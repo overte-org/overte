@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # General Build Information
 
-*Last Updated on March 8, 2021*
+*Last Updated on 21-10-2024*
 
 ## OS Specific Build Guides
 
@@ -34,7 +34,6 @@ These dependencies need not be installed manually. They are automatically downlo
 - [QuaZip](https://sourceforge.net/projects/quazip/files/quazip/):   0.7.3
 - [SDL2](https://www.libsdl.org/download-2.0.php):   2.0.3
 - [Intel Threading Building Blocks](https://www.threadingbuildingblocks.org/):   4.3
-- [vcpkg](https://github.com/hifi-archive/vcpkg):
 - [VHACD](https://github.com/virneo/v-hacd)
 - [zlib](http://www.zlib.net/):   1.28 (Win32 only)
 - [nvtt](https://github.com/hifi-archive/nvidia-texture-tools):   2.1.1 (customized)
@@ -78,23 +77,23 @@ information files (~7GB).
 
 Note: Installing Qt Creator is optional but recommended if you will be editing QML files.
 
-### VCPKG
+### Conan
 
-Overte uses vcpkg to download and build dependencies.
-You do not need to install vcpkg.
+Overte uses conan to download and build dependencies.
+Conan can be downloaded from here: https://conan.io/downloads
 
-Building the dependencies can be lengthy and the resulting files will be stored in your OS temp directory.
-However, those files can potentially get cleaned up by the OS, so in order to avoid this and having to redo the lengthy build step, you can set an environment variable.
+Building the dependencies can be lengthy and the resulting files will be stored in your home directory.
+To move them to a different location, you can set the `CONAN_HOME` variable to any folder where you wish to install the dependencies.
 
 Linux:
 
 ```bash
-export HIFI_VCPKG_BASE=/path/to/directory
+export CONAN_HOME=/path/to/directory
 ```
 
 Windows:
 ```bash
-set HIFI_VCPKG_BASE=/path/to/directory
+set CONAN_HOME=/path/to/directory
 ```
 
 Where `/path/to/directory` is the path to a directory where you wish the build files to get stored.
@@ -139,27 +138,12 @@ BUILD_GLOBAL_SERVICES=STABLE
 
 #### Generate Files
 
-Create a build directory in the root of your checkout and then run the CMake build from there. This will keep the rest of the directory clean.
-
 ```bash
-mkdir build
-cd build
-cmake ..
+conan install . -s build_type=Release -b missing -of build
+cmake --preset conan-release
 ```
 
 If CMake gives you the same error message repeatedly after the build fails, try removing `CMakeCache.txt`.
-
-#### Generating a release/debug only vcpkg build
-
-In order to generate a release or debug only vcpkg package, you could use the use the `VCPKG_BUILD_TYPE` define in your CMake generate command. Building a release only vcpkg can drastically decrease the total build time.
-
-For release only vcpkg:
-
-`cmake .. -DVCPKG_BUILD_TYPE=release`
-
-For debug only vcpkg:
-
-`cmake .. -DVCPKG_BUILD_TYPE=debug`
 
 ### Variables
 
@@ -168,7 +152,7 @@ Any variables that need to be set for CMake to find dependencies can be set as E
 For example, to pass the QT_CMAKE_PREFIX_PATH variable (if not using the vcpkg'ed version) during build file generation:
 
 ```bash
-cmake .. -DQT_CMAKE_PREFIX_PATH=/usr/local/qt/5.12.3/lib/cmake
+cmake --preset conan-release -DQT_CMAKE_PREFIX_PATH=/usr/local/qt/5.12.3/lib/cmake
 ```
 
 ### Finding Dependencies
