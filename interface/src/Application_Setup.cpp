@@ -35,6 +35,7 @@
 #include <AutoUpdater.h>
 #include <avatar/AvatarManager.h>
 #include <BuildInfo.h>
+#include <CameraRootTransformNode.h>
 #include <crash-handler/CrashHandler.h>
 #include <DebugDraw.h>
 #include <DeferredLightingEffect.h>
@@ -1275,6 +1276,15 @@ void Application::initialize(const QCommandLineParser &parser) {
         mouseRayPick->setJointState(PickQuery::JOINT_STATE_MOUSE);
         auto mouseRayPickID = DependencyManager::get<PickManager>()->addPick(PickQuery::Ray, mouseRayPick);
         DependencyManager::get<EntityTreeRenderer>()->setMouseRayPickID(mouseRayPickID);
+    }
+
+    // Setup the camera clipping ray pick
+    {
+        _prevCameraClippingEnabled = _cameraClippingEnabled.get();
+        auto cameraRayPick = std::make_shared<RayPick>(Vectors::ZERO, -Vectors::UP, PickFilter(PickScriptingInterface::getPickEntities() | PickScriptingInterface::getPickLocalEntities()),
+            MyAvatar::ZOOM_MAX, 0.0f, _prevCameraClippingEnabled);
+        cameraRayPick->parentTransform = std::make_shared<CameraRootTransformNode>();
+        _cameraClippingRayPickID = DependencyManager::get<PickManager>()->addPick(PickQuery::Ray, cameraRayPick);
     }
 
     // Preload Tablet sounds
