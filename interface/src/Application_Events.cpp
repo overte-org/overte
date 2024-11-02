@@ -929,3 +929,98 @@ bool Application::handleFileOpenEvent(QFileOpenEvent* fileEvent) {
     }
     return false;
 }
+
+void Application::processDriverBlocklistReply(const QString& fullDriverToTest, const QString& os, const QString& vendor, const QString& renderer, const QString& api,
+        const QString& driver) {
+    // The driver blocklist is a JSON array of objects where each object contains:
+    // - os (e.g. Windows, Linux): The system OS
+    // - vendor (e.g. NVIDIA, AMD): The GPU maker
+    // - renderer (optional) (e.g. AMD, Panfrost): The driver stack, if specified
+    // - api (e.g GL45, GLES): The backend version
+    // - version (optional) (e.g. 32.0.15.6070): The driver version, if just a single version is problematic
+    // - first_version (optional) (e.g. 32.0.15.6070): If a range is problematic, the first problematic version
+    // - last_version (optional) (e.g. 32.0.15.6070): If a range is problematic, the final problematic version.  If this is not provided,
+    //       all versions above first_version will trigger a warning.
+    // String values are *case insensitive*
+    QNetworkReply* reply = static_cast<QNetworkReply*>(sender());
+    QByteArray data = reply->readAll();
+
+    QJsonParseError error;
+    QJsonDocument json = QJsonDocument::fromJson(data, &error);
+    if (json.isNull() || !json.isArray()) {
+        OffscreenUi::asyncWarning("Driver Blocklist Error", "There is a problem with the GPU driver blocklist: " + error.errorString(),
+            QMessageBox::Ok, QMessageBox::Ok);
+    }
+
+    _prevCheckedDriver.set(fullDriverToTest);
+
+    QJsonArray driverArray = json.array();
+    for (QJsonValueRef driverJSON : driverArray) {
+        if (!driverJSON.isObject()) {
+            continue;
+        }
+
+        QJsonObject driverObject = driverJSON.toObject();
+        if (os.toLower() != driverObject["os"].toString().toLower()) {
+            continue;
+        }
+        if (vendor.toLower() != driverObject["vendor"].toString().toLower()) {
+            continue;
+        }
+        if (driverObject.contains("renderer")) {
+            if (renderer.toLower().contains(driverObject["renderer"].toString().toLower())) {
+                continue;
+            }
+        }
+        if (api.toLower() != driverObject["api"].toString().toLower()) {
+            continue;
+        }
+
+        QString minDriver;
+        QString maxDriver;
+
+        if (driverObject.contains("version")) {
+            QString driverString = driverObject["version"].toString();
+            minDriver = driverString;
+            maxDriver = driverString;
+        } else {
+            minDriver = driverObject["first_version"].toString();
+
+            if (driverObject.contains("last_version")) {
+                QString driverString = driverObject["last_version"].toString();
+                maxDriver = driverString;
+            }
+        }
+
+        minDriver = minDriver.replace(" ", ".");
+        maxDriver = maxDriver.replace(" ", ".");
+
+        const auto compareDriver = [] (const QStringList& driver1, const QStringList& driver2, std::function<bool(int, int)> func) {
+            if (driver1.size() != driver2.size()) {
+                return false;
+            }
+
+            for (size_t i = 0; i < driver1.size(); i++) {
+                if (!func(driver1[i].toInt(), driver2[i].toInt())) {
+                    return false;
+                }
+            }
+
+            return true;
+        };
+
+        QStringList driverParts = driver.split(".");
+        bool inErrorRange = compareDriver(driverParts, minDriver.split("."), [] (int driverPart1, int driverPart2) { return driverPart1 >= driverPart2; });
+        if (!maxDriver.isEmpty()) {
+            inErrorRange &= compareDriver(driverParts, maxDriver.split("."), [] (int driverPart1, int driverPart2) { return driverPart1 <= driverPart2; });
+        }
+
+        if (inErrorRange) {
+            QString issue = driverObject["description"].toString();
+            OffscreenUi::asyncWarning(
+                "GPU Driver Warning", "Your GPU driver (" + driver + ") has been reported as problematic (Issue: " + issue + "). If you encounter issues, consider trying a different version.",
+                QMessageBox::Ok, QMessageBox::Ok);
+            break;
+        }
+    }
+}

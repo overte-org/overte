@@ -650,6 +650,9 @@ private:
     bool handleKeyEventForFocusedEntity(QEvent* event);
     bool handleFileOpenEvent(QFileOpenEvent* event);
 
+    void processDriverBlocklistReply(const QString& fullDriverToTest, const QString& os, const QString& vendor, const QString& renderer, const QString& api,
+        const QString& driver);
+
 
     // Entities
     void queryOctree(NodeType_t serverType, PacketType packetType);
@@ -897,6 +900,7 @@ private:
     std::shared_ptr<GraphicsEngine> _graphicsEngine;
     glm::uvec2 _renderResolution;
 
+    Setting::Handle<QString> _prevCheckedDriver { "prevCheckedDriver", "" };
     bool _isGLInitialized { false };
 
 
