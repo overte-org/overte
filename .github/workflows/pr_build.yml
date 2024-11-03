@@ -137,9 +137,9 @@ jobs:
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
-            echo "CMAKE_EXTRA=-A x64" >> $GITHUB_ENV
+            echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
           else
-            echo "CMAKE_EXTRA=-A x64 -DCLIENT_ONLY=1" >> $GITHUB_ENV
+            echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE -DCLIENT_ONLY=1" >> $GITHUB_ENV
           fi
         fi
         # Android + Quest build variables

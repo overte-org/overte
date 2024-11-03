@@ -91,7 +91,7 @@ jobs:
           echo "ZIP_COMMAND=7z" >> $GITHUB_ENV
           echo "ZIP_ARGS=a" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
-          echo "CMAKE_EXTRA=-A x64" >> $GITHUB_ENV
+          echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
           echo "SYMBOL_REGEX=\(exe\|dll\|pdb\)" >> $GITHUB_ENV
           echo "symbols_archive=${BUILD_NUMBER}-${{ matrix.build_type }}-win-symbols.zip" >> $GITHUB_ENV
           # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
