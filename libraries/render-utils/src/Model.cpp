@@ -1653,13 +1653,13 @@ bool Model::isRenderable() const {
     return !_meshStates.empty() || (isLoaded() && _renderGeometry->getMeshes().empty());
 }
 
-std::set<unsigned int> Model::getMeshIDsFromMaterialID(QString parentMaterialName) {
-    std::set<unsigned int> toReturn;
+std::set<std::pair<uint, std::string>> Model::getMeshIDsAndMaterialNamesFromMaterialID(QString parentMaterialName) {
+    std::set<std::pair<uint, std::string>> toReturn;
 
     const QString all("all");
     if (parentMaterialName == all) {
         for (unsigned int i = 0; i < (unsigned int)_modelMeshRenderItemIDs.size(); i++) {
-            toReturn.insert(i);
+            toReturn.insert({ i, i < _modelMeshMaterialNames.size() ? _modelMeshMaterialNames[i] : "" });
         }
     } else if (!parentMaterialName.isEmpty()) {
         auto parseFunc = [this, &toReturn] (QString& target) {
@@ -1673,12 +1673,14 @@ std::set<unsigned int> Model::getMeshIDsFromMaterialID(QString parentMaterialNam
                 std::string targetStdString = target.replace(0, MATERIAL_NAME_PREFIX.size(), "").toStdString();
                 for (unsigned int i = 0; i < (unsigned int)_modelMeshMaterialNames.size(); i++) {
                     if (_modelMeshMaterialNames[i] == targetStdString) {
-                        toReturn.insert(i);
+                        toReturn.insert({ i, _modelMeshMaterialNames[i] });
                     }
                 }
                 return;
             }
-            toReturn.insert(target.toUInt());
+
+            uint result = target.toUInt();
+            toReturn.insert({ result, result < _modelMeshMaterialNames.size() ? _modelMeshMaterialNames[result] : "" });
         };
 
         if (parentMaterialName.length() > 2 && parentMaterialName.startsWith("[") && parentMaterialName.endsWith("]")) {
@@ -1720,15 +1722,15 @@ void Model::applyMaterialMapping() {
             continue;
         }
 
-        std::set<unsigned int> shapeIDs = getMeshIDsFromMaterialID(QString(mapping.first.c_str()));
+        auto shapeIDs = getMeshIDsAndMaterialNamesFromMaterialID(QString(mapping.first.c_str()));
         if (shapeIDs.size() == 0) {
             continue;
         }
 
         // This needs to be precomputed before the lambda, since the lambdas could be called out of order
         std::unordered_map<unsigned int, quint16> priorityMapPerResource;
-        for (auto shapeID : shapeIDs) {
-            priorityMapPerResource[shapeID] = ++_priorityMap[shapeID];
+        for (const auto& shapeID : shapeIDs) {
+            priorityMapPerResource[shapeID.first] = ++_priorityMap[shapeID.first];
         }
 
         std::weak_ptr<Model> weakSelf = shared_from_this();
@@ -1756,15 +1758,15 @@ void Model::applyMaterialMapping() {
                     networkMaterial = networkMaterialResource->parsedMaterials.networkMaterials[networkMaterialResource->parsedMaterials.names[0]];
                 }
             }
-            for (auto shapeID : shapeIDs) {
-                if (shapeID < modelMeshRenderItemIDs.size()) {
-                    auto itemID = modelMeshRenderItemIDs[shapeID];
-                    auto meshIndex = modelMeshRenderItemShapes[shapeID].meshIndex;
+            for (const auto& shapeID : shapeIDs) {
+                if (shapeID.first < modelMeshRenderItemIDs.size()) {
+                    auto itemID = modelMeshRenderItemIDs[shapeID.first];
+                    auto meshIndex = modelMeshRenderItemShapes[shapeID.first].meshIndex;
                     bool invalidatePayloadShapeKey = shouldInvalidatePayloadShapeKeyMap.at(meshIndex);
-                    graphics::MaterialLayer material = graphics::MaterialLayer(networkMaterial, priorityMapPerResource.at(shapeID));
+                    graphics::MaterialLayer material = graphics::MaterialLayer(networkMaterial, priorityMapPerResource.at(shapeID.first));
                     {
                         std::unique_lock<std::mutex> lock(self->_materialMappingMutex);
-                        self->_materialMapping[shapeID].push_back(material);
+                        self->_materialMapping[shapeID.first].push_back(material);
                     }
                     transaction.updateItem<ModelMeshPartPayload>(itemID, [material, renderItemsKey,
                             invalidatePayloadShapeKey, primitiveMode, useDualQuaternionSkinning](ModelMeshPartPayload& data) {
@@ -1787,17 +1789,17 @@ void Model::applyMaterialMapping() {
 }
 
 void Model::addMaterial(graphics::MaterialLayer material, const std::string& parentMaterialName) {
-    std::set<unsigned int> shapeIDs = getMeshIDsFromMaterialID(QString(parentMaterialName.c_str()));
+    auto shapeIDs = getMeshIDsAndMaterialNamesFromMaterialID(QString(parentMaterialName.c_str()));
 
     auto renderItemsKey = _renderItemKeyGlobalFlags;
     PrimitiveMode primitiveMode = getPrimitiveMode();
     bool useDualQuaternionSkinning = _useDualQuaternionSkinning;
 
     render::Transaction transaction;
-    for (auto shapeID : shapeIDs) {
-        if (shapeID < _modelMeshRenderItemIDs.size()) {
-            auto itemID = _modelMeshRenderItemIDs[shapeID];
-            auto meshIndex = _modelMeshRenderItemShapes[shapeID].meshIndex;
+    for (const auto& shapeID : shapeIDs) {
+        if (shapeID.first < _modelMeshRenderItemIDs.size()) {
+            auto itemID = _modelMeshRenderItemIDs[shapeID.first];
+            auto meshIndex = _modelMeshRenderItemShapes[shapeID.first].meshIndex;
             bool invalidatePayloadShapeKey = shouldInvalidatePayloadShapeKey(meshIndex);
             transaction.updateItem<ModelMeshPartPayload>(itemID, [material, renderItemsKey,
                 invalidatePayloadShapeKey, primitiveMode, useDualQuaternionSkinning](ModelMeshPartPayload& data) {
@@ -1812,14 +1814,14 @@ void Model::addMaterial(graphics::MaterialLayer material, const std::string& par
 }
 
 void Model::removeMaterial(graphics::MaterialPointer material, const std::string& parentMaterialName) {
-    std::set<unsigned int> shapeIDs = getMeshIDsFromMaterialID(QString(parentMaterialName.c_str()));
+    auto shapeIDs = getMeshIDsAndMaterialNamesFromMaterialID(QString(parentMaterialName.c_str()));
     render::Transaction transaction;
-    for (auto shapeID : shapeIDs) {
-        if (shapeID < _modelMeshRenderItemIDs.size()) {
-            auto itemID = _modelMeshRenderItemIDs[shapeID];
+    for (const auto& shapeID : shapeIDs) {
+        if (shapeID.first < _modelMeshRenderItemIDs.size()) {
+            auto itemID = _modelMeshRenderItemIDs[shapeID.first];
             auto renderItemsKey = _renderItemKeyGlobalFlags;
             PrimitiveMode primitiveMode = getPrimitiveMode();
-            auto meshIndex = _modelMeshRenderItemShapes[shapeID].meshIndex;
+            auto meshIndex = _modelMeshRenderItemShapes[shapeID.first].meshIndex;
             bool invalidatePayloadShapeKey = shouldInvalidatePayloadShapeKey(meshIndex);
             bool useDualQuaternionSkinning = _useDualQuaternionSkinning;
             transaction.updateItem<ModelMeshPartPayload>(itemID, [material, renderItemsKey,
