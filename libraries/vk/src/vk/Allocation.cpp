@@ -3,6 +3,7 @@
 #include <mutex>
 
 #include "VulkanTools.h"
+#include "Context.h"
 
 using namespace vks;
 
@@ -19,6 +20,7 @@ void Allocation::initAllocator(const VkPhysicalDevice& physicalDevice, const VkD
     std::call_once(once, [&] {
         VmaAllocatorCreateInfo allocatorInfo = {};
         allocatorInfo.physicalDevice = physicalDevice;
+        allocatorInfo.instance = vks::Context::get().instance;
         allocatorInfo.device = device;
 
         VmaAllocator& allocator = getAllocator();
