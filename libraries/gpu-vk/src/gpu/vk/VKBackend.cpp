@@ -1347,7 +1347,11 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
             //glDisableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is disabled
             _transform._enabledDrawcallInfoBuffer = false;
         }
+        // VKTODO
+        // Since Vulkan has no glVertexAttrib equivalent we need to pass a buffer pointer here
         //glVertexAttribI2i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.unused);
+        VkDeviceSize vkOffset = _transform._drawCallInfoOffsets[batch._currentNamedCall];
+        vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &_transform._drawCallInfoBuffer->buffer, &vkOffset);
     } else {
         if (!_transform._enabledDrawcallInfoBuffer) {
             //glEnableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is enabled
@@ -1411,8 +1415,10 @@ void VKBackend::transferTransformState(const Batch& batch) {
         }
         _transform._cameraBuffer = vks::Buffer::createUniform(bufferData.size());
         _frameData._buffers.push_back(_transform._cameraBuffer);
+        _transform._cameraBuffer->map();
         _transform._cameraBuffer->copy(bufferData.size(), bufferData.data());
         _transform._cameraBuffer->flush(VK_WHOLE_SIZE);
+        _transform._cameraBuffer->unmap();
     }else{
         _transform._cameraBuffer.reset();
     }
@@ -1420,15 +1426,23 @@ void VKBackend::transferTransformState(const Batch& batch) {
     if (!batch._objects.empty()) {
         _transform._objectBuffer = vks::Buffer::createUniform(batch._objects.size() * sizeof(Batch::TransformObject));
         _frameData._buffers.push_back(_transform._objectBuffer);
+        _transform._objectBuffer->map();
         _transform._objectBuffer->copy(batch._objects.size() * sizeof(Batch::TransformObject), batch._objects.data());
         _transform._objectBuffer->flush(VK_WHOLE_SIZE);
+        _transform._objectBuffer->unmap();
         //glNamedBufferData(_transform._objectBuffer, batch._objects.size() * sizeof(Batch::TransformObject), batch._objects.data(), GL_STREAM_DRAW);
     }else{
         _transform._objectBuffer.reset();
     }
 
-    if (!batch._namedData.empty()) {
+    if (!batch._namedData.empty() || batch._drawCallInfos.empty()) {
         bufferData.clear();
+        bufferData.reserve(batch._drawCallInfos.size() * sizeof(Batch::DrawCallInfo));
+        // VKTODO
+        auto bytesToCopy = data.second.drawCallInfos.size() * sizeof(Batch::DrawCallInfo);
+        bufferData.resize(currentSize + bytesToCopy);
+        memcpy(bufferData.data() + currentSize, data.second.drawCallInfos.data(), bytesToCopy);
+        _transform._drawCallInfoOffsets[data.first] = currentSize;
         for (auto& data : batch._namedData) {
             auto currentSize = bufferData.size();
             auto bytesToCopy = data.second.drawCallInfos.size() * sizeof(Batch::DrawCallInfo);
@@ -1440,8 +1454,10 @@ void VKBackend::transferTransformState(const Batch& batch) {
         //_frameData._buffers.push_back(_transform._drawCallInfoBuffer);
         _transform._drawCallInfoBuffer = vks::Buffer::createUniform(bufferData.size());
         _frameData._buffers.push_back(_transform._drawCallInfoBuffer);
+        _transform._drawCallInfoBuffer->map();
         _transform._drawCallInfoBuffer->copy(bufferData.size(), bufferData.data());
         _transform._drawCallInfoBuffer->flush(VK_WHOLE_SIZE);
+        _transform._drawCallInfoBuffer->unmap();
         //glNamedBufferData(_transform._drawCallInfoBuffer, bufferData.size(), bufferData.data(), GL_STREAM_DRAW);
     }else{
         _transform._drawCallInfoBuffer.reset();
