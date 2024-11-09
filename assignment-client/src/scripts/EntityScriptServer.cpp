@@ -567,6 +567,7 @@ void EntityScriptServer::addingEntity(const EntityItemID& entityID) {
 
 void EntityScriptServer::deletingEntity(const EntityItemID& entityID) {
     if (_entityViewer.getTree() && !_shuttingDown && _entitiesScriptManager) {
+        // TODO: Check if this is running on script engine thread, otherwise lambda capturing script engine pointer is needed
         _entitiesScriptManager->unloadEntityScript(entityID, true);
     }
 }
@@ -584,6 +585,7 @@ void EntityScriptServer::checkAndCallPreload(const EntityItemID& entityID, bool 
         EntityScriptDetails details;
         bool isRunning = _entitiesScriptManager->getEntityScriptDetails(entityID, details);
         if (entity && (forceRedownload || !isRunning || details.scriptText != entity->getServerScripts())) {
+            // TODO: Check if this is running on script engine thread, otherwise lambda capturing script engine pointer is needed
             if (isRunning) {
                 _entitiesScriptManager->unloadEntityScript(entityID, true);
             }

@@ -288,7 +288,10 @@ void EntityTreeRenderer::stopDomainAndNonOwnedEntities() {
             EntityItemPointer entityItem = getTree()->findEntityByEntityItemID(entityID);
             if (entityItem && !entityItem->getScript().isEmpty()) {
                 if (!(entityItem->isLocalEntity() || entityItem->isMyAvatarEntity())) {
-                    _nonPersistentEntitiesScriptManager->unloadEntityScript(entityID, true);
+                    auto scriptEnginePtr = _nonPersistentEntitiesScriptManager;
+                    QMetaObject::invokeMethod(scriptEnginePtr.get(), [scriptEnginePtr, entityID]{
+                        scriptEnginePtr->unloadEntityScript(entityID, true);
+                    });
                 }
             }
         }
@@ -1110,7 +1113,9 @@ void EntityTreeRenderer::deletingEntity(const EntityItemID& entityID) {
         if (_currentEntitiesInside.contains(entityID)) {
             scriptEngine->callEntityScriptMethod(entityID, "leaveEntity");
         }
-        scriptEngine->unloadEntityScript(entityID, true);
+        QMetaObject::invokeMethod(scriptEngine.get(), [scriptEngine, entityID]{
+            scriptEngine->unloadEntityScript(entityID, true);
+        });
     }
 
     auto scene = _viewState->getMain3DScene();
@@ -1163,7 +1168,9 @@ void EntityTreeRenderer::checkAndCallPreload(const EntityItemID& entityID, bool 
                 if (_currentEntitiesInside.contains(entityID)) {
                     scriptEngine->callEntityScriptMethod(entityID, "leaveEntity");
                 }
-                scriptEngine->unloadEntityScript(entityID);
+                QMetaObject::invokeMethod(scriptEngine.get(), [scriptEngine, entityID]{
+                    scriptEngine->unloadEntityScript(entityID);
+                });
             }
             entity->scriptHasUnloaded();
         }

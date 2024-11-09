@@ -381,6 +381,7 @@ ScriptManager::~ScriptManager() {
     if (_type == ScriptManager::Type::ENTITY_CLIENT) {
         printf("ScriptManager::~ScriptManager");
     }
+    _isDeleted = true;
 }
 
 void ScriptManager::disconnectNonEssentialSignals() {

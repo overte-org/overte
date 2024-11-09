@@ -1665,6 +1665,7 @@ protected:
     friend ScriptManagerPointer newScriptManager(Context context, const QString& scriptContents, const QString& fileNameString);
     friend class ScriptManagerScriptingInterface;
 
+    std::atomic<bool> _isDeleted {false}; // This is used for debugging use-after-delete. It happens quite often, so I'm keeping it here for now.
 };
 
 /**
