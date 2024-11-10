@@ -99,7 +99,7 @@ inline bool operator!=(const ProceduralProgramKey& a, const ProceduralProgramKey
 // FIXME better mechanism for extending to things rendered using shaders other than simple.slv
 struct Procedural {
 public:
-    Procedural();
+    Procedural(bool useAA = true);
     void setProceduralData(const ProceduralData& proceduralData);
 
     bool isReady() const;
@@ -132,7 +132,7 @@ public:
     gpu::StatePointer _opaqueState { std::make_shared<gpu::State>() };
     gpu::StatePointer _transparentState { std::make_shared<gpu::State>() };
 
-    static std::function<void(gpu::StatePointer)> opaqueStencil;
+    static std::function<void(gpu::StatePointer, bool)> opaqueStencil;
     static std::function<void(gpu::StatePointer)> transparentStencil;
 
     static bool enableProceduralShaders;

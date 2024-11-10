@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 5/25/2017.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -24,8 +25,8 @@ public:
 
     RenderShadowsAndDeferredTask() {}
 
-    void build(JobModel& task, const render::Varying& inputs, render::Varying& outputs, render::CullFunctor cullFunctor, uint8_t tagBits, uint8_t tagMask, size_t depth);
-
+    void build(JobModel& task, const render::Varying& inputs, render::Varying& outputs, render::CullFunctor cullFunctor,
+        uint8_t tagBits, uint8_t tagMask, uint8_t transformOffset, size_t depth);
 };
 
 class DeferredForwardSwitchJob {
@@ -36,8 +37,8 @@ public:
     DeferredForwardSwitchJob() {}
 
     void configure(const render::SwitchConfig& config) {}
-    void build(JobModel& task, const render::Varying& inputs, render::Varying& outputs, render::CullFunctor cullFunctor, uint8_t tagBits, uint8_t tagMask, size_t depth);
-
+    void build(JobModel& task, const render::Varying& inputs, render::Varying& outputs, render::CullFunctor cullFunctor,
+        uint8_t tagBits, uint8_t tagMask, uint8_t transformOffset, size_t depth);
 };
 
 class RenderViewTask {
@@ -47,8 +48,15 @@ public:
 
     RenderViewTask() {}
 
-    void build(JobModel& task, const render::Varying& inputs, render::Varying& outputs, render::CullFunctor cullFunctor, uint8_t tagBits = 0x00, uint8_t tagMask = 0x00, size_t depth = 0);
+    // each view uses 1 transform for the main view, and one for the background, so these need to be increments of 2
+    enum TransformOffset: uint8_t {
+        MAIN_VIEW = 0,
+        SECONDARY_VIEW = 2,
+        FIRST_MIRROR_VIEW = 4
+    };
 
+    void build(JobModel& task, const render::Varying& inputs, render::Varying& outputs, render::CullFunctor cullFunctor,
+        uint8_t tagBits = 0x00, uint8_t tagMask = 0x00, TransformOffset transformOffset = TransformOffset::MAIN_VIEW, size_t depth = 0);
 };
 
 

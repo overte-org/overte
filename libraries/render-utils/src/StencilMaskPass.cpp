@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 5/31/17.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -124,6 +125,12 @@ void PrepareStencil::drawBackground(gpu::State& state) {
 void PrepareStencil::testMask(gpu::State& state) {
     state.setStencilTest(true, 0x00, gpu::State::StencilTest(STENCIL_MASK, STENCIL_MASK, gpu::NOT_EQUAL,
         gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP));
+}
+
+// Pass if this area has NOT been marked as MASK or anything containing MASK and reset NO_AA if it passes
+void PrepareStencil::testMaskResetNoAA(gpu::State& state) {
+    state.setStencilTest(true, STENCIL_NO_AA, gpu::State::StencilTest(STENCIL_MASK, STENCIL_MASK, gpu::NOT_EQUAL,
+        gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_REPLACE));
 }
 
 // Pass if this area has NOT been marked as NO_AA or anything containing NO_AA
