@@ -145,10 +145,6 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
         // Shadow Stage Frame
         const auto shadowFrame = shadowTaskOutputs[1];
 
-    if (depth == 0) {
-        task.addJob<FadeEffect>("FadeEffect", opaques);
-    }
-
     const auto jitter = task.addJob<JitterSample>("JitterCam");
 
     // GPU jobs: Start preparing the primary, deferred and lighting buffer

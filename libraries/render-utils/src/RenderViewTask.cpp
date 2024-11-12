@@ -10,6 +10,7 @@
 //
 #include "RenderViewTask.h"
 
+#include "FadeEffect.h"
 #include "RenderShadowTask.h"
 #include "RenderCommonTask.h"
 #include "RenderDeferredTask.h"
@@ -39,6 +40,14 @@ void DeferredForwardSwitchJob::build(JobModel& task, const render::Varying& inpu
 
 void RenderViewTask::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, uint8_t tagBits, uint8_t tagMask, size_t depth) {
     const auto items = task.addJob<RenderFetchCullSortTask>("FetchCullSort", cullFunctor, tagBits, tagMask);
+
+    if (depth == 0 && tagBits == render::ItemKey::TAG_BITS_0) {
+        // TODO: This doesn't actually do any rendering, it simply processes the fade transactions.  Even though forward rendering
+        // doesn't support fading right now, we still need to do this once for both paths, otherwise we are left with orphaned objects
+        // after they fade out.  In the future, we should refactor this to happen elsewhere.
+        const auto& opaques = items.get<RenderFetchCullSortTask::Output>().get0()[RenderFetchCullSortTask::OPAQUE_SHAPE];
+        task.addJob<FadeEffect>("FadeEffect", opaques);
+    }
 
     // Issue the lighting model, aka the big global settings for the view 
     const auto lightingModel = task.addJob<MakeLightingModel>("LightingModel");
