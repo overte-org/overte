@@ -15,8 +15,7 @@
 
 class FadeEffect {
 public:
-    using Input = render::ItemBounds;
-    using JobModel = render::Task::ModelI<FadeEffect, render::ItemBounds>;
+    using JobModel = render::Task::Model<FadeEffect>;
 
     FadeEffect();
 
