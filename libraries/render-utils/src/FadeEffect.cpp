@@ -28,10 +28,8 @@ FadeEffect::FadeEffect() {
 }
 
 void FadeEffect::build(JobModel& task, const render::Varying& inputs, render::Varying& outputs) {
-    auto editedFadeCategory = task.addJob<FadeJob>("Fade");
-
-    const auto fadeEditInput = FadeEditJob::Input(inputs, editedFadeCategory).asVarying();
-    task.addJob<FadeEditJob>("FadeEdit", fadeEditInput);
+    const auto editedFadeCategory = task.addJob<FadeJob>("Fade");
+    task.addJob<FadeEditJob>("FadeEdit", editedFadeCategory);
 }
 
 render::ShapePipeline::BatchSetter FadeEffect::getBatchSetter() {

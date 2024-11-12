@@ -45,8 +45,7 @@ void RenderViewTask::build(JobModel& task, const render::Varying& input, render:
         // TODO: This doesn't actually do any rendering, it simply processes the fade transactions.  Even though forward rendering
         // doesn't support fading right now, we still need to do this once for both paths, otherwise we are left with orphaned objects
         // after they fade out.  In the future, we should refactor this to happen elsewhere.
-        const auto& opaques = items.get<RenderFetchCullSortTask::Output>().get0()[RenderFetchCullSortTask::OPAQUE_SHAPE];
-        task.addJob<FadeEffect>("FadeEffect", opaques);
+        task.addJob<FadeEffect>("FadeEffect");
     }
 
     // Issue the lighting model, aka the big global settings for the view 

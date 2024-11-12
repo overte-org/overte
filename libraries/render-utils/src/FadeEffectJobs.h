@@ -177,13 +177,13 @@ class FadeEditJob {
 public:
 
     using Config = FadeEditConfig;
-    using Input = render::VaryingSet2<render::ItemBounds, FadeCategory>;
+    using Input = FadeCategory;
     using JobModel = render::Job::ModelI<FadeEditJob, Input, Config>;
 
     FadeEditJob() {}
 
     void configure(const Config& config);
-    void run(const render::RenderContextPointer& renderContext, const FadeEditJob::Input& inputs);
+    void run(const render::RenderContextPointer& renderContext, const FadeEditJob::Input& input);
 
 private:
 

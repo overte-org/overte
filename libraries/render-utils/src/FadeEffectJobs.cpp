@@ -35,7 +35,7 @@ void FadeEditJob::configure(const Config& config) {
     _isEditEnabled = config.editFade;
 }
 
-void FadeEditJob::run(const render::RenderContextPointer& renderContext, const FadeEditJob::Input& inputs) {
+void FadeEditJob::run(const render::RenderContextPointer& renderContext, const FadeEditJob::Input& input) {
     auto scene = renderContext->_scene;
 
     if (_isEditEnabled) {
@@ -63,7 +63,7 @@ void FadeEditJob::run(const render::RenderContextPointer& renderContext, const F
                     render::Transition::AVATAR_CHANGE
                 };
 
-                auto transitionType = categoryToTransition[inputs.get1()];
+                auto transitionType = categoryToTransition[input];
 
                 transaction.queryTransitionOnItem(_editedItem, [transitionType, scene](render::ItemID id, const render::Transition* transition) {
                     if (transition == nullptr || transition->isFinished || transition->eventType != transitionType) {
