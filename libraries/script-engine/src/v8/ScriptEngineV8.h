@@ -35,6 +35,7 @@
 #include "libplatform/libplatform.h"
 #include "v8.h"
 
+#include "ScriptEngineDebugFlags.h"
 #include "../ScriptEngine.h"
 #include "../ScriptManager.h"
 #include "../ScriptException.h"
@@ -57,8 +58,6 @@ typedef V8ScriptValueTemplate<v8::Script> V8ScriptProgram;
 using ScriptContextV8Pointer = std::shared_ptr<ScriptContextV8Wrapper>;
 
 const double GARBAGE_COLLECTION_TIME_LIMIT_S = 1.0;
-
-#define OVERTE_SCRIPT_USE_AFTER_DELETE_GUARD
 
 Q_DECLARE_METATYPE(ScriptEngine::FunctionSignature)
 

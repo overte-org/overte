@@ -23,6 +23,7 @@
 #include <QtCore/QPointer>
 #include <QtCore/QString>
 
+#include "ScriptEngineDebugFlags.h"
 #include "../ScriptEngine.h"
 #include "../Scriptable.h"
 #include "ScriptEngineV8.h"
@@ -295,6 +296,9 @@ private:  // storage
     // Call counter for debugging purposes. It can be used to determine which signals are overwhelming script engine.
     int _callCounter{0};
     float _totalCallTime_s{ 0.0 };
+#ifdef OVERTE_SCRIPT_USE_AFTER_DELETE_GUARD
+    std::atomic<bool> _wasDeleted{false};
+#endif
 
     Q_DISABLE_COPY(ScriptSignalV8Proxy)
 };
