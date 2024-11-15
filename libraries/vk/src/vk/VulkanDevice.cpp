@@ -64,9 +64,17 @@ namespace vks
     */
     VulkanDevice::~VulkanDevice()
     {
-        if (commandPool)
+        if (graphicsCommandPool)
         {
-            vkDestroyCommandPool(logicalDevice, commandPool, nullptr);
+            vkDestroyCommandPool(logicalDevice, graphicsCommandPool, nullptr);
+        }
+        if (transferCommandPool)
+        {
+            vkDestroyCommandPool(logicalDevice, transferCommandPool, nullptr);
+        }
+        if (computeCommandPool)
+        {
+            vkDestroyCommandPool(logicalDevice, computeCommandPool, nullptr);
         }
         if (logicalDevice)
         {
@@ -299,7 +307,9 @@ namespace vks
         }
 
         // Create a default command pool for graphics command buffers
-        commandPool = createCommandPool(queueFamilyIndices.graphics);
+        graphicsCommandPool = createCommandPool(queueFamilyIndices.graphics);
+        transferCommandPool = createCommandPool(queueFamilyIndices.transfer);
+        //computeCommandPool = createCommandPool(queueFamilyIndices.compute); // VKTODO
 
         return result;
     }
@@ -454,7 +464,7 @@ namespace vks
     {
         assert(dst->size <= src->size);
         assert(src->buffer);
-        VkCommandBuffer copyCmd = createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+        VkCommandBuffer copyCmd = createCommandBuffer(transferCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
         VkBufferCopy bufferCopy{};
         if (copyRegion == nullptr)
         {
@@ -467,7 +477,7 @@ namespace vks
 
         vkCmdCopyBuffer(copyCmd, src->buffer, dst->buffer, 1, &bufferCopy);
 
-        flushCommandBuffer(copyCmd, queue);
+        flushCommandBuffer(copyCmd, queue, transferCommandPool);
     }
 
     /** 
@@ -500,7 +510,7 @@ namespace vks
     *
     * @return A handle to the allocated command buffer
     */
-    VkCommandBuffer VulkanDevice::createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin)
+    VkCommandBuffer VulkanDevice::createCommandBuffer(VkCommandPool pool, VkCommandBufferLevel level, bool begin)
     {
         VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(pool, level, 1);
         VkCommandBuffer cmdBuffer;
@@ -514,11 +524,6 @@ namespace vks
         return cmdBuffer;
     }
             
-    VkCommandBuffer VulkanDevice::createCommandBuffer(VkCommandBufferLevel level, bool begin)
-    {
-        return createCommandBuffer(level, commandPool, begin);
-    }
-
     /**
     * Finish command buffer recording and submit it to a queue
     *
@@ -555,11 +560,6 @@ namespace vks
         {
             vkFreeCommandBuffers(logicalDevice, pool, 1, &commandBuffer);
         }
-    }
-
-    void VulkanDevice::flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free)
-    {
-        return flushCommandBuffer(commandBuffer, queue, commandPool, free);
     }
 
     /**

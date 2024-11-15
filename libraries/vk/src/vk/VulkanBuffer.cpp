@@ -93,6 +93,35 @@ namespace vks
         return newBuffer;
     }
 
+    std::shared_ptr<Buffer> Buffer::createStorage(VkDeviceSize bufferSize) {
+        std::shared_ptr<Buffer> newBuffer = std::make_shared<Buffer>();
+        newBuffer->size = bufferSize;
+        VkBufferCreateInfo bufferCI = {  };
+        bufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferCI.size = newBuffer->size;
+        bufferCI.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        VmaAllocationCreateInfo allocationCI{};
+        allocationCI.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        vmaCreateBuffer(vks::Allocation::getAllocator(), &bufferCI, &allocationCI, &newBuffer->buffer, &newBuffer->allocation, nullptr);
+        return newBuffer;
+    }
+
+    std::shared_ptr<Buffer> Buffer::createVertex(VkDeviceSize bufferSize) {
+        //VKTODO: This needs to be on GPU-only memory in the future
+        std::shared_ptr<Buffer> newBuffer = std::make_shared<Buffer>();
+        newBuffer->size = bufferSize;
+        VkBufferCreateInfo bufferCI = {  };
+        bufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        bufferCI.size = newBuffer->size;
+        bufferCI.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        VmaAllocationCreateInfo allocationCI{};
+        allocationCI.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
+        allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        vmaCreateBuffer(vks::Allocation::getAllocator(), &bufferCI, &allocationCI, &newBuffer->buffer, &newBuffer->allocation, nullptr);
+        return newBuffer;
+    }
+
     /**
     * Copies the specified data to the mapped buffer
     * 

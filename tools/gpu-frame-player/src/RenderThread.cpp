@@ -174,7 +174,7 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     uint32_t swapchainIndex;
     VK_CHECK_RESULT(_swapchain.acquireNextImage(acquireComplete, &swapchainIndex));
     auto framebuffer = _framebuffers[swapchainIndex];
-    const auto& commandBuffer = _vkcontext.createCommandBuffer();
+    const auto& commandBuffer = _vkcontext.createCommandBuffer(_vkcontext.device->graphicsCommandPool);
     //auto vkBackend = dynamic_pointer_cast<gpu::vulkan::VKBackend>(getBackend());
     //Q_ASSERT(vkBackend);
 
@@ -262,8 +262,8 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     VkFenceCreateInfo fenceCI = vks::initializers::fenceCreateInfo();
     VkFence frameFence;
     vkCreateFence(_vkcontext.device->logicalDevice, &fenceCI, nullptr, &frameFence);
-    vkQueueSubmit(_vkcontext.queue, 1, &submitInfo, frameFence);
-    _swapchain.queuePresent(_vkcontext.queue, swapchainIndex, renderComplete);
+    vkQueueSubmit(_vkcontext.graphicsQueue, 1, &submitInfo, frameFence);
+    _swapchain.queuePresent(_vkcontext.graphicsQueue, swapchainIndex, renderComplete);
     _vkcontext.trashCommandBuffers({ commandBuffer });
     _vkcontext.emptyDumpster(frameFence);
     _vkcontext.recycle();

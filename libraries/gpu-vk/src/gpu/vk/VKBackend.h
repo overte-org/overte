@@ -23,6 +23,7 @@
 #include <vk/Config.h>
 #include <vk/Context.h>
 #include <vk/VulkanDebug.h>
+#include <vk/VulkanTexture.h>
 #include <vulkan/vulkan_core.h>
 
 #include "VKForward.h"
@@ -47,6 +48,17 @@
 #endif
 
 namespace gpu { namespace vk {
+
+static const int MAX_NUM_UNIFORM_BUFFERS = 14; // There's also camera buffer at slot 15
+
+static const int32_t MIN_REQUIRED_TEXTURE_IMAGE_UNITS = 16;
+static const int32_t MIN_REQUIRED_COMBINED_UNIFORM_BLOCKS = 70;
+static const int32_t MIN_REQUIRED_COMBINED_TEXTURE_IMAGE_UNITS = 48;
+static const int32_t MIN_REQUIRED_UNIFORM_BUFFER_BINDINGS = 36;
+static const int32_t MIN_REQUIRED_UNIFORM_LOCATIONS = 1024;
+
+static const int MAX_NUM_RESOURCE_BUFFERS = 16;
+static const int MAX_NUM_RESOURCE_TEXTURES = 16;
 
 class VKInputFormat : public GPUObject {
 public:
@@ -75,6 +87,8 @@ protected:
         mat4 prevView;
         mat4 prevViewInverse;
     };
+
+    struct UniformStageState;
 
     struct TransformStageState {
 #ifdef GPU_STEREO_CAMERA_BUFFER
@@ -128,8 +142,8 @@ protected:
         mutable size_t _currentCameraOffset{ INVALID_OFFSET };
 
         void preUpdate(size_t commandIndex, const StereoState& stereo, Vec2u framebufferSize);
-        void update(size_t commandIndex, const StereoState& stereo) const;
-        void bindCurrentCamera(int stereoSide) const;
+        void update(size_t commandIndex, const StereoState& stereo, VKBackend::UniformStageState &uniform) const;
+        void bindCurrentCamera(int stereoSide, VKBackend::UniformStageState &uniform) const;
     } _transform;
 
     static const int MAX_NUM_ATTRIBUTES = Stream::NUM_INPUT_SLOTS;
@@ -166,9 +180,77 @@ protected:
         uint32_t _defaultVAO { 0 };
     } _input;
 
+    struct UniformStageState {
+        struct BufferState {
+            // Only one of buffer or vksBuffer may be not NULL
+            BufferReference buffer{};
+            vks::Buffer *vksBuffer{};
+            uint32_t offset{ 0 }; // VKTODO: is it correct type
+            uint32_t size{ 0 }; // VKTODO: is it correct type
+
+            BufferState& operator=(const BufferState& other) = delete;
+            void reset() {
+                gpu::reset(buffer);
+                gpu::reset(vksBuffer);
+                offset = 0;
+                size = 0;
+            }
+
+            /*bool compare(const BufferPointer& buffer, uint32_t offset, uint32_t size) {
+                const auto& self = *this;
+                return (self.offset == offset && self.size == size && gpu::compare(self.buffer, buffer));
+            }*/
+        };
+
+        // MAX_NUM_UNIFORM_BUFFERS-1 is the max uniform index BATCHES are allowed to set, but
+        // MIN_REQUIRED_UNIFORM_BUFFER_BINDINGS is used here because the backend sets some
+        // internal UBOs for things like camera correction
+        std::array<BufferState, MIN_REQUIRED_UNIFORM_BUFFER_BINDINGS> _buffers;
+    } _uniform;
+
+    void updateVkDescriptorWriteSetsUniform(VkDescriptorSet target);
+    void releaseUniformBuffer(uint32_t slot);
+
+    // VKTODO
+    struct ResourceStageState {
+        struct TextureState {
+            TextureReference texture{};
+        };
+        struct BufferState {
+            BufferReference buffer{};
+            vks::Buffer *vksBuffer{};
+        };
+        std::array<BufferState, MAX_NUM_RESOURCE_BUFFERS> _buffers{};
+        std::array<TextureState, MAX_NUM_RESOURCE_TEXTURES> _textures{};
+        //int findEmptyTextureSlot() const;
+    } _resource;
+
+    void updateVkDescriptorWriteSetsTexture(VkDescriptorSet target);
+    void releaseResourceTexture(uint32_t slot);
+
+    void updateVkDescriptorWriteSetsStorage(VkDescriptorSet target);
+    void releaseResourceBuffer(uint32_t slot);
+
+    // VKTODO
+    struct OutputStageState {
+        FramebufferReference _framebuffer{};
+        int _drawFBO{ 0 };
+    } _output;
+
+    // VKTODO
+    void resetQueryStage();
+    struct QueryStageState {
+        uint32_t _rangeQueryDepth{ 0 };
+    } _queryStage;
+
+
     // VKTODO: one instance per each frame
     // Contains objects that are created per frame and need to be deleted after the frame is rendered
     struct FrameData {
+        std::vector<VkDescriptorSet> uniformDescriptorSets;
+        std::vector<VkDescriptorSet> textureDescriptorSets;
+        std::vector<VkDescriptorSet> storageDescriptorSets;
+        VkDescriptorPool _descriptorPool;
         std::vector<std::shared_ptr<vks::Buffer>> _buffers;
         std::vector<VkRenderPass> _renderPasses;
         void reset() {}; // VKTODO
@@ -184,7 +266,7 @@ protected:
 
     vk::VKFramebuffer* syncGPUObject(const Framebuffer& framebuffer);
     VKBuffer* syncGPUObject(const Buffer& buffer);
-    VKTexture* syncGPUObject(const TexturePointer& texturePointer);
+    VKTexture* syncGPUObject(const Texture& texture);
     VKQuery* syncGPUObject(const Query& query);
 
 public:
@@ -241,7 +323,7 @@ public:
     // Resource Stage
     virtual void do_setResourceBuffer(const Batch& batch, size_t paramOffset) final;
     virtual void do_setResourceTexture(const Batch& batch, size_t paramOffset) final;
-    virtual void do_setResourceTextureTable(const Batch& batch, size_t paramOffset) {}; // VKTODO: not needed currently, to be implemented in the future
+    virtual void do_setResourceTextureTable(const Batch& batch, size_t paramOffset) {};
     virtual void do_setResourceFramebufferSwapChainTexture(const Batch& batch, size_t paramOffset) final;
 
     // Pipeline Stage
@@ -278,14 +360,18 @@ public:
     virtual void do_popProfileRange(const Batch& batch, size_t paramOffset) final;
 
 protected:
+    // Creates descriptor pool for current frame
+    void createDescriptorPool();
     void initTransform();
+    void initDefaultTexture();
     // Logical device, application's view of the physical device (GPU)
     // VkPipeline cache object
     VkPipelineCache _pipelineCache;
 
     vks::Context& _context{ vks::Context::get() };
-    VkQueue _graphicsQueue; //TODO: initialize from device
-    VkQueue _transferQueue; //TODO: initialize from device
+    //VkQueue _graphicsQueue; //TODO: initialize from device
+    //VkQueue _transferQueue; //TODO: initialize from device
+    vks::Texture2D _defaultTexture;
     friend class VKBuffer;
     friend class VKFramebuffer;
     VkCommandBuffer _currentCommandBuffer;
