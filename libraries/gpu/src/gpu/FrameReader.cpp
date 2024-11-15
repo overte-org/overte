@@ -631,7 +631,8 @@ TextureView Deserializer::readTextureView(const json& node) {
         uint32_t textureIndex = node;
         return textures[textureIndex];
     };
-    readOptionalTransformed<TexturePointer>(result._texture, node, keys::texture, texturePointerReader);
+    bool textureFound = readOptionalTransformed<TexturePointer>(result._texture, node, keys::texture, texturePointerReader);
+    Q_ASSERT(textureFound);
     readOptionalTransformed<Element>(result._element, node, keys::element, &readElement);
     readOptional(result._subresource, node, keys::subresource);
     return result;

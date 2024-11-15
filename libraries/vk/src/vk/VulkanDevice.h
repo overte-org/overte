@@ -39,7 +39,9 @@ struct VulkanDevice
     /** @brief List of extensions supported by the device */
     std::vector<std::string> supportedExtensions;
     /** @brief Default command pool for the graphics queue family index */
-    VkCommandPool commandPool = VK_NULL_HANDLE;
+    VkCommandPool graphicsCommandPool = VK_NULL_HANDLE;
+    VkCommandPool transferCommandPool = VK_NULL_HANDLE;
+    VkCommandPool computeCommandPool = VK_NULL_HANDLE; // VKTODO: this is not assigned yet
     /** @brief Contains queue family indices */
     struct
     {
@@ -60,10 +62,8 @@ struct VulkanDevice
     VkResult        createBuffer(VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryPropertyFlags, vks::Buffer *buffer, VkDeviceSize size, void *data = nullptr);
     void            copyBuffer(vks::Buffer *src, vks::Buffer *dst, VkQueue queue, VkBufferCopy *copyRegion = nullptr);
     VkCommandPool   createCommandPool(uint32_t queueFamilyIndex, VkCommandPoolCreateFlags createFlags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
-    VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, VkCommandPool pool, bool begin = false);
-    VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level, bool begin = false);
+    VkCommandBuffer createCommandBuffer(VkCommandPool pool, VkCommandBufferLevel level, bool begin = false);
     void            flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, VkCommandPool pool, bool free = true);
-    void            flushCommandBuffer(VkCommandBuffer commandBuffer, VkQueue queue, bool free = true);
     bool            extensionSupported(std::string extension);
     VkFormat        getSupportedDepthFormat(bool checkSamplingSupport);
 };
