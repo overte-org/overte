@@ -74,7 +74,7 @@ void VKWindow::createCommandBuffers() {
     VK_CHECK_RESULT(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderCompleteSemaphore));
     // Create one command buffer for each swap chain image
     _drawCommandBuffers.resize(_swapchain.imageCount);
-    VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(_context.device->commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, static_cast<uint32_t>(_drawCommandBuffers.size()));
+    VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(_context.device->graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, static_cast<uint32_t>(_drawCommandBuffers.size()));
     VK_CHECK_RESULT(vkAllocateCommandBuffers(_device, &cmdBufAllocateInfo, _drawCommandBuffers.data()));
 }
 

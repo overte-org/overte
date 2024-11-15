@@ -357,7 +357,7 @@ namespace vks
         VkMemoryRequirements memReqs;
 
         // Use a separate command buffer for texture loading
-        VkCommandBuffer copyCmd = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+        VkCommandBuffer copyCmd = device->createCommandBuffer(device->transferCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
 
         // Create a host-visible staging buffer that contains the raw image data
         VkBuffer stagingBuffer;
@@ -458,7 +458,7 @@ namespace vks
             imageLayout,
             subresourceRange);
 
-        device->flushCommandBuffer(copyCmd, copyQueue);
+        device->flushCommandBuffer(copyCmd, copyQueue, device->transferCommandPool);
 
         // Clean up staging resources
         vkDestroyBuffer(device->logicalDevice, stagingBuffer, nullptr);

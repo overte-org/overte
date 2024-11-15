@@ -104,12 +104,15 @@ VKBackend::VKBackend() {
     qCDebug(gpu_vk_logging) << "VK Device Type: " << _context.device->properties.deviceType;
 
     initTransform();
+    createDescriptorPool();
+    initDefaultTexture();
 }
 
 VKBackend::~VKBackend() {
     // FIXME queue up all the trash calls
-    VK_CHECK_RESULT(vkQueueWaitIdle(_graphicsQueue));
-    VK_CHECK_RESULT(vkQueueWaitIdle(_transferQueue));
+    // VKTODO: move to context
+    VK_CHECK_RESULT(vkQueueWaitIdle(_context.graphicsQueue));
+    VK_CHECK_RESULT(vkQueueWaitIdle(_context.transferQueue) );
     VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
 
     {
@@ -206,7 +209,14 @@ struct Cache {
         gpu::FormatReference format{ GPU_REFERENCE_INIT_VALUE };
         gpu::FramebufferReference framebuffer{ GPU_REFERENCE_INIT_VALUE };
 
-        std::unordered_map<gpu::PipelineReference, VkPipelineLayout> _layoutMap;
+        struct PipelineLayout {
+            VkPipelineLayout pipelineLayout;
+            VkDescriptorSetLayout uniformLayout;
+            VkDescriptorSetLayout textureLayout;
+            VkDescriptorSetLayout storageLayout;
+        };
+
+        std::unordered_map<gpu::PipelineReference, PipelineLayout> _layoutMap;
         std::unordered_map<RenderpassKey, VkRenderPass, container_hash<RenderpassKey>> _renderPassMap;
 
         template <typename T>
@@ -254,7 +264,8 @@ struct Cache {
             return result;
         }
 
-        VkPipelineLayout getPipelineLayout(const vks::Context& context) {
+        // Returns structure containing pipeline layout and descriptor set layouts
+        PipelineLayout getPipelineAndDescriptorLayout(const vks::Context& context) {
             auto itr = _layoutMap.find(pipeline);
             if (_layoutMap.end() == itr) {
                 auto pipeline = gpu::acquire(this->pipeline);
@@ -271,6 +282,7 @@ struct Cache {
                 auto& texLayout = uniLayout;
                 auto& stoLayout = uniLayout;
 #endif
+                PipelineLayout layout {};
 
                 for (const auto& entry : getBindingMap(vertexReflection.uniformBuffers, fragmentRefelection.uniformBuffers)) {
                     VkDescriptorSetLayoutBinding binding = vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,entry.second,entry.first,1);
@@ -292,6 +304,7 @@ struct Cache {
                     VkDescriptorSetLayout descriptorSetLayout;
                     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorSetLayout));
                     layouts.push_back(descriptorSetLayout);
+                    layout.uniformLayout = descriptorSetLayout;
                 }
 #if SEP_DESC
                 if (!texLayout.empty()) {
@@ -299,18 +312,23 @@ struct Cache {
                     VkDescriptorSetLayout descriptorSetLayout;
                     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorSetLayout));
                     layouts.push_back(descriptorSetLayout);
+                    layout.textureLayout = descriptorSetLayout;
                 }
                 if (!stoLayout.empty()) {
                     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = vks::initializers::descriptorSetLayoutCreateInfo(stoLayout.data(), stoLayout.size());
                     VkDescriptorSetLayout descriptorSetLayout;
                     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorSetLayout));
                     layouts.push_back(descriptorSetLayout);
+                    layout.storageLayout = descriptorSetLayout;
                 }
 #endif
                 VkPipelineLayoutCreateInfo pipelineLayoutCI = vks::initializers::pipelineLayoutCreateInfo(layouts.data(), (uint32_t)layouts.size());
                 VkPipelineLayout pipelineLayout;
                 VK_CHECK_RESULT(vkCreatePipelineLayout(context.device->logicalDevice, &pipelineLayoutCI, nullptr, &pipelineLayout));
-                return _layoutMap[this->pipeline] = pipelineLayout;
+
+                layout.pipelineLayout = pipelineLayout;
+
+                return _layoutMap[this->pipeline] = layout;
                 //return _layoutMap[this->pipeline] = nullptr;
             }
             return itr->second;
@@ -323,7 +341,9 @@ struct Cache {
             } else {
                 for (const auto& attachment : framebuffer->getRenderBuffers()) {
                     if (attachment.isValid()) {
-                        result.push_back(evalTexelFormatInternal(attachment._element));
+                        // VKTODO: why _element often has different format than texture's pixel format, and seemingly wrong one?
+                        //result.push_back(evalTexelFormatInternal(attachment._element));
+                        result.push_back(evalTexelFormatInternal(attachment._texture->getTexelFormat()));
                     }
                 }
                 if (framebuffer->hasDepthStencil()) {
@@ -448,7 +468,7 @@ struct Cache {
 
     VkPipeline getPipeline(const vks::Context& context) {
         auto renderpass = pipelineState.getRenderPass(context);
-        auto pipelineLayout = pipelineState.getPipelineLayout(context);
+        auto pipelineLayout = pipelineState.getPipelineAndDescriptorLayout(context);
         const gpu::Pipeline& pipeline = *gpu::acquire(pipelineState.pipeline);
         const gpu::State& state = *pipeline.getState();
 
@@ -457,7 +477,7 @@ struct Cache {
         // FIXME
 
         const gpu::State::Data& stateData = state.getValues();
-        vks::pipelines::GraphicsPipelineBuilder builder{ context.device->logicalDevice, pipelineLayout, renderpass };
+        vks::pipelines::GraphicsPipelineBuilder builder{ context.device->logicalDevice, pipelineLayout.pipelineLayout, renderpass };
 
         // Input assembly
         {
@@ -579,6 +599,9 @@ Cache _cache;
 
 void VKBackend::executeFrame(const FramePointer& frame) {
     using namespace vks::debugutils;
+    // Create descriptor pool
+    // VKTODO: delete descriptor pool after it's not needed
+    //_frameData._descriptorPool
     {
         const auto& commandBuffer = _currentCommandBuffer;
         for (const auto& batchPtr : frame->batches) {
@@ -783,7 +806,7 @@ void VKBackend::TransformStageState::preUpdate(size_t commandIndex, const Stereo
     _invalidView = _invalidProj = _invalidViewport = false;
 }
 
-void VKBackend::TransformStageState::update(size_t commandIndex, const StereoState& stereo) const {
+void VKBackend::TransformStageState::update(size_t commandIndex, const StereoState& stereo, VKBackend::UniformStageState &uniform) const {
     size_t offset = INVALID_OFFSET;
     while ((_camerasItr != _cameraOffsets.end()) && (commandIndex >= (*_camerasItr).first)) {
         offset = (*_camerasItr).second;
@@ -793,7 +816,7 @@ void VKBackend::TransformStageState::update(size_t commandIndex, const StereoSta
 
     if (offset != INVALID_OFFSET) {
 #ifdef GPU_STEREO_CAMERA_BUFFER
-        bindCurrentCamera(0);
+        bindCurrentCamera(0, uniform);
 #else
         if (!stereo.isStereo()) {
             bindCurrentCamera(0);
@@ -802,12 +825,16 @@ void VKBackend::TransformStageState::update(size_t commandIndex, const StereoSta
     }
 }
 
-void VKBackend::TransformStageState::bindCurrentCamera(int eye) const {
-    // VKTODO
-    /*if (_currentCameraOffset != INVALID_OFFSET) {
+void VKBackend::TransformStageState::bindCurrentCamera(int eye, VKBackend::UniformStageState &uniform) const {
+    if (_currentCameraOffset != INVALID_OFFSET) {
         static_assert(slot::buffer::Buffer::CameraTransform >= MAX_NUM_UNIFORM_BUFFERS, "TransformCamera may overlap pipeline uniform buffer slots. Invalidate uniform buffer slot cache for safety (call _uniform._buffers[TRANSFORM_CAMERA_SLOT].reset()).");
-        glBindBufferRange(GL_UNIFORM_BUFFER, slot::buffer::Buffer::CameraTransform, _cameraBuffer, _currentCameraOffset + eye * _cameraUboSize, sizeof(CameraBufferElement));
-    }*/
+        // VKTODO: add convenience function for this?
+        auto &buffer = uniform._buffers[slot::buffer::Buffer::CameraTransform];
+        buffer.vksBuffer = _cameraBuffer.get();
+        buffer.size = sizeof(CameraBufferElement);
+        buffer.offset = _currentCameraOffset + eye * _cameraUboSize;
+        //glBindBufferRange(GL_UNIFORM_BUFFER, slot::buffer::Buffer::CameraTransform, _cameraBuffer, _currentCameraOffset + eye * _cameraUboSize, sizeof(CameraBufferElement));
+    }
 }
 
 void VKBackend::do_resetStages(const Batch& batch, size_t paramOffset) {
@@ -931,6 +958,132 @@ void VKBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRend
     _pipeline._cameraCorrectionBuffer._buffer->flush();*/
 }
 
+void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
+    std::vector<VkWriteDescriptorSet> sets;
+    for (size_t i = 0; i < _uniform._buffers.size(); i++) {
+        if (_uniform._buffers[i].buffer || _uniform._buffers[i].vksBuffer) {
+            // These cannot be set at the same time
+            Q_ASSERT(!(_uniform._buffers[i].buffer && _uniform._buffers[i].vksBuffer));
+            // VKTODO: move vulkan buffer creation to the transfer parts and aggregate several buffers together maybe?
+            VkDescriptorBufferInfo bufferInfo{};
+            if (_uniform._buffers[i].buffer) {
+                Q_ASSERT(i != slot::buffer::Buffer::CameraTransform);  // Camera buffer slot cannot be occupied by anything else
+                VKBuffer * buffer = syncGPUObject(*_uniform._buffers[i].buffer);
+                bufferInfo.buffer = buffer->buffer;
+            } else if (_uniform._buffers[i].vksBuffer) {
+                bufferInfo.buffer = _uniform._buffers[i].vksBuffer->buffer;
+            }
+            bufferInfo.offset = _uniform._buffers[i].offset;
+            bufferInfo.range = _uniform._buffers[i].size;
+
+            VkWriteDescriptorSet descriptorWriteSet{};
+            descriptorWriteSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWriteSet.dstSet = target;
+            descriptorWriteSet.dstBinding = i;
+            descriptorWriteSet.dstArrayElement = 0;
+            descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            descriptorWriteSet.descriptorCount = 1;
+            descriptorWriteSet.pBufferInfo = &bufferInfo;
+            sets.push_back(descriptorWriteSet);
+        }
+    }
+    vkUpdateDescriptorSets(_context.device->logicalDevice, sets.size(), sets.data(), 0, nullptr);
+}
+
+void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
+    std::vector<VkWriteDescriptorSet> sets;
+    for (size_t i = 0; i < _resource._textures.size(); i++) {
+        if (_resource._textures[i].texture) {
+            // VKTODO: move vulkan texture creation to the transfer parts
+            // VKTODO: this doesn't work yet
+            //VKTexture * texture = syncGPUObject(*_resource._textures[i]._texture);
+            VkDescriptorImageInfo imageInfo{};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            imageInfo.imageView = _defaultTexture.view;
+            imageInfo.sampler = _defaultTexture.sampler;
+
+            VkWriteDescriptorSet descriptorWriteSet{};
+            descriptorWriteSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWriteSet.dstSet = target;
+            descriptorWriteSet.dstBinding = i;
+            descriptorWriteSet.dstArrayElement = 0;
+            descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            descriptorWriteSet.descriptorCount = 1;
+            descriptorWriteSet.pImageInfo = &imageInfo;
+            sets.push_back(descriptorWriteSet);
+        }
+    }
+    vkUpdateDescriptorSets(_context.device->logicalDevice, sets.size(), sets.data(), 0, nullptr);
+}
+
+void VKBackend::updateVkDescriptorWriteSetsStorage(VkDescriptorSet target) {
+    std::vector<VkWriteDescriptorSet> sets;
+    for (size_t i = 0; i < _resource._buffers.size(); i++) {
+        if (_resource._buffers[i].buffer || _resource._buffers[i].vksBuffer) {
+            Q_ASSERT(!(_resource._buffers[i].buffer && _resource._buffers[i].vksBuffer));
+            // VKTODO: move vulkan buffer creation to the transfer parts and aggregate several buffers together maybe?
+            VkDescriptorBufferInfo bufferInfo{};
+            if (_resource._buffers[i].buffer) {
+                VKBuffer* buffer = syncGPUObject(*_resource._buffers[i].buffer);
+                bufferInfo.buffer = buffer->buffer;
+                bufferInfo.range = _resource._buffers[i].buffer->getSize();
+            } else if (_resource._buffers[i].vksBuffer)
+            {
+                bufferInfo.buffer = _resource._buffers[i].vksBuffer->buffer;
+                bufferInfo.range = _resource._buffers[i].vksBuffer->size;
+            }
+            bufferInfo.offset = 0;
+
+            VkWriteDescriptorSet descriptorWriteSet{};
+            descriptorWriteSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            descriptorWriteSet.dstSet = target;
+            descriptorWriteSet.dstBinding = i;
+            descriptorWriteSet.dstArrayElement = 0;
+            descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            descriptorWriteSet.descriptorCount = 1;
+            descriptorWriteSet.pBufferInfo = &bufferInfo;
+            sets.push_back(descriptorWriteSet);
+        }
+    }
+    vkUpdateDescriptorSets(_context.device->logicalDevice, sets.size(), sets.data(), 0, nullptr);
+}
+
+
+void VKBackend::releaseUniformBuffer(uint32_t slot) {
+    auto& bufferState = _uniform._buffers[slot];
+    if (valid(bufferState.buffer)) {
+        // VKTODO
+        //glBindBufferBase(GL_UNIFORM_BUFFER, slot, 0);  // RELEASE
+        //(void)CHECK_GL_ERROR();
+    }
+    bufferState.reset();
+}
+
+void VKBackend::releaseResourceTexture(uint32_t slot) {
+    auto& textureState = _resource._textures[slot];
+    if (valid(textureState.texture)) {
+        // VKTODO
+        //glActiveTexture(GL_TEXTURE0 + slot);
+        //glBindTexture(textureState._target, 0);  // RELEASE
+        //(void)CHECK_GL_ERROR();
+        reset(textureState.texture);
+    }
+}
+
+void VKBackend::releaseResourceBuffer(uint32_t slot) {
+    auto& bufferReference = _resource._buffers[slot].buffer;
+    auto buffer = acquire(bufferReference);
+    if (buffer) {
+        // VKTODO
+        //glActiveTexture(GL_TEXTURE0 + GLESBackend::RESOURCE_BUFFER_SLOT0_TEX_UNIT + slot);
+        //glBindTexture(GL_TEXTURE_BUFFER, 0);
+        reset(bufferReference);
+    }
+    if (_resource._buffers[slot].vksBuffer) {
+        reset(_resource._buffers[slot].vksBuffer);
+    }
+}
+
 void VKBackend::renderPassTransfer(const Batch& batch) {
     const size_t numCommands = batch.getCommands().size();
     const Batch::Commands::value_type* command = batch.getCommands().data();
@@ -1016,6 +1169,9 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             updateInput();
             updateTransform(batch);
             updatePipeline();
+            if (_cache.pipelineState.framebuffer->getRenderBuffers()[0]._texture->getTexelFormat().getSemantic() == gpu::R11G11B10) {
+                printf("Test");
+            }
             auto renderPassBeginInfo = vks::initializers::renderPassBeginInfo();
             renderPassBeginInfo.renderPass = _cache.pipelineState.getRenderPass(_context);
             Q_ASSERT(_cache.pipelineState.framebuffer);
@@ -1034,7 +1190,7 @@ void VKBackend::renderPassDraw(const Batch& batch) {
                 }
             }
             renderPassBeginInfo.pClearValues = clearValues.data();
-            renderPassBeginInfo.renderArea = VkRect2D{VkOffset2D {_transform._viewport.x, _transform._viewport.y}, VkExtent2D {_transform._viewport.z, _transform._viewport.w}};
+            renderPassBeginInfo.renderArea = VkRect2D{VkOffset2D {_transform._viewport.x, _transform._viewport.y}, VkExtent2D {(uint32_t)_transform._viewport.z, (uint32_t)_transform._viewport.w}};
             // VKTODO: this is inefficient
             vkCmdBeginRenderPass(_currentCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
             // VKTODO: this is inefficient
@@ -1055,6 +1211,51 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             scissor.extent.width = _currentScissorRect.z;
             scissor.extent.height = _currentScissorRect.w;
             vkCmdSetScissor(_currentCommandBuffer, 0, 1, &scissor);
+            auto layout = _cache.pipelineState.getPipelineAndDescriptorLayout(_context);
+            // VKTODO: Descriptor sets and associated buffers should be set up during pre-pass
+            // VKTODO: move this to a function
+            if (layout.uniformLayout) {
+                // TODO: allocate 3 at once?
+                VkDescriptorSetAllocateInfo allocInfo{};
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                allocInfo.descriptorPool = _frameData._descriptorPool;
+                allocInfo.descriptorSetCount = 1;
+                allocInfo.pSetLayouts = &layout.uniformLayout;
+                VkDescriptorSet descriptorSet;
+                VK_CHECK_RESULT(vkAllocateDescriptorSets(_context.device->logicalDevice, &allocInfo, &descriptorSet));
+
+                updateVkDescriptorWriteSetsUniform(descriptorSet);
+                vkCmdBindDescriptorSets(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipelineLayout, 0, 1,
+                                        &descriptorSet, 0, nullptr);
+            }
+            if (layout.textureLayout) {
+                // TODO: allocate 3 at once?
+                VkDescriptorSetAllocateInfo allocInfo{};
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                allocInfo.descriptorPool = _frameData._descriptorPool;
+                allocInfo.descriptorSetCount = 1;
+                allocInfo.pSetLayouts = &layout.textureLayout;
+                VkDescriptorSet descriptorSet;
+                VK_CHECK_RESULT(vkAllocateDescriptorSets(_context.device->logicalDevice, &allocInfo, &descriptorSet));
+
+                updateVkDescriptorWriteSetsTexture(descriptorSet);
+                vkCmdBindDescriptorSets(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipelineLayout, 1, 1,
+                                        &descriptorSet, 0, nullptr);
+            }
+            if (layout.storageLayout) {
+                // TODO: allocate 3 at once?
+                VkDescriptorSetAllocateInfo allocInfo{};
+                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+                allocInfo.descriptorPool = _frameData._descriptorPool;
+                allocInfo.descriptorSetCount = 1;
+                allocInfo.pSetLayouts = &layout.storageLayout;
+                VkDescriptorSet descriptorSet;
+                VK_CHECK_RESULT(vkAllocateDescriptorSets(_context.device->logicalDevice, &allocInfo, &descriptorSet));
+
+                updateVkDescriptorWriteSetsStorage(descriptorSet);
+                vkCmdBindDescriptorSets(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipelineLayout, 2, 1,
+                                        &descriptorSet, 0, nullptr);
+            }
             CommandCall call = _commandCalls[(*command)];
             (this->*(call))(batch, *offset);
             vkCmdEndRenderPass(_currentCommandBuffer);
@@ -1127,13 +1328,12 @@ VKBuffer* VKBackend::syncGPUObject(const Buffer& buffer) {
     return vk::VKBuffer::sync(*this, buffer);
 }
 
-VKTexture* VKBackend::syncGPUObject(const TexturePointer& texturePointer) {
+VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
     // VKTODO
-    if (!texturePointer) {
+    /*if (!texture) {
         return nullptr;
-    }
+    }*/
 
-    const Texture& texture = *texturePointer;
     if (TextureUsageType::EXTERNAL == texture.getUsageType()) {
         // VKTODO:
         return nullptr;
@@ -1157,7 +1357,7 @@ VKTexture* VKBackend::syncGPUObject(const TexturePointer& texturePointer) {
 #endif
             case TextureUsageType::STRICT_RESOURCE:
                 // VKTODO
-                //qCDebug(gpugllogging) << "Strict texture " << texture.source().c_str();
+                //qCDebug(gpu_vk_logging) << "Strict texture " << texture.source().c_str();
                 //object = new GL45StrictResourceTexture(shared_from_this(), texture);
                 break;
 
@@ -1324,6 +1524,39 @@ void VKBackend::updateInput() {
     }
 }
 
+void VKBackend::createDescriptorPool() {
+    std::vector<VkDescriptorPoolSize> poolSizes = {
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100000 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 50000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 50000 }
+    };
+
+    VkDescriptorPoolCreateInfo descriptorPoolCI = {};
+    descriptorPoolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    descriptorPoolCI.flags = 0;
+    descriptorPoolCI.maxSets = 1000;
+    descriptorPoolCI.poolSizeCount = (uint32_t)poolSizes.size();
+    descriptorPoolCI.pPoolSizes = poolSizes.data();
+
+    VK_CHECK_RESULT(vkCreateDescriptorPool(_context.device->logicalDevice, &descriptorPoolCI, nullptr, &_frameData._descriptorPool));
+}
+
+void VKBackend::initDefaultTexture() {
+    int width = 256;
+    int height = 256;
+    std::vector<uint8_t> buffer;
+    buffer.resize(width * height * 4);
+    for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) {
+            buffer[x + y * width] = x;
+            buffer[x + y * width + 1] = y;
+            buffer[x + y * width + 2] = x + y;
+            buffer[x + y * width + 3] = x - y;
+        }
+    }
+    _defaultTexture.fromBuffer(buffer.data(), buffer.size(), VK_FORMAT_R8G8B8A8_SRGB, width, height, _context.device.get(),  _context.transferQueue);
+}
+
 void VKBackend::initTransform() {
 
 #ifdef GPU_SSBO_TRANSFORM_OBJECT
@@ -1338,11 +1571,11 @@ void VKBackend::initTransform() {
 
 void VKBackend::updateTransform(const gpu::Batch& batch) {
     // VKTODO
-    _transform.update(_commandIndex, _stereo);
+    _transform.update(_commandIndex, _stereo, _uniform);
 
     auto& drawCallInfoBuffer = batch.getDrawCallInfoBuffer();
     if (batch._currentNamedCall.empty()) {
-        auto& drawCallInfo = drawCallInfoBuffer[_currentDraw];
+        //auto& drawCallInfo = drawCallInfoBuffer[_currentDraw];
         if (_transform._enabledDrawcallInfoBuffer) {
             //glDisableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is disabled
             _transform._enabledDrawcallInfoBuffer = false;
@@ -1350,7 +1583,8 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
         // VKTODO
         // Since Vulkan has no glVertexAttrib equivalent we need to pass a buffer pointer here
         //glVertexAttribI2i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.unused);
-        VkDeviceSize vkOffset = _transform._drawCallInfoOffsets[batch._currentNamedCall];
+        // Draw call info for unnamed calls starts at the beginning of the buffer, with offset dependent on _currentDraw
+        VkDeviceSize vkOffset = _currentDraw * sizeof(gpu::Batch::DrawCallInfo);
         vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &_transform._drawCallInfoBuffer->buffer, &vkOffset);
     } else {
         if (!_transform._enabledDrawcallInfoBuffer) {
@@ -1424,7 +1658,7 @@ void VKBackend::transferTransformState(const Batch& batch) {
     }
 
     if (!batch._objects.empty()) {
-        _transform._objectBuffer = vks::Buffer::createUniform(batch._objects.size() * sizeof(Batch::TransformObject));
+        _transform._objectBuffer = vks::Buffer::createStorage(batch._objects.size() * sizeof(Batch::TransformObject));
         _frameData._buffers.push_back(_transform._objectBuffer);
         _transform._objectBuffer->map();
         _transform._objectBuffer->copy(batch._objects.size() * sizeof(Batch::TransformObject), batch._objects.data());
@@ -1435,14 +1669,16 @@ void VKBackend::transferTransformState(const Batch& batch) {
         _transform._objectBuffer.reset();
     }
 
-    if (!batch._namedData.empty() || batch._drawCallInfos.empty()) {
+    if (!batch._namedData.empty() || !batch._drawCallInfos.empty()) {
         bufferData.clear();
         bufferData.reserve(batch._drawCallInfos.size() * sizeof(Batch::DrawCallInfo));
         // VKTODO
-        auto bytesToCopy = data.second.drawCallInfos.size() * sizeof(Batch::DrawCallInfo);
-        bufferData.resize(currentSize + bytesToCopy);
-        memcpy(bufferData.data() + currentSize, data.second.drawCallInfos.data(), bytesToCopy);
-        _transform._drawCallInfoOffsets[data.first] = currentSize;
+        {
+            auto currentSize = bufferData.size();
+            auto bytesToCopy = batch._drawCallInfos.size() * sizeof(Batch::DrawCallInfo);
+            bufferData.resize(currentSize + bytesToCopy);
+            memcpy(bufferData.data() + currentSize, batch._drawCallInfos.data(), bytesToCopy);
+        }
         for (auto& data : batch._namedData) {
             auto currentSize = bufferData.size();
             auto bytesToCopy = data.second.drawCallInfos.size() * sizeof(Batch::DrawCallInfo);
@@ -1452,7 +1688,7 @@ void VKBackend::transferTransformState(const Batch& batch) {
         }
         //_transform._drawCallInfoBuffer = std::make_shared<vks::Buffer>();
         //_frameData._buffers.push_back(_transform._drawCallInfoBuffer);
-        _transform._drawCallInfoBuffer = vks::Buffer::createUniform(bufferData.size());
+        _transform._drawCallInfoBuffer = vks::Buffer::createVertex(bufferData.size());
         _frameData._buffers.push_back(_transform._drawCallInfoBuffer);
         _transform._drawCallInfoBuffer->map();
         _transform._drawCallInfoBuffer->copy(bufferData.size(), bufferData.data());
@@ -1464,6 +1700,9 @@ void VKBackend::transferTransformState(const Batch& batch) {
     }
 
     // VKTODO
+    if (_transform._objectBuffer) {
+        _resource._buffers[slot::storage::ObjectTransforms].vksBuffer = _transform._objectBuffer.get();
+    }
     //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, slot::storage::ObjectTransforms, _transform._objectBuffer);
 
     // Make sure the current Camera offset is unknown before render Draw
@@ -2066,10 +2305,12 @@ void VKBackend::do_setStateBlendFactor(const Batch& batch, size_t paramOffset) {
 
 void VKBackend::do_setUniformBuffer(const Batch& batch, size_t paramOffset) {
     //VKTODO
-    /*VKuint slot = batch._params[paramOffset + 3]._uint;
+    uint32_t slot = batch._params[paramOffset + 3]._uint;
     BufferPointer uniformBuffer = batch._buffers.get(batch._params[paramOffset + 2]._uint);
-    VKintptr rangeStart = batch._params[paramOffset + 1]._uint;
-    VKsizeiptr rangeSize = batch._params[paramOffset + 0]._uint;
+    uint32_t rangeStart = batch._params[paramOffset + 1]._uint;
+    uint32_t rangeSize = batch._params[paramOffset + 0]._uint;
+
+    // Create descriptor
 
     if (!uniformBuffer) {
         releaseUniformBuffer(slot);
@@ -2077,29 +2318,28 @@ void VKBackend::do_setUniformBuffer(const Batch& batch, size_t paramOffset) {
     }
 
     // check cache before thinking
-    if (_uniform._buffers[slot] == uniformBuffer) {
+    if (_uniform._buffers[slot].buffer == uniformBuffer.get()) {
         return;
     }
 
     // Sync BufferObject
     auto* object = syncGPUObject(*uniformBuffer);
     if (object) {
-        glBindBufferRange(VK_UNIFORM_BUFFER, slot, object->_buffer, rangeStart, rangeSize);
+        //glBindBufferRange(VK_UNIFORM_BUFFER, slot, object->_buffer, rangeStart, rangeSize);
 
-        _uniform._buffers[slot] = uniformBuffer;
-        (void)CHECK_VK_ERROR();
+        _uniform._buffers[slot].buffer = uniformBuffer.get();
     } else {
         releaseResourceTexture(slot);
         return;
-    }*/
+    }
 }
 
 void VKBackend::do_setResourceBuffer(const Batch& batch, size_t paramOffset) {
     //VKTODO:
-    /*GLuint slot = batch._params[paramOffset + 1]._uint;
-    if (slot >= (GLuint)MAX_NUM_RESOURCE_BUFFERS) {
-        qCDebug(gpugllogging) << "GLBackend::do_setResourceBuffer: Trying to set a resource Buffer at slot #" << slot
-                              << " which doesn't exist. MaxNumResourceBuffers = " << getMaxNumResourceBuffers();
+    uint32_t slot = batch._params[paramOffset + 1]._uint;
+    if (slot >= (uint32_t)MAX_NUM_RESOURCE_BUFFERS) {
+        qCDebug(gpu_vk_logging) << "GLBackend::do_setResourceBuffer: Trying to set a resource Buffer at slot #" << slot
+                              << " which doesn't exist. MaxNumResourceBuffers = " << MAX_NUM_RESOURCE_BUFFERS;
         return;
     }
 
@@ -2110,33 +2350,38 @@ void VKBackend::do_setResourceBuffer(const Batch& batch, size_t paramOffset) {
         return;
     }
     // check cache before thinking
-    if (compare(_resource._buffers[slot], resourceBuffer)) {
+    if (compare(_resource._buffers[slot].buffer, resourceBuffer)) {
         return;
     }
 
     // One more True Buffer bound
     _stats._RSNumResourceBufferBounded++;
 
-    // If successful bind then cache it
-    if (bindResourceBuffer(slot, resourceBuffer)) {
-        assign(_resource._buffers[slot], resourceBuffer);
+    // If successful then cache it
+    auto* object = syncGPUObject(*resourceBuffer);
+    if (object) {
+        assign(_resource._buffers[slot].buffer, resourceBuffer);
     } else {  // else clear slot and cache
         releaseResourceBuffer(slot);
         return;
-    }*/
+    }
 }
 
 void VKBackend::do_setResourceTexture(const Batch& batch, size_t paramOffset) {
     // VKTODO:
-    /*VKuint slot = batch._params[paramOffset + 1]._uint;
+    uint32_t slot = batch._params[paramOffset + 1]._uint;
     TexturePointer resourceTexture = batch._textures.get(batch._params[paramOffset + 0]._uint);
+
+    if (slot == 2) {
+        printf("break");
+    }
 
     if (!resourceTexture) {
         releaseResourceTexture(slot);
         return;
     }
     // check cache before thinking
-    if (_resource._textures[slot] == resourceTexture) {
+    if (_resource._textures[slot].texture == resourceTexture.get()) {
         return;
     }
 
@@ -2144,31 +2389,30 @@ void VKBackend::do_setResourceTexture(const Batch& batch, size_t paramOffset) {
     _stats._RSNumTextureBounded++;
 
     // Always make sure the VKObject is in sync
-    VKTexture* object = syncGPUObject(resourceTexture);
-    if (object) {
-        VKuint to = object->_texture;
-        VKuint target = object->_target;
-        glActiveTexture(VK_TEXTURE0 + slot);
-        glBindTexture(target, to);
+    // VKTODO
+    //VKTexture* object = syncGPUObject(resourceTexture);
+    //if (object) {
+        //uint32_t to = object->_texture;
+        //uint32_t target = object->_target;
+        //glActiveTexture(VK_TEXTURE0 + slot);
+        //glBindTexture(target, to);
 
-        (void)CHECK_VK_ERROR();
+        _resource._textures[slot].texture = resourceTexture.get();
 
-        _resource._textures[slot] = resourceTexture;
+        //_stats._RSAmountTextureMemoryBounded += object->size();
 
-        _stats._RSAmountTextureMemoryBounded += object->size();
-
-    } else {
-        releaseResourceTexture(slot);
-        return;
-    }*/
+    //} else {
+    //    releaseResourceTexture(slot);
+    //    return;
+    //}
 }
 
 void VKBackend::do_setResourceFramebufferSwapChainTexture(const Batch& batch, size_t paramOffset) {
-    /*GLuint slot = batch._params[paramOffset + 1]._uint;
-    if (slot >= (GLuint)MAX_NUM_RESOURCE_TEXTURES) {
-        qCDebug(gpugllogging)
+    /*uint32_t slot = batch._params[paramOffset + 1]._uint;
+    if (slot >= MAX_NUM_RESOURCE_TEXTURES) {
+        qCDebug(gpu_vk_logging)
             << "GLBackend::do_setResourceFramebufferSwapChainTexture: Trying to set a resource Texture at slot #" << slot
-            << " which doesn't exist. MaxNumResourceTextures = " << getMaxNumResourceTextures();
+            << " which doesn't exist. MaxNumResourceTextures = " << MAX_NUM_RESOURCE_TEXTURES;
         return;
     }
 
