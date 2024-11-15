@@ -185,22 +185,24 @@ public:
                         VkImageLayout newImageLayout) const;
 
     void setImageLayout(VkImage image,
+                        VkCommandPool pool,
                         VkImageLayout oldImageLayout,
                         VkImageLayout newImageLayout,
                         VkImageSubresourceRange subresourceRange) const {
         withPrimaryCommandBuffer([&](const auto& commandBuffer) {
             setImageLayout(commandBuffer, image, oldImageLayout, newImageLayout, subresourceRange);
-        });
+        }, pool);
     }
 
     // Fixed sub resource on first mip level and layer
     void setImageLayout(VkImage image,
+                        VkCommandPool pool,
                         VkImageAspectFlags aspectMask,
                         VkImageLayout oldImageLayout,
                         VkImageLayout newImageLayout) const {
         withPrimaryCommandBuffer([&](const auto& commandBuffer) {
             setImageLayout(commandBuffer, image, aspectMask, oldImageLayout, newImageLayout);
-        });
+        }, pool);
     }
 
     void createDevice();
@@ -223,23 +225,24 @@ public:
 
     std::shared_ptr<vks::VulkanDevice> device;
 
-    VkQueue queue;
+    VkQueue graphicsQueue;
+    VkQueue transferQueue;
 
-    const VkCommandPool& getCommandPool() const;
+    //const VkCommandPool& getCommandPool() const;
 
     /*std::vector<VkCommandBuffer> allocateCommandBuffers(
         uint32_t count,
         VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const;*/
 
-    VkCommandBuffer createCommandBuffer(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const;
+    VkCommandBuffer createCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const;
 
     //void flushCommandBuffer(VkCommandBuffer& commandBuffer) const;
 
     // Create a short-lived command buffer which is immediately executed and released
     // This function is intended for initialization only.  It incurs a queue and device
     // flush and may impact performance if used in non-setup code
-    void withPrimaryCommandBuffer(const std::function<void(const VkCommandBuffer& commandBuffer)>& f) const {
-        VkCommandBuffer commandBuffer = device->createCommandBuffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    void withPrimaryCommandBuffer(const std::function<void(const VkCommandBuffer& commandBuffer)>& f, VkCommandPool commandPool) const {
+        VkCommandBuffer commandBuffer = device->createCommandBuffer(commandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
         VkCommandBufferBeginInfo vkCommandBufferBeginInfo {
             .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
             .pNext = nullptr,
@@ -249,7 +252,7 @@ public:
         vkBeginCommandBuffer(commandBuffer, &vkCommandBufferBeginInfo);
         f(commandBuffer);
         vkEndCommandBuffer(commandBuffer);
-        device->flushCommandBuffer(commandBuffer, queue, true);
+        device->flushCommandBuffer(commandBuffer, graphicsQueue, commandPool, true);
     }
 
     Image createImage(const VkImageCreateInfo& imageCreateInfo, const VkMemoryPropertyFlags& memoryPropertyFlags) const;

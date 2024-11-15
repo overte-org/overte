@@ -7,7 +7,7 @@
     #define gl_VertexID  gl_VertexIndex
     #define UNIFORM_BUFFER(SLOT, NAME) layout(std140, set=0, binding=SLOT) uniform NAME
     #define TEXTURE(SLOT, TYPE, NAME) layout(set=1, binding=SLOT) uniform TYPE NAME
-    #define RESOURCE_BUFFER(SLOT, NAME) layout(set=2, binding=SLOT) buffer NAME
+    #define RESOURCE_BUFFER(SLOT, NAME) layout(set=2, binding=SLOT) readonly buffer NAME
 #else
     #define UNIFORM_BUFFER(SLOT, NAME) layout(std140, binding=SLOT) uniform NAME
     #define TEXTURE(SLOT, TYPE, NAME) layout(binding=SLOT) uniform TYPE NAME
