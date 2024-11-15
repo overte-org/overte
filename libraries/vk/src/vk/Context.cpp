@@ -189,7 +189,7 @@ void Context::createInstance() {
 }
 
 void Context::destroyContext() {
-    VK_CHECK_RESULT(vkQueueWaitIdle(queue));
+    VK_CHECK_RESULT(vkQueueWaitIdle(graphicsQueue));
     for (const auto& trash : dumpster) {
         trash();
     }
@@ -233,9 +233,8 @@ void Context::destroyContext() {
 }*/
 
 void Context::trashCommandBuffers(const std::vector<VkCommandBuffer>& cmdBuffers, VkCommandPool commandPool) const {
-    if (!commandPool) {
-        commandPool = getCommandPool();
-    }
+    Q_ASSERT(commandPool);
+
     using DtorLambda = std::function<void(const std::vector<VkCommandBuffer>&)>;
     DtorLambda destructor =
         [=](const std::vector<VkCommandBuffer>& cmdBuffers) {
@@ -331,7 +330,8 @@ void Context::createDevice() {
 #endif
 
     // Get the graphics queue
-    vkGetDeviceQueue(device->logicalDevice, device->queueFamilyIndices.graphics, 0, &queue);
+    vkGetDeviceQueue(device->logicalDevice, device->queueFamilyIndices.graphics, 0, &graphicsQueue);
+    vkGetDeviceQueue(device->logicalDevice, device->queueFamilyIndices.transfer, 0, &transferQueue);
     //queue = device.getQueue(queueIndices.graphics, 0);
 }
 
@@ -428,9 +428,9 @@ void Context::buildDevice() {
     return result;
 }*/
 
-VkCommandBuffer Context::createCommandBuffer(VkCommandBufferLevel level) const {
+VkCommandBuffer Context::createCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level) const {
     VkCommandBuffer cmdBuffer;
-    VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(getCommandPool(), level, 1);
+    VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(commandPool, level, 1);
     VK_CHECK_RESULT(vkAllocateCommandBuffers(device->logicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
     return cmdBuffer;
 }
@@ -443,10 +443,6 @@ VkCommandBuffer Context::createCommandBuffer(VkCommandBufferLevel level) const {
     queue.waitIdle();
     device.waitIdle();
 }*/
-
-const VkCommandPool& Context::getCommandPool() const {
-    return device->commandPool;
-}
 
 Image Context::createImage(const VkImageCreateInfo& imageCreateInfo, const VkMemoryPropertyFlags& memoryPropertyFlags) const {
     Image result;
@@ -512,7 +508,7 @@ Image Context::stageToDeviceImage(VkImageCreateInfo imageCreateInfo,
         // Prepare for shader read
         setImageLayout(copyCmd, result.image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                        range);
-    });
+    }, device->transferCommandPool);
     staging.destroy();
     return result;
 }
@@ -580,7 +576,7 @@ Buffer Context::stageToDeviceBuffer(const VkBufferUsageFlags& usage, size_t size
         [&](VkCommandBuffer copyCmd) {
             VkBufferCopy bufferCopy{ 0, 0, size };
             vkCmdCopyBuffer(copyCmd, staging.buffer, result.buffer, 1, &bufferCopy);
-        });
+        }, device->transferCommandPool);
     staging.destroy();
     return result;
 }
