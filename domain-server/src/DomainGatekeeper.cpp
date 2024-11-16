@@ -905,7 +905,7 @@ void DomainGatekeeper::publicKeyJSONCallback(QNetworkReply* requestReply) {
         const QString JSON_DATA_KEY = "data";
         const QString JSON_PUBLIC_KEY_KEY = "public_key";
 
-        qDebug().nospace() << "Extracted " << (isOptimisticKey ? "optimistic " : " ") << "public key for " << username.toLower();;
+        qDebug().nospace() << "Extracted " << (isOptimisticKey ? "optimistic " : " ") << "public key for " << username.toLower();
 
         _userPublicKeys[username.toLower()] =
             {
@@ -1089,7 +1089,7 @@ void DomainGatekeeper::getGroupMemberships(const QString& username) {
 
     // if we've already asked, wait for the answer before asking again
     QString lowerUsername = username.toLower();
-    if (_inFlightGroupMembershipsRequests.contains(username.toLower())) {
+    if (_inFlightGroupMembershipsRequests.contains(lowerUsername)) {
         // public-key request for this username is already flight, not rerequesting
         return;
     }
