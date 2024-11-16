@@ -49,10 +49,10 @@ public:
     NodePermissionsKey getKey() const { return NodePermissionsKey(_id, _rankID); }
 
     // the _id member isn't authenticated/verified and _username is.
-    void setVerifiedUserName(QString userName) { _verifiedUserName = userName; }
+    void setVerifiedUserName(QString userName) { _verifiedUserName = userName.toLower(); }
     const QString& getVerifiedUserName() const { return _verifiedUserName; }
 
-    void setVerifiedDomainUserName(QString userName) { _verifiedDomainUserName = userName; }
+    void setVerifiedDomainUserName(QString userName) { _verifiedDomainUserName = userName.toLower(); }
     const QString& getVerifiedDomainUserName() const { return _verifiedDomainUserName; }
 
     void setGroupID(QUuid groupID) { _groupID = groupID; if (!groupID.isNull()) { _groupIDSet = true; }}
