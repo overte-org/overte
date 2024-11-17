@@ -3,9 +3,6 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import "./qml_widgets"
 
-
-// TODO: Some default values wait until component is completed. Is this necessary? 
-
 Rectangle {
     color: Qt.rgba(0.1,0.1,0.1,1)
     signal sendToScript(var message);
@@ -90,7 +87,18 @@ Rectangle {
 
 			CheckBox {
 				id: rendering_effects_state
-				checked: Render.renderMethod === 0
+
+				Component.onCompleted: {				
+					checked: Render.renderMethod == 1
+				}
+
+				onCheckedChanged: {
+					if (checked){
+						Render.renderMethod = 0;
+					} else {
+						Render.renderMethod = 1;
+					}
+				}
             }
 		}
 
@@ -99,24 +107,20 @@ Rectangle {
 		Item {
 			Layout.fillWidth: true
 			visible: rendering_effects_state.checked == true
-			height: 100
+			height: 150
 
 			Rectangle {
 				color: "#333333"
 				height: parent.children[1].height
 				width: parent.width
 			}
-			
 
-			// TODO: Some things were hard corded to be enabled / disabled depending on renderer.
-			// This is fixed currently in the ProtocolChanges branch, but not yet merged into master
-			// Remove "checked: XXXXXX" and replace with commented out "checked: XXXXX" this when merged
-			// Also please remove "enabled:false". That was just to make sure users don't diddle with settings they can't change :)
 			GridLayout {
 				columns: 2
-				height: 100
+				height: 150
 				width: parent.width - 10
 				anchors.horizontalCenter: parent.horizontalCenter
+				id: renderSettingsContainer
 
 				CheckBox {
 					text: "Shadows"
@@ -129,39 +133,43 @@ Rectangle {
 				}
 				
 				CheckBox {
-					enabled: false
 					text: "Local Lights"
 					Layout.fillWidth: true
 					palette.windowText: "gray"
-					//checked: Render.localLightsEnabled
-					checked: rendering_effects_state.checked
-					//onCheckedChanged: {
-					//    Render.localLightsEnabled = checked;
-					//}
+					checked: Render.localLightsEnabled
+					onCheckedChanged: {
+					   Render.localLightsEnabled = checked;
+					}
 				}
 				
 				CheckBox {
-					enabled: false
 					text: "Fog"
 					Layout.fillWidth: true
 					palette.windowText: "gray" 
-					//checked: Render.fogEnabled
-					checked: rendering_effects_state.checked 
-					//onCheckedChanged: {
-					//    Render.fogEnabled = checked;
-					//}
+					checked: Render.fogEnabled
+					onCheckedChanged: {
+					   Render.fogEnabled = checked;
+					}
+				}
+
+				CheckBox {
+					text: "Haze"
+					Layout.fillWidth: true
+					palette.windowText: "gray"
+					checked: Render.hazeEnabled
+					onCheckedChanged: {
+					   Render.hazeEnabled = checked;
+					}
 				}
 				
 				CheckBox {
-					enabled: false
 					text: "Bloom"
 					Layout.fillWidth: true
 					palette.windowText: "gray"
-					//checked: Render.bloomEnabled
-					checked: rendering_effects_state.checked 
-					//onCheckedChanged: {
-					//    Render.bloomEnabled = checked;
-					//}
+					checked:  Render.bloomEnabled
+					onCheckedChanged: {
+					   Render.bloomEnabled = checked;
+					}
 				}
 			}
 		}
