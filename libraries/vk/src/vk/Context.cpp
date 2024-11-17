@@ -534,11 +534,13 @@ Buffer Context::createBuffer(const VkBufferUsageFlags& usageFlags,
     };
 
 #if VULKAN_USE_VMA
-    VmaAllocationCreateInfo allocInfo = {};
-    allocInfo.requiredFlags = memoryPropertyFlags;
+    VmaAllocationCreateInfo allocationCI = {};
+    //allocationCI.requiredFlags = memoryPropertyFlags; //VKTODO: this will replace allocationCI.usage probably
+    allocationCI.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; // VKTODO: different kind will be required later for device-local memory
+    allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
     auto pCreateInfo = &createInfo;
     auto pBuffer = &result.buffer;
-    VK_CHECK_RESULT(vmaCreateBuffer(Allocation::getAllocator(), pCreateInfo, &allocInfo,
+    VK_CHECK_RESULT(vmaCreateBuffer(Allocation::getAllocator(), pCreateInfo, &allocationCI,
                     pBuffer, &result.allocation, nullptr));
 #else
     result.descriptor.buffer = result.buffer = device.createBuffer(bufferCreateInfo);
