@@ -19,6 +19,7 @@
 // For hash_combine
 #include <RegisteredMetaTypes.h>
 
+#include <gpu/TextureTable.h>
 #include <vk/Helpers.h>
 #include <vk/Version.h>
 #include <vk/Pipelines.h>
@@ -313,6 +314,8 @@ struct Cache {
                     VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorSetLayout));
                     layouts.push_back(descriptorSetLayout);
                     layout.textureLayout = descriptorSetLayout;
+                } else {
+                    printf("empty");
                 }
                 if (!stoLayout.empty()) {
                     VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = vks::initializers::descriptorSetLayoutCreateInfo(stoLayout.data(), stoLayout.size());
@@ -482,6 +485,7 @@ struct Cache {
         // Input assembly
         {
             auto& ia = builder.inputAssemblyState;
+            // VKTODO: this looks unfinished
             // ia.primitiveRestartEnable = ???
             // ia.topology = vk::PrimitiveTopology::eTriangleList; ???
         }
@@ -602,9 +606,13 @@ void VKBackend::executeFrame(const FramePointer& frame) {
     // Create descriptor pool
     // VKTODO: delete descriptor pool after it's not needed
     //_frameData._descriptorPool
+    int batch_count = 0;
     {
         const auto& commandBuffer = _currentCommandBuffer;
         for (const auto& batchPtr : frame->batches) {
+            if (batch_count == 6) {//12
+                return;
+            }
             const auto& batch = *batchPtr;
             cmdBeginLabel(commandBuffer, "batch:" + batch.getName(), glm::vec4{ 1, 1, 0, 1 });
             const auto& commands = batch.getCommands();
@@ -737,6 +745,7 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                 renderpassActive = false;
             }
             cmdEndLabel(commandBuffer);
+            batch_count++;
         }
     }
 
@@ -838,7 +847,16 @@ void VKBackend::TransformStageState::bindCurrentCamera(int eye, VKBackend::Unifo
 }
 
 void VKBackend::do_resetStages(const Batch& batch, size_t paramOffset) {
-    //VKTODO
+    //VKTODO: make sure all stages are reset
+    //VKTODO: should inout stage be reset here?
+    resetUniformStage();
+    resetTextureStage();
+    resetResourceStage();
+    resetQueryStage();
+    //resetInputStage();
+    //resetPipelineStage();
+    //resetTransformStage();
+    //resetOutputStage();
 }
 
 void VKBackend::do_disableContextViewCorrection(const Batch& batch, size_t paramOffset) {
@@ -1059,6 +1077,45 @@ void VKBackend::releaseUniformBuffer(uint32_t slot) {
     bufferState.reset();
 }
 
+void VKBackend::resetUniformStage() {
+    for (auto &buffer: _uniform._buffers) {
+        buffer.reset();
+    }
+}
+
+void VKBackend::bindResourceTexture(uint32_t slot, const gpu::TexturePointer& texture) {
+    qDebug() << "bindResourceTexture: " << slot;
+    if (!texture) {
+        releaseResourceTexture(slot);
+        return;
+    }
+    // check cache before thinking
+    if (_resource._textures[slot].texture == texture.get()) {
+        return;
+    }
+
+    // One more True texture bound
+    _stats._RSNumTextureBounded++;
+
+    // Always make sure the VKObject is in sync
+    // VKTODO
+    //VKTexture* object = syncGPUObject(resourceTexture);
+    //if (object) {
+    //uint32_t to = object->_texture;
+    //uint32_t target = object->_target;
+    //glActiveTexture(VK_TEXTURE0 + slot);
+    //glBindTexture(target, to);
+
+    _resource._textures[slot].texture = texture.get();
+
+    //_stats._RSAmountTextureMemoryBounded += object->size();
+
+    //} else {
+    //    releaseResourceTexture(slot);
+    //    return;
+    //}
+}
+
 void VKBackend::releaseResourceTexture(uint32_t slot) {
     auto& textureState = _resource._textures[slot];
     if (valid(textureState.texture)) {
@@ -1067,6 +1124,12 @@ void VKBackend::releaseResourceTexture(uint32_t slot) {
         //glBindTexture(textureState._target, 0);  // RELEASE
         //(void)CHECK_GL_ERROR();
         reset(textureState.texture);
+    }
+}
+
+void VKBackend::resetTextureStage() {
+    for (auto &texture : _resource._textures) {
+        texture.reset();
     }
 }
 
@@ -1084,6 +1147,16 @@ void VKBackend::releaseResourceBuffer(uint32_t slot) {
     }
 }
 
+void VKBackend::resetResourceStage() {
+    for (auto &buffer : _resource._buffers) {
+        buffer.reset();
+    }
+}
+
+void VKBackend::resetQueryStage() {
+    _queryStage._rangeQueryDepth = 0;
+}
+
 void VKBackend::renderPassTransfer(const Batch& batch) {
     const size_t numCommands = batch.getCommands().size();
     const Batch::Commands::value_type* command = batch.getCommands().data();
@@ -1092,12 +1165,12 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
     _inRenderTransferPass = true;
     { // Sync all the buffers
         PROFILE_RANGE(gpu_vk_detail, "syncGPUBuffer");
-
-        for (auto& cached : batch._buffers._items) {
+        // VKTODO: this is filling entire GPU VRAM for some reason
+        /*for (auto& cached : batch._buffers._items) {
             if (cached._data) {
                 syncGPUObject(*cached._data);
             }
-        }
+        }*/
     }
 
     { // Sync all the buffers
@@ -1534,7 +1607,7 @@ void VKBackend::createDescriptorPool() {
     VkDescriptorPoolCreateInfo descriptorPoolCI = {};
     descriptorPoolCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     descriptorPoolCI.flags = 0;
-    descriptorPoolCI.maxSets = 1000;
+    descriptorPoolCI.maxSets = 10000;
     descriptorPoolCI.poolSizeCount = (uint32_t)poolSizes.size();
     descriptorPoolCI.pPoolSizes = poolSizes.data();
 
@@ -2405,6 +2478,19 @@ void VKBackend::do_setResourceTexture(const Batch& batch, size_t paramOffset) {
     //    releaseResourceTexture(slot);
     //    return;
     //}
+}
+
+void VKBackend::do_setResourceTextureTable(const gpu::Batch& batch, size_t paramOffset) {
+    const auto& textureTablePointer = batch._textureTables.get(batch._params[paramOffset]._uint);
+    if (!textureTablePointer) {
+        return;
+    }
+
+    const auto& textureTable = *textureTablePointer;
+    const auto& textures = textureTable.getTextures();
+    for (uint32_t slot = 0; slot < textures.size(); ++slot) {
+        bindResourceTexture(slot, textures[slot]);
+    }
 }
 
 void VKBackend::do_setResourceFramebufferSwapChainTexture(const Batch& batch, size_t paramOffset) {
