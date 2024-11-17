@@ -1,3 +1,47 @@
+# This file defines all of the behavior of non-group entity properties.  Each line defines one property or property group.
+# This is how each line is interpreted:
+#   1. A single word with no spaces or commas: delimits a section of properties, e.g. "Physics" or "Scripts". After "Common", each line delimits a type of entity (e.g. "Shape", "Zone", "Web")
+#   2. A space separated list of the following properties, ending in a comma, defines a single property:
+#     Required values:
+#       enum:<the c++ prop enum (not including the PROP_ prefix)>
+#       prop:<the actual property name>
+#       type:<the property type>
+#       default:<the default value>
+#     Optional values:
+#       min:<the min value>
+#       max:<the max value>
+#       fromScriptType:<the type to use when converting from script values, if different than the normal type>
+#       proxy:<if this is a proxy for another property, the name of the actual property>
+#       proxyType:<for a proxy prop, the type of the original property, if different from this prop's type>
+#       getter:<the name of the function to use when getting this property in EntityItemProperties, if different than the default>
+#       setter:<the name of the function to use when setting this property in EntityItemProperties, if different than the default>
+#       networkGetter:<the expression to use when appending this property to the network stream in EntityItemProperties>
+#       variableNetworkGetter:<the expression to use when appending this property to the network stream in XXXXEntityItem>
+#       variableNetworkSetter:<the expression to use when reading this property from the network stream in XXXXEntityItem>
+#       variableCopyGetter:<the expression to use when getting this property to go from XXXXEntityItem to EntityItemProperties>
+#       variableCopySetter:<the expression to use when setting this property to go from EntityItemProperties to XXXXEntityItem>
+#       readType:<the type to use when reading this property from the network in EntityItemProperties>
+#       debugString:<the string to append to the debug dump for this property, e.g. units>
+#       debugGetter:<the expression to use to get a debug representation of this property>
+#     Optional flags:
+#       legacy: this is a legacy property, i.e. a proxy for another value
+#       common: this is a common property that is shared by multiple Entity types
+#       enum: this is an enum value
+#       propertySetter: in EntityItemProperties, this property will implement its own setter
+#       noScript: this property is not exposed to scripts
+#       readOnly: this property is not settable from scripts
+#       noNetwork: this property is not sent over the network
+#       urlPermission: this property is a URL which should be guarded by the canViewAssetURLs permission
+#       noVariableNetworkSetter: in XXXXEntityItem::readEntityDataFromBuffer/readEntitySubclassDataFromBuffer, this property will implement its own network setter (must still maintain the order though)
+#       basicProp/renderProp/noGetterSetterProp/inherited: specifies how the getter + setter should be defined in XXXXEntityItem. a basicProp will define them for you and just directly store the data. a renderProp will set _needsRenderUpdate to true if the property changes. a noGetterSetterProp will define the member variable but not the getter/setter. an inherited prop will not define anything, assuming both the member variable and getter/setter are inherited. if none of these are specified, the member variable will be defined as well as the getter/setter, but you must implement the getter/setter in the .cpp file.
+#   3. group:<lowercase group property name> followed by optional properties, followed by a comma: represents a property group which uses the group name for scripts
+#     Optional values:
+#       type:<camelcase actual type>: some groups have a different c++ file name, e.g. ring is RingGizmo. if this isn't specified, the group name is just capitalized, e.g. pulse to Pulse.
+#     Optional flags:
+#       common: if this is a "common" group, shared by multiple entity types
+#       renderUpdateOnSet/recordChange: renderUpdateOnSet, in setSubClassProperties, set _needsRenderUpdate to true to trigger a render update if any of the group properties change.  if recordChange, set a member variable (e.g. _hazePropertiesChanged) to true if any of the group properties change
+#       customVariableSetFrom: specifies that the class implements its own handling of how to react to changes to this group in setSubClassProperties
+#       customVariableRead: specifies that the class implements its own handling of how to react to changes to this group in readEntitySubclassDataFromBuffer
 Core
 enum:SIMULATION_OWNER prop:simulationOwner type:SimulationOwner default:SimulationOwner() noScript readType:QByteArray networkGetter:properties._simulationOwner.toByteArray() variableNetworkGetter:_simulationOwner.toByteArray() noVariableNetworkSetter,
 enum:PARENT_ID prop:parentID type:QUuid default:UNKNOWN_ENTITY_ID inherited variableNetworkGetter:actualParentID noVariableNetworkSetter,
