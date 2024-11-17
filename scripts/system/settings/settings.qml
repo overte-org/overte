@@ -102,73 +102,67 @@ Rectangle {
             }
 		}
 
-		// FIXME: Height is hardcoded
 		// Rendering Effects sub options
 		Item {
-			Layout.fillWidth: true
-			visible: rendering_effects_state.checked == true
-			height: 150
+			Layout.fillWidth: true;
+			visible: rendering_effects_state.checked == true;
+			height: children[0].height;
 
 			Rectangle {
-				color: "#333333"
-				height: parent.children[1].height
-				width: parent.width
-			}
+				color: "#222222";
+				width: parent.width;
+				height: children[0].height;
+				radius: 10;	
 
-			GridLayout {
-				columns: 2
-				height: 150
-				width: parent.width - 10
-				anchors.horizontalCenter: parent.horizontalCenter
-				id: renderSettingsContainer
+				GridLayout {
+					columns: 2;
+					width: parent.width - 10;
+					anchors.horizontalCenter: parent.horizontalCenter;
+					id: renderSettingsContainer;
 
-				CheckBox {
-					text: "Shadows"
-					Layout.fillWidth: true
-					palette.windowText: "gray"
-					checked: Render.shadowsEnabled
-					onCheckedChanged: {
-					   Render.shadowsEnabled = checked;
-					}
-				}
-				
-				CheckBox {
-					text: "Local Lights"
-					Layout.fillWidth: true
-					palette.windowText: "gray"
-					checked: Render.localLightsEnabled
-					onCheckedChanged: {
-					   Render.localLightsEnabled = checked;
-					}
-				}
-				
-				CheckBox {
-					text: "Fog"
-					Layout.fillWidth: true
-					palette.windowText: "gray" 
-					checked: Render.fogEnabled
-					onCheckedChanged: {
-					   Render.fogEnabled = checked;
-					}
-				}
+					SettingBoolean {
+						settingText: "Shadows";
+						settingEnabled: Render.shadowsEnabled
 
-				CheckBox {
-					text: "Haze"
-					Layout.fillWidth: true
-					palette.windowText: "gray"
-					checked: Render.hazeEnabled
-					onCheckedChanged: {
-					   Render.hazeEnabled = checked;
+						onSettingEnabledChanged: {
+							Render.shadowsEnabled = settingEnabled;
+						}
 					}
-				}
-				
-				CheckBox {
-					text: "Bloom"
-					Layout.fillWidth: true
-					palette.windowText: "gray"
-					checked:  Render.bloomEnabled
-					onCheckedChanged: {
-					   Render.bloomEnabled = checked;
+
+					SettingBoolean {
+						settingText: "Local Lights";
+						settingEnabled: Render.localLightsEnabled
+
+						onSettingEnabledChanged: {
+							Render.localLightsEnabled = settingEnabled;
+						}
+					}
+					
+					SettingBoolean {
+						settingText: "Fog";
+						settingEnabled: Render.fogEnabled
+
+						onSettingEnabledChanged: {
+							Render.fogEnabled = settingEnabled;
+						}
+					}
+
+					SettingBoolean {
+						settingText: "Haze";
+						settingEnabled: Render.hazeEnabled
+
+						onSettingEnabledChanged: {
+							Render.hazeEnabled = settingEnabled;
+						}
+					}
+
+					SettingBoolean {
+						settingText: "Bloom";
+						settingEnabled: Render.bloomEnabled 
+
+						onSettingEnabledChanged: {
+							Render.bloomEnabled = settingEnabled;
+						}
 					}
 				}
 			}
