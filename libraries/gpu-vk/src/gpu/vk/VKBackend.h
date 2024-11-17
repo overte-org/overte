@@ -210,15 +210,25 @@ protected:
 
     void updateVkDescriptorWriteSetsUniform(VkDescriptorSet target);
     void releaseUniformBuffer(uint32_t slot);
+    void resetUniformStage();
 
     // VKTODO
     struct ResourceStageState {
         struct TextureState {
             TextureReference texture{};
+            TextureState& operator=(const TextureState& other) = delete;
+            void reset() {
+                gpu::reset(texture);
+            }
         };
         struct BufferState {
             BufferReference buffer{};
             vks::Buffer *vksBuffer{};
+            BufferState& operator=(const BufferState& other) = delete;
+            void reset() {
+                gpu::reset(buffer);
+                gpu::reset(vksBuffer);
+            }
         };
         std::array<BufferState, MAX_NUM_RESOURCE_BUFFERS> _buffers{};
         std::array<TextureState, MAX_NUM_RESOURCE_TEXTURES> _textures{};
@@ -226,10 +236,13 @@ protected:
     } _resource;
 
     void updateVkDescriptorWriteSetsTexture(VkDescriptorSet target);
+    void bindResourceTexture(uint32_t slot, const TexturePointer& texture);
     void releaseResourceTexture(uint32_t slot);
+    void resetTextureStage();
 
     void updateVkDescriptorWriteSetsStorage(VkDescriptorSet target);
     void releaseResourceBuffer(uint32_t slot);
+    void resetResourceStage();
 
     // VKTODO
     struct OutputStageState {
@@ -238,11 +251,11 @@ protected:
     } _output;
 
     // VKTODO
-    void resetQueryStage();
     struct QueryStageState {
         uint32_t _rangeQueryDepth{ 0 };
     } _queryStage;
 
+    void resetQueryStage();
 
     // VKTODO: one instance per each frame
     // Contains objects that are created per frame and need to be deleted after the frame is rendered
@@ -323,7 +336,7 @@ public:
     // Resource Stage
     virtual void do_setResourceBuffer(const Batch& batch, size_t paramOffset) final;
     virtual void do_setResourceTexture(const Batch& batch, size_t paramOffset) final;
-    virtual void do_setResourceTextureTable(const Batch& batch, size_t paramOffset) {};
+    virtual void do_setResourceTextureTable(const Batch& batch, size_t paramOffset) final;
     virtual void do_setResourceFramebufferSwapChainTexture(const Batch& batch, size_t paramOffset) final;
 
     // Pipeline Stage

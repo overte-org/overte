@@ -16,6 +16,10 @@
 #include <gl/QOpenGLContextWrapper.h>
 #endif
 
+#include <dlfcn.h>
+#include "/home/ksuprynowicz/programy/renderdoc_1.35/include/renderdoc_app.h"
+RENDERDOC_API_1_1_2 *rdoc_api = NULL;
+
 void RenderThread::submitFrame(const gpu::FramePointer& frame) {
     std::unique_lock<std::mutex> lock(_frameLock);
     _pendingFrames.push(frame);
@@ -32,6 +36,13 @@ void RenderThread::move(const glm::vec3& v) {
 }
 
 void RenderThread::initialize(QWindow* window) {
+    if(void *mod = dlopen("/home/ksuprynowicz/programy/renderdoc_1.35/lib/librenderdoc.so", RTLD_NOW | RTLD_NOLOAD))
+    {
+        pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)dlsym(mod, "RENDERDOC_GetAPI");
+        int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void **)&rdoc_api);
+        assert(ret == 1);
+    }
+
     std::unique_lock<std::mutex> lock(_frameLock);
     setObjectName("RenderThread");
     Parent::initialize();
@@ -132,6 +143,10 @@ void RenderThread::shutdown() {
 }
 
 void RenderThread::renderFrame(gpu::FramePointer& frame) {
+    if (frame && !frame->batches.empty()) {
+        if (rdoc_api)
+            rdoc_api->StartFrameCapture(NULL, NULL);
+    }
 #ifdef USE_GL
     PROFILE_RANGE(render_gpu_gl, __FUNCTION__);
 #else
@@ -212,7 +227,8 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
         // VKTODO: this is a temporary workaround, until render passes are selected inside Vulkan backend
         //vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
         _gpuContext->executeFrame(frame);
-        vkCmdEndRenderPass(commandBuffer);
+        _renderedFrameCount++;
+        //vkCmdEndRenderPass(commandBuffer);
     }
 
 #ifdef USE_GL
@@ -264,9 +280,14 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     vkCreateFence(_vkcontext.device->logicalDevice, &fenceCI, nullptr, &frameFence);
     vkQueueSubmit(_vkcontext.graphicsQueue, 1, &submitInfo, frameFence);
     _swapchain.queuePresent(_vkcontext.graphicsQueue, swapchainIndex, renderComplete);
-    _vkcontext.trashCommandBuffers({ commandBuffer });
+    //VKTODO _vkcontext.trashCommandBuffers({ commandBuffer });
     _vkcontext.emptyDumpster(frameFence);
     _vkcontext.recycle();
+    if (frame && !frame->batches.empty()) {
+        if (rdoc_api)
+            rdoc_api->EndFrameCapture(NULL, NULL);
+    }
+
 #endif
 }
 
@@ -300,6 +321,9 @@ bool RenderThread::process() {
     }
 
     renderFrame(_activeFrame);
+    if (_renderedFrameCount == 1) {
+        return false;
+    }
     return true;
 }
 

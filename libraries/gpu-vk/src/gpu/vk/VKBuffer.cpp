@@ -25,6 +25,7 @@ VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer) {
     if (!object || object->_stamp != buffer._renderSysmem.getStamp()) {
         object = new VKBuffer(backend, buffer);
     }
+    // VKTODO: delete the old buffer after rendering the frame
 
     return object;
 }
@@ -45,6 +46,10 @@ VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& gpuBuffer) : VKObject(
     // VKTODO:
     (vks::Buffer&)(*this) =
         backend._context.createBuffer(usageFlags, gpuBuffer.getSize(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    map();
+    copy(gpuBuffer.getSize(), gpuBuffer.getData());
+    flush(VK_WHOLE_SIZE);
+    unmap();
 
     Backend::bufferCount.increment();
     Backend::bufferGPUMemSize.update(0, size);
