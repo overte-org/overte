@@ -112,7 +112,7 @@
         if (!channels.includes(message.channel)) return;
 
         // If message is local, and if player is too far away from location, do nothing.
-        if (message.channel == "local" && isCloseEnough(message.position)) return; 
+        if (message.channel == "local" && isTooFar(message.position)) return; 
 
         // Format the timestamp 
         message.timeString = timeArray[0];
@@ -147,7 +147,7 @@
         Settings.setValue("ArmoredChat-Messages", messageHistory);
 
         // Check to see if the message is close enough to the user
-        function isCloseEnough(messagePosition) {
+        function isTooFar(messagePosition) {
             return Vec3.distance(MyAvatar.position, messagePosition) > maxLocalDistance;
         }
     }
