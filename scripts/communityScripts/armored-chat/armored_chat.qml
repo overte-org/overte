@@ -562,15 +562,13 @@ Rectangle {
 
     // Messages from script
     function fromScript(message) {
-        let time = new Date().toLocaleTimeString(undefined, { hour12: false });
-        let date = new Date().toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric", });
 
         switch (message.type){
             case "show_message":
-                addMessage(message.displayName, message.message, `[ ${message.timeString || time} - ${message.dateString || date} ]`, message.channel, "chat");
+                addMessage(message.displayName, message.message, `[ ${message.timeString} - ${message.dateString} ]`, message.channel, "chat");
                 break;
             case "notification":
-                addMessage("SYSTEM", message.message, `[ ${time} - ${date} ]`, "domain", "notification");
+                addMessage("SYSTEM", message.message, `[ ${message.timeString} - ${message.dateString} ]`, "domain", "notification");
                 break;
             case "clear_messages":
                 local.clear();
