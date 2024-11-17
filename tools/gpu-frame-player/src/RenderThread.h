@@ -63,6 +63,7 @@ public:
     void move(const glm::vec3& v);
     glm::mat4 _correction;
     gpu::PipelinePointer _presentPipeline;
+    int _renderedFrameCount{ 0 };
 
     void resize(const QSize& newSize);
     void setup() override;
