@@ -19,6 +19,7 @@ Item {
 			height: parent.parent.height - 15;
 			width: 90;
 			radius: 10;
+			id: toggleButton
 
 			Text {
 				width: parent.width;
@@ -46,7 +47,7 @@ Item {
 		}
 
 		Text {
-			anchors.left: parent.children[0].right + 5;
+			anchors.left: toggleButton.right + 5;
 			height: parent.height;
 			text: settingText;
 			color: "white";
