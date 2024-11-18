@@ -1004,8 +1004,6 @@ void GLBackend::updatePresentFrame(const Mat4& correction, bool primary) {
     _transform._presentFrame.correction = correction;
     _transform._presentFrame.correctionInverse = glm::inverse(correction);
 
-    _transform._projectionJitter._currentSampleIndex++;
-
     // Update previous views of saved transforms
     for (auto& viewProjState : _transform._savedTransforms) {
         viewProjState._state._previousCorrectedView = viewProjState._state._correctedView;
@@ -1013,6 +1011,7 @@ void GLBackend::updatePresentFrame(const Mat4& correction, bool primary) {
     }
 
     if (primary) {
+        _transform._projectionJitter._currentSampleIndex++;
         _transform._presentFrame.unflippedCorrection = _transform._presentFrame.correction;
         quat flippedRotation = glm::quat_cast(_transform._presentFrame.unflippedCorrection);
         flippedRotation.y *= -1.0f;
