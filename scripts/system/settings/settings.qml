@@ -87,40 +87,21 @@ Rectangle {
 				}
 
 				// Rendering Effects
-				RowLayout {
-					width: parent.width
+				SettingBoolean {
+					settingText: "Rendering effects";
+					settingEnabled: Render.renderMethod == 0
 
-					Text {
-						text: "Rendering effects"
-						color: "white"
-						height: parent.height
-						width: parent.width - 150
-						font.pointSize: 14
-						Layout.fillWidth: true
-					}
-
-					CheckBox {
-						id: rendering_effects_state
-
-						Component.onCompleted: {				
-							checked: Render.renderMethod == 1
-						}
-
-						onCheckedChanged: {
-							if (checked){
-								Render.renderMethod = 0;
-							} else {
-								Render.renderMethod = 1;
-							}
-						}
+					onSettingEnabledChanged: {
+						Render.renderMethod = settingEnabled ? 0 : 1;
 					}
 				}
 
 				// Rendering Effects sub options
 				Item {
 					Layout.fillWidth: true;
-					visible: rendering_effects_state.checked == true;
+					visible: Render.renderMethod == 0;
 					height: children[0].height;
+					width: parent.width;
 
 					Rectangle {
 						color: "#222222";
@@ -128,15 +109,13 @@ Rectangle {
 						height: children[0].height;
 						radius: 10;	
 
-						GridLayout {
-							columns: 2;
+						ColumnLayout {
 							width: parent.width - 10;
-							anchors.horizontalCenter: parent.horizontalCenter;
 							id: renderSettingsContainer;
 
 							SettingBoolean {
 								settingText: "Shadows";
-								settingEnabled: Render.shadowsEnabled
+								settingEnabled: Render.shadowsEnabled;
 
 								onSettingEnabledChanged: {
 									Render.shadowsEnabled = settingEnabled;
