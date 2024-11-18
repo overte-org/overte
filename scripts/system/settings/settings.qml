@@ -56,33 +56,13 @@ Rectangle {
 				spacing: 10
 
 				// Graphics Presets
-				RowLayout {
-					width: parent.width
+				SettingComboBox {
+					settingText: "Graphics preset";
+					optionIndex: Performance.getPerformancePreset() - 1;
+					options: ["Low Power", "Low", "Medium", "High", "Custom"];
 
-					Text {
-						text: "Graphics Preset"
-						color: "white"
-						height: parent.height
-						width: parent.width - 150
-						font.pointSize: 14
-						Layout.fillWidth: true
-					}
-
-					ComboBox {
-						currentIndex: Performance.getPerformancePreset() - 1 // One off error FTW!
-						Layout.fillWidth: true
-						model: ListModel {
-							id: cbItems
-							ListElement { text: "Low Power" }
-							ListElement { text: "Low" }
-							ListElement { text: "Medium" }
-							ListElement { text: "High" }
-							ListElement { text: "Custom" }
-						}
-
-						onCurrentIndexChanged: {
-							Performance.setPerformancePreset(currentIndex + 1)
-						}
+					onValueChanged: {
+						Performance.setPerformancePreset(index + 1)
 					}
 				}
 
@@ -162,36 +142,17 @@ Rectangle {
 				}
 
 				// FPS
-				RowLayout {
-					width: parent.width
+				SettingComboBox {
+					settingText: "Refresh rate";
+					optionIndex: Performance.getPerformancePreset() - 1;
+					options: ["Economical", "Interactive", "Real-Time", "Custom"];
 
-					Text {
-						text: "Refresh Rate"
-						color: "white"
-						height: parent.height
-						width: parent.width - 150
-						font.pointSize: 14
-						Layout.fillWidth: true
+					Component.onCompleted: {
+						optionIndex = Performance.getRefreshRateProfile()
 					}
 
-					ComboBox {
-						id: refresh_rate_cb
-						currentIndex: 3
-						Layout.fillWidth: true
-						model: ListModel {
-							ListElement { text: "Economical" }
-							ListElement { text: "Interactive" }
-							ListElement { text: "Real-Time" }
-							ListElement { text: "Custom" }
-						}
-
-						Component.onCompleted: {
-							refresh_rate_cb.currentIndex = Performance.getRefreshRateProfile()
-						}
-
-						onCurrentIndexChanged: {
-							Performance.setRefreshRateProfile(currentIndex)
-						}
+					onValueChanged: {
+						Performance.setRefreshRateProfile(index)
 					}
 				}
 
@@ -416,30 +377,13 @@ Rectangle {
 				}
 
 				// Anti Aliasing
-				RowLayout {
-					width: parent.width
+				SettingComboBox {
+					settingText: "Anti-aliasing";
+					optionIndex: Render.antialiasingMode;
+					options: ["None", "TAA", "FXAA"];
 
-					Text {
-						text: "Anti-Aliasing"
-						color: "white"
-						height: parent.height
-						width: parent.width - 150
-						font.pointSize: 14
-						Layout.fillWidth: true
-					}
-
-					ComboBox {
-						currentIndex: Render.antialiasingMode
-						Layout.fillWidth: true
-						model: ListModel {
-							ListElement { text: "None" }
-							ListElement { text: "TAA" }
-							ListElement { text: "FXAA" }
-						}
-
-						onCurrentIndexChanged: {
-							Render.antialiasingMode = currentIndex;
-						}
+					onValueChanged: {
+						Render.antialiasingMode = index;
 					}
 				}
 			}
@@ -450,8 +394,6 @@ Rectangle {
 			id: audio_page
 			visible: current_page == "Audio"
 		}
-
-
 
 		// Templates
 
