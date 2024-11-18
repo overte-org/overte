@@ -11,47 +11,69 @@ Item {
 	width: parent.width;
 
 	RowLayout {
-		width: parent.width;
+		width: parent.width - 10;
 		height: parent.height;
+		anchors.horizontalCenter: parent.horizontalCenter;
 
-		Rectangle {
-			color: settingEnabled ? "#077e30" : "darkgray";
-			height: parent.parent.height - 15;
-			width: 90;
-			radius: 10;
-			id: toggleButton
-
-			Text {
-				width: parent.width;
-				height: parent.height;
-				text: settingEnabled ? "On" : "Off";
-				color: "white";
-				horizontalAlignment: Text.AlignHCenter;
-				verticalAlignment: Text.AlignVCenter;
-				font.pointSize: 14;
-			}
-
-			MouseArea {
-				anchors.fill: parent
-
-				onClicked: {
-					settingEnabled = !settingEnabled
-				}
-			}
-
-			Behavior on color {
-				ColorAnimation {
-					duration: 70
-				}
-			}
-		}
 
 		Text {
-			anchors.left: toggleButton.right + 5;
+			id: settingTextElem
 			height: parent.height;
 			text: settingText;
 			color: "white";
 			font.pointSize: 14;
 		}
+
+
+		RowLayout {
+			Layout.alignment: Qt.AlignRight;
+			anchors.left: settingTextElem.right + 5;
+
+			Text {
+				text: "<";
+				font.pointSize: 16;
+				color: "white";
+			}
+
+			Rectangle {
+				color: "transparent";
+				height: parent.parent.height - 15;
+				width: 200;
+				radius: 10;
+				border.color: settingEnabled ? "white" : "#333";
+				border.width: 1;
+
+				Text {
+					width: parent.width;
+					height: parent.height;
+					text: settingEnabled ? "Enabled" : "Disabled";
+					color: settingEnabled ? "white" : "gray";
+					horizontalAlignment: Text.AlignHCenter;
+					verticalAlignment: Text.AlignVCenter;
+					font.pointSize: 14;
+				}
+
+				MouseArea {
+					anchors.fill: parent
+
+					onClicked: {
+						settingEnabled = !settingEnabled
+					}
+				}
+
+				Behavior on color {
+					ColorAnimation {
+						duration: 70
+					}
+				}
+			}
+
+			Text {
+				text: ">";
+				font.pointSize: 16;
+				color: "white";
+			}
+		}
+
 	}
 }
