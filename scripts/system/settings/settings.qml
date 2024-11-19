@@ -157,159 +157,86 @@ Rectangle {
 				}
 
 
-				// FIXME: Height is hardcoded
-				// FPS sub options
 				Item {
-					Layout.fillWidth: true
-					visible: refresh_rate_cb.currentIndex == 3
-					height: 75 * 3
-
+					Layout.fillWidth: true;
+					visible: refresh_rate_cb.currentIndex == 3;
+					height: children[0].height;
+					width: parent.width;
 
 					Rectangle {
-						color: "#333333"
-						height: parent.children[1].height
-						width: parent.width
-					}
-					
-					GridLayout {
-						columns: 2
-						width: parent.width - 10
-						anchors.horizontalCenter: parent.horizontalCenter
-						height: 75 * 3
+						color: "#222222";
+						width: parent.width;
+						height: children[0].height;
+						radius: 10;	
 
-						Column {
-							Text {
-								text: "Focus Active"
-								Layout.fillWidth: true
-								color: "white"
-							}
-							TextField {
-								width: 100
-								Layout.maximumWidth: 50
-								inputMethodHints: Qt.ImhFormattedNumbersOnly
-								validator: RegExpValidator { regExp: /[0-9]*/ }
+						ColumnLayout {
+							width: parent.width - 10;
 
-								Component.onCompleted: {
-									text = Performance.getCustomRefreshRate(0)
-								}
-								
-								onTextChanged: {
-									Performance.setCustomRefreshRate(0, text)
+							SettingNumber {
+								settingText: "Focus Active";
+								minValue: 1;
+								decimalPlaces: 2;
+								maxValue: 9999;
+								suffixText: "fps";
+								settingValue: Performance.getCustomRefreshRate(0)
+
+								onValueChanged: {
+									Performance.setCustomRefreshRate(0, value);
 								}
 							}
-						}
 
-						Column {
-							Text {
-								text: "Focus Inactive"
-								Layout.fillWidth: true
-								color: "white"
-							}
-							TextField {
-								width: 100
-								Layout.maximumWidth: 50
-								inputMethodHints: Qt.ImhFormattedNumbersOnly
-								validator: RegExpValidator { regExp: /[0-9]*/ }
+							SettingNumber {
+								settingText: "Focus Inactive";
+								minValue: 1;
+								decimalPlaces: 2;
+								maxValue: 9999;
+								suffixText: "fps";
+								settingValue: Performance.getCustomRefreshRate(1)
 
-								Component.onCompleted: {
-									text = Performance.getCustomRefreshRate(1)
-								}
-								
-								onTextChanged: {
-									Performance.setCustomRefreshRate(1, text)
+								onValueChanged: {
+									Performance.setCustomRefreshRate(1, value);
 								}
 							}
-						}
 
-						Column {
-							Text {
-								text: "Unfocus"
-								Layout.fillWidth: true
-								color: "white"
-							}
-							TextField {
-								width: 100
-								Layout.maximumWidth: 50
-								inputMethodHints: Qt.ImhFormattedNumbersOnly
-								validator: RegExpValidator { regExp: /[0-9]*/ }
+							SettingNumber {
+								settingText: "Minimized";
+								minValue: 1;
+								decimalPlaces: 2;
+								maxValue: 9999;
+								suffixText: "fps";
+								settingValue: Performance.getCustomRefreshRate(3)
 
-								Component.onCompleted: {
-									text = Performance.getCustomRefreshRate(2)
+								onValueChanged: {
+									Performance.setCustomRefreshRate(3, value);
 								}
-								
-								onTextChanged: {
-									Performance.setCustomRefreshRate(2, text)
+							}
+
+							SettingNumber {
+								settingText: "Startup";
+								minValue: 1;
+								decimalPlaces: 2;
+								maxValue: 9999;
+								suffixText: "fps";
+								settingValue: Performance.getCustomRefreshRate(4)
+
+								onValueChanged: {
+									Performance.setCustomRefreshRate(4, value);
+								}
+							}
+
+							SettingNumber {
+								settingText: "Shutdown";
+								minValue: 1;
+								decimalPlaces: 2;
+								maxValue: 9999;
+								suffixText: "fps";
+								settingValue: Performance.getCustomRefreshRate(5)
+
+								onValueChanged: {
+									Performance.setCustomRefreshRate(5, value);
 								}
 							}
 						}
-
-						Column {
-							Text {
-								text: "Minimized"
-								Layout.fillWidth: true
-								color: "white"
-							}
-							TextField {
-								width: 100
-								Layout.maximumWidth: 50
-								inputMethodHints: Qt.ImhFormattedNumbersOnly
-								validator: RegExpValidator { regExp: /[0-9]*/ }
-
-								Component.onCompleted: {
-									text = Performance.getCustomRefreshRate(3)
-								}
-
-								
-								onTextChanged: {
-									Performance.setCustomRefreshRate(3, text)
-								}
-							}
-						}
-
-						Column {
-							Text {
-								text: "Startup"
-								Layout.fillWidth: true
-								color: "white"
-							}
-							TextField {
-								width: 100
-								Layout.maximumWidth: 50
-								inputMethodHints: Qt.ImhFormattedNumbersOnly
-								validator: RegExpValidator { regExp: /[0-9]*/ }
-
-								Component.onCompleted: {
-									text = Performance.getCustomRefreshRate(4)
-								}
-								
-								onTextChanged: {
-									Performance.setCustomRefreshRate(4, text)
-								}
-							}
-						}
-
-						Column {
-							Text {
-								text: "Shutdown"
-								Layout.fillWidth: true
-								color: "white"
-							}
-							TextField {
-								width: 100
-								Layout.maximumWidth: 50
-								inputMethodHints: Qt.ImhFormattedNumbersOnly
-								validator: RegExpValidator { regExp: /[0-9]*/ }
-
-								Component.onCompleted: {
-									text = Performance.getCustomRefreshRate(5)
-								}
-
-								onTextChanged: {
-									Performance.setCustomRefreshRate(5, text)
-								}
-							}
-						}
-
 					}
 				}
 
