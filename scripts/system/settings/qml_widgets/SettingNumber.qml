@@ -3,8 +3,6 @@ import QtQuick.Controls 2.5
 import QtQuick.Controls.Styles 1.4
 import QtQuick.Layouts 1.3
 
-// TODO: Numpad Enter key support
-
 Item {
 	id: root;
 	property string settingText: "";
@@ -68,14 +66,10 @@ Item {
 						radius: 10;
 					}
 
-					onTextChanged: {
-						valueChanged(spinbox.value);
-					}
-
 					Keys.onPressed: {
-						if (event.key === Qt.Key_Return) {
-							event.accepted = true;
+						if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
 							valueChanged(spinboxText.text);
+							settingValue = spinboxText.text;
 						}
 					}
 				}
