@@ -251,7 +251,7 @@ Rectangle {
 
 				// FOV
 				SettingSlider {
-					settingText: "Feild of View";
+					settingText: "Field of View";
 					sliderStepSize: 1;
 					minValue: 20;
 					maxValue: 130;
