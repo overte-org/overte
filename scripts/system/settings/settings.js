@@ -51,9 +51,7 @@
 	function onMenuItemEvent(menuItem){
 		if (menuItem === 'Graphics...'){
 			toolbarButtonClicked();
-			Script.setTimeout(() => {
-				toQML({type: 'loadPage', page: 'Graphics'})
-			}, 100);
+			toQML({type: 'loadPage', page: 'Graphics'})
 		}
 	}
 
