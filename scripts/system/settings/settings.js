@@ -11,7 +11,6 @@
 
 /* global Script Tablet */
 
-// TODO: Bind Target frame Rate to Graphics Preset
 // TODO: Fullscreen display? 
 
 (() => {
@@ -31,14 +30,32 @@
 
 	// When script ends, remove itself from tablet
 	Script.scriptEnding.connect(function () {
-		console.log("Shutting Down");
+		console.log("Shutting down Settings.js application");
 		tablet.removeButton(appButton);
+		Menu.removeMenuItem("Settings", "Graphics...");
 	});
 
-	// Overlay button toggle
+	// Event listeners
 	appButton.clicked.connect(toolbarButtonClicked);
 	tablet.fromQml.connect(fromQML);
 	tablet.screenChanged.connect(onTabletScreenChanged);
+	Menu.menuItemEvent.connect(onMenuItemEvent);
+
+	// Menu button
+	Menu.addMenuItem({
+		menuName:     "Settings",
+		menuItemName: "Graphics...",
+		afterItem:    "Audio...",
+	});
+
+	function onMenuItemEvent(menuItem){
+		if (menuItem === 'Graphics...'){
+			toolbarButtonClicked();
+			Script.setTimeout(() => {
+				toQML({type: 'loadPage', page: 'Graphics'})
+			}, 100);
+		}
+	}
 
 	function toolbarButtonClicked() {
 		if (active) tablet.gotoHomeScreen();
@@ -72,9 +89,9 @@
 	/**
 	 * Emit a packet to the HTML front end. Easy communication!
 	 * @param {Object} packet - The Object packet to emit to the HTML
-	 * @param {("show_message"|"clear_messages"|"notification"|"initial_settings")} packet.type - The type of packet it is
+	 * @param {("loadPage"|)} packet.type - The type of packet it is
 	 */
-	// function _emitEvent(packet = { type: "" }) {
-	// 	tablet.sendToQml(packet);
-	// }
+	function toQML(packet = { type: "" }) {
+		tablet.sendToQml(packet);
+	}
 })();
