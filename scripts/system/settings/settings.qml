@@ -175,7 +175,6 @@ Rectangle {
 							SettingNumber {
 								settingText: "Focus Active";
 								minValue: 1;
-								decimalPlaces: 2;
 								maxValue: 9999;
 								suffixText: "fps";
 								settingValue: Performance.getCustomRefreshRate(0)
@@ -188,7 +187,6 @@ Rectangle {
 							SettingNumber {
 								settingText: "Focus Inactive";
 								minValue: 1;
-								decimalPlaces: 2;
 								maxValue: 9999;
 								suffixText: "fps";
 								settingValue: Performance.getCustomRefreshRate(1)
@@ -201,7 +199,6 @@ Rectangle {
 							SettingNumber {
 								settingText: "Minimized";
 								minValue: 1;
-								decimalPlaces: 2;
 								maxValue: 9999;
 								suffixText: "fps";
 								settingValue: Performance.getCustomRefreshRate(3)
@@ -214,7 +211,6 @@ Rectangle {
 							SettingNumber {
 								settingText: "Startup";
 								minValue: 1;
-								decimalPlaces: 2;
 								maxValue: 9999;
 								suffixText: "fps";
 								settingValue: Performance.getCustomRefreshRate(4)
@@ -227,7 +223,6 @@ Rectangle {
 							SettingNumber {
 								settingText: "Shutdown";
 								minValue: 1;
-								decimalPlaces: 2;
 								maxValue: 9999;
 								suffixText: "fps";
 								settingValue: Performance.getCustomRefreshRate(5)
