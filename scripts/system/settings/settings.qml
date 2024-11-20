@@ -283,18 +283,19 @@ Rectangle {
 		}
 
 		// Templates
+	}
 
-		// Messages from script
-		function fromScript(message) {
-			switch (message.type){
-				case "":
-					break;
-			}
+	// Messages from script
+	function fromScript(message) {
+		switch (message.type){
+			case "loadPage":
+				current_page = message.page;
+				break;
 		}
+	}
 
-		// Send message to script
-		function toScript(packet){
-			sendToScript(packet)
-		}
+	// Send message to script
+	function toScript(packet){
+		sendToScript(packet)
 	}
 }
