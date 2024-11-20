@@ -3,7 +3,6 @@ import QtQuick.Controls 2.5
 import QtQuick.Controls.Styles 1.4
 import QtQuick.Layouts 1.3
 
-// TODO: Non int numbers
 // TODO: Numpad Enter key support
 
 Item {
@@ -11,12 +10,10 @@ Item {
 	property string settingText: "";
 	property var settingValue: 0;
 
-	// property bool isInt: true;
-	property int decimalPlaces: 0;
 	property real minValue: 0;
 	property real maxValue: 9;
 	property string suffixText: "";
-	// property real stepSize: 1;
+	property real stepSize: 1;
 
 	signal valueChanged(int value);
 
@@ -46,10 +43,9 @@ Item {
 			SpinBox {
 				id: spinbox;
 				value: settingValue;
-				// decimals: 2;
 				from: minValue;
 				to: maxValue;
-				// stepSize: stepSize;
+				stepSize: stepSize;
 				Layout.alignment: Qt.AlignRight;
 				implicitWidth: 200;
 				implicitHeight: parent.height;
@@ -107,7 +103,7 @@ Item {
 					}
 
 					onClicked: {
-						spinbox.value += 1;
+						spinbox.value += stepSize;
 						valueChanged(spinbox.value);
 					}
 				}
@@ -133,7 +129,7 @@ Item {
 					}
 
 					onClicked: {
-						spinbox.value -= 1;
+						spinbox.value -= stepSize;
 						valueChanged(spinbox.value);
 					}
 				}
