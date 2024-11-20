@@ -237,65 +237,29 @@ Rectangle {
 				}
 
 				// Resolution Scale
-				RowLayout {
-					width: parent.width
+				SettingSlider {
+					settingText: "Resolution scale";
+					sliderStepSize: 0.1;
+					minValue: 0.1;
+					maxValue: 2;
+					settingValue: Render.viewportResolutionScale.toFixed(1)
 
-					Text {
-						text: "Resolution Scale"
-						color: "white"
-						height: parent.height
-						width: parent.width - 150
-						font.pointSize: 14
-						Layout.fillWidth: true
-					}
-
-					Text {
-						text: parent.children[2].value.toFixed(1)
-						color: "white"
-					}
-
-					Slider {
-						id: resolution_slider
-						from: 0.1
-						to: 2
-						value: Render.viewportResolutionScale.toFixed(1)
-						stepSize: 0.1
-
-						onValueChanged: {
-							Render.viewportResolutionScale = value
-						}
+					onSliderValueChanged: {
+						Render.viewportResolutionScale = value.toFixed(1)
 					}
 				}
 
 				// FOV
-				RowLayout {
-					width: parent.width
+				SettingSlider {
+					settingText: "Feild of View";
+					sliderStepSize: 1;
+					minValue: 20;
+					maxValue: 130;
+					settingValue: Render.verticalFieldOfView.toFixed(1);
+					roundDisplay: 0;
 
-					Text {
-						text: "FOV"
-						color: "white"
-						height: parent.height
-						width: parent.width - 150
-						font.pointSize: 14
-						Layout.fillWidth: true
-					}
-
-					Text {
-						text: parent.children[2].value.toFixed(0)
-						color: "white"
-					}
-
-					// FIXME: QML Slider binding loop
-					Slider {
-						id: fov_slider
-						from: 20
-						to: 130
-						value: Render.verticalFieldOfView.toFixed(1) // TODO: Need to set to Overte default
-						stepSize: 1
-
-						onValueChanged: {
-							Render.verticalFieldOfView = value
-						}
+					onSliderValueChanged: {
+						Render.verticalFieldOfView = value.toFixed(1);
 					}
 				}
 
