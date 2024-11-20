@@ -10,7 +10,7 @@ Rectangle {
 	height: parent.height;
 	anchors.centerIn: parent;
 	anchors.horizontalCenter: parent.horizontalCenter
-	property var pages: ["Graphics", "Audio", "Controls", "Privacy and Security"]
+	property var pages: ["Graphics" /*, "Audio", "Controls", "Privacy and Security"*/];
 	property string current_page: "Settings"
 
 	ColumnLayout {
