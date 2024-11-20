@@ -152,14 +152,15 @@ Rectangle {
 					}
 
 					onValueChanged: {
-						Performance.setRefreshRateProfile(index)
+						Performance.setRefreshRateProfile(index);
+						customFPSVaulesContainer.visible = index == 3;
 					}
 				}
 
 
 				Item {
+					id: customFPSVaulesContainer
 					Layout.fillWidth: true;
-					visible: refresh_rate_cb.currentIndex == 3;
 					height: children[0].height;
 					width: parent.width;
 
@@ -174,7 +175,7 @@ Rectangle {
 
 							SettingNumber {
 								settingText: "Focus Active";
-								minValue: 1;
+								minValue: 5;
 								maxValue: 9999;
 								suffixText: "fps";
 								settingValue: Performance.getCustomRefreshRate(0)

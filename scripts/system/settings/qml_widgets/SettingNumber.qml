@@ -66,6 +66,11 @@ Item {
 						radius: 10;
 					}
 
+					onTextChanged: {
+						valueChanged(spinboxText.text);
+						settingValue = spinboxText.text;
+					}
+
 					Keys.onPressed: {
 						if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
 							valueChanged(spinboxText.text);
