@@ -157,7 +157,7 @@ Rectangle {
 					}
 				}
 
-
+				// Custom FPS
 				Item {
 					id: customFPSVaulesContainer
 					Layout.fillWidth: true;
@@ -194,6 +194,18 @@ Rectangle {
 
 								onValueChanged: {
 									Performance.setCustomRefreshRate(1, value);
+								}
+							}
+
+							SettingNumber {
+								settingText: "Unfocused";
+								minValue: 1;
+								maxValue: 9999;
+								suffixText: "fps";
+								settingValue: Performance.getCustomRefreshRate(2)
+
+								onValueChanged: {
+									Performance.setCustomRefreshRate(2, value);
 								}
 							}
 
