@@ -427,7 +427,10 @@ void ScriptManager::runInThread() {
 
 void ScriptManager::executeOnScriptThread(std::function<void()> function, const Qt::ConnectionType& type ) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "executeOnScriptThread", type, Q_ARG(std::function<void()>, function));
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->executeOnScriptThread(function, type);
+        });
         return;
     }
 
@@ -859,10 +862,10 @@ void ScriptManager::removeEventHandler(const EntityItemID& entityID, const QStri
         qCDebug(scriptengine) << "*** WARNING *** ScriptManager::removeEventHandler() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] "
             "entityID:" << entityID << " eventName:" << eventName;
 #endif
-        QMetaObject::invokeMethod(this, "removeEventHandler",
-                                  Q_ARG(const EntityItemID&, entityID),
-                                  Q_ARG(const QString&, eventName),
-                                  Q_ARG(const ScriptValue&, handler));
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->removeEventHandler(entityID, eventName, handler);
+        });
         return;
     }
 #ifdef THREAD_DEBUGGING
@@ -906,10 +909,10 @@ void ScriptManager::addEventHandler(const EntityItemID& entityID, const QString&
         "entityID:" << entityID << " eventName:" << eventName;
 #endif
 
-        QMetaObject::invokeMethod(this, "addEventHandler",
-                                  Q_ARG(const EntityItemID&, entityID),
-                                  Q_ARG(const QString&, eventName),
-                                  Q_ARG(const ScriptValue&, handler));
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->addEventHandler(entityID, eventName, handler);
+        });
         return;
     }
 #ifdef THREAD_DEBUGGING
@@ -1168,7 +1171,10 @@ void ScriptManager::stop(bool marshal) {
     _isStopping = true; // this can be done on any thread
 
     if (marshal) {
-        QMetaObject::invokeMethod(this, "stop");
+        // Lambda is necessary there to keep shared_ptr counter above zero if this gets called from different thread
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->stop(false);
+        });
         return;
     }
 
@@ -2012,11 +2018,10 @@ bool ScriptManager::hasEntityScriptDetails(const EntityItemID& entityID) const {
 
 void ScriptManager::loadEntityScript(const EntityItemID& entityID, const QString& entityScript, bool forceRedownload) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "loadEntityScript",
-            Q_ARG(const EntityItemID&, entityID),
-            Q_ARG(const QString&, entityScript),
-            Q_ARG(bool, forceRedownload)
-        );
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->loadEntityScript(entityID, entityScript, forceRedownload);
+        });
         return;
     }
     PROFILE_RANGE(script, __FUNCTION__);
@@ -2093,13 +2098,10 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
             << contents << "isURL:" << isURL << "success:" << success;
 #endif
 
-        QMetaObject::invokeMethod(this, "entityScriptContentAvailable",
-                                  Q_ARG(const EntityItemID&, entityID),
-                                  Q_ARG(const QString&, scriptOrURL),
-                                  Q_ARG(const QString&, contents),
-                                  Q_ARG(bool, isURL),
-                                  Q_ARG(bool, success),
-                                  Q_ARG(const QString&, status));
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->entityScriptContentAvailable(entityID, scriptOrURL, contents, isURL, success, status);
+        });
         return;
     }
 
@@ -2443,9 +2445,10 @@ void ScriptManager::unloadEntityScript(const EntityItemID& entityID, bool should
             "entityID:" << entityID;
 #endif
 
-        QMetaObject::invokeMethod(this, "unloadEntityScript",
-                                  Q_ARG(const EntityItemID&, entityID),
-                                  Q_ARG(bool, shouldRemoveFromMap));
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->unloadEntityScript(entityID, shouldRemoveFromMap);
+        });
         return;
     }
 #ifdef THREAD_DEBUGGING
@@ -2496,8 +2499,10 @@ void ScriptManager::unloadAllEntityScripts(bool blockingCall) {
         qCDebug(scriptengine) << "*** WARNING *** ScriptManager::unloadAllEntityScripts() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]";
 #endif
 
-        QMetaObject::invokeMethod(this, "unloadAllEntityScripts",
-            blockingCall ? Qt::BlockingQueuedConnection : Qt::QueuedConnection);
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->unloadAllEntityScripts(blockingCall ? Qt::BlockingQueuedConnection : Qt::QueuedConnection);
+        });
         return;
     }
 #ifdef THREAD_DEBUGGING
@@ -2590,12 +2595,10 @@ void ScriptManager::callEntityScriptMethod(const EntityItemID& entityID, const Q
         qCDebug(scriptengine) << "*** WARNING *** ScriptManager::callEntityScriptMethod() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]  "
             "entityID:" << entityID << "methodName:" << methodName;
 #endif
-
-        QMetaObject::invokeMethod(this, "callEntityScriptMethod",
-                                  Q_ARG(const EntityItemID&, entityID),
-                                  Q_ARG(const QString&, methodName),
-                                  Q_ARG(const QStringList&, params),
-                                  Q_ARG(const QUuid&, remoteCallerID));
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->callEntityScriptMethod(entityID, methodName, params, remoteCallerID);
+        });
         return;
     }
 #ifdef THREAD_DEBUGGING
@@ -2660,10 +2663,10 @@ void ScriptManager::callEntityScriptMethod(const EntityItemID& entityID, const Q
             "entityID:" << entityID << "methodName:" << methodName << "event: mouseEvent";
 #endif
 
-        QMetaObject::invokeMethod(this, "callEntityScriptMethod",
-                                  Q_ARG(const EntityItemID&, entityID),
-                                  Q_ARG(const QString&, methodName),
-                                  Q_ARG(const PointerEvent&, event));
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->callEntityScriptMethod(entityID, methodName, event);
+        });
         return;
     }
 #ifdef THREAD_DEBUGGING
@@ -2699,11 +2702,10 @@ void ScriptManager::callEntityScriptMethod(const EntityItemID& entityID, const Q
             "entityID:" << entityID << "methodName:" << methodName << "otherID:" << otherID << "collision: collision";
 #endif
 
-        QMetaObject::invokeMethod(this, "callEntityScriptMethod",
-                                  Q_ARG(const EntityItemID&, entityID),
-                                  Q_ARG(const QString&, methodName),
-                                  Q_ARG(const EntityItemID&, otherID),
-                                  Q_ARG(const Collision&, collision));
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->callEntityScriptMethod(entityID, methodName, otherID, collision);
+        });
         return;
     }
 #ifdef THREAD_DEBUGGING

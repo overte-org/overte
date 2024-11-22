@@ -220,8 +220,11 @@ void EntityTreeRenderer::setupEntityScriptEngineSignals(const ScriptManagerPoint
 void EntityTreeRenderer::resetPersistentEntitiesScriptEngine() {
     // This runs script engine shutdown procedure in a separate thread, avoiding a deadlock when script engine is doing
     // a blocking call to main thread
-    if (_persistentEntitiesScriptManager) {
-        QtConcurrent::run([manager = _persistentEntitiesScriptManager] {
+    ScriptManagerPointer scriptManager = _persistentEntitiesScriptManager;
+    // Clear the pointer before lambda is run on another thread.
+    _persistentEntitiesScriptManager.reset();
+    if (scriptManager) {
+        QtConcurrent::run([manager = scriptManager] {
             manager->unloadAllEntityScripts(true);
             manager->stop();
             manager->waitTillDoneRunning();
@@ -251,8 +254,11 @@ void EntityTreeRenderer::resetPersistentEntitiesScriptEngine() {
 void EntityTreeRenderer::resetNonPersistentEntitiesScriptEngine() {
     // This runs script engine shutdown procedure in a separate thread, avoiding a deadlock when script engine is doing
     // a blocking call to main thread
-    if (_nonPersistentEntitiesScriptManager) {
-        QtConcurrent::run([manager = _nonPersistentEntitiesScriptManager] {
+    ScriptManagerPointer scriptManager = _nonPersistentEntitiesScriptManager;
+    // Release the pointer as soon as possible.
+    _nonPersistentEntitiesScriptManager.reset();
+    if (scriptManager) {
+        QtConcurrent::run([manager = scriptManager] {
             manager->unloadAllEntityScripts(true);
             manager->stop();
             manager->waitTillDoneRunning();
