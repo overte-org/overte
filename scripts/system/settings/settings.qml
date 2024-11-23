@@ -144,12 +144,8 @@ Rectangle {
 				// FPS
 				SettingComboBox {
 					settingText: "Refresh rate";
-					optionIndex: Performance.getPerformancePreset() - 1;
 					options: ["Economical", "Interactive", "Real-Time", "Custom"];
-
-					Component.onCompleted: {
-						optionIndex = Performance.getRefreshRateProfile()
-					}
+					optionIndex: Performance.getRefreshRateProfile();
 
 					onValueChanged: {
 						Performance.setRefreshRateProfile(index);
