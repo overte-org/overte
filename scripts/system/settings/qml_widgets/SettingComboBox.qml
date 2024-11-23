@@ -6,6 +6,8 @@ Item {
 	id: root;
 	property string settingText: "";
 	property int optionIndex: 0;
+    property var _optionText: ""
+    readonly property string optionText: _optionText
 	property var options: [];
 
 	signal valueChanged(int index);
@@ -37,6 +39,7 @@ Item {
 
 			onCurrentIndexChanged: {
 				valueChanged(currentIndex);
+				_optionText = options[currentIndex];
 			}
 
 			delegate: ItemDelegate {
@@ -117,5 +120,21 @@ Item {
 				}
 			}
 		}
+	}
+
+	// Updates the contents of a combobox.
+	// This is only required if the desired contents needs to be gathered from a javascript function and then set after the fact.
+	// Ideally, this would not be used, but sometimes you gotta do what you gotta do.
+	function setOptions(newOptions) {
+		// Clear the model
+		options = [];
+
+		// Add the new options to the model
+		for (var opt of newOptions){
+			options.push(opt);
+		}
+
+		// Whack it with a hammer
+		control.model = options;
 	}
 }

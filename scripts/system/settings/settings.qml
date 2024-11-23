@@ -257,6 +257,28 @@ Rectangle {
 					}
 				}
 
+				// Fullscreen Display
+				SettingComboBox {
+					settingText: "Fullscreen Display";
+
+					Component.onCompleted: {
+						var screens = Render.getScreens();
+						var selected = Render.getFullScreenScreen();
+						setOptions(screens);
+
+						for (let i = 0; screens.length > i; i++) {
+							if (screens[i] == selected) {
+								optionIndex = i;
+								return;
+							}
+						}
+					}
+
+					onValueChanged: {
+						Render.setFullScreenScreen(optionText);
+					}
+				}
+
 				// FOV
 				SettingSlider {
 					settingText: "Field of View";
