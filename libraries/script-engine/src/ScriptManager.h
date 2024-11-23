@@ -378,8 +378,11 @@ public:
     Q_ENUM(Type);
 
     static int processLevelMaxRetries;
-    ScriptManager(Context context, const QString& scriptContents = NO_SCRIPT, const QString& fileNameString = QString("about:ScriptEngine"));
-    ~ScriptManager();
+private:
+    // Constructor is private so that only properly generated shared pointer can be used
+    explicit ScriptManager(Context context, const QString& scriptContents = NO_SCRIPT, const QString& fileNameString = QString("about:ScriptEngine"));
+public:
+    ~ScriptManager() override;
 
     // static initialization support
     typedef void (*ScriptManagerInitializer)(ScriptManager*);
@@ -387,7 +390,7 @@ public:
     public:
         ScriptManagerInitializer init;
         StaticInitializerNode* prev;
-        inline StaticInitializerNode(ScriptManagerInitializer&& pInit) : init(std::move(pInit)),prev(nullptr) { registerNewStaticInitializer(this); }
+        inline explicit StaticInitializerNode(ScriptManagerInitializer&& pInit) : init(std::move(pInit)),prev(nullptr) { registerNewStaticInitializer(this); }
     };
     static void registerNewStaticInitializer(StaticInitializerNode* dest);
 
@@ -395,7 +398,7 @@ public:
     public:
         ScriptManagerInitializer init;
         StaticTypesInitializerNode* prev;
-        inline StaticTypesInitializerNode(ScriptManagerInitializer&& pInit) : init(std::move(pInit)),prev(nullptr) { registerNewStaticTypesInitializer(this); }
+        inline explicit StaticTypesInitializerNode(ScriptManagerInitializer&& pInit) : init(std::move(pInit)),prev(nullptr) { registerNewStaticTypesInitializer(this); }
     };
     static void registerNewStaticTypesInitializer(StaticTypesInitializerNode* dest);
 
