@@ -2498,11 +2498,10 @@ void ScriptManager::unloadAllEntityScripts(bool blockingCall) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine) << "*** WARNING *** ScriptManager::unloadAllEntityScripts() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]";
 #endif
-
         // Lambda is necessary there to keep shared_ptr counter above zero
-        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
-            manager->unloadAllEntityScripts(blockingCall ? Qt::BlockingQueuedConnection : Qt::QueuedConnection);
-        });
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()] {
+            manager->unloadAllEntityScripts(blockingCall);
+        }, blockingCall ? Qt::BlockingQueuedConnection : Qt::QueuedConnection);
         return;
     }
 #ifdef THREAD_DEBUGGING
