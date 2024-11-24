@@ -1010,13 +1010,14 @@ void Avatar::renderDisplayName(gpu::Batch& batch, const ViewFrustum& view, const
         // Compute background position/size
         static const float SLIGHTLY_IN_FRONT = 0.1f;
         static const float BORDER_RELATIVE_SIZE = 0.1f;
-        static const float BEVEL_FACTOR = 0.1f;
+        // static const float BEVEL_FACTOR = 0.1f;
         const int border = BORDER_RELATIVE_SIZE * nameDynamicRect.height();
-        const int left = text_x - border;
-        const int bottom = text_y - border;
-        const int width = nameDynamicRect.width() + 2.0f * border;
+        // FIXME: Beveled box is broken
+        // const int left = text_x - border;
+        // const int bottom = text_y - border;
+        // const int width = nameDynamicRect.width() + 2.0f * border;
         const int height = nameDynamicRect.height() + 2.0f * border;
-        const int bevelDistance = BEVEL_FACTOR * height;
+        // const int bevelDistance = BEVEL_FACTOR * height;
 
         // Display name and background colors
         glm::vec4 textColor(0.93f, 0.93f, 0.93f, _displayNameAlpha);
@@ -1042,7 +1043,7 @@ void Avatar::renderDisplayName(gpu::Batch& batch, const ViewFrustum& view, const
         batch.setModelTransform(textTransform);
         {
             PROFILE_RANGE_BATCH(batch, __FUNCTION__":renderText");
-            displayNameRenderer->draw(batch, { nameUTF8.data(), textColor, { text_x, -text_y }, glm::vec2(10.0f), forward, TextAlignment::CENTER });
+            displayNameRenderer->draw(batch, { nameUTF8.data(), textColor, { text_x, -text_y }, glm::vec2(10.0f), TextAlignment::CENTER, forward });
         }
     }
 }

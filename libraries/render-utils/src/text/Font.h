@@ -71,9 +71,8 @@ public:
                   bool forward, bool mirror) :
             str(str), color(color), effectColor(effectColor), origin(origin), bounds(bounds), scale(scale), effectThickness(effectThickness),
             effect(effect), alignment(alignment), verticalAlignment(verticalAlignment), unlit(unlit), forward(forward), mirror(mirror) {}
-            
-        DrawProps(const QString& str, const glm::vec4& color, const glm::vec2& origin, const glm::vec2& bounds, bool forward, TextAlignment alignment) :
-            str(str), color(color), origin(origin), bounds(bounds), forward(forward), alignment(alignment) {}
+        DrawProps(const QString& str, const glm::vec4& color, const glm::vec2& origin, const glm::vec2& bounds, TextAlignment alignment, bool forward) :
+            str(str), color(color), origin(origin), bounds(bounds), alignment(alignment), forward(forward) {}
 
         const QString& str;
         const glm::vec4& color;
