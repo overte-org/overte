@@ -51,8 +51,11 @@ macro(GENERATE_ENTITY_PROPERTIES)
     file(STRINGS src/EntityItemProperties.txt ENTITY_PROPERTIES_FILE)
     while(ENTITY_PROPERTIES_FILE)
         list(POP_FRONT ENTITY_PROPERTIES_FILE LINE)
+        # Handle both trailing comments and full line comments
+        string(REGEX REPLACE " #.*$" "" LINE ${LINE})
+        string(REGEX REPLACE "#.*$" "" LINE ${LINE})
 
-        if(LINE MATCHES "#.*")
+        if(LINE STREQUAL "")
             continue()
         elseif(NOT LINE MATCHES ".*:.*")
             # Single-word lines represent sections of properties, which can be base properties like "Physics" or
@@ -430,8 +433,11 @@ macro(GENERATE_ENTITY_PROPERTIES)
     file(STRINGS src/EntityItemGroupProperties.txt GROUP_PROPERTIES_FILE)
     while(GROUP_PROPERTIES_FILE)
         list(POP_FRONT GROUP_PROPERTIES_FILE LINE)
+        # Handle both trailing comments and full line comments
+        string(REGEX REPLACE " #.*$" "" LINE ${LINE})
+        string(REGEX REPLACE "#.*$" "" LINE ${LINE})
 
-        if(LINE MATCHES "#.*")
+        if(LINE STREQUAL "")
             continue()
         elseif(NOT LINE MATCHES ".*,")
             # Lines that don't end in a comma represent the start of a new property group.
