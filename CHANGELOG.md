@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
-## [2024.10.2] 2024.11.??
+## [2024.11.1] 2024.11.23
 
 ### Fixes
 - Hard code link colors in Armored Chat (PR1083)
@@ -33,6 +33,17 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Rebuild fonts with full charset (NOT -allglyphs) (PR1172)
 - fix web entities not accepting keyboard focus (PR1187)
 - Fix stutter when an object is fading (PR1185)
+- fix density max typo (PR1195)
+- Fix ArmoredChat quick_message qml dialog colors on light theme systems (PR1196)
+- Fix missing properties in Script API (PR1215)
+- Fix ArmoredChat scrolling (PR1210)
+- Force enable JSDoc to get scripting console autocomplete working on Windows (PR1219)
+- Fix lack of entityHostType property (PR1224)
+- Fix access-after-delete on leaving domain with entity scripts (PR1230)
+- fix fade out not working in forward rendering (PR1234)
+- Fix access-after-delete during entity script engine cleanup (PR1236)
+- Fix script-related crashes on exiting a domain (PR1251)
+- Update privacy policy link (PR1237)
 
 ### Changes
 - Replace Floofchat with ArmoredChat (PR961)
@@ -62,6 +73,8 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Create App: Revolutionary "Paste" Url buttons for the "Create Model", "Create Material" and "Create Voxels" UI (PR1094)
 - Text verticalAlignment, send entity property enums as uint8_t, fix text recalculating too often, fix textSize (PR1111)
 - Create app: Grab and Equip (PR1160)
+- Create App: Add "Paste" button for NewSoundDialog QML (PR1202)
+- Added sounds to all incoming chat messages (PR1250)
 
 ### Removals
 - Remove (deprecated) attachments (PR1069)
