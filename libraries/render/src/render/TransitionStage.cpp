@@ -1,43 +1,25 @@
-#include "TransitionStage.h"
+//
+//  TransitionStage.cpp
+//
+//  Created by Olivier Prat on 07/07/2017.
+//  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
 
-#include <algorithm>
+#include "TransitionStage.h"
 
 using namespace render;
 
-std::string TransitionStage::_name("Transition");
-const TransitionStage::Index TransitionStage::INVALID_INDEX{ indexed_container::INVALID_INDEX };
+template <>
+std::string TypedStage<Transition>::_name { "TRANSITION_STAGE" };
 
 TransitionStage::Index TransitionStage::addTransition(ItemID itemId, Transition::Type type, ItemID boundId) {
     Transition transition;
-    Index id;
-    
     transition.eventType = type;
     transition.itemId = itemId;
     transition.boundItemId = boundId;
-    id = _transitions.newElement(transition);
-    _activeTransitionIds.push_back(id);
-
-    return id;
+    return addElement(transition);
 }
-
-void TransitionStage::removeTransition(Index index) {
-    TransitionIdList::iterator  idIterator = std::find(_activeTransitionIds.begin(), _activeTransitionIds.end(), index);
-    if (idIterator != _activeTransitionIds.end()) {
-        _activeTransitionIds.erase(idIterator);
-    }
-    if (!_transitions.isElementFreed(index)) {
-        _transitions.freeElement(index);
-    }
-}
-
-TransitionStageSetup::TransitionStageSetup() {
-}
-
-void TransitionStageSetup::run(const RenderContextPointer& renderContext) {
-    auto stage = renderContext->_scene->getStage(TransitionStage::getName());
-    if (!stage) {
-        stage = std::make_shared<TransitionStage>();
-        renderContext->_scene->resetStage(TransitionStage::getName(), stage);
-    }
-}
-
