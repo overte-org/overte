@@ -118,7 +118,7 @@
         let formattedMessagePacket = { ...message };
         formattedMessagePacket.message = formattedMessage
 
-        _emitEvent({ type: "show_message", ...formattedMessagePacket });           // Update qml view of to new message.
+        _emitEvent({ type: "show_message", ...formattedMessagePacket });        // Update qml view of to new message.
         _notificationCoreMessage(message.displayName, message.message)          // Show a new message on screen.
 
         // Create a new variable based on the message that will be saved.
@@ -291,7 +291,7 @@
     function _parseMessage(message){
         const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
         const mentionRegex = /@(\w+)/; // FIXME: Remove - devcode
-        const overteLocationRegex = null;
+        const overteLocationRegex = /hifi:\/\/[a-zA-Z0-9_-]+\/[-+]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+\/[-+]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+/;
 
         let runningMessage = message;
         let messageArray = [];
