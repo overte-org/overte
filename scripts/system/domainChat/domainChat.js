@@ -102,33 +102,20 @@
         const currentTimestamp = _getTimestamp();
         const timeArray = _formatTimestamp(currentTimestamp);
 
-        if (!message.channel) message.channel = "domain"; // We don't know where to put this message. Assume it is a domain wide message.
-
-        message.channel = message.channel.toLowerCase();
-
-        // Check the channel. If the channel is not one we have, do nothing.
-        if (!channels.includes(message.channel)) return;
-
-        // If message is local, and if player is too far away from location, do nothing.
-        if (message.channel == "local" && isTooFar(message.position)) return; 
+        if (!message.channel) message.channel = "domain";                       // We don't know where to put this message. Assume it is a domain wide message.
+        message.channel = message.channel.toLowerCase();                        // Only recognize channel names as lower case. 
+        
+        if (!channels.includes(message.channel)) return;                        // Check the channel. If the channel is not one we have, do nothing.
+        if (message.channel == "local" && isTooFar(message.position)) return;   // If message is local, and if player is too far away from location, do nothing.
 
         // Format the timestamp 
         message.timeString = timeArray[0];
         message.dateString = timeArray[1];
+        
+        _emitEvent({ type: "show_message", ...message });                       // Update qml view of to new message.
+        _notificationCoreMessage(message.displayName, message.message)          // Show a new message on screen.
 
-        // Update qml view of to new message
-        _emitEvent({ type: "show_message", ...message });
-
-        // Show new message on screen
-        Messages.sendLocalMessage(
-            "Floof-Notif",
-            JSON.stringify({
-                sender: message.displayName,
-                text: message.message,
-            })
-        );
-
-        // Save message to history
+        // Create a new variable based on the message that will be saved.
         let savedMessage = message;
 
         // Remove unnecessary data.
@@ -239,13 +226,7 @@
 
             // Show new message on screen
             if (settings.join_notification){
-                Messages.sendLocalMessage(
-                    "Floof-Notif",
-                    JSON.stringify({
-                        sender: displayName,
-                        text: type,
-                    })
-                );
+                _notificationCoreMessage(displayName, type)
             }
 
             _emitEvent({ type: "notification", ...message });
@@ -288,6 +269,12 @@
         }));
 
         return timeArray;
+    }
+    function _notificationCoreMessage(displayName, message){
+        Messages.sendLocalMessage(
+            "Floof-Notif",
+            JSON.stringify({ sender: displayName, text: message })
+        );
     }
 
     /**
