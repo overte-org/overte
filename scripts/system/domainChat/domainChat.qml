@@ -414,6 +414,7 @@ Rectangle {
                 anchors.top: parent.children[0].bottom;
                 width: parent.width * 0.8
                 x: 5
+                id: messageBoxFlow
 
                 Repeater {
                     model: texttest;
@@ -432,7 +433,7 @@ Rectangle {
                             text: model.value || ""
                             font.pointSize: 12
                             wrapMode: Text.Wrap
-                            width: Math.min(parent.parent.parent.width, contentWidth);
+                            width: Math.min(messageBoxFlow.width, contentWidth);
 
                             visible: model.type === 'text' || model.type === 'mention';
 
@@ -447,40 +448,86 @@ Rectangle {
                         }
 
                         RowLayout {
-                            width: Math.min(parent.parent.parent.width, children[0].contentWidth);
+                            width: Math.min(messageBoxFlow.width, children[0].contentWidth);
                             visible: model.type === 'url';
 
                             Text {
-                                text: model.value || ""
-                                font.pointSize: 12
-                                wrapMode: Text.Wrap
+                                text: model.value || "";
+                                font.pointSize: 12;
+                                wrapMode: Text.Wrap;
                                 color: "#4EBAFD";
-                                font.underline: true
+                                font.underline: true;
+                                width: parent.width;
 
                                 MouseArea {
                                     anchors.fill: parent;
 
                                     onClicked: {
-                                        Window.openWebBrowser(model.value)
+                                        Window.openWebBrowser(model.value);
                                     }
                                 }
                             }
 
                             Text {
-                                text: "🗗"
-                                font.pointSize: 10
-                                wrapMode: Text.Wrap
-                                color: "white"
+                                text: "🗗";
+                                font.pointSize: 10;
+                                wrapMode: Text.Wrap;
+                                color: "white";
 
                                 MouseArea {
                                     anchors.fill: parent;
 
                                     onClicked: {
-                                        Qt.openUrlExternally(model.value)
+                                        Qt.openUrlExternally(model.value);
                                     }
                                 }
                             }
                         }
+
+                        RowLayout {
+                            visible: model.type === 'overteLocation';
+                            width: Math.min(messageBoxFlow.width, children[0].children[1].contentWidth + 35);
+                            height: 20;
+                            Layout.leftMargin: 5
+                            Layout.rightMargin: 5
+
+                            Rectangle {
+                                width: parent.width;
+                                height: 20;
+                                color: "lightgray"
+                                radius: 2;
+
+                                Image {
+                                    source: "./img/ui/world_black.png"
+                                    width: 18;
+                                    height: 18;
+                                    sourceSize.width: 18
+                                    sourceSize.height: 18
+                                    anchors.left: parent.left
+                                    anchors.verticalCenter: parent.verticalCenter 
+                                    anchors.leftMargin: 2
+                                    anchors.rightMargin: 10
+                                }
+
+                                Text {
+                                    text: model.value.split('hifi://')[1].split('/')[0];
+                                    color: "black"
+                                    font.pointSize: 12
+                                    x: parent.children[0].width + 5;
+                                    anchors.verticalCenter: parent.verticalCenter 
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent;
+
+                                    onClicked: {
+                                        Window.openUrl(model.value);
+                                    }
+                                }
+
+                            }
+                        }
+
 
                         Item {
                             Layout.fillWidth: true
