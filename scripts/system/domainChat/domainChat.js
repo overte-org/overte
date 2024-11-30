@@ -1,5 +1,5 @@
 //
-//  armored_chat.js
+//  domainChat.js
 //
 //  Created by Armored Dragon, May 17th, 2024.
 //  Copyright 2024 Overte e.V.
@@ -62,7 +62,7 @@
         appButton.clicked.connect(toggleMainChatWindow);
 
         quickMessage = new OverlayWindow({
-            source: Script.resolvePath("./armored_chat_quick_message.qml"),
+            source: Script.resolvePath("./domainChatQuick.qml"),
         });
 
         _openWindow();
@@ -79,7 +79,7 @@
     }
     function _openWindow() {
         chatOverlayWindow = new Desktop.createWindow(
-            Script.resolvePath("./armored_chat.qml"),
+            Script.resolvePath("./domainChat.qml"),
             {
                 title: "Chat",
                 size: { x: 550, y: 400 },
