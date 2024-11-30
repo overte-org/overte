@@ -7,6 +7,8 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
+// TODO: Message trimming
+
 (() => {
     ("use strict");
 
@@ -111,8 +113,12 @@
         // Format the timestamp 
         message.timeString = timeArray[0];
         message.dateString = timeArray[1];
-        
-        _emitEvent({ type: "show_message", ...message });                       // Update qml view of to new message.
+
+        let formattedMessage = _parseMessage(message.message);                  // Format the message for viewing
+        let formattedMessagePacket = { ...message };
+        formattedMessagePacket.message = formattedMessage
+
+        _emitEvent({ type: "show_message", ...formattedMessagePacket });           // Update qml view of to new message.
         _notificationCoreMessage(message.displayName, message.message)          // Show a new message on screen.
 
         // Create a new variable based on the message that will be saved.
@@ -239,9 +245,15 @@
             // Load message history
             messageHistory.forEach((message) => {
                 const timeArray = _formatTimestamp(_getTimestamp());
-                message.timeString = timeArray[0];
-                message.dateString = timeArray[1];
-                _emitEvent({ type: "show_message", ...message });
+                messagePacket = { ...message };
+                messagePacket.timeString = timeArray[0];
+                messagePacket.dateString = timeArray[1];
+
+                let formattedMessage = _parseMessage(messagePacket.message);
+                let formattedMessagePacket = messagePacket;
+                formattedMessagePacket.message = formattedMessage;
+
+                _emitEvent({ type: "show_message", ...formattedMessagePacket });
             });
         }
 
@@ -275,6 +287,70 @@
             "Floof-Notif",
             JSON.stringify({ sender: displayName, text: message })
         );
+    }
+    function _parseMessage(message){
+        const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
+        const mentionRegex = /@(\w+)/; // FIXME: Remove - devcode
+        const overteLocationRegex = null;
+
+        let runningMessage = message;
+        let messageArray = [];
+
+        const regexPatterns = [
+            { type: "url", regex: urlRegex },
+            { type: "mention", regex: mentionRegex }, // FIXME: Remove - devcode
+            { type: "overteLocation", regex: overteLocationRegex }
+        ]
+
+        // Here is a link https://www.example.com, #hashtag, and @mention. Just for some spice here is another https://exampletwo.com
+
+        while (true) {
+            let firstMatch = _findFirstMatch();
+
+            if (firstMatch == null) {
+                // If there was not any matches found in the entire message, format the whole message as a single text entry.
+                messageArray.push({type: 'text', value: runningMessage});
+
+                // Append a final 'fill width' to the message text.
+                messageArray.push({type: 'messageEnd'});
+                break;
+            }
+
+            _formatMessage(firstMatch);
+        }
+
+        return messageArray;
+
+        function _formatMessage(firstMatch){
+            let indexOfFirstMatch = firstMatch[0];
+            let regex = regexPatterns[firstMatch[1]].regex;
+
+            let foundMatch = runningMessage.match(regex)[0];
+
+            messageArray.push({type: 'text', value: runningMessage.substring(0, indexOfFirstMatch)});
+            messageArray.push({type: regexPatterns[firstMatch[1]].type, value: runningMessage.substring(indexOfFirstMatch, indexOfFirstMatch + foundMatch.length)});
+            
+            runningMessage = runningMessage.substring(indexOfFirstMatch + foundMatch.length);   // Remove the part of the message we have worked with
+        }
+
+        function _findFirstMatch(){
+            let indexOfFirstMatch = Infinity;
+            let indexOfRegexPattern = Infinity;
+
+            for (let i = 0; regexPatterns.length > i; i++){
+                let indexOfMatch = runningMessage.search(regexPatterns[i].regex);
+
+                if (indexOfMatch == -1) continue;                                              // No match found
+
+                if (indexOfMatch < indexOfFirstMatch) {
+                    indexOfFirstMatch = indexOfMatch;
+                    indexOfRegexPattern = i;
+                }
+            }
+
+            if (indexOfFirstMatch !== Infinity) return [indexOfFirstMatch, indexOfRegexPattern];    // If there was a found match
+            return null;                                                                            // No found match
+        }
     }
 
     /**
