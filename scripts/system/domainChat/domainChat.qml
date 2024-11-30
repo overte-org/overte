@@ -162,7 +162,7 @@ Rectangle {
                         model: getChannel(pageVal)
                         delegate: Loader {
                             property int delegateIndex: model.index
-                            property string delegateText: model.text
+                            property var delegateText: model.text
                             property string delegateUsername: model.username
                             property string delegateDate: model.date
 
@@ -384,7 +384,7 @@ Rectangle {
 
         Rectangle {
             property int index: delegateIndex
-            property string texttest: delegateText
+            property var texttest: delegateText
             property string username: delegateUsername
             property string date: delegateDate
 
@@ -410,22 +410,83 @@ Rectangle {
                 }
             }
 
-            TextEdit {
-                anchors.top: parent.children[0].bottom
-                x: 5
-                text: texttest
-                color:"white"
-                font.pointSize: 12
-                readOnly: true
-                selectByMouse: true
-                selectByKeyboard: true
+            Flow {
+                anchors.top: parent.children[0].bottom;
                 width: parent.width * 0.8
-                height: contentHeight
-                wrapMode: Text.Wrap
-                textFormat: TextEdit.RichText
+                x: 5
 
-                onLinkActivated: {
-                    Window.openWebBrowser(link)
+                Repeater {
+                    model: texttest;
+
+                    RowLayout {
+                        width: {
+                            switch (model.type) {
+                                case "text":
+                                    return children[0].width;
+                                case "url":
+                                    return children[1].width;
+                            }
+                        }
+
+                        Text {
+                            text: model.value || ""
+                            font.pointSize: 12
+                            wrapMode: Text.Wrap
+                            width: Math.min(parent.parent.parent.width, contentWidth);
+
+                            visible: model.type === 'text' || model.type === 'mention';
+
+                            color: {
+                                switch (model.type) {
+                                    case "mention":
+                                        return "purple";
+                                    default:
+                                        return "white";
+                                }
+                            }
+                        }
+
+                        RowLayout {
+                            width: Math.min(parent.parent.parent.width, children[0].contentWidth);
+                            visible: model.type === 'url';
+
+                            Text {
+                                text: model.value || ""
+                                font.pointSize: 12
+                                wrapMode: Text.Wrap
+                                color: "#4EBAFD";
+                                font.underline: true
+
+                                MouseArea {
+                                    anchors.fill: parent;
+
+                                    onClicked: {
+                                        Window.openWebBrowser(model.value)
+                                    }
+                                }
+                            }
+
+                            Text {
+                                text: "🗗"
+                                font.pointSize: 10
+                                wrapMode: Text.Wrap
+                                color: "white"
+
+                                MouseArea {
+                                    anchors.fill: parent;
+
+                                    onClicked: {
+                                        Qt.openUrlExternally(model.value)
+                                    }
+                                }
+                            }
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                            visible: model.type === 'messageEnd'
+                        }
+                    }
                 }
             }
         }
@@ -436,7 +497,7 @@ Rectangle {
 
         Rectangle{
             property int index: delegateIndex
-            property string texttest: delegateText
+            property var texttest: delegateText
             property string username: delegateUsername
             property string date: delegateDate
             color: "#171717"
@@ -517,8 +578,6 @@ Rectangle {
         channel = getChannel(channel)
 
         // Format content
-        message = formatContent(message);
-        message = embedImages(message);
 
         if (type === "notification"){
             channel.append({ text: message, date: date, type: "notification" });
@@ -529,60 +588,30 @@ Rectangle {
             return;
         }
 
-        var current_time = new Date();
-        var elapsed_time = current_time - last_message_time;
-        var elapsed_minutes = elapsed_time / (1000 * 60); 
+        // TODO: Replace new time generation with time pregenerated from message
+        // var current_time = new Date();
+        // var elapsed_time = current_time - last_message_time;
+        // var elapsed_minutes = elapsed_time / (1000 * 60); 
 
-        var last_item_index = channel.count - 1;
-        var last_item = channel.get(last_item_index);
+        // var last_item_index = channel.count - 1;
+        // var last_item = channel.get(last_item_index);
 
-        if (last_message_user === username && elapsed_minutes < 1 && last_item){
-            message = "<br>" + message 
-            last_item.text = last_item.text += "\n" + message;
-            load_scroll_timer.running = true;
-            last_message_time = new Date();
-            return;
-        }
+        // if (last_message_user === username && elapsed_minutes < 1 && last_item){
+        //     message = "<br>" + message 
+        //     last_item.text = last_item.text += "\n" + message;
+        //     load_scroll_timer.running = true;
+        //     last_message_time = new Date();
+        //     return;
+        // }
 
-        last_message_user = username;
-        last_message_time = new Date();
+        // last_message_user = username;
+        // last_message_time = new Date();
         channel.append({ text: message, username: username, date: date, type: type });
         load_scroll_timer.running = true;
     }
 
     function getChannel(id) {
         return channels[id];
-    }
-
-    function formatContent(mess) {
-        var arrow = /\</gi
-        mess = mess.replace(arrow, "&lt;");
-
-        var link = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
-        mess = mess.replace(link, (match) => {return `<a style="color:#4EBAFD" onclick='Window.openUrl("+match+")' href='` + match + `'>` + match + `</a> <a onclick='Window.openUrl(`+match+`)'>🗗</a>`});
-
-        var newline = /\n/gi;
-        mess = mess.replace(newline, "<br>");
-        return mess
-    }
-
-    function embedImages(mess){
-        var image_link = /(https?:(\/){2})[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)(?:png|jpe?g|gif|bmp|svg|webp)/g;
-        var matches = mess.match(image_link);
-        var new_message = ""
-        var listed = []
-        var total_emeds = 0
-
-        new_message += mess
-
-        for (var i = 0; matches && matches.length > i && total_emeds < 3; i++){
-            if (!listed.includes(matches[i])) {
-                new_message += "<br><img src="+ matches[i] +" width='250' >"
-                listed.push(matches[i]);
-                total_emeds++
-            } 
-        }
-        return new_message;
     }
 
     // Messages from script
