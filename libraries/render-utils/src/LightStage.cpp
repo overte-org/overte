@@ -73,7 +73,7 @@ LightStage::Shadow::Schema::Schema() {
     maxDistance = 20.0f;
 }
 
-LightStage::Shadow::Cascade::Cascade() : 
+LightStage::Shadow::Cascade::Cascade() :
     _frustum{ std::make_shared<ViewFrustum>() },
     _minDistance{ 0.0f },
     _maxDistance{ 20.0f } {
@@ -89,7 +89,7 @@ const glm::mat4& LightStage::Shadow::Cascade::getProjection() const {
 
 float LightStage::Shadow::Cascade::computeFarDistance(const ViewFrustum& viewFrustum, const Transform& shadowViewInverse,
                                                       float left, float right, float bottom, float top, float viewMaxShadowDistance) const {
-    // Far distance should be extended to the intersection of the infinitely extruded shadow frustum 
+    // Far distance should be extended to the intersection of the infinitely extruded shadow frustum
     // with the view frustum side planes. To do so, we generate 10 triangles in shadow space which are the result of
     // tesselating the side and far faces of the view frustum and clip them with the 4 side planes of the
     // shadow frustum. The resulting clipped triangle vertices with the farthest Z gives the desired
@@ -122,7 +122,7 @@ float LightStage::Shadow::Cascade::computeFarDistance(const ViewFrustum& viewFru
     return far;
 }
 
-LightStage::Shadow::Shadow(graphics::LightPointer light, unsigned int cascadeCount) : 
+LightStage::Shadow::Shadow(graphics::LightPointer light, unsigned int cascadeCount) :
     _light{ light } {
     cascadeCount = std::min(cascadeCount, (unsigned int)SHADOW_CASCADE_MAX_COUNT);
     Schema schema;
@@ -388,8 +388,6 @@ void LightStage::updateLightArrayBuffer(Index lightId) {
     if (!_lightArrayBuffer) {
         _lightArrayBuffer = std::make_shared<gpu::Buffer>(lightSize);
     }
-
-    assert(checkLightId(lightId));
 
     if (lightId > (Index)_lightArrayBuffer->getNumTypedElements<graphics::Light::LightSchema>()) {
         _lightArrayBuffer->resize(lightSize * (lightId + 10));
