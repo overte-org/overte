@@ -1,11 +1,13 @@
 //
-//  armored_chat.js
+//  domainChat.js
 //
 //  Created by Armored Dragon, 2024.
 //  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+
+// TODO: Message trimming
 
 (() => {
     ("use strict");
@@ -28,7 +30,6 @@
     var palData = AvatarManager.getPalData().data;
 
     Controller.keyPressEvent.connect(keyPressEvent);
-    Messages.subscribe("Chat"); // Floofchat
     Messages.subscribe("chat");
     Messages.messageReceived.connect(receivedMessage);
     AvatarManager.avatarAddedEvent.connect((sessionId) => {
@@ -61,7 +62,7 @@
         appButton.clicked.connect(toggleMainChatWindow);
 
         quickMessage = new OverlayWindow({
-            source: Script.resolvePath("./armored_chat_quick_message.qml"),
+            source: Script.resolvePath("./domainChatQuick.qml"),
         });
 
         _openWindow();
@@ -78,7 +79,7 @@
     }
     function _openWindow() {
         chatOverlayWindow = new Desktop.createWindow(
-            Script.resolvePath("./armored_chat.qml"),
+            Script.resolvePath("./domainChat.qml"),
             {
                 title: "Chat",
                 size: { x: 550, y: 400 },
@@ -102,36 +103,24 @@
         const currentTimestamp = _getTimestamp();
         const timeArray = _formatTimestamp(currentTimestamp);
 
-        if (!message.channel) message.channel = "domain"; // We don't know where to put this message. Assume it is a domain wide message.
-        if (message.forApp) return; // Floofchat
-
-        // Floofchat compatibility hook
-        message = floofChatCompatibilityConversion(message);
-        message.channel = message.channel.toLowerCase();
-
-        // Check the channel. If the channel is not one we have, do nothing.
-        if (!channels.includes(message.channel)) return;
-
-        // If message is local, and if player is too far away from location, do nothing.
-        if (message.channel == "local" && isTooFar(message.position)) return; 
+        if (!message.channel) message.channel = "domain";                       // We don't know where to put this message. Assume it is a domain wide message.
+        message.channel = message.channel.toLowerCase();                        // Only recognize channel names as lower case. 
+        
+        if (!channels.includes(message.channel)) return;                        // Check the channel. If the channel is not one we have, do nothing.
+        if (message.channel == "local" && isTooFar(message.position)) return;   // If message is local, and if player is too far away from location, do nothing.
 
         // Format the timestamp 
         message.timeString = timeArray[0];
         message.dateString = timeArray[1];
 
-        // Update qml view of to new message
-        _emitEvent({ type: "show_message", ...message });
+        let formattedMessage = _parseMessage(message.message);                  // Format the message for viewing
+        let formattedMessagePacket = { ...message };
+        formattedMessagePacket.message = formattedMessage
 
-        // Show new message on screen
-        Messages.sendLocalMessage(
-            "Floof-Notif",
-            JSON.stringify({
-                sender: message.displayName,
-                text: message.message,
-            })
-        );
+        _emitEvent({ type: "show_message", ...formattedMessagePacket });        // Update qml view of to new message.
+        _notificationCoreMessage(message.displayName, message.message)          // Show a new message on screen.
 
-        // Save message to history
+        // Create a new variable based on the message that will be saved.
         let savedMessage = message;
 
         // Remove unnecessary data.
@@ -215,8 +204,6 @@
                 action: "send_chat_message",
             })
         );
-
-        floofChatCompatibilitySendMessage(message, channel);
     }
     function _avatarAction(type, sessionId) {
         Script.setTimeout(() => {
@@ -244,13 +231,7 @@
 
             // Show new message on screen
             if (settings.join_notification){
-                Messages.sendLocalMessage(
-                    "Floof-Notif",
-                    JSON.stringify({
-                        sender: displayName,
-                        text: type,
-                    })
-                );
+                _notificationCoreMessage(displayName, type)
             }
 
             _emitEvent({ type: "notification", ...message });
@@ -263,9 +244,15 @@
             // Load message history
             messageHistory.forEach((message) => {
                 const timeArray = _formatTimestamp(_getTimestamp());
-                message.timeString = timeArray[0];
-                message.dateString = timeArray[1];
-                _emitEvent({ type: "show_message", ...message });
+                messagePacket = { ...message };
+                messagePacket.timeString = timeArray[0];
+                messagePacket.dateString = timeArray[1];
+
+                let formattedMessage = _parseMessage(messagePacket.message);
+                let formattedMessagePacket = messagePacket;
+                formattedMessagePacket.message = formattedMessage;
+
+                _emitEvent({ type: "show_message", ...formattedMessagePacket });
             });
         }
 
@@ -294,6 +281,76 @@
 
         return timeArray;
     }
+    function _notificationCoreMessage(displayName, message){
+        Messages.sendLocalMessage(
+            "Floof-Notif",
+            JSON.stringify({ sender: displayName, text: message })
+        );
+    }
+    function _parseMessage(message){
+        const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
+        const mentionRegex = /@(\w+)/; // FIXME: Remove - devcode
+        const overteLocationRegex = /hifi:\/\/[a-zA-Z0-9_-]+\/[-+]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+\/[-+]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+/;
+
+        let runningMessage = message;
+        let messageArray = [];
+
+        const regexPatterns = [
+            { type: "url", regex: urlRegex },
+            { type: "mention", regex: mentionRegex }, // FIXME: Remove - devcode
+            { type: "overteLocation", regex: overteLocationRegex }
+        ]
+
+        // Here is a link https://www.example.com, #hashtag, and @mention. Just for some spice here is another https://exampletwo.com
+
+        while (true) {
+            let firstMatch = _findFirstMatch();
+
+            if (firstMatch == null) {
+                // If there was not any matches found in the entire message, format the whole message as a single text entry.
+                messageArray.push({type: 'text', value: runningMessage});
+
+                // Append a final 'fill width' to the message text.
+                messageArray.push({type: 'messageEnd'});
+                break;
+            }
+
+            _formatMessage(firstMatch);
+        }
+
+        return messageArray;
+
+        function _formatMessage(firstMatch){
+            let indexOfFirstMatch = firstMatch[0];
+            let regex = regexPatterns[firstMatch[1]].regex;
+
+            let foundMatch = runningMessage.match(regex)[0];
+
+            messageArray.push({type: 'text', value: runningMessage.substring(0, indexOfFirstMatch)});
+            messageArray.push({type: regexPatterns[firstMatch[1]].type, value: runningMessage.substring(indexOfFirstMatch, indexOfFirstMatch + foundMatch.length)});
+            
+            runningMessage = runningMessage.substring(indexOfFirstMatch + foundMatch.length);   // Remove the part of the message we have worked with
+        }
+
+        function _findFirstMatch(){
+            let indexOfFirstMatch = Infinity;
+            let indexOfRegexPattern = Infinity;
+
+            for (let i = 0; regexPatterns.length > i; i++){
+                let indexOfMatch = runningMessage.search(regexPatterns[i].regex);
+
+                if (indexOfMatch == -1) continue;                                              // No match found
+
+                if (indexOfMatch < indexOfFirstMatch) {
+                    indexOfFirstMatch = indexOfMatch;
+                    indexOfRegexPattern = i;
+                }
+            }
+
+            if (indexOfFirstMatch !== Infinity) return [indexOfFirstMatch, indexOfRegexPattern];    // If there was a found match
+            return null;                                                                            // No found match
+        }
+    }
 
     /**
      * Emit a packet to the HTML front end. Easy communication!
@@ -302,35 +359,5 @@
      */
     function _emitEvent(packet = { type: "" }) {
         chatOverlayWindow.sendToQml(packet);
-    }
-
-    //
-    // Floofchat compatibility functions
-    // Added to ease the transition between Floofchat to ArmoredChat
-    // These functions can be safely removed at a much later date.
-    function floofChatCompatibilityConversion(message) {
-        if (message.type === "TransmitChatMessage" && !message.forApp) {
-            return {
-                position: message.position,
-                message: message.message,
-                displayName: message.displayName,
-                channel: message.channel.toLowerCase(),
-            };
-        }
-        return message;
-    }
-
-    function floofChatCompatibilitySendMessage(message, channel) {
-        Messages.sendMessage(
-            "Chat",
-            JSON.stringify({
-                position: MyAvatar.position,
-                message: message,
-                displayName: MyAvatar.sessionDisplayName,
-                channel: channel.charAt(0).toUpperCase() + channel.slice(1),
-                type: "TransmitChatMessage",
-                forApp: "Floof",
-            })
-        );
     }
 })();
