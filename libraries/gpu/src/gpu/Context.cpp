@@ -238,10 +238,14 @@ const Backend::TransformCamera& Backend::TransformCamera::recomputeDerived(const
 Backend::TransformCamera Backend::TransformCamera::getEyeCamera(int eye, const StereoState& _stereo, const Transform& xformView, Vec2 normalizedJitter) const {
     TransformCamera result = *this;
     Transform offsetTransform = xformView;
-    if (!_stereo._skybox) {
-        offsetTransform.postTranslate(-Vec3(_stereo._eyeViews[eye][3]));
+    glm::vec3 eyePosition = extractTranslation(_stereo._eyeViews[eye]);
+    glm::quat eyeOrientation = glmExtractRotation(_stereo._eyeViews[eye]);
+    if (!_stereo._skybox)
+    {
+        offsetTransform.postRotate(eyeOrientation).postTranslate(eyePosition);
     } else {
         // FIXME: If "skybox" the ipd is set to 0 for now, let s try to propose a better solution for this in the future
+        offsetTransform.postRotate(eyeOrientation);
     }
     result._projection = _stereo._eyeProjections[eye];
     normalizedJitter.x *= 2.0f;
