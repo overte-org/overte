@@ -225,7 +225,7 @@ void setupPreferences() {
         preferences->addPreference(delaySlider);
     }
 
-    static const QString VIEW_CATEGORY{ "View" };
+    static const QString VIEW_CATEGORY { "View" };
     {
         auto getter = [myAvatar]()->float { return myAvatar->getRealWorldFieldOfView(); };
         auto setter = [myAvatar](float value) { myAvatar->setRealWorldFieldOfView(value); };
@@ -242,6 +242,11 @@ void setupPreferences() {
         preference->setMax(180);
         preference->setStep(1);
         preferences->addPreference(preference);
+    }
+    {
+        auto getter = []()->bool { return qApp->getCameraClippingEnabled(); };
+        auto setter = [](bool value) { qApp->setCameraClippingEnabled(value); };
+        preferences->addPreference(new CheckPreference(VIEW_CATEGORY, "Enable 3rd Person Camera Clipping?", getter, setter));
     }
 
     // Snapshots

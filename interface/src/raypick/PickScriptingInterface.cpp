@@ -21,6 +21,7 @@
 #include "ParabolaPick.h"
 #include "CollisionPick.h"
 
+#include "CameraRootTransformNode.h"
 #include "SpatialParentFinder.h"
 #include "PickTransformNode.h"
 #include "MouseTransformNode.h"
@@ -536,6 +537,9 @@ void PickScriptingInterface::setParentTransform(std::shared_ptr<PickQuery> pick,
             return;
         } else if (joint == "Avatar") {
             pick->parentTransform = std::make_shared<MyAvatarHeadTransformNode>();
+            return;
+        } else if (joint == "CameraRoot") {
+            pick->parentTransform = std::make_shared<CameraRootTransformNode>();
             return;
         } else {
             parentUuid = myAvatar->getSessionUUID();

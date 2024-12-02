@@ -9,11 +9,14 @@
 //
 #include "RenderScriptingInterface.h"
 
+#include <QScreen>
+#include <QtQml>
+
 #include <RenderCommonTask.h>
 #include <ScriptEngineCast.h>
 
 #include "LightingModel.h"
-#include <QScreen>
+#include "Menu.h"
 #include "ScreenName.h"
 
 #include <procedural/Procedural.h>
@@ -338,6 +341,13 @@ void RenderScriptingInterface::forceAntialiasingMode(AntialiasingConfig::Mode mo
 void RenderScriptingInterface::setVerticalFieldOfView(float fieldOfView) {
     if (qApp->getFieldOfView() != fieldOfView) {
         qApp->setFieldOfView(fieldOfView);
+        emit settingsChanged();
+    }
+}
+
+void RenderScriptingInterface::setCameraClippingEnabled(bool enabled) {
+    if (qApp->getCameraClippingEnabled() != enabled) {
+        qApp->setCameraClippingEnabled(enabled);
         emit settingsChanged();
     }
 }
