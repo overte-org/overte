@@ -50,27 +50,24 @@ public slots:
      *     unzipResult signal.
      * @param isZip - Set to true if path has a ".zip" extension,
      *     false if it doesn't (but should still be treated as a zip file).
-     * @param isBlocks - Not used by user scripts. The value is simply passed through to the
-     *     unzipResult signal.
      * @example (Old example from JS, needs to be converted)
      * Select and unzip a file.
-     * File.unzipResult.connect(function (zipFile, unzipFiles, autoAdd, isZip, isBlocks) {
+     * File.unzipResult.connect(function (zipFile, unzipFiles, autoAdd, isZip) {
      *     print("File.unzipResult()");
      *     print("- zipFile: " + zipFile);
      *     print("- unzipFiles(" + unzipFiles.length + "): " + unzipFiles);
      *     print("- autoAdd: " + autoAdd);
      *     print("- isZip: " + isZip);
-     *     print("- isBlocks: " + isBlocks);
      * });
      * 
      * var zipFile = Window.browse("Select a Zip File", "", "*.zip");
      * if (zipFile) {
-     *     File.runUnzip(zipFile, "", false, true, false);
+     *     File.runUnzip(zipFile, "", false, true);
      * } else {
      *     print("Zip file not selected.");
      * }
      */
-    void runUnzip(QString path, QUrl url, bool autoAdd, bool isZip, bool isBlocks);
+    void runUnzip(QString path, QUrl url, bool autoAdd, bool isZip);
 
     /**
      * Creates a new, unique directory for temporary use.
@@ -88,9 +85,8 @@ signals:
      * @param autoAdd - The value that runUnzip was called with.
      * @param isZip - true if runUnzip was called with isZip == true,
      *     unless there is no FBX or OBJ file in the unzipped file(s) in which case the value is false.
-     * @param isBlocks - The value that runUnzip was called with.
      */
-    void unzipResult(QString zipFile, QStringList unzipFile, bool autoAdd, bool isZip, bool isBlocks);
+    void unzipResult(QString zipFile, QStringList unzipFile, bool autoAdd, bool isZip);
 
 private:
     bool isTempDir(QString tempDir);
