@@ -245,10 +245,10 @@ protected:
     void resetResourceStage();
 
     // VKTODO
-    struct OutputStageState {
+    /*struct OutputStageState {
         FramebufferReference _framebuffer{};
         int _drawFBO{ 0 };
-    } _output;
+    } _output;*/
 
     // VKTODO
     struct QueryStageState {
@@ -256,6 +256,11 @@ protected:
     } _queryStage;
 
     void resetQueryStage();
+
+    VkRenderPass _currentRenderPass{ VK_NULL_HANDLE };
+    // Checks if renderpass change is needed and changes it if required
+    void updateRenderPass();
+    void resetRenderPass();
 
     // VKTODO: one instance per each frame
     // Contains objects that are created per frame and need to be deleted after the frame is rendered
@@ -298,6 +303,7 @@ public:
     void downloadFramebuffer(const FramebufferPointer& srcFramebuffer, const Vec4i& region, QImage& destImage) final;
     void setDrawCommandBuffer(VkCommandBuffer commandBuffer);
     size_t getNumInputBuffers() const { return _input._invalidBuffers.size(); }
+    VkDescriptorImageInfo getDefaultTextureDescriptorInfo() { return _defaultTexture.descriptor; };
 
 
     void trash(const VKBuffer& buffer);

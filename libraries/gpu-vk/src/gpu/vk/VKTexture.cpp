@@ -12,6 +12,7 @@
 #include <NumericalConstants.h>
 
 #include "VKBackend.h"
+#include "vk/Allocation.h"
 
 using namespace gpu;
 using namespace gpu::vk;
@@ -146,7 +147,7 @@ VKTexture::VKTexture(const std::weak_ptr<VKBackend>& backend, const Texture& tex
 
 VKTexture::~VKTexture() {
     auto backend = _backend.lock();
-    if (backend && _texture == VK_NULL_HANDLE) {
+    if (backend && _vkImage == VK_NULL_HANDLE) {
         // VKTODO
         // backend->releaseTexture(_id, 0);
     }
@@ -184,7 +185,7 @@ VkImageViewType VKTexture::getVKTextureType(const Texture& texture) {
 }
 
 // From VKS
-void VKAttachmentTexture::createTexture() {
+void VKAttachmentTexture::createTexture(VKBackend &backend) {
     VkImageCreateInfo imageCI = vks::initializers::imageCreateInfo();
     imageCI.imageType = VK_IMAGE_TYPE_2D;
     imageCI.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
@@ -209,15 +210,18 @@ void VKAttachmentTexture::createTexture() {
     auto device = _backend.lock()->getContext().device->logicalDevice;
 
     // Create image for this attachment
-    VK_CHECK_RESULT(vkCreateImage(device, &imageCI, nullptr, &_texture));
+    /*VK_CHECK_RESULT(vkCreateImage(device, &imageCI, nullptr, &_texture));
     VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
     VkMemoryRequirements memReqs;
     vkGetImageMemoryRequirements(device, _texture, &memReqs);
     memAlloc.allocationSize = memReqs.size;
     memAlloc.memoryTypeIndex = _backend.lock()->getContext().device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    // VKTODO: this may need to be changed to VMA
     VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &_vkDeviceMemory));
-    VK_CHECK_RESULT(vkBindImageMemory(device, _texture, _vkDeviceMemory, 0));
+    VK_CHECK_RESULT(vkBindImageMemory(device, _texture, _vkDeviceMemory, 0));*/
+
+    VmaAllocationCreateInfo allocationCI = {};
+    allocationCI.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    vmaCreateImage(vks::Allocation::getAllocator(), &imageCI, &allocationCI, &_vkImage, &_vmaAllocation, nullptr);
 
     /*attachment.subresourceRange = {};
     attachment.subresourceRange.aspectMask = aspectMask;
@@ -234,6 +238,223 @@ void VKAttachmentTexture::createTexture() {
     VK_CHECK_RESULT(vkCreateImageView(device, &imageView, nullptr, &attachment.view));*/
 
 }
+
+void VKStrictResourceTexture::createTexture(VKBackend &backend) {
+    VkImageCreateInfo imageCI = vks::initializers::imageCreateInfo();
+    imageCI.imageType = VK_IMAGE_TYPE_2D;
+    imageCI.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+    imageCI.extent.width = _gpuObject.getWidth();
+    imageCI.extent.height = _gpuObject.getHeight();
+    imageCI.extent.depth = 1;
+    imageCI.arrayLayers = _gpuObject.isArray() ? _gpuObject.getNumSlices() : 1;
+    imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCI.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+    //auto device = _backend.lock()->getContext().device->logicalDevice;
+
+    // Create image for this attachment
+    /*VK_CHECK_RESULT(vkCreateImage(device, &imageCI, nullptr, &_texture));
+    VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
+    VkMemoryRequirements memReqs;
+    vkGetImageMemoryRequirements(device, _texture, &memReqs);
+    memAlloc.allocationSize = memReqs.size;
+    memAlloc.memoryTypeIndex = _backend.lock()->getContext().device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &_vkDeviceMemory));
+    VK_CHECK_RESULT(vkBindImageMemory(device, _texture, _vkDeviceMemory, 0));*/
+    // We need to lock mip data here so that it doesn't change or get deleted before transfer
+
+    _transferData.mipLevels = _gpuObject.getNumMips();
+    _transferData.width = _gpuObject.getWidth();
+    _transferData.height = _gpuObject.getHeight();
+
+    _transferData.buffer_size = 0;
+
+    for (uint16_t sourceMip = 0; sourceMip < _transferData.mipLevels; ++sourceMip) {
+        if (!_gpuObject.isStoredMipFaceAvailable(sourceMip)) {
+            continue;
+        }
+        // VKTODO: iterate through faces?
+        auto dim = _gpuObject.evalMipDimensions(sourceMip);
+        auto mipData = _gpuObject.accessStoredMipFace(sourceMip, 0); // VKTODO: only one face for now
+        auto mipSize = _gpuObject.getStoredMipFaceSize(sourceMip, 0);
+        if (mipData) {
+            TransferData::Mip mip {};
+            mip.offset = _transferData.buffer_size;
+            mip.size = mipSize;
+            mip.data = mipData;
+            mip.width = dim.x;
+            mip.height = dim.y;
+            _transferData.buffer_size += mipSize;
+            _transferData.mips.push_back(mip);
+            // VKTODO auto texelFormat = evalTexelFormatInternal(_gpuObject.getStoredMipFormat());
+            //return copyMipFaceLinesFromTexture(targetMip, face, dim, 0, texelFormat.internalFormat, texelFormat.format, texelFormat.type, mipSize, mipData->readData());
+        } else {
+            qCDebug(gpu_vk_logging) << "Missing mipData level=" << sourceMip << " face=" << 0/*(int)face*/ << " for texture " << _gpuObject.source().c_str();
+        }
+    }
+
+    imageCI.mipLevels = _transferData.mips.size();
+
+    VmaAllocationCreateInfo allocationCI = {};
+    allocationCI.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    qDebug() << "storedSize: " << _gpuObject.getStoredSize();
+    VK_CHECK_RESULT(vmaCreateImage(vks::Allocation::getAllocator(), &imageCI, &allocationCI, &_vkImage, &_vmaAllocation, nullptr));
+}
+
+void VKStrictResourceTexture::transfer(VKBackend &backend) {
+    VkMemoryAllocateInfo memAllocInfo = vks::initializers::memoryAllocateInfo();
+    VkMemoryRequirements memReqs;
+    auto device = backend.getContext().device;
+
+    // From VKS
+    // Use a separate command buffer for texture loading
+    VkCommandBuffer copyCmd = device->createCommandBuffer(device->transferCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
+    // Create a host-visible staging buffer that contains the raw image data
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingMemory;
+
+    VkBufferCreateInfo bufferCreateInfo = vks::initializers::bufferCreateInfo();
+    // This buffer is used as a transfer source for the buffer copy
+    bufferCreateInfo.size = _transferData.buffer_size;
+    bufferCreateInfo.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+    bufferCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VK_CHECK_RESULT(vkCreateBuffer(device->logicalDevice, &bufferCreateInfo, nullptr, &stagingBuffer));
+
+    // Get memory requirements for the staging buffer (alignment, memory type bits)
+    vkGetBufferMemoryRequirements(device->logicalDevice, stagingBuffer, &memReqs);
+
+    memAllocInfo.allocationSize = memReqs.size;
+    // Get memory type index for a host visible buffer
+    memAllocInfo.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    VK_CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &stagingMemory));
+    VK_CHECK_RESULT(vkBindBufferMemory(device->logicalDevice, stagingBuffer, stagingMemory, 0));
+
+    // Copy texture data into staging buffer
+    uint8_t *data;
+    VK_CHECK_RESULT(vkMapMemory(device->logicalDevice, stagingMemory, 0, memReqs.size, 0, (void **)&data));
+    for (auto &mip : _transferData.mips) {
+        memcpy(data + mip.offset, mip.data->data(), mip.data->size());
+    }
+    vkUnmapMemory(device->logicalDevice, stagingMemory);
+
+    std::vector<VkBufferImageCopy> bufferCopyRegions;
+
+    for (size_t mipLevel = 0; mipLevel < _transferData.mips.size(); mipLevel++) {
+        VkBufferImageCopy bufferCopyRegion = {};
+        bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        bufferCopyRegion.imageSubresource.mipLevel = mipLevel;
+        bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
+        bufferCopyRegion.imageSubresource.layerCount = 1;
+        bufferCopyRegion.imageExtent.width = _transferData.mips[mipLevel].width;
+        bufferCopyRegion.imageExtent.height = _transferData.mips[mipLevel].height;
+        bufferCopyRegion.imageExtent.depth = 1;
+        bufferCopyRegion.bufferOffset = _transferData.mips[mipLevel].offset;
+        bufferCopyRegions.push_back(bufferCopyRegion);
+    }
+
+    // Create optimal tiled target image
+    VkImageCreateInfo imageCreateInfo = vks::initializers::imageCreateInfo();
+    imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+    imageCreateInfo.mipLevels = _transferData.mips.size();
+    imageCreateInfo.arrayLayers = 1;
+    imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCreateInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageCreateInfo.extent = { _transferData.width, _transferData.height, 1 };
+    imageCreateInfo.usage = VK_IMAGE_USAGE_SAMPLED_BIT;
+    // Ensure that the TRANSFER_DST bit is set for staging
+    if (!(imageCreateInfo.usage & VK_IMAGE_USAGE_TRANSFER_DST_BIT))
+    {
+        imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    }
+
+    /*VK_CHECK_RESULT(vkCreateImage(device->logicalDevice, &imageCreateInfo, nullptr, &_vkImage));
+
+    vkGetImageMemoryRequirements(device->logicalDevice, _vkImage, &memReqs);
+
+    memAllocInfo.allocationSize = memReqs.size;
+
+    // VKTODO: Switch to VMA
+    memAllocInfo.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VK_CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &deviceMemory));
+    VK_CHECK_RESULT(vkBindImageMemory(device->logicalDevice, _vkImage, deviceMemory, 0));*/
+
+    VkImageSubresourceRange subresourceRange = {};
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = _transferData.mips.size();
+    subresourceRange.layerCount = 1;
+
+    // Image barrier for optimal image (target)
+    // Optimal image will be used as destination for the copy
+    vks::tools::setImageLayout(
+        copyCmd,
+        _vkImage,
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        subresourceRange);
+
+    // Copy mip levels from staging buffer
+    vkCmdCopyBufferToImage(
+        copyCmd,
+        stagingBuffer,
+        _vkImage,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        bufferCopyRegions.size(),
+        bufferCopyRegions.data()
+    );
+
+    // Change texture image layout to shader read after all mip levels have been copied
+    _vkImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    vks::tools::setImageLayout(
+        copyCmd,
+        _vkImage,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        _vkImageLayout,
+        subresourceRange);
+
+    device->flushCommandBuffer(copyCmd, backend.getContext().transferQueue, device->transferCommandPool);
+
+    // Clean up staging resources
+    vkDestroyBuffer(device->logicalDevice, stagingBuffer, nullptr);
+    vkFreeMemory(device->logicalDevice, stagingMemory, nullptr);
+}
+
+void VKStrictResourceTexture::postTransfer(VKBackend &backend) {
+    auto device = backend.getContext().device;
+    // Create sampler
+    VkSamplerCreateInfo samplerCreateInfo = {};
+    samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerCreateInfo.magFilter = VK_FILTER_LINEAR; // VKTODO
+    samplerCreateInfo.minFilter = VK_FILTER_LINEAR; // VKTODO
+    samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.mipLodBias = 0.0f;
+    samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
+    samplerCreateInfo.minLod = 0.0f;
+    samplerCreateInfo.maxLod = 0.0f;
+    samplerCreateInfo.maxAnisotropy = 1.0f;
+    VK_CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &_vkSampler));
+
+    // Create image view
+    VkImageViewCreateInfo viewCreateInfo = {};
+    viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewCreateInfo.pNext = nullptr;
+    viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+    viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    viewCreateInfo.subresourceRange.levelCount = 1;
+    viewCreateInfo.image = _vkImage;
+    VK_CHECK_RESULT(vkCreateImageView(device->logicalDevice, &viewCreateInfo, nullptr, &_vkImageView));
+};
 
 /*Size VKTexture::copyMipFaceFromTexture(uint16_t sourceMip, uint16_t targetMip, uint8_t face) const {
     if (!_gpuObject.isStoredMipFaceAvailable(sourceMip)) {
@@ -369,6 +590,14 @@ TransferJob::TransferJob(uint16_t sourceMip, const std::function<void()>& transf
 TransferJob::~TransferJob() {
     Backend::texturePendingGPUTransferMemSize.update(_transferSize, 0);
 }*/
+
+VkDescriptorImageInfo VKStrictResourceTexture::getDescriptorImageInfo() {
+    VkDescriptorImageInfo result {};
+    result.sampler = _vkSampler;
+    result.imageLayout = _vkImageLayout;
+    result.imageView = _vkImageView;
+    return result;
+}
 
 #if 0
 #include "VKTexture.h"

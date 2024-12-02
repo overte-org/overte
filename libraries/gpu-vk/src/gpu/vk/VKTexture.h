@@ -25,7 +25,7 @@ public:
     //static void initTextureTransferHelper();
     //static std::shared_ptr<VKTextureTransferHelper> _textureTransferHelper;
 
-    template <typename VKTextureType>
+    /*template <typename VKTextureType>
     static VKTextureType* sync(VKBackend& backend, const TexturePointer& texturePointer, bool needTransfer) {
         const Texture& texture = *texturePointer;
         if (!texture.isDefined()) {
@@ -42,9 +42,9 @@ public:
             // This automatically any previous texture
             object = new VKTextureType(backend.shared_from_this(), texture, needTransfer);
             if (!object->_transferable) {
-                object->createTexture();
+                object->createTexture(backend);
                 object->_contentStamp = texture.getDataStamp();
-                object->postTransfer();
+                object->postTransfer(backend);
             }
         }
 
@@ -55,7 +55,7 @@ public:
 
         // If we just did a transfer, return the object after doing post-transfer work
         if (VKSyncState::Transferred == object->getSyncState()) {
-            object->postTransfer();
+            object->postTransfer(backend);
             return object;
         }
 
@@ -76,12 +76,13 @@ public:
         }
 
         return object;
-    }
+    }*/
 
-    template <typename VKTextureType> 
-    static VkImage getHandle(VKBackend& backend, const TexturePointer& texture, bool shouldSync) {
+    /*template <typename VKTextureType>
+    static VkDescriptorImageInfo getDescriptorImageInfoFromTexture(VKBackend& backend, const TexturePointer& texture, bool shouldSync) {
         if (!texture) {
-            return VK_NULL_HANDLE;
+            Q_ASSERT(false);
+            return backend.getDefaultTextureDescriptorInfo();
         }
         VKTextureType* object { nullptr };
         if (shouldSync) {
@@ -90,23 +91,27 @@ public:
             object = Backend::getGPUObject<VKTextureType>(*texture);
         }
         if (!object) {
-            return VK_NULL_HANDLE;
+            Q_ASSERT(false);
+            return backend.getDefaultTextureDescriptorInfo();
         }
 
-        VkImage result = object->_id;
+        VkDescriptorImageInfo result {};
+        //= object->_;
 
+        // VKTODO
         // Don't return textures that are in transfer state
-        if (shouldSync) {
+        /*if (shouldSync) {
             if ((object->getSyncState() != VKSyncState::Idle) ||
                 // Don't return transferable textures that have never completed transfer
                 (!object->_transferable || 0 != object->_transferCount)) {
                 // Will be either 0 or the original texture being downsampled.
+                Q_ASSERT(false);
                 result = object->_downsampleSource._texture;
             }
-        }
+        }*
         
-        return result;
-    }
+        return object->getDescriptorImageInfo();
+    }*/
 
     // Used by derived classes and helpers to ensure the actual VK object exceeds the lifetime of `this`
     /*VkImage takeOwnership() {
@@ -117,7 +122,7 @@ public:
 
     virtual ~VKTexture();
 
-    VkImage _texture { VK_NULL_HANDLE };
+    VkImage _vkImage{ VK_NULL_HANDLE };
     //const Stamp _storageStamp;
     const VkImageViewType _target;
     //const uint16 _maxMip;
@@ -129,7 +134,7 @@ public:
 
     struct DownsampleSource {
         using Pointer = std::shared_ptr<DownsampleSource>;
-        DownsampleSource(const std::weak_ptr<VKBackend>& backend) : _backend(backend), _size(0), _texture(0), _minMip(0), _maxMip(0) {}
+        DownsampleSource(const std::weak_ptr<VKBackend>& backend) : _backend(backend), _size(0), _texture(VK_NULL_HANDLE), _minMip(0), _maxMip(0) {}
         DownsampleSource(const std::weak_ptr<VKBackend>& backend, VKTexture* originalTexture)  : _backend(backend), _size(0), _texture(0), _minMip(0), _maxMip(0) { Q_ASSERT(false); }; // VKTODO
         ~DownsampleSource() {}; // VKTODO
         void reset() { _texture = VK_NULL_HANDLE; }
@@ -159,7 +164,7 @@ public:
     };
 
     // Execute any post-move operations that must occur only on the main thread
-    virtual void postTransfer() = 0;
+    virtual void postTransfer(VKBackend &backend) = 0;
 
     // VKTODO: can be done later
     bool isOverMaxMemory() const { return false; };
@@ -194,11 +199,27 @@ protected:
     void setSyncState(VKSyncState syncState) { _syncState = syncState; }
     //uint16 usedMipLevels() const { return (_maxMip - _minMip) + 1; }
 
-    virtual void createTexture() = 0;
+    virtual void createTexture(VKBackend &backend) = 0;
+    virtual VkDescriptorImageInfo getDescriptorImageInfo() = 0;
 
     //virtual void allocateStorage() const = 0;
     //virtual void updateSize() const = 0;
-    virtual void transfer() const = 0;
+    struct TransferData {
+        uint16_t mipLevels;
+        uint16_t width;
+        uint16_t height;
+        size_t buffer_size;
+        struct Mip {
+            size_t offset;
+            size_t size;
+            uint32_t width;
+            uint32_t height;
+            std::shared_ptr<const storage::Storage> data;
+        };
+        std::vector<Mip> mips;
+    };
+    TransferData _transferData{};
+    virtual void transfer(VKBackend &backend) = 0;
     //virtual void syncSampler() const = 0;
     // VKTODO
     //virtual void generateMips() const = 0;
@@ -218,7 +239,7 @@ private:
 
 class VKFixedAllocationTexture : public VKTexture {
     using Parent = VKTexture;
-    friend class GL45Backend;
+    friend class VKBackend;
 
 public:
     VKFixedAllocationTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture, bool isTransferable) :
@@ -228,30 +249,61 @@ public:
 protected:
     Size size() const override { return _size; }
 
-    // VKTODO
-    //void allocateStorage() const;
+    //void allocateStorage();
     // VKTODO
     //void syncSampler() const override;
     // VKTODO
     //void updateSize() const override {};
+    VmaAllocation _vmaAllocation;
     const Size _size{ 0 };
 };
 
 class VKAttachmentTexture : public VKFixedAllocationTexture {
-    using Parent = VKFixedAllocationTexture;
     friend class VKBackend;
 
 protected:
     VKAttachmentTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture) :
         VKFixedAllocationTexture(backend, texture, false) {
-            VKAttachmentTexture::createTexture();
+            VKAttachmentTexture::createTexture(*backend.lock());
         };
     virtual ~VKAttachmentTexture() {}; // VKTODO: delete image and image view, release memory
-    void createTexture() override;
-    void transfer() const override {}; // VKTODO
-    void postTransfer() override {}; // VKTODO
-    //VkImage vkImage { VK_NULL_HANDLE };
-    VkDeviceMemory _vkDeviceMemory{ VK_NULL_HANDLE };
+    void createTexture(VKBackend &backend) override;
+    void transfer(VKBackend &backend) override {}; // VKTODO
+    void postTransfer(VKBackend &backend) override {}; // VKTODO
+
+    VkDescriptorImageInfo getDescriptorImageInfo() override {
+        Q_ASSERT(false);
+        return {};
+    }; // VKTODO
+
+    //VkImage _vkImage { VK_NULL_HANDLE };
+    //VkDeviceMemory _vkDeviceMemory{ VK_NULL_HANDLE };
+};
+
+class VKStrictResourceTexture: public VKFixedAllocationTexture {
+    friend class VKBackend;
+
+protected:
+    // VKTODO: how to handle mipmaps?
+    VKStrictResourceTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture) :
+        VKFixedAllocationTexture(backend, texture, true) {
+        VKBackend& vkBackend = *backend.lock();
+        VKStrictResourceTexture::createTexture(vkBackend);
+        // VKTODO: transfer on transfer tread
+        VKStrictResourceTexture::transfer(vkBackend);
+        VKStrictResourceTexture::postTransfer(vkBackend);
+    };
+    ~VKStrictResourceTexture() override {}; // VKTODO: delete image and image view, release memory
+    void createTexture(VKBackend &backend) override;
+    void transfer(VKBackend &backend) override;
+    void postTransfer(VKBackend &backend) override;
+    VkDescriptorImageInfo getDescriptorImageInfo() override;
+    //VkImage _vkImage { VK_NULL_HANDLE };
+    VkImageView _vkImageView { VK_NULL_HANDLE };
+    VkImageLayout _vkImageLayout {}; // VKTODO
+    VkSampler _vkSampler { VK_NULL_HANDLE };
+    // This need to be moved to VKFixedAllocationTexture and allocated in allocateStorage()
+    //VkDeviceMemory _vkDeviceMemory{ VK_NULL_HANDLE };
 };
 
 } }
