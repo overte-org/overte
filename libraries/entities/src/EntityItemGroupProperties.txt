@@ -1,3 +1,19 @@
+# This file defines all of the behavior of group entity properties.  Each line defines one group property.
+# This is how each line is interpreted:
+#   1. A single word with no spaces or commas: delimits a property group, e.g. "grab" or "animation"
+#     Can be followed by type:<camelcase actual type>: some groups have a different c++ file name, e.g. ring is RingGizmo. if this isn't specified, the group name is just capitalized, e.g. pulse to Pulse.
+#   2. A space separated list of the following properties, ending in a comma, defines a single property:
+#     Required values:
+#       enum:<the c++ prop enum (not including the PROP_ prefix)>
+#       prop:<the actual property name>
+#       type:<the property type>
+#       default:<the default value>
+#     Optional values:
+#       min:<the min value>
+#       max:<the max value>
+#     Optional flags:
+#       enum: this is an enum value
+#       urlPermission: this property is a URL which should be guarded by the canViewAssetURLs permission
 grab
 enum:GRAB_GRABBABLE prop:grabbable type:bool default:INITIAL_GRABBABLE,
 enum:GRAB_KINEMATIC prop:grabKinematic type:bool default:INITIAL_KINEMATIC,
