@@ -78,10 +78,14 @@ namespace vks {
         struct PipelineViewportStateCreateInfo : public VkPipelineViewportStateCreateInfo {
             std::vector<VkViewport> viewports;
             std::vector<VkRect2D> scissors;
+            VkPipelineViewportDepthClipControlCreateInfoEXT depthClipControlCI{};
 
             PipelineViewportStateCreateInfo() :
                 VkPipelineViewportStateCreateInfo{} {
                 sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+                depthClipControlCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_DEPTH_CLIP_CONTROL_CREATE_INFO_EXT;
+                depthClipControlCI.negativeOneToOne = true;
+                pNext = &depthClipControlCI;
             }
 
             void update() {

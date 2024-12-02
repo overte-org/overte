@@ -108,11 +108,14 @@ void Context::createInstance() {
         qDebug() << "Found debug marker extension";
     }
 
+    //requireExtensions({ VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME });
+    //requireExtensions({ VK_EXT_DEPTH_CLAMP_ZERO_ONE_EXTENSION_NAME });
+
     // Vulkan instance
     VkApplicationInfo appInfo{};
     appInfo.pApplicationName = "VulkanExamples";
     appInfo.pEngineName = "VulkanExamples";
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    appInfo.apiVersion = VK_API_VERSION_1_1;
 
     std::set<std::string> instanceExtensions = { VK_KHR_SURFACE_EXTENSION_NAME };
 
@@ -409,10 +412,20 @@ void Context::buildDevice() {
     for (const auto& extension : requestedDeviceExtensions) {
         enabledExtensions.push_back(extension.c_str());
     }
+    enabledExtensions.push_back(VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME);
+
+    // Needed for OpenGL depth buffer compatibility
+    VkPhysicalDeviceDepthClipControlFeaturesEXT depthClipControl{};
+    depthClipControl.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DEPTH_CLIP_CONTROL_FEATURES_EXT;
+    depthClipControl.depthClipControl = true;
+
+    void *pNextChain = &depthClipControl;
+
+    enabledFeatures.depthClamp = true;
 
     Q_ASSERT(!device);
     device.reset(new VulkanDevice(physicalDevice));
-    device->createLogicalDevice(enabledFeatures, enabledExtensions, nullptr, true,
+    device->createLogicalDevice(enabledFeatures, enabledExtensions, pNextChain, true,
                                 VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_TRANSFER_BIT | VK_QUEUE_COMPUTE_BIT);
 }
 
