@@ -65,7 +65,7 @@ void gpu::vk::VKFramebuffer::update() {
                         attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat());
                         attachmentCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
                         attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
-                        addAttachment(attachmentCI, vkTexture->_texture);
+                        addAttachment(attachmentCI, vkTexture->_vkImage);
                         //glNamedFramebufferTexture(_id, colorAttachments[unit], gltexture->_texture, 0);
                         // VKTODO: how to do this?
                     /*} else if (vkTexture->_target == GL_TEXTURE_2D_MULTISAMPLE) {
@@ -111,7 +111,7 @@ void gpu::vk::VKFramebuffer::update() {
                 attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat());
                 attachmentCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
                 attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
-                addAttachment(attachmentCI, vkTexture->_texture);
+                addAttachment(attachmentCI, vkTexture->_vkImage);
                 //glNamedFramebufferTexture(_id, attachement, gltexture->_texture, 0);
                 // VKTODO
             /*}
