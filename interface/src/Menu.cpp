@@ -286,18 +286,6 @@ Menu::Menu() {
         }
     });
 
-    // Settings > Graphics...
-    action = addActionToQMenuAndActionHash(settingsMenu, "Graphics...");
-    connect(action, &QAction::triggered, [] {
-        auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
-        auto hmd = DependencyManager::get<HMDScriptingInterface>();
-        tablet->pushOntoStack("hifi/dialogs/graphics/GraphicsSettings.qml");
-
-        if (!hmd->getShouldShowTablet()) {
-            hmd->toggleShouldShowTablet();
-        }
-    });
-
     // Settings > Security...
     action = addActionToQMenuAndActionHash(settingsMenu, "Security...");
     connect(action, &QAction::triggered, [] {
