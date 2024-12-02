@@ -58,7 +58,7 @@ LogHandler::LogHandler() {
 #endif
 
 #ifdef HAS_JOURNALD
-    _useJournald = true;
+    _useJournald = false; // VKTODO
 #endif
 
     parseOptions(logOptions, "OVERTE_LOG_OPTIONS");

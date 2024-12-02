@@ -31,6 +31,8 @@
 #include "VKShared.h"
 #include "VKTexture.h"
 
+#define FORCE_STRICT_TEXTURE 1
+
 using namespace gpu;
 using namespace gpu::vk;
 
@@ -411,6 +413,8 @@ struct Cache {
                 VK_CHECK_RESULT(vkCreateRenderPass(context.device->logicalDevice, &renderPassInfo, nullptr, &renderPass));
                 _renderPassMap[key] = renderPass;
                 return renderPass;
+            } else {
+                printf("found");
             }
             return itr->second;
         }
@@ -519,7 +523,8 @@ struct Cache {
             //float ra.depthBiasConstantFactor;
             //float ra.depthBiasClamp;
             //float ra.depthBiasSlopeFactor;
-            ra.depthClampEnable = stateData.flags.depthClampEnable ? VK_TRUE : VK_FALSE;
+            ra.depthClampEnable = VK_TRUE;
+            //ra.depthClampEnable = stateData.flags.depthClampEnable ? VK_TRUE : VK_FALSE; // VKTODO
             ra.frontFace = stateData.flags.frontFaceClockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
             // ra.lineWidth
             ra.polygonMode = (VkPolygonMode)(2 - stateData.fillMode);
@@ -546,7 +551,8 @@ struct Cache {
         // Depth/Stencil
         {
             auto& ds = builder.depthStencilState;
-            ds.depthTestEnable = stateData.depthTest.isEnabled() ? VK_TRUE : VK_FALSE;
+            ds.depthTestEnable = VK_FALSE;
+            //ds.depthTestEnable = stateData.depthTest.isEnabled() ? VK_TRUE : VK_FALSE; //VKTODO
             ds.depthWriteEnable = stateData.depthTest.getWriteMask() != 0 ? VK_TRUE : VK_FALSE;
             ds.depthCompareOp = (VkCompareOp)stateData.depthTest.getFunction();
             ds.front = getStencilOp(stateData.stencilTestFront);
@@ -564,7 +570,12 @@ struct Cache {
             for (const auto& entry : format.getChannels()) {
                 const auto& slot = entry.first;
                 const auto& channel = entry.second;
-                bd.push_back({ slot, (uint32_t)channel._stride, (VkVertexInputRate)(channel._frequency) });
+                VkVertexInputBindingDescription bindingDescription {};
+                bindingDescription.binding = slot;
+                bindingDescription.stride = (uint32_t)channel._stride;
+                qDebug() << "binding " << bindingDescription.binding << "stride" << bindingDescription.stride;
+                bindingDescription.inputRate = (VkVertexInputRate)(channel._frequency);
+                bd.push_back(bindingDescription);
             }
 
             bool colorFound = false;
@@ -730,14 +741,16 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                 // generate pipeline
                 // find unique descriptor targets
                 // do we need to transfer data to the GPU?
-                {
-                    PROFILE_RANGE(gpu_vk_detail, "Transfer");
-                    renderPassTransfer(batch);
-                }
-                {
-                    PROFILE_RANGE(gpu_vk_detail, _stereo._enable ? "Render Stereo" : "Render");
-                    renderPassDraw(batch);
-                }
+            }
+
+            {
+                PROFILE_RANGE(gpu_vk_detail, "Transfer");
+                renderPassTransfer(batch);
+            }
+
+            {
+                PROFILE_RANGE(gpu_vk_detail, _stereo._enable ? "Render Stereo" : "Render");
+                renderPassDraw(batch);
             }
 
             if (renderpassActive) {
@@ -1014,11 +1027,16 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
         if (_resource._textures[i].texture) {
             // VKTODO: move vulkan texture creation to the transfer parts
             // VKTODO: this doesn't work yet
-            //VKTexture * texture = syncGPUObject(*_resource._textures[i]._texture);
+            VKTexture *texture = syncGPUObject(*_resource._textures[i].texture);
             VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = _defaultTexture.view;
-            imageInfo.sampler = _defaultTexture.sampler;
+            if (texture) {
+                imageInfo = texture->getDescriptorImageInfo();
+            } else {
+                imageInfo = _defaultTexture.descriptor;
+            }
+            //imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            //imageInfo.imageView = texture->;
+            //imageInfo.sampler = _defaultTexture.sampler;
 
             VkWriteDescriptorSet descriptorWriteSet{};
             descriptorWriteSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1157,6 +1175,50 @@ void VKBackend::resetQueryStage() {
     _queryStage._rangeQueryDepth = 0;
 }
 
+void VKBackend::updateRenderPass() {
+    auto renderPass = _cache.pipelineState.getRenderPass(_context);
+
+    // Current render pass is already up to date
+    // VKTODO: check if framebuffer has changed and if so update render pass too
+    if (_currentRenderPass == renderPass) {
+        return;
+    }
+
+    // Current render pass needs to be finished before starting new one
+    if (_currentRenderPass) {
+        vkCmdEndRenderPass(_currentCommandBuffer);
+    }
+
+    _currentRenderPass = renderPass;
+
+    auto renderPassBeginInfo = vks::initializers::renderPassBeginInfo();
+    renderPassBeginInfo.renderPass = renderPass;
+    Q_ASSERT(_cache.pipelineState.framebuffer);
+    auto framebuffer = VKFramebuffer::sync(*this, *_cache.pipelineState.framebuffer);
+    Q_ASSERT(framebuffer);
+    renderPassBeginInfo.framebuffer = framebuffer->vkFramebuffer;
+    renderPassBeginInfo.clearValueCount = framebuffer->attachments.size();
+    std::vector<VkClearValue> clearValues;
+    clearValues.resize(framebuffer->attachments.size());
+    for (size_t i = 0; i < framebuffer->attachments.size(); i++) {
+        if (framebuffer->attachments[i].isDepthStencil()) {
+            clearValues[i].depthStencil = { 1.0f, 0 };
+        } else {
+            clearValues[i].color = { { 0.2f, 0.5f, 0.1f, 1.0f } };
+        }
+    }
+    renderPassBeginInfo.pClearValues = clearValues.data();
+    renderPassBeginInfo.renderArea = VkRect2D{VkOffset2D {_transform._viewport.x, _transform._viewport.y}, VkExtent2D {(uint32_t)_transform._viewport.z, (uint32_t)_transform._viewport.w}};
+    vkCmdBeginRenderPass(_currentCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+}
+
+void VKBackend::resetRenderPass() {
+    if (_currentRenderPass) {
+        _currentRenderPass = VK_NULL_HANDLE;
+        vkCmdEndRenderPass(_currentCommandBuffer);
+    }
+}
+
 void VKBackend::renderPassTransfer(const Batch& batch) {
     const size_t numCommands = batch.getCommands().size();
     const Batch::Commands::value_type* command = batch.getCommands().data();
@@ -1245,27 +1307,7 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             if (_cache.pipelineState.framebuffer->getRenderBuffers()[0]._texture->getTexelFormat().getSemantic() == gpu::R11G11B10) {
                 printf("Test");
             }
-            auto renderPassBeginInfo = vks::initializers::renderPassBeginInfo();
-            renderPassBeginInfo.renderPass = _cache.pipelineState.getRenderPass(_context);
-            Q_ASSERT(_cache.pipelineState.framebuffer);
-            //auto framebuffer = getGPUObject<VKFramebuffer>(*_cache.pipelineState.framebuffer);
-            auto framebuffer = VKFramebuffer::sync(*this, *_cache.pipelineState.framebuffer);
-            Q_ASSERT(framebuffer);
-            renderPassBeginInfo.framebuffer = framebuffer->vkFramebuffer;
-            renderPassBeginInfo.clearValueCount = framebuffer->attachments.size();
-            std::vector<VkClearValue> clearValues;
-            clearValues.resize(framebuffer->attachments.size());
-            for (size_t i = 0; i < framebuffer->attachments.size(); i++) {
-                if (framebuffer->attachments[i].isDepthStencil()) {
-                    clearValues[i].depthStencil = { 1.0f, 0 };
-                } else {
-                    clearValues[i].color = { { 0.2f, 0.5f, 0.1f, 1.0f } };
-                }
-            }
-            renderPassBeginInfo.pClearValues = clearValues.data();
-            renderPassBeginInfo.renderArea = VkRect2D{VkOffset2D {_transform._viewport.x, _transform._viewport.y}, VkExtent2D {(uint32_t)_transform._viewport.z, (uint32_t)_transform._viewport.w}};
-            // VKTODO: this is inefficient
-            vkCmdBeginRenderPass(_currentCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+            updateRenderPass();
             // VKTODO: this is inefficient
             vkCmdBindPipeline(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _cache.getPipeline(_context));
             // VKTODO: this will create too many set viewport commands, but should work
@@ -1331,7 +1373,6 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             }
             CommandCall call = _commandCalls[(*command)];
             (this->*(call))(batch, *offset);
-            vkCmdEndRenderPass(_currentCommandBuffer);
             break;
         }
         default: {
@@ -1344,6 +1385,7 @@ void VKBackend::renderPassDraw(const Batch& batch) {
         command++;
         offset++;
     }
+    resetRenderPass();
 }
 
 void VKBackend::draw(VkPrimitiveTopology mode, uint32 numVertices, uint32 startVertex) {
@@ -1429,9 +1471,21 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
             case TextureUsageType::RESOURCE:
 #endif
             case TextureUsageType::STRICT_RESOURCE:
-                // VKTODO
-                //qCDebug(gpu_vk_logging) << "Strict texture " << texture.source().c_str();
-                //object = new GL45StrictResourceTexture(shared_from_this(), texture);
+
+                if (texture.getStoredSize() == 0){
+                    qDebug(gpu_vk_logging) << "No data on texture";
+                    return nullptr;
+                }
+
+                if (evalTexelFormatInternal(texture.getStoredMipFormat()) != evalTexelFormatInternal(texture.getTexelFormat())) {
+                    qDebug() << "Format mismatch, stored: " << evalTexelFormatInternal(texture.getStoredMipFormat()) << " texel: " << evalTexelFormatInternal(texture.getTexelFormat());
+                    return nullptr;
+                }
+
+                // VKTODO: What is strict resource?
+                qWarning() << "TextureUsageType::STRICT_RESOURCE";
+                qCDebug(gpu_vk_logging) << "Strict texture " << texture.source().c_str();
+                object = new VKStrictResourceTexture(shared_from_this(), texture);
                 break;
 
 #if !FORCE_STRICT_TEXTURE
@@ -1583,6 +1637,8 @@ void VKBackend::updateInput() {
         for (size_t buffer = 0; buffer < _input._buffers.size(); buffer++, vbo++, offset++, stride++) {
             if (_input._invalidBuffers.test(buffer)) {
                 auto vkBuffer = VKBuffer::getBuffer(*this, *_input._buffers[buffer]);
+                qDebug() << "Vertex buffer size: " << _input._buffers[buffer]->getSize();
+                qDebug() << "Vertex buffer usage: " << _input._buffers[buffer]->getUsage();
                 VkDeviceSize vkOffset = _input._bufferOffsets[buffer];
                 vkCmdBindVertexBuffers(_currentCommandBuffer, buffer, 1, &vkBuffer, &vkOffset);
                 //glBindVertexBuffer(buffer, (*vbo), (*offset), (GLsizei)(*stride));
