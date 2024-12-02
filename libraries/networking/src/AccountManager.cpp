@@ -37,7 +37,7 @@
 #include "RSAKeypairGenerator.h"
 #include "SharedUtil.h"
 #include "UserActivityLogger.h"
-
+#include "PathUtils.h"
 
 const bool VERBOSE_HTTP_REQUEST_DEBUGGING = false;
 
@@ -130,16 +130,10 @@ void AccountManager::logout() {
     _settings.loggedOut();
 }
 
-QString accountFileDir() {
-#if defined(Q_OS_ANDROID)
-    return QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/../files";
-#else
-    return QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-#endif
-}
+
 
 QString accountFilePath() {
-    return accountFileDir() + "/AccountInfo.bin";
+    return  PathUtils::getAccountFileDirPath() + "/AccountInfo.bin";
 }
 
 QVariantMap accountMapFromFile(bool& success) {
@@ -184,7 +178,7 @@ void AccountManager::setAuthURL(const QUrl& authURL) {
 
             qCDebug(networking) << "Found directory services API account information for" << qPrintable(_authURL.toString());
         } else {
-            qCWarning(networking) << "Unable to load account file. No existing account settings will be loaded.";
+            qCWarning(networking) << "Unable to load account file" << accountsFile << ". No existing account settings will be loaded.";
         }
 
         if (_isAgent && !_accountInfo.getAccessToken().token.isEmpty() && !_accountInfo.hasProfile()) {
@@ -428,7 +422,7 @@ bool writeAccountMapToFile(const QVariantMap& accountMap) {
     QFile accountFile { accountFilePath() };
 
     // make sure the directory that will hold the account file exists
-    QDir accountFileDirectory { accountFileDir() };
+    QDir accountFileDirectory { PathUtils::getAccountFileDirPath() };
     accountFileDirectory.mkpath(".");
 
     if (accountFile.open(QIODevice::WriteOnly)) {
