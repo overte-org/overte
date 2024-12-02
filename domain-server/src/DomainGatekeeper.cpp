@@ -27,6 +27,7 @@
 #include "DomainServer.h"
 #include "DomainServerNodeData.h"
 #include "WarningsSuppression.h"
+#include "LDAPAccount.h"
 
 using SharedAssignmentPointer = QSharedPointer<Assignment>;
 
@@ -456,6 +457,10 @@ const QString AUTHENTICATION_ENABLE_OAUTH2 = "authentication.enable_oauth2";
 const QString AUTHENTICATION_OAUTH2_URL_PATH = "authentication.oauth2_url_path";
 const QString AUTHENTICATION_WORDPRESS_URL_BASE = "authentication.wordpress_url_base";
 const QString AUTHENTICATION_PLUGIN_CLIENT_ID = "authentication.plugin_client_id";
+const QString LDAP_AUTHENTICATION_ENABLE = "ldap_authentication.enable_ldap";
+const QString LDAP_AUTHENTICATION_URL_BASE = "ldap_authentication.ldap_server";
+const QString LDAP_AUTHENTICATION_BASE_USER_SEARCH = "ldap_authentication.ldap_search_user_base";
+const QString LDAP_AUTHENTICATION_BASE_GROUP_SEARCH = "ldap_authentication.ldap_search_group_base";
 const QString MAXIMUM_USER_CAPACITY = "security.maximum_user_capacity";
 const QString MAXIMUM_USER_CAPACITY_REDIRECT_LOCATION = "security.maximum_user_capacity_redirect_location";
 
@@ -491,7 +496,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
 #ifdef WANT_DEBUG
             qDebug() << "stalling login because we have no username-signature:" << username;
 #endif
-            if (!domainHasLogin() || domainUsername.isEmpty()) {
+            if (!domainHasLogin("") || domainUsername.isEmpty()) {
                 return SharedNodePointer();
             }
         } else if (verifyUserSignature(username, usernameSignature, nodeConnection.senderSockAddr)) {
@@ -504,7 +509,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
 #ifdef WANT_DEBUG
             qDebug() << "stalling login because signature verification failed:" << username;
 #endif
-            if (!domainHasLogin() || domainUsername.isEmpty()) {
+            if (!domainHasLogin("") || domainUsername.isEmpty()) {
                 return SharedNodePointer();
             }
         }
@@ -513,7 +518,9 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     // The domain may have its own users and groups.
     QString verifiedDomainUsername;
     QStringList verifiedDomainUserGroups;
-    if (domainHasLogin() && !domainUsername.isEmpty()) {
+
+    if (domainHasLogin("wordpress") && !domainUsername.isEmpty()) {
+        qDebug() << "Attempting to sign in "<< username << " as " << domainUsername << " via Wordpress";
 
         if (domainAccessToken.isEmpty()) {
             // User is attempting to prove their domain identity.
@@ -544,12 +551,29 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
         }
     }
 
+    // Basic LDAP - Here to preform a basic LDAP connection to the server (if it exists)
+    if (domainHasLogin("ldap") && !domainUsername.isEmpty()) {
+        qDebug() << "Attempting to sign in "<< username << " as " << domainUsername << " via LDAP";
+
+        bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(domainUsername, domainAccessToken);
+        if (isValidLDAPCredentials) {
+            verifiedDomainUsername = domainUsername;
+            requestDomainLDAPUserFinished(verifiedDomainUsername, domainAccessToken);
+        }
+        else {
+            qDebug() << "LDAP Sign in failed";
+            return SharedNodePointer();
+        }
+    }
+
     userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUsername,
                                       nodeConnection.senderSockAddr.getAddress(), nodeConnection.hardwareAddress,
                                       nodeConnection.machineFingerprint);
 
     if (!userPerms.can(NodePermissions::Permission::canConnectToDomain)) {
-        if (domainHasLogin()) {
+        // FIXME: If server has wordpress enabled, LDAP becomes impossible. Wordpress must be disabled (or invalid :P) for LDAP check.
+        // Fine for now, will need to be addressed soon. -AD
+        if (domainHasLogin("wordpress")) {
             QString domainAuthURL;
             auto domainAuthURLVariant = _server->_settingsManager.valueForKeyPath(AUTHENTICATION_OAUTH2_URL_PATH);
             if (domainAuthURLVariant.canConvert<QString>()) {
@@ -564,7 +588,32 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
             sendConnectionDeniedPacket("You lack the required domain permissions to connect to this domain.",
                 nodeConnection.senderSockAddr, DomainHandler::ConnectionRefusedReason::NotAuthorizedDomain,
                     domainAuthURL + "|" + domainAuthClientID);
-        } else {
+        }
+        if (domainHasLogin("ldap")) {
+            QString ldapServerURL;
+            auto ldapServerURLVariant = _server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_URL_BASE);
+            if (ldapServerURLVariant.canConvert<QString>()) {
+                // qDebug() << "TRYING TO SET " << ldapServerURLVariant.toString() << " AS URL!";
+                ldapServerURL = ldapServerURLVariant.toString();
+                LDAPAccount::setLDAPServerURL(ldapServerURLVariant.toString());
+            }
+
+            auto ldapUserBaseVariant = _server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_BASE_USER_SEARCH);
+            if (ldapUserBaseVariant.canConvert<QString>()) {
+                LDAPAccount::setLDAPUserBase(ldapUserBaseVariant.toString());
+            }
+
+            auto ldapGroupBaseVariant = _server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_BASE_GROUP_SEARCH);
+            if (ldapGroupBaseVariant.canConvert<QString>()) {
+                LDAPAccount::setLDAPGroupBase(ldapGroupBaseVariant.toString());
+            }
+            // FIXME: As this uses existing infrastructure for authentication, this format is likely required just to prevent weird issues.
+            // This will need to be addressed soon as well. -AD
+            sendConnectionDeniedPacket("You lack the required domain permissions to connect to this domain.",
+                nodeConnection.senderSockAddr, DomainHandler::ConnectionRefusedReason::NotAuthorizedDomain,
+                    ldapServerURL + "|" + "");
+        }
+        else {
             sendConnectionDeniedPacket("You lack the required Directory Services permissions to connect to this domain.",
                 nodeConnection.senderSockAddr, DomainHandler::ConnectionRefusedReason::NotAuthorizedMetaverse);
         }
@@ -759,7 +808,7 @@ bool DomainGatekeeper::verifyUserSignature(const QString& username,
         }
     } else {
         if (!senderSockAddr.isNull()) {
-            qDebug() << "Insufficient data to decrypt username signature - delaying connection.";
+            qDebug() << "Insufficient data to decrypt username signature for "<< username <<" - delaying connection.";
         }
     }
 
@@ -811,7 +860,6 @@ void DomainGatekeeper::requestUserPublicKey(const QString& username, bool isOpti
     if (NodePermissions::standardNames.contains(username, Qt::CaseInsensitive)) {
         return;
     }
-
     QString lowerUsername = username.toLower();
     if (_inFlightPublicKeyRequests.contains(lowerUsername)) {
         // public-key request for this username is already flight, not rerequesting
@@ -1215,12 +1263,26 @@ Node::LocalID DomainGatekeeper::findOrCreateLocalID(const QUuid& uuid) {
 }
 
 
-bool DomainGatekeeper::domainHasLogin() {
-    // The domain may have its own users and groups in a WordPress site.
-    return _server->_settingsManager.valueForKeyPath(AUTHENTICATION_ENABLE_OAUTH2).toBool()
-        && !_server->_settingsManager.valueForKeyPath(AUTHENTICATION_OAUTH2_URL_PATH).toString().isEmpty()
-        && !_server->_settingsManager.valueForKeyPath(AUTHENTICATION_WORDPRESS_URL_BASE).toString().isEmpty()
-        && !_server->_settingsManager.valueForKeyPath(AUTHENTICATION_PLUGIN_CLIENT_ID).toString().isEmpty();
+bool DomainGatekeeper::domainHasLogin(const QString& type = "") {
+    bool domainHasWordpress = false;
+    bool domainHasLDAP = false;
+
+    if (type == "wordpress" || type == "") {
+        // The domain may have its own users and groups in a WordPress site.
+        domainHasWordpress =  _server->_settingsManager.valueForKeyPath(AUTHENTICATION_ENABLE_OAUTH2).toBool()
+            && !_server->_settingsManager.valueForKeyPath(AUTHENTICATION_OAUTH2_URL_PATH).toString().isEmpty()
+            && !_server->_settingsManager.valueForKeyPath(AUTHENTICATION_WORDPRESS_URL_BASE).toString().isEmpty()
+            && !_server->_settingsManager.valueForKeyPath(AUTHENTICATION_PLUGIN_CLIENT_ID).toString().isEmpty();
+    }
+
+    if (type == "ldap" || type == "") {
+        // The domain may have an LDAP server it can connect to.
+        domainHasLDAP = _server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_ENABLE).toBool()
+            && !_server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_URL_BASE).toString().isEmpty()
+            && !_server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_BASE_USER_SEARCH).toString().isEmpty()
+            && !_server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_BASE_GROUP_SEARCH).toString().isEmpty();
+    }
+    return domainHasWordpress || domainHasLDAP;
 }
 
 void DomainGatekeeper::requestDomainUser(const QString& username, const QString& accessToken, const QString& refreshToken) {
@@ -1305,4 +1367,26 @@ void DomainGatekeeper::requestDomainUserFinished() {
 
         _inFlightDomainUserIdentityRequests.clear();
     }
+}
+void DomainGatekeeper::requestDomainLDAPUserFinished(const QString& username, const QString& password) {
+    // Adds the user as a verified user?
+    _verifiedDomainUserIdentities.insert(username, _inFlightDomainUserIdentityRequests.value(username));
+
+    // No longer waiting for the identity request?
+    _inFlightDomainUserIdentityRequests.remove(username);
+
+    // Add "ldap" as a generic role for ldap authenticated user.
+    QStringList domainUserGroups;
+    domainUserGroups.append("ldap");
+
+    std::vector<std::string> roles = LDAPAccount::getRolesAsStrings(username, password);
+
+    // For each of the roles returned by the rolesAsStrings function, add it as a role for the ldap server.
+    foreach (auto role, roles) {
+        QString qStr = QString(role.c_str());
+        domainUserGroups.append(qStr);
+    }
+
+    _domainGroupMemberships[username] = domainUserGroups;
+    qDebug() << "LDAP user '" << username << "' finished.";
 }
