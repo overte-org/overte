@@ -918,7 +918,7 @@ void VKBackend::do_glUniform1f(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_glUniform2f(const Batch& batch, size_t paramOffset) {
-    qDebug() << "VKTODO: do_glUniform1f not implemented";
+    qDebug() << "VKTODO: do_glUniform2f not implemented";
     /*if (_pipeline._program == 0) {
         // We should call updatePipeline() to bind the program but we are not doing that
         // because these uniform setters are deprecated and we don;t want to create side effect
@@ -934,7 +934,7 @@ void VKBackend::do_glUniform2f(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_glUniform3f(const Batch& batch, size_t paramOffset) {
-    qDebug() << "VKTODO: do_glUniform1f not implemented";
+    qDebug() << "VKTODO: do_glUniform3f not implemented";
     /*if (_pipeline._program == 0) {
         // We should call updatePipeline() to bind the program but we are not doing that
         // because these uniform setters are deprecated and we don;t want to create side effect
@@ -951,7 +951,7 @@ void VKBackend::do_glUniform3f(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_glUniform4f(const Batch& batch, size_t paramOffset) {
-    qDebug() << "VKTODO: do_glUniform1f not implemented";
+    qDebug() << "VKTODO: do_glUniform4f not implemented";
     /*if (_pipeline._program == 0) {
         // We should call updatePipeline() to bind the program but we are not doing that
         // because these uniform setters are deprecated and we don;t want to create side effect
@@ -991,6 +991,9 @@ void VKBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRend
 
 void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
     std::vector<VkWriteDescriptorSet> sets;
+    std::vector<VkDescriptorBufferInfo> bufferInfos;
+    sets.reserve(_uniform._buffers.size());
+    bufferInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
     for (size_t i = 0; i < _uniform._buffers.size(); i++) {
         if (_uniform._buffers[i].buffer || _uniform._buffers[i].vksBuffer) {
             // These cannot be set at the same time
@@ -1006,7 +1009,7 @@ void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
             }
             bufferInfo.offset = _uniform._buffers[i].offset;
             bufferInfo.range = _uniform._buffers[i].size;
-
+            bufferInfos.push_back(bufferInfo);
             VkWriteDescriptorSet descriptorWriteSet{};
             descriptorWriteSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
             descriptorWriteSet.dstSet = target;
@@ -1014,7 +1017,7 @@ void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
             descriptorWriteSet.dstArrayElement = 0;
             descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             descriptorWriteSet.descriptorCount = 1;
-            descriptorWriteSet.pBufferInfo = &bufferInfo;
+            descriptorWriteSet.pBufferInfo = &bufferInfos.back();
             sets.push_back(descriptorWriteSet);
         }
     }
@@ -1023,6 +1026,9 @@ void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
 
 void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
     std::vector<VkWriteDescriptorSet> sets;
+    std::vector<VkDescriptorImageInfo> imageInfos;
+    sets.reserve(_uniform._buffers.size());
+    imageInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
     for (size_t i = 0; i < _resource._textures.size(); i++) {
         if (_resource._textures[i].texture) {
             // VKTODO: move vulkan texture creation to the transfer parts
@@ -1030,13 +1036,20 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
             VKTexture *texture = syncGPUObject(*_resource._textures[i].texture);
             VkDescriptorImageInfo imageInfo{};
             if (texture) {
+                qDebug() << "Writing descriptor " << i << " with texture: " << _resource._textures[i].texture->source();
                 imageInfo = texture->getDescriptorImageInfo();
             } else {
+                if (_resource._textures[i].texture) {
+                    qDebug() << "Cannot sync texture during descriptor " << i << " write: " << _resource._textures[i].texture->source();
+                } else {
+                    qDebug() << "Texture is null during descriptor " << i << " write: " << _resource._textures[i].texture->source();
+                }
                 imageInfo = _defaultTexture.descriptor;
             }
             //imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             //imageInfo.imageView = texture->;
             //imageInfo.sampler = _defaultTexture.sampler;
+            imageInfos.push_back(imageInfo);
 
             VkWriteDescriptorSet descriptorWriteSet{};
             descriptorWriteSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1045,7 +1058,7 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
             descriptorWriteSet.dstArrayElement = 0;
             descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             descriptorWriteSet.descriptorCount = 1;
-            descriptorWriteSet.pImageInfo = &imageInfo;
+            descriptorWriteSet.pImageInfo = &imageInfos.back();
             sets.push_back(descriptorWriteSet);
         }
     }
@@ -1054,6 +1067,9 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
 
 void VKBackend::updateVkDescriptorWriteSetsStorage(VkDescriptorSet target) {
     std::vector<VkWriteDescriptorSet> sets;
+    std::vector<VkDescriptorBufferInfo> bufferInfos;
+    sets.reserve(_uniform._buffers.size());
+    bufferInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
     for (size_t i = 0; i < _resource._buffers.size(); i++) {
         if (_resource._buffers[i].buffer || _resource._buffers[i].vksBuffer) {
             Q_ASSERT(!(_resource._buffers[i].buffer && _resource._buffers[i].vksBuffer));
@@ -1069,6 +1085,7 @@ void VKBackend::updateVkDescriptorWriteSetsStorage(VkDescriptorSet target) {
                 bufferInfo.range = _resource._buffers[i].vksBuffer->size;
             }
             bufferInfo.offset = 0;
+            bufferInfos.push_back(bufferInfo);
 
             VkWriteDescriptorSet descriptorWriteSet{};
             descriptorWriteSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1077,7 +1094,7 @@ void VKBackend::updateVkDescriptorWriteSetsStorage(VkDescriptorSet target) {
             descriptorWriteSet.dstArrayElement = 0;
             descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
             descriptorWriteSet.descriptorCount = 1;
-            descriptorWriteSet.pBufferInfo = &bufferInfo;
+            descriptorWriteSet.pBufferInfo = &bufferInfos.back();
             sets.push_back(descriptorWriteSet);
         }
     }
