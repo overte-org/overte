@@ -216,7 +216,7 @@ protected:
             uint32_t height;
             std::shared_ptr<const storage::Storage> data;
         };
-        std::vector<Mip> mips;
+        std::vector<std::vector<Mip>> mips;
     };
     TransferData _transferData{};
     virtual void transfer(VKBackend &backend) = 0;
@@ -266,16 +266,16 @@ protected:
         VKFixedAllocationTexture(backend, texture, false) {
             VKAttachmentTexture::createTexture(*backend.lock());
         };
-    virtual ~VKAttachmentTexture() {}; // VKTODO: delete image and image view, release memory
+    virtual ~VKAttachmentTexture(); // VKTODO: delete image and image view, release memory
     void createTexture(VKBackend &backend) override;
     void transfer(VKBackend &backend) override {}; // VKTODO
     void postTransfer(VKBackend &backend) override {}; // VKTODO
 
-    VkDescriptorImageInfo getDescriptorImageInfo() override {
-        Q_ASSERT(false);
-        return {};
-    }; // VKTODO
+    VkDescriptorImageInfo getDescriptorImageInfo() override; // VKTODO
 
+    VkImageView _vkImageView { VK_NULL_HANDLE };
+    VkImageLayout _vkImageLayout {}; // VKTODO
+    VkSampler _vkSampler { VK_NULL_HANDLE };
     //VkImage _vkImage { VK_NULL_HANDLE };
     //VkDeviceMemory _vkDeviceMemory{ VK_NULL_HANDLE };
 };
@@ -293,7 +293,7 @@ protected:
         VKStrictResourceTexture::transfer(vkBackend);
         VKStrictResourceTexture::postTransfer(vkBackend);
     };
-    ~VKStrictResourceTexture() override {}; // VKTODO: delete image and image view, release memory
+    ~VKStrictResourceTexture() override; // VKTODO: delete image and image view, release memory
     void createTexture(VKBackend &backend) override;
     void transfer(VKBackend &backend) override;
     void postTransfer(VKBackend &backend) override;
