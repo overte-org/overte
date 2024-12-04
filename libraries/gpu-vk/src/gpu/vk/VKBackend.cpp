@@ -267,6 +267,7 @@ struct Cache {
             return result;
         }
 
+        // VKTODO: This needs to be used instead of getPipeline
         // Returns structure containing pipeline layout and descriptor set layouts
         PipelineLayout getPipelineAndDescriptorLayout(const vks::Context& context) {
             auto itr = _layoutMap.find(pipeline);
@@ -474,6 +475,7 @@ struct Cache {
     }
 
     VkPipeline getPipeline(const vks::Context& context) {
+        //VKTODO: pipelines are not cached here currently
         auto renderpass = pipelineState.getRenderPass(context);
         auto pipelineLayout = pipelineState.getPipelineAndDescriptorLayout(context);
         const gpu::Pipeline& pipeline = *gpu::acquire(pipelineState.pipeline);
@@ -523,8 +525,8 @@ struct Cache {
             //float ra.depthBiasConstantFactor;
             //float ra.depthBiasClamp;
             //float ra.depthBiasSlopeFactor;
-            ra.depthClampEnable = VK_TRUE;
-            //ra.depthClampEnable = stateData.flags.depthClampEnable ? VK_TRUE : VK_FALSE; // VKTODO
+            //ra.depthClampEnable = VK_TRUE;
+            ra.depthClampEnable = stateData.flags.depthClampEnable ? VK_TRUE : VK_FALSE; // VKTODO
             ra.frontFace = stateData.flags.frontFaceClockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
             // ra.lineWidth
             ra.polygonMode = (VkPolygonMode)(2 - stateData.fillMode);
@@ -551,8 +553,8 @@ struct Cache {
         // Depth/Stencil
         {
             auto& ds = builder.depthStencilState;
-            ds.depthTestEnable = VK_FALSE;
-            //ds.depthTestEnable = stateData.depthTest.isEnabled() ? VK_TRUE : VK_FALSE; //VKTODO
+            //ds.depthTestEnable = VK_FALSE;
+            ds.depthTestEnable = stateData.depthTest.isEnabled() ? VK_TRUE : VK_FALSE; //VKTODO
             ds.depthWriteEnable = stateData.depthTest.getWriteMask() != 0 ? VK_TRUE : VK_FALSE;
             ds.depthCompareOp = (VkCompareOp)stateData.depthTest.getFunction();
             ds.front = getStencilOp(stateData.stencilTestFront);
@@ -598,8 +600,9 @@ struct Cache {
             // Explicitly add the draw call info slot if required
             if (vertexReflection.validInput(gpu::slot::attr::DrawCallInfo)) {
                 ad.push_back(
-                    { gpu::slot::attr::DrawCallInfo, gpu::slot::attr::DrawCallInfo, VK_FORMAT_R32G32_SINT, (uint32_t)0 });
-                bd.push_back({ gpu::slot::attr::DrawCallInfo, (uint32_t)sizeof(uint16_t) * 2, VK_VERTEX_INPUT_RATE_VERTEX });
+                    { gpu::slot::attr::DrawCallInfo, gpu::slot::attr::DrawCallInfo, VK_FORMAT_R16G16_SINT, (uint32_t)0 });
+                //bd.push_back({ gpu::slot::attr::DrawCallInfo, (uint32_t)sizeof(uint16_t) * 2, VK_VERTEX_INPUT_RATE_VERTEX });
+                bd.push_back({ gpu::slot::attr::DrawCallInfo, 0, VK_VERTEX_INPUT_RATE_VERTEX });
             }
         }
 
@@ -621,10 +624,16 @@ void VKBackend::executeFrame(const FramePointer& frame) {
     {
         const auto& commandBuffer = _currentCommandBuffer;
         for (const auto& batchPtr : frame->batches) {
-            if (batch_count == 6) {//12
+            /*if (batch_count == 6) {//12
                 return;
-            }
+            }*/
             const auto& batch = *batchPtr;
+            if (batch.getName() == "CompositeHUD") {
+                continue; // VKTODO: crashes frame player currently
+            }
+            if (batch.getName() == "Resample::run") {
+                continue; // VKTODO: no framebuffer commands support yet
+            }
             cmdBeginLabel(commandBuffer, "batch:" + batch.getName(), glm::vec4{ 1, 1, 0, 1 });
             const auto& commands = batch.getCommands();
             const auto& offsets = batch.getCommandOffsets();
@@ -990,12 +999,23 @@ void VKBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRend
 }
 
 void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
+    // VKTODO: can be used for "verification mode" later
+    // VKTODO: it looks like renderer tends to bind buffers that should not be bound at given point? Or maybe I'm missing reset somewhere
+    auto pipeline = gpu::acquire(_cache.pipelineState.pipeline);
+    auto program = pipeline->getProgram();
+    const auto& vertexReflection = program->getShaders()[0]->getReflection();
+    const auto& fragmentReflection = program->getShaders()[1]->getReflection();
+
+    auto bindingMap = Cache::Pipeline::getBindingMap(vertexReflection.uniformBuffers, fragmentReflection.uniformBuffers);
+
     std::vector<VkWriteDescriptorSet> sets;
     std::vector<VkDescriptorBufferInfo> bufferInfos;
     sets.reserve(_uniform._buffers.size());
     bufferInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
     for (size_t i = 0; i < _uniform._buffers.size(); i++) {
-        if (_uniform._buffers[i].buffer || _uniform._buffers[i].vksBuffer) {
+        if ((_uniform._buffers[i].buffer || _uniform._buffers[i].vksBuffer)
+            && (vertexReflection.validUniformBuffer(i) || fragmentReflection.validUniformBuffer(i))) {
+
             // These cannot be set at the same time
             Q_ASSERT(!(_uniform._buffers[i].buffer && _uniform._buffers[i].vksBuffer));
             // VKTODO: move vulkan buffer creation to the transfer parts and aggregate several buffers together maybe?
@@ -1025,24 +1045,36 @@ void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
 }
 
 void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
+    // VKTODO: renderer leaves unbound texture slots, and that's not allowed on Vulkan
+    // VKTODO: can be used for "verification mode" later
+    // VKTODO: it looks like renderer tends to bind buffers that should not be bound at given point? Or maybe I'm missing reset somewhere
+    auto pipeline = gpu::acquire(_cache.pipelineState.pipeline);
+    auto program = pipeline->getProgram();
+    const auto& vertexReflection = program->getShaders()[0]->getReflection();
+    const auto& fragmentReflection = program->getShaders()[1]->getReflection();
+
+    auto bindingMap = Cache::Pipeline::getBindingMap(vertexReflection.textures, fragmentReflection.textures);
+
     std::vector<VkWriteDescriptorSet> sets;
     std::vector<VkDescriptorImageInfo> imageInfos;
     sets.reserve(_uniform._buffers.size());
     imageInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
     for (size_t i = 0; i < _resource._textures.size(); i++) {
-        if (_resource._textures[i].texture) {
+        if (_resource._textures[i].texture && (vertexReflection.validTexture(i) || fragmentReflection.validTexture(i))) {
             // VKTODO: move vulkan texture creation to the transfer parts
             // VKTODO: this doesn't work yet
-            VKTexture *texture = syncGPUObject(*_resource._textures[i].texture);
+            VKTexture* texture = syncGPUObject(*_resource._textures[i].texture);
             VkDescriptorImageInfo imageInfo{};
             if (texture) {
                 qDebug() << "Writing descriptor " << i << " with texture: " << _resource._textures[i].texture->source();
                 imageInfo = texture->getDescriptorImageInfo();
             } else {
                 if (_resource._textures[i].texture) {
-                    qDebug() << "Cannot sync texture during descriptor " << i << " write: " << _resource._textures[i].texture->source();
+                    qDebug() << "Cannot sync texture during descriptor " << i
+                             << " write: " << _resource._textures[i].texture->source();
                 } else {
-                    qDebug() << "Texture is null during descriptor " << i << " write: " << _resource._textures[i].texture->source();
+                    qDebug() << "Texture is null during descriptor " << i
+                             << " write: " << _resource._textures[i].texture->source();
                 }
                 imageInfo = _defaultTexture.descriptor;
             }
@@ -1060,18 +1092,43 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
             descriptorWriteSet.descriptorCount = 1;
             descriptorWriteSet.pImageInfo = &imageInfos.back();
             sets.push_back(descriptorWriteSet);
+        } else {
+            auto binding = bindingMap.find(i);
+            if (binding != bindingMap.end()) {
+                // VKTODO: fill unbound but needed slots with default texture
+                VkWriteDescriptorSet descriptorWriteSet{};
+                descriptorWriteSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+                descriptorWriteSet.dstSet = target;
+                descriptorWriteSet.dstBinding = i;
+                descriptorWriteSet.dstArrayElement = 0;
+                descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                descriptorWriteSet.descriptorCount = 1;
+                descriptorWriteSet.pImageInfo = &_defaultTexture.descriptor;
+                sets.push_back(descriptorWriteSet);
+            }
         }
     }
     vkUpdateDescriptorSets(_context.device->logicalDevice, sets.size(), sets.data(), 0, nullptr);
 }
 
 void VKBackend::updateVkDescriptorWriteSetsStorage(VkDescriptorSet target) {
+    // VKTODO: can be used for "verification mode" later
+    // VKTODO: it looks like renderer tends to bind buffers that should not be bound at given point? Or maybe I'm missing reset somewhere
+    auto pipeline = gpu::acquire(_cache.pipelineState.pipeline);
+    auto program = pipeline->getProgram();
+    const auto& vertexReflection = program->getShaders()[0]->getReflection();
+    const auto& fragmentReflection = program->getShaders()[1]->getReflection();
+
+    auto bindingMap = Cache::Pipeline::getBindingMap(vertexReflection.resourceBuffers, fragmentReflection.resourceBuffers);
+
     std::vector<VkWriteDescriptorSet> sets;
     std::vector<VkDescriptorBufferInfo> bufferInfos;
     sets.reserve(_uniform._buffers.size());
     bufferInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
     for (size_t i = 0; i < _resource._buffers.size(); i++) {
-        if (_resource._buffers[i].buffer || _resource._buffers[i].vksBuffer) {
+        if ((_resource._buffers[i].buffer || _resource._buffers[i].vksBuffer)
+            && (vertexReflection.validUniformBuffer(i) || fragmentReflection.validUniformBuffer(i))) {
+
             Q_ASSERT(!(_resource._buffers[i].buffer && _resource._buffers[i].vksBuffer));
             // VKTODO: move vulkan buffer creation to the transfer parts and aggregate several buffers together maybe?
             VkDescriptorBufferInfo bufferInfo{};
@@ -1489,8 +1546,11 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
 #endif
             case TextureUsageType::STRICT_RESOURCE:
 
-                if (texture.getStoredSize() == 0){
+                // Stored size can sometimes be reported as 0 for valid textures.
+                if (texture.getStoredSize() == 0 && texture.getStoredMipFormat() == gpu::Element()){
                     qDebug(gpu_vk_logging) << "No data on texture";
+                    texture.getStoredMipFormat();
+                    texture.getStoredSize();
                     return nullptr;
                 }
 
@@ -1688,16 +1748,16 @@ void VKBackend::createDescriptorPool() {
 }
 
 void VKBackend::initDefaultTexture() {
-    int width = 256;
-    int height = 256;
+    int width = 1;
+    int height = 1;
     std::vector<uint8_t> buffer;
     buffer.resize(width * height * 4);
     for (int x = 0; x < width; x++) {
         for (int y = 0; y < height; y++) {
-            buffer[x + y * width] = x;
-            buffer[x + y * width + 1] = y;
-            buffer[x + y * width + 2] = x + y;
-            buffer[x + y * width + 3] = x - y;
+            buffer[x + y * width] = 0;
+            buffer[x + y * width + 1] = 0;
+            buffer[x + y * width + 2] = 0;
+            buffer[x + y * width + 3] = 255;
         }
     }
     _defaultTexture.fromBuffer(buffer.data(), buffer.size(), VK_FORMAT_R8G8B8A8_SRGB, width, height, _context.device.get(),  _context.transferQueue);
@@ -1729,6 +1789,7 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
         // VKTODO
         // Since Vulkan has no glVertexAttrib equivalent we need to pass a buffer pointer here
         //glVertexAttribI2i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.unused);
+        qDebug() << "drawCallInfo.unused: " << drawCallInfoBuffer[_currentDraw].unused;
         // Draw call info for unnamed calls starts at the beginning of the buffer, with offset dependent on _currentDraw
         VkDeviceSize vkOffset = _currentDraw * sizeof(gpu::Batch::DrawCallInfo);
         vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &_transform._drawCallInfoBuffer->buffer, &vkOffset);
@@ -2325,6 +2386,7 @@ void VKBackend::do_setViewTransform(const Batch& batch, size_t paramOffset) {
 
 void VKBackend::do_setProjectionTransform(const Batch& batch, size_t paramOffset) {
     memcpy(glm::value_ptr(_transform._projection), batch.readData(batch._params[paramOffset]._uint), sizeof(Mat4));
+    _transform._projection = glm::scale(_transform._projection, glm::vec3(1.0f, -1.0f, 1.0f));
     _transform._invalidProj = true;
 }
 
@@ -2474,6 +2536,8 @@ void VKBackend::do_setUniformBuffer(const Batch& batch, size_t paramOffset) {
         //glBindBufferRange(VK_UNIFORM_BUFFER, slot, object->_buffer, rangeStart, rangeSize);
 
         _uniform._buffers[slot].buffer = uniformBuffer.get();
+        _uniform._buffers[slot].offset = rangeStart;
+        _uniform._buffers[slot].size = rangeSize;
     } else {
         releaseResourceTexture(slot);
         return;
