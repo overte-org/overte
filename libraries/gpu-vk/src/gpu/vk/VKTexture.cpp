@@ -239,6 +239,58 @@ void VKAttachmentTexture::createTexture(VKBackend &backend) {
 
 }
 
+VKAttachmentTexture::~VKAttachmentTexture() {
+    auto backend = _backend.lock();
+    auto device = backend->getContext().device->logicalDevice;
+    if (_vkImageView) {
+        vkDestroyImageView(device, _vkImageView, nullptr);
+    }
+    if (_vkSampler) {
+        vkDestroySampler(device, _vkSampler, nullptr);
+    }
+    vmaDestroyImage(vks::Allocation::getAllocator(), _vkImage, _vmaAllocation);
+}
+
+VkDescriptorImageInfo VKAttachmentTexture::getDescriptorImageInfo() {
+    if (_vkSampler == VK_NULL_HANDLE) {
+        auto backend = _backend.lock();
+        auto device = backend->getContext().device;
+        // Create sampler
+        VkSamplerCreateInfo samplerCreateInfo = {};
+        samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+        samplerCreateInfo.magFilter = VK_FILTER_LINEAR;  // VKTODO
+        samplerCreateInfo.minFilter = VK_FILTER_LINEAR;  // VKTODO
+        samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+        samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+        samplerCreateInfo.mipLodBias = 0.0f;
+        samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
+        samplerCreateInfo.minLod = 0.0f;
+        samplerCreateInfo.maxLod = 0.0f;
+        samplerCreateInfo.maxAnisotropy = 1.0f;
+        VK_CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &_vkSampler));
+
+        // Create image view
+        VkImageViewCreateInfo viewCreateInfo = {};
+        viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewCreateInfo.pNext = nullptr;
+        viewCreateInfo.viewType = getVKTextureType(_gpuObject);
+        viewCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+        viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+        viewCreateInfo.subresourceRange.levelCount = 1;
+        viewCreateInfo.image = _vkImage;
+        VK_CHECK_RESULT(vkCreateImageView(device->logicalDevice, &viewCreateInfo, nullptr, &_vkImageView));
+    }
+
+    VkDescriptorImageInfo result {};
+    result.sampler = _vkSampler;
+    result.imageLayout = _vkImageLayout;
+    result.imageView = _vkImageView;
+    return result;
+};
+
+
 void VKStrictResourceTexture::createTexture(VKBackend &backend) {
     VkImageCreateInfo imageCI = vks::initializers::imageCreateInfo();
     imageCI.imageType = VK_IMAGE_TYPE_2D;
@@ -250,6 +302,10 @@ void VKStrictResourceTexture::createTexture(VKBackend &backend) {
     imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
     imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageCI.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (_gpuObject.getType() == Texture::TEX_CUBE) {
+        imageCI.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+        imageCI.arrayLayers = 6;
+    }
 
     //auto device = _backend.lock()->getContext().device->logicalDevice;
 
@@ -274,23 +330,34 @@ void VKStrictResourceTexture::createTexture(VKBackend &backend) {
         if (!_gpuObject.isStoredMipFaceAvailable(sourceMip)) {
             continue;
         }
-        // VKTODO: iterate through faces?
-        auto dim = _gpuObject.evalMipDimensions(sourceMip);
-        auto mipData = _gpuObject.accessStoredMipFace(sourceMip, 0); // VKTODO: only one face for now
-        auto mipSize = _gpuObject.getStoredMipFaceSize(sourceMip, 0);
-        if (mipData) {
-            TransferData::Mip mip {};
-            mip.offset = _transferData.buffer_size;
-            mip.size = mipSize;
-            mip.data = mipData;
-            mip.width = dim.x;
-            mip.height = dim.y;
-            _transferData.buffer_size += mipSize;
-            _transferData.mips.push_back(mip);
-            // VKTODO auto texelFormat = evalTexelFormatInternal(_gpuObject.getStoredMipFormat());
-            //return copyMipFaceLinesFromTexture(targetMip, face, dim, 0, texelFormat.internalFormat, texelFormat.format, texelFormat.type, mipSize, mipData->readData());
-        } else {
-            qCDebug(gpu_vk_logging) << "Missing mipData level=" << sourceMip << " face=" << 0/*(int)face*/ << " for texture " << _gpuObject.source().c_str();
+        _transferData.mips.emplace_back();
+        //VKTODO: error out if needed
+        size_t face_count = 1;
+        if (_gpuObject.getType() == Texture::TEX_CUBE) {
+            Q_ASSERT(_gpuObject.getNumFaces() == 6);
+            face_count = 6;
+        }else{
+            Q_ASSERT(_gpuObject.getNumFaces() == 1);
+        }
+        for (size_t face = 0; face < face_count; face++) {
+            auto dim = _gpuObject.evalMipDimensions(sourceMip);
+            auto mipData = _gpuObject.accessStoredMipFace(sourceMip, face);  // VKTODO: only one face for now
+            auto mipSize = _gpuObject.getStoredMipFaceSize(sourceMip, face);
+            if (mipData) {
+                TransferData::Mip mip{};
+                mip.offset = _transferData.buffer_size;
+                mip.size = mipSize;
+                mip.data = mipData;
+                mip.width = dim.x;
+                mip.height = dim.y;
+                _transferData.buffer_size += mipSize;
+                _transferData.mips.back().push_back(mip);
+                // VKTODO auto texelFormat = evalTexelFormatInternal(_gpuObject.getStoredMipFormat());
+                //return copyMipFaceLinesFromTexture(targetMip, face, dim, 0, texelFormat.internalFormat, texelFormat.format, texelFormat.type, mipSize, mipData->readData());
+            } else {
+                qCDebug(gpu_vk_logging) << "Missing mipData level=" << sourceMip
+                                        << " face=" << 0 /*(int)face*/ << " for texture " << _gpuObject.source().c_str();
+            }
         }
     }
 
@@ -337,23 +404,27 @@ void VKStrictResourceTexture::transfer(VKBackend &backend) {
     uint8_t *data;
     VK_CHECK_RESULT(vkMapMemory(device->logicalDevice, stagingMemory, 0, memReqs.size, 0, (void **)&data));
     for (auto &mip : _transferData.mips) {
-        memcpy(data + mip.offset, mip.data->data(), mip.data->size());
+        for (auto &face : mip) {
+            memcpy(data + face.offset, face.data->data(), face.data->size());
+        }
     }
     vkUnmapMemory(device->logicalDevice, stagingMemory);
 
     std::vector<VkBufferImageCopy> bufferCopyRegions;
 
     for (size_t mipLevel = 0; mipLevel < _transferData.mips.size(); mipLevel++) {
-        VkBufferImageCopy bufferCopyRegion = {};
-        bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        bufferCopyRegion.imageSubresource.mipLevel = mipLevel;
-        bufferCopyRegion.imageSubresource.baseArrayLayer = 0;
-        bufferCopyRegion.imageSubresource.layerCount = 1;
-        bufferCopyRegion.imageExtent.width = _transferData.mips[mipLevel].width;
-        bufferCopyRegion.imageExtent.height = _transferData.mips[mipLevel].height;
-        bufferCopyRegion.imageExtent.depth = 1;
-        bufferCopyRegion.bufferOffset = _transferData.mips[mipLevel].offset;
-        bufferCopyRegions.push_back(bufferCopyRegion);
+        for (size_t face = 0; face < _transferData.mips[mipLevel].size(); face++) {
+            VkBufferImageCopy bufferCopyRegion = {};
+            bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            bufferCopyRegion.imageSubresource.mipLevel = mipLevel;
+            bufferCopyRegion.imageSubresource.baseArrayLayer = face;
+            bufferCopyRegion.imageSubresource.layerCount = 1;
+            bufferCopyRegion.imageExtent.width = _transferData.mips[mipLevel][face].width;
+            bufferCopyRegion.imageExtent.height = _transferData.mips[mipLevel][face].height;
+            bufferCopyRegion.imageExtent.depth = 1;
+            bufferCopyRegion.bufferOffset = _transferData.mips[mipLevel][face].offset;
+            bufferCopyRegions.push_back(bufferCopyRegion);
+        }
     }
 
     // Create optimal tiled target image
@@ -389,7 +460,11 @@ void VKStrictResourceTexture::transfer(VKBackend &backend) {
     subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     subresourceRange.baseMipLevel = 0;
     subresourceRange.levelCount = _transferData.mips.size();
-    subresourceRange.layerCount = 1;
+    if (_gpuObject.getType() == Texture::TEX_CUBE) {
+        subresourceRange.layerCount = 6;
+    }else{
+        subresourceRange.layerCount = 1;
+    }
 
     // Image barrier for optimal image (target)
     // Optimal image will be used as destination for the copy
@@ -448,13 +523,29 @@ void VKStrictResourceTexture::postTransfer(VKBackend &backend) {
     VkImageViewCreateInfo viewCreateInfo = {};
     viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewCreateInfo.pNext = nullptr;
-    viewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewCreateInfo.viewType = getVKTextureType(_gpuObject);
     viewCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
     viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     viewCreateInfo.subresourceRange.levelCount = 1;
+    if (_gpuObject.getType() == Texture::TEX_CUBE) {
+        viewCreateInfo.subresourceRange.layerCount = 6;
+    } else {
+        viewCreateInfo.subresourceRange.layerCount = 1;
+    }
     viewCreateInfo.image = _vkImage;
     VK_CHECK_RESULT(vkCreateImageView(device->logicalDevice, &viewCreateInfo, nullptr, &_vkImageView));
 };
+
+VKStrictResourceTexture::~VKStrictResourceTexture() {
+    auto backend = _backend.lock();
+    auto device = backend->getContext().device->logicalDevice;
+    vkDestroyImageView(device, _vkImageView, nullptr);
+    if (_vkSampler)
+    {
+        vkDestroySampler(device, _vkSampler, nullptr);
+    }
+    vmaDestroyImage(vks::Allocation::getAllocator(), _vkImage, _vmaAllocation);
+}
 
 /*Size VKTexture::copyMipFaceFromTexture(uint16_t sourceMip, uint16_t targetMip, uint8_t face) const {
     if (!_gpuObject.isStoredMipFaceAvailable(sourceMip)) {

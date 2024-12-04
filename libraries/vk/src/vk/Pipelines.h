@@ -112,11 +112,11 @@ namespace vks {
                 VkPipelineDepthStencilStateCreateInfo{} {
                 sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
                 if (depthEnable) {
-                    //depthTestEnable = VK_TRUE; //VKTODO
-                    depthTestEnable = VK_FALSE;
+                    depthTestEnable = VK_TRUE; //VKTODO
+                    //depthTestEnable = VK_FALSE;
                     depthWriteEnable = VK_TRUE;
-                    //depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL; //VKTODO
-                    depthCompareOp = VK_COMPARE_OP_ALWAYS;
+                    depthCompareOp = VK_COMPARE_OP_GREATER_OR_EQUAL; //VKTODO
+                    //depthCompareOp = VK_COMPARE_OP_ALWAYS;
                 }
             }
         };
