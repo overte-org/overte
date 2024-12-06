@@ -19,7 +19,7 @@ public:
     static VKBuffer* sync(VKBackend& backend, const gpu::Buffer& buffer);
     static VkBuffer getBuffer(VKBackend& backend, const gpu::Buffer& buffer);
 
-    ~VKBuffer();
+    ~VKBuffer() override;
 protected:
     VKBuffer(VKBackend& backend, const gpu::Buffer& buffer);
     const Stamp _stamp{ 0 };
