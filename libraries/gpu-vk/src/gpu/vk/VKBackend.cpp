@@ -106,8 +106,12 @@ VKBackend::VKBackend() {
     qCDebug(gpu_vk_logging) << "VK Device Name: " << _context.device->properties.deviceName;
     qCDebug(gpu_vk_logging) << "VK Device Type: " << _context.device->properties.deviceType;
 
+    // Add frame data to frames pool
+    for (int i = 0; i < 3; i++) {
+        _framePool.push_back(std::make_shared<FrameData>(this));
+        _framesToReuse.push_back(_framePool.back());
+    }
     initTransform();
-    createDescriptorPool();
     initDefaultTexture();
 }
 
@@ -117,6 +121,11 @@ VKBackend::~VKBackend() {
     VK_CHECK_RESULT(vkQueueWaitIdle(_context.graphicsQueue));
     VK_CHECK_RESULT(vkQueueWaitIdle(_context.transferQueue) );
     VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
+
+    // Release frames so their destructors can do a cleanup
+    _currentFrame.reset();
+    _framesToReuse.resize(0);
+    _framePool.resize(0);
 
     {
         size_t pipelineCacheDataSize;
@@ -620,6 +629,8 @@ void VKBackend::executeFrame(const FramePointer& frame) {
     // Create descriptor pool
     // VKTODO: delete descriptor pool after it's not needed
     //_frameData._descriptorPool
+    acquireFrameData();
+
     int batch_count = 0;
     {
         const auto& commandBuffer = _currentCommandBuffer;
@@ -771,6 +782,15 @@ void VKBackend::executeFrame(const FramePointer& frame) {
         }
     }
 
+    VK_CHECK_RESULT(vkQueueWaitIdle(_context.graphicsQueue));
+    VK_CHECK_RESULT(vkQueueWaitIdle(_context.transferQueue) );
+    VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
+
+    //auto frameToRecycle = _currentFrame;
+    // Move pointer to current frame to property that will store it while it's being rendered and before it's recycled.
+    _currentlyRenderedFrame = _currentFrame;
+    releaseFrameData();
+
     // loop through commands
 
     //
@@ -784,7 +804,9 @@ void VKBackend::setDrawCommandBuffer(VkCommandBuffer commandBuffer) {
     _currentCommandBuffer = commandBuffer;
 }
 
-void VKBackend::trash(const VKBuffer& buffer) {
+void VKBackend::trash(VKBuffer& buffer) {
+    // VKTODO: thread safety for this and similar calls
+    buffer.destroy();
 }
 
 void VKBackend::TransformStageState::preUpdate(size_t commandIndex, const StereoState& stereo, Vec2u framebufferSize) {
@@ -837,7 +859,7 @@ void VKBackend::TransformStageState::preUpdate(size_t commandIndex, const Stereo
     _invalidView = _invalidProj = _invalidViewport = false;
 }
 
-void VKBackend::TransformStageState::update(size_t commandIndex, const StereoState& stereo, VKBackend::UniformStageState &uniform) const {
+void VKBackend::TransformStageState::update(size_t commandIndex, const StereoState& stereo, VKBackend::UniformStageState &uniform, FrameData &currentFrame) const {
     size_t offset = INVALID_OFFSET;
     while ((_camerasItr != _cameraOffsets.end()) && (commandIndex >= (*_camerasItr).first)) {
         offset = (*_camerasItr).second;
@@ -847,7 +869,7 @@ void VKBackend::TransformStageState::update(size_t commandIndex, const StereoSta
 
     if (offset != INVALID_OFFSET) {
 #ifdef GPU_STEREO_CAMERA_BUFFER
-        bindCurrentCamera(0, uniform);
+        bindCurrentCamera(0, uniform, currentFrame);
 #else
         if (!stereo.isStereo()) {
             bindCurrentCamera(0);
@@ -856,12 +878,13 @@ void VKBackend::TransformStageState::update(size_t commandIndex, const StereoSta
     }
 }
 
-void VKBackend::TransformStageState::bindCurrentCamera(int eye, VKBackend::UniformStageState &uniform) const {
+void VKBackend::TransformStageState::bindCurrentCamera(int eye, VKBackend::UniformStageState &uniform, FrameData &currentFrame) const {
     if (_currentCameraOffset != INVALID_OFFSET) {
         static_assert(slot::buffer::Buffer::CameraTransform >= MAX_NUM_UNIFORM_BUFFERS, "TransformCamera may overlap pipeline uniform buffer slots. Invalidate uniform buffer slot cache for safety (call _uniform._buffers[TRANSFORM_CAMERA_SLOT].reset()).");
         // VKTODO: add convenience function for this?
         auto &buffer = uniform._buffers[slot::buffer::Buffer::CameraTransform];
-        buffer.vksBuffer = _cameraBuffer.get();
+        Q_ASSERT(currentFrame._cameraBuffer);
+        buffer.vksBuffer = currentFrame._cameraBuffer.get();
         buffer.size = sizeof(CameraBufferElement);
         buffer.offset = _currentCameraOffset + eye * _cameraUboSize;
         //glBindBufferRange(GL_UNIFORM_BUFFER, slot::buffer::Buffer::CameraTransform, _cameraBuffer, _currentCameraOffset + eye * _cameraUboSize, sizeof(CameraBufferElement));
@@ -1407,7 +1430,7 @@ void VKBackend::renderPassDraw(const Batch& batch) {
                 // TODO: allocate 3 at once?
                 VkDescriptorSetAllocateInfo allocInfo{};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = _frameData._descriptorPool;
+                allocInfo.descriptorPool = _currentFrame->_descriptorPool;
                 allocInfo.descriptorSetCount = 1;
                 allocInfo.pSetLayouts = &layout.uniformLayout;
                 VkDescriptorSet descriptorSet;
@@ -1421,7 +1444,7 @@ void VKBackend::renderPassDraw(const Batch& batch) {
                 // TODO: allocate 3 at once?
                 VkDescriptorSetAllocateInfo allocInfo{};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = _frameData._descriptorPool;
+                allocInfo.descriptorPool = _currentFrame->_descriptorPool;
                 allocInfo.descriptorSetCount = 1;
                 allocInfo.pSetLayouts = &layout.textureLayout;
                 VkDescriptorSet descriptorSet;
@@ -1435,7 +1458,7 @@ void VKBackend::renderPassDraw(const Batch& batch) {
                 // TODO: allocate 3 at once?
                 VkDescriptorSetAllocateInfo allocInfo{};
                 allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = _frameData._descriptorPool;
+                allocInfo.descriptorPool = _currentFrame->_descriptorPool;
                 allocInfo.descriptorSetCount = 1;
                 allocInfo.pSetLayouts = &layout.storageLayout;
                 VkDescriptorSet descriptorSet;
@@ -1535,6 +1558,7 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
     }
 
     VKTexture* object = Backend::getGPUObject<VKTexture>(texture);
+    // VKTODO: check object->_storageStamp to see if texture is outdated
     if (!object) {
         switch (texture.getUsageType()) {
             case TextureUsageType::RENDERBUFFER:
@@ -1730,7 +1754,7 @@ void VKBackend::updateInput() {
     }
 }
 
-void VKBackend::createDescriptorPool() {
+void VKBackend::FrameData::createDescriptorPool() {
     std::vector<VkDescriptorPoolSize> poolSizes = {
         { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 100000 },
         { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 50000 },
@@ -1744,7 +1768,41 @@ void VKBackend::createDescriptorPool() {
     descriptorPoolCI.poolSizeCount = (uint32_t)poolSizes.size();
     descriptorPoolCI.pPoolSizes = poolSizes.data();
 
-    VK_CHECK_RESULT(vkCreateDescriptorPool(_context.device->logicalDevice, &descriptorPoolCI, nullptr, &_frameData._descriptorPool));
+    VK_CHECK_RESULT(vkCreateDescriptorPool(_backend->_context.device->logicalDevice, &descriptorPoolCI, nullptr, &_descriptorPool));
+}
+
+VKBackend::FrameData::FrameData(VKBackend *backend) : _backend(backend) {
+    createDescriptorPool();
+}
+
+VKBackend::FrameData::~FrameData() {
+    cleanup();
+    vkDestroyDescriptorPool(_backend->_context.device->logicalDevice, _descriptorPool, nullptr);
+    if (_objectBuffer) {
+        _objectBuffer->destroy();
+        _objectBuffer.reset();
+    }
+    if (_cameraBuffer) {
+        _cameraBuffer->destroy();
+        _cameraBuffer.reset();
+    }
+    if (_drawCallInfoBuffer) {
+        _drawCallInfoBuffer->destroy();
+        _drawCallInfoBuffer.reset();
+    }
+}
+
+void VKBackend::FrameData::cleanup() {
+    for (auto renderPass : _renderPasses) {
+        vkDestroyRenderPass(_backend->_context.device->logicalDevice, renderPass, nullptr);
+    }
+    _renderPasses.resize(0);
+
+    uniformDescriptorSets.resize(0);
+    textureDescriptorSets.resize(0);
+    storageDescriptorSets.resize(0);
+    // Should descriptor pool be cleared every frame?
+    vkResetDescriptorPool(_backend->_context.device->logicalDevice, _descriptorPool, 0);
 }
 
 void VKBackend::initDefaultTexture() {
@@ -1763,6 +1821,27 @@ void VKBackend::initDefaultTexture() {
     _defaultTexture.fromBuffer(buffer.data(), buffer.size(), VK_FORMAT_R8G8B8A8_SRGB, width, height, _context.device.get(),  _context.transferQueue);
 }
 
+void VKBackend::acquireFrameData() {
+    Q_ASSERT(!_framesToReuse.empty());
+    _currentFrame = _framesToReuse.front();
+    _framesToReuse.pop_front();
+}
+
+void VKBackend::recycleFrame() {
+    if (_currentlyRenderedFrame) {
+        _currentlyRenderedFrame->cleanup();
+        _framesToReuse.push_back(_currentlyRenderedFrame);
+        _currentlyRenderedFrame.reset();
+    }
+}
+
+void VKBackend::waitForGPU() {
+    VK_CHECK_RESULT(vkQueueWaitIdle(_context.graphicsQueue));
+    VK_CHECK_RESULT(vkQueueWaitIdle(_context.transferQueue));
+    VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
+}
+
+
 void VKBackend::initTransform() {
 
 #ifdef GPU_SSBO_TRANSFORM_OBJECT
@@ -1777,7 +1856,7 @@ void VKBackend::initTransform() {
 
 void VKBackend::updateTransform(const gpu::Batch& batch) {
     // VKTODO
-    _transform.update(_commandIndex, _stereo, _uniform);
+    _transform.update(_commandIndex, _stereo, _uniform, *_currentFrame);
 
     auto& drawCallInfoBuffer = batch.getDrawCallInfoBuffer();
     if (batch._currentNamedCall.empty()) {
@@ -1792,7 +1871,8 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
         qDebug() << "drawCallInfo.unused: " << drawCallInfoBuffer[_currentDraw].unused;
         // Draw call info for unnamed calls starts at the beginning of the buffer, with offset dependent on _currentDraw
         VkDeviceSize vkOffset = _currentDraw * sizeof(gpu::Batch::DrawCallInfo);
-        vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &_transform._drawCallInfoBuffer->buffer, &vkOffset);
+        Q_ASSERT(_currentFrame->_drawCallInfoBuffer);
+        vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &_currentFrame->_drawCallInfoBuffer->buffer, &vkOffset);
     } else {
         if (!_transform._enabledDrawcallInfoBuffer) {
             //glEnableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is enabled
@@ -1810,7 +1890,8 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
         //       This is in contrast to VertexAttrib*Pointer, where a zero signifies tightly-packed elements.
         // VKTODO: _drawCallInfoBuffer is empty currently
         VkDeviceSize vkOffset = _transform._drawCallInfoOffsets[batch._currentNamedCall];
-        vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &_transform._drawCallInfoBuffer->buffer, &vkOffset);
+        Q_ASSERT(_currentFrame->_drawCallInfoBuffer);
+        vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &_currentFrame->_drawCallInfoBuffer->buffer, &vkOffset);
         //glBindVertexBuffer(gpu::Stream::DRAW_CALL_INFO, _transform._drawCallInfoBuffer, (GLintptr)_transform._drawCallInfoOffsets[batch._currentNamedCall], 2 * sizeof(GLushort));
     }
 }
@@ -1854,26 +1935,24 @@ void VKBackend::transferTransformState(const Batch& batch) {
         for (size_t i = 0; i < _transform._cameras.size(); ++i) {
             memcpy(bufferData.data() + (_transform._cameraUboSize * i), &_transform._cameras[i], sizeof(TransformStageState::CameraBufferElement));
         }
-        _transform._cameraBuffer = vks::Buffer::createUniform(bufferData.size());
-        _frameData._buffers.push_back(_transform._cameraBuffer);
-        _transform._cameraBuffer->map();
-        _transform._cameraBuffer->copy(bufferData.size(), bufferData.data());
-        _transform._cameraBuffer->flush(VK_WHOLE_SIZE);
-        _transform._cameraBuffer->unmap();
+        _currentFrame->_cameraBuffer = vks::Buffer::createUniform(bufferData.size());
+        _currentFrame->_cameraBuffer->map();
+        _currentFrame->_cameraBuffer->copy(bufferData.size(), bufferData.data());
+        _currentFrame->_cameraBuffer->flush(VK_WHOLE_SIZE);
+        _currentFrame->_cameraBuffer->unmap();
     }else{
-        _transform._cameraBuffer.reset();
+        _currentFrame->_cameraBuffer.reset();
     }
 
     if (!batch._objects.empty()) {
-        _transform._objectBuffer = vks::Buffer::createStorage(batch._objects.size() * sizeof(Batch::TransformObject));
-        _frameData._buffers.push_back(_transform._objectBuffer);
-        _transform._objectBuffer->map();
-        _transform._objectBuffer->copy(batch._objects.size() * sizeof(Batch::TransformObject), batch._objects.data());
-        _transform._objectBuffer->flush(VK_WHOLE_SIZE);
-        _transform._objectBuffer->unmap();
+        _currentFrame->_objectBuffer = vks::Buffer::createStorage(batch._objects.size() * sizeof(Batch::TransformObject));
+        _currentFrame->_objectBuffer->map();
+        _currentFrame->_objectBuffer->copy(batch._objects.size() * sizeof(Batch::TransformObject), batch._objects.data());
+        _currentFrame->_objectBuffer->flush(VK_WHOLE_SIZE);
+        _currentFrame->_objectBuffer->unmap();
         //glNamedBufferData(_transform._objectBuffer, batch._objects.size() * sizeof(Batch::TransformObject), batch._objects.data(), GL_STREAM_DRAW);
     }else{
-        _transform._objectBuffer.reset();
+        _currentFrame->_objectBuffer.reset();
     }
 
     if (!batch._namedData.empty() || !batch._drawCallInfos.empty()) {
@@ -1895,20 +1974,19 @@ void VKBackend::transferTransformState(const Batch& batch) {
         }
         //_transform._drawCallInfoBuffer = std::make_shared<vks::Buffer>();
         //_frameData._buffers.push_back(_transform._drawCallInfoBuffer);
-        _transform._drawCallInfoBuffer = vks::Buffer::createVertex(bufferData.size());
-        _frameData._buffers.push_back(_transform._drawCallInfoBuffer);
-        _transform._drawCallInfoBuffer->map();
-        _transform._drawCallInfoBuffer->copy(bufferData.size(), bufferData.data());
-        _transform._drawCallInfoBuffer->flush(VK_WHOLE_SIZE);
-        _transform._drawCallInfoBuffer->unmap();
+        _currentFrame->_drawCallInfoBuffer = vks::Buffer::createVertex(bufferData.size());
+        _currentFrame->_drawCallInfoBuffer->map();
+        _currentFrame->_drawCallInfoBuffer->copy(bufferData.size(), bufferData.data());
+        _currentFrame->_drawCallInfoBuffer->flush(VK_WHOLE_SIZE);
+        _currentFrame->_drawCallInfoBuffer->unmap();
         //glNamedBufferData(_transform._drawCallInfoBuffer, bufferData.size(), bufferData.data(), GL_STREAM_DRAW);
     }else{
-        _transform._drawCallInfoBuffer.reset();
+        _currentFrame->_drawCallInfoBuffer.reset();
     }
 
     // VKTODO
-    if (_transform._objectBuffer) {
-        _resource._buffers[slot::storage::ObjectTransforms].vksBuffer = _transform._objectBuffer.get();
+    if (_currentFrame->_objectBuffer) {
+        _resource._buffers[slot::storage::ObjectTransforms].vksBuffer = _currentFrame->_objectBuffer.get();
     }
     //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, slot::storage::ObjectTransforms, _transform._objectBuffer);
 

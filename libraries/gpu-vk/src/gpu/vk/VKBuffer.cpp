@@ -39,8 +39,10 @@ VkBuffer VKBuffer::getBuffer(VKBackend& backend, const gpu::Buffer& buffer) {
     }
 }
 
-VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& gpuBuffer) : VKObject(backend, gpuBuffer) {
+VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& gpuBuffer) : VKObject(backend, gpuBuffer),
+    _stamp(gpuBuffer._renderSysmem.getStamp()) {
 
+    Backend::setGPUObject(gpuBuffer, this);
     // Flags match VkBufferUsageFlagBits - this was in original Vulkan branch
     VkBufferUsageFlags usageFlags{ (VkBufferUsageFlags)gpuBuffer.getUsage() };
     // VKTODO:

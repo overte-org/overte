@@ -228,6 +228,7 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
         //vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
         _gpuContext->executeFrame(frame);
         _renderedFrameCount++;
+        qDebug() << "Frame rendered: " << _renderedFrameCount;
         //vkCmdEndRenderPass(commandBuffer);
     }
 
@@ -281,6 +282,8 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     vkQueueSubmit(_vkcontext.graphicsQueue, 1, &submitInfo, frameFence);
     _swapchain.queuePresent(_vkcontext.graphicsQueue, swapchainIndex, renderComplete);
     //VKTODO _vkcontext.trashCommandBuffers({ commandBuffer });
+    vkBackend->waitForGPU();
+    vkBackend->recycleFrame();
     _vkcontext.emptyDumpster(frameFence);
     _vkcontext.recycle();
     if (frame && !frame->batches.empty()) {
