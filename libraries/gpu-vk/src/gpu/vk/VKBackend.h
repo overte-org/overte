@@ -73,10 +73,12 @@ public:
 class VKBackend : public Backend, public std::enable_shared_from_this<VKBackend> {
     // Context Backend static interface required
     friend class gpu::Context;
+
     static void init();
     static BackendPointer createBackend();
 
 protected:
+    class FrameData;
     // Allows for correction of the camera pose to account for changes
     // between the time when a was recorded and the time(s) when it is
     // executed
@@ -114,9 +116,6 @@ protected:
 
         mutable std::map<std::string, VkDeviceSize> _drawCallInfoOffsets;
 
-        std::shared_ptr<vks::Buffer> _objectBuffer;
-        std::shared_ptr<vks::Buffer> _cameraBuffer;
-        std::shared_ptr<vks::Buffer> _drawCallInfoBuffer;
         //uint32_t _objectBufferTexture{ 0 };
         size_t _cameraUboSize{ 0 };
         bool _viewIsCamera{ false };
@@ -142,8 +141,8 @@ protected:
         mutable size_t _currentCameraOffset{ INVALID_OFFSET };
 
         void preUpdate(size_t commandIndex, const StereoState& stereo, Vec2u framebufferSize);
-        void update(size_t commandIndex, const StereoState& stereo, VKBackend::UniformStageState &uniform) const;
-        void bindCurrentCamera(int stereoSide, VKBackend::UniformStageState &uniform) const;
+        void update(size_t commandIndex, const StereoState& stereo, VKBackend::UniformStageState &uniform, FrameData &currentFrame) const;
+        void bindCurrentCamera(int stereoSide, VKBackend::UniformStageState &uniform, FrameData &currentFrame) const;
     } _transform;
 
     static const int MAX_NUM_ATTRIBUTES = Stream::NUM_INPUT_SLOTS;
@@ -264,15 +263,29 @@ protected:
 
     // VKTODO: one instance per each frame
     // Contains objects that are created per frame and need to be deleted after the frame is rendered
-    struct FrameData {
+    class FrameData {
+    public:
         std::vector<VkDescriptorSet> uniformDescriptorSets;
         std::vector<VkDescriptorSet> textureDescriptorSets;
         std::vector<VkDescriptorSet> storageDescriptorSets;
         VkDescriptorPool _descriptorPool;
         std::vector<std::shared_ptr<vks::Buffer>> _buffers;
         std::vector<VkRenderPass> _renderPasses;
-        void reset() {}; // VKTODO
-    } _frameData;
+
+        std::shared_ptr<vks::Buffer> _objectBuffer;
+        std::shared_ptr<vks::Buffer> _cameraBuffer;
+        std::shared_ptr<vks::Buffer> _drawCallInfoBuffer;
+
+        FrameData(VKBackend *backend);
+        FrameData() = delete;
+        ~FrameData();
+        // Executed after the frame was rendered so that it can be reused
+        void cleanup(); // VKTODO
+    private:
+        // Creates descriptor pool for current frame
+        void createDescriptorPool();
+        VKBackend *_backend;
+    };
 
     void draw(VkPrimitiveTopology mode, uint32 numVertices, uint32 startVertex);
     void renderPassTransfer(const Batch& batch);
@@ -306,7 +319,7 @@ public:
     VkDescriptorImageInfo getDefaultTextureDescriptorInfo() { return _defaultTexture.descriptor; };
 
 
-    void trash(const VKBuffer& buffer);
+    void trash(VKBuffer& buffer);
 
     // Draw Stage
     virtual void do_draw(const Batch& batch, size_t paramOffset) final;
@@ -379,10 +392,21 @@ public:
     virtual void do_popProfileRange(const Batch& batch, size_t paramOffset) final;
 
 protected:
-    // Creates descriptor pool for current frame
-    void createDescriptorPool();
     void initTransform();
     void initDefaultTexture();
+
+    // Gets a frame data object from the pool and sets _currentFrame to point to it.
+    // Needs to be called before frame command buffers creation starts
+    void acquireFrameData();
+    // Called after frame command buffers are generated.
+    // Pointer needs to be kept until rendering finished.
+    void releaseFrameData() { _currentFrame.reset(); };
+public:
+    // Called after frame finishes rendering. Cleans up and puts frame data object back to the pool.
+    void recycleFrame();
+    void waitForGPU();
+protected:
+
     // Logical device, application's view of the physical device (GPU)
     // VkPipeline cache object
     VkPipelineCache _pipelineCache;
@@ -399,6 +423,13 @@ protected:
     bool _inRenderTransferPass{ false };
     // VKTODO: maybe move to _transform?
     Vec4i _currentScissorRect{ 0 };
+    // This allows for one frame to be renderer while commands are generated for next one already
+    std::vector<std::shared_ptr<FrameData>> _framePool;
+    std::deque<std::shared_ptr<FrameData>> _framesToReuse;
+    // Frame for which commands are currently generated
+    std::shared_ptr<FrameData> _currentFrame;
+    // Frame for which command buffer is already generated and it's currently being rendered.
+    std::shared_ptr<FrameData> _currentlyRenderedFrame;
 
     typedef void (VKBackend::*CommandCall)(const Batch&, size_t);
     static std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> _commandCalls;
