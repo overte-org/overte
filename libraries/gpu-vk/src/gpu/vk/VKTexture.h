@@ -123,7 +123,7 @@ public:
     virtual ~VKTexture();
 
     VkImage _vkImage{ VK_NULL_HANDLE };
-    //const Stamp _storageStamp;
+    const Stamp _storageStamp;
     const VkImageViewType _target;
     //const uint16 _maxMip;
     //const uint16 _minMip;
