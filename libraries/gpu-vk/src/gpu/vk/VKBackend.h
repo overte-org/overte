@@ -123,6 +123,8 @@ protected:
         Transform _view;
         CameraCorrection _correction;
         bool _viewCorrectionEnabled{ true };
+        // This is set by frame player to override camera correction setting
+        bool _viewCorrectionEnabledForFramePlayer{ false };
 
         Mat4 _projection;
         Vec4i _viewport{ 0, 0, 1, 1 };
@@ -300,6 +302,8 @@ protected:
     VKTexture* syncGPUObject(const Texture& texture);
     VKQuery* syncGPUObject(const Query& query);
 
+    void blitToFramebuffer(gpu::Texture &input, gpu::Texture &output);
+
 public:
     VKBackend();
     ~VKBackend();
@@ -317,6 +321,8 @@ public:
     void setDrawCommandBuffer(VkCommandBuffer commandBuffer);
     size_t getNumInputBuffers() const { return _input._invalidBuffers.size(); }
     VkDescriptorImageInfo getDefaultTextureDescriptorInfo() { return _defaultTexture.descriptor; };
+    // Used by GPU frame player to move camera around
+    void enableContextViewCorrectionForFramePlayer() { _transform._viewCorrectionEnabledForFramePlayer = true; };
 
 
     void trash(VKBuffer& buffer);
@@ -405,6 +411,8 @@ public:
     // Called after frame finishes rendering. Cleans up and puts frame data object back to the pool.
     void recycleFrame();
     void waitForGPU();
+    // VKTODO: quick hack
+    VKFramebuffer *_outputTexture{ nullptr };
 protected:
 
     // Logical device, application's view of the physical device (GPU)

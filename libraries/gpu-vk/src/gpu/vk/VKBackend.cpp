@@ -381,17 +381,21 @@ struct Cache {
                 for (const auto& format : key) {
                     VkAttachmentDescription attachment{};
                     attachment.format = format;
-                    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                    //attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
                     attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                    //attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
                     attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-                    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    //attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                     attachment.samples = VK_SAMPLE_COUNT_1_BIT;
                     if (isDepthStencilFormat(format)) {
+                        attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                         attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                         depthReference.attachment = (uint32_t)(attachments.size());
                         depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                     } else {
+                        attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                         attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                         VkAttachmentReference reference;
                         reference.attachment = (uint32_t)(attachments.size());
@@ -773,6 +777,10 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                 renderPassDraw(batch);
             }
 
+            if (batch.getName() == "DrawForward::run") {
+                _outputTexture = syncGPUObject(*_cache.pipelineState.framebuffer);
+            }
+
             if (renderpassActive) {
                 cmdEndLabel(commandBuffer);
                 renderpassActive = false;
@@ -821,7 +829,7 @@ void VKBackend::TransformStageState::preUpdate(size_t commandIndex, const Stereo
 
     if (_invalidView) {
         // Apply the correction
-        if (_viewIsCamera && (_viewCorrectionEnabled && _correction.correction != glm::mat4())) {
+        if (_viewIsCamera && ((_viewCorrectionEnabled || _viewCorrectionEnabledForFramePlayer) && _correction.correction != glm::mat4())) {
             // FIXME should I switch to using the camera correction buffer in Transform.slf and leave this out?
             Transform result;
             _view.mult(result, _view, _correction.correctionInverse);
@@ -1011,14 +1019,23 @@ void VKBackend::do_popProfileRange(const Batch& batch, size_t paramOffset) {
 
 void VKBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool reset) {
     // VKTODO
-    /*auto invCorrection = glm::inverse(correction);
+    auto invCorrection = glm::inverse(correction);
     auto invPrevView = glm::inverse(prevRenderView);
     _transform._correction.prevView = (reset ? Mat4() : prevRenderView);
     _transform._correction.prevViewInverse = (reset ? Mat4() : invPrevView);
     _transform._correction.correction = correction;
     _transform._correction.correctionInverse = invCorrection;
-    _pipeline._cameraCorrectionBuffer._buffer->setSubData(0, _transform._correction);
-    _pipeline._cameraCorrectionBuffer._buffer->flush();*/
+    std::vector<uint8_t> bufferData;
+    bufferData.resize(_transform._cameraUboSize * _transform._cameras.size());
+    for (size_t i = 0; i < _transform._cameras.size(); ++i) {
+        memcpy(bufferData.data() + (_transform._cameraUboSize * i), &_transform._cameras[i], sizeof(TransformStageState::CameraBufferElement));
+    }
+    if (_currentFrame && _currentFrame->_cameraBuffer) {
+        _currentFrame->_cameraBuffer->map();
+        _currentFrame->_cameraBuffer->copy(bufferData.size(), bufferData.data());
+        _currentFrame->_cameraBuffer->flush(VK_WHOLE_SIZE);
+        _currentFrame->_cameraBuffer->unmap();
+    }
 }
 
 void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
@@ -1639,6 +1656,55 @@ VKQuery* VKBackend::syncGPUObject(const Query& query) {
     return vk::VKQuery::sync(*this, query);
 }
 
+void VKBackend::blitToFramebuffer(gpu::Texture& input, gpu::Texture& output) {
+    // is vks::tools::insertImageMemoryBarrier needed?
+    VkImageBlit imageBlit{};
+    // Do we ever want to blit multiple layers/mips?
+    imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageBlit.srcSubresource.layerCount = 1;
+    imageBlit.srcSubresource.mipLevel = 0;
+    imageBlit.srcOffsets[1].x = input.getWidth();
+    imageBlit.srcOffsets[1].y = input.getHeight();
+    imageBlit.srcOffsets[1].z = 1;
+
+    imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageBlit.dstSubresource.layerCount = 1;
+    imageBlit.dstSubresource.mipLevel = 0;
+    imageBlit.dstOffsets[1].x = output.getWidth();
+    imageBlit.dstOffsets[1].y = output.getHeight();
+    imageBlit.dstOffsets[1].z = 1;
+
+    VkImageSubresourceRange mipSubRange = {};
+    mipSubRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    mipSubRange.baseMipLevel = 0;
+    mipSubRange.levelCount = 1;
+    mipSubRange.layerCount = 1;
+
+    auto inputObject = syncGPUObject(input);
+    auto outputObject = syncGPUObject(output);
+
+    vks::tools::insertImageMemoryBarrier(
+        _currentCommandBuffer,
+        outputObject->_vkImage,
+        0,
+        VK_ACCESS_TRANSFER_WRITE_BIT,
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        mipSubRange);
+
+    vkCmdBlitImage(
+        _currentCommandBuffer,
+        inputObject->_vkImage,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        outputObject->_vkImage,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &imageBlit,
+        VK_FILTER_LINEAR);
+}
+
 void VKBackend::updateInput() {
     // VKTODO
     bool isStereoNow = isStereo();
@@ -2160,7 +2226,8 @@ void VKBackend::do_setFramebufferSwapChain(const Batch& batch, size_t paramOffse
 
 void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
     // VKTODO: Check if this is needed on Vulkan or just clearing values in render pass info is enough
-    /*if (_stereo._enable && !_pipeline._stateCache.scissorEnable) {
+    ;
+    if (_stereo._enable && !_cache.pipelineState.pipeline->getState()->isScissorEnable()) {
         qWarning("Clear without scissor in stereo mode");
     }
 
@@ -2174,7 +2241,102 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
     int stencil = batch._params[paramOffset + 1]._int;
     int useScissor = batch._params[paramOffset + 0]._int;
 
-    VKuint glmask = 0;
+    auto framebuffer = _cache.pipelineState.framebuffer;
+
+    Cache::Pipeline::RenderpassKey key = _cache.pipelineState.getRenderPassKey(framebuffer);
+    std::vector<VkAttachmentDescription> attachments;
+    std::vector<VkClearValue> clearValues;
+    attachments.reserve(key.size());
+    std::vector<VkAttachmentReference> colorAttachmentReferences;
+    VkAttachmentReference depthReference{};
+    for (const auto& format : key) {
+        VkAttachmentDescription attachment{};
+        attachment.format = format;
+        attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        if (masks & Framebuffer::BUFFER_STENCIL) {
+            attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        } else {
+            attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+        }
+        //attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        if (isDepthStencilFormat(format)) {
+            clearValues.push_back(VkClearValue{.depthStencil =  VkClearDepthStencilValue{ depth, (uint32_t)stencil }});
+            if (masks & Framebuffer::BUFFER_DEPTH) {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+            } else {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+            }
+            if ((masks & Framebuffer::BUFFER_DEPTH) && (masks & Framebuffer::BUFFER_STENCIL)) {
+                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            } else {
+                attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            }
+            attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            depthReference.attachment = (uint32_t)(attachments.size());
+            depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        } else {
+            clearValues.push_back(VkClearValue{.color =  VkClearColorValue{.float32 =  { color.x, color.y, color.z, color.w }}});
+            if (masks & Framebuffer::BUFFER_COLORS) {
+                attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+            } else {
+                attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+            }
+            attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            VkAttachmentReference reference;
+            reference.attachment = (uint32_t)(attachments.size());
+            reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            colorAttachmentReferences.push_back(reference);
+        }
+        attachments.push_back(attachment);
+    }
+
+    std::vector<VkSubpassDescription> subpasses;
+    {
+        VkSubpassDescription subpass{};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        // VKTODO Is that correct?
+        if (depthReference.layout != VK_IMAGE_LAYOUT_UNDEFINED) {
+            subpass.pDepthStencilAttachment = &depthReference;
+        }
+        subpass.colorAttachmentCount = (uint32_t)colorAttachmentReferences.size();
+        subpass.pColorAttachments = colorAttachmentReferences.data();
+        subpasses.push_back(subpass);
+    }
+
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = (uint32_t)attachments.size();
+    renderPassInfo.pAttachments = attachments.data();
+    renderPassInfo.subpassCount = (uint32_t)subpasses.size();
+    renderPassInfo.pSubpasses = subpasses.data();
+
+    /*static const std::array<VkClearValue, 2> clearValuesx{
+        VkClearValue{.color =  VkClearColorValue{.float32 =  { color.x, color.y, color.z, color.w }}},
+        VkClearValue{.depthStencil =  VkClearDepthStencilValue{ depth, (uint32_t)stencil }},
+    };*/
+
+
+    // VKTODO: add render pass to frame and destroy it later
+    VkRenderPass renderPass;
+    VK_CHECK_RESULT(vkCreateRenderPass(_context.device->logicalDevice, &renderPassInfo, nullptr, &renderPass));
+
+    auto rect = VkRect2D{VkOffset2D{0, 0},
+                         VkExtent2D{framebuffer->getWidth(), framebuffer->getHeight()}};
+    VkRenderPassBeginInfo beginInfo = vks::initializers::renderPassBeginInfo();
+    beginInfo.renderPass = renderPass;
+    beginInfo.framebuffer = syncGPUObject(*framebuffer)->vkFramebuffer;
+    beginInfo.renderArea = rect;
+    beginInfo.clearValueCount = (uint32_t)clearValues.size();
+    beginInfo.pClearValues = clearValues.data();
+
+    vkCmdBeginRenderPass(_currentCommandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+    vkCmdEndRenderPass(_currentCommandBuffer);
+    // VKTODO: some sort of barrier is needed?
+
+    /*VKuint glmask = 0;
     if (masks & Framebuffer::BUFFER_STENCIL) {
         glClearStencil(stencil);
         glmask |= VK_STENCIL_BUFFER_BIT;
@@ -2217,24 +2379,26 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
 
         // Force the color mask cache to WRITE_ALL if not the case
         do_setStateColorWriteMask(State::ColorMask::WRITE_ALL);
-    }
+    }*/
 
     // Apply scissor if needed and if not already on
-    bool doEnableScissor = (useScissor && (!_pipeline._stateCache.scissorEnable));
+    // VKTODO: how to do this here?
+    /*bool doEnableScissor = (useScissor && (!_pipeline._stateCache.scissorEnable));
     if (doEnableScissor) {
         glEnable(VK_SCISSOR_TEST);
-    }
+    }*/
 
     // Clear!
-    glClear(glmask);
+    //glClear(glmask);
 
+    // VKTODO: how to do this here?
     // Restore scissor if needed
-    if (doEnableScissor) {
+    /*if (doEnableScissor) {
         glDisable(VK_SCISSOR_TEST);
-    }
+    }*/
 
     // Restore write mask meaning turn back off
-    if (restoreDepthMask) {
+    /*if (restoreDepthMask) {
         glDepthMask(VK_FALSE);
     }
 
