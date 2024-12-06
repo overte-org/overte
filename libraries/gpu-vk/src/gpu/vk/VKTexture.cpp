@@ -137,6 +137,7 @@ const std::vector<GLenum>& VKTexture::getFaceTargets(GLenum target) {
 
 VKTexture::VKTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture, bool isTransferable) :
     VKObject(*backend.lock(), texture),
+    _storageStamp(texture.getStamp()),
     _target(getVKTextureType(texture)),
     _transferable(isTransferable),
     _downsampleSource(backend),
