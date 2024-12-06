@@ -16,6 +16,8 @@
 #include <gl/QOpenGLContextWrapper.h>
 #endif
 
+#include <gpu/vk/VKFramebuffer.h>
+
 #include <dlfcn.h>
 #include "/home/ksuprynowicz/programy/renderdoc_1.35/include/renderdoc_app.h"
 RENDERDOC_API_1_1_2 *rdoc_api = NULL;
@@ -156,10 +158,13 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
 #ifdef USE_GL
     _context.makeCurrent();
 #endif
+    auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(_gpuContext->getBackend());
+
     if (_correction != glm::mat4()) {
         std::unique_lock<std::mutex> lock(_frameLock);
         if (_correction != glm::mat4()) {
             _backend->setCameraCorrection(_correction, _activeFrame->view);
+            vkBackend->enableContextViewCorrectionForFramePlayer();
             //_prevRenderView = _correction * _activeFrame->view;
         }
     }
@@ -220,7 +225,6 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
 #endif
 
     //_gpuContext->enableStereo(true);
-    auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(_gpuContext->getBackend());
     vkBackend->setDrawCommandBuffer(commandBuffer);
 
     if (frame && !frame->batches.empty()) {
@@ -263,6 +267,51 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     cmdBeginLabel(commandBuffer, "renderpass:testClear", glm::vec4{ 0, 1, 1, 1 });
     vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdEndRenderPass(commandBuffer);
+
+    // Blit the image into the swapchain.
+    // is vks::tools::insertImageMemoryBarrier needed?
+    VkImageBlit imageBlit{};
+    imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageBlit.srcSubresource.layerCount = 1;
+    imageBlit.srcSubresource.mipLevel = 0;
+    imageBlit.srcOffsets[1].x = vkBackend->_outputTexture->_gpuObject.getWidth();
+    imageBlit.srcOffsets[1].y = vkBackend->_outputTexture->_gpuObject.getHeight();
+    imageBlit.srcOffsets[1].z = 1;
+
+    imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageBlit.dstSubresource.layerCount = 1;
+    imageBlit.dstSubresource.mipLevel = 0;
+    imageBlit.dstOffsets[1].x = _swapchain.extent.width;
+    imageBlit.dstOffsets[1].y = _swapchain.extent.height;
+    imageBlit.dstOffsets[1].z = 1;
+
+    VkImageSubresourceRange mipSubRange = {};
+    mipSubRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    mipSubRange.baseMipLevel = 0;
+    mipSubRange.levelCount = 1;
+    mipSubRange.layerCount = 1;
+
+    vks::tools::insertImageMemoryBarrier(
+        commandBuffer,
+        vkBackend->_outputTexture->attachments[0].image,
+        0,
+        VK_ACCESS_TRANSFER_WRITE_BIT,
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        mipSubRange);
+
+    vkCmdBlitImage(
+        commandBuffer,
+        vkBackend->_outputTexture->attachments[0].image,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        _swapchain.images[swapchainIndex],
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &imageBlit,
+        VK_FILTER_LINEAR);
+
     cmdEndLabel(commandBuffer);
     VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 
@@ -324,9 +373,9 @@ bool RenderThread::process() {
     }
 
     renderFrame(_activeFrame);
-    if (_renderedFrameCount == 1) {
+    /*if (_renderedFrameCount == 1) {
         return false;
-    }
+    }*/
     return true;
 }
 
