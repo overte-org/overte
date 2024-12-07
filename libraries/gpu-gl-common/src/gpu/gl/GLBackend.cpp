@@ -94,6 +94,11 @@ GLBackend::CommandCall GLBackend::_commandCalls[Batch::NUM_COMMANDS] =
     (&::gpu::gl::GLBackend::do_glUniform2f),
     (&::gpu::gl::GLBackend::do_glUniform3f),
     (&::gpu::gl::GLBackend::do_glUniform4f),
+    (&::gpu::gl::GLBackend::do_glUniform3fv),
+    (&::gpu::gl::GLBackend::do_glUniform4fv),
+    (&::gpu::gl::GLBackend::do_glUniform4iv),
+    (&::gpu::gl::GLBackend::do_glUniformMatrix3fv),
+    (&::gpu::gl::GLBackend::do_glUniformMatrix4fv),
 
     (&::gpu::gl::GLBackend::do_pushProfileRange),
     (&::gpu::gl::GLBackend::do_popProfileRange),
@@ -748,6 +753,88 @@ void GLBackend::do_glUniform4f(const Batch& batch, size_t paramOffset) {
         batch._params[paramOffset + 2]._float,
         batch._params[paramOffset + 1]._float,
         batch._params[paramOffset + 0]._float);
+    (void)CHECK_GL_ERROR();
+}
+
+void GLBackend::do_glUniform3fv(const Batch& batch, size_t paramOffset) {
+    if (_pipeline._program == 0) {
+        // We should call updatePipeline() to bind the program but we are not doing that
+        // because these uniform setters are deprecated and we don;t want to create side effect
+        return;
+    }
+    updatePipeline();
+    GLint location = getRealUniformLocation(batch._params[paramOffset + 2]._int);
+    glUniform3fv(
+        location,
+        batch._params[paramOffset + 1]._uint,
+        (const GLfloat*)batch.readData(batch._params[paramOffset + 0]._uint));
+
+    (void)CHECK_GL_ERROR();
+}
+
+void GLBackend::do_glUniform4fv(const Batch& batch, size_t paramOffset) {
+    if (_pipeline._program == 0) {
+        // We should call updatePipeline() to bind the program but we are not doing that
+        // because these uniform setters are deprecated and we don;t want to create side effect
+        return;
+    }
+    updatePipeline();
+
+    GLint location = getRealUniformLocation(batch._params[paramOffset + 2]._int);
+    GLsizei count = batch._params[paramOffset + 1]._uint;
+    const GLfloat* value = (const GLfloat*)batch.readData(batch._params[paramOffset + 0]._uint);
+    glUniform4fv(location, count, value);
+
+    (void)CHECK_GL_ERROR();
+}
+
+void GLBackend::do_glUniform4iv(const Batch& batch, size_t paramOffset) {
+    if (_pipeline._program == 0) {
+        // We should call updatePipeline() to bind the program but we are not doing that
+        // because these uniform setters are deprecated and we don;t want to create side effect
+        return;
+    }
+    updatePipeline();
+    GLint location = getRealUniformLocation(batch._params[paramOffset + 2]._int);
+    glUniform4iv(
+        location,
+        batch._params[paramOffset + 1]._uint,
+        (const GLint*)batch.readData(batch._params[paramOffset + 0]._uint));
+
+    (void)CHECK_GL_ERROR();
+}
+
+void GLBackend::do_glUniformMatrix3fv(const Batch& batch, size_t paramOffset) {
+    if (_pipeline._program == 0) {
+        // We should call updatePipeline() to bind the program but we are not doing that
+        // because these uniform setters are deprecated and we don;t want to create side effect
+        return;
+    }
+    updatePipeline();
+
+    GLint location = getRealUniformLocation(batch._params[paramOffset + 3]._int);
+    glUniformMatrix3fv(
+        location,
+        batch._params[paramOffset + 2]._uint,
+        batch._params[paramOffset + 1]._uint,
+        (const GLfloat*)batch.readData(batch._params[paramOffset + 0]._uint));
+    (void)CHECK_GL_ERROR();
+}
+
+void GLBackend::do_glUniformMatrix4fv(const Batch& batch, size_t paramOffset) {
+    if (_pipeline._program == 0) {
+        // We should call updatePipeline() to bind the program but we are not doing that
+        // because these uniform setters are deprecated and we don;t want to create side effect
+        return;
+    }
+    updatePipeline();
+
+    GLint location = getRealUniformLocation(batch._params[paramOffset + 3]._int);
+    glUniformMatrix4fv(
+        location,
+        batch._params[paramOffset + 2]._uint,
+        batch._params[paramOffset + 1]._uint,
+        (const GLfloat*)batch.readData(batch._params[paramOffset + 0]._uint));
     (void)CHECK_GL_ERROR();
 }
 

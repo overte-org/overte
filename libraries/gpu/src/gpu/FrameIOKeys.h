@@ -195,6 +195,11 @@ constexpr const char*  COMMAND_NAMES[] = {
     "glUniform2f",
     "glUniform3f",
     "glUniform4f",
+    "glUniform3fv",
+    "glUniform4fv",
+    "glUniform4iv",
+    "glUniformMatrix3fv",
+    "glUniformMatrix4fv",
 
     "pushProfileRange",
     "popProfileRange",

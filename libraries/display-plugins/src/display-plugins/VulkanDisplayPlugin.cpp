@@ -721,7 +721,7 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(getBackend());
         auto vkDevice = vkBackend->getContext().device->logicalDevice;
         Q_ASSERT(vkBackend);
-        vkBackend->setCameraCorrection(correction, _prevRenderView);
+        vkBackend->setCameraCorrection(correction, _prevRenderView, true);
         _prevRenderView = correction * _currentFrame->view;
 
         uint32_t currentImageIndex = UINT32_MAX;
