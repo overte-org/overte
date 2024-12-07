@@ -220,6 +220,7 @@ struct Cache {
         gpu::PipelineReference pipeline{ GPU_REFERENCE_INIT_VALUE };
         gpu::FormatReference format{ GPU_REFERENCE_INIT_VALUE };
         gpu::FramebufferReference framebuffer{ GPU_REFERENCE_INIT_VALUE };
+        gpu::Primitive primitiveTopology;
 
         struct PipelineLayout {
             VkPipelineLayout pipelineLayout;
@@ -453,6 +454,7 @@ struct Cache {
             key += "_" + getRenderpassKeyString(renderpassKey);
             key += "_" + state.getKey();
             key += "_" + format->getKey();
+            key += "_" + hex(primitiveTopology);
             return key;
         }
     } pipelineState;
@@ -504,6 +506,7 @@ struct Cache {
         // Input assembly
         {
             auto& ia = builder.inputAssemblyState;
+            ia.topology = PRIMITIVE_TO_VK[pipelineState.primitiveTopology];
             // VKTODO: this looks unfinished
             // ia.primitiveRestartEnable = ???
             // ia.topology = vk::PrimitiveTopology::eTriangleList; ???
@@ -570,8 +573,11 @@ struct Cache {
             ds.depthTestEnable = stateData.depthTest.isEnabled() ? VK_TRUE : VK_FALSE; //VKTODO
             ds.depthWriteEnable = stateData.depthTest.getWriteMask() != 0 ? VK_TRUE : VK_FALSE;
             ds.depthCompareOp = (VkCompareOp)stateData.depthTest.getFunction();
+            ds.stencilTestEnable = stateData.stencilActivation.enabled;
             ds.front = getStencilOp(stateData.stencilTestFront);
+            ds.front.writeMask = stateData.stencilActivation.frontWriteMask;
             ds.back = getStencilOp(stateData.stencilTestBack);
+            ds.back.writeMask = stateData.stencilActivation.backWriteMask;
         }
 
         // Vertex input
@@ -671,7 +677,8 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                             // resolve layout
                             // resolve pipeline
                             // resolve descriptor set(s)
-                            _cache.getPipeline(_context);
+                            // VKTODO
+                            //_cache.getPipeline(_context);
                             break;
 
                         case Batch::COMMAND_setPipeline: {
@@ -1415,6 +1422,7 @@ void VKBackend::renderPassDraw(const Batch& batch) {
         case Batch::COMMAND_multiDrawIndexedIndirect: {
             // updates for draw calls
             ++_currentDraw;
+            _cache.pipelineState.primitiveTopology = getPrimitiveTopologyFromCommand(*command, batch, *offset);
             updateInput();
             updateTransform(batch);
             updatePipeline();
@@ -2063,6 +2071,33 @@ void VKBackend::transferTransformState(const Batch& batch) {
 
 void VKBackend::downloadFramebuffer(const FramebufferPointer& srcFramebuffer, const Vec4i& region, QImage& destImage) {
     // VKTODO
+}
+
+gpu::Primitive VKBackend::getPrimitiveTopologyFromCommand(Batch::Command command, const gpu::Batch& batch, size_t paramOffset) {
+    Primitive primitiveType{};
+    switch (command) {
+        case Batch::COMMAND_draw:
+            primitiveType = (Primitive)batch._params[paramOffset + 2]._uint;
+            break;
+        case Batch::COMMAND_drawIndexed:
+            primitiveType = (Primitive)batch._params[paramOffset + 2]._uint;
+            break;
+        case Batch::COMMAND_drawInstanced:
+            primitiveType = (Primitive)batch._params[paramOffset + 3]._uint;
+            break;
+        case Batch::COMMAND_drawIndexedInstanced:
+            primitiveType = (Primitive)batch._params[paramOffset + 3]._uint;
+            break;
+        case Batch::COMMAND_multiDrawIndirect:
+            primitiveType = (Primitive)batch._params[paramOffset + 1]._uint;
+            break;
+        case Batch::COMMAND_multiDrawIndexedIndirect:
+            primitiveType = (Primitive)batch._params[paramOffset + 1]._uint;
+            break;
+        default:
+            Q_ASSERT(false);
+    }
+    return primitiveType;
 }
 
 void VKBackend::do_draw(const Batch& batch, size_t paramOffset) {
