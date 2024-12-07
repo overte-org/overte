@@ -364,3 +364,20 @@ bool gpu::vk::isDepthStencilFormat(VkFormat format) {
     }
     return false;
 }
+
+VkColorComponentFlags gpu::vk::colorMaskToVk(const gpu::State::ColorMask &mask) {
+    VkColorComponentFlags flags{0};
+    if (mask & gpu::State::WRITE_RED) {
+        flags |= VK_COLOR_COMPONENT_R_BIT;
+    }
+    if (mask & gpu::State::WRITE_GREEN) {
+        flags |= VK_COLOR_COMPONENT_G_BIT;
+    }
+    if (mask & gpu::State::WRITE_BLUE) {
+        flags |= VK_COLOR_COMPONENT_B_BIT;
+    }
+    if (mask & gpu::State::WRITE_ALPHA) {
+        flags |= VK_COLOR_COMPONENT_A_BIT;
+    }
+    return flags;
+}

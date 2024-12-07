@@ -505,8 +505,8 @@ struct Cache {
 
         // Input assembly
         {
-            auto& ia = builder.inputAssemblyState;
-            ia.topology = PRIMITIVE_TO_VK[pipelineState.primitiveTopology];
+            auto& inputAssembly = builder.inputAssemblyState;
+            inputAssembly.topology = PRIMITIVE_TO_VK[pipelineState.primitiveTopology];
             // VKTODO: this looks unfinished
             // ia.primitiveRestartEnable = ???
             // ia.topology = vk::PrimitiveTopology::eTriangleList; ???
@@ -535,24 +535,34 @@ struct Cache {
 
         // Rasterization state
         {
-            auto& ra = builder.rasterizationState;
-            ra.cullMode = (VkCullModeFlagBits)stateData.cullMode;
+            auto& rasterizationState = builder.rasterizationState;
+            rasterizationState.cullMode = (VkCullModeFlagBits)stateData.cullMode;
             //Bool32 ra.depthBiasEnable;
             //float ra.depthBiasConstantFactor;
             //float ra.depthBiasClamp;
             //float ra.depthBiasSlopeFactor;
             //ra.depthClampEnable = VK_TRUE;
-            ra.depthClampEnable = stateData.flags.depthClampEnable ? VK_TRUE : VK_FALSE; // VKTODO
-            ra.frontFace = stateData.flags.frontFaceClockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
+            rasterizationState.depthClampEnable = stateData.flags.depthClampEnable ? VK_TRUE : VK_FALSE; // VKTODO
+            rasterizationState.frontFace = stateData.flags.frontFaceClockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
             // ra.lineWidth
-            ra.polygonMode = (VkPolygonMode)(2 - stateData.fillMode);
+            rasterizationState.polygonMode = (VkPolygonMode)(2 - stateData.fillMode);
         }
 
         // Color blending
         {
-            auto& cb = builder.colorBlendState;
-            auto& ass = cb.blendAttachmentStates;
+            auto& colorBlendState = builder.colorBlendState;
+            auto& attachmentStates = colorBlendState.blendAttachmentStates;
             Q_ASSERT(pipelineState.framebuffer);
+            auto &blendFunction = stateData.blendFunction;
+            auto &attachmentState = colorBlendState.blendAttachmentStates[0];
+            attachmentState.blendEnable = stateData.blendFunction.isEnabled();
+            attachmentState.srcColorBlendFactor = BLEND_ARGS_TO_VK[blendFunction.getSourceColor()];
+            attachmentState.dstColorBlendFactor = BLEND_ARGS_TO_VK[blendFunction.getDestinationColor()];
+            attachmentState.colorBlendOp = BLEND_OPS_TO_VK[blendFunction.getOperationColor()];
+            attachmentState.srcAlphaBlendFactor = BLEND_ARGS_TO_VK[blendFunction.getSourceAlpha()];
+            attachmentState.dstAlphaBlendFactor = BLEND_ARGS_TO_VK[blendFunction.getDestinationAlpha()];
+            attachmentState.alphaBlendOp = BLEND_OPS_TO_VK[blendFunction.getOperationAlpha()];
+            attachmentState.colorWriteMask = colorMaskToVk(stateData.colorWriteMask);
             auto& rbs = pipelineState.framebuffer->getRenderBuffers();
             uint32_t rbCount = 0;
             for (const auto& rb : rbs) {
@@ -562,7 +572,7 @@ struct Cache {
             }
 
             for (uint32_t i = 1; i < rbCount; ++i) {
-                ass.push_back(ass.back());
+                attachmentStates.push_back(attachmentStates.back());
             }
         }
 
