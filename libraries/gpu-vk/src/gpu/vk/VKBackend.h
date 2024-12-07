@@ -311,7 +311,7 @@ public:
     void syncProgram(const gpu::ShaderPointer& program) override {}
     void syncCache() override {}
     void recycle() const override {}
-    void setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool reset = false) override;
+    void setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool primary, bool reset = false) override;
     uint32_t getTextureID(const TexturePointer&) override { return 0; }
     void executeFrame(const FramePointer& frame) final;
     bool isTextureManagementSparseEnabled() const override;
@@ -348,6 +348,11 @@ public:
     virtual void do_glUniform2f(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform3f(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform4f(const Batch& batch, size_t paramOffset) final;
+    virtual void do_glUniform3fv(const Batch& batch, size_t paramOffset) final;
+    virtual void do_glUniform4fv(const Batch& batch, size_t paramOffset) final;
+    virtual void do_glUniform4iv(const Batch& batch, size_t paramOffset) final;
+    virtual void do_glUniformMatrix3fv(const Batch& batch, size_t paramOffset) final;
+    virtual void do_glUniformMatrix4fv(const Batch& batch, size_t paramOffset) final;
 
     // Transform Stage
     virtual void do_setModelTransform(const Batch& batch, size_t paramOffset) final;
