@@ -327,6 +327,8 @@ public:
 
     void trash(VKBuffer& buffer);
 
+    static gpu::Primitive getPrimitiveTopologyFromCommand(Batch::Command command, const Batch& batch, size_t paramOffset);
+
     // Draw Stage
     virtual void do_draw(const Batch& batch, size_t paramOffset) final;
     virtual void do_drawIndexed(const Batch& batch, size_t paramOffset) final;
