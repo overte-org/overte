@@ -36,6 +36,8 @@ VkFormat evalTexelFormatInternal(const Element& dstFormat);
 
 bool isDepthStencilFormat(VkFormat format);
 
+VkColorComponentFlags colorMaskToVk(const gpu::State::ColorMask &mask);
+
 static const VkBlendOp BLEND_OPS_TO_VK[State::NUM_BLEND_OPS] = {
     VK_BLEND_OP_ADD,
     VK_BLEND_OP_SUBTRACT,
