@@ -257,6 +257,31 @@ public:
     void _glUniform2f(int location, float v0, float v1);
     void _glUniform3f(int location, float v0, float v1, float v2);
     void _glUniform4f(int location, float v0, float v1, float v2, float v3);
+    void _glUniform3fv(int location, int count, const float* value);
+    void _glUniform4fv(int location, int count, const float* value);
+    void _glUniform4iv(int location, int count, const int* value);
+    void _glUniformMatrix3fv(int location, int count, unsigned char transpose, const float* value);
+    void _glUniformMatrix4fv(int location, int count, unsigned char transpose, const float* value);
+
+    void _glUniform(int location, float v0) {
+        _glUniform1f(location, v0);
+    }
+
+    void _glUniform(int location, const glm::vec2& v) {
+        _glUniform2f(location, v.x, v.y);
+    }
+
+    void _glUniform(int location, const glm::vec3& v) {
+        _glUniform3f(location, v.x, v.y, v.z);
+    }
+
+    void _glUniform(int location, const glm::vec4& v) {
+        _glUniform4f(location, v.x, v.y, v.z, v.w);
+    }
+
+    void _glUniform(int location, const glm::mat3& v) {
+        _glUniformMatrix3fv(location, 1, false, glm::value_ptr(v));
+    }
 
     void _glUniform(int location, const glm::mat4& v) {
         _glUniformMatrix4fv(location, 1, false, glm::value_ptr(v));
@@ -330,6 +355,11 @@ public:
         COMMAND_glUniform2f,
         COMMAND_glUniform3f,
         COMMAND_glUniform4f,
+        COMMAND_glUniform3fv,
+        COMMAND_glUniform4fv,
+        COMMAND_glUniform4iv,
+        COMMAND_glUniformMatrix3fv,
+        COMMAND_glUniformMatrix4fv,
 
         COMMAND_pushProfileRange,
         COMMAND_popProfileRange,

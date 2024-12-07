@@ -238,6 +238,11 @@ public:
     virtual void do_glUniform2f(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform3f(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform4f(const Batch& batch, size_t paramOffset) final;
+    virtual void do_glUniform3fv(const Batch& batch, size_t paramOffset) final;
+    virtual void do_glUniform4fv(const Batch& batch, size_t paramOffset) final;
+    virtual void do_glUniform4iv(const Batch& batch, size_t paramOffset) final;
+    virtual void do_glUniformMatrix3fv(const Batch& batch, size_t paramOffset) final;
+    virtual void do_glUniformMatrix4fv(const Batch& batch, size_t paramOffset) final;
 
     // The State setters called by the GLState::Commands when a new state is assigned
     virtual void do_setStateFillMode(int32 mode) final;
