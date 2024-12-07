@@ -23,6 +23,8 @@
 #include "Context.h"
 
 VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
+    setBaseSize(QSize(800, 600));
+    resize(QSize(800, 600));
     _resizeTimer = new QTimer(this);
     _resizeTimer->setTimerType(Qt::TimerType::PreciseTimer);
     _resizeTimer->setInterval(50);
@@ -68,7 +70,7 @@ void VKWindow::createCommandBuffers() {
     VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::semaphoreCreateInfo();
     // Create a semaphore used to synchronize image presentation
     // Ensures that the image is displayed before we start submitting new commands to the queue
-    VK_CHECK_RESULT(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_presentCompleteSemaphore));
+    VK_CHECK_RESULT(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_acquireCompleteSemaphore));
     // Create a semaphore used to synchronize command submission
     // Ensures that the image is not presented until all commands have been submitted and executed
     VK_CHECK_RESULT(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderCompleteSemaphore));
@@ -268,7 +270,7 @@ void VKWindow::resizeFramebuffer() {
 }
 
 VKWindow::~VKWindow() {
-    vkDestroySemaphore(_device, _presentCompleteSemaphore, nullptr);
+    vkDestroySemaphore(_device, _acquireCompleteSemaphore, nullptr);
     vkDestroySemaphore(_device, _renderCompleteSemaphore, nullptr);
     _swapchain.cleanup();
 }

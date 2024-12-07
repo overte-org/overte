@@ -196,11 +196,16 @@ protected:
     const gpu::BackendPointer& getBackend() const;
 
     // Any resource shared by the main thread and the presentation thread must
-    // be serialized through this mutex
+    // be accessed through this mutex
     mutable Mutex _presentMutex;
     float _hudAlpha{ 1.0f };
 
     QImage getScreenshot(float aspectRatio);
     QImage getSecondaryCameraScreenshot();
     std::shared_ptr<VKWindow> _vkWindow;
+    int _renderedFrameCount{ 0 };
+
+    // Render pass for presenting in window, quick hack for now
+    VkRenderPass _renderPass{VK_NULL_HANDLE};
+    void setupRenderPass();
 };

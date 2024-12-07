@@ -39,6 +39,7 @@
 #include <shaders/Shaders.h>
 #include <gpu/vk/VKShared.h>
 #include <gpu/vk/VKBackend.h>
+#include <gpu/vk/VKFramebuffer.h>
 #include <gpu/gl/GLTexelFormat.h>
 #include <GeometryCache.h>
 
@@ -325,6 +326,11 @@ bool VulkanDisplayPlugin::activate() {
     _vkWindow->createSurface();
     _vkWindow->createSwapchain();
 
+    // VKTODO: Should this be here?
+    customizeContext();
+
+    setupRenderPass();
+
     return Parent::activate();
 }
 
@@ -344,6 +350,10 @@ void VulkanDisplayPlugin::deactivate() {
         }
         _container->currentDisplayActions().clear();
     }
+
+    // VKTODO: Should this be here?
+    uncustomizeContext();
+
     Parent::deactivate();
 }
 
@@ -709,11 +719,28 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
     if (_currentFrame) {
         auto correction = getViewCorrection();
         auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(getBackend());
+        auto vkDevice = vkBackend->getContext().device->logicalDevice;
         Q_ASSERT(vkBackend);
         vkBackend->setCameraCorrection(correction, _prevRenderView);
         _prevRenderView = correction * _currentFrame->view;
+
         uint32_t currentImageIndex = UINT32_MAX;
-        VK_CHECK_RESULT(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_presentCompleteSemaphore, &currentImageIndex));
+        VK_CHECK_RESULT(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex));
+        auto framebuffer = _vkWindow->_frameBuffers[currentImageIndex];
+        const auto& commandBuffer = _vkWindow->_drawCommandBuffers[currentImageIndex];
+        //auto vkBackend = dynamic_pointer_cast<gpu::vulkan::VKBackend>(getBackend());
+        //Q_ASSERT(vkBackend);
+
+        //_renderPass, framebuffer, rect, (uint32_t)clearValues.size(), clearValues.data() };
+        VkCommandBufferBeginInfo commandBufferBeginInfo = vks::initializers::commandBufferBeginInfo();
+        commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+        VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
+
+        using namespace vks::debugutils;
+        cmdBeginLabel(commandBuffer, "executeFrame", glm::vec4{ 1, 1, 1, 1 });
+        //auto& glbackend = (gpu::gl::GLBackend&)(*_backend);
+        //glm::uvec2 fboSize{ frame->framebuffer->getWidth(), frame->framebuffer->getHeight() };
+
         Q_ASSERT(currentImageIndex != UINT32_MAX);
         {
             withPresentThreadLock([&] {
@@ -726,17 +753,21 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             // Execute the frame rendering commands
             PROFILE_RANGE_EX(render, "execute", 0xff00ff00, frameId)
 
-            vkBackend->setDrawCommandBuffer(_vkWindow->_drawCommandBuffers[currentImageIndex]);
+            vkBackend->setDrawCommandBuffer(commandBuffer);
             _gpuContext->executeFrame(_currentFrame);
+            _renderedFrameCount++;
+            qDebug() << "Frame rendered: " << _renderedFrameCount;
         }
 
         // Write all layers to a local framebuffer
-        {
+        // VKTODO
+        /*{
             PROFILE_RANGE_EX(render, "composite", 0xff00ffff, frameId)
             compositeLayers();
-        }
+        }*/
 
-        { // If we have any snapshots this frame, handle them
+        // VKTODO
+        /*{ // If we have any snapshots this frame, handle them
             PROFILE_RANGE_EX(render, "snapshotOperators", 0xffff00ff, frameId)
             while (!_currentFrame->snapshotOperators.empty()) {
                 auto& snapshotOperator = _currentFrame->snapshotOperators.front();
@@ -747,15 +778,111 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
                 }
                 _currentFrame->snapshotOperators.pop();
             }
-        }
+        }*/
 
         // Take the composite framebuffer and send it to the output device
         refreshRateController->clockEndTime();
-        {
+        /*{
             PROFILE_RANGE_EX(render, "internalPresent", 0xff00ffff, frameId)
             internalPresent();
+        }*/
+        // Hack for presenting frame:
+        VkFence frameFence;
+        {
+            PROFILE_RANGE_EX(render, "internalPresent", 0xff00ffff, frameId)
+
+            static const std::array<VkClearValue, 2> clearValues{
+                VkClearValue{color: VkClearColorValue{float32: { 0.2f, 0.2f, 0.2f, 0.2f }}},
+                VkClearValue{depthStencil: VkClearDepthStencilValue{ 1.0f, 0 }},
+            };
+
+            auto rect = VkRect2D{ VkOffset2D{ 0, 0 }, _vkWindow->_extent };
+            VkRenderPassBeginInfo beginInfo = vks::initializers::renderPassBeginInfo();
+            beginInfo.renderPass = _renderPass;
+            beginInfo.framebuffer = framebuffer;
+            beginInfo.renderArea = rect;
+            beginInfo.clearValueCount = (uint32_t)clearValues.size();
+            beginInfo.pClearValues = clearValues.data();
+
+            cmdEndLabel(commandBuffer);
+            cmdBeginLabel(commandBuffer, "renderpass:testClear", glm::vec4{ 0, 1, 1, 1 });
+            vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdEndRenderPass(commandBuffer);
+
+            cmdEndLabel(commandBuffer);
+            cmdBeginLabel(commandBuffer, "renderpass:testClear", glm::vec4{ 0, 1, 1, 1 });
+            vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
+            vkCmdEndRenderPass(commandBuffer);
+
+            // Blit the image into the swapchain.
+            // is vks::tools::insertImageMemoryBarrier needed?
+            VkImageBlit imageBlit{};
+            imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBlit.srcSubresource.layerCount = 1;
+            imageBlit.srcSubresource.mipLevel = 0;
+            imageBlit.srcOffsets[1].x = vkBackend->_outputTexture->_gpuObject.getWidth();
+            imageBlit.srcOffsets[1].y = vkBackend->_outputTexture->_gpuObject.getHeight();
+            imageBlit.srcOffsets[1].z = 1;
+
+            imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            imageBlit.dstSubresource.layerCount = 1;
+            imageBlit.dstSubresource.mipLevel = 0;
+            imageBlit.dstOffsets[1].x = (int32_t)_vkWindow->_swapchain.extent.width;
+            imageBlit.dstOffsets[1].y = (int32_t)_vkWindow->_swapchain.extent.height;
+            imageBlit.dstOffsets[1].z = 1;
+
+            VkImageSubresourceRange mipSubRange = {};
+            mipSubRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            mipSubRange.baseMipLevel = 0;
+            mipSubRange.levelCount = 1;
+            mipSubRange.layerCount = 1;
+
+            vks::tools::insertImageMemoryBarrier(
+                commandBuffer,
+                vkBackend->_outputTexture->attachments[0].image,
+                0,
+                VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                mipSubRange);
+
+            vkCmdBlitImage(
+                commandBuffer,
+                vkBackend->_outputTexture->attachments[0].image,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                _vkWindow->_swapchain.images[currentImageIndex],
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                1,
+                &imageBlit,
+                VK_FILTER_LINEAR);
+
+            cmdEndLabel(commandBuffer);
+            VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
+
+            static const VkPipelineStageFlags waitFlags{ VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
+            VkSubmitInfo submitInfo = vks::initializers::submitInfo();
+            submitInfo.waitSemaphoreCount = 1;
+            submitInfo.pWaitSemaphores = &_vkWindow->_acquireCompleteSemaphore;
+            submitInfo.pWaitDstStageMask = &waitFlags;
+            submitInfo.commandBufferCount = 1;
+            submitInfo.pCommandBuffers = &commandBuffer;
+            submitInfo.signalSemaphoreCount = 1;
+            submitInfo.pSignalSemaphores = &_vkWindow->_renderCompleteSemaphore;
+            submitInfo.commandBufferCount = 1;
+            VkFenceCreateInfo fenceCI = vks::initializers::fenceCreateInfo();
+            vkCreateFence(vkDevice, &fenceCI, nullptr, &frameFence);
+            vkQueueSubmit(vkBackend->getContext().graphicsQueue, 1, &submitInfo, frameFence);
         }
         _vkWindow->_swapchain.queuePresent(_vkWindow->_context.graphicsQueue, currentImageIndex, _vkWindow->_renderCompleteSemaphore);
+
+        // VKTODO this is inefficient here
+        vkBackend->waitForGPU();
+        vkBackend->recycleFrame();
+
+        vkBackend->getContext().emptyDumpster(frameFence);
+        vkBackend->getContext().recycle();
 
         gpu::Backend::freeGPUMemSize.set(gpu::gl::getFreeDedicatedMemory());
     } else if (alwaysPresent()) {
@@ -973,4 +1100,49 @@ void VulkanDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer ne
 
 gpu::PipelinePointer VulkanDisplayPlugin::getRenderTexturePipeline() {
     return _drawTexturePipeline;
+}
+
+void VulkanDisplayPlugin::setupRenderPass() {
+    auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(getBackend());
+    auto device = vkBackend->getContext().device->logicalDevice;
+    if (_renderPass) {
+        vkDestroyRenderPass(device, _renderPass, nullptr);
+    }
+
+    VkAttachmentDescription attachment{};
+    // Color attachment
+    attachment.format = _vkWindow->_swapchain.colorFormat;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    VkAttachmentReference colorAttachmentReference{};
+    colorAttachmentReference.attachment = 0;
+    colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentReference;
+    VkSubpassDependency subpassDependency{};
+    subpassDependency.srcSubpass = 0;
+    subpassDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependency.dstSubpass = VK_SUBPASS_EXTERNAL;
+    subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+    subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &attachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    // VKTODO
+    // renderPassInfo.dependencyCount = 1;
+    // renderPassInfo.pDependencies = &subpassDependency;
+    renderPassInfo.dependencyCount = 0;
+    VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassInfo, nullptr, &_renderPass));
 }

@@ -57,7 +57,7 @@ public:
     VkRenderPass _renderPass{};
     VkExtent2D _extent;
     VulkanSwapChain _swapchain;
-    VkSemaphore _presentCompleteSemaphore{};
+    VkSemaphore _acquireCompleteSemaphore{};
     VkSemaphore _renderCompleteSemaphore{};
     std::vector<VkCommandBuffer> _drawCommandBuffers;
     struct : vks::Allocation {
