@@ -1025,6 +1025,94 @@ void VKBackend::do_glUniform4f(const Batch& batch, size_t paramOffset) {
     (void)CHECK_GL_ERROR();*/
 }
 
+void VKBackend::do_glUniform3fv(const Batch& batch, size_t paramOffset) {
+    qDebug() << "VKTODO: do_glUniform3fv not implemented";
+
+    /*if (_pipeline._program == 0) {
+        // We should call updatePipeline() to bind the program but we are not doing that
+        // because these uniform setters are deprecated and we don;t want to create side effect
+        return;
+    }
+    updatePipeline();
+    GLint location = getRealUniformLocation(batch._params[paramOffset + 2]._int);
+    glUniform3fv(
+        location,
+        batch._params[paramOffset + 1]._uint,
+        (const GLfloat*)batch.readData(batch._params[paramOffset + 0]._uint));
+
+    (void)CHECK_GL_ERROR();*/
+}
+
+void VKBackend::do_glUniform4fv(const Batch& batch, size_t paramOffset) {
+    qDebug() << "VKTODO: do_glUniform4fv not implemented";
+    /*if (_pipeline._program == 0) {
+        // We should call updatePipeline() to bind the program but we are not doing that
+        // because these uniform setters are deprecated and we don;t want to create side effect
+        return;
+    }
+    updatePipeline();
+
+    GLint location = getRealUniformLocation(batch._params[paramOffset + 2]._int);
+    GLsizei count = batch._params[paramOffset + 1]._uint;
+    const GLfloat* value = (const GLfloat*)batch.readData(batch._params[paramOffset + 0]._uint);
+    glUniform4fv(location, count, value);
+
+    (void)CHECK_GL_ERROR();*/
+}
+
+void VKBackend::do_glUniform4iv(const Batch& batch, size_t paramOffset) {
+    qDebug() << "VKTODO: do_glUniform4iv not implemented";
+    /*if (_pipeline._program == 0) {
+        // We should call updatePipeline() to bind the program but we are not doing that
+        // because these uniform setters are deprecated and we don;t want to create side effect
+        return;
+    }
+    updatePipeline();
+    GLint location = getRealUniformLocation(batch._params[paramOffset + 2]._int);
+    glUniform4iv(
+        location,
+        batch._params[paramOffset + 1]._uint,
+        (const GLint*)batch.readData(batch._params[paramOffset + 0]._uint));
+
+    (void)CHECK_GL_ERROR();*/
+}
+
+void VKBackend::do_glUniformMatrix3fv(const Batch& batch, size_t paramOffset) {
+    qDebug() << "VKTODO: do_glUniformMatrix3fv not implemented";
+    /*if (_pipeline._program == 0) {
+        // We should call updatePipeline() to bind the program but we are not doing that
+        // because these uniform setters are deprecated and we don;t want to create side effect
+        return;
+    }
+    updatePipeline();
+
+    GLint location = getRealUniformLocation(batch._params[paramOffset + 3]._int);
+    glUniformMatrix3fv(
+        location,
+        batch._params[paramOffset + 2]._uint,
+        batch._params[paramOffset + 1]._uint,
+        (const GLfloat*)batch.readData(batch._params[paramOffset + 0]._uint));
+    (void)CHECK_GL_ERROR();*/
+}
+
+void VKBackend::do_glUniformMatrix4fv(const Batch& batch, size_t paramOffset) {
+    qDebug() << "VKTODO: do_glUniformMatrix4fv not implemented";
+    /*if (_pipeline._program == 0) {
+        // We should call updatePipeline() to bind the program but we are not doing that
+        // because these uniform setters are deprecated and we don;t want to create side effect
+        return;
+    }
+    updatePipeline();
+
+    GLint location = getRealUniformLocation(batch._params[paramOffset + 3]._int);
+    glUniformMatrix4fv(
+        location,
+        batch._params[paramOffset + 2]._uint,
+        batch._params[paramOffset + 1]._uint,
+        (const GLfloat*)batch.readData(batch._params[paramOffset + 0]._uint));
+    (void)CHECK_GL_ERROR();*/
+}
+
 void VKBackend::do_pushProfileRange(const Batch& batch, size_t paramOffset) {
     const auto& name = batch._profileRanges.get(batch._params[paramOffset]._uint);
     ::vks::debugutils::cmdBeginLabel(_currentCommandBuffer, name, glm::vec4{ 1.0 });
@@ -1034,8 +1122,8 @@ void VKBackend::do_popProfileRange(const Batch& batch, size_t paramOffset) {
     ::vks::debugutils::cmdEndLabel(_currentCommandBuffer);
 }
 
-void VKBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool reset) {
-    // VKTODO
+void VKBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool primary, bool reset) {
+    // VKTODO: `primary` property is not used yet
     auto invCorrection = glm::inverse(correction);
     auto invPrevView = glm::inverse(prevRenderView);
     _transform._correction.prevView = (reset ? Mat4() : prevRenderView);
@@ -2998,6 +3086,11 @@ std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> VKBackend::_commandCalls
     (&::gpu::vk::VKBackend::do_glUniform2f),
     (&::gpu::vk::VKBackend::do_glUniform3f),
     (&::gpu::vk::VKBackend::do_glUniform4f),
+    (&::gpu::vk::VKBackend::do_glUniform3fv),
+    (&::gpu::vk::VKBackend::do_glUniform4fv),
+    (&::gpu::vk::VKBackend::do_glUniform4iv),
+    (&::gpu::vk::VKBackend::do_glUniformMatrix3fv),
+    (&::gpu::vk::VKBackend::do_glUniformMatrix4fv),
 
     (&::gpu::vk::VKBackend::do_pushProfileRange),
     (&::gpu::vk::VKBackend::do_popProfileRange),

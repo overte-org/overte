@@ -225,7 +225,7 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
 #endif
 
     //_gpuContext->enableStereo(true);
-    auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(_gpuContext->getBackend());
+    //auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(_gpuContext->getBackend());
     vkBackend->setDrawCommandBuffer(commandBuffer);
 
     if (frame && !frame->batches.empty()) {
