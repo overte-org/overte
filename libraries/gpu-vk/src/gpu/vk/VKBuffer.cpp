@@ -22,10 +22,16 @@ VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer) {
 
     VKBuffer* object = gpu::Backend::getGPUObject<VKBuffer>(buffer);
     // Has the storage size changed?
+    if (buffer.isDirty()) {
+        printf("dirty\n");
+    }
     if (!object || object->_stamp != buffer._renderSysmem.getStamp()) {
         object = new VKBuffer(backend, buffer);
     }
     // VKTODO: delete the old buffer after rendering the frame
+    if (0 != (buffer._renderPages._flags & PageManager::DIRTY)) {
+        object->transfer();
+    }
 
     return object;
 }
@@ -38,6 +44,25 @@ VkBuffer VKBuffer::getBuffer(VKBackend& backend, const gpu::Buffer& buffer) {
         return nullptr;
     }
 }
+void VKBuffer::transfer() {
+    Size offset;
+    Size size;
+    Size currentPage { 0 };
+    auto data = _gpuObject._renderSysmem.readData();
+    auto dataSize = _gpuObject._renderSysmem.getSize();
+    while (_gpuObject._renderPages.getNextTransferBlock(offset, size, currentPage)) {
+        if (offset + size > _localData.size()) {
+            size = _localData.size() - offset;
+            Q_ASSERT(false);
+        }
+        memcpy(_localData.data()+offset, data+offset, size);
+    }
+    map();
+    copy(_localData.size(), _localData.data());
+    flush(VK_WHOLE_SIZE);
+    unmap();
+    _gpuObject._renderPages._flags &= ~PageManager::DIRTY;
+}
 
 VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& gpuBuffer) : VKObject(backend, gpuBuffer),
     _stamp(gpuBuffer._renderSysmem.getStamp()) {
@@ -45,11 +70,16 @@ VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& gpuBuffer) : VKObject(
     Backend::setGPUObject(gpuBuffer, this);
     // Flags match VkBufferUsageFlagBits - this was in original Vulkan branch
     VkBufferUsageFlags usageFlags{ (VkBufferUsageFlags)gpuBuffer.getUsage() };
-    // VKTODO:
+    auto data = _gpuObject._renderSysmem.readData();
+    auto dataSize = _gpuObject._renderSysmem.getSize();
+    _localData.resize(dataSize);
+    memcpy(_localData.data(), data, dataSize);
+    // VKTODO: VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT is wrong here but is not used on VMA yet.
     (vks::Buffer&)(*this) =
-        backend._context.createBuffer(usageFlags, gpuBuffer.getSize(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        //backend._context.createBuffer(usageFlags, gpuBuffer.getSize(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        backend._context.createBuffer(usageFlags, dataSize, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     map();
-    copy(gpuBuffer.getSize(), gpuBuffer.getData());
+    copy(dataSize, _localData.size());
     flush(VK_WHOLE_SIZE);
     unmap();
 
