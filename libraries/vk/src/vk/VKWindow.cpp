@@ -23,8 +23,8 @@
 #include "Context.h"
 
 VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
-    setBaseSize(QSize(800, 600));
-    resize(QSize(800, 600));
+    setBaseSize(QSize(1280, 720));
+    resize(QSize(1280, 720));
     _resizeTimer = new QTimer(this);
     _resizeTimer->setTimerType(Qt::TimerType::PreciseTimer);
     _resizeTimer->setInterval(50);
@@ -190,6 +190,7 @@ void VKWindow::setupRenderPass() {
     attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+    // VKTODO: not needed currently
     // Depth attachment
     attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
     attachments[1].format = VK_FORMAT_D24_UNORM_S8_UINT;

@@ -201,7 +201,7 @@ void VKAttachmentTexture::createTexture(VKBackend &backend) {
         || _gpuObject.getTexelFormat().getSemantic() == gpu::R11G11B10
         || _gpuObject.getTexelFormat().getSemantic() == gpu::SRGB
         || _gpuObject.getTexelFormat().getSemantic() == gpu::SRGBA) {
-        imageCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        imageCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     } else if (_gpuObject.isDepthStencilRenderTarget()) {
         imageCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     } else {
