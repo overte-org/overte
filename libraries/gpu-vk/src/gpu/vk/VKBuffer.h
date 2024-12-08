@@ -18,11 +18,14 @@ class VKBuffer : public VKObject<gpu::Buffer>, public vks::Buffer {
 public:
     static VKBuffer* sync(VKBackend& backend, const gpu::Buffer& buffer);
     static VkBuffer getBuffer(VKBackend& backend, const gpu::Buffer& buffer);
+    void transfer();
 
     ~VKBuffer() override;
 protected:
     VKBuffer(VKBackend& backend, const gpu::Buffer& buffer);
     const Stamp _stamp{ 0 };
+    // Local copy of buffer data. Updates are copied into it before transfer.
+    std::vector<uint8_t> _localData;
 };
 
 } }
