@@ -797,7 +797,7 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             };
 
             auto rect = VkRect2D{ VkOffset2D{ 0, 0 }, _vkWindow->_extent };
-            VkRenderPassBeginInfo beginInfo = vks::initializers::renderPassBeginInfo();
+            /*VkRenderPassBeginInfo beginInfo = vks::initializers::renderPassBeginInfo();
             beginInfo.renderPass = _renderPass;
             beginInfo.framebuffer = framebuffer;
             beginInfo.renderArea = rect;
@@ -812,7 +812,7 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             cmdEndLabel(commandBuffer);
             cmdBeginLabel(commandBuffer, "renderpass:testClear", glm::vec4{ 0, 1, 1, 1 });
             vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdEndRenderPass(commandBuffer);
+            vkCmdEndRenderPass(commandBuffer);*/
 
             // Blit the image into the swapchain.
             // is vks::tools::insertImageMemoryBarrier needed?
@@ -840,6 +840,17 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             vks::tools::insertImageMemoryBarrier(
                 commandBuffer,
                 vkBackend->_outputTexture->attachments[0].image,
+                VK_ACCESS_TRANSFER_READ_BIT,
+                0,
+                VK_IMAGE_LAYOUT_UNDEFINED,
+                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                mipSubRange);
+
+            vks::tools::insertImageMemoryBarrier(
+                commandBuffer,
+                _vkWindow->_swapchain.images[currentImageIndex],
                 0,
                 VK_ACCESS_TRANSFER_WRITE_BIT,
                 VK_IMAGE_LAYOUT_UNDEFINED,
@@ -857,6 +868,17 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
                 1,
                 &imageBlit,
                 VK_FILTER_LINEAR);
+
+            vks::tools::insertImageMemoryBarrier(
+                commandBuffer,
+                _vkWindow->_swapchain.images[currentImageIndex],
+                0,
+                VK_ACCESS_TRANSFER_WRITE_BIT,
+                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                VK_PIPELINE_STAGE_TRANSFER_BIT,
+                mipSubRange);
 
             cmdEndLabel(commandBuffer);
             VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));

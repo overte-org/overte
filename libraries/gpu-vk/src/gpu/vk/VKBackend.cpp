@@ -591,7 +591,7 @@ struct Cache {
         }
 
         // Vertex input
-        {
+        if (pipelineState.format) {
             const auto& vertexReflection = pipeline.getProgram()->getShaders()[0]->getReflection();
 
             const gpu::Stream::Format& format = *gpu::acquire(pipelineState.format);
@@ -663,7 +663,10 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                 continue; // VKTODO: crashes frame player currently
             }
             if (batch.getName() == "Resample::run") {
-                continue; // VKTODO: no framebuffer commands support yet
+                continue; // VKTODO: no framebuffer commands support yet"ApplicationOverlay::render"
+            }
+            if (batch.getName() == "ApplicationOverlay::render") {
+                continue; // VKTODO: no overlay support yet
             }
             cmdBeginLabel(commandBuffer, "batch:" + batch.getName(), glm::vec4{ 1, 1, 0, 1 });
             const auto& commands = batch.getCommands();

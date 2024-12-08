@@ -295,6 +295,17 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     vks::tools::insertImageMemoryBarrier(
         commandBuffer,
         vkBackend->_outputTexture->attachments[0].image,
+        VK_ACCESS_TRANSFER_READ_BIT,
+        0,
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        mipSubRange);
+
+    vks::tools::insertImageMemoryBarrier(
+        commandBuffer,
+        _swapchain.images[swapchainIndex],
         0,
         VK_ACCESS_TRANSFER_WRITE_BIT,
         VK_IMAGE_LAYOUT_UNDEFINED,
@@ -312,6 +323,17 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
         1,
         &imageBlit,
         VK_FILTER_LINEAR);
+
+    vks::tools::insertImageMemoryBarrier(
+        commandBuffer,
+        _swapchain.images[swapchainIndex],
+        0,
+        VK_ACCESS_TRANSFER_WRITE_BIT,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        mipSubRange);
 
     cmdEndLabel(commandBuffer);
     VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
