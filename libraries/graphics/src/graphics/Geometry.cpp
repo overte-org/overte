@@ -30,6 +30,7 @@ Mesh::Mesh(const Mesh& mesh) :
     _indexBuffer(mesh._indexBuffer),
     _partBuffer(mesh._partBuffer),
     _colorBuffer(mesh._colorBuffer) {
+        Q_ASSERT(_indexBuffer._buffer->getUsage() & gpu::Buffer::IndexBuffer);
 }
 
 Mesh::~Mesh() {
@@ -117,6 +118,7 @@ void Mesh::evalVertexStream() {
 }
 
 void Mesh::setIndexBuffer(const BufferView& buffer) {
+    Q_ASSERT(buffer._buffer->getUsage() & gpu::Buffer::IndexBuffer);
     _indexBuffer = buffer;
 }
 

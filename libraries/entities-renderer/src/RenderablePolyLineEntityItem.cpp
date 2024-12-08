@@ -37,7 +37,7 @@ PolyLineEntityRenderer::PolyLineEntityRenderer(const EntityItemPointer& entity) 
         PolylineData data { glm::vec2(_faceCamera, _glow), glm::vec2(0.0f) };
         _polylineDataBuffer->setSubData(0, data);
 
-        _polylineGeometryBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer);
+        _polylineGeometryBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer);
     }
 }
 

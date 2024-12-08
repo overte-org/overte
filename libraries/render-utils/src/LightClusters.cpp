@@ -78,8 +78,8 @@ const glm::uvec4 LightClusters::MAX_GRID_DIMENSIONS { 32, 32, 31, 16384 };
 
 LightClusters::LightClusters() :
     _lightIndicesBuffer(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer)),
-    _clusterGridBuffer(/*std::make_shared<gpu::Buffer>(), */gpu::Element::INDEX_INT32),
-    _clusterContentBuffer(/*std::make_shared<gpu::Buffer>(), */gpu::Element::INDEX_INT32) {
+    _clusterGridBuffer(/*std::make_shared<gpu::Buffer>(), */gpu::Element::INDEX_INT32), // VKTODO: is this correct
+    _clusterContentBuffer(/*std::make_shared<gpu::Buffer>(), */gpu::Element::INDEX_INT32) { // VKTODO: is this correct
 }
 
 void LightClusters::setDimensions(glm::uvec3 gridDims, uint32_t listBudget) {
