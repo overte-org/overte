@@ -17,6 +17,8 @@
 
 #include "GPULogging.h"
 
+#define DEBUG_VALIDATE_BUFFER_USAGE
+
 #if defined(NSIGHT_FOUND)
 #include "nvToolsExt.h"
 
@@ -236,6 +238,9 @@ void Batch::setInputFormat(const Stream::FormatPointer& format) {
 }
 
 void Batch::setInputBuffer(Slot channel, const BufferPointer& buffer, Offset offset, Offset stride) {
+#ifdef DEBUG_VALIDATE_BUFFER_USAGE
+    Q_ASSERT(buffer->getUsage() & gpu::Buffer::VertexBuffer);
+#endif
     ADD_COMMAND(setInputBuffer);
 
     _params.emplace_back(stride);
@@ -245,6 +250,9 @@ void Batch::setInputBuffer(Slot channel, const BufferPointer& buffer, Offset off
 }
 
 void Batch::setInputBuffer(Slot channel, const BufferView& view) {
+#ifdef DEBUG_VALIDATE_BUFFER_USAGE
+    Q_ASSERT(view._buffer->getUsage() & gpu::Buffer::VertexBuffer);
+#endif
     setInputBuffer(channel, view._buffer, view._offset, Offset(view._stride));
 }
 
@@ -260,6 +268,9 @@ void Batch::setInputStream(Slot startChannel, const BufferStream& stream) {
 }
 
 void Batch::setIndexBuffer(Type type, const BufferPointer& buffer, Offset offset) {
+#ifdef DEBUG_VALIDATE_BUFFER_USAGE
+    Q_ASSERT(buffer->getUsage() & gpu::Buffer::IndexBuffer);
+#endif
     ADD_COMMAND(setIndexBuffer);
 
     _params.emplace_back(offset);
@@ -268,6 +279,9 @@ void Batch::setIndexBuffer(Type type, const BufferPointer& buffer, Offset offset
 }
 
 void Batch::setIndexBuffer(const BufferView& buffer) {
+#ifdef DEBUG_VALIDATE_BUFFER_USAGE
+    Q_ASSERT(buffer._buffer->getUsage() & gpu::Buffer::IndexBuffer);
+#endif
     setIndexBuffer(buffer._element.getType(), buffer._buffer, buffer._offset);
 }
 
