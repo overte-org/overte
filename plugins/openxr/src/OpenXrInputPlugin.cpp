@@ -102,7 +102,7 @@ void OpenXrInputPlugin::loadSettings() {
 void OpenXrInputPlugin::saveSettings() const {
 }
 
-OpenXrInputPlugin::InputDevice::InputDevice(std::shared_ptr<OpenXrContext> c) : controller::InputDevice("Vive") {
+OpenXrInputPlugin::InputDevice::InputDevice(std::shared_ptr<OpenXrContext> c) : controller::InputDevice("OpenXR") {
     _context = c;
 }
 
@@ -126,8 +126,10 @@ bool OpenXrInputPlugin::InputDevice::triggerHapticPulse(float strength, float du
     nanoseconds durationNs = duration_cast<nanoseconds>(milliseconds(static_cast<int>(duration * 10.0f)));
     XrDuration xrDuration = durationNs.count();
 
-    if (!_actions.at("/output/haptic")->applyHaptic(index, xrDuration, XR_FREQUENCY_UNSPECIFIED, 0.5f * strength)) {
-        qCCritical(xr_input_cat, "Failed to apply haptic feedback!");
+    auto path = (index == 0) ? "hand_haptic_left" : "hand_haptic_right";
+
+    if (!_actions.at(path)->applyHaptic(xrDuration, XR_FREQUENCY_UNSPECIFIED, 0.5f * strength)) {
+        qCCritical(xr_input_cat) << "Failed to apply haptic feedback!";
     }
 
     return true;
@@ -142,12 +144,8 @@ bool OpenXrInputPlugin::Action::init(XrActionSet actionSet) {
         .subactionPaths = _context->_handPaths,
     };
 
-    QString name = QString::fromStdString(_path);
-    name.replace("/input/", "");
-    name.replace("/", "-");
-    strcpy(info.actionName, name.toUtf8().data());
-    name.replace("-", " ");
-    strcpy(info.localizedActionName, name.toUtf8().data());
+    strncpy(info.actionName, _id.c_str(), XR_MAX_ACTION_NAME_SIZE - 1);
+    strncpy(info.localizedActionName, _friendlyName.c_str(), XR_MAX_LOCALIZED_ACTION_NAME_SIZE - 1);
 
     XrResult result = xrCreateAction(actionSet, &info, &_action);
     if (!xrCheck(instance, result, "Failed to create action"))
@@ -163,23 +161,20 @@ bool OpenXrInputPlugin::Action::init(XrActionSet actionSet) {
     return true;
 }
 
-const std::vector<std::string> HAND_PATHS = { "left", "right" };
-
 std::vector<XrActionSuggestedBinding> OpenXrInputPlugin::Action::getBindings() {
     assert(_action != XR_NULL_HANDLE);
 
     std::vector<XrActionSuggestedBinding> bindings;
     for (uint32_t i = 0; i < HAND_COUNT; i++) {
         XrPath path;
-        std::string pathString = "/user/hand/" + HAND_PATHS[i] + _path;
-        xrStringToPath(_context->_instance, pathString.c_str(), &path);
+        xrStringToPath(_context->_instance, _id.c_str(), &path);
         XrActionSuggestedBinding binding = { .action = _action, .binding = path };
         bindings.push_back(binding);
     }
     return bindings;
 }
 
-XrActionStateFloat OpenXrInputPlugin::Action::getFloat(uint32_t handId) {
+XrActionStateFloat OpenXrInputPlugin::Action::getFloat() {
     XrActionStateFloat state = {
         .type = XR_TYPE_ACTION_STATE_FLOAT,
     };
@@ -187,7 +182,6 @@ XrActionStateFloat OpenXrInputPlugin::Action::getFloat(uint32_t handId) {
     XrActionStateGetInfo info = {
         .type = XR_TYPE_ACTION_STATE_GET_INFO,
         .action = _action,
-        .subactionPath = _context->_handPaths[handId],
     };
 
     XrResult result = xrGetActionStateFloat(_context->_session, &info, &state);
@@ -196,7 +190,23 @@ XrActionStateFloat OpenXrInputPlugin::Action::getFloat(uint32_t handId) {
     return state;
 }
 
-XrActionStateBoolean OpenXrInputPlugin::Action::getBool(uint32_t handId) {
+XrActionStateVector2f OpenXrInputPlugin::Action::getVector2f() {
+    XrActionStateVector2f state = {
+        .type = XR_TYPE_ACTION_STATE_VECTOR2F,
+    };
+
+    XrActionStateGetInfo info = {
+        .type = XR_TYPE_ACTION_STATE_GET_INFO,
+        .action = _action,
+    };
+
+    XrResult result = xrGetActionStateVector2f(_context->_session, &info, &state);
+    xrCheck(_context->_instance, result, "Failed to get vector2 state!");
+
+    return state;
+}
+
+XrActionStateBoolean OpenXrInputPlugin::Action::getBool() {
     XrActionStateBoolean state = {
         .type = XR_TYPE_ACTION_STATE_BOOLEAN,
     };
@@ -204,7 +214,6 @@ XrActionStateBoolean OpenXrInputPlugin::Action::getBool(uint32_t handId) {
     XrActionStateGetInfo info = {
         .type = XR_TYPE_ACTION_STATE_GET_INFO,
         .action = _action,
-        .subactionPath = _context->_handPaths[handId],
     };
 
     XrResult result = xrGetActionStateBoolean(_context->_session, &info, &state);
@@ -213,14 +222,13 @@ XrActionStateBoolean OpenXrInputPlugin::Action::getBool(uint32_t handId) {
     return state;
 }
 
-XrSpaceLocation OpenXrInputPlugin::Action::getPose(uint32_t handId) {
+XrSpaceLocation OpenXrInputPlugin::Action::getPose() {
     XrActionStatePose state = {
         .type = XR_TYPE_ACTION_STATE_POSE,
     };
     XrActionStateGetInfo info = {
         .type = XR_TYPE_ACTION_STATE_GET_INFO,
         .action = _action,
-        .subactionPath = _context->_handPaths[handId],
     };
 
     XrResult result = xrGetActionStatePose(_context->_session, &info, &state);
@@ -231,14 +239,14 @@ XrSpaceLocation OpenXrInputPlugin::Action::getPose(uint32_t handId) {
     };
 
     if (_context->_lastPredictedDisplayTime.has_value()) {
-        result = xrLocateSpace(_poseSpaces[handId], _context->_stageSpace, _context->_lastPredictedDisplayTime.value(), &location);
+        result = xrLocateSpace(_poseSpace, _context->_stageSpace, _context->_lastPredictedDisplayTime.value(), &location);
         xrCheck(_context->_instance, result, "Failed to locate hand space!");
     }
 
     return location;
 }
 
-bool OpenXrInputPlugin::Action::applyHaptic(uint32_t handId, XrDuration duration, float frequency, float amplitude) {
+bool OpenXrInputPlugin::Action::applyHaptic(XrDuration duration, float frequency, float amplitude) {
     XrHapticVibration vibration = {
         .type = XR_TYPE_HAPTIC_VIBRATION,
         .duration = duration,
@@ -249,7 +257,6 @@ bool OpenXrInputPlugin::Action::applyHaptic(uint32_t handId, XrDuration duration
     XrHapticActionInfo haptic_action_info = {
         .type = XR_TYPE_HAPTIC_ACTION_INFO,
         .action = _action,
-        .subactionPath = _context->_handPaths[handId],
     };
     XrResult result = xrApplyHapticFeedback(_context->_session, &haptic_action_info, (const XrHapticBaseHeader*)&vibration);
 
@@ -259,44 +266,40 @@ bool OpenXrInputPlugin::Action::applyHaptic(uint32_t handId, XrDuration duration
 bool OpenXrInputPlugin::Action::createPoseSpaces() {
     assert(_action != XR_NULL_HANDLE);
 
-    for (int hand = 0; hand < HAND_COUNT; hand++) {
-        XrActionSpaceCreateInfo info = {
-            .type = XR_TYPE_ACTION_SPACE_CREATE_INFO,
-            .action = _action,
-            .subactionPath = _context->_handPaths[hand],
-            .poseInActionSpace = XR_INDENTITY_POSE,
-        };
+    XrActionSpaceCreateInfo info = {
+        .type = XR_TYPE_ACTION_SPACE_CREATE_INFO,
+        .action = _action,
+        .poseInActionSpace = XR_INDENTITY_POSE,
+    };
 
-        XrResult result = xrCreateActionSpace(_context->_session, &info, &_poseSpaces[hand]);
-        if (!xrCheck(_context->_instance, result, "Failed to create hand pose space"))
-            return false;
-    }
+    XrResult result = xrCreateActionSpace(_context->_session, &info, &_poseSpace);
+    if (!xrCheck(_context->_instance, result, "Failed to create hand pose space"))
+        return false;
 
     return true;
 }
 
 bool OpenXrInputPlugin::InputDevice::initBindings(const std::string& profileName,
-                                                  const std::vector<std::string>& actionsToBind) {
+                                                  const std::map<std::string, std::string>& actionsToBind) {
     XrPath profilePath;
     XrResult result = xrStringToPath(_context->_instance, profileName.c_str(), &profilePath);
     if (!xrCheck(_context->_instance, result, "Failed to get interaction profile"))
         return false;
 
-    std::vector<XrActionSuggestedBinding> bindings;
-    for (const std::string& path : actionsToBind) {
-        if (!_actions.contains(path)) {
-            qCWarning(xr_input_cat, "%s has unbound input %s", profileName.c_str(), path.c_str());
-            continue;
-        }
-        std::vector<XrActionSuggestedBinding> actionBindings = _actions.at(path)->getBindings();
-        bindings.insert(std::end(bindings), std::begin(actionBindings), std::end(actionBindings));
+    std::vector<XrActionSuggestedBinding> suggestions;
+    for (const auto& [actionName, inputPathRaw] : actionsToBind) {
+        XrActionSuggestedBinding bind = {
+            .action = _actions[actionName]->_action,
+        };
+        xrStringToPath(_context->_instance, inputPathRaw.c_str(), &bind.binding);
+        suggestions.emplace(suggestions.end(), bind);
     }
 
     const XrInteractionProfileSuggestedBinding suggestedBinding = {
         .type = XR_TYPE_INTERACTION_PROFILE_SUGGESTED_BINDING,
         .interactionProfile = profilePath,
-        .countSuggestedBindings = (uint32_t)bindings.size(),
-        .suggestedBindings = bindings.data(),
+        .countSuggestedBindings = (uint32_t)suggestions.size(),
+        .suggestedBindings = suggestions.data(),
     };
 
     result = xrSuggestInteractionProfileBindings(_context->_instance, &suggestedBinding);
@@ -307,60 +310,41 @@ bool OpenXrInputPlugin::InputDevice::initBindings(const std::string& profileName
 controller::Input::NamedVector OpenXrInputPlugin::InputDevice::getAvailableInputs() const {
     using namespace controller;
 
-    // clang-format off
     QVector<Input::NamedPair> availableInputs{
         makePair(HEAD, "Head"),
         makePair(LEFT_HAND, "LeftHand"),
         makePair(RIGHT_HAND, "RightHand"),
 
-        // Trackpad analogs
-        makePair(LX, "LX"),
-        makePair(LY, "LY"),
-        makePair(RX, "RX"),
-        makePair(RY, "RY"),
+        // INPUT FIXME: Actions.Translate.{X,Z} work
+        // perfectly but Standard.LY is unreliable
+        makePair(LX, "WalkX"),
+        makePair(LY, "WalkY"),
 
-        // capacitive touch on the touch pad
-        makePair(LS_TOUCH, "LSTouch"),
-        makePair(RS_TOUCH, "RSTouch"),
+        makePair(LT, "LeftInteract"),
+        makePair(RT, "RightInteract"),
+        makePair(LT_CLICK, "LeftInteractClick"),
+        makePair(RT_CLICK, "RightInteractClick"),
 
-        // touch pad press
-        makePair(LS, "LS"),
-        makePair(RS, "RS"),
-        // Differentiate where we are in the touch pad click
-        makePair(LS_CENTER, "LSCenter"),
-        makePair(LS_X, "LSX"),
-        makePair(LS_Y, "LSY"),
-        makePair(RS_CENTER, "RSCenter"),
-        makePair(RS_X, "RSX"),
-        makePair(RS_Y, "RSY"),
-
-        // triggers
-        makePair(LT, "LT"),
-        makePair(RT, "RT"),
-        // Trigger clicks
-        makePair(LT_CLICK, "LTClick"),
-        makePair(RT_CLICK, "RTClick"),
-
-        // low profile side grip button.
         makePair(LEFT_GRIP, "LeftGrip"),
         makePair(RIGHT_GRIP, "RightGrip"),
 
-        makePair(LEFT_PRIMARY_THUMB, "LeftPrimaryThumb"),
-        makePair(RIGHT_PRIMARY_THUMB, "RightPrimaryThumb"),
-        makePair(LEFT_SECONDARY_THUMB, "LeftSecondaryThumb"),
-        makePair(RIGHT_SECONDARY_THUMB, "RightSecondaryThumb"),
-
-        makePair(LEFT_SECONDARY_THUMB, "LeftApplicationMenu"),
-        makePair(RIGHT_SECONDARY_THUMB, "RightApplicationMenu"),
+        // INPUT TODO: horrific hack that breaks depending on handedness
+        // because the input system is in dire need of a refactor,
+        // it was (mostly) designed with raw inputs in mind which makes
+        // it extremely difficult to map onto openxr actions
+        makePair(LEFT_PRIMARY_THUMB, "ToggleTablet"),
+        makePair(RIGHT_PRIMARY_THUMB, "Jump"),
+        makePair(DD, "Sprint"),
+        makePair(RX, "Turn"),
+        makePair(RY, "Teleport"),
+        makePair(LS_TOUCH, "CycleCamera"),
     };
-    // clang-format on
 
     return availableInputs;
 }
 
 QString OpenXrInputPlugin::InputDevice::getDefaultMappingConfig() const {
-    // FIXME: for some reason vive works but openxr_generic breaks the vertical trackpad?
-    return PathUtils::resourcesPath() + "/controllers/vive.json";
+    return PathUtils::resourcesPath() + "/controllers/openxr.json";
 }
 
 bool OpenXrInputPlugin::InputDevice::initActions() {
@@ -373,107 +357,96 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
 
     XrActionSetCreateInfo actionSetInfo = {
         .type = XR_TYPE_ACTION_SET_CREATE_INFO,
-        .actionSetName = "action_set",
-        .localizedActionSetName = "Action Set",
+        .actionSetName = "overte",
+        .localizedActionSetName = "Overte",
         .priority = 0,
     };
     XrResult result = xrCreateActionSet(instance, &actionSetInfo, &_actionSet);
     if (!xrCheck(instance, result, "Failed to create action set."))
         return false;
 
-    // clang-format off
-    std::map<std::string, XrActionType> actionsToInit = {
-        { "/output/haptic", XR_ACTION_TYPE_VIBRATION_OUTPUT },
-        { "/input/grip/pose", XR_ACTION_TYPE_POSE_INPUT },
+    std::map<std::string, std::pair<std::string, XrActionType>> actionTypes = {
+        {"tablet",             {"Toggle Tablet", XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"teleport",           {"Teleport", XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"cycle_camera",       {"Cycle Camera", XR_ACTION_TYPE_BOOLEAN_INPUT}},
 
-        // click but pretend it's a float for the trigger actions
-        { "/input/select/click", XR_ACTION_TYPE_FLOAT_INPUT },
-        { "/input/menu/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
-        { "/input/system/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
+        {"interact_left",      {"Left Interact", XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"interact_right",     {"Right Interact", XR_ACTION_TYPE_FLOAT_INPUT}},
 
-        { "/input/trackpad/x", XR_ACTION_TYPE_FLOAT_INPUT },
-        { "/input/trackpad/y", XR_ACTION_TYPE_FLOAT_INPUT },
-        { "/input/trackpad/touch", XR_ACTION_TYPE_BOOLEAN_INPUT },
-        { "/input/trackpad/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
+        {"grip_left",          {"Left Grip", XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"grip_right",         {"Right Grip", XR_ACTION_TYPE_FLOAT_INPUT}},
 
-        { "/input/thumbstick/x", XR_ACTION_TYPE_FLOAT_INPUT },
-        { "/input/thumbstick/y", XR_ACTION_TYPE_FLOAT_INPUT },
-        { "/input/thumbstick/touch", XR_ACTION_TYPE_BOOLEAN_INPUT },
-        { "/input/thumbstick/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
-        { "/input/a/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
-        { "/input/b/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
-        { "/input/a/touch", XR_ACTION_TYPE_BOOLEAN_INPUT },
-        { "/input/b/touch", XR_ACTION_TYPE_BOOLEAN_INPUT },
+        {"turn_left",          {"Turn Left", XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"turn_right",         {"Turn Right", XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"walk",               {"Walk", XR_ACTION_TYPE_VECTOR2F_INPUT}},
+        {"sprint",             {"Sprint", XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"jump",               {"Jump", XR_ACTION_TYPE_BOOLEAN_INPUT}},
 
-        { "/input/squeeze/click", XR_ACTION_TYPE_FLOAT_INPUT },
-        { "/input/trigger/value", XR_ACTION_TYPE_FLOAT_INPUT },
-        { "/input/trigger/click", XR_ACTION_TYPE_BOOLEAN_INPUT },
-        { "/input/trigger/touch", XR_ACTION_TYPE_BOOLEAN_INPUT },
+        // in case the runtime doesn't support dpad emulation
+        {"stick_left",         {"Left Stick (Fallback)", XR_ACTION_TYPE_VECTOR2F_INPUT}},
+        {"stick_right",        {"Right Stick (Fallback)", XR_ACTION_TYPE_VECTOR2F_INPUT}},
+        {"stick_click_left",   {"Left Stick Click (Fallback)", XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"stick_click_right",  {"Right Stick Click (Fallback)", XR_ACTION_TYPE_BOOLEAN_INPUT}},
+
+        {"hand_pose_left",     {"Left Hand Pose", XR_ACTION_TYPE_POSE_INPUT}},
+        {"hand_pose_right",    {"Right Hand Pose", XR_ACTION_TYPE_POSE_INPUT}},
+        {"hand_haptic_left",   {"Left Hand Haptic", XR_ACTION_TYPE_VIBRATION_OUTPUT}},
+        {"hand_haptic_right",  {"Right Hand Haptic", XR_ACTION_TYPE_VIBRATION_OUTPUT}},
     };
-    // clang-format on
 
-    for (const auto& [path, type] : actionsToInit) {
-        std::shared_ptr<Action> action = std::make_shared<Action>(_context, type, path);
+    // palm pose is nice but monado doesn't support it yet
+    auto hand_pose_name = (_context->_palmPoseSupported) ? "/palm_ext/pose" : "/grip/pose";
+
+    // TODO: set up the openxr dpad bindings modifier (looks complicated)
+    std::map<std::string, std::map<std::string, std::string>> actionSuggestions = {
+        {"/interaction_profiles/khr/simple_controller", {
+            {"tablet",            "/user/hand/left/input/menu/click"},
+            {"teleport",          "/user/hand/right/input/menu/click"},
+            {"interact_left",     "/user/hand/left/input/select/click"},
+            {"interact_right",    "/user/hand/right/input/select/click"},
+            {"hand_pose_left",    std::string("/user/hand/left/input") + hand_pose_name},
+            {"hand_pose_right",   std::string("/user/hand/right/input") + hand_pose_name},
+            {"hand_haptic_left",  "/user/hand/left/output/haptic"},
+            {"hand_haptic_right", "/user/hand/right/output/haptic"},
+        }},
+        {"/interaction_profiles/htc/vive_controller", {
+            {"tablet",            "/user/hand/left/input/menu/click"},
+            //{"teleport",          "/user/hand/right/input/trackpad/dpad_up"},
+            //{"cycle_camera",      "/user/hand/right/input/trackpad/dpad_down"},
+            {"interact_left",     "/user/hand/left/input/trigger/value"},
+            {"interact_right",    "/user/hand/right/input/trigger/value"},
+            {"grip_left",         "/user/hand/left/input/squeeze/click"},
+            {"grip_right",        "/user/hand/right/input/squeeze/click"},
+            {"jump",              "/user/hand/right/input/menu/click"},
+            {"walk",              "/user/hand/left/input/trackpad"},
+            //{"turn_left",         "/user/hand/right/input/trackpad/dpad_left"},
+            //{"turn_right",        "/user/hand/right/input/trackpad/dpad_right"},
+            {"stick_left",        "/user/hand/left/input/trackpad"},
+            {"stick_right",       "/user/hand/right/input/trackpad"},
+            {"stick_click_left",  "/user/hand/left/input/trackpad/click"},
+            {"stick_click_right", "/user/hand/right/input/trackpad/click"},
+            {"hand_pose_left",    std::string("/user/hand/left/input") + hand_pose_name},
+            {"hand_pose_right",   std::string("/user/hand/right/input") + hand_pose_name},
+            {"hand_haptic_left",  "/user/hand/left/output/haptic"},
+            {"hand_haptic_right", "/user/hand/right/output/haptic"},
+        }},
+    };
+
+    for (const auto& [id, args] : actionTypes) {
+        auto friendlyName = args.first;
+        auto xr_type = args.second;
+        std::shared_ptr<Action> action = std::make_shared<Action>(_context, id, friendlyName, xr_type);
         if (!action->init(_actionSet)) {
-            qCCritical(xr_input_cat, "Creating action %s failed!", path.c_str());
+            qCCritical(xr_input_cat) << "Creating action " << id.c_str() << " failed!";
         } else {
-            _actions.emplace(path, action);
+            _actions.emplace(id, action);
         }
     }
 
-    // Khronos Simple Controller
-    std::vector<std::string> simpleBindings = {
-        "/input/select/click",
-        "/input/menu/click",
-        "/input/grip/pose",
-        "/output/haptic",
-    };
-
-    if (!initBindings("/interaction_profiles/khr/simple_controller", simpleBindings)) {
-        qCCritical(xr_input_cat, "Failed to init bindings for khr/simple_controller");
-    }
-
-    // HTC Vive
-    std::vector<std::string> viveBindings = {
-        "/input/system/click",
-        "/input/squeeze/click",
-        "/input/menu/click",
-        "/input/trigger/click",
-        "/input/trigger/value",
-        "/input/trackpad/x",
-        "/input/trackpad/y",
-        "/input/trackpad/click",
-        "/input/trackpad/touch",
-        "/input/grip/pose",
-        "/output/haptic",
-    };
-
-    if (!initBindings("/interaction_profiles/htc/vive_controller", viveBindings)) {
-        qCCritical(xr_input_cat, "Failed to init bindings for htc/vive_controller");
-    }
-
-    // Valve Index Controller
-    // clang-format off
-    std::vector<std::string> indexBindings = {
-        "/input/grip/pose",
-        "/input/thumbstick/x",
-        "/input/thumbstick/y",
-        "/input/thumbstick/touch",
-        "/input/thumbstick/click",
-        "/input/a/click",
-        "/input/a/touch",
-        "/input/b/click",
-        "/input/b/touch",
-        "/input/trigger/value",
-        "/input/trigger/click",
-        "/input/trigger/touch",
-        "/output/haptic",
-        "/input/system/click",
-    };
-    // clang-format on
-
-    if (!initBindings("/interaction_profiles/valve/index_controller", indexBindings)) {
-        qCCritical(xr_input_cat, "Failed to init bindings for valve/index_controller");
+    for (const auto& [profile, input] : actionSuggestions) {
+        if (!initBindings(profile, input)) {
+            qCWarning(xr_input_cat) << "Failed to suggest actions for " << profile.c_str();
+        }
     }
 
     XrSessionActionSetsAttachInfo attachInfo = {
@@ -499,8 +472,8 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         return;
     }
 
-    if (!initActions()) {
-        qCCritical(xr_input_cat, "Could not initialize actions!");
+    if (!_actionsInitialized && !initActions()) {
+        qCCritical(xr_input_cat) << "Could not initialize actions!";
         return;
     }
 
@@ -534,7 +507,8 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     static const glm::quat rightRotationOffset = glm::inverse(rightQuarterZ * eighthX) * touchToHand;
 
     for (int i = 0; i < HAND_COUNT; i++) {
-        XrSpaceLocation handLocation = _actions.at("/input/grip/pose")->getPose(i);
+        auto hand_path = (i == 0) ? "hand_pose_left" : "hand_pose_right";
+        XrSpaceLocation handLocation = _actions.at(hand_path)->getPose();
         bool locationValid = (handLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
         if (locationValid) {
             vec3 translation = xrVecToGlm(handLocation.pose.position);
@@ -556,87 +530,160 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     glm::mat4 defaultHeadOffset = createMatFromQuatAndPos(-DEFAULT_AVATAR_HEAD_ROT, -DEFAULT_AVATAR_HEAD_TO_MIDDLE_EYE_OFFSET);
     _poseStateMap[controller::HEAD] = _context->_lastHeadPose.postTransform(defaultHeadOffset).transform(sensorToAvatar);
 
-    std::vector<std::pair<controller::StandardAxisChannel, std::string>> axesToUpdate[2] = {
-        {
-            { controller::LT, "/input/trigger/value" },
-            { controller::LT, "/input/select/click" },
-            { controller::LEFT_GRIP, "/input/squeeze/click" },
-            { controller::LX, "/input/trackpad/x" },
-            { controller::LY, "/input/trackpad/y" },
-            { controller::LX, "/input/thumbstick/x" },
-            { controller::LY, "/input/thumbstick/y" },
-        },
-        {
-            { controller::RT, "/input/trigger/value" },
-            { controller::RT, "/input/select/click" },
-            { controller::RIGHT_GRIP, "/input/squeeze/click" },
-            { controller::RX, "/input/trackpad/x" },
-            { controller::RY, "/input/trackpad/y" },
-            { controller::RX, "/input/thumbstick/x" },
-            { controller::RY, "/input/thumbstick/y" },
-        },
+    std::vector<std::pair<std::string, controller::StandardAxisChannel>> floatsToUpdate = {
+        {"interact_left", controller::LT},
+        {"interact_right", controller::RT},
+        {"grip_left", controller::LEFT_GRIP},
+        {"grip_right", controller::RIGHT_GRIP},
     };
 
-    for (uint32_t i = 0; i < HAND_COUNT; i++) {
-        for (const auto& [channel, path] : axesToUpdate[i]) {
-            auto action = _actions.at(path)->getFloat(i);
-            if (action.isActive) {
-                _axisStateMap[channel].value = action.currentState;
-            }
+    for (const auto& [name, channel] : floatsToUpdate) {
+        auto action = _actions.at(name)->getFloat();
+        if (action.isActive) {
+            _axisStateMap[channel].value = action.currentState;
         }
     }
 
-    std::vector<std::pair<controller::StandardButtonChannel, std::string>> buttonsToUpdate[2] = {
-        {
-            { controller::LS, "/input/trackpad/click" },
-            { controller::LS_TOUCH, "/input/trackpad/touch" },
-            { controller::LS, "/input/thumbstick/click" },
-            { controller::LS_TOUCH, "/input/thumbstick/touch" },
-            { controller::LT_CLICK, "/input/trigger/click" },
-            { controller::LEFT_PRIMARY_THUMB, "/input/a/click" },
-            { controller::LEFT_PRIMARY_THUMB, "/input/system/click" },
-            { controller::LEFT_SECONDARY_THUMB, "/input/b/click" },
-            { controller::LEFT_SECONDARY_THUMB, "/input/menu/click" },
-        },
-        {
-            { controller::RS, "/input/trackpad/click" },
-            { controller::RS_TOUCH, "/input/trackpad/touch" },
-            { controller::RS, "/input/thumbstick/click" },
-            { controller::RS_TOUCH, "/input/thumbstick/touch" },
-            { controller::RT_CLICK, "/input/trigger/click" },
-            { controller::RIGHT_PRIMARY_THUMB, "/input/a/click" },
-            { controller::RIGHT_PRIMARY_THUMB, "/input/system/click" },
-            { controller::RIGHT_SECONDARY_THUMB, "/input/b/click" },
-            { controller::RIGHT_SECONDARY_THUMB, "/input/menu/click" },
-        },
+    std::vector<std::tuple<std::string, controller::StandardAxisChannel, controller::StandardAxisChannel>> axesToUpdate = {
+        //{"stick_left", controller::LX, controller::LY},
+        //{"stick_right", controller::RX, controller::RY},
+        {"walk", controller::LX, controller::LY},
     };
 
-    for (uint32_t i = 0; i < HAND_COUNT; i++) {
-        for (const auto& [channel, path] : buttonsToUpdate[i]) {
-            auto action = _actions.at(path)->getBool(i);
-            if (action.isActive && action.currentState) {
-                _buttonPressedMap.insert(channel);
-            }
+    for (const auto& [name, x_channel, y_channel] : axesToUpdate) {
+        auto action = _actions.at(name)->getVector2f();
+        if (action.isActive) {
+            _axisStateMap[x_channel].value = action.currentState.x;
+            _axisStateMap[y_channel].value = -action.currentState.y;
         }
     }
 
-    // TODO: better alternative to having every controller emulate a vive one
-    partitionTouchpad(controller::LS, controller::LX, controller::LY, controller::LS_CENTER, controller::LS_X, controller::LS_Y);
-    partitionTouchpad(controller::RS, controller::RX, controller::RY, controller::RS_CENTER, controller::RS_X, controller::RS_Y);
+    // INPUT TODO: more hacks
+    {
+        auto turn_left = _actions.at("turn_left")->getBool();
+        if (turn_left.isActive && turn_left.currentState) {
+            _axisStateMap[controller::RX].value -= 1.0f;
+        }
+
+        auto turn_right = _actions.at("turn_right")->getBool();
+        if (turn_right.isActive && turn_right.currentState) {
+            _axisStateMap[controller::RX].value += 1.0f;
+        }
+
+        // INPUT TODO: the teleport script is hardcoded to use the LY/RY axes
+        auto teleport = _actions.at("teleport")->getBool();
+        if (teleport.isActive && teleport.currentState) {
+            _axisStateMap[controller::RY].value += 1.0f;
+        }
+    }
+
+    // don't double up on the stick values between the proper actions and fallback sticks
+    _axisStateMap[controller::LX].value = std::clamp(_axisStateMap[controller::LX].value, -1.0f, 1.0f);
+    _axisStateMap[controller::LY].value = std::clamp(_axisStateMap[controller::LY].value, -1.0f, 1.0f);
+    _axisStateMap[controller::RX].value = std::clamp(_axisStateMap[controller::RX].value, -1.0f, 1.0f);
+    _axisStateMap[controller::RY].value = std::clamp(_axisStateMap[controller::RY].value, -1.0f, 1.0f);
+
+    std::vector<std::pair<std::string, controller::StandardButtonChannel>> buttonsToUpdate = {
+        {"tablet", controller::LEFT_PRIMARY_THUMB},
+        {"jump", controller::RIGHT_PRIMARY_THUMB},
+        {"cycle_camera", controller::LS_TOUCH},
+        {"sprint", controller::DD},
+    };
+
+    for (const auto& [name, channel] : buttonsToUpdate) {
+        auto action = _actions.at(name)->getBool();
+        if (action.isActive && action.currentState) {
+            _buttonPressedMap.insert(channel);
+        }
+    }
+
+    // INPUT TODO: it's really not necessary to expose "interact click" bindings,
+    // but the engine expects there to be click buttons to work properly
+    {
+        auto left = _actions.at("interact_left")->getFloat();
+        if (left.isActive && left.currentState == 1.0f) {
+            _buttonPressedMap.insert(controller::LT_CLICK);
+        }
+
+        auto right = _actions.at("interact_right")->getFloat();
+        if (right.isActive && right.currentState == 1.0f) {
+            _buttonPressedMap.insert(controller::RT_CLICK);
+        }
+    }
+
+    // emulate dpad if the dpad extension isn't available
+    emulateStickDPad();
 }
 
-// copied from openvr/ViveControllerManager
-void OpenXrInputPlugin::InputDevice::partitionTouchpad(int sButton, int xAxis, int yAxis, int centerPseudoButton, int xPseudoButton, int yPseudoButton) {
-    // Populate the L/RS_CENTER/OUTER pseudo buttons, corresponding to a partition of the L/RS space based on the X/Y values.
-    const float CENTER_DEADBAND = 0.6f;
-    const float DIAGONAL_DIVIDE_IN_RADIANS = PI / 4.0f;
-    if (_buttonPressedMap.find(sButton) != _buttonPressedMap.end()) {
-        float absX = abs(_axisStateMap[xAxis].value);
-        float absY = abs(_axisStateMap[yAxis].value);
-        glm::vec2 cartesianQuadrantI(absX, absY);
-        float angle = glm::atan(cartesianQuadrantI.y / cartesianQuadrantI.x);
-        float radius = glm::length(cartesianQuadrantI);
-        bool isCenter = radius < CENTER_DEADBAND;
-        _buttonPressedMap.insert(isCenter ? centerPseudoButton : ((angle < DIAGONAL_DIVIDE_IN_RADIANS) ? xPseudoButton :yPseudoButton));
+void OpenXrInputPlugin::InputDevice::emulateStickDPad() {
+    auto right_stick = _actions.at("stick_right")->getVector2f();
+
+    auto left_stick_click = _actions.at("stick_click_left")->getBool();
+    auto right_stick_click = _actions.at("stick_click_right")->getBool();
+
+    auto left_needs_click = _context->_dpadNeedsClick && left_stick_click.isActive;
+    auto right_needs_click = _context->_dpadNeedsClick && left_stick_click.isActive;
+
+    auto left_clicked = left_needs_click ? left_stick_click.currentState : true;
+    auto right_clicked = right_needs_click ? right_stick_click.currentState : true;
+
+    if (right_stick.isActive && right_clicked) {
+        // camera switch (right stick down)
+        if (
+            right_stick.currentState.y < -0.6f
+            && right_stick.currentState.x > -0.4f
+            && right_stick.currentState.x < 0.4f
+        ) {
+            _buttonPressedMap.insert(controller::LS_TOUCH);
+        }
+
+        // snap turn left
+        if (
+            right_stick.currentState.x < -0.6f
+            && right_stick.currentState.y > -0.4f
+            && right_stick.currentState.y < 0.4f
+        ) {
+            _axisStateMap[controller::RX].value = -1.0f;
+            _axisStateMap[controller::RY].value = 0.0f;
+        }
+        
+        // snap turn right
+        if (
+            right_stick.currentState.x > 0.6f
+            && right_stick.currentState.y > -0.4f
+            && right_stick.currentState.y < 0.4f
+        ) {
+            _axisStateMap[controller::RX].value = 1.0f;
+            _axisStateMap[controller::RY].value = 0.0f;
+        }
+
+        // teleport
+        if (
+            right_stick.currentState.y > 0.6f
+            && right_stick.currentState.x > -0.4f
+            && right_stick.currentState.x < 0.4f
+        ) {
+            _axisStateMap[controller::RX].value = 0.0f;
+            _axisStateMap[controller::RY].value = -1.0f;
+        }
+    }
+
+    // set stick inputs to zero if they're not
+    // clicked in or too close to the center
+    if (
+        !right_clicked
+        || (right_stick.currentState.x > -0.6f
+            && right_stick.currentState.x < 0.6f
+            && right_stick.currentState.y > -0.6f
+            && right_stick.currentState.y < 0.6f)
+    ) {
+        _axisStateMap[controller::RX].value = 0.0f;
+        _axisStateMap[controller::RY].value = 0.0f;
+    }
+
+    // don't walk unless the trackpad is clicked in
+    if (!left_clicked) {
+        _axisStateMap[controller::LX].value = 0.0f;
+        _axisStateMap[controller::LY].value = 0.0f;
     }
 }

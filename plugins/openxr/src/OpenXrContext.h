@@ -69,8 +69,14 @@ public:
     QString _systemName;
     bool _isSessionRunning = false;
 
+    bool _dpadBindingSupported = false;
+    bool _palmPoseSupported = false;
+    bool _dpadNeedsClick = false;
+
 private:
     XrSessionState _lastSessionState = XR_SESSION_STATE_UNKNOWN;
+
+    XrPath _viveControllerPath = XR_NULL_PATH;
 
 public:
     OpenXrContext();
