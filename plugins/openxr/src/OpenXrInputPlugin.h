@@ -47,26 +47,28 @@ public:
 private:
     class Action {
     public:
-        Action(std::shared_ptr<OpenXrContext> c, XrActionType type, const std::string& path) {
+        Action(std::shared_ptr<OpenXrContext> c, const std::string& id, const std::string &friendlyName, XrActionType type) {
             _context = c;
-            _path = path;
+            _id = id;
+            _friendlyName = friendlyName;
             _type = type;
         }
 
         bool init(XrActionSet actionSet);
         std::vector<XrActionSuggestedBinding> getBindings();
-        XrActionStateFloat getFloat(uint32_t handId);
-        XrActionStateBoolean getBool(uint32_t handId);
-        XrSpaceLocation getPose(uint32_t handId);
-        bool applyHaptic(uint32_t handId, XrDuration duration, float frequency, float amplitude);
+        XrActionStateFloat getFloat();
+        XrActionStateVector2f getVector2f();
+        XrActionStateBoolean getBool();
+        XrSpaceLocation getPose();
+        bool applyHaptic(XrDuration duration, float frequency, float amplitude);
 
+        XrAction _action = XR_NULL_HANDLE;
     private:
         bool createPoseSpaces();
-        XrAction _action = XR_NULL_HANDLE;
         std::shared_ptr<OpenXrContext> _context;
-        std::string _path;
+        std::string _id, _friendlyName;
         XrActionType _type;
-        XrSpace _poseSpaces[HAND_COUNT] = { XR_NULL_HANDLE, XR_NULL_HANDLE };
+        XrSpace _poseSpace = XR_NULL_HANDLE;
     };
 
     class InputDevice : public controller::InputDevice {
@@ -80,7 +82,7 @@ private:
         void focusOutEvent() override;
         bool triggerHapticPulse(float strength, float duration, uint16_t index) override;
 
-        void partitionTouchpad(int sButton, int xAxis, int yAxis, int centerPseudoButton, int xPseudoButton, int yPseudoButton);
+        void emulateStickDPad();
 
         mutable std::recursive_mutex _lock;
         template <typename F>
@@ -98,7 +100,7 @@ private:
         bool _actionsInitialized = false;
 
         bool initActions();
-        bool initBindings(const std::string& profileName, const std::vector<std::string>& actionsToBind);
+        bool initBindings(const std::string& profileName, const std::map<std::string, std::string>& actionsToBind);
     };
 
     bool _registeredWithInputMapper = false;
