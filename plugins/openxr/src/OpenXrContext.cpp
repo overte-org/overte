@@ -82,12 +82,25 @@ bool OpenXrContext::initInstance() {
         return false;
 
     bool openglSupported = false;
+    bool bindingModificationSupported = false;
 
     qCInfo(xr_context_cat, "Runtime supports %d extensions:", count);
     for (uint32_t i = 0; i < count; i++) {
         qCInfo(xr_context_cat, "%s v%d", properties[i].extensionName, properties[i].extensionVersion);
         if (strcmp(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME, properties[i].extensionName) == 0) {
             openglSupported = true;
+        }
+        
+        if (strcmp(XR_KHR_BINDING_MODIFICATION_EXTENSION_NAME, properties[i].extensionName) == 0) {
+            bindingModificationSupported = true;
+        }
+        
+        if (strcmp(XR_EXT_DPAD_BINDING_EXTENSION_NAME, properties[i].extensionName) == 0) {
+            _dpadBindingSupported = true;
+        }
+        
+        if (strcmp(XR_EXT_PALM_POSE_EXTENSION_NAME, properties[i].extensionName) == 0) {
+            _palmPoseSupported = true;
         }
     }
 
@@ -96,14 +109,21 @@ bool OpenXrContext::initInstance() {
         return false;
     }
 
-    std::vector<const char*> enabled = { XR_KHR_OPENGL_ENABLE_EXTENSION_NAME };
+    std::vector<const char*> enabled = {XR_KHR_OPENGL_ENABLE_EXTENSION_NAME};
+    if (bindingModificationSupported && _dpadBindingSupported) {
+        enabled.emplace(enabled.end(), XR_KHR_BINDING_MODIFICATION_EXTENSION_NAME);
+        enabled.emplace(enabled.end(), XR_EXT_DPAD_BINDING_EXTENSION_NAME);
+    }
+    if (_palmPoseSupported) {
+        enabled.emplace(enabled.end(), XR_EXT_PALM_POSE_EXTENSION_NAME);
+    }
 
     XrInstanceCreateInfo info = {
       .type = XR_TYPE_INSTANCE_CREATE_INFO,
       .applicationInfo = {
-          .applicationName = "overte",
+          .applicationName = "Overte",
           .applicationVersion = 1,
-          .engineName = "overte",
+          .engineName = "Overte",
           .engineVersion = 0,
           .apiVersion = XR_CURRENT_API_VERSION,
       },
@@ -126,6 +146,8 @@ bool OpenXrContext::initInstance() {
 
     xrStringToPath(_instance, "/user/hand/left", &_handPaths[0]);
     xrStringToPath(_instance, "/user/hand/right", &_handPaths[1]);
+    
+    xrStringToPath(_instance, "/interaction_profiles/htc/vive_controller", &_viveControllerPath);
 
     return true;
 }
@@ -341,6 +363,11 @@ bool OpenXrContext::pollEvents() {
                     XrResult res = xrGetCurrentInteractionProfile(_session, _handPaths[i], &state);
                     if (!xrCheck(_instance, res, "Failed to get interaction profile"))
                         continue;
+
+                    _dpadNeedsClick = false;
+                    if (state.interactionProfile == _viveControllerPath) {
+                        _dpadNeedsClick = true;
+                    }
 
                     uint32_t bufferCountOutput;
                     char profilePath[XR_MAX_PATH_LENGTH];

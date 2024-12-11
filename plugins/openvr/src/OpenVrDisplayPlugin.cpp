@@ -469,6 +469,7 @@ bool OpenVrDisplayPlugin::internalActivate() {
         vr::VRCompositor()->ForceInterleavedReprojectionOn(true);
     }
 
+#if 0
     // set up default sensor space such that the UI overlay will align with the front of the room.
     auto chaperone = vr::VRChaperone();
     if (chaperone) {
@@ -485,6 +486,7 @@ bool OpenVrDisplayPlugin::internalActivate() {
         qDebug() << "OpenVR: error could not get chaperone pointer";
 #endif
     }
+#endif
 
     if (_threadedSubmit) {
         _submitThread = std::make_shared<OpenVrSubmitThread>(*this);
@@ -775,6 +777,9 @@ QString OpenVrDisplayPlugin::getPreferredAudioOutDevice() const {
 }
 
 QRectF OpenVrDisplayPlugin::getPlayAreaRect() {
+#if 1
+    return QRectF();
+#else
     auto chaperone = vr::VRChaperone();
     if (!chaperone) {
         qWarning() << "No chaperone";
@@ -806,6 +811,7 @@ QRectF OpenVrDisplayPlugin::getPlayAreaRect() {
     glm::vec2 dimensions = glm::vec2(maxXZ.x - minXZ.x, maxXZ.z - minXZ.z);
 
     return QRectF(center.x, center.y, dimensions.x, dimensions.y);
+#endif
 }
 
 DisplayPlugin::StencilMaskMeshOperator OpenVrDisplayPlugin::getStencilMaskMeshOperator() {
