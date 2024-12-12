@@ -131,3 +131,7 @@ interface/compiledResources
 # Act local GitHub Actions
 .secret
 
+
+_build/
+
+CMakeUserPresets.json
