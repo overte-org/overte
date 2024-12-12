@@ -395,7 +395,10 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
     };
 
     // palm pose is nice but monado doesn't support it yet
-    auto hand_pose_name = (_context->_palmPoseSupported) ? "/palm_ext/pose" : "/grip/pose";
+    // (disable it for now because i can't test what palm
+    //  pose looks like and if it'll break something)
+    //auto hand_pose_name = (_context->_palmPoseSupported) ? "/palm_ext/pose" : "/grip/pose";
+    auto hand_pose_name = "/grip/pose";
 
     // TODO: set up the openxr dpad bindings modifier (looks complicated)
     std::map<std::string, std::map<std::string, std::string>> actionSuggestions = {
@@ -427,6 +430,40 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"stick_click_right", "/user/hand/right/input/trackpad/click"},
             {"hand_pose_left",    std::string("/user/hand/left/input") + hand_pose_name},
             {"hand_pose_right",   std::string("/user/hand/right/input") + hand_pose_name},
+            {"hand_haptic_left",  "/user/hand/left/output/haptic"},
+            {"hand_haptic_right", "/user/hand/right/output/haptic"},
+        }},
+        {"/interaction_profiles/oculus/touch_controller", {
+            {"tablet",            "/user/hand/left/input/y/click"},
+            {"interact_left",     "/user/hand/left/input/trigger/value"},
+            {"interact_right",    "/user/hand/right/input/trigger/value"},
+            {"grip_left",         "/user/hand/left/input/squeeze/value"},
+            {"grip_right",        "/user/hand/right/input/squeeze/value"},
+            {"jump",              "/user/hand/right/input/b/click"},
+            {"walk",              "/user/hand/left/input/thumbstick"},
+            {"stick_left",        "/user/hand/left/input/thumbstick"},
+            {"stick_right",       "/user/hand/right/input/thumbstick"},
+            {"stick_click_left",  "/user/hand/left/input/thumbstick/click"},
+            {"stick_click_right", "/user/hand/right/input/thumbstick/click"},
+            {"hand_pose_left",    std::string("/user/hand/left/input") + hand_pose_name},
+            {"hand_pose_right",  std::string("/user/hand/right/input") + hand_pose_name},
+            {"hand_haptic_left",  "/user/hand/left/output/haptic"},
+            {"hand_haptic_right", "/user/hand/right/output/haptic"},
+        }},
+        {"/interaction_profiles/microsoft/motion_controller", {
+            {"tablet",            "/user/hand/left/input/menu/click"},
+            {"interact_left",     "/user/hand/left/input/trigger/value"},
+            {"interact_right",    "/user/hand/right/input/trigger/value"},
+            {"grip_left",         "/user/hand/left/input/squeeze/click"},
+            {"grip_right",        "/user/hand/right/input/squeeze/click"},
+            {"jump",              "/user/hand/right/input/menu/click"},
+            {"walk",              "/user/hand/left/input/thumbstick"},
+            {"stick_left",        "/user/hand/left/input/thumbstick"},
+            {"stick_right",       "/user/hand/right/input/thumbstick"},
+            {"stick_click_left",  "/user/hand/left/input/thumbstick/click"},
+            {"stick_click_right", "/user/hand/right/input/thumbstick/click"},
+            {"hand_pose_left",    std::string("/user/hand/left/input") + hand_pose_name},
+            {"hand_pose_right",  std::string("/user/hand/right/input") + hand_pose_name},
             {"hand_haptic_left",  "/user/hand/left/output/haptic"},
             {"hand_haptic_right", "/user/hand/right/output/haptic"},
         }},
@@ -646,7 +683,7 @@ void OpenXrInputPlugin::InputDevice::emulateStickDPad() {
             _axisStateMap[controller::RX].value = -1.0f;
             _axisStateMap[controller::RY].value = 0.0f;
         }
-        
+
         // snap turn right
         if (
             right_stick.currentState.x > 0.6f
