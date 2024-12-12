@@ -9,6 +9,8 @@
 
 #include "OpenXrContext.h"
 #include <qloggingcategory.h>
+#include <QString>
+#include <QGuiApplication>
 
 #include <sstream>
 
@@ -59,6 +61,11 @@ OpenXrContext::~OpenXrContext() {
 }
 
 bool OpenXrContext::initInstance() {
+    if (static_cast<QGuiApplication*>(qApp)->platformName() == "wayland") {
+        qCCritical(xr_context_cat, "The OpenXR plugin does not support Wayland yet! Use the QT_QPA_PLATFORM=xcb environment variable to force Overte to launch with X11.");
+        return false;
+    }
+
     uint32_t count = 0;
     XrResult result = xrEnumerateInstanceExtensionProperties(nullptr, 0, &count, nullptr);
 
@@ -90,15 +97,15 @@ bool OpenXrContext::initInstance() {
         if (strcmp(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME, properties[i].extensionName) == 0) {
             openglSupported = true;
         }
-        
+
         if (strcmp(XR_KHR_BINDING_MODIFICATION_EXTENSION_NAME, properties[i].extensionName) == 0) {
             bindingModificationSupported = true;
         }
-        
+
         if (strcmp(XR_EXT_DPAD_BINDING_EXTENSION_NAME, properties[i].extensionName) == 0) {
             _dpadBindingSupported = true;
         }
-        
+
         if (strcmp(XR_EXT_PALM_POSE_EXTENSION_NAME, properties[i].extensionName) == 0) {
             _palmPoseSupported = true;
         }
@@ -146,7 +153,7 @@ bool OpenXrContext::initInstance() {
 
     xrStringToPath(_instance, "/user/hand/left", &_handPaths[0]);
     xrStringToPath(_instance, "/user/hand/right", &_handPaths[1]);
-    
+
     xrStringToPath(_instance, "/interaction_profiles/htc/vive_controller", &_viveControllerPath);
 
     return true;
