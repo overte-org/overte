@@ -263,7 +263,6 @@ protected:
     void updateRenderPass();
     void resetRenderPass();
 
-    // VKTODO: one instance per each frame
     // Contains objects that are created per frame and need to be deleted after the frame is rendered
     class FrameData {
     public:
@@ -289,6 +288,46 @@ protected:
         VKBackend *_backend;
     };
 
+    // Contains objects that need to be deleted on Vulkan backend thread after frame is rendered.
+    // It's filled by destructors of objects like gpu::Texture and gpu::Buffer, since these destroy
+    // backend counterpart of their objects.
+public:
+    class Recycler {
+    public:
+        // This means that for every GPU object mutex will be locked and unlocked several times.
+        // VKTODO: It would be good to do profiling and check if it impacts performance or not.
+        void trashVkSampler(VkSampler &sampler);
+        void trashVkFramebuffer(VkFramebuffer &framebuffer);
+        void trashVkImageView(VkImageView &imageView);
+        void trashVkImage(VkImage &image);
+        void trashVkBuffer(VkBuffer &buffer);
+        void trashVkRenderPass(VkRenderPass &renderPass);
+        void trashVkPipeline(VkPipeline &pipeline);
+        void trashVkShaderModule(VkShaderModule &module);
+        void trashVmaAllocation(VmaAllocation &allocation);
+
+    private:
+        std::recursive_mutex recyclerMutex;
+
+        std::vector<VkSampler> vkSamplers;
+        std::vector<VkFramebuffer> vkFramebuffer;
+        std::vector<VkImageView> vkImageViews;
+        std::vector<VkImage> vkImages;
+        std::vector<VkBuffer> vkBuffers;
+        std::vector<VkRenderPass> vkRenderPasses;
+        std::vector<VkPipeline> vkPipelines;
+        std::vector<VkShaderModule> vkShaderModules;
+        std::vector<VmaAllocation> vmaAllocations;
+
+        // List of pointers to objects that were deleted and need to be removed from backend object sets.
+        std::vector<VKFramebuffer*> deletedFramebuffers;
+        std::vector<VKBuffer*> deletedBuffers;
+        std::vector<VKTexture*> deletedTextures;
+        std::vector<VKQuery*> deletedQueries;
+        friend class VKBackend;
+    } recycler;
+
+private:
     void draw(VkPrimitiveTopology mode, uint32 numVertices, uint32 startVertex);
     void renderPassTransfer(const Batch& batch);
     void renderPassDraw(const Batch& batch);
@@ -320,12 +359,9 @@ public:
     void downloadFramebuffer(const FramebufferPointer& srcFramebuffer, const Vec4i& region, QImage& destImage) final;
     void setDrawCommandBuffer(VkCommandBuffer commandBuffer);
     size_t getNumInputBuffers() const { return _input._invalidBuffers.size(); }
-    VkDescriptorImageInfo getDefaultTextureDescriptorInfo() { return _defaultTexture.descriptor; };
+    VkDescriptorImageInfo getDefaultTextureDescriptorInfo() ;
     // Used by GPU frame player to move camera around
     void enableContextViewCorrectionForFramePlayer() { _transform._viewCorrectionEnabledForFramePlayer = true; };
-
-
-    void trash(VKBuffer& buffer);
 
     static gpu::Primitive getPrimitiveTopologyFromCommand(Batch::Command command, const Batch& batch, size_t paramOffset);
 
@@ -422,6 +458,17 @@ public:
     VKFramebuffer *_outputTexture{ nullptr };
 protected:
 
+    // These are filled by syncGPUObject() calls, and are needed to track backend objects so that they can be destroyed before
+    // destroying backend.
+    // Access to these objects happens only from the backend thread. Destructors don't access them directly, but through a recycler.
+    std::unordered_set<VKFramebuffer*> framebuffers;
+    std::unordered_set<VKBuffer*> buffers;
+    std::unordered_set<VKTexture*> textures;
+    std::unordered_set<VKQuery*> queries;
+    void perFrameCleanup();
+    // Called by the destructor
+    void beforeShutdownCleanup();
+
     // Logical device, application's view of the physical device (GPU)
     // VkPipeline cache object
     VkPipelineCache _pipelineCache;
@@ -429,7 +476,9 @@ protected:
     vks::Context& _context{ vks::Context::get() };
     //VkQueue _graphicsQueue; //TODO: initialize from device
     //VkQueue _transferQueue; //TODO: initialize from device
-    vks::Texture2D _defaultTexture;
+    std::shared_ptr<gpu::Texture> _defaultTexture;
+    VKTexture* _defaultTextureVk{ nullptr };
+    VkDescriptorImageInfo _defaultTextureImageInfo{};
     friend class VKBuffer;
     friend class VKFramebuffer;
     VkCommandBuffer _currentCommandBuffer;
