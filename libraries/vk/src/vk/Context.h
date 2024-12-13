@@ -131,22 +131,6 @@ public:
 
     uint32_t findQueue(const VkQueueFlags& desiredFlags, const VkSurfaceKHR& presentSurface = VkSurfaceKHR()) const;
 
-    template <typename T>
-    void trash(T value, std::function<void(T t)> destructor = [](T t) { t.destroy(); }) const {
-        if (!value) {
-            return;
-        }
-        dumpster.push_back([=] { destructor(value); });
-    }
-
-    template <typename T>
-    void trashAll(const std::vector<T>& values, std::function<void(const std::vector<T>&)> destructor) const {
-        if (values.empty()) {
-            return;
-        }
-        dumpster.push_back([=] { destructor(values); });
-    }
-
     //
     // Convenience functions for trashing specific types.  These functions know what kind of function
     // call to make for destroying a given Vulkan object.

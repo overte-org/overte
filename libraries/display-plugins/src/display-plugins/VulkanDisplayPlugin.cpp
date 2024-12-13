@@ -351,8 +351,8 @@ void VulkanDisplayPlugin::deactivate() {
         _container->currentDisplayActions().clear();
     }
 
-    // VKTODO: Should this be here?
-    uncustomizeContext();
+    // VKTODO: This shouldn't be here, because it's wrong thread, but then where?
+    //uncustomizeContext();
 
     Parent::deactivate();
 }

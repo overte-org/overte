@@ -92,7 +92,8 @@ VKBuffer::~VKBuffer() {
     Backend::bufferCount.decrement();
     auto backend = _backend.lock();
     if (backend) {
-        backend->trash(*this);
+        backend->recycler.trashVkBuffer(buffer);
+        backend->recycler.trashVmaAllocation(allocation);
     }
 }
 

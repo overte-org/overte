@@ -193,13 +193,6 @@ void Context::createInstance() {
 
 void Context::destroyContext() {
     VK_CHECK_RESULT(vkQueueWaitIdle(graphicsQueue));
-    for (const auto& trash : dumpster) {
-        trash();
-    }
-
-    while (!recycler.empty()) {
-        recycle();
-    }
 
     device.reset();
     if (enableValidation) {
@@ -235,7 +228,7 @@ void Context::destroyContext() {
     return bestMatch;
 }*/
 
-void Context::trashCommandBuffers(const std::vector<VkCommandBuffer>& cmdBuffers, VkCommandPool commandPool) const {
+/*void Context::trashCommandBuffers(const std::vector<VkCommandBuffer>& cmdBuffers, VkCommandPool commandPool) const {
     Q_ASSERT(commandPool);
 
     using DtorLambda = std::function<void(const std::vector<VkCommandBuffer>&)>;
@@ -244,7 +237,7 @@ void Context::trashCommandBuffers(const std::vector<VkCommandBuffer>& cmdBuffers
             vkFreeCommandBuffers(device->logicalDevice, commandPool, cmdBuffers.size(), cmdBuffers.data());
         };
     trashAll<VkCommandBuffer>(cmdBuffers, destructor);
-}
+}*/
 
 void Context::emptyDumpster(VkFence fence) {
     VoidLambdaList newDumpster;
