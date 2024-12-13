@@ -88,6 +88,7 @@ LightingModel::LightingModel() {
             }
         });
 
+        _ambientFresnelLUT->setStoredMipFormat(_ambientFresnelLUT->getTexelFormat());
         _ambientFresnelLUT->assignStoredMip(0, N_roughness * N_NdotV * sizeof(LUTVector::value_type), (const gpu::Byte*)lut.data());
     }
 #endif
