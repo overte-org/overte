@@ -241,6 +241,7 @@ void VKAttachmentTexture::createTexture(VKBackend &backend) {
 }
 
 VKAttachmentTexture::~VKAttachmentTexture() {
+    // VKTODO: Redo destructors for cleanup to happen on present thread
     auto backend = _backend.lock();
     auto device = backend->getContext().device->logicalDevice;
     if (_vkImageView) {

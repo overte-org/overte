@@ -64,6 +64,8 @@ BackendPointer VKBackend::createBackend() {
     // FIXME provide a mechanism to override the backend for testing
     // Where the gpuContext is initialized and where the TRUE Backend is created and assigned
     std::shared_ptr<VKBackend> result = std::make_shared<VKBackend>();
+    result->initTransform();
+    result->initDefaultTexture();
     INSTANCE = result.get();
     void* voidInstance = &(*result);
     qApp->setProperty(VK_BACKEND_PROPERTY_NAME, QVariant::fromValue(voidInstance));
@@ -111,8 +113,6 @@ VKBackend::VKBackend() {
         _framePool.push_back(std::make_shared<FrameData>(this));
         _framesToReuse.push_back(_framePool.back());
     }
-    initTransform();
-    initDefaultTexture();
 }
 
 VKBackend::~VKBackend() {
@@ -832,9 +832,8 @@ void VKBackend::setDrawCommandBuffer(VkCommandBuffer commandBuffer) {
     _currentCommandBuffer = commandBuffer;
 }
 
-void VKBackend::trash(VKBuffer& buffer) {
-    // VKTODO: thread safety for this and similar calls
-    buffer.destroy();
+VkDescriptorImageInfo VKBackend::getDefaultTextureDescriptorInfo() {
+    return _defaultTextureVk->getDescriptorImageInfo();
 }
 
 void VKBackend::TransformStageState::preUpdate(size_t commandIndex, const StereoState& stereo, Vec2u framebufferSize) {
@@ -1224,7 +1223,7 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
                     qDebug() << "Texture is null during descriptor " << i
                              << " write: " << _resource._textures[i].texture->source();
                 }
-                imageInfo = _defaultTexture.descriptor;
+                imageInfo = _defaultTextureImageInfo;
             }
             //imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             //imageInfo.imageView = texture->;
@@ -1251,7 +1250,7 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
                 descriptorWriteSet.dstArrayElement = 0;
                 descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                 descriptorWriteSet.descriptorCount = 1;
-                descriptorWriteSet.pImageInfo = &_defaultTexture.descriptor;
+                descriptorWriteSet.pImageInfo = &_defaultTextureImageInfo;
                 sets.push_back(descriptorWriteSet);
             }
         }
@@ -1993,7 +1992,13 @@ void VKBackend::initDefaultTexture() {
             buffer[x + y * width + 3] = 255;
         }
     }
-    _defaultTexture.fromBuffer(buffer.data(), buffer.size(), VK_FORMAT_R8G8B8A8_SRGB, width, height, _context.device.get(),  _context.transferQueue);
+
+    _defaultTexture = gpu::Texture::create2D(gpu::Element{ gpu::VEC4, gpu::NUINT8, gpu::RGBA }, width, height, 1U,
+                                                gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR, gpu::Sampler::WRAP_CLAMP));
+    _defaultTexture->setStoredMipFormat(_defaultTexture->getTexelFormat());
+    _defaultTexture->assignStoredMip(0, width * height * sizeof(uint8_t) * 4, (const gpu::Byte*)buffer.data());
+    _defaultTextureVk = syncGPUObject(*_defaultTexture);
+    _defaultTextureImageInfo = _defaultTextureVk->getDescriptorImageInfo();
 }
 
 void VKBackend::acquireFrameData() {
@@ -2016,6 +2021,149 @@ void VKBackend::waitForGPU() {
     VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
 }
 
+void VKBackend::Recycler::trashVkSampler(VkSampler& sampler) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkSamplers.push_back(sampler);
+}
+
+void VKBackend::Recycler::trashVkFramebuffer(VkFramebuffer& framebuffer) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkFramebuffer.push_back(framebuffer);
+}
+
+void VKBackend::Recycler::trashVkImageView(VkImageView& imageView) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkImageViews.push_back(imageView);
+}
+
+void VKBackend::Recycler::trashVkImage(VkImage& image) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkImages.push_back(image);
+}
+
+void VKBackend::Recycler::trashVkBuffer(VkBuffer& buffer) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkBuffers.push_back(buffer);
+}
+
+void VKBackend::Recycler::trashVkRenderPass(VkRenderPass& renderPass) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkRenderPasses.push_back(renderPass);
+}
+
+void VKBackend::Recycler::trashVkPipeline(VkPipeline& pipeline) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkPipelines.push_back(pipeline);
+}
+
+void VKBackend::Recycler::trashVkShaderModule(VkShaderModule& module) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkShaderModules.push_back(module);
+}
+
+void VKBackend::Recycler::trashVmaAllocation(VmaAllocation& allocation) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+}
+
+void VKBackend::perFrameCleanup() {
+    std::lock_guard<std::recursive_mutex> lockGuard(recycler.recyclerMutex);
+    // Remove pointers to objects that were deleted during the frame.
+    for (auto framebuffer : recycler.deletedFramebuffers) {
+        framebuffers.erase(framebuffer);
+    }
+
+    size_t capacityBeforeClear = recycler.deletedFramebuffers.capacity();
+    recycler.deletedFramebuffers.resize(0);
+    recycler.deletedFramebuffers.reserve(capacityBeforeClear);
+    for (auto buffer : recycler.deletedBuffers) {
+        buffers.erase(buffer);
+    }
+
+    capacityBeforeClear = recycler.deletedBuffers.capacity();
+    recycler.deletedBuffers.resize(0);
+    recycler.deletedBuffers.reserve(capacityBeforeClear);
+    for (auto texture : recycler.deletedTextures) {
+        textures.erase(texture);
+    }
+
+    capacityBeforeClear = recycler.deletedTextures.capacity();
+    recycler.deletedTextures.resize(0);
+    recycler.deletedTextures.reserve(capacityBeforeClear);
+    for (auto query : recycler.deletedQueries) {
+        queries.erase(query);
+    }
+
+    capacityBeforeClear = recycler.deletedQueries.capacity();
+    recycler.deletedQueries.resize(0);
+    recycler.deletedQueries.reserve(capacityBeforeClear);
+
+    auto device = _context.device->logicalDevice;
+    for (auto sampler : recycler.vkSamplers) {
+        vkDestroySampler(device, sampler, nullptr);
+    }
+
+    for (auto imageView : recycler.vkImageViews) {
+        vkDestroyImageView(device, imageView, nullptr);
+    }
+
+    for (auto image : recycler.vkImages) {
+        vkDestroyImage(device, image, nullptr);
+    }
+
+    for (auto buffer : recycler.vkBuffers) {
+        vkDestroyBuffer(device, buffer, nullptr);
+    }
+
+    for (auto renderPass: recycler.vkRenderPasses) {
+        vkDestroyRenderPass(device, renderPass, nullptr);
+    }
+
+    for (auto pipeline: recycler.vkPipelines) {
+        vkDestroyPipeline(device, pipeline, nullptr);
+    }
+
+    for (auto allocation : recycler.vmaAllocations) {
+        vmaFreeMemory(vks::Allocation::getAllocator(), allocation);
+    }
+}
+
+void VKBackend::beforeShutdownCleanup() {
+    // Lock prevents destroying objects while hashes
+    std::lock_guard<std::recursive_mutex> lockGuard(recycler.recyclerMutex);
+    // Remove pointers to objects that were deleted during the frame.
+    // This prevents access-after-delete.
+    perFrameCleanup();
+
+    // Delete remaining backend objects.
+    for (auto framebuffer : framebuffers) {
+        framebuffer->_gpuObject.gpuObject.setGPUObject(nullptr);
+    }
+    framebuffers.clear();
+
+    for (auto buffer : buffers) {
+        buffer->_gpuObject.gpuObject.setGPUObject(nullptr);
+    }
+    buffers.clear();
+
+    for (auto texture : textures) {
+        texture->_gpuObject.gpuObject.setGPUObject(nullptr);
+    }
+    textures.clear();
+
+    for (auto query : queries) {
+        query->_gpuObject.gpuObject.setGPUObject(nullptr);
+    }
+    queries.clear();
+
+    // Deleted objects got added to recycler, so they need to be cleaned since sets are already empty.
+    recycler.deletedFramebuffers.clear();
+    recycler.deletedBuffers.clear();
+    recycler.deletedTextures.clear();
+    recycler.deletedQueries.clear();
+
+    // One more cleanup to destroy Vulkan objects released by backend objects.
+    perFrameCleanup();
+}
 
 void VKBackend::initTransform() {
 

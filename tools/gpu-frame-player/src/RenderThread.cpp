@@ -357,7 +357,7 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     vkBackend->waitForGPU();
     vkBackend->recycleFrame();
     _vkcontext.emptyDumpster(frameFence);
-    _vkcontext.recycle();
+    //_vkcontext.recycle();
     if (frame && !frame->batches.empty()) {
         if (rdoc_api)
             rdoc_api->EndFrameCapture(NULL, NULL);
@@ -406,11 +406,11 @@ bool RenderThread::process() {
 
 void RenderThread::setupFramebuffers() {
     // Recreate the frame buffers
-    _vkcontext.trashAll<VkFramebuffer>(_framebuffers, [this](const std::vector<VkFramebuffer>& framebuffers) {
-        for (const auto& framebuffer : framebuffers) {
-            vkDestroyFramebuffer(_vkcontext.device->logicalDevice, framebuffer, nullptr);
-        }
-    });
+    auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(_gpuContext->getBackend());
+    for (auto framebuffer : _framebuffers) {
+        vkBackend->recycler.trashVkFramebuffer(framebuffer);
+    }
+    _framebuffers.clear();
 
     std::vector<VkImageView> attachments;
     attachments.resize(1);

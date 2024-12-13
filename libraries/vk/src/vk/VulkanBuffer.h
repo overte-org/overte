@@ -46,9 +46,7 @@ namespace vks
         static std::shared_ptr<Buffer> createUniform(VkDeviceSize bufferSize);
         static std::shared_ptr<Buffer> createStorage(VkDeviceSize bufferSize);
         static std::shared_ptr<Buffer> createVertex(VkDeviceSize bufferSize);
-        void copyTo(void* data, VkDeviceSize size);
         //VkResult flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
         //VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0);
-        void destroy() override;
     };
 }
