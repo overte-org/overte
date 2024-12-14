@@ -75,7 +75,7 @@ jobs:
               runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
               arch: aarch64
               build_type: full
-              apt-dependencies: vulkan-validationlayers libvulkan-dev libvulkan1
+              apt-dependencies: vulkan-validationlayers libvulkan-dev libvulkan1 libqt5x11extras5-dev
               image: docker.io/overte/overte-full-build:0.1.1-ubuntu-22.04-aarch64
         fail-fast: false
     runs-on: ${{matrix.runner}}
