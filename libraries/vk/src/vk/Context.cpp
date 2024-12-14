@@ -92,9 +92,6 @@ void Context::createInstance() {
         qDebug() << "Found debug marker extension";
     }
 
-    //requireExtensions({ VK_EXT_DEPTH_CLIP_CONTROL_EXTENSION_NAME });
-    //requireExtensions({ VK_EXT_DEPTH_CLAMP_ZERO_ONE_EXTENSION_NAME });
-
     // Vulkan instance
     VkApplicationInfo appInfo{};
     appInfo.pApplicationName = "VulkanExamples";
