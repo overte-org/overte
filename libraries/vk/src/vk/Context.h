@@ -3,7 +3,6 @@
 #include "Config.h"
 
 #include "Debug.h"
-//#include "Image.h"
 #include "VulkanBuffer.h"
 #include "Helpers.h"
 #include "VulkanDevice.h"
