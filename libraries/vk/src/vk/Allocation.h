@@ -49,7 +49,7 @@ namespace vks {
         static VmaAllocator& getAllocator();
 
         VmaAllocation allocation;
-        /** @brief Memory propertys flags to be filled by external source at buffer creation (to query at some later point) */
+        /** @brief Memory properties flags to be filled by external source at buffer creation (to query at some later point) */
         VkMemoryPropertyFlags memoryPropertyFlags;
 #else
         VkDeviceMemory memory;
