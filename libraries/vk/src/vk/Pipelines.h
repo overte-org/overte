@@ -108,7 +108,7 @@ namespace vks {
         };
 
         struct PipelineDepthStencilStateCreateInfo : public VkPipelineDepthStencilStateCreateInfo {
-            PipelineDepthStencilStateCreateInfo(bool depthEnable = true):
+            explicit PipelineDepthStencilStateCreateInfo(bool depthEnable = true):
                 VkPipelineDepthStencilStateCreateInfo{} {
                 sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
                 if (depthEnable) {
