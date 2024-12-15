@@ -16,7 +16,7 @@
 
 #define TransformCamera _TransformCamera
 
-LAYOUT_STD140(binding=GPU_BUFFER_TRANSFORM_CAMERA) uniform transformCameraBuffer {
+UNIFORM_BUFFER(GPU_BUFFER_TRANSFORM_CAMERA, transformCameraBuffer) {
 #ifdef GPU_TRANSFORM_IS_STEREO
 #ifdef GPU_TRANSFORM_STEREO_CAMERA
     TransformCamera _camera[2];
@@ -32,10 +32,10 @@ LAYOUT_STD140(binding=GPU_BUFFER_TRANSFORM_CAMERA) uniform transformCameraBuffer
 #ifdef GPU_TRANSFORM_IS_STEREO
 #ifdef GPU_TRANSFORM_STEREO_CAMERA
 #ifdef GPU_TRANSFORM_STEREO_CAMERA_ATTRIBUTED
-layout(location=GPU_ATTR_STEREO_SIDE) in int _inStereoSide;
+INPUT(GPU_ATTR_STEREO_SIDE, int, _inStereoSide);
 #endif
 
-layout(location=GPU_ATTR_V2F_STEREO_SIDE) flat out int _stereoSide;
+FLAT_OUTPUT(GPU_ATTR_V2F_STEREO_SIDE, int, _stereoSide);
 
 // In stereo drawcall mode Instances are drawn twice (left then right) hence the true InstanceID is the gl_InstanceID / 2
 int gpu_InstanceID() {
@@ -60,7 +60,7 @@ int gpu_InstanceID() {
 
 #ifdef GPU_PIXEL_SHADER
 #ifdef GPU_TRANSFORM_STEREO_CAMERA
-layout(location=GPU_ATTR_V2F_STEREO_SIDE) flat in int _stereoSide;
+FLAT_INPUT(GPU_ATTR_V2F_STEREO_SIDE, int, _stereoSide);
 #endif
 #endif
 
@@ -117,10 +117,10 @@ struct TransformObject {
     mat4 _modelInverse;
 };
 
-layout(location=GPU_ATTR_DRAW_CALL_INFO) in ivec2 _drawCallInfo;
+INPUT(GPU_ATTR_DRAW_CALL_INFO, ivec2, _drawCallInfo);
 
 #if defined(GPU_SSBO_TRANSFORM_OBJECT)
-LAYOUT_STD140(binding=GPU_STORAGE_TRANSFORM_OBJECT) buffer transformObjectBuffer {
+RESOURCE_BUFFER(GPU_STORAGE_TRANSFORM_OBJECT, transformObjectBuffer) {
     TransformObject _object[];
 };
 TransformObject getTransformObject() {
@@ -128,7 +128,7 @@ TransformObject getTransformObject() {
     return transformObject;
 }
 #else
-LAYOUT(binding=GPU_TEXTURE_TRANSFORM_OBJECT) uniform samplerBuffer transformObjectBuffer;
+RESOURCE_BUFFER(GPU_TEXTURE_TRANSFORM_OBJECT, transformObjectBuffer);
 
 TransformObject getTransformObject() {
     int offset = 8 * _drawCallInfo.x;

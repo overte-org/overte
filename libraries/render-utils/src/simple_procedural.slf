@@ -18,7 +18,7 @@
     <@include GlobalLight.slh@>
     <$declareEvalGlobalLightingAlphaBlended()$>
 
-    layout(location=0) out vec4 _fragColor0;
+    OUTPUT(0, vec4, _fragColor0);
 <@endif@>
 
 <@include gpu/Transform.slh@>
@@ -27,12 +27,12 @@
 <@include CullFace.slh@>
 <@include render-utils/ShaderConstants.h@>
 
-layout(location=RENDER_UTILS_ATTR_POSITION_MS) in vec4 _positionMS;
-layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
-layout(location=RENDER_UTILS_ATTR_NORMAL_MS) in vec3 _normalMS;
-layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
-layout(location=RENDER_UTILS_ATTR_COLOR) in vec4 _color;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
+INPUT(RENDER_UTILS_ATTR_POSITION_MS, vec4, _positionMS);
+INPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
+INPUT(RENDER_UTILS_ATTR_NORMAL_MS, vec3, _normalMS);
+INPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
+INPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
+INPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 #define _texCoord0 _texCoord01.xy
 #define _texCoord1 _texCoord01.zw
 

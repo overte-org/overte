@@ -22,11 +22,11 @@ struct ParabolaData {
     ivec3 spare;
 };
 
-LAYOUT_STD140(binding=0) uniform parabolaData {
+UNIFORM_BUFFER(0, parabolaData) {
     ParabolaData _parabolaData;
 };
 
-layout(location=0) out vec4 _color;
+OUTPUT(0, vec4, _color);
 
 void main(void) {
     _color = _parabolaData.color;

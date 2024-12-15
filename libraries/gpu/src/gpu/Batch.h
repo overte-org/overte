@@ -253,7 +253,6 @@ public:
     // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
     // For now, instead of calling the raw gl Call, use the equivalent call on the batch so the call is beeing recorded
     // THe implementation of these functions is in GLBackend.cpp
-    void _glUniform1i(int location, int v0);
     void _glUniform1f(int location, float v0);
     void _glUniform2f(int location, float v0, float v1);
     void _glUniform3f(int location, float v0, float v1, float v2);
@@ -263,10 +262,6 @@ public:
     void _glUniform4iv(int location, int count, const int* value);
     void _glUniformMatrix3fv(int location, int count, unsigned char transpose, const float* value);
     void _glUniformMatrix4fv(int location, int count, unsigned char transpose, const float* value);
-
-    void _glUniform(int location, int v0) {
-        _glUniform1i(location, v0);
-    }
 
     void _glUniform(int location, float v0) {
         _glUniform1f(location, v0);
@@ -356,7 +351,6 @@ public:
         // TODO: As long as we have gl calls explicitely issued from interface
         // code, we need to be able to record and batch these calls. THe long
         // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
-        COMMAND_glUniform1i,
         COMMAND_glUniform1f,
         COMMAND_glUniform2f,
         COMMAND_glUniform3f,
@@ -510,6 +504,9 @@ public:
     TransformObjects _objects;
     static size_t _objectsMax;
 
+    Stream::FormatPointer _currentStreamFormat;
+    PipelinePointer _currentPipeline;
+
     BufferCaches _buffers;
     TextureCaches _textures;
     TextureTableCaches _textureTables;
@@ -546,6 +543,8 @@ protected:
     // MUST only be called on the render thread
     // MUST only be called on batches created on the render thread
     void flush();
+
+    void validateDrawState() const;
 
     void startNamedCall(const std::string& name);
     void stopNamedCall();
