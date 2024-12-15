@@ -27,7 +27,7 @@ namespace vks { namespace renderpasses {
         AttachmentDescription& withStoreOp(VkAttachmentStoreOp storeOp) {
             this->storeOp = storeOp; return *this;
         }
-        AttachmentDescription& withLStenciloadOp(VkAttachmentLoadOp loadOp) {
+        AttachmentDescription& withStencilLoadOp(VkAttachmentLoadOp loadOp) {
             this->stencilLoadOp = loadOp; return *this;
         }
         AttachmentDescription& withStencilStoreOp(VkAttachmentStoreOp storeOp) {
