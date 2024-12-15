@@ -10,13 +10,11 @@
 
 #include "VKShared.h"
 #include "VKBackend.h"
-#include <vk/VulkanFrameBuffer.hpp>
 
 namespace gpu { namespace vk {
 
 class VKFramebuffer : public vk::VKObject<Framebuffer> {
 public:
-    //vks::Framebuffer vksFrameBuffer;
     VkRenderPass vkRenderPass {VK_NULL_HANDLE};
     VkFramebuffer vkFramebuffer {VK_NULL_HANDLE};
 
@@ -49,24 +47,8 @@ public:
         return object;
     }
 
-    // VKTODO: what type should it return?
-    template <typename VKFramebufferType>
-    static uint32_t getId(vk::VKBackend& backend, const Framebuffer& framebuffer) {
-        VKFramebufferType* fbo = sync(backend, framebuffer);
-        if (fbo) {
-            return fbo->_id;
-        } else {
-            return 0;
-        }
-    }
-
-    // VKTODO: probably a Vulkan handle instead of this
-    //const VKuint& _fbo { _id };
-    //std::vector<VKenum> _colorBuffers;
     Stamp _depthStamp { 0 };
     std::vector<Stamp> _colorStamps;
-    // Contains attachment number?
-    //std::vector<uint32_t> _colorBuffers;
 
     // From VKS
     struct FramebufferAttachment
@@ -139,7 +121,6 @@ protected:
 
     // VKTODO: We need a check on backend.lock(), or to pass backend reference instead
     VKFramebuffer(const std::weak_ptr<vk::VKBackend>& backend, const Framebuffer& framebuffer) : VKObject(*backend.lock(), framebuffer) {}
-        //vksFrameBuffer(backend.lock()->getContext().device.get()){}
     // VKTODO: Do we need virtual destructor here?
     ~VKFramebuffer();
 

@@ -20,7 +20,7 @@ namespace vks {
     struct Version {
         Version() : vulkan_major(0), vulkan_minor(0), vulkan_patch(0) {
         }
-        Version(uint32_t version) : Version() {
+        explicit Version(uint32_t version) : Version() {
             *this = version;
         }
 
@@ -29,7 +29,7 @@ namespace vks {
             return *this;
         }
 
-        operator uint32_t() const {
+        explicit operator uint32_t() const {
             uint32_t result;
             memcpy(&result, this, sizeof(uint32_t));
             return result;

@@ -23,7 +23,6 @@
 #include <vk/Config.h>
 #include <vk/Context.h>
 #include <vk/VulkanDebug.h>
-#include <vk/VulkanTexture.h>
 #include <vulkan/vulkan_core.h>
 
 #include "VKForward.h"

@@ -70,12 +70,6 @@ inline VkAccessFlags accessFlagsForLayout(VkImageLayout layout) {
     }
 }
 
-inline VkClearColorValue clearColor(const glm::vec4& v = glm::vec4(0)) {
-    VkClearColorValue result;
-    memcpy(&result.float32, &v, sizeof(result.float32));
-    return result;
-}
-
 bool loadPipelineCacheData(std::vector<uint8_t>& outCache);
 void savePipelineCacheData(const std::vector<uint8_t>& cache);
 
