@@ -903,9 +903,6 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         vkBackend->waitForGPU();
         vkBackend->recycleFrame();
 
-        vkBackend->getContext().emptyDumpster(frameFence);
-        vkBackend->getContext().recycle();
-
         gpu::Backend::freeGPUMemSize.set(gpu::gl::getFreeDedicatedMemory());
     } else if (alwaysPresent()) {
         refreshRateController->clockEndTime();

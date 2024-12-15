@@ -356,8 +356,6 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     //VKTODO _vkcontext.trashCommandBuffers({ commandBuffer });
     vkBackend->waitForGPU();
     vkBackend->recycleFrame();
-    _vkcontext.emptyDumpster(frameFence);
-    //_vkcontext.recycle();
     if (frame && !frame->batches.empty()) {
         if (rdoc_api)
             rdoc_api->EndFrameCapture(NULL, NULL);
@@ -521,6 +519,7 @@ struct VkBufferTransferItem {
     }
 
     static void transferBuffers(const vks::Context& context, vks::Buffer& stagingBuffer, Vector& vector) {
+        // VKTODO: use existing command pool from VulkanDevice class
         VkCommandPool commandPool;
         {
             VkCommandPoolCreateInfo createInfo = vks::initializers::commandPoolCreateInfo();

@@ -12,7 +12,8 @@
 
 namespace gpu { namespace vk {
 
-class VKShader : public GPUObject {
+// VKTODO:
+/*class VKShader : public GPUObject {
 public:
     static VKShader* sync(VKBackend& backend, const Shader& shader);
     static bool makeProgram(VKBackend& backend, Shader& shader, const Shader::BindingSet& slotBindings);
@@ -45,7 +46,7 @@ public:
     }
 
     const std::weak_ptr<VKBackend> _backend;
-};
+};*/
 
 } }
 
