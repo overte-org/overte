@@ -162,16 +162,13 @@ Rectangle {
                         model: getChannel(pageVal)
                         delegate: Loader {
                             property int delegateIndex: model.index
-                            property string delegateText: model.text
+                            property var delegateText: model.text
                             property string delegateUsername: model.username
                             property string delegateDate: model.date
 
                             sourceComponent: {
-                                if (model.type === "chat") {
-                                    return template_chat_message;
-                                } else if (model.type === "notification") {
-                                    return template_notification;
-                                }
+                                if (model.type === "chat") return template_chat_message;
+                                if (model.type === "notification") return template_notification;
                             }
                         
                         }
@@ -384,9 +381,7 @@ Rectangle {
 
         Rectangle {
             property int index: delegateIndex
-            property string texttest: delegateText
             property string username: delegateUsername
-            property string date: delegateDate
 
             height: Math.max(65, children[1].height + 30)
             color: index % 2 === 0 ? "transparent" : Qt.rgba(0.15,0.15,0.15,1)
@@ -405,27 +400,135 @@ Rectangle {
 
                 Text{
                     anchors.right: parent.right
-                    text: date
+                    text: delegateDate
                     color: "lightgray"
                 }
             }
 
-            TextEdit {
-                anchors.top: parent.children[0].bottom
-                x: 5
-                text: texttest
-                color:"white"
-                font.pointSize: 12
-                readOnly: true
-                selectByMouse: true
-                selectByKeyboard: true
+            Flow {
+                anchors.top: parent.children[0].bottom;
                 width: parent.width * 0.8
-                height: contentHeight
-                wrapMode: Text.Wrap
-                textFormat: TextEdit.RichText
+                x: 5
+                id: messageBoxFlow
 
-                onLinkActivated: {
-                    Window.openWebBrowser(link)
+                Repeater {
+                    model: delegateText;
+
+                    RowLayout {
+                        Text {
+                            text: model.value || ""
+                            font.pointSize: 12
+                            wrapMode: Text.Wrap
+                            width: model.type === 'text' || model.type === 'mention' ? Math.min(messageBoxFlow.width, contentWidth) : 0;
+                            visible: model.type === 'text' || model.type === 'mention';
+
+                            color: {
+                                switch (model.type) {
+                                    case "mention":
+                                        return "purple";
+                                    default:
+                                        return "white";
+                                }
+                            }
+                        }
+
+                        RowLayout {
+                            width: children[0].contentWidth;
+                            visible: model.type === 'url';
+
+                            Text {
+                                text: model.value || "";
+                                font.pointSize: 12;
+                                wrapMode: Text.Wrap;
+                                color: "#4EBAFD";
+                                font.underline: true;
+                                width: parent.width;
+
+                                MouseArea {
+                                    anchors.fill: parent;
+
+                                    onClicked: {
+                                        Window.openWebBrowser(model.value);
+                                    }
+                                }
+                            }
+
+                            Text {
+                                text: "🗗";
+                                font.pointSize: 10;
+                                wrapMode: Text.Wrap;
+                                color: "white";
+
+                                MouseArea {
+                                    anchors.fill: parent;
+
+                                    onClicked: {
+                                        Qt.openUrlExternally(model.value);
+                                    }
+                                }
+                            }
+                        }
+
+                        RowLayout {
+                            visible: model.type === 'overteLocation';
+                            width: Math.min(messageBoxFlow.width, children[0].children[1].contentWidth + 35);
+                            height: 20;
+                            Layout.leftMargin: 5
+                            Layout.rightMargin: 5
+
+                            Rectangle {
+                                width: parent.width;
+                                height: 20;
+                                color: "lightgray"
+                                radius: 2;
+
+                                Image {
+                                    source: "./img/ui/world_black.png"
+                                    width: 18;
+                                    height: 18;
+                                    sourceSize.width: 18
+                                    sourceSize.height: 18
+                                    anchors.left: parent.left
+                                    anchors.verticalCenter: parent.verticalCenter 
+                                    anchors.leftMargin: 2
+                                    anchors.rightMargin: 10
+                                }
+
+                                Text {
+                                    text: model.type === 'overteLocation' ? model.value.split('hifi://')[1].split('/')[0] : '';
+                                    color: "black"
+                                    font.pointSize: 12
+                                    x: parent.children[0].width + 5;
+                                    anchors.verticalCenter: parent.verticalCenter 
+                                }
+
+                                MouseArea {
+                                    anchors.fill: parent;
+
+                                    onClicked: {
+                                        Window.openUrl(model.value);
+                                    }
+                                }
+                            }
+                        }
+
+                        Item {
+                            Layout.fillWidth: true
+                            visible: model.type === 'messageEnd'
+                        }
+
+                        Item {
+                            visible: model.type === 'imageEmbed';
+                            width: messageBoxFlow.width;
+                            height: 200
+
+                            Image {
+                                source: model.type === 'imageEmbed' ? model.value : ''
+                                sourceSize.width: 400
+                                sourceSize.height: 200
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -434,11 +537,10 @@ Rectangle {
     Component {
         id: template_notification
 
-        Rectangle{
+        Rectangle {
             property int index: delegateIndex
-            property string texttest: delegateText
             property string username: delegateUsername
-            property string date: delegateDate
+
             color: "#171717"
             width: parent.width
             height: 40
@@ -454,15 +556,14 @@ Rectangle {
                 }
             }
 
-
             Item {
                 width: parent.width - parent.children[0].width - 5
                 height: parent.height
                 anchors.left: parent.children[0].right
 
-                TextEdit{
-                    text: texttest
-                    color:"white"
+                TextEdit {
+                    text: delegateText
+                    color: "white"
                     font.pointSize: 12
                     readOnly: true
                     width: parent.width * 0.8
@@ -475,8 +576,8 @@ Rectangle {
                 }
 
                 Text {
-                    text: date
-                    color:"white"
+                    text: delegateDate
+                    color: "white"
                     font.pointSize: 12
                     anchors.right: parent.right
                     height: parent.height
@@ -497,16 +598,16 @@ Rectangle {
     }
 
     function scrollToBottom(bypassDistanceCheck = false, extraMoveDistance = 0) {
-        const totalHeight = listview.height; // Total height of the content
-        const currentPosition = messageViewFlickable.contentY; // Current position of the view
-        const windowHeight = listview.parent.parent.height; // Total height of the window
+        const totalHeight = listview.height;                    // Total height of the content
+        const currentPosition = messageViewFlickable.contentY;  // Current position of the view
+        const windowHeight = listview.parent.parent.height;     // Total height of the window
         const bottomPosition = currentPosition + windowHeight;
 
         // Check if the view is within 300 units from the bottom
         const closeEnoughToBottom = totalHeight - bottomPosition <= 300;
         if (!bypassDistanceCheck && !closeEnoughToBottom) return;
-        if (totalHeight < windowHeight) return; // No reason to scroll, we don't have an overflow.
-        if (bottomPosition == totalHeight) return; // At the bottom, do nothing.
+        if (totalHeight < windowHeight) return;                 // No reason to scroll, we don't have an overflow.
+        if (bottomPosition == totalHeight) return;              // At the bottom, do nothing.
 
         messageViewFlickable.contentY = listview.height - listview.parent.parent.height;
         messageViewFlickable.returnToBounds();
@@ -517,72 +618,20 @@ Rectangle {
         channel = getChannel(channel)
 
         // Format content
-        message = formatContent(message);
-        message = embedImages(message);
 
         if (type === "notification"){
             channel.append({ text: message, date: date, type: "notification" });
-            last_message_user = "";
             scrollToBottom(null, 30);
 
-            last_message_time = new Date();
             return;
         }
 
-        var current_time = new Date();
-        var elapsed_time = current_time - last_message_time;
-        var elapsed_minutes = elapsed_time / (1000 * 60); 
-
-        var last_item_index = channel.count - 1;
-        var last_item = channel.get(last_item_index);
-
-        if (last_message_user === username && elapsed_minutes < 1 && last_item){
-            message = "<br>" + message 
-            last_item.text = last_item.text += "\n" + message;
-            load_scroll_timer.running = true;
-            last_message_time = new Date();
-            return;
-        }
-
-        last_message_user = username;
-        last_message_time = new Date();
         channel.append({ text: message, username: username, date: date, type: type });
         load_scroll_timer.running = true;
     }
 
     function getChannel(id) {
         return channels[id];
-    }
-
-    function formatContent(mess) {
-        var arrow = /\</gi
-        mess = mess.replace(arrow, "&lt;");
-
-        var link = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
-        mess = mess.replace(link, (match) => {return `<a style="color:#4EBAFD" onclick='Window.openUrl("+match+")' href='` + match + `'>` + match + `</a> <a onclick='Window.openUrl(`+match+`)'>🗗</a>`});
-
-        var newline = /\n/gi;
-        mess = mess.replace(newline, "<br>");
-        return mess
-    }
-
-    function embedImages(mess){
-        var image_link = /(https?:(\/){2})[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)(?:png|jpe?g|gif|bmp|svg|webp)/g;
-        var matches = mess.match(image_link);
-        var new_message = ""
-        var listed = []
-        var total_emeds = 0
-
-        new_message += mess
-
-        for (var i = 0; matches && matches.length > i && total_emeds < 3; i++){
-            if (!listed.includes(matches[i])) {
-                new_message += "<br><img src="+ matches[i] +" width='250' >"
-                listed.push(matches[i]);
-                total_emeds++
-            } 
-        }
-        return new_message;
     }
 
     // Messages from script
