@@ -510,7 +510,7 @@ Rectangle {
                                 }
 
                                 Text {
-                                    text: model.value.split('hifi://')[1].split('/')[0];
+                                    text: model.type === 'overteLocation' ? model.value.split('hifi://')[1].split('/')[0] : '';
                                     color: "black"
                                     font.pointSize: 12
                                     x: parent.children[0].width + 5;
@@ -532,6 +532,18 @@ Rectangle {
                         Item {
                             Layout.fillWidth: true
                             visible: model.type === 'messageEnd'
+                        }
+
+                        Item {
+                            visible: model.type === 'imageEmbed';
+                            width: messageBoxFlow.width;
+                            height: 200
+
+                            Image {
+                                source: model.type === 'imageEmbed' ? model.value : ''
+                                sourceSize.width: 400
+                                sourceSize.height: 200
+                            }
                         }
                     }
                 }
@@ -653,6 +665,7 @@ Rectangle {
 
         // last_message_user = username;
         // last_message_time = new Date();
+
         channel.append({ text: message, username: username, date: date, type: type });
         load_scroll_timer.running = true;
     }

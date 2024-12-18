@@ -94,7 +94,7 @@
         chatOverlayWindow.fromQml.connect(fromQML);
         quickMessage.fromQml.connect(fromQML);
     }
-    function receivedMessage(channel, message) {
+    async function receivedMessage(channel, message) {
         // Is the message a chat message?
         channel = channel.toLowerCase();
         if (channel !== "chat") return;
@@ -114,9 +114,8 @@
         message.timeString = timeArray[0];
         message.dateString = timeArray[1];
 
-        let formattedMessage = _parseMessage(message.message);                  // Format the message for viewing
         let formattedMessagePacket = { ...message };
-        formattedMessagePacket.message = formattedMessage
+        formattedMessagePacket.message = await _parseMessage(message.message)
 
         _emitEvent({ type: "show_message", ...formattedMessagePacket });        // Update qml view of to new message.
         _notificationCoreMessage(message.displayName, message.message)          // Show a new message on screen.
@@ -238,23 +237,22 @@
             _emitEvent({ type: "notification", ...message });
         }, 1500);
     }
-    function _loadSettings() {
+    async function _loadSettings() {
         settings = Settings.getValue("ArmoredChat-Config", settings);
 
         if (messageHistory) {
             // Load message history
-            messageHistory.forEach((message) => {
+            for (message of messageHistory) {
                 const timeArray = _formatTimestamp(_getTimestamp());
                 messagePacket = { ...message };
                 messagePacket.timeString = timeArray[0];
                 messagePacket.dateString = timeArray[1];
 
-                let formattedMessage = _parseMessage(messagePacket.message);
-                let formattedMessagePacket = messagePacket;
-                formattedMessagePacket.message = formattedMessage;
+                let formattedMessagePacket = {...messagePacket};
+                formattedMessagePacket.message = await _parseMessage(messagePacket.message);
 
                 _emitEvent({ type: "show_message", ...formattedMessagePacket });
-            });
+            }
         }
 
         // Send current settings to the app
@@ -288,7 +286,7 @@
             JSON.stringify({ sender: displayName, text: message })
         );
     }
-    function _parseMessage(message){
+    async function _parseMessage(message){
         const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
         const mentionRegex = /@(\w+)/; // FIXME: Remove - devcode
         const overteLocationRegex = /hifi:\/\/[a-zA-Z0-9_-]+\/[-+]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+\/[-+]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+/;
@@ -309,7 +307,9 @@
 
             if (firstMatch == null) {
                 // If there was not any matches found in the entire message, format the whole message as a single text entry.
-                messageArray.push({type: 'text', value: runningMessage});
+                if (messageArray.length == 0) {
+                    messageArray.push({type: 'text', value: runningMessage});
+                }
 
                 // Append a final 'fill width' to the message text.
                 messageArray.push({type: 'messageEnd'});
@@ -317,6 +317,20 @@
             }
 
             _formatMessage(firstMatch);
+        }
+
+        for (dataChunk of messageArray){
+            if (dataChunk.type == 'url'){
+                let url = dataChunk.value;
+
+                const res = await fetch(url, {method: 'GET'});      // TODO: Replace with 'HEAD' method. https://github.com/overte-org/overte/issues/1273
+                const contentType = res.getResponseHeader("content-type");
+
+                // TODO: Add support for other media types
+                if (contentType.startsWith('image/')) {
+                    messageArray.push({type: 'imageEmbed', value: url});
+                }
+            }
         }
 
         return messageArray;
@@ -361,4 +375,28 @@
     function _emitEvent(packet = { type: "" }) {
         chatOverlayWindow.sendToQml(packet);
     }
+
+    function fetch(url, options = {method: "GET"}) {
+        return new Promise((resolve, reject) => {
+            let req = new XMLHttpRequest();
+
+            req.onreadystatechange = function () {
+
+                if (req.readyState === req.DONE) {
+                    if (req.status === 200) {
+                        console.log("Content type:", req.getResponseHeader("content-type"));
+                        resolve(req);
+            
+                    } else {
+                        console.log("Error", req.status, req.statusText);
+                        reject();
+                    }
+                }
+            };
+
+            req.open(options.method, url);
+            req.send();
+        });
+    }
+
 })();
