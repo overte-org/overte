@@ -167,11 +167,8 @@ Rectangle {
                             property string delegateDate: model.date
 
                             sourceComponent: {
-                                if (model.type === "chat") {
-                                    return template_chat_message;
-                                } else if (model.type === "notification") {
-                                    return template_notification;
-                                }
+                                if (model.type === "chat") return template_chat_message;
+                                if (model.type === "notification") return template_notification;
                             }
                         
                         }
@@ -384,9 +381,7 @@ Rectangle {
 
         Rectangle {
             property int index: delegateIndex
-            property var texttest: delegateText
             property string username: delegateUsername
-            property string date: delegateDate
 
             height: Math.max(65, children[1].height + 30)
             color: index % 2 === 0 ? "transparent" : Qt.rgba(0.15,0.15,0.15,1)
@@ -405,7 +400,7 @@ Rectangle {
 
                 Text{
                     anchors.right: parent.right
-                    text: date
+                    text: delegateDate
                     color: "lightgray"
                 }
             }
@@ -417,24 +412,14 @@ Rectangle {
                 id: messageBoxFlow
 
                 Repeater {
-                    model: texttest;
+                    model: delegateText;
 
                     RowLayout {
-                        width: {
-                            switch (model.type) {
-                                case "text":
-                                    return children[0].width;
-                                case "url":
-                                    return children[1].width;
-                            }
-                        }
-
                         Text {
                             text: model.value || ""
                             font.pointSize: 12
                             wrapMode: Text.Wrap
-                            width: Math.min(messageBoxFlow.width, contentWidth);
-
+                            width: model.type === 'text' || model.type === 'mention' ? Math.min(messageBoxFlow.width, contentWidth) : 0;
                             visible: model.type === 'text' || model.type === 'mention';
 
                             color: {
@@ -448,7 +433,7 @@ Rectangle {
                         }
 
                         RowLayout {
-                            width: Math.min(messageBoxFlow.width, children[0].contentWidth);
+                            width: children[0].contentWidth;
                             visible: model.type === 'url';
 
                             Text {
@@ -524,10 +509,8 @@ Rectangle {
                                         Window.openUrl(model.value);
                                     }
                                 }
-
                             }
                         }
-
 
                         Item {
                             Layout.fillWidth: true
@@ -554,11 +537,10 @@ Rectangle {
     Component {
         id: template_notification
 
-        Rectangle{
+        Rectangle {
             property int index: delegateIndex
-            property var texttest: delegateText
             property string username: delegateUsername
-            property string date: delegateDate
+
             color: "#171717"
             width: parent.width
             height: 40
@@ -574,15 +556,14 @@ Rectangle {
                 }
             }
 
-
             Item {
                 width: parent.width - parent.children[0].width - 5
                 height: parent.height
                 anchors.left: parent.children[0].right
 
-                TextEdit{
-                    text: texttest
-                    color:"white"
+                TextEdit {
+                    text: delegateText
+                    color: "white"
                     font.pointSize: 12
                     readOnly: true
                     width: parent.width * 0.8
@@ -595,8 +576,8 @@ Rectangle {
                 }
 
                 Text {
-                    text: date
-                    color:"white"
+                    text: delegateDate
+                    color: "white"
                     font.pointSize: 12
                     anchors.right: parent.right
                     height: parent.height
@@ -617,16 +598,16 @@ Rectangle {
     }
 
     function scrollToBottom(bypassDistanceCheck = false, extraMoveDistance = 0) {
-        const totalHeight = listview.height; // Total height of the content
-        const currentPosition = messageViewFlickable.contentY; // Current position of the view
-        const windowHeight = listview.parent.parent.height; // Total height of the window
+        const totalHeight = listview.height;                    // Total height of the content
+        const currentPosition = messageViewFlickable.contentY;  // Current position of the view
+        const windowHeight = listview.parent.parent.height;     // Total height of the window
         const bottomPosition = currentPosition + windowHeight;
 
         // Check if the view is within 300 units from the bottom
         const closeEnoughToBottom = totalHeight - bottomPosition <= 300;
         if (!bypassDistanceCheck && !closeEnoughToBottom) return;
-        if (totalHeight < windowHeight) return; // No reason to scroll, we don't have an overflow.
-        if (bottomPosition == totalHeight) return; // At the bottom, do nothing.
+        if (totalHeight < windowHeight) return;                 // No reason to scroll, we don't have an overflow.
+        if (bottomPosition == totalHeight) return;              // At the bottom, do nothing.
 
         messageViewFlickable.contentY = listview.height - listview.parent.parent.height;
         messageViewFlickable.returnToBounds();
@@ -640,31 +621,10 @@ Rectangle {
 
         if (type === "notification"){
             channel.append({ text: message, date: date, type: "notification" });
-            last_message_user = "";
             scrollToBottom(null, 30);
 
-            last_message_time = new Date();
             return;
         }
-
-        // TODO: Replace new time generation with time pregenerated from message
-        // var current_time = new Date();
-        // var elapsed_time = current_time - last_message_time;
-        // var elapsed_minutes = elapsed_time / (1000 * 60); 
-
-        // var last_item_index = channel.count - 1;
-        // var last_item = channel.get(last_item_index);
-
-        // if (last_message_user === username && elapsed_minutes < 1 && last_item){
-        //     message = "<br>" + message 
-        //     last_item.text = last_item.text += "\n" + message;
-        //     load_scroll_timer.running = true;
-        //     last_message_time = new Date();
-        //     return;
-        // }
-
-        // last_message_user = username;
-        // last_message_time = new Date();
 
         channel.append({ text: message, username: username, date: date, type: type });
         load_scroll_timer.running = true;
