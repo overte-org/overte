@@ -306,10 +306,8 @@
             let firstMatch = _findFirstMatch();
 
             if (firstMatch == null) {
-                // If there was not any matches found in the entire message, format the whole message as a single text entry.
-                if (messageArray.length == 0) {
-                    messageArray.push({type: 'text', value: runningMessage});
-                }
+                // Format any remaining text as a basic 'text' type.
+                messageArray.push({type: 'text', value: runningMessage});
 
                 // Append a final 'fill width' to the message text.
                 messageArray.push({type: 'messageEnd'});
