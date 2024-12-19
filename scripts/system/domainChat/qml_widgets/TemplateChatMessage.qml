@@ -7,7 +7,6 @@ Component {
 
 	Rectangle {
 		property int index: delegateIndex
-		property string username: delegateUsername
 
 		height: Math.max(65, children[1].height + 30)
 		color: index % 2 === 0 ? "transparent" : Qt.rgba(0.15,0.15,0.15,1)
@@ -19,12 +18,12 @@ Component {
 			anchors.horizontalCenter: parent.horizontalCenter
 			height: 22
 
-			Text{
-				text: username
+			Text {
+				text: delegateUsername
 				color: "lightgray"
 			}
 
-			Text{
+			Text {
 				anchors.right: parent.right
 				text: delegateDate
 				color: "lightgray"
@@ -109,7 +108,7 @@ Component {
 							radius: 2;
 
 							Image {
-								source: "./img/ui/world_black.png"
+								source: "../img/ui/world_black.png"
 								width: 18;
 								height: 18;
 								sourceSize.width: 18

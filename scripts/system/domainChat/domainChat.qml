@@ -9,7 +9,6 @@ Rectangle {
     signal sendToScript(var message);
 
     property string pageVal: "local"
-    property string last_message_user: ""
     property date last_message_time: new Date()
 
     // When the window is created on the script side, the window starts open.
@@ -163,7 +162,7 @@ Rectangle {
                         model: getChannel(pageVal)
                         delegate: Loader {
                             property int delegateIndex: model.index
-                            property var delegateText: model.text
+                            property var delegateText: model.message
                             property string delegateUsername: model.username
                             property string delegateDate: model.date
 
@@ -171,7 +170,6 @@ Rectangle {
                                 if (model.type === "chat") return template_chat_message;
                                 if (model.type === "notification") return template_notification;
                             }
-                        
                         }
                     }
                 }
@@ -406,15 +404,13 @@ Rectangle {
         channel = getChannel(channel)
 
         // Format content
-
         if (type === "notification"){
-            channel.append({ text: message, date: date, type: "notification" });
+            channel.append({ message: message, date: date, type: "notification" });
             scrollToBottom(null, 30);
-
             return;
         }
 
-        channel.append({ text: message, username: username, date: date, type: type });
+        channel.append({ message: message, username: username, date: date, type: type });
         load_scroll_timer.running = true;
     }
 

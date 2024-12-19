@@ -32,12 +32,8 @@
     Controller.keyPressEvent.connect(keyPressEvent);
     Messages.subscribe("chat");
     Messages.messageReceived.connect(receivedMessage);
-    AvatarManager.avatarAddedEvent.connect((sessionId) => {
-        _avatarAction("connected", sessionId);
-    });
-    AvatarManager.avatarRemovedEvent.connect((sessionId) => {
-        _avatarAction("left", sessionId);
-    });
+    AvatarManager.avatarAddedEvent.connect((sessionId) => { _avatarAction("connected", sessionId); });
+    AvatarManager.avatarRemovedEvent.connect((sessionId) => { _avatarAction("left", sessionId); });
 
     startup();
 
@@ -205,7 +201,7 @@
         );
     }
     function _avatarAction(type, sessionId) {
-        Script.setTimeout(() => {
+        Script.setTimeout(async () => {
             if (type == "connected") {
                 palData = AvatarManager.getPalData().data;
             }
@@ -233,7 +229,11 @@
                 _notificationCoreMessage(displayName, type)
             }
 
-            _emitEvent({ type: "notification", ...message });
+            // Format notification message
+            let formattedMessagePacket = {...message};
+            formattedMessagePacket.message = await _parseMessage(message.message);
+
+            _emitEvent({ type: "notification", ...formattedMessagePacket });
         }, 1500);
     }
     async function _loadSettings() {
