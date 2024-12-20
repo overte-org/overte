@@ -290,6 +290,9 @@ bool gpu::vk::VKFramebuffer::checkStatus(gpu::vk::VKFramebuffer::FramebufferStat
 }
 
 gpu::vk::VKFramebuffer::~VKFramebuffer() {
+    auto backend = _backend.lock();
+    auto &recycler = backend->getContext().recycler;
+    recycler.framebufferDeleted(this);
     //VKTODO
     /*if (_id) {
         auto backend = _backend.lock();

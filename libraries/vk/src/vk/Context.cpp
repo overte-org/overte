@@ -8,6 +8,8 @@
 
 using namespace vks;
 
+// Start of VKS code
+
 Context& Context::get() {
     static Context INSTANCE;
     return INSTANCE;
@@ -284,4 +286,79 @@ Buffer Context::createBuffer(const VkBufferUsageFlags& usageFlags,
 Buffer Context::createDeviceBuffer(const VkBufferUsageFlags& usageFlags, VkDeviceSize size) const {
     static const VkMemoryPropertyFlags memoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
     return createBuffer(usageFlags, size, memoryProperties);
+}
+
+// End of VKS code
+
+void Context::Recycler::trashVkSampler(VkSampler& sampler) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkSamplers.push_back(sampler);
+}
+
+void Context::Recycler::trashVkFramebuffer(VkFramebuffer& framebuffer) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkFramebuffer.push_back(framebuffer);
+}
+
+void Context::Recycler::trashVkImageView(VkImageView& imageView) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkImageViews.push_back(imageView);
+}
+
+void Context::Recycler::trashVkImage(VkImage& image) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkImages.push_back(image);
+}
+
+void Context::Recycler::trashVkBuffer(VkBuffer& buffer) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkBuffers.push_back(buffer);
+}
+
+void Context::Recycler::trashVkRenderPass(VkRenderPass& renderPass) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkRenderPasses.push_back(renderPass);
+}
+
+void Context::Recycler::trashVkPipeline(VkPipeline& pipeline) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkPipelines.push_back(pipeline);
+}
+
+void Context::Recycler::trashVkShaderModule(VkShaderModule& module) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkShaderModules.push_back(module);
+}
+
+void Context::Recycler::trashVkSwapchainKHR(VkSwapchainKHR& swapchain) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkSwapchainsKHR.push_back(swapchain);
+}
+
+void Context::Recycler::trashVKSurfaceKHR(VkSurfaceKHR& surface) {
+    vkSurfacesKHR.push_back(surface);
+}
+
+void Context::Recycler::trashVmaAllocation(VmaAllocation& allocation) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+}
+
+void Context::Recycler::framebufferDeleted(gpu::vk::VKFramebuffer* framebuffer) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    deletedFramebuffers.push_back(framebuffer);
+}
+
+void Context::Recycler::bufferDeleted(gpu::vk::VKBuffer* buffer) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    deletedBuffers.push_back(buffer);
+}
+
+void Context::Recycler::textureDeleted(gpu::vk::VKTexture* texture) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    deletedTextures.push_back(texture);
+}
+
+void Context::Recycler::queryDeleted(gpu::vk::VKQuery* query) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    deletedQueries.push_back(query);
 }
