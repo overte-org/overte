@@ -86,7 +86,7 @@ void VulkanSwapChain::initSurface(screen_context_t screen_context, screen_window
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
     surfaceCreateInfo.connection = connection;
     surfaceCreateInfo.window = window;
-    err = vkCreateXcbSurfaceKHR(instance, &surfaceCreateInfo, nullptr, &surface);
+    err = vkCreateXcbSurfaceKHR(_context->instance, &surfaceCreateInfo, nullptr, &surface);
 #elif defined(VK_USE_PLATFORM_HEADLESS_EXT)
     VkHeadlessSurfaceCreateInfoEXT surfaceCreateInfo = {};
     surfaceCreateInfo.sType = VK_STRUCTURE_TYPE_HEADLESS_SURFACE_CREATE_INFO_EXT;
@@ -111,11 +111,11 @@ void VulkanSwapChain::initSurface(screen_context_t screen_context, screen_window
 
     // Get available queue family properties
     uint32_t queueCount;
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueCount, NULL);
+    vkGetPhysicalDeviceQueueFamilyProperties(_context->physicalDevice, &queueCount, NULL);
     assert(queueCount >= 1);
 
     std::vector<VkQueueFamilyProperties> queueProps(queueCount);
-    vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueCount, queueProps.data());
+    vkGetPhysicalDeviceQueueFamilyProperties(_context->physicalDevice, &queueCount, queueProps.data());
 
     // Iterate over each queue to learn whether it supports presenting:
     // Find a queue with present support
@@ -123,7 +123,7 @@ void VulkanSwapChain::initSurface(screen_context_t screen_context, screen_window
     std::vector<VkBool32> supportsPresent(queueCount);
     for (uint32_t i = 0; i < queueCount; i++) 
     {
-        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, i, surface, &supportsPresent[i]);
+        vkGetPhysicalDeviceSurfaceSupportKHR(_context->physicalDevice, i, surface, &supportsPresent[i]);
     }
 
     // Search for a graphics and a present queue in the array of queue
@@ -176,11 +176,11 @@ void VulkanSwapChain::initSurface(screen_context_t screen_context, screen_window
 
     // Get list of supported surface formats
     uint32_t formatCount;
-    VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, NULL));
+    VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceFormatsKHR(_context->physicalDevice, surface, &formatCount, NULL));
     assert(formatCount > 0);
 
     std::vector<VkSurfaceFormatKHR> surfaceFormats(formatCount);
-    VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, surfaceFormats.data()));
+    VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceFormatsKHR(_context->physicalDevice, surface, &formatCount, surfaceFormats.data()));
 
     // We want to get a format that best suits our needs, so we try to get one from a set of preferred formats
     // Initialize the format to the first one returned by the implementation in case we can't find one of the preffered formats
@@ -202,33 +202,32 @@ void VulkanSwapChain::initSurface(screen_context_t screen_context, screen_window
     colorSpace = selectedFormat.colorSpace;
 }
 
-void VulkanSwapChain::setContext(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device)
+void VulkanSwapChain::setContext(vks::Context *context)
 {
-    this->instance = instance;
-    this->physicalDevice = physicalDevice;
-    this->device = device;
+    _context = context;
 }
 
 void VulkanSwapChain::create(uint32_t *width, uint32_t *height, bool vsync, bool fullscreen)
 {
-    assert(physicalDevice);
-    assert(device);
-    assert(instance);
+    assert(_context);
+    assert(_context->physicalDevice);
+    assert(_context->device);
+    assert(_context->instance);
 
     // Store the current swap chain handle so we can use it later on to ease up recreation
     VkSwapchainKHR oldSwapchain = swapChain;
 
     // Get physical device surface properties and formats
     VkSurfaceCapabilitiesKHR surfCaps;
-    VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &surfCaps));
+    VK_CHECK_RESULT(vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_context->physicalDevice, surface, &surfCaps));
 
     // Get available present modes
     uint32_t presentModeCount;
-    VK_CHECK_RESULT(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, NULL));
+    VK_CHECK_RESULT(vkGetPhysicalDeviceSurfacePresentModesKHR(_context->physicalDevice, surface, &presentModeCount, NULL));
     assert(presentModeCount > 0);
 
     std::vector<VkPresentModeKHR> presentModes(presentModeCount);
-    VK_CHECK_RESULT(vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data()));
+    VK_CHECK_RESULT(vkGetPhysicalDeviceSurfacePresentModesKHR(_context->physicalDevice, surface, &presentModeCount, presentModes.data()));
 
     VkExtent2D swapchainExtent = {};
     // If width (and height) equals the special value 0xFFFFFFFF, the size of the surface will be set by the swapchain
@@ -347,23 +346,22 @@ void VulkanSwapChain::create(uint32_t *width, uint32_t *height, bool vsync, bool
         swapchainCI.imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     }
 
-    VK_CHECK_RESULT(vkCreateSwapchainKHR(device, &swapchainCI, nullptr, &swapChain));
+    VK_CHECK_RESULT(vkCreateSwapchainKHR(*_context->device, &swapchainCI, nullptr, &swapChain));
 
     // If an existing swap chain is re-created, destroy the old swap chain
     // This also cleans up all the presentable images
-    if (oldSwapchain != VK_NULL_HANDLE) 
-    { 
-        for (uint32_t i = 0; i < imageCount; i++)
-        {
-            vkDestroyImageView(device, buffers[i].view, nullptr);
+    if (oldSwapchain != VK_NULL_HANDLE) {
+        auto &recycler = _context->recycler;
+        for (uint32_t i = 0; i < imageCount; i++) {
+            recycler.trashVkImageView(buffers[i].view);
         }
-        vkDestroySwapchainKHR(device, oldSwapchain, nullptr);
+        recycler.trashVkSwapchainKHR(oldSwapchain);
     }
-    VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device, swapChain, &imageCount, NULL));
+    VK_CHECK_RESULT(vkGetSwapchainImagesKHR(*_context->device, swapChain, &imageCount, NULL));
 
     // Get the swap chain images
     images.resize(imageCount);
-    VK_CHECK_RESULT(vkGetSwapchainImagesKHR(device, swapChain, &imageCount, images.data()));
+    VK_CHECK_RESULT(vkGetSwapchainImagesKHR(*_context->device, swapChain, &imageCount, images.data()));
 
     // Get the swap chain buffers containing the image and imageview
     buffers.resize(imageCount);
@@ -391,7 +389,7 @@ void VulkanSwapChain::create(uint32_t *width, uint32_t *height, bool vsync, bool
 
         colorAttachmentView.image = buffers[i].image;
 
-        VK_CHECK_RESULT(vkCreateImageView(device, &colorAttachmentView, nullptr, &buffers[i].view));
+        VK_CHECK_RESULT(vkCreateImageView(*_context->device, &colorAttachmentView, nullptr, &buffers[i].view));
     }
     extent.width = *width;
     extent.height = *height;
@@ -401,7 +399,7 @@ VkResult VulkanSwapChain::acquireNextImage(VkSemaphore presentCompleteSemaphore,
 {
     // By setting timeout to UINT64_MAX we will always wait until the next image has been acquired or an actual error is thrown
     // With that we don't have to handle VK_NOT_READY
-    return vkAcquireNextImageKHR(device, swapChain, UINT64_MAX, presentCompleteSemaphore, (VkFence)nullptr, imageIndex);
+    return vkAcquireNextImageKHR(*_context->device, swapChain, UINT64_MAX, presentCompleteSemaphore, (VkFence)nullptr, imageIndex);
 }
 
 VkResult VulkanSwapChain::queuePresent(VkQueue queue, uint32_t imageIndex, VkSemaphore waitSemaphore)
@@ -424,17 +422,18 @@ VkResult VulkanSwapChain::queuePresent(VkQueue queue, uint32_t imageIndex, VkSem
 
 void VulkanSwapChain::cleanup()
 {
+    auto &recycler = _context->recycler;
     if (swapChain != VK_NULL_HANDLE)
     {
         for (uint32_t i = 0; i < imageCount; i++)
         {
-            vkDestroyImageView(device, buffers[i].view, nullptr);
+            recycler.trashVkImageView(buffers[i].view);
         }
     }
     if (surface != VK_NULL_HANDLE)
     {
-        vkDestroySwapchainKHR(device, swapChain, nullptr);
-        vkDestroySurfaceKHR(instance, surface, nullptr);
+        recycler.trashVkSwapchainKHR(swapChain);
+        recycler.trashVKSurfaceKHR(surface);
     }
     surface = VK_NULL_HANDLE;
     swapChain = VK_NULL_HANDLE;
