@@ -1125,7 +1125,7 @@ void VulkanDisplayPlugin::setupRenderPass() {
     auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(getBackend());
     auto device = vkBackend->getContext().device->logicalDevice;
     if (_renderPass) {
-        vkDestroyRenderPass(device, _renderPass, nullptr);
+        vkBackend->getContext().recycler.trashVkRenderPass(_renderPass);
     }
 
     VkAttachmentDescription attachment{};

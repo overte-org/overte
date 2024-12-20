@@ -17,6 +17,7 @@
 #include <vector>
 
 #include <vulkan/vulkan.h>
+#include "Context.h"
 #include "VulkanTools.h"
 
 #ifdef __ANDROID__
@@ -34,10 +35,8 @@ typedef struct _SwapChainBuffers {
 
 class VulkanSwapChain
 {
-private: 
-    VkInstance instance;
-    VkDevice device;
-    VkPhysicalDevice physicalDevice;
+private:
+    vks::Context *_context {nullptr};
     VkSurfaceKHR surface;
 public:
     VkExtent2D extent{0, 0};
@@ -72,7 +71,7 @@ public:
     void initSurface(screen_context_t screen_context, screen_window_t screen_window);
 #endif
     /* Set the Vulkan objects required for swapchain creation and management, must be called before swapchain creation */
-    void setContext(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device);
+    void setContext(vks::Context *context);
     /**
     * Create the swapchain and get its images with given width and height
     * 

@@ -101,7 +101,7 @@ void RenderThread::initialize(QWindow* window) {
     _surface = _vkcontext.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)window->winId() });
 #else
     _vkcontext.createDevice();
-    _swapchain.setContext(_vkcontext.instance, _vkcontext.physicalDevice, _vkcontext.device->logicalDevice);
+    _swapchain.setContext(&_vkcontext);
     _swapchain.initSurface(QX11Info::connection(), (xcb_window_t)(window->winId()));
 #endif
     _swapchain.create(&_extent.width, &_extent.height, true);
@@ -404,9 +404,8 @@ bool RenderThread::process() {
 
 void RenderThread::setupFramebuffers() {
     // Recreate the frame buffers
-    auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(_gpuContext->getBackend());
     for (auto framebuffer : _framebuffers) {
-        vkBackend->recycler.trashVkFramebuffer(framebuffer);
+        _vkcontext.recycler.trashVkFramebuffer(framebuffer);
     }
     _framebuffers.clear();
 
@@ -432,7 +431,7 @@ void RenderThread::setupFramebuffers() {
 
 void RenderThread::setupRenderPass() {
     if (_renderPass) {
-        vkDestroyRenderPass(_vkcontext.device->logicalDevice, _renderPass, nullptr);
+        _vkcontext.recycler.trashVkRenderPass(_renderPass);
     }
 
     VkAttachmentDescription attachment{};

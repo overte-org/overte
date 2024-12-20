@@ -147,7 +147,9 @@ VKTexture::VKTexture(const std::weak_ptr<VKBackend>& backend, const Texture& tex
 }
 
 VKTexture::~VKTexture() {
+    qDebug() << "VKTexture destroyed: " << this;
     auto backend = _backend.lock();
+    backend->getContext().recycler.textureDeleted(this);
     if (backend && _vkImage == VK_NULL_HANDLE) {
         // VKTODO
         // backend->releaseTexture(_id, 0);
@@ -244,13 +246,15 @@ VKAttachmentTexture::~VKAttachmentTexture() {
     // VKTODO: Redo destructors for cleanup to happen on present thread
     auto backend = _backend.lock();
     auto device = backend->getContext().device->logicalDevice;
+    auto &recycler = backend->getContext().recycler;
     if (_vkImageView) {
-        vkDestroyImageView(device, _vkImageView, nullptr);
+        recycler.trashVkImageView(_vkImageView);
     }
     if (_vkSampler) {
-        vkDestroySampler(device, _vkSampler, nullptr);
+        recycler.trashVkSampler(_vkSampler);
     }
-    vmaDestroyImage(vks::Allocation::getAllocator(), _vkImage, _vmaAllocation);
+    recycler.trashVkImage(_vkImage);
+    recycler.trashVmaAllocation(_vmaAllocation);
 }
 
 VkDescriptorImageInfo VKAttachmentTexture::getDescriptorImageInfo() {
@@ -541,12 +545,13 @@ void VKStrictResourceTexture::postTransfer(VKBackend &backend) {
 VKStrictResourceTexture::~VKStrictResourceTexture() {
     auto backend = _backend.lock();
     auto device = backend->getContext().device->logicalDevice;
-    vkDestroyImageView(device, _vkImageView, nullptr);
-    if (_vkSampler)
-    {
-        vkDestroySampler(device, _vkSampler, nullptr);
+    auto &recycler = backend->getContext().recycler;
+    recycler.trashVkImageView(_vkImageView);
+    if (_vkSampler) {
+        recycler.trashVkSampler(_vkSampler);
     }
-    vmaDestroyImage(vks::Allocation::getAllocator(), _vkImage, _vmaAllocation);
+    recycler.trashVkImage(_vkImage);
+    recycler.trashVmaAllocation(_vmaAllocation);
 }
 
 /*Size VKTexture::copyMipFaceFromTexture(uint16_t sourceMip, uint16_t targetMip, uint8_t face) const {
