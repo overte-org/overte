@@ -24,7 +24,7 @@ var DEFAULT_SCRIPTS_COMBINED = [
     "system/snapshot.js",
     "system/pal.js", // "system/mod.js", // older UX, if you prefer
     "system/avatarapp.js",
-    "system/graphicsSettings.js",
+    "system/settings/settings.js",
     "system/makeUserConnection.js",
     "system/notifications.js",
     "system/create/edit.js",
