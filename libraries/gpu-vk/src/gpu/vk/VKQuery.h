@@ -54,6 +54,9 @@ protected:
     // VKTODO: We need a check on backend.lock(), or to pass backend reference instead
     VKQuery(const std::weak_ptr<VKBackend>& backend, const Query& query) : Parent(*backend.lock(), query) {}
     ~VKQuery() {
+        auto backend = _backend.lock();
+        auto &recycler = backend->getContext().recycler;
+        recycler.queryDeleted(this);
         // Vulkan handle is used instead
         /*if (_id) {
             // VKTODO
