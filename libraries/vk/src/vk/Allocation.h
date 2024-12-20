@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Config.h"
+#include <cstring>
+
 //#include "VulkanDevice.h"
 
 
