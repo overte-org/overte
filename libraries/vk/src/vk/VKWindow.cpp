@@ -33,7 +33,7 @@ VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
 }
 
 const void VKWindow::createSurface() {
-    _swapchain.setContext(_context.instance, _context.physicalDevice, _context.device->logicalDevice);
+    _swapchain.setContext(&_context);
 #ifdef WIN32
     // TODO
     _surface = _context.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)winId() });
@@ -83,10 +83,11 @@ void VKWindow::createCommandBuffers() {
 void VKWindow::setupDepthStencil() {
     auto &device = _context.device->logicalDevice;
     if (_depthStencil.isAllocated) {
-        vkDestroyImageView(device, _depthStencil.view, nullptr);
-        vkDestroyImage(device, _depthStencil.image, nullptr);
+        auto &recycler = _context.recycler;
+        recycler.trashVkImageView(_depthStencil.view);
+        recycler.trashVkImage(_depthStencil.image);
 #if VULKAN_USE_VMA
-        vmaFreeMemory(_depthStencil.getAllocator(), _depthStencil.allocation);
+        recycler.trashVmaAllocation(_depthStencil.allocation);
 #else
         vkFreeMemory(device, _depthStencil.memory, nullptr);
 #endif
@@ -141,6 +142,7 @@ void VKWindow::setupDepthStencil() {
     }
 
     VK_CHECK_RESULT(vkCreateImageView(device, &imageViewCI, nullptr, &_depthStencil.view));
+    _depthStencil.isAllocated = true;
 }
 
 void VKWindow::setupFramebuffers() {
@@ -178,7 +180,7 @@ void VKWindow::setupFramebuffers() {
 
 void VKWindow::setupRenderPass() {
     if (_renderPass) {
-        vkDestroyRenderPass(_device, _renderPass, nullptr);
+        _context.recycler.trashVkRenderPass(_renderPass);
     }
 
     std::array<VkAttachmentDescription, 2> attachments{};

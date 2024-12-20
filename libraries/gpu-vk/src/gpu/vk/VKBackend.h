@@ -287,45 +287,6 @@ protected:
         VKBackend *_backend;
     };
 
-    // Contains objects that need to be deleted on Vulkan backend thread after frame is rendered.
-    // It's filled by destructors of objects like gpu::Texture and gpu::Buffer, since these destroy
-    // backend counterpart of their objects.
-public:
-    class Recycler {
-    public:
-        // This means that for every GPU object mutex will be locked and unlocked several times.
-        // VKTODO: It would be good to do profiling and check if it impacts performance or not.
-        void trashVkSampler(VkSampler &sampler);
-        void trashVkFramebuffer(VkFramebuffer &framebuffer);
-        void trashVkImageView(VkImageView &imageView);
-        void trashVkImage(VkImage &image);
-        void trashVkBuffer(VkBuffer &buffer);
-        void trashVkRenderPass(VkRenderPass &renderPass);
-        void trashVkPipeline(VkPipeline &pipeline);
-        void trashVkShaderModule(VkShaderModule &module);
-        void trashVmaAllocation(VmaAllocation &allocation);
-
-    private:
-        std::recursive_mutex recyclerMutex;
-
-        std::vector<VkSampler> vkSamplers;
-        std::vector<VkFramebuffer> vkFramebuffer;
-        std::vector<VkImageView> vkImageViews;
-        std::vector<VkImage> vkImages;
-        std::vector<VkBuffer> vkBuffers;
-        std::vector<VkRenderPass> vkRenderPasses;
-        std::vector<VkPipeline> vkPipelines;
-        std::vector<VkShaderModule> vkShaderModules;
-        std::vector<VmaAllocation> vmaAllocations;
-
-        // List of pointers to objects that were deleted and need to be removed from backend object sets.
-        std::vector<VKFramebuffer*> deletedFramebuffers;
-        std::vector<VKBuffer*> deletedBuffers;
-        std::vector<VKTexture*> deletedTextures;
-        std::vector<VKQuery*> deletedQueries;
-        friend class VKBackend;
-    } recycler;
-
 private:
     void draw(VkPrimitiveTopology mode, uint32 numVertices, uint32 startVertex);
     void renderPassTransfer(const Batch& batch);
@@ -345,6 +306,7 @@ private:
 public:
     VKBackend();
     ~VKBackend();
+    void shutdown() override;
     vks::Context& getContext() { return _context; }
     void syncProgram(const gpu::ShaderPointer& program) override {}
     void syncCache() override {}
@@ -460,10 +422,10 @@ protected:
     // These are filled by syncGPUObject() calls, and are needed to track backend objects so that they can be destroyed before
     // destroying backend.
     // Access to these objects happens only from the backend thread. Destructors don't access them directly, but through a recycler.
-    std::unordered_set<VKFramebuffer*> framebuffers;
-    std::unordered_set<VKBuffer*> buffers;
-    std::unordered_set<VKTexture*> textures;
-    std::unordered_set<VKQuery*> queries;
+    std::unordered_set<VKFramebuffer*> _framebuffers;
+    std::unordered_set<VKBuffer*> _buffers;
+    std::unordered_set<VKTexture*> _textures;
+    std::unordered_set<VKQuery*> _queries;
     void perFrameCleanup();
     // Called by the destructor
     void beforeShutdownCleanup();
@@ -493,6 +455,8 @@ protected:
     std::shared_ptr<FrameData> _currentFrame;
     // Frame for which command buffer is already generated and it's currently being rendered.
     std::shared_ptr<FrameData> _currentlyRenderedFrame;
+    // Safety check to ensure that shutdown was completed before destruction.
+    std::atomic<bool> isBackendShutdownComplete{ false };
 
     typedef void (VKBackend::*CommandCall)(const Batch&, size_t);
     static std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> _commandCalls;
