@@ -12,6 +12,10 @@
 (() => {
     ("use strict");
 
+    Script.include([
+        "./formatting.js"
+    ])
+
     var appIsVisible = false;
     var settings = {
         external_window: false,
@@ -94,22 +98,16 @@
         // Is the message a chat message?
         channel = channel.toLowerCase();
         if (channel !== "chat") return;
-        message = JSON.parse(message);
-
-        // Get the message data
-        const currentTimestamp = _getTimestamp();
-        const timeArray = _formatTimestamp(currentTimestamp);
-
+        
+        if ((message = formatting.toJSON(message)) == null) return;             // Make sure we are working with a JSON object we expect, otherwise kill
+        message = formatting.addTimeAndDateStringToPacket(message);  
+        
         if (!message.channel) message.channel = "domain";                       // We don't know where to put this message. Assume it is a domain wide message.
         message.channel = message.channel.toLowerCase();                        // Only recognize channel names as lower case. 
         
         if (!channels.includes(message.channel)) return;                        // Check the channel. If the channel is not one we have, do nothing.
         if (message.channel == "local" && isTooFar(message.position)) return;   // If message is local, and if player is too far away from location, do nothing.
-
-        // Format the timestamp 
-        message.timeString = timeArray[0];
-        message.dateString = timeArray[1];
-
+        
         let formattedMessagePacket = { ...message };
         formattedMessagePacket.message = await _parseMessage(message.message)
 
@@ -117,24 +115,16 @@
         _notificationCoreMessage(message.displayName, message.message)          // Show a new message on screen.
 
         // Create a new variable based on the message that will be saved.
-        let savedMessage = message;
+        let trimmedPacket = formatting.trimPacketToSave(message);
+        messageHistory.push(trimmedPacket);
 
-        // Remove unnecessary data.
-        delete savedMessage.position;
-        delete savedMessage.timeString;
-        delete savedMessage.dateString;
-        delete savedMessage.action;
-
-        savedMessage.timestamp = currentTimestamp;
-
-        messageHistory.push(savedMessage);
         while (messageHistory.length > settings.maximum_messages) {
             messageHistory.shift();
         }
         Settings.setValue("ArmoredChat-Messages", messageHistory);
 
-        // Check to see if the message is close enough to the user
         function isTooFar(messagePosition) {
+            // Check to see if the message is close enough to the user
             return Vec3.distance(MyAvatar.position, messagePosition) > maxLocalDistance;
         }
     }
@@ -219,10 +209,7 @@
             }
 
             // Format the packet
-            let message = {};
-            const timeArray = _formatTimestamp(_getTimestamp());
-            message.timeString = timeArray[0];
-            message.dateString = timeArray[1];
+            let message = addTimeAndDateStringToPacket({});
             message.message = `${displayName} ${type}`;
 
             // Show new message on screen
@@ -243,42 +230,19 @@
         if (messageHistory) {
             // Load message history
             for (message of messageHistory) {
-                const timeArray = _formatTimestamp(_getTimestamp());
-                messagePacket = { ...message };
-                messagePacket.timeString = timeArray[0];
-                messagePacket.dateString = timeArray[1];
+                messagePacket = { ...message };                                             // Create new variable
+                messagePacket = formatting.addTimeAndDateStringToPacket(messagePacket);     // Add timestamp
+                messagePacket.message = await _parseMessage(messagePacket.message);         // Parse the message for the UI
 
-                let formattedMessagePacket = {...messagePacket};
-                formattedMessagePacket.message = await _parseMessage(messagePacket.message);
-
-                _emitEvent({ type: "show_message", ...formattedMessagePacket });
+                _emitEvent({ type: "show_message", ...messagePacket });                     // Send message to UI
             }
         }
 
-        // Send current settings to the app
-        _emitEvent({ type: "initial_settings", settings: settings });
+        _emitEvent({ type: "initial_settings", settings: settings });                       // Send current settings to the app
     }
     function _saveSettings() {
         console.log("Saving config");
         Settings.setValue("ArmoredChat-Config", settings);
-    }
-    function _getTimestamp(){
-        return Date.now();
-    }
-    function _formatTimestamp(timestamp){
-        let timeArray = [];
-
-        timeArray.push(new Date().toLocaleTimeString(undefined, {
-            hour12: false,
-        }));
-
-        timeArray.push(new Date(timestamp).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-        }));
-
-        return timeArray;
     }
     function _notificationCoreMessage(displayName, message){
         Messages.sendLocalMessage(
