@@ -5,4 +5,4 @@
 Source: hifi-deps
 Version: 0.1.5-github-actions
 Description: Collected dependencies for High Fidelity applications
-Build-Depends: artery-font-format, bullet3, cgltf, draco, etc2comp, glad, glm, node, nvtt, openexr (!android), openssl (windows), opus, polyvox, tbb (!android), vhacd, webrtc (!android|!(linux&arm)), zlib
+Build-Depends: artery-font-format, bullet3, cgltf, draco, etc2comp, glad, glm, node, nvtt, openexr (!android), openssl (windows), opus, polyvox, tbb (!android), vhacd, webrtc (!android|!(linux&arm)), zlib, openldap

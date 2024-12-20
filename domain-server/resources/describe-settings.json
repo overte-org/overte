@@ -161,6 +161,38 @@
       ]
     },
     {
+      "name": "ldap_authentication",
+      "label": "Networking / LDAP",
+      "settings": [
+        {
+          "name": "enable_ldap",
+          "label": "Enable LDAP Authentication",
+          "help": "Allow a LDAP server to provide authentication of users.",
+          "default": false,
+          "type": "checkbox",
+          "advanced": true
+        },
+        {
+          "name": "ldap_server",
+          "label": "LDAP Server URL",
+          "help": "The URL that the Interface will use to login via LDAP.",
+          "advanced": true
+        },
+        {
+          "name": "ldap_search_user_base",
+          "label": "LDAP user base",
+          "help": "The LDAP base that the domain server will use to make LDAP API calls.<br>Example: 'ou=users,dc=my-company,dc=com'",
+          "advanced": true
+        },
+        {
+          "name": "ldap_search_group_base",
+          "label": "LDAP group base",
+          "help": "The LDAP base that the domain server will use to make LDAP API calls to find group memberships.<br>Example: 'ou=groups,dc=my-company,dc=com'",
+          "advanced": true
+        }
+      ]
+    },
+    {
       "label": "Monitoring",
       "name": "monitoring",
       "restart": false,
