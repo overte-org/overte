@@ -38,6 +38,82 @@ const formatting = {
 		};
 		return newPacket;
 	},
+	parseMessage: async function(message) {
+		const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
+        const overteLocationRegex = /hifi:\/\/[a-zA-Z0-9_-]+\/[-+]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+\/[-+]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+/;
+
+		let runningMessage = message;			// The remaining message that will be parsed
+        let messageArray = [];					// An array of messages that are split up by the formatting functions
+
+		const regexPatterns = [
+            { type: "url", regex: urlRegex },
+            { type: "overteLocation", regex: overteLocationRegex }
+        ]
+
+		while (true) {
+            let firstMatch = _findFirstMatch();
+
+            if (firstMatch == null) {
+				// If there is no more text to parse, break out of the loop and return the message array.
+                // Format any remaining text as a basic 'text' type.
+                messageArray.push({type: 'text', value: runningMessage});
+
+                // Append a final 'fill width' to the message text.
+                messageArray.push({type: 'messageEnd'});
+                break;
+            }
+
+            _formatMessage(firstMatch);
+        }
+
+		// Embed images in the message array.
+		for (dataChunk of messageArray){
+            if (dataChunk.type == 'url'){
+                let url = dataChunk.value;
+
+                const res = await formatting.helpers.fetch(url, {method: 'GET'});      // TODO: Replace with 'HEAD' method. https://github.com/overte-org/overte/issues/1273
+                const contentType = res.getResponseHeader("content-type");
+
+                // TODO: Add support for other media types
+                if (contentType.startsWith('image/')) {
+                    messageArray.push({type: 'imageEmbed', value: url});
+                }
+            }
+        }
+
+		return messageArray;
+
+		function _formatMessage(firstMatch){
+            let indexOfFirstMatch = firstMatch[0];
+            let regex = regexPatterns[firstMatch[1]].regex;
+
+            let foundMatch = runningMessage.match(regex)[0];
+
+            messageArray.push({type: 'text', value: runningMessage.substring(0, indexOfFirstMatch)});
+            messageArray.push({type: regexPatterns[firstMatch[1]].type, value: runningMessage.substring(indexOfFirstMatch, indexOfFirstMatch + foundMatch.length)});
+            
+            runningMessage = runningMessage.substring(indexOfFirstMatch + foundMatch.length);   // Remove the part of the message we have worked with
+        }
+
+        function _findFirstMatch(){
+            let indexOfFirstMatch = Infinity;
+            let indexOfRegexPattern = Infinity;
+
+            for (let i = 0; regexPatterns.length > i; i++){
+                let indexOfMatch = runningMessage.search(regexPatterns[i].regex);
+
+                if (indexOfMatch == -1) continue;                                              // No match found
+
+                if (indexOfMatch < indexOfFirstMatch) {
+                    indexOfFirstMatch = indexOfMatch;
+                    indexOfRegexPattern = i;
+                }
+            }
+
+            if (indexOfFirstMatch !== Infinity) return [indexOfFirstMatch, indexOfRegexPattern];    // If there was a found match
+            return null;                                                                            // No found match
+        }
+	},
 
 	helpers: {
 		// Small functions that are used often in the other functions.
@@ -59,6 +135,28 @@ const formatting = {
 		},
 		getTimestamp: function(){
 			return Date.now();
+		},
+		fetch: function (url, options = {method: "GET"}) {
+			return new Promise((resolve, reject) => {
+				let req = new XMLHttpRequest();
+	
+				req.onreadystatechange = function () {
+	
+					if (req.readyState === req.DONE) {
+						if (req.status === 200) {
+							console.log("Content type:", req.getResponseHeader("content-type"));
+							resolve(req);
+				
+						} else {
+							console.log("Error", req.status, req.statusText);
+							reject();
+						}
+					}
+				};
+	
+				req.open(options.method, url);
+				req.send();
+			});
 		}
 	}
 }

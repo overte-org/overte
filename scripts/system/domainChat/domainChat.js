@@ -109,7 +109,7 @@
         if (message.channel == "local" && isTooFar(message.position)) return;   // If message is local, and if player is too far away from location, do nothing.
         
         let formattedMessagePacket = { ...message };
-        formattedMessagePacket.message = await _parseMessage(message.message)
+        formattedMessagePacket.message = await formatting.parseMessage(message.message)
 
         _emitEvent({ type: "show_message", ...formattedMessagePacket });        // Update qml view of to new message.
         _notificationCoreMessage(message.displayName, message.message)          // Show a new message on screen.
@@ -219,7 +219,7 @@
 
             // Format notification message
             let formattedMessagePacket = {...message};
-            formattedMessagePacket.message = await _parseMessage(message.message);
+            formattedMessagePacket.message = await formatting.parseMessage(message.message);
 
             _emitEvent({ type: "notification", ...formattedMessagePacket });
         }, 1500);
@@ -230,15 +230,15 @@
         if (messageHistory) {
             // Load message history
             for (message of messageHistory) {
-                messagePacket = { ...message };                                             // Create new variable
-                messagePacket = formatting.addTimeAndDateStringToPacket(messagePacket);     // Add timestamp
-                messagePacket.message = await _parseMessage(messagePacket.message);         // Parse the message for the UI
+                messagePacket = { ...message };                                                 // Create new variable
+                messagePacket = formatting.addTimeAndDateStringToPacket(messagePacket);         // Add timestamp
+                messagePacket.message = await formatting.parseMessage(messagePacket.message);   // Parse the message for the UI
 
-                _emitEvent({ type: "show_message", ...messagePacket });                     // Send message to UI
+                _emitEvent({ type: "show_message", ...messagePacket });                         // Send message to UI
             }
         }
 
-        _emitEvent({ type: "initial_settings", settings: settings });                       // Send current settings to the app
+        _emitEvent({ type: "initial_settings", settings: settings });                           // Send current settings to the app
     }
     function _saveSettings() {
         console.log("Saving config");
@@ -250,85 +250,6 @@
             JSON.stringify({ sender: displayName, text: message })
         );
     }
-    async function _parseMessage(message){
-        const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
-        const mentionRegex = /@(\w+)/; // FIXME: Remove - devcode
-        const overteLocationRegex = /hifi:\/\/[a-zA-Z0-9_-]+\/[-+]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+\/[-+]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+/;
-
-        let runningMessage = message;
-        let messageArray = [];
-
-        const regexPatterns = [
-            { type: "url", regex: urlRegex },
-            { type: "mention", regex: mentionRegex }, // FIXME: Remove - devcode
-            { type: "overteLocation", regex: overteLocationRegex }
-        ]
-
-        // Here is a link https://www.example.com, #hashtag, and @mention. Just for some spice here is another https://exampletwo.com
-
-        while (true) {
-            let firstMatch = _findFirstMatch();
-
-            if (firstMatch == null) {
-                // Format any remaining text as a basic 'text' type.
-                messageArray.push({type: 'text', value: runningMessage});
-
-                // Append a final 'fill width' to the message text.
-                messageArray.push({type: 'messageEnd'});
-                break;
-            }
-
-            _formatMessage(firstMatch);
-        }
-
-        for (dataChunk of messageArray){
-            if (dataChunk.type == 'url'){
-                let url = dataChunk.value;
-
-                const res = await fetch(url, {method: 'GET'});      // TODO: Replace with 'HEAD' method. https://github.com/overte-org/overte/issues/1273
-                const contentType = res.getResponseHeader("content-type");
-
-                // TODO: Add support for other media types
-                if (contentType.startsWith('image/')) {
-                    messageArray.push({type: 'imageEmbed', value: url});
-                }
-            }
-        }
-
-        return messageArray;
-
-        function _formatMessage(firstMatch){
-            let indexOfFirstMatch = firstMatch[0];
-            let regex = regexPatterns[firstMatch[1]].regex;
-
-            let foundMatch = runningMessage.match(regex)[0];
-
-            messageArray.push({type: 'text', value: runningMessage.substring(0, indexOfFirstMatch)});
-            messageArray.push({type: regexPatterns[firstMatch[1]].type, value: runningMessage.substring(indexOfFirstMatch, indexOfFirstMatch + foundMatch.length)});
-            
-            runningMessage = runningMessage.substring(indexOfFirstMatch + foundMatch.length);   // Remove the part of the message we have worked with
-        }
-
-        function _findFirstMatch(){
-            let indexOfFirstMatch = Infinity;
-            let indexOfRegexPattern = Infinity;
-
-            for (let i = 0; regexPatterns.length > i; i++){
-                let indexOfMatch = runningMessage.search(regexPatterns[i].regex);
-
-                if (indexOfMatch == -1) continue;                                              // No match found
-
-                if (indexOfMatch < indexOfFirstMatch) {
-                    indexOfFirstMatch = indexOfMatch;
-                    indexOfRegexPattern = i;
-                }
-            }
-
-            if (indexOfFirstMatch !== Infinity) return [indexOfFirstMatch, indexOfRegexPattern];    // If there was a found match
-            return null;                                                                            // No found match
-        }
-    }
-
     /**
      * Emit a packet to the HTML front end. Easy communication!
      * @param {Object} packet - The Object packet to emit to the HTML
@@ -338,27 +259,6 @@
         chatOverlayWindow.sendToQml(packet);
     }
 
-    function fetch(url, options = {method: "GET"}) {
-        return new Promise((resolve, reject) => {
-            let req = new XMLHttpRequest();
 
-            req.onreadystatechange = function () {
-
-                if (req.readyState === req.DONE) {
-                    if (req.status === 200) {
-                        console.log("Content type:", req.getResponseHeader("content-type"));
-                        resolve(req);
-            
-                    } else {
-                        console.log("Error", req.status, req.statusText);
-                        reject();
-                    }
-                }
-            };
-
-            req.open(options.method, url);
-            req.send();
-        });
-    }
 
 })();
