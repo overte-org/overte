@@ -12,13 +12,13 @@
 <@include BloomThreshold.shared.slh@>
 <@include render-utils/ShaderConstants.h@>
 
-LAYOUT(binding=RENDER_UTILS_TEXTURE_BLOOM_COLOR) uniform sampler2D colorMap;
-LAYOUT_STD140(binding=RENDER_UTILS_BUFFER_BLOOM_PARAMS) uniform parametersBuffer {
+TEXTURE(RENDER_UTILS_TEXTURE_BLOOM_COLOR, sampler2D, colorMap);
+UNIFORM_BUFFER(RENDER_UTILS_BUFFER_BLOOM_PARAMS, parametersBuffer) {
     Parameters parameters;
 };
 
-layout(location=0) in vec2 varTexCoord0;
-layout(location=0) out vec4 outFragColor;
+INPUT(0, vec2, varTexCoord0);
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
     vec2 startUv = varTexCoord0;
