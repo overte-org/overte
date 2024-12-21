@@ -1,4 +1,4 @@
-import QtQuick 2.7
+import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 
@@ -147,10 +147,11 @@ Component {
 						width: messageBoxFlow.width;
 						height: 200
 
-						Image {
+						AnimatedImage {
 							source: model.type === 'imageEmbed' ? model.value : ''
-							sourceSize.width: 400
-							sourceSize.height: 200
+							height: Math.min(sourceSize.height, 200);
+							onStatusChanged: playing = (status == AnimatedImage.Ready)
+							fillMode: Image.PreserveAspectFit
 						}
 					}
 				}
