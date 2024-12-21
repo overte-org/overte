@@ -95,7 +95,7 @@ class Overte(ConanFile):
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
-        if self.settings.os == "Windows" and self.settings.build_type == "Release":
+        if self.settings.build_type == "Release":
             deps.configuration = "RelWithDebInfo"
             deps.generate()
 
@@ -132,6 +132,7 @@ class Overte(ConanFile):
         )
         copy(self, "*.dll", src, bindir, False)
         copy(self, "*.so*", src, bindir, False)
-        if self.settings.os == "Windows" and self.settings.build_type == "Release":
+        if self.settings.build_type == "Release":
             bindir = os.path.join(self.build_folder, "conanlibs", "RelWithDebInfo")
             copy(self, "*.dll", src, bindir, False)
+            copy(self, "*.so*", src, bindir, False)
