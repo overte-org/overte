@@ -1,5 +1,5 @@
 //
-//  armored_chat.js
+//  domainChat.js
 //
 //  Created by Armored Dragon, 2024.
 //  Copyright 2024 Overte e.V.
@@ -7,8 +7,14 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
+// TODO: Message trimming
+
 (() => {
     ("use strict");
+
+    Script.include([
+        "./formatting.js"
+    ])
 
     var appIsVisible = false;
     var settings = {
@@ -28,15 +34,10 @@
     var palData = AvatarManager.getPalData().data;
 
     Controller.keyPressEvent.connect(keyPressEvent);
-    Messages.subscribe("Chat"); // Floofchat
     Messages.subscribe("chat");
     Messages.messageReceived.connect(receivedMessage);
-    AvatarManager.avatarAddedEvent.connect((sessionId) => {
-        _avatarAction("connected", sessionId);
-    });
-    AvatarManager.avatarRemovedEvent.connect((sessionId) => {
-        _avatarAction("left", sessionId);
-    });
+    AvatarManager.avatarAddedEvent.connect((sessionId) => { _avatarAction("connected", sessionId); });
+    AvatarManager.avatarRemovedEvent.connect((sessionId) => { _avatarAction("left", sessionId); });
 
     startup();
 
@@ -61,7 +62,7 @@
         appButton.clicked.connect(toggleMainChatWindow);
 
         quickMessage = new OverlayWindow({
-            source: Script.resolvePath("./armored_chat_quick_message.qml"),
+            source: Script.resolvePath("./domainChatQuick.qml"),
         });
 
         _openWindow();
@@ -78,7 +79,7 @@
     }
     function _openWindow() {
         chatOverlayWindow = new Desktop.createWindow(
-            Script.resolvePath("./armored_chat.qml"),
+            Script.resolvePath("./domainChat.qml"),
             {
                 title: "Chat",
                 size: { x: 550, y: 400 },
@@ -92,64 +93,37 @@
         chatOverlayWindow.fromQml.connect(fromQML);
         quickMessage.fromQml.connect(fromQML);
     }
-    function receivedMessage(channel, message) {
+    async function receivedMessage(channel, message) {
         // Is the message a chat message?
         channel = channel.toLowerCase();
         if (channel !== "chat") return;
-        message = JSON.parse(message);
+        
+        if ((message = formatting.toJSON(message)) == null) return;             // Make sure we are working with a JSON object we expect, otherwise kill
+        message = formatting.addTimeAndDateStringToPacket(message);  
+        
+        if (!message.channel) message.channel = "domain";                       // We don't know where to put this message. Assume it is a domain wide message.
+        message.channel = message.channel.toLowerCase();                        // Only recognize channel names as lower case. 
+        
+        if (!channels.includes(message.channel)) return;                        // Check the channel. If the channel is not one we have, do nothing.
+        if (message.channel == "local" && isTooFar(message.position)) return;   // If message is local, and if player is too far away from location, do nothing.
+        
+        let formattedMessagePacket = { ...message };
+        formattedMessagePacket.message = await formatting.parseMessage(message.message)
 
-        // Get the message data
-        const currentTimestamp = _getTimestamp();
-        const timeArray = _formatTimestamp(currentTimestamp);
+        _emitEvent({ type: "show_message", ...formattedMessagePacket });        // Update qml view of to new message.
+        _notificationCoreMessage(message.displayName, message.message)          // Show a new message on screen.
 
-        if (!message.channel) message.channel = "domain"; // We don't know where to put this message. Assume it is a domain wide message.
-        if (message.forApp) return; // Floofchat
+        // Create a new variable based on the message that will be saved.
+        let trimmedPacket = formatting.trimPacketToSave(message);
+        messageHistory.push(trimmedPacket);
 
-        // Floofchat compatibility hook
-        message = floofChatCompatibilityConversion(message);
-        message.channel = message.channel.toLowerCase();
-
-        // Check the channel. If the channel is not one we have, do nothing.
-        if (!channels.includes(message.channel)) return;
-
-        // If message is local, and if player is too far away from location, do nothing.
-        if (message.channel == "local" && isTooFar(message.position)) return; 
-
-        // Format the timestamp 
-        message.timeString = timeArray[0];
-        message.dateString = timeArray[1];
-
-        // Update qml view of to new message
-        _emitEvent({ type: "show_message", ...message });
-
-        // Show new message on screen
-        Messages.sendLocalMessage(
-            "Floof-Notif",
-            JSON.stringify({
-                sender: message.displayName,
-                text: message.message,
-            })
-        );
-
-        // Save message to history
-        let savedMessage = message;
-
-        // Remove unnecessary data.
-        delete savedMessage.position;
-        delete savedMessage.timeString;
-        delete savedMessage.dateString;
-        delete savedMessage.action;
-
-        savedMessage.timestamp = currentTimestamp;
-
-        messageHistory.push(savedMessage);
         while (messageHistory.length > settings.maximum_messages) {
             messageHistory.shift();
         }
         Settings.setValue("ArmoredChat-Messages", messageHistory);
 
-        // Check to see if the message is close enough to the user
         function isTooFar(messagePosition) {
+            // Check to see if the message is close enough to the user
             return Vec3.distance(MyAvatar.position, messagePosition) > maxLocalDistance;
         }
     }
@@ -215,11 +189,9 @@
                 action: "send_chat_message",
             })
         );
-
-        floofChatCompatibilitySendMessage(message, channel);
     }
     function _avatarAction(type, sessionId) {
-        Script.setTimeout(() => {
+        Script.setTimeout(async () => {
             if (type == "connected") {
                 palData = AvatarManager.getPalData().data;
             }
@@ -236,65 +208,47 @@
             }
 
             // Format the packet
-            let message = {};
-            const timeArray = _formatTimestamp(_getTimestamp());
-            message.timeString = timeArray[0];
-            message.dateString = timeArray[1];
+            let message = addTimeAndDateStringToPacket({});
             message.message = `${displayName} ${type}`;
 
             // Show new message on screen
             if (settings.join_notification){
-                Messages.sendLocalMessage(
-                    "Floof-Notif",
-                    JSON.stringify({
-                        sender: displayName,
-                        text: type,
-                    })
-                );
+                _notificationCoreMessage(displayName, type)
             }
 
-            _emitEvent({ type: "notification", ...message });
+            // Format notification message
+            let formattedMessagePacket = {...message};
+            formattedMessagePacket.message = await formatting.parseMessage(message.message);
+
+            _emitEvent({ type: "notification", ...formattedMessagePacket });
         }, 1500);
     }
-    function _loadSettings() {
+    async function _loadSettings() {
         settings = Settings.getValue("ArmoredChat-Config", settings);
 
         if (messageHistory) {
             // Load message history
-            messageHistory.forEach((message) => {
-                const timeArray = _formatTimestamp(_getTimestamp());
-                message.timeString = timeArray[0];
-                message.dateString = timeArray[1];
-                _emitEvent({ type: "show_message", ...message });
-            });
+            for (message of messageHistory) {
+                messagePacket = { ...message };                                                 // Create new variable
+                messagePacket = formatting.addTimeAndDateStringToPacket(messagePacket);         // Add timestamp
+                messagePacket.message = await formatting.parseMessage(messagePacket.message);   // Parse the message for the UI
+
+                _emitEvent({ type: "show_message", ...messagePacket });                         // Send message to UI
+            }
         }
 
-        // Send current settings to the app
-        _emitEvent({ type: "initial_settings", settings: settings });
+        _emitEvent({ type: "initial_settings", settings: settings });                           // Send current settings to the app
     }
     function _saveSettings() {
         console.log("Saving config");
         Settings.setValue("ArmoredChat-Config", settings);
     }
-    function _getTimestamp(){
-        return Date.now();
+    function _notificationCoreMessage(displayName, message){
+        Messages.sendLocalMessage(
+            "Floof-Notif",
+            JSON.stringify({ sender: displayName, text: message })
+        );
     }
-    function _formatTimestamp(timestamp){
-        let timeArray = [];
-
-        timeArray.push(new Date().toLocaleTimeString(undefined, {
-            hour12: false,
-        }));
-
-        timeArray.push(new Date(timestamp).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-        }));
-
-        return timeArray;
-    }
-
     /**
      * Emit a packet to the HTML front end. Easy communication!
      * @param {Object} packet - The Object packet to emit to the HTML
@@ -304,33 +258,6 @@
         chatOverlayWindow.sendToQml(packet);
     }
 
-    //
-    // Floofchat compatibility functions
-    // Added to ease the transition between Floofchat to ArmoredChat
-    // These functions can be safely removed at a much later date.
-    function floofChatCompatibilityConversion(message) {
-        if (message.type === "TransmitChatMessage" && !message.forApp) {
-            return {
-                position: message.position,
-                message: message.message,
-                displayName: message.displayName,
-                channel: message.channel.toLowerCase(),
-            };
-        }
-        return message;
-    }
 
-    function floofChatCompatibilitySendMessage(message, channel) {
-        Messages.sendMessage(
-            "Chat",
-            JSON.stringify({
-                position: MyAvatar.position,
-                message: message,
-                displayName: MyAvatar.sessionDisplayName,
-                channel: channel.charAt(0).toUpperCase() + channel.slice(1),
-                type: "TransmitChatMessage",
-                forApp: "Floof",
-            })
-        );
-    }
+
 })();
