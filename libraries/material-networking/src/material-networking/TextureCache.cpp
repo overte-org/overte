@@ -256,9 +256,9 @@ NetworkTexturePointer TextureCache::getTexture(const QUrl& url, image::TextureUs
     }
 
     QString urlString = url.toString();
-    if (content.isEmpty() && (urlString.contains("data:image/jpeg;base64,")
-                              || urlString.contains("data:image/png;base64,")
-                              || urlString.contains("data:image/webp;base64,"))) {
+    if (content.isEmpty() && (urlString.startsWith("data:image/jpeg;base64,")
+                              || urlString.startsWith("data:image/png;base64,")
+                              || urlString.startsWith("data:image/webp;base64,"))) {
         QString binaryUrl = urlString.split(",")[1];
         auto decodedContent = binaryUrl.isEmpty() ? QByteArray() : QByteArray::fromBase64(binaryUrl.toUtf8());
         if (!decodedContent.isEmpty()) {
