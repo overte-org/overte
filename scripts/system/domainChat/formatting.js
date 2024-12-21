@@ -74,10 +74,14 @@ const formatting = {
                 const res = await formatting.helpers.fetch(url, {method: 'GET'});      // TODO: Replace with 'HEAD' method. https://github.com/overte-org/overte/issues/1273
                 const contentType = res.getResponseHeader("content-type");
 
-                // TODO: Add support for other media types
                 if (contentType.startsWith('image/')) {
                     messageArray.push({type: 'imageEmbed', value: url});
+					continue;
                 }
+				if (contentType.startsWith('video/')){ 
+                    messageArray.push({type: 'videoEmbed', value: url});
+					continue;
+				}
             }
         }
 
@@ -144,7 +148,6 @@ const formatting = {
 	
 					if (req.readyState === req.DONE) {
 						if (req.status === 200) {
-							console.log("Content type:", req.getResponseHeader("content-type"));
 							resolve(req);
 				
 						} else {

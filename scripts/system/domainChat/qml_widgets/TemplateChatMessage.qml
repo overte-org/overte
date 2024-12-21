@@ -1,6 +1,7 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
+import QtMultimedia 5.15
 
 Component {
 	id: template_chat_message
@@ -150,8 +151,47 @@ Component {
 						AnimatedImage {
 							source: model.type === 'imageEmbed' ? model.value : ''
 							height: Math.min(sourceSize.height, 200);
-							onStatusChanged: playing = (status == AnimatedImage.Ready)
 							fillMode: Image.PreserveAspectFit
+						}
+					}
+
+					Item {
+						visible: model.type === 'videoEmbed';
+						width: messageBoxFlow.width;
+						height: 200;
+
+						Video {
+							id: videoPlayer
+							source: model.type === 'videoEmbed' ? model.value : ''
+							height: 200;
+							width: 400;
+							fillMode: Image.PreserveAspectFit
+							autoLoad: false;
+
+							onStatusChanged: {
+								if (status === 7) {
+									// Weird hack to make the video restart when it's over
+									// Ideally you'd want to use the seek function to restart the video but it doesn't work?
+									// Will need to make a more refined solution for this later. in the form of a more advanced media player.
+									// For now, this is sufficient. -AD
+									let originalURL = videoPlayer.source;
+									videoPlayer.source = "";
+									videoPlayer.source = originalURL;
+								}
+							}
+
+							MouseArea {
+								anchors.fill: parent
+								onClicked: {
+									const videoIsOver = videoPlayer.position == videoPlayer.duration
+									if (videoPlayer.playbackState == MediaPlayer.PlayingState) {
+										videoPlayer.pause();
+									} 
+									else {
+										parent.play();
+									}
+								}
+							}
 						}
 					}
 				}
