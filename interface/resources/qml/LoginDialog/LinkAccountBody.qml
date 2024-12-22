@@ -74,6 +74,8 @@ Item {
     }
 
     function login() {
+        var loginType = loginTypeComboBox.model.get(loginTypeComboBox.currentIndex).text;
+
         // make sure the directory server is set so we don't send your password to the wrong place!
         if (!isLoggingInToDomain) {
             Settings.setValue("private/selectedMetaverseURL", metaverseServerField.text);
@@ -90,7 +92,7 @@ Item {
         if (!isLoggingInToDomain) {
             loginDialog.login(emailField.text, passwordField.text);
         } else {
-            loginDialog.loginDomain(emailField.text, passwordField.text);
+            loginDialog.loginDomain(emailField.text, passwordField.text, loginType);
         }
         
         if (linkAccountBody.loginDialogPoppedUp) {
@@ -128,6 +130,9 @@ Item {
         var savedDisplayName = Settings.getValue("Avatar/displayName", "");
         displayNameField.text = savedDisplayName;
         emailField.placeholderText = "Username or Email";
+        if (isLoggingInToDomain) {
+            loginTypeComboBox.visible = true;
+        }
         if (!isLoggingInToDomain) {
             var savedUsername = Settings.getValue("keepMeLoggedIn/savedUsername", "");
             emailField.text = keepMeLoggedInCheckbox.checked ? savedUsername === "Unknown user" ? "" : savedUsername : "";
@@ -165,7 +170,7 @@ Item {
             id: loginContainer
             width: displayNameField.width
             height: errorContainer.height + loginDialogTextContainer.height + displayNameField.height + emailField.height + passwordField.height + metaverseServerField.height + 5.5 * hifi.dimensions.contentSpacing.y +
-                keepMeLoggedInCheckbox.height + loginButton.height + cantAccessTextMetrics.height + continueButton.height
+                keepMeLoggedInCheckbox.height + loginButton.height + cantAccessTextMetrics.height + continueButton.height + loginTypeComboBox.height
             anchors {
                 top: parent.top
                 topMargin: root.bannerHeight + 0.25 * parent.height
@@ -234,6 +239,26 @@ Item {
                 }
             }
 
+            HifiControlsUit.ComboBox {
+                id: loginTypeComboBox
+                comboBox.textRole: "text"
+                currentIndex: 0
+                width: root.bannerWidth
+                visible: false
+                anchors {
+                    top: loginDialogTextContainer.bottom
+                    topMargin: 1.5 * hifi.dimensions.contentSpacing.y
+                }
+
+                model: ListModel {
+                    ListElement {
+                        text: "WordPress"
+                    }
+                    ListElement {
+                        text: "LDAP"
+                    }
+                }
+            }
             HifiControlsUit.TextField {
                 id: displayNameField
                 width: root.bannerWidth
@@ -241,7 +266,7 @@ Item {
                 font.pixelSize: linkAccountBody.textFieldFontSize
                 styleRenderType: Text.QtRendering
                 anchors {
-                    top: loginDialogTextContainer.bottom
+                    top: loginTypeComboBox.visible ? loginTypeComboBox.bottom : loginDialogTextContainer.bottom
                     topMargin: 1.5 * hifi.dimensions.contentSpacing.y
                 }
                 placeholderText: "Display Name (optional)"
@@ -622,7 +647,7 @@ Item {
             anchors {
                 left: loginContainer.left
                 top: loginContainer.bottom
-                topMargin: 0.05 * parent.height
+                topMargin: 10
             }
             TextMetrics {
                 id: signUpTextMetrics
@@ -653,6 +678,7 @@ Item {
                 anchors {
                      left: signUpText.right
                      leftMargin: hifi.dimensions.contentSpacing.x
+                     top: cantAccessText.bottom - 10
                 }
 
                 text: "<a href='https://mv.overte.org/server/users/register'>Sign Up</a>"

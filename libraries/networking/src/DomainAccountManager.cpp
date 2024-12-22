@@ -25,8 +25,7 @@
 #include "NetworkAccessManager.h"
 #include "NetworkLogging.h"
 #include "NodeList.h"
-
-// FIXME: Generalize to other OAuth2 sources for domain login.
+#include "LDAPAccount.h"
 
 const bool VERBOSE_HTTP_REQUEST_DEBUGGING = false;
 
@@ -75,8 +74,12 @@ bool DomainAccountManager::isLoggedIn() {
     return !_currentAuth.authURL.isEmpty() && hasValidAccessToken();
 }
 
-void DomainAccountManager::requestAccessToken(const QString& username, const QString& password) {
+void DomainAccountManager::requestAccessToken(const QString& username, const QString& password, const QString& type) {
+    if (type == "wordpress") return requestAccessTokenWordPress(username, password);
+    if (type == "ldap") return requestAccessTokenLDAP(username, password);
+}
 
+void DomainAccountManager::requestAccessTokenWordPress(const QString& username, const QString& password) {
     _currentAuth.username = username;
     _currentAuth.accessToken = "";
     _currentAuth.refreshToken = "";
@@ -102,6 +105,36 @@ void DomainAccountManager::requestAccessToken(const QString& username, const QSt
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkReply* requestReply = networkAccessManager.post(request, formData);
     connect(requestReply, &QNetworkReply::finished, this, &DomainAccountManager::requestAccessTokenFinished);
+}
+
+void DomainAccountManager::requestAccessTokenLDAP(const QString& username, const QString& password) {
+    _currentAuth.username = username;
+    _currentAuth.accessToken = "";
+    _currentAuth.refreshToken = "";
+
+    LDAPAccount::setLDAPServerURL(_currentAuth.authURL.toString());
+
+    // NOTE: Do not check if the credentials are valid on the client side first. Let the server handle everything.
+    // const bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(username, password);
+    // if (isValidLDAPCredentials) {
+    // Set the password as the access token.
+    _currentAuth.accessToken = password;
+
+    // Set the authenticated host name.
+    auto nodeList = DependencyManager::get<NodeList>();
+    _currentAuth.authedDomainName = nodeList->getDomainHandler().getHostname();
+
+    // Remember domain login for the current Interface session.
+    _knownAuths.insert(_currentAuth.domainURL, _currentAuth);
+
+    emit loginComplete();
+    return;
+    // }
+
+    // TODO: Failure state: This code will not run due to not checking validity of credentials. See notes and fixmes above.
+    // Failure.
+    // FIXME: QML does not update to show sign in failure.
+    // qCDebug(networking) << "LDAP account failed to verify";
 }
 
 void DomainAccountManager::requestAccessTokenFinished() {
