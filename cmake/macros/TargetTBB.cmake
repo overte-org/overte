@@ -1,5 +1,6 @@
 #
 #  Copyright 2015 High Fidelity, Inc.
+#  Copyright 2024 Overte e.V.
 #  Created by Bradley Austin Davis on 2015/10/10
 #
 #  Distributed under the Apache License, Version 2.0.
@@ -16,9 +17,9 @@ if (ANDROID)
     target_include_directories(${TARGET_NAME} SYSTEM PUBLIC ${TBB_INCLUDE_DIRS})
     target_link_libraries(${TARGET_NAME} ${TBB_LIBRARIES})
 else()
-   	# using VCPKG for TBB
+    # using Conan for TBB
     find_package(TBB CONFIG REQUIRED)
-    target_link_libraries(${TARGET_NAME} onetbb::onetbb)
+    target_link_libraries(${TARGET_NAME} TBB::tbb)
 endif()
 
 endmacro()
