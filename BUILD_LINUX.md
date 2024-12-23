@@ -158,7 +158,7 @@ conan profile detect --force
 
 Next, add the overte remote to conan
 ```bash
-conan remote add overte https://git.anotherfoxguy.com/api/packages/overte/conan -f
+conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
 ```
 
 Optionally you can let conan automatically install the required system packages
