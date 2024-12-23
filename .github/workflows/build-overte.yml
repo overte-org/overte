@@ -51,14 +51,13 @@ jobs:
                   qml-module-qtwebengine
         shell: bash
 
-      - name: Fix broken mpg123 lib
+      - name: Setup conan
         if: steps.cache-conan.outputs.cache-hit != 'true'
         run: | 
           conan profile detect --force
           echo "tools.system.package_manager:mode = install" > ~/.conan2/global.conf
           echo "tools.system.package_manager:sudo = True" >> ~/.conan2/global.conf
-          conan remote add overte https://git.anotherfoxguy.com/api/packages/overte/conan -f
-          conan install --requires mpg123/1.31.2 -b mpg123/1.31.2 -b missing
+          conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
 
       - name: Install conan pkgs
         run: |
@@ -115,7 +114,7 @@ jobs:
 
       - name: Install conan pkgs
         run: |
-          conan remote add overte https://git.anotherfoxguy.com/api/packages/overte/conan -f
+          conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
           conan install . -b missing -pr:b=tools/conan-profiles/vs-19-release-ninja -pr=tools/conan-profiles/vs-19-release-ninja -of build
           conan cache clean "*" -sbd
         shell: cmd
