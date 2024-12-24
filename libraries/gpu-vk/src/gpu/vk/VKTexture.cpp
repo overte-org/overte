@@ -345,6 +345,30 @@ void VKStrictResourceTexture::createTexture(VKBackend &backend) {
         }else{
             Q_ASSERT(_gpuObject.getNumFaces() == 1);
         }
+
+        // Is conversion from RGB to RGBA needed?
+        bool needsAddingAlpha = false;
+        bool needsBGRToRGB = false;
+        auto storedFormat = _gpuObject.getStoredMipFormat();
+        auto texelFormat = _gpuObject.getTexelFormat();
+        if ((storedFormat.getSemantic() == gpu::BGRA || storedFormat.getSemantic() == gpu::SBGRA)
+            && !(texelFormat.getSemantic() == gpu::BGRA || texelFormat.getSemantic() == gpu::SBGRA)) {
+            needsBGRToRGB = true;
+        }
+        auto storedVkFormat = evalTexelFormatInternal(_gpuObject.getStoredMipFormat());
+        auto texelVkFormat = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+        if (storedFormat.getDimension() != texelFormat.getDimension()) {
+            if (storedFormat.getDimension() == gpu::VEC3 && texelFormat.getDimension() == gpu::VEC4) {
+                // It's best to make sure that this is not happening in unexpected cases and causing bugs
+                Q_ASSERT((storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_UNORM)
+                         || (storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_SRGB));
+                needsAddingAlpha = true;
+            } else {
+                qDebug() << "Format mismatch, stored: " << storedVkFormat << " texel: " << texelVkFormat;
+                Q_ASSERT(false);
+            }
+        }
+
         for (size_t face = 0; face < face_count; face++) {
             auto dim = _gpuObject.evalMipDimensions(sourceMip);
             auto mipData = _gpuObject.accessStoredMipFace(sourceMip, face);  // VKTODO: only one face for now
@@ -356,7 +380,14 @@ void VKStrictResourceTexture::createTexture(VKBackend &backend) {
                 mip.data = mipData;
                 mip.width = dim.x;
                 mip.height = dim.y;
-                _transferData.buffer_size += mipSize;
+                mip.needsAddingAlpha = needsAddingAlpha;
+                mip.needsBGRToRGB = needsBGRToRGB;
+                if (needsAddingAlpha) {
+                    Q_ASSERT(mipSize % 3 == 0);
+                    _transferData.buffer_size += mipSize / 3 * 4;
+                } else {
+                    _transferData.buffer_size += mipSize;
+                }
                 _transferData.mips.back().push_back(mip);
                 // VKTODO auto texelFormat = evalTexelFormatInternal(_gpuObject.getStoredMipFormat());
                 //return copyMipFaceLinesFromTexture(targetMip, face, dim, 0, texelFormat.internalFormat, texelFormat.format, texelFormat.type, mipSize, mipData->readData());
@@ -411,7 +442,32 @@ void VKStrictResourceTexture::transfer(VKBackend &backend) {
     VK_CHECK_RESULT(vkMapMemory(device->logicalDevice, stagingMemory, 0, memReqs.size, 0, (void **)&data));
     for (auto &mip : _transferData.mips) {
         for (auto &face : mip) {
-            memcpy(data + face.offset, face.data->data(), face.data->size());
+            if (face.needsAddingAlpha) {
+                // VKTODO: adding alpha and swapping channels at the same time
+                Q_ASSERT(!face.needsBGRToRGB);
+                size_t pixels = face.size/3;
+                for (size_t i = 0; i < pixels; i++) {
+                    size_t sourcePos = face.offset + i * 3;
+                    size_t destPos = i * 4;
+                    data[destPos] = face.data->data()[face.offset + sourcePos];
+                    data[destPos + 1] = face.data->data()[face.offset + sourcePos + 1];
+                    data[destPos + 2] = face.data->data()[face.offset + sourcePos + 2];
+                    data[destPos + 3] = 255;
+                }
+            } else if (face.needsBGRToRGB) {
+                Q_ASSERT(face.size % 4 == 0);
+                size_t pixels = face.size/4;
+                for (size_t i = 0; i < pixels; i++) {
+                    size_t sourcePos = i * 4;
+                    size_t destPos = face.offset + i * 4;
+                    data[destPos] = face.data->data()[sourcePos + 2];
+                    data[destPos + 1] = face.data->data()[sourcePos + 1];
+                    data[destPos + 2] = face.data->data()[sourcePos];
+                    data[destPos + 3] = face.data->data()[sourcePos + 3];
+                }
+            } else {
+                memcpy(data + face.offset, face.data->data(), face.data->size());
+            }
         }
     }
     vkUnmapMemory(device->logicalDevice, stagingMemory);
@@ -450,17 +506,6 @@ void VKStrictResourceTexture::transfer(VKBackend &backend) {
     {
         imageCreateInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     }
-
-    /*VK_CHECK_RESULT(vkCreateImage(device->logicalDevice, &imageCreateInfo, nullptr, &_vkImage));
-
-    vkGetImageMemoryRequirements(device->logicalDevice, _vkImage, &memReqs);
-
-    memAllocInfo.allocationSize = memReqs.size;
-
-    // VKTODO: Switch to VMA
-    memAllocInfo.memoryTypeIndex = device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    VK_CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memAllocInfo, nullptr, &deviceMemory));
-    VK_CHECK_RESULT(vkBindImageMemory(device->logicalDevice, _vkImage, deviceMemory, 0));*/
 
     VkImageSubresourceRange subresourceRange = {};
     subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
