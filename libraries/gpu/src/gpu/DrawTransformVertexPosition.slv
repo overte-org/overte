@@ -18,9 +18,9 @@
 
 <$declareStandardTransform()$>
 
-layout(location=0) in vec4 inPosition;
+INPUT(0, vec4, inPosition);
 
-layout(location=0) out vec3 varWorldPos;
+OUTPUT(0, vec3, varWorldPos);
 
 void main(void) {
     // standard transform

@@ -191,7 +191,6 @@ constexpr const char*  COMMAND_NAMES[] = {
     "startNamedCall",
     "stopNamedCall",
 
-    "glUniform1i",
     "glUniform1f",
     "glUniform2f",
     "glUniform3f",

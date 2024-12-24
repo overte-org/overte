@@ -59,7 +59,7 @@ float unpackOcclusion(vec4 raw) {
 <@include DeferredTransform.slh@>
 <$declareDeferredFrameTransform()$>
 
-LAYOUT(binding=RENDER_UTILS_BUFFER_SSAO_PARAMS) uniform ambientOcclusionParamsBuffer {
+UNIFORM_BUFFER(RENDER_UTILS_BUFFER_SSAO_PARAMS, ambientOcclusionParamsBuffer) {
     AmbientOcclusionParams params;
 };
 
@@ -248,8 +248,8 @@ vec3 getTapLocationClampedSSAO(int sampleNumber, float spinAngle, float outerRad
 <@func declareFetchDepthPyramidMap()@>
 
 // the depth pyramid texture
-LAYOUT(binding=RENDER_UTILS_TEXTURE_SSAO_DEPTH) uniform sampler2D depthPyramidTex;
-LAYOUT(binding=RENDER_UTILS_TEXTURE_SSAO_NORMAL) uniform sampler2D normalTex;
+TEXTURE(RENDER_UTILS_TEXTURE_SSAO_DEPTH, sampler2D, depthPyramidTex);
+TEXTURE(RENDER_UTILS_TEXTURE_SSAO_NORMAL, sampler2D, normalTex);
 
 vec2 getFramebufferUVFromSideUV(ivec4 side, vec2 uv) {
     return mix(uv, vec2((uv.x + float(getStereoSide(side))) * 0.5, uv.y), float(isStereo()));
