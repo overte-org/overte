@@ -434,8 +434,6 @@ struct Cache {
                 VK_CHECK_RESULT(vkCreateRenderPass(context.device->logicalDevice, &renderPassInfo, nullptr, &renderPass));
                 _renderPassMap[key] = renderPass;
                 return renderPass;
-            } else {
-                printf("found");
             }
             return itr->second;
         }
@@ -518,8 +516,6 @@ struct Cache {
             // ia.topology = vk::PrimitiveTopology::eTriangleList; ???
         }
 
-        qDebug() << vertexShader.name.c_str() << " " << fragmentShader.name.c_str();
-
         // Shader modules
         {
             builder.shaderStages.resize(2,{});
@@ -601,8 +597,7 @@ struct Cache {
             const auto& vertexReflection = pipeline.getProgram()->getShaders()[0]->getReflection();
 
             const gpu::Stream::Format& format = *gpu::acquire(pipelineState.format);
-            auto& vis = builder.vertexInputState;
-            auto& bd = vis.bindingDescriptions;
+            auto& bindingDescriptions = builder.vertexInputState.bindingDescriptions;
             auto channelCount = format.getNumChannels();
             for (const auto& entry : format.getChannels()) {
                 const auto& slot = entry.first;
@@ -610,13 +605,12 @@ struct Cache {
                 VkVertexInputBindingDescription bindingDescription {};
                 bindingDescription.binding = slot;
                 bindingDescription.stride = (uint32_t)channel._stride;
-                qDebug() << "binding " << bindingDescription.binding << "stride" << bindingDescription.stride;
                 bindingDescription.inputRate = (VkVertexInputRate)(channel._frequency);
-                bd.push_back(bindingDescription);
+                bindingDescriptions.push_back(bindingDescription);
             }
 
             bool colorFound = false;
-            auto& ad = vis.attributeDescriptions;
+            auto& attributeDescriptions = builder.vertexInputState.attributeDescriptions;
             for (const auto& entry : format.getAttributes()) {
                 const auto& slot = entry.first;
                 const auto& attribute = entry.second;
@@ -624,20 +618,20 @@ struct Cache {
                     colorFound = true;
                 }
 
-                ad.push_back(
+                attributeDescriptions.push_back(
                     { slot, attribute._channel, evalTexelFormatInternal(attribute._element), (uint32_t)attribute._offset });
             }
 
             if (!colorFound && vertexShader.reflection.validInput(Stream::COLOR)) {
-                ad.push_back({ Stream::COLOR, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
+                attributeDescriptions.push_back({ Stream::COLOR, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
             }
 
             // Explicitly add the draw call info slot if required
             if (vertexReflection.validInput(gpu::slot::attr::DrawCallInfo)) {
-                ad.push_back(
+                attributeDescriptions.push_back(
                     { gpu::slot::attr::DrawCallInfo, gpu::slot::attr::DrawCallInfo, VK_FORMAT_R16G16_SINT, (uint32_t)0 });
                 //bd.push_back({ gpu::slot::attr::DrawCallInfo, (uint32_t)sizeof(uint16_t) * 2, VK_VERTEX_INPUT_RATE_VERTEX });
-                bd.push_back({ gpu::slot::attr::DrawCallInfo, 0, VK_VERTEX_INPUT_RATE_VERTEX });
+                bindingDescriptions.push_back({ gpu::slot::attr::DrawCallInfo, 0, VK_VERTEX_INPUT_RATE_VERTEX });
             }
         }
 
@@ -1220,9 +1214,9 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
             VKTexture* texture = syncGPUObject(*_resource._textures[i].texture);
             VkDescriptorImageInfo imageInfo{};
             if (texture) {
-                qDebug() << "Writing descriptor " << i << " with texture: " << _resource._textures[i].texture->source();
                 imageInfo = texture->getDescriptorImageInfo();
             } else {
+                qDebug() << "Writing descriptor " << i << " with texture: " << _resource._textures[i].texture->source();
                 if (_resource._textures[i].texture) {
                     qDebug() << "Cannot sync texture during descriptor " << i
                              << " write: " << _resource._textures[i].texture->source();
@@ -1281,7 +1275,7 @@ void VKBackend::updateVkDescriptorWriteSetsStorage(VkDescriptorSet target) {
     bufferInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
     for (size_t i = 0; i < _resource._buffers.size(); i++) {
         if ((_resource._buffers[i].buffer || _resource._buffers[i].vksBuffer)
-            && (vertexReflection.validUniformBuffer(i) || fragmentReflection.validUniformBuffer(i))) {
+            && (vertexReflection.validResourceBuffer(i) || fragmentReflection.validResourceBuffer(i))) {
 
             Q_ASSERT(!(_resource._buffers[i].buffer && _resource._buffers[i].vksBuffer));
             // VKTODO: move vulkan buffer creation to the transfer parts and aggregate several buffers together maybe?
@@ -1330,7 +1324,6 @@ void VKBackend::resetUniformStage() {
 }
 
 void VKBackend::bindResourceTexture(uint32_t slot, const gpu::TexturePointer& texture) {
-    qDebug() << "bindResourceTexture: " << slot;
     if (!texture) {
         releaseResourceTexture(slot);
         return;
@@ -1533,9 +1526,6 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             updateInput();
             updateTransform(batch);
             updatePipeline();
-            if (_cache.pipelineState.framebuffer->getRenderBuffers()[0]._texture->getTexelFormat().getSemantic() == gpu::R11G11B10) {
-                printf("Test");
-            }
             updateRenderPass();
             // VKTODO: this is inefficient
             vkCmdBindPipeline(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _cache.getPipeline(_context));
@@ -1712,9 +1702,44 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
                     return nullptr;
                 }
 
-                if (evalTexelFormatInternal(texture.getStoredMipFormat()) != evalTexelFormatInternal(texture.getTexelFormat())) {
-                    qDebug() << "Format mismatch, stored: " << evalTexelFormatInternal(texture.getStoredMipFormat()) << " texel: " << evalTexelFormatInternal(texture.getTexelFormat());
-                    return nullptr;
+                {
+                    auto storedFormat = texture.getStoredMipFormat();
+                    auto texelFormat = texture.getTexelFormat();
+                    if (storedFormat.getDimension() != texelFormat.getDimension()) {
+                        qDebug() << "Element dimension mismatch, stored: " << storedFormat.getDimension() << " texel: " << texelFormat.getDimension();
+                        return nullptr;
+                    }
+                    if (storedFormat.getType() != texelFormat.getType()) {
+                        qDebug() << " mismatch, stored: " << storedFormat.getType() << " texel: " << texelFormat.getType();
+                        return nullptr;
+                    }
+                    auto storedVkFormat = evalTexelFormatInternal(texture.getStoredMipFormat());
+                    auto texelVkFormat = evalTexelFormatInternal(texture.getTexelFormat());
+                    if (storedVkFormat != texelVkFormat) {
+                        if (!(storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_UNORM) // Adding alpha channel needed
+                            && !(storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_SRGB) // Adding alpha channel needed and maybe SRGB conversion?
+                            && !(storedVkFormat == VK_FORMAT_B8G8R8A8_SRGB && texelVkFormat == VK_FORMAT_R8G8B8A8_SRGB)) { // Swapping channels needed
+                            qDebug() << "Format mismatch, stored: " << storedVkFormat << " texel: " << texelVkFormat;
+                            return nullptr;
+                        }
+                    }
+                }
+
+                //VKTODO: for some reason some textures have only level 1 mipmap stored, while only level 0 is needed
+                // I'm not sure why yet
+                // For now I'll skip these
+                {
+                    auto numMips = texture.getNumMips();
+                    bool areMipsAvailable = false;
+                    for (uint16_t sourceMip = 0; sourceMip < numMips; ++sourceMip) {
+                        if (texture.isStoredMipFaceAvailable(sourceMip)) {
+                            areMipsAvailable = true;
+                        }
+                    }
+                    if (!areMipsAvailable) {
+                        qWarning() << "VKTODO: Texture has no mip levels available";
+                        return nullptr;
+                    }
                 }
 
                 // VKTODO: What is strict resource?
@@ -1923,8 +1948,6 @@ void VKBackend::updateInput() {
         for (size_t buffer = 0; buffer < _input._buffers.size(); buffer++, vbo++, offset++, stride++) {
             if (_input._invalidBuffers.test(buffer)) {
                 auto vkBuffer = VKBuffer::getBuffer(*this, *_input._buffers[buffer]);
-                qDebug() << "Vertex buffer size: " << _input._buffers[buffer]->getSize();
-                qDebug() << "Vertex buffer usage: " << _input._buffers[buffer]->getUsage();
                 VkDeviceSize vkOffset = _input._bufferOffsets[buffer];
                 vkCmdBindVertexBuffers(_currentCommandBuffer, buffer, 1, &vkBuffer, &vkOffset);
                 //glBindVertexBuffer(buffer, (*vbo), (*offset), (GLsizei)(*stride));
@@ -2167,7 +2190,6 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
         // VKTODO
         // Since Vulkan has no glVertexAttrib equivalent we need to pass a buffer pointer here
         //glVertexAttribI2i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.unused);
-        qDebug() << "drawCallInfo.unused: " << drawCallInfoBuffer[_currentDraw].unused;
         // Draw call info for unnamed calls starts at the beginning of the buffer, with offset dependent on _currentDraw
         VkDeviceSize vkOffset = _currentDraw * sizeof(gpu::Batch::DrawCallInfo);
         Q_ASSERT(_currentFrame->_drawCallInfoBuffer);

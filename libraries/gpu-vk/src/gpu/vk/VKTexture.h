@@ -214,6 +214,8 @@ protected:
             size_t size;
             uint32_t width;
             uint32_t height;
+            bool needsAddingAlpha;
+            bool needsBGRToRGB;
             std::shared_ptr<const storage::Storage> data;
         };
         std::vector<std::vector<Mip>> mips;
