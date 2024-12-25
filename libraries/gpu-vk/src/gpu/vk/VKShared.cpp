@@ -260,6 +260,16 @@ VkFormat gpu::vk::evalTexelFormatInternal(const gpu::Element& dstFormat) {
         case gpu::VEC4:
         {
             switch (dstFormat.getSemantic()) {
+                case gpu::BGRA:
+                    switch (dstFormat.getType()) {
+                        case gpu::NUINT8:
+                            result = VK_FORMAT_B8G8R8A8_UNORM;
+                            break;
+                        default:
+                            qCWarning(gpu_vk_logging) << "Unknown combination of texel format";
+                            Q_ASSERT(false);
+                    }
+                    break;
                 case gpu::RGB:
                 case gpu::RGBA:
                 case gpu::XYZW:
