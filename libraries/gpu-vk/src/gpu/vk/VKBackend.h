@@ -178,7 +178,11 @@ protected:
         Offset _indirectBufferStride { 0 };
 
         uint32_t _defaultVAO { 0 };
+
+        void reset();
     } _input;
+
+    void resetInputStage();
 
     struct UniformStageState {
         struct BufferState {
