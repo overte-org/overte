@@ -940,7 +940,7 @@ void VKBackend::do_resetStages(const Batch& batch, size_t paramOffset) {
     resetTextureStage();
     resetResourceStage();
     resetQueryStage();
-    //resetInputStage();
+    resetInputStage();
     //resetPipelineStage();
     //resetTransformStage();
     //resetOutputStage();
@@ -1158,6 +1158,32 @@ void VKBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRend
         _currentFrame->_cameraBuffer->flush(VK_WHOLE_SIZE);
         _currentFrame->_cameraBuffer->unmap();
     }
+}
+
+void VKBackend::resetInputStage() {
+    _input.reset();
+}
+
+void VKBackend::InputStageState::reset() {
+    _invalidFormat = true;
+    _lastUpdateStereoState = false;
+    _format = GPU_REFERENCE_INIT_VALUE;
+    _formatKey = "";
+    _attributeActivation.reset();
+    _invalidBuffers.reset();
+    _attribBindingBuffers.reset();
+    for (int i = 0; i < MAX_NUM_INPUT_BUFFERS; i++) {
+        _buffers[i] = nullptr;
+        _bufferOffsets[i] = 0;
+        _bufferStrides[i] = 0;
+        _bufferVBOs[i] = VK_NULL_HANDLE;
+    }
+    _indexBuffer = nullptr;
+    _indexBufferOffset = 0;
+    _indexBufferType = UINT32;
+    _indirectBuffer = nullptr;
+    _indirectBufferOffset = 0;
+    _indirectBufferStride = 0;
 }
 
 void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
@@ -1619,6 +1645,8 @@ void VKBackend::renderPassDraw(const Batch& batch) {
         offset++;
     }
     resetRenderPass();
+    // VKTODO: which other stages should be reset here?
+    resetInputStage();
 }
 
 void VKBackend::draw(VkPrimitiveTopology mode, uint32 numVertices, uint32 startVertex) {
@@ -1673,7 +1701,6 @@ vk::VKFramebuffer* VKBackend::syncGPUObject(const Framebuffer& framebuffer) {
 }
 
 VKBuffer* VKBackend::syncGPUObject(const Buffer& buffer) {
-    // VKTODO
     auto object = vk::VKBuffer::sync(*this, buffer);
     return object;
 }
@@ -1975,7 +2002,14 @@ void VKBackend::updateInput() {
 
         for (size_t buffer = 0; buffer < _input._buffers.size(); buffer++, vbo++, offset++, stride++) {
             if (_input._invalidBuffers.test(buffer)) {
-                auto vkBuffer = VKBuffer::getBuffer(*this, *_input._buffers[buffer]);
+                auto backendBuffer = syncGPUObject(*_input._buffers[buffer]);
+                VkBuffer vkBuffer = VK_NULL_HANDLE;
+                if (backendBuffer) {
+                    vkBuffer = backendBuffer->buffer;
+                }
+                Q_ASSERT(vkBuffer != VK_NULL_HANDLE);
+
+                //auto vkBuffer = VKBuffer::getBuffer(*this, *_input._buffers[buffer]);
                 VkDeviceSize vkOffset = _input._bufferOffsets[buffer];
                 vkCmdBindVertexBuffers(_currentCommandBuffer, buffer, 1, &vkBuffer, &vkOffset);
                 //glBindVertexBuffer(buffer, (*vbo), (*offset), (GLsizei)(*stride));
@@ -2437,7 +2471,7 @@ void VKBackend::do_drawIndexed(const Batch& batch, size_t paramOffset) {
         _stats._DSNumTriangles += 2 * numIndices / 3;
         _stats._DSNumDrawcalls += 2;
     } else {
-        // VKTODO: what should vertexOffest be?
+        // VKTODO: what should vertexOffset be?
         // VKTODO: mode needs to be in the pipeline
         vkCmdDrawIndexed(_currentCommandBuffer, numIndices, 1, startIndex, 0, 0);
         //glDrawElements(mode, numIndices, glType, indexBufferByteOffset);
@@ -2448,19 +2482,19 @@ void VKBackend::do_drawIndexed(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_drawInstanced(const Batch& batch, size_t paramOffset) {
-    // VKTODO: can be done later
-    /*GLint numInstances = batch._params[paramOffset + 4]._uint;
-    Primitive primitiveType = (Primitive)batch._params[paramOffset + 3]._uint;
-    GLenum mode = gl::PRIMITIVE_TO_GL[primitiveType];
+    int numInstances = batch._params[paramOffset + 4]._uint;
+    Primitive primitiveType = (Primitive)batch._params[paramOffset + 3]._uint; // VKTODO: what to do with this
+    VkPrimitiveTopology topology = PRIMITIVE_TO_VK[primitiveType];
     uint32 numVertices = batch._params[paramOffset + 2]._uint;
     uint32 startVertex = batch._params[paramOffset + 1]._uint;
 
 
     if (isStereo()) {
-        GLint trueNumInstances = 2 * numInstances;
+        int trueNumInstances = 2 * numInstances;
 
 #ifdef GPU_STEREO_DRAWCALL_INSTANCED
-        glDrawArraysInstanced(mode, startVertex, numVertices, trueNumInstances);
+        vkCmdDraw(_currentCommandBuffer, numVertices, numInstances, startVertex, 0);
+        //glDrawArraysInstanced(mode, startVertex, numVertices, trueNumInstances);
 #else
         setupStereoSide(0);
         glDrawArraysInstanced(mode, startVertex, numVertices, numInstances);
@@ -2469,33 +2503,34 @@ void VKBackend::do_drawInstanced(const Batch& batch, size_t paramOffset) {
 #endif
 
         _stats._DSNumTriangles += (trueNumInstances * numVertices) / 3;
+        // VKTODO: should that count as 2 draw calls for whole set of instances?
         _stats._DSNumDrawcalls += trueNumInstances;
     } else {
-        glDrawArraysInstanced(mode, startVertex, numVertices, numInstances);
+        vkCmdDraw(_currentCommandBuffer, numVertices, numInstances, startVertex, 0);
+        //glDrawArraysInstanced(mode, startVertex, numVertices, numInstances);
         _stats._DSNumTriangles += (numInstances * numVertices) / 3;
+        // VKTODO: should that count as 1 draw call for whole set of instances?
         _stats._DSNumDrawcalls += numInstances;
     }
     _stats._DSNumAPIDrawcalls++;
-
-    (void) CHECK_GL_ERROR();*/
 }
 
 void VKBackend::do_drawIndexedInstanced(const Batch& batch, size_t paramOffset) {
-    // VKTODO: can be done later
-    /*GLint numInstances = batch._params[paramOffset + 4]._uint;
-    GLenum mode = gl::PRIMITIVE_TO_GL[(Primitive)batch._params[paramOffset + 3]._uint];
+    int numInstances = batch._params[paramOffset + 4]._uint;
+    Primitive primitiveType = (Primitive)batch._params[paramOffset + 3]._uint; // VKTODO: what to do with this
     uint32 numIndices = batch._params[paramOffset + 2]._uint;
     uint32 startIndex = batch._params[paramOffset + 1]._uint;
     uint32 startInstance = batch._params[paramOffset + 0]._uint;
-    GLenum glType = gl::ELEMENT_TYPE_TO_GL[_input._indexBufferType];
+    //GLenum glType = gl::ELEMENT_TYPE_TO_GL[_input._indexBufferType];
     auto typeByteSize = TYPE_SIZE[_input._indexBufferType];
-    GLvoid* indexBufferByteOffset = reinterpret_cast<GLvoid*>(startIndex * typeByteSize + _input._indexBufferOffset);
+    void* indexBufferByteOffset = reinterpret_cast<void*>(startIndex * typeByteSize + _input._indexBufferOffset);
 
     if (isStereo()) {
-        GLint trueNumInstances = 2 * numInstances;
+        int trueNumInstances = 2 * numInstances;
 
 #ifdef GPU_STEREO_DRAWCALL_INSTANCED
-        glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, trueNumInstances, 0, startInstance);
+        vkCmdDrawIndexed(_currentCommandBuffer, numIndices, trueNumInstances, startIndex, 0, 0); // VKTODO: where to get vertexOffset?
+        //glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, trueNumInstances, 0, startInstance);
 #else
         setupStereoSide(0);
         glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, numInstances, 0, startInstance);
@@ -2505,14 +2540,13 @@ void VKBackend::do_drawIndexedInstanced(const Batch& batch, size_t paramOffset) 
         _stats._DSNumTriangles += (trueNumInstances * numIndices) / 3;
         _stats._DSNumDrawcalls += trueNumInstances;
     } else {
-        glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, numInstances, 0, startInstance);
+        vkCmdDrawIndexed(_currentCommandBuffer, numIndices, numInstances, startIndex, 0, 0); // VKTODO: where to get vertexOffset?
+        //glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, numInstances, 0, startInstance);
         _stats._DSNumTriangles += (numInstances * numIndices) / 3;
         _stats._DSNumDrawcalls += numInstances;
     }
 
     _stats._DSNumAPIDrawcalls++;
-
-    (void)CHECK_GL_ERROR();*/
 }
 
 void VKBackend::do_multiDrawIndirect(const Batch& batch, size_t paramOffset) {
@@ -2808,7 +2842,11 @@ void VKBackend::do_setInputBuffer(const Batch& batch, size_t paramOffset) {
 
             VkBuffer vkBuffer = VK_NULL_HANDLE;
             if (buffer) {
-                vkBuffer = VKBuffer::getBuffer(*this, *buffer);
+                //vkBuffer = VKBuffer::getBuffer(*this, *buffer);
+                auto backendBuffer = syncGPUObject(*buffer);
+                if (backendBuffer) {
+                    vkBuffer = backendBuffer->buffer;
+                }
             }
             _input._bufferVBOs[channel] = vkBuffer;
 
@@ -2850,7 +2888,13 @@ void VKBackend::do_setIndexBuffer(const Batch& batch, size_t paramOffset) {
             } else {
                 Q_ASSERT(false);
             }
-            vkCmdBindIndexBuffer(_currentCommandBuffer, VKBuffer::getBuffer(*this, *indexBuffer), _input._indexBufferOffset, indexType);
+            auto backendBuffer = syncGPUObject(*indexBuffer);
+            VkBuffer vkBuffer = VK_NULL_HANDLE;
+            if (backendBuffer) {
+                vkBuffer = backendBuffer->buffer;
+            }
+            Q_ASSERT(vkBuffer != VK_NULL_HANDLE);
+            vkCmdBindIndexBuffer(_currentCommandBuffer, vkBuffer, _input._indexBufferOffset, indexType);
             //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, getBufferID(*indexBuffer));
         } else {
             // FIXME do we really need this?  Is there ever a draw call where we care that the element buffer is null?
