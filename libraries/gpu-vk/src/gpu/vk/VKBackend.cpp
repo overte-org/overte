@@ -609,6 +609,8 @@ struct Cache {
                 bindingDescriptions.push_back(bindingDescription);
             }
 
+            std::array<bool,16> isAttributeSlotOccupied {};
+
             bool colorFound = false;
             auto& attributeDescriptions = builder.vertexInputState.attributeDescriptions;
             for (const auto& entry : format.getAttributes()) {
@@ -617,13 +619,22 @@ struct Cache {
                 if (slot == Stream::COLOR) {
                     colorFound = true;
                 }
+                isAttributeSlotOccupied[slot] = true;
 
                 attributeDescriptions.push_back(
                     { slot, attribute._channel, evalTexelFormatInternal(attribute._element), (uint32_t)attribute._offset });
             }
 
-            if (!colorFound && vertexShader.reflection.validInput(Stream::COLOR)) {
+            if (!colorFound && vertexReflection.validInput(Stream::COLOR)) {
                 attributeDescriptions.push_back({ Stream::COLOR, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
+            }
+
+            if (!isAttributeSlotOccupied[Stream::TEXCOORD0] && vertexReflection.validInput(Stream::TEXCOORD0)) {
+                attributeDescriptions.push_back({ Stream::TEXCOORD0, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
+            }
+
+            if (!isAttributeSlotOccupied[Stream::TEXCOORD1] && vertexReflection.validInput(Stream::TEXCOORD1)) {
+                attributeDescriptions.push_back({ Stream::TEXCOORD1, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
             }
 
             // Explicitly add the draw call info slot if required
@@ -635,6 +646,9 @@ struct Cache {
             }
         }
 
+        auto program = pipeline.getProgram();
+        const auto& vertexReflection = program->getShaders()[0]->getReflection();
+        const auto& fragmentRefelection = program->getShaders()[1]->getReflection();
         auto result = builder.create();
         builder.shaderStages.clear();
         return result;
@@ -1718,7 +1732,8 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
                     if (storedVkFormat != texelVkFormat) {
                         if (!(storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_UNORM) // Adding alpha channel needed
                             && !(storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_SRGB) // Adding alpha channel needed and maybe SRGB conversion?
-                            && !(storedVkFormat == VK_FORMAT_B8G8R8A8_SRGB && texelVkFormat == VK_FORMAT_R8G8B8A8_SRGB)) { // Swapping channels needed
+                            && !(storedVkFormat == VK_FORMAT_B8G8R8A8_SRGB && texelVkFormat == VK_FORMAT_R8G8B8A8_SRGB) // Swapping channels needed
+                            && !(storedVkFormat == VK_FORMAT_B8G8R8A8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_UNORM)) { // Swapping channels needed
                             qDebug() << "Format mismatch, stored: " << storedVkFormat << " texel: " << texelVkFormat;
                             return nullptr;
                         }
@@ -1860,6 +1875,19 @@ void VKBackend::updateInput() {
     _input._lastUpdateStereoState = isStereoNow;
 
     /*if (_input._invalidFormat) {
+        auto format = _input._format;
+        for (int i = 0; i < MAX_NUM_INPUT_BUFFERS; i++) {
+            if (_input._invalidBuffers.test(i) && _input._buffers[i]) {
+                Q_ASSERT(format->_channels.count(i));
+                // VKTODO: I think only strides change?
+                format->_channels[i]._stride = _input._bufferStrides[i];
+            }
+        }
+        //format->evaluateCache();
+        //auto sharedFormat = std::make_shared<Stream::Format> (format);
+        //_cache.pipelineState.setVertexFormat(sharedFormat);
+    }*/
+    /*if (_input._invalidFormat) {
         InputStageState::ActivationCache newActivation;
 
         // Assign the vertex format required
@@ -1941,7 +1969,7 @@ void VKBackend::updateInput() {
         auto offset = _input._bufferOffsets.data();
         auto stride = _input._bufferStrides.data();
 
-        // Profile the count of buffers to update and use it to short cut the for loop
+        // Profile the count of buffers to update and use it to shortcut the for loop
         int numInvalids = (int) _input._invalidBuffers.count();
         _stats._ISNumInputBufferChanges += numInvalids;
 
@@ -2062,67 +2090,94 @@ void VKBackend::perFrameCleanup() {
     for (auto framebuffer : recycler.deletedFramebuffers) {
         _framebuffers.erase(framebuffer);
     }
-    size_t capacityBeforeClear = recycler.deletedFramebuffers.capacity();
-    recycler.deletedFramebuffers.resize(0);
+    size_t capacityBeforeClear = recycler.deletedFramebuffers.capacity(); // C++ standard doesn't guarantee keeping capacity on clear and that could impact performance
+    recycler.deletedFramebuffers.clear();
     recycler.deletedFramebuffers.reserve(capacityBeforeClear);
 
     for (auto buffer : recycler.deletedBuffers) {
         _buffers.erase(buffer);
     }
     capacityBeforeClear = recycler.deletedBuffers.capacity();
-    recycler.deletedBuffers.resize(0);
+    recycler.deletedBuffers.clear();
     recycler.deletedBuffers.reserve(capacityBeforeClear);
 
     for (auto texture : recycler.deletedTextures) {
         _textures.erase(texture);
     }
     capacityBeforeClear = recycler.deletedTextures.capacity();
-    recycler.deletedTextures.resize(0);
+    recycler.deletedTextures.clear();
     recycler.deletedTextures.reserve(capacityBeforeClear);
 
     for (auto query : recycler.deletedQueries) {
         _queries.erase(query);
     }
     capacityBeforeClear = recycler.deletedQueries.capacity();
-    recycler.deletedQueries.resize(0);
+    recycler.deletedQueries.clear();
     recycler.deletedQueries.reserve(capacityBeforeClear);
 
     auto device = _context.device->logicalDevice;
     for (auto sampler : recycler.vkSamplers) {
         vkDestroySampler(device, sampler, nullptr);
     }
+    capacityBeforeClear = recycler.vkSamplers.capacity();
+    recycler.vkSamplers.clear();
+    recycler.vkSamplers.reserve(capacityBeforeClear);
 
     for (auto imageView : recycler.vkImageViews) {
         vkDestroyImageView(device, imageView, nullptr);
     }
+    capacityBeforeClear = recycler.vkImageViews.capacity();
+    recycler.vkImageViews.clear();
+    recycler.vkImageViews.reserve(capacityBeforeClear);
 
     for (auto image : recycler.vkImages) {
         vkDestroyImage(device, image, nullptr);
     }
+    capacityBeforeClear = recycler.vkImages.capacity();
+    recycler.vkImages.clear();
+    recycler.vkImages.reserve(capacityBeforeClear);
 
     for (auto buffer : recycler.vkBuffers) {
         vkDestroyBuffer(device, buffer, nullptr);
     }
+    capacityBeforeClear = recycler.vkBuffers.capacity();
+    recycler.vkBuffers.clear();
+    recycler.vkBuffers.reserve(capacityBeforeClear);
 
     for (auto renderPass: recycler.vkRenderPasses) {
         vkDestroyRenderPass(device, renderPass, nullptr);
     }
+    capacityBeforeClear = recycler.vkRenderPasses.capacity();
+    recycler.vkRenderPasses.clear();
+    recycler.vkRenderPasses.reserve(capacityBeforeClear);
 
     for (auto pipeline: recycler.vkPipelines) {
         vkDestroyPipeline(device, pipeline, nullptr);
     }
+    capacityBeforeClear = recycler.vkPipelines.capacity();
+    recycler.vkPipelines.clear();
+    recycler.vkPipelines.reserve(capacityBeforeClear);
 
     for (auto swapchain : recycler.vkSwapchainsKHR) {
         vkDestroySwapchainKHR(device, swapchain, nullptr);
     }
+    capacityBeforeClear = recycler.vkSwapchainsKHR.capacity();
+    recycler.vkSwapchainsKHR.clear();
+    recycler.vkSwapchainsKHR.reserve(capacityBeforeClear);
 
     for (auto surface: recycler.vkSurfacesKHR) {
         vkDestroySurfaceKHR(_context.instance, surface, nullptr);
     }
+    capacityBeforeClear = recycler.vkSurfacesKHR.capacity();
+    recycler.vkSurfacesKHR.clear();
+    recycler.vkSurfacesKHR.reserve(capacityBeforeClear);
 
     for (auto allocation : recycler.vmaAllocations) {
         vmaFreeMemory(vks::Allocation::getAllocator(), allocation);
     }
+    capacityBeforeClear = recycler.vmaAllocations.capacity();
+    recycler.vmaAllocations.clear();
+    recycler.vmaAllocations.reserve(capacityBeforeClear);
 }
 
 void VKBackend::beforeShutdownCleanup() {
@@ -2719,7 +2774,6 @@ void VKBackend::do_blit(const Batch& batch, size_t paramOffset) {
 
 void VKBackend::do_setInputFormat(const Batch& batch, size_t paramOffset) {
     const auto& format = batch._streamFormats.get(batch._params[paramOffset]._uint);
-    // VKTODO: what about index format?
     _cache.pipelineState.setVertexFormat(format);
     // VKTODO: is _input needed anywhere?
     if (!compare(_input._format, format)) {
@@ -2796,7 +2850,7 @@ void VKBackend::do_setIndexBuffer(const Batch& batch, size_t paramOffset) {
             } else {
                 Q_ASSERT(false);
             }
-            vkCmdBindIndexBuffer(_currentCommandBuffer, VKBuffer::getBuffer(*this, *indexBuffer), _input._indexBufferOffset, VK_INDEX_TYPE_UINT32);
+            vkCmdBindIndexBuffer(_currentCommandBuffer, VKBuffer::getBuffer(*this, *indexBuffer), _input._indexBufferOffset, indexType);
             //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, getBufferID(*indexBuffer));
         } else {
             // FIXME do we really need this?  Is there ever a draw call where we care that the element buffer is null?
