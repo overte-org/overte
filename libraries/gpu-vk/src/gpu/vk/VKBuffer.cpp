@@ -26,6 +26,7 @@ VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer) {
         printf("dirty\n");
     }
     if (!object || object->_stamp != buffer._renderSysmem.getStamp()) {
+        // VKTODO: Should previous gpuobject be replaced?
         object = new VKBuffer(backend, buffer);
     }
     // VKTODO: delete the old buffer after rendering the frame
