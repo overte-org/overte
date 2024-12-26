@@ -222,7 +222,6 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
     auto vertexBufferStream = std::make_shared<gpu::BufferStream>();
 
     gpu::BufferPointer attribBuffer;
-    int totalAttribBufferSize = totalVertsSize;
     gpu::uint8 posChannel = 0;
     gpu::uint8 tangentChannel = posChannel;
     gpu::uint8 attribChannel = posChannel;
@@ -296,9 +295,12 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
         auto vClusterWeightSize = clusterWeightsSize / numVerts;
 
         auto vStride = vClusterWeightOffset + vClusterWeightSize;
+        if (vStride % 4 != 0) {
+            vStride += 4 - vStride % 4;
+        }
 
         std::vector<gpu::Byte> dest;
-        dest.resize(totalAttribBufferSize);
+        dest.resize(vStride * numVerts);
         auto vDest = dest.data();
 
         auto source = vertBuffer->getData();
@@ -317,7 +319,7 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
         }
 
         auto attribBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
-        attribBuffer->setData(totalAttribBufferSize, dest.data());
+        attribBuffer->setData(dest.size(), dest.data());
         vertexBufferStream->addBuffer(attribBuffer, 0, vStride);
     }
 
