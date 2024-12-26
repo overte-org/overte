@@ -238,6 +238,10 @@ struct Cache {
         std::unordered_map<gpu::PipelineReference, PipelineLayout> _layoutMap;
         std::unordered_map<RenderpassKey, VkRenderPass, container_hash<RenderpassKey>> _renderPassMap;
 
+        // These get set when stride gets set by setInputBuffer
+        std::array<Offset, VKBackend::MAX_NUM_INPUT_BUFFERS> _bufferStrides {0};
+        std::bitset<VKBackend::MAX_NUM_INPUT_BUFFERS> _bufferStrideSet;
+
         template <typename T>
         static std::string hex(T t) {
             std::stringstream sStream;
@@ -245,16 +249,22 @@ struct Cache {
             return sStream.str();
         }
 
+        void clearStrides() {
+            _bufferStrideSet.reset();
+        }
+
         void setPipeline(const gpu::PipelinePointer& pipeline) {
             if (!gpu::compare(this->pipeline, pipeline)) {
                 gpu::assign(this->pipeline, pipeline);
             }
+            clearStrides();
         }
 
         void setVertexFormat(const gpu::Stream::FormatPointer& format) {
             if (!gpu::compare(this->format, format)) {
                 gpu::assign(this->format, format);
             }
+            clearStrides();
         }
 
         void setFramebuffer(const gpu::FramebufferPointer& framebuffer) {
@@ -445,6 +455,15 @@ struct Cache {
             }
             return result;
         }
+        std::string getStridesKey() const {
+            std::string key;
+            for (int i = 0; i < VKBackend::MAX_NUM_INPUT_BUFFERS; i++) {
+                if (_bufferStrideSet[i]) {
+                    key += "_" + hex(i) + "s" + hex(_bufferStrides[i]);
+                }
+            }
+            return key;
+        }
         std::string getKey() const {
             const auto framebuffer = gpu::acquire(this->framebuffer);
             RenderpassKey renderpassKey = getRenderPassKey(framebuffer);
@@ -459,6 +478,7 @@ struct Cache {
             key += "_" + state.getKey();
             key += "_" + format->getKey();
             key += "_" + hex(primitiveTopology);
+            key += "_" + getStridesKey();
             return key;
         }
     } pipelineState;
@@ -604,7 +624,11 @@ struct Cache {
                 const auto& channel = entry.second;
                 VkVertexInputBindingDescription bindingDescription {};
                 bindingDescription.binding = slot;
-                bindingDescription.stride = (uint32_t)channel._stride;
+                if (pipelineState._bufferStrideSet[slot]) {
+                    bindingDescription.stride = pipelineState._bufferStrides[slot];
+                } else {
+                    bindingDescription.stride = (uint32_t)channel._stride;
+                }
                 bindingDescription.inputRate = (VkVertexInputRate)(channel._frequency);
                 bindingDescriptions.push_back(bindingDescription);
             }
@@ -2002,6 +2026,8 @@ void VKBackend::updateInput() {
 
         for (size_t buffer = 0; buffer < _input._buffers.size(); buffer++, vbo++, offset++, stride++) {
             if (_input._invalidBuffers.test(buffer)) {
+                _cache.pipelineState._bufferStrides[buffer] = *stride;
+                _cache.pipelineState._bufferStrideSet.set(buffer, true);
                 auto backendBuffer = syncGPUObject(*_input._buffers[buffer]);
                 VkBuffer vkBuffer = VK_NULL_HANDLE;
                 if (backendBuffer) {
