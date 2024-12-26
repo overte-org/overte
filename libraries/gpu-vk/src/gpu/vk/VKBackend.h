@@ -282,6 +282,13 @@ protected:
         std::shared_ptr<vks::Buffer> _cameraBuffer;
         std::shared_ptr<vks::Buffer> _drawCallInfoBuffer;
 
+        std::shared_ptr<vks::Buffer> _glUniformBuffer; // Contains data from glUniform... calls
+        std::vector<uint8_t> _glUniformData;
+        std::unordered_map<int, size_t> _glUniformOffsetMap;
+        size_t _glUniformBufferPosition {0}; // Position where data from next glUniform... call is placed
+
+        void addGlUniform(size_t size, const void *data, size_t commandIndex);
+
         FrameData(VKBackend *backend);
         FrameData() = delete;
         ~FrameData();
@@ -297,6 +304,7 @@ private:
     void draw(VkPrimitiveTopology mode, uint32 numVertices, uint32 startVertex);
     void renderPassTransfer(const Batch& batch);
     void renderPassDraw(const Batch& batch);
+    void transferGlUniforms();
     void transferTransformState(const Batch& batch);
     void updateInput();
     void updateTransform(const Batch& batch);
@@ -332,6 +340,18 @@ public:
 
     static gpu::Primitive getPrimitiveTopologyFromCommand(Batch::Command command, const Batch& batch, size_t paramOffset);
 
+    int getRealUniformLocation(int location);
+
+    virtual void store_glUniform1f(const Batch& batch, size_t paramOffset) final;
+    virtual void store_glUniform2f(const Batch& batch, size_t paramOffset) final;
+    virtual void store_glUniform3f(const Batch& batch, size_t paramOffset) final;
+    virtual void store_glUniform4f(const Batch& batch, size_t paramOffset) final;
+    virtual void store_glUniform3fv(const Batch& batch, size_t paramOffset) final;
+    virtual void store_glUniform4fv(const Batch& batch, size_t paramOffset) final;
+    virtual void store_glUniform4iv(const Batch& batch, size_t paramOffset) final;
+    virtual void store_glUniformMatrix3fv(const Batch& batch, size_t paramOffset) final;
+    virtual void store_glUniformMatrix4fv(const Batch& batch, size_t paramOffset) final;
+
     // Draw Stage
     virtual void do_draw(const Batch& batch, size_t paramOffset) final;
     virtual void do_drawIndexed(const Batch& batch, size_t paramOffset) final;
@@ -346,6 +366,7 @@ public:
     virtual void do_setIndexBuffer(const Batch& batch, size_t paramOffset) final;
     virtual void do_setIndirectBuffer(const Batch& batch, size_t paramOffset) final;
     virtual void do_generateTextureMips(const Batch& batch, size_t paramOffset) final;
+    virtual void do_generateTextureMipsWithPipeline(const Batch& batch, size_t paramOffset) final;
 
     virtual void do_glUniform1f(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform2f(const Batch& batch, size_t paramOffset) final;
@@ -393,8 +414,11 @@ public:
 
     // Reset stages
     virtual void do_resetStages(const Batch& batch, size_t paramOffset) final;
+
     virtual void do_disableContextViewCorrection(const Batch& batch, size_t paramOffset) final;
     virtual void do_restoreContextViewCorrection(const Batch& batch, size_t paramOffset) final;
+    virtual void do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) final;
+
     virtual void do_disableContextStereo(const Batch& batch, size_t paramOffset) final;
     virtual void do_restoreContextStereo(const Batch& batch, size_t paramOffset) final;
 
