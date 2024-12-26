@@ -957,6 +957,69 @@ void VKBackend::TransformStageState::bindCurrentCamera(int eye, VKBackend::Unifo
     }
 }
 
+void VKBackend::store_glUniform1f(const Batch& batch, size_t paramOffset) {
+    _currentFrame->addGlUniform(sizeof(float), reinterpret_cast<const void*>(&batch._params[paramOffset + 0]._float), _commandIndex);
+}
+
+void VKBackend::store_glUniform2f(const Batch& batch, size_t paramOffset) {
+    std::array<float, 2> array {batch._params[paramOffset + 1]._float,
+                                batch._params[paramOffset + 0]._float};
+    _currentFrame->addGlUniform(sizeof(float) * 2, reinterpret_cast<const void*>(array.data()), _commandIndex);
+}
+
+void VKBackend::store_glUniform3f(const Batch& batch, size_t paramOffset) {
+    std::array<float, 3> array {batch._params[paramOffset + 2]._float,
+                                batch._params[paramOffset + 1]._float,
+                                batch._params[paramOffset + 0]._float};
+    _currentFrame->addGlUniform(sizeof(float) * 3, reinterpret_cast<const void*>(array.data()), _commandIndex);
+
+}
+
+void VKBackend::store_glUniform4f(const Batch& batch, size_t paramOffset) {
+    std::array<float, 4> array {batch._params[paramOffset + 3]._float,
+                                batch._params[paramOffset + 2]._float,
+                                batch._params[paramOffset + 1]._float,
+                                batch._params[paramOffset + 0]._float};
+    _currentFrame->addGlUniform(sizeof(float) * 4, reinterpret_cast<const void*>(array.data()), _commandIndex);
+}
+
+void VKBackend::store_glUniform3fv(const Batch& batch, size_t paramOffset) {
+    _currentFrame->addGlUniform(sizeof(float) * 3 * batch._params[paramOffset + 1]._uint,
+                                reinterpret_cast<const void*>(batch.readData(batch._params[paramOffset + 0]._uint)), _commandIndex);
+}
+
+void VKBackend::store_glUniform4fv(const Batch& batch, size_t paramOffset) {
+    _currentFrame->addGlUniform(sizeof(float) * 4 * batch._params[paramOffset + 1]._uint,
+                                reinterpret_cast<const void*>(batch.readData(batch._params[paramOffset + 0]._uint)), _commandIndex);
+}
+
+void VKBackend::store_glUniform4iv(const Batch& batch, size_t paramOffset) {
+    _currentFrame->addGlUniform(sizeof(int) * 4 * batch._params[paramOffset + 1]._uint,
+                                reinterpret_cast<const void*>(batch.readData(batch._params[paramOffset + 0]._uint)), _commandIndex);
+}
+
+void VKBackend::store_glUniformMatrix3fv(const Batch& batch, size_t paramOffset) {
+    _currentFrame->addGlUniform(sizeof(float) * 3 * 3 * batch._params[paramOffset + 2]._uint,
+                                reinterpret_cast<const void*>(batch.readData(batch._params[paramOffset + 0]._uint)), _commandIndex);
+    // VKTODO: transpose if batch._params[paramOffset + 1]._uint != 0
+    /*glUniformMatrix3fv(
+        location,
+        batch._params[paramOffset + 2]._uint,
+        batch._params[paramOffset + 1]._uint,
+        (const GLfloat*)batch.readData(batch._params[paramOffset + 0]._uint));*/
+}
+
+void VKBackend::store_glUniformMatrix4fv(const Batch& batch, size_t paramOffset) {
+    _currentFrame->addGlUniform(sizeof(float) * 4 * 4 * batch._params[paramOffset + 2]._uint,
+                                reinterpret_cast<const void*>(batch.readData(batch._params[paramOffset + 0]._uint)), _commandIndex);
+    // VKTODO: transpose if batch._params[paramOffset + 1]._uint != 0
+    /*glUniformMatrix4fv(
+        location,
+        batch._params[paramOffset + 2]._uint,
+        batch._params[paramOffset + 1]._uint,
+        (const GLfloat*)batch.readData(batch._params[paramOffset + 0]._uint));*/
+}
+
 void VKBackend::do_resetStages(const Batch& batch, size_t paramOffset) {
     //VKTODO: make sure all stages are reset
     //VKTODO: should inout stage be reset here?
@@ -965,9 +1028,9 @@ void VKBackend::do_resetStages(const Batch& batch, size_t paramOffset) {
     resetResourceStage();
     resetQueryStage();
     resetInputStage();
-    //resetPipelineStage();
-    //resetTransformStage();
-    //resetOutputStage();
+    /*resetPipelineStage();
+    resetTransformStage();
+    resetOutputStage();*/ //VKTODO
 }
 
 void VKBackend::do_disableContextViewCorrection(const Batch& batch, size_t paramOffset) {
@@ -976,6 +1039,10 @@ void VKBackend::do_disableContextViewCorrection(const Batch& batch, size_t param
 
 void VKBackend::do_restoreContextViewCorrection(const Batch& batch, size_t paramOffset) {
     _transform._viewCorrectionEnabled = true;
+}
+
+void VKBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) {
+    //VKTODO
 }
 
 void VKBackend::do_disableContextStereo(const Batch& batch, size_t paramOffset) {
@@ -999,20 +1066,40 @@ void VKBackend::do_stopNamedCall(const Batch& batch, size_t paramOffset) {
     batch._currentNamedCall.clear();
 }
 
+static const int INVALID_UNIFORM_INDEX = -1;
+
+int VKBackend::getRealUniformLocation(int location) {
+    return location;
+    /*auto variant = isStereo() ? shader::Variant::Stereo : shader::Variant::Mono;
+    auto index = static_cast<uint32_t>(variant);
+
+    auto& shader = _cache.pipelineState.pipeline->getProgram()->_shaderObjects[index];
+    auto itr = shader.uniformRemap.find(location);
+    if (itr == shader.uniformRemap.end()) {
+        // This shouldn't happen, because we use reflection to determine all the possible
+        // uniforms.  If someone is requesting a uniform that isn't in the remapping structure
+        // that's a bug from the calling code, because it means that location wasn't in the
+        // reflection
+        qWarning() << "Unexpected location requested for shader: #" << location;
+        return INVALID_UNIFORM_INDEX;
+    }
+    return itr->second;*/ //VKTOODO: is this needed?
+}
+
 void VKBackend::do_glUniform1f(const Batch& batch, size_t paramOffset) {
-    qDebug() << "VKTODO: do_glUniform1f not implemented";
     /*if (_pipeline._program == 0) {
         // We should call updatePipeline() to bind the program but we are not doing that
         // because these uniform setters are deprecated and we don;t want to create side effect
         return;
     }
-    updatePipeline();
+    updatePipeline();*/
 
-    GLint location = getRealUniformLocation(batch._params[paramOffset + 1]._int);
-    glUniform1f(
-        location,
-        batch._params[paramOffset + 0]._float);
-    (void)CHECK_GL_ERROR();*/
+    int location = getRealUniformLocation(batch._params[paramOffset + 1]._int);
+    Q_ASSERT(location != INVALID_UNIFORM_INDEX);
+    _uniform._buffers[location].buffer = nullptr;
+    _uniform._buffers[location].vksBuffer = _currentFrame->_glUniformBuffer.get();
+    _uniform._buffers[location].offset = _currentFrame->_glUniformOffsetMap[(int)_commandIndex];
+    _uniform._buffers[location].size = sizeof(float);
 }
 
 void VKBackend::do_glUniform2f(const Batch& batch, size_t paramOffset) {
@@ -1022,13 +1109,14 @@ void VKBackend::do_glUniform2f(const Batch& batch, size_t paramOffset) {
         // because these uniform setters are deprecated and we don;t want to create side effect
         return;
     }
-    updatePipeline();
-    GLint location = getRealUniformLocation(batch._params[paramOffset + 2]._int);
-    glUniform2f(
-        location,
-        batch._params[paramOffset + 1]._float,
-        batch._params[paramOffset + 0]._float);
-    (void)CHECK_GL_ERROR();*/
+    updatePipeline();*/
+
+     int location = getRealUniformLocation(batch._params[paramOffset + 2]._int);
+     Q_ASSERT(location != INVALID_UNIFORM_INDEX);
+    _uniform._buffers[location].buffer = nullptr;
+    _uniform._buffers[location].vksBuffer = _currentFrame->_glUniformBuffer.get();
+    _uniform._buffers[location].offset = _currentFrame->_glUniformOffsetMap[(int)_commandIndex];
+    _uniform._buffers[location].size = sizeof(float) * 2;
 }
 
 void VKBackend::do_glUniform3f(const Batch& batch, size_t paramOffset) {
@@ -1527,27 +1615,54 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
 
         for (_commandIndex = 0; _commandIndex < numCommands; ++_commandIndex) {
             switch (*command) {
-            case Batch::COMMAND_draw:
-            case Batch::COMMAND_drawIndexed:
-            case Batch::COMMAND_drawInstanced:
-            case Batch::COMMAND_drawIndexedInstanced:
-            case Batch::COMMAND_multiDrawIndirect:
-            case Batch::COMMAND_multiDrawIndexedIndirect:
-                // VKTODO: pass current framebuffer size
-                _transform.preUpdate(_commandIndex, _stereo, Vec2u(640, 480));
-                break;
+                case Batch::COMMAND_glUniform1f:
+                    store_glUniform1f(batch, *offset);
+                    break;
+                case Batch::COMMAND_glUniform2f:
+                    store_glUniform2f(batch, *offset);
+                    break;
+                case Batch::COMMAND_glUniform3f:
+                    store_glUniform3f(batch, *offset);
+                    break;
+                case Batch::COMMAND_glUniform4f:
+                    store_glUniform4f(batch, *offset);
+                    break;
+                case Batch::COMMAND_glUniform3fv:
+                    store_glUniform3fv(batch, *offset);
+                    break;
+                case Batch::COMMAND_glUniform4fv:
+                    store_glUniform4fv(batch, *offset);
+                    break;
+                case Batch::COMMAND_glUniform4iv:
+                    store_glUniform4iv(batch, *offset);
+                    break;
+                case Batch::COMMAND_glUniformMatrix3fv:
+                    store_glUniform3fv(batch, *offset);
+                    break;
+                case Batch::COMMAND_glUniformMatrix4fv:
+                    store_glUniform4fv(batch, *offset);
+                    break;
+                case Batch::COMMAND_draw:
+                case Batch::COMMAND_drawIndexed:
+                case Batch::COMMAND_drawInstanced:
+                case Batch::COMMAND_drawIndexedInstanced:
+                case Batch::COMMAND_multiDrawIndirect:
+                case Batch::COMMAND_multiDrawIndexedIndirect:
+                    // VKTODO: pass current framebuffer size
+                    _transform.preUpdate(_commandIndex, _stereo, Vec2u(640, 480));
+                    break;
 
-            case Batch::COMMAND_setViewportTransform:
-            case Batch::COMMAND_setViewTransform:
-            case Batch::COMMAND_setProjectionTransform: {
-                CommandCall call = _commandCalls[(*command)];
-                (this->*(call))(batch, *offset);
-                break;
-            }
+                case Batch::COMMAND_setViewportTransform:
+                case Batch::COMMAND_setViewTransform:
+                case Batch::COMMAND_setProjectionTransform: {
+                    CommandCall call = _commandCalls[(*command)];
+                    (this->*(call))(batch, *offset);
+                    break;
+                }
 
-            default:
-                break;
-            }
+                default:
+                    break;
+                }
             command++;
             offset++;
         }
@@ -1555,6 +1670,7 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
 
     { // Sync the transform buffers
         PROFILE_RANGE(gpu_vk_detail, "syncGPUTransform");
+        transferGlUniforms();
         transferTransformState(batch);
     }
 
@@ -2067,6 +2183,12 @@ void VKBackend::FrameData::createDescriptorPool() {
     VK_CHECK_RESULT(vkCreateDescriptorPool(_backend->_context.device->logicalDevice, &descriptorPoolCI, nullptr, &_descriptorPool));
 }
 
+void VKBackend::FrameData::addGlUniform(size_t size, const void* data, size_t commandIndex) {
+    _glUniformData.resize(_glUniformBufferPosition + size);
+    memcpy(_glUniformData.data()+_glUniformBufferPosition, data, size);
+    _glUniformBufferPosition += size;
+}
+
 VKBackend::FrameData::FrameData(VKBackend *backend) : _backend(backend) {
     createDescriptorPool();
 }
@@ -2086,6 +2208,10 @@ VKBackend::FrameData::~FrameData() {
         _drawCallInfoBuffer->destroy();
         _drawCallInfoBuffer.reset();
     }
+    if (_glUniformBuffer) {
+        _glUniformBuffer->destroy();
+        _glUniformBuffer.reset();
+    }
 }
 
 void VKBackend::FrameData::cleanup() {
@@ -2093,6 +2219,9 @@ void VKBackend::FrameData::cleanup() {
         vkDestroyRenderPass(_backend->_context.device->logicalDevice, renderPass, nullptr);
     }
     _renderPasses.resize(0);
+    _glUniformBufferPosition = 0;
+    _glUniformOffsetMap.clear();
+    _glUniformData.clear();
 
     uniformDescriptorSets.resize(0);
     textureDescriptorSets.resize(0);
@@ -2360,6 +2489,17 @@ void VKBackend::updatePipeline() {
         }
         _pipeline._invalidState = false;
     }*/
+}
+
+void VKBackend::transferGlUniforms() {
+    auto size = _currentFrame->_glUniformData.size();
+    if (size) {
+        _currentFrame->_glUniformBuffer = vks::Buffer::createUniform(size);
+        _currentFrame->_glUniformBuffer->map();
+        _currentFrame->_glUniformBuffer->copy(size, _currentFrame->_glUniformData.data());
+        _currentFrame->_glUniformBuffer->flush(VK_WHOLE_SIZE);
+        _currentFrame->_glUniformBuffer->unmap();
+    }
 }
 
 void VKBackend::transferTransformState(const Batch& batch) {
@@ -2965,6 +3105,10 @@ void VKBackend::do_generateTextureMips(const Batch& batch, size_t paramOffset) {
     object->generateMips();*/
 }
 
+void VKBackend::do_generateTextureMipsWithPipeline(const Batch& batch, size_t paramOffset) {
+    // VKTODO
+}
+
 void VKBackend::do_advance(const Batch& batch, size_t paramOffset) {
     auto ringbuffer = batch._swapChains.get(batch._params[paramOffset]._uint);
     if (ringbuffer) {
@@ -3336,6 +3480,7 @@ std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> VKBackend::_commandCalls
     (&::gpu::vk::VKBackend::do_clearFramebuffer),
     (&::gpu::vk::VKBackend::do_blit),
     (&::gpu::vk::VKBackend::do_generateTextureMips),
+    (&::gpu::vk::VKBackend::do_generateTextureMipsWithPipeline),
 
     (&::gpu::vk::VKBackend::do_advance),
 
@@ -3347,6 +3492,8 @@ std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> VKBackend::_commandCalls
 
     (&::gpu::vk::VKBackend::do_disableContextViewCorrection),
     (&::gpu::vk::VKBackend::do_restoreContextViewCorrection),
+    (&::gpu::vk::VKBackend::do_setContextMirrorViewCorrection),
+
     (&::gpu::vk::VKBackend::do_disableContextStereo),
     (&::gpu::vk::VKBackend::do_restoreContextStereo),
 
