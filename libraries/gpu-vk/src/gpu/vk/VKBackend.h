@@ -146,10 +146,12 @@ protected:
         void bindCurrentCamera(int stereoSide, VKBackend::UniformStageState &uniform, FrameData &currentFrame) const;
     } _transform;
 
+public:
     static const int MAX_NUM_ATTRIBUTES = Stream::NUM_INPUT_SLOTS;
     // The drawcall Info attribute  channel is reserved and is the upper bound for the number of availables Input buffers
     static const int MAX_NUM_INPUT_BUFFERS = Stream::DRAW_CALL_INFO;
 
+protected:
     struct InputStageState {
         bool _invalidFormat { true };
         bool _lastUpdateStereoState { false };
