@@ -37,7 +37,7 @@ void MetaModelPayload::setBlendedVertices(int blendNumber, const QVector<Blendsh
         const auto& buffer = _blendshapeBuffers.find(i);
         const auto blendShapeBufferSize = numVertices * sizeof(BlendshapeOffset);
         if (buffer == _blendshapeBuffers.end()) {
-            auto usage = gpu::Buffer::VertexBuffer;
+            auto usage = gpu::Buffer::ResourceBuffer;
             auto data = (gpu::Byte*) blendshapeOffsets.constData() + index * sizeof(BlendshapeOffset);
             auto size = blendShapeBufferSize;
             _blendshapeBuffers[i] = std::make_shared<gpu::Buffer>(usage, size, data);

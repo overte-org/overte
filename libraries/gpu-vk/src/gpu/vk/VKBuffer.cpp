@@ -21,10 +21,8 @@ VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer) {
     }
 
     VKBuffer* object = gpu::Backend::getGPUObject<VKBuffer>(buffer);
-    // Has the storage size changed?
-    if (buffer.isDirty()) {
-        printf("dirty\n");
-    }
+    // Has the storage size changed? VKTODO: is something missing here?
+
     if (!object || object->_stamp != buffer._renderSysmem.getStamp()) {
         // VKTODO: Should previous gpuobject be replaced?
         object = new VKBuffer(backend, buffer);
