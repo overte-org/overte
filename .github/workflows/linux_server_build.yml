@@ -266,7 +266,7 @@ jobs:
 
     - name: Archive cmake logs
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz
         path: cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz
