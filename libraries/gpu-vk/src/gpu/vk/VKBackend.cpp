@@ -11,7 +11,6 @@
 #include <queue>
 #include <list>
 #include <functional>
-#include <iomanip>
 #include <glm/gtc/type_ptr.hpp>
 
 #include <QtCore/QProcessEnvironment>
@@ -30,6 +29,7 @@
 #include "VKForward.h"
 #include "VKShared.h"
 #include "VKTexture.h"
+#include "VKPipelineCache.h"
 
 #define FORCE_STRICT_TEXTURE 1
 
@@ -41,24 +41,6 @@ size_t VKBackend::UNIFORM_BUFFER_OFFSET_ALIGNMENT{ 4 };
 static VKBackend* INSTANCE{ nullptr };
 static const char* VK_BACKEND_PROPERTY_NAME = "com.highfidelity.vk.backend";
 static bool enableDebugMarkers = false;
-
-namespace std {
-template <>
-struct hash<gpu::Element> {
-    size_t operator()(const gpu::Element& a) const { return std::hash<uint16>()(a.getRaw()); }
-};
-}  // namespace std
-
-template <typename Container>  // we can make this generic for any container [1]
-struct container_hash {
-    std::size_t operator()(const Container& c) const {
-        size_t seed = 0;
-        for (const auto& e : c) {
-            std::hash_combine(seed, e);
-        }
-        return seed;
-    }
-};
 
 BackendPointer VKBackend::createBackend() {
     // FIXME provide a mechanism to override the backend for testing
@@ -215,469 +197,6 @@ bool VKBackend::supportedTextureFormat(const gpu::Element& format) const {
     return true;
 }
 
-struct Cache {
-    std::unordered_map<uint32_t, VkShaderModule> moduleMap;
-
-    struct Pipeline {
-        using RenderpassKey = std::vector<VkFormat>;
-        using BindingMap = std::unordered_map<uint32_t, VkShaderStageFlags>;
-        using LocationMap = shader::Reflection::LocationMap;
-
-        gpu::PipelineReference pipeline{ GPU_REFERENCE_INIT_VALUE };
-        gpu::FormatReference format{ GPU_REFERENCE_INIT_VALUE };
-        gpu::FramebufferReference framebuffer{ GPU_REFERENCE_INIT_VALUE };
-        gpu::Primitive primitiveTopology;
-
-        struct PipelineLayout {
-            VkPipelineLayout pipelineLayout;
-            VkDescriptorSetLayout uniformLayout;
-            VkDescriptorSetLayout textureLayout;
-            VkDescriptorSetLayout storageLayout;
-        };
-
-        std::unordered_map<gpu::PipelineReference, PipelineLayout> _layoutMap;
-        std::unordered_map<RenderpassKey, VkRenderPass, container_hash<RenderpassKey>> _renderPassMap;
-
-        // These get set when stride gets set by setInputBuffer
-        std::array<Offset, VKBackend::MAX_NUM_INPUT_BUFFERS> _bufferStrides {0};
-        std::bitset<VKBackend::MAX_NUM_INPUT_BUFFERS> _bufferStrideSet;
-
-        template <typename T>
-        static std::string hex(T t) {
-            std::stringstream sStream;
-            sStream << std::setw(sizeof(T)) << std::setfill('0') << std::hex << t;
-            return sStream.str();
-        }
-
-        void clearStrides() {
-            _bufferStrideSet.reset();
-        }
-
-        void setPipeline(const gpu::PipelinePointer& pipeline) {
-            if (!gpu::compare(this->pipeline, pipeline)) {
-                gpu::assign(this->pipeline, pipeline);
-            }
-            clearStrides();
-        }
-
-        void setVertexFormat(const gpu::Stream::FormatPointer& format) {
-            if (!gpu::compare(this->format, format)) {
-                gpu::assign(this->format, format);
-            }
-            clearStrides();
-        }
-
-        void setFramebuffer(const gpu::FramebufferPointer& framebuffer) {
-            if (!gpu::compare(this->framebuffer, framebuffer)) {
-                gpu::assign(this->framebuffer, framebuffer);
-            }
-        }
-
-        static void updateBindingMap(BindingMap& bindingMap,
-                                     const LocationMap& locationMap,
-                                     VkShaderStageFlagBits shaderStage) {
-            for (const auto& entry : locationMap) {
-                bindingMap[entry.second] |= shaderStage;
-            }
-        }
-
-        static void setBindingMap(BindingMap& bindingMap, const LocationMap& vertexMap, const LocationMap& fragmentMap) {
-            bindingMap.clear();
-            updateBindingMap(bindingMap, vertexMap, VK_SHADER_STAGE_VERTEX_BIT);
-            updateBindingMap(bindingMap, fragmentMap, VK_SHADER_STAGE_FRAGMENT_BIT);
-        }
-
-        static BindingMap getBindingMap(const LocationMap& vertexMap, const LocationMap& fragmentMap) {
-            BindingMap result;
-            setBindingMap(result, vertexMap, fragmentMap);
-            return result;
-        }
-
-        // VKTODO: This needs to be used instead of getPipeline
-        // Returns structure containing pipeline layout and descriptor set layouts
-        PipelineLayout getPipelineAndDescriptorLayout(const vks::Context& context) {
-            auto itr = _layoutMap.find(pipeline);
-            if (_layoutMap.end() == itr) {
-                auto pipeline = gpu::acquire(this->pipeline);
-                auto program = pipeline->getProgram();
-                const auto& vertexReflection = program->getShaders()[0]->getReflection();
-                const auto& fragmentRefelection = program->getShaders()[1]->getReflection();
-
-                std::vector<VkDescriptorSetLayoutBinding> uniLayout;
-#define SEP_DESC 1
-#if SEP_DESC
-                std::vector<VkDescriptorSetLayoutBinding> texLayout;
-                std::vector<VkDescriptorSetLayoutBinding> stoLayout;
-#else
-                auto& texLayout = uniLayout;
-                auto& stoLayout = uniLayout;
-#endif
-                PipelineLayout layout {};
-
-                for (const auto& entry : getBindingMap(vertexReflection.uniformBuffers, fragmentRefelection.uniformBuffers)) {
-                    VkDescriptorSetLayoutBinding binding = vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,entry.second,entry.first,1);
-                    uniLayout.push_back(binding);
-                }
-                for (const auto& entry : getBindingMap(vertexReflection.textures, fragmentRefelection.textures)) {
-                    VkDescriptorSetLayoutBinding binding = vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,entry.second,entry.first,1);
-                    texLayout.push_back(binding);
-                }
-                for (const auto& entry : getBindingMap(vertexReflection.resourceBuffers, fragmentRefelection.resourceBuffers)) {
-                    VkDescriptorSetLayoutBinding binding = vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,entry.second,entry.first,1);
-                    stoLayout.push_back(binding);
-                }
-
-                // Create the descriptor set layouts
-                std::vector<VkDescriptorSetLayout> layouts;
-                if (!uniLayout.empty()) {
-                    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = vks::initializers::descriptorSetLayoutCreateInfo(uniLayout.data(), uniLayout.size());
-                    VkDescriptorSetLayout descriptorSetLayout;
-                    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorSetLayout));
-                    layouts.push_back(descriptorSetLayout);
-                    layout.uniformLayout = descriptorSetLayout;
-                }
-#if SEP_DESC
-                if (!texLayout.empty()) {
-                    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = vks::initializers::descriptorSetLayoutCreateInfo(texLayout.data(), texLayout.size());
-                    VkDescriptorSetLayout descriptorSetLayout;
-                    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorSetLayout));
-                    layouts.push_back(descriptorSetLayout);
-                    layout.textureLayout = descriptorSetLayout;
-                } else {
-                    printf("empty");
-                }
-                if (!stoLayout.empty()) {
-                    VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI = vks::initializers::descriptorSetLayoutCreateInfo(stoLayout.data(), stoLayout.size());
-                    VkDescriptorSetLayout descriptorSetLayout;
-                    VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr, &descriptorSetLayout));
-                    layouts.push_back(descriptorSetLayout);
-                    layout.storageLayout = descriptorSetLayout;
-                }
-#endif
-                VkPipelineLayoutCreateInfo pipelineLayoutCI = vks::initializers::pipelineLayoutCreateInfo(layouts.data(), (uint32_t)layouts.size());
-                VkPipelineLayout pipelineLayout;
-                VK_CHECK_RESULT(vkCreatePipelineLayout(context.device->logicalDevice, &pipelineLayoutCI, nullptr, &pipelineLayout));
-
-                layout.pipelineLayout = pipelineLayout;
-
-                return _layoutMap[this->pipeline] = layout;
-                //return _layoutMap[this->pipeline] = nullptr;
-            }
-            return itr->second;
-        }
-
-        RenderpassKey getRenderPassKey(gpu::Framebuffer* framebuffer) const {
-            RenderpassKey result;
-            if (!framebuffer) {
-                result.push_back(VK_FORMAT_R8G8B8A8_SRGB);
-            } else {
-                for (const auto& attachment : framebuffer->getRenderBuffers()) {
-                    if (attachment.isValid()) {
-                        // VKTODO: why _element often has different format than texture's pixel format, and seemingly wrong one?
-                        //result.push_back(evalTexelFormatInternal(attachment._element));
-                        result.push_back(evalTexelFormatInternal(attachment._texture->getTexelFormat()));
-                    }
-                }
-                if (framebuffer->hasDepthStencil()) {
-                    result.push_back(evalTexelFormatInternal(framebuffer->getDepthStencilBufferFormat()));
-                }
-            }
-            return result;
-        }
-
-        VkRenderPass getRenderPass(const vks::Context& context) {
-            const auto framebuffer = gpu::acquire(this->framebuffer);
-
-            RenderpassKey key = getRenderPassKey(framebuffer);
-            auto itr = _renderPassMap.find(key);
-            if (itr == _renderPassMap.end()) {
-                std::vector<VkAttachmentDescription> attachments;
-                attachments.reserve(key.size());
-                std::vector<VkAttachmentReference> colorAttachmentReferences;
-                VkAttachmentReference depthReference{};
-                for (const auto& format : key) {
-                    VkAttachmentDescription attachment{};
-                    attachment.format = format;
-                    //attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-                    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-                    //attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-                    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
-                    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
-                    //attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-                    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-                    if (isDepthStencilFormat(format)) {
-                        attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                        attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                        depthReference.attachment = (uint32_t)(attachments.size());
-                        depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                    } else {
-                        attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                        attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                        VkAttachmentReference reference;
-                        reference.attachment = (uint32_t)(attachments.size());
-                        reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-                        colorAttachmentReferences.push_back(reference);
-                    }
-                    attachments.push_back(attachment);
-                }
-
-                std::vector<VkSubpassDescription> subpasses;
-                {
-                    VkSubpassDescription subpass{};
-                    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-                    if (depthReference.layout != VK_IMAGE_LAYOUT_UNDEFINED) {
-                        subpass.pDepthStencilAttachment = &depthReference;
-                    }
-                    subpass.colorAttachmentCount = (uint32_t)colorAttachmentReferences.size();
-                    subpass.pColorAttachments = colorAttachmentReferences.data();
-                    subpasses.push_back(subpass);
-                }
-
-                VkRenderPassCreateInfo renderPassInfo{};
-                renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-                renderPassInfo.attachmentCount = (uint32_t)attachments.size();
-                renderPassInfo.pAttachments = attachments.data();
-                renderPassInfo.subpassCount = (uint32_t)subpasses.size();
-                renderPassInfo.pSubpasses = subpasses.data();
-                VkRenderPass renderPass;
-                VK_CHECK_RESULT(vkCreateRenderPass(context.device->logicalDevice, &renderPassInfo, nullptr, &renderPass));
-                _renderPassMap[key] = renderPass;
-                return renderPass;
-            }
-            return itr->second;
-        }
-        static std::string getRenderpassKeyString(const RenderpassKey& renderpassKey) {
-            std::string result;
-
-            for (const auto& e : renderpassKey) {
-                result += hex((uint32_t)e);
-            }
-            return result;
-        }
-        std::string getStridesKey() const {
-            std::string key;
-            for (int i = 0; i < VKBackend::MAX_NUM_INPUT_BUFFERS; i++) {
-                if (_bufferStrideSet[i]) {
-                    key += "_" + hex(i) + "s" + hex(_bufferStrides[i]);
-                }
-            }
-            return key;
-        }
-        std::string getKey() const {
-            const auto framebuffer = gpu::acquire(this->framebuffer);
-            RenderpassKey renderpassKey = getRenderPassKey(framebuffer);
-            const gpu::Pipeline& pipeline = *gpu::acquire(this->pipeline);
-            const gpu::State& state = *pipeline.getState();
-            const auto& vertexShader = pipeline.getProgram()->getShaders()[0]->getSource();
-            const auto& fragmentShader = pipeline.getProgram()->getShaders()[1]->getSource();
-            std::string key;
-            // FIXME account for customized shaders (preferably by forcing shaders to have a new unique ID at runtime when they're using replacement strings)
-            key = hex(shader::makeProgramId(vertexShader.id, fragmentShader.id));
-            key += "_" + getRenderpassKeyString(renderpassKey);
-            key += "_" + state.getKey();
-            key += "_" + format->getKey();
-            key += "_" + hex(primitiveTopology);
-            key += "_" + getStridesKey();
-            return key;
-        }
-    } pipelineState;
-
-    static VkStencilOpState getStencilOp(const gpu::State::StencilTest& stencil) {
-        VkStencilOpState result;
-        result.compareOp = (VkCompareOp)stencil.getFunction();
-        result.passOp = (VkStencilOp)stencil.getPassOp();
-        result.failOp = (VkStencilOp)stencil.getFailOp();
-        result.depthFailOp = (VkStencilOp)stencil.getDepthFailOp();
-        result.reference = stencil.getReference();
-        result.compareMask = stencil.getReadMask();
-        result.writeMask = 0xFF;
-        return result;
-    }
-
-    VkShaderModule getShaderModule(const vks::Context& context, const shader::Source& source) {
-        auto itr = moduleMap.find(source.id);
-        if (moduleMap.end() == itr) {
-            const auto& dialectSource = source.dialectSources.find(shader::Dialect::glsl450)->second;
-            const auto& variantSource = dialectSource.variantSources.find(shader::Variant::Mono)->second;
-            const auto& spirv = variantSource.spirv;
-            VkShaderModule result;
-            VkShaderModuleCreateInfo shaderModuleCreateInfo{};
-            shaderModuleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-            shaderModuleCreateInfo.codeSize = spirv.size();
-            shaderModuleCreateInfo.pCode = (const uint32_t*)spirv.data();
-            VK_CHECK_RESULT(vkCreateShaderModule(context.device->logicalDevice, &shaderModuleCreateInfo, nullptr, &result));
-            moduleMap[source.id] = result;
-            return result;
-        }
-        return itr->second;
-    }
-
-    VkPipeline getPipeline(const vks::Context& context) {
-        //VKTODO: pipelines are not cached here currently
-        auto renderpass = pipelineState.getRenderPass(context);
-        auto pipelineLayout = pipelineState.getPipelineAndDescriptorLayout(context);
-        const gpu::Pipeline& pipeline = *gpu::acquire(pipelineState.pipeline);
-        const gpu::State& state = *pipeline.getState();
-
-        const auto& vertexShader = pipeline.getProgram()->getShaders()[0]->getSource();
-        const auto& fragmentShader = pipeline.getProgram()->getShaders()[1]->getSource();
-        // FIXME
-
-        const gpu::State::Data& stateData = state.getValues();
-        vks::pipelines::GraphicsPipelineBuilder builder{ context.device->logicalDevice, pipelineLayout.pipelineLayout, renderpass };
-
-        // Input assembly
-        {
-            auto& inputAssembly = builder.inputAssemblyState;
-            inputAssembly.topology = PRIMITIVE_TO_VK[pipelineState.primitiveTopology];
-            // VKTODO: this looks unfinished
-            // ia.primitiveRestartEnable = ???
-            // ia.topology = vk::PrimitiveTopology::eTriangleList; ???
-        }
-
-        // Shader modules
-        {
-            builder.shaderStages.resize(2,{});
-            {
-                auto& shaderStage = builder.shaderStages[0];
-                shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-                shaderStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
-                shaderStage.pName = "main";
-                shaderStage.module = getShaderModule(context, vertexShader);
-            }
-            {
-                auto& shaderStage = builder.shaderStages[1];
-                shaderStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-                shaderStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-                shaderStage.pName = "main";
-                shaderStage.module = getShaderModule(context, fragmentShader);
-            }
-        }
-
-        // Rasterization state
-        {
-            auto& rasterizationState = builder.rasterizationState;
-            rasterizationState.cullMode = (VkCullModeFlagBits)stateData.cullMode;
-            //Bool32 ra.depthBiasEnable;
-            //float ra.depthBiasConstantFactor;
-            //float ra.depthBiasClamp;
-            //float ra.depthBiasSlopeFactor;
-            //ra.depthClampEnable = VK_TRUE;
-            rasterizationState.depthClampEnable = stateData.flags.depthClampEnable ? VK_TRUE : VK_FALSE; // VKTODO
-            rasterizationState.frontFace = stateData.flags.frontFaceClockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
-            // ra.lineWidth
-            rasterizationState.polygonMode = (VkPolygonMode)(2 - stateData.fillMode);
-        }
-
-        // Color blending
-        {
-            auto& colorBlendState = builder.colorBlendState;
-            auto& attachmentStates = colorBlendState.blendAttachmentStates;
-            Q_ASSERT(pipelineState.framebuffer);
-            auto &blendFunction = stateData.blendFunction;
-            auto &attachmentState = colorBlendState.blendAttachmentStates[0];
-            attachmentState.blendEnable = stateData.blendFunction.isEnabled();
-            attachmentState.srcColorBlendFactor = BLEND_ARGS_TO_VK[blendFunction.getSourceColor()];
-            attachmentState.dstColorBlendFactor = BLEND_ARGS_TO_VK[blendFunction.getDestinationColor()];
-            attachmentState.colorBlendOp = BLEND_OPS_TO_VK[blendFunction.getOperationColor()];
-            attachmentState.srcAlphaBlendFactor = BLEND_ARGS_TO_VK[blendFunction.getSourceAlpha()];
-            attachmentState.dstAlphaBlendFactor = BLEND_ARGS_TO_VK[blendFunction.getDestinationAlpha()];
-            attachmentState.alphaBlendOp = BLEND_OPS_TO_VK[blendFunction.getOperationAlpha()];
-            attachmentState.colorWriteMask = colorMaskToVk(stateData.colorWriteMask);
-            auto& rbs = pipelineState.framebuffer->getRenderBuffers();
-            uint32_t rbCount = 0;
-            for (const auto& rb : rbs) {
-                if (rb.isValid()) {
-                    ++rbCount;
-                }
-            }
-
-            for (uint32_t i = 1; i < rbCount; ++i) {
-                attachmentStates.push_back(attachmentStates.back());
-            }
-        }
-
-        // Depth/Stencil
-        {
-            auto& ds = builder.depthStencilState;
-            //ds.depthTestEnable = VK_FALSE;
-            ds.depthTestEnable = stateData.depthTest.isEnabled() ? VK_TRUE : VK_FALSE; //VKTODO
-            ds.depthWriteEnable = stateData.depthTest.getWriteMask() != 0 ? VK_TRUE : VK_FALSE;
-            ds.depthCompareOp = (VkCompareOp)stateData.depthTest.getFunction();
-            ds.stencilTestEnable = stateData.stencilActivation.enabled;
-            ds.front = getStencilOp(stateData.stencilTestFront);
-            ds.front.writeMask = stateData.stencilActivation.frontWriteMask;
-            ds.back = getStencilOp(stateData.stencilTestBack);
-            ds.back.writeMask = stateData.stencilActivation.backWriteMask;
-        }
-
-        // Vertex input
-        if (pipelineState.format) {
-            const auto& vertexReflection = pipeline.getProgram()->getShaders()[0]->getReflection();
-
-            const gpu::Stream::Format& format = *gpu::acquire(pipelineState.format);
-            auto& bindingDescriptions = builder.vertexInputState.bindingDescriptions;
-            auto channelCount = format.getNumChannels();
-            for (const auto& entry : format.getChannels()) {
-                const auto& slot = entry.first;
-                const auto& channel = entry.second;
-                VkVertexInputBindingDescription bindingDescription {};
-                bindingDescription.binding = slot;
-                if (pipelineState._bufferStrideSet[slot]) {
-                    bindingDescription.stride = pipelineState._bufferStrides[slot];
-                } else {
-                    bindingDescription.stride = (uint32_t)channel._stride;
-                }
-                bindingDescription.inputRate = (VkVertexInputRate)(channel._frequency);
-                bindingDescriptions.push_back(bindingDescription);
-            }
-
-            std::array<bool,16> isAttributeSlotOccupied {};
-
-            bool colorFound = false;
-            auto& attributeDescriptions = builder.vertexInputState.attributeDescriptions;
-            for (const auto& entry : format.getAttributes()) {
-                const auto& slot = entry.first;
-                const auto& attribute = entry.second;
-                if (slot == Stream::COLOR) {
-                    colorFound = true;
-                }
-                isAttributeSlotOccupied[slot] = true;
-
-                attributeDescriptions.push_back(
-                    { slot, attribute._channel, evalTexelFormatInternal(attribute._element), (uint32_t)attribute._offset });
-            }
-
-            if (!colorFound && vertexReflection.validInput(Stream::COLOR)) {
-                attributeDescriptions.push_back({ Stream::COLOR, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
-            }
-
-            if (!isAttributeSlotOccupied[Stream::TEXCOORD0] && vertexReflection.validInput(Stream::TEXCOORD0)) {
-                attributeDescriptions.push_back({ Stream::TEXCOORD0, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
-            }
-
-            if (!isAttributeSlotOccupied[Stream::TEXCOORD1] && vertexReflection.validInput(Stream::TEXCOORD1)) {
-                attributeDescriptions.push_back({ Stream::TEXCOORD1, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
-            }
-
-            // Explicitly add the draw call info slot if required
-            if (vertexReflection.validInput(gpu::slot::attr::DrawCallInfo)) {
-                attributeDescriptions.push_back(
-                    { gpu::slot::attr::DrawCallInfo, gpu::slot::attr::DrawCallInfo, VK_FORMAT_R16G16_SINT, (uint32_t)0 });
-                //bd.push_back({ gpu::slot::attr::DrawCallInfo, (uint32_t)sizeof(uint16_t) * 2, VK_VERTEX_INPUT_RATE_VERTEX });
-                bindingDescriptions.push_back({ gpu::slot::attr::DrawCallInfo, 0, VK_VERTEX_INPUT_RATE_VERTEX });
-            }
-        }
-
-        auto program = pipeline.getProgram();
-        const auto& vertexReflection = program->getShaders()[0]->getReflection();
-        const auto& fragmentRefelection = program->getShaders()[1]->getReflection();
-        auto result = builder.create();
-        builder.shaderStages.clear();
-        return result;
-    }
-};
 
 // VKTODO: this is ugly solution
 Cache _cache;
@@ -815,6 +334,8 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                             Q_ASSERT(false);
                         case Batch::NUM_COMMANDS:
                             Q_ASSERT(false);
+                        default:
+                            break;
                     }
                 }
                 // loop through commands
@@ -1726,6 +1247,15 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             scissor.extent.height = _currentScissorRect.w;
             vkCmdSetScissor(_currentCommandBuffer, 0, 1, &scissor);
             auto layout = _cache.pipelineState.getPipelineAndDescriptorLayout(_context);
+
+            // VKTODO: remove when webentities work
+            auto pipeline = gpu::acquire(_cache.pipelineState.pipeline);
+            auto program = pipeline->getProgram();
+            const auto& vertexReflection = program->getShaders()[0]->getReflection();
+            const auto& fragmentReflection = program->getShaders()[1]->getReflection();
+            if (fragmentReflection.textures.count("webTexture")) {
+                printf("webTexture");
+            }
             // VKTODO: Descriptor sets and associated buffers should be set up during pre-pass
             // VKTODO: move this to a function
             if (layout.uniformLayout) {
@@ -1852,7 +1382,37 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
     }*/
 
     if (TextureUsageType::EXTERNAL == texture.getUsageType()) {
-        // VKTODO:
+        /*Texture::ExternalUpdates updates = texture.getUpdates();
+        if (!updates.empty()) {
+            Texture::ExternalRecycler recycler = texture.getExternalRecycler();
+            Q_ASSERT(recycler);
+            // Discard any superfluous updates
+            while (updates.size() > 1) {
+                const auto& update = updates.front();
+                // Superfluous updates will never have been read, but we want to ensure the previous
+                // writes to them are complete before they're written again, so return them with the
+                // same fences they arrived with.  This can happen on any thread because no GL context
+                // work is involved
+                recycler(update.first, update.second);
+                updates.pop_front();
+            }
+
+            // The last texture remaining is the one we'll use to create the GLTexture
+            const auto& update = updates.front();
+            // Check for a fence, and if it exists, inject a wait into the command stream, then destroy the fence
+            if (update.second) {
+                GLsync fence = static_cast<GLsync>(update.second);
+                glWaitSync(fence, 0, GL_TIMEOUT_IGNORED);
+                glDeleteSync(fence);
+            }
+
+            // Create the new texture object (replaces any previous texture object)
+            new GLExternalTexture(shared_from_this(), texture, update.first);
+        }
+
+        // Return the texture object (if any) associated with the texture, without extensive logic
+        // (external textures are
+        return Backend::getGPUObject<GLTexture>(texture);*/
         return nullptr;
         //return Parent::syncGPUObject(texturePointer);
     }
