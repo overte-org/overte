@@ -10,8 +10,13 @@
 
 #include <vk/Config.h>
 #include <gpu/Forward.h>
+#include <gpu/Stream.h>
 
 namespace gpu { namespace vk {
+
+static const int MAX_NUM_ATTRIBUTES = Stream::NUM_INPUT_SLOTS;
+// The drawcall Info attribute  channel is reserved and is the upper bound for the number of available Input buffers
+static const int MAX_NUM_INPUT_BUFFERS = Stream::DRAW_CALL_INFO;
 
 class VKBuffer;
 class VKShader;
