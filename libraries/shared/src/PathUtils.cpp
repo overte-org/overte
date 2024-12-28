@@ -69,6 +69,8 @@ QString PathUtils::_appdata_path{""};
 QString PathUtils::_local_appdata_path{""};
 QString PathUtils::_plugins_path{""};
 QString PathUtils::_instance_name{"main"};
+QString PathUtils::_default_scripts_path{""};
+
 bool PathUtils::_initialized{false};
 std::mutex PathUtils::_lock{};
 
@@ -360,29 +362,8 @@ QString findMostRecentFileExtension(const QString& originalFileName, QVector<QSt
 }
 
 QUrl PathUtils::defaultScriptsLocation(const QString& newDefaultPath) {
-    static QString overriddenDefaultScriptsLocation = "";
-    QString path;
-
-    // set overriddenDefaultScriptLocation if it was passed in
-    if (!newDefaultPath.isEmpty()) {
-        overriddenDefaultScriptsLocation = newDefaultPath;
-    }
-
-    // use the overridden location if it is set
-    if (!overriddenDefaultScriptsLocation.isEmpty()) {
-        path = overriddenDefaultScriptsLocation;
-    } else {
-#if defined(Q_OS_OSX)
-        path = QCoreApplication::applicationDirPath() + "/../Resources/scripts";
-#elif defined(Q_OS_ANDROID)
-        path = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/scripts";
-#else
-        path = QCoreApplication::applicationDirPath() + "/scripts";
-#endif
-    }
-
     // turn the string into a legit QUrl
-    return QUrl::fromLocalFile(QFileInfo(path).canonicalFilePath());
+    return QUrl::fromLocalFile(_default_scripts_path);
 }
 
 QString PathUtils::stripFilename(const QUrl& url) {
@@ -415,11 +396,11 @@ QString PathUtils::getInstanceName() {
     return _instance_name;
 }
 
-void PathUtils::setInstanceName(const QString &name) {
-    std::lock_guard<std::mutex> guard(_lock);
-    qInfo() << "Instance name set to" << name;
-    _instance_name = name;
-}
+//void PathUtils::setInstanceName(const QString &name) {
+//    std::lock_guard<std::mutex> guard(_lock);
+//    qInfo() << "Instance name set to" << name;
+//    _instance_name = name;
+//}
 
 void PathUtils::setResourcesPath(const QString &dir) {
     std::lock_guard<std::mutex> guard(_lock);
@@ -510,16 +491,20 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
     }
 
     if (QCoreApplication::applicationName().isEmpty()) {
-        qCCritical(pathutils_log) << "QCoreApplication not initialized yet!";
+        qCCritical(pathutils_log) << "Please set QCoreApplication::applicationName and related fields first!";
         return false;
     }
 
+    if (QCoreApplication::applicationDirPath().isEmpty()) {
+        qCCritical(pathutils_log) << "Please ensure a QApplication object exists first!";
+        return false;
+    }
 
     /*********************************************************************
      * Auto-detection
      *********************************************************************/
 
-    qCDebug(pathutils_log) << "Initializing, type" << type << "; storage" << ds;
+    qCDebug(pathutils_log) << "Initializing, type" << type << "; storage" << ds << "; instance" << instance;
 
     QDir build_base_dir;
     QDir fhs_base_dir;
@@ -557,7 +542,7 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
             }
 
             if (build_base_dir.isRoot()) {
-                qCCritical(pathutils_log) << "Descended down to root, but still failed to find base build directory";
+                qCCritical(pathutils_log) << "Descended down to filesystem root, but still failed to find base build directory";
                 return false;
             }
 
@@ -582,6 +567,10 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
 
 
     QDir resources_dir = fhs_base_dir;
+    QDir scripts_dir = fhs_base_dir;
+    QDir lib_dir = fhs_base_dir;
+    QDir plugins_dir = fhs_base_dir;
+
 
     switch(type) {
         case FilesystemLayout::Auto:
@@ -594,12 +583,50 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
             resources_dir.cd(QCoreApplication::applicationName().toLower());
 
             _static_resources_path = resources_dir.canonicalPath();
+
+            scripts_dir = resources_dir;
+            scripts_dir.cd("scripts");
+
             qCDebug(pathutils_log) << "Resources: " << _static_resources_path;
+
+            _default_scripts_path = scripts_dir.canonicalPath();
+
+            if (!lib_dir.cd("lib64")) {
+                if (!lib_dir.cd("lib")) {
+                    qCCritical(pathutils_log) << "Can't find library directory under" << lib_dir;
+                }
+            }
+
+            if (!lib_dir.cd("overte")) {
+                qCCritical(pathutils_log) << "Can't find 'overte' library directory under" << lib_dir;
+            }
+
+            qCDebug(pathutils_log) << "Library dir:" << lib_dir;
+
+            plugins_dir = lib_dir;
+
+            if (!plugins_dir.cd("plugins")) {
+                qCCritical(pathutils_log) << "Can't find 'plugins' directory under" << plugins_dir;
+            }
+
+
             break;
         case FilesystemLayout::BuildDir:
 
             /* fall-through */
         case FilesystemLayout::BuildDirSourceResources:
+            resources_dir = QDir(QCoreApplication::applicationDirPath());
+            _static_resources_path = resources_dir.canonicalPath();
+
+            scripts_dir = resources_dir;
+            scripts_dir.cd("scripts");
+            _default_scripts_path = scripts_dir.canonicalPath();
+
+            plugins_dir = resources_dir;
+            if (!plugins_dir.cd("plugins")) {
+                qCCritical(pathutils_log) << "Can't find 'plugins' directory under" << plugins_dir;
+            }
+
             break;
     }
 
@@ -617,7 +644,7 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
 
 
 
-    _server_resources_path = qgetenv("OVERTE_RESOURCES_PATH");
+    _server_resources_path = qgetenv("OVERTE_SERVER_RESOURCES_PATH");
     if ( _server_resources_path.isEmpty() ) {
         if (isSystemInstall() || isSystemUser()) {
             _server_resources_path = OVERTE_DEFAULT_RESOURCES_PATH;
@@ -653,7 +680,7 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
         }
     }
 
-    _plugins_path = qgetenv("OVERTE_PLUGINS_PATH");
+    //_plugins_path = findFirstDir({qgetenv("OVERTE_PLUGINS_PATH");
     if ( _plugins_path.isEmpty()) {
         if (isSystemInstall()) {
             _plugins_path = OVERTE_DEFAULT_PLUGINS_PATH;
@@ -669,6 +696,8 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
     }
 
 
+    _plugins_path = plugins_dir.canonicalPath();
+
     qInfo() << "Path system initialized:";
     qInfo() << "\tRunning as system user      :" << isSystemUser();
     qInfo() << "\tRunning from system location:" << isSystemInstall();
@@ -680,9 +709,8 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
     qInfo() << "\tResource base path          :" << _static_resources_path;
     qInfo() << "\tRCC path                    :" << getRccPath();
     qInfo() << "\tResources path              :" << resourcesPath();
-    qInfo() << "\tResources URL               :" << resourcesUrl();
+
     qInfo() << "\tConfig base path            :" << _config_path;
-    qInfo() << "\tQML base URL                :" << qmlBaseUrl();
     qInfo() << "\tApp data path               :" << getAppDataPath();
     qInfo() << "\tApp local data path         :" << getAppLocalDataPath();
     qInfo() << "\tDefault scripts path        :" << defaultScriptsLocation();
@@ -690,6 +718,11 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
     qInfo() << "\tData base path              :" << _appdata_path;
     qInfo() << "\tLocal data base path        :" << _local_appdata_path;
     qInfo() << "\tPlugins path                :" << getPluginsPath();
+
+    qInfo() << "Initialized URLs:";
+    qInfo() << "\tResources URL               :" << resourcesUrl();
+    qInfo() << "\tQML base URL                :" << qmlBaseUrl();
+
     _initialized = true;
 
     return true;
@@ -700,10 +733,32 @@ QString PathUtils::findFirstDir(const QStringList &paths, const QString &descrip
         QFileInfo fi(path);
         if ( fi.exists() && fi.isDir() ) {
             qInfo() << "Found directory for" << description << ":" << fi.absoluteFilePath();
-            return fi.absoluteFilePath() + "/";
+            return fi.absoluteFilePath() + QDir::separator();
         }
     }
 
     qCritical() << "Failed to find directory for " << description << "; looked in" << paths;
+    return "";
+}
+
+QString findFirstDir(const QString &base, const QStringList &subpaths, const QString &description) {
+    QDir basedir{base};
+
+
+    if (!basedir.exists()) {
+        qCritical() << "Failed to find directory for " << description << "; base dir " << base << " doesn't exist";
+        return "";
+    }
+
+
+    for(const auto &path : subpaths ) {
+        QDir d = basedir;
+        if ( d.cd(path) ) {
+            qInfo() << "Found directory for" << description << ":" << d.canonicalPath();
+            return d.canonicalPath() + QDir::separator();
+        }
+    }
+
+    qCritical() << "Failed to find directory for " << description << "; looked in base" << base << "; subpaths" << subpaths;
     return "";
 }

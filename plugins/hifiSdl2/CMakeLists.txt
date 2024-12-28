@@ -23,4 +23,6 @@ if (NOT APPLE)
     link_hifi_libraries(shared controllers ui plugins input-plugins)
     include_hifi_library_headers(script-engine)
     target_sdl2()
+    install_beside_client()
+
 endif()
