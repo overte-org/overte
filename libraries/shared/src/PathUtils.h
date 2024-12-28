@@ -22,22 +22,6 @@
 Q_DECLARE_LOGGING_CATEGORY(pathutils_log)
 
 
-/*@jsdoc
- * The <code>Paths</code> API provides absolute paths to the scripts and resources directories.
- *
- * @namespace Paths
- *
- * @hifi-interface
- * @hifi-client-entity
- * @hifi-avatar
- *
- * @deprecated The Paths API is deprecated. Use {@link Script.resolvePath} and {@link Script.resourcesPath} instead.
- * @readonly
- * @property {string} defaultScripts - The path to the scripts directory. <em>Read-only.</em>
- * @property {string} resources - The path to the resources directory. <em>Read-only.</em>
- */
-
-
 /**
  * @brief Path handling functions
  *
@@ -64,6 +48,11 @@ Q_DECLARE_LOGGING_CATEGORY(pathutils_log)
  * Some combinations don't make sense for some of the code. Interface shouldn't write to /etc because it's a program
  * run by a desktop user.
  *
+ * @note General design notes:
+ *
+ * 1. Everything is initialized once in initialize(). We don't do runtime changes.
+ * 2. No getenv() after initialize(). It's not thread safe.
+ * 3. No getenv() when possible, this should work right out of the box. If customization is needed it's probably a bug.
  *
  *
  */
@@ -158,8 +147,7 @@ public:
     /**
      * @brief Initialize the path system
      *
-     * This will be automatically called internally with the Auto type. Call it manually
-     * to specify another one.
+     * This will be automatically called internally with the default arguments if not done.
      *
      * @param type Type of filesystem layout
      * @param ds  Type of data storage
@@ -172,12 +160,72 @@ public:
 
 
 
+    /**
+     * @brief Get get path to the Qt Resource file
+     *
+     * The RCC file contains data such as scripts and textures
+     *
+     * @return const QString& Path to file
+     */
     static const QString& getRccPath();
+
+
+    /**
+     * @brief Get the URL to static resources
+     *
+     * This normally returns just qrc://, directing things towards the contents of the rcc file.
+     *
+     * However, the RCC file can also be ignored when using out of tree resources, so in this case
+     * it'll return a path pointing to the filesystem instead.
+     *
+     * @return const QString& URL
+     */
     static const QString& resourcesUrl();
+
+
+    /**
+     * @brief Get the URL to a particular static resourcec
+     *
+     * Returns a path relative to resourcesUrl(), this is a convenience function.
+     *
+     * @param relative Relative path
+     * @return QUrl URL consisting of resourcesUrl()/relative
+     */
     static QUrl resourcesUrl(const QString& relative);
+
+
+    /**
+     * @brief Get the base path for static resources
+     *
+     * Like resourcesUrl(), but this points to a local file path instead
+     *
+     * This returns ":/" by default, which is a special value used by the Qt resources system: https://doc.qt.io/qt-5/resources.html
+     *
+     * @note It's not quite clear to me whether this is redundant with resourcesUrl
+     *
+     * @return const QString& Base path, by default ":/"
+     */
     static const QString& resourcesPath();
+
+    /**
+     * @brief Returns the base URL for QML
+     *
+     * This is resourcesUrl()/qml/
+     *
+     * @return const QString& QML base URL
+     */
+
     static const QString& qmlBaseUrl();
     static QUrl expandToLocalDataAbsolutePath(const QUrl& fileUrl);
+
+
+    /**
+     * @brief URL to a QML document
+     *
+     * This is calculated relative to qmlBaseUrl()
+     * @param relative Relative path
+     * @return QUrl URL pointing to qmlBaseUrl()/relative
+     */
     static QUrl qmlUrl(const QString& relative);
 #ifdef DEV_BUILD
     static const QString& projectRootPath();
@@ -207,12 +255,12 @@ public:
      * The server name is used as a component of paths to allow for multiple instances to run on the same machine.
      * The default name is "main".
      *
-     * For instance, by default the server-wide config files will be in "/etc/vircadia/main".
-     * Starting a second instance with a server name of "Bob" will result in a domain that loads the config from "/etc/vircadia/bob"
+     * For instance, by default the server-wide config files will be in "/etc/overte/main".
+     * Starting a second instance with a server name of "bob" will result in a domain that loads the config from "/etc/overte/bob"
      *
      * @param server_name
      */
-    static void setInstanceName(const QString& server_name);
+    //static void setInstanceName(const QString& server_name);
 
     /**
      * @brief Get the instance name
@@ -306,6 +354,18 @@ private:
      */
     static QString findFirstDir(const QStringList &paths, const QString &description);
 
+    /**
+     * @brief Given a list of paths, find the first one that exists
+     *
+     *
+     * @param base Base path
+     * @param subpaths Paths relative to base to check
+     * @param description Description of the kind of path being sought, for error messages
+     * @return QString Found path or empty string
+     */
+    static QString findFirstDir(const QString &base, const QStringList &subpaths, const QString &description);
+
+
     static QString makePath(const QStringList &paths, bool create=false);
 
     // Name for our server instance. This allows us to run multiple instances on the same machine.
@@ -328,6 +388,9 @@ private:
 
     // Location of assignment client plugins
     static QString _plugins_path;
+
+    // Location of default scripts for the interface
+    static QString _default_scripts_path;
 
     static bool _initialized;
     static std::mutex _lock;

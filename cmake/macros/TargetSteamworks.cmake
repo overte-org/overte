@@ -10,4 +10,6 @@ macro(TARGET_STEAMWORKS)
     find_package(Steamworks REQUIRED)
     target_include_directories(${TARGET_NAME} PRIVATE ${STEAMWORKS_INCLUDE_DIRS})
     target_link_libraries(${TARGET_NAME} ${STEAMWORKS_LIBRARIES})
+
+    install_external_library("${STEAMWORKS_LIBRARIES}")
 endmacro()
