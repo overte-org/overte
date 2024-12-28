@@ -20,7 +20,7 @@
     <@if HIFI_USE_SHADOW@>
         <$declareMToonMaterialTextures(ALBEDO)$>
         <@if HIFI_USE_MIRROR@>
-            LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
+            TEXTURE(GRAPHICS_TEXTURE_MATERIAL_MIRROR, sampler2D, mirrorMap);
         <@endif@>
     <@else@>
         <@if HIFI_USE_NORMALMAP@>
@@ -33,7 +33,7 @@
     <@if HIFI_USE_SHADOW or HIFI_USE_UNLIT@>
         <$declareMaterialTextures(ALBEDO)$>
         <@if HIFI_USE_MIRROR@>
-            LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
+            TEXTURE(GRAPHICS_TEXTURE_MATERIAL_MIRROR, sampler2D, mirrorMap);
         <@endif@>
     <@else@>
         <@if not HIFI_USE_LIGHTMAP@>

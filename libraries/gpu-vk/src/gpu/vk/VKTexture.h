@@ -9,8 +9,12 @@
 #define hifi_gpu_vk_VKTexture_h
 
 #include "VKShared.h"
-//#include "VKTextureTransfer.h"
+
+#include <gl/Config.h>
+#include <gl/GLHelpers.h>
+
 #include "VKBackend.h"
+
 
 namespace gpu { namespace vk {
 
@@ -306,6 +310,49 @@ protected:
     VkSampler _vkSampler { VK_NULL_HANDLE };
     // This need to be moved to VKFixedAllocationTexture and allocated in allocateStorage()
     //VkDeviceMemory _vkDeviceMemory{ VK_NULL_HANDLE };
+};
+
+class VKExternalTexture: public VKTexture {
+    friend class VKBackend;
+
+public:
+    VKExternalTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture) :
+            VKTexture(backend, texture, false) {
+            VKBackend& vkBackend = *backend.lock();
+            VKExternalTexture::createTexture(vkBackend);
+            // VKTODO: maybe this needs to be done on OpenGL thread?
+            VKExternalTexture::initGL(vkBackend);
+            VKExternalTexture::transferGL(vkBackend);
+            VKExternalTexture::postTransfer(vkBackend);
+        }; // VKTODO
+    ~VKExternalTexture() override;
+
+protected:
+    Size size() const override { return _size; }
+
+    //VmaAllocation _vmaAllocation;
+    VkDeviceMemory _sharedMemory;
+    size_t _sharedMemorySize;
+    const Size _size{ 0 }; // VKTODO: how is this used?
+
+    void createTexture(VKBackend &backend) override;
+    void initGL(VKBackend &backend);
+    void transferGL(VKBackend &backend);
+    void transfer(VKBackend &backend) override {};
+    void postTransfer(VKBackend &backend) override;
+    VkDescriptorImageInfo getDescriptorImageInfo() override;
+    VkImageView _vkImageView { VK_NULL_HANDLE };
+    VkImageLayout _vkImageLayout {}; // VKTODO
+    VkSampler _vkSampler { VK_NULL_HANDLE };
+
+    // Shared texture properties
+#ifdef WIN32
+    HANDLE _sharedHandle { nullptr };  // Windows handle for shared texture memory.
+#else
+    int _sharedFd { -1 }; // File descriptor is used for sharing memory between Vulkan and OpenGL on Linux.
+#endif
+    GLuint _openGLMemoryObject = 0;
+    GLuint _openGLId = 0;
 };
 
 } }

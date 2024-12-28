@@ -58,7 +58,7 @@ layout(location=RENDER_UTILS_ATTR_FADE2) flat in float _isTofu;
 <@if HIFI_USE_MIRROR@>
     <@include graphics/ShaderConstants.h@>
 
-    LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
+    TEXTURE(GRAPHICS_TEXTURE_MATERIAL_MIRROR, sampler2D, mirrorMap);
 <@endif@>
 
 void main() {

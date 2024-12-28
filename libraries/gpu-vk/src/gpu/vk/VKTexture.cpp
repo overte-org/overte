@@ -599,6 +599,206 @@ VKStrictResourceTexture::~VKStrictResourceTexture() {
     recycler.trashVmaAllocation(_vmaAllocation);
 }
 
+void VKExternalTexture::createTexture(VKBackend &backend) {
+    auto device = backend.getContext().device;
+
+    VkImageCreateInfo imageCI = vks::initializers::imageCreateInfo();
+    imageCI.imageType = VK_IMAGE_TYPE_2D;
+    imageCI.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+    imageCI.extent.width = _gpuObject.getWidth();
+    imageCI.extent.height = _gpuObject.getHeight();
+    imageCI.extent.depth = 1;
+    imageCI.arrayLayers = _gpuObject.isArray() ? _gpuObject.getNumSlices() : 1;
+    imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCI.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+    if (_gpuObject.getType() == Texture::TEX_CUBE) {
+        imageCI.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+        imageCI.arrayLayers = 6;
+    }
+
+    _transferData.mipLevels = _gpuObject.getNumMips();
+    _transferData.width = _gpuObject.getWidth();
+    _transferData.height = _gpuObject.getHeight();
+
+    _transferData.buffer_size = 0;
+
+    /*for (uint16_t sourceMip = 0; sourceMip < _transferData.mipLevels; ++sourceMip) {
+        if (!_gpuObject.isStoredMipFaceAvailable(sourceMip)) {
+            continue;
+        }
+        _transferData.mips.emplace_back();
+        //VKTODO: error out if needed
+        size_t face_count = 1;
+        if (_gpuObject.getType() == Texture::TEX_CUBE) {
+            Q_ASSERT(_gpuObject.getNumFaces() == 6);
+            face_count = 6;
+        }else{
+            Q_ASSERT(_gpuObject.getNumFaces() == 1);
+        }
+
+        // Is conversion from RGB to RGBA needed?
+        bool needsAddingAlpha = false;
+        bool needsBGRToRGB = false;
+        auto storedFormat = _gpuObject.getStoredMipFormat();
+        auto texelFormat = _gpuObject.getTexelFormat();
+        if ((storedFormat.getSemantic() == gpu::BGRA || storedFormat.getSemantic() == gpu::SBGRA)
+            && !(texelFormat.getSemantic() == gpu::BGRA || texelFormat.getSemantic() == gpu::SBGRA)) {
+            needsBGRToRGB = true;
+        }
+        auto storedVkFormat = evalTexelFormatInternal(_gpuObject.getStoredMipFormat());
+        auto texelVkFormat = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+        if (storedFormat.getDimension() != texelFormat.getDimension()) {
+            if (storedFormat.getDimension() == gpu::VEC3 && texelFormat.getDimension() == gpu::VEC4) {
+                // It's best to make sure that this is not happening in unexpected cases and causing bugs
+                Q_ASSERT((storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_UNORM)
+                         || (storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_SRGB));
+                needsAddingAlpha = true;
+            } else {
+                qDebug() << "Format mismatch, stored: " << storedVkFormat << " texel: " << texelVkFormat;
+                Q_ASSERT(false);
+            }
+        }
+
+        for (size_t face = 0; face < face_count; face++) {
+            auto dim = _gpuObject.evalMipDimensions(sourceMip);
+            auto mipData = _gpuObject.accessStoredMipFace(sourceMip, face);  // VKTODO: only one face for now
+            auto mipSize = _gpuObject.getStoredMipFaceSize(sourceMip, face);
+            if (mipData) {
+                TransferData::Mip mip{};
+                mip.offset = _transferData.buffer_size;
+                mip.size = mipSize;
+                mip.data = mipData;
+                mip.width = dim.x;
+                mip.height = dim.y;
+                mip.needsAddingAlpha = needsAddingAlpha;
+                mip.needsBGRToRGB = needsBGRToRGB;
+                if (needsAddingAlpha) {
+                    Q_ASSERT(mipSize % 3 == 0);
+                    _transferData.buffer_size += mipSize / 3 * 4;
+                } else {
+                    _transferData.buffer_size += mipSize;
+                }
+                _transferData.mips.back().push_back(mip);
+                // VKTODO auto texelFormat = evalTexelFormatInternal(_gpuObject.getStoredMipFormat());
+                //return copyMipFaceLinesFromTexture(targetMip, face, dim, 0, texelFormat.internalFormat, texelFormat.format, texelFormat.type, mipSize, mipData->readData());
+            } else {
+                qCDebug(gpu_vk_logging) << "Missing mipData level=" << sourceMip
+                                        << " face=" << 0 << " for texture " << _gpuObject.source().c_str();
+            }
+        }
+    }*/
+
+    imageCI.mipLevels = _transferData.mips.size();
+    VK_CHECK_RESULT(vkCreateImage(device->logicalDevice, &imageCI, nullptr, &_vkImage));
+
+    VkMemoryRequirements memoryRequirements;
+    vkGetImageMemoryRequirements(device->logicalDevice, _vkImage, &memoryRequirements);
+
+    _sharedMemorySize = memoryRequirements.size;
+
+    //VmaAllocationCreateInfo allocationCI = {};
+    //allocationCI.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    //qDebug() << "storedSize: " << _gpuObject.getStoredSize();
+    VkExportMemoryAllocateInfo exportMemoryAllocateInfo {};
+    exportMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
+#ifdef WIN32
+    exportMemoryAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_BIT;
+#else
+    exportMemoryAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+#endif
+    VkMemoryAllocateInfo memoryAllocateInfo {};
+    memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memoryAllocateInfo.allocationSize = memoryRequirements.size;
+    memoryAllocateInfo.memoryTypeIndex = device->getMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    memoryAllocateInfo.pNext = &exportMemoryAllocateInfo;
+
+    VK_CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memoryAllocateInfo, nullptr, &_sharedMemory));
+    VK_CHECK_RESULT(vkBindImageMemory(device->logicalDevice, _vkImage, _sharedMemory, 0));
+#ifdef WIN32
+    VkMemoryGetWin32HandleInfoKHR memoryGetWin32HandleInfoKHR {};
+    memoryGetWin32HandleInfoKHR.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
+    memoryGetWin32HandleInfoKHR.memory = _sharedMemory,
+    memoryGetWin32HandleInfoKHR.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT_KHR;
+    VK_CHECK_RESULT(vkGetMemoryWin32HandleKHR(device->logicalDevice, &memoryGetWin32HandleInfoKHR, &_sharedHandle));
+#else
+    VkMemoryGetFdInfoKHR memoryGetFdInfoKHR {};
+    memoryGetFdInfoKHR.sType = VK_STRUCTURE_TYPE_MEMORY_GET_FD_INFO_KHR;
+    memoryGetFdInfoKHR.memory = _sharedMemory;
+    memoryGetFdInfoKHR.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
+    VK_CHECK_RESULT(vkGetMemoryFdKHR(device->logicalDevice, &memoryGetFdInfoKHR, &_sharedFd));
+#endif
+}
+
+void VKExternalTexture::initGL(gpu::vk::VKBackend& backend) {
+    glCreateMemoryObjectsEXT(1, &_openGLMemoryObject);
+#ifdef WIN32
+    glImportMemoryWin32HandleEXT(_openGLMemoryObject, _sharedMemorySize, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, _sharedHandle);
+#else
+    glImportMemoryFdEXT(_openGLMemoryObject, _sharedMemorySize, GL_HANDLE_TYPE_OPAQUE_FD_EXT, _sharedFd);
+    _sharedFd = -1; // File descriptor can be used only once?
+#endif
+}
+
+void VKExternalTexture::transferGL(VKBackend &backend) {
+
+}
+
+void VKExternalTexture::postTransfer(VKBackend &backend) {
+    auto device = backend.getContext().device;
+    // Create sampler
+    VkSamplerCreateInfo samplerCreateInfo = {};
+    samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerCreateInfo.magFilter = VK_FILTER_LINEAR; // VKTODO
+    samplerCreateInfo.minFilter = VK_FILTER_LINEAR; // VKTODO
+    samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerCreateInfo.mipLodBias = 0.0f;
+    samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
+    samplerCreateInfo.minLod = 0.0f;
+    samplerCreateInfo.maxLod = 0.0f;
+    samplerCreateInfo.maxAnisotropy = 1.0f;
+    VK_CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &_vkSampler));
+
+    // Create image view
+    VkImageViewCreateInfo viewCreateInfo = {};
+    viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewCreateInfo.pNext = nullptr;
+    viewCreateInfo.viewType = getVKTextureType(_gpuObject);
+    viewCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+    viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    viewCreateInfo.subresourceRange.levelCount = 1;
+    if (_gpuObject.getType() == Texture::TEX_CUBE) {
+        viewCreateInfo.subresourceRange.layerCount = 6;
+    } else {
+        viewCreateInfo.subresourceRange.layerCount = 1;
+    }
+    viewCreateInfo.image = _vkImage;
+    VK_CHECK_RESULT(vkCreateImageView(device->logicalDevice, &viewCreateInfo, nullptr, &_vkImageView));
+};
+
+VKExternalTexture::~VKExternalTexture() {
+    auto backend = _backend.lock();
+    auto device = backend->getContext().device->logicalDevice;
+    auto &recycler = backend->getContext().recycler;
+    recycler.trashVkImageView(_vkImageView);
+    if (_vkSampler) {
+        recycler.trashVkSampler(_vkSampler);
+    }
+    recycler.trashVkImage(_vkImage);
+    recycler.trashVkDeviceMemory(_sharedMemory);
+}
+
+VkDescriptorImageInfo VKExternalTexture::getDescriptorImageInfo() {
+    VkDescriptorImageInfo result {};
+    result.sampler = _vkSampler;
+    result.imageLayout = _vkImageLayout;
+    result.imageView = _vkImageView;
+    return result;
+}
+
 /*Size VKTexture::copyMipFaceFromTexture(uint16_t sourceMip, uint16_t targetMip, uint8_t face) const {
     if (!_gpuObject.isStoredMipFaceAvailable(sourceMip)) {
         return 0;
