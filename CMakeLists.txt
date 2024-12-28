@@ -28,7 +28,15 @@ else()
 endif()
 
 
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/macros/GetVersionFromGit.cmake")
+get_version_from_git()
 
+set(OVERTE_VERSION_MAJOR "${GIT_VERSION_MAJOR}")
+set(OVERTE_VERSION_MINOR "${GIT_VERSION_MINOR}")
+set(OVERTE_VERSION_PATCH "${GIT_VERSION_PATCH}")
+set(OVERTE_VERSION_TWEAK "${GIT_VERSION_TWEAK}")
+
+set(OVERTE_VERSION "${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_PATCH}.${GIT_VERSION_TWEAK}")
 
 
 # This should allow using long paths on Windows
@@ -251,7 +259,7 @@ endif()
 option(VCPKG_APPLOCAL_DEPS OFF)
 
 
-project(overte LANGUAGES CXX)
+project(overte LANGUAGES CXX VERSION "${GIT_VERSION_FULL}")
 
 if (UNIX AND NOT APPLE)
   # A bit of convenience for later
@@ -259,6 +267,8 @@ if (UNIX AND NOT APPLE)
 
   # GNU paths for Linux installs. Must come after project
   include(GNUInstallDirs)
+
+ # set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib;$ORIGIN/../lib64")
 endif()
 
 
