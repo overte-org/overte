@@ -63,7 +63,7 @@ UNIFORM_BUFFER(RENDER_UTILS_BUFFER_SSAO_PARAMS, ambientOcclusionParamsBuffer) {
     AmbientOcclusionParams params;
 };
 
-LAYOUT(binding=RENDER_UTILS_BUFFER_SSAO_FRAME_PARAMS) uniform ambientOcclusionFrameParamsBuffer {
+UNIFORM_BUFFER(RENDER_UTILS_BUFFER_SSAO_FRAME_PARAMS, ambientOcclusionFrameParamsBuffer) {
     AmbientOcclusionFrameParams frameParams;
 };
 

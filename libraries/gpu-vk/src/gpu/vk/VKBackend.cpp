@@ -1223,6 +1223,11 @@ void VKBackend::renderPassDraw(const Batch& batch) {
         case Batch::COMMAND_multiDrawIndexedIndirect: {
             // updates for draw calls
             ++_currentDraw;
+
+            /*if (_cache.pipelineState.pipeline->getProgram()->getShaders()[0]->getSource().name == "simple_procedural.vert") {
+                printf("simple_procedural.vert");
+                break;
+            }*/ // VKTODO: currently crashes on procedural shaders. I tried this as a workaround,but it didn't work.
             _cache.pipelineState.primitiveTopology = getPrimitiveTopologyFromCommand(*command, batch, *offset);
             updateInput();
             updateTransform(batch);
@@ -1413,7 +1418,7 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
         // Return the texture object (if any) associated with the texture, without extensive logic
         // (external textures are
         return Backend::getGPUObject<GLTexture>(texture);*/
-        return nullptr;
+
         //return Parent::syncGPUObject(texturePointer);
     }
 
@@ -1428,6 +1433,10 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
         switch (texture.getUsageType()) {
             case TextureUsageType::RENDERBUFFER:
                 object = new VKAttachmentTexture(shared_from_this(), texture);
+                break;
+
+            case TextureUsageType::EXTERNAL:
+                object = new VKExternalTexture(shared_from_this(), texture);
                 break;
 
 #if FORCE_STRICT_TEXTURE
@@ -1532,7 +1541,7 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
         }
     }
 
-    _textures.insert(object);
+    _textures.insert(object); // VKTODO: shouldn't that only be inserted when new object is created?
     return object;
 }
 
@@ -1920,6 +1929,13 @@ void VKBackend::perFrameCleanup() {
     capacityBeforeClear = recycler.vkSurfacesKHR.capacity();
     recycler.vkSurfacesKHR.clear();
     recycler.vkSurfacesKHR.reserve(capacityBeforeClear);
+
+    for (auto memory: recycler.vkDeviceMemories) {
+        vkFreeMemory(device, memory, nullptr);
+    }
+    capacityBeforeClear = recycler.vkDeviceMemories.capacity();
+    recycler.vkDeviceMemories.clear();
+    recycler.vkDeviceMemories.reserve(capacityBeforeClear);
 
     for (auto allocation : recycler.vmaAllocations) {
         vmaFreeMemory(vks::Allocation::getAllocator(), allocation);

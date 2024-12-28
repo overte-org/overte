@@ -6,6 +6,11 @@
 
 #include "Context.h"
 
+namespace gpu::vk {
+// Extension for sharing memory with OpenGL, needed by QML UI and Web entities.
+PFN_vkGetMemoryFdKHR vkGetMemoryFdKHR;
+}
+
 using namespace vks;
 
 // Start of VKS code
@@ -85,6 +90,17 @@ void Context::createInstance() {
         throw std::runtime_error("Vulkan device already exists");
     }
 
+    requireDeviceExtensions({
+#ifdef WIN32
+                        VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
+                        VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
+#else
+                        VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
+                        VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME,
+#endif
+                        VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
+                        VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME});
+
     if (isExtensionPresent(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
         requireExtensions({ VK_EXT_DEBUG_UTILS_EXTENSION_NAME });
         enableValidation = true;
@@ -98,7 +114,9 @@ void Context::createInstance() {
     appInfo.pEngineName = "VulkanExamples";
     appInfo.apiVersion = VK_API_VERSION_1_1;
 
-    std::set<std::string> instanceExtensions = { VK_KHR_SURFACE_EXTENSION_NAME };
+    std::set<std::string> instanceExtensions = { VK_KHR_SURFACE_EXTENSION_NAME,
+                                                 VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
+                                                 VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME };
 
 // Enable surface extensions depending on OS
 #if defined(_WIN32)
@@ -166,6 +184,8 @@ void Context::createInstance() {
     if (enableDebugMarkers) {
         debugutils::setup(instance);
     }
+
+    gpu::vk::vkGetMemoryFdKHR = reinterpret_cast<PFN_vkGetMemoryFdKHR>(vkGetInstanceProcAddr(instance, "vkGetMemoryFdKHR"));
 }
 
 void Context::destroyContext() {
@@ -330,6 +350,10 @@ void Context::Recycler::trashVkShaderModule(VkShaderModule& module) {
 void Context::Recycler::trashVkSwapchainKHR(VkSwapchainKHR& swapchain) {
     std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
     vkSwapchainsKHR.push_back(swapchain);
+}
+
+void Context::Recycler::trashVkDeviceMemory(VkDeviceMemory& memory) {
+    vkDeviceMemories.push_back(memory);
 }
 
 void Context::Recycler::trashVKSurfaceKHR(VkSurfaceKHR& surface) {
