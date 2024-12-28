@@ -19,7 +19,7 @@
 // Hack comment to absorb the extra '//' scribe prepends
 
 #if !defined(GPU_SSBO_TRANSFORM_OBJECT)
-LAYOUT(binding=GPU_RESOURCE_BUFFER_SLOT0_TEXTURE) uniform samplerBuffer polylineVerticesBuffer;
+RESOURCE_BUFFER(GPU_RESOURCE_BUFFER_SLOT0_TEXTURE, ssbo0Buffer);
 PolylineVertex getPolylineVertex(int i) {
     int offset = 4 * i;
     PolylineVertex vertex;
@@ -30,7 +30,8 @@ PolylineVertex getPolylineVertex(int i) {
     return vertex;
 }
 #else
-LAYOUT_STD140(binding=GPU_RESOURCE_BUFFER_SLOT0_STORAGE) buffer polylineVerticesBuffer {
+// VKTODO: what is LAYOUT_STD140?
+RESOURCE_BUFFER(GPU_RESOURCE_BUFFER_SLOT0_STORAGE, polylineVerticesBuffer) {
     PolylineVertex _vertices[];
 };
 PolylineVertex getPolylineVertex(int i) {
@@ -39,7 +40,8 @@ PolylineVertex getPolylineVertex(int i) {
 }
 #endif
 
-LAYOUT_STD140(binding=0) uniform polylineDataBuffer {
+// VKTODO: what is LAYOUT_STD140?
+UNIFORM_BUFFER(0, polylineDataBuffer) {
     PolylineData _polylineData;
 };
 

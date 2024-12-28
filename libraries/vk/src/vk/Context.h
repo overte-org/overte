@@ -18,6 +18,9 @@ namespace gpu::vk {
     class VKTexture;
     class VKQuery;
     class VKBackend;
+
+    // Extension for sharing memory with OpenGL, needed by QML UI and Web entities.
+    extern PFN_vkGetMemoryFdKHR vkGetMemoryFdKHR;
 }
 
 namespace vks {
@@ -122,6 +125,7 @@ public:
         void trashVkShaderModule(VkShaderModule &module);
         void trashVkSwapchainKHR(VkSwapchainKHR &swapchain);
         void trashVKSurfaceKHR(VkSurfaceKHR &surface);
+        void trashVkDeviceMemory(VkDeviceMemory &memory);
         void trashVmaAllocation(VmaAllocation &allocation);
 
         void framebufferDeleted(gpu::vk::VKFramebuffer *framebuffer);
@@ -142,6 +146,7 @@ public:
         std::vector<VkShaderModule> vkShaderModules;
         std::vector<VkSwapchainKHR> vkSwapchainsKHR;
         std::vector<VkSurfaceKHR> vkSurfacesKHR;
+        std::vector<VkDeviceMemory> vkDeviceMemories;
         std::vector<VmaAllocation> vmaAllocations;
 
         // List of pointers to objects that were deleted and need to be removed from backend object sets.

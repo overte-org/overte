@@ -356,14 +356,14 @@ float fetchUVAnimationMaskMap(vec2 uv) {
 #else
 
 <@if withAlbedo@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO) uniform sampler2D albedoMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_ALBEDO, sampler2D, albedoMap);
 vec4 fetchAlbedoMap(vec2 uv) {
     return texture(albedoMap, uv, TAA_TEXTURE_LOD_BIAS);
 }
 <@endif@>
 
 <@if withNormal@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL) uniform sampler2D normalMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_NORMAL, sampler2D, normalMap);
 vec3 fetchNormalMap(vec2 uv) {
     // unpack normal, swizzle to get into hifi tangent space with Y axis pointing out
     vec2 t = 2.0 * (texture(normalMap, uv, TAA_TEXTURE_LOD_BIAS).rg - vec2(0.5, 0.5));
@@ -373,42 +373,42 @@ vec3 fetchNormalMap(vec2 uv) {
 <@endif@>
 
 <@if withShade@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SHADE) uniform sampler2D shadeMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_SHADE, sampler2D, shadeMap);
 vec3 fetchShadeMap(vec2 uv) {
     return texture(shadeMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
 }
 <@endif@>
 
 <@if withEmissive@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP) uniform sampler2D emissiveMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP, sampler2D, emissiveMap);
 vec3 fetchEmissiveMap(vec2 uv) {
     return texture(emissiveMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
 }
 <@endif@>
 
 <@if withShadingShift@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SHADING_SHIFT) uniform sampler2D shadingShiftMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_SHADING_SHIFT, sampler2D, shadingShiftMap);
 float fetchShadingShiftMap(vec2 uv) {
     return texture(shadingShiftMap, uv, TAA_TEXTURE_LOD_BIAS).r;
 }
 <@endif@>
 
 <@if withMatcap@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MATCAP) uniform sampler2D matcapMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_MATCAP, sampler2D, matcapMap);
 vec3 fetchMatcapMap(vec2 uv) {
     return texture(matcapMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
 }
 <@endif@>
 
 <@if withRim@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_RIM) uniform sampler2D rimMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_RIM, sampler2D, rimMap);
 vec3 fetchRimMap(vec2 uv) {
     return texture(rimMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
 }
 <@endif@>
 
 <@if withUVAnimationMask@>
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_UV_ANIMATION_MASK) uniform sampler2D uvAnimationMaskMap;
+TEXTURE(GRAPHICS_TEXTURE_MATERIAL_UV_ANIMATION_MASK, sampler2D, uvAnimationMaskMap);
 float fetchUVAnimationMaskMap(vec2 uv) {
     return texture(uvAnimationMaskMap, uv, TAA_TEXTURE_LOD_BIAS).r;
 }

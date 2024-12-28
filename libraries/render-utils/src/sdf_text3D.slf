@@ -48,7 +48,7 @@ INPUT(RENDER_UTILS_ATTR_FADE1, vec4, _glyphBounds); // we're reusing the fade te
 <@if HIFI_USE_MIRROR@>
     <@include graphics/ShaderConstants.h@>
 
-    LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
+    TEXTURE(GRAPHICS_TEXTURE_MATERIAL_MIRROR, sampler2D, mirrorMap);
 <@endif@>
 
 void main() {

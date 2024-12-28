@@ -22,7 +22,7 @@
 // the source occlusion texture
 TEXTURE(RENDER_UTILS_TEXTURE_SSAO_OCCLUSION, sampler2D, occlusionMap);
 
-LAYOUT(binding=RENDER_UTILS_BUFFER_SSAO_BLUR_PARAMS) uniform blurParamsBuffer {
+UNIFORM_BUFFER(RENDER_UTILS_BUFFER_SSAO_BLUR_PARAMS, blurParamsBuffer) {
     AmbientOcclusionBlurParams blurParams;
 };
 
