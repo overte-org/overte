@@ -41,8 +41,9 @@
 
 #include <ktx/KTX.h>
 
-
-
+#ifdef Q_OS_WIN
+#include <Windows.h>
+#endif
 
 void stripKtxKeyValues(const std::string& sourceFile, const std::string& destFile) {
     auto sourceStorage = std::make_shared<storage::FileStorage>(sourceFile.c_str());

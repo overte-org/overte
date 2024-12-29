@@ -1,6 +1,4 @@
 macro(TARGET_DISCORD_RPC)
-    find_library(DISCORD_RPC_LIBRARY_RELEASE discord-rpc PATHS ${VCPKG_INSTALL_ROOT}/lib)
-    find_library(DISCORD_RPC_LIBRARY_DEBUG discord-rpc PATHS ${VCPKG_INSTALL_ROOT}/debug/lib)
-    select_library_configurations(DISCORD_RPC)
-    target_link_libraries(${TARGET_NAME} ${DISCORD_RPC_LIBRARY})
+    find_package(discord-rpc REQUIRED)
+    target_link_libraries(${TARGET_NAME} discord-rpc::discord-rpc)
 endmacro()
