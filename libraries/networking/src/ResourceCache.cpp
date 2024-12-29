@@ -687,6 +687,8 @@ void Resource::init(bool resetLoaded) {
     }
 
 
+    qCDebug(networking) << "Loading URL" << _activeUrl;
+
     // Dropbox by default creates URLs like:
     // https://www.dropbox.com/scl/fi/xxx/avatar.fbx?rlkey=xxx&dl=0
     //

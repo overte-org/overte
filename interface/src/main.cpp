@@ -37,6 +37,7 @@
 #include <plugins/PluginManager.h>
 #include <plugins/DisplayPlugin.h>
 #include <plugins/CodecPlugin.h>
+#include "PathUtils.h"
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
@@ -135,6 +136,11 @@ int main(int argc, const char* argv[]) {
     QCommandLineOption allowMultipleInstancesOption(
         "allowMultipleInstances",
         "Allow multiple instances to run."
+    );
+    QCommandLineOption instanceOption(
+        "instance",
+        "Name of the instance to run. An instance has its own settings."
+        "name"
     );
     QCommandLineOption displaysOption(
         "display",
@@ -300,6 +306,7 @@ int main(int argc, const char* argv[]) {
     parser.addOption(overrideAppLocalDataPathOption);
     parser.addOption(scriptsOption);
     parser.addOption(allowMultipleInstancesOption);
+    parser.addOption(instanceOption);
     parser.addOption(displaysOption);
     parser.addOption(disableDisplaysOption);
     parser.addOption(disableInputsOption);
@@ -334,6 +341,9 @@ int main(int argc, const char* argv[]) {
 
 
     QString applicationPath;
+    QString instanceName = "main";
+
+
     // A temporary application instance is needed to get the location of the running executable
     // Tests using high_resolution_clock show that this takes about 30-50 microseconds (on my machine, YMMV)
     // If we wanted to avoid the QCoreApplication, we would need to write our own
@@ -343,6 +353,7 @@ int main(int argc, const char* argv[]) {
 
         parser.process(QCoreApplication::arguments());  // Must be run after QCoreApplication is initalised.
 
+
 #ifdef Q_OS_OSX
         if (QFileInfo::exists(QCoreApplication::applicationDirPath() + "/../../../config.json")) {
             applicationPath = QCoreApplication::applicationDirPath() + "/../../../";
@@ -351,7 +362,18 @@ int main(int argc, const char* argv[]) {
         }
 #else
         applicationPath = QCoreApplication::applicationDirPath();
+        qInfo() << "Application path is: " << applicationPath;
 #endif
+
+
+        // PathUtils::initialize wants a fully working QCoreApplication, so we've got to do this
+        // in a scope where a QApplication exists. A bit hacky, but should be harmless and saves
+        // us a bunch of work.
+
+        if (parser.isSet(instanceOption)) {
+            instanceName = parser.value(instanceOption).toUtf8();
+        }
+        PathUtils::initialize(PathUtils::FilesystemLayout::Auto, PathUtils::DataStorage::Auto, instanceName);
     }
 
     // TODO: We need settings for Application, but Settings needs an Application
@@ -727,6 +749,7 @@ int main(int argc, const char* argv[]) {
     {
         RunningMarker runningMarker(RUNNING_MARKER_FILENAME);
         bool runningMarkerExisted = runningMarker.fileExists();
+        qInfo() << "Running marker existed";
         runningMarker.writeRunningMarkerFile();
 
         bool noUpdater = parser.isSet(noUpdaterOption);
