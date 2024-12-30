@@ -322,10 +322,12 @@ public:
             VKExternalTexture::createTexture(vkBackend);
             // VKTODO: maybe this needs to be done on OpenGL thread?
             VKExternalTexture::initGL(vkBackend);
-            VKExternalTexture::transferGL(vkBackend);
+            //VKExternalTexture::transferGL(vkBackend);
             VKExternalTexture::postTransfer(vkBackend);
         }; // VKTODO
-    ~VKExternalTexture() override;
+    ~VKExternalTexture() override; // VKTODO: add proper cleanup for both Vulkan and OpenGL
+    void setSource(GLuint source) { _openGLSourceId = source; };
+    void transferGL(VKBackend &backend);
 
 protected:
     Size size() const override { return _size; }
@@ -337,7 +339,6 @@ protected:
 
     void createTexture(VKBackend &backend) override;
     void initGL(VKBackend &backend);
-    void transferGL(VKBackend &backend);
     void transfer(VKBackend &backend) override {};
     void postTransfer(VKBackend &backend) override;
     VkDescriptorImageInfo getDescriptorImageInfo() override;
@@ -353,6 +354,7 @@ protected:
 #endif
     GLuint _openGLMemoryObject = 0;
     GLuint _openGLId = 0;
+    GLuint _openGLSourceId = 0;
 };
 
 } }
