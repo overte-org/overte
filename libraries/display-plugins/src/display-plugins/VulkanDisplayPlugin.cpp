@@ -287,6 +287,7 @@ bool VulkanDisplayPlugin::activate() {
         }
         //CHECK_GL_ERROR();
         widget->context()->doneCurrent();
+        widget->context()->moveToThread(presentThread.get());
 
         presentThread->setContext(&vks::Context::get());
         connect(presentThread.data(), &QThread::started, [] { setThreadName("OpenGL Present Thread"); });
@@ -752,9 +753,12 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             });
             // Execute the frame rendering commands
             PROFILE_RANGE_EX(render, "execute", 0xff00ff00, frameId)
-
+            auto context = _container->getPrimaryWidget()->context();
+            context->moveToThread(QThread::currentThread());
+            context->makeCurrent();
             vkBackend->setDrawCommandBuffer(commandBuffer);
             _gpuContext->executeFrame(_currentFrame);
+            context->doneCurrent();
             _renderedFrameCount++;
             qDebug() << "Frame rendered: " << _renderedFrameCount;
         }

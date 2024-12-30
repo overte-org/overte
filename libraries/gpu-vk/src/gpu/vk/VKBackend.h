@@ -427,6 +427,9 @@ public:
     virtual void do_popProfileRange(const Batch& batch, size_t paramOffset) final;
 
 protected:
+    // Initializes parts of the backend that can't be initialized in the constuctor.
+    void initBeforeFirstFrame();
+
     void initTransform();
     void initDefaultTexture();
 
@@ -487,6 +490,7 @@ protected:
     static std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> _commandCalls;
     static const size_t INVALID_OFFSET = (size_t)-1;
     static size_t UNIFORM_BUFFER_OFFSET_ALIGNMENT;
+    bool _isInitialized {false};
 };
 
 }}  // namespace gpu::vulkan

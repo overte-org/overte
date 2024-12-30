@@ -46,8 +46,6 @@ BackendPointer VKBackend::createBackend() {
     // FIXME provide a mechanism to override the backend for testing
     // Where the gpuContext is initialized and where the TRUE Backend is created and assigned
     std::shared_ptr<VKBackend> result = std::make_shared<VKBackend>();
-    result->initTransform();
-    result->initDefaultTexture();
     INSTANCE = result.get();
     void* voidInstance = &(*result);
     qApp->setProperty(VK_BACKEND_PROPERTY_NAME, QVariant::fromValue(voidInstance));
@@ -203,6 +201,13 @@ Cache _cache;
 
 void VKBackend::executeFrame(const FramePointer& frame) {
     using namespace vks::debugutils;
+
+    // Initialize parts that cannot be initialized in default constructor.
+    if (!_isInitialized) {
+        initBeforeFirstFrame();
+        _isInitialized = true;
+    }
+
     // Create descriptor pool
     // VKTODO: delete descriptor pool after it's not needed
     //_frameData._descriptorPool
@@ -1385,9 +1390,12 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
     /*if (!texture) {
         return nullptr;
     }*/
+    VKTexture* object = Backend::getGPUObject<VKTexture>(texture);
 
     if (TextureUsageType::EXTERNAL == texture.getUsageType()) {
-        /*Texture::ExternalUpdates updates = texture.getUpdates();
+        Q_ASSERT(GLAD_GL_EXT_memory_object);
+        Q_ASSERT(GLAD_GL_EXT_semaphore);
+        Texture::ExternalUpdates updates = texture.getUpdates();
         if (!updates.empty()) {
             Texture::ExternalRecycler recycler = texture.getExternalRecycler();
             Q_ASSERT(recycler);
@@ -1400,7 +1408,7 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
                 // work is involved
                 recycler(update.first, update.second);
                 updates.pop_front();
-            }
+            } // VKTODO: should that be thread-safe?
 
             // The last texture remaining is the one we'll use to create the GLTexture
             const auto& update = updates.front();
@@ -1411,13 +1419,23 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
                 glDeleteSync(fence);
             }
 
+            if (!object) {
+                object = new VKExternalTexture(shared_from_this(), texture);
+            }
+            auto externalTexture = dynamic_cast<VKExternalTexture*>(object);
+            Q_ASSERT(externalTexture);
+            externalTexture->setSource(update.first);
+            externalTexture->transferGL(*this); // VKTODO: add texture resizing if needed
+
             // Create the new texture object (replaces any previous texture object)
-            new GLExternalTexture(shared_from_this(), texture, update.first);
+
+            return object;
+            //new GLExternalTexture(shared_from_this(), texture, update.first);
         }
 
         // Return the texture object (if any) associated with the texture, without extensive logic
         // (external textures are
-        return Backend::getGPUObject<GLTexture>(texture);*/
+        //return Backend::getGPUObject<GLTexture>(texture);*/
 
         //return Parent::syncGPUObject(texturePointer);
     }
@@ -1427,7 +1445,6 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
         return nullptr;
     }
 
-    VKTexture* object = Backend::getGPUObject<VKTexture>(texture);
     // VKTODO: check object->_storageStamp to see if texture is outdated
     if (!object) {
         switch (texture.getUsageType()) {
@@ -1982,6 +1999,11 @@ void VKBackend::beforeShutdownCleanup() {
 
     // One more cleanup to destroy Vulkan objects released by backend objects.
     perFrameCleanup();
+}
+
+void VKBackend::initBeforeFirstFrame() {
+    initTransform();
+    initDefaultTexture();
 }
 
 void VKBackend::initTransform() {
