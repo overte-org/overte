@@ -10,6 +10,7 @@
 
 #include <QtCore/QThread>
 #include <NumericalConstants.h>
+#include <gl/GLHelpers.h>
 
 #include "VKBackend.h"
 #include "vk/Allocation.h"
@@ -609,6 +610,7 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
     imageCI.extent.height = _gpuObject.getHeight();
     imageCI.extent.depth = 1;
     imageCI.arrayLayers = _gpuObject.isArray() ? _gpuObject.getNumSlices() : 1;
+    imageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
     imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageCI.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -617,7 +619,7 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
         imageCI.arrayLayers = 6;
     }
 
-    _transferData.mipLevels = _gpuObject.getNumMips();
+    _transferData.mipLevels = 1; // VKTODO: generate mipmaps for web textures later
     _transferData.width = _gpuObject.getWidth();
     _transferData.height = _gpuObject.getHeight();
 
@@ -689,7 +691,17 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
         }
     }*/
 
-    imageCI.mipLevels = _transferData.mips.size();
+    imageCI.mipLevels = 1;
+
+    VkExternalMemoryImageCreateInfo externalMemoryImageCI {};
+    externalMemoryImageCI.sType = VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO;
+#ifdef WIN32
+    externalMemoryImageCI.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_WIN32_BIT;
+#else
+    externalMemoryImageCI.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
+#endif
+    imageCI.pNext = &externalMemoryImageCI;
+
     VK_CHECK_RESULT(vkCreateImage(device->logicalDevice, &imageCI, nullptr, &_vkImage));
 
     VkMemoryRequirements memoryRequirements;
@@ -714,7 +726,6 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
     memoryAllocateInfo.pNext = &exportMemoryAllocateInfo;
 
     VK_CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memoryAllocateInfo, nullptr, &_sharedMemory));
-    VK_CHECK_RESULT(vkBindImageMemory(device->logicalDevice, _vkImage, _sharedMemory, 0));
 #ifdef WIN32
     VkMemoryGetWin32HandleInfoKHR memoryGetWin32HandleInfoKHR {};
     memoryGetWin32HandleInfoKHR.sType = VK_STRUCTURE_TYPE_MEMORY_GET_WIN32_HANDLE_INFO_KHR;
@@ -728,20 +739,74 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
     memoryGetFdInfoKHR.handleType = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT_KHR;
     VK_CHECK_RESULT(vkGetMemoryFdKHR(device->logicalDevice, &memoryGetFdInfoKHR, &_sharedFd));
 #endif
+    VK_CHECK_RESULT(vkBindImageMemory(device->logicalDevice, _vkImage, _sharedMemory, 0));
+
+    VkCommandBuffer transferCmd = device->createCommandBuffer(device->graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
+    VkImageSubresourceRange subresourceRange = {};
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = 1; // VKTODO
+    if (_gpuObject.getType() == Texture::TEX_CUBE) {
+        subresourceRange.layerCount = 6;
+    }else{
+        subresourceRange.layerCount = 1;
+    }
+
+    vks::tools::setImageLayout(
+        transferCmd,
+        _vkImage,
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        subresourceRange);
+
+    VkClearColorValue color = { .float32 = {0.5, 0.0, 0.0} };
+    VkImageSubresourceRange imageSubresourceRange { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+    vkCmdClearColorImage(transferCmd, _vkImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &color, 1, &imageSubresourceRange);
+
+    _vkImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    vks::tools::setImageLayout(
+        transferCmd,
+        _vkImage,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_GENERAL,
+        subresourceRange);
+
+    device->flushCommandBuffer(transferCmd, backend.getContext().graphicsQueue, device->graphicsCommandPool);
 }
 
 void VKExternalTexture::initGL(gpu::vk::VKBackend& backend) {
-    glCreateMemoryObjectsEXT(1, &_openGLMemoryObject);
+    glCreateMemoryObjectsEXT(1, &_openGLMemoryObject); // VKTODO: clean these up later
+    ::gl::checkGLError("GL to VK");
 #ifdef WIN32
     glImportMemoryWin32HandleEXT(_openGLMemoryObject, _sharedMemorySize, GL_HANDLE_TYPE_OPAQUE_WIN32_EXT, _sharedHandle);
+    ::gl::checkGLError("GL to VK");
 #else
     glImportMemoryFdEXT(_openGLMemoryObject, _sharedMemorySize, GL_HANDLE_TYPE_OPAQUE_FD_EXT, _sharedFd);
     _sharedFd = -1; // File descriptor can be used only once?
+    ::gl::checkGLError("GL to VK");
 #endif
+
+    glCreateTextures(GL_TEXTURE_2D, 1, &_openGLId);
+    ::gl::checkGLError("GL to VK");
+    Q_ASSERT(evalTexelFormatInternal(_gpuObject.getTexelFormat()) == VK_FORMAT_R8G8B8A8_UNORM);
+    glTextureStorageMem2DEXT(_openGLId, 1, GL_RGBA8, _gpuObject.getWidth(), _gpuObject.getHeight(), _openGLMemoryObject, 0);
+    ::gl::checkGLError("GL to VK");
+    std::array<GLubyte, 4> clearColor {128,128,128,255};
+    glClearTexImage(_openGLId, 0, GL_RGBA, GL_UNSIGNED_BYTE, clearColor.data());
+    ::gl::checkGLError("GL to VK");
 }
 
 void VKExternalTexture::transferGL(VKBackend &backend) {
-
+    glCopyImageSubData(
+        _openGLSourceId, GL_TEXTURE_2D
+        , 0, 0, 0, 0
+        , _openGLId, GL_TEXTURE_2D
+        , 0, 0, 0, 0
+        , _gpuObject.getWidth(), _gpuObject.getHeight(), 1);
+    ::gl::checkGLError("GL to VK");
+    // VKTODO: generate mipmaps
 }
 
 void VKExternalTexture::postTransfer(VKBackend &backend) {
