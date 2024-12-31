@@ -7,8 +7,6 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
-// TODO: Message trimming
-
 (() => {
     ("use strict");
 
@@ -20,8 +18,10 @@
     var settings = {
         external_window: false,
         maximum_messages: 200,
-        join_notification: true
+        join_notification: true,
+        switchToInternalOnHeadsetUsed: true
     };
+    let temporaryChangeModeToVirtual = false;
 
     // Global vars
     var tablet;
@@ -38,6 +38,7 @@
     Messages.messageReceived.connect(receivedMessage);
     AvatarManager.avatarAddedEvent.connect((sessionId) => { _avatarAction("connected", sessionId); });
     AvatarManager.avatarRemovedEvent.connect((sessionId) => { _avatarAction("left", sessionId); });
+    HMD.displayModeChanged.connect(_onHMDDisplayModeChanged);
 
     startup();
 
@@ -134,15 +135,16 @@
                 break;
             case "setting_change":
                 // Set the setting value, and save the config
-                settings[event.setting] = event.value; // Update local settings
-                _saveSettings(); // Save local settings
+                settings[event.setting] = event.value;  // Update local settings
+                _saveSettings();                        // Save local settings
 
                 // Extra actions to preform. 
                 switch (event.setting) {
                     case "external_window":
-                        chatOverlayWindow.presentationMode = event.value
-                            ? Desktop.PresentationMode.NATIVE
-                            : Desktop.PresentationMode.VIRTUAL;
+                        _changePresentationMode(event.value);
+                        break;
+                    case "switchToInternalOnHeadsetUsed":
+                        _onHMDDisplayModeChanged(HMD.active);
                         break;
                 }
 
@@ -175,6 +177,22 @@
                     value: true,
                 });
         }
+    }
+    function _onHMDDisplayModeChanged(isHMDActive){
+        // If the user enabled automatic switching to internal when they put on a headset...
+        if (!settings.switchToInternalOnHeadsetUsed) return;
+
+        if (isHMDActive) temporaryChangeModeToVirtual = true;
+        else temporaryChangeModeToVirtual = false;
+
+        _changePresentationMode(settings.external_window);
+    }
+    function _changePresentationMode(changeToExternal){
+        if (temporaryChangeModeToVirtual) changeToExternal = false;
+        
+        chatOverlayWindow.presentationMode = changeToExternal
+            ? Desktop.PresentationMode.NATIVE
+            : Desktop.PresentationMode.VIRTUAL;
     }
     function _sendMessage(message, channel) {
         if (message.length == 0) return;
