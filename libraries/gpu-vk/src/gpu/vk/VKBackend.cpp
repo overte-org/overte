@@ -363,7 +363,7 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                 renderPassDraw(batch);
             }
 
-            if (batch.getName() == "DrawForward::run") {
+            if (batch.getName() == "Resample::run") {
                 _outputTexture = syncGPUObject(*_cache.pipelineState.framebuffer);
             }
 
