@@ -223,15 +223,15 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                 return;
             }*/
             const auto& batch = *batchPtr;
-            if (batch.getName() == "CompositeHUD") {
+            /*if (batch.getName() == "CompositeHUD") {
                 continue; // VKTODO: crashes frame player currently
-            }
-            if (batch.getName() == "Resample::run") {
+            }*/
+            /*if (batch.getName() == "Resample::run") {
                 continue; // VKTODO: no framebuffer commands support yet"ApplicationOverlay::render"
-            }
-            if (batch.getName() == "ApplicationOverlay::render") {
+            }*/
+            /*if (batch.getName() == "ApplicationOverlay::render") {
                 continue; // VKTODO: no overlay support yet
-            }
+            }*/
             cmdBeginLabel(commandBuffer, "batch:" + batch.getName(), glm::vec4{ 1, 1, 0, 1 });
             const auto& commands = batch.getCommands();
             const auto& offsets = batch.getCommandOffsets();
@@ -1186,6 +1186,52 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
                     break;
                 }
 
+                case Batch::COMMAND_setFramebuffer: {
+                    size_t paramOffset = *offset;
+                    auto framebuffer = batch._framebuffers.get(batch._params[paramOffset]._uint);
+                    // Framebuffer attachments may need layout transitions
+                    auto &renderBuffers = framebuffer->getRenderBuffers();
+                    auto depthStencilBuffer = framebuffer->getDepthStencilBuffer();
+                    for (auto &buffer : renderBuffers) {
+                        if (buffer._texture) {
+                            auto gpuTexture = syncGPUObject(*buffer._texture);
+                            if (gpuTexture) {
+                                auto attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
+                                if (attachmentTexture) {
+                                    _attachmentTexturesToTransitionToWrite.push_back(attachmentTexture);
+                                }
+                            }
+                        }
+                    }
+                    if (depthStencilBuffer) {
+                        auto gpuDepthStencilBuffer = syncGPUObject(*depthStencilBuffer);
+                        if (gpuDepthStencilBuffer) {
+                            auto attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuDepthStencilBuffer);
+                            if (attachmentTexture) {
+                                _attachmentTexturesToTransitionToWrite.push_back(attachmentTexture);
+                            }
+                        }
+                    }
+
+                }
+                    break;
+
+                case Batch::COMMAND_setResourceTexture: {
+                    size_t paramOffset = *offset;
+                    uint32_t slot = batch._params[paramOffset + 1]._uint;
+                    TexturePointer resourceTexture = batch._textures.get(batch._params[paramOffset + 0]._uint);
+                    if (resourceTexture) {
+                        auto gpuTexture = syncGPUObject(*resourceTexture);
+                        if (gpuTexture) {
+                            auto attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
+                            if (attachmentTexture) {
+                                _attachmentTexturesToTransitionToRead.push_back(attachmentTexture);
+                            }
+                        }
+                    }
+                }
+                    break;
+
                 default:
                     break;
                 }
@@ -1199,6 +1245,9 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
         transferGlUniforms();
         transferTransformState(batch);
     }
+    transitionImageLayouts();
+    _attachmentTexturesToTransitionToRead.clear();
+    _attachmentTexturesToTransitionToWrite.clear();
 
     _inRenderTransferPass = false;
 }
@@ -1568,22 +1617,26 @@ VKQuery* VKBackend::syncGPUObject(const Query& query) {
     return object;
 }
 
-void VKBackend::blitToFramebuffer(gpu::Texture& input, gpu::Texture& output) {
+void VKBackend::blitToFramebuffer(VKAttachmentTexture &input, const Vec4i& srcViewport, VKAttachmentTexture &output, const Vec4i& dstViewport) {
     // is vks::tools::insertImageMemoryBarrier needed?
     VkImageBlit imageBlit{};
     // Do we ever want to blit multiple layers/mips?
     imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     imageBlit.srcSubresource.layerCount = 1;
     imageBlit.srcSubresource.mipLevel = 0;
-    imageBlit.srcOffsets[1].x = input.getWidth();
-    imageBlit.srcOffsets[1].y = input.getHeight();
+    imageBlit.srcOffsets[0].x = srcViewport.x;
+    imageBlit.srcOffsets[0].y = srcViewport.y;
+    imageBlit.srcOffsets[1].x = srcViewport.z;
+    imageBlit.srcOffsets[1].y = srcViewport.w;
     imageBlit.srcOffsets[1].z = 1;
 
     imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     imageBlit.dstSubresource.layerCount = 1;
     imageBlit.dstSubresource.mipLevel = 0;
-    imageBlit.dstOffsets[1].x = output.getWidth();
-    imageBlit.dstOffsets[1].y = output.getHeight();
+    imageBlit.dstOffsets[0].x = srcViewport.x;
+    imageBlit.dstOffsets[0].y = srcViewport.y;
+    imageBlit.dstOffsets[1].x = srcViewport.z;
+    imageBlit.dstOffsets[1].y = srcViewport.w;
     imageBlit.dstOffsets[1].z = 1;
 
     VkImageSubresourceRange mipSubRange = {};
@@ -1592,29 +1645,39 @@ void VKBackend::blitToFramebuffer(gpu::Texture& input, gpu::Texture& output) {
     mipSubRange.levelCount = 1;
     mipSubRange.layerCount = 1;
 
-    auto inputObject = syncGPUObject(input);
-    auto outputObject = syncGPUObject(output);
-
     vks::tools::insertImageMemoryBarrier(
         _currentCommandBuffer,
-        outputObject->_vkImage,
+        input._vkImage,
+        VK_ACCESS_TRANSFER_READ_BIT,
         0,
-        VK_ACCESS_TRANSFER_WRITE_BIT,
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, // VKTODO:
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         VK_PIPELINE_STAGE_TRANSFER_BIT,
         VK_PIPELINE_STAGE_TRANSFER_BIT,
         mipSubRange);
 
     vkCmdBlitImage(
         _currentCommandBuffer,
-        inputObject->_vkImage,
+        input._vkImage,
         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-        outputObject->_vkImage,
+        output._vkImage,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,
         &imageBlit,
         VK_FILTER_LINEAR);
+
+    vks::tools::insertImageMemoryBarrier(
+        _currentCommandBuffer,
+        output._vkImage,
+        0,
+        VK_ACCESS_TRANSFER_WRITE_BIT,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, // VKTODO
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        mipSubRange);
+
+    output._vkImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // VKTODO
 }
 
 void VKBackend::updateInput() {
@@ -1856,6 +1919,62 @@ void VKBackend::waitForGPU() {
     VK_CHECK_RESULT(vkQueueWaitIdle(_context.graphicsQueue));
     VK_CHECK_RESULT(vkQueueWaitIdle(_context.transferQueue));
     VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
+}
+
+void VKBackend::transitionImageLayouts() {
+    for (auto attachmentTexture : _attachmentTexturesToTransitionToRead) {
+        if (attachmentTexture->_vkImageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+            VkImageSubresourceRange mipSubRange = {};
+            mipSubRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            mipSubRange.baseMipLevel = 0;
+            mipSubRange.levelCount = 1;
+            mipSubRange.layerCount = 1;
+            vks::tools::insertImageMemoryBarrier(
+                _currentCommandBuffer,
+                attachmentTexture->_vkImage,
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                VK_ACCESS_SHADER_READ_BIT,
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, // VKTODO
+                mipSubRange);
+            attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        }
+    }
+    for (auto attachmentTexture : _attachmentTexturesToTransitionToWrite) {
+        if (attachmentTexture->_vkImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+            if (attachmentTexture->_gpuObject.isDepthStencilRenderTarget()) {
+                VkImageSubresourceRange mipSubRange = {};
+                mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                mipSubRange.baseMipLevel = 0;
+                mipSubRange.levelCount = 1;
+                mipSubRange.layerCount = 1;
+                vks::tools::insertImageMemoryBarrier(_currentCommandBuffer, attachmentTexture->_vkImage,
+                                                     VK_ACCESS_SHADER_READ_BIT,
+                                                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,  // VKTODO: should be
+                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
+                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, mipSubRange); // VKTODO: what stage mask for depth stencil?
+                attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            } else {
+                VkImageSubresourceRange mipSubRange = {};
+                mipSubRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                mipSubRange.baseMipLevel = 0;
+                mipSubRange.levelCount = 1;
+                mipSubRange.layerCount = 1;
+                vks::tools::insertImageMemoryBarrier(_currentCommandBuffer, attachmentTexture->_vkImage,
+                                                     VK_ACCESS_SHADER_READ_BIT,
+                                                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                     VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,  // VKTODO: should be
+                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
+                                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, mipSubRange);
+                attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            }
+        }
+    }
 }
 
 void VKBackend::perFrameCleanup() {
@@ -2360,8 +2479,9 @@ void VKBackend::do_setFramebufferSwapChain(const Batch& batch, size_t paramOffse
 }
 
 void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
-    // VKTODO: Check if this is needed on Vulkan or just clearing values in render pass info is enough
-    ;
+    // VKTODO: This could possibly be optimized by clearing on next render pass.
+    // VKTODO: use vkCmdClearColorImage(), vkCmdClearDepthStencilImage() or vkCmdClearAttachments() instead
+
     if (_stereo._enable && !_cache.pipelineState.pipeline->getState()->isScissorEnable()) {
         qWarning("Clear without scissor in stereo mode");
     }
@@ -2377,6 +2497,8 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
     int useScissor = batch._params[paramOffset + 0]._int;
 
     auto framebuffer = _cache.pipelineState.framebuffer;
+    auto gpuFramebuffer = syncGPUObject(*framebuffer);
+    auto &renderBuffers = framebuffer->getRenderBuffers();
 
     Cache::Pipeline::RenderpassKey key = _cache.pipelineState.getRenderPassKey(framebuffer);
     std::vector<VkAttachmentDescription> attachments;
@@ -2384,7 +2506,20 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
     attachments.reserve(key.size());
     std::vector<VkAttachmentReference> colorAttachmentReferences;
     VkAttachmentReference depthReference{};
-    for (const auto& format : key) {
+    for (size_t i = 0; i < key.size(); i++) {
+        const auto& format = key[i];
+        /*if (surface) {
+            Q_ASSERT(TextureUsageType::RENDERBUFFER == surface->getUsageType());
+            vkTexture = backend->syncGPUObject(*surface.get());*/
+        auto texture = renderBuffers[i]._texture;
+        VKAttachmentTexture *attachmentTexture = nullptr;
+        if (texture) {
+            auto gpuTexture = syncGPUObject(*texture);
+            if (gpuTexture) {
+                attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
+                Q_ASSERT(attachmentTexture);
+            }
+        }
         VkAttachmentDescription attachment{};
         attachment.format = format;
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -2408,6 +2543,14 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
                 attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             }
             attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            // Texture state needs to be updated
+            auto depthStencil = framebuffer->getDepthStencilBuffer();
+            Q_ASSERT(depthStencil);
+            auto gpuDepthStencil = syncGPUObject(*depthStencil);
+            Q_ASSERT(gpuDepthStencil);
+            auto depthStencilAttachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuDepthStencil);
+            Q_ASSERT(depthStencilAttachmentTexture);
+            depthStencilAttachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             depthReference.attachment = (uint32_t)(attachments.size());
             depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
         } else {
@@ -2420,6 +2563,11 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
             }
             attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            // Texture state needs to be updated
+            if (attachmentTexture) {
+                attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                //Q_ASSERT(attachmentTexture->_gpuObject.isColorRenderTarget()); // isColorRenderTarget is broken
+            }
             VkAttachmentReference reference;
             reference.attachment = (uint32_t)(attachments.size());
             reference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -2462,7 +2610,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
                          VkExtent2D{framebuffer->getWidth(), framebuffer->getHeight()}};
     VkRenderPassBeginInfo beginInfo = vks::initializers::renderPassBeginInfo();
     beginInfo.renderPass = renderPass;
-    beginInfo.framebuffer = syncGPUObject(*framebuffer)->vkFramebuffer;
+    beginInfo.framebuffer = gpuFramebuffer->vkFramebuffer;
     beginInfo.renderArea = rect;
     beginInfo.clearValueCount = (uint32_t)clearValues.size();
     beginInfo.pClearValues = clearValues.data();
@@ -2547,8 +2695,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_blit(const Batch& batch, size_t paramOffset) {
-    // VKTODO
-    /*auto srcframebuffer = batch._framebuffers.get(batch._params[paramOffset]._uint);
+    auto srcframebuffer = batch._framebuffers.get(batch._params[paramOffset]._uint);
     Vec4i srcvp;
     for (auto i = 0; i < 4; ++i) {
         srcvp[i] = batch._params[paramOffset + 1 + i]._int;
@@ -2561,13 +2708,39 @@ void VKBackend::do_blit(const Batch& batch, size_t paramOffset) {
     }
 
     // Assign dest framebuffer if not bound already
-    auto destFbo = getFramebufferID(dstframebuffer);
-    auto srcFbo = getFramebufferID(srcframebuffer);
-    glBlitNamedFramebuffer(srcFbo, destFbo,
-                           srcvp.x, srcvp.y, srcvp.z, srcvp.w,
-                           dstvp.x, dstvp.y, dstvp.z, dstvp.w,
-                           GL_COLOR_BUFFER_BIT, GL_LINEAR);
-    (void) CHECK_GL_ERROR();*/
+    auto dstFbo = syncGPUObject(*dstframebuffer);
+    auto srcFbo = syncGPUObject(*srcframebuffer);
+
+    // Sometimes framebuffer with multiple attachments is blitted into one with a single attachment.
+    auto &srcRenderBuffers = srcFbo->_gpuObject.getRenderBuffers();
+    auto srcDepthStencilBuffer = srcFbo->_gpuObject.getDepthStencilBuffer();
+    auto &dstRenderBuffers = dstFbo->_gpuObject.getRenderBuffers();
+    auto dstDepthStencilBuffer = dstFbo->_gpuObject.getDepthStencilBuffer();
+
+    for (size_t i = 0; i < srcRenderBuffers.size(); i++) {
+        if (srcRenderBuffers[i]._texture && dstRenderBuffers[i]._texture) {
+            auto source = syncGPUObject(*srcRenderBuffers[i]._texture);
+            auto destination = syncGPUObject(*dstRenderBuffers[i]._texture);
+            if (source && destination) {
+                auto srcAttachmentTexture = dynamic_cast<VKAttachmentTexture*>(source);
+                auto dstAttachmentTexture = dynamic_cast<VKAttachmentTexture*>(destination);
+                if (srcAttachmentTexture && dstAttachmentTexture) {
+                    blitToFramebuffer(*srcAttachmentTexture, srcvp, *dstAttachmentTexture, dstvp);
+                }
+            }
+        }
+    }
+    if (srcDepthStencilBuffer && dstDepthStencilBuffer) {
+        auto source = syncGPUObject(*srcDepthStencilBuffer);
+        auto destination = syncGPUObject(*dstDepthStencilBuffer);
+        if (source && destination) {
+            auto srcAttachmentTexture = dynamic_cast<VKAttachmentTexture*>(source);
+            auto dstAttachmentTexture = dynamic_cast<VKAttachmentTexture*>(destination);
+            if (srcAttachmentTexture && dstAttachmentTexture) {
+                blitToFramebuffer(*srcAttachmentTexture, srcvp, *dstAttachmentTexture, dstvp);
+            }
+        }
+    }
 }
 
 void VKBackend::do_setInputFormat(const Batch& batch, size_t paramOffset) {
@@ -2972,14 +3145,11 @@ void VKBackend::do_setResourceTexture(const Batch& batch, size_t paramOffset) {
     uint32_t slot = batch._params[paramOffset + 1]._uint;
     TexturePointer resourceTexture = batch._textures.get(batch._params[paramOffset + 0]._uint);
 
-    if (slot == 2) {
-        printf("break");
-    }
-
     if (!resourceTexture) {
         releaseResourceTexture(slot);
         return;
     }
+
     // check cache before thinking
     if (_resource._textures[slot].texture == resourceTexture.get()) {
         return;

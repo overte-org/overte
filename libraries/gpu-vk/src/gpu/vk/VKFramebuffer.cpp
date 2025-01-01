@@ -14,6 +14,7 @@
 void gpu::vk::VKFramebuffer::update() {
     auto backend = _backend.lock();
     VkDevice device = backend->getContext().device->logicalDevice;
+    // VKTODO: this is wrong, most of framebuffer code will need to be rewritten
     if (vkFramebuffer != VK_NULL_HANDLE) {
         vkDestroyFramebuffer(device, vkFramebuffer, nullptr);
     }
@@ -63,7 +64,7 @@ void gpu::vk::VKFramebuffer::update() {
                         attachmentCI.height = vkTexture->_gpuObject.getHeight();
                         attachmentCI.layerCount = 1;
                         attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat());
-                        attachmentCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+                        attachmentCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
                         attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
                         addAttachment(attachmentCI, vkTexture->_vkImage);
                         //glNamedFramebufferTexture(_id, colorAttachments[unit], gltexture->_texture, 0);
@@ -258,7 +259,7 @@ VkResult gpu::vk::VKFramebuffer::createFramebuffer()
     return VK_SUCCESS;
 }
 
-bool gpu::vk::VKFramebuffer::checkStatus(gpu::vk::VKFramebuffer::FramebufferStatus target) const {
+//bool gpu::vk::VKFramebuffer::checkStatus(gpu::vk::VKFramebuffer::FramebufferStatus target) const {
     // VKTODO
     /*switch (_status) {
         case GL_FRAMEBUFFER_COMPLETE:
@@ -287,7 +288,7 @@ bool gpu::vk::VKFramebuffer::checkStatus(gpu::vk::VKFramebuffer::FramebufferStat
     }
     return false;
 */
-}
+//}
 
 gpu::vk::VKFramebuffer::~VKFramebuffer() {
     auto backend = _backend.lock();
@@ -334,29 +335,9 @@ uint32_t gpu::vk::VKFramebuffer::addAttachment(VKAttachmentCreateInfo createinfo
 
     assert(aspectMask > 0);
 
-    /*VkImageCreateInfo image = vks::initializers::imageCreateInfo();
-    image.imageType = VK_IMAGE_TYPE_2D;
-    image.format = createinfo.format;
-    image.extent.width = createinfo.width;
-    image.extent.height = createinfo.height;
-    image.extent.depth = 1;
-    image.mipLevels = 1;
-    image.arrayLayers = createinfo.layerCount;
-    image.samples = createinfo.imageSampleCount;
-    image.tiling = VK_IMAGE_TILING_OPTIMAL;
-    image.usage = createinfo.usage;*/
-
     VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
     VkMemoryRequirements memReqs;
 
-    // Create image for this attachment
-    /*VK_CHECK_RESULT(vkCreateImage(vulkanDevice->logicalDevice, &image, nullptr, &attachment.image));
-    vkGetImageMemoryRequirements(vulkanDevice->logicalDevice, attachment.image, &memReqs);
-    memAlloc.allocationSize = memReqs.size;
-    memAlloc.memoryTypeIndex = vulkanDevice->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    // VKTODO: this may need to be changed to VMA
-    VK_CHECK_RESULT(vkAllocateMemory(vulkanDevice->logicalDevice, &memAlloc, nullptr, &attachment.memory));
-    VK_CHECK_RESULT(vkBindImageMemory(vulkanDevice->logicalDevice, attachment.image, attachment.memory, 0));*/
     attachment.image = image;
 
     attachment.subresourceRange = {};
@@ -385,11 +366,13 @@ uint32_t gpu::vk::VKFramebuffer::addAttachment(VKAttachmentCreateInfo createinfo
     // If not, final layout depends on attachment type
     if (attachment.hasDepth() || attachment.hasStencil())
     {
-        attachment.description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        //attachment.description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        attachment.description.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL; // VKTODO: this is tricky, because it depends on what the image will be used for
     }
     else
     {
-        attachment.description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        //attachment.description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        attachment.description.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // VKTODO: this is tricky, because it depends on what the image will be used for
     }
 
     attachments.push_back(attachment);

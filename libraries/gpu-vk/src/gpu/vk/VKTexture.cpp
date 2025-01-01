@@ -204,14 +204,12 @@ void VKAttachmentTexture::createTexture(VKBackend &backend) {
         || _gpuObject.getTexelFormat().getSemantic() == gpu::R11G11B10
         || _gpuObject.getTexelFormat().getSemantic() == gpu::SRGB
         || _gpuObject.getTexelFormat().getSemantic() == gpu::SRGBA) {
-        imageCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+        imageCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     } else if (_gpuObject.isDepthStencilRenderTarget()) {
         imageCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     } else {
         Q_ASSERT(false);
     }
-
-    auto device = _backend.lock()->getContext().device->logicalDevice;
 
     // Create image for this attachment
     /*VK_CHECK_RESULT(vkCreateImage(device, &imageCI, nullptr, &_texture));
@@ -292,7 +290,7 @@ VkDescriptorImageInfo VKAttachmentTexture::getDescriptorImageInfo() {
 
     VkDescriptorImageInfo result {};
     result.sampler = _vkSampler;
-    result.imageLayout = _vkImageLayout;
+    result.imageLayout = _vkImageLayout;  // VKTODO: this needs to be updated on blits and other image writes
     result.imageView = _vkImageView;
     return result;
 };
