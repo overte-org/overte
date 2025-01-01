@@ -106,6 +106,7 @@ void ApplicationOverlay::renderQmlUi(RenderArgs* renderArgs) {
     bool newTextureAvailable = offscreenUI ? offscreenUI->fetchTexture(newTextureAndFence) : false;
     if (newTextureAvailable) {
         _uiTexture->setExternalTexture(newTextureAndFence.first, newTextureAndFence.second);
+        _uiTexture->setSize(offscreenUI->size().width(), offscreenUI->size().height());
     }
     auto geometryCache = DependencyManager::get<GeometryCache>();
     gpu::Batch& batch = *renderArgs->_batch;

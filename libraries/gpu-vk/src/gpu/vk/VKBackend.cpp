@@ -219,19 +219,7 @@ void VKBackend::executeFrame(const FramePointer& frame) {
     {
         const auto& commandBuffer = _currentCommandBuffer;
         for (const auto& batchPtr : frame->batches) {
-            /*if (batch_count == 6) {//12
-                return;
-            }*/
             const auto& batch = *batchPtr;
-            /*if (batch.getName() == "CompositeHUD") {
-                continue; // VKTODO: crashes frame player currently
-            }*/
-            /*if (batch.getName() == "Resample::run") {
-                continue; // VKTODO: no framebuffer commands support yet"ApplicationOverlay::render"
-            }*/
-            /*if (batch.getName() == "ApplicationOverlay::render") {
-                continue; // VKTODO: no overlay support yet
-            }*/
             cmdBeginLabel(commandBuffer, "batch:" + batch.getName(), glm::vec4{ 1, 1, 0, 1 });
             const auto& commands = batch.getCommands();
             const auto& offsets = batch.getCommandOffsets();
@@ -888,7 +876,6 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
     for (size_t i = 0; i < _resource._textures.size(); i++) {
         if (_resource._textures[i].texture && (vertexReflection.validTexture(i) || fragmentReflection.validTexture(i))) {
             // VKTODO: move vulkan texture creation to the transfer parts
-            // VKTODO: this doesn't work yet
             VKTexture* texture = syncGPUObject(*_resource._textures[i].texture);
             VkDescriptorImageInfo imageInfo{};
             if (texture) {
