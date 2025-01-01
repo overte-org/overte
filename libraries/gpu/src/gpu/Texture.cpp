@@ -315,7 +315,7 @@ Texture::Size Texture::resize(Type type, const Element& texelFormat, uint16 widt
 }
 
 bool Texture::isColorRenderTarget() const {
-    return (_texelFormat.getSemantic() == gpu::RGBA);
+    return (_texelFormat.getSemantic() == gpu::RGBA); // TODO: this is wrong, especially since we use B10G11R11 render targets too
 }
 
 bool Texture::isDepthStencilRenderTarget() const {

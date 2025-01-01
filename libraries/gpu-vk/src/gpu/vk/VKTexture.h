@@ -280,7 +280,7 @@ protected:
     VkDescriptorImageInfo getDescriptorImageInfo() override; // VKTODO
 
     VkImageView _vkImageView { VK_NULL_HANDLE };
-    VkImageLayout _vkImageLayout {}; // VKTODO
+    VkImageLayout _vkImageLayout {}; // VKTODO: this needs to be updated on blits and other image writes
     VkSampler _vkSampler { VK_NULL_HANDLE };
     //VkImage _vkImage { VK_NULL_HANDLE };
     //VkDeviceMemory _vkDeviceMemory{ VK_NULL_HANDLE };
@@ -306,7 +306,7 @@ protected:
     VkDescriptorImageInfo getDescriptorImageInfo() override;
     //VkImage _vkImage { VK_NULL_HANDLE };
     VkImageView _vkImageView { VK_NULL_HANDLE };
-    VkImageLayout _vkImageLayout {}; // VKTODO
+    VkImageLayout _vkImageLayout {};
     VkSampler _vkSampler { VK_NULL_HANDLE };
     // This need to be moved to VKFixedAllocationTexture and allocated in allocateStorage()
     //VkDeviceMemory _vkDeviceMemory{ VK_NULL_HANDLE };
@@ -343,7 +343,7 @@ protected:
     void postTransfer(VKBackend &backend) override;
     VkDescriptorImageInfo getDescriptorImageInfo() override;
     VkImageView _vkImageView { VK_NULL_HANDLE };
-    VkImageLayout _vkImageLayout {}; // VKTODO
+    VkImageLayout _vkImageLayout {};
     VkSampler _vkSampler { VK_NULL_HANDLE };
 
     // Shared texture properties

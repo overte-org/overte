@@ -100,7 +100,7 @@ Cache::Pipeline::PipelineLayout Cache::Pipeline::getPipelineAndDescriptorLayout(
 
         // Create the descriptor set layouts
         std::vector<VkDescriptorSetLayout> layouts;
-        if (!uniLayout.empty()) {
+        if (!uniLayout.empty() || !texLayout.empty() || !stoLayout.empty()) {
             VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI =
                 vks::initializers::descriptorSetLayoutCreateInfo(uniLayout.data(), uniLayout.size());
             VkDescriptorSetLayout descriptorSetLayout;
@@ -110,7 +110,8 @@ Cache::Pipeline::PipelineLayout Cache::Pipeline::getPipelineAndDescriptorLayout(
             layout.uniformLayout = descriptorSetLayout;
         }
 #if SEP_DESC
-        if (!texLayout.empty()) {
+        // Descriptor set needs to be created even if it's empty if later descriptor sets are not empty.
+        if (!texLayout.empty() || !stoLayout.empty()) {
             VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI =
                 vks::initializers::descriptorSetLayoutCreateInfo(texLayout.data(), texLayout.size());
             VkDescriptorSetLayout descriptorSetLayout;

@@ -102,12 +102,15 @@ public:
 
     };
 
+    // VKTODO: this can be removed in the future, it's redundant
     std::vector<FramebufferAttachment> attachments;
 
 protected:
-    enum FramebufferStatus { VK_FRAMEBUFFER_COMPLETE } _status;
+    //VkImageLayout _currentLayout {VK_IMAGE_LAYOUT_UNDEFINED}; // Used by render passes. If it's VK_IMAGE_LAYOUT_UNDEFINED, then image will be cleared in the render pass
+    //enum FramebufferStatus { VK_FRAMEBUFFER_COMPLETE } _status;
+
     virtual void update();
-    bool checkStatus(FramebufferStatus target) const;
+    //bool checkStatus(FramebufferStatus target) const;
     VkResult createFramebuffer();
     struct VKAttachmentCreateInfo
     {
