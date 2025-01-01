@@ -48,6 +48,8 @@
 
 namespace gpu { namespace vk {
 
+class VKAttachmentTexture;
+
 static const int MAX_NUM_UNIFORM_BUFFERS = 14; // There's also camera buffer at slot 15
 
 static const int32_t MIN_REQUIRED_TEXTURE_IMAGE_UNITS = 16;
@@ -310,7 +312,7 @@ private:
     VKTexture* syncGPUObject(const Texture& texture);
     VKQuery* syncGPUObject(const Query& query);
 
-    void blitToFramebuffer(gpu::Texture &input, gpu::Texture &output);
+    void blitToFramebuffer(VKAttachmentTexture &input, const Vec4i& srcViewport, VKAttachmentTexture &output, const Vec4i& dstViewport);
 
 public:
     VKBackend();
@@ -446,6 +448,7 @@ public:
     // VKTODO: quick hack
     VKFramebuffer *_outputTexture{ nullptr };
 protected:
+    void transitionImageLayouts();
 
     // These are filled by syncGPUObject() calls, and are needed to track backend objects so that they can be destroyed before
     // destroying backend.
@@ -483,6 +486,10 @@ protected:
     std::shared_ptr<FrameData> _currentFrame;
     // Frame for which command buffer is already generated and it's currently being rendered.
     std::shared_ptr<FrameData> _currentlyRenderedFrame;
+
+    std::vector<VKAttachmentTexture*> _attachmentTexturesToTransitionToRead;
+    std::vector<VKAttachmentTexture*> _attachmentTexturesToTransitionToWrite;
+
     // Safety check to ensure that shutdown was completed before destruction.
     std::atomic<bool> isBackendShutdownComplete{ false };
 
