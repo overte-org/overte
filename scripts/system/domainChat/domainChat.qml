@@ -479,8 +479,6 @@ Rectangle {
                 domain.clear();
                 break;
             case "initial_settings":
-
-                print(JSON.stringify(message.settings));
                 if (message.settings.external_window) s_external_window.checked = true;
                 if (message.settings.maximum_messages) s_maximum_messages.value = message.settings.maximum_messages;
                 if (message.settings.join_notification) s_join_notification.checked = true;
