@@ -200,15 +200,14 @@ void VKAttachmentTexture::createTexture(VKBackend &backend) {
     imageCI.arrayLayers = _gpuObject.isArray() ? _gpuObject.getNumSlices() : 1;
     imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
     imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
-    if (_gpuObject.isColorRenderTarget()
+    /*if (_gpuObject.isColorRenderTarget()
         || _gpuObject.getTexelFormat().getSemantic() == gpu::R11G11B10
         || _gpuObject.getTexelFormat().getSemantic() == gpu::SRGB
-        || _gpuObject.getTexelFormat().getSemantic() == gpu::SRGBA) {
-        imageCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-    } else if (_gpuObject.isDepthStencilRenderTarget()) {
+        || _gpuObject.getTexelFormat().getSemantic() == gpu::SRGBA) {*/
+    if (_gpuObject.isDepthStencilRenderTarget()) {
         imageCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
     } else {
-        Q_ASSERT(false);
+        imageCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
     }
 
     // Create image for this attachment
