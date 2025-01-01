@@ -19,7 +19,8 @@
         external_window: false,
         maximum_messages: 200,
         join_notification: true,
-        switchToInternalOnHeadsetUsed: true
+        switchToInternalOnHeadsetUsed: true,
+        enableEmbedding: false                  // Prevents information leakage, default false
     };
     let temporaryChangeModeToVirtual = false;
 
@@ -109,7 +110,7 @@
         if (message.channel == "local" && isTooFar(message.position)) return;   // If message is local, and if player is too far away from location, do nothing.
         
         let formattedMessagePacket = { ...message };
-        formattedMessagePacket.message = await formatting.parseMessage(message.message)
+        formattedMessagePacket.message = await formatting.parseMessage(message.message, settings.enableEmbedding)
 
         _emitEvent({ type: "show_message", ...formattedMessagePacket });        // Update qml view of to new message.
         _notificationCoreMessage(message.displayName, message.message)          // Show a new message on screen.
@@ -247,9 +248,9 @@
         if (messageHistory) {
             // Load message history
             for (message of messageHistory) {
-                messagePacket = { ...message };                                                 // Create new variable
-                messagePacket = formatting.addTimeAndDateStringToPacket(messagePacket);         // Add timestamp
-                messagePacket.message = await formatting.parseMessage(messagePacket.message);   // Parse the message for the UI
+                messagePacket = { ...message };                                                                             // Create new variable
+                messagePacket = formatting.addTimeAndDateStringToPacket(messagePacket);                                     // Add timestamp
+                messagePacket.message = await formatting.parseMessage(messagePacket.message, settings.enableEmbedding);     // Parse the message for the UI
 
                 _emitEvent({ type: "show_message", ...messagePacket });                         // Send message to UI
             }

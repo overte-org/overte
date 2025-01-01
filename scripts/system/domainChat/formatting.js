@@ -38,7 +38,7 @@ const formatting = {
 		};
 		return newPacket;
 	},
-	parseMessage: async function(message) {
+	parseMessage: async function(message, enableEmbedding) {
 		const urlRegex = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/;
         const overteLocationRegex = /hifi:\/\/[a-zA-Z0-9_-]+\/[-+]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+\/[-+]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+,[+-]?\d*\.?\d+/;
 
@@ -67,23 +67,25 @@ const formatting = {
         }
 
 		// Embed images in the message array.
-		for (dataChunk of messageArray){
-            if (dataChunk.type == 'url'){
-                let url = dataChunk.value;
+		if (enableEmbedding) {
+			for (dataChunk of messageArray){
+				if (dataChunk.type == 'url'){
+					let url = dataChunk.value;
 
-                const res = await formatting.helpers.fetch(url, {method: 'GET'});      // TODO: Replace with 'HEAD' method. https://github.com/overte-org/overte/issues/1273
-                const contentType = res.getResponseHeader("content-type");
+					const res = await formatting.helpers.fetch(url, {method: 'GET'});      // TODO: Replace with 'HEAD' method. https://github.com/overte-org/overte/issues/1273
+					const contentType = res.getResponseHeader("content-type");
 
-                if (contentType.startsWith('image/')) {
-                    messageArray.push({type: 'imageEmbed', value: url});
-					continue;
-                }
-				if (contentType.startsWith('video/')){ 
-                    messageArray.push({type: 'videoEmbed', value: url});
-					continue;
+					if (contentType.startsWith('image/')) {
+						messageArray.push({type: 'imageEmbed', value: url});
+						continue;
+					}
+					if (contentType.startsWith('video/')){ 
+						messageArray.push({type: 'videoEmbed', value: url});
+						continue;
+					}
 				}
-            }
-        }
+			}
+		}
 
 		return messageArray;
 

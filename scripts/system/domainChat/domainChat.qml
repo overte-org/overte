@@ -392,6 +392,29 @@ Rectangle {
                         }
                     }
                 }
+                // Toggle media embedding
+                Rectangle {
+                    width: parent.width
+                    height: 40
+                    color: "transparent"
+
+                    Text {
+                        text: "Enable media embedding"
+                        color: "white"
+                        font.pointSize: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    CheckBox {
+                        id: s_enable_embedding
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        onCheckedChanged: {
+                            toScript({type: 'setting_change', setting: 'enableEmbedding', value: checked})
+                        }
+                    }
+                }
             }
         }
 
@@ -456,11 +479,13 @@ Rectangle {
                 domain.clear();
                 break;
             case "initial_settings":
+
                 print(JSON.stringify(message.settings));
                 if (message.settings.external_window) s_external_window.checked = true;
                 if (message.settings.maximum_messages) s_maximum_messages.value = message.settings.maximum_messages;
                 if (message.settings.join_notification) s_join_notification.checked = true;
                 if (message.settings.switchToInternalOnHeadsetUsed) s_force_vw_in_vr.checked = true;
+                if (message.settings.enableEmbedding) s_enable_embedding.checked = true;
                 break;
         }
     }
