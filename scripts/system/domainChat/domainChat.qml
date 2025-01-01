@@ -2,13 +2,13 @@ import QtQuick 2.7
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import controlsUit 1.0 as HifiControlsUit
+import "./qml_widgets"
 
 Rectangle {
     color: Qt.rgba(0.1,0.1,0.1,1)
     signal sendToScript(var message);
 
     property string pageVal: "local"
-    property string last_message_user: ""
     property date last_message_time: new Date()
 
     // When the window is created on the script side, the window starts open.
@@ -162,18 +162,14 @@ Rectangle {
                         model: getChannel(pageVal)
                         delegate: Loader {
                             property int delegateIndex: model.index
-                            property string delegateText: model.text
+                            property var delegateText: model.message
                             property string delegateUsername: model.username
                             property string delegateDate: model.date
 
                             sourceComponent: {
-                                if (model.type === "chat") {
-                                    return template_chat_message;
-                                } else if (model.type === "notification") {
-                                    return template_notification;
-                                }
+                                if (model.type === "chat") return template_chat_message;
+                                if (model.type === "notification") return template_notification;
                             }
-                        
                         }
                     }
                 }
@@ -373,123 +369,60 @@ Rectangle {
                         }
                     }
                 }
+                // Switch to internal on VR Mode
+                Rectangle {
+                    width: parent.width
+                    height: 40
+                    color: "transparent"
+
+                    Text {
+                        text: "Force Virtual window in VR"
+                        color: "white"
+                        font.pointSize: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    CheckBox {
+                        id: s_force_vw_in_vr
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        onCheckedChanged: {
+                            toScript({type: 'setting_change', setting: 'switchToInternalOnHeadsetUsed', value: checked})
+                        }
+                    }
+                }
+                // Toggle media embedding
+                Rectangle {
+                    width: parent.width
+                    height: 40
+                    color: "transparent"
+
+                    Text {
+                        text: "Enable media embedding"
+                        color: "white"
+                        font.pointSize: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    CheckBox {
+                        id: s_enable_embedding
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        onCheckedChanged: {
+                            toScript({type: 'setting_change', setting: 'enableEmbedding', value: checked})
+                        }
+                    }
+                }
             }
         }
 
     }
 
     // Templates
-    Component {
-        id: template_chat_message
-
-        Rectangle {
-            property int index: delegateIndex
-            property string texttest: delegateText
-            property string username: delegateUsername
-            property string date: delegateDate
-
-            height: Math.max(65, children[1].height + 30)
-            color: index % 2 === 0 ? "transparent" : Qt.rgba(0.15,0.15,0.15,1)
-            width: listview.parent.parent.width
-            Layout.fillWidth: true
-
-            Item {
-                width: parent.width - 10
-                anchors.horizontalCenter: parent.horizontalCenter
-                height: 22
-
-                Text{
-                    text: username
-                    color: "lightgray"
-                }
-
-                Text{
-                    anchors.right: parent.right
-                    text: date
-                    color: "lightgray"
-                }
-            }
-
-            TextEdit {
-                anchors.top: parent.children[0].bottom
-                x: 5
-                text: texttest
-                color:"white"
-                font.pointSize: 12
-                readOnly: true
-                selectByMouse: true
-                selectByKeyboard: true
-                width: parent.width * 0.8
-                height: contentHeight
-                wrapMode: Text.Wrap
-                textFormat: TextEdit.RichText
-
-                onLinkActivated: {
-                    Window.openWebBrowser(link)
-                }
-            }
-        }
-    }
-
-    Component {
-        id: template_notification
-
-        Rectangle{
-            property int index: delegateIndex
-            property string texttest: delegateText
-            property string username: delegateUsername
-            property string date: delegateDate
-            color: "#171717"
-            width: parent.width
-            height: 40
-
-            Item {
-                width: 10
-                height: parent.height
-
-                Rectangle {
-                    height: parent.height
-                    width: 5
-                    color: "#505186"
-                }
-            }
-
-
-            Item {
-                width: parent.width - parent.children[0].width - 5
-                height: parent.height
-                anchors.left: parent.children[0].right
-
-                TextEdit{
-                    text: texttest
-                    color:"white"
-                    font.pointSize: 12
-                    readOnly: true
-                    width: parent.width * 0.8
-                    selectByMouse: true
-                    selectByKeyboard: true
-                    height: parent.height
-                    wrapMode: Text.Wrap
-                    verticalAlignment: Text.AlignVCenter
-                    font.italic: true
-                }
-
-                Text {
-                    text: date
-                    color:"white"
-                    font.pointSize: 12
-                    anchors.right: parent.right
-                    height: parent.height
-                    wrapMode: Text.Wrap
-                    horizontalAlignment: Text.AlignRight
-                    verticalAlignment: Text.AlignVCenter
-                    font.italic: true
-                }
-            }
-
-        }
-
-    }
+    TemplateChatMessage { id: template_chat_message }
+    TemplateNotification { id: template_notification }
 
     property var channels: {
         "local": local,
@@ -497,16 +430,16 @@ Rectangle {
     }
 
     function scrollToBottom(bypassDistanceCheck = false, extraMoveDistance = 0) {
-        const totalHeight = listview.height; // Total height of the content
-        const currentPosition = messageViewFlickable.contentY; // Current position of the view
-        const windowHeight = listview.parent.parent.height; // Total height of the window
+        const totalHeight = listview.height;                    // Total height of the content
+        const currentPosition = messageViewFlickable.contentY;  // Current position of the view
+        const windowHeight = listview.parent.parent.height;     // Total height of the window
         const bottomPosition = currentPosition + windowHeight;
 
         // Check if the view is within 300 units from the bottom
         const closeEnoughToBottom = totalHeight - bottomPosition <= 300;
         if (!bypassDistanceCheck && !closeEnoughToBottom) return;
-        if (totalHeight < windowHeight) return; // No reason to scroll, we don't have an overflow.
-        if (bottomPosition == totalHeight) return; // At the bottom, do nothing.
+        if (totalHeight < windowHeight) return;                 // No reason to scroll, we don't have an overflow.
+        if (bottomPosition == totalHeight) return;              // At the bottom, do nothing.
 
         messageViewFlickable.contentY = listview.height - listview.parent.parent.height;
         messageViewFlickable.returnToBounds();
@@ -517,72 +450,18 @@ Rectangle {
         channel = getChannel(channel)
 
         // Format content
-        message = formatContent(message);
-        message = embedImages(message);
-
         if (type === "notification"){
-            channel.append({ text: message, date: date, type: "notification" });
-            last_message_user = "";
+            channel.append({ message: message, date: date, type: "notification" });
             scrollToBottom(null, 30);
-
-            last_message_time = new Date();
             return;
         }
 
-        var current_time = new Date();
-        var elapsed_time = current_time - last_message_time;
-        var elapsed_minutes = elapsed_time / (1000 * 60); 
-
-        var last_item_index = channel.count - 1;
-        var last_item = channel.get(last_item_index);
-
-        if (last_message_user === username && elapsed_minutes < 1 && last_item){
-            message = "<br>" + message 
-            last_item.text = last_item.text += "\n" + message;
-            load_scroll_timer.running = true;
-            last_message_time = new Date();
-            return;
-        }
-
-        last_message_user = username;
-        last_message_time = new Date();
-        channel.append({ text: message, username: username, date: date, type: type });
+        channel.append({ message: message, username: username, date: date, type: type });
         load_scroll_timer.running = true;
     }
 
     function getChannel(id) {
         return channels[id];
-    }
-
-    function formatContent(mess) {
-        var arrow = /\</gi
-        mess = mess.replace(arrow, "&lt;");
-
-        var link = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
-        mess = mess.replace(link, (match) => {return `<a style="color:#4EBAFD" onclick='Window.openUrl("+match+")' href='` + match + `'>` + match + `</a> <a onclick='Window.openUrl(`+match+`)'>🗗</a>`});
-
-        var newline = /\n/gi;
-        mess = mess.replace(newline, "<br>");
-        return mess
-    }
-
-    function embedImages(mess){
-        var image_link = /(https?:(\/){2})[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)(?:png|jpe?g|gif|bmp|svg|webp)/g;
-        var matches = mess.match(image_link);
-        var new_message = ""
-        var listed = []
-        var total_emeds = 0
-
-        new_message += mess
-
-        for (var i = 0; matches && matches.length > i && total_emeds < 3; i++){
-            if (!listed.includes(matches[i])) {
-                new_message += "<br><img src="+ matches[i] +" width='250' >"
-                listed.push(matches[i]);
-                total_emeds++
-            } 
-        }
-        return new_message;
     }
 
     // Messages from script
@@ -603,6 +482,8 @@ Rectangle {
                 if (message.settings.external_window) s_external_window.checked = true;
                 if (message.settings.maximum_messages) s_maximum_messages.value = message.settings.maximum_messages;
                 if (message.settings.join_notification) s_join_notification.checked = true;
+                if (message.settings.switchToInternalOnHeadsetUsed) s_force_vw_in_vr.checked = true;
+                if (message.settings.enableEmbedding) s_enable_embedding.checked = true;
                 break;
         }
     }
