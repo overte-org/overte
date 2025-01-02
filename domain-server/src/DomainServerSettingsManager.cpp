@@ -989,16 +989,18 @@ void DomainServerSettingsManager::processNodeKickRequestPacket(QSharedPointer<Re
                 }
 
                 if (banByIP) {
+                    // TODO(IPv6):
                     auto& kickAddress = matchingNode->getActiveSocket()
-                        ? matchingNode->getActiveSocket()->getAddress()
-                        : matchingNode->getPublicSocket().getAddress();
+                        ? matchingNode->getActiveSocket()->getAddressIPv4()
+                        : matchingNode->getPublicSocket().getAddressIPv4();
 
                     // probably isLoopback covers it, as whenever I try to ban an agent on same machine as the domain-server
                     // it is always 127.0.0.1, but looking at the public and local addresses just to be sure
                     // TODO: soon we will have feedback (in the form of a message to the client) after we kick.  When we
                     // do, we will have a success flag, and perhaps a reason for failure.  For now, just don't do it.
-                    if (kickAddress == limitedNodeList->getPublicSockAddr().getAddress() ||
-                        kickAddress == limitedNodeList->getLocalSockAddr().getAddress() ||
+                    // TODO(IPv6):
+                    if (kickAddress == limitedNodeList->getPublicSockAddr().getAddressIPv4() ||
+                        kickAddress == limitedNodeList->getLocalSockAddr().getAddressIPv4() ||
                         kickAddress.isLoopback() ) {
                         qWarning() << "attempt to kick node running on same machine as domain server, ignoring KickRequest";
                         return;
