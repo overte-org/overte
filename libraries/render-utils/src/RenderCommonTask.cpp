@@ -324,7 +324,7 @@ public:
         args->_numMirrorFlips += portalExitID != Item::INVALID_ITEM_ID ? 0 : 1;
 
         gpu::doInBatch("SetupMirrorTask::run", args->_context, [&](gpu::Batch& batch) {
-            bool shouldMirror = args->_numMirrorFlips % 2 == (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
+            bool shouldMirror = args->_numMirrorFlips % 2 == (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE ? 1 : 0);
             batch.setContextMirrorViewCorrection(shouldMirror);
         });
 
