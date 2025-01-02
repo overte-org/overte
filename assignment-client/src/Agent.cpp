@@ -219,14 +219,36 @@ void Agent::requestScript() {
     // figure out the URL for the script for this agent assignment
     QUrl scriptURL;
     // TODO(IPv6): IPv6 URLs have different format
-    if (_payload.isEmpty())  {
-        scriptURL = QUrl(QString("http://%1:%2/assignment/%3/")
-                         .arg(nodeList->getDomainHandler().getIPv4().toString())
-                         .arg(DOMAIN_SERVER_HTTP_PORT)
-                         .arg(uuidStringWithoutCurlyBraces(nodeList->getSessionUUID())));
+
+    QString ipv4Address = nodeList->getDomainHandler().getIPv4().toString();
+    QString ipv6Address = nodeList->getDomainHandler().getIPv6().toString();
+    QString address;
+
+    if (!ipv6Address.isEmpty()) {
+        // This is an IPv6 address
+        address = "[" + ipv6Address + "]";
     } else {
-        scriptURL = QUrl(_payload);
+        // Fallback to IPv4 address
+        address = ipv4Address;
     }
+
+    scriptURL = QUrl(QString("http://%1:%2/assignment/%3/")
+            .arg(address)
+            .arg(DOMAIN_SERVER_HTTP_PORT)
+            .arg(uuidStringWithoutCurlyBraces(nodeList->getSessionUUID())));
+
+
+
+//    if (_payload.isEmpty())  {
+//        scriptURL = QUrl(QString("http://%1:%2/assignment/%3/")
+//                         .arg(nodeList->getDomainHandler().getIPv4().toString())
+//                         .arg(DOMAIN_SERVER_HTTP_PORT)
+//                         .arg(uuidStringWithoutCurlyBraces(nodeList->getSessionUUID())));
+//    } else if (_payload.contains(":")){
+//
+//    } else {
+//        scriptURL = QUrl(_payload);
+//    }
 
     // make sure this is not a script request for the file scheme
     if (scriptURL.scheme() == HIFI_URL_SCHEME_FILE) {

@@ -111,11 +111,13 @@ AssignmentClient::AssignmentClient(Assignment::Type requestAssignmentType, QStri
     // Create Singleton objects on main thread
     NetworkAccessManager::getInstance();
 
-    // did we get an assignment-client monitor port?
     if (assignmentMonitorPort > 0) {
-        // TODO(IPv6):
-        _assignmentClientMonitorSocket = SockAddr(SocketType::UDP, DEFAULT_ASSIGNMENT_CLIENT_MONITOR_HOSTNAME, QHostAddress(),
-            assignmentMonitorPort);
+        QHostAddress ipv4Address = nodeList->getDomainHandler().getIPv4();
+        QHostAddress ipv6Address = nodeList->getDomainHandler().getIPv6();
+        QHostAddress assignmentClientMonitorAddress = !ipv6Address.isNull() ? ipv6Address : ipv4Address;
+
+        _assignmentClientMonitorSocket = SockAddr(SocketType::UDP, DEFAULT_ASSIGNMENT_CLIENT_MONITOR_HOSTNAME,
+                                                  assignmentClientMonitorAddress, assignmentMonitorPort);
         _assignmentClientMonitorSocket.setObjectName("AssignmentClientMonitor");
 
         qCDebug(assignment_client) << "Assignment-client monitor socket is" << _assignmentClientMonitorSocket;
@@ -123,6 +125,20 @@ AssignmentClient::AssignmentClient(Assignment::Type requestAssignmentType, QStri
         // Hook up a timer to send this child's status to the Monitor once per second
         setUpStatusToMonitor();
     }
+
+    // did we get an assignment-client monitor port?
+//    if (assignmentMonitorPort > 0) {
+//        // TODO(IPv6):
+//        _assignmentClientMonitorSocket =
+//            SockAddr(SocketType::UDP, DEFAULT_ASSIGNMENT_CLIENT_MONITOR_HOSTNAME, QHostAddress(),
+//            assignmentMonitorPort);
+//        _assignmentClientMonitorSocket.setObjectName("AssignmentClientMonitor");
+//
+//        qCDebug(assignment_client) << "Assignment-client monitor socket is" << _assignmentClientMonitorSocket;
+//
+//        // Hook up a timer to send this child's status to the Monitor once per second
+//        setUpStatusToMonitor();
+//    }
     auto& packetReceiver = DependencyManager::get<NodeList>()->getPacketReceiver();
     packetReceiver.registerListener(PacketType::CreateAssignment,
         PacketReceiver::makeUnsourcedListenerReference<AssignmentClient>(this, &AssignmentClient::handleCreateAssignmentPacket));

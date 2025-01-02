@@ -270,8 +270,11 @@ bool LimitedNodeList::packetVersionMatch(const udt::Packet& packet) {
 
             if (!hasBeenOutput) {
                 versionDebugSuppressMap.insert(senderSockAddr, headerType);
-                // TODO(IPv6):
-                senderString = QString("%1:%2").arg(senderSockAddr.getAddressIPv4().toString()).arg(senderSockAddr.getPort());
+
+                senderString =
+                    !senderSockAddr.getAddressIPv6().isNull()
+                        ? QString("[%1]:%2").arg(senderSockAddr.getAddressIPv6().toString()).arg(senderSockAddr.getPort())
+                        : QString("%1:%2").arg(senderSockAddr.getAddressIPv4().toString()).arg(senderSockAddr.getPort());
             }
         } else {
             SharedNodePointer sourceNode = nodeWithLocalID(NLPacket::sourceIDInHeader(packet));
@@ -1112,12 +1115,14 @@ void LimitedNodeList::processSTUNResponse(std::unique_ptr<udt::BasePacket> packe
     if (parseSTUNResponse(packet.get(), newPublicAddress, newPublicPort)) {
 
         // TODO(IPv6): How does STUN handle IPv6?
-        if (newPublicAddress != _publicSockAddr.getAddressIPv4() || newPublicPort != _publicSockAddr.getPort()) {
+        if (newPublicAddress != _publicSockAddr.getAddressIPv4() || newPublicPort != _publicSockAddr.getPort() ||
+            newPublicAddress != _publicSockAddr.getAddressIPv6()) {
             qCDebug(networking, "New public socket received from STUN server is %s:%hu (was %s:%hu)",
-                    newPublicAddress.toString().toStdString().c_str(),
-                    newPublicPort,
+                    newPublicAddress.toString().toStdString().c_str(), newPublicPort,
                     // TODO(IPv6):
-                    _publicSockAddr.getAddressIPv4().toString().toLocal8Bit().constData(),
+                    (!_publicSockAddr.getAddressIPv6().isNull()
+                         ? _publicSockAddr.getAddressIPv6().toString().toStdString().c_str()
+                         : _publicSockAddr.getAddressIPv4().toString().toStdString().c_str()),
                     _publicSockAddr.getPort());
 
             // TODO(IPv6):

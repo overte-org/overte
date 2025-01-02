@@ -68,7 +68,8 @@ NodeConnectionData NodeConnectionData::fromDataStream(QDataStream& dataStream, c
 
         // We don't know whether it's a public or local connection so set both the same.
         // TODO(IPv6):
-        auto address = senderSockAddr.getAddressIPv4();
+        auto address =
+            !senderSockAddr.getAddressIPv6().isNull() ? senderSockAddr.getAddressIPv6() : senderSockAddr.getAddressIPv4();
         auto port = senderSockAddr.getPort();
         newHeader.publicSockAddr.setAddress(address);
         newHeader.publicSockAddr.setPort(port);
@@ -79,18 +80,21 @@ NodeConnectionData NodeConnectionData::fromDataStream(QDataStream& dataStream, c
     newHeader.senderSockAddr = senderSockAddr;
     
     // TODO(IPv6):
-    if (newHeader.publicSockAddr.getAddressIPv4().isNull()) {
-        // this node wants to use us its STUN server
-        // so set the node public address to whatever we perceive the public address to be
-        
+    if (newHeader.publicSockAddr.getAddressIPv4().isNull() && newHeader.publicSockAddr.getAddressIPv6().isNull()) {
+        // this node wants to use us as its STUN server
+        // set the node's public address to whatever we perceive the public address to be
+
         // if the sender is on our box then leave its public address to 0 so that
         // other users attempt to reach it on the same address they have for the domain-server
-        // TODO(IPv6):
-        if (senderSockAddr.getAddressIPv4().isLoopback()) {
+        if (senderSockAddr.getAddressIPv4().isLoopback() || senderSockAddr.getAddressIPv6().isLoopback()) {
             newHeader.publicSockAddr.setAddress(QHostAddress());
         } else {
-            // TODO(IPv6):
-            newHeader.publicSockAddr.setAddress(senderSockAddr.getAddressIPv4());
+            // prefer IPv6 if available
+            if (!senderSockAddr.getAddressIPv6().isNull()) {
+                newHeader.publicSockAddr.setAddress(senderSockAddr.getAddressIPv6());
+            } else {
+                newHeader.publicSockAddr.setAddress(senderSockAddr.getAddressIPv4());
+            }
         }
     }
     

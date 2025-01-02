@@ -1030,9 +1030,20 @@ void OctreeServer::readConfiguration() {
     _settings = settingsSectionObject; // keep this for later
 
     if (!readOptionString(QString("statusHost"), settingsSectionObject, _statusHost) || _statusHost.isEmpty()) {
-        // TODO(IPv6):
-        _statusHost = getGuessedLocalAddress(QAbstractSocket::IPv4Protocol).toString();
+        QHostAddress guessedAddress = getGuessedLocalAddress(QAbstractSocket::IPv4Protocol);
+
+        if (guessedAddress.isNull()) {
+            guessedAddress = getGuessedLocalAddress(QAbstractSocket::IPv6Protocol);
+        }
+
+        _statusHost = guessedAddress.toString();
     }
+
+    
+ //   if (!readOptionString(QString("statusHost"), settingsSectionObject, _statusHost) || _statusHost.isEmpty()) {
+ //       // TODO(IPv6):
+ //       _statusHost = getGuessedLocalAddress(QAbstractSocket::IPv4Protocol).toString();
+ //   }
     qDebug("statusHost=%s", qPrintable(_statusHost));
 
     if (readOptionInt(QString("statusPort"), settingsSectionObject, _statusPort)) {

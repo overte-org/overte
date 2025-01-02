@@ -257,7 +257,12 @@ void DomainHandler::setURLAndID(QUrl domainURL, QUuid domainID) {
 void DomainHandler::setIceServerHostnameAndID(const QString& iceServerHostname, const QUuid& id) {
 
     // TODO(IPv6):
-    auto newIceServer = _iceServerSockAddr.getAddressIPv4().toString() != iceServerHostname;
+    QHostAddress IPv4 = SockAddr().getAddressIPv4();
+    QHostAddress IPv6 = SockAddr().getAddressIPv6();
+
+    QHostAddress address = !IPv6.isNull() ? IPv6 : IPv4;
+
+    auto newIceServer = address.toString() != iceServerHostname;
     auto newDomainID = id != _pendingDomainID;
 
     // if it's in the error state, reset and try again.
@@ -306,7 +311,10 @@ void DomainHandler::activateICELocalSocket() {
     _sockAddr = _icePeer.getLocalSocket();
     _domainURL.setScheme(URL_SCHEME_OVERTE);
     // TODO(IPv6):
-    _domainURL.setHost(_sockAddr.getAddressIPv4().toString());
+    QHostAddress IPv4 = _sockAddr.getAddressIPv4();
+    QHostAddress IPv6 = _sockAddr.getAddressIPv6();
+    QHostAddress address = !IPv6.isNull() ? IPv6 : IPv4;
+    _domainURL.setHost(address.toString());
     emit domainURLChanged(_domainURL);
     emit completedSocketDiscovery();
 }
@@ -316,7 +324,12 @@ void DomainHandler::activateICEPublicSocket() {
     _sockAddr = _icePeer.getPublicSocket();
     _domainURL.setScheme(URL_SCHEME_OVERTE);
     // TODO(IPv6):
-    _domainURL.setHost(_sockAddr.getAddressIPv4().toString());
+    QHostAddress IPv4 = _sockAddr.getAddressIPv4();
+    QHostAddress IPv6 = _sockAddr.getAddressIPv6();
+
+    QHostAddress address = !IPv6.isNull() ? IPv6 : IPv4;
+
+    _domainURL.setHost(address.toString());
     emit domainURLChanged(_domainURL);
     emit completedSocketDiscovery();
 }

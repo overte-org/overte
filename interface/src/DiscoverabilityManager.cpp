@@ -84,7 +84,10 @@ void DiscoverabilityManager::updateLocation() {
             auto& domainSockAddr = domainHandler.getSockAddr();
             const QString NETWORK_ADDRESS_KEY_IN_LOCATION = "network_address";
             // TODO(IPv6):
-            locationObject.insert(NETWORK_ADDRESS_KEY_IN_LOCATION, domainSockAddr.getAddressIPv4().toString());
+            QHostAddress IPv4 = domainSockAddr.getAddressIPv4();
+            QHostAddress IPv6 = domainSockAddr.getAddressIPv6();
+            QHostAddress address = !IPv6.isNull() ? IPv6 : IPv4;
+            locationObject.insert(NETWORK_ADDRESS_KEY_IN_LOCATION, address.toString());
 
             const QString NETWORK_ADDRESS_PORT_IN_LOCATION = "network_port";
             locationObject.insert(NETWORK_ADDRESS_PORT_IN_LOCATION, domainSockAddr.getPort());
