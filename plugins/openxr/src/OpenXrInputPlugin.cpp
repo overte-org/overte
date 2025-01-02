@@ -446,7 +446,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"stick_click_left",  "/user/hand/left/input/thumbstick/click"},
             {"stick_click_right", "/user/hand/right/input/thumbstick/click"},
             {"hand_pose_left",    std::string("/user/hand/left/input") + hand_pose_name},
-            {"hand_pose_right",  std::string("/user/hand/right/input") + hand_pose_name},
+            {"hand_pose_right",   std::string("/user/hand/right/input") + hand_pose_name},
             {"hand_haptic_left",  "/user/hand/left/output/haptic"},
             {"hand_haptic_right", "/user/hand/right/output/haptic"},
         }},
@@ -463,7 +463,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"stick_click_left",  "/user/hand/left/input/thumbstick/click"},
             {"stick_click_right", "/user/hand/right/input/thumbstick/click"},
             {"hand_pose_left",    std::string("/user/hand/left/input") + hand_pose_name},
-            {"hand_pose_right",  std::string("/user/hand/right/input") + hand_pose_name},
+            {"hand_pose_right",   std::string("/user/hand/right/input") + hand_pose_name},
             {"hand_haptic_left",  "/user/hand/left/output/haptic"},
             {"hand_haptic_right", "/user/hand/right/output/haptic"},
         }},
@@ -557,15 +557,26 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
             // (apparently the openvr plugin uses similar constants?)
             glm::mat4 posOffset(1.0f);
             posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? 0.04f : -0.04f));
-            posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.15f);
-            posOffset *= glm::translate(glm::vec3(handOffset[2]) * 0.02f);
+            posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.16f);
+            posOffset *= glm::translate(glm::vec3(handOffset[2]) * -0.04f);
             _poseStateMap[i == 0 ? controller::LEFT_HAND : controller::RIGHT_HAND] =
                 pose.postTransform(posOffset).postTransform(handOffset).transform(sensorToAvatar);
         }
     }
 
-    glm::mat4 defaultHeadOffset = createMatFromQuatAndPos(-DEFAULT_AVATAR_HEAD_ROT, -DEFAULT_AVATAR_HEAD_TO_MIDDLE_EYE_OFFSET);
-    _poseStateMap[controller::HEAD] = _context->_lastHeadPose.postTransform(defaultHeadOffset).transform(sensorToAvatar);
+    glm::mat4 defaultHeadOffset;
+    if (inputCalibrationData.hmdAvatarAlignmentType == controller::HmdAvatarAlignmentType::Eyes) {
+        // align the eyes of the user with the eyes of the avatar
+        defaultHeadOffset = (glm::inverse(inputCalibrationData.defaultCenterEyeMat) * inputCalibrationData.defaultHeadMat) * Matrices::Y_180;
+    } else {
+        defaultHeadOffset = createMatFromQuatAndPos(-DEFAULT_AVATAR_HEAD_ROT, -DEFAULT_AVATAR_HEAD_TO_MIDDLE_EYE_OFFSET);
+    }
+    // try to account for weirdness with HMD view being inside the root of the head bone
+    // TODO: is the 15cm(?) forward shift too much?
+    // FIXME: this doesn't account for avatar scale
+    auto headCorrectionA = glm::translate(glm::vec3(0.0f, 0.15f, 0.15f));
+    auto headCorrectionB = glm::translate(glm::vec3(0.0f, -0.2f, 0.0f));
+    _poseStateMap[controller::HEAD] = _context->_lastHeadPose.postTransform(headCorrectionA).postTransform(defaultHeadOffset).transform(sensorToAvatar).postTransform(headCorrectionB);
 
     std::vector<std::pair<std::string, controller::StandardAxisChannel>> floatsToUpdate = {
         {"interact_left", controller::LT},
