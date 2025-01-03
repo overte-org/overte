@@ -267,6 +267,9 @@ protected:
 class VKAttachmentTexture : public VKFixedAllocationTexture {
     friend class VKBackend;
 
+public:
+    VkImageLayout getVkImageLayout() { return _vkImageLayout; };
+
 protected:
     VKAttachmentTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture) :
         VKFixedAllocationTexture(backend, texture, false) {
