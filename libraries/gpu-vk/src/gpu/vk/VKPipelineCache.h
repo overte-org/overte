@@ -19,17 +19,29 @@ struct hash<gpu::Element> {
     size_t operator()(const gpu::Element& a) const { return std::hash<uint16_t>()(a.getRaw()); }
 };
 
+template <>
+struct hash<::VkImageLayout> {
+    size_t operator()(const VkImageLayout& a) const { return std::hash<uint16_t>()((uint16_t)a); }
+};
+
+
+
 }  // namespace std
 namespace gpu { namespace vk {
 
+inline size_t hashRenderPassPair(const std::pair<VkFormat,VkImageLayout>& a) {
+    size_t seed = 0;
+    std::hash_combine(seed, a.first);
+    std::hash_combine(seed, a.second);
+    return seed;
+}
 
-
-template <typename Container>  // we can make this generic for any container [1]
-struct container_hash {
+template <typename Container>
+struct RenderPassHash {
     std::size_t operator()(const Container& c) const {
         size_t seed = 0;
         for (const auto& e : c) {
-            std::hash_combine(seed, e);
+            std::hash_combine(seed, hashRenderPassPair(e));
         }
         return seed;
     }
@@ -39,7 +51,7 @@ struct Cache {
     std::unordered_map<uint32_t, VkShaderModule> moduleMap;
 
     struct Pipeline {
-        using RenderpassKey = std::vector<VkFormat>;
+        using RenderpassKey = std::vector<std::pair<VkFormat, VkImageLayout>>;
         using BindingMap = std::unordered_map<uint32_t, VkShaderStageFlags>;
         using LocationMap = shader::Reflection::LocationMap;
 
@@ -55,8 +67,8 @@ struct Cache {
             VkDescriptorSetLayout storageLayout;
         };
 
-        std::unordered_map<gpu::PipelineReference, PipelineLayout> _layoutMap;
-        std::unordered_map<RenderpassKey, VkRenderPass, container_hash<RenderpassKey>> _renderPassMap;
+        std::unordered_map<gpu::PipelineReference, PipelineLayout> _layoutMap; // VKTODO: make sure pipelines are retrieved from here
+        std::unordered_map<RenderpassKey, VkRenderPass, RenderPassHash<std::vector<std::pair<VkFormat, VkImageLayout>>>> _renderPassMap; // VKTODO: make sure render passes are retrieved from here
 
         // These get set when stride gets set by setInputBuffer
         std::array<Offset, MAX_NUM_INPUT_BUFFERS> _bufferStrides{ 0 };

@@ -117,6 +117,8 @@ void RenderThread::initialize(QWindow* window) {
     gpu::Context::init<gpu::vk::VKBackend>();
     _gpuContext = std::make_shared<gpu::Context>();
     _backend = _gpuContext->getBackend();
+    auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(_gpuContext->getBackend());
+    vkBackend->setIsFramePlayer(true);
 #endif
 }
 
@@ -297,7 +299,7 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
         vkBackend->_outputTexture->attachments[0].image,
         VK_ACCESS_TRANSFER_READ_BIT,
         0,
-        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         VK_PIPELINE_STAGE_TRANSFER_BIT,
         VK_PIPELINE_STAGE_TRANSFER_BIT,

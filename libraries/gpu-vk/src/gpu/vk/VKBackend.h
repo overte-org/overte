@@ -260,9 +260,12 @@ protected:
 
     void resetQueryStage();
 
-    VkRenderPass _currentRenderPass{ VK_NULL_HANDLE };
+    VkRenderPass _currentVkRenderPass{ VK_NULL_HANDLE };
+    gpu::FramebufferReference _currentFramebuffer{ nullptr }; // Framebuffer used in currently happening render pass
+    VkFramebuffer _currentVkFramebuffer{ VK_NULL_HANDLE }; // Framebuffer used in currently happening render pass
     // Checks if renderpass change is needed and changes it if required
     void updateRenderPass();
+    void updateAttachmentLayoutsAfterRenderPass();
     void resetRenderPass();
 
     // Contains objects that are created per frame and need to be deleted after the frame is rendered
@@ -334,6 +337,7 @@ public:
     VkDescriptorImageInfo getDefaultTextureDescriptorInfo() ;
     // Used by GPU frame player to move camera around
     void enableContextViewCorrectionForFramePlayer() { _transform._viewCorrectionEnabledForFramePlayer = true; };
+    void setIsFramePlayer(bool isFramePlayer) { _isFramePlayer = isFramePlayer; };
 
     static gpu::Primitive getPrimitiveTopologyFromCommand(Batch::Command command, const Batch& batch, size_t paramOffset);
 
@@ -448,7 +452,8 @@ public:
     // VKTODO: quick hack
     VKFramebuffer *_outputTexture{ nullptr };
 protected:
-    void transitionImageLayouts();
+    void transitionInputImageLayouts();
+    void transitionAttachmentImageLayouts(gpu::Framebuffer &framebuffer);
 
     // These are filled by syncGPUObject() calls, and are needed to track backend objects so that they can be destroyed before
     // destroying backend.
@@ -487,9 +492,6 @@ protected:
     // Frame for which command buffer is already generated and it's currently being rendered.
     std::shared_ptr<FrameData> _currentlyRenderedFrame;
 
-    std::vector<VKAttachmentTexture*> _attachmentTexturesToTransitionToRead;
-    std::vector<VKAttachmentTexture*> _attachmentTexturesToTransitionToWrite;
-
     // Safety check to ensure that shutdown was completed before destruction.
     std::atomic<bool> isBackendShutdownComplete{ false };
 
@@ -497,6 +499,7 @@ protected:
     static std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> _commandCalls;
     static const size_t INVALID_OFFSET = (size_t)-1;
     static size_t UNIFORM_BUFFER_OFFSET_ALIGNMENT;
+    bool _isFramePlayer {false};
     bool _isInitialized {false};
 };
 

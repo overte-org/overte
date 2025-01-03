@@ -317,6 +317,7 @@ uint32_t gpu::vk::VKFramebuffer::addAttachment(VKAttachmentCreateInfo createinfo
     // Color attachment
     if (createinfo.usage & VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
     {
+        Q_ASSERT(attachment.format != VK_FORMAT_D24_UNORM_S8_UINT);
         aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     }
 
