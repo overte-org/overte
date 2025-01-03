@@ -113,7 +113,7 @@ void Context::executeBatch(const char* name, std::function<void(Batch&)> lambda)
 void Context::executeBatch(Batch& batch) const {
     PROFILE_RANGE(render_gpu, __FUNCTION__);
     batch.flush();
-    _backend->render(batch);
+    //_backend->render(batch);
 }
 
 void Context::recycle() const {
@@ -133,22 +133,7 @@ void Context::executeFrame(const FramePointer& frame) const {
     static ContextStats beginStats;
     getStats(beginStats);
 
-    // FIXME? probably not necessary, but safe
-    consumeFrameUpdates(frame);
-    _backend->setStereoState(frame->stereoState);
-
-    executeBatch("Context::executeFrame::begin", [&](Batch& batch){
-        batch.pushProfileRange("Frame");
-        _frameRangeTimer->begin(batch);
-    });
-    // Execute the frame rendering commands
-    for (auto& batch : frame->batches) {
-        _backend->render(*batch);
-    }
-    executeBatch("Context::executeFrame::end", [&](Batch& batch){
-        batch.popProfileRange();
-        _frameRangeTimer->end(batch);
-    });
+    _backend->executeFrame(frame);
 
     static ContextStats endStats;
     getStats(endStats);

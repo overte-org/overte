@@ -11,10 +11,10 @@
 <@include gpu/Noise.slh@>
 <@include procedural/ShaderConstants.h@>
 
-LAYOUT(binding=PROCEDURAL_TEXTURE_CHANNEL0) uniform sampler2D iChannel0;
-LAYOUT(binding=PROCEDURAL_TEXTURE_CHANNEL1) uniform sampler2D iChannel1;
-LAYOUT(binding=PROCEDURAL_TEXTURE_CHANNEL2) uniform sampler2D iChannel2;
-LAYOUT(binding=PROCEDURAL_TEXTURE_CHANNEL3) uniform sampler2D iChannel3;
+TEXTURE(PROCEDURAL_TEXTURE_CHANNEL0, sampler2D, iChannel0);
+TEXTURE(PROCEDURAL_TEXTURE_CHANNEL1, sampler2D, iChannel1);
+TEXTURE(PROCEDURAL_TEXTURE_CHANNEL2, sampler2D, iChannel2);
+TEXTURE(PROCEDURAL_TEXTURE_CHANNEL3, sampler2D, iChannel3);
 
 // DO NOT TOUCH
 // This block does not follow our normal rules of always using a struct and 
@@ -24,7 +24,7 @@ LAYOUT(binding=PROCEDURAL_TEXTURE_CHANNEL3) uniform sampler2D iChannel3;
 // comptability with existing procedural shaders that previously relied on these 
 // inputs as uniforms, not members of a UBO
 
-LAYOUT_STD140(binding=PROCEDURAL_BUFFER_INPUTS) uniform standardInputsBuffer {
+UNIFORM_BUFFER(0, standardInputsBuffer) {
     // Offset 0
     vec4 date;
     // Offset 16, acts as vec4 for alignment purposes

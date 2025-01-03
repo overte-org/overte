@@ -68,6 +68,9 @@ Material::Material() {
     for (int i = 0; i < NUM_TOTAL_FLAGS; i++) {
         _propertyFallthroughs[i] = false;
     }
+    // created from nothing: create the Buffer to store the properties
+    //Schema schema;
+    //_schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
 }
 
 Material::Material(const Material& material) :
@@ -89,6 +92,10 @@ Material::Material(const Material& material) :
     _defaultFallthrough(material._defaultFallthrough),
     _propertyFallthroughs(material._propertyFallthroughs)
 {
+    // copied: create the Buffer to store the properties, avoid holding a ref to the old Buffer
+    //Schema schema;
+    //_schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+    //_schemaBuffer.edit<Schema>() = material._schemaBuffer.get<Schema>();
 }
 
 Material& Material::operator=(const Material& material) {
@@ -112,6 +119,11 @@ Material& Material::operator=(const Material& material) {
 
     _defaultFallthrough = material._defaultFallthrough;
     _propertyFallthroughs = material._propertyFallthroughs;
+
+    // copied: create the Buffer to store the properties, avoid holding a ref to the old Buffer
+    //Schema schema;
+    //_schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+    //_schemaBuffer.edit<Schema>() = material._schemaBuffer.get<Schema>();
 
     return (*this);
 }
@@ -273,7 +285,7 @@ const glm::vec3 Material::DEFAULT_OUTLINE = glm::vec3(0.0f);
 
 MultiMaterial::MultiMaterial() {
     Schema schema;
-    _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+    _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
 }
 
 void MultiMaterial::calculateMaterialInfo() const {
@@ -329,10 +341,10 @@ void MultiMaterial::setisMToon(bool isMToon) {
     if (isMToon != _isMToon) {
         if (isMToon) {
             MToonSchema toonSchema;
-            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(MToonSchema), (const gpu::Byte*) &toonSchema, sizeof(MToonSchema)));
+            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(MToonSchema), (const gpu::Byte*) &toonSchema, sizeof(MToonSchema)));
         } else {
             Schema schema;
-            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
         }
     }
     _isMToon = isMToon;

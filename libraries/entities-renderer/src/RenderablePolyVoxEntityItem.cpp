@@ -1336,14 +1336,14 @@ void RenderablePolyVoxEntityItem::recomputeMesh() {
 
         // convert PolyVox mesh to a Sam mesh
         const std::vector<uint32_t>& vecIndices = polyVoxMesh.getIndices();
-        auto indexBuffer = std::make_shared<gpu::Buffer>(vecIndices.size() * sizeof(uint32_t),
+        auto indexBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer, vecIndices.size() * sizeof(uint32_t),
                                                          (gpu::Byte*)vecIndices.data());
         auto indexBufferPtr = gpu::BufferPointer(indexBuffer);
         gpu::BufferView indexBufferView(indexBufferPtr, gpu::Element(gpu::SCALAR, gpu::UINT32, gpu::INDEX));
         mesh->setIndexBuffer(indexBufferView);
 
         const std::vector<PolyVox::PositionMaterialNormal>& vecVertices = polyVoxMesh.getRawVertexData();
-        auto vertexBuffer = std::make_shared<gpu::Buffer>(vecVertices.size() * sizeof(PolyVox::PositionMaterialNormal),
+        auto vertexBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer, vecVertices.size() * sizeof(PolyVox::PositionMaterialNormal),
                                                           (gpu::Byte*)vecVertices.data());
         auto vertexBufferPtr = gpu::BufferPointer(vertexBuffer);
         gpu::BufferView vertexBufferView(vertexBufferPtr, 0,
@@ -1365,8 +1365,8 @@ void RenderablePolyVoxEntityItem::recomputeMesh() {
                                              (graphics::Index)vecIndices.size(), // numIndices
                                              (graphics::Index)0, // baseVertex
                                              graphics::Mesh::TRIANGLES)); // topology
-        mesh->setPartBuffer(gpu::BufferView(new gpu::Buffer(parts.size() * sizeof(graphics::Mesh::Part), (gpu::Byte*) parts.data()),
-                                            gpu::Element::PART_DRAWCALL));
+        mesh->setPartBuffer(gpu::BufferView(new gpu::Buffer(gpu::Buffer::IndirectBuffer, parts.size() * sizeof(graphics::Mesh::Part),
+                                                            (gpu::Byte*) parts.data()), gpu::Element::PART_DRAWCALL));
         entity->setMesh(mesh);
     });
 }
@@ -1766,7 +1766,7 @@ PolyVoxEntityRenderer::PolyVoxEntityRenderer(const EntityItemPointer& entity) : 
         _vertexFormat->setAttribute(gpu::Stream::POSITION, 0, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 0);
         _vertexFormat->setAttribute(gpu::Stream::NORMAL, 0, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 12);
     });
-    _params = std::make_shared<gpu::Buffer>(sizeof(glm::vec4), nullptr);
+    _params = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(glm::vec4), nullptr);
 }
 
 ShapeKey PolyVoxEntityRenderer::getShapeKey() {
