@@ -4,6 +4,7 @@
 
 #include "VKShared.h"
 #include <vk/Pipelines.h>
+#include "VKTexture.h"
 
 using namespace gpu;
 using namespace gpu::vk;
@@ -149,17 +150,35 @@ Cache::Pipeline::PipelineLayout Cache::Pipeline::getPipelineAndDescriptorLayout(
 Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffer* framebuffer) const {
     RenderpassKey result;
     if (!framebuffer) {
-        result.push_back(VK_FORMAT_R8G8B8A8_SRGB);
+        result.emplace_back(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED);
     } else {
         for (const auto& attachment : framebuffer->getRenderBuffers()) {
             if (attachment.isValid()) {
                 // VKTODO: why _element often has different format than texture's pixel format, and seemingly wrong one?
                 //result.push_back(evalTexelFormatInternal(attachment._element));
-                result.push_back(evalTexelFormatInternal(attachment._texture->getTexelFormat()));
+                VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+                auto *gpuTexture = Backend::getGPUObject<VKTexture>(*attachment._texture);
+                if (gpuTexture) {
+                    auto attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
+                    if (attachmentTexture) {
+                        layout = attachmentTexture->getVkImageLayout();
+                    }
+                }
+                result.emplace_back(evalTexelFormatInternal(attachment._texture->getTexelFormat()), layout);
             }
         }
         if (framebuffer->hasDepthStencil()) {
-            result.push_back(evalTexelFormatInternal(framebuffer->getDepthStencilBufferFormat()));
+            VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+            if (framebuffer->getDepthStencilBuffer()) {
+                auto* gpuTexture = Backend::getGPUObject<VKTexture>(*framebuffer->getDepthStencilBuffer());
+                if (gpuTexture) {
+                    auto attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
+                    if (attachmentTexture) {
+                        layout = attachmentTexture->getVkImageLayout();
+                    }
+                }
+            }
+            result.emplace_back(evalTexelFormatInternal(framebuffer->getDepthStencilBufferFormat()), layout);
         }
     }
     return result;
@@ -171,28 +190,57 @@ VkRenderPass Cache::Pipeline::getRenderPass(const vks::Context& context) {
     RenderpassKey key = getRenderPassKey(framebuffer);
     auto itr = _renderPassMap.find(key);
     if (itr == _renderPassMap.end()) {
+        auto &renderBuffers = framebuffer->getRenderBuffers();
+        size_t renderBufferIndex = 0;
         std::vector<VkAttachmentDescription> attachments;
         attachments.reserve(key.size());
         std::vector<VkAttachmentReference> colorAttachmentReferences;
         VkAttachmentReference depthReference{};
-        for (const auto& format : key) {
+        for (const auto& formatAndLayout : key) {
+            Q_ASSERT(renderBufferIndex < renderBuffers.size());
+            std::shared_ptr<gpu::Texture> texture = renderBuffers[renderBufferIndex]._texture;
+            if (isDepthStencilFormat(formatAndLayout.first)) {
+                texture = framebuffer->getDepthStencilBuffer();
+            } else {
+                texture = renderBuffers[renderBufferIndex]._texture;
+                renderBufferIndex++;
+            }
+            VKAttachmentTexture *attachmentTexture = nullptr;
+            if (texture) {
+                auto gpuObject = Backend::getGPUObject<VKTexture>(*texture);
+                if (gpuObject) {
+                    attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuObject);
+                }
+            }
             VkAttachmentDescription attachment{};
-            attachment.format = format;
-            //attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+            attachment.format = formatAndLayout.first;
+            // Framebuffers are always cleared with a separate command in the renderer/
+            if (!attachmentTexture || attachmentTexture->getVkImageLayout() == VK_IMAGE_LAYOUT_UNDEFINED) {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+                attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+            } else {
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+                attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+            }
             attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-            //attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-            attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
             attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
             //attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-            if (isDepthStencilFormat(format)) {
-                attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            if (isDepthStencilFormat(formatAndLayout.first)) {
+                if (!attachmentTexture || attachmentTexture->getVkImageLayout() == VK_IMAGE_LAYOUT_UNDEFINED) {
+                    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                } else {
+                    attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                }
                 attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                 depthReference.attachment = (uint32_t)(attachments.size());
                 depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             } else {
-                attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                if (!attachmentTexture || attachmentTexture->getVkImageLayout() == VK_IMAGE_LAYOUT_UNDEFINED) {
+                    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                } else {
+                    attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+                }
                 attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                 VkAttachmentReference reference;
                 reference.attachment = (uint32_t)(attachments.size());
@@ -228,14 +276,15 @@ VkRenderPass Cache::Pipeline::getRenderPass(const vks::Context& context) {
     return itr->second;
 }
 
-std::string Cache::Pipeline::getRenderpassKeyString(const RenderpassKey& renderpassKey) {
+// VKTODO:
+/*std::string Cache::Pipeline::getRenderpassKeyString(const RenderpassKey& renderpassKey) {
     std::string result;
 
     for (const auto& e : renderpassKey) {
         result += hex((uint32_t)e);
     }
     return result;
-}
+}*/
 
 std::string Cache::Pipeline::getStridesKey() const {
     std::string key;
