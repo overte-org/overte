@@ -10,7 +10,7 @@ Rectangle {
 	height: parent.height;
 	anchors.centerIn: parent;
 	anchors.horizontalCenter: parent.horizontalCenter
-	property var pages: ["Graphics" /*, "Audio", "Controls", "Privacy and Security"*/];
+	property var pages: [{name: "Graphics", icon: "../img/computer.svg"} /*"Graphics" , "Audio", "Controls", "Privacy and Security"*/];
 	property string current_page: "Settings"
 
 	ColumnLayout {
@@ -33,7 +33,8 @@ Rectangle {
 			Repeater {
 				model: pages.length
 				delegate: SettingSubviewListElement {
-					property string page_name: pages[index];
+					property string page_name: pages[index].name;
+					property string page_icon: pages[index].icon;
 				}
 			}
 		}

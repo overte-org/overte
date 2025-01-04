@@ -21,12 +21,14 @@ Item {
 		anchors.horizontalCenter: parent.horizontalCenter;
 		Layout.alignment: Qt.AlignTop;
 
-		Text {
+		TextEdit {
 			id: settingTextElem
 			height: parent.height;
 			text: settingText;
 			color: "white";
 			font.pointSize: 14;
+			selectByMouse: true;
+			readOnly: true;
 		}
 
 		ComboBox {
