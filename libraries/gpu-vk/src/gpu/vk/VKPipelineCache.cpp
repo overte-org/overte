@@ -229,16 +229,25 @@ VkRenderPass Cache::Pipeline::getRenderPass(const vks::Context& context) {
             if (isDepthStencilFormat(formatAndLayout.first)) {
                 if (!attachmentTexture || attachmentTexture->getVkImageLayout() == VK_IMAGE_LAYOUT_UNDEFINED) {
                     attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+                    attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                 } else {
-                    attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                    if (attachmentTexture->getVkImageLayout() == VK_IMAGE_LAYOUT_GENERAL) {
+                        attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
+                        attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
+                        depthReference.layout = VK_IMAGE_LAYOUT_GENERAL;
+                    } else {
+                        Q_ASSERT(attachmentTexture->getVkImageLayout() == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+                        attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                        attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                        depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                    }
                 }
-                attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                 depthReference.attachment = (uint32_t)(attachments.size());
-                depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             } else {
                 if (!attachmentTexture || attachmentTexture->getVkImageLayout() == VK_IMAGE_LAYOUT_UNDEFINED) {
                     attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                 } else {
+                    Q_ASSERT(attachmentTexture->getVkImageLayout() == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
                     attachment.initialLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                 }
                 attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;

@@ -17,12 +17,21 @@ OUTPUT(0, vec2, varTexCoord0);
 
 void main(void) {
     const float depth = 1.0;
+#ifdef VULKAN
+    const vec4 UNIT_QUAD[4] = vec4[4](
+        vec4(-1.0, 1.0, depth, 1.0),
+        vec4(1.0, 1.0, depth, 1.0),
+        vec4(-1.0, -1.0, depth, 1.0),
+        vec4(1.0, -1.0, depth, 1.0)
+    );
+#else
     const vec4 UNIT_QUAD[4] = vec4[4](
         vec4(-1.0, -1.0, depth, 1.0),
         vec4(1.0, -1.0, depth, 1.0),
         vec4(-1.0, 1.0, depth, 1.0),
         vec4(1.0, 1.0, depth, 1.0)
     );
+#endif
     vec4 pos = UNIT_QUAD[gl_VertexID];
 
     varTexCoord0 = (pos.xy + 1.0) * 0.5;

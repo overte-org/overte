@@ -37,6 +37,8 @@ void DeferredFrameTransform::update(RenderArgs* args, glm::vec2 jitter) {
     cameraTransform.getInverseMatrix(frameTransformBuffer.view);
 
     args->getViewFrustum().evalProjectionMatrix(frameTransformBuffer.projectionMono);
+    // VKTODO: This breaks things for OpenGL.
+    frameTransformBuffer.projectionMono = glm::scale(frameTransformBuffer.projectionMono, glm::vec3(1.0f, -1.0f, 1.0f));
 
     // There may be some sort of mismatch here if the viewport size isn't the same as the frame buffer size as
     // jitter is normalized by frame buffer size in TransformCamera. But we should be safe.

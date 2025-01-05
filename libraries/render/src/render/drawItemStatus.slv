@@ -74,7 +74,7 @@ void main(void) {
         vec4(-1.0, 1.0, 0.0, 1.0),
         vec4(1.0, -1.0, 0.0, 1.0),
         vec4(1.0, 1.0, 0.0, 1.0)
-    );
+    ); // VKTODO: does this need to be inverted?
 
     const vec2 ICON_PIXEL_SIZE = vec2(36, 36);
     const vec2 MARGIN_PIXEL_SIZE = vec2(2, 2);

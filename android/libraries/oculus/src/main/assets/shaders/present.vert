@@ -4,12 +4,21 @@ layout(location = 0) out vec4 vTexCoordLR;
 
 void main(void) {
     const float depth = 0.0;
+#ifdef VULKAN
+    const vec4 UNIT_QUAD[4] = vec4[4](
+        vec4(-1.0, 1.0, depth, 1.0),
+        vec4(1.0, 1.0, depth, 1.0),
+        vec4(-1.0, -1.0, depth, 1.0),
+        vec4(1.0, -1.0, depth, 1.0)
+    );
+#else
     const vec4 UNIT_QUAD[4] = vec4[4](
         vec4(-1.0, -1.0, depth, 1.0),
         vec4(1.0, -1.0, depth, 1.0),
         vec4(-1.0, 1.0, depth, 1.0),
         vec4(1.0, 1.0, depth, 1.0)
     );
+#endif
     vec4 pos = UNIT_QUAD[gl_VertexID];
     gl_Position = pos;
     vTexCoordLR.xy = pos.xy;
