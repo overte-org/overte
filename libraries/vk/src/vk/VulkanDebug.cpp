@@ -73,7 +73,7 @@ namespace vks
             } else {
                 std::cout << debugMessage.str() << "\n\n";
             }
-            fflush(stdout);
+                    fflush(stdout);
 #endif
 
 

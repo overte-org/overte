@@ -182,6 +182,7 @@ protected:
 
     // FIXME find a more generic way to do this.
     friend class ::gpu::vk::VKBuffer;
+    friend class ::gpu::vk::VKBackend;
     friend class gl::GLBackend;
     friend class gl::GLBuffer;
     friend class gl41::GL41Buffer;
