@@ -258,6 +258,13 @@ ScriptEngineV8::ScriptEngineV8(ScriptManager *manager) : ScriptEngine(manager), 
 }
 
 ScriptEngineV8::~ScriptEngineV8() {
+    // Process remaining events to avoid problems with `deleteLater` calling destructor of script proxies after script engine has been deleted:
+    {
+        QEventLoop loop;
+        loop.processEvents();
+    }
+    // This is necessary for script engines that don't run in ScriptManager::run(), for example entity scripts:
+    disconnectSignalProxies();
     deleteUnusedValueWrappers();
 #ifdef OVERTE_SCRIPT_USE_AFTER_DELETE_GUARD
     _wasDestroyed = true;
@@ -272,13 +279,13 @@ void ScriptEngineV8::perManagerLoopIterationCleanup() {
 void ScriptEngineV8::disconnectSignalProxies() {
     _signalProxySetLock.lockForRead();
     while (!_signalProxySet.empty()) {
+        auto proxy = *_signalProxySet.begin();
         _signalProxySetLock.unlock();
-        delete *_signalProxySet.begin();
+        delete proxy;
         _signalProxySetLock.lockForRead();
     }
     _signalProxySetLock.unlock();
 }
-
 
 void ScriptEngineV8::deleteUnusedValueWrappers() {
     while (!_scriptValueWrappersToDelete.empty()) {

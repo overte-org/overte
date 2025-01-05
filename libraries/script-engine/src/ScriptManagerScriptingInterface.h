@@ -58,6 +58,9 @@ public:
 
 class ScriptManagerScriptingInterface : public QObject {
     Q_OBJECT
+    Q_PROPERTY(QString context READ getContext)
+    Q_PROPERTY(QString type READ getTypeAsString)
+    Q_PROPERTY(QString fileName READ getAbsoluteFilename CONSTANT)
 public:
     ScriptManagerScriptingInterface(ScriptManager *parent);
 
@@ -96,6 +99,26 @@ public:
      */
     Q_INVOKABLE QString getContext() const { return _manager->getContext(); }
 
+    /*@jsdoc
+     * Gets the type of script that is running: Interface, avatar, client entity, server entity, or assignment client.
+     * @function Script.getTypeAsString
+     * @returns {string} The type of script that is running:
+     *     <ul>
+     *       <li><code>"client"</code>: An Interface script.</li>
+     *       <li><code>"entity_client"</code>: A client entity script.</li>
+     *       <li><code>"avatar"</code>: An avatar script.</li>
+     *       <li><code>"entity_server"</code>: A server entity script.</li>
+     *       <li><code>"agent"</code>: An assignment client script.</li>
+     *     </ul>
+     */
+    Q_INVOKABLE QString getTypeAsString() const { return _manager->getTypeAsString(); }
+
+    /*@jsdoc
+     * Gets the filename of the script file.
+     * @function Script.getAbsoluteFilename
+     * @returns {string} The filename of the script file.
+     */
+    Q_INVOKABLE QString getAbsoluteFilename() const { return _manager->getAbsoluteFilename(); }
 
     /*@jsdoc
      * Checks whether the script is running as an Interface or avatar script.

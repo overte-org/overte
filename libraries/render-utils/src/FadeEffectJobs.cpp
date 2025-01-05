@@ -3,6 +3,7 @@
 
 //  Created by Olivier Prat on 07/07/2017.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -35,7 +36,7 @@ void FadeEditJob::configure(const Config& config) {
     _isEditEnabled = config.editFade;
 }
 
-void FadeEditJob::run(const render::RenderContextPointer& renderContext, const FadeEditJob::Input& inputs) {
+void FadeEditJob::run(const render::RenderContextPointer& renderContext, const FadeEditJob::Input& input) {
     auto scene = renderContext->_scene;
 
     if (_isEditEnabled) {
@@ -63,7 +64,7 @@ void FadeEditJob::run(const render::RenderContextPointer& renderContext, const F
                     render::Transition::AVATAR_CHANGE
                 };
 
-                auto transitionType = categoryToTransition[inputs.get1()];
+                auto transitionType = categoryToTransition[input];
 
                 transaction.queryTransitionOnItem(_editedItem, [transitionType, scene](render::ItemID id, const render::Transition* transition) {
                     if (transition == nullptr || transition->isFinished || transition->eventType != transitionType) {
@@ -572,7 +573,7 @@ void FadeJob::run(const render::RenderContextPointer& renderContext, FadeJob::Ou
 
     // And now update fade effect
     for (auto transitionId : *transitionStage) {
-        auto& state = transitionStage->editTransition(transitionId);
+        auto& state = transitionStage->editElement(transitionId);
 #ifdef DEBUG
         auto& item = scene->getItem(state.itemId);
         assert(item.getTransitionId() == transitionId);

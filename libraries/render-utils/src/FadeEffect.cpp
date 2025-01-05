@@ -3,6 +3,7 @@
 
 //  Created by Olivier Prat on 17/07/2017.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -28,10 +29,8 @@ FadeEffect::FadeEffect() {
 }
 
 void FadeEffect::build(JobModel& task, const render::Varying& inputs, render::Varying& outputs) {
-    auto editedFadeCategory = task.addJob<FadeJob>("Fade");
-
-    const auto fadeEditInput = FadeEditJob::Input(inputs, editedFadeCategory).asVarying();
-    task.addJob<FadeEditJob>("FadeEdit", fadeEditInput);
+    const auto editedFadeCategory = task.addJob<FadeJob>("Fade");
+    task.addJob<FadeEditJob>("FadeEdit", editedFadeCategory);
 }
 
 render::ShapePipeline::BatchSetter FadeEffect::getBatchSetter() {
@@ -47,7 +46,7 @@ render::ShapePipeline::ItemSetter FadeEffect::getItemUniformSetter() {
             const auto& scene = args->_scene;
             const auto& batch = args->_batch;
             auto transitionStage = scene->getStage<render::TransitionStage>();
-            auto& transitionState = transitionStage->getTransition(item.getTransitionId());
+            auto& transitionState = transitionStage->getElement(item.getTransitionId());
 
             if (transitionState.paramsBuffer._size != sizeof(gpu::StructBuffer<FadeObjectParams>)) {
                 static_assert(sizeof(transitionState.paramsBuffer) == sizeof(gpu::StructBuffer<FadeObjectParams>), "Assuming gpu::StructBuffer is a helper class for gpu::BufferView");
