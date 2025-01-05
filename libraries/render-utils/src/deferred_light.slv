@@ -18,12 +18,21 @@ OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 
 void main(void) {
     const float depth = 1.0;
+    #ifdef VULKAN
+    const mat4 UNIT_QUAD = mat4(
+        vec4(-1.0, 1.0, depth, 1.0),
+        vec4(1.0, 1.0, depth, 1.0),
+        vec4(-1.0, -1.0, depth, 1.0),
+        vec4(1.0, -1.0, depth, 1.0)
+    );
+    #else
     const mat4 UNIT_QUAD = mat4(
         vec4(-1.0, -1.0, depth, 1.0),
         vec4(1.0, -1.0, depth, 1.0),
         vec4(-1.0, 1.0, depth, 1.0),
         vec4(1.0, 1.0, depth, 1.0)
     );
+    #endif
     vec4 pos = UNIT_QUAD[gl_VertexID];
 
     _texCoord01 = vec4((pos.xy + 1.0) * 0.5, 0.0, 0.0);

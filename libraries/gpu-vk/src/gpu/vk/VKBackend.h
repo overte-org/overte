@@ -263,6 +263,7 @@ protected:
     VkRenderPass _currentVkRenderPass{ VK_NULL_HANDLE };
     gpu::FramebufferReference _currentFramebuffer{ nullptr }; // Framebuffer used in currently happening render pass
     VkFramebuffer _currentVkFramebuffer{ VK_NULL_HANDLE }; // Framebuffer used in currently happening render pass
+    bool _hasFramebufferChanged {false}; // Set to true when batch calls setFramebuffer command. Used to end render pass and update input image layouts.
     // Checks if renderpass change is needed and changes it if required
     void updateRenderPass();
     void updateAttachmentLayoutsAfterRenderPass();
@@ -286,6 +287,9 @@ protected:
         std::vector<uint8_t> _glUniformData;
         std::unordered_map<int, size_t> _glUniformOffsetMap;
         size_t _glUniformBufferPosition {0}; // Position where data from next glUniform... call is placed
+
+        BufferView _cameraCorrectionBuffer { gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(CameraCorrection), nullptr )) };
+        BufferView _cameraCorrectionBufferIdentity { gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(CameraCorrection), nullptr )) };
 
         void addGlUniform(size_t size, const void *data, size_t commandIndex);
 
@@ -452,8 +456,8 @@ public:
     // VKTODO: quick hack
     VKFramebuffer *_outputTexture{ nullptr };
 protected:
-    void transitionInputImageLayouts();
-    void transitionAttachmentImageLayouts(gpu::Framebuffer &framebuffer);
+    void transitionInputImageLayouts(); // This can be called only form `updateRenderPass`
+    void transitionAttachmentImageLayouts(gpu::Framebuffer &framebuffer); // This can be called only form `updateRenderPass`
 
     // These are filled by syncGPUObject() calls, and are needed to track backend objects so that they can be destroyed before
     // destroying backend.

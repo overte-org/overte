@@ -186,9 +186,10 @@ void VulkanSwapChain::initSurface(screen_context_t screen_context, screen_window
     // Initialize the format to the first one returned by the implementation in case we can't find one of the preffered formats
     VkSurfaceFormatKHR selectedFormat = surfaceFormats[0];
     std::vector<VkFormat> preferredImageFormats = { 
-        VK_FORMAT_B8G8R8A8_UNORM,
+        VK_FORMAT_B8G8R8A8_SRGB
+        /*VK_FORMAT_B8G8R8A8_UNORM,
         VK_FORMAT_R8G8B8A8_UNORM, 
-        VK_FORMAT_A8B8G8R8_UNORM_PACK32 
+        VK_FORMAT_A8B8G8R8_UNORM_PACK32 */
     };
 
     for (auto& availableFormat : surfaceFormats) {
