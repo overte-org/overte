@@ -34,7 +34,8 @@ struct ShaderObject {
 
 VkFormat evalTexelFormatInternal(const Element& dstFormat);
 
-bool isDepthStencilFormat(VkFormat format);
+//bool isDepthStencilFormat(VkFormat format);
+bool formatHasStencil(VkFormat format);
 
 VkColorComponentFlags colorMaskToVk(const gpu::State::ColorMask &mask);
 
