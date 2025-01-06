@@ -889,16 +889,21 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
             // VKTODO: move vulkan texture creation to the transfer parts
             VKTexture* texture = syncGPUObject(*_resource._textures[i].texture);
             VkDescriptorImageInfo imageInfo{};
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             if (texture) {
                 imageInfo = texture->getDescriptorImageInfo();
-            } else {
+            }
+            if (imageInfo.imageLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
                 qDebug() << "Writing descriptor " << i << " with texture: " << _resource._textures[i].texture->source();
-                if (_resource._textures[i].texture) {
+                if (texture) {
+                    qDebug() << "Warning: Texture " + _resource._textures[i].texture->source() + " being bound at input slot "
+                                    << i << " is in VK_IMAGE_LAYOUT_UNDEFINED layout.";
+                } else if (_resource._textures[i].texture) {
                     qDebug() << "Cannot sync texture during descriptor " << i
                              << " write: " << _resource._textures[i].texture->source();
                 } else {
                     qDebug() << "Texture is null during descriptor " << i
-                             << " write: " << _resource._textures[i].texture->source();
+                             << " write.";
                 }
                 imageInfo = _defaultTextureImageInfo;
             }
@@ -1088,7 +1093,7 @@ void VKBackend::updateRenderPass() {
     auto framebuffer = syncGPUObject(*_cache.pipelineState.framebuffer);
 
     // Current render pass is already up to date.
-    // VKTODO: check if framebuffer has changed and if so update render pass too
+    // VKTODO: check if framebuffer has changed and if so update render pass too.
     if (_currentVkRenderPass == renderPass && _currentVkFramebuffer == framebuffer->vkFramebuffer) {
         return;
     }
@@ -2667,14 +2672,19 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
             Q_ASSERT(TextureUsageType::RENDERBUFFER == surface->getUsageType());
             vkTexture = backend->syncGPUObject(*surface.get());*/
         auto texture = renderBuffers[i]._texture;
-        VKAttachmentTexture *attachmentTexture = nullptr;
-        if (texture) {
-            auto gpuTexture = syncGPUObject(*texture);
-            if (gpuTexture) {
-                attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
-                Q_ASSERT(attachmentTexture);
-            }
+        if (!texture) {
+            // Last texture of the key can be depth stencil attachment
+            Q_ASSERT(i + 1 == key.size());
+            texture = framebuffer->getDepthStencilBuffer();
         }
+        Q_ASSERT(texture);
+        VKAttachmentTexture *attachmentTexture = nullptr;
+        //if (texture) {
+        auto gpuTexture = syncGPUObject(*texture);
+        Q_ASSERT(gpuTexture);
+        attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
+        Q_ASSERT(attachmentTexture);
+        //}
         VkAttachmentDescription attachment{};
         attachment.format = formatAndLayout.first;
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -2685,35 +2695,33 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
         }
         //attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-        if (isDepthStencilFormat(formatAndLayout.first)) {
+        if (texture->isDepthStencilRenderTarget()) {
             clearValues.push_back(VkClearValue{.depthStencil =  VkClearDepthStencilValue{ depth, (uint32_t)stencil }});
             if (masks & Framebuffer::BUFFER_DEPTH) {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                if (!formatHasStencil(attachment.format)) {
+                    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                }
             } else {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
             }
             // Texture state needs to be updated
-            auto depthStencil = framebuffer->getDepthStencilBuffer();
-            Q_ASSERT(depthStencil);
-            auto gpuDepthStencil = syncGPUObject(*depthStencil);
-            Q_ASSERT(gpuDepthStencil);
-            auto depthStencilAttachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuDepthStencil);
-            Q_ASSERT(depthStencilAttachmentTexture);
 
-            if ((masks & Framebuffer::BUFFER_DEPTH) && (masks & Framebuffer::BUFFER_STENCIL)) {
+            if (((masks & Framebuffer::BUFFER_DEPTH) && (masks & Framebuffer::BUFFER_STENCIL))
+                || ((masks & Framebuffer::BUFFER_DEPTH) && !formatHasStencil(attachment.format))) {
                 attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                 attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                depthStencilAttachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                 depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             } else {
-                if (depthStencilAttachmentTexture->_vkImageLayout == VK_IMAGE_LAYOUT_GENERAL) {
+                if (attachmentTexture->_vkImageLayout == VK_IMAGE_LAYOUT_GENERAL) {
                     attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
                     attachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
                     depthReference.layout = VK_IMAGE_LAYOUT_GENERAL;
                 } else {
                     attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                     attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-                    depthStencilAttachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                    attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                     depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                 }
             }
@@ -2782,7 +2790,80 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
     vkCmdBeginRenderPass(_currentCommandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
     vkCmdEndRenderPass(_currentCommandBuffer);
     _currentFrame->_renderPasses.push_back(renderPass); // To be deleted after frame rendering is complete
+
     // VKTODO: some sort of barrier is needed?
+    for (auto &renderBuffer : renderBuffers) {
+        auto texture = renderBuffer._texture;
+        if (!texture) {
+            continue;
+        }
+        auto gpuTexture = syncGPUObject(*texture);
+        Q_ASSERT(gpuTexture);
+        auto *attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
+        Q_ASSERT(attachmentTexture);
+        if (masks & Framebuffer::BUFFER_COLORS) {
+            if (attachmentTexture->_gpuObject.isDepthStencilRenderTarget()) {
+                // VKTODO: Check if the same depth render target is used as one of the inputs, if so then don't update it here
+                VkImageSubresourceRange mipSubRange = {};
+                mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                mipSubRange.baseMipLevel = 0;
+                mipSubRange.levelCount = 1;
+                mipSubRange.layerCount = 1;
+                vks::tools::insertImageMemoryBarrier(_currentCommandBuffer, attachmentTexture->_vkImage,
+                                                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                                     VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                                     VK_IMAGE_LAYOUT_UNDEFINED,
+                                                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,  // VKTODO: should be
+                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
+                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, mipSubRange); // VKTODO: what stage mask for depth stencil?
+                attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            } else {
+                VkImageSubresourceRange mipSubRange = {};
+                mipSubRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+                mipSubRange.baseMipLevel = 0;
+                mipSubRange.levelCount = 1;
+                mipSubRange.layerCount = 1;
+                vks::tools::insertImageMemoryBarrier(_currentCommandBuffer, attachmentTexture->_vkImage,
+                                                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                     VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                                                     VK_IMAGE_LAYOUT_UNDEFINED,
+                                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,  // VKTODO: should be
+                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
+                                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, mipSubRange);
+                attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            }
+        }
+    }
+
+    if (masks & Framebuffer::BUFFER_STENCIL || masks & Framebuffer::BUFFER_DEPTH) {
+        auto texture = framebuffer->getDepthStencilBuffer();
+        Q_ASSERT(texture);
+        auto gpuTexture = syncGPUObject(*texture);
+        Q_ASSERT(gpuTexture);
+        auto *attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
+        Q_ASSERT(attachmentTexture);
+
+        if ( attachmentTexture->_vkImage == (VkImage)(0x260000000026UL)) {
+            printf("0x260000000026UL");
+        }
+
+        VkImageSubresourceRange mipSubRange = {};
+        mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        if (formatHasStencil(evalTexelFormatInternal(texture->getTexelFormat()))) {
+            mipSubRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
+        mipSubRange.baseMipLevel = 0;
+        mipSubRange.levelCount = 1;
+        mipSubRange.layerCount = 1;
+        vks::tools::insertImageMemoryBarrier(_currentCommandBuffer, attachmentTexture->_vkImage,
+                                             VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                             VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+                                             VK_IMAGE_LAYOUT_UNDEFINED,
+                                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,  // VKTODO: should be
+                                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
+                                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, mipSubRange); // VKTODO: what stage mask for depth stencil?
+        attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    }
 
     /*VKuint glmask = 0;
     if (masks & Framebuffer::BUFFER_STENCIL) {
