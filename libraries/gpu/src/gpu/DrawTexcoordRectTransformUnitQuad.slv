@@ -32,21 +32,13 @@ UNIFORM_BUFFER(0, texcoordRectBuffer) {
 OUTPUT(0, vec2, varTexCoord0);
 
 void main(void) {
-#ifdef VULKAN
-    const vec4 UNIT_QUAD[4] = vec4[4](
-        vec4(-1.0, 1.0, 0.0, 1.0),
-        vec4(1.0, 1.0, 0.0, 1.0),
-        vec4(-1.0, -1.0, 0.0, 1.0),
-        vec4(1.0, -1.0, 0.0, 1.0)
-    );
-#else
+
     const vec4 UNIT_QUAD[4] = vec4[4](
         vec4(-1.0, -1.0, 0.0, 1.0),
         vec4(1.0, -1.0, 0.0, 1.0),
         vec4(-1.0, 1.0, 0.0, 1.0),
         vec4(1.0, 1.0, 0.0, 1.0)
     );
-#endif
     vec4 pos = UNIT_QUAD[gl_VertexID];
 
     // standard transform
@@ -54,5 +46,6 @@ void main(void) {
     TransformObject obj = getTransformObject();
     <$transformModelToClipPos(cam, obj, pos, gl_Position)$>
 
+    // VKTODO: texture coordinates might need to be inverted
     varTexCoord0 = ((pos.xy + 1.0) * 0.5) * params.texcoordRect.zw + params.texcoordRect.xy;
 }
