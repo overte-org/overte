@@ -346,7 +346,7 @@ void VKStrictResourceTexture::createTexture(VKBackend &backend) {
         if (_gpuObject.getType() == Texture::TEX_CUBE) {
             Q_ASSERT(_gpuObject.getNumFaces() == 6);
             face_count = 6;
-        }else{
+        } else {
             Q_ASSERT(_gpuObject.getNumFaces() == 1);
         }
 
@@ -355,8 +355,8 @@ void VKStrictResourceTexture::createTexture(VKBackend &backend) {
         bool needsBGRToRGB = false;
         auto storedFormat = _gpuObject.getStoredMipFormat();
         auto texelFormat = _gpuObject.getTexelFormat();
-        if ((storedFormat.getSemantic() == gpu::BGRA || storedFormat.getSemantic() == gpu::SBGRA)
-            && !(texelFormat.getSemantic() == gpu::BGRA || texelFormat.getSemantic() == gpu::SBGRA)) {
+        if ((storedFormat.getSemantic() == gpu::BGRA || storedFormat.getSemantic() == gpu::SBGRA) &&
+            !(texelFormat.getSemantic() == gpu::BGRA || texelFormat.getSemantic() == gpu::SBGRA)) {
             needsBGRToRGB = true;
         }
         auto storedVkFormat = evalTexelFormatInternal(_gpuObject.getStoredMipFormat());
@@ -364,8 +364,8 @@ void VKStrictResourceTexture::createTexture(VKBackend &backend) {
         if (storedFormat.getDimension() != texelFormat.getDimension()) {
             if (storedFormat.getDimension() == gpu::VEC3 && texelFormat.getDimension() == gpu::VEC4) {
                 // It's best to make sure that this is not happening in unexpected cases and causing bugs
-                Q_ASSERT((storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_UNORM)
-                         || (storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_SRGB));
+                Q_ASSERT((storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_UNORM) ||
+                         (storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_SRGB));
                 needsAddingAlpha = true;
             } else {
                 qDebug() << "Format mismatch, stored: " << storedVkFormat << " texel: " << texelVkFormat;
@@ -408,6 +408,9 @@ void VKStrictResourceTexture::createTexture(VKBackend &backend) {
     allocationCI.usage = VMA_MEMORY_USAGE_GPU_ONLY;
     qDebug() << "storedSize: " << _gpuObject.getStoredSize();
     VK_CHECK_RESULT(vmaCreateImage(vks::Allocation::getAllocator(), &imageCI, &allocationCI, &_vkImage, &_vmaAllocation, nullptr));
+    /*if ( _vkImage != (VkImage)(0x260000000026UL)) {
+        printf("0x260000000026UL");
+    }*/
 }
 
 void VKStrictResourceTexture::transfer(VKBackend &backend) {

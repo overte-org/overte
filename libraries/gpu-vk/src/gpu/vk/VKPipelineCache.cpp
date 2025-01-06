@@ -150,7 +150,8 @@ Cache::Pipeline::PipelineLayout Cache::Pipeline::getPipelineAndDescriptorLayout(
 Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffer* framebuffer) const {
     RenderpassKey result;
     if (!framebuffer) {
-        result.emplace_back(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED);
+        result.emplace_back(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED); // VKTODO: this is definitely wrong, why is it that way?
+        Q_ASSERT(false);
     } else {
         for (const auto& attachment : framebuffer->getRenderBuffers()) {
             if (attachment.isValid()) {
@@ -191,19 +192,19 @@ VkRenderPass Cache::Pipeline::getRenderPass(const vks::Context& context) {
     auto itr = _renderPassMap.find(key);
     if (itr == _renderPassMap.end()) {
         auto &renderBuffers = framebuffer->getRenderBuffers();
-        size_t renderBufferIndex = 0;
         std::vector<VkAttachmentDescription> attachments;
         attachments.reserve(key.size());
         std::vector<VkAttachmentReference> colorAttachmentReferences;
         VkAttachmentReference depthReference{};
-        for (const auto& formatAndLayout : key) {
-            Q_ASSERT(renderBufferIndex < renderBuffers.size());
-            std::shared_ptr<gpu::Texture> texture = renderBuffers[renderBufferIndex]._texture;
-            if (isDepthStencilFormat(formatAndLayout.first)) {
+        for (size_t i = 0; i < key.size(); i++) {
+            Q_ASSERT(i < renderBuffers.size());
+            std::shared_ptr<gpu::Texture> texture = renderBuffers[i]._texture;
+            if (!texture) {
+                // Last texture of the key can be depth stencil attachment
+                Q_ASSERT(i + 1 == key.size());
                 texture = framebuffer->getDepthStencilBuffer();
             } else {
-                texture = renderBuffers[renderBufferIndex]._texture;
-                renderBufferIndex++;
+                texture = renderBuffers[i]._texture;
             }
             VKAttachmentTexture *attachmentTexture = nullptr;
             if (texture) {
@@ -213,11 +214,11 @@ VkRenderPass Cache::Pipeline::getRenderPass(const vks::Context& context) {
                 }
             }
             VkAttachmentDescription attachment{};
-            attachment.format = formatAndLayout.first;
+            attachment.format = key[i].first;
             // Framebuffers are always cleared with a separate command in the renderer/
             if (!attachmentTexture || attachmentTexture->getVkImageLayout() == VK_IMAGE_LAYOUT_UNDEFINED) {
-                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-                attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+                attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+                attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
             } else {
                 attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
                 attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
@@ -226,10 +227,11 @@ VkRenderPass Cache::Pipeline::getRenderPass(const vks::Context& context) {
             attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE;
             //attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
             attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-            if (isDepthStencilFormat(formatAndLayout.first)) {
+            if (texture->isDepthStencilRenderTarget()) {
                 if (!attachmentTexture || attachmentTexture->getVkImageLayout() == VK_IMAGE_LAYOUT_UNDEFINED) {
                     attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                     attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                    depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                 } else {
                     if (attachmentTexture->getVkImageLayout() == VK_IMAGE_LAYOUT_GENERAL) {
                         attachment.initialLayout = VK_IMAGE_LAYOUT_GENERAL;
@@ -263,7 +265,9 @@ VkRenderPass Cache::Pipeline::getRenderPass(const vks::Context& context) {
         {
             VkSubpassDescription subpass{};
             subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-            if (depthReference.layout != VK_IMAGE_LAYOUT_UNDEFINED) {
+            //if (depthReference.layout != VK_IMAGE_LAYOUT_UNDEFINED) {
+            if (framebuffer->getDepthStencilBuffer()) {
+                Q_ASSERT(depthReference.layout != VK_IMAGE_LAYOUT_UNDEFINED);
                 subpass.pDepthStencilAttachment = &depthReference;
             }
             subpass.colorAttachmentCount = (uint32_t)colorAttachmentReferences.size();
