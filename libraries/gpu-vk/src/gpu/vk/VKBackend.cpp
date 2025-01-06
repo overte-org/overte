@@ -2737,6 +2737,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
                 || ((masks & Framebuffer::BUFFER_DEPTH) && !formatHasStencil(attachment.format))) {
                 attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
                 attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+                //Q_ASSERT(attachmentTexture->_vkImageLayout != VK_IMAGE_LAYOUT_GENERAL); //
                 attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
                 depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             } else {
@@ -2764,6 +2765,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
             attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             // Texture state needs to be updated
             if (attachmentTexture) {
+                Q_ASSERT(attachmentTexture->_vkImageLayout != VK_IMAGE_LAYOUT_GENERAL);
                 attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
                 //Q_ASSERT(attachmentTexture->_gpuObject.isColorRenderTarget()); // isColorRenderTarget is broken
             }
@@ -2842,6 +2844,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
                                                      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,  // VKTODO: should be
                                                      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
                                                      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, mipSubRange); // VKTODO: what stage mask for depth stencil?
+                Q_ASSERT(attachmentTexture->_vkImageLayout != VK_IMAGE_LAYOUT_GENERAL);
                 attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             } else {
                 VkImageSubresourceRange mipSubRange = {};
@@ -2852,7 +2855,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
                 vks::tools::insertImageMemoryBarrier(_currentCommandBuffer, attachmentTexture->_vkImage,
                                                      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                                      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                                                     VK_IMAGE_LAYOUT_UNDEFINED,
+                                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,  // VKTODO: should be
                                                      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
                                                      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, mipSubRange);
@@ -2881,14 +2884,19 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
         mipSubRange.baseMipLevel = 0;
         mipSubRange.levelCount = 1;
         mipSubRange.layerCount = 1;
+        VkImageLayout layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        if (attachmentTexture->_vkImageLayout == VK_IMAGE_LAYOUT_GENERAL) {
+            layout = VK_IMAGE_LAYOUT_GENERAL;
+        }
         vks::tools::insertImageMemoryBarrier(_currentCommandBuffer, attachmentTexture->_vkImage,
                                              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
-                                             VK_IMAGE_LAYOUT_UNDEFINED,
-                                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,  // VKTODO: should be
+                                             layout,
+                                             layout,  // VKTODO: should be
                                              VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
                                              VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, mipSubRange); // VKTODO: what stage mask for depth stencil?
-        attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        attachmentTexture->_vkImageLayout = layout;
     }
 
     /*VKuint glmask = 0;

@@ -21,21 +21,12 @@
 OUTPUT(0, vec2, varTexCoord0);
 
 void main(void) {
-#ifdef VULKAN
-    const vec4 UNIT_QUAD[4] = vec4[4](
-        vec4(-1.0, 1.0, 0.0, 1.0),
-        vec4(1.0, 1.0, 0.0, 1.0),
-        vec4(-1.0, -1.0, 0.0, 1.0),
-        vec4(1.0, -1.0, 0.0, 1.0)
-    );
-#else
     const vec4 UNIT_QUAD[4] = vec4[4](
         vec4(-1.0, -1.0, 0.0, 1.0),
         vec4(1.0, -1.0, 0.0, 1.0),
         vec4(-1.0, 1.0, 0.0, 1.0),
         vec4(1.0, 1.0, 0.0, 1.0)
     );
-#endif
     vec4 pos = UNIT_QUAD[gl_VertexID];
 
     // standard transform
@@ -43,5 +34,9 @@ void main(void) {
     TransformObject obj = getTransformObject();
     <$transformModelToClipPos(cam, obj, pos, gl_Position)$>
 
+#ifdef VULKAN
+    varTexCoord0 = vec2((pos.x + 1.0) * 0.5, (-pos.y + 1.0) * 0.5);
+#else
     varTexCoord0 = (pos.xy + 1.0) * 0.5;
+#endif
 }
