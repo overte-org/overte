@@ -30,6 +30,8 @@
 #include "VKShared.h"
 #include "VKTexture.h"
 #include "VKPipelineCache.h"
+// VKTODO: how to include this?
+#include "../../../../render-utils/src/render-utils/ShaderConstants.h"
 
 #define FORCE_STRICT_TEXTURE 1
 
@@ -848,6 +850,7 @@ void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
             if (_uniform._buffers[i].buffer) {
                 Q_ASSERT(i != slot::buffer::Buffer::CameraTransform);  // Camera buffer slot cannot be occupied by anything else
                 VKBuffer * buffer = syncGPUObject(*_uniform._buffers[i].buffer);
+                Q_ASSERT(buffer);
                 bufferInfo.buffer = buffer->buffer;
             } else if (_uniform._buffers[i].vksBuffer) {
                 bufferInfo.buffer = _uniform._buffers[i].vksBuffer->buffer;
@@ -905,7 +908,12 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
                     qDebug() << "Texture is null during descriptor " << i
                              << " write.";
                 }
-                imageInfo = _defaultTextureImageInfo;
+                // VKTODO: is there a more reliable way of telling which one we need?
+                if (i == render_utils::slot::texture::Skybox) {
+                    imageInfo = _defaultSkyboxTextureImageInfo;
+                } else {
+                    imageInfo = _defaultTextureImageInfo;
+                }
             }
             //imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             //imageInfo.imageView = texture->;
@@ -933,6 +941,11 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
                 descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
                 descriptorWriteSet.descriptorCount = 1;
                 descriptorWriteSet.pImageInfo = &_defaultTextureImageInfo;
+                if (i == render_utils::slot::texture::Skybox) {
+                    descriptorWriteSet.pImageInfo = &_defaultSkyboxTextureImageInfo;
+                } else {
+                    descriptorWriteSet.pImageInfo = &_defaultTextureImageInfo;
+                }
                 sets.push_back(descriptorWriteSet);
             }
         }
@@ -1942,10 +1955,23 @@ void VKBackend::initDefaultTexture() {
 
     _defaultTexture = gpu::Texture::create2D(gpu::Element{ gpu::VEC4, gpu::NUINT8, gpu::RGBA }, width, height, 1U,
                                                 gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR, gpu::Sampler::WRAP_CLAMP));
+    _defaultTexture->setSource("defaultVulkanTexture");
     _defaultTexture->setStoredMipFormat(_defaultTexture->getTexelFormat());
     _defaultTexture->assignStoredMip(0, width * height * sizeof(uint8_t) * 4, (const gpu::Byte*)buffer.data());
     _defaultTextureVk = syncGPUObject(*_defaultTexture);
     _defaultTextureImageInfo = _defaultTextureVk->getDescriptorImageInfo();
+
+    // Skyboxes cannot use single layer texture on Vulkan so a separate one needs to be created
+    Q_ASSERT(width == height);
+    _defaultSkyboxTexture = gpu::Texture::createCube(gpu::Element{ gpu::VEC4, gpu::NUINT8, gpu::RGBA }, width, 1U,
+                                                        gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR, gpu::Sampler::WRAP_CLAMP));
+    _defaultSkyboxTexture->setSource("defaultVulkanSkyboxTexture");
+    _defaultSkyboxTexture->setStoredMipFormat(_defaultSkyboxTexture->getTexelFormat());
+    for (int i = 0; i < 6; i++) {
+        _defaultSkyboxTexture->assignStoredMipFace(0, i, width * height * sizeof(uint8_t) * 4, (const gpu::Byte*)buffer.data());
+    }
+    _defaultSkyboxTextureVk = syncGPUObject(*_defaultSkyboxTexture);
+    _defaultSkyboxTextureImageInfo = _defaultSkyboxTextureVk->getDescriptorImageInfo();
 }
 
 void VKBackend::acquireFrameData() {
@@ -3563,3 +3589,5 @@ VKInputFormat* VKInputFormat::sync(const Stream::Format& inputFormat) {
 
     return object;
 }
+
+// VKTODO: all syncGPUObject calls should be done before the frame drawing begins

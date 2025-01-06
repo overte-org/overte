@@ -480,6 +480,9 @@ protected:
     std::shared_ptr<gpu::Texture> _defaultTexture;
     VKTexture* _defaultTextureVk{ nullptr };
     VkDescriptorImageInfo _defaultTextureImageInfo{};
+    std::shared_ptr<gpu::Texture> _defaultSkyboxTexture;
+    VKTexture* _defaultSkyboxTextureVk{ nullptr };
+    VkDescriptorImageInfo _defaultSkyboxTextureImageInfo{};
     friend class VKBuffer;
     friend class VKFramebuffer;
     VkCommandBuffer _currentCommandBuffer;
