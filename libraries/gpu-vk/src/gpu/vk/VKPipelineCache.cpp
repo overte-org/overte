@@ -58,93 +58,93 @@ Cache::Pipeline::BindingMap Cache::Pipeline::getBindingMap(const LocationMap& ve
 
 // VKTODO: This needs to be used instead of getPipeline
 // Returns structure containing pipeline layout and descriptor set layouts
-Cache::Pipeline::PipelineLayout Cache::Pipeline::getPipelineAndDescriptorLayout(const vks::Context& context) {
-    auto itr = _layoutMap.find(pipeline);
-    if (_layoutMap.end() == itr) {
-        auto pipeline = gpu::acquire(this->pipeline);
-        auto program = pipeline->getProgram();
-        const auto& vertexReflection = program->getShaders()[0]->getReflection();
-        const auto& fragmentRefelection = program->getShaders()[1]->getReflection();
+Cache::PipelineLayout Cache::Pipeline::getPipelineAndDescriptorLayout(const vks::Context& context) {
+    auto pipeline = gpu::acquire(this->pipeline);
+    auto program = pipeline->getProgram();
+    const auto& vertexReflection = program->getShaders()[0]->getReflection();
+    const auto& fragmentRefelection = program->getShaders()[1]->getReflection();
 
-        std::vector<VkDescriptorSetLayoutBinding> uniLayout;
+    std::vector<VkDescriptorSetLayoutBinding> uniLayout;
 #define SEP_DESC 1
 #if SEP_DESC
-        std::vector<VkDescriptorSetLayoutBinding> texLayout;
-        std::vector<VkDescriptorSetLayoutBinding> stoLayout;
+    std::vector<VkDescriptorSetLayoutBinding> texLayout;
+    std::vector<VkDescriptorSetLayoutBinding> stoLayout;
 #else
-        auto& texLayout = uniLayout;
-        auto& stoLayout = uniLayout;
+    auto& texLayout = uniLayout;
+    auto& stoLayout = uniLayout;
 #endif
-        PipelineLayout layout{};
+    PipelineLayout layout{};
 
-        for (const auto& entry : getBindingMap(vertexReflection.uniformBuffers, fragmentRefelection.uniformBuffers)) {
-            VkDescriptorSetLayoutBinding binding =
-                vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, entry.second,
-                                                              entry.first, 1);
-            uniLayout.push_back(binding);
-        }
-        if (fragmentRefelection.textures.count("webTexture")){
-            printf("webTexture");
-        }
-        for (const auto& entry : getBindingMap(vertexReflection.textures, fragmentRefelection.textures)) {
-            VkDescriptorSetLayoutBinding binding =
-                vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, entry.second,
-                                                              entry.first, 1);
-            texLayout.push_back(binding);
-        }
-        for (const auto& entry : getBindingMap(vertexReflection.resourceBuffers, fragmentRefelection.resourceBuffers)) {
-            VkDescriptorSetLayoutBinding binding =
-                vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, entry.second,
-                                                              entry.first, 1);
-            stoLayout.push_back(binding);
-        }
-
-        // Create the descriptor set layouts
-        std::vector<VkDescriptorSetLayout> layouts;
-        if (!uniLayout.empty() || !texLayout.empty() || !stoLayout.empty()) {
-            VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI =
-                vks::initializers::descriptorSetLayoutCreateInfo(uniLayout.data(), uniLayout.size());
-            VkDescriptorSetLayout descriptorSetLayout;
-            VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr,
-                                                        &descriptorSetLayout));
-            layouts.push_back(descriptorSetLayout);
-            layout.uniformLayout = descriptorSetLayout;
-        }
-#if SEP_DESC
-        // Descriptor set needs to be created even if it's empty if later descriptor sets are not empty.
-        if (!texLayout.empty() || !stoLayout.empty()) {
-            VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI =
-                vks::initializers::descriptorSetLayoutCreateInfo(texLayout.data(), texLayout.size());
-            VkDescriptorSetLayout descriptorSetLayout;
-            VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr,
-                                                        &descriptorSetLayout));
-            layouts.push_back(descriptorSetLayout);
-            layout.textureLayout = descriptorSetLayout;
-        } else {
-            printf("empty");
-        }
-        if (!stoLayout.empty()) {
-            VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI =
-                vks::initializers::descriptorSetLayoutCreateInfo(stoLayout.data(), stoLayout.size());
-            VkDescriptorSetLayout descriptorSetLayout;
-            VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr,
-                                                        &descriptorSetLayout));
-            layouts.push_back(descriptorSetLayout);
-            layout.storageLayout = descriptorSetLayout;
-        }
+#ifdef OVERTE_VK_PIPELINE_DEBUG
+    layout.vertexShader = program->getShaders()[0]->getSource().name;
+    layout.fragmentShader = program->getShaders()[1]->getSource().name;
 #endif
-        VkPipelineLayoutCreateInfo pipelineLayoutCI =
-            vks::initializers::pipelineLayoutCreateInfo(layouts.data(), (uint32_t)layouts.size());
-        VkPipelineLayout pipelineLayout;
-        VK_CHECK_RESULT(
-            vkCreatePipelineLayout(context.device->logicalDevice, &pipelineLayoutCI, nullptr, &pipelineLayout));
 
-        layout.pipelineLayout = pipelineLayout;
-
-        return _layoutMap[this->pipeline] = layout;
-        //return _layoutMap[this->pipeline] = nullptr;
+    for (const auto& entry : getBindingMap(vertexReflection.uniformBuffers, fragmentRefelection.uniformBuffers)) {
+        VkDescriptorSetLayoutBinding binding =
+            vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, entry.second,
+                                                          entry.first, 1);
+        uniLayout.push_back(binding);
     }
-    return itr->second;
+    if (fragmentRefelection.textures.count("webTexture")){
+        printf("webTexture");
+    }
+    for (const auto& entry : getBindingMap(vertexReflection.textures, fragmentRefelection.textures)) {
+        VkDescriptorSetLayoutBinding binding =
+            vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, entry.second,
+                                                          entry.first, 1);
+        texLayout.push_back(binding);
+    }
+    for (const auto& entry : getBindingMap(vertexReflection.resourceBuffers, fragmentRefelection.resourceBuffers)) {
+        VkDescriptorSetLayoutBinding binding =
+            vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, entry.second,
+                                                          entry.first, 1);
+        stoLayout.push_back(binding);
+    }
+
+    // Create the descriptor set layouts
+    std::vector<VkDescriptorSetLayout> layouts;
+    if (!uniLayout.empty() || !texLayout.empty() || !stoLayout.empty()) {
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI =
+            vks::initializers::descriptorSetLayoutCreateInfo(uniLayout.data(), uniLayout.size());
+        VkDescriptorSetLayout descriptorSetLayout;
+        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr,
+                                                    &descriptorSetLayout));
+        layouts.push_back(descriptorSetLayout);
+        layout.uniformLayout = descriptorSetLayout;
+    }
+#if SEP_DESC
+    // Descriptor set needs to be created even if it's empty if later descriptor sets are not empty.
+    if (!texLayout.empty() || !stoLayout.empty()) {
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI =
+            vks::initializers::descriptorSetLayoutCreateInfo(texLayout.data(), texLayout.size());
+        VkDescriptorSetLayout descriptorSetLayout;
+        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr,
+                                                    &descriptorSetLayout));
+        layouts.push_back(descriptorSetLayout);
+        layout.textureLayout = descriptorSetLayout;
+    } else {
+        printf("empty");
+    }
+    if (!stoLayout.empty()) {
+        VkDescriptorSetLayoutCreateInfo descriptorSetLayoutCI =
+            vks::initializers::descriptorSetLayoutCreateInfo(stoLayout.data(), stoLayout.size());
+        VkDescriptorSetLayout descriptorSetLayout;
+        VK_CHECK_RESULT(vkCreateDescriptorSetLayout(context.device->logicalDevice, &descriptorSetLayoutCI, nullptr,
+                                                    &descriptorSetLayout));
+        layouts.push_back(descriptorSetLayout);
+        layout.storageLayout = descriptorSetLayout;
+    }
+#endif
+    VkPipelineLayoutCreateInfo pipelineLayoutCI =
+        vks::initializers::pipelineLayoutCreateInfo(layouts.data(), (uint32_t)layouts.size());
+    VkPipelineLayout pipelineLayout;
+    VK_CHECK_RESULT(
+        vkCreatePipelineLayout(context.device->logicalDevice, &pipelineLayoutCI, nullptr, &pipelineLayout));
+
+    layout.pipelineLayout = pipelineLayout;
+
+    return layout;
 }
 
 Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffer* framebuffer) const {
@@ -290,14 +290,14 @@ VkRenderPass Cache::Pipeline::getRenderPass(const vks::Context& context) {
 }
 
 // VKTODO:
-/*std::string Cache::Pipeline::getRenderpassKeyString(const RenderpassKey& renderpassKey) {
+std::string Cache::Pipeline::getRenderpassKeyString(const RenderpassKey& renderpassKey) {
     std::string result;
 
     for (const auto& e : renderpassKey) {
-        result += hex((uint32_t)e);
+        result += hex((uint32_t)e.first) + hex((uint32_t)e.second);
     }
     return result;
-}*/
+}
 
 std::string Cache::Pipeline::getStridesKey() const {
     std::string key;
@@ -309,8 +309,13 @@ std::string Cache::Pipeline::getStridesKey() const {
     return key;
 }
 
-// VKTODO:
-/*std::string Cache::Pipeline::getKey() const {
+std::string gpu::State::getKey() const {
+    QByteArray data((const char*)&_values, sizeof(Data));
+    return data.toBase64().toStdString();
+}
+
+// VKTODO: use binary key if performance with text key is not good enough
+std::string Cache::Pipeline::getKey() const {
     const auto framebuffer = gpu::acquire(this->framebuffer);
     RenderpassKey renderpassKey = getRenderPassKey(framebuffer);
     const gpu::Pipeline& pipeline = *gpu::acquire(this->pipeline);
@@ -326,7 +331,7 @@ std::string Cache::Pipeline::getStridesKey() const {
     key += "_" + hex(primitiveTopology);
     key += "_" + getStridesKey();
     return key;
-}*/
+}
 
 VkStencilOpState Cache::getStencilOp(const gpu::State::StencilTest& stencil) {
     VkStencilOpState result;
@@ -358,8 +363,13 @@ VkShaderModule Cache::getShaderModule(const vks::Context& context, const shader:
     return itr->second;
 }
 
-VkPipeline Cache::getPipeline(const vks::Context& context) {
-    //VKTODO: pipelines are not cached here currently
+Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
+    auto key = pipelineState.getKey();
+    auto pipelineIterator = pipelineMap.find(key);
+    if (pipelineIterator != pipelineMap.end()) {
+        return pipelineIterator->second;
+    }
+
     auto renderpass = pipelineState.getRenderPass(context);
     auto pipelineLayout = pipelineState.getPipelineAndDescriptorLayout(context);
     const gpu::Pipeline& pipeline = *gpu::acquire(pipelineState.pipeline);
@@ -522,5 +532,8 @@ VkPipeline Cache::getPipeline(const vks::Context& context) {
     const auto& fragmentRefelection = program->getShaders()[1]->getReflection();
     auto result = builder.create();
     builder.shaderStages.clear();
-    return result;
+    pipelineLayout.pipeline = result;
+    pipelineMap.insert({key, pipelineLayout});
+    qDebug() << "Pipeline cache size: " << pipelineMap.size();
+    return pipelineLayout;
 }

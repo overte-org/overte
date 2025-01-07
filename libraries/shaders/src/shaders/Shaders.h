@@ -181,7 +181,7 @@ inline uint32_t getFragmentId(uint32_t programId) {
 }
 
 inline uint32_t makeProgramId(uint32_t vertexId, uint32_t fragmentId) {
-    return (vertexId << 16) & fragmentId;
+    return (vertexId << 16) | fragmentId;
 }
 
 }  // namespace shader

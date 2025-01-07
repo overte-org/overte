@@ -1322,7 +1322,8 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             updatePipeline();
             updateRenderPass();
             // VKTODO: this is inefficient
-            vkCmdBindPipeline(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, _cache.getPipeline(_context));
+            auto layout = _cache.getPipeline(_context);
+            vkCmdBindPipeline(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipeline);
             // VKTODO: this will create too many set viewport commands, but should work
             VkViewport viewport;
             viewport.x = (float)_transform._viewport.x;
@@ -1339,7 +1340,6 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             scissor.extent.width = _currentScissorRect.z;
             scissor.extent.height = _currentScissorRect.w;
             vkCmdSetScissor(_currentCommandBuffer, 0, 1, &scissor);
-            auto layout = _cache.pipelineState.getPipelineAndDescriptorLayout(_context);
 
             // VKTODO: remove when webentities work
             auto pipeline = gpu::acquire(_cache.pipelineState.pipeline);
