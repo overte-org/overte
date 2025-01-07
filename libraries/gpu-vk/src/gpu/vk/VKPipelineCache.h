@@ -13,15 +13,17 @@
 
 #include "VKForward.h"
 
+//define OVERTE_VK_PIPELINE_DEBUG
+
 namespace std {
 template <>
 struct hash<gpu::Element> {
-    size_t operator()(const gpu::Element& a) const { return std::hash<uint16_t>()(a.getRaw()); }
+    size_t operator()(const gpu::Element& a) const { return std::hash<uint32_t>()(a.getRaw()); }
 };
 
 template <>
 struct hash<::VkImageLayout> {
-    size_t operator()(const VkImageLayout& a) const { return std::hash<uint16_t>()((uint16_t)a); }
+    size_t operator()(const VkImageLayout& a) const { return std::hash<uint32_t>()((uint32_t)a); }
 };
 
 
@@ -48,7 +50,19 @@ struct RenderPassHash {
 };
 
 struct Cache {
+    struct PipelineLayout {
+        VkPipeline pipeline;
+        VkPipelineLayout pipelineLayout;
+        VkDescriptorSetLayout uniformLayout;
+        VkDescriptorSetLayout textureLayout;
+        VkDescriptorSetLayout storageLayout;
+#ifdef OVERTE_VK_PIPELINE_DEBUG
+        std::string vertexShader;
+        std::string fragmentShader;
+#endif
+    };
     std::unordered_map<uint32_t, VkShaderModule> moduleMap;
+    std::unordered_map<std::string, PipelineLayout> pipelineMap;
 
     struct Pipeline {
         using RenderpassKey = std::vector<std::pair<VkFormat, VkImageLayout>>;
@@ -60,14 +74,8 @@ struct Cache {
         gpu::FramebufferReference framebuffer{ GPU_REFERENCE_INIT_VALUE };
         gpu::Primitive primitiveTopology;
 
-        struct PipelineLayout {
-            VkPipelineLayout pipelineLayout;
-            VkDescriptorSetLayout uniformLayout;
-            VkDescriptorSetLayout textureLayout;
-            VkDescriptorSetLayout storageLayout;
-        };
 
-        std::unordered_map<gpu::PipelineReference, PipelineLayout> _layoutMap; // VKTODO: make sure pipelines are retrieved from here
+        // VKTODO: maybe these should be moved from here to cache object?
         std::unordered_map<RenderpassKey, VkRenderPass, RenderPassHash<std::vector<std::pair<VkFormat, VkImageLayout>>>> _renderPassMap; // VKTODO: make sure render passes are retrieved from here
 
         // These get set when stride gets set by setInputBuffer
@@ -99,14 +107,14 @@ struct Cache {
         VkRenderPass getRenderPass(const vks::Context& context);
         static std::string getRenderpassKeyString(const RenderpassKey& renderpassKey);
         std::string getStridesKey() const;
-        //std::string getKey() const;
+        std::string getKey() const;
     } pipelineState;
 
     static VkStencilOpState getStencilOp(const gpu::State::StencilTest& stencil);
 
     VkShaderModule getShaderModule(const vks::Context& context, const shader::Source& source);
 
-    VkPipeline getPipeline(const vks::Context& context);
+    PipelineLayout getPipeline(const vks::Context& context);
 };
 
 } }
