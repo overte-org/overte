@@ -311,6 +311,7 @@ void RenderDeferredSetup::run(const render::RenderContextPointer& renderContext,
 
     auto args = renderContext->args;
     auto& batch = (*args->_batch);
+    batch.setName("RenderDeferredSetup::run");
     {
         // Framebuffer copy operations cannot function as multipass stereo operations.
         batch.enableStereo(false);
@@ -569,6 +570,26 @@ void RenderDeferred::run(const RenderContextPointer& renderContext, const Inputs
 
 void DefaultLightingSetup::run(const RenderContextPointer& renderContext) {
 
+    if (!_defaultHaze) {
+        auto hazeStage = renderContext->_scene->getStage<HazeStage>();
+        if (hazeStage) {
+            auto haze = std::make_shared<graphics::Haze>();
+
+            _defaultHaze = haze;
+            _defaultHazeID = hazeStage->addElement(_defaultHaze);
+        }
+    }
+
+    if (!_defaultTonemapping) {
+        auto tonemappingStage = renderContext->_scene->getStage<TonemappingStage>();
+        if (tonemappingStage) {
+            auto tonemapping = std::make_shared<graphics::Tonemapping>();
+
+            _defaultTonemapping = tonemapping;
+            _defaultTonemappingID = tonemappingStage->addElement(_defaultTonemapping);
+        }
+    }
+
     if (!_defaultLight || !_defaultBackground) {
         auto defaultSkyboxURL = PathUtils::resourcesUrl() + "images/Default-Sky-9-cubemap/Default-Sky-9-cubemap.texmeta.json";
         auto defaultAmbientURL = PathUtils::resourcesUrl() + "images/Default-Sky-9-cubemap/Default-Sky-9-cubemap-ambient.texmeta.json";
@@ -637,26 +658,6 @@ void DefaultLightingSetup::run(const RenderContextPointer& renderContext) {
 
             // Add the global light to the light stage (for later shadow rendering)
             _defaultBackgroundID = backgroundStage->addElement(_defaultBackground);
-        }
-    }
-
-    if (!_defaultHaze) {
-        auto hazeStage = renderContext->_scene->getStage<HazeStage>();
-        if (hazeStage) {
-            auto haze = std::make_shared<graphics::Haze>();
-
-            _defaultHaze = haze;
-            _defaultHazeID = hazeStage->addElement(_defaultHaze);
-        }
-    }
-
-    if (!_defaultTonemapping) {
-        auto tonemappingStage = renderContext->_scene->getStage<TonemappingStage>();
-        if (tonemappingStage) {
-            auto tonemapping = std::make_shared<graphics::Tonemapping>();
-
-            _defaultTonemapping = tonemapping;
-            _defaultTonemappingID = tonemappingStage->addElement(_defaultTonemapping);
         }
     }
 }
