@@ -342,6 +342,13 @@ void RenderScriptingInterface::setVerticalFieldOfView(float fieldOfView) {
     }
 }
 
+void RenderScriptingInterface::setCameraClippingEnabled(bool enabled) {
+    if (qApp->getCameraClippingEnabled() != enabled) {
+        qApp->setCameraClippingEnabled(enabled);
+        emit settingsChanged();
+    }
+}
+
 QStringList RenderScriptingInterface::getScreens() const {
     QStringList screens;
 
