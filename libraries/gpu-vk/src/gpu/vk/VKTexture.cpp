@@ -800,7 +800,8 @@ void VKExternalTexture::initGL(gpu::vk::VKBackend& backend) {
     glTextureStorageMem2DEXT(_openGLId, 1, GL_RGBA8, _gpuObject.getWidth(), _gpuObject.getHeight(), _openGLMemoryObject, 0);
     ::gl::checkGLError("GL to VK");
     std::array<GLubyte, 4> clearColor {128,128,128,255};
-    glClearTexImage(_openGLId, 0, GL_RGBA, GL_UNSIGNED_BYTE, clearColor.data());
+    // Can be enabled for testing
+    //glClearTexImage(_openGLId, 0, GL_RGBA, GL_UNSIGNED_BYTE, clearColor.data());
     ::gl::checkGLError("GL to VK");
 }
 
@@ -850,7 +851,29 @@ void VKExternalTexture::postTransfer(VKBackend &backend) {
     VK_CHECK_RESULT(vkCreateImageView(device->logicalDevice, &viewCreateInfo, nullptr, &_vkImageView));
 };
 
+void VKExternalTexture::releaseExternalTexture() {
+    auto backend = _backend.lock();
+    if (backend) {
+        auto recycler = _gpuObject.getExternalRecycler();
+        if (recycler) {
+            backend->releaseExternalTexture(_openGLSourceId, recycler);
+        } else {
+            qWarning() << "No recycler available for texture " << _openGLSourceId << " possible leak";
+        }
+        const_cast<GLuint&>(_openGLSourceId) = 0;
+    }
+    Backend::textureExternalCount.decrement();
+}
+
+void VKExternalTexture::setSource(GLuint source) {
+    if (_openGLSourceId != source) {
+        releaseExternalTexture();
+        _openGLSourceId = source;
+    }
+}
+
 VKExternalTexture::~VKExternalTexture() {
+    releaseExternalTexture();
     auto backend = _backend.lock();
     auto device = backend->getContext().device->logicalDevice;
     auto &recycler = backend->getContext().recycler;

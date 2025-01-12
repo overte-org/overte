@@ -132,6 +132,8 @@ void Batch::setDrawcallUniformReset(uint16_t uniformReset) {
 //#pragma optimize("", off)
 
 void Batch::validateDrawState() const {
+    // VKTODO: this seems to produce warnings where Vulkan validation layers don't?
+    return;
     if (!_currentPipeline) {
         qCWarning(gpulogging) << "Missing pipeline during draw call";
     }

@@ -329,7 +329,8 @@ public:
             VKExternalTexture::postTransfer(vkBackend);
         }; // VKTODO
     ~VKExternalTexture() override; // VKTODO: add proper cleanup for both Vulkan and OpenGL
-    void setSource(GLuint source) { _openGLSourceId = source; };
+    void releaseExternalTexture(); // Called on destructor and when new texture is set
+    void setSource(GLuint source);
     void transferGL(VKBackend &backend);
 
 protected:

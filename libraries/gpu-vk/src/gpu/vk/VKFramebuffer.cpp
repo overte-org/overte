@@ -292,7 +292,7 @@ VkResult gpu::vk::VKFramebuffer::createFramebuffer()
 
 gpu::vk::VKFramebuffer::~VKFramebuffer() {
     auto backend = _backend.lock();
-    auto &recycler = backend->getContext().recycler;
+    auto &recycler = backend->getContext().recycler; // VKTODO: these sometimes get destroyed after backend was destroyed?
     recycler.framebufferDeleted(this);
     //VKTODO
     /*if (_id) {

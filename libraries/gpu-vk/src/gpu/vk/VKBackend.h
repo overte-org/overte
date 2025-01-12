@@ -24,6 +24,7 @@
 #include <vk/Context.h>
 #include <vk/VulkanDebug.h>
 #include <vulkan/vulkan_core.h>
+#include <glad/glad.h>
 
 #include "VKForward.h"
 #include "../../../../vk/src/vk/Context.h"
@@ -453,6 +454,9 @@ public:
     // Called after frame finishes rendering. Cleans up and puts frame data object back to the pool.
     void recycleFrame();
     void waitForGPU();
+
+    void releaseExternalTexture(GLuint id, const Texture::ExternalRecycler& recycler);
+
     // VKTODO: quick hack
     VKFramebuffer *_outputTexture{ nullptr };
 protected:
@@ -469,6 +473,10 @@ protected:
     void perFrameCleanup();
     // Called by the destructor
     void beforeShutdownCleanup();
+    void dumpVmaMemoryStats();
+
+    std::mutex _externalTexturesMutex;
+    std::list<std::pair<GLuint, Texture::ExternalRecycler>> _externalTexturesTrash;
 
     // Logical device, application's view of the physical device (GPU)
     // VkPipeline cache object
@@ -498,6 +506,7 @@ protected:
     std::shared_ptr<FrameData> _currentFrame;
     // Frame for which command buffer is already generated and it's currently being rendered.
     std::shared_ptr<FrameData> _currentlyRenderedFrame;
+    size_t _frameCounter{ 0 };
 
     // Safety check to ensure that shutdown was completed before destruction.
     std::atomic<bool> isBackendShutdownComplete{ false };
