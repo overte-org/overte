@@ -66,6 +66,7 @@ void VKBackend::init() {
 
 VKBackend::VKBackend() {
     if (!_context.instance) {
+        _context.setValidationEnabled(true); // VKTODO: find nicer way of toggling this
         _context.createInstance();
         _context.createDevice();
     }
@@ -225,9 +226,9 @@ void VKBackend::executeFrame(const FramePointer& frame) {
             /*if (batch.getName() == "SubsurfaceScattering::diffuseProfileGPU") {
                 continue;
             }*/
-            if (batch.getName() == "SurfaceGeometryPass::run") {
+            /*if (batch.getName() == "SurfaceGeometryPass::run") {
                 printf("SurfaceGeometryPass");
-            }
+            }*/
             /*if (batch.getName() == "BlurGaussian::run") {
                 continue;
             }*/
@@ -385,6 +386,11 @@ void VKBackend::executeFrame(const FramePointer& frame) {
     // Move pointer to current frame to property that will store it while it's being rendered and before it's recycled.
     _currentlyRenderedFrame = _currentFrame;
     releaseFrameData();
+    // VKTODO: provide nicer way of doing this
+    _frameCounter++;
+    if (_frameCounter % 400 == 0) {
+        //dumpVmaMemoryStats();
+    }
     // loop through commands
 
     //
@@ -897,13 +903,13 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
                 imageInfo = texture->getDescriptorImageInfo();
             }
             if (imageInfo.imageLayout == VK_IMAGE_LAYOUT_UNDEFINED) {
-                qDebug() << "Writing descriptor " << i << " with texture: " << _resource._textures[i].texture->source();
+                qDebug() << "Writing descriptor " << i << " with texture: " << QString::fromStdString(_resource._textures[i].texture->source());
                 if (texture) {
-                    qDebug() << "Warning: Texture " + _resource._textures[i].texture->source() + " being bound at input slot "
+                    qDebug() << "Warning: Texture " + QString::fromStdString(_resource._textures[i].texture->source()) + " being bound at input slot "
                                     << i << " is in VK_IMAGE_LAYOUT_UNDEFINED layout.";
                 } else if (_resource._textures[i].texture) {
                     qDebug() << "Cannot sync texture during descriptor " << i
-                             << " write: " << _resource._textures[i].texture->source();
+                             << " write: " << QString::fromStdString(_resource._textures[i].texture->source());
                 } else {
                     qDebug() << "Texture is null during descriptor " << i
                              << " write.";
@@ -1346,9 +1352,9 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             auto program = pipeline->getProgram();
             const auto& vertexReflection = program->getShaders()[0]->getReflection();
             const auto& fragmentReflection = program->getShaders()[1]->getReflection();
-            if (fragmentReflection.textures.count("webTexture")) {
+            /*if (fragmentReflection.textures.count("webTexture")) {
                 printf("webTexture");
-            }
+            }*/
             // VKTODO: Descriptor sets and associated buffers should be set up during pre-pass
             // VKTODO: move this to a function
             if (layout.uniformLayout) {
@@ -1506,7 +1512,7 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
             // Check for a fence, and if it exists, inject a wait into the command stream, then destroy the fence
             if (update.second) {
                 GLsync fence = static_cast<GLsync>(update.second);
-                glWaitSync(fence, 0, GL_TIMEOUT_IGNORED);
+                glWaitSync(fence, 0, GL_TIMEOUT_IGNORED); // VKTODO: Maybe take earlier texture instead of waiting to avoid stall?
                 glDeleteSync(fence);
             }
 
@@ -2252,6 +2258,25 @@ void VKBackend::perFrameCleanup() {
     capacityBeforeClear = recycler.vmaAllocations.capacity();
     recycler.vmaAllocations.clear();
     recycler.vmaAllocations.reserve(capacityBeforeClear);
+
+    {
+        Lock(_externalTexturesMutex);
+        if (!_externalTexturesTrash.empty()) {
+            std::vector<GLsync> fences;
+            fences.resize(_externalTexturesTrash.size());
+            for (size_t i = 0; i < _externalTexturesTrash.size(); ++i) {
+                fences[i] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+            }
+            // External texture fences will be read in another thread/context, so we need a flush
+            glFlush();
+            size_t index = 0;
+            for (auto pair : _externalTexturesTrash) {
+                auto fence = fences[index++];
+                pair.second(pair.first, fence);
+            }
+            _externalTexturesTrash.clear();
+        }
+    }
 }
 
 void VKBackend::beforeShutdownCleanup() {
@@ -2291,6 +2316,21 @@ void VKBackend::beforeShutdownCleanup() {
 
     // One more cleanup to destroy Vulkan objects released by backend objects.
     perFrameCleanup();
+}
+
+void VKBackend::dumpVmaMemoryStats() {
+    char *stats;
+    vmaBuildStatsString(vks::Allocation::getAllocator(), &stats, VK_TRUE);
+    std::ofstream statsFile;
+    statsFile.open ("/tmp/vmaStats.txt");
+    statsFile << stats;
+    statsFile.close();
+    vmaFreeStatsString(vks::Allocation::getAllocator(), stats);
+}
+
+void VKBackend::releaseExternalTexture(GLuint id, const Texture::ExternalRecycler& recycler) {
+    Lock lock(_externalTexturesMutex);
+    _externalTexturesTrash.emplace_back(id, recycler);
 }
 
 void VKBackend::initBeforeFirstFrame() {

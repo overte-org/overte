@@ -103,7 +103,6 @@ void Context::createInstance() {
 
     if (isExtensionPresent(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
         requireExtensions({ VK_EXT_DEBUG_UTILS_EXTENSION_NAME });
-        enableValidation = true;
         enableDebugMarkers = true;
         qDebug() << "Found debug marker extension";
     }

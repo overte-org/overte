@@ -760,7 +760,7 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             _gpuContext->executeFrame(_currentFrame);
             context->doneCurrent();
             _renderedFrameCount++;
-            qDebug() << "Frame rendered: " << _renderedFrameCount;
+            //qDebug() << "Frame rendered: " << _renderedFrameCount;
         }
 
         // Write all layers to a local framebuffer

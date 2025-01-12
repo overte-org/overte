@@ -19,15 +19,15 @@ static std::string hex(T t) {
 void Cache::Pipeline::setPipeline(const gpu::PipelinePointer& pipeline) {
     if (!gpu::compare(this->pipeline, pipeline)) {
         gpu::assign(this->pipeline, pipeline);
+        clearStrides(); // VKTODO: this doesn't fix the issue with strides for basic shapes being corrupted, sometimes strides are still cleared wile they shouldn't be so more investigation is needed
     }
-    clearStrides();
 }
 
 void Cache::Pipeline::setVertexFormat(const gpu::Stream::FormatPointer& format) {
     if (!gpu::compare(this->format, format)) {
         gpu::assign(this->format, format);
+        clearStrides();
     }
-    clearStrides();
 }
 
 void Cache::Pipeline::setFramebuffer(const gpu::FramebufferPointer& framebuffer) {
@@ -86,9 +86,9 @@ Cache::PipelineLayout Cache::Pipeline::getPipelineAndDescriptorLayout(const vks:
                                                           entry.first, 1);
         uniLayout.push_back(binding);
     }
-    if (fragmentRefelection.textures.count("webTexture")){
+    /*if (fragmentRefelection.textures.count("webTexture")){
         printf("webTexture");
-    }
+    }*/
     for (const auto& entry : getBindingMap(vertexReflection.textures, fragmentRefelection.textures)) {
         VkDescriptorSetLayoutBinding binding =
             vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, entry.second,
