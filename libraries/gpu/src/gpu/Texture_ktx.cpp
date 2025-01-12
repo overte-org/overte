@@ -93,7 +93,6 @@ struct GPUKTXPayload {
         uint8_t usagetype = 0;
 
         dsr >> version;
-        dsr.skipPadding(1);
 
         if (version > CURRENT_VERSION) {
             // If we try to load a version that we don't know how to parse,
@@ -109,12 +108,13 @@ struct GPUKTXPayload {
         _usage = gpu::Texture::Usage(usageData);
 
         dsr >> usagetype;
-        dsr.skipPadding(1);
         _usageType = (TextureUsageType)usagetype;
 
         if (version >= 2) {
             dsr >> _originalSize;
         }
+
+        dsr.skipPadding(PADDING);
 
         return true;
     }

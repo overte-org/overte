@@ -188,23 +188,7 @@ public:
                 _minMip == other._minMip &&
                 _maxMip == other._maxMip;
         }
-
-        DataSerializer &operator<<(DataSerializer &dsd) {
-            dsd << _borderColor;
-            dsd << _maxAnisotropy;
-            dsd << _filter;
-            dsd << _comparisonFunc;
-            dsd << _wrapModeU;
-            dsd << _wrapModeV;
-            dsd << _wrapModeW;
-            dsd << _mipOffset;
-            dsd << _minMip;
-            dsd << _maxMip;
-            return dsd;
-        }
     };
-
-
 
     Sampler() {}
     Sampler(const Filter filter, const WrapMode wrap = WRAP_REPEAT) : _desc(filter, wrap) {}
