@@ -20,26 +20,23 @@ Component {
 			height: 22
 
 			TextEdit {
-				text: delegateUsername
-				color: "lightgray"
-				readOnly: true
-				selectByMouse: true
-				selectByKeyboard: true
+				text: delegateUsername;
+				color: "lightgray";
+				readOnly: true;
+				selectByMouse: true;
+				selectByKeyboard: true;
 			}
 
-			TextEdit {
-				anchors.right: parent.right
-				text: delegateDate
-				color: "lightgray"
-				readOnly: true
-				selectByMouse: true
-				selectByKeyboard: true
+			Text {
+				anchors.right: parent.right;
+				text: delegateDate;
+				color: "lightgray";
 			}
 		}
 
 		Flow {
 			anchors.top: parent.children[0].bottom;
-			width: parent.width * 0.8
+			width: parent.width;
 			x: 5
 			id: messageBoxFlow
 
@@ -47,11 +44,13 @@ Component {
 				model: delegateText;
 
 				RowLayout {
+					width: parent.width;
+
 					TextEdit {
 						text: model.value || ""
 						font.pointSize: 12
 						wrapMode: Text.Wrap
-						width: model.type === 'text' || model.type === 'mention' ? Math.min(messageBoxFlow.width, contentWidth) : 0;
+						width: messageBoxFlow.width;
 						visible: model.type === 'text' || model.type === 'mention';
 						readOnly: true
 						selectByMouse: true
@@ -68,10 +67,11 @@ Component {
 					}
 
 					RowLayout {
-						width: children[0].contentWidth;
+						width: urlTypeTextDisplay.width;
 						visible: model.type === 'url';
 
 						TextEdit {
+							id: urlTypeTextDisplay;
 							text: model.value || "";
 							font.pointSize: 12;
 							wrapMode: Text.Wrap;
@@ -154,8 +154,8 @@ Component {
 					}
 
 					Item {
-						Layout.fillWidth: true
-						visible: model.type === 'messageEnd'
+						Layout.fillWidth: true;
+						visible: model.type === 'messageEnd';
 					}
 
 					Item {
