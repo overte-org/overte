@@ -19,15 +19,21 @@ Component {
 			anchors.horizontalCenter: parent.horizontalCenter
 			height: 22
 
-			Text {
+			TextEdit {
 				text: delegateUsername
 				color: "lightgray"
+				readOnly: true
+				selectByMouse: true
+				selectByKeyboard: true
 			}
 
-			Text {
+			TextEdit {
 				anchors.right: parent.right
 				text: delegateDate
 				color: "lightgray"
+				readOnly: true
+				selectByMouse: true
+				selectByKeyboard: true
 			}
 		}
 
@@ -41,12 +47,15 @@ Component {
 				model: delegateText;
 
 				RowLayout {
-					Text {
+					TextEdit {
 						text: model.value || ""
 						font.pointSize: 12
 						wrapMode: Text.Wrap
 						width: model.type === 'text' || model.type === 'mention' ? Math.min(messageBoxFlow.width, contentWidth) : 0;
 						visible: model.type === 'text' || model.type === 'mention';
+						readOnly: true
+						selectByMouse: true
+						selectByKeyboard: true
 
 						color: {
 							switch (model.type) {
@@ -62,13 +71,16 @@ Component {
 						width: children[0].contentWidth;
 						visible: model.type === 'url';
 
-						Text {
+						TextEdit {
 							text: model.value || "";
 							font.pointSize: 12;
 							wrapMode: Text.Wrap;
 							color: "#4EBAFD";
 							font.underline: true;
 							width: parent.width;
+							readOnly: true
+							selectByMouse: true
+							selectByKeyboard: true
 
 							MouseArea {
 								anchors.fill: parent;
@@ -120,12 +132,15 @@ Component {
 								anchors.rightMargin: 10
 							}
 
-							Text {
+							TextEdit {
 								text: model.type === 'overteLocation' ? model.value.split('hifi://')[1].split('/')[0] : '';
 								color: "black"
 								font.pointSize: 12
 								x: parent.children[0].width + 5;
 								anchors.verticalCenter: parent.verticalCenter 
+								readOnly: true
+								selectByMouse: true
+								selectByKeyboard: true
 							}
 
 							MouseArea {
