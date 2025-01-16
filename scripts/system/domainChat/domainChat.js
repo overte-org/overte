@@ -99,7 +99,6 @@
         // Is the message a chat message?
         channel = channel.toLowerCase();
         if (channel !== "chat") return;
-        
         if ((message = formatting.toJSON(message)) == null) return;             // Make sure we are working with a JSON object we expect, otherwise kill
         message = formatting.addTimeAndDateStringToPacket(message);  
         
@@ -194,6 +193,8 @@
         chatOverlayWindow.presentationMode = changeToExternal
             ? Desktop.PresentationMode.NATIVE
             : Desktop.PresentationMode.VIRTUAL;
+        
+        console.log(`Presentation mode was changed to ${chatOverlayWindow.presentationMode}`);
     }
     function _sendMessage(message, channel) {
         if (message.length == 0) return;
@@ -244,6 +245,7 @@
     }
     async function _loadSettings() {
         settings = Settings.getValue("ArmoredChat-Config", settings);
+        console.log("Loading settings: ", jstr(settings));
 
         if (messageHistory) {
             // Load message history
@@ -259,10 +261,11 @@
         _emitEvent({ type: "initial_settings", settings: settings });                           // Send current settings to the app
     }
     function _saveSettings() {
-        console.log("Saving config");
+        console.log("Saving settings: ", jstr(settings));
         Settings.setValue("ArmoredChat-Config", settings);
     }
     function _notificationCoreMessage(displayName, message){
+        console.log("Sending notification to notificationCore:", `Display name: ${displayName}\n Message: ${message}`);
         Messages.sendLocalMessage(
             "Floof-Notif",
             JSON.stringify({ sender: displayName, text: message })
@@ -274,9 +277,19 @@
      * @param {("show_message"|"clear_messages"|"notification"|"initial_settings")} packet.type - The type of packet it is
      */
     function _emitEvent(packet = { type: "" }) {
+        if (packet.type == `show_message`) {
+            // Don't show the message contents, this is a courtesy to prevent message leakage in the logs.
+            let strippedPacket = {...packet};
+            delete strippedPacket.message
+            console.log("Sending packet to QML interface", jstr(strippedPacket));
+        }
+        else {
+            console.log("Sending packet to QML interface", jstr(packet));
+        }
+
         chatOverlayWindow.sendToQml(packet);
     }
 
-
-
+    // Debug and developer functions and data
+    const jstr = (object) => JSON.stringify(object, null, 4);       // JSON Stringify function with formatting
 })();
