@@ -8,8 +8,10 @@ Rectangle {
     color: Qt.rgba(0.1,0.1,0.1,1)
     signal sendToScript(var message);
 
-    property string pageVal: "local"
-    property date last_message_time: new Date()
+    property string pageVal: "local";
+    property date last_message_time: new Date();
+    property bool initialized: false;
+
 
     // When the window is created on the script side, the window starts open.
     // Once the QML window is created wait, then send the initialized signal.
@@ -445,7 +447,6 @@ Rectangle {
         messageViewFlickable.returnToBounds();
     }
 
-
     function addMessage(username, message, date, channel, type){
         channel = getChannel(channel)
 
@@ -479,17 +480,23 @@ Rectangle {
                 domain.clear();
                 break;
             case "initial_settings":
+                print(`Got settings:\n ${JSON.stringify(message.settings, null, 4)}`);
                 if (message.settings.external_window) s_external_window.checked = true;
                 if (message.settings.maximum_messages) s_maximum_messages.value = message.settings.maximum_messages;
                 if (message.settings.join_notification) s_join_notification.checked = true;
                 if (message.settings.switchToInternalOnHeadsetUsed) s_force_vw_in_vr.checked = true;
                 if (message.settings.enableEmbedding) s_enable_embedding.checked = true;
+
+                initialized = true;     // Application is ready
+
                 break;
         }
     }
 
     // Send message to script
     function toScript(packet){
+        if (packet.type === "setting_change" && !initialized) return;   // Don't announce a change in settings if not ready
+
         sendToScript(packet)
     }
 }
