@@ -15,13 +15,17 @@
     var portalURL = "";
     var portalName = "";
     var TP_SOUND = SoundCache.getSound(ROOT + "sounds/teleportSound.mp3");
+    var PORTAL_SOUND = SoundCache.getSound(ROOT + "sounds/portalSound.mp3");
+    var portalInjector = Uuid.NONE;
+    var portalPosition;
     
     this.preload = function(entityID) {
 
-        var properties = Entities.getEntityProperties(entityID, ["userData", "dimensions"]);
+        var properties = Entities.getEntityProperties(entityID, ["userData", "dimensions", "position"]);
         var userDataObj = JSON.parse(properties.userData);
         portalURL = userDataObj.url;
         portalName = userDataObj.name;
+        portalPosition = properties.position;
         var portalColor = getColorFromPlaceID(userDataObj.placeID);
         
         
@@ -116,6 +120,26 @@
             "spinFinish": 0
         },"local");
         
+        if (PORTAL_SOUND.downloaded) {
+            playLoopSound();
+        } else {
+            PORTAL_SOUND.ready.connect(onSoundReady);
+        }
+    }
+
+    function onSoundReady() {
+        PORTAL_SOUND.ready.disconnect(onSoundReady);
+        playLoopSound();
+    }
+
+    function playLoopSound() {
+        var injectorOptions = {
+            "position": portalPosition,
+            "volume": 0.15,
+            "loop": true,
+            "localOnly": true
+        };
+        portalInjector = Audio.playSound(PORTAL_SOUND, injectorOptions);
     }
 
     this.enterEntity = function(entityID) {
@@ -129,11 +153,16 @@
         
         var timer = Script.setTimeout(function () {
             Window.location = portalURL;
+            portalInjector.stop();
             Entities.deleteEntity(entityID);
         }, 1000);
 
-    }; 
+    };
 
+    this.unload = function(entityID) {
+        portalInjector.stop();
+    };
+    
     function getColorFromPlaceID(placeID) {
         var idIntegerConstant = getStringScore(placeID);
         var hue = (idIntegerConstant%360)/360;

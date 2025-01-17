@@ -38,8 +38,10 @@
     var channel = "com.overte.places";
     
     var portalChannelName = "com.overte.places.portalRezzer";
-    var MAX_DISTANCE_TO_CONSIDER_PORTAL = 50.0; //in meters
+    var MAX_DISTANCE_TO_CONSIDER_PORTAL = 100.0; //in meters
     var PORTAL_DURATION_MILLISEC = 45000; //45 sec
+    var rezzerPortalCount = 0;
+    var MAX_REZZED_PORTAL = 15;
 
     var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
@@ -587,37 +589,44 @@
     }
 
     function generatePortal(position, url, name, placeID) {
-        var TOLERANCE_FACTOR = 1.1;
-        if (Vec3.distance(MyAvatar.position, position) < MAX_DISTANCE_TO_CONSIDER_PORTAL) {
-            var height = MyAvatar.userHeight * MyAvatar.scale * TOLERANCE_FACTOR;
-            
-            var portalPosition = Vec3.sum(position, {"x": 0.0, "y": height/2, "z": 0.0});
-            var dimensions = {"x": height * 0.618, "y": height, "z": height * 0.618};
-            var userdata = {
-                "url": url,
-                "name": name,
-                "placeID": placeID
-            };
-            
-            var portalID = Entities.addEntity({
-                "position": portalPosition,
-                "dimensions": dimensions,
-                "type": "Shape",
-                "shape": "Sphere",
-                "name": "Portal to " + name,
-                "canCastShadow": false,
-                "collisionless": true,
-                "userData": JSON.stringify(userdata),
-                "script": ROOT + "portal.js",
-                "visible": "false",
-                "grab": {
-                    "grabbable": false
-                }
-            }, "local");
-            
-            Script.setTimeout(function () {
-                Entities.deleteEntity(portalID);
-            }, PORTAL_DURATION_MILLISEC);
+        if (rezzerPortalCount <= MAX_REZZED_PORTAL) {
+            var TOLERANCE_FACTOR = 1.1;
+            if (Vec3.distance(MyAvatar.position, position) < MAX_DISTANCE_TO_CONSIDER_PORTAL) {
+                var height = MyAvatar.userHeight * MyAvatar.scale * TOLERANCE_FACTOR;
+                
+                var portalPosition = Vec3.sum(position, {"x": 0.0, "y": height/2, "z": 0.0});
+                var dimensions = {"x": height * 0.618, "y": height, "z": height * 0.618};
+                var userdata = {
+                    "url": url,
+                    "name": name,
+                    "placeID": placeID
+                };
+                
+                var portalID = Entities.addEntity({
+                    "position": portalPosition,
+                    "dimensions": dimensions,
+                    "type": "Shape",
+                    "shape": "Sphere",
+                    "name": "Portal to " + name,
+                    "canCastShadow": false,
+                    "collisionless": true,
+                    "userData": JSON.stringify(userdata),
+                    "script": ROOT + "portal.js",
+                    "visible": "false",
+                    "grab": {
+                        "grabbable": false
+                    }
+                }, "local");
+                rezzerPortalCount = rezzerPortalCount + 1;
+                
+                Script.setTimeout(function () {
+                    Entities.deleteEntity(portalID);
+                    rezzerPortalCount = rezzerPortalCount - 1;
+                    if (rezzerPortalCount < 0) {
+                        rezzerPortalCount = 0;
+                    }
+                }, PORTAL_DURATION_MILLISEC);
+            }
         }
     }
 
