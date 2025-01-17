@@ -113,7 +113,7 @@ void Context::executeBatch(const char* name, std::function<void(Batch&)> lambda)
 void Context::executeBatch(Batch& batch) const {
     PROFILE_RANGE(render_gpu, __FUNCTION__);
     batch.flush();
-    //_backend->render(batch);
+    //_backend->render(batch); // VKTODO: why is this commented out?
 }
 
 void Context::recycle() const {

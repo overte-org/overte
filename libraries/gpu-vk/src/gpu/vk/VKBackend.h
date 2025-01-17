@@ -188,14 +188,14 @@ protected:
         struct BufferState {
             // Only one of buffer or vksBuffer may be not NULL
             BufferReference buffer{};
-            vks::Buffer *vksBuffer{};
+            //vks::Buffer *vksBuffer{};
             uint32_t offset{ 0 }; // VKTODO: is it correct type
             uint32_t size{ 0 }; // VKTODO: is it correct type
 
             BufferState& operator=(const BufferState& other) = delete;
             void reset() {
                 gpu::reset(buffer);
-                gpu::reset(vksBuffer);
+                //gpu::reset(vksBuffer);
                 offset = 0;
                 size = 0;
             }
@@ -227,11 +227,11 @@ protected:
         };
         struct BufferState {
             BufferReference buffer{};
-            vks::Buffer *vksBuffer{};
+            //vks::Buffer *vksBuffer{};
             BufferState& operator=(const BufferState& other) = delete;
             void reset() {
                 gpu::reset(buffer);
-                gpu::reset(vksBuffer);
+                //gpu::reset(vksBuffer);
             }
         };
         std::array<BufferState, MAX_NUM_RESOURCE_BUFFERS> _buffers{};
@@ -277,14 +277,14 @@ protected:
         std::vector<VkDescriptorSet> textureDescriptorSets;
         std::vector<VkDescriptorSet> storageDescriptorSets;
         VkDescriptorPool _descriptorPool;
-        std::vector<std::shared_ptr<vks::Buffer>> _buffers;
+        std::vector<std::shared_ptr<gpu::Buffer>> _buffers;
         std::vector<VkRenderPass> _renderPasses;
 
-        std::shared_ptr<vks::Buffer> _objectBuffer;
-        std::shared_ptr<vks::Buffer> _cameraBuffer;
-        std::shared_ptr<vks::Buffer> _drawCallInfoBuffer;
+        std::shared_ptr<gpu::Buffer> _objectBuffer;
+        std::shared_ptr<gpu::Buffer> _cameraBuffer;
+        std::shared_ptr<gpu::Buffer> _drawCallInfoBuffer;
 
-        std::shared_ptr<vks::Buffer> _glUniformBuffer; // Contains data from glUniform... calls
+        std::shared_ptr<gpu::Buffer> _glUniformBuffer; // Contains data from glUniform... calls
         std::vector<uint8_t> _glUniformData;
         std::unordered_map<int, size_t> _glUniformOffsetMap;
         size_t _glUniformBufferPosition {0}; // Position where data from next glUniform... call is placed

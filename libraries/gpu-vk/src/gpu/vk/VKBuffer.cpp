@@ -31,6 +31,7 @@ VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer) {
     if (0 != (buffer._renderPages._flags & PageManager::DIRTY)) {
         object->transfer();
     }
+    Q_ASSERT(object->size == buffer._renderSysmem.getSize());
 
     return object;
 }
@@ -45,19 +46,18 @@ VkBuffer VKBuffer::getBuffer(VKBackend& backend, const gpu::Buffer& buffer) {
 }
 void VKBuffer::transfer() {
     Size offset;
-    Size size;
+    Size blockSize;
     Size currentPage { 0 };
     auto data = _gpuObject._renderSysmem.readData();
     auto dataSize = _gpuObject._renderSysmem.getSize();
-    while (_gpuObject._renderPages.getNextTransferBlock(offset, size, currentPage)) {
-        if (offset + size > _localData.size()) {
-            size = _localData.size() - offset;
+    while (_gpuObject._renderPages.getNextTransferBlock(offset, blockSize, currentPage)) {
+        if (offset + blockSize > _localData.size()) {
             Q_ASSERT(false);
         }
-        memcpy(_localData.data()+offset, data+offset, size);
+        memcpy(_localData.data()+offset, data+offset, blockSize);
     }
     map();
-    copy(_localData.size(), _localData.data());
+    copy(size, _localData.data());
     flush(VK_WHOLE_SIZE);
     unmap();
     _gpuObject._renderPages._flags &= ~PageManager::DIRTY;
@@ -73,12 +73,27 @@ VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& gpuBuffer) : VKObject(
     auto dataSize = _gpuObject._renderSysmem.getSize();
     _localData.resize(dataSize);
     memcpy(_localData.data(), data, dataSize);
-    // VKTODO: VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT is wrong here but is not used on VMA yet.
-    (vks::Buffer&)(*this) =
-        //backend._context.createBuffer(usageFlags, gpuBuffer.getSize(), VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        backend._context.createBuffer(usageFlags, dataSize, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    this->size = gpuBuffer._renderSysmem.getSize();
+    VkBufferCreateInfo vkBufferCI{};
+    vkBufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    vkBufferCI.pNext = nullptr;
+    vkBufferCI.flags = 0;
+    vkBufferCI.size = size == 0 ? 256 : size;
+    vkBufferCI.usage = usageFlags;
+    vkBufferCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    vkBufferCI.queueFamilyIndexCount = 0;
+    vkBufferCI.pQueueFamilyIndices = nullptr;
+
+    VmaAllocationCreateInfo allocationCI = {};
+    allocationCI.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; // VKTODO: different kind will be required later for device-local memory
+    allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+    auto pCreateInfo = &vkBufferCI;
+    VK_CHECK_RESULT(vmaCreateBuffer(Allocation::getAllocator(), pCreateInfo, &allocationCI,
+                                    &buffer, &allocation, nullptr));
+
     map();
-    copy(dataSize, _localData.size());
+    copy(size, _localData.data());
     flush(VK_WHOLE_SIZE);
     unmap();
 
@@ -97,4 +112,3 @@ VKBuffer::~VKBuffer() {
         recycler.bufferDeleted(this);
     }
 }
-
