@@ -32,6 +32,7 @@
 #include "VKPipelineCache.h"
 // VKTODO: how to include this?
 #include "../../../../render-utils/src/render-utils/ShaderConstants.h"
+#include "shared/FileUtils.h"
 
 #define FORCE_STRICT_TEXTURE 1
 
@@ -388,8 +389,8 @@ void VKBackend::executeFrame(const FramePointer& frame) {
     releaseFrameData();
     // VKTODO: provide nicer way of doing this
     _frameCounter++;
-    if (_frameCounter % 400 == 0) {
-        //dumpVmaMemoryStats();
+    if (_frameCounter % 4000 == 0) {
+        dumpVmaMemoryStats();
     }
     // loop through commands
 
@@ -483,7 +484,7 @@ void VKBackend::TransformStageState::bindCurrentCamera(int eye, VKBackend::Unifo
         // VKTODO: add convenience function for this?
         auto &buffer = uniform._buffers[slot::buffer::Buffer::CameraTransform];
         Q_ASSERT(currentFrame._cameraBuffer);
-        buffer.vksBuffer = currentFrame._cameraBuffer.get();
+        buffer.buffer = currentFrame._cameraBuffer.get();
         buffer.size = sizeof(CameraBufferElement);
         buffer.offset = _currentCameraOffset + eye * _cameraUboSize;
         //glBindBufferRange(GL_UNIFORM_BUFFER, slot::buffer::Buffer::CameraTransform, _cameraBuffer, _currentCameraOffset + eye * _cameraUboSize, sizeof(CameraBufferElement));
@@ -629,8 +630,8 @@ void VKBackend::do_glUniform1f(const Batch& batch, size_t paramOffset) {
 
     int location = getRealUniformLocation(batch._params[paramOffset + 1]._int);
     Q_ASSERT(location != INVALID_UNIFORM_INDEX);
-    _uniform._buffers[location].buffer = nullptr;
-    _uniform._buffers[location].vksBuffer = _currentFrame->_glUniformBuffer.get();
+    //_uniform._buffers[location].vksBuffer = nullptr;
+    _uniform._buffers[location].buffer = _currentFrame->_glUniformBuffer.get();
     _uniform._buffers[location].offset = _currentFrame->_glUniformOffsetMap[(int)_commandIndex];
     _uniform._buffers[location].size = sizeof(float);
 }
@@ -646,8 +647,8 @@ void VKBackend::do_glUniform2f(const Batch& batch, size_t paramOffset) {
 
      int location = getRealUniformLocation(batch._params[paramOffset + 2]._int);
      Q_ASSERT(location != INVALID_UNIFORM_INDEX);
-    _uniform._buffers[location].buffer = nullptr;
-    _uniform._buffers[location].vksBuffer = _currentFrame->_glUniformBuffer.get();
+    //_uniform._buffers[location].vksBuffer = nullptr;
+    _uniform._buffers[location].buffer = _currentFrame->_glUniformBuffer.get();
     _uniform._buffers[location].offset = _currentFrame->_glUniformOffsetMap[(int)_commandIndex];
     _uniform._buffers[location].size = sizeof(float) * 2;
 }
@@ -798,10 +799,10 @@ void VKBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRend
         memcpy(bufferData.data() + (_transform._cameraUboSize * i), &_transform._cameras[i], sizeof(TransformStageState::CameraBufferElement));
     }
     if (_currentFrame && _currentFrame->_cameraBuffer) {
-        _currentFrame->_cameraBuffer->map();
-        _currentFrame->_cameraBuffer->copy(bufferData.size(), bufferData.data());
-        _currentFrame->_cameraBuffer->flush(VK_WHOLE_SIZE);
-        _currentFrame->_cameraBuffer->unmap();
+        _currentFrame->_cameraBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, bufferData.size(), bufferData.data());
+        _currentFrame->_cameraBuffer->flush();
+        _currentFrame->_buffers.push_back(_currentFrame->_cameraBuffer);
+        syncGPUObject(*_currentFrame->_cameraBuffer);
     }
 }
 
@@ -846,20 +847,14 @@ void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
     sets.reserve(_uniform._buffers.size());
     bufferInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
     for (size_t i = 0; i < _uniform._buffers.size(); i++) {
-        if ((_uniform._buffers[i].buffer || _uniform._buffers[i].vksBuffer)
+        if ((_uniform._buffers[i].buffer)
             && (vertexReflection.validUniformBuffer(i) || fragmentReflection.validUniformBuffer(i))) {
-
-            // These cannot be set at the same time
-            Q_ASSERT(!(_uniform._buffers[i].buffer && _uniform._buffers[i].vksBuffer));
             // VKTODO: move vulkan buffer creation to the transfer parts and aggregate several buffers together maybe?
             VkDescriptorBufferInfo bufferInfo{};
             if (_uniform._buffers[i].buffer) {
-                Q_ASSERT(i != slot::buffer::Buffer::CameraTransform);  // Camera buffer slot cannot be occupied by anything else
                 VKBuffer * buffer = syncGPUObject(*_uniform._buffers[i].buffer);
                 Q_ASSERT(buffer);
                 bufferInfo.buffer = buffer->buffer;
-            } else if (_uniform._buffers[i].vksBuffer) {
-                bufferInfo.buffer = _uniform._buffers[i].vksBuffer->buffer;
             }
             bufferInfo.offset = _uniform._buffers[i].offset;
             bufferInfo.range = _uniform._buffers[i].size;
@@ -974,20 +969,14 @@ void VKBackend::updateVkDescriptorWriteSetsStorage(VkDescriptorSet target) {
     sets.reserve(_uniform._buffers.size());
     bufferInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
     for (size_t i = 0; i < _resource._buffers.size(); i++) {
-        if ((_resource._buffers[i].buffer || _resource._buffers[i].vksBuffer)
+        if ((_resource._buffers[i].buffer)
             && (vertexReflection.validResourceBuffer(i) || fragmentReflection.validResourceBuffer(i))) {
-
-            Q_ASSERT(!(_resource._buffers[i].buffer && _resource._buffers[i].vksBuffer));
             // VKTODO: move vulkan buffer creation to the transfer parts and aggregate several buffers together maybe?
             VkDescriptorBufferInfo bufferInfo{};
             if (_resource._buffers[i].buffer) {
                 VKBuffer* buffer = syncGPUObject(*_resource._buffers[i].buffer);
                 bufferInfo.buffer = buffer->buffer;
-                bufferInfo.range = _resource._buffers[i].buffer->getSize();
-            } else if (_resource._buffers[i].vksBuffer)
-            {
-                bufferInfo.buffer = _resource._buffers[i].vksBuffer->buffer;
-                bufferInfo.range = _resource._buffers[i].vksBuffer->size;
+                bufferInfo.range = _resource._buffers[i].buffer->_renderSysmem.getSize();
             }
             bufferInfo.offset = 0;
             bufferInfos.push_back(bufferInfo);
@@ -1080,9 +1069,6 @@ void VKBackend::releaseResourceBuffer(uint32_t slot) {
         //glActiveTexture(GL_TEXTURE0 + GLESBackend::RESOURCE_BUFFER_SLOT0_TEX_UNIT + slot);
         //glBindTexture(GL_TEXTURE_BUFFER, 0);
         reset(bufferReference);
-    }
-    if (_resource._buffers[slot].vksBuffer) {
-        reset(_resource._buffers[slot].vksBuffer);
     }
 }
 
@@ -1912,19 +1898,15 @@ VKBackend::FrameData::~FrameData() {
     cleanup();
     vkDestroyDescriptorPool(_backend->_context.device->logicalDevice, _descriptorPool, nullptr);
     if (_objectBuffer) {
-        _objectBuffer->destroy();
         _objectBuffer.reset();
     }
     if (_cameraBuffer) {
-        _cameraBuffer->destroy();
         _cameraBuffer.reset();
     }
     if (_drawCallInfoBuffer) {
-        _drawCallInfoBuffer->destroy();
         _drawCallInfoBuffer.reset();
     }
     if (_glUniformBuffer) {
-        _glUniformBuffer->destroy();
         _glUniformBuffer.reset();
     }
 }
@@ -1937,6 +1919,10 @@ void VKBackend::FrameData::cleanup() {
     _glUniformBufferPosition = 0;
     _glUniformOffsetMap.clear();
     _glUniformData.clear();
+
+    size_t vectorCapacity = _buffers.capacity();
+    _buffers.clear();
+    _buffers.reserve(vectorCapacity);
 
     uniformDescriptorSets.resize(0);
     textureDescriptorSets.resize(0);
@@ -2322,7 +2308,9 @@ void VKBackend::dumpVmaMemoryStats() {
     char *stats;
     vmaBuildStatsString(vks::Allocation::getAllocator(), &stats, VK_TRUE);
     std::ofstream statsFile;
-    statsFile.open ("/tmp/vmaStats.txt");
+    static QString pathTemplate = "/tmp/vma_{DATE}_{TIME}.json";
+    QString fullPath = FileUtils::computeDocumentPath(FileUtils::replaceDateTimeTokens(pathTemplate));
+    statsFile.open (fullPath.toStdString());
     statsFile << stats;
     statsFile.close();
     vmaFreeStatsString(vks::Allocation::getAllocator(), stats);
@@ -2367,7 +2355,8 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
         // Draw call info for unnamed calls starts at the beginning of the buffer, with offset dependent on _currentDraw
         VkDeviceSize vkOffset = _currentDraw * sizeof(gpu::Batch::DrawCallInfo);
         Q_ASSERT(_currentFrame->_drawCallInfoBuffer);
-        vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &_currentFrame->_drawCallInfoBuffer->buffer, &vkOffset);
+        auto gpuBuffer = syncGPUObject(*_currentFrame->_drawCallInfoBuffer);
+        vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &gpuBuffer->buffer, &vkOffset);
     } else {
         if (!_transform._enabledDrawcallInfoBuffer) {
             //glEnableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is enabled
@@ -2386,7 +2375,8 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
         // VKTODO: _drawCallInfoBuffer is empty currently
         VkDeviceSize vkOffset = _transform._drawCallInfoOffsets[batch._currentNamedCall];
         Q_ASSERT(_currentFrame->_drawCallInfoBuffer);
-        vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &_currentFrame->_drawCallInfoBuffer->buffer, &vkOffset);
+        auto gpuBuffer = syncGPUObject(*_currentFrame->_drawCallInfoBuffer);
+        vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &gpuBuffer->buffer, &vkOffset);
         //glBindVertexBuffer(gpu::Stream::DRAW_CALL_INFO, _transform._drawCallInfoBuffer, (GLintptr)_transform._drawCallInfoOffsets[batch._currentNamedCall], 2 * sizeof(GLushort));
     }
     _resource._buffers;
@@ -2432,11 +2422,10 @@ void VKBackend::updatePipeline() {
 void VKBackend::transferGlUniforms() {
     auto size = _currentFrame->_glUniformData.size();
     if (size) {
-        _currentFrame->_glUniformBuffer = vks::Buffer::createUniform(size);
-        _currentFrame->_glUniformBuffer->map();
-        _currentFrame->_glUniformBuffer->copy(size, _currentFrame->_glUniformData.data());
-        _currentFrame->_glUniformBuffer->flush(VK_WHOLE_SIZE);
-        _currentFrame->_glUniformBuffer->unmap();
+        _currentFrame->_glUniformBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, size,
+                                                                        _currentFrame->_glUniformData.data());
+        _currentFrame->_glUniformBuffer->flush();
+        _currentFrame->_buffers.push_back(_currentFrame->_glUniformBuffer);
     }
 }
 
@@ -2449,22 +2438,21 @@ void VKBackend::transferTransformState(const Batch& batch) {
         for (size_t i = 0; i < _transform._cameras.size(); ++i) {
             memcpy(bufferData.data() + (_transform._cameraUboSize * i), &_transform._cameras[i], sizeof(TransformStageState::CameraBufferElement));
         }
-        _currentFrame->_cameraBuffer = vks::Buffer::createUniform(bufferData.size());
-        _currentFrame->_cameraBuffer->map();
-        _currentFrame->_cameraBuffer->copy(bufferData.size(), bufferData.data());
-        _currentFrame->_cameraBuffer->flush(VK_WHOLE_SIZE);
-        _currentFrame->_cameraBuffer->unmap();
+        _currentFrame->_cameraBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, bufferData.size(), bufferData.data());//vks::Buffer::createUniform(bufferData.size());
+        _currentFrame->_cameraBuffer->flush();
+        _currentFrame->_buffers.push_back(_currentFrame->_cameraBuffer);
+        syncGPUObject(*_currentFrame->_cameraBuffer);
     }else{
         _currentFrame->_cameraBuffer.reset();
     }
 
     if (!batch._objects.empty()) {
-        _currentFrame->_objectBuffer = vks::Buffer::createStorage(batch._objects.size() * sizeof(Batch::TransformObject));
-        _currentFrame->_objectBuffer->map();
-        _currentFrame->_objectBuffer->copy(batch._objects.size() * sizeof(Batch::TransformObject), batch._objects.data());
-        _currentFrame->_objectBuffer->flush(VK_WHOLE_SIZE);
-        _currentFrame->_objectBuffer->unmap();
-        //glNamedBufferData(_transform._objectBuffer, batch._objects.size() * sizeof(Batch::TransformObject), batch._objects.data(), GL_STREAM_DRAW);
+        _currentFrame->_objectBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer,
+                                                                     batch._objects.size() * sizeof(Batch::TransformObject),
+                                                                     reinterpret_cast<const uint8_t*>(batch._objects.data()));//vks::Buffer::createStorage(batch._objects.size() * sizeof(Batch::TransformObject));
+        _currentFrame->_objectBuffer->flush();
+        syncGPUObject(*_currentFrame->_objectBuffer);
+        _currentFrame->_buffers.push_back(_currentFrame->_objectBuffer);
     }else{
         _currentFrame->_objectBuffer.reset();
     }
@@ -2488,19 +2476,18 @@ void VKBackend::transferTransformState(const Batch& batch) {
         }
         //_transform._drawCallInfoBuffer = std::make_shared<vks::Buffer>();
         //_frameData._buffers.push_back(_transform._drawCallInfoBuffer);
-        _currentFrame->_drawCallInfoBuffer = vks::Buffer::createVertex(bufferData.size());
-        _currentFrame->_drawCallInfoBuffer->map();
-        _currentFrame->_drawCallInfoBuffer->copy(bufferData.size(), bufferData.data());
-        _currentFrame->_drawCallInfoBuffer->flush(VK_WHOLE_SIZE);
-        _currentFrame->_drawCallInfoBuffer->unmap();
-        //glNamedBufferData(_transform._drawCallInfoBuffer, bufferData.size(), bufferData.data(), GL_STREAM_DRAW);
+        _currentFrame->_drawCallInfoBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer,
+                                                                           bufferData.size(),
+                                                                           bufferData.data());
+        _currentFrame->_drawCallInfoBuffer->flush();
+        _currentFrame->_buffers.push_back(_currentFrame->_drawCallInfoBuffer);
     }else{
         _currentFrame->_drawCallInfoBuffer.reset();
     }
 
     // VKTODO
     if (_currentFrame->_objectBuffer) {
-        _resource._buffers[slot::storage::ObjectTransforms].vksBuffer = _currentFrame->_objectBuffer.get();
+        _resource._buffers[slot::storage::ObjectTransforms].buffer = _currentFrame->_objectBuffer.get();
     }
     //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, slot::storage::ObjectTransforms, _transform._objectBuffer);
 

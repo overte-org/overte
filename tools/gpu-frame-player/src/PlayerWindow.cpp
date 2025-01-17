@@ -82,7 +82,7 @@ void PlayerWindow::keyPressEvent(QKeyEvent* event) {
             return;
 
         case Qt::Key_F4:
-            _renderThread.testVkTransfer();
+            //_renderThread.testVkTransfer();
             return;
 
         case Qt::Key_W:

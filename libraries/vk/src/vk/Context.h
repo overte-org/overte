@@ -89,12 +89,6 @@ public:
 
     VkCommandBuffer createCommandBuffer(VkCommandPool commandPool, VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY) const;
 
-    Buffer createBuffer(const VkBufferUsageFlags& usageFlags,
-                        VkDeviceSize size,
-                        const VkMemoryPropertyFlags& memoryPropertyFlags) const;
-
-    Buffer createDeviceBuffer(const VkBufferUsageFlags& usageFlags, VkDeviceSize size) const;
-
 private:
     // Set to true when example is created with enabled validation layers
     bool enableValidation = false;

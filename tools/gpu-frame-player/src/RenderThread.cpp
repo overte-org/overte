@@ -485,7 +485,7 @@ private:
     std::function<void()> _f;
 };
 
-struct VkBufferTransferItem {
+/*struct VkBufferTransferItem {
     using Vector = std::vector<VkBufferTransferItem>;
     VkDeviceSize offset{ 0 };
     gpu::BufferPointer gpuBuffer;
@@ -569,9 +569,9 @@ struct VkBufferTransferItem {
             }
         }
     }
-};
+};*/
 
-void RenderThread::testVkTransfer() {
+/*void RenderThread::testVkTransfer() {
     static std::atomic<bool> running{ false };
     if (running) {
         return;
@@ -638,7 +638,7 @@ void RenderThread::testVkTransfer() {
 
         running = false;
     }));
-}
+}*/
 
 #ifdef USE_GL
 struct GlBufferTransferItem {

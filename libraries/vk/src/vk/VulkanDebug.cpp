@@ -74,6 +74,12 @@ namespace vks
                 std::cout << debugMessage.str() << "\n\n";
             }
                     fflush(stdout);
+                    if (prefix == "ERROR: ") {
+                        printf("validation error \n"); // For placing breakpoints
+                    }
+                    if (pCallbackData->messageIdNumber == 1094073922) {
+                        printf("validation error \n"); //
+                    }
 #endif
 
 

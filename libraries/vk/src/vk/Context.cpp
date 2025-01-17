@@ -243,6 +243,7 @@ void Context::buildDevice() {
     void *pNextChain = &depthClipControl;
 
     enabledFeatures.depthClamp = true;
+    enabledFeatures.fillModeNonSolid = true;
 
     Q_ASSERT(!device);
     device.reset(new VulkanDevice(physicalDevice));
@@ -255,53 +256,6 @@ VkCommandBuffer Context::createCommandBuffer(VkCommandPool commandPool, VkComman
     VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(commandPool, level, 1);
     VK_CHECK_RESULT(vkAllocateCommandBuffers(device->logicalDevice, &cmdBufAllocateInfo, &cmdBuffer));
     return cmdBuffer;
-}
-
-Buffer Context::createBuffer(const VkBufferUsageFlags& usageFlags,
-                    VkDeviceSize size,
-                    const VkMemoryPropertyFlags& memoryPropertyFlags) const {
-    Buffer result;
-    result.device = device->logicalDevice;
-    result.size = size;
-    result.descriptor.range = size;
-    result.descriptor.offset = 0;
-
-    VkBufferCreateInfo createInfo{
-        .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
-        .pNext = nullptr,
-        .flags = 0,
-        .size = size == 0 ? 256 : size,
-        .usage = usageFlags,
-        .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
-        .queueFamilyIndexCount = 0,
-        .pQueueFamilyIndices = nullptr
-    };
-
-#if VULKAN_USE_VMA
-    VmaAllocationCreateInfo allocationCI = {};
-    //allocationCI.requiredFlags = memoryPropertyFlags; //VKTODO: this will replace allocationCI.usage probably
-    allocationCI.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; // VKTODO: different kind will be required later for device-local memory
-    allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
-    auto pCreateInfo = &createInfo;
-    auto pBuffer = &result.buffer;
-    VK_CHECK_RESULT(vmaCreateBuffer(Allocation::getAllocator(), pCreateInfo, &allocationCI,
-                    pBuffer, &result.allocation, nullptr));
-#else
-    result.descriptor.buffer = result.buffer = device.createBuffer(bufferCreateInfo);
-    vk::MemoryRequirements memReqs = device.getBufferMemoryRequirements(result.buffer);
-    vk::MemoryAllocateInfo memAlloc;
-    result.allocSize = memAlloc.allocationSize = memReqs.size;
-    memAlloc.memoryTypeIndex = getMemoryType(memReqs.memoryTypeBits, memoryPropertyFlags);
-    result.memory = device.allocateMemory(memAlloc);
-    device.bindBufferMemory(result.buffer, result.memory, 0);
-#endif
-    result.descriptor.buffer = result.buffer;
-    return result;
-}
-
-Buffer Context::createDeviceBuffer(const VkBufferUsageFlags& usageFlags, VkDeviceSize size) const {
-    static const VkMemoryPropertyFlags memoryProperties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    return createBuffer(usageFlags, size, memoryProperties);
 }
 
 // End of VKS code
@@ -360,7 +314,7 @@ void Context::Recycler::trashVKSurfaceKHR(VkSurfaceKHR& surface) {
 }
 
 void Context::Recycler::trashVmaAllocation(VmaAllocation& allocation) {
-    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vmaFreeMemory(vks::Allocation::getAllocator(), allocation);
 }
 
 void Context::Recycler::framebufferDeleted(gpu::vk::VKFramebuffer* framebuffer) {

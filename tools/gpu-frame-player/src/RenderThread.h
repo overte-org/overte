@@ -32,7 +32,6 @@ public:
     QWindow* _window{ nullptr };
 
     vks::Context& _vkcontext{ vks::Context::get() };
-    vks::Buffer _vkstagingBuffer;
 
 #ifdef USE_GL
     gl::Context _context;
@@ -72,7 +71,7 @@ public:
 #ifdef USE_GL
     void testGlTransfer();
 #else
-    void testVkTransfer();
+    //void testVkTransfer();
 #endif
     void submitFrame(const gpu::FramePointer& frame);
     void initialize(QWindow* window);
