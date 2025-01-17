@@ -14,13 +14,15 @@
 
 namespace gpu { namespace vk {
 
-class VKBuffer : public VKObject<gpu::Buffer>, public vks::Buffer {
+class VKBuffer : public VKObject<gpu::Buffer>, public vks::Allocation {
 public:
     static VKBuffer* sync(VKBackend& backend, const gpu::Buffer& buffer);
     static VkBuffer getBuffer(VKBackend& backend, const gpu::Buffer& buffer);
     void transfer();
 
     ~VKBuffer() override;
+
+    VkBuffer buffer{ VK_NULL_HANDLE };
 protected:
     VKBuffer(VKBackend& backend, const gpu::Buffer& buffer);
     const Stamp _stamp{ 0 };
