@@ -37,6 +37,7 @@ signals:
 
 protected:
     friend class VkCloseEventFilter;
+    friend struct vks::Context;
     void emitClosing();
 
 protected slots:
@@ -49,6 +50,7 @@ protected:
     void setupDepthStencil();
     void setupFramebuffers();
     void createCommandBuffers();
+    void vulkanCleanup(); // Called by the context before backend is destroyed.
 
 public:
     vks::Context& _context{ vks::Context::get() };
@@ -63,11 +65,9 @@ public:
     struct : vks::Allocation {
         bool isAllocated {false};
         VkImage image;
-        VkDeviceMemory memory;
         VkImageView view;
     } _depthStencil{};
-    std::vector<VkFramebuffer>_frameBuffers;
-    //vks::Image _depthStencil;
-    //std::vector<VkFramebuffer> _framebuffers;
+    std::vector<VkFramebuffer> _frameBuffers;
     QTimer* _resizeTimer{ nullptr };
+    std::atomic<bool> _isVulkanCleanupComplete{ false };
 };
