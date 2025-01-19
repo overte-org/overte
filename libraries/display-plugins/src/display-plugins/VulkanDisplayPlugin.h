@@ -204,8 +204,4 @@ protected:
     QImage getSecondaryCameraScreenshot();
     std::shared_ptr<VKWindow> _vkWindow;
     int _renderedFrameCount{ 0 };
-
-    // Render pass for presenting in window, quick hack for now
-    VkRenderPass _renderPass{VK_NULL_HANDLE};
-    void setupRenderPass();
 };

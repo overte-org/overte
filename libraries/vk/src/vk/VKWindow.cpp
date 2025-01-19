@@ -23,6 +23,7 @@
 #include "Context.h"
 
 VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
+    vks::Context::get().registerWindow(this);
     setBaseSize(QSize(1280, 720));
     resize(QSize(1280, 720));
     _resizeTimer = new QTimer(this);
@@ -78,6 +79,35 @@ void VKWindow::createCommandBuffers() {
     _drawCommandBuffers.resize(_swapchain.imageCount);
     VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(_context.device->graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, static_cast<uint32_t>(_drawCommandBuffers.size()));
     VK_CHECK_RESULT(vkAllocateCommandBuffers(_device, &cmdBufAllocateInfo, _drawCommandBuffers.data()));
+}
+
+void VKWindow::vulkanCleanup() {
+    _isVulkanCleanupComplete = true;
+    _context.recycler.trashVkSemaphore(_acquireCompleteSemaphore);
+    _context.recycler.trashVkSemaphore(_renderCompleteSemaphore);
+
+    if (_renderPass) {
+        _context.recycler.trashVkRenderPass(_renderPass);
+    }
+
+    if (_depthStencil.image) {
+        _context.recycler.trashVkImage(_depthStencil.image);
+    }
+
+    if (_depthStencil.view) {
+        _context.recycler.trashVkImageView(_depthStencil.view);
+    }
+
+    if (_depthStencil.allocation) {
+        _context.recycler.trashVmaAllocation(_depthStencil.allocation);
+    }
+
+    for (auto& framebuffer : _frameBuffers) {
+        _context.recycler.trashVkFramebuffer(framebuffer);
+    }
+    _frameBuffers.clear();
+
+    _swapchain.cleanup();
 }
 
 void VKWindow::setupDepthStencil() {
@@ -149,7 +179,7 @@ void VKWindow::setupFramebuffers() {
     // Recreate the frame buffers
     if (!_frameBuffers.empty()) {
         for (auto& framebuffer : _frameBuffers) {
-            vkDestroyFramebuffer(_device, framebuffer, nullptr);
+            _context.recycler.trashVkFramebuffer(framebuffer);
         }
         _frameBuffers.clear();
     }
@@ -273,9 +303,12 @@ void VKWindow::resizeFramebuffer() {
 }
 
 VKWindow::~VKWindow() {
-    vkDestroySemaphore(_device, _acquireCompleteSemaphore, nullptr);
-    vkDestroySemaphore(_device, _renderCompleteSemaphore, nullptr);
-    _swapchain.cleanup();
+    // Depending on what is shut down first, cleanup is done either by window or Vulkan backend.
+    std::lock_guard<std::recursive_mutex> lock(_context.vulkanWindowsMutex);
+    if (!_isVulkanCleanupComplete) {
+        _context.unregisterWindow(this);
+        vulkanCleanup();
+    }
 }
 
 void VKWindow::emitClosing() {
