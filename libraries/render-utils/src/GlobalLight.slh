@@ -134,13 +134,13 @@ vec3 evalSkyboxGlobalColor(mat4 invViewMat, float shadowAttenuation, float obscu
     color += directionalDiffuse;
     color += directionalSpecular;
 
+<@if computeHaze@>
     // Haze
     if (isHazeEnabled() > 0.0) {
         if ((hazeParams.hazeMode & HAZE_MODE_IS_KEYLIGHT_ATTENUATED) == HAZE_MODE_IS_KEYLIGHT_ATTENUATED) {
             color = computeHazeColorKeyLightAttenuation(color, lightDirection, fragPositionWS);
         }
 
-<@if computeHaze@>
         if ((hazeParams.hazeMode & HAZE_MODE_IS_ACTIVE) == HAZE_MODE_IS_ACTIVE) {
             vec4 hazeColor = computeHazeColor(
                 positionES,                     // fragment position in eye   coordinates
@@ -280,7 +280,7 @@ vec3 evalGlobalLightingAlphaBlended(
 <@endfunc@>
 
 <@if HIFI_USE_MTOON@>
-<@func declareEvalGlobalLightingAlphaBlendedMToon()@>
+<@func declareEvalGlobalLightingAlphaBlendedMToon(computeHaze)@>
 
 <$declareLightingAmbient(1, 1, 1)$>
 <$declareLightingDirectional()$>
@@ -330,6 +330,7 @@ vec3 evalGlobalLightingAlphaBlendedMToon(
     rimDiffuse = rimDiffuse * mix(vec3(1.0), vec3(0.0), rimMix);
     color += rimDiffuse;
 
+<@if computeHaze@>
     // Haze
     if (isHazeEnabled() > 0.0) {
         if ((hazeParams.hazeMode & HAZE_MODE_IS_KEYLIGHT_ATTENUATED) == HAZE_MODE_IS_KEYLIGHT_ATTENUATED) {
@@ -347,6 +348,7 @@ vec3 evalGlobalLightingAlphaBlendedMToon(
             color = mix(color.rgb, hazeColor.rgb, hazeColor.a);
         }
     }
+<@endif@>
 
     return color;
 }
