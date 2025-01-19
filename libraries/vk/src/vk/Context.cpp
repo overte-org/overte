@@ -5,6 +5,7 @@
 #include <QtCore/QDebug>
 
 #include "Context.h"
+#include "VKWindow.h"
 
 namespace gpu::vk {
 // Extension for sharing memory with OpenGL, needed by QML UI and Web entities.
@@ -260,6 +261,24 @@ VkCommandBuffer Context::createCommandBuffer(VkCommandPool commandPool, VkComman
 
 // End of VKS code
 
+void Context::registerWindow(VKWindow* window) {
+    std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
+    vulkanWindows.push_back(window);
+}
+
+void Context::unregisterWindow(VKWindow* window) {
+    std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
+    vulkanWindows.remove(window);
+}
+
+void Context::shutdownWindows() {
+    std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
+    for (auto window : vulkanWindows) {
+        window->vulkanCleanup();
+    }
+    vulkanWindows.clear();
+}
+
 void Context::Recycler::trashVkSampler(VkSampler& sampler) {
     std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
     vkSamplers.push_back(sampler);
@@ -267,7 +286,7 @@ void Context::Recycler::trashVkSampler(VkSampler& sampler) {
 
 void Context::Recycler::trashVkFramebuffer(VkFramebuffer& framebuffer) {
     std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
-    vkFramebuffer.push_back(framebuffer);
+    vkFramebuffers.push_back(framebuffer);
 }
 
 void Context::Recycler::trashVkImageView(VkImageView& imageView) {
@@ -290,6 +309,16 @@ void Context::Recycler::trashVkRenderPass(VkRenderPass& renderPass) {
     vkRenderPasses.push_back(renderPass);
 }
 
+void Context::Recycler::trashVkDescriptorSetLayout(VkDescriptorSetLayout& descriptorSetLayout) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkDescriptorSetLayouts.push_back(descriptorSetLayout);
+}
+
+void Context::Recycler::trashVkPipelineLayout(VkPipelineLayout& pipelineLayout) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkPipelineLayouts.push_back(pipelineLayout);
+}
+
 void Context::Recycler::trashVkPipeline(VkPipeline& pipeline) {
     std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
     vkPipelines.push_back(pipeline);
@@ -306,10 +335,17 @@ void Context::Recycler::trashVkSwapchainKHR(VkSwapchainKHR& swapchain) {
 }
 
 void Context::Recycler::trashVkDeviceMemory(VkDeviceMemory& memory) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
     vkDeviceMemories.push_back(memory);
 }
 
+void Context::Recycler::trashVkSemaphore(VkSemaphore &semaphore) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkSemaphores.push_back(semaphore);
+}
+
 void Context::Recycler::trashVKSurfaceKHR(VkSurfaceKHR& surface) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
     vkSurfacesKHR.push_back(surface);
 }
 
