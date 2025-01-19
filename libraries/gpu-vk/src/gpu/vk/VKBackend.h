@@ -278,7 +278,7 @@ protected:
         std::vector<VkDescriptorSet> storageDescriptorSets;
         VkDescriptorPool _descriptorPool;
         std::vector<std::shared_ptr<gpu::Buffer>> _buffers;
-        std::vector<VkRenderPass> _renderPasses;
+        std::vector<VkRenderPass> _renderPasses;  // VKTODO: add a lock? It depends on how we do transfer thread
 
         std::shared_ptr<gpu::Buffer> _objectBuffer;
         std::shared_ptr<gpu::Buffer> _cameraBuffer;

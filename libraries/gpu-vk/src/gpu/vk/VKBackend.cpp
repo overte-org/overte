@@ -39,6 +39,9 @@
 using namespace gpu;
 using namespace gpu::vk;
 
+// VKTODO: this is ugly solution
+Cache _cache;
+
 size_t VKBackend::UNIFORM_BUFFER_OFFSET_ALIGNMENT{ 4 };
 
 static VKBackend* INSTANCE{ nullptr };
@@ -110,10 +113,31 @@ void VKBackend::shutdown() {
     VK_CHECK_RESULT(vkQueueWaitIdle(_context.transferQueue) );
     VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
 
+    _context.shutdownWindows();
+
     // Release frames so their destructors can do a cleanup
     _currentFrame.reset();
     _framesToReuse.resize(0);
     _framePool.resize(0);
+
+    for (auto &module : _cache.moduleMap) {
+        _context.recycler.trashVkShaderModule(module.second);
+    }
+    _cache.moduleMap.clear();
+
+    for (auto &renderPass : _cache.pipelineState._renderPassMap) {
+        _context.recycler.trashVkRenderPass(renderPass.second);
+    }
+    _cache.pipelineState._renderPassMap.clear();
+
+    for (auto &pipeline : _cache.pipelineMap) {
+        _context.recycler.trashVkDescriptorSetLayout(pipeline.second.uniformLayout);
+        _context.recycler.trashVkDescriptorSetLayout(pipeline.second.storageLayout);
+        _context.recycler.trashVkDescriptorSetLayout(pipeline.second.textureLayout);
+        _context.recycler.trashVkPipelineLayout(pipeline.second.pipelineLayout);
+        _context.recycler.trashVkPipeline(pipeline.second.pipeline);
+    }
+    _cache.pipelineMap.clear();
 
     beforeShutdownCleanup();
 
@@ -127,6 +151,8 @@ void VKBackend::shutdown() {
             vks::util::savePipelineCacheData(pipelineCacheData);
         }
     }
+    vkDestroyPipelineCache(_context.device->logicalDevice, _pipelineCache, nullptr);
+    vmaDestroyAllocator(vks::Allocation::getAllocator());
 
     isBackendShutdownComplete = true;
 }
@@ -198,10 +224,6 @@ bool VKBackend::supportedTextureFormat(const gpu::Element& format) const {
     }
     return true;
 }
-
-
-// VKTODO: this is ugly solution
-Cache _cache;
 
 void VKBackend::executeFrame(const FramePointer& frame) {
     using namespace vks::debugutils;
@@ -1457,11 +1479,17 @@ void VKBackend::setupStereoSide(int side) {
 vk::VKFramebuffer* VKBackend::syncGPUObject(const Framebuffer& framebuffer) {
     // VKTODO
     auto object = vk::VKFramebuffer::sync(*this, framebuffer);
+    if (!_framebuffers.count(object)) {
+        _framebuffers.insert(object);
+    }
     return object;
 }
 
 VKBuffer* VKBackend::syncGPUObject(const Buffer& buffer) {
     auto object = vk::VKBuffer::sync(*this, buffer);
+    if (!_buffers.count(object)) {
+        _buffers.insert(object);
+    }
     return object;
 }
 
@@ -1644,13 +1672,17 @@ VKTexture* VKBackend::syncGPUObject(const Texture& texture) {
         }
     }
 
-    _textures.insert(object); // VKTODO: shouldn't that only be inserted when new object is created?
+    if (!_textures.count(object)) {
+        _textures.insert(object);
+    }
     return object;
 }
 
 VKQuery* VKBackend::syncGPUObject(const Query& query) {
-    // VKTODO
     auto object = vk::VKQuery::sync(*this, query);
+    if (!_queries.count(object)) {
+        _queries.insert(object);
+    }
     return object;
 }
 
@@ -2175,6 +2207,14 @@ void VKBackend::perFrameCleanup() {
     recycler.deletedQueries.reserve(capacityBeforeClear);
 
     auto device = _context.device->logicalDevice;
+
+    for (auto framebuffer : recycler.vkFramebuffers) {
+        vkDestroyFramebuffer(device, framebuffer, nullptr);
+    }
+    capacityBeforeClear = recycler.vkFramebuffers.capacity();
+    recycler.vkFramebuffers.clear();
+    recycler.vkFramebuffers.reserve(capacityBeforeClear);
+
     for (auto sampler : recycler.vkSamplers) {
         vkDestroySampler(device, sampler, nullptr);
     }
@@ -2210,6 +2250,20 @@ void VKBackend::perFrameCleanup() {
     recycler.vkRenderPasses.clear();
     recycler.vkRenderPasses.reserve(capacityBeforeClear);
 
+    for (auto descriptorSetLayout: recycler.vkDescriptorSetLayouts) {
+        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+    }
+    capacityBeforeClear = recycler.vkDescriptorSetLayouts.capacity();
+    recycler.vkDescriptorSetLayouts.clear();
+    recycler.vkDescriptorSetLayouts.reserve(capacityBeforeClear);
+
+    for (auto pipelineLayout: recycler.vkPipelineLayouts) {
+        vkDestroyPipelineLayout(device, pipelineLayout, nullptr);
+    }
+    capacityBeforeClear = recycler.vkPipelineLayouts.capacity();
+    recycler.vkPipelineLayouts.clear();
+    recycler.vkPipelineLayouts.reserve(capacityBeforeClear);
+
     for (auto pipeline: recycler.vkPipelines) {
         vkDestroyPipeline(device, pipeline, nullptr);
     }
@@ -2217,12 +2271,26 @@ void VKBackend::perFrameCleanup() {
     recycler.vkPipelines.clear();
     recycler.vkPipelines.reserve(capacityBeforeClear);
 
+    for (auto shaderModule: recycler.vkShaderModules) {
+        vkDestroyShaderModule(device, shaderModule, nullptr);
+    }
+    capacityBeforeClear = recycler.vkShaderModules.capacity();
+    recycler.vkShaderModules.clear();
+    recycler.vkShaderModules.reserve(capacityBeforeClear);
+
     for (auto swapchain : recycler.vkSwapchainsKHR) {
         vkDestroySwapchainKHR(device, swapchain, nullptr);
     }
     capacityBeforeClear = recycler.vkSwapchainsKHR.capacity();
     recycler.vkSwapchainsKHR.clear();
     recycler.vkSwapchainsKHR.reserve(capacityBeforeClear);
+
+    for (auto semaphore: recycler.vkSemaphores) {
+        vkDestroySemaphore(device, semaphore, nullptr);
+    }
+    capacityBeforeClear = recycler.vkSemaphores.capacity();
+    recycler.vkSemaphores.clear();
+    recycler.vkSemaphores.reserve(capacityBeforeClear);
 
     for (auto surface: recycler.vkSurfacesKHR) {
         vkDestroySurfaceKHR(_context.instance, surface, nullptr);

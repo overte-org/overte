@@ -330,8 +330,6 @@ bool VulkanDisplayPlugin::activate() {
     // VKTODO: Should this be here?
     customizeContext();
 
-    setupRenderPass();
-
     return Parent::activate();
 }
 
@@ -915,6 +913,8 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         _vkWindow->_swapchain.queuePresent(_vkWindow->_context.graphicsQueue, currentImageIndex, _vkWindow->_renderCompleteSemaphore);
 
         // VKTODO this is inefficient here
+        VK_CHECK_RESULT(vkWaitForFences(vkDevice, 1, &frameFence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
+        vkDestroyFence(vkDevice, frameFence, nullptr);
         vkBackend->waitForGPU();
         vkBackend->recycleFrame();
 
@@ -1134,49 +1134,4 @@ void VulkanDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer ne
 
 gpu::PipelinePointer VulkanDisplayPlugin::getRenderTexturePipeline() {
     return _drawTexturePipeline;
-}
-
-void VulkanDisplayPlugin::setupRenderPass() {
-    auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(getBackend());
-    auto device = vkBackend->getContext().device->logicalDevice;
-    if (_renderPass) {
-        vkBackend->getContext().recycler.trashVkRenderPass(_renderPass);
-    }
-
-    VkAttachmentDescription attachment{};
-    // Color attachment
-    attachment.format = _vkWindow->_swapchain.colorFormat;
-    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-
-    VkAttachmentReference colorAttachmentReference{};
-    colorAttachmentReference.attachment = 0;
-    colorAttachmentReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription subpass{};
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colorAttachmentReference;
-    VkSubpassDependency subpassDependency{};
-    subpassDependency.srcSubpass = 0;
-    subpassDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-    subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-    subpassDependency.dstSubpass = VK_SUBPASS_EXTERNAL;
-    subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-    subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-
-    VkRenderPassCreateInfo renderPassInfo{};
-    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    renderPassInfo.attachmentCount = 1;
-    renderPassInfo.pAttachments = &attachment;
-    renderPassInfo.subpassCount = 1;
-    renderPassInfo.pSubpasses = &subpass;
-    // VKTODO
-    // renderPassInfo.dependencyCount = 1;
-    // renderPassInfo.pDependencies = &subpassDependency;
-    renderPassInfo.dependencyCount = 0;
-    VK_CHECK_RESULT(vkCreateRenderPass(device, &renderPassInfo, nullptr, &_renderPass));
 }

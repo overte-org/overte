@@ -23,6 +23,8 @@ namespace gpu::vk {
     extern PFN_vkGetMemoryFdKHR vkGetMemoryFdKHR;
 }
 
+class VKWindow;
+
 namespace vks {
 
 // Start of VKS code
@@ -31,6 +33,7 @@ using StringList = std::list<std::string>;
 using CStringVector = std::vector<const char*>;
 
 struct Context {
+    friend class ::VKWindow;
 private:
     static CStringVector filterLayers(const StringList& desiredLayers);
 
@@ -102,6 +105,13 @@ private:
 
 public:
 
+
+    void registerWindow(VKWindow *window); // Every Vulkan window registers itself here, so its.
+
+    void unregisterWindow(VKWindow *window); // When window closes before backend was shut down , it removes itself from the list.
+
+    void shutdownWindows(); // When backend shuts down, it cleans up after all windows and removes them from the list.
+
     // Contains objects that need to be deleted on Vulkan backend thread after frame is rendered.
     // It's filled by destructors of objects like gpu::Texture and gpu::Buffer, since these destroy
     // backend counterpart of their objects.
@@ -115,10 +125,13 @@ public:
         void trashVkImage(VkImage &image);
         void trashVkBuffer(VkBuffer &buffer);
         void trashVkRenderPass(VkRenderPass &renderPass);
+        void trashVkDescriptorSetLayout(VkDescriptorSetLayout& descriptorSetLayout);
+        void trashVkPipelineLayout(VkPipelineLayout& pipelineLayout);
         void trashVkPipeline(VkPipeline &pipeline);
         void trashVkShaderModule(VkShaderModule &module);
         void trashVkSwapchainKHR(VkSwapchainKHR &swapchain);
         void trashVKSurfaceKHR(VkSurfaceKHR &surface);
+        void trashVkSemaphore(VkSemaphore &semaphore);
         void trashVkDeviceMemory(VkDeviceMemory &memory);
         void trashVmaAllocation(VmaAllocation &allocation);
 
@@ -130,16 +143,19 @@ public:
     private:
         std::recursive_mutex recyclerMutex;
 
+        std::vector<VkFramebuffer> vkFramebuffers;
         std::vector<VkSampler> vkSamplers;
-        std::vector<VkFramebuffer> vkFramebuffer;
         std::vector<VkImageView> vkImageViews;
         std::vector<VkImage> vkImages;
         std::vector<VkBuffer> vkBuffers;
         std::vector<VkRenderPass> vkRenderPasses;
+        std::vector<VkDescriptorSetLayout> vkDescriptorSetLayouts;
+        std::vector<VkPipelineLayout > vkPipelineLayouts;
         std::vector<VkPipeline> vkPipelines;
         std::vector<VkShaderModule> vkShaderModules;
         std::vector<VkSwapchainKHR> vkSwapchainsKHR;
         std::vector<VkSurfaceKHR> vkSurfacesKHR;
+        std::vector<VkSemaphore> vkSemaphores;
         std::vector<VkDeviceMemory> vkDeviceMemories;
         std::vector<VmaAllocation> vmaAllocations;
 
@@ -150,6 +166,10 @@ public:
         std::vector<gpu::vk::VKQuery*> deletedQueries;
         friend class gpu::vk::VKBackend;
     } recycler;
+
+private:
+    std::recursive_mutex vulkanWindowsMutex;
+    std::list<VKWindow*> vulkanWindows;
 
 };
 

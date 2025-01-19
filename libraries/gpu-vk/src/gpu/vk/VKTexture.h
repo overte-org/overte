@@ -266,6 +266,7 @@ protected:
 
 class VKAttachmentTexture : public VKFixedAllocationTexture {
     friend class VKBackend;
+    friend class VKFramebuffer;
 
 public:
     VkImageLayout getVkImageLayout() { return _vkImageLayout; };
@@ -282,11 +283,9 @@ protected:
 
     VkDescriptorImageInfo getDescriptorImageInfo() override; // VKTODO
 
-    VkImageView _vkImageView { VK_NULL_HANDLE };
+    VkImageView _vkImageView { VK_NULL_HANDLE }; // Created by VKFramebuffer class.
     VkImageLayout _vkImageLayout {}; // VKTODO: this needs to be updated on blits and other image writes
     VkSampler _vkSampler { VK_NULL_HANDLE };
-    //VkImage _vkImage { VK_NULL_HANDLE };
-    //VkDeviceMemory _vkDeviceMemory{ VK_NULL_HANDLE };
 };
 
 class VKStrictResourceTexture: public VKFixedAllocationTexture {

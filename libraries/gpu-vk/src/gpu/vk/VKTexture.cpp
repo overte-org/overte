@@ -274,7 +274,10 @@ VkDescriptorImageInfo VKAttachmentTexture::getDescriptorImageInfo() {
         samplerCreateInfo.maxLod = 0.0f;
         samplerCreateInfo.maxAnisotropy = 1.0f;
         VK_CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &_vkSampler));
-
+    }
+    if (_vkImageView == VK_NULL_HANDLE) {
+        auto backend = _backend.lock();
+        auto device = backend->getContext().device;
         // Create image view
         VkImageViewCreateInfo viewCreateInfo = {};
         viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
