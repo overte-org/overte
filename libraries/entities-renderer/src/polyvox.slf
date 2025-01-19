@@ -28,7 +28,7 @@
         <@include DefaultMaterials.slh@>
 
         <@include GlobalLight.slh@>
-        <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, HIFI_USE_FORWARD)$>
+        <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, 1)$>
 
         <@include gpu/Transform.slh@>
         <$declareStandardCameraTransform()$>

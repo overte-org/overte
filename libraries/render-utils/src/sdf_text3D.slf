@@ -16,7 +16,7 @@
     <@if HIFI_USE_TRANSLUCENT@>
         <$declareEvalGlobalLightingAlphaBlended()$>
     <@else@>
-        <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, HIFI_USE_FORWARD)$>
+        <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, 1)$>
     <@endif@>
 
     <@include gpu/Transform.slh@>

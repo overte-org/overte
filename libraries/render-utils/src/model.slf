@@ -50,7 +50,11 @@
 
         <@include DefaultMaterials.slh@>
         <@include GlobalLight.slh@>
-        <$declareEvalGlobalLightingAlphaBlendedMToon()$>
+        <@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
+            <$declareEvalGlobalLightingAlphaBlendedMToon(1)$>
+        <@else@>
+            <$declareEvalGlobalLightingAlphaBlendedMToon(_SCRIBE_NULL)$>
+        <@endif@>
 
         <@include gpu/Transform.slh@>
         <$declareStandardCameraTransform()$>
@@ -71,7 +75,7 @@
             <@endif@>
             <$declareEvalGlobalLightingAlphaBlended()$>
         <@else@>
-            <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, HIFI_USE_FORWARD)$>
+            <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, 1)$>
         <@endif@>
         <@include gpu/Transform.slh@>
         <$declareStandardCameraTransform()$>

@@ -32,7 +32,7 @@
         <$declareEvalGlobalLightingAlphaBlended()$>
     <@elif HIFI_USE_FORWARD@>
         <@include GlobalLight.slh@>
-        <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, HIFI_USE_FORWARD)$>
+        <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, 1)$>
     <@else@>
         <@include DeferredBufferWrite.slh@>
     <@endif@>
