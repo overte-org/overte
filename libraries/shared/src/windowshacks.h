@@ -14,7 +14,7 @@
 #ifndef hifi_windowshacks_h
 #define hifi_windowshacks_h
 
-#ifdef WIN32
+#ifdef _WIN32
 
 #include <cmath>
 inline double roundf(double value) {
@@ -57,10 +57,10 @@ inline int c99_snprintf(char* str, size_t size, const char* format, ...) {
 #include <winsock2.h>
 #include <WS2tcpip.h>
 
-#else // WIN32
+#else // _WIN32
 
 #include <netinet/in.h>
 
-#endif // WIN32
+#endif // _WIN32
 
 #endif // hifi_windowshacks_h

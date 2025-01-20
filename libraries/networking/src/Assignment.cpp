@@ -96,7 +96,7 @@ Assignment::Assignment(ReceivedMessage& message) :
     packetStream >> *this;
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 #pragma warning(default:4351)
 #endif
 

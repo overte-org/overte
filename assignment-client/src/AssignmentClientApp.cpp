@@ -34,16 +34,16 @@
 AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
     QCoreApplication(argc, argv)
 {
-#   ifndef WIN32
+#ifndef _WIN32
     setvbuf(stdout, NULL, _IOLBF, 0);
-#   endif
+#endif
 
     // setup a shutdown event listener to handle SIGTERM or WM_CLOSE for us
-#   ifdef _WIN32
+#ifdef _WIN32
     installNativeEventFilter(&ShutdownEventListener::getInstance());
-#   else
+#else
     ShutdownEventListener::getInstance();
-#   endif
+#endif
 
     // parse command-line
     QCommandLineParser parser;
