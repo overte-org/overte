@@ -858,7 +858,7 @@ int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, AACube
     DataDeserializer des(dataBytes, sizeof(aaCubeData));
     des >> result;
 
-    return des.length();
+    return (int)des.length();
 }
 
 int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, QRect& result) {

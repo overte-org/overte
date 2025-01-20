@@ -187,6 +187,8 @@ if(OVERTE_WARNINGS_AS_ERRORS)
     if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "" AND WIN32))
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
       set(CMAKE_CFLAGS "${CMAKE_CFLAGS} /WX")
+      # Silence a warning in Qt about stdext::checked_array_iterator
+      add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
     else()
       # Silence multichar to work around an issue in crashpad
       # Silence stringop-overflow to work around an issue in tbb

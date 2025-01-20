@@ -96,11 +96,6 @@ Assignment::Assignment(ReceivedMessage& message) :
     packetStream >> *this;
 }
 
-#ifdef _WIN32
-#pragma warning(default:4351)
-#endif
-
-
 Assignment::Assignment(const Assignment& otherAssignment) : QObject() {
     _uuid = otherAssignment._uuid;
     _command = otherAssignment._command;

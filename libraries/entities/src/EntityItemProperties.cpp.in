@@ -490,6 +490,7 @@ void EntityItemProperties::setTagsFromVector(const QVector<QString>& tags) {
     for (const QString& tag : tags) {
         _tags.insert(tag);
     }
+    _tagsChanged = true;
 }
 
 EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
