@@ -74,11 +74,11 @@ public:
         DrawProps(const QString& str, const glm::vec4& color, const glm::vec2& origin, const glm::vec2& bounds, TextAlignment alignment, bool forward) :
             str(str), color(color), origin(origin), bounds(bounds), alignment(alignment), forward(forward) {}
 
-        const QString& str;
-        const glm::vec4& color;
-        const glm::vec3& effectColor { glm::vec3(0.0f) };
-        const glm::vec2& origin;
-        const glm::vec2& bounds;
+        QString str;
+        glm::vec4 color;
+        glm::vec3 effectColor { glm::vec3(0.0f) };
+        glm::vec2 origin;
+        glm::vec2 bounds;
         float scale { 1.0f };
         float effectThickness { 0.0f };
         TextEffect effect { TextEffect::NO_EFFECT };

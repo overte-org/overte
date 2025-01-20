@@ -624,7 +624,7 @@ void GLBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t par
     bool prevMirrorViewCorrection = _transform._mirrorViewCorrection;
     _transform._mirrorViewCorrection = batch._params[paramOffset]._uint != 0;
 
-    if (_transform._correction.correction != glm::mat4()) {
+    if (prevMirrorViewCorrection != _transform._mirrorViewCorrection && _transform._correction.correction != glm::mat4()) {
         setCameraCorrection(_transform._mirrorViewCorrection ? _transform._flippedCorrection : _transform._unflippedCorrection, _transform._correction.prevView, false);
         _transform._invalidView = true;
     }

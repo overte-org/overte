@@ -498,18 +498,24 @@ bool OctreePacketData::appendValue(const QVector<QUuid>& value) {
 }
 
 bool OctreePacketData::appendValue(const QSet<QString>& value) {
-    QVector<QString> valueVector;
+    QVector<QByteArray> byteArrayVector;
     for (const QString& valueString : value) {
-        valueVector.push_back(valueString);
+        byteArrayVector.push_back(valueString.toUtf8());
     }
 
-    uint16_t qVecSize = value.size();
-    bool success = appendValue(qVecSize);
+    uint16_t valueSize = value.size();
+    bool success = appendValue(valueSize);
     if (success) {
-        success = append((const unsigned char*)valueVector.constData(), qVecSize * sizeof(QString));
-        if (success) {
-            _bytesOfValues += qVecSize * sizeof(QString);
-            _totalBytesOfValues += qVecSize * sizeof(QString);
+        for (const QByteArray& byteArray : byteArrayVector) {
+            uint16_t length = byteArray.length();
+            success = appendValue(length);
+            if (success) {
+                success = appendRawData((const unsigned char*)byteArray.constData(), length);
+            }
+
+            if (!success) {
+                break;
+            }
         }
     }
     return success;
@@ -822,20 +828,21 @@ int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, QVecto
 }
 
 int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, QSet<QString>& result) {
-    QVector<QString> resultVector;
+    uint16_t numValues;
+    memcpy(&numValues, dataBytes, sizeof(uint16_t));
+    dataBytes += sizeof(numValues);
 
-    uint16_t length;
-    memcpy(&length, dataBytes, sizeof(uint16_t));
-    dataBytes += sizeof(length);
-    resultVector.resize(length);
-    memcpy(resultVector.data(), dataBytes, length * sizeof(QString));
-
-    result.clear();
-    for (const QString& resultString : resultVector) {
-        result.insert(resultString);
+    uint16_t dataLength = 0;
+    for (size_t i = 0; i < numValues; i++) {
+        uint16_t length;
+        memcpy(&length, dataBytes, sizeof(length));
+        dataBytes += sizeof(length);
+        result.insert(QString::fromUtf8((const char*)dataBytes, length));
+        dataBytes += length;
+        dataLength += length;
     }
 
-    return sizeof(uint16_t) + length * sizeof(QString);
+    return sizeof(uint16_t) + (numValues * sizeof(uint16_t)) + dataLength;
 }
 
 int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, QByteArray& result) {

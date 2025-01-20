@@ -160,7 +160,7 @@ if(NOT DEFINED OVERTE_WARNINGS_ALLOWLIST)
 endif()
 
 if(NOT DEFINED OVERTE_WARNINGS_AS_ERRORS)
-    set(OVERTE_WARNINGS_AS_ERRORS false CACHE BOOL "Count warnings as errors")
+    set(OVERTE_WARNINGS_AS_ERRORS true CACHE BOOL "Count warnings as errors")
 endif()
 
 if(OVERTE_WARNINGS_ALLOWLIST)
@@ -188,8 +188,10 @@ if(OVERTE_WARNINGS_AS_ERRORS)
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
       set(CMAKE_CFLAGS "${CMAKE_CFLAGS} /WX")
     else()
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-      set(CMAKE_CFLAGS "${CMAKE_CFLAGS} -Werror")
+      # Silence multichar to work around an issue in crashpad
+      # Silence stringop-overflow to work around an issue in tbb
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-multichar -Wno-stringop-overflow")
+      set(CMAKE_CFLAGS "${CMAKE_CFLAGS} -Werror -Wno-multichar -Wno-stringop-overflow")
     endif()
 endif()
 

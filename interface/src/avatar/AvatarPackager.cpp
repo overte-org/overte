@@ -31,7 +31,7 @@ AvatarPackager::AvatarPackager() {
 
         qmlRegisterType<FST>();
 
-        OVERTE_IGNORE_DEPRECATED_END
+        OVERTE_IGNORE_WARNING_END
 
         qRegisterMetaType<AvatarPackager*>();
         qRegisterMetaType<AvatarProject*>();
