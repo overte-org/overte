@@ -387,6 +387,7 @@ public:
     void scriptHasUnloaded();
     void setScriptHasFinishedPreload(bool value);
     bool isScriptPreloadFinished();
+    QString getLoadedScript() const { return _loadedScript; }
     virtual bool isWearable() const;
     bool isDomainEntity() const { return _entityHostType == entity::HostType::DOMAIN; }
     bool isAvatarEntity() const { return _entityHostType == entity::HostType::AVATAR; }

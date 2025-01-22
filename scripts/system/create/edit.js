@@ -96,8 +96,9 @@
     var ZONE_URL = Script.resolvePath("assets/images/icon-zone.svg");
     var MATERIAL_URL = Script.resolvePath("assets/images/icon-material.svg");
     var SOUND_URL = Script.resolvePath("assets/images/icon-sound.svg");
+    var SCRIPT_URL = Script.resolvePath("assets/images/icon-script.svg");
 
-    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "ProceduralParticleEffect", "Zone", "Material", "Sound"], function(entityID) {
+    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "ProceduralParticleEffect", "Zone", "Material", "Sound", "Script"], function(entityID) {
         var properties = Entities.getEntityProperties(entityID, ["type", "isSpotlight", "parentID", "name"]);
         if (properties.type === "Light") {
             return {
@@ -113,6 +114,8 @@
             }
         } else if (properties.type === "Sound") {
             return { imageURL: SOUND_URL, rotation: Quat.fromPitchYawRollDegrees(0, 0, 0) };
+        } else if (properties.type === "Script") {
+            return { imageURL: SCRIPT_URL, rotation: Quat.fromPitchYawRollDegrees(0, 0, 0) };
         } else {
             return { imageURL: PARTICLE_SYSTEM_URL };
         }
@@ -341,7 +344,7 @@
             canCastShadow: true,
             href: "",
             script: "",
-            serverScripts:"",
+            serverScripts: "",
             velocity: {
                 x: 0,
                 y: 0,
@@ -541,6 +544,9 @@
             positional: true,
             localOnly: false
         },
+        Script: {
+            enabled: true
+        }
     };
 
     var toolBar = (function () {
@@ -621,7 +627,7 @@
                     if (Menu.isOptionChecked(MENU_CREATE_ENTITIES_GRABBABLE) &&
                         !(properties.type === "Zone" || properties.type === "Light" || properties.type === "Sound"
                             || properties.type === "ParticleEffect" || properties.type == "ProceduralParticleEffect"
-                            || properties.type === "Web")) {
+                            || properties.type === "Web" || properties.type === "Script")) {
                         properties.grab.grabbable = true;
                     } else {
                         properties.grab.grabbable = false;
@@ -928,6 +934,17 @@
                 }
             }
         }
+        function handleNewScriptDialogResult(result) {
+            if (result) {
+                var scriptURL = result.textInput;
+                if (scriptURL) {
+                    createNewEntity({
+                        type: "Script",
+                        scriptURL: scriptURL
+                    });
+                }
+            }
+        }
 
         function fromQml(message) { // messages are {method, params}, like json-rpc. See also sendToQml.
             var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
@@ -969,6 +986,13 @@
                     closeExistingDialogWindow();
                     break;
                 case "newSoundDialogCancel":
+                    closeExistingDialogWindow();
+                    break;
+                case "newScriptDialogAdd":
+                    handleNewScriptDialogResult(message.params);
+                    closeExistingDialogWindow();
+                    break;
+                case "newScriptDialogCancel":
                     closeExistingDialogWindow();
                     break;
             }
@@ -1137,6 +1161,8 @@
             addButton("newPolyVoxButton", createNewEntityDialogButtonCallback("PolyVox"));
 
             addButton("newSoundButton", createNewEntityDialogButtonCallback("Sound"));
+
+            addButton("newScriptButton", createNewEntityDialogButtonCallback("Script"));
 
             var deactivateCreateIfDesktopWindowsHidden = function() {
                 if (!shouldUseEditTabletApp() && !entityListTool.isVisible() && !createToolsWindow.isVisible()) {
@@ -2127,7 +2153,7 @@
                     var entityParentIDs = [];
 
                     var propType = Entities.getEntityProperties(pastedEntityIDs[0], ["type"]).type;
-                    var NO_ADJUST_ENTITY_TYPES = ["Zone", "Light", "ParticleEffect", "ProceduralParticleEffect", "Sound"];
+                    var NO_ADJUST_ENTITY_TYPES = ["Zone", "Light", "ParticleEffect", "ProceduralParticleEffect", "Sound", "Script"];
                     if (NO_ADJUST_ENTITY_TYPES.indexOf(propType) === -1) {
                         var targetDirection;
                         if (Camera.mode === "entity" || Camera.mode === "independent") {
