@@ -184,6 +184,7 @@ bool HTTPManager::handleHTTPRequest(HTTPConnection* connection, const QUrl& url,
     }
 
     // respond with a 404
+    qCWarning(embeddedwebserver) << "Resource not found for URL" << url;
     connection->respond(HTTPConnection::StatusCode404, "Resource not found.");
 
     return true;
