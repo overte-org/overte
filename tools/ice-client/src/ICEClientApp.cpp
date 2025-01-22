@@ -106,13 +106,19 @@ ICEClientApp::ICEClientApp(int argc, char* argv[]) :
             port = ICE_SERVER_DEFAULT_PORT;
         }
 
+        // TODO(IPv6): This needs to be updated and tested for IPv6
+        // Maybe both IPv4 and IPv6 addresses should be given simultaneously?
         if (address.isNull()) {
             qCritical() << "Could not parse an IP address and port combination from" << hostnamePortString << "-" <<
                 "The parsed IP was" << address.toString() << "and the parsed port was" << port;
 
             QMetaObject::invokeMethod(this, "quit", Qt::QueuedConnection);
         } else {
-            _iceServerAddr = SockAddr(SocketType::UDP, address, port);
+            if (address.protocol() == QAbstractSocket::IPv4Protocol) {
+                _iceServerAddr = SockAddr(SocketType::UDP, address, QHostAddress(), port);
+            } else if (address.protocol() == QAbstractSocket::IPv6Protocol) {
+                _iceServerAddr = SockAddr(SocketType::UDP, QHostAddress(), address, port);
+            }
         }
     }
 
@@ -148,7 +154,7 @@ void ICEClientApp::openSocket() {
 
     _socket = new udt::Socket();
     unsigned int localPort = 0;
-    _socket->bind(SocketType::UDP, QHostAddress::AnyIPv4, localPort);
+    _socket->bind(SocketType::UDP, QHostAddress::Any, localPort);
     _socket->setPacketHandler([this](std::unique_ptr<udt::Packet> packet) { processPacket(std::move(packet)); });
     _socket->addUnfilteredHandler(_stunSockAddr,
                                   [this](std::unique_ptr<udt::BasePacket> packet) {
@@ -170,14 +176,15 @@ void ICEClientApp::doSomething() {
 
     } else if (_state == lookUpStunServer) {
         // lookup STUN server address
-        if (!_stunSockAddr.getAddress().isNull()) {
+        // TODO(IPv6): IPv4-only for now
+        if (!_stunSockAddr.getAddressIPv4().isNull()) {
             if (_verbose) {
                 qDebug() << "stun server is" << _stunSockAddr;
             }
             setState(sendStunRequestPacket);
         } else {
             if (_verbose) {
-                qDebug() << "_stunSockAddr is" << _stunSockAddr.getAddress();
+                qDebug() << "_stunSockAddr is" << _stunSockAddr.getAddressIPv4() << " " << _stunSockAddr.getAddressIPv6();
             }
             QCoreApplication::exit(stunFailureExitStatus);
         }
@@ -318,8 +325,9 @@ void ICEClientApp::processSTUNResponse(std::unique_ptr<udt::BasePacket> packet) 
 
     uint16_t newPublicPort;
     QHostAddress newPublicAddress;
+    // TODO(IPv6): This needs to be modified for IPv6 support. I'm not sure how STUN handles IPv6.
     if (LimitedNodeList::parseSTUNResponse(packet.get(), newPublicAddress, newPublicPort)) {
-        _publicSockAddr = SockAddr(SocketType::UDP, newPublicAddress, newPublicPort);
+        _publicSockAddr = SockAddr(SocketType::UDP, newPublicAddress, QHostAddress(), newPublicPort);
         if (_verbose) {
             qDebug() << "My public address is" << _publicSockAddr;
         }
