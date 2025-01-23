@@ -1,0 +1,43 @@
+{
+    "version": 3,
+    "vendor": {
+        "conan": {}
+    },
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 15,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "conan-gcc-14-x86_64-17-release",
+            "displayName": "'conan-gcc-14-x86_64-17-release' config",
+            "description": "'conan-gcc-14-x86_64-17-release' configure using 'Unix Makefiles' generator",
+            "generator": "Unix Makefiles",
+            "cacheVariables": {
+                "CMAKE_POLICY_DEFAULT_CMP0091": "NEW",
+                "CMAKE_BUILD_TYPE": "Release"
+            },
+            "toolchainFile": "generators/conan_toolchain.cmake",
+            "binaryDir": "/home/juliangro/git/overte/conan-recipes/nss/all/test_package/build/gcc-14-x86_64-17-release"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "conan-gcc-14-x86_64-17-release",
+            "configurePreset": "conan-gcc-14-x86_64-17-release",
+            "jobs": 28
+        }
+    ],
+    "testPresets": [
+        {
+            "name": "conan-gcc-14-x86_64-17-release",
+            "configurePreset": "conan-gcc-14-x86_64-17-release",
+            "environment": {
+                "PATH": "/home/juliangro/.conan2/p/b/nssb1d8c7def7e78/p/bin:$penv{PATH}",
+                "LD_LIBRARY_PATH": "/home/juliangro/.conan2/p/b/nssb1d8c7def7e78/p/lib:/home/juliangro/.conan2/p/b/nsprc5d1b95cc6e17/p/lib:$penv{LD_LIBRARY_PATH}",
+                "DYLD_LIBRARY_PATH": "/home/juliangro/.conan2/p/b/nssb1d8c7def7e78/p/lib:/home/juliangro/.conan2/p/b/nsprc5d1b95cc6e17/p/lib:$penv{DYLD_LIBRARY_PATH}"
+            }
+        }
+    ]
+}

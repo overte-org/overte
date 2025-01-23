@@ -75,7 +75,7 @@ class Overte(ConanFile):
         self.requires("zlib/1.2.13")
         self.requires("glm/0.9.9.5", force=True)
 
-        if self.settings.os == "Linux":
+        if self.settings.os == "Linux" and not self.options.with_qt:
             self.requires("openssl/system@anotherfoxguy/stable", force=True)
 
         if self.settings.os == "Windows":
@@ -84,7 +84,9 @@ class Overte(ConanFile):
             self.requires("ovr-platform-skd/1.10.0@overte/prebuild")
 
         if self.options.with_qt:
-            self.requires("qt/5.15.13", force=True)
+            self.requires("qt/5.15.16", force=True)
+            # Upstream NSS is broken, so we use https://github.com/conan-io/conan-center-index/pull/19262/commits/735df499341924901089fd512a8ac56ac83d1e6a
+            self.requires("nss/3.107@overte/stable", force=True)
 
         if self.options.with_webrtc:
             self.requires("webrtc-prebuild/2021.01.05@overte/stable", force=True)
