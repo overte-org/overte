@@ -189,7 +189,6 @@ Rectangle {
                 }
             }
 
-
             ListModel {
                 id: local
             }
