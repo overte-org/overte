@@ -56,7 +56,7 @@ const formatting = {
             if (firstMatch == null) {
 				// If there is no more text to parse, break out of the loop and return the message array.
                 // Format any remaining text as a basic 'text' type.
-                messageArray.push({type: 'text', value: runningMessage});
+                if (runningMessage.trim() != "") messageArray.push({type: 'text', value: runningMessage});
 
                 // Append a final 'fill width' to the message text.
                 messageArray.push({type: 'messageEnd'});
@@ -95,7 +95,7 @@ const formatting = {
 
             let foundMatch = runningMessage.match(regex)[0];
 
-            messageArray.push({type: 'text', value: runningMessage.substring(0, indexOfFirstMatch)});
+			if (runningMessage.substring(0, indexOfFirstMatch) != "") messageArray.push({type: 'text', value: runningMessage.substring(0, indexOfFirstMatch)});
             messageArray.push({type: regexPatterns[firstMatch[1]].type, value: runningMessage.substring(indexOfFirstMatch, indexOfFirstMatch + foundMatch.length)});
             
             runningMessage = runningMessage.substring(indexOfFirstMatch + foundMatch.length);   // Remove the part of the message we have worked with
