@@ -2,6 +2,9 @@ sources:
   18.17.1:
     sha256: 1cc1670bc183eaf9e0afe0258391695d1d6ae1be02ba4c26e0218cf5f19b96f7
     url: https://github.com/nodejs/node/archive/refs/tags/v18.17.1.tar.gz
+  18.20.6:
+    sha256: 84b563933f5f38738ec8ea4050d1672f9d0fce8336735457156c39f3fbe2ff1f
+    url: https://github.com/nodejs/node/archive/refs/tags/v18.20.6.tar.gz
   21.6.2:
     sha256: 24a2de72478e1aa60bc830092e8f331f86aedd41e7e3f98fcb66bf5f02bdb578
     url: https://github.com/nodejs/node/archive/refs/tags/v21.6.2.tar.gz
