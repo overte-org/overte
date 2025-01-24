@@ -64,7 +64,6 @@ class Overte(ConanFile):
         self.requires("openvr/2.2.3@overte/stable")
         self.requires("opus/1.4")
         self.requires("polyvox/0.2.1@overte/stable")
-        self.requires("quazip/1.4@overte/stable")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.30.3")
         self.requires("spirv-cross/cci.20211113")
@@ -84,9 +83,13 @@ class Overte(ConanFile):
             self.requires("ovr-platform-skd/1.10.0@overte/prebuild")
 
         if self.options.with_qt:
-            self.requires("qt/5.15.16", force=True)
+            self.requires("qt/5.15.16-2025.01.23@overte/stable", force=True)
             # Upstream NSS is broken, so we use https://github.com/conan-io/conan-center-index/pull/19262/commits/735df499341924901089fd512a8ac56ac83d1e6a
             self.requires("nss/3.107@overte/stable", force=True)
+            self.requires("quazip/1.4")
+        else:
+            # Upstream Quazip depends on Qt provided by Conan instead of system Qt.
+            self.requires("quazip/1.4@overte/stable")
 
         if self.options.with_webrtc:
             self.requires("webrtc-prebuild/2021.01.05@overte/stable", force=True)
