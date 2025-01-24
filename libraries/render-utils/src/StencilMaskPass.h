@@ -3,7 +3,8 @@
 //  render-utils/src/
 //
 //  Created by Sam Gateau on 5/31/17.
-//  Copyright 20154 High Fidelity, Inc.
+//  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -52,6 +53,7 @@ public:
     static void drawMask(gpu::State& state);
     static void drawBackground(gpu::State& state);
     static void testMask(gpu::State& state);
+    static void testMaskResetNoAA(gpu::State& state);
     static void testNoAA(gpu::State& state);
     static void testBackground(gpu::State& state);
     static void testShape(gpu::State& state);

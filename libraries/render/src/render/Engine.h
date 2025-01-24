@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 3/3/15.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -84,6 +85,11 @@ namespace render {
     // the engine should not be known from its jobs.
     class RenderEngine : public Engine {
     public:
+
+        enum TransformSlot : uint8_t {
+            TS_MAIN_VIEW = 0,
+            TS_BACKGROUND_VIEW
+        };
 
         RenderEngine();
         ~RenderEngine() = default;

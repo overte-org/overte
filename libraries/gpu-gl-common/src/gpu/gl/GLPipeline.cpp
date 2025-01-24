@@ -1,6 +1,7 @@
 //
 //  Created by Bradley Austin Davis on 2016/05/15
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -49,11 +50,6 @@ GLPipeline* GLPipeline::sync(GLBackend& backend, const Pipeline& pipeline) {
         Backend::setGPUObject(pipeline, object);
     }
 
-    // Special case for view correction matrices, any pipeline that declares the correction buffer
-    // uniform will automatically have it provided without any client code necessary.
-    // Required for stable lighting in the HMD.
-    auto reflection = shader->getReflection(backend.getShaderDialect(), backend.getShaderVariant());
-    object->_cameraCorrection = reflection.validUniformBuffer(gpu::slot::buffer::CameraCorrection);
     object->_program = programObject;
     object->_state = stateObject;
 

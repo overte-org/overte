@@ -22,8 +22,7 @@ Item {
     anchors.fill:parent
 
     Component.onCompleted: {
-        Render.getConfig("RenderMainView.DrawSceneOctree").showVisibleCells = false
-        Render.getConfig("RenderMainView.DrawSceneOctree").showEmptyCells = false
+        Render.getConfig("RenderMainView.DrawSceneOctree").enabled = true
     }
 
     Component.onDestruction: {
@@ -38,9 +37,9 @@ Item {
 
         HifiControls.CheckBox {
             boxSize: 20
-            text: "Show LOD Reticule"
-            checked: Render.getConfig("RenderMainView.DrawSceneOctree").enabled
-            onCheckedChanged: { Render.getConfig("RenderMainView.DrawSceneOctree").enabled = checked }
+            text: "Show LOD Reticle"
+            checked: Render.getConfig("RenderMainView.DrawSceneOctree").showLODReticle
+            onCheckedChanged: { Render.getConfig("RenderMainView.DrawSceneOctree").showLODReticle = checked }
         }
 
         RichSlider {

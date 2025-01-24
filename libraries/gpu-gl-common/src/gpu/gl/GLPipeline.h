@@ -1,6 +1,7 @@
 //
 //  Created by Bradley Austin Davis on 2016/05/15
 //  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -18,9 +19,6 @@ public:
 
     GLShader* _program { nullptr };
     GLState* _state { nullptr };
-    // Bit of a hack, any pipeline can need the camera correction buffer at execution time, so 
-    // we store whether a given pipeline has declared the uniform buffer for it.
-    bool _cameraCorrection{ false };
 };
 
 } }
