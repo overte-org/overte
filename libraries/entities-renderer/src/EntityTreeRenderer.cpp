@@ -220,8 +220,11 @@ void EntityTreeRenderer::setupEntityScriptEngineSignals(const ScriptManagerPoint
 void EntityTreeRenderer::resetPersistentEntitiesScriptEngine() {
     // This runs script engine shutdown procedure in a separate thread, avoiding a deadlock when script engine is doing
     // a blocking call to main thread
-    if (_persistentEntitiesScriptManager) {
-        QtConcurrent::run([manager = _persistentEntitiesScriptManager] {
+    ScriptManagerPointer scriptManager = _persistentEntitiesScriptManager;
+    // Clear the pointer before lambda is run on another thread.
+    _persistentEntitiesScriptManager.reset();
+    if (scriptManager) {
+        QtConcurrent::run([manager = scriptManager] {
             manager->unloadAllEntityScripts(true);
             manager->stop();
             manager->waitTillDoneRunning();
@@ -251,8 +254,11 @@ void EntityTreeRenderer::resetPersistentEntitiesScriptEngine() {
 void EntityTreeRenderer::resetNonPersistentEntitiesScriptEngine() {
     // This runs script engine shutdown procedure in a separate thread, avoiding a deadlock when script engine is doing
     // a blocking call to main thread
-    if (_nonPersistentEntitiesScriptManager) {
-        QtConcurrent::run([manager = _nonPersistentEntitiesScriptManager] {
+    ScriptManagerPointer scriptManager = _nonPersistentEntitiesScriptManager;
+    // Release the pointer as soon as possible.
+    _nonPersistentEntitiesScriptManager.reset();
+    if (scriptManager) {
+        QtConcurrent::run([manager = scriptManager] {
             manager->unloadAllEntityScripts(true);
             manager->stop();
             manager->waitTillDoneRunning();
@@ -288,7 +294,10 @@ void EntityTreeRenderer::stopDomainAndNonOwnedEntities() {
             EntityItemPointer entityItem = getTree()->findEntityByEntityItemID(entityID);
             if (entityItem && !entityItem->getScript().isEmpty()) {
                 if (!(entityItem->isLocalEntity() || entityItem->isMyAvatarEntity())) {
-                    _nonPersistentEntitiesScriptManager->unloadEntityScript(entityID, true);
+                    auto scriptEnginePtr = _nonPersistentEntitiesScriptManager;
+                    QMetaObject::invokeMethod(scriptEnginePtr.get(), [scriptEnginePtr, entityID]{
+                        scriptEnginePtr->unloadEntityScript(entityID, true);
+                    });
                 }
             }
         }
@@ -1110,7 +1119,9 @@ void EntityTreeRenderer::deletingEntity(const EntityItemID& entityID) {
         if (_currentEntitiesInside.contains(entityID)) {
             scriptEngine->callEntityScriptMethod(entityID, "leaveEntity");
         }
-        scriptEngine->unloadEntityScript(entityID, true);
+        QMetaObject::invokeMethod(scriptEngine.get(), [scriptEngine, entityID]{
+            scriptEngine->unloadEntityScript(entityID, true);
+        });
     }
 
     auto scene = _viewState->getMain3DScene();
@@ -1163,7 +1174,9 @@ void EntityTreeRenderer::checkAndCallPreload(const EntityItemID& entityID, bool 
                 if (_currentEntitiesInside.contains(entityID)) {
                     scriptEngine->callEntityScriptMethod(entityID, "leaveEntity");
                 }
-                scriptEngine->unloadEntityScript(entityID);
+                QMetaObject::invokeMethod(scriptEngine.get(), [scriptEngine, entityID]{
+                    scriptEngine->unloadEntityScript(entityID);
+                });
             }
             entity->scriptHasUnloaded();
         }

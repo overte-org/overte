@@ -1217,7 +1217,9 @@ ScriptSignalV8Proxy::~ScriptSignalV8Proxy() {
     _objectLifetime.Reset();
     _v8Context.Reset();
 #ifdef OVERTE_SCRIPT_USE_AFTER_DELETE_GUARD
+    Q_ASSERT(!_wasDeleted);
     Q_ASSERT(!_engine->_wasDestroyed);
+    _wasDeleted = true;
 #endif
     _engine->_signalProxySetLock.lockForWrite();
     _engine->_signalProxySet.remove(this);

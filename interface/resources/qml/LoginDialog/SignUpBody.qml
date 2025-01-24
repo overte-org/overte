@@ -3,6 +3,7 @@
 //
 //  Created by Stephen Birarda on 7 Dec 2016
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -395,7 +396,7 @@ Item {
                     text: signUpBody.termsContainerText
                     Component.onCompleted: {
                         // with the link.
-                        termsText.text = qsTr("By signing up, you agree to <a href='https://overte.org/legal/privacy/'>Overte Terms of Service</a>")
+                        termsText.text = qsTr("By signing up, you agree to <a href='https://overte.org/privacy_policy.html'>Overte Terms of Service</a>")
                     }
                 }
 

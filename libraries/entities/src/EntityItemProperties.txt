@@ -30,7 +30,7 @@ group:grab,
 enum:MIRROR_MODE prop:mirrorMode type:MirrorMode default:MirrorMode::NONE enum renderProp,
 enum:PORTAL_EXIT_ID prop:portalExitID type:QUuid default:UNKNOWN_ENTITY_ID renderProp,
 Physics
-enum:DENSITY prop:density type:float default:ENTITY_ITEM_DEFAULT_DENSITY min:ENTITY_ITEM_MIN_DENSITY max:ENTITY_ITEM_MIN_DENSITY,
+enum:DENSITY prop:density type:float default:ENTITY_ITEM_DEFAULT_DENSITY min:ENTITY_ITEM_MIN_DENSITY max:ENTITY_ITEM_MAX_DENSITY,
 enum:VELOCITY prop:velocity type:vec3 default:ENTITY_ITEM_DEFAULT_VELOCITY inherited variableCopyGetter:getLocalVelocity variableNetworkGetter:getLocalVelocity() variableNetworkSetter:customUpdateVelocityFromNetwork debugString:"m/s" debugGetter:getWorldVelocity(),
 enum:ANGULAR_VELOCITY prop:angularVelocity type:vec3 default:ENTITY_ITEM_DEFAULT_ANGULAR_VELOCITY inherited variableCopyGetter:getLocalAngularVelocity variableNetworkGetter:getLocalAngularVelocity() variableNetworkSetter:customUpdateAngularVelocityFromNetwork debugGetter:getWorldAngularVelocity(),
 enum:GRAVITY prop:gravity type:vec3 default:ENTITY_ITEM_DEFAULT_GRAVITY debugString:"m/s^2",

@@ -161,7 +161,7 @@ void DrawStatus::run(const RenderContextPointer& renderContext, const Input& inI
                                 status.setColor(Item::Status::Value::RED);
                             }
                             // Set icon based on transition type
-                            auto& transition = transitionStage->getTransition(transitionID);
+                            auto& transition = transitionStage->getElement(transitionID);
                             switch (transition.eventType) {
                             case Transition::Type::USER_ENTER_DOMAIN:
                                 status.setIcon((unsigned char)Item::Status::Icon::USER_TRANSITION_IN);

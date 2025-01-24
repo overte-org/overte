@@ -2,7 +2,7 @@
 //  NewSoundDialog.qml
 //  qml/hifi
 //
-//  Created by HifiExperiments on 4/7/24
+//  Created by HifiExperiments on April 7th, 2024
 //  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
@@ -53,9 +53,24 @@ Rectangle {
 
         Text {
             id: text1
-            text: qsTr("Sound URL")
+            text: qsTr("Sound URL <i></i>&nbsp;&nbsp;&nbsp;")
             color: "#ffffff"
             font.pixelSize: 12
+        }
+
+        Button {
+            id: pasteBtn
+            text: "Paste"
+            font.pixelSize: 11
+            height: 16
+            width: 40
+            radius: 4
+            anchors.top: text1.top
+            anchors.left: text1.right
+            anchors.bottom: text1.bottom
+            onClicked: {
+                soundURL.paste()
+            }
         }
 
         TextInput {
@@ -63,7 +78,7 @@ Rectangle {
             height: 20
             text: qsTr("")
             color: "white"
-            anchors.top: text1.bottom
+            anchors.top: pasteBtn.bottom
             anchors.topMargin: 5
             anchors.left: parent.left
             anchors.leftMargin: 0

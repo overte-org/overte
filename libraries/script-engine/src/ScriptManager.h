@@ -280,9 +280,6 @@ public:
  */
 class ScriptManager : public QObject, public EntitiesScriptEngineProvider, public std::enable_shared_from_this<ScriptManager> {
     Q_OBJECT
-    Q_PROPERTY(QString context READ getContext)
-    Q_PROPERTY(QString type READ getTypeAsString)
-    Q_PROPERTY(QString fileName MEMBER _fileNameString CONSTANT)
 public:
     static const QString SCRIPT_EXCEPTION_FORMAT;
     static const QString SCRIPT_BACKTRACE_SEP;
@@ -381,8 +378,11 @@ public:
     Q_ENUM(Type);
 
     static int processLevelMaxRetries;
-    ScriptManager(Context context, const QString& scriptContents = NO_SCRIPT, const QString& fileNameString = QString("about:ScriptEngine"));
-    ~ScriptManager();
+private:
+    // Constructor is private so that only properly generated shared pointer can be used
+    explicit ScriptManager(Context context, const QString& scriptContents = NO_SCRIPT, const QString& fileNameString = QString("about:ScriptEngine"));
+public:
+    ~ScriptManager() override;
 
     // static initialization support
     typedef void (*ScriptManagerInitializer)(ScriptManager*);
@@ -390,7 +390,7 @@ public:
     public:
         ScriptManagerInitializer init;
         StaticInitializerNode* prev;
-        inline StaticInitializerNode(ScriptManagerInitializer&& pInit) : init(std::move(pInit)),prev(nullptr) { registerNewStaticInitializer(this); }
+        inline explicit StaticInitializerNode(ScriptManagerInitializer&& pInit) : init(std::move(pInit)),prev(nullptr) { registerNewStaticInitializer(this); }
     };
     static void registerNewStaticInitializer(StaticInitializerNode* dest);
 
@@ -398,7 +398,7 @@ public:
     public:
         ScriptManagerInitializer init;
         StaticTypesInitializerNode* prev;
-        inline StaticTypesInitializerNode(ScriptManagerInitializer&& pInit) : init(std::move(pInit)),prev(nullptr) { registerNewStaticTypesInitializer(this); }
+        inline explicit StaticTypesInitializerNode(ScriptManagerInitializer&& pInit) : init(std::move(pInit)),prev(nullptr) { registerNewStaticTypesInitializer(this); }
     };
     static void registerNewStaticTypesInitializer(StaticTypesInitializerNode* dest);
 
@@ -1668,6 +1668,7 @@ protected:
     friend ScriptManagerPointer newScriptManager(Context context, const QString& scriptContents, const QString& fileNameString);
     friend class ScriptManagerScriptingInterface;
 
+    std::atomic<bool> _isDeleted {false}; // This is used for debugging use-after-delete. It happens quite often, so I'm keeping it here for now.
 };
 
 /**

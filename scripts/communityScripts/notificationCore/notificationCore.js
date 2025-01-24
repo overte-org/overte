@@ -22,7 +22,12 @@ var DEFAULT_OFFSET = 10;
 var FLOOF_NOTIFICATION_CHANNEL = "Floof-Notif";
 var MAIN_CHAT_APP_CHANNEL = "Chat";
 var ARROW_REGEX = /\</gi;
-
+var notificationSound = SoundCache.getSound(Script.resolvePath("resources/click.wav"));
+var soundInjectorOptions = {
+    localOnly: true,
+    position: MyAvatar.position,
+    volume: 0.04
+};
 
 var offset = DEFAULT_OFFSET;
 
@@ -48,6 +53,7 @@ function messageReceived(channel, message, sender, local) {
                     }
                 } else {
                     notificationCore.add(cmd.text, cmd.sender, cmd.colour);
+                    playSound();
                 }
             }
         }
@@ -111,6 +117,10 @@ function cleanUp() {
     notificationList.forEach(function (noti) {
         Overlays.deleteOverlay(noti.id);
     });
+}
+
+function playSound() {
+    Audio.playSound(notificationSound, soundInjectorOptions);
 }
 
 function notif(text, colour) {

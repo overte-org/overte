@@ -141,10 +141,6 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
         // Shadow Stage Frame
         const auto shadowFrame = shadowTaskOutputs[1];
 
-    if (depth == 0) {
-        task.addJob<FadeEffect>("FadeEffect", opaques);
-    }
-
     const auto antialiasingMode = task.addJob<AntialiasingSetup>("AntialiasingSetup");
 
     // GPU jobs: Start preparing the primary, deferred and lighting buffer
@@ -494,8 +490,8 @@ void RenderTransparentDeferred::run(const RenderContextPointer& renderContext, c
 
         // Setup haze if current zone has haze
         const auto& hazeStage = args->_scene->getStage<HazeStage>();
-        if (hazeStage && hazeFrame->_hazes.size() > 0) {
-            const auto& hazePointer = hazeStage->getHaze(hazeFrame->_hazes.front());
+        if (hazeStage && hazeFrame->_elements.size() > 0) {
+            const auto& hazePointer = hazeStage->getElement(hazeFrame->_elements.front());
             if (hazePointer) {
                 batch.setUniformBuffer(graphics::slot::buffer::Buffer::HazeParams, hazePointer->getHazeParametersBuffer());
             }

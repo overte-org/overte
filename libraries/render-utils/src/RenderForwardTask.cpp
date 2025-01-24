@@ -274,8 +274,8 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
 
     graphics::HazePointer haze;
     const auto& hazeStage = renderContext->args->_scene->getStage<HazeStage>();
-    if (hazeStage && hazeFrame->_hazes.size() > 0) {
-        haze = hazeStage->getHaze(hazeFrame->_hazes.front());
+    if (hazeStage && hazeFrame->_elements.size() > 0) {
+        haze = hazeStage->getElement(hazeFrame->_elements.front());
     }
 
     gpu::doInBatch("DrawForward::run", args->_context, [&](gpu::Batch& batch) {

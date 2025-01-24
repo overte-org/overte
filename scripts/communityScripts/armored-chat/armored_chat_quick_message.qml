@@ -1,7 +1,7 @@
 import QtQuick 2.5
 import QtQuick.Controls 1.4
 
-Rectangle {
+Item {
     id: root
     property var window
 
@@ -21,15 +21,22 @@ Rectangle {
         z: 99
         visible: false
 
-        TextArea {
-            id: textArea
-            x: 0
+        Rectangle {
             width: parent.width
             height: parent.height
-            text:""
-            textColor: "#ffffff"
+            color: Qt.rgba(0.95,0.95,0.95,1)
+        }
+
+        TextInput {
+            id: textArea
+            x: 5
+            width: parent.width
+            height: parent.height
+            text: ""
+            color: "#000"
             clip: false
             font.pointSize: 18
+            verticalAlignment: Text.AlignVCenter
 
             Keys.onReturnPressed: { _onEnterPressed(); }
             Keys.onEnterPressed: { _onEnterPressed(); }
@@ -52,33 +59,36 @@ Rectangle {
             text: "Local message..."
             font.pointSize: 16
             color: "gray"
-            x: 0
+            x: 5
             width: parent.width
             anchors.verticalCenter: parent.verticalCenter
             visible: textArea.text == ""
+            font.italic: true
         }
 
-        Button {
+        Rectangle {
             id: button
             x: parent.width - width
             y: 0
             width: 64
             height: parent.height
             clip: false
-            visible: true
-            
+            color: "#262626"
+
             Image {
                 id: image
                 width: 30
                 height: 30
                 fillMode: Image.PreserveAspectFit
-                visible: true
                 anchors.centerIn: parent
                 source: "./img/ui/send_white.png"
             }
 
-            onClicked: {
-                _onEnterPressed();
+            MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                    _onEnterPressed();
+                }
             }
         }
 

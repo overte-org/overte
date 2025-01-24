@@ -1,7 +1,7 @@
 //
 //  armored_chat.js
 //
-//  Created by Armored Dragon, 2024.
+//  Created by Armored Dragon, May 17th, 2024.
 //  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
@@ -14,6 +14,7 @@
     var settings = {
         external_window: false,
         maximum_messages: 200,
+        join_notification: true
     };
 
     // Global vars
@@ -46,6 +47,7 @@
             icon: Script.resolvePath("./img/icon_white.png"),
             activeIcon: Script.resolvePath("./img/icon_black.png"),
             text: "CHAT",
+            sortOrder: 8,
             isActive: appIsVisible,
         });
 
@@ -97,24 +99,31 @@
         if (channel !== "chat") return;
         message = JSON.parse(message);
 
+        // Get the message data
+        const currentTimestamp = _getTimestamp();
+        const timeArray = _formatTimestamp(currentTimestamp);
+
         if (!message.channel) message.channel = "domain"; // We don't know where to put this message. Assume it is a domain wide message.
         if (message.forApp) return; // Floofchat
 
         // Floofchat compatibility hook
         message = floofChatCompatibilityConversion(message);
-        message.channel = message.channel.toLowerCase(); // Make sure the "local", "domain", etc. is formatted consistently
+        message.channel = message.channel.toLowerCase();
 
-        if (!channels.includes(message.channel)) return; // Check the channel
-        if (
-            message.channel == "local" &&
-            Vec3.distance(MyAvatar.position, message.position) >
-                maxLocalDistance
-        )
-            return; // If message is local, and if player is too far away from location, don't do anything
+        // Check the channel. If the channel is not one we have, do nothing.
+        if (!channels.includes(message.channel)) return;
+
+        // If message is local, and if player is too far away from location, do nothing.
+        if (message.channel == "local" && isTooFar(message.position)) return; 
+
+        // Format the timestamp 
+        message.timeString = timeArray[0];
+        message.dateString = timeArray[1];
 
         // Update qml view of to new message
         _emitEvent({ type: "show_message", ...message });
 
+        // Show new message on screen
         Messages.sendLocalMessage(
             "Floof-Notif",
             JSON.stringify({
@@ -125,20 +134,25 @@
 
         // Save message to history
         let savedMessage = message;
+
+        // Remove unnecessary data.
         delete savedMessage.position;
-        savedMessage.timeString = new Date().toLocaleTimeString(undefined, {
-            hour12: false,
-        });
-        savedMessage.dateString = new Date().toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        });
+        delete savedMessage.timeString;
+        delete savedMessage.dateString;
+        delete savedMessage.action;
+
+        savedMessage.timestamp = currentTimestamp;
+
         messageHistory.push(savedMessage);
         while (messageHistory.length > settings.maximum_messages) {
             messageHistory.shift();
         }
         Settings.setValue("ArmoredChat-Messages", messageHistory);
+
+        // Check to see if the message is close enough to the user
+        function isTooFar(messagePosition) {
+            return Vec3.distance(MyAvatar.position, messagePosition) > maxLocalDistance;
+        }
     }
     function fromQML(event) {
         switch (event.type) {
@@ -146,17 +160,16 @@
                 _sendMessage(event.message, event.channel);
                 break;
             case "setting_change":
+                // Set the setting value, and save the config
                 settings[event.setting] = event.value; // Update local settings
                 _saveSettings(); // Save local settings
 
+                // Extra actions to preform. 
                 switch (event.setting) {
                     case "external_window":
                         chatOverlayWindow.presentationMode = event.value
                             ? Desktop.PresentationMode.NATIVE
                             : Desktop.PresentationMode.VIRTUAL;
-                        break;
-                    case "maximum_messages":
-                        // Do nothing
                         break;
                 }
 
@@ -164,7 +177,8 @@
             case "action":
                 switch (event.action) {
                     case "erase_history":
-                        Settings.setValue("ArmoredChat-Messages", []);
+                        Settings.setValue("ArmoredChat-Messages", null);
+                        messageHistory = [];
                         _emitEvent({
                             type: "clear_messages",
                         });
@@ -213,9 +227,7 @@
 
             // Get the display name of the user
             let displayName = "";
-            displayName =
-                AvatarManager.getPalData([sessionId])?.data[0]
-                    ?.sessionDisplayName || null;
+            displayName = AvatarManager.getPalData([sessionId])?.data[0]?.sessionDisplayName || null;
             if (displayName == null) {
                 for (let i = 0; i < palData.length; i++) {
                     if (palData[i].sessionUUID == sessionId) {
@@ -226,7 +238,21 @@
 
             // Format the packet
             let message = {};
+            const timeArray = _formatTimestamp(_getTimestamp());
+            message.timeString = timeArray[0];
+            message.dateString = timeArray[1];
             message.message = `${displayName} ${type}`;
+
+            // Show new message on screen
+            if (settings.join_notification){
+                Messages.sendLocalMessage(
+                    "Floof-Notif",
+                    JSON.stringify({
+                        sender: displayName,
+                        text: type,
+                    })
+                );
+            }
 
             _emitEvent({ type: "notification", ...message });
         }, 1500);
@@ -237,7 +263,9 @@
         if (messageHistory) {
             // Load message history
             messageHistory.forEach((message) => {
-                delete message.action;
+                const timeArray = _formatTimestamp(_getTimestamp());
+                message.timeString = timeArray[0];
+                message.dateString = timeArray[1];
                 _emitEvent({ type: "show_message", ...message });
             });
         }
@@ -248,6 +276,24 @@
     function _saveSettings() {
         console.log("Saving config");
         Settings.setValue("ArmoredChat-Config", settings);
+    }
+    function _getTimestamp(){
+        return Date.now();
+    }
+    function _formatTimestamp(timestamp){
+        let timeArray = [];
+
+        timeArray.push(new Date().toLocaleTimeString(undefined, {
+            hour12: false,
+        }));
+
+        timeArray.push(new Date(timestamp).toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+        }));
+
+        return timeArray;
     }
 
     /**

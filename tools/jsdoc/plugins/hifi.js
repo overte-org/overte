@@ -71,7 +71,7 @@ exports.handlers = {
         ];
 
         // only files with this extension will be searched for jsdoc comments.
-        var exts = ['.h', '.cpp'];
+        var exts = ['.h', '.h.in', '.cpp', '.cpp.in'];
 
         var fs = require('fs');
         dirList.forEach(function (dir) {
@@ -123,9 +123,9 @@ exports.handlers = {
             // Append an Available In: sentence at the beginning of the namespace description.
             if (rows.length > 0) {
                 var availableIn = "<p class='availableIn'><b>Supported Script Types:</b> " + rows.join(" &bull; ") + "</p>";
-             
+
                 e.doclet.description = availableIn + (e.doclet.description ? e.doclet.description : "");
-            }            
+            }
         }
 
         if (e.doclet.kind === "function" && e.doclet.returns && e.doclet.returns[0].type
