@@ -1263,6 +1263,20 @@ void Application::initialize(const QCommandLineParser &parser) {
     qCDebug(interfaceapp) << "[VERSION] We will use DEVELOPMENT global services.";
 #endif
 
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // This logging code is critically important to make interface not hang on the Conan branch!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    // It appears that making a SSL HTTP request first thing results in some sort of deadlock inside Qt.
+    // I don't know why it happens only in the Conan branch, but it appears to be a Qt bug of some sort.
+    // Since Qt5 is in maintenance mode, an official fix is unlikely.
+    //
+    // Asking for the version seems to prod Qt to initialize whatever needs initializing internally,
+    // and that gets things to work properly.
+
+    qCDebug(interfaceapp) << "SSL library version      : " << QSslSocket::sslLibraryVersionString();
+    qCDebug(interfaceapp) << "SSL library build version: " << QSslSocket::sslLibraryBuildVersionString();
+
     updateHeartbeat();
 
     // setup a timer for domain-server check ins
