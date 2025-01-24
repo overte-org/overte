@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2020-2022 Vircadia contributors.
-# Copyright 2021-2024 Overte e.V.
+# Copyright 2021-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 name: Linux Server CI Build
@@ -8,7 +8,7 @@ name: Linux Server CI Build
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
+    types: [labeled]
   push:
     tags:
       # Release tags. E.g. 2024.06.1
@@ -21,8 +21,6 @@ env:
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
-  # Disable VCPKG caching to save time.
-  VCPKG_FEATURE_FLAGS: -binarycaching
 
 jobs:
   build:
@@ -33,69 +31,81 @@ jobs:
       matrix:
         include:
           - os: debian-11
-            image: docker.io/overte/overte-server-build:0.1.3-debian-11-amd64
+            image: docker.io/overte/overte-server-build:0.1.5-debian-11-amd64
             arch: amd64
+            conan_qt: False
             # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels
             # self_hosted makes the Hetzner auto-scaler put up the job.
             # type-cx52 is a Hetzner VPS server type. In this case cs52 is a server with 16-cores and 32GB of RAM.
             # image-x86-app-docker-ce is a Hetzner image.
             # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image
-            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
 
           - os: debian-11
-            image: docker.io/overte/overte-server-build:0.1.3-debian-11-aarch64
+            image: docker.io/overte/overte-server-build:0.1.5-debian-11-aarch64
             arch: aarch64
+            conan_qt: False
             runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
           - os: debian-12
-            image: docker.io/overte/overte-server-build:0.1.3-debian-12-amd64
+            image: docker.io/overte/overte-server-build:0.1.5-debian-12-amd64
             arch: amd64
-            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+            conan_qt: False
+            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
 
           - os: debian-12
-            image: docker.io/overte/overte-server-build:0.1.3-debian-12-aarch64
+            image: docker.io/overte/overte-server-build:0.1.5-debian-12-aarch64
             arch: aarch64
+            conan_qt: False
             runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
           - os: ubuntu-20.04
-            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-20.04-amd64
+            image: docker.io/overte/overte-server-build:0.1.5-ubuntu-20.04-amd64
             arch: amd64
-            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+            conan_qt: True
+            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
 
           - os: ubuntu-22.04
-            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-22.04-amd64
+            image: docker.io/overte/overte-server-build:0.1.5-ubuntu-22.04-amd64
             arch: amd64
-            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+            conan_qt: False
+            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
 
           - os: ubuntu-22.04
-            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-22.04-aarch64
+            image: docker.io/overte/overte-server-build:0.1.5-ubuntu-22.04-aarch64
             arch: aarch64
+            conan_qt: False
             runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
           - os: ubuntu-24.04
-            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-24.04-amd64
+            image: docker.io/overte/overte-server-build:0.1.5-ubuntu-24.04-amd64
             arch: amd64
-            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+            conan_qt: False
+            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
 
           - os: ubuntu-24.04
-            image: docker.io/overte/overte-server-build:0.1.3-ubuntu-24.04-aarch64
+            image: docker.io/overte/overte-server-build:0.1.5-ubuntu-24.04-aarch64
             arch: aarch64
+            conan_qt: False
             runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
           - os: fedora-40
-            image: docker.io/overte/overte-server-build:0.1.4-fedora-40-amd64
+            image: docker.io/overte/overte-server-build:0.1.5-fedora-40-amd64
             arch: amd64
-            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+            conan_qt: False
+            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
 
           - os: fedora-40
-            image: docker.io/overte/overte-server-build:0.1.4-fedora-40-aarch64
+            image: docker.io/overte/overte-server-build:0.1.5-fedora-40-aarch64
             arch: aarch64
+            conan_qt: False
             runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
           - os: rockylinux-9
-            image: docker.io/overte/overte-server-build:0.1.3-rockylinux-9-amd64
+            image: docker.io/overte/overte-server-build:0.1.5-rockylinux-9-amd64
             arch: amd64
-            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+            conan_qt: False
+            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
 
       fail-fast: false
 
@@ -125,6 +135,8 @@ jobs:
         echo "REFNAME=${{ github.ref_name }}" >> $GITHUB_ENV
 
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.arch}}" >> $GITHUB_ENV
+        echo "CONAN_QT=${{matrix.conan_qt}}" >> $GITHUB_ENV
+        echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
 
         echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
 
@@ -154,7 +166,6 @@ jobs:
 
         # Architecture specific variables
         if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
-          echo "VCPKG_FORCE_SYSTEM_BINARIES=true" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DSERVER_ONLY=true -DBUILD_TOOLS=true" >> $GITHUB_ENV
         else # amd64
           echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DSERVER_ONLY=true -DBUILD_TOOLS=true" >> $GITHUB_ENV
@@ -222,55 +233,51 @@ jobs:
           fi
         fi
 
-
     - uses: actions/checkout@v4
       with:
         submodules: false
         fetch-depth: 1
 
-    - name: Create Build Environment
+    - name: Prepare Conan Build Environment
       shell: bash
-      run: mkdir build
+      run: |
+        conan profile detect
+        conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
+        echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
+
+    - name: Install Conan dependencies
+      shell: bash
+      run: conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:with_qt='${CONAN_QT^} -b missing -pr:b=default -of build --format=json > build.json
+
+    - name: Upload Conan dependencies
+      continue-on-error: true
+      shell: bash
+      env:
+        CONAN_LOGIN_USERNAME_OVERTE: ${{ secrets.conan_login_username_overte }}
+        CONAN_PASSWORD_OVERTE: ${{ secrets.conan_password_overte }}
+      run: |
+        conan list --graph=build.json --graph-binaries=build --format=json > pkglist.json
+        conan upload --list=pkglist.json -r=overte -c || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
 
     - name: Configure CMake
-      working-directory: build
       shell: bash
-      run: |
-
-        cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
-
-    - name: Compress cmake logs
-      if: always()
-      shell: bash
-      run: |
-
-        if [ ${{ env.CI_WORKSPACE }} ]; then
-          find "$CI_WORKSPACE/overte-files/vcpkg" -name '*log' -type f -print0 | tar --null --force-local -T - -c --xz -v -f "cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz"
-        else
-          find "$HOME/overte-files/vcpkg" -name '*log' -type f -print0 | tar --null --force-local -T - -c --xz -v -f "cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz"
-        fi
-
-    - name: Archive cmake logs
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz
-        path: cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz
+           # This syntax requires CMake 3.23
+      run: cmake --preset conan-${BUILD_TYPE,,} $CMAKE_EXTRA
 
     - name: Build Domain Server
       working-directory: build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target domain-server $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build Assignment Client
       working-directory: build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target assignment-client $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build Oven
       working-directory: build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target oven $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target oven $CMAKE_BUILD_EXTRA
 
     - name: Package
       working-directory: pkg-scripts
