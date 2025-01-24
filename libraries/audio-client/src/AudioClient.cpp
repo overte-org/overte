@@ -26,7 +26,7 @@
 #include <CoreAudio/AudioHardware.h>
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif
@@ -573,7 +573,7 @@ QString defaultAudioDeviceName(QAudio::Mode mode) {
         }
     }
 #endif
-#ifdef WIN32
+#ifdef _WIN32
     //Check for Windows Vista or higher, IMMDeviceEnumerator doesn't work below that.
     if (!IsWindowsVistaOrGreater()) { // lower then vista
         if (mode == QAudio::AudioInput) {

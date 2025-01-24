@@ -108,7 +108,7 @@ bool Clip::write(QIODevice& output) {
     OVERTE_IGNORE_DEPRECATED_BEGIN
     // Can't use CBOR yet, will break the protocol.
     QByteArray headerFrameData = QJsonDocument(rootObject).toBinaryData();
-    OVERTE_IGNORE_DEPRECATED_END
+    OVERTE_IGNORE_WARNING_END
     // Never compress the header frame
     if (!writeFrame(output, Frame({ Frame::TYPE_HEADER, 0, headerFrameData }), false)) {
         return false;

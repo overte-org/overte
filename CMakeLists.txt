@@ -160,7 +160,7 @@ if(NOT DEFINED OVERTE_WARNINGS_ALLOWLIST)
 endif()
 
 if(NOT DEFINED OVERTE_WARNINGS_AS_ERRORS)
-    set(OVERTE_WARNINGS_AS_ERRORS false CACHE BOOL "Count warnings as errors")
+    set(OVERTE_WARNINGS_AS_ERRORS true CACHE BOOL "Count warnings as errors")
 endif()
 
 if(OVERTE_WARNINGS_ALLOWLIST)
@@ -187,9 +187,13 @@ if(OVERTE_WARNINGS_AS_ERRORS)
     if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "" AND WIN32))
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
       set(CMAKE_CFLAGS "${CMAKE_CFLAGS} /WX")
+      # Silence a warning in Qt about stdext::checked_array_iterator
+      add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
     else()
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-      set(CMAKE_CFLAGS "${CMAKE_CFLAGS} -Werror")
+      # Silence multichar to work around an issue in crashpad
+      # Silence stringop-overflow to work around an issue in tbb
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-multichar -Wno-stringop-overflow")
+      set(CMAKE_CFLAGS "${CMAKE_CFLAGS} -Werror -Wno-multichar -Wno-stringop-overflow")
     endif()
 endif()
 
