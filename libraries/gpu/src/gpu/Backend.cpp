@@ -63,7 +63,7 @@ Backend::TransformCamera Backend::TransformCamera::getEyeCamera(int eye,
     // Apply jitter to projections
     // We divided by the framebuffer size, which was double-sized, to normalize the jitter, but we want a normal amount of jitter
     // for each eye, so we multiply by 2 to get back to normal
-    normalizedJitter.x *= 2.0f;
+    //normalizedJitter.x *= 2.0f;
     result._projection[2][0] += normalizedJitter.x;
     result._projection[2][1] += normalizedJitter.y;
 
