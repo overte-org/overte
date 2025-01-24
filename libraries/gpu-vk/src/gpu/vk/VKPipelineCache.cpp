@@ -481,11 +481,7 @@ Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
             const auto& channel = entry.second;
             VkVertexInputBindingDescription bindingDescription{};
             bindingDescription.binding = slot;
-            if (pipelineState._bufferStrideSet[slot]) {
-                bindingDescription.stride = pipelineState._bufferStrides[slot];
-            } else {
-                bindingDescription.stride = (uint32_t)channel._stride;
-            }
+            bindingDescription.stride = pipelineState._bufferStrides[slot];
             bindingDescription.inputRate = (VkVertexInputRate)(channel._frequency);
             bindingDescriptions.push_back(bindingDescription);
         }
@@ -522,8 +518,7 @@ Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
         if (vertexReflection.validInput(gpu::slot::attr::DrawCallInfo)) {
             attributeDescriptions.push_back(
                 { gpu::slot::attr::DrawCallInfo, gpu::slot::attr::DrawCallInfo, VK_FORMAT_R16G16_SINT, (uint32_t)0 });
-            //bd.push_back({ gpu::slot::attr::DrawCallInfo, (uint32_t)sizeof(uint16_t) * 2, VK_VERTEX_INPUT_RATE_VERTEX });
-            bindingDescriptions.push_back({ gpu::slot::attr::DrawCallInfo, 0, VK_VERTEX_INPUT_RATE_VERTEX });
+            bindingDescriptions.push_back({ gpu::slot::attr::DrawCallInfo, (uint32_t)sizeof(uint16_t) * 2, VK_VERTEX_INPUT_RATE_INSTANCE });
         }
     }
 
