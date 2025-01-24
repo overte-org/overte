@@ -1145,6 +1145,7 @@ void EntityTreeRenderer::deletingEntity(const EntityItemID& entityID) {
 }
 
 void EntityTreeRenderer::addingEntity(const EntityItemID& entityID) {
+    qDebug() << "SCRIPT DEBUGGING addingEntity " << entityID;
     checkAndCallPreload(entityID);
     auto entity = std::static_pointer_cast<EntityTree>(_tree)->findEntityByID(entityID);
     if (entity) {
@@ -1153,6 +1154,7 @@ void EntityTreeRenderer::addingEntity(const EntityItemID& entityID) {
 }
 
 void EntityTreeRenderer::entityScriptChanging(const EntityItemID& entityID, bool reload) {
+    qDebug() << "SCRIPT DEBUGGING entityScriptChanging " << entityID;
     checkAndCallPreload(entityID, reload, true);
     // Force "re-checking" entities so that the logic inside `checkEnterLeaveEntities()` is run.
     // This will ensure that the `enterEntity()` signal is emitted on clients whose avatars
@@ -1164,11 +1166,13 @@ void EntityTreeRenderer::checkAndCallPreload(const EntityItemID& entityID, bool 
     if (_tree && !_shuttingDown) {
         EntityItemPointer entity = getTree()->findEntityByEntityItemID(entityID);
         if (!entity) {
+            qDebug() << "SCRIPT DEBUGGING checkAndCallPreload entity doesn't exist " << entityID;
             return;
         }
         auto& scriptEngine = (entity->isLocalEntity() || entity->isMyAvatarEntity()) ? _persistentEntitiesScriptManager : _nonPersistentEntitiesScriptManager;
         bool shouldLoad = entity->shouldPreloadScript() && scriptEngine;
         QString scriptUrl = entity->getScript();
+        qDebug() << "SCRIPT DEBUGGING checkAndCallPreload check " << entityID << shouldLoad << (bool)scriptEngine << entity->shouldPreloadScript() << entity->getScript();
         if ((shouldLoad && unloadFirst) || scriptUrl.isEmpty()) {
             if (scriptEngine) {
                 if (_currentEntitiesInside.contains(entityID)) {
@@ -1185,6 +1189,8 @@ void EntityTreeRenderer::checkAndCallPreload(const EntityItemID& entityID, bool 
             scriptEngine->loadEntityScript(entityID, resolveScriptURL(scriptUrl), reload);
             entity->scriptHasPreloaded();
         }
+    } else {
+        qDebug() << "SCRIPT DEBUGGING checkAndCallPreload failed " << (bool)_tree << _shuttingDown << entityID;
     }
 }
 
