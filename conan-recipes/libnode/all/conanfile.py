@@ -171,7 +171,7 @@ class libnodeConan(ConanFile):
             )
         else:
             self.run(
-                "export HEADERS_ONLY=1 && python ./tools/install.py install %s/ /"
+                "export HEADERS_ONLY=1 && python3 ./tools/install.py install %s/ /"
                 % self.package_folder
             )
             copy(
