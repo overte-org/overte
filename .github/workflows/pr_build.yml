@@ -13,10 +13,7 @@ on:
 env:
   APP_NAME: interface
   BUILD_TYPE: Release
-  CI_BUILD: Github
   GIT_COMMIT: ${{ github.event.pull_request.head.sha }}
-  # VCPKG did not build well on OSX disabling HIFI_VCPKG_BOOTSTRAP, which invokes a download to a working version of vcpkg
-  # HIFI_VCPKG_BOOTSTRAP: true
   RELEASE_TYPE: PR
   RELEASE_NUMBER: ${{ github.event.number }}
   VERSION_CODE: ${{ github.event.number }}
@@ -24,8 +21,6 @@ env:
   # We can't use secrets or actions here, so the actual value has to be hardcoded.
   CMAKE_BACKTRACE_URL: "https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
   CMAKE_BACKTRACE_TOKEN: PR_${{ github.event.number }}_${{ github.sha }}
-  # Disable VCPKG caching to save time.
-  VCPKG_FEATURE_FLAGS: -binarycaching
 
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
@@ -53,17 +48,20 @@ jobs:
               runner: windows-2019
               arch: x86_64
               build_type: full
+              conan_qt: True
             #- os: macOS-10.15
             #  build_type: full
+            #  conan_qt: True
             - os: Ubuntu 20.04
               # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels
               # self_hosted makes the Hetzner auto-scaler put up the job.
               # type-cx52 is a Hetzner VPS server type. In this case cs52 is a server with 16-cores and 32GB of RAM.
               # image-x86-app-docker-ce is a Hetzner image.
               # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image
-              runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+              runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
               arch: amd64
               build_type: full
+              conan_qt: True
               apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
               image: docker.io/overte/overte-full-build:0.1.6-ubuntu-20.04-amd64
             # Android builds are currently failing
@@ -75,6 +73,7 @@ jobs:
               runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
               arch: aarch64
               build_type: full
+              conan_qt: False
               apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
               image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-aarch64
         fail-fast: false
@@ -90,9 +89,11 @@ jobs:
         echo "GIT_COMMIT_SHORT=`echo $GIT_COMMIT | cut -c1-7`" >> $GITHUB_ENV
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
+        echo "CONAN_QT=${{matrix.conan_qt}}" >> $GITHUB_ENV
 
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
+          echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=*" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
@@ -104,7 +105,6 @@ jobs:
           fi
 
           if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
-            echo "VCPKG_FORCE_SYSTEM_BINARIES=true" >> $GITHUB_ENV
             if [ "${{ matrix.build_type }}" = "full" ]; then
               echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             else
@@ -135,6 +135,7 @@ jobs:
         fi
         # Windows build variables
         if [ "${{ matrix.os }}" = "Windows 2019" ]; then
+          echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
@@ -215,13 +216,6 @@ jobs:
           sudo cp -rp MacOSX10.12.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/ || exit 0
           echo "  done"
         fi
-        if [[ "${{ matrix.os }}" =~ "Debian 11" ]]; then
-          echo "Installing CMake from Debian Backports"
-          echo deb http://deb.debian.org/debian bullseye-backports main > /etc/apt/sources.list.d/bullseye-backports.list
-          sudo apt update
-          sudo apt-get -t bullseye-backports install -y cmake
-        fi
-
 
     - name: Override Windows package versions
       shell: pwsh
@@ -233,60 +227,58 @@ jobs:
     - name: Install Python modules
       if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS')
       shell: bash
-      run: $PYTHON_EXEC -m pip install boto3 PyGithub
+      run: $PYTHON_EXEC -m pip install boto3 PyGithub conan
 
-    - name: Create Build Environment
-      shell: bash
-      run: cmake -E make_directory ./build
-
-    - name: Configure CMake
-      working-directory: build
-      shell: bash
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
-
-    - name: Compress cmake logs
-      if: always()
+    - name: Prepare Conan Build Environment
       shell: bash
       run: |
-        if [ "${{ matrix.os }}" == "macOS-10.15" ]; then
-          TAR=gtar
-        else
-          TAR=tar
-        fi
-          find "$HOME/overte-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "./cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
+        conan profile detect
+        conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
+        echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
 
-    - name: Archive cmake logs
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz
-        path: ./cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz
-        if-no-files-found: error
+    - name: Install Conan dependencies
+      shell: bash
+      run: conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:with_qt='${CONAN_QT^} -b missing -pr:b=default -of build --format=json > build.json
+
+    - name: Upload Conan dependencies
+      continue-on-error: true
+      shell: bash
+      env:
+        CONAN_LOGIN_USERNAME_OVERTE: ${{ secrets.conan_login_username_overte }}
+        CONAN_PASSWORD_OVERTE: ${{ secrets.conan_password_overte }}
+      run: |
+        conan list --graph=build.json --graph-binaries=build --format=json > pkglist.json
+        conan upload --list=pkglist.json -r=overte -c || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
+
+    - name: Configure CMake
+      shell: bash
+           # This syntax requires CMake 3.23
+      run: cmake --preset conan-${BUILD_TYPE,,} $CMAKE_EXTRA
 
     - name: Build Application
       if: matrix.build_type == 'full' || matrix.build_type == 'client'
       working-directory: build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
 
     - name: Build Domain Server
       if: matrix.build_type == 'full'
       working-directory: build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target domain-server $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build Assignment Client
       if: matrix.build_type == 'full'
       working-directory: build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target assignment-client $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build Console
       if: matrix.build_type == 'full' && matrix.arch != 'aarch64' || startsWith(matrix.os, 'windows')
       working-directory: build
       shell: bash
       run: |
-        cmake --build . --config $BUILD_TYPE --target packaged-server-console $CMAKE_BUILD_EXTRA
+        cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build Installer
       if: matrix.build_type != 'android' && matrix.arch != 'aarch64'
