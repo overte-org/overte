@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build -t overte/overte-full-build:0.1.2-ubuntu-22.04 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build -t overte/overte-full-build:0.1.5-ubuntu-22.04 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
@@ -13,6 +13,27 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN echo UTC >/etc/timezone
 # Installing via dependency causes interactive hang:
 RUN apt-get update && apt-get -y install tzdata
+
+# Install Conan
+RUN apt-get -y install python3-pip
+RUN pip3 install conan
+
+# Install CMake from Kitware
+RUN apt-get update
+RUN apt-get -y install ca-certificates gpg wget
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
+RUN apt-get update
+RUN rm /usr/share/keyrings/kitware-archive-keyring.gpg && apt-get -y install kitware-archive-keyring
+RUN apt-get -y install cmake
+
+# Install GCC 13 from Toolchain test PPA
+RUN apt-get -y install software-properties-common
+RUN add-apt-repository ppa:ubuntu-toolchain-r/test
+RUN apt-get update
+RUN apt-get -y install gcc-13 g++-13
+# Set GCC 13 as default
+RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13
 
 # Install Overte domain-server and assignment-client build dependencies
 RUN apt-get -y install curl ninja-build git cmake g++ libssl-dev libqt5websockets5-dev qtscript5-dev qtdeclarative5-dev qtmultimedia5-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev libsystemd-dev

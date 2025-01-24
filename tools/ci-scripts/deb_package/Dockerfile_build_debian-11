@@ -1,8 +1,8 @@
-# Copyright 2022-2023 Overte e.V.
+# Copyright 2022-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte Server
-# Example build: docker build -t overte/overte-server-build:0.1.3-debian-11 -f Dockerfile_build_debian-11 .
+# Example build: docker build -t overte/overte-server-build:0.1.5-debian-11 -f Dockerfile_build_debian-11 .
 FROM debian:bullseye
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
@@ -13,6 +13,10 @@ ARG DEBIAN_FRONTEND=noninteractive
 RUN echo UTC >/etc/timezone
 # Installing via dependency causes interactive hang:
 RUN apt-get update && apt-get -y install tzdata
+
+# Install Conan
+RUN apt-get -y install python3-pip
+RUN pip3 install conan
 
 # Install Overte domain-server and assignment-client build dependencies
 RUN apt-get -y install curl ninja-build git g++ libssl-dev libqt5websockets5-dev qtdeclarative5-dev qtmultimedia5-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev libsystemd-dev
