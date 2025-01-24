@@ -151,8 +151,8 @@ vec3 evalSkyboxGlobalColor(mat4 invViewMat, float shadowAttenuation, float obscu
 
             color = mix(color.rgb, hazeColor.rgb, hazeColor.a);
         }
-<@endif@>
     }
+<@endif@>
 
     return color;
 }

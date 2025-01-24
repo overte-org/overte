@@ -1771,19 +1771,6 @@ void VKBackend::updateInput() {
     _input._lastUpdateStereoState = isStereoNow;
 
     /*if (_input._invalidFormat) {
-        auto format = _input._format;
-        for (int i = 0; i < MAX_NUM_INPUT_BUFFERS; i++) {
-            if (_input._invalidBuffers.test(i) && _input._buffers[i]) {
-                Q_ASSERT(format->_channels.count(i));
-                // VKTODO: I think only strides change?
-                format->_channels[i]._stride = _input._bufferStrides[i];
-            }
-        }
-        //format->evaluateCache();
-        //auto sharedFormat = std::make_shared<Stream::Format> (format);
-        //_cache.pipelineState.setVertexFormat(sharedFormat);
-    }*/
-    /*if (_input._invalidFormat) {
         InputStageState::ActivationCache newActivation;
 
         // Assign the vertex format required
@@ -1833,6 +1820,8 @@ void VKBackend::updateInput() {
                         assert(frequency == attrib._frequency);
                     }
 
+
+                    (void)CHECK_GL_ERROR();
                 }
 #ifdef GPU_STEREO_DRAWCALL_INSTANCED
                 glVertexBindingDivisor(bufferChannelNum, frequency * (isStereoNow ? 2 : 1));
@@ -1855,25 +1844,23 @@ void VKBackend::updateInput() {
                 _input._attributeActivation.flip(i);
             }
         }
+        (void)CHECK_GL_ERROR();
 
         _input._invalidFormat = false;
         _stats._ISNumFormatChanges++;
     }*/
 
     if (_input._invalidBuffers.any()) {
-        auto vbo = _input._bufferVBOs.data();
-        auto offset = _input._bufferOffsets.data();
-        auto stride = _input._bufferStrides.data();
 
         // Profile the count of buffers to update and use it to shortcut the for loop
         int numInvalids = (int) _input._invalidBuffers.count();
         _stats._ISNumInputBufferChanges += numInvalids;
 
-        for (size_t buffer = 0; buffer < _input._buffers.size(); buffer++, vbo++, offset++, stride++) {
-            if (_input._invalidBuffers.test(buffer)) {
-                _cache.pipelineState._bufferStrides[buffer] = *stride;
-                _cache.pipelineState._bufferStrideSet.set(buffer, true);
-                auto backendBuffer = syncGPUObject(*_input._buffers[buffer]);
+        for (size_t buffer_index = 0; buffer_index < _input._buffers.size(); buffer_index++) {
+            if (_input._invalidBuffers.test(buffer_index)) {
+                _cache.pipelineState._bufferStrides[buffer_index] = _input._bufferStrides[buffer_index];
+                _cache.pipelineState._bufferStrideSet.set(buffer_index, true);
+                auto backendBuffer = syncGPUObject(*_input._buffers[buffer_index]);
                 VkBuffer vkBuffer = VK_NULL_HANDLE;
                 if (backendBuffer) {
                     vkBuffer = backendBuffer->buffer;
@@ -1881,8 +1868,8 @@ void VKBackend::updateInput() {
                 Q_ASSERT(vkBuffer != VK_NULL_HANDLE);
 
                 //auto vkBuffer = VKBuffer::getBuffer(*this, *_input._buffers[buffer]);
-                VkDeviceSize vkOffset = _input._bufferOffsets[buffer];
-                vkCmdBindVertexBuffers(_currentCommandBuffer, buffer, 1, &vkBuffer, &vkOffset);
+                VkDeviceSize vkOffset = _input._bufferOffsets[buffer_index];
+                vkCmdBindVertexBuffers(_currentCommandBuffer, buffer_index, 1, &vkBuffer, &vkOffset);
                 //glBindVertexBuffer(buffer, (*vbo), (*offset), (GLsizei)(*stride));
                 numInvalids--;
                 if (numInvalids <= 0) {
@@ -3184,11 +3171,12 @@ void VKBackend::do_setInputBuffer(const Batch& batch, size_t paramOffset) {
 void VKBackend::do_setIndexBuffer(const Batch& batch, size_t paramOffset) {
     // VKTODO
     _input._indexBufferType = (Type)batch._params[paramOffset + 2]._uint;
-    _input._indexBufferOffset = batch._params[paramOffset + 0]._uint;
+    gpu::Offset newOffset = batch._params[paramOffset + 0]._uint;
 
     BufferPointer indexBuffer = batch._buffers.get(batch._params[paramOffset + 1]._uint);
-    if (indexBuffer.get() != _input._indexBuffer) {
+    if (indexBuffer.get() != _input._indexBuffer || newOffset != _input._indexBufferOffset) {
         _input._indexBuffer = indexBuffer.get();
+        _input._indexBufferOffset = batch._params[paramOffset + 0]._uint;
         if (indexBuffer) {
             //auto vulkanBuffer = getGPUObject<VKBuffer>(*indexBuffer);
             // VKTODO: which index type?
