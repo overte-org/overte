@@ -554,7 +554,7 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
             glm::mat4 handOffset = i == 0 ? glm::toMat4(leftRotationOffset) : glm::toMat4(rightRotationOffset);
 
             // offset constants taken from OpenComposite
-            // (apparently the openvr plugin uses similar constants?)
+            // and tweaked to fit my hands as best i could
             glm::mat4 posOffset(1.0f);
             posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? 0.04f : -0.04f));
             posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.16f);
@@ -565,18 +565,21 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     }
 
     glm::mat4 defaultHeadOffset;
+    float eyeZOffset = 0.16f;
     if (inputCalibrationData.hmdAvatarAlignmentType == controller::HmdAvatarAlignmentType::Eyes) {
         // align the eyes of the user with the eyes of the avatar
-        defaultHeadOffset = (glm::inverse(inputCalibrationData.defaultCenterEyeMat) * inputCalibrationData.defaultHeadMat) * Matrices::Y_180;
+        defaultHeadOffset = Matrices::Y_180 * (glm::inverse(inputCalibrationData.defaultCenterEyeMat) * inputCalibrationData.defaultHeadMat);
+
+        // dont double up on eye offset
+        eyeZOffset = 0.0f;
     } else {
         defaultHeadOffset = createMatFromQuatAndPos(-DEFAULT_AVATAR_HEAD_ROT, -DEFAULT_AVATAR_HEAD_TO_MIDDLE_EYE_OFFSET);
     }
+
     // try to account for weirdness with HMD view being inside the root of the head bone
-    // TODO: is the 15cm(?) forward shift too much?
-    // FIXME: this doesn't account for avatar scale
-    auto headCorrectionA = glm::translate(glm::vec3(0.0f, 0.15f, 0.15f));
+    auto headCorrectionA = glm::translate(glm::vec3(0.0f, 0.16f, eyeZOffset));
     auto headCorrectionB = glm::translate(glm::vec3(0.0f, -0.2f, 0.0f));
-    _poseStateMap[controller::HEAD] = _context->_lastHeadPose.postTransform(headCorrectionA).postTransform(defaultHeadOffset).transform(sensorToAvatar).postTransform(headCorrectionB);
+    _poseStateMap[controller::HEAD] = _context->_lastHeadPose.postTransform(headCorrectionA).postTransform(defaultHeadOffset).postTransform(headCorrectionB).transform(sensorToAvatar);
 
     std::vector<std::pair<std::string, controller::StandardAxisChannel>> floatsToUpdate = {
         {"interact_left", controller::LT},
