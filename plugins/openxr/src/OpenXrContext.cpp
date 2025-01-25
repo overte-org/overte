@@ -89,25 +89,12 @@ bool OpenXrContext::initInstance() {
         return false;
 
     bool openglSupported = false;
-    bool bindingModificationSupported = false;
 
     qCInfo(xr_context_cat, "Runtime supports %d extensions:", count);
     for (uint32_t i = 0; i < count; i++) {
         qCInfo(xr_context_cat, "%s v%d", properties[i].extensionName, properties[i].extensionVersion);
         if (strcmp(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME, properties[i].extensionName) == 0) {
             openglSupported = true;
-        }
-
-        if (strcmp(XR_KHR_BINDING_MODIFICATION_EXTENSION_NAME, properties[i].extensionName) == 0) {
-            bindingModificationSupported = true;
-        }
-
-        if (strcmp(XR_EXT_DPAD_BINDING_EXTENSION_NAME, properties[i].extensionName) == 0) {
-            _dpadBindingSupported = true;
-        }
-
-        if (strcmp(XR_EXT_PALM_POSE_EXTENSION_NAME, properties[i].extensionName) == 0) {
-            _palmPoseSupported = true;
         }
     }
 
@@ -117,13 +104,6 @@ bool OpenXrContext::initInstance() {
     }
 
     std::vector<const char*> enabled = {XR_KHR_OPENGL_ENABLE_EXTENSION_NAME};
-    if (bindingModificationSupported && _dpadBindingSupported) {
-        enabled.emplace(enabled.end(), XR_KHR_BINDING_MODIFICATION_EXTENSION_NAME);
-        enabled.emplace(enabled.end(), XR_EXT_DPAD_BINDING_EXTENSION_NAME);
-    }
-    if (_palmPoseSupported) {
-        enabled.emplace(enabled.end(), XR_EXT_PALM_POSE_EXTENSION_NAME);
-    }
 
     XrInstanceCreateInfo info = {
       .type = XR_TYPE_INSTANCE_CREATE_INFO,
