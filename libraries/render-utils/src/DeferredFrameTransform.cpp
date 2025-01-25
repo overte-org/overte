@@ -67,7 +67,9 @@ void DeferredFrameTransform::update(RenderArgs* args, glm::vec2 jitter) {
 
         for (int i = 0; i < 2; i++) {
             // Compose the mono Eye space to Stereo clip space Projection Matrix
-            auto sideViewMat = projMats[i] * eyeViews[i];
+            // FIXME: eyeViews is being applied twice somewhere,
+            // this glm::inverse call undoes the bugged transform
+            auto sideViewMat = projMats[i] * glm::inverse(eyeViews[i]);
             frameTransformBuffer.projectionUnjittered[i] = sideViewMat;
             frameTransformBuffer.invProjectionUnjittered[i] = glm::inverse(sideViewMat);
 
