@@ -24,6 +24,8 @@ macro(SETUP_HIFI_PROJECT)
 
   add_executable(${TARGET_NAME} ${TARGET_SRCS} ${AUTOSCRIBE_SHADER_LIB_SRC} ${GENERATE_ENTITIES_LIB_SRC})
 
+  set_property(TARGET ${TARGET_NAME} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+
   # include the generated application version header
   target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/includes")
 
