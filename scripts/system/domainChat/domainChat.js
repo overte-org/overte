@@ -49,6 +49,7 @@
         appButton = tablet.addButton({
             icon: Script.resolvePath("./img/icon_white.png"),
             activeIcon: Script.resolvePath("./img/icon_black.png"),
+            sortOrder: 8,
             text: "CHAT",
             sortOrder: 8,
             isActive: appIsVisible,
