@@ -589,7 +589,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
                 nodeConnection.senderSockAddr, DomainHandler::ConnectionRefusedReason::NotAuthorizedDomain,
                     domainAuthURL + "|" + domainAuthClientID);
         }
-        if (domainHasLogin("ldap")) {
+        else if (domainHasLogin("ldap")) {
             QString ldapServerURL;
             auto ldapServerURLVariant = _server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_URL_BASE);
             if (ldapServerURLVariant.canConvert<QString>()) {
