@@ -771,20 +771,24 @@ void Application::initialize(const QCommandLineParser &parser) {
     // setDefaultFormat has no effect after the platform window has been created, so call it here.
     QSurfaceFormat::setDefaultFormat(getDefaultOpenGLSurfaceFormat());
 
-    _glWidget = new GLCanvas();
-    getApplicationCompositor().setRenderingWidget(_glWidget);
-    _window->setCentralWidget(_glWidget);
+#ifdef USE_GL
+    _primaryWidget = new GLCanvas();
+#else
+    _primaryWidget = new VKCanvas();
+#endif
+    getApplicationCompositor().setRenderingWidget(_primaryWidget);
+    _window->setCentralWidget(_primaryWidget);
 
     _window->restoreGeometry();
     _window->setVisible(true);
 
-    _glWidget->setFocusPolicy(Qt::StrongFocus);
-    _glWidget->setFocus();
+    _primaryWidget->setFocusPolicy(Qt::StrongFocus);
+    _primaryWidget->setFocus();
 
     showCursor(Cursor::Manager::lookupIcon(_preferredCursor.get()));
 
     // enable mouse tracking; otherwise, we only get drag events
-    _glWidget->setMouseTracking(true);
+    _primaryWidget->setMouseTracking(true);
     // Make sure the window is set to the correct size by processing the pending events
     QCoreApplication::processEvents();
 
@@ -1990,11 +1994,11 @@ void Application::setupSignalsAndOperators() {
                 QPoint localPos(reticlePos.x, reticlePos.y); // both hmd and desktop already handle this in our coordinates.
                 if (state) {
                     QMouseEvent mousePress(QEvent::MouseButtonPress, localPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-                    sendEvent(_glWidget, &mousePress);
+                    sendEvent(_primaryWidget, &mousePress);
                     _reticleClickPressed = true;
                 } else {
                     QMouseEvent mouseRelease(QEvent::MouseButtonRelease, localPos, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
-                    sendEvent(_glWidget, &mouseRelease);
+                    sendEvent(_primaryWidget, &mouseRelease);
                     _reticleClickPressed = false;
                 }
                 return; // nothing else to do

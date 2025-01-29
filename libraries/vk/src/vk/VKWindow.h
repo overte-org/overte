@@ -27,16 +27,16 @@ public:
 
     void createSwapchain();
     //void queuePresent(const vk::ArrayProxy<const VkSemaphore>& waitSemaphores);
-    const void createSurface();
+    void createSurface();
     //const VkSurfaceKHR& getSurface() { return _surface; }
-    VulkanSwapChain& getSwapchain() { return _swapchain; }
-    VkFramebuffer acquireFramebuffer(const VkSemaphore& semaphore);
+    //VulkanSwapChain& getSwapchain() { return _swapchain; }
+    //VkFramebuffer acquireFramebuffer(const VkSemaphore& semaphore);
 
 signals:
     void aboutToClose();
 
 protected:
-    friend class VkCloseEventFilter;
+    //friend class VkCloseEventFilter;
     friend struct vks::Context;
     void emitClosing();
 
