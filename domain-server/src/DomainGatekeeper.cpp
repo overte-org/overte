@@ -463,6 +463,8 @@ const QString LDAP_AUTHENTICATION_BASE_USER_SEARCH = "ldap_authentication.ldap_s
 const QString LDAP_AUTHENTICATION_BASE_GROUP_SEARCH = "ldap_authentication.ldap_search_group_base";
 const QString MAXIMUM_USER_CAPACITY = "security.maximum_user_capacity";
 const QString MAXIMUM_USER_CAPACITY_REDIRECT_LOCATION = "security.maximum_user_capacity_redirect_location";
+const QString WORDPRESS_AUTHENTICATION_NAME = "wordpress";
+const QString LDAP_AUTHENTICATION_NAME = "ldap";
 
 SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnectionData& nodeConnection,
                                                                const QString& username,
@@ -519,7 +521,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     QString verifiedDomainUsername;
     QStringList verifiedDomainUserGroups;
 
-    if (domainHasLogin("wordpress") && !domainUsername.isEmpty()) {
+    if (domainHasLogin(WORDPRESS_AUTHENTICATION_NAME) && !domainUsername.isEmpty()) {
         qDebug() << "Attempting to sign in "<< username << " as " << domainUsername << " via Wordpress";
 
         if (domainAccessToken.isEmpty()) {
@@ -552,7 +554,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     }
 
     // Basic LDAP - Here to preform a basic LDAP connection to the server (if it exists)
-    if (domainHasLogin("ldap") && !domainUsername.isEmpty()) {
+    if (domainHasLogin(LDAP_AUTHENTICATION_NAME) && !domainUsername.isEmpty()) {
         qDebug() << "Attempting to sign in "<< username << " as " << domainUsername << " via LDAP";
 
         bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(domainUsername, domainAccessToken);
@@ -573,7 +575,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     if (!userPerms.can(NodePermissions::Permission::canConnectToDomain)) {
         // FIXME: If server has wordpress enabled, LDAP becomes impossible. Wordpress must be disabled (or invalid :P) for LDAP check.
         // Fine for now, will need to be addressed soon. -AD
-        if (domainHasLogin("wordpress")) {
+        if (domainHasLogin(WORDPRESS_AUTHENTICATION_NAME)) {
             QString domainAuthURL;
             auto domainAuthURLVariant = _server->_settingsManager.valueForKeyPath(AUTHENTICATION_OAUTH2_URL_PATH);
             if (domainAuthURLVariant.canConvert<QString>()) {
@@ -589,7 +591,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
                 nodeConnection.senderSockAddr, DomainHandler::ConnectionRefusedReason::NotAuthorizedDomain,
                     domainAuthURL + "|" + domainAuthClientID);
         }
-        else if (domainHasLogin("ldap")) {
+        else if (domainHasLogin(LDAP_AUTHENTICATION_NAME)) {
             QString ldapServerURL;
             auto ldapServerURLVariant = _server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_URL_BASE);
             if (ldapServerURLVariant.canConvert<QString>()) {
@@ -1267,7 +1269,7 @@ bool DomainGatekeeper::domainHasLogin(const QString& type = "") {
     bool domainHasWordpress = false;
     bool domainHasLDAP = false;
 
-    if (type == "wordpress" || type == "") {
+    if (type == WORDPRESS_AUTHENTICATION_NAME || type == "") {
         // The domain may have its own users and groups in a WordPress site.
         domainHasWordpress =  _server->_settingsManager.valueForKeyPath(AUTHENTICATION_ENABLE_OAUTH2).toBool()
             && !_server->_settingsManager.valueForKeyPath(AUTHENTICATION_OAUTH2_URL_PATH).toString().isEmpty()
@@ -1275,7 +1277,7 @@ bool DomainGatekeeper::domainHasLogin(const QString& type = "") {
             && !_server->_settingsManager.valueForKeyPath(AUTHENTICATION_PLUGIN_CLIENT_ID).toString().isEmpty();
     }
 
-    if (type == "ldap" || type == "") {
+    if (type == LDAP_AUTHENTICATION_NAME || type == "") {
         // The domain may have an LDAP server it can connect to.
         domainHasLDAP = _server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_ENABLE).toBool()
             && !_server->_settingsManager.valueForKeyPath(LDAP_AUTHENTICATION_URL_BASE).toString().isEmpty()
