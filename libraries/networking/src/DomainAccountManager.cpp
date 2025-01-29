@@ -110,15 +110,15 @@ void DomainAccountManager::requestAccessTokenWordPress(const QString& username, 
 }
 
 void DomainAccountManager::requestAccessTokenLDAP(const QString& username, const QString& password) {
+    // NOTE: Do not check if the credentials are valid on the client side first. Let the server handle everything.
+    // LDAP TODO: Handle a login failure and communicate that to the client.
+
     _currentAuth.username = username;
     _currentAuth.accessToken = "";
     _currentAuth.refreshToken = "";
 
     LDAPAccount::setLDAPServerURL(_currentAuth.authURL.toString());
 
-    // NOTE: Do not check if the credentials are valid on the client side first. Let the server handle everything.
-    // const bool isValidLDAPCredentials = LDAPAccount::isValidCredentials(username, password);
-    // if (isValidLDAPCredentials) {
     // Set the password as the access token.
     _currentAuth.accessToken = password;
 
@@ -131,12 +131,6 @@ void DomainAccountManager::requestAccessTokenLDAP(const QString& username, const
 
     emit loginComplete();
     return;
-    // }
-
-    // TODO: Failure state: This code will not run due to not checking validity of credentials. See notes and fixmes above.
-    // Failure.
-    // FIXME: QML does not update to show sign in failure.
-    // qCDebug(networking) << "LDAP account failed to verify";
 }
 
 void DomainAccountManager::requestAccessTokenFinished() {
