@@ -28,7 +28,11 @@
 #include <GLMHelpers.h>
 
 #include <gl/QOpenGLContextWrapper.h>
+#ifdef USE_GL
 #include <gl/GLWidget.h>
+#else
+#include "vk/VKWidget.h"
+#endif
 #include <gl/GLEscrow.h>
 #include <gl/Context.h>
 #include <gl/OffscreenGLCanvas.h>

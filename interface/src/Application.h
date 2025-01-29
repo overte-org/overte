@@ -81,6 +81,10 @@
 #include "ui/overlays/Overlays.h"
 #include "DiscordRichPresence.h"
 
+#ifndef USE_GL
+#include <vk/VKWidget.h>
+#endif
+
 #include "workload/GameWorkload.h"
 #include "graphics/GraphicsEngine.h"
 
@@ -90,7 +94,11 @@
 #include "Sound.h"
 #include "VisionSqueeze.h"
 
+#ifdef USE_GL
 class GLCanvas;
+#else
+class VKCanvas;
+#endif
 class MainWindow;
 class AssetUpload;
 class CompositorHelper;
@@ -152,7 +160,11 @@ public:
     virtual ui::Menu* getPrimaryMenu() override;
     virtual void requestReset() override { resetSensors(false); }
     virtual void showDisplayPluginsTools(bool show) override;
+#ifdef USE_GL
     virtual GLWidget* getPrimaryWidget() override;
+#else
+    virtual VKWidget* getPrimaryWidget() override;
+#endif
     virtual MainWindow* getPrimaryWindow() override;
     virtual QOpenGLContext* getPrimaryContext() override;
     virtual bool makeRenderingContextCurrent() override;
@@ -763,7 +775,11 @@ private:
 
     bool _notifiedPacketVersionMismatchThisDomain;
 
-    GLCanvas* _glWidget{ nullptr };
+#ifdef USE_GL
+    GLCanvas* _primaryWidget{ nullptr };
+#else
+    VKCanvas* _primaryWidget{ nullptr };
+#endif
 
     typedef bool (Application::* AcceptURLMethod)(const QString &);
     static const std::vector<std::pair<QString, Application::AcceptURLMethod>> _acceptedExtensions;

@@ -16,16 +16,32 @@
 #pragma once
 
 #include <QtWidgets/QWidget>
-
 #include "Context.h"
+#include "VulkanSwapChain.h"
+
+namespace gl {
+class Context;
+}
+
+namespace vks {
+class Context;
+}
+
+class QOpenGLContext;
 
 /// customized canvas that simply forwards requests/events to the singleton application
 class VKWidget : public QWidget {
     Q_OBJECT
 
+    friend struct vks::Context;
+
 public:
     VKWidget();
-    ~VKWidget();
+    ~VKWidget() override;
+
+    void createSwapchain();
+    void createSurface();
+
     int getDeviceWidth() const;
     int getDeviceHeight() const;
     QSize getDeviceSize() const { return QSize(getDeviceWidth(), getDeviceHeight()); }
@@ -34,15 +50,46 @@ public:
     bool makeCurrent();
     void doneCurrent();
     void swapBuffers();
-    vks::Context* context() { return _context; }
+    gl::Context* context() { return _context; }
+    QOpenGLContext* qglContext();
     virtual QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
+
+protected slots:
+    virtual void resizeFramebuffer();
 
 protected:
     virtual bool nativeEvent(const QByteArray &eventType, void *message, long *result) override;
     virtual bool event(QEvent* event) override;
-    vks::Context* _context { nullptr };
+    gl::Context* _context { nullptr };
+
+    void setupRenderPass();
+    void setupDepthStencil();
+
+    void setupFramebuffers();
+    void createCommandBuffers();
+    void vulkanCleanup(); // Called by the context before backend is destroyed.
 
 private:
     QPaintEngine* _paintEngine { nullptr };
+
     bool _vsyncSupported { false };
+
+public:
+    vks::Context& _vksContext{ vks::Context::get() };
+    //VkDevice _device{ VK_NULL_HANDLE };
+    //VkSurfaceKHR _surface;
+    VkRenderPass _renderPass{};
+    VkExtent2D _extent;
+    VulkanSwapChain _swapchain;
+    VkSemaphore _acquireCompleteSemaphore{};
+    VkSemaphore _renderCompleteSemaphore{};
+    std::vector<VkCommandBuffer> _drawCommandBuffers;
+    struct : vks::Allocation {
+        bool isAllocated {false};
+        VkImage image;
+        VkImageView view;
+    } _depthStencil{};
+    std::vector<VkFramebuffer> _frameBuffers;
+    QTimer* _resizeTimer{ nullptr };
+    std::atomic<bool> _isVulkanCleanupComplete{ false };
 };
