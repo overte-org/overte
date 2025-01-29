@@ -152,7 +152,11 @@ public:
     // UI
     virtual ui::Menu* getPrimaryMenu() override;
     virtual void showDisplayPluginsTools(bool show) override;
+#ifdef USE_GL
     virtual GLWidget* getPrimaryWidget() override;
+#else
+    virtual VKWidget* getPrimaryWidget() override;
+#endif
     virtual MainWindow* getPrimaryWindow() override;
     virtual QOpenGLContext* getPrimaryContext() override;
     virtual bool isForeground() const override;
@@ -755,7 +759,11 @@ private:
 
 
     // UI
-    GLCanvas* _glWidget { nullptr };
+#ifdef USE_GL
+    GLCanvas* _primaryWidget{ nullptr };
+#else
+    VKCanvas* _primaryWidget{ nullptr };
+#endif
 
     Overlays _overlays;
     std::shared_ptr<ApplicationOverlay> _applicationOverlay;

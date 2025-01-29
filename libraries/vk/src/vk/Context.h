@@ -24,6 +24,7 @@ namespace gpu::vk {
 }
 
 class VKWindow;
+class VKWidget;
 
 namespace vks {
 
@@ -34,6 +35,7 @@ using CStringVector = std::vector<const char*>;
 
 struct Context {
     friend class ::VKWindow;
+    friend class ::VKWidget;
 private:
     static CStringVector filterLayers(const StringList& desiredLayers);
 
@@ -106,9 +108,13 @@ private:
 public:
 
 
-    void registerWindow(VKWindow *window); // Every Vulkan window registers itself here, so its.
+    void registerWindow(VKWindow *window); // Every Vulkan window registers itself here.
 
-    void unregisterWindow(VKWindow *window); // When window closes before backend was shut down , it removes itself from the list.
+    void unregisterWindow(VKWindow *window); // When window closes before backend was shut down, it removes itself from the list.
+
+    void registerWidget(VKWidget *widget); // Every Vulkan widget registers itself here, so its.
+
+    void unregisterWidget(VKWidget *widget); // When widget closes before backend was shut down, it removes itself from the list.
 
     void shutdownWindows(); // When backend shuts down, it cleans up after all windows and removes them from the list.
 
@@ -170,6 +176,7 @@ public:
 private:
     std::recursive_mutex vulkanWindowsMutex;
     std::list<VKWindow*> vulkanWindows;
+    std::list<VKWidget*> vulkanWidgets;
 
 };
 

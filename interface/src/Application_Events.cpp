@@ -140,8 +140,8 @@ bool Application::event(QEvent* event) {
             return true;
         case QEvent::FocusIn:
         { //testing to see if we can set focus when focus is not set to root window.
-            _glWidget->activateWindow();
-            _glWidget->setFocus();
+            _primaryWidget->activateWindow();
+            _primaryWidget->setFocus();
             return true;
         }
 

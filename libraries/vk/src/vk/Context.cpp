@@ -6,6 +6,7 @@
 
 #include "Context.h"
 #include "VKWindow.h"
+#include "VKWidget.h"
 
 namespace gpu::vk {
 // Extension for sharing memory with OpenGL, needed by QML UI and Web entities.
@@ -271,8 +272,22 @@ void Context::unregisterWindow(VKWindow* window) {
     vulkanWindows.remove(window);
 }
 
+void Context::registerWidget(VKWidget* widget) {
+    std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
+    vulkanWidgets.push_back(widget);
+}
+
+void Context::unregisterWidget(VKWidget* widget) {
+    std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
+    vulkanWidgets.remove(widget);
+}
+
 void Context::shutdownWindows() {
     std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
+    for (auto widget : vulkanWidgets) {
+        widget->vulkanCleanup();
+    }
+    vulkanWidgets.clear();
     for (auto window : vulkanWindows) {
         window->vulkanCleanup();
     }

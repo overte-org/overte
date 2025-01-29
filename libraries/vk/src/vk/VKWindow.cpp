@@ -33,7 +33,7 @@ VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
     connect(_resizeTimer, &QTimer::timeout, this, &VKWindow::resizeFramebuffer);
 }
 
-const void VKWindow::createSurface() {
+void VKWindow::createSurface() {
     _swapchain.setContext(&_context);
 #ifdef WIN32
     // TODO

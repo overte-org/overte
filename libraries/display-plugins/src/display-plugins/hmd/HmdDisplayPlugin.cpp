@@ -21,7 +21,11 @@
 #include <GLMHelpers.h>
 #include <ui-plugins/PluginContainer.h>
 #include <CursorManager.h>
+#ifdef USE_GL
 #include <gl/GLWidget.h>
+#else
+#include <vk/VKWidget.h>
+#endif
 #include <shared/NsightHelpers.h>
 #include <gpu/Context.h>
 #include <gpu/gl/GLBackend.h>
