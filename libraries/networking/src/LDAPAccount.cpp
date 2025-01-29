@@ -26,7 +26,7 @@ QString LDAPAccount::ldapServerUserBase;
 QString LDAPAccount::ldapServerGroupBase;
 
 /**
- * @brief Check that a given username and password are valid cridentials for a known LDAP server
+ * @brief Check that a given username and password are valid credentials for a known LDAP server
  *
  * @param username The account username
  * @param password The account password
