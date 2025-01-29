@@ -27,6 +27,8 @@
 #include "NodeList.h"
 #include "LDAPAccount.h"
 
+// FIXME: Generalize to other OAuth2 sources for domain login.
+
 const bool VERBOSE_HTTP_REQUEST_DEBUGGING = false;
 
 DomainAccountManager::DomainAccountManager() {
