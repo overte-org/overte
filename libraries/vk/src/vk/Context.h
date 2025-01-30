@@ -4,6 +4,7 @@
 
 #include <unordered_set>
 #include <mutex>
+#include <memory>
 
 #include "Debug.h"
 #include "VulkanBuffer.h"
@@ -176,7 +177,7 @@ public:
 private:
     std::recursive_mutex vulkanWindowsMutex;
     std::list<VKWindow*> vulkanWindows;
-    std::list<VKWidget*> vulkanWidgets;
+    //std::list<VKWidget*> vulkanWidgets;
 
 };
 

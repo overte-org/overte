@@ -326,14 +326,17 @@ bool VulkanDisplayPlugin::activate() {
         _container->showDisplayPluginsTools();
     }
 
-    /*_vkWindow = std::make_shared<VKWindow>();
+    //_vkWindow = std::make_shared<VKWindow>();
+    _vkWindow = new VKWindow();
+    //VKWidget *vkWidget = _container->getPrimaryWidget();
+    //_vkWindow = vkWidget->_mainWindow;
     _vkWindow->setVisible(true);
     _vkWindow->createSurface();
-    _vkWindow->createSwapchain();*/
-    _vkWidget = _container->getPrimaryWidget();
+    _vkWindow->createSwapchain();
+    /*_vkWidget = _container->getPrimaryWidget();
     _vkWidget->setVisible(true);
     _vkWidget->createSurface();
-    _vkWidget->createSwapchain();
+    _vkWidget->createSwapchain();*/
 
     // VKTODO: Should this be here?
     customizeContext();
@@ -732,12 +735,12 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         _prevRenderView = correction * _currentFrame->view;
 
         uint32_t currentImageIndex = UINT32_MAX;
-        /*VK_CHECK_RESULT(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex));
+        VK_CHECK_RESULT(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex));
         auto framebuffer = _vkWindow->_frameBuffers[currentImageIndex];
-        const auto& commandBuffer = _vkWindow->_drawCommandBuffers[currentImageIndex];*/
-        VK_CHECK_RESULT(_vkWidget->_swapchain.acquireNextImage(_vkWidget->_acquireCompleteSemaphore, &currentImageIndex));
+        const auto& commandBuffer = _vkWindow->_drawCommandBuffers[currentImageIndex];
+        /*VK_CHECK_RESULT(_vkWidget->_swapchain.acquireNextImage(_vkWidget->_acquireCompleteSemaphore, &currentImageIndex));
         auto framebuffer = _vkWidget->_frameBuffers[currentImageIndex];
-        const auto& commandBuffer = _vkWidget->_drawCommandBuffers[currentImageIndex];        //auto vkBackend = dynamic_pointer_cast<gpu::vulkan::VKBackend>(getBackend());
+        const auto& commandBuffer = _vkWidget->_drawCommandBuffers[currentImageIndex];*/        //auto vkBackend = dynamic_pointer_cast<gpu::vulkan::VKBackend>(getBackend());
         //Q_ASSERT(vkBackend);
 
         //_renderPass, framebuffer, rect, (uint32_t)clearValues.size(), clearValues.data() };
@@ -808,8 +811,8 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
                 VkClearValue{depthStencil: VkClearDepthStencilValue{ 1.0f, 0 }},
             };
 
-            //auto rect = VkRect2D{ VkOffset2D{ 0, 0 }, _vkWindow->_extent };
-            auto rect = VkRect2D{ VkOffset2D{ 0, 0 }, _vkWidget->_extent };
+            auto rect = VkRect2D{ VkOffset2D{ 0, 0 }, _vkWindow->_extent };
+            //auto rect = VkRect2D{ VkOffset2D{ 0, 0 }, _vkWidget->_extent };
             /*VkRenderPassBeginInfo beginInfo = vks::initializers::renderPassBeginInfo();
             beginInfo.renderPass = _renderPass;
             beginInfo.framebuffer = framebuffer;
@@ -840,10 +843,10 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             imageBlit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
             imageBlit.dstSubresource.layerCount = 1;
             imageBlit.dstSubresource.mipLevel = 0;
-            //imageBlit.dstOffsets[1].x = (int32_t)_vkWindow->_swapchain.extent.width;
-            //imageBlit.dstOffsets[1].y = (int32_t)_vkWindow->_swapchain.extent.height;
-            imageBlit.dstOffsets[1].x = (int32_t)_vkWidget->_swapchain.extent.width;
-            imageBlit.dstOffsets[1].y = (int32_t)_vkWidget->_swapchain.extent.height;
+            imageBlit.dstOffsets[1].x = (int32_t)_vkWindow->_swapchain.extent.width;
+            imageBlit.dstOffsets[1].y = (int32_t)_vkWindow->_swapchain.extent.height;
+            //imageBlit.dstOffsets[1].x = (int32_t)_vkWidget->_swapchain.extent.width;
+            //imageBlit.dstOffsets[1].y = (int32_t)_vkWidget->_swapchain.extent.height;
             imageBlit.dstOffsets[1].z = 1;
 
             VkImageSubresourceRange mipSubRange = {};
@@ -865,8 +868,8 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
 
             vks::tools::insertImageMemoryBarrier(
                 commandBuffer,
-                //_vkWindow->_swapchain.images[currentImageIndex],
-                _vkWidget->_swapchain.images[currentImageIndex],
+                _vkWindow->_swapchain.images[currentImageIndex],
+                //_vkWidget->_swapchain.images[currentImageIndex],
                 0,
                 VK_ACCESS_TRANSFER_WRITE_BIT,
                 VK_IMAGE_LAYOUT_UNDEFINED,
@@ -879,8 +882,8 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
                 commandBuffer,
                 vkBackend->_outputTexture->attachments[0].image,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                //_vkWindow->_swapchain.images[currentImageIndex],
-                _vkWidget->_swapchain.images[currentImageIndex],
+                _vkWindow->_swapchain.images[currentImageIndex],
+                //_vkWidget->_swapchain.images[currentImageIndex],
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 1,
                 &imageBlit,
@@ -888,8 +891,8 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
 
             vks::tools::insertImageMemoryBarrier(
                 commandBuffer,
-                //_vkWindow->_swapchain.images[currentImageIndex],
-                _vkWidget->_swapchain.images[currentImageIndex],
+                _vkWindow->_swapchain.images[currentImageIndex],
+                //_vkWidget->_swapchain.images[currentImageIndex],
                 0,
                 VK_ACCESS_TRANSFER_WRITE_BIT,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -915,21 +918,21 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             static const VkPipelineStageFlags waitFlags{ VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
             VkSubmitInfo submitInfo = vks::initializers::submitInfo();
             submitInfo.waitSemaphoreCount = 1;
-            //submitInfo.pWaitSemaphores = &_vkWindow->_acquireCompleteSemaphore;
-            submitInfo.pWaitSemaphores = &_vkWidget->_acquireCompleteSemaphore;
+            submitInfo.pWaitSemaphores = &_vkWindow->_acquireCompleteSemaphore;
+            //submitInfo.pWaitSemaphores = &_vkWidget->_acquireCompleteSemaphore;
             submitInfo.pWaitDstStageMask = &waitFlags;
             submitInfo.commandBufferCount = 1;
             submitInfo.pCommandBuffers = &commandBuffer;
             submitInfo.signalSemaphoreCount = 1;
-            //submitInfo.pSignalSemaphores = &_vkWindow->_renderCompleteSemaphore;
-            submitInfo.pSignalSemaphores = &_vkWidget->_renderCompleteSemaphore;
+            submitInfo.pSignalSemaphores = &_vkWindow->_renderCompleteSemaphore;
+            //submitInfo.pSignalSemaphores = &_vkWidget->_renderCompleteSemaphore;
             submitInfo.commandBufferCount = 1;
             VkFenceCreateInfo fenceCI = vks::initializers::fenceCreateInfo();
             vkCreateFence(vkDevice, &fenceCI, nullptr, &frameFence);
             vkQueueSubmit(vkBackend->getContext().graphicsQueue, 1, &submitInfo, frameFence);
         }
-        //_vkWindow->_swapchain.queuePresent(_vkWindow->_context.graphicsQueue, currentImageIndex, _vkWindow->_renderCompleteSemaphore);
-        _vkWidget->_swapchain.queuePresent(_vkWidget->_vksContext.graphicsQueue, currentImageIndex, _vkWidget->_renderCompleteSemaphore);
+        _vkWindow->_swapchain.queuePresent(_vkWindow->_context.graphicsQueue, currentImageIndex, _vkWindow->_renderCompleteSemaphore);
+        //_vkWidget->_swapchain.queuePresent(_vkWidget->_vksContext.graphicsQueue, currentImageIndex, _vkWidget->_renderCompleteSemaphore);
 
         // VKTODO this is inefficient here
         VK_CHECK_RESULT(vkWaitForFences(vkDevice, 1, &frameFence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));

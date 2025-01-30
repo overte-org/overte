@@ -21,17 +21,18 @@
 
 namespace gl {
 class Context;
+class OffscreenContext;
 }
 
 namespace vks {
-class Context;
+struct Context;
 }
 
 class QOpenGLContext;
 
 /// customized canvas that simply forwards requests/events to the singleton application
 class VKWidget : public QWidget {
-    Q_OBJECT
+    //Q_OBJECT
 
     friend struct vks::Context;
 
@@ -39,35 +40,35 @@ public:
     VKWidget();
     ~VKWidget() override;
 
-    void createSwapchain();
-    void createSurface();
+    //void createSwapchain();
+    //void createSurface();
 
-    int getDeviceWidth() const;
-    int getDeviceHeight() const;
-    QSize getDeviceSize() const { return QSize(getDeviceWidth(), getDeviceHeight()); }
-    QPaintEngine* paintEngine() const override;
+    [[nodiscard]] int getDeviceWidth() const;
+    [[nodiscard]] int getDeviceHeight() const;
+    [[nodiscard]] QSize getDeviceSize() const { return QSize(getDeviceWidth(), getDeviceHeight()); }
+    [[nodiscard]] QPaintEngine* paintEngine() const override;
     void createContext(QOpenGLContext* shareContext = nullptr);
     bool makeCurrent();
     void doneCurrent();
     void swapBuffers();
-    gl::Context* context() { return _context; }
+    gl::OffscreenContext* context() { return _context; }
+    //gl::Context* context() { return _context; }
     QOpenGLContext* qglContext();
-    virtual QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
+    [[nodiscard]] QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
 
-protected slots:
-    virtual void resizeFramebuffer();
+//protected slots:
+//    virtual void resizeFramebuffer();
 
 protected:
-    virtual bool nativeEvent(const QByteArray &eventType, void *message, long *result) override;
-    virtual bool event(QEvent* event) override;
-    gl::Context* _context { nullptr };
-
-    void setupRenderPass();
+    bool nativeEvent(const QByteArray &eventType, void *message, long *result) override;
+    bool event(QEvent* event) override;
+    gl::OffscreenContext* _context { nullptr };
+    //gl::Context* _context { nullptr };
+    /*void setupRenderPass();
     void setupDepthStencil();
-
     void setupFramebuffers();
     void createCommandBuffers();
-    void vulkanCleanup(); // Called by the context before backend is destroyed.
+    void vulkanCleanup(); // Called by the context before backend is destroyed.*/
 
 private:
     QPaintEngine* _paintEngine { nullptr };
@@ -75,8 +76,8 @@ private:
     bool _vsyncSupported { false };
 
 public:
-    QWindow *_mainWindow; // For getting Vulkan surface, VKTODO: make a better way of setting it
-    vks::Context& _vksContext{ vks::Context::get() };
+    VKWindow *_mainWindow; // For getting Vulkan surface, VKTODO: make a better way of setting it
+    /*vks::Context& _vksContext{ vks::Context::get() };
     //VkDevice _device{ VK_NULL_HANDLE };
     //VkSurfaceKHR _surface;
     VkRenderPass _renderPass{};
@@ -92,5 +93,5 @@ public:
     } _depthStencil{};
     std::vector<VkFramebuffer> _frameBuffers;
     QTimer* _resizeTimer{ nullptr };
-    std::atomic<bool> _isVulkanCleanupComplete{ false };
+    std::atomic<bool> _isVulkanCleanupComplete{ false };*/
 };
