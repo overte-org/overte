@@ -670,6 +670,8 @@ private:
 
     void userKickConfirmation(const QUuid& nodeID, unsigned int banFlags = ModerationFlags::getDefaultBanFlags());
 
+    VKWindow* _vkWindow;
+    QWidget *_vkWindowWrapper;
     MainWindow* _window;
 
     // _isMenuInitialized: used to initialize menu early enough before it's needed by other

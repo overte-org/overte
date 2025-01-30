@@ -999,9 +999,10 @@ Application::Application(
     QElapsedTimer& startupTimer
 ) :
     QApplication(argc, argv),
-    _window(new MainWindow(desktop())),
+    //_window(new MainWindow(desktop())), //VKTODO
+    _window(nullptr),
     // Menu needs to be initialized before other initializers. Otherwise deadlock happens on qApp->getWindow()->menuBar().
-    _isMenuInitialized(initMenu()),
+    _isMenuInitialized(false),
     _sessionRunTimer(startupTimer),
 #ifndef Q_OS_ANDROID
     _logger(new FileLogger(this)),
@@ -1032,6 +1033,13 @@ Application::Application(
     _snapshotSound(nullptr),
     _sampleSound(nullptr)
 {
+    _vkWindow = new VKWindow();
+    //auto qWindow = dynamic_cast<QWindow*>(_vkWindow);
+    //Q_ASSERT(qWindow);
+    _vkWindowWrapper = QWidget::createWindowContainer(_vkWindow);
+    _window = new MainWindow(_vkWindowWrapper);
+    _isMenuInitialized = initMenu();
+
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
 
     LogHandler::getInstance().moveToThread(thread());
@@ -1551,6 +1559,8 @@ void Application::initialize(const QCommandLineParser &parser) {
 
     _primaryWidget->setFocusPolicy(Qt::StrongFocus);
     _primaryWidget->setFocus();
+
+    _primaryWidget->_mainWindow = _vkWindow;
 
     showCursor(Cursor::Manager::lookupIcon(_preferredCursor.get()));
 
