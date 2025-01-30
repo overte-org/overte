@@ -203,6 +203,7 @@ protected:
     QImage getScreenshot(float aspectRatio);
     QImage getSecondaryCameraScreenshot();
     //std::shared_ptr<VKWindow> _vkWindow;
-    VKWidget *_vkWidget{ 0 };
+    //VKWidget *_vkWidget{ 0 };
+    VKWindow *_vkWindow{ 0 };
     int _renderedFrameCount{ 0 };
 };
