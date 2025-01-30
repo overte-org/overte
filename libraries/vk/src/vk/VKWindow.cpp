@@ -71,14 +71,14 @@ void VKWindow::createCommandBuffers() {
     VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::semaphoreCreateInfo();
     // Create a semaphore used to synchronize image presentation
     // Ensures that the image is displayed before we start submitting new commands to the queue
-    VK_CHECK_RESULT(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_acquireCompleteSemaphore));
+    VK_CHECK_RESULT(vkCreateSemaphore(_context.device->logicalDevice, &semaphoreCreateInfo, nullptr, &_acquireCompleteSemaphore));
     // Create a semaphore used to synchronize command submission
     // Ensures that the image is not presented until all commands have been submitted and executed
-    VK_CHECK_RESULT(vkCreateSemaphore(_device, &semaphoreCreateInfo, nullptr, &_renderCompleteSemaphore));
+    VK_CHECK_RESULT(vkCreateSemaphore(_context.device->logicalDevice, &semaphoreCreateInfo, nullptr, &_renderCompleteSemaphore));
     // Create one command buffer for each swap chain image
     _drawCommandBuffers.resize(_swapchain.imageCount);
     VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(_context.device->graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, static_cast<uint32_t>(_drawCommandBuffers.size()));
-    VK_CHECK_RESULT(vkAllocateCommandBuffers(_device, &cmdBufAllocateInfo, _drawCommandBuffers.data()));
+    VK_CHECK_RESULT(vkAllocateCommandBuffers(_context.device->logicalDevice, &cmdBufAllocateInfo, _drawCommandBuffers.data()));
 }
 
 void VKWindow::vulkanCleanup() {
@@ -276,7 +276,7 @@ void VKWindow::setupRenderPass() {
     renderPassInfo.pSubpasses = subpasses.data();
     renderPassInfo.dependencyCount = (uint32_t)subpassDependencies.size();
     renderPassInfo.pDependencies = subpassDependencies.data();
-    VK_CHECK_RESULT(vkCreateRenderPass(_device, &renderPassInfo, nullptr, &_renderPass));
+    VK_CHECK_RESULT(vkCreateRenderPass(_context.device->logicalDevice, &renderPassInfo, nullptr, &_renderPass));
 }
 
 
@@ -295,7 +295,7 @@ void VKWindow::resizeFramebuffer() {
         .height = (uint32_t)qsize.height()
     };
     //vkQueueWaitIdle();
-    VK_CHECK_RESULT(vkDeviceWaitIdle(_device));
+    VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
     _swapchain.create(&_extent.width, &_extent.height, false, false);
     // TODO: add an assert here to see if width and height changed?
     setupDepthStencil();
