@@ -54,7 +54,7 @@ protected:
 
 public:
     vks::Context& _context{ vks::Context::get() };
-    const VkDevice& _device{ _context.device->logicalDevice };
+    //const VkDevice& _device{ _context.device->logicalDevice };
     //VkSurfaceKHR _surface;
     VkRenderPass _renderPass{};
     VkExtent2D _extent;

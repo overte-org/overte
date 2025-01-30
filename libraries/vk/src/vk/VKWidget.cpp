@@ -69,11 +69,11 @@ VKWidget::~VKWidget() {
     delete _paintEngine;
     _paintEngine = nullptr;
     // Depending on what is shut down first, cleanup is done either by window or Vulkan backend.
-    std::lock_guard<std::recursive_mutex> lock(_vksContext.vulkanWindowsMutex);
+    /*std::lock_guard<std::recursive_mutex> lock(_vksContext.vulkanWindowsMutex);
     if (!_isVulkanCleanupComplete) {
         _vksContext.unregisterWidget(this);
         vulkanCleanup();
-    }
+    }*/
 }
 
 int VKWidget::getDeviceWidth() const {
@@ -85,8 +85,9 @@ int VKWidget::getDeviceHeight() const {
 }
 
 void VKWidget::createContext(QOpenGLContext* shareContext) {
-    _context = new gl::Context();
-    _context->setWindow(windowHandle());
+    //_context = new gl::OffscreenContext();
+    _context = new gl::OffscreenContext();
+    //_context->setWindow(windowHandle());
     _context->create(shareContext);
     _context->makeCurrent();
     _context->clear();
@@ -98,7 +99,8 @@ void VKWidget::swapBuffers() {
 }
 
 bool VKWidget::makeCurrent() {
-    gl::Context::makeCurrent(_context->qglContext(), windowHandle()); // VKTODO
+    //gl::Context::makeCurrent(_context->qglContext(), windowHandle()); // VKTODO
+    gl::Context::makeCurrent(_context->qglContext(), _context->getWindow()); // VKTODO
     return _context->makeCurrent();
 }
 
@@ -179,7 +181,7 @@ QPaintEngine* VKWidget::paintEngine() const {
     return _paintEngine;
 }
 
-void VKWidget::createSurface() {
+/*void VKWidget::createSurface() {
     nativeParentWidget()->windowHandle()->setSurfaceType(QSurface::VulkanSurface); //VKTODO
     //windowHandle()->setSurfaceType(QSurface::VulkanSurface);
     _swapchain.setContext(&_vksContext);
@@ -201,9 +203,9 @@ void VKWidget::createSurface() {
     //VK_CHECK_RESULT(vkCreateXcbSurfaceKHR(_context.instance, &surfaceCreateInfo, nullptr, &surface));
 #endif
     //_swapchain.setSurface(_surface);
-}
+}*/
 
-void VKWidget::createSwapchain() {
+/*void VKWidget::createSwapchain() {
     {
         auto qsize = getDeviceSize();
         _extent = VkExtent2D{(uint32_t)qsize.width(), (uint32_t)qsize.height()};
@@ -214,9 +216,9 @@ void VKWidget::createSwapchain() {
     setupRenderPass();
     setupDepthStencil();
     setupFramebuffers();
-}
+}*/
 
-void VKWidget::createCommandBuffers() {
+/*void VKWidget::createCommandBuffers() {
     VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::semaphoreCreateInfo();
     // Create a semaphore used to synchronize image presentation
     // Ensures that the image is displayed before we start submitting new commands to the queue
@@ -426,7 +428,7 @@ void VKWidget::setupRenderPass() {
     renderPassInfo.dependencyCount = (uint32_t)subpassDependencies.size();
     renderPassInfo.pDependencies = subpassDependencies.data();
     VK_CHECK_RESULT(vkCreateRenderPass(_vksContext.device->logicalDevice, &renderPassInfo, nullptr, &_renderPass));
-}
+}*/
 
 
 /*void VKWidget::resizeEvent(QResizeEvent* event) {
@@ -437,7 +439,7 @@ void VKWidget::setupRenderPass() {
     }
 }*/
 
-void VKWidget::resizeFramebuffer() {
+/*void VKWidget::resizeFramebuffer() {
     auto qsize = getDeviceSize(); // VKTODO: is this ok
     _extent = VkExtent2D{
         .width = (uint32_t)qsize.width(),
@@ -449,4 +451,4 @@ void VKWidget::resizeFramebuffer() {
     // TODO: add an assert here to see if width and height changed?
     setupDepthStencil();
     setupFramebuffers();
-}
+}*/

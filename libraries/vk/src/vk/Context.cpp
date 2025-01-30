@@ -284,10 +284,10 @@ void Context::unregisterWidget(VKWidget* widget) {
 
 void Context::shutdownWindows() {
     std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
-    for (auto widget : vulkanWidgets) {
+    /*for (auto widget : vulkanWidgets) {
         widget->vulkanCleanup();
     }
-    vulkanWidgets.clear();
+    vulkanWidgets.clear();*/
     for (auto window : vulkanWindows) {
         window->vulkanCleanup();
     }
