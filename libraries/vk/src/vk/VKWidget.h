@@ -75,6 +75,7 @@ private:
     bool _vsyncSupported { false };
 
 public:
+    QWindow *_mainWindow; // For getting Vulkan surface, VKTODO: make a better way of setting it
     vks::Context& _vksContext{ vks::Context::get() };
     //VkDevice _device{ VK_NULL_HANDLE };
     //VkSurfaceKHR _surface;

@@ -930,7 +930,6 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         }
         //_vkWindow->_swapchain.queuePresent(_vkWindow->_context.graphicsQueue, currentImageIndex, _vkWindow->_renderCompleteSemaphore);
         _vkWidget->_swapchain.queuePresent(_vkWidget->_vksContext.graphicsQueue, currentImageIndex, _vkWidget->_renderCompleteSemaphore);
-        _vkWidget->swapBuffers();
 
         // VKTODO this is inefficient here
         VK_CHECK_RESULT(vkWaitForFences(vkDevice, 1, &frameFence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
