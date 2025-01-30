@@ -243,6 +243,12 @@ Application::Application(
     _fieldOfView("fieldOfView", DEFAULT_FIELD_OF_VIEW_DEGREES),
     _cameraClippingEnabled("cameraClippingEnabled", false)
 {
+    _vkWindow = new VKWindow();
+    //auto qWindow = dynamic_cast<QWindow*>(_vkWindow);
+    //Q_ASSERT(qWindow);
+    _vkWindowWrapper = QWidget::createWindowContainer(_vkWindow);
+    _window = new MainWindow(_vkWindowWrapper);
+
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
 
     LogHandler::getInstance().moveToThread(thread());

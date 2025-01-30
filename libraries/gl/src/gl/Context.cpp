@@ -369,8 +369,7 @@ void OffscreenContext::create(QOpenGLContext* shareContext) {
     if (!_window) {
         _window = new QWindow();
         _window->setFlags(Qt::MSWindowsOwnDC);
-        _window->setSurfaceType(QSurface::OpenGLSurface); // VKTODO
-        //_window->setSurfaceType(QSurface::VulkanSurface);
+        _window->setSurfaceType(QSurface::OpenGLSurface);
         _window->create();
         setWindow(_window);
         QSize windowSize = _window->size() * _window->devicePixelRatio();
