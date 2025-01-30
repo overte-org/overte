@@ -20,6 +20,7 @@ class LDAPAccount : public QObject {
     Q_OBJECT
 private:
     static LDAP* initialize();
+    static void disposeLDAP(LDAP *ldapConnection);
     static int login(LDAP* ldapHandle, const QString& username, const QString& password);
     static QString buildDNFromUsername(const QString& username);
     static QString ldapServerURL;

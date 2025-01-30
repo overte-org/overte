@@ -34,9 +34,10 @@ QString LDAPAccount::ldapServerGroupBase;
  */
 bool LDAPAccount::isValidCredentials(const QString& username, const QString& password) {
     LDAP* ldapHandle = initialize(); // Initialize the ldap connection.
-    if (ldapHandle == nullptr) {return false;}
+    if (ldapHandle == nullptr) return false;
     int loginResult = login(ldapHandle, username, password); // Log in
-    ldap_unbind_ext(ldapHandle, nullptr, nullptr);
+
+    disposeLDAP(ldapHandle);
 
     if (loginResult != LDAP_SUCCESS){
         // Login failed
@@ -66,6 +67,7 @@ std::vector<std::string> LDAPAccount::getRolesAsStrings(const QString& username,
     if (loginResult != 0){
         // Login failed
         qDebug() << "Failed trying to get roles as string. LDAP error code: " << loginResult << ". " << ldap_err2string(loginResult);
+        disposeLDAP(ldapHandle);
         return {};
     }
 
@@ -98,6 +100,8 @@ std::vector<std::string> LDAPAccount::getRolesAsStrings(const QString& username,
     if (entry == nullptr) {
         // Failed to find the user
         qDebug(networking) << "LDAP search returned no users.";
+        disposeLDAP(ldapHandle);
+        ldap_msgfree(result);
         return {};
     }
 
@@ -105,6 +109,9 @@ std::vector<std::string> LDAPAccount::getRolesAsStrings(const QString& username,
     if (memberOf == nullptr) {
         // User does not have any roles to return
         qDebug(networking) << "User does not have any roles.";
+        disposeLDAP(ldapHandle);
+        ldap_msgfree(result);
+        ldap_value_free_len(memberOf);
         return {};
     }
 
@@ -117,6 +124,11 @@ std::vector<std::string> LDAPAccount::getRolesAsStrings(const QString& username,
             roles.emplace_back(cn); // Append to the list
         }
     }
+
+    // Dispose of LDAP connection
+    disposeLDAP(ldapHandle);
+    ldap_msgfree(result);
+    ldap_value_free_len(memberOf);
 
     return roles;
 }
@@ -148,6 +160,17 @@ LDAP* LDAPAccount::initialize(){
     }
     return ldapHandle;
 }
+/**
+* @brief Disposes of a LDAP connection
+*
+*/
+void LDAPAccount::disposeLDAP(LDAP *ldapConnection) {
+    if (ldapConnection != nullptr) {
+        ldap_unbind_ext_s(ldapConnection, nullptr, nullptr);
+        ldapConnection = nullptr;
+    }
+}
+
 /**
  * @brief Construct a full username in DN notation from the servers current LDAP server setting.
  *
@@ -183,5 +206,6 @@ int LDAPAccount::login(LDAP* ldapHandle, const QString& username, const QString&
     }
 
     qDebug(networking) << "Successfully signed in '" << username << "' into the LDAP server";
+
     return saslBind; // Should be '0'
 }
