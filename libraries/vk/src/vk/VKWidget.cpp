@@ -42,6 +42,15 @@ class GLPaintEngine : public QPaintEngine {
     Type type() const override { return OpenGL2; }
 };
 
+class NullPaintEngine : public QPaintEngine {
+    bool begin(QPaintDevice *pdev) override { return true; }
+    bool end() override { return true; }
+    void updateState(const QPaintEngineState &state) override { }
+    void drawPixmap(const QRectF &r, const QPixmap &pm, const QRectF &sr) override { }
+    Type type() const override { return User; }
+};
+
+
 VKWidget::VKWidget() {
     setAttribute(Qt::WA_AcceptTouchEvents);
     setAttribute(Qt::WA_NativeWindow);
@@ -51,7 +60,7 @@ VKWidget::VKWidget() {
     setAutoFillBackground(false);
     grabGesture(Qt::PinchGesture);
     setAcceptDrops(true);
-    _paintEngine = new GLPaintEngine(); // VKTODO: what is it used for?
+    _paintEngine = new NullPaintEngine(); // VKTODO: what is it used for?
     vks::Context::get().registerWidget(this);
     //_device = _vksContext.device->logicalDevice;
 }
@@ -171,7 +180,8 @@ QPaintEngine* VKWidget::paintEngine() const {
 }
 
 void VKWidget::createSurface() {
-    windowHandle()->setSurfaceType(QSurface::VulkanSurface);
+    nativeParentWidget()->windowHandle()->setSurfaceType(QSurface::VulkanSurface); //VKTODO
+    //windowHandle()->setSurfaceType(QSurface::VulkanSurface);
     _swapchain.setContext(&_vksContext);
 #ifdef WIN32
     // TODO
@@ -182,9 +192,10 @@ void VKWidget::createSurface() {
 
     auto* platformInterface = QGuiApplication::platformNativeInterface();
     auto* handle = platformInterface->nativeResourceForWindow("handle", windowHandle());
-    Q_ASSERT(winId());
+    Q_ASSERT(_mainWindow->winId());
     qDebug() << "VKWindow::createSurface winId:" << winId();
-    _swapchain.initSurface(QX11Info::connection(), winId());
+    qDebug() << "VKWindow::createSurface winId:" << _mainWindow->winId();
+    _swapchain.initSurface(QX11Info::connection(), _mainWindow->winId());
     //_swapchain.initSurface(QX11Info::connection(), QX11Info::appRootWindow());
     //VkSurfaceKHR surface;
     //VK_CHECK_RESULT(vkCreateXcbSurfaceKHR(_context.instance, &surfaceCreateInfo, nullptr, &surface));

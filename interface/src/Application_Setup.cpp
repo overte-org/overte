@@ -775,6 +775,8 @@ void Application::initialize(const QCommandLineParser &parser) {
     _primaryWidget->setFocusPolicy(Qt::StrongFocus);
     _primaryWidget->setFocus();
 
+    _primaryWidget->_mainWindow = _vkWindow;
+
     showCursor(Cursor::Manager::lookupIcon(_preferredCursor.get()));
 
     // enable mouse tracking; otherwise, we only get drag events
