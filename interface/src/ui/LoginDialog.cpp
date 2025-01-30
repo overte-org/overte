@@ -160,9 +160,7 @@ void LoginDialog::loginDomain(const QString& username, const QString& password, 
 
     const QString normalizedType = type.toLower(); // Convert to lowercase for ease.
 
-    if (normalizedType == "ldap") return DependencyManager::get<DomainAccountManager>()->requestAccessToken(username, password, "ldap");
-    if (normalizedType == "wordpress") return DependencyManager::get<DomainAccountManager>()->requestAccessToken(username, password, "wordpress");
-
+    DependencyManager::get<DomainAccountManager>()->requestAccessToken(username, password, normalizedType);
 }
 
 void LoginDialog::loginThroughOculus() {
