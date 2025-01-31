@@ -64,7 +64,12 @@ void Stream::Format::evaluateCache() {
 
     for(AttributeMap::iterator it = _attributes.begin(); it != _attributes.end(); it++) {
         Attribute& attrib = (*it).second;
+        if (0 == _channels.count(attrib._channel)) {
+            _channels[attrib._channel]._frequency = attrib._frequency;
+        }
         ChannelInfo& channel = _channels[attrib._channel];
+        // All attributes within a channel must have the same frequency
+        assert(attrib._frequency == channel._frequency);
         channel._slots.push_back(attrib._slot);
         channel._stride = std::max(channel._stride, attrib.getSize() + attrib._offset);
         channel._netSize += attrib.getSize();

@@ -63,7 +63,7 @@ float getLightAmbientMapNumMips(LightAmbient l) { return l._ambientInfo.y; }
 
 
 <@if N@>
-LAYOUT(binding=GRAPHICS_BUFFER_LIGHT) uniform lightBuffer {
+UNIFORM_BUFFER(GRAPHICS_BUFFER_LIGHT, lightBuffer) {
     Light lightArray[<$N$>];
 };
 Light getLight(int index) {
@@ -71,7 +71,7 @@ Light getLight(int index) {
 }
 
 <@else@>
-LAYOUT(binding=GRAPHICS_BUFFER_KEY_LIGHT) uniform keyLightBuffer {
+UNIFORM_BUFFER(GRAPHICS_BUFFER_KEY_LIGHT, keyLightBuffer) {
     Light light;
 };
 Light getKeyLight() {
@@ -87,7 +87,7 @@ Light getKeyLight() {
 
 <@if N@>
 
-LAYOUT(binding=GRAPHICS_BUFFER_AMBIENT_LIGHT) uniform lightAmbientBuffer {
+UNIFORM_BUFFER(GRAPHICS_BUFFER_AMBIENT_LIGHT, lightAmbientBuffer) {
     LightAmbient lightAmbientArray[<$N$>];
 };
 
@@ -96,7 +96,7 @@ LightAmbient getLightAmbient(int index) {
 }
 
 <@else@>
-LAYOUT(binding=GRAPHICS_BUFFER_AMBIENT_LIGHT) uniform lightAmbientBuffer {
+UNIFORM_BUFFER(GRAPHICS_BUFFER_AMBIENT_LIGHT, lightAmbientBuffer) {
     LightAmbient lightAmbient;
 };
 

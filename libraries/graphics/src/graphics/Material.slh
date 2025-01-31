@@ -67,7 +67,7 @@ struct Material {
 };
 <@endif@>
 
-LAYOUT_STD140(binding=GRAPHICS_BUFFER_MATERIAL) uniform materialBuffer {
+UNIFORM_BUFFER(GRAPHICS_BUFFER_MATERIAL, materialBuffer) {
     Material _mat;
     TexMapArray _texMapArray;
 };

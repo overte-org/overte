@@ -419,6 +419,7 @@ bool SharedObject::fetchTexture(TextureAndFence& textureAndFence) {
 }
 
 void SharedObject::addToDeletionList(QObject* object) {
+    qDebug() << "SharedObject::addToDeletionList _deletionList.size:" << _deletionList.size();
     _deletionList.append(QPointer<QObject>(object));
 }
 

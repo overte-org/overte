@@ -23,19 +23,19 @@
 
 
 #if NUM_UPDATE_PROPS > 0
-LAYOUT(binding=PROCEDURAL_PARTICLE_TEXTURE_PROP0) uniform sampler2D _prop0Texture;
+TEXTURE(PROCEDURAL_PARTICLE_TEXTURE_PROP0, sampler2D, _prop0Texture);
 #endif
 #if NUM_UPDATE_PROPS > 1
-LAYOUT(binding=PROCEDURAL_PARTICLE_TEXTURE_PROP1) uniform sampler2D _prop1Texture;
+TEXTURE(PROCEDURAL_PARTICLE_TEXTURE_PROP1, sampler2D, _prop1Texture);
 #endif
 #if NUM_UPDATE_PROPS > 2
-LAYOUT(binding=PROCEDURAL_PARTICLE_TEXTURE_PROP2) uniform sampler2D _prop2Texture;
+TEXTURE(PROCEDURAL_PARTICLE_TEXTURE_PROP2, sampler2D, _prop2Texture);
 #endif
 #if NUM_UPDATE_PROPS > 3
-LAYOUT(binding=PROCEDURAL_PARTICLE_TEXTURE_PROP3) uniform sampler2D _prop3Texture;
+TEXTURE(PROCEDURAL_PARTICLE_TEXTURE_PROP3, sampler2D, _prop3Texture);
 #endif
 #if NUM_UPDATE_PROPS > 4
-LAYOUT(binding=PROCEDURAL_PARTICLE_TEXTURE_PROP4) uniform sampler2D _prop4Texture;
+TEXTURE(PROCEDURAL_PARTICLE_TEXTURE_PROP4, sampler2D, _prop4Texture);
 #endif
 
 <@func declareProceduralParticleRender()@>

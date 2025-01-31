@@ -30,10 +30,10 @@ struct DrawTextureWithVisionSqueezeParams {
 };
 
 
-LAYOUT(binding=0) uniform sampler2D colorMap;
+TEXTURE(0, sampler2D, colorMap);
 
 // binding=1 must match drawTextureWithSqueezeParamsSlot in OpenGLDisplayPlugin.h
-LAYOUT(binding=1) uniform drawTextureWithSqueezeMappingParamsBuffer {
+UNIFORM_BUFFER(1, drawTextureWithSqueezeMappingParamsBuffer) {
     DrawTextureWithVisionSqueezeParams params;
 };
 

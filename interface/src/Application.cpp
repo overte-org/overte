@@ -180,7 +180,11 @@
 #include "CrashRecoveryHandler.h"
 #include "crash-handler/CrashHandler.h"
 #include "DiscoverabilityManager.h"
+#ifdef USE_GL
 #include "GLCanvas.h"
+#else
+#include "VKCanvas.h"
+#endif
 #include "InterfaceDynamicFactory.h"
 #include "InterfaceLogging.h"
 #include "LODManager.h"
@@ -275,6 +279,7 @@ static AppNapDisabler appNapDisabler;   // disabled, while in scope
 #endif
 
 #include "graphics/RenderEventHandler.h"
+#include "display-plugins/VulkanDisplayPlugin.h"
 
 Q_LOGGING_CATEGORY(trace_app_input_mouse, "trace.app.input.mouse")
 
@@ -995,9 +1000,10 @@ Application::Application(
     QElapsedTimer& startupTimer
 ) :
     QApplication(argc, argv),
-    _window(new MainWindow(desktop())),
+    //_window(new MainWindow(desktop())), //VKTODO
+    _window(nullptr),
     // Menu needs to be initialized before other initializers. Otherwise deadlock happens on qApp->getWindow()->menuBar().
-    _isMenuInitialized(initMenu()),
+    _isMenuInitialized(false),
     _sessionRunTimer(startupTimer),
 #ifndef Q_OS_ANDROID
     _logger(new FileLogger(this)),
@@ -1029,6 +1035,15 @@ Application::Application(
     _snapshotSound(nullptr),
     _sampleSound(nullptr)
 {
+    _vkWindow = new VKWindow();
+    //auto qWindow = dynamic_cast<QWindow*>(_vkWindow);
+    //Q_ASSERT(qWindow);
+    //VKWidget *intermediateWidget = new VKWidget(_vkWindowWrapper);
+    _window = new MainWindow();
+    //_vkWindowWrapper = QWidget::createWindowContainer(_vkWindow, _window);
+    //_window = new MainWindow(_vkWindowWrapper);
+    _isMenuInitialized = initMenu();
+
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
 
     LogHandler::getInstance().moveToThread(thread());
@@ -1535,20 +1550,29 @@ void Application::initialize(const QCommandLineParser &parser) {
     // setDefaultFormat has no effect after the platform window has been created, so call it here.
     QSurfaceFormat::setDefaultFormat(getDefaultOpenGLSurfaceFormat());
 
-    _glWidget = new GLCanvas();
-    getApplicationCompositor().setRenderingWidget(_glWidget);
-    _window->setCentralWidget(_glWidget);
+#ifdef USE_GL
+    _primaryWidget = new GLCanvas();
+#else
+    _primaryWidget = new VKCanvas();
+#endif
+    _vkWindowWrapper = QWidget::createWindowContainer(_vkWindow);
+    getApplicationCompositor().setRenderingWidget(_primaryWidget);
+    _primaryWidget->setParent(_vkWindowWrapper);
+    _vkWindow->_primaryWidget = _primaryWidget;
+    _window->setCentralWidget(_vkWindowWrapper);
 
     _window->restoreGeometry();
     _window->setVisible(true);
 
-    _glWidget->setFocusPolicy(Qt::StrongFocus);
-    _glWidget->setFocus();
+    _primaryWidget->setFocusPolicy(Qt::StrongFocus);
+    _primaryWidget->setFocus();
+
+    _primaryWidget->_mainWindow = _vkWindow;
 
     showCursor(Cursor::Manager::lookupIcon(_preferredCursor.get()));
 
     // enable mouse tracking; otherwise, we only get drag events
-    _glWidget->setMouseTracking(true);
+    _primaryWidget->setMouseTracking(true);
     // Make sure the window is set to the correct size by processing the pending events
     QCoreApplication::processEvents();
 
@@ -1867,11 +1891,11 @@ void Application::initialize(const QCommandLineParser &parser) {
             QPoint localPos(reticlePos.x, reticlePos.y); // both hmd and desktop already handle this in our coordinates.
             if (state) {
                 QMouseEvent mousePress(QEvent::MouseButtonPress, localPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-                sendEvent(_glWidget, &mousePress);
+                sendEvent(_primaryWidget, &mousePress);
                 _reticleClickPressed = true;
             } else {
                 QMouseEvent mouseRelease(QEvent::MouseButtonRelease, localPos, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
-                sendEvent(_glWidget, &mouseRelease);
+                sendEvent(_primaryWidget, &mouseRelease);
                 _reticleClickPressed = false;
             }
             return; // nothing else to do
@@ -2767,7 +2791,7 @@ void Application::checkChangeCursor() {
 #else
         // On windows and linux, hiding the top level cursor also means it's invisible when hovering over the
         // window menu, which is a pain, so only hide it for the GL surface
-        auto cursorTarget = _glWidget;
+        auto cursorTarget = _primaryWidget;
 #endif
         cursorTarget->setCursor(_desiredCursor);
 
@@ -3098,7 +3122,7 @@ void Application::initializeGL() {
         _isGLInitialized = true;
     }
 
-    _glWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat());
+    //_primaryWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat()); // VKTODO
 
     // When loading QtWebEngineWidgets, it creates a global share context on startup.
     // We have to account for this possibility by checking here for an existing
@@ -3133,9 +3157,9 @@ void Application::initializeGL() {
 #endif
 
 
-    _glWidget->createContext(globalShareContext);
+    _primaryWidget->createContext(globalShareContext);
 
-    if (!_glWidget->makeCurrent()) {
+    if (!_primaryWidget->makeCurrent()) {
         qCWarning(interfaceapp, "Unable to make window context current");
     }
 
@@ -3162,7 +3186,7 @@ void Application::initializeGL() {
 #endif
 
     if (!globalShareContext) {
-        globalShareContext = _glWidget->qglContext();
+        globalShareContext = _primaryWidget->qglContext();
         qt_gl_set_global_share_context(globalShareContext);
     }
 
@@ -3177,7 +3201,7 @@ void Application::initializeGL() {
         }
         OffscreenQmlSurface::setSharedContext(_qmlShareContext->getContext());
         _qmlShareContext->doneCurrent();
-        if (!_glWidget->makeCurrent()) {
+        if (!_primaryWidget->makeCurrent()) {
             qCWarning(interfaceapp, "Unable to make window context current");
         }
     }
@@ -3185,12 +3209,12 @@ void Application::initializeGL() {
 
 
     // Build an offscreen GL context for the main thread.
-    _glWidget->makeCurrent();
+    _primaryWidget->makeCurrent();
     glClearColor(0.2f, 0.2f, 0.2f, 1);
     glClear(GL_COLOR_BUFFER_BIT);
-    _glWidget->swapBuffers();
+    _primaryWidget->swapBuffers(); //VKTODO
 
-    _graphicsEngine->initializeGPU(_glWidget);
+    _graphicsEngine->initializeGPU(_primaryWidget);
 }
 
 void Application::initializeDisplayPlugins() {
@@ -3383,7 +3407,7 @@ void Application::initializeUi() {
     setupPreferences();
 
 #if !defined(DISABLE_QML)
-    _glWidget->installEventFilter(offscreenUi.data());
+    _primaryWidget->installEventFilter(offscreenUi.data());
     offscreenUi->setMouseTranslator([=](const QPointF& pt) {
         QPointF result = pt;
         auto displayPlugin = getActiveDisplayPlugin();
@@ -4347,9 +4371,17 @@ bool Application::event(QEvent* event) {
         return true;
     }
 
+    if (isKeyEvent(event->type())) {
+        qDebug() << "keyevent1";
+    }
+
     // Allow focused Entities to handle keyboard input
     if (isKeyEvent(event->type()) && handleKeyEventForFocusedEntity(event)) {
         return true;
+    }
+
+    if (isKeyEvent(event->type())) {
+        qDebug() << "keyevent2";
     }
 
     int type = event->type();
@@ -4401,8 +4433,8 @@ bool Application::event(QEvent* event) {
             return true;
         case QEvent::FocusIn:
         { //testing to see if we can set focus when focus is not set to root window.
-            _glWidget->activateWindow();
-            _glWidget->setFocus();
+            _primaryWidget->activateWindow();
+            _primaryWidget->setFocus();
             return true;
         }
 
@@ -6093,16 +6125,16 @@ void Application::cameraModeChanged() {
 }
 
 bool Application::shouldCaptureMouse() const {
-    return _captureMouse && _glWidget->isActiveWindow() && !ui::Menu::isSomeSubmenuShown();
+    return _captureMouse && _primaryWidget->isActiveWindow() && !ui::Menu::isSomeSubmenuShown();
 }
 
 void Application::captureMouseChanged(bool captureMouse) {
     _captureMouse = captureMouse;
     if (_captureMouse) {
-        _glWidget->setCursor(QCursor(Qt::BlankCursor));
+        _primaryWidget->setCursor(QCursor(Qt::BlankCursor));
     } else {
         _mouseCaptureTarget = QPointF(NAN, NAN);
-        _glWidget->unsetCursor();
+        _primaryWidget->unsetCursor();
     }
 }
 
@@ -6458,7 +6490,7 @@ void Application::update(float deltaTime) {
     }
 
      if (shouldCaptureMouse()) {
-        QPoint point = _glWidget->mapToGlobal(_glWidget->geometry().center());
+        QPoint point = _primaryWidget->mapToGlobal(_primaryWidget->geometry().center());
         if (QCursor::pos() != point) {
             _mouseCaptureTarget = point;
             _ignoreMouseMove = true;
@@ -8512,7 +8544,7 @@ void Application::packageModel() {
 }
 
 void Application::loadDialog() {
-    ModalDialogListener* dlg = OffscreenUi::getOpenFileNameAsync(_glWidget, tr("Open Script"),
+    ModalDialogListener* dlg = OffscreenUi::getOpenFileNameAsync(_primaryWidget, tr("Open Script"),
                                                                  getPreviousScriptLocation(),
                                                                  tr("JavaScript Files (*.js)"));
     connect(dlg, &ModalDialogListener::response, this, [=] (QVariant answer) {
@@ -8810,13 +8842,13 @@ void Application::shutdownPlugins() {
 }
 
 glm::uvec2 Application::getCanvasSize() const {
-    return glm::uvec2(_glWidget->width(), _glWidget->height());
+    return glm::uvec2(_primaryWidget->width(), _primaryWidget->height());
 }
 
 QRect Application::getRenderingGeometry() const {
-    auto geometry = _glWidget->geometry();
+    auto geometry = _primaryWidget->geometry();
     auto topLeft = geometry.topLeft();
-    auto topLeftScreen = _glWidget->mapToGlobal(topLeft);
+    auto topLeftScreen = _primaryWidget->mapToGlobal(topLeft);
     geometry.moveTopLeft(topLeftScreen);
     return geometry;
 }
@@ -9063,7 +9095,11 @@ void Application::setDisplayPlugin(DisplayPluginPointer newDisplayPlugin) {
         }
 
         RefreshRateManager& refreshRateManager = getRefreshRateManager();
+#ifdef USE_GL
         refreshRateManager.setRefreshRateOperator(OpenGLDisplayPlugin::getRefreshRateOperator());
+#else
+        refreshRateManager.setRefreshRateOperator(VulkanDisplayPlugin::getRefreshRateOperator());
+#endif
         bool isHmd = newDisplayPlugin->isHmd();
         RefreshRateManager::UXMode uxMode = isHmd ? RefreshRateManager::UXMode::VR :
             RefreshRateManager::UXMode::DESKTOP;
@@ -9430,16 +9466,22 @@ void Application::showDisplayPluginsTools(bool show) {
     DependencyManager::get<DialogsManager>()->hmdTools(show);
 }
 
+#ifdef USE_GL
 GLWidget* Application::getPrimaryWidget() {
     return _glWidget;
 }
+#else
+VKWidget* Application::getPrimaryWidget() {
+    return _primaryWidget;
+}
+#endif
 
 MainWindow* Application::getPrimaryWindow() {
     return getWindow();
 }
 
 QOpenGLContext* Application::getPrimaryContext() {
-    return _glWidget->qglContext();
+    return _primaryWidget->qglContext();
 }
 
 bool Application::makeRenderingContextCurrent() {

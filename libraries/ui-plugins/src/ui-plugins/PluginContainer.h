@@ -19,7 +19,11 @@
 #include <plugins/Forward.h>
 
 class QAction;
+#ifdef USE_GL
 class GLWidget;
+#else
+class VKWidget;
+#endif
 class QScreen;
 class QOpenGLContext;
 class QWindow;
@@ -64,7 +68,11 @@ public:
     virtual void showDisplayPluginsTools(bool show = true) = 0;
     virtual void requestReset() = 0;
     virtual bool makeRenderingContextCurrent() = 0;
+#ifdef USE_GL
     virtual GLWidget* getPrimaryWidget() = 0;
+#else
+    virtual VKWidget* getPrimaryWidget() = 0;
+#endif
     virtual MainWindow* getPrimaryWindow() = 0;
     virtual QOpenGLContext* getPrimaryContext() = 0;
     virtual bool isForeground() const = 0;

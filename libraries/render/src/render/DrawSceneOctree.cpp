@@ -71,6 +71,7 @@ void DrawSceneOctree::configure(const Config& config) {
     _showEmptyCells = config.showEmptyCells;
 }
 
+
 void DrawSceneOctree::run(const RenderContextPointer& renderContext, const ItemSpatialTree::ItemSelection& inSelection) {
     assert(renderContext->args);
     assert(renderContext->args->hasViewFrustum());
@@ -174,16 +175,16 @@ void DrawItemSelection::run(const RenderContextPointer& renderContext, const Ite
     auto& scene = renderContext->_scene;
 
     if (!_boundsBufferInside) {
-        _boundsBufferInside = std::make_shared<gpu::Buffer>(sizeof(render::ItemBound));
+        _boundsBufferInside = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer, sizeof(render::ItemBound));
     }
     if (!_boundsBufferInsideSubcell) {
-        _boundsBufferInsideSubcell = std::make_shared<gpu::Buffer>(sizeof(render::ItemBound));
+        _boundsBufferInsideSubcell = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer, sizeof(render::ItemBound));
     }
     if (!_boundsBufferPartial) {
-        _boundsBufferPartial = std::make_shared<gpu::Buffer>(sizeof(render::ItemBound));
+        _boundsBufferPartial = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer, sizeof(render::ItemBound));
     }
     if (!_boundsBufferPartialSubcell) {
-        _boundsBufferPartialSubcell = std::make_shared<gpu::Buffer>(sizeof(render::ItemBound));
+        _boundsBufferPartialSubcell = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer, sizeof(render::ItemBound));
     }
 
     gpu::doInBatch("DrawItemSelection::run", args->_context, [&](gpu::Batch& batch) {
