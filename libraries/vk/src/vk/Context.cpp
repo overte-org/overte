@@ -272,7 +272,7 @@ void Context::unregisterWindow(VKWindow* window) {
     vulkanWindows.remove(window);
 }
 
-void Context::registerWidget(VKWidget* widget) {
+/*void Context::registerWidget(VKWidget* widget) {
     std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
     vulkanWidgets.push_back(widget);
 }
@@ -280,7 +280,7 @@ void Context::registerWidget(VKWidget* widget) {
 void Context::unregisterWidget(VKWidget* widget) {
     std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
     vulkanWidgets.remove(widget);
-}
+}*/
 
 void Context::shutdownWindows() {
     std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
