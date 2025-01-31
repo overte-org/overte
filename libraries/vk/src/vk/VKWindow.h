@@ -32,6 +32,8 @@ public:
     //VulkanSwapChain& getSwapchain() { return _swapchain; }
     //VkFramebuffer acquireFramebuffer(const VkSemaphore& semaphore);
 
+    bool event(QEvent *event) override;
+
 signals:
     void aboutToClose();
 
@@ -53,6 +55,7 @@ protected:
     void vulkanCleanup(); // Called by the context before backend is destroyed.
 
 public:
+    VKWidget *_primaryWidget{ nullptr };
     vks::Context& _context{ vks::Context::get() };
     //const VkDevice& _device{ _context.device->logicalDevice };
     //VkSurfaceKHR _surface;

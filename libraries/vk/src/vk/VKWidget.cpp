@@ -51,7 +51,7 @@ class NullPaintEngine : public QPaintEngine {
 };
 
 
-VKWidget::VKWidget() {
+VKWidget::VKWidget(QWidget *parent) : QWidget(parent) {
     setAttribute(Qt::WA_AcceptTouchEvents);
     setAttribute(Qt::WA_NativeWindow);
     setAttribute(Qt::WA_PaintOnScreen);
@@ -61,7 +61,7 @@ VKWidget::VKWidget() {
     grabGesture(Qt::PinchGesture);
     setAcceptDrops(true);
     _paintEngine = new NullPaintEngine(); // VKTODO: what is it used for?
-    vks::Context::get().registerWidget(this);
+    //vks::Context::get().registerWidget(this);
     //_device = _vksContext.device->logicalDevice;
 }
 

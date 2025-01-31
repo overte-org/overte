@@ -1036,8 +1036,10 @@ Application::Application(
     _vkWindow = new VKWindow();
     //auto qWindow = dynamic_cast<QWindow*>(_vkWindow);
     //Q_ASSERT(qWindow);
-    _vkWindowWrapper = QWidget::createWindowContainer(_vkWindow);
-    _window = new MainWindow(_vkWindowWrapper);
+    //VKWidget *intermediateWidget = new VKWidget(_vkWindowWrapper);
+    _window = new MainWindow();
+    //_vkWindowWrapper = QWidget::createWindowContainer(_vkWindow, _window);
+    //_window = new MainWindow(_vkWindowWrapper);
     _isMenuInitialized = initMenu();
 
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
@@ -1551,8 +1553,11 @@ void Application::initialize(const QCommandLineParser &parser) {
 #else
     _primaryWidget = new VKCanvas();
 #endif
+    _vkWindowWrapper = QWidget::createWindowContainer(_vkWindow);
     getApplicationCompositor().setRenderingWidget(_primaryWidget);
-    _window->setCentralWidget(_primaryWidget);
+    _primaryWidget->setParent(_vkWindowWrapper);
+    _vkWindow->_primaryWidget = _primaryWidget;
+    _window->setCentralWidget(_vkWindowWrapper);
 
     _window->restoreGeometry();
     _window->setVisible(true);
@@ -3104,7 +3109,7 @@ void Application::initializeGL() {
         _isGLInitialized = true;
     }
 
-    _primaryWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat()); // VKTODO
+    //_primaryWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat()); // VKTODO
 
     // When loading QtWebEngineWidgets, it creates a global share context on startup.
     // We have to account for this possibility by checking here for an existing
@@ -4323,9 +4328,17 @@ bool Application::event(QEvent* event) {
         return true;
     }
 
+    if (isKeyEvent(event->type())) {
+        qDebug() << "keyevent1";
+    }
+
     // Allow focused Entities to handle keyboard input
     if (isKeyEvent(event->type()) && handleKeyEventForFocusedEntity(event)) {
         return true;
+    }
+
+    if (isKeyEvent(event->type())) {
+        qDebug() << "keyevent2";
     }
 
     int type = event->type();
