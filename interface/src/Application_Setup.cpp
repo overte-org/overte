@@ -776,8 +776,11 @@ void Application::initialize(const QCommandLineParser &parser) {
 #else
     _primaryWidget = new VKCanvas();
 #endif
+    _vkWindowWrapper = QWidget::createWindowContainer(_vkWindow);
     getApplicationCompositor().setRenderingWidget(_primaryWidget);
-    _window->setCentralWidget(_primaryWidget);
+    _primaryWidget->setParent(_vkWindowWrapper);
+    _vkWindow->_primaryWidget = _primaryWidget;
+    _window->setCentralWidget(_vkWindowWrapper);
 
     _window->restoreGeometry();
     _window->setVisible(true);

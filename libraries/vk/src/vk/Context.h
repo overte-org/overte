@@ -113,9 +113,9 @@ public:
 
     void unregisterWindow(VKWindow *window); // When window closes before backend was shut down, it removes itself from the list.
 
-    void registerWidget(VKWidget *widget); // Every Vulkan widget registers itself here, so its.
+    //void registerWidget(VKWidget *widget); // Every Vulkan widget registers itself here, so its.
 
-    void unregisterWidget(VKWidget *widget); // When widget closes before backend was shut down, it removes itself from the list.
+    //void unregisterWidget(VKWidget *widget); // When widget closes before backend was shut down, it removes itself from the list.
 
     void shutdownWindows(); // When backend shuts down, it cleans up after all windows and removes them from the list.
 
