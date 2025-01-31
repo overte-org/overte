@@ -327,9 +327,9 @@ bool VulkanDisplayPlugin::activate() {
     }
 
     //_vkWindow = std::make_shared<VKWindow>();
-    _vkWindow = new VKWindow();
-    //VKWidget *vkWidget = _container->getPrimaryWidget();
-    //_vkWindow = vkWidget->_mainWindow;
+    //_vkWindow = new VKWindow();
+    VKWidget *vkWidget = _container->getPrimaryWidget();
+    _vkWindow = vkWidget->_mainWindow;
     _vkWindow->setVisible(true);
     _vkWindow->createSurface();
     _vkWindow->createSwapchain();
@@ -735,7 +735,10 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         _prevRenderView = correction * _currentFrame->view;
 
         uint32_t currentImageIndex = UINT32_MAX;
-        VK_CHECK_RESULT(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex));
+        //VK_CHECK_RESULT(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex));
+        if(!_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex)) {
+            qDebug() << "_vkWindow->_swapchain.acquireNextImage fail";
+        }
         auto framebuffer = _vkWindow->_frameBuffers[currentImageIndex];
         const auto& commandBuffer = _vkWindow->_drawCommandBuffers[currentImageIndex];
         /*VK_CHECK_RESULT(_vkWidget->_swapchain.acquireNextImage(_vkWidget->_acquireCompleteSemaphore, &currentImageIndex));

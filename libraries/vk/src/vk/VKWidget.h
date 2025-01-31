@@ -32,12 +32,12 @@ class QOpenGLContext;
 
 /// customized canvas that simply forwards requests/events to the singleton application
 class VKWidget : public QWidget {
-    //Q_OBJECT
+    Q_OBJECT
 
     friend struct vks::Context;
 
 public:
-    VKWidget();
+    VKWidget(QWidget *parent = nullptr);
     ~VKWidget() override;
 
     //void createSwapchain();

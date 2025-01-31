@@ -16,8 +16,10 @@
 #include <QtPlatformHeaders/QXcbWindowFunctions>
 #include <qpa/qplatformnativeinterface.h>
 #include <QtX11Extras/QX11Info>
+#include <QWidget>
 
 #include "VKWindow.h"
+#include "VKWidget.h"
 #include "Config.h"
 #include "VulkanSwapChain.h"
 #include "Context.h"
@@ -39,6 +41,7 @@ void VKWindow::createSurface() {
     // TODO
     _surface = _context.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)winId() });
 #else
+    setSurfaceType(QSurface::VulkanSurface);
     VkXcbSurfaceCreateInfoKHR surfaceCreateInfo{};
     //dynamic_cast<QGuiApplication*>(QGuiApplication::instance())->platformNativeInterface()->connection();
 
@@ -288,12 +291,54 @@ void VKWindow::resizeEvent(QResizeEvent* event) {
     }
 }
 
+bool VKWindow::event(QEvent* event) {
+    switch (event->type()) {
+        case QEvent::MouseMove:
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonRelease:
+        case QEvent::MouseButtonDblClick:
+        case QEvent::KeyPress:
+        case QEvent::KeyRelease:
+        case QEvent::FocusIn:
+        case QEvent::FocusOut:
+        case QEvent::Resize:
+        case QEvent::TouchBegin:
+        case QEvent::TouchEnd:
+        case QEvent::TouchUpdate:
+        case QEvent::Gesture:
+        case QEvent::Wheel:
+        case QEvent::DragEnter:
+        case QEvent::Drop:
+            if (QCoreApplication::sendEvent(QCoreApplication::instance(), event)) {
+                return true;
+            }
+            break;
+        case QEvent::InputMethod:
+            if (QCoreApplication::sendEvent(QCoreApplication::instance(), event)) {
+                return true;
+            }
+            break;
+        case QEvent::InputMethodQuery:
+            if (QCoreApplication::sendEvent(QCoreApplication::instance(), event)) {
+                return true;
+            }
+            break;
+
+        default:
+            break;
+    }
+    return QWindow::event(event);
+}
+
 void VKWindow::resizeFramebuffer() {
     auto qsize = size();
     _extent = VkExtent2D{
         .width = (uint32_t)qsize.width(),
         .height = (uint32_t)qsize.height()
     };
+    if (_primaryWidget) {
+        _primaryWidget->resize(qsize);
+    }
     //vkQueueWaitIdle();
     VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
     _swapchain.create(&_extent.width, &_extent.height, false, false);
