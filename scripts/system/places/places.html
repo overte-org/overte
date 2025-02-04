@@ -4,7 +4,7 @@
 //  places.html
 //
 //  Created by Alezia Kurdis, January 1st, 2022.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  html for the ui of the Places application.
 //
@@ -107,7 +107,7 @@
         <div id="placeDetail" class="overlay">
           <a href="javascript:void(0)" class="closebtn" onclick="closeDetail();">&times;</a>
           <div class="overlay-content">
-                <img id="placeDetail-image" onclick="closeDetail();" draggable="false">
+                <div id="placeDetail-image" onclick="closeDetail();" draggable="false"></div>
                 <div id="placeDetail-placeName"></div>
                 <table width='100%'>
                     <tr valign='top'>
@@ -751,12 +751,17 @@
                     }
                 }
 
-                document.getElementById("placeDetail-image").src = "";
+                var pictureUrl = "";
                 if (placeDetail.thumbnail === "") {
-                    document.getElementById("placeDetail-image").src = "icons/placeholder_" + placeDetail.metaverseRegion + ".jpg";
+                    pictureUrl = "icons/placeholder_" + placeDetail.metaverseRegion + ".jpg";
                 } else {
-                    document.getElementById("placeDetail-image").src = placeDetail.thumbnail;
+                    pictureUrl = placeDetail.thumbnail;
                 }
+                document.getElementById("placeDetail-image").style.backgroundImage = "url(" + pictureUrl + ")";
+                document.getElementById("placeDetail-image").style.backgroundRepeat = "no-repeat"; 
+                document.getElementById("placeDetail-image").style.backgroundPosition = "center center"; 
+                document.getElementById("placeDetail-image").style.backgroundSize = "cover";
+
                 document.getElementById("placeDetail-placeName").innerHTML = placeDetail.name;
                 document.getElementById("placeDetail-managers").innerHTML = "By <br>&nbsp;&nbsp;&nbsp;&nbsp;" + placeDetail.managers;
                 document.getElementById("placeDetail-description").innerHTML = placeDetail.description;
