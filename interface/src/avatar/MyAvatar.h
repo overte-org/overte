@@ -618,6 +618,13 @@ public:
     void setRealWorldFieldOfView(float realWorldFov) { _realWorldFieldOfView.set(realWorldFov); }
 
     /*@jsdoc
+     * Sets whether the avatar's head should be hidden in first-person mode.
+     * @function MyAvatar.setHeadClippingEnabled
+     * @param {boolean} enable - <code>true</code> will scale the avatar's head in first person to hide it; <code>false</code> will leave the head full and visible in first person, which may have visible near-Z clipping or obstruct the player's view.
+     */
+    Q_INVOKABLE void setHeadClippingEnabled(bool enable) { _headClipping.set(enable); }
+
+    /*@jsdoc
      * Gets the position in world coordinates of the point directly between your avatar's eyes assuming your avatar was in its
      * default pose. This is a reference position; it does not change as your avatar's head moves relative to the avatar
      * position.
@@ -630,6 +637,13 @@ public:
     Q_INVOKABLE glm::vec3 getDefaultEyePosition() const;
 
     float getRealWorldFieldOfView() { return _realWorldFieldOfView.get(); }
+
+    /*@jsdoc
+     * Gets whether the avatar's head mesh will be hidden in first person mode.
+     * @function MyAvatar.getHeadClippingEnabled
+     * @returns {boolean} Whether head clipping is enabled.
+     */
+    Q_INVOKABLE bool getHeadClippingEnabled() const { return _headClipping.get(); }
 
     /*@jsdoc
      * Overrides the default avatar animations.
@@ -2611,6 +2625,7 @@ private:
     bool _isPointTargetValid { true };
 
     Setting::Handle<float> _realWorldFieldOfView;
+    Setting::Handle<bool> _headClipping;
     Setting::Handle<bool> _useAdvancedMovementControls;
     Setting::Handle<bool> _showPlayArea;
 

@@ -205,6 +205,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     _eyeContactTarget(LEFT_EYE),
     _realWorldFieldOfView("realWorldFieldOfView",
                           DEFAULT_REAL_WORLD_FIELD_OF_VIEW_DEGREES),
+    _headClipping("headClipping", true),
     _useAdvancedMovementControls("advancedMovementForHandControllersIsChecked", true),
     _showPlayArea("showPlayArea", true),
     _smoothOrientationTimer(std::numeric_limits<float>::max()),
@@ -3223,7 +3224,8 @@ bool MyAvatar::shouldRenderHead(const RenderArgs* renderArgs) const {
     bool overrideAnim = _skeletonModel ? _skeletonModel->getRig().isPlayingOverrideAnimation() : false;
     bool isInMirror = renderArgs->_mirrorDepth > 0;
     bool insideHead = cameraInsideHead(renderArgs->getViewFrustum().getPosition());
-    return !defaultMode || isInMirror || (!firstPerson && !insideHead) || (overrideAnim && !insideHead);
+    bool forceDisabled = !getHeadClippingEnabled();
+    return forceDisabled || !defaultMode || isInMirror || (!firstPerson && !insideHead) || (overrideAnim && !insideHead);
 }
 
 void MyAvatar::setRotationRecenterFilterLength(float length) {
