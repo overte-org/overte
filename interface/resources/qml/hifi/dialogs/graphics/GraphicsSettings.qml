@@ -688,6 +688,36 @@ Flickable {
                         }
                     }
                 }
+                Item {
+                    Layout.preferredWidth: parent.width
+                    Layout.preferredHeight: 35
+                    Layout.topMargin: 16
+
+                    HifiStylesUit.RalewayRegular {
+                        id: enableHeadClippingHeader
+                        text: "Hide Head in 1st Person"
+                        anchors.left: parent.left
+                        anchors.top: parent.top
+                        width: 200
+                        height: parent.height
+                        size: 16
+                        color: "#FFFFFF"
+                    }
+
+                    HifiControlsUit.CheckBox {
+                        id: enableHeadClipping
+                        checked: MyAvatar.getHeadClippingEnabled()
+                        boxSize: 16
+                        spacing: -1
+                        colorScheme: hifi.colorSchemes.dark
+                        anchors.left: enableHeadClippingHeader.right
+                        anchors.leftMargin: 20
+                        anchors.top: parent.top
+                        onCheckedChanged: {
+                            MyAvatar.setHeadClippingEnabled(enableHeadClipping.checked);
+                        }
+                    }
+                }
             }
 
             ColumnLayout {
