@@ -46,7 +46,7 @@ size_t VKBackend::UNIFORM_BUFFER_OFFSET_ALIGNMENT{ 4 };
 
 static VKBackend* INSTANCE{ nullptr };
 static const char* VK_BACKEND_PROPERTY_NAME = "com.highfidelity.vk.backend";
-static bool enableDebugMarkers = false;
+//static bool enableDebugMarkers = false;
 
 BackendPointer VKBackend::createBackend() {
     // FIXME provide a mechanism to override the backend for testing
@@ -262,7 +262,7 @@ void VKBackend::executeFrame(const FramePointer& frame) {
             const auto* command = commands.data();
             const auto* offset = offsets.data();
             bool renderpassActive = false;
-            for (auto commandIndex = 0; commandIndex < numCommands; ++commandIndex, ++command, ++offset) {
+            for (auto commandIndex = 0; commandIndex < (int)numCommands; ++commandIndex, ++command, ++offset) {
                 const auto& paramOffset = *offset;
                 {
                     PROFILE_RANGE(gpu_vk_detail, "Preprocess");
@@ -2301,7 +2301,7 @@ void VKBackend::perFrameCleanup() {
     recycler.vmaAllocations.reserve(capacityBeforeClear);
 
     {
-        Lock(_externalTexturesMutex);
+        Lock lock(_externalTexturesMutex);
         if (!_externalTexturesTrash.empty()) {
             std::vector<GLsync> fences;
             fences.resize(_externalTexturesTrash.size());
@@ -2397,7 +2397,7 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
     // VKTODO
     _transform.update(_commandIndex, _stereo, _uniform, *_currentFrame);
 
-    auto& drawCallInfoBuffer = batch.getDrawCallInfoBuffer();
+    //auto& drawCallInfoBuffer = batch.getDrawCallInfoBuffer();
     if (batch._currentNamedCall.empty()) {
         //auto& drawCallInfo = drawCallInfoBuffer[_currentDraw];
         if (_transform._enabledDrawcallInfoBuffer) {
@@ -2434,7 +2434,6 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
         vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &gpuBuffer->buffer, &vkOffset);
         //glBindVertexBuffer(gpu::Stream::DRAW_CALL_INFO, _transform._drawCallInfoBuffer, (GLintptr)_transform._drawCallInfoOffsets[batch._currentNamedCall], 2 * sizeof(GLushort));
     }
-    _resource._buffers;
 
     // VKTODO: camera correction
     auto* cameraCorrectionObject = syncGPUObject(*_currentFrame->_cameraCorrectionBuffer._buffer);
@@ -2592,8 +2591,7 @@ void VKBackend::do_draw(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_drawIndexed(const Batch& batch, size_t paramOffset) {
-    Primitive primitiveType = (Primitive)batch._params[paramOffset + 2]._uint;
-    VkPrimitiveTopology mode = PRIMITIVE_TO_VK[primitiveType];
+    //Primitive primitiveType = (Primitive)batch._params[paramOffset + 2]._uint; // Do not remove, it's here for readability
     uint32 numIndices = batch._params[paramOffset + 1]._uint;
     uint32 startIndex = batch._params[paramOffset + 0]._uint;
 
@@ -2629,8 +2627,7 @@ void VKBackend::do_drawIndexed(const Batch& batch, size_t paramOffset) {
 
 void VKBackend::do_drawInstanced(const Batch& batch, size_t paramOffset) {
     int numInstances = batch._params[paramOffset + 4]._uint;
-    Primitive primitiveType = (Primitive)batch._params[paramOffset + 3]._uint; // VKTODO: what to do with this
-    VkPrimitiveTopology topology = PRIMITIVE_TO_VK[primitiveType];
+    //Primitive primitiveType = (Primitive)batch._params[paramOffset + 3]._uint; // Do not remove, it's here for readability
     uint32 numVertices = batch._params[paramOffset + 2]._uint;
     uint32 startVertex = batch._params[paramOffset + 1]._uint;
 
@@ -2663,13 +2660,13 @@ void VKBackend::do_drawInstanced(const Batch& batch, size_t paramOffset) {
 
 void VKBackend::do_drawIndexedInstanced(const Batch& batch, size_t paramOffset) {
     int numInstances = batch._params[paramOffset + 4]._uint;
-    Primitive primitiveType = (Primitive)batch._params[paramOffset + 3]._uint; // VKTODO: what to do with this
+    //Primitive primitiveType = (Primitive)batch._params[paramOffset + 3]._uint; // Do not remove, it's here for readability
     uint32 numIndices = batch._params[paramOffset + 2]._uint;
     uint32 startIndex = batch._params[paramOffset + 1]._uint;
-    uint32 startInstance = batch._params[paramOffset + 0]._uint;
+    //uint32 startInstance = batch._params[paramOffset + 0]._uint; // VKTODO: what to do with this
     //GLenum glType = gl::ELEMENT_TYPE_TO_GL[_input._indexBufferType];
-    auto typeByteSize = TYPE_SIZE[_input._indexBufferType];
-    void* indexBufferByteOffset = reinterpret_cast<void*>(startIndex * typeByteSize + _input._indexBufferOffset);
+    //auto typeByteSize = TYPE_SIZE[_input._indexBufferType];
+    //void* indexBufferByteOffset = reinterpret_cast<void*>(startIndex * typeByteSize + _input._indexBufferOffset);
 
     if (isStereo()) {
         int trueNumInstances = 2 * numInstances;
@@ -2762,7 +2759,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
     color.w = batch._params[paramOffset + 3]._float;
     float depth = batch._params[paramOffset + 2]._float;
     int stencil = batch._params[paramOffset + 1]._int;
-    int useScissor = batch._params[paramOffset + 0]._int;
+    //int useScissor = batch._params[paramOffset + 0]._int; // VKTODO: what to do with this?
 
     auto framebuffer = _cache.pipelineState.framebuffer;
     auto gpuFramebuffer = syncGPUObject(*framebuffer);
@@ -3326,9 +3323,9 @@ void VKBackend::do_setViewportTransform(const Batch& batch, size_t paramOffset) 
     memcpy(glm::value_ptr(_transform._viewport), batch.readData(batch._params[paramOffset]._uint), sizeof(Vec4i));
     //memcpy(&_transform._viewport, batch.editData(batch._params[paramOffset]._uint), sizeof(Vec4i));
 
-    if (!_inRenderTransferPass && !isStereo()) {
+    /*if (!_inRenderTransferPass && !isStereo()) {
         ivec4& vp = _transform._viewport;
-    }
+    }*/
 
     // The Viewport is tagged invalid because the CameraTransformUBO is not up to date and will need update on next drawcall
     _transform._invalidViewport = true;

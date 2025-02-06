@@ -202,7 +202,7 @@ VkResult gpu::vk::VKFramebuffer::createFramebuffer()
     }
 
     // Use subpass dependencies for attachment layout transitions
-    std::array<VkSubpassDependency, 2> dependencies;
+    //std::array<VkSubpassDependency, 2> dependencies;
 
     // VKTODO: what are these for?
     /*dependencies[0].srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -348,9 +348,6 @@ uint32_t gpu::vk::VKFramebuffer::addAttachment(VKAttachmentCreateInfo createinfo
 
     assert(aspectMask > 0);
 
-    VkMemoryAllocateInfo memAlloc = vks::initializers::memoryAllocateInfo();
-    VkMemoryRequirements memReqs;
-
     attachment.image = attachmentTexture->_vkImage;
 
     attachment.subresourceRange = {};
@@ -363,7 +360,7 @@ uint32_t gpu::vk::VKFramebuffer::addAttachment(VKAttachmentCreateInfo createinfo
         imageView.viewType = (createinfo.layerCount == 1) ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
         imageView.format = createinfo.format;
         imageView.subresourceRange = attachment.subresourceRange;
-        imageView.subresourceRange.aspectMask = (attachment.hasDepth()) ? VK_IMAGE_ASPECT_DEPTH_BIT : aspectMask;
+        imageView.subresourceRange.aspectMask = attachment.hasDepth() ? VkImageAspectFlags{VK_IMAGE_ASPECT_DEPTH_BIT} : aspectMask;
         imageView.image = attachment.image;
         VK_CHECK_RESULT(vkCreateImageView(_backend.lock()->_context.device->logicalDevice, &imageView, nullptr, &attachmentTexture->_vkImageView));
     }
