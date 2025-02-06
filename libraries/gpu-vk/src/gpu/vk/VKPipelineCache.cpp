@@ -475,7 +475,7 @@ Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
 
         const gpu::Stream::Format& format = *gpu::acquire(pipelineState.format);
         auto& bindingDescriptions = builder.vertexInputState.bindingDescriptions;
-        auto channelCount = format.getNumChannels();
+        //auto channelCount = format.getNumChannels();
         for (const auto& entry : format.getChannels()) {
             const auto& slot = entry.first;
             const auto& channel = entry.second;

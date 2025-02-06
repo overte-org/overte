@@ -104,15 +104,15 @@ public:
 
         // VKTODO
         // Don't return textures that are in transfer state
-        /*if (shouldSync) {
-            if ((object->getSyncState() != VKSyncState::Idle) ||
-                // Don't return transferable textures that have never completed transfer
-                (!object->_transferable || 0 != object->_transferCount)) {
-                // Will be either 0 or the original texture being downsampled.
-                Q_ASSERT(false);
-                result = object->_downsampleSource._texture;
-            }
-        }*
+        //if (shouldSync) {
+        //    if ((object->getSyncState() != VKSyncState::Idle) ||
+        //        // Don't return transferable textures that have never completed transfer
+        //        (!object->_transferable || 0 != object->_transferCount)) {
+        //        // Will be either 0 or the original texture being downsampled.
+        //        Q_ASSERT(false);
+        //        result = object->_downsampleSource._texture;
+        //    }
+        //}
         
         return object->getDescriptorImageInfo();
     }*/

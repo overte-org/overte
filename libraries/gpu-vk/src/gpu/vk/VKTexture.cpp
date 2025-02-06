@@ -243,7 +243,6 @@ void VKAttachmentTexture::createTexture(VKBackend &backend) {
 VKAttachmentTexture::~VKAttachmentTexture() {
     // VKTODO: Redo destructors for cleanup to happen on present thread
     auto backend = _backend.lock();
-    auto device = backend->getContext().device->logicalDevice;
     auto &recycler = backend->getContext().recycler;
     if (_vkImageView) {
         recycler.trashVkImageView(_vkImageView);
@@ -599,7 +598,6 @@ void VKStrictResourceTexture::postTransfer(VKBackend &backend) {
 
 VKStrictResourceTexture::~VKStrictResourceTexture() {
     auto backend = _backend.lock();
-    auto device = backend->getContext().device->logicalDevice;
     auto &recycler = backend->getContext().recycler;
     recycler.trashVkImageView(_vkImageView);
     if (_vkSampler) {
@@ -802,8 +800,8 @@ void VKExternalTexture::initGL(gpu::vk::VKBackend& backend) {
     Q_ASSERT(evalTexelFormatInternal(_gpuObject.getTexelFormat()) == VK_FORMAT_R8G8B8A8_UNORM);
     glTextureStorageMem2DEXT(_openGLId, 1, GL_RGBA8, _gpuObject.getWidth(), _gpuObject.getHeight(), _openGLMemoryObject, 0);
     ::gl::checkGLError("GL to VK");
-    std::array<GLubyte, 4> clearColor {128,128,128,255};
     // Can be enabled for testing
+    //std::array<GLubyte, 4> clearColor {128,128,128,255};
     //glClearTexImage(_openGLId, 0, GL_RGBA, GL_UNSIGNED_BYTE, clearColor.data());
     ::gl::checkGLError("GL to VK");
 }
@@ -878,7 +876,6 @@ void VKExternalTexture::setSource(GLuint source) {
 VKExternalTexture::~VKExternalTexture() {
     releaseExternalTexture();
     auto backend = _backend.lock();
-    auto device = backend->getContext().device->logicalDevice;
     auto &recycler = backend->getContext().recycler;
     recycler.trashVkImageView(_vkImageView);
     if (_vkSampler) {
