@@ -49,7 +49,7 @@ void VKBuffer::transfer() {
     Size blockSize;
     Size currentPage { 0 };
     auto data = _gpuObject._renderSysmem.readData();
-    auto dataSize = _gpuObject._renderSysmem.getSize();
+    //auto dataSize = _gpuObject._renderSysmem.getSize();
     while (_gpuObject._renderPages.getNextTransferBlock(offset, blockSize, currentPage)) {
         if (offset + blockSize > _localData.size()) {
             Q_ASSERT(false);

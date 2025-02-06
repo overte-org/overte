@@ -215,9 +215,9 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     using namespace vks::debugutils;
     cmdBeginLabel(commandBuffer, "executeFrame", glm::vec4{ 1, 1, 1, 1 });
 #endif
-    auto& glbackend = (gpu::gl::GLBackend&)(*_backend);
     glm::uvec2 fboSize{ frame->framebuffer->getWidth(), frame->framebuffer->getHeight() };
 #ifdef USE_GL
+    auto& glbackend = (gpu::gl::GLBackend&)(*_backend);
     auto fbo = glbackend.getFramebufferID(frame->framebuffer);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
     glClearColor(0, 0, 0, 1);
@@ -453,13 +453,13 @@ void RenderThread::setupRenderPass() {
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentReference;
-    VkSubpassDependency subpassDependency{};
+    /*VkSubpassDependency subpassDependency{};
     subpassDependency.srcSubpass = 0;
     subpassDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
     subpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     subpassDependency.dstSubpass = VK_SUBPASS_EXTERNAL;
     subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-    subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    subpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;*/
 
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;

@@ -42,11 +42,11 @@ void VKWindow::createSurface() {
     _surface = _context.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)winId() });
 #else
     setSurfaceType(QSurface::VulkanSurface);
-    VkXcbSurfaceCreateInfoKHR surfaceCreateInfo{};
+    //VkXcbSurfaceCreateInfoKHR surfaceCreateInfo{};
     //dynamic_cast<QGuiApplication*>(QGuiApplication::instance())->platformNativeInterface()->connection();
 
-    auto* platformInterface = QGuiApplication::platformNativeInterface();
-    auto* handle = platformInterface->nativeResourceForWindow("handle", this);
+    //auto* platformInterface = QGuiApplication::platformNativeInterface();
+    //auto* handle = platformInterface->nativeResourceForWindow("handle", this);
     Q_ASSERT(winId());
     qDebug() << "VKWindow::createSurface winId:" << winId();
     _swapchain.initSurface(QX11Info::connection(), winId());

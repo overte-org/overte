@@ -629,7 +629,7 @@ void GLBackend::do_restoreContextViewCorrection(const Batch& batch, size_t param
 }
 
 void GLBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) {
-    bool prevMirrorViewCorrection = _transform._mirrorViewCorrection;
+    //bool prevMirrorViewCorrection = _transform._mirrorViewCorrection;
     _transform._mirrorViewCorrection = batch._params[paramOffset]._uint != 0;
 
     if (_transform._correction.correction != glm::mat4()) {
