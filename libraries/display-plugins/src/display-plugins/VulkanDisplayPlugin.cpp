@@ -739,7 +739,7 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         if(!_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex)) {
             qDebug() << "_vkWindow->_swapchain.acquireNextImage fail";
         }
-        auto framebuffer = _vkWindow->_frameBuffers[currentImageIndex];
+        //auto framebuffer = _vkWindow->_frameBuffers[currentImageIndex];
         const auto& commandBuffer = _vkWindow->_drawCommandBuffers[currentImageIndex];
         /*VK_CHECK_RESULT(_vkWidget->_swapchain.acquireNextImage(_vkWidget->_acquireCompleteSemaphore, &currentImageIndex));
         auto framebuffer = _vkWidget->_frameBuffers[currentImageIndex];
@@ -809,12 +809,12 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         {
             PROFILE_RANGE_EX(render, "internalPresent", 0xff00ffff, frameId)
 
-            static const std::array<VkClearValue, 2> clearValues{
+            /*static const std::array<VkClearValue, 2> clearValues{
                 VkClearValue{color: VkClearColorValue{float32: { 0.2f, 0.2f, 0.2f, 0.2f }}},
                 VkClearValue{depthStencil: VkClearDepthStencilValue{ 1.0f, 0 }},
-            };
+            };*/
 
-            auto rect = VkRect2D{ VkOffset2D{ 0, 0 }, _vkWindow->_extent };
+            //auto rect = VkRect2D{ VkOffset2D{ 0, 0 }, _vkWindow->_extent };
             //auto rect = VkRect2D{ VkOffset2D{ 0, 0 }, _vkWidget->_extent };
             /*VkRenderPassBeginInfo beginInfo = vks::initializers::renderPassBeginInfo();
             beginInfo.renderPass = _renderPass;
