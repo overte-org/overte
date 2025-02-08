@@ -1554,10 +1554,13 @@ void Application::initialize(const QCommandLineParser &parser) {
     _primaryWidget = new VKCanvas();
 #endif
     _vkWindowWrapper = QWidget::createWindowContainer(_vkWindow);
+    _vkWindowWrapper->setFocusProxy(_primaryWidget);
+    _vkWindowWrapper->setFocusPolicy(Qt::StrongFocus);
     getApplicationCompositor().setRenderingWidget(_primaryWidget);
     _primaryWidget->setParent(_vkWindowWrapper);
     _vkWindow->_primaryWidget = _primaryWidget;
     _window->setCentralWidget(_vkWindowWrapper);
+    //_window->setCentralWidget(_primaryWidget); //VKTODO
 
     _window->restoreGeometry();
     _window->setVisible(true);
@@ -2763,7 +2766,9 @@ void Application::toggleTabletUI(bool shouldOpen) const {
 
         if (!HMD->getShouldShowTablet()) {
             DependencyManager::get<Keyboard>()->setRaised(false);
-            _window->activateWindow();
+#ifdef USE_GL
+            _window->activateWindow(); //VKTODO
+#endif
             auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet(SYSTEM_TABLET);
             tablet->unfocus();
         }
@@ -3394,7 +3399,11 @@ void Application::initializeUi() {
     setupPreferences();
 
 #if !defined(DISABLE_QML)
-    _primaryWidget->installEventFilter(offscreenUi.data());
+#ifdef USE_GL
+    //_primaryWidget->installEventFilter(offscreenUi.data()); //VKTODO
+#else
+    _vkWindow->installEventFilter(offscreenUi.data());
+#endif
     offscreenUi->setMouseTranslator([=](const QPointF& pt) {
         QPointF result = pt;
         auto displayPlugin = getActiveDisplayPlugin();
@@ -4328,17 +4337,9 @@ bool Application::event(QEvent* event) {
         return true;
     }
 
-    if (isKeyEvent(event->type())) {
-        qDebug() << "keyevent1";
-    }
-
     // Allow focused Entities to handle keyboard input
     if (isKeyEvent(event->type()) && handleKeyEventForFocusedEntity(event)) {
         return true;
-    }
-
-    if (isKeyEvent(event->type())) {
-        qDebug() << "keyevent2";
     }
 
     int type = event->type();
@@ -4390,7 +4391,9 @@ bool Application::event(QEvent* event) {
             return true;
         case QEvent::FocusIn:
         { //testing to see if we can set focus when focus is not set to root window.
-            _primaryWidget->activateWindow();
+#ifdef USE_GL
+            _primaryWidget->activateWindow(); //VKTODO
+#endif
             _primaryWidget->setFocus();
             return true;
         }
@@ -5544,7 +5547,9 @@ bool Application::exportEntities(const QString& filename,
         success = exportTree->writeToJSONFile(filename.toLocal8Bit().constData());
 
         // restore the main window's active state
-        _window->activateWindow();
+#ifdef USE_GL
+        _window->activateWindow(); //VKTODO
+#endif
     }
     return success;
 }
@@ -8861,7 +8866,9 @@ void Application::setFocus() {
     // Note: Windows doesn't allow a user focus to be taken away from another application. Instead, it changes the color of and
     // flashes the taskbar icon.
     auto window = qApp->getWindow();
-    window->activateWindow();
+#ifdef USE_GL
+    window->activateWindow(); //VKTODO
+#endif
 }
 
 void Application::raise() {
@@ -9386,7 +9393,9 @@ void Application::handleLocalServerConnection() const {
     connect(socket, &QLocalSocket::readyRead, this, &Application::readArgumentsFromLocalSocket);
 
     qApp->getWindow()->raise();
-    qApp->getWindow()->activateWindow();
+#ifdef USE_GL
+    qApp->getWindow()->activateWindow(); //VKTODO
+#endif
 }
 
 void Application::readArgumentsFromLocalSocket() const {

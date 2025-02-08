@@ -74,7 +74,9 @@ HMDToolsDialog::HMDToolsDialog(QWidget* parent) :
         setLayout(form);
     }
 
-    qApp->getWindow()->activateWindow();
+#ifdef USE_GL
+    qApp->getWindow()->activateWindow(); //VKTODO
+#endif
 
     // watch for our dialog window moving screens. If it does we want to enforce our rules about
     // what screens we're allowed on
@@ -154,14 +156,18 @@ void HMDToolsDialog::toggleHMDMode() {
 void HMDToolsDialog::enterHMDMode() {
     if (!qApp->isHMDMode()) {
         qApp->setActiveDisplayPlugin(_hmdPluginName);
-        qApp->getWindow()->activateWindow();
+#ifdef USE_GL
+        qApp->getWindow()->activateWindow(); //VKTODO
+#endif
     }
 }
 
 void HMDToolsDialog::leaveHMDMode() {
     if (qApp->isHMDMode()) {
         qApp->setActiveDisplayPlugin(_defaultPluginName);
-        qApp->getWindow()->activateWindow();
+#ifdef USE_GL
+        qApp->getWindow()->activateWindow(); //VKTODO
+#endif
     }
 }
 

@@ -736,8 +736,11 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
 
         uint32_t currentImageIndex = UINT32_MAX;
         //VK_CHECK_RESULT(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex));
-        if(!_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex)) {
+        if(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex) != VK_SUCCESS) {
             qDebug() << "_vkWindow->_swapchain.acquireNextImage fail";
+        }
+        if (currentImageIndex == UINT32_MAX) {
+            return;
         }
         //auto framebuffer = _vkWindow->_frameBuffers[currentImageIndex];
         const auto& commandBuffer = _vkWindow->_drawCommandBuffers[currentImageIndex];
