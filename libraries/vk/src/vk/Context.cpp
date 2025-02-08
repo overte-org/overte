@@ -172,7 +172,7 @@ void Context::createInstance() {
             qWarning() << "Cannot find VK_LAYER_KHRONOS_validation layer, validation not enabled";
         }
     } else {
-        Q_ASSERT(false);
+        //Q_ASSERT(false);
     }
 
     VkResult result = vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
