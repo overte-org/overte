@@ -767,10 +767,13 @@ void Application::initialize(const QCommandLineParser &parser) {
     _primaryWidget = new VKCanvas();
 #endif
     _vkWindowWrapper = QWidget::createWindowContainer(_vkWindow);
+    _vkWindowWrapper->setFocusProxy(_primaryWidget);
+    _vkWindowWrapper->setFocusPolicy(Qt::StrongFocus);
     getApplicationCompositor().setRenderingWidget(_primaryWidget);
     _primaryWidget->setParent(_vkWindowWrapper);
     _vkWindow->_primaryWidget = _primaryWidget;
     _window->setCentralWidget(_vkWindowWrapper);
+    //_window->setCentralWidget(_primaryWidget); //VKTODO
 
     _window->restoreGeometry();
     _window->setVisible(true);

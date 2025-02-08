@@ -318,7 +318,11 @@ void Application::initializeUi() {
     setupPreferences();
 
 #if !defined(DISABLE_QML)
+#ifdef USE_GL
     _primaryWidget->installEventFilter(offscreenUi.data());
+#else
+    _vkWindow->installEventFilter(offscreenUi.data()); //VKTODO
+#endif
     offscreenUi->setMouseTranslator([=, this](const QPointF& pt) {
         QPointF result = pt;
         auto displayPlugin = getActiveDisplayPlugin();

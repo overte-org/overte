@@ -140,7 +140,9 @@ bool Application::event(QEvent* event) {
             return true;
         case QEvent::FocusIn:
         { //testing to see if we can set focus when focus is not set to root window.
-            _primaryWidget->activateWindow();
+#ifdef USE_GL
+            _primaryWidget->activateWindow(); //VKTODO
+#endif
             _primaryWidget->setFocus();
             return true;
         }

@@ -106,7 +106,9 @@ bool Application::exportEntities(const QString& filename,
         success = exportTree->writeToJSONFile(filename.toLocal8Bit().constData());
 
         // restore the main window's active state
-        _window->activateWindow();
+#ifdef USE_GL
+        _window->activateWindow(); //VKTODO
+#endif
     }
     return success;
 }
