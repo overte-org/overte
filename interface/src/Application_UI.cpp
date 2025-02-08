@@ -157,7 +157,9 @@ void Application::setFocus() {
     // Note: Windows doesn't allow a user focus to be taken away from another application. Instead, it changes the color of and
     // flashes the taskbar icon.
     auto window = qApp->getWindow();
-    window->activateWindow();
+#ifdef USE_GL
+    window->activateWindow(); //VKTODO
+#endif
 }
 
 void Application::raise() {
@@ -1333,7 +1335,9 @@ void Application::toggleTabletUI(bool shouldOpen) const {
 
         if (!HMD->getShouldShowTablet()) {
             DependencyManager::get<Keyboard>()->setRaised(false);
-            _window->activateWindow();
+#ifdef USE_GL
+            _window->activateWindow(); //VKTODO
+#endif
             auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet(SYSTEM_TABLET);
             tablet->unfocus();
         }
