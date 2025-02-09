@@ -28,12 +28,22 @@ VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
     vks::Context::get().registerWindow(this);
     setBaseSize(QSize(1280, 720));
     resize(QSize(1280, 720));
-    _resizeTimer = new QTimer(this);
+    /*_resizeTimer = new QTimer(this);
     _resizeTimer->setTimerType(Qt::TimerType::PreciseTimer);
     _resizeTimer->setInterval(50);
     _resizeTimer->setSingleShot(true);
-    connect(_resizeTimer, &QTimer::timeout, this, &VKWindow::resizeFramebuffer);
+    connect(_resizeTimer, &QTimer::timeout, this, &VKWindow::resizeFramebuffer);*/
 }
+
+/*void VKWindow::connectResizeTimer(QThread *timerThread) {
+    _resizeTimer = new QTimer(this);
+    _resizeTimer->moveToThread(timerThread);
+    _resizeTimer->setTimerType(Qt::TimerType::PreciseTimer);
+    _resizeTimer->setInterval(50);
+    _resizeTimer->setSingleShot(true);
+    connect(_resizeTimer, &QTimer::timeout, this, &VKWindow::resizeFramebuffer,  Qt::QueuedConnection);
+    //connect(_resizeTimer, &QTimer::timeout, this, [this] { QMetaObject::invokeMethod(this, "resizeFramebuffer", Qt::QueuedConnection); },  Qt::QueuedConnection);
+}*/
 
 void VKWindow::createSurface() {
     _swapchain.setContext(&_context);
@@ -287,7 +297,10 @@ void VKWindow::resizeEvent(QResizeEvent* event) {
     QWindow::resizeEvent(event);
     auto qsize = event->size();
     if (qsize.width() != (int)(_extent.width) || qsize.height() != (int)(_extent.height)) {
-        _resizeTimer->start();
+        /*if (_resizeTimer) {
+            _resizeTimer->start();
+        }*/
+        _needsResizing = true;
     }
 }
 

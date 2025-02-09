@@ -34,6 +34,8 @@ public:
 
     bool event(QEvent *event) override;
 
+    //void connectResizeTimer(QThread *timerThread);
+
 signals:
     void aboutToClose();
 
@@ -42,7 +44,7 @@ protected:
     friend struct vks::Context;
     void emitClosing();
 
-protected slots:
+public slots:
     virtual void resizeFramebuffer();
 
 protected:
@@ -71,6 +73,7 @@ public:
         VkImageView view;
     } _depthStencil{};
     std::vector<VkFramebuffer> _frameBuffers;
-    QTimer* _resizeTimer{ nullptr };
+    //QTimer* _resizeTimer{ nullptr };
     std::atomic<bool> _isVulkanCleanupComplete{ false };
+    std::atomic<bool> _needsResizing{ true };
 };
