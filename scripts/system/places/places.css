@@ -3,7 +3,7 @@
 //  places.css
 //
 //  Created by Alezia Kurdis, January 1st, 2022.
-//  Copyright 2022 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  css for the ui of the Places application.
 //
@@ -489,6 +489,10 @@ div.placeEntry {
 
 div.placeEntryLargeSize {
     height: 220px;
+}
+
+div.placeEntryMediumSize {
+    height: 100px;
 }
 
 div.addMsEntry {
