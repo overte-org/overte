@@ -292,6 +292,14 @@ bool VulkanDisplayPlugin::activate() {
         //CHECK_GL_ERROR();
         widget->context()->doneCurrent();
         widget->context()->moveToThread(presentThread.get());
+        VKWidget *vkWidget = _container->getPrimaryWidget();
+        _vkWindow = vkWidget->_mainWindow;
+        _vkWindow->setVisible(true);
+        _vkWindow->createSurface();
+        _vkWindow->createSwapchain();
+        _vkWindow->moveToThread(presentThread.get());
+
+        //_vkWindow->connectResizeTimer(presentThread.get());
 
         presentThread->setContext(&vks::Context::get());
         connect(presentThread.data(), &QThread::started, [] { setThreadName("Vulkan Present Thread"); });
@@ -328,11 +336,12 @@ bool VulkanDisplayPlugin::activate() {
 
     //_vkWindow = std::make_shared<VKWindow>();
     //_vkWindow = new VKWindow();
-    VKWidget *vkWidget = _container->getPrimaryWidget();
+    /*VKWidget *vkWidget = _container->getPrimaryWidget();
     _vkWindow = vkWidget->_mainWindow;
     _vkWindow->setVisible(true);
     _vkWindow->createSurface();
     _vkWindow->createSwapchain();
+    _vkWindow->moveToThread(presentThread.get());*/
     /*_vkWidget = _container->getPrimaryWidget();
     _vkWidget->setVisible(true);
     _vkWidget->createSurface();
@@ -716,6 +725,10 @@ void VulkanDisplayPlugin::internalPresent() {
 }
 
 void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& refreshRateController) {
+    if (_vkWindow->_needsResizing) {
+        _vkWindow->resizeFramebuffer();
+        _vkWindow->_needsResizing = false;
+    }
     auto frameId = (uint64_t)presentCount();
     PROFILE_RANGE_EX(render, __FUNCTION__, 0xffffff00, frameId)
     uint64_t startPresent = usecTimestampNow();
@@ -738,8 +751,10 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         //VK_CHECK_RESULT(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex));
         if(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex) != VK_SUCCESS) {
             qDebug() << "_vkWindow->_swapchain.acquireNextImage fail";
+            _vkWindow->resizeFramebuffer(); //VKTODO: workaround
         }
         if (currentImageIndex == UINT32_MAX) {
+            refreshRateController->clockEndTime();
             return;
         }
         //auto framebuffer = _vkWindow->_frameBuffers[currentImageIndex];
