@@ -70,7 +70,11 @@ void VKBackend::init() {
 
 VKBackend::VKBackend() {
     if (!_context.instance) {
+#ifdef QT_NO_DEBUG
+        _context.setValidationEnabled(false); // VKTODO: find nicer way of toggling this
+#else
         _context.setValidationEnabled(true); // VKTODO: find nicer way of toggling this
+#endif
         _context.createInstance();
         _context.createDevice();
     }
@@ -1159,7 +1163,19 @@ void VKBackend::updateRenderPass() {
         }
     }
     renderPassBeginInfo.pClearValues = clearValues.data();
-    renderPassBeginInfo.renderArea = VkRect2D{VkOffset2D {_transform._viewport.x, _transform._viewport.y}, VkExtent2D {(uint32_t)_transform._viewport.z, (uint32_t)_transform._viewport.w}};
+    VkOffset2D offset{_transform._viewport.x, _transform._viewport.y};
+    VkExtent2D extent{static_cast<uint32_t>(_transform._viewport.z), static_cast<uint32_t>(_transform._viewport.w)};
+    if (offset.x > framebuffer->_gpuObject.getWidth() || offset.y > framebuffer->_gpuObject.getHeight()) {
+        offset.x = std::min(offset.x, (int32_t)framebuffer->_gpuObject.getWidth());
+        offset.y = std::min(offset.y, (int32_t)framebuffer->_gpuObject.getHeight());
+        qDebug() << "Vulkan framebuffer offset too high";
+    }
+    if (extent.width + offset.x > framebuffer->_gpuObject.getWidth() || extent.height + offset.y > framebuffer->_gpuObject.getHeight()) {
+        extent.width = std::min(extent.width + offset.x, (uint32_t)framebuffer->_gpuObject.getWidth()) - offset.x;
+        extent.height = std::min(extent.height + offset.y, (uint32_t)framebuffer->_gpuObject.getHeight()) - offset.y;
+        qDebug() << "Vulkan framebuffer extent too large";
+    }
+    renderPassBeginInfo.renderArea = VkRect2D{offset, extent};
     vkCmdBeginRenderPass(_currentCommandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 }
 
