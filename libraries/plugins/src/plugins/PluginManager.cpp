@@ -29,6 +29,7 @@
 #include "DisplayPlugin.h"
 #include "InputPlugin.h"
 #include "PluginLogging.h"
+#include "PathUtils.h"
 
 
 void PluginManager::setDisplayPluginProvider(const DisplayPluginProvider& provider) {
@@ -96,13 +97,7 @@ int PluginManager::instantiate() {
     static std::once_flag once;
     static LoaderList loadedPlugins;
     std::call_once(once, [&] {
-#if defined(Q_OS_ANDROID)
-        QString pluginPath = QCoreApplication::applicationDirPath() + "/";
-#elif defined(Q_OS_MAC)
-        QString pluginPath = QCoreApplication::applicationDirPath() + "/../PlugIns/";
-#else
-        QString pluginPath = QCoreApplication::applicationDirPath() + "/plugins/";
-#endif
+        QString pluginPath = PathUtils::getPluginsPath();
         QDir pluginDir(pluginPath);
         pluginDir.setSorting(QDir::Name);
         pluginDir.setFilter(QDir::Files);
