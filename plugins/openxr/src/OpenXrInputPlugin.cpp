@@ -556,9 +556,9 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
             // offset constants taken from OpenComposite
             // and tweaked to fit my hands as best i could
             glm::mat4 posOffset(1.0f);
-            posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? 0.04f : -0.04f));
+            posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? 0.1f : -0.1f));
             posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.16f);
-            posOffset *= glm::translate(glm::vec3(handOffset[2]) * -0.04f);
+            posOffset *= glm::translate(glm::vec3(handOffset[2]) * -0.02f);
             _poseStateMap[i == 0 ? controller::LEFT_HAND : controller::RIGHT_HAND] =
                 pose.postTransform(posOffset).postTransform(handOffset).transform(sensorToAvatar);
         }
