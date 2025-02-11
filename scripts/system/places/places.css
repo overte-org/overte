@@ -491,6 +491,10 @@ div.placeEntryLargeSize {
     height: 220px;
 }
 
+div.placeEntryMediumSize {
+    height: 100px;
+}
+
 div.addMsEntry {
     width: 85%;
     height: 38px;

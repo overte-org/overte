@@ -423,6 +423,9 @@
                                         }
                                         
                                         var maxCharNumber = 55;
+                                        if (currentListFormat === "PLACES" && placeRecords[i].category === "A") {
+                                            maxCharNumber = 110;
+                                        }
                                         if (currentListFormat === "PLACES" && i === 0) {
                                             maxCharNumber = 180;
                                         }
@@ -443,6 +446,11 @@
                                         var promoted = "";
                                         var placeTitlePromoted = "";
                                         var prompotionDescHeight = "";
+                                        if (currentListFormat === "PLACES" && placeRecords[i].category === "A") {
+                                            promoted = " placeEntryMediumSize";
+                                            promotedblur = " promotedblur";
+                                            prompotionDescHeight = " style='height: 60px; '";
+                                        }
                                         if (currentListFormat === "PLACES" && i === 0) {
                                             promotedblur = " promotedblur";
                                             promoted = " placeEntryLargeSize";
