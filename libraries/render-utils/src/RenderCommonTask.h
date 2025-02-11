@@ -18,6 +18,7 @@
 #include "LightStage.h"
 #include "HazeStage.h"
 #include "LightingModel.h"
+#include "DeferredFrameTransform.h"
 
 class BeginGPURangeTimer {
 public:
@@ -66,19 +67,21 @@ protected:
 
 class DrawLayered3D {
 public:
-    using Inputs = render::VaryingSet4<render::ItemBounds, LightingModelPointer, HazeStage::FramePointer, glm::vec2>;
+    using Inputs = render::VaryingSet4<render::ItemBounds, DeferredFrameTransformPointer, LightingModelPointer, HazeStage::FramePointer>;
     using Config = DrawLayered3DConfig;
     using JobModel = render::Job::ModelI<DrawLayered3D, Inputs, Config>;
 
-    DrawLayered3D(bool opaque);
+    DrawLayered3D(const render::ShapePlumberPointer& shapePlumber, bool opaque, bool jitter, uint transformSlot);
 
     void configure(const Config& config) { _maxDrawn = config.maxDrawn; }
     void run(const render::RenderContextPointer& renderContext, const Inputs& inputs);
 
 protected:
-    static render::ShapePlumberPointer _shapePlumber;
+    render::ShapePlumberPointer _shapePlumber;
     int _maxDrawn; // initialized by Config
+    uint _transformSlot;
     bool _opaquePass { true };
+    bool _isJitterEnabled { false };
 };
 
 class Blit {
@@ -159,13 +162,14 @@ protected:
 
 class RenderMirrorTask {
 public:
-    using Inputs = render::VaryingSet3<render::ItemBounds, gpu::FramebufferPointer, glm::vec2>;
+    using Inputs = render::VaryingSet2<render::ItemBounds, gpu::FramebufferPointer>;
     using JobModel = render::Task::ModelI<RenderMirrorTask, Inputs>;
 
     RenderMirrorTask() {}
 
-    void build(JobModel& task, const render::Varying& inputs, render::Varying& output, size_t mirrorIndex, render::CullFunctor cullFunctor, size_t depth);
+    void build(JobModel& task, const render::Varying& inputs, render::Varying& output, size_t mirrorIndex, render::CullFunctor cullFunctor, uint transformOffset, size_t depth);
 
+    // NOTE: if these change, must also change Batch::MAX_TRANSFORM_SAVE_SLOT_COUNT
     static const size_t MAX_MIRROR_DEPTH { 3 };
     static const size_t MAX_MIRRORS_PER_LEVEL { 3 };
 };

@@ -1,0 +1,60 @@
+<!
+//  skybox.slh
+//  libraries/graphics/src
+//
+//  Created by HifiExperiments on 8/5/2020.
+//  Copyright 2024 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+!>
+<@if not SKYBOX_SLH@>
+<@def SKYBOX_SLH@>
+
+<@include graphics/ShaderConstants.h@>
+
+<@include gpu/Transform.slh@>
+<$declareStandardCameraTransform()$>
+
+<@include gpu/PackedNormal.slh@>
+
+LAYOUT(binding=GRAPHICS_TEXTURE_SKYBOX) uniform samplerCube cubeMap;
+
+struct Skybox {
+    vec4 color;
+};
+
+LAYOUT(binding=GRAPHICS_BUFFER_SKYBOX_PARAMS) uniform skyboxBuffer {
+    Skybox skybox;
+};
+
+<@func declarePackDeferredFragmentSky()@>
+// This code belongs in render-utils/VelocityWrite.slh but because graphics can't include render-utils, we have to have it here
+
+vec2 getEyeTexcoordPos() {
+    // No need to add 0.5 as, by default, frag coords are pixel centered at (0.5, 0.5)
+    vec2 texCoordPos = gl_FragCoord.xy;
+    texCoordPos *= cam_getInvWidthHeight();
+    texCoordPos.x -= cam_getStereoSide();
+    return texCoordPos;
+}
+
+vec2 packVelocity(vec4 prevPositionCS) {
+    vec2 uv = getEyeTexcoordPos();
+    vec2 prevUV =  (prevPositionCS.xy / prevPositionCS.w) * 0.5 + 0.5;
+    vec2 deltaUV = uv - prevUV;
+    // Velocity should be computed without any jitter inside.
+    return deltaUV;
+}
+
+layout(location = 0) out vec4 _lighting; // calculated lighting
+layout(location = 1) out vec4 _velocity; // velocity
+
+void packDeferredFragmentSky(vec4 prevPositionCS, vec3 color) {
+    _lighting = vec4(color, 1.0f);
+    _velocity = vec4(packVelocity(prevPositionCS), 0.0f, 0.0f);
+}
+
+<@endfunc@>
+
+<@endif@>

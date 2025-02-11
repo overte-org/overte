@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 10/27/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -268,6 +269,8 @@ protected:
     // Resource Stage
     bool bindResourceBuffer(uint32_t slot, const BufferPointer& buffer) override;
     void releaseResourceBuffer(uint32_t slot) override;
+
+    void do_copySavedViewProjectionTransformToBuffer(const Batch& batch, size_t paramOffset) override;
 
     // Output stage
     void do_blit(const Batch& batch, size_t paramOffset) override;

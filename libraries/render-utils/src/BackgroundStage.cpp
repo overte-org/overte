@@ -42,6 +42,7 @@ void DrawBackgroundStage::run(const render::RenderContextPointer& renderContext,
         auto args = renderContext->args;
 
         gpu::doInBatch("DrawBackgroundStage::run", args->_context, [&](gpu::Batch& batch) {
+            PROFILE_RANGE_BATCH(batch, "Background");
             args->_batch = &batch;
 
             batch.enableSkybox(true);
@@ -49,16 +50,11 @@ void DrawBackgroundStage::run(const render::RenderContextPointer& renderContext,
             batch.setViewportTransform(args->_viewport);
             batch.setStateScissorRect(args->_viewport);
 
-            glm::mat4 projMat;
-            Transform viewMat;
-            args->getViewFrustum().evalProjectionMatrix(projMat);
-            args->getViewFrustum().evalViewTransform(viewMat);
-
-            batch.setProjectionTransform(projMat);
-            batch.setViewTransform(viewMat);
+            bool forward = args->_renderMethod == render::Args::RenderMethod::FORWARD;
+            batch.setProjectionJitterEnabled(!forward);
 
             // If we're using forward rendering, we need to calculate haze
-            if (args->_renderMethod == render::Args::RenderMethod::FORWARD) {
+            if (forward) {
                 const auto& hazeStage = args->_scene->getStage<HazeStage>();
                 if (hazeStage && hazeFrame->_elements.size() > 0) {
                     const auto& hazePointer = hazeStage->getElement(hazeFrame->_elements.front());
@@ -68,7 +64,7 @@ void DrawBackgroundStage::run(const render::RenderContextPointer& renderContext,
                 }
             }
 
-            skybox->render(batch, args->getViewFrustum(), args->_renderMethod == render::Args::RenderMethod::FORWARD);
+            skybox->render(batch, args->getViewFrustum(), forward, _transformSlot);
         });
         args->_batch = nullptr;
     }

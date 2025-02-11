@@ -3,6 +3,7 @@
 //  interface/src
 //
 //  Created by Jason Rickwald on 3/2/15.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -53,7 +54,7 @@ static ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, co
                 state->setDepthTest(true, !transparent, gpu::LESS_EQUAL);
                 state->setBlendFunction(transparent, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE,
                     gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
-                transparent ? PrepareStencil::testMask(*state) : PrepareStencil::testMaskDrawShape(*state);
+                transparent ? PrepareStencil::testMaskResetNoAA(*state) : PrepareStencil::testMaskDrawShapeNoAA(*state);
 
                 auto program = gpu::Shader::createProgram(std::get<3>(key));
                 _pipelines[std::make_tuple(std::get<0>(key), transparent, std::get<2>(key), wireframe)] = gpu::Pipeline::create(program, state);

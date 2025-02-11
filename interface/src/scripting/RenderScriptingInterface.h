@@ -46,8 +46,8 @@ class RenderScriptingInterface : public QObject {
     Q_PROPERTY(bool hazeEnabled READ getHazeEnabled WRITE setHazeEnabled NOTIFY settingsChanged)
     Q_PROPERTY(bool bloomEnabled READ getBloomEnabled WRITE setBloomEnabled NOTIFY settingsChanged)
     Q_PROPERTY(bool ambientOcclusionEnabled READ getAmbientOcclusionEnabled WRITE setAmbientOcclusionEnabled NOTIFY settingsChanged)
+    Q_PROPERTY(AntialiasingSetupConfig::Mode antialiasingMode READ getAntialiasingMode WRITE setAntialiasingMode NOTIFY settingsChanged)
     Q_PROPERTY(bool proceduralMaterialsEnabled READ getProceduralMaterialsEnabled WRITE setProceduralMaterialsEnabled NOTIFY settingsChanged)
-    Q_PROPERTY(AntialiasingConfig::Mode antialiasingMode READ getAntialiasingMode WRITE setAntialiasingMode NOTIFY settingsChanged)
     Q_PROPERTY(float viewportResolutionScale READ getViewportResolutionScale WRITE setViewportResolutionScale NOTIFY settingsChanged)
     Q_PROPERTY(float verticalFieldOfView READ getVerticalFieldOfView WRITE setVerticalFieldOfView NOTIFY settingsChanged)
     Q_PROPERTY(bool cameraClippingEnabled READ getCameraClippingEnabled WRITE setCameraClippingEnabled NOTIFY settingsChanged)
@@ -204,14 +204,14 @@ public slots:
      * @function Render.getAntialiasingMode
      * @returns {AntialiasingMode} The active anti-aliasing mode.
      */
-    AntialiasingConfig::Mode getAntialiasingMode() const;
+    AntialiasingSetupConfig::Mode getAntialiasingMode() const;
 
     /*@jsdoc
      * Sets the active anti-aliasing mode.
      * @function Render.setAntialiasingMode
      * @param {AntialiasingMode} The active anti-aliasing mode.
      */
-    void setAntialiasingMode(AntialiasingConfig::Mode mode);
+    void setAntialiasingMode(AntialiasingSetupConfig::Mode mode);
 
     /*@jsdoc
      * Gets the view port resolution scale.
@@ -304,7 +304,7 @@ private:
     bool _bloomEnabled { true };
     bool _ambientOcclusionEnabled { true };
     bool _proceduralMaterialsEnabled { true };
-    AntialiasingConfig::Mode _antialiasingMode { AntialiasingConfig::Mode::NONE };
+    AntialiasingSetupConfig::Mode _antialiasingMode { AntialiasingSetupConfig::Mode::NONE };
     float _viewportResolutionScale { 1.0f };
     QString _fullScreenScreen;
 
@@ -315,7 +315,7 @@ private:
     Setting::Handle<bool> _bloomEnabledSetting { "bloomEnabled", true };
     Setting::Handle<bool> _ambientOcclusionEnabledSetting { "ambientOcclusionEnabled", true };
     Setting::Handle<bool> _proceduralMaterialsEnabledSetting { "proceduralMaterialsEnabled", true };
-    Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", AntialiasingConfig::Mode::NONE };
+    Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", (int)AntialiasingSetupConfig::Mode::NONE };
     Setting::Handle<float> _viewportResolutionScaleSetting { "viewportResolutionScale", 1.0f };
     Setting::Handle<QString> _fullScreenScreenSetting { "fullScreenScreen", "" };
 
@@ -326,7 +326,7 @@ private:
     void forceBloomEnabled(bool enabled);
     void forceAmbientOcclusionEnabled(bool enabled);
     void forceProceduralMaterialsEnabled(bool enabled);
-    void forceAntialiasingMode(AntialiasingConfig::Mode mode);
+    void forceAntialiasingMode(AntialiasingSetupConfig::Mode mode);
     void forceViewportResolutionScale(float scale);
 
     static std::once_flag registry_flag;

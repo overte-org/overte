@@ -262,14 +262,14 @@ void GraphicsEngine::render_performFrame() {
             batch.enableStereo(isStereo);
             batch.clearDepthStencilFramebuffer(1.0, 0);
             batch.setViewportTransform({ 0, 0, finalFramebuffer->getSize() });
-            _splashScreen->render(batch, viewFrustum, renderArgs._renderMethod == RenderArgs::RenderMethod::FORWARD);
+            _splashScreen->render(batch, viewFrustum, renderArgs._renderMethod == RenderArgs::RenderMethod::FORWARD, render::RenderEngine::TS_BACKGROUND_VIEW);
         });
     } else {
         {
             PROFILE_RANGE(render, "/renderOverlay");
             PerformanceTimer perfTimer("renderOverlay");
             // NOTE: There is no batch associated with this renderArgs
-            // the ApplicationOverlay class assumes it's viewport is set up to be the device size
+            // the ApplicationOverlay class assumes its viewport is set up to be the device size
             renderArgs._viewport = glm::ivec4(0, 0, qApp->getDeviceSize());
             qApp->getApplicationOverlay().renderOverlay(&renderArgs);
         }

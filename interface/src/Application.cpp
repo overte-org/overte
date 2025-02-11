@@ -2141,8 +2141,8 @@ void Application::initialize(const QCommandLineParser &parser) {
         }
         return glm::vec3(1.0f);
     });
-    Procedural::opaqueStencil = [](gpu::StatePointer state) { PrepareStencil::testMaskDrawShape(*state); };
-    Procedural::transparentStencil = [](gpu::StatePointer state) { PrepareStencil::testMask(*state); };
+    Procedural::opaqueStencil = [](gpu::StatePointer state, bool useAA) { useAA ? PrepareStencil::testMaskDrawShape(*state) : PrepareStencil::testMaskDrawShapeNoAA(*state); };
+    Procedural::transparentStencil = [](gpu::StatePointer state) { PrepareStencil::testMaskResetNoAA(*state); };
 
     EntityTree::setGetEntityObjectOperator([this](const QUuid& id) -> QObject* {
         auto entities = getEntities();
