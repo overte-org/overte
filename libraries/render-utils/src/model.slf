@@ -20,7 +20,7 @@
     <@if HIFI_USE_SHADOW@>
         <$declareMToonMaterialTextures(ALBEDO)$>
         <@if HIFI_USE_MIRROR@>
-            LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
+            TEXTURE(GRAPHICS_TEXTURE_MATERIAL_MIRROR, sampler2D, mirrorMap);
         <@endif@>
     <@else@>
         <$declareMToonMaterialTextures(ALBEDO, HIFI_USE_NORMALMAP, SHADE, EMISSIVE, SHADING_SHIFT, MATCAP, RIM, UV_ANIMATION_MASK)$>
@@ -29,7 +29,7 @@
     <@if HIFI_USE_SHADOW or HIFI_USE_UNLIT@>
         <$declareMaterialTextures(ALBEDO)$>
         <@if HIFI_USE_MIRROR@>
-            LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
+            TEXTURE(GRAPHICS_TEXTURE_MATERIAL_MIRROR, sampler2D, mirrorMap);
         <@endif@>
     <@else@>
         <@if not HIFI_USE_LIGHTMAP@>
@@ -50,7 +50,11 @@
 
         <@include DefaultMaterials.slh@>
         <@include GlobalLight.slh@>
-        <$declareEvalGlobalLightingAlphaBlendedMToon()$>
+        <@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
+            <$declareEvalGlobalLightingAlphaBlendedMToon(1)$>
+        <@else@>
+            <$declareEvalGlobalLightingAlphaBlendedMToon(_SCRIBE_NULL)$>
+        <@endif@>
 
         <@include gpu/Transform.slh@>
         <$declareStandardCameraTransform()$>
@@ -71,24 +75,23 @@
             <@endif@>
             <$declareEvalGlobalLightingAlphaBlended()$>
         <@else@>
-            <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, HIFI_USE_FORWARD)$>
+            <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, 1)$>
         <@endif@>
         <@include gpu/Transform.slh@>
         <$declareStandardCameraTransform()$>
-
-        layout(location=0) out vec4 _fragColor0;
+        OUTPUT(0, vec4, _fragColor0);
     <@else@>
         <@include DeferredBufferWrite.slh@>
     <@endif@>
 <@else@>
     <@if HIFI_USE_MIRROR@>
         <@if HIFI_USE_FORWARD@>
-            layout(location=0) out vec4 _fragColor0;
+            OUTPUT(0, vec4, _fragColor0);
         <@else@>
             <@include DeferredBufferWrite.slh@>
         <@endif@>
     <@else@>
-        layout(location=0) out vec4 _fragColor0;
+         OUTPUT(0, vec4, _fragColor0);
     <@endif@>
 <@endif@>
 
@@ -101,18 +104,18 @@
     <$declareFadeFragment()$>
 <@endif@>
 
-layout(location=RENDER_UTILS_ATTR_POSITION_WS) in vec4 _positionWS;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
+INPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
+INPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 #define _texCoord0 _texCoord01.xy
 #define _texCoord1 _texCoord01.zw
 <@if not HIFI_USE_SHADOW@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
-    layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
+    INPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
+    INPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
     <@if not HIFI_USE_MTOON@>
-        layout(location=RENDER_UTILS_ATTR_COLOR) in vec4 _color;
+        INPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
     <@endif@>
     <@if HIFI_USE_NORMALMAP@>
-        layout(location=RENDER_UTILS_ATTR_TANGENT_WS) in vec3 _tangentWS;
+        INPUT(RENDER_UTILS_ATTR_TANGENT_WS, vec3, _tangentWS);
     <@endif@>
 <@endif@>
 

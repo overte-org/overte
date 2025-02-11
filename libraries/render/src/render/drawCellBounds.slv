@@ -20,8 +20,8 @@
 <$declareColorWheel()$>
 <@include SceneOctree.slh@>
 
-layout(location=0) in ivec4 inCellLocation;
-layout(location=0) out vec4 varColor;
+INPUT(0, ivec4, inCellLocation);
+OUTPUT(0, vec4, varColor);
 
 void main(void) {
     const vec4 UNIT_BOX[8] = vec4[8](

@@ -14,9 +14,15 @@
 <@include ssao.slh@>
 <$declareAmbientOcclusion()$>
 
-LAYOUT(binding=0) uniform sampler2D depthMap;
+TEXTURE(0, sampler2D, depthMap);
 
-layout(location=0) out vec4 outFragColor;
+const ivec2 horizontal = ivec2(1,0);
+<$declareBlurPass(horizontal)$>
+
+// Unused, but needed to match the vertex shader
+INPUT(0, vec2, varTexCoord0);
+
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
     float Zdb = texelFetch(depthMap, ivec2(gl_FragCoord.xy), 0).x;
