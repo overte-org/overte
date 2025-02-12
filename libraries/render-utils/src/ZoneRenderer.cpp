@@ -4,7 +4,6 @@
 //
 //  Created by Sam Gateau on 4/4/2017.
 //  Copyright 2017 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -87,11 +86,11 @@ void SetupZones::run(const RenderContextPointer& context, const Input& input) {
     // Finally add the default lights and background:
     lightStage->_currentFrame.pushSunLight(lightStage->getDefaultLight());
     lightStage->_currentFrame.pushAmbientLight(lightStage->getDefaultLight());
-    backgroundStage->_currentFrame.pushElement(0);
-    hazeStage->_currentFrame.pushElement(0);
-    bloomStage->_currentFrame.pushElement(INVALID_INDEX);
-    tonemappingStage->_currentFrame.pushElement(0);
-    ambientOcclusionStage->_currentFrame.pushElement(INVALID_INDEX);
+    backgroundStage->_currentFrame.pushBackground(0);
+    hazeStage->_currentFrame.pushHaze(0);
+    bloomStage->_currentFrame.pushBloom(INVALID_INDEX);
+    tonemappingStage->_currentFrame.pushTonemapping(0);
+    ambientOcclusionStage->_currentFrame.pushAmbientOcclusion(INVALID_INDEX);
 }
 
 gpu::PipelinePointer DebugZoneLighting::_keyLightPipeline;
@@ -145,22 +144,22 @@ void DebugZoneLighting::run(const render::RenderContextPointer& context, const I
     std::vector<graphics::LightPointer> keyLightStack;
     if (lightStage && lightFrame->_sunLights.size()) {
         for (auto index : lightFrame->_sunLights) {
-            keyLightStack.push_back(lightStage->getElement(index));
+            keyLightStack.push_back(lightStage->getLight(index));
         }
     }
 
     std::vector<graphics::LightPointer> ambientLightStack;
     if (lightStage && lightFrame->_ambientLights.size()) {
         for (auto index : lightFrame->_ambientLights) {
-            ambientLightStack.push_back(lightStage->getElement(index));
+            ambientLightStack.push_back(lightStage->getLight(index));
         }
     }
 
     auto backgroundStage = context->_scene->getStage<BackgroundStage>(BackgroundStage::getName());
     std::vector<graphics::SkyboxPointer> skyboxStack;
-    if (backgroundStage && backgroundFrame->_elements.size()) {
-        for (auto index : backgroundFrame->_elements) {
-            auto background = backgroundStage->getElement(index);
+    if (backgroundStage && backgroundFrame->_backgrounds.size()) {
+        for (auto index : backgroundFrame->_backgrounds) {
+            auto background = backgroundStage->getBackground(index);
             if (background) {
                 skyboxStack.push_back(background->getSkybox());
             }

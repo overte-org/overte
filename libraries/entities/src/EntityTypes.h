@@ -2,9 +2,9 @@
 //  EntityTypes.h
 //  libraries/entities/src
 //
-//  Created by Brad Hefta-Gaub on December 4th, 2013.
+//  Created by Brad Hefta-Gaub on 12/4/13.
 //  Copyright 2013 High Fidelity, Inc.
-//  Copyright 2023-2025 Overte e.V.
+//  Copyright 2023 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -91,7 +91,7 @@ public:
      *     <tr><td><code>"Material"</code></td><td>Modifies the existing materials on entities and avatars.</td>
      *       <td>{@link Entities.EntityProperties-Material|EntityProperties-Material}</td></tr>
      *     <tr><td><code>"Sound"</code></td><td>Plays a sound.</td>
-     *       <td>{@link Entities.EntityProperties-Sound|EntityProperties-Sound}</td></tr>
+     *       <td>{@link Entities.EntityProperties-Material|EntityProperties-Sound}</td></tr>
      *   </tbody>
      * </table>
      * @typedef {string} Entities.EntityType

@@ -473,8 +473,8 @@ void DebugSubsurfaceScattering::run(const render::RenderContextPointer& renderCo
 
     auto lightStage = renderContext->_scene->getStage<LightStage>();
     assert(lightStage);
-   // const auto light = DependencyManager::get<DeferredLightingEffect>()->getLightStage()->getElement(0);
-    const auto light = lightStage->getElement(0);
+   // const auto light = DependencyManager::get<DeferredLightingEffect>()->getLightStage()->getLight(0);
+    const auto light = lightStage->getLight(0);
     if (!_debugParams) {
         _debugParams = std::make_shared<gpu::Buffer>(sizeof(glm::vec4), nullptr);
         _debugParams->setSubData(0, _debugCursorTexcoord);

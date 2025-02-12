@@ -40,8 +40,8 @@ void DrawHaze::run(const render::RenderContextPointer& renderContext, const Inpu
     const auto hazeFrame = inputs.get0();
     const auto& hazeStage = renderContext->args->_scene->getStage<HazeStage>();
     graphics::HazePointer haze;
-    if (hazeStage && hazeFrame->_elements.size() > 0) {
-        haze = hazeStage->getElement(hazeFrame->_elements.front());
+    if (hazeStage && hazeFrame->_hazes.size() > 0) {
+        haze = hazeStage->getHaze(hazeFrame->_hazes.front());
     }
 
     if (!haze) {

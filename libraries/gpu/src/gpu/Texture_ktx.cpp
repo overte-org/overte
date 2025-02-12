@@ -18,7 +18,6 @@
 #include <ktx/KTX.h>
 
 #include "GPULogging.h"
-#include "SerDes.h"
 
 using namespace gpu;
 
@@ -28,93 +27,70 @@ using KtxStorage = Texture::KtxStorage;
 std::vector<std::pair<std::shared_ptr<storage::FileStorage>, std::shared_ptr<std::mutex>>> KtxStorage::_cachedKtxFiles;
 std::mutex KtxStorage::_cachedKtxFilesMutex;
 
-
-/**
- * @brief Payload for a KTX (texture)
- *
- * This contains a ready to use texture. This is both used for the local cache, and for baked textures.
- *
- * @note The usage for textures means breaking compatibility is a bad idea, and that the implementation
- * should just keep on adding extra data at the bottom of the structure, and remain able to read old
- * formats. In fact, version 1 KTX can be found in older baked assets.
- */
 struct GPUKTXPayload {
     using Version = uint8;
 
     static const std::string KEY;
     static const Version CURRENT_VERSION { 2 };
     static const size_t PADDING { 2 };
-    static const size_t SIZE { sizeof(Version) + sizeof(Sampler::Desc) + sizeof(uint32_t) + sizeof(TextureUsageType) + sizeof(glm::ivec2) + PADDING };
-
+    static const size_t SIZE { sizeof(Version) + sizeof(Sampler::Desc) + sizeof(uint32) + sizeof(TextureUsageType) + sizeof(glm::ivec2) + PADDING };
     static_assert(GPUKTXPayload::SIZE == 44, "Packing size may differ between platforms");
+    static_assert(GPUKTXPayload::SIZE % 4 == 0, "GPUKTXPayload is not 4 bytes aligned");
 
     Sampler::Desc _samplerDesc;
     Texture::Usage _usage;
     TextureUsageType _usageType;
     glm::ivec2 _originalSize { 0, 0 };
 
-    /**
-     * @brief Serialize the KTX payload
-     *
-     * @warning Be careful modifying this code, as it influences baked assets.
-     * Backwards compatibility must be maintained.
-     *
-     * @param ser Destination serializer
-     */
-    void serialize(DataSerializer &ser) {
+    Byte* serialize(Byte* data) const {
+        *(Version*)data = CURRENT_VERSION;
+        data += sizeof(Version);
 
-        ser << CURRENT_VERSION;
+        memcpy(data, &_samplerDesc, sizeof(Sampler::Desc));
+        data += sizeof(Sampler::Desc);
 
-        ser << _samplerDesc;
+        // We can't copy the bitset in Texture::Usage in a crossplateform manner
+        // So serialize it manually
+        uint32 usageData = _usage._flags.to_ulong();
+        memcpy(data, &usageData, sizeof(uint32));
+        data += sizeof(uint32);
 
-        uint32_t usageData = (uint32_t)_usage._flags.to_ulong();
-        ser << usageData;
-        ser << ((uint8_t)_usageType);
-        ser << _originalSize;
+        memcpy(data, &_usageType, sizeof(TextureUsageType));
+        data += sizeof(TextureUsageType);
 
-        ser.addPadding(PADDING);
+        memcpy(data, glm::value_ptr(_originalSize), sizeof(glm::ivec2));
+        data += sizeof(glm::ivec2);
 
-        assert(ser.length() == GPUKTXPayload::SIZE);
+        return data + PADDING;
     }
 
-    /**
-     * @brief Deserialize the KTX payload
-     *
-     * @warning Be careful modifying this code, as it influences baked assets.
-     * Backwards compatibility must be maintained.
-     *
-     * @param dsr Deserializer object
-     * @return true Successful
-     * @return false Version check failed
-     */
-    bool unserialize(DataDeserializer &dsr) {
-        Version version = 0;
-        uint32_t usageData = 0;
-        uint8_t usagetype = 0;
-
-        dsr >> version;
+    bool unserialize(const Byte* data, size_t size) {
+        Version version = *(const Version*)data;
+        data += sizeof(Version);
 
         if (version > CURRENT_VERSION) {
             // If we try to load a version that we don't know how to parse,
             // it will render incorrectly
-            qCWarning(gpulogging) << "KTX version" << version << "is newer than our own," << CURRENT_VERSION;
-            qCWarning(gpulogging) << dsr;
             return false;
         }
 
-        dsr >> _samplerDesc;
+        memcpy(&_samplerDesc, data, sizeof(Sampler::Desc));
+        data += sizeof(Sampler::Desc);
 
-        dsr >> usageData;
-        _usage = gpu::Texture::Usage(usageData);
+        // We can't copy the bitset in Texture::Usage in a crossplateform manner
+        // So unserialize it manually
+        uint32 usageData;
+        memcpy(&usageData, data, sizeof(uint32));
+        _usage = Texture::Usage(usageData);
+        data += sizeof(uint32);
 
-        dsr >> usagetype;
-        _usageType = (TextureUsageType)usagetype;
+        memcpy(&_usageType, data, sizeof(TextureUsageType));
+        data += sizeof(TextureUsageType);
 
         if (version >= 2) {
-            dsr >> _originalSize;
+            memcpy(&_originalSize, data, sizeof(glm::ivec2));
+            data += sizeof(glm::ivec2);
         }
-
-        dsr.skipPadding(PADDING);
 
         return true;
     }
@@ -127,8 +103,7 @@ struct GPUKTXPayload {
         auto found = std::find_if(keyValues.begin(), keyValues.end(), isGPUKTX);
         if (found != keyValues.end()) {
             auto value = found->_value;
-            DataDeserializer dsr(value.data(), value.size());
-            return payload.unserialize(dsr);
+            return payload.unserialize(value.data(), value.size());
         }
         return false;
     }
@@ -148,24 +123,29 @@ struct IrradianceKTXPayload {
 
     SphericalHarmonics _irradianceSH;
 
-    void serialize(DataSerializer &ser) const {
-        ser << CURRENT_VERSION;
-        ser << _irradianceSH;
-        ser.addPadding(PADDING);
+    Byte* serialize(Byte* data) const {
+        *(Version*)data = CURRENT_VERSION;
+        data += sizeof(Version);
+
+        memcpy(data, &_irradianceSH, sizeof(SphericalHarmonics));
+        data += sizeof(SphericalHarmonics);
+
+        return data + PADDING;
     }
 
-    bool unserialize(DataDeserializer &des) {
-        Version version;
-        if (des.length() != SIZE) {
+    bool unserialize(const Byte* data, size_t size) {
+        if (size != SIZE) {
             return false;
         }
 
-        des >> version;
+        Version version = *(const Version*)data;
         if (version != CURRENT_VERSION) {
             return false;
         }
+        data += sizeof(Version);
 
-        des >> _irradianceSH;
+        memcpy(&_irradianceSH, data, sizeof(SphericalHarmonics));
+
         return true;
     }
 
@@ -177,8 +157,7 @@ struct IrradianceKTXPayload {
         auto found = std::find_if(keyValues.begin(), keyValues.end(), isIrradianceKTX);
         if (found != keyValues.end()) {
             auto value = found->_value;
-            DataDeserializer des(value.data(), value.size());
-            return payload.unserialize(des);
+            return payload.unserialize(value.data(), value.size());
         }
         return false;
     }
@@ -488,9 +467,7 @@ ktx::KTXUniquePointer Texture::serialize(const Texture& texture, const glm::ivec
     gpuKeyval._originalSize = originalSize;
 
     Byte keyvalPayload[GPUKTXPayload::SIZE];
-    DataSerializer ser(keyvalPayload, sizeof(keyvalPayload));
-
-    gpuKeyval.serialize(ser);
+    gpuKeyval.serialize(keyvalPayload);
 
     ktx::KeyValues keyValues;
     keyValues.emplace_back(GPUKTXPayload::KEY, (uint32)GPUKTXPayload::SIZE, (ktx::Byte*) &keyvalPayload);
@@ -500,8 +477,7 @@ ktx::KTXUniquePointer Texture::serialize(const Texture& texture, const glm::ivec
         irradianceKeyval._irradianceSH = *texture.getIrradiance();
 
         Byte irradianceKeyvalPayload[IrradianceKTXPayload::SIZE];
-        DataSerializer ser(irradianceKeyvalPayload, sizeof(irradianceKeyvalPayload));
-        irradianceKeyval.serialize(ser);
+        irradianceKeyval.serialize(irradianceKeyvalPayload);
 
         keyValues.emplace_back(IrradianceKTXPayload::KEY, (uint32)IrradianceKTXPayload::SIZE, (ktx::Byte*) &irradianceKeyvalPayload);
     }

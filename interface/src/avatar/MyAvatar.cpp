@@ -75,8 +75,6 @@
 #include "WarningsSuppression.h"
 #include "ScriptPermissions.h"
 
-#include "Application.h"
-
 using namespace std;
 
 const float DEFAULT_REAL_WORLD_FIELD_OF_VIEW_DEGREES = 30.0f;
@@ -228,7 +226,6 @@ MyAvatar::MyAvatar(QThread* thread) :
     _scaleSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "scale", _targetScale),
     _yawSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "yawSpeed", _yawSpeed),
     _hmdYawSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "hmdYawSpeed", _hmdYawSpeed),
-    _cameraSensitivitySetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "cameraSensitivity", qApp->getCamera().getSensitivity()),
     _pitchSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "pitchSpeed", _pitchSpeed),
     _fullAvatarURLSetting(QStringList() << SETTINGS_FULL_PRIVATE_GROUP_NAME << AVATAR_SETTINGS_GROUP_NAME << "fullAvatarURL",
                           AvatarData::defaultFullAvatarModelUrl()),
@@ -1327,7 +1324,6 @@ void MyAvatar::saveData() {
     _scaleSetting.set(_targetScale);
     _yawSpeedSetting.set(_yawSpeed);
     _hmdYawSpeedSetting.set(_hmdYawSpeed);
-    _cameraSensitivitySetting.set(getCameraSensitivity());
     _pitchSpeedSetting.set(_pitchSpeed);
 
     // only save the fullAvatarURL if it has not been overwritten on command line
@@ -2088,7 +2084,6 @@ void MyAvatar::loadData() {
 
     _yawSpeed = _yawSpeedSetting.get(_yawSpeed);
     _hmdYawSpeed = _hmdYawSpeedSetting.get(_hmdYawSpeed);
-    setCameraSensitivity(_cameraSensitivitySetting.get(getCameraSensitivity()));
     _pitchSpeed = _pitchSpeedSetting.get(_pitchSpeed);
 
     _prefOverrideAnimGraphUrl.set(_animGraphURLSetting.get().toString());
@@ -7006,12 +7001,4 @@ void MyAvatar::resetPointAt() {
         _skeletonModel->getRig().setDirectionalBlending(POINT_BLEND_DIRECTIONAL_ALPHA_NAME, glm::vec3(),
                                                         POINT_BLEND_LINEAR_ALPHA_NAME, POINT_ALPHA_BLENDING);
     }
-}
-
-float MyAvatar::getCameraSensitivity() const {
-    return qApp->getCamera().getSensitivity();
-}
-
-void MyAvatar::setCameraSensitivity(float cameraSensitivity) {
-    qApp->getCamera().setSensitivity(cameraSensitivity);
 }

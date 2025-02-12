@@ -3,7 +3,7 @@
 //  places.css
 //
 //  Created by Alezia Kurdis, January 1st, 2022.
-//  Copyright 2022-2025 Overte e.V.
+//  Copyright 2022 Overte e.V.
 //
 //  css for the ui of the Places application.
 //
@@ -750,20 +750,19 @@ font.domain-nbrUser_small {
     color: #cccccc;
     padding: 10px;
     text-align: justify;
-    text-justify: inter-word;
+    text-justify: inter-word;    
 }
 
 #placeDetail-visitBtn {
   background: #0000ff;
   background-image: linear-gradient(to bottom, #0000ff, #000020);
   border: 0px;
-  border-radius: 6px;
-  font-weight: 700;
+  border-radius: 10px;
+  font-weight: 800;
   color: #ffffff;
-  font-size: 14px;
-  padding: 2px 22px 2px 22px;
+  font-size: 20px;
+  padding: 3px 22px 3px 22px;
   text-decoration: none;
-  width: 90%;
 }
 
 #placeDetail-visitBtn:hover {
@@ -775,57 +774,7 @@ font.domain-nbrUser_small {
 #placeDetail-visitBtn-container {
     width: 100%;
     text-align: left;
-    margin-bottom: 8px; 
-}
-
-#placeDetail-rezPortalBtn {
-  background: #0000ff;
-  background-image: linear-gradient(to bottom, #0000ff, #000020);
-  border: 0px;
-  border-radius: 6px;
-  font-weight: 700;
-  color: #ffffff;
-  font-size: 14px;
-  padding: 2px 22px 2px 22px;
-  text-decoration: none;
-  width: 90%;
-}
-
-#placeDetail-rezPortalBtn:hover {
-  background: #057eff;
-  background-image: linear-gradient(to bottom, #057eff, #00090f);
-  text-decoration: none;
-}
-
-#placeDetail-rezPortalBtn-container {
-    width: 100%;
-    text-align: left;
-    margin-bottom: 8px; 
-}
-
-#placeDetail-copyPlaceURLBtn {
-  background: #0000ff;
-  background-image: linear-gradient(to bottom, #0000ff, #000020);
-  border: 0px;
-  border-radius: 6px;
-  font-weight: 700;
-  color: #ffffff;
-  font-size: 14px;
-  padding: 2px 22px 2px 22px;
-  text-decoration: none;
-  width: 90%;
-}
-
-#placeDetail-copyPlaceURLBtn:hover {
-  background: #057eff;
-  background-image: linear-gradient(to bottom, #057eff, #00090f);
-  text-decoration: none;
-}
-
-#placeDetail-copyPlaceURLBtn-container {
-    width: 100%;
-    text-align: left;
-    margin-bottom: 8px;
+    margin-bottom: 40px; 
 }
 
 #placeDetail-placedata {
@@ -855,7 +804,7 @@ font.domain-nbrUser_small {
 
 #placeDetail-users {
     font-size: 30px;
-    font-weight: 600;
+    font-weight: 600;    
 }
 
 #placeDetail-capacity {

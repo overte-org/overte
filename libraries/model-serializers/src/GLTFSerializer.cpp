@@ -1335,7 +1335,7 @@ HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture) {
             hfmTex.filename = textureUrl.toEncoded().append(QString::number(imageIndex).toUtf8());
         }
 
-        if (url.startsWith("data:image/jpeg;base64,") || url.startsWith("data:image/png;base64,") || url.startsWith("data:image/webp;base64,")) {
+        if (url.contains("data:image/jpeg;base64,") || url.contains("data:image/png;base64,") || url.contains("data:image/webp;base64,")) {
             hfmTex.content = requestEmbeddedData(url);
         }
     }

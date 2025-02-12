@@ -1,7 +1,7 @@
 //
 //  domainChat.js
 //
-//  Created by Armored Dragon, May 17th, 2024.
+//  Created by Armored Dragon, 2024.
 //  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
@@ -51,7 +51,6 @@
             activeIcon: Script.resolvePath("./img/icon_black.png"),
             sortOrder: 8,
             text: "CHAT",
-            sortOrder: 8,
             isActive: appIsVisible,
         });
 

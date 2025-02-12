@@ -4,7 +4,6 @@
 //
 //  Created by Anna Brewer on 7/3/19.
 //  Copyright 2019 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -75,8 +74,8 @@ void ToneMapAndResample::run(const RenderContextPointer& renderContext, const In
 
     const auto& tonemappingStage = renderContext->_scene->getStage<TonemappingStage>();
     graphics::TonemappingPointer tonemapping;
-    if (tonemappingStage && tonemappingFrame->_elements.size()) {
-        tonemapping = tonemappingStage->getElement(tonemappingFrame->_elements.front());
+    if (tonemappingStage && tonemappingFrame->_tonemappings.size()) {
+        tonemapping = tonemappingStage->getTonemapping(tonemappingFrame->_tonemappings.front());
     }
 
     if (_debug) {

@@ -994,9 +994,9 @@ void Avatar::renderDisplayName(gpu::Batch& batch, const ViewFrustum& view, const
 
         QString statsFormat = QString("(%1 Kbps, %2 Hz)");
         if (!renderedDisplayName.isEmpty()) {
-            statsFormat.append("\n");
+            statsFormat.prepend(" - ");
         }
-        renderedDisplayName = statsFormat.arg(QString::number(kilobitsPerSecond, 'f', 2)).arg(getReceiveRate())  + renderedDisplayName;
+        renderedDisplayName += statsFormat.arg(QString::number(kilobitsPerSecond, 'f', 2)).arg(getReceiveRate());
     }
 
     // Compute display name extent/position offset
@@ -1010,18 +1010,18 @@ void Avatar::renderDisplayName(gpu::Batch& batch, const ViewFrustum& view, const
         // Compute background position/size
         static const float SLIGHTLY_IN_FRONT = 0.1f;
         static const float BORDER_RELATIVE_SIZE = 0.1f;
-        // static const float BEVEL_FACTOR = 0.1f;
+        static const float BEVEL_FACTOR = 0.1f;
         const int border = BORDER_RELATIVE_SIZE * nameDynamicRect.height();
-        // FIXME: Beveled box is broken
-        // const int left = text_x - border;
-        // const int bottom = text_y - border;
-        // const int width = nameDynamicRect.width() + 2.0f * border;
+        const int left = text_x - border;
+        const int bottom = text_y - border;
+        const int width = nameDynamicRect.width() + 2.0f * border;
         const int height = nameDynamicRect.height() + 2.0f * border;
-        // const int bevelDistance = BEVEL_FACTOR * height;
+        const int bevelDistance = BEVEL_FACTOR * height;
 
         // Display name and background colors
         glm::vec4 textColor(0.93f, 0.93f, 0.93f, _displayNameAlpha);
-        glm::vec4 backgroundColor(0.2f, 0.2f, 0.2f,(_displayNameAlpha / DISPLAYNAME_ALPHA) * DISPLAYNAME_BACKGROUND_ALPHA);
+        glm::vec4 backgroundColor(0.2f, 0.2f, 0.2f,
+                                  (_displayNameAlpha / DISPLAYNAME_ALPHA) * DISPLAYNAME_BACKGROUND_ALPHA);
 
         // Compute display name transform
         auto textTransform = calculateDisplayNameTransform(view, textPosition);
@@ -1029,11 +1029,12 @@ void Avatar::renderDisplayName(gpu::Batch& batch, const ViewFrustum& view, const
         textTransform.postScale(1.0f / height);
         batch.setModelTransform(textTransform);
 
-        // {
-        //     PROFILE_RANGE_BATCH(batch, __FUNCTION__":renderBevelCornersRect");
-        //     DependencyManager::get<GeometryCache>()->bindSimpleProgram(batch, false, false, true, true, true, forward);
-        //     DependencyManager::get<GeometryCache>()->renderBevelCornersRect(batch, left, bottom, width, height, bevelDistance, backgroundColor, _nameRectGeometryID);
-        // }
+        {
+            PROFILE_RANGE_BATCH(batch, __FUNCTION__":renderBevelCornersRect");
+            DependencyManager::get<GeometryCache>()->bindSimpleProgram(batch, false, false, true, true, true, forward);
+            DependencyManager::get<GeometryCache>()->renderBevelCornersRect(batch, left, bottom, width, height,
+                bevelDistance, backgroundColor, _nameRectGeometryID);
+        }
 
         // Render actual name
         QByteArray nameUTF8 = renderedDisplayName.toLocal8Bit();
@@ -1043,7 +1044,7 @@ void Avatar::renderDisplayName(gpu::Batch& batch, const ViewFrustum& view, const
         batch.setModelTransform(textTransform);
         {
             PROFILE_RANGE_BATCH(batch, __FUNCTION__":renderText");
-            displayNameRenderer->draw(batch, { nameUTF8.data(), textColor, { text_x, -text_y }, glm::vec2(-1.0f), TextAlignment::LEFT, forward });
+            displayNameRenderer->draw(batch, { nameUTF8.data(), textColor, { text_x, -text_y }, glm::vec2(-1.0f), forward });
         }
     }
 }

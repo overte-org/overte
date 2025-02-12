@@ -1,9 +1,8 @@
 //
 //  BackgroundStage.h
-//
+
 //  Created by Sam Gateau on 5/9/2017.
 //  Copyright 2015 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -13,19 +12,72 @@
 #define hifi_render_utils_BackgroundStage_h
 
 #include <graphics/Stage.h>
+#include <set>
+#include <unordered_map>
+#include <render/IndexedContainer.h>
 #include <render/Stage.h>
-#include <render/StageSetup.h>
-
 #include "HazeStage.h"
+
 #include "LightingModel.h"
 
+
 // Background stage to set up background-related rendering tasks
-class BackgroundStage : public render::PointerStage<graphics::SunSkyStage, graphics::SunSkyStagePointer> {};
+class BackgroundStage : public render::Stage {
+public:
+    static std::string _stageName;
+    static const std::string& getName() { return _stageName; }
+
+    using Index = render::indexed_container::Index;
+    static const Index INVALID_INDEX;
+    static bool isIndexInvalid(Index index) { return index == INVALID_INDEX; }
+    
+    using BackgroundPointer = graphics::SunSkyStagePointer;
+    using Backgrounds = render::indexed_container::IndexedPointerVector<graphics::SunSkyStage>;
+    using BackgroundMap = std::unordered_map<BackgroundPointer, Index>;
+
+    using BackgroundIndices = std::vector<Index>;
+
+
+    Index findBackground(const BackgroundPointer& background) const;
+    Index addBackground(const BackgroundPointer& background);
+
+    BackgroundPointer removeBackground(Index index);
+    
+    bool checkBackgroundId(Index index) const { return _backgrounds.checkIndex(index); }
+
+    Index getNumBackgrounds() const { return _backgrounds.getNumElements(); }
+    Index getNumFreeBackgrounds() const { return _backgrounds.getNumFreeIndices(); }
+    Index getNumAllocatedBackgrounds() const { return _backgrounds.getNumAllocatedIndices(); }
+
+    BackgroundPointer getBackground(Index backgroundId) const {
+        return _backgrounds.get(backgroundId);
+    }
+
+    Backgrounds _backgrounds;
+    BackgroundMap _backgroundMap;
+
+    class Frame {
+    public:
+        Frame() {}
+        
+        void clear() { _backgrounds.clear(); }
+
+        void pushBackground(BackgroundStage::Index index) { _backgrounds.emplace_back(index); }
+
+        BackgroundStage::BackgroundIndices _backgrounds;
+    };
+    using FramePointer = std::shared_ptr<Frame>;
+    
+    Frame _currentFrame;
+};
 using BackgroundStagePointer = std::shared_ptr<BackgroundStage>;
 
-class BackgroundStageSetup : public render::StageSetup<BackgroundStage> {
+class BackgroundStageSetup {
 public:
     using JobModel = render::Job::Model<BackgroundStageSetup>;
+
+    BackgroundStageSetup();
+    void run(const render::RenderContextPointer& renderContext);
 };
 
 class DrawBackgroundStage {

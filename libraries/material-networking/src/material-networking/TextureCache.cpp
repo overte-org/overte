@@ -254,18 +254,6 @@ NetworkTexturePointer TextureCache::getTexture(const QUrl& url, image::TextureUs
     if (url.scheme() == RESOURCE_SCHEME) {
         return getResourceTexture(url);
     }
-
-    QString urlString = url.toString();
-    if (content.isEmpty() && (urlString.startsWith("data:image/jpeg;base64,")
-                              || urlString.startsWith("data:image/png;base64,")
-                              || urlString.startsWith("data:image/webp;base64,"))) {
-        QString binaryUrl = urlString.split(",")[1];
-        auto decodedContent = binaryUrl.isEmpty() ? QByteArray() : QByteArray::fromBase64(binaryUrl.toUtf8());
-        if (!decodedContent.isEmpty()) {
-            return getTexture(url, type, decodedContent, maxNumPixels, sourceChannel);
-        }
-    }
-
     QString decodedURL = QUrl::fromPercentEncoding(url.toEncoded());
     if (decodedURL.startsWith("{")) {
         return getTextureByUUID(decodedURL);

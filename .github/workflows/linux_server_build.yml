@@ -82,6 +82,16 @@ jobs:
             arch: aarch64
             runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
+          - os: fedora-39
+            image: docker.io/overte/overte-server-build:0.1.4-fedora-39-amd64
+            arch: amd64
+            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+
+          - os: fedora-39
+            image: docker.io/overte/overte-server-build:0.1.4-fedora-39-aarch64
+            arch: aarch64
+            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+
           - os: fedora-40
             image: docker.io/overte/overte-server-build:0.1.4-fedora-40-amd64
             arch: amd64
@@ -214,6 +224,10 @@ jobs:
         else  # RPM
           if [ "${{ matrix.os }}" == "rockylinux-9" ]; then
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.el9.$INSTALLER_EXT" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "fedora-38" ]; then
+            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc38.$INSTALLER_EXT" >> $GITHUB_ENV
+          elif [ "${{ matrix.os }}" == "fedora-39" ]; then
+            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc39.$INSTALLER_EXT" >> $GITHUB_ENV
           elif [ "${{ matrix.os }}" == "fedora-40" ]; then
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc40.$INSTALLER_EXT" >> $GITHUB_ENV
           else
@@ -252,7 +266,7 @@ jobs:
 
     - name: Archive cmake logs
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz
         path: cmake-logs-${{ matrix.os }}-${{ matrix.arch }}-${{ github.event.number }}.tar.xz

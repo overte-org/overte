@@ -1,7 +1,6 @@
 //
 //  Created by Samuel Gateau on 2018/12/06
 //  Copyright 2013-2018 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html

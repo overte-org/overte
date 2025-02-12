@@ -288,10 +288,6 @@ public:
         _glUniformMatrix3fv(location, 1, false, glm::value_ptr(v));
     }
 
-    void _glUniform(int location, const glm::mat4& v) {
-        _glUniformMatrix4fv(location, 1, false, glm::value_ptr(v));
-    }
-
     // Maybe useful but shoudln't be public. Please convince me otherwise
     // Well porting to gles i need it...
     void runLambda(std::function<void()> f);

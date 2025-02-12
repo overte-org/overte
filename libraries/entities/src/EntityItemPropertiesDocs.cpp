@@ -935,9 +935,7 @@
  *
  * @typedef {object} Entities.EntityProperties-Image
  * @property {Vec3} dimensions=0.1,0.1,0.01 - The dimensions of the entity.
- * @property {string} imageURL="" - The URL of the image to use. It can also contain a base64 encoded image, in the same format as glTF.
- *     For network transmitted entities there's about 1000-character limit for the length of this field. For base64 image
- *     the property string needs to begin with `data:image/png;base64,`, `data:image/jpeg;base64,` or `data:image/webp;base64,`.
+ * @property {string} imageURL="" - The URL of the image to use.
  * @property {boolean} emissive=false - <code>true</code> if the image should be emissive (unlit), <code>false</code> if it
  *     shouldn't.
  * @property {boolean} keepAspectRatio=true - <code>true</code> if the image should maintain its aspect ratio,

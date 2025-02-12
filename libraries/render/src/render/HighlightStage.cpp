@@ -1,31 +1,33 @@
-//
-//  HighlightStage.cpp
-//
-//  Created by Olivier Prat on 07/07/2017.
-//  Copyright 2017 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
-//
-//  Distributed under the Apache License, Version 2.0.
-//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
-//
-
 #include "HighlightStage.h"
-
-#include "Engine.h"
 
 using namespace render;
 
-template <>
-std::string TypedStage<Highlight>::_name { "HIGHLIGHT_STAGE" };
+std::string HighlightStage::_name("Highlight");
+const HighlightStage::Index HighlightStage::INVALID_INDEX{ render::indexed_container::INVALID_INDEX };
 
 HighlightStage::Index HighlightStage::addHighlight(const std::string& selectionName, const HighlightStyle& style) {
-    Highlight outline { selectionName, style };
-    return addElement(outline);
+    Highlight outline{ selectionName, style };
+    Index id;
+
+    id = _highlights.newElement(outline);
+    _activeHighlightIds.push_back(id);
+
+    return id;
 }
 
-HighlightStage::Index HighlightStage::getHighlightIdBySelection(const std::string& selectionName) const {
-    for (auto outlineId : _activeElementIDs) {
-        const auto& outline = _elements.get(outlineId);
+void HighlightStage::removeHighlight(Index index) {
+    HighlightIdList::iterator  idIterator = std::find(_activeHighlightIds.begin(), _activeHighlightIds.end(), index);
+    if (idIterator != _activeHighlightIds.end()) {
+        _activeHighlightIds.erase(idIterator);
+    }
+    if (!_highlights.isElementFreed(index)) {
+        _highlights.freeElement(index);
+    }
+}
+
+Index HighlightStage::getHighlightIdBySelection(const std::string& selectionName) const {
+    for (auto outlineId : _activeHighlightIds) {
+        const auto& outline = _highlights.get(outlineId);
         if (outline._selectionName == selectionName) {
             return outlineId;
         }
@@ -98,6 +100,9 @@ void HighlightStageConfig::setOccludedFillOpacity(float value) {
     emit dirty();
 }
 
+HighlightStageSetup::HighlightStageSetup() {
+}
+
 void HighlightStageSetup::configure(const Config& config) {
     // Copy the styles here but update the stage with the new styles in run to be sure everything is
     // thread safe...
@@ -107,7 +112,8 @@ void HighlightStageSetup::configure(const Config& config) {
 void HighlightStageSetup::run(const render::RenderContextPointer& renderContext) {
     auto stage = renderContext->_scene->getStage<HighlightStage>(HighlightStage::getName());
     if (!stage) {
-        renderContext->_scene->resetStage(HighlightStage::getName(), std::make_shared<HighlightStage>());
+        stage = std::make_shared<HighlightStage>();
+        renderContext->_scene->resetStage(HighlightStage::getName(), stage);
     }
 
     if (!_styles.empty()) {
@@ -121,3 +127,4 @@ void HighlightStageSetup::run(const render::RenderContextPointer& renderContext)
         _styles.clear();
     }
 }
+

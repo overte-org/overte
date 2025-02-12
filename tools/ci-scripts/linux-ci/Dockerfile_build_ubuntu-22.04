@@ -1,8 +1,8 @@
-# Copyright 2022-2024 Overte e.V.
+# Copyright 2022-2023 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build -t overte/overte-full-build:0.1.2-ubuntu-22.04 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build -t overte/overte-full-build:0.1.1-ubuntu-22.04 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
@@ -19,7 +19,7 @@ RUN apt-get -y install curl ninja-build git cmake g++ libssl-dev libqt5websocket
 # Install Overte tools build dependencies
 RUN apt-get -y install libqt5webchannel5-dev qtwebengine5-dev libqt5xmlpatterns5-dev
 # Install Overte Interface build dependencies
-RUN apt-get -y install libqt5svg5-dev qttools5-dev vulkan-validationlayers libvulkan-dev libvulkan1 libqt5x11extras5-dev qtbase5-private-dev
+RUN apt-get -y install libqt5svg5-dev qttools5-dev
 # Install server-console build dependencies
 RUN apt-get -y install npm
 

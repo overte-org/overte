@@ -356,53 +356,16 @@ void Procedural::prepare(gpu::Batch& batch,
                 }
             }
             // Then fill in every reflections the new custom bindings
-            size_t customSlot = procedural::slot::uniform::Custom;
-            _slotMap.clear();
+            int customSlot = procedural::slot::uniform::Custom;
             for (const auto& key : _data.uniforms.keys()) {
-                bool isArrayUniform = false;
-                size_t numSlots = 0;
-                const QJsonValue& value = _data.uniforms[key];
-                if (value.isDouble()) {
-                    numSlots = 1;
-                } else if (value.isArray()) {
-                    const QJsonArray valueArray = value.toArray();
-                    if (valueArray.size() > 0) {
-                        if (valueArray[0].isArray()) {
-                            const size_t valueLength = valueArray[0].toArray().size();
-                            size_t count = 0;
-                            for (const QJsonValue& value : valueArray) {
-                                if (value.isArray()) {
-                                    const QJsonArray innerValueArray = value.toArray();
-                                    if (innerValueArray.size() == valueLength) {
-                                        if (valueLength == 3 || valueLength == 4 || valueLength == 9 || valueLength == 16) {
-                                            count++;
-                                            isArrayUniform = true;
-                                        }
-                                    }
-                                }
-                            }
-                            numSlots = count;
-                        } else if (valueArray[0].isDouble()) {
-                            numSlots = 1;
-                        }
-                    }
+                std::string uniformName = key.toLocal8Bit().data();
+                for (auto reflection : allFragmentReflections) {
+                    reflection->uniforms[uniformName] = customSlot;
                 }
-
-                if (numSlots > 0) {
-                    std::string uniformName = key.toLocal8Bit().data();
-                    std::string trueUniformName = uniformName;
-                    if (isArrayUniform) {
-                        trueUniformName += "[0]";
-                    }
-                    for (auto reflection : allFragmentReflections) {
-                        reflection->uniforms[trueUniformName] = customSlot;
-                    }
-                    for (auto reflection : allVertexReflections) {
-                        reflection->uniforms[trueUniformName] = customSlot;
-                    }
-                    _slotMap[uniformName] = customSlot;
-                    customSlot += numSlots;
+                for (auto reflection : allVertexReflections) {
+                    reflection->uniforms[uniformName] = customSlot;
                 }
+                ++customSlot;
             }
         }
 
@@ -485,138 +448,59 @@ void Procedural::prepare(gpu::Batch& batch,
     }
 }
 
+
 void Procedural::setupUniforms() {
     _uniforms.clear();
     // Set any userdata specified uniforms
+    int slot = procedural::slot::uniform::Custom;
     for (const auto& key : _data.uniforms.keys()) {
-        const std::string uniformName = key.toLocal8Bit().data();
-        auto slotItr = _slotMap.find(uniformName);
-        if (slotItr == _slotMap.end()) {
-            continue;
-        }
-
-        const size_t slot = slotItr->second;
-        const QJsonValue& value = _data.uniforms[key];
+        std::string uniformName = key.toLocal8Bit().data();
+        QJsonValue value = _data.uniforms[key];
         if (value.isDouble()) {
-            const float v = value.toDouble();
+            float v = value.toDouble();
             _uniforms.push_back([slot, v](gpu::Batch& batch) { batch._glUniform1f(slot, v); });
         } else if (value.isArray()) {
-            const QJsonArray valueArray = value.toArray();
-            if (valueArray.size() > 0) {
-                if (valueArray[0].isArray()) {
-                    const size_t valueLength = valueArray[0].toArray().size();
-                    std::vector<float> vs;
-                    vs.reserve(valueLength * valueArray.size());
-                    size_t count = 0;
-                    for (const QJsonValue& value : valueArray) {
-                        if (value.isArray()) {
-                            const QJsonArray innerValueArray = value.toArray();
-                            if (innerValueArray.size() == valueLength) {
-                                if (valueLength == 3 || valueLength == 4 || valueLength == 9 || valueLength == 16) {
-                                    for (size_t i = 0; i < valueLength; i++) {
-                                        vs.push_back(innerValueArray[i].toDouble());
-                                    }
-                                    count++;
-                                }
-                            }
-                        }
-                    }
-                    if (count > 0) {
-                        switch (valueLength) {
-                            case 3: {
-                                _uniforms.push_back([slot, vs, count](gpu::Batch& batch) { batch._glUniform3fv(slot, count, vs.data()); });
-                                break;
-                            }
-                            case 4: {
-                                _uniforms.push_back([slot, vs, count](gpu::Batch& batch) { batch._glUniform4fv(slot, count, vs.data()); });
-                                break;
-                            }
-                            case 9: {
-                                _uniforms.push_back([slot, vs, count](gpu::Batch& batch) { batch._glUniformMatrix3fv(slot, count, false, vs.data()); });
-                                break;
-                            }
-                            case 16: {
-                                _uniforms.push_back([slot, vs, count](gpu::Batch& batch) { batch._glUniformMatrix4fv(slot, count, false, vs.data()); });
-                                break;
-                            }
-                            default:
-                                break;
-                        }
-                    }
-                } else if (valueArray[0].isDouble()) {
-                    switch (valueArray.size()) {
-                        case 1: {
-                            const float v = valueArray[0].toDouble();
-                            _uniforms.push_back([slot, v](gpu::Batch& batch) { batch._glUniform(slot, v); });
-                            break;
-                        }
-                        case 2: {
-                            const glm::vec2 v{ valueArray[0].toDouble(), valueArray[1].toDouble() };
-                            _uniforms.push_back([slot, v](gpu::Batch& batch) { batch._glUniform(slot, v); });
-                            break;
-                        }
-                        case 3: {
-                            const glm::vec3 v{
-                                valueArray[0].toDouble(),
-                                valueArray[1].toDouble(),
-                                valueArray[2].toDouble(),
-                            };
-                            _uniforms.push_back([slot, v](gpu::Batch& batch) { batch._glUniform(slot, v); });
-                            break;
-                        }
-                        case 4: {
-                            const glm::vec4 v{
-                                valueArray[0].toDouble(),
-                                valueArray[1].toDouble(),
-                                valueArray[2].toDouble(),
-                                valueArray[3].toDouble(),
-                            };
-                            _uniforms.push_back([slot, v](gpu::Batch& batch) { batch._glUniform(slot, v); });
-                            break;
-                        }
-                        case 9: {
-                            const glm::mat3 m{
-                                valueArray[0].toDouble(),
-                                valueArray[1].toDouble(),
-                                valueArray[2].toDouble(),
-                                valueArray[3].toDouble(),
-                                valueArray[4].toDouble(),
-                                valueArray[5].toDouble(),
-                                valueArray[6].toDouble(),
-                                valueArray[7].toDouble(),
-                                valueArray[8].toDouble(),
-                            };
-                            _uniforms.push_back([slot, m](gpu::Batch& batch) { batch._glUniform(slot, m); });
-                            break;
-                        }
-                        case 16: {
-                            const glm::mat4 m{
-                                valueArray[0].toDouble(),
-                                valueArray[1].toDouble(),
-                                valueArray[2].toDouble(),
-                                valueArray[3].toDouble(),
-                                valueArray[4].toDouble(),
-                                valueArray[5].toDouble(),
-                                valueArray[6].toDouble(),
-                                valueArray[7].toDouble(),
-                                valueArray[8].toDouble(),
-                                valueArray[9].toDouble(),
-                                valueArray[10].toDouble(),
-                                valueArray[11].toDouble(),
-                                valueArray[12].toDouble(),
-                                valueArray[13].toDouble(),
-                                valueArray[14].toDouble(),
-                                valueArray[15].toDouble(),
-                            };
-                            _uniforms.push_back([slot, m](gpu::Batch& batch) { batch._glUniform(slot, m); });
-                            break;
-                        }
-                        default:
-                            break;
-                    }
-                }
+            auto valueArray = value.toArray();
+            switch (valueArray.size()) {
+            case 0:
+                break;
+
+            case 1: {
+                float v = valueArray[0].toDouble();
+                _uniforms.push_back([slot, v](gpu::Batch& batch) { batch._glUniform1f(slot, v); });
+                break;
+            }
+
+            case 2: {
+                glm::vec2 v{ valueArray[0].toDouble(), valueArray[1].toDouble() };
+                _uniforms.push_back([slot, v](gpu::Batch& batch) { batch._glUniform2f(slot, v.x, v.y); });
+                break;
+            }
+
+            case 3: {
+                glm::vec3 v{
+                    valueArray[0].toDouble(),
+                    valueArray[1].toDouble(),
+                    valueArray[2].toDouble(),
+                };
+                _uniforms.push_back([slot, v](gpu::Batch& batch) { batch._glUniform3f(slot, v.x, v.y, v.z); });
+                break;
+            }
+
+            default:
+            case 4: {
+                glm::vec4 v{
+                    valueArray[0].toDouble(),
+                    valueArray[1].toDouble(),
+                    valueArray[2].toDouble(),
+                    valueArray[3].toDouble(),
+                };
+                _uniforms.push_back([slot, v](gpu::Batch& batch) { batch._glUniform4f(slot, v.x, v.y, v.z, v.w); });
+                break;
+            }
             }
         }
+        slot++;
     }
 
     _uniforms.push_back([this](gpu::Batch& batch) {

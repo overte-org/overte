@@ -5,7 +5,6 @@
 //
 //  Created by Zach Pomerantz on 12/13/2016.
 //  Copyright 2016 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -272,8 +271,8 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
 
     graphics::HazePointer haze;
     const auto& hazeStage = renderContext->args->_scene->getStage<HazeStage>();
-    if (hazeStage && hazeFrame->_elements.size() > 0) {
-        haze = hazeStage->getElement(hazeFrame->_elements.front());
+    if (hazeStage && hazeFrame->_hazes.size() > 0) {
+        haze = hazeStage->getHaze(hazeFrame->_hazes.front());
     }
 
     gpu::doInBatch("DrawForward::run", args->_context, [&](gpu::Batch& batch) {

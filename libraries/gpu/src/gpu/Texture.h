@@ -24,7 +24,6 @@
 #include "Forward.h"
 #include "Resource.h"
 #include "Metric.h"
-#include "SerDes.h"
 
 const int ABSOLUTE_MAX_TEXTURE_NUM_PIXELS = 8192 * 8192;
 
@@ -92,37 +91,6 @@ public:
 };
 typedef std::shared_ptr< SphericalHarmonics > SHPointer;
 
-
-inline DataSerializer &operator<<(DataSerializer &ser, const SphericalHarmonics &h) {
-    DataSerializer::SizeTracker tracker(ser);
-
-    ser << h.L00  << h.spare0;
-    ser << h.L1m1 << h.spare1;
-    ser << h.L10  << h.spare2;
-    ser << h.L11  << h.spare3;
-    ser << h.L2m2 << h.spare4;
-    ser << h.L2m1 << h.spare5;
-    ser << h.L20  << h.spare6;
-    ser << h.L21  << h.spare7;
-    ser << h.L22  << h.spare8;
-    return ser;
-}
-
-inline DataDeserializer &operator>>(DataDeserializer &des, SphericalHarmonics &h) {
-    DataDeserializer::SizeTracker tracker(des);
-
-    des >> h.L00  >> h.spare0;
-    des >> h.L1m1 >> h.spare1;
-    des >> h.L10  >> h.spare2;
-    des >> h.L11  >> h.spare3;
-    des >> h.L2m2 >> h.spare4;
-    des >> h.L2m1 >> h.spare5;
-    des >> h.L20  >> h.spare6;
-    des >> h.L21  >> h.spare7;
-    des >> h.L22  >> h.spare8;
-    return des;
-}
-
 class Sampler {
 public:
 
@@ -168,7 +136,7 @@ public:
         uint8 _wrapModeU = WRAP_REPEAT;
         uint8 _wrapModeV = WRAP_REPEAT;
         uint8 _wrapModeW = WRAP_REPEAT;
-
+            
         uint8 _mipOffset = 0;
         uint8 _minMip = 0;
         uint8 _maxMip = MAX_MIP_LEVEL;
@@ -225,35 +193,6 @@ protected:
     friend class Deserializer;
 };
 
-inline DataSerializer &operator<<(DataSerializer &ser, const Sampler::Desc &d) {
-    DataSerializer::SizeTracker tracker(ser);
-    ser << d._borderColor;
-    ser << d._maxAnisotropy;
-    ser << d._filter;
-    ser << d._comparisonFunc;
-    ser << d._wrapModeU;
-    ser << d._wrapModeV;
-    ser << d._wrapModeW;
-    ser << d._mipOffset;
-    ser << d._minMip;
-    ser << d._maxMip;
-    return ser;
-}
-
-inline DataDeserializer &operator>>(DataDeserializer &dsr, Sampler::Desc &d) {
-    DataDeserializer::SizeTracker tracker(dsr);
-    dsr >> d._borderColor;
-    dsr >> d._maxAnisotropy;
-    dsr >> d._filter;
-    dsr >> d._comparisonFunc;
-    dsr >> d._wrapModeU;
-    dsr >> d._wrapModeV;
-    dsr >> d._wrapModeW;
-    dsr >> d._mipOffset;
-    dsr >> d._minMip;
-    dsr >> d._maxMip;
-    return dsr;
-}
 enum class TextureUsageType : uint8 {
     RENDERBUFFER,       // Used as attachments to a framebuffer
     RESOURCE,           // Resource textures, like materials... subject to memory manipulation
@@ -291,7 +230,7 @@ public:
             NORMAL,      // Texture is a normal map
             ALPHA,      // Texture has an alpha channel
             ALPHA_MASK,       // Texture alpha channel is a Mask 0/1
-            NUM_FLAGS,
+            NUM_FLAGS,  
         };
 
         typedef std::bitset<NUM_FLAGS> Flags;
@@ -539,7 +478,7 @@ public:
     uint16 evalMipDepth(uint16 level) const { return std::max(_depth >> level, 1); }
 
     // The true size of an image line or surface depends on the format, tiling and padding rules
-    //
+    // 
     // Here are the static function to compute the different sizes from parametered dimensions and format
     // Tile size must be a power of 2
     static uint16 evalTiledPadding(uint16 length, int tile) { int tileMinusOne = (tile - 1); return (tileMinusOne - (length + tileMinusOne) % tile); }
@@ -568,7 +507,7 @@ public:
     uint32 evalMipFaceNumTexels(uint16 level) const { return evalMipWidth(level) * evalMipHeight(level) * evalMipDepth(level); }
     uint32 evalMipNumTexels(uint16 level) const { return evalMipFaceNumTexels(level) * getNumFaces(); }
 
-    // For convenience assign a source name
+    // For convenience assign a source name 
     const std::string& source() const { return _source; }
     void setSource(const std::string& source) { _source = source; }
     const std::string& sourceHash() const { return _sourceHash; }
@@ -694,7 +633,7 @@ protected:
     uint16 _maxMipLevel { 0 };
 
     uint16 _minMip { 0 };
-
+ 
     Type _type { TEX_1D };
 
     Usage _usage;
@@ -704,7 +643,7 @@ protected:
     bool _isIrradianceValid = false;
     bool _defined = false;
     bool _important = false;
-
+   
     static TexturePointer create(TextureUsageType usageType, Type type, const Element& texelFormat, uint16 width, uint16 height, uint16 depth, uint16 numSamples, uint16 numSlices, uint16 numMips, const Sampler& sampler);
 
     Size resize(Type type, const Element& texelFormat, uint16 width, uint16 height, uint16 depth, uint16 numSamples, uint16 numSlices, uint16 numMips);

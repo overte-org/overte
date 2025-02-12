@@ -4,11 +4,11 @@
 # - Check which commit you are building https://invent.kde.org/qt/qt/qt5/-/tree/kde/5.15
 # - Adjust this file to include the commit hash you are building, the date, the number of threads you want to use (-j10), the platform, and the Qt and QtWebEngine versions.
 #     Keep in mind that building Qt requires a lot of memory. You should have over 1.2GiB of system memory available per thread.
-# - Run the build process with something like `PROGRESS_NO_TRUNC=1 DOCKER_BUILDKIT=1 BUILDKIT_STEP_LOG_MAX_SIZE=-1 docker build --progress plain -t overte-qt5:5.15.16-2024.12.14-kde_32be154325bfba3ad2ba8bf75dad702f3588e8d3 -f Dockerfile_Ubuntu_20.04_Qt5 .`
+# - Run the build process with something like `PROGRESS_NO_TRUNC=1 DOCKER_BUILDKIT=1 BUILDKIT_STEP_LOG_MAX_SIZE=-1 docker build --progress plain -t overte-qt5:5.15.14-2024.06.17-kde_570f5b2105df1ea052bec0d6dbf8a00137274371 -f Dockerfile_Ubuntu_20.04_Qt5 .`
 #     Buildkit is used to cache intermittent steps in case you need to modify something afterwards.
 # - Once the build has completed, create a container from the image and export the created Qt package.
-#     `docker create --name extract overte-qt5:5.15.16-2024.12.14-kde_32be154325bfba3ad2ba8bf75dad702f3588e8d3`
-#     `docker cp extract:qt5-install-5.15.16-2024.12.14-kde_32be154325bfba3ad2ba8bf75dad702f3588e8d3-ubuntu-20.04-amd64.tar.xz /path/on/host`
+#     `docker create --name extract overte-qt5:5.15.14-2024.06.17-kde_570f5b2105df1ea052bec0d6dbf8a00137274371`
+#     `docker cp extract:qt5-install-5.15.14-2024.06.17-kde_570f5b2105df1ea052bec0d6dbf8a00137274371-ubuntu-20.04-amd64.tar.xz /path/on/host`
 #     `docker rm extract`
 
 FROM ubuntu:20.04
@@ -47,7 +47,7 @@ RUN apt-get -y install git python gperf flex bison pkg-config mesa-utils libgl1-
 
 RUN mkdir qt5-install && mkdir qt5-build
 WORKDIR qt5-build
-RUN ../qt5/configure -force-debug-info -release -opensource -confirm-license -platform linux-g++ -recheck-all -nomake tests -nomake examples -skip qttranslations -skip qtserialport -skip qt3d -skip qtlocation -skip qtwayland -skip qtsensors -skip qtgamepad -skip qtcharts -skip qtmacextras -skip qtvirtualkeyboard -skip qtpurchasing -skip qtdatavis3d -skip qtlottie -skip qtquick3d -skip qtpim -skip qtdocgallery -no-warnings-are-errors -no-pch -no-icu -prefix ../qt5-install
+RUN ../qt5/configure -force-debug-info -release -opensource -confirm-license -platform linux-g++ -recheck-all -nomake tests -nomake examples -skip qttranslations -skip qtserialport -skip qt3d -skip qtlocation -skip qtwayland -skip qtsensors -skip qtgamepad -skip qtcharts -skip qtx11extras -skip qtmacextras -skip qtvirtualkeyboard -skip qtpurchasing -skip qtdatavis3d -skip qtlottie -skip qtquick3d -skip qtpim -skip qtdocgallery -no-warnings-are-errors -no-pch -no-icu -prefix ../qt5-install
 
 RUN NINJAFLAGS='-j6' make -j6
 
@@ -58,12 +58,12 @@ WORKDIR ../../qt5-install
 RUN find . -name \*.prl -exec sed -i -e '/^QMAKE_PRL_BUILD_DIR/d' {} \;
 
 # Overwrite QtWebengine version to work around version conflicts
-RUN find . -name \Qt5WebEngine*Config.cmake -exec sed -i '' -e 's/5\.15\.19/5\.15\.16/g' {} \;
-RUN cp lib/libQt5WebEngine.so.5.15.19 lib/libQt5WebEngine.so.5.15.16
-RUN cp lib/libQt5WebEngineCore.so.5.15.19 lib/libQt5WebEngineCore.so.5.15.16
-RUN cp lib/libQt5WebEngineWidgets.so.5.15.19 lib/libQt5WebEngineWidgets.so.5.15.16
-RUN cp lib/libQt5Pdf.so.5.15.19 lib/libQt5Pdf.so.5.15.16
-RUN cp lib/libQt5PdfWidgets.so.5.15.19 lib/libQt5PdfWidgets.so.5.15.16
+RUN find . -name \Qt5WebEngine*Config.cmake -exec sed -i '' -e 's/5\.15\.17/5\.15\.14/g' {} \;
+RUN cp lib/libQt5WebEngine.so.5.15.17 lib/libQt5WebEngine.so.5.15.14
+RUN cp lib/libQt5WebEngineCore.so.5.15.17 lib/libQt5WebEngineCore.so.5.15.14
+RUN cp lib/libQt5WebEngineWidgets.so.5.15.17 lib/libQt5WebEngineWidgets.so.5.15.14
+RUN cp lib/libQt5Pdf.so.5.15.17 lib/libQt5Pdf.so.5.15.14
+RUN cp lib/libQt5PdfWidgets.so.5.15.17 lib/libQt5PdfWidgets.so.5.15.14
 
 
 COPY ./qt.conf ./bin/
@@ -71,4 +71,4 @@ COPY ./qt.conf ./bin/
 RUN cp ../qt5-build/config.summary ./
 
 WORKDIR ..
-RUN XZ_OPT='-T0' tar -Jcvf qt5-install-5.15.16-2024.12.14-kde_32be154325bfba3ad2ba8bf75dad702f3588e8d3-ubuntu-20.04-amd64.tar.xz qt5-install
+RUN XZ_OPT='-T0' tar -Jcvf qt5-install-5.15.14-2024.06.17-kde_570f5b2105df1ea052bec0d6dbf8a00137274371-ubuntu-20.04-amd64.tar.xz qt5-install

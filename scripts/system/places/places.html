@@ -4,7 +4,7 @@
 //  places.html
 //
 //  Created by Alezia Kurdis, January 1st, 2022.
-//  Copyright 2022-2025 Overte e.V.
+//  Copyright 2022 Overte e.V.
 //
 //  html for the ui of the Places application.
 //
@@ -107,7 +107,7 @@
         <div id="placeDetail" class="overlay">
           <a href="javascript:void(0)" class="closebtn" onclick="closeDetail();">&times;</a>
           <div class="overlay-content">
-                <div id="placeDetail-image" onclick="closeDetail();" draggable="false"></div>
+                <img id="placeDetail-image" onclick="closeDetail();" draggable="false">
                 <div id="placeDetail-placeName"></div>
                 <table width='100%'>
                     <tr valign='top'>
@@ -118,8 +118,6 @@
                         <td id="" width='29%'>
                             
                             <div id="placeDetail-visitBtn-container"></div>
-                            <div id="placeDetail-rezPortalBtn-container"></div>
-                            <div id="placeDetail-copyPlaceURLBtn-container"></div>
                             <div id="placeDetail-maturity"></div>
                             <div id="placeDetail-placedata">
                                 DOMAIN:
@@ -504,28 +502,6 @@
                 
             }
 
-            function rezPortal(name, address, placeID) {
-                var portalOrder = {
-                    "channel": channel,
-                    "action": "REQUEST_PORTAL",
-                    "name": name,
-                    "address": address,
-                    "placeID": placeID
-                    };
-                EventBridge.emitWebEvent(JSON.stringify(portalOrder));
-                
-            }
-
-            function copyPlaceURL(address) {
-                var portalOrder = {
-                    "channel": channel,
-                    "action": "COPY_URL",
-                    "address": address
-                    };
-                EventBridge.emitWebEvent(JSON.stringify(portalOrder));
-                
-            }
-
             function goHome() {
                 var message = {
                     "channel": channel,
@@ -775,17 +751,12 @@
                     }
                 }
 
-                var pictureUrl = "";
+                document.getElementById("placeDetail-image").src = "";
                 if (placeDetail.thumbnail === "") {
-                    pictureUrl = "icons/placeholder_" + placeDetail.metaverseRegion + ".jpg";
+                    document.getElementById("placeDetail-image").src = "icons/placeholder_" + placeDetail.metaverseRegion + ".jpg";
                 } else {
-                    pictureUrl = placeDetail.thumbnail;
+                    document.getElementById("placeDetail-image").src = placeDetail.thumbnail;
                 }
-                document.getElementById("placeDetail-image").style.backgroundImage = "url(" + pictureUrl + ")";
-                document.getElementById("placeDetail-image").style.backgroundRepeat = "no-repeat"; 
-                document.getElementById("placeDetail-image").style.backgroundPosition = "center center"; 
-                document.getElementById("placeDetail-image").style.backgroundSize = "cover";
-
                 document.getElementById("placeDetail-placeName").innerHTML = placeDetail.name;
                 document.getElementById("placeDetail-managers").innerHTML = "By <br>&nbsp;&nbsp;&nbsp;&nbsp;" + placeDetail.managers;
                 document.getElementById("placeDetail-description").innerHTML = placeDetail.description;
@@ -795,8 +766,6 @@
                     placeUrl = "hifi://" + placeDetail.address;
                 }                
                 document.getElementById("placeDetail-visitBtn-container").innerHTML = "<button id='placeDetail-visitBtn' onclick='teleport(" + '"' + placeDetail.id + '"' + ", " + '"' + placeUrl + '"' + "); return false;'>Visit</button>";
-                document.getElementById("placeDetail-rezPortalBtn-container").innerHTML = "<button id='placeDetail-rezPortalBtn' onclick='rezPortal(" + '"' + placeDetail.name + '"' + ", " + '"' + placeUrl + '"' + ", " + '"' + placeDetail.id + '"' + "); return false;'>Portal</button>";
-                document.getElementById("placeDetail-copyPlaceURLBtn-container").innerHTML = "<button id='placeDetail-copyPlaceURLBtn' onclick='copyPlaceURL(" + '"' + placeUrl + '"' + "); return false;'>Copy URL</button>";
                 document.getElementById("placeDetail-maturity").innerHTML = placeDetail.maturity.toUpperCase();
                 document.getElementById("placeDetail-maturity").className = placeDetail.maturity + "FilterOn placeMaturity";
                 document.getElementById("placeDetail-domain").innerHTML = placeDetail.domain.toUpperCase();

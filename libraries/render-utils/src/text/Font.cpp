@@ -438,7 +438,7 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
 
         // Draw the token
         for (const QChar& c : token) {
-            if (bounds.x != -1 && advance.x > rightEdge) {
+            if (advance.x > rightEdge) {
                 break;
             }
             const Glyph& glyph = _glyphs[c];

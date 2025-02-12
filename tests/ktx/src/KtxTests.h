@@ -16,7 +16,6 @@ private slots:
     void testKtxEvalFunctions();
     void testKhronosCompressionFunctions();
     void testKtxSerialization();
-    void testKtxNewSerializationSphericalHarmonics();
 };
 
 

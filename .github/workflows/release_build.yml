@@ -56,6 +56,7 @@ jobs:
             echo "UPLOAD_PREFIX=build/overte/release/" >> $GITHUB_ENV
         fi
 
+        echo ::set-output name=github_sha_short::`echo $GIT_COMMIT | cut -c1-7`
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
 

@@ -4,7 +4,6 @@
 //
 //  Created by Zach Pomerantz on 1/14/2015.
 //  Copyright 2015 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -16,9 +15,7 @@
 
 #include "ViewFrustum.h"
 
-template <>
-std::string render::PointerStage<graphics::Light, graphics::LightPointer, LightFrame>::_name { "LIGHT_STAGE" };
-
+std::string LightStage::_stageName { "LIGHT_STAGE" };
 // The bias matrix goes from homogeneous coordinates to UV coords (see http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-16-shadow-mapping/#basic-shader)
 const glm::mat4 LightStage::Shadow::_biasMatrix {
     0.5, 0.0, 0.0, 0.0,
@@ -27,6 +24,8 @@ const glm::mat4 LightStage::Shadow::_biasMatrix {
     0.5, 0.5, 0.5, 1.0 };
 const int LightStage::Shadow::MAP_SIZE = 1024;
 
+const LightStage::Index LightStage::INVALID_INDEX { render::indexed_container::INVALID_INDEX };
+
 LightStage::LightStage() {
     // Add off lights
     const LightPointer ambientOffLight { std::make_shared<graphics::Light>() };
@@ -34,28 +33,28 @@ LightStage::LightStage() {
     ambientOffLight->setColor(graphics::Vec3(0.0));
     ambientOffLight->setIntensity(0.0f);
     ambientOffLight->setType(graphics::Light::Type::AMBIENT);
-    _ambientOffLightId = addElement(ambientOffLight);
+    _ambientOffLightId = addLight(ambientOffLight);
 
     const LightPointer pointOffLight { std::make_shared<graphics::Light>() };
     pointOffLight->setAmbientIntensity(0.0f);
     pointOffLight->setColor(graphics::Vec3(0.0));
     pointOffLight->setIntensity(0.0f);
     pointOffLight->setType(graphics::Light::Type::POINT);
-    _pointOffLightId = addElement(pointOffLight);
+    _pointOffLightId = addLight(pointOffLight);
 
     const LightPointer spotOffLight { std::make_shared<graphics::Light>() };
     spotOffLight->setAmbientIntensity(0.0f);
     spotOffLight->setColor(graphics::Vec3(0.0));
     spotOffLight->setIntensity(0.0f);
     spotOffLight->setType(graphics::Light::Type::SPOT);
-    _spotOffLightId = addElement(spotOffLight);
+    _spotOffLightId = addLight(spotOffLight);
 
     const LightPointer sunOffLight { std::make_shared<graphics::Light>() };
     sunOffLight->setAmbientIntensity(0.0f);
     sunOffLight->setColor(graphics::Vec3(0.0));
     sunOffLight->setIntensity(0.0f);
     sunOffLight->setType(graphics::Light::Type::SUN);
-    _sunOffLightId = addElement(sunOffLight);
+    _sunOffLightId = addLight(sunOffLight);
 
     // Set default light to the off ambient light (until changed)
     _defaultLightId = _ambientOffLightId;
@@ -73,7 +72,7 @@ LightStage::Shadow::Schema::Schema() {
     maxDistance = 20.0f;
 }
 
-LightStage::Shadow::Cascade::Cascade() :
+LightStage::Shadow::Cascade::Cascade() : 
     _frustum{ std::make_shared<ViewFrustum>() },
     _minDistance{ 0.0f },
     _maxDistance{ 20.0f } {
@@ -89,7 +88,7 @@ const glm::mat4& LightStage::Shadow::Cascade::getProjection() const {
 
 float LightStage::Shadow::Cascade::computeFarDistance(const ViewFrustum& viewFrustum, const Transform& shadowViewInverse,
                                                       float left, float right, float bottom, float top, float viewMaxShadowDistance) const {
-    // Far distance should be extended to the intersection of the infinitely extruded shadow frustum
+    // Far distance should be extended to the intersection of the infinitely extruded shadow frustum 
     // with the view frustum side planes. To do so, we generate 10 triangles in shadow space which are the result of
     // tesselating the side and far faces of the view frustum and clip them with the 4 side planes of the
     // shadow frustum. The resulting clipped triangle vertices with the farthest Z gives the desired
@@ -122,7 +121,7 @@ float LightStage::Shadow::Cascade::computeFarDistance(const ViewFrustum& viewFru
     return far;
 }
 
-LightStage::Shadow::Shadow(graphics::LightPointer light, unsigned int cascadeCount) :
+LightStage::Shadow::Shadow(graphics::LightPointer light, unsigned int cascadeCount) : 
     _light{ light } {
     cascadeCount = std::min(cascadeCount, (unsigned int)SHADOW_CASCADE_MAX_COUNT);
     Schema schema;
@@ -324,12 +323,21 @@ void LightStage::Shadow::setCascadeFrustum(unsigned int cascadeIndex, const View
     schemaCascade.reprojection = _biasMatrix * shadowFrustum.getProjection() * viewInverse.getMatrix();
 }
 
-LightStage::Index LightStage::addElement(const LightPointer& light, const bool shouldSetAsDefault) {
+LightStage::Index LightStage::findLight(const LightPointer& light) const {
+    auto found = _lightMap.find(light);
+    if (found != _lightMap.end()) {
+        return INVALID_INDEX;
+    } else {
+        return (*found).second;
+    }
+}
+
+LightStage::Index LightStage::addLight(const LightPointer& light, const bool shouldSetAsDefault) {
     Index lightId;
 
-    auto found = _elementMap.find(light);
-    if (found == _elementMap.end()) {
-        lightId = _elements.newElement(light);
+    auto found = _lightMap.find(light);
+    if (found == _lightMap.end()) {
+        lightId = _lights.newElement(light);
         // Avoid failing to allocate a light, just pass
         if (lightId != INVALID_INDEX) {
 
@@ -341,8 +349,8 @@ LightStage::Index LightStage::addElement(const LightPointer& light, const bool s
                 _descs[lightId] = Desc();
             }
 
-            // Insert the light and its index in the reverese map
-            _elementMap[light] = lightId;
+            // INsert the light and its index in the reverese map
+            _lightMap.insert(LightMap::value_type(light, lightId));
 
             updateLightArrayBuffer(lightId);
         }
@@ -357,30 +365,30 @@ LightStage::Index LightStage::addElement(const LightPointer& light, const bool s
     return lightId;
 }
 
-LightStage::LightPointer LightStage::removeElement(Index index) {
-    LightPointer removedLight = _elements.freeElement(index);
+LightStage::LightPointer LightStage::removeLight(Index index) {
+    LightPointer removedLight = _lights.freeElement(index);
     if (removedLight) {
-        _elementMap.erase(removedLight);
+        _lightMap.erase(removedLight);
         _descs[index] = Desc();
     }
     assert(_descs.size() <= (size_t)index || _descs[index].shadowId == INVALID_INDEX);
     return removedLight;
 }
 
-LightStage::LightPointer LightStage::getCurrentKeyLight(const LightFrame& frame) const {
+LightStage::LightPointer LightStage::getCurrentKeyLight(const LightStage::Frame& frame) const {
     Index keyLightId { _defaultLightId };
     if (!frame._sunLights.empty()) {
         keyLightId = frame._sunLights.front();
     }
-    return _elements.get(keyLightId);
+    return _lights.get(keyLightId);
 }
 
-LightStage::LightPointer LightStage::getCurrentAmbientLight(const LightFrame& frame) const {
+LightStage::LightPointer LightStage::getCurrentAmbientLight(const LightStage::Frame& frame) const {
     Index keyLightId { _defaultLightId };
     if (!frame._ambientLights.empty()) {
         keyLightId = frame._ambientLights.front();
     }
-    return _elements.get(keyLightId);
+    return _lights.get(keyLightId);
 }
 
 void LightStage::updateLightArrayBuffer(Index lightId) {
@@ -389,12 +397,14 @@ void LightStage::updateLightArrayBuffer(Index lightId) {
         _lightArrayBuffer = std::make_shared<gpu::Buffer>(lightSize);
     }
 
+    assert(checkLightId(lightId));
+
     if (lightId > (Index)_lightArrayBuffer->getNumTypedElements<graphics::Light::LightSchema>()) {
         _lightArrayBuffer->resize(lightSize * (lightId + 10));
     }
 
     // lightArray is big enough so we can remap
-    auto light = _elements._elements[lightId];
+    auto light = _lights._elements[lightId];
     if (light) {
         const auto& lightSchema = light->getLightSchemaBuffer().get();
         _lightArrayBuffer->setSubData<graphics::Light::LightSchema>(lightId, lightSchema);
@@ -402,3 +412,17 @@ void LightStage::updateLightArrayBuffer(Index lightId) {
         // this should not happen ?
     }
 }
+
+LightStageSetup::LightStageSetup() {
+}
+
+void LightStageSetup::run(const render::RenderContextPointer& renderContext) {
+    if (renderContext->_scene) {
+        auto stage = renderContext->_scene->getStage(LightStage::getName());
+        if (!stage) {
+            stage = std::make_shared<LightStage>();
+            renderContext->_scene->resetStage(LightStage::getName(), stage);
+        }
+    }
+}
+

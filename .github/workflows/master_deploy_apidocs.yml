@@ -31,7 +31,7 @@ jobs:
         jsdoc root.js -r api-mainpage.md -c config.json -d output
 
     - name: Deploy API-docs
-      uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+      uses: SamKirkland/FTP-Deploy-Action@v4.3.4
       with:
         server: www531.your-server.de
         protocol: ftps

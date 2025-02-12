@@ -161,7 +161,7 @@ void DrawHighlightMask::run(const render::RenderContextPointer& renderContext, c
 
     if (!inShapes.empty() && !render::HighlightStage::isIndexInvalid(highlightId)) {
         auto resources = inputs.get1();
-        auto& highlight = highlightStage->getElement(highlightId);
+        auto& highlight = highlightStage->getHighlight(highlightId);
 
         RenderArgs* args = renderContext->args;
 
@@ -247,7 +247,7 @@ void DrawHighlight::run(const render::RenderContextPointer& renderContext, const
             auto highlightStage = renderContext->_scene->getStage<render::HighlightStage>();
             auto highlightId = _sharedParameters->_highlightIds[_highlightPassIndex];
             if (!render::HighlightStage::isIndexInvalid(highlightId)) {
-                auto& highlight = highlightStage->getElement(highlightId);
+                auto& highlight = highlightStage->getHighlight(highlightId);
                 auto pipeline = getPipeline(highlight._style);
                 {
                     auto& shaderParameters = _configuration.edit();
@@ -432,7 +432,7 @@ void SelectionToHighlight::run(const render::RenderContextPointer& renderContext
     auto highlightList = highlightStage->getActiveHighlightIds();
 
     for (auto styleId : highlightList) {
-        auto highlight = highlightStage->getElement(styleId);
+        auto highlight = highlightStage->getHighlight(styleId);
 
         if (!scene->isSelectionEmpty(highlight._selectionName)) {
             auto highlightId = highlightStage->getHighlightIdBySelection(highlight._selectionName);
@@ -572,8 +572,8 @@ void HighlightCleanup::run(const render::RenderContextPointer& renderContext, co
     auto highlightStage = scene->getStage<render::HighlightStage>();
 
     for (auto index : inputs.get0()) {
-        std::string selectionName = highlightStage->getElement(index)._selectionName;
-        highlightStage->removeElement(index);
+        std::string selectionName = highlightStage->getHighlight(index)._selectionName;
+        highlightStage->removeHighlight(index);
         scene->removeSelection(selectionName);
     }
 

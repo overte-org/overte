@@ -1407,9 +1407,6 @@ public:
     float getHMDYawSpeed() const { return _hmdYawSpeed; }
     void setHMDYawSpeed(float speed) { _hmdYawSpeed = speed; }
 
-    float getCameraSensitivity() const;
-    void setCameraSensitivity(float cameraSensitivity);
-
     static const float ZOOM_MIN;
     static const float ZOOM_MAX;
     static const float ZOOM_DEFAULT;
@@ -3010,7 +3007,6 @@ private:
     Setting::Handle<float> _scaleSetting;
     Setting::Handle<float> _yawSpeedSetting;
     Setting::Handle<float> _hmdYawSpeedSetting;
-    Setting::Handle<float> _cameraSensitivitySetting;
     Setting::Handle<float> _pitchSpeedSetting;
     Setting::Handle<QUrl> _fullAvatarURLSetting;
     Setting::Handle<QUrl> _fullAvatarModelNameSetting;

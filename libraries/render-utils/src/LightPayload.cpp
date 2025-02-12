@@ -52,7 +52,7 @@ LightPayload::LightPayload() :
 LightPayload::~LightPayload() {
     if (!LightStage::isIndexInvalid(_index)) {
         if (_stage) {
-            _stage->removeElement(_index);
+            _stage->removeLight(_index);
         }
     }
 }
@@ -64,7 +64,7 @@ void LightPayload::render(RenderArgs* args) {
     }
     // Do we need to allocate the light in the stage ?
     if (LightStage::isIndexInvalid(_index)) {
-        _index = _stage->addElement(_light);
+        _index = _stage->addLight(_light);
         _needUpdate = false;
     }
     // Need an update ?
@@ -122,7 +122,7 @@ _light(std::make_shared<graphics::Light>())
 KeyLightPayload::~KeyLightPayload() {
     if (!LightStage::isIndexInvalid(_index)) {
         if (_stage) {
-            _stage->removeElement(_index);
+            _stage->removeLight(_index);
         }
     }
 }
@@ -134,7 +134,7 @@ void KeyLightPayload::render(RenderArgs* args) {
     }
     // Do we need to allocate the light in the stage ?
     if (LightStage::isIndexInvalid(_index)) {
-        _index = _stage->addElement(_light);
+        _index = _stage->addLight(_light);
         _needUpdate = false;
     }
     // Need an update ?

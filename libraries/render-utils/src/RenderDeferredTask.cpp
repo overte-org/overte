@@ -5,7 +5,6 @@
 //
 //  Created by Sam Gateau on 5/29/15.
 //  Copyright 2016 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -512,8 +511,8 @@ void RenderTransparentDeferred::run(const RenderContextPointer& renderContext, c
 
         // Setup haze if current zone has haze
         const auto& hazeStage = args->_scene->getStage<HazeStage>();
-        if (hazeStage && hazeFrame->_elements.size() > 0) {
-            const auto& hazePointer = hazeStage->getElement(hazeFrame->_elements.front());
+        if (hazeStage && hazeFrame->_hazes.size() > 0) {
+            const auto& hazePointer = hazeStage->getHaze(hazeFrame->_hazes.front());
             if (hazePointer) {
                 batch.setUniformBuffer(graphics::slot::buffer::Buffer::HazeParams, hazePointer->getHazeParametersBuffer());
             }

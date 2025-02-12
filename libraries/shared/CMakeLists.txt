@@ -1,11 +1,12 @@
 # Copyright 2013-2020, High Fidelity, Inc.
-# Copyright 2021-2025 Overte e.V.
+# Copyright 2021-2023 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 set(TARGET_NAME shared)
 
 include_directories("${QT_DIR}/include/QtCore/${QT_VERSION}/QtCore" "${QT_DIR}/include/QtCore/${QT_VERSION}")
 
+# TODO: there isn't really a good reason to have Script linked here - let's get what is requiring it out (RegisteredMetaTypes.cpp)
 setup_hifi_library(Gui Network)
 
 if (WIN32)

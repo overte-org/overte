@@ -4,7 +4,6 @@
 //
 //  Created by Olivier Prat on 09/25/17.
 //  Copyright 2017 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -44,8 +43,8 @@ void BloomThreshold::run(const render::RenderContextPointer& renderContext, cons
     const auto lightingModel = inputs.get3();
     const auto& bloomStage = renderContext->_scene->getStage<BloomStage>();
     graphics::BloomPointer bloom;
-    if (bloomStage && bloomFrame->_elements.size()) {
-        bloom = bloomStage->getElement(bloomFrame->_elements.front());
+    if (bloomStage && bloomFrame->_blooms.size()) {
+        bloom = bloomStage->getBloom(bloomFrame->_blooms.front());
     }
     if (!bloom || (lightingModel && !lightingModel->isBloomEnabled())) {
         renderContext->taskFlow.abortTask();

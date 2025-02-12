@@ -1,9 +1,6 @@
 //
-//  RenderCommonTask.cpp
-//
 //  Created by Bradley Austin Davis on 2018/01/09
 //  Copyright 2013-2018 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -81,9 +78,9 @@ void DrawLayered3D::run(const RenderContextPointer& renderContext, const Inputs&
 
     graphics::HazePointer haze;
     const auto& hazeStage = renderContext->args->_scene->getStage<HazeStage>();
-    if (hazeStage && hazeFrame->_elements.size() > 0) {
+    if (hazeStage && hazeFrame->_hazes.size() > 0) {
         // We use _hazes.back() here because the last haze object will always have haze disabled.
-        haze = hazeStage->getElement(hazeFrame->_elements.back());
+        haze = hazeStage->getHaze(hazeFrame->_hazes.back());
     }
 
     // Clear the framebuffer without stereo

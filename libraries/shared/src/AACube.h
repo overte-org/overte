@@ -20,7 +20,6 @@
 #include <QDebug>
 
 #include "BoxBase.h"
-#include "SerDes.h"
 
 class AABox;
 class Extents;
@@ -81,10 +80,6 @@ private:
 
     glm::vec3 _corner;
     float _scale;
-
-    friend DataSerializer& operator<<(DataSerializer &ser, const AACube &cube);
-    friend DataDeserializer& operator>>(DataDeserializer &des, AACube &cube);
-
 };
 
 inline bool operator==(const AACube& a, const AACube& b) {
@@ -104,16 +99,5 @@ inline QDebug operator<<(QDebug debug, const AACube& cube) {
     return debug;
 }
 
-inline DataSerializer& operator<<(DataSerializer &ser, const AACube &cube) {
-    ser << cube._corner;
-    ser << cube._scale;
-    return ser;
-}
-
-inline DataDeserializer& operator>>(DataDeserializer &des, AACube &cube) {
-    des >> cube._corner;
-    des >> cube._scale;
-    return des;
-}
 
 #endif // hifi_AACube_h

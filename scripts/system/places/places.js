@@ -3,7 +3,7 @@
 //  places.js
 //
 //  Created by Alezia Kurdis, January 1st, 2022.
-//  Copyright 2022-2025 Overte e.V.
+//  Copyright 2022-2023 Overte e.V.
 //
 //  Generate an explore app based on the differents source of placename data.
 //
@@ -36,12 +36,6 @@
     var APP_ICON_ACTIVE = ROOT + "icons/appicon_a.png";
     var appStatus = false;
     var channel = "com.overte.places";
-    
-    var portalChannelName = "com.overte.places.portalRezzer";
-    var MAX_DISTANCE_TO_CONSIDER_PORTAL = 100.0; //in meters
-    var PORTAL_DURATION_MILLISEC = 45000; //45 sec
-    var rezzerPortalCount = 0;
-    var MAX_REZZED_PORTAL = 15;
 
     var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
@@ -98,24 +92,6 @@
                     Window.location = messageObj.address;
                 }
                 
-            } else if (messageObj.action === "REQUEST_PORTAL" && (n - timestamp) > INTERCALL_DELAY) {
-                d = new Date();
-                timestamp = d.getTime();
-                var portalPosition = Vec3.sum(MyAvatar.feetPosition, Vec3.multiplyQbyV(MyAvatar.orientation, {"x": 0.0, "y": 0.0, "z": -2.0}));
-                var requestToSend = {
-                    "action": "REZ_PORTAL",
-                    "position": portalPosition,
-                    "url": messageObj.address,
-                    "name": messageObj.name,
-                    "placeID": messageObj.placeID
-                };
-                Messages.sendMessage(portalChannelName, JSON.stringify(requestToSend), false);
-                
-            } else if (messageObj.action === "COPY_URL" && (n - timestamp) > INTERCALL_DELAY) {
-                d = new Date();
-                timestamp = d.getTime();
-                Window.copyToClipboard(messageObj.address);
-                Window.displayAnnouncement("Place URL copied.");
             } else if (messageObj.action === "GO_HOME" && (n - timestamp) > INTERCALL_DELAY) {
                 d = new Date();
                 timestamp = d.getTime();
@@ -308,8 +284,8 @@
                 region = "local";
                 order = "A";
                 fetch = true;
-                pinned = false;
-                currentFound = true;
+                pinned = false;                
+                currentFound = true;                
             } else {
                 region = "federation";
                 order = "F";
@@ -579,57 +555,6 @@
     }
     //####### END of seed random library ################
 
-    function onMessageReceived(paramChannel, paramMessage, paramSender, paramLocalOnly) {
-        if (paramChannel === portalChannelName) {
-            var instruction = JSON.parse(paramMessage);
-            if (instruction.action === "REZ_PORTAL") {
-                generatePortal(instruction.position, instruction.url, instruction.name, instruction.placeID);
-            }
-        }
-    }
-
-    function generatePortal(position, url, name, placeID) {
-        if (rezzerPortalCount <= MAX_REZZED_PORTAL) {
-            var TOLERANCE_FACTOR = 1.1;
-            if (Vec3.distance(MyAvatar.position, position) < MAX_DISTANCE_TO_CONSIDER_PORTAL) {
-                var height = MyAvatar.userHeight * MyAvatar.scale * TOLERANCE_FACTOR;
-                
-                var portalPosition = Vec3.sum(position, {"x": 0.0, "y": height/2, "z": 0.0});
-                var dimensions = {"x": height * 0.618, "y": height, "z": height * 0.618};
-                var userdata = {
-                    "url": url,
-                    "name": name,
-                    "placeID": placeID
-                };
-                
-                var portalID = Entities.addEntity({
-                    "position": portalPosition,
-                    "dimensions": dimensions,
-                    "type": "Shape",
-                    "shape": "Sphere",
-                    "name": "Portal to " + name,
-                    "canCastShadow": false,
-                    "collisionless": true,
-                    "userData": JSON.stringify(userdata),
-                    "script": ROOT + "portal.js",
-                    "visible": "false",
-                    "grab": {
-                        "grabbable": false
-                    }
-                }, "local");
-                rezzerPortalCount = rezzerPortalCount + 1;
-                
-                Script.setTimeout(function () {
-                    Entities.deleteEntity(portalID);
-                    rezzerPortalCount = rezzerPortalCount - 1;
-                    if (rezzerPortalCount < 0) {
-                        rezzerPortalCount = 0;
-                    }
-                }, PORTAL_DURATION_MILLISEC);
-            }
-        }
-    }
-
     function cleanup() {
 
         if (appStatus) {
@@ -637,15 +562,9 @@
             tablet.webEventReceived.disconnect(onAppWebEventReceived);
         }
 
-        Messages.messageReceived.disconnect(onMessageReceived);
-        Messages.unsubscribe(portalChannelName);
-
         tablet.screenChanged.disconnect(onScreenChanged);
         tablet.removeButton(button);
     }
-
-    Messages.subscribe(portalChannelName);
-    Messages.messageReceived.connect(onMessageReceived);
 
     Script.scriptEnding.connect(cleanup);
 }());

@@ -64,8 +64,8 @@ jobs:
               runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
               arch: amd64
               build_type: full
-              # apt-dependencies:  # add missing dependencies to docker image when convenient
-              image: docker.io/overte/overte-full-build:0.1.2-ubuntu-20.04-amd64
+              apt-dependencies: pkg-config libxext-dev libdouble-conversion-dev libpcre2-16-0 libpulse0 libharfbuzz-dev libnss3 libnspr4 libxdamage1 libasound2 # add missing dependencies to docker image when convenient
+              image: docker.io/overte/overte-full-build:0.1.1-ubuntu-20.04-amd64
             # Android builds are currently failing
             #- os: ubuntu-18.04
             #  build_type: android
@@ -75,7 +75,7 @@ jobs:
               runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
               arch: aarch64
               build_type: full
-              image: docker.io/overte/overte-full-build:0.1.2-ubuntu-22.04-aarch64
+              image: docker.io/overte/overte-full-build:0.1.1-ubuntu-22.04-aarch64
         fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
@@ -244,7 +244,7 @@ jobs:
 
     - name: Archive cmake logs
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v3
       with:
         name: cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz
         path: ./cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz

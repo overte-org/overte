@@ -348,7 +348,7 @@ glm::ivec3 LightClusters::updateClusters() {
     uint32_t numClusteredLights = 0;
     for (size_t lightNum = 1; lightNum < _visibleLightIndices.size(); ++lightNum) {
         auto lightId = _visibleLightIndices[lightNum];
-        auto light = _lightStage->getElement(lightId);
+        auto light = _lightStage->getLight(lightId);
         if (!light) {
             continue;
         }
@@ -567,9 +567,9 @@ void LightClusteringPass::run(const render::RenderContextPointer& renderContext,
     output = _lightClusters;
 
     auto config = std::static_pointer_cast<Config>(renderContext->jobConfig);
-    config->numSceneLights = lightStage->getNumElements();
-    config->numFreeSceneLights = lightStage->getNumFreeElements();
-    config->numAllocatedSceneLights = lightStage->getNumAllocatedElements();
+    config->numSceneLights = lightStage->getNumLights();
+    config->numFreeSceneLights = lightStage->getNumFreeLights();
+    config->numAllocatedSceneLights = lightStage->getNumAllocatedLights();
     config->setNumInputLights(clusteringStats.x);
     config->setNumClusteredLights(clusteringStats.y);
     config->setNumClusteredLightReferences(clusteringStats.z);

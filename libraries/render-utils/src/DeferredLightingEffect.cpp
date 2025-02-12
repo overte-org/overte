@@ -4,7 +4,6 @@
 //
 //  Created by Andrzej Kapolka on 9/11/14.
 //  Copyright 2014 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -376,7 +375,7 @@ void RenderDeferredSetup::run(const render::RenderContextPointer& renderContext,
         // Global directional light, maybe shadow and ambient pass
         auto lightStage = renderContext->_scene->getStage<LightStage>();
         assert(lightStage);
-        assert(lightStage->getNumElements() > 0);
+        assert(lightStage->getNumLights() > 0);
         auto keyLight = lightStage->getCurrentKeyLight(*lightFrame);
 
         // Check if keylight casts shadows
@@ -392,7 +391,7 @@ void RenderDeferredSetup::run(const render::RenderContextPointer& renderContext,
         // Global Ambient light
         graphics::LightPointer ambientLight;
         if (lightStage && lightFrame->_ambientLights.size()) {
-            ambientLight = lightStage->getElement(lightFrame->_ambientLights.front());
+            ambientLight = lightStage->getLight(lightFrame->_ambientLights.front());
         }
         bool hasAmbientMap = (ambientLight != nullptr);
 
@@ -431,8 +430,8 @@ void RenderDeferredSetup::run(const render::RenderContextPointer& renderContext,
 
         // Haze
         const auto& hazeStage = args->_scene->getStage<HazeStage>();
-        if (hazeStage && hazeFrame->_elements.size() > 0) {
-            const auto& hazePointer = hazeStage->getElement(hazeFrame->_elements.front());
+        if (hazeStage && hazeFrame->_hazes.size() > 0) {
+            const auto& hazePointer = hazeStage->getHaze(hazeFrame->_hazes.front());
             if (hazePointer) {
                 batch.setUniformBuffer(graphics::slot::buffer::Buffer::HazeParams, hazePointer->getHazeParametersBuffer());
             }
@@ -637,7 +636,7 @@ void DefaultLightingSetup::run(const RenderContextPointer& renderContext) {
 
             // Add the global light to the light stage (for later shadow rendering)
             // Set this light to be the default
-            _defaultLightID = lightStage->addElement(lp, true);
+            _defaultLightID = lightStage->addLight(lp, true);
         }
 
         auto backgroundStage = renderContext->_scene->getStage<BackgroundStage>();
@@ -650,7 +649,7 @@ void DefaultLightingSetup::run(const RenderContextPointer& renderContext) {
             _defaultBackground = background;
 
             // Add the global light to the light stage (for later shadow rendering)
-            _defaultBackgroundID = backgroundStage->addElement(_defaultBackground);
+            _defaultBackgroundID = backgroundStage->addBackground(_defaultBackground);
         }
     }
 
@@ -660,7 +659,7 @@ void DefaultLightingSetup::run(const RenderContextPointer& renderContext) {
             auto haze = std::make_shared<graphics::Haze>();
 
             _defaultHaze = haze;
-            _defaultHazeID = hazeStage->addElement(_defaultHaze);
+            _defaultHazeID = hazeStage->addHaze(_defaultHaze);
         }
     }
 
@@ -670,7 +669,7 @@ void DefaultLightingSetup::run(const RenderContextPointer& renderContext) {
             auto tonemapping = std::make_shared<graphics::Tonemapping>();
 
             _defaultTonemapping = tonemapping;
-            _defaultTonemappingID = tonemappingStage->addElement(_defaultTonemapping);
+            _defaultTonemappingID = tonemappingStage->addTonemapping(_defaultTonemapping);
         }
     }
 }

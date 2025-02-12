@@ -246,9 +246,6 @@ public:
     float getFieldOfView() { return _fieldOfView.get(); }
     void setFieldOfView(float fov);
 
-    bool getCameraClippingEnabled() { return _cameraClippingEnabled.get(); }
-    void setCameraClippingEnabled(bool enabled);
-
     float getHMDTabletScale() { return _hmdTabletScale.get(); }
     void setHMDTabletScale(float hmdTabletScale);
     float getDesktopTabletScale() { return _desktopTabletScale.get(); }
@@ -265,9 +262,6 @@ public:
 
     bool getPreferAvatarFingerOverStylus() { return _preferAvatarFingerOverStylusSetting.get(); }
     void setPreferAvatarFingerOverStylus(bool value);
-
-    bool getShowGraphicsIcon() { return _showGraphicsIconSetting.get(); }
-    void setShowGraphicsIcon(bool value);
 
     bool getMiniTabletEnabled() { return _miniTabletEnabledSetting.get(); }
     void setMiniTabletEnabled(bool enabled);
@@ -722,7 +716,6 @@ private:
 
     Setting::Handle<QString> _previousScriptLocation;
     Setting::Handle<float> _fieldOfView;
-    Setting::Handle<float> _cameraClippingEnabled;
     Setting::Handle<float> _hmdTabletScale;
     Setting::Handle<float> _desktopTabletScale;
     Setting::Handle<bool> _firstRun;
@@ -730,7 +723,6 @@ private:
     Setting::Handle<bool> _hmdTabletBecomesToolbarSetting;
     Setting::Handle<bool> _preferStylusOverLaserSetting;
     Setting::Handle<bool> _preferAvatarFingerOverStylusSetting;
-    Setting::Handle<bool> _showGraphicsIconSetting;
     Setting::Handle<bool> _constrainToolbarPosition;
     Setting::Handle<bool> _awayStateWhenFocusLostInVREnabled;
     Setting::Handle<QString> _preferredCursor;
@@ -897,8 +889,5 @@ private:
     DiscordPresence* _discordPresence{ nullptr };
 
     bool _profilingInitialized { false };
-
-    bool _prevCameraClippingEnabled { false };
-    unsigned int _cameraClippingRayPickID;
 };
 #endif // hifi_Application_h

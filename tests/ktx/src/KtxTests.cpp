@@ -16,7 +16,6 @@
 #include <gpu/Texture.h>
 #include <image/Image.h>
 #include <image/TextureProcessing.h>
-#include "SerDes.h"
 
 
 QTEST_GUILESS_MAIN(KtxTests)
@@ -31,19 +30,6 @@ QString getRootPath() {
     });
     return result;
 }
-
-#if 0
-ktx::Byte* serializeSPH(ktx::Byte* data, const gpu::IrradianceKTXPayload &payload) const {
-    *(ktx::IrradianceKTXPayload::Version*)data = IrradianceKTXPayload::CURRENT_VERSION;
-    data += sizeof(ktx::IrradianceKTXPayload::Version);
-
-    memcpy(data, &payload._irradianceSH, sizeof(ktx::SphericalHarmonics));
-    data += sizeof(SphericalHarmonics);
-
-    return data + PADDING;
-}
-#endif
-
 
 void KtxTests::initTestCase() {
 }
@@ -160,14 +146,6 @@ void KtxTests::testKtxSerialization() {
     }
     testTexture->setKtxBacking(TEST_IMAGE_KTX.fileName().toStdString());
 }
-
-
-void KtxTests::testKtxNewSerializationSphericalHarmonics() {
-    DataSerializer ser;
-
-
-}
-
 
 #if 0
 

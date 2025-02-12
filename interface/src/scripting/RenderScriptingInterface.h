@@ -37,7 +37,6 @@
  *     they're disabled.
  * @property {integer} antialiasingMode - The active anti-aliasing mode.
  * @property {number} viewportResolutionScale - The view port resolution scale, <code>&gt; 0.0</code>.
- * @property {boolean} cameraClippingEnabled - <code>true</code> if third person camera clipping is enabled, <code>false</code> if it's disabled.
  */
 class RenderScriptingInterface : public QObject {
     Q_OBJECT
@@ -50,7 +49,6 @@ class RenderScriptingInterface : public QObject {
     Q_PROPERTY(AntialiasingConfig::Mode antialiasingMode READ getAntialiasingMode WRITE setAntialiasingMode NOTIFY settingsChanged)
     Q_PROPERTY(float viewportResolutionScale READ getViewportResolutionScale WRITE setViewportResolutionScale NOTIFY settingsChanged)
     Q_PROPERTY(float verticalFieldOfView READ getVerticalFieldOfView WRITE setVerticalFieldOfView NOTIFY settingsChanged)
-    Q_PROPERTY(bool cameraClippingEnabled READ getCameraClippingEnabled WRITE setCameraClippingEnabled NOTIFY settingsChanged)
 
 public:
     RenderScriptingInterface();
@@ -263,21 +261,7 @@ public slots:
      * @function Render.setVerticalFieldOfView
      * @param {number} fieldOfView - The vertical field of view in degrees to set.
      */
-    void setVerticalFieldOfView(float fieldOfView);
-
-    /*@jsdoc
-     * Gets whether or not third person camera clipping is enabled.
-     * @function Render.getCameraClippingEnabled
-     * @returns {boolean} <code>true</code> if camera clipping is enabled, <code>false</code> if it's disabled.
-     */
-    bool getCameraClippingEnabled() { return qApp->getCameraClippingEnabled(); }
-
-    /*@jsdoc
-     * Sets whether or not third person camera clipping is enabled.
-     * @function Render.setCameraClippingEnabled
-     * @param {boolean} enabled - <code>true</code> to enable third person camera clipping, <code>false</code> to disable.
-     */
-    void setCameraClippingEnabled(bool enabled);
+    void setVerticalFieldOfView( float fieldOfView );
 
 signals:
 

@@ -95,8 +95,8 @@ vec4 evalSDFColor(vec2 texCoord, vec4 glyphBounds) {
 
 vec4 evalSDFSuperSampled(vec2 texCoord, vec2 positionMS, vec4 glyphBounds) {
     // Clip to edges. Note: We don't need to check the top edge.
-    if ((params.bounds.z > 0.0 && (positionMS.x < params.bounds.x || positionMS.x > (params.bounds.x + params.bounds.z))) ||
-        (params.bounds.w > 0.0 && (positionMS.y < params.bounds.y - params.bounds.w))) {
+    if (positionMS.x < params.bounds.x || positionMS.x > (params.bounds.x + params.bounds.z) ||
+        positionMS.y < params.bounds.y - params.bounds.w) {
         return vec4(0.0);
     }
 

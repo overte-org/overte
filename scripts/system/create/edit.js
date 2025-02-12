@@ -261,8 +261,6 @@
         visible: false
     });
 
-    var savedClippingEnabled = false;
-
     function adjustPositionPerBoundingBox(position, direction, registration, dimensions, orientation) {
         // Adjust the position such that the bounding box (registration, dimensions and orientation) lies behind the original
         // position in the given direction.
@@ -1197,7 +1195,6 @@
                 selectionDisplay.disableTriggerMapping();
                 tablet.landscape = false;
                 Controller.disableMapping(CONTROLLER_MAPPING_NAME);
-                Render.cameraClippingEnabled = savedClippingEnabled;
             } else {
                 if (shouldUseEditTabletApp()) {
                     tablet.loadQMLSource(Script.resolvePath("qml/Edit.qml"), true);
@@ -1215,8 +1212,6 @@
                 print("starting tablet in landscape mode");
                 tablet.landscape = true;
                 Controller.enableMapping(CONTROLLER_MAPPING_NAME);
-                savedClippingEnabled = Render.cameraClippingEnabled;
-                Render.cameraClippingEnabled = false;
                 // Not sure what the following was meant to accomplish, but it currently causes
                 // everybody else to think that Interface has lost focus overall. fogbugzid:558
                 // Window.setFocus();

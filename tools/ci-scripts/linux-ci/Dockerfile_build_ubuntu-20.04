@@ -1,8 +1,8 @@
-# Copyright 2022-2024 Overte e.V.
+# Copyright 2022-2023 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build -t overte/overte-full-build:0.1.2-ubuntu-20.04 -f Dockerfile_build_ubuntu-20.04 .
+# Example build: docker build -t overte/overte-full-build:0.1.1-ubuntu-20.04 -f Dockerfile_build_ubuntu-20.04 .
 FROM ubuntu:20.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
@@ -18,8 +18,6 @@ RUN apt-get update && apt-get -y install tzdata
 RUN apt-get -y install curl ninja-build git cmake g++ libssl-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev libsystemd-dev
 # Install server-console build dependencies
 RUN apt-get -y install npm
-# Install Interface dependencies
-RUN apt-get -y install pkg-config libxext-dev libdouble-conversion-dev libpcre2-16-0 libpulse0 libharfbuzz-dev libnss3 libnspr4 libxdamage1 libasound2 vulkan-validationlayers libvulkan-dev libvulkan1
 
 # Install tools for package creation
 RUN apt-get -y install sudo chrpath binutils dh-make

@@ -4,7 +4,6 @@
 //
 //  Created by Clement on 4/22/15.
 //  Copyright 2015 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -40,46 +39,46 @@ ZoneEntityRenderer::ZoneEntityRenderer(const EntityItemPointer& entity)
 void ZoneEntityRenderer::onRemoveFromSceneTyped(const TypedEntityPointer& entity) {
     if (_stage) {
         if (!LightStage::isIndexInvalid(_sunIndex)) {
-            _stage->removeElement(_sunIndex);
+            _stage->removeLight(_sunIndex);
             _sunIndex = INVALID_INDEX;
         }
         if (!LightStage::isIndexInvalid(_ambientIndex)) {
-            _stage->removeElement(_ambientIndex);
+            _stage->removeLight(_ambientIndex);
             _ambientIndex = INVALID_INDEX;
         }
     }
 
     if (_backgroundStage) {
         if (!BackgroundStage::isIndexInvalid(_backgroundIndex)) {
-            _backgroundStage->removeElement(_backgroundIndex);
+            _backgroundStage->removeBackground(_backgroundIndex);
             _backgroundIndex = INVALID_INDEX;
         }
     }
 
     if (_hazeStage) {
         if (!HazeStage::isIndexInvalid(_hazeIndex)) {
-            _hazeStage->removeElement(_hazeIndex);
+            _hazeStage->removeHaze(_hazeIndex);
             _hazeIndex = INVALID_INDEX;
         }
     }
 
     if (_bloomStage) {
         if (!BloomStage::isIndexInvalid(_bloomIndex)) {
-            _bloomStage->removeElement(_bloomIndex);
+            _bloomStage->removeBloom(_bloomIndex);
             _bloomIndex = INVALID_INDEX;
         }
     }
 
     if (_tonemappingStage) {
         if (!TonemappingStage::isIndexInvalid(_tonemappingIndex)) {
-            _tonemappingStage->removeElement(_tonemappingIndex);
+            _tonemappingStage->removeTonemapping(_tonemappingIndex);
             _tonemappingIndex = INVALID_INDEX;
         }
     }
 
     if (_ambientOcclusionStage) {
         if (!AmbientOcclusionStage::isIndexInvalid(_ambientOcclusionIndex)) {
-            _ambientOcclusionStage->removeElement(_ambientOcclusionIndex);
+            _ambientOcclusionStage->removeAmbientOcclusion(_ambientOcclusionIndex);
             _ambientOcclusionIndex = INVALID_INDEX;
         }
     }
@@ -124,7 +123,7 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
     { // Sun 
         if (_needSunUpdate) {
             if (LightStage::isIndexInvalid(_sunIndex)) {
-                _sunIndex = _stage->addElement(_sunLight);
+                _sunIndex = _stage->addLight(_sunLight);
             } else {
                 _stage->updateLightArrayBuffer(_sunIndex);
             }
@@ -137,7 +136,7 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
 
         if (_needAmbientUpdate) {
             if (LightStage::isIndexInvalid(_ambientIndex)) {
-                _ambientIndex = _stage->addElement(_ambientLight);
+                _ambientIndex = _stage->addLight(_ambientLight);
             } else {
                 _stage->updateLightArrayBuffer(_ambientIndex);
             }
@@ -150,7 +149,7 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
 
         if (_needBackgroundUpdate) {
             if (BackgroundStage::isIndexInvalid(_backgroundIndex)) {
-                _backgroundIndex = _backgroundStage->addElement(_background);
+                _backgroundIndex = _backgroundStage->addBackground(_background);
             }
             _needBackgroundUpdate = false;
         }
@@ -159,7 +158,7 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
     {
         if (_needHazeUpdate) {
             if (HazeStage::isIndexInvalid(_hazeIndex)) {
-                _hazeIndex = _hazeStage->addElement(_haze);
+                _hazeIndex = _hazeStage->addHaze(_haze);
             }
             _needHazeUpdate = false;
         }
@@ -168,7 +167,7 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
     {
         if (_needBloomUpdate) {
             if (BloomStage::isIndexInvalid(_bloomIndex)) {
-                _bloomIndex = _bloomStage->addElement(_bloom);
+                _bloomIndex = _bloomStage->addBloom(_bloom);
             }
             _needBloomUpdate = false;
         }
@@ -177,7 +176,7 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
     {
         if (_needTonemappingUpdate) {
             if (TonemappingStage::isIndexInvalid(_tonemappingIndex)) {
-                _tonemappingIndex = _tonemappingStage->addElement(_tonemapping);
+                _tonemappingIndex = _tonemappingStage->addTonemapping(_tonemapping);
             }
             _needTonemappingUpdate = false;
         }
@@ -186,7 +185,7 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
     {
         if (_needAmbientOcclusionUpdate) {
             if (AmbientOcclusionStage::isIndexInvalid(_ambientOcclusionIndex)) {
-                _ambientOcclusionIndex = _ambientOcclusionStage->addElement(_ambientOcclusion);
+                _ambientOcclusionIndex = _ambientOcclusionStage->addAmbientOcclusion(_ambientOcclusion);
             }
             _needAmbientOcclusionUpdate = false;
         }
@@ -206,9 +205,9 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
         }
 
         if (_skyboxMode == COMPONENT_MODE_DISABLED) {
-            _backgroundStage->_currentFrame.pushElement(INVALID_INDEX);
+            _backgroundStage->_currentFrame.pushBackground(INVALID_INDEX);
         } else if (_skyboxMode == COMPONENT_MODE_ENABLED) {
-            _backgroundStage->_currentFrame.pushElement(_backgroundIndex);
+            _backgroundStage->_currentFrame.pushBackground(_backgroundIndex);
         }
 
         if (_ambientLightMode == COMPONENT_MODE_DISABLED) {
@@ -219,25 +218,25 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
 
         // Haze only if the mode is not inherit, as the model deals with on/off
         if (_hazeMode != COMPONENT_MODE_INHERIT) {
-            _hazeStage->_currentFrame.pushElement(_hazeIndex);
+            _hazeStage->_currentFrame.pushHaze(_hazeIndex);
         }
 
         if (_bloomMode == COMPONENT_MODE_DISABLED) {
-            _bloomStage->_currentFrame.pushElement(INVALID_INDEX);
+            _bloomStage->_currentFrame.pushBloom(INVALID_INDEX);
         } else if (_bloomMode == COMPONENT_MODE_ENABLED) {
-            _bloomStage->_currentFrame.pushElement(_bloomIndex);
+            _bloomStage->_currentFrame.pushBloom(_bloomIndex);
         }
 
         if (_tonemappingMode == COMPONENT_MODE_DISABLED) {
-            _tonemappingStage->_currentFrame.pushElement(0);  // Use the fallback tonemapping for "off"
+            _tonemappingStage->_currentFrame.pushTonemapping(0); // Use the fallback tonemapping for "off"
         } else if (_tonemappingMode == COMPONENT_MODE_ENABLED) {
-            _tonemappingStage->_currentFrame.pushElement(_tonemappingIndex);
+            _tonemappingStage->_currentFrame.pushTonemapping(_tonemappingIndex);
         }
 
         if (_ambientOcclusionMode == COMPONENT_MODE_DISABLED) {
-            _ambientOcclusionStage->_currentFrame.pushElement(INVALID_INDEX);
+            _ambientOcclusionStage->_currentFrame.pushAmbientOcclusion(INVALID_INDEX);
         } else if (_ambientOcclusionMode == COMPONENT_MODE_ENABLED) {
-            _ambientOcclusionStage->_currentFrame.pushElement(_ambientOcclusionIndex);
+            _ambientOcclusionStage->_currentFrame.pushAmbientOcclusion(_ambientOcclusionIndex);
         }
     }
 

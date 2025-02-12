@@ -440,7 +440,7 @@ void Scene::queryTransitionItems(const Transaction::TransitionQueries& transacti
             auto transitionId = item.getTransitionId();
 
             if (!TransitionStage::isIndexInvalid(transitionId)) {
-                auto& transition = transitionStage->getElement(transitionId);
+                auto& transition = transitionStage->getTransition(transitionId);
                 func(itemId, &transition);
             } else {
                 func(itemId, nullptr);
@@ -477,7 +477,7 @@ void Scene::resetHighlights(const Transaction::HighlightResets& transactions) {
             if (HighlightStage::isIndexInvalid(outlineId)) {
                 outlineStage->addHighlight(selectionName, newStyle);
             } else {
-                outlineStage->editElement(outlineId)._style = newStyle;
+                outlineStage->editHighlight(outlineId)._style = newStyle;
             }
         }
     }
@@ -490,7 +490,7 @@ void Scene::removeHighlights(const Transaction::HighlightRemoves& transactions) 
             auto outlineId = outlineStage->getHighlightIdBySelection(selectionName);
 
             if (!HighlightStage::isIndexInvalid(outlineId)) {
-                outlineStage->removeElement(outlineId);
+                outlineStage->removeHighlight(outlineId);
             }
         }
     }
@@ -505,7 +505,7 @@ void Scene::queryHighlights(const Transaction::HighlightQueries& transactions) {
             auto outlineId = outlineStage->getHighlightIdBySelection(selectionName);
 
             if (!HighlightStage::isIndexInvalid(outlineId)) {
-                func(&outlineStage->editElement(outlineId)._style);
+                func(&outlineStage->editHighlight(outlineId)._style);
             } else {
                 func(nullptr);
             }
@@ -559,7 +559,7 @@ void Scene::removeItemTransition(ItemID itemId) {
     auto& item = _items[itemId];
     TransitionStage::Index transitionId = item.getTransitionId();
     if (!render::TransitionStage::isIndexInvalid(transitionId)) {
-        const auto& transition = transitionStage->getElement(transitionId);
+        const auto& transition = transitionStage->getTransition(transitionId);
         const auto transitionOwner = transition.itemId;
         if (transitionOwner == itemId) {
             // No more items will be using this transition. Clean it up.
@@ -570,7 +570,7 @@ void Scene::removeItemTransition(ItemID itemId) {
                 }
             }
             _transitionFinishedOperatorMap.erase(transitionId);
-            transitionStage->removeElement(transitionId);
+            transitionStage->removeTransition(transitionId);
         }
 
         setItemTransition(itemId, render::TransitionStage::INVALID_INDEX);

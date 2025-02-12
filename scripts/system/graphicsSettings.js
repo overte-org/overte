@@ -1,20 +1,15 @@
 //
 //  graphicsSettings.js
 //
-//  Created by Kalila L. on August 5th, 2020
+//  Created by Kalila L. on 8/5/2020
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
 (function() { // BEGIN LOCAL_SCOPE
-    var channelComm = "Overte-ShowGraphicsIconChanged";
-    var appStatus = false;
-    var GRAPHICS_HIDE_AND_SHOW_SETTING_KEY = "showGraphicsIcon";
-    var GRAPHICS_HIDE_AND_SHOW_DEFAULT_VALUE = true;
-    
+
     var AppUi = Script.require('appUi');
     
     // cellphone-cog MDI
@@ -54,49 +49,22 @@
     }
 
     function startup() {
-        if (!appStatus) {
-            ui = new AppUi({
-                buttonName: BUTTON_NAME,
-                sortOrder: 8,
-                normalButton: getIcon(),
-                activeButton: getIcon().replace('white', 'black'),
-                home: GRAPHICS_QML_SOURCE
-            });
-        }
-        appStatus = true;
+        ui = new AppUi({
+            buttonName: BUTTON_NAME,
+            sortOrder: 8,
+            normalButton: getIcon(),
+            activeButton: getIcon().replace('white', 'black'),
+            home: GRAPHICS_QML_SOURCE
+        });
     }
 
     function shutdown() {
-        if (appStatus) {
-            ui.onScriptEnding();
-            appStatus = false;
-        }
-    }
-
-    function cleanup() {
-        Messages.messageReceived.disconnect(onMessageReceived);
-        Messages.unsubscribe(channelComm);
-    }
-
-    function onMessageReceived(channel, message, sender, localOnly) {
-        if (channel === channelComm && localOnly) {
-            if (Settings.getValue(GRAPHICS_HIDE_AND_SHOW_SETTING_KEY, GRAPHICS_HIDE_AND_SHOW_DEFAULT_VALUE)) {
-                startup();
-            } else {
-                shutdown();
-            }
-        }
     }
 
     //
     // Run the functions.
     //
-    if (Settings.getValue(GRAPHICS_HIDE_AND_SHOW_SETTING_KEY, GRAPHICS_HIDE_AND_SHOW_DEFAULT_VALUE)) {
-        startup();
-    }
-    Messages.subscribe(channelComm);
-    Messages.messageReceived.connect(onMessageReceived);
-    
-    Script.scriptEnding.connect(cleanup);
+    startup();
+    Script.scriptEnding.connect(shutdown);
 
 }()); // END LOCAL_SCOPE
