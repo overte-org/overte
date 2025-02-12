@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2020-2022 Vircadia contributors
-# Copyright 2021-2024 Overte e.V.
+# Copyright 2021-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 name: Master CI Build
@@ -14,10 +14,7 @@ env:
   APP_NAME: interface
   BUILD_TYPE: Release
   BUILD_NUMBER: ${{ github.event.number }}_${{ github.sha }}
-  CI_BUILD: Github
   GIT_COMMIT: ${{ github.sha }}
-  # VCPKG did not build well on OSX disabling HIFI_VCPKG_BOOTSTRAP, which invokes a download to a working version of vcpkg
-  # HIFI_VCPKG_BOOTSTRAP: true
   RELEASE_TYPE: PRODUCTION
   RELEASE_NUMBER: ${{ github.event.number }}_${{ github.sha }}
   STABLE_BUILD: 0
@@ -26,8 +23,6 @@ env:
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
   CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
   CMAKE_BACKTRACE_TOKEN: master_${{ github.event.number }}_${{ github.sha }}
-  # Disable VCPKG caching to save time.
-  VCPKG_FEATURE_FLAGS: -binarycaching
 
   # OSX-specific variables
   DEVELOPER_DIR: /Applications/Xcode_11.2.app/Contents/Developer
@@ -40,15 +35,19 @@ env:
 
 jobs:
   build:
+    name: "${{matrix.os}}"
     strategy:
       matrix:
         include:
           - os: windows-2019
             build_type: full
+            conan_qt: True
           #- os: macOS-10.15
           #  build_type: full
+          #  conan_qt: True
           #- os: ubuntu-20.04
           #  build_type: full
+          #  conan_qt: True
           #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion3 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
       fail-fast: false
     runs-on: ${{matrix.os}}
@@ -68,8 +67,10 @@ jobs:
         echo "{github_sha_short}={`echo $GIT_COMMIT | cut -c1-7`}" >> $GITHUB_OUTPUT
         echo "JOB_NAME=build (${{matrix.os}}, ${{matrix.build_type}})" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
+        echo "CONAN_QT=${{matrix.conan_qt}}" >> $GITHUB_ENV
         # Linux build variables
         if [[ "${{ matrix.os }}" = "ubuntu-"* ]]; then
+          echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=tgz" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
@@ -87,6 +88,7 @@ jobs:
         fi
         # Windows build variables
         if [ "${{ matrix.os }}" = "windows-2019" ]; then
+          echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "ZIP_COMMAND=7z" >> $GITHUB_ENV
           echo "ZIP_ARGS=a" >> $GITHUB_ENV
@@ -166,36 +168,53 @@ jobs:
     - name: Install Python modules
       if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
       shell: bash
-      run: $PYTHON_EXEC -m pip install boto3 PyGithub
+      run: $PYTHON_EXEC -m pip install boto3 PyGithub conan
 
-    - name: Create build environment
+    - name: Prepare Conan Build Environment
       shell: bash
-      run: cmake -E make_directory "${{runner.workspace}}/build"
+      run: |
+        conan profile detect
+        conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
+        echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
+
+    - name: Install Conan dependencies
+      shell: bash
+      run: conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:with_qt='${CONAN_QT^} -b missing -pr:b=default -of build --format=json > build.json
+
+    - name: Upload Conan dependencies
+      continue-on-error: true
+      shell: bash
+      env:
+        CONAN_LOGIN_USERNAME_OVERTE: ${{ secrets.conan_login_username_overte }}
+        CONAN_PASSWORD_OVERTE: ${{ secrets.conan_password_overte }}
+      run: |
+        conan list --graph=build.json --graph-binaries=build --format=json > pkglist.json
+        conan upload --list=pkglist.json -r=overte -c
 
     - name: Configure CMake
-      working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
+           # This syntax requires CMake 3.23
+      run: cmake --preset conan-${BUILD_TYPE,,} -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
 
     - name: Build application
       working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
 
     - name: Build domain server
       working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target domain-server $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build assignment client
       working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target assignment-client $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build console
       working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target packaged-server-console $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build installer
       working-directory: ${{runner.workspace}}/build
