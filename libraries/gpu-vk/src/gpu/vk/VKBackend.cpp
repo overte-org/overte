@@ -861,10 +861,8 @@ void VKBackend::InputStageState::reset() {
 void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
     // VKTODO: can be used for "verification mode" later
     // VKTODO: it looks like renderer tends to bind buffers that should not be bound at given point? Or maybe I'm missing reset somewhere
-    auto pipeline = gpu::acquire(_cache.pipelineState.pipeline);
-    auto program = pipeline->getProgram();
-    const auto& vertexReflection = program->getShaders()[0]->getReflection();
-    const auto& fragmentReflection = program->getShaders()[1]->getReflection();
+    const auto& vertexReflection = _cache.pipelineState.vertexReflection;
+    const auto& fragmentReflection = _cache.pipelineState.fragmentReflection;
 
     auto bindingMap = Cache::Pipeline::getBindingMap(vertexReflection.uniformBuffers, fragmentReflection.uniformBuffers);
 
@@ -903,10 +901,8 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
     // VKTODO: renderer leaves unbound texture slots, and that's not allowed on Vulkan
     // VKTODO: can be used for "verification mode" later
     // VKTODO: it looks like renderer tends to bind buffers that should not be bound at given point? Or maybe I'm missing reset somewhere
-    auto pipeline = gpu::acquire(_cache.pipelineState.pipeline);
-    auto program = pipeline->getProgram();
-    const auto& vertexReflection = program->getShaders()[0]->getReflection();
-    const auto& fragmentReflection = program->getShaders()[1]->getReflection();
+    const auto& vertexReflection = _cache.pipelineState.vertexReflection;
+    const auto& fragmentReflection = _cache.pipelineState.fragmentReflection;
 
     auto bindingMap = Cache::Pipeline::getBindingMap(vertexReflection.textures, fragmentReflection.textures);
 
@@ -983,10 +979,8 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
 void VKBackend::updateVkDescriptorWriteSetsStorage(VkDescriptorSet target) {
     // VKTODO: can be used for "verification mode" later
     // VKTODO: it looks like renderer tends to bind buffers that should not be bound at given point? Or maybe I'm missing reset somewhere
-    auto pipeline = gpu::acquire(_cache.pipelineState.pipeline);
-    auto program = pipeline->getProgram();
-    const auto& vertexReflection = program->getShaders()[0]->getReflection();
-    const auto& fragmentReflection = program->getShaders()[1]->getReflection();
+    const auto& vertexReflection = _cache.pipelineState.vertexReflection;
+    const auto& fragmentReflection = _cache.pipelineState.fragmentReflection;
 
     auto bindingMap = Cache::Pipeline::getBindingMap(vertexReflection.resourceBuffers, fragmentReflection.resourceBuffers);
 
@@ -1372,10 +1366,8 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             vkCmdSetScissor(_currentCommandBuffer, 0, 1, &scissor);
 
             // VKTODO: remove when webentities work
-            auto pipeline = gpu::acquire(_cache.pipelineState.pipeline);
-            auto program = pipeline->getProgram();
-            const auto& vertexReflection = program->getShaders()[0]->getReflection();
-            const auto& fragmentReflection = program->getShaders()[1]->getReflection();
+            const auto& vertexReflection = _cache.pipelineState.vertexReflection;
+            const auto& fragmentReflection = _cache.pipelineState.fragmentReflection;
             /*if (fragmentReflection.textures.count("webTexture")) {
                 printf("webTexture");
             }*/
