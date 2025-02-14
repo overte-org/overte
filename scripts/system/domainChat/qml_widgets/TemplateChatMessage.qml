@@ -3,176 +3,176 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 
 Component {
-	id: template_chat_message
+    id: template_chat_message
 
-	Rectangle {
-		property int index: delegateIndex
+    Rectangle {
+        property int index: delegateIndex
 
-		height: Math.max(65, children[1].height + 30)
-		color: index % 2 === 0 ? "transparent" : Qt.rgba(0.15,0.15,0.15,1)
-		width: listview.parent.parent.width
-		Layout.fillWidth: true
+        height: Math.max(65, children[1].height + 30)
+        color: index % 2 === 0 ? "transparent" : Qt.rgba(0.15,0.15,0.15,1)
+        width: listview.parent.parent.width
+        Layout.fillWidth: true
 
-		Item {
-			width: parent.width - 10
-			anchors.horizontalCenter: parent.horizontalCenter
-			height: 22
+        Item {
+            width: parent.width - 10
+            anchors.horizontalCenter: parent.horizontalCenter
+            height: 22
 
-			TextEdit {
-				text: delegateUsername;
-				color: "lightgray";
-				readOnly: true;
-				selectByMouse: true;
-				selectByKeyboard: true;
-			}
+            TextEdit {
+                text: delegateUsername;
+                color: "lightgray";
+                readOnly: true;
+                selectByMouse: true;
+                selectByKeyboard: true;
+            }
 
-			Text {
-				anchors.right: parent.right;
-				text: delegateDate;
-				color: "lightgray";
-			}
-		}
+            Text {
+                anchors.right: parent.right;
+                text: delegateDate;
+                color: "lightgray";
+            }
+        }
 
-		Flow {
-			anchors.top: parent.children[0].bottom;
-			width: parent.width;
-			x: 5
-			id: messageBoxFlow
+        Flow {
+            anchors.top: parent.children[0].bottom;
+            width: parent.width;
+            x: 5
+            id: messageBoxFlow
 
-			Repeater {
-				model: delegateText;
+            Repeater {
+                model: delegateText;
 
-				Item {
-					width: parent.width;
-					height: children[0].contentHeight;
+                Item {
+                    width: parent.width;
+                    height: children[0].contentHeight;
 
-					TextEdit {
-						text: model.value || ""
-						font.pointSize: 12
-						wrapMode: TextEdit.WordWrap
-						width: parent.width * 0.8
-						visible: model.type === 'text' || model.type === 'mention';
-						readOnly: true
-						selectByMouse: true
-						selectByKeyboard: true
+                    TextEdit {
+                        text: model.value || ""
+                        font.pointSize: 12
+                        wrapMode: TextEdit.WordWrap
+                        width: parent.width * 0.8
+                        visible: model.type === 'text' || model.type === 'mention';
+                        readOnly: true
+                        selectByMouse: true
+                        selectByKeyboard: true
 
-						color: {
-							switch (model.type) {
-								case "mention":
-									return "purple";
-								default:
-									return "white";
-							}
-						}
-					}
+                        color: {
+                            switch (model.type) {
+                                case "mention":
+                                    return "purple";
+                                default:
+                                    return "white";
+                            }
+                        }
+                    }
 
-					RowLayout {
-						width: urlTypeTextDisplay.width;
-						visible: model.type === 'url';
+                    RowLayout {
+                        width: urlTypeTextDisplay.width;
+                        visible: model.type === 'url';
 
-						TextEdit {
-							id: urlTypeTextDisplay;
-							text: model.value || "";
-							font.pointSize: 12;
-							wrapMode: Text.Wrap;
-							color: "#4EBAFD";
-							font.underline: true;
-							width: parent.width;
-							readOnly: true
-							selectByMouse: true
-							selectByKeyboard: true
+                        TextEdit {
+                            id: urlTypeTextDisplay;
+                            text: model.value || "";
+                            font.pointSize: 12;
+                            wrapMode: Text.Wrap;
+                            color: "#4EBAFD";
+                            font.underline: true;
+                            width: parent.width;
+                            readOnly: true
+                            selectByMouse: true
+                            selectByKeyboard: true
 
-							MouseArea {
-								anchors.fill: parent;
+                            MouseArea {
+                                anchors.fill: parent;
 
-								onClicked: {
-									Window.openWebBrowser(model.value);
-								}
-							}
-						}
+                                onClicked: {
+                                    Window.openWebBrowser(model.value);
+                                }
+                            }
+                        }
 
-						Text {
-							text: "🗗";
-							font.pointSize: 10;
-							wrapMode: Text.Wrap;
-							color: "white";
+                        Text {
+                            text: "🗗";
+                            font.pointSize: 10;
+                            wrapMode: Text.Wrap;
+                            color: "white";
 
-							MouseArea {
-								anchors.fill: parent;
+                            MouseArea {
+                                anchors.fill: parent;
 
-								onClicked: {
-									Qt.openUrlExternally(model.value);
-								}
-							}
-						}
-					}
+                                onClicked: {
+                                    Qt.openUrlExternally(model.value);
+                                }
+                            }
+                        }
+                    }
 
-					RowLayout {
-						visible: model.type === 'overteLocation';
-						width: Math.min(messageBoxFlow.width, children[0].children[1].contentWidth + 35);
-						height: 20;
-						Layout.leftMargin: 5
-						Layout.rightMargin: 5
+                    RowLayout {
+                        visible: model.type === 'overteLocation';
+                        width: Math.min(messageBoxFlow.width, children[0].children[1].contentWidth + 35);
+                        height: 20;
+                        Layout.leftMargin: 5
+                        Layout.rightMargin: 5
 
-						Rectangle {
-							width: parent.width;
-							height: 20;
-							color: "lightgray"
-							radius: 2;
+                        Rectangle {
+                            width: parent.width;
+                            height: 20;
+                            color: "lightgray"
+                            radius: 2;
 
-							Image {
-								source: "../img/ui/world_black.png"
-								width: 18;
-								height: 18;
-								sourceSize.width: 18
-								sourceSize.height: 18
-								anchors.left: parent.left
-								anchors.verticalCenter: parent.verticalCenter 
-								anchors.leftMargin: 2
-								anchors.rightMargin: 10
-							}
+                            Image {
+                                source: "../img/ui/world_black.png"
+                                width: 18;
+                                height: 18;
+                                sourceSize.width: 18
+                                sourceSize.height: 18
+                                anchors.left: parent.left
+                                anchors.verticalCenter: parent.verticalCenter 
+                                anchors.leftMargin: 2
+                                anchors.rightMargin: 10
+                            }
 
-							TextEdit {
-								text: model.type === 'overteLocation' ? model.value.split('hifi://')[1].split('/')[0] : '';
-								color: "black"
-								font.pointSize: 12
-								x: parent.children[0].width + 5;
-								anchors.verticalCenter: parent.verticalCenter 
-								readOnly: true
-								selectByMouse: true
-								selectByKeyboard: true
-							}
+                            TextEdit {
+                                text: model.type === 'overteLocation' ? model.value.split('hifi://')[1].split('/')[0] : '';
+                                color: "black"
+                                font.pointSize: 12
+                                x: parent.children[0].width + 5;
+                                anchors.verticalCenter: parent.verticalCenter 
+                                readOnly: true
+                                selectByMouse: true
+                                selectByKeyboard: true
+                            }
 
-							MouseArea {
-								anchors.fill: parent;
+                            MouseArea {
+                                anchors.fill: parent;
 
-								onClicked: {
-									Window.openUrl(model.value);
-								}
-							}
-						}
-					}
+                                onClicked: {
+                                    Window.openUrl(model.value);
+                                }
+                            }
+                        }
+                    }
 
-					Item {
-						Layout.fillWidth: true;
-						visible: model.type === 'messageEnd';
-					}
+                    Item {
+                        Layout.fillWidth: true;
+                        visible: model.type === 'messageEnd';
+                    }
 
-					Item {
-						visible: model.type === 'imageEmbed';
-						width: messageBoxFlow.width;
-						height: 200
+                    Item {
+                        visible: model.type === 'imageEmbed';
+                        width: messageBoxFlow.width;
+                        height: 200
 
-						AnimatedImage {
-							source: model.type === 'imageEmbed' ? model.value : ''
-							height: Math.min(sourceSize.height, 200);
-							fillMode: Image.PreserveAspectFit
-						}
-					}
+                        AnimatedImage {
+                            source: model.type === 'imageEmbed' ? model.value : ''
+                            height: Math.min(sourceSize.height, 200);
+                            fillMode: Image.PreserveAspectFit
+                        }
+                    }
 
 
-				}
-			}
-		}
-	}
+                }
+            }
+        }
+    }
 }
