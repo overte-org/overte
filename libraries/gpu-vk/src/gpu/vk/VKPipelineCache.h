@@ -70,6 +70,9 @@ struct Cache {
         using LocationMap = shader::Reflection::LocationMap;
 
         gpu::PipelineReference pipeline{ GPU_REFERENCE_INIT_VALUE };
+        std::shared_ptr<Shader> program;
+        shader::Reflection vertexReflection;
+        shader::Reflection fragmentReflection;
         gpu::FormatReference format{ GPU_REFERENCE_INIT_VALUE };
         gpu::FramebufferReference framebuffer{ GPU_REFERENCE_INIT_VALUE };
         gpu::Primitive primitiveTopology;

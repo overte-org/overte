@@ -285,7 +285,7 @@ bool VulkanDisplayPlugin::activate() {
         auto widget = _container->getPrimaryWidget();
         DependencyManager::set<VulkanPresentThread>();
         presentThread = DependencyManager::get<VulkanPresentThread>();
-        presentThread->setObjectName("Presentation Thread");
+        presentThread->setObjectName("PresentThread");
         if (!widget->context()->makeCurrent()) {
             throw std::runtime_error("Failed to make context current");
         }
@@ -958,7 +958,7 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         // VKTODO this is inefficient here
         VK_CHECK_RESULT(vkWaitForFences(vkDevice, 1, &frameFence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
         vkDestroyFence(vkDevice, frameFence, nullptr);
-        vkBackend->waitForGPU();
+        //vkBackend->waitForGPU();
         vkBackend->recycleFrame();
 
         gpu::Backend::freeGPUMemSize.set(gpu::gl::getFreeDedicatedMemory());
