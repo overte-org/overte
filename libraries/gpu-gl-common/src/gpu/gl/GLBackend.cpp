@@ -90,7 +90,6 @@ GLBackend::CommandCall GLBackend::_commandCalls[Batch::NUM_COMMANDS] =
     (&::gpu::gl::GLBackend::do_startNamedCall),
     (&::gpu::gl::GLBackend::do_stopNamedCall),
 
-    (&::gpu::gl::GLBackend::do_glUniform1i),
     (&::gpu::gl::GLBackend::do_glUniform1f),
     (&::gpu::gl::GLBackend::do_glUniform2f),
     (&::gpu::gl::GLBackend::do_glUniform3f),
@@ -581,6 +580,15 @@ void GLBackend::render(const Batch& batch) {
     _stereo._enable = savedStereo;
 }
 
+void GLBackend::executeFrame(const FramePointer& frame) {
+    setStereoState(frame->stereoState);
+    // Execute the frame rendering commands
+    for (auto& batch : frame->batches) {
+        render(*batch);
+    }
+}
+
+
 
 void GLBackend::syncCache() {
     PROFILE_RANGE(render_gpu_gl_detail, __FUNCTION__);
@@ -621,7 +629,7 @@ void GLBackend::do_restoreContextViewCorrection(const Batch& batch, size_t param
 }
 
 void GLBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) {
-    bool prevMirrorViewCorrection = _transform._mirrorViewCorrection;
+    //bool prevMirrorViewCorrection = _transform._mirrorViewCorrection;
     _transform._mirrorViewCorrection = batch._params[paramOffset]._uint != 0;
 
     if (_transform._correction.correction != glm::mat4()) {
@@ -667,7 +675,7 @@ void GLBackend::resetStages() {
 
 void GLBackend::do_pushProfileRange(const Batch& batch, size_t paramOffset) {
     if (trace_render_gpu_gl_detail().isDebugEnabled()) {
-        auto name = batch._profileRanges.get(batch._params[paramOffset]._uint);
+        const auto& name = batch._profileRanges.get(batch._params[paramOffset]._uint);
         profileRanges.push_back(name);
 #if defined(NSIGHT_FOUND)
         nvtxRangePush(name.c_str());
@@ -684,25 +692,6 @@ void GLBackend::do_popProfileRange(const Batch& batch, size_t paramOffset) {
     }
 }
 
-
-// TODO: As long as we have gl calls explicitely issued from interface
-// code, we need to be able to record and batch these calls. THe long 
-// term strategy is to get rid of any GL calls in favor of the HIFI GPU API
-
-void GLBackend::do_glUniform1i(const Batch& batch, size_t paramOffset) {
-    if (_pipeline._program == 0) {
-        // We should call updatePipeline() to bind the program but we are not doing that
-        // because these uniform setters are deprecated and we don;t want to create side effect
-        return;
-    }
-    updatePipeline();
-
-    GLint location = getRealUniformLocation(batch._params[paramOffset + 1]._int);
-    glUniform1i(
-        location,
-        batch._params[paramOffset + 0]._int);
-    (void)CHECK_GL_ERROR();
-}
 
 void GLBackend::do_glUniform1f(const Batch& batch, size_t paramOffset) {
     if (_pipeline._program == 0) {

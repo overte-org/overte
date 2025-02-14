@@ -54,7 +54,7 @@ namespace render {
         static gpu::PipelinePointer _drawLODReticlePipeline;
         static gpu::PipelinePointer _drawItemBoundPipeline;
         static gpu::Stream::FormatPointer _cellBoundsFormat;
-        gpu::BufferPointer _cellBoundsBuffer { std::make_shared<gpu::Buffer>() };
+        gpu::BufferPointer _cellBoundsBuffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
 
         bool _showVisibleCells; // initialized by Config
         bool _showEmptyCells; // initialized by Config

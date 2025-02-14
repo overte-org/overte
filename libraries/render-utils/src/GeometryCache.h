@@ -315,8 +315,8 @@ private:
     gpu::PipelinePointer _standardDrawPipeline;
     gpu::PipelinePointer _standardDrawPipelineNoBlend;
 
-    gpu::BufferPointer _shapeVertices{ std::make_shared<gpu::Buffer>() };
-    gpu::BufferPointer _shapeIndices{ std::make_shared<gpu::Buffer>() };
+    gpu::BufferPointer _shapeVertices { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
+    gpu::BufferPointer _shapeIndices { std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer) };
 
     class GridSchema {
     public:
