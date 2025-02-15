@@ -405,10 +405,6 @@ void VKBackend::executeFrame(const FramePointer& frame) {
         }
     }
 
-    VK_CHECK_RESULT(vkQueueWaitIdle(_context.graphicsQueue));
-    VK_CHECK_RESULT(vkQueueWaitIdle(_context.transferQueue) );
-    VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
-
     //auto frameToRecycle = _currentFrame;
     // Move pointer to current frame to property that will store it while it's being rendered and before it's recycled.
     _currentlyRenderedFrame = _currentFrame;
@@ -2202,6 +2198,13 @@ void VKBackend::perFrameCleanup() {
     recycler.deletedQueries.reserve(capacityBeforeClear);
 
     auto device = _context.device->logicalDevice;
+
+    for (auto fence : recycler.vkFences) {
+        vkDestroyFence(device, fence, nullptr);
+    }
+    capacityBeforeClear = recycler.vkFences.capacity();
+    recycler.vkFences.clear();
+    recycler.vkFences.reserve(capacityBeforeClear);
 
     for (auto framebuffer : recycler.vkFramebuffers) {
         vkDestroyFramebuffer(device, framebuffer, nullptr);
