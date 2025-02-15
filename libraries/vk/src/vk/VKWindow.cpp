@@ -96,6 +96,12 @@ void VKWindow::createCommandBuffers() {
 
 void VKWindow::vulkanCleanup() {
     _isVulkanCleanupComplete = true;
+
+    if (_previousFrameFence) {
+        _context.recycler.trashVkFence(_previousFrameFence);
+        _previousFrameFence = VK_NULL_HANDLE;
+    }
+
     _context.recycler.trashVkSemaphore(_acquireCompleteSemaphore);
     _context.recycler.trashVkSemaphore(_renderCompleteSemaphore);
 

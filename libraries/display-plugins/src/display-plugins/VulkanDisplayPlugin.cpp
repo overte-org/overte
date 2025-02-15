@@ -823,7 +823,6 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             internalPresent();
         }*/
         // Hack for presenting frame:
-        VkFence frameFence;
         {
             PROFILE_RANGE_EX(render, "internalPresent", 0xff00ffff, frameId)
 
@@ -949,16 +948,18 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             //submitInfo.pSignalSemaphores = &_vkWidget->_renderCompleteSemaphore;
             submitInfo.commandBufferCount = 1;
             VkFenceCreateInfo fenceCI = vks::initializers::fenceCreateInfo();
+            VkFence frameFence;
             vkCreateFence(vkDevice, &fenceCI, nullptr, &frameFence);
             vkQueueSubmit(vkBackend->getContext().graphicsQueue, 1, &submitInfo, frameFence);
+            if (_vkWindow->_previousFrameFence != VK_NULL_HANDLE) {
+                VK_CHECK_RESULT(vkWaitForFences(vkDevice, 1, &frameFence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
+                vkDestroyFence(vkDevice, frameFence, nullptr);
+            }
+            _vkWindow->_previousFrameFence = frameFence;
         }
         _vkWindow->_swapchain.queuePresent(_vkWindow->_context.graphicsQueue, currentImageIndex, _vkWindow->_renderCompleteSemaphore);
         //_vkWidget->_swapchain.queuePresent(_vkWidget->_vksContext.graphicsQueue, currentImageIndex, _vkWidget->_renderCompleteSemaphore);
 
-        // VKTODO this is inefficient here
-        VK_CHECK_RESULT(vkWaitForFences(vkDevice, 1, &frameFence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
-        vkDestroyFence(vkDevice, frameFence, nullptr);
-        //vkBackend->waitForGPU();
         vkBackend->recycleFrame();
 
         gpu::Backend::freeGPUMemSize.set(gpu::gl::getFreeDedicatedMemory());

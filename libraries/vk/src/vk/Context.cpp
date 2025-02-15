@@ -294,6 +294,11 @@ void Context::shutdownWindows() {
     vulkanWindows.clear();
 }
 
+void Context::Recycler::trashVkFence(VkFence& fence) {
+    std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
+    vkFences.push_back(fence);
+}
+
 void Context::Recycler::trashVkSampler(VkSampler& sampler) {
     std::lock_guard<std::recursive_mutex> lockGuard(recyclerMutex);
     vkSamplers.push_back(sampler);

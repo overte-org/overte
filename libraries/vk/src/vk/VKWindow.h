@@ -76,4 +76,5 @@ public:
     //QTimer* _resizeTimer{ nullptr };
     std::atomic<bool> _isVulkanCleanupComplete{ false };
     std::atomic<bool> _needsResizing{ true };
+    VkFence _previousFrameFence{ VK_NULL_HANDLE};
 };

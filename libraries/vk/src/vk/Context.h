@@ -126,6 +126,7 @@ public:
     public:
         // This means that for every GPU object mutex will be locked and unlocked several times.
         // VKTODO: It would be good to do profiling and check if it impacts performance or not.
+        void trashVkFence(VkFence& fence);
         void trashVkSampler(VkSampler &sampler);
         void trashVkFramebuffer(VkFramebuffer &framebuffer);
         void trashVkImageView(VkImageView &imageView);
@@ -150,6 +151,7 @@ public:
     private:
         std::recursive_mutex recyclerMutex;
 
+        std::vector<VkFence> vkFences;
         std::vector<VkFramebuffer> vkFramebuffers;
         std::vector<VkSampler> vkSamplers;
         std::vector<VkImageView> vkImageViews;
