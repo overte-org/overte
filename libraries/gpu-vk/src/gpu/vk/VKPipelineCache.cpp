@@ -19,9 +19,11 @@ static std::string hex(T t) {
 void Cache::Pipeline::setPipeline(const gpu::PipelinePointer& pipeline) {
     if (!gpu::compare(this->pipeline, pipeline)) {
         gpu::assign(this->pipeline, pipeline);
-        program = pipeline->getProgram();
-        vertexReflection = program->getShaders()[0]->getReflection();
-        fragmentReflection = program->getShaders()[1]->getReflection();
+        if (pipeline) {
+            program = pipeline->getProgram();
+            vertexReflection = program->getShaders()[0]->getReflection();
+            fragmentReflection = program->getShaders()[1]->getReflection();
+        }
         clearStrides(); // VKTODO: this doesn't fix the issue with strides for basic shapes being corrupted, sometimes strides are still cleared wile they shouldn't be so more investigation is needed
     }
 }
@@ -290,22 +292,58 @@ VkRenderPass Cache::Pipeline::getRenderPass(const vks::Context& context) {
 
 // VKTODO:
 std::string Cache::Pipeline::getRenderpassKeyString(const RenderpassKey& renderpassKey) {
-    std::string result;
-
+    std::vector<char> key_buffer;
+    key_buffer.resize((sizeof(VkFormat) + sizeof(VkImageLayout) + 1) * renderpassKey.size() * 2 + 2, 0);
+    int key_pos = 0;
+    key_buffer[key_pos++] = 's';
+    //std::string key;
     for (const auto& e : renderpassKey) {
-        result += hex((uint32_t)e.first) + hex((uint32_t)e.second);
+        union VkFormatBytes {
+            VkFormat format;
+            char bytes[sizeof(VkFormat)];
+        } formatBytes;
+        formatBytes.format = e.first;
+        union VkImageLayoutBytes {
+            VkImageLayout format;
+            char bytes[sizeof(VkFormat)];
+        } imageLayoutBytes;
+        imageLayoutBytes.format = e.second;
+        key_buffer[key_pos++] = '_';
+        for (const char &byte: formatBytes.bytes) {
+            key_buffer[key_pos++] = (byte >> 4) + 'A';
+            key_buffer[key_pos++] = (byte & 0x0f) + 'A';
+        }
+        for (const char &byte: imageLayoutBytes.bytes) {
+            key_buffer[key_pos++] = (byte >> 4) + 'A';
+            key_buffer[key_pos++] = (byte & 0x0f) + 'A';
+        }
     }
-    return result;
+    key_buffer[key_pos] = 0;
+    return { key_buffer.data() };
+
 }
 
 std::string Cache::Pipeline::getStridesKey() const {
-    std::string key;
+    char key_buffer[(sizeof(Offset) + 1) * MAX_NUM_INPUT_BUFFERS * 2 + 2];
+    int key_pos = 0;
+    key_buffer[key_pos++] = 's';
     for (int i = 0; i < MAX_NUM_INPUT_BUFFERS; i++) {
         if (_bufferStrideSet[i]) {
-            key += "_" + hex(i) + "s" + hex(_bufferStrides[i]);
+            union OffsetBytes {
+                Offset offset;
+                char bytes[sizeof(Offset)];
+            } offsetBytes;
+            offsetBytes.offset = _bufferStrides[i];
+            key_buffer[key_pos++] = '_';
+            for (char byte : offsetBytes.bytes) {
+                key_buffer[key_pos++] = (byte >> 4) + 'A';
+                key_buffer[key_pos++] = (byte & 0x0f) + 'A';
+            }
+            //key += "_" + hex(i) + "s" + hex(_bufferStrides[i]);
         }
     }
-    return key;
+    key_buffer[key_pos] = 0;
+    return { key_buffer };
 }
 
 std::string gpu::State::getKey() const {
