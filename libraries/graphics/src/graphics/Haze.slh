@@ -38,7 +38,8 @@ struct HazeParams {
     float hazeKeyLightAltitudeFactor;
 };
 
-LAYOUT_STD140(binding=GRAPHICS_BUFFER_HAZE_PARAMS) uniform hazeBuffer {
+// See ShapePipeline::Slot::BUFFER in ShapePipeline.h
+UNIFORM_BUFFER(GRAPHICS_BUFFER_HAZE_PARAMS, hazeBuffer) {
     HazeParams hazeParams;
 };
 

@@ -102,7 +102,7 @@ private:
     CpuParticles _cpuParticles;
     bool _emitting { false };
     uint64_t _timeUntilNextEmit { 0 };
-    BufferPointer _particleBuffer { std::make_shared<Buffer>() };
+    BufferPointer _particleBuffer { std::make_shared<Buffer>(gpu::Buffer::VertexBuffer) };
     BufferView _uniformBuffer;
     quint64 _lastSimulated { 0 };
 

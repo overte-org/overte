@@ -252,7 +252,7 @@ void Deserializer::readBuffers(const json& buffersNode) {
         if (offset + size > mappedSize) {
             throw std::runtime_error("read buffer error");
         }
-        buffers.push_back(std::make_shared<Buffer>(size, mapped + offset));
+        buffers.push_back(std::make_shared<Buffer>(gpu::Buffer::AllFlags, size, mapped + offset));
         bufferOffsets[buffers.back()] = offset;
         offset += size;
     }
@@ -631,7 +631,8 @@ TextureView Deserializer::readTextureView(const json& node) {
         uint32_t textureIndex = node;
         return textures[textureIndex];
     };
-    readOptionalTransformed<TexturePointer>(result._texture, node, keys::texture, texturePointerReader);
+    bool textureFound = readOptionalTransformed<TexturePointer>(result._texture, node, keys::texture, texturePointerReader);
+    Q_ASSERT(textureFound);
     readOptionalTransformed<Element>(result._element, node, keys::element, &readElement);
     readOptional(result._subresource, node, keys::subresource);
     return result;

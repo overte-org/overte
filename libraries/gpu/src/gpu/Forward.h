@@ -95,6 +95,11 @@ namespace gpu {
     class TextureTable;
     using TextureTablePointer = std::shared_ptr<TextureTable>;
 
+    namespace vk {
+        class VKBackend;
+        class VKBuffer;
+    }
+
     struct StereoState {
         StereoState() {}
         bool isStereo() const {
@@ -127,6 +132,7 @@ namespace gpu {
         GPUObject* getGPUObject() const { return _gpuObject.get(); }
 
         friend class Backend;
+        friend class vk::VKBackend;
         friend class Texture;
     };
 
@@ -149,6 +155,7 @@ namespace gpu {
         class GLESBackend;
         class GLESBuffer;
     }
+
 }
 
 #endif
