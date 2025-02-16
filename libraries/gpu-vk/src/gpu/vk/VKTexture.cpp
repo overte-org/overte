@@ -575,7 +575,7 @@ void VKStrictResourceTexture::postTransfer(VKBackend &backend) {
     samplerCreateInfo.mipLodBias = 0.0f;
     samplerCreateInfo.compareOp = VK_COMPARE_OP_NEVER;
     samplerCreateInfo.minLod = 0.0f;
-    samplerCreateInfo.maxLod = 0.0f;
+    samplerCreateInfo.maxLod = static_cast<float>(_transferData.mips.size());//1.0f;
     samplerCreateInfo.maxAnisotropy = 1.0f;
     VK_CHECK_RESULT(vkCreateSampler(device->logicalDevice, &samplerCreateInfo, nullptr, &_vkSampler));
 
@@ -586,7 +586,7 @@ void VKStrictResourceTexture::postTransfer(VKBackend &backend) {
     viewCreateInfo.viewType = getVKTextureType(_gpuObject);
     viewCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
     viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-    viewCreateInfo.subresourceRange.levelCount = 1;
+    viewCreateInfo.subresourceRange.levelCount = _transferData.mips.size();
     if (_gpuObject.getType() == Texture::TEX_CUBE) {
         viewCreateInfo.subresourceRange.layerCount = 6;
     } else {
