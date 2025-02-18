@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 10/27/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -50,9 +51,15 @@ GLBackend::CommandCall GLBackend::_commandCalls[Batch::NUM_COMMANDS] =
     (&::gpu::gl::GLBackend::do_setModelTransform),
     (&::gpu::gl::GLBackend::do_setViewTransform),
     (&::gpu::gl::GLBackend::do_setProjectionTransform),
-    (&::gpu::gl::GLBackend::do_setProjectionJitter),
+    (&::gpu::gl::GLBackend::do_setProjectionJitterEnabled),
+    (&::gpu::gl::GLBackend::do_setProjectionJitterSequence),
+    (&::gpu::gl::GLBackend::do_setProjectionJitterScale),
     (&::gpu::gl::GLBackend::do_setViewportTransform),
     (&::gpu::gl::GLBackend::do_setDepthRangeTransform),
+
+    (&::gpu::gl::GLBackend::do_saveViewProjectionTransform),
+    (&::gpu::gl::GLBackend::do_setSavedViewProjectionTransform),
+    (&::gpu::gl::GLBackend::do_copySavedViewProjectionTransformToBuffer),
 
     (&::gpu::gl::GLBackend::do_setPipeline),
     (&::gpu::gl::GLBackend::do_setStateBlendFactor),
@@ -268,12 +275,10 @@ bool GLBackend::availableMemoryKnown() {
 }
 
 GLBackend::GLBackend(bool syncCache) {
-    _pipeline._cameraCorrectionBuffer._buffer->flush();
     initShaderBinaryCache();
 }
 
 GLBackend::GLBackend() {
-    _pipeline._cameraCorrectionBuffer._buffer->flush();
     initShaderBinaryCache();
 }
 
@@ -319,19 +324,8 @@ void GLBackend::renderPassTransfer(const Batch& batch) {
                 case Batch::COMMAND_drawIndexedInstanced:
                 case Batch::COMMAND_multiDrawIndirect:
                 case Batch::COMMAND_multiDrawIndexedIndirect:
-                {
-                    Vec2u outputSize{ 1,1 };
-
-                    auto framebuffer = acquire(_output._framebuffer);
-                    if (framebuffer) {
-                        outputSize.x = framebuffer->getWidth();
-                        outputSize.y = framebuffer->getHeight();
-                    } else if (glm::dot(_transform._projectionJitter, _transform._projectionJitter)>0.0f) {
-                        qCWarning(gpugllogging) << "Jittering needs to have a frame buffer to be set";
-                    }
-
-                    _transform.preUpdate(_commandIndex, _stereo, outputSize);
-                }
+                case Batch::COMMAND_copySavedViewProjectionTransformToBuffer: // We need to store this transform state in the transform buffer
+                    preUpdateTransform();
                     break;
 
                 case Batch::COMMAND_disableContextStereo:
@@ -346,7 +340,11 @@ void GLBackend::renderPassTransfer(const Batch& batch) {
                 case Batch::COMMAND_setViewportTransform:
                 case Batch::COMMAND_setViewTransform:
                 case Batch::COMMAND_setProjectionTransform:
-                case Batch::COMMAND_setProjectionJitter:
+                case Batch::COMMAND_setProjectionJitterEnabled:
+                case Batch::COMMAND_setProjectionJitterSequence:
+                case Batch::COMMAND_setProjectionJitterScale:
+                case Batch::COMMAND_saveViewProjectionTransform:
+                case Batch::COMMAND_setSavedViewProjectionTransform:
                 case Batch::COMMAND_setContextMirrorViewCorrection:
                 {
                     CommandCall call = _commandCalls[(*command)];
@@ -385,6 +383,9 @@ void GLBackend::renderPassDraw(const Batch& batch) {
             case Batch::COMMAND_setModelTransform:
             case Batch::COMMAND_setViewTransform:
             case Batch::COMMAND_setProjectionTransform:
+            case Batch::COMMAND_saveViewProjectionTransform:
+            case Batch::COMMAND_setSavedViewProjectionTransform:
+            case Batch::COMMAND_setProjectionJitterSequence:
                 break;
 
             case Batch::COMMAND_draw:
@@ -410,7 +411,6 @@ void GLBackend::renderPassDraw(const Batch& batch) {
             //case Batch::COMMAND_setModelTransform:
             //case Batch::COMMAND_setViewTransform:
             //case Batch::COMMAND_setProjectionTransform:
-            case Batch::COMMAND_setProjectionJitter:
             case Batch::COMMAND_setViewportTransform:
             case Batch::COMMAND_setDepthRangeTransform:
             case Batch::COMMAND_setContextMirrorViewCorrection:
@@ -555,7 +555,7 @@ void GLBackend::render(const Batch& batch) {
         _stereo._enable = false;
     }
     // Reset jitter
-    _transform._projectionJitter = Vec2(0.0f, 0.0f);
+    _transform._projectionJitter._isEnabled = false;
     
     {
         GL_PROFILE_RANGE(render_gpu_gl_detail, "Transfer");
@@ -579,6 +579,14 @@ void GLBackend::render(const Batch& batch) {
 
     // Restore the saved stereo state for the next batch
     _stereo._enable = savedStereo;
+
+    if (batch._mustUpdatePreviousModels) {
+        // Update object transform history for when the batch will be reexecuted
+        for (auto& objectTransform : batch._objects) {
+            objectTransform._previousModel = objectTransform._model;
+        }
+        batch._mustUpdatePreviousModels = false;
+    }
 }
 
 
@@ -621,11 +629,11 @@ void GLBackend::do_restoreContextViewCorrection(const Batch& batch, size_t param
 }
 
 void GLBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) {
-    bool prevMirrorViewCorrection = _transform._mirrorViewCorrection;
-    _transform._mirrorViewCorrection = batch._params[paramOffset]._uint != 0;
+    bool prevMirrorViewCorrection = _transform._presentFrame.mirrorViewCorrection;
+    _transform._presentFrame.mirrorViewCorrection = batch._params[paramOffset]._uint != 0;
 
-    if (_transform._correction.correction != glm::mat4()) {
-        setCameraCorrection(_transform._mirrorViewCorrection ? _transform._flippedCorrection : _transform._unflippedCorrection, _transform._correction.prevView, false);
+    if (_transform._presentFrame.correction != glm::mat4()) {
+        updatePresentFrame(_transform._presentFrame.mirrorViewCorrection ? _transform._presentFrame.flippedCorrection : _transform._presentFrame.unflippedCorrection, false);
         _transform._invalidView = true;
     }
 }
@@ -992,28 +1000,26 @@ void GLBackend::recycle() const {
     _textureManagement._transferEngine->manageMemory();
 }
 
-void GLBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool primary, bool reset) {
-    auto invCorrection = glm::inverse(correction);
-    auto invPrevView = glm::inverse(prevRenderView);
-    _transform._correction.prevView = (reset ? Mat4() : prevRenderView);
-    _transform._correction.prevViewInverse = (reset ? Mat4() : invPrevView);
-    _transform._correction.correction = correction;
-    _transform._correction.correctionInverse = invCorrection;
+void GLBackend::updatePresentFrame(const Mat4& correction, bool primary) {
+    _transform._presentFrame.correction = correction;
+    _transform._presentFrame.correctionInverse = glm::inverse(correction);
 
-    if (!_inRenderTransferPass) {
-        _pipeline._cameraCorrectionBuffer._buffer->setSubData(0, _transform._correction);
-        _pipeline._cameraCorrectionBuffer._buffer->flush();
+    // Update previous views of saved transforms
+    for (auto& viewProjState : _transform._savedTransforms) {
+        viewProjState._state._previousCorrectedView = viewProjState._state._correctedView;
+        viewProjState._state._previousProjection = viewProjState._state._projection;
     }
 
     if (primary) {
-        _transform._unflippedCorrection = _transform._correction.correction;
-        quat flippedRotation = glm::quat_cast(_transform._unflippedCorrection);
+        _transform._projectionJitter._currentSampleIndex++;
+        _transform._presentFrame.unflippedCorrection = _transform._presentFrame.correction;
+        quat flippedRotation = glm::quat_cast(_transform._presentFrame.unflippedCorrection);
         flippedRotation.y *= -1.0f;
         flippedRotation.z *= -1.0f;
-        vec3 flippedTranslation = _transform._unflippedCorrection[3];
+        vec3 flippedTranslation = _transform._presentFrame.unflippedCorrection[3];
         flippedTranslation.x *= -1.0f;
-        _transform._flippedCorrection = glm::translate(glm::mat4_cast(flippedRotation), flippedTranslation);
-        _transform._mirrorViewCorrection = false;
+        _transform._presentFrame.flippedCorrection = glm::translate(glm::mat4_cast(flippedRotation), flippedTranslation);
+        _transform._presentFrame.mirrorViewCorrection = false;
     }
 }
 

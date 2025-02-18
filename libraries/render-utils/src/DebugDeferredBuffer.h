@@ -4,6 +4,7 @@
 //
 //  Created by Clement on 12/3/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -19,7 +20,6 @@
 #include "DeferredFramebuffer.h"
 #include "SurfaceGeometryPass.h"
 #include "AmbientOcclusionEffect.h"
-#include "VelocityBufferPass.h"
 
 #include "LightStage.h"
 
@@ -44,13 +44,13 @@ public:
                                        LinearDepthFramebufferPointer,
                                        SurfaceGeometryFramebufferPointer,
                                        AmbientOcclusionFramebufferPointer,
-                                       VelocityFramebufferPointer,
                                        DeferredFrameTransformPointer,
-                                       LightStage::ShadowFramePointer>;
+                                       LightStage::ShadowFramePointer,
+                                       gpu::TexturePointer>;
     using Config = DebugDeferredBufferConfig;
     using JobModel = render::Job::ModelI<DebugDeferredBuffer, Inputs, Config>;
 
-    DebugDeferredBuffer();
+    DebugDeferredBuffer(uint transformSlot);
     ~DebugDeferredBuffer();
 
     void configure(const Config& config);
@@ -92,6 +92,7 @@ protected:
         AmbientOcclusionBlurredMode,
         AmbientOcclusionNormalMode,
         VelocityMode,
+        AntialiasingIntensityMode,
         CustomMode,  // Needs to stay last
 
         NumModes,
@@ -100,6 +101,7 @@ protected:
 private:
     Mode _mode{ Off };
     glm::vec4 _size;
+    uint _transformSlot;
 
 #include "debug_deferred_buffer_shared.slh"
 

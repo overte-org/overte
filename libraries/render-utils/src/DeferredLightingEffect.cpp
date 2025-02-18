@@ -300,8 +300,9 @@ void PrepareDeferred::run(const RenderContextPointer& renderContext, const Input
 
         // Clear Color, Depth and Stencil for deferred buffer
         batch.clearFramebuffer(
-            gpu::Framebuffer::BUFFER_COLOR0 | gpu::Framebuffer::BUFFER_COLOR1 | gpu::Framebuffer::BUFFER_COLOR2 | gpu::Framebuffer::BUFFER_COLOR3 |
-            gpu::Framebuffer::BUFFER_DEPTH |
+            gpu::Framebuffer::BUFFER_COLOR0 | gpu::Framebuffer::BUFFER_COLOR1 |
+            gpu::Framebuffer::BUFFER_COLOR2 | gpu::Framebuffer::BUFFER_COLOR3 |
+            gpu::Framebuffer::BUFFER_COLOR4 | gpu::Framebuffer::BUFFER_DEPTH |
             gpu::Framebuffer::BUFFER_STENCIL,
             vec4(vec3(0), 0), 1.0, 0, true);
 
@@ -506,7 +507,7 @@ void RenderDeferredLocals::run(const render::RenderContextPointer& renderContext
     }
 }
 
-void RenderDeferredCleanup::run(const render::RenderContextPointer& renderContext) {
+void RenderDeferredCleanup::run(const render::RenderContextPointer& renderContext, const DeferredFramebufferPointer& deferredFramebuffer) {
     auto args = renderContext->args;
     auto& batch = (*args->_batch);
     {
@@ -531,6 +532,8 @@ void RenderDeferredCleanup::run(const render::RenderContextPointer& renderContex
         batch.setUniformBuffer(ru::Buffer::LightClusterGrid, nullptr);
         batch.setUniformBuffer(ru::Buffer::LightClusterContent, nullptr);
 
+        // Restore the lighting with velocity framebuffer so that following stages, like drawing the background, can get motion vectors.
+        batch.setFramebuffer(deferredFramebuffer->getLightingWithVelocityFramebuffer());
     }
 }
 
@@ -571,7 +574,7 @@ void RenderDeferred::run(const RenderContextPointer& renderContext, const Inputs
 
         lightsJob.run(renderContext, deferredTransform, deferredFramebuffer, lightingModel, surfaceGeometryFramebuffer, lightClusters);
 
-        cleanupJob.run(renderContext);
+        cleanupJob.run(renderContext, deferredFramebuffer);
 
         _gpuTimer->end(batch);
     });

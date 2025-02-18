@@ -3,6 +3,7 @@
 //
 //  Created by Nissim Hadar on 9/13/2017
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -181,10 +182,9 @@ vec4 computeHazeColor(vec3 fragPositionES, vec3 fragPositionWS, vec3 eyePosition
 
     // Mix with background at far range
     const float BLEND_DISTANCE = 27000.0f;
-    vec4 outFragColor = potentialFragColor;
-    outFragColor.a *= mix(1.0, hazeParams.backgroundBlend, float(distance > BLEND_DISTANCE));
+    potentialFragColor.a *= mix(1.0, hazeParams.backgroundBlend, float(distance > BLEND_DISTANCE));
 
-    return outFragColor;
+    return potentialFragColor;
 }
 
 <@endif@>

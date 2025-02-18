@@ -4,6 +4,7 @@
 //
 //  Created by Andrzej Kapolka on 6/21/13.
 //  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -1677,7 +1678,7 @@ void GeometryCache::useSimpleDrawPipeline(gpu::Batch& batch, bool noBlend) {
 
         // enable decal blend
         state->setBlendFunction(true, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA);
-        PrepareStencil::testMask(*state);
+        PrepareStencil::testMaskResetNoAA(*state);
 
         _standardDrawPipeline = gpu::Pipeline::create(program, state);
 
@@ -1709,7 +1710,7 @@ void GeometryCache::useGridPipeline(gpu::Batch& batch, GridBuffer gridBuffer, bo
             gpu::StatePointer state = std::make_shared<gpu::State>();
             state->setDepthTest(true, !std::get<0>(key), gpu::LESS_EQUAL);
             if (std::get<0>(key)) {
-                PrepareStencil::testMask(*state);
+                PrepareStencil::testMaskResetNoAA(*state);
             } else {
                 PrepareStencil::testMaskDrawShape(*state);
             }
@@ -1816,7 +1817,6 @@ gpu::PipelinePointer GeometryCache::getWebBrowserProgram(bool transparent, bool 
 
             gpu::StatePointer state = std::make_shared<gpu::State>();
             state->setDepthTest(true, !transparent, gpu::LESS_EQUAL);
-            // FIXME: do we need a testMaskDrawNoAA?
             PrepareStencil::testMaskDrawShapeNoAA(*state);
             state->setBlendFunction(transparent,
                 gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
@@ -1897,7 +1897,7 @@ gpu::PipelinePointer GeometryCache::getSimplePipeline(bool textured, bool transp
         gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
 
     if (config.isAntiAliased()) {
-        config.isTransparent() ? PrepareStencil::testMask(*state) : PrepareStencil::testMaskDrawShape(*state);
+        config.isTransparent() ? PrepareStencil::testMaskResetNoAA(*state) : PrepareStencil::testMaskDrawShape(*state);
     } else {
         PrepareStencil::testMaskDrawShapeNoAA(*state);
     }

@@ -5,6 +5,8 @@
 //  vertex shader
 //
 //  Created by Brad Davis on 10/14/13.
+//  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -22,6 +24,9 @@
 layout(location=RENDER_UTILS_ATTR_POSITION_MS) out vec2 _positionMS;
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     layout(location=RENDER_UTILS_ATTR_POSITION_ES) out vec4 _positionES;
+<@endif@>
+<@if not HIFI_USE_FORWARD@>
+    layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) out vec4 _prevPositionCS;
 <@endif@>
 layout(location=RENDER_UTILS_ATTR_NORMAL_WS) out vec3 _normalWS;
 layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
@@ -43,10 +48,12 @@ void main() {
 
     TransformCamera cam = getTransformCamera();
     TransformObject obj = getTransformObject();
-<@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
+<@if HIFI_USE_FORWARD@>
     <$transformModelToEyeAndClipPos(cam, obj, position, _positionES, gl_Position)$>
+<@elif HIFI_USE_TRANSLUCENT@>
+    <$transformModelToEyeClipPosAndPrevClipPos(cam, obj, position, _positionES, gl_Position, _prevPositionCS)$>
 <@else@>
-    <$transformModelToClipPos(cam, obj, position, gl_Position)$>
+    <$transformModelToClipPosAndPrevClipPos(cam, obj, position, gl_Position, _prevPositionCS)$>
 <@endif@>
 
     const vec3 normal = vec3(0, 0, 1);

@@ -5,6 +5,7 @@
 //
 //  Created by Olivier Prat on 09/26/2017
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -17,11 +18,10 @@ LAYOUT_STD140(binding=RENDER_UTILS_BUFFER_BLOOM_PARAMS) uniform parametersBuffer
     Parameters parameters;
 };
 
-layout(location=0) in vec2 varTexCoord0;
 layout(location=0) out vec4 outFragColor;
 
 void main(void) {
-    vec2 startUv = varTexCoord0;
+    vec2 startUv = (vec2(gl_FragCoord.xy) + vec2(parameters._offset)) * parameters._deltaUV;
     vec4 maskedColor = vec4(0,0,0,0);
 
     for (int y=0 ; y<parameters._sampleCount ; y++) {
