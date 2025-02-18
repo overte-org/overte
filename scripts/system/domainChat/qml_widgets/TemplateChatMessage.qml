@@ -66,8 +66,9 @@ Component {
                         }
                     }
 
-                    RowLayout {
-                        width: urlTypeTextDisplay.width;
+                    Flow {
+                        width: parent.width * 0.8;
+                        height: 20
                         visible: model.type === 'url';
 
                         TextEdit {
@@ -77,10 +78,10 @@ Component {
                             wrapMode: Text.Wrap;
                             color: "#4EBAFD";
                             font.underline: true;
-                            width: parent.width;
                             readOnly: true
                             selectByMouse: true
                             selectByKeyboard: true
+                            width: Math.min(parent.width - 20, textMetrics.tightBoundingRect.width) ;
 
                             MouseArea {
                                 anchors.fill: parent;
@@ -91,12 +92,20 @@ Component {
                             }
                         }
 
+                        TextMetrics {
+                            id: textMetrics
+                            font: urlTypeTextDisplay.font
+                            text: urlTypeTextDisplay.text
+                        }
+
                         Text {
+                            width: 20;
                             text: "🗗";
                             font.pointSize: 10;
-                            wrapMode: Text.Wrap;
                             color: "white";
-
+                            horizontalAlignment: Text.AlignHCenter
+                            verticalAlignment: Text.AlignVCenter
+                            
                             MouseArea {
                                 anchors.fill: parent;
 
