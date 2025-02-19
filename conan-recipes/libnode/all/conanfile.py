@@ -40,7 +40,7 @@ class libnodeConan(ConanFile):
 
     def requirements(self):
         self.requires("brotli/[>1.0 <1.2]")
-        # self.requires("llhttp/[>6.0 <7.0]") NodeJS 18.20.6 required (and comes with) llhttp version 6.1.1, which isn't packaged.
+        self.requires("llhttp/6.1.1@overte/stable")
         # self.requires("libnghttp2/[>1.50 <1.60]")
         # self.requires("libuv/[>1.40 <1.50]")
         self.requires("openssl/1.1.1w")
@@ -76,7 +76,7 @@ class libnodeConan(ConanFile):
             node_build_env.define("PKG_CONFIG_PATH", self.build_folder)
             envvars = node_build_env.vars(self)
             envvars.save_script("node_build_env")
-            # rename(self, "libllhttp.pc", "http_parser.pc")
+            rename(self, "libllhttp.pc", "http_parser.pc")
 
     def build(self):
         args = [
@@ -96,7 +96,7 @@ class libnodeConan(ConanFile):
         # args += self.__add_shared("libnghttp2", "nghttp2")
         # args += self.__add_shared("libuv", "libuv")
         args += self.__add_shared("brotli", "brotli")
-        # args += self.__add_shared("llhttp", "http-parser")
+        args += self.__add_shared("llhttp", "http-parser")
         args += self.__add_shared("openssl", "openssl")
         args += self.__add_shared("zlib", "zlib")
 
