@@ -200,4 +200,9 @@ class libnodeConan(ConanFile):
 
     def package_info(self):
         self.cpp_info.includedirs = ["include", "include/node"]
-        self.cpp_info.libs = collect_libs(self)
+        if self.settings.os == "Linux":
+            # Hack to work around collect_libs() not being able to deal with .so.x.y.z files.
+            # See: https://github.com/conan-io/conan/pull/17816
+            self.cpp_info.libs = ['libnode.so.108']
+        else: # Windows and macOS
+            self.cpp_info.libs = collect_libs(self)
