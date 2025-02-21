@@ -22,13 +22,14 @@
 #include "AudioClient.h"
 #include "Audio.h"
 #include "UserActivityLogger.h"
+#include "HifiAudioDeviceInfo.h"
 
 using namespace scripting;
 
-static Setting::Handle<QString> desktopInputDeviceSetting { QStringList { Audio::AUDIO, Audio::DESKTOP, "INPUT" }};
-static Setting::Handle<QString> desktopOutputDeviceSetting { QStringList { Audio::AUDIO, Audio::DESKTOP, "OUTPUT" }};
-static Setting::Handle<QString> hmdInputDeviceSetting { QStringList { Audio::AUDIO, Audio::HMD, "INPUT" }};
-static Setting::Handle<QString> hmdOutputDeviceSetting { QStringList { Audio::AUDIO, Audio::HMD, "OUTPUT" }};
+static Setting::Handle<QString> desktopInputDeviceSetting { QStringList { OVERTE_AUDIO_STRING, OVERTE_AUDIO_DESKTOP_STRING, "INPUT" }, HIFI_AUDIO_DEVICE_INFO_DEFAULT_DEVICE_NAME};
+static Setting::Handle<QString> desktopOutputDeviceSetting { QStringList { OVERTE_AUDIO_STRING, OVERTE_AUDIO_DESKTOP_STRING, "OUTPUT" }, HIFI_AUDIO_DEVICE_INFO_DEFAULT_DEVICE_NAME};
+static Setting::Handle<QString> hmdInputDeviceSetting { QStringList { OVERTE_AUDIO_STRING, OVERTE_AUDIO_HMD_STRING, "INPUT" }, HIFI_AUDIO_DEVICE_INFO_DEFAULT_DEVICE_NAME};
+static Setting::Handle<QString> hmdOutputDeviceSetting { QStringList { OVERTE_AUDIO_STRING, OVERTE_AUDIO_HMD_STRING, "OUTPUT" }, HIFI_AUDIO_DEVICE_INFO_DEFAULT_DEVICE_NAME};
 
 Q_DECLARE_METATYPE(HifiAudioDeviceInfo);
 
