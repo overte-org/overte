@@ -32,6 +32,8 @@
 void setupPreferences() {
     auto preferences = DependencyManager::get<Preferences>();
     auto myAvatar = DependencyManager::get<AvatarManager>()->getMyAvatar();
+
+    
     static const QString AVATAR_BASICS { "Avatar Basics" };
     {
         auto getter = [myAvatar]()->QString { return myAvatar->getDisplayName(); };
@@ -140,6 +142,14 @@ void setupPreferences() {
         auto getter = []()->bool { return qApp->getSettingConstrainToolbarPosition(); };
         auto setter = [](bool value) { qApp->setSettingConstrainToolbarPosition(value); };
         preferences->addPreference(new CheckPreference(UI_CATEGORY, "Constrain Toolbar Position to Horizontal Center", getter, setter));
+    }
+
+    //static const QString TEST{ "TEST SECTION" };
+    {
+        auto getter = []() -> bool { return qApp->getMouseLock(); };
+        auto setter = [](bool value) { qApp->setMouseLock(value); };
+        auto preference = new CheckPreference(UI_CATEGORY, "3D mouse cursor in VR", getter, setter);
+        preferences->addPreference(preference);
     }
 
     {
