@@ -4,6 +4,7 @@
 //
 //  Created by Zach Pomerantz on 12/13/2016.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -36,7 +37,7 @@ public:
     RenderForwardTask() {}
 
     void configure(const Config& config);
-    void build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, size_t depth);
+    void build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, uint transformOffset, size_t depth);
 };
 
 
@@ -93,13 +94,15 @@ public:
     using Inputs = render::VaryingSet3<render::ItemBounds, LightingModelPointer, HazeStage::FramePointer>;
     using JobModel = render::Job::ModelI<DrawForward, Inputs>;
 
-    DrawForward(const render::ShapePlumberPointer& shapePlumber, bool opaquePass) : _shapePlumber(shapePlumber), _opaquePass(opaquePass) {}
+    DrawForward(const render::ShapePlumberPointer& shapePlumber, bool opaquePass, uint transformSlot) :
+        _shapePlumber(shapePlumber), _opaquePass(opaquePass), _transformSlot(transformSlot) {}
     void run(const render::RenderContextPointer& renderContext,
             const Inputs& inputs);
 
 private:
     render::ShapePlumberPointer _shapePlumber;
     bool _opaquePass;
+    uint _transformSlot;
 };
 
 #endif // hifi_RenderForwardTask_h

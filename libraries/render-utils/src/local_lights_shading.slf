@@ -7,6 +7,7 @@
 //
 //  Created by Sam Gateau on 9/6/2016.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -32,8 +33,7 @@ void main(void) {
     // Grab the fragment data from the uv
     vec2 texCoord = _texCoord0.st;
 
-    DeferredFrameTransform deferredTransform = getDeferredFrameTransform();
-    DeferredFragment frag = unpackDeferredFragment(deferredTransform, texCoord);
+    DeferredFragment frag = unpackDeferredFragment(texCoord);
     vec4 fragPosition = frag.position;
 
     if (frag.mode == FRAG_MODE_UNLIT) {
@@ -41,7 +41,7 @@ void main(void) {
     }
 
     // Frag pos in world
-    mat4 invViewMat = getViewInverse();
+    mat4 invViewMat = getViewInverse(frag.side);
     vec4 fragWorldPos = invViewMat * fragPosition;
 
     <$fetchClusterInfo(fragWorldPos)$>;

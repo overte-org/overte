@@ -166,6 +166,7 @@ protected:
     MirrorMode _mirrorMode { MirrorMode::NONE };
     QUuid _portalExitID;
     Transform _renderTransform;
+    Transform _prevRenderTransform; // each subclass is responsible for updating this after they render because they all handle transforms differently
 
     MaterialMap _materials;
     mutable std::mutex _materialsLock;

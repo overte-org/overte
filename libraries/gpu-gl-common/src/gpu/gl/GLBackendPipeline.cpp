@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 3/8/2015.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -37,7 +38,6 @@ void GLBackend::do_setPipeline(const Batch& batch, size_t paramOffset) {
         reset(_pipeline._pipeline);
 
         _pipeline._program = 0;
-        _pipeline._cameraCorrection = false;
         _pipeline._programShader = nullptr;
         _pipeline._invalidProgram = true;
 
@@ -63,7 +63,6 @@ void GLBackend::do_setPipeline(const Batch& batch, size_t paramOffset) {
             _pipeline._program = glprogram;
             _pipeline._programShader = pipelineObject->_program;
             _pipeline._invalidProgram = true;
-            _pipeline._cameraCorrection = pipelineObject->_cameraCorrection;
         }
 
         // Now for the state
@@ -79,16 +78,6 @@ void GLBackend::do_setPipeline(const Batch& batch, size_t paramOffset) {
     // THis should be done on Pipeline::update...
     if (_pipeline._invalidProgram) {
         glUseProgram(_pipeline._program);
-        if (_pipeline._cameraCorrection) {
-            // Invalidate uniform buffer cache slot
-            _uniform._buffers[gpu::slot::buffer::CameraCorrection].reset();
-            auto& cameraCorrectionBuffer = _transform._viewCorrectionEnabled ?
-                _pipeline._cameraCorrectionBuffer._buffer : 
-                _pipeline._cameraCorrectionBufferIdentity._buffer;
-            // Because we don't sync Buffers in the bindUniformBuffer, let s force this buffer synced
-            getBufferID(*cameraCorrectionBuffer);
-            bindUniformBuffer(gpu::slot::buffer::CameraCorrection, cameraCorrectionBuffer, 0, sizeof(CameraCorrection));
-        }
         (void)CHECK_GL_ERROR();
         _pipeline._invalidProgram = false;
     }

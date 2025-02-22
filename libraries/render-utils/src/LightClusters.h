@@ -217,7 +217,7 @@ public:
     using Config = DebugLightClustersConfig;
     using JobModel = render::Job::ModelI<DebugLightClusters, Inputs, Config>;
 
-    DebugLightClusters() {}
+    DebugLightClusters(uint transformSlot) : _transformSlot(transformSlot) {}
 
     void configure(const Config& config);
 
@@ -228,6 +228,7 @@ protected:
     static gpu::PipelinePointer _drawClusterFromDepth;
     static gpu::PipelinePointer _drawClusterContent;
     gpu::BufferPointer _gridBuffer;
+    uint _transformSlot;
 
     bool doDrawGrid { false };
     bool doDrawClusterFromDepth { false };

@@ -300,6 +300,9 @@ public:
     float getFieldOfView() { return _fieldOfView.get(); }
     void setFieldOfView(float fov);
 
+    bool getCameraClippingEnabled() { return _cameraClippingEnabled.get(); }
+    void setCameraClippingEnabled(bool enabled);
+
     void updateMyAvatarLookAtPosition(float deltaTime);
 
 
@@ -880,6 +883,10 @@ private:
     ConicalViewFrustums _lastQueriedViews;  // last views used to query servers
 
     Setting::Handle<float> _fieldOfView;
+    Setting::Handle<float> _cameraClippingEnabled;
+
+    bool _prevCameraClippingEnabled { false };
+    unsigned int _cameraClippingRayPickID;
 
 
     // Graphics

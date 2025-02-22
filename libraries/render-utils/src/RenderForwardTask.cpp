@@ -68,7 +68,7 @@ void RenderForwardTask::configure(const Config& config) {
     preparePrimaryBufferConfig->setResolutionScale(config.resolutionScale);
 }
 
-void RenderForwardTask::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, size_t depth) {
+void RenderForwardTask::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, uint transformOffset, size_t depth) {
     task.addJob<SetRenderMethod>("SetRenderMethodTask", render::Args::FORWARD);
 
     // Prepare the ShapePipelines
@@ -77,6 +77,9 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     std::call_once(once, [] {
         initForwardPipelines(*shapePlumber);
     });
+
+    uint backgroundViewTransformSlot = render::RenderEngine::TS_BACKGROUND_VIEW + transformOffset;
+    uint mainViewTransformSlot = render::RenderEngine::TS_MAIN_VIEW + transformOffset;
 
     // Unpack inputs
     const auto& inputs = input.get<Input>();
@@ -115,7 +118,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     const auto scaledPrimaryFramebuffer = task.addJob<PreparePrimaryFramebufferMSAA>("PreparePrimaryBufferForward");
 
     // Prepare deferred, generate the shared Deferred Frame Transform. Only valid with the scaled frame buffer
-    const auto deferredFrameTransform = task.addJob<GenerateDeferredFrameTransform>("DeferredFrameTransform");
+    const auto deferredFrameTransform = task.addJob<GenerateDeferredFrameTransform>("DeferredFrameTransform", mainViewTransformSlot);
 
     // Prepare Forward Framebuffer pass 
     const auto prepareForwardInputs = PrepareForward::Inputs(scaledPrimaryFramebuffer, lightFrame).asVarying();
@@ -131,38 +134,37 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
 
     // Draw opaques forward
     const auto opaqueInputs = DrawForward::Inputs(opaques, lightingModel, hazeFrame).asVarying();
-    task.addJob<DrawForward>("DrawOpaques", opaqueInputs, shapePlumber, true);
+    task.addJob<DrawForward>("DrawOpaques", opaqueInputs, shapePlumber, true, mainViewTransformSlot);
 
-    const auto nullJitter = Varying(glm::vec2(0.0f, 0.0f));
 #ifndef Q_OS_ANDROID
     if (depth < RenderMirrorTask::MAX_MIRROR_DEPTH) {
-        const auto mirrorInputs = RenderMirrorTask::Inputs(mirrors, scaledPrimaryFramebuffer, nullJitter).asVarying();
+        const auto mirrorInputs = RenderMirrorTask::Inputs(mirrors, scaledPrimaryFramebuffer).asVarying();
         for (size_t i = 0; i < RenderMirrorTask::MAX_MIRRORS_PER_LEVEL; i++) {
-            task.addJob<RenderMirrorTask>("RenderMirrorTask" + std::to_string(i) + "Depth" + std::to_string(depth), mirrorInputs, i, cullFunctor, depth);
+            task.addJob<RenderMirrorTask>("RenderMirrorTask" + std::to_string(i) + "Depth" + std::to_string(depth), mirrorInputs, i, cullFunctor, transformOffset, depth);
         }
     }
 #endif
 
     // Similar to light stage, background stage has been filled by several potential render items and resolved for the frame in this job
     const auto backgroundInputs = DrawBackgroundStage::Inputs(lightingModel, backgroundFrame, hazeFrame).asVarying();
-    task.addJob<DrawBackgroundStage>("DrawBackgroundForward", backgroundInputs);
+    task.addJob<DrawBackgroundStage>("DrawBackgroundForward", backgroundInputs, backgroundViewTransformSlot);
 
     // Draw transparent objects forward
     const auto transparentInputs = DrawForward::Inputs(transparents, lightingModel, hazeFrame).asVarying();
-    task.addJob<DrawForward>("DrawTransparents", transparentInputs, shapePlumber, false);
+    task.addJob<DrawForward>("DrawTransparents", transparentInputs, shapePlumber, false, mainViewTransformSlot);
 
      // Layered
-    const auto inFrontOpaquesInputs = DrawLayered3D::Inputs(inFrontOpaque, lightingModel, hazeFrame, nullJitter).asVarying();
-    const auto inFrontTransparentsInputs = DrawLayered3D::Inputs(inFrontTransparent, lightingModel, hazeFrame, nullJitter).asVarying();
-    task.addJob<DrawLayered3D>("DrawInFrontOpaque", inFrontOpaquesInputs, true);
-    task.addJob<DrawLayered3D>("DrawInFrontTransparent", inFrontTransparentsInputs, false);
+    const auto inFrontOpaquesInputs = DrawLayered3D::Inputs(inFrontOpaque, deferredFrameTransform, lightingModel, hazeFrame).asVarying();
+    const auto inFrontTransparentsInputs = DrawLayered3D::Inputs(inFrontTransparent, deferredFrameTransform, lightingModel, hazeFrame).asVarying();
+    task.addJob<DrawLayered3D>("DrawInFrontOpaque", inFrontOpaquesInputs, shapePlumber, true, false, mainViewTransformSlot);
+    task.addJob<DrawLayered3D>("DrawInFrontTransparent", inFrontTransparentsInputs, shapePlumber, false, false, mainViewTransformSlot);
 
     if (depth == 0) {  // Debug the bounds of the rendered items, still look at the zbuffer
-        task.addJob<DrawBounds>("DrawMetaBounds", metas);
-        task.addJob<DrawBounds>("DrawBounds", opaques);
-        task.addJob<DrawBounds>("DrawTransparentBounds", transparents);
+        task.addJob<DrawBounds>("DrawMetaBounds", metas, mainViewTransformSlot);
+        task.addJob<DrawBounds>("DrawBounds", opaques, mainViewTransformSlot);
+        task.addJob<DrawBounds>("DrawTransparentBounds", transparents, mainViewTransformSlot);
 
-        task.addJob<DrawBounds>("DrawZones", zones);
+        task.addJob<DrawBounds>("DrawZones", zones, mainViewTransformSlot);
         const auto debugZoneInputs = DebugZoneLighting::Inputs(deferredFrameTransform, lightFrame, backgroundFrame).asVarying();
         task.addJob<DebugZoneLighting>("DrawZoneStack", debugZoneInputs);
     }
@@ -177,8 +179,8 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     const auto toneMappingInputs = ToneMapAndResample::Input(resolvedFramebuffer, destFramebuffer, tonemappingFrame).asVarying();
     const auto toneMappedBuffer = task.addJob<ToneMapAndResample>("ToneMapping", toneMappingInputs);
     // HUD Layer
-    const auto renderHUDLayerInputs = RenderHUDLayerTask::Input(toneMappedBuffer, lightingModel, hudOpaque, hudTransparent, hazeFrame).asVarying();
-    task.addJob<RenderHUDLayerTask>("RenderHUDLayer", renderHUDLayerInputs);
+    const auto renderHUDLayerInputs = RenderHUDLayerTask::Input(toneMappedBuffer, lightingModel, hudOpaque, hudTransparent, hazeFrame, deferredFrameTransform).asVarying();
+    task.addJob<RenderHUDLayerTask>("RenderHUDLayer", renderHUDLayerInputs, shapePlumber, mainViewTransformSlot);
 }
 
 gpu::FramebufferPointer PreparePrimaryFramebufferMSAA::createFramebuffer(const char* name, const glm::uvec2& frameSize, int numSamples) {
@@ -280,12 +282,7 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
         args->_batch = &batch;
 
         // Setup projection
-        glm::mat4 projMat;
-        Transform viewMat;
-        args->getViewFrustum().evalProjectionMatrix(projMat);
-        args->getViewFrustum().evalViewTransform(viewMat);
-        batch.setProjectionTransform(projMat);
-        batch.setViewTransform(viewMat);
+        batch.setSavedViewProjectionTransform(_transformSlot);
         batch.setModelTransform(Transform());
 
         // Setup lighting model for all items;

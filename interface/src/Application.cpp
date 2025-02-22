@@ -234,7 +234,8 @@ Application::Application(
     _maxOctreePacketsPerSecond("maxOctreePPS", DEFAULT_MAX_OCTREE_PPS),
     _maxOctreePPS(_maxOctreePacketsPerSecond.get()),
     // Camera
-    _fieldOfView("fieldOfView", DEFAULT_FIELD_OF_VIEW_DEGREES)
+    _fieldOfView("fieldOfView", DEFAULT_FIELD_OF_VIEW_DEGREES),
+    _cameraClippingEnabled("cameraClippingEnabled", false)
 {
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
 
