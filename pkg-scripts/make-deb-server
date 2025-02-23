@@ -1,17 +1,12 @@
 #!/bin/sh
 
 # Copyright 2020-2021 Vircadia contributors.
-# Copyright 2022-2023 Overte e.V.
+# Copyright 2022-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 if [ "$OVERTE" = "" ]; then
 	OVERTE=`realpath ..`
 fi
-if [ ! "$OVERTE_USE_SYSTEM_QT" ]; then
-	QT5_LIBS=`realpath ~/overte-files/qt/qt5-install/lib`
-fi
-# The regex below extracts the path from the VCPKG_INSTALL_ROOT variable. Said variable gets populated during the CMake step.
-VCPKG_INSTALL_ROOT=`grep VCPKG_INSTALL_ROOT $OVERTE/build/vcpkg.cmake | perl -ne 'm/set\(VCPKG_INSTALL_ROOT\s+\"(.*?)\"/; print $1'`
 
 sudo apt-get install chrpath binutils dh-make
 
@@ -26,18 +21,14 @@ cp $OVERTE/build/assignment-client/assignment-client $DEB_BUILD_ROOT
 cp $OVERTE/build/domain-server/domain-server $DEB_BUILD_ROOT
 cp $OVERTE/build/tools/oven/oven $DEB_BUILD_ROOT  # Oven is required for pre-baking assets
 cp $OVERTE/build/libraries/*/*.so $DEB_BUILD_ROOT
-#cp $OVERTE/build/ice-server/ice-server $DEB_BUILD_ROOT
 chrpath -d $DEB_BUILD_ROOT/*
-if [ ! "$OVERTE_USE_SYSTEM_QT" ]; then
-	cp $QT5_LIBS/libQt5Network.so.*.*.* $DEB_BUILD_ROOT
-	cp $QT5_LIBS/libQt5Core.so.*.*.* $DEB_BUILD_ROOT
-	cp $QT5_LIBS/libQt5Widgets.so.*.*.* $DEB_BUILD_ROOT
-	cp $QT5_LIBS/libQt5Gui.so.*.*.* $DEB_BUILD_ROOT
-	cp $QT5_LIBS/libQt5WebSockets.so.*.*.* $DEB_BUILD_ROOT
-	cp $QT5_LIBS/libQt5Qml.so.*.*.* $DEB_BUILD_ROOT
-	chmod +x $DEB_BUILD_ROOT/*.so.*.*.*
-fi
-cp $VCPKG_INSTALL_ROOT/lib/libnode.so* $DEB_BUILD_ROOT
+
+# TODO: get Qt from Conan if building without system Qt
+
+# hack: we get libnode.so.108 from conan-libs folder, because the dpkg command at the end of this file cannot always find libnode
+cp $OVERTE/build/conanlibs/Release/libnode.so.108 $DEB_BUILD_ROOT
+# hack: we get libttb.so.12 from conan-libs folder, because the dpkg command at the end of this file cannot always find libtbb12
+cp $OVERTE/build/conanlibs/Release/libttb.so.12 $DEB_BUILD_ROOT
 
 strip --strip-all $DEB_BUILD_ROOT/*
 cp $OVERTE/pkg-scripts/new-server $DEB_BUILD_ROOT
@@ -57,8 +48,6 @@ cp $OVERTE/pkg-scripts/overte-assignment-client.service debian
 cp $OVERTE/pkg-scripts/overte-assignment-client@.service debian
 cp $OVERTE/pkg-scripts/overte-domain-server.service debian
 cp $OVERTE/pkg-scripts/overte-domain-server@.service debian
-#cp $OVERTE/pkg-scripts/overte-ice-server.service debian
-#cp $OVERTE/pkg-scripts/overte-ice-server@.service debian
 cp $OVERTE/pkg-scripts/overte-server.target debian
 cp $OVERTE/pkg-scripts/overte-server@.target debian
 
@@ -77,7 +66,6 @@ echo README.md > debian/docs
 echo assignment-client opt/overte > debian/install
 echo domain-server opt/overte >> debian/install
 echo oven opt/overte >> debian/install
-#echo ice-server opt/overte >> debian/install
 echo new-server opt/overte >> debian/install
 for so in *.so*; do
 	echo $so opt/overte/lib >> debian/install
@@ -97,6 +85,7 @@ else
 	SOFILES=`ls *.so | grep -Po '^(.+\.so(\.\d+)?)' | sed 's/\./\\\./g' | paste -d'|' -s`
 fi
 
+# dpkg -S can only find packages which are already installed on the system.
 DEPENDS=`find * -path debian -prune -o -type f -executable -exec sh -c 'objdump -p {} | grep NEEDED' \; \
 	| awk '{print $2}' | sort | uniq | egrep -v "^($SOFILES)$" \
 	| xargs -n 1 -I {} sh -c 'dpkg -S {} | head -n 1' | cut -d ':' -f 1 | sort | uniq | paste -d',' -s`
