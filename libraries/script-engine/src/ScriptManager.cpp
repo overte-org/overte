@@ -2817,6 +2817,49 @@ void ScriptManager::callEntityScriptMethodForScript(const EntityItemID& entityID
     }
 }
 
+void ScriptManager::callEntityScriptMethodForScript(const EntityItemID& entityID,
+                                                    const QString& scriptURL,
+                                                    const QString& methodName,
+                                                    const QString& param) {
+    if (QThread::currentThread() != thread()) {
+#ifdef THREAD_DEBUGGING
+        qCDebug(scriptengine) << "*** WARNING *** ScriptManager::callEntityScriptMethodForScript() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]  "
+            "entityID:" << entityID << "script:" << scriptURL << "methodName:" << methodName;
+#endif
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->callEntityScriptMethodForScript(entityID, scriptURL, methodName, param);
+        });
+        return;
+    }
+#ifdef THREAD_DEBUGGING
+    qCDebug(scriptengine) << "ScriptManager::callEntityScriptMethodForScript() called on correct thread [" << thread() << "]  "
+        "entityID:" << entityID << "methodName:" << methodName;
+#endif
+
+    EntityScriptDetails details;
+    {
+        QWriteLocker locker { &_entityScriptsLock };
+        details = _entityScripts[entityID][scriptURL];
+    }
+    if (HIFI_AUTOREFRESH_FILE_SCRIPTS && methodName != "unload") {
+        refreshFileScript(entityID, scriptURL);
+    }
+    if (isEntityScriptRunning(entityID, scriptURL)) {
+        ScriptValue entityScript = details.scriptObject;  // previously loaded
+
+        if (entityScript.property(methodName).isFunction()) {
+            auto scriptEngine = engine().get();
+
+            ScriptValueList args;
+            args << EntityItemIDtoScriptValue(scriptEngine, entityID);
+            args << scriptValueFromValue(scriptEngine, param);
+            callWithEnvironment(entityID, details.definingSandboxURL, entityScript.property(methodName), entityScript,
+                                args);
+        }
+    }
+}
+
 void ScriptManager::callEntityScriptMethod(const EntityItemID& entityID, const QString& methodName, const PointerEvent& event) {
     if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING

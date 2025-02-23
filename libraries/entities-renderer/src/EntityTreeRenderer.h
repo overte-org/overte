@@ -154,6 +154,7 @@ public:
                              const QString& oldOverrideURL = "",
                              const QString& newOverrideURL = "");
     void unloadEntityScript(const EntityItemID& entityID, const QString& scriptURL);
+    void updateScriptUserData(const EntityItemID& entityID, const QString& scriptURL, const QString& userData);
 
 signals:
     void enterEntity(const EntityItemID& entityItemID);

@@ -33,6 +33,8 @@ public:
     virtual void setUnscaledDimensions(const glm::vec3& value) override;
     void setParentID(const QUuid& parentID) override;
 
+    void setUserData(const QString& value) override;
+
     static void setLoadOrReloadScriptOperator(std::function<bool(const EntityItemID&, const QString&, const QString&)> loadOrReloadScriptOperator) {
         _loadOrReloadScriptOperator = loadOrReloadScriptOperator;
     }

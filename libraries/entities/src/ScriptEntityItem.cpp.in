@@ -135,6 +135,27 @@ void ScriptEntityItem::setParentID(const QUuid& parentID) {
     }
 }
 
+void ScriptEntityItem::setUserData(const QString& value) {
+    bool changed = false;
+    withWriteLock([&] {
+        changed = _userData != value;
+    });
+    if (changed) {
+        EntityItem::setUserData(value);
+        QUuid runningParentID;
+        QString runningScriptURL;
+        bool enabled;
+        withReadLock([&] {
+            runningParentID = _runningParentID;
+            runningScriptURL = _runningScriptURL;
+            enabled = _enabled;
+        });
+        if (enabled && !runningParentID.isNull() && !runningScriptURL.isEmpty()) {
+            EntityItem::updateScriptUserData(runningParentID, runningScriptURL, value);
+        }
+    }
+}
+
 void ScriptEntityItem::setScriptURL(const QString& value) {
     bool changed = false;
     withWriteLock([&] {

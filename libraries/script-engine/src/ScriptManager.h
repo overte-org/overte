@@ -977,6 +977,19 @@ public:
      * @brief Call a method on an entity script
      *
      * @param entityID
+     * @param scriptURL
+     * @param methodName
+     * @param param
+     */
+    Q_INVOKABLE void callEntityScriptMethodForScript(const EntityItemID& entityID,
+                                                     const QString& scriptURL,
+                                                     const QString& methodName,
+                                                     const QString& param);
+
+    /**
+     * @brief Call a method on an entity script
+     *
+     * @param entityID
      * @param methodName
      * @param event
      */

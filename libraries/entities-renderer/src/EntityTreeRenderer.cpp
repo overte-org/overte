@@ -1219,6 +1219,21 @@ void EntityTreeRenderer::unloadEntityScript(const EntityItemID& entityID, const 
     }
 }
 
+void EntityTreeRenderer::updateScriptUserData(const EntityItemID& entityID, const QString& scriptURL, const QString& userData) {
+    if (_tree && !_shuttingDown) {
+        EntityItemPointer entity = getTree()->findEntityByEntityItemID(entityID);
+        if (!entity) {
+            return;
+        }
+        auto& scriptEngine = (entity->isLocalEntity() || entity->isMyAvatarEntity()) ? _persistentEntitiesScriptManager : _nonPersistentEntitiesScriptManager;
+        if (!scriptEngine) {
+            return;
+        }
+
+        scriptEngine->callEntityScriptMethodForScript(entityID, scriptURL, "updateUserData", userData);
+    }
+}
+
 void EntityTreeRenderer::fadeOutRenderable(const EntityRendererPointer& renderable) {
     render::Transaction transaction;
     auto scene = _viewState->getMain3DScene();
