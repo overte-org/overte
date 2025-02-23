@@ -88,7 +88,7 @@ void Socket::rebind(SocketType socketType) {
 
 void Socket::rebind(SocketType socketType, quint16 localPort) {
     _networkSocket.abort(socketType);
-    bind(socketType, QHostAddress::AnyIPv4, localPort);
+    bind(socketType, QHostAddress::Any, localPort);
 }
 
 #if defined(WEBRTC_DATA_CHANNELS)
