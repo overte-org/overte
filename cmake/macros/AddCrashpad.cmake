@@ -48,7 +48,7 @@ macro(add_crashpad)
     add_definitions(-DCMAKE_BACKTRACE_TOKEN=\"${CMAKE_BACKTRACE_TOKEN}\")
 
     target_include_directories(${TARGET_NAME} PRIVATE ${CRASHPAD_INCLUDE_DIRS})
-    target_link_libraries(${TARGET_NAME} ${CRASHPAD_LIBRARY} ${CRASHPAD_UTIL_LIBRARY} ${CRASHPAD_BASE_LIBRARY})
+    target_link_libraries(${TARGET_NAME} ${CRASHPAD_LIBRARY} ${CRASHPAD_UTIL_LIBRARY} ${CRASHPAD_BASE_LIBRARY} ${CRASHPAD_HANDLER_LIBRARY} ${CRASHPAD_COMMON_LIBRARY})
 
     if (WIN32)
       set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS "/ignore:4099")
