@@ -1,5 +1,5 @@
 # Copyright 2020-2021 Vircadia contributors.
-# Copyright 2022-2024 Overte e.V.
+# Copyright 2022-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 #OVERTE=~/Overte rpmbuild --target x86_64 -bb overte-server.spec
@@ -50,7 +50,10 @@ install -d $RPM_BUILD_ROOT/opt/overte/lib
 install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/build/libraries/*/*.so
 strip --strip-all $RPM_BUILD_ROOT/opt/overte/lib/*
 chrpath -d $RPM_BUILD_ROOT/opt/overte/lib/*
-install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $VCPKG_INSTALL_ROOT/lib/libnode.so*
+# hack: we get libnode.so.108 from conan-libs folder, because we don't know if it is available on the system.
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/build/conanlibs/Release/libnode.so*
+# hack: we get libttb.so.12 from conan-libs folder, because we don't know if it is available on the system.
+install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $OVERTE/build/conanlibs/Release/libtbb.so*
 %if "$OVERTE_USE_SYSTEM_QT" == ""
 install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5Network.so.*.*.*
 install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5Core.so.*.*.*
