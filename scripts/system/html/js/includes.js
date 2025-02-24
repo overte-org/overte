@@ -22,6 +22,7 @@ const ENTITY_TYPE_ICON = {
     Shape: "n",
     Sphere: "n",
     Sound: "G",
+    Script: "k",
     Text: "l",
     Web: "q",
     Zone: "o",

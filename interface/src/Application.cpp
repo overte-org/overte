@@ -2195,6 +2195,16 @@ void Application::initialize(const QCommandLineParser &parser) {
         return nullptr;
     });
 
+    ScriptEntityItem::setLoadOrReloadScriptOperator([](const EntityItemID& entityID, const QString& oldScriptURL, const QString& newScriptURL) -> bool {
+        return DependencyManager::get<EntityTreeRenderer>()->checkAndCallPreload(entityID, true, true, oldScriptURL, newScriptURL);
+    });
+    ScriptEntityItem::setUnloadScriptOperator([](const EntityItemID& entityID, const QString& scriptURL) -> void {
+        DependencyManager::get<EntityTreeRenderer>()->unloadEntityScript(entityID, scriptURL);
+    });
+    EntityItem::setUpdateScriptUserDataOperator([](const EntityItemID& entityID, const QString& scriptURL, const QString& userData) -> void {
+        return DependencyManager::get<EntityTreeRenderer>()->updateScriptUserData(entityID, scriptURL, userData);
+    });
+
     connect(this, &Application::aboutToQuit, [this]() {
         setKeyboardFocusEntity(UNKNOWN_ENTITY_ID);
     });
