@@ -21,6 +21,7 @@
 
 #include "Application.h"
 #include "ui/DialogsManager.h"
+#include "ui/LodToolsDialog.h"
 #include "InterfaceLogging.h"
 
 STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
