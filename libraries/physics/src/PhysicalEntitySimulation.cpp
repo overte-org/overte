@@ -186,10 +186,10 @@ void PhysicalEntitySimulation::processDeadEntities() {
         if (motionState) {
             _entitiesToRemoveFromPhysics.insert(entity);
         }
-        if (entity->isDomainEntity()) {
+        if (entity->isDomainEntity() && !getEntityTree()->isServerlessMode()) {
             // interface-client can't delete domainEntities outright, they must roundtrip through the entity-server
             _entityPacketSender->queueEraseEntityMessage(entity->getID());
-        } else if (entity->isLocalEntity() || entity->isMyAvatarEntity()) {
+        } else {
             entitiesToDeleteImmediately.push_back(entity);
             entity->collectChildrenForDelete(entitiesToDeleteImmediately, sessionID);
         }
