@@ -32,12 +32,16 @@ protected:
     virtual bool wantsHandControllerPointerEvents() const override { return false; }
     virtual bool wantsKeyboardFocus() const override { return false; }
 
+    virtual void doRenderUpdateAsynchronousTyped(const TypedEntityPointer &entity) override;
+
 private:
     gpu::TexturePointer _texture;
 
     int _ticks = 0;
     QTimer _testTimer;
     void onTimeout();
+
+    int _width = 4, _height = 4;
 };
 
 } }
