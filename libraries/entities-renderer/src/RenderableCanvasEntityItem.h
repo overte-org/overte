@@ -34,6 +34,10 @@ protected:
 
 private:
     gpu::TexturePointer _texture;
+
+    int _ticks = 0;
+    QTimer _testTimer;
+    void onTimeout();
 };
 
 } }
