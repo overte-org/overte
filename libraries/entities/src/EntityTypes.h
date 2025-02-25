@@ -116,6 +116,7 @@ public:
         Zone,
         Material,
         Sound,
+        Canvas,
         NUM_TYPES
     } EntityType;
 
