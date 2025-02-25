@@ -83,7 +83,9 @@ GLTexture* GL45Backend::syncGPUObject(const TexturePointer& texturePointer) {
             case TextureUsageType::RESOURCE:
 #endif
             case TextureUsageType::STRICT_RESOURCE:
-                qCDebug(gpugllogging) << "Strict texture " << texture.source().c_str();
+                if (texture.source() != "CanvasEntityRenderer") {
+                    qCDebug(gpugllogging) << "Strict texture " << texture.source().c_str();
+                }
                 object = new GL45StrictResourceTexture(shared_from_this(), texture);
                 break;
 
