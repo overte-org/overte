@@ -1,0 +1,88 @@
+//
+//  Created by Ada <ada@thingvellir.net> on 2025-02-04
+//  Copyright 2025 Overte e.V.
+//
+//  Distributed under the Apache license, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+
+#include "CanvasEntityItem.h"
+
+#include <QtCore/QDebug>
+
+#include "EntitiesLogging.h"
+#include "EntityItemProperties.h"
+#include "EntityTreeElement.h"
+
+EntityItemPointer CanvasEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    std::shared_ptr<CanvasEntityItem> entity(new CanvasEntityItem(entityID), [](CanvasEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+CanvasEntityItem::CanvasEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
+    _type = EntityTypes::Canvas;
+}
+
+CanvasEntityItem::~CanvasEntityItem() {}
+
+void CanvasEntityItem::debugDump() const {
+    qCDebug(entities) << "CanvasEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+    @Base_ENTITY_DEBUG@
+
+}
+
+void CanvasEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                          EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                          EntityPropertyFlags& requestedProperties,
+                                          EntityPropertyFlags& propertyFlags,
+                                          EntityPropertyFlags& propertiesDidntFit,
+                                          int& propertyCount,
+                                          OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+    @Canvas_ENTITY_APPEND@
+
+}
+
+int CanvasEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                       ReadBitstreamToTreeParams& args,
+                                                       EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                       bool& somethingChanged) {
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+    @Canvas_ENTITY_READ@
+
+    return bytesRead;
+}
+
+EntityPropertyFlags CanvasEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+    @Canvas_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+bool CanvasEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+    @Canvas_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityItemProperties CanvasEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
+
+    @Canvas_ENTITY_COPY_TO@
+
+    return properties;
+}

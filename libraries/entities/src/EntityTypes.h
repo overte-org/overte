@@ -120,6 +120,7 @@ public:
         Zone,
         Material,
         Sound,
+        Canvas,
         Empty,
         Script,
         NUM_TYPES

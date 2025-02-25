@@ -1,0 +1,28 @@
+//
+//  Created by Ada <ada@thingvellir.net> on 2025-02-04
+//  Copyright 2025 Overte e.V.
+//
+//  Distributed under the Apache license, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+
+#ifndef hifi_CanvasEntityItem_h
+#define hifi_CanvasEntityItem_h
+
+#include "EntityItem.h"
+
+class CanvasEntityItem : public EntityItem {
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    CanvasEntityItem(const EntityItemID& entityItemID);
+    ~CanvasEntityItem();
+
+    bool shouldBePhysical() const override { return false; }
+
+    virtual bool supportsDetailedIntersection() const override { return false; }
+
+    ALLOW_INSTANTIATION // This class can be instantiated
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+};
+
+#endif // hifi_CanvasEntityItem_h
