@@ -12,29 +12,17 @@ using namespace render;
 using namespace render::entities;
 
 CanvasEntityRenderer::CanvasEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {
-    gpu::Byte pixels[256 * 256 * 4];
-
-    // dummy placeholder texture to make sure the per-frame thing works
-    for (int x = 0; x < 256; x++) {
-        for (int y = 0; y < 256; y++) {
-            pixels[(y * 256 * 4) + (x * 4) + 0] = 255;
-            pixels[(y * 256 * 4) + (x * 4) + 1] = 0;
-            pixels[(y * 256 * 4) + (x * 4) + 2] = 255;
-            pixels[(y * 256 * 4) + (x * 4) + 3] = 255;
-        }
-    }
-
-    _texture = gpu::Texture::create2D(gpu::Element::COLOR_SRGBA_32, 256, 256);
-    _texture->setStoredMipFormat(gpu::Element::COLOR_SRGBA_32);
-    _texture->assignStoredMip(0, 256 * 256 * 4, pixels);
-    _texture->setSource(__FUNCTION__);
-
-    _testTimer.setInterval(33);
+    _testTimer.setInterval(16);
     connect(&_testTimer, &QTimer::timeout, this, &CanvasEntityRenderer::onTimeout);
     _testTimer.start();
 }
 
 CanvasEntityRenderer::~CanvasEntityRenderer() { }
+
+void CanvasEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointer &entity) {
+    _width = entity->getWidth();
+    _height = entity->getHeight();
+}
 
 void CanvasEntityRenderer::onTimeout() {
     gpu::Byte pixels[256 * 256 * 4];
@@ -49,8 +37,12 @@ void CanvasEntityRenderer::onTimeout() {
         }
     }
 
-    _texture->assignStoredMip(0, 256 * 256 * 4, pixels);
+    auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, 256, 256);
+    texture->setStoredMipFormat(gpu::Element::COLOR_SRGBA_32);
+    texture->setAutoGenerateMips(false);
+    texture->assignStoredMip(0, 256 * 256 * 4, pixels);
+    texture->setSource("CanvasEntityRenderer");
+    _texture = texture;
 
     _ticks += 1;
-    qDebug("onTimeout: _ticks = %d", _ticks);
 }
