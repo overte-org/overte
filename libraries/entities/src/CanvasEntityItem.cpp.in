@@ -16,8 +16,7 @@
 EntityItemPointer CanvasEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
     std::shared_ptr<CanvasEntityItem> entity(new CanvasEntityItem(entityID), [](CanvasEntityItem* ptr) { ptr->deleteLater(); });
     entity->setProperties(properties);
-    size_t bufferSize = 4 * static_cast<size_t>(properties._width) + static_cast<size_t>(properties._height);
-    qDebug() << __FUNCTION__ << ": (4 * " << properties._width << " * " << properties._height << " = " << bufferSize;
+    size_t bufferSize = 4 * static_cast<size_t>(properties._width) * static_cast<size_t>(properties._height);
     entity->_imageData = QByteArray(bufferSize, (unsigned char)255);
     return entity;
 }
@@ -83,7 +82,7 @@ bool CanvasEntityItem::setSubClassProperties(const EntityItemProperties& propert
 
     // reallocate and resize if the size properties are changed
     if (oldWidth != getWidth() || oldHeight != getHeight()) {
-        size_t bufferSize = 4 * static_cast<size_t>(getWidth()) + static_cast<size_t>(getHeight());
+        size_t bufferSize = 4 * static_cast<size_t>(getWidth()) * static_cast<size_t>(getHeight());
         _imageData = QByteArray(bufferSize, (unsigned char)255);
     }
 
@@ -103,16 +102,22 @@ QByteArray& CanvasEntityItem::getImageData() {
 }
 
 void CanvasEntityItem::setImageData(const QByteArray& data) {
-    if (data.length() != _imageData.length()) {
+    if (data.length() != _width * _height * 4) {
         return;
     }
 
     _imageData = data;
-    _needsRenderUpdate = true;
+
+    auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, _width, _height);
+    texture->setStoredMipFormat(gpu::Element::COLOR_SRGBA_32);
+    texture->setAutoGenerateMips(false);
+    texture->assignStoredMip(0, _width * _height * 4, reinterpret_cast<const uint8_t*>(_imageData.data()));
+    texture->setSource("CanvasEntityRenderer");
+    _texture = texture;
+
+    setNeedsRenderUpdate(true);
 }
 
 void CanvasEntityItem::setImageSubData(const QByteArray& data, uint32_t dx, uint32_t dy, uint32_t dw, uint32_t dh, uint32_t sx, uint32_t sy, uint32_t sw, uint32_t sh) {
     qCWarning(entities) << "CanvasEntityItem::setImageSubData unimplemented!";
-
-    _needsRenderUpdate = false;
 }

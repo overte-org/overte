@@ -2707,7 +2707,6 @@ void EntityScriptingInterface::canvasSubmitImage(const QUuid& entityID, const QB
 
         if (imageData.length() != canvas->getImageData().length()) {
             qCDebug(entities) << "canvasSubmitImage with different sized buffers on " << entityID << ": input size: " << imageData.length() << ", canvas size: " << canvas->getImageData().length();
-            qCDebug(entities) << "width: " << canvas->getWidth() << ", height: " << canvas->getHeight();
         }
 
         canvas->setImageData(imageData);
