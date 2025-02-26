@@ -705,10 +705,11 @@ void EntityTree::deleteEntitiesByID(const std::vector<EntityItemID>& ids, bool f
                     entity = _entityMap.value(id);
                 }
                 if (entity) {
-                    if (entity->isDomainEntity()) {
+                    bool isServerless = isServerlessMode();
+                    if (entity->isDomainEntity() && !isServerless) {
                         // domain-entity deletes must round-trip through entity-server
                         domainEntitiesIDs.push_back(id);
-                    } else if (force || entity->isLocalEntity() || entity->isMyAvatarEntity()) {
+                    } else if (force || entity->isLocalEntity() || entity->isMyAvatarEntity() || isServerless) {
                         entitiesToDelete.push_back(entity);
                         entity->collectChildrenForDelete(entitiesToDelete, sessionID);
                     }
