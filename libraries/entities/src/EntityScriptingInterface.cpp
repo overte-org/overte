@@ -2695,3 +2695,27 @@ glm::vec3 EntityScriptingInterface::localToWorldDimensions(glm::vec3 localDimens
         return glm::vec3(0.0f);
     }
 }
+
+void EntityScriptingInterface::canvasSubmitImage(const QUuid& entityID, const QByteArray& imageData) {
+    EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
+    if (!entity) {
+        return;
+    }
+
+    if (entity->getType() == EntityTypes::Canvas) {
+        auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+
+        if (imageData.length() != canvas->getImageData().length()) {
+            qCDebug(entities) << "canvasSubmitImage with different sized buffers on " << entityID << ": input size: " << imageData.length() << ", canvas size: " << canvas->getImageData().length();
+            qCDebug(entities) << "width: " << canvas->getWidth() << ", height: " << canvas->getHeight();
+        }
+
+        canvas->setImageData(imageData);
+    } else {
+        qCWarning(entities) << "canvasSubmitImage called on a non-canvas entity " << entityID;
+    }
+}
+
+void EntityScriptingInterface::canvasSubmitSubImage(const QUuid& entityID, const QByteArray& imageData, const QVector<uint32_t>& destRect, const QVector<uint32_t>& srcRect) {
+    qCWarning(entities) << "canvasSubmitSubImage unimplemented! called on " << entityID;
+}
