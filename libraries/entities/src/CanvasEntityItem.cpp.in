@@ -33,7 +33,7 @@ void CanvasEntityItem::debugDump() const {
     qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
     qCDebug(entities) << "    pointer:" << this;
 
-    @Base_ENTITY_DEBUG@
+@Base_ENTITY_DEBUG@
 
 }
 
@@ -47,7 +47,7 @@ void CanvasEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBi
 
     bool successPropertyFits = true;
 
-    @Canvas_ENTITY_APPEND@
+@Canvas_ENTITY_APPEND@
 
 }
 
@@ -58,7 +58,7 @@ int CanvasEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data
     int bytesRead = 0;
     const unsigned char* dataAt = data;
 
-    @Canvas_ENTITY_READ@
+@Canvas_ENTITY_READ@
 
     return bytesRead;
 }
@@ -66,7 +66,7 @@ int CanvasEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data
 EntityPropertyFlags CanvasEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
     EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
 
-    @Canvas_REQUESTED_PROPS@
+@Canvas_REQUESTED_PROPS@
 
     return requestedProperties;
 }
@@ -74,7 +74,7 @@ EntityPropertyFlags CanvasEntityItem::getEntityProperties(EncodeBitstreamParams&
 bool CanvasEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
     bool somethingChanged = false;
 
-    @Canvas_ENTITY_SET_FROM@
+@Canvas_ENTITY_SET_FROM@
 
     return somethingChanged;
 }
@@ -82,7 +82,7 @@ bool CanvasEntityItem::setSubClassProperties(const EntityItemProperties& propert
 EntityItemProperties CanvasEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
     EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
 
-    @Canvas_ENTITY_COPY_TO@
+@Canvas_ENTITY_COPY_TO@
 
     return properties;
 }

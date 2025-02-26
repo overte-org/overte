@@ -1763,6 +1763,38 @@ const GROUPS = [
         ]
     },
     {
+        id: "canvas",
+        label: "CANVAS",
+        properties: [
+            {
+                label: "Width",
+                type: "number-draggable",
+                propertyID: "width",
+            },
+            {
+                label: "Height",
+                type: "number-draggable",
+                propertyID: "height",
+            },
+            {
+                label: "Background color",
+                type: "color",
+                propertyID: "bgColor",
+                propertyName: "bgColor", // actual entity property name
+            },
+            {
+                label: "Background alpha",
+                type: "number-draggable",
+                min: 0,
+                max: 1,
+                step: 0.01,
+                decimals: 2,
+                propertyID: "bgAlpha",
+                propertyName: "bgAlpha",
+            },
+        ]
+    },
+    {
         id: "empty",
         label: "EMPTY",
         properties: []
@@ -6462,7 +6494,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
     selectedEntityIDs = new Set(selections.map(selection => selection.id));
     const multipleSelections = currentSelections.length > 1;
     const hasSelectedEntityChanged = !areSetsEqual(selectedEntityIDs, previouslySelectedEntityIDs);
-    
+
     if (selections.length === 1) {
         if (maSelectedId !== selections[0].id) {
             closeMaterialAssistant();
