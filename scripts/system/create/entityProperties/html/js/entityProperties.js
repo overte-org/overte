@@ -1703,6 +1703,38 @@ const GROUPS = [
         ]
     },
     {
+        id: "canvas",
+        label: "CANVAS",
+        properties: [
+            {
+                label: "Width",
+                type: "number-draggable",
+                propertyID: "width",
+            },
+            {
+                label: "Height",
+                type: "number-draggable",
+                propertyID: "height",
+            },
+            {
+                label: "Background color",
+                type: "color",
+                propertyID: "bgColor",
+                propertyName: "bgColor", // actual entity property name
+            },
+            {
+                label: "Background alpha",
+                type: "number-draggable",
+                min: 0,
+                max: 1,
+                step: 0.01,
+                decimals: 2,
+                propertyID: "bgAlpha",
+                propertyName: "bgAlpha",
+            },
+        ]
+    },
+    {
         id: "spatial",
         label: "SPATIAL",
         properties: [
@@ -3716,10 +3748,6 @@ function createProperty(propertyData, propertyElementID, propertyName, propertyI
             property.elInput = createZonesSelection(property, elProperty);
             break;            
         }
-        case 'childList': {
-            property.elInput = createChildList(property, elProperty);
-            break;
-        }
         case 'icon': {
             property.elSpan = createIconProperty(property, elProperty);
             break;
@@ -3866,10 +3894,6 @@ function copySkyboxURLToAmbientURL() {
     let skyboxURL = getPropertyInputElement("skybox.url").value;
     getPropertyInputElement("ambientLight.ambientURL").value = skyboxURL;
     updateProperty("ambientLight.ambientURL", skyboxURL, false);
-}
-
-function copySkyboxColorToAmbientColor() {
-    updateProperty("ambientLight.ambientColor", skyboxColorForCopy, false);
 }
 
 function copyPositionProperty() {
@@ -5251,7 +5275,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
     selectedEntityIDs = new Set(selections.map(selection => selection.id));
     const multipleSelections = currentSelections.length > 1;
     const hasSelectedEntityChanged = !areSetsEqual(selectedEntityIDs, previouslySelectedEntityIDs);
-    
+
     if (selections.length === 1) {
         if (maSelectedId !== selections[0].id) {
             closeMaterialAssistant();

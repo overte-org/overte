@@ -24,15 +24,9 @@ public:
     ALLOW_INSTANTIATION // This class can be instantiated
     ENTITY_PROPERTY_SUBCLASS_METHODS
 
-    int getWidth() { return width; }
-    int getHeight() { return height; }
-    uint32_t getClearColor() { return clearColor; }
-
 protected:
 @Canvas_ENTITY_PROPS@
 
-    int width, height;
-    uint32_t clearColor;
 };
 
 #endif // hifi_CanvasEntityItem_h
