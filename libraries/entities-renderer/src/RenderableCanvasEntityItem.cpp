@@ -17,6 +17,4 @@ CanvasEntityRenderer::~CanvasEntityRenderer() { }
 
 void CanvasEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) {
     _texture = entity->getTexture();
-
-    qDebug() << "CanvasEntityRenderer::doRenderUpdateAsynchronousTyped";
 }
