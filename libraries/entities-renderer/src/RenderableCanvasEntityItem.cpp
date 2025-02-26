@@ -12,37 +12,33 @@ using namespace render;
 using namespace render::entities;
 
 CanvasEntityRenderer::CanvasEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {
-    _testTimer.setInterval(16);
-    connect(&_testTimer, &QTimer::timeout, this, &CanvasEntityRenderer::onTimeout);
-    _testTimer.start();
+    auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+    _width = canvas->getWidth();
+    _width = canvas->getHeight();
 }
 
 CanvasEntityRenderer::~CanvasEntityRenderer() { }
 
-void CanvasEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointer &entity) {
+void CanvasEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) {
     _width = entity->getWidth();
     _height = entity->getHeight();
-}
 
-void CanvasEntityRenderer::onTimeout() {
-    gpu::Byte pixels[256 * 256 * 4];
+    qDebug() << "width: " << _width << ", height: " << _height;
 
-    // XOR placeholder texture
-    for (int x = 0; x < 256; x++) {
-        for (int y = 0; y < 256; y++) {
-            pixels[(y * 256 * 4) + (x * 4) + 0] = ((x + _ticks) ^ (y + _ticks));
-            pixels[(y * 256 * 4) + (x * 4) + 1] = ((x + _ticks) ^ (y + _ticks));
-            pixels[(y * 256 * 4) + (x * 4) + 2] = ((x + _ticks) ^ (y + _ticks));
-            pixels[(y * 256 * 4) + (x * 4) + 3] = 255;
+    if (entity->needsRenderUpdate()) {
+        // misaligned size, can't safely copy
+        if (entity->getImageData().length() != _width * _height * 4) {
+            entity->setNeedsRenderUpdate(false);
+            return;
         }
+
+        auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, _width, _height);
+        texture->setStoredMipFormat(gpu::Element::COLOR_SRGBA_32);
+        texture->setAutoGenerateMips(false);
+        texture->assignStoredMip(0, _width * _height * 4, reinterpret_cast<const uint8_t*>(entity->getImageData().data()));
+        texture->setSource("CanvasEntityRenderer");
+        _texture = texture;
+
+        entity->setNeedsRenderUpdate(false);
     }
-
-    auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, 256, 256);
-    texture->setStoredMipFormat(gpu::Element::COLOR_SRGBA_32);
-    texture->setAutoGenerateMips(false);
-    texture->assignStoredMip(0, 256 * 256 * 4, pixels);
-    texture->setSource("CanvasEntityRenderer");
-    _texture = texture;
-
-    _ticks += 1;
 }
