@@ -32,12 +32,10 @@ protected:
     virtual bool wantsHandControllerPointerEvents() const override { return false; }
     virtual bool wantsKeyboardFocus() const override { return false; }
 
-    virtual void doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) override;
+    virtual void doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) override;
 
 private:
     gpu::TexturePointer _texture;
-
-    int _width, _height;
 };
 
 } }
