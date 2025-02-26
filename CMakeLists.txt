@@ -28,7 +28,6 @@ endif()
 
 # set our OS X deployment target
 # (needs to be set before first project() call and before prebuild.py)
-# Will affect VCPKG dependencies
 if (APPLE)
   set(ENV{MACOSX_DEPLOYMENT_TARGET} 10.11)
 endif()
@@ -42,7 +41,6 @@ endif()
 
 # OVERTE_OPTIMIZE
 # Variable determining Overte optimization. If not set, it defaults to true.
-# It's used to determine build flags for main codebase and for VCPKG dependencies.
 # Should be set to false to get completely unoptimized build for easier line-by-line debugging
 
 if( NOT WIN32 )
@@ -72,7 +70,7 @@ if( NOT WIN32 )
 
     # OVERTE_CPU_ARCHITECTURE
     # Variable determining CPU architecture for which Overte will be built.
-    # If defined, it's appended to CXXFLAGS and CFLAGS for both Overte and VCPKG dependencies
+    # If defined, it's appended to CXXFLAGS and CFLAGS for Overte
 
     #Assume -march=native for compilers that allow it if architecture is not specified
     if(NOT DEFINED OVERTE_CPU_ARCHITECTURE)
