@@ -269,6 +269,14 @@ void Application::setHmdTabletBecomesToolbarSetting(bool value) {
     updateSystemTabletMode();
 }
 
+void Application::setMouseLock(bool value) {
+    _defaultMouseLock.set(value);
+    getApplicationCompositor().setMouseLockComposit(value);
+}
+bool Application::getMouseLock() {
+    return _defaultMouseLock.get();
+}
+
 void Application::setShowGraphicsIcon(bool value) {
     _showGraphicsIconSetting.set(value);
     DependencyManager::get<MessagesClient>()->sendLocalMessage("Overte-ShowGraphicsIconChanged", "");
