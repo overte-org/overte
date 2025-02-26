@@ -10,7 +10,6 @@ macro(TARGET_ZLIB)
         # zlib is part of the NDK
         target_link_libraries(${TARGET_NAME} z)
     else()
-        # using VCPKG for zlib
         find_package(ZLIB REQUIRED)
         target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${ZLIB_INCLUDE_DIRS})
         target_link_libraries(${TARGET_NAME} ${ZLIB_LIBRARIES})
