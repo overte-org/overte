@@ -96,8 +96,9 @@
     var ZONE_URL = Script.resolvePath("assets/images/icon-zone.svg");
     var MATERIAL_URL = Script.resolvePath("assets/images/icon-material.svg");
     var SOUND_URL = Script.resolvePath("assets/images/icon-sound.svg");
+    var CANVAS_URL = Script.resolvePath("assets/images/icon-sound.svg");
 
-    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "ProceduralParticleEffect", "Zone", "Material", "Sound"], function(entityID) {
+    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "ProceduralParticleEffect", "Zone", "Material", "Sound", "Canvas"], function(entityID) {
         var properties = Entities.getEntityProperties(entityID, ["type", "isSpotlight", "parentID", "name"]);
         if (properties.type === "Light") {
             return {
@@ -113,6 +114,8 @@
             }
         } else if (properties.type === "Sound") {
             return { imageURL: SOUND_URL, rotation: Quat.fromPitchYawRollDegrees(0, 0, 0) };
+        } else if (properties.type === "Canvas") {
+            return { imageURL: CANVAS_URL, rotation: Quat.fromPitchYawRollDegrees(0, 0, 0) };
         } else {
             return { imageURL: PARTICLE_SYSTEM_URL };
         }
@@ -540,6 +543,12 @@
             loop: true,
             positional: true,
             localOnly: false
+        },
+        Canvas: {
+            width: 300,
+            height: 150,
+            bgColor: { red: 255, green: 255, blue: 255 },
+            bgAlpha: 1,
         },
     };
 
@@ -2127,7 +2136,7 @@
                     var entityParentIDs = [];
 
                     var propType = Entities.getEntityProperties(pastedEntityIDs[0], ["type"]).type;
-                    var NO_ADJUST_ENTITY_TYPES = ["Zone", "Light", "ParticleEffect", "ProceduralParticleEffect", "Sound"];
+                    var NO_ADJUST_ENTITY_TYPES = ["Zone", "Light", "ParticleEffect", "ProceduralParticleEffect", "Sound", "Canvas"];
                     if (NO_ADJUST_ENTITY_TYPES.indexOf(propType) === -1) {
                         var targetDirection;
                         if (Camera.mode === "entity" || Camera.mode === "independent") {
