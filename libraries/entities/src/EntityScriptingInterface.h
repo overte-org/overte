@@ -2196,14 +2196,15 @@ public slots:
     Q_INVOKABLE const EntityPropertyInfo getPropertyInfo(const QString& propertyName) const;
 
     /*@jsdoc
-     * TODO
+     * Submits an sRGBA8 buffer to a Canvas entity. The buffer must be the correct
+     * size for the canvas entity (4 * width * height) or nothing will happen.
+     * This function only has client-side effects, the image data will not be
+     * sent across the network.
+     * @function Entities.canvasSubmitImage
+     * @param {Uuid} entityID - The Canvas entity that this image will be submitted to.
+     * @param {ArrayBuffer} imageData - The sRGBA8 image data to submit.
      */
     Q_INVOKABLE void canvasSubmitImage(const QUuid& entityID, const QByteArray& imageData);
-
-    /*@jsdoc
-     * TODO
-     */
-    Q_INVOKABLE void canvasSubmitSubImage(const QUuid& entityID, const QByteArray& imageData, const QVector<uint32_t>& destRect, const QVector<uint32_t>& srcRect);
 
 signals:
     /*@jsdoc
