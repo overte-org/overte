@@ -11,34 +11,12 @@
 using namespace render;
 using namespace render::entities;
 
-CanvasEntityRenderer::CanvasEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {
-    auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
-    _width = canvas->getWidth();
-    _width = canvas->getHeight();
-}
+CanvasEntityRenderer::CanvasEntityRenderer(const EntityItemPointer& entity) : Parent(entity) { }
 
 CanvasEntityRenderer::~CanvasEntityRenderer() { }
 
-void CanvasEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) {
-    _width = entity->getWidth();
-    _height = entity->getHeight();
+void CanvasEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) {
+    _texture = entity->getTexture();
 
-    qDebug() << "width: " << _width << ", height: " << _height;
-
-    if (entity->needsRenderUpdate()) {
-        // misaligned size, can't safely copy
-        if (entity->getImageData().length() != _width * _height * 4) {
-            entity->setNeedsRenderUpdate(false);
-            return;
-        }
-
-        auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, _width, _height);
-        texture->setStoredMipFormat(gpu::Element::COLOR_SRGBA_32);
-        texture->setAutoGenerateMips(false);
-        texture->assignStoredMip(0, _width * _height * 4, reinterpret_cast<const uint8_t*>(entity->getImageData().data()));
-        texture->setSource("CanvasEntityRenderer");
-        _texture = texture;
-
-        entity->setNeedsRenderUpdate(false);
-    }
+    qDebug() << "CanvasEntityRenderer::doRenderUpdateAsynchronousTyped";
 }

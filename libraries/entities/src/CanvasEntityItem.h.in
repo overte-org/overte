@@ -9,6 +9,7 @@
 #define hifi_CanvasEntityItem_h
 
 #include "EntityItem.h"
+#include <gpu/Texture.h>
 
 class CanvasEntityItem : public EntityItem {
 public:
@@ -28,10 +29,13 @@ public:
     void setImageData(const QByteArray& data);
     void setImageSubData(const QByteArray& data, uint32_t dx, uint32_t dy, uint32_t dw, uint32_t dh, uint32_t sx, uint32_t sy, uint32_t sw, uint32_t sh);
 
+    gpu::TexturePointer getTexture() const { return _texture; }
+
 protected:
 @Canvas_ENTITY_PROPS@
 
     QByteArray _imageData;
+    gpu::TexturePointer _texture;
 };
 
 #endif // hifi_CanvasEntityItem_h
