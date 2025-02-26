@@ -1,4 +1,0 @@
-Source: quazip
-Version: 0.7.3
-Description: Zip file manipulation for Qt
-Build-Depends: zlib

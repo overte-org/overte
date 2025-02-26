@@ -40,6 +40,6 @@ DEPENDS=mesa-libGL,`ls \
 
 sudo yum install chrpath
 
-export VERSION DEPENDS OVERTE QT5_LIBS VCPKG_INSTALL_ROOT
+export VERSION DEPENDS OVERTE QT5_LIBS
 rpmbuild --target $(uname -m) -bb ./overte-server.spec
 mv ~/rpmbuild/RPMS/$(uname -m)/*.rpm .
