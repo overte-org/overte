@@ -16,6 +16,9 @@
 EntityItemPointer CanvasEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
     std::shared_ptr<CanvasEntityItem> entity(new CanvasEntityItem(entityID), [](CanvasEntityItem* ptr) { ptr->deleteLater(); });
     entity->setProperties(properties);
+    size_t bufferSize = 4 * static_cast<size_t>(properties._width) + static_cast<size_t>(properties._height);
+    qDebug() << __FUNCTION__ << ": (4 * " << properties._width << " * " << properties._height << " = " << bufferSize;
+    entity->_imageData = QByteArray(bufferSize, (unsigned char)255);
     return entity;
 }
 
@@ -73,8 +76,16 @@ EntityPropertyFlags CanvasEntityItem::getEntityProperties(EncodeBitstreamParams&
 
 bool CanvasEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
     bool somethingChanged = false;
+    uint16_t oldWidth = getWidth();
+    uint16_t oldHeight = getHeight();
 
 @Canvas_ENTITY_SET_FROM@
+
+    // reallocate and resize if the size properties are changed
+    if (oldWidth != getWidth() || oldHeight != getHeight()) {
+        size_t bufferSize = 4 * static_cast<size_t>(getWidth()) + static_cast<size_t>(getHeight());
+        _imageData = QByteArray(bufferSize, (unsigned char)255);
+    }
 
     return somethingChanged;
 }
@@ -85,4 +96,23 @@ EntityItemProperties CanvasEntityItem::getProperties(const EntityPropertyFlags& 
 @Canvas_ENTITY_COPY_TO@
 
     return properties;
+}
+
+QByteArray& CanvasEntityItem::getImageData() {
+    return _imageData;
+}
+
+void CanvasEntityItem::setImageData(const QByteArray& data) {
+    if (data.length() != _imageData.length()) {
+        return;
+    }
+
+    _imageData = data;
+    _needsRenderUpdate = true;
+}
+
+void CanvasEntityItem::setImageSubData(const QByteArray& data, uint32_t dx, uint32_t dy, uint32_t dw, uint32_t dh, uint32_t sx, uint32_t sy, uint32_t sw, uint32_t sh) {
+    qCWarning(entities) << "CanvasEntityItem::setImageSubData unimplemented!";
+
+    _needsRenderUpdate = false;
 }

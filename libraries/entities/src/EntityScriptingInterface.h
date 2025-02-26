@@ -2195,6 +2195,16 @@ public slots:
      */
     Q_INVOKABLE const EntityPropertyInfo getPropertyInfo(const QString& propertyName) const;
 
+    /*@jsdoc
+     * TODO
+     */
+    Q_INVOKABLE void canvasSubmitImage(const QUuid& entityID, const QByteArray& imageData);
+
+    /*@jsdoc
+     * TODO
+     */
+    Q_INVOKABLE void canvasSubmitSubImage(const QUuid& entityID, const QByteArray& imageData, const QVector<uint32_t>& destRect, const QVector<uint32_t>& srcRect);
+
 signals:
     /*@jsdoc
      * Triggered on the client that is the physics simulation owner during the collision of two entities. Note: Isn't triggered
