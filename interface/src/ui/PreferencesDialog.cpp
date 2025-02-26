@@ -144,14 +144,6 @@ void setupPreferences() {
         preferences->addPreference(new CheckPreference(UI_CATEGORY, "Constrain Toolbar Position to Horizontal Center", getter, setter));
     }
 
-    //static const QString TEST{ "TEST SECTION" };
-    {
-        auto getter = []() -> bool { return qApp->getMouseLock(); };
-        auto setter = [](bool value) { qApp->setMouseLock(value); };
-        auto preference = new CheckPreference(UI_CATEGORY, "3D mouse cursor in VR", getter, setter);
-        preferences->addPreference(preference);
-    }
-
     {
         auto getter = []()->bool { return qApp->getAwayStateWhenFocusLostInVREnabled(); };
         auto setter = [](bool value) { qApp->setAwayStateWhenFocusLostInVREnabled(value); };
@@ -173,6 +165,13 @@ void setupPreferences() {
         auto preference = new SpinnerPreference(UI_CATEGORY, "VR Tablet Scale %", getter, setter);
         preference->setMin(20);
         preference->setMax(500);
+        preferences->addPreference(preference);
+    }
+        
+    {
+        auto getter = []() -> bool { return qApp->getMouseLock(); };
+        auto setter = [](bool value) { qApp->setMouseLock(value); };
+        auto preference = new CheckPreference(UI_CATEGORY, "3D mouse cursor in VR", getter, setter);
         preferences->addPreference(preference);
     }
 
