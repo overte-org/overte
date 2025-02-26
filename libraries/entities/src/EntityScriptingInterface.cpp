@@ -2714,7 +2714,3 @@ void EntityScriptingInterface::canvasSubmitImage(const QUuid& entityID, const QB
         qCWarning(entities) << "canvasSubmitImage called on a non-canvas entity " << entityID;
     }
 }
-
-void EntityScriptingInterface::canvasSubmitSubImage(const QUuid& entityID, const QByteArray& imageData, const QVector<uint32_t>& destRect, const QVector<uint32_t>& srcRect) {
-    qCWarning(entities) << "canvasSubmitSubImage unimplemented! called on " << entityID;
-}
