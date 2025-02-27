@@ -27,6 +27,9 @@ class ScriptEngine;
 struct CanvasImage {
     QByteArray buffer;
     int width, height;
+
+    CanvasImage() : buffer(QByteArray()), width(0), height(0) {}
+    CanvasImage(QByteArray buffer, int width, int height) : buffer(buffer), width(width), height(height) {}
 };
 
 class CanvasCommand {
@@ -166,6 +169,31 @@ public:
             case Variant::Line: _line = other._line; break;
             case Variant::ImageCopy: _imageCopy = other._imageCopy; break;
         }
+    }
+
+    CanvasCommand& operator=(const CanvasCommand& other) noexcept {
+        _tag = other._tag;
+        switch (other._tag) {
+            case Variant::Invalid: _invalid = other._invalid; break;
+            case Variant::SetStrokeWidth: _setStrokeWidth = _setStrokeWidth; break;
+            case Variant::SetColor: _setColor = other._setColor; break;
+            case Variant::SetHints: _setHints = other._setHints; break;
+            case Variant::SetBlendMode: _setBlendMode = other._setBlendMode; break;
+            case Variant::SetFont: _setFont = other._setFont; break;
+            case Variant::ClearRect: _clearRect = other._clearRect; break;
+            case Variant::FillPath: _fillPath = other._fillPath; break;
+            case Variant::FillRect: _fillRect = other._fillRect; break;
+            case Variant::FillEllipse: _fillEllipse = other._fillEllipse; break;
+            case Variant::FillText: _fillText = other._fillText; break;
+            case Variant::StrokePath: _strokePath = other._strokePath; break;
+            case Variant::StrokeRect: _strokeRect = other._strokeRect; break;
+            case Variant::StrokeArc: _strokeArc = other._strokeArc; break;
+            case Variant::StrokeEllipse: _strokeEllipse = other._strokeEllipse; break;
+            case Variant::Point: _point = other._point; break;
+            case Variant::Line: _line = other._line; break;
+            case Variant::ImageCopy: _imageCopy = other._imageCopy; break;
+        }
+        return *this;
     }
 
     void set(Invalid&& cmd) { _tag = Variant::Invalid; _invalid = cmd; }
