@@ -2228,7 +2228,7 @@ public slots:
      * @function Entities.canvasCommit
      * @param {Uuid} entityID - The canvas entity to update the texture of.
      */
-    Q_INVOKABLE void canvasCommit(const QUuid* entityID);
+    Q_INVOKABLE void canvasCommit(const QUuid& entityID);
 
 signals:
     /*@jsdoc
