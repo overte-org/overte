@@ -1,0 +1,21 @@
+diff -ru node/tools/gyp/pylib/gyp/input.py node.patched/tools/gyp/pylib/gyp/input.py
+--- node/tools/gyp/pylib/gyp/input.py	2024-04-10 14:12:07.000000000 +0200
++++ node.patched/tools/gyp/pylib/gyp/input.py	2025-02-27 21:58:01.579193906 +0100
+@@ -16,7 +16,7 @@
+ import sys
+ import threading
+ import traceback
+-from distutils.version import StrictVersion
++from packaging.version import Version
+ from gyp.common import GypError
+ from gyp.common import OrderedSet
+ 
+@@ -1190,7 +1190,7 @@
+         else:
+             ast_code = compile(cond_expr_expanded, "<string>", "eval")
+             cached_conditions_asts[cond_expr_expanded] = ast_code
+-        env = {"__builtins__": {}, "v": StrictVersion}
++        env = {"__builtins__": {}, "v": Version}
+         if eval(ast_code, env, variables):
+             return true_dict
+         return false_dict

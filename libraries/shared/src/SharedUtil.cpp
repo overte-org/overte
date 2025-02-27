@@ -24,6 +24,7 @@
 
 #include <QtCore/QOperatingSystemVersion>
 #include <glm/glm.hpp>
+#include "PathUtils.h"
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -1033,7 +1034,7 @@ bool getProcessorInfo(ProcessorInfo& info) {
 
 
 const QString& getInterfaceSharedMemoryName() {
-    static const QString applicationName = "High Fidelity Interface - " + qgetenv("USERNAME");
+    static const QString applicationName = "High Fidelity Interface - " + qgetenv("USERNAME") + "(" + PathUtils::getInstanceName() + ")";
     return applicationName;
 }
 

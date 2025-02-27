@@ -10,4 +10,6 @@ macro(TARGET_OPENVR)
     find_library(OPENVR_LIBRARY_DEBUG NAMES openvr_api PATHS ${VCPKG_INSTALL_ROOT}/debug/lib)
     select_library_configurations(OPENVR)
     target_link_libraries(${TARGET_NAME} ${OPENVR_LIBRARY})
+
+    install_external_library("${OPENVR_LIBRARY}")
 endmacro()
