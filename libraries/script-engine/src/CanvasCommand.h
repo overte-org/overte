@@ -216,6 +216,7 @@ private:
 
 void registerCanvasMetaTypes(ScriptEngine *engine);
 
+Q_DECLARE_METATYPE(CanvasCommand)
 ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand& cmd);
 bool canvasCommandFromScriptValue(const ScriptValue& object, CanvasCommand& cmd);
 CanvasCommand canvasCommandFromScriptValue(const ScriptValue& object);
