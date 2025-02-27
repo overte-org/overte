@@ -10,6 +10,7 @@
 
 #include "EntityItem.h"
 #include <gpu/Texture.h>
+#include <CanvasCommand.h>
 
 class CanvasEntityItem : public EntityItem {
 public:
@@ -25,16 +26,22 @@ public:
     ALLOW_INSTANTIATION // This class can be instantiated
     ENTITY_PROPERTY_SUBCLASS_METHODS
 
-    QByteArray& getImageData();
-    void setImageData(const QByteArray& data);
-    void setImageSubData(const QByteArray& data, uint32_t dx, uint32_t dy, uint32_t dw, uint32_t dh, uint32_t sx, uint32_t sy, uint32_t sw, uint32_t sh);
+    QByteArray& getImageData() { return _imageData; }
+    void setImageData(const CanvasImage& image);
+
+    void pushCommands(const QVector<CanvasCommand>& queue) { _commandQueue.append(queue); }
+
+    void commit();
 
     gpu::TexturePointer getTexture() const { return _texture; }
 
 protected:
 @Canvas_ENTITY_PROPS@
 
+    void paintCommands(const QVector<CanvasCommand>& queue);
+
     QByteArray _imageData;
+    QVector<CanvasCommand> _commandQueue;
     gpu::TexturePointer _texture;
 };
 
