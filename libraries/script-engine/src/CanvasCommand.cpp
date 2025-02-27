@@ -52,7 +52,7 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
 
         case Variant::SetColor: {
             auto props = cmd._setColor;
-            obj.setProperty("color", u8vec3ColorToScriptValue(engine, glm::u8vec3(props.color.red(), props.color.green(), props.color.blue())));
+            obj.setProperty("color", u8vec3ColorToScriptValue(engine, props.color));
             return obj;
         }
 
@@ -195,7 +195,7 @@ bool canvasCommandFromScriptValue(const ScriptValue& object, CanvasCommand& cmd)
         if (!u8vec3FromScriptValue(object.property("color"), c)) { return false; }
 
         // FIXME: we have a script RGB color type but not an RGBA one
-        cmd.set(CanvasCommand::SetColor { QColor(c[0], c[1], c[2], 255) });
+        cmd.set(CanvasCommand::SetColor { c });
     } else if (type == static_cast<uint>(Variant::SetHints)) {
         cmd.set(CanvasCommand::SetHints {
             static_cast<CanvasCommand::RenderHint>(object.property("hints").toVariant().toUInt())
@@ -368,8 +368,7 @@ ScriptValue canvasImageToScriptValue(ScriptEngine* engine, const CanvasImage& im
 bool canvasImageFromScriptValue(const ScriptValue& object, CanvasImage& img) {
     img.width = object.property(IMG_WIDTH_PROP_NAME).toVariant().toUInt();
     img.height = object.property(IMG_HEIGHT_PROP_NAME).toVariant().toUInt();
-    img.buffer = object.property(IMG_BUFFER_PROP_NAME).toVariant().toByteArray();
-    return true;
+    return qBytearrayFromScriptValue(object.property(IMG_BUFFER_PROP_NAME), img.buffer);
 }
 
 CanvasImage canvasImageFromScriptValue(const ScriptValue& object) {
