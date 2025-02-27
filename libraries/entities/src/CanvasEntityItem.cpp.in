@@ -8,6 +8,8 @@
 #include "CanvasEntityItem.h"
 
 #include <QtCore/QDebug>
+#include <QImage>
+#include <QPainter>
 
 #include "EntitiesLogging.h"
 #include "EntityItemProperties.h"
@@ -16,8 +18,8 @@
 EntityItemPointer CanvasEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
     std::shared_ptr<CanvasEntityItem> entity(new CanvasEntityItem(entityID), [](CanvasEntityItem* ptr) { ptr->deleteLater(); });
     entity->setProperties(properties);
-    size_t bufferSize = 4 * static_cast<size_t>(properties._width) * static_cast<size_t>(properties._height);
-    entity->_imageData = QByteArray(bufferSize, (unsigned char)255);
+    size_t size = 4 * static_cast<size_t>(properties._width) * static_cast<size_t>(properties._height);
+    entity->_imageData = QByteArray(size, 0);
     return entity;
 }
 
@@ -82,8 +84,8 @@ bool CanvasEntityItem::setSubClassProperties(const EntityItemProperties& propert
 
     // reallocate and resize if the size properties are changed
     if (oldWidth != getWidth() || oldHeight != getHeight()) {
-        size_t bufferSize = 4 * static_cast<size_t>(getWidth()) * static_cast<size_t>(getHeight());
-        _imageData = QByteArray(bufferSize, (unsigned char)255);
+        size_t size = 4 * static_cast<size_t>(_width) * static_cast<size_t>(_height);
+        _imageData = QByteArray(size, 0);
     }
 
     return somethingChanged;
@@ -97,28 +99,171 @@ EntityItemProperties CanvasEntityItem::getProperties(const EntityPropertyFlags& 
     return properties;
 }
 
-QByteArray& CanvasEntityItem::getImageData() {
-    return _imageData;
-}
-
-void CanvasEntityItem::setImageData(const QByteArray& data) {
-    if (data.length() != _width * _height * 4) {
+void CanvasEntityItem::setImageData(const CanvasImage& image) {
+    if (image.buffer.length() != _imageData.length()) {
         return;
     }
 
-    _imageData = data;
+    std::memcpy(_imageData.data(), image.buffer.constData(), _imageData.length());
+}
+
+void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
+    using V = CanvasCommand::Variant;
+    using Hint = CanvasCommand::RenderHint;
+
+    auto destImage = QImage(reinterpret_cast<uint8_t *>(_imageData.data()), _width, _height, QImage::Format_RGBA8888);
+    QPen pen;
+    QBrush brush;
+    QPainter p;
+    p.begin(&destImage);
+
+    for (int i = 0; i < queue.length(); i++) {
+        auto cmd = queue[i];
+
+        switch (cmd.kind()) {
+            case V::Invalid:
+                qCCritical(entities) << "CanvasEntityItem::paintCommands: Invalid command at index " << i;
+                break;
+
+            case V::SetStrokeWidth: {
+                auto props = cmd._setStrokeWidth;
+                pen.setWidthF(props.width);
+                p.setPen(pen);
+                break;
+            }
+
+            case V::SetColor: {
+                auto props = cmd._setColor;
+                pen.setColor(props.color);
+                brush.setColor(props.color);
+                p.setPen(pen);
+                p.setBrush(brush);
+                break;
+            }
+
+            case V::SetHints: {
+                auto props = cmd._setHints;
+                p.setRenderHint(QPainter::Antialiasing, (props.hints & Hint::PrimitiveAntialiasing) != 0);
+                p.setRenderHint(QPainter::TextAntialiasing, (props.hints & Hint::TextAntialiasing) != 0);
+                p.setRenderHint(QPainter::SmoothPixmapTransform, (props.hints & Hint::BilinearImageScaling) != 0);
+                break;
+            }
+
+            case V::SetBlendMode: {
+                auto props = cmd._setBlendMode;
+                p.setCompositionMode(props.mode);
+                break;
+            }
+
+            case V::SetFont: {
+                auto props = cmd._setFont;
+                p.setFont(QFont(props.family, props.size, props.weight, props.italic));
+                break;
+            }
+
+            case V::ClearRect: {
+                auto props = cmd._clearRect;
+                p.eraseRect(props.rect);
+                break;
+            }
+
+            case V::FillPath: {
+                auto props = cmd._fillPath;
+                p.fillPath(props.path, brush);
+                break;
+            }
+
+            case V::FillRect: {
+                auto props = cmd._fillRect;
+                p.fillRect(props.rect, brush);
+                break;
+            }
+
+            case V::FillEllipse: {
+                auto props = cmd._fillEllipse;
+                auto pathHack = QPainterPath();
+                pathHack.addEllipse(props.rect);
+                p.fillPath(pathHack, brush);
+                break;
+            }
+
+            case V::FillText: {
+                auto props = cmd._fillText;
+
+                // unbounded text
+                if (props.rect.width() == 0.0 && props.rect.height() == 0.0) {
+                    p.drawText(QPointF(props.rect.x(), props.rect.y()), props.text);
+                } else {
+                    p.drawText(props.rect, props.flag, props.text);
+                }
+                break;
+            }
+
+            case V::StrokePath: {
+                auto props = cmd._strokePath;
+                p.strokePath(props.path, pen);
+                break;
+            }
+
+            case V::StrokeRect: {
+                auto props = cmd._strokeRect;
+                p.drawRect(props.rect);
+                break;
+            }
+
+            case V::StrokeArc: {
+                auto props = cmd._strokeArc;
+                p.drawArc(props.rect, props.startAngle * 16, props.spanAngle * 16);
+                break;
+            }
+
+            case V::StrokeEllipse: {
+                auto props = cmd._strokeEllipse;
+                p.drawEllipse(props.rect);
+                break;
+            }
+
+            case V::Point: {
+                auto props = cmd._point;
+                p.drawPoint(props.point);
+                break;
+            }
+
+            case V::Line: {
+                auto props = cmd._line;
+                p.drawLine(props.line);
+                break;
+            }
+
+            case V::ImageCopy: {
+                auto props = cmd._imageCopy;
+                if (props.image.buffer.length() != static_cast<int>(4 * props.image.width * props.image.height)) {
+                    qCCritical(entities) << "CanvasEntityItem::paintCommands: Source CanvasImage buffer has incorrect size, expected " << (4 * props.image.width * props.image.height) << ", got " << props.image.buffer.length();
+                    break;
+                }
+                auto img = QImage(reinterpret_cast<const uint8_t*>(props.image.buffer.constData()), props.image.width, props.image.height, QImage::Format_RGBA8888);
+                p.drawImage(props.dst, img, props.src);
+                break;
+            }
+        }
+    }
+
+    p.end();
+}
+
+void CanvasEntityItem::commit() {
+    if (_commandQueue.length() > 0) {
+        paintCommands(_commandQueue);
+        _commandQueue.clear();
+    }
 
     auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, _width, _height);
     texture->setStoredMipFormat(gpu::Element::COLOR_SRGBA_32);
     texture->setAutoGenerateMips(false);
-    texture->assignStoredMip(0, _width * _height * 4, reinterpret_cast<const uint8_t*>(_imageData.data()));
+    texture->assignStoredMip(0, _imageData.length(), reinterpret_cast<const uint8_t*>(_imageData.constData()));
     texture->setSource("CanvasEntityRenderer");
     _texture = texture;
 
     setNeedsRenderUpdate(true);
     somethingChangedNotification();
-}
-
-void CanvasEntityItem::setImageSubData(const QByteArray& data, uint32_t dx, uint32_t dy, uint32_t dw, uint32_t dh, uint32_t sx, uint32_t sy, uint32_t sw, uint32_t sh) {
-    qCWarning(entities) << "CanvasEntityItem::setImageSubData unimplemented!";
 }
