@@ -19,11 +19,12 @@
 #include "ScriptValue.h"
 #include "ScriptManager.h"
 #include "ScriptValueUtils.h"
+#include "v8/FastScriptValueUtils.h"
 
 STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
 
-    scriptRegisterMetaType<CanvasCommand, canvasCommandToScriptValue, canvasCommandFromScriptValue>(scriptEngine);
+    scriptRegisterMetaType<CanvasCommand, canvasCommandToScriptValue, canvasCommandFromScriptValue>(scriptEngine, "CanvasCommand");
     scriptRegisterMetaType<CanvasImage, canvasImageToScriptValue, canvasImageFromScriptValue>(scriptEngine, "CanvasImage");
     scriptRegisterMetaType<QPainterPath, qPainterPathToScriptValue, qPainterPathFromScriptValue>(scriptEngine, "CanvasPath");
     scriptRegisterMetaType<QVector<CanvasCommand>, qVectorCanvasCommandToScriptValue, qVectorCanvasCommandFromScriptValue>(scriptEngine);
@@ -51,7 +52,7 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
 
         case Variant::SetColor: {
             auto props = cmd._setColor;
-            obj.setProperty("color", props.color);
+            obj.setProperty("color", u8vec3ColorToScriptValue(engine, glm::u8vec3(props.color.red(), props.color.green(), props.color.blue())));
             return obj;
         }
 
@@ -78,7 +79,7 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
 
         case Variant::FillPath: {
             auto props = cmd._fillPath;
-            obj.setProperty("path", props.path);
+            obj.setProperty("path", qPainterPathToScriptValue(engine, props.path));
             return obj;
         }
 
@@ -113,7 +114,7 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
 
         case Variant::StrokePath: {
             auto props = cmd._strokePath;
-            obj.setProperty("path", props.path);
+            obj.setProperty("path", qPainterPathToScriptValue(engine, props.path));
             return obj;
         }
 
@@ -172,7 +173,7 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
             obj.setProperty("destY", props.dst.y());
             obj.setProperty("destW", props.dst.width());
             obj.setProperty("destH", props.dst.height());
-            obj.setProperty("image", props.image);
+            obj.setProperty("image", canvasImageToScriptValue(engine, props.image));
             return obj;
         }
 
@@ -350,7 +351,7 @@ ScriptValue canvasImageToScriptValue(ScriptEngine* engine, const CanvasImage& im
     ScriptValue obj = engine->newObject();
     obj.setProperty(IMG_WIDTH_PROP_NAME, img.width);
     obj.setProperty(IMG_HEIGHT_PROP_NAME, img.height);
-    obj.setProperty(IMG_BUFFER_PROP_NAME, img.buffer);
+    obj.setProperty(IMG_BUFFER_PROP_NAME, qBytearrayToScriptValue(engine, img.buffer));
     return obj;
 }
 
