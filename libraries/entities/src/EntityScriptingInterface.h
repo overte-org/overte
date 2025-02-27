@@ -34,6 +34,7 @@
 #include <PickFilter.h>
 #include <ScriptManager.h>
 #include <ScriptValue.h>
+#include <CanvasCommand.h>
 
 #include "PolyVoxEntityItem.h"
 #include "LineEntityItem.h"
@@ -2196,15 +2197,38 @@ public slots:
     Q_INVOKABLE const EntityPropertyInfo getPropertyInfo(const QString& propertyName) const;
 
     /*@jsdoc
-     * Submits an sRGBA8 buffer to a Canvas entity. The buffer must be the correct
-     * size for the canvas entity (4 * width * height) or nothing will happen.
-     * This function only has client-side effects, the image data will not be
-     * sent across the network.
-     * @function Entities.canvasSubmitImage
+     * Replaces the contents of a canvas entity's image buffer.
+     * @function Entities.canvasPushImage
      * @param {Uuid} entityID - The Canvas entity that this image will be submitted to.
-     * @param {ArrayBuffer} imageData - The sRGBA8 image data to submit.
+     * @param {CanvasImage} image - The image to submit.
      */
-    Q_INVOKABLE void canvasSubmitImage(const QUuid& entityID, const QByteArray& imageData);
+    Q_INVOKABLE void canvasPushImage(const QUuid& entityID, const CanvasImage& image);
+
+    /*@jsdoc
+     * Retrieves a copy of the current sRGBA8 pixel buffer of a canvas as an ArrayBuffer.
+     * The contents are determined by the last call to Entities.canvasCommit.
+     * @function Entities.canvasGetImage
+     * @param {Uuid} entityID - The canvas entity to retrieve the buffer from.
+     * @returns {CanvasImage} - The image data.
+     */
+    Q_INVOKABLE CanvasImage canvasGetImage(const QUuid& entityID);
+
+    /*@jsdoc
+     * Pushes a list of high-level drawing commands into a Canvas entity's internal queue.
+     * Pushed commands will not execute until Entities.canvasCommit is called.
+     * @function Entities.canvasPushCommands
+     * @param {Uuid} entityID - The canvas entity to push commands to.
+     * @param {Object[]} commands - The drawing commands to push. See CanvasCommand for more info.
+     */
+    Q_INVOKABLE void canvasPushCommands(const QUuid& entityID, const QVector<CanvasCommand>& commands);
+
+    /*@jsdoc
+     * Completes any pending drawing commands and updates the texture of a Canvas entity.
+     * The Canvas entity's internal command queue is cleared after this function is called.
+     * @function Entities.canvasCommit
+     * @param {Uuid} entityID - The canvas entity to update the texture of.
+     */
+    Q_INVOKABLE void canvasCommit(const QUuid* entityID);
 
 signals:
     /*@jsdoc
