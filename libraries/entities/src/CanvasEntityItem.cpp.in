@@ -134,8 +134,9 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
 
             case V::SetColor: {
                 auto props = cmd._setColor;
-                pen.setColor(props.color);
-                brush.setColor(props.color);
+                auto color = QColor(props.color[0], props.color[1], props.color[2], 255);
+                pen.setColor(color);
+                brush.setColor(color);
                 p.setPen(pen);
                 p.setBrush(brush);
                 break;

@@ -7725,6 +7725,8 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject("HifiAbout", AboutUtil::getInstance());  // Deprecated.
     scriptEngine->registerGlobalObject("ResourceRequestObserver", DependencyManager::get<ResourceRequestObserver>().data());
 
+    scriptEngine->registerGlobalObject("CanvasCommand", DependencyManager::get<CanvasCommandFactory>().data());
+
     // connect this script engines printedMessage signal to the global ScriptEngines these various messages
     auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
     connect(scriptManager.get(), &ScriptManager::printedMessage, scriptEngines, &ScriptEngines::onPrintedMessage);
