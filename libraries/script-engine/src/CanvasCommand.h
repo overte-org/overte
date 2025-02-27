@@ -17,6 +17,7 @@
 #define hifi_CanvasCommand_h
 
 #include "ScriptValue.h"
+#include "ScriptValueUtils.h"
 
 #include <QColor>
 #include <QPainter>
@@ -63,7 +64,7 @@ public:
 
     struct Invalid {};
     struct SetStrokeWidth { qreal width; };
-    struct SetColor { QColor color; };
+    struct SetColor { glm::u8vec3 color; };
     struct SetHints { RenderHint hints; };
     struct SetBlendMode { QPainter::CompositionMode mode; };
     struct SetFont { QString family; int size; int weight; bool italic; };
@@ -240,6 +241,23 @@ public:
 
 private:
     Variant _tag;
+};
+
+class CanvasCommandFactory : public QObject {
+    Q_OBJECT
+
+public:
+    static CanvasCommand setStrokeWidth(qreal width) {
+        return CanvasCommand(CanvasCommand::SetStrokeWidth { width });
+    }
+
+    static CanvasCommand setColor(glm::u8vec3 color) {
+        return CanvasCommand(CanvasCommand::SetColor { color });
+    }
+
+    static CanvasCommand setHints(uint hints) {
+        return CanvasCommand(CanvasCommand::SetHints { static_cast<CanvasCommand::RenderHint>(hints) });
+    }
 };
 
 void registerCanvasMetaTypes(ScriptEngine *engine);
