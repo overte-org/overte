@@ -2696,7 +2696,7 @@ glm::vec3 EntityScriptingInterface::localToWorldDimensions(glm::vec3 localDimens
     }
 }
 
-void EntityScriptingInterface::canvasSubmitImage(const QUuid& entityID, const QByteArray& imageData) {
+void EntityScriptingInterface::canvasPushImage(const QUuid& entityID, const CanvasImage& image) {
     EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
     if (!entity) {
         return;
@@ -2705,11 +2705,17 @@ void EntityScriptingInterface::canvasSubmitImage(const QUuid& entityID, const QB
     if (entity->getType() == EntityTypes::Canvas) {
         auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
 
-        if (imageData.length() != canvas->getImageData().length()) {
-            qCDebug(entities) << "canvasSubmitImage with different sized buffers on " << entityID << ": input size: " << imageData.length() << ", canvas size: " << canvas->getImageData().length();
+        if (image.buffer.length() != (int)(4 * image.width * image.height)) {
+            qCWarning(entities) << "canvasPushImage: \"image\" has invalid buffer size, expected " << (4 * image.width * image.height) << ", got " << image.buffer.length();
+            return;
         }
 
-        canvas->setImageData(imageData);
+        if (image.width != canvas->getWidth() || image.height != canvas->getHeight()) {
+            qCWarning(entities) << "canvasPushImage: \"image\" dimensions don't match canvas, expected " << canvas->getWidth() << "x" << canvas->getHeight() << ", got " << image.width << "x" << image.height;
+            return;
+        }
+
+        canvas->setImageData(image);
     } else {
         qCWarning(entities) << "canvasSubmitImage called on a non-canvas entity " << entityID;
     }
