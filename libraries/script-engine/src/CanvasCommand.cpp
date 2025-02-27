@@ -347,6 +347,16 @@ bool qVectorCanvasCommandFromScriptValue(const ScriptValue& array, QVector<Canva
     return true;
 }
 
+ScriptValue qVectorCanvasCommandToScriptValue(ScriptEngine* engine, const QVector<CanvasCommand>& list) {
+    auto array = engine->newArray(list.length());
+
+    for (int i = 0; i < list.length(); i++) {
+        array.setProperty(i, canvasCommandToScriptValue(engine, list.at(i)));
+    }
+
+    return array;
+}
+
 ScriptValue canvasImageToScriptValue(ScriptEngine* engine, const CanvasImage& img) {
     ScriptValue obj = engine->newObject();
     obj.setProperty(IMG_WIDTH_PROP_NAME, img.width);
