@@ -2706,17 +2706,60 @@ void EntityScriptingInterface::canvasPushImage(const QUuid& entityID, const Canv
         auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
 
         if (image.buffer.length() != (int)(4 * image.width * image.height)) {
-            qCWarning(entities) << "canvasPushImage: \"image\" has invalid buffer size, expected " << (4 * image.width * image.height) << ", got " << image.buffer.length();
+            qCCritical(entities) << "canvasPushImage: \"image\" has invalid buffer size, expected " << (4 * image.width * image.height) << ", got " << image.buffer.length();
             return;
         }
 
         if (image.width != canvas->getWidth() || image.height != canvas->getHeight()) {
-            qCWarning(entities) << "canvasPushImage: \"image\" dimensions don't match canvas, expected " << canvas->getWidth() << "x" << canvas->getHeight() << ", got " << image.width << "x" << image.height;
+            qCCritical(entities) << "canvasPushImage: \"image\" dimensions don't match canvas, expected " << canvas->getWidth() << "x" << canvas->getHeight() << ", got " << image.width << "x" << image.height;
             return;
         }
 
         canvas->setImageData(image);
     } else {
-        qCWarning(entities) << "canvasSubmitImage called on a non-canvas entity " << entityID;
+        qCWarning(entities) << "canvasPushImage called on a non-canvas entity " << entityID;
+    }
+}
+
+void EntityScriptingInterface::canvasPushCommands(const QUuid& entityID, const QVector<CanvasCommand>& commands) {
+    EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
+    if (!entity) {
+        return;
+    }
+
+    if (entity->getType() == EntityTypes::Canvas) {
+        auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+        canvas->pushCommands(commands);
+    } else {
+        qCWarning(entities) << "canvasPushCommands called on a non-canvas entity " << entityID;
+    }
+}
+
+CanvasImage EntityScriptingInterface::canvasGetImage(const QUuid& entityID) {
+    EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
+    if (!entity) {
+        return CanvasImage();
+    }
+
+    if (entity->getType() == EntityTypes::Canvas) {
+        auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+        return CanvasImage { canvas->getImageData(), canvas->getWidth(), canvas->getHeight() };
+    } else {
+        qCWarning(entities) << "canvasCommit called on a non-canvas entity " << entityID;
+        return CanvasImage();
+    }
+}
+
+void EntityScriptingInterface::canvasCommit(const QUuid& entityID) {
+    EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
+    if (!entity) {
+        return;
+    }
+
+    if (entity->getType() == EntityTypes::Canvas) {
+        auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+        canvas->commit();
+    } else {
+        qCWarning(entities) << "canvasCommit called on a non-canvas entity " << entityID;
     }
 }
