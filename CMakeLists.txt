@@ -49,10 +49,6 @@ if( NOT WIN32 )
         set(OVERTE_OPTIMIZE true CACHE BOOL "Enable code optimization for Overte and compiled dependencies")
     endif()
 
-    #compiler needs to be detected before building VCPKG dependencies
-    set(CMAKE_PLATFORM_INFO_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-    include(CMakeDetermineCXXCompiler)
-
     set(OVERTE_OPTIMIZE_FLAGS "")
 
     if(OVERTE_OPTIMIZE)
