@@ -18,6 +18,7 @@
 
 #include "ScriptValue.h"
 #include "ScriptValueUtils.h"
+#include "Scriptable.h"
 
 #include <QColor>
 #include <QPainter>
@@ -33,9 +34,8 @@ struct CanvasImage {
     CanvasImage(QByteArray buffer, int width, int height) : buffer(buffer), width(width), height(height) {}
 };
 
-class CanvasCommand {
-public:
-    enum class Variant: uint8_t {
+struct CanvasCommand {
+    enum Variant {
         Invalid,
         SetStrokeWidth,
         SetColor,
@@ -56,208 +56,263 @@ public:
         ImageCopy,
     };
 
-    enum RenderHint: uint8_t {
+    enum RenderHint {
         PrimitiveAntialiasing = (1 << 0),
         TextAntialiasing = (1 << 1),
         BilinearImageScaling = (1 << 2),
     };
 
-    struct Invalid {};
-    struct SetStrokeWidth { qreal width; };
-    struct SetColor { glm::u8vec3 color; };
-    struct SetHints { RenderHint hints; };
-    struct SetBlendMode { QPainter::CompositionMode mode; };
-    struct SetFont { QString family; int size; int weight; bool italic; };
-    struct ClearRect { QRect rect; };
-    struct FillPath { QPainterPath path; };
-    struct FillRect { QRectF rect; };
-    struct FillEllipse { QRectF rect; };
-    struct FillText { QRectF rect; QString text; Qt::AlignmentFlag flag; };
-    struct StrokePath { QPainterPath path; };
-    struct StrokeRect { QRectF rect; };
-    struct StrokeArc { QRectF rect; qreal startAngle, spanAngle; };
-    struct StrokeEllipse { QRectF rect; };
-    struct Point { QPointF point; };
-    struct Line { QLineF line; };
-    struct ImageCopy { QRectF src; QRectF dst; CanvasImage image; };
-
-    CanvasCommand() noexcept: _invalid(), _tag(Variant::Invalid) {}
-    CanvasCommand(Invalid cmd) noexcept: _invalid(), _tag(Variant::Invalid) {}
-    CanvasCommand(SetStrokeWidth cmd) noexcept: _setStrokeWidth(cmd), _tag(Variant::SetStrokeWidth) {}
-    CanvasCommand(SetColor cmd) noexcept: _setColor(cmd), _tag(Variant::SetColor) {}
-    CanvasCommand(SetHints cmd) noexcept: _setHints(cmd), _tag(Variant::SetHints) {}
-    CanvasCommand(SetBlendMode cmd) noexcept: _setBlendMode(cmd), _tag(Variant::SetBlendMode) {}
-    CanvasCommand(SetFont cmd) noexcept: _setFont(cmd), _tag(Variant::SetFont) {}
-    CanvasCommand(ClearRect cmd) noexcept: _clearRect(cmd), _tag(Variant::ClearRect) {}
-    CanvasCommand(FillPath cmd) noexcept: _fillPath(cmd), _tag(Variant::FillPath) {}
-    CanvasCommand(FillRect cmd) noexcept: _fillRect(cmd), _tag(Variant::FillRect) {}
-    CanvasCommand(FillEllipse cmd) noexcept: _fillEllipse(cmd), _tag(Variant::FillEllipse) {}
-    CanvasCommand(FillText cmd) noexcept: _fillText(cmd), _tag(Variant::FillText) {}
-    CanvasCommand(StrokePath cmd) noexcept: _strokePath(cmd), _tag(Variant::StrokePath) {}
-    CanvasCommand(StrokeRect cmd) noexcept: _strokeRect(cmd), _tag(Variant::StrokeRect) {}
-    CanvasCommand(StrokeArc cmd) noexcept: _strokeArc(cmd), _tag(Variant::StrokeArc) {}
-    CanvasCommand(StrokeEllipse cmd) noexcept: _strokeEllipse(cmd), _tag(Variant::StrokeArc) {}
-    CanvasCommand(Point cmd) noexcept: _point(cmd), _tag(Variant::Point) {}
-    CanvasCommand(Line cmd) noexcept: _line(cmd), _tag(Variant::Line) {}
-    CanvasCommand(ImageCopy cmd) noexcept: _imageCopy(cmd), _tag(Variant::ImageCopy) {}
-
-    ~CanvasCommand() noexcept {
-        switch (_tag) {
-            case Variant::Invalid: _invalid.~Invalid(); break;
-            case Variant::SetStrokeWidth: _setStrokeWidth.~SetStrokeWidth(); break;
-            case Variant::SetColor: _setColor.~SetColor(); break;
-            case Variant::SetHints: _setHints.~SetHints(); break;
-            case Variant::SetBlendMode: _setBlendMode.~SetBlendMode(); break;
-            case Variant::SetFont: _setFont.~SetFont(); break;
-            case Variant::ClearRect: _clearRect.~ClearRect(); break;
-            case Variant::FillPath: _fillPath.~FillPath(); break;
-            case Variant::FillRect: _fillRect.~FillRect(); break;
-            case Variant::FillEllipse: _fillEllipse.~FillEllipse(); break;
-            case Variant::FillText: _fillText.~FillText(); break;
-            case Variant::StrokePath: _strokePath.~StrokePath(); break;
-            case Variant::StrokeRect: _strokeRect.~StrokeRect(); break;
-            case Variant::StrokeArc: _strokeArc.~StrokeArc(); break;
-            case Variant::StrokeEllipse: _strokeEllipse.~StrokeEllipse(); break;
-            case Variant::Point: _point.~Point(); break;
-            case Variant::Line: _line.~Line(); break;
-            case Variant::ImageCopy: _imageCopy.~ImageCopy(); break;
-        }
-    }
-
-    CanvasCommand(const CanvasCommand& other) noexcept {
-        _tag = other._tag;
-        switch (other._tag) {
-            case Variant::Invalid: _invalid = other._invalid; break;
-            case Variant::SetStrokeWidth: _setStrokeWidth = _setStrokeWidth; break;
-            case Variant::SetColor: _setColor = other._setColor; break;
-            case Variant::SetHints: _setHints = other._setHints; break;
-            case Variant::SetBlendMode: _setBlendMode = other._setBlendMode; break;
-            case Variant::SetFont: _setFont = other._setFont; break;
-            case Variant::ClearRect: _clearRect = other._clearRect; break;
-            case Variant::FillPath: _fillPath = other._fillPath; break;
-            case Variant::FillRect: _fillRect = other._fillRect; break;
-            case Variant::FillEllipse: _fillEllipse = other._fillEllipse; break;
-            case Variant::FillText: _fillText = other._fillText; break;
-            case Variant::StrokePath: _strokePath = other._strokePath; break;
-            case Variant::StrokeRect: _strokeRect = other._strokeRect; break;
-            case Variant::StrokeArc: _strokeArc = other._strokeArc; break;
-            case Variant::StrokeEllipse: _strokeEllipse = other._strokeEllipse; break;
-            case Variant::Point: _point = other._point; break;
-            case Variant::Line: _line = other._line; break;
-            case Variant::ImageCopy: _imageCopy = other._imageCopy; break;
-        }
-    }
-
-    CanvasCommand(CanvasCommand&& other) noexcept {
-        _tag = other._tag;
-        switch (other._tag) {
-            case Variant::Invalid: _invalid = other._invalid; break;
-            case Variant::SetStrokeWidth: _setStrokeWidth = _setStrokeWidth; break;
-            case Variant::SetColor: _setColor = other._setColor; break;
-            case Variant::SetHints: _setHints = other._setHints; break;
-            case Variant::SetBlendMode: _setBlendMode = other._setBlendMode; break;
-            case Variant::SetFont: _setFont = other._setFont; break;
-            case Variant::ClearRect: _clearRect = other._clearRect; break;
-            case Variant::FillPath: _fillPath = other._fillPath; break;
-            case Variant::FillRect: _fillRect = other._fillRect; break;
-            case Variant::FillEllipse: _fillEllipse = other._fillEllipse; break;
-            case Variant::FillText: _fillText = other._fillText; break;
-            case Variant::StrokePath: _strokePath = other._strokePath; break;
-            case Variant::StrokeRect: _strokeRect = other._strokeRect; break;
-            case Variant::StrokeArc: _strokeArc = other._strokeArc; break;
-            case Variant::StrokeEllipse: _strokeEllipse = other._strokeEllipse; break;
-            case Variant::Point: _point = other._point; break;
-            case Variant::Line: _line = other._line; break;
-            case Variant::ImageCopy: _imageCopy = other._imageCopy; break;
-        }
-    }
-
-    CanvasCommand& operator=(const CanvasCommand& other) noexcept {
-        _tag = other._tag;
-        switch (other._tag) {
-            case Variant::Invalid: _invalid = other._invalid; break;
-            case Variant::SetStrokeWidth: _setStrokeWidth = _setStrokeWidth; break;
-            case Variant::SetColor: _setColor = other._setColor; break;
-            case Variant::SetHints: _setHints = other._setHints; break;
-            case Variant::SetBlendMode: _setBlendMode = other._setBlendMode; break;
-            case Variant::SetFont: _setFont = other._setFont; break;
-            case Variant::ClearRect: _clearRect = other._clearRect; break;
-            case Variant::FillPath: _fillPath = other._fillPath; break;
-            case Variant::FillRect: _fillRect = other._fillRect; break;
-            case Variant::FillEllipse: _fillEllipse = other._fillEllipse; break;
-            case Variant::FillText: _fillText = other._fillText; break;
-            case Variant::StrokePath: _strokePath = other._strokePath; break;
-            case Variant::StrokeRect: _strokeRect = other._strokeRect; break;
-            case Variant::StrokeArc: _strokeArc = other._strokeArc; break;
-            case Variant::StrokeEllipse: _strokeEllipse = other._strokeEllipse; break;
-            case Variant::Point: _point = other._point; break;
-            case Variant::Line: _line = other._line; break;
-            case Variant::ImageCopy: _imageCopy = other._imageCopy; break;
-        }
-        return *this;
-    }
-
-    void set(Invalid&& cmd) { _tag = Variant::Invalid; _invalid = cmd; }
-    void set(SetStrokeWidth&& cmd) { _tag = Variant::SetStrokeWidth; _setStrokeWidth = cmd; }
-    void set(SetColor&& cmd) { _tag = Variant::SetColor; _setColor = cmd; }
-    void set(SetHints&& cmd) { _tag = Variant::SetHints; _setHints = cmd; }
-    void set(SetBlendMode&& cmd) { _tag = Variant::SetBlendMode; _setBlendMode = cmd; }
-    void set(SetFont&& cmd) { _tag = Variant::SetFont; _setFont = cmd; }
-    void set(ClearRect&& cmd) { _tag = Variant::ClearRect; _clearRect = cmd; }
-    void set(FillPath&& cmd) { _tag = Variant::FillPath; _fillPath = cmd; }
-    void set(FillRect&& cmd) { _tag = Variant::FillRect; _fillRect = cmd; }
-    void set(FillEllipse&& cmd) { _tag = Variant::FillEllipse; _fillEllipse = cmd; }
-    void set(FillText&& cmd) { _tag = Variant::FillText; _fillText = cmd; }
-    void set(StrokePath&& cmd) { _tag = Variant::StrokePath; _strokePath = cmd; }
-    void set(StrokeRect&& cmd) { _tag = Variant::StrokeRect; _strokeRect = cmd; }
-    void set(StrokeArc&& cmd) { _tag = Variant::StrokeArc; _strokeArc = cmd; }
-    void set(StrokeEllipse&& cmd) { _tag = Variant::StrokeEllipse; _strokeEllipse = cmd; }
-    void set(Point&& cmd) { _tag = Variant::Point; _point = cmd; }
-    void set(Line&& cmd) { _tag = Variant::Line; _line = cmd; }
-    void set(ImageCopy&& cmd) { _tag = Variant::ImageCopy; _imageCopy = cmd; }
-
-    Variant kind() const { return _tag; }
-
-    union {
-        Invalid _invalid;
-        SetStrokeWidth _setStrokeWidth;
-        SetColor _setColor;
-        SetHints _setHints;
-        SetBlendMode _setBlendMode;
-        SetFont _setFont;
-        ClearRect _clearRect;
-        FillPath _fillPath;
-        FillRect _fillRect;
-        FillText _fillText;
-        FillEllipse _fillEllipse;
-        StrokePath _strokePath;
-        StrokeRect _strokeRect;
-        StrokeArc _strokeArc;
-        StrokeEllipse _strokeEllipse;
-        Point _point;
-        Line _line;
-        ImageCopy _imageCopy;
-    };
-
-private:
-    Variant _tag;
+    virtual Variant kind() const { return Variant::Invalid; }
 };
 
-class CanvasCommandFactory : public QObject {
+namespace canvas_cmd {
+struct Invalid : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::Invalid; }
+};
+
+struct SetStrokeWidth : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::SetStrokeWidth; }
+
+    SetStrokeWidth(qreal width) : width(width) {}
+
+    qreal width;
+};
+
+struct SetColor : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::SetColor; }
+
+    SetColor(const glm::u8vec3& color) : color(color) {}
+
+    glm::u8vec3 color;
+};
+
+struct SetHints : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::SetHints; }
+
+    SetHints(int hints) : hints(static_cast<CanvasCommand::RenderHint>(hints)) {}
+
+    CanvasCommand::RenderHint hints;
+};
+
+struct SetBlendMode : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::SetBlendMode; }
+
+    SetBlendMode(int mode) : mode(static_cast<QPainter::CompositionMode>(mode)) {}
+
+    QPainter::CompositionMode mode;
+};
+
+struct SetFont : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::SetFont; }
+
+    SetFont(const QString& family, int size = 12, int weight = 400, bool italic = false) : family(family), size(size), weight(weight), italic(italic) {}
+
+    QString family;
+    int size;
+    int weight;
+    bool italic;
+};
+
+struct ClearRect : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::ClearRect; }
+
+    ClearRect(const QRect& rect) : rect(rect) {}
+
+    QRect rect;
+};
+
+struct FillPath : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::FillPath; }
+
+    FillPath(const QPainterPath& path) : path(path) {}
+
+    QPainterPath path;
+};
+
+struct FillRect : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::FillRect; }
+
+    FillRect(const QRectF& rect) : rect(rect) {}
+
+    QRectF rect;
+};
+
+struct FillEllipse : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::FillEllipse; }
+
+    FillEllipse(const QRectF& rect) : rect(rect) {}
+
+    QRectF rect;
+};
+
+struct FillText : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::FillText; }
+
+    FillText(const QRectF& rect, const QString& text, int flag = 0) : rect(rect), text(text), flag(static_cast<Qt::AlignmentFlag>(flag)) {}
+
+    QRectF rect;
+    QString text;
+    Qt::AlignmentFlag flag;
+};
+
+struct StrokePath : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::StrokePath; }
+
+    StrokePath(const QPainterPath& path) : path(path) {}
+
+    QPainterPath path;
+};
+
+struct StrokeRect : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::StrokeRect; }
+
+    StrokeRect(const QRectF& rect) : rect(rect) {}
+
+    QRectF rect;
+};
+
+struct StrokeArc : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::StrokeArc; }
+
+    StrokeArc(const QRectF& rect, qreal startAngle, qreal spanAngle) : rect(rect), startAngle(startAngle), spanAngle(spanAngle) {}
+
+    QRectF rect;
+    qreal startAngle, spanAngle;
+};
+
+struct StrokeEllipse : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::StrokeEllipse; }
+
+    StrokeEllipse(const QRectF& rect) : rect(rect) {}
+
+    QRectF rect;
+};
+
+struct Point : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::Point; }
+
+    Point(qreal x, qreal y) : point(QPointF(x, y)) {}
+
+    QPointF point;
+};
+
+struct Line : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::Line; }
+
+    Line(qreal x1, qreal y1, qreal x2, qreal y2) : line(QLineF(x1, y1, x2, y2)) {}
+
+    QLineF line;
+};
+
+struct ImageCopy : public CanvasCommand {
+    virtual Variant kind() const override { return Variant::ImageCopy; }
+
+    ImageCopy(const CanvasImage& image, const QRectF& src, const QRectF& dst) : src(src), dst(dst), image(image) {}
+
+    QRectF src;
+    QRectF dst;
+    CanvasImage image;
+};
+}
+
+class CanvasCommandInterface : public QObject, protected Scriptable {
     Q_OBJECT
 
-public:
-    static CanvasCommand setStrokeWidth(qreal width) {
-        return CanvasCommand(CanvasCommand::SetStrokeWidth { width });
-    }
+    Q_PROPERTY(int TEXT_ALIGN_LEFT READ TEXT_ALIGN_LEFT CONSTANT)
+    Q_PROPERTY(int TEXT_ALIGN_RIGHT READ TEXT_ALIGN_RIGHT CONSTANT)
+    Q_PROPERTY(int TEXT_ALIGN_HCENTER READ TEXT_ALIGN_HCENTER CONSTANT)
+    Q_PROPERTY(int TEXT_ALIGN_JUSTIFY READ TEXT_ALIGN_JUSTIFY CONSTANT)
+    Q_PROPERTY(int TEXT_ALIGN_TOP READ TEXT_ALIGN_TOP CONSTANT)
+    Q_PROPERTY(int TEXT_ALIGN_BOTTOM READ TEXT_ALIGN_BOTTOM CONSTANT)
+    Q_PROPERTY(int TEXT_ALIGN_VCENTER READ TEXT_ALIGN_VCENTER CONSTANT)
+    Q_PROPERTY(int TEXT_ALIGN_BASELINE READ TEXT_ALIGN_BASELINE CONSTANT)
 
-    static CanvasCommand setColor(glm::u8vec3 color) {
-        return CanvasCommand(CanvasCommand::SetColor { color });
-    }
+    Q_PROPERTY(int HINT_ANTIALIASING READ HINT_ANTIALIASING CONSTANT)
+    Q_PROPERTY(int HINT_TEXT_ANTIALIASING READ HINT_TEXT_ANTIALIASING CONSTANT)
+    Q_PROPERTY(int HINT_BILINEAR_SCALING READ HINT_BILINEAR_SCALING CONSTANT)
 
-    static CanvasCommand setHints(uint hints) {
-        return CanvasCommand(CanvasCommand::SetHints { static_cast<CanvasCommand::RenderHint>(hints) });
-    }
+    Q_PROPERTY(int BLEND_SOURCEOVER READ BLEND_SOURCEOVER CONSTANT)
+    Q_PROPERTY(int BLEND_DESTINATIONOVER READ BLEND_DESTINATIONOVER CONSTANT)
+    Q_PROPERTY(int BLEND_CLEAR READ BLEND_CLEAR CONSTANT)
+    Q_PROPERTY(int BLEND_SOURCE READ BLEND_SOURCE CONSTANT)
+    Q_PROPERTY(int BLEND_DESTINATION READ BLEND_DESTINATION CONSTANT)
+    Q_PROPERTY(int BLEND_SOURCEIN READ BLEND_SOURCEIN CONSTANT)
+    Q_PROPERTY(int BLEND_DESTINATIONIN READ BLEND_DESTINATIONIN CONSTANT)
+    Q_PROPERTY(int BLEND_SOURCEOUT READ BLEND_SOURCEOUT CONSTANT)
+    Q_PROPERTY(int BLEND_DESTINATIONOUT READ BLEND_DESTINATIONOUT CONSTANT)
+    Q_PROPERTY(int BLEND_SOURCEATOP READ BLEND_SOURCEATOP CONSTANT)
+    Q_PROPERTY(int BLEND_DESTINATIONATOP READ BLEND_DESTINATIONATOP CONSTANT)
+    Q_PROPERTY(int BLEND_XOR READ BLEND_XOR CONSTANT)
+    Q_PROPERTY(int BLEND_PLUS READ BLEND_PLUS CONSTANT)
+    Q_PROPERTY(int BLEND_MULTIPLY READ BLEND_MULTIPLY CONSTANT)
+    Q_PROPERTY(int BLEND_SCREEN READ BLEND_SCREEN CONSTANT)
+    Q_PROPERTY(int BLEND_OVERLAY READ BLEND_OVERLAY CONSTANT)
+    Q_PROPERTY(int BLEND_DARKEN READ BLEND_DARKEN CONSTANT)
+    Q_PROPERTY(int BLEND_LIGHTEN READ BLEND_LIGHTEN CONSTANT)
+    Q_PROPERTY(int BLEND_COLORDODGE READ BLEND_COLORDODGE CONSTANT)
+    Q_PROPERTY(int BLEND_COLORBURN READ BLEND_COLORBURN CONSTANT)
+    Q_PROPERTY(int BLEND_HARDLIGHT READ BLEND_HARDLIGHT CONSTANT)
+    Q_PROPERTY(int BLEND_SOFTLIGHT READ BLEND_SOFTLIGHT CONSTANT)
+    Q_PROPERTY(int BLEND_DIFFERENCE READ BLEND_DIFFERENCE CONSTANT)
+    Q_PROPERTY(int BLEND_EXCLUSION READ BLEND_EXCLUSION CONSTANT)
+
+public slots:
+    CanvasCommand setStrokeWidth(qreal width) const;
+    CanvasCommand setColor(const glm::u8vec3& color) const;
+    CanvasCommand setHints(int hints) const;
+    CanvasCommand setBlendMode(int mode) const;
+    CanvasCommand setFont(const QString& family, int size = 12, int weight = QFont::Normal, bool italic = false) const;
+    CanvasCommand clearRect(const QRect& rect) const;
+    CanvasCommand fillPath(const QPainterPath& path) const;
+    CanvasCommand fillRect(const QRectF& rect) const;
+    CanvasCommand fillEllipse(const QRectF& rect) const;
+    CanvasCommand fillText(const QString& text, const QRectF& rect, int flag = 0) const;
+    CanvasCommand strokePath(const QPainterPath& path) const;
+    CanvasCommand strokeRect(const QRectF& rect) const;
+    CanvasCommand strokeArc(const QRectF& rect, qreal startAngle, qreal spanAngle) const;
+    CanvasCommand strokeEllipse(const QRectF& rect) const;
+    CanvasCommand point(qreal x, qreal y) const;
+    CanvasCommand line(qreal x1, qreal y1, qreal x2, qreal y2) const;
+    CanvasCommand imageCopy(const CanvasImage& image, const QRectF& src, const QRectF& dest) const;
+
+private:
+    int TEXT_ALIGN_LEFT() const { return Qt::AlignLeft; }
+    int TEXT_ALIGN_RIGHT() const { return Qt::AlignRight; }
+    int TEXT_ALIGN_HCENTER() const { return Qt::AlignHCenter; }
+    int TEXT_ALIGN_JUSTIFY() const { return Qt::AlignJustify; }
+    int TEXT_ALIGN_TOP() const { return Qt::AlignTop; }
+    int TEXT_ALIGN_BOTTOM() const { return Qt::AlignBottom; }
+    int TEXT_ALIGN_VCENTER() const { return Qt::AlignVCenter; }
+    int TEXT_ALIGN_BASELINE() const { return Qt::AlignBaseline; }
+
+    int HINT_ANTIALIASING() const { return CanvasCommand::RenderHint::PrimitiveAntialiasing; }
+    int HINT_TEXT_ANTIALIASING() const { return CanvasCommand::RenderHint::PrimitiveAntialiasing; }
+    int HINT_BILINEAR_SCALING() const { return CanvasCommand::RenderHint::BilinearImageScaling; }
+
+    int BLEND_SOURCEOVER() const { return QPainter::CompositionMode_SourceOver; }
+    int BLEND_DESTINATIONOVER() const { return QPainter::CompositionMode_DestinationOver; }
+    int BLEND_CLEAR() const { return QPainter::CompositionMode_Clear; }
+    int BLEND_SOURCE() const { return QPainter::CompositionMode_Source; }
+    int BLEND_DESTINATION() const { return QPainter::CompositionMode_Destination; }
+    int BLEND_SOURCEIN() const { return QPainter::CompositionMode_SourceIn; }
+    int BLEND_DESTINATIONIN() const { return QPainter::CompositionMode_DestinationIn; }
+    int BLEND_SOURCEOUT() const { return QPainter::CompositionMode_SourceOut; }
+    int BLEND_DESTINATIONOUT() const { return QPainter::CompositionMode_DestinationOut; }
+    int BLEND_SOURCEATOP() const { return QPainter::CompositionMode_SourceAtop; }
+    int BLEND_DESTINATIONATOP() const { return QPainter::CompositionMode_DestinationAtop; }
+    int BLEND_XOR() const { return QPainter::CompositionMode_Xor; }
+    int BLEND_PLUS() const { return QPainter::CompositionMode_Plus; }
+    int BLEND_MULTIPLY() const { return QPainter::CompositionMode_Multiply; }
+    int BLEND_SCREEN() const { return QPainter::CompositionMode_Screen; }
+    int BLEND_OVERLAY() const { return QPainter::CompositionMode_Overlay; }
+    int BLEND_DARKEN() const { return QPainter::CompositionMode_Darken; }
+    int BLEND_LIGHTEN() const { return QPainter::CompositionMode_Lighten; }
+    int BLEND_COLORDODGE() const { return QPainter::CompositionMode_ColorDodge; }
+    int BLEND_COLORBURN() const { return QPainter::CompositionMode_ColorBurn; }
+    int BLEND_HARDLIGHT() const { return QPainter::CompositionMode_HardLight; }
+    int BLEND_SOFTLIGHT() const { return QPainter::CompositionMode_SoftLight; }
+    int BLEND_DIFFERENCE() const { return QPainter::CompositionMode_Difference; }
+    int BLEND_EXCLUSION() const { return QPainter::CompositionMode_Exclusion; }
 };
 
 void registerCanvasMetaTypes(ScriptEngine *engine);
