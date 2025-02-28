@@ -1,6 +1,0 @@
-# Copyright 2023 Overte e.V.
-# SPDX-License-Identifier: MIT
-Source: node
-Version: 18.14.2-1
-Homepage: https://nodejs.org/
-Description: Node.js JavaScript runtime.

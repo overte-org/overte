@@ -1,9 +1,9 @@
 
 set(TARGET_NAME render-texture-load)
- 
+
 if (WIN32)
-  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /ignore:4049 /ignore:4217")
-endif()
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /ignore:4049 /ignore:4217")
+endif ()
 
 setup_memory_debugger()
 setup_thread_debugger()
@@ -14,13 +14,13 @@ set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Tests/manual-tests/")
 
 # link in the shared libraries
 link_hifi_libraries(
-    shared task networking octree 
-    shaders gl gpu render ktx image animation 
-    graphics hfm fbx model-networking 
-    render-utils 
-    entities entities-renderer audio avatars 
-    script-engine physics 
-    ${PLATFORM_GL_BACKEND}
+        shared task networking octree
+        shaders gl gpu render ktx image animation
+        graphics hfm model-serializers model-networking
+        render-utils material-networking procedural
+        entities entities-renderer audio avatars
+        script-engine physics
+        ${PLATFORM_GL_BACKEND}
 )
 
 package_libraries_for_deployment()
@@ -32,7 +32,7 @@ target_zlib()
 target_quazip()
 
 if (WIN32)
-  add_dependency_external_projects(wasapi)
+    add_dependency_external_projects(wasapi)
 endif ()
 
 
