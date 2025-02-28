@@ -208,8 +208,6 @@ Windows.ScrollingWindow {
                 HifiControls.Button {
                     text: "Load Defaults"
                     color: hifi.buttons.black
-                    height: 26
-                    visible: root.developerMenuEnabled;
                     onClicked: loadDefaults()
                 }
             }
