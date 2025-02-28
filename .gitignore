@@ -1,7 +1,7 @@
 # https://www.git-scm.com/docs/gitignore
 #
 # Copyright 2013-2019 High Fidelity, Inc.
-# Copyright 2022-2023 Overte e.V.
+# Copyright 2022-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 VideoDecodeStats
@@ -25,6 +25,17 @@ cmake-build-debug/
 /ext/
 Makefile
 *.user
+_build/
+
+# Conan
+CMakeUserPresets.json
+build.json
+pkglist.json
+
+# Python
+**/__pycache__
+**/.venv
+
 
 # Android Studio
 *.iml
@@ -115,24 +126,15 @@ interface/compiledResources
 # GPUCache
 /interface/resources/GPUCache/*
 
-# package lock file for JSDoc tool
+# package lock files
 /tools/jsdoc/package-lock.json
-
-# Python compile artifacts
-**/__pycache__
+/server-console/package-lock.json
 
 # ignore local unity project files for avatar exporter
 /tools/unity-avatar-exporter
 
-/server-console/package-lock.json
-/vcpkg/
+# Nitpick
 /tools/nitpick/compiledResources
-/qt/
 
 # Act local GitHub Actions
 .secret
-
-
-_build/
-
-CMakeUserPresets.json
