@@ -14,6 +14,7 @@
 #include "EntitiesLogging.h"
 #include "EntityItemProperties.h"
 #include "EntityTreeElement.h"
+#include "gpu/Texture.h"
 
 EntityItemPointer CanvasEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
     std::shared_ptr<CanvasEntityItem> entity(new CanvasEntityItem(entityID), [](CanvasEntityItem* ptr) { ptr->deleteLater(); });
@@ -108,7 +109,6 @@ void CanvasEntityItem::setImageData(const CanvasImage& image) {
 }
 
 void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
-    using namespace canvas_cmd;
     using V = CanvasCommand::Variant;
     using Hint = CanvasCommand::RenderHint;
 
@@ -121,21 +121,19 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
     for (int i = 0; i < queue.length(); i++) {
         auto cmd = queue[i];
 
-        switch (cmd.kind()) {
+        switch (cmd.kind) {
             case V::Invalid:
                 qCCritical(entities) << "CanvasEntityItem::paintCommands: Invalid command at index " << i;
                 break;
 
             case V::SetStrokeWidth: {
-                auto props = dynamic_cast<const SetStrokeWidth&>(cmd);
-                pen.setWidthF(props.width);
+                pen.setWidthF(cmd._float[0]);
                 p.setPen(pen);
                 break;
             }
 
             case V::SetColor: {
-                auto props = dynamic_cast<const SetColor&>(cmd);
-                auto color = QColor(props.color[0], props.color[1], props.color[2], 255);
+                auto color = QColor(cmd._color[0], cmd._color[1], cmd._color[2], 255);
                 pen.setColor(color);
                 brush.setColor(color);
                 p.setPen(pen);
@@ -144,107 +142,91 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
             }
 
             case V::SetHints: {
-                auto props = dynamic_cast<const SetHints&>(cmd);
-                p.setRenderHint(QPainter::Antialiasing, (props.hints & Hint::PrimitiveAntialiasing) != 0);
-                p.setRenderHint(QPainter::TextAntialiasing, (props.hints & Hint::TextAntialiasing) != 0);
-                p.setRenderHint(QPainter::SmoothPixmapTransform, (props.hints & Hint::BilinearImageScaling) != 0);
+                p.setRenderHint(QPainter::Antialiasing, (cmd._int[0] & Hint::PrimitiveAntialiasing) != 0);
+                p.setRenderHint(QPainter::TextAntialiasing, (cmd._int[0] & Hint::TextAntialiasing) != 0);
+                p.setRenderHint(QPainter::SmoothPixmapTransform, (cmd._int[0] & Hint::BilinearImageScaling) != 0);
                 break;
             }
 
             case V::SetBlendMode: {
-                auto props = dynamic_cast<const SetBlendMode&>(cmd);
-                p.setCompositionMode(props.mode);
+                p.setCompositionMode(static_cast<QPainter::CompositionMode>(cmd._int[0]));
                 break;
             }
 
             case V::SetFont: {
-                auto props = dynamic_cast<const SetFont&>(cmd);
-                p.setFont(QFont(props.family, props.size, props.weight, props.italic));
+                p.setFont(QFont(cmd._text, cmd._int[0], cmd._int[1], cmd._int[2]));
                 break;
             }
 
             case V::ClearRect: {
-                auto props = dynamic_cast<const ClearRect&>(cmd);
-                p.eraseRect(props.rect);
+                p.eraseRect(QRect(cmd._int[0], cmd._int[1], cmd._int[2], cmd._int[3]));
                 break;
             }
 
             case V::FillPath: {
-                auto props = dynamic_cast<const FillPath&>(cmd);
-                p.fillPath(props.path, brush);
+                p.fillPath(cmd._paintPath, brush);
                 break;
             }
 
             case V::FillRect: {
-                auto props = dynamic_cast<const FillRect&>(cmd);
-                p.fillRect(props.rect, brush);
+                p.fillRect(cmd._rect, brush);
                 break;
             }
 
             case V::FillEllipse: {
-                auto props = dynamic_cast<const FillEllipse&>(cmd);
                 auto pathHack = QPainterPath();
-                pathHack.addEllipse(props.rect);
+                pathHack.addEllipse(cmd._rect);
                 p.fillPath(pathHack, brush);
                 break;
             }
 
             case V::FillText: {
-                auto props = dynamic_cast<const FillText&>(cmd);
-
                 // unbounded text
-                if (props.rect.width() == 0.0 && props.rect.height() == 0.0) {
-                    p.drawText(QPointF(props.rect.x(), props.rect.y()), props.text);
+                if (cmd._rect.width() == 0.0 && cmd._rect.height() == 0.0) {
+                    p.drawText(QPointF(cmd._rect.x(), cmd._rect.y()), cmd._text);
                 } else {
-                    p.drawText(props.rect, props.flag, props.text);
+                    p.drawText(cmd._rect, cmd._int[0], cmd._text);
                 }
                 break;
             }
 
             case V::StrokePath: {
-                auto props = dynamic_cast<const StrokePath&>(cmd);
-                p.strokePath(props.path, pen);
+                p.strokePath(cmd._paintPath, pen);
                 break;
             }
 
             case V::StrokeRect: {
-                auto props = dynamic_cast<const StrokeRect&>(cmd);
-                p.drawRect(props.rect);
+                p.drawRect(cmd._rect);
                 break;
             }
 
             case V::StrokeArc: {
-                auto props = dynamic_cast<const StrokeArc&>(cmd);
-                p.drawArc(props.rect, props.startAngle * 16, props.spanAngle * 16);
+                p.drawArc(cmd._rect, cmd._float[0] * 16, cmd._float[1] * 16);
                 break;
             }
 
             case V::StrokeEllipse: {
-                auto props = dynamic_cast<const StrokeEllipse&>(cmd);
-                p.drawEllipse(props.rect);
+                p.drawEllipse(cmd._rect);
                 break;
             }
 
             case V::Point: {
-                auto props = dynamic_cast<const Point&>(cmd);
-                p.drawPoint(props.point);
+                p.drawPoint(cmd._point);
                 break;
             }
 
             case V::Line: {
-                auto props = dynamic_cast<const Line&>(cmd);
-                p.drawLine(props.line);
+                p.drawLine(cmd._line);
                 break;
             }
 
             case V::ImageCopy: {
-                auto props = dynamic_cast<const ImageCopy&>(cmd);
-                if (props.image.buffer.length() != static_cast<int>(4 * props.image.width * props.image.height)) {
-                    qCCritical(entities) << "CanvasEntityItem::paintCommands: Source CanvasImage buffer has incorrect size, expected " << (4 * props.image.width * props.image.height) << ", got " << props.image.buffer.length();
+                if (cmd._image.buffer.length() != static_cast<int>(4 * cmd._image.width * cmd._image.height)) {
+                    qCCritical(entities) << "CanvasEntityItem::paintCommands: Source CanvasImage buffer has incorrect size, expected " << (4 * cmd._image.width * cmd._image.height) << ", got " << cmd._image.buffer.length();
                     break;
                 }
-                auto img = QImage(reinterpret_cast<const uint8_t*>(props.image.buffer.constData()), props.image.width, props.image.height, QImage::Format_RGBA8888);
-                p.drawImage(props.dst, img, props.src);
+                auto img = QImage(reinterpret_cast<const uint8_t*>(cmd._image.buffer.constData()), cmd._image.width, cmd._image.height, QImage::Format_RGBA8888);
+                p.drawImage(cmd._rect2, img, cmd._rect);
                 break;
             }
         }
@@ -259,7 +241,7 @@ void CanvasEntityItem::commit() {
         _commandQueue.clear();
     }
 
-    auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, _width, _height);
+    auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, _width, _height, 1, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR));
     texture->setStoredMipFormat(gpu::Element::COLOR_SRGBA_32);
     texture->setAutoGenerateMips(false);
     texture->assignStoredMip(0, _imageData.length(), reinterpret_cast<const uint8_t*>(_imageData.constData()));
