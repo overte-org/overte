@@ -20,7 +20,6 @@
 #include "ScriptValueUtils.h"
 #include "Scriptable.h"
 
-#include <QColor>
 #include <QPainter>
 #include <QPainterPath>
 
@@ -62,158 +61,91 @@ struct CanvasCommand {
         BilinearImageScaling = (1 << 2),
     };
 
-    virtual Variant kind() const { return Variant::Invalid; }
+    static CanvasCommand none() {
+        return CanvasCommand {};
+    }
+
+    static CanvasCommand setStrokeWidth(qreal width) {
+        return CanvasCommand { .kind = Variant::SetStrokeWidth, ._float = {width} };
+    }
+
+    static CanvasCommand setColor(const glm::u8vec3& color) {
+        return CanvasCommand { .kind = Variant::SetColor, ._color = color };
+    }
+
+    static CanvasCommand setHints(int hints) {
+        return CanvasCommand { .kind = Variant::SetHints, ._int = {hints} };
+    }
+
+    static CanvasCommand setBlendMode(int mode) {
+        return CanvasCommand { .kind = Variant::SetBlendMode, ._int = {mode} };
+    }
+
+    static CanvasCommand setFont(const QString& family, int size, int weight, bool italic) {
+        return CanvasCommand { .kind = Variant::SetFont, ._text = family, ._int = {size, weight, italic} };
+    }
+
+    static CanvasCommand clearRect(int x, int y, int w, int h) {
+        return CanvasCommand { .kind = Variant::ClearRect, ._int = {x, y, w, h} };
+    }
+
+    static CanvasCommand fillPath(const QPainterPath& path) {
+        return CanvasCommand { .kind = Variant::FillPath, ._paintPath = path };
+    }
+
+    static CanvasCommand fillRect(const QRectF& rect) {
+        return CanvasCommand { .kind = Variant::FillRect, ._rect = rect };
+    }
+
+    static CanvasCommand fillEllipse(const QRectF& rect) {
+        return CanvasCommand { .kind = Variant::FillEllipse, ._rect = rect };
+    }
+
+    static CanvasCommand fillText(const QString& text, const QRectF& rect, int flag) {
+        return CanvasCommand { .kind = Variant::FillText, ._rect = rect, ._text = text, ._int = {flag} };
+    }
+
+    static CanvasCommand strokePath(const QPainterPath& path) {
+        return CanvasCommand { .kind = Variant::StrokePath, ._paintPath = path };
+    }
+
+    static CanvasCommand strokeRect(const QRectF& rect) {
+        return CanvasCommand { .kind = Variant::StrokeRect, ._rect = rect };
+    }
+
+    static CanvasCommand strokeArc(const QRectF& rect, qreal startAngle, qreal spanAngle) {
+        return CanvasCommand { .kind = Variant::StrokeArc, ._rect = rect, ._float = {startAngle, spanAngle} };
+    }
+
+    static CanvasCommand strokeEllipse(const QRectF& rect) {
+        return CanvasCommand { .kind = Variant::StrokeEllipse, ._rect = rect };
+    }
+
+    static CanvasCommand point(qreal x, qreal y) {
+        return CanvasCommand { .kind = Variant::Point, ._point = QPointF(x, y) };
+    }
+
+    static CanvasCommand line(qreal x1, qreal y1, qreal x2, qreal y2) {
+        return CanvasCommand { .kind = Variant::Line, ._line = QLineF(x1, y1, x2, y2) };
+    }
+
+    static CanvasCommand imageCopy(const CanvasImage& image, const QRectF& src, const QRectF& dst) {
+        return CanvasCommand { .kind = Variant::ImageCopy, ._rect = src, ._rect2 = dst, ._image = image };
+    }
+
+    Variant kind = Variant::Invalid;
+
+    QRectF _rect = QRectF();
+    QRectF _rect2 = QRectF();
+    QString _text = QString();
+    QPointF _point = QPointF();
+    QLineF _line = QLineF();
+    qreal _float[4] = {};
+    int _int[4] = {};
+    glm::u8vec3 _color = {};
+    QPainterPath _paintPath = QPainterPath();
+    CanvasImage _image = {};
 };
-
-namespace canvas_cmd {
-struct Invalid : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::Invalid; }
-};
-
-struct SetStrokeWidth : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::SetStrokeWidth; }
-
-    SetStrokeWidth(qreal width) : width(width) {}
-
-    qreal width;
-};
-
-struct SetColor : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::SetColor; }
-
-    SetColor(const glm::u8vec3& color) : color(color) {}
-
-    glm::u8vec3 color;
-};
-
-struct SetHints : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::SetHints; }
-
-    SetHints(int hints) : hints(static_cast<CanvasCommand::RenderHint>(hints)) {}
-
-    CanvasCommand::RenderHint hints;
-};
-
-struct SetBlendMode : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::SetBlendMode; }
-
-    SetBlendMode(int mode) : mode(static_cast<QPainter::CompositionMode>(mode)) {}
-
-    QPainter::CompositionMode mode;
-};
-
-struct SetFont : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::SetFont; }
-
-    SetFont(const QString& family, int size = 12, int weight = 400, bool italic = false) : family(family), size(size), weight(weight), italic(italic) {}
-
-    QString family;
-    int size;
-    int weight;
-    bool italic;
-};
-
-struct ClearRect : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::ClearRect; }
-
-    ClearRect(const QRect& rect) : rect(rect) {}
-
-    QRect rect;
-};
-
-struct FillPath : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::FillPath; }
-
-    FillPath(const QPainterPath& path) : path(path) {}
-
-    QPainterPath path;
-};
-
-struct FillRect : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::FillRect; }
-
-    FillRect(const QRectF& rect) : rect(rect) {}
-
-    QRectF rect;
-};
-
-struct FillEllipse : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::FillEllipse; }
-
-    FillEllipse(const QRectF& rect) : rect(rect) {}
-
-    QRectF rect;
-};
-
-struct FillText : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::FillText; }
-
-    FillText(const QRectF& rect, const QString& text, int flag = 0) : rect(rect), text(text), flag(static_cast<Qt::AlignmentFlag>(flag)) {}
-
-    QRectF rect;
-    QString text;
-    Qt::AlignmentFlag flag;
-};
-
-struct StrokePath : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::StrokePath; }
-
-    StrokePath(const QPainterPath& path) : path(path) {}
-
-    QPainterPath path;
-};
-
-struct StrokeRect : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::StrokeRect; }
-
-    StrokeRect(const QRectF& rect) : rect(rect) {}
-
-    QRectF rect;
-};
-
-struct StrokeArc : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::StrokeArc; }
-
-    StrokeArc(const QRectF& rect, qreal startAngle, qreal spanAngle) : rect(rect), startAngle(startAngle), spanAngle(spanAngle) {}
-
-    QRectF rect;
-    qreal startAngle, spanAngle;
-};
-
-struct StrokeEllipse : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::StrokeEllipse; }
-
-    StrokeEllipse(const QRectF& rect) : rect(rect) {}
-
-    QRectF rect;
-};
-
-struct Point : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::Point; }
-
-    Point(qreal x, qreal y) : point(QPointF(x, y)) {}
-
-    QPointF point;
-};
-
-struct Line : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::Line; }
-
-    Line(qreal x1, qreal y1, qreal x2, qreal y2) : line(QLineF(x1, y1, x2, y2)) {}
-
-    QLineF line;
-};
-
-struct ImageCopy : public CanvasCommand {
-    virtual Variant kind() const override { return Variant::ImageCopy; }
-
-    ImageCopy(const CanvasImage& image, const QRectF& src, const QRectF& dst) : src(src), dst(dst), image(image) {}
-
-    QRectF src;
-    QRectF dst;
-    CanvasImage image;
-};
-}
 
 class CanvasCommandInterface : public QObject, protected Scriptable {
     Q_OBJECT
@@ -262,18 +194,18 @@ public slots:
     CanvasCommand setHints(int hints) const;
     CanvasCommand setBlendMode(int mode) const;
     CanvasCommand setFont(const QString& family, int size = 12, int weight = QFont::Normal, bool italic = false) const;
-    CanvasCommand clearRect(const QRect& rect) const;
+    CanvasCommand clearRect(int x, int y, int w, int h) const;
     CanvasCommand fillPath(const QPainterPath& path) const;
-    CanvasCommand fillRect(const QRectF& rect) const;
-    CanvasCommand fillEllipse(const QRectF& rect) const;
-    CanvasCommand fillText(const QString& text, const QRectF& rect, int flag = 0) const;
+    CanvasCommand fillRect(qreal x, qreal y, qreal w, qreal h) const;
+    CanvasCommand fillEllipse(qreal x, qreal y, qreal w, qreal h) const;
+    CanvasCommand fillText(const QString& text, qreal x, qreal y, qreal w = 0, qreal h = 0, int flag = 0) const;
     CanvasCommand strokePath(const QPainterPath& path) const;
-    CanvasCommand strokeRect(const QRectF& rect) const;
-    CanvasCommand strokeArc(const QRectF& rect, qreal startAngle, qreal spanAngle) const;
-    CanvasCommand strokeEllipse(const QRectF& rect) const;
+    CanvasCommand strokeRect(qreal x, qreal y, qreal w, qreal h) const;
+    CanvasCommand strokeArc(qreal x, qreal y, qreal w, qreal h, qreal startAngle, qreal spanAngle) const;
+    CanvasCommand strokeEllipse(qreal x, qreal y, qreal w, qreal h) const;
     CanvasCommand point(qreal x, qreal y) const;
     CanvasCommand line(qreal x1, qreal y1, qreal x2, qreal y2) const;
-    CanvasCommand imageCopy(const CanvasImage& image, const QRectF& src, const QRectF& dest) const;
+    CanvasCommand imageCopy(const CanvasImage& image, qreal sx, qreal sy, qreal sw, qreal sh, qreal dx, qreal dy, qreal dw, qreal dh) const;
 
 private:
     int TEXT_ALIGN_LEFT() const { return Qt::AlignLeft; }
