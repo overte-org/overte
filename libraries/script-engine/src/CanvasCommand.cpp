@@ -42,7 +42,7 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
 
     ScriptValue obj = engine->newObject();
 
-    obj.setProperty(CMD_TYPE_PROP_NAME, (uint)cmd.kind());
+    obj.setProperty(CMD_TYPE_PROP_NAME, cmd.kind());
 
     switch (cmd.kind()) {
         case Variant::SetStrokeWidth: {
@@ -197,7 +197,7 @@ bool canvasCommandFromScriptValue(const ScriptValue& object, CanvasCommand& cmd)
     using Variant = CanvasCommand::Variant;
     using namespace canvas_cmd;
 
-    uint type = object.property(CMD_TYPE_PROP_NAME).toVariant().toInt();
+    uint type = object.property(CMD_TYPE_PROP_NAME).toInt32();
 
     if (type == Variant::SetStrokeWidth) {
         cmd = SetStrokeWidth { object.property("width").toNumber() };
@@ -208,22 +208,22 @@ bool canvasCommandFromScriptValue(const ScriptValue& object, CanvasCommand& cmd)
         // FIXME: we have a script RGB color type but not an RGBA one
         cmd = SetColor(c);
     } else if (type == Variant::SetHints) {
-        cmd = SetHints(object.property("hints").toVariant().toUInt());
+        cmd = SetHints(object.property("hints").toUInt32());
     } else if (type == Variant::SetBlendMode) {
-        cmd = SetBlendMode(object.property("mode").toVariant().toUInt());
+        cmd = SetBlendMode(object.property("mode").toUInt32());
     } else if (type == Variant::SetFont) {
         cmd = SetFont(
             object.property("family").toString(),
-            object.property("size").toVariant().toInt(),
-            object.property("weight").toVariant().toInt(),
+            object.property("size").toInt32(),
+            object.property("weight").toInt32(),
             object.property("italic").toBool()
         );
     } else if (type == Variant::ClearRect) {
         cmd = ClearRect(QRect(
-            object.property("x").toVariant().toInt(),
-            object.property("y").toVariant().toInt(),
-            object.property("w").toVariant().toInt(),
-            object.property("h").toVariant().toInt()
+            object.property("x").toInt32(),
+            object.property("y").toInt32(),
+            object.property("w").toInt32(),
+            object.property("h").toInt32()
         ));
     } else if (type == Variant::FillPath) {
         cmd = FillPath(qPainterPathFromScriptValue(object.property("path")));
@@ -250,7 +250,7 @@ bool canvasCommandFromScriptValue(const ScriptValue& object, CanvasCommand& cmd)
                 object.property("h").toNumber()
             ),
             object.property("text").toString(),
-            object.property("flag").toVariant().toInt()
+            object.property("flag").toInt32()
         );
     } else if (type == Variant::StrokePath) {
         cmd = StrokePath(qPainterPathFromScriptValue(object.property("path")));
@@ -355,8 +355,8 @@ ScriptValue canvasImageToScriptValue(ScriptEngine* engine, const CanvasImage& im
 }
 
 bool canvasImageFromScriptValue(const ScriptValue& object, CanvasImage& img) {
-    img.width = object.property(IMG_WIDTH_PROP_NAME).toVariant().toUInt();
-    img.height = object.property(IMG_HEIGHT_PROP_NAME).toVariant().toUInt();
+    img.width = object.property(IMG_WIDTH_PROP_NAME).toUInt32();
+    img.height = object.property(IMG_HEIGHT_PROP_NAME).toUInt32();
     return qBytearrayFromScriptValue(object.property(IMG_BUFFER_PROP_NAME), img.buffer);
 }
 
@@ -400,7 +400,7 @@ bool qPainterPathFromScriptValue(const ScriptValue& array, QPainterPath& path) {
 
     for (int i = 0; i < length; i++) {
         ScriptValue obj = array.property(i);
-        uint type = obj.property("type").toVariant().toUInt();
+        uint type = obj.property("type").toUInt32();
         auto x = obj.property("x").toNumber();
         auto y = obj.property("y").toNumber();
 
