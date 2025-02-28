@@ -108,6 +108,7 @@ void CanvasEntityItem::setImageData(const CanvasImage& image) {
 }
 
 void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
+    using namespace canvas_cmd;
     using V = CanvasCommand::Variant;
     using Hint = CanvasCommand::RenderHint;
 
@@ -126,14 +127,14 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
                 break;
 
             case V::SetStrokeWidth: {
-                auto props = cmd._setStrokeWidth;
+                auto props = dynamic_cast<const SetStrokeWidth&>(cmd);
                 pen.setWidthF(props.width);
                 p.setPen(pen);
                 break;
             }
 
             case V::SetColor: {
-                auto props = cmd._setColor;
+                auto props = dynamic_cast<const SetColor&>(cmd);
                 auto color = QColor(props.color[0], props.color[1], props.color[2], 255);
                 pen.setColor(color);
                 brush.setColor(color);
@@ -143,7 +144,7 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
             }
 
             case V::SetHints: {
-                auto props = cmd._setHints;
+                auto props = dynamic_cast<const SetHints&>(cmd);
                 p.setRenderHint(QPainter::Antialiasing, (props.hints & Hint::PrimitiveAntialiasing) != 0);
                 p.setRenderHint(QPainter::TextAntialiasing, (props.hints & Hint::TextAntialiasing) != 0);
                 p.setRenderHint(QPainter::SmoothPixmapTransform, (props.hints & Hint::BilinearImageScaling) != 0);
@@ -151,37 +152,37 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
             }
 
             case V::SetBlendMode: {
-                auto props = cmd._setBlendMode;
+                auto props = dynamic_cast<const SetBlendMode&>(cmd);
                 p.setCompositionMode(props.mode);
                 break;
             }
 
             case V::SetFont: {
-                auto props = cmd._setFont;
+                auto props = dynamic_cast<const SetFont&>(cmd);
                 p.setFont(QFont(props.family, props.size, props.weight, props.italic));
                 break;
             }
 
             case V::ClearRect: {
-                auto props = cmd._clearRect;
+                auto props = dynamic_cast<const ClearRect&>(cmd);
                 p.eraseRect(props.rect);
                 break;
             }
 
             case V::FillPath: {
-                auto props = cmd._fillPath;
+                auto props = dynamic_cast<const FillPath&>(cmd);
                 p.fillPath(props.path, brush);
                 break;
             }
 
             case V::FillRect: {
-                auto props = cmd._fillRect;
+                auto props = dynamic_cast<const FillRect&>(cmd);
                 p.fillRect(props.rect, brush);
                 break;
             }
 
             case V::FillEllipse: {
-                auto props = cmd._fillEllipse;
+                auto props = dynamic_cast<const FillEllipse&>(cmd);
                 auto pathHack = QPainterPath();
                 pathHack.addEllipse(props.rect);
                 p.fillPath(pathHack, brush);
@@ -189,7 +190,7 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
             }
 
             case V::FillText: {
-                auto props = cmd._fillText;
+                auto props = dynamic_cast<const FillText&>(cmd);
 
                 // unbounded text
                 if (props.rect.width() == 0.0 && props.rect.height() == 0.0) {
@@ -201,43 +202,43 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
             }
 
             case V::StrokePath: {
-                auto props = cmd._strokePath;
+                auto props = dynamic_cast<const StrokePath&>(cmd);
                 p.strokePath(props.path, pen);
                 break;
             }
 
             case V::StrokeRect: {
-                auto props = cmd._strokeRect;
+                auto props = dynamic_cast<const StrokeRect&>(cmd);
                 p.drawRect(props.rect);
                 break;
             }
 
             case V::StrokeArc: {
-                auto props = cmd._strokeArc;
+                auto props = dynamic_cast<const StrokeArc&>(cmd);
                 p.drawArc(props.rect, props.startAngle * 16, props.spanAngle * 16);
                 break;
             }
 
             case V::StrokeEllipse: {
-                auto props = cmd._strokeEllipse;
+                auto props = dynamic_cast<const StrokeEllipse&>(cmd);
                 p.drawEllipse(props.rect);
                 break;
             }
 
             case V::Point: {
-                auto props = cmd._point;
+                auto props = dynamic_cast<const Point&>(cmd);
                 p.drawPoint(props.point);
                 break;
             }
 
             case V::Line: {
-                auto props = cmd._line;
+                auto props = dynamic_cast<const Line&>(cmd);
                 p.drawLine(props.line);
                 break;
             }
 
             case V::ImageCopy: {
-                auto props = cmd._imageCopy;
+                auto props = dynamic_cast<const ImageCopy&>(cmd);
                 if (props.image.buffer.length() != static_cast<int>(4 * props.image.width * props.image.height)) {
                     qCCritical(entities) << "CanvasEntityItem::paintCommands: Source CanvasImage buffer has incorrect size, expected " << (4 * props.image.width * props.image.height) << ", got " << props.image.buffer.length();
                     break;
