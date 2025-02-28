@@ -228,16 +228,16 @@ jobs:
       shell: bash
       run: |
         echo "-> Check IP"
-        curl https://4.myip.is/
-        curl https://6.myip.is/
+        curl https://4.myip.is/ || true
+        curl https://6.myip.is/ || true
         echo "-> Curl"
-        curl -v https://center2.conan.io/v1/ping
-        curl -v https://center2.conan.io/v2/conans/artery-font-format/1.0.1/_/_/latest
+        curl -v https://center2.conan.io/v1/ping || true
+        curl -v https://center2.conan.io/v2/conans/artery-font-format/1.0.1/_/_/latest || true
         echo "-> Conan"
-        conan install . -vvv -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:with_qt='${CONAN_QT^} -b missing -pr:b=default -of build
+        conan install . -vvv -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:with_qt='${CONAN_QT^} -b missing -pr:b=default -of build || true
         echo "-> Curl"
-        curl -v https://center2.conan.io/v1/ping
-        curl -v https://center2.conan.io/v2/conans/artery-font-format/1.0.1/_/_/latest
+        curl -v https://center2.conan.io/v1/ping || true
+        curl -v https://center2.conan.io/v2/conans/artery-font-format/1.0.1/_/_/latest || true
 
     - name: Upload Conan dependencies
       continue-on-error: true
