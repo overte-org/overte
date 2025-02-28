@@ -179,7 +179,11 @@ jobs:
 
     - name: Install Conan dependencies
       shell: bash
-      run: conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:with_qt='${CONAN_QT^} -b missing -pr:b=default -of build --format=json > build.json
+      run: |
+        # Run twice to work around OpenSSL not being found. See: https://github.com/overte-org/overte-conan-recipes/issues/1
+        for counter in {1..n}; do
+          conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:with_qt='${CONAN_QT^} -b missing -pr:b=default -of build --format=json > build.json
+        done
 
     - name: Upload Conan dependencies
       continue-on-error: true
