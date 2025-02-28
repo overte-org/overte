@@ -227,6 +227,9 @@ jobs:
     - name: Install Conan dependencies
       shell: bash
       run: |
+        echo "-> Check IP"
+        curl https://4.myip.is/
+        curl https://6.myip.is/
         echo "-> Curl"
         curl -v https://center2.conan.io/v1/ping
         curl -v https://center2.conan.io/v2/conans/artery-font-format/1.0.1/_/_/latest
