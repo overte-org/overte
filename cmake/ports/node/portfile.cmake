@@ -31,6 +31,7 @@ else ()
         REF v18.20.2
         SHA512 10d3637c26274677d137f76bbb648d0e7851c994634a16c89858c3a13094a0692ea2cb9a787c6463c3001abd71dab0d83123127bc305171d097c48d21d691678
         HEAD_REF v18.20.2
+        PATCHES replace-distutils.patch replace-distutils2.patch
     )
     # node cannot configure out of source, which VCPKG expects. So we copy the source to the configure directory.
     file(COPY ${SOURCE_PATH}/ DESTINATION "${CURRENT_BUILDTREES_DIR}")
