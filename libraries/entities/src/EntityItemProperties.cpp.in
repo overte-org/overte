@@ -1401,9 +1401,7 @@ void EntityItemProperties::convertToCloneProperties(const EntityItemID& entityID
 bool EntityItemProperties::blobToProperties(ScriptEngine& scriptEngine, const QByteArray& blob, EntityItemProperties& properties) {
     // DANGER: this method is NOT efficient.
     // begin recipe for converting unfortunately-formatted-binary-blob to EntityItemProperties
-    OVERTE_IGNORE_DEPRECATED_BEGIN
-    QJsonDocument jsonProperties = QJsonDocument::fromBinaryData(blob);
-    OVERTE_IGNORE_WARNING_END
+    QJsonDocument jsonProperties = QJsonDocument(QCborValue::fromCbor(blob).toJsonValue().toObject());
     if (jsonProperties.isEmpty() || jsonProperties.isNull() || !jsonProperties.isObject() || jsonProperties.object().isEmpty()) {
         qCDebug(entities) << "bad avatarEntityData json" << QString(blob.toHex());
         return false;
@@ -1432,10 +1430,7 @@ void EntityItemProperties::propertiesToBlob(ScriptEngine& scriptEngine, const QU
             jsonObject["parentID"] = AVATAR_SELF_ID.toString();
         }
     }
-    jsonProperties = QJsonDocument(jsonObject);
-    OVERTE_IGNORE_DEPRECATED_BEGIN
-    blob = jsonProperties.toBinaryData();
-    OVERTE_IGNORE_WARNING_END
+    blob = QCborValue::fromJsonValue(jsonObject).toCbor();
     // end recipe
 }
 

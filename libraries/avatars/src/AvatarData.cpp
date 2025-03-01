@@ -2648,17 +2648,12 @@ QByteArray AvatarData::toFrame(const AvatarData& avatar) {
         qCDebug(avatars).noquote() << QJsonDocument(obj).toJson(QJsonDocument::JsonFormat::Indented);
     }
 #endif
-    OVERTE_IGNORE_DEPRECATED_BEGIN
-    // Can't use CBOR yet, would break the protocol
-    return QJsonDocument(root).toBinaryData();
-    OVERTE_IGNORE_WARNING_END
+    return QCborValue::fromJsonValue(root).toCbor();
 }
 
 
 void AvatarData::fromFrame(const QByteArray& frameData, AvatarData& result, bool useFrameSkeleton) {
-    OVERTE_IGNORE_DEPRECATED_BEGIN
-    QJsonDocument doc = QJsonDocument::fromBinaryData(frameData);
-    OVERTE_IGNORE_WARNING_END
+    QJsonDocument doc = QJsonDocument(QCborValue::fromCbor(frameData).toJsonValue().toObject());
 
 #ifdef WANT_JSON_DEBUG
     {
@@ -2918,9 +2913,7 @@ ScriptValue AvatarEntityMapToScriptValue(ScriptEngine* engine, const AvatarEntit
     ScriptValue obj = engine->newObject();
     for (auto entityID : value.keys()) {
         QByteArray entityProperties = value.value(entityID);
-        OVERTE_IGNORE_DEPRECATED_BEGIN
-        QJsonDocument jsonEntityProperties = QJsonDocument::fromBinaryData(entityProperties);
-        OVERTE_IGNORE_WARNING_END
+        QJsonDocument jsonEntityProperties = QJsonDocument(QCborValue::fromCbor(entityProperties).toJsonValue().toObject());
         if (!jsonEntityProperties.isObject()) {
             qCDebug(avatars) << "bad AvatarEntityData in AvatarEntityMap" << QString(entityProperties.toHex());
         }
@@ -2944,9 +2937,7 @@ bool AvatarEntityMapFromScriptValue(const ScriptValue& object, AvatarEntityMap& 
         ScriptValue scriptEntityProperties = itr->value();
         QVariant variantEntityProperties = scriptEntityProperties.toVariant();
         QJsonDocument jsonEntityProperties = QJsonDocument::fromVariant(variantEntityProperties);
-        OVERTE_IGNORE_DEPRECATED_BEGIN
-        QByteArray binaryEntityProperties = jsonEntityProperties.toBinaryData();
-        OVERTE_IGNORE_WARNING_END
+        QByteArray binaryEntityProperties = QCborValue::fromJsonValue(jsonEntityProperties.object()).toCbor();
         value[EntityID] = binaryEntityProperties;
     }
     return true;
