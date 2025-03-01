@@ -553,5 +553,8 @@ set(CPACK_BUNDLE_NAME "Overte")
 set(CPACK_RPM_DEBUGINFO_PACKAGE "ON")
 set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")  # Obsolete on Fedora >=25
 
+
+set(CPACK_PACKAGE_CONTACT "Dale Glass <dale@daleglass.net>")
+
 include(CPack)
 include(InstallRequiredSystemLibraries)
