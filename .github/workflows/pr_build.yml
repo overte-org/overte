@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2020-2022 Vircadia contributors.
-# Copyright 2021-2024 Overte e.V.
+# Copyright 2021-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 name: Pull Request CI Build
@@ -64,8 +64,8 @@ jobs:
               runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
               arch: amd64
               build_type: full
-              apt-dependencies: python3-packaging # add missing dependencies to docker image when convenient
-              image: docker.io/overte/overte-full-build:0.1.2-ubuntu-20.04-amd64
+            #  apt-dependencies: # add missing dependencies to docker image when convenient
+              image: docker.io/overte/overte-full-build:0.1.6-ubuntu-20.04-amd64
             # Android builds are currently failing
             #- os: ubuntu-18.04
             #  build_type: android
@@ -75,8 +75,8 @@ jobs:
               runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
               arch: aarch64
               build_type: full
-              image: docker.io/overte/overte-full-build:0.1.2-ubuntu-22.04-aarch64
-              apt-dependencies: python3-packaging
+              image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-aarch64
+            #  apt-dependencies: # add missing dependencies to docker image when convenient
         fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
