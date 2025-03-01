@@ -245,6 +245,9 @@ jobs:
         done
 
     - name: Upload Conan dependencies
+      # Conan isn't glibc aware, so we need to be really careful what we upload to the binary cache on Linux.
+      # See the upstream discussion: https://github.com/conan-io/conan/issues/7121
+      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
       continue-on-error: true
       shell: bash
       env:
