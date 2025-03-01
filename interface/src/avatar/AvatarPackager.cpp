@@ -27,12 +27,7 @@
 std::once_flag setupQMLTypesFlag;
 AvatarPackager::AvatarPackager() {
     std::call_once(setupQMLTypesFlag, []() {
-        OVERTE_IGNORE_DEPRECATED_BEGIN
-
-        qmlRegisterType<FST>();
-
-        OVERTE_IGNORE_WARNING_END
-
+        qmlRegisterAnonymousType<FST>("", 1);
         qRegisterMetaType<AvatarPackager*>();
         qRegisterMetaType<AvatarProject*>();
         qRegisterMetaType<AvatarDoctor*>();
