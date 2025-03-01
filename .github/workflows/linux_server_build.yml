@@ -287,16 +287,6 @@ jobs:
           conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:with_qt='${CONAN_QT^} -b missing -pr:b=default -of build --format=json > build.json
         done
 
-    - name: Upload Conan dependencies
-      continue-on-error: true
-      shell: bash
-      env:
-        CONAN_LOGIN_USERNAME_OVERTE: ${{ secrets.conan_login_username_overte }}
-        CONAN_PASSWORD_OVERTE: ${{ secrets.conan_password_overte }}
-      run: |
-        conan list --graph=build.json --graph-binaries=build --format=json > pkglist.json
-        conan upload --list=pkglist.json -r=overte -c || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
-
     - name: Configure CMake
       shell: bash
            # This syntax requires CMake 3.23
