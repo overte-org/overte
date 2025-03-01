@@ -112,15 +112,15 @@ jobs:
             arch: aarch64
             runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
-          - os: fedora-42
-            image: docker.io/overte/overte-server-build:0.1.6-fedora-42-amd64
-            arch: amd64
-            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+          #~ - os: fedora-42
+            #~ image: docker.io/overte/overte-server-build:0.1.6-fedora-42-amd64
+            #~ arch: amd64
+            #~ runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
 
-          - os: fedora-42
-            image: docker.io/overte/overte-server-build:0.1.6-fedora-42-aarch64
-            arch: aarch64
-            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+          #~ - os: fedora-42
+            #~ image: docker.io/overte/overte-server-build:0.1.6-fedora-42-aarch64
+            #~ arch: aarch64
+            #~ runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
 
           - os: rockylinux-9
             image: docker.io/overte/overte-server-build:0.1.6-rockylinux-9-amd64
