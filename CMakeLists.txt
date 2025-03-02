@@ -547,7 +547,7 @@ if (BUILD_INSTALLER)
 #        COMPONENT ${CLIENT_COMPONENT}
 #    )
 #  endif()
-  generate_installers()
+  #generate_installers()
 endif()
 
 # QML import paths for Qt Creator and KDevelop code completion
