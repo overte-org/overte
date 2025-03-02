@@ -3,14 +3,11 @@
 # Copyright 2021-2023 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
-if (APPLE)
-  # Make the OSX DMG app be Overte.app.
-  set(TARGET_NAME Overte)
-else()
-  set(TARGET_NAME interface)
-endif()
+set(TARGET_NAME ${INTERFACE_TARGET_NAME})
 
 project(${TARGET_NAME})
+
+
 
 file(GLOB_RECURSE QML_SRC resources/qml/*.qml resources/qml/*.js)
 add_custom_target(qmls SOURCES ${QML_SRC})
@@ -170,6 +167,7 @@ elseif (WIN32)
 
   # add an executable that also has the icon itself and the configured rc file as resources
   add_executable(${TARGET_NAME} WIN32 ${INTERFACE_SRCS} ${QM} ${CONFIGURE_ICON_RC_OUTPUT} ${CONFIGURE_VERSION_INFO_RC_OUTPUT})
+
   ##^^^^^ creates native Win32 app w/o cmd console vvvvvv forces cmd console for logging
   # add_executable(${TARGET_NAME} ${INTERFACE_SRCS} ${QM} ${CONFIGURE_ICON_RC_OUTPUT} ${CONFIGURE_VERSION_INFO_RC_OUTPUT})
 
@@ -186,7 +184,10 @@ elseif (ANDROID)
   # on android the Interface target is a library that gets linked/used by the APK shell that qtcreateapk produces
   add_library(${TARGET_NAME} ${INTERFACE_SRCS} ${QM})
 else ()
+  # Linux
   add_executable(${TARGET_NAME} ${INTERFACE_SRCS} ${QM})
+
+  set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib64/overte;$ORIGIN/../lib/overte")
 endif ()
 
 if (NOT ANDROID)
@@ -384,6 +385,8 @@ else()
     COMMAND "${CMAKE_COMMAND}" -E copy_directory
       "${CMAKE_SOURCE_DIR}/scripts"
       "${INTERFACE_EXEC_DIR}/scripts"
+
+    # Actual tutorial resources like textures are packaged inside the QRC
     COMMAND "${CMAKE_COMMAND}" -E copy_if_different
       "${PROJECT_SOURCE_DIR}/resources/serverless/tutorial.json"
       "${RESOURCES_DEV_DIR}/serverless/tutorial.json"
@@ -422,6 +425,34 @@ else()
     set(EXECUTABLE_COMPONENT ${CLIENT_COMPONENT})
 
     optional_win_executable_signing()
+  else()
+    # Not Apple and not Win32, so Linux
+
+    # Using PROGRAMS instead of TARGETS so that RENAME works.
+    # We're renaming interface to overte for Linux
+
+    install(TARGETS ${TARGET_NAME}
+            DESTINATION ${CMAKE_INSTALL_BINDIR}
+            COMPONENT ${CLIENT_COMPONENT}
+    )
+
+    install(FILES ${RESOURCES_RCC}
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/overte/interface"
+            COMPONENT ${CLIENT_COMPONENT}
+            )
+
+    install(DIRECTORY "${RESOURCES_DEV_DIR}/fonts"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/overte/interface"
+            COMPONENT ${CLIENT_COMPONENT}
+    )
+
+    install(DIRECTORY "${RESOURCES_DEV_DIR}/serverless"
+            DESTINATION "${CMAKE_INSTALL_DATADIR}/overte/interface"
+            COMPONENT ${CLIENT_COMPONENT}
+    )
+
+
+    set(SCRIPTS_INSTALL_DIR "${CMAKE_INSTALL_DATADIR}/overte/interface")
   endif()
 endif()
 
@@ -443,11 +474,14 @@ endif()
 
 if (SCRIPTS_INSTALL_DIR)
   # setup install of scripts beside interface executable
+  message(STATUS "Installing scripts into ${SCRIPTS_INSTALL_DIR}")
   install(
     DIRECTORY "${CMAKE_SOURCE_DIR}/scripts/"
     DESTINATION ${SCRIPTS_INSTALL_DIR}/scripts
     COMPONENT ${CLIENT_COMPONENT}
   )
+else()
+  message(FATAL_ERROR "Not installing! ${CMAKE_INSTALL_DATA}")
 endif()
 
 if (DOWNLOAD_SERVERLESS_CONTENT)
@@ -479,3 +513,50 @@ target_include_directories(${TARGET_NAME} PUBLIC ${GIFCREATOR_INCLUDE_DIRS})
 
 # tell CMake to exclude ui_console.h for policy CMP0071
 set_property(SOURCE ui_console.h PROPERTY SKIP_AUTOMOC ON)
+
+
+
+##########################################################################
+# Installation
+##########################################################################
+
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Overte client")
+set(CPACK_PACKAGE_VENDOR "Overte e.V.")
+#set(CPACK_PACKAGE_DESCRIPTION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../README.md")
+set(CPACK_PACKAGE_DESCRIPTION
+"Overte is a free and open source 3D social virtual worlds software.\
+\
+* Desktop and VR use\
+* Hundreds of users simultaneously\
+* Collaborative in-world creation\
+* Full-body avatars\
+* FBX, glTF, and OBJ support\
+* JavaScript scripting engine\
+* 256km²/4096km³ world space in a server\
+* Fully self-hosted\
+* Apache 2.0\
+")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Virtual worlds and social VR/desktp client")
+
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE")
+set(CPACK_RPM_PACKAGE_LICENSE "Apache-2.0")
+set(CPACK_DEBIAN_DEBUGINFO_PACKAGE "ON")
+
+
+set(CPACK_PACKAGE_VERSION "${OVERTE_VERSION_MAJOR}.${OVERTE_VERSION_MINOR}.${OVERTE_VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION_MAJOR "${OVERTE_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${OVERTE_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${OVERTE_VERSION_PATCH}")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "Overte")
+set(CPACK_PACKAGE_EXECUTABLES "overte" "overte")
+set(CPACK_THREADS 0)
+set(CPACK_BUNDLE_NAME "Overte")
+
+set(CPACK_RPM_DEBUGINFO_PACKAGE "ON")
+set(CPACK_RPM_PACKAGE_GROUP "Applications/Multimedia")  # Obsolete on Fedora >=25
+
+
+set(CPACK_PACKAGE_CONTACT "Dale Glass <dale@daleglass.net>")
+
+include(CPack)
+include(InstallRequiredSystemLibraries)

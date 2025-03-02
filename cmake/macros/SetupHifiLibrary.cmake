@@ -81,4 +81,18 @@ macro(SETUP_HIFI_LIBRARY)
 
   set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Libraries")
 
+
+  ########################################################################
+  # Installation
+  ########################################################################
+  if (UNIX AND NOT APPLE)
+    # Linux
+    set_target_properties(${TARGET_NAME} PROPERTIES INSTALL_RPATH "$ORIGIN")
+
+    install(
+        TARGETS ${TARGET_NAME}
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/overte"
+      )
+  endif()
 endmacro(SETUP_HIFI_LIBRARY)
