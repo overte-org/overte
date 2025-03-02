@@ -815,8 +815,8 @@ void Application::initialize(const QCommandLineParser &parser) {
     // Needs to happen AFTER the render engine initialization to access its configuration
     initializeUi();
 
-    init();
     setupSignalsAndOperators();
+    init();
     qCDebug(interfaceapp, "init() complete.");
 
     // create thread for parsing of octree data independent of the main network and rendering threads
