@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte Server
-# Example build: docker build -t overte/overte-server-build:0.1.6-debian-11 -f Dockerfile_build_debian-11 .
-FROM debian:bullseye
+# Example build: docker build -t overte/overte-server-build:0.1.6-debian-13 -f Dockerfile_build_debian-13 .
+FROM debian:trixie
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
 
@@ -16,14 +16,10 @@ RUN apt-get update && apt-get -y install tzdata
 
 # Install Conan
 RUN apt-get -y install python3-pip
-RUN pip3 install conan
+RUN pip3 install --break-system-packages conan
 
 # Install Overte domain-server and assignment-client build dependencies
-RUN apt-get -y install curl ninja-build git g++ libssl-dev libqt5websockets5-dev qtdeclarative5-dev qtmultimedia5-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev libsystemd-dev python3-packaging
-
-# Install CMake from Debian Backports
-RUN echo deb http://deb.debian.org/debian bullseye-backports main > /etc/apt/sources.list.d/bullseye-backports.list
-RUN apt-get update && apt-get -y -t bullseye-backports install -y cmake
+RUN apt-get -y install cmake curl ninja-build git g++ libssl-dev libqt5websockets5-dev qtdeclarative5-dev qtmultimedia5-dev python3-distro mesa-common-dev libgl1-mesa-dev libsystemd-dev python3-packaging
 
 # Install Overte tools build dependencies
 RUN apt-get -y install libqt5webchannel5-dev qtwebengine5-dev libqt5xmlpatterns5-dev
@@ -44,4 +40,4 @@ RUN echo "export LANG=en_US.UTF-8" >> ~/.bashrc
 RUN echo "export LANGUAGE=en_US.UTF-8" >> ~/.bashrc
 
 # Install tools needed for our Github Actions Workflow
-Run apt-get -y install python3-boto3 python3-github zip
+RUN apt-get -y install python3-boto3 python3-github zip

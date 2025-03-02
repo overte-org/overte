@@ -1,16 +1,7 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2019-2021 Vircadia contributors.
-# Copyright 2020-2023 Overte e.V.
+# Copyright 2020-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
-
-# If we're running under the gradle build, HIFI_ANDROID will be set here, but
-# ANDROID will not be set until after the `project` statement.  This is the *ONLY*
-# place you need to use `HIFI_ANDROID` instead of `ANDROID`
-if (WIN32 AND NOT HIFI_ANDROID)
-  cmake_minimum_required(VERSION 3.7)
-else()
-  cmake_minimum_required(VERSION 3.2)
-endif()
 
 # 3.14 is the minimum version that supports symlinks on Windows
 cmake_minimum_required(VERSION 3.14)
