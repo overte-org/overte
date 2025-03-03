@@ -53,8 +53,8 @@ elseif (APPLE)
 elseif (UNIX)
   ExternalProject_Add(
     ${EXTERNAL_NAME}
-    URL "${EXTERNAL_BUILD_ASSETS}/dependencies/crashpad_linux_f1943fcb.tar.bz2"
-    URL_MD5 e0949e5988905471c63c399833879482
+    URL "${EXTERNAL_BUILD_ASSETS}/dependencies/crashpad_linux_2025-01-16_c6d912da.tar.xz"
+    URL_HASH "SHA256=d0cf09ad17277ef8c29153b40c56390f6be373e5fa774db1e1fa9a2ce90d1196"
     CONFIGURE_COMMAND ""
     BUILD_COMMAND ""
     INSTALL_COMMAND ""
@@ -78,10 +78,17 @@ if (WIN32 OR APPLE OR UNIX)
   set(${EXTERNAL_NAME_UPPER}_LIBRARY_RELEASE ${LIB_RELEASE_PATH}/${LIB_PREFIX}crashpad_client.${LIB_EXT} CACHE FILEPATH "Path to Crashpad release library")
   set(${EXTERNAL_NAME_UPPER}_BASE_LIBRARY_RELEASE ${LIB_RELEASE_PATH}/${LIB_PREFIX}base.${LIB_EXT} CACHE FILEPATH "Path to Crashpad base release library")
   set(${EXTERNAL_NAME_UPPER}_UTIL_LIBRARY_RELEASE ${LIB_RELEASE_PATH}/${LIB_PREFIX}crashpad_util.${LIB_EXT} CACHE FILEPATH "Path to Crashpad util release library")
+  set(${EXTERNAL_NAME_UPPER}_HANDLER_LIBRARY_RELEASE ${LIB_RELEASE_PATH}/${LIB_PREFIX}crashpad_handler.${LIB_EXT} CACHE FILEPATH "Path to Crashpad handler release library")
+  set(${EXTERNAL_NAME_UPPER}_COMMON_LIBRARY_RELEASE ${LIB_RELEASE_PATH}/${LIB_PREFIX}crashpad_common.${LIB_EXT} CACHE FILEPATH "Path to Crashpad common release library")
+
+
 
   set(${EXTERNAL_NAME_UPPER}_LIBRARY_DEBUG ${LIB_DEBUG_PATH}/${LIB_PREFIX}crashpad_client.${LIB_EXT} CACHE FILEPATH "Path to Crashpad debug library")
   set(${EXTERNAL_NAME_UPPER}_BASE_LIBRARY_DEBUG ${LIB_DEBUG_PATH}/${LIB_PREFIX}base.${LIB_EXT} CACHE FILEPATH "Path to Crashpad base debug library")
   set(${EXTERNAL_NAME_UPPER}_UTIL_LIBRARY_DEBUG ${LIB_DEBUG_PATH}/${LIB_PREFIX}crashpad_util.${LIB_EXT} CACHE FILEPATH "Path to Crashpad util debug library")
+  set(${EXTERNAL_NAME_UPPER}_HANDLER_LIBRARY_DEBUG ${LIB_DEBUG_PATH}/${LIB_PREFIX}crashpad_handler.${LIB_EXT} CACHE FILEPATH "Path to Crashpad handler debug library")
+  set(${EXTERNAL_NAME_UPPER}_COMMON_LIBRARY_DEBUG ${LIB_DEBUG_PATH}/${LIB_PREFIX}crashpad_common.${LIB_EXT} CACHE FILEPATH "Path to Crashpad common debug library")
+
 
   set(CRASHPAD_HANDLER_EXE_PATH ${BIN_RELEASE_PATH}/crashpad_handler${BIN_EXT} CACHE FILEPATH "Path to the Crashpad handler binary")
 endif ()
