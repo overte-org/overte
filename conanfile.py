@@ -7,9 +7,12 @@ from conan.tools.files import copy, save
 class Overte(ConanFile):
     name = "Overte"
     settings = "os", "compiler", "build_type", "arch"
-    options = {"with_qt": [True, False], "with_webrtc": [True, False]}
+    options = {
+        "qt_source": ["system", "aqt", "source"],
+        "with_webrtc": [True, False],
+    }
     default_options = {
-        "with_qt": False,
+        "qt_source": "system",
         "with_webrtc": True,
         "sdl*:alsa": "False",
         "sdl*:pulse": "False",
@@ -74,22 +77,22 @@ class Overte(ConanFile):
         self.requires("zlib/1.2.13")
         self.requires("glm/0.9.9.5", force=True)
 
-        if self.settings.os == "Linux" and not self.options.with_qt:
-            self.requires("openssl/system@anotherfoxguy/stable", force=True)
+        if self.options.qt_source == "system":
+            self.requires("qt/5.15.2@overte/system", force=True)
+            if self.settings.os == "Linux":
+                self.requires("openssl/system@anotherfoxguy/stable", force=True)
+        elif self.options.qt_source == "aqt":
+            self.requires("qt/5.15.2@overte/aqt", force=True)
+        else:
+            self.requires("qt/5.15.16-2025.01.23@overte/stable", force=True)
+            # Upstream NSS is broken, so we use https://github.com/conan-io/conan-center-index/pull/19262/commits/735df499341924901089fd512a8ac56ac83d1e6a
+            self.requires("nss/3.107@overte/stable", force=True)
+            self.requires("quazip/1.4")
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")
             self.requires("ovr-skd/1.35.0@overte/prebuild")
             self.requires("ovr-platform-skd/1.10.0@overte/prebuild")
-
-        if self.options.with_qt:
-            self.requires("qt/5.15.16-2025.01.23@overte/stable", force=True)
-            # Upstream NSS is broken, so we use https://github.com/conan-io/conan-center-index/pull/19262/commits/735df499341924901089fd512a8ac56ac83d1e6a
-            self.requires("nss/3.107@overte/stable", force=True)
-            self.requires("quazip/1.4")
-        else:
-            # Upstream Quazip depends on Qt provided by Conan instead of system Qt.
-            self.requires("quazip/1.4@overte/stable")
 
         if self.options.with_webrtc:
             self.requires("webrtc-prebuild/2021.01.05@overte/stable", force=True)
