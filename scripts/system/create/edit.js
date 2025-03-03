@@ -4,7 +4,7 @@
 //  Persist toolbar by HRS on June 2nd, 2015.
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2024 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  This script allows you to edit entities with a new UI/UX for mouse and trackpad based editing
 //
@@ -2609,6 +2609,10 @@
                     entity.properties.keyLight.direction = Vec3.toPolar(entity.properties.keyLight.direction);
                     entity.properties.keyLight.direction.z = 0.0;
                 }
+                if (selectionManager.selections.length === 1) {
+                    entity.properties.children = createApp.getChildEntitiesList(entity.id);
+                }
+                
                 selections.push(entity);
             }
             data.selections = selections;
@@ -2980,6 +2984,8 @@
                     type: 'importUi_LOAD_DATA',
                     importUiPersistedData: importUiPersistedData
                 });
+            } else if (data.type === "specificEntityNavigation") {
+                selectionManager.setSelections([data.id], this);
             }
         };
 
@@ -3386,7 +3392,7 @@
         }
     }
 
-        createApp.rotateAsNextClickedSurface = function() {
+    createApp.rotateAsNextClickedSurface = function() {
         if (!SelectionManager.hasSelection() || !SelectionManager.hasUnlockedSelection()) {
             audioFeedback.rejection();
             Window.notifyEditError("You have nothing selected, or the selection is locked.");
@@ -3394,6 +3400,21 @@
         } else {
             createApp.expectingRotateAsClickedSurface = true;
         }
+    }
+
+    createApp.getChildEntitiesList = function(parentID) {
+        let children = Entities.getChildrenIDs(parentID);
+        let childList = [];
+        let i, properties;
+        if (children.length > 0) {
+            for (i = 0; i < children.length; i++ ) {
+                properties = Entities.getEntityProperties(children[i], ["id", "name", "type", "entityHostType"]);
+                if (properties.name !== undefined && properties.name !== entityShapeVisualizerSessionName) {
+                    childList.push(properties);
+                }
+            }
+        }
+        return childList;
     }
 
 }()); // END LOCAL_SCOPE
