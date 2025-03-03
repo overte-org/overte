@@ -368,14 +368,17 @@ void DomainGatekeeper::updateNodePermissions() {
                 hardwareAddress = nodeData->getHardwareAddress();
                 machineFingerprint = nodeData->getMachineFingerprint();
 
-                auto sendingAddress = nodeData->getSendingSockAddr().getAddress();
+                // TODO(IPv6):
+                auto sendingAddress = nodeData->getSendingSockAddr().getAddressIPv4();
                 auto nodeList = limitedNodeListWeak.lock();
-                isLocalUser = ((nodeList && sendingAddress == nodeList->getLocalSockAddr().getAddress()) ||
+                // TODO(IPv6):
+                isLocalUser = ((nodeList && sendingAddress == nodeList->getLocalSockAddr().getAddressIPv4()) ||
                                sendingAddress == QHostAddress::LocalHost);
             }
 
+            // TODO(IPv6):
             userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUserName,
-                                              connectingAddr.getAddress(), hardwareAddress, machineFingerprint);
+                                              connectingAddr.getAddressIPv4(), hardwareAddress, machineFingerprint);
         }
 
         node->setPermissions(userPerms);
@@ -473,9 +476,11 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     userPerms.setAll(false);
 
     // check if this user is on our local machine - if this is true set permissions to those for a "localhost" connection
-    QHostAddress senderHostAddress = nodeConnection.senderSockAddr.getAddress();
+    // TODO(IPv6):
+    QHostAddress senderHostAddress = nodeConnection.senderSockAddr.getAddressIPv4();
+    // TODO(IPv6):
     bool isLocalUser =
-        (senderHostAddress == limitedNodeList->getLocalSockAddr().getAddress() || senderHostAddress == QHostAddress::LocalHost);
+        (senderHostAddress == limitedNodeList->getLocalSockAddr().getAddressIPv4() || senderHostAddress == QHostAddress::LocalHost);
 
     QString verifiedUsername; // if this remains empty, consider this an anonymous connection attempt
     if (!username.isEmpty()) {
@@ -544,8 +549,9 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
         }
     }
 
+    // TODO(IPv6):
     userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUsername,
-                                      nodeConnection.senderSockAddr.getAddress(), nodeConnection.hardwareAddress,
+                                      nodeConnection.senderSockAddr.getAddressIPv4(), nodeConnection.hardwareAddress,
                                       nodeConnection.machineFingerprint);
 
     if (!userPerms.can(NodePermissions::Permission::canConnectToDomain)) {

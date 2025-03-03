@@ -67,7 +67,8 @@ NodeConnectionData NodeConnectionData::fromDataStream(QDataStream& dataStream, c
         }
 
         // We don't know whether it's a public or local connection so set both the same.
-        auto address = senderSockAddr.getAddress();
+        // TODO(IPv6):
+        auto address = senderSockAddr.getAddressIPv4();
         auto port = senderSockAddr.getPort();
         newHeader.publicSockAddr.setAddress(address);
         newHeader.publicSockAddr.setPort(port);
@@ -77,16 +78,19 @@ NodeConnectionData NodeConnectionData::fromDataStream(QDataStream& dataStream, c
 
     newHeader.senderSockAddr = senderSockAddr;
     
-    if (newHeader.publicSockAddr.getAddress().isNull()) {
+    // TODO(IPv6):
+    if (newHeader.publicSockAddr.getAddressIPv4().isNull()) {
         // this node wants to use us its STUN server
         // so set the node public address to whatever we perceive the public address to be
         
         // if the sender is on our box then leave its public address to 0 so that
         // other users attempt to reach it on the same address they have for the domain-server
-        if (senderSockAddr.getAddress().isLoopback()) {
+        // TODO(IPv6):
+        if (senderSockAddr.getAddressIPv4().isLoopback()) {
             newHeader.publicSockAddr.setAddress(QHostAddress());
         } else {
-            newHeader.publicSockAddr.setAddress(senderSockAddr.getAddress());
+            // TODO(IPv6):
+            newHeader.publicSockAddr.setAddress(senderSockAddr.getAddressIPv4());
         }
     }
     

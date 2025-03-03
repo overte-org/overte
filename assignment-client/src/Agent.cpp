@@ -218,9 +218,10 @@ void Agent::requestScript() {
 
     // figure out the URL for the script for this agent assignment
     QUrl scriptURL;
+    // TODO(IPv6): IPv6 URLs have different format
     if (_payload.isEmpty())  {
         scriptURL = QUrl(QString("http://%1:%2/assignment/%3/")
-                         .arg(nodeList->getDomainHandler().getIP().toString())
+                         .arg(nodeList->getDomainHandler().getIPv4().toString())
                          .arg(DOMAIN_SERVER_HTTP_PORT)
                          .arg(uuidStringWithoutCurlyBraces(nodeList->getSessionUUID())));
     } else {
