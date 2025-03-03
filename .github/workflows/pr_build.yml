@@ -48,10 +48,10 @@ jobs:
               runner: windows-2019
               arch: x86_64
               build_type: full
-              conan_qt: True
+              qt_source: aqt
             #- os: macOS-10.15
             #  build_type: full
-            #  conan_qt: True
+            #  qt_source: aqt
             - os: Ubuntu 20.04
               # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels
               # self_hosted makes the Hetzner auto-scaler put up the job.
@@ -61,7 +61,7 @@ jobs:
               runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
               arch: amd64
               build_type: full
-              conan_qt: True
+              qt_source: source
               apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
               image: docker.io/overte/overte-full-build:0.1.6-ubuntu-20.04-amd64
             # Android builds are currently failing
@@ -73,7 +73,7 @@ jobs:
               runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
               arch: aarch64
               build_type: full
-              conan_qt: False
+              qt_source: source
               apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
               image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-aarch64
         fail-fast: false
@@ -89,7 +89,7 @@ jobs:
         echo "GIT_COMMIT_SHORT=`echo $GIT_COMMIT | cut -c1-7`" >> $GITHUB_ENV
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
-        echo "CONAN_QT=${{matrix.conan_qt}}" >> $GITHUB_ENV
+        echo "qt_source=${{matrix.qt_source}}" >> $GITHUB_ENV
 
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
@@ -246,10 +246,7 @@ jobs:
     - name: Install Conan dependencies
       shell: bash
       run: |
-        # Run twice to work around OpenSSL not being found. See: https://github.com/overte-org/overte-conan-recipes/issues/1
-        for counter in {1..2}; do
-          conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:with_qt='${CONAN_QT^} -b missing -pr:b=default -of build
-        done
+        conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:qt_source='${qt_source} -b missing -pr:b=default -of build
 
     - name: Cleanup Conan dependencies
       run: conan cache clean "*" -sbd
