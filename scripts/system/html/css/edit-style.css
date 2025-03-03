@@ -4,7 +4,7 @@
 //  Created by Ryan Huffman on November 13th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2024 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -175,8 +175,19 @@ tr:focus {
     outline: none;
 }
 
+th.childrenTableHeader {
+    height: 26px;
+    background-color: #1c1c1c;
+    border-right: 1px solid #575757;
+    border-bottom: 1px solid #575757;
+}
+
 tr.avatarEntity {
     color: #7fdb98;
+}
+
+tr.localEntity {
+    color: #f0d769;
 }
 
 tr.selAvatarEntity {
@@ -444,6 +455,18 @@ input[type=button].glyph, button.hifi-edit-button.glyph {
     text-transform: none;
     min-width: 32px;
     padding: 0;
+}
+
+input[type=button].navigation, button.hifi-edit-button.navigation {
+    font-family: HiFi-Glyphs;
+    font-size: 20px;
+    text-transform: none;
+    min-width: 32px;
+    padding: 0;
+}
+
+input[type=button].navigation:focus, button.hifi-edit-button.navigation:focus {
+    outline: none;
 }
 
 input[type=button].normal, button.hifi-edit-button.normal {
@@ -2210,4 +2233,8 @@ div.menu-item-caption {
 
 div.menu-item-shortcut {
     float: right;
+}
+
+span.viewParent {
+    color: #ffffff;
 }
