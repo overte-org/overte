@@ -129,6 +129,13 @@ jobs:
         submodules: false
         fetch-depth: 1
 
+    - name: Cache conan
+      uses: actions/cache@v4
+      with:
+        key: conan-${{ matrix.os }}-${{ hashFiles('conanfile.py') }}
+        path: ~/.conan2/
+  
+
     - name: Install dependencies
       shell: bash
       if: startsWith(matrix.os, 'ubuntu') || contains(matrix.os, 'debian') || startsWith(matrix.os, 'macOS')
@@ -184,21 +191,12 @@ jobs:
       run: |
         # Run twice to work around OpenSSL not being found. See: https://github.com/overte-org/overte-conan-recipes/issues/1
         for counter in {1..2}; do
-          conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:with_qt='${CONAN_QT^} -b missing -pr:b=default -of build --format=json > build.json
+          conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:with_qt='${CONAN_QT^} -b missing -pr:b=default -of build
         done
 
-    - name: Upload Conan dependencies
-      # Conan isn't glibc aware, so we need to be really careful what we upload to the binary cache on Linux.
-      # See the upstream discussion: https://github.com/conan-io/conan/issues/7121
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
-      continue-on-error: true
+    - name: Cleanup Conan dependencies
+      run: conan cache clean "*" -sbd
       shell: bash
-      env:
-        CONAN_LOGIN_USERNAME_OVERTE: ${{ secrets.conan_login_username_overte }}
-        CONAN_PASSWORD_OVERTE: ${{ secrets.conan_password_overte }}
-      run: |
-        conan list --graph=build.json --graph-binaries=build --format=json > pkglist.json
-        conan upload --list=pkglist.json -r=overte -c
 
     - name: Configure CMake
       shell: bash
