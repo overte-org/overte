@@ -3,7 +3,7 @@
 //  Created by Ryan Huffman on November 13th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2024 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -81,6 +81,7 @@ const GROUPS = [
                 label: "Parent",
                 type: "string",
                 propertyID: "parentID",
+                buttons: [ { id: "navigateToParentEntity", label: "1", className: "navigation", onClick: navigateToSpecificEntityFromParentID } ],
                 onChange: parentIDChanged,
             },
             {
@@ -495,7 +496,7 @@ const GROUPS = [
             },
             {
                 type: "buttons",
-                buttons: [ { id: "copy", label: "Copy from Skybox", 
+                buttons: [ { id: "copy", label: "Copy URL from Skybox", 
                              className: "black", onClick: copySkyboxURLToAmbientURL } ],
                 propertyID: "copyURLToAmbient",
                 showPropertyRule: { "ambientLightMode": "enabled" },
@@ -2156,28 +2157,39 @@ const GROUPS = [
             }
         ]
     },
+    {
+        id: "children",
+        label: "CHILD ENTITIES",
+        properties: [
+            {
+                label: "Children",
+                type: "childList",
+                propertyID: "children",
+            }
+        ]
+    },
 ];
 
 const GROUPS_PER_TYPE = {
-  None: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Shape: [ 'base', 'shape', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Text: [ 'base', 'text', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+  None: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Shape: [ 'base', 'shape', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Text: [ 'base', 'text', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Zone: [ 'base', 'zone', 'zone_key_light', 'zone_skybox', 'zone_ambient_light', 'zone_haze',
             'zone_bloom', 'zone_tonemapping', 'zone_ambient_occlusion', 'zone_avatar_priority',
-            'zone_audio', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
-  Model: [ 'base', 'model', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Image: [ 'base', 'image', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Web: [ 'base', 'web', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Light: [ 'base', 'light', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Material: [ 'base', 'material', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
+            'zone_audio', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  Model: [ 'base', 'model', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Image: [ 'base', 'image', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Web: [ 'base', 'web', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Light: [ 'base', 'light', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Material: [ 'base', 'material', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   ParticleEffect: [ 'base', 'particles', 'particles_emit', 'particles_size', 'particles_color', 
-                    'particles_behavior', 'particles_constraints', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
-  ProceduralParticleEffect: [ 'base', 'particles_procedural', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
-  PolyLine: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
-  Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
-  Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+                    'particles_behavior', 'particles_constraints', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  ProceduralParticleEffect: [ 'base', 'particles_procedural', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  PolyLine: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
 };
 
 const EDITOR_TIMEOUT_DURATION = 1500;
@@ -2438,6 +2450,10 @@ function resetProperties() {
                 property.elInput.classList.remove('multi-diff');
                 property.elInput.value = "[]";
                 setZonesSelectionData(property.elInput, false);
+                break;
+            }
+            case 'childList': {
+                setChildListData(property.elInput, undefined, "");
                 break;
             }
             case 'icon': {
@@ -3643,6 +3659,10 @@ function createProperty(propertyData, propertyElementID, propertyName, propertyI
             property.elInput = createZonesSelection(property, elProperty);
             break;            
         }
+        case 'childList': {
+            property.elInput = createChildList(property, elProperty);
+            break;
+        }
         case 'icon': {
             property.elSpan = createIconProperty(property, elProperty);
             break;
@@ -4753,6 +4773,75 @@ function setZonesSelectionData(element, isEditable) {
     displaySelectedZones(element.id, isEditable);
 }
 
+
+/**
+ * CHILD ENTITIES FUNCTIONS
+ */
+ 
+function createChildList(property, elProperty) {
+    let elementID = property.elementID;
+    elProperty.className = "childEntityList";
+
+    let elInput = document.createElement('div');
+    elInput.setAttribute("id", "childList-" + elementID);
+
+    elProperty.appendChild(elInput);
+    return elInput;
+}
+
+function setChildListData(element, children, parentID) {
+    let childListContainer = document.getElementById(element.id);
+    let renderer = "";
+    let i;
+    if (parentID !== "") {
+        renderer += "<span class='viewParent' onClick='navigateToSpecificEntity(" + '"'+ parentID + '"'+ ")'>&#129093; View Parent</span><br>";
+    } else {
+        renderer += "<br>";
+    }
+    renderer += "<table>";
+    renderer += "<tr><th class='childrenTableHeader' width='30%'>TYPE</th><th class='childrenTableHeader' width='65%'>NAME</th><th class='childrenTableHeader' width='5%'>VIEW</th></tr>";
+    if (children === undefined) {
+        renderer += "<tr><td colspan = '3' style='text-align: center;'><i>Not applicable</i></td></tr>";
+    } else {
+        if (children.length > 0) {
+            for (i = 0; i < children.length; i++ ) {
+                let entityHostTypeClass = "";
+                if (children[i].entityHostType !== "domain") {
+                    entityHostTypeClass = " class='" + children[i].entityHostType + "Entity'";
+                }
+                let navigatorBtn = "<span onClick='navigateToSpecificEntity(" + '"'+ children[i].id + '"'+ ")'>&#129094;</span>";
+                renderer += "<tr" + entityHostTypeClass + "><td>" + children[i].type + "</td><td>" + children[i].name + "</td><td>" + navigatorBtn + "</td></tr>";
+            }
+        } else {
+            renderer += "<tr><td colspan = '3' style='text-align: center;'><i>No children</i></td></tr>";
+        }
+    }
+    renderer += "</table>";
+    childListContainer.innerHTML = renderer;
+}
+
+function navigateToSpecificEntityFromParentID() {
+    let parentID = getPropertyInputElement("parentID").value;
+    if (parentID !== "" && parentID !== "{00000000-0000-0000-0000-000000000000}") {
+        navigateToSpecificEntity(parentID);
+    }
+}
+
+function setParentIdNavigationAvailable(selectionLength) {
+    if (selectionLength === 1) {
+        $('#property-parentID-button-navigateToParentEntity').attr('disabled', false);
+    } else {
+        $('#property-parentID-button-navigateToParentEntity').attr('disabled', true);
+    }
+}
+
+function navigateToSpecificEntity(id) {
+    EventBridge.emitWebEvent(JSON.stringify({
+        type: "specificEntityNavigation",
+        id: id
+    }));
+}
+
 /**
  * MATERIAL TARGET FUNCTIONS
  */
@@ -4974,6 +5063,8 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
         setCopyPastePositionAndRotationAvailability (selections.length, true);
 
         disableProperties();
+        
+        setParentIdNavigationAvailable(selections.length);
     } else {
         let entityHostType = selections[0].properties.entityHostType;
         
@@ -5006,6 +5097,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
             disableProperties();
             getPropertyInputElement('locked').removeAttribute('disabled');
             setCopyPastePositionAndRotationAvailability (selections.length, true);
+            setParentIdNavigationAvailable(selections.length);
         } else {
             enableProperties();
             disableSaveUserDataButton();
@@ -5013,6 +5105,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
             disableSaveParticleUpdateDataButton();
             disableSaveParticleRenderDataButton();
             setCopyPastePositionAndRotationAvailability (selections.length, false);
+            setParentIdNavigationAvailable(selections.length);
         }
 
         Object.entries(properties).forEach(function([propertyID, property]) {
@@ -5037,7 +5130,9 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
 
             const isSubProperty = propertyData.subPropertyOf !== undefined;
             if (propertyValue === undefined && !isMultiDiffValue && !isSubProperty) {
-                return;
+                if (propertyData.type !== "childList") {
+                    return;
+                }
             }
 
             if (!shownGroups.includes(property.group_id)) {
@@ -5196,6 +5291,14 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
                     } else {
                         setZonesSelectionData(property.elInput, true);
                     }
+                    break;
+                }
+                case 'childList': {
+                    let parentID = selections[0].properties.parentID;
+                    if (selections.length !== 1 || parentID === "{00000000-0000-0000-0000-000000000000}") {
+                        parentID = "";
+                    }
+                    setChildListData(property.elInput, propertyValue, parentID);
                     break;
                 }
                 case 'icon': {
@@ -5641,6 +5744,9 @@ function loaded() {
         elScript.parentNode.className = "url refresh";
         elServerScripts.parentNode.className = "url refresh";
 
+        let elParentID = getPropertyInputElement("parentID");
+        elParentID.parentNode.className = "url refresh";
+        
         // User Data
         let userDataProperty = properties["userData"];
         let elUserData = userDataProperty.elInput;
