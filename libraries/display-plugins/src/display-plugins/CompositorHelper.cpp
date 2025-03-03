@@ -195,6 +195,10 @@ bool CompositorHelper::shouldCaptureMouse() const {
     if (!isHMD()) {
         return false;
     }
+    
+    if (!_mouseLockComposit) {
+        return false;
+    }
 
 
     if (!isWindowActive()) {
@@ -214,6 +218,10 @@ void CompositorHelper::setAllowMouseCapture(bool capture) {
         _allowMouseCapture = capture;
         emit allowMouseCaptureChanged();
     }
+}
+
+void CompositorHelper::setMouseLockComposit(bool capture) {
+    _mouseLockComposit = capture;
 }
 
 void CompositorHelper::handleLeaveEvent() {
