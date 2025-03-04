@@ -61,7 +61,7 @@ jobs:
               runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
               arch: amd64
               build_type: full
-              qt_source: source
+              qt_source: system
               apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
               image: docker.io/overte/overte-full-build:0.1.6-ubuntu-20.04-amd64
             # Android builds are currently failing
@@ -73,7 +73,7 @@ jobs:
               runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
               arch: aarch64
               build_type: full
-              qt_source: source
+              qt_source: system
               apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
               image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-aarch64
         fail-fast: false
@@ -253,9 +253,16 @@ jobs:
       shell: bash
 
     - name: Configure CMake
+      if: startsWith(matrix.os, 'Windows') == false
       shell: bash
            # This syntax requires CMake 3.23
       run: cmake --preset conan-${BUILD_TYPE,,} $CMAKE_EXTRA
+
+    - name: Configure CMake (Windows)
+      if: startsWith(matrix.os, 'Windows')
+      shell: bash
+           # This syntax requires CMake 3.23
+      run: cmake --preset conan-default $CMAKE_EXTRA
 
     - name: Build Application
       if: matrix.build_type == 'full' || matrix.build_type == 'client'
