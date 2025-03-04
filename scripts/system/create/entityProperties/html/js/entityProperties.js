@@ -478,6 +478,13 @@ const GROUPS = [
                 showPropertyRule: { "ambientLightMode": "enabled" },
             },
             {
+                type: "buttons",
+                buttons: [ { id: "copy", label: "Copy color from Skybox", 
+                             className: "black", onClick: copySkyboxColorToAmbientColor } ],
+                propertyID: "copyColorToAmbient",
+                showPropertyRule: { "ambientLightMode": "enabled" },
+            },
+            {
                 label: "Ambient Intensity",
                 type: "number-draggable",
                 min: -200,
@@ -2259,6 +2266,7 @@ let currentSpaceMode = PROPERTY_SPACE_MODE.LOCAL;
 let zonesList = [];
 let canViewAssetURLs = false;
 let maSelectedId;
+let skyboxColorForCopy;
 
 function createElementFromHTML(htmlString) {
     let elTemplate = document.createElement('template');
@@ -3811,6 +3819,10 @@ function copySkyboxURLToAmbientURL() {
     updateProperty("ambientLight.ambientURL", skyboxURL, false);
 }
 
+function copySkyboxColorToAmbientColor() {
+    updateProperty("ambientLight.ambientColor", skyboxColorForCopy, false);
+}
+
 function copyPositionProperty() {
     EventBridge.emitWebEvent(JSON.stringify({
         type: "action",
@@ -5014,15 +5026,21 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
     selectedEntityIDs = new Set(selections.map(selection => selection.id));
     const multipleSelections = currentSelections.length > 1;
     const hasSelectedEntityChanged = !areSetsEqual(selectedEntityIDs, previouslySelectedEntityIDs);
-
+    
     if (selections.length === 1) {
         if (maSelectedId !== selections[0].id) {
             closeMaterialAssistant();
         }
         maSelectedId = selections[0].id;
+        if (selections[0].properties.type === "Zone") {
+            skyboxColorForCopy = selections[0].properties.skybox.color;
+        } else {
+            skyboxColorForCopy = undefined;
+        }
     } else {
         closeMaterialAssistant();
         maSelectedId = "";
+        skyboxColorForCopy = undefined;
     }
 
     requestZoneList();
