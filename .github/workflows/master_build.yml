@@ -197,9 +197,16 @@ jobs:
       shell: bash
 
     - name: Configure CMake
+      if: startsWith(matrix.os, 'Windows') == false
       shell: bash
            # This syntax requires CMake 3.23
       run: cmake --preset conan-${BUILD_TYPE,,} -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
+
+    - name: Configure CMake (Windows)
+      if: startsWith(matrix.os, 'Windows')
+      shell: bash
+           # This syntax requires CMake 3.23
+      run: cmake --preset conan-default -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
 
     - name: Build application
       working-directory: ${{runner.workspace}}/build
