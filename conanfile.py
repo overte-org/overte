@@ -47,10 +47,10 @@ class Overte(ConanFile):
 
     def requirements(self):
         # self.requires("shaderc/2021.1") # Broken
-        # self.requires("crashpad/cci.20220219") # Broken
         self.requires("artery-font-format/1.0.1")
         self.requires("bullet3/3.25")
         self.requires("cgltf/1.14@overte/stable")
+        self.requires("crashpad/cci.20220219")
         self.requires("discord-rpc/3.4.0@anotherfoxguy/stable")
         self.requires("draco/1.3.5")
         self.requires("etc2comp/cci.20170424")
@@ -67,6 +67,7 @@ class Overte(ConanFile):
         self.requires("openvr/2.2.3@overte/stable")
         self.requires("opus/1.4")
         self.requires("polyvox/0.2.1@overte/stable")
+        self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.30.3")
         self.requires("spirv-cross/cci.20211113")
@@ -87,7 +88,6 @@ class Overte(ConanFile):
             self.requires("qt/5.15.16-2025.01.23@overte/stable", force=True)
             # Upstream NSS is broken, so we use https://github.com/conan-io/conan-center-index/pull/19262/commits/735df499341924901089fd512a8ac56ac83d1e6a
             self.requires("nss/3.107@overte/stable", force=True)
-            self.requires("quazip/1.4")
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")

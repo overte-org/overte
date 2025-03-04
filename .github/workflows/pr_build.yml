@@ -180,6 +180,7 @@ jobs:
         fetch-depth: 1
 
     - name: Cache conan
+      id: conan-cache
       uses: actions/cache@v4
       with:
         key: conan-${{ matrix.os }}-${{ hashFiles('conanfile.py') }}
@@ -251,6 +252,13 @@ jobs:
     - name: Cleanup Conan dependencies
       run: conan cache clean "*" -sbd
       shell: bash
+
+    - name: Save Conan cache
+      if: always() && steps.conan-cache.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ steps.conan-cache.outputs.cache-primary-key }}
+        path: ~/.conan2/
 
     - name: Configure CMake
       if: startsWith(matrix.os, 'Windows') == false
