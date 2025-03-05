@@ -26,8 +26,9 @@ STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
 
     scriptRegisterMetaType<CanvasCommand, canvasCommandToScriptValue, canvasCommandFromScriptValue>(scriptEngine, "CanvasCommand");
     scriptRegisterMetaType<CanvasImage, canvasImageToScriptValue, canvasImageFromScriptValue>(scriptEngine, "CanvasImage");
-    scriptRegisterMetaType<QPainterPath, qPainterPathToScriptValue, qPainterPathFromScriptValue>(scriptEngine, "CanvasPath");
+    scriptRegisterMetaType<QPainterPath, qPainterPathToScriptValue, qPainterPathFromScriptValue>(scriptEngine, "QPainterPath");
     scriptRegisterMetaType<QVector<CanvasCommand>, qVectorCanvasCommandToScriptValue, qVectorCanvasCommandFromScriptValue>(scriptEngine);
+    scriptRegisterMetaType<CanvasPathElement, canvasPathElementToScriptValue, canvasPathElementFromScriptValue>(scriptEngine, "CanvasPathElement");
 }));
 
 const QString CMD_TYPE_PROP_NAME = "type";
@@ -408,6 +409,45 @@ QPainterPath qPainterPathFromScriptValue(const ScriptValue& object) {
     return p;
 }
 
+ScriptValue canvasPathElementToScriptValue(ScriptEngine* engine, const CanvasPathElement& elem) {
+    auto obj = engine->newObject();
+    obj.setProperty("type", elem.type);
+    obj.setProperty("x", elem.x);
+    obj.setProperty("y", elem.y);
+
+    if (elem.type == QPainterPath::CurveToElement) {
+        obj.setProperty("c1x", elem.c1x);
+        obj.setProperty("c1y", elem.c1y);
+        obj.setProperty("c2x", elem.c2x);
+        obj.setProperty("c2y", elem.c2y);
+    }
+
+    return obj;
+}
+
+bool canvasPathElementFromScriptValue(const ScriptValue& obj, CanvasPathElement& elem) {
+    int type = obj.property("type").toInt32();
+
+    elem.type = type;
+    elem.x = obj.property("x").toNumber();
+    elem.y = obj.property("y").toNumber();
+
+    if (type == QPainterPath::CurveToElement) {
+        elem.c1x = obj.property("c1x").toNumber();
+        elem.c1y = obj.property("c1y").toNumber();
+        elem.c2x = obj.property("c2x").toNumber();
+        elem.c2y = obj.property("c2y").toNumber();
+    }
+
+    return true;
+}
+
+CanvasPathElement canvasPathElementFromScriptValue(const ScriptValue& object) {
+    CanvasPathElement e;
+    canvasPathElementFromScriptValue(object, e);
+    return e;
+}
+
 CanvasCommand CanvasCommandInterface::setStrokeWidth(qreal width) const {
     return CanvasCommand::setStrokeWidth(width);
 }
@@ -474,4 +514,50 @@ CanvasCommand CanvasCommandInterface::line(qreal x1, qreal y1, qreal x2, qreal y
 
 CanvasCommand CanvasCommandInterface::imageCopy(const CanvasImage& image, qreal sx, qreal sy, qreal sw, qreal sh, qreal dx, qreal dy, qreal dw, qreal dh) const {
     return CanvasCommand::imageCopy(image, QRectF(sx, sy, sw, sh), QRectF(dx, dy, dw, dh));
+}
+
+CanvasPathElement CanvasCommandInterface::pathMoveTo(qreal x, qreal y) const {
+    return CanvasPathElement(QPainterPath::MoveToElement, x, y);
+}
+
+CanvasPathElement CanvasCommandInterface::pathLineTo(qreal x, qreal y) const {
+    return CanvasPathElement(QPainterPath::LineToElement, x, y);
+}
+
+CanvasPathElement CanvasCommandInterface::pathCubicTo(qreal c1x, qreal c1y, qreal c2x, qreal c2y, qreal x, qreal y) const {
+    return CanvasPathElement(QPainterPath::CurveToElement, x, y, c1x, c1y, c2x, c2y);
+}
+
+CanvasPathElement CanvasCommandInterface::pathQuadTo(qreal cx, qreal cy, qreal endX, qreal endY) const {
+    QPainterPath path;
+    path.quadTo(cx, cy, endX, endY);
+
+    auto elem = CanvasPathElement();
+    elem.type = QPainterPath::CurveToElement;
+    elem.c1x = path.elementAt(0).x;
+    elem.c1y = path.elementAt(0).y;
+    elem.c2x = path.elementAt(1).x;
+    elem.c2y = path.elementAt(2).y;
+    elem.x = path.elementAt(3).x;
+    elem.y = path.elementAt(3).y;
+
+    return elem;
+}
+
+QPainterPath CanvasCommandInterface::pathEllipse(qreal x, qreal y, qreal w, qreal h) const {
+    QPainterPath path;
+    path.addEllipse(x, y, w, h);
+    return path;
+}
+
+QPainterPath CanvasCommandInterface::pathRoundedRect(qreal x, qreal y, qreal w, qreal h, qreal xRadius, qreal yRadius) const {
+    QPainterPath path;
+    path.addRoundedRect(x, y, w, h, xRadius, yRadius);
+    return path;
+}
+
+QPainterPath CanvasCommandInterface::pathRect(qreal x, qreal y, qreal w, qreal h) const {
+    QPainterPath path;
+    path.addRect(x, y, w, h);
+    return path;
 }
