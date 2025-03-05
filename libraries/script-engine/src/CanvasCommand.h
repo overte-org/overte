@@ -33,6 +33,15 @@ struct CanvasImage {
     CanvasImage(QByteArray buffer, int width, int height) : buffer(buffer), width(width), height(height) {}
 };
 
+struct CanvasPathElement {
+    int type;
+    qreal x, y, c1x, c1y, c2x, c2y;
+
+    CanvasPathElement(int type, qreal x, qreal y) : type(type), x(x), y(y), c1x(0), c1y(0), c2x(0), c2y(0) {}
+    CanvasPathElement(int type, qreal x, qreal y, qreal c1x, qreal c1y, qreal c2x, qreal c2y) : type(type), x(x), y(y), c1x(c1x), c1y(c1y), c2x(c2x), c2y(c2y) {}
+    CanvasPathElement() : type(0), x(0), y(0), c1x(0), c1y(0), c2x(0), c2y(0) {}
+};
+
 struct CanvasCommand {
     enum Variant {
         Invalid,
@@ -147,6 +156,15 @@ struct CanvasCommand {
     CanvasImage _image = {};
 };
 
+/*@jsdoc
+ * The <code>CanvasCommand</code> API provides functions for generating high-level drawing
+ * commands for use with a Canvas entity through <code>Entities.canvasPushCommands</code>.
+ *
+ * @namespace CanvasCommand
+ *
+ * @hifi-interface
+ * @hifi-client-entity
+ */
 class CanvasCommandInterface : public QObject, protected Scriptable {
     Q_OBJECT
 
@@ -188,24 +206,176 @@ class CanvasCommandInterface : public QObject, protected Scriptable {
     Q_PROPERTY(int BLEND_DIFFERENCE READ BLEND_DIFFERENCE CONSTANT)
     Q_PROPERTY(int BLEND_EXCLUSION READ BLEND_EXCLUSION CONSTANT)
 
+    Q_PROPERTY(int PATH_TYPE_MOVE READ PATH_TYPE_MOVE CONSTANT)
+    Q_PROPERTY(int PATH_TYPE_LINE READ PATH_TYPE_LINE CONSTANT)
+    Q_PROPERTY(int PATH_TYPE_CUBIC READ PATH_TYPE_CUBIC CONSTANT)
+
 public slots:
+    /*jsdoc
+     * @function CanvasCommand.setStrokeWidth
+     * @param {number} width - Stroke/line thickness
+     * @returns {Object}
+     */
     CanvasCommand setStrokeWidth(qreal width) const;
+
+    /*jsdoc
+     * @function CanvasCommand.setColor
+     * @param {Vec3} color - Fill and stroke color
+     * @returns {Object}
+     */
     CanvasCommand setColor(const glm::u8vec3& color) const;
+
+    /*jsdoc
+     * @function CanvasCommand.setHints
+     * @param {number} hints
+     * @returns {Object}
+     */
     CanvasCommand setHints(int hints) const;
+
+    /*jsdoc
+     * @function CanvasCommand.setBlendMode
+     * @param {number} mode - Blending mode
+     * @returns {Object}
+     */
     CanvasCommand setBlendMode(int mode) const;
+
+    /*jsdoc
+     * @function CanvasCommand.setFont
+     * @param {string} family - Font family name
+     * @param {number} size - Point size
+     * @param {number} weight - 400 for regular, 600 for bold
+     * @param {boolean} italic
+     * @returns {Object}
+     */
     CanvasCommand setFont(const QString& family, int size = 12, int weight = QFont::Normal, bool italic = false) const;
+
+    /*jsdoc
+     * @function CanvasCommand.clearRect
+     * @param {number} x
+     * @param {number} y
+     * @param {number} w
+     * @param {number} h
+     * @returns {Object}
+     */
     CanvasCommand clearRect(int x, int y, int w, int h) const;
+
+    /*jsdoc
+     * @function CanvasCommand.fillPath
+     * @param {CanvasPath} path
+     * @returns {Object}
+     */
     CanvasCommand fillPath(const QPainterPath& path) const;
+
+    /*jsdoc
+     * @function CanvasCommand.fillRect
+     * @param {number} x
+     * @param {number} y
+     * @param {number} w
+     * @param {number} h
+     * @returns {Object}
+     */
     CanvasCommand fillRect(qreal x, qreal y, qreal w, qreal h) const;
+
+    /*jsdoc
+     * @function CanvasCommand.fillEllipse
+     * @param {number} x
+     * @param {number} y
+     * @param {number} w
+     * @param {number} h
+     * @returns {Object}
+     */
     CanvasCommand fillEllipse(qreal x, qreal y, qreal w, qreal h) const;
+
+    /*jsdoc
+     * @function CanvasCommand.fillText
+     * @param {string} text
+     * @param {number} x
+     * @param {number} y
+     * @param {number} w
+     * @param {number} flag
+     * @returns {Object}
+     */
     CanvasCommand fillText(const QString& text, qreal x, qreal y, qreal w = 0, qreal h = 0, int flag = 0) const;
+
+    /*jsdoc
+     * @function CanvasCommand.strokePath
+     * @param {CanvasPath} path
+     * @returns {Object}
+     */
     CanvasCommand strokePath(const QPainterPath& path) const;
+
+    /*jsdoc
+     * @function CanvasCommand.strokeRect
+     * @param {number} x
+     * @param {number} y
+     * @param {number} w
+     * @param {number} h
+     * @returns {Object}
+     */
     CanvasCommand strokeRect(qreal x, qreal y, qreal w, qreal h) const;
+
+    /*jsdoc
+     * @function CanvasCommand.stokeArc
+     * @param {number} x
+     * @param {number} y
+     * @param {number} w
+     * @param {number} h
+     * @param {number} startAngle
+     * @param {number} spanAngle
+     * @returns {Object}
+     */
     CanvasCommand strokeArc(qreal x, qreal y, qreal w, qreal h, qreal startAngle, qreal spanAngle) const;
+
+    /*jsdoc
+     * @function CanvasCommand.strokeEllipse
+     * @param {number} x
+     * @param {number} y
+     * @param {number} w
+     * @param {number} h
+     * @returns {Object}
+     */
     CanvasCommand strokeEllipse(qreal x, qreal y, qreal w, qreal h) const;
+
+    /*jsdoc
+     * @function CanvasCommand.point
+     * @param {number} x
+     * @param {number} y
+     * @returns {Object}
+     */
     CanvasCommand point(qreal x, qreal y) const;
+
+    /*jsdoc
+     * @function CanvasCommand.line
+     * @param {number} x1
+     * @param {number} y1
+     * @param {number} x2
+     * @param {number} y2
+     * @returns {Object}
+     */
     CanvasCommand line(qreal x1, qreal y1, qreal x2, qreal y2) const;
+
+    /*jsdoc
+     * @function CanvasCommand.imageCopy
+     * @param {CanvasImage} image
+     * @param {number} sx
+     * @param {number} sy
+     * @param {number} sw
+     * @param {number} sh
+     * @param {number} dx
+     * @param {number} dy
+     * @param {number} dw
+     * @param {number} dh
+     * @returns {Object}
+     */
     CanvasCommand imageCopy(const CanvasImage& image, qreal sx, qreal sy, qreal sw, qreal sh, qreal dx, qreal dy, qreal dw, qreal dh) const;
+
+    CanvasPathElement pathMoveTo(qreal x, qreal y) const;
+    CanvasPathElement pathLineTo(qreal x, qreal y) const;
+    CanvasPathElement pathCubicTo(qreal c1x, qreal c1y, qreal c2x, qreal c2y, qreal x, qreal y) const;
+    CanvasPathElement pathQuadTo(qreal cx, qreal cy, qreal endX, qreal endY) const;
+    QPainterPath pathEllipse(qreal x, qreal y, qreal w, qreal h) const;
+    QPainterPath pathRoundedRect(qreal x, qreal y, qreal w, qreal h, qreal xRadius, qreal yRadius) const;
+    QPainterPath pathRect(qreal x, qreal y, qreal w, qreal h) const;
 
 private:
     int TEXT_ALIGN_LEFT() const { return Qt::AlignLeft; }
@@ -245,6 +415,10 @@ private:
     int BLEND_SOFTLIGHT() const { return QPainter::CompositionMode_SoftLight; }
     int BLEND_DIFFERENCE() const { return QPainter::CompositionMode_Difference; }
     int BLEND_EXCLUSION() const { return QPainter::CompositionMode_Exclusion; }
+
+    int PATH_TYPE_MOVE() const { return QPainterPath::MoveToElement; }
+    int PATH_TYPE_LINE() const { return QPainterPath::LineToElement; }
+    int PATH_TYPE_CUBIC() const { return QPainterPath::CurveToElement; }
 };
 
 void registerCanvasMetaTypes(ScriptEngine *engine);
@@ -268,6 +442,11 @@ Q_DECLARE_METATYPE(CanvasImage)
 ScriptValue canvasImageToScriptValue(ScriptEngine* engine, const CanvasImage& img);
 bool canvasImageFromScriptValue(const ScriptValue& object, CanvasImage& img);
 CanvasImage canvasImageFromScriptValue(const ScriptValue& object);
+
+Q_DECLARE_METATYPE(CanvasPathElement)
+ScriptValue canvasPathElementToScriptValue(ScriptEngine* engine, const CanvasPathElement& elem);
+bool canvasPathElementFromScriptValue(const ScriptValue& object, CanvasPathElement& elem);
+CanvasPathElement canvasPathElementFromScriptValue(const ScriptValue& object);
 
 #endif // hifi_CanvasCommand_h
 
