@@ -4801,15 +4801,24 @@ function createChildList(property, elProperty) {
     return elInput;
 }
 
-function setChildListData(element, children, parentID) {
+function setChildListData(element, children, parentID, entityHostType = "") {
+    
     let childListContainer = document.getElementById(element.id);
     let renderer = "";
     let i;
+    renderer += "<div id='childEntityActionsContainer'>";
     if (parentID !== "") {
-        renderer += "<span class='viewParent' onClick='navigateToSpecificEntity(" + '"'+ parentID + '"'+ ")'>&#129093; View Parent</span><br>";
+        renderer += "<div id='viewParentContainer'><span class='viewParent' onClick='navigateToSpecificEntity(" + '"'+ parentID + '"'+ ")'>&#129093; View Parent</span></div>";
     } else {
-        renderer += "<br>";
+        renderer += "<div id='viewParentContainer'></div>";
     }
+    if ((entityHostType === "domain" || entityHostType === "avatar") && children !== undefined) {
+        renderer += "<div id='addChildEntityContainer'><span class='viewParent' onClick='openCreateChildEntityAssistant(" + '"' + entityHostType + '"' + ")'>+ Add Child Entity&nbsp;&nbsp;</span></div>";
+    } else {
+        renderer += "<div id='addChildEntityContainer'></div>";
+    }
+    renderer += "</div>";
+    
     renderer += "<table>";
     renderer += "<tr><th class='childrenTableHeader' width='30%'>TYPE</th><th class='childrenTableHeader' width='65%'>NAME</th><th class='childrenTableHeader' width='5%'>VIEW</th></tr>";
     if (children === undefined) {
@@ -4852,6 +4861,177 @@ function navigateToSpecificEntity(id) {
         type: "specificEntityNavigation",
         id: id
     }));
+}
+
+//CREATE CHILD ENTITY FUNCTIONS:
+
+function openCreateChildEntityAssistant(entityHostType) {
+    $('#uiCreateChildEntityAssistant').show();
+    $('#properties-list').hide();
+    generateCreateChildEntityAssistant(entityHostType);
+}
+
+function generateCreateChildEntityAssistant(entityHostType) {
+    let entityType = [
+        {"type": "Model", "name": "Model"},
+        {"type": "Shape", "name": "Shape"},
+        {"type": "Text", "name": "Text"},
+        {"type": "Image", "name": "Image"},
+        {"type": "Web", "name": "Web"},
+        {"type": "ParticleEffect", "name": "Particle"},
+        {"type": "ProceduralParticleEffect", "name": "Proc. Part."},
+        {"type": "Light", "name": "Light"},
+        {"type": "Zone", "name": "Zone"},
+        {"type": "Material", "name": "Material"},
+        {"type": "Sound", "name": "Sound"},
+        {"type": "PolyVox", "name": "Voxel"},
+    ];
+    const TILES_PER_ROW = 4;
+    let renderer = "<div id='typeSelectorCreateChildEntityAssistant' style = 'display: block;'>";
+    let i;
+    let rowCount = 0;
+    for (i = 0; i < entityType.length; i++) {
+        if (rowCount === 0) {
+            renderer += "<div>";
+        }
+        rowCount++;
+        renderer += "<span class='tileCreateChildEntityAssistant-" + entityHostType + "' onclick='selectTypeInChildEntityAssistant(" + '"' +  entityType[i].type + '"' +  ", " + '"' +  entityHostType + '"' + ")'>";
+        renderer += "<font class = 'iconCreateChildEntityAssistant'>" + ENTITY_TYPE_ICON[entityType[i].type] + "</font><br>" + entityType[i].name.toUpperCase() + "</span>";
+        if (rowCount === TILES_PER_ROW) {
+            renderer += "</div>";
+            rowCount = 0;
+        }
+    }
+    if (rowCount !== 0) {
+        renderer += "</div>";
+    }
+    renderer += "</div>";
+    
+    renderer += "<div id='paramaterCreateChildEntityAssistant' style='display: none;'>";
+    renderer += "<div id='nameCreateChildEntityAssistant'></div><br>";
+    renderer += "<font class='addChildEntity-" + entityHostType + "'>URL: </font><input id='urlCreateChildEntityAssistant' type='text'><br><br>";
+    renderer += "<div style='text-align: right;'>";
+    renderer += "<input type='button' class='black' id='cancelBtnCreateChildEntityAssistant' value='Cancel'>&nbsp;&nbsp;";
+    renderer += "<input type='button' class='white' id='createBtnCreateChildEntityAssistant' value='Create'>";
+    renderer += "<div>";
+    renderer += "</div>";
+    
+    document.getElementById("uiCreateChildEntityAssistant-form").innerHTML = renderer;
+}
+
+function selectTypeInChildEntityAssistant(type, entityHostType) {
+    if (type === "Model" || type === "Sound") { //Only if the url is cruxial. We want the less entry as possible for the user.
+        document.getElementById("nameCreateChildEntityAssistant").innerHTML = "<br><br><font class='addChildEntity-" + entityHostType + "'>Create a child '" + type + "' entity<br>";
+        document.getElementById("typeSelectorCreateChildEntityAssistant").style.display = "none";
+        document.getElementById("paramaterCreateChildEntityAssistant").style.display = "block";
+        document.getElementById("createBtnCreateChildEntityAssistant").setAttribute("onclick","createChildEntity('" + type + "', '" + entityHostType + "')");
+        document.getElementById("cancelBtnCreateChildEntityAssistant").setAttribute("onclick","closeCreateChildEntityAssistant()");
+    } else {
+        createChildEntity(type, entityHostType);
+    }
+}
+
+function createChildEntity(type, entityHostType) {
+    let url = document.getElementById("urlCreateChildEntityAssistant").value;
+    let parentID = getPropertyInputElement("id").value;
+    let properties;
+    switch(type) {
+        case "Model":
+            properties = {
+                "type": type,
+                "modelURL": url,
+                "parentID": parentID,
+                "shapeType": "static-mesh",
+                "dynamic": false,
+                "grab": {"grabbable": false},
+                "useOriginalPivot": true
+            };
+            break;
+        case "Shape":
+            properties = {
+                "type": type,
+                "parentID": parentID,
+                "shape": "Cube"
+            };
+            break;
+        case "Text":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Image":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Web":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "ParticleEffect":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "ProceduralParticleEffect":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Light":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Zone":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Material":
+            properties = {
+                "type": type,
+                "materialURL": "materialData",
+                "materialData": JSON.stringify({ "materials": {} }),
+                "parentID": parentID,
+                "priority": 1
+            };
+            break;
+        case "Sound":
+            properties = {
+                "type": type,
+                "soundURL": url,
+                "parentID": parentID
+            };
+            break;
+        case "PolyVox":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+    }
+
+    EventBridge.emitWebEvent(JSON.stringify({
+        "type": "createChildEntity",
+        "properties": properties,
+        "entityHostType": entityHostType
+    }));
+   
+    closeCreateChildEntityAssistant();
+}
+
+function closeCreateChildEntityAssistant() {
+    $('#uiCreateChildEntityAssistant').hide();
+    $('#properties-list').show();
 }
 
 /**
@@ -5093,6 +5273,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
         }
 
         if (hasSelectedEntityChanged) {
+            closeCreateChildEntityAssistant();
             if (!multipleSelections) {
                 resetServerScriptStatus();
             }
@@ -5316,7 +5497,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
                     if (selections.length !== 1 || parentID === "{00000000-0000-0000-0000-000000000000}") {
                         parentID = "";
                     }
-                    setChildListData(property.elInput, propertyValue, parentID);
+                    setChildListData(property.elInput, propertyValue, parentID, entityHostType);
                     break;
                 }
                 case 'icon': {
