@@ -81,7 +81,7 @@ const GROUPS = [
                 label: "Parent",
                 type: "string",
                 propertyID: "parentID",
-                buttons: [ { id: "navigateToParentEntity", label: "1", className: "navigation", onClick: navigateToSpecificEntityFromParentID } ],
+                buttons: [ { id: "navigateToParentEntity", label: "E", className: "navigation", onClick: navigateToSpecificEntityFromParentID } ],
                 onChange: parentIDChanged,
             },
             {
