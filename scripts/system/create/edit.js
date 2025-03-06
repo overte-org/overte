@@ -542,7 +542,7 @@
             localOnly: false
         },
     };
-
+    var fcreateNewEntity;
     var toolBar = (function () {
         var EDIT_SETTING = "io.highfidelity.isEditing"; // for communication with other scripts
         var that = {},
@@ -552,7 +552,7 @@
             dialogWindow = null,
             tablet = null;
 
-        function createNewEntity(requestedProperties) {
+        function createNewEntity(requestedProperties, entityHostType="domain") {
             var dimensions = requestedProperties.dimensions ? requestedProperties.dimensions : DEFAULT_DIMENSIONS;
             var position = createApp.getPositionToCreateEntity();
             var entityID = null;
@@ -632,7 +632,7 @@
                     properties.visible = false;
                 }
 
-                entityID = Entities.addEntity(properties);
+                entityID = Entities.addEntity(properties, entityHostType);
 
                 var dimensionsCheckCallback = function(){
                     // Adjust position of entity per bounding box after it has been created and auto-resized.
@@ -711,7 +711,9 @@
 
             return entityID;
         }
-
+        
+        fcreateNewEntity = createNewEntity;
+        
         function closeExistingDialogWindow() {
             if (dialogWindow) {
                 dialogWindow.close();
@@ -2986,6 +2988,8 @@
                 });
             } else if (data.type === "specificEntityNavigation") {
                 selectionManager.setSelections([data.id], this);
+            } else if (data.type === "createChildEntity") {
+                fcreateNewEntity(data.properties, data.entityHostType);
             }
         };
 
