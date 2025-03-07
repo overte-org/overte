@@ -36,8 +36,6 @@ macro(add_crashpad)
     message(STATUS "Checking crashpad config - enabled.")
     get_property(CRASHPAD_CHECKED GLOBAL PROPERTY CHECKED_FOR_CRASHPAD_ONCE)
     if (NOT CRASHPAD_CHECKED)
-
-      add_dependency_external_projects(crashpad)
       find_package(Crashpad REQUIRED)
 
       set_property(GLOBAL PROPERTY CHECKED_FOR_CRASHPAD_ONCE TRUE)
