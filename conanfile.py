@@ -82,7 +82,6 @@ class Overte(ConanFile):
             self.requires("qt/5.15.2@overte/system", force=True)
             if self.settings.os == "Linux":
                 self.requires("openssl/system@anotherfoxguy/stable", force=True)
-                self.requires("libcurl/8.12.1@overte/experimental", override=True) # Upstream libcurl conflicts with our OpenSSL/system package.
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
