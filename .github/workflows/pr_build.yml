@@ -261,16 +261,15 @@ jobs:
         path: ~/.conan2/
 
     - name: Configure CMake
-      if: startsWith(matrix.os, 'Windows') == false
       shell: bash
-           # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} $CMAKE_EXTRA
-
-    - name: Configure CMake (Windows)
-      if: startsWith(matrix.os, 'Windows')
-      shell: bash
-           # This syntax requires CMake 3.23
-      run: cmake --preset conan-default $CMAKE_EXTRA
+      run: |
+        if [[ "${{ matrix.os }}" =~ "Windows"; then
+          # This syntax requires CMake 3.23
+          cmake --preset conan-default $CMAKE_EXTRA  # Why does Conan not provide the preset we tell it to on Windows?
+        else
+          # This syntax requires CMake 3.23
+          cmake --preset conan-${BUILD_TYPE,,} $CMAKE_EXTRA
+        fi
 
     - name: Build Application
       if: matrix.build_type == 'full' || matrix.build_type == 'client'
