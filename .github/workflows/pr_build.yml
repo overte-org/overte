@@ -184,7 +184,7 @@ jobs:
       id: conan-cache
       uses: actions/cache@v4
       with:
-        key: conan-${{ matrix.os }}-${{ hashFiles('conanfile.py') }}
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
         path: ~/.conan2/
   
     - name: Install dependencies
