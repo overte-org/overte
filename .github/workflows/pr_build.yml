@@ -261,7 +261,7 @@ jobs:
       if: always() && steps.conan-cache.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
-        key: ${{ steps.conan-cache.outputs.cache-primary-key }}
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
         path: ~/.conan2/
 
     - name: Configure CMake
