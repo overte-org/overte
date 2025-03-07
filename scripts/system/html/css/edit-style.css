@@ -458,8 +458,8 @@ input[type=button].glyph, button.hifi-edit-button.glyph {
 }
 
 input[type=button].navigation, button.hifi-edit-button.navigation {
-    font-family: Vircadia-Glyphs;
-    font-size: 16px;
+    font-family: HiFi-Glyphs;
+    font-size: 20px;
     text-transform: none;
     min-width: 32px;
     padding: 0;
