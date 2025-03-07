@@ -61,7 +61,7 @@ jobs:
               runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
               arch: amd64
               build_type: full
-              qt_source: system
+              qt_source: source  # system Qt is too old
               apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
               image: docker.io/overte/overte-full-build:0.1.6-ubuntu-20.04-amd64
             # Android builds are currently failing
