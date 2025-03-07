@@ -53,7 +53,7 @@ jobs:
             #- os: macOS-10.15
             #  build_type: full
             #  qt_source: aqt
-            - os: Ubuntu 20.04
+            - os: Ubuntu 22.04
               # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels
               # self_hosted makes the Hetzner auto-scaler put up the job.
               # type-cx52 is a Hetzner VPS server type. In this case cs52 is a server with 16-cores and 32GB of RAM.
@@ -64,7 +64,7 @@ jobs:
               build_type: full
               qt_source: source  # system Qt is too old
               apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
-              image: docker.io/overte/overte-full-build:0.1.6-ubuntu-20.04-amd64
+              image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-amd64
             # Android builds are currently failing
             #- os: ubuntu-18.04
             #  build_type: android
