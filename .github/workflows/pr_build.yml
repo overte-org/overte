@@ -19,8 +19,9 @@ env:
   VERSION_CODE: ${{ github.event.number }}
   # Sentry Crash Reporting
   # We can't use secrets or actions here, so the actual value has to be hardcoded.
-  CMAKE_BACKTRACE_URL: "https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
-  CMAKE_BACKTRACE_TOKEN: PR_${{ github.event.number }}_${{ github.sha }}
+  # Disabled until we build with Crashpad again.
+  # CMAKE_BACKTRACE_URL: "https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
+  # CMAKE_BACKTRACE_TOKEN: PR_${{ github.event.number }}_${{ github.sha }}
 
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1

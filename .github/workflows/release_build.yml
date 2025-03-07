@@ -23,8 +23,9 @@ env:
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
-  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
-  CMAKE_BACKTRACE_TOKEN: ${{ github.ref_name }}_Windows_${{ github.sha }}
+  # Disabled until we build with Crashpad again.
+  # CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
+  # CMAKE_BACKTRACE_TOKEN: ${{ github.ref_name }}_Windows_${{ github.sha }}
 
   # WIN-specific variables
   PreferredToolArchitecture: X64

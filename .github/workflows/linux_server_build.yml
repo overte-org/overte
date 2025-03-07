@@ -233,14 +233,15 @@ jobs:
 
         echo "BUILD_NUMBER=$GIT_COMMIT_SHORT" >> $GITHUB_ENV
 
-        if [ "${{ github.ref_type }}" == "tag" ]; then
-          export CMAKE_BACKTRACE_URL="${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}"
-          export CMAKE_BACKTRACE_TOKEN="${{ github.ref_name }}_${{ matrix.os }}_${{ github.sha }}"
-        else
-          # We're building a PR, default to the PR endpoint
-          export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
-          export CMAKE_BACKTRACE_TOKEN="server_pr_${{ github.event.number }}_${{ github.sha }}"
-        fi
+        # Disabled until we build with Crashpad again.
+        #~ if [ "${{ github.ref_type }}" == "tag" ]; then
+          #~ export CMAKE_BACKTRACE_URL="${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}"
+          #~ export CMAKE_BACKTRACE_TOKEN="${{ github.ref_name }}_${{ matrix.os }}_${{ github.sha }}"
+        #~ else
+          #~ # We're building a PR, default to the PR endpoint
+          #~ export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
+          #~ export CMAKE_BACKTRACE_TOKEN="server_pr_${{ github.event.number }}_${{ github.sha }}"
+        #~ fi
 
     - name: Configure Build Environment 3
       shell: bash
