@@ -263,7 +263,7 @@ jobs:
     - name: Configure CMake
       shell: bash
       run: |
-        if [[ "${{ matrix.os }}" =~ "Windows"; then
+        if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
           # This syntax requires CMake 3.23
           cmake --preset conan-default $CMAKE_EXTRA  # Why does Conan not provide the preset we tell it to on Windows?
         else
