@@ -46,7 +46,6 @@ class Overte(ConanFile):
         self.folders.generators = os.path.join(self.folders.build, "generators")
 
     def requirements(self):
-        # self.requires("shaderc/2021.1") # Broken
         self.requires("artery-font-format/1.0.1")
         self.requires("bullet3/3.25")
         self.requires("cgltf/1.14@overte/stable")
