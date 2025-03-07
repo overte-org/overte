@@ -183,7 +183,7 @@ jobs:
     - name: Prepare Conan Build Environment
       shell: bash
       run: |
-        conan profile detect
+        conan profile detect -e
         conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
         conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center
         echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
