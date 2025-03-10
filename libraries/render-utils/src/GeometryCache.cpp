@@ -18,6 +18,7 @@
 #include <QtCore/QFileInfo>
 #include <QtNetwork/QNetworkReply>
 
+#include <glm/gtx/transform.hpp>
 #include <shared/Shapes.h>
 #include <shared/PlatformHacks.h>
 
@@ -589,8 +590,7 @@ void GeometryCache::buildShapes() {
     extrudePolygon<64>(_shapes[Cone], _shapeVertices, _shapeIndices, true);
     // Circle renders as flat Cylinder
     extrudePolygon<64>(_shapes[Circle], _shapeVertices, _shapeIndices);
-    // Not implemented yet:
-    //Torus,
+    //Torus is implemented in renderTorus, not with ShapeData, because the inner radius can change
 }
 
 const GeometryCache::ShapeData * GeometryCache::getShapeData(const Shape shape) const {
@@ -695,6 +695,9 @@ void GeometryCache::releaseID(int id) {
 
     _lastRegisteredGridBuffer.remove(id);
     _registeredGridBuffers.remove(id);
+
+    _lastRegisteredTorusBuffer.remove(id);
+    _registeredTorusBuffers.remove(id);
 }
 
 void GeometryCache::initializeShapePipelines() {
@@ -1617,18 +1620,132 @@ void GeometryCache::renderDashedLine(gpu::Batch& batch, const glm::vec3& start, 
     batch.draw(gpu::LINES, details.vertices, 0);
 }
 
+void GeometryCache::renderTorus(gpu::Batch& batch, float innerRadius, gpu::BufferPointer& colorBuffer, int id) {
+    bool registered = (id != UNKNOWN_ID);
+    BatchItemDetails& details = _registeredTorusBuffers[id];
+
+    // if this is a registered, and we have buffers, then check to see if the geometry changed and rebuild if needed
+    if (registered && details.isCreated) {
+        if (_lastRegisteredTorusBuffer[id] != innerRadius) {
+            details.clear();
+            _lastRegisteredTorusBuffer[id] = innerRadius;
+#ifdef WANT_DEBUG
+            qCDebug(renderutils) << "renderTorus()... RELEASING REGISTERED";
+#endif  // def WANT_DEBUG
+        }
+    }
+
+    if (!details.isCreated) {
+        const int NUM_DIVISIONS = 64;
+        const float ANGLE_STEP = 2.0f * ((float)M_PI) / NUM_DIVISIONS;
+        const int FLOATS_PER_VERTEX = 3 + 3 + 2 + 3;  // vertices + normals + tex coords + tangents
+        details.isCreated = true;
+        details.vertices = 6 * (NUM_DIVISIONS + 1) * (NUM_DIVISIONS + 1);
+        details.vertexSize = FLOATS_PER_VERTEX;
+
+        auto verticesBuffer = std::make_shared<gpu::Buffer>();
+        auto indicesBuffer = std::make_shared<gpu::Buffer>();
+        auto streamFormat = std::make_shared<gpu::Stream::Format>();
+        auto stream = std::make_shared<gpu::BufferStream>();
+
+        details.verticesBuffer = verticesBuffer;
+        details.uniformBuffer = indicesBuffer; // we use the uniformBuffer to store the incides
+        details.streamFormat = streamFormat;
+        details.stream = stream;
+
+        details.streamFormat->setAttribute(gpu::Stream::POSITION, 0, POSITION_ELEMENT);
+        details.streamFormat->setAttribute(gpu::Stream::NORMAL, 0, NORMAL_ELEMENT, 3 * sizeof(float));
+        details.streamFormat->setAttribute(gpu::Stream::TEXCOORD0, 0, TEXCOORD0_ELEMENT, 6 * sizeof(float));
+        details.streamFormat->setAttribute(gpu::Stream::TANGENT, 0, TANGENT_ELEMENT, 8 * sizeof(float));
+        details.streamFormat->setAttribute(gpu::Stream::COLOR, gpu::Stream::COLOR, COLOR_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+
+        details.stream->addBuffer(details.verticesBuffer, 0, details.streamFormat->getChannels().at(0)._stride);
+
+        // Build our initial circle.  Keep track of the center point for normal calculations.
+        glm::vec3 center = glm::vec3(0.5f - innerRadius, 0.0f, 0.0f);
+        std::array<glm::vec3, NUM_DIVISIONS + 1> points;
+        for (int i = 0; i <= NUM_DIVISIONS; i++) {
+            // Inner radius only affects X.  Y still needs to be -0.5 -> 0.5.
+            points[i] = center + glm::vec3(innerRadius * glm::cos(i * ANGLE_STEP), 0.5f * glm::sin(i * ANGLE_STEP), 0.0f);
+        }
+        glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::scale(glm::vec3(1.0f, 0.5f / innerRadius, 1.0f))));
+
+        // Build all of our vertex data
+        float* vertexData = new float[details.vertices * FLOATS_PER_VERTEX];
+        float* vertex = vertexData;
+        for (int y = 0; y <= NUM_DIVISIONS; y++) {
+            const float ANGLE = y * ANGLE_STEP;
+            for (int i = 0; i <= NUM_DIVISIONS; i++) {
+                glm::vec3 currentCenter = fabs(center.x) * glm::vec3(glm::cos(ANGLE), 0.0f, glm::sin(ANGLE));
+                // Position
+                glm::vec3 currentPoint = glm::vec3(0.0f, points[i].y, 0.0f) + fabs(points[i].x) * glm::vec3(glm::cos(ANGLE), 0.0f, glm::sin(ANGLE));
+                *(vertex++) = currentPoint.x;
+                *(vertex++) = currentPoint.y;
+                *(vertex++) = currentPoint.z;
+                // Normal
+                glm::vec3 currentNormal = glm::normalize(normalMatrix * glm::normalize(currentPoint - currentCenter));
+                *(vertex++) = currentNormal.x;
+                *(vertex++) = currentNormal.y;
+                *(vertex++) = currentNormal.z;
+                // UV
+                glm::vec2 currentUV = glm::vec2((float)i / NUM_DIVISIONS, (float)y / NUM_DIVISIONS);
+                *(vertex++) = currentUV.x;
+                *(vertex++) = currentUV.y;
+                // Tangent
+                int nextIndex = (i + 1) % (NUM_DIVISIONS + 1) + (i / (NUM_DIVISIONS + 1));
+                glm::vec3 currentTangent = glm::normalize(glm::cross(currentNormal, points[nextIndex] - points[i]));
+                *(vertex++) = currentTangent.x;
+                *(vertex++) = currentTangent.y;
+                *(vertex++) = currentTangent.z;
+            }
+        }
+
+        details.verticesBuffer->append(sizeof(float) * FLOATS_PER_VERTEX * details.vertices, (gpu::Byte*)vertexData);
+        delete[] vertexData;
+
+        // Build our indices
+        for (int y = 0; y < NUM_DIVISIONS; y++) {
+            for (int i = 0; i < NUM_DIVISIONS; i++) {
+                const int baseIndex = i + (NUM_DIVISIONS + 1) * y;
+                details.uniformBuffer->append((uint16_t)baseIndex);
+                details.uniformBuffer->append((uint16_t)(baseIndex + 1));
+                details.uniformBuffer->append((uint16_t)(baseIndex + NUM_DIVISIONS + 1));
+                details.uniformBuffer->append((uint16_t)(baseIndex + 1));
+                details.uniformBuffer->append((uint16_t)(baseIndex + NUM_DIVISIONS + 2));
+                details.uniformBuffer->append((uint16_t)(baseIndex + NUM_DIVISIONS + 1));
+            }
+        }
+
+#ifdef WANT_DEBUG
+        if (registered) {
+            qCDebug(renderutils) << "new registered torus buffer made -- _registeredTorusBuffers:"
+                                 << _registeredTorusBuffers.size();
+        } else {
+            qCDebug(renderutils) << "new torus buffer made -- _registeredTorusBuffers:" << _registeredTorusBuffers.size();
+        }
+#endif
+    }
+
+    // TODO: instanced rendering
+    gpu::BufferView colorView(colorBuffer, COLOR_ELEMENT);
+    batch.setInputBuffer(gpu::Stream::COLOR, colorView);
+    batch.setInputStream(0, *details.stream);
+    batch.setInputFormat(details.streamFormat);
+    batch.setIndexBuffer(gpu::Type::UINT16, details.uniformBuffer, 0);  // indices are stored in uniformBuffer
+    batch.drawIndexed(gpu::TRIANGLES, details.vertices, 0);
+}
 
 int GeometryCache::BatchItemDetails::population = 0;
 
 GeometryCache::BatchItemDetails::BatchItemDetails() :
-verticesBuffer(NULL),
-normalBuffer(NULL),
-colorBuffer(NULL),
-streamFormat(NULL),
-stream(NULL),
-vertices(0),
-vertexSize(0),
-isCreated(false) {
+    verticesBuffer(NULL),
+    normalBuffer(NULL),
+    colorBuffer(NULL),
+    streamFormat(NULL),
+    stream(NULL),
+    vertices(0),
+    vertexSize(0),
+    isCreated(false) {
     population++;
 #ifdef WANT_DEBUG
     qCDebug(renderutils) << "BatchItemDetails()... population:" << population << "**********************************";
@@ -1636,14 +1753,14 @@ isCreated(false) {
 }
 
 GeometryCache::BatchItemDetails::BatchItemDetails(const GeometryCache::BatchItemDetails& other) :
-verticesBuffer(other.verticesBuffer),
-normalBuffer(other.normalBuffer),
-colorBuffer(other.colorBuffer),
-streamFormat(other.streamFormat),
-stream(other.stream),
-vertices(other.vertices),
-vertexSize(other.vertexSize),
-isCreated(other.isCreated) {
+    verticesBuffer(other.verticesBuffer),
+    normalBuffer(other.normalBuffer),
+    colorBuffer(other.colorBuffer),
+    streamFormat(other.streamFormat),
+    stream(other.stream),
+    vertices(other.vertices),
+    vertexSize(other.vertexSize),
+    isCreated(other.isCreated) {
     population++;
 #ifdef WANT_DEBUG
     qCDebug(renderutils) << "BatchItemDetails()... population:" << population << "**********************************";
@@ -1726,8 +1843,6 @@ void GeometryCache::useGridPipeline(gpu::Batch& batch, GridBuffer gridBuffer, bo
     batch.setPipeline(_gridPipelines[{ transparent, forward }]);
     batch.setUniformBuffer(0, gridBuffer);
 }
-
-
 
 class SimpleProgramKey {
 public:

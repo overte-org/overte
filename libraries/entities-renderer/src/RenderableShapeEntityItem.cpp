@@ -12,7 +12,6 @@
 
 #include <gpu/Batch.h>
 #include <DependencyManager.h>
-#include <GeometryCache.h>
 #include <PerfStat.h>
 
 #include "RenderPipelines.h"
@@ -26,6 +25,15 @@ static const float SPHERE_ENTITY_SCALE = 0.5f;
 
 ShapeEntityRenderer::ShapeEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {
     addMaterial(graphics::MaterialLayer(_material, 0), "0");
+}
+
+void ShapeEntityRenderer::onRemoveFromSceneTyped(const TypedEntityPointer& entity) {
+    if (_torusID != GeometryCache::UNKNOWN_ID) {
+        auto geometryCache = DependencyManager::get<GeometryCache>();
+        if (geometryCache) {
+            geometryCache->releaseID(_torusID);
+        }
+    }
 }
 
 bool ShapeEntityRenderer::needsRenderUpdate() const {
@@ -49,6 +57,7 @@ void ShapeEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& sce
 
 void ShapeEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) {
     _pulseProperties = entity->getPulseProperties();
+    _innerRadius = entity->getInnerRadius();
 
     bool materialChanged = false;
     glm::vec3 color = toGlm(entity->getColor());
@@ -130,6 +139,10 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         _shape < EntityShape::Cube || _shape > EntityShape::Icosahedron));
     batch.setModelTransform(transform);
 
+    if (geometryShape == GeometryCache::Shape::Torus && _torusID == GeometryCache::UNKNOWN_ID) {
+        _torusID = geometryCache->allocateID();
+    }
+
     Pipeline pipelineType = getPipelineType(materials);
     if (pipelineType == Pipeline::PROCEDURAL) {
         auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials.top().material);
@@ -141,10 +154,14 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
 
         const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
         _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
-        if (wireframe) {
-            geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
+        if (geometryShape != GeometryCache::Shape::Torus) {
+            if (wireframe) {
+                geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
+            } else {
+                geometryCache->renderShape(batch, geometryShape, _colorBuffer);
+            }
         } else {
-            geometryCache->renderShape(batch, geometryShape, _colorBuffer);
+            geometryCache->renderTorus(batch, 0.25, _colorBuffer, _torusID);
         }
     } else if (pipelineType == Pipeline::SIMPLE) {
         // FIXME, support instanced multi-shape rendering using multidraw indirect
@@ -153,18 +170,28 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         if (outColor.a >= 1.0f) {
             render::ShapePipelinePointer pipeline = geometryCache->getShapePipelinePointer(false, wireframe || materials.top().material->isUnlit(),
                 forward, materials.top().material->getCullFaceMode());
-            if (wireframe) {
-                geometryCache->renderWireShapeInstance(args, batch, geometryShape, outColor, pipeline);
+            if (geometryShape != GeometryCache::Shape::Torus) {
+                if (wireframe) {
+                    geometryCache->renderWireShapeInstance(args, batch, geometryShape, outColor, pipeline);
+                } else {
+                    geometryCache->renderSolidShapeInstance(args, batch, geometryShape, outColor, pipeline);
+                }
             } else {
-                geometryCache->renderSolidShapeInstance(args, batch, geometryShape, outColor, pipeline);
+                const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+                _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*)&compactColor);
+                geometryCache->renderTorus(batch, _innerRadius, _colorBuffer, _torusID);
             }
         } else {
             const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
             _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
-            if (wireframe) {
-                geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
+            if (geometryShape != GeometryCache::Shape::Torus) {
+                if (wireframe) {
+                    geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
+                } else {
+                    geometryCache->renderShape(batch, geometryShape, _colorBuffer);
+                }
             } else {
-                geometryCache->renderShape(batch, geometryShape, _colorBuffer);
+                geometryCache->renderTorus(batch, _innerRadius, _colorBuffer, _torusID);
             }
         }
     } else {
@@ -174,7 +201,11 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
 
         const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
         _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
-        geometryCache->renderShape(batch, geometryShape, _colorBuffer);
+        if (geometryShape != GeometryCache::Shape::Torus) {
+            geometryCache->renderShape(batch, geometryShape, _colorBuffer);
+        } else {
+            geometryCache->renderTorus(batch, _innerRadius, _colorBuffer, _torusID);
+        }
     }
 
     const auto triCount = geometryCache->getShapeTriangleCount(geometryShape);
