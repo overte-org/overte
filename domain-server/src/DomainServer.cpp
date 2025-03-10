@@ -2834,8 +2834,7 @@ std::pair<bool, QString>  DomainServer::isAuthenticatedRequest(HTTPConnection* c
     static const QByteArray HTTP_COOKIE_HEADER_KEY = "Cookie";
     static const QString ADMIN_USERS_CONFIG_KEY = "oauth.admin-users";
     static const QString ADMIN_ROLES_CONFIG_KEY = "oauth.admin-roles";
-    static const QString BASIC_AUTH_USERNAME_KEY_PATH = "security.http_username";
-    static const QString BASIC_AUTH_PASSWORD_KEY_PATH = "security.http_password";
+    static const QString BASIC_AUTH_MULTI_PATH = "security.http_authentication";
     const QString COOKIE_UUID_REGEX_STRING = HIFI_SESSION_COOKIE_KEY + "=([\\d\\w-]+)($|;)";
 
     const QByteArray UNAUTHENTICATED_BODY = "You do not have permission to access this domain-server.";
@@ -2856,7 +2855,7 @@ std::pair<bool, QString>  DomainServer::isAuthenticatedRequest(HTTPConnection* c
             cookieUUID = cookieUUIDRegex.cap(1);
         }
 
-        if (_settingsManager.valueForKeyPath(BASIC_AUTH_USERNAME_KEY_PATH).isValid()) {
+        if (_settingsManager.valueForKeyPath(BASIC_AUTH_MULTI_PATH).isValid()) {
             qDebug() << "Config file contains web admin settings for OAuth and basic HTTP authentication."
                 << "These cannot be combined - using OAuth for authentication.";
         }
@@ -2926,7 +2925,7 @@ std::pair<bool, QString>  DomainServer::isAuthenticatedRequest(HTTPConnection* c
             // we don't know about this user yet, so they are not yet authenticated
             return { false, QString() };
         }
-    } else if (_settingsManager.valueForKeyPath(BASIC_AUTH_USERNAME_KEY_PATH).isValid()) {
+    } else if (_settingsManager.valueForKeyPath(BASIC_AUTH_MULTI_PATH).isValid()) {
         // config file contains username and password combinations for basic auth
         const QByteArray BASIC_AUTH_HEADER_KEY = "Authorization";
 
@@ -2944,9 +2943,34 @@ std::pair<bool, QString>  DomainServer::isAuthenticatedRequest(HTTPConnection* c
                     QString headerUsername = credentialList[0];
                     QString headerPassword = credentialList[1];
 
+                    QString settingsUsername;
+                    QVariant settingsPasswordVariant;
+
                     // we've pulled a username and password - now check if there is a match in our basic auth hash
-                    QString settingsUsername = _settingsManager.valueForKeyPath(BASIC_AUTH_USERNAME_KEY_PATH).toString();
-                    QVariant settingsPasswordVariant = _settingsManager.valueForKeyPath(BASIC_AUTH_PASSWORD_KEY_PATH);
+                    // MUL TODO: Don't allow empty usernames.
+                    // MUL TODO: Don't allow duplicate usernames.
+                    // MUL TODO: Require at least one account at all times?
+                    // MUL TODO: New config version!
+                    // MUL TODO: Allow updating password on new value in password / password verify.
+                    QVariant allAccounts = _settingsManager.valueForKeyPath(BASIC_AUTH_MULTI_PATH);
+                    QList<QVariant> accountList = allAccounts.toList();
+
+                    for (const QVariant &account : accountList) {
+                        // Convert QVariant to QMap
+                        QMap<QString, QVariant> accountMap = account.toMap();
+
+                        // Retrieve the values of the properties
+                        QString httpUsername = accountMap.value("http_username_multi").toString();
+                        QString httpPassword = accountMap.value("http_password_multi").toString();
+
+                        if (httpUsername == headerUsername) {
+                            // Found the username we are looking for
+                            settingsUsername = httpUsername;
+                            settingsPasswordVariant = httpPassword;
+
+                            break;
+                        }
+                    }
 
                     QString settingsPassword = settingsPasswordVariant.isValid() ? settingsPasswordVariant.toString() : "";
                     QString hexHeaderPassword = headerPassword.isEmpty() ?

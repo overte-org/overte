@@ -326,26 +326,42 @@
       "restart": false,
       "settings": [
         {
-          "name": "http_username",
-          "label": "HTTP Username",
-          "help": "Username used for basic HTTP authentication.",
-          "backup": false
-        },
-        {
-          "name": "http_password",
-          "label": "HTTP Password",
-          "type": "password",
-          "help": "Password used for basic HTTP authentication. Leave this alone if you do not want to change it.",
-          "password_placeholder": "******",
-          "value-hidden": true,
-          "backup": false
-        },
-        {
-          "name": "verify_http_password",
-          "label": "Verify HTTP Password",
-          "type": "password",
-          "help": "Must match the password entered above for change to be saved.",
-          "value-hidden": true
+          "name": "http_authentication",
+          "type": "table",
+          "caption": "Authorized Users for HTTP Basic authentication",
+          "help": "These are accounts that are authorized to sign in to the web interface.",
+          "can_add_new_categories": false,
+          "can_add_new_rows": true,
+          "new_category_placeholder": "Add new user",
+          "columns": [
+            {
+              "name": "http_username",
+              "label": "Username",
+              "hidden": false,
+              "backup": false,
+              "readonly": false,
+              "editable": true
+            },
+            {
+              "name": "http_password",
+              "label": "Password",
+              "type": "password",
+              "password_placeholder": "******",
+              "value-hidden": true,
+              "hidden": false,
+              "backup": false,
+              "readonly": false,
+              "editable": true
+            },
+            {
+              "name": "http_password_verify",
+              "label": "Verify Password",
+              "type": "password",
+              "backup": false,
+              "readonly": false,
+              "editable": true
+            }
+          ]
         },
         {
           "name": "approved_safe_urls",
