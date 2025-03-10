@@ -473,6 +473,7 @@ function makeTable(setting, keypath, setting_value) {
 
   var html = "";
 
+  // Apply the "help" block above the table.
   if (setting.help) {
     html += "<span class='help-block'>" + setting.help + "</span>"
   }
@@ -480,11 +481,13 @@ function makeTable(setting, keypath, setting_value) {
   var nonDeletableRowKey = setting["non-deletable-row-key"];
   var nonDeletableRowValues = setting["non-deletable-row-values"];
 
+  // Initialize the table.
   html += "<table class='table table-bordered' " +
                  "data-short-name='" + setting.name + "' name='" + keypath + "' " +
                  "id='" + (!_.isUndefined(setting.html_id) ? setting.html_id : keypath) + "' " +
                  "data-setting-type='" + (isArray ? 'array' : 'hash') + "'>";
 
+  // Add a caption (if provided).
   if (setting.caption) {
     html += "<caption>" + setting.caption + "</caption>"
   }
@@ -508,10 +511,12 @@ function makeTable(setting, keypath, setting_value) {
   // Column names
   html += "<tr class='headers'>"
 
+  // Add a number column (If enabled)
   if (setting.numbered === true) {
     html += "<td class='number'><strong>#</strong></td>" // Row number
   }
 
+  // Add a key column (If enabled)
   if (setting.key) {
     html += "<td class='key'><strong>" + setting.key.label + "</strong></td>" // Key
   }
@@ -584,6 +589,12 @@ function makeTable(setting, keypath, setting_value) {
             "<td class='" + Settings.DATA_COL_CLASS + "'name='" + col.name + "'>" +
               "<input type='checkbox' class='form-control table-checkbox' " +
                      "name='" + colName + "'" + (colValue ? " checked" : "") + "/>" +
+            "</td>";
+        } else if (isArray && col.type === "password" && col.editable) {
+          html +=
+            "<td class='" + Settings.DATA_COL_CLASS + "' " + (col.hidden ? "style='display: none;'" : "") +
+                "name='" + colName + "'>" +
+              "<input class='form-control' type='password' name='" + colName + "' value='"+ (colValue ? colValue : "") + "'/>" +
             "</td>";
         } else if (isArray && col.type === "time" && col.editable) {
           html +=
