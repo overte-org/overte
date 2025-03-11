@@ -80,6 +80,9 @@ $(document).ready(function(){
 
     // Check if we have updated the basic http authentication settings
     if (formJSON["security"] && formJSON["security"]["http_authentication"]) {
+      // Keep a list of usernames while going though all accounts to see if there are any duplicates.
+      let usernameList = [];
+
       for (loginIndex in formJSON["security"]["http_authentication"]) {
         var loginPair = formJSON["security"]["http_authentication"][loginIndex];
 
@@ -90,6 +93,12 @@ $(document).ready(function(){
         if (!username) {
           // Account does not have a user name, don't allow blank username.
           bootbox.alert({ "message": "Account must have a username", "title": "Username Error" });
+          return false;
+        }
+
+        if (usernameList.includes(username)) {
+          // Account already exists with this username, don't allow duplicate usernames.
+          bootbox.alert({ "message": `Account already exists with the username "${username}"`, "title": "Username Error"  });
           return false;
         }
 
@@ -106,6 +115,8 @@ $(document).ready(function(){
           // Hash the new password
           password = sha256_digest(password);
         }
+
+        usernameList.push(username);
 
         // Delete the verification field so we don't try and save it.
         delete formJSON["security"]["http_authentication"][loginIndex]["http_password_verify"];
