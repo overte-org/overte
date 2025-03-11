@@ -83,11 +83,18 @@ $(document).ready(function(){
       for (loginIndex in formJSON["security"]["http_authentication"]) {
         var loginPair = formJSON["security"]["http_authentication"][loginIndex];
 
+        var username = loginPair["http_username"].trim() || null;
         var password = loginPair["http_password"] || null;
         var passwordVerify = loginPair["http_password_verify"] || null;
 
+        if (!username) {
+          // Account does not have a user name, don't allow blank username.
+          bootbox.alert({ "message": "Account must have a username", "title": "Username Error" });
+          return false;
+        }
+
         if (passwordVerify && password !== passwordVerify) {
-          // Tried to change the password, but the password does not match
+          // Tried to change the password, but the password does not match.
           bootbox.alert({ "message": "Passwords must match!", "title": "Password Error" });
           return false;
         }
