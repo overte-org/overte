@@ -311,6 +311,16 @@ $(document).ready(function(){
     }
   });
 
+  $('#' + Settings.FORM_ID).on('change', 'input.table-text', function() {
+    // Bootstrap switches in table: set the changed data attribute for all rows in table.
+    var row = $(this).closest('tr');
+    if (row.hasClass("value-row")) {  // Don't set attribute on input row switches prior to it being added to table.
+      row.find('td.' + Settings.DATA_COL_CLASS + ' input').attr('data-changed', true);
+      updateDataChangedForSiblingRows(row, true);
+      badgeForDifferences($(this));
+    }
+  });
+  
   $('#' + Settings.FORM_ID).on('change', 'select', function(){
     $("input[name='" +  $(this).attr('data-hidden-input') + "']").val($(this).val()).change();
   });
@@ -594,7 +604,7 @@ function makeTable(setting, keypath, setting_value) {
           html +=
             "<td class='" + Settings.DATA_COL_CLASS + "' " + (col.hidden ? "style='display: none;'" : "") +
                 "name='" + colName + "'>" +
-              "<input class='form-control' type='password' name='" + colName + "' value='"+ (colValue ? colValue : "") + "'/>" +
+              "<input class='form-control table-text' type='password' name='" + colName + "' value='"+ (colValue ? colValue : "") + "'/>" +
             "</td>";
         } else if (isArray && col.type === "time" && col.editable) {
           html +=
