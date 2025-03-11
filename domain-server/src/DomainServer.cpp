@@ -2947,11 +2947,6 @@ std::pair<bool, QString>  DomainServer::isAuthenticatedRequest(HTTPConnection* c
                     QVariant settingsPasswordVariant;
 
                     // we've pulled a username and password - now check if there is a match in our basic auth hash
-                    // MUL TODO: Don't allow empty usernames.
-                    // MUL TODO: Don't allow duplicate usernames.
-                    // MUL TODO: Require at least one account at all times?
-                    // MUL TODO: New config version!
-                    // MUL TODO: Allow updating password on new value in password / password verify.
                     QVariant allAccounts = _settingsManager.valueForKeyPath(BASIC_AUTH_MULTI_PATH);
                     QList<QVariant> accountList = allAccounts.toList();
 
