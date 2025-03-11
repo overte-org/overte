@@ -2955,8 +2955,8 @@ std::pair<bool, QString>  DomainServer::isAuthenticatedRequest(HTTPConnection* c
                         QMap<QString, QVariant> accountMap = account.toMap();
 
                         // Retrieve the values of the properties
-                        QString httpUsername = accountMap.value("http_username_multi").toString();
-                        QString httpPassword = accountMap.value("http_password_multi").toString();
+                        QString httpUsername = accountMap.value("http_username").toString();
+                        QString httpPassword = accountMap.value("http_password").toString();
 
                         if (httpUsername == headerUsername) {
                             // Found the username we are looking for
