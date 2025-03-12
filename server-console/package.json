@@ -8,8 +8,8 @@
     ""
   ],
   "devDependencies": {
-    "electron": "^3.0.0",
-    "electron-packager": "^12.1.2"
+    "@electron/packager": "^18.3.6",
+    "electron": "^35.0.1"
   },
   "repository": {
     "type": "git",
@@ -17,19 +17,19 @@
   },
   "main": "src/main.js",
   "scripts": {
-    "start": "electron . --binary-type local-debug --debug",
-    "local-release": "electron . --binary-type local-release --debug",
+    "start": "electron . --binary-type local-debug --inspect",
+    "local-release": "electron . --binary-type local-release --inspect",
     "local-release-no-debug": "electron . --binary-type local-release",
     "packager": "node packager.js"
   },
   "dependencies": {
     "always-tail": "^0.2.0",
-    "cheerio": "^0.22.0",
+    "cheerio": "^1.0.0",
     "debug": "^4.0.1",
     "electron-log": "1.1.1",
     "extend": "^3.0.0",
     "fs-extra": "^6.0.0",
-    "node-notifier": "^5.2.1",
+    "node-notifier": "^10.0.1",
     "os-homedir": "^1.0.1",
     "request": "^2.88.0",
     "request-progress": "1.0.2",
