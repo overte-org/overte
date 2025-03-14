@@ -3,6 +3,7 @@
 //
 //  Created by Alezia Kurdis on 27 Feb 2020
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -72,6 +73,6 @@ td.tabsPropertiesFrame {
 }
 
 div.tabsPropertiesPage {
-    min-height: 352px;
+    min-height: 400px;
     display: block;
 }
