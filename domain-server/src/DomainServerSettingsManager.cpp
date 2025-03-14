@@ -989,14 +989,16 @@ void DomainServerSettingsManager::processNodeKickRequestPacket(QSharedPointer<Re
                 }
 
                 if (banByIP) {
-                    // TODO(IPv6):
-                    auto& kickAddress = matchingNode->getActiveSocket()
-                                            ? (!matchingNode->getActiveSocket()->getAddressIPv6().isNull()
+                    // TODO(IPv6): Testing
+                    auto& activeSocket = !matchingNode->getActiveSocket()->getAddressIPv6().isNull()
                                                    ? matchingNode->getActiveSocket()->getAddressIPv6()
-                                                   : matchingNode->getActiveSocket()->getAddressIPv4())
-                                            : (!matchingNode->getPublicSocket().getAddressIPv6().isNull()
+                                                   : matchingNode->getActiveSocket()->getAddressIPv4();
+
+                    auto& publicSocket = !matchingNode->getPublicSocket().getAddressIPv6().isNull()
                                                    ? matchingNode->getPublicSocket().getAddressIPv6()
-                                                   : matchingNode->getPublicSocket().getAddressIPv4());
+                                                   : matchingNode->getPublicSocket().getAddressIPv4();
+
+                    auto& kickAddress = matchingNode->getActiveSocket() ? activeSocket : publicSocket;
 
                     // probably isLoopback covers it, as whenever I try to ban an agent on same machine as the domain-server
                     // it is always 127.0.0.1, but looking at the public and local addresses just to be sure

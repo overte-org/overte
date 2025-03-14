@@ -83,10 +83,10 @@ void DiscoverabilityManager::updateLocation() {
             // in case the place/domain isn't in the database, we send the network address and port
             auto& domainSockAddr = domainHandler.getSockAddr();
             const QString NETWORK_ADDRESS_KEY_IN_LOCATION = "network_address";
-            // TODO(IPv6):
-            QHostAddress IPv4 = domainSockAddr.getAddressIPv4();
-            QHostAddress IPv6 = domainSockAddr.getAddressIPv6();
-            QHostAddress address = !IPv6.isNull() ? IPv6 : IPv4;
+            // TODO(IPv6): Both needs to be transmitted for LOCATION
+            QHostAddress ipv4 = domainSockAddr.getAddressIPv4();
+            QHostAddress ipv6 = domainSockAddr.getAddressIPv6();
+            QHostAddress address = !ipv6.isNull() ? ipv6 : ipv4;
             locationObject.insert(NETWORK_ADDRESS_KEY_IN_LOCATION, address.toString());
 
             const QString NETWORK_ADDRESS_PORT_IN_LOCATION = "network_port";

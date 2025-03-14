@@ -1116,7 +1116,7 @@ void LimitedNodeList::processSTUNResponse(std::unique_ptr<udt::BasePacket> packe
 
         // TODO(IPv6): How does STUN handle IPv6?
         if (newPublicAddress != _publicSockAddr.getAddressIPv4() || newPublicPort != _publicSockAddr.getPort() ||
-            newPublicAddress != _publicSockAddr.getAddressIPv6()) {
+            newPublicAddress != _publicSockAddr.getAddressIPv6() || newPublicPort != _publicSockAddr.getPort()) {
             qCDebug(networking, "New public socket received from STUN server is %s:%hu (was %s:%hu)",
                     newPublicAddress.toString().toStdString().c_str(), newPublicPort,
                     // TODO(IPv6):
@@ -1214,15 +1214,15 @@ void LimitedNodeList::stopInitialSTUNUpdate(bool success) {
                 STUN_SERVER_HOSTNAME, STUN_SERVER_PORT);
         qCDebug(networking) << "LimitedNodeList public socket will be set with local port and null QHostAddress.";
 
-        // reset the public address and port to a null address
-        _publicSockAddr = SockAddr(SocketType::UDP, QHostAddress(), QHostAddress(), _nodeSocket.localPort(SocketType::UDP));
+        // reset the public address and port to a null address (maybe this is a poblem)???
+        _publicSockAddr = SockAddr(SocketType::UDP, getGuessedLocalAddress(QAbstractSocket::IPv4Protocol), getGuessedLocalAddress(QAbstractSocket::IPv6Protocol), _nodeSocket.localPort(SocketType::UDP));
 
         // we have changed the publicSockAddr, so emit our signal
         emit publicSockAddrChanged(_publicSockAddr);
 
         flagTimeForConnectionStep(ConnectionStep::SetPublicSocketFromSTUN);
     }
-
+a
     // stop our initial fast timer
     if (_initialSTUNTimer) {
         _initialSTUNTimer->stop();

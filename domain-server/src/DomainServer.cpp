@@ -1494,21 +1494,27 @@ void DomainServer::broadcastNewNode(const SharedNodePointer& addedNode) {
 }
 
 void DomainServer::processRequestAssignmentPacket(QSharedPointer<ReceivedMessage> message) {
+
+
     // construct the requested assignment from the packet data
     Assignment requestAssignment(*message);
 
-    // TODO(IPv6):
-    auto senderAddressIPv4 = message->getSenderSockAddr().getAddressIPv4();
-    auto senderAddressIPv6 = message->getSenderSockAddr().getAddressIPv6();
-    auto senderAddr = !senderAddressIPv6.isNull() ? senderAddressIPv6 : senderAddressIPv4;
+    // TODO(IPv6): Testing
+    auto senderAddr = message->getSenderSockAddr().getAddressIPv6();
+
+    if (senderAddr.isNull()) {
+        senderAddr = message->getSenderSockAddr().getAddressIPv4();
+        HIFI_FDEBUG("IPv6 is null IP set too: " << senderAddr.toString());
+    }
 
     //auto senderAddr = message->getSenderSockAddr().getAddressIPv4();
 
     auto isHostAddressInSubnet = [&senderAddr](const Subnet& mask) -> bool {
-        //TODO: Fix it when ready (temp fix).
+        //TODO(IPv6): Added Temp fix to aid with IPv4 -> IPv6 localhost notation
         if (senderAddr.toString() == "::ffff:127.0.0.1") {
             return true;
         }
+
         return senderAddr.isInSubnet(mask);
     };
 
@@ -1729,9 +1735,7 @@ void DomainServer::sendICEServerAddressToMetaverseAPI() {
     QJsonObject domainObject;
 
     if (!_connectedToICEServer || _iceServerSocket.isNull()) {
-        
         domainObject[ICE_SERVER_ADDRESS] = "0.0.0.0";
-        
     } else {
         // we're using full automatic networking and we have a current ice-server socket, use that now
         auto iceServerAddressIPv4 = _iceServerSocket.getAddressIPv4();
@@ -1741,7 +1745,6 @@ void DomainServer::sendICEServerAddressToMetaverseAPI() {
 
         domainObject[ICE_SERVER_ADDRESS] = iceServerAddress;
     }
-
 
     const auto& temporaryDomainKey = DependencyManager::get<AccountManager>()->getTemporaryDomainKey(getID());
     if (!temporaryDomainKey.isEmpty()) {
@@ -1820,7 +1823,7 @@ void DomainServer::sendHeartbeatToIceServer() {
             return;
         }
 
-        const int FAILOVER_NO_REPLY_ICE_HEARTBEATS{ 6 };
+        const int FAILOVER_NO_REPLY_ICE_HEARTBEATS { 6 };
 
         // Increase the count of no reply ICE heartbeats and check the current value
         ++_noReplyICEHeartbeats;
@@ -1833,6 +1836,7 @@ void DomainServer::sendHeartbeatToIceServer() {
             // Add the current address to our list of failed addresses
             QHostAddress iceServerAddress = !_iceServerSocket.getAddressIPv6().isNull() ? _iceServerSocket.getAddressIPv6()
                                                                                         : _iceServerSocket.getAddressIPv4();
+            //TODO(IPv6): Testing
             _failedIceServerAddresses << iceServerAddress;
 
             // If we've failed to hear back for three heartbeats, we clear the current ice-server socket and attempt to randomize a new one
@@ -1866,8 +1870,9 @@ void DomainServer::sendHeartbeatToIceServer() {
             SockAddr publicSocket, localSocket;
             heartbeatStream >> senderUUID >> publicSocket >> localSocket;
 
-            if (senderUUID != limitedNodeList->getSessionUUID() || publicSocket != limitedNodeList->getPublicSockAddr() ||
-                localSocket != limitedNodeList->getLocalSockAddr()) {
+            if (senderUUID != limitedNodeList->getSessionUUID()
+                || publicSocket != limitedNodeList->getPublicSockAddr()
+                || localSocket != limitedNodeList->getLocalSockAddr()) {
                 shouldRecreatePacket = true;
             }
         } else {
@@ -1886,8 +1891,7 @@ void DomainServer::sendHeartbeatToIceServer() {
                                 << limitedNodeList->getLocalSockAddr();
 
             // Setup a QByteArray that points to the plaintext data
-            auto plaintext =
-                QByteArray::fromRawData(_iceServerHeartbeatPacket->getPayload(), _iceServerHeartbeatPacket->getPayloadSize());
+            auto plaintext = QByteArray::fromRawData(_iceServerHeartbeatPacket->getPayload(), _iceServerHeartbeatPacket->getPayloadSize());
 
             // Generate a signature for the plaintext data in the packet
             auto signature = accountManager->getAccountInfo().signPlaintext(plaintext);

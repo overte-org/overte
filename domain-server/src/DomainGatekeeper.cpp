@@ -367,6 +367,7 @@ void DomainGatekeeper::updateNodePermissions() {
 
             DomainServerNodeData* nodeData = static_cast<DomainServerNodeData*>(node->getLinkedData());
             if (nodeData) {
+                //TODO(IPv6) : Testing
                 auto sendingAddressIPv4 = nodeData->getSendingSockAddr().getAddressIPv4();
                 auto sendingAddressIPv6 = nodeData->getSendingSockAddr().getAddressIPv6();
                 hardwareAddress = nodeData->getHardwareAddress();
@@ -374,7 +375,6 @@ void DomainGatekeeper::updateNodePermissions() {
 
                 // Get both IPv4 and IPv6 addresses
                 auto nodeList = limitedNodeListWeak.lock();
-                bool isLocalUser = false;
 
                 if (nodeList) {
                     auto localSockAddr = nodeList->getLocalSockAddr();
@@ -385,12 +385,14 @@ void DomainGatekeeper::updateNodePermissions() {
                     isLocalUser =
                         (sendingAddressIPv4 == localSockAddrIPv4 || sendingAddressIPv6 == localSockAddrIPv6 ||
                          sendingAddressIPv4 == QHostAddress::LocalHost || sendingAddressIPv6 == QHostAddress::LocalHostIPv6);
+                } else {
+                    isLocalUser =
+                        (sendingAddressIPv4 == QHostAddress::LocalHost || sendingAddressIPv6 == QHostAddress::LocalHostIPv6);
                 }
 
             }
 
-
-            // TODO(IPv6):
+            // TODO(IPv6): Testing
             QHostAddress connectingAddrIPv4 = connectingAddr.getAddressIPv4();
             QHostAddress connectingAddrIPv6 = connectingAddr.getAddressIPv6();
             QHostAddress chosenAddress;
