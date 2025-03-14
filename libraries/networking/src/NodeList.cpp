@@ -357,16 +357,17 @@ void NodeList::sendDomainServerCheckIn() {
     }
 
     auto publicSockAddr = _publicSockAddr;
-    auto domainHandlerIp = _domainHandler.getIP();
+    auto domainHandlerIPv4 = _domainHandler.getIPv4();
+    auto domainHandlerIPv6 = _domainHandler.getIPv6();
 
     if (publicSockAddr.isNull()) {
         // we don't know our public socket and we need to send it to the domain server
         qCDebug(networking_ice) << "Waiting for initial public socket from STUN. Will not send domain-server check in.";
-    } else if (domainHandlerIp.isNull() && _domainHandler.requiresICE()) {
+    } else if (domainHandlerIPv4.isNull() && domainHandlerIPv6.isNull() && _domainHandler.requiresICE()) {
         qCDebug(networking_ice) << "Waiting for ICE discovered domain-server socket. Will not send domain-server check in.";
         handleICEConnectionToDomainServer();
         // let the domain handler know we are due to send a checkin packet
-    } else if (!domainHandlerIp.isNull() && !_domainHandler.checkInPacketTimeout()) {
+    } else if ((!domainHandlerIPv4.isNull() || !domainHandlerIPv6.isNull()) && !_domainHandler.checkInPacketTimeout()) {
         bool domainIsConnected = _domainHandler.isConnected();
         SockAddr domainSockAddr = _domainHandler.getSockAddr();
         PacketType domainPacketType = !domainIsConnected
@@ -380,7 +381,10 @@ void NodeList::sendDomainServerCheckIn() {
             // is this our localhost domain-server?
             // if so we need to make sure we have an up-to-date local port in case it restarted
 
-            if ((domainSockAddr.getAddress() == QHostAddress::LocalHost || hostname == "localhost")
+            if ((domainSockAddr.getAddressIPv4() == QHostAddress::LocalHost
+                 ||
+                 domainSockAddr.getAddressIPv6() == QHostAddress::LocalHostIPv6
+                 || hostname == "localhost")
                 && _domainPortAutoDiscovery) {
 
                 quint16 domainPort = DEFAULT_DOMAIN_SERVER_PORT;
@@ -440,7 +444,8 @@ void NodeList::sendDomainServerCheckIn() {
             QString hardwareAddress;
             for (auto networkInterface : QNetworkInterface::allInterfaces()) {
                 for (auto interfaceAddress : networkInterface.addressEntries()) {
-                    if (interfaceAddress.ip() == localSockAddr.getAddress()) {
+                    if (interfaceAddress.ip() == localSockAddr.getAddressIPv4()
+                        || interfaceAddress.ip() == localSockAddr.getAddressIPv6()) {
                         // this is the interface whose local IP matches what we've detected the current IP to be
                         hardwareAddress = networkInterface.hardwareAddress();
 
@@ -672,7 +677,7 @@ void NodeList::handleICEConnectionToDomainServer() {
 
 void NodeList::pingPunchForDomainServer() {
     // make sure if we're here that we actually still need to ping the domain-server
-    if (_domainHandler.getIP().isNull() && _domainHandler.getICEPeer().hasSockets()) {
+    if ((_domainHandler.getIPv4().isNull() || _domainHandler.getIPv6().isNull()) && _domainHandler.getICEPeer().hasSockets()) {
 
         // check if we've hit the number of pings we'll send to the DS before we consider it a fail
         const int NUM_DOMAIN_SERVER_PINGS_BEFORE_RESET = 2000 / UDP_PUNCH_PING_INTERVAL_MS;
@@ -902,8 +907,11 @@ void NodeList::parseNodeFromPacketStream(QDataStream& packetStream) {
 
     // if the public socket address is 0 then it's reachable at the same IP
     // as the domain server
-    if (info.publicSocket.getAddress().isNull()) {
-        info.publicSocket.setAddress(_domainHandler.getIP());
+    if (info.publicSocket.getAddressIPv4().isNull()) {
+        info.publicSocket.setAddress(_domainHandler.getIPv4());
+    }
+    if (info.publicSocket.getAddressIPv6().isNull()) {
+        info.publicSocket.setAddress(_domainHandler.getIPv6());
     }
 
     addNewNode(info);

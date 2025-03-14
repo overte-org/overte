@@ -284,7 +284,7 @@ void OctreeServer::initHTTPManager(int port) {
     QString documentRoot = QString("%1/web").arg(PathUtils::getAppDataPath());
 
     // setup an httpManager with us as the request handler and the parent
-    _httpManager.reset(new HTTPManager(QHostAddress::AnyIPv4, port, documentRoot, this));
+    _httpManager.reset(new HTTPManager(QHostAddress::Any, port, documentRoot, this));
 }
 
 bool OctreeServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url, bool skipSubHandler) {
@@ -1030,8 +1030,21 @@ void OctreeServer::readConfiguration() {
     _settings = settingsSectionObject; // keep this for later
 
     if (!readOptionString(QString("statusHost"), settingsSectionObject, _statusHost) || _statusHost.isEmpty()) {
-        _statusHost = getGuessedLocalAddress().toString();
+        // TODO(IPv6): Testing
+        QHostAddress guessedAddress = getGuessedLocalAddress(QAbstractSocket::IPv6Protocol);
+
+        if (guessedAddress.isNull()) {
+            guessedAddress = getGuessedLocalAddress(QAbstractSocket::IPv4Protocol);
+        }
+
+        _statusHost = guessedAddress.toString();
     }
+
+    
+ //   if (!readOptionString(QString("statusHost"), settingsSectionObject, _statusHost) || _statusHost.isEmpty()) {
+ //
+ //       _statusHost = getGuessedLocalAddress(QAbstractSocket::IPv4Protocol).toString();
+ //   }
     qDebug("statusHost=%s", qPrintable(_statusHost));
 
     if (readOptionInt(QString("statusPort"), settingsSectionObject, _statusPort)) {
