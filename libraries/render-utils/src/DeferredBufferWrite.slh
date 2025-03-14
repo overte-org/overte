@@ -72,22 +72,18 @@ void packDeferredFragmentTranslucent(vec4 prevPositionCS, vec3 normal, float alp
     if (alpha <= 0.0) {
         discard;
     }
+    // There's only one attachment here, and _albedoMetallic is actually _lighting,
+    // since transparencies are drawn using forward rendering, not deferred.
     _albedoMetallic = vec4(albedo.rgb, alpha);
-    //_normalRoughness = vec4(packNormal(normal), clamp(roughness, 0.0, 1.0));
-    //_scatteringEmissiveOcclusion = vec4(vec3(0.0), 1.0);
-    //_velocity = vec4(packVelocity(prevPositionCS), 0.0, 0.0);
-    //_lighting = vec4(0.0);
 }
 
 void packDeferredFragmentTranslucentUnlit(vec4 prevPositionCS, vec3 normal, float alpha, vec3 color) {
     if (alpha <= 0.0) {
         discard;
     }
+    // There's only one attachment here, and _albedoMetallic is actually _lighting,
+    // since transparencies are drawn using forward rendering, not deferred.
     _albedoMetallic = vec4(color, alpha);
-    //_normalRoughness = vec4(packNormal(normal), 1.0);
-    //_scatteringEmissiveOcclusion = vec4(vec3(0.0), 1.0);
-    //_velocity = vec4(packVelocity(prevPositionCS), 0.0, 0.0);
-    //_lighting = vec4(color, 1.0);
 }
 
 <@endif@>
