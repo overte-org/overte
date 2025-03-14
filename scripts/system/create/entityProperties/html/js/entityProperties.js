@@ -1716,22 +1716,6 @@ const GROUPS = [
                 type: "number-draggable",
                 propertyID: "height",
             },
-            {
-                label: "Background color",
-                type: "color",
-                propertyID: "bgColor",
-                propertyName: "bgColor", // actual entity property name
-            },
-            {
-                label: "Background alpha",
-                type: "number-draggable",
-                min: 0,
-                max: 1,
-                step: 0.01,
-                decimals: 2,
-                propertyID: "bgAlpha",
-                propertyName: "bgAlpha",
-            },
         ]
     },
     {
@@ -2230,6 +2214,7 @@ const GROUPS_PER_TYPE = {
   PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  Canvas: [ 'base', 'canvas', 'spatial', 'behavior', 'scripts', 'children' ],
   Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
 };
 
