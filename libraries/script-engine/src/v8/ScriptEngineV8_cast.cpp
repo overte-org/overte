@@ -525,9 +525,9 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                 }
                 // check if it's a pointer to QVariant
                 {
-                    QVariant var = *ScriptVariantV8Proxy::unwrapQVariantPointer(_v8Isolate, v8Val.constGet());
-                    if (var.isValid()) {
-                        dest = var;
+                    QVariant *varPtr = ScriptVariantV8Proxy::unwrapQVariantPointer(_v8Isolate, v8Val.constGet());
+                    if (varPtr && varPtr->isValid()) {
+                        dest = *varPtr;
                         break;
                     }
                 }

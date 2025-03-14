@@ -31,6 +31,7 @@
 #include "RenderableLightEntityItem.h"
 #include "RenderableZoneEntityItem.h"
 #include "RenderableMaterialEntityItem.h"
+#include "RenderableCanvasEntityItem.h"
 
 #include "RenderPipelines.h"
 
@@ -431,6 +432,10 @@ EntityRenderer::Pointer EntityRenderer::addToScene(EntityTreeRenderer& renderer,
 
         case Type::Material:
             result = make_renderer<MaterialEntityRenderer>(entity);
+            break;
+
+        case Type::Canvas:
+            result = make_renderer<CanvasEntityRenderer>(entity);
             break;
 
         default:
