@@ -44,7 +44,7 @@ protected:
 
 class RenderTransparentDeferred {
 public:
-    using Inputs = render::VaryingSet7<render::ItemBounds, HazeStage::FramePointer, LightStage::FramePointer, LightingModelPointer, LightClustersPointer, LightStage::ShadowFramePointer, DeferredFrameTransformPointer>;
+    using Inputs = render::VaryingSet8<render::ItemBounds, HazeStage::FramePointer, LightStage::FramePointer, LightingModelPointer, LightClustersPointer, LightStage::ShadowFramePointer, DeferredFrameTransformPointer, DeferredFramebufferPointer>;
     using Config = RenderTransparentDeferredConfig;
     using JobModel = render::Job::ModelI<RenderTransparentDeferred, Inputs, Config>;
 
