@@ -22,7 +22,7 @@ const ENTITY_TYPE_ICON = {
     Shape: "n",
     Sphere: "n",
     Sound: "G",
-    Canvas: "&#xe00b;",
+    Canvas: "&#xe03b;",
     Script: "&#xe03C",
     Text: "l",
     Web: "q",

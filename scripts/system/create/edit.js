@@ -553,10 +553,8 @@
             localOnly: false
         },
         Canvas: {
-            width: 300,
-            height: 150,
-            bgColor: { red: 255, green: 255, blue: 255 },
-            bgAlpha: 1,
+            width: 128,
+            height: 128,
         },
         Script: {
             enabled: true
