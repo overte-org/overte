@@ -96,10 +96,13 @@ void RenderDeferredTask::configure(const Config& config) {
 
 void RenderDeferredTask::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, uint transformOffset, size_t depth) {
     // Prepare the ShapePipelines
-    ShapePlumberPointer shapePlumberDeferred = std::make_shared<ShapePlumber>();
-    initDeferredPipelines(*shapePlumberDeferred, FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter());
-    ShapePlumberPointer shapePlumberForward = std::make_shared<ShapePlumber>();
-    initForwardPipelines(*shapePlumberForward);
+    static ShapePlumberPointer shapePlumberDeferred = std::make_shared<ShapePlumber>();
+    static ShapePlumberPointer shapePlumberForward = std::make_shared<ShapePlumber>();
+    static std::once_flag once;
+    std::call_once(once, [] {
+        initDeferredPipelines(*shapePlumberDeferred, FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter());
+        initForwardPipelines(*shapePlumberForward);
+    });
 
     uint backgroundViewTransformSlot = render::RenderEngine::TS_BACKGROUND_VIEW + transformOffset;
     uint mainViewTransformSlot = render::RenderEngine::TS_MAIN_VIEW + transformOffset;
