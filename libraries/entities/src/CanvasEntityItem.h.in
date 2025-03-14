@@ -38,6 +38,8 @@ public:
 protected:
 @Canvas_ENTITY_PROPS@
 
+    int expectedSize() const;
+    void updateBufferSize();
     void paintCommands(const QVector<CanvasCommand>& queue);
 
     QByteArray _imageData;
