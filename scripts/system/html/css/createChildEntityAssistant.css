@@ -1,0 +1,168 @@
+/*
+//  createChildEntityAssistant.css
+//
+//  Created by Alezia Kurdis on March 3rd, 2025.
+//  Copyright 2025 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+*/
+
+#uiCreateChildEntityAssistant {
+    position: fixed;
+    display: none;
+    width: 100%;
+    top: 0px;
+    left: 0px;
+    right: 0px;
+    bottom: 0px;
+    border: 0px;
+    padding: 0px;
+    background-color: #404040;
+    z-index: 2;
+    border-collapse: collapse;
+}
+
+#uiCreateChildEntityAssistant-scrollable {
+    border-collapse: collapse;
+    overflow-y: scroll;
+    height: 100%;
+}
+
+#uiCreateChildEntityAssistant-headerContainer {
+    width: 98%;
+    text-align: right;
+    padding: 6px;
+    display: flex;
+}
+
+#uiCreateChildEntityAssistant-closeButton {
+    font-family: Raleway-Bold;
+    font-size: 18px;
+    text-align: center;
+    border: 0px;
+    padding: 6px;
+    color: #FFFFFF;
+}
+
+font.uiCreateChildEntityAssistant-Explain{
+    background-color: #2E2E2E;
+    font-family: Raleway-Regular;
+    text-decoration: Italic;
+    font-size: 10px;
+    color: #8ad5ff;
+}
+
+font.uiCreateChildEntityAssistant-label{
+    background-color: #2E2E2E;
+    font-family: Raleway-SemiBold;
+    text-decoration: none;
+    font-size: 12px;
+    color: #D2D2D2;
+}
+
+label.uiCreateChildEntityAssistant-label{
+    background-color: #2E2E2E;
+    font-family: Raleway-SemiBold;
+    text-decoration: none;
+    font-size: 12px;
+    color: #D2D2D2;
+}
+
+font.uiCreateChildEntityAssistant-title{
+    background-color: #404040;
+    font-family: Raleway-Bold;
+    font-size: 18px;
+    text-decoration: none;
+    color: #F2F2F2;
+    white-space: normal;
+}
+
+#urlCreateChildEntityAssistant {
+    background-color: #222222;
+    color: #bbbbbb;
+    width: 90%;
+}
+
+#childEntityActionsContainer {
+    width: 100%;
+    text-align: center;
+    padding: 3px;
+}
+
+#viewParentContainer {
+    display: inline-block;
+    text-align: left;
+    width: 50%;
+    vertical-align: middle;
+}
+
+#addChildEntityContainer {
+    display: inline-block;
+    width: 50%;
+    text-align: right;
+    vertical-align: middle;
+}
+
+span.tileCreateChildEntityAssistant-domain {
+    border: 2px solid #000000;
+    background-color: #000000;
+    padding: 5px;
+    margin: 10px;
+    display: inline-block;
+    text-align: center;
+    border-radius: 10px;
+    width: 80px;
+    height: 80px;
+    color: #FFFFFF;
+    font-family: FiraSans-SemiBold;
+    font-size: 13px;
+}
+
+span.tileCreateChildEntityAssistant-domain:hover {
+    border: 2px solid #FFFFFF;
+}
+
+span.tileCreateChildEntityAssistant-avatar {
+    border: 2px solid #000000;
+    background-color: #000000;
+    padding: 5px;
+    margin: 10px;
+    display: inline-block;
+    text-align: center;
+    align-items: center;
+    border-radius: 10px;
+    width: 80px;
+    height: 80px;
+    color: #7fdb98;
+    font-family: FiraSans-SemiBold;
+    font-size: 13px;
+}
+
+span.tileCreateChildEntityAssistant-avatar:hover {
+    border: 2px solid #7fdb98;
+}
+
+font.iconCreateChildEntityAssistant {
+    font-family: HiFi-Glyphs;
+    font-size: 50px;
+}
+
+#typeSelectorCreateChildEntityAssistant {
+    width: 100%;
+    text-align: center;
+}
+
+font.addChildEntity-domain {
+    color: #FFFFFF;
+}
+
+font.addChildEntity-avatar {
+    color: #7fdb98;
+}
+
+#paramaterCreateChildEntityAssistant {
+    font-family: FiraSans-SemiBold;
+    font-size: 14px;
+    padding: 10px;
+}
