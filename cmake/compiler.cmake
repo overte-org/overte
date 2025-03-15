@@ -38,6 +38,8 @@ if (WIN32)
   # always produce symbols as PDB files
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /Zi")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DEBUG /OPT:REF /OPT:ICF")
+  # Enable unwind semantics for C++ exception handlers
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
 else ()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fno-strict-aliasing -Wno-unused-parameter")
   if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")

@@ -13,7 +13,7 @@
 #include "avatar/AvatarManager.h"
 
 TTSScriptingInterface::TTSScriptingInterface() {
-#ifdef WIN32
+#ifdef _WIN32
     //
     // Create text to speech engine
     //
@@ -46,7 +46,7 @@ TTSScriptingInterface::TTSScriptingInterface() {
 TTSScriptingInterface::~TTSScriptingInterface() {
 }
 
-#ifdef WIN32
+#ifdef _WIN32
 class ReleaseOnExit {
 public:
     ReleaseOnExit(IUnknown* p) : m_p(p) {}
@@ -72,7 +72,7 @@ void TTSScriptingInterface::updateLastSoundAudioInjector() {
 }
 
 void TTSScriptingInterface::speakText(const QString& textToSpeak) {
-#ifdef WIN32
+#ifdef _WIN32
     WAVEFORMATEX fmt;
     fmt.wFormatTag = WAVE_FORMAT_PCM;
     fmt.nSamplesPerSec = AudioConstants::SAMPLE_RATE;

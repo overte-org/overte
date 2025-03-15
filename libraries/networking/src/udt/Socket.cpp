@@ -32,7 +32,7 @@
 
 using namespace udt;
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock2.h>
 #include <WS2tcpip.h>
 #else
@@ -260,7 +260,7 @@ qint64 Socket::writeDatagram(const QByteArray& datagram, const SockAddr& sockAdd
     if (bytesWritten < 0 || pending) {
         int wsaError = 0;
         static std::atomic<int> previousWsaError (0);
-#ifdef WIN32
+#ifdef _WIN32
         wsaError = WSAGetLastError();
 #endif
         QString errorString;
@@ -554,7 +554,7 @@ std::vector<SockAddr> Socket::getConnectionSockAddrs() {
 void Socket::handleSocketError(SocketType socketType, QAbstractSocket::SocketError socketError) {
     int wsaError = 0;
     static std::atomic<int> previousWsaError(0);
-#ifdef WIN32
+#ifdef _WIN32
     wsaError = WSAGetLastError();
 #endif
     int pending = _networkSocket.bytesToWrite(socketType);

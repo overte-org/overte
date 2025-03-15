@@ -14,7 +14,7 @@
 #include <QtCore/QObject>
 #include <QTimer>
 #include <DependencyManager.h>
-#ifdef WIN32
+#ifdef _WIN32
 #pragma warning(disable : 4996)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -36,7 +36,7 @@ public:
     Q_INVOKABLE void stopLastSpeech();
 
 private:
-#ifdef WIN32
+#ifdef _WIN32
     class CComAutoInit {
     public:
         // Initializes COM using CoInitialize.

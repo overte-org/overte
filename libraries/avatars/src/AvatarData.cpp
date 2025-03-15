@@ -2651,14 +2651,14 @@ QByteArray AvatarData::toFrame(const AvatarData& avatar) {
     OVERTE_IGNORE_DEPRECATED_BEGIN
     // Can't use CBOR yet, would break the protocol
     return QJsonDocument(root).toBinaryData();
-    OVERTE_IGNORE_DEPRECATED_END
+    OVERTE_IGNORE_WARNING_END
 }
 
 
 void AvatarData::fromFrame(const QByteArray& frameData, AvatarData& result, bool useFrameSkeleton) {
     OVERTE_IGNORE_DEPRECATED_BEGIN
     QJsonDocument doc = QJsonDocument::fromBinaryData(frameData);
-    OVERTE_IGNORE_DEPRECATED_END
+    OVERTE_IGNORE_WARNING_END
 
 #ifdef WANT_JSON_DEBUG
     {
@@ -2920,7 +2920,7 @@ ScriptValue AvatarEntityMapToScriptValue(ScriptEngine* engine, const AvatarEntit
         QByteArray entityProperties = value.value(entityID);
         OVERTE_IGNORE_DEPRECATED_BEGIN
         QJsonDocument jsonEntityProperties = QJsonDocument::fromBinaryData(entityProperties);
-        OVERTE_IGNORE_DEPRECATED_END
+        OVERTE_IGNORE_WARNING_END
         if (!jsonEntityProperties.isObject()) {
             qCDebug(avatars) << "bad AvatarEntityData in AvatarEntityMap" << QString(entityProperties.toHex());
         }
@@ -2946,7 +2946,7 @@ bool AvatarEntityMapFromScriptValue(const ScriptValue& object, AvatarEntityMap& 
         QJsonDocument jsonEntityProperties = QJsonDocument::fromVariant(variantEntityProperties);
         OVERTE_IGNORE_DEPRECATED_BEGIN
         QByteArray binaryEntityProperties = jsonEntityProperties.toBinaryData();
-        OVERTE_IGNORE_DEPRECATED_END
+        OVERTE_IGNORE_WARNING_END
         value[EntityID] = binaryEntityProperties;
     }
     return true;
