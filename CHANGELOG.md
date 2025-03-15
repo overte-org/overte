@@ -11,8 +11,14 @@ like documentaion or CI pipeline.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-
 ## [2025.03.2] 2025.03.15
+
+### Fixes
+- fix long startup times (PR1360)
+- Initial fix for blurry/noisy transparencies on TAA (PR1358)
+
+
+## [2025.03.1] 2025.03.8
 
 ### Fixes
 - Fix for missing jsdoc (PR1226)
@@ -24,8 +30,6 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Amended path to Rearranged_Basic_Sandbox.tar.gz (PR1288)
 - fix script initialization order bug (PR1330)
 - Fix VR Preview on Linux with Mesa drivers (PR1318)
-- fix long startup times (PR1360)
-- Initial fix for blurry/noisy transparencies on TAA (PR1358)
 
 ### Changes
 - Change ArmoredChat timestamps to use real timestamps (PR1241)
