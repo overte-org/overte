@@ -2039,10 +2039,7 @@ void MyAvatar::updateAvatarEntity(const QUuid& entityID, const QByteArray& entit
 
     bool changed = false;
     _avatarEntitiesLock.withWriteLock([&] {
-        OVERTE_IGNORE_DEPRECATED_BEGIN
-        // We're not transitioning to CBOR yet, since it'd break the protocol.
-        auto data = QJsonDocument::fromBinaryData(entityData);
-        OVERTE_IGNORE_WARNING_END
+        auto data = QJsonDocument(QCborValue::fromCbor(entityData).toJsonValue().toObject());
         if (data.isEmpty() || data.isNull() || !data.isObject() || data.object().isEmpty()) {
             qDebug() << "ERROR!  Trying to update with invalid avatar entity data.  Skipping." << data;
         } else {

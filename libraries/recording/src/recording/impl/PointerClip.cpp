@@ -107,10 +107,7 @@ void PointerClip::init(uchar* data, size_t size) {
 
         QByteArray fileHeaderData((char*)_data + fileHeaderFrameHeader.fileOffset, fileHeaderFrameHeader.size);
 
-        OVERTE_IGNORE_DEPRECATED_BEGIN
-        // Can't use CBOR yet, will break the protocol.
-        _header = QJsonDocument::fromBinaryData(fileHeaderData);
-        OVERTE_IGNORE_WARNING_END
+        _header = QJsonDocument(QCborValue::fromCbor(fileHeaderData).toJsonValue().toObject());
     }
 
     // Check for compression
