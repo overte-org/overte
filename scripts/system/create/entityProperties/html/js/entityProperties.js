@@ -15,6 +15,8 @@ var currentTab = "base";
 
 const DEGREES_TO_RADIANS = Math.PI / 180.0;
 
+const UUID_NONE = "{00000000-0000-0000-0000-000000000000}";
+
 const ENTITY_HOST_TYPE_COLOR_DOMAIN = "#afafaf";
 const ENTITY_HOST_TYPE_COLOR_AVATAR = "#7fdb98";
 const ENTITY_HOST_TYPE_COLOR_LOCAL = "#f0d769";
@@ -4843,17 +4845,13 @@ function setChildListData(element, children, parentID, entityHostType = "") {
 
 function navigateToSpecificEntityFromParentID() {
     let parentID = getPropertyInputElement("parentID").value;
-    if (parentID !== "" && parentID !== "{00000000-0000-0000-0000-000000000000}") {
+    if (parentID !== "" && parentID !== UUID_NONE) {
         navigateToSpecificEntity(parentID);
     }
 }
 
 function setParentIdNavigationAvailable(selectionLength) {
-    if (selectionLength === 1) {
-        $('#property-parentID-button-navigateToParentEntity').attr('disabled', false);
-    } else {
-        $('#property-parentID-button-navigateToParentEntity').attr('disabled', true);
-    }
+    $('#property-parentID-button-navigateToParentEntity').attr('disabled', selectionLength !== 1);
 }
 
 function navigateToSpecificEntity(id) {
@@ -5494,7 +5492,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
                 }
                 case 'childList': {
                     let parentID = selections[0].properties.parentID;
-                    if (selections.length !== 1 || parentID === "{00000000-0000-0000-0000-000000000000}") {
+                    if (selections.length !== 1 || parentID === UUID_NONE) {
                         parentID = "";
                     }
                     setChildListData(property.elInput, propertyValue, parentID, entityHostType);
