@@ -867,19 +867,24 @@ public:
      * @param entityID
      * @return bool
      */
-    Q_INVOKABLE bool isEntityScriptRunning(const EntityItemID& entityID) {
+    Q_INVOKABLE bool isEntityScriptRunning(const EntityItemID& entityID, const QString& scriptURL) {
         QReadLocker locker { &_entityScriptsLock };
         auto it = _entityScripts.constFind(entityID);
-        return it != _entityScripts.constEnd() && it->status == EntityScriptStatus::RUNNING;
+        if (it != _entityScripts.constEnd()) {
+            auto it2 = it.value().constFind(scriptURL);
+            return it2 != it.value().constEnd() && it2.value().status == EntityScriptStatus::RUNNING; 
+        }
+        return false;
     }
 
     /**
      * @brief Clone the details of an entity script
      *
      * @param entityID Entity ID
+     * @param scriptURL Script URL
      * @return QVariant Copy of the details
      */
-    QVariant cloneEntityScriptDetails(const EntityItemID& entityID);
+    QVariant cloneEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL);
 
 
     /**
@@ -888,9 +893,10 @@ public:
      * Same as cloneEntityScriptDetails, only as a QFuture.
      *
      * @param entityID Entity ID
+     * @param scriptURL Script URL
      * @return QFuture<QVariant>
      */
-    QFuture<QVariant> getLocalEntityScriptDetails(const EntityItemID& entityID) override;
+    QFuture<QVariant> getLocalEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL) override;
 
 
     /**
@@ -919,9 +925,18 @@ public:
      * @brief Unload an entity script
      *
      * @param entityID
+     * @param scriptURL
      * @param shouldRemoveFromMap
      */
-    Q_INVOKABLE void unloadEntityScript(const EntityItemID& entityID, bool shouldRemoveFromMap = false); // will call unload method
+    Q_INVOKABLE void unloadEntityScript(const EntityItemID& entityID, const QString& scriptURL, bool shouldRemoveFromMap = false); // will call unload method
+
+    /**
+     * @brief Unloads all entity script for an entity
+     *
+     * @param entityID
+     * @param shouldRemoveFromMap
+     */
+    Q_INVOKABLE void unloadAllEntityScriptsForEntity(const EntityItemID& entityID, bool shouldRemoveFromMap = false); // will call unload method
 
 
     /**
@@ -932,7 +947,7 @@ public:
     Q_INVOKABLE void unloadAllEntityScripts(bool blockingCall = false);
 
     /**
-     * @brief Call a method on an entity script
+     * @brief Call a method on all of an entity's scripts
      *
      * @param entityID
      * @param methodName
@@ -942,6 +957,34 @@ public:
     Q_INVOKABLE void callEntityScriptMethod(const EntityItemID& entityID, const QString& methodName,
                                             const QStringList& params = QStringList(),
                                             const QUuid& remoteCallerID = QUuid()) override;
+
+    /**
+     * @brief Call a method on an entity script
+     *
+     * @param entityID
+     * @param scriptURL
+     * @param methodName
+     * @param params
+     * @param remoteCallerID
+     */
+    Q_INVOKABLE void callEntityScriptMethodForScript(const EntityItemID& entityID,
+                                                     const QString& scriptURL,
+                                                     const QString& methodName,
+                                                     const QStringList& params = QStringList(),
+                                                     const QUuid& remoteCallerID = QUuid()) override;
+
+    /**
+     * @brief Call a method on an entity script
+     *
+     * @param entityID
+     * @param scriptURL
+     * @param methodName
+     * @param param
+     */
+    Q_INVOKABLE void callEntityScriptMethodForScript(const EntityItemID& entityID,
+                                                     const QString& scriptURL,
+                                                     const QString& methodName,
+                                                     const QString& param);
 
     /**
      * @brief Call a method on an entity script
@@ -1140,20 +1183,22 @@ public:
      * @brief Retrieves the details about an entity script
      *
      * @param entityID Entity ID
+     * @param scriptURL Script URL
      * @param details Returned details
      * @return true If the entity ID was found
      * @return false If the entity ID wasn't found. details will be unmodified.
      */
-    bool getEntityScriptDetails(const EntityItemID& entityID, EntityScriptDetails &details) const;
+    bool getEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL, EntityScriptDetails &details) const;
 
     /**
      * @brief Whether there are script details for a given entity ID
      *
      * @param entityID Entity ID
+     * @param scriptURL Script URL
      * @return true There is an entity script for this entity
      * @return false There's no entity script
      */
-    bool hasEntityScriptDetails(const EntityItemID& entityID) const;
+    bool hasEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL) const;
 
     /**
      * @brief Set a shared pointer to the ScriptEngines class
@@ -1509,7 +1554,7 @@ protected:
     void timerFired();
     void stopAllTimers();
     void stopAllTimersForEntityScript(const EntityItemID& entityID);
-    void refreshFileScript(const EntityItemID& entityID);
+    void refreshFileScript(const EntityItemID& entityID, const QString& scriptURL);
 
     /**
      * @brief Updates the status of an entity script
@@ -1517,19 +1562,21 @@ protected:
      * Emits entityScriptDetailsUpdated()
      *
      * @param entityID Entity ID
+     * @param scriptURL Script URL
      * @param status Status
      * @param errorInfo Description of the error, if any
      */
-    void updateEntityScriptStatus(const EntityItemID& entityID, const EntityScriptStatus& status, const QString& errorInfo = QString());
+    void updateEntityScriptStatus(const EntityItemID& entityID, const QString& scriptURL, const EntityScriptStatus& status, const QString& errorInfo = QString());
 
 
     /**
      * @brief Set the details for an entity script
      *
      * @param entityID Entity ID
+     * @param scriptURL Script URL
      * @param details Details
      */
-    void setEntityScriptDetails(const EntityItemID& entityID, const EntityScriptDetails& details);
+    void setEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL, const EntityScriptDetails& details);
 
     /**
      * @brief Set the parent URL, used to resolve relative paths
@@ -1623,7 +1670,7 @@ protected:
     QHash<QTimer*, CallbackData> _timerFunctionMap;
     QSet<QUrl> _includedURLs;
     mutable QReadWriteLock _entityScriptsLock { QReadWriteLock::Recursive };
-    QHash<EntityItemID, EntityScriptDetails> _entityScripts;
+    QHash<EntityItemID, QHash<QString, EntityScriptDetails>> _entityScripts;
     EntityScriptContentAvailableMap _contentAvailableQueue;
     ScriptValue _returnValue;
 

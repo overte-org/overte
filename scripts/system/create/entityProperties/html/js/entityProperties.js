@@ -1008,7 +1008,8 @@ const GROUPS = [
             {
                 label: "Script URL",
                 type: "string",
-                propertyID: "scriptURL",
+                propertyID: "webScriptURL",
+                propertyName: "scriptURL", // actual entity property name
                 placeholder: "URL",
             },
             {
@@ -1693,6 +1694,23 @@ const GROUPS = [
         ]
     },
     {
+        id: "script",
+        label: "SCRIPT",
+        properties: [
+            {
+                label: "Script",
+                type: "string",
+                propertyID: "scriptURL",
+                placeholder: "URL",
+            },
+            {
+                label: "Enabled",
+                type: "bool",
+                propertyID: "enabled",
+            },
+        ]
+    },
+    {
         id: "spatial",
         label: "SPATIAL",
         properties: [
@@ -2177,6 +2195,7 @@ const GROUPS_PER_TYPE = {
   PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
   Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
+  Script: [ 'base', 'script', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
   Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
 };
 

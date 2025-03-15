@@ -24,7 +24,10 @@ class EntitiesScriptEngineProvider {
 public:
     virtual void callEntityScriptMethod(const EntityItemID& entityID, const QString& methodName, 
                                         const QStringList& params = QStringList(), const QUuid& remoteCallerID = QUuid()) = 0;
-    virtual QFuture<QVariant> getLocalEntityScriptDetails(const EntityItemID& entityID) = 0;
+    virtual void callEntityScriptMethodForScript(const EntityItemID& entityID, const QString& scriptURL,
+                                                 const QString& methodName, const QStringList& params = QStringList(),
+                                                 const QUuid& remoteCallerID = QUuid()) = 0;
+    virtual QFuture<QVariant> getLocalEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL) = 0;
 };
 
 #endif // hifi_EntitiesScriptEngineProvider_h
