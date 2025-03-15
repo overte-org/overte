@@ -83,7 +83,7 @@ const GROUPS = [
                 label: "Parent",
                 type: "string",
                 propertyID: "parentID",
-                buttons: [ { id: "navigateToParentEntity", label: "_", className: "navigation", onClick: navigateToSpecificEntityFromParentID } ],
+                buttons: [ { id: "navigateToParentEntity", label: "1", className: "navigation", onClick: navigateToSpecificEntityFromParentID } ],
                 onChange: parentIDChanged,
             },
             {
@@ -4810,7 +4810,7 @@ function setChildListData(element, children, parentID, entityHostType = "") {
     let i;
     renderer += "<div id='childEntityActionsContainer'>";
     if (parentID !== "") {
-        renderer += "<div id='viewParentContainer'><span class='viewParent' onClick='navigateToSpecificEntity(" + '"'+ parentID + '"'+ ")'>&#129093; View Parent</span></div>";
+        renderer += "<div id='viewParentContainer'><span class='viewParent' onClick='navigateToSpecificEntity(" + '"'+ parentID + '"'+ ")'><font class='viewParentIcon'>1</font>View Parent</span></div>";
     } else {
         renderer += "<div id='viewParentContainer'></div>";
     }
