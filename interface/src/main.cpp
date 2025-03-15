@@ -18,6 +18,7 @@
 #include <QLocalServer>
 #include <QSharedMemory>
 #include <QTranslator>
+#include <QStandardPaths>
 
 #include <BuildInfo.h>
 #include <SandboxUtils.h>
@@ -25,6 +26,10 @@
 #include <NetworkAccessManager.h>
 #include <gl/GLHelpers.h>
 #include <iostream>
+#include <plugins/InputPlugin.h>
+#include <plugins/PluginManager.h>
+#include <plugins/DisplayPlugin.h>
+#include <plugins/CodecPlugin.h>
 
 #include "AddressManager.h"
 #include "Application.h"
@@ -34,9 +39,7 @@
 #include "MainWindow.h"
 #include "Profile.h"
 #include "LogHandler.h"
-#include <plugins/PluginManager.h>
-#include <plugins/DisplayPlugin.h>
-#include <plugins/CodecPlugin.h>
+#include "RunningMarker.h"
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
@@ -316,6 +319,7 @@ int main(int argc, const char* argv[]) {
     parser.addOption(noLauncherOption);
     parser.addOption(responseTokensOption);
     parser.addOption(displayNameOption);
+    parser.addOption(noLoginOption);
     parser.addOption(overrideScriptsPathOption);
     parser.addOption(defaultScriptsOverrideOption);
     parser.addOption(traceFileOption);
@@ -558,10 +562,6 @@ int main(int argc, const char* argv[]) {
     QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
 #endif
 
-
-
-
-
     // Instance UserActivityLogger now that the settings are loaded
     auto& ual = UserActivityLogger::getInstance();
     auto& ch = CrashHandler::getInstance();
@@ -725,7 +725,7 @@ int main(int argc, const char* argv[]) {
 
     int exitCode;
     {
-        RunningMarker runningMarker(RUNNING_MARKER_FILENAME);
+        RunningMarker runningMarker("Interface.running");
         bool runningMarkerExisted = runningMarker.fileExists();
         runningMarker.writeRunningMarkerFile();
 

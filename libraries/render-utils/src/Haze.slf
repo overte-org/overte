@@ -26,7 +26,7 @@
 LAYOUT(binding=RENDER_UTILS_TEXTURE_HAZE_LINEAR_DEPTH) uniform sampler2D linearDepthMap;
 <@endif@>
 
-vec4 unpackPositionFromZeye(vec2 texcoord) {
+vec4 unpackPositionFromZeyeAndGetSide(vec2 texcoord, out int side) {
 <@if not HIFI_USE_BACKGROUND@>
     float Zeye = -texture(linearDepthMap, texcoord).x;
 <@else@>
@@ -36,7 +36,7 @@ vec4 unpackPositionFromZeye(vec2 texcoord) {
     float check = float(isStereo());
     float check2 = check * float(texcoord.x > 0.5);
     texcoord.x -= check2 * 0.5;
-    int side = int(check2);
+    side = int(check2);
     texcoord.x *= 1.0 + check;
 
     return vec4(evalEyePositionFromZeye(side, Zeye, texcoord), 1.0);
@@ -46,8 +46,9 @@ layout(location=0) in vec2 varTexCoord0;
 layout(location=0) out vec4 outFragColor;
 
 void main(void) {
-    vec4 fragPositionES = unpackPositionFromZeye(varTexCoord0);
-    mat4 viewInverse = getViewInverse();
+    int side;
+    vec4 fragPositionES = unpackPositionFromZeyeAndGetSide(varTexCoord0, side);
+    mat4 viewInverse = getViewInverse(side);
 
 <@if HIFI_USE_BACKGROUND@>
     // We choose an arbitrary large number > BLEND_DISTANCE in Haze.slh

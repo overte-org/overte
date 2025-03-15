@@ -6,6 +6,7 @@
 //
 //  Created by Sam Gondelman on 3/15/19
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -38,6 +39,7 @@ LAYOUT(binding=0) uniform textParamsBuffer {
 #define TAA_TEXTURE_LOD_BIAS    -3.0
 
 const float interiorCutoff = 0.5;
+const float smoothStrength = 4.0;
 const float taaBias = pow(2.0, TAA_TEXTURE_LOD_BIAS);
 
 // MSDF logic from: https://github.com/Chlumsky/msdfgen?tab=readme-ov-file#using-a-multi-channel-distance-field
@@ -100,18 +102,16 @@ vec4 evalSDFSuperSampled(vec2 texCoord, vec2 positionMS, vec4 glyphBounds) {
         return vec4(0.0);
     }
 
-    vec2 dxTexCoord = dFdx(texCoord) * 0.5 * taaBias;
-    vec2 dyTexCoord = dFdy(texCoord) * 0.5 * taaBias;
+    vec4 color = evalSDFColor(texCoord, glyphBounds);
 
-    // Perform 4x supersampling for anisotropic filtering
-    vec4 color;
-    color = evalSDFColor(texCoord, glyphBounds);
-    color += evalSDFColor(texCoord + dxTexCoord, glyphBounds);
-    color += evalSDFColor(texCoord + dyTexCoord, glyphBounds);
-    color += evalSDFColor(texCoord + dxTexCoord + dyTexCoord, glyphBounds);
-    color *= 0.25;
+    // Rely on TAA for anti-aliasing but smooth transition when minification
+    // to help filtering
+    float uvFootprint = length(fwidth(texCoord) * smoothStrength);
+    float smoothStart = max(0.0, 0.5 - uvFootprint);
+    float smoothEnd = min(1.0, 0.5 + uvFootprint);
+    float alpha = max(smoothstep(smoothStart, smoothEnd, color.a), step(interiorCutoff, color.a));
 
-    return vec4(color.rgb, step(interiorCutoff, color.a));
+    return vec4(color.rgb, alpha);
 }
 
 <@endfunc@>

@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 1/25/16.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -22,6 +23,7 @@ namespace render {
         Q_OBJECT
         Q_PROPERTY(bool showVisibleCells READ getShowVisibleCells WRITE setShowVisibleCells NOTIFY dirty())
         Q_PROPERTY(bool showEmptyCells READ getShowEmptyCells WRITE setShowEmptyCells NOTIFY dirty())
+        Q_PROPERTY(bool showLODReticle READ getShowLODReticle WRITE setShowLODReticle NOTIFY dirty())
         Q_PROPERTY(int numAllocatedCells READ getNumAllocatedCells)
         Q_PROPERTY(int numFreeCells READ getNumFreeCells)
 
@@ -35,15 +37,18 @@ namespace render {
         int getNumAllocatedCells() const { return numAllocatedCells; }
         int getNumFreeCells() const { return numFreeCells; }
 
-        bool showVisibleCells{ true };
-        bool showEmptyCells{ false };
+        bool showVisibleCells { false };
+        bool showEmptyCells { false };
+        bool showLODReticle { false };
 
         bool getShowVisibleCells() { return showVisibleCells; }
         bool getShowEmptyCells() { return showEmptyCells; }
+        bool getShowLODReticle() { return showLODReticle; }
 
     public slots:
         void setShowVisibleCells(bool show) { showVisibleCells = show; emit dirty(); }
         void setShowEmptyCells(bool show) { showEmptyCells = show; emit dirty(); }
+        void setShowLODReticle(bool show) { showLODReticle = show; emit dirty(); }
 
     signals:
         void dirty();
@@ -56,17 +61,22 @@ namespace render {
         static gpu::Stream::FormatPointer _cellBoundsFormat;
         gpu::BufferPointer _cellBoundsBuffer { std::make_shared<gpu::Buffer>() };
 
-        bool _showVisibleCells; // initialized by Config
-        bool _showEmptyCells; // initialized by Config
+        // initialized by Config
+        bool _showVisibleCells;
+        bool _showEmptyCells;
+        bool _showLODReticle;
 
     public:
         using Config = DrawSceneOctreeConfig;
         using JobModel = Job::ModelI<DrawSceneOctree, ItemSpatialTree::ItemSelection, Config>;
 
-        DrawSceneOctree();
+        DrawSceneOctree(uint transformSlot);
 
         void configure(const Config& config);
         void run(const RenderContextPointer& renderContext, const ItemSpatialTree::ItemSelection& selection);
+
+    private:
+        uint _transformSlot;
 
         static const gpu::PipelinePointer getDrawCellBoundsPipeline();
         static const gpu::PipelinePointer getDrawLODReticlePipeline();
@@ -120,10 +130,13 @@ namespace render {
         using Config = DrawItemSelectionConfig;
         using JobModel = Job::ModelI<DrawItemSelection, ItemSpatialTree::ItemSelection, Config>;
 
-        DrawItemSelection() {}
+        DrawItemSelection(uint transformSlot) : _transformSlot(transformSlot) {}
 
         void configure(const Config& config);
         void run(const RenderContextPointer& renderContext, const ItemSpatialTree::ItemSelection& selection);
+
+    private:
+        uint _transformSlot;
 
         static const gpu::PipelinePointer getDrawItemBoundPipeline();
     };

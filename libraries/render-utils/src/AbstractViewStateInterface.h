@@ -30,9 +30,6 @@ using ConicalViewFrustums = std::vector<ConicalViewFrustum>;
 /// Interface provided by Application to other objects that need access to the current view state details
 class AbstractViewStateInterface {
 public:
-    /// copies the current view frustum for rendering the view state
-    virtual void copyCurrentViewFrustum(ViewFrustum& viewOut) const = 0;
-
     virtual const ConicalViewFrustums& getConicalViews() const = 0;
 
     virtual QThread* getMainThread() = 0;
@@ -53,8 +50,6 @@ public:
     // not return until the code is executed, regardles of which thread it 
     // is called from
     virtual void sendLambdaEvent(const std::function<void()>& f) = 0;
-
-    virtual qreal getDevicePixelRatio() = 0;
 
     virtual render::ScenePointer getMain3DScene() = 0;
     virtual render::EnginePointer getRenderEngine() = 0;

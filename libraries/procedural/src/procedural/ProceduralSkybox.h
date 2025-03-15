@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 9/21/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -26,8 +27,8 @@ public:
     bool empty() override;
     void clear() override;
 
-    void render(gpu::Batch& batch, const ViewFrustum& frustum, bool forward) const override;
-    static void render(gpu::Batch& batch, const ViewFrustum& frustum, const ProceduralSkybox& skybox, bool forward);
+    void render(gpu::Batch& batch, const ViewFrustum& frustum, bool forward, uint transformSlot) const override;
+    static void render(gpu::Batch& batch, const ViewFrustum& frustum, const ProceduralSkybox& skybox, bool forward, uint transformSlot);
 
     uint64_t getCreated() const { return _created; }
 

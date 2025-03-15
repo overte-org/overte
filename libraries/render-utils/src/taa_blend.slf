@@ -7,6 +7,7 @@
 //
 //  Created by Sam Gateau on 8/17/2017
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -20,7 +21,6 @@ layout(location=0) out vec4 outFragColor;
 void main(void) {
     vec3 nextColor = texture(nextMap, varTexCoord0).xyz;
     outFragColor = vec4(nextColor, 1.0);
-
 
     // Pixel being shaded
     vec3 sourceColor = texture(sourceMap, varTexCoord0).xyz;

@@ -115,16 +115,16 @@ void ProceduralData::parse(const QJsonObject& proceduralData) {
     channels = proceduralData[CHANNELS_KEY].toArray();
 }
 
-std::function<void(gpu::StatePointer)> Procedural::opaqueStencil = [](gpu::StatePointer state) {};
+std::function<void(gpu::StatePointer, bool)> Procedural::opaqueStencil = [](gpu::StatePointer state, bool useAA) {};
 std::function<void(gpu::StatePointer)> Procedural::transparentStencil = [](gpu::StatePointer state) {};
 
-Procedural::Procedural() {
+Procedural::Procedural(bool useAA) {
     _opaqueState->setCullMode(gpu::State::CULL_NONE);
     _opaqueState->setDepthTest(true, true, gpu::LESS_EQUAL);
     _opaqueState->setBlendFunction(false,
         gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
         gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
-    opaqueStencil(_opaqueState);
+    opaqueStencil(_opaqueState, useAA);
 
     _transparentState->setCullMode(gpu::State::CULL_NONE);
     _transparentState->setDepthTest(true, false, gpu::LESS_EQUAL);

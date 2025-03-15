@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 10/14/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -42,6 +43,13 @@ class Batch {
 public:
     typedef Stream::Slot Slot;
 
+    enum {
+        // This is tied to RenderMirrorTask::MAX_MIRROR_DEPTH and RenderMirrorTask::MAX_MIRRORS_PER_LEVEL
+        // We have 1 view at mirror depth 0, 3 more at mirror depth 1, 9 more at mirror depth 2, and 27 more at mirror depth 3
+        // For each view, we have one slot for the background and one for the primary view, and that's all repeated for the secondary camera
+        // So this is 2 slots/view/camera * 2 cameras * (1 + 3 + 9 + 27) views
+        MAX_TRANSFORM_SAVE_SLOT_COUNT = 160
+    };
 
     class DrawCallInfo {
     public:
@@ -151,20 +159,20 @@ public:
     // multi command desctription for multiDrawIndexedIndirect
     class DrawIndirectCommand {
     public:
-        uint  _count{ 0 };
-        uint  _instanceCount{ 0 };
-        uint  _firstIndex{ 0 };
-        uint  _baseInstance{ 0 };
+        uint  _count { 0 };
+        uint  _instanceCount { 0 };
+        uint  _firstIndex { 0 };
+        uint  _baseInstance { 0 };
     };
 
     // multi command desctription for multiDrawIndexedIndirect
     class DrawIndexedIndirectCommand {
     public:
-        uint  _count{ 0 };
-        uint  _instanceCount{ 0 };
-        uint  _firstIndex{ 0 };
-        uint  _baseVertex{ 0 };
-        uint  _baseInstance{ 0 };
+        uint  _count { 0 };
+        uint  _instanceCount { 0 };
+        uint  _firstIndex { 0 };
+        uint  _baseVertex { 0 };
+        uint  _baseInstance { 0 };
     };
 
     // Transform Stage
@@ -174,16 +182,23 @@ public:
     // WARNING: ViewTransform transform from eye space to world space, its inverse is composed
     // with the ModelTransform to create the equivalent of the gl ModelViewMatrix
     void setModelTransform(const Transform& model);
+    void setModelTransform(const Transform& model, const Transform& previousModel);
     void resetViewTransform() { setViewTransform(Transform(), false); }
     void setViewTransform(const Transform& view, bool camera = true);
     void setProjectionTransform(const Mat4& proj);
-    void setProjectionJitter(float jx = 0.0f, float jy = 0.0f);
+    void setProjectionJitterEnabled(bool isProjectionEnabled);
+    void setProjectionJitterSequence(const Vec2* sequence, size_t count);
+    void setProjectionJitterScale(float scale);
     // Very simple 1 level stack management of jitter.
-    void pushProjectionJitter(float jx = 0.0f, float jy = 0.0f);
-    void popProjectionJitter();
+    void pushProjectionJitterEnabled(bool isProjectionEnabled);
+    void popProjectionJitterEnabled();
     // Viewport is xy = low left corner in framebuffer, zw = width height of the viewport, expressed in pixels
     void setViewportTransform(const Vec4i& viewport);
     void setDepthRangeTransform(float nearDepth, float farDepth);
+
+    void saveViewProjectionTransform(uint saveSlot);
+    void setSavedViewProjectionTransform(uint saveSlot);
+    void copySavedViewProjectionTransformToBuffer(uint saveSlot, const BufferPointer& buffer, Offset offset);
 
     // Pipeline Stage
     void setPipeline(const PipelinePointer& pipeline);
@@ -202,7 +217,7 @@ public:
     void setResourceTexture(uint32 slot, const TexturePointer& texture);
     void setResourceTexture(uint32 slot, const TextureView& view); // not a command, just a shortcut from a TextureView
     void setResourceTextureTable(const TextureTablePointer& table, uint32 slot = 0);
-    void setResourceFramebufferSwapChainTexture(uint32 slot, const FramebufferSwapChainPointer& framebuffer, unsigned int swpaChainIndex, unsigned int renderBufferSlot = 0U); // not a command, just a shortcut from a TextureView
+    void setResourceFramebufferSwapChainTexture(uint32 slot, const FramebufferSwapChainPointer& framebuffer, unsigned int swapChainIndex, unsigned int renderBufferSlot = 0U); // not a command, just a shortcut from a TextureView
 
     // Ouput Stage
     void setFramebuffer(const FramebufferPointer& framebuffer);
@@ -312,9 +327,15 @@ public:
         COMMAND_setModelTransform,
         COMMAND_setViewTransform,
         COMMAND_setProjectionTransform,
-        COMMAND_setProjectionJitter,
+        COMMAND_setProjectionJitterEnabled,
+        COMMAND_setProjectionJitterSequence,
+        COMMAND_setProjectionJitterScale,
         COMMAND_setViewportTransform,
         COMMAND_setDepthRangeTransform,
+
+        COMMAND_saveViewProjectionTransform,
+        COMMAND_setSavedViewProjectionTransform,
+        COMMAND_copySavedViewProjectionTransformToBuffer,
 
         COMMAND_setPipeline,
         COMMAND_setStateBlendFactor,
@@ -497,17 +518,14 @@ public:
     Bytes _data;
     static size_t _dataMax;
 
-    // SSBO class... layout MUST match the layout in Transform.slh
-    class TransformObject {
-    public:
-        Mat4 _model;
-        Mat4 _modelInverse;
-    };
+#include "TransformObject_shared.slh"
 
     using TransformObjects = std::vector<TransformObject>;
     bool _invalidModel { true };
     Transform _currentModel;
-    TransformObjects _objects;
+    Transform _previousModel;
+    mutable bool _mustUpdatePreviousModels;
+    mutable TransformObjects _objects;
     static size_t _objectsMax;
 
     BufferCaches _buffers;
@@ -525,11 +543,12 @@ public:
 
     NamedBatchDataMap _namedData;
 
-    uint16_t _drawcallUniform{ 0 };
-    uint16_t _drawcallUniformReset{ 0 };
+    bool _isJitterOnProjectionEnabled { false };
 
-    glm::vec2 _projectionJitter{ 0.0f, 0.0f };
-    bool _enableStereo{ true };
+    uint16_t _drawcallUniform { 0 };
+    uint16_t _drawcallUniformReset { 0 };
+
+    bool _enableStereo { true };
     bool _enableSkybox { false };
 
 protected:
@@ -558,7 +577,7 @@ protected:
 template <typename T>
 size_t Batch::Cache<T>::_max = BATCH_PREALLOCATE_MIN;
 
-}
+}  // namespace gpu
 
 #if defined(NSIGHT_FOUND)
 
