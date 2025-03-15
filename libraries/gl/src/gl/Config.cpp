@@ -76,7 +76,22 @@ static void* getGlProcessAddress(const char *namez) {
 
 
 typedef Bool (*PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC) (int attribute, unsigned int *value);
+typedef int (*PFNGLXSWAPINTERVALMESAPROC)(unsigned int interval);
+typedef int (*PFNGLXGETSWAPINTERVALMESAPROC)(void);
+
 PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC QueryCurrentRendererIntegerMESA;
+
+// NOTE: On Linux, we can only really use MESA_swap_control.
+// SGI_swap_control is useless (can't set swap interval to zero),
+// and EXT_swap_control requires Xlib structures that Qt5 doesn't
+// expose to us. From what I could tell, Nvidia's driver doesn't
+// have this extension, so vsync will always be enabled there.
+// Because Qt5 doesn't expose Xlib structures, we can't properly
+// check if the GLX extension for these is supported and we have
+// to hope the driver returns NULL for them.
+// (QueryCurrentRenderIntegerMESA was already doing this)
+PFNGLXSWAPINTERVALMESAPROC SwapIntervalMESA;
+PFNGLXGETSWAPINTERVALMESAPROC GetSwapIntervalMESA;
 
 static void* getGlProcessAddress(const char *namez) {
     return (void*)glXGetProcAddressARB((const GLubyte*)namez);
@@ -98,6 +113,8 @@ void gl::initModuleGl() {
 
 #if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
         QueryCurrentRendererIntegerMESA = (PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC)getGlProcessAddress("glXQueryCurrentRendererIntegerMESA");
+        SwapIntervalMESA = (PFNGLXSWAPINTERVALMESAPROC)getGlProcessAddress("glXSwapIntervalMESA");
+        GetSwapIntervalMESA = (PFNGLXGETSWAPINTERVALMESAPROC)getGlProcessAddress("glXGetSwapIntervalMESA");
 #endif
 
 #if defined(USE_GLES)
@@ -115,8 +132,13 @@ int gl::getSwapInterval() {
     GLint interval;
     CGLGetParameter(CGLGetCurrentContext(), kCGLCPSwapInterval, &interval);
     return interval;
-#else 
-    // TODO: Fill in for linux
+#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
+    if (GetSwapIntervalMESA) {
+        return GetSwapIntervalMESA();
+    } else {
+        return 1;
+    }
+#else
     return 1;
 #endif
 }
@@ -128,6 +150,10 @@ void gl::setSwapInterval(int interval) {
     CGLSetParameter(CGLGetCurrentContext(), kCGLCPSwapInterval, &interval);
 #elif defined(Q_OS_ANDROID)
     eglSwapInterval(eglGetCurrentDisplay(), interval);
+#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
+    if (SwapIntervalMESA) {
+        SwapIntervalMESA(interval);
+    }
 #else
     Q_UNUSED(interval);
 #endif

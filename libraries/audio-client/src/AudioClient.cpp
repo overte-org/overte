@@ -343,6 +343,7 @@ AudioClient::AudioClient() {
     defaultAudioDeviceName(QAudio::AudioInput);
     defaultAudioDeviceName(QAudio::AudioOutput);
 
+    checkDevices();
     // start a thread to detect any device changes
     _checkDevicesTimer = new QTimer(this);
     const unsigned long DEVICE_CHECK_INTERVAL_MSECS = 2 * 1000;
@@ -807,9 +808,10 @@ void AudioClient::start() {
         inputName = _hmdInputName;
         outputName = _hmdOutputName;
     }
-    
-    //initialize input to the dummy device to prevent starves
-    switchInputToAudioDevice(HifiAudioDeviceInfo());
+
+    // Input was originally set to HifiAudioDeviceInfo(), but that was causing trouble.
+    //Original comment: initialize input to the dummy device to prevent starves
+    switchInputToAudioDevice(defaultAudioDeviceForMode(QAudio::AudioInput, QString()));
     switchOutputToAudioDevice(defaultAudioDeviceForMode(QAudio::AudioOutput, QString())); 
 
 #if defined(Q_OS_ANDROID)

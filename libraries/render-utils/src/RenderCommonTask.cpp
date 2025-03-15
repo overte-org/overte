@@ -34,18 +34,19 @@ namespace gr {
 using RenderArgsPointer = std::shared_ptr<RenderArgs>;
 
 using namespace render;
-extern void initForwardPipelines(ShapePlumber& plumber);
 extern void initMirrorPipelines(ShapePlumber& plumber, gpu::StatePointer state, const render::ShapePipeline::BatchSetter& batchSetter, const render::ShapePipeline::ItemSetter& itemSetter, bool forward);
 
 void BeginGPURangeTimer::run(const render::RenderContextPointer& renderContext, gpu::RangeTimerPointer& timer) {
     timer = _gpuTimer;
     gpu::doInBatch("BeginGPURangeTimer", renderContext->args->_context, [&](gpu::Batch& batch) {
         _gpuTimer->begin(batch);
+        batch.pushProfileRange(timer->name().c_str());
     });
 }
 
 void EndGPURangeTimer::run(const render::RenderContextPointer& renderContext, const gpu::RangeTimerPointer& timer) {
     gpu::doInBatch("EndGPURangeTimer", renderContext->args->_context, [&](gpu::Batch& batch) {
+        batch.popProfileRange();
         timer->end(batch);
     });
     
@@ -53,14 +54,11 @@ void EndGPURangeTimer::run(const render::RenderContextPointer& renderContext, co
     config->setGPUBatchRunTime(timer->getGPUAverage(), timer->getBatchAverage());
 }
 
-render::ShapePlumberPointer DrawLayered3D::_shapePlumber = std::make_shared<ShapePlumber>();
-
-DrawLayered3D::DrawLayered3D(bool opaque) :
-    _opaquePass(opaque) {
-    static std::once_flag once;
-    std::call_once(once, [] {
-        initForwardPipelines(*_shapePlumber);
-    });
+DrawLayered3D::DrawLayered3D(const render::ShapePlumberPointer& shapePlumber, bool opaque, bool jitter, uint transformSlot) :
+    _shapePlumber(shapePlumber),
+    _transformSlot(transformSlot),
+    _opaquePass(opaque),
+    _isJitterEnabled(jitter) {
 }
 
 void DrawLayered3D::run(const RenderContextPointer& renderContext, const Inputs& inputs) {
@@ -70,9 +68,9 @@ void DrawLayered3D::run(const RenderContextPointer& renderContext, const Inputs&
     auto config = std::static_pointer_cast<Config>(renderContext->jobConfig);
 
     const auto& inItems = inputs.get0();
-    const auto& lightingModel = inputs.get1();
-    const auto& hazeFrame = inputs.get2();
-    const auto jitter = inputs.get3();
+    const auto& frameTransform = inputs.get1();
+    const auto& lightingModel = inputs.get2();
+    const auto& hazeFrame = inputs.get3();
     
     config->setNumDrawn((int)inItems.size());
     emit config->numDrawnChanged();
@@ -92,7 +90,7 @@ void DrawLayered3D::run(const RenderContextPointer& renderContext, const Inputs&
     if (_opaquePass) {
         gpu::doInBatch("DrawLayered3D::run::clear", args->_context, [&](gpu::Batch& batch) {
             batch.enableStereo(false);
-            batch.clearFramebuffer(gpu::Framebuffer::BUFFER_DEPTH, glm::vec4(), 1.f, 0, false);
+            batch.clearDepthFramebuffer(true, false);
         });
     }
 
@@ -101,22 +99,18 @@ void DrawLayered3D::run(const RenderContextPointer& renderContext, const Inputs&
 
         // Render the items
         gpu::doInBatch("DrawLayered3D::main", args->_context, [&](gpu::Batch& batch) {
+            PROFILE_RANGE_BATCH(batch, "DrawLayered3D::main");
             args->_batch = &batch;
             batch.setViewportTransform(args->_viewport);
             batch.setStateScissorRect(args->_viewport);
 
-            glm::mat4 projMat;
-            Transform viewMat;
-            args->getViewFrustum().evalProjectionMatrix(projMat);
-            args->getViewFrustum().evalViewTransform(viewMat);
-
-            batch.setProjectionTransform(projMat);
-            batch.setProjectionJitter(jitter.x, jitter.y);
-            batch.setViewTransform(viewMat);
+            batch.setProjectionJitterEnabled(_isJitterEnabled);
+            batch.setSavedViewProjectionTransform(_transformSlot);
 
             // Setup lighting model for all items;
             batch.setUniformBuffer(ru::Buffer::LightModel, lightingModel->getParametersBuffer());
             batch.setResourceTexture(ru::Texture::AmbientFresnel, lightingModel->getAmbientFresnelLUT());
+            batch.setUniformBuffer(ru::Buffer::DeferredFrameTransform, frameTransform->getFrameTransformBuffer());
 
             if (haze) {
                 batch.setUniformBuffer(graphics::slot::buffer::Buffer::HazeParams, haze->getHazeParametersBuffer());
@@ -288,7 +282,7 @@ void ResolveFramebuffer::run(const render::RenderContextPointer& renderContext, 
 class SetupMirrorTask {
 public:
     using Input = RenderMirrorTask::Inputs;
-    using Outputs = render::VaryingSet4<render::ItemBound, gpu::FramebufferPointer, RenderArgsPointer, glm::vec2>;
+    using Outputs = render::VaryingSet3<render::ItemBound, gpu::FramebufferPointer, RenderArgsPointer>;
     using JobModel = render::Job::ModelIO<SetupMirrorTask, Input, Outputs>;
 
     SetupMirrorTask(size_t mirrorIndex, size_t depth) : _mirrorIndex(mirrorIndex), _depth(depth) {}
@@ -336,7 +330,6 @@ public:
         outputs.edit0() = mirror;
         outputs.edit1() = inputFramebuffer;
         outputs.edit2() = _cachedArgsPointer;
-        outputs.edit3() = inputs.get2();
     }
 
 protected:
@@ -352,13 +345,13 @@ public:
     using Inputs = SetupMirrorTask::Outputs;
     using JobModel = render::Job::ModelI<DrawMirrorTask, Inputs>;
 
-    DrawMirrorTask() {
+    DrawMirrorTask(uint transformSlot) : _transformSlot(transformSlot) {
         static std::once_flag once;
         std::call_once(once, [this] {
             auto state = std::make_shared<gpu::State>();
             state->setCullMode(gpu::State::CULL_BACK);
             state->setDepthTest(true, true, gpu::LESS_EQUAL);
-            PrepareStencil::testMaskDrawShape(*state);
+            PrepareStencil::testMaskDrawShapeNoAA(*state);
 
             initMirrorPipelines(*_forwardPipelines, state, FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter(), true);
             initMirrorPipelines(*_deferredPipelines, state, FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter(), false);
@@ -370,7 +363,6 @@ public:
         auto mirror = inputs.get0();
         auto framebuffer = inputs.get1();
         auto cachedArgs = inputs.get2();
-        auto jitter = inputs.get3();
 
         if (cachedArgs) {
             args->_renderMode = cachedArgs->_renderMode;
@@ -389,14 +381,7 @@ public:
             batch.setViewportTransform(args->_viewport);
             batch.setStateScissorRect(args->_viewport);
 
-            glm::mat4 projMat;
-            Transform viewMat;
-            args->getViewFrustum().evalProjectionMatrix(projMat);
-            args->getViewFrustum().evalViewTransform(viewMat);
-
-            batch.setProjectionTransform(projMat);
-            batch.setProjectionJitter(jitter.x, jitter.y);
-            batch.setViewTransform(viewMat);
+            batch.setSavedViewProjectionTransform(_transformSlot);
 
             batch.setResourceTexture(gr::Texture::MaterialMirror, args->_blitFramebuffer->getRenderBuffer(0));
 
@@ -417,19 +402,55 @@ public:
 private:
     static ShapePlumberPointer _forwardPipelines;
     static ShapePlumberPointer _deferredPipelines;
+
+    uint _transformSlot;
 };
 
 ShapePlumberPointer DrawMirrorTask::_forwardPipelines = std::make_shared<ShapePlumber>();
 ShapePlumberPointer DrawMirrorTask::_deferredPipelines = std::make_shared<ShapePlumber>();
 
- void RenderMirrorTask::build(JobModel& task, const render::Varying& inputs, render::Varying& output, size_t mirrorIndex, render::CullFunctor cullFunctor, size_t depth) {
+void RenderMirrorTask::build(JobModel& task, const render::Varying& inputs, render::Varying& output, size_t mirrorIndex, render::CullFunctor cullFunctor,
+        uint transformOffset,size_t depth) {
     size_t nextDepth = depth + 1;
     const auto setupOutput = task.addJob<SetupMirrorTask>("SetupMirror" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), inputs, mirrorIndex, nextDepth);
 
-    task.addJob<RenderViewTask>("RenderMirrorView" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), cullFunctor, render::ItemKey::TAG_BITS_1, render::ItemKey::TAG_BITS_1, nextDepth);
+    // Our primary view starts at transformOffset 0, and the secondary camera starts at transformOffset 2
+    // Our primary mirror views thus start after the secondary camera, at transformOffset 4, and the secondary
+    // camera mirror views start after all of the primary camera mirror views, at 4 + NUM_MAIN_MIRROR_SLOTS
+    static uint NUM_MAIN_MIRROR_SLOTS = 0;
+    static std::once_flag once;
+    std::call_once(once, [] {
+        for (size_t mirrorDepth = 0; mirrorDepth < MAX_MIRROR_DEPTH; mirrorDepth++) {
+            NUM_MAIN_MIRROR_SLOTS += pow(MAX_MIRRORS_PER_LEVEL, mirrorDepth + 1);
+        }
+        NUM_MAIN_MIRROR_SLOTS *= 2;
+    });
 
-    task.addJob<DrawMirrorTask>("DrawMirrorTask" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), setupOutput);
- }
+    uint mirrorOffset;
+    if (transformOffset == RenderViewTask::TransformOffset::MAIN_VIEW) {
+        mirrorOffset = RenderViewTask::TransformOffset::FIRST_MIRROR_VIEW - 2;
+    } else if (transformOffset == RenderViewTask::TransformOffset::SECONDARY_VIEW) {
+        mirrorOffset = RenderViewTask::TransformOffset::FIRST_MIRROR_VIEW + NUM_MAIN_MIRROR_SLOTS - 2;
+    } else {
+        mirrorOffset = transformOffset;
+    }
+
+    // To calculate our transformSlot, we take the transformSlot of our parent and add numSubSlots (the number of slots
+    // taken up by a sub-tree starting at this depth) per preceding mirrorIndex
+    uint numSubSlots = 0;
+    for (size_t mirrorDepth = depth; mirrorDepth < MAX_MIRROR_DEPTH; mirrorDepth++) {
+        numSubSlots += pow(MAX_MIRRORS_PER_LEVEL, mirrorDepth + 1 - nextDepth);
+    }
+    numSubSlots *= 2;
+
+    mirrorOffset += 2 + numSubSlots * (uint)mirrorIndex;
+
+    task.addJob<RenderViewTask>("RenderMirrorView" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), cullFunctor, render::ItemKey::TAG_BITS_1,
+        render::ItemKey::TAG_BITS_1, (RenderViewTask::TransformOffset) mirrorOffset, nextDepth);
+
+    task.addJob<DrawMirrorTask>("DrawMirrorTask" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth), setupOutput,
+        render::RenderEngine::TS_MAIN_VIEW + transformOffset);
+}
 
 void RenderSimulateTask::run(const render::RenderContextPointer& renderContext, const Inputs& inputs) {
     auto args = renderContext->args;

@@ -132,8 +132,11 @@ void main(void) {
 #endif
 
 <@if not HIFI_USE_TRANSLUCENT@>
+    // Particles have AA disabled so this doesn't matter
+    vec4 PREV_POSITION_CS = vec4(0.0, 0.0, 0.0, 1.0);
     if (emissiveAmount > 0.0) {
         packDeferredFragmentLightmap(
+            PREV_POSITION_CS,
             normal,
             1.0,
             diffuse,
@@ -142,6 +145,7 @@ void main(void) {
             emissive);
     } else {
         packDeferredFragment(
+            PREV_POSITION_CS,
             normal,
             1.0,
             diffuse,

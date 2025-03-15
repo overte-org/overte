@@ -24,6 +24,8 @@
 #include "StylusPick.h"
 #include <ScriptManager.h>
 
+#include <controllers/UserInputMapper.h>
+
 STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
     scriptRegisterMetaType<RayPointerProperties, rayPointerPropertiesToScriptValue, rayPointerPropertiesFromScriptValue>(scriptEngine);

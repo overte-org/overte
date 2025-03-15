@@ -713,7 +713,7 @@ Flickable {
                     ListModel {
                         id: antialiasingModel
 
-                        // Maintain same order as "AntialiasingConfig::Mode".
+                        // Maintain same order as "AntialiasingSetupConfig::Mode".
                         ListElement {
                             text: "None"
                         }
