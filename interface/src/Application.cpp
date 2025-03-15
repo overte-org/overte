@@ -2373,7 +2373,6 @@ void Application::update(float deltaTime) {
         AnimDebugDraw::getInstance().update();
     }
 
-
     { // Game loop is done, mark the end of the frame for the scene transactions and the render loop to take over
         PerformanceTimer perfTimer("enqueueFrame");
         getMain3DScene()->enqueueFrame();
@@ -2388,6 +2387,12 @@ void Application::update(float deltaTime) {
     if (getActiveDisplayPlugin()->isHmd()) {
         PerformanceTimer perfTimer("squeezeVision");
         _visionSqueeze.updateVisionSqueeze(myAvatar->getSensorToWorldMatrix(), deltaTime);
+
+        // XRTODO: won't this impact performance, especially on slower CPUs?
+        // I think it will also affect OpenVR
+        // FIXME HACK: OpenXR doesn't limit the game rate for some reason and wastes cpu time
+        using namespace std::chrono_literals;
+        std::this_thread::sleep_for(5ms);
     }
 }
 
