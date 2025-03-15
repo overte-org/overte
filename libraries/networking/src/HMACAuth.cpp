@@ -122,5 +122,5 @@ bool HMACAuth::calculateHash(HMACHash& hashResult, const char* data, int dataLen
     return true;
 }
 
-OVERTE_IGNORE_DEPRECATED_END
+OVERTE_IGNORE_WARNING_END
 

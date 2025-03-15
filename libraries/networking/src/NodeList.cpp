@@ -99,7 +99,6 @@ NodeList::NodeList(char newOwnerType, int socketListenPort, int dtlsListenPort) 
     // FIXME: Can remove this temporary work-around in version 2021.2.0. (New protocol version implies a domain server upgrade.)
     // Adjust our canRezAvatarEntities permissions on older domains that do not have this setting.
     // DomainServerList and DomainSettings packets can come in either order so need to adjust with both occurrences.
-    auto nodeList = DependencyManager::get<NodeList>();
     connect(&_domainHandler, &DomainHandler::settingsReceived, this, &NodeList::adjustCanRezAvatarEntitiesPerSettings);
 
     auto accountManager = DependencyManager::get<AccountManager>();
@@ -192,7 +191,7 @@ qint64 NodeList::sendStats(QJsonObject statsObject, SockAddr destination) {
     OVERTE_IGNORE_DEPRECATED_BEGIN
     // Can't use CBOR yet, will break protocol.
     statsPacketList->write(jsonDocument.toBinaryData());
-    OVERTE_IGNORE_DEPRECATED_END
+    OVERTE_IGNORE_WARNING_END
 
     sendPacketList(std::move(statsPacketList), destination);
     return 0;

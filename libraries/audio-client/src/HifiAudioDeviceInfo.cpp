@@ -12,7 +12,7 @@
 
 #include "HifiAudioDeviceInfo.h"
 
-const QString HifiAudioDeviceInfo::DEFAULT_DEVICE_NAME = "default ";
+const QString HifiAudioDeviceInfo::DEFAULT_DEVICE_NAME = HIFI_AUDIO_DEVICE_INFO_DEFAULT_DEVICE_NAME;
 
 void HifiAudioDeviceInfo::setDevice(QAudioDeviceInfo devInfo) {
     _audioDeviceInfo = devInfo;

@@ -43,11 +43,11 @@ namespace render {
     class DrawStatus {
     public:
         using Config = DrawStatusConfig;
-        using Input = VaryingSet2<ItemBounds, glm::vec2>;
+        using Input = ItemBounds;
         using JobModel = Job::ModelI<DrawStatus, Input, Config>;
 
         DrawStatus() {}
-        DrawStatus(const gpu::TexturePointer statusIconMap) { setStatusIconMap(statusIconMap); }
+        DrawStatus(const gpu::TexturePointer statusIconMap, uint transformSlot) : _transformSlot(transformSlot) { setStatusIconMap(statusIconMap); }
 
         void configure(const Config& config);
         void run(const RenderContextPointer& renderContext, const Input& input);
@@ -70,6 +70,8 @@ namespace render {
         gpu::BufferPointer _boundsBuffer;
         gpu::BufferPointer _instanceBuffer;
         gpu::TexturePointer _statusIconMap;
+
+        uint _transformSlot;
     };
 }
 

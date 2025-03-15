@@ -288,6 +288,7 @@ public:
         bool lightBufferUnit{ false };
         bool lightAmbientBufferUnit{ false };
         bool lightAmbientMapUnit{ false };
+        bool deferredFrameTransformBufferUnit{ false };
         bool fadeMaskTextureUnit{ false };
         bool fadeParameterBufferUnit{ false };
         bool fadeObjectParameterBufferUnit{ false };

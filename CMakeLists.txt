@@ -1,16 +1,7 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2019-2021 Vircadia contributors.
-# Copyright 2020-2023 Overte e.V.
+# Copyright 2020-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
-
-# If we're running under the gradle build, HIFI_ANDROID will be set here, but
-# ANDROID will not be set until after the `project` statement.  This is the *ONLY*
-# place you need to use `HIFI_ANDROID` instead of `ANDROID`
-if (WIN32 AND NOT HIFI_ANDROID)
-  cmake_minimum_required(VERSION 3.7)
-else()
-  cmake_minimum_required(VERSION 3.2)
-endif()
 
 # 3.14 is the minimum version that supports symlinks on Windows
 cmake_minimum_required(VERSION 3.14)
@@ -160,7 +151,7 @@ if(NOT DEFINED OVERTE_WARNINGS_ALLOWLIST)
 endif()
 
 if(NOT DEFINED OVERTE_WARNINGS_AS_ERRORS)
-    set(OVERTE_WARNINGS_AS_ERRORS false CACHE BOOL "Count warnings as errors")
+    set(OVERTE_WARNINGS_AS_ERRORS true CACHE BOOL "Count warnings as errors")
 endif()
 
 if(OVERTE_WARNINGS_ALLOWLIST)
@@ -187,9 +178,13 @@ if(OVERTE_WARNINGS_AS_ERRORS)
     if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "" AND WIN32))
       set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
       set(CMAKE_CFLAGS "${CMAKE_CFLAGS} /WX")
+      # Silence a warning in Qt about stdext::checked_array_iterator
+      add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
     else()
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-      set(CMAKE_CFLAGS "${CMAKE_CFLAGS} -Werror")
+      # Silence multichar to work around an issue in crashpad
+      # Silence stringop-overflow to work around an issue in tbb
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-multichar -Wno-stringop-overflow")
+      set(CMAKE_CFLAGS "${CMAKE_CFLAGS} -Werror -Wno-multichar -Wno-stringop-overflow")
     endif()
 endif()
 

@@ -490,6 +490,7 @@ void EntityItemProperties::setTagsFromVector(const QVector<QString>& tags) {
     for (const QString& tag : tags) {
         _tags.insert(tag);
     }
+    _tagsChanged = true;
 }
 
 EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
@@ -1402,7 +1403,7 @@ bool EntityItemProperties::blobToProperties(ScriptEngine& scriptEngine, const QB
     // begin recipe for converting unfortunately-formatted-binary-blob to EntityItemProperties
     OVERTE_IGNORE_DEPRECATED_BEGIN
     QJsonDocument jsonProperties = QJsonDocument::fromBinaryData(blob);
-    OVERTE_IGNORE_DEPRECATED_END
+    OVERTE_IGNORE_WARNING_END
     if (jsonProperties.isEmpty() || jsonProperties.isNull() || !jsonProperties.isObject() || jsonProperties.object().isEmpty()) {
         qCDebug(entities) << "bad avatarEntityData json" << QString(blob.toHex());
         return false;
@@ -1434,7 +1435,7 @@ void EntityItemProperties::propertiesToBlob(ScriptEngine& scriptEngine, const QU
     jsonProperties = QJsonDocument(jsonObject);
     OVERTE_IGNORE_DEPRECATED_BEGIN
     blob = jsonProperties.toBinaryData();
-    OVERTE_IGNORE_DEPRECATED_END
+    OVERTE_IGNORE_WARNING_END
     // end recipe
 }
 

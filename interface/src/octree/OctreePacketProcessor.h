@@ -17,6 +17,7 @@
 #include <ReceivedPacketProcessor.h>
 #include <ReceivedMessage.h>
 
+#include "OctreeSceneStats.h"
 #include "SafeLanding.h"
 
 /// Handles processing of incoming voxel packets for the interface application. As with other ReceivedPacketProcessor classes
@@ -26,6 +27,9 @@ class OctreePacketProcessor : public ReceivedPacketProcessor {
 public:
     OctreePacketProcessor();
     ~OctreePacketProcessor();
+
+    NodeToOctreeSceneStats* getOctreeSceneStats() { return &_octreeServerSceneStats; }
+    std::atomic<uint32_t>& getFullSceneReceivedCounter() { return _fullSceneReceivedCounter; }
 
     void startSafeLanding();
     void updateSafeLanding();
@@ -46,6 +50,12 @@ private slots:
     void handleOctreePacket(QSharedPointer<ReceivedMessage> message, SharedNodePointer senderNode);
 
 private:
+    int processOctreeStats(ReceivedMessage& message, SharedNodePointer sendingNode);
+    void trackIncomingOctreePacket(ReceivedMessage& message, SharedNodePointer sendingNode, bool wasStatsPacket);
+
+    NodeToOctreeSceneStats _octreeServerSceneStats;
+    std::atomic<uint32_t> _fullSceneReceivedCounter { 0 };  // how many times have we received a full-scene octree stats packet
+
     OCTREE_PACKET_SEQUENCE _safeLandingSequenceStart { SafeLanding::INVALID_SEQUENCE };
     std::unique_ptr<SafeLanding> _safeLanding;
 };

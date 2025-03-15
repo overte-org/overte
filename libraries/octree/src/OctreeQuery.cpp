@@ -70,7 +70,7 @@ int OctreeQuery::getBroadcastData(unsigned char* destinationBuffer) {
         OVERTE_IGNORE_DEPRECATED_BEGIN
         // Can't use CBOR yet, will break the protocol.
         binaryParametersDocument = QJsonDocument(_jsonParameters).toBinaryData();
-        OVERTE_IGNORE_DEPRECATED_END
+        OVERTE_IGNORE_WARNING_END
     }
 
     // write the size of the JSON parameters
@@ -160,7 +160,7 @@ int OctreeQuery::parseData(ReceivedMessage& message) {
         // grab the parameter object from the packed binary representation of JSON
         OVERTE_IGNORE_DEPRECATED_BEGIN
         auto newJsonDocument = QJsonDocument::fromBinaryData(binaryJSONParameters);
-        OVERTE_IGNORE_DEPRECATED_END
+        OVERTE_IGNORE_WARNING_END
 
         QWriteLocker jsonParameterLocker { &_jsonParametersLock };
         _jsonParameters = newJsonDocument.object();

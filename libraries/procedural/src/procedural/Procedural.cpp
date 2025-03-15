@@ -115,16 +115,16 @@ void ProceduralData::parse(const QJsonObject& proceduralData) {
     channels = proceduralData[CHANNELS_KEY].toArray();
 }
 
-std::function<void(gpu::StatePointer)> Procedural::opaqueStencil = [](gpu::StatePointer state) {};
+std::function<void(gpu::StatePointer, bool)> Procedural::opaqueStencil = [](gpu::StatePointer state, bool useAA) {};
 std::function<void(gpu::StatePointer)> Procedural::transparentStencil = [](gpu::StatePointer state) {};
 
-Procedural::Procedural() {
+Procedural::Procedural(bool useAA) {
     _opaqueState->setCullMode(gpu::State::CULL_NONE);
     _opaqueState->setDepthTest(true, true, gpu::LESS_EQUAL);
     _opaqueState->setBlendFunction(false,
         gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
         gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
-    opaqueStencil(_opaqueState);
+    opaqueStencil(_opaqueState, useAA);
 
     _transparentState->setCullMode(gpu::State::CULL_NONE);
     _transparentState->setDepthTest(true, false, gpu::LESS_EQUAL);
@@ -356,11 +356,11 @@ void Procedural::prepare(gpu::Batch& batch,
                 }
             }
             // Then fill in every reflections the new custom bindings
-            size_t customSlot = procedural::slot::uniform::Custom;
+            int customSlot = procedural::slot::uniform::Custom;
             _slotMap.clear();
             for (const auto& key : _data.uniforms.keys()) {
                 bool isArrayUniform = false;
-                size_t numSlots = 0;
+                int numSlots = 0;
                 const QJsonValue& value = _data.uniforms[key];
                 if (value.isDouble()) {
                     numSlots = 1;
@@ -368,8 +368,8 @@ void Procedural::prepare(gpu::Batch& batch,
                     const QJsonArray valueArray = value.toArray();
                     if (valueArray.size() > 0) {
                         if (valueArray[0].isArray()) {
-                            const size_t valueLength = valueArray[0].toArray().size();
-                            size_t count = 0;
+                            const int valueLength = valueArray[0].toArray().size();
+                            int count = 0;
                             for (const QJsonValue& value : valueArray) {
                                 if (value.isArray()) {
                                     const QJsonArray innerValueArray = value.toArray();
@@ -495,7 +495,7 @@ void Procedural::setupUniforms() {
             continue;
         }
 
-        const size_t slot = slotItr->second;
+        const int slot = slotItr->second;
         const QJsonValue& value = _data.uniforms[key];
         if (value.isDouble()) {
             const float v = value.toDouble();
@@ -504,16 +504,16 @@ void Procedural::setupUniforms() {
             const QJsonArray valueArray = value.toArray();
             if (valueArray.size() > 0) {
                 if (valueArray[0].isArray()) {
-                    const size_t valueLength = valueArray[0].toArray().size();
+                    const int valueLength = valueArray[0].toArray().size();
                     std::vector<float> vs;
                     vs.reserve(valueLength * valueArray.size());
-                    size_t count = 0;
+                    int count = 0;
                     for (const QJsonValue& value : valueArray) {
                         if (value.isArray()) {
                             const QJsonArray innerValueArray = value.toArray();
                             if (innerValueArray.size() == valueLength) {
                                 if (valueLength == 3 || valueLength == 4 || valueLength == 9 || valueLength == 16) {
-                                    for (size_t i = 0; i < valueLength; i++) {
+                                    for (int i = 0; i < valueLength; i++) {
                                         vs.push_back(innerValueArray[i].toDouble());
                                     }
                                     count++;

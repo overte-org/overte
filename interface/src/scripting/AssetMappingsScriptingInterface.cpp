@@ -173,7 +173,7 @@ void AssetMappingsScriptingInterface::getAllMappings(QJSValue callback) {
         OVERTE_IGNORE_DEPRECATED_BEGIN
         // Still using QScriptEngine
         auto map = callback.engine()->newObject();
-        OVERTE_IGNORE_DEPRECATED_END
+        OVERTE_IGNORE_WARNING_END
 
         for (auto& kv : mappings ) {
             map.setProperty(kv.first, kv.second.hash);

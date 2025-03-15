@@ -1,6 +1,7 @@
 //
 //  Created by Sam Gondelman on 11/29/18
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -189,7 +190,10 @@ void ImageEntityRenderer::doRender(RenderArgs* args) {
         }
         transform.setScale(scale);
     }
-    batch->setModelTransform(transform);
+    batch->setModelTransform(transform, _prevRenderTransform);
+    if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
+        _prevRenderTransform = transform;
+    }
 
     Pipeline pipelineType = getPipelineType(materials);
     if (pipelineType == Pipeline::PROCEDURAL) {

@@ -201,7 +201,7 @@ void AvatarBookmarks::updateAvatarEntities(const QVariantList &avatarEntities) {
                 OVERTE_IGNORE_DEPRECATED_BEGIN
                 // We're not transitioning to CBOR yet, since it'd break the protocol.
                 myAvatar->updateAvatarEntity(id, QJsonDocument::fromVariant(propertiesItr.value()).toBinaryData());
-                OVERTE_IGNORE_DEPRECATED_END
+                OVERTE_IGNORE_WARNING_END
             }
         }
     }
