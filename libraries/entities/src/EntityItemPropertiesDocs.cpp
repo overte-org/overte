@@ -700,6 +700,7 @@
  * @property {number} alpha=1 - The opacity of the entity, range <code>0.0</code> &ndash; <code>1.0</code>.
  * @property {boolean} unlit=false - <code>true</code> if the entity is unaffected by lighting, <code>false</code> if it is lit
  *     by the key light and local lights.
+ * @property {number} innerRadius=0.25 - The inner radius of the shape, as a fraction of the total dimensions. Only used for Torus.
  * @property {Entities.Pulse} pulse - Color and alpha pulse.
  *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @example <caption>Create a cylinder.</caption>

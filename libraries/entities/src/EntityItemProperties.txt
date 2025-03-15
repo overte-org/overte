@@ -229,6 +229,7 @@ enum:ALPHA prop:alpha type:float default:ENTITY_ITEM_DEFAULT_ALPHA min:0.0f max:
 enum:UNLIT prop:unlit type:bool default:false common renderProp,
 group:pulse common renderUpdateOnSet,
 enum:SHAPE prop:shape type:EntityShape default:EntityShape::Sphere enum,
+enum:SHAPE_INNER_RADIUS prop:innerRadius type:float default:0.25f min:0.0f max:0.25f renderProp,
 Material
 enum:MATERIAL_URL prop:materialURL type:QString default:"" urlPermission renderProp,
 enum:MATERIAL_MAPPING_MODE prop:materialMappingMode type:MaterialMappingMode default:UV enum renderProp,

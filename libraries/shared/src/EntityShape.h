@@ -31,7 +31,7 @@
  *     <tr><td><code>"Quad"</code></td><td>2D</td><td>A square oriented in 3D.</td></tr>
  *     <tr><td><code>"Sphere"</code></td><td>3D</td><td></td></tr>
  *     <tr><td><code>"Tetrahedron"</code></td><td>3D</td><td></td></tr>
- *     <tr><td><code>"Torus"</code></td><td>3D</td><td><em>Not implemented.</em></td></tr>
+ *     <tr><td><code>"Torus"</code></td><td>3D</td><td>A donut shape.</td></tr>
  *     <tr><td><code>"Triangle"</code></td><td>3D</td><td>A triangular prism.</td></tr>
  *   </tbody>
  * </table>
