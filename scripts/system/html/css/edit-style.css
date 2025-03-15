@@ -2238,3 +2238,9 @@ div.menu-item-shortcut {
 span.viewParent {
     color: #ffffff;
 }
+
+font.viewParentIcon {
+    font-family: HiFi-Glyphs;
+    font-weight: bold;
+}
+
