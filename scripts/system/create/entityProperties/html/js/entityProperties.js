@@ -196,7 +196,7 @@ const GROUPS = [
         properties: [
             {
                 label: "Text",
-                type: "string",
+                type: "textarea",
                 propertyID: "text",
             },
             {
