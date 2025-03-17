@@ -32,7 +32,7 @@ void DomainServerNodeData::updateJSONStats(QByteArray statsByteArray) {
     auto document = QJsonDocument::fromBinaryData(statsByteArray);
     Q_ASSERT(document.isObject());
     _statsJSONObject = overrideValuesIfNeeded(document.object());
-    OVERTE_IGNORE_DEPRECATED_END
+    OVERTE_IGNORE_WARNING_END
 }
 
 QJsonObject DomainServerNodeData::overrideValuesIfNeeded(const QJsonObject& newStats) {

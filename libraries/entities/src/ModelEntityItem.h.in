@@ -104,16 +104,16 @@ protected:
     ReadWriteLockable _jointDataLock;
 
     bool _jointRotationsExplicitlySet { false }; // were the joints set as a property or just side effect of animations
-    bool _jointTranslationsExplicitlySet{ false }; // were the joints set as a property or just side effect of animations
+    bool _jointTranslationsExplicitlySet { false }; // were the joints set as a property or just side effect of animations
 
     QVariantMap _blendshapeCoefficientsMap;
 
 private:
-    uint64_t _lastAnimated { 0 };
-    float _currentFrame { -1.0f };
-
     QVector<float> _blendshapeCoefficientsVector;
     bool _blendshapesChanged { false };
+
+    uint64_t _lastAnimated { 0 };
+    float _currentFrame { -1.0f };
 };
 
 #endif // hifi_ModelEntityItem_h

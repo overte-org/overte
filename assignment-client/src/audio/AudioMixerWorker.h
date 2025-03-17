@@ -12,11 +12,6 @@
 #ifndef hifi_AudioMixerWorker_h
 #define hifi_AudioMixerWorker_h
 
-#if !defined(Q_MOC_RUN)
-// Work around https://bugreports.qt.io/browse/QTBUG-80990
-#include <tbb/concurrent_vector.h>
-#endif
-
 #include <AABox.h>
 #include <AudioHRTF.h>
 #include <AudioRingBuffer.h>
@@ -24,6 +19,7 @@
 #include <UUIDHasher.h>
 #include <NodeList.h>
 #include <PositionalAudioStream.h>
+#include <TBBHelpers.h>
 
 #include "AudioMixerClientData.h"
 #include "AudioMixerStats.h"
