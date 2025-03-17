@@ -1,15 +1,15 @@
-# Armored Chat
+# Domain Chat
 
-1. What is Armored Chat
+1. What is Domain Chat
 2. User manual
     - Installation
     - Settings
     - Usability tips
 3. Development
 
-## What is Armored Chat
+## What is Domain Chat
 
-Armored Chat is a chat application strictly made to communicate between players in the same domain. It is made using QML and to be as light weight as reasonably possible.
+Domain Chat is a chat application strictly made to communicate between players in the same domain. It is made using QML and to be as light weight as reasonably possible.
 
 ### Dependencies
 
@@ -21,7 +21,7 @@ For notifications, AC uses [notificationCore.js](https://github.com/overte-org/o
 
 ### Installation
 
-Armored Chat is preinstalled courtesy of [defaultScripts.js](https://github.com/overte-org/overte/blob/8661e8a858663b48e8485c2cd7120dc3e2d7b87e/scripts/defaultScripts.js).
+Domain Chat is preinstalled courtesy of [defaultScripts.js](https://github.com/overte-org/overte/blob/8661e8a858663b48e8485c2cd7120dc3e2d7b87e/scripts/defaultScripts.js).
 
 If AC is not preinstalled, or for some other reason it can not be automatically installed, you can install it manually by following [these instructions](https://github.com/overte-org/overte/blob/8661e8a858663b48e8485c2cd7120dc3e2d7b87e/scripts/defaultScripts.js) to open your script management application, and loading the script url:
 
@@ -33,7 +33,7 @@ https://raw.githubusercontent.com/overte-org/overte/master/scripts/communityScri
 
 ### Settings
 
-Armored Chat comes with basic settings for managing itself.
+Domain Chat comes with basic settings for managing itself.
 
 #### External window
 
