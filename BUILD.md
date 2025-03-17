@@ -1,13 +1,13 @@
 <!--
 Copyright 2013-2019 High Fidelity, Inc.
 Copyright 2020-2021 Vircadia contributors
-Copyright 2021-2022 Overte e.V.
+Copyright 2021-2025 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
 # General Build Information
 
-*Last Updated on 21-10-2024*
+*Last Updated on 2025-03-17*
 
 ## OS Specific Build Guides
 
@@ -18,69 +18,26 @@ SPDX-License-Identifier: Apache-2.0
 
 ## Dependencies
 - [git](https://git-scm.com/downloads): >= 1.6
-- [CMake](https://cmake.org/download/):  3.9 (or greater up to 3.18.x)
+- [CMake](https://cmake.org/download/):  3.9 (or greater up to latest 3.x.x)
+- [Conan](https://conan.io/downloads): 2.x
 - [Python](https://www.python.org/downloads/): 3.6 or higher
 - [Node.JS](https://nodejs.org/en/): >= 12.13.1 LTS
-    - Used to build the Screen Sharing executable.
+    - Used to build the server-console, JSDoc, and script console autocomplete.
 
-## CMake External Project Dependencies
-
-These dependencies need not be installed manually. They are automatically downloaded on the platforms where they are required.
-- [Bullet Physics Engine](https://github.com/bulletphysics/bullet3/releases):  2.83
-- [glm](https://glm.g-truc.net/0.9.8/index.html):  0.9.8
-- [Oculus SDK](https://developer.oculus.com/downloads/):   1.11 (Windows) / 0.5 (Mac)
-- [OpenVR](https://github.com/ValveSoftware/openvr):   1.11.11 (Windows, Linux)
-- [Polyvox](http://www.volumesoffun.com/):   0.2.1
-- [QuaZip](https://sourceforge.net/projects/quazip/files/quazip/):   0.7.3
-- [SDL2](https://www.libsdl.org/download-2.0.php):   2.0.3
-- [Intel Threading Building Blocks](https://www.threadingbuildingblocks.org/):   4.3
-- [VHACD](https://github.com/virneo/v-hacd)
-- [zlib](http://www.zlib.net/):   1.28 (Win32 only)
-- [nvtt](https://github.com/hifi-archive/nvidia-texture-tools):   2.1.1 (customized)
-
-The above dependencies will be downloaded, built, linked and included automatically by CMake where we require them. The CMakeLists files that handle grabbing each of the following external dependencies can be found in the [cmake/externals folder](cmake/externals). The resulting downloads, source files and binaries will be placed in the `build/ext` folder in each of the subfolders for each external project.
-
-These are not placed in your normal build tree when doing an out of source build so that they do not need to be re-downloaded and re-compiled every time the CMake build folder is cleared. Should you want to force a re-download and re-compile of a specific external, you can simply remove that directory from the appropriate subfolder in `build/ext`. Should you want to force a re-download and re-compile of all externals, just remove the `build/ext` folder.
+## Conan Dependencies
+Most of our dependencies are automatically fetched and built using Conan.
+See the accompanying `conanfile.py` for a full list of direct dependencies.
 
 ### CMake
 
 Overte uses CMake to generate build files and project files for your platform.
 
-### Qt
-
-CMake will download Qt 5.15.2 using vcpkg.
-
-To override this - i.e., use an installed Qt configuration - you need to set a QT_CMAKE_PREFIX_PATH environment variable pointing to your Qt **lib/cmake** folder.
-This can either be entered directly into your shell session before you build or in your shell profile (e.g.: ~/.bash_profile, ~/.bashrc, ~/.zshrc - this depends on your shell and environment).  The path it needs to be set to will depend on where and how Qt5 was installed.
-
-For example, under Linux:
-```bash
-export QT_CMAKE_PREFIX_PATH=/usr/local/Qt5.15.2/gcc_64/lib/cmake
-export QT_CMAKE_PREFIX_PATH=/usr/local/qt/5.15.2/clang_64/lib/cmake/
-export QT_CMAKE_PREFIX_PATH=/usr/local/Cellar/qt5/5.15.2/lib/cmake
-export QT_CMAKE_PREFIX_PATH=/usr/local/opt/qt5/lib/cmake
-```
-
-For example, under Windows:
-
-    set QT_CMAKE_PREFIX_PATH=C:\Qt\5.15.2\msvc2019_64\lib\cmake
-
-For example, under OSX:
-
-    export QT_CMAKE_PREFIX_PATH=/usr/local/Cellar/qt5/5.15.2/lib/cmake
-
-Note: You only need the following components checked under Qt 5.15.2 (select the "Custom Installation" option):
-"MSVC 2019 64-bit", "Qt WebEngine", and "Qt Script (Deprecated)".
-
-Note: Installing the sources is optional but recommended if you have room for them (~3GB). You may also want the Qt debug
-information files (~7GB).
-
-Note: Installing Qt Creator is optional but recommended if you will be editing QML files.
-
 ### Conan
 
 Overte uses conan to download and build dependencies.
 Conan can be downloaded from here: https://conan.io/downloads
+
+See the accompanying `conanfile.py` for a full list of direct dependencies.
 
 Building the dependencies can be lengthy and the resulting files will be stored in your home directory.
 To move them to a different location, you can set the `CONAN_HOME` variable to any folder where you wish to install the dependencies.
@@ -145,19 +102,9 @@ cmake --preset conan-release
 
 If CMake gives you the same error message repeatedly after the build fails, try removing `CMakeCache.txt`.
 
-### Variables
-
-Any variables that need to be set for CMake to find dependencies can be set as ENV variables in your shell profile, or passed directly to CMake with a `-D` flag appended to the `cmake ..` command.
-
-For example, to pass the QT_CMAKE_PREFIX_PATH variable (if not using the vcpkg'ed version) during build file generation:
-
-```bash
-cmake --preset conan-release -DQT_CMAKE_PREFIX_PATH=/usr/local/qt/5.12.3/lib/cmake
-```
-
 ### Finding Dependencies
 
-The following applies for dependencies we do not grab via CMake ExternalProject (OpenSSL is an example), or for dependencies you have opted not to grab as a CMake ExternalProject (via -DUSE_LOCAL_$NAME=0). The list of dependencies we grab by default as external projects can be found in [the CMake External Project Dependencies section](#cmake-external-project-dependencies).
+The following applies for dependencies we do not grab via Conan.
 
 You can point our [CMake find modules](cmake/modules/) to the correct version of dependencies by setting one of the three following variables to the location of the correct version of the dependency.
 
@@ -195,4 +142,3 @@ maximum compatibility.
 ### Devices
 
 You can support external input/output devices such as Leap Motion, MIDI, and more by adding each individual SDK in the visible building path. Refer to the readme file available in each device folder in [interface/external/](interface/external) for the detailed explanation of the requirements to use the device.
-
