@@ -6,7 +6,7 @@
 //    Modified by David Back on January 9th, 2018
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors
-//  Copyright 2022-2024 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  This script implements a class useful for building tools for editing entities.
 //
@@ -981,7 +981,8 @@ SelectionDisplay = (function() {
         primitiveMode: "solid",
         visible: false,
         ignorePickIntersection: true,
-        renderLayer: "front"
+        renderLayer: "front",
+        unlit: true
     };
     var handlePropertiesTranslateArrowCylinders = {
         type: "Shape",
@@ -990,7 +991,8 @@ SelectionDisplay = (function() {
         primitiveMode: "solid",
         visible: false,
         ignorePickIntersection: true,
-        renderLayer: "front"
+        renderLayer: "front",
+        unlit: true
     };
     var handleTranslateXCone = Entities.addEntity(handlePropertiesTranslateArrowCones, "local");
     var handleTranslateXCylinder = Entities.addEntity(handlePropertiesTranslateArrowCylinders, "local");
@@ -1004,13 +1006,6 @@ SelectionDisplay = (function() {
     var handleTranslateZCylinder = Entities.addEntity(handlePropertiesTranslateArrowCylinders, "local");
     Entities.editEntity(handleTranslateZCone, { color: COLOR_BLUE });
     Entities.editEntity(handleTranslateZCylinder, { color: COLOR_BLUE });
-
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleTranslateXCone));
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleTranslateYCone));
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleTranslateZCone));
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleTranslateXCylinder));
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleTranslateYCylinder));
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleTranslateZCylinder));
 
     var handlePropertiesRotateRings = {
         type: "Gizmo",
@@ -1082,7 +1077,7 @@ SelectionDisplay = (function() {
             innerStartColor: COLOR_ROTATE_CURRENT_RING,
             innerEndColor: COLOR_ROTATE_CURRENT_RING,
             outerStartColor: COLOR_ROTATE_CURRENT_RING,
-            outerEndColor: COLOR_ROTATE_CURRENT_RING,            
+            outerEndColor: COLOR_ROTATE_CURRENT_RING,
             },
         primitiveMode: "solid",
         visible: false,
@@ -1117,7 +1112,8 @@ SelectionDisplay = (function() {
         primitiveMode: "solid",
         visible: false,
         ignorePickIntersection: true,
-        renderLayer: "front"
+        renderLayer: "front",
+        unlit: true
     };
 
     var handleStretchXCube = Entities.addEntity(handlePropertiesStretchCubes, "local");
@@ -1127,10 +1123,6 @@ SelectionDisplay = (function() {
     var handleStretchZCube = Entities.addEntity(handlePropertiesStretchCubes, "local");
     Entities.editEntity(handleStretchZCube, { color: COLOR_BLUE });
 
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleStretchXCube));
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleStretchYCube));
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleStretchZCube));
-
     var handlePropertiesStretchPanel = {
         type: "Shape",
         shape: "Cube",
@@ -1138,7 +1130,8 @@ SelectionDisplay = (function() {
         alpha: 0.5,
         visible: false,
         ignorePickIntersection: true,
-        renderLayer: "front"
+        renderLayer: "front",
+        unlit: true
     };
     var handleStretchXPanel = Entities.addEntity(handlePropertiesStretchPanel, "local");
     Entities.editEntity(handleStretchXPanel, { color: COLOR_RED });
@@ -1147,22 +1140,18 @@ SelectionDisplay = (function() {
     var handleStretchZPanel = Entities.addEntity(handlePropertiesStretchPanel, "local");
     Entities.editEntity(handleStretchZPanel, { color: COLOR_BLUE });
 
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleStretchXPanel));
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleStretchYPanel));
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleStretchZPanel));
-
     var handleScaleCube = Entities.addEntity({
         type: "Shape",
         shape: "Cube",
-        primitiveMode: "solid",         
+        primitiveMode: "solid",
         dimensions: 0.025,
         color: COLOR_SCALE_CUBE,
         visible: false,
         ignorePickIntersection: true,
-        renderLayer: "front"        
+        renderLayer: "front",
+        unlit: true
     }, "local");
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleScaleCube));
-    
+
     var handleBoundingBox = Entities.addEntity({
         type: "Shape",
         shape: "Cube",
@@ -1171,34 +1160,35 @@ SelectionDisplay = (function() {
         color: COLOR_BOUNDING_EDGE,
         visible: false,
         ignorePickIntersection: true,
-        renderLayer: "front"
+        renderLayer: "front",
+        unlit: true
     }, "local");
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleBoundingBox));
-    
+
     var handleDuplicator = Entities.addEntity({
         type: "Shape",
         shape: "Shere",
-        primitiveMode: "solid",         
+        primitiveMode: "solid",
         alpha: 1,
         dimensions: 0.05,
         color: COLOR_DUPLICATOR,
         visible: false,
         ignorePickIntersection: true,
-        renderLayer: "front"
+        renderLayer: "front",
+        unlit: true
     }, "local");
-    toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleDuplicator));
 
     // setting to 0 alpha for now to keep this hidden vs using visible false 
     // because its used as the translate xz tool handle toolEntity
     var selectionBox = Entities.addEntity({
         type: "Shape",
         shape: "Cube",
-        primitiveMode: "lines",         
+        primitiveMode: "lines",
         dimensions: 1,
         color: COLOR_RED,
         alpha: 0,
         visible: false,
-        ignorePickIntersection: true
+        ignorePickIntersection: true,
+        unlit: true
     }, "local");
 
     // Handle for x-z translation of particle effect and light entities while inside the bounding box.
@@ -1211,7 +1201,8 @@ SelectionDisplay = (function() {
         color: COLOR_RED,
         alpha: 0,
         visible: false,
-        ignorePickIntersection: true
+        ignorePickIntersection: true,
+        unlit: true
     }, "local");
 
     var xRailToolEntity = Entities.addEntity({
