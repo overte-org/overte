@@ -1,6 +1,5 @@
 $(document).ready(function(){
 
-  var currentHighchart;
 
   // setup a function to grab the nodeStats
   function getNodeStats() {
@@ -22,22 +21,11 @@ $(document).ready(function(){
       $('.jh-value span').each(function(val){
         console.log(val);
         if (!isNaN($(this).text())) {
-          // this looks like a number - give it the clickable class so we can get graphs for it
+          // this looks like a number - give it the clickable class
           $(this).addClass('graphable-stat');
         }
       });
 
-      if (currentHighchart) {
-        // get the current time to set with the point
-        var x = (new Date()).getTime();
-
-        // get the last value using underscore-keypath
-        var y = Number(_(json).valueForKeyPath(graphKeypath));
-
-        // start shifting the chart once we hit 20 data points
-        var shift = currentHighchart.series[0].data.length > 20;
-        currentHighchart.series[0].addPoint([x, y], true, shift);
-      }
     }).fail(function(data) {
       $('#stats-container th').each(function(){
         $(this).addClass('stale');
