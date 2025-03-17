@@ -5,7 +5,7 @@
 //  Created by Ryan Huffman on 13 Nov 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2024 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -20,6 +20,7 @@
         <link rel="stylesheet" type="text/css" href="../../../html/css/jsoneditor.css">
         <link rel="stylesheet" type="text/css" href="../../../html/css/tabs.css">
         <link rel="stylesheet" type="text/css" href="../../../html/css/materialAssistant.css">
+        <link rel="stylesheet" type="text/css" href="../../../html/css/createChildEntityAssistant.css">
         <script type="text/javascript" src="qrc:///qtwebchannel/qwebchannel.js"></script>
         <script src="../../../html/js/jquery-2.1.4.min.js"></script>
         <script type="text/javascript" src="../../../html/js/colpick.js"></script>
@@ -61,6 +62,13 @@
                     </td>
                 </tr>
             </table>
+        </div>
+        <div id="uiCreateChildEntityAssistant" style="display: none;">
+            <div id="uiCreateChildEntityAssistant-headerContainer">
+                <div style="width: 85%; text-align: left;"><font class="uiCreateChildEntityAssistant-title">CREATE CHILD ENTITY</font></div>
+                <div style="width: 15%; text-align: right;"><span id="uiCreateChildEntityAssistant-closeButton" onclick="closeCreateChildEntityAssistant()">&#10006;&nbsp;&nbsp;</span></div>
+            </div>
+            <div id="uiCreateChildEntityAssistant-form"></div>
         </div>
         <div id="uiMaterialAssistant" style="display: none;">
             <div id="uiMaterialAssistant-headerContainer">
