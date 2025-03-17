@@ -8,3 +8,5 @@ compiler.runtime_type=Release
 build_type=Release
 [conf]
 tools.cmake.cmaketoolchain:generator=Ninja
+[options]
+Overte/*:qt_source=aqt
