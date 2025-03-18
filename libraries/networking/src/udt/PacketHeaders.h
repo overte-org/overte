@@ -370,6 +370,7 @@ enum class EntityVersion : PacketVersion {
     ScriptEntities,
     Fading,
     Sampler,
+    CanvasEntity,
 
     // Add new versions above here
     NUM_PACKET_TYPE,
