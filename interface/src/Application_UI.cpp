@@ -6,7 +6,7 @@
 //  Created by Andrzej Kapolka on 5/10/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -18,6 +18,9 @@
 #include <QtQml/QQmlContext>
 #include <QStyle>
 #include <QStyleFactory>
+#if defined(Q_OS_WIN)
+#include <windows.h>
+#endif
 
 #include <AddressManager.h>
 #include <AnimationCacheScriptingInterface.h>
