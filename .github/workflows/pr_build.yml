@@ -50,6 +50,11 @@ jobs:
               arch: x86_64
               build_type: full
               qt_source: aqt
+            - os: Windows 2022
+              runner: windows-2022
+              arch: x86_64
+              build_type: full
+              qt_source: aqt
             #- os: macOS-10.15
             #  build_type: full
             #  qt_source: aqt
@@ -135,7 +140,7 @@ jobs:
           echo "APP_TARGET_NAME=Overte" >> $GITHUB_ENV
         fi
         # Windows build variables
-        if [ "${{ matrix.os }}" = "Windows 2019" ]; then
+        if [[ "${{ matrix.os }}" = "Windows"* ]]; then
           echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
