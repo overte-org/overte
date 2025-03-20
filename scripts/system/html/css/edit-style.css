@@ -4,7 +4,7 @@
 //  Created by Ryan Huffman on November 13th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2024 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -194,6 +194,28 @@ tr.lastSelAvatarEntity {
 }
 
 tr.lastSelAvatarEntity + tr.lastSelAvatarEntity {
+    border-top: 1px solid #2e2e2e;
+}
+
+tr.localEntity {
+    color: #f0d769;
+}
+
+tr.selLocalEntity {
+    color: #000000;
+    background-color: #f0d769;
+}
+
+tr.selLocalEntity + tr.selLocalEntity {
+    border-top: 1px solid #2e2e2e;
+}
+
+tr.lastSelLocalEntity {
+    color: #000000;
+    background-color: #ebac00;
+}
+
+tr.lastSelLocalEntity + tr.lastSelLocalEntity {
     border-top: 1px solid #2e2e2e;
 }
 
@@ -486,6 +508,21 @@ input[type=button].white, button.hifi-edit-button.white {
     background-color: #afafaf;
     background: linear-gradient(#fff 20%, #afafaf 100%);
 }
+
+input[type=button].localEntity, button.hifi-edit-button.localEntity {
+    color: #f0d769;
+    font-size: 26px;
+    padding-bottom: 2px;
+}
+
+input[type=button].selLocalEntity, button.hifi-edit-button.selLocalEntity {
+    color: #000000;
+    font-size: 26px;
+    background-color: #f0d769;
+    background: linear-gradient(#f0d769 20%, #ebac00 100%);
+    padding-bottom: 2px;
+}
+
 input[type=button].secondary, button.hifi-edit-button.secondary {
     font-family: Raleway-Bold;
     font-size: 10px;
@@ -556,6 +593,17 @@ input[type=button].green:enabled:hover, button.hifi-edit-button.green:enabled:ho
 }
 input[type=button].white:enabled:hover, button.hifi-edit-button.white:enabled:hover {
     background: linear-gradient(#fff, #fff);
+    border: none;
+}
+
+input[type=button].localEntity:enabled:hover, button.hifi-edit-button.localEntity:enabled:hover {
+    color: #ebac00;
+    border: none;
+}
+
+input[type=button].selLocalEntity:enabled:hover, button.hifi-edit-button.selLocalEntity:enabled:hover {
+    color: #000000;
+    background: linear-gradient(#ebac00, #ebac00);
     border: none;
 }
 
