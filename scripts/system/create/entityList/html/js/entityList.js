@@ -3,7 +3,7 @@
 //  Created by Ryan Huffman on November 19th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2024 Overte e.V.
+//  Copyright 2024-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -210,6 +210,7 @@ let currentSortOrder = ASCENDING_SORT;
 let elSortOrders = {};
 let typeFilters = [];
 let isFilterInView = false;
+let localEntityFilter = false;
 
 let columns = [];
 let columnsByID = {};
@@ -239,15 +240,16 @@ let elEntityTable,
     elTransformMenu,
     elToolsMenu,
     elMenuBackgroundOverlay,
+    elLocalEntityFilter,
     elHmdMultiSelect,
     elHmdCopy,
     elHmdCut,
     elHmdPaste,
-    elHmdDuplicate,   
+    elHmdDuplicate,
     elUndo,
     elRedo,
     elParent,
-    elUnparent,    
+    elUnparent,
     elDelete,
     elRotateAsTheNextClickedSurface,
     elQuickRotate90x,
@@ -329,6 +331,7 @@ function loaded() {
         elTransformMenu = document.getElementById("transform");
         elToolsMenu = document.getElementById("tools");
         elMenuBackgroundOverlay = document.getElementById("menuBackgroundOverlay");
+        elLocalEntityFilter = document.getElementById("localEntityFilter");
         elHmdCopy = document.getElementById("hmdcopy");
         elHmdCopyID = document.getElementById("hmdcopyid");
         elHmdCut = document.getElementById("hmdcut");
@@ -393,6 +396,16 @@ function loaded() {
         };
         elExport.onclick = function() {
             EventBridge.emitWebEvent(JSON.stringify({ type: "export"}));
+        };
+        elLocalEntityFilter.onclick = function() {
+            if (localEntityFilter) {
+                elLocalEntityFilter.className = "localEntity glyph";
+                localEntityFilter = false;
+            } else {
+                elLocalEntityFilter.className = "selLocalEntity glyph";
+                localEntityFilter = true;
+            }
+            EventBridge.emitWebEvent(JSON.stringify({ "type": "localEntityFilter", "localEntityFilter": localEntityFilter }));
         };
         elHmdMultiSelect.onclick = function() {
             if (hmdMultiSelectMode) {
@@ -1188,6 +1201,8 @@ function loaded() {
                     if (entity.elRow) {
                         if (entity.entityHostType === "avatar") {
                             entity.elRow.className = "avatarEntity";
+                        } else if (entity.entityHostType === "local") {
+                            entity.elRow.className = "localEntity";
                         } else {
                             entity.elRow.className = "";
                         }
@@ -1206,12 +1221,16 @@ function loaded() {
                         if (id === lastSelectedEntity) {
                             if (entity.entityHostType === "avatar") {
                                 entity.elRow.className = "lastSelAvatarEntity";
+                            } else if (entity.entityHostType === "local") {
+                                entity.elRow.className = "lastSelLocalEntity";
                             } else {
                                 entity.elRow.className = "last-selected";
                             }
                         } else {
                             if (entity.entityHostType === "avatar") {
                                 entity.elRow.className = "selAvatarEntity";
+                            } else if (entity.entityHostType === "local") {
+                                entity.elRow.className = "selLocalEntity";
                             } else {
                                 entity.elRow.className = "selected";
                             }
@@ -1287,12 +1306,16 @@ function loaded() {
                 if (itemData.id === lastSelectedEntity) {
                     if (itemData.entityHostType === "avatar") {
                         elRow.className = "lastSelAvatarEntity";
+                    } else if (itemData.entityHostType === "local") {
+                        elRow.className = "lastSelLocalEntity";
                     } else {
                         elRow.className = "last-selected";
                     }
                 } else {
                     if (itemData.entityHostType === "avatar") {
                         elRow.className = "selAvatarEntity";
+                    } else if (itemData.entityHostType === "local") {
+                        elRow.className = "selLocalEntity";
                     } else {
                         elRow.className = "selected";
                     }
@@ -1300,6 +1323,8 @@ function loaded() {
             } else {
                 if (itemData.entityHostType === "avatar") {
                     elRow.className = "avatarEntity";
+                } else if (itemData.entityHostType === "local") {
+                    elRow.className = "localEntity";
                 } else {
                     elRow.className = "";
                 }

@@ -2,9 +2,10 @@
 
 //  entityList.js
 //
+//  Created by Ryan Huffman on November 19th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2023-2024 Overte e.V.
+//  Copyright 2023-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -70,6 +71,7 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
 
     var filterInView = false;
     var searchRadius = 100;
+    var localEntityFilter = false;
 
     var visible = false;
 
@@ -78,7 +80,7 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
     that.setVisible = function(newVisible) {
         visible = newVisible;
         webView.setVisible(shouldUseEditTabletApp() && visible);
-        entityListWindow.setVisible(!shouldUseEditTabletApp() && visible);        
+        entityListWindow.setVisible(!shouldUseEditTabletApp() && visible);
     };
 
     that.isVisible = function() {
@@ -200,11 +202,36 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
 
             var ids;
             PROFILE("findEntities", function() {
+                var domainAndAvatarIds;
                 if (filterInView) {
-                    ids = Entities.findEntitiesInFrustum(Camera.frustum);
+                    domainAndAvatarIds = Entities.findEntitiesInFrustum(Camera.frustum);
                 } else {
-                    ids = Entities.findEntities(MyAvatar.position, searchRadius);
+                    domainAndAvatarIds = Entities.findEntities(MyAvatar.position, searchRadius);
                 }
+                var localIds = [];
+                if (localEntityFilter) {
+                    localIds = Overlays.findOverlays(MyAvatar.position, searchRadius);
+                    var tabletLocalEntityToExclude = [
+                        HMD.tabletID,
+                        HMD.tabletScreenID,
+                        HMD.homeButtonID,
+                        HMD.homeButtonHighlightID,
+                        HMD.miniTabletID,
+                        HMD.miniTabletScreenID
+                    ];
+                    var seltoolsIds = SelectionDisplay.toolEntityMaterial.concat(
+                        SelectionDisplay.allToolEntities, 
+                        allOverlays,
+                        that.createApp.entityShapeVisualizerLocalEntityToExclude,
+                        tabletLocalEntityToExclude
+                    );
+                    for (var i = localIds.length - 1; i >= 0; i--) {
+                        if (seltoolsIds.includes(localIds[i]) || Keyboard.containsID(localIds[i])) {
+                            localIds.splice(i, 1);
+                        }
+                    }
+                }
+                ids = domainAndAvatarIds.concat(localIds);
             });
 
             var cameraPosition = Camera.position;
@@ -433,6 +460,9 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
             that.createApp.toggleGridVisibility();
         } else if (data.type === 'toggleSnapToGrid') {
             that.toggleSnapToGrid();
+        } else if (data.type === 'localEntityFilter') {
+            localEntityFilter = data.localEntityFilter;
+            that.sendUpdate();
         }
 
     };

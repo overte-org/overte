@@ -161,7 +161,7 @@
     editTools.addListener(selectionManager.updateEditSettings);
 
     var entityShapeVisualizerSessionName = "SHAPE_VISUALIZER_" + Uuid.generate();
-
+    createApp.entityShapeVisualizerLocalEntityToExclude = [];
     var EntityShapeVisualizer = Script.require('./modules/entityShapeVisualizer.js');
     var entityShapeVisualizer = new EntityShapeVisualizer(["Zone"], entityShapeVisualizerSessionName);
 
@@ -174,6 +174,7 @@
         selectionDisplay.updateHandles();
         entityIconOverlayManager.updatePositions(selectionManager.selections);
         entityShapeVisualizer.setEntities(selectionManager.selections);
+        createApp.entityShapeVisualizerLocalEntityToExclude = entityShapeVisualizer.getLocalEntityToExclude();
     });
 
     var DEGREES_TO_RADIANS = Math.PI / 180.0;
