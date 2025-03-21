@@ -1726,7 +1726,7 @@ function loaded() {
                 elToggleSpaceMode.innerText = "World";
             }
         }
-
+        
         const KEY_CODES = {
             BACKSPACE: 8,
             DELETE: 46
@@ -1867,6 +1867,10 @@ function loaded() {
                     if (typeof(data.defaultRadius) === "number") {
                         elFilterRadius.value = data.defaultRadius;
                         onRadiusChange();
+                        if (data.localEntityFilter) {
+                            elLocalEntityFilter.className = "selLocalEntity glyph";
+                            localEntityFilter = true;
+                        }
                     }
                     if (data.columnsData !== "NO_DATA" && typeof(data.columnsData) === "object") {
                         var isValid = true;

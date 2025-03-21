@@ -438,7 +438,8 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
             emitJSONScriptEvent({
                 "type": "loadedConfigSetting",
                 "columnsData": columnsData,
-                "defaultRadius": defaultRadius
+                "defaultRadius": defaultRadius,
+                "localEntityFilter": localEntityFilter
             });
         } else if (data.type === 'saveColumnsConfigSetting') {
             Settings.setValue(that.createApp.SETTING_EDITOR_COLUMNS_SETUP, data.columnsData);
