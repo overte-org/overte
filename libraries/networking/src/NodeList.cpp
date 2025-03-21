@@ -907,10 +907,10 @@ void NodeList::parseNodeFromPacketStream(QDataStream& packetStream) {
 
     // if the public socket address is 0 then it's reachable at the same IP
     // as the domain server
-    if (info.publicSocket.getAddressIPv4().isNull()) {
+    if (!info.publicSocket.getAddressIPv4().isNull()) {
         info.publicSocket.setAddress(_domainHandler.getIPv4());
     }
-    if (info.publicSocket.getAddressIPv6().isNull()) {
+    if (!info.publicSocket.getAddressIPv6().isNull()) {
         info.publicSocket.setAddress(_domainHandler.getIPv6());
     }
 

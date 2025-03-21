@@ -59,7 +59,7 @@ SockAddr& SockAddr::operator=(const SockAddr& rhsSockAddr) {
     return *this;
 }
 
-SockAddr::SockAddr(SocketType socketType, const QString& hostname, quint16 hostOrderPort, bool shouldBlockForLookup) :
+SockAddr::SockAddr(SocketType socketType, const QString& hostname, quint16 hostOrderPort, bool shouldBlockForLookup, QAbstractSocket::NetworkLayerProtocol protocolToUse) :
     _socketType(socketType), _addressIPv4(), _addressIPv6(),
     _port(hostOrderPort)
 {
@@ -70,11 +70,19 @@ SockAddr::SockAddr(SocketType socketType, const QString& hostname, quint16 hostO
         if (shouldBlockForLookup) {
             qCDebug(networking) << "Synchronously looking up IP address for hostname" << hostname << "for" << socketType << "socket on port" << hostOrderPort;
             QHostInfo result = QHostInfo::fromName(hostname);
-            handleLookupResult(result);
+            handleLookupResult(result, protocolToUse);
         } else {
             qCDebug(networking) << "Asynchronously looking up IP address for hostname" << hostname << "for" << socketType << "socket on port" << hostOrderPort;
-            int lookupID = QHostInfo::lookupHost(hostname, this, &SockAddr::handleLookupResult);
-            qCDebug(networking) << "Lookup ID for " << hostname << "is" << lookupID;
+            if (protocolToUse == QAbstractSocket::IPv4Protocol) {
+                int lookupID = QHostInfo::lookupHost(hostname, this, &SockAddr::handleLookupResultIPv4Only);
+                qCDebug(networking) << "Lookup ID for " << hostname << "is" << lookupID;
+            } else if (protocolToUse == QAbstractSocket::IPv6Protocol) {
+                int lookupID = QHostInfo::lookupHost(hostname, this, &SockAddr::handleLookupResultIPv6Only);
+                qCDebug(networking) << "Lookup ID for " << hostname << "is" << lookupID;
+            } else {
+                int lookupID = QHostInfo::lookupHost(hostname, this, &SockAddr::handleLookupResultAnyIP);
+                qCDebug(networking) << "Lookup ID for " << hostname << "is" << lookupID;
+            }
         }
     }
     if (address.protocol() == QAbstractSocket::IPv4Protocol) {
@@ -114,7 +122,19 @@ void SockAddr::setAddress(const QHostAddress& address) {
     }
 }
 
-void SockAddr::handleLookupResult(const QHostInfo& hostInfo) {
+void SockAddr::handleLookupResultIPv4Only(const QHostInfo& hostInfo) {
+    handleLookupResult(hostInfo, QAbstractSocket::IPv4Protocol);
+}
+
+void SockAddr::handleLookupResultIPv6Only(const QHostInfo& hostInfo) {
+    handleLookupResult(hostInfo, QAbstractSocket::IPv6Protocol);
+}
+
+void SockAddr::handleLookupResultAnyIP(const QHostInfo& hostInfo) {
+    handleLookupResult(hostInfo, QAbstractSocket::AnyIPProtocol);
+}
+
+void SockAddr::handleLookupResult(const QHostInfo& hostInfo, QAbstractSocket::NetworkLayerProtocol protocolToUse) {
     qCDebug(networking) << "handleLookupResult for" << hostInfo.lookupId();
 
     if (hostInfo.error() != QHostInfo::NoError) {
@@ -126,13 +146,15 @@ void SockAddr::handleLookupResult(const QHostInfo& hostInfo) {
             // just take the first IPv4 address
             // TODO(IPv6): what to do about IPv4 and IPv6?
             qDebug() << "SockAddr::handleLookupResult hostInfo: " << hostInfo.addresses();
-            if (address.protocol() == QAbstractSocket::IPv4Protocol) {
+            if (address.protocol() == QAbstractSocket::IPv4Protocol
+                && (protocolToUse == QAbstractSocket::IPv4Protocol || protocolToUse == QAbstractSocket::AnyIPProtocol)) {
                 _addressIPv4 = address;
                 qCDebug(networking) << "QHostInfo lookup result for"
                     << hostInfo.hostName() << "with lookup ID" << hostInfo.lookupId() << "is" << address.toString();
                 addressFound = true;
             }
-            if (address.protocol() == QAbstractSocket::IPv6Protocol) {
+            if (address.protocol() == QAbstractSocket::IPv6Protocol
+                && (protocolToUse == QAbstractSocket::IPv6Protocol || protocolToUse == QAbstractSocket::AnyIPProtocol)) {
                 _addressIPv6 = address;
                 qCDebug(networking) << "QHostInfo lookup result for"
                                     << hostInfo.hostName() << "with lookup ID" << hostInfo.lookupId() << "is" << address.toString();

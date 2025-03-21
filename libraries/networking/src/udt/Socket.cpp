@@ -247,6 +247,11 @@ qint64 Socket::writeDatagram(const char* data, qint64 size, const SockAddr& sock
 qint64 Socket::writeDatagram(const QByteArray& datagram, const SockAddr& sockAddr) {
     auto socketType = sockAddr.getType();
 
+    //qDebug() << "Socket::writeDatagram v4 " << sockAddr.getAddressIPv4() << " v6 " << sockAddr.getAddressIPv6() << " protocol ";
+    /*if (sockAddr.getAddressIPv4() == QHostAddress("127.0.0.1")) {
+        printf("break");
+    }*/
+
     // don't attempt to write the datagram if we're unbound.  Just drop it.
     // _networkSocket.writeDatagram will return an error anyway, but there are
     // potential crashes in Qt when that happens.

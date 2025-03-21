@@ -29,7 +29,9 @@ public:
     SockAddr();
     SockAddr(SocketType socketType, const QHostAddress& addressV4, const QHostAddress& addressV6, quint16 port);
     SockAddr(const SockAddr& otherSockAddr);
-    SockAddr(SocketType socketType, const QString& hostname, quint16 hostOrderPort, bool shouldBlockForLookup = false);
+    // ipV4Only is used for STUN.
+    SockAddr(SocketType socketType, const QString& hostname, quint16 hostOrderPort, bool shouldBlockForLookup = false,
+             QAbstractSocket::NetworkLayerProtocol protocolToUse = QAbstractSocket::AnyIPProtocol);
 
     // TODO(IPv6): original code had && too but is this correct? Shouldn't it be invalid if either port or address is invalid?
     // fo0r now I changed it to ||
@@ -72,7 +74,11 @@ public:
     friend QDataStream& operator>>(QDataStream& dataStream, SockAddr& sockAddr);
 
 private slots:
-    void handleLookupResult(const QHostInfo& hostInfo);
+    // In some cases, for example for STUN IPv4-ony lookup is needed.
+    void handleLookupResult(const QHostInfo& hostInfo, QAbstractSocket::NetworkLayerProtocol protocolToUse);
+    void handleLookupResultIPv4Only(const QHostInfo& hostInfo);
+    void handleLookupResultIPv6Only(const QHostInfo& hostInfo);
+    void handleLookupResultAnyIP(const QHostInfo& hostInfo);
 signals:
     void lookupCompleted();
     void lookupFailed();
@@ -100,7 +106,10 @@ namespace std {
                 hashResult ^= hash<uint32_t>()((uint32_t)sockAddr.getAddressIPv4().toIPv4Address());
             }
             if (!sockAddr.getAddressIPv6().isNull()) {
+                bool ipv4Test;
                 Q_ASSERT(sockAddr.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol);
+                sockAddr.getAddressIPv6().toIPv4Address(&ipv4Test);
+                Q_ASSERT(!ipv4Test);
                 union {
                     Q_IPV6ADDR ip;
                     // IPv6 is 128 bit long

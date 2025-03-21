@@ -68,7 +68,7 @@ ICEClientApp::ICEClientApp(int argc, char* argv[]) :
         const_cast<QLoggingCategory*>(&networking())->setEnabled(QtWarningMsg, false);
     }
 
-    _stunSockAddr = SockAddr(SocketType::UDP, STUN_SERVER_HOSTNAME, STUN_SERVER_PORT, true);
+    _stunSockAddr = SockAddr(SocketType::UDP, STUN_SERVER_HOSTNAME, STUN_SERVER_PORT, true, QAbstractSocket::IPv4Protocol);
 
     _cacheSTUNResult = parser.isSet(cacheSTUNOption);
 
