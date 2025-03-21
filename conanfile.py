@@ -75,7 +75,7 @@ class Overte(ConanFile):
         self.requires("v-hacd/4.1.0")
         self.requires("vulkan-memory-allocator/3.0.1")
         self.requires("zlib/1.2.13")
-        self.requires("glm/0.9.9.5", force=True)
+        self.requires("glm/0.9.9.5@overte/experimental#d9c7c5675e292bc8c822a67e5bd438dd", force=True)
 
         if self.options.qt_source == "system":
             self.requires("qt/5.15.2@overte/system", force=True)
