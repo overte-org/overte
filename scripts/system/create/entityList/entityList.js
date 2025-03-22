@@ -217,7 +217,8 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
                         HMD.homeButtonID,
                         HMD.homeButtonHighlightID,
                         HMD.miniTabletID,
-                        HMD.miniTabletScreenID
+                        HMD.miniTabletScreenID,
+                        that.grid.getGridEntityToolID()
                     ];
                     var seltoolsIds = SelectionDisplay.toolEntityMaterial.concat(
                         SelectionDisplay.allToolEntities, 

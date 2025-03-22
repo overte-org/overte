@@ -167,6 +167,7 @@
 
     var entityListTool = new EntityListTool(shouldUseEditTabletApp, selectionManager);
     entityListTool.createApp = createApp;
+    entityListTool.grid = grid;
     entityListTool.cameraManager = cameraManager;
     entityListTool.selectionDisplay = selectionDisplay;
 
