@@ -163,6 +163,9 @@ EntityShape.prototype = {
             this.initialize(propertiesForType);
         }
     },
+    getIds: function() {
+        return {"materialEntityID": this.materialEntity, "entityID": this.entity};
+    },
     clear: function() {
         Entities.deleteEntity(this.materialEntity);
         Entities.deleteEntity(this.entity);
@@ -203,6 +206,16 @@ EntityShapeVisualizer.prototype = {
             this.entityShapes[entityID].clear();
         }, this);
         this.entityShapes = {};
+    },
+    getLocalEntityToExclude: function() {
+        var ids = [];
+        var entityShapesIDs;
+        Object.keys(this.entityShapes).forEach(function(entityID) {
+            entityShapesIDs = this.entityShapes[entityID].getIds();
+            ids.push(entityShapesIDs.entityID);
+            ids.push(entityShapesIDs.materialEntityID);
+        }, this);
+        return ids;
     },
     setEntities: function(entities) {
         var qualifiedEntities = entities.filter(function(entityID) {

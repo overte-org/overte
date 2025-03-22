@@ -6,7 +6,7 @@
 //    Modified by David Back on January 9th, 2018
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors
-//  Copyright 2022-2024 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  This script implements a class useful for building tools for editing entities.
 //
@@ -1277,6 +1277,7 @@ SelectionDisplay = (function() {
     ];
 
     that.allToolEntities = allToolEntities;
+    that.toolEntityMaterial = toolEntityMaterial;
 
     const nonLayeredToolEntities = [selectionBox, iconSelectionBox];
 
