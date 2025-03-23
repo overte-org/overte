@@ -789,6 +789,7 @@ int possibleResampling(AudioSRC* resampler,
 }
 
 void AudioClient::start() {
+    _startupMutex.lock();
 
     // set up the desired audio format
     _desiredInputFormat.setSampleRate(AudioConstants::SAMPLE_RATE);
@@ -818,6 +819,10 @@ void AudioClient::start() {
     connect(&_checkInputTimer, &QTimer::timeout, this, &AudioClient::checkInputTimeout);
     _checkInputTimer.start(CHECK_INPUT_READS_MSECS);
 #endif
+
+    _startupFinished = true;
+    _startupMutex.unlock();
+    _startupFinishedCondition.notify_one();
 }
 
 void AudioClient::stop() {
@@ -2504,6 +2509,11 @@ void AudioClient::setAvatarBoundingBoxParameters(glm::vec3 corner, glm::vec3 sca
 
 void AudioClient::startThread() {
     moveToNewNamedThread(this, "Audio Thread", [this] { start(); }, QThread::TimeCriticalPriority);
+}
+
+void AudioClient::waitForThreadToStart() {
+    std::unique_lock<std::mutex> lock(_startupMutex);
+    _startupFinishedCondition.wait(lock, [this]{ return _startupFinished; });
 }
 
 void AudioClient::setInputVolume(float volume, bool emitSignal) {

@@ -126,6 +126,7 @@ public:
     };
     
     void startThread();
+    void waitForThreadToStart();
     void negotiateAudioFormat();
     void selectAudioFormat(const QString& selectedCodecName);
 
@@ -536,6 +537,11 @@ private:
     QTimer* _checkPeakValuesTimer { nullptr };
 
     bool _isRecording { false };
+
+    // Needed for startup:
+    std::mutex _startupMutex;
+    bool _startupFinished { false };
+    std::condition_variable _startupFinishedCondition;
 };
 
 

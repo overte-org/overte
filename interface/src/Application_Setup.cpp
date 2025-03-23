@@ -800,10 +800,6 @@ void Application::initialize(const QCommandLineParser &parser) {
         showCursor(Cursor::Manager::lookupIcon(_preferredCursor.get()));
     }
 
-    // An audio device changed signal received before the display plugins are set up will cause a crash,
-    // so we defer the setup of the `scripting::Audio` class until this point
-    DependencyManager::set<AudioScriptingInterface, scripting::Audio>();
-
     // Create the rendering engine.  This can be slow on some machines due to lots of
     // GPU pipeline creation.
     initializeRenderEngine();
@@ -2146,6 +2142,12 @@ void Application::setupSignalsAndOperators() {
             }
         });
         audioIO->startThread();
+        audioIO->waitForThreadToStart();
+
+        // This needs to happen after audio thread has started.
+        // An audio device changed signal received before the display plugins are set up will cause a crash,
+        // so we defer the setup of the `scripting::Audio` class until this point
+        DependencyManager::set<AudioScriptingInterface, scripting::Audio>();
 
         auto audioScriptingInterface = DependencyManager::get<AudioScriptingInterface>().data();
         connect(audioIO, &AudioClient::mutedByMixer, audioScriptingInterface, &AudioScriptingInterface::mutedByMixer);
