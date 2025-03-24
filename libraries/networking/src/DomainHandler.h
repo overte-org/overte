@@ -117,6 +117,7 @@ public:
 
     const QHostAddress& getIPv4() const { return _sockAddr.getAddressIPv4(); }
     const QHostAddress& getIPv6() const { return _sockAddr.getAddressIPv6(); }
+    // TODO(IPv6):
     void setIPToLocalhost() { _sockAddr.setAddress(QHostAddress(QHostAddress::LocalHost)); }
 
     const SockAddr& getSockAddr() const { return _sockAddr; }

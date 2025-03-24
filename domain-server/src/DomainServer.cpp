@@ -345,7 +345,8 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     static const QString AC_SUBNET_ALLOWLIST_SETTING_PATH = "security.ac_subnet_allowlist";
 
     static const Subnet LOCALHOST { QHostAddress("127.0.0.1"), 32 };
-    _acSubnetAllowlist = { LOCALHOST };
+    static const Subnet LOCALHOST_IPV6 { QHostAddress("::1"), 128 };
+    _acSubnetAllowlist = { LOCALHOST, LOCALHOST_IPV6 };
 
     auto allowlist = _settingsManager.valueOrDefaultValueForKeyPath(AC_SUBNET_ALLOWLIST_SETTING_PATH).toStringList();
     for (auto& subnet : allowlist) {
@@ -356,9 +357,14 @@ DomainServer::DomainServer(int argc, char* argv[]) :
             continue;
         }
 
+        auto ip = QHostAddress(netmaskParts[0]);
+
+        // TODO(IPv6): how is netmask specified when IPv4 address is written as an IPv6 address?
         // The default netmask is 32 if one has not been specified, which will
         // match only the ip provided.
-        int netmask = 32;
+        bool isIPv4 = false;
+        ip.toIPv4Address(&isIPv4);
+        int netmask = isIPv4 ? 32 : 128;
 
         if (netmaskParts.size() == 2) {
             bool ok;
@@ -368,8 +374,6 @@ DomainServer::DomainServer(int argc, char* argv[]) :
                 continue;
             }
         }
-
-        auto ip = QHostAddress(netmaskParts[0]);
 
         if (!ip.isNull()) {
             qDebug() << "Adding AC allowlist subnet: " << subnet << " -> " << (ip.toString() + "/" + QString::number(netmask));

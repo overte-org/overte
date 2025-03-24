@@ -444,6 +444,7 @@ enum class DomainConnectRequestVersion : PacketVersion {
     HasReason,
     HasSystemInfo,
     HasCompressedSystemInfo,
+    IPv6Support,
     SocketTypes
 };
 

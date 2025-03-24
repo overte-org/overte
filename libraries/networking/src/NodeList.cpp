@@ -907,10 +907,12 @@ void NodeList::parseNodeFromPacketStream(QDataStream& packetStream) {
 
     // if the public socket address is 0 then it's reachable at the same IP
     // as the domain server
-    if (!info.publicSocket.getAddressIPv4().isNull()) {
+    qDebug() << "NodeList::parseNodeFromPacketStream v4" << info.publicSocket.getAddressIPv4() << " " << info.publicSocket.getAddressIPv4().protocol()
+        << " v6 " << info.publicSocket.getAddressIPv6() << " " << info.publicSocket.getAddressIPv6().protocol();
+    if (info.publicSocket.getAddressIPv4().isNull()) {
         info.publicSocket.setAddress(_domainHandler.getIPv4());
     }
-    if (!info.publicSocket.getAddressIPv6().isNull()) {
+    if (info.publicSocket.getAddressIPv6().isNull()) {
         info.publicSocket.setAddress(_domainHandler.getIPv6());
     }
 
