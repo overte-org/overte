@@ -1,5 +1,5 @@
 <!--
-Copyright 2022-2023 Overte e.V.
+Copyright 2022-2025 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
@@ -10,6 +10,15 @@ like documentaion or CI pipeline.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2025.03.3] 2025.03.25
+
+### Fixes
+- Fix starting in VR on Windows (PR1378)
+
+### Removals
+- Remove proprietary graphing functionality from the Domain server control panel (PR1371)
+
 
 ## [2025.03.2] 2025.03.15
 
