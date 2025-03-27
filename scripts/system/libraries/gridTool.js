@@ -1,9 +1,9 @@
 //  gridTool.js
 //
-//  Created by Ryan Huffman on 6 Nov 2014
+//  Created by Ryan Huffman on November 6th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -45,6 +45,10 @@ Grid = function() {
 
     that.getOrigin = function() {
         return origin;
+    };
+
+    that.getGridEntityToolID = function() {
+        return gridEntityTool;
     };
 
     that.getMinorIncrement = function() {
