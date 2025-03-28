@@ -78,6 +78,7 @@ Rectangle {
                         anchors.fill: parent
                         onClicked: {
                             pageVal = "local";
+                            load_scroll_timer.bypassDistanceCheck = true;
                             load_scroll_timer.running = true;
                         }
                     }
@@ -106,7 +107,8 @@ Rectangle {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            pageVal = "domain"
+                            pageVal = "domain";
+                            load_scroll_timer.bypassDistanceCheck = true;
                             load_scroll_timer.running = true;
                         }
                     }
