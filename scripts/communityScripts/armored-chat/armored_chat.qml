@@ -21,6 +21,7 @@ Rectangle {
         repeat: false
         onTriggered: {
             toScript({type: "initialized"});
+            load_scroll_timer.bypassDistanceCheck = true
             load_scroll_timer.running = true
         }
     }
@@ -29,8 +30,12 @@ Rectangle {
         interval: 100
         running: false
         repeat: false
+
+        property bool bypassDistanceCheck: false    // One time event. Whether we should bypass the distance check, and scroll to the bottom regardless or not.
+
         onTriggered: {
-           scrollToBottom(true);
+           scrollToBottom(bypassDistanceCheck);
+           bypassDistanceCheck = false;             // Set the property to false, this was a one time event!
         }
     }
 
@@ -73,6 +78,7 @@ Rectangle {
                         anchors.fill: parent
                         onClicked: {
                             pageVal = "local";
+                            load_scroll_timer.bypassDistanceCheck = true;
                             load_scroll_timer.running = true;
                         }
                     }
@@ -101,7 +107,8 @@ Rectangle {
                     MouseArea {
                         anchors.fill: parent
                         onClicked: {
-                            pageVal = "domain"
+                            pageVal = "domain";
+                            load_scroll_timer.bypassDistanceCheck = true;
                             load_scroll_timer.running = true;
                         }
                     }
