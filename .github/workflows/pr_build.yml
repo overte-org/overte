@@ -64,7 +64,7 @@ jobs:
               runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
               arch: amd64
               build_type: full
-            #  apt-dependencies: # add missing dependencies to docker image when convenient
+              apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
               image: docker.io/overte/overte-full-build:0.1.6-ubuntu-20.04-amd64
             # Android builds are currently failing
             #- os: ubuntu-18.04
@@ -75,8 +75,8 @@ jobs:
               runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
               arch: aarch64
               build_type: full
+              apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
               image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-aarch64
-            #  apt-dependencies: # add missing dependencies to docker image when convenient
         fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
@@ -189,6 +189,16 @@ jobs:
 
           echo "Installing apt packages"
           sudo apt install -y ${{ matrix.apt-dependencies }} || exit 1
+
+          echo "Adding Toolchain test PPA"
+          apt install -y software-properties-common
+          add-apt-repository ppa:ubuntu-toolchain-r/test
+
+          echo "Installing gcc-13"
+          apt install -y gcc-13 g++-13 || exit 1
+
+          # Set GCC 13 as default
+          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13
 
         else # macOS
           echo "Downloading MacOSX10.12 SDK.."

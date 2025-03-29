@@ -745,6 +745,13 @@ void OpenGLDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         }
 
         gpu::Backend::freeGPUMemSize.set(gpu::gl::getFreeDedicatedMemory());
+
+        // Drop current frame after presenting it once.
+        // This is required for the OpenXR frame cycle, since we call xrEndFrame after presenting.
+        // xrEndFrame must not be called multiple times.
+        if (_presentOnlyOnce) {
+            _currentFrame.reset();
+        }
     } else if (alwaysPresent()) {
         refreshRateController->clockEndTime();
         internalPresent();
