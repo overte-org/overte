@@ -41,7 +41,7 @@ jobs:
         include:
           - os: windows-2019
             build_type: full
-            conan_qt: True
+            qt_source: aqt
       fail-fast: false
     runs-on: ${{matrix.os}}
     steps:
@@ -114,7 +114,7 @@ jobs:
       run: |
         # Run twice to work around OpenSSL not being found. See: https://github.com/overte-org/overte-conan-recipes/issues/1
         for counter in {1..2}; do
-          conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:with_qt='${CONAN_QT^} -b missing -pr:b=default -of build --format=json > build.json
+          conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:qt_source='${qt_source} -b missing -pr:b=default -of build --format=json > build.json
         done
 
     - name: Upload Conan dependencies
