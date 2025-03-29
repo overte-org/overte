@@ -1,0 +1,29 @@
+{
+    "name": "OpenXR Actions",
+    "channels": [
+        { "from": "OpenXR.LeftHand", "to": "Standard.LeftHand" },
+        { "from": "OpenXR.RightHand", "to": "Standard.RightHand" },
+        { "from": "OpenXR.Head", "to" : "Standard.Head", "when" : [ "Application.InHMD"] },
+
+        { "from": "OpenXR.LeftInteract", "to": "Standard.LT", "filters": [{"type": "deadZone", "min": 0.05}]},
+        { "from": "OpenXR.RightInteract", "to": "Standard.RT", "filters": [{"type": "deadZone", "min": 0.05}]},
+        { "from": "OpenXR.LeftInteractClick", "to": "Standard.LTClick" },
+        { "from": "OpenXR.RightInteractClick", "to": "Standard.RTClick" },
+
+        { "from": "OpenXR.LeftGrip", "to": "Standard.LeftGrip" },
+        { "from": "OpenXR.RightGrip", "to": "Standard.RightGrip" },
+
+        { "from": "OpenXR.WalkX", "to": "Actions.TranslateX" },
+        { "from": "OpenXR.WalkY", "to": "Actions.TranslateZ" },
+        { "from": "OpenXR.WalkX", "peek": true, "to": "Standard.LX" },
+        { "from": "OpenXR.WalkY", "peek": true, "to": "Standard.LY" },
+
+        { "from": "OpenXR.Turn", "to": "Standard.RX"},
+        { "from": "OpenXR.Teleport", "to": "Standard.RY" },
+
+        { "from": "OpenXR.CycleCamera", "to": "Actions.CycleCamera" },
+        { "from": "OpenXR.Sprint", "to": "Actions.Sprint" },
+        { "from": "OpenXR.ToggleTablet", "to": "Standard.LeftSecondaryThumb" },
+        { "from": "OpenXR.Jump", "to": "Standard.RightSecondaryThumb" }
+    ]
+}
