@@ -336,7 +336,7 @@ jobs:
         df -h
 
     - name: Output Installer Logs
-      if: failure() && startsWith(matrix.os, 'Windows')
+      if: startsWith(matrix.os, 'Windows')
       shell: bash
       working-directory: build
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
