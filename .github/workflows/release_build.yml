@@ -30,6 +30,9 @@ env:
   # WIN-specific variables
   PreferredToolArchitecture: X64
 
+  # Specify build preset, since on Windows, `cmake --build` appears to be unaware of of which build preset to use, using defaults instead.
+  CMAKE_BUILD_EXTRA: --preset conan-release
+
 jobs:
   build:
     name: "${{matrix.os}}"
@@ -131,27 +134,22 @@ jobs:
       run: cmake --preset conan-${BUILD_TYPE,,} -DJSDOC_ENABLED:BOOL=TRUE -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
 
     - name: Build application
-      working-directory: ${{runner.workspace}}/build
       shell: bash
       run: cmake --build . --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
 
     - name: Build domain server
-      working-directory: ${{runner.workspace}}/build
       shell: bash
       run: cmake --build . --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build assignment client
-      working-directory: ${{runner.workspace}}/build
       shell: bash
       run: cmake --build . --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build console
-      working-directory: ${{runner.workspace}}/build
       shell: bash
       run: cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build installer
-      working-directory: ${{runner.workspace}}/build
       shell: bash
       run: |
         echo "Retry code from https://unix.stackexchange.com/a/137639"
