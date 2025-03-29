@@ -1,4 +1,4 @@
-
+# TODO: vhacd isn't packaged through Conan yet, so we are missing the library required to build vhacd-util.
 return()
 set(TARGET_NAME vhacd-util)
 setup_hifi_project(Core)
