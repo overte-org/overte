@@ -39,6 +39,9 @@ env:
   # Ensure XZ always runs with muticore support
   XZ_OPT: -T0
 
+  # Specify build preset, since on Windows, `cmake --build` appears to be unaware of of which build preset to use, using defaults instead.
+  CMAKE_BUILD_EXTRA: --preset conan-release
+
 jobs:
   build_pr:
     name: "${{matrix.os}}, ${{matrix.arch}}"
@@ -102,7 +105,7 @@ jobs:
           echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=*" >> $GITHUB_ENV
-          echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
+          echo "CMAKE_BUILD_EXTRA=$CMAKE_BUILD_EXTRA -- -j$(nproc)" >> $GITHUB_ENV
           # Don't optimize builds to save build time.
           echo "OVERTE_OPTIMIZE=false" >> $GITHUB_ENV
           # Starting with Ubuntu 22.04 we can use system Qt
@@ -282,32 +285,27 @@ jobs:
 
     - name: Build Application
       if: matrix.build_type == 'full' || matrix.build_type == 'client'
-      working-directory: build
       shell: bash
       run: cmake --build . --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
 
     - name: Build Domain Server
       if: matrix.build_type == 'full'
-      working-directory: build
       shell: bash
       run: cmake --build . --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build Assignment Client
       if: matrix.build_type == 'full'
-      working-directory: build
       shell: bash
       run: cmake --build . --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build Console
       if: matrix.build_type == 'full' && matrix.arch != 'aarch64' || startsWith(matrix.os, 'windows')
-      working-directory: build
       shell: bash
       run: |
         cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build Installer
       if: matrix.build_type != 'android' && matrix.arch != 'aarch64'
-      working-directory: build
       shell: bash
       run: |
         echo "Retry code from https://unix.stackexchange.com/a/137639"
