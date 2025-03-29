@@ -106,5 +106,5 @@ void RSAKeypairGenerator::generateKeypair() {
     emit generatedKeypair(_publicKey, _privateKey);
 }
 
-OVERTE_IGNORE_DEPRECATED_END
+OVERTE_IGNORE_WARNING_END
 

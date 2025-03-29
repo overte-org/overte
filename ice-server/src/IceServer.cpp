@@ -243,7 +243,7 @@ bool IceServer::isVerifiedHeartbeat(const QUuid& domainID, const QByteArray& pla
                                                     signature.size(),
                                                     rsaPublicKey);
 
-                OVERTE_IGNORE_DEPRECATED_END
+                OVERTE_IGNORE_WARNING_END
                 if (verificationResult == 1) {
                     // this is the only success case - we return true here to indicate that the heartbeat is verified
                     return true;
@@ -328,7 +328,7 @@ void IceServer::publicKeyReplyFinished(QNetworkReply* reply) {
                     qWarning() << "Could not convert in-memory public key for" << domainID << "to usable RSA public key.";
                     qWarning() << "Public key will be re-requested on next heartbeat.";
                 }
-                OVERTE_IGNORE_DEPRECATED_END
+                OVERTE_IGNORE_WARNING_END
 
             } else {
                 qWarning() << "There was no public key present in response for domain with ID" << domainID;

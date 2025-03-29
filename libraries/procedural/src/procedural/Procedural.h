@@ -190,7 +190,7 @@ protected:
     NetworkTexturePointer _channels[MAX_PROCEDURAL_TEXTURE_CHANNELS];
     std::unordered_map<std::string, std::string> _vertexReplacements;
     std::unordered_map<std::string, std::string> _fragmentReplacements;
-    std::unordered_map<std::string, size_t> _slotMap;
+    std::unordered_map<std::string, int> _slotMap;
 
     std::unordered_map<ProceduralProgramKey, gpu::PipelinePointer> _proceduralPipelines;
     std::unordered_map<ProceduralProgramKey, gpu::PipelinePointer> _errorPipelines;

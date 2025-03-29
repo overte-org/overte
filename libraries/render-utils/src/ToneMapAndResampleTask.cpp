@@ -43,7 +43,6 @@ void ToneMapAndResample::init() {
 }
 
 void ToneMapAndResample::setExposure(float exposure) {
-    auto& params = _parametersBuffer.get<Parameters>();
     if (_exposure != exposure) {
         _exposure = exposure;
         _parametersBuffer.edit<Parameters>()._twoPowExposure = pow(2.0, exposure);
@@ -112,7 +111,7 @@ void ToneMapAndResample::run(const RenderContextPointer& renderContext, const In
         batch.setViewportTransform(destViewport);
         batch.setProjectionTransform(glm::mat4());
         batch.resetViewTransform();
-        bool shouldMirror = args->_numMirrorFlips >= (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
+        bool shouldMirror = args->_numMirrorFlips >= (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE ? 1 : 0);
         batch.setPipeline(shouldMirror ? _mirrorPipeline : _pipeline);
 
         batch.setModelTransform(gpu::Framebuffer::evalSubregionTexcoordTransform(srcBufferSize, args->_viewport));
