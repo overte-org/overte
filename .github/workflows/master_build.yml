@@ -171,10 +171,13 @@ jobs:
           echo "  done"
         fi
 
-    - name: Override NSIS
+    - name: Prepare NSIS
       shell: pwsh
       if: startsWith(matrix.os, 'windows')
-      run: choco install nsis --allow-downgrade --version=3.06.1
+      run: |
+        choco install nsis --allow-downgrade --version=3.06.1
+        Invoke-WebRequest https://build-deps.overte.org/conan/nsis-overte-plugins/NSIS-hifi-plugins-1.0.zip -OutFile NSIS-hifi-plugins.zip
+        Expand-Archive -LiteralPath 'NSIS-hifi-plugins.zip' -DestinationPath 'C:/Program Files (x86)/'
 
     - name: Install Python modules
       if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
