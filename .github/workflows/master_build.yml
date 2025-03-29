@@ -177,6 +177,8 @@ jobs:
       run: |
         choco install nsis --allow-downgrade --version=3.06.1
         choco install cmake --allow-downgrade --version=3.31.6  # Our dependencies don't support CMake 4.0 yet.
+        Invoke-WebRequest https://build-deps.overte.org/conan/nsis-overte-plugins/NSIS-hifi-plugins-1.0.zip -OutFile NSIS-hifi-plugins.zip
+        Expand-Archive -LiteralPath 'NSIS-hifi-plugins.zip' -DestinationPath 'C:/Program Files (x86)/'
 
     - name: Install Python modules
       if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
