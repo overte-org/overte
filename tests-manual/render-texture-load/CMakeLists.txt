@@ -14,13 +14,13 @@ set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Tests/manual-tests/")
 
 # link in the shared libraries
 link_hifi_libraries(
-        shared task networking octree
-        shaders gl gpu render ktx image animation
-        graphics hfm model-serializers model-networking
-        render-utils material-networking procedural
-        entities entities-renderer audio avatars
-        script-engine physics
-        ${PLATFORM_GL_BACKEND}
+    shared task networking octree
+    shaders gl gpu render ktx image animation
+    graphics hfm model-serializers model-networking
+    render-utils material-networking procedural
+    entities entities-renderer audio avatars
+    script-engine physics
+    ${PLATFORM_GL_BACKEND}
 )
 
 package_libraries_for_deployment()
