@@ -26,6 +26,7 @@
 #include "OpenVrHelpers.h"
 
 #ifdef Q_OS_WIN
+// Disabled Vive Pro Eye support, because SRanipal isn't packaged in Conan.
 // #define VIVE_PRO_EYE
 #endif
 
