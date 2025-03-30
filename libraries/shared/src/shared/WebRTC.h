@@ -11,8 +11,6 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#if 0
-
 #ifndef hifi_WebRTC_h
 #define hifi_WebRTC_h
 
@@ -55,5 +53,3 @@
 #endif
 
 #endif // hifi_WebRTC_h
-
-#endif
