@@ -12,10 +12,10 @@ set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Tests/manual-tests/")
 
 # link in the shared libraries
 link_hifi_libraries(
-        entities hfm avatars script-engine image
-        procedural material-networking ktx shaders
-        model-networking shared octree gpu graphics
-        model-serializers networking animation audio gl
+    entities hfm avatars script-engine image
+    procedural material-networking ktx shaders
+    model-networking shared octree gpu graphics
+    model-serializers networking animation audio gl
 )
 
 if (WIN32)
