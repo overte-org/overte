@@ -357,7 +357,7 @@ Script.include("/~/system/libraries/controllers.js");
         };
 
         this.notPointingAtEntity = function (controllerData) {
-            if (!hudRayPick.intersects) return;
+            if (!hudRayPick.intersects) return false;
             
             var intersection = controllerData.rayPicks[this.hand];
             var entityProperty = Entities.getEntityProperties(intersection.objectID, "type");
