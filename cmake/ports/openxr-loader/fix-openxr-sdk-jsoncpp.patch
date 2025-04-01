@@ -1,8 +1,8 @@
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index c75b145..386494c 100644
+index c2e53cf..2c195de 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -89,7 +89,7 @@ if(NOT VULKAN_INCOMPATIBLE)
+@@ -122,7 +122,7 @@ if(NOT METAL_INCOMPATIBLE)
  endif()
  
  find_package(Threads REQUIRED)
@@ -12,12 +12,12 @@ index c75b145..386494c 100644
  ### All options defined here
  option(BUILD_LOADER "Build loader" ON)
 diff --git a/src/loader/CMakeLists.txt b/src/loader/CMakeLists.txt
-index 6a88cf4..0821a3d 100644
+index 28aff53..6ee58f4 100644
 --- a/src/loader/CMakeLists.txt
 +++ b/src/loader/CMakeLists.txt
-@@ -68,7 +68,11 @@ add_library(openxr_loader ${LIBRARY_TYPE}
-     ${openxr_loader_RESOURCE_FILE}
- )
+@@ -101,7 +101,11 @@ endif()
+ 
+ # Get jsoncpp externally or internally
  if(BUILD_WITH_SYSTEM_JSONCPP)
 -    target_link_libraries(openxr_loader PRIVATE JsonCpp::JsonCpp)
 +    if(BUILD_SHARED_LIBS)
@@ -26,5 +26,5 @@ index 6a88cf4..0821a3d 100644
 +        target_link_libraries(openxr_loader PRIVATE jsoncpp_static)
 +    endif()
  else()
-     target_sources(openxr_loader
-         PRIVATE
+     if(NOT BUILD_LOADER_WITH_EXCEPTION_HANDLING)
+         target_compile_definitions(openxr_loader PRIVATE JSON_USE_EXCEPTION=0)

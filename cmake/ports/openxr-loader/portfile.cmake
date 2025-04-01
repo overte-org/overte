@@ -3,7 +3,7 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
     REPO KhronosGroup/OpenXR-SDK
     REF "release-${VERSION}"
-    SHA512 6efc7596e707f95366dbcdbac9bd7d0c20735a2175b4edf56a9e8a112cf0ab8b664069fe942313164a37119032ddbf5671bc88ab5f276005dd36e4a4dabba1c7
+    SHA512 f5f02857036d14c3894bee979bf108c4066ff5551393bc9bdde85dced5c5007148880c6174174dfe3b844e00baeb66106afbf18be069958128404d6a9bdc96ce
     HEAD_REF master
     PATCHES
         fix-openxr-sdk-jsoncpp.patch
@@ -13,21 +13,10 @@ vcpkg_from_github(
     OUT_SOURCE_PATH SDK_SOURCE_PATH
     REPO KhronosGroup/OpenXR-SDK-Source
     REF "release-${VERSION}"
-    SHA512 04bdb0f16078209b5edd175a3396f70e1ceb8cfa382c65b8fda388e565480e3844daf68e0d987e72ed8c21d3148af0b41a2170911ec1660565887e0e5ae6d2bf
+    SHA512 29155f5cd6104a479ce25ea090020001a01652ce42823ddad3e2569d7d2d513a0339c084d90acd3a00b220f7ba1cf68af1ac4b4c01f0a949aa9d919a1914d6c9
     HEAD_REF master
     PATCHES
         fix-openxr-sdk-jsoncpp.patch
-        fix-jinja2.patch
-)
-
-vcpkg_from_github(
-    OUT_SOURCE_PATH HPP_SOURCE_PATH
-    REPO KhronosGroup/OpenXR-hpp
-    REF 63db9919822f8af6f7bf7416ba6a015d4617202e
-    SHA512 9e768f485d1631f8e74f35f028a64e2d64e33d362c53ae1c54427a10786e3befdd24089927319aa1a4b4c3e010247bd6cb3394bcee460c467c637ab6bc7bec90
-    HEAD_REF master
-    PATCHES
-        python3_8_compatibility.patch
 )
 
 # Weird behavior inside the OpenXR loader.  On Windows they force shared libraries to use static crt, and
@@ -56,14 +45,6 @@ vcpkg_cmake_configure(
 )
 
 vcpkg_cmake_install()
-
-# Generate the OpenXR C++ bindings
-set(ENV{OPENXR_REPO} "${SDK_SOURCE_PATH}")
-vcpkg_execute_required_process(
-    COMMAND ${PYTHON3} "${HPP_SOURCE_PATH}/scripts/hpp_genxr.py" -quiet  -registry "${SDK_SOURCE_PATH}/specification/registry/xr.xml" -o "${CURRENT_PACKAGES_DIR}/include/openxr"
-    WORKING_DIRECTORY "${HPP_SOURCE_PATH}"
-    LOGNAME "openxr-hpp"
-)
 
 if(VCPKG_TARGET_IS_WINDOWS)
     vcpkg_cmake_config_fixup(PACKAGE_NAME OpenXR CONFIG_PATH cmake)
