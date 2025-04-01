@@ -36,10 +36,16 @@ bool xrCheck(XrInstance instance, XrResult result, const char* message) {
 
 // Extension functions must be loaded with xrGetInstanceProcAddr
 static PFN_xrGetOpenGLGraphicsRequirementsKHR pfnGetOpenGLGraphicsRequirementsKHR = nullptr;
-static bool initFunctionPointers(XrInstance instance) {
-    XrResult result = xrGetInstanceProcAddr(instance, "xrGetOpenGLGraphicsRequirementsKHR",
-                                            (PFN_xrVoidFunction*)&pfnGetOpenGLGraphicsRequirementsKHR);
-    return xrCheck(instance, result, "Failed to get OpenGL graphics requirements function!");
+
+static bool loadXrFunction(XrInstance instance, const char* name, PFN_xrVoidFunction* out) {
+    auto result = xrGetInstanceProcAddr(instance, name, out);
+
+    if (result != XR_SUCCESS) {
+        qCCritical(xr_context_cat) << "Failed to load OpenXR function '" << name << "'";
+        return false;
+    }
+
+    return true;
 }
 
 OpenXrContext::OpenXrContext() {
@@ -89,12 +95,15 @@ bool OpenXrContext::initInstance() {
         return false;
 
     bool openglSupported = false;
+    bool userPresenceSupported = false;
 
     qCInfo(xr_context_cat, "Runtime supports %d extensions:", count);
     for (uint32_t i = 0; i < count; i++) {
         qCInfo(xr_context_cat, "%s v%d", properties[i].extensionName, properties[i].extensionVersion);
         if (strcmp(XR_KHR_OPENGL_ENABLE_EXTENSION_NAME, properties[i].extensionName) == 0) {
             openglSupported = true;
+        } else if (strcmp(XR_EXT_USER_PRESENCE_EXTENSION_NAME, properties[i].extensionName) == 0) {
+            userPresenceSupported = true;
         }
     }
 
@@ -104,6 +113,9 @@ bool OpenXrContext::initInstance() {
     }
 
     std::vector<const char*> enabled = {XR_KHR_OPENGL_ENABLE_EXTENSION_NAME};
+    if (userPresenceSupported) {
+        enabled.push_back(XR_EXT_USER_PRESENCE_EXTENSION_NAME);
+    }
 
     XrInstanceCreateInfo info = {
       .type = XR_TYPE_INSTANCE_CREATE_INFO,
@@ -128,13 +140,24 @@ bool OpenXrContext::initInstance() {
     if (!xrCheck(XR_NULL_HANDLE, result, "Failed to create OpenXR instance."))
         return false;
 
-    if (!initFunctionPointers(_instance))
+    if (!loadXrFunction(_instance, "xrGetOpenGLGraphicsRequirementsKHR", (PFN_xrVoidFunction*)&pfnGetOpenGLGraphicsRequirementsKHR)) {
+        qCCritical(xr_context_cat) << "Failed to get OpenGL graphics requirements function!";
         return false;
+    }
 
     xrStringToPath(_instance, "/user/hand/left", &_handPaths[0]);
     xrStringToPath(_instance, "/user/hand/right", &_handPaths[1]);
 
     xrStringToPath(_instance, "/interaction_profiles/htc/vive_controller", &_viveControllerPath);
+
+    if (userPresenceSupported) {
+        XrSystemUserPresencePropertiesEXT presenceProps = {XR_TYPE_SYSTEM_USER_PRESENCE_PROPERTIES_EXT};
+        XrSystemProperties sysProps = {XR_TYPE_SYSTEM_PROPERTIES, &presenceProps};
+        result = xrGetSystemProperties(_instance, _systemId, &sysProps);
+        if (xrCheck(XR_NULL_HANDLE, result, "Couldn't get system properties")) {
+            _userPresenceAvailable = presenceProps.supportsUserPresence;
+        }
+    }
 
     return true;
 }
@@ -332,14 +355,14 @@ bool OpenXrContext::pollEvents() {
     while (result == XR_SUCCESS) {
         switch (event.type) {
             case XR_TYPE_EVENT_DATA_INSTANCE_LOSS_PENDING: {
-                XrEventDataInstanceLossPending* instanceLossPending = (XrEventDataInstanceLossPending*)&event;
-                qCCritical(xr_context_cat, "Instance loss pending at %lu! Destroying instance.", instanceLossPending->lossTime);
+                const auto& instanceLossPending = *reinterpret_cast<XrEventDataInstanceLossPending*>(&event);
+                qCCritical(xr_context_cat, "Instance loss pending at %lu! Destroying instance.", instanceLossPending.lossTime);
                 _shouldQuit = true;
                 continue;
             }
             case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
-                XrEventDataSessionStateChanged* sessionStateChanged = (XrEventDataSessionStateChanged*)&event;
-                if (!updateSessionState(sessionStateChanged->state)) {
+                const auto& sessionStateChanged = *reinterpret_cast<XrEventDataSessionStateChanged*>(&event);
+                if (!updateSessionState(sessionStateChanged.state)) {
                     return false;
                 }
                 break;
@@ -351,9 +374,9 @@ bool OpenXrContext::pollEvents() {
                     if (!xrCheck(_instance, res, "Failed to get interaction profile"))
                         continue;
 
-                    _dpadNeedsClick = false;
-                    if (state.interactionProfile == _viveControllerPath) {
-                        _dpadNeedsClick = true;
+                    _stickEmulation = false;
+                    if (_viveControllerPath != XR_NULL_PATH && state.interactionProfile == _viveControllerPath) {
+                        _stickEmulation = true;
                     }
 
                     uint32_t bufferCountOutput;
@@ -365,6 +388,11 @@ bool OpenXrContext::pollEvents() {
 
                     qCInfo(xr_context_cat, "Controller %d: Interaction profile changed to '%s'", i, profilePath);
                 }
+                break;
+            }
+            case XR_TYPE_EVENT_DATA_USER_PRESENCE_CHANGED_EXT: {
+                const auto& eventdata = *reinterpret_cast<XrEventDataUserPresenceChangedEXT*>(&event);
+                _hmdMounted = eventdata.isUserPresent;
                 break;
             }
             default:

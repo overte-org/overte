@@ -1,29 +1,35 @@
 {
-    "name": "OpenXR Actions",
+    "name": "OpenXR to Standard",
     "channels": [
         { "from": "OpenXR.LeftHand", "to": "Standard.LeftHand" },
         { "from": "OpenXR.RightHand", "to": "Standard.RightHand" },
         { "from": "OpenXR.Head", "to" : "Standard.Head", "when" : [ "Application.InHMD"] },
 
-        { "from": "OpenXR.LeftInteract", "to": "Standard.LT", "filters": [{"type": "deadZone", "min": 0.05}]},
-        { "from": "OpenXR.RightInteract", "to": "Standard.RT", "filters": [{"type": "deadZone", "min": 0.05}]},
-        { "from": "OpenXR.LeftInteractClick", "to": "Standard.LTClick" },
-        { "from": "OpenXR.RightInteractClick", "to": "Standard.RTClick" },
+        { "from": "OpenXR.LT", "to": "Standard.LT", "filters": [{"type": "deadZone", "min": 0.05}]},
+        { "from": "OpenXR.RT", "to": "Standard.RT", "filters": [{"type": "deadZone", "min": 0.05}]},
+        { "from": "OpenXR.LTClick", "to": "Standard.LTClick" },
+        { "from": "OpenXR.RTClick", "to": "Standard.RTClick" },
 
-        { "from": "OpenXR.LeftGrip", "to": "Standard.LeftGrip" },
-        { "from": "OpenXR.RightGrip", "to": "Standard.RightGrip" },
+        { "from": "OpenXR.LeftGrip", "to": "Standard.LeftGrip", "filters": [{ "type": "deadZone", "min": 0.05 }] },
+        { "from": "OpenXR.RightGrip", "to": "Standard.RightGrip", "filters": [{ "type": "deadZone", "min": 0.05 }] },
 
-        { "from": "OpenXR.WalkX", "to": "Actions.TranslateX" },
-        { "from": "OpenXR.WalkY", "to": "Actions.TranslateZ" },
-        { "from": "OpenXR.WalkX", "peek": true, "to": "Standard.LX" },
-        { "from": "OpenXR.WalkY", "peek": true, "to": "Standard.LY" },
+        { "from": "OpenXR.LX", "to": "Standard.LX", "filters": [{ "type": "deadZone", "min": 0.05 }] },
+        { "from": "OpenXR.LY", "to": "Standard.LY", "filters": [{ "type": "deadZone", "min": 0.05 }] },
 
-        { "from": "OpenXR.Turn", "to": "Standard.RX"},
-        { "from": "OpenXR.Teleport", "to": "Standard.RY" },
+        { "from": "OpenXR.LX", "to": "Actions.TranslateX", "peek": true, "filters": [{ "type": "deadZone", "min": 0.05 }] },
+        { "from": "OpenXR.LY", "to": "Actions.TranslateZ", "peek": true, "filters": [{ "type": "deadZone", "min": 0.05 }] },
 
-        { "from": "OpenXR.CycleCamera", "to": "Actions.CycleCamera" },
-        { "from": "OpenXR.Sprint", "to": "Actions.Sprint" },
-        { "from": "OpenXR.ToggleTablet", "to": "Standard.LeftSecondaryThumb" },
-        { "from": "OpenXR.Jump", "to": "Standard.RightSecondaryThumb" }
+        { "from": "OpenXR.RX", "to": "Standard.RX"},
+        { "from": "OpenXR.RY", "to": "Standard.RY" },
+
+        { "from": "OpenXR.LS", "to": "Standard.LS" },
+        { "from": "OpenXR.RS", "to": "Standard.RS" },
+        { "from": "OpenXR.LSTouch", "to": "Standard.LSTouch" },
+        { "from": "OpenXR.RSTouch", "to": "Standard.RSTouch" },
+
+        { "from": "OpenXR.LeftPrimaryThumb", "to": "Standard.LeftPrimaryThumb" },
+        { "from": "OpenXR.RightPrimaryThumb", "to": "Standard.RightPrimaryThumb" },
+        { "from": "OpenXR.LeftSecondaryThumb", "to": "Standard.LeftSecondaryThumb" },
+        { "from": "OpenXR.RightSecondaryThumb", "to": "Standard.RightSecondaryThumb" }
     ]
 }

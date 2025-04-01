@@ -69,7 +69,15 @@ public:
     QString _systemName;
     bool _isSessionRunning = false;
 
-    bool _dpadNeedsClick = false;
+    // hack for vive controllers
+    bool _stickEmulation = false;
+
+    // only supported by a few runtimes, but lets us
+    // emulate OpenVR's headset proximity sensor system
+    bool _userPresenceAvailable = false;
+
+    // whether the headset is on, using XR_EXT_user_presence
+    bool _hmdMounted = true;
 
 private:
     XrSessionState _lastSessionState = XR_SESSION_STATE_UNKNOWN;

@@ -82,7 +82,8 @@ private:
         void focusOutEvent() override;
         bool triggerHapticPulse(float strength, float duration, uint16_t index) override;
 
-        void emulateStickDPad();
+        void emulateStickFromTrackpad();
+        void awfulRightStickHackForBrokenScripts();
 
         mutable std::recursive_mutex _lock;
         template <typename F>

@@ -31,6 +31,8 @@ constexpr GLint XR_PREFERRED_COLOR_FORMAT = GL_SRGB8_ALPHA8;
 OpenXrDisplayPlugin::OpenXrDisplayPlugin(std::shared_ptr<OpenXrContext> c) {
     _context = c;
     _presentOnlyOnce = true;
+    _lastFrameTime = 1.0f / 90.0f;
+    _estimatedTargetFramerate = 90.0f;
 }
 
 bool OpenXrDisplayPlugin::isSupported() const {
@@ -77,13 +79,14 @@ glm::mat4 OpenXrDisplayPlugin::getEyeProjection(Eye eye, const glm::mat4& basePr
     return fovToProjection(_views.value()[(eye == Left) ? 0 : 1].fov, frustum.getNearClip(), frustum.getFarClip());
 }
 
-// TODO: This apparently wasn't right in the OpenVR plugin, but this is what it basically did.
+// TODO: interface/src/Application_Graphics.cpp:535
 glm::mat4 OpenXrDisplayPlugin::getCullingProjection(const glm::mat4& baseProjection) const {
     return getEyeProjection(Left, baseProjection);
 }
 
-// TODO: This should not be explicilty known by the application.
-// Let's just render as fast as we can and OpenXR will dictate the pace.
+// OpenXR doesn't give us a target framerate,
+// but it does do vsync on its own,
+// so just push out frames as vsync allows
 float OpenXrDisplayPlugin::getTargetFrameRate() const {
     return std::numeric_limits<float>::max();
 }
@@ -134,6 +137,7 @@ static std::string glFormatStr(GLenum source) {
         ENUM_TO_STR(GL_RGBA16);
         ENUM_TO_STR(GL_RGBA16F);
         ENUM_TO_STR(GL_SRGB8_ALPHA8);
+        ENUM_TO_STR(GL_RGB10_A2UI);
         default:
             return std::format("0x{:X}", source);
     }
@@ -256,6 +260,15 @@ void OpenXrDisplayPlugin::init() {
     emit deviceConnected(getName());
 }
 
+// FIXME: For some reason, OpenVR and OVR don't need this,
+// and the game tick counter works as expected. In XR, it
+// doesn't behave properly, so we have to emulate vsync delay manually.
+void OpenXrDisplayPlugin::idle() {
+    float remainingUntilFrame = std::max(0.0f, _lastFrameTime - (1.0f / _estimatedTargetFramerate));
+    std::chrono::duration<float, std::ratio<1>> duration(remainingUntilFrame);
+    std::this_thread::sleep_for(duration);
+}
+
 const QString OpenXrDisplayPlugin::getName() const {
     return QString("OpenXR: %1").arg(_context->_systemName);
 }
@@ -324,6 +337,8 @@ void OpenXrDisplayPlugin::resetSensors() {
 }
 
 bool OpenXrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
+    std::chrono::time_point measureStart = std::chrono::high_resolution_clock::now();
+
     _context->pollEvents();
 
     if (_context->_shouldQuit) {
@@ -421,6 +436,14 @@ bool OpenXrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
     _currentRenderFrameInfo.presentPose = _currentRenderFrameInfo.renderPose;
     _frameInfos[frameIndex] = _currentRenderFrameInfo;
 
+    std::chrono::time_point measureEnd = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double, std::ratio<1>> delta = measureEnd - measureStart;
+    _lastFrameTime = delta.count();
+    auto newEstimatedFramerate =(1.0f / _lastFrameTime);
+    if (_estimatedTargetFramerate < newEstimatedFramerate) {
+        _estimatedTargetFramerate = newEstimatedFramerate;
+    }
+
     return HmdDisplayPlugin::beginFrameRender(frameIndex);
 }
 
@@ -515,7 +538,6 @@ bool OpenXrDisplayPlugin::endFrame() {
     };
 
     if ((_lastViewState.viewStateFlags & XR_VIEW_STATE_ORIENTATION_VALID_BIT) == 0) {
-        qCWarning(xr_display_cat, "Not submitting layers because orientation is invalid.");
         info.layerCount = 0;
     }
 
@@ -535,7 +557,7 @@ void OpenXrDisplayPlugin::postPreview() {
 }
 
 bool OpenXrDisplayPlugin::isHmdMounted() const {
-    return true;
+    return _context->_hmdMounted;
 }
 
 void OpenXrDisplayPlugin::updatePresentPose() {
