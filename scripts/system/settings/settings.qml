@@ -294,6 +294,16 @@ Rectangle {
 					}
 				}
 
+				// Camera clipping
+				SettingBoolean {
+					settingText: "Allow camera clipping";
+					settingEnabled: !Render.cameraClippingEnabled
+
+					onSettingEnabledChanged: {
+						Render.cameraClippingEnabled = settingEnabled ? 0 : 1;
+					}
+				}
+
 				// Anti Aliasing
 				SettingComboBox {
 					settingText: "Anti-aliasing";
