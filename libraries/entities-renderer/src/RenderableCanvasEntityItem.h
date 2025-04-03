@@ -36,7 +36,9 @@ protected:
 
 private:
     gpu::TexturePointer _texture;
+    std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };
     int _geometryId { 0 };
+    bool _unlit { false };
 };
 
 } }
