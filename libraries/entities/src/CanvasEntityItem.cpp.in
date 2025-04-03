@@ -24,7 +24,6 @@ EntityItemPointer CanvasEntityItem::factory(const EntityItemID& entityID, const 
 
 CanvasEntityItem::CanvasEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
     _type = EntityTypes::Canvas;
-    _texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, _width, _height, 1, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR));
 }
 
 CanvasEntityItem::~CanvasEntityItem() {}
@@ -251,9 +250,6 @@ void CanvasEntityItem::commit() {
     }
 
     auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, getWidth(), getHeight(), 1, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR));
-    //texture->setSize(getWidth(), getHeight());
-    texture->setStoredMipFormat(gpu::Element::COLOR_SRGBA_32);
-    texture->setAutoGenerateMips(false);
     texture->assignStoredMip(0, _imageData.length(), reinterpret_cast<const uint8_t*>(_imageData.constData()));
     texture->setSource("CanvasEntityRenderer");
     _texture = texture;
