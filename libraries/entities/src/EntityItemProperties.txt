@@ -267,5 +267,5 @@ enum:SOUND_LOOP prop:loop type:bool default:true,
 enum:SOUND_POSITIONAL prop:positional type:bool default:true,
 enum:SOUND_LOCAL_ONLY prop:localOnly type:bool default:false,
 Canvas
-enum:CANVAS_WIDTH prop:width type:uint16_t default:128 renderProp,
-enum:CANVAS_HEIGHT prop:height type:uint16_t default:128 renderProp,
+enum:CANVAS_WIDTH prop:width type:uint16_t default:128 basicProp,
+enum:CANVAS_HEIGHT prop:height type:uint16_t default:128 basicProp,
