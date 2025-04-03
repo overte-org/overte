@@ -1706,6 +1706,11 @@ const GROUPS = [
                 type: "number-draggable",
                 propertyID: "height",
             },
+            {
+                label: "Unlit",
+                type: "bool",
+                propertyID: "unlit",
+            }
         ]
     },
     {
@@ -2193,7 +2198,7 @@ const GROUPS_PER_TYPE = {
   PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
   Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
-  Canvas: [ 'base', 'canvas', 'spatial', 'grabAndEquip', 'scripts' ],
+  Canvas: [ 'base', 'canvas', 'spatial', 'grabAndEquip', 'scripts', 'physics' ],
   Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
 };
 

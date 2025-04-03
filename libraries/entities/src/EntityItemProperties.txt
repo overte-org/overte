@@ -269,3 +269,4 @@ enum:SOUND_LOCAL_ONLY prop:localOnly type:bool default:false,
 Canvas
 enum:CANVAS_WIDTH prop:width type:uint16_t default:128 basicProp,
 enum:CANVAS_HEIGHT prop:height type:uint16_t default:128 basicProp,
+enum:UNLIT prop:unlit type:bool default:false common renderProp,
