@@ -35,9 +35,7 @@ protected:
     virtual void doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) override;
 
 private:
-    std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };
     gpu::TexturePointer _texture;
-
     int _geometryId { 0 };
 };
 
