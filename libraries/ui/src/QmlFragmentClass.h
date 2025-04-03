@@ -36,7 +36,7 @@ public:
     /*@jsdoc
      * Creates a new button, adds it to this and returns it.
      * @function QmlFragmentClass#addButton
-     * @param properties {object} button properties 
+     * @param {object} properties - button properties 
      * @returns {TabletButtonProxy}
      */
     Q_INVOKABLE QObject* addButton(const QVariant& properties);

@@ -162,7 +162,7 @@ public:
      * registers a global object by name.
      * @function Script.registerValue
      * @param {string} valueName
-     * @param {value} value
+     * @param {*} value
      */
     /// registers a global object by name
     Q_INVOKABLE void registerValue(const QString& valueName, ScriptValue value) { _manager->registerValue(valueName, value); }
@@ -547,8 +547,8 @@ public:
 
     /*@jsdoc
      * Create test object for garbage collector debugging.
-     * @function Script.createGarbageCollectorDebuggingObject()
-     * @Returns Test object.
+     * @function Script.createGarbageCollectorDebuggingObject
+     * @Returns {*} Test object.
      */
      Q_INVOKABLE ScriptValue createGarbageCollectorDebuggingObject();
 
@@ -800,7 +800,7 @@ protected:
     /*@jsdoc
      * @function Script.executeOnScriptThread
      * @param {function} function - Function.
-     * @param {ConnectionType} [type=2] - Connection type.
+     * @param {*} [type=2] - Connection type.
      * @deprecated This function is deprecated and will be removed.
      */
     // V8TODO: Nothing seems to be using this, and it generates:

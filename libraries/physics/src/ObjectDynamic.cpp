@@ -106,14 +106,14 @@ bool ObjectDynamic::updateArguments(QVariantMap arguments) {
  *     <code>0</code> means that the action should not be deleted.
  * @property {boolean} isMine=true - <code>true</code> if the action was created during the current client session, 
  *     <code>false</code> if it wasn't. <em>Read-only.</em>
- * @property {boolean} ::no-motion-state - Is present with a value of <code>true</code> when the entity hasn't been registered 
+ * @property {boolean} 'no-motion-state' - Is present with a value of <code>true</code> when the entity hasn't been registered 
  *     with the physics engine yet (e.g., if the action hasn't been properly configured), otherwise the property is 
  *     <code>undefined</code>. <em>Read-only.</em>
- * @property {boolean} ::active - <code>true</code> when the action is modifying the entity's motion, <code>false</code> 
+ * @property {boolean} 'active' - <code>true</code> when the action is modifying the entity's motion, <code>false</code> 
  *     otherwise. Is present once the entity has been registered with the physics engine, otherwise the property is 
  *     <code>undefined</code>. 
  *     <em>Read-only.</em>
- * @property {Entities.PhysicsMotionType} ::motion-type - How the entity moves with the action. Is present once the entity has 
+ * @property {Entities.PhysicsMotionType} 'motion-type' - How the entity moves with the action. Is present once the entity has 
  *     been registered with the physics engine, otherwise the property is <code>undefined</code>. <em>Read-only.</em>
  *
  * @comment The different action types have additional arguments as follows:

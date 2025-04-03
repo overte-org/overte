@@ -143,8 +143,8 @@ public slots:
     /*@jsdoc
      * Unblocks a MIDI device's input or output.
      * @function Midi.unblockMidiDevice
-     * @param {string} name- The name of the MIDI device to unblock.
-     * @param {boolean} output -  <code>true</code> to unblock the device's output, <code>false</code> to unblock its input.
+     * @param {string} name The name of the MIDI device to unblock.
+     * @param {boolean} output - <code>true</code> to unblock the device's output, <code>false</code> to unblock its input.
      */
     Q_INVOKABLE void unblockMidiDevice(QString name, bool output);
 

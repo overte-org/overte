@@ -782,7 +782,7 @@ void ScriptManager::init() {
      * The message logged is the message values separated by spaces.
      * <p>Alternatively, you can use {@link Script.print} or one of the {@link console} API methods.</p>
      * @function print
-     * @param {...*} [message] - The message values to print.
+     * @param {*} [message] - The message values to print.
      */
     scriptEngine->globalObject().setProperty("print", scriptEngine->newFunction(debugPrint));
 

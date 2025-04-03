@@ -116,7 +116,7 @@ namespace scriptable {
 
         /*@jsdoc
          * Gets the value of an attribute for all vertices in the <em>whole</em> mesh (i.e., parent and mesh parts).
-         * @function GraphicsMeshPArt.queryVertexAttributes
+         * @function GraphicsMeshPart.queryVertexAttributes
          * @param {Graphics.BufferTypeName} name - The name of the attribute to get the vertex values of.
          * @throws Throws an error if the <code>name</code> is invalid or isn't used in the mesh.
          * @returns {Graphics.BufferType[]} The attribute values for all vertices.
@@ -230,7 +230,7 @@ namespace scriptable {
         /*@jsdoc
          * Removes an attribute from all vertices in the <em>whole</em> mesh (i.e., parent and mesh parts).
          * <p>Note: The <code>"position"</code> attribute cannot be removed.</p>
-         * @function GraphicsMeshPArt.removeAttribute
+         * @function GraphicsMeshPart.removeAttribute
          * @param {Graphics.BufferTypeName} name - The name of the attribute to remove.
          * @returns {boolean} <code>true</code> if the attribute existed and was removed, <code>false</code> otherwise.
          */
@@ -255,7 +255,7 @@ namespace scriptable {
         /*@jsdoc
          * Replaces a mesh part with a copy of another mesh part.
          * @function GraphicsMeshPart.replaceMeshPartData
-         * @param {GrphicsMeshPart} source - The mesh part to copy.
+         * @param {GraphicsMeshPart} source - The mesh part to copy.
          * @param {Graphics.BufferTypeName[]} [attributes] - The attributes to copy. If not specified, all attributes are 
          *     copied from the source.
          * @throws Throws an error if the mesh part of source mesh part aren't valid.
@@ -291,7 +291,7 @@ namespace scriptable {
 
         /*@jsdoc
          * Calls a function for each vertex in the <em>whole</em> mesh (i.e., parent and mesh parts).
-         * @function GraphicsMeshPArt.forEachVertex
+         * @function GraphicsMeshPart.forEachVertex
          * @param {GraphicsMesh~forEachVertexCallback} callback - The function to call for each vertex.
          * @returns {number} The number of vertices the callback was called for.
          */
