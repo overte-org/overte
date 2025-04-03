@@ -20,6 +20,7 @@ using namespace render::entities;
 CanvasEntityRenderer::CanvasEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {
     _geometryId = DependencyManager::get<GeometryCache>()->allocateID();
     _material->setCullFaceMode(graphics::MaterialKey::CullFaceMode::CULL_NONE);
+    _material->setUnlit(true);
     addMaterial(graphics::MaterialLayer(_material, 0), "0");
     updateMaterials(true);
 }
@@ -60,6 +61,9 @@ void CanvasEntityRenderer::doRender(RenderArgs* args) {
     }
 
     Transform transform;
+    withReadLock([&] {
+        transform = _renderTransform;
+    });
 
     gpu::Batch* batch = args->_batch;
 
@@ -85,7 +89,7 @@ void CanvasEntityRenderer::doRender(RenderArgs* args) {
     }
 
     DependencyManager::get<GeometryCache>()->renderQuad(
-        *batch, glm::vec2(-0.5f), glm::vec2(0.5f), glm::vec2(0.0f), glm::vec2(1.0f),
+        *batch, glm::vec2(-0.5f), glm::vec2(0.5f), glm::vec2(0.0f, 1.0f), glm::vec2(1.0f, 0.0f),
         glm::vec4(1.0f), _geometryId
     );
 
@@ -93,6 +97,4 @@ void CanvasEntityRenderer::doRender(RenderArgs* args) {
         // we have to reset this to white for other simple shapes
         batch->setResourceTexture(graphics::slot::texture::Texture::MaterialAlbedo, DependencyManager::get<TextureCache>()->getWhiteTexture());
     }
-
-    qCritical("Canvas rendered");
 }
