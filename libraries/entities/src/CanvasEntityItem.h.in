@@ -44,7 +44,7 @@ protected:
 
     QByteArray _imageData;
     QVector<CanvasCommand> _commandQueue;
-    gpu::TexturePointer _texture;
+    gpu::TexturePointer _texture { nullptr };
 };
 
 #endif // hifi_CanvasEntityItem_h
