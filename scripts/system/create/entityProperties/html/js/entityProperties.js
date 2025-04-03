@@ -1777,21 +1777,11 @@ const GROUPS = [
                 propertyID: "height",
             },
             {
-                label: "Background color",
-                type: "color",
-                propertyID: "bgColor",
-                propertyName: "bgColor", // actual entity property name
-            },
-            {
-                label: "Background alpha",
-                type: "number-draggable",
-                min: 0,
-                max: 1,
-                step: 0.01,
-                decimals: 2,
-                propertyID: "bgAlpha",
-                propertyName: "bgAlpha",
-            },
+                label: "Unlit",
+                type: "bool",
+                propertyID: "unlit",
+            }
+
         ]
     },
     {

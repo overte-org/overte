@@ -19,9 +19,7 @@ public:
     CanvasEntityItem(const EntityItemID& entityItemID);
     ~CanvasEntityItem();
 
-    bool shouldBePhysical() const override { return false; }
-
-    virtual bool supportsDetailedIntersection() const override { return false; }
+    virtual ShapeType getShapeType() const override { return SHAPE_TYPE_BOX; }
 
     ALLOW_INSTANTIATION // This class can be instantiated
     ENTITY_PROPERTY_SUBCLASS_METHODS
