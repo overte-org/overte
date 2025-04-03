@@ -115,8 +115,8 @@ void CanvasEntityItem::setImageData(const CanvasImage& image) {
 }
 
 void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
-    using V = CanvasCommand::Variant;
-    using Hint = CanvasCommand::RenderHint;
+    using Variant = CanvasCommand::Variant;
+    using RenderHint = CanvasCommand::RenderHint;
 
     updateBufferSize();
 
@@ -130,13 +130,13 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
         auto cmd = queue[i];
 
         switch (cmd.kind) {
-            case V::SetStrokeWidth: {
+            case Variant::SetStrokeWidth: {
                 pen.setWidthF(cmd._float[0]);
                 p.setPen(pen);
                 break;
             }
 
-            case V::SetColor: {
+            case Variant::SetColor: {
                 auto color = QColor(cmd._color[0], cmd._color[1], cmd._color[2], 255);
                 pen.setColor(color);
                 brush.setColor(color);
@@ -145,46 +145,46 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
                 break;
             }
 
-            case V::SetHints: {
-                p.setRenderHint(QPainter::Antialiasing, (cmd._int[0] & Hint::PrimitiveAntialiasing) != 0);
-                p.setRenderHint(QPainter::TextAntialiasing, (cmd._int[0] & Hint::TextAntialiasing) != 0);
-                p.setRenderHint(QPainter::SmoothPixmapTransform, (cmd._int[0] & Hint::BilinearImageScaling) != 0);
+            case Variant::SetHints: {
+                p.setRenderHint(QPainter::Antialiasing, (cmd._int[0] & RenderHint::PrimitiveAntialiasing) != 0);
+                p.setRenderHint(QPainter::TextAntialiasing, (cmd._int[0] & RenderHint::TextAntialiasing) != 0);
+                p.setRenderHint(QPainter::SmoothPixmapTransform, (cmd._int[0] & RenderHint::BilinearImageScaling) != 0);
                 break;
             }
 
-            case V::SetBlendMode: {
+            case Variant::SetBlendMode: {
                 p.setCompositionMode(static_cast<QPainter::CompositionMode>(cmd._int[0]));
                 break;
             }
 
-            case V::SetFont: {
+            case Variant::SetFont: {
                 p.setFont(QFont(cmd._text, cmd._int[0], cmd._int[1], cmd._int[2]));
                 break;
             }
 
-            case V::ClearRect: {
+            case Variant::ClearRect: {
                 p.eraseRect(QRect(cmd._int[0], cmd._int[1], cmd._int[2], cmd._int[3]));
                 break;
             }
 
-            case V::FillPath: {
+            case Variant::FillPath: {
                 p.fillPath(cmd._paintPath, brush);
                 break;
             }
 
-            case V::FillRect: {
+            case Variant::FillRect: {
                 p.fillRect(cmd._rect, brush);
                 break;
             }
 
-            case V::FillEllipse: {
+            case Variant::FillEllipse: {
                 auto pathHack = QPainterPath();
                 pathHack.addEllipse(cmd._rect);
                 p.fillPath(pathHack, brush);
                 break;
             }
 
-            case V::FillText: {
+            case Variant::FillText: {
                 // unbounded text
                 if (cmd._rect.width() == 0.0 && cmd._rect.height() == 0.0) {
                     p.drawText(QPointF(cmd._rect.x(), cmd._rect.y()), cmd._text);
@@ -194,37 +194,37 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
                 break;
             }
 
-            case V::StrokePath: {
+            case Variant::StrokePath: {
                 p.strokePath(cmd._paintPath, pen);
                 break;
             }
 
-            case V::StrokeRect: {
+            case Variant::StrokeRect: {
                 p.drawRect(cmd._rect);
                 break;
             }
 
-            case V::StrokeArc: {
+            case Variant::StrokeArc: {
                 p.drawArc(cmd._rect, cmd._float[0] * 16, cmd._float[1] * 16);
                 break;
             }
 
-            case V::StrokeEllipse: {
+            case Variant::StrokeEllipse: {
                 p.drawEllipse(cmd._rect);
                 break;
             }
 
-            case V::Point: {
+            case Variant::Point: {
                 p.drawPoint(cmd._point);
                 break;
             }
 
-            case V::Line: {
+            case Variant::Line: {
                 p.drawLine(cmd._line);
                 break;
             }
 
-            case V::ImageCopy: {
+            case Variant::ImageCopy: {
                 if (cmd._image.buffer.length() != static_cast<int>(4 * cmd._image.width * cmd._image.height)) {
                     qCCritical(entities) << "CanvasEntityItem::paintCommands: Source CanvasImage buffer has incorrect size, expected " << (4 * cmd._image.width * cmd._image.height) << ", got " << cmd._image.buffer.length();
                     break;
@@ -250,13 +250,13 @@ void CanvasEntityItem::commit() {
         _commandQueue.clear();
     }
 
-    //auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, _width, _height, 1, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR));
-    _texture->setSize(getWidth(), getHeight());
-    _texture->setStoredMipFormat(gpu::Element::COLOR_SRGBA_32);
-    _texture->setAutoGenerateMips(false);
-    _texture->assignStoredMip(0, _imageData.length(), reinterpret_cast<const uint8_t*>(_imageData.constData()));
-    _texture->setSource("CanvasEntityRenderer");
-    //_texture = texture;
+    auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, getWidth(), getHeight(), 1, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR));
+    //texture->setSize(getWidth(), getHeight());
+    texture->setStoredMipFormat(gpu::Element::COLOR_SRGBA_32);
+    texture->setAutoGenerateMips(false);
+    texture->assignStoredMip(0, _imageData.length(), reinterpret_cast<const uint8_t*>(_imageData.constData()));
+    texture->setSource("CanvasEntityRenderer");
+    _texture = texture;
 
     setNeedsRenderUpdate(true);
     somethingChangedNotification();
