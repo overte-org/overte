@@ -12,8 +12,6 @@
 #include <GeometryCache.h>
 #include <graphics/ShaderConstants.h>
 
-#include "RenderPipelines.h"
-
 using namespace render;
 using namespace render::entities;
 
@@ -30,6 +28,7 @@ CanvasEntityRenderer::~CanvasEntityRenderer() {
 
 void CanvasEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) {
     _texture = entity->getTexture();
+    _unlit = entity->getUnlit();
 }
 
 void CanvasEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) {
@@ -65,7 +64,9 @@ void CanvasEntityRenderer::doRender(RenderArgs* args) {
         _prevRenderTransform = transform;
     }
 
-    DependencyManager::get<GeometryCache>()->bindSimpleProgram(batch, true, true);
+    // FIXME: bindSimpleProgram doesn't support transparent and unlit,
+    // so we can only have one or the other
+    DependencyManager::get<GeometryCache>()->bindSimpleProgram(batch, true, !_unlit, _unlit, false, false, true, graphics::MaterialKey::CullFaceMode::CULL_NONE);
     DependencyManager::get<GeometryCache>()->renderQuad(
         batch, glm::vec2(-0.5f), glm::vec2(0.5f), glm::vec2(0.0f, 1.0f), glm::vec2(1.0f, 0.0f),
         glm::vec4(1.0f), _geometryId
