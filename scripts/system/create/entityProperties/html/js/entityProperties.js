@@ -1716,6 +1716,11 @@ const GROUPS = [
                 type: "number-draggable",
                 propertyID: "height",
             },
+            {
+                label: "Unlit",
+                type: "bool",
+                propertyID: "unlit",
+            }
         ]
     },
     {
