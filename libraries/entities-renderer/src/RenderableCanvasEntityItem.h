@@ -10,8 +10,9 @@
 #ifndef hifi_RenderableCanvasEntityItem_h
 #define hifi_RenderableCanvasEntityItem_h
 
-#include <CanvasEntityItem.h>
 #include "RenderableEntityItem.h"
+#include <CanvasEntityItem.h>
+#include <procedural/Procedural.h>
 
 namespace render { namespace entities {
 
@@ -27,15 +28,17 @@ public:
     gpu::TexturePointer getTexture() override { return _texture; }
 
 protected:
-    virtual void doRender(RenderArgs* args) override { }
-    virtual bool isTransparent() const override { return false; }
-    virtual bool wantsHandControllerPointerEvents() const override { return false; }
-    virtual bool wantsKeyboardFocus() const override { return false; }
+    virtual void doRender(RenderArgs* args) override;
+    virtual bool isTransparent() const override { return true; }
 
+    virtual void doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) override;
     virtual void doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) override;
 
 private:
+    std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };
     gpu::TexturePointer _texture;
+
+    int _geometryId { 0 };
 };
 
 } }
