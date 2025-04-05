@@ -43,32 +43,32 @@
 
 	// Menu button
 	Menu.addMenuItem({
-		menuName:     "Settings",
+		menuName: "Settings",
 		menuItemName: "Graphics...",
-		afterItem:    "Audio...",
+		afterItem: "Audio...",
 	});
 
-	function onMenuItemEvent(menuItem){
-		if (menuItem === 'Graphics...'){
+	function onMenuItemEvent(menuItem) {
+		if (menuItem === 'Graphics...') {
 			toolbarButtonClicked();
-			toQML({type: 'loadPage', page: 'Graphics'})
+			toQML({ type: 'loadPage', page: 'Graphics' })
 		}
 	}
 
 	function toolbarButtonClicked() {
 		if (active) tablet.gotoHomeScreen();
 		else tablet.loadQMLSource(url);
-		
+
 		active = !active;
 		appButton.editProperties({
 			isActive: active,
 		});
 	}
 
-	function onTabletScreenChanged(type, new_url){
+	function onTabletScreenChanged(type, new_url) {
 		if (url == new_url) active = true;
 		else active = false;
-		
+
 		appButton.editProperties({
 			isActive: active,
 		});
@@ -79,9 +79,17 @@
 		console.log(`New QML event:\n${JSON.stringify(event)}`);
 
 		switch (event.type) {
-		case "initialized":
-			getActivePolls();
-			break;
+			case "initialized":
+				getActivePolls();
+				break;
+			case "switch_app":
+				if (event.app_url == "hifi/dialogs/GeneralPreferencesDialog.qml") {
+					// This page needs to be opened like this because 
+					Desktop.show("hifi/dialogs/GeneralPreferencesDialog.qml", "GeneralPreferencesDialog");
+					return;
+				}
+				tablet.loadQMLSource(event.app_url);
+				break;
 		}
 	}
 	/**

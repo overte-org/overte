@@ -29,6 +29,10 @@ Item {
 	MouseArea {
 		anchors.fill: parent;
 		onClicked: {
+			if (target_page !== "") {
+				toScript({type:"switch_app", app_url: target_page});
+				return;
+			}
 			current_page = page_name;
 		}
 	}
