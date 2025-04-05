@@ -83,10 +83,12 @@ jobs:
         submodules: false
         fetch-depth: 1
 
-    - name: Override NSIS
+    - name: Override Windows package versions
       shell: pwsh
       if: startsWith(matrix.os, 'windows')
-      run: choco install nsis --allow-downgrade --version=3.06.1
+      run: |
+        choco install nsis --allow-downgrade --version=3.06.1
+        choco install cmake --allow-downgrade --version=3.31.6  # Our dependencies don't support CMake 4.0 yet.
 
     - name: Install Python modules
       if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
