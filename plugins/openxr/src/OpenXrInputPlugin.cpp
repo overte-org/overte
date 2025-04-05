@@ -428,7 +428,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"right_pose",             hand_right + "/grip/pose"},
             {"right_haptic",           "/user/hand/right/output/haptic"},
         }},
-        {"/interaction_profiles/oculus_touch_controller", {
+        {"/interaction_profiles/oculus/touch_controller", {
             {"left_primary_click",     hand_left  + "/x/click"},
             {"left_secondary_click",   hand_left  + "/y/click"},
             {"left_squeeze_value",     hand_left  + "/squeeze/value"},
@@ -471,6 +471,29 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"right_thumbstick_touch",  hand_right  + "/trackpad/touch"},
             {"right_pose",              hand_right  + "/grip/pose"},
             {"right_haptic",            "/user/hand/right/output/haptic"},
+        }},
+        {"/interaction_profiles/valve/index_controller", {
+            {"left_primary_click",     hand_left  + "/a/click"},
+            {"left_secondary_click",   hand_left  + "/b/click"},
+            {"left_squeeze_value",     hand_left  + "/squeeze/value"},
+            {"left_trigger_value",     hand_left  + "/trigger/value"},
+            {"left_trigger_click",     hand_left  + "/trigger/click"},
+            {"left_thumbstick",        hand_left  + "/thumbstick"},
+            {"left_thumbstick_click",  hand_left  + "/thumbstick/click"},
+            {"left_thumbstick_touch",  hand_left  + "/thumbstick/touch"},
+            {"left_pose",              hand_left  + "/grip/pose"},
+            {"left_haptic",            "/user/hand/left/output/haptic"},
+
+            {"right_primary_click",    hand_right  + "/a/click"},
+            {"right_secondary_click",  hand_right  + "/b/click"},
+            {"right_squeeze_value",    hand_right  + "/squeeze/value"},
+            {"right_trigger_value",    hand_right  + "/trigger/value"},
+            {"right_trigger_click",    hand_right  + "/trigger/click"},
+            {"right_thumbstick",       hand_right  + "/thumbstick"},
+            {"right_thumbstick_click", hand_right  + "/thumbstick/click"},
+            {"right_thumbstick_touch", hand_right  + "/thumbstick/touch"},
+            {"right_pose",             hand_right  + "/grip/pose"},
+            {"right_haptic",           "/user/hand/right/output/haptic"},
         }},
     };
 
