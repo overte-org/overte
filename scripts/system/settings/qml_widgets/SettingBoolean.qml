@@ -35,6 +35,14 @@ Item {
 				text: "<";
 				font.pointSize: 16;
 				color: "white";
+
+				MouseArea {
+					anchors.fill: parent
+
+					onClicked: {
+						settingEnabled = !settingEnabled
+					}
+				}
 			}
 
 			Rectangle {
@@ -74,6 +82,14 @@ Item {
 				text: ">";
 				font.pointSize: 16;
 				color: "white";
+
+				MouseArea {
+					anchors.fill: parent
+
+					onClicked: {
+						settingEnabled = !settingEnabled
+					}
+				}
 			}
 		}
 
