@@ -2373,7 +2373,6 @@ void Application::update(float deltaTime) {
         AnimDebugDraw::getInstance().update();
     }
 
-
     { // Game loop is done, mark the end of the frame for the scene transactions and the render loop to take over
         PerformanceTimer perfTimer("enqueueFrame");
         getMain3DScene()->enqueueFrame();

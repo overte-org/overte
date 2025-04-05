@@ -73,6 +73,18 @@ void Application::initializePluginManager(const QCommandLineParser& parser) {
         qInfo() << "Disabling following input plugins:" << disabledInputs;
         PluginManager::getInstance()->disableInputs(disabledInputs);
     }
+
+    if (parser.isSet("useExperimentalXR")) {
+        auto pluginNames = QStringList();
+        pluginNames.push_back("OpenVR (Vive)");
+        PluginManager::getInstance()->disableDisplays(pluginNames);
+        PluginManager::getInstance()->disableInputs(pluginNames);
+    } else {
+        auto pluginNames = QStringList();
+        pluginNames.push_back("OpenXR");
+        PluginManager::getInstance()->disableDisplays(pluginNames);
+        PluginManager::getInstance()->disableInputs(pluginNames);
+    }
 }
 
 void Application::shutdownPlugins() {}
