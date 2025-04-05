@@ -159,6 +159,7 @@ const bool DEFAULT_DESKTOP_TABLET_BECOMES_TOOLBAR = true;
 const bool DEFAULT_HMD_TABLET_BECOMES_TOOLBAR = false;
 const bool DEFAULT_PREFER_STYLUS_OVER_LASER = false;
 const bool DEFAULT_PREFER_AVATAR_FINGER_OVER_STYLUS = false;
+const bool DEFAULT_MOUSE_CAPTURE_VR = false;
 const bool DEFAULT_SHOW_GRAPHICS_ICON = true;
 const bool DEFAULT_MINI_TABLET_ENABLED = false;
 const bool DEFAULT_AWAY_STATE_WHEN_FOCUS_LOST_IN_VR_ENABLED = true;
@@ -225,6 +226,7 @@ Application::Application(
     _hmdTabletBecomesToolbarSetting("hmdTabletBecomesToolbar", DEFAULT_HMD_TABLET_BECOMES_TOOLBAR),
     _preferStylusOverLaserSetting("preferStylusOverLaser", DEFAULT_PREFER_STYLUS_OVER_LASER),
     _preferAvatarFingerOverStylusSetting("preferAvatarFingerOverStylus", DEFAULT_PREFER_AVATAR_FINGER_OVER_STYLUS),
+    _defaultMouseCaptureVR("defaultMouseCaptureVR", DEFAULT_MOUSE_CAPTURE_VR),
     _showGraphicsIconSetting("showGraphicsIcon", DEFAULT_SHOW_GRAPHICS_ICON),
     _constrainToolbarPosition("toolbar/constrainToolbarToCenterX", true),
     _awayStateWhenFocusLostInVREnabled("awayStateWhenFocusLostInVREnabled", DEFAULT_AWAY_STATE_WHEN_FOCUS_LOST_IN_VR_ENABLED),

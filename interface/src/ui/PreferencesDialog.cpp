@@ -32,6 +32,8 @@
 void setupPreferences() {
     auto preferences = DependencyManager::get<Preferences>();
     auto myAvatar = DependencyManager::get<AvatarManager>()->getMyAvatar();
+
+    
     static const QString AVATAR_BASICS { "Avatar Basics" };
     {
         auto getter = [myAvatar]()->QString { return myAvatar->getDisplayName(); };
@@ -163,6 +165,13 @@ void setupPreferences() {
         auto preference = new SpinnerPreference(UI_CATEGORY, "VR Tablet Scale %", getter, setter);
         preference->setMin(20);
         preference->setMax(500);
+        preferences->addPreference(preference);
+    }
+        
+    {
+        auto getter = []() -> bool { return qApp->getMouseCaptureVR(); };
+        auto setter = [](bool value) { qApp->setMouseCaptureVR(value); };
+        auto preference = new CheckPreference(UI_CATEGORY, "3D mouse cursor in VR", getter, setter);
         preferences->addPreference(preference);
     }
 

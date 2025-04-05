@@ -269,6 +269,14 @@ void Application::setHmdTabletBecomesToolbarSetting(bool value) {
     updateSystemTabletMode();
 }
 
+void Application::setMouseCaptureVR(bool value) {
+    _defaultMouseCaptureVR.set(value);
+    getApplicationCompositor().setEnableMouseCaptureVR(value);
+}
+bool Application::getMouseCaptureVR() {
+    return _defaultMouseCaptureVR.get();
+}
+
 void Application::setShowGraphicsIcon(bool value) {
     _showGraphicsIconSetting.set(value);
     DependencyManager::get<MessagesClient>()->sendLocalMessage("Overte-ShowGraphicsIconChanged", "");
