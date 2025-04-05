@@ -24,12 +24,14 @@ OpenXrInputPlugin::OpenXrInputPlugin(std::shared_ptr<OpenXrContext> c) {
     _inputDevice = std::make_shared<InputDevice>(_context);
 }
 
-// TODO: Make a config UI
+// TODO: Config options
 static const QString XR_CONFIGURATION_LAYOUT = QString("");
 
+// TODO: full-body-tracking
 void OpenXrInputPlugin::calibrate() {
 }
 
+// TODO: full-body-tracking
 bool OpenXrInputPlugin::uncalibrate() {
     return true;
 }
@@ -38,9 +40,11 @@ bool OpenXrInputPlugin::isSupported() const {
     return _context->_isSupported;
 }
 
+// TODO: Config options
 void OpenXrInputPlugin::setConfigurationSettings(const QJsonObject configurationSettings) {
 }
 
+// TODO: Config options
 QJsonObject OpenXrInputPlugin::configurationSettings() {
     return QJsonObject();
 }
@@ -96,9 +100,11 @@ void OpenXrInputPlugin::pluginUpdate(float deltaTime, const controller::InputCal
     }
 }
 
+// TODO: Config options
 void OpenXrInputPlugin::loadSettings() {
 }
 
+// TODO: Config options
 void OpenXrInputPlugin::saveSettings() const {
 }
 
