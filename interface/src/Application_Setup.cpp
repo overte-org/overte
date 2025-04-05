@@ -287,6 +287,10 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
         if (!QResource::registerResource(resourcesBinaryFile)) {
             throw std::runtime_error(QString("Unable to load primary resources from '%1'").arg(resourcesBinaryFile).toStdString());
         }
+
+        // Sanity check, this is here just to make checking whether resources are working right more convenient
+        QDir resdir(":/");
+        qCInfo(interfaceapp) << "Root-level resources found:" << resdir.entryList();
     }
 
     DependencyManager::set<ScriptInitializers>();
