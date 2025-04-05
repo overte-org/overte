@@ -188,7 +188,7 @@ static bool isWindowActive() {
 }
 
 bool CompositorHelper::shouldCaptureMouse() const {
-    if (!_allowMouseCaptureVR) {
+    if (!_allowMouseCapture) {
         return false;
     }
 
@@ -196,7 +196,7 @@ bool CompositorHelper::shouldCaptureMouse() const {
         return false;
     }
     
-    if (!_mouseLockComposit) {
+    if (!_enableMouseCaptureVR) {
         return false;
     }
 
@@ -214,14 +214,14 @@ bool CompositorHelper::shouldCaptureMouse() const {
 }
 
 void CompositorHelper::setAllowMouseCapture(bool capture) {
-    if (capture != _allowMouseCaptureVR) {
-        _allowMouseCaptureVR = capture;
+    if (capture != _allowMouseCapture) {
+        _allowMouseCapture = capture;
         emit allowMouseCaptureChanged();
     }
 }
 
-void CompositorHelper::setMouseLockCompositVR(bool capture) {
-    _mouseLockComposit = capture;
+void CompositorHelper::setEnableMouseCaptureVR(bool capture) {
+    _enableMouseCaptureVR = capture;
 }
 
 void CompositorHelper::handleLeaveEvent() {

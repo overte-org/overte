@@ -270,11 +270,11 @@ void Application::setHmdTabletBecomesToolbarSetting(bool value) {
 }
 
 void Application::setMouseCaptureVR(bool value) {
-    _defaultMouseLock.set(value);
-    getApplicationCompositor().setMouseLockCompositVR(value);
+    _defaultMouseCaptureVR.set(value);
+    getApplicationCompositor().setEnableMouseCaptureVR(value);
 }
 bool Application::getMouseCaptureVR() {
-    return _defaultMouseLock.get();
+    return _defaultMouseCaptureVR.get();
 }
 
 void Application::setShowGraphicsIcon(bool value) {
