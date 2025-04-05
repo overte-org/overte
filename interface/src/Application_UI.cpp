@@ -269,11 +269,11 @@ void Application::setHmdTabletBecomesToolbarSetting(bool value) {
     updateSystemTabletMode();
 }
 
-void Application::setMouseLock(bool value) {
+void Application::setMouseCaptureVR(bool value) {
     _defaultMouseLock.set(value);
-    getApplicationCompositor().setMouseLockComposit(value);
+    getApplicationCompositor().setMouseLockCompositVR(value);
 }
-bool Application::getMouseLock() {
+bool Application::getMouseCaptureVR() {
     return _defaultMouseLock.get();
 }
 

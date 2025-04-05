@@ -169,8 +169,8 @@ void setupPreferences() {
     }
         
     {
-        auto getter = []() -> bool { return qApp->getMouseLock(); };
-        auto setter = [](bool value) { qApp->setMouseLock(value); };
+        auto getter = []() -> bool { return qApp->getMouseCaptureVR(); };
+        auto setter = [](bool value) { qApp->setMouseCaptureVR(value); };
         auto preference = new CheckPreference(UI_CATEGORY, "3D mouse cursor in VR", getter, setter);
         preferences->addPreference(preference);
     }

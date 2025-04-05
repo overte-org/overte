@@ -104,9 +104,9 @@ public:
 
     bool shouldCaptureMouse() const;
 
-    bool getAllowMouseCapture() const { return _allowMouseCapture; }
+    bool getAllowMouseCapture() const { return _allowMouseCaptureVR; }
     void setAllowMouseCapture(bool capture);
-    void setMouseLockComposit(bool capture);
+    void setMouseLockCompositVR(bool capture);
 
     /// if the reticle is pointing to a system overlay (a dialog box for example) then the function returns true otherwise false
     bool getReticleOverDesktop() const;
@@ -169,7 +169,7 @@ private:
 
     bool _reticleOverQml { false };
 
-    std::atomic<bool> _allowMouseCapture{ true };
+    std::atomic<bool> _allowMouseCaptureVR{ true };
     std::atomic<bool> _mouseLockComposit{ false };
 
     bool _fakeMouseEvent { false };
