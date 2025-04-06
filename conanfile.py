@@ -23,6 +23,7 @@ class Overte(ConanFile):
         "sdl*:xscrnsaver": "False",
         "sdl*:xshape": "False",
         "sdl*:xvm": "False",
+        "openssl*:shared": "True",
         "qt*:shared": "True",
         "qt*:gui": "True",
         "qt*:qtdeclarative": "True",
@@ -76,11 +77,12 @@ class Overte(ConanFile):
         self.requires("vulkan-memory-allocator/3.0.1")
         self.requires("zlib/1.2.13")
         self.requires("glm/0.9.9.5", force=True)
+        openssl = "openssl/1.1.1q"
 
         if self.options.qt_source == "system":
             self.requires("qt/5.15.2@overte/system", force=True)
             if self.settings.os == "Linux":
-                self.requires("openssl/system@anotherfoxguy/stable", force=True)
+                openssl = "openssl/system@anotherfoxguy/stable"
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
@@ -95,6 +97,8 @@ class Overte(ConanFile):
 
         if self.options.with_webrtc:
             self.requires("webrtc-prebuild/2021.01.05@overte/stable", force=True)
+
+        self.requires(openssl, force=True)
 
     def generate(self):
         tc = CMakeToolchain(self)

@@ -7,7 +7,6 @@
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 #
 macro(TARGET_OPENSSL)
-    find_package(OpenSSL 1.1.0 REQUIRED)
-    include_directories(SYSTEM "${OPENSSL_INCLUDE_DIR}")
-    target_link_libraries(${TARGET_NAME} ${OPENSSL_LIBRARIES})
+    find_package(OpenSSL REQUIRED)
+    target_link_libraries(${TARGET_NAME} OpenSSL::SSL OpenSSL::Crypto)
 endmacro()
