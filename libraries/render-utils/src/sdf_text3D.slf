@@ -48,7 +48,9 @@ layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
 layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
 #define _texCoord0 _texCoord01.xy
 #define _texCoord1 _texCoord01.zw
-layout(location=RENDER_UTILS_ATTR_FADE1) flat in vec4 _glyphBounds; // we're reusing the fade texcoord locations here
+ // we're reusing the fade texcoord locations here:
+layout(location=RENDER_UTILS_ATTR_FADE1) flat in vec4 _glyphBounds;
+layout(location=RENDER_UTILS_ATTR_FADE2) flat in float _isTofu;
 
 <@if HIFI_USE_MIRROR@>
     <@include graphics/ShaderConstants.h@>
@@ -57,7 +59,7 @@ layout(location=RENDER_UTILS_ATTR_FADE1) flat in vec4 _glyphBounds; // we're reu
 <@endif@>
 
 void main() {
-    vec4 color = evalSDFSuperSampled(_texCoord0, _positionMS, _glyphBounds);
+    vec4 color = evalSDFSuperSampled(_texCoord0, _positionMS, _glyphBounds, _isTofu);
 
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     color.a *= params.color.a;

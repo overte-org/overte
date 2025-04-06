@@ -117,6 +117,7 @@ private:
     // we declare the hash as mutable in order to avoid such
     // copies
     mutable QHash<QChar, Glyph> _glyphs;
+    Glyph _tofuGlyph;
 
     // Font characteristics
     QString _family;
