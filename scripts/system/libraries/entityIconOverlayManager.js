@@ -1,11 +1,11 @@
 /* globals EntityIconOverlayManager:true */
-
+var allOverlays;
 EntityIconOverlayManager = function(entityTypes, getOverlayPropertiesFunc) {
 
     var visible = false;
 
     // List of all created overlays
-    var allOverlays = [];
+    allOverlays = [];
 
     // List of overlays not currently being used
     var unusedOverlays = [];
@@ -99,7 +99,7 @@ EntityIconOverlayManager = function(entityTypes, getOverlayPropertiesFunc) {
         }
         return overlay;
     }
-
+    
     function releaseOverlay(overlay) {
         unusedOverlays.push(overlay);
         Entities.editEntity(overlay, {
