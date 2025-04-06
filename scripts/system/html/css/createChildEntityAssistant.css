@@ -143,6 +143,13 @@ span.tileCreateChildEntityAssistant-avatar:hover {
     border: 2px solid #7fdb98;
 }
 
+span.viewChildProperties {
+    width: 100%;
+    padding-left: 12px;
+    padding-right: 12px;
+    text-align: center;
+}
+
 font.iconCreateChildEntityAssistant {
     font-family: HiFi-Glyphs;
     font-size: 50px;
