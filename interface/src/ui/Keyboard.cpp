@@ -897,7 +897,7 @@ void Keyboard::loadKeyboardFile(const QString& keyboardFile) {
             properties.setBottomMargin((float)displayTextObject["bottomMargin"].toDouble());
             properties.setLineHeight((float)displayTextObject["lineHeight"].toDouble());
             properties.setVisible(false);
-            properties.setEmissive(true);
+            properties.setUnlit(true);
             properties.getGrab().setGrabbable(false);
             properties.setText("");
             properties.setTextAlpha(1.0f);
