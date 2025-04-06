@@ -4832,7 +4832,7 @@ function setChildListData(element, children, parentID, entityHostType = "") {
                 if (children[i].entityHostType !== "domain") {
                     entityHostTypeClass = " class='" + children[i].entityHostType + "Entity'";
                 }
-                let navigatorBtn = "<span onClick='navigateToSpecificEntity(" + '"'+ children[i].id + '"'+ ")'>&#129094;</span>";
+                let navigatorBtn = "<span class='viewChildProperties' onClick='navigateToSpecificEntity(" + '"'+ children[i].id + '"'+ ")'>&#129094;</span>";
                 renderer += "<tr" + entityHostTypeClass + "><td>" + children[i].type + "</td><td>" + children[i].name + "</td><td>" + navigatorBtn + "</td></tr>";
             }
         } else {
