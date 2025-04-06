@@ -53,6 +53,7 @@ public:
     qint64 getDataSize() const { return (_payloadStart - _packet.get()) + _payloadSize; }
     
     // Returns the size of the packet, including the header AND the UDP/IP header
+    // TODO(IPv6): Is UDP header size different for IPv6?
     qint64 getWireSize() const { return getDataSize() + UDP_IPV4_HEADER_SIZE; }
     
     // Returns the size of the payload only

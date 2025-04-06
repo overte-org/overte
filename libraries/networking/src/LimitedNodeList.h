@@ -447,7 +447,7 @@ protected:
     QUdpSocket* _dtlsSocket { nullptr };
     SockAddr _localSockAddr;
     SockAddr _publicSockAddr;
-    SockAddr _stunSockAddr { SocketType::UDP, STUN_SERVER_HOSTNAME, STUN_SERVER_PORT };
+    SockAddr _stunSockAddr { SocketType::UDP, STUN_SERVER_HOSTNAME, STUN_SERVER_PORT, false, QAbstractSocket::IPv4Protocol};
     bool _hasTCPCheckedLocalSocket { false };
     bool _useAuthentication { true };
 
