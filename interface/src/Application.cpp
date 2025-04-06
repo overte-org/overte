@@ -1743,17 +1743,19 @@ void Application::idle() {
 #endif
 
 #ifdef Q_OS_WIN
-    // If tracing is enabled then monitor the CPU in a separate thread
-    static std::once_flag once;
-    std::call_once(once, [&] {
-        if (trace_app().isDebugEnabled()) {
-            QThread* cpuMonitorThread = new QThread(qApp);
-            cpuMonitorThread->setObjectName("cpuMonitorThread");
-            QObject::connect(cpuMonitorThread, &QThread::started, [this] { setupCpuMonitorThread(); });
-            QObject::connect(qApp, &QCoreApplication::aboutToQuit, cpuMonitorThread, &QThread::quit);
-            cpuMonitorThread->start();
-        }
-    });
+    {
+        // If tracing is enabled then monitor the CPU in a separate thread
+        static std::once_flag once;
+        std::call_once(once, [&] {
+            if (trace_app().isDebugEnabled()) {
+                QThread* cpuMonitorThread = new QThread(qApp);
+                cpuMonitorThread->setObjectName("cpuMonitorThread");
+                QObject::connect(cpuMonitorThread, &QThread::started, [this] { setupCpuMonitorThread(); });
+                QObject::connect(qApp, &QCoreApplication::aboutToQuit, cpuMonitorThread, &QThread::quit);
+                cpuMonitorThread->start();
+            }
+        });
+    }
 #endif
 
     auto displayPlugin = getActiveDisplayPlugin();
@@ -1882,6 +1884,16 @@ void Application::idle() {
     _overlayConductor.update(secondsSinceLastUpdate);
 
     _gameLoopCounter.increment();
+
+    {
+        static std::once_flag once;
+        std::call_once(once, [] {
+            const QString& bookmarksError = DependencyManager::get<AvatarBookmarks>()->getBookmarkError();
+            if (!bookmarksError.isEmpty()) {
+                OffscreenUi::asyncWarning("Avatar Bookmarks Error", "JSON parse error: " + bookmarksError, QMessageBox::Ok, QMessageBox::Ok);
+            }
+        });
+    }
 }
 
 void Application::update(float deltaTime) {
