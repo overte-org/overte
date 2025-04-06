@@ -65,6 +65,7 @@ class Overte(ConanFile):
         self.requires("onetbb/2021.10.0")
         self.requires("openexr/3.1.9")
         self.requires("openvr/2.2.3@overte/stable")
+        self.requires("openxr/1.1.46@overte/stable")
         self.requires("opus/1.4")
         self.requires("polyvox/0.2.1@overte/stable")
         self.requires("quazip/1.4")
@@ -77,6 +78,7 @@ class Overte(ConanFile):
         self.requires("vulkan-memory-allocator/3.0.1")
         self.requires("zlib/1.2.13")
         self.requires("glm/0.9.9.5", force=True)
+        self.requires("jsoncpp/1.9.6", force=True)
         openssl = "openssl/1.1.1q"
 
         if self.options.qt_source == "system":
