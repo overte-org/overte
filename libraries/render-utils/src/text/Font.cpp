@@ -378,7 +378,7 @@ void Font::setupGPU() {
         static const int TEX_BOUNDS_OFFSET = offsetof(TextureVertex, bounds);
         static const int TOFU_OFFSET = offsetof(TextureVertex, isTofu);
         assert(TEX_COORD_OFFSET == sizeof(glm::vec2));
-        assert(sizeof(TextureVertex) == 2 * sizeof(glm::vec2) + sizeof(glm::vec4));
+        assert(sizeof(TextureVertex) == 2 * sizeof(glm::vec2) + sizeof(glm::vec4) + sizeof(float));
         assert(sizeof(QuadBuilder) == 4 * sizeof(TextureVertex));
 
         // Setup rendering structures
