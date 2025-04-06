@@ -16,20 +16,25 @@ macro(manually_install_openssl_for_qt)
   # So even though we don't need the dynamic version of OpenSSL for our direct-use purposes
   # we use this macro to include the two SSL DLLs with the targets using QtNetwork
   if (WIN32)
-    # we have to call find_package(OpenSSL) here even though this target may not directly need it
-    find_package(OpenSSL REQUIRED)
-
     install(
-      FILES "${VCPKG_INSTALL_ROOT}/bin/libcrypto-3-x64.dll"
+      FILES "${CMAKE_BINARY_DIR}/conanlibs/$<CONFIGURATION>/libcrypto-1_1-x64.dll"
       DESTINATION ${TARGET_INSTALL_DIR}
       COMPONENT ${TARGET_INSTALL_COMPONENT}
     )
 
     install(
-      FILES "${VCPKG_INSTALL_ROOT}/bin/libssl-3-x64.dll"
+      FILES "${CMAKE_BINARY_DIR}/conanlibs/$<CONFIGURATION>/libssl-1_1-x64.dll"
       DESTINATION ${TARGET_INSTALL_DIR}
       COMPONENT ${TARGET_INSTALL_COMPONENT}
     )
+
+    add_custom_command(
+        TARGET ${TARGET_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/conanlibs/$<CONFIGURATION>/libcrypto-1_1-x64.dll" "${CMAKE_CURRENT_BINARY_DIR}/libcrypto-1_1-x64.dll"
+        COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_BINARY_DIR}/conanlibs/$<CONFIGURATION>/libssl-1_1-x64.dll" "${CMAKE_CURRENT_BINARY_DIR}/libssl-1_1-x64.dll"
+        COMMENT "Copy openssl dlls"
+    )
+
   endif()
 
 endmacro()
