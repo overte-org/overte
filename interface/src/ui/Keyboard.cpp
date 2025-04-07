@@ -84,9 +84,10 @@ static const QString LAYER_STRING = "layer";
 static const QString BACKSPACE_STRING = "backspace";
 static const QString SPACE_STRING = "space";
 static const QString ENTER_STRING = "enter";
-static const QString COPY_STRING = "copy";
-static const QString PASTE_STRING = "paste";
 static const QString SELECT_ALL_STRING = "select_all";
+static const QString COPY_STRING = "copy";
+static const QString CUT_STRING = "cut";
+static const QString PASTE_STRING = "paste";
 
 static const QString KEY_HOVER_HIGHLIGHT = "keyHoverHiglight";
 static const QString KEY_PRESSED_HIGHLIGHT = "keyPressesHighlight";
@@ -207,12 +208,14 @@ Key::Type Key::getKeyTypeFromString(const QString& keyTypeString) {
         return Type::CLOSE;
     } else if (keyTypeString == ENTER_STRING) {
         return Type::ENTER;
-    } else if (keyTypeString == COPY_STRING) {
-        return Type::COPY;
-    } else if (keyTypeString == PASTE_STRING) {
-        return Type::PASTE;
     } else if (keyTypeString == SELECT_ALL_STRING) {
         return Type::SELECT_ALL;
+    } else if (keyTypeString == COPY_STRING) {
+        return Type::COPY;
+    } else if (keyTypeString == CUT_STRING) {
+        return Type::CUT;
+    } else if (keyTypeString == PASTE_STRING) {
+        return Type::PASTE;
     }
 
     return Type::CHARACTER;
@@ -517,6 +520,46 @@ bool Keyboard::shouldProcessPointerEvent(const PointerEvent& event) const {
     return ((isStylusEvent && preferMalletsOverLasers) || (isLaserEvent && !preferMalletsOverLasers));
 }
 
+void Keyboard::handleShortcut(Key::Type keyType) {
+    int keyCode;
+    switch (keyType) {
+        case Key::Type::SELECT_ALL:
+            keyCode = Qt::Key_A;
+            break;
+
+        case Key::Type::COPY:
+            keyCode = Qt::Key_C;
+            break;
+
+        case Key::Type::CUT:
+            keyCode = Qt::Key_X;
+            break;
+
+        case Key::Type::PASTE:
+            keyCode = Qt::Key_V;
+            break;
+
+        // shouldn't reach here
+        default:
+            return;
+    }
+
+    // Qt automatically remaps ⌘A, ⌘C, etc. to ^A and ^C on macOS
+    QKeyEvent* pressEvent = new QKeyEvent(QEvent::KeyPress, keyCode, Qt::ControlModifier);
+    QKeyEvent* releaseEvent = new QKeyEvent(QEvent::KeyRelease, keyCode, Qt::ControlModifier);
+
+    if (_inputToHudUI) {
+        QCoreApplication::postEvent(qApp->getPrimaryWidget(), pressEvent);
+        QCoreApplication::postEvent(qApp->getPrimaryWidget(), releaseEvent);
+    } else {
+        QCoreApplication::postEvent(QCoreApplication::instance(), pressEvent);
+        QCoreApplication::postEvent(QCoreApplication::instance(), releaseEvent);
+    }
+
+    _typedCharacters.clear();
+    updateTextDisplay();
+}
+
 void Keyboard::handleTriggerBegin(const QUuid& id, const PointerEvent& event) {
     auto buttonType = event.getButton();
     if (!shouldProcessEntityAndPointerEvent(event) || buttonType != PointerEvent::PrimaryButton) {
@@ -582,57 +625,12 @@ void Keyboard::handleTriggerBegin(const QUuid& id, const PointerEvent& event) {
                 _typedCharacters.clear();
                 updateTextDisplay();
                 break;
-            // TODO, macOS: If macOS support comes back, these should be revisited
-            case Key::Type::COPY: {
-                QKeyEvent* pressEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier);
-                QKeyEvent* releaseEvent = new QKeyEvent(QEvent::KeyRelease, Qt::Key_C, Qt::ControlModifier);
-
-                if (_inputToHudUI) {
-                    QCoreApplication::postEvent(qApp->getPrimaryWidget(), pressEvent);
-                    QCoreApplication::postEvent(qApp->getPrimaryWidget(), releaseEvent);
-                } else {
-                    QCoreApplication::postEvent(QCoreApplication::instance(), pressEvent);
-                    QCoreApplication::postEvent(QCoreApplication::instance(), releaseEvent);
-                }
-
-                _typedCharacters.clear();
-                updateTextDisplay();
+            case Key::Type::SELECT_ALL:
+            case Key::Type::COPY:
+            case Key::Type::CUT:
+            case Key::Type::PASTE:
+                handleShortcut(key.getKeyType());
                 return;
-            }
-            // TODO, macOS: If macOS support comes back, these should be revisited
-            case Key::Type::PASTE: {
-                QKeyEvent* pressEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_V, Qt::ControlModifier);
-                QKeyEvent* releaseEvent = new QKeyEvent(QEvent::KeyRelease, Qt::Key_V, Qt::ControlModifier);
-
-                if (_inputToHudUI) {
-                    QCoreApplication::postEvent(qApp->getPrimaryWidget(), pressEvent);
-                    QCoreApplication::postEvent(qApp->getPrimaryWidget(), releaseEvent);
-                } else {
-                    QCoreApplication::postEvent(QCoreApplication::instance(), pressEvent);
-                    QCoreApplication::postEvent(QCoreApplication::instance(), releaseEvent);
-                }
-
-                _typedCharacters.clear();
-                updateTextDisplay();
-                return;
-            }
-            // TODO, macOS: If macOS support comes back, these should be revisited
-            case Key::Type::SELECT_ALL: {
-                QKeyEvent* pressEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_A, Qt::ControlModifier);
-                QKeyEvent* releaseEvent = new QKeyEvent(QEvent::KeyRelease, Qt::Key_A, Qt::ControlModifier);
-
-                if (_inputToHudUI) {
-                    QCoreApplication::postEvent(qApp->getPrimaryWidget(), pressEvent);
-                    QCoreApplication::postEvent(qApp->getPrimaryWidget(), releaseEvent);
-                } else {
-                    QCoreApplication::postEvent(QCoreApplication::instance(), pressEvent);
-                    QCoreApplication::postEvent(QCoreApplication::instance(), releaseEvent);
-                }
-
-                _typedCharacters.clear();
-                updateTextDisplay();
-                return;
-            }
             case Key::Type::CHARACTER:
                 if (keyString != " ") {
                     _typedCharacters.push_back((_password ? "*" : keyString));
