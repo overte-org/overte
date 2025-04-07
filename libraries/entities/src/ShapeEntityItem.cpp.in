@@ -351,8 +351,12 @@ PulsePropertyGroup ShapeEntityItem::getPulseProperties() const {
 }
 
 void ShapeEntityItem::setUserData(const QString& value) {
+    bool changed = false;
     withWriteLock([&] {
-        _needsRenderUpdate |= _userData != value;
-        _userData = value;
+        changed = _userData != value;
+        _needsRenderUpdate |= changed;
     });
+    if (changed) {
+        EntityItem::setUserData(value);
+    }
 }
