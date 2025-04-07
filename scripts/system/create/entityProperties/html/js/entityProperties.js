@@ -3,7 +3,7 @@
 //  Created by Ryan Huffman on November 13th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2024 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -14,6 +14,8 @@
 var currentTab = "base";
 
 const DEGREES_TO_RADIANS = Math.PI / 180.0;
+
+const UUID_NONE = "{00000000-0000-0000-0000-000000000000}";
 
 const ENTITY_HOST_TYPE_COLOR_DOMAIN = "#afafaf";
 const ENTITY_HOST_TYPE_COLOR_AVATAR = "#7fdb98";
@@ -81,6 +83,7 @@ const GROUPS = [
                 label: "Parent",
                 type: "string",
                 propertyID: "parentID",
+                buttons: [ { id: "navigateToParentEntity", label: "1", className: "navigation", onClick: navigateToSpecificEntityFromParentID } ],
                 onChange: parentIDChanged,
             },
             {
@@ -477,6 +480,13 @@ const GROUPS = [
                 showPropertyRule: { "ambientLightMode": "enabled" },
             },
             {
+                type: "buttons",
+                buttons: [ { id: "copy", label: "Copy color from Skybox", 
+                             className: "black", onClick: copySkyboxColorToAmbientColor } ],
+                propertyID: "copyColorToAmbient",
+                showPropertyRule: { "ambientLightMode": "enabled" },
+            },
+            {
                 label: "Ambient Intensity",
                 type: "number-draggable",
                 min: -200,
@@ -495,7 +505,7 @@ const GROUPS = [
             },
             {
                 type: "buttons",
-                buttons: [ { id: "copy", label: "Copy from Skybox", 
+                buttons: [ { id: "copy", label: "Copy URL from Skybox", 
                              className: "black", onClick: copySkyboxURLToAmbientURL } ],
                 propertyID: "copyURLToAmbient",
                 showPropertyRule: { "ambientLightMode": "enabled" },
@@ -2156,28 +2166,39 @@ const GROUPS = [
             }
         ]
     },
+    {
+        id: "children",
+        label: "CHILD ENTITIES",
+        properties: [
+            {
+                label: "Children",
+                type: "childList",
+                propertyID: "children",
+            }
+        ]
+    },
 ];
 
 const GROUPS_PER_TYPE = {
-  None: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Shape: [ 'base', 'shape', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Text: [ 'base', 'text', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+  None: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Shape: [ 'base', 'shape', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Text: [ 'base', 'text', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Zone: [ 'base', 'zone', 'zone_key_light', 'zone_skybox', 'zone_ambient_light', 'zone_haze',
             'zone_bloom', 'zone_tonemapping', 'zone_ambient_occlusion', 'zone_avatar_priority',
-            'zone_audio', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
-  Model: [ 'base', 'model', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Image: [ 'base', 'image', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Web: [ 'base', 'web', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Light: [ 'base', 'light', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Material: [ 'base', 'material', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
+            'zone_audio', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  Model: [ 'base', 'model', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Image: [ 'base', 'image', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Web: [ 'base', 'web', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Light: [ 'base', 'light', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Material: [ 'base', 'material', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   ParticleEffect: [ 'base', 'particles', 'particles_emit', 'particles_size', 'particles_color', 
-                    'particles_behavior', 'particles_constraints', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
-  ProceduralParticleEffect: [ 'base', 'particles_procedural', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
-  PolyLine: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
-  Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
-  Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics' ],
-  Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics' ],
+                    'particles_behavior', 'particles_constraints', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  ProceduralParticleEffect: [ 'base', 'particles_procedural', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  PolyLine: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
 };
 
 const EDITOR_TIMEOUT_DURATION = 1500;
@@ -2247,6 +2268,7 @@ let currentSpaceMode = PROPERTY_SPACE_MODE.LOCAL;
 let zonesList = [];
 let canViewAssetURLs = false;
 let maSelectedId;
+let skyboxColorForCopy;
 
 function createElementFromHTML(htmlString) {
     let elTemplate = document.createElement('template');
@@ -2438,6 +2460,10 @@ function resetProperties() {
                 property.elInput.classList.remove('multi-diff');
                 property.elInput.value = "[]";
                 setZonesSelectionData(property.elInput, false);
+                break;
+            }
+            case 'childList': {
+                setChildListData(property.elInput, undefined, "");
                 break;
             }
             case 'icon': {
@@ -3643,6 +3669,10 @@ function createProperty(propertyData, propertyElementID, propertyName, propertyI
             property.elInput = createZonesSelection(property, elProperty);
             break;            
         }
+        case 'childList': {
+            property.elInput = createChildList(property, elProperty);
+            break;
+        }
         case 'icon': {
             property.elSpan = createIconProperty(property, elProperty);
             break;
@@ -3789,6 +3819,10 @@ function copySkyboxURLToAmbientURL() {
     let skyboxURL = getPropertyInputElement("skybox.url").value;
     getPropertyInputElement("ambientLight.ambientURL").value = skyboxURL;
     updateProperty("ambientLight.ambientURL", skyboxURL, false);
+}
+
+function copySkyboxColorToAmbientColor() {
+    updateProperty("ambientLight.ambientColor", skyboxColorForCopy, false);
 }
 
 function copyPositionProperty() {
@@ -4753,6 +4787,251 @@ function setZonesSelectionData(element, isEditable) {
     displaySelectedZones(element.id, isEditable);
 }
 
+
+/**
+ * CHILD ENTITIES FUNCTIONS
+ */
+ 
+function createChildList(property, elProperty) {
+    let elementID = property.elementID;
+    elProperty.className = "childEntityList";
+
+    let elInput = document.createElement('div');
+    elInput.setAttribute("id", "childList-" + elementID);
+
+    elProperty.appendChild(elInput);
+    return elInput;
+}
+
+function setChildListData(element, children, parentID, entityHostType = "") {
+    
+    let childListContainer = document.getElementById(element.id);
+    let renderer = "";
+    let i;
+    renderer += "<div id='childEntityActionsContainer'>";
+    if (parentID !== "") {
+        renderer += "<div id='viewParentContainer'><span class='viewParent' onClick='navigateToSpecificEntity(" + '"'+ parentID + '"'+ ")'><font class='viewParentIcon'>1</font>View Parent</span></div>";
+    } else {
+        renderer += "<div id='viewParentContainer'></div>";
+    }
+    if ((entityHostType === "domain" || entityHostType === "avatar") && children !== undefined) {
+        renderer += "<div id='addChildEntityContainer'><span class='viewParent' onClick='openCreateChildEntityAssistant(" + '"' + entityHostType + '"' + ")'>+ Add Child Entity&nbsp;&nbsp;</span></div>";
+    } else {
+        renderer += "<div id='addChildEntityContainer'></div>";
+    }
+    renderer += "</div>";
+    
+    renderer += "<table>";
+    renderer += "<tr><th class='childrenTableHeader' width='30%'>TYPE</th><th class='childrenTableHeader' width='65%'>NAME</th><th class='childrenTableHeader' width='5%'>VIEW</th></tr>";
+    if (children === undefined) {
+        renderer += "<tr><td colspan = '3' style='text-align: center;'><i>Not applicable</i></td></tr>";
+    } else {
+        if (children.length > 0) {
+            for (i = 0; i < children.length; i++ ) {
+                let entityHostTypeClass = "";
+                if (children[i].entityHostType !== "domain") {
+                    entityHostTypeClass = " class='" + children[i].entityHostType + "Entity'";
+                }
+                let navigatorBtn = "<span class='viewChildProperties' onClick='navigateToSpecificEntity(" + '"'+ children[i].id + '"'+ ")'>&#129094;</span>";
+                renderer += "<tr" + entityHostTypeClass + "><td>" + children[i].type + "</td><td>" + children[i].name + "</td><td>" + navigatorBtn + "</td></tr>";
+            }
+        } else {
+            renderer += "<tr><td colspan = '3' style='text-align: center;'><i>No children</i></td></tr>";
+        }
+    }
+    renderer += "</table>";
+    childListContainer.innerHTML = renderer;
+}
+
+function navigateToSpecificEntityFromParentID() {
+    let parentID = getPropertyInputElement("parentID").value;
+    if (parentID !== "" && parentID !== UUID_NONE) {
+        navigateToSpecificEntity(parentID);
+    }
+}
+
+function setParentIdNavigationAvailable(selectionLength) {
+    $('#property-parentID-button-navigateToParentEntity').attr('disabled', selectionLength !== 1);
+}
+
+function navigateToSpecificEntity(id) {
+    EventBridge.emitWebEvent(JSON.stringify({
+        type: "specificEntityNavigation",
+        id: id
+    }));
+}
+
+//CREATE CHILD ENTITY FUNCTIONS:
+
+function openCreateChildEntityAssistant(entityHostType) {
+    $('#uiCreateChildEntityAssistant').show();
+    $('#properties-list').hide();
+    generateCreateChildEntityAssistant(entityHostType);
+}
+
+function generateCreateChildEntityAssistant(entityHostType) {
+    let entityType = [
+        {"type": "Model", "name": "Model"},
+        {"type": "Shape", "name": "Shape"},
+        {"type": "Text", "name": "Text"},
+        {"type": "Image", "name": "Image"},
+        {"type": "Web", "name": "Web"},
+        {"type": "ParticleEffect", "name": "Particle"},
+        {"type": "ProceduralParticleEffect", "name": "Proc. Part."},
+        {"type": "Light", "name": "Light"},
+        {"type": "Zone", "name": "Zone"},
+        {"type": "Material", "name": "Material"},
+        {"type": "Sound", "name": "Sound"},
+        {"type": "PolyVox", "name": "Voxel"},
+    ];
+    const TILES_PER_ROW = 4;
+    let renderer = "<div id='typeSelectorCreateChildEntityAssistant' style = 'display: block;'>";
+    let i;
+    let rowCount = 0;
+    for (i = 0; i < entityType.length; i++) {
+        if (rowCount === 0) {
+            renderer += "<div>";
+        }
+        rowCount++;
+        renderer += "<span class='tileCreateChildEntityAssistant-" + entityHostType + "' onclick='selectTypeInChildEntityAssistant(" + '"' +  entityType[i].type + '"' +  ", " + '"' +  entityHostType + '"' + ")'>";
+        renderer += "<font class = 'iconCreateChildEntityAssistant'>" + ENTITY_TYPE_ICON[entityType[i].type] + "</font><br>" + entityType[i].name.toUpperCase() + "</span>";
+        if (rowCount === TILES_PER_ROW) {
+            renderer += "</div>";
+            rowCount = 0;
+        }
+    }
+    if (rowCount !== 0) {
+        renderer += "</div>";
+    }
+    renderer += "</div>";
+    
+    renderer += "<div id='paramaterCreateChildEntityAssistant' style='display: none;'>";
+    renderer += "<div id='nameCreateChildEntityAssistant'></div><br>";
+    renderer += "<font class='addChildEntity-" + entityHostType + "'>URL: </font><input id='urlCreateChildEntityAssistant' type='text'><br><br>";
+    renderer += "<div style='text-align: right;'>";
+    renderer += "<input type='button' class='black' id='cancelBtnCreateChildEntityAssistant' value='Cancel'>&nbsp;&nbsp;";
+    renderer += "<input type='button' class='white' id='createBtnCreateChildEntityAssistant' value='Create'>";
+    renderer += "<div>";
+    renderer += "</div>";
+    
+    document.getElementById("uiCreateChildEntityAssistant-form").innerHTML = renderer;
+}
+
+function selectTypeInChildEntityAssistant(type, entityHostType) {
+    if (type === "Model" || type === "Sound") { //Only if the url is cruxial. We want the less entry as possible for the user.
+        document.getElementById("nameCreateChildEntityAssistant").innerHTML = "<br><br><font class='addChildEntity-" + entityHostType + "'>Create a child '" + type + "' entity<br>";
+        document.getElementById("typeSelectorCreateChildEntityAssistant").style.display = "none";
+        document.getElementById("paramaterCreateChildEntityAssistant").style.display = "block";
+        document.getElementById("createBtnCreateChildEntityAssistant").setAttribute("onclick","createChildEntity('" + type + "', '" + entityHostType + "')");
+        document.getElementById("cancelBtnCreateChildEntityAssistant").setAttribute("onclick","closeCreateChildEntityAssistant()");
+    } else {
+        createChildEntity(type, entityHostType);
+    }
+}
+
+function createChildEntity(type, entityHostType) {
+    let url = document.getElementById("urlCreateChildEntityAssistant").value;
+    let parentID = getPropertyInputElement("id").value;
+    let properties;
+    switch(type) {
+        case "Model":
+            properties = {
+                "type": type,
+                "modelURL": url,
+                "parentID": parentID,
+                "shapeType": "static-mesh",
+                "dynamic": false,
+                "grab": {"grabbable": false},
+                "useOriginalPivot": true
+            };
+            break;
+        case "Shape":
+            properties = {
+                "type": type,
+                "parentID": parentID,
+                "shape": "Cube"
+            };
+            break;
+        case "Text":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Image":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Web":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "ParticleEffect":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "ProceduralParticleEffect":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Light":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Zone":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Material":
+            properties = {
+                "type": type,
+                "materialURL": "materialData",
+                "materialData": JSON.stringify({ "materials": {} }),
+                "parentID": parentID,
+                "priority": 1
+            };
+            break;
+        case "Sound":
+            properties = {
+                "type": type,
+                "soundURL": url,
+                "parentID": parentID
+            };
+            break;
+        case "PolyVox":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+    }
+
+    EventBridge.emitWebEvent(JSON.stringify({
+        "type": "createChildEntity",
+        "properties": properties,
+        "entityHostType": entityHostType
+    }));
+   
+    closeCreateChildEntityAssistant();
+}
+
+function closeCreateChildEntityAssistant() {
+    $('#uiCreateChildEntityAssistant').hide();
+    $('#properties-list').show();
+}
+
 /**
  * MATERIAL TARGET FUNCTIONS
  */
@@ -4925,15 +5204,21 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
     selectedEntityIDs = new Set(selections.map(selection => selection.id));
     const multipleSelections = currentSelections.length > 1;
     const hasSelectedEntityChanged = !areSetsEqual(selectedEntityIDs, previouslySelectedEntityIDs);
-
+    
     if (selections.length === 1) {
         if (maSelectedId !== selections[0].id) {
             closeMaterialAssistant();
         }
         maSelectedId = selections[0].id;
+        if (selections[0].properties.type === "Zone") {
+            skyboxColorForCopy = selections[0].properties.skybox.color;
+        } else {
+            skyboxColorForCopy = undefined;
+        }
     } else {
         closeMaterialAssistant();
         maSelectedId = "";
+        skyboxColorForCopy = undefined;
     }
 
     requestZoneList();
@@ -4974,6 +5259,8 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
         setCopyPastePositionAndRotationAvailability (selections.length, true);
 
         disableProperties();
+        
+        setParentIdNavigationAvailable(selections.length);
     } else {
         let entityHostType = selections[0].properties.entityHostType;
         
@@ -4984,6 +5271,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
         }
 
         if (hasSelectedEntityChanged) {
+            closeCreateChildEntityAssistant();
             if (!multipleSelections) {
                 resetServerScriptStatus();
             }
@@ -5006,6 +5294,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
             disableProperties();
             getPropertyInputElement('locked').removeAttribute('disabled');
             setCopyPastePositionAndRotationAvailability (selections.length, true);
+            setParentIdNavigationAvailable(selections.length);
         } else {
             enableProperties();
             disableSaveUserDataButton();
@@ -5013,6 +5302,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
             disableSaveParticleUpdateDataButton();
             disableSaveParticleRenderDataButton();
             setCopyPastePositionAndRotationAvailability (selections.length, false);
+            setParentIdNavigationAvailable(selections.length);
         }
 
         Object.entries(properties).forEach(function([propertyID, property]) {
@@ -5037,7 +5327,9 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
 
             const isSubProperty = propertyData.subPropertyOf !== undefined;
             if (propertyValue === undefined && !isMultiDiffValue && !isSubProperty) {
-                return;
+                if (propertyData.type !== "childList") {
+                    return;
+                }
             }
 
             if (!shownGroups.includes(property.group_id)) {
@@ -5196,6 +5488,14 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
                     } else {
                         setZonesSelectionData(property.elInput, true);
                     }
+                    break;
+                }
+                case 'childList': {
+                    let parentID = selections[0].properties.parentID;
+                    if (selections.length !== 1 || parentID === UUID_NONE) {
+                        parentID = "";
+                    }
+                    setChildListData(property.elInput, propertyValue, parentID, entityHostType);
                     break;
                 }
                 case 'icon': {
@@ -5641,6 +5941,9 @@ function loaded() {
         elScript.parentNode.className = "url refresh";
         elServerScripts.parentNode.className = "url refresh";
 
+        let elParentID = getPropertyInputElement("parentID");
+        elParentID.parentNode.className = "url refresh";
+        
         // User Data
         let userDataProperty = properties["userData"];
         let elUserData = userDataProperty.elInput;
