@@ -14,11 +14,10 @@ ScrollView {
 		spacing: 0
 	}
 
-	// For each child of index not of 0 or 1, append as child of index of 0. 
-	// Append children of the custom element to the ColumnLayout.
+	// Append children made using this custom element to the ColumnLayout.
 	Component.onCompleted: {
-		for (var i = 2; i < root.contentChildren.length; i++) {
-			root.contentChildren[i].parent = root.contentChildren[0]
-        }
+		while (root.contentChildren.length > 1){
+			root.contentChildren[2].parent = root.contentChildren[0]
+		}
 	}
 }
