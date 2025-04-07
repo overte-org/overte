@@ -57,7 +57,7 @@ bool qBytearrayFromScriptValue(const ScriptValue& object, QByteArray &qByteArray
     }
     v8::Local<v8::ArrayBuffer> arrayBuffer = v8::Local<v8::ArrayBuffer>::Cast(v8Value);
     qByteArray.resize((int)arrayBuffer->ByteLength());
-    memcpy(qByteArray.data(), arrayBuffer->Data(), arrayBuffer->ByteLength());
+    memcpy(qByteArray.data(), arrayBuffer->GetBackingStore()->Data(), arrayBuffer->ByteLength());
     return true;
 }
 

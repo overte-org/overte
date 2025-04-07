@@ -7,6 +7,11 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 macro(TARGET_V8)
-    find_package(libnode REQUIRED)
-    target_link_libraries(${TARGET_NAME} libnode::libnode)
+    find_package(v8 REQUIRED)
+    target_link_libraries(${TARGET_NAME} v8::v8)
+
+    if (WIN32)
+        target_link_libraries(${TARGET_NAME} Dbghelp)
+    endif()
+
 endmacro()
