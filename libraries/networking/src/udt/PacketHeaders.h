@@ -381,7 +381,8 @@ enum class EntityQueryPacketVersion: PacketVersion {
     ConnectionIdentifier = 20,
     RemovedJurisdictions = 21,
     MultiFrustumQuery = 22,
-    ConicalFrustums = 23
+    ConicalFrustums = 23,
+    CborData = 24,
 };
 
 enum class AssetServerPacketVersion: PacketVersion {
