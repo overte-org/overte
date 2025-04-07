@@ -40,7 +40,10 @@ public:
         LAYER,
         BACKSPACE,
         SPACE,
-        ENTER
+        ENTER,
+        COPY,
+        PASTE,
+        SELECT_ALL,
     };
 
     static Key::Type getKeyTypeFromString(const QString& keyTypeString);

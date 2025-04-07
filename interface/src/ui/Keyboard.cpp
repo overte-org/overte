@@ -84,6 +84,9 @@ static const QString LAYER_STRING = "layer";
 static const QString BACKSPACE_STRING = "backspace";
 static const QString SPACE_STRING = "space";
 static const QString ENTER_STRING = "enter";
+static const QString COPY_STRING = "copy";
+static const QString PASTE_STRING = "paste";
+static const QString SELECT_ALL_STRING = "select_all";
 
 static const QString KEY_HOVER_HIGHLIGHT = "keyHoverHiglight";
 static const QString KEY_PRESSED_HIGHLIGHT = "keyPressesHighlight";
@@ -204,6 +207,12 @@ Key::Type Key::getKeyTypeFromString(const QString& keyTypeString) {
         return Type::CLOSE;
     } else if (keyTypeString == ENTER_STRING) {
         return Type::ENTER;
+    } else if (keyTypeString == COPY_STRING) {
+        return Type::COPY;
+    } else if (keyTypeString == PASTE_STRING) {
+        return Type::PASTE;
+    } else if (keyTypeString == SELECT_ALL_STRING) {
+        return Type::SELECT_ALL;
     }
 
     return Type::CHARACTER;
@@ -573,6 +582,57 @@ void Keyboard::handleTriggerBegin(const QUuid& id, const PointerEvent& event) {
                 _typedCharacters.clear();
                 updateTextDisplay();
                 break;
+            // TODO, macOS: If macOS support comes back, these should be revisited
+            case Key::Type::COPY: {
+                QKeyEvent* pressEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_C, Qt::ControlModifier);
+                QKeyEvent* releaseEvent = new QKeyEvent(QEvent::KeyRelease, Qt::Key_C, Qt::ControlModifier);
+
+                if (_inputToHudUI) {
+                    QCoreApplication::postEvent(qApp->getPrimaryWidget(), pressEvent);
+                    QCoreApplication::postEvent(qApp->getPrimaryWidget(), releaseEvent);
+                } else {
+                    QCoreApplication::postEvent(QCoreApplication::instance(), pressEvent);
+                    QCoreApplication::postEvent(QCoreApplication::instance(), releaseEvent);
+                }
+
+                _typedCharacters.clear();
+                updateTextDisplay();
+                return;
+            }
+            // TODO, macOS: If macOS support comes back, these should be revisited
+            case Key::Type::PASTE: {
+                QKeyEvent* pressEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_V, Qt::ControlModifier);
+                QKeyEvent* releaseEvent = new QKeyEvent(QEvent::KeyRelease, Qt::Key_V, Qt::ControlModifier);
+
+                if (_inputToHudUI) {
+                    QCoreApplication::postEvent(qApp->getPrimaryWidget(), pressEvent);
+                    QCoreApplication::postEvent(qApp->getPrimaryWidget(), releaseEvent);
+                } else {
+                    QCoreApplication::postEvent(QCoreApplication::instance(), pressEvent);
+                    QCoreApplication::postEvent(QCoreApplication::instance(), releaseEvent);
+                }
+
+                _typedCharacters.clear();
+                updateTextDisplay();
+                return;
+            }
+            // TODO, macOS: If macOS support comes back, these should be revisited
+            case Key::Type::SELECT_ALL: {
+                QKeyEvent* pressEvent = new QKeyEvent(QEvent::KeyPress, Qt::Key_A, Qt::ControlModifier);
+                QKeyEvent* releaseEvent = new QKeyEvent(QEvent::KeyRelease, Qt::Key_A, Qt::ControlModifier);
+
+                if (_inputToHudUI) {
+                    QCoreApplication::postEvent(qApp->getPrimaryWidget(), pressEvent);
+                    QCoreApplication::postEvent(qApp->getPrimaryWidget(), releaseEvent);
+                } else {
+                    QCoreApplication::postEvent(QCoreApplication::instance(), pressEvent);
+                    QCoreApplication::postEvent(QCoreApplication::instance(), releaseEvent);
+                }
+
+                _typedCharacters.clear();
+                updateTextDisplay();
+                return;
+            }
             case Key::Type::CHARACTER:
                 if (keyString != " ") {
                     _typedCharacters.push_back((_password ? "*" : keyString));

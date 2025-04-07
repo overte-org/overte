@@ -812,6 +812,81 @@
                 }
             },
             {
+                "key": "Copy",
+                "type": "copy",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.65333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.07
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_copy.png",
+                    "file10": "meshes/keyboard/key_copy.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Paste",
+                "type": "paste",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.65333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.12
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_paste.png",
+                    "file10": "meshes/keyboard/key_paste.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Select All",
+                "type": "select_all",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.65333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.02
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_select_all.png",
+                    "file10": "meshes/keyboard/key_select_all.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
                 "key": "numbers",
                 "type": "layer",
                 "switchToLayer": 2,
