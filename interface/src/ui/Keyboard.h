@@ -45,6 +45,10 @@ public:
         COPY,
         CUT,
         PASTE,
+        CURSOR_UP,
+        CURSOR_RIGHT,
+        CURSOR_DOWN,
+        CURSOR_LEFT,
     };
 
     static Key::Type getKeyTypeFromString(const QString& keyTypeString);
@@ -165,7 +169,7 @@ private:
 
     void startLayerSwitchTimer();
     bool isLayerSwitchTimerFinished() const;
-    void handleShortcut(Key::Type keyType);
+    void handleSpecialKey(Key::Type keyType);
 
     bool _raised { false };
     bool _resetKeyboardPositionOnRaise { true };

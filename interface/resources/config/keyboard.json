@@ -820,9 +820,9 @@
                     "y": 0.04787999764084816
                  },
                  "position": {
-                    "x": -0.65333323516845703,
+                    "x": -0.026292800903320312,
                     "y": 0.019300000742077827,
-                    "z": -0.02
+                    "z": 0.09745675086975098
                  },
                 "modelURL": "meshes/keyboard/SM_key.fbx",
                 "texture": {
@@ -841,13 +841,13 @@
                 "type": "cut",
                 "dimensions": {
                     "x": 0.04787999764084816,
-                    "z": 0.020519999787211418,
+                    "z": 0.02051999792456627,
                     "y": 0.04787999764084816
                  },
                  "position": {
-                    "x": -0.70333323516845703,
+                    "x": -0.08203601837158203,
                     "y": 0.019300000742077827,
-                    "z": -0.02
+                    "z": 0.09745675086975098
                  },
                 "modelURL": "meshes/keyboard/SM_key.fbx",
                 "texture": {
@@ -870,9 +870,9 @@
                     "y": 0.04787999764084816
                  },
                  "position": {
-                    "x": -0.65333323516845703,
+                    "x": -0.47769832611083984,
                     "y": 0.019300000742077827,
-                    "z": -0.07
+                    "z": 0.09745675086975098
                  },
                 "modelURL": "meshes/keyboard/SM_key.fbx",
                 "texture": {
@@ -895,14 +895,114 @@
                     "y": 0.04787999764084816
                  },
                  "position": {
-                    "x": -0.70333323516845703,
+                    "x": -0.5332040786743164,
                     "y": 0.019300000742077827,
-                    "z": -0.07
+                    "z": 0.09745675086975098
                  },
                 "modelURL": "meshes/keyboard/SM_key.fbx",
                 "texture": {
                     "file9": "meshes/keyboard/key_paste.png",
                     "file10": "meshes/keyboard/key_paste.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Up",
+                "type": "cursor_up",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.68333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.02282185554504395
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_up.png",
+                    "file10": "meshes/keyboard/key_up.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Left",
+                "type": "cursor_left",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.63333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.07282185554504395
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_left.png",
+                    "file10": "meshes/keyboard/key_left.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Down",
+                "type": "cursor_down",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.68333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.07282185554504395
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_down.png",
+                    "file10": "meshes/keyboard/key_down.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Right",
+                "type": "cursor_right",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.73333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.07282185554504395
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_right.png",
+                    "file10": "meshes/keyboard/key_right.png"
                 },
                 "localOrientation": {
                     "w": 0.000,
@@ -1681,6 +1781,206 @@
                 "texture": {
                     "file10": "meshes/keyboard/key_enter.png",
                     "file11": "meshes/keyboard/key_enter.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Select All",
+                "type": "select_all",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.026292800903320312,
+                    "y": 0.019300000742077827,
+                    "z": 0.09745675086975098
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_select_all.png",
+                    "file10": "meshes/keyboard/key_select_all.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Cut",
+                "type": "cut",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.02051999792456627,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.08203601837158203,
+                    "y": 0.019300000742077827,
+                    "z": 0.09745675086975098
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_cut.png",
+                    "file10": "meshes/keyboard/key_cut.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Copy",
+                "type": "copy",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.47769832611083984,
+                    "y": 0.019300000742077827,
+                    "z": 0.09745675086975098
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_copy.png",
+                    "file10": "meshes/keyboard/key_copy.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Paste",
+                "type": "paste",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.5332040786743164,
+                    "y": 0.019300000742077827,
+                    "z": 0.09745675086975098
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_paste.png",
+                    "file10": "meshes/keyboard/key_paste.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Up",
+                "type": "cursor_up",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.68333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.02282185554504395
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_up.png",
+                    "file10": "meshes/keyboard/key_up.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Left",
+                "type": "cursor_left",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.63333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.07282185554504395
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_left.png",
+                    "file10": "meshes/keyboard/key_left.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Down",
+                "type": "cursor_down",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.68333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.07282185554504395
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_down.png",
+                    "file10": "meshes/keyboard/key_down.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Right",
+                "type": "cursor_right",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.73333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.07282185554504395
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_right.png",
+                    "file10": "meshes/keyboard/key_right.png"
                 },
                 "localOrientation": {
                     "w": 0.000,
@@ -2507,6 +2807,206 @@
                 "texture": {
                     "file10": "meshes/keyboard/key_enter.png",
                     "file11": "meshes/keyboard/key_enter.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Select All",
+                "type": "select_all",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.026292800903320312,
+                    "y": 0.019300000742077827,
+                    "z": 0.09745675086975098
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_select_all.png",
+                    "file10": "meshes/keyboard/key_select_all.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Cut",
+                "type": "cut",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.02051999792456627,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.08203601837158203,
+                    "y": 0.019300000742077827,
+                    "z": 0.09745675086975098
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_cut.png",
+                    "file10": "meshes/keyboard/key_cut.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Copy",
+                "type": "copy",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.47769832611083984,
+                    "y": 0.019300000742077827,
+                    "z": 0.09745675086975098
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_copy.png",
+                    "file10": "meshes/keyboard/key_copy.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Paste",
+                "type": "paste",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.5332040786743164,
+                    "y": 0.019300000742077827,
+                    "z": 0.09745675086975098
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_paste.png",
+                    "file10": "meshes/keyboard/key_paste.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Up",
+                "type": "cursor_up",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.68333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.02282185554504395
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_up.png",
+                    "file10": "meshes/keyboard/key_up.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Left",
+                "type": "cursor_left",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.63333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.07282185554504395
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_left.png",
+                    "file10": "meshes/keyboard/key_left.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Down",
+                "type": "cursor_down",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.68333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.07282185554504395
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_down.png",
+                    "file10": "meshes/keyboard/key_down.png"
+                },
+                "localOrientation": {
+                    "w": 0.000,
+                    "x": 0.000,
+                    "y": 0.707,
+                    "z": 0.707
+                }
+            },
+            {
+                "key": "Right",
+                "type": "cursor_right",
+                "dimensions": {
+                    "x": 0.04787999764084816,
+                    "z": 0.020519999787211418,
+                    "y": 0.04787999764084816
+                 },
+                 "position": {
+                    "x": -0.73333323516845703,
+                    "y": 0.019300000742077827,
+                    "z": -0.07282185554504395
+                 },
+                "modelURL": "meshes/keyboard/SM_key.fbx",
+                "texture": {
+                    "file9": "meshes/keyboard/key_right.png",
+                    "file10": "meshes/keyboard/key_right.png"
                 },
                 "localOrientation": {
                     "w": 0.000,
