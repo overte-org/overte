@@ -16,11 +16,14 @@ let appButton = tablet.addButton({
 	isActive: active,
 });
 
+let palData = {};
+
 appButton.clicked.connect(toolbarButtonClicked);
 
 tablet.fromQml.connect(fromQML);
 tablet.screenChanged.connect(onScreenChanged);
 Script.scriptEnding.connect(shutdownScript);
+Script.setInterval(updatePalData, 100);
 
 function toolbarButtonClicked() {
 	if (active) {
@@ -32,7 +35,6 @@ function toolbarButtonClicked() {
 		active = !active;
 		appButton.editProperties({ isActive: active });
 		sendMyData();
-		updatePalList();
 	}
 }
 
@@ -47,9 +49,8 @@ function onScreenChanged(type, url) {
 
 function fromQML(event) {
 	console.log(`New QML event:\n${JSON.stringify(event)}`);
-	if (event.type == "getUserData") {
-		getFocusedUserData(event.user);
-		return;
+	if (event.type == "") {
+
 	}
 }
 
@@ -63,9 +64,9 @@ function toQML(packet = { type: "" }) {
 	tablet.sendToQml(packet);
 }
 
-function updatePalList() {
+function updatePalData() {
 	// Updates the UI to the list of people in the session.
-	const palData = AvatarManager.getPalData().data;
+	palData = AvatarManager.getPalData().data;
 
 	if (location.domainID == Uuid.NONE) {
 		// We are in a serverless session. 
@@ -77,7 +78,15 @@ function updatePalList() {
 		return;
 	}
 
+	palData.map((user) => {user.audioLoudness = scaleAudioExponential(user.audioLoudness)});
+
 	toQML({ type: "palList", data: palData });
+
+	function scaleAudioExponential(audioValue) {
+		let normalizedValue = audioValue / 32768;
+		let scaledValue = Math.pow(normalizedValue, 0.3);
+		return scaledValue;
+	}
 }
 
 function sendMyData() {
@@ -101,12 +110,6 @@ function sendMyData() {
 
 		toQML({ type: "myData", data: data });
 	});
-}
-
-function getFocusedUserData(sessionUUID) {
-	const palData = AvatarManager.getPalData().data;
-	const singleUserPalData = palData.filter((user) => user.sessionUUID === sessionUUID)[0];
-	toQML({ type: "focusedUserData", data: singleUserPalData });
 }
 
 function request(url, method = "GET") {
