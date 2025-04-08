@@ -16,5 +16,12 @@ Column {
 		width: parent.width;
 		height: 20;
 		color: "white";
+
+		Rectangle {
+			width: focusedUserData.audioLoudness * parent.width || 0;
+			height: parent.height - 4;
+			color: "orange";
+			anchors.verticalCenter: parent.verticalCenter;
+		}
 	}
 }

@@ -16,6 +16,7 @@ Rectangle {
 	property var isAdmin: false;
 	property var myData: {};
 	property var focusedUserData: {};
+	property var focusedUser: "";
 	property var page: "Home";
 	property var pages: ["Home", "User"];
 
@@ -61,7 +62,7 @@ Rectangle {
 		
 		UserAbout {
 			id: focusedUserAbout;
-			sessionDisplayName: focusedUserData.displayName;
+			sessionDisplayName: focusedUserData.sessionDisplayName;
 		}
 
 		UserAudio {
@@ -84,8 +85,9 @@ Rectangle {
 	}
 
 	function toUserPage(sessionUUID){
-		focusedUserData = {};
-		toScript({type: "getUserData", user: sessionUUID});
+		focusedUser = sessionUUID;
+		focusedUserData = users.filter((user) => user.sessionUUID === focusedUser)[0];
+		page = "User";
 	}
 
 	function fromScript(message) {
@@ -96,20 +98,12 @@ Rectangle {
 
 		if (message.type == "palList") {
 			users = message.data;
+			focusedUserData = users.filter((user) => user.sessionUUID === focusedUser)[0];
 			return;
 		}
 
 		if (message.type == "isAdmin") {
 			isAdmin = message.isAdmin;
-			return;
-		}
-
-		if (message.type == "focusedUserData"){
-			focusedUserData = message.data;
-			
-			focusedUserAbout.sessionDisplayName = focusedUserData.sessionDisplayName;
-			print(`Focused User Data:\n${JSON.stringify(focusedUserData, null, 4)}`);
-			page = "User";
 			return;
 		}
 	}
