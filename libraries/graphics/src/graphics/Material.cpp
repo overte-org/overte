@@ -86,6 +86,7 @@ Material::Material(const Material& material) :
     _materialParams(material._materialParams),
     _cullFaceMode(material._cullFaceMode),
     _textureMaps(material._textureMaps),
+    _samplers(material._samplers),
     _defaultFallthrough(material._defaultFallthrough),
     _propertyFallthroughs(material._propertyFallthroughs)
 {
@@ -109,6 +110,7 @@ Material& Material::operator=(const Material& material) {
     _materialParams = material._materialParams;
     _cullFaceMode = material._cullFaceMode;
     _textureMaps = material._textureMaps;
+    _samplers = material._samplers;
 
     _defaultFallthrough = material._defaultFallthrough;
     _propertyFallthroughs = material._propertyFallthroughs;
