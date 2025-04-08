@@ -28,7 +28,7 @@ Column {
 			id: flickableContent;
 			height: parent.height;
 			width: parent.width;
-			spacing: 5;
+			spacing: 0;
 
 			Repeater {
 				model: users.length;

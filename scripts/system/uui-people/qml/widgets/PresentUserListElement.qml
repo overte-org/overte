@@ -3,9 +3,11 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 
 Rectangle {
+	property var backgroundColor: index % 2 == 0 ? "#333" : "#2a2a2a";
+
 	width: parent.width;
 	height: isAdmin ? 60 : 40;
-	color: "#333";
+	color: backgroundColor;
 	anchors.horizontalCenter: parent.horizontalCenter;
 
 	Column {
@@ -50,7 +52,7 @@ Rectangle {
 		}
 
 		onExited: {
-			parent.color = "#333";
+			parent.color = backgroundColor
 			parent.children[0].x = 0;
 		}
 
