@@ -18,10 +18,11 @@ Column {
 		color: "white";
 
 		Rectangle {
-			width: focusedUserData.audioLoudness * parent.width;
+			width: focusedUserData.audioLoudness * parent.width - 4;
 			height: parent.height - 4;
-			color: "orange";
+			color: "#505186";
 			anchors.verticalCenter: parent.verticalCenter;
+			x: 2
 		}
 	}
 }
