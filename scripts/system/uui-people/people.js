@@ -66,9 +66,19 @@ function toQML(packet = { type: "" }) {
 function updatePalList() {
 	// Updates the UI to the list of people in the session.
 	const palData = AvatarManager.getPalData().data;
+
+	if (location.domainID == Uuid.NONE) {
+		// We are in a serverless session. 
+		toQML({
+			type: "palList", data: [{
+				sessionDisplayName: MyAvatar.displayName
+			}]
+		});
+		return;
+	}
+
 	toQML({ type: "palList", data: palData });
 }
-
 
 function sendMyData() {
 	// Send the current user to the QML UI.
