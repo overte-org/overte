@@ -238,6 +238,11 @@ float fetchScatteringMap(vec2 uv) {
     vec3 inPosition = (<$positionMS$> - vec3(0.5)) / <$triplanarScale$>.xyz;
     vec3 normalMS = normalize(cross(dFdy(<$positionMS$>.xyz), dFdx(<$positionMS$>.xyz)));
 
+    // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
+    vec3 blend = abs(normalMS.xyz);
+    blend = max(blend - 0.2, vec3(0.0));
+    blend /= dot(blend, vec3(1.0));
+
     TexMapArray texMapArray = getTexMapArray();
     vec2 uvXY = vec2(-inPosition.x, -inPosition.y);
     <$evalTexMapArrayTexcoord0(texMapArray, uvXY, _positionWS, uvXY)$>
@@ -267,7 +272,7 @@ float fetchScatteringMap(vec2 uv) {
 
     {
         <$fetchMaterialTexturesCoord0($matKey$, uvXY, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$)$>
-        float magnitude = abs(normalMS.z);
+        float magnitude = blend.z;
         <@if albedo@>
             <$albedo$>Triplanar += magnitude * <$albedo$>;
         <@endif@>
@@ -290,7 +295,7 @@ float fetchScatteringMap(vec2 uv) {
 
     {
         <$fetchMaterialTexturesCoord0($matKey$, uvXZ, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$)$>
-        float magnitude = abs(normalMS.y);
+        float magnitude = blend.y;
         <@if albedo@>
             <$albedo$>Triplanar += magnitude * <$albedo$>;
         <@endif@>
@@ -313,7 +318,7 @@ float fetchScatteringMap(vec2 uv) {
 
     {
         <$fetchMaterialTexturesCoord0($matKey$, uvYZ, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$)$>
-        float magnitude = abs(normalMS.x);
+        float magnitude = blend.x;
         <@if albedo@>
             <$albedo$>Triplanar += magnitude * <$albedo$>;
         <@endif@>
@@ -581,6 +586,11 @@ float fetchUVAnimationMaskMap(vec2 uv) {
     vec3 inPosition = (<$positionMS$> - vec3(0.5)) / <$triplanarScale$>.xyz;
     vec3 normalMS = normalize(cross(dFdy(<$positionMS$>.xyz), dFdx(<$positionMS$>.xyz)));
 
+    // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
+    vec3 blend = abs(normalMS.xyz);
+    blend = max(blend - 0.2, vec3(0.0));
+    blend /= dot(blend, vec3(1.0));
+
     TexMapArray texMapArray = getTexMapArray();
     vec2 uvXY = vec2(-inPosition.x, -inPosition.y);
     <$evalTexMapArrayTexcoord0(texMapArray, uvXY, _positionWS, uvXY)$>
@@ -610,7 +620,7 @@ float fetchUVAnimationMaskMap(vec2 uv) {
 
     {
         <$fetchMToonMaterialTexturesCoord0($matKey$, uvXY, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
-        float magnitude = abs(normalMS.z);
+        float magnitude = blend.z;
         <@if albedo@>
             <$albedo$>Triplanar += magnitude * <$albedo$>;
         <@endif@>
@@ -633,7 +643,7 @@ float fetchUVAnimationMaskMap(vec2 uv) {
 
     {
         <$fetchMToonMaterialTexturesCoord0($matKey$, uvXZ, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
-        float magnitude = abs(normalMS.y);
+        float magnitude = blend.y;
         <@if albedo@>
             <$albedo$>Triplanar += magnitude * <$albedo$>;
         <@endif@>
@@ -656,7 +666,7 @@ float fetchUVAnimationMaskMap(vec2 uv) {
 
     {
         <$fetchMToonMaterialTexturesCoord0($matKey$, uvYZ, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
-        float magnitude = abs(normalMS.x);
+        float magnitude = blend.x;
         <@if albedo@>
             <$albedo$>Triplanar += magnitude * <$albedo$>;
         <@endif@>
