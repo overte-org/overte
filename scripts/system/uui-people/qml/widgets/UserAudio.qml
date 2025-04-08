@@ -18,7 +18,7 @@ Column {
 		color: "white";
 
 		Rectangle {
-			width: focusedUserData.audioLoudness * parent.width || 0;
+			width: focusedUserData.audioLoudness * parent.width;
 			height: parent.height - 4;
 			color: "orange";
 			anchors.verticalCenter: parent.verticalCenter;

@@ -6,7 +6,7 @@ Rectangle {
 	width: parent.width;
 	height: 40;
 	color: "#333";
-	anchors.horizontalCenter: parent.horizontalCenter;
+	Layout.alignment: Qt.AlignHCenter;
 
 	Column {
 		width: parent.width - 10;

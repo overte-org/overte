@@ -72,7 +72,9 @@ function updatePalData() {
 		// We are in a serverless session. 
 		toQML({
 			type: "palList", data: [{
-				sessionDisplayName: MyAvatar.displayName
+				sessionDisplayName: MyAvatar.displayName,
+				sessionUUID: Uuid.NONE,
+				audioLoudness: scaleAudioExponential(MyAvatar.audioLoudness)
 			}]
 		});
 		return;

@@ -5,7 +5,7 @@ import QtGraphicalEffects 1.0
 
 Row {
 	property var sessionDisplayName: "";
-	property var icon: "";
+	property var icon: "../../img/default_profile_avatar.svg";
 	property var isSelf: false;
 
 	width: parent.width - 20;

@@ -14,8 +14,8 @@ Rectangle {
 
 	property var users: [];
 	property var isAdmin: false;
-	property var myData: {};
-	property var focusedUserData: {};
+	property var myData: {icon: "../img/default_profile_avatar.svg"; displayName: ""; sessionDisplayName: ""};
+	property var focusedUserData: {sessionDisplayName: ""; audioLoudness: 0.01};
 	property var focusedUser: "";
 	property var page: "Home";
 	property var pages: ["Home", "User"];
@@ -98,7 +98,8 @@ Rectangle {
 
 		if (message.type == "palList") {
 			users = message.data;
-			focusedUserData = users.filter((user) => user.sessionUUID === focusedUser)[0];
+			if (focusedUser) focusedUserData = users.filter((user) => user.sessionUUID === focusedUser)[0];
+			// print(JSON.stringify(users, null, 4));
 			return;
 		}
 
