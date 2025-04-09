@@ -4,8 +4,6 @@ const directoryBase = Account.metaverseServerURL;
 
 // TODO: Get all user profile pictures?
 // TODO: User status (Public / Friends only / Private)
-// TODO: Focused user halo
-// TODO: Teleport + Teleport permissions
 
 let tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 let active = false;
