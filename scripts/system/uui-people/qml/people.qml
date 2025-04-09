@@ -72,10 +72,16 @@ Rectangle {
 			Layout.fillHeight: true;
 
 			UserOptionButton {
+				buttonText: "Teleport";
+				action: () => {
+					var avatar = AvatarList.getAvatar(focusedUser);
+					MyAvatar.goToLocation(avatar.position, true, Quat.cancelOutRollAndPitch(avatar.orientation), true);
+				};
+			}
+			UserOptionButton {
 				buttonText: "Mute";
 				action: () => {Users.personalMute(focusedUser, !Users.getPersonalMuteStatus(focusedUser))};
 			}
-
 			UserOptionButton {
 				buttonText: "Ignore";
 				action: () => {Users.ignore(focusedUser, !Users.getIgnoreStatus(focusedUser))};
