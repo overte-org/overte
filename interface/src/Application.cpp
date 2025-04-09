@@ -1408,7 +1408,7 @@ void Application::updateWindowTitle() const {
 
     QString title = currentPlaceName + connectionStatus + metaverseDetails + domainDetails + buildVersion;
 
-#ifndef WIN32
+#ifndef _WIN32
     // crashes with vs2013/win32
     qCDebug(interfaceapp, "Application title set to: %s", title.toStdString().c_str());
 #endif

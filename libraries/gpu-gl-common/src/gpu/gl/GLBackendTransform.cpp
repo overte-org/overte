@@ -50,7 +50,10 @@ void GLBackend::do_setProjectionJitterSequence(const Batch& batch, size_t paramO
     auto& projectionJitter = _transform._projectionJitter;
     projectionJitter._offsetSequence.resize(count);
     if (count) {
-        memcpy(projectionJitter._offsetSequence.data(), batch.readData(batch._params[paramOffset + 1]._uint), sizeof(Vec2) * count);
+        const Vec2* data = (Vec2 *)batch.readData(batch._params[paramOffset + 1]._uint);
+        for (uint32 i = 0; i < count; i++) {
+            projectionJitter._offsetSequence[i] = data[i];
+        }
         projectionJitter._offset = projectionJitter._offsetSequence[projectionJitter._currentSampleIndex  % count];
     } else {
         projectionJitter._offset = Vec2(0.0f);
