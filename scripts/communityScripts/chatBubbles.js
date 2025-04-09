@@ -154,13 +154,7 @@ function ChatBubbles_RecvMsg(channel, msg, senderID, _localOnly) {
     }
 }
 
-settings = Settings.getValue("ChatBubbles-Config", settings);
-Messages.messageReceived.connect(ChatBubbles_RecvMsg);
-
-Script.scriptEnding.connect(() => {
-	Settings.setValue("ChatBubbles-Config", settings);
-	Messages.messageReceived.disconnect(ChatBubbles_RecvMsg);
-
+function ChatBubbles_DeleteAll() {
 	for (const [_, bubble] of Object.entries(currentBubbles)) {
 		Entities.deleteEntity(bubble.entity);
 		Script.clearTimeout(bubble.timeout);
@@ -170,4 +164,36 @@ Script.scriptEnding.connect(() => {
 		Entities.deleteEntity(indicator.entity);
 		Script.clearInterval(indicator.interval);
 	}
+}
+
+function ChatBubbles_Delete(sessionID) {
+    const bubble = currentBubbles[sessionID];
+    const indicator = typingIndicators[sessionID];
+
+    if (bubble) {
+        Entities.deleteEntity(bubble.entity);
+        Script.clearTimeout(bubble.timeout);
+    }
+
+    if (indicator) {
+		Entities.deleteEntity(indicator.entity);
+		Script.clearInterval(indicator.interval);
+    }
+}
+
+// delete any chat bubbles or typing indicators if we get disconnected
+Window.domainChanged.connect(_domainURL => ChatBubbles_DeleteAll());
+Window.domainConnectionRefused.connect((_msg, _code, _info) => ChatBubbles_DeleteAll());
+
+// delete the chat bubbles and typing indicators of someone who disconnects
+AvatarList.avatarRemovedEvent.connect(sessionID => ChatBubbles_Delete(sessionID));
+AvatarList.avatarSessionChangedEvent.connect((_, oldSessionID) => ChatBubbles_Delete(oldSessionID));
+
+settings = Settings.getValue("ChatBubbles-Config", settings);
+Messages.messageReceived.connect(ChatBubbles_RecvMsg);
+
+Script.scriptEnding.connect(() => {
+	Settings.setValue("ChatBubbles-Config", settings);
+	Messages.messageReceived.disconnect(ChatBubbles_RecvMsg);
+    ChatBubbles_DeleteAll();
 });

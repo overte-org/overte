@@ -128,7 +128,7 @@
         _emitEvent({ type: "show_message", ...message });
 
         // Show new message on screen
-        if (!useChatBubbles) {
+        if (message.channel !== "local" || !useChatBubbles) {
             Messages.sendLocalMessage(
                 "Floof-Notif",
                 JSON.stringify({
