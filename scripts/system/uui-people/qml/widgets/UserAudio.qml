@@ -24,5 +24,40 @@ Column {
 			anchors.verticalCenter: parent.verticalCenter;
 			x: 2
 		}
+
+		Slider {
+			from: -60;
+			to: 20;
+			value: Users.getAvatarGain(focusedUser);
+			snapMode: Slider.SnapAlways;
+			stepSize: 1;
+			width: parent.width;
+			anchors.horizontalCenter: parent.horizontalCenter;
+			anchors.verticalCenter: parent.verticalCenter;
+
+			background: Rectangle {
+				color: "transparent"
+			}
+
+			handle: Rectangle {
+				x: parent.leftPadding + parent.visualPosition * (parent.availableWidth - width)
+				y: -14
+				width: 20
+				height: 40
+				color: "black"
+
+				Rectangle {
+					width: 16
+					height: 36
+					color: "gray"
+					anchors.horizontalCenter: parent.horizontalCenter;
+					anchors.verticalCenter: parent.verticalCenter;
+				}
+			}
+
+			onValueChanged: {
+				Users.setAvatarGain(focusedUser, value)
+			}
+		}
 	}
 }
