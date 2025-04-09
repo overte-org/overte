@@ -7,7 +7,6 @@ RowLayout {
 	property var sessionDisplayName: "";
 	property var icon: "../../img/default_profile_avatar.svg";
 	property var isSelf: false;
-	signal updateAbout;
 
 	property var statusColors: {
 		"all": "#3babe1",
@@ -57,33 +56,38 @@ RowLayout {
 		}
 	}
 
-	Column {
-		Text {
-			text: sessionDisplayName;
-			font.pointSize: 16;
-			color: "white";
-		}
+	ColumnLayout {
+		width: 300;
+		height: 40;
 
-		RowLayout {
-			visible: isSelf;
+		Item {
+			width: parent.width;
+			height: 40;
 
 			Rectangle {
-				// Squarcle
-				width: 15;
-				height: 15;
-				radius: 100;
-				color: statusColors[myData.findableBy] || "magenta";
-				anchors.verticalCenter: parent.verticalCenter;
+				color: "#333";
+				anchors.fill: parent;
+				width: parent.width;
+				height: parent.height;
 			}
 
-			Text {
-				x: parent.children[0].width + 10;
-				text: statusLiteral[myData.findableBy];
+			TextInput {
+				id: displayNameEntry
+				text: myData.displayName;
 				font.pointSize: 16;
-				color: statusColors[myData.findableBy] || "magenta";
-				anchors.verticalCenter: parent.verticalCenter;
+				color: "white";
+				width: parent.width - 4;
+				height: parent.height - 4;
+				anchors.centerIn: parent;
+				clip: true;
+
+				onTextEdited: {
+					MyAvatar.displayName = text;
+				}
 			}
 		}
 
 	}
+
+
 }

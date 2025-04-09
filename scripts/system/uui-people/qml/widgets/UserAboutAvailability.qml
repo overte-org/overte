@@ -1,10 +1,27 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
+import QtGraphicalEffects 1.0
+
 
 Rectangle {
+	property var status: "";
+	property var statusColors: {
+		"all": "#3babe1",
+		"connections": "#3edf44",
+		"friends": "#f7ff3a",
+		"none": "#969696"
+	}
+
+	property var statusLiteral: {
+		"all": "Everyone",
+		"connections": "Contacts",
+		"friends": "Friends",
+		"none": "Offline"
+	}
+
 	width: parent.width;
-	height: 40;
+	height: 60;
 	color: "#333";
 	Layout.alignment: Qt.AlignHCenter;
 
@@ -16,8 +33,8 @@ Rectangle {
 		Text {
 			x: 10;
 			width: parent.width;
-			text: "Back";
-			color: "white";
+			text: statusLiteral[status];
+			color: statusColors[status];
 			font.pointSize: 16;
 			horizontalAlignment: Text.AlignHCenter
 
@@ -47,9 +64,8 @@ Rectangle {
 		}
 
 		onClicked: {
-			page = "Home";
-			toScript({type: "focusedUser", user: null});
-			focusedUser = null;
+			AccountServices.findableBy = status;
+			sendToScript({type: "updateMyData"});
 		}
 	}
 }

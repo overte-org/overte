@@ -14,11 +14,11 @@ Rectangle {
 
 	property var users: [];
 	property var canKick: false;	// The only way to tell if a user is an admin of a domain is if they have the kick permissions
-	property var myData: {icon: "../img/default_profile_avatar.svg"; displayName: ""; sessionDisplayName: ""};
-	property var focusedUserData: {sessionDisplayName: ""; audioLoudness: 0.01};
-	property var focusedUser: "";
+	property var myData: {icon: "../img/default_profile_avatar.svg"; displayName: ""; username: ""};
+	property var focusedUserData: {sessionDisplayName: ""; audioLoudness: 0.0};
+	property var focusedUser: null;
 	property var page: "Home";
-	property var pages: ["Home", "User"];
+	property var pages: ["Home", "User", "EditSelf"];
 
 	Column {
 		// Home page
@@ -39,6 +39,14 @@ Rectangle {
 			sessionDisplayName: myData.displayName;
 			icon: myData.icon;
 			isSelf: true;
+
+			MouseArea {
+				anchors.fill: parent;
+
+				onClicked: {
+					page = "EditSelf";
+				}
+			}
 		}
 
 		UserList {
@@ -119,6 +127,70 @@ Rectangle {
 		
 	}
 
+	ColumnLayout {
+		// Edit self information
+		width: parent.width - 20;
+		height: parent.height;
+		spacing: 15;
+		anchors.horizontalCenter: parent.horizontalCenter;
+		visible: page == "EditSelf";
+
+
+		Item {
+			// Spacer
+			height: 1;
+			width: 1;
+		}
+		
+		UserAboutEdit {
+			sessionDisplayName: myData.displayName;
+			icon: myData.icon;
+			isSelf: true;
+		}
+
+		ColumnLayout {
+			width: parent.width;
+			Layout.fillHeight: true;
+
+			Text {
+				text: "Availability";
+				color: "white";
+				font.pointSize: 18; // TODO: Sync with the other label
+			}
+			
+			UserAboutAvailability {
+				status: "all";
+			}
+			UserAboutAvailability {
+				status: "connections";
+			}
+			UserAboutAvailability {
+				status: "friends";
+			}
+			UserAboutAvailability {
+				status: "none";
+			}
+		}
+
+
+
+		Item {
+			// Spacer
+			Layout.fillHeight: true;
+		}
+
+		BackButton {
+			
+		}
+		
+		Item {
+			// Spacer
+			height: 1;
+			width: 1;
+		}
+		
+	}
+
 	function toUserPage(sessionUUID){
 		focusedUser = sessionUUID;
 		focusedUserData = users.filter((user) => user.sessionUUID === focusedUser)[0];
@@ -136,7 +208,7 @@ Rectangle {
 		if (message.type == "palList") {
 			users = message.data;
 			if (focusedUser) focusedUserData = users.filter((user) => user.sessionUUID === focusedUser)[0];
-			// print(JSON.stringify(users, null, 4));
+			else focusedUserData = {sessionDisplayName: "", audioLoudness: 0.0};
 			return;
 		}
 	}

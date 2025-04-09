@@ -3,7 +3,10 @@
 const directoryBase = Account.metaverseServerURL;
 
 // TODO: Get all user profile pictures?
-// TODO: User status (Public / Friends only / Private)
+// TODO: Connections
+// FIXME: Focused user sometimes blast logs with errors?
+// FIXME: Handle long names
+// TODO: User join / leave notifications
 
 let tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 let active = false;
@@ -66,6 +69,10 @@ function fromQML(event) {
 		if (Uuid.fromString(event.user) !== null) return highlightUser(event.user);
 		else return removeHighlightUser();
 	}
+
+	if (event.type == "updateMyData") {
+		return sendMyData();
+	} 
 }
 
 function shutdownScript() {
@@ -103,7 +110,9 @@ function sendMyData() {
 	let data = {
 		displayName: MyAvatar.displayName,
 		icon: null,
-		canKick: Users.getCanKick()
+		canKick: Users.getCanKick(),
+		findableBy: AccountServices.findableBy,
+		username: AccountServices.username
 	}
 
 	// Get the current user's avatar icon.
