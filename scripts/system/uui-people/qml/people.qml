@@ -93,7 +93,7 @@ Rectangle {
 			}
 			UserOptionButton {
 				buttonText: "Ignore";
-				action: () => {Users.ignore(focusedUser, !Users.getIgnoreStatus(focusedUser))};
+				action: () => {toScript({type: "ignoreUser", sessionUUID: focusedUser, user: focusedUserData})};
 			}
 
 			UserOptionButton {

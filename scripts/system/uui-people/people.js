@@ -2,10 +2,8 @@
 
 const directoryBase = Account.metaverseServerURL;
 
-// TODO: Get all user profile pictures?
 // TODO: Connections
 // FIXME: Focused user sometimes blast logs with errors?
-// FIXME: Handle long names
 // TODO: User join / leave notifications
 
 let tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
@@ -35,6 +33,8 @@ const selectionListStyle = {
 let iAmAdmin = Users.getCanKick();
 let adminUserData = {};
 let adminUserDataTimestamp = 0;
+
+let ignoredUsers = {};
 
 appButton.clicked.connect(toolbarButtonClicked);
 
@@ -68,7 +68,6 @@ function onScreenChanged(type, url) {
 }
 
 function fromQML(event) {
-	console.log(`New QML event:\n${JSON.stringify(event)}`);
 	if (event.type == "focusedUser") {
 		if (Uuid.fromString(event.user) !== null) return highlightUser(event.user);
 		else return removeHighlightUser();
@@ -77,6 +76,20 @@ function fromQML(event) {
 	if (event.type == "updateMyData") {
 		return sendMyData();
 	} 
+
+	if (event.type == "ignoreUser"){
+		if (ignoredUsers[event.user.sessionUUID]) {
+			// User is ignored, unignore them
+			delete ignoredUsers[event.sessionUUID];
+			Users.ignore(event.sessionUUID, false);
+			return;
+		}
+		else {
+			ignoredUsers[event.user.sessionUUID] = event.user;
+			Users.ignore(event.user.sessionUUID, true);
+		}
+	}
+
 }
 
 function shutdownScript() {
@@ -100,7 +113,7 @@ function updatePalData() {
 	// Set the audioLoudness value to a exponential value that fits within the bounds of the visual audio scale.
 	palData.map((user) => {user.audioLoudness = scaleAudioExponential(user.audioLoudness)});
 
-	toQML({ type: "palList", data: palData });
+	toQML({ type: "palList", data: [...palData, ...Object.values(ignoredUsers)] });
 	toQML({ type: "adminUserData", data: adminUserData });
 
 	palData.forEach((user) => domainUserUpdate(user.sessionUUID));
