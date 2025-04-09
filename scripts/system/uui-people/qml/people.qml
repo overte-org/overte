@@ -19,6 +19,7 @@ Rectangle {
 	property var focusedUser: null;
 	property var page: "Home";
 	property var pages: ["Home", "User", "EditSelf"];
+	property var adminUserData: {};
 
 	Column {
 		// Home page
@@ -209,6 +210,11 @@ Rectangle {
 			users = message.data;
 			if (focusedUser) focusedUserData = users.filter((user) => user.sessionUUID === focusedUser)[0];
 			else focusedUserData = {sessionDisplayName: "", audioLoudness: 0.0};
+			return;
+		}
+
+		if (message.type == "adminUserData") {
+			adminUserData = message.data;
 			return;
 		}
 	}

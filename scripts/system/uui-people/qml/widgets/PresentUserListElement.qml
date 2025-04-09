@@ -21,6 +21,8 @@ Rectangle {
 			text: sessionDisplayName;
 			color: "white";
 			font.pointSize: 16;
+			elide: Text.ElideRight;
+			maximumLineCount: 1;
 		}
 
 		Text {
@@ -28,9 +30,11 @@ Rectangle {
 			visible: canKick;
 			x: 30;
 			width: parent.width;
-			text: "OwO Notices your real name";
-			color: "white";
+			text: adminUserData[users[index].sessionUUID].username || ""
+			color: "#3babe1";
 			font.pointSize: 12;
+			elide: Text.ElideRight;
+			maximumLineCount: 1;
 		}
 
 		// Animation for the x of the element.

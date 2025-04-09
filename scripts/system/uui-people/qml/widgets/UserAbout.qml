@@ -57,10 +57,16 @@ RowLayout {
 	}
 
 	Column {
+		width: 300;
 		Text {
 			text: sessionDisplayName || "";
 			font.pointSize: 16;
 			color: "white";
+			clip: true;
+			width: parent.width;
+			wrapMode: Text.WrapAnywhere;
+			elide: Text.ElideRight;
+			maximumLineCount: 2;
 		}
 
 		RowLayout {
