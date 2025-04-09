@@ -3,7 +3,7 @@
 const directoryBase = Account.metaverseServerURL;
 
 // TODO: Connections
-// FIXME: Focused user sometimes blast logs with errors?
+// FIXME: Check if focus user exists before issuing commands on them
 // TODO: User join / leave notifications
 
 let tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
