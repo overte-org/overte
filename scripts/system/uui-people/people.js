@@ -20,6 +20,18 @@ let appButton = tablet.addButton({
 
 let palData = {};
 
+const selectionListName = "people.focusedUser";
+const selectionListStyle = {
+	outlineUnoccludedColor: { red: 255, green: 0, blue: 0 },
+	outlineUnoccludedAlpha: 1,
+	fillUnoccludedColor: {red: 255, green: 255, blue: 255},
+	fillUnoccludedAlpha: 0.0,
+	outlineOccludedColor: { red: 255, green: 255, blue: 255 },
+	outlineOccludedAlpha: 0.7,
+	outlineWidth: 4,
+	fillOccludedAlpha: 0.2
+}; 
+
 appButton.clicked.connect(toolbarButtonClicked);
 
 tablet.fromQml.connect(fromQML);
@@ -43,6 +55,7 @@ function toolbarButtonClicked() {
 function onScreenChanged(type, url) {
 	if (url != Script.resolvePath("./qml/people.qml")) {
 		active = false;
+		removeHighlightUser();
 		appButton.editProperties({
 			isActive: active,
 		});
@@ -51,8 +64,9 @@ function onScreenChanged(type, url) {
 
 function fromQML(event) {
 	console.log(`New QML event:\n${JSON.stringify(event)}`);
-	if (event.type == "") {
-
+	if (event.type == "focusedUser") {
+		if (Uuid.fromString(event.user) !== null) return highlightUser(event.user);
+		else return removeHighlightUser();
 	}
 }
 
@@ -60,6 +74,7 @@ function shutdownScript() {
 	// Script has been removed.
 	console.log("Shutting Down");
 	tablet.removeButton(appButton);
+	removeHighlightUser();
 }
 
 function toQML(packet = { type: "" }) {
@@ -127,4 +142,20 @@ function request(url, method = "GET") {
 		req.open(method, url);
 		req.send();
 	})
+}
+
+function highlightUser(sessionUUID){
+	// We only ever highlight a single user. Delete the previous selection (if it exists)
+	removeHighlightUser();
+
+	// Create the selection highlight
+	Selection.enableListHighlight(selectionListName, selectionListStyle);
+
+	// Highlight the user
+	Selection.addToSelectedItemsList(selectionListName, "avatar", sessionUUID);
+}
+
+function removeHighlightUser(){
+	// Destroy the highlight list
+	Selection.removeListFromMap(selectionListName);
 }

@@ -48,6 +48,7 @@ Rectangle {
 
 		onClicked: {
 			page = "Home";
+			toScript({type: "focusedUser", user: null});
 		}
 	}
 }
