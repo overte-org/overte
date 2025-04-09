@@ -234,6 +234,133 @@ float fetchScatteringMap(vec2 uv) {
 <@endif@>
 <@endfunc@>
 
+<@func fetchMaterialTexturesCoord0Triplanar(matKey, positionMS, triplanarScale, albedo, roughness, normal, metallic, emissive, scattering)@>
+    vec3 inPosition = (<$positionMS$> - vec3(0.5)) / <$triplanarScale$>.xyz;
+    vec3 normalMS = normalize(cross(dFdy(<$positionMS$>.xyz), dFdx(<$positionMS$>.xyz)));
+
+    // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
+    vec3 blend = abs(normalMS.xyz);
+    blend = max(blend - 0.2, vec3(0.0));
+    blend /= (blend.x + blend.y + blend.z);
+
+    TexMapArray texMapArray = getTexMapArray();
+    vec2 uvXY = vec2(-inPosition.x, -inPosition.y);
+    <$evalTexMapArrayTexcoord0(texMapArray, uvXY, _positionWS, uvXY)$>
+    vec2 uvXZ = vec2(-inPosition.x, inPosition.z);
+    <$evalTexMapArrayTexcoord0(texMapArray, uvXZ, _positionWS, uvXZ)$>
+    vec2 uvYZ = vec2(inPosition.z, -inPosition.y);
+    <$evalTexMapArrayTexcoord0(texMapArray, uvYZ, _positionWS, uvYZ)$>
+
+<@if albedo@>
+    vec4 <$albedo$>Triplanar = vec4(0.0);
+<@endif@>
+<@if roughness@>
+    float <$roughness$>Triplanar = 0.0;
+<@endif@>
+<@if normal@>
+    vec3 <$normal$>Triplanar = vec3(0.0);
+<@endif@>
+<@if metallic@>
+    float <$metallic$>Triplanar = 0.0;
+<@endif@>
+<@if emissive@>
+    vec3 <$emissive$>Triplanar = vec3(0.0);
+<@endif@>
+<@if scattering@>
+    float <$scattering$>Triplanar = 0.0;
+<@endif@>
+
+    {
+        <$fetchMaterialTexturesCoord0($matKey$, uvXY, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$)$>
+        float magnitude = blend.z;
+        <@if albedo@>
+            <$albedo$>Triplanar += magnitude * <$albedo$>;
+        <@endif@>
+        <@if roughness@>
+            <$roughness$>Triplanar += magnitude * <$roughness$>;
+        <@endif@>
+        <@if normal@>
+            <$normal$>Triplanar += magnitude * <$normal$>;
+        <@endif@>
+        <@if metallic@>
+            <$metallic$>Triplanar += magnitude * <$metallic$>;
+        <@endif@>
+        <@if emissive@>
+            <$emissive$>Triplanar += magnitude * <$emissive$>;
+        <@endif@>
+        <@if scattering@>
+            <$scattering$>Triplanar += magnitude * <$scattering$>;
+        <@endif@>
+    }
+
+    {
+        <$fetchMaterialTexturesCoord0($matKey$, uvXZ, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$)$>
+        float magnitude = blend.y;
+        <@if albedo@>
+            <$albedo$>Triplanar += magnitude * <$albedo$>;
+        <@endif@>
+        <@if roughness@>
+            <$roughness$>Triplanar += magnitude * <$roughness$>;
+        <@endif@>
+        <@if normal@>
+            <$normal$>Triplanar += magnitude * <$normal$>;
+        <@endif@>
+        <@if metallic@>
+            <$metallic$>Triplanar += magnitude * <$metallic$>;
+        <@endif@>
+        <@if emissive@>
+            <$emissive$>Triplanar += magnitude * <$emissive$>;
+        <@endif@>
+        <@if scattering@>
+            <$scattering$>Triplanar += magnitude * <$scattering$>;
+        <@endif@>
+    }
+
+    {
+        <$fetchMaterialTexturesCoord0($matKey$, uvYZ, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$)$>
+        float magnitude = blend.x;
+        <@if albedo@>
+            <$albedo$>Triplanar += magnitude * <$albedo$>;
+        <@endif@>
+        <@if roughness@>
+            <$roughness$>Triplanar += magnitude * <$roughness$>;
+        <@endif@>
+        <@if normal@>
+            <$normal$>Triplanar += magnitude * <$normal$>;
+        <@endif@>
+        <@if metallic@>
+            <$metallic$>Triplanar += magnitude * <$metallic$>;
+        <@endif@>
+        <@if emissive@>
+            <$emissive$>Triplanar += magnitude * <$emissive$>;
+        <@endif@>
+        <@if scattering@>
+            <$scattering$>Triplanar += magnitude * <$scattering$>;
+        <@endif@>
+    }
+
+<@if albedo@>
+    vec4 <$albedo$> = <$albedo$>Triplanar;
+<@endif@>
+<@if roughness@>
+    float <$roughness$> = <$roughness$>Triplanar;
+<@endif@>
+<@if normal@>
+    // FIXME: this isn't strictly correct, as our tangents no longer match the space of our UVs
+    vec3 <$normal$> = normalize(<$normal$>Triplanar);
+<@endif@>
+<@if metallic@>
+    float <$metallic$> = <$metallic$>Triplanar;
+<@endif@>
+<@if emissive@>
+    vec3 <$emissive$> = <$emissive$>Triplanar;
+<@endif@>
+<@if scattering@>
+    float <$scattering$> = <$scattering$>Triplanar;
+<@endif@>
+
+<@endfunc@>
+
 <@func fetchMaterialTexturesCoord1(matKey, texcoord1, occlusion, lightmap)@>
 <@if occlusion@>
     float <$occlusion$> = mix(1.0, fetchOcclusionMap(<$texcoord1$>), float((<$matKey$> & OCCLUSION_MAP_BIT) != 0));
@@ -453,6 +580,133 @@ float fetchUVAnimationMaskMap(vec2 uv) {
 <@if rim@>
     vec3 <$rim$> = mix(vec3(1.0), fetchRimMap(texCoord), float((<$matKey$> & RIM_MAP_BIT) != 0));
 <@endif@>
+<@endfunc@>
+
+<@func fetchMToonMaterialTexturesCoord0Triplanar(matKey, positionMS, triplanarScale, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
+    vec3 inPosition = (<$positionMS$> - vec3(0.5)) / <$triplanarScale$>.xyz;
+    vec3 normalMS = normalize(cross(dFdy(<$positionMS$>.xyz), dFdx(<$positionMS$>.xyz)));
+
+    // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
+    vec3 blend = abs(normalMS.xyz);
+    blend = max(blend - 0.2, vec3(0.0));
+    blend /= (blend.x + blend.y + blend.z);
+
+    TexMapArray texMapArray = getTexMapArray();
+    vec2 uvXY = vec2(-inPosition.x, -inPosition.y);
+    <$evalTexMapArrayTexcoord0(texMapArray, uvXY, _positionWS, uvXY)$>
+    vec2 uvXZ = vec2(-inPosition.x, inPosition.z);
+    <$evalTexMapArrayTexcoord0(texMapArray, uvXZ, _positionWS, uvXZ)$>
+    vec2 uvYZ = vec2(inPosition.z, -inPosition.y);
+    <$evalTexMapArrayTexcoord0(texMapArray, uvYZ, _positionWS, uvYZ)$>
+
+<@if albedo@>
+    vec4 <$albedo$>Triplanar = vec4(0.0);
+<@endif@>
+<@if normal@>
+    vec3 <$normal$>Triplanar = vec3(0.0);
+<@endif@>
+<@if shade@>
+    vec3 <$shade$>Triplanar = vec3(0.0);
+<@endif@>
+<@if emissive@>
+    vec3 <$emissive$>Triplanar = vec3(0.0);
+<@endif@>
+<@if shadingShift@>
+    float <$shadingShift$>Triplanar = 0.0;
+<@endif@>
+<@if rim@>
+    vec3 <$rim$>Triplanar = vec3(0.0);
+<@endif@>
+
+    {
+        <$fetchMToonMaterialTexturesCoord0($matKey$, uvXY, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
+        float magnitude = blend.z;
+        <@if albedo@>
+            <$albedo$>Triplanar += magnitude * <$albedo$>;
+        <@endif@>
+        <@if normal@>
+            <$normal$>Triplanar += magnitude * <$normal$>;
+        <@endif@>
+        <@if shade@>
+            <$shade$>Triplanar += magnitude * <$shade$>;
+        <@endif@>
+        <@if emissive@>
+            <$emissive$>Triplanar += magnitude * <$emissive$>;
+        <@endif@>
+        <@if shadingShift@>
+            <$shadingShift$>Triplanar += magnitude * <$shadingShift$>;
+        <@endif@>
+        <@if rim@>
+            <$rim$>Triplanar += magnitude * <$rim$>;
+        <@endif@>
+    }
+
+    {
+        <$fetchMToonMaterialTexturesCoord0($matKey$, uvXZ, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
+        float magnitude = blend.y;
+        <@if albedo@>
+            <$albedo$>Triplanar += magnitude * <$albedo$>;
+        <@endif@>
+        <@if normal@>
+            <$normal$>Triplanar += magnitude * <$normal$>;
+        <@endif@>
+        <@if shade@>
+            <$shade$>Triplanar += magnitude * <$shade$>;
+        <@endif@>
+        <@if emissive@>
+            <$emissive$>Triplanar += magnitude * <$emissive$>;
+        <@endif@>
+        <@if shadingShift@>
+            <$shadingShift$>Triplanar += magnitude * <$shadingShift$>;
+        <@endif@>
+        <@if rim@>
+            <$rim$>Triplanar += magnitude * <$rim$>;
+        <@endif@>
+    }
+
+    {
+        <$fetchMToonMaterialTexturesCoord0($matKey$, uvYZ, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
+        float magnitude = blend.x;
+        <@if albedo@>
+            <$albedo$>Triplanar += magnitude * <$albedo$>;
+        <@endif@>
+        <@if normal@>
+            <$normal$>Triplanar += magnitude * <$normal$>;
+        <@endif@>
+        <@if shade@>
+            <$shade$>Triplanar += magnitude * <$shade$>;
+        <@endif@>
+        <@if emissive@>
+            <$emissive$>Triplanar += magnitude * <$emissive$>;
+        <@endif@>
+        <@if shadingShift@>
+            <$shadingShift$>Triplanar += magnitude * <$shadingShift$>;
+        <@endif@>
+        <@if rim@>
+            <$rim$>Triplanar += magnitude * <$rim$>;
+        <@endif@>
+    }
+
+<@if albedo@>
+    vec4 <$albedo$> = <$albedo$>Triplanar;
+<@endif@>
+<@if normal@>
+    // FIXME: this isn't strictly correct, as our tangents no longer match the space of our UVs
+    vec3 <$normal$> = normalize(<$normal$>Triplanar);
+<@endif@>
+<@if shade@>
+    vec3 <$shade$> = <$shade$>Triplanar;
+<@endif@>
+<@if emissive@>
+    vec3 <$emissive$> = <$emissive$>Triplanar;
+<@endif@>
+<@if shadingShift@>
+    float <$shadingShift$> = <$shadingShift$>Triplanar;
+<@endif@>
+<@if rim@>
+    vec3 <$rim$> = <$rim$>Triplanar;
+<@endif@>
+
 <@endfunc@>
 
 <@func evalMaterialShade(fetchedShade, materialShade, matKey, shade)@>

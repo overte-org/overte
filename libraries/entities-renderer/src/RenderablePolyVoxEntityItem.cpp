@@ -29,12 +29,14 @@
 #include <StencilMaskPass.h>
 #include <graphics/ShaderConstants.h>
 #include <render/ShapePipeline.h>
+#include <procedural/Procedural.h>
 
 #include "entities-renderer/ShaderConstants.h"
 
 #include <shaders/Shaders.h>
 
 #include "EntityTreeRenderer.h"
+#include "RenderPipelines.h"
 
 #include <FadeEffect.h>
 
@@ -1707,9 +1709,11 @@ using namespace render;
 using namespace render::entities;
 
 static uint8_t CUSTOM_PIPELINE_NUMBER;
+static const gpu::Element COLOR_ELEMENT { gpu::VEC4, gpu::NUINT8, gpu::RGBA };
 // forward, shadow, fade, wireframe
 static std::map<std::tuple<bool, bool, bool, bool>, ShapePipelinePointer> _pipelines;
 static gpu::Stream::FormatPointer _vertexFormat;
+static gpu::Stream::FormatPointer _vertexColorFormat;
 
 ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, const ShapeKey& key, RenderArgs* args) {
     if (_pipelines.empty()) {
@@ -1765,16 +1769,46 @@ PolyVoxEntityRenderer::PolyVoxEntityRenderer(const EntityItemPointer& entity) : 
         _vertexFormat = std::make_shared<gpu::Stream::Format>();
         _vertexFormat->setAttribute(gpu::Stream::POSITION, 0, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 0);
         _vertexFormat->setAttribute(gpu::Stream::NORMAL, 0, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 12);
+
+        _vertexColorFormat = std::make_shared<gpu::Stream::Format>();
+        _vertexColorFormat->setAttribute(gpu::Stream::POSITION, 0, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 0);
+        _vertexColorFormat->setAttribute(gpu::Stream::NORMAL, 0, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 12);
+        _vertexColorFormat->setAttribute(gpu::Stream::COLOR, gpu::Stream::COLOR, COLOR_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
     });
     _params = std::make_shared<gpu::Buffer>(sizeof(glm::vec4), nullptr);
 }
 
 ShapeKey PolyVoxEntityRenderer::getShapeKey() {
-    auto builder = ShapeKey::Builder().withCustom(CUSTOM_PIPELINE_NUMBER);
-    if (_primitiveMode == PrimitiveMode::LINES) {
-        builder.withWireframe();
+    bool hasMaterials = false;
+    graphics::MultiMaterial materials;
+    {
+        std::lock_guard<std::mutex> lock(_materialsLock);
+        auto materialsItr = _materials.find("0");
+        hasMaterials = (materialsItr != _materials.end());
+        if (hasMaterials) {
+            materials = materialsItr->second;
+        }
+    }
+    ShapeKey::Builder builder;
+    if (!hasMaterials) {
+        builder = ShapeKey::Builder().withCustom(CUSTOM_PIPELINE_NUMBER);
+        if (_primitiveMode == PrimitiveMode::LINES) {
+            builder.withWireframe();
+        }
+    } else {
+        updateShapeKeyBuilderFromMaterials(builder);
+        Pipeline pipelineType = getPipelineType(materials);
+        if (pipelineType == Pipeline::MATERIAL) {
+            builder.withTriplanar();
+        }
+        // FIXME: We don't currently generate tangents for PolyVox, so they don't support normal maps
+        builder.withoutTangents();
     }
     return builder.build();
+}
+
+bool PolyVoxEntityRenderer::needsRenderUpdate() const {
+    return needsRenderUpdateFromMaterials() || Parent::needsRenderUpdate();
 }
 
 bool PolyVoxEntityRenderer::needsRenderUpdateFromTypedEntity(const TypedEntityPointer& entity) const {
@@ -1834,6 +1868,17 @@ void PolyVoxEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoi
             texture = DependencyManager::get<TextureCache>()->getTexture(textureURL);
         }
     }
+
+    updateMaterials();
+}
+
+bool PolyVoxEntityRenderer::isTransparent() const {
+    // TODO: We don't currently support transparent PolyVox (unless they are using the material path)
+    return /*Parent::isTransparent() || */materialsTransparent();
+}
+
+Item::Bound PolyVoxEntityRenderer::getBound(RenderArgs* args) {
+    return Parent::getMaterialBound(args);
 }
 
 void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
@@ -1853,20 +1898,60 @@ void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
         _prevRenderTransform = transform;
     }
 
-    batch.setInputFormat(_vertexFormat);
     batch.setInputBuffer(gpu::Stream::POSITION, _mesh->getVertexBuffer()._buffer, 0, sizeof(PolyVox::PositionMaterialNormal));
     batch.setIndexBuffer(gpu::UINT32, _mesh->getIndexBuffer()._buffer, 0);
 
-    for (size_t i = 0; i < _xyzTextures.size(); ++i) {
-        const auto& texture = _xyzTextures[i];
-        if (texture) {
-            batch.setResourceTexture((uint32_t)i, texture->getGPUTexture());
-        } else {
-            batch.setResourceTexture((uint32_t)i, DependencyManager::get<TextureCache>()->getWhiteTexture());
+    bool hasMaterials = false;
+    graphics::MultiMaterial materials;
+    {
+        std::lock_guard<std::mutex> lock(_materialsLock);
+        auto materialsItr = _materials.find("0");
+        hasMaterials = (materialsItr != _materials.end());
+        if (hasMaterials) {
+            materials = materialsItr->second;
         }
     }
+    if (!hasMaterials) {
+        for (size_t i = 0; i < _xyzTextures.size(); ++i) {
+            const auto& texture = _xyzTextures[i];
+            if (texture) {
+                batch.setResourceTexture((uint32_t)i, texture->getGPUTexture());
+            } else {
+                batch.setResourceTexture((uint32_t)i, DependencyManager::get<TextureCache>()->getWhiteTexture());
+            }
+        }
+        batch.setInputFormat(_vertexFormat);
+        batch.setUniformBuffer(0, _params);
+    } else {
+        glm::vec4 outColor = materials.getColor();
 
-    batch.setUniformBuffer(0, _params);
+        if (outColor.a == 0.0f) {
+            return;
+        }
+
+        Pipeline pipelineType = getPipelineType(materials);
+        if (pipelineType == Pipeline::PROCEDURAL) {
+            auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials.top().material);
+            outColor = procedural->getColor(outColor);
+            outColor.a *= procedural->isFading() ? Interpolate::calculateFadeRatio(procedural->getFadeStartTime()) : 1.0f;
+            withReadLock([&] {
+                procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created,
+                                    ProceduralProgramKey(outColor.a < 1.0f));
+            });
+        } else if (pipelineType == Pipeline::MATERIAL) {
+            if (RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
+                args->_details._materialSwitches++;
+            }
+        }
+
+        const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*)&compactColor);
+        gpu::BufferView colorView(_colorBuffer, COLOR_ELEMENT);
+        batch.setInputBuffer(gpu::Stream::COLOR, colorView);
+        batch.setInputFormat(_vertexColorFormat);
+        batch.setUniformBuffer(graphics::slot::buffer::TriplanarScale, _params);
+    }
+
     batch.drawIndexed(gpu::TRIANGLES, (gpu::uint32)_mesh->getNumIndices(), 0);
 }
 

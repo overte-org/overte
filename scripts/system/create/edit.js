@@ -749,6 +749,7 @@
 
         var MATERIAL_MODE_UV = 0;
         var MATERIAL_MODE_PROJECTED = 1;
+        var MATERIAL_MODE_TRIPLANAR = 2;
 
         function handleNewModelDialogResult(result) {
             if (result) {
@@ -889,6 +890,9 @@
                 //switch (result.comboBox) {
                 //    case MATERIAL_MODE_PROJECTED:
                 //        materialMappingMode = "projected";
+                //        break;
+                //    case MATERIAL_MODE_TRIPLANAR:
+                //        materialMappingMode = "triplanar";
                 //        break;
                 //    default:
                 //        shapeType = "uv";

@@ -626,7 +626,7 @@ void EntityRenderer::removeMaterial(graphics::MaterialPointer material, const st
 graphics::MaterialPointer EntityRenderer::getTopMaterial() {
     std::lock_guard<std::mutex> lock(_materialsLock);
     auto materials = _materials.find("0");
-    if (materials != _materials.end()) {
+    if (materials != _materials.end() && materials->second.size() > 0) {
         return materials->second.top().material;
     }
     return nullptr;
@@ -637,7 +637,7 @@ EntityRenderer::Pipeline EntityRenderer::getPipelineType(const graphics::MultiMa
         return Pipeline::MIRROR;
     }
 
-    if (materials.top().material && materials.top().material->isProcedural() && materials.top().material->isReady()) {
+    if (materials.size() > 0 && materials.top().material && materials.top().material->isProcedural() && materials.top().material->isReady()) {
         return Pipeline::PROCEDURAL;
     }
 
@@ -670,7 +670,7 @@ bool EntityRenderer::needsRenderUpdateFromMaterials() const {
         return true;
     }
 
-    if (materials->second.top().material && materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
+    if (materials->second.size() > 0 && materials->second.top().material && materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
         auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials->second.top().material);
         if (procedural->isFading()) {
             return true;
@@ -696,7 +696,7 @@ void EntityRenderer::updateMaterials(bool baseMaterialChanged) {
     }
 
     bool requestUpdate = false;
-    if (materials->second.top().material && materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
+    if (materials->second.size() > 0 && materials->second.top().material && materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
         auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials->second.top().material);
         if (procedural->isFading()) {
             procedural->setIsFading(Interpolate::calculateFadeRatio(procedural->getFadeStartTime()) < 1.0f);
@@ -725,7 +725,7 @@ bool EntityRenderer::materialsTransparent() const {
         }
     }
 
-    if (materials->second.top().material) {
+    if (materials->second.size() > 0 && materials->second.top().material) {
         if (materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
             auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials->second.top().material);
             if (procedural->isFading()) {
@@ -752,7 +752,7 @@ Item::Bound EntityRenderer::getMaterialBound(RenderArgs* args) {
         }
     }
 
-    if (materials->second.top().material && materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
+    if (materials->second.size() > 0 && materials->second.top().material && materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
         auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials->second.top().material);
         if (procedural->hasVertexShader() && procedural->hasBoundOperator()) {
             return procedural->getBound(args);
@@ -824,6 +824,11 @@ void EntityRenderer::updateShapeKeyBuilderFromMaterials(ShapeKey::Builder& build
             }
         } else {
             builder.withMToon();
+        }
+
+        if (materials->second.size() > 0 && materials->second.top().material &&
+            (MaterialMappingMode)materials->second.top().material->getMaterialParams().x == MaterialMappingMode::TRIPLANAR) {
+            builder.withTriplanar();
         }
     } else if (pipelineType == Pipeline::PROCEDURAL) {
         builder.withOwnPipeline();

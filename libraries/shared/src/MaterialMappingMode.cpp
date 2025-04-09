@@ -10,7 +10,8 @@
 
 const char* materialMappingModeNames[] = {
     "uv",
-    "projected"
+    "projected",
+    "triplanar"
 };
 
 static const size_t MATERIAL_MODE_NAMES = (sizeof(materialMappingModeNames) / sizeof(materialMappingModeNames[0]));
