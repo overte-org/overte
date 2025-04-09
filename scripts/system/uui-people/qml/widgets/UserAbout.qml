@@ -7,7 +7,6 @@ RowLayout {
 	property var sessionDisplayName: "";
 	property var icon: "../../img/default_profile_avatar.svg";
 	property var isSelf: false;
-	signal updateAbout;
 
 	property var statusColors: {
 		"all": "#3babe1",
@@ -42,7 +41,7 @@ RowLayout {
 
 		Image {
 			id: avatarImageElement;
-			source: icon;
+			source: icon || "../../img/default_profile_avatar.svg";
 			sourceSize.width: 80;
        		sourceSize.height: 80;
 			z: 1;
@@ -59,7 +58,7 @@ RowLayout {
 
 	Column {
 		Text {
-			text: sessionDisplayName;
+			text: sessionDisplayName || "";
 			font.pointSize: 16;
 			color: "white";
 		}
@@ -73,15 +72,15 @@ RowLayout {
 				height: 15;
 				radius: 100;
 				color: statusColors[myData.findableBy] || "magenta";
-				anchors.verticalCenter: parent.verticalCenter;
+				Layout.alignment: Qt.AlignVCenter;
 			}
 
 			Text {
 				x: parent.children[0].width + 10;
-				text: statusLiteral[myData.findableBy];
+				text: statusLiteral[myData.findableBy] || "...";
 				font.pointSize: 16;
 				color: statusColors[myData.findableBy] || "magenta";
-				anchors.verticalCenter: parent.verticalCenter;
+				Layout.alignment: Qt.AlignVCenter;
 			}
 		}
 

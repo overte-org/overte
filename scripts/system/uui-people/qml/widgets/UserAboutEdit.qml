@@ -41,7 +41,7 @@ RowLayout {
 
 		Image {
 			id: avatarImageElement;
-			source: icon;
+			source: icon || "../../img/default_profile_avatar.svg";
 			sourceSize.width: 80;
        		sourceSize.height: 80;
 			z: 1;
@@ -73,7 +73,7 @@ RowLayout {
 
 			TextInput {
 				id: displayNameEntry
-				text: myData.displayName;
+				text: myData.displayName || "";
 				font.pointSize: 16;
 				color: "white";
 				width: parent.width - 4;
