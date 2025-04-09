@@ -50,6 +50,7 @@ Row {
 		}
 
 		Text {
+			visible: isSelf;
 			text: "Edit >"
 			font.pointSize: 14;
 			color: "gray";

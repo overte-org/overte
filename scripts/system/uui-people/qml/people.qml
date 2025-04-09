@@ -70,6 +70,35 @@ Rectangle {
 
 		UserOptions {
 			Layout.fillHeight: true;
+
+			UserOptionButton {
+				buttonText: "Mute";
+				action: () => {Users.personalMute(focusedUser, !Users.getPersonalMuteStatus(focusedUser))};
+			}
+
+			UserOptionButton {
+				buttonText: "Ignore";
+				action: () => {Users.ignore(focusedUser, !Users.getIgnoreStatus(focusedUser))};
+			}
+
+			UserOptionButton {
+				buttonText: "Kick";
+				visible: isAdmin;
+				isDangerButton: isAdmin;
+				action: () => {Users.kick(focusedUser, Users.NO_BAN)};
+			}
+			UserOptionButton {
+				buttonText: "Ban";
+				visible: isAdmin;
+				isDangerButton: isAdmin;
+				action: () => {Users.kick(focusedUser, Users.BAN_BY_USERNAME | Users.BAN_BY_FINGERPRINT | Users.BAN_BY_IP)};
+			}
+			UserOptionButton {
+				buttonText: "Silence";
+				visible: isAdmin;
+				isDangerButton: isAdmin;
+				action: () => {Users.mute(focusedUser)};
+			}
 		}
 
 		BackButton {
