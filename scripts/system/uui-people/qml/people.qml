@@ -13,7 +13,7 @@ Rectangle {
 	anchors.horizontalCenter: parent.horizontalCenter;
 
 	property var users: [];
-	property var isAdmin: false;
+	property var canKick: false;	// The only way to tell if a user is an admin of a domain is if they have the kick permissions
 	property var myData: {icon: "../img/default_profile_avatar.svg"; displayName: ""; sessionDisplayName: ""};
 	property var focusedUserData: {sessionDisplayName: ""; audioLoudness: 0.01};
 	property var focusedUser: "";
@@ -83,20 +83,20 @@ Rectangle {
 
 			UserOptionButton {
 				buttonText: "Kick";
-				visible: isAdmin;
-				isDangerButton: isAdmin;
+				visible: canKick;
+				isDangerButton: true;
 				action: () => {Users.kick(focusedUser, Users.NO_BAN)};
 			}
 			UserOptionButton {
 				buttonText: "Ban";
-				visible: isAdmin;
-				isDangerButton: isAdmin;
+				visible: canKick;
+				isDangerButton: true;
 				action: () => {Users.kick(focusedUser, Users.BAN_BY_USERNAME | Users.BAN_BY_FINGERPRINT | Users.BAN_BY_IP)};
 			}
 			UserOptionButton {
 				buttonText: "Silence";
-				visible: isAdmin;
-				isDangerButton: isAdmin;
+				visible: canKick;
+				isDangerButton: true;
 				action: () => {Users.mute(focusedUser)};
 			}
 		}
@@ -122,6 +122,7 @@ Rectangle {
 	function fromScript(message) {
 		if (message.type == "myData"){
 			myData = message.data;
+			canKick = message.data.canKick;
 			return;
 		}
 
@@ -129,11 +130,6 @@ Rectangle {
 			users = message.data;
 			if (focusedUser) focusedUserData = users.filter((user) => user.sessionUUID === focusedUser)[0];
 			// print(JSON.stringify(users, null, 4));
-			return;
-		}
-
-		if (message.type == "isAdmin") {
-			isAdmin = message.isAdmin;
 			return;
 		}
 	}
