@@ -2,8 +2,12 @@
 
 const directoryBase = Account.metaverseServerURL;
 
-// Get list of users
-// Get information about users (blocked/ volume, etc)
+// TODO: Get all user profile pictures?
+// TODO: User status (Public / Friends only / Private)
+// TODO: Focused user halo
+// TODO: User options (Block / mute)
+// TODO: User admin options (Kick / ban / silence)
+// TODO: Teleport + Teleport permissions
 
 let tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 let active = false;
