@@ -32,6 +32,9 @@ const selectionListStyle = {
 	outlineWidth: 4,
 	fillOccludedAlpha: 0.2
 }; 
+let iAmAdmin = Users.getCanKick();
+let adminUserData = {};
+let adminUserDataTimestamp = 0;
 
 appButton.clicked.connect(toolbarButtonClicked);
 
@@ -39,6 +42,7 @@ tablet.fromQml.connect(fromQML);
 tablet.screenChanged.connect(onScreenChanged);
 Script.scriptEnding.connect(shutdownScript);
 Script.setInterval(updatePalData, 100);
+Users.usernameFromIDReply.connect(onUsernameFromIDReply);
 
 function toolbarButtonClicked() {
 	if (active) {
@@ -97,6 +101,9 @@ function updatePalData() {
 	palData.map((user) => {user.audioLoudness = scaleAudioExponential(user.audioLoudness)});
 
 	toQML({ type: "palList", data: palData });
+	toQML({ type: "adminUserData", data: adminUserData });
+
+	palData.forEach((user) => domainUserUpdate(user.sessionUUID));
 
 	function scaleAudioExponential(audioValue) {
 		let normalizedValue = audioValue / 32768;
@@ -165,4 +172,22 @@ function highlightUser(sessionUUID){
 function removeHighlightUser(){
 	// Destroy the highlight list
 	Selection.removeListFromMap(selectionListName);
+}
+
+function domainUserUpdate(sessionUUID){
+	if (!iAmAdmin) return; 						// Not admin, not going to work
+	if (adminUserData[sessionUUID]) return; 	// We already have that data!
+
+	console.log(`Requesting ${sessionUUID}'s information`)
+	adminUserData[sessionUUID] = {}; 			// Initialize to prevent multiple requests for a single user
+	Users.requestUsernameFromID(sessionUUID);
+}
+
+function onUsernameFromIDReply(sessionUUID, userName, machineFingerprint, isAdmin) {
+	console.log(`Got ${sessionUUID}'s information`)
+	adminUserData[sessionUUID] = {
+		username: userName,
+		isAdmin: isAdmin
+	};
+	toQML({type: "adminUserData", data: adminUserData});
 }
