@@ -14,13 +14,13 @@
 
 #include <mutex>
 #include <bitset>
-#include <map>
 #include <unordered_map>
 #include <queue>
 
 #include <ColorUtils.h>
 
 #include <gpu/Resource.h>
+#include <gpu/Texture.h>
 #include <gpu/TextureTable.h>
 
 #include "MaterialMappingMode.h"
@@ -342,7 +342,8 @@ public:
 class Material {
 public:
     typedef MaterialKey::MapChannel MapChannel;
-    typedef std::map<MapChannel, TextureMapPointer> TextureMaps;
+    typedef std::unordered_map<MapChannel, TextureMapPointer> TextureMaps;
+    typedef std::unordered_map<MapChannel, gpu::Sampler> SamplerMap;
 
     Material();
     Material(const Material& material);
@@ -395,6 +396,9 @@ public:
     void setTextureMap(MapChannel channel, const TextureMapPointer& textureMap);
     virtual TextureMaps getTextureMaps() const { return _textureMaps; } // FIXME - not thread safe...
     const TextureMapPointer getTextureMap(MapChannel channel) const;
+
+    void setSampler(MapChannel channel, const gpu::Sampler& sampler);
+    void applySampler(MapChannel channel);
 
     // Albedo maps cannot have opacity detected until they are loaded
     // This method allows const changing of the key/schemaBuffer without touching the map
@@ -494,6 +498,7 @@ private:
     glm::vec2 _materialParams { 0.0, 1.0 };
     MaterialKey::CullFaceMode _cullFaceMode { DEFAULT_CULL_FACE_MODE };
     TextureMaps _textureMaps;
+    SamplerMap _samplers;
 
     bool _defaultFallthrough { false };
     std::unordered_map<uint, bool> _propertyFallthroughs { NUM_TOTAL_FLAGS };
@@ -670,6 +675,10 @@ public:
     void setOutlineWidth(float width) { _outlineWidth = width; }
     void setOutline(const glm::vec3& outline) { _outline = outline; }
 
+    void addSamplerFunc(std::function<void(void)> samplerFunc) { _samplerFuncs.push_back(samplerFunc); }
+    void resetSamplers() { _samplerFuncs.clear(); }
+    void applySamplers() const;
+
 private:
     gpu::BufferView _schemaBuffer;
     graphics::MaterialKey::CullFaceMode _cullFaceMode { graphics::Material::DEFAULT_CULL_FACE_MODE };
@@ -692,6 +701,8 @@ private:
     uint8_t _outlineWidthMode { 0 };
     float _outlineWidth { 0.0f };
     glm::vec3 _outline { graphics::Material::DEFAULT_OUTLINE };
+
+    std::vector<std::function<void(void)>> _samplerFuncs;
 };
 
 };

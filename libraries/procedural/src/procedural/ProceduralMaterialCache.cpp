@@ -17,6 +17,8 @@
 #include "Procedural.h"
 #include "ReferenceMaterial.h"
 
+const QString FALLTHROUGH("fallthrough");
+
 NetworkMaterialResource::NetworkMaterialResource(const QUrl& url) :
     Resource(url) {}
 
@@ -51,7 +53,7 @@ void NetworkMaterialResource::downloadFinished(const QByteArray& data) {
  * </table>
  * @typedef {array} RGBS
  */
-bool NetworkMaterialResource::parseJSONColor(const QJsonValue& array, glm::vec3& color, bool& isSRGB) {
+static bool parseJSONColor(const QJsonValue& array, glm::vec3& color, bool& isSRGB) {
     if (array.isArray()) {
         QJsonArray colorArray = array.toArray();
         if (colorArray.size() >= 3 && colorArray[0].isDouble() && colorArray[1].isDouble() && colorArray[2].isDouble()) {
@@ -124,6 +126,98 @@ NetworkMaterialResource::ParsedMaterials NetworkMaterialResource::parseMaterialF
     return toReturn;
 }
 
+static void setMaterialColor(const QJsonValue value, const std::function<void(glm::vec3, bool)>& setter) {
+    glm::vec3 color;
+    bool isSRGB;
+    bool valid = parseJSONColor(value, color, isSRGB);
+    if (valid) {
+        setter(color, isSRGB);
+    }
+}
+
+static void setMaterialMapString(const QString& valueString, const std::shared_ptr<NetworkMaterial>& material, uint property,
+                                 const QUrl& baseUrl, const std::function<void(QUrl)>& setter) {
+    if (valueString == FALLTHROUGH) {
+        material->setPropertyDoesFallthrough(property);
+    } else {
+        setter(baseUrl.resolved(valueString));
+    }
+}
+
+static void setMaterialMap(const QJsonValue& value, const std::shared_ptr<NetworkMaterial>& material, uint property,
+                           graphics::MaterialKey::MapChannel channel, const QUrl& baseUrl, const std::function<void(QUrl)>& setter) {
+    if (value.isObject()) {
+        QJsonObject valueMap = value.toObject();
+        auto urlItr = valueMap.constFind("url");
+        if (urlItr != valueMap.constEnd() && urlItr->isString()) {
+            setMaterialMapString(urlItr->toString(), material, property, baseUrl, setter);
+
+            auto samplerItr = valueMap.constFind("sampler");
+            if (samplerItr != valueMap.constEnd() && samplerItr->isObject()) {
+                auto samplerObject = samplerItr->toObject();
+                material->setSampler(channel, gpu::Sampler::parseSampler(samplerObject));
+            }
+        }
+    } else if (value.isString()) {
+        setMaterialMapString(value.toString(), material, property, baseUrl, setter);
+    }
+}
+
+/*@jsdoc
+ * <p>Specifies the filter applied to a texture when it is sampled.</p>
+ * <table>
+ *   <thead>
+ *     <tr><th>Value</th><th>Description</th></tr>
+ *   </thead>
+ *   <tbody>
+ *     <tr><td><code>"point"</code></td><td>Select the texel nearest the texture coordinate.</td></tr>
+ *     <tr><td><code>"linear"</code></td><td>Perform a weighted linear blend between the nearest adjacent samples.</td></tr>
+ *     <tr><td><code>"mipmapPoint"</code></td><td>Minification filter only. Same as "point", but with mipmaps.</td></tr>
+ *     <tr><td><code>"mipmapLinear"</code></td><td>Minification filter only. Same as "linear", but with mipmaps.</td></tr>
+ *     <tr><td><code>"linearMipmapPoint"</code></td><td>Minification filter only. Same as "point", but with mipmaps and linear blending between them.</td></tr>
+ *     <tr><td><code>"linearMipmapLinear"</code></td><td>Minification filter only. Same as "linear", but with mipmaps and linear blending between them.</td></tr>
+ *   </tbody>
+ * </table>
+ * @typedef {string} FilterMode
+ */
+
+/*@jsdoc
+ * <p>Specifies the wrap mode applied to a texture when it is sampled.</p>
+ * <table>
+ *   <thead>
+ *     <tr><th>Value</th><th>Description</th></tr>
+ *   </thead>
+ *   <tbody>
+ *     <tr><td><code>"repeat"</code></td><td>The texture coordinate wraps around the texture.</td></tr>
+ *     <tr><td><code>"mirror"</code></td><td>The texture coordinate wraps around like a mirror.</td></tr>
+ *     <tr><td><code>"clamp"</code></td><td>The texture coordinate is clamped to the [0, 1] range.</td></tr>
+ *     <tr><td><code>"border"</code></td><td>The texture coordinate is clamped to the [0, 1] range, but the edge texels are blended with a constant border color.</td></tr>
+ *     <tr><td><code>"mirrorOnce"</code></td><td>The texture coordinates are clamped to the [-1, 1] range, but the negative coordinates are mirrors of the positive.
+ *          This effectively makes the texture twice as big through mirroring, but clamps to the edge beyond that.</td></tr>
+ *   </tbody>
+ * </table>
+ * @typedef {string} WrapMode
+ */
+
+/*@jsdoc
+ * A sampler describes the parameters used to access a texture in a shader.
+ * @typedef {object} Entities.Sampler
+ * @property {FilterMode} filter="point" - Set the min and mag filters to the same thing.
+ * @property {FilterMode} minFilter="point" - Set the minification filter.
+ * @property {FilterMode} magFilter="point" - Set the magnification filter.
+ * @property {WrapMode} wrap="repeat" - Set both the horizontal and vertical wrapping behavior.
+ * @property {WrapMode} wrapS="repeat" - Set the horizontal wrapping behavior.
+ * @property {WrapMode} wrapT="repeat" - Set the vertical wrapping behavior.
+ * @property {Vec4} borderColor=1,1,1,1 - The border color used if the wrap mode is <code>"border"</code>.
+ */
+
+/*@jsdoc
+ * A description of a texture, combining a URL and a sampler.
+ * @typedef {object} Entities.Texture
+ * @property {string} url - The URL of the texture.
+ * @property {Entities.Sampler} sampler - Set sampler used for this texture.
+ */
+
 /*@jsdoc
  * A material used in a {@link Entities.MaterialResource|MaterialResource}.
  * @typedef {object} Entities.Material
@@ -149,10 +243,10 @@ NetworkMaterialResource::ParsedMaterials NetworkMaterialResource::parseMaterialF
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"hifi_pbr"</code>.
  * @property {number|string} scattering - The scattering, range <code>0.0</code> &ndash; <code>1.0</code>. 
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"hifi_pbr"</code>.
- * @property {string} emissiveMap - The URL of the emissive texture image, or an entity ID.  An entity ID may be that of an
+ * @property {string|Entities.Texture} emissiveMap - The URL of the emissive texture image, or an entity ID.  An entity ID may be that of an
  *     Image or Web entity.  Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"hifi_pbr"</code>,
  *     <code>"vrm_mtoon"</code>.
- * @property {string} albedoMap - The URL of the albedo texture image, or an entity ID.  An entity ID may be that of an Image
+ * @property {string|Entities.Texture} albedoMap - The URL of the albedo texture image, or an entity ID.  An entity ID may be that of an Image
  *     or Web entity.  Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"hifi_pbr"</code>,
  *     <code>"vrm_mtoon"</code>.
  * @property {string} opacityMap - The URL of the opacity texture image, or an entity ID.  An entity ID may be that of an Image
@@ -178,31 +272,31 @@ NetworkMaterialResource::ParsedMaterials NetworkMaterialResource::parseMaterialF
  *         <li><code>"CULL_BACK"</code> (the default) to cull the back faces of the geometry.</li>
  *     </ul>
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: all.
- * @property {string} roughnessMap - The URL of the roughness texture image. You can use this or <code>glossMap</code>, but not 
+ * @property {string|Entities.Texture} roughnessMap - The URL of the roughness texture image. You can use this or <code>glossMap</code>, but not 
  *     both. 
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"hifi_pbr"</code>.
- * @property {string} glossMap - The URL of the gloss texture image. You can use this or <code>roughnessMap</code>, but not 
+ * @property {string|Entities.Texture} glossMap - The URL of the gloss texture image. You can use this or <code>roughnessMap</code>, but not 
  *     both. 
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"hifi_pbr"</code>.
- * @property {string} metallicMap - The URL of the metallic texture image, or an entity ID.  An entity ID may be that of an
+ * @property {string|Entities.Texture} metallicMap - The URL of the metallic texture image, or an entity ID.  An entity ID may be that of an
  *     Image or Web entity.  You can use this or <code>specularMap</code>, but not both.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"hifi_pbr"</code>.
- * @property {string} specularMap - The URL of the specular texture image, or an entity ID.  An entity ID may be that of an
+ * @property {string|Entities.Texture} specularMap - The URL of the specular texture image, or an entity ID.  An entity ID may be that of an
  *     Image or Web entity.  You can use this or <code>metallicMap</code>, but not both.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"hifi_pbr"</code>.
- * @property {string} normalMap - The URL of the normal texture image, or an entity ID.  An entity ID may be that of an Image
+ * @property {string|Entities.Texture} normalMap - The URL of the normal texture image, or an entity ID.  An entity ID may be that of an Image
  *     or Web entity.  You can use this or <code>bumpMap</code>, but not both. Set to <code>"fallthrough"</code> to fall
  *     through to the material below. Supported models: <code>"hifi_pbr"</code>, <code>"vrm_mtoon"</code>.
- * @property {string} bumpMap - The URL of the bump texture image, or an entity ID.  An entity ID may be that of an Image
+ * @property {string|Entities.Texture} bumpMap - The URL of the bump texture image, or an entity ID.  An entity ID may be that of an Image
  *     or Web entity.  You can use this or <code>normalMap</code>, but not both. Set to <code>"fallthrough"</code> to
  *     fall through to the material below. Supported models: <code>"hifi_pbr"</code>, <code>"vrm_mtoon"</code>.
- * @property {string} occlusionMap - The URL of the occlusion texture image, or an entity ID.  An entity ID may be that of
+ * @property {string|Entities.Texture} occlusionMap - The URL of the occlusion texture image, or an entity ID.  An entity ID may be that of
  *     an Image or Web entity.  Set to <code>"fallthrough"</code> to fall through to the material below.
  *     Supported models: <code>"hifi_pbr"</code>.
- * @property {string} scatteringMap - The URL of the scattering texture image, or an entity ID.  An entity ID may be that of an
+ * @property {string|Entities.Texture} scatteringMap - The URL of the scattering texture image, or an entity ID.  An entity ID may be that of an
  *     Image or Web entity.  Only used if <code>normalMap</code> or <code>bumpMap</code> is specified.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"hifi_pbr"</code>.
- * @property {string} lightMap - The URL of the light map texture image, or an entity ID.  An entity ID may be that of an Image
+ * @property {string|Entities.Texture} lightMap - The URL of the light map texture image, or an entity ID.  An entity ID may be that of an Image
  *     or Web entity.  Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"hifi_pbr"</code>.
  * @property {Mat4|string} texCoordTransform0 - The transform to use for all of the maps apart from <code>occlusionMap</code> 
  *     and <code>lightMap</code>. 
@@ -222,12 +316,12 @@ NetworkMaterialResource::ParsedMaterials NetworkMaterialResource::parseMaterialF
  * @property {ColorFloat|RGBS|string} shade - The shade color. A {@link ColorFloat} value is treated as sRGB and must have
  *     component values in the range <code>0.0</code> &ndash; <code>1.0</code>. A {@link RGBS} value can be either RGB or sRGB.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"vrm_mtoon"</code>.
- * @property {string} shadeMap - The URL of the shade texture image, or an entity ID.  An entity ID may be that of an
+ * @property {string|Entities.Texture} shadeMap - The URL of the shade texture image, or an entity ID.  An entity ID may be that of an
  *     Image or Web entity.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"vrm_mtoon"</code>.
  * @property {number|string} shadingShift - The shading shift.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"vrm_mtoon"</code>.
- * @property {string} shadingShiftMap - The URL of the shading shift texture image, or an entity ID.  An entity ID may be that of an
+ * @property {string|Entities.Texture} shadingShiftMap - The URL of the shading shift texture image, or an entity ID.  An entity ID may be that of an
  *     Image or Web entity.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"vrm_mtoon"</code>.
  * @property {number|string} shadingToony - The shading toony factor. Range <code>0.0</code> &ndash; <code>1.0</code>.
@@ -235,7 +329,7 @@ NetworkMaterialResource::ParsedMaterials NetworkMaterialResource::parseMaterialF
  * @property {ColorFloat|RGBS|string} matcap - The matcap color. A {@link ColorFloat} value is treated as sRGB and must have
  *     component values in the range <code>0.0</code> &ndash; <code>1.0</code>. A {@link RGBS} value can be either RGB or sRGB.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"vrm_mtoon"</code>.
- * @property {string} matcapMap - The URL of the matcap texture image, or an entity ID.  An entity ID may be that of an
+ * @property {string|Entities.Texture} matcapMap - The URL of the matcap texture image, or an entity ID.  An entity ID may be that of an
  *     Image or Web entity.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"vrm_mtoon"</code>.
  * @property {ColorFloat|RGBS|string} parametricRim - The rim color. A {@link ColorFloat} value is treated as sRGB and must have
@@ -245,7 +339,7 @@ NetworkMaterialResource::ParsedMaterials NetworkMaterialResource::parseMaterialF
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"vrm_mtoon"</code>.
  * @property {number|string} parametricRimLift - The parametric rim lift factor.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"vrm_mtoon"</code>.
- * @property {string} rimMap - The URL of the rim texture image, or an entity ID.  An entity ID may be that of an
+ * @property {string|Entities.Texture} rimMap - The URL of the rim texture image, or an entity ID.  An entity ID may be that of an
  *     Image or Web entity.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"vrm_mtoon"</code>.
  * @property {number|string} rimLightingMix - How much to mix between the rim color and normal lighting. Range <code>0.0</code>
@@ -264,7 +358,7 @@ NetworkMaterialResource::ParsedMaterials NetworkMaterialResource::parseMaterialF
  * @property {ColorFloat|RGBS|string} outline - The outline color. A {@link ColorFloat} value is treated as sRGB and must have
  *     component values in the range <code>0.0</code> &ndash; <code>1.0</code>. A {@link RGBS} value can be either RGB or sRGB.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"vrm_mtoon"</code>.
- * @property {string} uvAnimationMaskMap - The URL of the UV animation mask texture image, or an entity ID.  An entity ID may be that of an
+ * @property {string|Entities.Texture} uvAnimationMaskMap - The URL of the UV animation mask texture image, or an entity ID.  An entity ID may be that of an
  *     Image or Web entity.
  *     Set to <code>"fallthrough"</code> to fall through to the material below. Supported models: <code>"vrm_mtoon"</code>.
  * @property {number|string} uvAnimationScrollXSpeed - The speed of the UV scrolling animation in the X dimension, in UV units per second.
@@ -299,7 +393,6 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
 
     std::array<glm::mat4, graphics::Material::NUM_TEXCOORD_TRANSFORMS> texcoordTransforms;
 
-    const QString FALLTHROUGH("fallthrough");
     if (modelString == graphics::Material::HIFI_PBR || modelString == graphics::Material::VRM_MTOON) {
         std::shared_ptr<NetworkMaterial> material;
         if (modelString == graphics::Material::HIFI_PBR) {
@@ -319,12 +412,7 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                 if (value.isString() && value.toString() == FALLTHROUGH) {
                     material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::EMISSIVE_VAL_BIT);
                 } else {
-                    glm::vec3 color;
-                    bool isSRGB;
-                    bool valid = parseJSONColor(value, color, isSRGB);
-                    if (valid) {
-                        material->setEmissive(color, isSRGB);
-                    }
+                    setMaterialColor(value, [&](glm::vec3 color, bool isSRGB) { material->setEmissive(color, isSRGB); });
                 }
             } else if (key == "opacity") {
                 auto value = materialJSON.value(key);
@@ -338,12 +426,7 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                 if (value.isString() && value.toString() == FALLTHROUGH) {
                     material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::ALBEDO_VAL_BIT);
                 } else {
-                    glm::vec3 color;
-                    bool isSRGB;
-                    bool valid = parseJSONColor(value, color, isSRGB);
-                    if (valid) {
-                        material->setAlbedo(color, isSRGB);
-                    }
+                    setMaterialColor(value, [&](glm::vec3 color, bool isSRGB) { material->setAlbedo(color, isSRGB); });
                 }
             } else if (key == "opacityMapMode") {
                 auto value = materialJSON.value(key);
@@ -358,7 +441,7 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                         }
                     }
                 }
-           } else if (key == "opacityCutoff") {
+            } else if (key == "opacityCutoff") {
                 auto value = materialJSON.value(key);
                 if (value.isString() && value.toString() == FALLTHROUGH) {
                     material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::OPACITY_CUTOFF_VAL_BIT);
@@ -378,51 +461,29 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                         }
                     }
                 }
-           } else if (key == "emissiveMap") {
+            } else if (key == "emissiveMap") {
                 auto value = materialJSON.value(key);
-                if (value.isString()) {
-                    auto valueString = value.toString();
-                    if (valueString == FALLTHROUGH) {
-                        material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::EMISSIVE_MAP_BIT);
-                    } else {
-                        material->setEmissiveMap(baseUrl.resolved(valueString));
-                    }
-                }
+                setMaterialMap(value, material, graphics::MaterialKey::FlagBit::EMISSIVE_MAP_BIT, graphics::Material::MapChannel::EMISSIVE_MAP,
+                    baseUrl, [&](const QUrl& url) { material->setEmissiveMap(url); });
             } else if (key == "albedoMap") {
                 auto value = materialJSON.value(key);
-                if (value.isString()) {
-                    QString valueString = value.toString();
-                    if (valueString == FALLTHROUGH) {
-                        material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::ALBEDO_MAP_BIT);
-                    } else {
+                setMaterialMap(value, material, graphics::MaterialKey::FlagBit::ALBEDO_MAP_BIT, graphics::Material::MapChannel::ALBEDO_MAP,
+                    baseUrl, [&](const QUrl& url) {
                         bool useAlphaChannel = false;
                         auto opacityMap = materialJSON.find("opacityMap");
-                        if (opacityMap != materialJSON.end() && opacityMap->isString() && opacityMap->toString() == valueString) {
+                        if (opacityMap != materialJSON.end() && opacityMap->isString() && baseUrl.resolved(opacityMap->toString()) == url) {
                             useAlphaChannel = true;
                         }
-                        material->setAlbedoMap(baseUrl.resolved(valueString), useAlphaChannel);
-                    }
-                }
+                        material->setAlbedoMap(url, useAlphaChannel);
+                    });
             } else if (key == "normalMap") {
                 auto value = materialJSON.value(key);
-                if (value.isString()) {
-                    auto valueString = value.toString();
-                    if (valueString == FALLTHROUGH) {
-                        material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::NORMAL_MAP_BIT);
-                    } else {
-                        material->setNormalMap(baseUrl.resolved(valueString), false);
-                    }
-                }
+                setMaterialMap(value, material, graphics::MaterialKey::FlagBit::NORMAL_MAP_BIT, graphics::Material::MapChannel::NORMAL_MAP,
+                    baseUrl, [&](const QUrl& url) { material->setNormalMap(url, false); });
             } else if (key == "bumpMap") {
                 auto value = materialJSON.value(key);
-                if (value.isString()) {
-                    auto valueString = value.toString();
-                    if (valueString == FALLTHROUGH) {
-                        material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::NORMAL_MAP_BIT);
-                    } else {
-                        material->setNormalMap(baseUrl.resolved(valueString), true);
-                    }
-                }
+                setMaterialMap(value, material, graphics::MaterialKey::FlagBit::NORMAL_MAP_BIT, graphics::Material::MapChannel::NORMAL_MAP,
+                    baseUrl, [&](const QUrl& url) { material->setNormalMap(url, true); });
             } else if (key == "texCoordTransform0") {
                 auto value = materialJSON.value(key);
                 if (value.isString()) {
@@ -494,74 +555,32 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                     }
                 } else if (key == "roughnessMap") {
                     auto value = materialJSON.value(key);
-                    if (value.isString()) {
-                        auto valueString = value.toString();
-                        if (valueString == FALLTHROUGH) {
-                            material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::ROUGHNESS_MAP_BIT);
-                        } else {
-                            material->setRoughnessMap(baseUrl.resolved(valueString), false);
-                        }
-                    }
+                    setMaterialMap(value, material, graphics::MaterialKey::FlagBit::ROUGHNESS_MAP_BIT, graphics::Material::MapChannel::ROUGHNESS_MAP,
+                        baseUrl, [&](const QUrl& url) { material->setRoughnessMap(url, false); });
                 } else if (key == "glossMap") {
                     auto value = materialJSON.value(key);
-                    if (value.isString()) {
-                        auto valueString = value.toString();
-                        if (valueString == FALLTHROUGH) {
-                            material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::ROUGHNESS_MAP_BIT);
-                        } else {
-                            material->setRoughnessMap(baseUrl.resolved(valueString), true);
-                        }
-                    }
+                    setMaterialMap(value, material, graphics::MaterialKey::FlagBit::ROUGHNESS_MAP_BIT, graphics::Material::MapChannel::ROUGHNESS_MAP,
+                        baseUrl, [&](const QUrl& url) { material->setRoughnessMap(url, true); });
                 } else if (key == "metallicMap") {
                     auto value = materialJSON.value(key);
-                    if (value.isString()) {
-                        auto valueString = value.toString();
-                        if (valueString == FALLTHROUGH) {
-                            material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::METALLIC_MAP_BIT);
-                        } else {
-                            material->setMetallicMap(baseUrl.resolved(valueString), false);
-                        }
-                    }
+                    setMaterialMap(value, material, graphics::MaterialKey::FlagBit::METALLIC_MAP_BIT, graphics::Material::MapChannel::METALLIC_MAP,
+                        baseUrl, [&](const QUrl& url) { material->setMetallicMap(url, false); });
                 } else if (key == "specularMap") {
                     auto value = materialJSON.value(key);
-                    if (value.isString()) {
-                        auto valueString = value.toString();
-                        if (valueString == FALLTHROUGH) {
-                            material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::METALLIC_MAP_BIT);
-                        } else {
-                            material->setMetallicMap(baseUrl.resolved(valueString), true);
-                        }
-                    }
+                    setMaterialMap(value, material, graphics::MaterialKey::FlagBit::METALLIC_MAP_BIT, graphics::Material::MapChannel::METALLIC_MAP,
+                        baseUrl, [&](const QUrl& url) { material->setMetallicMap(url, true); });
                 } else if (key == "occlusionMap") {
                     auto value = materialJSON.value(key);
-                    if (value.isString()) {
-                        auto valueString = value.toString();
-                        if (valueString == FALLTHROUGH) {
-                            material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::OCCLUSION_MAP_BIT);
-                        } else {
-                            material->setOcclusionMap(baseUrl.resolved(valueString));
-                        }
-                    }
+                    setMaterialMap(value, material, graphics::MaterialKey::FlagBit::OCCLUSION_MAP_BIT, graphics::Material::MapChannel::OCCLUSION_MAP,
+                        baseUrl, [&](const QUrl& url) { material->setOcclusionMap(url); });
                 } else if (key == "scatteringMap") {
                     auto value = materialJSON.value(key);
-                    if (value.isString()) {
-                        auto valueString = value.toString();
-                        if (valueString == FALLTHROUGH) {
-                            material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::SCATTERING_MAP_BIT);
-                        } else {
-                            material->setScatteringMap(baseUrl.resolved(valueString));
-                        }
-                    }
+                    setMaterialMap(value, material, graphics::MaterialKey::FlagBit::SCATTERING_MAP_BIT, graphics::Material::MapChannel::SCATTERING_MAP,
+                        baseUrl, [&](const QUrl& url) { material->setScatteringMap(url); });
                 } else if (key == "lightMap") {
                     auto value = materialJSON.value(key);
-                    if (value.isString()) {
-                        auto valueString = value.toString();
-                        if (valueString == FALLTHROUGH) {
-                            material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::LIGHT_MAP_BIT);
-                        } else {
-                            material->setLightMap(baseUrl.resolved(valueString));
-                        }
-                    }
+                    setMaterialMap(value, material, graphics::MaterialKey::FlagBit::LIGHT_MAP_BIT, graphics::Material::MapChannel::LIGHT_MAP,
+                        baseUrl, [&](const QUrl& url) { material->setLightMap(url); });
                 } else if (key == "lightmapParams") {
                     auto value = materialJSON.value(key);
                     if (value.isString()) {
@@ -579,23 +598,13 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                     if (value.isString() && value.toString() == FALLTHROUGH) {
                         material->setPropertyDoesFallthrough(NetworkMToonMaterial::MToonFlagBit::SHADE_VAL_BIT);
                     } else {
-                        glm::vec3 color;
-                        bool isSRGB;
-                        bool valid = parseJSONColor(value, color, isSRGB);
-                        if (valid) {
-                            toonMaterial->setShade(color, isSRGB);
-                        }
+                        setMaterialColor(value, [&](glm::vec3 color, bool isSRGB) { toonMaterial->setShade(color, isSRGB); });
                     }
                 } else if (key == "shadeMap") {
                     auto value = materialJSON.value(key);
-                    if (value.isString()) {
-                        auto valueString = value.toString();
-                        if (valueString == FALLTHROUGH) {
-                            material->setPropertyDoesFallthrough(NetworkMToonMaterial::MToonFlagBit::SHADE_MAP_BIT);
-                        } else {
-                            toonMaterial->setShadeMap(baseUrl.resolved(valueString));
-                        }
-                    }
+                    setMaterialMap(value, material, NetworkMToonMaterial::MToonFlagBit::SHADE_MAP_BIT,
+                        (graphics::Material::MapChannel) NetworkMToonMaterial::MToonMapChannel::SHADE_MAP,
+                        baseUrl, [&](const QUrl& url) { toonMaterial->setShadeMap(url); });
                 } else if (key == "shadingShift") {
                     auto value = materialJSON.value(key);
                     if (value.isString() && value.toString() == FALLTHROUGH) {
@@ -605,14 +614,9 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                     }
                 } else if (key == "shadingShiftMap") {
                     auto value = materialJSON.value(key);
-                    if (value.isString()) {
-                        auto valueString = value.toString();
-                        if (valueString == FALLTHROUGH) {
-                            material->setPropertyDoesFallthrough(NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_MAP_BIT);
-                        } else {
-                            toonMaterial->setShadingShiftMap(baseUrl.resolved(valueString));
-                        }
-                    }
+                    setMaterialMap(value, material, NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_MAP_BIT,
+                        (graphics::Material::MapChannel) NetworkMToonMaterial::MToonMapChannel::SHADING_SHIFT_MAP,
+                        baseUrl, [&](const QUrl& url) { toonMaterial->setShadingShiftMap(url); });
                 } else if (key == "shadingToony") {
                     auto value = materialJSON.value(key);
                     if (value.isString() && value.toString() == FALLTHROUGH) {
@@ -625,34 +629,19 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                     if (value.isString() && value.toString() == FALLTHROUGH) {
                         material->setPropertyDoesFallthrough(NetworkMToonMaterial::MToonFlagBit::MATCAP_VAL_BIT);
                     } else {
-                        glm::vec3 color;
-                        bool isSRGB;
-                        bool valid = parseJSONColor(value, color, isSRGB);
-                        if (valid) {
-                            toonMaterial->setMatcap(color, isSRGB);
-                        }
+                        setMaterialColor(value, [&](glm::vec3 color, bool isSRGB) { toonMaterial->setMatcap(color, isSRGB); });
                     }
                 } else if (key == "matcapMap") {
                     auto value = materialJSON.value(key);
-                    if (value.isString()) {
-                        auto valueString = value.toString();
-                        if (valueString == FALLTHROUGH) {
-                            material->setPropertyDoesFallthrough(NetworkMToonMaterial::MToonFlagBit::MATCAP_MAP_BIT);
-                        } else {
-                            toonMaterial->setMatcapMap(baseUrl.resolved(valueString));
-                        }
-                    }
+                    setMaterialMap(value, material, NetworkMToonMaterial::MToonFlagBit::MATCAP_MAP_BIT,
+                        (graphics::Material::MapChannel) NetworkMToonMaterial::MToonMapChannel::MATCAP_MAP,
+                        baseUrl, [&](const QUrl& url) { toonMaterial->setMatcapMap(url); });
                 } else if (key == "parametricRim") {
                     auto value = materialJSON.value(key);
                     if (value.isString() && value.toString() == FALLTHROUGH) {
                         material->setPropertyDoesFallthrough(NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_VAL_BIT);
                     } else {
-                        glm::vec3 color;
-                        bool isSRGB;
-                        bool valid = parseJSONColor(value, color, isSRGB);
-                        if (valid) {
-                            toonMaterial->setParametricRim(color, isSRGB);
-                        }
+                        setMaterialColor(value, [&](glm::vec3 color, bool isSRGB) { toonMaterial->setParametricRim(color, isSRGB); });
                     }
                 } else if (key == "parametricRimFresnelPower") {
                     auto value = materialJSON.value(key);
@@ -670,14 +659,9 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                     }
                 } else if (key == "rimMap") {
                     auto value = materialJSON.value(key);
-                    if (value.isString()) {
-                        auto valueString = value.toString();
-                        if (valueString == FALLTHROUGH) {
-                            material->setPropertyDoesFallthrough(NetworkMToonMaterial::MToonFlagBit::RIM_MAP_BIT);
-                        } else {
-                            toonMaterial->setRimMap(baseUrl.resolved(valueString));
-                        }
-                    }
+                    setMaterialMap(value, material, NetworkMToonMaterial::MToonFlagBit::RIM_MAP_BIT,
+                        (graphics::Material::MapChannel) NetworkMToonMaterial::MToonMapChannel::RIM_MAP,
+                        baseUrl, [&](const QUrl& url) { toonMaterial->setRimMap(url); });
                 } else if (key == "rimLightingMix") {
                     auto value = materialJSON.value(key);
                     if (value.isString() && value.toString() == FALLTHROUGH) {
@@ -687,14 +671,9 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                     }
                 } else if (key == "uvAnimationMaskMap") {
                     auto value = materialJSON.value(key);
-                    if (value.isString()) {
-                        auto valueString = value.toString();
-                        if (valueString == FALLTHROUGH) {
-                            material->setPropertyDoesFallthrough(NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_MASK_MAP_BIT);
-                        } else {
-                            toonMaterial->setUVAnimationMaskMap(baseUrl.resolved(valueString));
-                        }
-                    }
+                    setMaterialMap(value, material, NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_MASK_MAP_BIT,
+                        (graphics::Material::MapChannel) NetworkMToonMaterial::MToonMapChannel::UV_ANIMATION_MASK_MAP,
+                        baseUrl, [&](const QUrl& url) { toonMaterial->setUVAnimationMaskMap(url); });
                 } else if (key == "uvAnimationScrollXSpeed") {
                     auto value = materialJSON.value(key);
                     if (value.isString() && value.toString() == FALLTHROUGH) {
@@ -742,12 +721,7 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                     if (value.isString() && value.toString() == FALLTHROUGH) {
                         material->setPropertyDoesFallthrough(NetworkMToonMaterial::MToonFlagBit::OUTLINE_VAL_BIT);
                     } else {
-                        glm::vec3 color;
-                        bool isSRGB;
-                        bool valid = parseJSONColor(value, color, isSRGB);
-                        if (valid) {
-                            toonMaterial->setOutline(color, isSRGB);
-                        }
+                        setMaterialColor(value, [&](glm::vec3 color, bool isSRGB) { toonMaterial->setOutline(color, isSRGB); });
                     }
                 }
                 // TODO: support outlineWidthTexture and outlineLightingMix
@@ -783,12 +757,7 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                 if (value.isString() && value.toString() == FALLTHROUGH) {
                     material->setPropertyDoesFallthrough(graphics::MaterialKey::FlagBit::ALBEDO_VAL_BIT);
                 } else {
-                    glm::vec3 color;
-                    bool isSRGB;
-                    bool valid = parseJSONColor(value, color, isSRGB);
-                    if (valid) {
-                        material->setAlbedo(color, isSRGB);
-                    }
+                    setMaterialColor(value, [&](glm::vec3 color, bool isSRGB) { material->setAlbedo(color, isSRGB); });
                 }
             } else if (key == "defaultFallthrough") {
                 auto value = materialJSON.value(key);
@@ -873,6 +842,7 @@ graphics::TextureMapPointer NetworkMaterial::fetchTextureMap(const QUrl& baseUrl
         qDebug() << "GeometryResource::setTextures: TextureCache dependency not available, skipping textures";
     }
     _textures[channel] = Texture { hfmTexture.name, texture };
+    setSampler(channel, hfmTexture.sampler);
 
     auto map = std::make_shared<graphics::TextureMap>();
     if (texture) {
@@ -978,6 +948,7 @@ NetworkMaterial::NetworkMaterial(const HFMMaterial& material, const QUrl& textur
         }
 
         setTextureMap(MapChannel::ALBEDO_MAP, map);
+        setSampler(MapChannel::ALBEDO_MAP, material.albedoTexture.sampler);
     }
 
 
@@ -985,22 +956,27 @@ NetworkMaterial::NetworkMaterial(const HFMMaterial& material, const QUrl& textur
         auto type = (material.normalTexture.isBumpmap ? image::TextureUsage::BUMP_TEXTURE : image::TextureUsage::NORMAL_TEXTURE);
         auto map = fetchTextureMap(textureBaseUrl, material.normalTexture, type, MapChannel::NORMAL_MAP);
         setTextureMap(MapChannel::NORMAL_MAP, map);
+        setSampler(MapChannel::NORMAL_MAP, material.normalTexture.sampler);
     }
 
     if (!material.roughnessTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.roughnessTexture, image::TextureUsage::ROUGHNESS_TEXTURE, MapChannel::ROUGHNESS_MAP);
         setTextureMap(MapChannel::ROUGHNESS_MAP, map);
+        setSampler(MapChannel::ROUGHNESS_MAP, material.roughnessTexture.sampler);
     } else if (!material.glossTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.glossTexture, image::TextureUsage::GLOSS_TEXTURE, MapChannel::ROUGHNESS_MAP);
         setTextureMap(MapChannel::ROUGHNESS_MAP, map);
+        setSampler(MapChannel::ROUGHNESS_MAP, material.glossTexture.sampler);
     }
 
     if (!material.metallicTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.metallicTexture, image::TextureUsage::METALLIC_TEXTURE, MapChannel::METALLIC_MAP);
         setTextureMap(MapChannel::METALLIC_MAP, map);
+        setSampler(MapChannel::METALLIC_MAP, material.metallicTexture.sampler);
     } else if (!material.specularTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.specularTexture, image::TextureUsage::SPECULAR_TEXTURE, MapChannel::METALLIC_MAP);
         setTextureMap(MapChannel::METALLIC_MAP, map);
+        setSampler(MapChannel::METALLIC_MAP, material.specularTexture.sampler);
     }
 
     if (!material.occlusionTexture.filename.isEmpty()) {
@@ -1009,16 +985,19 @@ NetworkMaterial::NetworkMaterial(const HFMMaterial& material, const QUrl& textur
             map->setTextureTransform(material.occlusionTexture.transform);
         }
         setTextureMap(MapChannel::OCCLUSION_MAP, map);
+        setSampler(MapChannel::OCCLUSION_MAP, material.occlusionTexture.sampler);
     }
 
     if (!material.emissiveTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.emissiveTexture, image::TextureUsage::EMISSIVE_TEXTURE, MapChannel::EMISSIVE_MAP);
         setTextureMap(MapChannel::EMISSIVE_MAP, map);
+        setSampler(MapChannel::EMISSIVE_MAP, material.emissiveTexture.sampler);
     }
 
     if (!material.scatteringTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.scatteringTexture, image::TextureUsage::SCATTERING_TEXTURE, MapChannel::SCATTERING_MAP);
         setTextureMap(MapChannel::SCATTERING_MAP, map);
+        setSampler(MapChannel::SCATTERING_MAP, material.scatteringTexture.sampler);
     }
 
     if (!material.lightmapTexture.filename.isEmpty()) {
@@ -1030,6 +1009,7 @@ NetworkMaterial::NetworkMaterial(const HFMMaterial& material, const QUrl& textur
             map->setLightmapOffsetScale(_lightmapParams.x, _lightmapParams.y);
         }
         setTextureMap(MapChannel::LIGHT_MAP, map);
+        setSampler(MapChannel::LIGHT_MAP, material.lightmapTexture.sampler);
     }
 }
 
@@ -1142,26 +1122,31 @@ NetworkMToonMaterial::NetworkMToonMaterial(const HFMMaterial& material, const QU
     if (!material.shadeTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.shadeTexture, image::TextureUsage::ALBEDO_TEXTURE, (MapChannel)MToonMapChannel::SHADE_MAP);
         setTextureMap((MapChannel)MToonMapChannel::SHADE_MAP, map);
+        setSampler((MapChannel)MToonMapChannel::SHADE_MAP, material.shadeTexture.sampler);
     }
 
     if (!material.shadingShiftTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.shadingShiftTexture, image::TextureUsage::ROUGHNESS_TEXTURE, (MapChannel)MToonMapChannel::SHADING_SHIFT_MAP);
         setTextureMap((MapChannel)MToonMapChannel::SHADING_SHIFT_MAP, map);
+        setSampler((MapChannel)MToonMapChannel::SHADING_SHIFT_MAP, material.shadingShiftTexture.sampler);
     }
 
     if (!material.matcapTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.matcapTexture, image::TextureUsage::EMISSIVE_TEXTURE, (MapChannel)MToonMapChannel::MATCAP_MAP);
         setTextureMap((MapChannel)MToonMapChannel::MATCAP_MAP, map);
+        setSampler((MapChannel)MToonMapChannel::MATCAP_MAP, material.matcapTexture.sampler);
     }
 
     if (!material.rimTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.rimTexture, image::TextureUsage::ALBEDO_TEXTURE, (MapChannel)MToonMapChannel::RIM_MAP);
         setTextureMap((MapChannel)MToonMapChannel::RIM_MAP, map);
+        setSampler((MapChannel)MToonMapChannel::RIM_MAP, material.rimTexture.sampler);
     }
 
     if (!material.uvAnimationTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.uvAnimationTexture, image::TextureUsage::ROUGHNESS_TEXTURE, (MapChannel)MToonMapChannel::UV_ANIMATION_MASK_MAP);
         setTextureMap((MapChannel)MToonMapChannel::UV_ANIMATION_MASK_MAP, map);
+        setSampler((MapChannel)MToonMapChannel::UV_ANIMATION_MASK_MAP, material.uvAnimationTexture.sampler);
     }
 }
 

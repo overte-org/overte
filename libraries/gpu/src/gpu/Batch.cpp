@@ -15,6 +15,7 @@
 
 #include <QDebug>
 #include "ShaderConstants.h"
+#include "TextureTable.h"
 
 #include "GPULogging.h"
 
@@ -96,6 +97,7 @@ void Batch::clear() {
     _streamFormats.clear();
     _textures.clear();
     _textureTables.clear();
+    _samplers.clear();
     _transforms.clear();
 
     _name.clear();
@@ -385,6 +387,9 @@ void Batch::setResourceTexture(uint32 slot, const TexturePointer& texture) {
 
     _params.emplace_back(_textures.cache(texture));
     _params.emplace_back(slot);
+    if (texture) {
+        _params.emplace_back(_samplers.cache(texture->getSampler()));
+    }
 }
 
 void Batch::setResourceTexture(uint32 slot, const TextureView& view) {
@@ -395,6 +400,14 @@ void Batch::setResourceTextureTable(const TextureTablePointer& textureTable, uin
     ADD_COMMAND(setResourceTextureTable);
     _params.emplace_back(_textureTables.cache(textureTable));
     _params.emplace_back(slot);
+    if (textureTable) {
+        TextureTable::Array textures = textureTable->getTextures();
+        for (auto& texture : textures) {
+            if (texture) {
+                _params.emplace_back(_samplers.cache(texture->getSampler()));
+            }
+        }
+    }
 }
 
 void Batch::setResourceFramebufferSwapChainTexture(uint32 slot, const FramebufferSwapChainPointer& framebuffer, unsigned int swapChainIndex, unsigned int renderBufferSlot) {
@@ -404,6 +417,11 @@ void Batch::setResourceFramebufferSwapChainTexture(uint32 slot, const Framebuffe
     _params.emplace_back(slot);
     _params.emplace_back(swapChainIndex);
     _params.emplace_back(renderBufferSlot);
+    if (framebuffer) {
+        const auto& resourceFramebuffer = framebuffer->get(swapChainIndex);
+        const auto& resourceTexture = resourceFramebuffer->getRenderBuffer(renderBufferSlot);
+        _params.emplace_back(_samplers.cache(resourceTexture->getSampler()));
+    }
 }
 
 void Batch::setFramebuffer(const FramebufferPointer& framebuffer) {

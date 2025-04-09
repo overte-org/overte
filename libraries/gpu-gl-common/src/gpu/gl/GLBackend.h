@@ -347,7 +347,7 @@ protected:
     void setupStereoSide(int side);
 #endif
 
-    virtual void setResourceTexture(unsigned int slot, const TexturePointer& resourceTexture);
+    virtual void setResourceTexture(unsigned int slot, const TexturePointer& resourceTexture, const Sampler& sampler);
     virtual void setFramebuffer(const FramebufferPointer& framebuffer);
     virtual void initInput() final;
     virtual void killInput() final;
@@ -530,7 +530,7 @@ protected:
 
     // Helper function that provides common code used by do_setResourceTexture and
     // do_setResourceTextureTable (in non-bindless mode)
-    void bindResourceTexture(uint32_t slot, const TexturePointer& texture);
+    void bindResourceTexture(uint32_t slot, const TexturePointer& texture, const Sampler& sampler);
 
     // update resource cache and do the gl unbind call with the current gpu::Texture cached at slot s
     void releaseResourceTexture(uint32_t slot);
@@ -539,7 +539,8 @@ protected:
 
     struct ResourceStageState {
         struct TextureState {
-            TextureReference _texture{};
+            TextureReference _texture {};
+            Sampler _sampler {};
             GLenum _target;
         };
         std::array<BufferReference, MAX_NUM_RESOURCE_BUFFERS> _buffers{};
