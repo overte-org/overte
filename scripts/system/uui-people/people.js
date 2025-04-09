@@ -72,18 +72,10 @@ function updatePalData() {
 	// Updates the UI to the list of people in the session.
 	palData = AvatarManager.getPalData().data;
 
-	if (location.domainID == Uuid.NONE) {
-		// We are in a serverless session. 
-		toQML({
-			type: "palList", data: [{
-				sessionDisplayName: MyAvatar.displayName,
-				sessionUUID: Uuid.NONE,
-				audioLoudness: scaleAudioExponential(MyAvatar.audioLoudness)
-			}]
-		});
-		return;
-	}
+	// Don't include ourself in the list
+	palData = palData.filter((user) => user.sessionUUID !== "");
 
+	// Set the audioLoudness value to a exponential value that fits within the bounds of the visual audio scale.
 	palData.map((user) => {user.audioLoudness = scaleAudioExponential(user.audioLoudness)});
 
 	toQML({ type: "palList", data: palData });
