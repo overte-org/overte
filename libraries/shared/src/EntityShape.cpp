@@ -20,7 +20,7 @@ const char* shapeNames[] = {
     "Octahedron",
     "Dodecahedron",
     "Icosahedron",
-    "Torus",  // Not implemented yet.
+    "Torus",
     "Cone",
     "Cylinder"
 };
