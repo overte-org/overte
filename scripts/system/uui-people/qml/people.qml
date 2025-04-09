@@ -71,7 +71,7 @@ Rectangle {
 		
 		UserAbout {
 			id: focusedUserAbout;
-			sessionDisplayName: focusedUserData.sessionDisplayName;
+			sessionDisplayName: focusedUserData && focusedUserData.sessionDisplayName || "";
 		}
 
 		UserAudio {
