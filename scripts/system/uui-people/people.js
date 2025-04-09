@@ -5,8 +5,6 @@ const directoryBase = Account.metaverseServerURL;
 // TODO: Get all user profile pictures?
 // TODO: User status (Public / Friends only / Private)
 // TODO: Focused user halo
-// TODO: User options (Block / mute)
-// TODO: User admin options (Kick / ban / silence)
 // TODO: Teleport + Teleport permissions
 
 let tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
@@ -92,6 +90,7 @@ function sendMyData() {
 	let data = {
 		displayName: MyAvatar.displayName,
 		icon: null,
+		canKick: Users.getCanKick()
 	}
 
 	// Get the current user's avatar icon.

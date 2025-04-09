@@ -6,7 +6,7 @@ Rectangle {
 	property var backgroundColor: index % 2 == 0 ? "#333" : "#2a2a2a";
 
 	width: parent.width;
-	height: isAdmin ? 60 : 40;
+	height: canKick ? 60 : 40;
 	color: backgroundColor;
 	anchors.horizontalCenter: parent.horizontalCenter;
 
@@ -25,7 +25,7 @@ Rectangle {
 
 		Text {
 			// Users real account name.
-			visible: isAdmin;
+			visible: canKick;
 			x: 30;
 			width: parent.width;
 			text: "OwO Notices your real name";
