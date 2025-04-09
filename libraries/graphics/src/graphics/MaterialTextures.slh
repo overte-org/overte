@@ -241,7 +241,7 @@ float fetchScatteringMap(vec2 uv) {
     // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
     vec3 blend = abs(normalMS.xyz);
     blend = max(blend - 0.2, vec3(0.0));
-    blend /= dot(blend, vec3(1.0));
+    blend /= (blend.x + blend.y + blend.z);
 
     TexMapArray texMapArray = getTexMapArray();
     vec2 uvXY = vec2(-inPosition.x, -inPosition.y);
@@ -589,7 +589,7 @@ float fetchUVAnimationMaskMap(vec2 uv) {
     // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
     vec3 blend = abs(normalMS.xyz);
     blend = max(blend - 0.2, vec3(0.0));
-    blend /= dot(blend, vec3(1.0));
+    blend /= (blend.x + blend.y + blend.z);
 
     TexMapArray texMapArray = getTexMapArray();
     vec2 uvXY = vec2(-inPosition.x, -inPosition.y);
