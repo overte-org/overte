@@ -117,6 +117,7 @@ Rectangle {
 		focusedUser = sessionUUID;
 		focusedUserData = users.filter((user) => user.sessionUUID === focusedUser)[0];
 		page = "User";
+		toScript({type: "focusedUser", user: focusedUser});
 	}
 
 	function fromScript(message) {
