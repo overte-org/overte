@@ -357,12 +357,12 @@ Script.include("/~/system/libraries/controllers.js");
         };
 
         this.notPointingAtEntity = function (controllerData) {
-            if (!hudRayPick.intersects) return false;
-            
+
             var intersection = controllerData.rayPicks[this.hand];
             var entityProperty = Entities.getEntityProperties(intersection.objectID, "type");
             var entityType = entityProperty.type;
             var hudRayPick = controllerData.hudRayPicks[this.hand];
+            if (!hudRayPick.intersects) return false;
             var point2d = this.calculateNewReticlePosition(hudRayPick.intersection);
 
             if ((intersection.type === Picks.INTERSECTED_ENTITY && entityType === "Web") ||
