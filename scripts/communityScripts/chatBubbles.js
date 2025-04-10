@@ -134,7 +134,7 @@ function ChatBubbles_RecvMsg(channel, msg, senderID, localOnly) {
     if (channel !== CHAT_CHANNEL && channel !== TYPING_NOTIFICATION_CHANNEL) { return; }
 
     // don't spawn bubbles for MyAvatar if the setting is disabled
-    if (!SELF_BUBBLES && (senderID === MyAvatar.sessionID || !MyAvatar.sessionID)) { return; }
+    //if (!SELF_BUBBLES && (senderID === MyAvatar.sessionID || !MyAvatar.sessionID)) { return; }
 
 	let data;
 	try {
