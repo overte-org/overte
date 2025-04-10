@@ -22,7 +22,7 @@ var DEFAULT_SCRIPTS_COMBINED = [
     "system/menu.js",
     "system/bubble.js",
     "system/snapshot.js",
-    "system/pal.js", // "system/mod.js", // older UX, if you prefer
+    "system/people/people.js", //"system/pal.js" for older UIX, "system/mod.js" for older UIX.
     "system/avatarapp.js",
     "system/settings/settings.js",
     "system/makeUserConnection.js",
