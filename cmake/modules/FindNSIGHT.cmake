@@ -45,7 +45,6 @@ if (WIN32)
 	 	PATHS
 	 		"C:/Program Files/NVIDIA Corporation/NvToolsExt")
 
-  add_paths_to_fixup_libs("C:/Program Files/NVIDIA Corporation/NvToolsExt/bin/${ARCH_DIR}")
   include(SelectLibraryConfigurations)
   select_library_configurations(NSIGHT)
 endif ()

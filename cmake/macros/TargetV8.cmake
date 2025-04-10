@@ -7,9 +7,11 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 macro(TARGET_V8)
+    find_package(v8 REQUIRED)
+    target_link_libraries(${TARGET_NAME} v8::v8)
 
-find_package(V8 REQUIRED)
-target_include_directories(${TARGET_NAME} PUBLIC ${V8_INCLUDE_DIRS})
-target_link_libraries(${TARGET_NAME} ${V8_LIBRARIES})
+    if (WIN32)
+        target_link_libraries(${TARGET_NAME} Dbghelp)
+    endif()
 
 endmacro()

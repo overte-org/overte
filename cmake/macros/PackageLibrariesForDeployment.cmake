@@ -10,59 +10,37 @@
 #
 
 macro(PACKAGE_LIBRARIES_FOR_DEPLOYMENT)
-  if (WIN32)
-    configure_file(
-      ${HF_CMAKE_DIR}/templates/FixupBundlePostBuild.cmake.in
-      ${CMAKE_CURRENT_BINARY_DIR}/FixupBundlePostBuild.cmake
-      @ONLY
-    )
+    if (WIN32)
+        set(PLUGIN_PATH "plugins")
 
-    set(PLUGIN_PATH "plugins")
+        get_target_property(Qt_Core_Location Qt5::Core LOCATION)
+        get_filename_component(QT_BIN_DIR ${Qt_Core_Location} DIRECTORY)
+        find_program(WINDEPLOYQT_COMMAND windeployqt PATHS ${QT_BIN_DIR})
 
-    # add a post-build command to copy DLLs beside the executable
-    add_custom_command(
-      TARGET ${TARGET_NAME}
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND}
-        -DBUNDLE_EXECUTABLE="$<TARGET_FILE:${TARGET_NAME}>"
-        -DBUNDLE_PLUGIN_DIR="$<TARGET_FILE_DIR:${TARGET_NAME}>/${PLUGIN_PATH}"
-        -P "${CMAKE_CURRENT_BINARY_DIR}/FixupBundlePostBuild.cmake"
-    )
+        if (NOT WINDEPLOYQT_COMMAND)
+            message(FATAL_ERROR "Could not find windeployqt at ${QT_BIN_DIR}. windeployqt is required.")
+        endif ()
 
-    find_program(WINDEPLOYQT_COMMAND windeployqt PATHS ${QT_DIR}/bin NO_DEFAULT_PATH)
+        # add a post-build command to call windeployqt to copy Qt plugins
+        set(CMD "${WINDEPLOYQT_COMMAND} ${EXTRA_DEPLOY_OPTIONS} --no-compiler-runtime --no-opengl-sw --no-angle -no-system-d3d-compiler")
 
-    if (NOT WINDEPLOYQT_COMMAND)
-      message(FATAL_ERROR "Could not find windeployqt at ${QT_DIR}/bin. windeployqt is required.")
+        file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/windeploy-${TARGET_NAME}.bat" "${CMD} %*")
+        add_custom_command(
+                TARGET ${TARGET_NAME}
+                POST_BUILD
+                COMMAND "${CMAKE_CURRENT_BINARY_DIR}/windeploy-${TARGET_NAME}.bat" $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>,$<CONFIG:RelWithDebInfo>>:--release> \"$<TARGET_FILE:${TARGET_NAME}>\"
+        )
+
     endif ()
 
-    # add a post-build command to call windeployqt to copy Qt plugins
+    # Add a post-build command to copy the libraries beside the executable
     add_custom_command(
-      TARGET ${TARGET_NAME}
-      POST_BUILD
-      COMMAND CMD /C "SET PATH=${QT_DIR}/bin;%PATH% && ${WINDEPLOYQT_COMMAND}\
-       ${EXTRA_DEPLOY_OPTIONS} $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>,$<CONFIG:RelWithDebInfo>>:--release>\
-       --no-compiler-runtime --no-opengl-sw --no-angle -no-system-d3d-compiler \"$<TARGET_FILE:${TARGET_NAME}>\""
+            TARGET ${TARGET_NAME}
+            POST_BUILD
+            COMMAND ${CMAKE_COMMAND}
+            -DBUNDLE_EXECUTABLE="$<TARGET_FILE:${TARGET_NAME}>"
+            -DBUNDLE_PLUGIN_DIR="$<TARGET_FILE_DIR:${TARGET_NAME}>/${PLUGIN_PATH}"
+            -DLIB_PATHS="${CMAKE_BINARY_DIR}/conanlibs/$<CONFIGURATION>"
+            -P "${CMAKE_SOURCE_DIR}/cmake/FixupBundlePostBuild.cmake"
     )
-
-    set(QTAUDIO_PATH "$<TARGET_FILE_DIR:${TARGET_NAME}>/audio")
-    set(QTAUDIO_WIN7_PATH "$<TARGET_FILE_DIR:${TARGET_NAME}>/audioWin7/audio")
-    set(QTAUDIO_WIN8_PATH "$<TARGET_FILE_DIR:${TARGET_NAME}>/audioWin8/audio")
-
-    # copy qtaudio_wasapi.dll and qtaudio_windows.dll in the correct directories for runtime selection
-    add_custom_command(
-      TARGET ${TARGET_NAME}
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E make_directory "${QTAUDIO_WIN7_PATH}"
-      COMMAND ${CMAKE_COMMAND} -E make_directory "${QTAUDIO_WIN8_PATH}"
-      # copy release DLLs
-      COMMAND if exist "${QTAUDIO_PATH}/qtaudio_windows.dll" ( ${CMAKE_COMMAND} -E copy "${QTAUDIO_PATH}/qtaudio_windows.dll" "${QTAUDIO_WIN7_PATH}" )
-      COMMAND if exist "${QTAUDIO_PATH}/qtaudio_windows.dll" ( ${CMAKE_COMMAND} -E copy "${WASAPI_DLL_PATH}/qtaudio_wasapi.dll" "${QTAUDIO_WIN8_PATH}" )
-      # copy debug DLLs
-      COMMAND if exist "${QTAUDIO_PATH}/qtaudio_windowsd.dll" ( ${CMAKE_COMMAND} -E copy "${QTAUDIO_PATH}/qtaudio_windowsd.dll" "${QTAUDIO_WIN7_PATH}" )
-      COMMAND if exist "${QTAUDIO_PATH}/qtaudio_windowsd.dll" ( ${CMAKE_COMMAND} -E copy "${WASAPI_DLL_PATH}/qtaudio_wasapid.dll" "${QTAUDIO_WIN8_PATH}" )
-      # remove directory
-      COMMAND  ${CMAKE_COMMAND} -E remove_directory "${QTAUDIO_PATH}"
-    )
-
-  endif ()
 endmacro()
