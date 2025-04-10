@@ -18,8 +18,9 @@ Rectangle {
 	property var focusedUserData: {sessionDisplayName: ""; audioLoudness: 0.0};
 	property var focusedUser: null;
 	property var page: "Home";
-	property var pages: ["Home", "User", "EditSelf"];
+	property var pages: ["Home", "User", "EditSelf", "Connections"];
 	property var adminUserData: {};
+	property var connections: [];
 
 	Column {
 		// Home page
@@ -41,13 +42,6 @@ Rectangle {
 			icon: myData.icon;
 			isSelf: true;
 
-			MouseArea {
-				anchors.fill: parent;
-
-				onClicked: {
-					page = "EditSelf";
-				}
-			}
 		}
 
 		UserList {
@@ -192,6 +186,25 @@ Rectangle {
 		
 	}
 
+	ColumnLayout {
+		// Connections
+		width: parent.width - 20;
+		height: parent.height;
+		spacing: 15;
+		anchors.horizontalCenter: parent.horizontalCenter;
+		visible: page == "Connections";
+
+		UserConnections {}
+
+		BackButton {}
+
+		Item {
+			// Spacer
+			height: 1;
+			width: 1;
+		}
+	}
+
 	function toUserPage(sessionUUID){
 		focusedUser = sessionUUID;
 		focusedUserData = users.filter((user) => user.sessionUUID === focusedUser)[0];
@@ -215,6 +228,11 @@ Rectangle {
 
 		if (message.type == "adminUserData") {
 			adminUserData = message.data;
+			return;
+		}
+
+		if (message.type == "connections") {
+			connections = message.data;
 			return;
 		}
 	}

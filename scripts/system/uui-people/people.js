@@ -2,7 +2,6 @@
 
 const directoryBase = Account.metaverseServerURL;
 
-// TODO: Connections
 // FIXME: Check if focus user exists before issuing commands on them
 // TODO: User join / leave notifications
 
@@ -90,6 +89,16 @@ function fromQML(event) {
 		}
 	}
 
+	if (event.type == "addFriend"){
+		addFriend(event.username);
+		return;
+	}
+
+	if (event.type == "removeFriend"){
+		removeFriend(event.username);
+		return;
+	}
+
 }
 
 function shutdownScript() {
@@ -135,6 +144,8 @@ function sendMyData() {
 		username: AccountServices.username
 	}
 
+	updateConnections();
+
 	// Get the current user's avatar icon.
 	var url = directoryBase + '/api/v1/users?filter=connections&per_page=10&search=' + encodeURIComponent(data.displayName);
 
@@ -151,9 +162,8 @@ function sendMyData() {
 	});
 }
 
-function request(url, method = "GET") {
+function request(url, method = "GET", body) {
 	return new Promise((resolve) => {
-
 		var req = new XMLHttpRequest();
 		req.onreadystatechange = function () {
 			if (req.readyState === req.DONE) {
@@ -167,7 +177,8 @@ function request(url, method = "GET") {
 		};
 
 		req.open(method, url);
-		req.send();
+		if (method == `POST`) req.setRequestHeader("Content-Type", "application/json");
+		req.send(JSON.stringify(body));
 	})
 }
 
@@ -203,4 +214,27 @@ function onUsernameFromIDReply(sessionUUID, userName, machineFingerprint, isAdmi
 		isAdmin: isAdmin
 	};
 	toQML({type: "adminUserData", data: adminUserData});
+}
+
+async function updateConnections(){
+	console.log(`Updating connections`);
+	let req = await request(`https://mv.overte.org/server/api/v1/users/connections`);
+	// We have a response we expect
+	if (!req.includes('{')) return; 
+	
+	req = JSON.parse(req);
+
+	if (req.status == "success") {
+		const totalConnections = req.total_entries;
+		req = req.data.users; // Now we only have the contact data and not any of the extra
+
+		toQML({type: "connections", data: {connections: req, totalConnections: totalConnections}});
+	}
+}
+
+function addFriend(username){
+	request(`${directoryBase}/api/v1/user/friends`, `POST`, {username: username});
+}
+function removeFriend(username) {
+	request(`${directoryBase}/api/v1/user/friends/${username}`, `DELETE`);
 }

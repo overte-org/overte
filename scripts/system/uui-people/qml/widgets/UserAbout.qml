@@ -54,10 +54,20 @@ RowLayout {
 			source: avatarImageElement;
 			maskSource: avatarImageBackground;
 		}
+
+		MouseArea {
+			anchors.fill: parent;
+			visible: isSelf;
+
+			onClicked: {
+				page = "EditSelf";
+			}
+		}
 	}
 
 	Column {
 		width: 300;
+		
 		Text {
 			text: sessionDisplayName || "";
 			font.pointSize: 16;
@@ -67,10 +77,20 @@ RowLayout {
 			wrapMode: Text.WrapAnywhere;
 			elide: Text.ElideRight;
 			maximumLineCount: 2;
+
+			MouseArea {
+				anchors.fill: parent;
+				visible: isSelf;
+
+				onClicked: {
+					page = "EditSelf";
+				}
+			}
 		}
 
 		RowLayout {
 			visible: isSelf;
+			width: parent.width;
 
 			Rectangle {
 				// Squarcle
@@ -82,11 +102,63 @@ RowLayout {
 			}
 
 			Text {
-				x: parent.children[0].width + 10;
+				x: parent.children[0].width;
 				text: statusLiteral[myData.findableBy] || "...";
 				font.pointSize: 16;
 				color: statusColors[myData.findableBy] || "magenta";
 				Layout.alignment: Qt.AlignVCenter;
+			}
+
+			Item {
+				Layout.fillWidth: true;
+				// Spacer
+				width: 1;
+				height: 1;
+			}
+
+			MouseArea {
+				anchors.fill: parent;
+				visible: isSelf;
+
+				onClicked: {
+					page = "EditSelf";
+				}
+			}
+		}
+		RowLayout {
+			visible: isSelf;
+			width: parent.width;
+
+			Rectangle {
+				// Squarcle
+				width: 15;
+				height: 15;
+				radius: 100;
+				color: "teal";
+				Layout.alignment: Qt.AlignVCenter;
+			}
+
+			Text {
+				text: (connections.totalConnections || "0");
+				color: "white"
+				font.pointSize: 16;
+				Layout.alignment: Qt.AlignVCenter;
+			}
+
+			Item {
+				Layout.fillWidth: true;
+				// Spacer
+				width: 1;
+				height: 1;
+			}
+
+			MouseArea {
+				anchors.fill: parent;
+				visible: isSelf;
+
+				onClicked: {
+					page = "Connections";
+				}
 			}
 		}
 
