@@ -17,6 +17,7 @@ const CONFIG_UPDATE_CHANNEL = "ChatBubbles-Config";
 
 const BUBBLE_LIFETIME_SECS = 10;
 const MAX_DISTANCE = 20;
+const SELF_BUBBLES = true;
 
 let settings = {
 	enabled: true,
@@ -112,8 +113,9 @@ function ChatBubbles_HideTypingIndicator(senderID) {
 	delete typingIndicators[senderID];
 }
 
-function ChatBubbles_RecvMsg(channel, msg, senderID, _localOnly) {
-    if (channel === CONFIG_UPDATE_CHANNEL) {
+function ChatBubbles_RecvMsg(channel, msg, senderID, localOnly) {
+    // IPC between ArmoredChat's config window and this script
+    if (channel === CONFIG_UPDATE_CHANNEL && localOnly) {
         let data;
         try {
             data = JSON.parse(msg);
@@ -128,7 +130,11 @@ function ChatBubbles_RecvMsg(channel, msg, senderID, _localOnly) {
         return;
     }
 
+    // not any other message we're interested in
     if (channel !== CHAT_CHANNEL && channel !== TYPING_NOTIFICATION_CHANNEL) { return; }
+
+    // don't spawn bubbles for MyAvatar if the setting is disabled
+    if (!SELF_BUBBLES && (senderID === MyAvatar.sessionID || !MyAvatar.sessionID)) { return; }
 
 	let data;
 	try {
