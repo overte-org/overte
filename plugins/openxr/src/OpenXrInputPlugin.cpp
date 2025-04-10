@@ -398,7 +398,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
         // not really usable, bare minimum
         {"/interaction_profiles/khr/simple_controller", {
             {"left_secondary_click",   hand_left  + "/menu/click"},
-            {"left_trigger_click",     hand_left  + "/select/click"},
+            {"left_trigger_value",     hand_left  + "/select/click"},
             {"left_pose",              hand_left  + "/grip/pose"},
             {"left_haptic",            "/user/hand/left/output/haptic"},
 
@@ -433,7 +433,6 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"left_secondary_click",   hand_left  + "/y/click"},
             {"left_squeeze_value",     hand_left  + "/squeeze/value"},
             {"left_trigger_value",     hand_left  + "/trigger/value"},
-            {"left_trigger_click",     hand_left  + "/trigger/click"},
             {"left_thumbstick",        hand_left  + "/thumbstick"},
             {"left_thumbstick_click",  hand_left  + "/thumbstick/click"},
             {"left_thumbstick_touch",  hand_left  + "/thumbstick/touch"},
@@ -444,7 +443,6 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"right_secondary_click",  hand_right  + "/b/click"},
             {"right_squeeze_value",    hand_right  + "/squeeze/value"},
             {"right_trigger_value",    hand_right  + "/trigger/value"},
-            {"right_trigger_click",    hand_right  + "/trigger/click"},
             {"right_thumbstick",       hand_right  + "/thumbstick"},
             {"right_thumbstick_click", hand_right  + "/thumbstick/click"},
             {"right_thumbstick_touch", hand_right  + "/thumbstick/touch"},
@@ -455,7 +453,6 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"left_secondary_click",   hand_left  + "/menu/click"},
             {"left_squeeze_value",     hand_left  + "/squeeze/click"},
             {"left_trigger_value",     hand_left  + "/trigger/value"},
-            {"left_trigger_click",     hand_left  + "/trigger/click"},
             {"left_thumbstick",        hand_left  + "/thumbstick"},
             {"left_thumbstick_click",  hand_left  + "/trackpad/click"},
             {"left_thumbstick_touch",  hand_left  + "/trackpad/touch"},
@@ -465,7 +462,6 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"right_secondary_click",   hand_right  + "/menu/click"},
             {"right_squeeze_value",     hand_right  + "/squeeze/click"},
             {"right_trigger_value",     hand_right  + "/trigger/value"},
-            {"right_trigger_click",     hand_right  + "/trigger/click"},
             {"right_thumbstick",        hand_right  + "/thumbstick"},
             {"right_thumbstick_click",  hand_right  + "/trackpad/click"},
             {"right_thumbstick_touch",  hand_right  + "/trackpad/touch"},
@@ -619,6 +615,23 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         auto action = _actions.at(name)->getFloat();
         if (action.isActive) {
             _axisStateMap[channel].value = action.currentState;
+        }
+    }
+
+    // emulate stick clicks for controllers that don't have them
+    {
+        const auto& left_trigger = _actions.at("left_trigger_value")->getFloat();
+        const auto& left_click = _actions.at("left_trigger_click")->getBool();
+
+        const auto& right_trigger = _actions.at("right_trigger_value")->getFloat();
+        const auto& right_click = _actions.at("right_trigger_click")->getBool();
+
+        if (!left_click.isActive && (left_trigger.isActive && left_trigger.currentState > 0.9f)) {
+            _buttonPressedMap.insert(controller::LT_CLICK);
+        }
+
+        if (!right_click.isActive && (right_trigger.isActive && right_trigger.currentState > 0.9f)) {
+            _buttonPressedMap.insert(controller::RT_CLICK);
         }
     }
 
