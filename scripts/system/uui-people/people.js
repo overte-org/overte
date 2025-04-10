@@ -9,8 +9,8 @@ let tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 let active = false;
 
 let appButton = tablet.addButton({
-	icon: Script.resolvePath("./img/icon_white.png"),
-	activeIcon: Script.resolvePath("./img/icon_black.png"),
+	icon: Script.resolvePath("./img/icon_white.svg"),
+	activeIcon: Script.resolvePath("./img/icon_black.svg"),
 	text: "PEOPLE",
 	sortOrder: 7,
 	isActive: active,
