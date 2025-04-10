@@ -232,7 +232,7 @@ Rectangle {
                                 text = ""
                                 toScript({type: "action", action: "end_typing"});
                             } else {
-                                if (text === "") {
+                                if (text === "" || (event.key === Qt.Key_Backspace && text.length === 1)) {
                                     toScript({type: "action", action: "end_typing"});
                                 } else {
                                     toScript({type: "action", action: "start_typing"});
