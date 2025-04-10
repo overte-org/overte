@@ -42,6 +42,7 @@
 #include <DomainAccountManager.h>
 #include <EntityScriptServerLogClient.h>
 #include <FramebufferCache.h>
+#include <gl/GLHelpers.h>
 #include <GPUIdent.h>
 #include <graphics-scripting/GraphicsScriptingInterface.h>
 #include <hfm/ModelFormatRegistry.h>
@@ -56,6 +57,9 @@
 #include <networking/CloseEventSender.h>
 #include <OffscreenUi.h>
 #include <PickManager.h>
+#include <platform/Platform.h>
+#include <platform/PlatformKeys.h>
+#include <platform/backend/PlatformInstance.h>
 #include <plugins/OculusPlatformPlugin.h>
 #include <plugins/PluginManager.h>
 #include <plugins/PluginUtils.h>
@@ -1885,12 +1889,31 @@ void Application::idle() {
 
     _gameLoopCounter.increment();
 
+    // Perform one-time startup checks in case we need to show warnings
     {
         static std::once_flag once;
-        std::call_once(once, [] {
+        std::call_once(once, [this] {
             const QString& bookmarksError = DependencyManager::get<AvatarBookmarks>()->getBookmarkError();
             if (!bookmarksError.isEmpty()) {
                 OffscreenUi::asyncWarning("Avatar Bookmarks Error", "JSON parse error: " + bookmarksError, QMessageBox::Ok, QMessageBox::Ok);
+            }
+
+            QString os = platform::getComputer()[platform::keys::computer::OS].dump().c_str();
+            os = os.replace("\"", "");
+            GPUIdent* gpuIdent = GPUIdent::getInstance();
+            QString vendor = platform::Instance::findGPUVendorInDescription(gpuIdent->getName().toStdString());
+            QString renderer = gl::ContextInfo::get().renderer.c_str();
+            QString api = _graphicsEngine->getGPUContext()->getBackendVersion().c_str();
+            QString driver = gpuIdent->getDriver();
+            QString fullDriverToTest = os + " " + vendor + " " + renderer + " " + api + " " + driver;
+            if (fullDriverToTest != _prevCheckedDriver.get()) {
+                QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
+                QNetworkRequest request(QUrl("https://mv.overte.org/gpu_driver_blocklist.json"));
+                request.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
+                request.setHeader(QNetworkRequest::UserAgentHeader, NetworkingConstants::OVERTE_USER_AGENT);
+                QNetworkReply* reply = networkAccessManager.get(request);
+                auto onFinished = std::bind(&Application::processDriverBlocklistReply, this, fullDriverToTest, os, vendor, renderer, api, driver.replace(" ", "."));
+                connect(reply, &QNetworkReply::finished, this, onFinished);
             }
         });
     }
