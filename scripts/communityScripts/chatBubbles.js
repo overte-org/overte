@@ -164,6 +164,9 @@ function ChatBubbles_DeleteAll() {
 		Entities.deleteEntity(indicator.entity);
 		Script.clearInterval(indicator.interval);
 	}
+
+    currentBubbles = {};
+    typingIndicators = {};
 }
 
 function ChatBubbles_Delete(sessionID) {
@@ -173,11 +176,13 @@ function ChatBubbles_Delete(sessionID) {
     if (bubble) {
         Entities.deleteEntity(bubble.entity);
         Script.clearTimeout(bubble.timeout);
+        delete currentBubbles[sessionID];
     }
 
     if (indicator) {
-		Entities.deleteEntity(indicator.entity);
-		Script.clearInterval(indicator.interval);
+        Entities.deleteEntity(indicator.entity);
+        Script.clearInterval(indicator.interval);
+        delete typingIndicators[sessionID];
     }
 }
 
