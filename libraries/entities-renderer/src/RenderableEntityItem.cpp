@@ -808,6 +808,7 @@ void EntityRenderer::updateShapeKeyBuilderFromMaterials(ShapeKey::Builder& build
     builder.withCullFaceMode(materials->second.getCullFaceMode());
 
     graphics::MaterialKey drawMaterialKey = materials->second.getMaterialKey();
+    // TODO: support lit/unlit mtoon
     if (!materials->second.isMToon() && drawMaterialKey.isUnlit()) {
         builder.withUnlit();
     }

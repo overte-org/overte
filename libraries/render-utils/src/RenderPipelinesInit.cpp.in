@@ -1,0 +1,315 @@
+
+//
+//  RenderPipelinesInit.cpp
+//  render-utils/src/
+//
+//  Created by HifiExperiments on 10/10/2024.
+//  Copyright 2024 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#include "DeferredLightingEffect.h"
+#include "StencilMaskPass.h"
+
+#include <graphics/ShaderConstants.h>
+#include <material-networking/TextureCache.h>
+#include <render/Engine.h>
+#include <render/ShapePipeline.h>
+#include "render-utils/ShaderConstants.h"
+#include <shaders/Shaders.h>
+
+using namespace render;
+using namespace gpu;
+using namespace std::placeholders;
+using namespace shader::render_utils::program;
+using Key = ShapeKey;
+
+namespace ru {
+    using render_utils::slot::texture::Texture;
+    using render_utils::slot::buffer::Buffer;
+}
+
+namespace gr {
+    using graphics::slot::texture::Texture;
+    using graphics::slot::buffer::Buffer;
+}
+
+void initDeferredPipelines(ShapePlumber& plumber, const ShapePipeline::BatchSetter& batchSetter, const ShapePipeline::ItemSetter& itemSetter);
+void initForwardPipelines(ShapePlumber& plumber);
+void initZPassPipelines(ShapePlumber& plumber, StatePointer state, const ShapePipeline::BatchSetter& batchSetter, const ShapePipeline::ItemSetter& itemSetter);
+void initMirrorPipelines(ShapePlumber& plumber, StatePointer state, const ShapePipeline::BatchSetter& batchSetter, const ShapePipeline::ItemSetter& itemSetter, bool forward);
+void sortAndRenderZPassShapes(const ShapePlumberPointer& shapePlumber, const RenderContextPointer& renderContext, const ShapeBounds& inShapes, ItemBounds &itemBounds);
+
+void addPlumberPipeline(ShapePlumber& plumber,
+        const ShapeKey& key, int programId, StatePointer& baseState,
+        const ShapePipeline::BatchSetter& batchSetter, const ShapePipeline::ItemSetter& itemSetter);
+
+void batchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* args);
+void lightBatchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* args);
+static bool forceLightBatchSetter { false };
+
+// builder, deferred pipeline, shadow pipeline, forward pipeline (or 0 if unsupported)
+std::vector<std::tuple<Key::Builder, uint32_t, uint32_t, uint32_t>> ALL_PIPELINES = {
+
+@ALL_PIPELINES_MAP@
+
+};
+
+void initDeferredPipelines(ShapePlumber& plumber, const ShapePipeline::BatchSetter& batchSetter, const ShapePipeline::ItemSetter& itemSetter) {
+    auto addPipeline = std::bind(&addPlumberPipeline, std::ref(plumber), _1, _2, std::make_shared<State>(), _3, _4);
+
+    for (auto& pipeline : ALL_PIPELINES) {
+        if (std::get<0>(pipeline).build().isFaded()) {
+            addPipeline(std::get<0>(pipeline), std::get<1>(pipeline), batchSetter, itemSetter);
+        } else {
+            addPipeline(std::get<0>(pipeline), std::get<1>(pipeline), nullptr, nullptr);
+        }
+    }
+}
+
+void initForwardPipelines(ShapePlumber& plumber) {
+    auto addPipelineBind = std::bind(&addPlumberPipeline, std::ref(plumber), _1, _2, std::make_shared<State>(), _3, _4);
+
+    // Disable fade on the forward pipeline, all shaders get added twice, once with the fade key and once without
+    auto addPipeline = [&](const ShapeKey& key, int programId) {
+        addPipelineBind(key, programId, nullptr, nullptr);
+        addPipelineBind(Key::Builder(key).withFade(), programId, nullptr, nullptr);
+    };
+
+    // Forward pipelines need the lightBatchSetter for opaques and transparents
+    forceLightBatchSetter = true;
+
+    for (auto& pipeline : ALL_PIPELINES) {
+        if (std::get<3>(pipeline) != 0) {
+            addPipeline(std::get<0>(pipeline), std::get<3>(pipeline));
+        }
+    }
+
+    forceLightBatchSetter = false;
+}
+
+void addPlumberPipeline(ShapePlumber& plumber,
+        const ShapeKey& key, int programId, StatePointer& baseState,
+        const ShapePipeline::BatchSetter& extraBatchSetter, const ShapePipeline::ItemSetter& itemSetter) {
+    // These key-values' pipelines are added by this functor in addition to the key passed
+    assert(!key.isWireframe());
+    assert(!key.isDepthBiased());
+    assert(key.isCullFace());
+
+    ShaderPointer program = Shader::createProgram(programId);
+
+    for (int i = 0; i < 4; i++) {
+        bool isBiased = (i & 1);
+        bool isWireframed = (i & 2);
+        for (int cullFaceMode = graphics::MaterialKey::CullFaceMode::CULL_NONE; cullFaceMode < graphics::MaterialKey::CullFaceMode::NUM_CULL_FACE_MODES; cullFaceMode++) {
+            auto state = std::make_shared<State>(*baseState);
+            key.isTranslucent() ? PrepareStencil::testMaskResetNoAA(*state) : PrepareStencil::testMaskDrawShape(*state);
+
+            // Depth test depends on transparency
+            state->setDepthTest(true, !key.isTranslucent(), LESS_EQUAL);
+            state->setBlendFunction(key.isTranslucent(),
+                    State::SRC_ALPHA, State::BLEND_OP_ADD, State::INV_SRC_ALPHA,
+                    State::FACTOR_ALPHA, State::BLEND_OP_ADD, State::ONE);
+
+            ShapeKey::Builder builder(key);
+            builder.withCullFaceMode((graphics::MaterialKey::CullFaceMode)cullFaceMode);
+            state->setCullMode((State::CullMode)cullFaceMode);
+            if (isWireframed) {
+                builder.withWireframe();
+                state->setFillMode(State::FILL_LINE);
+            }
+            if (isBiased) {
+                builder.withDepthBias();
+                state->setDepthBias(1.0f);
+                state->setDepthBiasSlopeScale(1.0f);
+            }
+
+            auto baseBatchSetter = (forceLightBatchSetter || key.isTranslucent() || key.isMToon()) ? &lightBatchSetter : &batchSetter;
+            ShapePipeline::BatchSetter finalBatchSetter;
+            if (extraBatchSetter) {
+                finalBatchSetter = [baseBatchSetter, extraBatchSetter](const ShapePipeline& pipeline, Batch& batch, Args* args) {
+                    baseBatchSetter(pipeline, batch, args);
+                    extraBatchSetter(pipeline, batch, args);
+                };
+            } else {
+                finalBatchSetter = baseBatchSetter;
+            }
+            plumber.addPipeline(builder.build(), program, state, finalBatchSetter, itemSetter);
+        }
+    }
+}
+
+void batchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* args) {
+    // Set a default albedo map
+    batch.setResourceTexture(gr::Texture::MaterialAlbedo, DependencyManager::get<TextureCache>()->getWhiteTexture());
+
+    // Set a default material
+    if (pipeline.locations->materialBufferUnit) {
+        // Create a default schema
+        static BufferView schemaBuffer;
+        static std::once_flag once;
+        std::call_once(once, [] {
+            graphics::MultiMaterial::Schema schema;
+            graphics::MaterialKey schemaKey;
+
+            schema._albedo = ColorUtils::sRGBToLinearVec3(vec3(1.0f));
+            schema._opacity = 1.0f;
+            schema._metallic = 0.1f;
+            schema._roughness = 0.9f;
+
+            schemaKey.setAlbedo(true);
+            schemaKey.setTranslucentFactor(false);
+            schemaKey.setMetallic(true);
+            schemaKey.setGlossy(true);
+            schema._key = (uint32_t)schemaKey._flags.to_ulong();
+
+            auto schemaSize = sizeof(graphics::MultiMaterial::Schema);
+            schemaBuffer = BufferView(std::make_shared<Buffer>(schemaSize, (const Byte*) &schema, schemaSize));
+        });
+
+        batch.setUniformBuffer(gr::Buffer::Material, schemaBuffer);
+    }
+}
+
+void lightBatchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* args) {
+    // Set the batch
+    batchSetter(pipeline, batch, args);
+
+    // Set the light
+    if (pipeline.locations->keyLightBufferUnit) {
+        DependencyManager::get<DeferredLightingEffect>()->setupKeyLightBatch(args, batch);
+    }
+}
+
+void initZPassPipelines(ShapePlumber& plumber, StatePointer state, const ShapePipeline::BatchSetter& batchSetter, const ShapePipeline::ItemSetter& itemSetter) {
+    auto addPipeline = std::bind(&addPlumberPipeline, std::ref(plumber), _1, _2, state, _3, _4);
+
+    for (auto& pipeline : ALL_PIPELINES) {
+        if (std::get<0>(pipeline).build().isFaded()) {
+            addPipeline(std::get<0>(pipeline), std::get<2>(pipeline), batchSetter, itemSetter);
+        } else {
+            addPipeline(std::get<0>(pipeline), std::get<2>(pipeline), nullptr, nullptr);
+        }
+    }
+}
+
+void sortAndRenderZPassShapes(const ShapePlumberPointer& shapePlumber, const RenderContextPointer& renderContext, const ShapeBounds& inShapes, ItemBounds &itemBounds) {
+    std::unordered_map<ShapeKey, std::vector<ShapeKey>, ShapeKey::Hash, ShapeKey::KeyEqual> sortedShapeKeys;
+    std::unordered_map<uint8_t, std::unordered_map<ShapeKey, std::vector<ShapeKey>, ShapeKey::Hash, ShapeKey::KeyEqual>> sortedCustomShapeKeys;
+    std::unordered_map<ShapeKey, std::vector<ShapeKey>, ShapeKey::Hash, ShapeKey::KeyEqual> sortedOwnPipelineShapeKeys;
+
+    for (const auto& items : inShapes) {
+        itemBounds.insert(itemBounds.end(), items.second.begin(), items.second.end());
+
+        ShapeKey::Builder variantKey = ShapeKey::Builder();
+
+        // The keys we need to check here have to match the ones set up in initZPassPipelines (+ addPlumberPipeline)
+        if (items.first.isDeformed()) {
+            variantKey.withDeformed();
+            if (items.first.isDualQuatSkinned()) {
+                variantKey.withDualQuatSkinned();
+            }
+        }
+
+        if (items.first.isFaded()) {
+            variantKey.withFade();
+        }
+
+        if (items.first.isMToon()) {
+            variantKey.withMToon();
+        }
+
+        if (items.first.isCullFace()) {
+            variantKey.withCullFaceMode(graphics::MaterialKey::CULL_BACK);
+        } else if (items.first.isCullFaceFront()) {
+            variantKey.withCullFaceMode(graphics::MaterialKey::CULL_FRONT);
+        } else if (items.first.isCullFaceNone()) {
+            variantKey.withCullFaceMode(graphics::MaterialKey::CULL_NONE);
+        }
+
+        if (items.first.isWireframe()) {
+            variantKey.withWireframe();
+        }
+
+        if (items.first.isDepthBiased()) {
+            variantKey.withDepthBias();
+        }
+
+        if (items.first.hasOwnPipeline()) {
+            sortedOwnPipelineShapeKeys[variantKey.build()].push_back(items.first);
+        } else if (items.first.isCustom()) {
+            const uint8_t custom = items.first.getCustom();
+            variantKey.withCustom(custom);
+            sortedCustomShapeKeys[custom][variantKey.build()].push_back(items.first);
+        } else {
+            sortedShapeKeys[variantKey.build()].push_back(items.first);
+        }
+    }
+
+    // Render non-withCustom, non-withOwnPipeline things
+    for (const auto& variantAndKeys : sortedShapeKeys) {
+        for (const auto& key : variantAndKeys.second) {
+            renderShapes(renderContext, shapePlumber, inShapes.at(key));
+        }
+    }
+
+    // Render withCustom things
+    for (const auto& customAndSortedCustomKeys : sortedCustomShapeKeys) {
+        for (const auto& variantAndKeys : customAndSortedCustomKeys.second) {
+            for (const auto& key : variantAndKeys.second) {
+                renderShapes(renderContext, shapePlumber, inShapes.at(key));
+            }
+        }
+    }
+
+    // Render withOwnPipeline things
+    for (const auto& variantAndKeys : sortedOwnPipelineShapeKeys) {
+        for (const auto& key : variantAndKeys.second) {
+            renderShapes(renderContext, shapePlumber, inShapes.at(key));
+        }
+    }
+
+    renderContext->args->_shapePipeline = nullptr;
+    renderContext->args->_batch = nullptr;
+}
+
+void initMirrorPipelines(ShapePlumber& shapePlumber, StatePointer state, const ShapePipeline::BatchSetter& extraBatchSetter, const ShapePipeline::ItemSetter& itemSetter, bool forward) {
+    using namespace shader::render_utils::program;
+
+    if (forward) {
+        shapePlumber.addPipeline(
+            ShapeKey::Filter::Builder().withoutDeformed().withoutFade(),
+            Shader::createProgram(model_shadow_mirror_forward), state);
+
+        shapePlumber.addPipeline(
+            ShapeKey::Filter::Builder().withDeformed().withoutDualQuatSkinned().withoutFade(),
+            Shader::createProgram(model_shadow_mirror_deformed_forward), state);
+
+        shapePlumber.addPipeline(
+            ShapeKey::Filter::Builder().withDeformed().withDualQuatSkinned().withoutFade(),
+            Shader::createProgram(model_shadow_mirror_deformeddq_forward), state);
+    } else {
+        shapePlumber.addPipeline(
+            ShapeKey::Filter::Builder().withoutDeformed().withoutFade(),
+            Shader::createProgram(model_shadow_mirror), state);
+        shapePlumber.addPipeline(
+            ShapeKey::Filter::Builder().withoutDeformed().withFade(),
+            Shader::createProgram(model_shadow_mirror_fade), state, extraBatchSetter, itemSetter);
+
+        shapePlumber.addPipeline(
+            ShapeKey::Filter::Builder().withDeformed().withoutDualQuatSkinned().withoutFade(),
+            Shader::createProgram(model_shadow_mirror_deformed), state);
+        shapePlumber.addPipeline(
+            ShapeKey::Filter::Builder().withDeformed().withoutDualQuatSkinned().withFade(),
+            Shader::createProgram(model_shadow_mirror_deformed_fade), state, extraBatchSetter, itemSetter);
+
+        shapePlumber.addPipeline(
+            ShapeKey::Filter::Builder().withDeformed().withDualQuatSkinned().withoutFade(),
+            Shader::createProgram(model_shadow_mirror_deformeddq), state);
+        shapePlumber.addPipeline(
+            ShapeKey::Filter::Builder().withDeformed().withDualQuatSkinned().withFade(),
+            Shader::createProgram(model_shadow_mirror_deformeddq_fade), state, extraBatchSetter, itemSetter);
+    }
+}
