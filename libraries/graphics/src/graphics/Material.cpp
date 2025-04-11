@@ -87,6 +87,7 @@ Material::Material(const Material& material) :
     _cullFaceMode(material._cullFaceMode),
     _textureMaps(material._textureMaps),
     _samplers(material._samplers),
+    _texCoordSets(material._texCoordSets),
     _defaultFallthrough(material._defaultFallthrough),
     _propertyFallthroughs(material._propertyFallthroughs)
 {
@@ -111,6 +112,7 @@ Material& Material::operator=(const Material& material) {
     _cullFaceMode = material._cullFaceMode;
     _textureMaps = material._textureMaps;
     _samplers = material._samplers;
+    _texCoordSets = material._texCoordSets;
 
     _defaultFallthrough = material._defaultFallthrough;
     _propertyFallthroughs = material._propertyFallthroughs;
@@ -211,6 +213,22 @@ void Material::applySampler(MapChannel channel) {
     auto textureMapsItr = _textureMaps.find(channel);
     if (samplerItr != _samplers.end() && textureMapsItr != _textureMaps.end() && textureMapsItr->second->getTextureSource()) {
         textureMapsItr->second->getTextureSource()->setSampler(samplerItr->second);
+    }
+}
+
+void Material::setTexCoordSet(MapChannel channel, int texCoordSet) {
+    std::lock_guard<std::recursive_mutex> locker(_textureMapsMutex);
+    _texCoordSets[channel] = texCoordSet;
+}
+
+int Material::getTexCoordSet(MapChannel channel) {
+    std::lock_guard<std::recursive_mutex> locker(_textureMapsMutex);
+
+    auto result = _texCoordSets.find(channel);
+    if (result != _texCoordSets.end()) {
+        return (result->second);
+    } else {
+        return 0;
     }
 }
 

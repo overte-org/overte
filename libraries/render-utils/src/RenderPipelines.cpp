@@ -839,6 +839,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             schemaKey.setAlbedoMap(true);
                             schemaKey.setOpacityMaskMap(material->getKey().isOpacityMaskMap());
                             schemaKey.setTranslucentMap(material->getKey().isTranslucentMap());
+                            schema.setTexCoordSet(gr::Texture::MaterialAlbedo, material->getTexCoordSet(graphics::MaterialKey::ALBEDO_MAP));
                         }
                         break;
                     case graphics::MaterialKey::METALLIC_MAP_BIT:
@@ -860,6 +861,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey.setMetallicMap(true);
+                            schema.setTexCoordSet(gr::Texture::MaterialMetallic, material->getTexCoordSet(graphics::MaterialKey::METALLIC_MAP));
                         }
                         break;
                     case graphics::MaterialKey::ROUGHNESS_MAP_BIT:
@@ -881,6 +883,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey.setRoughnessMap(true);
+                            schema.setTexCoordSet(gr::Texture::MaterialRoughness, material->getTexCoordSet(graphics::MaterialKey::ROUGHNESS_MAP));
                         }
                         break;
                     case graphics::MaterialKey::NORMAL_MAP_BIT:
@@ -902,6 +905,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey.setNormalMap(true);
+                            schema.setTexCoordSet(gr::Texture::MaterialNormal, material->getTexCoordSet(graphics::MaterialKey::NORMAL_MAP));
                         }
                         break;
                     case graphics::MaterialKey::OCCLUSION_MAP_BIT:
@@ -923,6 +927,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey.setOcclusionMap(true);
+                            schema.setTexCoordSet(gr::Texture::MaterialOcclusion, material->getTexCoordSet(graphics::MaterialKey::OCCLUSION_MAP));
                         }
                         break;
                     case graphics::MaterialKey::SCATTERING_MAP_BIT:
@@ -944,6 +949,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey.setScatteringMap(true);
+                            schema.setTexCoordSet(gr::Texture::MaterialScattering, material->getTexCoordSet(graphics::MaterialKey::SCATTERING_MAP));
                         }
                         break;
                     case graphics::MaterialKey::EMISSIVE_MAP_BIT:
@@ -966,6 +972,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey.setEmissiveMap(true);
+                            schema.setTexCoordSet(gr::Texture::MaterialEmissiveLightmap, material->getTexCoordSet(graphics::MaterialKey::EMISSIVE_MAP));
                         } else if (materialKey.isLightMap()) {
                             // We'll set this later when we check the lightmap
                             wasSet = true;
@@ -990,6 +997,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey.setLightMap(true);
+                            schema.setTexCoordSet(gr::Texture::MaterialEmissiveLightmap, material->getTexCoordSet(graphics::MaterialKey::LIGHT_MAP));
                         }
                         break;
                     case graphics::Material::TEXCOORDTRANSFORM0:
@@ -1077,6 +1085,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             schemaKey.setAlbedoMap(true);
                             schemaKey.setOpacityMaskMap(material->getKey().isOpacityMaskMap());
                             schemaKey.setTranslucentMap(material->getKey().isTranslucentMap());
+                            toonSchema.setTexCoordSet(gr::Texture::MaterialAlbedo, material->getTexCoordSet(graphics::MaterialKey::ALBEDO_MAP));
                         }
                         break;
                     case graphics::MaterialKey::NORMAL_MAP_BIT:
@@ -1098,6 +1107,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey.setNormalMap(true);
+                            toonSchema.setTexCoordSet(gr::Texture::MaterialNormal, material->getTexCoordSet(graphics::MaterialKey::NORMAL_MAP));
                         }
                         break;
                     case graphics::MaterialKey::EMISSIVE_MAP_BIT:
@@ -1120,6 +1130,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey.setEmissiveMap(true);
+                            toonSchema.setTexCoordSet(gr::Texture::MaterialEmissiveLightmap, material->getTexCoordSet(graphics::MaterialKey::EMISSIVE_MAP));
                         } else if (materialKey.isLightMap()) {
                             // We'll set this later when we check the lightmap
                             wasSet = true;
@@ -1198,6 +1209,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::SHADE_MAP_BIT, true);
+                            toonSchema.setTexCoordSet(gr::Texture::MaterialShade, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::SHADE_MAP));
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_MAP_BIT:
@@ -1219,6 +1231,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_MAP_BIT, true);
+                            toonSchema.setTexCoordSet(gr::Texture::MaterialShadingShift, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::SHADING_SHIFT_MAP));
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::MATCAP_MAP_BIT:
@@ -1240,6 +1253,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::MATCAP_MAP_BIT, true);
+                            toonSchema.setTexCoordSet(gr::Texture::MaterialMatcap, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::MATCAP_MAP));
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::RIM_MAP_BIT:
@@ -1261,6 +1275,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::RIM_MAP_BIT, true);
+                            toonSchema.setTexCoordSet(gr::Texture::MaterialRim, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::RIM_MAP));
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_MASK_MAP_BIT:
@@ -1282,6 +1297,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                                 forceDefault = true;
                             }
                             schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_MASK_MAP_BIT, true);
+                            toonSchema.setTexCoordSet(gr::Texture::MaterialUVAnimationMask, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::UV_ANIMATION_MASK_MAP));
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::MATCAP_VAL_BIT:
