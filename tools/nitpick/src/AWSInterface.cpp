@@ -19,8 +19,8 @@
 #include <QProcess>
 #include <QRegularExpression>
 
-#include <quazip5/quazip.h>
-#include <quazip5/JlCompress.h>
+#include <quazip/quazip.h>
+#include <quazip/JlCompress.h>
 
 AWSInterface::AWSInterface(QObject* parent) : QObject(parent) {
     _pythonInterface = new PythonInterface();

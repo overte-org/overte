@@ -20,7 +20,7 @@
 
 #if defined(Q_OS_WIN)
 // Enable event queue debugging
-#define DEBUG_EVENT_QUEUE
+//#define DEBUG_EVENT_QUEUE
 #endif
 
 class QLoggingCategory;

@@ -17,9 +17,9 @@
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-#include <quazip5/quazip.h>
-#include <quazip5/quazipfile.h>
-#include <quazip5/quazipdir.h>
+#include <quazip/quazip.h>
+#include <quazip/quazipfile.h>
+#include <quazip/quazipdir.h>
 
 #if !defined(__clang__) && defined(__GNUC__)
 #pragma GCC diagnostic pop

@@ -36,8 +36,8 @@
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QApplication>
 
-#include <quazip5/quazip.h>
-#include <quazip5/JlCompress.h>
+#include <quazip/quazip.h>
+#include <quazip/JlCompress.h>
 
 
 #include "GLIHelpers.h"
