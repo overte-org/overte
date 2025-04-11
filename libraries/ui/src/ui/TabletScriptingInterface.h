@@ -52,7 +52,7 @@ class OffscreenQmlSurface;
 /*@jsdoc
  * The <code>tabletInterface</code> API provides the facilities to work with the system or other tablet.
  *
- * @namespace tabletInterface
+ * @namespace TabletInterface
  *
  * @hifi-interface
  * @hifi-client-entity
