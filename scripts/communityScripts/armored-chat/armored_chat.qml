@@ -230,13 +230,13 @@ Rectangle {
                                 event.accepted = true;
                                 toScript({type: "send_message", message: text, channel: pageVal});
                                 text = ""
+                            }
+                        }
+                        onTextChanged: {
+                            if (text === "") {
                                 toScript({type: "action", action: "end_typing"});
                             } else {
-                                if (text === "" || (event.key === Qt.Key_Backspace && text.length === 1)) {
-                                    toScript({type: "action", action: "end_typing"});
-                                } else {
-                                    toScript({type: "action", action: "start_typing"});
-                                }
+                                toScript({type: "action", action: "start_typing"});
                             }
                         }
                         onFocusChanged: {
