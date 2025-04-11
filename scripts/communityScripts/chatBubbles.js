@@ -33,7 +33,8 @@ function ChatBubbles_SpawnBubble(data, senderID) {
 		delete currentBubbles[senderID];
 	}
 
-	// TODO: handle avatar scale
+    const scale = AvatarList.getAvatar(senderID).scale;
+
 	const bubbleEntity = Entities.addEntity({
 		type: "Text",
 		parentID: senderID,
@@ -41,7 +42,7 @@ function ChatBubbles_SpawnBubble(data, senderID) {
 		unlit: true,
 		lineHeight: 0.07,
 		dimensions: [1.3, 4, 0.01],
-		localPosition: [0, 3.1, 0],
+		localPosition: [0, scale + 2.1, 0],
 		backgroundAlpha: 0,
 		textEffect: "outline fill",
 		textEffectColor: "#000",
@@ -77,7 +78,8 @@ function ChatBubbles_IndicatorTick(senderID) {
 function ChatBubbles_ShowTypingIndicator(senderID) {
 	if (typingIndicators[senderID]) { return; }
 
-	// TODO: handle avatar scale
+    const scale = AvatarList.getAvatar(senderID).scale;
+
 	const indicatorEntity = Entities.addEntity({
 		type: "Text",
 		parentID: senderID,
@@ -85,7 +87,7 @@ function ChatBubbles_ShowTypingIndicator(senderID) {
 		unlit: true,
 		lineHeight: 0.2,
 		dimensions: [0.22, 0.1, 0.01],
-		localPosition: [0, 1, 0],
+		localPosition: [0, scale, 0],
 		backgroundAlpha: 0.8,
 		canCastShadow: false,
 		billboardMode: "full",
