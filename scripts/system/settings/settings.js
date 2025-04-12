@@ -4,21 +4,27 @@
 //  App to configure Overte
 //
 //  Created by Armored Dragon, 2024.
-//  Copyright 2024 Overte e.V.
+//  Copyright 2024-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 
 /* global Script Tablet */
 
-// TODO: Fullscreen display? 
+// TODO: Fullscreen display?
+// TODO: Move Graphics Settings part of the UI to its own widget
+// TODO: Replace bool setting with switch?
+// FIXME: Setting slider handle
+// TODO: Setting slider incorrect radius around filled background?
+// FIXME: Combobox overflows text onto arrow visual
+// TODO: Advanced Settings widget
 
 (() => {
 	"use strict";
 	var tablet;
 	var appButton;
 	var active = false;
-	const url = Script.resolvePath("./settings.qml")
+	const url = Script.resolvePath("./Settings.qml")
 
 	tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 	appButton = tablet.addButton({
@@ -78,18 +84,13 @@
 	function fromQML(event) {
 		console.log(`New QML event:\n${JSON.stringify(event)}`);
 
-		switch (event.type) {
-			case "initialized":
-				getActivePolls();
-				break;
-			case "switch_app":
-				if (event.app_url == "hifi/dialogs/GeneralPreferencesDialog.qml") {
-					// This page needs to be opened like this because 
-					Desktop.show("hifi/dialogs/GeneralPreferencesDialog.qml", "GeneralPreferencesDialog");
-					return;
-				}
-				tablet.loadQMLSource(event.app_url);
-				break;
+		if (event.type === "switch_app") {
+			if (event.app_url == "hifi/dialogs/GeneralPreferencesDialog.qml") {
+				// This page needs to be opened like this just because.
+				Desktop.show("hifi/dialogs/GeneralPreferencesDialog.qml", "GeneralPreferencesDialog");
+				return;
+			}
+			tablet.loadQMLSource(event.app_url);
 		}
 	}
 	/**
