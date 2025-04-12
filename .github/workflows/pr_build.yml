@@ -69,7 +69,7 @@ jobs:
               arch: amd64
               build_type: full
               qt_source: system
-              apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
+              apt-dependencies: libxcb-glx0-dev libqt5multimedia5-plugins # add missing dependencies to docker image when convenient
               image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-amd64
             # Android builds are currently failing
             #- os: ubuntu-18.04
@@ -81,7 +81,7 @@ jobs:
               arch: aarch64
               build_type: full
               qt_source: system
-              apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
+              apt-dependencies: libxcb-glx0-dev libqt5multimedia5-plugins # add missing dependencies to docker image when convenient
               image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-aarch64
         fail-fast: false
     runs-on: ${{matrix.runner}}
