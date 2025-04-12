@@ -1,0 +1,8 @@
+[Desktop Entry]
+Version=1.0
+Name=Overte
+Terminal=false
+Type=Application
+Exec=interface
+Icon=interface
+Categories=Network;Qt;
