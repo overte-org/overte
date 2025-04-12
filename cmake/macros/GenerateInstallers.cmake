@@ -5,7 +5,7 @@
 #  Created by Leonardo Murillo on 12/16/2015.
 #  Copyright 2015 High Fidelity, Inc.
 #  Copyright 2021 Vircadia contributors.
-#  Copyright 2022-2024 Overte e.V.
+#  Copyright 2022-2025 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -111,7 +111,22 @@ macro(GENERATE_INSTALLERS)
       # hide the special Icon? file
       install(CODE "execute_process(COMMAND SetFile -a V \${CMAKE_INSTALL_PREFIX}/${ESCAPED_DMG_SUBFOLDER_NAME}/Icon\\r)")
     endif ()
+  elseif (LINUX)
+    # Produce Interface AppImage using our own scripts.
+    set(CPACK_GENERATOR "External")
 
+    set(CPACK_EXTERNAL_ENABLE_STAGING YES)
+    set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${HF_CMAKE_DIR}/modules/GenerateAppImage.cmake")
+    set(CPACK_CMAKE_SOURCE_DIR "${CMAKE_SOURCE_DIR}")
+
+    # Guard against packaging an AppImage with native optimization.
+    string(FIND "${CMAKE_CXX_FLAGS}" "native" HAS_NATIVE_OPTIMIZATION)
+    if ((NOT HAS_NATIVE_OPTIMIZATION EQUAL -1) AND (NOT APPIMAGE_IGNORE_OPTIMIZATION))
+      message(FATAL_ERROR
+          "Binaries appear to have been built with native optimization. "
+          "The resulting AppImage will not be able to run on most machines. "
+          "Set APPIMAGE_IGNORE_OPTIMIZATION to continue anyway.")
+    endif()
   endif ()
 
   # configure a cpack properties file for custom variables in template
