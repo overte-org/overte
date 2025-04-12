@@ -12,7 +12,6 @@
 /* global Script Tablet */
 
 // TODO: Fullscreen display?
-// TODO: Move Graphics Settings part of the UI to its own widget
 // TODO: Replace bool setting with switch?
 // FIXME: Setting slider handle
 // TODO: Setting slider incorrect radius around filled background?
