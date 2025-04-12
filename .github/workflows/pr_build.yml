@@ -42,6 +42,9 @@ env:
   # Specify build preset, since on Windows, `cmake --build` appears to be unaware of of which build preset to use, using defaults instead.
   CMAKE_BUILD_EXTRA: --preset conan-release
 
+  # Work around AppImages not executing in Docker. https://github.com/AppImage/AppImageKit/issues/912#issuecomment-528669441
+  APPIMAGE_EXTRACT_AND_RUN: 1
+
 jobs:
   build_pr:
     name: "${{matrix.os}}, ${{matrix.arch}}"
