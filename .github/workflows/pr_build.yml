@@ -305,7 +305,7 @@ jobs:
         cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build Installer
-      if: matrix.build_type != 'android' && matrix.arch != 'aarch64'
+      if: matrix.build_type != 'android'
       shell: bash
       run: |
         echo "Retry code from https://unix.stackexchange.com/a/137639"
