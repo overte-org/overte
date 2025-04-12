@@ -145,6 +145,16 @@ Overte Interface AppImages are built using [linuxdeploy](https://github.com/linu
    cmake --preset conan-release -DOVERTE_CPU_ARCHITECTURE=-msse3
    ```
 
+3. Create AppImage
+   ```bash
+   cmake --build --preset conan-release --target package
+   ```
+   CPack will build target ALL instead of INTERFACE, which is a limitation of CPack.
+
+4. Lint with [appimagelint](https://github.com/TheAssassin/appimagelint) to check which Linux distributions the AppImage will likely be able to run on.
+
+**Alternatively**, you can also create the AppImage manually:
+
 3. Build Interface
    ```bash
    cmake --build --preset conan-release --target interface
@@ -160,7 +170,6 @@ Overte Interface AppImages are built using [linuxdeploy](https://github.com/linu
    ~/temp/linuxdeploy-x86_64.AppImage --appdir build/AppDir --executable build/interface/interface --output appimage --plugin qt --icon-file interface/icon/interface.svg --desktop-file interface/org.overte.interface.desktop
    ```
 
-7. Lint with [appimagelint](https://github.com/TheAssassin/appimagelint) to check which Linux distributions the AppImage will likely be able to run on.
 
 #### Server
 
