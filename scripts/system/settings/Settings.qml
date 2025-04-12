@@ -1,8 +1,8 @@
 import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
-import "./qml_widgets"
-import "./qml_widgets/pages"
+import "./qml"
+import "./qml/pages"
 
 Rectangle {
     signal sendToScript(var message);
