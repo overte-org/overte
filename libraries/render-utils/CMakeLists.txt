@@ -3,10 +3,12 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(TARGET_NAME render-utils)
-
+generate_render_pipelines()
 # pull in the resources.qrc file
 qt5_add_resources(QT_RESOURCES_FILE "${CMAKE_CURRENT_SOURCE_DIR}/res/fonts/fonts.qrc")
 setup_hifi_library(Gui Network Qml Quick)
+target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/libraries/render-utils/src")
+target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/libraries/render-utils/src")
 link_hifi_libraries(shared task ktx gpu shaders graphics graphics-scripting material-networking model-networking render animation model-serializers image procedural)
 include_hifi_library_headers(audio)
 include_hifi_library_headers(networking)

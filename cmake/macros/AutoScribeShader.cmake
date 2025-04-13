@@ -3,12 +3,13 @@
 #
 #  Created by Sam Gateau on 12/17/14.
 #  Copyright 2014 High Fidelity, Inc.
+#  Copyright 2024 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 #
 
-# FIXME use the built tools 
+# FIXME use the built tools
 
 macro(AUTOSCRIBE_APPEND_QRC)
     string(CONCAT SHADER_QRC "${SHADER_QRC}" "<file alias=\"${ARGV0}\">${ARGV1}</file>\n")
@@ -120,7 +121,7 @@ macro(AUTOSCRIBE_SHADER)
     # SHADER_SCRIBED -> the output of scribe
     set(SHADER_SCRIBED "${SHADERS_DIR}/${SHADER_LIB}/${SHADER_NAME}.${SHADER_TYPE}")
 
-    # SHADER_NAME_FILE -> a file containing the shader name and extension (useful for debugging and for 
+    # SHADER_NAME_FILE -> a file containing the shader name and extension (useful for debugging and for
     # determining the type of shader from the filename)
     set(SHADER_NAME_FILE "${SHADER_SCRIBED}.name")
     file(TO_CMAKE_PATH "${SHADER_SCRIBED}" SHADER_SCRIBED)
@@ -221,7 +222,7 @@ macro(AUTOSCRIBE_SHADER_LIB)
 
     file(MAKE_DIRECTORY "${SHADERS_DIR}/${SHADER_LIB}")
 
-    list(APPEND HIFI_LIBRARIES_SHADER_INCLUDE_FILES "${CMAKE_SOURCE_DIR}/libraries/${SHADER_LIB}/src") 
+    list(APPEND HIFI_LIBRARIES_SHADER_INCLUDE_FILES "${CMAKE_SOURCE_DIR}/libraries/${SHADER_LIB}/src")
     string(REGEX REPLACE "[-]" "_" SHADER_NAMESPACE ${SHADER_LIB})
     string(CONCAT SHADER_ENUMS "${SHADER_ENUMS}" "namespace ${SHADER_NAMESPACE} {\n")
     set(SRC_FOLDER "${CMAKE_SOURCE_DIR}/libraries/${ARGN}/src")
@@ -375,7 +376,7 @@ macro(AUTOSCRIBE_SHADER_LIB)
         string(CONCAT SHADER_ENUMS "${SHADER_ENUMS}" "${PROGRAM_ENUMS}")
     endif()
 
-    # Finish the shader enums 
+    # Finish the shader enums
     string(CONCAT SHADER_ENUMS "${SHADER_ENUMS}" "} // namespace ${SHADER_NAMESPACE}\n")
 endmacro()
 
@@ -390,7 +391,7 @@ macro(AUTOSCRIBE_SHADER_LIBS)
 
     #
     # Scribe generation & program defintiion
-    # 
+    #
     foreach(SHADER_LIB ${ARGN})
         list(APPEND AUTOSCRIBE_SHADER_SEEN_LIBS ${SHADER_LIB})
         AUTOSCRIBE_SHADER_LIB(${SHADER_LIB})
@@ -398,10 +399,10 @@ macro(AUTOSCRIBE_SHADER_LIBS)
 
     # Generate the library files
     configure_file(
-        ShaderEnums.cpp.in 
+        ShaderEnums.cpp.in
         ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.cpp)
     configure_file(
-        ShaderEnums.h.in 
+        ShaderEnums.h.in
         ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.h)
 
     configure_file(shaders.qrc.in ${CMAKE_CURRENT_BINARY_DIR}/shaders.qrc)
@@ -416,16 +417,16 @@ macro(AUTOSCRIBE_SHADER_LIBS)
 
     list(APPEND AUTOSCRIBE_SHADER_LIB_SRC ${AUTOSCRIBE_SHADER_HEADERS})
     list(APPEND AUTOSCRIBE_SHADER_LIB_SRC ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.h ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.cpp)
-    
+
     # Write the shadergen command list
     set(AUTOSCRIBE_SHADERGEN_COMMANDS_FILE ${CMAKE_CURRENT_BINARY_DIR}/shadergen.txt)
     file(WRITE ${AUTOSCRIBE_SHADERGEN_COMMANDS_FILE} "${AUTOSCRIBE_SHADERGEN_COMMANDS}")
 
     if (HIFI_ANDROID)
         if (
-            (${HIFI_ANDROID_APP} STREQUAL "questInterface") OR 
+            (${HIFI_ANDROID_APP} STREQUAL "questInterface") OR
             (${HIFI_ANDROID_APP} STREQUAL "questFramePlayer") OR
-            (${HIFI_ANDROID_APP} STREQUAL "framePlayer") 
+            (${HIFI_ANDROID_APP} STREQUAL "framePlayer")
         )
             set(EXTRA_SHADERGEN_ARGS --extensions EXT_clip_cull_distance)
         endif()
@@ -435,8 +436,8 @@ macro(AUTOSCRIBE_SHADER_LIBS)
     add_custom_command(
         OUTPUT ${SCRIBED_SHADERS} ${SPIRV_SHADERS} ${REFLECTED_SHADERS}
         COMMENT "Generating/updating shaders"
-        COMMAND ${HIFI_PYTHON_EXEC} ${CMAKE_SOURCE_DIR}/tools/shadergen.py 
-            --commands ${AUTOSCRIBE_SHADERGEN_COMMANDS_FILE} 
+        COMMAND ${HIFI_PYTHON_EXEC} ${CMAKE_SOURCE_DIR}/tools/shadergen.py
+            --commands ${AUTOSCRIBE_SHADERGEN_COMMANDS_FILE}
             --tools-dir ${VCPKG_TOOLS_DIR}
             --build-dir ${CMAKE_CURRENT_BINARY_DIR}
             --source-dir ${CMAKE_SOURCE_DIR}
@@ -465,4 +466,123 @@ macro(AUTOSCRIBE_SHADER_LIBS)
     message(STATUS "Shader processing end")
 endmacro()
 
+macro(GENERATE_RENDER_PIPELINES)
+    message(STATUS "Render pipeline processing start")
 
+    # We reuse the same model.slp
+    set(SRC_FOLDER "${CMAKE_SOURCE_DIR}/libraries/render-utils/src")
+    file(GLOB_RECURSE MODEL_SLP_FILE ${SRC_FOLDER}/*model.slp)
+    file(READ ${MODEL_SLP_FILE} MODEL_CONFIG)
+    string(REGEX MATCH ".*DEFINES +([a-zA-Z\(\)/: ]+)" MDEF ${MODEL_CONFIG})
+    set(MODEL_DEFINES ${CMAKE_MATCH_1})
+    string(REGEX REPLACE " +" ";" MODEL_DEFINES "${MODEL_DEFINES}")
+    string(REGEX REPLACE "\:v+" "" MODEL_DEFINES "${MODEL_DEFINES}")
+    string(REGEX REPLACE "\:f+" "" MODEL_DEFINES "${MODEL_DEFINES}")
+    GENERATE_DEFINES_LIST("${MODEL_DEFINES}")
+
+    # These map from define to builder keys
+    set(DEFINE_STRINGS "normalmap" "translucent" "unlit" "lightmap" "mtoon" "triplanar" "deformed" "deformeddq" "fade")
+    set(BUILDER_STRINGS "withTangents" "withTranslucent" "withUnlit" "withLightMap" "withMToon" "withTriplanar" "withDeformed" "withDeformed().withDualQuatSkinned" "withFade")
+    # We skip some pre-built defines, as they are handled differently
+    set(IGNORE_DEFINES "shadow" "mirror" "forward")
+    # Some defines are not used for shadows
+    set(IGNORE_SHADOWS_DEFINES "normalmap" "translucent" "unlit" "lightmap")
+    # Some defines are not used for forward rendering
+    set(IGNORE_FORWARD_DEFINES "fade")
+    # These defines are "model" specific.  For everything else, we also generate a "simple" version.
+    set(NON_SIMPLE_DEFINES "normalmap" "lightmap" "mtoon" "triplanar" "deformed" "deformeddq")
+
+    # Our base model and simple pipelines
+    set(ALL_PIPELINES_MAP "")
+    string(CONCAT ALL_PIPELINES_MAP "${ALL_PIPELINES_MAP}" "\t{ Key::Builder(), simple, model_shadow, simple_forward },\n")
+    string(CONCAT ALL_PIPELINES_MAP "${ALL_PIPELINES_MAP}" "\t{ Key::Builder().withMaterial(), model, model_shadow, model_forward },\n")
+
+    foreach(PIPELINE_DEFINES IN LISTS DEFINES_LIST)
+        string(REGEX REPLACE "_+" ";" PIPELINE_DEFINES "${PIPELINE_DEFINES}")
+
+        # Should we skip this variant?
+        set(SHOULD_SKIP FALSE)
+        foreach(IGNORE_DEFINE IN LISTS IGNORE_DEFINES)
+            if ("${IGNORE_DEFINE}" IN_LIST PIPELINE_DEFINES)
+                set(SHOULD_SKIP TRUE)
+                break()
+            endif()
+        endforeach()
+
+        if (${SHOULD_SKIP})
+            continue()
+        endif()
+
+        # Let's start building our pipelines!
+        set(BUILDER_STRING "Key::Builder().withMaterial()")
+        set(DEFERRED_STRING "model_")
+        set(SHADOW_STRING "model_shadow_")
+        set(FORWARD_STRING "model_")
+
+        foreach(PIPELINE_DEFINE IN LISTS PIPELINE_DEFINES)
+            list(FIND DEFINE_STRINGS "${PIPELINE_DEFINE}" INDEX)
+            if (NOT ${INDEX} EQUAL -1)
+                list(GET BUILDER_STRINGS ${INDEX} BUILDER_ELEMENT)
+                string(CONCAT BUILDER_STRING "${BUILDER_STRING}" ".${BUILDER_ELEMENT}()")
+                string(CONCAT DEFERRED_STRING "${DEFERRED_STRING}" "${PIPELINE_DEFINE}_")
+                if (NOT "${PIPELINE_DEFINE}" IN_LIST IGNORE_SHADOWS_DEFINES)
+                    string(CONCAT SHADOW_STRING "${SHADOW_STRING}" "${PIPELINE_DEFINE}_")
+                endif()
+                string(CONCAT FORWARD_STRING "${FORWARD_STRING}" "${PIPELINE_DEFINE}_")
+            endif()
+        endforeach()
+
+        # remove trailing _'s
+        string(LENGTH ${DEFERRED_STRING} STR_LENGTH)
+        MATH(EXPR STR_LENGTH "${STR_LENGTH} - 1")
+        string(SUBSTRING "${DEFERRED_STRING}" 0 ${STR_LENGTH} DEFERRED_STRING)
+        string(LENGTH ${SHADOW_STRING} STR_LENGTH)
+        MATH(EXPR STR_LENGTH "${STR_LENGTH} - 1")
+        string(SUBSTRING "${SHADOW_STRING}" 0 ${STR_LENGTH} SHADOW_STRING)
+        string(LENGTH ${FORWARD_STRING} STR_LENGTH)
+        MATH(EXPR STR_LENGTH "${STR_LENGTH} - 1")
+        string(SUBSTRING "${FORWARD_STRING}" 0 ${STR_LENGTH} FORWARD_STRING)
+
+        # Not all pipelines have a forward equivalent.  For those, we set FORWARD_STRING to "0"
+        set(HAS_FORWARD TRUE)
+        foreach(IGNORE_FORWARD_DEFINE IN LISTS IGNORE_FORWARD_DEFINES)
+            string(FIND "${FORWARD_STRING}" "${IGNORE_FORWARD_DEFINE}" INDEX)
+            if (NOT ${INDEX} EQUAL -1)
+                set(HAS_FORWARD FALSE)
+                break()
+            endif()
+        endforeach()
+
+        if (HAS_FORWARD)
+            string(CONCAT FORWARD_STRING "${FORWARD_STRING}" "_forward")
+        else()
+            set(FORWARD_STRING "0")
+        endif()
+
+        string(CONCAT ALL_PIPELINES_MAP "${ALL_PIPELINES_MAP}" "\t{ ${BUILDER_STRING}, ${DEFERRED_STRING}, ${SHADOW_STRING}, ${FORWARD_STRING} },\n")
+
+        # If needed, add our "simple" variant
+        set(IS_SIMPLE TRUE)
+        foreach(NON_SIMPLE_DEFINE IN LISTS NON_SIMPLE_DEFINES)
+            if ("${NON_SIMPLE_DEFINE}" IN_LIST PIPELINE_DEFINES)
+                set(IS_SIMPLE FALSE)
+                break()
+            endif()
+        endforeach()
+
+        if (${IS_SIMPLE})
+            string(REPLACE ".withMaterial()" "" BUILDER_STRING ${BUILDER_STRING})
+            string(REPLACE "model" "simple" DEFERRED_STRING ${DEFERRED_STRING})
+            string(REPLACE "model" "simple" FORWARD_STRING ${FORWARD_STRING})
+            string(CONCAT ALL_PIPELINES_MAP "${ALL_PIPELINES_MAP}" "\t{ ${BUILDER_STRING}, ${DEFERRED_STRING}, ${SHADOW_STRING}, ${FORWARD_STRING} },\n")
+        endif()
+    endforeach()
+
+    # Done!
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/RenderPipelinesInit.cpp.in
+        ${CMAKE_CURRENT_BINARY_DIR}/src/RenderPipelinesInit.cpp)
+    list(APPEND GENERATE_RENDER_PIPELINES_LIB_SRC ${CMAKE_CURRENT_BINARY_DIR}/src/RenderPipelinesInit.cpp)
+
+    message(STATUS "Render pipeline processing end")
+endmacro()
