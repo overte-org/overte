@@ -124,7 +124,7 @@ bool OpenXrContext::initInstance() {
           .applicationVersion = 1,
           .engineName = "Overte",
           .engineVersion = 0,
-          .apiVersion = XR_API_VERSION_1_0,
+          .apiVersion = XR_API_VERSION_1_1,
       },
       .enabledExtensionCount = (uint32_t)enabled.size(),
       .enabledExtensionNames = enabled.data(),
