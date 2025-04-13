@@ -2031,8 +2031,8 @@ void DomainServer::processNodeJSONStatsPacket(QSharedPointer<ReceivedMessage> pa
 QJsonObject DomainServer::jsonForSocket(const SockAddr& socket) {
     QJsonObject socketJSON;
 
-    // TODO(IPv6): IPv6 needs to be added here too
-    socketJSON["ip"] = !socket.getAddressIPv6().isNull() ? socket.getAddressIPv6().toString() : socket.getAddressIPv4().toString();
+    // TODO(IPv6): IPv6 needs to be added here too (done 24/03/2025)
+    socketJSON["ip"] = "v4 " + socket.getAddressIPv4().toString() + " v6 " + socket.getAddressIPv6().toString();
     socketJSON["port"] = socket.getPort();
 
     return socketJSON;
