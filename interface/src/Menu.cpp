@@ -467,10 +467,14 @@ Menu::Menu() {
     textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture12288MB, 0, false));
     textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture16384MB, 0, false));
     textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture20480MB, 0, false));
+    textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture24576MB, 0, false));
+    textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture28672MB, 0, false));
+    textureGroup->addAction(addCheckableActionToQMenuAndActionHash(textureMenu, MenuOption::RenderMaxTexture32768MB, 0, false));
     connect(textureGroup, &QActionGroup::triggered, [textureGroup] {
         auto checked = textureGroup->checkedAction();
         auto text = checked->text();
         gpu::Context::Size newMaxTextureMemory { 0 };
+
         if (MenuOption::RenderMaxTexture4MB == text) {
             newMaxTextureMemory = MB_TO_BYTES(4);
         } else if (MenuOption::RenderMaxTexture64MB == text) {
@@ -497,6 +501,12 @@ Menu::Menu() {
             newMaxTextureMemory = MB_TO_BYTES(16384);
         } else if (MenuOption::RenderMaxTexture20480MB == text) {
             newMaxTextureMemory = MB_TO_BYTES(20480);
+        } else if (MenuOption::RenderMaxTexture24576MB == text) {
+            newMaxTextureMemory = MB_TO_BYTES(24576);
+        } else if (MenuOption::RenderMaxTexture28672MB == text) {
+            newMaxTextureMemory = MB_TO_BYTES(28672);
+        } else if (MenuOption::RenderMaxTexture32768MB == text) {
+            newMaxTextureMemory = MB_TO_BYTES(32768);
         }
         gpu::Texture::setAllowedGPUMemoryUsage(newMaxTextureMemory);
     });
