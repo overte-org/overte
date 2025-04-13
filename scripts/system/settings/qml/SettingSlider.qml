@@ -79,21 +79,22 @@ Item {
 				}
 
 				background: Rectangle {
-					x: slider.leftPadding
-					y: slider.topPadding + slider.availableHeight / 2 - height / 2
-					implicitWidth: 200
-					implicitHeight: 20
-					width: slider.availableWidth
-					height: implicitHeight
-					radius: 2
-					color: "white"
-					clip: true;
+					x: slider.leftPadding;
+					y: slider.topPadding + slider.availableHeight / 2 - height / 2;
+					implicitWidth: 200;
+					implicitHeight: 20;
+					width: slider.availableWidth;
+					height: implicitHeight;
+					radius: 10;
+					color: "#ffffff";
+                    clip: true;
 
-					Rectangle {
-						width: slider.visualPosition * parent.width
-						height: parent.height
-						color: "#5153bd"
-						radius: 2
+                    Rectangle {
+						width: slider.visualPosition * parent.width + 1;
+						height: parent.height + 1;
+						color: "#5153bd";
+                        radius: parent.radius;
+                        antialiasing: false;
 					}
 				}
 
