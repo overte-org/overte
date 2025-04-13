@@ -403,7 +403,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"left_haptic",            "/user/hand/left/output/haptic"},
 
             {"right_secondary_click",  hand_right + "/menu/click"},
-            {"right_trigger_click",    hand_right + "/select/click"},
+            {"right_trigger_value",    hand_right + "/select/click"},
             {"right_pose",             hand_right + "/grip/pose"},
             {"right_haptic",           "/user/hand/right/output/haptic"},
         }},
