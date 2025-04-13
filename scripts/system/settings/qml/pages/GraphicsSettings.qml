@@ -13,7 +13,7 @@ Flickable {
     contentHeight: graphics_page_column.height
     clip: true
 
-    ColumnLayout {
+    Column {
         id: graphics_page_column
         width: parent.width - 10
         anchors.horizontalCenter: parent.horizontalCenter
@@ -41,66 +41,52 @@ Flickable {
         }
 
         // Rendering Effects sub options
-        Item {
-            Layout.fillWidth: true;
-            visible: Render.renderMethod == 0;
-            height: children[0].height;
-            width: parent.width;
+        AdvancedOptions {
+            id: renderingEffectsAdvancedOptions;
+            isEnabled: Render.renderMethod === 0;
 
-            Rectangle {
-                color: "#222222";
-                width: parent.width;
-                height: children[0].height;
-                radius: 10;
+            SettingBoolean {
+                settingText: "Shadows";
+                settingEnabled: Render.shadowsEnabled;
 
-                ColumnLayout {
-                    width: parent.width - 10;
-                    id: renderSettingsContainer;
+                onSettingEnabledChanged: {
+                    Render.shadowsEnabled = settingEnabled;
+                }
+            }
 
-                    SettingBoolean {
-                        settingText: "Shadows";
-                        settingEnabled: Render.shadowsEnabled;
+            SettingBoolean {
+                settingText: "Local Lights";
+                settingEnabled: Render.localLightsEnabled
 
-                        onSettingEnabledChanged: {
-                            Render.shadowsEnabled = settingEnabled;
-                        }
-                    }
+                onSettingEnabledChanged: {
+                    Render.localLightsEnabled = settingEnabled;
+                }
+            }
 
-                    SettingBoolean {
-                        settingText: "Local Lights";
-                        settingEnabled: Render.localLightsEnabled
+            SettingBoolean {
+                settingText: "Fog";
+                settingEnabled: Render.fogEnabled
 
-                        onSettingEnabledChanged: {
-                            Render.localLightsEnabled = settingEnabled;
-                        }
-                    }
+                onSettingEnabledChanged: {
+                    Render.fogEnabled = settingEnabled;
+                }
+            }
 
-                    SettingBoolean {
-                        settingText: "Fog";
-                        settingEnabled: Render.fogEnabled
+            SettingBoolean {
+                settingText: "Haze";
+                settingEnabled: Render.hazeEnabled
 
-                        onSettingEnabledChanged: {
-                            Render.fogEnabled = settingEnabled;
-                        }
-                    }
+                onSettingEnabledChanged: {
+                    Render.hazeEnabled = settingEnabled;
+                }
+            }
 
-                    SettingBoolean {
-                        settingText: "Haze";
-                        settingEnabled: Render.hazeEnabled
+            SettingBoolean {
+                settingText: "Bloom";
+                settingEnabled: Render.bloomEnabled
 
-                        onSettingEnabledChanged: {
-                            Render.hazeEnabled = settingEnabled;
-                        }
-                    }
-
-                    SettingBoolean {
-                        settingText: "Bloom";
-                        settingEnabled: Render.bloomEnabled
-
-                        onSettingEnabledChanged: {
-                            Render.bloomEnabled = settingEnabled;
-                        }
-                    }
+                onSettingEnabledChanged: {
+                    Render.bloomEnabled = settingEnabled;
                 }
             }
         }
@@ -113,97 +99,84 @@ Flickable {
 
             onValueChanged: {
                 Performance.setRefreshRateProfile(index);
-                customFPSVaulesContainer.visible = index == 3;
+                fpsAdvancedOptions.isEnabled = index == 3;
             }
         }
 
         // Custom FPS
-        Item {
-            id: customFPSVaulesContainer
-            Layout.fillWidth: true;
-            height: children[0].height;
-            width: parent.width;
+        AdvancedOptions {
+            id: fpsAdvancedOptions;
+            isEnabled: Performance.getRefreshRateProfile() === 3;
 
-            Rectangle {
-                color: "#222222";
-                width: parent.width;
-                height: children[0].height;
-                radius: 10;
+            SettingNumber {
+                settingText: "Focus Active";
+                minValue: 5;
+                maxValue: 9999;
+                suffixText: "fps";
+                settingValue: Performance.getCustomRefreshRate(0)
 
-                ColumnLayout {
-                    width: parent.width - 10;
+                onValueChanged: {
+                    Performance.setCustomRefreshRate(0, value);
+                }
+            }
 
-                    SettingNumber {
-                        settingText: "Focus Active";
-                        minValue: 5;
-                        maxValue: 9999;
-                        suffixText: "fps";
-                        settingValue: Performance.getCustomRefreshRate(0)
+            SettingNumber {
+                settingText: "Focus Inactive";
+                minValue: 1;
+                maxValue: 9999;
+                suffixText: "fps";
+                settingValue: Performance.getCustomRefreshRate(1)
 
-                        onValueChanged: {
-                            Performance.setCustomRefreshRate(0, value);
-                        }
-                    }
+                onValueChanged: {
+                    Performance.setCustomRefreshRate(1, value);
+                }
+            }
 
-                    SettingNumber {
-                        settingText: "Focus Inactive";
-                        minValue: 1;
-                        maxValue: 9999;
-                        suffixText: "fps";
-                        settingValue: Performance.getCustomRefreshRate(1)
+            SettingNumber {
+                settingText: "Unfocused";
+                minValue: 1;
+                maxValue: 9999;
+                suffixText: "fps";
+                settingValue: Performance.getCustomRefreshRate(2)
 
-                        onValueChanged: {
-                            Performance.setCustomRefreshRate(1, value);
-                        }
-                    }
+                onValueChanged: {
+                    Performance.setCustomRefreshRate(2, value);
+                }
+            }
 
-                    SettingNumber {
-                        settingText: "Unfocused";
-                        minValue: 1;
-                        maxValue: 9999;
-                        suffixText: "fps";
-                        settingValue: Performance.getCustomRefreshRate(2)
+            SettingNumber {
+                settingText: "Minimized";
+                minValue: 1;
+                maxValue: 9999;
+                suffixText: "fps";
+                settingValue: Performance.getCustomRefreshRate(3)
 
-                        onValueChanged: {
-                            Performance.setCustomRefreshRate(2, value);
-                        }
-                    }
+                onValueChanged: {
+                    Performance.setCustomRefreshRate(3, value);
+                }
+            }
 
-                    SettingNumber {
-                        settingText: "Minimized";
-                        minValue: 1;
-                        maxValue: 9999;
-                        suffixText: "fps";
-                        settingValue: Performance.getCustomRefreshRate(3)
+            SettingNumber {
+                settingText: "Startup";
+                minValue: 1;
+                maxValue: 9999;
+                suffixText: "fps";
+                settingValue: Performance.getCustomRefreshRate(4)
 
-                        onValueChanged: {
-                            Performance.setCustomRefreshRate(3, value);
-                        }
-                    }
+                onValueChanged: {
+                    Performance.setCustomRefreshRate(4, value);
+                }
+            }
 
-                    SettingNumber {
-                        settingText: "Startup";
-                        minValue: 1;
-                        maxValue: 9999;
-                        suffixText: "fps";
-                        settingValue: Performance.getCustomRefreshRate(4)
+            SettingNumber {
+                settingText: "Shutdown";
+                minValue: 1;
+                maxValue: 9999;
+                suffixText: "fps";
+                settingValue: Performance.getCustomRefreshRate(5)
 
-                        onValueChanged: {
-                            Performance.setCustomRefreshRate(4, value);
-                        }
-                    }
-
-                    SettingNumber {
-                        settingText: "Shutdown";
-                        minValue: 1;
-                        maxValue: 9999;
-                        suffixText: "fps";
-                        settingValue: Performance.getCustomRefreshRate(5)
-
-                        onValueChanged: {
-                            Performance.setCustomRefreshRate(5, value);
-                        }
-                    }
+                onValueChanged: {
+                    Performance.setCustomRefreshRate(5, value);
                 }
             }
         }
