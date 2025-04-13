@@ -65,9 +65,17 @@ Item {
 				handle: Rectangle {
 					x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - width)
 					y: slider.topPadding + slider.availableHeight / 2 - height / 2
-					implicitWidth: 5
-					implicitHeight: 20
-					color: "#5153bd"
+					implicitWidth: 20
+					implicitHeight: 40
+                    color: "black"
+
+                    Rectangle {
+                        width: 16
+                        height: 36
+                        color: "gray"
+                        anchors.horizontalCenter: parent.horizontalCenter;
+                        anchors.verticalCenter: parent.verticalCenter;
+                    }
 				}
 
 				background: Rectangle {

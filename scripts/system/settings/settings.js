@@ -13,7 +13,6 @@
 
 // TODO: Fullscreen display?
 // TODO: Replace bool setting with switch?
-// FIXME: Setting slider handle
 // TODO: Setting slider incorrect radius around filled background?
 // FIXME: Combobox overflows text onto arrow visual
 
