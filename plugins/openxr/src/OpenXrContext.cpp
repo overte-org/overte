@@ -96,6 +96,7 @@ bool OpenXrContext::initInstance() {
 
     bool openglSupported = false;
     bool userPresenceSupported = false;
+    bool odysseyControllerSupported = false;
 
     qCInfo(xr_context_cat, "Runtime supports %d extensions:", count);
     for (uint32_t i = 0; i < count; i++) {
@@ -104,6 +105,8 @@ bool OpenXrContext::initInstance() {
             openglSupported = true;
         } else if (strcmp(XR_EXT_USER_PRESENCE_EXTENSION_NAME, properties[i].extensionName) == 0) {
             userPresenceSupported = true;
+        } else if (strcmp(XR_EXT_SAMSUNG_ODYSSEY_CONTROLLER_EXTENSION_NAME, properties[i].extensionName) == 0) {
+            odysseyControllerSupported = true;
         }
     }
 
@@ -113,8 +116,13 @@ bool OpenXrContext::initInstance() {
     }
 
     std::vector<const char*> enabled = {XR_KHR_OPENGL_ENABLE_EXTENSION_NAME};
+
     if (userPresenceSupported) {
         enabled.push_back(XR_EXT_USER_PRESENCE_EXTENSION_NAME);
+    }
+
+    if (odysseyControllerSupported) {
+        enabled.push_back(XR_EXT_SAMSUNG_ODYSSEY_CONTROLLER_EXTENSION_NAME);
     }
 
     XrInstanceCreateInfo info = {
