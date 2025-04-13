@@ -308,10 +308,12 @@
  *     For example, <code>"[0,1,mat::string,mat::string2]"</code> will replace mesh parts 0 and 1, and any mesh parts with
  *     material <code>"string"</code> or <code>"string2"</code>. Do not put spaces around the commas. Invalid values are parsed
  *     to <code>0</code>.</p>
- * @property {string} materialMappingMode="uv" - How the material is mapped to the entity. Either <code>"uv"</code> or
- *     <code>"projected"</code>. In <code>"uv"</code> mode, the material is evaluated within the UV space of the mesh it is
- *     applied to. In <code>"projected"</code> mode, the 3D transform (position, rotation, and dimensions) of the Material
- *     entity is used to evaluate the texture coordinates for the material.
+ * @property {string} materialMappingMode="uv" - How the material is mapped to the entity. Either <code>"uv"</code>,
+ *     <code>"projected"</code>, or <code>"triplanar"</code>. In <code>"uv"</code> mode, the material is evaluated within the
+ *     UV space of the mesh it is applied to. In <code>"projected"</code> mode, the 3D transform (position, rotation, and
+ *     dimensions) of the Material entity is used to evaluate the texture coordinates for the material.  <code>"triplanar"</code>
+ *     mode is like <code>"uv"</code> mode but the UV coordinates are evaluated based on a triplanar mapping instead of the
+ *     coordinates from the model.
  * @property {Vec2} materialMappingPos=0,0 - Offset position in UV-space of the top left of the material, range
  *     <code>{ x: 0, y: 0 }</code> &ndash; <code>{ x: 1, y: 1 }</code>.
  * @property {Vec2} materialMappingScale=1,1 - How much to scale the material within the parent's UV-space.

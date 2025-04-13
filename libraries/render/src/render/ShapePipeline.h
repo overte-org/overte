@@ -40,6 +40,7 @@ public:
         CULL_FACE_NONE, // if neither of these are set, we're CULL_FACE_BACK
         CULL_FACE_FRONT,
         MTOON,
+        TRIPLANAR,
 
         OWN_PIPELINE,
         INVALID,
@@ -81,6 +82,7 @@ public:
         Builder& withTranslucent() { _flags.set(TRANSLUCENT); return (*this); }
         Builder& withLightMap() { _flags.set(LIGHTMAP); return (*this); }
         Builder& withTangents() { _flags.set(TANGENTS); return (*this); }
+        Builder& withoutTangents() { _flags.reset(TANGENTS); return (*this); }
         Builder& withUnlit() { _flags.set(UNLIT); return (*this); }
         Builder& withDeformed() { _flags.set(DEFORMED); return (*this); }
         Builder& withDualQuatSkinned() { _flags.set(DUAL_QUAT_SKINNED); return (*this); }
@@ -88,6 +90,7 @@ public:
         Builder& withWireframe() { _flags.set(WIREFRAME); return (*this); }
         Builder& withFade() { _flags.set(FADE); return (*this); }
         Builder& withMToon() { _flags.set(MTOON); return (*this); }
+        Builder& withTriplanar() { _flags.set(TRIPLANAR); return (*this); }
 
         Builder& withoutCullFace() { return withCullFaceMode(graphics::MaterialKey::CullFaceMode::CULL_NONE); }
         Builder& withCullFaceMode(graphics::MaterialKey::CullFaceMode cullFaceMode) {
@@ -191,6 +194,9 @@ public:
             Builder& withMToon() { _flags.set(MTOON); _mask.set(MTOON); return (*this); }
             Builder& withoutMToon() { _flags.reset(MTOON); _mask.set(MTOON); return (*this); }
 
+            Builder& withTriplanar() { _flags.set(TRIPLANAR); _mask.set(TRIPLANAR); return (*this); }
+            Builder& withoutTriplanar() { _flags.reset(TRIPLANAR); _mask.set(TRIPLANAR); return (*this); }
+
             Builder& withCustom(uint8_t custom) { _flags &= (~CUSTOM_MASK); _flags |= (custom << CUSTOM_0); _mask |= (CUSTOM_MASK); return (*this); }
             Builder& withoutCustom() { _flags &= (~CUSTOM_MASK);  _mask |= (CUSTOM_MASK); return (*this); }
 
@@ -221,6 +227,7 @@ public:
     bool isCullFaceFront() const { return !_flags[CULL_FACE_NONE] && _flags[CULL_FACE_FRONT]; }
     bool isFaded() const { return _flags[FADE]; }
     bool isMToon() const { return _flags[MTOON]; }
+    bool isTriplanar() const { return _flags[TRIPLANAR]; }
 
     bool hasOwnPipeline() const { return _flags[OWN_PIPELINE]; }
     bool isValid() const { return !_flags[INVALID]; }
@@ -261,6 +268,7 @@ inline QDebug operator<<(QDebug debug, const ShapeKey& key) {
                 << "isCullFace:" << key.isCullFace()
                 << "isFaded:" << key.isFaded()
                 << "isMToon:" << key.isMToon()
+                << "isTriplanar:" << key.isTriplanar()
                 << "]";
         }
     } else {

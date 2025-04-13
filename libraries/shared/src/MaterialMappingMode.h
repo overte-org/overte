@@ -14,6 +14,7 @@
 enum MaterialMappingMode : uint8_t {
     UV = 0,
     PROJECTED,
+    TRIPLANAR,
     // put new mapping-modes before this line.
     UNSET_MATERIAL_MAPPING_MODE
 };

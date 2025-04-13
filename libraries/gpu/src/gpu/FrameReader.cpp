@@ -746,6 +746,23 @@ BatchPointer Deserializer::readBatch(const json& node) {
     readOptional(batch._drawcallUniformReset, node, keys::drawcallUniformReset);
     readPointerCache(batch._textures, node, keys::textures, textures);
     readPointerCache(batch._textureTables, node, keys::textureTables, textureTables);
+    {
+        auto transform = [](const json& node) -> Sampler {
+            Sampler::Desc desc;
+            desc._borderColor = readVec4(node["borderColor"]);
+            desc._maxAnisotropy = node["maxAnisotropy"];
+            desc._filter = node["filter"];
+            desc._comparisonFunc = node["comparisonFunc"];
+            desc._wrapModeU = node["wrapModeU"];
+            desc._wrapModeV = node["wrapModeV"];
+            desc._wrapModeW = node["wrapModeW"];
+            desc._mipOffset = node["mipOffset"];
+            desc._minMip = node["minMip"];
+            desc._maxMip = node["maxMip"];
+            return Sampler(desc);
+        };
+        readBatchCacheTransformed<Sampler, Sampler>(batch._samplers, node, keys::samplers, transform);
+    }
     readPointerCache(batch._buffers, node, keys::buffers, buffers);
     readPointerCache(batch._pipelines, node, keys::pipelines, pipelines);
     readPointerCache(batch._streamFormats, node, keys::formats, formats);

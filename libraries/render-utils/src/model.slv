@@ -56,11 +56,18 @@ layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
         layout(location=RENDER_UTILS_ATTR_TANGENT_WS) out vec3 _tangentWS;
     <@endif@>
 <@endif@>
+<@if HIFI_USE_TRIPLANAR@>
+    layout(location=RENDER_UTILS_ATTR_POSITION_MS) out vec3 _positionMS;
+<@endif@>
 
 void main(void) {
     vec4 positionMS = inPosition;
     vec3 normalMS = inNormal.xyz;
     vec3 tangentMS = inTangent.xyz;
+
+<@if HIFI_USE_TRIPLANAR@>
+        _positionMS = inPosition.xyz;
+<@endif@>
 
 <@if HIFI_USE_DEFORMED or HIFI_USE_DEFORMEDDQ@>
         evalMeshDeformer(inPosition, positionMS,

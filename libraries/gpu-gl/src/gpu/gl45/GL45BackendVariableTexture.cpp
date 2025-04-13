@@ -97,7 +97,7 @@ GL45ResourceTexture::GL45ResourceTexture(const std::weak_ptr<GLBackend>& backend
 
     allocateStorage(allocatedMip);
     copyMipsFromTexture();
-    syncSampler();
+    syncSampler(texture.getSampler());
 }
 
 void GL45ResourceTexture::allocateStorage(uint16 allocatedMip) {
@@ -129,8 +129,8 @@ Size GL45ResourceTexture::copyMipsFromTexture() {
     return amount;
 }
 
-void GL45ResourceTexture::syncSampler() const {
-    Parent::syncSampler();
+void GL45ResourceTexture::syncSampler(const Sampler& sampler) const {
+    Parent::syncSampler(sampler);
 #if GPU_BINDLESS_TEXTURES
     if (!isBindless()) {
         glTextureParameteri(_id, GL_TEXTURE_BASE_LEVEL, _populatedMip - _allocatedMip);
@@ -178,7 +178,7 @@ size_t GL45ResourceTexture::promote() {
 
     // Update sampler
     _cachedSampler = getInvalidSampler();
-    syncSampler();
+    syncSampler(_gpuObject.getSampler());
 
     // update the memory usage
     Backend::textureResourceGPUMemSize.update(oldSize, 0);
@@ -220,7 +220,7 @@ size_t GL45ResourceTexture::demote() {
 
     // Update sampler
     _cachedSampler = getInvalidSampler();
-    syncSampler();
+    syncSampler(_gpuObject.getSampler());
 
     // update the memory usage
     Backend::textureResourceGPUMemSize.update(oldSize, 0);
@@ -285,7 +285,7 @@ void GL45ResourceTexture::populateTransferQueue(TransferQueue& pendingTransfers)
             _populatedMip = sourceMip;
             incrementPopulatedSize(_gpuObject.evalMipSize(sourceMip));
             sanityCheck();
-            syncSampler();
+            syncSampler(_gpuObject.getSampler());
         }));
     } while (sourceMip != _allocatedMip);
 }
@@ -384,7 +384,7 @@ GL45SparseResourceTexture::GL45SparseResourceTexture(const std::weak_ptr<GLBacke
     _pageBytes = (uint32_t)(_pageBytes * SPARSE_PAGE_SIZE_OVERHEAD_ESTIMATE);
 
     //allocateStorage();
-    syncSampler();
+    syncSampler(texture.getSampler());
 }
 
 GL45SparseResourceTexture::~GL45SparseResourceTexture() {
@@ -625,7 +625,7 @@ void GL45Texture::stripToMip(uint16_t newMinMip) {
     }
 
     // Re-sync the sampler to force access to the new mip level
-    syncSampler();
+    syncSampler(_gpuObject.getSampler());
     updateSize();
 }
 

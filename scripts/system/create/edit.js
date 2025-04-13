@@ -4,7 +4,7 @@
 //  Persist toolbar by HRS on June 2nd, 2015.
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2024 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  This script allows you to edit entities with a new UI/UX for mouse and trackpad based editing
 //
@@ -161,12 +161,13 @@
     editTools.addListener(selectionManager.updateEditSettings);
 
     var entityShapeVisualizerSessionName = "SHAPE_VISUALIZER_" + Uuid.generate();
-
+    createApp.entityShapeVisualizerLocalEntityToExclude = [];
     var EntityShapeVisualizer = Script.require('./modules/entityShapeVisualizer.js');
     var entityShapeVisualizer = new EntityShapeVisualizer(["Zone"], entityShapeVisualizerSessionName);
 
     var entityListTool = new EntityListTool(shouldUseEditTabletApp, selectionManager);
     entityListTool.createApp = createApp;
+    entityListTool.grid = grid;
     entityListTool.cameraManager = cameraManager;
     entityListTool.selectionDisplay = selectionDisplay;
 
@@ -174,6 +175,7 @@
         selectionDisplay.updateHandles();
         entityIconOverlayManager.updatePositions(selectionManager.selections);
         entityShapeVisualizer.setEntities(selectionManager.selections);
+        createApp.entityShapeVisualizerLocalEntityToExclude = entityShapeVisualizer.getLocalEntityToExclude();
     });
 
     var DEGREES_TO_RADIANS = Math.PI / 180.0;
@@ -542,7 +544,7 @@
             localOnly: false
         },
     };
-
+    var fcreateNewEntity;
     var toolBar = (function () {
         var EDIT_SETTING = "io.highfidelity.isEditing"; // for communication with other scripts
         var that = {},
@@ -552,7 +554,7 @@
             dialogWindow = null,
             tablet = null;
 
-        function createNewEntity(requestedProperties) {
+        function createNewEntity(requestedProperties, entityHostType="domain") {
             var dimensions = requestedProperties.dimensions ? requestedProperties.dimensions : DEFAULT_DIMENSIONS;
             var position = createApp.getPositionToCreateEntity();
             var entityID = null;
@@ -632,7 +634,7 @@
                     properties.visible = false;
                 }
 
-                entityID = Entities.addEntity(properties);
+                entityID = Entities.addEntity(properties, entityHostType);
 
                 var dimensionsCheckCallback = function(){
                     // Adjust position of entity per bounding box after it has been created and auto-resized.
@@ -711,7 +713,9 @@
 
             return entityID;
         }
-
+        
+        fcreateNewEntity = createNewEntity;
+        
         function closeExistingDialogWindow() {
             if (dialogWindow) {
                 dialogWindow.close();
@@ -745,6 +749,7 @@
 
         var MATERIAL_MODE_UV = 0;
         var MATERIAL_MODE_PROJECTED = 1;
+        var MATERIAL_MODE_TRIPLANAR = 2;
 
         function handleNewModelDialogResult(result) {
             if (result) {
@@ -885,6 +890,9 @@
                 //switch (result.comboBox) {
                 //    case MATERIAL_MODE_PROJECTED:
                 //        materialMappingMode = "projected";
+                //        break;
+                //    case MATERIAL_MODE_TRIPLANAR:
+                //        materialMappingMode = "triplanar";
                 //        break;
                 //    default:
                 //        shapeType = "uv";
@@ -2609,6 +2617,10 @@
                     entity.properties.keyLight.direction = Vec3.toPolar(entity.properties.keyLight.direction);
                     entity.properties.keyLight.direction.z = 0.0;
                 }
+                if (selectionManager.selections.length === 1) {
+                    entity.properties.children = createApp.getChildEntitiesList(entity.id);
+                }
+                
                 selections.push(entity);
             }
             data.selections = selections;
@@ -2980,6 +2992,10 @@
                     type: 'importUi_LOAD_DATA',
                     importUiPersistedData: importUiPersistedData
                 });
+            } else if (data.type === "specificEntityNavigation") {
+                selectionManager.setSelections([data.id], this);
+            } else if (data.type === "createChildEntity") {
+                fcreateNewEntity(data.properties, data.entityHostType);
             }
         };
 
@@ -3386,7 +3402,7 @@
         }
     }
 
-        createApp.rotateAsNextClickedSurface = function() {
+    createApp.rotateAsNextClickedSurface = function() {
         if (!SelectionManager.hasSelection() || !SelectionManager.hasUnlockedSelection()) {
             audioFeedback.rejection();
             Window.notifyEditError("You have nothing selected, or the selection is locked.");
@@ -3394,6 +3410,21 @@
         } else {
             createApp.expectingRotateAsClickedSurface = true;
         }
+    }
+
+    createApp.getChildEntitiesList = function(parentID) {
+        let children = Entities.getChildrenIDs(parentID);
+        let childList = [];
+        let i, properties;
+        if (children.length > 0) {
+            for (i = 0; i < children.length; i++ ) {
+                properties = Entities.getEntityProperties(children[i], ["id", "name", "type", "entityHostType"]);
+                if (properties.name !== undefined && properties.name !== entityShapeVisualizerSessionName) {
+                    childList.push(properties);
+                }
+            }
+        }
+        return childList;
     }
 
 }()); // END LOCAL_SCOPE

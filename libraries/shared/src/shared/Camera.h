@@ -267,11 +267,11 @@ private:
 
     CameraMode _mode{ CAMERA_MODE_LOOK_AT };
     glm::mat4 _transform;
-    glm::mat4 _projection;
+    glm::mat4 _projection = glm::mat4(1.f);
 
     // derived
     glm::vec3 _position { 0.0f, 0.0f, 0.0f };
-    glm::quat _orientation;
+    glm::quat _orientation { 1.f, 0.f, 0.f, 0.f };
     bool _isKeepLookingAt{ false };
     glm::vec3 _lookingAt;
 

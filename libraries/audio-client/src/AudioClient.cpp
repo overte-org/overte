@@ -320,6 +320,18 @@ AudioClient::AudioClient() {
     // avoid putting a lock in the device callback
     assert(_localSamplesAvailable.is_lock_free());
 
+    // Set up the desired audio format, since scripting API expects it to be set and audio scripting API
+    // is initialized before audio thread starts.
+    _desiredInputFormat.setSampleRate(AudioConstants::SAMPLE_RATE);
+    _desiredInputFormat.setSampleSize(16);
+    _desiredInputFormat.setCodec("audio/pcm");
+    _desiredInputFormat.setSampleType(QAudioFormat::SignedInt);
+    _desiredInputFormat.setByteOrder(QAudioFormat::LittleEndian);
+    _desiredInputFormat.setChannelCount(1);
+
+    _desiredOutputFormat = _desiredInputFormat;
+    _desiredOutputFormat.setChannelCount(OUTPUT_CHANNEL_COUNT);
+
     // deprecate legacy settings
     {
         Setting::Handle<int>::Deprecated("maxFramesOverDesired", InboundAudioStream::MAX_FRAMES_OVER_DESIRED);

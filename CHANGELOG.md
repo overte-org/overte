@@ -1,5 +1,5 @@
 <!--
-Copyright 2022-2023 Overte e.V.
+Copyright 2022-2025 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
@@ -10,6 +10,65 @@ like documentaion or CI pipeline.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2025.03.3] 2025.03.25
+
+### Fixes
+- Fix starting in VR on Windows (PR1378)
+
+### Removals
+- Remove proprietary graphing functionality from the Domain server control panel (PR1371)
+
+
+## [2025.03.2] 2025.03.15
+
+### Fixes
+- fix long startup times (PR1360)
+- Initial fix for blurry/noisy transparencies on TAA (PR1358)
+
+
+## [2025.03.1] 2025.03.8
+
+### Fixes
+- Fix for missing jsdoc (PR1226)
+- remove unnecessary fullscreen pass when haze is off/disabled (PR1176)
+- Fix ShowRecieveStats in the Developer > Avatar menu (PR1247)
+- Fixed Camera Sensitivity setting not saving (PR1220)
+- Remove an assert referencing checkLightId, which seems not to exist anywhere (PR1263)
+- Add .cache to gitignore for VSCode builds (PR1211)
+- Amended path to Rearranged_Basic_Sandbox.tar.gz (PR1288)
+- fix script initialization order bug (PR1330)
+- Fix VR Preview on Linux with Mesa drivers (PR1318)
+
+### Changes
+- Change ArmoredChat timestamps to use real timestamps (PR1241)
+- Templated render stages (PR1177)
+- Implement network serializer (PR1293)
+- Armored-Chat: Add sortOrder. (PR1276)
+- Places App: Addressing ugly image "broken link" in Place Details (PR1304)
+- Improved TAA with Velocity Buffer (PR1213)
+- Refactor Application.cpp (PR939)
+- Places App.: Larger display and no more blurry effect in Places List. (PR1307)
+- Always show "Load Defaults" in "Running Scripts", not just when the developer menu is enabled. (PR1331)
+
+### Additions
+- ArmoredChat notifications on join and leave (PR1203)
+- Add a label to the Pal application 'displayname' field (PR1204)
+- support more procedural shader uniform types, including arrays (PR1178)
+- Add a setting to hide the Graphics icon (PR1274)
+- Graphics App: adding a setting to hide or display the app in the tablet/toolbar (PR1275)
+- Add support for base64 images in image entity URLs (PR1278)
+- Camera clipping (PR1217)
+- Places app: Portal Spawner and Copy URL (PR1296)
+
+### Removals
+- Remove missed comment about removing dependency on script library. (PR1302)
+
+### Build System
+- Update Qt package and enable QtX11Extras. (PR1272)
+- Update GitHub Actions (PR1281)
+- Fix failure of Node build due to deprecated distutils (PR1329)
+- Update GitHub Actions server packaging (PR1333)
 
 
 ## [2024.11.1] 2024.11.23

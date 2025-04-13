@@ -27,6 +27,7 @@
 #include <QtNetwork/QNetworkAccessManager>
 #include <QtNetwork/QNetworkRequest>
 
+#include <glad/glad.h>
 #include <qfile.h>
 #include <qfileinfo.h>
 
@@ -1283,6 +1284,56 @@ QNetworkReply* GLTFSerializer::request(hifi::URL& url, bool isTest) {
     return netReply;                // trying to sync later on.
 }
 
+static gpu::Sampler::Filter filterFromGL(cgltf_int minFilter, cgltf_int magFilter) {
+    if (magFilter == GL_NEAREST) {
+        if (minFilter == GL_NEAREST) {
+            return gpu::Sampler::Filter::FILTER_MIN_MAG_POINT;
+        } else if (minFilter == GL_LINEAR) {
+            return gpu::Sampler::Filter::FILTER_MIN_LINEAR_MAG_POINT;
+        } else if (minFilter == GL_NEAREST_MIPMAP_NEAREST) {
+            return gpu::Sampler::Filter::FILTER_MIN_MAG_MIP_POINT;
+        } else if (minFilter == GL_NEAREST_MIPMAP_LINEAR) {
+            return gpu::Sampler::Filter::FILTER_MIN_MAG_POINT_MIP_LINEAR;
+        } else if (minFilter == GL_LINEAR_MIPMAP_NEAREST) {
+            return gpu::Sampler::Filter::FILTER_MIN_LINEAR_MAG_MIP_POINT;
+        } else if (minFilter == GL_LINEAR_MIPMAP_LINEAR) {
+            return gpu::Sampler::Filter::FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR;
+        }
+    } else if (magFilter == GL_LINEAR) {
+        if (minFilter == GL_NEAREST) {
+            return gpu::Sampler::Filter::FILTER_MIN_POINT_MAG_LINEAR;
+        } else if (minFilter == GL_LINEAR) {
+            return gpu::Sampler::Filter::FILTER_MIN_MAG_LINEAR;
+        } else if (minFilter == GL_NEAREST_MIPMAP_NEAREST) {
+            return gpu::Sampler::Filter::FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT;
+        } else if (minFilter == GL_NEAREST_MIPMAP_LINEAR) {
+            return gpu::Sampler::Filter::FILTER_MIN_POINT_MAG_MIP_LINEAR;
+        } else if (minFilter == GL_LINEAR_MIPMAP_NEAREST) {
+            return gpu::Sampler::Filter::FILTER_MIN_MAG_LINEAR_MIP_POINT;
+        } else if (minFilter == GL_LINEAR_MIPMAP_LINEAR) {
+            return gpu::Sampler::Filter::FILTER_MIN_MAG_MIP_LINEAR;
+        }
+    }
+
+    return gpu::Sampler::Filter::FILTER_MIN_MAG_POINT;
+}
+
+static gpu::Sampler::WrapMode wrapModeFromGL(cgltf_int wrapMode) {
+    if (wrapMode == GL_REPEAT) {
+        return gpu::Sampler::WrapMode::WRAP_REPEAT;
+    } else if (wrapMode == GL_MIRRORED_REPEAT) {
+        return gpu::Sampler::WrapMode::WRAP_MIRROR;
+    } else if (wrapMode == GL_CLAMP_TO_EDGE) {
+        return gpu::Sampler::WrapMode::WRAP_CLAMP;
+    } else if (wrapMode == GL_CLAMP_TO_BORDER) {
+        return gpu::Sampler::WrapMode::WRAP_BORDER;
+    } else if (wrapMode == GL_MIRROR_CLAMP_TO_EDGE) {
+        return gpu::Sampler::WrapMode::WRAP_MIRROR_ONCE;
+    }
+
+    return gpu::Sampler::WrapMode::WRAP_REPEAT;
+}
+
 HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture) {
     HFMTexture hfmTex = HFMTexture();
     hfmTex.texcoordSet = 0;
@@ -1339,6 +1390,18 @@ HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture) {
             hfmTex.content = requestEmbeddedData(url);
         }
     }
+
+    auto sampler = texture->sampler;
+    if (sampler) {
+        gpu::Sampler::Desc samplerDesc;
+
+        samplerDesc._filter = filterFromGL(sampler->min_filter, sampler->mag_filter);
+        samplerDesc._wrapModeU = wrapModeFromGL(sampler->wrap_s);
+        samplerDesc._wrapModeV = wrapModeFromGL(sampler->wrap_t);
+
+        hfmTex.sampler = gpu::Sampler(samplerDesc);
+    }
+
     return hfmTex;
 }
 

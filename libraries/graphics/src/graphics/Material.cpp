@@ -86,6 +86,7 @@ Material::Material(const Material& material) :
     _materialParams(material._materialParams),
     _cullFaceMode(material._cullFaceMode),
     _textureMaps(material._textureMaps),
+    _samplers(material._samplers),
     _defaultFallthrough(material._defaultFallthrough),
     _propertyFallthroughs(material._propertyFallthroughs)
 {
@@ -109,6 +110,7 @@ Material& Material::operator=(const Material& material) {
     _materialParams = material._materialParams;
     _cullFaceMode = material._cullFaceMode;
     _textureMaps = material._textureMaps;
+    _samplers = material._samplers;
 
     _defaultFallthrough = material._defaultFallthrough;
     _propertyFallthroughs = material._propertyFallthroughs;
@@ -195,6 +197,21 @@ void Material::setTextureMap(MapChannel channel, const TextureMapPointer& textur
 
     _materialParams = (textureMap ? glm::vec2(textureMap->getMappingMode(), textureMap->getRepeat()) : glm::vec2(MaterialMappingMode::UV, 1.0));
 
+}
+
+void Material::setSampler(MapChannel channel, const gpu::Sampler& sampler) {
+    std::lock_guard<std::recursive_mutex> locker(_textureMapsMutex);
+    _samplers[channel] = sampler;
+}
+
+void Material::applySampler(MapChannel channel) {
+    std::lock_guard<std::recursive_mutex> locker(_textureMapsMutex);
+
+    auto samplerItr = _samplers.find(channel);
+    auto textureMapsItr = _textureMaps.find(channel);
+    if (samplerItr != _samplers.end() && textureMapsItr != _textureMaps.end() && textureMapsItr->second->getTextureSource()) {
+        textureMapsItr->second->getTextureSource()->setSampler(samplerItr->second);
+    }
 }
 
 bool Material::resetOpacityMap() const {
@@ -350,4 +367,10 @@ void MultiMaterial::setMToonTime() {
 
     // Minimize floating point error by doing an integer division to milliseconds, before the floating point division to seconds
     _schemaBuffer.edit<graphics::MultiMaterial::MToonSchema>()._time = (float)((usecTimestampNow() - mtoonStartTime) / USECS_PER_MSEC) / MSECS_PER_SECOND;
+}
+
+void MultiMaterial::applySamplers() const {
+    for (auto& func : _samplerFuncs) {
+        func();
+    }
 }

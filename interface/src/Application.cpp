@@ -159,6 +159,7 @@ const bool DEFAULT_DESKTOP_TABLET_BECOMES_TOOLBAR = true;
 const bool DEFAULT_HMD_TABLET_BECOMES_TOOLBAR = false;
 const bool DEFAULT_PREFER_STYLUS_OVER_LASER = false;
 const bool DEFAULT_PREFER_AVATAR_FINGER_OVER_STYLUS = false;
+const bool DEFAULT_MOUSE_CAPTURE_VR = false;
 const bool DEFAULT_SHOW_GRAPHICS_ICON = true;
 const bool DEFAULT_MINI_TABLET_ENABLED = false;
 const bool DEFAULT_AWAY_STATE_WHEN_FOCUS_LOST_IN_VR_ENABLED = true;
@@ -225,6 +226,7 @@ Application::Application(
     _hmdTabletBecomesToolbarSetting("hmdTabletBecomesToolbar", DEFAULT_HMD_TABLET_BECOMES_TOOLBAR),
     _preferStylusOverLaserSetting("preferStylusOverLaser", DEFAULT_PREFER_STYLUS_OVER_LASER),
     _preferAvatarFingerOverStylusSetting("preferAvatarFingerOverStylus", DEFAULT_PREFER_AVATAR_FINGER_OVER_STYLUS),
+    _defaultMouseCaptureVR("defaultMouseCaptureVR", DEFAULT_MOUSE_CAPTURE_VR),
     _showGraphicsIconSetting("showGraphicsIcon", DEFAULT_SHOW_GRAPHICS_ICON),
     _constrainToolbarPosition("toolbar/constrainToolbarToCenterX", true),
     _awayStateWhenFocusLostInVREnabled("awayStateWhenFocusLostInVREnabled", DEFAULT_AWAY_STATE_WHEN_FOCUS_LOST_IN_VR_ENABLED),
@@ -1741,17 +1743,19 @@ void Application::idle() {
 #endif
 
 #ifdef Q_OS_WIN
-    // If tracing is enabled then monitor the CPU in a separate thread
-    static std::once_flag once;
-    std::call_once(once, [&] {
-        if (trace_app().isDebugEnabled()) {
-            QThread* cpuMonitorThread = new QThread(qApp);
-            cpuMonitorThread->setObjectName("cpuMonitorThread");
-            QObject::connect(cpuMonitorThread, &QThread::started, [this] { setupCpuMonitorThread(); });
-            QObject::connect(qApp, &QCoreApplication::aboutToQuit, cpuMonitorThread, &QThread::quit);
-            cpuMonitorThread->start();
-        }
-    });
+    {
+        // If tracing is enabled then monitor the CPU in a separate thread
+        static std::once_flag once;
+        std::call_once(once, [&] {
+            if (trace_app().isDebugEnabled()) {
+                QThread* cpuMonitorThread = new QThread(qApp);
+                cpuMonitorThread->setObjectName("cpuMonitorThread");
+                QObject::connect(cpuMonitorThread, &QThread::started, [this] { setupCpuMonitorThread(); });
+                QObject::connect(qApp, &QCoreApplication::aboutToQuit, cpuMonitorThread, &QThread::quit);
+                cpuMonitorThread->start();
+            }
+        });
+    }
 #endif
 
     auto displayPlugin = getActiveDisplayPlugin();
@@ -1880,6 +1884,16 @@ void Application::idle() {
     _overlayConductor.update(secondsSinceLastUpdate);
 
     _gameLoopCounter.increment();
+
+    {
+        static std::once_flag once;
+        std::call_once(once, [] {
+            const QString& bookmarksError = DependencyManager::get<AvatarBookmarks>()->getBookmarkError();
+            if (!bookmarksError.isEmpty()) {
+                OffscreenUi::asyncWarning("Avatar Bookmarks Error", "JSON parse error: " + bookmarksError, QMessageBox::Ok, QMessageBox::Ok);
+            }
+        });
+    }
 }
 
 void Application::update(float deltaTime) {
@@ -2372,7 +2386,6 @@ void Application::update(float deltaTime) {
         PerformanceTimer perfTimer("AnimDebugDraw");
         AnimDebugDraw::getInstance().update();
     }
-
 
     { // Game loop is done, mark the end of the frame for the scene transactions and the render loop to take over
         PerformanceTimer perfTimer("enqueueFrame");

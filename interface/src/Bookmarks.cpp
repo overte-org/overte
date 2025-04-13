@@ -4,6 +4,7 @@
 //
 //  Created by David Rowe on 13 Jan 2015.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -24,10 +25,6 @@
 #include "Menu.h"
 #include "InterfaceLogging.h"
 
-Bookmarks::Bookmarks() :
-_isMenuSorted(false)
-{
-}
 void Bookmarks::deleteBookmark() {
     QStringList bookmarkList;
     QList<QAction*> menuItems = _bookmarksMenu->actions();
@@ -154,8 +151,14 @@ void Bookmarks::readFromFile() {
     }
 
     QByteArray data = loadFile.readAll();
-    QJsonDocument json(QJsonDocument::fromJson(data));
-    _bookmarks = json.object().toVariantMap();
+    QJsonParseError error;
+    QJsonDocument json = QJsonDocument::fromJson(data, &error);
+
+    if (json.isNull()) {
+        _bookmarkError = error.errorString();
+    } else {
+        _bookmarks = json.object().toVariantMap();
+    }
 }
 
 void Bookmarks::persistToFile() {

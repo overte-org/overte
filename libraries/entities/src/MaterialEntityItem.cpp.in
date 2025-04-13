@@ -91,7 +91,7 @@ void MaterialEntityItem::setUnscaledDimensions(const glm::vec3& value) {
     _desiredDimensions = value;
     if (_hasVertexShader || _materialMappingMode == MaterialMappingMode::PROJECTED) {
         EntityItem::setUnscaledDimensions(value);
-    } else if (_materialMappingMode == MaterialMappingMode::UV) {
+    } else if (_materialMappingMode == MaterialMappingMode::UV || _materialMappingMode == MaterialMappingMode::TRIPLANAR) {
         EntityItem::setUnscaledDimensions(ENTITY_ITEM_DEFAULT_DIMENSIONS);
     }
 }

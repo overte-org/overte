@@ -50,12 +50,19 @@ Backend::TransformCamera Backend::TransformCamera::getEyeCamera(int eye,
     TransformCamera result = *this;
     Transform eyeView = view;
     Transform eyePreviousView = previousView;
+    glm::vec3 eyePosition = extractTranslation(stereo._eyeViews[eye]);
+    glm::quat eyeOrientation = glmExtractRotation(stereo._eyeViews[eye]);
+    glm::vec3 eyePreviousPosition = extractTranslation(prevStereo._eyeViews[eye]);
+    glm::quat eyePreviousOrientation = glmExtractRotation(prevStereo._eyeViews[eye]);
     if (!stereo._skybox) {
-        eyeView.postTranslate(-Vec3(stereo._eyeViews[eye][3]));
-        eyePreviousView.postTranslate(-Vec3(prevStereo._eyeViews[eye][3]));
+        eyeView.postRotate(eyeOrientation).postTranslate(eyePosition);
+        eyePreviousView.postRotate(eyePreviousOrientation).postTranslate(eyePreviousPosition);
     } else {
         // FIXME: If "skybox" the ipd is set to 0 for now, let s try to propose a better solution for this in the future
-        eyePreviousView.setTranslation(vec3());
+        // XRTODO: maybe this is responsible for reprojection-like stutters?
+        //eyePreviousView.setTranslation(vec3());
+        eyeView.postRotate(eyeOrientation);
+        eyePreviousView.postRotate(eyePreviousOrientation);
     }
     result._projection = stereo._eyeProjections[eye];
     Mat4 previousProjection = prevStereo._eyeProjections[eye];

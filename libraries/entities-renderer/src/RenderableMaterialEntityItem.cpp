@@ -57,7 +57,7 @@ void MaterialEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPo
             _materialMappingPos = mappingPos;
             _materialMappingScale = mappingScale;
             _materialMappingRot = mappingRot;
-            transformChanged |= _materialMappingMode == MaterialMappingMode::UV;
+            transformChanged |= (_materialMappingMode == MaterialMappingMode::UV || _materialMappingMode == MaterialMappingMode::TRIPLANAR);
         }
     }
     {
@@ -264,6 +264,10 @@ ShapeKey MaterialEntityRenderer::getShapeKey() {
             builder.withTangents();
         }
 
+        if (drawMaterial && (MaterialMappingMode)drawMaterial->getMaterialParams().x == MaterialMappingMode::TRIPLANAR) {
+            builder.withTriplanar();
+        }
+
         if (drawMaterial && drawMaterial->isMToon()) {
             builder.withMToon();
         } else {
@@ -409,7 +413,7 @@ void MaterialEntityRenderer::deleteMaterial(const QUuid& oldParentID, const QStr
 
 void MaterialEntityRenderer::applyTextureTransform(std::shared_ptr<NetworkMaterial>& material) {
     Transform textureTransform;
-    if (_materialMappingMode == MaterialMappingMode::UV) {
+    if (_materialMappingMode == MaterialMappingMode::UV || _materialMappingMode == MaterialMappingMode::TRIPLANAR) {
         textureTransform.setTranslation(glm::vec3(_materialMappingPos, 0.0f));
         textureTransform.setRotation(glm::vec3(0.0f, 0.0f, glm::radians(_materialMappingRot)));
         textureTransform.setScale(glm::vec3(_materialMappingScale, 1.0f));
