@@ -205,12 +205,10 @@ AvatarList.avatarSessionChangedEvent.connect((_, oldSessionID) => ChatBubbles_De
 settings = Settings.getValue("ChatBubbles-Config", settings);
 Messages.messageReceived.connect(ChatBubbles_RecvMsg);
 Messages.subscribe(TYPING_NOTIFICATION_CHANNEL);
-Messages.subscribe("chat");
 
 Script.scriptEnding.connect(() => {
 	Settings.setValue("ChatBubbles-Config", settings);
 	Messages.messageReceived.disconnect(ChatBubbles_RecvMsg);
     Messages.unsubscribe(TYPING_NOTIFICATION_CHANNEL);
-    Messages.unsubscribe("chat");
     ChatBubbles_DeleteAll();
 });
