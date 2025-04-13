@@ -9,7 +9,7 @@
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 #
 
-# FIXME use the built tools 
+# FIXME use the built tools
 
 macro(AUTOSCRIBE_APPEND_QRC)
     string(CONCAT SHADER_QRC "${SHADER_QRC}" "<file alias=\"${ARGV0}\">${ARGV1}</file>\n")
@@ -121,7 +121,7 @@ macro(AUTOSCRIBE_SHADER)
     # SHADER_SCRIBED -> the output of scribe
     set(SHADER_SCRIBED "${SHADERS_DIR}/${SHADER_LIB}/${SHADER_NAME}.${SHADER_TYPE}")
 
-    # SHADER_NAME_FILE -> a file containing the shader name and extension (useful for debugging and for 
+    # SHADER_NAME_FILE -> a file containing the shader name and extension (useful for debugging and for
     # determining the type of shader from the filename)
     set(SHADER_NAME_FILE "${SHADER_SCRIBED}.name")
     file(TO_CMAKE_PATH "${SHADER_SCRIBED}" SHADER_SCRIBED)
@@ -222,7 +222,7 @@ macro(AUTOSCRIBE_SHADER_LIB)
 
     file(MAKE_DIRECTORY "${SHADERS_DIR}/${SHADER_LIB}")
 
-    list(APPEND HIFI_LIBRARIES_SHADER_INCLUDE_FILES "${CMAKE_SOURCE_DIR}/libraries/${SHADER_LIB}/src") 
+    list(APPEND HIFI_LIBRARIES_SHADER_INCLUDE_FILES "${CMAKE_SOURCE_DIR}/libraries/${SHADER_LIB}/src")
     string(REGEX REPLACE "[-]" "_" SHADER_NAMESPACE ${SHADER_LIB})
     string(CONCAT SHADER_ENUMS "${SHADER_ENUMS}" "namespace ${SHADER_NAMESPACE} {\n")
     set(SRC_FOLDER "${CMAKE_SOURCE_DIR}/libraries/${ARGN}/src")
@@ -376,7 +376,7 @@ macro(AUTOSCRIBE_SHADER_LIB)
         string(CONCAT SHADER_ENUMS "${SHADER_ENUMS}" "${PROGRAM_ENUMS}")
     endif()
 
-    # Finish the shader enums 
+    # Finish the shader enums
     string(CONCAT SHADER_ENUMS "${SHADER_ENUMS}" "} // namespace ${SHADER_NAMESPACE}\n")
 endmacro()
 
@@ -391,7 +391,7 @@ macro(AUTOSCRIBE_SHADER_LIBS)
 
     #
     # Scribe generation & program defintiion
-    # 
+    #
     foreach(SHADER_LIB ${ARGN})
         list(APPEND AUTOSCRIBE_SHADER_SEEN_LIBS ${SHADER_LIB})
         AUTOSCRIBE_SHADER_LIB(${SHADER_LIB})
@@ -399,10 +399,10 @@ macro(AUTOSCRIBE_SHADER_LIBS)
 
     # Generate the library files
     configure_file(
-        ShaderEnums.cpp.in 
+        ShaderEnums.cpp.in
         ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.cpp)
     configure_file(
-        ShaderEnums.h.in 
+        ShaderEnums.h.in
         ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.h)
 
     configure_file(shaders.qrc.in ${CMAKE_CURRENT_BINARY_DIR}/shaders.qrc)
@@ -417,16 +417,16 @@ macro(AUTOSCRIBE_SHADER_LIBS)
 
     list(APPEND AUTOSCRIBE_SHADER_LIB_SRC ${AUTOSCRIBE_SHADER_HEADERS})
     list(APPEND AUTOSCRIBE_SHADER_LIB_SRC ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.h ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.cpp)
-    
+
     # Write the shadergen command list
     set(AUTOSCRIBE_SHADERGEN_COMMANDS_FILE ${CMAKE_CURRENT_BINARY_DIR}/shadergen.txt)
     file(WRITE ${AUTOSCRIBE_SHADERGEN_COMMANDS_FILE} "${AUTOSCRIBE_SHADERGEN_COMMANDS}")
 
     if (HIFI_ANDROID)
         if (
-            (${HIFI_ANDROID_APP} STREQUAL "questInterface") OR 
+            (${HIFI_ANDROID_APP} STREQUAL "questInterface") OR
             (${HIFI_ANDROID_APP} STREQUAL "questFramePlayer") OR
-            (${HIFI_ANDROID_APP} STREQUAL "framePlayer") 
+            (${HIFI_ANDROID_APP} STREQUAL "framePlayer")
         )
             set(EXTRA_SHADERGEN_ARGS --extensions EXT_clip_cull_distance)
         endif()
@@ -436,8 +436,8 @@ macro(AUTOSCRIBE_SHADER_LIBS)
     add_custom_command(
         OUTPUT ${SCRIBED_SHADERS} ${SPIRV_SHADERS} ${REFLECTED_SHADERS}
         COMMENT "Generating/updating shaders"
-        COMMAND ${HIFI_PYTHON_EXEC} ${CMAKE_SOURCE_DIR}/tools/shadergen.py 
-            --commands ${AUTOSCRIBE_SHADERGEN_COMMANDS_FILE} 
+        COMMAND ${HIFI_PYTHON_EXEC} ${CMAKE_SOURCE_DIR}/tools/shadergen.py
+            --commands ${AUTOSCRIBE_SHADERGEN_COMMANDS_FILE}
             --tools-dir ${VCPKG_TOOLS_DIR}
             --build-dir ${CMAKE_CURRENT_BINARY_DIR}
             --source-dir ${CMAKE_SOURCE_DIR}
@@ -470,6 +470,7 @@ macro(GENERATE_RENDER_PIPELINES)
     message(STATUS "Render pipeline processing start")
 
     # We reuse the same model.slp
+    set(SRC_FOLDER "${CMAKE_SOURCE_DIR}/libraries/render-utils/src")
     file(GLOB_RECURSE MODEL_SLP_FILE ${SRC_FOLDER}/*model.slp)
     file(READ ${MODEL_SLP_FILE} MODEL_CONFIG)
     string(REGEX MATCH ".*DEFINES +([a-zA-Z\(\)/: ]+)" MDEF ${MODEL_CONFIG})
