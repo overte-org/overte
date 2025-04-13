@@ -23,22 +23,14 @@
 
 <@if HIFI_USE_DEFORMED or HIFI_USE_DEFORMEDDQ@>
     <@include MeshDeformer.slh@>
-    <@if HIFI_USE_DEFORMED@>
-        <@if HIFI_USE_SHADOW@>
-            <$declareMeshDeformer(_SCRIBE_NULL, _SCRIBE_NULL, 1, _SCRIBE_NULL, 1)$>
-        <@elif not HIFI_USE_NORMALMAP@>
-            <$declareMeshDeformer(1, _SCRIBE_NULL, 1, _SCRIBE_NULL, 1)$>
-        <@else@>
-            <$declareMeshDeformer(1, 1, 1, _SCRIBE_NULL, 1)$>
-        <@endif@>
+    <@if HIFI_USE_SHADOW@>
+        <$declareMeshDeformer(_SCRIBE_NULL, _SCRIBE_NULL, 1, HIFI_USE_DEFORMEDDQ, 1)$>
+    <@elif not HIFI_USE_NORMALMAP@>
+        <$declareMeshDeformer(1, _SCRIBE_NULL, 1, HIFI_USE_DEFORMEDDQ, 1)$>
+    <@elif HIFI_USE_TRIPLANAR@>
+        <$declareMeshDeformer(1, _SCRIBE_NULL, 1, HIFI_USE_DEFORMEDDQ, 1)$>
     <@else@>
-        <@if HIFI_USE_SHADOW@>
-            <$declareMeshDeformer(_SCRIBE_NULL, _SCRIBE_NULL, 1, 1, 1)$>
-        <@elif not HIFI_USE_NORMALMAP@>
-            <$declareMeshDeformer(1, _SCRIBE_NULL, 1, 1, 1)$>
-        <@else@>
-            <$declareMeshDeformer(1, 1, 1, 1, 1)$>
-        <@endif@>
+        <$declareMeshDeformer(1, 1, 1, HIFI_USE_DEFORMEDDQ, 1)$>
     <@endif@>
     <$declareMeshDeformerActivation(1, 1)$>
 <@endif@>
@@ -52,21 +44,27 @@ layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
         layout(location=RENDER_UTILS_ATTR_COLOR) out vec4 _color;
     <@endif@>
     layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) out vec4 _prevPositionCS;
-    <@if HIFI_USE_NORMALMAP@>
-        layout(location=RENDER_UTILS_ATTR_TANGENT_WS) out vec3 _tangentWS;
+    <@if not HIFI_USE_TRIPLANAR@>
+        <@if HIFI_USE_NORMALMAP@>
+            layout(location=RENDER_UTILS_ATTR_TANGENT_WS) out vec3 _tangentWS;
+        <@endif@>
     <@endif@>
 <@endif@>
 <@if HIFI_USE_TRIPLANAR@>
     layout(location=RENDER_UTILS_ATTR_POSITION_MS) out vec3 _positionMS;
+    layout(location=RENDER_UTILS_ATTR_NORMAL_MS) out vec3 _normalMS;
 <@endif@>
 
 void main(void) {
     vec4 positionMS = inPosition;
     vec3 normalMS = inNormal.xyz;
+<@if not HIFI_USE_TRIPLANAR@>
     vec3 tangentMS = inTangent.xyz;
+<@endif@>
 
 <@if HIFI_USE_TRIPLANAR@>
         _positionMS = inPosition.xyz;
+        _normalMS = normalMS.xyz;
 <@endif@>
 
 <@if HIFI_USE_DEFORMED or HIFI_USE_DEFORMEDDQ@>
@@ -74,25 +72,29 @@ void main(void) {
     <@if not HIFI_USE_SHADOW@>
                             inNormal.xyz, normalMS,
         <@if HIFI_USE_NORMALMAP@>
+            <@if not HIFI_USE_TRIPLANAR@>
                                 inTangent.xyz, tangentMS,
+            <@endif@>
         <@endif@>
     <@endif@>
-                         meshDeformer_doSkinning(_drawCallInfo.y), inSkinClusterIndex, inSkinClusterWeight,
-                         meshDeformer_doBlendshape(_drawCallInfo.y), gl_VertexID);
+                         meshDeformer_doSkinning(_inDrawCallInfo.y), inSkinClusterIndex, inSkinClusterWeight,
+                         meshDeformer_doBlendshape(_inDrawCallInfo.y), gl_VertexID);
 <@endif@>
 
     TransformCamera cam = getTransformCamera();
     TransformObject obj = getTransformObject();
 <@if not HIFI_USE_SHADOW@>
         <$transformModelToWorldEyeClipPosAndPrevClipPos(cam, obj, positionMS, _positionWS, _positionES, gl_Position, _prevPositionCS)$>
-        <$transformModelToWorldDir(cam, obj, normalMS, _normalWS)$>
+        <$transformModelToWorldDir(obj, normalMS, _normalWS)$>
 <@else@>
         <$transformModelToClipPos(cam, obj, positionMS, gl_Position)$>
         <$transformModelToWorldPos(obj, positionMS, _positionWS)$>
 <@endif@>
 
 <@if HIFI_USE_NORMALMAP@>
-        <$transformModelToWorldDir(cam, obj, tangentMS, _tangentWS)$>
+    <@if not HIFI_USE_TRIPLANAR@>
+        <$transformModelToWorldDir(obj, tangentMS, _tangentWS)$>
+    <@endif@>
 <@endif@>
 
 <@if HIFI_USE_SHADOW@>

@@ -17,6 +17,8 @@
 
 #define TAA_TEXTURE_LOD_BIAS    -1.0
 
+<@if not HIFI_USE_TRIPLANAR@>
+
 <@func evalMaterialNormalLOD(fragPosES, fetchedNormal, interpolatedNormal, interpolatedTangent, normal)@>
 {
     vec3 normalizedNormal = normalize(<$interpolatedNormal$>.xyz);
@@ -25,9 +27,22 @@
     // attenuate the normal map divergence from the mesh normal based on distance
     // The attenuation range [30,100] meters from the eye is arbitrary for now
     vec3 localNormal = mix(<$fetchedNormal$>, vec3(0.0, 1.0, 0.0), smoothstep(30.0, 100.0, (-<$fragPosES$>).z));
-    <$normal$> = vec3(normalizedBitangent * localNormal.x + normalizedNormal * localNormal.y + normalizedTangent * localNormal.z);
+    <$normal$> = normalize(vec3(normalizedBitangent * localNormal.x + normalizedNormal * localNormal.y + normalizedTangent * localNormal.z));
 }
 <@endfunc@>
+
+<@else@>
+
+// In triplanar mode, fetchedNormal is already in world space
+<@func evalMaterialNormalLODTriplanar(fragPosES, fetchedNormal, interpolatedNormal, normal)@>
+{
+    // attenuate the normal map divergence from the mesh normal based on distance
+    // The attenuation range [30,100] meters from the eye is arbitrary for now
+    <$normal$> = mix(<$fetchedNormal$>, <$interpolatedNormal$>, smoothstep(30.0, 100.0, (-<$fragPosES$>).z));
+}
+<@endfunc@>
+
+<@endif@>
 
 <@func evalMaterialAlbedo(fetchedAlbedo, materialAlbedo, matKey, albedo)@>
 {
@@ -267,14 +282,20 @@ vec3 fetchLightMap(mat2 uvs) {
 <@endif@>
 <@endfunc@>
 
-<@func fetchMaterialTexturesTriplanar(matKey, positionMS, texCoord1, triplanarScale, albedo, roughness, normal, metallic, emissive, scattering, occlusion, lightmap)@>
+<@if HIFI_USE_TRIPLANAR@>
+
+<@func fetchMaterialTexturesTriplanar(matKey, positionMS, normalMS, texCoord1, triplanarScale, albedo, roughness, normal, metallic, emissive, scattering, occlusion, lightmap)@>
     vec3 inPosition = (<$positionMS$> - vec3(0.5)) / <$triplanarScale$>.xyz;
-    vec3 normalMS = normalize(cross(dFdy(<$positionMS$>.xyz), dFdx(<$positionMS$>.xyz)));
+    vec3 normalMS = normalize(<$normalMS$>);
 
     // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
     vec3 blend = abs(normalMS.xyz);
     blend = max(blend - 0.2, vec3(0.0));
     blend /= (blend.x + blend.y + blend.z);
+
+<@if normal@>
+    vec3 axisSign = sign(normalMS.xyz);
+<@endif@>
 
     TexMapArray texMapArray = getTexMapArray();
     vec2 uvXY = vec2(-inPosition.x, -inPosition.y);
@@ -320,7 +341,9 @@ vec3 fetchLightMap(mat2 uvs) {
             <$roughness$>Triplanar += magnitude * <$roughness$>;
         <@endif@>
         <@if normal@>
-            <$normal$>Triplanar += magnitude * <$normal$>;
+            vec3 tangentNormal = <$normal$>;
+            tangentNormal.y *= axisSign.z;
+            <$normal$>Triplanar += magnitude * vec3(-1, 1, 1) * tangentNormal.zxy;
         <@endif@>
         <@if metallic@>
             <$metallic$>Triplanar += magnitude * <$metallic$>;
@@ -350,7 +373,9 @@ vec3 fetchLightMap(mat2 uvs) {
             <$roughness$>Triplanar += magnitude * <$roughness$>;
         <@endif@>
         <@if normal@>
-            <$normal$>Triplanar += magnitude * <$normal$>;
+            vec3 tangentNormal = <$normal$>;
+            tangentNormal.y *= axisSign.y;
+            <$normal$>Triplanar += magnitude * vec3(-1, 1, -1) * tangentNormal.zyx;
         <@endif@>
         <@if metallic@>
             <$metallic$>Triplanar += magnitude * <$metallic$>;
@@ -380,7 +405,9 @@ vec3 fetchLightMap(mat2 uvs) {
             <$roughness$>Triplanar += magnitude * <$roughness$>;
         <@endif@>
         <@if normal@>
-            <$normal$>Triplanar += magnitude * <$normal$>;
+            vec3 tangentNormal = <$normal$>;
+            tangentNormal.y *= axisSign.x;
+            <$normal$>Triplanar += magnitude * tangentNormal.yxz;
         <@endif@>
         <@if metallic@>
             <$metallic$>Triplanar += magnitude * <$metallic$>;
@@ -406,8 +433,11 @@ vec3 fetchLightMap(mat2 uvs) {
     float <$roughness$> = <$roughness$>Triplanar;
 <@endif@>
 <@if normal@>
-    // FIXME: this isn't strictly correct, as our tangents no longer match the space of our UVs
-    vec3 <$normal$> = normalize(<$normal$>Triplanar);
+    vec3 <$normal$> = normalize(<$normal$>Triplanar + normalMS.xyz);
+    {
+        TransformObject obj = getTransformObject();
+        <$transformModelToWorldDir(obj, $normal$, $normal$)$>
+    }
 <@endif@>
 <@if metallic@>
     float <$metallic$> = <$metallic$>Triplanar;
@@ -426,6 +456,8 @@ vec3 fetchLightMap(mat2 uvs) {
 <@endif@>
 
 <@endfunc@>
+
+<@endif@>
 
 <@func evalMaterialRoughness(fetchedRoughness, materialRoughness, matKey, roughness)@>
 {
@@ -645,14 +677,20 @@ float fetchUVAnimationMaskMap(mat2 uvs) {
 <@endif@>
 <@endfunc@>
 
-<@func fetchMToonMaterialTexturesTriplanar(matKey, positionMS, texCoord1, triplanarScale, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
+<@if HIFI_USE_TRIPLANAR@>
+
+<@func fetchMToonMaterialTexturesTriplanar(matKey, positionMS, normalMS, texCoord1, triplanarScale, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
     vec3 inPosition = (<$positionMS$> - vec3(0.5)) / <$triplanarScale$>.xyz;
-    vec3 normalMS = normalize(cross(dFdy(<$positionMS$>.xyz), dFdx(<$positionMS$>.xyz)));
+    vec3 normalMS = normalize(<$normalMS$>);
 
     // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
     vec3 blend = abs(normalMS.xyz);
     blend = max(blend - 0.2, vec3(0.0));
     blend /= (blend.x + blend.y + blend.z);
+
+<@if normal@>
+    vec3 axisSign = sign(normalMS.xyz);
+<@endif@>
 
     TexMapArray texMapArray = getTexMapArray();
     vec2 uvXY = vec2(-inPosition.x, -inPosition.y);
@@ -689,7 +727,9 @@ float fetchUVAnimationMaskMap(mat2 uvs) {
             <$albedo$>Triplanar += magnitude * <$albedo$>;
         <@endif@>
         <@if normal@>
-            <$normal$>Triplanar += magnitude * <$normal$>;
+            vec3 tangentNormal = <$normal$>;
+            tangentNormal.y *= axisSign.z;
+            <$normal$>Triplanar += magnitude * vec3(-1, 1, 1) * tangentNormal.zxy;
         <@endif@>
         <@if shade@>
             <$shade$>Triplanar += magnitude * <$shade$>;
@@ -713,7 +753,9 @@ float fetchUVAnimationMaskMap(mat2 uvs) {
             <$albedo$>Triplanar += magnitude * <$albedo$>;
         <@endif@>
         <@if normal@>
-            <$normal$>Triplanar += magnitude * <$normal$>;
+            vec3 tangentNormal = <$normal$>;
+            tangentNormal.y *= axisSign.y;
+            <$normal$>Triplanar += magnitude * vec3(-1, 1, -1) * tangentNormal.zyx;
         <@endif@>
         <@if shade@>
             <$shade$>Triplanar += magnitude * <$shade$>;
@@ -737,7 +779,9 @@ float fetchUVAnimationMaskMap(mat2 uvs) {
             <$albedo$>Triplanar += magnitude * <$albedo$>;
         <@endif@>
         <@if normal@>
-            <$normal$>Triplanar += magnitude * <$normal$>;
+            vec3 tangentNormal = <$normal$>;
+            tangentNormal.y *= axisSign.x;
+            <$normal$>Triplanar += magnitude * tangentNormal.yxz;
         <@endif@>
         <@if shade@>
             <$shade$>Triplanar += magnitude * <$shade$>;
@@ -757,8 +801,11 @@ float fetchUVAnimationMaskMap(mat2 uvs) {
     vec4 <$albedo$> = <$albedo$>Triplanar;
 <@endif@>
 <@if normal@>
-    // FIXME: this isn't strictly correct, as our tangents no longer match the space of our UVs
-    vec3 <$normal$> = normalize(<$normal$>Triplanar);
+    vec3 <$normal$> = normalize(<$normal$>Triplanar + normalMS.xyz);
+    {
+        TransformObject obj = getTransformObject();
+        <$transformModelToWorldDir(obj, $normal$, $normal$)$>
+    }
 <@endif@>
 <@if shade@>
     vec3 <$shade$> = <$shade$>Triplanar;
@@ -774,6 +821,8 @@ float fetchUVAnimationMaskMap(mat2 uvs) {
 <@endif@>
 
 <@endfunc@>
+
+<@endif@>
 
 <@func evalMaterialShade(fetchedShade, materialShade, matKey, shade)@>
 {
