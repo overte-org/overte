@@ -344,6 +344,7 @@ public:
     typedef MaterialKey::MapChannel MapChannel;
     typedef std::unordered_map<MapChannel, TextureMapPointer> TextureMaps;
     typedef std::unordered_map<MapChannel, gpu::Sampler> SamplerMap;
+    typedef std::unordered_map<MapChannel, int> TexCoordSetMap;
 
     Material();
     Material(const Material& material);
@@ -399,6 +400,9 @@ public:
 
     void setSampler(MapChannel channel, const gpu::Sampler& sampler);
     void applySampler(MapChannel channel);
+
+    void setTexCoordSet(MapChannel channel, int texCoordSet);
+    int getTexCoordSet(MapChannel channel);
 
     // Albedo maps cannot have opacity detected until they are loaded
     // This method allows const changing of the key/schemaBuffer without touching the map
@@ -499,6 +503,7 @@ private:
     MaterialKey::CullFaceMode _cullFaceMode { DEFAULT_CULL_FACE_MODE };
     TextureMaps _textureMaps;
     SamplerMap _samplers;
+    TexCoordSetMap _texCoordSets;
 
     bool _defaultFallthrough { false };
     std::unordered_map<uint, bool> _propertyFallthroughs { NUM_TOTAL_FLAGS };
@@ -575,10 +580,18 @@ public:
 
         glm::vec2 _lightmapParams { 0.0, 1.0 };
 
+        uint32_t _texCoordSets { 0 };
+
         Schema() {
             for (auto& transform : _texcoordTransforms) {
                 transform = glm::mat4();
             }
+        }
+
+        void setTexCoordSet(int channel, int texCoordSet) {
+            // We currently only support two texCoord sets (0 and 1), but eventually we want to support 4, so we use 2 bits
+            const int MAX_TEX_COORD_SET = 1;
+            _texCoordSets |= std::min(texCoordSet, MAX_TEX_COORD_SET) << (2 * channel);
         }
     };
 
@@ -615,10 +628,18 @@ public:
         // y: 1 for texture repeat, 0 for discard outside of 0 - 1
         glm::vec2 _materialParams { 0.0, 1.0 };
 
+        uint32_t _texCoordSets { 0 };
+
         MToonSchema() {
             for (auto& transform : _texcoordTransforms) {
                 transform = glm::mat4();
             }
+        }
+
+        void setTexCoordSet(int channel, int texCoordSet) {
+            // We currently only support two texCoord sets (0 and 1), but eventually we want to support 4, so we use 2 bits
+            const int MAX_TEX_COORD_SET = 1;
+            _texCoordSets |= std::min(texCoordSet, MAX_TEX_COORD_SET) << (2 * channel);
         }
     };
 

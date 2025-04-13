@@ -52,6 +52,7 @@ void main(void) {
     vec3 tangentMS = inTangent.xyz;
     vec4 color = color_sRGBAToLinear(inColor);
     vec2 texCoord0 = inTexCoord0.st;
+    vec2 texCoord1 = inTexCoord1.st;
 
 <@if HIFI_USE_DEFORMED or HIFI_USE_DEFORMEDDQ@>
         evalMeshDeformer(inPosition, positionMS, inNormal.xyz, normalMS, inTangent.xyz, tangentMS,
@@ -68,7 +69,8 @@ void main(void) {
         tangentMS,
         inTangent.xyz,
         color,
-        texCoord0
+        texCoord0,
+        texCoord1
     );
 
     getProceduralVertex(proceduralData);
@@ -77,12 +79,13 @@ void main(void) {
     normalMS = proceduralData.normal;
     color = proceduralData.color;
     texCoord0 = proceduralData.texCoord0;
+    texCoord1 = proceduralData.texCoord1;
 #endif
 
     _positionMS = positionMS;
     _normalMS = normalMS;
     _color = color;
-    _texCoord01 = vec4(texCoord0, 0.0, 0.0);
+    _texCoord01 = vec4(texCoord0, texCoord1);
 
     TransformCamera cam = getTransformCamera();
     TransformObject obj = getTransformObject();

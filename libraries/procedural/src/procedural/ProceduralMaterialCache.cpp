@@ -157,6 +157,11 @@ static void setMaterialMap(const QJsonValue& value, const std::shared_ptr<Networ
                 auto samplerObject = samplerItr->toObject();
                 material->setSampler(channel, gpu::Sampler::parseSampler(samplerObject));
             }
+
+            auto texCoordItr = valueMap.constFind("texCoord");
+            if (texCoordItr != valueMap.constEnd() && texCoordItr->isDouble()) {
+                material->setTexCoordSet(channel, texCoordItr->toInt());
+            }
         }
     } else if (value.isString()) {
         setMaterialMapString(value.toString(), material, property, baseUrl, setter);
@@ -216,6 +221,7 @@ static void setMaterialMap(const QJsonValue& value, const std::shared_ptr<Networ
  * @typedef {object} Entities.Texture
  * @property {string} url - The URL of the texture.
  * @property {Entities.Sampler} sampler - Set sampler used for this texture.
+ * @property {number} texCoord - The texCoord set to use for this texture.
  */
 
 /*@jsdoc
@@ -843,6 +849,7 @@ graphics::TextureMapPointer NetworkMaterial::fetchTextureMap(const QUrl& baseUrl
     }
     _textures[channel] = Texture { hfmTexture.name, texture };
     setSampler(channel, hfmTexture.sampler);
+    setTexCoordSet(channel, hfmTexture.texcoordSet);
 
     auto map = std::make_shared<graphics::TextureMap>();
     if (texture) {
@@ -949,6 +956,7 @@ NetworkMaterial::NetworkMaterial(const HFMMaterial& material, const QUrl& textur
 
         setTextureMap(MapChannel::ALBEDO_MAP, map);
         setSampler(MapChannel::ALBEDO_MAP, material.albedoTexture.sampler);
+        setTexCoordSet(MapChannel::ALBEDO_MAP, material.albedoTexture.texcoordSet);
     }
 
 
@@ -957,26 +965,31 @@ NetworkMaterial::NetworkMaterial(const HFMMaterial& material, const QUrl& textur
         auto map = fetchTextureMap(textureBaseUrl, material.normalTexture, type, MapChannel::NORMAL_MAP);
         setTextureMap(MapChannel::NORMAL_MAP, map);
         setSampler(MapChannel::NORMAL_MAP, material.normalTexture.sampler);
+        setTexCoordSet(MapChannel::NORMAL_MAP, material.normalTexture.texcoordSet);
     }
 
     if (!material.roughnessTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.roughnessTexture, image::TextureUsage::ROUGHNESS_TEXTURE, MapChannel::ROUGHNESS_MAP);
         setTextureMap(MapChannel::ROUGHNESS_MAP, map);
         setSampler(MapChannel::ROUGHNESS_MAP, material.roughnessTexture.sampler);
+        setTexCoordSet(MapChannel::ROUGHNESS_MAP, material.roughnessTexture.texcoordSet);
     } else if (!material.glossTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.glossTexture, image::TextureUsage::GLOSS_TEXTURE, MapChannel::ROUGHNESS_MAP);
         setTextureMap(MapChannel::ROUGHNESS_MAP, map);
         setSampler(MapChannel::ROUGHNESS_MAP, material.glossTexture.sampler);
+        setTexCoordSet(MapChannel::ROUGHNESS_MAP, material.glossTexture.texcoordSet);
     }
 
     if (!material.metallicTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.metallicTexture, image::TextureUsage::METALLIC_TEXTURE, MapChannel::METALLIC_MAP);
         setTextureMap(MapChannel::METALLIC_MAP, map);
         setSampler(MapChannel::METALLIC_MAP, material.metallicTexture.sampler);
+        setTexCoordSet(MapChannel::METALLIC_MAP, material.metallicTexture.texcoordSet);
     } else if (!material.specularTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.specularTexture, image::TextureUsage::SPECULAR_TEXTURE, MapChannel::METALLIC_MAP);
         setTextureMap(MapChannel::METALLIC_MAP, map);
         setSampler(MapChannel::METALLIC_MAP, material.specularTexture.sampler);
+        setTexCoordSet(MapChannel::METALLIC_MAP, material.specularTexture.texcoordSet);
     }
 
     if (!material.occlusionTexture.filename.isEmpty()) {
@@ -986,18 +999,21 @@ NetworkMaterial::NetworkMaterial(const HFMMaterial& material, const QUrl& textur
         }
         setTextureMap(MapChannel::OCCLUSION_MAP, map);
         setSampler(MapChannel::OCCLUSION_MAP, material.occlusionTexture.sampler);
+        setTexCoordSet(MapChannel::OCCLUSION_MAP, material.occlusionTexture.texcoordSet);
     }
 
     if (!material.emissiveTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.emissiveTexture, image::TextureUsage::EMISSIVE_TEXTURE, MapChannel::EMISSIVE_MAP);
         setTextureMap(MapChannel::EMISSIVE_MAP, map);
         setSampler(MapChannel::EMISSIVE_MAP, material.emissiveTexture.sampler);
+        setTexCoordSet(MapChannel::EMISSIVE_MAP, material.emissiveTexture.texcoordSet);
     }
 
     if (!material.scatteringTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.scatteringTexture, image::TextureUsage::SCATTERING_TEXTURE, MapChannel::SCATTERING_MAP);
         setTextureMap(MapChannel::SCATTERING_MAP, map);
         setSampler(MapChannel::SCATTERING_MAP, material.scatteringTexture.sampler);
+        setTexCoordSet(MapChannel::SCATTERING_MAP, material.scatteringTexture.texcoordSet);
     }
 
     if (!material.lightmapTexture.filename.isEmpty()) {
@@ -1010,6 +1026,7 @@ NetworkMaterial::NetworkMaterial(const HFMMaterial& material, const QUrl& textur
         }
         setTextureMap(MapChannel::LIGHT_MAP, map);
         setSampler(MapChannel::LIGHT_MAP, material.lightmapTexture.sampler);
+        setTexCoordSet(MapChannel::LIGHT_MAP, material.lightmapTexture.texcoordSet);
     }
 }
 
@@ -1123,30 +1140,35 @@ NetworkMToonMaterial::NetworkMToonMaterial(const HFMMaterial& material, const QU
         auto map = fetchTextureMap(textureBaseUrl, material.shadeTexture, image::TextureUsage::ALBEDO_TEXTURE, (MapChannel)MToonMapChannel::SHADE_MAP);
         setTextureMap((MapChannel)MToonMapChannel::SHADE_MAP, map);
         setSampler((MapChannel)MToonMapChannel::SHADE_MAP, material.shadeTexture.sampler);
+        setTexCoordSet((MapChannel)MToonMapChannel::SHADE_MAP, material.shadeTexture.texcoordSet);
     }
 
     if (!material.shadingShiftTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.shadingShiftTexture, image::TextureUsage::ROUGHNESS_TEXTURE, (MapChannel)MToonMapChannel::SHADING_SHIFT_MAP);
         setTextureMap((MapChannel)MToonMapChannel::SHADING_SHIFT_MAP, map);
         setSampler((MapChannel)MToonMapChannel::SHADING_SHIFT_MAP, material.shadingShiftTexture.sampler);
+        setTexCoordSet((MapChannel)MToonMapChannel::SHADING_SHIFT_MAP, material.shadingShiftTexture.texcoordSet);
     }
 
     if (!material.matcapTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.matcapTexture, image::TextureUsage::EMISSIVE_TEXTURE, (MapChannel)MToonMapChannel::MATCAP_MAP);
         setTextureMap((MapChannel)MToonMapChannel::MATCAP_MAP, map);
         setSampler((MapChannel)MToonMapChannel::MATCAP_MAP, material.matcapTexture.sampler);
+        setTexCoordSet((MapChannel)MToonMapChannel::MATCAP_MAP, material.matcapTexture.texcoordSet);
     }
 
     if (!material.rimTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.rimTexture, image::TextureUsage::ALBEDO_TEXTURE, (MapChannel)MToonMapChannel::RIM_MAP);
         setTextureMap((MapChannel)MToonMapChannel::RIM_MAP, map);
         setSampler((MapChannel)MToonMapChannel::RIM_MAP, material.rimTexture.sampler);
+        setTexCoordSet((MapChannel)MToonMapChannel::RIM_MAP, material.rimTexture.texcoordSet);
     }
 
     if (!material.uvAnimationTexture.filename.isEmpty()) {
         auto map = fetchTextureMap(textureBaseUrl, material.uvAnimationTexture, image::TextureUsage::ROUGHNESS_TEXTURE, (MapChannel)MToonMapChannel::UV_ANIMATION_MASK_MAP);
         setTextureMap((MapChannel)MToonMapChannel::UV_ANIMATION_MASK_MAP, map);
         setSampler((MapChannel)MToonMapChannel::UV_ANIMATION_MASK_MAP, material.uvAnimationTexture.sampler);
+        setTexCoordSet((MapChannel)MToonMapChannel::UV_ANIMATION_MASK_MAP, material.uvAnimationTexture.texcoordSet);
     }
 }
 
