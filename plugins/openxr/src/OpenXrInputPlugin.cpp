@@ -688,6 +688,23 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         }
     }
 
+    // emulate primary button for controllers with only one physical button,
+    // but not on vive controllers because we have special behavior there already
+    if (!_context->_stickEmulation) {
+        const auto& left_click = _actions.at("left_thumbstick_click")->getBool();
+        const auto& right_click = _actions.at("right_thumbstick_click")->getBool();
+        const auto& left_primary = _actions.at("left_primary_click")->getBool();
+        const auto& right_primary = _actions.at("right_primary_click")->getBool();
+
+        if (!left_primary.isActive && left_click.currentState) {
+            _buttonPressedMap.insert(controller::LEFT_PRIMARY_THUMB);
+        }
+
+        if (!right_primary.isActive && right_click.currentState) {
+            _buttonPressedMap.insert(controller::RIGHT_PRIMARY_THUMB);
+        }
+    }
+
     awfulRightStickHackForBrokenScripts();
 
     if (_context->_stickEmulation) {
@@ -715,20 +732,20 @@ void OpenXrInputPlugin::InputDevice::emulateStickFromTrackpad() {
     // "primary" button on trackpad center
     if (
         left_click &&
-        left_stick.x > -0.3f &&
-        left_stick.x < 0.3f &&
-        left_stick.y > -0.3f &&
-        left_stick.y < 0.3f
+        left_stick.x > -0.4f &&
+        left_stick.x < 0.4f &&
+        left_stick.y > -0.4f &&
+        left_stick.y < 0.4f
     ) {
         _buttonPressedMap.insert(controller::LEFT_PRIMARY_THUMB);
     }
 
     if (
         right_click &&
-        right_stick.x > -0.3f &&
-        right_stick.x < 0.3f &&
-        right_stick.y > -0.3f &&
-        right_stick.y < 0.3f
+        right_stick.x > -0.4f &&
+        right_stick.x < 0.4f &&
+        right_stick.y > -0.4f &&
+        right_stick.y < 0.4f
     ) {
         _buttonPressedMap.insert(controller::RIGHT_PRIMARY_THUMB);
     }
