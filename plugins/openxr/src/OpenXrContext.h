@@ -57,6 +57,7 @@ public:
     XrSpace _stageSpace = XR_NULL_HANDLE;
     XrSpace _viewSpace = XR_NULL_HANDLE;
     XrPath _handPaths[HAND_COUNT];
+    XrPath _currentProfilePaths[HAND_COUNT];
 
     controller::Pose _lastHeadPose;
     std::optional<XrTime> _lastPredictedDisplayTime;

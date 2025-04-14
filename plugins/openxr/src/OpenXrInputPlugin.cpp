@@ -8,6 +8,8 @@
 //
 
 #include <glm/ext.hpp>
+#include <QJsonArray>
+#include <SettingHandle.h>
 
 #include "OpenXrInputPlugin.h"
 
@@ -19,20 +21,30 @@
 Q_DECLARE_LOGGING_CATEGORY(xr_input_cat)
 Q_LOGGING_CATEGORY(xr_input_cat, "openxr.input")
 
+static const std::map<std::string, std::vector<XrPosef>> DEFAULT_HAND_CALIBRATIONS = {
+    // TODO: why the hell is the "grip" pose for the vive controller
+    // at the top near the tracking ring like in SteamVR??
+
+    // Add your controller calibrations above this comment
+};
+
 OpenXrInputPlugin::OpenXrInputPlugin(std::shared_ptr<OpenXrContext> c) {
     _context = c;
     _inputDevice = std::make_shared<InputDevice>(_context);
 }
 
-// TODO: Config options
-static const QString XR_CONFIGURATION_LAYOUT = QString("");
+static const QString XR_CONFIGURATION_LAYOUT = QString("OpenXrConfiguration.qml");
 
-// TODO: full-body-tracking
 void OpenXrInputPlugin::calibrate() {
+    // TODO
+    qCInfo(xr_input_cat) << "OpenXrInputPlugin::calibrate()";
 }
 
-// TODO: full-body-tracking
 bool OpenXrInputPlugin::uncalibrate() {
+    _inputDevice->calibrationOffsets = {
+        { .orientation = {0.0f, 0.0f, 0.0f, 1.0f}, .position = {} },
+        { .orientation = {0.0f, 0.0f, 0.0f, 1.0f}, .position = {} },
+    };
     return true;
 }
 
@@ -40,13 +52,87 @@ bool OpenXrInputPlugin::isSupported() const {
     return _context->_isSupported;
 }
 
-// TODO: Config options
 void OpenXrInputPlugin::setConfigurationSettings(const QJsonObject configurationSettings) {
+    const auto& calibration = configurationSettings.value("calibration").toObject();
+
+    const auto& left_hand = calibration.value("left_hand").toObject();
+    const auto& left_position = left_hand.value("position").toArray();
+    const auto& left_orientation = left_hand.value("orientation").toArray();
+
+    const auto& right_hand = calibration.value("right_hand").toObject();
+    const auto& right_position = right_hand.value("position").toArray();
+    const auto& right_orientation = right_hand.value("orientation").toArray();
+
+    // everything can default to zero, rotation W defaults to
+    // 1 so it's still valid if the other members are missing
+
+    _inputDevice->calibrationOffsets[0].position.x = left_position.at(0).toDouble();
+    _inputDevice->calibrationOffsets[0].position.y = left_position.at(1).toDouble();
+    _inputDevice->calibrationOffsets[0].position.z = left_position.at(2).toDouble();
+    _inputDevice->calibrationOffsets[0].orientation.x = left_orientation.at(0).toDouble();
+    _inputDevice->calibrationOffsets[0].orientation.y = left_orientation.at(1).toDouble();
+    _inputDevice->calibrationOffsets[0].orientation.z = left_orientation.at(2).toDouble();
+    _inputDevice->calibrationOffsets[0].orientation.w = left_orientation.at(3).toDouble(1.0);
+
+    _inputDevice->calibrationOffsets[1].position.x = right_position.at(0).toDouble();
+    _inputDevice->calibrationOffsets[1].position.y = right_position.at(1).toDouble();
+    _inputDevice->calibrationOffsets[1].position.z = right_position.at(2).toDouble();
+    _inputDevice->calibrationOffsets[1].orientation.x = right_orientation.at(0).toDouble();
+    _inputDevice->calibrationOffsets[1].orientation.y = right_orientation.at(1).toDouble();
+    _inputDevice->calibrationOffsets[1].orientation.z = right_orientation.at(2).toDouble();
+    _inputDevice->calibrationOffsets[1].orientation.w = right_orientation.at(3).toDouble(1.0);
 }
 
-// TODO: Config options
 QJsonObject OpenXrInputPlugin::configurationSettings() {
-    return QJsonObject();
+    const auto& left_hand = _inputDevice->calibrationOffsets[0];
+    const auto& right_hand = _inputDevice->calibrationOffsets[1];
+
+    QJsonObject obj {
+        {"calibration",
+            QJsonObject {
+                {"left_hand",
+                    QJsonObject {
+                        {"position",
+                            QJsonArray {
+                                static_cast<double>(left_hand.position.x),
+                                static_cast<double>(left_hand.position.y),
+                                static_cast<double>(left_hand.position.z),
+                            }
+                        },
+                        {"orientation",
+                            QJsonArray {
+                                static_cast<double>(left_hand.orientation.x),
+                                static_cast<double>(left_hand.orientation.y),
+                                static_cast<double>(left_hand.orientation.z),
+                                static_cast<double>(left_hand.orientation.w),
+                            }
+                        },
+                    },
+                },
+                {"right_hand",
+                    QJsonObject {
+                        {"position",
+                            QJsonArray {
+                                static_cast<double>(right_hand.position.x),
+                                static_cast<double>(right_hand.position.y),
+                                static_cast<double>(right_hand.position.z),
+                            }
+                        },
+                        {"orientation",
+                            QJsonArray {
+                                static_cast<double>(right_hand.orientation.x),
+                                static_cast<double>(right_hand.orientation.y),
+                                static_cast<double>(right_hand.orientation.z),
+                                static_cast<double>(right_hand.orientation.w),
+                            }
+                        },
+                    },
+                },
+            }
+        }
+    };
+
+    return obj;
 }
 
 QString OpenXrInputPlugin::configurationLayout() {
@@ -100,12 +186,22 @@ void OpenXrInputPlugin::pluginUpdate(float deltaTime, const controller::InputCal
     }
 }
 
-// TODO: Config options
 void OpenXrInputPlugin::loadSettings() {
+    Settings settings;
+    settings.beginGroup(getName());
+
+    // TODO: put other settings here
+
+    settings.endGroup();
 }
 
-// TODO: Config options
 void OpenXrInputPlugin::saveSettings() const {
+    Settings settings;
+    settings.beginGroup(getName());
+
+    // TODO: put other settings here
+
+    settings.endGroup();
 }
 
 OpenXrInputPlugin::InputDevice::InputDevice(std::shared_ptr<OpenXrContext> c) : controller::InputDevice("OpenXR") {
@@ -539,6 +635,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
         return false;
 
     _actionsInitialized = true;
+    _calibrated = false;
 
     return true;
 }
@@ -555,6 +652,39 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     if (!_actionsInitialized && !initActions()) {
         qCCritical(xr_input_cat) << "Could not initialize actions!";
         return;
+    }
+
+    if (!_calibrated) {
+        uint32_t bufferCountOutput;
+        char pathBuf[XR_MAX_PATH_LENGTH];
+        bool success = false;
+
+        if (xrPathToString(_context->_instance, _context->_currentProfilePaths[0], XR_MAX_PATH_LENGTH, &bufferCountOutput, pathBuf) == XR_SUCCESS) {
+            auto left_path = std::string(pathBuf);
+
+            if (DEFAULT_HAND_CALIBRATIONS.contains(left_path)) {
+                calibrationOffsets[0] = DEFAULT_HAND_CALIBRATIONS.at(left_path)[0];
+            }
+
+            success = true;
+        }
+
+        if (xrPathToString(_context->_instance, _context->_currentProfilePaths[1], XR_MAX_PATH_LENGTH, &bufferCountOutput, pathBuf) == XR_SUCCESS) {
+            auto right_path = std::string(pathBuf);
+
+            if (DEFAULT_HAND_CALIBRATIONS.contains(right_path)) {
+                calibrationOffsets[1] = DEFAULT_HAND_CALIBRATIONS.at(right_path)[1];
+            }
+
+            success = true;
+        }
+
+        // keep trying until we get valid controller paths,
+        // it looks like it needs at least two calls to update()
+        // to have the controller paths set up
+        if (success) {
+            _calibrated = true;
+        }
     }
 
     const XrActiveActionSet active_actionset = {
@@ -596,12 +726,13 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
             auto pose = controller::Pose(translation, rotation);
             glm::mat4 handOffset = i == 0 ? glm::toMat4(leftRotationOffset) : glm::toMat4(rightRotationOffset);
 
-            glm::mat4 posOffset(1.0f);
-            posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? 0.1f : -0.1f));
-            posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.16f);
-            posOffset *= glm::translate(glm::vec3(handOffset[2]) * -0.02f);
+            vec3 calibrationTranslation = xrVecToGlm(calibrationOffsets[i].position);
+            quat calibrationOrientation = xrQuatToGlm(calibrationOffsets[i].orientation);
+            glm::mat4 calibration = glm::translate(glm::toMat4(calibrationOrientation), calibrationTranslation);
+
+            // FIXME: this is a mess, consolidate the magic offsets into one transform
             _poseStateMap[i == 0 ? controller::LEFT_HAND : controller::RIGHT_HAND] =
-                pose.postTransform(posOffset).postTransform(handOffset).transform(sensorToAvatar);
+                pose.transform(calibration).postTransform(handOffset).transform(sensorToAvatar);
         }
     }
 
