@@ -69,7 +69,6 @@ jobs:
           - os: ubuntu-20.04
             image: docker.io/overte/overte-server-build:0.1.6-ubuntu-20.04-amd64
             arch: amd64
-            conan_qt: True
             qt_source: source
             runner: ubuntu-latest
 
@@ -82,7 +81,7 @@ jobs:
           - os: ubuntu-22.04
             image: docker.io/overte/overte-server-build:0.1.6-ubuntu-22.04-aarch64
             arch: aarch64
-            conan_qt: False
+            qt_source: system
             runner: ubuntu-24.04-arm
 
           - os: ubuntu-24.04
