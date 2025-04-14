@@ -104,8 +104,6 @@ jobs:
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=$CMAKE_BUILD_EXTRA -- -j$(nproc)" >> $GITHUB_ENV
-          # Don't optimize builds to save build time.
-          echo "OVERTE_OPTIMIZE=false" >> $GITHUB_ENV
           # Starting with Ubuntu 22.04 we can use system Qt
           if [[ "${{ matrix.image }}" = *"ubuntu-22.04"* ]]; then
             echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
