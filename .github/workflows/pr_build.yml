@@ -98,10 +98,6 @@ jobs:
           echo "CMAKE_BUILD_EXTRA=$CMAKE_BUILD_EXTRA -- -j$(nproc)" >> $GITHUB_ENV
           # Don't optimize builds to save build time.
           echo "OVERTE_OPTIMIZE=false" >> $GITHUB_ENV
-          # Starting with Ubuntu 22.04 we can use system Qt
-          if [[ "${{ matrix.image }}" = *"ubuntu-22.04"* ]]; then
-            echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
-          fi
 
           if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
             if [ "${{ matrix.build_type }}" = "full" ]; then
@@ -165,14 +161,6 @@ jobs:
           echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
 
-    - name: Clear Working Directories
-      if: contains(matrix.runner, 'linux_aarch64') || contains(matrix.runner, 'linux_amd64')
-      shell: bash
-      run: |
-        rm -rf ./*
-        rm -rf ~/overte-files
-        rm -rf ~/.cache
-
     - uses: actions/checkout@v4
       with:
         submodules: false
@@ -196,16 +184,6 @@ jobs:
 
           echo "Installing apt packages"
           sudo apt install -y ${{ matrix.apt-dependencies }} || exit 1
-
-          echo "Adding Toolchain test PPA"
-          apt install -y software-properties-common
-          add-apt-repository ppa:ubuntu-toolchain-r/test
-
-          echo "Installing gcc-13"
-          apt install -y gcc-13 g++-13 || exit 1
-
-          # Set GCC 13 as default
-          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13
 
         else # macOS
           echo "Downloading MacOSX10.12 SDK.."
@@ -367,11 +345,3 @@ jobs:
         name: ${{ env.ARTIFACT_PATTERN }}
         path: ./build/${{ env.ARTIFACT_PATTERN }}
         if-no-files-found: error
-
-    - name: Clear Working Directories
-      if: contains(matrix.runner, 'linux_aarch64') || contains(matrix.runner, 'linux_amd64')
-      shell: bash
-      run: |
-        rm -rf ./*
-        rm -rf ~/overte-files
-        rm -rf ~/.cache
