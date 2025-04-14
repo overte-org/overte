@@ -15,7 +15,6 @@ Item {
 		height: parent.height;
 		anchors.horizontalCenter: parent.horizontalCenter;
 
-
 		TextEdit {
 			id: settingTextElem
 			height: parent.height;
@@ -26,72 +25,50 @@ Item {
 			readOnly: true;
 		}
 
+        Switch {
+            Layout.alignment: Qt.AlignVCenter | Qt.AlignRight;
+            checked: settingEnabled;
+            implicitHeight: 20;
 
-		RowLayout {
-			Layout.alignment: Qt.AlignRight;
-			anchors.left: settingTextElem.right + 5;
+            indicator: Item {
+                implicitWidth: 70;
+                implicitHeight: parent.implicitHeight;
 
-			Text {
-				text: "<";
-				font.pointSize: 16;
-				color: "white";
+                Rectangle {
+                    anchors.fill: parent
+                    radius: height / 2
+                    color: parent.parent.checked ? "#5153bd" : "gray";
 
-				MouseArea {
-					anchors.fill: parent
+                    Behavior on color {
+                        ColorAnimation {
+                            duration: 200
+                            easing.type: Easing.InOutCubic
+                        }
+                    }
+                }
 
-					onClicked: {
-						settingEnabled = !settingEnabled
-					}
-				}
-			}
 
-			Rectangle {
-				color: "transparent";
-				height: parent.parent.height - 15;
-				width: 200;
-				radius: 10;
-				border.color: settingEnabled ? "white" : "#333";
-				border.width: 1;
+                Rectangle {
+                    width: 30
+                    height: 30
+                    radius: height;
+                    color: "white"
+                    x: parent.parent.checked ? parent.width - width : 0;
+                    y: (parent.implicitHeight - height) / 2
 
-				Text {
-					width: parent.width;
-					height: parent.height;
-					text: settingEnabled ? "Enabled" : "Disabled";
-					color: settingEnabled ? "white" : "gray";
-					horizontalAlignment: Text.AlignHCenter;
-					verticalAlignment: Text.AlignVCenter;
-					font.pointSize: 14;
-				}
+                    // Movement animation
+                    Behavior on x {
+                        NumberAnimation {
+                            duration: 100;
+                            easing.type: Easing.InOutCubic;
+                        }
+                    }
+                }
+            }
 
-				MouseArea {
-					anchors.fill: parent
-
-					onClicked: {
-						settingEnabled = !settingEnabled
-					}
-				}
-
-				Behavior on color {
-					ColorAnimation {
-						duration: 70
-					}
-				}
-			}
-
-			Text {
-				text: ">";
-				font.pointSize: 16;
-				color: "white";
-
-				MouseArea {
-					anchors.fill: parent
-
-					onClicked: {
-						settingEnabled = !settingEnabled
-					}
-				}
-			}
-		}
-
+            onCheckedChanged: {
+                settingEnabled = checked;
+            }
+        }
 	}
 }

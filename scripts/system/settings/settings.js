@@ -12,7 +12,6 @@
 /* global Script Tablet */
 
 // TODO: Fullscreen display?
-// TODO: Replace bool setting with switch?
 // FIXME: Combobox overflows text onto arrow visual
 
 (() => {
