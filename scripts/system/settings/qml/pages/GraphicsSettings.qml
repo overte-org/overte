@@ -91,6 +91,16 @@ Flickable {
             }
         }
 
+        // Procedural Materials
+        SettingBoolean {
+            settingText: "Procedural Materials";
+            settingEnabled: Render.proceduralMaterialsEnabled;
+
+            onSettingEnabledChanged: {
+                Render.proceduralMaterialsEnabled = settingEnabled;
+            }
+        }
+
         // FPS
         SettingComboBox {
             settingText: "Refresh rate";
