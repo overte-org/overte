@@ -4618,6 +4618,10 @@ function createProperty(propertyData, propertyElementID, propertyName, propertyI
             property.elInput = createChildList(property, elProperty);
             break;
         }
+        case 'childList': {
+            property.elInput = createChildList(property, elProperty);
+            break;
+        }
         case 'icon': {
             property.elSpan = createIconProperty(property, elProperty);
             break;
@@ -6485,7 +6489,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
     selectedEntityIDs = new Set(selections.map(selection => selection.id));
     const multipleSelections = currentSelections.length > 1;
     const hasSelectedEntityChanged = !areSetsEqual(selectedEntityIDs, previouslySelectedEntityIDs);
-
+    
     if (selections.length === 1) {
         if (maSelectedId !== selections[0].id) {
             closeMaterialAssistant();
