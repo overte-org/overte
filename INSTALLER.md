@@ -1,13 +1,13 @@
 <!--
 Copyright 2013-2019 High Fidelity, Inc.
 Copyright 2020-2021 Vircadia contributors
-Copyright 2021-2022 Overte e.V.
+Copyright 2021-2025 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
 # Creating an Installer
 
-*Last Updated on June 16, 2021*
+*Last Updated on April 12, 2025*
 
 Follow the [build guide](BUILD.md) to figure out how to build Overte for your platform.
 
@@ -129,6 +129,47 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
 3. `make package` to create the package.
 
 ### Linux
+
+#### Client
+
+##### AppImage
+
+Overte Interface AppImages are built using [linuxdeploy](https://github.com/linuxdeploy/linuxdeploy) and [linuxdeploy-plugin-qt](https://github.com/linuxdeploy/linuxdeploy-plugin-qt).
+**AppImages need to be built using the glibc version of the oldest Linux distribution it is supposed to run on.** We target the oldest Ubuntu LTS which still receives standard (not ESM) security updates.
+
+1. Prepare build environment
+   Follow the [Linux build guide](BUILD_LINUX.md).
+
+2. Configure Interface (**Make sure that OVERTE_CPU_ARCHITECTURE is set to an empty string or `-msse3` depending on target CPU architecture!**)
+   ```bash
+   cmake --preset conan-release -DOVERTE_CPU_ARCHITECTURE=-msse3
+   ```
+
+3. Create AppImage
+   ```bash
+   cmake --build --preset conan-release --target package
+   ```
+   CPack will build target ALL instead of INTERFACE, which is a limitation of CPack.
+
+4. Lint with [appimagelint](https://github.com/TheAssassin/appimagelint) to check which Linux distributions the AppImage will likely be able to run on.
+
+**Alternatively**, you can also create the AppImage manually:
+
+3. Build Interface
+   ```bash
+   cmake --build --preset conan-release --target interface
+   ```
+
+4. Copy `build/interface/plugins` `build/interface/scripts` `build/interface/resources.rcc` and `build/interface/resources` into `build/AppDir/usr/bin/`
+
+5. Copy `interface/org.overte.interface.appdata.xml` to `build/AppDir/usr/share/metainfo/org.overte.interface.appdata.xml`
+
+6. Run linuxdeploy (make sure that linuxdeploy-plugin-qt is next to linuxdeploy and that both are executable)
+   ```bash
+   export "QML_SOURCES_PATHS=interface/resources/qml/"
+   ~/temp/linuxdeploy-x86_64.AppImage --appdir build/AppDir --executable build/interface/interface --output appimage --plugin qt --icon-file interface/icon/interface.svg --desktop-file interface/org.overte.interface.desktop
+   ```
+
 
 #### Server
 
