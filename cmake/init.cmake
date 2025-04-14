@@ -1,19 +1,3 @@
-if (WIN32)
-  cmake_policy(SET CMP0020 NEW)
-endif (WIN32)
-
-if (POLICY CMP0043)
-  cmake_policy(SET CMP0043 NEW)
-endif ()
-
-if (POLICY CMP0042)
-  cmake_policy(SET CMP0042 NEW)
-endif ()
-
-if (POLICY CMP0074)
-  cmake_policy(SET CMP0074 NEW)
-endif ()
-
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "CMakeTargets")
 # Hide automoc folders (for IDEs)
