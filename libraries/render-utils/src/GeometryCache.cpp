@@ -1860,10 +1860,12 @@ gpu::PipelinePointer GeometryCache::getSimplePipeline(bool textured, bool transp
             _shapeShaders[std::make_tuple(false, false, true, false)] = gpu::Shader::createProgram(simple_forward);
             _shapeShaders[std::make_tuple(true, false, true, false)] = gpu::Shader::createProgram(simple_translucent_forward);
             _shapeShaders[std::make_tuple(false, true, true, false)] = gpu::Shader::createProgram(simple_unlit_forward);
+            _shapeShaders[std::make_tuple(true, true, true, false)] = gpu::Shader::createProgram(simple_translucent_unlit_forward);
 
             _shapeShaders[std::make_tuple(false, false, false, false)] = gpu::Shader::createProgram(simple);
             _shapeShaders[std::make_tuple(true, false, false, false)] = gpu::Shader::createProgram(simple_translucent);
             _shapeShaders[std::make_tuple(false, true, false, false)] = gpu::Shader::createProgram(simple_unlit);
+            _shapeShaders[std::make_tuple(true, true, false, false)] = gpu::Shader::createProgram(simple_translucent_unlit);
         });
     } else {
         static std::once_flag once;
@@ -1871,10 +1873,14 @@ gpu::PipelinePointer GeometryCache::getSimplePipeline(bool textured, bool transp
             using namespace shader::render_utils::program;
             // Fading is currently disabled during forward rendering
             _shapeShaders[std::make_tuple(false, false, true, true)] = gpu::Shader::createProgram(simple_forward);
+            _shapeShaders[std::make_tuple(true, false, true, true)] = gpu::Shader::createProgram(simple_translucent_forward);
             _shapeShaders[std::make_tuple(false, true, true, true)] = gpu::Shader::createProgram(simple_unlit_forward);
+            _shapeShaders[std::make_tuple(true, true, true, true)] = gpu::Shader::createProgram(simple_translucent_unlit_forward);
 
             _shapeShaders[std::make_tuple(false, false, false, true)] = gpu::Shader::createProgram(simple_fade);
+            _shapeShaders[std::make_tuple(true, false, false, true)] = gpu::Shader::createProgram(simple_translucent_fade);
             _shapeShaders[std::make_tuple(false, true, false, true)] = gpu::Shader::createProgram(simple_unlit_fade);
+            _shapeShaders[std::make_tuple(true, true, false, true)] = gpu::Shader::createProgram(simple_translucent_unlit_fade);
         });
     }
 
