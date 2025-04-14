@@ -61,20 +61,29 @@ Item {
 				highlighted: control.highlightedIndex === index
 			}
 
-			contentItem: Text {
-				text: control.displayText
-				color: "white";
-				verticalAlignment: Text.AlignVCenter
-				horizontalAlignment: Text.AlignHCenter
-				font.pointSize: 14;
-				elide: Text.ElideRight
-				width: parent.width;
-			}
+			contentItem: RowLayout {
+                width: parent.width - 20;
+                height: parent.height;
+
+                Item {
+                    width: parent.width - 10;
+                    height: parent.height;
+
+                    Text {
+                        anchors.centerIn: parent;
+                        width: parent.width;
+                        text: control.displayText;
+                        horizontalAlignment: Text.AlignHCenter;
+                        verticalAlignment: Text.AlignVCenter;
+                        elide: Text.ElideRight;
+                        font.pointSize: 14;
+                        color: "white";
+                    }
+                }
+            }
 
 			background: Rectangle {
-				border.color: "white";
-				border.width: 1;
-				color: "transparent";
+				color: "#333";
 				radius: 10;
 				width: parent.width;
 			}
