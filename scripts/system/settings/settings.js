@@ -11,9 +11,6 @@
 
 /* global Script Tablet */
 
-// TODO: Fullscreen display?
-// FIXME: Combobox overflows text onto arrow visual
-
 (() => {
 	"use strict";
 	var tablet;
