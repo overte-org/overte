@@ -64,9 +64,7 @@ void CanvasEntityRenderer::doRender(RenderArgs* args) {
         _prevRenderTransform = transform;
     }
 
-    // FIXME: bindSimpleProgram doesn't support transparent and unlit,
-    // so we can only have one or the other
-    DependencyManager::get<GeometryCache>()->bindSimpleProgram(batch, true, !_unlit, _unlit, false, false, true, graphics::MaterialKey::CullFaceMode::CULL_NONE);
+    DependencyManager::get<GeometryCache>()->bindSimpleProgram(batch, true, true, _unlit, false, false, true, graphics::MaterialKey::CullFaceMode::CULL_NONE);
     DependencyManager::get<GeometryCache>()->renderQuad(
         batch, glm::vec2(-0.5f), glm::vec2(0.5f), glm::vec2(0.0f, 1.0f), glm::vec2(1.0f, 0.0f),
         glm::vec4(1.0f), _geometryId
