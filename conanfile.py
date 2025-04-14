@@ -9,11 +9,9 @@ class Overte(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     options = {
         "qt_source": ["system", "aqt", "source"],
-        "with_webrtc": [True, False],
     }
     default_options = {
         "qt_source": "system",
-        "with_webrtc": True,
         "sdl*:alsa": "False",
         "sdl*:pulse": "False",
         "sdl*:wayland": "False",
@@ -76,6 +74,7 @@ class Overte(ConanFile):
         self.requires("steamworks/158a@overte/prebuild")
         self.requires("v-hacd/4.1.0")
         self.requires("vulkan-memory-allocator/3.0.1")
+        self.requires("webrtc-audio-processing/2.1@overte/stable")
         self.requires("zlib/1.2.13")
         self.requires("glm/0.9.9.5", force=True)
         self.requires("jsoncpp/1.9.6", force=True)
@@ -97,14 +96,10 @@ class Overte(ConanFile):
             self.requires("ovr-skd/1.35.0@overte/prebuild")
             self.requires("ovr-platform-skd/1.10.0@overte/prebuild")
 
-        if self.options.with_webrtc:
-            self.requires("webrtc-prebuild/2021.01.05@overte/stable", force=True)
-
         self.requires(openssl, force=True)
 
     def generate(self):
         tc = CMakeToolchain(self)
-        tc.variables["DISABLE_WEBRTC"] = "OFF" if self.options.with_webrtc else "ON"
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
