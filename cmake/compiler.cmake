@@ -17,10 +17,8 @@ if (WIN32)
   # if you get build error about missing 'glu32' this path is likely wrong
   if (MSVC_VERSION GREATER_EQUAL 1910) # VS 2017
     set(WINDOW_SDK_PATH "C:/Program Files (x86)/Windows Kits/10/Lib/${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}/x64" CACHE PATH "Windows SDK PATH")
-  elseif (MSVC_VERSION GREATER_EQUAL 1800) # VS 2013
-    set(WINDOW_SDK_PATH "C:\\Program Files (x86)\\Windows Kits\\8.1\\Lib\\winv6.3\\um\\${WINDOW_SDK_FOLDER}" CACHE PATH "Windows SDK PATH")
   else()
-    message( FATAL_ERROR "Visual Studio 2013 or higher required." )
+    message( FATAL_ERROR "Visual Studio 2017 or higher required." )
   endif()
 
   if (DEBUG_DISCOVERED_SDK_PATH)
@@ -41,14 +39,7 @@ if (WIN32)
 else ()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fno-strict-aliasing -Wno-unused-parameter")
   if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Woverloaded-virtual -Wdouble-promotion")
-      if (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "5.1") # gcc 5.1 and on have suggest-override
-          set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wsuggest-override")
-      endif ()
-      if(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "5.3")
-          # GLM 0.9.8 on Ubuntu 14 (gcc 4.4) has issues with the simd declarations
-          add_definitions(-DGLM_FORCE_PURE)
-      endif()
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Woverloaded-virtual -Wdouble-promotion -Wsuggest-override")
   endif ()
 endif()
 
