@@ -88,7 +88,6 @@ jobs:
         echo "GIT_COMMIT_SHORT=`echo $GIT_COMMIT | cut -c1-7`" >> $GITHUB_ENV
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
-        echo "qt_source=${{matrix.qt_source}}" >> $GITHUB_ENV
 
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
@@ -228,7 +227,7 @@ jobs:
       run: |
         # Run twice to work around OpenSSL not being found. See: https://github.com/overte-org/overte-conan-recipes/issues/1
         for counter in {1..2}; do
-          conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:qt_source='${qt_source} -b missing -pr:b=default -of build
+          conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:qt_source='${{matrix.qt_source}} -b missing -pr:b=default -of build
         done
 
     - name: Cleanup Conan dependencies
