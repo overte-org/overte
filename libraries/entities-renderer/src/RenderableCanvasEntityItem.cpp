@@ -27,8 +27,20 @@ CanvasEntityRenderer::~CanvasEntityRenderer() {
 }
 
 void CanvasEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) {
-    _texture = entity->getTexture();
     _unlit = entity->getUnlit();
+
+    if (entity->_imageDataDirty.load()) {
+        auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, entity->getWidth(), entity->getHeight(), 1, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR));
+        texture->setSource("CanvasEntityRenderer");
+
+        const std::lock_guard<std::recursive_mutex> dataLock(entity->_imageDataMutex);
+        const auto& data = entity->getImageData();
+
+        texture->assignStoredMip(0, data.length(), reinterpret_cast<const uint8_t*>(data.constData()));
+        _texture = texture;
+
+        entity->_imageDataDirty.store(false);
+    }
 }
 
 void CanvasEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) {
