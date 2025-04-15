@@ -9,8 +9,8 @@
 #define hifi_CanvasEntityItem_h
 
 #include "EntityItem.h"
-#include <gpu/Texture.h>
 #include <CanvasCommand.h>
+#include <mutex>
 
 class CanvasEntityItem : public EntityItem {
 public:
@@ -27,11 +27,15 @@ public:
     QByteArray& getImageData() { return _imageData; }
     void setImageData(const CanvasImage& image);
 
-    void pushCommands(const QVector<CanvasCommand>& queue) { _commandQueue.append(queue); }
+    void pushCommands(const QVector<CanvasCommand>& queue) {
+        const std::lock_guard<std::recursive_mutex> commandQueueLock(_commandQueueMutex);
+        _commandQueue.append(queue);
+    }
 
     void commit();
 
-    gpu::TexturePointer getTexture() const { return _texture; }
+    std::atomic<bool> _imageDataDirty;
+    std::recursive_mutex _imageDataMutex;
 
 protected:
 @Canvas_ENTITY_PROPS@
@@ -41,8 +45,9 @@ protected:
     void paintCommands(const QVector<CanvasCommand>& queue);
 
     QByteArray _imageData;
+
+    std::recursive_mutex _commandQueueMutex;
     QVector<CanvasCommand> _commandQueue;
-    gpu::TexturePointer _texture { nullptr };
 };
 
 #endif // hifi_CanvasEntityItem_h

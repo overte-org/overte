@@ -14,7 +14,6 @@
 #include "EntitiesLogging.h"
 #include "EntityItemProperties.h"
 #include "EntityTreeElement.h"
-#include "gpu/Texture.h"
 
 EntityItemPointer CanvasEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
     std::shared_ptr<CanvasEntityItem> entity(new CanvasEntityItem(entityID), [](CanvasEntityItem* ptr) { ptr->deleteLater(); });
@@ -95,6 +94,8 @@ int CanvasEntityItem::expectedSize() const {
 }
 
 void CanvasEntityItem::updateBufferSize() {
+    const std::lock_guard<std::recursive_mutex> dataLock(_imageDataMutex);
+
     auto size = expectedSize();
 
     // size is correct, don't need to resize
@@ -104,6 +105,8 @@ void CanvasEntityItem::updateBufferSize() {
 }
 
 void CanvasEntityItem::setImageData(const CanvasImage& image) {
+    const std::lock_guard<std::recursive_mutex> dataLock(_imageDataMutex);
+
     updateBufferSize();
 
     if (image.buffer.length() != _imageData.length()) {
@@ -116,6 +119,11 @@ void CanvasEntityItem::setImageData(const CanvasImage& image) {
 void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
     using Variant = CanvasCommand::Variant;
     using RenderHint = CanvasCommand::RenderHint;
+
+    const std::lock_guard<std::recursive_mutex> dataLock(_imageDataMutex);
+    const std::lock_guard<std::recursive_mutex> commandQueueLock(_commandQueueMutex);
+
+    if (_commandQueue.length() == 0) { return; }
 
     updateBufferSize();
 
@@ -241,19 +249,12 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
     }
 
     p.end();
+    _commandQueue.clear();
 }
 
 void CanvasEntityItem::commit() {
-    if (_commandQueue.length() > 0) {
-        paintCommands(_commandQueue);
-        _commandQueue.clear();
-    }
-
-    auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, getWidth(), getHeight(), 1, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR));
-    texture->assignStoredMip(0, _imageData.length(), reinterpret_cast<const uint8_t*>(_imageData.constData()));
-    texture->setSource("CanvasEntityRenderer");
-    _texture = texture;
-
+    paintCommands(_commandQueue);
+    _imageDataDirty.store(true);
     setNeedsRenderUpdate(true);
     somethingChangedNotification();
 }
