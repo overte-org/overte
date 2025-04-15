@@ -24,7 +24,11 @@ public:
     ALLOW_INSTANTIATION // This class can be instantiated
     ENTITY_PROPERTY_SUBCLASS_METHODS
 
-    QByteArray& getImageData() { return _imageData; }
+    const QByteArray& getImageData() const {
+        const std::lock_guard<std::recursive_mutex> dataLock(_imageDataMutex);
+        return _imageData;
+    }
+
     void setImageData(const CanvasImage& image);
 
     void pushCommands(const QVector<CanvasCommand>& queue) {
@@ -35,7 +39,7 @@ public:
     void commit();
 
     std::atomic<bool> _imageDataDirty;
-    std::recursive_mutex _imageDataMutex;
+    mutable std::recursive_mutex _imageDataMutex;
 
 protected:
 @Canvas_ENTITY_PROPS@

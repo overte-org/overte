@@ -2200,7 +2200,7 @@ public slots:
      * Replaces the contents of a canvas entity's image buffer.
      * @function Entities.canvasPushImage
      * @param {Uuid} entityID - The Canvas entity that this image will be submitted to.
-     * @param {CanvasImage} image - The image to submit.
+     * @param {CanvasImage} image - The image to submit. Must have the same dimensions as the target Canvas entity.
      */
     Q_INVOKABLE void canvasPushImage(const QUuid& entityID, const CanvasImage& image);
 

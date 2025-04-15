@@ -101,7 +101,14 @@ void CanvasEntityItem::updateBufferSize() {
     // size is correct, don't need to resize
     if (_imageData.length() == size) { return; }
 
+    auto old_size = _imageData.length();
+
     _imageData.resize(size);
+
+    // initialize the new pixels
+    if (size > old_size) {
+        std::memset(_imageData.data() + old_size, 0, size - old_size);
+    }
 }
 
 void CanvasEntityItem::setImageData(const CanvasImage& image) {
@@ -170,7 +177,9 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
             }
 
             case Variant::ClearRect: {
-                p.eraseRect(QRect(cmd._int[0], cmd._int[1], cmd._int[2], cmd._int[3]));
+                // FIXME: QPainter's eraseRect function doesn't seem to be working,
+                // replace it with memsets for each line of the cleared rect
+                std::memset(_imageData.data(), 0, _imageData.size());
                 break;
             }
 
