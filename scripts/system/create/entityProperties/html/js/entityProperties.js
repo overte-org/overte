@@ -1720,6 +1720,16 @@ const GROUPS = [
                 label: "Unlit",
                 type: "bool",
                 propertyID: "unlit",
+            },
+            {
+                label: "Pixelated",
+                type: "bool",
+                propertyID: "pixelated",
+            },
+            {
+                label: "Texture Repeat",
+                type: "bool",
+                propertyID: "wrapMode",
             }
         ]
     },
