@@ -4,6 +4,10 @@ const directoryBase = Account.metaverseServerURL;
 
 // FIXME: Check if focus user exists before issuing commands on them
 // TODO: User join / leave notifications
+// TODO: Dedicated "Edit Persona" button
+// FIXME: Better contacts page
+// TODO: Documentation
+// TODO: User selection distance based fallback
 
 let tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 let active = false;
@@ -59,7 +63,7 @@ function toolbarButtonClicked() {
 function onScreenChanged(type, url) {
 	if (url != Script.resolvePath("./qml/people.qml")) {
 		active = false;
-		removeHighlightUser();
+		destroyHighlightSelection();
 		appButton.editProperties({
 			isActive: active,
 		});
@@ -69,7 +73,7 @@ function onScreenChanged(type, url) {
 function fromQML(event) {
 	if (event.type == "focusedUser") {
 		if (Uuid.fromString(event.user) !== null) return highlightUser(event.user);
-		else return removeHighlightUser();
+		else return destroyHighlightSelection();
 	}
 
 	if (event.type == "updateMyData") {
@@ -105,7 +109,7 @@ function shutdownScript() {
 	// Script has been removed.
 	console.log("Shutting Down");
 	tablet.removeButton(appButton);
-	removeHighlightUser();
+	destroyHighlightSelection();
 }
 
 function toQML(packet = { type: "" }) {
@@ -183,18 +187,33 @@ function request(url, method = "GET", body) {
 }
 
 function highlightUser(sessionUUID){
-	// We only ever highlight a single user. Delete the previous selection (if it exists)
-	removeHighlightUser();
+	destroyHighlightSelection();
 
-	// Create the selection highlight
 	Selection.enableListHighlight(selectionListName, selectionListStyle);
 
-	// Highlight the user
 	Selection.addToSelectedItemsList(selectionListName, "avatar", sessionUUID);
+
+	const childEntitiesOfAvatar = recursivelyGetAllEntitiesOfAvatar(sessionUUID);
+	childEntitiesOfAvatar.forEach((id) => Selection.addToSelectedItemsList(selectionListName, "entity", id));
 }
 
-function removeHighlightUser(){
-	// Destroy the highlight list
+function recursivelyGetAllEntitiesOfAvatar(avatarId) {
+    let entityIds = [];
+
+    recurse(avatarId);
+    return entityIds;
+
+    function recurse(id) {
+        const children = Entities.getChildrenIDs(id);
+		
+        children.forEach((childId) => {
+            entityIds.push(childId);
+            recurse(childId);
+        });
+    }
+}
+
+function destroyHighlightSelection(){
 	Selection.removeListFromMap(selectionListName);
 }
 
