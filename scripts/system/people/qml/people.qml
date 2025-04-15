@@ -41,7 +41,6 @@ Rectangle {
 			sessionDisplayName: myData.displayName;
 			icon: myData.icon;
 			isSelf: true;
-
 		}
 
 		UserList {

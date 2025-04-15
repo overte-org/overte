@@ -4,7 +4,6 @@ const directoryBase = Account.metaverseServerURL;
 
 // FIXME: Check if focus user exists before issuing commands on them
 // TODO: User join / leave notifications
-// TODO: Dedicated "Edit Persona" button
 // FIXME: Better contacts page
 // TODO: Documentation
 // TODO: User selection distance based fallback

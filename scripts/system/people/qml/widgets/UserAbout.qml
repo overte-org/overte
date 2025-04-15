@@ -7,6 +7,7 @@ RowLayout {
 	property var sessionDisplayName: "";
 	property var icon: "../../img/default_profile_avatar.svg";
 	property var isSelf: false;
+	property var statusColor: statusColors[myData.findableBy] || "magenta";
 
 	property var statusColors: {
 		"all": "#3babe1",
@@ -26,6 +27,7 @@ RowLayout {
 	height: 80;
 	spacing: 10;
 
+	// Profile picture
 	Item {
 		height: 80;
 		width: 80;
@@ -54,113 +56,176 @@ RowLayout {
 			source: avatarImageElement;
 			maskSource: avatarImageBackground;
 		}
-
-		MouseArea {
-			anchors.fill: parent;
-			visible: isSelf;
-
-			onClicked: {
-				page = "EditSelf";
-			}
-		}
 	}
 
+	// Specific user information
 	Column {
 		width: 300;
+
+		Rectangle {
+			color: "transparent";
+			width: parent.width;
+			height: 30;
+			radius: 10;
+
+			Behavior on color {
+				ColorAnimation {
+					duration: 50
+					easing.type: Easing.InOutCubic
+				}
+			}
 		
-		Text {
-			text: sessionDisplayName || "";
-			font.pointSize: 16;
-			color: "white";
-			clip: true;
-			width: parent.width;
-			wrapMode: Text.WrapAnywhere;
-			elide: Text.ElideRight;
-			maximumLineCount: 2;
-
-			MouseArea {
-				anchors.fill: parent;
-				visible: isSelf;
-
-				onClicked: {
-					page = "EditSelf";
-				}
-			}
-		}
-
-		RowLayout {
-			visible: isSelf;
-			width: parent.width;
-
-			Rectangle {
-				// Squarcle
-				width: 15;
-				height: 15;
-				radius: 100;
-				color: statusColors[myData.findableBy] || "magenta";
-				Layout.alignment: Qt.AlignVCenter;
-			}
-
 			Text {
-				x: parent.children[0].width;
-				text: statusLiteral[myData.findableBy] || "...";
+				text: sessionDisplayName || "";
 				font.pointSize: 16;
-				color: statusColors[myData.findableBy] || "magenta";
-				Layout.alignment: Qt.AlignVCenter;
-			}
+				color: "white";
+				clip: true;
+				width: parent.width - 10;
+				anchors.centerIn: parent;
+				wrapMode: Text.WrapAnywhere;
+				elide: Text.ElideRight;
+				maximumLineCount: 2;
 
-			Item {
-				Layout.fillWidth: true;
-				// Spacer
-				width: 1;
-				height: 1;
-			}
+				MouseArea {
+					anchors.fill: parent;
+					visible: isSelf;
+					hoverEnabled: true;
 
-			MouseArea {
-				anchors.fill: parent;
-				visible: isSelf;
+					onClicked: {
+						page = "EditSelf";
+					}			
+					
+					onEntered: {
+						parent.parent.color = "#333";
+					}
+					onExited: {
+						parent.parent.color = "transparent";
+					}
 
-				onClicked: {
-					page = "EditSelf";
 				}
 			}
 		}
-		RowLayout {
-			visible: isSelf;
+
+		Rectangle {
+			color: "transparent";
 			width: parent.width;
+			height: 30;
+			radius: 10;
 
-			Rectangle {
-				// Squarcle
-				width: 15;
-				height: 15;
-				radius: 100;
-				color: "teal";
-				Layout.alignment: Qt.AlignVCenter;
+			Behavior on color {
+				ColorAnimation {
+					duration: 50
+					easing.type: Easing.InOutCubic
+				}
 			}
 
-			Text {
-				text: (connections.totalConnections || "0");
-				color: "white"
-				font.pointSize: 16;
-				Layout.alignment: Qt.AlignVCenter;
-			}
-
-			Item {
-				Layout.fillWidth: true;
-				// Spacer
-				width: 1;
-				height: 1;
-			}
-
-			MouseArea {
-				anchors.fill: parent;
+			RowLayout {
 				visible: isSelf;
+				width: parent.width - 10;
+				anchors.centerIn: parent;
 
-				onClicked: {
-					page = "Connections";
+				Rectangle {
+					// Squarcle
+					width: 15;
+					height: 15;
+					radius: 100;
+					color: statusColor;
+					Layout.alignment: Qt.AlignVCenter;
+				}
+
+				Text {
+					x: parent.children[0].width;
+					text: statusLiteral[myData.findableBy] || "...";
+					font.pointSize: 16;
+					color: statusColor;
+					Layout.alignment: Qt.AlignVCenter;
+				}
+
+				Item {
+					// Spacer
+					Layout.fillWidth: true;
+					width: 1;
+					height: 1;
+				}
+
+				MouseArea {
+					anchors.fill: parent;
+					visible: isSelf;
+					hoverEnabled: true;
+
+					onClicked: {
+						page = "EditSelf";
+					}			
+					
+					onEntered: {
+						parent.parent.color = "#333";
+					}
+					onExited: {
+						parent.parent.color = "transparent";
+					}
+
 				}
 			}
 		}
 
+		Rectangle {
+			color: "transparent";
+			width: parent.width;
+			height: 30;
+			radius: 10;
+
+			Behavior on color {
+				ColorAnimation {
+					duration: 50
+					easing.type: Easing.InOutCubic
+				}
+			}
+
+			RowLayout {
+				visible: isSelf;
+				width: parent.width - 10;
+				anchors.centerIn: parent;
+
+				Rectangle {
+					// Squarcle
+					width: 15;
+					height: 15;
+					radius: 100;
+					color: "teal";
+					Layout.alignment: Qt.AlignVCenter;
+				}
+
+				Text {
+					text: (connections.totalConnections || "0");
+					color: "white"
+					font.pointSize: 16;
+					Layout.alignment: Qt.AlignVCenter;
+				}
+
+				Item {
+					Layout.fillWidth: true;
+					// Spacer
+					width: 1;
+					height: 1;
+				}
+
+				MouseArea {
+					anchors.fill: parent;
+					visible: isSelf;
+					hoverEnabled: true;
+
+					onClicked: {
+						page = "Connections";
+					}
+
+					onEntered: {
+						parent.parent.color = "#333";
+					}
+					onExited: {
+						parent.parent.color = "transparent";
+					}
+				}
+			}
+		}
 	}
 }
