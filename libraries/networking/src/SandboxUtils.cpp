@@ -16,6 +16,7 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QProcess>
+#include <csignal>
 
 #include <NumericalConstants.h>
 #include <SharedUtil.h>
@@ -55,6 +56,8 @@ bool readStatus(QByteArray statusData) {
 }
 
 void runLocalSandbox(QString contentPath, bool autoShutdown, bool noUpdater) {
+    // use the current behavior on windows to not break anyone's setup
+#if defined (Q_OS_WIN)
     QString serverPath = "./server-console/server-console.exe";
     qCDebug(networking) << "Server path is: " << serverPath;
     qCDebug(networking) << "autoShutdown: " << autoShutdown;
@@ -85,6 +88,45 @@ void runLocalSandbox(QString contentPath, bool autoShutdown, bool noUpdater) {
 
     qCDebug(networking) << "Launching sandbox with:" << args;
     qCDebug(networking) << QProcess::startDetached(serverPath, args);
+#else
+    auto myPid = QCoreApplication::applicationPid();
+    QStringList domainArgs, assignmentArgs;
+
+    qint64 domainPid = 0, assignmentPid = 0;
+
+    qCDebug(networking) << "Launching sandbox";
+
+    domainArgs << "--parent-pid" << QString::number(myPid);
+    domainArgs << "--get-temp-name";
+
+    auto domainSuccess = QProcess::startDetached(
+        "./domain-server/domain-server",
+        domainArgs,
+        QString(),
+        &domainPid
+    );
+
+    if (!domainSuccess) { return; }
+    qCDebug(networking) << "Domain server successfully launched";
+
+    assignmentArgs << "--parent-pid" << QString::number(myPid);
+    assignmentArgs << "-n" << QString::number(7);
+
+    auto assignmentSuccess = QProcess::startDetached(
+        "./assignment-client/assignment-client",
+        assignmentArgs,
+        QString(),
+        &assignmentPid
+    );
+
+    if (!assignmentSuccess) {
+        // kill the domain server if we can't start the assignment client
+        if (domainPid) { kill(domainPid, SIGINT); }
+        return;
+    }
+
+    qCDebug(networking) << "Assignment client successfully launched";
+#endif
 }
 
 }
