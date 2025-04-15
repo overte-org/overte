@@ -2742,8 +2742,8 @@ CanvasImage EntityScriptingInterface::canvasGetImage(const QUuid& entityID) {
     }
 
     if (entity->getType() == EntityTypes::Canvas) {
-        auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
-        return CanvasImage { canvas->getImageData(), canvas->getWidth(), canvas->getHeight() };
+        const auto& canvas = *std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+        return CanvasImage { canvas.getImageData(), canvas.getWidth(), canvas.getHeight() };
     } else {
         qCWarning(entities) << "canvasCommit called on a non-canvas entity " << entityID;
         return CanvasImage();
@@ -2757,8 +2757,8 @@ void EntityScriptingInterface::canvasCommit(const QUuid& entityID) {
     }
 
     if (entity->getType() == EntityTypes::Canvas) {
-        auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
-        canvas->commit();
+        auto& canvas = *std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+        canvas.commit();
     } else {
         qCWarning(entities) << "canvasCommit called on a non-canvas entity " << entityID;
     }

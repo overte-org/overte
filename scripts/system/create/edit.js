@@ -555,6 +555,8 @@
         Canvas: {
             width: 128,
             height: 128,
+            unlit: false,
+            pixelated: false,
         },
         Script: {
             enabled: true
