@@ -30,12 +30,18 @@ void CanvasEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoin
     _unlit = entity->getUnlit();
 
     if (entity->_imageDataDirty.load()) {
-        auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, entity->getWidth(), entity->getHeight(), 1, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR));
-        texture->setSource("CanvasEntityRenderer");
-
         const std::lock_guard<std::recursive_mutex> dataLock(entity->_imageDataMutex);
         const auto& data = entity->getImageData();
 
+        auto nearest = entity->getPixelated();
+        auto wrapMode = entity->getWrapMode();
+        auto sampler = gpu::Sampler(
+            nearest ? gpu::Sampler::FILTER_MIN_MAG_POINT : gpu::Sampler::FILTER_MIN_MAG_LINEAR,
+            wrapMode ? gpu::Sampler::WRAP_REPEAT : gpu::Sampler::WRAP_CLAMP
+        );
+
+        auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, entity->getWidth(), entity->getHeight(), 1, sampler);
+        texture->setSource("CanvasEntityRenderer");
         texture->assignStoredMip(0, data.length(), reinterpret_cast<const uint8_t*>(data.constData()));
         _texture = texture;
 
@@ -57,23 +63,27 @@ void CanvasEntityRenderer::doRender(RenderArgs* args) {
     PerformanceTimer perfTimer("RenderableCanvasEntityItem::render");
     Q_ASSERT(args->_batch);
 
-    if (!_texture) { return; }
+    gpu::Batch& batch = *args->_batch;
 
     Transform transform;
     withReadLock([&] {
         transform = _renderTransform;
     });
 
-    gpu::Batch& batch = *args->_batch;
-
-    batch.setResourceTexture(0, _texture);
-
     bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
+
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
         usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
     batch.setModelTransform(transform, _prevRenderTransform);
+
     if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
         _prevRenderTransform = transform;
+    }
+
+    if (_texture) {
+        batch.setResourceTexture(0, _texture);
+    } else {
+        batch.setResourceTexture(0, DependencyManager::get<TextureCache>()->getWhiteTexture());
     }
 
     DependencyManager::get<GeometryCache>()->bindSimpleProgram(batch, true, true, _unlit, false, false, true, graphics::MaterialKey::CullFaceMode::CULL_NONE);
