@@ -2,11 +2,17 @@
 
 const directoryBase = Account.metaverseServerURL;
 
-// FIXME: Check if focus user exists before issuing commands on them
-// TODO: User join / leave notifications
-// FIXME: Better contacts page
-// TODO: Documentation
-// TODO: User selection distance based fallback
+// FIXME: Check if focus user exists before issuing commands on them.
+// FIXME: Not having contacts breaks our own data?
+// TODO: User join / leave notifications.
+// FIXME: Better contacts page.
+// TODO: Documentation.
+// TODO: User selection distance based fallback.
+// TODO: Highlight contact if they are in the session.
+
+// Housekeeping TODO:
+// TODO: Singular focused user. Create internal use object with all relevant information.
+// TODO: Check to see if contact is present in world.
 
 let tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 let active = false;
@@ -32,6 +38,9 @@ const selectionListStyle = {
 	outlineWidth: 4,
 	fillOccludedAlpha: 0.2
 }; 
+let contactsLib = Script.require("./libs/contacts.js");
+let profilesLib = Script.require("./libs/profiles.js");
+let helper = Script.require("./libs/helper.js");
 let iAmAdmin = Users.getCanKick();
 let adminUserData = {};
 let adminUserDataTimestamp = 0;
@@ -70,6 +79,8 @@ function onScreenChanged(type, url) {
 }
 
 function fromQML(event) {
+	console.log(`Got event from QML:\n ${JSON.stringify(event, null, 4)}`);
+
 	if (event.type == "focusedUser") {
 		if (Uuid.fromString(event.user) !== null) return highlightUser(event.user);
 		else return destroyHighlightSelection();
@@ -92,16 +103,32 @@ function fromQML(event) {
 		}
 	}
 
+	if (event.type == "addContact"){
+		contactsLib.addContact(event.sessionId).then(helper.logJSON);
+		return;
+	}
+
+	if (event.type == "removeContact") {
+		contactsLib.removeContact(event.username).then(helper.logJSON);
+		return;
+	}
+
 	if (event.type == "addFriend"){
-		addFriend(event.username);
+		contactsLib.addFriend(event.username).then(helper.logJSON);
 		return;
 	}
 
 	if (event.type == "removeFriend"){
-		removeFriend(event.username);
+		contactsLib.removeFriend(event.username).then(helper.logJSON);
 		return;
 	}
 
+	if (event.type == "findContactByUsername") {
+		contactsLib.getContactByUsername(event.username).then((response) => {
+			if (response.success) toQML({type: "contactFromUsername", contact: response.contact})
+		})
+		return;
+	}
 }
 
 function shutdownScript() {
@@ -137,7 +164,7 @@ function updatePalData() {
 	}
 }
 
-function sendMyData() {
+async function sendMyData() {
 	// Send the current user to the QML UI.
 	let data = {
 		displayName: MyAvatar.displayName,
@@ -147,22 +174,14 @@ function sendMyData() {
 		username: AccountServices.username
 	}
 
-	updateConnections();
-
-	// Get the current user's avatar icon.
-	var url = directoryBase + '/api/v1/users?filter=connections&per_page=10&search=' + encodeURIComponent(data.displayName);
-
-	request(url).then((res) => {
-		let parsedResponse = JSON.parse(res);
-
-		if (parsedResponse.status !== `success`) return;
-
-		parsedResponse = parsedResponse.data.users[0]; // My user
-
-		data.icon = parsedResponse.images.thumbnail;
-
-		toQML({ type: "myData", data: data });
+	contactsLib.getContactList().then(() => {
+		toQML({type: "connections", data: {connections: contactsLib.contacts, totalConnections: contactsLib.contacts.length}});
+	}).catch((response) => {
+		helper.logJSON(response);
 	});
+
+	data.icon = (await profilesLib.getProfile(data.displayName)).profile.images.thumbnail;
+	toQML({ type: "myData", data: data });
 }
 
 function request(url, method = "GET", body) {
@@ -232,27 +251,4 @@ function onUsernameFromIDReply(sessionUUID, userName, machineFingerprint, isAdmi
 		isAdmin: isAdmin
 	};
 	toQML({type: "adminUserData", data: adminUserData});
-}
-
-async function updateConnections(){
-	console.log(`Updating connections`);
-	let req = await request(`https://mv.overte.org/server/api/v1/users/connections`);
-	// We have a response we expect
-	if (!req.includes('{')) return; 
-	
-	req = JSON.parse(req);
-
-	if (req.status == "success") {
-		const totalConnections = req.total_entries;
-		req = req.data.users; // Now we only have the contact data and not any of the extra
-
-		toQML({type: "connections", data: {connections: req, totalConnections: totalConnections}});
-	}
-}
-
-function addFriend(username){
-	request(`${directoryBase}/api/v1/user/friends`, `POST`, {username: username});
-}
-function removeFriend(username) {
-	request(`${directoryBase}/api/v1/user/friends/${username}`, `DELETE`);
 }

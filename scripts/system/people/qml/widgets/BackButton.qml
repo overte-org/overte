@@ -50,6 +50,7 @@ Rectangle {
 			page = "Home";
 			toScript({type: "focusedUser", user: null});
 			focusedUser = null;
+			focusedContact = null;
 		}
 	}
 }

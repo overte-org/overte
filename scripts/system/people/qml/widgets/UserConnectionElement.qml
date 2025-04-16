@@ -39,22 +39,6 @@ Rectangle {
 			maximumLineCount: 1;
 		}
 
-		CheckBox {
-			checked: isFriend;
-			width: 50;
-			height: parent.height;
-
-			onCheckedChanged: {
-				if (!isFriendCheckBoxInitialized) return;
-				if (checked) return toScript({type: "addFriend", username: displayName});
-				else return toScript({type: "removeFriend", username: displayName}); 
-			}
-
-			Component.onCompleted: {
-				isFriendCheckBoxInitialized = true;
-			}
-		}
-
 		// Animation for the x of the element.
 		Behavior on x {
 			NumberAnimation {
@@ -64,5 +48,23 @@ Rectangle {
 		}
 	}
 
+	MouseArea {
+		anchors.fill: parent;
+		hoverEnabled: true;
+
+		onEntered: {
+			parent.color = "#555";
+			parent.children[0].x = 10;
+		}
+
+		onExited: {
+			parent.color = backgroundColor
+			parent.children[0].x = 0;
+		}
+
+		onClicked: {
+			toContactPage(displayName);
+		}
+	}
 
 }
