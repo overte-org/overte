@@ -184,26 +184,6 @@ async function sendMyData() {
 	toQML({ type: "myData", data: data });
 }
 
-function request(url, method = "GET", body) {
-	return new Promise((resolve) => {
-		var req = new XMLHttpRequest();
-		req.onreadystatechange = function () {
-			if (req.readyState === req.DONE) {
-				if (req.status === 200) {
-					resolve(req.responseText);
-				}
-				else {
-					print("Error", req.status, req.statusText);
-				}
-			}
-		};
-
-		req.open(method, url);
-		if (method == `POST`) req.setRequestHeader("Content-Type", "application/json");
-		req.send(JSON.stringify(body));
-	})
-}
-
 function highlightUser(sessionUUID){
 	destroyHighlightSelection();
 

@@ -12,11 +12,11 @@
 
 let helper = {
 	removeCurlyBracesFromUuid: (Uuid) => {
-		return guidWithCurlyBraces.slice(1, -1);
+		return Uuid.slice(1, -1);
 	},
 	request: (url, method = "GET", body) => {
 		return new Promise((resolve) => {
-			var req = new XMLHttpRequest();
+			let req = new XMLHttpRequest();
 			req.onreadystatechange = function () {
 				if (req.readyState === req.DONE) {
 					if (req.status === 200) {

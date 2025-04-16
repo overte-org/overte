@@ -10,6 +10,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 "use strict";
 
+let helper = Script.require("./helper.js");
+
 const directoryBase = Account.metaverseServerURL;
 
 let contactsLib = {
@@ -20,12 +22,12 @@ let contactsLib = {
 			print(`Adding contact '${uuid}'`);
 			
 			const requestUrl = `${directoryBase}/api/v1/user/connection_request`;
-			const requestBody = {'node_id': removeCurlyBracesFromUuid(MyAvatar.sessionUUID), 'proposed_node_id': removeCurlyBracesFromUuid(uuid)};
+			const requestBody = {'node_id': helper.removeCurlyBracesFromUuid(MyAvatar.sessionUUID), 'proposed_node_id': helper.removeCurlyBracesFromUuid(uuid)};
 			
-			request(requestUrl, "POST", {'user_connection_request': requestBody}).then(onResponse);
+			helper.request(requestUrl, "POST", {'user_connection_request': requestBody}).then(onResponse);
 		
 			function onResponse(response){
-				const responseJSON = makeJSON(response);
+				const responseJSON = helper.makeJSON(response);
 		
 				// Error check
 				if (responseJSON.status !== "success") {
@@ -53,12 +55,12 @@ let contactsLib = {
 		return new Promise((resolve, reject) => {
 			print(`Removing contact '${username}'.`);
 
-			request(`${directoryBase}/api/v1/user/connections/${username}`, `DELETE`).then(onResponse);
+			helper.request(`${directoryBase}/api/v1/user/connections/${username}`, `DELETE`).then(onResponse);
 
 			function onResponse(response){
-				const responseJSON = makeJSON(response);
+				const responseJSON = helper.makeJSON(response);
 
-				logJSON(responseJSON);
+				helper.logJSON(responseJSON);
 
 				if (responseJSON.status !== "success") {
 					print(`Error sending contact removal request.`)
@@ -73,22 +75,22 @@ let contactsLib = {
 		return new Promise((resolve, reject) => {
 			print(`Adding friend '${username}'.`);
 
-			request(`${directoryBase}/api/v1/user/friends`, `POST`, {username: username}).then(onResponse);
+			helper.request(`${directoryBase}/api/v1/user/friends`, `POST`, {username: username}).then(onResponse);
 
 			function onResponse(response) {
-				const responseJSON = makeJSON(response);
-				logJSON(responseJSON);
+				const responseJSON = helper.makeJSON(response);
+				helper.logJSON(responseJSON);
 			}
 		})
 	},
 	removeFriend: (username) => {
 		return new Promise((resolve, reject) => {
 			print(`Removing friend '${username}'.`);
-			request(`${directoryBase}/api/v1/user/friends/${username}`, `DELETE`).then(onResponse);
+			helper.request(`${directoryBase}/api/v1/user/friends/${username}`, `DELETE`).then(onResponse);
 
 			function onResponse(response) {
-				const responseJSON = makeJSON(response);
-				logJSON(responseJSON);
+				const responseJSON = helper.makeJSON(response);
+				helper.logJSON(responseJSON);
 			}
 		})
 	},
@@ -96,10 +98,10 @@ let contactsLib = {
 		return new Promise((resolve, reject) => {
 			print(`Getting contact list.`);
 
-			request(`https://mv.overte.org/server/api/v1/users/connections`).then(onResponse);
+			helper.request(`https://mv.overte.org/server/api/v1/users/connections`).then(onResponse);
 
 			function onResponse(response) {
-				const responseJSON = makeJSON(response);
+				const responseJSON = helper.makeJSON(response);
 
 				if (responseJSON.status !== "success") {
 					print(`Error requesting contacts.`);
@@ -120,45 +122,6 @@ let contactsLib = {
 			return resolve({success: true, contact: contactSingle});
 		});
 	}
-}
-
-function removeCurlyBracesFromUuid(guidWithCurlyBraces) {
-	return guidWithCurlyBraces.slice(1, -1);
-}
-
-function request(url, method = "GET", body) {
-	return new Promise((resolve) => {
-		var req = new XMLHttpRequest();
-		req.onreadystatechange = function () {
-			if (req.readyState === req.DONE) {
-				if (req.status === 200) {
-					resolve(req.responseText);
-				}
-				else {
-					print("Error", req.status, req.statusText);
-				}
-			}
-		};
-
-		req.open(method, url);
-		if (method == `POST`) req.setRequestHeader("Content-Type", "application/json");
-		req.send(JSON.stringify(body));
-	})
-}
-
-function makeJSON(string){
-	if (typeof string === "object") return string;
-	try {
-		return JSON.parse(string);
-	} catch {
-		print(`Could not turn into JSON:\n${string}`);
-		return {};
-	}
-}
-
-// Debug functions ---
-function logJSON(obj){
-	print(JSON.stringify(obj, null, 4));
 }
 
 module.exports = contactsLib;
