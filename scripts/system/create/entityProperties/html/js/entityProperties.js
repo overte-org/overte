@@ -1997,14 +1997,14 @@ const GROUPS = [
         properties: [
             {
                 label: "Script",
-                type: "string",
+                type: "code",
                 buttons: [ { id: "reload", label: "F", className: "glyph", onClick: reloadScripts } ],
                 propertyID: "script",
                 placeholder: "URL",
             },
             {
                 label: "Server Script",
-                type: "string",
+                type: "code",
                 buttons: [ { id: "reload", label: "F", className: "glyph", onClick: reloadServerScripts } ],
                 propertyID: "serverScripts",
                 placeholder: "URL",
@@ -2292,6 +2292,7 @@ function getPropertyInputElement(propertyID) {
         case 'bool':
         case 'dropdown':
         case 'textarea':
+        case 'code':
         case 'texture':
             return property.elInput;
         case 'multipleZonesSelection':
@@ -2450,7 +2451,8 @@ function resetProperties() {
                 setDropdownText(property.elInput);
                 break;
             }
-            case 'textarea': {
+            case 'textarea':
+            case 'code': {
                 property.elInput.classList.remove('multi-diff');
                 property.elInput.value = "";
                 setTextareaScrolling(property.elInput);
@@ -3428,6 +3430,47 @@ function createTextareaProperty(property, elProperty) {
     return elInput;
 }
 
+function createCodeProperty(property, elProperty) {
+    let elementID = property.elementID;
+    let propertyData = property.data;
+
+    elProperty.className = "textarea";
+
+    let elInput = document.createElement('textarea');
+    elInput.setAttribute("id", elementID);
+    if (propertyData.readOnly) {
+        elInput.readOnly = true;
+    }
+
+    elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
+    elInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Tab') {
+            event.preventDefault();
+            const prevStart = this.selectionStart + 1;
+            this.value = this.value.substring(0, this.selectionStart)
+                       + "\t"
+                       + this.value.substring(this.selectionEnd);
+            this.selectionStart = prevStart;
+            this.selectionEnd = prevStart;
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            this.blur();
+        }
+    });
+
+    let elMultiDiff = document.createElement('span');
+    elMultiDiff.className = "multi-diff";
+
+    elProperty.appendChild(elInput);
+    elProperty.appendChild(elMultiDiff);
+
+    if (propertyData.buttons !== undefined) {
+        addButtons(elProperty, elementID, propertyData.buttons, true);
+    }
+
+    return elInput;
+}
+
 function createIconProperty(property, elProperty) {
     let elementID = property.elementID;
 
@@ -3663,6 +3706,10 @@ function createProperty(propertyData, propertyElementID, propertyName, propertyI
         }
         case 'textarea': {
             property.elInput = createTextareaProperty(property, elProperty);
+            break;
+        }
+        case 'code': {
+            property.elInput = createCodeProperty(property, elProperty);
             break;
         }
         case 'multipleZonesSelection': {
@@ -5476,7 +5523,8 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
                     setDropdownText(property.elInput);
                     break;
                 }
-                case 'textarea': {
+                case 'textarea':
+                case 'code': {
                     property.elInput.value = propertyValue;
                     setTextareaScrolling(property.elInput);
                     break;
