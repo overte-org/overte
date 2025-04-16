@@ -10,7 +10,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 "use strict";
 
-var helper = Script.require("./helper.js");
+let helper = Script.require("./helper.js");
 
 const directoryBase = Account.metaverseServerURL;
 
