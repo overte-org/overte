@@ -326,7 +326,7 @@ void ShapeEntityItem::computeShapeInfo(ShapeInfo& info) {
         break;
         case EntityShape::Torus: {
             // Not in GeometryCache::buildShapes, unsupported.
-            _collisionShapeType = SHAPE_TYPE_ELLIPSOID;
+            _collisionShapeType = SHAPE_TYPE_CYLINDER_Y;
             //TODO handle this shape more correctly
         }
         break;
