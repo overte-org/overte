@@ -143,7 +143,7 @@ void DomainGatekeeper::processConnectRequestPacket(QSharedPointer<ReceivedMessag
         nodeData->setPlaceName(nodeConnection.placeName);
 
         QMetaEnum metaEnum = QMetaEnum::fromType<LimitedNodeList::ConnectReason>();
-        qDebug() << "Allowed connection from node" << uuidStringWithoutCurlyBraces(node->getUUID())
+        qInfo() << "Allowed connection from node" << uuidStringWithoutCurlyBraces(node->getUUID())
             << "on" << message->getSenderSockAddr()
             << "with MAC" << nodeConnection.hardwareAddress
             << "and machine fingerprint" << nodeConnection.machineFingerprint
@@ -156,7 +156,7 @@ void DomainGatekeeper::processConnectRequestPacket(QSharedPointer<ReceivedMessag
         // and broadcast its presence right away
         emit connectedNode(node, message->getFirstPacketReceiveTime());
     } else {
-        qDebug() << "Refusing connection from node at" << message->getSenderSockAddr()
+        qWarning() << "Refusing connection from node at" << message->getSenderSockAddr()
             << "with hardware address" << nodeConnection.hardwareAddress
             << "and machine fingerprint" << nodeConnection.machineFingerprint
             << "sysinfo" << nodeConnection.SystemInfo;
