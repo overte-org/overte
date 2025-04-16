@@ -17,13 +17,15 @@ Rectangle {
 	property var myData: {icon: "../img/default_profile_avatar.svg"; displayName: ""; username: ""};
 	property var focusedUserData: {sessionDisplayName: ""; audioLoudness: 0.0};
 	property var focusedUser: null;
+	property var focusedContactData: {username: ""};
+	property var focusedContact: null;
 	property var page: "Home";
-	property var pages: ["Home", "User", "EditSelf", "Connections"];
+	property var pages: ["Home", "User", "EditSelf", "Connections", "ContactPage"];
 	property var adminUserData: {};
 	property var connections: [];
 
+	// Home page
 	Column {
-		// Home page
 		width: parent.width - 20;
 		height: parent.height;
 		spacing: 15;
@@ -48,8 +50,8 @@ Rectangle {
 		}
 	}
 
+	// Focused user page
 	ColumnLayout {
-		// Focused user page
 		width: parent.width - 20;
 		height: parent.height;
 		spacing: 15;
@@ -79,6 +81,10 @@ Rectangle {
 					var avatar = AvatarList.getAvatar(focusedUser);
 					MyAvatar.goToLocation(avatar.position, true, Quat.cancelOutRollAndPitch(avatar.orientation), true);
 				};
+			}
+			UserOptionButton {
+				buttonText: "Add Contact";
+				action: () => {toScript({type: "addContact", sessionId: focusedUser})};
 			}
 			UserOptionButton {
 				buttonText: "Mute";
@@ -121,8 +127,8 @@ Rectangle {
 		
 	}
 
+	// Edit persona
 	ColumnLayout {
-		// Edit self information
 		width: parent.width - 20;
 		height: parent.height;
 		spacing: 15;
@@ -185,8 +191,8 @@ Rectangle {
 		
 	}
 
+	// Connections
 	ColumnLayout {
-		// Connections
 		width: parent.width - 20;
 		height: parent.height;
 		spacing: 15;
@@ -204,12 +210,66 @@ Rectangle {
 		}
 	}
 
+	// Contact user page
+	ColumnLayout {
+		width: parent.width - 20;
+		height: parent.height;
+		spacing: 15;
+		anchors.horizontalCenter: parent.horizontalCenter;
+		visible: page == "ContactPage";
+
+		Item {
+			// Spacer
+			height: 1;
+			width: 1;
+		}
+		
+		UserAbout {
+			id: contactUserAbout;
+			sessionDisplayName: focusedContactData && focusedContactData.username || "";
+			icon: focusedContactData && focusedContactData.images.thumbnail || "";
+		}
+
+		UserOptions {
+			Layout.fillHeight: true;
+
+			// TODO: Make this button toggle and conditional?
+			UserOptionButton {
+				buttonText: "Make Friend";
+				action: () => {
+
+				};
+			}
+			UserOptionButton {
+				buttonText: "Remove Contact";
+				action: () => {toScript({type: "removeContact", username: focusedContact})};
+			}
+		}
+
+		BackButton {
+			
+		}
+
+		Item {
+			// Spacer
+			height: 1;
+			width: 1;
+		}
+		
+	}
+
 	function toUserPage(sessionUUID){
 		focusedUser = sessionUUID;
 		focusedUserData = users.filter((user) => user.sessionUUID === focusedUser)[0];
 		page = "User";
 		toScript({type: "focusedUser", user: focusedUser});
 	}
+
+	function toContactPage(username){
+		page = "ContactPage";
+		toScript({type: "findContactByUsername", username: username});
+	}
+
 
 	function fromScript(message) {
 		if (message.type == "myData"){
@@ -233,6 +293,11 @@ Rectangle {
 		if (message.type == "connections") {
 			connections = message.data;
 			return;
+		}
+
+		if (message.type == "contactFromUsername") {
+			focusedContactData = message.contact;
+			focusedContact = message.contact.username;
 		}
 	}
 
