@@ -174,13 +174,18 @@ async function sendMyData() {
 		username: AccountServices.username
 	}
 
-	contactsLib.getContactList().then(() => {
-		toQML({type: "connections", data: {connections: contactsLib.contacts, totalConnections: contactsLib.contacts.length}});
-	}).catch((response) => {
-		helper.logJSON(response);
-	});
+	let [contactsList, profile] = await Promise.allSettled([contactsLib.getContactList(), profilesLib.getProfile(data.displayName)]);
 
-	data.icon = (await profilesLib.getProfile(data.displayName)).profile.images.thumbnail;
+	if (contactsList.status === "fulfilled"){
+		contactsList = contactsList.value;
+		toQML({type: "connections", data: {connections: contactsLib.contacts, totalConnections: contactsLib.contacts.length}});
+	}
+
+	if (profile.status === "fulfilled") {
+		profile = profile.value;
+		data.icon = profile.profile.images.thumbnail;
+	}
+
 	toQML({ type: "myData", data: data });
 }
 
