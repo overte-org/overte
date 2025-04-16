@@ -3,6 +3,9 @@
 # Copyright 2021-2023 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
+include(../cmake/externals/overte-editor-app/CMakeLists.txt)
+set(CMAKE_POLICY_DEFAULT_CMP0135 NEW)
+
 if (APPLE)
   # Make the OSX DMG app be Overte.app.
   set(TARGET_NAME Overte)
@@ -36,6 +39,20 @@ if (BUILD_TOOLS AND JSDOC_ENABLED)
   message(STATUS "JSDoc enabled, depending on jsdoc")
   add_custom_qrc_path(CUSTOM_INTERFACE_QRC_PATHS "${CMAKE_BINARY_DIR}/tools/jsdoc/out/hifiJSDoc.json" "auto-complete/hifiJSDoc.json")
 endif ()
+
+# Script editor webentity resource files
+download_and_add_script_editor()
+FetchContent_MakeAvailable(overte-editor-app)
+file(COPY "${overte-editor-app_SOURCE_DIR}" DESTINATION "${CMAKE_BINARY_DIR}/interface/resources/html/overte-editor-app" FOLLOW_SYMLINK_CHAIN)
+file(GLOB_RECURSE
+        EDITOR_FILES_AND_DIRS
+        LIST_DIRECTORIES false
+        "${overte-editor-app_SOURCE_DIR}/*"
+)
+foreach (EDITOR_DIR ${EDITOR_FILES_AND_DIRS})
+  string(REPLACE "${overte-editor-app_SOURCE_DIR}" "html/overte-editor-app" EDITOR_RCC_DIR "${EDITOR_DIR}")
+  add_custom_qrc_path(CUSTOM_INTERFACE_QRC_PATHS "${EDITOR_DIR}" "${EDITOR_RCC_DIR}")
+endforeach()
 
 set(RESOURCES_QRC ${CMAKE_CURRENT_BINARY_DIR}/resources.qrc)
 set(RESOURCES_RCC ${CMAKE_CURRENT_BINARY_DIR}/resources.rcc)

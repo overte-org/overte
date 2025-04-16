@@ -16,7 +16,7 @@
 
 /* global Script, SelectionDisplay, LightOverlayManager, CameraManager, Grid, GridTool, EditTools, EditVoxels, EntityListTool, Vec3, SelectionManager,
    Overlays, OverlayWebWindow, UserActivityLogger, Settings, Entities, Tablet, Toolbars, Messages, Menu, Camera,
-   progressDialog, tooltip, MyAvatar, Quat, Controller, Clipboard, HMD, UndoStack, OverlaySystemWindow */
+   progressDialog, tooltip, MyAvatar, Quat, Controller, Clipboard, HMD, UndoStack, OverlaySystemWindow, editorSpawner */
 
 (function() { // BEGIN LOCAL_SCOPE
     var createApp = {};
@@ -40,7 +40,8 @@
         "modules/brokenURLReport.js",
         "modules/renderWithZonesManager.js",
         "editModes/editModes.js",
-        "editModes/editVoxels.js"
+        "editModes/editVoxels.js",
+        "scriptEditor/editorSpawner.js"
     ]);
 
     var CreateWindow = Script.require('./modules/createWindow.js');
@@ -2802,6 +2803,14 @@
                         for (i = 0; i < selectionManager.selections.length; i++) {
                             Entities.reloadServerScripts(selectionManager.selections[i]);
                         }
+                    }
+                } else if (data.action === "startClientEditor") {
+                    if (selectionManager.hasSelection()) {
+                        editorSpawner.spawn(selectionManager.selections[0], 'client');
+                    }
+                } else if (data.action === "startServerEditor") {
+                    if (selectionManager.hasSelection()) {
+                        editorSpawner.spawn(selectionManager.selections[0], 'server');
                     }
                 } else if (data.action === "copyPosition") {
                     if (selectionManager.selections.length === 1) {

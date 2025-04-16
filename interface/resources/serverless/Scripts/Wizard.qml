@@ -31,7 +31,6 @@ Rectangle {
   property bool keyboardRaised: false
 
   function setStep(stepNum) {
-    stepList.completed = stepNum
     switch (stepNum) {
       case 0:
         loader.sourceComponent = step1;
@@ -49,8 +48,9 @@ Rectangle {
         loader.sourceComponent = step5;
         break;
       default:
-        loader.setSource(undefined);
+        return;
     }
+    stepList.completed = stepNum;
   }
 
   function completeWizard() {
