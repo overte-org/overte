@@ -197,6 +197,18 @@ bool ScriptEntityItem::getEnabled() const {
 }
 
 void ScriptEntityItem::updateScript() {
+    const auto tree = getTree();
+    if (!tree) {
+        _updateNeeded = true;
+        return;
+    }
+
+    // We only support client-side Script entities for now
+    if (!tree->getIsClient()) {
+        _updateNeeded = false;
+        return;
+    }
+
     QUuid parentID = getParentID();
     QUuid runningParentID;
     QString runningScriptURL;
