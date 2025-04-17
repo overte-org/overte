@@ -124,6 +124,7 @@ private:
     BloomPropertyGroup _bloomProperties;
     TonemappingPropertyGroup _tonemappingProperties;
     AmbientOcclusionPropertyGroup _ambientOcclusionProperties;
+    NormalMapAttenuationPropertyGroup _normalMapAttenuationProperties;
 
     // More attributes used for rendering:
     QString _ambientTextureURL;

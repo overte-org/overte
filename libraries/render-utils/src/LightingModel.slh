@@ -20,6 +20,7 @@ struct LightingModel {
     vec4 _AmbientDirectionalPointSpot;
     vec4 _ShowContourObscuranceWireframe;
     vec4 _HazeBloomSkinningBlendshape;
+    vec4 _AmbientOcclusionShadowsNormalMapAttenuationMinMax;
 };
 
 // See DeferredShader_BufferSlot in DeferredLightingEffect.cpp
@@ -88,6 +89,10 @@ float isSkinningEnabled() {
 }
 float isBlendshapeEnabled() {
     return lightingModel._HazeBloomSkinningBlendshape.w;
+}
+
+vec2 getNormalMapAttenuation() {
+    return vec2(lightingModel._AmbientOcclusionShadowsNormalMapAttenuationMinMax.z, lightingModel._AmbientOcclusionShadowsNormalMapAttenuationMinMax.w);
 }
 
 <@endfunc@>
