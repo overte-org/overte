@@ -364,6 +364,7 @@ enum class EntityVersion : PacketVersion {
     PropertyCleanup,
     TextVerticalAlignment,
     RemoveScreenshare,
+    TorusInnerRadius,
     ScriptEntities,
 
     // Add new versions above here
