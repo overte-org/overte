@@ -1036,7 +1036,8 @@ const GROUPS = [
             {
                 label: "Script URL",
                 type: "string",
-                propertyID: "scriptURL",
+                propertyID: "webScriptURL",
+                propertyName: "scriptURL", // actual entity property name
                 placeholder: "URL",
             },
             {
@@ -1721,6 +1722,23 @@ const GROUPS = [
         ]
     },
     {
+        id: "script",
+        label: "SCRIPT",
+        properties: [
+            {
+                label: "Script",
+                type: "string",
+                propertyID: "scriptURL",
+                placeholder: "URL",
+            },
+            {
+                label: "Enabled",
+                type: "bool",
+                propertyID: "enabled",
+            },
+        ]
+    },
+    {
         id: "spatial",
         label: "SPATIAL",
         properties: [
@@ -2216,6 +2234,7 @@ const GROUPS_PER_TYPE = {
   PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  Script: [ 'base', 'script', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
 };
 
@@ -5108,6 +5127,7 @@ function generateCreateChildEntityAssistant(entityHostType) {
         {"type": "Zone", "name": "Zone"},
         {"type": "Material", "name": "Material"},
         {"type": "Sound", "name": "Sound"},
+        {"type": "Script", "name": "Script"},
         {"type": "PolyVox", "name": "Voxel"},
     ];
     const TILES_PER_ROW = 4;
@@ -5233,6 +5253,12 @@ function createChildEntity(type, entityHostType) {
             properties = {
                 "type": type,
                 "soundURL": url,
+                "parentID": parentID
+            };
+            break;
+        case "Script":
+            properties = {
+                "type": type,
                 "parentID": parentID
             };
             break;

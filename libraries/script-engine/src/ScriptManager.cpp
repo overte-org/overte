@@ -1929,33 +1929,35 @@ void ScriptManager::forwardHandlerCall(const EntityItemID& entityID, const QStri
 int ScriptManager::getNumRunningEntityScripts() const {
     QReadLocker locker { &_entityScriptsLock };
     int sum = 0;
-    for (const auto& st : _entityScripts) {
-        if (st.status == EntityScriptStatus::RUNNING) {
-            ++sum;
+    for (const auto& entityScripts : _entityScripts) {
+        for (const auto& script : entityScripts) {
+            if (script.status == EntityScriptStatus::RUNNING) {
+                ++sum;
+            }
         }
     }
     return sum;
 }
 
-void ScriptManager::setEntityScriptDetails(const EntityItemID& entityID, const EntityScriptDetails& details) {
+void ScriptManager::setEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL, const EntityScriptDetails& details) {
     {
         QWriteLocker locker { &_entityScriptsLock };
-        _entityScripts[entityID] = details;
+        _entityScripts[entityID][scriptURL] = details;
     }
     emit entityScriptDetailsUpdated();
 }
 
-void ScriptManager::updateEntityScriptStatus(const EntityItemID& entityID, const EntityScriptStatus &status, const QString& errorInfo) {
+void ScriptManager::updateEntityScriptStatus(const EntityItemID& entityID, const QString& scriptURL, const EntityScriptStatus &status, const QString& errorInfo) {
     {
         QWriteLocker locker { &_entityScriptsLock };
-        EntityScriptDetails& details = _entityScripts[entityID];
+        EntityScriptDetails& details = _entityScripts[entityID][scriptURL];
         details.status = status;
         details.errorInfo = errorInfo;
     }
     emit entityScriptDetailsUpdated();
 }
 
-QVariant ScriptManager::cloneEntityScriptDetails(const EntityItemID& entityID) {
+QVariant ScriptManager::cloneEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL) {
     static const QVariant NULL_VARIANT = QVariant::fromValue(nullptr);
     QVariantMap map;
     if (entityID.isNull()) {
@@ -1967,11 +1969,11 @@ QVariant ScriptManager::cloneEntityScriptDetails(const EntityItemID& entityID) {
         qCDebug(scriptengine) << "cloneEntityScriptDetails" << entityID << QThread::currentThread();
 #endif
         EntityScriptDetails scriptDetails;
-        if (getEntityScriptDetails(entityID, scriptDetails)) {
+        if (getEntityScriptDetails(entityID, scriptURL, scriptDetails)) {
 #ifdef DEBUG_ENTITY_STATES
             qCDebug(scriptengine) << "gotEntityScriptDetails" << scriptDetails.status << QThread::currentThread();
 #endif
-            map["isRunning"] = isEntityScriptRunning(entityID);
+            map["isRunning"] = isEntityScriptRunning(entityID, scriptURL);
             map["status"] = EntityScriptStatus_::valueToKey(scriptDetails.status).toLower();
             map["errorInfo"] = scriptDetails.errorInfo;
             map["entityID"] = entityID.toString();
@@ -1997,23 +1999,31 @@ QVariant ScriptManager::cloneEntityScriptDetails(const EntityItemID& entityID) {
     return map;
 }
 
-QFuture<QVariant> ScriptManager::getLocalEntityScriptDetails(const EntityItemID& entityID) {
-    return QtConcurrent::run(this, &ScriptManager::cloneEntityScriptDetails, entityID);
+QFuture<QVariant> ScriptManager::getLocalEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL) {
+    return QtConcurrent::run(this, &ScriptManager::cloneEntityScriptDetails, entityID, scriptURL);
 }
 
-bool ScriptManager::getEntityScriptDetails(const EntityItemID& entityID, EntityScriptDetails &details) const {
+bool ScriptManager::getEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL, EntityScriptDetails &details) const {
     QReadLocker locker { &_entityScriptsLock };
     auto it = _entityScripts.constFind(entityID);
     if (it == _entityScripts.constEnd()) {
         return false;
     }
-    details = it.value();
+    auto it2 = it.value().constFind(scriptURL);
+    if (it2 == it.value().constEnd()) {
+        return false;
+    }
+    details = it2.value();
     return true;
 }
 
-bool ScriptManager::hasEntityScriptDetails(const EntityItemID& entityID) const {
+bool ScriptManager::hasEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL) const {
     QReadLocker locker { &_entityScriptsLock };
-    return _entityScripts.contains(entityID);
+    auto it = _entityScripts.constFind(entityID);
+    if (it == _entityScripts.constEnd()) {
+        return false;
+    }
+    return it.value().contains(scriptURL);
 }
 
 void ScriptManager::loadEntityScript(const EntityItemID& entityID, const QString& entityScript, bool forceRedownload) {
@@ -2034,16 +2044,16 @@ void ScriptManager::loadEntityScript(const EntityItemID& entityID, const QString
         return;
     }
 
-    if (!hasEntityScriptDetails(entityID)) {
+    if (!hasEntityScriptDetails(entityID, entityScript)) {
         // make sure EntityScriptDetails has an entry for this UUID right away
         // (which allows bailing from the loading/provisioning process early if the Entity gets deleted mid-flight)
-        updateEntityScriptStatus(entityID, EntityScriptStatus::PENDING, "...pending...");
+        updateEntityScriptStatus(entityID, entityScript, EntityScriptStatus::PENDING, "...pending...");
     }
 
 #ifdef DEBUG_ENTITY_STATES
     {
         EntityScriptDetails details;
-        bool hasEntityScript = getEntityScriptDetails(entityID, details);
+        bool hasEntityScript = getEntityScriptDetails(entityID, entityScript, details);
         qCDebug(scriptengine) << "loadEntityScript.LOADING: " << entityID.toString()
             << "(previous: " << (hasEntityScript ? details.status : EntityScriptStatus::PENDING) << ")";
     }
@@ -2053,7 +2063,7 @@ void ScriptManager::loadEntityScript(const EntityItemID& entityID, const QString
     newDetails.scriptText = entityScript;
     newDetails.status = EntityScriptStatus::LOADING;
     newDetails.definingSandboxURL = currentSandboxURL;
-    setEntityScriptDetails(entityID, newDetails);
+    setEntityScriptDetails(entityID, entityScript, newDetails);
 
     auto scriptCache = DependencyManager::get<ScriptCache>();
     // note: see EntityTreeRenderer.cpp for shared pointer lifecycle management
@@ -2075,7 +2085,7 @@ void ScriptManager::loadEntityScript(const EntityItemID& entityID, const QString
 #ifdef DEBUG_ENTITY_STATES
                 qCDebug(scriptengine) << "loadEntityScript.contentAvailable" << status << entityID.toString();
 #endif
-                if (!isStopping() && hasEntityScriptDetails(entityID)) {
+                if (!isStopping() && hasEntityScriptDetails(entityID, entityScript)) {
                     _contentAvailableQueue[entityID] = { entityID, url, contents, isURL, success, status };
                 } else {
 #ifdef DEBUG_ENTITY_STATES
@@ -2116,7 +2126,7 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
     QString entityScript;
     {
         QWriteLocker locker { &_entityScriptsLock };
-        entityScript = _entityScripts[entityID].scriptText;
+        entityScript = _entityScripts[entityID][scriptOrURL].scriptText;
     }
 
     EntityScriptDetails newDetails;
@@ -2127,7 +2137,7 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
     auto setError = [&](const QString &errorInfo, const EntityScriptStatus& status) {
         newDetails.errorInfo = errorInfo;
         newDetails.status = status;
-        setEntityScriptDetails(entityID, newDetails);
+        setEntityScriptDetails(entityID, scriptOrURL, newDetails);
     };
 
     // NETWORK / FILESYSTEM ERRORS
@@ -2417,14 +2427,14 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
     newDetails.scriptObject = entityScriptObject;
     newDetails.lastModified = lastModified;
     newDetails.definingSandboxURL = sandboxURL;
-    setEntityScriptDetails(entityID, newDetails);
+    setEntityScriptDetails(entityID, scriptOrURL, newDetails);
 
     if (isURL) {
         setParentURL("");
     }
 
     // if we got this far, then call the preload method
-    callEntityScriptMethod(entityID, "preload");
+    callEntityScriptMethodForScript(entityID, scriptOrURL, "preload");
 
     emit entityScriptPreloadFinished(entityID);
 }
@@ -2438,7 +2448,7 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
  * @returns {Signal}
  */
 // The JSDoc is for the callEntityScriptMethod() call in this method.
-void ScriptManager::unloadEntityScript(const EntityItemID& entityID, bool shouldRemoveFromMap) {
+void ScriptManager::unloadEntityScript(const EntityItemID& entityID, const QString& scriptURL, bool shouldRemoveFromMap) {
     if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine) << "*** WARNING *** ScriptManager::unloadEntityScript() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]  "
@@ -2447,7 +2457,7 @@ void ScriptManager::unloadEntityScript(const EntityItemID& entityID, bool should
 
         // Lambda is necessary there to keep shared_ptr counter above zero
         QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
-            manager->unloadEntityScript(entityID, shouldRemoveFromMap);
+            manager->unloadEntityScript(entityID, scriptURL, shouldRemoveFromMap);
         });
         return;
     }
@@ -2457,11 +2467,11 @@ void ScriptManager::unloadEntityScript(const EntityItemID& entityID, bool should
 #endif
 
     EntityScriptDetails oldDetails;
-    if (getEntityScriptDetails(entityID, oldDetails)) {
-        auto scriptText = oldDetails.scriptText;
+    if (getEntityScriptDetails(entityID, scriptURL, oldDetails)) {
+        const auto& scriptText = oldDetails.scriptText;
 
-        if (isEntityScriptRunning(entityID)) {
-            callEntityScriptMethod(entityID, "unload");
+        if (isEntityScriptRunning(entityID, scriptURL)) {
+            callEntityScriptMethodForScript(entityID, scriptURL, "unload");
         }
 #ifdef DEBUG_ENTITY_STATES
         else {
@@ -2472,6 +2482,71 @@ void ScriptManager::unloadEntityScript(const EntityItemID& entityID, bool should
             // this was a deleted entity, we've been asked to remove it from the map
             {
                 QWriteLocker locker { &_entityScriptsLock };
+                auto& entityScripts = _entityScripts[entityID];
+                entityScripts.remove(scriptText);
+                if (entityScripts.size() == 0) {
+                    _entityScripts.remove(entityID);
+                }
+            }
+            emit entityScriptDetailsUpdated();
+        } else if (oldDetails.status != EntityScriptStatus::UNLOADED) {
+            EntityScriptDetails newDetails;
+            newDetails.status = EntityScriptStatus::UNLOADED;
+            newDetails.lastModified = QDateTime::currentMSecsSinceEpoch();
+            // keep scriptText populated for the current need to "debouce" duplicate calls to unloadEntityScript
+            newDetails.scriptText = scriptText;
+            setEntityScriptDetails(entityID, scriptURL, newDetails);
+        }
+
+        stopAllTimersForEntityScript(entityID);
+    }
+}
+
+void ScriptManager::unloadAllEntityScriptsForEntity(const EntityItemID& entityID, bool shouldRemoveFromMap) {
+    if (QThread::currentThread() != thread()) {
+#ifdef THREAD_DEBUGGING
+        qCDebug(scriptengine) << "*** WARNING *** ScriptManager::unloadAllEntityScriptsForEntity() called on wrong thread ["
+                              << QThread::currentThread() << "], invoking on correct thread [" << thread()
+                              << "]  "
+                                 "entityID:"
+                              << entityID;
+#endif
+
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()] {
+            manager->unloadAllEntityScriptsForEntity(entityID, shouldRemoveFromMap);
+        });
+        return;
+    }
+#ifdef THREAD_DEBUGGING
+    qCDebug(scriptengine) << "ScriptManager::unloadAllEntityScriptsForEntity() called on correct thread [" << thread()
+                          << "]  "
+                             "entityID:"
+                          << entityID;
+#endif
+
+    std::vector<EntityScriptDetails> scriptDetails;
+    {
+        QWriteLocker locker { &_entityScriptsLock };
+        for (const auto& detail : _entityScripts[entityID]) {
+            scriptDetails.push_back(detail);
+        }
+    }
+    for (const auto& oldDetails : scriptDetails) {
+        const auto& scriptText = oldDetails.scriptText;
+
+        if (isEntityScriptRunning(entityID, scriptText)) {
+            callEntityScriptMethodForScript(entityID, scriptText, "unload");
+        }
+#ifdef DEBUG_ENTITY_STATES
+        else {
+            qCDebug(scriptengine) << "unload called while !running" << entityID << oldDetails.status;
+        }
+#endif
+        if (shouldRemoveFromMap) {
+            // this was a deleted entity, we've been asked to remove it from the map
+            {
+                QWriteLocker locker{ &_entityScriptsLock };
                 _entityScripts.remove(entityID);
             }
             emit entityScriptDetailsUpdated();
@@ -2481,7 +2556,7 @@ void ScriptManager::unloadEntityScript(const EntityItemID& entityID, bool should
             newDetails.lastModified = QDateTime::currentMSecsSinceEpoch();
             // keep scriptText populated for the current need to "debouce" duplicate calls to unloadEntityScript
             newDetails.scriptText = scriptText;
-            setEntityScriptDetails(entityID, newDetails);
+            setEntityScriptDetails(entityID, scriptText, newDetails);
         }
 
         stopAllTimersForEntityScript(entityID);
@@ -2508,13 +2583,17 @@ void ScriptManager::unloadAllEntityScripts(bool blockingCall) {
     qCDebug(scriptengine) << "ScriptManager::unloadAllEntityScripts() called on correct thread [" << thread() << "]";
 #endif
 
-    QList<EntityItemID> keys;
+    std::vector<std::pair<EntityItemID, EntityScriptDetails>> scripts;
     {
         QReadLocker locker{ &_entityScriptsLock };
-        keys = _entityScripts.keys();
+        for (const auto& entityID : _entityScripts.keys()) {
+            for (const auto& scriptDetails : _entityScripts[entityID]) {
+                scripts.push_back(std::make_pair(entityID, scriptDetails));
+            }
+        }
     }
-    foreach(const EntityItemID& entityID, keys) {
-        unloadEntityScript(entityID);
+    foreach (const auto& idAndScript, scripts) {
+        unloadEntityScript(idAndScript.first, idAndScript.second.scriptText, true);
     }
     {
         QWriteLocker locker{ &_entityScriptsLock };
@@ -2531,8 +2610,8 @@ void ScriptManager::unloadAllEntityScripts(bool blockingCall) {
 #endif // DEBUG_ENGINE_STATE
 }
 
-void ScriptManager::refreshFileScript(const EntityItemID& entityID) {
-    if (!HIFI_AUTOREFRESH_FILE_SCRIPTS || !hasEntityScriptDetails(entityID)) {
+void ScriptManager::refreshFileScript(const EntityItemID& entityID, const QString& scriptURL) {
+    if (!HIFI_AUTOREFRESH_FILE_SCRIPTS || !hasEntityScriptDetails(entityID, scriptURL)) {
         return;
     }
 
@@ -2545,7 +2624,7 @@ void ScriptManager::refreshFileScript(const EntityItemID& entityID) {
     EntityScriptDetails details;
     {
         QWriteLocker locker { &_entityScriptsLock };
-        details = _entityScripts[entityID];
+        details = _entityScripts[entityID][scriptURL];
     }
     // Check to see if a file based script needs to be reloaded (easier debugging)
     if (details.lastModified > 0) {
@@ -2605,15 +2684,94 @@ void ScriptManager::callEntityScriptMethod(const EntityItemID& entityID, const Q
         "entityID:" << entityID << "methodName:" << methodName;
 #endif
 
-    if (HIFI_AUTOREFRESH_FILE_SCRIPTS && methodName != "unload") {
-        refreshFileScript(entityID);
-    }
-    if (isEntityScriptRunning(entityID)) {
-        EntityScriptDetails details;
-        {
-            QWriteLocker locker { &_entityScriptsLock };
-            details = _entityScripts[entityID];
+    std::vector<EntityScriptDetails> scriptDetails;
+    {
+        QWriteLocker locker { &_entityScriptsLock };
+        for (const auto& detail : _entityScripts[entityID]) {
+            scriptDetails.push_back(detail);
         }
+    }
+    for (const auto& details : scriptDetails) {
+        if (HIFI_AUTOREFRESH_FILE_SCRIPTS && methodName != "unload") {
+            refreshFileScript(entityID, details.scriptText);
+        }
+        if (isEntityScriptRunning(entityID, details.scriptText)) {
+            ScriptValue entityScript = details.scriptObject;  // previously loaded
+
+            // If this is a remote call, we need to check to see if the function is remotely callable
+            // we do this by checking for the existance of the 'remotelyCallable' property on the
+            // entityScript. And we confirm that the method name is included. If this fails, the
+            // function will not be called.
+            bool callAllowed = false;
+            if (remoteCallerID == QUuid()) {
+                callAllowed = true;
+            } else {
+                if (entityScript.property("remotelyCallable").isArray()) {
+                    auto callables = entityScript.property("remotelyCallable");
+                    auto callableCount = callables.property("length").toInteger();
+                    for (int i = 0; i < callableCount; i++) {
+                        auto callable = callables.property(i).toString();
+                        if (callable == methodName) {
+                            callAllowed = true;
+                            break;
+                        }
+                    }
+                }
+                if (!callAllowed) {
+                    qCDebug(scriptengine) << "Method [" << methodName << "] not remotely callable.";
+                }
+            }
+
+            if (callAllowed && entityScript.property(methodName).isFunction()) {
+                auto scriptEngine = engine().get();
+
+                ScriptValueList args;
+                args << EntityItemIDtoScriptValue(scriptEngine, entityID);
+                args << scriptValueFromSequence(scriptEngine, params);
+
+                ScriptValue oldData = scriptEngine->globalObject().property("Script").property("remoteCallerID");
+                scriptEngine->globalObject()
+                    .property("Script")
+                    .setProperty("remoteCallerID",
+                                 remoteCallerID.toString());  // Make the remoteCallerID available to javascript as a global.
+                callWithEnvironment(entityID, details.definingSandboxURL, entityScript.property(methodName), entityScript,
+                                    args);
+                scriptEngine->globalObject().property("Script").setProperty("remoteCallerID", oldData);
+            }
+        }
+    }
+}
+
+void ScriptManager::callEntityScriptMethodForScript(const EntityItemID& entityID,
+                                                    const QString& scriptURL,
+                                                    const QString& methodName,
+                                                    const QStringList& params,
+                                                    const QUuid& remoteCallerID) {
+    if (QThread::currentThread() != thread()) {
+#ifdef THREAD_DEBUGGING
+        qCDebug(scriptengine) << "*** WARNING *** ScriptManager::callEntityScriptMethodForScript() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]  "
+            "entityID:" << entityID << "script:" << scriptURL << "methodName:" << methodName;
+#endif
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->callEntityScriptMethodForScript(entityID, scriptURL, methodName, params, remoteCallerID);
+        });
+        return;
+    }
+#ifdef THREAD_DEBUGGING
+    qCDebug(scriptengine) << "ScriptManager::callEntityScriptMethodForScript() called on correct thread [" << thread() << "]  "
+        "entityID:" << entityID << "methodName:" << methodName;
+#endif
+
+    EntityScriptDetails details;
+    {
+        QWriteLocker locker { &_entityScriptsLock };
+        details = _entityScripts[entityID][scriptURL];
+    }
+    if (HIFI_AUTOREFRESH_FILE_SCRIPTS && methodName != "unload") {
+        refreshFileScript(entityID, scriptURL);
+    }
+    if (isEntityScriptRunning(entityID, scriptURL)) {
         ScriptValue entityScript = details.scriptObject;  // previously loaded
 
         // If this is a remote call, we need to check to see if the function is remotely callable
@@ -2648,9 +2806,56 @@ void ScriptManager::callEntityScriptMethod(const EntityItemID& entityID, const Q
             args << scriptValueFromSequence(scriptEngine, params);
 
             ScriptValue oldData = scriptEngine->globalObject().property("Script").property("remoteCallerID");
-            scriptEngine->globalObject().property("Script").setProperty("remoteCallerID", remoteCallerID.toString()); // Make the remoteCallerID available to javascript as a global.
-            callWithEnvironment(entityID, details.definingSandboxURL, entityScript.property(methodName), entityScript, args);
+            scriptEngine->globalObject()
+                .property("Script")
+                .setProperty("remoteCallerID",
+                                remoteCallerID.toString());  // Make the remoteCallerID available to javascript as a global.
+            callWithEnvironment(entityID, details.definingSandboxURL, entityScript.property(methodName), entityScript,
+                                args);
             scriptEngine->globalObject().property("Script").setProperty("remoteCallerID", oldData);
+        }
+    }
+}
+
+void ScriptManager::callEntityScriptMethodForScript(const EntityItemID& entityID,
+                                                    const QString& scriptURL,
+                                                    const QString& methodName,
+                                                    const QString& param) {
+    if (QThread::currentThread() != thread()) {
+#ifdef THREAD_DEBUGGING
+        qCDebug(scriptengine) << "*** WARNING *** ScriptManager::callEntityScriptMethodForScript() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]  "
+            "entityID:" << entityID << "script:" << scriptURL << "methodName:" << methodName;
+#endif
+        // Lambda is necessary there to keep shared_ptr counter above zero
+        QMetaObject::invokeMethod(this, [=, manager = shared_from_this()]{
+            manager->callEntityScriptMethodForScript(entityID, scriptURL, methodName, param);
+        });
+        return;
+    }
+#ifdef THREAD_DEBUGGING
+    qCDebug(scriptengine) << "ScriptManager::callEntityScriptMethodForScript() called on correct thread [" << thread() << "]  "
+        "entityID:" << entityID << "methodName:" << methodName;
+#endif
+
+    EntityScriptDetails details;
+    {
+        QWriteLocker locker { &_entityScriptsLock };
+        details = _entityScripts[entityID][scriptURL];
+    }
+    if (HIFI_AUTOREFRESH_FILE_SCRIPTS && methodName != "unload") {
+        refreshFileScript(entityID, scriptURL);
+    }
+    if (isEntityScriptRunning(entityID, scriptURL)) {
+        ScriptValue entityScript = details.scriptObject;  // previously loaded
+
+        if (entityScript.property(methodName).isFunction()) {
+            auto scriptEngine = engine().get();
+
+            ScriptValueList args;
+            args << EntityItemIDtoScriptValue(scriptEngine, entityID);
+            args << scriptValueFromValue(scriptEngine, param);
+            callWithEnvironment(entityID, details.definingSandboxURL, entityScript.property(methodName), entityScript,
+                                args);
         }
     }
 }
@@ -2673,23 +2878,27 @@ void ScriptManager::callEntityScriptMethod(const EntityItemID& entityID, const Q
         "entityID:" << entityID << "methodName:" << methodName << "event: pointerEvent";
 #endif
 
-    if (HIFI_AUTOREFRESH_FILE_SCRIPTS) {
-        refreshFileScript(entityID);
-    }
-    if (isEntityScriptRunning(entityID)) {
-        EntityScriptDetails details;
-        {
-            QWriteLocker locker { &_entityScriptsLock };
-            details = _entityScripts[entityID];
+    std::vector<EntityScriptDetails> scriptDetails;
+    {
+        QWriteLocker locker{ &_entityScriptsLock };
+        for (const auto& detail : _entityScripts[entityID]) {
+            scriptDetails.push_back(detail);
         }
-        ScriptValue entityScript = details.scriptObject;  // previously loaded
-        if (entityScript.property(methodName).isFunction()) {
-            auto scriptEngine = engine().get();
+    }
+    for (const auto& details : scriptDetails) {
+        if (HIFI_AUTOREFRESH_FILE_SCRIPTS) {
+            refreshFileScript(entityID, details.scriptText);
+        }
+        if (isEntityScriptRunning(entityID, details.scriptText)) {
+            ScriptValue entityScript = details.scriptObject;  // previously loaded
+            if (entityScript.property(methodName).isFunction()) {
+                auto scriptEngine = engine().get();
 
-            ScriptValueList args;
-            args << EntityItemIDtoScriptValue(scriptEngine, entityID);
-            args << event.toScriptValue(scriptEngine);
-            callWithEnvironment(entityID, details.definingSandboxURL, entityScript.property(methodName), entityScript, args);
+                ScriptValueList args;
+                args << EntityItemIDtoScriptValue(scriptEngine, entityID);
+                args << event.toScriptValue(scriptEngine);
+                callWithEnvironment(entityID, details.definingSandboxURL, entityScript.property(methodName), entityScript, args);
+            }
         }
     }
 }
@@ -2712,24 +2921,29 @@ void ScriptManager::callEntityScriptMethod(const EntityItemID& entityID, const Q
         "entityID:" << entityID << "methodName:" << methodName << "otherID:" << otherID << "collision: collision";
 #endif
 
-    if (HIFI_AUTOREFRESH_FILE_SCRIPTS) {
-        refreshFileScript(entityID);
-    }
-    if (isEntityScriptRunning(entityID)) {
-        EntityScriptDetails details;
-        {
-            QWriteLocker locker { &_entityScriptsLock };
-            details = _entityScripts[entityID];
+    std::vector<EntityScriptDetails> scriptDetails;
+    {
+        QWriteLocker locker{ &_entityScriptsLock };
+        for (const auto& detail : _entityScripts[entityID]) {
+            scriptDetails.push_back(detail);
         }
-        ScriptValue entityScript = details.scriptObject;  // previously loaded
-        if (entityScript.property(methodName).isFunction()) {
-            auto scriptEngine = engine().get();
+    }
+    for (const auto& details : scriptDetails) {
+        if (HIFI_AUTOREFRESH_FILE_SCRIPTS) {
+            refreshFileScript(entityID, details.scriptText);
+        }
+        if (isEntityScriptRunning(entityID, details.scriptText)) {
+            ScriptValue entityScript = details.scriptObject;  // previously loaded
+            if (entityScript.property(methodName).isFunction()) {
+                auto scriptEngine = engine().get();
 
-            ScriptValueList args;
-            args << EntityItemIDtoScriptValue(scriptEngine, entityID);
-            args << EntityItemIDtoScriptValue(scriptEngine, otherID);
-            args << collisionToScriptValue(scriptEngine, collision);
-            callWithEnvironment(entityID, details.definingSandboxURL, entityScript.property(methodName), entityScript, args);
+                ScriptValueList args;
+                args << EntityItemIDtoScriptValue(scriptEngine, entityID);
+                args << EntityItemIDtoScriptValue(scriptEngine, otherID);
+                args << collisionToScriptValue(scriptEngine, collision);
+                callWithEnvironment(entityID, details.definingSandboxURL, entityScript.property(methodName), entityScript,
+                                    args);
+            }
         }
     }
 }
