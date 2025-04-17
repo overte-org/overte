@@ -387,6 +387,7 @@ public:
     void scriptHasUnloaded();
     void setScriptHasFinishedPreload(bool value);
     bool isScriptPreloadFinished();
+    QString getLoadedScript() const { return _loadedScript; }
     virtual bool isWearable() const;
     bool isDomainEntity() const { return _entityHostType == entity::HostType::DOMAIN; }
     bool isAvatarEntity() const { return _entityHostType == entity::HostType::AVATAR; }
@@ -446,6 +447,13 @@ public:
 
     bool needsZoneOcclusionUpdate() const { return _needsZoneOcclusionUpdate; }
     void resetNeedsZoneOcclusionUpdate() { withWriteLock([&] { _needsZoneOcclusionUpdate = false; }); }
+
+    static void setUpdateScriptUserDataOperator(std::function<void(const EntityItemID&, const QString&, const QString&)> updateScriptUserDataOperator) {
+        _updateScriptUserDataOperator = updateScriptUserDataOperator;
+    }
+    static void updateScriptUserData(const EntityItemID& entityID, const QString& scriptURL, const QString& userData) {
+        _updateScriptUserDataOperator(entityID, scriptURL, userData);
+    }
 
 signals:
     void spaceUpdate(std::pair<int32_t, glm::vec4> data);
@@ -588,6 +596,8 @@ protected:
     bool _cullWithParent { false };
 
     mutable bool _needsRenderUpdate { false };
+
+    static std::function<void(const EntityItemID&, const QString&, const QString&)> _updateScriptUserDataOperator;
 };
 
 #endif // hifi_EntityItem_h
