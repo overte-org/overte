@@ -407,12 +407,13 @@ public:
     // Entity Script Related methods
 
     /*@jsdoc
-     * Checks whether an entity has an entity script running.
+     * Checks whether a specific script URL is running on an entity.
      * @function Script.isEntityScriptRunning
      * @param {Uuid} entityID - The ID of the entity.
-     * @returns {boolean} <code>true</code> if the entity has an entity script running, <code>false</code> if it doesn't.
+     * @param {string} scriptURL - The script URL.
+     * @returns {boolean} <code>true</code> if the entity has the entity script running, <code>false</code> if it doesn't.
      */
-    Q_INVOKABLE bool isEntityScriptRunning(const EntityItemID& entityID) { return _manager->isEntityScriptRunning(entityID); }
+    Q_INVOKABLE bool isEntityScriptRunning(const EntityItemID& entityID, const QString& scriptURL) { return _manager->isEntityScriptRunning(entityID, scriptURL); }
 
     /*@jsdoc
      * Manually runs the JavaScript garbage collector which reclaims memory by disposing of objects that are no longer
@@ -440,10 +441,25 @@ public:
     /*@jsdoc
      * @function Script.unloadEntityScript
      * @param {Uuid} entityID - Entity ID.
+     * @param {string} scriptURL - Script URL to unload.
      * @param {boolean} [shouldRemoveFromMap=false] - Should remove from map.
      * @deprecated This function is deprecated and will be removed.
      */
-    Q_INVOKABLE void unloadEntityScript(const EntityItemID& entityID, bool shouldRemoveFromMap = false) { _manager->unloadEntityScript(entityID, shouldRemoveFromMap); }
+    Q_INVOKABLE void unloadEntityScript(const EntityItemID& entityID,
+                                        const QString& scriptURL,
+                                        bool shouldRemoveFromMap = false) {
+        _manager->unloadEntityScript(entityID, scriptURL, shouldRemoveFromMap);
+    }
+
+    /*@jsdoc
+     * @function Script.unloadAllEntityScriptsForEntity
+     * @param {Uuid} entityID - Entity ID.
+     * @param {boolean} [shouldRemoveFromMap=false] - Should remove from map.
+     * @deprecated This function is deprecated and will be removed.
+     */
+    Q_INVOKABLE void unloadAllEntityScriptsForEntity(const EntityItemID& entityID, bool shouldRemoveFromMap = false) {
+        _manager->unloadAllEntityScriptsForEntity(entityID, shouldRemoveFromMap);
+    }
 
     /*@jsdoc
      * @function Script.unloadAllEntityScripts
