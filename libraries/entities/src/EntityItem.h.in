@@ -452,7 +452,9 @@ public:
         _updateScriptUserDataOperator = updateScriptUserDataOperator;
     }
     static void updateScriptUserData(const EntityItemID& entityID, const QString& scriptURL, const QString& userData) {
-        _updateScriptUserDataOperator(entityID, scriptURL, userData);
+        if (_updateScriptUserDataOperator) {
+            _updateScriptUserDataOperator(entityID, scriptURL, userData);
+        }
     }
 
 signals:
