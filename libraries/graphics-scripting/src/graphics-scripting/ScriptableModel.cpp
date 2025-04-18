@@ -257,8 +257,9 @@ void scriptable::ScriptableModelBase::append(const ScriptableMeshBase& mesh) {
 }
 
 void scriptable::ScriptableModelBase::appendMaterial(const graphics::MaterialLayer& materialLayer, int shapeID, std::string materialName) {
-    materialLayers[QString::number(shapeID)].push_back(ScriptableMaterialLayer(materialLayer));
-    materialLayers["mat::" + QString::fromStdString(materialName)].push_back(ScriptableMaterialLayer(materialLayer));
+    ScriptableMaterialLayer layer = ScriptableMaterialLayer(materialLayer);
+    materialLayers[QString::number(shapeID)].push_back(layer);
+    materialLayers["mat::" + QString::fromStdString(materialName)].push_back(layer);
 }
 
 void scriptable::ScriptableModelBase::appendMaterials(const std::unordered_map<std::string, graphics::MultiMaterial>& materialsToAppend) {
