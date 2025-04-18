@@ -797,12 +797,12 @@ void Application::updateThemeColors() {
     if (_darkTheme.get()) {
         qApp->setStyle(QStyleFactory::create("Fusion")); // builtin style that always exists
         auto palette = QPalette(
-            QColor(224, 224, 244), // windowText
+            QColor(224, 224, 224), // windowText
             QColor(48, 48, 48),    // button
             QColor(72, 72, 72),    // light
             QColor(24, 24, 24),    // dark
             QColor(48, 48, 48),    // mid
-            QColor(244, 224, 224), // text
+            QColor(224, 224, 224), // text
             QColor(255, 255, 255), // brightText
             QColor(48, 48, 48),    // base
             QColor(48, 48, 48)     // window
