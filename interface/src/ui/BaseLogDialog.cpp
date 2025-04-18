@@ -23,8 +23,7 @@ const int TOP_BAR_HEIGHT = 124;
 const int INITIAL_WIDTH = 800;
 const int INITIAL_HEIGHT = 480;
 const int MINIMAL_WIDTH = 780;
-const int SEARCH_BUTTON_LEFT = 25;
-const int SEARCH_BUTTON_WIDTH = 20;
+const int SEARCH_BUTTON_WIDTH = 32;
 const int SEARCH_TOGGLE_BUTTON_WIDTH = 50;
 const int SEARCH_TEXT_WIDTH = 240;
 const int TIME_STAMP_LENGTH = 16;
@@ -37,11 +36,6 @@ BaseLogDialog::BaseLogDialog(QWidget* parent) : QDialog(parent, Qt::Window) {
     setWindowTitle("Base Log");
     setAttribute(Qt::WA_DeleteOnClose);
 
-    QFile styleSheet(PathUtils::resourcesPath() + "styles/log_dialog.qss");
-    if (styleSheet.open(QIODevice::ReadOnly)) {
-        setStyleSheet(styleSheet.readAll());
-    }
-
     initControls();
 
     resize(INITIAL_WIDTH, INITIAL_HEIGHT);
@@ -53,18 +47,16 @@ BaseLogDialog::~BaseLogDialog() {
 }
 
 void BaseLogDialog::initControls() {
-    _searchButton = new QPushButton(this);
+    _searchButton = new QPushButton(QIcon(":/styles/search.svg"), "", this);
     // set object name for css styling
     _searchButton->setObjectName("searchButton");
-    _leftPad = SEARCH_BUTTON_LEFT;
+    _leftPad = 8;
     _searchButton->setGeometry(_leftPad, ELEMENT_MARGIN, SEARCH_BUTTON_WIDTH, ELEMENT_HEIGHT);
     _leftPad += SEARCH_BUTTON_WIDTH;
     _searchButton->show();
     connect(_searchButton, &QPushButton::clicked, this, &BaseLogDialog::handleSearchButton);
 
     _searchTextBox = new QLineEdit(this);
-    // disable blue outline in Mac
-    _searchTextBox->setAttribute(Qt::WA_MacShowFocusRect, false);
     _searchTextBox->setGeometry(_leftPad, ELEMENT_MARGIN, SEARCH_TEXT_WIDTH, ELEMENT_HEIGHT);
     _leftPad += SEARCH_TEXT_WIDTH + BUTTON_MARGIN;
     _searchTextBox->show();
@@ -88,6 +80,7 @@ void BaseLogDialog::initControls() {
     connect(_searchNextButton, &QPushButton::clicked, this, &BaseLogDialog::toggleSearchNext);
 
     _logTextBox = new QPlainTextEdit(this);
+    _logTextBox->setFont(QFont("monospace"));
     _logTextBox->setReadOnly(true);
     _logTextBox->show();
     _highlighter = new Highlighter(_logTextBox->document());

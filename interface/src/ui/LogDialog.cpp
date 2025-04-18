@@ -46,7 +46,7 @@ LogDialog::LogDialog(QWidget* parent, AbstractLoggerInterface* logger) : BaseLog
     _logger = logger;
     setWindowTitle("Log");
 
-    _revealLogButton = new QPushButton("Reveal log file", this);
+    _revealLogButton = new QPushButton(QIcon(":/styles/txt-file.svg"), "Reveal log file", this);
     // set object name for css styling
     _revealLogButton->setObjectName("revealLogButton");
     _revealLogButton->show();
