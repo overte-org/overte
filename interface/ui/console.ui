@@ -14,7 +14,7 @@
    <string>Dialog</string>
   </property>
   <property name="styleSheet">
-   <string notr="true">QDialog { background: white }</string>
+   <string notr="true">QDialog { background: white; color: black }</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
@@ -80,7 +80,7 @@
           </rect>
          </property>
          <property name="styleSheet">
-          <string notr="true">background-color: white;</string>
+          <string notr="true">background-color: white; color: black;</string>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <property name="spacing">
@@ -131,7 +131,7 @@
                 </sizepolicy>
                </property>
                <property name="styleSheet">
-                <string notr="true">background-color: white;</string>
+                <string notr="true">background-color: white; color: black;</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_5">
                 <property name="spacing">
@@ -223,7 +223,7 @@
                   </property>
                   <property name="font">
                    <font>
-                    <family>Inconsolata,Lucida Console,Andale Mono,Monaco</family>
+                    <family>Inconsolata,Lucida Console,Andale Mono,Monaco,Courier New,monospace</family>
                     <pointsize>-1</pointsize>
                    </font>
                   </property>
@@ -238,6 +238,9 @@
                   </property>
                   <property name="horizontalScrollBarPolicy">
                    <enum>Qt::ScrollBarAlwaysOff</enum>
+                  </property>
+                  <property name="acceptRichText">
+                   <bool>false</bool>
                   </property>
                  </widget>
                 </item>
