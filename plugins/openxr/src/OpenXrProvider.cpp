@@ -24,6 +24,10 @@ public:
     std::shared_ptr<OpenXrContext> context = std::make_shared<OpenXrContext>();
 
     virtual DisplayPluginList getDisplayPlugins() override {
+        if (!context->_isSupported) {
+            return _displayPlugins;
+        }
+
         static std::once_flag once;
         std::call_once(once, [&] {
             DisplayPluginPointer plugin(std::make_shared<OpenXrDisplayPlugin>(context));
@@ -36,6 +40,10 @@ public:
     }
 
     virtual InputPluginList getInputPlugins() override {
+        if (!context->_isSupported) {
+            return _inputPlugins;
+        }
+
         static std::once_flag once;
 
         std::call_once(once, [&] {
