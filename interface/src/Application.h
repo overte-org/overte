@@ -386,6 +386,8 @@ signals:
     void miniTabletEnabledChanged(bool enabled);
     void awayStateWhenFocusLostInVRChanged(bool enabled);
 
+    void darkThemePreferenceChanged(bool useDarkTheme);
+
 public slots:
     void updateThreadPoolCount() const;
 
@@ -459,6 +461,9 @@ public slots:
 
     const QString getPreferredCursor() const { return _preferredCursor.get(); }
     void setPreferredCursor(const QString& cursor);
+
+    bool getDarkThemePreference() const { return _darkTheme.get(); }
+    void setDarkThemePreference(bool value);
 
     /**
      * @brief Shows/hides VR keyboard input for Overlay windows
@@ -799,8 +804,16 @@ private:
     Setting::Handle<bool> _constrainToolbarPosition;
     Setting::Handle<bool> _awayStateWhenFocusLostInVREnabled;
     Setting::Handle<QString> _preferredCursor;
+    // TODO Qt6: Qt5 doesn't have anything for system theme preferences, Qt6.5+ does
+    Setting::Handle<bool> _darkTheme;
     Setting::Handle<bool> _miniTabletEnabledSetting;
     Setting::Handle<bool> _keepLogWindowOnTop { "keepLogWindowOnTop", false };
+
+    // to allow switching between system/light and dark theme without needing a restart
+    QString _startupThemeStyleName;
+    QPalette _startupThemePalette;
+
+    void updateThemeColors();
 
 
     // Plugins

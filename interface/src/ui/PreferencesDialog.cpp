@@ -139,6 +139,12 @@ void setupPreferences() {
     // UI
     static const QString UI_CATEGORY { "User Interface" };
     {
+        auto getter = []()->bool { return qApp->getDarkThemePreference(); };
+        auto setter = [](bool value) { qApp->setDarkThemePreference(value); };
+        preferences->addPreference(new CheckPreference(UI_CATEGORY, "Use dark theme", getter, setter));
+    }
+
+    {
         auto getter = []()->bool { return qApp->getSettingConstrainToolbarPosition(); };
         auto setter = [](bool value) { qApp->setSettingConstrainToolbarPosition(value); };
         preferences->addPreference(new CheckPreference(UI_CATEGORY, "Constrain Toolbar Position to Horizontal Center", getter, setter));

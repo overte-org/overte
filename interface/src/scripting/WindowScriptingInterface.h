@@ -626,6 +626,13 @@ public slots:
      */
     void openWebBrowser(const QString& url = "");
 
+    /*@jsdoc
+     * Returns true if the user prefers a dark UI theme.
+     * @function Window.getDarkThemePreference
+     * @returns {boolean}
+     */
+    bool getDarkThemePreference();
+
 
 private slots:
     void onWindowGeometryChanged(const QRect& geometry);
@@ -840,6 +847,12 @@ signals:
      * Window.minimizedChanged.connect(onWindowMinimizedChanged);
      */
     void minimizedChanged(bool isMinimized);
+
+    /*@jsdoc
+     * @function Window.darkThemePreferenceChanged
+     * @returns {boolean}
+     */
+    void darkThemePreferenceChanged(bool useDarkTheme);
 
 private:
     QString getPreviousBrowseLocation() const;
