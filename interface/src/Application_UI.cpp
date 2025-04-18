@@ -16,6 +16,7 @@
 #include "Application.h"
 
 #include <QtQml/QQmlContext>
+#include <QStyleFactory>
 
 #include <AddressManager.h>
 #include <AnimationCacheScriptingInterface.h>
@@ -790,6 +791,39 @@ void Application::setPreferredCursor(const QString& cursorName) {
     }
 
     showCursor(Cursor::Manager::lookupIcon(_preferredCursor.get()));
+}
+
+void Application::updateThemeColors() {
+    if (_darkTheme.get()) {
+        qApp->setStyle(QStyleFactory::create("Fusion")); // builtin style that always exists
+        auto palette = QPalette(
+            QColor(224, 224, 244), // windowText
+            QColor(48, 48, 48),    // button
+            QColor(72, 72, 72),    // light
+            QColor(24, 24, 24),    // dark
+            QColor(48, 48, 48),    // mid
+            QColor(244, 224, 224), // text
+            QColor(255, 255, 255), // brightText
+            QColor(48, 48, 48),    // base
+            QColor(48, 48, 48)     // window
+        );
+        qApp->setPalette(palette);
+        qApp->getPrimaryMenu()->setPalette(palette); // weird Qt bug workaround
+    } else {
+        qApp->setStyle(QStyleFactory::create(_startupThemeStyleName));
+        qApp->setPalette(_startupThemePalette);
+        qApp->getPrimaryMenu()->setPalette(_startupThemePalette); // weird Qt bug workaround
+    }
+}
+
+void Application::setDarkThemePreference(bool value) {
+    bool previousValue = _darkTheme.get();
+
+    if (value == previousValue) { return; }
+
+    _darkTheme.set(value);
+    updateThemeColors();
+    emit darkThemePreferenceChanged(value);
 }
 
 void Application::showVRKeyboardForHudUI(bool show) {

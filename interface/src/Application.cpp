@@ -21,6 +21,7 @@
 #include <QtNetwork/QLocalServer>
 #include <QtQuick/QQuickWindow>
 #include <QWidget>
+#include <QStyle>
 
 #include <AccountManager.h>
 #include <AddressManager.h>
@@ -231,6 +232,7 @@ Application::Application(
     _constrainToolbarPosition("toolbar/constrainToolbarToCenterX", true),
     _awayStateWhenFocusLostInVREnabled("awayStateWhenFocusLostInVREnabled", DEFAULT_AWAY_STATE_WHEN_FOCUS_LOST_IN_VR_ENABLED),
     _preferredCursor("preferredCursor", DEFAULT_CURSOR_NAME),
+    _darkTheme("darkTheme", false),
     _miniTabletEnabledSetting("miniTabletEnabled", DEFAULT_MINI_TABLET_ENABLED),
     // Entities
     _maxOctreePacketsPerSecond("maxOctreePPS", DEFAULT_MAX_OCTREE_PPS),
@@ -246,6 +248,9 @@ Application::Application(
     qInstallMessageHandler(messageHandler);
 
     DependencyManager::set<PathUtils>();
+
+    _startupThemeStyleName = qApp->style()->objectName();
+    _startupThemePalette = qApp->palette();
 }
 
 Application::~Application() {
@@ -1259,6 +1264,9 @@ void Application::loadSettings(const QCommandLineParser& parser) {
         Setting::Handle<QString> url(setting, externalResource->getBase(bucket));
         externalResource->setBase(bucket, url.get());
     }
+
+    // the setter function isn't called, so update the theme colors now
+    updateThemeColors();
 
     _settingsLoaded = true;
 }
