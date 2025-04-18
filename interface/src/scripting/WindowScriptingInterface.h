@@ -849,8 +849,9 @@ signals:
     void minimizedChanged(bool isMinimized);
 
     /*@jsdoc
+     * Triggered when the dark theme preference is changed.
      * @function Window.darkThemePreferenceChanged
-     * @returns {boolean}
+     * @param {boolean} useDarkTheme
      */
     void darkThemePreferenceChanged(bool useDarkTheme);
 
