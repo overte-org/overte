@@ -2170,5 +2170,6 @@ void Application::setupSignalsAndOperators() {
             connect(this, &Application::activeDisplayPluginChanged,
                 scriptingAudioSharedPointer.data(), &scripting::Audio::onContextChanged);
         }
+        dynamic_cast<scripting::Audio*>(audioScriptingInterface)->onContextChanged();
     }
 }
