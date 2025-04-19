@@ -151,7 +151,7 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
             }
 
             case Variant::SetColor: {
-                auto color = QColor(cmd._color[0], cmd._color[1], cmd._color[2], 255);
+                auto color = cmd._color;
                 pen.setColor(color);
                 brush.setColor(color);
                 p.setPen(pen);

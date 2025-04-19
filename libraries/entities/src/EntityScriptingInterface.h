@@ -2197,21 +2197,21 @@ public slots:
     Q_INVOKABLE const EntityPropertyInfo getPropertyInfo(const QString& propertyName) const;
 
     /*@jsdoc
-     * Replaces the contents of a canvas entity's image buffer.
+     * Replaces the contents of a canvas entity's pixel buffer.
      * @function Entities.canvasPushImage
      * @param {Uuid} entityID - The Canvas entity that this image will be submitted to.
      * @param {CanvasImage} image - The image to submit. Must have the same dimensions as the target Canvas entity.
      */
-    Q_INVOKABLE void canvasPushImage(const QUuid& entityID, const CanvasImage& image);
+    Q_INVOKABLE void canvasPushPixels(const QUuid& entityID, const CanvasImage& image);
 
     /*@jsdoc
-     * Retrieves a copy of the current sRGBA8 pixel buffer of a canvas as an ArrayBuffer.
+     * Retrieves a copy of the current sRGBA8 pixel buffer of a canvas.
      * The contents are determined by the last call to Entities.canvasCommit.
      * @function Entities.canvasGetImage
      * @param {Uuid} entityID - The canvas entity to retrieve the buffer from.
-     * @returns {CanvasImage} - The image data.
+     * @returns {CanvasImage}
      */
-    Q_INVOKABLE CanvasImage canvasGetImage(const QUuid& entityID);
+    Q_INVOKABLE CanvasImage canvasGetPixels(const QUuid& entityID);
 
     /*@jsdoc
      * Pushes a list of high-level drawing commands into a Canvas entity's internal queue.
@@ -2229,6 +2229,14 @@ public slots:
      * @param {Uuid} entityID - The canvas entity to update the texture of.
      */
     Q_INVOKABLE void canvasCommit(const QUuid& entityID);
+
+    /*@jsdoc
+     * Creates a standard-format image binary that can be saved to disk or the asset server.
+     * @function Entities.canvasToImageData
+     * @param {Uuid} entityID - The canvas entity to make an image from.
+     * @returns {ArrayBuffer}
+     */
+    Q_INVOKABLE QByteArray canvasToImageData(const QUuid& entityID);
 
 signals:
     /*@jsdoc
