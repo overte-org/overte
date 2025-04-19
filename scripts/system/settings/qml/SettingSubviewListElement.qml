@@ -1,5 +1,6 @@
 import QtQuick 2.15
 import QtQuick.Layouts 1.3
+import TabletScriptingInterface 1.0
 
 Item {
 	property color bgColor: index % 2 === 0 ? Qt.rgba(0,0,0,0) : Qt.rgba(0.15,0.15,0.15,1);
@@ -69,6 +70,7 @@ Item {
 		hoverEnabled: true;
 
 		onClicked: {
+			Tablet.playSound(TabletEnums.ButtonClicked);
 			if (target_page !== "") {
 				toScript({type:"switch_app", app_url: target_page});
 				return;
@@ -79,6 +81,7 @@ Item {
 		onEntered: {
 			backgroundElement.color = "#333";
 			pageNameElement.x = initialTextXPosition + 20;
+			Tablet.playSound(TabletEnums.ButtonHover);
 		}
 
 		onExited: {
