@@ -13,8 +13,6 @@
 #include "controllers/InputDevice.h"
 #include "OpenXrContext.h"
 
-#define HAND_COUNT 2
-
 class OpenXrInputPlugin : public InputPlugin {
     Q_OBJECT
 public:
@@ -99,6 +97,10 @@ private:
         std::map<std::string, std::shared_ptr<Action>> _actions;
         std::shared_ptr<OpenXrContext> _context;
         bool _actionsInitialized = false;
+        bool _calibrated = false;
+
+        // two empty offsets for the hands to start with
+        std::vector<XrPosef> calibrationOffsets { XR_INDENTITY_POSE, XR_INDENTITY_POSE };
 
         bool initActions();
         bool initBindings(const std::string& profileName, const std::map<std::string, std::string>& actionsToBind);
