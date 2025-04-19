@@ -2229,7 +2229,7 @@ const GROUPS_PER_TYPE = {
   PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
-  Canvas: [ 'base', 'canvas', 'spatial', 'behavior', 'scripts', 'children' ],
+  Canvas: [ 'base', 'canvas', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
 };
 
