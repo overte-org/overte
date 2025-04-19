@@ -847,10 +847,6 @@ void ScriptManager::init() {
     scriptEngine->registerGlobalObject("StackTest", new StackTestScriptingInterface(this));
 #endif
 
-    if (_context == CLIENT_SCRIPT) {
-        scriptEngine->registerGlobalObject("CanvasCommand", &_canvasCommandLibrary);
-    }
-
     qCDebug(scriptengine) << "Engine initialized";
 }
 
