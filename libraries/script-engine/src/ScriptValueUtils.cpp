@@ -792,14 +792,48 @@ bool qTimerFromScriptValue(const ScriptValue& object, QTimer* &out) {
 bool qColorFromScriptValue(const ScriptValue& object, QColor& color) {
     if (object.isNumber()) {
         color.setRgb(object.toUInt32());
-
+        return true;
     } else if (object.isString()) {
         color.setNamedColor(object.toString());
+        return true;
+    } else if (object.isArray()) {
+        auto length = object.property("length").toInt32();
+        auto r = object.property(0).toInt32();
+        auto g = object.property(1).toInt32();
+        auto b = object.property(2).toInt32();
 
+        color.setRed(r);
+        color.setGreen(g);
+        color.setBlue(b);
+
+        if (length == 3) {
+            color.setAlpha(255);
+        } else if (length == 4) {
+            color.setAlpha(object.property(3).toInt32());
+        } else {
+            return false;
+        }
+
+        return true;
+    } else if (object.isObject()) {
+        auto r = object.property("red");
+        auto g = object.property("green");
+        auto b = object.property("blue");
+        auto a = object.property("alpha");
+
+        if (!r.isNumber()) { r = object.property("r"); }
+        if (!g.isNumber()) { g = object.property("g"); }
+        if (!b.isNumber()) { b = object.property("b"); }
+        if (!a.isNumber()) { a = object.property("a"); }
+
+        color.setRed(r.toInt32());
+        color.setGreen(g.toInt32());
+        color.setBlue(b.toInt32());
+        color.setAlpha(a.isNumber() ? a.toInt32() : 255);
+
+        return true;
     } else {
-        ScriptValue alphaValue = object.property("alpha");
-        color.setRgb(object.property("red").toInt32(), object.property("green").toInt32(), object.property("blue").toInt32(),
-                     alphaValue.isNumber() ? alphaValue.toInt32() : 255);
+        return false;
     }
     return true;
 }

@@ -48,7 +48,6 @@
 #include "ScriptValue.h"
 #include "ScriptException.h"
 #include "Vec3.h"
-#include "CanvasCommand.h"
 
 static const QString NO_SCRIPT("");
 
@@ -1684,7 +1683,6 @@ protected:
     Mat4 _mat4Library;
     ScriptUUID _uuidLibrary;
     ConsoleScriptingInterface _consoleScriptingInterface;
-    CanvasCommandInterface _canvasCommandLibrary;
     std::atomic<bool> _isUserLoaded { false };
     bool _isReloading { false };
 

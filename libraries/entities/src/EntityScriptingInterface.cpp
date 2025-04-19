@@ -22,6 +22,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QtWidgets/QApplication>
+#include <QBuffer>
 
 #include <shared/QtHelpers.h>
 #include <VariantMapToScriptValue.h>
@@ -2696,7 +2697,7 @@ glm::vec3 EntityScriptingInterface::localToWorldDimensions(glm::vec3 localDimens
     }
 }
 
-void EntityScriptingInterface::canvasPushImage(const QUuid& entityID, const CanvasImage& image) {
+void EntityScriptingInterface::canvasPushPixels(const QUuid& entityID, const CanvasImage& image) {
     EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
     if (!entity) {
         return;
@@ -2706,18 +2707,18 @@ void EntityScriptingInterface::canvasPushImage(const QUuid& entityID, const Canv
         auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
 
         if (image.buffer.length() != (int)(4 * image.width * image.height)) {
-            qCCritical(entities) << "canvasPushImage: \"image\" has invalid buffer size, expected " << (4 * image.width * image.height) << ", got " << image.buffer.length();
+            qCCritical(entities) << "canvasPushPixels: \"image\" has invalid buffer size, expected " << (4 * image.width * image.height) << ", got " << image.buffer.length();
             return;
         }
 
         if (image.width != canvas->getWidth() || image.height != canvas->getHeight()) {
-            qCCritical(entities) << "canvasPushImage: \"image\" dimensions don't match canvas, expected " << canvas->getWidth() << "x" << canvas->getHeight() << ", got " << image.width << "x" << image.height;
+            qCCritical(entities) << "canvasPushPixels: \"image\" dimensions don't match canvas, expected " << canvas->getWidth() << "x" << canvas->getHeight() << ", got " << image.width << "x" << image.height;
             return;
         }
 
         canvas->setImageData(image);
     } else {
-        qCWarning(entities) << "canvasPushImage called on a non-canvas entity " << entityID;
+        qCWarning(entities) << "canvasPushPixels called on a non-canvas entity " << entityID;
     }
 }
 
@@ -2735,7 +2736,7 @@ void EntityScriptingInterface::canvasPushCommands(const QUuid& entityID, const Q
     }
 }
 
-CanvasImage EntityScriptingInterface::canvasGetImage(const QUuid& entityID) {
+CanvasImage EntityScriptingInterface::canvasGetPixels(const QUuid& entityID) {
     EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
     if (!entity) {
         return CanvasImage();
@@ -2743,9 +2744,10 @@ CanvasImage EntityScriptingInterface::canvasGetImage(const QUuid& entityID) {
 
     if (entity->getType() == EntityTypes::Canvas) {
         const auto& canvas = *std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+        const std::lock_guard<std::recursive_mutex> dataLock(canvas._imageDataMutex);
         return CanvasImage { canvas.getImageData(), canvas.getWidth(), canvas.getHeight() };
     } else {
-        qCWarning(entities) << "canvasCommit called on a non-canvas entity " << entityID;
+        qCWarning(entities) << "canvasGetPixels called on a non-canvas entity " << entityID;
         return CanvasImage();
     }
 }
@@ -2761,5 +2763,28 @@ void EntityScriptingInterface::canvasCommit(const QUuid& entityID) {
         canvas.commit();
     } else {
         qCWarning(entities) << "canvasCommit called on a non-canvas entity " << entityID;
+    }
+}
+
+QByteArray EntityScriptingInterface::canvasToImageData(const QUuid& entityID) {
+    EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
+    if (!entity) {
+        return QByteArray();
+    }
+
+    if (entity->getType() == EntityTypes::Canvas) {
+        auto& canvas = *std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+        const std::lock_guard<std::recursive_mutex> dataLock(canvas._imageDataMutex);
+        auto image = QImage(reinterpret_cast<const uchar*>(canvas.getImageData().constData()), canvas.getWidth(), canvas.getHeight(), QImage::Format_RGBA8888);
+
+        QByteArray bytes;
+        QBuffer buffer(&bytes);
+        buffer.open(QIODevice::WriteOnly);
+        image.save(&buffer, "PNG");
+        buffer.close();
+        return bytes;
+    } else {
+        qCWarning(entities) << "canvasToImageData called on a non-canvas entity " << entityID;
+        return QByteArray();
     }
 }

@@ -42,30 +42,39 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
 
     ScriptValue obj = engine->newObject();
 
-    obj.setProperty(CMD_TYPE_PROP_NAME, cmd.kind);
-
     switch (cmd.kind) {
         case Variant::SetStrokeWidth: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "strokeWidth");
             obj.setProperty("width", cmd._float[0]);
             return obj;
         }
 
         case Variant::SetColor: {
-            obj.setProperty("color", u8vec3ColorToScriptValue(engine, cmd._color));
+            obj.setProperty(CMD_TYPE_PROP_NAME, "color");
+
+            auto color = engine->newArray(4);
+            color.setProperty(0, cmd._color.red());
+            color.setProperty(1, cmd._color.green());
+            color.setProperty(2, cmd._color.blue());
+            color.setProperty(3, cmd._color.alpha());
+            obj.setProperty("color", color);
             return obj;
         }
 
         case Variant::SetHints: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "hints");
             obj.setProperty("hints", cmd._int[0]);
             return obj;
         }
 
         case Variant::SetBlendMode: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "blendMode");
             obj.setProperty("mode", cmd._int[0]);
             return obj;
         }
 
         case Variant::SetFont: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "font");
             obj.setProperty("family", cmd._text);
             obj.setProperty("size", cmd._int[0]);
             obj.setProperty("weight", cmd._int[1]);
@@ -74,6 +83,7 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
         }
 
         case Variant::ClearRect: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "clearRect");
             obj.setProperty("x", cmd._rect.x());
             obj.setProperty("y", cmd._rect.y());
             obj.setProperty("w", cmd._rect.width());
@@ -82,11 +92,13 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
         }
 
         case Variant::FillPath: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "fillPath");
             obj.setProperty("path", qPainterPathToScriptValue(engine, cmd._paintPath));
             return obj;
         }
 
         case Variant::FillRect: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "fillRect");
             obj.setProperty("x", cmd._rect.x());
             obj.setProperty("y", cmd._rect.y());
             obj.setProperty("w", cmd._rect.width());
@@ -95,6 +107,7 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
         }
 
         case Variant::FillEllipse: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "fillEllipse");
             obj.setProperty("x", cmd._rect.x());
             obj.setProperty("y", cmd._rect.y());
             obj.setProperty("w", cmd._rect.width());
@@ -103,6 +116,7 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
         }
 
         case Variant::FillText: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "fillText");
             obj.setProperty("x", cmd._rect.x());
             obj.setProperty("y", cmd._rect.y());
             obj.setProperty("w", cmd._rect.width());
@@ -113,11 +127,13 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
         }
 
         case Variant::StrokePath: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "strokePath");
             obj.setProperty("path", qPainterPathToScriptValue(engine, cmd._paintPath));
             return obj;
         }
 
         case Variant::StrokeRect: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "strokeRect");
             obj.setProperty("x", cmd._rect.x());
             obj.setProperty("y", cmd._rect.y());
             obj.setProperty("w", cmd._rect.width());
@@ -126,6 +142,7 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
         }
 
         case Variant::StrokeArc: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "strokeArc");
             obj.setProperty("x", cmd._rect.x());
             obj.setProperty("y", cmd._rect.y());
             obj.setProperty("w", cmd._rect.width());
@@ -136,6 +153,7 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
         }
 
         case Variant::StrokeEllipse: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "strokeEllipse");
             obj.setProperty("x", cmd._rect.x());
             obj.setProperty("y", cmd._rect.y());
             obj.setProperty("w", cmd._rect.width());
@@ -144,12 +162,14 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
         }
 
         case Variant::Point: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "point");
             obj.setProperty("x", cmd._point.x());
             obj.setProperty("y", cmd._point.y());
             return obj;
         }
 
         case Variant::Line: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "line");
             obj.setProperty("x1", cmd._line.x1());
             obj.setProperty("y1", cmd._line.y1());
             obj.setProperty("x2", cmd._line.x2());
@@ -158,6 +178,7 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
         }
 
         case Variant::ImageCopy: {
+            obj.setProperty(CMD_TYPE_PROP_NAME, "imageCopy");
             obj.setProperty("srcX", cmd._rect.x());
             obj.setProperty("srcY", cmd._rect.y());
             obj.setProperty("srcW", cmd._rect.width());
@@ -170,60 +191,57 @@ ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand
             return obj;
         }
 
-        default: {
-            return obj;
-        }
+        case Variant::Invalid: break;
     }
+
+    return obj;
 }
 
 bool canvasCommandFromScriptValue(const ScriptValue& object, CanvasCommand& cmd) {
-    using Variant = CanvasCommand::Variant;
+    QString type = object.property(CMD_TYPE_PROP_NAME).toString();
 
-    uint type = object.property(CMD_TYPE_PROP_NAME).toInt32();
-
-    if (type == Variant::SetStrokeWidth) {
+    if (type == "strokeWidth") {
         cmd = CanvasCommand::setStrokeWidth(object.property("width").toNumber());
-    } else if (type == Variant::SetColor) {
-        glm::u8vec3 c;
-        if (!u8vec3FromScriptValue(object.property("color"), c)) { return false; }
+    } else if (type == "color") {
+        QColor c;
+        if (!qColorFromScriptValue(object.property("color"), c)) { return false; }
 
-        // FIXME: we have a script RGB color type but not an RGBA one
         cmd = CanvasCommand::setColor(c);
-    } else if (type == Variant::SetHints) {
+    } else if (type == "hints") {
         cmd = CanvasCommand::setHints(object.property("hints").toInt32());
-    } else if (type == Variant::SetBlendMode) {
+    } else if (type == "blendMode") {
         cmd = CanvasCommand::setBlendMode(object.property("mode").toInt32());
-    } else if (type == Variant::SetFont) {
+    } else if (type == "font") {
         cmd = CanvasCommand::setFont(
             object.property("family").toString(),
             object.property("size").toInt32(),
             object.property("weight").toInt32(),
             object.property("italic").toBool()
         );
-    } else if (type == Variant::ClearRect) {
+    } else if (type == "clearRect") {
         cmd = CanvasCommand::clearRect(
             object.property("x").toInt32(),
             object.property("y").toInt32(),
             object.property("w").toInt32(),
             object.property("h").toInt32()
         );
-    } else if (type == Variant::FillPath) {
+    } else if (type == "fillPath") {
         cmd = CanvasCommand::fillPath(qPainterPathFromScriptValue(object.property("path")));
-    } else if (type == Variant::FillRect) {
+    } else if (type == "fillRect") {
         cmd = CanvasCommand::fillRect(QRectF(
             object.property("x").toNumber(),
             object.property("y").toNumber(),
             object.property("w").toNumber(),
             object.property("h").toNumber()
         ));
-    } else if (type == Variant::FillEllipse) {
+    } else if (type == "fillEllipse") {
         cmd = CanvasCommand::fillEllipse(QRectF(
             object.property("x").toNumber(),
             object.property("y").toNumber(),
             object.property("w").toNumber(),
             object.property("h").toNumber()
         ));
-    } else if (type == Variant::FillText) {
+    } else if (type == "fillText") {
         cmd = CanvasCommand::fillText(
             object.property("text").toString(),
             QRectF(
@@ -234,16 +252,16 @@ bool canvasCommandFromScriptValue(const ScriptValue& object, CanvasCommand& cmd)
             ),
             object.property("flag").toInt32()
         );
-    } else if (type == Variant::StrokePath) {
+    } else if (type == "strokePath") {
         cmd = CanvasCommand::strokePath(qPainterPathFromScriptValue(object.property("path")));
-    } else if (type == Variant::StrokeRect) {
+    } else if (type == "strokeRect") {
         cmd = CanvasCommand::strokeRect(QRectF(
             object.property("x").toNumber(),
             object.property("y").toNumber(),
             object.property("w").toNumber(),
             object.property("h").toNumber()
         ));
-    } else if (type == Variant::StrokeArc) {
+    } else if (type == "strokeArc") {
         cmd = CanvasCommand::strokeArc(
             QRectF(
                 object.property("x").toNumber(),
@@ -254,26 +272,26 @@ bool canvasCommandFromScriptValue(const ScriptValue& object, CanvasCommand& cmd)
             object.property("startAngle").toNumber(),
             object.property("spanAngle").toNumber()
         );
-    } else if (type == Variant::StrokeEllipse) {
+    } else if (type == "strokeEllipse") {
         cmd = CanvasCommand::strokeEllipse(QRectF(
             object.property("x").toNumber(),
             object.property("y").toNumber(),
             object.property("w").toNumber(),
             object.property("h").toNumber()
         ));
-    } else if (type == Variant::Point) {
+    } else if (type == "point") {
         cmd = CanvasCommand::point(
             object.property("x").toNumber(),
             object.property("y").toNumber()
         );
-    } else if (type == Variant::Line) {
+    } else if (type == "line") {
         cmd = CanvasCommand::line(
             object.property("x1").toNumber(),
             object.property("y1").toNumber(),
             object.property("x2").toNumber(),
             object.property("y2").toNumber()
         );
-    } else if (type == Variant::ImageCopy) {
+    } else if (type == "imageCopy") {
         cmd = CanvasCommand::imageCopy(
             canvasImageFromScriptValue(object.property("image")),
             QRectF(
@@ -446,118 +464,4 @@ CanvasPathElement canvasPathElementFromScriptValue(const ScriptValue& object) {
     CanvasPathElement e;
     canvasPathElementFromScriptValue(object, e);
     return e;
-}
-
-CanvasCommand CanvasCommandInterface::setStrokeWidth(qreal width) const {
-    return CanvasCommand::setStrokeWidth(width);
-}
-
-CanvasCommand CanvasCommandInterface::setColor(const glm::u8vec3& color) const {
-    return CanvasCommand::setColor(color);
-}
-
-CanvasCommand CanvasCommandInterface::setHints(int hints) const {
-    return CanvasCommand::setHints(hints);
-}
-
-CanvasCommand CanvasCommandInterface::setBlendMode(int mode) const {
-    return CanvasCommand::setBlendMode(mode);
-}
-
-CanvasCommand CanvasCommandInterface::setFont(const QString& family, int size, int weight, bool italic) const {
-    return CanvasCommand::setFont(family, size, weight, italic);
-}
-
-CanvasCommand CanvasCommandInterface::clearRect(int x, int y, int w, int h) const {
-    return CanvasCommand::clearRect(x, y, w, h);
-}
-
-CanvasCommand CanvasCommandInterface::fillPath(const QPainterPath& path) const {
-    return CanvasCommand::fillPath(path);
-}
-
-CanvasCommand CanvasCommandInterface::fillRect(qreal x, qreal y, qreal w, qreal h) const {
-    return CanvasCommand::fillRect(QRectF(x, y, w, h));
-}
-
-CanvasCommand CanvasCommandInterface::fillEllipse(qreal x, qreal y, qreal w, qreal h) const {
-    return CanvasCommand::fillEllipse(QRectF(x, y, w, h));
-}
-
-CanvasCommand CanvasCommandInterface::fillText(const QString& text, qreal x, qreal y, qreal w, qreal h, int flag) const {
-    return CanvasCommand::fillText(text, QRectF(x, y, w, h), flag);
-}
-
-CanvasCommand CanvasCommandInterface::strokePath(const QPainterPath& path) const {
-    return CanvasCommand::strokePath(path);
-}
-
-CanvasCommand CanvasCommandInterface::strokeRect(qreal x, qreal y, qreal w, qreal h) const {
-    return CanvasCommand::strokeRect(QRectF(x, y, w, h));
-}
-
-CanvasCommand CanvasCommandInterface::strokeArc(qreal x, qreal y, qreal w, qreal h, qreal startAngle, qreal spanAngle) const {
-    return CanvasCommand::strokeArc(QRectF(x, y, w, h), startAngle, spanAngle);
-}
-
-CanvasCommand CanvasCommandInterface::strokeEllipse(qreal x, qreal y, qreal w, qreal h) const {
-    return CanvasCommand::strokeEllipse(QRectF(x, y, w, h));
-}
-
-CanvasCommand CanvasCommandInterface::point(qreal x, qreal y) const {
-    return CanvasCommand::point(x, y);
-}
-
-CanvasCommand CanvasCommandInterface::line(qreal x1, qreal y1, qreal x2, qreal y2) const {
-    return CanvasCommand::line(x1, y1, x2, y2);
-}
-
-CanvasCommand CanvasCommandInterface::imageCopy(const CanvasImage& image, qreal sx, qreal sy, qreal sw, qreal sh, qreal dx, qreal dy, qreal dw, qreal dh) const {
-    return CanvasCommand::imageCopy(image, QRectF(sx, sy, sw, sh), QRectF(dx, dy, dw, dh));
-}
-
-CanvasPathElement CanvasCommandInterface::pathMoveTo(qreal x, qreal y) const {
-    return CanvasPathElement(QPainterPath::MoveToElement, x, y);
-}
-
-CanvasPathElement CanvasCommandInterface::pathLineTo(qreal x, qreal y) const {
-    return CanvasPathElement(QPainterPath::LineToElement, x, y);
-}
-
-CanvasPathElement CanvasCommandInterface::pathCubicTo(qreal c1x, qreal c1y, qreal c2x, qreal c2y, qreal x, qreal y) const {
-    return CanvasPathElement(QPainterPath::CurveToElement, x, y, c1x, c1y, c2x, c2y);
-}
-
-CanvasPathElement CanvasCommandInterface::pathQuadTo(qreal cx, qreal cy, qreal endX, qreal endY) const {
-    QPainterPath path;
-    path.quadTo(cx, cy, endX, endY);
-
-    auto elem = CanvasPathElement();
-    elem.type = QPainterPath::CurveToElement;
-    elem.c1x = path.elementAt(0).x;
-    elem.c1y = path.elementAt(0).y;
-    elem.c2x = path.elementAt(1).x;
-    elem.c2y = path.elementAt(2).y;
-    elem.x = path.elementAt(3).x;
-    elem.y = path.elementAt(3).y;
-
-    return elem;
-}
-
-QPainterPath CanvasCommandInterface::pathEllipse(qreal x, qreal y, qreal w, qreal h) const {
-    QPainterPath path;
-    path.addEllipse(x, y, w, h);
-    return path;
-}
-
-QPainterPath CanvasCommandInterface::pathRoundedRect(qreal x, qreal y, qreal w, qreal h, qreal xRadius, qreal yRadius) const {
-    QPainterPath path;
-    path.addRoundedRect(x, y, w, h, xRadius, yRadius);
-    return path;
-}
-
-QPainterPath CanvasCommandInterface::pathRect(qreal x, qreal y, qreal w, qreal h) const {
-    QPainterPath path;
-    path.addRect(x, y, w, h);
-    return path;
 }
