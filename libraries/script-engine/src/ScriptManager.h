@@ -579,7 +579,7 @@ public:
     /**
      * @brief Registers a global object by name.
      *
-     * @param {*} valueName
+     * @param {string} valueName
      * @param {*} value
      */
     Q_INVOKABLE void registerValue(const QString& valueName, ScriptValue value);
