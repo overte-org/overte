@@ -4,6 +4,9 @@ import QtQuick.Layouts 1.3
 import "../"
 
 Flickable {
+    property int verticalScrollBarPolicy: Qt.ScrollBarAlwaysOn;
+    property var verticalScrollBarWidth: 20;
+
     id: graphics_page
     visible: current_page == "Graphics"
     width: parent.width
@@ -12,6 +15,61 @@ Flickable {
     contentWidth: parent.width
     contentHeight: graphics_page_column.height
     clip: true
+
+    Timer {
+        id: verticalScrollBarInitialVisibilityTimer;
+        interval: 200;
+        running: false;
+        repeat: false;
+
+        onTriggered: {
+            verticalScrollBarWidth = 12;
+        }
+    }
+
+    Timer {
+        id: verticalScrollBarInitialWidthTimer;
+        interval: 600;
+        running: false;
+        repeat: false;
+
+        onTriggered: {
+            verticalScrollBarPolicy = Qt.ScrollBarAsNeeded;
+        }
+    }
+
+    onVisibleChanged: {
+        // Set the initial values for the variables.
+        verticalScrollBarPolicy = Qt.ScrollBarAlwaysOn;
+        verticalScrollBarWidth = 20;
+
+        // We are leaving the page, don't animate. 
+        if (!visible) return;
+
+        // We have opened the page
+        // Start the visibility effect timers.
+        verticalScrollBarInitialVisibilityTimer.running = true;
+        verticalScrollBarInitialWidthTimer.running = true;
+    }
+
+    ScrollBar.vertical: ScrollBar {
+        id: scrollBar;
+        policy: verticalScrollBarPolicy;
+
+        background: Rectangle {
+            implicitWidth: verticalScrollBarWidth;
+            color: "transparent";
+            radius: 5;
+            visible: scrollBar.visible;
+
+            Behavior on implicitWidth {
+                NumberAnimation {
+                    duration: 300;
+                    easing.type: Easing.InOutCubic;
+                }
+            }
+        }
+    }
 
     Column {
         id: graphics_page_column
