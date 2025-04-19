@@ -12,7 +12,7 @@ Rectangle {
 	anchors.centerIn: parent;
 	anchors.horizontalCenter: parent.horizontalCenter
 	property var pages: [
-		{name: "General", icon: "../img/overte.svg", target_page: "hifi/dialogs/GeneralPreferencesDialog.qml" }, 
+		{name: "General", icon: "../img/overte.svg", target_page: "hifi/tablet/TabletGeneralPreferences.qml" },
 		{name: "Graphics", icon: "../img/computer.svg", target_page: "" }, 
 		{name: "Audio", icon: "../img/volume.svg", target_page: "hifi/audio/Audio.qml" }, 
 		{name: "Controls", icon: "../img/dpad.svg", target_page: "hifi/tablet/ControllerSettings.qml" }, 
