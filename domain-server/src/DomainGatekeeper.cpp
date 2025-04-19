@@ -363,19 +363,49 @@ void DomainGatekeeper::updateNodePermissions() {
             QUuid machineFingerprint;
             bool isLocalUser { false };
 
+
+
             DomainServerNodeData* nodeData = static_cast<DomainServerNodeData*>(node->getLinkedData());
             if (nodeData) {
+                //TODO(IPv6) : Testing
+                auto sendingAddressIPv4 = nodeData->getSendingSockAddr().getAddressIPv4();
+                auto sendingAddressIPv6 = nodeData->getSendingSockAddr().getAddressIPv6();
                 hardwareAddress = nodeData->getHardwareAddress();
                 machineFingerprint = nodeData->getMachineFingerprint();
 
-                auto sendingAddress = nodeData->getSendingSockAddr().getAddress();
+                // Get both IPv4 and IPv6 addresses
                 auto nodeList = limitedNodeListWeak.lock();
-                isLocalUser = ((nodeList && sendingAddress == nodeList->getLocalSockAddr().getAddress()) ||
-                               sendingAddress == QHostAddress::LocalHost);
+
+                if (nodeList) {
+                    auto localSockAddr = nodeList->getLocalSockAddr();
+                    auto localSockAddrIPv4 = localSockAddr.getAddressIPv4();
+                    auto localSockAddrIPv6 = localSockAddr.getAddressIPv6();
+
+                    // Check if sending address matches either IPv4 or IPv6
+                    isLocalUser =
+                        (sendingAddressIPv4 == localSockAddrIPv4 || sendingAddressIPv6 == localSockAddrIPv6 ||
+                         sendingAddressIPv4 == QHostAddress::LocalHost || sendingAddressIPv6 == QHostAddress::LocalHostIPv6);
+                } else {
+                    isLocalUser =
+                        (sendingAddressIPv4 == QHostAddress::LocalHost || sendingAddressIPv6 == QHostAddress::LocalHostIPv6);
+                }
+
             }
 
-            userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUserName,
-                                              connectingAddr.getAddress(), hardwareAddress, machineFingerprint);
+            // TODO(IPv6): Testing
+            QHostAddress connectingAddrIPv4 = connectingAddr.getAddressIPv4();
+            QHostAddress connectingAddrIPv6 = connectingAddr.getAddressIPv6();
+            QHostAddress chosenAddress;
+
+            if (!connectingAddrIPv6.isNull()) {
+                chosenAddress = connectingAddrIPv6;
+            } else {
+                chosenAddress = connectingAddrIPv4;
+            }
+
+            userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUserName, chosenAddress,
+                                              hardwareAddress, machineFingerprint);
+
         }
 
         node->setPermissions(userPerms);
@@ -473,9 +503,11 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     userPerms.setAll(false);
 
     // check if this user is on our local machine - if this is true set permissions to those for a "localhost" connection
-    QHostAddress senderHostAddress = nodeConnection.senderSockAddr.getAddress();
+    // TODO(IPv6):
+    QHostAddress senderHostAddress = nodeConnection.senderSockAddr.getAddressIPv4();
+    // TODO(IPv6):
     bool isLocalUser =
-        (senderHostAddress == limitedNodeList->getLocalSockAddr().getAddress() || senderHostAddress == QHostAddress::LocalHost);
+        (senderHostAddress == limitedNodeList->getLocalSockAddr().getAddressIPv4() || senderHostAddress == QHostAddress::LocalHost);
 
     QString verifiedUsername; // if this remains empty, consider this an anonymous connection attempt
     if (!username.isEmpty()) {
@@ -544,9 +576,14 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
         }
     }
 
-    userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUsername,
-                                      nodeConnection.senderSockAddr.getAddress(), nodeConnection.hardwareAddress,
-                                      nodeConnection.machineFingerprint);
+    // TODO(IPv6):
+    QHostAddress senderAddressIPv4 = nodeConnection.senderSockAddr.getAddressIPv4();
+    QHostAddress senderAddressIPv6 = nodeConnection.senderSockAddr.getAddressIPv6();
+    QHostAddress preferredSenderAddress = !senderAddressIPv6.isNull() ? senderAddressIPv6 : senderAddressIPv4;
+
+    userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUsername, preferredSenderAddress,
+                                      nodeConnection.hardwareAddress, nodeConnection.machineFingerprint);
+
 
     if (!userPerms.can(NodePermissions::Permission::canConnectToDomain)) {
         if (domainHasLogin()) {

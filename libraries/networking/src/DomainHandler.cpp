@@ -37,7 +37,7 @@
 
 DomainHandler::DomainHandler(QObject* parent) :
     QObject(parent),
-    _sockAddr(SockAddr(SocketType::UDP, QHostAddress::Null, DEFAULT_DOMAIN_SERVER_PORT)),
+    _sockAddr(SockAddr(SocketType::UDP, QHostAddress::Null, QHostAddress::Null, DEFAULT_DOMAIN_SERVER_PORT)),
     _icePeer(this),
     _settingsTimer(this),
     _apiRefreshTimer(this)
@@ -256,7 +256,13 @@ void DomainHandler::setURLAndID(QUrl domainURL, QUuid domainID) {
 
 void DomainHandler::setIceServerHostnameAndID(const QString& iceServerHostname, const QUuid& id) {
 
-    auto newIceServer = _iceServerSockAddr.getAddress().toString() != iceServerHostname;
+    // TODO(IPv6):
+    QHostAddress IPv4 = SockAddr().getAddressIPv4();
+    QHostAddress IPv6 = SockAddr().getAddressIPv6();
+
+    QHostAddress address = !IPv6.isNull() ? IPv6 : IPv4;
+
+    auto newIceServer = address.toString() != iceServerHostname;
     auto newDomainID = id != _pendingDomainID;
 
     // if it's in the error state, reset and try again.
@@ -289,7 +295,7 @@ void DomainHandler::setIceServerHostnameAndID(const QString& iceServerHostname, 
 
         nodeList->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetICEServerHostname);
 
-        if (_iceServerSockAddr.getAddress().isNull()) {
+        if (_iceServerSockAddr.getAddressIPv4().isNull() && _iceServerSockAddr.getAddressIPv6().isNull()) {
             // connect to lookup completed for ice-server socket so we can request a heartbeat once hostname is looked up
             connect(&_iceServerSockAddr, &SockAddr::lookupCompleted, this, &DomainHandler::completedIceServerHostnameLookup);
         } else {
@@ -304,7 +310,11 @@ void DomainHandler::activateICELocalSocket() {
     DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetDomainSocket);
     _sockAddr = _icePeer.getLocalSocket();
     _domainURL.setScheme(URL_SCHEME_OVERTE);
-    _domainURL.setHost(_sockAddr.getAddress().toString());
+    // TODO(IPv6):
+    QHostAddress IPv4 = _sockAddr.getAddressIPv4();
+    QHostAddress IPv6 = _sockAddr.getAddressIPv6();
+    QHostAddress address = !IPv6.isNull() ? IPv6 : IPv4;
+    _domainURL.setHost(address.toString());
     emit domainURLChanged(_domainURL);
     emit completedSocketDiscovery();
 }
@@ -313,7 +323,13 @@ void DomainHandler::activateICEPublicSocket() {
     DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetDomainSocket);
     _sockAddr = _icePeer.getPublicSocket();
     _domainURL.setScheme(URL_SCHEME_OVERTE);
-    _domainURL.setHost(_sockAddr.getAddress().toString());
+    // TODO(IPv6):
+    QHostAddress IPv4 = _sockAddr.getAddressIPv4();
+    QHostAddress IPv6 = _sockAddr.getAddressIPv6();
+
+    QHostAddress address = !IPv6.isNull() ? IPv6 : IPv4;
+
+    _domainURL.setHost(address.toString());
     emit domainURLChanged(_domainURL);
     emit completedSocketDiscovery();
 }
@@ -330,6 +346,7 @@ QString DomainHandler::getViewPointFromNamedPath(QString namedPath) {
 }
 
 void DomainHandler::completedHostnameLookup(const QHostInfo& hostInfo) {
+    bool discoveryComplete = false;
     for (int i = 0; i < hostInfo.addresses().size(); i++) {
         if (hostInfo.addresses()[i].protocol() == QAbstractSocket::IPv4Protocol) {
             _sockAddr.setAddress(hostInfo.addresses()[i]);
@@ -337,12 +354,24 @@ void DomainHandler::completedHostnameLookup(const QHostInfo& hostInfo) {
             DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetDomainSocket);
 
             qCDebug(networking, "DS at %s is at %s", _domainURL.host().toLocal8Bit().constData(),
-                   _sockAddr.getAddress().toString().toLocal8Bit().constData());
+                    _sockAddr.getAddressIPv4().toString().toLocal8Bit().constData());
 
-            emit completedSocketDiscovery();
-
-            return;
+            discoveryComplete = true;
         }
+        if (hostInfo.addresses()[i].protocol() == QAbstractSocket::IPv6Protocol) {
+            _sockAddr.setAddress(hostInfo.addresses()[i]);
+
+            DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetDomainSocket);
+
+            qCDebug(networking, "DS at %s is at %s", _domainURL.host().toLocal8Bit().constData(),
+                    _sockAddr.getAddressIPv6().toString().toLocal8Bit().constData());
+
+            discoveryComplete = true;
+        }
+    }
+    if (discoveryComplete) {
+        emit completedSocketDiscovery();
+        return;
     }
 
     // if we got here then we failed to lookup the address
@@ -461,7 +490,7 @@ void DomainHandler::processICEPingReplyPacket(QSharedPointer<ReceivedMessage> me
     const SockAddr& senderSockAddr = message->getSenderSockAddr();
     qCDebug(networking_ice) << "Received reply from domain-server on" << senderSockAddr;
 
-    if (getIP().isNull()) {
+    if (getIPv4().isNull() && getIPv6().isNull()) {
         // we're hearing back from this domain-server, no need to refresh API information
         _apiRefreshTimer.stop();
 
@@ -555,7 +584,8 @@ bool DomainHandler::reasonSuggestsDomainLogin(ConnectionRefusedReason reasonCode
 void DomainHandler::processDomainServerConnectionDeniedPacket(QSharedPointer<ReceivedMessage> message) {
 
     // Ignore any residual packets from previous domain.
-    if (!message->getSenderSockAddr().getAddress().isEqual(_sockAddr.getAddress())) {
+    if ((!message->getSenderSockAddr().getAddressIPv4().isEqual(_sockAddr.getAddressIPv4()))
+         && (!message->getSenderSockAddr().getAddressIPv6().isEqual(_sockAddr.getAddressIPv6()))) {
         return;
     }
 

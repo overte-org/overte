@@ -113,8 +113,11 @@ AssignmentClient::AssignmentClient(Assignment::Type requestAssignmentType, QStri
 
     // did we get an assignment-client monitor port?
     if (assignmentMonitorPort > 0) {
-        _assignmentClientMonitorSocket = SockAddr(SocketType::UDP, DEFAULT_ASSIGNMENT_CLIENT_MONITOR_HOSTNAME, 
-            assignmentMonitorPort);
+        QHostAddress ipv4Address = nodeList->getDomainHandler().getIPv4();
+        QHostAddress ipv6Address = nodeList->getDomainHandler().getIPv6();
+        QHostAddress assignmentClientMonitorAddress = !ipv6Address.isNull() ? ipv6Address : ipv4Address;
+
+        _assignmentClientMonitorSocket = SockAddr(SocketType::UDP, DEFAULT_ASSIGNMENT_CLIENT_MONITOR_HOSTNAME, assignmentClientMonitorAddress, assignmentMonitorPort);
         _assignmentClientMonitorSocket.setObjectName("AssignmentClientMonitor");
 
         qCDebug(assignment_client) << "Assignment-client monitor socket is" << _assignmentClientMonitorSocket;
@@ -122,6 +125,20 @@ AssignmentClient::AssignmentClient(Assignment::Type requestAssignmentType, QStri
         // Hook up a timer to send this child's status to the Monitor once per second
         setUpStatusToMonitor();
     }
+
+    // did we get an assignment-client monitor port?
+//    if (assignmentMonitorPort > 0) {
+//        // TODO(IPv6):
+//        _assignmentClientMonitorSocket =
+//            SockAddr(SocketType::UDP, DEFAULT_ASSIGNMENT_CLIENT_MONITOR_HOSTNAME, QHostAddress(),
+//            assignmentMonitorPort);
+//        _assignmentClientMonitorSocket.setObjectName("AssignmentClientMonitor");
+//
+//        qCDebug(assignment_client) << "Assignment-client monitor socket is" << _assignmentClientMonitorSocket;
+//
+//        // Hook up a timer to send this child's status to the Monitor once per second
+//        setUpStatusToMonitor();
+//    }
     auto& packetReceiver = DependencyManager::get<NodeList>()->getPacketReceiver();
     packetReceiver.registerListener(PacketType::CreateAssignment,
         PacketReceiver::makeUnsourcedListenerReference<AssignmentClient>(this, &AssignmentClient::handleCreateAssignmentPacket));
@@ -249,7 +266,8 @@ void AssignmentClient::handleCreateAssignmentPacket(QSharedPointer<ReceivedMessa
         nodeList->getDomainHandler().setSockAddr(message->getSenderSockAddr(), _assignmentServerHostname);
         nodeList->getDomainHandler().setAssignmentUUID(_currentAssignment->getUUID());
 
-        qCDebug(assignment_client) << "Destination IP for assignment is" << nodeList->getDomainHandler().getIP().toString();
+        qCDebug(assignment_client) << "Destination IP for assignment is" << nodeList->getDomainHandler().getIPv4().toString()
+            << " " << nodeList->getDomainHandler().getIPv6().toString();
 
         // start the deployed assignment
         QThread* workerThread = new QThread();
@@ -287,8 +305,8 @@ void AssignmentClient::handleCreateAssignmentPacket(QSharedPointer<ReceivedMessa
 void AssignmentClient::handleStopNodePacket(QSharedPointer<ReceivedMessage> message) {
     const SockAddr& senderSockAddr = message->getSenderSockAddr();
 
-    if (senderSockAddr.getAddress() == QHostAddress::LocalHost ||
-        senderSockAddr.getAddress() == QHostAddress::LocalHostIPv6) {
+    if (senderSockAddr.getAddressIPv4() == QHostAddress::LocalHost ||
+        senderSockAddr.getAddressIPv6() == QHostAddress::LocalHostIPv6) {
 
         qCDebug(assignment_client) << "AssignmentClientMonitor at" << senderSockAddr << "requested stop via PacketType::StopNode.";
         QCoreApplication::quit();
