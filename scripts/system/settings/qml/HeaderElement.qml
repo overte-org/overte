@@ -37,7 +37,7 @@ Item {
 	Text {
 		text: current_page
 		color: "white"
-		font.pointSize: 18
+		font.pixelSize: 26
 		anchors.horizontalCenter: parent.horizontalCenter
 		anchors.verticalCenter: parent.verticalCenter
 		horizontalAlignment: Text.AlignHCenter

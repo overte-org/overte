@@ -29,7 +29,7 @@ Item {
 			height: parent.height;
 			text: settingText;
 			color: "white";
-			font.pointSize: 14;
+			font.pixelSize: 22;
 			Layout.fillWidth: true;
 			selectByMouse: true;
 			readOnly: true;
@@ -49,7 +49,7 @@ Item {
 				height: parent.height;
 				verticalAlignment: Qt.AlignVCenter
 				width: 25;
-				font.pointSize: 14;
+				font.pixelSize: 22;
 			}
 
 			Slider {

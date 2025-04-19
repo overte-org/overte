@@ -21,7 +21,7 @@ Item {
 	Text {
 		text: page_name;
 		color: "white";
-		font.pointSize: 16;
+		font.pixelSize: 24;
 		anchors.verticalCenter: parent.verticalCenter;
 		x: 45;
 	}

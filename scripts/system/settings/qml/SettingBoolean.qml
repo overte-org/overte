@@ -20,7 +20,7 @@ Item {
 			height: parent.height;
 			text: settingText;
 			color: "white";
-			font.pointSize: 14;
+			font.pixelSize: 22;
 			selectByMouse: true;
 			readOnly: true;
 		}

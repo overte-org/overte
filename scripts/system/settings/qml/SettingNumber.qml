@@ -29,7 +29,7 @@ Item {
 			height: parent.height;
 			text: settingText;
 			color: "white";
-			font.pointSize: 14;
+			font.pixelSize: 22;
 			width: parent.width - 200;			
 			selectByMouse: true;
 			readOnly: true;
@@ -58,7 +58,7 @@ Item {
 					horizontalAlignment: TextInput.AlignHCenter
 					width: parent.width;
 					clip: true;
-					font.pointSize: 14
+					font.pixelSize: 22
 					validator: RegExpValidator { regExp: /[0-9]*/ }
 
 					background: Rectangle {
@@ -97,7 +97,7 @@ Item {
 					Text {
 						text: "+";
 						color: "white";
-						font.pointSize: 20;
+						font.pixelSize: 28;
 						verticalAlignment: Qt.AlignVCenter	
 						anchors.horizontalCenter: parent.horizontalCenter;
 						anchors.verticalCenter: parent.verticalCenter;
@@ -124,7 +124,7 @@ Item {
 					Text {
 						text: "-";
 						color: "white";
-						font.pointSize: 20;
+						font.pixelSize: 28;
 						anchors.horizontalCenter: parent.horizontalCenter;
 						anchors.verticalCenter: parent.verticalCenter;
 					}

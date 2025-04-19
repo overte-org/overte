@@ -26,7 +26,7 @@ Item {
 			height: parent.height;
 			text: settingText;
 			color: "white";
-			font.pointSize: 14;
+			font.pixelSize: 22;
 			selectByMouse: true;
 			readOnly: true;
 		}
@@ -76,7 +76,7 @@ Item {
                         horizontalAlignment: Text.AlignHCenter;
                         verticalAlignment: Text.AlignVCenter;
                         elide: Text.ElideRight;
-                        font.pointSize: 14;
+                        font.pixelSize: 22;
                         color: "white";
                     }
                 }
