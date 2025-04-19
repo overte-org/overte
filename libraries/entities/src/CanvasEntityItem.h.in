@@ -25,7 +25,6 @@ public:
     ENTITY_PROPERTY_SUBCLASS_METHODS
 
     const QByteArray& getImageData() const {
-        const std::lock_guard<std::recursive_mutex> dataLock(_imageDataMutex);
         return _imageData;
     }
 
