@@ -654,8 +654,8 @@ int main(int argc, const char* argv[]) {
 
             socket.close();
 
-            qDebug() << "Interface instance appears to be running, exiting";
-            qDebug() << "Start with --allowMultipleInstances to allow running multiple instances at once.";
+            qCritical() << "Interface instance appears to be running, exiting";
+            qCritical() << "Start with --allowMultipleInstances to allow running multiple instances at once.";
 
             return EXIT_SUCCESS;
         }
