@@ -3,7 +3,7 @@ import QtQuick.Layouts 1.3
 import TabletScriptingInterface 1.0
 
 Item {
-	property color bgColor: index % 2 === 0 ? Qt.rgba(0,0,0,0) : Qt.rgba(0.15,0.15,0.15,1);
+	property color bgColor: index % 2 === 0 ? "transparent" : Qt.rgba(0.12,0.12,0.12,1);
 	property int initialTextXPosition;
 
 	width: parent.width;

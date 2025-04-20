@@ -18,92 +18,125 @@ Item {
 	height: 50;
 	width: parent.width;
 
-	RowLayout {
-		width: parent.width - 10;
-		height: parent.height;
-		anchors.horizontalCenter: parent.horizontalCenter;
-		Layout.alignment: Qt.AlignTop;
-
-		TextEdit {
-			id: settingTextElem
-			height: parent.height;
-			text: settingText;
-			color: "white";
-			font.pixelSize: 22;
-			Layout.fillWidth: true;
-			selectByMouse: true;
-			readOnly: true;
-		}
+	Rectangle {
+        id: backgroundElement;
+        width: parent.width;
+        height: parent.height;
+        color: "transparent";
+        radius: 15;
 
 		RowLayout {
-			Layout.alignment: Qt.AlignRight;
-			width: 225;
-			implicitWidth: 225;
+			width: parent.width - 10;
 			height: parent.height;
-			Layout.fillWidth: false;
+			anchors.horizontalCenter: parent.horizontalCenter;
+			Layout.alignment: Qt.AlignTop;
 
-			Text {
-				id: sliderValueDisplay
-				text: slider.value.toFixed(roundDisplay);
-				color: "white";
+			TextEdit {
+				id: settingTextElem
 				height: parent.height;
-				verticalAlignment: Qt.AlignVCenter
-				width: 25;
+				text: settingText;
+				color: "white";
 				font.pixelSize: 22;
+				Layout.fillWidth: true;
+				selectByMouse: true;
+				readOnly: true;
 			}
 
-			Slider {
-				Layout.fillWidth: true;
+			RowLayout {
+				Layout.alignment: Qt.AlignRight;
+				width: 225;
+				implicitWidth: 225;
 				height: parent.height;
-				id: slider;
-				from: minValue;
-				to: maxValue;
-				stepSize: sliderStepSize;
-				snapMode: Slider.SnapOnRelease;
-				value: settingValue;
+				Layout.fillWidth: false;
 
-				handle: Rectangle {
-					x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - width)
-					y: slider.topPadding + slider.availableHeight / 2 - height / 2
-					implicitWidth: 20
-					implicitHeight: 40
-                    color: "black"
-
-                    Rectangle {
-                        width: 16
-                        height: 36
-                        color: "gray"
-                        anchors.horizontalCenter: parent.horizontalCenter;
-                        anchors.verticalCenter: parent.verticalCenter;
-                    }
+				Text {
+					id: sliderValueDisplay
+					text: slider.value.toFixed(roundDisplay);
+					color: "white";
+					height: parent.height;
+					verticalAlignment: Qt.AlignVCenter
+					width: 25;
+					font.pixelSize: 22;
 				}
 
-				background: Rectangle {
-					x: slider.leftPadding;
-					y: slider.topPadding + slider.availableHeight / 2 - height / 2;
-					implicitWidth: 200;
-					implicitHeight: 20;
-					width: slider.availableWidth;
-					height: implicitHeight;
-					radius: 10;
-					color: "#ffffff";
-                    clip: true;
+				Slider {
+					Layout.fillWidth: true;
+					height: parent.height;
+					id: slider;
+					from: minValue;
+					to: maxValue;
+					stepSize: sliderStepSize;
+					snapMode: Slider.SnapOnRelease;
+					value: settingValue;
 
-                    Rectangle {
-						width: slider.visualPosition * parent.width + 1;
-						height: parent.height + 1;
-						color: "#5153bd";
-                        radius: parent.radius;
-                        antialiasing: false;
+					handle: Rectangle {
+						x: slider.leftPadding + slider.visualPosition * (slider.availableWidth - width)
+						y: slider.topPadding + slider.availableHeight / 2 - height / 2
+						implicitWidth: 20
+						implicitHeight: 40
+						color: "black"
+
+						Rectangle {
+							width: 16
+							height: 36
+							color: "gray"
+							anchors.horizontalCenter: parent.horizontalCenter;
+							anchors.verticalCenter: parent.verticalCenter;
+						}
+					}
+
+					background: Rectangle {
+						x: slider.leftPadding;
+						y: slider.topPadding + slider.availableHeight / 2 - height / 2;
+						implicitWidth: 200;
+						implicitHeight: 20;
+						width: slider.availableWidth;
+						height: implicitHeight;
+						radius: 10;
+						color: "#ffffff";
+						clip: true;
+
+						Rectangle {
+							width: slider.visualPosition * parent.width + 1;
+							height: parent.height + 1;
+							color: "#5153bd";
+							radius: parent.radius;
+							antialiasing: false;
+						}
+					}
+
+					onValueChanged: {
+						sliderValueChanged(value)
 					}
 				}
 
-				onValueChanged: {
-					sliderValueChanged(value)
-				}
+
 			}
-
-
 		}
-	}
+
+        MouseArea {
+            anchors.fill: parent;
+            hoverEnabled: true;
+            propagateComposedEvents: true;
+
+            onPressed: {
+                mouse.accepted = false
+            }
+
+            onEntered: {
+                backgroundElement.color = "#333";
+            }
+
+            onExited: {
+                backgroundElement.color = "transparent";
+            }
+        }
+
+        Behavior on color {
+			ColorAnimation {
+				duration: 50
+				easing.type: Easing.InOutCubic
+			}
+		}
+    }
 }
