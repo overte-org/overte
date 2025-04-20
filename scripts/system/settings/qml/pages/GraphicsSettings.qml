@@ -6,14 +6,15 @@ import "../"
 Flickable {
     property var verticalScrollBarWidth: 20;
 
-    id: graphics_page
-    visible: current_page == "Graphics"
-    width: parent.width
-    Layout.fillHeight: true
-    y: header.height + 10
-    contentWidth: parent.width
-    contentHeight: graphics_page_column.height
-    clip: true
+    id: graphics_page;
+    visible: current_page == "Graphics";
+    width: parent.width;
+    Layout.fillHeight: true;
+    y: header.height + 10;
+    contentWidth: parent.width;
+    contentHeight: graphics_page_column.height;
+    clip: true;
+    flickDeceleration: 4000;
 
     Timer {
         id: verticalScrollBarInitialVisibilityTimer;
