@@ -6,7 +6,7 @@ import QtQuick.Layouts 1.3
 Item {
 	id: root;
 	property string settingText: "";
-	property int settingValue: 0;
+	property var settingValue: 0;
 
 	property real minValue: 0;
 	property real maxValue: 9;
