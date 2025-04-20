@@ -7,9 +7,9 @@ Item {
 	id: root;
 	property string settingText: "";
 	property int optionIndex: 0;
-    property var _optionText: ""
-    readonly property string optionText: _optionText
-	property var options: [];
+    property var _optionText: "";
+    readonly property string optionText: _optionText;
+	property var options: [""];
 
 	signal valueChanged(int index);
 

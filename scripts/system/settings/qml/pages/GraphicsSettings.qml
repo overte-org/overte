@@ -102,7 +102,7 @@ Flickable {
 
             SettingBoolean {
                 settingText: "Local Lights";
-                settingEnabled: Render.localLightsEnabled
+                settingEnabled: Render.localLightsEnabled ? true : false
 
                 onSettingEnabledChanged: {
                     Render.localLightsEnabled = settingEnabled;
@@ -111,7 +111,7 @@ Flickable {
 
             SettingBoolean {
                 settingText: "Fog";
-                settingEnabled: Render.fogEnabled
+                settingEnabled: Render.fogEnabled ? true : false;
 
                 onSettingEnabledChanged: {
                     Render.fogEnabled = settingEnabled;
