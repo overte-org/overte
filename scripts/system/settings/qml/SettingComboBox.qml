@@ -174,8 +174,6 @@ Item {
 		}
     }
 
-
-
 	// Updates the contents of a combobox.
 	// This is only required if the desired contents needs to be gathered from a javascript function and then set after the fact.
 	// Ideally, this would not be used, but sometimes you gotta do what you gotta do.

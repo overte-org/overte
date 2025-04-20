@@ -6,19 +6,18 @@ import QtQuick.Layouts 1.3
 Item {
 	id: root;
 	property string settingText: "";
-	property var settingValue: 0;
+	property int settingValue: 0;
 
 	property real minValue: 0;
 	property real maxValue: 9;
 	property string suffixText: "";
 	property real stepSize: 1;
+	property color buttonColor: "#333";
 
 	signal valueChanged(int value);
 
 	height: 50;
 	width: parent.width;
-
-
 
 	Rectangle {
         id: backgroundElement;
@@ -71,9 +70,8 @@ Item {
 						validator: RegExpValidator { regExp: /[0-9]*/ }
 
 						background: Rectangle {
-							color: "transparent";
-							border.width: 1;
-							border.color: "white";
+							color: "#111";
+							border.width: 0;
 							radius: 10;
 						}
 
@@ -97,9 +95,8 @@ Item {
 						anchors.verticalCenter: parent.verticalCenter;
 
 						background: Rectangle {
-							color: "transparent";
-							border.color: "white";
-							border.width: 1;
+							color: buttonColor;
+							border.width: 0;
 							radius: 10;
 						}
 
@@ -124,9 +121,8 @@ Item {
 						anchors.verticalCenter: parent.verticalCenter;
 
 						background: Rectangle {
-							color: "transparent";
-							border.color: "white";
-							border.width: 1;
+							color: buttonColor;
+							border.width: 0;
 							radius: 10;
 						}
 
@@ -147,7 +143,6 @@ Item {
 					background: Rectangle {
 						color: "transparent";
 					}
-
 
 				}
 
@@ -173,10 +168,12 @@ Item {
 
             onEntered: {
                 backgroundElement.color = "#333";
+				buttonColor = "#444";
             }
 
             onExited: {
                 backgroundElement.color = "transparent";
+				buttonColor = "#333";
             }
         }
 
