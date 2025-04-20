@@ -36,7 +36,7 @@ Item {
 
 			Image {
 				sourceSize.height: 25;
-				source: page_icon;
+				source: pageIcon;
 				anchors.centerIn: parent;
 			}
 		}
@@ -44,7 +44,7 @@ Item {
 		// Page name
 		Text {
 			id: pageNameElement
-			text: page_name;
+			text: pageName;
 			color: "white";
 			font.pixelSize: 24;
 			anchors.verticalCenter: parent.verticalCenter;
@@ -71,11 +71,11 @@ Item {
 
 		onClicked: {
 			Tablet.playSound(TabletEnums.ButtonClicked);
-			if (target_page !== "") {
-				toScript({type:"switch_app", app_url: target_page});
+			if (targetPage !== "") {
+				toScript({type:"switchApp", appUrl: targetPage});
 				return;
 			}
-			current_page = page_name;
+			currentPage = pageName;
 		}
 
 		onEntered: {

@@ -63,8 +63,8 @@
 		});
 	}
 
-	function onTabletScreenChanged(type, new_url) {
-		if (url == new_url) active = true;
+	function onTabletScreenChanged(type, newUrl) {
+		if (url == newUrl) active = true;
 		else active = false;
 
 		appButton.editProperties({
@@ -76,13 +76,13 @@
 	function fromQML(event) {
 		console.log(`New QML event:\n${JSON.stringify(event)}`);
 
-		if (event.type === "switch_app") {
-			if (event.app_url == "hifi/dialogs/GeneralPreferencesDialog.qml") {
+		if (event.type === "switchApp") {
+			if (event.appUrl == "hifi/dialogs/GeneralPreferencesDialog.qml") {
 				// This page needs to be opened like this just because.
 				Desktop.show("hifi/dialogs/GeneralPreferencesDialog.qml", "GeneralPreferencesDialog");
 				return;
 			}
-			tablet.loadQMLSource(event.app_url);
+			tablet.loadQMLSource(event.appUrl);
 		}
 	}
 	/**

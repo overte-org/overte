@@ -12,15 +12,15 @@ Rectangle {
 	anchors.centerIn: parent;
 	anchors.horizontalCenter: parent.horizontalCenter
 	property var pages: [
-		{name: "General", icon: "../img/overte.svg", target_page: "hifi/tablet/TabletGeneralPreferences.qml" },
-		{name: "Graphics", icon: "../img/computer.svg", target_page: "" }, 
-		{name: "Audio", icon: "../img/volume.svg", target_page: "hifi/audio/Audio.qml" }, 
-		{name: "Controls", icon: "../img/dpad.svg", target_page: "hifi/tablet/ControllerSettings.qml" }, 
-		{name: "Security", icon: "../img/badge.svg", target_page: "hifi/dialogs/security/Security.qml" }, 
-		{name: "QML Allowlist", icon: "../img/lock.svg", target_page: "hifi/dialogs/security/EntityScriptQMLAllowlist.qml" }, 
-		{name: "Script Security", icon: "../img/shield.svg", target_page: "hifi/dialogs/security/ScriptSecurity.qml" }, 
+		{name: "General", icon: "../img/overte.svg", targetPage: "hifi/tablet/TabletGeneralPreferences.qml" },
+		{name: "Graphics", icon: "../img/computer.svg", targetPage: "" }, 
+		{name: "Audio", icon: "../img/volume.svg", targetPage: "hifi/audio/Audio.qml" }, 
+		{name: "Controls", icon: "../img/dpad.svg", targetPage: "hifi/tablet/ControllerSettings.qml" }, 
+		{name: "Security", icon: "../img/badge.svg", targetPage: "hifi/dialogs/security/Security.qml" }, 
+		{name: "QML Allowlist", icon: "../img/lock.svg", targetPage: "hifi/dialogs/security/EntityScriptQMLAllowlist.qml" }, 
+		{name: "Script Security", icon: "../img/shield.svg", targetPage: "hifi/dialogs/security/ScriptSecurity.qml" }, 
 	];
-	property string current_page: "Settings"
+	property string currentPage: "Settings"
 
 	ColumnLayout {
 		width: parent.width
@@ -35,28 +35,22 @@ Rectangle {
 
 		// Home page
 		SettingCenterContainer {
-			id: home_page
-			visible: current_page == "Settings"
+			id: homePage
+			visible: currentPage == "Settings"
 			Layout.fillHeight: true
 
 			Repeater {
 				model: pages.length;
 				delegate: SettingSubviewListElement {
-					property string page_name: pages[index].name;
-					property string page_icon: pages[index].icon;
-					property string target_page: pages[index].target_page;
+					property string pageName: pages[index].name;
+					property string pageIcon: pages[index].icon;
+					property string targetPage: pages[index].targetPage;
 				}
 			}
 		}
 
 		// Graphics 
 		GraphicsSettings {}
-
-		// Audio
-		SettingCenterContainer {
-			id: audio_page
-			visible: current_page == "Audio"
-		}
 
 		// Templates
 	}
@@ -65,7 +59,7 @@ Rectangle {
 	function fromScript(message) {
 		switch (message.type){
 			case "loadPage":
-				current_page = message.page;
+				currentPage = message.page;
 				break;
 		}
 	}

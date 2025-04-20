@@ -17,7 +17,7 @@ Item {
 		anchors.verticalCenter: parent.verticalCenter
 		height: 40
 		width: 40
-		x: current_page == "Settings" ? -40 : 10
+		x: currentPage == "Settings" ? -40 : 10
 
 		Behavior on x {
 			NumberAnimation {
@@ -29,13 +29,13 @@ Item {
 		MouseArea {
 			anchors.fill: parent
 			onClicked: {
-				current_page = "Settings";
+				currentPage = "Settings";
 			}
 		}
 	}
 
 	Text {
-		text: current_page
+		text: currentPage
 		color: "white"
 		font.pixelSize: 26
 		anchors.horizontalCenter: parent.horizontalCenter

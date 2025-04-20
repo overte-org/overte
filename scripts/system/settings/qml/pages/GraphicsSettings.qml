@@ -6,13 +6,13 @@ import "../"
 Flickable {
     property var verticalScrollBarWidth: 20;
 
-    id: graphics_page;
-    visible: current_page == "Graphics";
+    id: graphicsPage;
+    visible: currentPage == "Graphics";
     width: parent.width;
     Layout.fillHeight: true;
     y: header.height + 10;
     contentWidth: parent.width;
-    contentHeight: graphics_page_column.height;
+    contentHeight: graphicsPageColumn.height;
     clip: true;
     flickDeceleration: 4000;
 
@@ -59,7 +59,7 @@ Flickable {
     }
 
     Column {
-        id: graphics_page_column;
+        id: graphicsPageColumn;
         width: parent.width - 20;
         anchors.horizontalCenterOffset: -5
         anchors.horizontalCenter: parent.horizontalCenter;
