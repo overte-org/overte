@@ -279,11 +279,7 @@ jobs:
         fetch-depth: 1
 
     - name: Prepare Conan Build Environment
-      shell: bash
-      run: |
-        conan profile detect -e
-        conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
-        echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
+      uses: ./.github/actions/setup-conan
 
     - name: Install Conan dependencies
       shell: bash
@@ -292,6 +288,13 @@ jobs:
         for counter in {1..2}; do
           conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:qt_source='${qt_source} -b missing -pr:b=default -of build --format=json > build.json
         done
+
+    - name: Upload dependency source backups
+      shell: bash
+      env:
+        # Token for uploading dependency source backups.
+        CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN: ${{ secrets.CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN }}
+      run: conan cache backup-upload || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
 
     - name: Configure CMake
       shell: bash

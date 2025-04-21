@@ -189,7 +189,7 @@ jobs:
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
         path: ~/.conan2/
-  
+
     - name: Install dependencies
       shell: bash
       if: startsWith(matrix.os, 'Ubuntu') || contains(matrix.os, 'Debian') || startsWith(matrix.os, 'macOS')
@@ -243,12 +243,7 @@ jobs:
       run: $PYTHON_EXEC -m pip install boto3 PyGithub conan
 
     - name: Prepare Conan Build Environment
-      shell: bash
-      run: |
-        conan profile detect -e
-        conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
-        conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center
-        echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
+      uses: ./.github/actions/setup-conan
 
     - name: Install Conan dependencies
       shell: bash
@@ -257,6 +252,13 @@ jobs:
         for counter in {1..2}; do
           conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:qt_source='${qt_source} -b missing -pr:b=default -of build
         done
+
+    - name: Upload dependency source backups
+      shell: bash
+      env:
+        # Token for uploading dependency source backups.
+        CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN: ${{ secrets.CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN }}
+      run: conan cache backup-upload || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
 
     - name: Cleanup Conan dependencies
       run: conan cache clean "*" -sbd

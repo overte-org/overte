@@ -103,12 +103,7 @@ jobs:
       run: $PYTHON_EXEC -m pip install boto3 PyGithub conan
 
     - name: Prepare Conan Build Environment
-      shell: bash
-      run: |
-        conan profile detect -e
-        conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
-        conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center  # Use our mirror of Conan Center to avoid rate limiting.
-        echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
+      uses: ./.github/actions/setup-conan
 
     - name: Install Conan dependencies
       shell: bash
