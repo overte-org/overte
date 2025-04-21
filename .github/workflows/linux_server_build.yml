@@ -170,7 +170,6 @@ jobs:
         echo "REFNAME=${{ github.ref_name }}" >> $GITHUB_ENV
 
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.arch}}" >> $GITHUB_ENV
-        echo "CONAN_QT=${{matrix.conan_qt}}" >> $GITHUB_ENV
         echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
 
         echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
@@ -282,12 +281,11 @@ jobs:
       uses: ./.github/actions/setup-conan
 
     - name: Install Conan dependencies
-      shell: bash
-      run: |
-        # Run twice to work around OpenSSL not being found. See: https://github.com/overte-org/overte-conan-recipes/issues/1
-        for counter in {1..2}; do
-          conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:qt_source='${qt_source} -b missing -pr:b=default -of build --format=json > build.json
-        done
+      uses: ./.github/actions/conan-install
+      with:
+        qt_source: ${{matrix.qt_source}}
+        build_type: ${{env.BUILD_TYPE}}
+        cppstd: ${{env.CONAN_CPPSTD}}
 
     - name: Upload dependency source backups
       shell: bash

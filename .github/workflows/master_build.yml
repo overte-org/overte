@@ -71,7 +71,6 @@ jobs:
         echo "{github_sha_short}={`echo $GIT_COMMIT | cut -c1-7`}" >> $GITHUB_OUTPUT
         echo "JOB_NAME=build (${{matrix.os}}, ${{matrix.build_type}})" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
-        echo "qt_source=${{matrix.qt_source}}" >> $GITHUB_ENV
         # Linux build variables
         if [[ "${{ matrix.os }}" = "ubuntu-"* ]]; then
           echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
@@ -79,6 +78,7 @@ jobs:
           echo "INSTALLER_EXT=tgz" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=$CMAKE_BUILD_EXTRA -- -j$(nproc)" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+          echo "CONAN_PROFILE=default" >> $GITHUB_ENV
         fi
         # Mac build variables
         if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
@@ -89,6 +89,7 @@ jobs:
           echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           echo "symbols_archive=${BUILD_NUMBER}-${{ matrix.build_type }}-mac-symbols.zip" >> $GITHUB_ENV
           echo "APP_TARGET_NAME=Overte" >> $GITHUB_ENV
+          echo "CONAN_PROFILE=default" >> $GITHUB_ENV
         fi
         # Windows build variables
         if [ "${{ matrix.os }}" = "windows-2019" ]; then
@@ -102,6 +103,11 @@ jobs:
           echo "symbols_archive=${BUILD_NUMBER}-${{ matrix.build_type }}-win-symbols.zip" >> $GITHUB_ENV
           # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
           # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
+          if [[ "${{ matrix.os }}" = "windows-2019" ]]; then
+            echo "CONAN_PROFILE='./tools/conan-profiles/vs-19-release'" >> $GITHUB_ENV
+          else
+            echo "Not sure which Conan profile to use. Exiting." && exit 1
+          fi
         fi
     # Configuration is broken into two steps because you can't set an env var and also reference it in the same step
     - name: Configure build environment 2
@@ -189,9 +195,12 @@ jobs:
       uses: ./.github/actions/setup-conan
 
     - name: Install Conan dependencies
-      shell: bash
-      run: |
-        conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:qt_source='${qt_source} -b missing -pr:b=default -of build
+      uses: ./.github/actions/conan-install
+      with:
+        qt_source: ${{matrix.qt_source}}
+        build_type: ${{env.BUILD_TYPE}}
+        cppstd: ${{env.CONAN_CPPSTD}}
+        conan_profile: ${{env.CONAN_PROFILE}}
 
     - name: Upload dependency source backups
       shell: bash

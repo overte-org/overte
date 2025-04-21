@@ -93,7 +93,6 @@ jobs:
         echo "GIT_COMMIT_SHORT=`echo $GIT_COMMIT | cut -c1-7`" >> $GITHUB_ENV
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
-        echo "qt_source=${{matrix.qt_source}}" >> $GITHUB_ENV
 
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
@@ -125,6 +124,7 @@ jobs:
             fi
           fi
         fi
+        echo "CONAN_PROFILE=default" >> $GITHUB_ENV
 
         # Mac build variables
         if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
@@ -136,6 +136,7 @@ jobs:
             echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCLIENT_ONLY=1 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           fi
           echo "APP_TARGET_NAME=Overte" >> $GITHUB_ENV
+          echo "CONAN_PROFILE=default" >> $GITHUB_ENV
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" = "Windows"* ]]; then
@@ -146,6 +147,11 @@ jobs:
             echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
           else
             echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE -DCLIENT_ONLY=1" >> $GITHUB_ENV
+          fi
+          if [[ "${{ matrix.runner }}" = "windows-2019" ]]; then
+            echo "CONAN_PROFILE='./tools/conan-profiles/vs-19-release'" >> $GITHUB_ENV
+          else
+            echo "Not sure which Conan profile to use. Exiting." && exit 1
           fi
         fi
         # Android + Quest build variables
@@ -246,12 +252,12 @@ jobs:
       uses: ./.github/actions/setup-conan
 
     - name: Install Conan dependencies
-      shell: bash
-      run: |
-        # Run twice to work around OpenSSL not being found. See: https://github.com/overte-org/overte-conan-recipes/issues/1
-        for counter in {1..2}; do
-          conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:qt_source='${qt_source} -b missing -pr:b=default -of build
-        done
+      uses: ./.github/actions/conan-install
+      with:
+        qt_source: ${{matrix.qt_source}}
+        build_type: ${{env.BUILD_TYPE}}
+        cppstd: ${{env.CONAN_CPPSTD}}
+        conan_profile: ${{env.CONAN_PROFILE}}
 
     - name: Upload dependency source backups
       shell: bash
