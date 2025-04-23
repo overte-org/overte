@@ -26,7 +26,6 @@ CryptographyScriptingInterface::~CryptographyScriptingInterface() {
     }
 }
 
-// Function to generate an RSA key pair
 QVariant CryptographyScriptingInterface::generateRSAKeypair(const int bits) {
     QVariantMap keypair; // Map to hold the generated keys
     const int VALID_KEY_LENGTHS[] = {512, 1024, 2048, 3072, 4096};
