@@ -282,7 +282,7 @@ Item {
                 }
                 placeholderText: "Username or Email"
                 activeFocusOnPress: true
-                prohibitedCharacters: ["\n"];
+                prohibitedCharacters: ["\n", "\r"];
                 Keys.onPressed: {
                     switch (event.key) {
                         case Qt.Key_Tab:
