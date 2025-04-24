@@ -1128,8 +1128,9 @@ void LimitedNodeList::processSTUNResponse(std::unique_ptr<udt::BasePacket> packe
                          : _publicSockAddr.getAddressIPv4().toString().toStdString().c_str()),
                     _publicSockAddr.getPort());
 
-            // TODO(IPv6):
-            _publicSockAddr = SockAddr(SocketType::UDP, newPublicAddress, QHostAddress(), newPublicPort);
+            // TODO(IPv6): for now take public IPV6 address from local IPv6 address, since in most cases they are the same
+            // TODO(IPv6): can public port be different for IPv4 and IPv6?
+            _publicSockAddr = SockAddr(SocketType::UDP, newPublicAddress, _publicSockAddr.getAddressIPv6(), newPublicPort);
 
             if (!_hasCompletedInitialSTUN) {
                 // if we're here we have definitely completed our initial STUN sequence
@@ -1335,6 +1336,13 @@ void LimitedNodeList::setLocalSocket(const SockAddr& sockAddr) {
             }
         }
 
+        // TODO(IPv6): for now public IPv6 address is assumed as same as the local one.
+        if (_publicSockAddr.getAddressIPv6() != _localSockAddr.getAddressIPv6()
+            && _localSockAddr.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol) {
+            _publicSockAddr.setAddress(_localSockAddr.getAddressIPv6());
+            qCInfo(networking) << "LimitedNodeList::setLocalSocket: Public IPv6 address changed to " << _publicSockAddr.getAddressIPv6();
+            emit publicSockAddrChanged(_publicSockAddr);
+        }
         emit localSockAddrChanged(_localSockAddr);
     }
 }

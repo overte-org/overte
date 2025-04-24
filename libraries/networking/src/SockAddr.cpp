@@ -230,6 +230,7 @@ QDataStream& operator<<(QDataStream& dataStream, const SockAddr& sockAddr) {
     // Don't include socket type because ICE packets must not have it.
     // TODO(IPv6): How to add IPv6 here without braking the protocol
     dataStream << sockAddr._addressIPv4 << sockAddr._addressIPv6 << sockAddr._port;
+    //qDebug() << "SockAddr operator<< ipv6: " << sockAddr._addressIPv6 << "" << sockAddr._addressIPv6.protocol();
     return dataStream;
 }
 
@@ -237,6 +238,7 @@ QDataStream& operator>>(QDataStream& dataStream, SockAddr& sockAddr) {
     // Don't include socket type because ICE packets must not have it.
     // TODO(IPv6): How to add IPv6 here without braking the protocol
     dataStream >> sockAddr._addressIPv4 >> sockAddr._addressIPv6 >> sockAddr._port;
+    //qDebug() << "SockAddr operator>> ipv6: " << sockAddr._addressIPv6 << "" << sockAddr._addressIPv6.protocol();
     return dataStream;
 }
 

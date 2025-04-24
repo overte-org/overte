@@ -152,6 +152,10 @@ qint64 Socket::writePacket(const Packet& packet, const SockAddr& sockAddr) {
         sequenceNumber = ++_unreliableSequenceNumbers[sockAddr];
     }
 
+    // TODO(IPv6): Add a way of choosing IPv6 or IPv4
+    // TODO(IPv6): Make sure that both IPv4 and IPv6 connections are removed when disconnecting (SockAddr with both IPv4 and IPv6 might not match anything)
+    // For now we will listen on IPv6
+
     auto connection = findOrCreateConnection(sockAddr, true);
     if (connection) {
         connection->recordSentUnreliablePackets(packet.getWireSize(),
@@ -288,6 +292,7 @@ qint64 Socket::writeDatagram(const QByteArray& datagram, const SockAddr& sockAdd
 }
 
 Connection* Socket::findOrCreateConnection(const SockAddr& sockAddr, bool filterCreate) {
+    Q_ASSERT(!(!sockAddr.getAddressIPv6().isNull() && !sockAddr.getAddressIPv4().isNull()));
     Lock connectionsLock(_connectionsHashMutex);
     auto it = _connectionsHash.find(sockAddr);
 
@@ -321,6 +326,26 @@ Connection* Socket::findOrCreateConnection(const SockAddr& sockAddr, bool filter
 
     return it->second.get();
 }
+
+/*Connection* Socket::createConnection(const SockAddr& sockAddr, bool filterCreate) {
+    std::unordered_map<SockAddr, std::unique_ptr<Connection>>::iterator it;
+    auto congestionControl = _ccFactory->create();
+    congestionControl->setMaxBandwidth(_maxBandwidth);
+    auto connection = std::unique_ptr<Connection>(new Connection(this, sockAddr, std::move(congestionControl)));
+    if (QThread::currentThread() != thread()) {
+        qCDebug(networking) << "Moving new Connection to NodeList thread";
+        connection->moveToThread(thread());
+    }
+    // allow higher-level classes to find out when connections have completed a handshake
+    QObject::connect(connection.get(), &Connection::receiverHandshakeRequestComplete,
+                     this, &Socket::clientHandshakeRequestComplete);
+
+    qCDebug(networking) << "Creating new Connection class for" << sockAddr;
+
+    it = _connectionsHash.insert(it, std::make_pair(sockAddr, std::move(connection)));
+
+    return it->second.get();
+}*/
 
 void Socket::clearConnections() {
     if (QThread::currentThread() != thread()) {
