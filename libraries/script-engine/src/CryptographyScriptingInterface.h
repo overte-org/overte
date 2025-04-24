@@ -42,6 +42,10 @@ public:
 
 
     Q_INVOKABLE bool validateRSASignature(const QString message, const QString hexSignature, const QString publicKeyPEM);
+
+    Q_INVOKABLE QString encryptRSA(const QString message, const QString publicKeyPEM);
+
+    Q_INVOKABLE QString decryptRSA(const QString message, const QString privateKeyPEM);
 private: 
     EVP_PKEY* loadPrivateKeyFromPEM(const QString privateKeyPEM);
     EVP_PKEY* loadPublicKeyFromPEM(const QString publicKeyPEM);
