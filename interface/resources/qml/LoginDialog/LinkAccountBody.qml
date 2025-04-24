@@ -316,7 +316,7 @@ Item {
                 styleRenderType: Text.QtRendering
                 placeholderText: "Password"
                 activeFocusOnPress: true
-                prohibitedCharacters: ["\n"];
+                prohibitedCharacters: ["\n", "\r"];
                 echoMode: passwordFieldMouseArea.showPassword ? TextInput.Normal : TextInput.Password
                 anchors {
                     top: emailField.bottom
