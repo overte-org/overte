@@ -8,7 +8,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-var toolIconUrl = Script.getExternalPath(Script.ExternalPaths.HF_Public, "images/tools/");
+// This URL will be used not relative to this script, but relative to the QML that handles the Overlay, so we need an absolute URL.
+var toolIconUrl = Script.resolvePath("../assets/images/tools/");
 
 progressDialog = (function () {
     var that = {},
