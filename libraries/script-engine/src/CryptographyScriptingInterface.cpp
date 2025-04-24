@@ -26,6 +26,53 @@ CryptographyScriptingInterface::~CryptographyScriptingInterface() {
     }
 }
 
+// Creates a valid EVP_PKEY from a QString PEM formatted private key.
+EVP_PKEY* CryptographyScriptingInterface::loadPrivateKeyFromPEM(const QString privateKeyPEM) {
+    // Convert QString to QByteArray
+    QByteArray pemBytes = privateKeyPEM.toUtf8();
+
+    // Create a BIO to read the PEM data
+    BIO* bio = BIO_new_mem_buf(pemBytes.constData(), pemBytes.length());
+    if (!bio) {
+        qCWarning(scriptengine) << "Failed to create BIO.";
+        return nullptr;
+    }
+
+    // Read the private key from the BIO
+    EVP_PKEY* privateKey = PEM_read_bio_PrivateKey(bio, nullptr, nullptr, nullptr);
+    BIO_free(bio); // Free the BIO after use
+
+    if (!privateKey) {
+        qCWarning(scriptengine) << "Failed to read private key from PEM.";
+        return nullptr;
+    }
+
+    return privateKey; // Return the loaded private key
+}
+
+// Creates a valid EVP_PKEY from a QString PEM formatted public key.
+EVP_PKEY* CryptographyScriptingInterface::loadPublicKeyFromPEM(const QString publicKeyPEM) {
+    // Convert QString to QByteArray
+    QByteArray pemBytes = publicKeyPEM.toUtf8();
+
+    BIO* bio = BIO_new_mem_buf(pemBytes.constData(), pemBytes.length());
+    if (!bio) {
+        qCWarning(scriptengine) << "Failed to create BIO.";
+        return nullptr;
+    }
+
+    EVP_PKEY* publicKey = PEM_read_bio_PUBKEY(bio, nullptr, nullptr, nullptr);
+    BIO_free(bio);
+
+    if (!publicKey) {
+        qCWarning(scriptengine) << "Failed to read public key from PEM.";
+        return nullptr;
+    }
+
+    return publicKey;
+}
+
+
 QVariant CryptographyScriptingInterface::generateRSAKeypair(const int bits) {
     QVariantMap keypair; // Map to hold the generated keys
     const int VALID_KEY_LENGTHS[] = {512, 1024, 2048, 3072, 4096};
@@ -82,3 +129,113 @@ QVariant CryptographyScriptingInterface::generateRSAKeypair(const int bits) {
 
     return keypair; // Return the map containing the keys
 }
+
+QString CryptographyScriptingInterface::signRSAMessage(const QString message, const QString privateKeyPEM) {
+    EVP_PKEY* privateKey = CryptographyScriptingInterface::loadPrivateKeyFromPEM(privateKeyPEM);
+
+    // Create a context for signing
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    if (!ctx) {
+        qCWarning(scriptengine) << "Failed to create context for signing.";
+        return NULL;
+    }
+
+    // Initialize the signing operation
+    if (EVP_SignInit_ex(ctx, EVP_sha256(), nullptr) != 1) {
+        EVP_MD_CTX_free(ctx);
+        qCWarning(scriptengine) << "Failed to initialize signing.";
+        return NULL;
+    }
+
+    // Convert QString to expected string type
+    QByteArray messageBytes = message.toUtf8();
+    const char* messageCStr = messageBytes.constData();
+
+    // Update the context with the message
+    if (EVP_SignUpdate(ctx, messageCStr, message.length()) != 1) {
+        EVP_MD_CTX_free(ctx);
+        qCWarning(scriptengine) << "Failed to update signing context.";
+        return NULL;
+    }
+
+    int keySizeBits = EVP_PKEY_bits(privateKey);
+    unsigned int signatureLength = keySizeBits / 8;
+    std::vector<unsigned char> signature(signatureLength); // Create dynamic buffer from the signature length
+
+    // Finalize the signing operation
+    if (EVP_SignFinal(ctx, signature.data(), &signatureLength, privateKey) != 1) {
+        EVP_MD_CTX_free(ctx);
+        qCWarning(scriptengine) << "Failed to finalize signing.";
+        return NULL;
+    }
+
+    EVP_MD_CTX_free(ctx); // Clean up the context
+
+    // Convert signature to a hex string for easier handling
+    QString hexSignature;
+    for (unsigned int i = 0; i < signatureLength; i++) {
+        char buffer[3];
+        snprintf(buffer, sizeof(buffer), "%02x", signature[i]);
+        hexSignature += buffer;
+    }
+
+    return hexSignature; // Return the signature as a hex string
+}
+
+bool CryptographyScriptingInterface::validateRSASignature(const QString message, const QString hexSignature, const QString publicKeyPEM) {
+    // Load the public key from the PEM format
+    EVP_PKEY* publicKey = loadPublicKeyFromPEM(publicKeyPEM);
+
+    if (!publicKey) {
+        qCWarning(scriptengine) << "Invalid public key.";
+        return false;
+    }
+
+    // Create a context for verification
+    EVP_MD_CTX* ctx = EVP_MD_CTX_new();
+    if (!ctx) {
+        qCWarning(scriptengine) << "Failed to create context for verification.";
+        EVP_PKEY_free(publicKey);
+        return false;
+    }
+
+    // Initialize the verification operation
+    if (EVP_VerifyInit_ex(ctx, EVP_sha256(), nullptr) != 1) {
+        qCWarning(scriptengine) << "Failed to initialize verification.";
+        EVP_MD_CTX_free(ctx);
+        EVP_PKEY_free(publicKey);
+        return false;
+    }
+
+    // Convert QString to C-style string
+    QByteArray messageBytes = message.toUtf8();
+    const char* messageCStr = messageBytes.constData();
+
+    // Update the context with the message
+    if (EVP_VerifyUpdate(ctx, messageCStr, messageBytes.length()) != 1) {
+        qCWarning(scriptengine) << "Failed to update verification context.";
+        EVP_MD_CTX_free(ctx);
+        EVP_PKEY_free(publicKey);
+        return false;
+    }
+
+    int keySizeBits = EVP_PKEY_bits(publicKey);
+    unsigned int signatureLength = keySizeBits / 8;
+    std::vector<unsigned char> signature(signatureLength); // Create dynamic buffer from the signature length
+
+    for (unsigned int i = 0; i < signatureLength; i++) {
+        std::string byteString = hexSignature.mid(i * 2, 2).toStdString();
+        signature[i] = static_cast<unsigned char>(strtol(byteString.c_str(), nullptr, 16));
+    }
+
+    // Finalize the verification
+    int result = EVP_VerifyFinal(ctx, signature.data(), signatureLength, publicKey);
+    EVP_MD_CTX_free(ctx);
+    EVP_PKEY_free(publicKey);
+
+    return result == 1;
+}
+
+
+// TODO: RSA Message encryption
+// TODO: RSA Message decryption

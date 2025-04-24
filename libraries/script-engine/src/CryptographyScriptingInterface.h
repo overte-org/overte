@@ -30,6 +30,20 @@ public:
     * }
     */
     Q_INVOKABLE QVariant generateRSAKeypair(const int bits = 2048);
+
+    /*@jsdoc
+    * Generates a signature for a given string message.
+    * @function crypto.signRSAMessage
+    * @param {string} [message] - The string message to provide a signature for.
+    * @returns {?String} A valid signature for a given message.
+    * @example <caption>Sign a message.</caption>
+    */
+    Q_INVOKABLE QString signRSAMessage(const QString message, const QString privateKeyPEM);
+
+
+    Q_INVOKABLE bool validateRSASignature(const QString message, const QString hexSignature, const QString publicKeyPEM);
 private: 
+    EVP_PKEY* loadPrivateKeyFromPEM(const QString privateKeyPEM);
+    EVP_PKEY* loadPublicKeyFromPEM(const QString publicKeyPEM);
     OSSL_LIB_CTX* libctx; // OpenSSL library context
 };
