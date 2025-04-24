@@ -1,8 +1,12 @@
 #include "CryptographyScriptingInterface.h"
+#include <openssl/err.h>
 #include <qvariant.h>
 #include <algorithm>
 #include <iterator>
 #include "ScriptEngineLogging.h"
+
+// TODO: RSA encryption without padding
+// TODO: RSA encryption PKCS #1 / legacy padding (for funsies)
 
 QUuid CryptographyScriptingInterface::randomUUID() {
     return QUuid::createUuid();
@@ -28,8 +32,9 @@ CryptographyScriptingInterface::~CryptographyScriptingInterface() {
 
 // Creates a valid EVP_PKEY from a QString PEM formatted private key.
 EVP_PKEY* CryptographyScriptingInterface::loadPrivateKeyFromPEM(const QString privateKeyPEM) {
+    QString trimmedPrivateKeyPEM = privateKeyPEM.trimmed();
     // Convert QString to QByteArray
-    QByteArray pemBytes = privateKeyPEM.toUtf8();
+    QByteArray pemBytes = trimmedPrivateKeyPEM.toUtf8();
 
     // Create a BIO to read the PEM data
     BIO* bio = BIO_new_mem_buf(pemBytes.constData(), pemBytes.length());
@@ -52,8 +57,10 @@ EVP_PKEY* CryptographyScriptingInterface::loadPrivateKeyFromPEM(const QString pr
 
 // Creates a valid EVP_PKEY from a QString PEM formatted public key.
 EVP_PKEY* CryptographyScriptingInterface::loadPublicKeyFromPEM(const QString publicKeyPEM) {
+    QString trimmedPublicKeyPEM = publicKeyPEM.trimmed();
+
     // Convert QString to QByteArray
-    QByteArray pemBytes = publicKeyPEM.toUtf8();
+    QByteArray pemBytes = trimmedPublicKeyPEM.toUtf8();
 
     BIO* bio = BIO_new_mem_buf(pemBytes.constData(), pemBytes.length());
     if (!bio) {
@@ -236,6 +243,130 @@ bool CryptographyScriptingInterface::validateRSASignature(const QString message,
     return result == 1;
 }
 
+QString CryptographyScriptingInterface::encryptRSA(const QString message, const QString publicKeyPEM) {
+    // Load the public key from the PEM format
+    EVP_PKEY* publicKey = loadPublicKeyFromPEM(publicKeyPEM);
 
-// TODO: RSA Message encryption
-// TODO: RSA Message decryption
+    if (!publicKey) {
+        qCWarning(scriptengine) << "Failed to read public key from PEM.";
+        return NULL;
+    }
+
+    // Create a context for encryption
+    EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(publicKey, nullptr);
+    if (!ctx) {
+        qCWarning(scriptengine) << "Failed to create context for encryption.";
+        EVP_PKEY_free(publicKey);
+        return NULL;
+    }
+
+    // Initialize the encryption operation
+    if (EVP_PKEY_encrypt_init(ctx) <= 0) {
+        qCWarning(scriptengine) << "Failed to initialize encryption.";
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(publicKey);
+        return NULL;
+    }
+
+    // Set padding (if needed)
+    if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
+        qCWarning(scriptengine) << "Failed to set padding.";
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(publicKey);
+        return NULL;
+    }
+
+    // Prepare the message for encryption
+    QByteArray messageBytes = message.toUtf8();
+    size_t encryptedLength;
+
+    // Determine the size of the encrypted message
+    if (EVP_PKEY_encrypt(ctx, nullptr, &encryptedLength, reinterpret_cast<const unsigned char*>(messageBytes.constData()), messageBytes.length()) <= 0) {
+        qCWarning(scriptengine) << "Failed to determine encrypted length.";
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(publicKey);
+        return NULL;
+    }
+
+    // Allocate buffer for the encrypted message
+    std::vector<unsigned char> encrypted(encryptedLength);
+
+    // Encrypt the message
+    if (EVP_PKEY_encrypt(ctx, encrypted.data(), &encryptedLength, reinterpret_cast<const unsigned char*>(messageBytes.constData()), messageBytes.length()) <= 0) {
+        qCWarning(scriptengine) << "Failed to encrypt message: " << ERR_error_string(ERR_get_error(), nullptr);
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(publicKey);
+        return NULL;
+    }
+
+    EVP_PKEY_CTX_free(ctx);
+    EVP_PKEY_free(publicKey);
+
+    // Convert encrypted data to Base64 for easier handling
+    QByteArray base64Encrypted = QByteArray(reinterpret_cast<const char*>(encrypted.data()), encryptedLength).toBase64();
+
+    return QString(base64Encrypted);; // Return the encrypted message as a hex string
+}
+
+QString CryptographyScriptingInterface::decryptRSA(const QString base64Encrypted, const QString privateKeyPEM) {
+    // Load the private key from the PEM format
+    EVP_PKEY* privateKey = loadPrivateKeyFromPEM(privateKeyPEM);
+
+    if (!privateKey) {
+        qCWarning(scriptengine) << "Failed to read private key from PEM.";
+        return NULL;
+    }
+
+    // Create a context for decryption
+    EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(privateKey, nullptr);
+    if (!ctx) {
+        qCWarning(scriptengine) << "Failed to create context for decryption.";
+        EVP_PKEY_free(privateKey);
+        return NULL;
+    }
+
+    // Initialize the decryption operation
+    if (EVP_PKEY_decrypt_init(ctx) <= 0) {
+        qCWarning(scriptengine) << "Failed to initialize decryption.";
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(privateKey);
+        return NULL;
+    }
+
+    // Set padding
+    if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING) <= 0) {
+        qCWarning(scriptengine) << "Failed to set padding.";
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(privateKey);
+        return NULL;
+    }
+
+    // Decode the Base64 string back to binary
+    QByteArray encryptedData = QByteArray::fromBase64(base64Encrypted.toUtf8());
+    size_t decryptedLength;
+
+    // Determine the size of the decrypted message
+    if (EVP_PKEY_decrypt(ctx, nullptr, &decryptedLength, reinterpret_cast<const unsigned char*>(encryptedData.constData()), encryptedData.length()) <= 0) {
+        qCWarning(scriptengine) << "Failed to determine decrypted length.";
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(privateKey);
+        return NULL;
+    }
+
+    // Allocate buffer for the decrypted message
+    std::vector<unsigned char> decrypted(decryptedLength);
+
+    // Decrypt the message
+    if (EVP_PKEY_decrypt(ctx, decrypted.data(), &decryptedLength, reinterpret_cast<const unsigned char*>(encryptedData.constData()), encryptedData.length()) <= 0) {
+        qCWarning(scriptengine) << "Failed to decrypt message: " << ERR_error_string(ERR_get_error(), nullptr);
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(privateKey);
+        return NULL;
+    }
+
+    EVP_PKEY_CTX_free(ctx);
+    EVP_PKEY_free(privateKey);
+
+    // Convert decrypted data back to QString
+    return QString::fromUtf8(reinterpret_cast<const char*>(decrypted.data()), decryptedLength);
+}
