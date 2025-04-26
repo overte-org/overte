@@ -36,6 +36,14 @@ using ScriptEnginePointer = std::shared_ptr<ScriptEngine>;
 using ScriptValueList = QList<ScriptValue>;
 using ScriptValueIteratorPointer = std::shared_ptr<ScriptValueIterator>;
 
+class ScriptBufferView {
+public:
+    virtual bool hasBuffer() const = 0;
+    virtual void* buffer() const = 0;
+    virtual size_t byteOffset() const = 0;
+    virtual size_t byteLength() const = 0;
+};
+
 /// [ScriptInterface] Provides an engine-independent interface for QScriptValue
 class ScriptValue {
 public:
@@ -87,6 +95,7 @@ public:
     inline bool isUndefined() const;
     inline bool isValid() const;
     inline bool isVariant() const;
+    inline bool isArrayBufferView() const;
     inline ScriptValueIteratorPointer newIterator() const;
     inline ScriptValue property(const QString& name, const ResolveFlags& mode = ResolvePrototype) const;
     inline ScriptValue property(quint32 arrayIndex, const ResolveFlags& mode = ResolvePrototype) const;
@@ -118,6 +127,7 @@ public:
     inline quint32 toUInt32() const;
     inline QVariant toVariant() const;
     inline QObject* toQObject() const;
+    inline std::shared_ptr<ScriptBufferView> toArrayBufferView() const;
 
 protected:
     ScriptValueProxy* _proxy;
@@ -150,6 +160,7 @@ public:
     virtual bool isUndefined() const = 0;
     virtual bool isValid() const = 0;
     virtual bool isVariant() const = 0;
+    virtual bool isArrayBufferView() const = 0;
     virtual ScriptValueIteratorPointer newIterator() const = 0;
     virtual ScriptValue property(const QString& name,
                                  const ScriptValue::ResolveFlags& mode = ScriptValue::ResolvePrototype) const = 0;
@@ -177,6 +188,7 @@ public:
     virtual quint32 toUInt32() const = 0;
     virtual QVariant toVariant() const = 0;
     virtual QObject* toQObject() const = 0;
+    virtual std::shared_ptr<ScriptBufferView> toArrayBufferView() const = 0;
 
 protected:
     virtual ~ScriptValueProxy() {}  // prevent explicit deletion of base class
@@ -305,6 +317,11 @@ bool ScriptValue::isVariant() const {
     return _proxy->isVariant();
 }
 
+bool ScriptValue::isArrayBufferView() const {
+    Q_ASSERT(_proxy != nullptr);
+    return _proxy->isArrayBufferView();
+}
+
 ScriptValueIteratorPointer ScriptValue::newIterator() const {
     Q_ASSERT(_proxy != nullptr);
     return _proxy->newIterator();
@@ -404,6 +421,11 @@ QVariant ScriptValue::toVariant() const {
 QObject* ScriptValue::toQObject() const {
     Q_ASSERT(_proxy != nullptr);
     return _proxy->toQObject();
+}
+
+std::shared_ptr<ScriptBufferView> ScriptValue::toArrayBufferView() const {
+    Q_ASSERT(_proxy != nullptr);
+    return _proxy->toArrayBufferView();
 }
 
 #endif // hifi_ScriptValue_h

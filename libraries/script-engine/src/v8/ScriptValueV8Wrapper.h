@@ -28,6 +28,44 @@
 
 //#define OVERTE_V8_SCRIPT_VALUE_WRAPPER_DELETE_GUARD
 
+class ScriptBufferViewV8Wrapper final : public ScriptBufferView {
+public:
+    bool hasBuffer() const override {
+        auto view = v8::ArrayBufferView::Cast(*_view.Get(_isolate));
+        return view->HasBuffer();
+    }
+
+    void* buffer() const override {
+        auto view = v8::ArrayBufferView::Cast(*_view.Get(_isolate));
+        if (view->HasBuffer()) {
+            return view->Buffer()->Data();
+        } else {
+            return nullptr;
+        }
+    }
+
+    size_t byteOffset() const override {
+        auto view = v8::ArrayBufferView::Cast(*_view.Get(_isolate));
+        return view->ByteOffset();
+    }
+
+    size_t byteLength() const override {
+        auto view = v8::ArrayBufferView::Cast(*_view.Get(_isolate));
+        return view->ByteLength();
+    }
+
+    ScriptBufferViewV8Wrapper(v8::Isolate *isolate, v8::Persistent<v8::Value, v8::CopyablePersistentTraits<v8::Value>> view) : _isolate(isolate), _view(view) {}
+
+    ~ScriptBufferViewV8Wrapper() {
+        _view.Reset();
+        _isolate->Dispose();
+    }
+
+private:
+    v8::Isolate *_isolate;
+    v8::Persistent<v8::Value, v8::CopyablePersistentTraits<v8::Value>> _view;
+};
+
 /// [V8] Implements ScriptValue for V8 and translates calls for V8ScriptValue
 class ScriptValueV8Wrapper final : public ScriptValueProxy {
 public: // construction
@@ -94,6 +132,7 @@ public:  // ScriptValue implementation
     virtual bool isUndefined() const override;
     virtual bool isValid() const override;
     virtual bool isVariant() const override;
+    virtual bool isArrayBufferView() const override;
     virtual bool toBool() const override;
     virtual qint32 toInt32() const override;
     virtual double toInteger() const override;
@@ -103,6 +142,7 @@ public:  // ScriptValue implementation
     virtual quint32 toUInt32() const override;
     virtual QVariant toVariant() const override;
     virtual QObject* toQObject() const override;
+    virtual std::shared_ptr<ScriptBufferView> toArrayBufferView() const override;
 
 #ifdef OVERTE_V8_SCRIPT_VALUE_WRAPPER_DELETE_GUARD
     // These can be used for debugging crashes caused access after delete
