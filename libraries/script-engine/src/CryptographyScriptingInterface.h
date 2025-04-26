@@ -49,5 +49,6 @@ public:
 private: 
     EVP_PKEY* loadPrivateKeyFromPEM(const QString privateKeyPEM);
     EVP_PKEY* loadPublicKeyFromPEM(const QString publicKeyPEM);
+    int getMaximumMessageLength(const EVP_PKEY* publicKey);
     OSSL_LIB_CTX* libctx; // OpenSSL library context
 };
