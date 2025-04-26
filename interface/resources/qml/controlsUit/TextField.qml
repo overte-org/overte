@@ -32,6 +32,7 @@ TextField {
     property string leftPermanentGlyph: "";
     property string centerPlaceholderGlyph: "";
     property int styleRenderType: Text.NativeRendering
+    property var prohibitedCharacters: [""];
 
     placeholderText: textField.placeholderText
 
@@ -178,5 +179,16 @@ TextField {
         anchors.bottom: parent.top
         anchors.bottomMargin: 3
         visible: label != ""
+    }
+
+    onTextChanged: {
+        removeProhibitedCharacters();
+    }
+
+    function removeProhibitedCharacters() {
+        var pattern = prohibitedCharacters.join('');
+        var regex = new RegExp('[' + pattern + ']', 'g');
+
+        text = text.replace(regex, '');
     }
 }
