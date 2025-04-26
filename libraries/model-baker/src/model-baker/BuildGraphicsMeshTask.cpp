@@ -18,7 +18,7 @@
 #include "ModelMath.h"
 
 // Uncomment this to use 16-bit float texture coordinates instead of 32-bit ones.
-//#define OVERTE_16_BIT_TEXCOODRS
+//#define OVERTE_16_BIT_TEXCOORDS
 
 using vec2h = glm::tvec2<glm::detail::hdata>;
 
@@ -83,7 +83,7 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
     const int colorsSize = hfmMesh.colors.size() * colorElement.getSize();
 
     // Texture coordinates are stored in 2 half floats
-#ifdef OVERTE_16_BIT_TEXCOODRS
+#ifdef OVERTE_16_BIT_TEXCOORDS
     const auto texCoordsElement = gpu::Element(gpu::VEC2, gpu::HALF, gpu::UV);
 #else
     const auto texCoordsElement = gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::UV);
@@ -163,7 +163,7 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
 
     // Pack Texcoords 0 and 1 (if exists)
     if (texCoordsSize > 0) {
-#ifdef OVERTE_16_BIT_TEXCOODRS
+#ifdef OVERTE_16_BIT_TEXCOORDS
         QVector<vec2h> texCoordData;
         texCoordData.reserve(hfmMesh.texCoords.size());
         for (auto& texCoordVec2f : hfmMesh.texCoords) {
@@ -179,7 +179,7 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
 #endif
     }
     if (texCoords1Size > 0) {
-#ifdef OVERTE_16_BIT_TEXCOODRS
+#ifdef OVERTE_16_BIT_TEXCOORDS
         QVector<vec2h> texCoordData;
         texCoordData.reserve(hfmMesh.texCoords1.size());
         for (auto& texCoordVec2f : hfmMesh.texCoords1) {
