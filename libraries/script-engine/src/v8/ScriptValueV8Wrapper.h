@@ -58,7 +58,6 @@ public:
 
     ~ScriptBufferViewV8Wrapper() {
         _view.Reset();
-        _isolate->Dispose();
     }
 
 private:

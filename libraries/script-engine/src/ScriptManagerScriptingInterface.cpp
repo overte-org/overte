@@ -149,14 +149,16 @@ void ScriptManagerScriptingInterface::test__ArrayBufferView(const ScriptValue& v
     auto offset = view->byteOffset();
     auto length = view->byteLength();
 
-    stream << "ArrayBufferView(" << offset << ", " << length << ") [";
+    stream << "ArrayBufferView(" << offset << ", " << length << ") [ ";
 
     if (data) {
         for (size_t i = 0; i < length; i++) {
-            stream << data[i];
+            stream << (uint8_t)data[offset + i];
 
             if (i < length - 1) { stream << ", "; }
         }
+    } else {
+        stream << "(no buffer)";
     }
 
     stream << " ]";
