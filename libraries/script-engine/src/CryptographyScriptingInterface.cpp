@@ -5,9 +5,6 @@
 #include <iterator>
 #include "ScriptEngineLogging.h"
 
-// TODO: RSA encryption without padding
-// TODO: RSA encryption PKCS #1 / legacy padding (for funsies)
-
 QUuid CryptographyScriptingInterface::randomUUID() {
     return QUuid::createUuid();
 }
@@ -77,6 +74,15 @@ EVP_PKEY* CryptographyScriptingInterface::loadPublicKeyFromPEM(const QString pub
     }
 
     return publicKey;
+}
+
+int CryptographyScriptingInterface::getMaximumMessageLength(const EVP_PKEY* publicKey) {
+    // This will need updating when more padding methods are supported.
+    // Currently we only support RSA_PKCS1_OAEP_PADDING, as such this only works for RSA_PKCS1_OAEP_PADDING.
+    int keyLengthBits = EVP_PKEY_bits(publicKey);
+    int keyLengthBytes = keyLengthBits / 8;
+
+    return keyLengthBytes - 2 * SHA256_DIGEST_LENGTH - 2;
 }
 
 
@@ -279,6 +285,14 @@ QString CryptographyScriptingInterface::encryptRSA(const QString message, const 
     // Prepare the message for encryption
     QByteArray messageBytes = message.toUtf8();
     size_t encryptedLength;
+    int maximumSizeOfMessages = getMaximumMessageLength(publicKey);
+
+    if (messageBytes.length() > maximumSizeOfMessages) {
+        qCWarning(scriptengine) << "Message is too long for encryption.";
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(publicKey);
+        return nullptr;
+    }
 
     // Determine the size of the encrypted message
     if (EVP_PKEY_encrypt(ctx, nullptr, &encryptedLength, reinterpret_cast<const unsigned char*>(messageBytes.constData()), messageBytes.length()) <= 0) {
