@@ -60,5 +60,5 @@ void main() {
 <@endif@>
 
     const vec3 normal = vec3(0, 0, 1);
-    <$transformModelToWorldDir(cam, obj, normal, _normalWS)$>
+    <$transformModelToWorldDir(obj, normal, _normalWS)$>
 }

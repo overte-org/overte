@@ -56,8 +56,8 @@ void main(void) {
 
 <@if HIFI_USE_DEFORMED or HIFI_USE_DEFORMEDDQ@>
         evalMeshDeformer(inPosition, positionMS, inNormal.xyz, normalMS, inTangent.xyz, tangentMS,
-                         meshDeformer_doSkinning(_drawCallInfo.y), inSkinClusterIndex, inSkinClusterWeight,
-                         meshDeformer_doBlendshape(_drawCallInfo.y), gl_VertexID);
+                         meshDeformer_doSkinning(_inDrawCallInfo.y), inSkinClusterIndex, inSkinClusterWeight,
+                         meshDeformer_doBlendshape(_inDrawCallInfo.y), gl_VertexID);
 <@endif@>
 
 #if defined(PROCEDURAL_V1) || defined(PROCEDURAL_V2) || defined(PROCEDURAL_V3)
@@ -90,5 +90,5 @@ void main(void) {
     TransformCamera cam = getTransformCamera();
     TransformObject obj = getTransformObject();
     <$transformModelToEyeClipPosAndPrevClipPos(cam, obj, positionMS, _positionES, gl_Position, _prevPositionCS)$>
-    <$transformModelToWorldDir(cam, obj, normalMS, _normalWS)$>
+    <$transformModelToWorldDir(obj, normalMS, _normalWS)$>
 }

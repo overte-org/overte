@@ -47,6 +47,7 @@
 
 // OSX seems to have an issue using 14 as an attribute location for passing from the vertex to the fragment shader
 #define GPU_ATTR_V2F_STEREO_SIDE 8
+#define GPU_ATTR_V2F_DRAW_CALL_INFO 13
 
 #define GPU_UNIFORM_EXTRA0 110
 #define GPU_UNIFORM_EXTRA1 111

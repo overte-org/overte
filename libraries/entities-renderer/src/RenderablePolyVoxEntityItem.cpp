@@ -1801,8 +1801,6 @@ ShapeKey PolyVoxEntityRenderer::getShapeKey() {
         if (pipelineType == Pipeline::MATERIAL) {
             builder.withTriplanar();
         }
-        // FIXME: We don't currently generate tangents for PolyVox, so they don't support normal maps
-        builder.withoutTangents();
     }
     return builder.build();
 }
