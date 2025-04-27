@@ -37,6 +37,10 @@ public:
 
     void* buffer() const override {
         auto view = v8::ArrayBufferView::Cast(*_view.Get(_isolate));
+
+        // FIXME: calling IsExternal makes some buffers live longer??
+        view->Buffer()->IsExternal();
+
         if (view->HasBuffer()) {
             return view->Buffer()->Data();
         } else {
