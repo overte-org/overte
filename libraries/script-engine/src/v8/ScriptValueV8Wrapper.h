@@ -30,43 +30,26 @@
 
 class ScriptBufferViewV8Wrapper final : public ScriptBufferView {
 public:
-    bool hasBuffer() const override {
-        auto view = v8::ArrayBufferView::Cast(*_view.Get(_isolate));
-        return view->HasBuffer();
-    }
-
     void* buffer() const override {
-        auto view = v8::ArrayBufferView::Cast(*_view.Get(_isolate));
-
-        // FIXME: calling IsExternal makes some buffers live longer??
-        view->Buffer()->IsExternal();
-
-        if (view->HasBuffer()) {
-            return view->Buffer()->Data();
-        } else {
-            return nullptr;
-        }
+        return _buffer->Get(_isolate)->Data();
     }
 
     size_t byteOffset() const override {
-        auto view = v8::ArrayBufferView::Cast(*_view.Get(_isolate));
-        return view->ByteOffset();
+        return _offset;
     }
 
     size_t byteLength() const override {
-        auto view = v8::ArrayBufferView::Cast(*_view.Get(_isolate));
-        return view->ByteLength();
+        return _length;
     }
 
-    ScriptBufferViewV8Wrapper(v8::Isolate *isolate, v8::Persistent<v8::Value, v8::CopyablePersistentTraits<v8::Value>> view) : _isolate(isolate), _view(view) {}
-
-    ~ScriptBufferViewV8Wrapper() {
-        _view.Reset();
-    }
+    ScriptBufferViewV8Wrapper(v8::Isolate *isolate, std::shared_ptr<v8::UniquePersistent<v8::ArrayBuffer>> buffer, size_t offset, size_t length) : _isolate(isolate), _buffer(buffer), _offset(offset), _length(length) {}
 
 private:
     v8::Isolate *_isolate;
-    v8::Persistent<v8::Value, v8::CopyablePersistentTraits<v8::Value>> _view;
+    std::shared_ptr<v8::UniquePersistent<v8::ArrayBuffer>> _buffer;
+
+    size_t _offset;
+    size_t _length;
 };
 
 /// [V8] Implements ScriptValue for V8 and translates calls for V8ScriptValue

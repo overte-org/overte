@@ -650,7 +650,9 @@ std::shared_ptr<ScriptBufferView> ScriptValueV8Wrapper::toArrayBufferView() cons
     auto value = _value.constGet();
     if (value->IsArrayBufferView()) {
         v8::Isolate* isolate = _engine->getIsolate();
-        return std::make_shared<ScriptBufferViewV8Wrapper>(isolate, v8::Persistent<v8::Value, v8::CopyablePersistentTraits<v8::Value>>(isolate, value));
+        auto view = v8::ArrayBufferView::Cast(*value);
+        auto persistent = std::make_shared<v8::UniquePersistent<v8::ArrayBuffer>>(isolate, view->Buffer());
+        return std::make_shared<ScriptBufferViewV8Wrapper>(isolate, persistent, view->ByteOffset(), view->ByteLength());
     } else {
         return nullptr;
     }

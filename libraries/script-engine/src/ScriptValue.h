@@ -38,7 +38,6 @@ using ScriptValueIteratorPointer = std::shared_ptr<ScriptValueIterator>;
 
 class ScriptBufferView {
 public:
-    virtual bool hasBuffer() const = 0;
     virtual void* buffer() const = 0;
     virtual size_t byteOffset() const = 0;
     virtual size_t byteLength() const = 0;
