@@ -21,7 +21,6 @@
 #include <QtNetwork/QLocalServer>
 #include <QtQuick/QQuickWindow>
 #include <QWidget>
-#include <QStyle>
 
 #include <AccountManager.h>
 #include <AddressManager.h>
