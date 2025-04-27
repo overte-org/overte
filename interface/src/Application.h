@@ -809,10 +809,6 @@ private:
     Setting::Handle<bool> _miniTabletEnabledSetting;
     Setting::Handle<bool> _keepLogWindowOnTop { "keepLogWindowOnTop", false };
 
-    // to allow switching between system/light and dark theme without needing a restart
-    QString _startupThemeStyleName;
-    QPalette _startupThemePalette;
-
     void updateThemeColors();
 
 

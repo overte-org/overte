@@ -248,9 +248,6 @@ Application::Application(
     qInstallMessageHandler(messageHandler);
 
     DependencyManager::set<PathUtils>();
-
-    _startupThemeStyleName = qApp->style()->objectName();
-    _startupThemePalette = qApp->palette();
 }
 
 Application::~Application() {

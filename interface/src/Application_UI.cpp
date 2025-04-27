@@ -16,6 +16,7 @@
 #include "Application.h"
 
 #include <QtQml/QQmlContext>
+#include <QStyle>
 #include <QStyleFactory>
 
 #include <AddressManager.h>
@@ -794,26 +795,41 @@ void Application::setPreferredCursor(const QString& cursorName) {
 }
 
 void Application::updateThemeColors() {
+    // builtin style that exists on all platforms
+    // NOTE: in Qt5 the Fusion style with a dark palette has
+    // checkboxes with very low contrast, this was fixed in Qt6.5
+    auto style = QStyleFactory::create("Fusion");
+
+    QPalette palette = style->standardPalette();
+
     if (_darkTheme.get()) {
-        qApp->setStyle(QStyleFactory::create("Fusion")); // builtin style that always exists
-        auto palette = QPalette(
-            QColor(224, 224, 224), // windowText
-            QColor(48, 48, 48),    // button
-            QColor(72, 72, 72),    // light
-            QColor(24, 24, 24),    // dark
-            QColor(48, 48, 48),    // mid
-            QColor(224, 224, 224), // text
-            QColor(255, 255, 255), // brightText
-            QColor(48, 48, 48),    // base
-            QColor(48, 48, 48)     // window
-        );
-        qApp->setPalette(palette);
-        qApp->getPrimaryMenu()->setPalette(palette); // weird Qt bug workaround
-    } else {
-        qApp->setStyle(QStyleFactory::create(_startupThemeStyleName));
-        qApp->setPalette(_startupThemePalette);
-        qApp->getPrimaryMenu()->setPalette(_startupThemePalette); // weird Qt bug workaround
+        palette.setColor(QPalette::Window,          QColor(48, 48, 48));
+        palette.setColor(QPalette::WindowText,      QColor(224, 224, 224));
+
+        palette.setColor(QPalette::Base,            QColor(40, 40, 40));
+        palette.setColor(QPalette::AlternateBase,   QColor(44, 44, 44));
+
+        palette.setColor(QPalette::Light,           QColor(72, 72, 72));
+        palette.setColor(QPalette::Midlight,        QColor(64, 64, 64));
+        palette.setColor(QPalette::Button,          QColor(40, 40, 40));
+        palette.setColor(QPalette::Mid,             QColor(32, 32, 32));
+        palette.setColor(QPalette::Dark,            QColor(20, 20, 20));
+        palette.setColor(QPalette::Shadow,          QColor(0, 0, 0));
+
+        palette.setColor(QPalette::Text,            QColor(224, 224, 224));
+        palette.setColor(QPalette::ButtonText,      QColor(224, 224, 224));
+        palette.setColor(QPalette::BrightText,      QColor(255, 255, 255));
+
+        palette.setColor(QPalette::Highlight,       QColor(21, 83, 158));
+        palette.setColor(QPalette::HighlightedText, QColor(255, 255, 255));
+
+        palette.setColor(QPalette::Link,            QColor(95, 189, 252));
+        palette.setColor(QPalette::LinkVisited,     QColor(192, 95, 252));
     }
+
+    qApp->setStyle(style);
+    qApp->setPalette(palette);
+    qApp->getPrimaryMenu()->setPalette(palette); // weird Qt bug workaround
 }
 
 void Application::setDarkThemePreference(bool value) {
