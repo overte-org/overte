@@ -245,10 +245,7 @@ void GLBackend::do_setResourceTexture(const Batch& batch, size_t paramOffset) {
     }
 
     const auto& resourceTexture = batch._textures.get(batch._params[paramOffset + 0]._uint);
-    Sampler sampler;
-    if (resourceTexture) {
-        sampler = batch._samplers.get(batch._params[paramOffset + 2]._uint);
-    }
+    const Sampler& sampler = batch._samplers.get(batch._params[paramOffset + 2]._uint);
     bindResourceTexture(slot, resourceTexture, sampler);
 }
 
@@ -278,9 +275,10 @@ void GLBackend::do_setResourceFramebufferSwapChainTexture(const Batch& batch, si
     }
     auto index = batch._params[paramOffset + 2]._uint;
     auto renderBufferSlot = batch._params[paramOffset + 3]._uint;
+    const Sampler& sampler = batch._samplers.get(batch._params[paramOffset + 4]._uint);
+
     const auto& resourceFramebuffer = swapChain->get(index);
     const auto& resourceTexture = resourceFramebuffer->getRenderBuffer(renderBufferSlot);
-    Sampler sampler = batch._samplers.get(batch._params[paramOffset + 4]._uint);
     setResourceTexture(slot, resourceTexture, sampler);
 }
 
@@ -325,11 +323,7 @@ void GLBackend::do_setResourceTextureTable(const Batch& batch, size_t paramOffse
     const auto& textures = textureTable.getTextures();
     for (GLuint slot = 0; slot < textures.size(); ++slot) {
         const auto& texture = textures[slot];
-
-        Sampler sampler;
-        if (texture) {
-            sampler = batch._samplers.get(batch._params[paramOffset + 2 + (samplerIndex++)]._uint);
-        }
+        const Sampler& sampler = batch._samplers.get(batch._params[paramOffset + 2 + (samplerIndex++)]._uint);
 
         bindResourceTexture(slot + startSlot, texture, sampler);
     }
