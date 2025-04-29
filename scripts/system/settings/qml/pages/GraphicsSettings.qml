@@ -120,7 +120,15 @@ Flickable {
                 onSettingEnabledChanged: {
                     Render.fogEnabled = settingEnabled;
                 }
+            }
 
+            SettingBoolean {
+                settingText: "Ambient Occlusion";
+                settingEnabledCondition: () => { return Render.ambientOcclusionEnabled }
+
+                onSettingEnabledChanged: {
+                    Render.ambientOcclusionEnabled = settingEnabled;
+                }
             }
 
             SettingBoolean {
