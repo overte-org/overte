@@ -5,6 +5,8 @@ import "../"
 
 Flickable {
     property var verticalScrollBarWidth: 20;
+    property bool hasPresetBeenModified: false;
+    property bool isChangingPreset: false;
 
     id: graphicsPage;
     visible: currentPage == "Graphics";
@@ -67,19 +69,21 @@ Flickable {
 
         // Graphics Presets
         SettingComboBox {
+            id: graphicsPresetCombobox;
             settingText: "Graphics preset";
             optionIndex: Performance.getPerformancePreset() - 1;
             options: ["Low Power", "Low", "Medium", "High", "Custom"];
 
             onValueChanged: {
-                Performance.setPerformancePreset(index + 1)
+                Performance.setPerformancePreset(index + 1);
+                if (index !== 4) switchToAGraphicsPreset();
             }
         }
 
         // Rendering Effects
         SettingBoolean {
             settingText: "Rendering effects";
-            settingEnabled: Render.renderMethod == 0
+            settingEnabledCondition: function () { return Render.renderMethod === 0; }
 
             onSettingEnabledChanged: {
                 Render.renderMethod = settingEnabled ? 0 : 1;
@@ -93,16 +97,16 @@ Flickable {
 
             SettingBoolean {
                 settingText: "Shadows";
-                settingEnabled: Render.shadowsEnabled;
+                settingEnabledCondition: () => { return Render.shadowsEnabled }
 
                 onSettingEnabledChanged: {
                     Render.shadowsEnabled = settingEnabled;
                 }
-            }
+            } 
 
             SettingBoolean {
                 settingText: "Local Lights";
-                settingEnabled: Render.localLightsEnabled ? true : false
+                settingEnabledCondition: () => { return Render.localLightsEnabled }
 
                 onSettingEnabledChanged: {
                     Render.localLightsEnabled = settingEnabled;
@@ -111,16 +115,17 @@ Flickable {
 
             SettingBoolean {
                 settingText: "Fog";
-                settingEnabled: Render.fogEnabled ? true : false;
+                settingEnabledCondition: () => { return Render.fogEnabled ? true : false }
 
                 onSettingEnabledChanged: {
                     Render.fogEnabled = settingEnabled;
                 }
+
             }
 
             SettingBoolean {
                 settingText: "Haze";
-                settingEnabled: Render.hazeEnabled
+                settingEnabledCondition: () => { return Render.hazeEnabled }
 
                 onSettingEnabledChanged: {
                     Render.hazeEnabled = settingEnabled;
@@ -129,7 +134,7 @@ Flickable {
 
             SettingBoolean {
                 settingText: "Bloom";
-                settingEnabled: Render.bloomEnabled
+                settingEnabledCondition: () => { return Render.bloomEnabled }
 
                 onSettingEnabledChanged: {
                     Render.bloomEnabled = settingEnabled;
@@ -140,7 +145,7 @@ Flickable {
         // Procedural Materials
         SettingBoolean {
             settingText: "Procedural Materials";
-            settingEnabled: Render.proceduralMaterialsEnabled;
+            settingEnabledCondition: () => { return Render.proceduralMaterialsEnabled}
 
             onSettingEnabledChanged: {
                 Render.proceduralMaterialsEnabled = settingEnabled;
@@ -289,7 +294,7 @@ Flickable {
         // Camera clipping
         SettingBoolean {
             settingText: "Allow camera clipping";
-            settingEnabled: !Render.cameraClippingEnabled
+            settingEnabledCondition: () => { return !Render.cameraClippingEnabled }
 
             onSettingEnabledChanged: {
                 Render.cameraClippingEnabled = settingEnabled ? 0 : 1;
@@ -305,6 +310,39 @@ Flickable {
             onValueChanged: {
                 Render.antialiasingMode = index;
             }
+        }
+    }
+
+    onHasPresetBeenModifiedChanged: {
+        if (hasPresetBeenModified === true && isChangingPreset === false){
+            graphicsPresetCombobox.setOptionIndex(4);
+        }
+    }
+
+    function switchToAGraphicsPreset(){
+        // We need to disable the event updates from settings to detect if we have changed a preset.
+        isChangingPreset = true;
+
+        // Change all of the settings to match the preset 
+        recursivelyUpdateAllSettings(graphicsPageColumn);
+        hasPresetBeenModified = false;
+
+        // "Unmute" the events listening for a preset change.
+        isChangingPreset = false;
+    }
+
+    function recursivelyUpdateAllSettings(item){
+        // In order to update all settings based on current values, 
+        // we need to go through all children elements and re-evaluate their settingEnabled value
+
+        // Update all settings options visually to reflect settings
+        for (let i = 0; item.children.length > i; i++) {
+            var child = item.children[i];
+
+            child.update();
+
+            // Run this function on all of this elements children.
+            recursivelyUpdateAllSettings(child);
         }
     }
 }

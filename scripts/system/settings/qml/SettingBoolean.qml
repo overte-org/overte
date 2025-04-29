@@ -7,6 +7,7 @@ Item {
 	id: root;
 	property string settingText: "";
 	property bool settingEnabled: false;
+    property var settingEnabledCondition;
 
 	height: 50;
 	width: parent.width;
@@ -106,6 +107,23 @@ Item {
 				easing.type: Easing.InOutCubic
 			}
 		}
+    }
+
+    Component.onCompleted: {
+        update();
+    }
+
+    onSettingEnabledChanged: {
+        if (isChangingPreset === false) { 
+            // We don't want to update this variable if we are changing to a preset.
+            hasPresetBeenModified = true;
+        }
+    }
+
+    function update(){
+        if (settingEnabledCondition && typeof settingEnabledCondition === "function") {
+            settingEnabled = settingEnabledCondition();
+        }
     }
 }
 

@@ -189,4 +189,8 @@ Item {
 		// Whack it with a hammer
 		control.model = options;
 	}
+
+	function setOptionIndex(index) {
+		control.currentIndex = index;
+	}
 }
