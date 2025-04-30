@@ -114,15 +114,6 @@ Flickable {
             }
 
             SettingBoolean {
-                settingText: "Fog";
-                settingEnabledCondition: () => { return Render.fogEnabled ? true : false }
-
-                onSettingEnabledChanged: {
-                    Render.fogEnabled = settingEnabled;
-                }
-            }
-
-            SettingBoolean {
                 settingText: "Ambient Occlusion";
                 settingEnabledCondition: () => { return Render.ambientOcclusionEnabled }
 
