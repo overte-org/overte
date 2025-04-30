@@ -22,8 +22,11 @@ SettingBoolean {
 	// Provide the label for the setting (String).
 	settingText: "Rendering effects";
 
-	// Set the initial value of the boolean based on the current setting (bool).
-	settingEnabled: Render.renderMethod == 0;
+	// Pass a function that is executed and the resulting value is set to the internal variable "settingEnabled"
+	// This function is executed when the component is loaded, setting the initial state of the boolean.
+	// When setting a graphics preset, all SettingBoolean elements have their "update()" function executed.
+	// The "update()" function executes the function provided here as the "settingEnabledCondition".
+	settingEnabledCondition: function () { return Render.renderMethod === 0; }
 
 	// When the value is changed, execute...
 	onSettingEnabledChanged: {
