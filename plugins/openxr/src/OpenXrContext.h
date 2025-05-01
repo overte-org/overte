@@ -79,6 +79,12 @@ public:
     // whether the headset is on, using XR_EXT_user_presence
     bool _hmdMounted = true;
 
+    bool _handTrackingSupported = false;
+
+    PFN_xrCreateHandTrackerEXT xrCreateHandTrackerEXT;
+    PFN_xrLocateHandJointsEXT xrLocateHandJointsEXT;
+    PFN_xrDestroyHandTrackerEXT xrDestroyHandTrackerEXT;
+
 private:
     XrSessionState _lastSessionState = XR_SESSION_STATE_UNKNOWN;
 

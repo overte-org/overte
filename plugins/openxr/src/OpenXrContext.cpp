@@ -97,6 +97,7 @@ bool OpenXrContext::initInstance() {
     bool openglSupported = false;
     bool userPresenceSupported = false;
     bool odysseyControllerSupported = false;
+    bool handTrackingSupported = false;
 
     qCInfo(xr_context_cat, "Runtime supports %d extensions:", count);
     for (uint32_t i = 0; i < count; i++) {
@@ -107,6 +108,8 @@ bool OpenXrContext::initInstance() {
             userPresenceSupported = true;
         } else if (strcmp(XR_EXT_SAMSUNG_ODYSSEY_CONTROLLER_EXTENSION_NAME, properties[i].extensionName) == 0) {
             odysseyControllerSupported = true;
+        } else if (strcmp(XR_EXT_HAND_TRACKING_EXTENSION_NAME, properties[i].extensionName) == 0) {
+            handTrackingSupported = true;
         }
     }
 
@@ -125,18 +128,23 @@ bool OpenXrContext::initInstance() {
         enabled.push_back(XR_EXT_SAMSUNG_ODYSSEY_CONTROLLER_EXTENSION_NAME);
     }
 
+    if (handTrackingSupported) {
+        enabled.push_back(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
+        _handTrackingSupported = true;
+    }
+
     XrInstanceCreateInfo info = {
-      .type = XR_TYPE_INSTANCE_CREATE_INFO,
-      .applicationInfo = {
-          .applicationName = "Overte",
-          .applicationVersion = 1,
-          .engineName = "Overte",
-          .engineVersion = 0,
-          .apiVersion = XR_API_VERSION_1_0,
-      },
-      .enabledExtensionCount = (uint32_t)enabled.size(),
-      .enabledExtensionNames = enabled.data(),
-  };
+        .type = XR_TYPE_INSTANCE_CREATE_INFO,
+        .applicationInfo = {
+            .applicationName = "Overte",
+            .applicationVersion = 1,
+            .engineName = "Overte",
+            .engineVersion = 0,
+            .apiVersion = XR_API_VERSION_1_0,
+        },
+        .enabledExtensionCount = (uint32_t)enabled.size(),
+        .enabledExtensionNames = enabled.data(),
+    };
 
     result = xrCreateInstance(&info, &_instance);
 
@@ -182,7 +190,17 @@ bool OpenXrContext::initSystem() {
 
     XrSystemProperties props = {
         .type = XR_TYPE_SYSTEM_PROPERTIES,
+        .next = nullptr,
     };
+
+    XrSystemHandTrackingPropertiesEXT handTrackingProps = {
+        .type = XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT,
+        .next = props.next,
+    };
+
+    if (_handTrackingSupported) {
+        props.next = &handTrackingProps;
+    }
 
     result = xrGetSystemProperties(_instance, _systemId, &props);
     if (!xrCheck(_instance, result, "Failed to get System properties"))
@@ -196,6 +214,34 @@ bool OpenXrContext::initSystem() {
            props.graphicsProperties.maxSwapchainImageWidth);
     qCInfo(xr_context_cat, "Orientation Tracking: %d", props.trackingProperties.orientationTracking);
     qCInfo(xr_context_cat, "Position Tracking   : %d", props.trackingProperties.positionTracking);
+
+    auto next = reinterpret_cast<const XrExtensionProperties*>(props.next);
+    while (next) {
+        if (next->type == XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT) {
+            auto ext = reinterpret_cast<const XrSystemHandTrackingPropertiesEXT*>(next);
+            _handTrackingSupported = ext->supportsHandTracking;
+
+            xrGetInstanceProcAddr(
+                _instance,
+                "xrCreateHandTrackerEXT",
+                reinterpret_cast<PFN_xrVoidFunction*>(&xrCreateHandTrackerEXT)
+            );
+
+            xrGetInstanceProcAddr(
+                _instance,
+                "xrDestroyHandTrackerEXT",
+                reinterpret_cast<PFN_xrVoidFunction*>(&xrDestroyHandTrackerEXT)
+            );
+
+            xrGetInstanceProcAddr(
+                _instance,
+                "xrLocateHandJointsEXT",
+                reinterpret_cast<PFN_xrVoidFunction*>(&xrLocateHandJointsEXT)
+            );
+        }
+
+        next = reinterpret_cast<const XrExtensionProperties*>(next->next);
+    }
 
     return true;
 }
