@@ -70,7 +70,7 @@ function toQML(packet = { type: "" }) {
 }
 
 async function runTest() {
-	let testBits = [512, 1024, 2048, 3072, 4096];
+	let testBits = [1024, 2048, 3072, 4096];
 	testBits.forEach((bitLength) => rsa.runRSATest(bitLength));
 }
 

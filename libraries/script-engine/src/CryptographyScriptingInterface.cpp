@@ -27,8 +27,9 @@ CryptographyScriptingInterface::~CryptographyScriptingInterface() {
     }
 }
 
-// Creates a valid EVP_PKEY from a QString PEM formatted private key.
 EVP_PKEY* CryptographyScriptingInterface::loadPrivateKeyFromPEM(const QString privateKeyPEM) {
+    // Creates a valid EVP_PKEY from a QString PEM formatted private key.
+
     QString trimmedPrivateKeyPEM = privateKeyPEM.trimmed();
     // Convert QString to QByteArray
     QByteArray pemBytes = trimmedPrivateKeyPEM.toUtf8();
@@ -52,8 +53,8 @@ EVP_PKEY* CryptographyScriptingInterface::loadPrivateKeyFromPEM(const QString pr
     return privateKey; // Return the loaded private key
 }
 
-// Creates a valid EVP_PKEY from a QString PEM formatted public key.
 EVP_PKEY* CryptographyScriptingInterface::loadPublicKeyFromPEM(const QString publicKeyPEM) {
+    // Creates a valid EVP_PKEY from a QString PEM formatted public key.
     QString trimmedPublicKeyPEM = publicKeyPEM.trimmed();
 
     // Convert QString to QByteArray
@@ -85,10 +86,9 @@ int CryptographyScriptingInterface::getMaximumMessageLength(const EVP_PKEY* publ
     return keyLengthBytes - 2 * SHA256_DIGEST_LENGTH - 2;
 }
 
-
 QVariant CryptographyScriptingInterface::generateRSAKeypair(const int bits) {
     QVariantMap keypair; // Map to hold the generated keys
-    const int VALID_KEY_LENGTHS[] = {512, 1024, 2048, 3072, 4096};
+    const int VALID_KEY_LENGTHS[] = {1024, 2048, 3072, 4096};
     const bool IS_VALID_KEY_LENGTH = std::any_of(std::begin(VALID_KEY_LENGTHS), std::end(VALID_KEY_LENGTHS), [&](int i){return i==bits;});
 
     // Create a new context for RSA key generation
