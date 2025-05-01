@@ -110,6 +110,13 @@ void OpenXrInputPlugin::saveSettings() const {
 
 OpenXrInputPlugin::InputDevice::InputDevice(std::shared_ptr<OpenXrContext> c) : controller::InputDevice("OpenXR") {
     _context = c;
+
+    qCInfo(xr_input_cat) << "Hand tracking supported:" << _context->_handTrackingSupported;
+}
+
+OpenXrInputPlugin::InputDevice::~InputDevice() {
+    if (_handTracker[0] != XR_NULL_HANDLE) { _context->xrDestroyHandTrackerEXT(_handTracker[0]); }
+    if (_handTracker[1] != XR_NULL_HANDLE) { _context->xrDestroyHandTrackerEXT(_handTracker[1]); }
 }
 
 void OpenXrInputPlugin::InputDevice::focusOutEvent() {
@@ -340,6 +347,50 @@ controller::Input::NamedVector OpenXrInputPlugin::InputDevice::getAvailableInput
         makePair(RIGHT_GRIP, "RightGrip"),
         makePair(RIGHT_PRIMARY_THUMB, "RightPrimaryThumb"),
         makePair(RIGHT_SECONDARY_THUMB, "RightSecondaryThumb"),
+
+        // hand tracking
+
+        makePair(LEFT_HAND_THUMB1, "LeftHandThumb1"),
+        makePair(LEFT_HAND_THUMB2, "LeftHandThumb2"),
+        makePair(LEFT_HAND_THUMB3, "LeftHandThumb3"),
+        makePair(LEFT_HAND_THUMB4, "LeftHandThumb4"),
+        makePair(LEFT_HAND_INDEX1, "LeftHandIndex1"),
+        makePair(LEFT_HAND_INDEX2, "LeftHandIndex2"),
+        makePair(LEFT_HAND_INDEX3, "LeftHandIndex3"),
+        makePair(LEFT_HAND_INDEX4, "LeftHandIndex4"),
+        makePair(LEFT_HAND_MIDDLE1, "LeftHandMiddle1"),
+        makePair(LEFT_HAND_MIDDLE2, "LeftHandMiddle2"),
+        makePair(LEFT_HAND_MIDDLE3, "LeftHandMiddle3"),
+        makePair(LEFT_HAND_MIDDLE4, "LeftHandMiddle4"),
+        makePair(LEFT_HAND_RING1, "LeftHandRing1"),
+        makePair(LEFT_HAND_RING2, "LeftHandRing2"),
+        makePair(LEFT_HAND_RING3, "LeftHandRing3"),
+        makePair(LEFT_HAND_RING4, "LeftHandRing4"),
+        makePair(LEFT_HAND_PINKY1, "LeftHandPinky1"),
+        makePair(LEFT_HAND_PINKY2, "LeftHandPinky2"),
+        makePair(LEFT_HAND_PINKY3, "LeftHandPinky3"),
+        makePair(LEFT_HAND_PINKY4, "LeftHandPinky4"),
+
+        makePair(RIGHT_HAND_THUMB1, "RightHandThumb1"),
+        makePair(RIGHT_HAND_THUMB2, "RightHandThumb2"),
+        makePair(RIGHT_HAND_THUMB3, "RightHandThumb3"),
+        makePair(RIGHT_HAND_THUMB4, "RightHandThumb4"),
+        makePair(RIGHT_HAND_INDEX1, "RightHandIndex1"),
+        makePair(RIGHT_HAND_INDEX2, "RightHandIndex2"),
+        makePair(RIGHT_HAND_INDEX3, "RightHandIndex3"),
+        makePair(RIGHT_HAND_INDEX4, "RightHandIndex4"),
+        makePair(RIGHT_HAND_MIDDLE1, "RightHandMiddle1"),
+        makePair(RIGHT_HAND_MIDDLE2, "RightHandMiddle2"),
+        makePair(RIGHT_HAND_MIDDLE3, "RightHandMiddle3"),
+        makePair(RIGHT_HAND_MIDDLE4, "RightHandMiddle4"),
+        makePair(RIGHT_HAND_RING1, "RightHandRing1"),
+        makePair(RIGHT_HAND_RING2, "RightHandRing2"),
+        makePair(RIGHT_HAND_RING3, "RightHandRing3"),
+        makePair(RIGHT_HAND_RING4, "RightHandRing4"),
+        makePair(RIGHT_HAND_PINKY1, "RightHandPinky1"),
+        makePair(RIGHT_HAND_PINKY2, "RightHandPinky2"),
+        makePair(RIGHT_HAND_PINKY3, "RightHandPinky3"),
+        makePair(RIGHT_HAND_PINKY4, "RightHandPinky4"),
     };
 
     return availableInputs;
@@ -538,6 +589,20 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
     if (!xrCheck(_context->_instance, result, "Failed to attach action set"))
         return false;
 
+    if (_context->_handTrackingSupported) {
+        XrHandTrackerCreateInfoEXT createInfo = {
+            .type = XR_TYPE_HAND_TRACKER_CREATE_INFO_EXT,
+            .next = nullptr,
+            .handJointSet = XR_HAND_JOINT_SET_DEFAULT_EXT,
+        };
+
+        createInfo.hand = XR_HAND_LEFT_EXT;
+        xrCheck(_context->_instance, _context->xrCreateHandTrackerEXT(_context->_session, &createInfo, &_handTracker[0]), "Failed to create left hand tracker");
+
+        createInfo.hand = XR_HAND_RIGHT_EXT;
+        xrCheck(_context->_instance, _context->xrCreateHandTrackerEXT(_context->_session, &createInfo, &_handTracker[1]), "Failed to create right hand tracker");
+    }
+
     _actionsInitialized = true;
 
     return true;
@@ -710,6 +775,12 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     if (_context->_stickEmulation) {
         emulateStickFromTrackpad();
     }
+
+    if (_context->_handTrackingSupported) {
+        for (int i = 0; i < HAND_COUNT; i++) {
+            getHandTrackingInputs(i, sensorToAvatar);
+        }
+    }
 }
 
 void OpenXrInputPlugin::InputDevice::emulateStickFromTrackpad() {
@@ -774,4 +845,81 @@ void OpenXrInputPlugin::InputDevice::awfulRightStickHackForBrokenScripts() {
     if (stick.y < -0.6f && stick.x > -0.4f && stick.x < 0.4f) {
         _axisStateMap[controller::RY].value = 1.0f;
     }
+}
+
+void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& sensorToAvatar) {
+    if (_handTracker[i] == XR_NULL_HANDLE) { return; }
+    if (!_context->_lastPredictedDisplayTime.has_value()) { return; }
+
+    XrHandJointLocationEXT joints[XR_HAND_JOINT_COUNT_EXT];
+    XrHandJointLocationsEXT locations = {
+        .type = XR_TYPE_HAND_JOINT_LOCATIONS_EXT,
+        .jointCount = XR_HAND_JOINT_COUNT_EXT,
+        .jointLocations = joints,
+    };
+
+    XrHandJointsLocateInfoEXT locateInfo = {
+        .type = XR_TYPE_HAND_JOINTS_LOCATE_INFO_EXT,
+        .baseSpace = _context->_stageSpace,
+        .time = _context->_lastPredictedDisplayTime.value(),
+    };
+
+    _context->xrLocateHandJointsEXT(_handTracker[i], &locateInfo, &locations);
+
+    if (!locations.isActive) { return; }
+
+    // Handles coordinate space conversion:
+    //
+    //   OpenXR
+    // * Y-up relative to the fingernail
+    // * Z flowing down into the finger and wrist
+    // * Finger bone chain ends at the metacarpals and wrist
+    // * Has finger tip bones
+    // * Has a palm bone in the center of the middle metacarpal
+    // * Can report joints as they are positioned on the user's real hand
+    //
+    //   Mixamo
+    // * Z facing away from the palm
+    // * Y flowing out of the finger
+    // * Finger bone chain ends at the knuckles, except for the thumb, which has a metacarpal
+    // * Thumb tip has an extra bone
+    //
+    auto xrJointToGlm = [&](int joint) -> controller::Pose {
+        auto position = xrVecToGlm(joints[joint].pose.position);
+        auto rotation = xrQuatToGlm(joints[joint].pose.orientation);
+
+        // rotate the thumb bones from thumbnail-relative to palm-relative, 90°
+        if (joint >= XR_HAND_JOINT_THUMB_METACARPAL_EXT && joint <= XR_HAND_JOINT_THUMB_TIP_EXT) {
+            // ccw on the right hand, cw on the left hand
+            rotation = glm::rotate(rotation, glm::radians(i == 0 ? 90.0f : -90.0f), Vectors::UNIT_Z);
+        }
+
+        // rotate 90° clockwise on X, then rotate 180° on Z
+        rotation = glm::rotate(rotation, glm::radians(90.0f), Vectors::UNIT_X);
+        rotation = glm::rotate(rotation, glm::radians(180.0f), Vectors::UNIT_Z);
+
+        return controller::Pose(position, rotation).transform(sensorToAvatar);
+    };
+
+    _poseStateMap[i == 0 ? controller::LEFT_HAND : controller::RIGHT_HAND] = xrJointToGlm(XR_HAND_JOINT_WRIST_EXT);
+
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_THUMB1 : controller::RIGHT_HAND_THUMB1] = xrJointToGlm(XR_HAND_JOINT_THUMB_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_THUMB2 : controller::RIGHT_HAND_THUMB2] = xrJointToGlm(XR_HAND_JOINT_THUMB_PROXIMAL_EXT);
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_THUMB3 : controller::RIGHT_HAND_THUMB3] = xrJointToGlm(XR_HAND_JOINT_THUMB_DISTAL_EXT);
+
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_INDEX1 : controller::RIGHT_HAND_INDEX1] = xrJointToGlm(XR_HAND_JOINT_INDEX_PROXIMAL_EXT);
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_INDEX2 : controller::RIGHT_HAND_INDEX2] = xrJointToGlm(XR_HAND_JOINT_INDEX_INTERMEDIATE_EXT);
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_INDEX3 : controller::RIGHT_HAND_INDEX3] = xrJointToGlm(XR_HAND_JOINT_INDEX_DISTAL_EXT);
+
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_MIDDLE1 : controller::RIGHT_HAND_MIDDLE1] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_PROXIMAL_EXT);
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_MIDDLE2 : controller::RIGHT_HAND_MIDDLE2] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_INTERMEDIATE_EXT);
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_MIDDLE3 : controller::RIGHT_HAND_MIDDLE3] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_DISTAL_EXT);
+
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_RING1 : controller::RIGHT_HAND_RING1] = xrJointToGlm(XR_HAND_JOINT_RING_PROXIMAL_EXT);
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_RING2 : controller::RIGHT_HAND_RING2] = xrJointToGlm(XR_HAND_JOINT_RING_INTERMEDIATE_EXT);
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_RING3 : controller::RIGHT_HAND_RING3] = xrJointToGlm(XR_HAND_JOINT_RING_DISTAL_EXT);
+
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_PINKY1 : controller::RIGHT_HAND_PINKY1] = xrJointToGlm(XR_HAND_JOINT_LITTLE_PROXIMAL_EXT);
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_PINKY2 : controller::RIGHT_HAND_PINKY2] = xrJointToGlm(XR_HAND_JOINT_LITTLE_INTERMEDIATE_EXT);
+    _poseStateMap[i == 0 ? controller::LEFT_HAND_PINKY3 : controller::RIGHT_HAND_PINKY3] = xrJointToGlm(XR_HAND_JOINT_LITTLE_DISTAL_EXT);
 }
