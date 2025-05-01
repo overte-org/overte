@@ -889,7 +889,7 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
         auto rotation = xrQuatToGlm(joints[joint].pose.orientation);
 
         // rotate the thumb bones from thumbnail-relative to palm-relative, 90°
-        if (joint >= XR_HAND_JOINT_THUMB_METACARPAL_EXT && i <= XR_HAND_JOINT_THUMB_TIP_EXT) {
+        if (joint >= XR_HAND_JOINT_THUMB_METACARPAL_EXT && joint <= XR_HAND_JOINT_THUMB_TIP_EXT) {
             // ccw on the right hand, cw on the left hand
             rotation = glm::rotate(rotation, glm::radians(i == 0 ? 90.0f : -90.0f), Vectors::UNIT_Z);
         }
