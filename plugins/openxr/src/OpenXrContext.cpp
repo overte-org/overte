@@ -382,6 +382,8 @@ bool OpenXrContext::pollEvents() {
                     if (!xrCheck(_instance, res, "Failed to get interaction profile"))
                         continue;
 
+                    _currentProfilePaths[i] = state.interactionProfile;
+
                     _stickEmulation = false;
                     if (_viveControllerPath != XR_NULL_PATH && state.interactionProfile == _viveControllerPath) {
                         _stickEmulation = true;
