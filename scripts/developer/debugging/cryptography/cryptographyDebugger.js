@@ -77,5 +77,3 @@ async function runTest() {
 function debugLog(message) {
 	console.log(message);
 }
-
-modules.exports = { debugLog };
