@@ -42,6 +42,9 @@ env:
   # Specify build preset, since on Windows, `cmake --build` appears to be unaware of of which build preset to use, using defaults instead.
   CMAKE_BUILD_EXTRA: --preset conan-release
 
+  # Work around AppImages not executing in Docker. https://github.com/AppImage/AppImageKit/issues/912#issuecomment-528669441
+  APPIMAGE_EXTRACT_AND_RUN: 1
+
 jobs:
   build_pr:
     name: "${{matrix.os}}, ${{matrix.arch}}"
@@ -62,7 +65,7 @@ jobs:
               arch: amd64
               build_type: full
               qt_source: system
-              apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
+              apt-dependencies: libxcb-glx0-dev libqt5multimedia5-plugins # add missing dependencies to docker image when convenient
             # Android builds are currently failing
             #- os: ubuntu-18.04
             #  build_type: android
@@ -74,7 +77,7 @@ jobs:
               arch: aarch64
               build_type: full
               qt_source: system
-              apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
+              apt-dependencies: libxcb-glx0-dev libqt5multimedia5-plugins # add missing dependencies to docker image when convenient
         fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
@@ -93,10 +96,8 @@ jobs:
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
           echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=*" >> $GITHUB_ENV
+          echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=$CMAKE_BUILD_EXTRA -- -j$(nproc)" >> $GITHUB_ENV
-          # Don't optimize builds to save build time.
-          echo "OVERTE_OPTIMIZE=false" >> $GITHUB_ENV
 
           if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
             if [ "${{ matrix.build_type }}" = "full" ]; then
@@ -153,8 +154,12 @@ jobs:
 
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
         if [ "${{ matrix.build_type }}" = "full" ]; then
-          echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
-          echo "INSTALLER=Overte-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
+          if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
+            echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}-$(uname -m).$INSTALLER_EXT" >> $GITHUB_ENV
+          else
+            echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "INSTALLER=Overte-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
+          fi
         else
           echo "ARTIFACT_PATTERN=Overte-Interface-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
           echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
@@ -274,7 +279,7 @@ jobs:
         cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build Installer
-      if: matrix.build_type != 'android' && matrix.arch != 'aarch64'
+      if: matrix.build_type != 'android'
       shell: bash
       run: |
         echo "Retry code from https://unix.stackexchange.com/a/137639"
@@ -338,7 +343,6 @@ jobs:
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Upload Artifact
-      if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS')
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
