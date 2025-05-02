@@ -231,7 +231,7 @@ Application::Application(
     _constrainToolbarPosition("toolbar/constrainToolbarToCenterX", true),
     _awayStateWhenFocusLostInVREnabled("awayStateWhenFocusLostInVREnabled", DEFAULT_AWAY_STATE_WHEN_FOCUS_LOST_IN_VR_ENABLED),
     _preferredCursor("preferredCursor", DEFAULT_CURSOR_NAME),
-    _darkTheme("darkTheme", false),
+    _darkTheme("darkTheme", true),
     _miniTabletEnabledSetting("miniTabletEnabled", DEFAULT_MINI_TABLET_ENABLED),
     // Entities
     _maxOctreePacketsPerSecond("maxOctreePPS", DEFAULT_MAX_OCTREE_PPS),
