@@ -81,9 +81,9 @@ public:
 
     bool _handTrackingSupported = false;
 
-    PFN_xrCreateHandTrackerEXT xrCreateHandTrackerEXT;
-    PFN_xrLocateHandJointsEXT xrLocateHandJointsEXT;
-    PFN_xrDestroyHandTrackerEXT xrDestroyHandTrackerEXT;
+    PFN_xrCreateHandTrackerEXT xrCreateHandTrackerEXT = nullptr;
+    PFN_xrLocateHandJointsEXT xrLocateHandJointsEXT = nullptr;
+    PFN_xrDestroyHandTrackerEXT xrDestroyHandTrackerEXT = nullptr;
 
 private:
     XrSessionState _lastSessionState = XR_SESSION_STATE_UNKNOWN;

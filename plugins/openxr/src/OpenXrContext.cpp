@@ -243,6 +243,11 @@ bool OpenXrContext::initSystem() {
         next = reinterpret_cast<const XrExtensionProperties*>(next->next);
     }
 
+    // don't start up hand tracking stuff if it's force disabled
+    if (qApp->arguments().contains("--xrNoHandTracking")) {
+        _handTrackingSupported = false;
+    }
+
     return true;
 }
 

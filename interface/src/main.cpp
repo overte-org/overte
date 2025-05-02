@@ -286,9 +286,13 @@ int main(int argc, const char* argv[]) {
         "getProtocolVersionData",
         "Debug option. Returns the network protocol detailed data in JSON."
     );
-    QCommandLineOption useExperimentalXR(
+    QCommandLineOption useExperimentalXROption(
         "useExperimentalXR",
         "Enables the experimental OpenXR plugin and disables the OpenVR plugin. Some features available in OpenVR aren't yet available in OpenXR."
+    );
+    QCommandLineOption xrNoHandTrackingOption(
+        "xrNoHandTracking",
+        "Debug option. Disables OpenXR hand tracking, even if it's supported by the runtime."
     );
 
     // "--qmljsdebugger", which appears in output from "--help-all".
@@ -339,7 +343,8 @@ int main(int argc, const char* argv[]) {
     parser.addOption(getPluginsOption);
     parser.addOption(getProtocolVersionHashOption);
     parser.addOption(getProtocolVersionDataOption);
-    parser.addOption(useExperimentalXR);
+    parser.addOption(useExperimentalXROption);
+    parser.addOption(xrNoHandTrackingOption);
 
 
     QString applicationPath;

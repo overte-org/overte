@@ -541,7 +541,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
         {"/interaction_profiles/valve/index_controller", {
             {"left_primary_click",     hand_left  + "/a/click"},
             {"left_secondary_click",   hand_left  + "/b/click"},
-            {"left_squeeze_value",     hand_left  + "/squeeze/value"},
+            {"left_squeeze_value",     hand_left  + "/squeeze/force"},
             {"left_trigger_value",     hand_left  + "/trigger/value"},
             {"left_trigger_click",     hand_left  + "/trigger/click"},
             {"left_thumbstick",        hand_left  + "/thumbstick"},
@@ -552,7 +552,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
 
             {"right_primary_click",    hand_right  + "/a/click"},
             {"right_secondary_click",  hand_right  + "/b/click"},
-            {"right_squeeze_value",    hand_right  + "/squeeze/value"},
+            {"right_squeeze_value",    hand_right  + "/squeeze/force"},
             {"right_trigger_value",    hand_right  + "/trigger/value"},
             {"right_trigger_click",    hand_right  + "/trigger/click"},
             {"right_thumbstick",       hand_right  + "/thumbstick"},
@@ -662,9 +662,19 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
             glm::mat4 handOffset = i == 0 ? glm::toMat4(leftRotationOffset) : glm::toMat4(rightRotationOffset);
 
             glm::mat4 posOffset(1.0f);
-            posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? 0.1f : -0.1f));
-            posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.16f);
-            posOffset *= glm::translate(glm::vec3(handOffset[2]) * -0.02f);
+
+            // vive controllers have bugged poses that aren't in the grip or aim position,
+            // they're always at the top near the tracking ring
+            if (_context->_stickEmulation) {
+                posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? 0.1f : -0.1f));
+                posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.16f);
+                posOffset *= glm::translate(glm::vec3(handOffset[2]) * -0.02f);
+            } else {
+                posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? -0.07f : 0.07f));
+                posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.10f);
+                posOffset *= glm::translate(glm::vec3(handOffset[2]) * -0.01f);
+            }
+
             _poseStateMap[i == 0 ? controller::LEFT_HAND : controller::RIGHT_HAND] =
                 pose.postTransform(posOffset).postTransform(handOffset).transform(sensorToAvatar);
         }
