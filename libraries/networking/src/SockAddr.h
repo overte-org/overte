@@ -57,6 +57,9 @@ public:
     QHostAddress* getAddressPointerIPv4() { return &_addressIPv4; }
     void setAddress(const QHostAddress& address);
 
+    SockAddr toIPv6Only() const { return {_socketType, QHostAddress(), _addressIPv6, _port}; }; // TODO(IPv6): set qobject name too
+    SockAddr toIPv4Only() const { return {_socketType, _addressIPv4, QHostAddress(), _port}; };
+
     quint16 getPort() const { return _port; }
     quint16* getPortPointer() { return &_port; }
     void setPort(quint16 port) { _port = port; }

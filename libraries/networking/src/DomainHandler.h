@@ -139,8 +139,8 @@ public:
     bool requiresICE() const { return !_iceServerSockAddr.isNull(); }
     const SockAddr& getICEServerSockAddr() const { return _iceServerSockAddr; }
     NetworkPeer& getICEPeer() { return _icePeer; }
-    void activateICELocalSocket();
-    void activateICEPublicSocket();
+    void activateICELocalSocket(QAbstractSocket::NetworkLayerProtocol protocol);
+    void activateICEPublicSocket(QAbstractSocket::NetworkLayerProtocol protocol);
 
     bool isConnected() const { return _isConnected; }
     void setIsConnected(bool isConnected);

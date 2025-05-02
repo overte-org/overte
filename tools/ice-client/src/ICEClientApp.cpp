@@ -95,7 +95,8 @@ ICEClientApp::ICEClientApp(int argc, char* argv[]) :
         }
     }
 
-    _iceServerAddr = SockAddr(SocketType::UDP, "127.0.0.1", ICE_SERVER_DEFAULT_PORT);
+    _iceServerAddrIPv4 = SockAddr(SocketType::UDP, "127.0.0.1", ICE_SERVER_DEFAULT_PORT);
+    _iceServerAddrIPv6 = SockAddr(SocketType::UDP, "::1", ICE_SERVER_DEFAULT_PORT);
     if (parser.isSet(iceServerAddressOption)) {
         // parse the IP and port combination for this target
         QString hostnamePortString = parser.value(iceServerAddressOption);
@@ -115,15 +116,15 @@ ICEClientApp::ICEClientApp(int argc, char* argv[]) :
             QMetaObject::invokeMethod(this, "quit", Qt::QueuedConnection);
         } else {
             if (address.protocol() == QAbstractSocket::IPv4Protocol) {
-                _iceServerAddr = SockAddr(SocketType::UDP, address, QHostAddress(), port);
+                _iceServerAddrIPv4 = SockAddr(SocketType::UDP, address, QHostAddress(), port);
             } else if (address.protocol() == QAbstractSocket::IPv6Protocol) {
-                _iceServerAddr = SockAddr(SocketType::UDP, QHostAddress(), address, port);
+                _iceServerAddrIPv6 = SockAddr(SocketType::UDP, QHostAddress(), address, port);
             }
         }
     }
 
     if (_verbose) {
-        qDebug() << "ICE-server address is" << _iceServerAddr;
+        qDebug() << "ICE-server address is" << _iceServerAddrIPv4 << " IPv6: " << _iceServerAddrIPv6;
     }
 
     setState(lookUpStunServer);
@@ -164,8 +165,10 @@ void ICEClientApp::openSocket() {
     if (_verbose) {
         qDebug() << "local port is" << _socket->localPort(SocketType::UDP);
     }
-    _localSockAddr = SockAddr(SocketType::UDP, "127.0.0.1", _socket->localPort(SocketType::UDP));
-    _publicSockAddr = SockAddr(SocketType::UDP, "127.0.0.1", _socket->localPort(SocketType::UDP));
+    _localSockAddrIPv4 = SockAddr(SocketType::UDP, "127.0.0.1", _socket->localPort(SocketType::UDP));
+    _localSockAddrIPv6 = SockAddr(SocketType::UDP, "::1", _socket->localPort(SocketType::UDP));
+    _publicSockAddrIPv4 = SockAddr(SocketType::UDP, "127.0.0.1", _socket->localPort(SocketType::UDP));
+    _publicSockAddrIPv6 = SockAddr(SocketType::UDP, "::1", _socket->localPort(SocketType::UDP));
     _domainPingCount = 0;
 }
 
@@ -211,7 +214,8 @@ void ICEClientApp::doSomething() {
             if (_verbose) {
                 qDebug() << "using cached STUN response";
             }
-            _publicSockAddr.setPort(_socket->localPort(SocketType::UDP));
+            _publicSockAddrIPv4.setPort(_socket->localPort(SocketType::UDP));
+            _publicSockAddrIPv6.setPort(_socket->localPort(SocketType::UDP));
             setState(talkToIceServer);
         }
 
@@ -231,7 +235,8 @@ void ICEClientApp::doSomething() {
             qDebug() << "I am" << _sessionUUID;
         }
 
-        sendPacketToIceServer(PacketType::ICEServerQuery, _iceServerAddr, _sessionUUID, peerID);
+        sendPacketToIceServer(PacketType::ICEServerQuery, _iceServerAddrIPv4, _sessionUUID, peerID);
+        sendPacketToIceServer(PacketType::ICEServerQuery, _iceServerAddrIPv6, _sessionUUID, peerID);
         _iceResponseTimer.setSingleShot(true);
         connect(&_iceResponseTimer, SIGNAL(timeout()), this, SLOT(iceResponseTimeout()));
         _iceResponseTimer.start(iceResponseTimeoutMilliSeconds);
@@ -266,7 +271,8 @@ void ICEClientApp::sendPacketToIceServer(PacketType packetType, const SockAddr& 
     std::unique_ptr<NLPacket> icePacket = NLPacket::create(packetType);
 
     QDataStream iceDataStream(icePacket.get());
-    iceDataStream << clientID << _publicSockAddr << _localSockAddr;
+    iceDataStream << clientID << _publicSockAddrIPv4 << _publicSockAddrIPv4
+        << _localSockAddrIPv4 << _localSockAddrIPv6;
 
     if (packetType == PacketType::ICEServerQuery) {
         assert(!peerID.isNull());
@@ -280,7 +286,8 @@ void ICEClientApp::sendPacketToIceServer(PacketType packetType, const SockAddr& 
     }
 
     // fillPacketHeader(packet, connectionSecret);
-    _socket->writePacket(*icePacket, _iceServerAddr);
+    _socket->writePacket(*icePacket, _iceServerAddrIPv4);
+    _socket->writePacket(*icePacket, _iceServerAddrIPv6);
 }
 
 void ICEClientApp::checkDomainPingCount() {
@@ -302,11 +309,29 @@ void ICEClientApp::icePingDomainServer() {
         qDebug() << "ice-pinging domain-server: " << _domainServerPeer;
     }
 
-    auto localPingPacket = LimitedNodeList::constructICEPingPacket(PingType::Local, _sessionUUID);
-    _socket->writePacket(*localPingPacket, _domainServerPeer.getLocalSocket());
+    auto localSocketIPv4 = _domainServerPeer.getLocalSocketIPv4();
+    if (!localSocketIPv4.isNull()) {
+        auto localPingPacket = LimitedNodeList::constructICEPingPacket(PingType::Local, _sessionUUID);
+        _socket->writePacket(*localPingPacket, localSocketIPv4);
+    }
 
-    auto publicPingPacket = LimitedNodeList::constructICEPingPacket(PingType::Public, _sessionUUID);
-    _socket->writePacket(*publicPingPacket, _domainServerPeer.getPublicSocket());
+    auto localSocketIPv6 = _domainServerPeer.getLocalSocketIPv6();
+    if (!localSocketIPv6.isNull()) {
+        auto localPingPacket = LimitedNodeList::constructICEPingPacket(PingType::Local, _sessionUUID);
+        _socket->writePacket(*localPingPacket, localSocketIPv6);
+    }
+
+    auto publicSocketIPv4 = _domainServerPeer.getPublicSocketIPv4();
+    if (!publicSocketIPv4.isNull()) {
+        auto publicPingPacket = LimitedNodeList::constructICEPingPacket(PingType::Public, _sessionUUID);
+        _socket->writePacket(*publicPingPacket, publicSocketIPv4);
+    }
+
+    auto publicSocketIPv6 = _domainServerPeer.getPublicSocketIPv6();
+    if (!publicSocketIPv6.isNull()) {
+        auto publicPingPacket = LimitedNodeList::constructICEPingPacket(PingType::Public, _sessionUUID);
+        _socket->writePacket(*publicPingPacket, publicSocketIPv6);
+    }
     checkDomainPingCount();
 }
 
@@ -327,9 +352,10 @@ void ICEClientApp::processSTUNResponse(std::unique_ptr<udt::BasePacket> packet) 
     QHostAddress newPublicAddress;
     // TODO(IPv6): This needs to be modified for IPv6 support. I'm not sure how STUN handles IPv6.
     if (LimitedNodeList::parseSTUNResponse(packet.get(), newPublicAddress, newPublicPort)) {
-        _publicSockAddr = SockAddr(SocketType::UDP, newPublicAddress, QHostAddress(), newPublicPort);
+        _publicSockAddrIPv4 = SockAddr(SocketType::UDP, newPublicAddress, QHostAddress(), newPublicPort);
+        _publicSockAddrIPv6 = SockAddr(SocketType::UDP, QHostAddress(), _localSockAddrIPv6.getAddressIPv6(), _localSockAddrIPv6.getPort());
         if (_verbose) {
-            qDebug() << "My public address is" << _publicSockAddr;
+            qDebug() << "My public address is" << _publicSockAddrIPv4 << " " << _publicSockAddrIPv6;
         }
         _stunResultSet = true;
         setState(talkToIceServer);
@@ -389,8 +415,10 @@ void ICEClientApp::processPacket(std::unique_ptr<udt::Packet> packet) {
             qDebug() << "got packet: " << nlPacket->getType();
         }
         if (_domainServerPeerSet && _state == waitForIceReply &&
-            (senderAddr == _domainServerPeer.getLocalSocket() ||
-             senderAddr == _domainServerPeer.getPublicSocket())) {
+            (senderAddr == _domainServerPeer.getLocalSocketIPv4() ||
+             senderAddr == _domainServerPeer.getLocalSocketIPv6() ||
+             senderAddr == _domainServerPeer.getPublicSocketIPv4() ||
+             senderAddr == _domainServerPeer.getPublicSocketIPv6())) {
 
             delete _pingDomainTimer;
             _pingDomainTimer = nullptr;

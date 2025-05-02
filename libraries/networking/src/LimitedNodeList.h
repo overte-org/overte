@@ -178,7 +178,8 @@ public:
     SharedNodePointer nodeWithLocalID(Node::LocalID localID) const;
 
     SharedNodePointer addOrUpdateNode(const QUuid& uuid, NodeType_t nodeType,
-                                      const SockAddr& publicSocket, const SockAddr& localSocket,
+                                      const SockAddr& publicSocketIPv4, const SockAddr& publicSocketIPv6,
+                                      const SockAddr& localSocketIPv4, const SockAddr& localSocketIPv6,
                                       Node::LocalID localID = Node::NULL_LOCAL_ID, bool isReplicated = false,
                                       bool isUpstream = false, const QUuid& connectionSecret = QUuid(),
                                       const NodePermissions& permissions = DEFAULT_AGENT_PERMISSIONS);
@@ -186,8 +187,10 @@ public:
     static bool parseSTUNResponse(udt::BasePacket* packet, QHostAddress& newPublicAddress, uint16_t& newPublicPort);
     bool hasCompletedInitialSTUN() const { return _hasCompletedInitialSTUN; }
 
-    const SockAddr& getLocalSockAddr() const { return _localSockAddr; }
-    const SockAddr& getPublicSockAddr() const { return _publicSockAddr; }
+    const SockAddr& getLocalSockAddrIPv4() const { return _localSockAddrIPv4; }
+    const SockAddr& getLocalSockAddrIPv6() const { return _localSockAddrIPv6; }
+    const SockAddr& getPublicSockAddrIPv4() const { return _publicSockAddrIPv4; }
+    const SockAddr& getPublicSockAddrIPv6() const { return _publicSockAddrIPv6; }
     const SockAddr& getSTUNSockAddr() const { return _stunSockAddr; }
 
     void processKillNode(ReceivedMessage& message);
@@ -382,8 +385,10 @@ signals:
 
     void clientConnectionToNodeReset(SharedNodePointer);
 
-    void localSockAddrChanged(const SockAddr& localSockAddr);
-    void publicSockAddrChanged(const SockAddr& publicSockAddr);
+    void localSockAddrIPv4Changed(const SockAddr& localSockAddr);
+    void localSockAddrIPv6Changed(const SockAddr& localSockAddr);
+    void publicSockAddrIPv4Changed(const SockAddr& publicSockAddr);
+    void publicSockAddrIPv6Changed(const SockAddr& publicSockAddr);
 
     void isAllowedEditorChanged(bool isAllowedEditor);
     void canRezChanged(bool canRez);
@@ -407,8 +412,10 @@ protected:
     struct NewNodeInfo {
         qint8 type;
         QUuid uuid;
-        SockAddr publicSocket;
-        SockAddr localSocket;
+        SockAddr publicSocketIPv4;
+        SockAddr publicSocketIPv6;
+        SockAddr localSocketIPv4;
+        SockAddr localSocketIPv6;
         NodePermissions permissions;
         bool isReplicated;
         Node::LocalID sessionLocalID;
@@ -422,7 +429,8 @@ protected:
     qint64 sendPacket(std::unique_ptr<NLPacket> packet, const Node& destinationNode,
                       const SockAddr& overridenSockAddr);
 
-    void setLocalSocket(const SockAddr& sockAddr);
+    void setLocalSocketIPv4(const SockAddr& sockAddr);
+    void setLocalSocketIPv6(const SockAddr& sockAddr);
 
     bool packetSourceAndHashMatchAndTrackBandwidth(const udt::Packet& packet, Node* sourceNode = nullptr);
     void processSTUNResponse(std::unique_ptr<udt::BasePacket> packet);
@@ -445,8 +453,10 @@ protected:
     mutable QReadWriteLock _nodeMutex { QReadWriteLock::Recursive };
     udt::Socket _nodeSocket;
     QUdpSocket* _dtlsSocket { nullptr };
-    SockAddr _localSockAddr;
-    SockAddr _publicSockAddr;
+    SockAddr _localSockAddrIPv4;
+    SockAddr _localSockAddrIPv6;
+    SockAddr _publicSockAddrIPv4;
+    SockAddr _publicSockAddrIPv6;
     SockAddr _stunSockAddr { SocketType::UDP, STUN_SERVER_HOSTNAME, STUN_SERVER_PORT, false, QAbstractSocket::IPv4Protocol};
     bool _hasTCPCheckedLocalSocket { false };
     bool _useAuthentication { true };

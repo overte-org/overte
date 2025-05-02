@@ -76,10 +76,13 @@ private:
 
     QTimer* _pingDomainTimer { nullptr };
 
-    SockAddr _iceServerAddr;
+    SockAddr _iceServerAddrIPv4;
+    SockAddr _iceServerAddrIPv6;
 
-    SockAddr _localSockAddr;
-    SockAddr _publicSockAddr;
+    SockAddr _localSockAddrIPv4;
+    SockAddr _localSockAddrIPv6;
+    SockAddr _publicSockAddrIPv4;
+    SockAddr _publicSockAddrIPv6;
     udt::Socket* _socket { nullptr };
 
     bool _domainServerPeerSet { false };

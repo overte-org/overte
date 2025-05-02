@@ -306,30 +306,36 @@ void DomainHandler::setIceServerHostnameAndID(const QString& iceServerHostname, 
     }
 }
 
-void DomainHandler::activateICELocalSocket() {
+void DomainHandler::activateICELocalSocket(QAbstractSocket::NetworkLayerProtocol protocol) {
     DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetDomainSocket);
-    _sockAddr = _icePeer.getLocalSocket();
-    _domainURL.setScheme(URL_SCHEME_OVERTE);
-    // TODO(IPv6):
-    QHostAddress IPv4 = _sockAddr.getAddressIPv4();
-    QHostAddress IPv6 = _sockAddr.getAddressIPv6();
-    QHostAddress address = !IPv6.isNull() ? IPv6 : IPv4;
-    _domainURL.setHost(address.toString());
+    if (protocol == QAbstractSocket::IPv4Protocol) {
+        _sockAddr = _icePeer.getLocalSocketIPv4();
+        _domainURL.setScheme(URL_SCHEME_OVERTE);
+        QHostAddress address = _sockAddr.getAddressIPv4();
+        _domainURL.setHost(address.toString());
+    } else {
+        _sockAddr = _icePeer.getLocalSocketIPv6();
+        _domainURL.setScheme(URL_SCHEME_OVERTE);
+        QHostAddress address = _sockAddr.getAddressIPv6();
+        _domainURL.setHost(address.toString());
+    }
     emit domainURLChanged(_domainURL);
     emit completedSocketDiscovery();
 }
 
-void DomainHandler::activateICEPublicSocket() {
+void DomainHandler::activateICEPublicSocket(QAbstractSocket::NetworkLayerProtocol protocol) {
     DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetDomainSocket);
-    _sockAddr = _icePeer.getPublicSocket();
-    _domainURL.setScheme(URL_SCHEME_OVERTE);
-    // TODO(IPv6):
-    QHostAddress IPv4 = _sockAddr.getAddressIPv4();
-    QHostAddress IPv6 = _sockAddr.getAddressIPv6();
-
-    QHostAddress address = !IPv6.isNull() ? IPv6 : IPv4;
-
-    _domainURL.setHost(address.toString());
+    if (protocol == QAbstractSocket::IPv4Protocol) {
+        _sockAddr = _icePeer.getPublicSocketIPv4();
+        _domainURL.setScheme(URL_SCHEME_OVERTE);
+        QHostAddress address = _sockAddr.getAddressIPv4();
+        _domainURL.setHost(address.toString());
+    } else {
+        _sockAddr = _icePeer.getPublicSocketIPv6();
+        _domainURL.setScheme(URL_SCHEME_OVERTE);
+        QHostAddress address = _sockAddr.getAddressIPv6();
+        _domainURL.setHost(address.toString());
+    }
     emit domainURLChanged(_domainURL);
     emit completedSocketDiscovery();
 }
@@ -466,7 +472,19 @@ void DomainHandler::requestDomainSettings() {
     packet->writePrimitive(assignmentType);
 
     auto nodeList = DependencyManager::get<LimitedNodeList>();
-    nodeList->sendPacket(std::move(packet), _sockAddr);
+
+    SockAddr sockAddrIPv4(_sockAddr.getType(), _sockAddr.getAddressIPv4(), QHostAddress(), _sockAddr.getPort());
+    SockAddr sockAddrIPv6(_sockAddr.getType(), QHostAddress(), _sockAddr.getAddressIPv6(), _sockAddr.getPort());
+
+    auto packetCopyIPv6 = packet->createCopy(*packet); // TODO(IPv6): ugly name
+    if (sockAddrIPv4.getAddressIPv4().protocol() == QAbstractSocket::IPv4Protocol) {
+        nodeList->sendPacket(std::move(packet), sockAddrIPv4);
+    }
+    if (sockAddrIPv6.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol) {
+        nodeList->sendPacket(std::move(packetCopyIPv6), sockAddrIPv6);
+    }
+
+    //nodeList->sendPacket(std::move(packet), _sockAddr);
 
     _settingsTimer.start();
 }
@@ -495,12 +513,18 @@ void DomainHandler::processICEPingReplyPacket(QSharedPointer<ReceivedMessage> me
         _apiRefreshTimer.stop();
 
         // for now we're unsafely assuming this came back from the domain
-        if (senderSockAddr == _icePeer.getLocalSocket()) {
-            qCDebug(networking_ice) << "Connecting to domain using local socket";
-            activateICELocalSocket();
-        } else if (senderSockAddr == _icePeer.getPublicSocket()) {
-            qCDebug(networking_ice) << "Conecting to domain using public socket";
-            activateICEPublicSocket();
+        if (senderSockAddr == _icePeer.getLocalSocketIPv4()) {
+            qCDebug(networking_ice) << "Connecting to domain using local socket, IPv4";
+            activateICELocalSocket(QAbstractSocket::IPv4Protocol);
+        } else if (senderSockAddr == _icePeer.getLocalSocketIPv6()) {
+            qCDebug(networking_ice) << "Connecting to domain using local socket, IPv6";
+            activateICELocalSocket(QAbstractSocket::IPv6Protocol);
+        } else if (senderSockAddr == _icePeer.getPublicSocketIPv4()) {
+            qCDebug(networking_ice) << "Conecting to domain using public socket, IPv4";
+            activateICEPublicSocket(QAbstractSocket::IPv4Protocol);
+        }  else if (senderSockAddr == _icePeer.getPublicSocketIPv6()) {
+            qCDebug(networking_ice) << "Conecting to domain using public socket, IPv6";
+            activateICEPublicSocket(QAbstractSocket::IPv6Protocol);
         } else {
             qCDebug(networking_ice) << "Reply does not match either local or public socket for domain. Will not connect.";
         }

@@ -34,10 +34,12 @@ class NetworkPeer : public QObject {
     Q_OBJECT
 public:
     NetworkPeer(QObject* parent = 0);
-    NetworkPeer(const QUuid& uuid, const SockAddr& publicSocket, const SockAddr& localSocket, QObject* parent = 0);
+    NetworkPeer(const QUuid& uuid, const SockAddr& publicSocketIPv4, const SockAddr& publicSocketIPv6,
+        const SockAddr& localSocketIPv4, const SockAddr& localSocketIPv6, QObject* parent = 0);
 
     bool isNull() const { return _uuid.isNull(); }
-    bool hasSockets() const { return !_localSocket.isNull() && !_publicSocket.isNull(); }
+    bool hasSockets() const { return (!_localSocketIPv4.isNull() || !_localSocketIPv6.isNull())
+        && (!_publicSocketIPv4.isNull() || !_publicSocketIPv6.isNull()); }
 
     const QUuid& getUUID() const { return _uuid; }
     void setUUID(const QUuid& uuid) { _uuid = uuid; }
@@ -51,19 +53,28 @@ public:
     void softReset();
     void reset();
 
-    const SockAddr& getPublicSocket() const { return _publicSocket; }
-    const SockAddr& getLocalSocket() const { return _localSocket; }
-    const SockAddr& getSymmetricSocket() const { return _symmetricSocket; }
+    //const SockAddr& getPublicSocket() const { return _publicSocket; }
+    //const SockAddr& getLocalSocket() const { return _localSocket; }
+    //const SockAddr& getSymmetricSocket() const { return _symmetricSocket; }
 
-    void setPublicSocket(const SockAddr& publicSocket);
-    void setLocalSocket(const SockAddr& localSocket);
+    const SockAddr& getPublicSocketIPv4() const { return _publicSocketIPv4; }
+    const SockAddr& getLocalSocketIPv4() const { return _localSocketIPv4; }
+    const SockAddr& getSymmetricSocketIPv4() const { return _symmetricSocketIPv4; }
+    const SockAddr& getPublicSocketIPv6() const { return _publicSocketIPv6; }
+    const SockAddr& getLocalSocketIPv6() const { return _localSocketIPv6; }
+    const SockAddr& getSymmetricSocketIPv6() const { return _symmetricSocketIPv6; }
+
+    void setPublicSocketIPv4(const SockAddr& publicSocket);
+    void setPublicSocketIPv6(const SockAddr& publicSocket);
+    void setLocalSocketIPv4(const SockAddr& localSocket);
+    void setLocalSocketIPv6(const SockAddr& localSocket);
     void setSymmetricSocket(const SockAddr& symmetricSocket);
 
     const SockAddr* getActiveSocket() const { return _activeSocket; }
 
-    void activatePublicSocket();
-    void activateLocalSocket();
-    void activateSymmetricSocket();
+    void activatePublicSocket(QAbstractSocket::NetworkLayerProtocol protocol);
+    void activateLocalSocket(QAbstractSocket::NetworkLayerProtocol protocol);
+    void activateSymmetricSocket(QAbstractSocket::NetworkLayerProtocol protocol);
 
     void activateMatchingOrNewSymmetricSocket(const SockAddr& matchableSockAddr);
 
@@ -104,9 +115,16 @@ protected:
     QUuid _uuid;
     LocalID _localID { 0 };
 
-    SockAddr _publicSocket;
-    SockAddr _localSocket;
-    SockAddr _symmetricSocket;
+    // TODO(IPv6): these should be available separately for IPv4 and IPv6
+    //SockAddr _publicSocket;
+    SockAddr _publicSocketIPv4;
+    SockAddr _publicSocketIPv6;
+    //SockAddr _localSocket;
+    SockAddr _localSocketIPv4;
+    SockAddr _localSocketIPv6;
+    //SockAddr _symmetricSocket;
+    SockAddr _symmetricSocketIPv4;
+    SockAddr _symmetricSocketIPv6;
     SockAddr* _activeSocket;
 
     quint64 _wakeTimestamp;

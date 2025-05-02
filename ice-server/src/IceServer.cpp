@@ -154,8 +154,10 @@ void IceServer::processPacket(std::unique_ptr<udt::Packet> packet) {
             heartbeatStream >> senderUUID;
 
             // pull the public and private sock addrs for this peer
-            SockAddr publicSocket, localSocket;
-            heartbeatStream >> publicSocket >> localSocket;
+            SockAddr publicSocketIPv4, publicSocketIPv6;
+            SockAddr localSocketIPv4, localSocketIPv6;
+            heartbeatStream >> publicSocketIPv4 >> publicSocketIPv6
+                >> localSocketIPv4 >> localSocketIPv6;
 
             // check if this node also included a UUID that they would like to connect to
             QUuid connectRequestID;
@@ -173,7 +175,8 @@ void IceServer::processPacket(std::unique_ptr<udt::Packet> packet) {
                 // we also need to send them to the active peer they are hoping to connect to
                 // create a dummy peer object we can pass to sendPeerInformationPacket
 
-                NetworkPeer dummyPeer(senderUUID, publicSocket, localSocket);
+                NetworkPeer dummyPeer(senderUUID, publicSocketIPv4, publicSocketIPv6,
+                    localSocketIPv4, localSocketIPv6);
                 sendPeerInformationPacket(dummyPeer, matchingPeer->getActiveSocket());
             } else {
                 qDebug() << "Peer" << senderUUID << "asked for" << connectRequestID << "but no matching peer found";
@@ -186,11 +189,13 @@ SharedNetworkPeer IceServer::addOrUpdateHeartbeatingPeer(NLPacket& packet) {
 
     // pull the UUID, public and private sock addrs for this peer
     QUuid senderUUID;
-    SockAddr publicSocket, localSocket;
+    SockAddr publicSocketIPv4, publicSocketIPv6;
+    SockAddr localSocketIPv4, localSocketIPv6;
     QByteArray signature;
 
     QDataStream heartbeatStream(&packet);
-    heartbeatStream >> senderUUID >> publicSocket >> localSocket;
+    heartbeatStream >> senderUUID >> publicSocketIPv4 >> publicSocketIPv6
+        >> localSocketIPv4 >> localSocketIPv6;
 
     auto signedPlaintext = QByteArray::fromRawData(packet.getPayload(), heartbeatStream.device()->pos());
     heartbeatStream >> signature;
@@ -202,14 +207,17 @@ SharedNetworkPeer IceServer::addOrUpdateHeartbeatingPeer(NLPacket& packet) {
 
         if (!matchingPeer) {
             // if we don't have this sender we need to create them now
-            matchingPeer = QSharedPointer<NetworkPeer>::create(senderUUID, publicSocket, localSocket);
+            matchingPeer = QSharedPointer<NetworkPeer>::create(senderUUID, publicSocketIPv4, publicSocketIPv6,
+                localSocketIPv4, localSocketIPv6);
             _activePeers.insert(senderUUID, matchingPeer);
 
             qDebug() << "Added a new network peer" << *matchingPeer;
         } else {
             // we already had the peer so just potentially update their sockets
-            matchingPeer->setPublicSocket(publicSocket);
-            matchingPeer->setLocalSocket(localSocket);
+            matchingPeer->setPublicSocketIPv4(publicSocketIPv4);
+            matchingPeer->setPublicSocketIPv6(publicSocketIPv6);
+            matchingPeer->setLocalSocketIPv4(localSocketIPv4);
+            matchingPeer->setLocalSocketIPv6(localSocketIPv6);
         }
 
         // update our last heard microstamp for this network peer to now

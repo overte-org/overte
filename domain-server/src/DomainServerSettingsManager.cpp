@@ -994,9 +994,9 @@ void DomainServerSettingsManager::processNodeKickRequestPacket(QSharedPointer<Re
                                                    ? matchingNode->getActiveSocket()->getAddressIPv6()
                                                    : matchingNode->getActiveSocket()->getAddressIPv4();
 
-                    auto& publicSocket = !matchingNode->getPublicSocket().getAddressIPv6().isNull()
-                                                   ? matchingNode->getPublicSocket().getAddressIPv6()
-                                                   : matchingNode->getPublicSocket().getAddressIPv4();
+                    auto& publicSocket = !matchingNode->getPublicSocketIPv6().getAddressIPv6().isNull()
+                                                   ? matchingNode->getPublicSocketIPv6().getAddressIPv6()
+                                                   : matchingNode->getPublicSocketIPv4().getAddressIPv4();
 
                     auto& kickAddress = matchingNode->getActiveSocket() ? activeSocket : publicSocket;
 
@@ -1005,10 +1005,10 @@ void DomainServerSettingsManager::processNodeKickRequestPacket(QSharedPointer<Re
                     // TODO: soon we will have feedback (in the form of a message to the client) after we kick.  When we
                     // do, we will have a success flag, and perhaps a reason for failure.  For now, just don't do it.
                     // TODO(IPv6):
-                    if (kickAddress.isLoopback() || kickAddress == limitedNodeList->getPublicSockAddr().getAddressIPv4() ||
-                        kickAddress == limitedNodeList->getPublicSockAddr().getAddressIPv6() ||
-                        kickAddress == limitedNodeList->getLocalSockAddr().getAddressIPv4() ||
-                        kickAddress == limitedNodeList->getLocalSockAddr().getAddressIPv6()) {
+                    if (kickAddress.isLoopback() || kickAddress == limitedNodeList->getPublicSockAddrIPv4().getAddressIPv4() ||
+                        kickAddress == limitedNodeList->getPublicSockAddrIPv6().getAddressIPv6() ||
+                        kickAddress == limitedNodeList->getLocalSockAddrIPv4().getAddressIPv4() ||
+                        kickAddress == limitedNodeList->getLocalSockAddrIPv6().getAddressIPv6()) {
                         qWarning()
                             << "Attempt to kick a node running on the same machine as the domain server. Ignoring KickRequest.";
                         return;

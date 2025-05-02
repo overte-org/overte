@@ -862,7 +862,13 @@ void DomainServer::setupNodeListAndAssignments() {
 
     connect(nodeList.data(), &LimitedNodeList::nodeAdded, this, &DomainServer::nodeAdded);
     connect(nodeList.data(), &LimitedNodeList::nodeKilled, this, &DomainServer::nodeKilled);
-    connect(nodeList.data(), &LimitedNodeList::localSockAddrChanged, this,
+    // TODO (IPv6): this needs both IPv4 and IPv6 version
+    connect(nodeList.data(), &LimitedNodeList::localSockAddrIPv4Changed, this,
+        [this](const SockAddr& localSockAddr) {
+        DependencyManager::get<LimitedNodeList>()->putLocalPortIntoSharedMemory(DOMAIN_SERVER_LOCAL_PORT_SMEM_KEY, this, localSockAddr.getPort());
+    });
+
+    connect(nodeList.data(), &LimitedNodeList::localSockAddrIPv6Changed, this,
         [this](const SockAddr& localSockAddr) {
         DependencyManager::get<LimitedNodeList>()->putLocalPortIntoSharedMemory(DOMAIN_SERVER_LOCAL_PORT_SMEM_KEY, this, localSockAddr.getPort());
     });
@@ -1065,8 +1071,11 @@ void DomainServer::setupAutomaticNetworking() {
 
                 auto nodeList = DependencyManager::get<LimitedNodeList>();
 
+                // TODO (IPv6): this needs both IPv6 and IPv4 version?
                 // send any public socket changes to the data server so nodes can find us at our new IP
-                connect(nodeList.data(), &LimitedNodeList::publicSockAddrChanged, this,
+                connect(nodeList.data(), &LimitedNodeList::publicSockAddrIPv4Changed, this,
+                        &DomainServer::performIPAddressPortUpdate);
+                connect(nodeList.data(), &LimitedNodeList::publicSockAddrIPv6Changed, this,
                         &DomainServer::performIPAddressPortUpdate);
 
                 if (_automaticNetworkingSetting == IP_ONLY_AUTOMATIC_NETWORKING_VALUE) {
@@ -1102,10 +1111,15 @@ void DomainServer::setupICEHeartbeatForFullNetworking() {
     // lookup the available ice-server hosts now
     updateICEServerAddresses();
 
+    // TODO (IPv6): This needs v4 and v6 version?
     // call our sendHeartbeatToIceServer immediately anytime a local or public socket changes
-    connect(limitedNodeList.data(), &LimitedNodeList::localSockAddrChanged,
+    connect(limitedNodeList.data(), &LimitedNodeList::localSockAddrIPv4Changed,
             this, &DomainServer::sendHeartbeatToIceServer);
-    connect(limitedNodeList.data(), &LimitedNodeList::publicSockAddrChanged,
+    connect(limitedNodeList.data(), &LimitedNodeList::localSockAddrIPv6Changed,
+            this, &DomainServer::sendHeartbeatToIceServer);
+    connect(limitedNodeList.data(), &LimitedNodeList::publicSockAddrIPv4Changed,
+            this, &DomainServer::sendHeartbeatToIceServer);
+    connect(limitedNodeList.data(), &LimitedNodeList::publicSockAddrIPv6Changed,
             this, &DomainServer::sendHeartbeatToIceServer);
 
     // we need this DS to know what our public IP is - start trying to figure that out now
@@ -1269,8 +1283,10 @@ void DomainServer::processListRequestPacket(QSharedPointer<ReceivedMessage> mess
     NodeConnectionData nodeRequestData = NodeConnectionData::fromDataStream(packetStream, message->getSenderSockAddr(), false);
 
     // update this node's sockets in case they have changed
-    sendingNode->setPublicSocket(nodeRequestData.publicSockAddr);
-    sendingNode->setLocalSocket(nodeRequestData.localSockAddr);
+    sendingNode->setPublicSocketIPv4(nodeRequestData.publicSockAddrIPv4);
+    sendingNode->setPublicSocketIPv6(nodeRequestData.publicSockAddrIPv6);
+    sendingNode->setLocalSocketIPv4(nodeRequestData.localSockAddrIPv4);
+    sendingNode->setLocalSocketIPv6(nodeRequestData.localSockAddrIPv6);
 
     DomainServerNodeData* nodeData = static_cast<DomainServerNodeData*>(sendingNode->getLinkedData());
 
@@ -1875,8 +1891,10 @@ void DomainServer::sendHeartbeatToIceServer() {
             heartbeatStream >> senderUUID >> publicSocket >> localSocket;
 
             if (senderUUID != limitedNodeList->getSessionUUID()
-                || publicSocket != limitedNodeList->getPublicSockAddr()
-                || localSocket != limitedNodeList->getLocalSockAddr()) {
+                || publicSocket != limitedNodeList->getPublicSockAddrIPv4()
+                || publicSocket != limitedNodeList->getPublicSockAddrIPv6()
+                || localSocket != limitedNodeList->getLocalSockAddrIPv4()
+                || localSocket != limitedNodeList->getLocalSockAddrIPv6()) {
                 shouldRecreatePacket = true;
             }
         } else {
@@ -1891,8 +1909,9 @@ void DomainServer::sendHeartbeatToIceServer() {
 
             // Write our plaintext data to the packet
             QDataStream heartbeatDataStream(_iceServerHeartbeatPacket.get());
-            heartbeatDataStream << limitedNodeList->getSessionUUID() << limitedNodeList->getPublicSockAddr()
-                                << limitedNodeList->getLocalSockAddr();
+            heartbeatDataStream << limitedNodeList->getSessionUUID()
+                << limitedNodeList->getPublicSockAddrIPv4() << limitedNodeList->getPublicSockAddrIPv6()
+                << limitedNodeList->getLocalSockAddrIPv4() << limitedNodeList->getLocalSockAddrIPv6();
 
             // Setup a QByteArray that points to the plaintext data
             auto plaintext = QByteArray::fromRawData(_iceServerHeartbeatPacket->getPayload(), _iceServerHeartbeatPacket->getPayloadSize());
@@ -1925,7 +1944,7 @@ void DomainServer::nodePingMonitor() {
             if (nodeData) {
                 username = nodeData->getUsername();
             }
-            qCDebug(domain_server) << "Haven't heard from " << node->getPublicSocket() << username << " in " << lastHeard / USECS_PER_MSEC << " msec";
+            qCDebug(domain_server) << "Haven't heard from " << node->getPublicSocketIPv4() << " " << node->getPublicSocketIPv6() << username << " in " << lastHeard / USECS_PER_MSEC << " msec";
         }
     });
 }
@@ -2062,8 +2081,13 @@ QJsonObject DomainServer::jsonObjectForNode(const SharedNodePointer& node) {
     nodeJson[JSON_KEY_TYPE] = nodeTypeName;
 
     // add the node socket information
-    nodeJson[JSON_KEY_PUBLIC_SOCKET] = jsonForSocket(node->getPublicSocket());
-    nodeJson[JSON_KEY_LOCAL_SOCKET] = jsonForSocket(node->getLocalSocket());
+    // TODO(IPv6): add proper information about IPv6 socket, it may be at a different port
+    const auto publicScoket = SockAddr(node->getPublicSocketIPv4().getType(), node->getPublicSocketIPv4().getAddressIPv4(),
+        node->getPublicSocketIPv6().getAddressIPv6(), node->getPublicSocketIPv4().getPort());
+    nodeJson[JSON_KEY_PUBLIC_SOCKET] = jsonForSocket(publicScoket);
+    const auto localSocket = SockAddr(node->getLocalSocketIPv4().getType(), node->getLocalSocketIPv4().getAddressIPv4(),
+        node->getLocalSocketIPv6().getAddressIPv6(), node->getLocalSocketIPv4().getPort());
+    nodeJson[JSON_KEY_LOCAL_SOCKET] = jsonForSocket(localSocket);
 
     // add the node uptime in our list
     nodeJson[JSON_KEY_UPTIME] = QString::number(double(QDateTime::currentMSecsSinceEpoch() - node->getWakeTimestamp()) / 1000.0);
@@ -3105,6 +3129,7 @@ ReplicationServerInfo serverInformationFromSettings(QVariantMap serverMap, Repli
     static const QString REPLICATION_SERVER_ADDRESS = "address";
     static const QString REPLICATION_SERVER_PORT = "port";
     static const QString REPLICATION_SERVER_TYPE = "server_type";
+    // TODO(IPv6): add IPv6 support here
 
     if (serverMap.contains(REPLICATION_SERVER_ADDRESS) && serverMap.contains(REPLICATION_SERVER_PORT)
         && serverMap.contains(REPLICATION_SERVER_TYPE)) {
@@ -3152,13 +3177,15 @@ void DomainServer::updateReplicationNodes(ReplicationServerDirection direction) 
             nodeList->eachNode([direction, &knownReplicationNodes](const SharedNodePointer& otherNode) {
                 if ((direction == Upstream && NodeType::isUpstream(otherNode->getType()))
                     || (direction == Downstream && NodeType::isDownstream(otherNode->getType()))) {
-                    knownReplicationNodes.push_back(otherNode->getPublicSocket());
+                    // TODO(IPv6): add IPv6 support here
+                    knownReplicationNodes.push_back(otherNode->getPublicSocketIPv4());
                 }
             });
 
             for (auto& server : serversSettings) {
-                auto replicationServer = serverInformationFromSettings(server.toMap(), direction);
 
+                auto replicationServer = serverInformationFromSettings(server.toMap(), direction);
+                // TODO(IPv6): add IPv6 support here
                 if (!replicationServer.sockAddr.isNull() && replicationServer.nodeType != NodeType::Unassigned) {
                     // make sure we have the settings we need for this replication server
                     replicationNodesInSettings.push_back(replicationServer.sockAddr);
@@ -3168,7 +3195,8 @@ void DomainServer::updateReplicationNodes(ReplicationServerDirection direction) 
                     if (!knownNode) {
                         // manually add the replication node to our node list
                         auto node = nodeList->addOrUpdateNode(QUuid::createUuid(), replicationServer.nodeType,
-                                                              replicationServer.sockAddr, replicationServer.sockAddr,
+                                                              replicationServer.sockAddr.toIPv4Only(), replicationServer.sockAddr.toIPv6Only(),
+                                                              replicationServer.sockAddr.toIPv4Only(), replicationServer.sockAddr.toIPv6Only(),
                                                               Node::NULL_LOCAL_ID, false, direction == Upstream);
                         node->setIsForcedNeverSilent(true);
 
@@ -3176,7 +3204,8 @@ void DomainServer::updateReplicationNodes(ReplicationServerDirection direction) 
                             << "node:" << node->getUUID() << replicationServer.sockAddr;
 
                         // manually activate the public socket for the replication node
-                        node->activatePublicSocket();
+                        // TODO(IPv6): add IPv6 support here
+                        node->activatePublicSocket(QAbstractSocket::IPv4Protocol);
                     }
                 }
 
@@ -3190,11 +3219,12 @@ void DomainServer::updateReplicationNodes(ReplicationServerDirection direction) 
         nodeList->eachNode([&direction, &replicationNodesInSettings, &replicationDirection, &nodesToKill](const SharedNodePointer& otherNode) {
             if ((direction == Upstream && NodeType::isUpstream(otherNode->getType()))
                 || (direction == Downstream && NodeType::isDownstream(otherNode->getType()))) {
+                // TODO(IPv6): add IPv6 support here
                 bool nodeInSettings = find(replicationNodesInSettings.cbegin(), replicationNodesInSettings.cend(),
-                                           otherNode->getPublicSocket()) != replicationNodesInSettings.cend();
+                                           otherNode->getPublicSocketIPv4()) != replicationNodesInSettings.cend();
                 if (!nodeInSettings) {
                     qDebug() << "Removing" << replicationDirection
-                        << "node:" << otherNode->getUUID() << otherNode->getPublicSocket();
+                        << "node:" << otherNode->getUUID() << otherNode->getPublicSocketIPv4();
                     nodesToKill.push_back(otherNode);
                 }
             }
