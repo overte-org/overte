@@ -34,113 +34,107 @@ jobs:
             image: docker.io/overte/overte-server-build:0.1.6-debian-11-amd64
             arch: amd64
             qt_source: system
-            # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels
-            # self_hosted makes the Hetzner auto-scaler put up the job.
-            # type-cx52 is a Hetzner VPS server type. In this case cs52 is a server with 16-cores and 32GB of RAM.
-            # image-x86-app-docker-ce is a Hetzner image.
-            # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image
-            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
+            runner: ubuntu-latest
 
           - os: debian-11
             image: docker.io/overte/overte-server-build:0.1.6-debian-11-aarch64
             arch: aarch64
             qt_source: system
-            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+            runner: ubuntu-24.04-arm
 
           - os: debian-12
             image: docker.io/overte/overte-server-build:0.1.6-debian-12-amd64
             arch: amd64
             qt_source: system
-            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
+            runner: ubuntu-latest
 
           - os: debian-12
             image: docker.io/overte/overte-server-build:0.1.6-debian-12-aarch64
             arch: aarch64
             qt_source: system
-            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+            runner: ubuntu-24.04-arm
 
           - os: debian-13
             image: docker.io/overte/overte-server-build:0.1.6-debian-13-amd64
             arch: amd64
             qt_source: system
-            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+            runner: ubuntu-latest
 
           - os: debian-13
             image: docker.io/overte/overte-server-build:0.1.6-debian-13-aarch64
             arch: aarch64
             qt_source: system
-            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+            runner: ubuntu-24.04-arm
 
           - os: ubuntu-20.04
             image: docker.io/overte/overte-server-build:0.1.6-ubuntu-20.04-amd64
             arch: amd64
-            conan_qt: True
             qt_source: source
-            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
+            runner: ubuntu-latest
 
           - os: ubuntu-22.04
             image: docker.io/overte/overte-server-build:0.1.6-ubuntu-22.04-amd64
             arch: amd64
             qt_source: system
-            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
+            runner: ubuntu-latest
 
           - os: ubuntu-22.04
             image: docker.io/overte/overte-server-build:0.1.6-ubuntu-22.04-aarch64
             arch: aarch64
-            conan_qt: False
-            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+            qt_source: system
+            runner: ubuntu-24.04-arm
 
           - os: ubuntu-24.04
             image: docker.io/overte/overte-server-build:0.1.6-ubuntu-24.04-amd64
             arch: amd64
             qt_source: system
-            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
+            runner: ubuntu-latest
 
           - os: ubuntu-24.04
             image: docker.io/overte/overte-server-build:0.1.6-ubuntu-24.04-aarch64
             arch: aarch64
             qt_source: system
-            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+            runner: ubuntu-24.04-arm
 
           - os: fedora-40
             image: docker.io/overte/overte-server-build:0.1.6-fedora-40-amd64
             arch: amd64
             qt_source: system
-            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
+            runner: ubuntu-latest
 
           - os: fedora-40
             image: docker.io/overte/overte-server-build:0.1.6-fedora-40-aarch64
             arch: aarch64
             qt_source: system
-            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+            runner: ubuntu-24.04-arm
 
           - os: fedora-41
             image: docker.io/overte/overte-server-build:0.1.6-fedora-41-amd64
             arch: amd64
             qt_source: system
-            runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+            runner: ubuntu-latest
 
           - os: fedora-41
             image: docker.io/overte/overte-server-build:0.1.6-fedora-41-aarch64
             arch: aarch64
             qt_source: system
-            runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+            runner: ubuntu-24.04-arm
 
           #~ - os: fedora-42
             #~ image: docker.io/overte/overte-server-build:0.1.6-fedora-42-amd64
             #~ arch: amd64
-            #~ runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+            #~ runner: ubuntu-latest
 
           #~ - os: fedora-42
             #~ image: docker.io/overte/overte-server-build:0.1.6-fedora-42-aarch64
             #~ arch: aarch64
-            #~ runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+            #~ runner: ubuntu-24.04-arm
 
           - os: rockylinux-9
             image: docker.io/overte/overte-server-build:0.1.6-rockylinux-9-amd64
             arch: amd64
             qt_source: source
-            runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
+            runner: ubuntu-latest
 
       fail-fast: false
 

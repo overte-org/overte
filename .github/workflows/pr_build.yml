@@ -42,6 +42,9 @@ env:
   # Specify build preset, since on Windows, `cmake --build` appears to be unaware of of which build preset to use, using defaults instead.
   CMAKE_BUILD_EXTRA: --preset conan-release
 
+  # Work around AppImages not executing in Docker. https://github.com/AppImage/AppImageKit/issues/912#issuecomment-528669441
+  APPIMAGE_EXTRACT_AND_RUN: 1
+
 jobs:
   build_pr:
     name: "${{matrix.os}}, ${{matrix.arch}}"
@@ -57,29 +60,24 @@ jobs:
             #  build_type: full
             #  qt_source: aqt
             - os: Ubuntu 22.04
-              # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels
-              # self_hosted makes the Hetzner auto-scaler put up the job.
-              # type-cx52 is a Hetzner VPS server type. In this case cs52 is a server with 16-cores and 32GB of RAM.
-              # image-x86-app-docker-ce is a Hetzner image.
-              # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image
-              runner: [self_hosted, type-cpx41, image-x86-app-docker-ce]
+              image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-amd64
+              runner: ubuntu-latest
               arch: amd64
               build_type: full
               qt_source: system
-              apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
-              image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-amd64
+              apt-dependencies: libxcb-glx0-dev libqt5multimedia5-plugins # add missing dependencies to docker image when convenient
             # Android builds are currently failing
             #- os: ubuntu-18.04
             #  build_type: android
             #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
             - os: Ubuntu 22.04
-              runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+              image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-aarch64
+              runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
               qt_source: system
-              apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
-              image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-aarch64
+              apt-dependencies: libxcb-glx0-dev libqt5multimedia5-plugins # add missing dependencies to docker image when convenient
         fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
@@ -98,14 +96,8 @@ jobs:
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
           echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=*" >> $GITHUB_ENV
+          echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=$CMAKE_BUILD_EXTRA -- -j$(nproc)" >> $GITHUB_ENV
-          # Don't optimize builds to save build time.
-          echo "OVERTE_OPTIMIZE=false" >> $GITHUB_ENV
-          # Starting with Ubuntu 22.04 we can use system Qt
-          if [[ "${{ matrix.image }}" = *"ubuntu-22.04"* ]]; then
-            echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
-          fi
 
           if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
             if [ "${{ matrix.build_type }}" = "full" ]; then
@@ -169,20 +161,16 @@ jobs:
 
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
         if [ "${{ matrix.build_type }}" = "full" ]; then
-          echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
-          echo "INSTALLER=Overte-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
+          if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
+            echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}-$(uname -m).$INSTALLER_EXT" >> $GITHUB_ENV
+          else
+            echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "INSTALLER=Overte-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
+          fi
         else
           echo "ARTIFACT_PATTERN=Overte-Interface-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
           echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
-
-    - name: Clear Working Directories
-      if: contains(matrix.runner, 'linux_aarch64') || contains(matrix.runner, 'linux_amd64')
-      shell: bash
-      run: |
-        rm -rf ./*
-        rm -rf ~/overte-files
-        rm -rf ~/.cache
 
     - uses: actions/checkout@v4
       with:
@@ -207,16 +195,6 @@ jobs:
 
           echo "Installing apt packages"
           sudo apt install -y ${{ matrix.apt-dependencies }} || exit 1
-
-          echo "Adding Toolchain test PPA"
-          apt install -y software-properties-common
-          add-apt-repository ppa:ubuntu-toolchain-r/test
-
-          echo "Installing gcc-13"
-          apt install -y gcc-13 g++-13 || exit 1
-
-          # Set GCC 13 as default
-          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13
 
         else # macOS
           echo "Downloading MacOSX10.12 SDK.."
@@ -310,7 +288,7 @@ jobs:
         cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build Installer
-      if: matrix.build_type != 'android' && matrix.arch != 'aarch64'
+      if: matrix.build_type != 'android'
       shell: bash
       run: |
         echo "Retry code from https://unix.stackexchange.com/a/137639"
@@ -374,17 +352,8 @@ jobs:
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Upload Artifact
-      if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS')
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
         path: ./build/${{ env.ARTIFACT_PATTERN }}
         if-no-files-found: error
-
-    - name: Clear Working Directories
-      if: contains(matrix.runner, 'linux_aarch64') || contains(matrix.runner, 'linux_amd64')
-      shell: bash
-      run: |
-        rm -rf ./*
-        rm -rf ~/overte-files
-        rm -rf ~/.cache
