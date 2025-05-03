@@ -31,6 +31,7 @@ else ()
         REF v18.20.7
         SHA512 0d7000937b9b5089affc23daa7222938213bd5d77b8ed872d8cb424570fbc3e1567362c18ee8ef99413be098f7ff9fb82d49b9fc92fc93589628b07d1464b3ff
         HEAD_REF v18.20.7
+        PATCHES node-cstdint.patch
     )
     # node cannot configure out of source, which VCPKG expects. So we copy the source to the configure directory.
     file(COPY ${SOURCE_PATH}/ DESTINATION "${CURRENT_BUILDTREES_DIR}")
