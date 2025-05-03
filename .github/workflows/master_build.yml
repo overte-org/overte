@@ -71,7 +71,6 @@ jobs:
         echo "{github_sha_short}={`echo $GIT_COMMIT | cut -c1-7`}" >> $GITHUB_OUTPUT
         echo "JOB_NAME=build (${{matrix.os}}, ${{matrix.build_type}})" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
-        echo "qt_source=${{matrix.qt_source}}" >> $GITHUB_ENV
         # Linux build variables
         if [[ "${{ matrix.os }}" = "ubuntu-"* ]]; then
           echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
@@ -196,7 +195,7 @@ jobs:
     - name: Install Conan dependencies
       shell: bash
       run: |
-        conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:qt_source='${qt_source} -b missing -pr:b=default -of build
+        conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:qt_source='${{matrix.qt_source}} -b missing -pr:b=default -of build
 
     - name: Cleanup Conan dependencies
       run: conan cache clean "*" -sbd
