@@ -56,6 +56,8 @@ QString OpenXrInputPlugin::configurationLayout() {
 bool OpenXrInputPlugin::activate() {
     InputPlugin::activate();
 
+    qCCritical(xr_input_cat) << "OpenXrInputPlugin::activate";
+
     loadSettings();
 
     // register with UserInputMapper
@@ -68,6 +70,8 @@ bool OpenXrInputPlugin::activate() {
 
 void OpenXrInputPlugin::deactivate() {
     InputPlugin::deactivate();
+
+    qCCritical(xr_input_cat) << "OpenXrInputPlugin::deactivate";
 
     _inputDevice->_poseStateMap.clear();
 
@@ -117,6 +121,10 @@ OpenXrInputPlugin::InputDevice::InputDevice(std::shared_ptr<OpenXrContext> c) : 
 OpenXrInputPlugin::InputDevice::~InputDevice() {
     if (_handTracker[0] != XR_NULL_HANDLE) { _context->xrDestroyHandTrackerEXT(_handTracker[0]); }
     if (_handTracker[1] != XR_NULL_HANDLE) { _context->xrDestroyHandTrackerEXT(_handTracker[1]); }
+
+    // so we don't accidentally try to destroy them twice
+    _handTracker[0] = XR_NULL_HANDLE;
+    _handTracker[1] = XR_NULL_HANDLE;
 }
 
 void OpenXrInputPlugin::InputDevice::focusOutEvent() {
@@ -141,6 +149,9 @@ bool OpenXrInputPlugin::InputDevice::triggerHapticPulse(float strength, float du
 
     auto path = (index == 0) ? "left_haptic" : "right_haptic";
 
+    // FIXME: sometimes something bugs out and hammers this,
+    // and the controller vibrates really loudly until another
+    // haptic pulse is triggered
     if (!_actions.at(path)->applyHaptic(xrDuration, XR_FREQUENCY_UNSPECIFIED, 0.5f * strength)) {
         qCCritical(xr_input_cat) << "Failed to apply haptic feedback!";
     }
