@@ -45,7 +45,8 @@ public:
     using Stats = udt::ConnectionStats::Stats;
 
     Node(const QUuid& uuid, NodeType_t type,
-         const SockAddr& publicSocket, const SockAddr& localSocket,
+         const SockAddr& publicSocketIPv4, const SockAddr& publicSocketIPv6,
+         const SockAddr& localSocketIPv4, const SockAddr& localSocketIPv6,
          QObject* parent = nullptr);
 
     bool operator==(const Node& otherNode) const { return _uuid == otherNode._uuid; }

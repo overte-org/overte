@@ -674,22 +674,34 @@ void AddressManager::attemptDomainIDLookup(const QString& lookupString, const QS
                                                 QByteArray(), NULL, requestParams);
 }
 
+#include <QDebug>  // Ensure this is included for debug logging
+
 bool AddressManager::handleNetworkAddress(const QString& lookupString, LookupTrigger trigger, bool& hostChanged) {
-    const QString IP_ADDRESS_REGEX_STRING = "^((?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}"
+    qDebug() << "handleNetworkAddress called with lookupString:" << lookupString;
+
+    const QString IP_ADDRESS_REGEX_STRING_V4 =
+        "^((?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}"
         "(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))(?::(\\d{1,5}))?$";
 
-    const QString HOSTNAME_REGEX_STRING = "^((?:[A-Z0-9]|[A-Z0-9][A-Z0-9\\-]{0,61}[A-Z0-9])"
+    const QString IP_ADDRESS_REGEX_STRING_V6 = "^([0-9a-fA-F:]+)(?::(\\d{1,5}))?$";
+
+    const QString HOSTNAME_REGEX_STRING =
+        "^((?:[A-Z0-9]|[A-Z0-9][A-Z0-9\\-]{0,61}[A-Z0-9])"
         "(?:\\.(?:[A-Z0-9]|[A-Z0-9][A-Z0-9\\-]{0,61}[A-Z0-9]))+|localhost)(?::(\\d{1,5}))?$";
 
-    QRegExp ipAddressRegex(IP_ADDRESS_REGEX_STRING);
+    QRegExp ipAddressRegexV4(IP_ADDRESS_REGEX_STRING_V4);
+    QRegExp ipAddressRegexV6(IP_ADDRESS_REGEX_STRING_V6);
 
-    if (ipAddressRegex.indexIn(lookupString) != -1) {
-        QString domainIPString = ipAddressRegex.cap(1);
-
+    // Check for IPv4 address
+    if (ipAddressRegexV4.indexIn(lookupString) != -1) {
+        QString domainIPString = ipAddressRegexV4.cap(1);
         quint16 domainPort = 0;
-        if (!ipAddressRegex.cap(2).isEmpty()) {
-            domainPort = (quint16) ipAddressRegex.cap(2).toInt();
+
+        if (!ipAddressRegexV4.cap(2).isEmpty()) {
+            domainPort = (quint16)ipAddressRegexV4.cap(2).toInt();
         }
+
+        qDebug() << "Matched IPv4 address:" << domainIPString << "with port:" << domainPort;
 
         emit lookupResultsFinished();
         QUrl domainURL;
@@ -700,19 +712,45 @@ bool AddressManager::handleNetworkAddress(const QString& lookupString, LookupTri
         }
         hostChanged = setDomainInfo(domainURL, trigger);
 
+        qDebug() << "IPv4 processing complete. Host changed:" << hostChanged;
         return true;
     }
 
-    QRegExp hostnameRegex(HOSTNAME_REGEX_STRING, Qt::CaseInsensitive);
+    // Check for IPv6 address
+    if (ipAddressRegexV6.indexIn(lookupString) != -1) {
+        QString domainIPString = ipAddressRegexV6.cap(1);
+        quint16 domainPort = 0;
 
+        if (!ipAddressRegexV6.cap(2).isEmpty()) {
+            domainPort = (quint16)ipAddressRegexV6.cap(2).toInt();
+        }
+
+        qDebug() << "Matched IPv6 address:" << domainIPString << "with port:" << domainPort;
+
+        emit lookupResultsFinished();
+        QUrl domainURL;
+        domainURL.setScheme(URL_SCHEME_OVERTE);
+        domainURL.setHost(domainIPString);
+        if (domainPort > 0) {
+            domainURL.setPort(domainPort);
+        }
+        hostChanged = setDomainInfo(domainURL, trigger);
+
+        qDebug() << "IPv6 processing complete. Host changed:" << hostChanged;
+        return true;
+    }
+
+    // Check for hostname
+    QRegExp hostnameRegex(HOSTNAME_REGEX_STRING, Qt::CaseInsensitive);
     if (hostnameRegex.indexIn(lookupString) != -1) {
         QString domainHostname = hostnameRegex.cap(1);
-
         quint16 domainPort = 0;
 
         if (!hostnameRegex.cap(2).isEmpty()) {
             domainPort = (quint16)hostnameRegex.cap(2).toInt();
         }
+
+        qDebug() << "Matched hostname:" << domainHostname << "with port:" << domainPort;
 
         emit lookupResultsFinished();
         QUrl domainURL;
@@ -723,13 +761,18 @@ bool AddressManager::handleNetworkAddress(const QString& lookupString, LookupTri
         }
         hostChanged = setDomainInfo(domainURL, trigger);
 
+        qDebug() << "Hostname processing complete. Host changed:" << hostChanged;
         return true;
     }
 
+    // If no match
+    qDebug() << "No valid network address matched for lookupString:" << lookupString;
     hostChanged = false;
-
     return false;
 }
+
+
+
 
 bool AddressManager::handleDomainID(const QString& host) {
     const QString UUID_REGEX_STRING = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";

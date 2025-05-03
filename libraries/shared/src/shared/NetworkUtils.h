@@ -12,6 +12,6 @@
 
 #include <QtNetwork/QHostAddress>
 
-QHostAddress getGuessedLocalAddress();
+QHostAddress getGuessedLocalAddress(QAbstractSocket::NetworkLayerProtocol protocol);
 
 #endif // hifi_shared_NetworkUtils_h

@@ -115,7 +115,9 @@ public:
 
     int getLastDomainConnectionError() { return _lastDomainConnectionError; }
 
-    const QHostAddress& getIP() const { return _sockAddr.getAddress(); }
+    const QHostAddress& getIPv4() const { return _sockAddr.getAddressIPv4(); }
+    const QHostAddress& getIPv6() const { return _sockAddr.getAddressIPv6(); }
+    // TODO(IPv6):
     void setIPToLocalhost() { _sockAddr.setAddress(QHostAddress(QHostAddress::LocalHost)); }
 
     const SockAddr& getSockAddr() const { return _sockAddr; }
@@ -137,8 +139,8 @@ public:
     bool requiresICE() const { return !_iceServerSockAddr.isNull(); }
     const SockAddr& getICEServerSockAddr() const { return _iceServerSockAddr; }
     NetworkPeer& getICEPeer() { return _icePeer; }
-    void activateICELocalSocket();
-    void activateICEPublicSocket();
+    void activateICELocalSocket(QAbstractSocket::NetworkLayerProtocol protocol);
+    void activateICEPublicSocket(QAbstractSocket::NetworkLayerProtocol protocol);
 
     bool isConnected() const { return _isConnected; }
     void setIsConnected(bool isConnected);
@@ -164,7 +166,7 @@ public:
     const QString& getPendingPath() { return _pendingPath; }
     void clearPendingPath() { _pendingPath.clear(); }
 
-    bool isSocketKnown() const { return !_sockAddr.getAddress().isNull(); }
+    bool isSocketKnown() const { return (!_sockAddr.getAddressIPv4().isNull()) || (!_sockAddr.getAddressIPv6().isNull()); }
 
     void softReset(QString reason);
 

@@ -25,8 +25,10 @@ public:
     QUuid connectUUID;
     quint64 lastPingTimestamp{ 0 }; // client-side send time of last connect/domain list request
     NodeType_t nodeType;
-    SockAddr publicSockAddr;
-    SockAddr localSockAddr;
+    SockAddr publicSockAddrIPv4;
+    SockAddr publicSockAddrIPv6;
+    SockAddr localSockAddrIPv4;
+    SockAddr localSockAddrIPv6;
     SockAddr senderSockAddr;
     QList<NodeType_t> interestList;
     QString placeName;

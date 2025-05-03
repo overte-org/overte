@@ -116,7 +116,9 @@ private slots:
 private:
     void setSystemBufferSizes(SocketType socketType);
     Connection* findOrCreateConnection(const SockAddr& sockAddr, bool filterCreation = false);
-   
+    // Can be used only by findOrCreateConnection.
+    //Connection* createConnection(const SockAddr& sockAddr, bool filterCreation = false);
+
     // privatized methods used by UDTTest - they are private since they must be called on the Socket thread
     ConnectionStats::Stats sampleStatsForConnection(const SockAddr& destination);
     

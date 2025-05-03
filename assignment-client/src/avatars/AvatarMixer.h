@@ -37,8 +37,10 @@ public:
 
     static bool shouldReplicateTo(const Node& from, const Node& to) {
         return to.getType() == NodeType::DownstreamAvatarMixer &&
-            to.getPublicSocket() != from.getPublicSocket() &&
-            to.getLocalSocket() != from.getLocalSocket();
+            to.getPublicSocketIPv4() != from.getPublicSocketIPv4() &&
+            to.getPublicSocketIPv6() != from.getPublicSocketIPv6() &&
+            to.getLocalSocketIPv4() != from.getLocalSocketIPv4() &&
+            to.getLocalSocketIPv6() != from.getLocalSocketIPv6();
     }
 
 public slots:
