@@ -11,8 +11,8 @@
         { "from": "OpenXR.LeftGrip", "to": "Standard.LeftGrip", "filters": [{ "type": "deadZone", "min": 0.05 }] },
         { "from": "OpenXR.RightGrip", "to": "Standard.RightGrip", "filters": [{ "type": "deadZone", "min": 0.05 }] },
 
-        { "from": "OpenXR.LX", "to": "Standard.LX" },
-        { "from": "OpenXR.LY", "to": "Standard.LY" },
+        { "from": "OpenXR.LX", "to": "Standard.LX", "filters": [{ "type": "deadZone", "min": 0.05 }] },
+        { "from": "OpenXR.LY", "to": "Standard.LY", "filters": [{ "type": "deadZone", "min": 0.05 }] },
 
         { "from": "OpenXR.RX", "to": "Standard.RX" },
         { "from": "OpenXR.RY", "to": "Standard.RY" },

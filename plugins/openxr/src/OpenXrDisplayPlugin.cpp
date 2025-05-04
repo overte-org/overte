@@ -81,12 +81,9 @@ glm::mat4 OpenXrDisplayPlugin::getCullingProjection(const glm::mat4& baseProject
     return getEyeProjection(Left, baseProjection);
 }
 
-// OpenXR doesn't give us a target framerate,
-// but it does do vsync on its own,
-// so just push out frames as vsync allows
 float OpenXrDisplayPlugin::getTargetFrameRate() const {
     // predictedDisplayPeriod is delta nanoseconds, so convert it to frames per second
-    return std::min(1.0f, 1.0f / (_lastFrameState.predictedDisplayPeriod / 1e9f));
+    return std::max(1.0f, 1.0f / (_lastFrameState.predictedDisplayPeriod / 1e9f));
 }
 
 bool OpenXrDisplayPlugin::initViews() {
@@ -354,7 +351,14 @@ bool OpenXrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
         }
     }
 
-    _frameInfos[frameIndex] = _currentRenderFrameInfo;
+    _currentRenderFrameInfo = FrameInfo();
+    _currentRenderFrameInfo.predictedDisplayTime = _lastFrameState.predictedDisplayTime / 1e9;
+
+    withNonPresentThreadLock([&] {
+        _currentRenderFrameInfo.renderPose = _context->_lastHeadPose.getMatrix();
+        _currentRenderFrameInfo.presentPose = _context->_lastHeadPose.getMatrix();
+        _frameInfos[frameIndex] = _currentRenderFrameInfo;
+    });
 
     return HmdDisplayPlugin::beginFrameRender(frameIndex);
 }
@@ -486,6 +490,10 @@ bool OpenXrDisplayPlugin::isHmdMounted() const {
 void OpenXrDisplayPlugin::updatePresentPose() {
     _context->_lastPredictedDisplayTime = _lastFrameState.predictedDisplayTime;
 
+    // it *feels* like we need two frames of prediction for
+    // it to feel good, the oculusMobilePlugin does the same
+    auto twoFramesLater = _lastFrameState.predictedDisplayTime + (_lastFrameState.predictedDisplayPeriod * 2);
+
     std::vector<XrView> eye_views(_viewCount);
     for (uint32_t i = 0; i < _viewCount; i++) {
         eye_views[i].type = XR_TYPE_VIEW;
@@ -495,7 +503,7 @@ void OpenXrDisplayPlugin::updatePresentPose() {
     XrViewLocateInfo eyeViewLocateInfo = {
         .type = XR_TYPE_VIEW_LOCATE_INFO,
         .viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
-        .displayTime = _lastFrameState.predictedDisplayTime,
+        .displayTime = twoFramesLater,
         .space = _context->_viewSpace,
     };
 
@@ -516,7 +524,7 @@ void OpenXrDisplayPlugin::updatePresentPose() {
     XrViewLocateInfo viewLocateInfo = {
         .type = XR_TYPE_VIEW_LOCATE_INFO,
         .viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
-        .displayTime = _lastFrameState.predictedDisplayTime,
+        .displayTime = twoFramesLater,
         .space = _context->_stageSpace,
     };
 
@@ -533,18 +541,14 @@ void OpenXrDisplayPlugin::updatePresentPose() {
         .type = XR_TYPE_SPACE_LOCATION,
         .pose = XR_INDENTITY_POSE,
     };
-    xrLocateSpace(_context->_viewSpace, _context->_stageSpace, _lastFrameState.predictedDisplayTime, &headLocation);
+    xrLocateSpace(_context->_viewSpace, _context->_stageSpace, twoFramesLater, &headLocation);
 
     glm::vec3 headPosition = xrVecToGlm(headLocation.pose.position);
     glm::quat headOrientation = xrQuatToGlm(headLocation.pose.orientation);
     _context->_lastHeadPose = controller::Pose(headPosition, headOrientation);
 
-    _currentRenderFrameInfo = FrameInfo();
-    _currentRenderFrameInfo.renderPose = _context->_lastHeadPose.getMatrix();
-    _currentRenderFrameInfo.presentPose = _currentRenderFrameInfo.renderPose;
-
-    _currentPresentFrameInfo.renderPose = _currentRenderFrameInfo.renderPose;
-    _currentPresentFrameInfo.presentPose = _currentRenderFrameInfo.renderPose;
+    _currentPresentFrameInfo.presentPose = _context->_lastHeadPose.getMatrix();
+    _currentPresentFrameInfo.predictedDisplayTime = _lastFrameState.predictedDisplayTime / 1e9;
 }
 
 int OpenXrDisplayPlugin::getRequiredThreadCount() const {
