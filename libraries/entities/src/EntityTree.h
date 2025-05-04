@@ -173,6 +173,7 @@ public:
     void debugDumpMap();
     virtual void dumpTree() override;
     virtual void pruneTree() override;
+    int removeOrphanedEntities();
 
     static QByteArray remapActionDataIDs(QByteArray actionData, QHash<EntityItemID, EntityItemID>& map);
 
