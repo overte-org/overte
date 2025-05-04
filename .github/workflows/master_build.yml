@@ -194,13 +194,17 @@ jobs:
     - name: Prepare Conan Build Environment
       uses: ./.github/actions/setup-conan
 
-    - name: Install Conan dependencies
-      uses: ./.github/actions/conan-install
-      with:
-        qt_source: ${{matrix.qt_source}}
-        build_type: ${{env.BUILD_TYPE}}
-        cppstd: ${{env.CONAN_CPPSTD}}
-        conan_profile: ${{env.CONAN_PROFILE}}
+    - name: Configure CMake
+      if: startsWith(matrix.os, 'Windows') == false
+      shell: bash
+           # This syntax requires CMake 3.23
+      run: cmake . -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -Bbuild -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="cmake/conan_provider.cmake" -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
+
+    - name: Configure CMake (Windows)
+      if: startsWith(matrix.os, 'Windows')
+      shell: bash
+           # This syntax requires CMake 3.23
+      run: cmake . -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -Bbuild -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="cmake/conan_provider.cmake" -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
 
     - name: Upload dependency source backups
       shell: bash
@@ -212,18 +216,6 @@ jobs:
     - name: Cleanup Conan dependencies
       run: conan cache clean "*" -sbd
       shell: bash
-
-    - name: Configure CMake
-      if: startsWith(matrix.os, 'Windows') == false
-      shell: bash
-           # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
-
-    - name: Configure CMake (Windows)
-      if: startsWith(matrix.os, 'Windows')
-      shell: bash
-           # This syntax requires CMake 3.23
-      run: cmake --preset conan-default -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
 
     - name: Build application
       shell: bash

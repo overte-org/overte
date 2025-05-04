@@ -1,11 +1,4 @@
 set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
-if (WIN32)
-  # Building with webrtc-audio-processing on Windows fails on cppstd 14.
-  set(CMAKE_CXX_STANDARD 17)
-else ()
-  set(CMAKE_CXX_STANDARD 14)
-endif ()
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (NOT "${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
   message( FATAL_ERROR "Only 64 bit builds supported." )

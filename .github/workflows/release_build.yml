@@ -109,31 +109,13 @@ jobs:
     - name: Prepare Conan Build Environment
       uses: ./.github/actions/setup-conan
 
-    - name: Install Conan dependencies
-      uses: ./.github/actions/conan-install
-      with:
-        qt_source: ${{matrix.qt_source}}
-        build_type: ${{env.BUILD_TYPE}}
-        cppstd: ${{env.CONAN_CPPSTD}}
-        conan_profile: ${{env.CONAN_PROFILE}}
-
-    - name: Upload Conan dependencies
-      # Conan isn't glibc aware, so we need to be really careful what we upload to the binary cache on Linux.
-      # See the upstream discussion: https://github.com/conan-io/conan/issues/7121
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
-      continue-on-error: true
-      shell: bash
-      env:
-        CONAN_LOGIN_USERNAME_OVERTE: ${{ secrets.conan_login_username_overte }}
-        CONAN_PASSWORD_OVERTE: ${{ secrets.conan_password_overte }}
-      run: |
-        conan list --graph=build.json --graph-binaries=build --format=json > pkglist.json
-        conan upload --list=pkglist.json -r=overte -c
-
     - name: Configure CMake
       shell: bash
-           # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} -DJSDOC_ENABLED:BOOL=TRUE -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
+      run: cmake . -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -Bbuild -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="cmake/conan_provider.cmake" -DJSDOC_ENABLED:BOOL=TRUE -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
+
+    - name: Cleanup Conan dependencies
+      run: conan cache clean "*" -sbd
+      shell: bash
 
     - name: Build application
       shell: bash

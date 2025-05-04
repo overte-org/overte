@@ -274,12 +274,9 @@ jobs:
     - name: Prepare Conan Build Environment
       uses: ./.github/actions/setup-conan
 
-    - name: Install Conan dependencies
-      uses: ./.github/actions/conan-install
-      with:
-        qt_source: ${{matrix.qt_source}}
-        build_type: ${{env.BUILD_TYPE}}
-        cppstd: ${{env.CONAN_CPPSTD}}
+    - name: Configure CMake
+      shell: bash
+      run: cmake . -DCMAKE_BUILD_TYPE=Release -Bbuild -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="cmake/conan_provider.cmake" $CMAKE_EXTRA
 
     - name: Upload dependency source backups
       shell: bash
@@ -288,10 +285,9 @@ jobs:
         CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN: ${{ secrets.CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN }}
       run: conan cache backup-upload || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
 
-    - name: Configure CMake
+    - name: Cleanup Conan dependencies
+      run: conan cache clean "*" -sbd
       shell: bash
-           # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} $CMAKE_EXTRA
 
     - name: Build Domain Server
       working-directory: build

@@ -26,6 +26,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarc
     set(GLES_OPTION ON)
 endif()
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 # set our OS X deployment target
 # (needs to be set before first project() call and before prebuild.py)
 if (APPLE)
