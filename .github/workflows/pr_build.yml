@@ -116,6 +116,7 @@ jobs:
             fi
           fi
         fi
+        echo "CONAN_PROFILE=default" >> $GITHUB_ENV
 
         # Mac build variables
         if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
@@ -127,6 +128,7 @@ jobs:
             echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCLIENT_ONLY=1 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           fi
           echo "APP_TARGET_NAME=Overte" >> $GITHUB_ENV
+          echo "CONAN_PROFILE=default" >> $GITHUB_ENV
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" = "Windows"* ]]; then
@@ -137,6 +139,11 @@ jobs:
             echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
           else
             echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE -DCLIENT_ONLY=1" >> $GITHUB_ENV
+          fi
+          if [[ "${{ matrix.runner }}" = "windows-2019" ]]; then
+            echo "CONAN_PROFILE='./tools/conan-profiles/vs-19-release'" >> $GITHUB_ENV
+          else
+            echo "Not sure which Conan profile to use. Exiting." && exit 1
           fi
         fi
         # Android + Quest build variables
@@ -176,7 +183,7 @@ jobs:
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
         path: ~/.conan2/
-  
+
     - name: Install dependencies
       shell: bash
       if: startsWith(matrix.os, 'Ubuntu') || contains(matrix.os, 'Debian') || startsWith(matrix.os, 'macOS')
@@ -220,20 +227,22 @@ jobs:
       run: $PYTHON_EXEC -m pip install boto3 PyGithub conan
 
     - name: Prepare Conan Build Environment
-      shell: bash
-      run: |
-        conan profile detect -e
-        conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
-        conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center
-        echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
+      uses: ./.github/actions/setup-conan
 
     - name: Install Conan dependencies
+      uses: ./.github/actions/conan-install
+      with:
+        qt_source: ${{matrix.qt_source}}
+        build_type: ${{env.BUILD_TYPE}}
+        cppstd: ${{env.CONAN_CPPSTD}}
+        conan_profile: ${{env.CONAN_PROFILE}}
+
+    - name: Upload dependency source backups
       shell: bash
-      run: |
-        # Run twice to work around OpenSSL not being found. See: https://github.com/overte-org/overte-conan-recipes/issues/1
-        for counter in {1..2}; do
-          conan install . -s compiler.cppstd=$CONAN_CPPSTD -s build_type=$BUILD_TYPE -o '&:qt_source='${{matrix.qt_source}} -b missing -pr:b=default -of build
-        done
+      env:
+        # Token for uploading dependency source backups.
+        CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN: ${{ secrets.CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN }}
+      run: conan cache backup-upload || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
 
     - name: Cleanup Conan dependencies
       run: conan cache clean "*" -sbd
