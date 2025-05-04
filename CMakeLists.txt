@@ -338,10 +338,6 @@ if (HIFI_USE_OPTIMIZED_IK)
 endif()
 set(HIFI_LIBRARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libraries")
 
-set(EXTERNAL_PROJECT_PREFIX "project")
-set_property(DIRECTORY PROPERTY EP_PREFIX ${EXTERNAL_PROJECT_PREFIX})
-setup_externals_binary_dir()
-
 option(USE_NSIGHT "Attempt to find the nSight libraries" 1)
 
 # FIXME hack to work on the proper Android toolchain
