@@ -151,12 +151,7 @@ Setting `OVERTE_CPU_ARCHITECTURE` to an empty string will use the default compil
 
 The next step is setting up conan
 
-First, create a conan profile
-```bash
-conan profile detect --force
-```
-
-Next, add the overte remote to conan
+First, add the overte remote to conan
 ```bash
 conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
 ```
@@ -169,15 +164,9 @@ echo "tools.system.package_manager:sudo = True" >> ~/.conan2/global.conf
 
 ### Compiling
 
-Install the dependencies with conan
-```bash
-cd overte
-conan install . -s build_type=Release -b missing -pr:b=default -of build
-```
-
 Prepare makefiles:
 ```bash
-cmake --preset conan-release
+cmake . -DCMAKE_BUILD_TYPE=Release -Bbuild -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="cmake/conan_provider.cmake"
 ```
 
 #### Server
