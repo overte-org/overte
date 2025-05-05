@@ -3,8 +3,8 @@
     "channels": [
         { "from": "OpenXR.Head", "to" : "Standard.Head", "when" : [ "Application.InHMD"] },
 
-        { "from": "OpenXR.LT", "to": "Standard.LT", "filters": [{"type": "deadZone", "min": 0.05}]},
-        { "from": "OpenXR.RT", "to": "Standard.RT", "filters": [{"type": "deadZone", "min": 0.05}]},
+        { "from": "OpenXR.LT", "to": "Standard.LT", "filters": [{"type": "deadZone", "min": 0.05}] },
+        { "from": "OpenXR.RT", "to": "Standard.RT", "filters": [{"type": "deadZone", "min": 0.05}] },
         { "from": "OpenXR.LTClick", "to": "Standard.LTClick" },
         { "from": "OpenXR.RTClick", "to": "Standard.RTClick" },
 
@@ -14,10 +14,7 @@
         { "from": "OpenXR.LX", "to": "Standard.LX", "filters": [{ "type": "deadZone", "min": 0.05 }] },
         { "from": "OpenXR.LY", "to": "Standard.LY", "filters": [{ "type": "deadZone", "min": 0.05 }] },
 
-        { "from": "OpenXR.LX", "to": "Actions.TranslateX", "peek": true, "filters": [{ "type": "deadZone", "min": 0.05 }] },
-        { "from": "OpenXR.LY", "to": "Actions.TranslateZ", "peek": true, "filters": [{ "type": "deadZone", "min": 0.05 }] },
-
-        { "from": "OpenXR.RX", "to": "Standard.RX"},
+        { "from": "OpenXR.RX", "to": "Standard.RX" },
         { "from": "OpenXR.RY", "to": "Standard.RY" },
 
         { "from": "OpenXR.LS", "to": "Standard.LS" },

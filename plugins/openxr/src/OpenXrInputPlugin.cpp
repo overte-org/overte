@@ -114,11 +114,6 @@ OpenXrInputPlugin::InputDevice::InputDevice(std::shared_ptr<OpenXrContext> c) : 
     qCInfo(xr_input_cat) << "Hand tracking supported:" << _context->_handTrackingSupported;
 }
 
-OpenXrInputPlugin::InputDevice::~InputDevice() {
-    if (_handTracker[0] != XR_NULL_HANDLE) { _context->xrDestroyHandTrackerEXT(_handTracker[0]); }
-    if (_handTracker[1] != XR_NULL_HANDLE) { _context->xrDestroyHandTrackerEXT(_handTracker[1]); }
-}
-
 void OpenXrInputPlugin::InputDevice::focusOutEvent() {
     _axisStateMap.clear();
     _buttonPressedMap.clear();
@@ -141,6 +136,10 @@ bool OpenXrInputPlugin::InputDevice::triggerHapticPulse(float strength, float du
 
     auto path = (index == 0) ? "left_haptic" : "right_haptic";
 
+    // FIXME: sometimes something bugs out and hammers this,
+    // and the controller vibrates really loudly until another
+    // haptic pulse is triggered
+    // The OpenVR plugin has a lock protecting these
     if (!_actions.at(path)->applyHaptic(xrDuration, XR_FREQUENCY_UNSPECIFIED, 0.5f * strength)) {
         qCCritical(xr_input_cat) << "Failed to apply haptic feedback!";
     }
@@ -418,6 +417,9 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
     if (!xrCheck(instance, result, "Failed to create action set."))
         return false;
 
+    // NOTE: The "squeeze" actions have quite a high deadzone in the controller config.
+    // A lot of our controller scripts currently only check for (squeeze > 0),
+    // which means controllers like the Index ones will be way too sensitive.
     std::map<std::string, std::pair<std::string, XrActionType>> actionTypes = {
         {"left_primary_click",     {"Left Primary", XR_ACTION_TYPE_BOOLEAN_INPUT}},
         {"left_secondary_click",   {"Left Secondary (Tablet)", XR_ACTION_TYPE_BOOLEAN_INPUT}},

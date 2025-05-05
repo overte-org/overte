@@ -30,9 +30,6 @@ constexpr GLint XR_PREFERRED_COLOR_FORMAT = GL_SRGB8_ALPHA8;
 
 OpenXrDisplayPlugin::OpenXrDisplayPlugin(std::shared_ptr<OpenXrContext> c) {
     _context = c;
-    _presentOnlyOnce = true;
-    _lastFrameTime = 1.0f / 90.0f;
-    _estimatedTargetFramerate = 90.0f;
 }
 
 bool OpenXrDisplayPlugin::isSupported() const {
@@ -84,11 +81,9 @@ glm::mat4 OpenXrDisplayPlugin::getCullingProjection(const glm::mat4& baseProject
     return getEyeProjection(Left, baseProjection);
 }
 
-// OpenXR doesn't give us a target framerate,
-// but it does do vsync on its own,
-// so just push out frames as vsync allows
 float OpenXrDisplayPlugin::getTargetFrameRate() const {
-    return std::numeric_limits<float>::max();
+    // predictedDisplayPeriod is delta nanoseconds, so convert it to frames per second
+    return std::max(1.0f, 1.0f / (_lastFrameState.predictedDisplayPeriod / 1e9f));
 }
 
 bool OpenXrDisplayPlugin::initViews() {
@@ -260,15 +255,6 @@ void OpenXrDisplayPlugin::init() {
     emit deviceConnected(getName());
 }
 
-// FIXME: For some reason, OpenVR and OVR don't need this,
-// and the game tick counter works as expected. In XR, it
-// doesn't behave properly, so we have to emulate vsync delay manually.
-void OpenXrDisplayPlugin::idle() {
-    float remainingUntilFrame = std::max(0.0f, _lastFrameTime - (1.0f / _estimatedTargetFramerate));
-    std::chrono::duration<float, std::ratio<1>> duration(remainingUntilFrame);
-    std::this_thread::sleep_for(duration);
-}
-
 const QString OpenXrDisplayPlugin::getName() const {
     return QString("OpenXR: %1").arg(_context->_systemName);
 }
@@ -337,8 +323,6 @@ void OpenXrDisplayPlugin::resetSensors() {
 }
 
 bool OpenXrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
-    std::chrono::time_point measureStart = std::chrono::high_resolution_clock::now();
-
     _context->pollEvents();
 
     if (_context->_shouldQuit) {
@@ -347,112 +331,24 @@ bool OpenXrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
     }
 
     if (!_context->_shouldRunFrameCycle) {
-        qCWarning(xr_display_cat, "beginFrameRender: Shoudln't run frame cycle. Skipping renderin frame %d", frameIndex);
+        qCWarning(xr_display_cat, "beginFrameRender: Shouldn't run frame cycle. Skipping renderin frame %d", frameIndex);
         return true;
     }
 
-    // Wait for present thread
-    // Actually wait for xrEndFrame to happen.
-    bool haveFrameToSubmit = true;
-    {
-        std::unique_lock<std::mutex> lock(_haveFrameMutex);
-        haveFrameToSubmit = _haveFrameToSubmit;
-    }
-
-    while (haveFrameToSubmit) {
-        std::this_thread::sleep_for(std::chrono::microseconds(10));
-        {
-            std::unique_lock<std::mutex> lock(_haveFrameMutex);
-            haveFrameToSubmit = _haveFrameToSubmit;
-        }
-    }
-
-    _lastFrameState = { .type = XR_TYPE_FRAME_STATE };
-    XrResult result = xrWaitFrame(_context->_session, nullptr, &_lastFrameState);
-
-    if (!xrCheck(_context->_instance, result, "xrWaitFrame failed"))
-        return false;
-
-    if (!_context->beginFrame())
-        return false;
-
-    _context->_lastPredictedDisplayTime = _lastFrameState.predictedDisplayTime;
-
-    std::vector<XrView> eye_views(_viewCount);
-    for (uint32_t i = 0; i < _viewCount; i++) {
-        eye_views[i].type = XR_TYPE_VIEW;
-    }
-
-    // TODO: Probably shouldn't call xrLocateViews twice. Use only view space views?
-    XrViewLocateInfo eyeViewLocateInfo = {
-        .type = XR_TYPE_VIEW_LOCATE_INFO,
-        .viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
-        .displayTime = _lastFrameState.predictedDisplayTime,
-        .space = _context->_viewSpace,
-    };
-
-    XrViewState eyeViewState = { .type = XR_TYPE_VIEW_STATE };
-
-    result = xrLocateViews(_context->_session, &eyeViewLocateInfo, &eyeViewState, _viewCount, &_viewCount, eye_views.data());
-    if (!xrCheck(_context->_instance, result, "Could not locate views"))
-        return false;
-
-    for (uint32_t i = 0; i < 2; i++) {
-        vec3 eyePosition = xrVecToGlm(eye_views[i].pose.position);
-        quat eyeOrientation = xrQuatToGlm(eye_views[i].pose.orientation);
-        _eyeOffsets[i] = controller::Pose(eyePosition, eyeOrientation).getMatrix();
-    }
-
-    _lastViewState = { .type = XR_TYPE_VIEW_STATE };
-
-    XrViewLocateInfo viewLocateInfo = {
-        .type = XR_TYPE_VIEW_LOCATE_INFO,
-        .viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
-        .displayTime = _lastFrameState.predictedDisplayTime,
-        .space = _context->_stageSpace,
-    };
-
-    result = xrLocateViews(_context->_session, &viewLocateInfo, &_lastViewState, _viewCount, &_viewCount, _views.value().data());
-    if (!xrCheck(_context->_instance, result, "Could not locate views"))
-        return false;
-
-    for (uint32_t i = 0; i < _viewCount; i++) {
-        _projectionLayerViews[i].pose = _views.value()[i].pose;
-        _projectionLayerViews[i].fov = _views.value()[i].fov;
-    }
-
-    XrSpaceLocation headLocation = {
-        .type = XR_TYPE_SPACE_LOCATION,
-        .pose = XR_INDENTITY_POSE,
-    };
-    xrLocateSpace(_context->_viewSpace, _context->_stageSpace, _lastFrameState.predictedDisplayTime, &headLocation);
-
-    glm::vec3 headPosition = xrVecToGlm(headLocation.pose.position);
-    glm::quat headOrientation = xrQuatToGlm(headLocation.pose.orientation);
-    _context->_lastHeadPose = controller::Pose(headPosition, headOrientation);
-
     _currentRenderFrameInfo = FrameInfo();
-    _currentRenderFrameInfo.renderPose = _context->_lastHeadPose.getMatrix();
-    _currentRenderFrameInfo.presentPose = _currentRenderFrameInfo.renderPose;
-    _frameInfos[frameIndex] = _currentRenderFrameInfo;
+    _currentRenderFrameInfo.predictedDisplayTime = _lastFrameState.predictedDisplayTime / 1e9;
 
-    std::chrono::time_point measureEnd = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::ratio<1>> delta = measureEnd - measureStart;
-    _lastFrameTime = delta.count();
-    auto newEstimatedFramerate =(1.0f / _lastFrameTime);
-    if (_estimatedTargetFramerate < newEstimatedFramerate) {
-        _estimatedTargetFramerate = newEstimatedFramerate;
-    }
+    withNonPresentThreadLock([&] {
+        _currentRenderFrameInfo.renderPose = _context->_lastHeadPose.getMatrix();
+        _currentRenderFrameInfo.presentPose = _context->_lastHeadPose.getMatrix();
+        _frameInfos[frameIndex] = _currentRenderFrameInfo;
+    });
 
     return HmdDisplayPlugin::beginFrameRender(frameIndex);
 }
 
 void OpenXrDisplayPlugin::submitFrame(const gpu::FramePointer& newFrame) {
     OpenGLDisplayPlugin::submitFrame(newFrame);
-    {
-        std::unique_lock<std::mutex> lock(_haveFrameMutex);
-        _haveFrameToSubmit = true;
-    }
 }
 
 void OpenXrDisplayPlugin::compositeLayers() {
@@ -468,10 +364,19 @@ void OpenXrDisplayPlugin::compositeLayers() {
 
 void OpenXrDisplayPlugin::hmdPresent() {
     if (!_context->_shouldRunFrameCycle) {
-        qCWarning(xr_display_cat, "hmdPresent: Shoudln't run frame cycle. Skipping renderin frame %d",
+        qCWarning(xr_display_cat, "hmdPresent: Shouldn't run frame cycle. Skipping renderin frame %d",
                   _currentFrame->frameIndex);
         return;
     }
+
+    _lastFrameState = { .type = XR_TYPE_FRAME_STATE };
+    XrResult result = xrWaitFrame(_context->_session, nullptr, &_lastFrameState);
+
+    if (!xrCheck(_context->_instance, result, "xrWaitFrame failed"))
+        return;
+
+    if (!_context->beginFrame())
+        return;
 
     if (_lastFrameState.shouldRender) {
         // TODO: Use multiview swapchain
@@ -509,11 +414,6 @@ void OpenXrDisplayPlugin::hmdPresent() {
     endFrame();
 
     _presentRate.increment();
-
-    {
-        std::unique_lock<std::mutex> lock(_haveFrameMutex);
-        _haveFrameToSubmit = false;
-    }
 }
 
 bool OpenXrDisplayPlugin::endFrame() {
@@ -561,6 +461,67 @@ bool OpenXrDisplayPlugin::isHmdMounted() const {
 }
 
 void OpenXrDisplayPlugin::updatePresentPose() {
+    if (_lastFrameState.predictedDisplayTime == 0) { return; }
+
+    _context->_lastPredictedDisplayTime = _lastFrameState.predictedDisplayTime;
+
+    auto predictedDisplayTime = _lastFrameState.predictedDisplayTime;
+
+    std::vector<XrView> eye_views(_viewCount);
+    for (uint32_t i = 0; i < _viewCount; i++) {
+        eye_views[i].type = XR_TYPE_VIEW;
+    }
+
+    // TODO: Probably shouldn't call xrLocateViews twice. Use only view space views?
+    XrViewLocateInfo eyeViewLocateInfo = {
+        .type = XR_TYPE_VIEW_LOCATE_INFO,
+        .viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
+        .displayTime = predictedDisplayTime,
+        .space = _context->_viewSpace,
+    };
+
+    XrViewState eyeViewState = { .type = XR_TYPE_VIEW_STATE };
+
+    XrResult result = xrLocateViews(_context->_session, &eyeViewLocateInfo, &eyeViewState, _viewCount, &_viewCount, eye_views.data());
+    if (!xrCheck(_context->_instance, result, "Could not locate views"))
+        return;
+
+    for (uint32_t i = 0; i < 2; i++) {
+        vec3 eyePosition = xrVecToGlm(eye_views[i].pose.position);
+        quat eyeOrientation = xrQuatToGlm(eye_views[i].pose.orientation);
+        _eyeOffsets[i] = controller::Pose(eyePosition, eyeOrientation).getMatrix();
+    }
+
+    _lastViewState = { .type = XR_TYPE_VIEW_STATE };
+
+    XrViewLocateInfo viewLocateInfo = {
+        .type = XR_TYPE_VIEW_LOCATE_INFO,
+        .viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
+        .displayTime = predictedDisplayTime,
+        .space = _context->_stageSpace,
+    };
+
+    result = xrLocateViews(_context->_session, &viewLocateInfo, &_lastViewState, _viewCount, &_viewCount, _views.value().data());
+    if (!xrCheck(_context->_instance, result, "Could not locate views"))
+        return;
+
+    for (uint32_t i = 0; i < _viewCount; i++) {
+        _projectionLayerViews[i].pose = _views.value()[i].pose;
+        _projectionLayerViews[i].fov = _views.value()[i].fov;
+    }
+
+    XrSpaceLocation headLocation = {
+        .type = XR_TYPE_SPACE_LOCATION,
+        .pose = XR_INDENTITY_POSE,
+    };
+    xrLocateSpace(_context->_viewSpace, _context->_stageSpace, predictedDisplayTime, &headLocation);
+
+    glm::vec3 headPosition = xrVecToGlm(headLocation.pose.position);
+    glm::quat headOrientation = xrQuatToGlm(headLocation.pose.orientation);
+    _context->_lastHeadPose = controller::Pose(headPosition, headOrientation);
+
+    _currentPresentFrameInfo.presentPose = _context->_lastHeadPose.getMatrix();
+    _currentPresentFrameInfo.predictedDisplayTime = _lastFrameState.predictedDisplayTime / 1e9;
 }
 
 int OpenXrDisplayPlugin::getRequiredThreadCount() const {

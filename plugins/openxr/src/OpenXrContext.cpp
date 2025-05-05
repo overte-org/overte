@@ -8,7 +8,7 @@
 //
 
 #include "OpenXrContext.h"
-#include <qloggingcategory.h>
+#include <QLoggingCategory>
 #include <QString>
 #include <QGuiApplication>
 
@@ -67,8 +67,10 @@ OpenXrContext::~OpenXrContext() {
 }
 
 bool OpenXrContext::initInstance() {
-    if (static_cast<QGuiApplication*>(qApp)->platformName() == "wayland") {
-        qCCritical(xr_context_cat, "The OpenXR plugin does not support Wayland yet! Use the QT_QPA_PLATFORM=xcb environment variable to force Overte to launch with X11.");
+    auto myApp = static_cast<QGuiApplication*>(qApp);
+    if (myApp->platformName() == "wayland") {
+        auto msg = QString::fromUtf8("The OpenXR plugin does not support Wayland yet! Use the QT_QPA_PLATFORM=xcb environment variable to force Overte to launch with X11.");
+        qCCritical(xr_context_cat) << msg;
         return false;
     }
 
@@ -258,32 +260,45 @@ bool OpenXrContext::initGraphics() {
 }
 
 bool OpenXrContext::requestExitSession() {
+    if (_session == XR_NULL_HANDLE) { return true; }
+
     XrResult result = xrRequestExitSession(_session);
     return xrCheck(_instance, result, "Failed to request exit session!");
 }
 
 bool OpenXrContext::initSession() {
+    if (_session != XR_NULL_HANDLE) { return true; }
+
+    XrSessionCreateInfo info = {
+        .type = XR_TYPE_SESSION_CREATE_INFO,
+        .next = nullptr,
+        .systemId = _systemId,
+    };
+
 #if defined(Q_OS_LINUX)
-    XrGraphicsBindingOpenGLXlibKHR binding = {
+    // if (wayland) {
+    // blah blah...
+    // info.next = &wlBinding;
+    // } else
+    XrGraphicsBindingOpenGLXlibKHR xlibBinding = {
         .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR,
         .xDisplay = XOpenDisplay(nullptr),
         .glxDrawable = glXGetCurrentDrawable(),
         .glxContext = glXGetCurrentContext(),
     };
+
+    info.next = &xlibBinding;
 #elif defined(Q_OS_WIN)
     XrGraphicsBindingOpenGLWin32KHR binding = {
         .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR,
         .hDC = wglGetCurrentDC(),
         .hGLRC = wglGetCurrentContext(),
     };
+
+    info.next = &binding;
 #else
   #error "Unsupported platform"
 #endif
-    XrSessionCreateInfo info = {
-        .type = XR_TYPE_SESSION_CREATE_INFO,
-        .next = &binding,
-        .systemId = _systemId,
-    };
 
     XrResult result = xrCreateSession(_instance, &info, &_session);
     return xrCheck(_instance, result, "Failed to create session");
@@ -398,6 +413,7 @@ bool OpenXrContext::updateSessionState(XrSessionState newState) {
                 return false;
             _shouldQuit = true;
             _shouldRunFrameCycle = false;
+            _session = XR_NULL_HANDLE;
             qCDebug(xr_context_cat, "Destroyed session");
             break;
         }

@@ -75,8 +75,6 @@ private:
     public:
         InputDevice(std::shared_ptr<OpenXrContext> c);
 
-        ~InputDevice();
-
     private:
         controller::Input::NamedVector getAvailableInputs() const override;
         QString getDefaultMappingConfig() const override;
