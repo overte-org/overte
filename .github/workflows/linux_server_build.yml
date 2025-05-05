@@ -276,7 +276,10 @@ jobs:
 
     - name: Configure CMake
       shell: bash
-      run: cmake . -DCMAKE_BUILD_TYPE=Release -Bbuild -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="cmake/conan_provider.cmake" $CMAKE_EXTRA
+      run: |
+        cmake . -DCMAKE_BUILD_TYPE=Release -Bbuild \
+          -DCONAN_INSTALL_ARGS="-o '&:qt_source=${{matrix.qt_source}}' -b missing" \
+          -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="cmake/conan_provider.cmake" $CMAKE_EXTRA
 
     - name: Upload dependency source backups
       shell: bash
