@@ -8,8 +8,8 @@
         { "from": "OpenXR.LTClick", "to": "Standard.LTClick" },
         { "from": "OpenXR.RTClick", "to": "Standard.RTClick" },
 
-        { "from": "OpenXR.LeftGrip", "to": "Standard.LeftGrip", "filters": [{ "type": "deadZone", "min": 0.6 }] },
-        { "from": "OpenXR.RightGrip", "to": "Standard.RightGrip", "filters": [{ "type": "deadZone", "min": 0.6 }] },
+        { "from": "OpenXR.LeftGrip", "to": "Standard.LeftGrip", "filters": [{ "type": "deadZone", "min": 0.05 }] },
+        { "from": "OpenXR.RightGrip", "to": "Standard.RightGrip", "filters": [{ "type": "deadZone", "min": 0.05 }] },
 
         { "from": "OpenXR.LX", "to": "Standard.LX", "filters": [{ "type": "deadZone", "min": 0.05 }] },
         { "from": "OpenXR.LY", "to": "Standard.LY", "filters": [{ "type": "deadZone", "min": 0.05 }] },
