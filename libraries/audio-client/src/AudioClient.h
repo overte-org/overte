@@ -54,6 +54,7 @@
 
 #include <plugins/CodecPlugin.h>
 
+#include "AudioScriptingInterface.h"
 #include "AudioIOStats.h"
 #include "AudioFileWav.h"
 #include "HifiAudioDeviceInfo.h"
@@ -186,6 +187,10 @@ public:
     void setAudioPaused(bool pause);
 
     AudioSolo& getAudioSolo() override { return _solo; }
+
+    QUuid registerScriptListener() override;
+    void unregisterScriptListener(const QUuid& listenerID) override;
+    QByteArray getPCMData(const QUuid& listener) override;
 
 #ifdef Q_OS_WIN
     static QString getWinDeviceName(wchar_t* guid);
@@ -534,6 +539,9 @@ private:
     QTimer* _checkDevicesTimer { nullptr };
     Mutex _checkPeakValuesMutex;
     QTimer* _checkPeakValuesTimer { nullptr };
+
+    Mutex _scriptListenersMutex;
+    QHash<QUuid, std::shared_ptr<ScriptAudioListener>> _scriptListeners;
 
     bool _isRecording { false };
 };
