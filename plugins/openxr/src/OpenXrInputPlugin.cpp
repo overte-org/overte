@@ -417,6 +417,9 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
     if (!xrCheck(instance, result, "Failed to create action set."))
         return false;
 
+    // NOTE: The "squeeze" actions have quite a high deadzone in the controller config.
+    // A lot of our controller scripts currently only check for (squeeze > 0),
+    // which means controllers like the Index ones will be way too sensitive.
     std::map<std::string, std::pair<std::string, XrActionType>> actionTypes = {
         {"left_primary_click",     {"Left Primary", XR_ACTION_TYPE_BOOLEAN_INPUT}},
         {"left_secondary_click",   {"Left Secondary (Tablet)", XR_ACTION_TYPE_BOOLEAN_INPUT}},

@@ -335,22 +335,6 @@ bool OpenXrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
         return true;
     }
 
-    // Wait for present thread
-    // Actually wait for xrEndFrame to happen.
-    bool haveFrameToSubmit = true;
-    {
-        std::unique_lock<std::mutex> lock(_haveFrameMutex);
-        haveFrameToSubmit = _haveFrameToSubmit;
-    }
-
-    while (haveFrameToSubmit) {
-        std::this_thread::sleep_for(std::chrono::microseconds(10));
-        {
-            std::unique_lock<std::mutex> lock(_haveFrameMutex);
-            haveFrameToSubmit = _haveFrameToSubmit;
-        }
-    }
-
     _currentRenderFrameInfo = FrameInfo();
     _currentRenderFrameInfo.predictedDisplayTime = _lastFrameState.predictedDisplayTime / 1e9;
 
@@ -365,10 +349,6 @@ bool OpenXrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
 
 void OpenXrDisplayPlugin::submitFrame(const gpu::FramePointer& newFrame) {
     OpenGLDisplayPlugin::submitFrame(newFrame);
-    {
-        std::unique_lock<std::mutex> lock(_haveFrameMutex);
-        _haveFrameToSubmit = true;
-    }
 }
 
 void OpenXrDisplayPlugin::compositeLayers() {
@@ -397,8 +377,6 @@ void OpenXrDisplayPlugin::hmdPresent() {
 
     if (!_context->beginFrame())
         return;
-
-    updatePresentPose();
 
     if (_lastFrameState.shouldRender) {
         // TODO: Use multiview swapchain
@@ -436,11 +414,6 @@ void OpenXrDisplayPlugin::hmdPresent() {
     endFrame();
 
     _presentRate.increment();
-
-    {
-        std::unique_lock<std::mutex> lock(_haveFrameMutex);
-        _haveFrameToSubmit = false;
-    }
 }
 
 bool OpenXrDisplayPlugin::endFrame() {
@@ -488,11 +461,11 @@ bool OpenXrDisplayPlugin::isHmdMounted() const {
 }
 
 void OpenXrDisplayPlugin::updatePresentPose() {
+    if (_lastFrameState.predictedDisplayTime == 0) { return; }
+
     _context->_lastPredictedDisplayTime = _lastFrameState.predictedDisplayTime;
 
-    // it *feels* like we need two frames of prediction for
-    // it to feel good, the oculusMobilePlugin does the same
-    auto twoFramesLater = _lastFrameState.predictedDisplayTime + (_lastFrameState.predictedDisplayPeriod * 2);
+    auto predictedDisplayTime = _lastFrameState.predictedDisplayTime;
 
     std::vector<XrView> eye_views(_viewCount);
     for (uint32_t i = 0; i < _viewCount; i++) {
@@ -503,7 +476,7 @@ void OpenXrDisplayPlugin::updatePresentPose() {
     XrViewLocateInfo eyeViewLocateInfo = {
         .type = XR_TYPE_VIEW_LOCATE_INFO,
         .viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
-        .displayTime = twoFramesLater,
+        .displayTime = predictedDisplayTime,
         .space = _context->_viewSpace,
     };
 
@@ -524,7 +497,7 @@ void OpenXrDisplayPlugin::updatePresentPose() {
     XrViewLocateInfo viewLocateInfo = {
         .type = XR_TYPE_VIEW_LOCATE_INFO,
         .viewConfigurationType = XR_VIEW_CONFIGURATION_TYPE_PRIMARY_STEREO,
-        .displayTime = twoFramesLater,
+        .displayTime = predictedDisplayTime,
         .space = _context->_stageSpace,
     };
 
@@ -541,7 +514,7 @@ void OpenXrDisplayPlugin::updatePresentPose() {
         .type = XR_TYPE_SPACE_LOCATION,
         .pose = XR_INDENTITY_POSE,
     };
-    xrLocateSpace(_context->_viewSpace, _context->_stageSpace, twoFramesLater, &headLocation);
+    xrLocateSpace(_context->_viewSpace, _context->_stageSpace, predictedDisplayTime, &headLocation);
 
     glm::vec3 headPosition = xrVecToGlm(headLocation.pose.position);
     glm::quat headOrientation = xrQuatToGlm(headLocation.pose.orientation);
