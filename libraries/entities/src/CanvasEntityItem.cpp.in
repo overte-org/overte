@@ -135,10 +135,11 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
     updateBufferSize();
 
     auto destImage = QImage(reinterpret_cast<uint8_t *>(_imageData.data()), getWidth(), getHeight(), QImage::Format_RGBA8888);
-    QPen pen;
-    QBrush brush;
+    QPen pen(Qt::black, 1.0, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin);
+    QBrush brush(Qt::black);
     QPainter p;
     p.begin(&destImage);
+    p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
     for (int i = 0; i < queue.length(); i++) {
         auto cmd = queue[i];
@@ -177,9 +178,10 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
             }
 
             case Variant::ClearRect: {
-                // FIXME: QPainter's eraseRect function doesn't seem to be working,
-                // replace it with memsets for each line of the cleared rect
-                std::memset(_imageData.data(), 0, _imageData.size());
+                auto currentBlendMode = p.compositionMode();
+                p.setCompositionMode(QPainter::CompositionMode_Clear);
+                p.eraseRect(cmd._rect);
+                p.setCompositionMode(currentBlendMode);
                 break;
             }
 
@@ -211,22 +213,34 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
             }
 
             case Variant::StrokePath: {
+                auto prevFill = p.brush();
+                p.setBrush(Qt::transparent);
                 p.strokePath(cmd._paintPath, pen);
+                p.setBrush(prevFill);
                 break;
             }
 
             case Variant::StrokeRect: {
+                auto prevFill = p.brush();
+                p.setBrush(Qt::transparent);
                 p.drawRect(cmd._rect);
+                p.setBrush(prevFill);
                 break;
             }
 
             case Variant::StrokeArc: {
+                auto prevFill = p.brush();
+                p.setBrush(Qt::transparent);
                 p.drawArc(cmd._rect, cmd._float[0] * 16, cmd._float[1] * 16);
+                p.setBrush(prevFill);
                 break;
             }
 
             case Variant::StrokeEllipse: {
+                auto prevFill = p.brush();
+                p.setBrush(Qt::transparent);
                 p.drawEllipse(cmd._rect);
+                p.setBrush(prevFill);
                 break;
             }
 
