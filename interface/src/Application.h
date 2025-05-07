@@ -923,6 +923,10 @@ private:
     PhysicsEnginePointer _physicsEngine;
 
     bool _physicsEnabled { false };
+    // This is needed so that physics do not get re-enabled before safe landing starts when moving from
+    // serverless to domain server.
+    // It's set to true by Application::clearDomainOctreeData and is cleared by Application::setIsServerlessMode
+    bool _waitForServerlessToBeSet { true };
 
     bool _showTrackedObjects { false };
     bool _prevShowTrackedObjects { false };

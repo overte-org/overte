@@ -951,6 +951,7 @@ void Application::setIsServerlessMode(bool serverlessDomain) {
     auto tree = getEntities()->getTree();
     if (tree) {
         tree->setIsServerlessMode(serverlessDomain);
+        _waitForServerlessToBeSet = false;
     }
 }
 
@@ -1915,7 +1916,7 @@ void Application::update(float deltaTime) {
 
         // we haven't yet enabled physics.  we wait until we think we have all the collision information
         // for nearby entities before starting bullet up.
-        if (isServerlessMode()) {
+        if (isServerlessMode() && !_waitForServerlessToBeSet) {
             tryToEnablePhysics();
         } else if (_failedToConnectToEntityServer) {
             if (_octreeProcessor->safeLandingIsActive()) {
