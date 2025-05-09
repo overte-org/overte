@@ -454,6 +454,14 @@ namespace scriptable {
                 obj.setProperty("cullFaceMode", material.cullFaceMode);
             }
 
+            if (material.layers > 1) {
+                obj.setProperty("layers", material.layers);
+            }
+
+            if (!material.splatMap.isEmpty()) {
+                obj.setProperty("splatMap", material.splatMap);
+            }
+
             if (material.model.toStdString() == graphics::Material::HIFI_PBR) {
                 if (hasPropertyFallthroughs && material.propertyFallthroughs.at(graphics::MaterialKey::GLOSSY_VAL_BIT)) {
                     obj.setProperty("roughness", FALLTHROUGH);
