@@ -1150,7 +1150,7 @@ void setupHifiApplication(QString applicationName) {
     // You can find more details as to why this is important in the SharedUtil.h/cpp files
     setupGlobalInstances();
 
-#ifndef WIN32
+#ifndef _WIN32
     // Windows tends to hold onto log lines until it has a sizeable buffer
     // This makes the log feel unresponsive and trap useful log data in the log buffer
     // when a crash occurs.
