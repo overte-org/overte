@@ -109,7 +109,6 @@ void ShapePlumber::addPipeline(const Filter& filter, const gpu::ShaderPointer& p
     locations->hazeParameterBufferUnit = reflection.validUniformBuffer(graphics::slot::buffer::HazeParams);
     if (key.isTranslucent()) {
         locations->lightClusterGridBufferUnit = reflection.validUniformBuffer(render_utils::slot::buffer::LightClusterGrid);
-        locations->lightClusterContentBufferUnit = reflection.validUniformBuffer(render_utils::slot::buffer::LightClusterContent);
         locations->lightClusterFrustumBufferUnit = reflection.validUniformBuffer(render_utils::slot::buffer::LightClusterFrustumGrid);
     }
 
@@ -141,6 +140,17 @@ const ShapePipelinePointer ShapePlumber::pickPipeline(RenderArgs* args, const Ke
                     return pickPipeline(args, key);
                 } else {
                     qCDebug(renderlogging) << "ShapePlumber::Couldn't find a custom pipeline factory for " << key.getCustom() << " key is: " << key;
+                }
+            } else {
+                auto pipelineOperatorItr = _pipelineOperatorMap.find(key);
+                if (pipelineOperatorItr != _pipelineOperatorMap.end()) {
+                    // We have a deferred pipeline operator - lets call it to populate the pipelines
+                    pipelineOperatorItr->second();
+
+                    // We're done with this operator for good.
+                    _pipelineOperatorMap.erase(pipelineOperatorItr);
+
+                    return pickPipeline(args, key);
                 }
             }
 

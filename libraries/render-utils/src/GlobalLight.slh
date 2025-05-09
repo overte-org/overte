@@ -322,7 +322,7 @@ vec3 evalGlobalLightingAlphaBlendedMToon(
     const float epsilon = 0.00001;
 
     vec3 rimDiffuse;
-    <$evalMaterialMatcap(matcapUV, matcap, matKey, rimDiffuse)$>;
+    <$evalMaterialMatcap(0, matcapUV, matcap, matKey, rimDiffuse)$>;
     float rimColor = clamp(1.0 - dot(surfaceWS.normal, surfaceWS.eyeDir) + parametricRimLift, 0.0, 1.0);
     rimColor = pow(rimColor, max(parametricRimFresnelPower, epsilon));
     rimDiffuse += rimColor * parametricRim;
