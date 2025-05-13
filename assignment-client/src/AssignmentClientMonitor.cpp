@@ -340,14 +340,17 @@ void AssignmentClientMonitor::handleChildStatusPacket(QSharedPointer<ReceivedMes
 
     if (!matchingNode) {
         // The parent only expects to be talking with programs running on this same machine.
-        if (senderSockAddr.getAddressIPv4() == QHostAddress::LocalHost ||
-            senderSockAddr.getAddressIPv6() == QHostAddress::LocalHostIPv6) {
+        if (senderSockAddr.getAddress() == QHostAddress::LocalHost ||
+            senderSockAddr.getAddress() == QHostAddress::LocalHostIPv6) {
 
             if (!senderID.isNull()) {
                 // We don't have this node yet - we should add it
+                SockAddr nodeSockAddrIPv4 = message->getSenderSockAddr().isIPv4() ? message->getSenderSockAddr() : SockAddr();
+                SockAddr nodeSockAddrIPv6 = message->getSenderSockAddr().isIPv6() ? message->getSenderSockAddr() : SockAddr();
+
                 matchingNode = DependencyManager::get<LimitedNodeList>()->addOrUpdateNode(senderID, NodeType::Unassigned,
-                                                                                          senderSockAddr.toIPv4Only(), senderSockAddr.toIPv6Only(),
-                                                                                          senderSockAddr.toIPv4Only(), senderSockAddr.toIPv6Only());
+                                                                                          nodeSockAddrIPv4, nodeSockAddrIPv6,
+                                                                                          nodeSockAddrIPv4, nodeSockAddrIPv6);
 
                 auto newChildData = std::unique_ptr<AssignmentClientChildData>
                     { new AssignmentClientChildData(Assignment::Type::AllTypes) };
@@ -367,10 +370,9 @@ void AssignmentClientMonitor::handleChildStatusPacket(QSharedPointer<ReceivedMes
 
     if (childData) {
         // update our records about how to reach this child
-        Q_ASSERT(!(!senderSockAddr.getAddressIPv4().isNull() && !senderSockAddr.getAddressIPv6().isNull()));
-        if (!senderSockAddr.getAddressIPv4().isNull()) {
+        if (senderSockAddr.isIPv4()) {
             matchingNode->setLocalSocketIPv4(senderSockAddr);
-        } else if (!senderSockAddr.getAddressIPv6().isNull()) {
+        } else if (senderSockAddr.isIPv6()) {
             matchingNode->setLocalSocketIPv6(senderSockAddr);
         } else {
             Q_ASSERT(false);

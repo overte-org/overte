@@ -529,6 +529,7 @@ void AddressManager::goToAddressFromObject(const QVariantMap& dataObject, const 
                     }
                     emit possibleDomainChangeRequired(domainURL, domainID);
                 } else {
+                    // TODO(IPv6): there should be both IPv4 and IPv6 address for the ICE server here
                     QString iceServerAddress = domainObject[DOMAIN_ICE_SERVER_ADDRESS_KEY].toString();
 
                     qCDebug(networking_ice) << "Possible domain change required to connect to domain with ID" << domainID

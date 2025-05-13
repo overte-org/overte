@@ -61,6 +61,25 @@ enum ReplicationServerDirection {
 class DomainServer : public QCoreApplication, public HTTPSRequestHandler {
     Q_OBJECT
 public:
+
+    class ICEConnectionData {
+    public:
+        // These will be parented to this, they are not dangling
+        QTimer* _iceHeartbeatTimer { nullptr };
+
+        QList<QHostAddress> _iceServerAddresses;
+        QSet<QHostAddress> _failedIceServerAddresses;
+        int _iceAddressLookupID { INVALID_ICE_LOOKUP_ID };
+        SockAddr _iceServerSocket;
+        std::unique_ptr<NLPacket> _iceServerHeartbeatPacket;
+        int _noReplyICEHeartbeats { 0 };
+        int _numHeartbeatDenials { 0 };
+        bool _connectedToICEServer { false };
+
+        bool _sendICEServerAddressToMetaverseAPIInProgress { false };
+        bool _sendICEServerAddressToMetaverseAPIRedo { false };
+    };
+
     DomainServer(int argc, char* argv[]);
     ~DomainServer();
 
@@ -110,7 +129,7 @@ private slots:
 
     void performIPAddressPortUpdate(const SockAddr& newPublicSockAddr);
     void sendHeartbeatToMetaverse() { sendHeartbeatToMetaverse(QString(), int()); }
-    void sendHeartbeatToIceServer();
+    void sendHeartbeatToIceServer(ICEConnectionData &ice);
     void nodePingMonitor();
 
     void handleConnectedNode(SharedNodePointer newNode, quint64 requestReceiveTime);
@@ -121,14 +140,18 @@ private slots:
 
     void queuedQuit(QString quitMessage, int exitCode);
 
-    void handleKeypairChange();
+    void handleKeypairChange(ICEConnectionData &ice);
 
-    void updateICEServerAddresses();
-    void handleICEHostInfo(const QHostInfo& hostInfo);
+    void updateICEServerAddresses(ICEConnectionData &ice);
+    void handleICEHostInfo(const QHostInfo& hostInfo, ICEConnectionData &ice);
 
-    void sendICEServerAddressToMetaverseAPI();
-    void handleSuccessfulICEServerAddressUpdate(QNetworkReply* requestReply);
-    void handleFailedICEServerAddressUpdate(QNetworkReply* requestReply);
+    void sendICEServerAddressToMetaverseAPI(ICEConnectionData &ice);
+    void handleSuccessfulICEServerAddressUpdateIPv4(QNetworkReply* requestReply) { handleSuccessfulICEServerAddressUpdate(requestReply, _iceIPv4); };
+    void handleSuccessfulICEServerAddressUpdateIPv6(QNetworkReply* requestReply) { handleSuccessfulICEServerAddressUpdate(requestReply, _iceIPv6); };
+    void handleSuccessfulICEServerAddressUpdate(QNetworkReply* requestReply, ICEConnectionData &ice);
+    void handleFailedICEServerAddressUpdateIPv4(QNetworkReply* requestReply) { handleFailedICEServerAddressUpdate(requestReply, _iceIPv4); };
+    void handleFailedICEServerAddressUpdateIPv6(QNetworkReply* requestReply) { handleFailedICEServerAddressUpdate(requestReply, _iceIPv6); };
+    void handleFailedICEServerAddressUpdate(QNetworkReply* requestReply, ICEConnectionData &ice);
 
     void updateReplicatedNodes();
     void updateDownstreamNodes();
@@ -182,7 +205,7 @@ private:
     void setupHeartbeatToMetaverse();
     void sendHeartbeatToMetaverse(const QString& networkAddress, const int port);
 
-    void randomizeICEServerAddress(bool shouldTriggerHostLookup);
+    void randomizeICEServerAddress(bool shouldTriggerHostLookup, ICEConnectionData &ice);
 
     unsigned int countConnectedUsers();
 
@@ -279,30 +302,18 @@ private:
 
     DomainServerSettingsManager _settingsManager;
 
-    SockAddr _iceServerSocket;
-    std::unique_ptr<NLPacket> _iceServerHeartbeatPacket;
-
     // These will be parented to this, they are not dangling
     DomainMetadata* _metadata { nullptr };
-    QTimer* _iceHeartbeatTimer { nullptr };
     QTimer* _metaverseHeartbeatTimer { nullptr };
     QTimer* _metaverseGroupCacheTimer { nullptr };
     QTimer* _nodePingMonitorTimer { nullptr };
 
-    QList<QHostAddress> _iceServerAddresses;
-    QSet<QHostAddress> _failedIceServerAddresses;
-    int _iceAddressLookupID { INVALID_ICE_LOOKUP_ID };
-    int _noReplyICEHeartbeats { 0 };
-    int _numHeartbeatDenials { 0 };
-    bool _connectedToICEServer { false };
-
-    DomainType _type { DomainType::NonMetaverse };
-
-    friend class DomainGatekeeper;
-    friend class DomainMetadata;
+    ICEConnectionData _iceIPv4;
+    ICEConnectionData _iceIPv6;
 
     static QString _iceServerAddr;
     static int _iceServerPort;
+
     static bool _overrideDomainID; // should we override the domain-id from settings?
     static QUuid _overridingDomainID; // what should we override it with?
     static bool _getTempName;
@@ -310,9 +321,10 @@ private:
     static int _parentPID;
     static bool _forceCrashReporting;
 
+    DomainType _type { DomainType::NonMetaverse };
 
-    bool _sendICEServerAddressToMetaverseAPIInProgress { false };
-    bool _sendICEServerAddressToMetaverseAPIRedo { false };
+    friend class DomainGatekeeper;
+    friend class DomainMetadata;
 
     std::unique_ptr<DomainContentBackupManager> _contentManager { nullptr };
 

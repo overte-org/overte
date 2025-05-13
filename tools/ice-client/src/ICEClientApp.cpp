@@ -116,9 +116,9 @@ ICEClientApp::ICEClientApp(int argc, char* argv[]) :
             QMetaObject::invokeMethod(this, "quit", Qt::QueuedConnection);
         } else {
             if (address.protocol() == QAbstractSocket::IPv4Protocol) {
-                _iceServerAddrIPv4 = SockAddr(SocketType::UDP, address, QHostAddress(), port);
+                _iceServerAddrIPv4 = SockAddr(SocketType::UDP, address, port);
             } else if (address.protocol() == QAbstractSocket::IPv6Protocol) {
-                _iceServerAddrIPv6 = SockAddr(SocketType::UDP, QHostAddress(), address, port);
+                _iceServerAddrIPv6 = SockAddr(SocketType::UDP, address, port);
             }
         }
     }
@@ -180,14 +180,14 @@ void ICEClientApp::doSomething() {
     } else if (_state == lookUpStunServer) {
         // lookup STUN server address
         // TODO(IPv6): IPv4-only for now
-        if (!_stunSockAddr.getAddressIPv4().isNull()) {
+        if (!_stunSockAddr.getAddress().isNull()) {
             if (_verbose) {
                 qDebug() << "stun server is" << _stunSockAddr;
             }
             setState(sendStunRequestPacket);
         } else {
             if (_verbose) {
-                qDebug() << "_stunSockAddr is" << _stunSockAddr.getAddressIPv4() << " " << _stunSockAddr.getAddressIPv6();
+                qDebug() << "_stunSockAddr is" << _stunSockAddr.getAddress();
             }
             QCoreApplication::exit(stunFailureExitStatus);
         }
@@ -352,8 +352,8 @@ void ICEClientApp::processSTUNResponse(std::unique_ptr<udt::BasePacket> packet) 
     QHostAddress newPublicAddress;
     // TODO(IPv6): This needs to be modified for IPv6 support. I'm not sure how STUN handles IPv6.
     if (LimitedNodeList::parseSTUNResponse(packet.get(), newPublicAddress, newPublicPort)) {
-        _publicSockAddrIPv4 = SockAddr(SocketType::UDP, newPublicAddress, QHostAddress(), newPublicPort);
-        _publicSockAddrIPv6 = SockAddr(SocketType::UDP, QHostAddress(), _localSockAddrIPv6.getAddressIPv6(), _localSockAddrIPv6.getPort());
+        _publicSockAddrIPv4 = SockAddr(SocketType::UDP, newPublicAddress, newPublicPort);
+        _publicSockAddrIPv6 = SockAddr(SocketType::UDP, _localSockAddrIPv6.getAddress(), _localSockAddrIPv6.getPort());
         if (_verbose) {
             qDebug() << "My public address is" << _publicSockAddrIPv4 << " " << _publicSockAddrIPv6;
         }

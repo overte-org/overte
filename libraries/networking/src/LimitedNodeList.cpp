@@ -121,7 +121,7 @@ LimitedNodeList::LimitedNodeList(int socketListenPort, int dtlsListenPort) :
     // handle when a socket connection has its receiver side reset - might need to emit clientConnectionToNodeReset
     connect(&_nodeSocket, &udt::Socket::clientHandshakeRequestComplete, this, &LimitedNodeList::clientConnectionToSockAddrReset);
 
-    if (_stunSockAddr.getAddressIPv4().isNull() && _stunSockAddr.getAddressIPv6().isNull()) {
+    if (_stunSockAddr.getAddress().isNull()) {
         // we don't know the stun server socket yet, add it to unfiltered once known
         connect(&_stunSockAddr, &SockAddr::lookupCompleted, this, &LimitedNodeList::addSTUNHandlerToUnfiltered);
     } else {
@@ -272,9 +272,9 @@ bool LimitedNodeList::packetVersionMatch(const udt::Packet& packet) {
                 versionDebugSuppressMap.insert(senderSockAddr, headerType);
 
                 senderString =
-                    !senderSockAddr.getAddressIPv6().isNull()
-                        ? QString("[%1]:%2").arg(senderSockAddr.getAddressIPv6().toString()).arg(senderSockAddr.getPort())
-                        : QString("%1:%2").arg(senderSockAddr.getAddressIPv4().toString()).arg(senderSockAddr.getPort());
+                    senderSockAddr.getAddress().protocol() == QAbstractSocket::IPv6Protocol
+                        ? QString("[%1]:%2").arg(senderSockAddr.getAddress().toString()).arg(senderSockAddr.getPort())
+                        : QString("%1:%2").arg(senderSockAddr.getAddress().toString()).arg(senderSockAddr.getPort());
             }
         } else {
             SharedNodePointer sourceNode = nodeWithLocalID(NLPacket::sourceIDInHeader(packet));
@@ -353,7 +353,7 @@ bool LimitedNodeList::packetSourceAndHashMatchAndTrackBandwidth(const udt::Packe
         if (!sourceNode &&
             !isDomainServer() &&
             sourceLocalID == getDomainLocalID() &&
-            packet.getSenderSockAddr() == getDomainSockAddr() &&
+            (packet.getSenderSockAddr() == getDomainSockAddrIPv4() ||  packet.getSenderSockAddr() == getDomainSockAddrIPv6()) &&
             PacketTypeEnum::getDomainSourcedPackets().contains(headerType)) {
             // This is a packet sourced by the domain server
             return true;
@@ -784,10 +784,14 @@ SharedNodePointer LimitedNodeList::addOrUpdateNode(const QUuid& uuid, NodeType_t
     }
 
     // Signal when a socket changes, so we can start the hole punch over.
-    connect(newNodePointer.data(), &NetworkPeer::socketUpdated, this, [this, weakPtr] {
+    connect(newNodePointer.data(), &NetworkPeer::socketUpdatedIPv4, this, [this, weakPtr] {
         emit nodeSocketUpdated(weakPtr);
     });
-    connect(newNodePointer.data(), &NetworkPeer::socketUpdated, &_nodeSocket, &udt::Socket::handleRemoteAddressChange);
+    connect(newNodePointer.data(), &NetworkPeer::socketUpdatedIPv6, this, [this, weakPtr] {
+        emit nodeSocketUpdated(weakPtr);
+    });
+    connect(newNodePointer.data(), &NetworkPeer::socketUpdatedIPv4, &_nodeSocket, &udt::Socket::handleRemoteAddressChange);
+    connect(newNodePointer.data(), &NetworkPeer::socketUpdatedIPv6, &_nodeSocket, &udt::Socket::handleRemoteAddressChange);
 
     return newNodePointer;
 }
@@ -1030,7 +1034,7 @@ void LimitedNodeList::makeSTUNRequestPacket(char* stunRequestPacket) {
 }
 
 void LimitedNodeList::sendSTUNRequest() {
-    if ((!_stunSockAddr.getAddressIPv4().isNull()) || (!_stunSockAddr.getAddressIPv6().isNull())) {
+    if ((!_stunSockAddr.getAddress().isNull())) {
         const int NUM_INITIAL_STUN_REQUESTS_BEFORE_FAIL = 10;
 
         if (!_hasCompletedInitialSTUN) {
@@ -1047,7 +1051,7 @@ void LimitedNodeList::sendSTUNRequest() {
         char stunRequestPacket[NUM_BYTES_STUN_HEADER];
         makeSTUNRequestPacket(stunRequestPacket);
         flagTimeForConnectionStep(ConnectionStep::SendSTUNRequest);
-        auto address = _stunSockAddr.getAddressIPv4();
+        auto address = _stunSockAddr.getAddress();
         _stunSockAddr.setAddress(address);
         _nodeSocket.writeDatagram(stunRequestPacket, sizeof(stunRequestPacket), _stunSockAddr);
     }
@@ -1129,16 +1133,16 @@ void LimitedNodeList::processSTUNResponse(std::unique_ptr<udt::BasePacket> packe
     if (parseSTUNResponse(packet.get(), newPublicAddress, newPublicPort)) {
 
         // TODO(IPv6): I think STUN only needs to be used for finding IPv4 address?
-        if (newPublicAddress != _publicSockAddrIPv4.getAddressIPv4() || newPublicPort != _publicSockAddrIPv4.getPort()) {
+        if (newPublicAddress != _publicSockAddrIPv4.getAddress() || newPublicPort != _publicSockAddrIPv4.getPort()) {
             qCDebug(networking, "New public IPv4 socket received from STUN server is %s:%hu (was %s:%hu)",
                     newPublicAddress.toString().toStdString().c_str(), newPublicPort,
-                    _publicSockAddrIPv4.getAddressIPv4().toString().toStdString().c_str(),
+                    _publicSockAddrIPv4.getAddress().toString().toStdString().c_str(),
                     _publicSockAddrIPv4.getPort());
 
             // TODO(IPv6): for now take public IPV6 address from local IPv6 address, since in most cases they are the same
             // TODO(IPv6): can public port be different for IPv4 and IPv6?
-            _publicSockAddrIPv4 = SockAddr(SocketType::UDP, newPublicAddress, QHostAddress(), newPublicPort);
-            _publicSockAddrIPv6 = SockAddr(SocketType::UDP, QHostAddress(), getGuessedLocalAddress(QAbstractSocket::IPv6Protocol), newPublicPort);
+            _publicSockAddrIPv4 = SockAddr(SocketType::UDP, newPublicAddress, newPublicPort);
+            _publicSockAddrIPv6 = SockAddr(SocketType::UDP, getGuessedLocalAddress(QAbstractSocket::IPv6Protocol), newPublicPort);
 
             if (!_hasCompletedInitialSTUN) {
                 // if we're here we have definitely completed our initial STUN sequence
@@ -1163,7 +1167,7 @@ void LimitedNodeList::startSTUNPublicSocketUpdate() {
         _initialSTUNTimer->setInterval(STUN_INITIAL_UPDATE_INTERVAL_MSECS); // 250ms, Qt::CoarseTimer acceptable
 
         // if we don't know the STUN IP yet we need to wait until it is known to start STUN requests
-        if (_stunSockAddr.getAddressIPv4().isNull() && _stunSockAddr.getAddressIPv6().isNull()) {
+        if (_stunSockAddr.getAddress().isNull()) {
 
             // if we fail to lookup the socket then timeout the STUN address lookup
             connect(&_stunSockAddr, &SockAddr::lookupFailed, this, &LimitedNodeList::STUNAddressLookupFailed);
@@ -1196,7 +1200,7 @@ void LimitedNodeList::startSTUNPublicSocketUpdate() {
 }
 
 void LimitedNodeList::STUNAddressLookupFailed() {
-    if (_stunSockAddr.getAddressIPv4().isNull() && _stunSockAddr.getAddressIPv6().isNull()) {
+    if (_stunSockAddr.getAddress().isNull()) {
         // got a lookup failure
         qCCritical(networking) << "PAGE: Failed to lookup address of STUN server" << STUN_SERVER_HOSTNAME;
         stopInitialSTUNUpdate(false);
@@ -1204,7 +1208,7 @@ void LimitedNodeList::STUNAddressLookupFailed() {
 }
 
 void LimitedNodeList::STUNAddressLookupTimeout() {
-    if (_stunSockAddr.getAddressIPv4().isNull() && _stunSockAddr.getAddressIPv6().isNull()) {
+    if (_stunSockAddr.getAddress().isNull()) {
         // our stun address is still NULL, but we've been waiting for long enough - time to force a fail
         qCCritical(networking) << "PAGE: Address lookup of STUN server" << STUN_SERVER_HOSTNAME << "timed out";
         stopInitialSTUNUpdate(false);
@@ -1227,8 +1231,8 @@ void LimitedNodeList::stopInitialSTUNUpdate(bool success) {
         qCDebug(networking) << "LimitedNodeList public socket will be set with local port and null QHostAddress.";
 
         // reset the public address and port to a null address (maybe this is a problem)???
-        _publicSockAddrIPv4 = SockAddr(SocketType::UDP, getGuessedLocalAddress(QAbstractSocket::IPv4Protocol), QHostAddress(), _nodeSocket.localPort(SocketType::UDP));
-        _publicSockAddrIPv6 = SockAddr(SocketType::UDP, QHostAddress(), getGuessedLocalAddress(QAbstractSocket::IPv6Protocol), _nodeSocket.localPort(SocketType::UDP));
+        _publicSockAddrIPv4 = SockAddr(SocketType::UDP, getGuessedLocalAddress(QAbstractSocket::IPv4Protocol), _nodeSocket.localPort(SocketType::UDP));
+        _publicSockAddrIPv6 = SockAddr(SocketType::UDP, getGuessedLocalAddress(QAbstractSocket::IPv6Protocol), _nodeSocket.localPort(SocketType::UDP));
 
         // we have changed the publicSockAddr, so emit our signal
         emit publicSockAddrIPv4Changed(_publicSockAddrIPv4);
@@ -1258,9 +1262,9 @@ void LimitedNodeList::updateLocalSocket() {
     if (_localSockAddrIPv4.isNull() && _localSockAddrIPv6.isNull()) {
         // TODO(IPv6): getGuessedLocalAddress might not work correctly for IPv6
         setLocalSocketIPv4(SockAddr { SocketType::UDP, getGuessedLocalAddress(QAbstractSocket::IPv4Protocol),
-                                 QHostAddress(), _nodeSocket.localPort(SocketType::UDP) });
-        setLocalSocketIPv6(SockAddr { SocketType::UDP, QHostAddress(),
-                                 getGuessedLocalAddress(QAbstractSocket::IPv6Protocol), _nodeSocket.localPort(SocketType::UDP) });
+                                 _nodeSocket.localPort(SocketType::UDP) });
+        setLocalSocketIPv6(SockAddr { SocketType::UDP, getGuessedLocalAddress(QAbstractSocket::IPv6Protocol),
+                                 _nodeSocket.localPort(SocketType::UDP) });
     }
 
     // attempt to use Google's DNS to confirm that local IP
@@ -1292,7 +1296,7 @@ void LimitedNodeList::connectedForLocalSocketTest() {
 
         // TODO(IPv6): This doesn't support IPv6 yet
         if (localHostAddress.protocol() == QAbstractSocket::IPv4Protocol) {
-            setLocalSocketIPv4(SockAddr { SocketType::UDP, localHostAddress, QHostAddress(), _nodeSocket.localPort(SocketType::UDP) });
+            setLocalSocketIPv4(SockAddr { SocketType::UDP, localHostAddress, _nodeSocket.localPort(SocketType::UDP) });
             _hasTCPCheckedLocalSocket = true;
         }
         if (localHostAddress.protocol() == QAbstractSocket::IPv6Protocol) {
@@ -1301,9 +1305,9 @@ void LimitedNodeList::connectedForLocalSocketTest() {
             if (isMapped) {
                 // TODO(IPv6): test
                 QHostAddress qHostAddressIPv4 = QHostAddress(addressIPv4);
-                setLocalSocketIPv4(SockAddr { SocketType::UDP, localHostAddress, QHostAddress(), _nodeSocket.localPort(SocketType::UDP) });
+                setLocalSocketIPv4(SockAddr { SocketType::UDP, localHostAddress, _nodeSocket.localPort(SocketType::UDP) });
             } else {
-                setLocalSocketIPv6(SockAddr { SocketType::UDP, QHostAddress(), localHostAddress, _nodeSocket.localPort(SocketType::UDP) });
+                setLocalSocketIPv6(SockAddr { SocketType::UDP, localHostAddress, _nodeSocket.localPort(SocketType::UDP) });
             }
             _hasTCPCheckedLocalSocket = true;
         }
@@ -1321,9 +1325,9 @@ void LimitedNodeList::errorTestingLocalSocket() {
         // then use our possibly updated guessed local address as fallback
         if (!_hasTCPCheckedLocalSocket) {
             setLocalSocketIPv4(SockAddr { SocketType::UDP, getGuessedLocalAddress(QAbstractSocket::IPv4Protocol),
-                                     QHostAddress(), _nodeSocket.localPort(SocketType::UDP) });
-            setLocalSocketIPv6(SockAddr { SocketType::UDP, QHostAddress(),
-                                     getGuessedLocalAddress(QAbstractSocket::IPv6Protocol), _nodeSocket.localPort(SocketType::UDP) });
+                                     _nodeSocket.localPort(SocketType::UDP) });
+            setLocalSocketIPv6(SockAddr { SocketType::UDP, getGuessedLocalAddress(QAbstractSocket::IPv6Protocol),
+                                     _nodeSocket.localPort(SocketType::UDP) });
             qCCritical(networking) << "PAGE: Can't connect to Google DNS service via TCP, falling back to guessed local address"
                 << getLocalSockAddrIPv4() << "; " << getLocalSockAddrIPv6();
         }
@@ -1333,7 +1337,7 @@ void LimitedNodeList::errorTestingLocalSocket() {
 }
 
 void LimitedNodeList::setLocalSocketIPv4(const SockAddr& sockAddr) {
-    if (sockAddr.getAddressIPv4() != _localSockAddrIPv4.getAddressIPv4()) {
+    if (sockAddr.getAddress() != _localSockAddrIPv4.getAddress()) {
 
         if (_localSockAddrIPv4.isNull()) {
             qCInfo(networking) << "Local IPv4 socket is" << sockAddr;
@@ -1354,7 +1358,7 @@ void LimitedNodeList::setLocalSocketIPv4(const SockAddr& sockAddr) {
 }
 
 void LimitedNodeList::setLocalSocketIPv6(const SockAddr& sockAddr) {
-    if (sockAddr.getAddressIPv6() != _localSockAddrIPv6.getAddressIPv6()) {
+    if (sockAddr.getAddress() != _localSockAddrIPv6.getAddress()) {
 
         if (_localSockAddrIPv6.isNull()) {
             qCInfo(networking) << "Local IPv6 socket is" << sockAddr;
@@ -1371,10 +1375,10 @@ void LimitedNodeList::setLocalSocketIPv6(const SockAddr& sockAddr) {
         }
 
         // TODO(IPv6): for now public IPv6 address is assumed as same as the local one.
-        if (_publicSockAddrIPv6.getAddressIPv6() != _localSockAddrIPv6.getAddressIPv6()
-            && _localSockAddrIPv6.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol) {
-            _publicSockAddrIPv6.setAddress(_localSockAddrIPv6.getAddressIPv6());
-            qCInfo(networking) << "LimitedNodeList::setLocalSocket: Public IPv6 address changed to " << _publicSockAddrIPv6.getAddressIPv6();
+        if (_publicSockAddrIPv6.getAddress() != _localSockAddrIPv6.getAddress()
+            && _localSockAddrIPv6.getAddress().protocol() == QAbstractSocket::IPv6Protocol) {
+            _publicSockAddrIPv6.setAddress(_localSockAddrIPv6.getAddress());
+            qCInfo(networking) << "LimitedNodeList::setLocalSocket: Public IPv6 address changed to " << _publicSockAddrIPv6.getAddress();
             emit publicSockAddrIPv6Changed(_publicSockAddrIPv6);
             }
         emit localSockAddrIPv6Changed(_localSockAddrIPv6);
@@ -1388,8 +1392,6 @@ void LimitedNodeList::sendPeerQueryToIceServer(const SockAddr& iceServerSockAddr
 
 SharedNodePointer LimitedNodeList::findNodeWithAddr(const SockAddr& addr) {
     QReadLocker locker(&_nodeMutex);
-    Q_ASSERT(!(addr.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol
-        && addr.getAddressIPv4().protocol() == QAbstractSocket::IPv4Protocol));
     auto it = std::find_if(std::begin(_nodeHash), std::end(_nodeHash), [&addr](const UUIDNodePair& pair) {
         return pair.second->getPublicSocketIPv4() == addr
             || pair.second->getLocalSocketIPv4() == addr
@@ -1403,8 +1405,6 @@ SharedNodePointer LimitedNodeList::findNodeWithAddr(const SockAddr& addr) {
 
 bool LimitedNodeList::sockAddrBelongsToNode(const SockAddr& sockAddr) {
     QReadLocker locker(&_nodeMutex);
-    Q_ASSERT(!(sockAddr.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol
-    && sockAddr.getAddressIPv4().protocol() == QAbstractSocket::IPv4Protocol));
 
     auto it = std::find_if(std::begin(_nodeHash), std::end(_nodeHash), [&sockAddr](const UUIDNodePair& pair) {
         return pair.second->getPublicSocketIPv4() == sockAddr

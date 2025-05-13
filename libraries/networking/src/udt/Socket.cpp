@@ -292,7 +292,6 @@ qint64 Socket::writeDatagram(const QByteArray& datagram, const SockAddr& sockAdd
 }
 
 Connection* Socket::findOrCreateConnection(const SockAddr& sockAddr, bool filterCreate) {
-    Q_ASSERT(!(!sockAddr.getAddressIPv6().isNull() && !sockAddr.getAddressIPv4().isNull()));
     Lock connectionsLock(_connectionsHashMutex);
     auto it = _connectionsHash.find(sockAddr);
 

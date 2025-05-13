@@ -27,7 +27,8 @@ class SockAddr : public QObject {
     Q_OBJECT
 public:
     SockAddr();
-    SockAddr(SocketType socketType, const QHostAddress& addressV4, const QHostAddress& addressV6, quint16 port);
+    // TODO(IPv6): Handle IPv4 encoded as IPv6
+    SockAddr(SocketType socketType, const QHostAddress& address, quint16 port);
     SockAddr(const SockAddr& otherSockAddr);
     // ipV4Only is used for STUN.
     SockAddr(SocketType socketType, const QString& hostname, quint16 hostOrderPort, bool shouldBlockForLookup = false,
@@ -36,10 +37,8 @@ public:
     // TODO(IPv6): original code had && too but is this correct? Shouldn't it be invalid if either port or address is invalid?
     // fo0r now I changed it to ||
     //bool isNull() const { return _addressIPv4.isNull() && _addressIPv6.isNull() && _port == 0; }
-    bool isNull() const { return (_addressIPv4.isNull() && _addressIPv6.isNull()) || _port == 0; }
-    void clear() {
-        _addressIPv4.clear();
-        _addressIPv6.clear(); _port = 0;}
+    bool isNull() const { return _address.isNull() || _port == 0; }
+    void clear() { _address.clear(); _port = 0;}
 
     SockAddr& operator=(const SockAddr& rhsSockAddr);
     void swap(SockAddr& otherSockAddr);
@@ -51,14 +50,15 @@ public:
     SocketType* getSocketTypePointer() { return &_socketType; }
     void setType(const SocketType socketType) { _socketType = socketType; }
 
-    const QHostAddress& getAddressIPv6() const { return _addressIPv6; }
-    const QHostAddress& getAddressIPv4() const { return _addressIPv4; }
-    QHostAddress* getAddressPointerIPv6() { return &_addressIPv6; }
-    QHostAddress* getAddressPointerIPv4() { return &_addressIPv4; }
+    const QHostAddress& getAddress() const { return _address; }
+    QHostAddress* getAddressPointer() { return &_address; }
     void setAddress(const QHostAddress& address);
 
-    SockAddr toIPv6Only() const { return {_socketType, QHostAddress(), _addressIPv6, _port}; }; // TODO(IPv6): set qobject name too
-    SockAddr toIPv4Only() const { return {_socketType, _addressIPv4, QHostAddress(), _port}; };
+    bool isIPv4() const;
+    bool isIPv6() const {
+        // TODO: add assert to check if it's real IPv6
+        return _address.protocol() == QAbstractSocket::IPv6Protocol;
+    };
 
     quint16 getPort() const { return _port; }
     quint16* getPortPointer() { return &_port; }
@@ -87,8 +87,7 @@ signals:
     void lookupFailed();
 private:
     SocketType _socketType { SocketType::Unknown };
-    QHostAddress _addressIPv4;
-    QHostAddress _addressIPv6;
+    QHostAddress _address;
     quint16 _port;
 };
 
@@ -104,21 +103,19 @@ namespace std {
             // depending on the type of address we're looking at
             uint hashResult = 0;
 
-            if (!sockAddr.getAddressIPv4().isNull()) {
-                Q_ASSERT(sockAddr.getAddressIPv4().protocol() == QAbstractSocket::IPv4Protocol);
-                hashResult ^= hash<uint32_t>()((uint32_t)sockAddr.getAddressIPv4().toIPv4Address());
-            }
-            if (!sockAddr.getAddressIPv6().isNull()) {
+            if (!sockAddr.isIPv4()) {
+                hashResult ^= hash<uint32_t>()((uint32_t)sockAddr.getAddress().toIPv4Address());
+            } else if (!sockAddr.isIPv6()) {
                 bool ipv4Test;
-                Q_ASSERT(sockAddr.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol);
-                sockAddr.getAddressIPv6().toIPv4Address(&ipv4Test);
+                Q_ASSERT(sockAddr.getAddress().protocol() == QAbstractSocket::IPv6Protocol);
+                sockAddr.getAddress().toIPv4Address(&ipv4Test);
                 Q_ASSERT(!ipv4Test);
                 union {
                     Q_IPV6ADDR ip;
                     // IPv6 is 128 bit long
                     uint64_t value[2];
                 } ipConversion;
-                ipConversion.ip = sockAddr.getAddressIPv6().toIPv6Address();
+                ipConversion.ip = sockAddr.getAddress().toIPv6Address();
                 hashResult ^= hash<uint64_t>()(ipConversion.value[0]) ^ hash<uint64_t>()(ipConversion.value[1]);
             }
             return hashResult ^ hash<uint16_t>()((uint16_t) sockAddr.getPort());

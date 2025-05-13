@@ -77,16 +77,17 @@ NodeConnectionData NodeConnectionData::fromDataStream(QDataStream& dataStream, c
         //auto address =
         //    !senderSockAddr.getAddressIPv6().isNull() ? senderSockAddr.getAddressIPv6() : senderSockAddr.getAddressIPv4();
         auto port = senderSockAddr.getPort();
-        Q_ASSERT(!(!senderSockAddr.getAddressIPv6().isNull() && !senderSockAddr.getAddressIPv4().isNull()));
-        if (!senderSockAddr.getAddressIPv6().isNull()) {
-            newHeader.publicSockAddrIPv6.setAddress(senderSockAddr.getAddressIPv6());
+        Q_ASSERT(!senderSockAddr.getAddress().isNull());
+        if (senderSockAddr.getAddress().protocol() == QAbstractSocket::IPv6Protocol) {
+            // TODO(IPv6) add an assert to check if it's not IPv4 showing as IPv6
+            newHeader.publicSockAddrIPv6.setAddress(senderSockAddr.getAddress());
             newHeader.publicSockAddrIPv6.setPort(port);
-            newHeader.localSockAddrIPv6.setAddress(senderSockAddr.getAddressIPv6());
+            newHeader.localSockAddrIPv6.setAddress(senderSockAddr.getAddress());
             newHeader.localSockAddrIPv6.setPort(port);
         } else {
-            newHeader.publicSockAddrIPv4.setAddress(senderSockAddr.getAddressIPv4());
+            newHeader.publicSockAddrIPv4.setAddress(senderSockAddr.getAddress());
             newHeader.publicSockAddrIPv4.setPort(port);
-            newHeader.localSockAddrIPv4.setAddress(senderSockAddr.getAddressIPv4());
+            newHeader.localSockAddrIPv4.setAddress(senderSockAddr.getAddress());
             newHeader.localSockAddrIPv4.setPort(port);
         }
     }
@@ -94,21 +95,21 @@ NodeConnectionData NodeConnectionData::fromDataStream(QDataStream& dataStream, c
     newHeader.senderSockAddr = senderSockAddr;
     
     // TODO(IPv6): test this
-    if (newHeader.publicSockAddrIPv4.getAddressIPv4().isNull() && newHeader.publicSockAddrIPv6.getAddressIPv6().isNull()) {
+    if (newHeader.publicSockAddrIPv4.getAddress().isNull() && newHeader.publicSockAddrIPv6.getAddress().isNull()) {
         // this node wants to use us as its STUN server
         // set the node's public address to whatever we perceive the public address to be
 
         // if the sender is on our box then leave its public address to 0 so that
         // other users attempt to reach it on the same address they have for the domain-server
-        if (senderSockAddr.getAddressIPv4().isLoopback() || senderSockAddr.getAddressIPv6().isLoopback()) {
+        if (senderSockAddr.getAddress().isLoopback()) {
             newHeader.publicSockAddrIPv4.setAddress(QHostAddress());
             newHeader.publicSockAddrIPv6.setAddress(QHostAddress());
         } else {
             // prefer IPv6 if available
-            if (!senderSockAddr.getAddressIPv6().isNull()) {
-                newHeader.publicSockAddrIPv6.setAddress(senderSockAddr.getAddressIPv6());
+            if (!senderSockAddr.isIPv6()) {
+                newHeader.publicSockAddrIPv6.setAddress(senderSockAddr.getAddress());
             } else {
-                newHeader.publicSockAddrIPv4.setAddress(senderSockAddr.getAddressIPv4());
+                newHeader.publicSockAddrIPv4.setAddress(senderSockAddr.getAddress());
             }
         }
     }

@@ -73,13 +73,13 @@ void NetworkPeer::setPublicSocketIPv4(const SockAddr& publicSocket) {
 
         if (!wasOldSocketIPv4Null) {
             qCDebug(networking) << "Public IPv4 socket change for node" << *this << "; previously" << previousSocketIPv4;
-            emit socketUpdated(previousSocketIPv4, _publicSocketIPv4);
+            emit socketUpdatedIPv4(previousSocketIPv4, _publicSocketIPv4);
         }
     }
 }
 
 void NetworkPeer::setPublicSocketIPv6(const SockAddr& publicSocket) {
-    if (publicSocket.toIPv6Only() != _publicSocketIPv6) {
+    if (publicSocket != _publicSocketIPv6) {
         if (_activeSocket == &_publicSocketIPv6) {
             // if the active socket was the public socket then reset it to NULL
             _activeSocket = NULL;
@@ -93,13 +93,13 @@ void NetworkPeer::setPublicSocketIPv6(const SockAddr& publicSocket) {
 
         if (!wasOldSocketIPv6Null) {
             qCDebug(networking) << "Public IPv6 socket change for node" << *this << "; previously" << previousSocketIPv6;
-            emit socketUpdated(previousSocketIPv6, _publicSocketIPv6);
+            emit socketUpdatedIPv6(previousSocketIPv6, _publicSocketIPv6);
         }
     }
 }
 
 void NetworkPeer::setLocalSocketIPv4(const SockAddr& localSocket) {
-    if (localSocket.toIPv4Only() != _localSocketIPv4) {
+    if (localSocket != _localSocketIPv4) {
         if (_activeSocket == &_localSocketIPv4) {
             // if the active socket was the local socket then reset it to NULL
             _activeSocket = NULL;
@@ -113,13 +113,13 @@ void NetworkPeer::setLocalSocketIPv4(const SockAddr& localSocket) {
 
         if (!wasOldSocketNullIPv4) {
             qCDebug(networking) << "Local IPv4 socket change for node" << *this << "; previously" << previousSocket;
-            emit socketUpdated(previousSocket, _localSocketIPv4);
+            emit socketUpdatedIPv4(previousSocket, _localSocketIPv4);
         }
     }
 }
 
 void NetworkPeer::setLocalSocketIPv6(const SockAddr& localSocket) {
-    if (localSocket.toIPv6Only() != _localSocketIPv6) {
+    if (localSocket != _localSocketIPv6) {
         if (_activeSocket == &_localSocketIPv6) {
             // if the active socket was the local socket then reset it to NULL
             _activeSocket = NULL;
@@ -133,14 +133,14 @@ void NetworkPeer::setLocalSocketIPv6(const SockAddr& localSocket) {
 
         if (!wasOldSocketNullIPv6) {
             qCDebug(networking) << "Local IPv6 socket change for node" << *this << "; previously" << previousSocketIPv6;
-            emit socketUpdated(previousSocketIPv6, _localSocketIPv6);
+            emit socketUpdatedIPv6(previousSocketIPv6, _localSocketIPv6);
         }
     }
 }
 
-void NetworkPeer::setSymmetricSocket(const SockAddr& symmetricSocket) {
-    if (symmetricSocket.toIPv4Only() != _symmetricSocketIPv4 || symmetricSocket.toIPv6Only() != _symmetricSocketIPv6) {
-        if (_activeSocket == &_symmetricSocketIPv4 || _activeSocket == &_symmetricSocketIPv6) {
+void NetworkPeer::setSymmetricSocketIPv4(const SockAddr& symmetricSocket) {
+    if (symmetricSocket != _symmetricSocketIPv4) {
+        if (_activeSocket == &_symmetricSocketIPv4) {
             // if the active socket was the symmetric socket then reset it to NULL
             _activeSocket = NULL;
         }
@@ -153,7 +153,16 @@ void NetworkPeer::setSymmetricSocket(const SockAddr& symmetricSocket) {
         
         if (!wasOldSocketNullIPv4) {
             qCDebug(networking) << "Symmetric socket change for node" << *this << "; previously" << previousSocketIPv4;
-            emit socketUpdated(previousSocketIPv4, _symmetricSocketIPv4);
+            emit socketUpdatedIPv4(previousSocketIPv4, _symmetricSocketIPv4);
+        }
+    }
+}
+
+void NetworkPeer::setSymmetricSocketIPv6(const SockAddr& symmetricSocket) {
+    if (symmetricSocket != _symmetricSocketIPv6) {
+        if (_activeSocket == &_symmetricSocketIPv6) {
+            // if the active socket was the symmetric socket then reset it to NULL
+            _activeSocket = NULL;
         }
 
         bool wasOldSocketNull = _symmetricSocketIPv6.isNull();
@@ -164,7 +173,7 @@ void NetworkPeer::setSymmetricSocket(const SockAddr& symmetricSocket) {
 
         if (!wasOldSocketNull) {
             qCDebug(networking) << "Symmetric socket change for node" << *this << "; previously" << previousSocketIPv6;
-            emit socketUpdated(previousSocketIPv6, _symmetricSocketIPv6);
+            emit socketUpdatedIPv6(previousSocketIPv6, _symmetricSocketIPv6);
         }
     }
 }
@@ -226,8 +235,7 @@ void NetworkPeer::activateSymmetricSocket(QAbstractSocket::NetworkLayerProtocol 
 }
 
 void NetworkPeer::activateMatchingOrNewSymmetricSocket(const SockAddr& matchableSockAddr) {
-    Q_ASSERT(!(matchableSockAddr.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol
-        && matchableSockAddr.getAddressIPv4().protocol() == QAbstractSocket::IPv4Protocol));
+    // TODO(IPv6): I'm not sure if this is correct
     if (matchableSockAddr == _publicSocketIPv4) {
         activatePublicSocket(QAbstractSocket::IPv4Protocol);
     } else     if (matchableSockAddr == _publicSocketIPv6) {
@@ -238,12 +246,15 @@ void NetworkPeer::activateMatchingOrNewSymmetricSocket(const SockAddr& matchable
         activateLocalSocket(QAbstractSocket::IPv6Protocol);
     } else {
         // set the Node's symmetric socket to the passed socket
-        setSymmetricSocket(matchableSockAddr);
         // TODO(IPv6): what to do here?
-        if (matchableSockAddr.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol) {
+        if (matchableSockAddr.isIPv4()) {
+            setSymmetricSocketIPv4(matchableSockAddr);
+            activateSymmetricSocket(QAbstractSocket::IPv4Protocol);
+        } else if (matchableSockAddr.getAddress().protocol() == QAbstractSocket::IPv6Protocol) {
+            setSymmetricSocketIPv6(matchableSockAddr);
             activateSymmetricSocket(QAbstractSocket::IPv6Protocol);
         } else {
-            activateSymmetricSocket(QAbstractSocket::IPv4Protocol);
+            Q_ASSERT(false);
         }
     }
 }

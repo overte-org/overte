@@ -90,7 +90,9 @@ NodeList::NodeList(char newOwnerType, int socketListenPort, int dtlsListenPort) 
     connect(&_domainHandler, SIGNAL(disconnectedFromDomain()), this, SLOT(resetFromDomainHandler()));
 
     // send an ICE heartbeat as soon as we get ice server information
-    connect(&_domainHandler, &DomainHandler::iceSocketAndIDReceived, this, &NodeList::handleICEConnectionToDomainServer);
+    // TODO(IPv6): should we send heartbeat to both?
+    connect(&_domainHandler, &DomainHandler::iceSocketAndIDReceivedIPv4, this, &NodeList::handleICEConnectionToDomainServerIPv4);
+    connect(&_domainHandler, &DomainHandler::iceSocketAndIDReceivedIPv6, this, &NodeList::handleICEConnectionToDomainServerIPv6);
 
     // handle ping timeout from DomainHandler to establish a connection with auto networked domain-server
     connect(&_domainHandler.getICEPeer(), &NetworkPeer::pingTimerTimeout, this, &NodeList::pingPunchForDomainServer);
@@ -206,7 +208,7 @@ qint64 NodeList::sendStatsToDomainServer(QJsonObject statsObject) {
         return 0;
     }
 
-    return sendStats(statsObject, _domainHandler.getSockAddr());
+    return sendStats(statsObject, _domainHandler.getActiveSockAddr());
 }
 
 void NodeList::timePingReply(ReceivedMessage& message, const SharedNodePointer& sendingNode) {
@@ -254,15 +256,19 @@ void NodeList::processPingPacket(QSharedPointer<ReceivedMessage> message, Shared
     const SockAddr& senderSockAddr = message->getSenderSockAddr();
     sendPacket(std::move(replyPacket), *sendingNode, senderSockAddr);
 
-    Q_ASSERT(!(senderSockAddr.getAddressIPv4().protocol() == QAbstractSocket::IPv4Protocol
-        && senderSockAddr.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol));
     // If we don't have a symmetric socket for this node and this socket doesn't match
     // what we have for public and local then set it as the symmetric.
     // This allows a server on a reachable port to communicate with nodes on symmetric NATs
     if (sendingNode->getSymmetricSocketIPv4().isNull() && sendingNode->getSymmetricSocketIPv6().isNull()) {
         if (senderSockAddr != sendingNode->getLocalSocketIPv4() && senderSockAddr != sendingNode->getLocalSocketIPv6()
             && senderSockAddr != sendingNode->getPublicSocketIPv4() && senderSockAddr != sendingNode->getPublicSocketIPv6()) {
-            sendingNode->setSymmetricSocket(senderSockAddr);
+            if (senderSockAddr.isIPv6()) {
+                sendingNode->setSymmetricSocketIPv6(senderSockAddr);
+            } else if (senderSockAddr.isIPv4()) {
+                sendingNode->setSymmetricSocketIPv4(senderSockAddr);
+            } else {
+                Q_ASSERT(false);
+            }
         }
     }
 
@@ -371,11 +377,14 @@ void NodeList::sendDomainServerCheckIn() {
         qCDebug(networking_ice) << "Waiting for initial public socket from STUN. Will not send domain-server check in.";
     } else if (domainHandlerIPv4.isNull() && domainHandlerIPv6.isNull() && _domainHandler.requiresICE()) {
         qCDebug(networking_ice) << "Waiting for ICE discovered domain-server socket. Will not send domain-server check in.";
-        handleICEConnectionToDomainServer();
+        // TODO(IPv6): is this correct?
+        handleICEConnectionToDomainServerIPv4();
+        handleICEConnectionToDomainServerIPv6();
         // let the domain handler know we are due to send a checkin packet
     } else if ((!domainHandlerIPv4.isNull() || !domainHandlerIPv6.isNull()) && !_domainHandler.checkInPacketTimeout()) {
         bool domainIsConnected = _domainHandler.isConnected();
-        SockAddr domainSockAddr = _domainHandler.getSockAddr();
+        SockAddr domainSockAddrIPv6 = _domainHandler.getSockAddrIPv6();
+        SockAddr domainSockAddrIPv4 = _domainHandler.getSockAddrIPv4();
         PacketType domainPacketType = !domainIsConnected
             ? PacketType::DomainConnectRequest : PacketType::DomainListRequest;
 
@@ -387,16 +396,19 @@ void NodeList::sendDomainServerCheckIn() {
             // is this our localhost domain-server?
             // if so we need to make sure we have an up-to-date local port in case it restarted
 
-            if ((domainSockAddr.getAddressIPv4() == QHostAddress::LocalHost
+            // TODO(IPv6): does the address need to be set here too?
+            if ((domainSockAddrIPv4.getAddress() == QHostAddress::LocalHost
                  ||
-                 domainSockAddr.getAddressIPv6() == QHostAddress::LocalHostIPv6
+                 domainSockAddrIPv6.getAddress() == QHostAddress::LocalHostIPv6
                  || hostname == "localhost")
                 && _domainPortAutoDiscovery) {
 
                 quint16 domainPort = DEFAULT_DOMAIN_SERVER_PORT;
                 getLocalServerPortFromSharedMemory(DOMAIN_SERVER_LOCAL_PORT_SMEM_KEY, domainPort);
                 qCDebug(networking_ice) << "Local domain-server port read from shared memory (or default) is" << domainPort;
-                _domainHandler.setPort(domainPort);
+
+                _domainHandler.setPortIPv4(domainPort);
+                _domainHandler.setPortIPv6(domainPort);
             }
         }
 
@@ -452,8 +464,8 @@ void NodeList::sendDomainServerCheckIn() {
             for (auto networkInterface : QNetworkInterface::allInterfaces()) {
                 for (auto interfaceAddress : networkInterface.addressEntries()) {
                     // TODO(IPv6): I'm not sure if this is correct
-                    if (interfaceAddress.ip() == localSockAddrIPv4.getAddressIPv4()
-                        || interfaceAddress.ip() == localSockAddrIPv6.getAddressIPv6()) {
+                    if (interfaceAddress.ip() == localSockAddrIPv4.getAddress()
+                        || interfaceAddress.ip() == localSockAddrIPv6.getAddress()) {
                         // this is the interface whose local IP matches what we've detected the current IP to be
                         hardwareAddress = networkInterface.hardwareAddress();
 
@@ -552,25 +564,23 @@ void NodeList::sendDomainServerCheckIn() {
         int checkinCount = outstandingCheckins > 1 ? std::pow(2, outstandingCheckins - 2) : 1;
         checkinCount = std::min(checkinCount, MAX_CHECKINS_TOGETHER);
         // TODO(IPv6): this could be used to decide if IPv6 can be used for particular server
-        SockAddr domainSockAddrIPv4(domainSockAddr.getType(), domainSockAddr.getAddressIPv4(), QHostAddress(), domainSockAddr.getPort());
-        SockAddr domainSockAddrIPv6(domainSockAddr.getType(), QHostAddress(), domainSockAddr.getAddressIPv6(), domainSockAddr.getPort());
         for (int i = 1; i < checkinCount; ++i) {
             auto packetCopyIPv4 = domainPacket->createCopy(*domainPacket);
             auto packetCopyIPv6 = domainPacket->createCopy(*domainPacket);
 
-            if (domainSockAddrIPv4.getAddressIPv4().protocol() == QAbstractSocket::IPv4Protocol) {
+            if (!domainSockAddrIPv4.isNull()) {
                 sendPacket(std::move(packetCopyIPv4), domainSockAddrIPv4);
             }
-            if (domainSockAddrIPv6.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol) {
+            if (!domainSockAddrIPv6.isNull()) {
                 sendPacket(std::move(packetCopyIPv6), domainSockAddrIPv6);
             }
         }
 
         auto packetCopyIPv6_2 = domainPacket->createCopy(*domainPacket); // TODO(IPv6): ugly name
-        if (domainSockAddrIPv4.getAddressIPv4().protocol() == QAbstractSocket::IPv4Protocol) {
+        if (!domainSockAddrIPv4.isNull()) {
             sendPacket(std::move(domainPacket), domainSockAddrIPv4);
         }
-        if (domainSockAddrIPv6.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol) {
+        if (!domainSockAddrIPv6.isNull()) {
             sendPacket(std::move(packetCopyIPv6_2), domainSockAddrIPv6);
         }
 
@@ -637,11 +647,24 @@ void NodeList::sendDSPathQuery(const QString& newPath) {
             // append the path itself to the query packet
             pathQueryPacket->write(pathQueryUTF8);
 
-            qCDebug(networking) << "Sending a path query packet for path" << newPath << "to domain-server at"
-                << _domainHandler.getSockAddr();
+            /*if (!_domainHandler.getSockAddrIPv6().isNull()) {
+                qCDebug(networking) << "Sending a path query packet for path" << newPath << "to domain-server at"
+                    << _domainHandler.getSockAddrIPv6();
+                auto packetCopy = NLPacket::createCopy(*pathQueryPacket);
+                // send off the path query
+                sendPacket(std::move(packetCopy), _domainHandler.getSockAddrIPv6());
+            }
 
+            if (!_domainHandler.getSockAddrIPv4().isNull()) {
+                qCDebug(networking) << "Sending a path query packet for path" << newPath << "to domain-server at"
+                    << _domainHandler.getSockAddrIPv4();
+                // send off the path query
+                sendPacket(std::move(pathQueryPacket), _domainHandler.getSockAddrIPv4());
+            }*/
+            qCDebug(networking) << "Sending a path query packet for path" << newPath << "to domain-server at"
+                << _domainHandler.getActiveSockAddr();
             // send off the path query
-            sendPacket(std::move(pathQueryPacket), _domainHandler.getSockAddr());
+            sendPacket(std::move(pathQueryPacket), _domainHandler.getActiveSockAddr());
         } else {
             qCDebug(networking) << "Path" << newPath << "would make PacketType::DomainServerPathQuery packet > MAX_PACKET_SIZE." <<
                 "Will not send query.";
@@ -687,7 +710,7 @@ void NodeList::processDomainServerPathResponse(QSharedPointer<ReceivedMessage> m
     }
 }
 
-void NodeList::handleICEConnectionToDomainServer() {
+void NodeList::handleICEConnectionToDomainServerIPv4() {
     // if we're still waiting to get sockets we want to ping for the domain-server
     // then send another heartbeat now
     if (!_domainHandler.getICEPeer().hasSockets()) {
@@ -696,15 +719,34 @@ void NodeList::handleICEConnectionToDomainServer() {
 
         flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SendICEServerQuery);
 
-        LimitedNodeList::sendPeerQueryToIceServer(_domainHandler.getICEServerSockAddr(),
-                                                  _domainHandler.getICEClientID(),
-                                                  _domainHandler.getPendingDomainID());
+        if (_domainHandler.getICEServerSockAddrIPv4().isNull()) {
+            LimitedNodeList::sendPeerQueryToIceServer(_domainHandler.getICEServerSockAddrIPv4(),
+                                                      _domainHandler.getICEClientID(),
+                                                      _domainHandler.getPendingDomainID());
+        }
+    }
+}
+
+void NodeList::handleICEConnectionToDomainServerIPv6() {
+    // if we're still waiting to get sockets we want to ping for the domain-server
+    // then send another heartbeat now
+    if (!_domainHandler.getICEPeer().hasSockets()) {
+
+        _domainHandler.getICEPeer().resetConnectionAttempts();
+
+        flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SendICEServerQuery);
+
+        if (_domainHandler.getICEServerSockAddrIPv6().isNull()) {
+            LimitedNodeList::sendPeerQueryToIceServer(_domainHandler.getICEServerSockAddrIPv6(),
+                                                      _domainHandler.getICEClientID(),
+                                                      _domainHandler.getPendingDomainID());
+        }
     }
 }
 
 void NodeList::pingPunchForDomainServer() {
     // make sure if we're here that we actually still need to ping the domain-server
-    if ((_domainHandler.getIPv4().isNull() || _domainHandler.getIPv6().isNull()) && _domainHandler.getICEPeer().hasSockets()) {
+    if ((_domainHandler.getIPv4().isNull() && _domainHandler.getIPv6().isNull()) && _domainHandler.getICEPeer().hasSockets()) {
         // check if we've hit the number of pings we'll send to the DS before we consider it a fail
         const int NUM_DOMAIN_SERVER_PINGS_BEFORE_RESET = 2000 / UDP_PUNCH_PING_INTERVAL_MS;
 
@@ -718,7 +760,9 @@ void NodeList::pingPunchForDomainServer() {
                     << uuidStringWithoutCurlyBraces(_domainHandler.getICEClientID()) << "-" << "re-sending ICE query.";
 
                 _domainHandler.getICEPeer().softReset();
-                handleICEConnectionToDomainServer();
+                // TODO(IPv6): is this correct?
+                handleICEConnectionToDomainServerIPv4();
+                handleICEConnectionToDomainServerIPv6();
 
                 return;
             }
@@ -756,10 +800,13 @@ void NodeList::pingPunchForDomainServer() {
 }
 
 void NodeList::processDomainServerConnectionTokenPacket(QSharedPointer<ReceivedMessage> message) {
-    if (_domainHandler.getSockAddr().isNull()) {
+    if (_domainHandler.getSockAddrIPv4().isNull() && _domainHandler.getSockAddrIPv6().isNull()) {
         // refuse to process this packet if we aren't currently connected to the DS
         return;
     }
+    // TODO(IPv6): is this the right place to set active socket?
+    _domainHandler.setActiveSockAddr(message->getSenderSockAddr());
+
     // read in the connection token from the packet, then send domain-server checkin
     _domainHandler.setConnectionToken(QUuid::fromRfc4122(message->readWithoutCopy(NUM_BYTES_RFC4122_UUID)));
 
@@ -824,7 +871,7 @@ void NodeList::processDomainList(QSharedPointer<ReceivedMessage> message) {
     qint64 domainServerRequestLag = (qint64(domainServerPingSendTime - domainServerCheckinProcessingTime) - qint64(connectRequestTimestamp)) / qint64(USECS_PER_MSEC);;
     qint64 domainServerResponseLag = (now - qint64(domainServerPingSendTime)) / qint64(USECS_PER_MSEC);
 
-    if (_domainHandler.getSockAddr().isNull()) {
+    if (_domainHandler.getActiveSockAddr().isNull()) {
         qWarning(networking) << "IGNORING DomainList packet while not connected to a Domain Server: sent " << pingLagTime << " msec ago.";
         qWarning(networking) << "DomainList request lag (interface->ds): " << domainServerRequestLag << "msec";
         qWarning(networking) << "DomainList server processing time: " << domainServerCheckinProcessingTime << "usec";
@@ -960,10 +1007,10 @@ void NodeList::parseNodeFromPacketStream(QDataStream& packetStream) {
     // as the domain server
     //qDebug() << "NodeList::parseNodeFromPacketStream v4" << info.publicSocket.getAddressIPv4() << " " << info.publicSocket.getAddressIPv4().protocol()
     //    << " v6 " << info.publicSocket.getAddressIPv6() << " " << info.publicSocket.getAddressIPv6().protocol();
-    if (info.publicSocketIPv4.getAddressIPv4().isNull()) {
+    if (info.publicSocketIPv4.getAddress().isNull()) {
         info.publicSocketIPv4.setAddress(_domainHandler.getIPv4());
     }
-    if (info.publicSocketIPv6.getAddressIPv6().isNull()) {
+    if (info.publicSocketIPv6.getAddress().isNull()) {
         info.publicSocketIPv6.setAddress(_domainHandler.getIPv6());
     }
 
@@ -981,14 +1028,14 @@ void NodeList::sendAssignment(Assignment& assignment) {
     QDataStream packetStream(assignmentPacket.get());
     packetStream << assignment;
 
-    SockAddr assignmentServerSocketIPv4(_assignmentServerSocket.getType(), _assignmentServerSocket.getAddressIPv4(), QHostAddress(), _assignmentServerSocket.getPort());
-    SockAddr assignmentServerSocketIPv6(_assignmentServerSocket.getType(), QHostAddress(), _assignmentServerSocket.getAddressIPv6(), _assignmentServerSocket.getPort());
+    SockAddr assignmentServerSocketIPv4(_assignmentServerSocket.getType(), _assignmentServerSocket.getAddress(), _assignmentServerSocket.getPort());
+    SockAddr assignmentServerSocketIPv6(_assignmentServerSocket.getType(), _assignmentServerSocket.getAddress(), _assignmentServerSocket.getPort());
 
     auto packetCopyIPv6 = assignmentPacket->createCopy(*assignmentPacket); // TODO(IPv6): ugly name
-    if (assignmentServerSocketIPv4.getAddressIPv4().protocol() == QAbstractSocket::IPv4Protocol) {
+    if (!assignmentServerSocketIPv4.isNull()) {
         sendPacket(std::move(assignmentPacket), assignmentServerSocketIPv4);
     }
-    if (assignmentServerSocketIPv6.getAddressIPv6().protocol() == QAbstractSocket::IPv6Protocol) {
+    if (!assignmentServerSocketIPv6.isNull()) {
         sendPacket(std::move(packetCopyIPv6), assignmentServerSocketIPv6);
     }
 
@@ -1015,11 +1062,11 @@ void NodeList::pingPunchForInactiveNode(const SharedNodePointer& node) {
     const SockAddr localIPv4 = node->getLocalSocketIPv4();
 
 
-    if (!localIPv6.getAddressIPv6().isNull()) {
+    if (!localIPv6.getAddress().isNull()) {
         auto packetCopyIPv6 = localPingPacket->createCopy(*localPingPacket);
         sendPacket(std::move(packetCopyIPv6), *node, localIPv6);
     }
-    if (!localIPv4.getAddressIPv4().isNull()) {
+    if (!localIPv4.getAddress().isNull()) {
         sendPacket(std::move(localPingPacket), *node, localIPv4);
     }
 
@@ -1028,11 +1075,11 @@ void NodeList::pingPunchForInactiveNode(const SharedNodePointer& node) {
     const SockAddr publicIPv4 = node->getPublicSocketIPv4();
     //sendPacket(std::move(publicPingPacket), *node, publicIPv6);
     //sendPacket(std::move(publicPingPacket), *node, publicIPv4);
-    if (!publicIPv6.getAddressIPv6().isNull() && publicIPv6.getAddressIPv6() != localIPv6.getAddressIPv6()) {
+    if (!publicIPv6.getAddress().isNull() && publicIPv6.getAddress() != localIPv6.getAddress()) {
         auto packetCopyIPv6 = publicPingPacket->createCopy(*publicPingPacket);
         sendPacket(std::move(packetCopyIPv6), *node, publicIPv6);
     }
-    if (!publicIPv4.getAddressIPv4().isNull()) {
+    if (!publicIPv4.getAddress().isNull()) {
         sendPacket(std::move(publicPingPacket), *node, publicIPv4);
     }
 
@@ -1101,8 +1148,8 @@ void NodeList::activateSocketFromNodeCommunication(ReceivedMessage& message, con
 
     // if this is a local or public ping then we can activate a socket
     // we do nothing with agnostic pings, those are simply for timing
-    auto ipv4 = message.getSenderSockAddr().getAddressIPv4();
-    auto ipv6 = message.getSenderSockAddr().getAddressIPv4();
+    auto ipv4 = message.getSenderSockAddr().getAddress();
+    auto ipv6 = message.getSenderSockAddr().getAddress();
     Q_ASSERT(!(ipv4.protocol() == QAbstractSocket::IPv4Protocol && ipv6.protocol() == QAbstractSocket::IPv6Protocol));
     QAbstractSocket::NetworkLayerProtocol protocol = ipv6.protocol() == QAbstractSocket::IPv6Protocol ? QAbstractSocket::IPv6Protocol : QAbstractSocket::IPv4Protocol;
 
@@ -1139,7 +1186,9 @@ void NodeList::sendKeepAlivePings() {
 }
 
 bool NodeList::sockAddrBelongsToDomainOrNode(const SockAddr& sockAddr) {
-    return _domainHandler.getSockAddr() == sockAddr || LimitedNodeList::sockAddrBelongsToNode(sockAddr);
+    return _domainHandler.getSockAddrIPv4() == sockAddr
+        || _domainHandler.getSockAddrIPv6() == sockAddr
+        || LimitedNodeList::sockAddrBelongsToNode(sockAddr);
 }
 
 void NodeList::ignoreNodesInRadius(bool enabled) {
@@ -1434,7 +1483,7 @@ void NodeList::kickNodeBySessionID(const QUuid& nodeID, unsigned int banFlags) {
 
             qCDebug(networking) << "Sending packet to kick node" << uuidStringWithoutCurlyBraces(nodeID);
 
-            sendPacket(std::move(kickPacket), _domainHandler.getSockAddr());
+            sendPacket(std::move(kickPacket), _domainHandler.getActiveSockAddr());
         } else {
             qWarning() << "You do not have permissions to kick in this domain."
                 << "Request to kick node" << uuidStringWithoutCurlyBraces(nodeID) << "will not be sent";
@@ -1487,7 +1536,7 @@ void NodeList::requestUsernameFromSessionID(const QUuid& nodeID) {
 
     qCDebug(networking) << "Sending packet to get username/fingerprint/admin status of node" << uuidStringWithoutCurlyBraces(nodeID);
 
-    sendPacket(std::move(usernameFromIDRequestPacket), _domainHandler.getSockAddr());
+    sendPacket(std::move(usernameFromIDRequestPacket), _domainHandler.getActiveSockAddr());
 }
 
 void NodeList::processUsernameFromIDReply(QSharedPointer<ReceivedMessage> message) {

@@ -148,7 +148,8 @@ public:
     virtual bool isDomainServer() const { return true; }
     virtual QUuid getDomainUUID() const { assert(false); return QUuid(); }
     virtual Node::LocalID getDomainLocalID() const { assert(false); return Node::NULL_LOCAL_ID; }
-    virtual SockAddr getDomainSockAddr() const { assert(false); return SockAddr(); }
+    virtual SockAddr getDomainSockAddrIPv4() const { assert(false); return SockAddr(); }
+    virtual SockAddr getDomainSockAddrIPv6() const { assert(false); return SockAddr(); }
 
     // use sendUnreliablePacket to send an unreliable packet (that you do not need to move)
     // either to a node (via its active socket) or to a manual sockaddr

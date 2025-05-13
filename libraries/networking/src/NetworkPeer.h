@@ -68,7 +68,8 @@ public:
     void setPublicSocketIPv6(const SockAddr& publicSocket);
     void setLocalSocketIPv4(const SockAddr& localSocket);
     void setLocalSocketIPv6(const SockAddr& localSocket);
-    void setSymmetricSocket(const SockAddr& symmetricSocket);
+    void setSymmetricSocketIPv4(const SockAddr& symmetricSocket);
+    void setSymmetricSocketIPv6(const SockAddr& symmetricSocket);
 
     const SockAddr* getActiveSocket() const { return _activeSocket; }
 
@@ -107,7 +108,8 @@ public slots:
 signals:
     void pingTimerTimeout();
     void socketActivated(const SockAddr& sockAddr);
-    void socketUpdated(SockAddr previousAddress, SockAddr currentAddress);
+    void socketUpdatedIPv4(SockAddr previousAddress, SockAddr currentAddress);
+    void socketUpdatedIPv6(SockAddr previousAddress, SockAddr currentAddress);
 
 protected:
     void setActiveSocket(SockAddr* discoveredSocket);

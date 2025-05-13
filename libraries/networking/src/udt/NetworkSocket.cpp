@@ -132,13 +132,12 @@ qint64 NetworkSocket::writeDatagram(const QByteArray& datagram, const SockAddr& 
         // WEBRTC TODO: The Qt documentation says that the following call shouldn't be used if the UDP socket is connected!!!
         // https://doc.qt.io/qt-5/qudpsocket.html#writeDatagram
         // TODO(IPv6): how to choose which protocol to use?
-        if (!sockAddr.getAddressIPv6().isNull()) {
-            //qDebug() << "Socket::writeDatagram v6 " << sockAddr.getAddressIPv4() << " v6 " << sockAddr.getAddressIPv6() << " protocol " << sockAddr.getAddressIPv6().protocol();
-            return _udpSocket.writeDatagram(datagram, sockAddr.getAddressIPv6(), sockAddr.getPort());
+        /*if (!sockAddr.getAddress().protocol() == QAbstractSocket::IPv6Protocol) {
+            qDebug() << "Socket::writeDatagram v6 " << sockAddr.getAddressIPv4() << " v6 " << sockAddr.getAddressIPv6() << " protocol " << sockAddr.getAddressIPv6().protocol();
         } else {
-            //qDebug() << "Socket::writeDatagram v4 " << sockAddr.getAddressIPv4() << " v6 " << sockAddr.getAddressIPv6() << " protocol " << sockAddr.getAddressIPv4().protocol();
-            return _udpSocket.writeDatagram(datagram, sockAddr.getAddressIPv4(), sockAddr.getPort());
-        }
+            qDebug() << "Socket::writeDatagram v4 " << sockAddr.getAddressIPv4() << " v6 " << sockAddr.getAddressIPv6() << " protocol " << sockAddr.getAddressIPv4().protocol();
+        }*/
+        return _udpSocket.writeDatagram(datagram, sockAddr.getAddress(), sockAddr.getPort());
 #if defined(WEBRTC_DATA_CHANNELS)
     case SocketType::WebRTC:
         return _webrtcSocket.writeDatagram(datagram, sockAddr);
@@ -231,7 +230,7 @@ qint64 NetworkSocket::readDatagram(char* data, qint64 maxSize, SockAddr* sockAdd
             sockAddr->setType(SocketType::WebRTC);
             // TODO(IPv6):
             QHostAddress address;
-            qint64 datagramSize = _webrtcSocket.readDatagram(data, maxSize, sockAddr->getAddressPointerIPv4(), sockAddr->getPortPointer());
+            qint64 datagramSize = _webrtcSocket.readDatagram(data, maxSize, sockAddr->getAddressPointer(), sockAddr->getPortPointer());
             sockAddr->setAddress(address);
             return datagramSize;
         } else {

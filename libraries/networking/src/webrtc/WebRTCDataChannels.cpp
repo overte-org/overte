@@ -383,7 +383,7 @@ void WDCConnection::onDataChannelMessageReceived(const DataBuffer& buffer) {
             return;
         }
         // TODO(IPv6):
-        auto address = SockAddr(SocketType::WebRTC, QHostAddress(addressParts[0]), QHostAddress(), addressParts[1].toInt());
+        auto address = SockAddr(SocketType::WebRTC, QHostAddress(addressParts[0]), addressParts[1].toInt());
         _parent->sendDataMessage(address, byteArray);  // Use parent method to exercise the code stack.
         return;
     }
@@ -566,7 +566,7 @@ void WebRTCDataChannels::emitDataMessage(const QString& dataChannelID, const QBy
         return;
     }
     // TODO(IPv6):
-    auto address = SockAddr(SocketType::WebRTC, QHostAddress(addressParts[0]), QHostAddress(), addressParts[1].toInt());
+    auto address = SockAddr(SocketType::WebRTC, QHostAddress(addressParts[0]), addressParts[1].toInt());
     emit dataMessage(address, byteArray);
 }
 

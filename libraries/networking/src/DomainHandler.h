@@ -115,16 +115,24 @@ public:
 
     int getLastDomainConnectionError() { return _lastDomainConnectionError; }
 
-    const QHostAddress& getIPv4() const { return _sockAddr.getAddressIPv4(); }
-    const QHostAddress& getIPv6() const { return _sockAddr.getAddressIPv6(); }
-    // TODO(IPv6):
-    void setIPToLocalhost() { _sockAddr.setAddress(QHostAddress(QHostAddress::LocalHost)); }
+    const QHostAddress& getIPv4() const { return _sockAddrIPv4.getAddress(); }
+    const QHostAddress& getIPv6() const { return _sockAddrIPv6.getAddress(); }
+    // TODO(IPv6): should we clear active socket here?
+    void setIPToLocalhost() {
+        _sockAddrIPv4.setAddress(QHostAddress(QHostAddress::LocalHost));
+        _sockAddrIPv6.setAddress(QHostAddress(QHostAddress::LocalHostIPv6));
+    }
 
-    const SockAddr& getSockAddr() const { return _sockAddr; }
+    const SockAddr& getSockAddrIPv4() const { return _sockAddrIPv4; }
+    const SockAddr& getSockAddrIPv6() const { return _sockAddrIPv6; }
+    const SockAddr& getActiveSockAddr() const;
+    void setActiveSockAddr(const SockAddr& sockAddr);
     void setSockAddr(const SockAddr& sockAddr, const QString& hostname);
 
-    unsigned short getPort() const { return _sockAddr.getPort(); }
-    void setPort(quint16 port) { _sockAddr.setPort(port); }
+    unsigned short getPortIPv4() const { return _sockAddrIPv4.getPort(); }
+    unsigned short getPortIPv6() const { return _sockAddrIPv6.getPort(); }
+    void setPortIPv4(quint16 port) { _sockAddrIPv4.setPort(port); }
+    void setPortIPv6(quint16 port) { _sockAddrIPv6.setPort(port); }
 
     const QUuid& getConnectionToken() const { return _connectionToken; }
     void setConnectionToken(const QUuid& connectionToken) { _connectionToken = connectionToken; }
@@ -136,8 +144,9 @@ public:
 
     const QUuid& getICEClientID() const { return _iceClientID; }
 
-    bool requiresICE() const { return !_iceServerSockAddr.isNull(); }
-    const SockAddr& getICEServerSockAddr() const { return _iceServerSockAddr; }
+    bool requiresICE() const { return (!_iceServerSockAddrIPv4.isNull() || !_iceServerSockAddrIPv6.isNull()); }
+    const SockAddr& getICEServerSockAddrIPv4() const { return _iceServerSockAddrIPv4; }
+    const SockAddr& getICEServerSockAddrIPv6() const { return _iceServerSockAddrIPv6; }
     NetworkPeer& getICEPeer() { return _icePeer; }
     void activateICELocalSocket(QAbstractSocket::NetworkLayerProtocol protocol);
     void activateICEPublicSocket(QAbstractSocket::NetworkLayerProtocol protocol);
@@ -166,7 +175,7 @@ public:
     const QString& getPendingPath() { return _pendingPath; }
     void clearPendingPath() { _pendingPath.clear(); }
 
-    bool isSocketKnown() const { return (!_sockAddr.getAddressIPv4().isNull()) || (!_sockAddr.getAddressIPv6().isNull()); }
+    bool isSocketKnown() const { return !_activeSockAddr.getAddress().isNull(); }
 
     void softReset(QString reason);
 
@@ -261,7 +270,8 @@ public slots:
 
 private slots:
     void completedHostnameLookup(const QHostInfo& hostInfo);
-    void completedIceServerHostnameLookup();
+    void completedIceServerHostnameLookupIPv4();
+    void completedIceServerHostnameLookupIPv6();
 
 signals:
     void domainURLChanged(QUrl domainURL);
@@ -275,7 +285,8 @@ signals:
     void connectedToDomain(QUrl domainURL);
     void disconnectedFromDomain();
 
-    void iceSocketAndIDReceived();
+    void iceSocketAndIDReceivedIPv4();
+    void iceSocketAndIDReceivedIPv6();
     void icePeerSocketsReceived();
 
     void settingsReceived(const QJsonObject& domainSettingsObject);
@@ -299,12 +310,16 @@ private:
     Node::LocalID _localID;
     QUrl _domainURL;
     QUrl _errorDomainURL;
-    SockAddr _sockAddr;
+    SockAddr _sockAddrIPv4;
+    SockAddr _sockAddrIPv6;
+    // _activeSockAddr is equal to either _sockAddrIPv4 or _sockAddrIPv6, depending on which one domain is connected to.
+    SockAddr _activeSockAddr;
     QUuid _assignmentUUID;
     QUuid _connectionToken;
     QUuid _pendingDomainID; // ID of domain being connected to, via ICE or direct connection
     QUuid _iceClientID;
-    SockAddr _iceServerSockAddr;
+    SockAddr _iceServerSockAddrIPv4;
+    SockAddr _iceServerSockAddrIPv6;
     NetworkPeer _icePeer;
     bool _isConnected { false };
     bool _haveAskedConnectWithoutAvatarEntities { false };
