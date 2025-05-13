@@ -32,7 +32,8 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - fix sampler assert (PR1500)
 - Places App: Make navigation buttons not draggable (PR1503)
 - Squeeze force for grab on Index, tweak offsets for non-Vive controllers, xrNoHandTracking debug option (PR1508)
-- OpenXR cleanup 2, electric boogaloo (PR1516)
+- Fix flickering on OpenXR  (PR1516)
+- Fix movement speed resetting when snap-turning in VR  (PR1516)
 - Fix VR teleport indicator (PR1513)
 - Fix falling through the ground after leaving a serverless world (PR1523)
 
