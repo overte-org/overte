@@ -34,7 +34,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Squeeze force for grab on Index, tweak offsets for non-Vive controllers, xrNoHandTracking debug option (PR1508)
 - OpenXR cleanup 2, electric boogaloo (PR1516)
 - Fix VR teleport indicator (PR1513)
-- Fix falling though the ground after serverless (PR1523)
+- Fix falling through the ground after leaving a serverless world (PR1523)
 
 ### Changes
 - Create App: Text Entity: Support for line breaks, Replace unlit material entity for shape unlit in selection tool (PR1367)
