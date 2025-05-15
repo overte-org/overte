@@ -67,6 +67,7 @@ QVariant NetworkSocket::socketOption(SocketType socketType, QAbstractSocket::Soc
 void NetworkSocket::bind(SocketType socketType, const QHostAddress& address, quint16 port) {
     switch (socketType) {
     case SocketType::UDP:
+        qDebug() << "NetworkSocket::bind " << address << " protocol " << address.protocol();
         _udpSocket.bind(address, port);
         break;
 #if defined(WEBRTC_DATA_CHANNELS)
@@ -130,6 +131,12 @@ qint64 NetworkSocket::writeDatagram(const QByteArray& datagram, const SockAddr& 
     case SocketType::UDP:
         // WEBRTC TODO: The Qt documentation says that the following call shouldn't be used if the UDP socket is connected!!!
         // https://doc.qt.io/qt-5/qudpsocket.html#writeDatagram
+        // TODO(IPv6): how to choose which protocol to use?
+        /*if (!sockAddr.getAddress().protocol() == QAbstractSocket::IPv6Protocol) {
+            qDebug() << "Socket::writeDatagram v6 " << sockAddr.getAddressIPv4() << " v6 " << sockAddr.getAddressIPv6() << " protocol " << sockAddr.getAddressIPv6().protocol();
+        } else {
+            qDebug() << "Socket::writeDatagram v4 " << sockAddr.getAddressIPv4() << " v6 " << sockAddr.getAddressIPv6() << " protocol " << sockAddr.getAddressIPv4().protocol();
+        }*/
         return _udpSocket.writeDatagram(datagram, sockAddr.getAddress(), sockAddr.getPort());
 #if defined(WEBRTC_DATA_CHANNELS)
     case SocketType::WebRTC:
@@ -198,7 +205,21 @@ qint64 NetworkSocket::readDatagram(char* data, qint64 maxSize, SockAddr* sockAdd
         _pendingDatagramSizeSocketType = SocketType::Unknown;
         if (sockAddr) {
             sockAddr->setType(SocketType::UDP);
-            return _udpSocket.readDatagram(data, maxSize, sockAddr->getAddressPointer(), sockAddr->getPortPointer());
+            // TODO(IPv6):
+            QHostAddress address;
+            qint64 datagramSize = _udpSocket.readDatagram(data, maxSize, &address, sockAddr->getPortPointer());
+            //qDebug() << "NetworkSocket::readDatagram " << address << " protocol " << address.protocol();
+
+            bool isMapped;
+            quint32 addressIPv4 = address.toIPv4Address(&isMapped);
+            if (isMapped) {
+                address = QHostAddress(addressIPv4);
+            }
+            sockAddr->setAddress(address);
+            /*if (sockAddr->getAddressIPv4() == QHostAddress("127.0.0.1")) {
+                printf("break");
+            }*/
+            return datagramSize;
         } else {
             return _udpSocket.readDatagram(data, maxSize);
         }
@@ -207,13 +228,18 @@ qint64 NetworkSocket::readDatagram(char* data, qint64 maxSize, SockAddr* sockAdd
         _pendingDatagramSizeSocketType = SocketType::Unknown;
         if (sockAddr) {
             sockAddr->setType(SocketType::WebRTC);
-            return _webrtcSocket.readDatagram(data, maxSize, sockAddr->getAddressPointer(), sockAddr->getPortPointer());
+            // TODO(IPv6):
+            QHostAddress address;
+            qint64 datagramSize = _webrtcSocket.readDatagram(data, maxSize, sockAddr->getAddressPointer(), sockAddr->getPortPointer());
+            sockAddr->setAddress(address);
+            return datagramSize;
         } else {
             return _webrtcSocket.readDatagram(data, maxSize);
         }
     }
 #else
     if (sockAddr) {
+        // TODO(IPv6):
         sockAddr->setType(SocketType::UDP);
         return _udpSocket.readDatagram(data, maxSize, sockAddr->getAddressPointer(), sockAddr->getPortPointer());
     } else {

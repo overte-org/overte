@@ -208,7 +208,8 @@ void AssignmentClientMonitor::spawnChildClient() {
     // tell children which assignment monitor port to use
     // for now they simply talk to us on localhost
     _childArguments.append("--" + ASSIGNMENT_CLIENT_MONITOR_PORT_OPTION);
-    _childArguments.append(QString::number(DependencyManager::get<NodeList>()->getLocalSockAddr().getPort()));
+    // TODO (IPv6): local ports should be the same but maybe send both?
+    _childArguments.append(QString::number(DependencyManager::get<NodeList>()->getLocalSockAddrIPv4().getPort()));
 
     _childArguments.append("--" + PARENT_PID_OPTION);
     _childArguments.append(QString::number(QCoreApplication::applicationPid()));
@@ -317,7 +318,8 @@ void AssignmentClientMonitor::checkSpares() {
             // kill aSpareId
             qDebug() << "asking child" << aSpareId << "to exit.";
             SharedNodePointer childNode = nodeList->nodeWithUUID(aSpareId);
-            childNode->activateLocalSocket();
+            // TODO (IPv6): what to do here? I'm sending it on IPv6 for now.
+            childNode->activateLocalSocket(QAbstractSocket::IPv4Protocol);
 
             auto diePacket = NLPacket::create(PacketType::StopNode, 0);
             nodeList->sendPacket(std::move(diePacket), *childNode);
@@ -339,12 +341,16 @@ void AssignmentClientMonitor::handleChildStatusPacket(QSharedPointer<ReceivedMes
     if (!matchingNode) {
         // The parent only expects to be talking with programs running on this same machine.
         if (senderSockAddr.getAddress() == QHostAddress::LocalHost ||
-                senderSockAddr.getAddress() == QHostAddress::LocalHostIPv6) {
+            senderSockAddr.getAddress() == QHostAddress::LocalHostIPv6) {
 
             if (!senderID.isNull()) {
                 // We don't have this node yet - we should add it
+                SockAddr nodeSockAddrIPv4 = message->getSenderSockAddr().isIPv4() ? message->getSenderSockAddr() : SockAddr();
+                SockAddr nodeSockAddrIPv6 = message->getSenderSockAddr().isIPv6() ? message->getSenderSockAddr() : SockAddr();
+
                 matchingNode = DependencyManager::get<LimitedNodeList>()->addOrUpdateNode(senderID, NodeType::Unassigned,
-                                                                                          senderSockAddr, senderSockAddr);
+                                                                                          nodeSockAddrIPv4, nodeSockAddrIPv6,
+                                                                                          nodeSockAddrIPv4, nodeSockAddrIPv6);
 
                 auto newChildData = std::unique_ptr<AssignmentClientChildData>
                     { new AssignmentClientChildData(Assignment::Type::AllTypes) };
@@ -364,7 +370,13 @@ void AssignmentClientMonitor::handleChildStatusPacket(QSharedPointer<ReceivedMes
 
     if (childData) {
         // update our records about how to reach this child
-        matchingNode->setLocalSocket(senderSockAddr);
+        if (senderSockAddr.isIPv4()) {
+            matchingNode->setLocalSocketIPv4(senderSockAddr);
+        } else if (senderSockAddr.isIPv6()) {
+            matchingNode->setLocalSocketIPv6(senderSockAddr);
+        } else {
+            Q_ASSERT(false);
+        }
 
         // get child's assignment type out of the packet
         quint8 assignmentType;

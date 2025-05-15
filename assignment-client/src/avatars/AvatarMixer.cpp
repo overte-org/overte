@@ -113,9 +113,13 @@ AvatarMixer::AvatarMixer(ReceivedMessage& message) :
 }
 
 SharedNodePointer addOrUpdateReplicatedNode(const QUuid& nodeID, const SockAddr& senderSockAddr) {
+
+    SockAddr nodeSockAddrIPv4 = senderSockAddr.isIPv4() ? senderSockAddr : SockAddr();
+    SockAddr nodeSockAddrIPv6 = senderSockAddr.isIPv6() ? senderSockAddr : SockAddr();
+
     auto replicatedNode = DependencyManager::get<NodeList>()->addOrUpdateNode(nodeID, NodeType::Agent,
-                                                                              senderSockAddr,
-                                                                              senderSockAddr,
+                                                                              nodeSockAddrIPv4, nodeSockAddrIPv6,
+                                                                              nodeSockAddrIPv4, nodeSockAddrIPv6,
                                                                               Node::NULL_LOCAL_ID, true, true);
 
     replicatedNode->setLastHeardMicrostamp(usecTimestampNow());

@@ -149,8 +149,12 @@ void AudioMixer::queueReplicatedAudioPacket(QSharedPointer<ReceivedMessage> mess
     // Node ID is now part of user data, since replicated audio packets are non-sourced.
     QUuid nodeID = QUuid::fromRfc4122(message->readWithoutCopy(NUM_BYTES_RFC4122_UUID));
 
+    SockAddr nodeSockAddrIPv4 = message->getSenderSockAddr().isIPv4() ? message->getSenderSockAddr() : SockAddr();
+    SockAddr nodeSockAddrIPv6 = message->getSenderSockAddr().isIPv6() ? message->getSenderSockAddr() : SockAddr();
+
     auto replicatedNode = nodeList->addOrUpdateNode(nodeID, NodeType::Agent,
-                                                    message->getSenderSockAddr(), message->getSenderSockAddr(),
+                                                    nodeSockAddrIPv4, nodeSockAddrIPv6,
+                                                    nodeSockAddrIPv4, nodeSockAddrIPv6,
                                                     Node::NULL_LOCAL_ID, true, true);
     replicatedNode->setLastHeardMicrostamp(usecTimestampNow());
 

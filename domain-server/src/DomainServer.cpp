@@ -76,6 +76,7 @@ const QString DomainServer::REPLACEMENT_FILE_EXTENSION = ".replace";
 const QString& DOMAIN_SERVER_SETTINGS_KEY = "domain_server";
 const QString PUBLIC_SOCKET_ADDRESS_KEY = "network_address";
 const QString PUBLIC_SOCKET_PORT_KEY = "network_port";
+const QString DOMAIN_UPDATE_AUTOMATIC_NETWORKING_KEY = "automatic_networking";
 const int MIN_PORT = 1;
 const int MAX_PORT = 65535;
 
@@ -199,7 +200,7 @@ bool DomainServer::forwardMetaverseAPIRequest(HTTPConnection* connection,
 DomainServer::DomainServer(int argc, char* argv[]) :
     QCoreApplication(argc, argv),
     _gatekeeper(this),
-    _httpManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTP_PORT,
+    _httpManager(QHostAddress::Any, DOMAIN_SERVER_HTTP_PORT,
         QString("%1/resources/web/").arg(QCoreApplication::applicationDirPath()), this)
 {
     static const QString CRASH_REPORTER = "crash_reporting.enable_crash_reporter";
@@ -344,7 +345,8 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     static const QString AC_SUBNET_ALLOWLIST_SETTING_PATH = "security.ac_subnet_allowlist";
 
     static const Subnet LOCALHOST { QHostAddress("127.0.0.1"), 32 };
-    _acSubnetAllowlist = { LOCALHOST };
+    static const Subnet LOCALHOST_IPV6 { QHostAddress("::1"), 128 };
+    _acSubnetAllowlist = { LOCALHOST, LOCALHOST_IPV6 };
 
     auto allowlist = _settingsManager.valueOrDefaultValueForKeyPath(AC_SUBNET_ALLOWLIST_SETTING_PATH).toStringList();
     for (auto& subnet : allowlist) {
@@ -355,9 +357,14 @@ DomainServer::DomainServer(int argc, char* argv[]) :
             continue;
         }
 
+        auto ip = QHostAddress(netmaskParts[0]);
+
+        // TODO(IPv6): how is netmask specified when IPv4 address is written as an IPv6 address?
         // The default netmask is 32 if one has not been specified, which will
         // match only the ip provided.
-        int netmask = 32;
+        bool isIPv4 = false;
+        ip.toIPv4Address(&isIPv4);
+        int netmask = isIPv4 ? 32 : 128;
 
         if (netmaskParts.size() == 2) {
             bool ok;
@@ -367,8 +374,6 @@ DomainServer::DomainServer(int argc, char* argv[]) :
                 continue;
             }
         }
-
-        auto ip = QHostAddress(netmaskParts[0]);
 
         if (!ip.isNull()) {
             qDebug() << "Adding AC allowlist subnet: " << subnet << " -> " << (ip.toString() + "/" + QString::number(netmask));
@@ -595,7 +600,7 @@ bool DomainServer::optionallyReadX509KeyAndCertificate() {
             qCritical() << "SSL Private Key Not Loading.  Bad password or key format?";
         }
 
-        _httpsManager.reset(new HTTPSManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTPS_PORT, sslCertificate, privateKey, QString(), this));
+        _httpsManager.reset(new HTTPSManager(QHostAddress::Any, DOMAIN_SERVER_HTTPS_PORT, sslCertificate, privateKey, QString(), this));
 
         qDebug() << "TCP server listening for HTTPS connections on" << DOMAIN_SERVER_HTTPS_PORT;
 
@@ -712,7 +717,8 @@ void DomainServer::handleTempDomainSuccess(QNetworkReply* requestReply) {
         setupHeartbeatToMetaverse();
 
         // if we have a current ICE server address, update it in the API for the new temporary domain
-        sendICEServerAddressToMetaverseAPI();
+        sendICEServerAddressToMetaverseAPI(_iceIPv4);
+        sendICEServerAddressToMetaverseAPI(_iceIPv6);
     } else {
         qWarning() << "There were problems parsing the API response containing a temporary domain name. Please try again"
             << "via domain-server relaunch or from the domain-server settings.";
@@ -857,7 +863,13 @@ void DomainServer::setupNodeListAndAssignments() {
 
     connect(nodeList.data(), &LimitedNodeList::nodeAdded, this, &DomainServer::nodeAdded);
     connect(nodeList.data(), &LimitedNodeList::nodeKilled, this, &DomainServer::nodeKilled);
-    connect(nodeList.data(), &LimitedNodeList::localSockAddrChanged, this,
+    // TODO (IPv6): this needs both IPv4 and IPv6 version
+    connect(nodeList.data(), &LimitedNodeList::localSockAddrIPv4Changed, this,
+        [this](const SockAddr& localSockAddr) {
+        DependencyManager::get<LimitedNodeList>()->putLocalPortIntoSharedMemory(DOMAIN_SERVER_LOCAL_PORT_SMEM_KEY, this, localSockAddr.getPort());
+    });
+
+    connect(nodeList.data(), &LimitedNodeList::localSockAddrIPv6Changed, this,
         [this](const SockAddr& localSockAddr) {
         DependencyManager::get<LimitedNodeList>()->putLocalPortIntoSharedMemory(DOMAIN_SERVER_LOCAL_PORT_SMEM_KEY, this, localSockAddr.getPort());
     });
@@ -931,7 +943,7 @@ void DomainServer::setupNodeListAndAssignments() {
 // Sets up the WebRTC signaling server that's hosted by the domain server.
 void DomainServer::setUpWebRTCSignalingServer() {
     // Bind the WebRTC signaling server's WebSocket to its port.
-    bool isBound = _webrtcSignalingServer->bind(QHostAddress::AnyIPv4, DEFAULT_DOMAIN_SERVER_WS_PORT);
+    bool isBound = _webrtcSignalingServer->bind(QHostAddress::Any, DEFAULT_DOMAIN_SERVER_WS_PORT);
     if (!isBound) {
         qWarning() << "WebRTC signaling server not bound to port. WebRTC connections are not supported.";
         return;
@@ -1060,8 +1072,11 @@ void DomainServer::setupAutomaticNetworking() {
 
                 auto nodeList = DependencyManager::get<LimitedNodeList>();
 
+                // TODO (IPv6): this needs both IPv6 and IPv4 version?
                 // send any public socket changes to the data server so nodes can find us at our new IP
-                connect(nodeList.data(), &LimitedNodeList::publicSockAddrChanged, this,
+                connect(nodeList.data(), &LimitedNodeList::publicSockAddrIPv4Changed, this,
+                        &DomainServer::performIPAddressPortUpdate);
+                connect(nodeList.data(), &LimitedNodeList::publicSockAddrIPv6Changed, this,
                         &DomainServer::performIPAddressPortUpdate);
 
                 if (_automaticNetworkingSetting == IP_ONLY_AUTOMATIC_NETWORKING_VALUE) {
@@ -1095,13 +1110,19 @@ void DomainServer::setupICEHeartbeatForFullNetworking() {
     auto limitedNodeList = DependencyManager::get<LimitedNodeList>();
 
     // lookup the available ice-server hosts now
-    updateICEServerAddresses();
+    updateICEServerAddresses(_iceIPv4);
+    updateICEServerAddresses(_iceIPv6);
 
+    // TODO (IPv6): This needs v4 and v6 version?
     // call our sendHeartbeatToIceServer immediately anytime a local or public socket changes
-    connect(limitedNodeList.data(), &LimitedNodeList::localSockAddrChanged,
-            this, &DomainServer::sendHeartbeatToIceServer);
-    connect(limitedNodeList.data(), &LimitedNodeList::publicSockAddrChanged,
-            this, &DomainServer::sendHeartbeatToIceServer);
+    connect(limitedNodeList.data(), &LimitedNodeList::localSockAddrIPv4Changed,
+            this, [this] {sendHeartbeatToIceServer(_iceIPv4);});
+    connect(limitedNodeList.data(), &LimitedNodeList::localSockAddrIPv6Changed,
+            this, [this] {sendHeartbeatToIceServer(_iceIPv6);});
+    connect(limitedNodeList.data(), &LimitedNodeList::publicSockAddrIPv4Changed,
+            this, [this] {sendHeartbeatToIceServer(_iceIPv4);});
+    connect(limitedNodeList.data(), &LimitedNodeList::publicSockAddrIPv6Changed,
+            this, [this] {sendHeartbeatToIceServer(_iceIPv6);});
 
     // we need this DS to know what our public IP is - start trying to figure that out now
     limitedNodeList->startSTUNPublicSocketUpdate();
@@ -1114,21 +1135,31 @@ void DomainServer::setupICEHeartbeatForFullNetworking() {
         accountManager->generateNewDomainKeypair(getID());
     }
 
+    // TODO(IPv6): I'm not sure of this, do we need two separate keys and two separate AccountManager::newKeypair?
     // hookup to the signal from account manager that tells us when keypair is available
-    connect(accountManager.data(), &AccountManager::newKeypair, this, &DomainServer::handleKeypairChange);
+    connect(accountManager.data(), &AccountManager::newKeypair, this, [this]{handleKeypairChange(_iceIPv4);});
+    connect(accountManager.data(), &AccountManager::newKeypair, this, [this]{handleKeypairChange(_iceIPv6);});
 
-    if (!_iceHeartbeatTimer) {
+    if (!_iceIPv4._iceHeartbeatTimer) {
         // setup a timer to heartbeat with the ice-server
-        _iceHeartbeatTimer = new QTimer { this };
-        connect(_iceHeartbeatTimer, &QTimer::timeout, this, &DomainServer::sendHeartbeatToIceServer);
-        sendHeartbeatToIceServer();
-        _iceHeartbeatTimer->start(ICE_HEARBEAT_INTERVAL_MSECS);
+        _iceIPv4._iceHeartbeatTimer = new QTimer { this };
+        connect(_iceIPv4._iceHeartbeatTimer, &QTimer::timeout, this, [this] {sendHeartbeatToIceServer(_iceIPv4); });
+        sendHeartbeatToIceServer(_iceIPv4);
+        _iceIPv4._iceHeartbeatTimer->start(ICE_HEARBEAT_INTERVAL_MSECS);
+    }
+
+    if (!_iceIPv6._iceHeartbeatTimer) {
+        // setup a timer to heartbeat with the ice-server
+        _iceIPv6._iceHeartbeatTimer = new QTimer { this };
+        connect(_iceIPv6._iceHeartbeatTimer, &QTimer::timeout, this, [this] {sendHeartbeatToIceServer(_iceIPv6); });
+        sendHeartbeatToIceServer(_iceIPv6);
+        _iceIPv6._iceHeartbeatTimer->start(ICE_HEARBEAT_INTERVAL_MSECS);
     }
 }
 
-void DomainServer::updateICEServerAddresses() {
-    if (_iceAddressLookupID == INVALID_ICE_LOOKUP_ID) {
-        _iceAddressLookupID = QHostInfo::lookupHost(_iceServerAddr, this, SLOT(handleICEHostInfo(QHostInfo)));
+void DomainServer::updateICEServerAddresses(ICEConnectionData &ice) {
+    if (ice._iceAddressLookupID == INVALID_ICE_LOOKUP_ID) {
+        ice._iceAddressLookupID = QHostInfo::lookupHost(_iceServerAddr, this, SLOT(handleICEHostInfo(QHostInfo)));
     }
 }
 
@@ -1264,8 +1295,10 @@ void DomainServer::processListRequestPacket(QSharedPointer<ReceivedMessage> mess
     NodeConnectionData nodeRequestData = NodeConnectionData::fromDataStream(packetStream, message->getSenderSockAddr(), false);
 
     // update this node's sockets in case they have changed
-    sendingNode->setPublicSocket(nodeRequestData.publicSockAddr);
-    sendingNode->setLocalSocket(nodeRequestData.localSockAddr);
+    sendingNode->setPublicSocketIPv4(nodeRequestData.publicSockAddrIPv4);
+    sendingNode->setPublicSocketIPv6(nodeRequestData.publicSockAddrIPv6);
+    sendingNode->setLocalSocketIPv4(nodeRequestData.localSockAddrIPv4);
+    sendingNode->setLocalSocketIPv6(nodeRequestData.localSockAddrIPv6);
 
     DomainServerNodeData* nodeData = static_cast<DomainServerNodeData*>(sendingNode->getLinkedData());
 
@@ -1493,12 +1526,19 @@ void DomainServer::broadcastNewNode(const SharedNodePointer& addedNode) {
 }
 
 void DomainServer::processRequestAssignmentPacket(QSharedPointer<ReceivedMessage> message) {
+
     // construct the requested assignment from the packet data
     Assignment requestAssignment(*message);
 
+    // TODO(IPv6): Testing
     auto senderAddr = message->getSenderSockAddr().getAddress();
 
     auto isHostAddressInSubnet = [&senderAddr](const Subnet& mask) -> bool {
+        //TODO(IPv6): Added Temp fix to aid with IPv4 -> IPv6 localhost notation
+        if (senderAddr.toString() == "::ffff:127.0.0.1") {
+            return true;
+        }
+
         return senderAddr.isInSubnet(mask);
     };
 
@@ -1560,16 +1600,24 @@ QJsonObject jsonForDomainSocketUpdate(const SockAddr& socket) {
     const QString SOCKET_PORT_KEY = "port";
 
     QJsonObject socketObject;
-    socketObject[SOCKET_NETWORK_ADDRESS_KEY] = socket.getAddress().toString();
+    const QString addressString = socket.getAddress().toString();
+
+    socketObject[SOCKET_NETWORK_ADDRESS_KEY] = addressString;
+
     socketObject[SOCKET_PORT_KEY] = socket.getPort();
 
     return socketObject;
 }
 
 void DomainServer::performIPAddressPortUpdate(const SockAddr& newPublicSockAddr) {
+    const QString& DOMAIN_SERVER_SETTINGS_KEY = "domain_server";
+
     const QString& publicSocketAddress = newPublicSockAddr.getAddress().toString();
     const int publicSocketPort = newPublicSockAddr.getPort();
 
+
+    // TODO(IPv6): This is wrong. We need to send both IPv4 and IPv6 address to directory server, but that may be impossible without modifying the directory server
+    // TODO(IPv6): Try sending both addresses here in one string if directory server does not check formatting
     if (_automaticNetworkingSetting == IP_ONLY_AUTOMATIC_NETWORKING_VALUE) {
         sendHeartbeatToMetaverse(publicSocketAddress, 0);
     } else {
@@ -1579,6 +1627,7 @@ void DomainServer::performIPAddressPortUpdate(const SockAddr& newPublicSockAddr)
 
     QJsonObject rootObject;
     QJsonObject domainServerObject;
+    // TODO(IPv6): Add two separate keys, for IPv4 and IPv6
     domainServerObject.insert(PUBLIC_SOCKET_ADDRESS_KEY, publicSocketAddress);
     if (_automaticNetworkingSetting == FULL_AUTOMATIC_NETWORKING_VALUE) {
         domainServerObject.insert(PUBLIC_SOCKET_PORT_KEY, publicSocketPort);
@@ -1695,23 +1744,29 @@ void DomainServer::handleMetaverseHeartbeatError(QNetworkReply* requestReply) {
     }
 }
 
-void DomainServer::sendICEServerAddressToMetaverseAPI() {
-    if (_sendICEServerAddressToMetaverseAPIInProgress) {
+// TODO(IPv6): two versions are needed
+void DomainServer::sendICEServerAddressToMetaverseAPI(ICEConnectionData &ice) {
+    if (ice._sendICEServerAddressToMetaverseAPIInProgress) {
         // don't have more than one of these in-flight at a time.  set a flag to indicate that once the current one
         // is done, we need to do update metaverse again.
-        _sendICEServerAddressToMetaverseAPIRedo = true;
+        ice._sendICEServerAddressToMetaverseAPIRedo = true;
         return;
     }
-    _sendICEServerAddressToMetaverseAPIInProgress = true;
+    ice._sendICEServerAddressToMetaverseAPIInProgress = true;
     const QString ICE_SERVER_ADDRESS = "ice_server_address";
+
+    // TODO(IPv6): currently it may be impossible to send two IP addresses to directory server, and for proper IPv6 support that is required.
 
     QJsonObject domainObject;
 
-    if (!_connectedToICEServer || _iceServerSocket.isNull()) {
+    if (!ice._connectedToICEServer || ice._iceServerSocket.isNull()) {
         domainObject[ICE_SERVER_ADDRESS] = "0.0.0.0";
     } else {
         // we're using full automatic networking and we have a current ice-server socket, use that now
-        domainObject[ICE_SERVER_ADDRESS] = _iceServerSocket.getAddress().toString();
+        QString iceServerAddress = ice._iceServerSocket.getAddress().toString();
+
+        // TODO(IPv6): two separate entries, one for IPv4 and one for IPv6
+        domainObject[ICE_SERVER_ADDRESS] = iceServerAddress;
     }
 
     const auto& temporaryDomainKey = DependencyManager::get<AccountManager>()->getTemporaryDomainKey(getID());
@@ -1726,11 +1781,24 @@ void DomainServer::sendICEServerAddressToMetaverseAPI() {
     // make sure we hear about failure so we can retry
     JSONCallbackParameters callbackParameters;
     callbackParameters.callbackReceiver = this;
-    callbackParameters.errorCallbackMethod = "handleFailedICEServerAddressUpdate";
-    callbackParameters.jsonCallbackMethod = "handleSuccessfulICEServerAddressUpdate";
+    if (&ice == &_iceIPv4) {
+        callbackParameters.errorCallbackMethod = "handleFailedICEServerAddressUpdateIPv4";
+        callbackParameters.jsonCallbackMethod = "handleSuccessfulICEServerAddressUpdateIPv4";
+    } else if (&ice == &_iceIPv6) {
+        callbackParameters.errorCallbackMethod = "handleFailedICEServerAddressUpdateIPv6";
+        callbackParameters.jsonCallbackMethod = "handleSuccessfulICEServerAddressUpdateIPv6";
+    } else {
+        Q_ASSERT(false);
+    }
 
+    if (&ice == &_iceIPv6) {
+        qWarning(domain_server_ice) << "Skipping update of ice-server IPv6 address in Directory Services API. This needs to be implemented in the future.";
+    }
+
+    // TODO(IPv6): update both in the future.
     qCDebug(domain_server_ice) << "Updating ice-server address in Directory Services API to"
-        << (_iceServerSocket.isNull() ? "" : _iceServerSocket.getAddress().toString());
+        << (ice._iceServerSocket.isNull() ? "" : ice._iceServerSocket.getAddress().toString()) << " "
+        <<  "Warning: currently only IPv4, in the future both need to be sent.";
 
     static const QString DOMAIN_ICE_ADDRESS_UPDATE = "/api/v1/domains/%1/ice_server_address";
 
@@ -1741,38 +1809,41 @@ void DomainServer::sendICEServerAddressToMetaverseAPI() {
                                                           domainUpdateJSON.toUtf8());
 }
 
-void DomainServer::handleSuccessfulICEServerAddressUpdate(QNetworkReply* requestReply) {
-    _sendICEServerAddressToMetaverseAPIInProgress = false;
-    if (_sendICEServerAddressToMetaverseAPIRedo) {
-        qCDebug(domain_server_ice) << "ice-server address (" << _iceServerSocket << ") updated with directory server, but has since changed.  redoing update...";
-        _sendICEServerAddressToMetaverseAPIRedo = false;
-        sendICEServerAddressToMetaverseAPI();
+void DomainServer::handleSuccessfulICEServerAddressUpdate(QNetworkReply* requestReply, ICEConnectionData &ice) {
+    ice._sendICEServerAddressToMetaverseAPIInProgress = false;
+    if (ice._sendICEServerAddressToMetaverseAPIRedo) {
+        qCDebug(domain_server_ice) << "ice-server address (" << ice._iceServerSocket << " " << ice._iceServerSocket.getAddress().protocol()
+            << ") updated with directory server, but has since changed.  redoing update...";
+        ice._sendICEServerAddressToMetaverseAPIRedo = false;
+        sendICEServerAddressToMetaverseAPI(ice);
     } else {
-        qCDebug(domain_server_ice) << "ice-server address (" << _iceServerSocket << ") updated with directory server.";
+        qCDebug(domain_server_ice) << "ice-server address (" << ice._iceServerSocket << " " << ice._iceServerSocket.getAddress().protocol()
+            << ") updated with directory server.";
     }
 }
 
-void DomainServer::handleFailedICEServerAddressUpdate(QNetworkReply* requestReply) {
-    _sendICEServerAddressToMetaverseAPIInProgress = false;
-    if (_sendICEServerAddressToMetaverseAPIRedo) {
+void DomainServer::handleFailedICEServerAddressUpdate(QNetworkReply* requestReply, ICEConnectionData &ice) {
+    ice._sendICEServerAddressToMetaverseAPIInProgress = false;
+    if (ice._sendICEServerAddressToMetaverseAPIRedo) {
         // if we have new data, retry right away, even though the previous attempt didn't go well.
-        _sendICEServerAddressToMetaverseAPIRedo = false;
-        sendICEServerAddressToMetaverseAPI();
+        ice._sendICEServerAddressToMetaverseAPIRedo = false;
+        sendICEServerAddressToMetaverseAPI(ice);
     } else {
         const int ICE_SERVER_UPDATE_RETRY_MS = 2 * 1000;
 
-        qCWarning(domain_server_ice) << "PAGE: Failed to update ice-server address (" << _iceServerSocket <<
-            ") with Directory Server (" << requestReply->url() << ") (critical error for auto-networking) error:" <<
+        qCWarning(domain_server_ice) << "PAGE: Failed to update ice-server address (" << ice._iceServerSocket << " "
+            << ice._iceServerSocket.getAddress().protocol()
+            << ") with Directory Server (" << requestReply->url() << ") (critical error for auto-networking) error:" <<
             requestReply->errorString();
         qCWarning(domain_server_ice) << "\tRe-attempting in" << ICE_SERVER_UPDATE_RETRY_MS / 1000 << "seconds";
 
-        QTimer::singleShot(ICE_SERVER_UPDATE_RETRY_MS, this, SLOT(sendICEServerAddressToMetaverseAPI()));
+        QTimer::singleShot(ICE_SERVER_UPDATE_RETRY_MS, this, [this, &ice] {sendICEServerAddressToMetaverseAPI(ice);});
     }
 }
 
-void DomainServer::sendHeartbeatToIceServer() {
-    if (!_iceServerSocket.getAddress().isNull()) {
-
+void DomainServer::sendHeartbeatToIceServer(ICEConnectionData &ice) {
+    // TODO(IPv6):
+    if (!ice._iceServerSocket.getAddress().isNull()) {
         auto accountManager = DependencyManager::get<AccountManager>();
         auto limitedNodeList = DependencyManager::get<LimitedNodeList>();
 
@@ -1783,7 +1854,8 @@ void DomainServer::sendHeartbeatToIceServer() {
             if (!limitedNodeList->getSessionUUID().isNull()) {
                 accountManager->generateNewDomainKeypair(limitedNodeList->getSessionUUID());
             } else {
-                qCWarning(domain_server_ice) << "Attempting to send ICE server heartbeat with no domain ID. This is not supported";
+                qCWarning(domain_server_ice)
+                    << "Attempting to send ICE server heartbeat with no domain ID. This is not supported";
             }
 
             return;
@@ -1791,52 +1863,55 @@ void DomainServer::sendHeartbeatToIceServer() {
 
         const int FAILOVER_NO_REPLY_ICE_HEARTBEATS { 6 };
 
-        // increase the count of no reply ICE heartbeats and check the current value
-        ++_noReplyICEHeartbeats;
+        // Increase the count of no reply ICE heartbeats and check the current value
+        ++ice._noReplyICEHeartbeats;
 
-        if (_noReplyICEHeartbeats > FAILOVER_NO_REPLY_ICE_HEARTBEATS) {
-            qCWarning(domain_server_ice) << "There have been" << _noReplyICEHeartbeats - 1 << "heartbeats sent with no reply from the ice-server";
+        if (ice._noReplyICEHeartbeats > FAILOVER_NO_REPLY_ICE_HEARTBEATS) {
+            qCWarning(domain_server_ice) << "There have been" << ice._noReplyICEHeartbeats - 1
+                                         << "heartbeats sent with no reply from the ice-server";
             qCWarning(domain_server_ice) << "Clearing the current ice-server socket and selecting a new candidate ice-server";
 
-            // add the current address to our list of failed addresses
-            _failedIceServerAddresses << _iceServerSocket.getAddress();
+            // Add the current address to our list of failed addresses
+            QHostAddress iceServerAddress = ice._iceServerSocket.getAddress();
+            //TODO(IPv6): Testing
+            ice._failedIceServerAddresses << iceServerAddress;
 
-            // if we've failed to hear back for three heartbeats, we clear the current ice-server socket and attempt
-            // to randomize a new one
-            _iceServerSocket.clear();
+            // If we've failed to hear back for three heartbeats, we clear the current ice-server socket and attempt to randomize a new one
+            ice._iceServerSocket.clear();
 
-            // reset the number of no reply ICE hearbeats
-            _noReplyICEHeartbeats = 0;
+            // Reset the number of no reply ICE hearbeats
+            ice._noReplyICEHeartbeats = 0;
 
-            // reset the connection flag for ICE server
-            _connectedToICEServer = false;
-            sendICEServerAddressToMetaverseAPI();
+            // Reset the connection flag for ICE server
+            ice._connectedToICEServer = false;
+            sendICEServerAddressToMetaverseAPI(ice);
 
-            // randomize our ice-server address (and simultaneously look up any new hostnames for available ice-servers)
-            randomizeICEServerAddress(true);
+            // Randomize our ice-server address (and simultaneously look up any new hostnames for available ice-servers)
+            randomizeICEServerAddress(true, ice);
         }
 
-        // NOTE: I'd love to specify the correct size for the packet here, but it's a little trickey with
-        // QDataStream and the possibility of IPv6 address for the sockets.
-        if (!_iceServerHeartbeatPacket) {
-            _iceServerHeartbeatPacket = NLPacket::create(PacketType::ICEServerHeartbeat);
+        // NOTE: I'd love to specify the correct size for the packet here, but it's a little tricky with QDataStream and the possibility of IPv6 address for the sockets.
+        if (!ice._iceServerHeartbeatPacket) {
+            ice._iceServerHeartbeatPacket = NLPacket::create(PacketType::ICEServerHeartbeat);
         }
 
         bool shouldRecreatePacket = false;
 
-        if (_iceServerHeartbeatPacket->getPayloadSize() > 0) {
-            // if either of our sockets have changed we need to re-sign the heartbeat
-            // first read the sockets out from the current packet
-            _iceServerHeartbeatPacket->seek(0);
-            QDataStream heartbeatStream(_iceServerHeartbeatPacket.get());
+        if (ice._iceServerHeartbeatPacket->getPayloadSize() > 0) {
+            // If either of our sockets have changed, we need to re-sign the heartbeat
+            // First read the sockets out from the current packet
+            ice._iceServerHeartbeatPacket->seek(0);
+            QDataStream heartbeatStream(ice._iceServerHeartbeatPacket.get());
 
             QUuid senderUUID;
             SockAddr publicSocket, localSocket;
             heartbeatStream >> senderUUID >> publicSocket >> localSocket;
 
             if (senderUUID != limitedNodeList->getSessionUUID()
-                || publicSocket != limitedNodeList->getPublicSockAddr()
-                || localSocket != limitedNodeList->getLocalSockAddr()) {
+                || publicSocket != limitedNodeList->getPublicSockAddrIPv4()
+                || publicSocket != limitedNodeList->getPublicSockAddrIPv6()
+                || localSocket != limitedNodeList->getLocalSockAddrIPv4()
+                || localSocket != limitedNodeList->getLocalSockAddrIPv6()) {
                 shouldRecreatePacket = true;
             }
         } else {
@@ -1844,29 +1919,29 @@ void DomainServer::sendHeartbeatToIceServer() {
         }
 
         if (shouldRecreatePacket) {
-            // either we don't have a heartbeat packet yet or some combination of sockets, ID and keypair have changed
-            // and we need to make a new one
+            // Either we don't have a heartbeat packet yet or some combination of sockets, ID, and keypair have changed, and we need to make a new one
 
-            // reset the position in the packet before writing
-            _iceServerHeartbeatPacket->reset();
+            // Reset the position in the packet before writing
+            ice._iceServerHeartbeatPacket->reset();
 
-            // write our plaintext data to the packet
-            QDataStream heartbeatDataStream(_iceServerHeartbeatPacket.get());
+            // Write our plaintext data to the packet
+            QDataStream heartbeatDataStream(ice._iceServerHeartbeatPacket.get());
             heartbeatDataStream << limitedNodeList->getSessionUUID()
-                << limitedNodeList->getPublicSockAddr() << limitedNodeList->getLocalSockAddr();
+                << limitedNodeList->getPublicSockAddrIPv4() << limitedNodeList->getPublicSockAddrIPv6()
+                << limitedNodeList->getLocalSockAddrIPv4() << limitedNodeList->getLocalSockAddrIPv6();
 
-            // setup a QByteArray that points to the plaintext data
-            auto plaintext = QByteArray::fromRawData(_iceServerHeartbeatPacket->getPayload(), _iceServerHeartbeatPacket->getPayloadSize());
+            // Setup a QByteArray that points to the plaintext data
+            auto plaintext = QByteArray::fromRawData(ice._iceServerHeartbeatPacket->getPayload(), ice._iceServerHeartbeatPacket->getPayloadSize());
 
-            // generate a signature for the plaintext data in the packet
+            // Generate a signature for the plaintext data in the packet
             auto signature = accountManager->getAccountInfo().signPlaintext(plaintext);
 
-            // pack the signature with the data
+            // Pack the signature with the data
             heartbeatDataStream << signature;
         }
 
-        // send the heartbeat packet to the ice server now
-        limitedNodeList->sendUnreliablePacket(*_iceServerHeartbeatPacket, _iceServerSocket);
+        // Send the heartbeat packet to the ICE server now
+        limitedNodeList->sendUnreliablePacket(*ice._iceServerHeartbeatPacket, ice._iceServerSocket);
 
     } else {
         qCDebug(domain_server_ice) << "Not sending ice-server heartbeat since there is no selected ice-server.";
@@ -1886,7 +1961,7 @@ void DomainServer::nodePingMonitor() {
             if (nodeData) {
                 username = nodeData->getUsername();
             }
-            qCDebug(domain_server) << "Haven't heard from " << node->getPublicSocket() << username << " in " << lastHeard / USECS_PER_MSEC << " msec";
+            qCDebug(domain_server) << "Haven't heard from " << node->getPublicSocketIPv4() << " " << node->getPublicSocketIPv6() << username << " in " << lastHeard / USECS_PER_MSEC << " msec";
         }
     });
 }
@@ -2022,8 +2097,15 @@ QJsonObject DomainServer::jsonObjectForNode(const SharedNodePointer& node) {
     nodeJson[JSON_KEY_TYPE] = nodeTypeName;
 
     // add the node socket information
-    nodeJson[JSON_KEY_PUBLIC_SOCKET] = jsonForSocket(node->getPublicSocket());
-    nodeJson[JSON_KEY_LOCAL_SOCKET] = jsonForSocket(node->getLocalSocket());
+    // TODO(IPv6): add proper information about IPv6 socket, it may be at a different port
+    const auto publicSocket = SockAddr(node->getPublicSocketIPv4().getType(), node->getPublicSocketIPv4().getAddress(),
+        node->getPublicSocketIPv4().getPort());
+    // TODO(IPv6): this needs two separate keys, one for IPv4 and one for IPv6.
+    nodeJson[JSON_KEY_PUBLIC_SOCKET] = jsonForSocket(publicSocket);
+    const auto localSocket = SockAddr(node->getLocalSocketIPv4().getType(),
+        node->getLocalSocketIPv6().getAddress(), node->getLocalSocketIPv4().getPort());
+    // TODO(IPv6): this needs two separate keys, one for IPv4 and one for IPv6.
+    nodeJson[JSON_KEY_LOCAL_SOCKET] = jsonForSocket(localSocket);
 
     // add the node uptime in our list
     nodeJson[JSON_KEY_UPTIME] = QString::number(double(QDateTime::currentMSecsSinceEpoch() - node->getWakeTimestamp()) / 1000.0);
@@ -3056,6 +3138,7 @@ void DomainServer::refreshStaticAssignmentAndAddToQueue(SharedAssignmentPointer&
 
 static const QString BROADCASTING_SETTINGS_KEY = "broadcasting";
 
+// TODO(IPv6): this needs both IPv4 and IPv6 address
 struct ReplicationServerInfo {
     NodeType_t nodeType;
     SockAddr sockAddr;
@@ -3065,6 +3148,7 @@ ReplicationServerInfo serverInformationFromSettings(QVariantMap serverMap, Repli
     static const QString REPLICATION_SERVER_ADDRESS = "address";
     static const QString REPLICATION_SERVER_PORT = "port";
     static const QString REPLICATION_SERVER_TYPE = "server_type";
+    // TODO(IPv6): add IPv6 support here
 
     if (serverMap.contains(REPLICATION_SERVER_ADDRESS) && serverMap.contains(REPLICATION_SERVER_PORT)
         && serverMap.contains(REPLICATION_SERVER_TYPE)) {
@@ -3112,13 +3196,15 @@ void DomainServer::updateReplicationNodes(ReplicationServerDirection direction) 
             nodeList->eachNode([direction, &knownReplicationNodes](const SharedNodePointer& otherNode) {
                 if ((direction == Upstream && NodeType::isUpstream(otherNode->getType()))
                     || (direction == Downstream && NodeType::isDownstream(otherNode->getType()))) {
-                    knownReplicationNodes.push_back(otherNode->getPublicSocket());
+                    // TODO(IPv6): add IPv6 support here
+                    knownReplicationNodes.push_back(otherNode->getPublicSocketIPv4());
                 }
             });
 
             for (auto& server : serversSettings) {
-                auto replicationServer = serverInformationFromSettings(server.toMap(), direction);
 
+                auto replicationServer = serverInformationFromSettings(server.toMap(), direction);
+                // TODO(IPv6): add IPv6 support here
                 if (!replicationServer.sockAddr.isNull() && replicationServer.nodeType != NodeType::Unassigned) {
                     // make sure we have the settings we need for this replication server
                     replicationNodesInSettings.push_back(replicationServer.sockAddr);
@@ -3126,9 +3212,13 @@ void DomainServer::updateReplicationNodes(ReplicationServerDirection direction) 
                     bool knownNode = find(knownReplicationNodes.cbegin(), knownReplicationNodes.cend(),
                                           replicationServer.sockAddr) != knownReplicationNodes.cend();
                     if (!knownNode) {
+                        SockAddr nodeSockAddrIPv4 = replicationServer.sockAddr.isIPv4() ? replicationServer.sockAddr : SockAddr();
+                        SockAddr nodeSockAddrIPv6 = replicationServer.sockAddr.isIPv6() ? replicationServer.sockAddr : SockAddr();
+
                         // manually add the replication node to our node list
                         auto node = nodeList->addOrUpdateNode(QUuid::createUuid(), replicationServer.nodeType,
-                                                              replicationServer.sockAddr, replicationServer.sockAddr,
+                                                              nodeSockAddrIPv4, nodeSockAddrIPv6,
+                                                              nodeSockAddrIPv4, nodeSockAddrIPv6,
                                                               Node::NULL_LOCAL_ID, false, direction == Upstream);
                         node->setIsForcedNeverSilent(true);
 
@@ -3136,7 +3226,8 @@ void DomainServer::updateReplicationNodes(ReplicationServerDirection direction) 
                             << "node:" << node->getUUID() << replicationServer.sockAddr;
 
                         // manually activate the public socket for the replication node
-                        node->activatePublicSocket();
+                        // TODO(IPv6): add IPv6 support here
+                        node->activatePublicSocket(QAbstractSocket::IPv4Protocol);
                     }
                 }
 
@@ -3150,11 +3241,12 @@ void DomainServer::updateReplicationNodes(ReplicationServerDirection direction) 
         nodeList->eachNode([&direction, &replicationNodesInSettings, &replicationDirection, &nodesToKill](const SharedNodePointer& otherNode) {
             if ((direction == Upstream && NodeType::isUpstream(otherNode->getType()))
                 || (direction == Downstream && NodeType::isDownstream(otherNode->getType()))) {
+                // TODO(IPv6): add IPv6 support here
                 bool nodeInSettings = find(replicationNodesInSettings.cbegin(), replicationNodesInSettings.cend(),
-                                           otherNode->getPublicSocket()) != replicationNodesInSettings.cend();
+                                           otherNode->getPublicSocketIPv4()) != replicationNodesInSettings.cend();
                 if (!nodeInSettings) {
                     qDebug() << "Removing" << replicationDirection
-                        << "node:" << otherNode->getUUID() << otherNode->getPublicSocket();
+                        << "node:" << otherNode->getUUID() << otherNode->getPublicSocketIPv4();
                     nodesToKill.push_back(otherNode);
                 }
             }
@@ -3538,54 +3630,75 @@ void DomainServer::broadcastNodeDisconnect(const SharedNodePointer& disconnected
 
 void DomainServer::processICEServerHeartbeatDenialPacket(QSharedPointer<ReceivedMessage> message) {
     static const int NUM_HEARTBEAT_DENIALS_FOR_KEYPAIR_REGEN = 3;
+    ICEConnectionData &ice = message->getSenderSockAddr().getAddress() == _iceIPv4._iceServerSocket.getAddress() ?
+        _iceIPv4 : _iceIPv6;
+    Q_ASSERT(message->getSenderSockAddr().getAddress() == _iceIPv4._iceServerSocket.getAddress()
+        || message->getSenderSockAddr().getAddress() == _iceIPv6._iceServerSocket.getAddress());
 
-    if (++_numHeartbeatDenials > NUM_HEARTBEAT_DENIALS_FOR_KEYPAIR_REGEN) {
+    if (++ice._numHeartbeatDenials > NUM_HEARTBEAT_DENIALS_FOR_KEYPAIR_REGEN) {
         qCDebug(domain_server_ice) << "Received" << NUM_HEARTBEAT_DENIALS_FOR_KEYPAIR_REGEN << "heartbeat denials from ice-server"
             << "- re-generating keypair now";
 
+        // TODO(IPv6): do we need two separate keypairs for IPv4 and IPv6 connection?
         // we've hit our threshold of heartbeat denials, trigger a keypair re-generation
         auto limitedNodeList = DependencyManager::get<LimitedNodeList>();
         DependencyManager::get<AccountManager>()->generateNewDomainKeypair(limitedNodeList->getSessionUUID());
 
         // reset our number of heartbeat denials
-        _numHeartbeatDenials = 0;
+        ice._numHeartbeatDenials = 0;
     }
 
     // even though we can't get into this ice-server it is responding to us, so we reset our number of no-reply heartbeats
-    _noReplyICEHeartbeats = 0;
+    ice._noReplyICEHeartbeats = 0;
 }
 
 void DomainServer::processICEServerHeartbeatACK(QSharedPointer<ReceivedMessage> message) {
-    // we don't do anything with this ACK other than use it to tell us to keep talking to the same ice-server
-    _noReplyICEHeartbeats = 0;
-
-    if (!_connectedToICEServer) {
-        _connectedToICEServer = true;
-        sendICEServerAddressToMetaverseAPI();
-        qCInfo(domain_server_ice) << "Connected to ice-server at" << _iceServerSocket;
+    static const int NUM_HEARTBEAT_DENIALS_FOR_KEYPAIR_REGEN = 3;
+    ICEConnectionData &ice = message->getSenderSockAddr().getAddress() == _iceIPv4._iceServerSocket.getAddress() ?
+        _iceIPv4 : _iceIPv6;
+    if (message->getSenderSockAddr().getAddress() == _iceIPv4._iceServerSocket.getAddress()
+        || message->getSenderSockAddr().getAddress() == _iceIPv6._iceServerSocket.getAddress()) {
+        Q_ASSERT(false);
     }
+
+    // we don't do anything with this ACK other than use it to tell us to keep talking to the same ice-server
+    if (message->getSenderSockAddr().getAddress() == ice._iceServerSocket.getAddress()) {
+        ice._noReplyICEHeartbeats = 0;
+
+        if (!ice._connectedToICEServer) {
+            ice._connectedToICEServer = true;
+            sendICEServerAddressToMetaverseAPI(ice);
+            if (&ice == &_iceIPv4) {
+                qCInfo(domain_server_ice) << "Connected to ice-server by IPv4 at" << ice._iceServerSocket;
+            } else {
+                qCInfo(domain_server_ice) << "Connected to ice-server by IPv6 at" << ice._iceServerSocket;
+            }
+        }
+    }
+        //qWarning(domain_server_ice) << "ICE server address not recognized";
 }
 
-void DomainServer::handleKeypairChange() {
-    if (_iceServerHeartbeatPacket) {
+void DomainServer::handleKeypairChange(ICEConnectionData &ice) {
+    if (ice._iceServerHeartbeatPacket) {
         // reset the payload size of the ice-server heartbeat packet - this causes the packet to be re-generated
         // the next time we go to send an ice-server heartbeat
-        _iceServerHeartbeatPacket->setPayloadSize(0);
+        ice._iceServerHeartbeatPacket->setPayloadSize(0);
 
         // send a heartbeat to the ice server immediately
-        sendHeartbeatToIceServer();
+        sendHeartbeatToIceServer(ice);
     }
 }
 
-void DomainServer::handleICEHostInfo(const QHostInfo& hostInfo) {
+void DomainServer::handleICEHostInfo(const QHostInfo& hostInfo, ICEConnectionData &ice) {
     // clear the ICE address lookup ID so that it can fire again
-    _iceAddressLookupID = INVALID_ICE_LOOKUP_ID;
+    ice._iceAddressLookupID = INVALID_ICE_LOOKUP_ID;
 
     // enumerate the returned addresses and collect only valid IPv4 addresses
+    // TODO(IPv6): Does it need to be IPv4 and if so why?
     QList<QHostAddress> sanitizedAddresses = hostInfo.addresses();
     auto it = sanitizedAddresses.begin();
     while (it != sanitizedAddresses.end()) {
-        if (!it->isNull() && it->protocol() == QAbstractSocket::IPv4Protocol) {
+        if (!it->isNull() && (it->protocol() == QAbstractSocket::IPv4Protocol || it->protocol() == QAbstractSocket::IPv6Protocol)) {
             ++it;
         } else {
             it = sanitizedAddresses.erase(it);
@@ -3596,48 +3709,54 @@ void DomainServer::handleICEHostInfo(const QHostInfo& hostInfo) {
         qCWarning(domain_server_ice) << "IP address lookup failed for" << _iceServerAddr << ":" << hostInfo.errorString();
 
         // if we don't have an ICE server to use yet, trigger a retry
-        if (_iceServerSocket.isNull()) {
+        if (ice._iceServerSocket.isNull()) {
             const int ICE_ADDRESS_LOOKUP_RETRY_MS = 1000;
 
-            QTimer::singleShot(ICE_ADDRESS_LOOKUP_RETRY_MS, this, SLOT(updateICEServerAddresses()));
+            // TODO(IPv6): this needs two versions
+            //QTimer::singleShot(ICE_ADDRESS_LOOKUP_RETRY_MS, this, SLOT(updateICEServerAddresses()));
+            QTimer::singleShot(ICE_ADDRESS_LOOKUP_RETRY_MS, this, [this, &ice]{updateICEServerAddresses(ice);});
         }
 
     } else {
-        int countBefore = _iceServerAddresses.count();
+        int countBefore = ice._iceServerAddresses.count();
 
-        _iceServerAddresses = sanitizedAddresses;
+        ice._iceServerAddresses = sanitizedAddresses;
 
         if (countBefore == 0) {
-            qCInfo(domain_server_ice) << "Found" << _iceServerAddresses.count() << "ice-server IP addresses for" << _iceServerAddr;
+            qCInfo(domain_server_ice) << "Found" << ice._iceServerAddresses.count() << "ice-server IP addresses for" << _iceServerAddr;
         }
 
-        if (_iceServerSocket.isNull()) {
+        if (ice._iceServerSocket.isNull()) {
             // we don't have a candidate ice-server yet, pick now (without triggering a host lookup since we just did one)
-            randomizeICEServerAddress(false);
+            randomizeICEServerAddress(false, ice);
         }
     }
 }
 
-void DomainServer::randomizeICEServerAddress(bool shouldTriggerHostLookup) {
+void DomainServer::randomizeICEServerAddress(bool shouldTriggerHostLookup, ICEConnectionData &ice) {
     if (shouldTriggerHostLookup) {
-        updateICEServerAddresses();
+        updateICEServerAddresses(ice);
     }
 
     // create a list by removing the already failed ice-server addresses
-    auto candidateICEAddresses = _iceServerAddresses;
+    QList<QHostAddress> candidateICEAddresses;
 
-    auto it = candidateICEAddresses.begin();
+    //auto it = candidateICEAddresses.begin();
 
-    while (it != candidateICEAddresses.end()) {
-        if (_failedIceServerAddresses.contains(*it)) {
-            // we already tried this address and it failed, remove it from list of candidates
-            it = candidateICEAddresses.erase(it);
-        } else {
-            // keep this candidate, it hasn't failed yet
-            ++it;
+    for (const auto &address: ice._iceServerAddresses) {
+        if (!ice._failedIceServerAddresses.contains(address)
+            && address.protocol() == QAbstractSocket::IPv4Protocol
+            && &ice == &_iceIPv4) {
+            candidateICEAddresses.append(address);
+        }
+        if (!ice._failedIceServerAddresses.contains(address)
+            && address.protocol() == QAbstractSocket::IPv6Protocol
+            && &ice == &_iceIPv6) {
+            candidateICEAddresses.append(address);
         }
     }
 
+    // TODO(IPv6): how to handle this with IPv6? If we have two separate lists IPv6 may always fail if IPv6 is not available.
     if (candidateICEAddresses.empty()) {
         // we ended up with an empty list since everything we've tried has failed
         // so clear the set of failed addresses and start going through them again
@@ -3646,8 +3765,8 @@ void DomainServer::randomizeICEServerAddress(bool shouldTriggerHostLookup) {
             "PAGE: All current ice-server addresses have failed - re-attempting all current addresses for"
             << _iceServerAddr;
 
-        _failedIceServerAddresses.clear();
-        candidateICEAddresses = _iceServerAddresses;
+        ice._failedIceServerAddresses.clear();
+        candidateICEAddresses = ice._iceServerAddresses;
     }
 
     // of the list of available addresses that we haven't tried, pick a random one
@@ -3662,17 +3781,17 @@ void DomainServer::randomizeICEServerAddress(bool shouldTriggerHostLookup) {
         indexToTry = distribution(generator);
     }
 
-    _iceServerSocket = SockAddr { SocketType::UDP, candidateICEAddresses[indexToTry], ICE_SERVER_DEFAULT_PORT };
-    qCInfo(domain_server_ice) << "Set candidate ice-server socket to" << _iceServerSocket;
+    ice._iceServerSocket = SockAddr { SocketType::UDP, candidateICEAddresses[indexToTry], ICE_SERVER_DEFAULT_PORT };
+    qCInfo(domain_server_ice) << "Set candidate ice-server IPv4 socket to" << ice._iceServerSocket;
 
     // clear our number of hearbeat denials, this should be re-set on ice-server change
-    _numHeartbeatDenials = 0;
+    ice._numHeartbeatDenials = 0;
 
     // immediately fire an ICE heartbeat once we've picked a candidate ice-server
-    sendHeartbeatToIceServer();
+    sendHeartbeatToIceServer(ice);
 
     // immediately send an update to the directory services API when our ice-server changes
-    sendICEServerAddressToMetaverseAPI();
+    sendICEServerAddressToMetaverseAPI(ice);
 }
 
 void DomainServer::setupGroupCacheRefresh() {

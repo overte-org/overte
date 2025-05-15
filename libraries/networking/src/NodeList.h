@@ -103,7 +103,9 @@ public:
     virtual bool isDomainServer() const override { return false; }
     virtual QUuid getDomainUUID() const override { return _domainHandler.getUUID(); }
     virtual Node::LocalID getDomainLocalID() const override { return _domainHandler.getLocalID(); }
-    virtual SockAddr getDomainSockAddr() const override { return _domainHandler.getSockAddr(); }
+    // TODO(IPv6): this also needs one to get domain's active sock addr
+    virtual SockAddr getDomainSockAddrIPv4() const override { return _domainHandler.getSockAddrIPv4(); }
+    virtual SockAddr getDomainSockAddrIPv6() const override { return _domainHandler.getSockAddrIPv6(); }
 
 public slots:
     void reset(QString reason, bool skipDomainHandlerReset = false);
@@ -144,7 +146,8 @@ signals:
 private slots:
     void stopKeepalivePingTimer();
     void sendPendingDSPathQuery();
-    void handleICEConnectionToDomainServer();
+    void handleICEConnectionToDomainServerIPv4();
+    void handleICEConnectionToDomainServerIPv6();
 
     void startNodeHolePunch(const SharedNodePointer& node);
     void handleNodePingTimeout();

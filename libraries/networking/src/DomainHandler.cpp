@@ -37,12 +37,14 @@
 
 DomainHandler::DomainHandler(QObject* parent) :
     QObject(parent),
-    _sockAddr(SockAddr(SocketType::UDP, QHostAddress::Null, DEFAULT_DOMAIN_SERVER_PORT)),
+    _sockAddrIPv4(SockAddr(SocketType::UDP, QHostAddress::Null, DEFAULT_DOMAIN_SERVER_PORT)),
+    _sockAddrIPv6(SockAddr(SocketType::UDP, QHostAddress::Null, DEFAULT_DOMAIN_SERVER_PORT)),
     _icePeer(this),
     _settingsTimer(this),
     _apiRefreshTimer(this)
 {
-    _sockAddr.setObjectName("DomainServer");
+    _sockAddrIPv4.setObjectName("DomainServer");
+    _sockAddrIPv6.setObjectName("DomainServer");
 
     // if we get a socket that make sure our NetworkPeer ping timer stops
     connect(this, &DomainHandler::completedSocketDiscovery, &_icePeer, &NetworkPeer::stopPingTimer);
@@ -80,7 +82,8 @@ void DomainHandler::disconnect(QString reason) {
 
     if (requiresICE()) {
         // if we connected to this domain with ICE, re-set the socket so we reconnect through the ice-server
-        _sockAddr.clear();
+        _sockAddrIPv4.clear();
+        _sockAddrIPv6.clear();
     }
 
     qCDebug(networking_ice) << "Disconnecting from domain server.";
@@ -97,7 +100,9 @@ void DomainHandler::sendDisconnectPacket() {
 
     // send the disconnect packet to the current domain server
     auto nodeList = DependencyManager::get<NodeList>();
-    nodeList->sendUnreliablePacket(*disconnectPacket, _sockAddr);
+    // TODO(IPv6): we should probably decide which socket is active and send disconnect on that one.
+    nodeList->sendUnreliablePacket(*disconnectPacket, _sockAddrIPv4);
+    nodeList->sendUnreliablePacket(*disconnectPacket, _sockAddrIPv6);
 }
 
 void DomainHandler::clearSettings() {
@@ -133,8 +138,10 @@ void DomainHandler::hardReset(QString reason) {
 
     qCDebug(networking) << "Hard reset in NodeList DomainHandler.";
     _pendingDomainID = QUuid();
-    _iceServerSockAddr = SockAddr();
-    _sockAddr.clear();
+    _iceServerSockAddrIPv4 = SockAddr();
+    _iceServerSockAddrIPv6 = SockAddr();
+    _sockAddrIPv4.clear();
+    _sockAddrIPv6.clear();
     _domainURL = QUrl();
 
     _domainConnectionRefusals.clear();
@@ -170,15 +177,31 @@ void DomainHandler::setErrorDomainURL(const QUrl& url) {
     return;
 }
 
+const SockAddr& DomainHandler::getActiveSockAddr() const {
+    return _activeSockAddr;
+}
+
+void DomainHandler::setActiveSockAddr(const SockAddr& sockAddr) {
+    Q_ASSERT(sockAddr == _sockAddrIPv4 || sockAddr == _sockAddrIPv6);
+    _activeSockAddr = sockAddr;
+}
+
+// TODO(IPv4): investigate where this is called and if we need to set the active socket
 void DomainHandler::setSockAddr(const SockAddr& sockAddr, const QString& hostname) {
-    if (_sockAddr != sockAddr) {
+    _activeSockAddr = sockAddr;
+    if (_sockAddrIPv4 != sockAddr && _sockAddrIPv6 != sockAddr) {
         // we should reset on a sockAddr change
         hardReset("Changing domain sockAddr");
         // change the sockAddr
-        _sockAddr = sockAddr;
+        // Only one can be valid at a time.
+        qCDebug(networking) << "Domain SockAddr changed to " << sockAddr << " " << hostname;
+        if (sockAddr.isIPv4()) {
+            _sockAddrIPv4 = sockAddr;
+            _sockAddrIPv6 = SockAddr();
+        }
     }
 
-    if (!_sockAddr.isNull()) {
+    if (!(_sockAddrIPv4.isNull() && _sockAddrIPv6.isNull())) {
         DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetDomainSocket);
     }
 
@@ -186,7 +209,7 @@ void DomainHandler::setSockAddr(const SockAddr& sockAddr, const QString& hostnam
     _domainURL = QUrl();
     _domainURL.setScheme(URL_SCHEME_OVERTE);
     _domainURL.setHost(hostname);
-    _domainURL.setPort(_sockAddr.getPort());
+    _domainURL.setPort(getActiveSockAddr().getPort());
 }
 
 void DomainHandler::setUUID(const QUuid& uuid) {
@@ -200,7 +223,8 @@ void DomainHandler::setURLAndID(QUrl domainURL, QUuid domainID) {
     _pendingDomainID = domainID;
 
     if (domainURL.scheme() != URL_SCHEME_OVERTE) {
-        _sockAddr.clear();
+        _sockAddrIPv4.clear();
+        _sockAddrIPv6.clear();
 
         // if this is a file URL we need to see if it has a ~ for us to expand
         if (domainURL.scheme() == HIFI_URL_SCHEME_FILE) {
@@ -215,7 +239,7 @@ void DomainHandler::setURLAndID(QUrl domainURL, QUuid domainID) {
 
     // if it's in the error state, reset and try again.
     if (_domainURL != domainURL 
-        || (_sockAddr.getPort() != domainPort && domainURL.scheme() == URL_SCHEME_OVERTE)
+        || (getActiveSockAddr().getPort() != domainPort && domainURL.scheme() == URL_SCHEME_OVERTE)
         || isServerless() // For reloading content in serverless domain.
         || _isInErrorState) {
         // re-set the domain info so that auth information is reloaded
@@ -247,16 +271,22 @@ void DomainHandler::setURLAndID(QUrl domainURL, QUuid domainID) {
 
         emit domainURLChanged(_domainURL);
 
-        if (_sockAddr.getPort() != domainPort) {
-            qCDebug(networking) << "Updated domain port to" << domainPort;
-            _sockAddr.setPort(domainPort);
+        if (_sockAddrIPv4.getPort() != domainPort) {
+            qCDebug(networking) << "Updated domain IPv4 port to" << domainPort;
+            _sockAddrIPv4.setPort(domainPort);
         }
-    }
+        if (_sockAddrIPv6.getPort() != domainPort) {
+            qCDebug(networking) << "Updated domain IPv6 port to" << domainPort;
+            _sockAddrIPv6.setPort(domainPort);
+        }
+        }
 }
 
 void DomainHandler::setIceServerHostnameAndID(const QString& iceServerHostname, const QUuid& id) {
-
-    auto newIceServer = _iceServerSockAddr.getAddress().toString() != iceServerHostname;
+    // TODO(IPv6): will this work if ICE server does not have IPv6 address?
+    bool newIceServer = false;
+    newIceServer = (_iceServerSockAddrIPv4.getAddress().toString() != iceServerHostname)
+                    || (_iceServerSockAddrIPv6.getAddress().toString() != iceServerHostname);
     auto newDomainID = id != _pendingDomainID;
 
     // if it's in the error state, reset and try again.
@@ -280,40 +310,69 @@ void DomainHandler::setIceServerHostnameAndID(const QString& iceServerHostname, 
 
         _pendingDomainID = id;
 
-        SockAddr* replaceableSockAddr = &_iceServerSockAddr;
-        replaceableSockAddr->~SockAddr();
-        replaceableSockAddr = new (replaceableSockAddr) SockAddr(SocketType::UDP, iceServerHostname, ICE_SERVER_DEFAULT_PORT);
-        _iceServerSockAddr.setObjectName("IceServer");
+        SockAddr* replaceableSockAddrIPv4 = &_iceServerSockAddrIPv4;
+        // TODO(IPv6): this looks like it will cause a memory leak
+        replaceableSockAddrIPv4->~SockAddr();
+        replaceableSockAddrIPv4 = new (replaceableSockAddrIPv4) SockAddr(SocketType::UDP, iceServerHostname, ICE_SERVER_DEFAULT_PORT, false, QAbstractSocket::IPv4Protocol);
+        _iceServerSockAddrIPv4.setObjectName("IceServer");
+
+        SockAddr* replaceableSockAddrIPv6 = &_iceServerSockAddrIPv6;
+        replaceableSockAddrIPv6->~SockAddr();
+        replaceableSockAddrIPv6 = new (replaceableSockAddrIPv6) SockAddr(SocketType::UDP, iceServerHostname, ICE_SERVER_DEFAULT_PORT, false, QAbstractSocket::IPv6Protocol);
+        _iceServerSockAddrIPv6.setObjectName("IceServer");
 
         auto nodeList = DependencyManager::get<NodeList>();
 
         nodeList->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetICEServerHostname);
 
-        if (_iceServerSockAddr.getAddress().isNull()) {
+        if (_iceServerSockAddrIPv4.getAddress().isNull()) {
             // connect to lookup completed for ice-server socket so we can request a heartbeat once hostname is looked up
-            connect(&_iceServerSockAddr, &SockAddr::lookupCompleted, this, &DomainHandler::completedIceServerHostnameLookup);
+            connect(&_iceServerSockAddrIPv4, &SockAddr::lookupCompleted, this, &DomainHandler::completedIceServerHostnameLookupIPv4);
         } else {
-            completedIceServerHostnameLookup();
+            completedIceServerHostnameLookupIPv4();
+        }
+
+        if (_iceServerSockAddrIPv6.getAddress().isNull()) {
+            // connect to lookup completed for ice-server socket so we can request a heartbeat once hostname is looked up
+            connect(&_iceServerSockAddrIPv6, &SockAddr::lookupCompleted, this, &DomainHandler::completedIceServerHostnameLookupIPv6);
+        } else {
+            completedIceServerHostnameLookupIPv6();
         }
 
         qCDebug(networking_ice) << "ICE required to connect to domain via ice server at" << iceServerHostname;
     }
 }
 
-void DomainHandler::activateICELocalSocket() {
+void DomainHandler::activateICELocalSocket(QAbstractSocket::NetworkLayerProtocol protocol) {
     DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetDomainSocket);
-    _sockAddr = _icePeer.getLocalSocket();
-    _domainURL.setScheme(URL_SCHEME_OVERTE);
-    _domainURL.setHost(_sockAddr.getAddress().toString());
+    if (protocol == QAbstractSocket::IPv4Protocol) {
+        _sockAddrIPv4 = _icePeer.getLocalSocketIPv4();
+        _domainURL.setScheme(URL_SCHEME_OVERTE);
+        QHostAddress address = _sockAddrIPv4.getAddress();
+        _domainURL.setHost(address.toString());
+    } else {
+        _sockAddrIPv6 = _icePeer.getLocalSocketIPv6();
+        _domainURL.setScheme(URL_SCHEME_OVERTE);
+        QHostAddress address = _sockAddrIPv6.getAddress();
+        _domainURL.setHost(address.toString());
+    }
     emit domainURLChanged(_domainURL);
     emit completedSocketDiscovery();
 }
 
-void DomainHandler::activateICEPublicSocket() {
+void DomainHandler::activateICEPublicSocket(QAbstractSocket::NetworkLayerProtocol protocol) {
     DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetDomainSocket);
-    _sockAddr = _icePeer.getPublicSocket();
-    _domainURL.setScheme(URL_SCHEME_OVERTE);
-    _domainURL.setHost(_sockAddr.getAddress().toString());
+    if (protocol == QAbstractSocket::IPv4Protocol) {
+        _sockAddrIPv4 = _icePeer.getPublicSocketIPv4();
+        _domainURL.setScheme(URL_SCHEME_OVERTE);
+        QHostAddress address = _sockAddrIPv4.getAddress();
+        _domainURL.setHost(address.toString());
+    } else {
+        _sockAddrIPv6 = _icePeer.getPublicSocketIPv6();
+        _domainURL.setScheme(URL_SCHEME_OVERTE);
+        QHostAddress address = _sockAddrIPv6.getAddress();
+        _domainURL.setHost(address.toString());
+    }
     emit domainURLChanged(_domainURL);
     emit completedSocketDiscovery();
 }
@@ -330,32 +389,55 @@ QString DomainHandler::getViewPointFromNamedPath(QString namedPath) {
 }
 
 void DomainHandler::completedHostnameLookup(const QHostInfo& hostInfo) {
+    bool discoveryComplete = false;
     for (int i = 0; i < hostInfo.addresses().size(); i++) {
         if (hostInfo.addresses()[i].protocol() == QAbstractSocket::IPv4Protocol) {
-            _sockAddr.setAddress(hostInfo.addresses()[i]);
+            _sockAddrIPv4.setAddress(hostInfo.addresses()[i]);
 
             DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetDomainSocket);
 
             qCDebug(networking, "DS at %s is at %s", _domainURL.host().toLocal8Bit().constData(),
-                   _sockAddr.getAddress().toString().toLocal8Bit().constData());
+                    _sockAddrIPv4.getAddress().toString().toLocal8Bit().constData());
 
-            emit completedSocketDiscovery();
-
-            return;
+            discoveryComplete = true;
         }
+        if (hostInfo.addresses()[i].protocol() == QAbstractSocket::IPv6Protocol) {
+            _sockAddrIPv6.setAddress(hostInfo.addresses()[i]);
+
+            DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetDomainSocket);
+
+            qCDebug(networking, "DS at %s is at %s", _domainURL.host().toLocal8Bit().constData(),
+                    _sockAddrIPv6.getAddress().toString().toLocal8Bit().constData());
+
+            discoveryComplete = true;
+        }
+    }
+    if (discoveryComplete) {
+        emit completedSocketDiscovery();
+        return;
     }
 
     // if we got here then we failed to lookup the address
     qCDebug(networking, "Failed domain server lookup");
 }
 
-void DomainHandler::completedIceServerHostnameLookup() {
-    qCDebug(networking_ice) << "ICE server socket is at" << _iceServerSockAddr;
+void DomainHandler::completedIceServerHostnameLookupIPv4() {
+    qCDebug(networking_ice) << "ICE server IPv4 socket is at" << _iceServerSockAddrIPv4;
 
     DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetICEServerSocket);
 
     // emit our signal so we can send a heartbeat to ice-server immediately
-    emit iceSocketAndIDReceived();
+    emit iceSocketAndIDReceivedIPv4();
+}
+
+void DomainHandler::completedIceServerHostnameLookupIPv6() {
+    qCDebug(networking_ice) << "ICE server IPv6 socket is at" << _iceServerSockAddrIPv6;
+
+    // TODO(IPv6): Does this need two separate versions too
+    DependencyManager::get<NodeList>()->flagTimeForConnectionStep(LimitedNodeList::ConnectionStep::SetICEServerSocket);
+
+    // emit our signal so we can send a heartbeat to ice-server immediately
+    emit iceSocketAndIDReceivedIPv6();
 }
 
 void DomainHandler::setIsConnected(bool isConnected) {
@@ -437,7 +519,16 @@ void DomainHandler::requestDomainSettings() {
     packet->writePrimitive(assignmentType);
 
     auto nodeList = DependencyManager::get<LimitedNodeList>();
-    nodeList->sendPacket(std::move(packet), _sockAddr);
+
+    auto packetCopyIPv6 = packet->createCopy(*packet); // TODO(IPv6): ugly name
+    if (_sockAddrIPv4.isIPv4()) {
+        nodeList->sendPacket(std::move(packet), _sockAddrIPv4);
+    }
+    if (_sockAddrIPv6.isIPv6()) {
+        nodeList->sendPacket(std::move(packetCopyIPv6), _sockAddrIPv6);
+    }
+
+    //nodeList->sendPacket(std::move(packet), _sockAddr);
 
     _settingsTimer.start();
 }
@@ -461,17 +552,23 @@ void DomainHandler::processICEPingReplyPacket(QSharedPointer<ReceivedMessage> me
     const SockAddr& senderSockAddr = message->getSenderSockAddr();
     qCDebug(networking_ice) << "Received reply from domain-server on" << senderSockAddr;
 
-    if (getIP().isNull()) {
+    if (getIPv4().isNull() && getIPv6().isNull()) {
         // we're hearing back from this domain-server, no need to refresh API information
         _apiRefreshTimer.stop();
 
         // for now we're unsafely assuming this came back from the domain
-        if (senderSockAddr == _icePeer.getLocalSocket()) {
-            qCDebug(networking_ice) << "Connecting to domain using local socket";
-            activateICELocalSocket();
-        } else if (senderSockAddr == _icePeer.getPublicSocket()) {
-            qCDebug(networking_ice) << "Conecting to domain using public socket";
-            activateICEPublicSocket();
+        if (senderSockAddr == _icePeer.getLocalSocketIPv4()) {
+            qCDebug(networking_ice) << "Connecting to domain using local socket, IPv4";
+            activateICELocalSocket(QAbstractSocket::IPv4Protocol);
+        } else if (senderSockAddr == _icePeer.getLocalSocketIPv6()) {
+            qCDebug(networking_ice) << "Connecting to domain using local socket, IPv6";
+            activateICELocalSocket(QAbstractSocket::IPv6Protocol);
+        } else if (senderSockAddr == _icePeer.getPublicSocketIPv4()) {
+            qCDebug(networking_ice) << "Conecting to domain using public socket, IPv4";
+            activateICEPublicSocket(QAbstractSocket::IPv4Protocol);
+        }  else if (senderSockAddr == _icePeer.getPublicSocketIPv6()) {
+            qCDebug(networking_ice) << "Conecting to domain using public socket, IPv6";
+            activateICEPublicSocket(QAbstractSocket::IPv6Protocol);
         } else {
             qCDebug(networking_ice) << "Reply does not match either local or public socket for domain. Will not connect.";
         }
@@ -485,7 +582,9 @@ void DomainHandler::processDTLSRequirementPacket(QSharedPointer<ReceivedMessage>
 
     qCDebug(networking) << "domain-server DTLS port changed to" << dtlsPort << "- Enabling DTLS.";
 
-    _sockAddr.setPort(dtlsPort);
+    // TODO(IPv6): what to do here?
+    _sockAddrIPv4.setPort(dtlsPort);
+    _sockAddrIPv6.setPort(dtlsPort);
 
 //    initializeDTLSSession();
 }
@@ -555,7 +654,8 @@ bool DomainHandler::reasonSuggestsDomainLogin(ConnectionRefusedReason reasonCode
 void DomainHandler::processDomainServerConnectionDeniedPacket(QSharedPointer<ReceivedMessage> message) {
 
     // Ignore any residual packets from previous domain.
-    if (!message->getSenderSockAddr().getAddress().isEqual(_sockAddr.getAddress())) {
+    if ((!message->getSenderSockAddr().getAddress().isEqual(_sockAddrIPv4.getAddress()))
+         || (!message->getSenderSockAddr().getAddress().isEqual(_sockAddrIPv6.getAddress()))) {
         return;
     }
 

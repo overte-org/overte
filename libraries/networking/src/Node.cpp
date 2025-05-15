@@ -105,9 +105,10 @@ NodeType_t NodeType::fromChar(QChar type) {
     return TYPE_CHAR_HASH.key(type, NodeType::Unassigned);
 }
 
-Node::Node(const QUuid& uuid, NodeType_t type, const SockAddr& publicSocket,
-    const SockAddr& localSocket, QObject* parent) :
-    NetworkPeer(uuid, publicSocket, localSocket, parent),
+Node::Node(const QUuid& uuid, NodeType_t type, const SockAddr& publicSocketIPv4, const SockAddr& publicSocketIPv6,
+    const SockAddr& localSocketIPv4, const SockAddr& localSocketIPv6, QObject* parent) :
+    NetworkPeer(uuid, publicSocketIPv4, publicSocketIPv6,
+        localSocketIPv4, localSocketIPv6, parent),
     _type(type),
     _pingMs(-1),  // "Uninitialized"
     _clockSkewUsec(0),
@@ -122,9 +123,12 @@ void Node::setType(char type) {
     _type = type;
     
     auto typeString = NodeType::getNodeTypeName(type);
-    _publicSocket.setObjectName(typeString);
-    _localSocket.setObjectName(typeString);
-    _symmetricSocket.setObjectName(typeString);
+    _publicSocketIPv4.setObjectName(typeString);
+    _publicSocketIPv6.setObjectName(typeString);
+    _localSocketIPv4.setObjectName(typeString);
+    _localSocketIPv6.setObjectName(typeString);
+    _symmetricSocketIPv4.setObjectName(typeString);
+    _symmetricSocketIPv6.setObjectName(typeString);
 }
 
 
@@ -196,10 +200,14 @@ bool Node::isIgnoringNodeWithID(const QUuid& nodeID) const {
 QDataStream& operator<<(QDataStream& out, const Node& node) {
     out << node._type;
     out << node._uuid;
-    out << node._publicSocket.getType();
-    out << node._publicSocket;
-    out << node._localSocket.getType();
-    out << node._localSocket;
+    out << node._publicSocketIPv4.getType();
+    out << node._publicSocketIPv4;
+    out << node._localSocketIPv4.getType();
+    out << node._localSocketIPv4;
+    out << node._publicSocketIPv6.getType();
+    out << node._publicSocketIPv6;
+    out << node._localSocketIPv6.getType();
+    out << node._localSocketIPv6;
     out << node._permissions;
     out << node._isReplicated;
     out << node._localID;
@@ -207,15 +215,26 @@ QDataStream& operator<<(QDataStream& out, const Node& node) {
 }
 
 QDataStream& operator>>(QDataStream& in, Node& node) {
-    SocketType publicSocketType, localSocketType;
+    SocketType publicSocketTypeIPv4, localSocketTypeIPv4;
+    SocketType publicSocketTypeIPv6, localSocketTypeIPv6;
     in >> node._type;
     in >> node._uuid;
-    in >> publicSocketType;
-    in >> node._publicSocket;
-    node._publicSocket.setType(publicSocketType);
-    in >> localSocketType;
-    in >> node._localSocket;
-    node._localSocket.setType(localSocketType);
+    in >> publicSocketTypeIPv4;
+    in >> node._publicSocketIPv4;
+    node._publicSocketIPv4.setType(publicSocketTypeIPv4);
+
+    in >> localSocketTypeIPv4;
+    in >> node._localSocketIPv4;
+    node._localSocketIPv4.setType(localSocketTypeIPv4);
+
+    in >> publicSocketTypeIPv6;
+    in >> node._publicSocketIPv6;
+    node._publicSocketIPv6.setType(publicSocketTypeIPv6);
+
+    in >> localSocketTypeIPv6;
+    in >> node._localSocketIPv6;
+    node._localSocketIPv6.setType(localSocketTypeIPv6);
+
     in >> node._permissions;
     in >> node._isReplicated;
     in >> node._localID;
@@ -230,7 +249,8 @@ QDebug operator<<(QDebug debug, const Node& node) {
         debug.nospace() << " (" << node.getType() << ")";
     }
     debug << " " << node.getUUID().toString().toLocal8Bit().constData() << "(" << node.getLocalID() << ") ";
-    debug.nospace() << node.getPublicSocket() << "/" << node.getLocalSocket();
+    debug.nospace() << node.getPublicSocketIPv4() << " " << node.getPublicSocketIPv6() << "/"
+    << node.getLocalSocketIPv4() << " " << node.getLocalSocketIPv6();
     return debug.nospace();
 }
 

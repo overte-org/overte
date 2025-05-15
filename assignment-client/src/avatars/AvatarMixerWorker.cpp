@@ -801,7 +801,8 @@ void AvatarMixerWorker::broadcastAvatarDataToDownstreamMixer(const SharedNodePoi
 
         // send the replicated bulk avatar data
         auto nodeList = DependencyManager::get<NodeList>();
-        nodeList->sendPacketList(std::move(avatarPacketList), node->getPublicSocket());
+        // TODO (IPv6): what to do here?
+        nodeList->sendPacketList(std::move(avatarPacketList), node->getPublicSocketIPv4());
 
         // record the bytes sent for other avatar data in the AvatarMixerClientData
         nodeData->recordSentAvatarData(numAvatarDataBytes);

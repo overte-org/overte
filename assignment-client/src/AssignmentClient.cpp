@@ -78,6 +78,7 @@ AssignmentClient::AssignmentClient(Assignment::Type requestAssignmentType, QStri
         _assignmentServerHostname = assignmentServerHostname;
     }
 
+    // TODO(IPv6): this can resolve both to IPv4 and IPv6
     _assignmentServerSocket = SockAddr(SocketType::UDP, _assignmentServerHostname, assignmentServerPort, true);
     if (_assignmentServerSocket.isNull()) {
         qCCritical(assignment_client) << "PAGE: Couldn't resolve domain server address" << _assignmentServerHostname;
@@ -113,8 +114,8 @@ AssignmentClient::AssignmentClient(Assignment::Type requestAssignmentType, QStri
 
     // did we get an assignment-client monitor port?
     if (assignmentMonitorPort > 0) {
-        _assignmentClientMonitorSocket = SockAddr(SocketType::UDP, DEFAULT_ASSIGNMENT_CLIENT_MONITOR_HOSTNAME, 
-            assignmentMonitorPort);
+        // TODO(IPv6): this uses IPv4 currently for localhost
+        _assignmentClientMonitorSocket = SockAddr(SocketType::UDP, DEFAULT_ASSIGNMENT_CLIENT_MONITOR_HOSTNAME, assignmentMonitorPort);
         _assignmentClientMonitorSocket.setObjectName("AssignmentClientMonitor");
 
         qCDebug(assignment_client) << "Assignment-client monitor socket is" << _assignmentClientMonitorSocket;
@@ -122,6 +123,20 @@ AssignmentClient::AssignmentClient(Assignment::Type requestAssignmentType, QStri
         // Hook up a timer to send this child's status to the Monitor once per second
         setUpStatusToMonitor();
     }
+
+    // did we get an assignment-client monitor port?
+//    if (assignmentMonitorPort > 0) {
+//        // TODO(IPv6):
+//        _assignmentClientMonitorSocket =
+//            SockAddr(SocketType::UDP, DEFAULT_ASSIGNMENT_CLIENT_MONITOR_HOSTNAME, QHostAddress(),
+//            assignmentMonitorPort);
+//        _assignmentClientMonitorSocket.setObjectName("AssignmentClientMonitor");
+//
+//        qCDebug(assignment_client) << "Assignment-client monitor socket is" << _assignmentClientMonitorSocket;
+//
+//        // Hook up a timer to send this child's status to the Monitor once per second
+//        setUpStatusToMonitor();
+//    }
     auto& packetReceiver = DependencyManager::get<NodeList>()->getPacketReceiver();
     packetReceiver.registerListener(PacketType::CreateAssignment,
         PacketReceiver::makeUnsourcedListenerReference<AssignmentClient>(this, &AssignmentClient::handleCreateAssignmentPacket));
@@ -228,7 +243,7 @@ void AssignmentClient::sendAssignmentRequest() {
 }
 
 void AssignmentClient::handleCreateAssignmentPacket(QSharedPointer<ReceivedMessage> message) {
-    qCDebug(assignment_client) << "Received a PacketType::CreateAssignment - attempting to unpack.";
+    qCDebug(assignment_client) << "Received a PacketType::CreateAssignment from " << message->getSenderSockAddr() <<" - attempting to unpack.";
 
     if (_currentAssignment) {
         qCWarning(assignment_client) << "Received a PacketType::CreateAssignment while still running an active assignment. Ignoring.";
@@ -249,7 +264,8 @@ void AssignmentClient::handleCreateAssignmentPacket(QSharedPointer<ReceivedMessa
         nodeList->getDomainHandler().setSockAddr(message->getSenderSockAddr(), _assignmentServerHostname);
         nodeList->getDomainHandler().setAssignmentUUID(_currentAssignment->getUUID());
 
-        qCDebug(assignment_client) << "Destination IP for assignment is" << nodeList->getDomainHandler().getIP().toString();
+        qCDebug(assignment_client) << "Destination IP for assignment is" << nodeList->getDomainHandler().getIPv4().toString()
+            << " " << nodeList->getDomainHandler().getIPv6().toString();
 
         // start the deployed assignment
         QThread* workerThread = new QThread();
@@ -370,7 +386,7 @@ void AssignmentClient::handleWebRTCSignalingPacket(QSharedPointer<ReceivedMessag
         auto packetList = NLPacketList::create(PacketType::WebRTCSignaling, QByteArray(), true, true);
         packetList->writeString(QJsonDocument(json).toJson(QJsonDocument::Compact));
         auto nodeList = DependencyManager::get<NodeList>();
-        auto domainServerAddress = nodeList->getDomainHandler().getSockAddr();
+        auto domainServerAddress = nodeList->getDomainHandler().getActiveSockAddr();
         nodeList->sendPacketList(std::move(packetList), domainServerAddress);
 
     } else {
@@ -384,7 +400,7 @@ void AssignmentClient::sendSignalingMessageToUserClient(const QJsonObject& json)
     auto packetList = NLPacketList::create(PacketType::WebRTCSignaling, QByteArray(), true, true);
     packetList->writeString(QJsonDocument(json).toJson(QJsonDocument::Compact));
     auto nodeList = DependencyManager::get<NodeList>();
-    auto domainServerAddress = nodeList->getDomainHandler().getSockAddr();
+    auto domainServerAddress = nodeList->getDomainHandler().getActiveSockAddr();
     nodeList->sendPacketList(std::move(packetList), domainServerAddress);
 }
 

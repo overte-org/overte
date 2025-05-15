@@ -218,11 +218,27 @@ void Agent::requestScript() {
 
     // figure out the URL for the script for this agent assignment
     QUrl scriptURL;
-    if (_payload.isEmpty())  {
+    // TODO(IPv6): IPv6 URLs have different format
+
+    if (_payload.isEmpty()) {
+        QString ipv4Address = nodeList->getDomainHandler().getIPv4().toString();
+        QString ipv6Address = nodeList->getDomainHandler().getIPv6().toString();
+        QString address;
+
+        if (!ipv6Address.isEmpty()) {
+            // This is an IPv6 address
+            address = "[" + ipv6Address + "]";
+        } else {
+            // Fallback to IPv4 address
+            address = ipv4Address;
+        }
+
         scriptURL = QUrl(QString("http://%1:%2/assignment/%3/")
-                         .arg(nodeList->getDomainHandler().getIP().toString())
+                         .arg(address)
                          .arg(DOMAIN_SERVER_HTTP_PORT)
                          .arg(uuidStringWithoutCurlyBraces(nodeList->getSessionUUID())));
+    } else if (_payload.contains(":")){
+
     } else {
         scriptURL = QUrl(_payload);
     }

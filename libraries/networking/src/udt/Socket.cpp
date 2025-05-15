@@ -88,7 +88,7 @@ void Socket::rebind(SocketType socketType) {
 
 void Socket::rebind(SocketType socketType, quint16 localPort) {
     _networkSocket.abort(socketType);
-    bind(socketType, QHostAddress::AnyIPv4, localPort);
+    bind(socketType, QHostAddress::Any, localPort);
 }
 
 #if defined(WEBRTC_DATA_CHANNELS)
@@ -151,6 +151,10 @@ qint64 Socket::writePacket(const Packet& packet, const SockAddr& sockAddr) {
         Lock lock(_unreliableSequenceNumbersMutex);
         sequenceNumber = ++_unreliableSequenceNumbers[sockAddr];
     }
+
+    // TODO(IPv6): Add a way of choosing IPv6 or IPv4
+    // TODO(IPv6): Make sure that both IPv4 and IPv6 connections are removed when disconnecting (SockAddr with both IPv4 and IPv6 might not match anything)
+    // For now we will listen on IPv6
 
     auto connection = findOrCreateConnection(sockAddr, true);
     if (connection) {
@@ -247,6 +251,11 @@ qint64 Socket::writeDatagram(const char* data, qint64 size, const SockAddr& sock
 qint64 Socket::writeDatagram(const QByteArray& datagram, const SockAddr& sockAddr) {
     auto socketType = sockAddr.getType();
 
+    //qDebug() << "Socket::writeDatagram v4 " << sockAddr.getAddressIPv4() << " v6 " << sockAddr.getAddressIPv6() << " protocol ";
+    /*if (sockAddr.getAddressIPv4() == QHostAddress("127.0.0.1")) {
+        printf("break");
+    }*/
+
     // don't attempt to write the datagram if we're unbound.  Just drop it.
     // _networkSocket.writeDatagram will return an error anyway, but there are
     // potential crashes in Qt when that happens.
@@ -316,6 +325,26 @@ Connection* Socket::findOrCreateConnection(const SockAddr& sockAddr, bool filter
 
     return it->second.get();
 }
+
+/*Connection* Socket::createConnection(const SockAddr& sockAddr, bool filterCreate) {
+    std::unordered_map<SockAddr, std::unique_ptr<Connection>>::iterator it;
+    auto congestionControl = _ccFactory->create();
+    congestionControl->setMaxBandwidth(_maxBandwidth);
+    auto connection = std::unique_ptr<Connection>(new Connection(this, sockAddr, std::move(congestionControl)));
+    if (QThread::currentThread() != thread()) {
+        qCDebug(networking) << "Moving new Connection to NodeList thread";
+        connection->moveToThread(thread());
+    }
+    // allow higher-level classes to find out when connections have completed a handshake
+    QObject::connect(connection.get(), &Connection::receiverHandshakeRequestComplete,
+                     this, &Socket::clientHandshakeRequestComplete);
+
+    qCDebug(networking) << "Creating new Connection class for" << sockAddr;
+
+    it = _connectionsHash.insert(it, std::make_pair(sockAddr, std::move(connection)));
+
+    return it->second.get();
+}*/
 
 void Socket::clearConnections() {
     if (QThread::currentThread() != thread()) {

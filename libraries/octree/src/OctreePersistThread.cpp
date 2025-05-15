@@ -99,7 +99,7 @@ void OctreePersistThread::start() {
     }
 
     qCDebug(octree) << "Sending OctreeDataFileRequest to DS";
-    nodeList->sendPacket(std::move(packet), domainHandler.getSockAddr());
+    nodeList->sendPacket(std::move(packet), domainHandler.getActiveSockAddr());
 }
 
 void OctreePersistThread::handleOctreeDataFileReply(QSharedPointer<ReceivedMessage> message) {
@@ -334,7 +334,7 @@ void OctreePersistThread::sendLatestEntityDataToDS() {
     if (_tree->toJSON(&data, nullptr, true)) {
         auto message = NLPacketList::create(PacketType::OctreeDataPersist, QByteArray(), true, true);
         message->write(data);
-        nodeList->sendPacketList(std::move(message), domainHandler.getSockAddr());
+        nodeList->sendPacketList(std::move(message), domainHandler.getActiveSockAddr());
     } else {
         qCWarning(octree) << "Failed to persist octree to DS";
     }

@@ -72,7 +72,9 @@ void DomainGatekeeper::processConnectRequestPacket(QSharedPointer<ReceivedMessag
         return;
     }
 
-    if (nodeConnection.localSockAddr.isNull() || nodeConnection.publicSockAddr.isNull()) {
+    // TODO (IPv6): I'm not sure if this is correct
+    if ((nodeConnection.localSockAddrIPv4.isNull() && nodeConnection.localSockAddrIPv6.isNull())
+        || (nodeConnection.publicSockAddrIPv4.isNull() && nodeConnection.publicSockAddrIPv6.isNull())) {
         qDebug() << "Unexpected data received for node local socket or public socket. Will not allow connection.";
         return;
     }
@@ -357,25 +359,54 @@ void DomainGatekeeper::updateNodePermissions() {
         } else {
             // at this point we don't have a sending socket for packets from this node - assume it is the active socket
             // or the public socket if we haven't activated a socket for the node yet
-            SockAddr connectingAddr = node->getActiveSocket() ? *node->getActiveSocket() : node->getPublicSocket();
+            // TODO (IPv6): what should be selected here? For now I'm selecting IPv4 but that may be wrong
+            SockAddr connectingAddr = node->getActiveSocket() ? *node->getActiveSocket() : node->getPublicSocketIPv4();
+
+            if (node->getActiveSocket()) {
+                connectingAddr = *node->getActiveSocket();
+            } else if (!node->getPublicSocketIPv4().isNull()) {
+                connectingAddr = node->getPublicSocketIPv4();
+            } else {
+                connectingAddr = node->getPublicSocketIPv6();
+            }
 
             QString hardwareAddress;
             QUuid machineFingerprint;
             bool isLocalUser { false };
 
+
+
             DomainServerNodeData* nodeData = static_cast<DomainServerNodeData*>(node->getLinkedData());
             if (nodeData) {
+                //TODO(IPv6) : This needs rework
+                auto sendingAddress = nodeData->getSendingSockAddr().getAddress();
                 hardwareAddress = nodeData->getHardwareAddress();
                 machineFingerprint = nodeData->getMachineFingerprint();
 
-                auto sendingAddress = nodeData->getSendingSockAddr().getAddress();
+                // Get both IPv4 and IPv6 addresses
                 auto nodeList = limitedNodeListWeak.lock();
-                isLocalUser = ((nodeList && sendingAddress == nodeList->getLocalSockAddr().getAddress()) ||
-                               sendingAddress == QHostAddress::LocalHost);
+
+                if (nodeList) {
+                    auto localSockAddrIPv4 = nodeList->getLocalSockAddrIPv4().getAddress();
+                    auto localSockAddrIPv6 = nodeList->getLocalSockAddrIPv6().getAddress();
+
+                    // Check if sending address matches either IPv4 or IPv6
+                    isLocalUser =
+                        (sendingAddress == localSockAddrIPv4 || sendingAddress == localSockAddrIPv6 ||
+                         sendingAddress == QHostAddress::LocalHost || sendingAddress == QHostAddress::LocalHostIPv6);
+                } else {
+                    isLocalUser =
+                        (sendingAddress == QHostAddress::LocalHost || sendingAddress == QHostAddress::LocalHostIPv6);
+                }
+
             }
 
-            userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUserName,
-                                              connectingAddr.getAddress(), hardwareAddress, machineFingerprint);
+            //TODO(IPv6) : This needs rework
+            // TODO(IPv6): Testing
+
+            userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUserName, connectingAddr.getAddress(),
+                                              hardwareAddress, machineFingerprint);
+
         }
 
         node->setPermissions(userPerms);
@@ -473,9 +504,14 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     userPerms.setAll(false);
 
     // check if this user is on our local machine - if this is true set permissions to those for a "localhost" connection
+    // TODO(IPv6): use one address in SockAddr
     QHostAddress senderHostAddress = nodeConnection.senderSockAddr.getAddress();
+    // TODO(IPv6):
     bool isLocalUser =
-        (senderHostAddress == limitedNodeList->getLocalSockAddr().getAddress() || senderHostAddress == QHostAddress::LocalHost);
+        (senderHostAddress == limitedNodeList->getLocalSockAddrIPv4().getAddress()
+            || senderHostAddress == limitedNodeList->getLocalSockAddrIPv6().getAddress()
+            || senderHostAddress == QHostAddress::LocalHost
+            || senderHostAddress == QHostAddress::LocalHostIPv6);
 
     QString verifiedUsername; // if this remains empty, consider this an anonymous connection attempt
     if (!username.isEmpty()) {
@@ -544,9 +580,12 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
         }
     }
 
-    userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUsername,
-                                      nodeConnection.senderSockAddr.getAddress(), nodeConnection.hardwareAddress,
-                                      nodeConnection.machineFingerprint);
+    // TODO(IPv6):
+    QHostAddress senderAddress = nodeConnection.senderSockAddr.getAddress();
+
+    userPerms = setPermissionsForUser(isLocalUser, verifiedUsername, verifiedDomainUsername, senderAddress,
+                                      nodeConnection.hardwareAddress, nodeConnection.machineFingerprint);
+
 
     if (!userPerms.can(NodePermissions::Permission::canConnectToDomain)) {
         if (domainHasLogin()) {
@@ -599,7 +638,10 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     // double check we don't have the same node whose sockets match exactly already in the list
     limitedNodeList->eachNodeBreakable([nodeConnection, username, &existingNodeID](const SharedNodePointer& node){
 
-        if (node->getPublicSocket() == nodeConnection.publicSockAddr && node->getLocalSocket() == nodeConnection.localSockAddr) {
+        if (node->getPublicSocketIPv4() == nodeConnection.publicSockAddrIPv4
+            && node->getPublicSocketIPv6() == nodeConnection.publicSockAddrIPv6
+            && node->getLocalSocketIPv4() == nodeConnection.localSockAddrIPv4
+            && node->getLocalSocketIPv6() == nodeConnection.localSockAddrIPv6) {
             // we have a node that already has these exact sockets
             // this can occur if a node is failing to connect to the domain
 
@@ -668,7 +710,8 @@ SharedNodePointer DomainGatekeeper::addVerifiedNodeFromConnectRequest(const Node
 
     Node::LocalID newLocalID = findOrCreateLocalID(nodeID);
     SharedNodePointer newNode = limitedNodeList->addOrUpdateNode(nodeID, nodeConnection.nodeType,
-                                                                 nodeConnection.publicSockAddr, nodeConnection.localSockAddr,
+                                                                 nodeConnection.publicSockAddrIPv4, nodeConnection.publicSockAddrIPv6,
+                                                                 nodeConnection.localSockAddrIPv4, nodeConnection.localSockAddrIPv6,
                                                                  newLocalID);
 
     // So that we can send messages to this node at will - we need to activate the correct socket on this node now
@@ -947,11 +990,25 @@ void DomainGatekeeper::pingPunchForConnectingPeer(const SharedNetworkPeer& peer)
         auto limitedNodeList = DependencyManager::get<LimitedNodeList>();
 
         // send the ping packet to the local and public sockets for this node
-        auto localPingPacket = limitedNodeList->constructICEPingPacket(PingType::Local, limitedNodeList->getSessionUUID());
-        limitedNodeList->sendPacket(std::move(localPingPacket), peer->getLocalSocket());
+        if (!peer->getLocalSocketIPv4().getAddress().isNull()) {
+            auto localPingPacket = limitedNodeList->constructICEPingPacket(PingType::Local, limitedNodeList->getSessionUUID());
+            limitedNodeList->sendPacket(std::move(localPingPacket), peer->getLocalSocketIPv4());
+        }
 
-        auto publicPingPacket = limitedNodeList->constructICEPingPacket(PingType::Public, limitedNodeList->getSessionUUID());
-        limitedNodeList->sendPacket(std::move(publicPingPacket), peer->getPublicSocket());
+        if (!peer->getLocalSocketIPv6().getAddress().isNull()) {
+            auto localPingPacket = limitedNodeList->constructICEPingPacket(PingType::Local, limitedNodeList->getSessionUUID());
+            limitedNodeList->sendPacket(std::move(localPingPacket), peer->getLocalSocketIPv6());
+        }
+
+        if (!peer->getPublicSocketIPv4().getAddress().isNull()) {
+            auto publicPingPacket = limitedNodeList->constructICEPingPacket(PingType::Public, limitedNodeList->getSessionUUID());
+            limitedNodeList->sendPacket(std::move(publicPingPacket), peer->getPublicSocketIPv4());
+        }
+
+        if (!peer->getPublicSocketIPv6().getAddress().isNull()) {
+            auto publicPingPacket = limitedNodeList->constructICEPingPacket(PingType::Public, limitedNodeList->getSessionUUID());
+            limitedNodeList->sendPacket(std::move(publicPingPacket), peer->getPublicSocketIPv6());
+        }
 
         peer->incrementConnectionAttempts();
     }

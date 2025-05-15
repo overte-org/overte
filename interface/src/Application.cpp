@@ -445,7 +445,7 @@ void Application::replaceDomainContent(const QString& url, const QString& itemNa
 
     auto octreeFilePacket = NLPacket::create(PacketType::DomainContentReplacementFromUrl, urlData.size(), true);
     octreeFilePacket->write(urlData);
-    limitedNodeList->sendPacket(std::move(octreeFilePacket), domainHandler.getSockAddr());
+    limitedNodeList->sendPacket(std::move(octreeFilePacket), domainHandler.getActiveSockAddr());
 
     auto addressManager = DependencyManager::get<AddressManager>();
     addressManager->handleLookupString(DOMAIN_SPAWNING_POINT);

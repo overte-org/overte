@@ -27,11 +27,17 @@ class SockAddr : public QObject {
     Q_OBJECT
 public:
     SockAddr();
+    // TODO(IPv6): Handle IPv4 encoded as IPv6
     SockAddr(SocketType socketType, const QHostAddress& address, quint16 port);
     SockAddr(const SockAddr& otherSockAddr);
-    SockAddr(SocketType socketType, const QString& hostname, quint16 hostOrderPort, bool shouldBlockForLookup = false);
+    // ipV4Only is used for STUN.
+    SockAddr(SocketType socketType, const QString& hostname, quint16 hostOrderPort, bool shouldBlockForLookup = false,
+             QAbstractSocket::NetworkLayerProtocol protocolToUse = QAbstractSocket::AnyIPProtocol);
 
-    bool isNull() const { return _address.isNull() && _port == 0; }
+    // TODO(IPv6): original code had && too but is this correct? Shouldn't it be invalid if either port or address is invalid?
+    // fo0r now I changed it to ||
+    //bool isNull() const { return _addressIPv4.isNull() && _addressIPv6.isNull() && _port == 0; }
+    bool isNull() const { return _address.isNull() || _port == 0; }
     void clear() { _address.clear(); _port = 0;}
 
     SockAddr& operator=(const SockAddr& rhsSockAddr);
@@ -46,7 +52,13 @@ public:
 
     const QHostAddress& getAddress() const { return _address; }
     QHostAddress* getAddressPointer() { return &_address; }
-    void setAddress(const QHostAddress& address) { _address = address; }
+    void setAddress(const QHostAddress& address);
+
+    bool isIPv4() const;
+    bool isIPv6() const {
+        // TODO: add assert to check if it's real IPv6
+        return _address.protocol() == QAbstractSocket::IPv6Protocol;
+    };
 
     quint16 getPort() const { return _port; }
     quint16* getPortPointer() { return &_port; }
@@ -65,7 +77,11 @@ public:
     friend QDataStream& operator>>(QDataStream& dataStream, SockAddr& sockAddr);
 
 private slots:
-    void handleLookupResult(const QHostInfo& hostInfo);
+    // In some cases, for example for STUN IPv4-ony lookup is needed.
+    void handleLookupResult(const QHostInfo& hostInfo, QAbstractSocket::NetworkLayerProtocol protocolToUse);
+    void handleLookupResultIPv4Only(const QHostInfo& hostInfo);
+    void handleLookupResultIPv6Only(const QHostInfo& hostInfo);
+    void handleLookupResultAnyIP(const QHostInfo& hostInfo);
 signals:
     void lookupCompleted();
     void lookupFailed();
@@ -85,16 +101,24 @@ namespace std {
         size_t operator()(const SockAddr& sockAddr) const {
             // use XOR of implemented std::hash templates for new hash
             // depending on the type of address we're looking at
-            
-            if (sockAddr.getAddress().protocol() == QAbstractSocket::IPv4Protocol) {
-                return hash<uint32_t>()((uint32_t) sockAddr.getAddress().toIPv4Address())
-                    ^ hash<uint16_t>()((uint16_t) sockAddr.getPort());
-            } else {
-                // NOTE: if we start to use IPv6 addresses, it's possible their hashing
-                // can be faster by XORing the hash for each 64 bits in the address
-                return hash<string>()(sockAddr.getAddress().toString().toStdString())
-                    ^ hash<uint16_t>()((uint16_t) sockAddr.getPort());
+            uint hashResult = 0;
+
+            if (sockAddr.isIPv4()) {
+                hashResult ^= hash<uint32_t>()((uint32_t)sockAddr.getAddress().toIPv4Address());
+            } else if (sockAddr.isIPv6()) {
+                bool ipv4Test;
+                Q_ASSERT(sockAddr.getAddress().protocol() == QAbstractSocket::IPv6Protocol);
+                sockAddr.getAddress().toIPv4Address(&ipv4Test);
+                Q_ASSERT(!ipv4Test);
+                union {
+                    Q_IPV6ADDR ip;
+                    // IPv6 is 128 bit long
+                    uint64_t value[2];
+                } ipConversion;
+                ipConversion.ip = sockAddr.getAddress().toIPv6Address();
+                hashResult ^= hash<uint64_t>()(ipConversion.value[0]) ^ hash<uint64_t>()(ipConversion.value[1]);
             }
+            return hashResult ^ hash<uint16_t>()((uint16_t) sockAddr.getPort());
         }
     };
 }
