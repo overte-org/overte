@@ -188,6 +188,7 @@ void DomainHandler::setActiveSockAddr(const SockAddr& sockAddr) {
 
 // TODO(IPv4): investigate where this is called and if we need to set the active socket
 void DomainHandler::setSockAddr(const SockAddr& sockAddr, const QString& hostname) {
+    _activeSockAddr = sockAddr;
     if (_sockAddrIPv4 != sockAddr && _sockAddrIPv6 != sockAddr) {
         // we should reset on a sockAddr change
         hardReset("Changing domain sockAddr");

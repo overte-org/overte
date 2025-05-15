@@ -38,6 +38,7 @@ SockAddr::SockAddr(SocketType socketType, const QHostAddress& address, quint16 p
     _port(port)
 {
     if (address.protocol() == QAbstractSocket::IPv6Protocol) {
+        // IPv6 address can contain IPv4 one
         bool ipv4Test;
         QHostAddress addressIPv4(address.toIPv4Address(&ipv4Test));
         if (ipv4Test) {
@@ -46,7 +47,7 @@ SockAddr::SockAddr(SocketType socketType, const QHostAddress& address, quint16 p
             _address = address;
         }
     } else {
-        Q_ASSERT(address.protocol() == QAbstractSocket::IPv4Protocol);
+        // Either IPv4 or null
         _address = address;
     }
 }
@@ -93,8 +94,6 @@ SockAddr::SockAddr(SocketType socketType, const QString& hostname, quint16 hostO
             }
         }
     }
-
-    _address = address;
 }
 
 void SockAddr::swap(SockAddr& otherSockAddr) {

@@ -103,9 +103,9 @@ namespace std {
             // depending on the type of address we're looking at
             uint hashResult = 0;
 
-            if (!sockAddr.isIPv4()) {
+            if (sockAddr.isIPv4()) {
                 hashResult ^= hash<uint32_t>()((uint32_t)sockAddr.getAddress().toIPv4Address());
-            } else if (!sockAddr.isIPv6()) {
+            } else if (sockAddr.isIPv6()) {
                 bool ipv4Test;
                 Q_ASSERT(sockAddr.getAddress().protocol() == QAbstractSocket::IPv6Protocol);
                 sockAddr.getAddress().toIPv4Address(&ipv4Test);

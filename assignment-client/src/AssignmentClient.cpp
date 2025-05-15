@@ -78,6 +78,7 @@ AssignmentClient::AssignmentClient(Assignment::Type requestAssignmentType, QStri
         _assignmentServerHostname = assignmentServerHostname;
     }
 
+    // TODO(IPv6): this can resolve both to IPv4 and IPv6
     _assignmentServerSocket = SockAddr(SocketType::UDP, _assignmentServerHostname, assignmentServerPort, true);
     if (_assignmentServerSocket.isNull()) {
         qCCritical(assignment_client) << "PAGE: Couldn't resolve domain server address" << _assignmentServerHostname;
@@ -242,7 +243,7 @@ void AssignmentClient::sendAssignmentRequest() {
 }
 
 void AssignmentClient::handleCreateAssignmentPacket(QSharedPointer<ReceivedMessage> message) {
-    qCDebug(assignment_client) << "Received a PacketType::CreateAssignment - attempting to unpack.";
+    qCDebug(assignment_client) << "Received a PacketType::CreateAssignment from " << message->getSenderSockAddr() <<" - attempting to unpack.";
 
     if (_currentAssignment) {
         qCWarning(assignment_client) << "Received a PacketType::CreateAssignment while still running an active assignment. Ignoring.";

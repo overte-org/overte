@@ -391,7 +391,8 @@ void NodeList::sendDomainServerCheckIn() {
         if (!domainIsConnected) {
             auto hostname = _domainHandler.getHostname();
             QMetaEnum metaEnum = QMetaEnum::fromType<LimitedNodeList::ConnectReason>();
-            qCDebug(networking_ice) << "Sending connect request ( REASON:" << QString(metaEnum.valueToKey(_connectReason)) << ") to domain-server at" << hostname;
+            qCDebug(networking_ice) << "Sending connect request ( REASON:" << QString(metaEnum.valueToKey(_connectReason)) << ") to domain-server at" << hostname
+                << " " << _domainHandler.getIPv4() << " " << _domainHandler.getIPv6();
 
             // is this our localhost domain-server?
             // if so we need to make sure we have an up-to-date local port in case it restarted
@@ -565,25 +566,23 @@ void NodeList::sendDomainServerCheckIn() {
         checkinCount = std::min(checkinCount, MAX_CHECKINS_TOGETHER);
         // TODO(IPv6): this could be used to decide if IPv6 can be used for particular server
         for (int i = 1; i < checkinCount; ++i) {
-            auto packetCopyIPv4 = domainPacket->createCopy(*domainPacket);
-            auto packetCopyIPv6 = domainPacket->createCopy(*domainPacket);
-
             if (!domainSockAddrIPv4.isNull()) {
+                auto packetCopyIPv4 = domainPacket->createCopy(*domainPacket);
                 sendPacket(std::move(packetCopyIPv4), domainSockAddrIPv4);
             }
             if (!domainSockAddrIPv6.isNull()) {
+                auto packetCopyIPv6 = domainPacket->createCopy(*domainPacket);
                 sendPacket(std::move(packetCopyIPv6), domainSockAddrIPv6);
             }
         }
 
-        auto packetCopyIPv6_2 = domainPacket->createCopy(*domainPacket); // TODO(IPv6): ugly name
+        if (!domainSockAddrIPv6.isNull()) {
+            auto packetCopyIPv6_2 = domainPacket->createCopy(*domainPacket); // TODO(IPv6): ugly name
+            sendPacket(std::move(packetCopyIPv6_2), domainSockAddrIPv6);
+        }
         if (!domainSockAddrIPv4.isNull()) {
             sendPacket(std::move(domainPacket), domainSockAddrIPv4);
         }
-        if (!domainSockAddrIPv6.isNull()) {
-            sendPacket(std::move(packetCopyIPv6_2), domainSockAddrIPv6);
-        }
-
     }
 }
 
