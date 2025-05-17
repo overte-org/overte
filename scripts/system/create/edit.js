@@ -550,7 +550,7 @@
             width: 128,
             height: 128,
             unlit: false,
-            pixelated: false,
+            transparent: false,
         },
     };
     var fcreateNewEntity;

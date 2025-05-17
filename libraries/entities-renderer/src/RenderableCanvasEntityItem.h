@@ -29,15 +29,21 @@ public:
 
 protected:
     virtual void doRender(RenderArgs* args) override;
-    virtual bool isTransparent() const override { return true; }
+    virtual bool isTransparent() const override { return _transparent; }
 
     virtual void doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) override;
     virtual void doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) override;
+
+    Item::Bound getBound(RenderArgs* args) override;
+    ShapeKey getShapeKey() override;
 
 private:
     gpu::TexturePointer _texture;
     int _geometryId { 0 };
     bool _unlit { false };
+    bool _transparent { false };
+
+    std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };
 };
 
 } }
