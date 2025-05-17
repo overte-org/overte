@@ -2215,7 +2215,7 @@ public slots:
 
     /*@jsdoc
      * Pushes a list of high-level drawing commands into a Canvas entity's internal queue.
-     * Pushed commands will not execute until Entities.canvasCommit is called.
+     * See {@link CanvasCommand}
      * @function Entities.canvasPushCommands
      * @param {Uuid} entityID - The canvas entity to push commands to.
      * @param {Object[]} commands - The drawing commands to push. See CanvasCommand for more info.
@@ -2231,7 +2231,7 @@ public slots:
     Q_INVOKABLE void canvasCommit(const QUuid& entityID);
 
     /*@jsdoc
-     * Creates a standard-format image binary that can be saved to disk or the asset server.
+     * Creates a PNG image binary that can be saved to disk or the asset server.
      * @function Entities.canvasToImageData
      * @param {Uuid} entityID - The canvas entity to make an image from.
      * @returns {ArrayBuffer}

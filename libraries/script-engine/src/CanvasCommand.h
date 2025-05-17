@@ -25,6 +25,12 @@
 
 class ScriptEngine;
 
+/*@jsdoc
+ * @typedef {object} CanvasImage
+ * @property {ArrayBuffer} buffer - RGBA8 pixel data
+ * @property {number} width - Image width in pixels
+ * @property {number} height - Image height in pixels
+ */
 struct CanvasImage {
     QByteArray buffer;
     int width, height;
@@ -42,6 +48,39 @@ struct CanvasPathElement {
     CanvasPathElement() : type(0), x(0), y(0), c1x(0), c1y(0), c2x(0), c2y(0) {}
 };
 
+/*@jsdoc
+ * @namespace CanvasCommand
+ *
+ * @hifi-interface
+ * @hifi-client-entity
+ *
+ * @example <caption>Create a canvas entity and draw "Hello, world!" into it as text.</caption>
+ * const CanvasCommand = Script.require("canvasCommand");
+ *
+ * const canvas = Entities.addEntity({
+ *     type: "Canvas",
+ *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -1 })),
+ *     dimensions: { x: 1, y: 0.5, z: 0.01 },
+ *     lifetime: 30,  // Delete after 30 seconds.
+ *     width: 256,
+ *     height: 128,
+ *     unlit: true,
+ *     transparent: true,
+ * }, "local");
+ *
+ * Entities.canvasPushCommands(canvas, [
+ *     CanvasCommand.color([255, 255, 255, 255]),
+ *     CanvasCommand.font("sans-serif", 20),
+ *     CanvasCommand.fillText(
+ *         "Hello, world!",
+ *         0, 0,
+ *         256, 128,
+ *         CanvasCommand.TEXT_ALIGN_HCENTER | CanvasCommand.TEXT_ALIGN_VCENTER
+ *     ),
+ * ]);
+ *
+ * Entities.canvasCommit(canvas);
+ */
 struct CanvasCommand {
     enum Variant {
         Invalid,

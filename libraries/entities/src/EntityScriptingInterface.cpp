@@ -2745,7 +2745,7 @@ CanvasImage EntityScriptingInterface::canvasGetPixels(const QUuid& entityID) {
     if (entity->getType() == EntityTypes::Canvas) {
         const auto& canvas = *std::dynamic_pointer_cast<CanvasEntityItem>(entity);
         const std::lock_guard<std::recursive_mutex> dataLock(canvas._imageDataMutex);
-        return CanvasImage { canvas.getImageData(), canvas.getWidth(), canvas.getHeight() };
+        return CanvasImage { canvas.getImageData(), canvas.getImageWidth(), canvas.getImageHeight() };
     } else {
         qCWarning(entities) << "canvasGetPixels called on a non-canvas entity " << entityID;
         return CanvasImage();
@@ -2775,7 +2775,7 @@ QByteArray EntityScriptingInterface::canvasToImageData(const QUuid& entityID) {
     if (entity->getType() == EntityTypes::Canvas) {
         auto& canvas = *std::dynamic_pointer_cast<CanvasEntityItem>(entity);
         const std::lock_guard<std::recursive_mutex> dataLock(canvas._imageDataMutex);
-        auto image = QImage(reinterpret_cast<const uchar*>(canvas.getImageData().constData()), canvas.getWidth(), canvas.getHeight(), QImage::Format_RGBA8888);
+        auto image = QImage(reinterpret_cast<const uchar*>(canvas.getImageData().constData()), canvas.getImageWidth(), canvas.getImageHeight(), QImage::Format_RGBA8888);
 
         QByteArray bytes;
         QBuffer buffer(&bytes);
