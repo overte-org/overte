@@ -75,74 +75,136 @@ struct CanvasCommand {
     }
 
     static CanvasCommand setStrokeWidth(qreal width) {
-        return CanvasCommand { .kind = Variant::SetStrokeWidth, ._float = {width} };
+        CanvasCommand cmd;
+        cmd.kind = SetStrokeWidth;
+        cmd._float[0] = width;
+        return cmd;
     }
 
     static CanvasCommand setColor(const QColor& color) {
-        return CanvasCommand { .kind = Variant::SetColor, ._color = color };
+        CanvasCommand cmd;
+        cmd.kind = SetColor;
+        cmd._color = color;
+        return cmd;
     }
 
     static CanvasCommand setHints(int hints) {
-        return CanvasCommand { .kind = Variant::SetHints, ._int = {hints} };
+        CanvasCommand cmd;
+        cmd.kind = SetHints;
+        cmd._int[0] = hints;
+        return cmd;
     }
 
     static CanvasCommand setBlendMode(int mode) {
-        return CanvasCommand { .kind = Variant::SetBlendMode, ._int = {mode} };
+        CanvasCommand cmd;
+        cmd.kind = SetBlendMode;
+        cmd._int[0] = mode;
+        return cmd;
     }
 
     static CanvasCommand setFont(const QString& family, int size, int weight, bool italic) {
-        return CanvasCommand { .kind = Variant::SetFont, ._text = family, ._int = {size, weight, italic} };
+        CanvasCommand cmd;
+        cmd.kind = SetFont;
+        cmd._text = family;
+        cmd._int[0] = size;
+        cmd._int[1] = weight;
+        cmd._int[2] = italic;
+        return cmd;
     }
 
     static CanvasCommand clearRect(int x, int y, int w, int h) {
-        return CanvasCommand { .kind = Variant::ClearRect, ._int = {x, y, w, h} };
+        CanvasCommand cmd;
+        cmd.kind = ClearRect;
+        cmd._int[0] = x;
+        cmd._int[1] = y;
+        cmd._int[2] = w;
+        cmd._int[3] = h;
+        return cmd;
     }
 
     static CanvasCommand fillPath(const QPainterPath& path) {
-        return CanvasCommand { .kind = Variant::FillPath, ._paintPath = path };
+        CanvasCommand cmd;
+        cmd.kind = FillPath;
+        cmd._paintPath = path;
+        return cmd;
     }
 
     static CanvasCommand fillRect(const QRectF& rect) {
-        return CanvasCommand { .kind = Variant::FillRect, ._rect = rect };
+        CanvasCommand cmd;
+        cmd.kind = FillRect;
+        return CanvasCommand { .kind = FillRect, ._rect = rect };
     }
 
     static CanvasCommand fillEllipse(const QRectF& rect) {
-        return CanvasCommand { .kind = Variant::FillEllipse, ._rect = rect };
+        CanvasCommand cmd;
+        cmd.kind = FillEllipse;
+        cmd._rect = rect;
+        return cmd;
     }
 
     static CanvasCommand fillText(const QString& text, const QRectF& rect, int flag) {
-        return CanvasCommand { .kind = Variant::FillText, ._rect = rect, ._text = text, ._int = {flag} };
+        CanvasCommand cmd;
+        cmd.kind = FillText;
+        cmd._text = text;
+        cmd._rect = rect;
+        cmd._int[0] = flag;
+        return cmd;
     }
 
     static CanvasCommand strokePath(const QPainterPath& path) {
-        return CanvasCommand { .kind = Variant::StrokePath, ._paintPath = path };
+        CanvasCommand cmd;
+        cmd.kind = StrokePath;
+        cmd._paintPath = path;
+        return cmd;
     }
 
     static CanvasCommand strokeRect(const QRectF& rect) {
-        return CanvasCommand { .kind = Variant::StrokeRect, ._rect = rect };
+        CanvasCommand cmd;
+        cmd.kind = StrokeRect;
+        cmd._rect = rect;
+        return cmd;
     }
 
     static CanvasCommand strokeArc(const QRectF& rect, qreal startAngle, qreal spanAngle) {
-        return CanvasCommand { .kind = Variant::StrokeArc, ._rect = rect, ._float = {startAngle, spanAngle} };
+        CanvasCommand cmd;
+        cmd.kind = StrokeArc;
+        cmd._rect = rect;
+        cmd._float[0] = startAngle;
+        cmd._float[1] = spanAngle;
+        return cmd;
     }
 
     static CanvasCommand strokeEllipse(const QRectF& rect) {
-        return CanvasCommand { .kind = Variant::StrokeEllipse, ._rect = rect };
+        CanvasCommand cmd;
+        cmd.kind = StrokeEllipse;
+        cmd._rect = rect;
+        return cmd;
     }
 
     static CanvasCommand point(qreal x, qreal y) {
-        return CanvasCommand { .kind = Variant::Point, ._point = QPointF(x, y) };
+        CanvasCommand cmd;
+        cmd.kind = Point;
+        cmd._point = QPointF(x, y);
+        return cmd;
     }
 
     static CanvasCommand line(qreal x1, qreal y1, qreal x2, qreal y2) {
-        return CanvasCommand { .kind = Variant::Line, ._line = QLineF(x1, y1, x2, y2) };
+        CanvasCommand cmd;
+        cmd.kind = Line;
+        cmd._line = QLineF(x1, y1, x2, y2);
+        return cmd;
     }
 
     static CanvasCommand imageCopy(const CanvasImage& image, const QRectF& src, const QRectF& dst) {
-        return CanvasCommand { .kind = Variant::ImageCopy, ._rect = src, ._rect2 = dst, ._image = image };
+        CanvasCommand cmd;
+        cmd.kind = ImageCopy;
+        cmd._rect = src;
+        cmd._rect2 = dst;
+        cmd._image = image;
+        return cmd;
     }
 
-    Variant kind = Variant::Invalid;
+    Variant kind = Invalid;
 
     QRectF _rect = QRectF();
     QRectF _rect2 = QRectF();
