@@ -1031,6 +1031,7 @@ void OctreeServer::readConfiguration() {
 
     if (!readOptionString(QString("statusHost"), settingsSectionObject, _statusHost) || _statusHost.isEmpty()) {
         // TODO(IPv6): Testing
+        // TODO(IPv6): This may not work, it probably needs both IPv6 and IPv4 address since both may be available, but IPv6 may be not supported
         QHostAddress guessedAddress = getGuessedLocalAddress(QAbstractSocket::IPv6Protocol);
 
         if (guessedAddress.isNull()) {

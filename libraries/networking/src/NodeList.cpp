@@ -408,6 +408,8 @@ void NodeList::sendDomainServerCheckIn() {
                 getLocalServerPortFromSharedMemory(DOMAIN_SERVER_LOCAL_PORT_SMEM_KEY, domainPort);
                 qCDebug(networking_ice) << "Local domain-server port read from shared memory (or default) is" << domainPort;
 
+                // We don't know if connection will happen over IPv4 ot IPv6 yet, so we don't set the active port here.
+                // It's set when receiving DomainList instead.
                 _domainHandler.setPortIPv4(domainPort);
                 _domainHandler.setPortIPv6(domainPort);
             }
@@ -565,6 +567,8 @@ void NodeList::sendDomainServerCheckIn() {
         int checkinCount = outstandingCheckins > 1 ? std::pow(2, outstandingCheckins - 2) : 1;
         checkinCount = std::min(checkinCount, MAX_CHECKINS_TOGETHER);
         // TODO(IPv6): this could be used to decide if IPv6 can be used for particular server
+        // TODO(IPv6): Add a command line toggle for this to force IPv4 or IPv6 for debugging
+        // TODO(IPv6): Based on the active socket decide if we should connect to assignment clients over IPv4 or IPv6
         for (int i = 1; i < checkinCount; ++i) {
             if (!domainSockAddrIPv4.isNull()) {
                 auto packetCopyIPv4 = domainPacket->createCopy(*domainPacket);
@@ -861,6 +865,9 @@ void NodeList::processDomainList(QSharedPointer<ReceivedMessage> message) {
     packetStream >> newConnection;
 
     if (newConnection) {
+        // TODO(IPv6): Check if we already connected over other protocol?
+        // TODO(IPv6): It seems to work well without the check so may be not needed but I'm leaving this comment for now.
+        _domainHandler.setActiveSockAddr(message->getSenderSockAddr());
         _nodeConnectTimestamp = usecTimestampNow();
         _connectReason = Connect;
     }
