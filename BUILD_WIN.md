@@ -90,9 +90,7 @@ Run the Command Prompt from Start and run the following commands:
 
 ```bash
 cd "%OVERTE_DIR%"
-conan install . -b missing -pr=tools/conan-profiles/vs-19-release -of build
-conan install . -b missing -pr=tools/conan-profiles/vs-19-debug -of build
-cmake --preset conan-default
+cmake . -G"Visual Studio 16 2019" -Bbuild -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="cmake/conan_provider.cmake"
 ```
 
 Where `%OVERTE_DIR%` is the directory for the Overte repository.

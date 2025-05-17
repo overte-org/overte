@@ -1,8 +1,4 @@
-ECHO Running conan
-conan install . -b missing -pr=tools/conan-profiles/vs-19-release -of build
-conan install . -b missing -pr=tools/conan-profiles/vs-19-debug -of build
-conan cache clean "*" -sbd
 ECHO Running cmake
-cmake --preset conan-default
+cmake . -G"Visual Studio 16 2019" -Ax64 -Bbuild -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="cmake/conan_provider.cmake"
 ECHO CMake has finished
 pause
