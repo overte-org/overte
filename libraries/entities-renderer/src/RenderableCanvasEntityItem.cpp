@@ -11,12 +11,16 @@
 #include <DependencyManager.h>
 #include <GeometryCache.h>
 #include <graphics/ShaderConstants.h>
+#include "RenderPipelines.h"
 
 using namespace render;
 using namespace render::entities;
 
 CanvasEntityRenderer::CanvasEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {
     _geometryId = DependencyManager::get<GeometryCache>()->allocateID();
+    _material->setCullFaceMode(graphics::MaterialKey::CullFaceMode::CULL_NONE);
+    _material->setAlbedo(vec3(1.0f), true);
+    addMaterial(graphics::MaterialLayer(_material, 0), "0");
 }
 
 CanvasEntityRenderer::~CanvasEntityRenderer() {
@@ -27,20 +31,33 @@ CanvasEntityRenderer::~CanvasEntityRenderer() {
 }
 
 void CanvasEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) {
-    _unlit = entity->getUnlit();
+    _transparent = entity->getTransparent();
+
+    bool materialChanged = false;
+    auto unlit = entity->getUnlit();
+    if (_unlit != unlit) {
+        _unlit = unlit;
+        _material->setUnlit(_unlit);
+        materialChanged = true;
+    }
+
+    updateMaterials(materialChanged);
 
     if (entity->_imageDataDirty.load()) {
         const std::lock_guard<std::recursive_mutex> dataLock(entity->_imageDataMutex);
         const auto& data = entity->getImageData();
+        auto width = entity->getImageWidth();
+        auto height = entity->getImageHeight();
 
-        auto nearest = entity->getPixelated();
-        auto wrapMode = entity->getWrapMode();
+        // TODO: generic sampler properties
+        auto nearest = false;//entity->getPixelated();
+        auto wrapMode = true;//entity->getWrapMode();
         auto sampler = gpu::Sampler(
             nearest ? gpu::Sampler::FILTER_MIN_MAG_POINT : gpu::Sampler::FILTER_MIN_MAG_LINEAR,
             wrapMode ? gpu::Sampler::WRAP_REPEAT : gpu::Sampler::WRAP_CLAMP
         );
 
-        auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, entity->getWidth(), entity->getHeight(), 1, sampler);
+        auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, width, height, 1, sampler);
         texture->setSource("CanvasEntityRenderer");
         texture->assignStoredMip(0, data.length(), reinterpret_cast<const uint8_t*>(data.constData()));
         _texture = texture;
@@ -59,16 +76,40 @@ void CanvasEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& sc
     });
 }
 
+Item::Bound CanvasEntityRenderer::getBound(RenderArgs* args) {
+    return Parent::getMaterialBound(args);
+}
+
+ShapeKey CanvasEntityRenderer::getShapeKey() {
+    auto builder = render::ShapeKey::Builder().withDepthBias();
+    updateShapeKeyBuilderFromMaterials(builder);
+    return builder.build();
+}
+
 void CanvasEntityRenderer::doRender(RenderArgs* args) {
     PerformanceTimer perfTimer("RenderableCanvasEntityItem::render");
     Q_ASSERT(args->_batch);
 
+    graphics::MultiMaterial materials;
+    {
+        std::lock_guard<std::mutex> lock(_materialsLock);
+        materials = _materials["0"];
+    }
+
+    glm::vec4 color = materials.getColor();
+
+    if (color.a == 0.0f) { return; }
+
     gpu::Batch& batch = *args->_batch;
 
     Transform transform;
+    bool transparent;
     withReadLock([&] {
         transform = _renderTransform;
+        transparent = isTransparent();
     });
+
+    transparent |= color.a < 1.0f;
 
     bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
 
@@ -80,17 +121,26 @@ void CanvasEntityRenderer::doRender(RenderArgs* args) {
         _prevRenderTransform = transform;
     }
 
-    if (_texture) {
+    Pipeline pipelineType = getPipelineType(materials);
+    if (pipelineType == Pipeline::PROCEDURAL) {
+        auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials.top().material);
+        transparent |= procedural->isFading();
+        procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(transparent));
+    } else if (pipelineType == Pipeline::SIMPLE) {
         batch.setResourceTexture(0, _texture);
-    } else {
-        batch.setResourceTexture(0, DependencyManager::get<TextureCache>()->getWhiteTexture());
+    } else if (pipelineType == Pipeline::MATERIAL) {
+        if (RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
+            args->_details._materialSwitches++;
+        }
     }
 
-    DependencyManager::get<GeometryCache>()->bindSimpleProgram(batch, true, true, _unlit, false, false, true, graphics::MaterialKey::CullFaceMode::CULL_NONE);
     DependencyManager::get<GeometryCache>()->renderQuad(
         batch, glm::vec2(-0.5f), glm::vec2(0.5f), glm::vec2(0.0f, 1.0f), glm::vec2(1.0f, 0.0f),
-        glm::vec4(1.0f), _geometryId
+        color, _geometryId
     );
 
-    batch.setResourceTexture(0, nullptr);
+    if (pipelineType == Pipeline::SIMPLE) {
+        // we have to reset this to white for other simple shapes
+        batch.setResourceTexture(graphics::slot::texture::Texture::MaterialAlbedo, DependencyManager::get<TextureCache>()->getWhiteTexture());
+    }
 }

@@ -24,9 +24,9 @@ public:
     ALLOW_INSTANTIATION // This class can be instantiated
     ENTITY_PROPERTY_SUBCLASS_METHODS
 
-    const QByteArray& getImageData() const {
-        return _imageData;
-    }
+    const QByteArray& getImageData() const { return _imageData; }
+    int getImageWidth() const { return _imageDataWidth; }
+    int getImageHeight() const { return _imageDataHeight; }
 
     void setImageData(const CanvasImage& image);
 
@@ -48,6 +48,7 @@ protected:
     void paintCommands(const QVector<CanvasCommand>& queue);
 
     QByteArray _imageData;
+    int _imageDataWidth, _imageDataHeight;
 
     std::recursive_mutex _commandQueueMutex;
     QVector<CanvasCommand> _commandQueue;
