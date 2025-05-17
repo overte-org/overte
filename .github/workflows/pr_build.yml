@@ -233,7 +233,7 @@ jobs:
       shell: bash
       run: |
         cmake . -DCMAKE_BUILD_TYPE=${BUILD_TYPE} -Bbuild \
-          -DCONAN_INSTALL_ARGS="-o '&:qt_source=${{matrix.qt_source}}' -b missing" \
+          -DCONAN_INSTALL_ARGS="-o='&:qt_source=${{matrix.qt_source}}';--build=missing" \
           -DCMAKE_PROJECT_TOP_LEVEL_INCLUDES="cmake/conan_provider.cmake" $CMAKE_EXTRA
   
     - name: Upload dependency source backups
