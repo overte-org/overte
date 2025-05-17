@@ -92,6 +92,8 @@ public:
      *       <td>{@link Entities.EntityProperties-Material|EntityProperties-Material}</td></tr>
      *     <tr><td><code>"Sound"</code></td><td>Plays a sound.</td>
      *       <td>{@link Entities.EntityProperties-Sound|EntityProperties-Sound}</td></tr>
+     *     <tr><td><code>"Canvas"</code></td><td>A runtime scriptable image.</td>
+     *       <td>{@link Entities.EntityProperties-Canvas|EntityProperties-Canvas}</td></tr>
      *   </tbody>
      * </table>
      * @typedef {string} Entities.EntityType
