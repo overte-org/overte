@@ -328,8 +328,7 @@ enum:SOUND_LOCAL_ONLY prop:localOnly type:bool default:false,
 Canvas
 enum:CANVAS_WIDTH prop:width type:uint16_t default:128 min:1 max:8192 debugString:"px" basicProp,
 enum:CANVAS_HEIGHT prop:height type:uint16_t default:128 min:1 max:8192 debugString:"px" basicProp,
-enum:CANVAS_PIXELATED prop:pixelated type:bool default:false renderProp,
-enum:CANVAS_WRAP_MODE prop:wrapMode type:bool default:true renderProp,
+enum:CANVAS_TRANSPARENT prop:transparent type:bool default:false renderProp,
 enum:UNLIT prop:unlit type:bool default:false common renderProp,
 Empty
 Script

@@ -1782,14 +1782,9 @@ const GROUPS = [
                 propertyID: "unlit",
             },
             {
-                label: "Pixelated",
+                label: "Transparent",
                 type: "bool",
-                propertyID: "pixelated",
-            },
-            {
-                label: "Texture Repeat",
-                type: "bool",
-                propertyID: "wrapMode",
+                propertyID: "transparent",
             }
 
         ]

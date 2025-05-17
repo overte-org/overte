@@ -69,7 +69,6 @@ GLTexture* GL41Backend::syncGPUObject(const TexturePointer& texturePointer) {
                 break;
 
             case TextureUsageType::STRICT_RESOURCE:
-                qCDebug(gpugllogging) << "Strict texture";
                 object = new GL41StrictResourceTexture(shared_from_this(), texture);
                 break;
 
