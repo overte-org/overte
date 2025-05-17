@@ -198,9 +198,13 @@ public:
 
     //Template iterator with random access on the buffer sysmem
     template<typename T>
-    class Iterator : public std::iterator<std::random_access_iterator_tag, T, Index, T*, T&>
-    {
+    class Iterator {
     public:
+        using iterator_category = std::random_access_iterator_tag;
+        using value_type = T;
+        using difference_type = Index;
+        using pointer = const value_type*;
+        using reference = const value_type&;
 
         Iterator(T* ptr = NULL, int stride = sizeof(T)): _ptr(ptr), _stride(stride) { }
         Iterator(const Iterator<T>& iterator) = default;
