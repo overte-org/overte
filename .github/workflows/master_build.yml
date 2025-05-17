@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2020-2022 Vircadia contributors
-# Copyright 2021-2024 Overte e.V.
+# Copyright 2021-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 name: Master CI Build
@@ -14,20 +14,16 @@ env:
   APP_NAME: interface
   BUILD_TYPE: Release
   BUILD_NUMBER: ${{ github.event.number }}_${{ github.sha }}
-  CI_BUILD: Github
   GIT_COMMIT: ${{ github.sha }}
-  # VCPKG did not build well on OSX disabling HIFI_VCPKG_BOOTSTRAP, which invokes a download to a working version of vcpkg
-  # HIFI_VCPKG_BOOTSTRAP: true
   RELEASE_TYPE: PRODUCTION
   RELEASE_NUMBER: ${{ github.event.number }}_${{ github.sha }}
   STABLE_BUILD: 0
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
-  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
-  CMAKE_BACKTRACE_TOKEN: master_${{ github.event.number }}_${{ github.sha }}
-  # Disable VCPKG caching to save time.
-  VCPKG_FEATURE_FLAGS: -binarycaching
+  # Disabled until we build with Crashpad again.
+  # CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
+  # CMAKE_BACKTRACE_TOKEN: master_${{ github.event.number }}_${{ github.sha }}
 
   # OSX-specific variables
   DEVELOPER_DIR: /Applications/Xcode_11.2.app/Contents/Developer
@@ -38,17 +34,24 @@ env:
   # WIN-specific variables
   PreferredToolArchitecture: X64
 
+  # Specify build preset, since on Windows, `cmake --build` appears to be unaware of of which build preset to use, using defaults instead.
+  CMAKE_BUILD_EXTRA: --preset conan-release
+
 jobs:
   build:
+    name: "${{matrix.os}}"
     strategy:
       matrix:
         include:
           - os: windows-2019
             build_type: full
+            qt_source: aqt
           #- os: macOS-10.15
           #  build_type: full
-          # - os: ubuntu-20.04
+          #  qt_source: source
+          #- os: ubuntu-20.04
           #  build_type: full
+          #  qt_source: source
           #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion3 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
       fail-fast: false
     runs-on: ${{matrix.os}}
@@ -70,10 +73,12 @@ jobs:
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
         # Linux build variables
         if [[ "${{ matrix.os }}" = "ubuntu-"* ]]; then
+          echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=tgz" >> $GITHUB_ENV
-          echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
+          echo "CMAKE_BUILD_EXTRA=$CMAKE_BUILD_EXTRA -- -j$(nproc)" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+          echo "CONAN_PROFILE=default" >> $GITHUB_ENV
         fi
         # Mac build variables
         if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
@@ -84,9 +89,11 @@ jobs:
           echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           echo "symbols_archive=${BUILD_NUMBER}-${{ matrix.build_type }}-mac-symbols.zip" >> $GITHUB_ENV
           echo "APP_TARGET_NAME=Overte" >> $GITHUB_ENV
+          echo "CONAN_PROFILE=default" >> $GITHUB_ENV
         fi
         # Windows build variables
         if [ "${{ matrix.os }}" = "windows-2019" ]; then
+          echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "ZIP_COMMAND=7z" >> $GITHUB_ENV
           echo "ZIP_ARGS=a" >> $GITHUB_ENV
@@ -96,6 +103,11 @@ jobs:
           echo "symbols_archive=${BUILD_NUMBER}-${{ matrix.build_type }}-win-symbols.zip" >> $GITHUB_ENV
           # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
           # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
+          if [[ "${{ matrix.os }}" = "windows-2019" ]]; then
+            echo "CONAN_PROFILE='./tools/conan-profiles/vs-19-release'" >> $GITHUB_ENV
+          else
+            echo "Not sure which Conan profile to use. Exiting." && exit 1
+          fi
         fi
     # Configuration is broken into two steps because you can't set an env var and also reference it in the same step
     - name: Configure build environment 2
@@ -126,6 +138,13 @@ jobs:
       with:
         submodules: false
         fetch-depth: 1
+
+    - name: Cache conan
+      uses: actions/cache@v4
+      with:
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: ~/.conan2/
+
 
     - name: Install dependencies
       shell: bash
@@ -164,43 +183,65 @@ jobs:
       run: |
         choco install nsis --allow-downgrade --version=3.06.1
         choco install cmake --allow-downgrade --version=3.31.6  # Our dependencies don't support CMake 4.0 yet.
+        Invoke-WebRequest https://build-deps.overte.org/conan/nsis-overte-plugins/NSIS-hifi-plugins-1.0.zip -OutFile NSIS-hifi-plugins.zip
+        Expand-Archive -LiteralPath 'NSIS-hifi-plugins.zip' -DestinationPath 'C:/Program Files (x86)/'
 
     - name: Install Python modules
       if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
       shell: bash
-      run: $PYTHON_EXEC -m pip install boto3 PyGithub
+      run: $PYTHON_EXEC -m pip install boto3 PyGithub conan
 
-    - name: Create build environment
+    - name: Prepare Conan Build Environment
+      uses: ./.github/actions/setup-conan
+
+    - name: Install Conan dependencies
+      uses: ./.github/actions/conan-install
+      with:
+        qt_source: ${{matrix.qt_source}}
+        build_type: ${{env.BUILD_TYPE}}
+        cppstd: ${{env.CONAN_CPPSTD}}
+        conan_profile: ${{env.CONAN_PROFILE}}
+
+    - name: Upload dependency source backups
       shell: bash
-      run: cmake -E make_directory "${{runner.workspace}}/build"
+      env:
+        # Token for uploading dependency source backups.
+        CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN: ${{ secrets.CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN }}
+      run: conan cache backup-upload
+
+    - name: Cleanup Conan dependencies
+      run: conan cache clean "*" -sbd
+      shell: bash
 
     - name: Configure CMake
-      working-directory: ${{runner.workspace}}/build
+      if: startsWith(matrix.os, 'Windows') == false
       shell: bash
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
+           # This syntax requires CMake 3.23
+      run: cmake --preset conan-${BUILD_TYPE,,} -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
+
+    - name: Configure CMake (Windows)
+      if: startsWith(matrix.os, 'Windows')
+      shell: bash
+           # This syntax requires CMake 3.23
+      run: cmake --preset conan-default -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
 
     - name: Build application
-      working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
 
     - name: Build domain server
-      working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target domain-server $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build assignment client
-      working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target assignment-client $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build console
-      working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target packaged-server-console $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build installer
-      working-directory: ${{runner.workspace}}/build
       shell: bash
       run: |
         echo "Retry code from https://unix.stackexchange.com/a/137639"

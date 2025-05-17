@@ -20,8 +20,6 @@ if ((WIN32 OR UNIX AND NOT APPLE) AND NOT USE_GLES)
 
     target_openvr()
     if (WIN32)
-        target_sranipal()
-        target_aristo()
         target_link_libraries(${TARGET_NAME} Winmm.lib)
     endif()
 endif()

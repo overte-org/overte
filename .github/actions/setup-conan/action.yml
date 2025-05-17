@@ -1,0 +1,33 @@
+name: "Prepare Conan Build Environment"
+description: "Configures Conan for building Overte. It also sets up a backup source repository, which requires env CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN to be set for uploading backups."
+runs:
+  using: "composite"
+  steps:
+  - name: "Prepare Conan Build Environment"
+    shell: bash
+    run: |
+      conan profile detect -e
+      conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
+      # Use our mirror of Conan Center to avoid rate limiting.
+      conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center
+      echo "Starting with a clean Conan global.conf…" && rm ~/.conan2/global.conf
+      echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
+      # Try downloading source files from conandata.yml first. Fall back to our backup if the upstream source is down.
+      echo "core.sources:download_urls=['origin', 'https://artifactory.overte.org/artifactory/build-dependencies-backup/']" >> ~/.conan2/global.conf
+      echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ~/.conan2/global.conf
+      # Credentials for uploading backsups of dependency sources.
+      # source-credentials.json is a jinja template, so os.getenv() happens at runtime.
+      cat > ~/.conan2/source-credentials.json <<EOF
+      {% set TOKEN = os.getenv('CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN') %}
+      {
+        "credentials": [
+          {
+          "url": "https://artifactory.overte.org/artifactory/build-dependencies-backup/",
+          "token": "{{TOKEN}}"
+          }
+        ]
+      }
+      EOF
+      echo "Printing Conan global.conf…" && cat ~/.conan2/global.conf
+      echo "Printing Conan remotes.json…" && cat ~/.conan2/remotes.json
+      echo "Printing Conan source-credentials.json…" && cat ~/.conan2/source-credentials.json
