@@ -30,4 +30,4 @@ runs:
       EOF
       echo "Printing Conan global.conf…" && cat ~/.conan2/global.conf
       echo "Printing Conan remotes.json…" && cat ~/.conan2/remotes.json
-      echo "Printing Conan source-credentials.json…" && cat ~/.conan2/source-credentials.json
+      echo "Printing Conan source_credentials.json…" && cat ~/.conan2/source_credentials.json
