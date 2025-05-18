@@ -41,7 +41,7 @@ RUN apt-get -y install curl ninja-build git cmake g++ libssl-dev libqt5websocket
 # Install Overte tools build dependencies
 RUN apt-get -y install libqt5webchannel5-dev qtwebengine5-dev libqt5xmlpatterns5-dev
 # Install Overte Interface build dependencies
-RUN apt-get -y install libqt5svg5-dev qttools5-dev vulkan-validationlayers libvulkan-dev libvulkan1 libqt5x11extras5-dev qtbase5-private-dev
+RUN apt-get -y install libqt5svg5-dev qttools5-dev vulkan-validationlayers libvulkan-dev libvulkan1 libqt5x11extras5-dev qtbase5-private-dev libxcb-glx0-dev libqt5multimedia5-plugins
 # Install server-console build dependencies
 RUN apt-get -y install npm
 
