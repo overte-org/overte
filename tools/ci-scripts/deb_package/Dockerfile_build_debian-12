@@ -16,13 +16,12 @@ RUN apt-get update && apt-get -y install tzdata
 
 # Install Conan
 RUN apt-get -y install wget
-ARG TARGETARCH
-RUN if [ "$TARGETARCH" = "amd64" ]; then \
+RUN if [ $(uname -m) = "x86_64" ]; then \
         wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.16.1/conan-2.16.1-amd64.deb ; \
-    elif [ "$TARGETARCH" = "arm64" ]; then \
+    elif [ $(uname -m) = "aarch64" ]; then \
         wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.16.1/conan-2.16.1-arm64.deb ; \
     else \
-        echo "Unsupported architecture: $TARGETARCH"; \
+        echo "Unsupported architecture: $(uname -m)"; \
     fi
 RUN apt-get -y install ./conan.deb
 
