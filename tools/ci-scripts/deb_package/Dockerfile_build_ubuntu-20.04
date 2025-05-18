@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte Server
-# Example build: docker build -t overte/overte-server-build:0.1.6-ubuntu-20.04 -f Dockerfile_build_ubuntu-20.04 .
+# Example build: docker build --no-cache -t overte/overte-server-build:0.1.7-ubuntu-20.04-amd64 -f Dockerfile_build_ubuntu-20.04 .
 FROM ubuntu:20.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
@@ -14,10 +14,6 @@ RUN echo UTC >/etc/timezone
 # Installing via dependency causes interactive hang:
 RUN apt-get update && apt-get -y install tzdata
 
-# Install Conan
-RUN apt-get -y install python3-pip
-RUN pip3 install conan
-
 # Install CMake from Kitware
 RUN apt-get update
 RUN apt-get -y install ca-certificates gpg wget
@@ -27,6 +23,16 @@ RUN apt-get update
 RUN rm /usr/share/keyrings/kitware-archive-keyring.gpg && apt-get -y install kitware-archive-keyring
 RUN apt-get -y install cmake
 
+# Install Conan
+ARG TARGETARCH
+RUN if [ "$TARGETARCH" = "amd64" ]; then \
+        wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.16.1/conan-2.16.1-amd64.deb ; \
+    elif [ "$TARGETARCH" = "arm64" ]; then \
+        wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.16.1/conan-2.16.1-arm64.deb ; \
+    else \
+        echo "Unsupported architecture: $TARGETARCH"; \
+    fi
+RUN apt-get -y install ./conan.deb
 
 # Install Overte domain-server and assignment-client build dependencies
 RUN apt-get -y install curl ninja-build git cmake g++ libssl-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev libharfbuzz-dev libdouble-conversion3 libxext-dev libsystemd-dev python3-packaging
