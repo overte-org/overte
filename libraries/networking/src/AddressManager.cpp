@@ -313,8 +313,19 @@ bool AddressManager::handleUrl(const QUrl& lookupUrlIn, LookupTrigger trigger, c
             // we're assuming this is either a network address or global place name
             // check if it is a network address first
             bool hostChanged;
-            if (handleNetworkAddress(lookupUrl.host()
-                                     + (lookupUrl.port() == -1 ? "" : ":" + QString::number(lookupUrl.port())), trigger, hostChanged)) {
+            bool wasNetworkAddressHandled = false;
+            QHostAddress hostAddress(lookupUrl.host());
+            if (hostAddress.protocol() == QAbstractSocket::IPv6Protocol) {
+                qDebug(networking) << "AddressManager::handleUrl hostAddress.protocol() == QAbstractSocket::IPv6Protocol";
+                wasNetworkAddressHandled = handleNetworkAddress("[" + lookupUrl.host() + "]"
+                                     + (lookupUrl.port() == -1 ? "" : ":" + QString::number(lookupUrl.port())), trigger, hostChanged);
+            } else {
+                qDebug(networking) << "AddressManager::handleUrl hostAddress.protocol() == QAbstractSocket::IPv4Protocol";
+                wasNetworkAddressHandled = handleNetworkAddress(lookupUrl.host()
+                                     + (lookupUrl.port() == -1 ? "" : ":" + QString::number(lookupUrl.port())), trigger, hostChanged);
+            }
+
+            if (wasNetworkAddressHandled) {
 
                 UserActivityLogger::getInstance().wentTo(trigger, URL_TYPE_NETWORK_ADDRESS, lookupUrl.toString());
 
@@ -680,34 +691,21 @@ void AddressManager::attemptDomainIDLookup(const QString& lookupString, const QS
 bool AddressManager::handleNetworkAddress(const QString& lookupString, LookupTrigger trigger, bool& hostChanged) {
     qDebug() << "handleNetworkAddress called with lookupString:" << lookupString;
 
-    const QString IP_ADDRESS_REGEX_STRING_V4 =
-        "^((?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}"
-        "(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]))(?::(\\d{1,5}))?$";
-
-    const QString IP_ADDRESS_REGEX_STRING_V6 = "^([0-9a-fA-F:]+)(?::(\\d{1,5}))?$";
-
     const QString HOSTNAME_REGEX_STRING =
         "^((?:[A-Z0-9]|[A-Z0-9][A-Z0-9\\-]{0,61}[A-Z0-9])"
         "(?:\\.(?:[A-Z0-9]|[A-Z0-9][A-Z0-9\\-]{0,61}[A-Z0-9]))+|localhost)(?::(\\d{1,5}))?$";
 
-    QRegExp ipAddressRegexV4(IP_ADDRESS_REGEX_STRING_V4);
-    QRegExp ipAddressRegexV6(IP_ADDRESS_REGEX_STRING_V6);
+    QUrl url("hifi://" + lookupString);
+    QHostAddress ipAddress(url.host());
 
     // Check for IPv4 address
-    if (ipAddressRegexV4.indexIn(lookupString) != -1) {
-        QString domainIPString = ipAddressRegexV4.cap(1);
-        quint16 domainPort = 0;
-
-        if (!ipAddressRegexV4.cap(2).isEmpty()) {
-            domainPort = (quint16)ipAddressRegexV4.cap(2).toInt();
-        }
-
-        qDebug() << "Matched IPv4 address:" << domainIPString << "with port:" << domainPort;
+    if (ipAddress.protocol() == QAbstractSocket::IPv4Protocol) {
+        quint16 domainPort = url.port();
 
         emit lookupResultsFinished();
         QUrl domainURL;
         domainURL.setScheme(URL_SCHEME_OVERTE);
-        domainURL.setHost(domainIPString);
+        domainURL.setHost(url.host());
         if (domainPort > 0) {
             domainURL.setPort(domainPort);
         }
@@ -718,20 +716,13 @@ bool AddressManager::handleNetworkAddress(const QString& lookupString, LookupTri
     }
 
     // Check for IPv6 address
-    if (ipAddressRegexV6.indexIn(lookupString) != -1) {
-        QString domainIPString = ipAddressRegexV6.cap(1);
-        quint16 domainPort = 0;
-
-        if (!ipAddressRegexV6.cap(2).isEmpty()) {
-            domainPort = (quint16)ipAddressRegexV6.cap(2).toInt();
-        }
-
-        qDebug() << "Matched IPv6 address:" << domainIPString << "with port:" << domainPort;
+    if (ipAddress.protocol() == QAbstractSocket::IPv6Protocol) {
+        quint16 domainPort = url.port();
 
         emit lookupResultsFinished();
         QUrl domainURL;
         domainURL.setScheme(URL_SCHEME_OVERTE);
-        domainURL.setHost(domainIPString);
+        domainURL.setHost(url.host());
         if (domainPort > 0) {
             domainURL.setPort(domainPort);
         }
