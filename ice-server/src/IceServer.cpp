@@ -67,10 +67,10 @@ IceServer::IceServer(int argc, char* argv[]) :
         Q_UNREACHABLE();
     }
 
-    QHostAddress address = QHostAddress::AnyIPv4;
+    QHostAddress address = QHostAddress::Any;
     if (parser.isSet(addressOption)) {
         if (parser.value(addressOption) == "0.0.0.0") {
-            QHostAddress address = QHostAddress::AnyIPv4;
+            QHostAddress address = QHostAddress::Any;
         } else {
             address.setAddress(parser.value(addressOption));
         }
