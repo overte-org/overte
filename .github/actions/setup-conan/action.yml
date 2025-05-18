@@ -17,7 +17,7 @@ runs:
       echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ~/.conan2/global.conf
       # Credentials for uploading backsups of dependency sources.
       # source-credentials.json is a jinja template, so os.getenv() happens at runtime.
-      cat > ~/.conan2/source-credentials.json <<EOF
+      cat > ~/.conan2/source_credentials.json <<EOF
       {% set TOKEN = os.getenv('CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN') %}
       {
         "credentials": [
