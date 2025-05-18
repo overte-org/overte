@@ -27,13 +27,6 @@ RUN apt-get update
 RUN rm /usr/share/keyrings/kitware-archive-keyring.gpg && apt-get -y install kitware-archive-keyring
 RUN apt-get -y install cmake
 
-# Install GCC 13 from Toolchain test PPA
-RUN apt-get -y install software-properties-common
-RUN add-apt-repository ppa:ubuntu-toolchain-r/test
-RUN apt-get update
-RUN apt-get -y install gcc-13 g++-13
-# Set GCC 13 as default
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13
 
 # Install Overte domain-server and assignment-client build dependencies
 RUN apt-get -y install curl ninja-build git cmake g++ libssl-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev libharfbuzz-dev libdouble-conversion3 libxext-dev libsystemd-dev python3-packaging
