@@ -1,18 +1,17 @@
 module.exports = {
-	HINT_ANTIALIASING: (1 << 0),
-	HINT_TEXT_ANTIALIASING: (1 << 1),
-	HINT_BILINEAR_SCALING: (1 << 2),
+	HINT_NO_ANTIALIASING: (1 << 0),
+	HINT_NO_TEXT_ANTIALIASING: (1 << 1),
+	HINT_NEAREST_SCALING: (1 << 2),
 
-	// These are basically just Qt constants
 	TEXT_ALIGN_LEFT: (1 << 0),
 	TEXT_ALIGN_RIGHT: (1 << 1),
 	TEXT_ALIGN_HCENTER: (1 << 2),
 	TEXT_ALIGN_JUSTIFY: (1 << 3),
-	TEXT_ALIGN_ABSOLUTE: (1 << 4),
+	//TEXT_ALIGN_ABSOLUTE: (1 << 4),
 	TEXT_ALIGN_TOP: (1 << 5),
 	TEXT_ALIGN_BOTTOM: (1 << 6),
 	TEXT_ALIGN_VCENTER: (1 << 7),
-	TEXT_ALIGN_BASELINE: (1 << 8),
+	//TEXT_ALIGN_BASELINE: (1 << 8),
 	TEXT_ALIGN_CENTER: (1 << 2) | (1 << 7),
 
 	BLEND_SOURCEOVER: 0,
@@ -48,7 +47,7 @@ module.exports = {
 	color: color => ({type: "color", color: color}),
 	hints: hints => ({type: "hints", hints: hints}),
 	blendMode: mode => ({type: "blendMode", mode: mode}),
-	font: (family, size = 16, weight = 600, italic = false) => ({
+	font: (family, size = 16, weight = 400, italic = false) => ({
 		type: "font",
 		family: family,
 		size: size,
@@ -59,7 +58,15 @@ module.exports = {
 	fillPath: path => ({type: "fillPath", path: path}),
 	fillRect: (x, y, w, h) => ({type: "fillRect", x: x, y: y, w: w, h: h}),
 	fillEllipse: (x, y, w, h) => ({type: "fillEllipse", x: x, y: y, w: w, h: h}),
-	fillText: (text, x, y, w, h, flags) => ({type: "fillText", text: text, x: x, y: y, w: w, h: h, flag: flags}),
+	fillText: (text, x, y, w, h, flags) => ({
+        type: "fillText",
+        text: text,
+        x: x,
+        y: y,
+        w: w ?? 0,
+        h: h ?? 0,
+        flag: flags,
+    }),
 	strokePath: path => ({type: "strokePath", path: path}),
 	strokeRect: (x, y, w, h) => ({type: "strokeRect", x: x, y: y, w: w, h: h}),
 	strokeArc: (x, y, w, h, startAngle, spanAngle) => ({
@@ -77,7 +84,13 @@ module.exports = {
 	imageCopy: (img, srcRect, destRect) => ({
 		type: "imageCopy",
 		image: img,
-		srcX: srcRect[0], srcY: srcRect[1], srcW: srcRect[2], srcH: srcRect[3],
-		destX: destRect[0], destY: destRect[1], destW: destRect[2], destH: destRect[3],
+		srcX: srcRect[0] ?? srcRect.x,
+        srcY: srcRect[1] ?? srcRect.y,
+        srcW: srcRect[2] ?? srcRect.width,
+        srcH: srcRect[3] ?? srcRect.height,
+		destX: destRect[0] ?? destRect.x,
+        destY: destRect[1] ?? destRect.y,
+        destW: destRect[2] ?? destRect.width,
+        destH: destRect[3] ?? destRect.height,
 	}),
 };

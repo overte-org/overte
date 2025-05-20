@@ -142,6 +142,9 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
     QPainter p;
     p.begin(&destImage);
     p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setRenderHint(QPainter::TextAntialiasing, true);
+    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
 
     for (int i = 0; i < queue.length(); i++) {
         auto cmd = queue[i];
@@ -163,9 +166,9 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
             }
 
             case Variant::SetHints: {
-                p.setRenderHint(QPainter::Antialiasing, (cmd._int[0] & RenderHint::PrimitiveAntialiasing) != 0);
-                p.setRenderHint(QPainter::TextAntialiasing, (cmd._int[0] & RenderHint::TextAntialiasing) != 0);
-                p.setRenderHint(QPainter::SmoothPixmapTransform, (cmd._int[0] & RenderHint::BilinearImageScaling) != 0);
+                p.setRenderHint(QPainter::Antialiasing, (cmd._int[0] & RenderHint::NoPrimitiveAntialiasing) == 0);
+                p.setRenderHint(QPainter::TextAntialiasing, (cmd._int[0] & RenderHint::NoTextAntialiasing) == 0);
+                p.setRenderHint(QPainter::SmoothPixmapTransform, (cmd._int[0] & RenderHint::NearestImageScaling) == 0);
                 break;
             }
 
@@ -175,7 +178,12 @@ void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
             }
 
             case Variant::SetFont: {
-                p.setFont(QFont(cmd._text, cmd._int[0], cmd._int[1], cmd._int[2]));
+                // Sigh… why did you have to do your own thing, Qt?
+                // Basically everything else uses 1-1000, Qt uses 0-99.
+                // CSS normal and bold are 400 and 700, they're 50 and 75 in Qt.
+                // For now, divide by 10 and add 10, which isn't perfect, but close enough
+                int weight = (cmd._int[1] / 10) + 10;
+                p.setFont(QFont(cmd._text, cmd._int[0], weight, cmd._int[2]));
                 break;
             }
 

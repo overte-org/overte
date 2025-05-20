@@ -35,7 +35,7 @@ const QString CMD_TYPE_PROP_NAME = "type";
 
 const QString IMG_WIDTH_PROP_NAME = "width";
 const QString IMG_HEIGHT_PROP_NAME = "height";
-const QString IMG_BUFFER_PROP_NAME = "buffer";
+const QString IMG_DATA_PROP_NAME = "data";
 
 ScriptValue canvasCommandToScriptValue(ScriptEngine* engine, const CanvasCommand& cmd) {
     using Variant = CanvasCommand::Variant;
@@ -350,14 +350,14 @@ ScriptValue canvasImageToScriptValue(ScriptEngine* engine, const CanvasImage& im
     ScriptValue obj = engine->newObject();
     obj.setProperty(IMG_WIDTH_PROP_NAME, img.width);
     obj.setProperty(IMG_HEIGHT_PROP_NAME, img.height);
-    obj.setProperty(IMG_BUFFER_PROP_NAME, qBytearrayToScriptValue(engine, img.buffer));
+    obj.setProperty(IMG_DATA_PROP_NAME, qBytearrayToScriptValue(engine, img.buffer));
     return obj;
 }
 
 bool canvasImageFromScriptValue(const ScriptValue& object, CanvasImage& img) {
     img.width = object.property(IMG_WIDTH_PROP_NAME).toInt32();
     img.height = object.property(IMG_HEIGHT_PROP_NAME).toInt32();
-    return qBytearrayFromScriptValue(object.property(IMG_BUFFER_PROP_NAME), img.buffer);
+    return qBytearrayFromScriptValue(object.property(IMG_DATA_PROP_NAME), img.buffer);
 }
 
 CanvasImage canvasImageFromScriptValue(const ScriptValue& object) {

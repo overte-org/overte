@@ -27,18 +27,31 @@ class ScriptEngine;
 
 /*@jsdoc
  * @typedef {object} CanvasImage
- * @property {ArrayBuffer} buffer - RGBA8 pixel data
+ * @property {ArrayBuffer} data - RGBA8 pixel data
  * @property {number} width - Image width in pixels
  * @property {number} height - Image height in pixels
  */
 struct CanvasImage {
+    // TODO: TypedArray reference
     QByteArray buffer;
-    int width, height;
 
-    CanvasImage() : buffer(QByteArray()), width(0), height(0) {}
-    CanvasImage(QByteArray buffer, int width, int height) : buffer(buffer), width(width), height(height) {}
+    int width, height;
+    bool _ownsData; // true if buffer is valid, false if using TypedArray
+
+    CanvasImage() : buffer(QByteArray()), width(0), height(0), _ownsData(true) {}
+    CanvasImage(QByteArray buffer, int width, int height) : buffer(buffer), width(width), height(height), _ownsData(true) {}
 };
 
+/*@jsdoc
+ * @typedef {object} CanvasPathElement
+ * @property {number} type - 0: Move to, 1: Line to, 2: Cubic curve to
+ * @property {number} x
+ * @property {number} y
+ * @property {number} c1x
+ * @property {number} c1y
+ * @property {number} c2x
+ * @property {number} c2y
+ */
 struct CanvasPathElement {
     int type;
     qreal x, y, c1x, c1y, c2x, c2y;
@@ -53,6 +66,45 @@ struct CanvasPathElement {
  *
  * @hifi-interface
  * @hifi-client-entity
+ *
+ * @readonly
+ * @property {number} HINT_NO_ANTIALIASING=1 - If set, drawn shapes will have pixelated edges.
+ * @property {number} HINT_NO_TEXT_ANTIALIASING=2 - If set, text will have pixelated edges.
+ * @property {number} HINT_NEAREST_SCALING=4 - If set, drawn images will be scaled using pixelated, nearest-neighbor scaling.
+ *
+ * @property {number} TEXT_ALIGN_LEFT=1 - Align drawn text to the left side of its bounding box.
+ * @property {number} TEXT_ALIGN_RIGHT=2 - Align drawn text to the right side of its bounding box.
+ * @property {number} TEXT_ALIGN_HCENTER=4 - Align drawn text horizontally to the center of its bounding box.
+ * @property {number} TEXT_ALIGN_JUSTIFY=8 - Justifies text horizontally to fit in its bounding box.
+ * @property {number} TEXT_ALIGN_TOP=32 - Align drawn text to the top of its bounding box.
+ * @property {number} TEXT_ALIGN_BOTTOM=64 - Align drawn text to the bottom of its bounding box.
+ * @property {number} TEXT_ALIGN_VCENTER=32 - Align drawn text vertically to the center of its bounding box.
+ * @property {number} TEXT_ALIGN_CENTER=132 - Align drawn text to the center of its bounding box, both horizontally and vertically.
+ *
+ * @property {number} BLEND_SOURCEOVER=0
+ * @property {number} BLEND_DESTINATIONOVER=1
+ * @property {number} BLEND_CLEAR=2
+ * @property {number} BLEND_SOURCE=3
+ * @property {number} BLEND_DESTINATION=4
+ * @property {number} BLEND_SOURCEIN=5
+ * @property {number} BLEND_DESTINATIONIN=6
+ * @property {number} BLEND_SOURCEOUT=7
+ * @property {number} BLEND_DESTINATIONOUT=8
+ * @property {number} BLEND_SOURCEATOP=9
+ * @property {number} BLEND_DESTINATIONATOP=10
+ * @property {number} BLEND_XOR=11
+ * @property {number} BLEND_PLUS=12
+ * @property {number} BLEND_MULTIPLY=13
+ * @property {number} BLEND_SCREEN=14
+ * @property {number} BLEND_OVERLAY=15
+ * @property {number} BLEND_DARKEN=16
+ * @property {number} BLEND_LIGHTEN=17
+ * @property {number} BLEND_COLORDODGE=18
+ * @property {number} BLEND_COLORBURN=19
+ * @property {number} BLEND_HARDLIGHT=20
+ * @property {number} BLEND_SOFTLIGHT=21
+ * @property {number} BLEND_DIFFERENCE=22
+ * @property {number} BLEND_EXCLUSION=23
  *
  * @example <caption>Create a canvas entity and draw "Hello, world!" into it as text.</caption>
  * const CanvasCommand = Script.require("canvasCommand");
@@ -75,12 +127,206 @@ struct CanvasPathElement {
  *         "Hello, world!",
  *         0, 0,
  *         256, 128,
- *         CanvasCommand.TEXT_ALIGN_HCENTER | CanvasCommand.TEXT_ALIGN_VCENTER
+ *         CanvasCommand.TEXT_ALIGN_CENTER
  *     ),
  * ]);
  *
  * Entities.canvasCommit(canvas);
+ * @example <caption>Create a canvas entity and draw an XOR pattern into it.</caption>
+ * const CanvasCommand = Script.require("canvasCommand");
+ *
+ * const canvas = Entities.addEntity({
+ *     type: "Canvas",
+ *     position: Vec3.sum(MyAvatar.getHeadPosition(), Vec3.multiplyQbyV(MyAvatar.orientation, [0, 0, -2])),
+ *     rotation: MyAvatar.orientation,
+ *     dimensions: [2, 2, 0.1],
+ *     width: 256,
+ *     height: 256,
+ *     unlit: true,
+ *     collisionless: true,
+ * }, "local");
+ *
+ * const buffer = new Uint8Array(256 * 256 * 4);
+ * const img = {data: buffer.buffer, width: 256, height: 256};
+ *
+ * for (let x = 0; x < 256; x++) {
+ *     for (let y = 0; y < 256; y++) {
+ *         let color = x ^ y;
+ *         buffer[(y * 256 * 4) + (x * 4) + 0] = color;
+ *         buffer[(y * 256 * 4) + (x * 4) + 1] = color;
+ *         buffer[(y * 256 * 4) + (x * 4) + 2] = color;
+ *         buffer[(y * 256 * 4) + (x * 4) + 3] = 255;
+ *     }
+ * }
+ *
+ * Entities.canvasPushPixels(canvas, img);
+ * Entities.canvasCommit(canvas);
+ *
+ * Script.scriptEnding.connect(() => Entities.deleteEntity(canvas));
+ *
+ * // delete after 10 seconds
+ * Script.setTimeout(() => Script.stop(), 1000 * 10);
  */
+
+/*@jsdoc
+ * Sets the line width for stroked shapes.
+ * @name CanvasCommand.strokeWidth
+ * @function
+ * @param {number} width - Stroke width in pixels.
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * Sets the stroke and fill color to use.
+ * @name CanvasCommand.color
+ * @function
+ * @param {Color|Vec4} color - Stroke and fill color to use.
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * Sets rendering hints.
+ * @name CanvasCommand.hints
+ * @function
+ * @param {number} hints
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * Sets the blending mode.
+ * @name CanvasCommand.blendMode
+ * @function
+ * @param {number} mode
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * Sets the font to use for {@link CanvasCommand.fillText}.
+ * @name CanvasCommand.font
+ * @function
+ * @param {string} family
+ * @param {number} size=16 - Pixel height
+ * @param {number} weight=400 - 400 is normal, 700 is bold
+ * @param {boolean} italic=false
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * Clears a region of a canvas with transparent black.
+ * @name CanvasCommand.clearRect
+ * @function
+ * @param {number} x - Left of the rectangle.
+ * @param {number} x - Top of the rectangle.
+ * @param {number} w - Width of the rectangle.
+ * @param {number} h - Height of the rectangle.
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * @name CanvasCommand.fillPath
+ * @function
+ * @param {CanvasPathElement[]} path
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * @name CanvasCommand.fillRect
+ * @function
+ * @param {number} x - Left of the rectangle.
+ * @param {number} x - Top of the rectangle.
+ * @param {number} w - Width of the rectangle.
+ * @param {number} h - Height of the rectangle.
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * @name CanvasCommand.fillEllipse
+ * @function
+ * @param {number} x - Left of the rectangle.
+ * @param {number} x - Top of the rectangle.
+ * @param {number} w - Width of the rectangle.
+ * @param {number} h - Height of the rectangle.
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * @name CanvasCommand.fillText
+ * @function
+ * @param {string} text
+ * @param {number} x - Left of the rectangle.
+ * @param {number} x - Top of the rectangle.
+ * @param {number} w - Width of the rectangle.
+ * @param {number} h - Height of the rectangle.
+ * @param {number} flags
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * @name CanvasCommand.strokePath
+ * @function
+ * @param {CanvasPathElement[]} path
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * @name CanvasCommand.strokeRect
+ * @function
+ * @param {number} x - Left of the rectangle.
+ * @param {number} x - Top of the rectangle.
+ * @param {number} w - Width of the rectangle.
+ * @param {number} h - Height of the rectangle.
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * @name CanvasCommand.strokeArc
+ * @function
+ * @param {number} x - Left of the rectangle.
+ * @param {number} x - Top of the rectangle.
+ * @param {number} w - Width of the rectangle.
+ * @param {number} h - Height of the rectangle.
+ * @param {number} startAngle
+ * @param {number} spanAngle
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * @name CanvasCommand.strokeEllipse
+ * @function
+ * @param {number} x - Left of the rectangle.
+ * @param {number} x - Top of the rectangle.
+ * @param {number} w - Width of the rectangle.
+ * @param {number} h - Height of the rectangle.
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * @name CanvasCommand.point
+ * @function
+ * @param {number} x
+ * @param {number} y
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * @name CanvasCommand.line
+ * @function
+ * @param {number} x1
+ * @param {number} y1
+ * @param {number} x2
+ * @param {number} y2
+ * @returns {object}
+ */
+
+/*@jsdoc
+ * @name CanvasCommand.imageCopy
+ * @function
+ * @param {CanvasImage} image
+ * @param {Vec4|Rect} srcRect
+ * @param {Vec4|Rect} destRect
+ * @returns {object}
+ */
+
 struct CanvasCommand {
     enum Variant {
         Invalid,
@@ -104,9 +350,9 @@ struct CanvasCommand {
     };
 
     enum RenderHint {
-        PrimitiveAntialiasing = (1 << 0),
-        TextAntialiasing = (1 << 1),
-        BilinearImageScaling = (1 << 2),
+        NoPrimitiveAntialiasing = (1 << 0),
+        NoTextAntialiasing = (1 << 1),
+        NearestImageScaling = (1 << 2),
     };
 
     static CanvasCommand none() {
