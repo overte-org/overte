@@ -96,18 +96,6 @@ jobs:
             qt_source: system
             runner: ubuntu-24.04-arm
 
-          - os: fedora-40
-            image: docker.io/overte/overte-server-build:0.1.6-fedora-40-amd64
-            arch: amd64
-            qt_source: system
-            runner: ubuntu-latest
-
-          - os: fedora-40
-            image: docker.io/overte/overte-server-build:0.1.6-fedora-40-aarch64
-            arch: aarch64
-            qt_source: system
-            runner: ubuntu-24.04-arm
-
           - os: fedora-41
             image: docker.io/overte/overte-server-build:0.1.6-fedora-41-amd64
             arch: amd64
