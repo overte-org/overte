@@ -66,12 +66,6 @@ jobs:
             qt_source: system
             runner: ubuntu-24.04-arm
 
-          - os: ubuntu-20.04
-            image: docker.io/overte/overte-server-build:0.1.7-ubuntu-20.04-amd64
-            arch: amd64
-            qt_source: source
-            runner: ubuntu-latest
-
           - os: ubuntu-22.04
             image: docker.io/overte/overte-server-build:0.1.7-ubuntu-22.04-amd64
             arch: amd64
