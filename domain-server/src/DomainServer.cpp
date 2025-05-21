@@ -1159,7 +1159,7 @@ void DomainServer::setupICEHeartbeatForFullNetworking() {
 
 void DomainServer::updateICEServerAddresses(ICEConnectionData &ice) {
     if (ice._iceAddressLookupID == INVALID_ICE_LOOKUP_ID) {
-        ice._iceAddressLookupID = QHostInfo::lookupHost(_iceServerAddr, this, SLOT(handleICEHostInfo(QHostInfo)));
+        ice._iceAddressLookupID = QHostInfo::lookupHost(_iceServerAddr, this, [this, &ice](const QHostInfo &info) { handleICEHostInfo(info, ice); } );
     }
 }
 
@@ -3656,10 +3656,6 @@ void DomainServer::processICEServerHeartbeatACK(QSharedPointer<ReceivedMessage> 
     static const int NUM_HEARTBEAT_DENIALS_FOR_KEYPAIR_REGEN = 3;
     ICEConnectionData &ice = message->getSenderSockAddr().getAddress() == _iceIPv4._iceServerSocket.getAddress() ?
         _iceIPv4 : _iceIPv6;
-    if (message->getSenderSockAddr().getAddress() == _iceIPv4._iceServerSocket.getAddress()
-        || message->getSenderSockAddr().getAddress() == _iceIPv6._iceServerSocket.getAddress()) {
-        Q_ASSERT(false);
-    }
 
     // we don't do anything with this ACK other than use it to tell us to keep talking to the same ice-server
     if (message->getSenderSockAddr().getAddress() == ice._iceServerSocket.getAddress()) {

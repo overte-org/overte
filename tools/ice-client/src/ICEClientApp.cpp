@@ -101,8 +101,10 @@ ICEClientApp::ICEClientApp(int argc, char* argv[]) :
         // parse the IP and port combination for this target
         QString hostnamePortString = parser.value(iceServerAddressOption);
 
-        QHostAddress address { hostnamePortString.left(hostnamePortString.indexOf(':')) };
-        quint16 port { (quint16) hostnamePortString.mid(hostnamePortString.indexOf(':') + 1).toUInt() };
+        // It's not http of course, but this way QUrl can be used for parsing both IPv4 and IPv6
+        QUrl url("http://" + hostnamePortString);
+        QHostAddress address(url.host());
+        quint16 port { static_cast<quint16>(url.port()) };
         if (port == 0) {
             port = ICE_SERVER_DEFAULT_PORT;
         }
