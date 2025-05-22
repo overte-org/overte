@@ -179,7 +179,7 @@ std::shared_ptr<PickQuery> PickScriptingInterface::buildRayPick(const QVariantMa
     if (propMap["delay"].isValid()) {
         // We want to be within 0.1% of the target in <delay> seconds
         // https://twitter.com/FreyaHolmer/status/1757836988495847568
-        delayHalf = -std::max(propMap["delay"].toFloat(), 0.0f) / log2(0.001);
+        delayHalf = -std::max(propMap["delay"].toFloat(), 0.0f) / log2(0.001f);
     }
 
     auto rayPick = std::make_shared<RayPick>(position, direction, filter, maxDistance, delayHalf, enabled);

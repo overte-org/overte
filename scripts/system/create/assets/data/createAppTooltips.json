@@ -2,6 +2,9 @@
     "shape": {
         "tooltip": "The shape of this entity's geometry."
     },
+    "innerRadius": {
+        "tooltip": "The inner radius of the shape."
+    },
     "color": {
         "tooltip": "The color of this entity."
     },
