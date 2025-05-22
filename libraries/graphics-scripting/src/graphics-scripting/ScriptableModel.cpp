@@ -38,6 +38,9 @@ scriptable::ScriptableMaterial& scriptable::ScriptableMaterial::operator=(const 
         bumpMap = material.bumpMap;
         cullFaceMode = material.cullFaceMode;
 
+        layers = material.layers;
+        splatMap = material.splatMap;
+
         if (model.toStdString() == graphics::Material::HIFI_PBR) {
             roughness = material.roughness;
             metallic = material.metallic;
@@ -122,6 +125,12 @@ scriptable::ScriptableMaterial::ScriptableMaterial(const graphics::MaterialPoint
             }
 
             cullFaceMode = QString(graphics::MaterialKey::getCullFaceModeName(material->getCullFaceMode()).c_str());
+
+            layers = material->getLayers();
+            map = material->getTextureMap(graphics::Material::MapChannel::SPLAT_MAP);
+            if (map && map->getTextureSource()) {
+                splatMap = map->getTextureSource()->getUrl().toString();
+            }
 
             if (model.toStdString() == graphics::Material::HIFI_PBR) {
                 roughness = material->getRoughness();
