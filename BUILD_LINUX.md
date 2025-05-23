@@ -39,7 +39,7 @@ sudo apt install ./conan-*.deb
 Verify Conan was installed by running `conan --version`.
 
 ### Install build dependencies:
-Most dependencies will be automatically installed by Conan. This section only list dependencies which might not be handled by Conan.
+Most dependencies will be automatically installed by Conan. This section only lists dependencies which might not be handled by Conan.
 
 - OpenGL:
 ```bash
