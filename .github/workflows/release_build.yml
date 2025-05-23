@@ -209,12 +209,11 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
-        path: ${{runner.workspace}}/build/${{ env.ARTIFACT_PATTERN }}
+        path: build/${{ env.ARTIFACT_PATTERN }}
         if-no-files-found: error
 
     - name: Archive symbols
       if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
-      working-directory: ${{runner.workspace}}
       shell: bash
       run: |
         SYMBOLS_TEMP="symbols-temp"
@@ -227,5 +226,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.SYMBOLS_ARCHIVE }}
-        path: ${{runner.workspace}}/${{ env.SYMBOLS_ARCHIVE }}
+        path: ${{ env.SYMBOLS_ARCHIVE }}
         if-no-files-found: error

@@ -275,7 +275,7 @@ jobs:
 
     - name: Output system stats
       if: ${{ always() }}
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       shell: bash
       run: |
         echo "Disk usage:"
@@ -284,14 +284,14 @@ jobs:
     - name: Output installer logs
       if: failure() && startsWith(matrix.os, 'windows')
       shell: bash
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Upload artifact to GitHub
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.INSTALLER }}
-        path: ${{runner.workspace}}/build/${{ env.INSTALLER }}
+        path: build/${{ env.INSTALLER }}
         if-no-files-found: error
 
     #- name: Archive symbols
