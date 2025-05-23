@@ -1,65 +1,45 @@
 <!--
 Copyright 2013-2019 High Fidelity, Inc.
 Copyright 2019-2022 Vircadia contributors
-Copyright 2021-2022 Overte e.V.
+Copyright 2021-2025 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
 # Build Linux
 
-*Last Updated on 21-10-2024*
+*Last Updated on 2025-05-21*
 
 Please read the [general build guide](BUILD.md) for information on dependencies required for all platforms. Only Linux specific instructions are found in this file.
 
-You can use the [Overte Builder](https://github.com/overte-org/overte-builder) to build on Linux more easily. Alternatively, you can follow the manual steps below.
+~~You can use the [Overte Builder](https://github.com/overte-org/overte-builder) to build on Linux more easily. Alternatively, you can follow the manual steps below.~~ (Currently outdated.)
 
-## Ubuntu 18.04
-
-### Ubuntu 18.04 Server only
-Add the universe repository:  
-_(This is not enabled by default on the server edition.)_
-```bash
-sudo add-apt-repository universe
-sudo apt-get update
-```
+This documentation assumes that you are running our current target distribution, which is currently Ubuntu 22.04. The target distribution is usually the latest Ubuntu LTS still receiving standard support, though we may upgrade a little sooner if we require certain newer packages. Ubuntu version numbers are date codes and standard support is 5 years, meaning that Ubuntu 22.04 leaves standard support after around 2027-04.
 
 ### Install build tools:
--  First update the repositories:  
+
+-  First update the package cache and your system:
 ```bash
-sudo apt-get update -y
-sudo apt-get upgrade -y
+sudo apt update
+sudo apt upgrade
 ```
 
--  Install git
+-  Install git and g++
 ```bash
-sudo apt-get install git -y
+sudo apt install git g++
 ```
-Verify git was installed by running `git --version`.
 
--  Install g++
+-  Install CMake
+We require a newer CMake version than 3.22.1, which is shipped in Ubuntu 22.04, so we install CMake packages provided by upstream here: https://apt.kitware.com/
+
+-  Install Conan
+Get the Conan "Ubuntu / Debian installer" from https://conan.io/downloads and install it using:
 ```bash
-sudo apt-get install g++ -y
+sudo apt install ./conan-*.deb
 ```
-Verify g++ was installed by running `g++ --version`.
-
--  **Ubuntu 18.04** CMake
-```bash
-sudo apt-get install cmake -y
-```
-Verify CMake was installed by running `cmake --version`.
-
--  Conan
-
-See https://conan.io/downloads for download instructions
-
 Verify Conan was installed by running `conan --version`.
 
 ### Install build dependencies:
--  OpenSSL:
-```bash
-sudo apt-get install libssl-dev
-```
-Verify OpenSSL was installed by running `openssl version`.
+Most dependencies will be automatically installed by Conan. This section only list dependencies which might not be handled by Conan.
 
 - OpenGL:
 ```bash
@@ -98,22 +78,22 @@ sudo apt-get install -y qtbase5-dev \
 
 - Install the following:
 ```bash
-sudo apt-get -y install libpulse0 libnss3 libnspr4 libfontconfig1 libxcursor1 libxcomposite1 libxtst6 libxslt1.1
+sudo apt install libpulse0 libnss3 libnspr4 libfontconfig1 libxcursor1 libxcomposite1 libxtst6 libxslt1.1
 ```
 
 -  Misc dependencies:
 ```bash
-sudo apt-get install libasound2 libxmu-dev libxi-dev freeglut3-dev libasound2-dev libjack0 libjack-dev libxrandr-dev libudev-dev libssl-dev zlib1g-dev
+sudo apt install libasound2 libxmu-dev libxi-dev freeglut3-dev libasound2-dev libjack0 libjack-dev libxrandr-dev libudev-dev libssl-dev zlib1g-dev
 ```
 
 -  Install Python 3 and required packages:
 ```bash
-sudo apt-get install python python3 python3-distro
+sudo apt install python python3 python3-distro
 ```
 
 -  Install Node.js as it is required to build the jsdoc documentation:
 ```bash
-sudo apt-get install nodejs
+sudo apt install nodejs
 ```
 
 ### Get code and checkout the branch you need
