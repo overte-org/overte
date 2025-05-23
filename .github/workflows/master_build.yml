@@ -322,11 +322,3 @@ jobs:
     #  with:
     #    name: symbols
     #    path: ${{runner.workspace}}/${{ steps.buildenv1.outputs.symbols_archive }}
-
-    - name: Clear Working Directories
-      if: contains(matrix.runner, 'linux_aarch64')
-      shell: bash
-      run: |
-        rm -rf ./*
-        rm -rf ~/overte-files
-        rm -rf ~/.cache

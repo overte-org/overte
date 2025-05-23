@@ -229,11 +229,3 @@ jobs:
         name: ${{ env.SYMBOLS_ARCHIVE }}
         path: ${{runner.workspace}}/${{ env.SYMBOLS_ARCHIVE }}
         if-no-files-found: error
-
-    - name: Clear Working Directories
-      if: contains(matrix.runner, 'linux_aarch64')
-      shell: bash
-      run: |
-        rm -rf ./*
-        rm -rf ~/overte-files
-        rm -rf ~/.cache
