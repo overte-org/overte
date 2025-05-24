@@ -16,7 +16,7 @@
 #include <glm/gtx/string_cast.hpp>
 #include <glm/gtx/transform.hpp>
 #include <thread>
-#include <format>
+#include <sstream>
 
 #if defined(Q_OS_WIN)
 #undef near
@@ -133,8 +133,11 @@ static std::string glFormatStr(GLenum source) {
         ENUM_TO_STR(GL_RGBA16F);
         ENUM_TO_STR(GL_SRGB8_ALPHA8);
         ENUM_TO_STR(GL_RGB10_A2UI);
-        default:
-            return std::format("0x{:X}", source);
+        default: {
+            std::stringstream stream;
+            stream << "0x" << std::uppercase << std::hex << source;
+            return stream.str();
+        }
     }
 }
 
