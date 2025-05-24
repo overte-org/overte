@@ -37,10 +37,11 @@ public:
     };
 
     enum EventType {
-        Press,       // A button has just been pressed
-        DoublePress, // A button has just been double pressed
-        Release,     // A button has just been released
+        Press,        // A button has just been pressed
+        DoublePress,  // A button has just been double pressed
+        Release,      // A button has just been released
         Move,         // The pointer has just moved
+        Scroll,       // Thumbstick scrolling
         NumEventTypes
     };
 
@@ -64,6 +65,7 @@ public:
     const glm::vec3& getPos3D() const { return _pos3D; }
     const glm::vec3& getNormal() const { return _normal; }
     const glm::vec3& getDirection() const { return _direction; }
+    const glm::vec2& getScroll() const { return _scroll; }
     Button getButton() const { return _button; }
     uint32_t getButtons() const { return _buttons; }
     Qt::KeyboardModifiers getKeyboardModifiers() const { return _keyboardModifiers; }
@@ -76,6 +78,7 @@ public:
     void setPos2D(const glm::vec2& pos2D) { _pos2D = pos2D; }
     void setShouldFocus(bool focus) { _shouldFocus = focus; }
     void setMoveOnHoverLeave(bool moveOnHoverLeave) { _moveOnHoverLeave = moveOnHoverLeave; }
+    void setScroll(const glm::vec2& value) { _scroll = value; }
 
     static const unsigned int INVALID_POINTER_ID { 0 };
 
@@ -86,6 +89,7 @@ private:
     glm::vec3 _pos3D { glm::vec3(NAN) };     // surface location in world coordinates (in meters)
     glm::vec3 _normal { glm::vec3(NAN) };    // surface normal
     glm::vec3 _direction { glm::vec3(NAN) }; // incoming direction of pointer ray.
+    glm::vec2 _scroll { glm::vec3{NAN} };
 
     Button _button { NoButtons };  // button associated with this event, (if type is Press, this will be the button that is pressed)
     uint32_t _buttons { NoButtons }; // the current state of all the buttons.
