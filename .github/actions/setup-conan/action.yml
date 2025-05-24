@@ -6,6 +6,7 @@ runs:
   - name: "Prepare Conan Build Environment"
     shell: bash
     run: |
+      echo "Starting with a clean Conan profile…" && rm ~/.conan2/profiles/default || true  # Don't fail if missing.
       conan profile detect -e
       conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
       # Use our mirror of Conan Center to avoid rate limiting.
