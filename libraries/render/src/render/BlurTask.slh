@@ -18,7 +18,7 @@ struct BlurParameters {
     vec4 depthInfo;
     vec4 stereoInfo;
     vec4 linearDepthInfo;
-    vec2 taps[BLUR_MAX_NUM_TAPS];
+    vec4 taps[BLUR_MAX_NUM_TAPS];
 };
 
 LAYOUT(binding=0) uniform blurParamsBuffer {
@@ -46,7 +46,7 @@ float getOutputAlpha() {
 }
 
 vec2 getFilterTap(int index) {
-    return parameters.taps[index];
+    return parameters.taps[index].xy;
 }
 
 float getFilterTapOffset(vec2 tap) {
