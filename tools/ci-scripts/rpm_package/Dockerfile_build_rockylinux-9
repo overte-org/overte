@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte Server
-# Example build: docker build -t overte/overte-server-build:0.1.6-rockylinux-9 -f Dockerfile_build_rockylinux-9 .
+# Example build: docker build --no-cache -t overte/overte-server-build:0.1.7-rockylinux-9-amd64 -f Dockerfile_build_rockylinux-9 .
 FROM rockylinux:9
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
@@ -26,8 +26,17 @@ RUN dnf -y install zip unzip
 RUN dnf -y install chrpath rpmdevtools
 
 # Install tools needed for our Github Actions Workflow
-Run dnf -y install python3-boto3 python3-github
+RUN dnf -y install python3-boto3 python3-github
 
 # Install Conan
 RUN dnf -y install python3-pip
 RUN pip3 install conan
+
+# Install Python 2 which is required for building Qt Webengine 5.15.x
+RUN curl -L -O https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tar.xz
+RUN tar xf Python-2.7.18.tar.xz
+RUN rm Python-2.7.18.tar.xz
+RUN cd Python-2.7.18 && ./configure --prefix=/usr/local --enable-shared --enable-unicode=ucs4 && make -j8 && make altinstall
+RUN ln -s /usr/local/bin/python2.7 /usr/local/bin/python2
+ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/local/bin/python2.7:$LD_LIBRARY_PATH"
+ENV PATH="/usr/local/bin/python2:$PATH"
