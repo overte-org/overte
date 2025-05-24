@@ -102,15 +102,17 @@ jobs:
             qt_source: system
             runner: ubuntu-24.04-arm
 
-          #~ - os: fedora-42
-            #~ image: docker.io/overte/overte-server-build:0.1.6-fedora-42-amd64
-            #~ arch: amd64
-            #~ runner: ubuntu-latest
+          - os: fedora-42
+            image: docker.io/overte/overte-server-build:0.1.7-fedora-42-amd64
+            arch: amd64
+            qt_source: system
+            runner: ubuntu-latest
 
-          #~ - os: fedora-42
-            #~ image: docker.io/overte/overte-server-build:0.1.6-fedora-42-aarch64
-            #~ arch: aarch64
-            #~ runner: ubuntu-24.04-arm
+          - os: fedora-42
+            image: docker.io/overte/overte-server-build:0.1.7-fedora-42-aarch64
+            arch: aarch64
+            qt_source: system
+            runner: ubuntu-24.04-arm
 
           - os: rockylinux-9
             image: docker.io/overte/overte-server-build:0.1.7-rockylinux-9-amd64
