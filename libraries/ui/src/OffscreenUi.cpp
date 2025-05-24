@@ -136,6 +136,7 @@ OffscreenUi::OffscreenUi() {
     connect(pointerManager.data(), &PointerManager::triggerBeginHUD, this, &OffscreenUi::handlePointerEvent);
     connect(pointerManager.data(), &PointerManager::triggerContinueHUD, this, &OffscreenUi::handlePointerEvent);
     connect(pointerManager.data(), &PointerManager::triggerEndHUD, this, &OffscreenUi::handlePointerEvent);
+    connect(pointerManager.data(), &PointerManager::scrollHUD, this, &OffscreenUi::handlePointerEvent);
 }
 
 void OffscreenUi::hoverBeginEvent(const PointerEvent& event) {

@@ -442,6 +442,8 @@ PointerEvent::EventType OffscreenQmlSurface::choosePointerEventType(QEvent::Type
             return PointerEvent::Release;
         case QEvent::MouseMove:
             return PointerEvent::Move;
+        case QEvent::Wheel:
+            return PointerEvent::Scroll;
         default:
             return PointerEvent::Move;
     }
@@ -578,6 +580,15 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QT
         if (QCoreApplication::sendEvent(getWindow(), &touchEvent)) {
             eventSent = true;
             eventsAccepted &= touchEvent.isAccepted();
+        }
+    }
+
+    if (event.getType() == PointerEvent::Scroll) {
+        auto scroll = event.getScroll();
+        QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(scroll.x, scroll.y), QPoint(), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::ScrollUpdate, false);
+        if (QCoreApplication::sendEvent(getWindow(), &wheelEvent)) {
+            eventSent = true;
+            eventsAccepted &= wheelEvent.isAccepted();
         }
     }
 

@@ -215,6 +215,22 @@ Pointer::PickedObject PathPointer::getHoveredObject(const PickResultPointer& pic
     return PickedObject(getPickedObjectID(pickResult), getPickedObjectType(pickResult));
 }
 
+glm::vec2 PathPointer::getScroll(const PickResultPointer& pickResult) {
+    glm::vec2 accum { 0.0f };
+
+    for (const PointerTrigger& trigger : _triggers) {
+        std::string button = trigger.getButton();
+
+        if (button == "ScrollX") {
+            accum.x += trigger.getEndpoint()->peek().value;
+        } else if (button == "ScrollY") {
+            accum.y += trigger.getEndpoint()->peek().value;
+        }
+    }
+
+    return accum;
+}
+
 Pointer::Buttons PathPointer::getPressedButtons(const PickResultPointer& pickResult) {
     std::unordered_set<std::string> toReturn;
 

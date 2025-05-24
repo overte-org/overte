@@ -70,8 +70,8 @@ void PointerEvent::setButton(Button button) {
 /*@jsdoc
  * A 2D or 3D mouse or similar pointer event.
  * @typedef {object} PointerEvent
- * @property {string} type - The type of event: <code>"Press"</code>, <code>"DoublePress"</code>, <code>"Release"</code>, or
- *     <code>"Move"</code>.
+ * @property {string} type - The type of event: <code>"Press"</code>, <code>"DoublePress"</code>, <code>"Release"</code>,
+ *     <code>"Move"</code>, or <code>"Scroll"</code>.
  * @property {number} id - Integer number used to identify the pointer: <code>0</code> = hardware mouse, <code>1</code> = left
  *     controller, <code>2</code> = right controller.
  * @property {Vec2} pos2D - The 2D position of the event on the intersected object XY plane, where applicable.
@@ -139,6 +139,9 @@ ScriptValue PointerEvent::toScriptValue(ScriptEngine* engine, const PointerEvent
         break;
     case Release:
         obj.setProperty("type", "Release");
+        break;
+    case Scroll:
+        obj.setProperty("type", "Scroll");
         break;
     default:
     case Move:
@@ -224,6 +227,8 @@ bool PointerEvent::fromScriptValue(const ScriptValue& object, PointerEvent& even
             event._type = DoublePress;
         } else if (typeStr == "Release") {
             event._type = Release;
+        } else if (typeStr == "Scroll") {
+            event._type = Scroll;
         } else {
             event._type = Move;
         }
@@ -268,7 +273,7 @@ bool PointerEvent::fromScriptValue(const ScriptValue& object, PointerEvent& even
     return true;
 }
 
-static const char* typeToStringMap[PointerEvent::NumEventTypes] = { "Press", "DoublePress", "Release", "Move" };
+static const char* typeToStringMap[PointerEvent::NumEventTypes] = { "Press", "DoublePress", "Release", "Move", "Scroll" };
 static const char* buttonsToStringMap[8] = {
     "NoButtons",
     "PrimaryButton",

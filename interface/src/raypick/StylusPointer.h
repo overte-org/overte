@@ -41,6 +41,8 @@ public:
 protected:
     PickedObject getHoveredObject(const PickResultPointer& pickResult) override;
     Buttons getPressedButtons(const PickResultPointer& pickResult) override;
+    glm::vec2 getScroll(const PickResultPointer& pickResult) override;
+
     bool shouldHover(const PickResultPointer& pickResult) override;
     bool shouldTrigger(const PickResultPointer& pickResult) override;
     virtual PickResultPointer getPickResultCopy(const PickResultPointer& pickResult) const override;
