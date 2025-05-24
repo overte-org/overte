@@ -37,5 +37,6 @@ RUN curl -L -O https://www.python.org/ftp/python/2.7.18/Python-2.7.18.tar.xz
 RUN tar xf Python-2.7.18.tar.xz
 RUN rm Python-2.7.18.tar.xz
 RUN cd Python-2.7.18 && ./configure --prefix=/usr/local --enable-shared --enable-unicode=ucs4 && make -j8 && make altinstall
+RUN ln -s /usr/local/bin/python2.7 /usr/local/bin/python2
 ENV LD_LIBRARY_PATH="/usr/local/lib:/usr/local/bin/python2.7:$LD_LIBRARY_PATH"
-ENV PATH="$PATH:/usr/local/bin/python2.7"
+ENV PATH="/usr/local/bin/python2:$PATH"
