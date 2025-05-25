@@ -45,6 +45,19 @@ typedef QPair<Vec3Pair, Vec4Pair> Vec3PairVec4Pair;
 typedef QPair<Vec4Pair, glm::vec4> Vec4PairVec4;
 typedef QPair<Vec4Pair, Vec4Pair> Vec4PairVec4Pair;
 
+/*@jsdoc
+ * **Note:** This is just scaffolding and has not been properly implemented.
+ * @typedef {Object} Vec3Pair
+ * @property {Vec3} first - The first 3D vector.
+ * @property {Vec3} second - The second 3D vector.
+ * 
+ * @example <caption>Creating a pair of vec3 objects to represent two 3D vectors.</caption>
+ * const myVec3Pair = {
+ *   first: new vec3(1.0, 0.0, 0.0),  // First vector pointing along the X-axis
+ *   second: new vec3(0.0, 1.0, 0.0) // Second vector pointing along the Y-axis
+ * };
+ */
+
 inline uint qHash(const Vec2FloatPairPair& v, uint seed) {
     // multiply by prime numbers greater than the possible size
     return qHash(v.first.first.x + 5009 * v.first.first.y + 5011 * v.first.second +

@@ -95,7 +95,7 @@ public:
      * @param {Quat} rotation - The orientation of the marker in world coordinates.
      * @param {Vec3} position - The position of the market in world coordinates.
      * @param {Vec4} color - The color of the marker.
-     * @param {float} size - A float between 0.0 and 1.0 (10 cm) to control the size of the marker.
+     * @param {number} size - A float between 0.0 and 1.0 (10 cm) to control the size of the marker.
      * @example <caption>Briefly draw a debug marker in front of your avatar, in world coordinates.</caption>
      * var MARKER_NAME = "my marker";
      * DebugDraw.addMarker(
@@ -128,7 +128,7 @@ public:
      * @param {Quat} rotation - The orientation of the marker in avatar coordinates.
      * @param {Vec3} position - The position of the market in avatar coordinates.
      * @param {Vec4} color - color of the marker.
-     * @param {float} size - A float between 0.0 and 1.0 (10 cm) to control the size of the marker.
+     * @param {number} size - A float between 0.0 and 1.0 (10 cm) to control the size of the marker.
      * @example <caption>Briefly draw a debug marker in front of your avatar, in avatar coordinates.</caption>
      * var MARKER_NAME = "My avatar marker";
      * DebugDraw.addMyAvatarMarker(

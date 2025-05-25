@@ -2857,14 +2857,24 @@ glm::mat4 AvatarData::getControllerRightHandMatrix() const {
  * @property {boolean} intersects - <code>true</code> if an avatar is intersected, <code>false</code> if it isn't.
  * @property {string} avatarID - The ID of the avatar that is intersected.
  * @property {number} distance - The distance from the ray origin to the intersection.
- * @property {string} face - The name of the box face that is intersected; <code>"UNKNOWN_FACE"</code> if mesh was picked
- *     against.
+ * @property {string} face - The name of the box face that is intersected; <code>"UNKNOWN_FACE"</code> if mesh was picked against.
  * @property {Vec3} intersection - The ray intersection point in world coordinates.
  * @property {Vec3} surfaceNormal - The surface normal at the intersection point.
  * @property {number} jointIndex - The index of the joint intersected.
  * @property {SubmeshIntersection} extraInfo - Extra information on the mesh intersected if mesh was picked against,
  *     <code>{}</code> if it wasn't.
  */
+
+ /*@jsdoc
+ * Information about a parabola-to-avatar intersection.
+ * @typedef {Object} ParabolaToAvatarIntersectionParameters
+ * @property {PickParabola} pick - The pick used for the intersection calculation.
+ * @property {Uuid[]} avatarsToInclude - List of avatars to include in the intersection check.
+ * @property {Uuid[]} avatarsToDiscard - List of avatars to exclude from the intersection check.
+ * 
+ * @typedef {RayToAvatarIntersectionResult} ParabolaToAvatarIntersectionResult
+ */
+
 ScriptValue RayToAvatarIntersectionResultToScriptValue(ScriptEngine* engine, const RayToAvatarIntersectionResult& value) {
     ScriptValue obj = engine->newObject();
     obj.setProperty("intersects", value.intersects);
