@@ -209,6 +209,21 @@ void Pointer::generatePointerEvents(unsigned int pointerID, const PickResultPoin
         }
     }
 
+    // scroll events
+    PointerEvent scrollEvent = buildPointerEvent(hoveredObject, pickResult);
+    scrollEvent.setType(PointerEvent::Scroll);
+    scrollEvent.setID(pointerID);
+    scrollEvent.setScroll(getScroll(pickResult));
+    if (glm::length(scrollEvent.getScroll()) > 0.01f) {
+        if (hoveredObject.type == ENTITY) {
+            emit pointerManager->scrollEntity(hoveredObject.objectID, scrollEvent);
+        } else if (hoveredObject.type == LOCAL_ENTITY) {
+            emit pointerManager->scrollOverlay(hoveredObject.objectID, scrollEvent);
+        } else if (hoveredObject.type == HUD) {
+            emit pointerManager->scrollHUD(scrollEvent);
+        }
+    }
+
     // Trigger begin
     const std::string SHOULD_FOCUS_BUTTON = "Focus";
     for (const std::string& button : newButtons) {
