@@ -140,9 +140,14 @@ ScriptValue PointerEvent::toScriptValue(ScriptEngine* engine, const PointerEvent
     case Release:
         obj.setProperty("type", "Release");
         break;
-    case Scroll:
+    case Scroll: {
         obj.setProperty("type", "Scroll");
+        ScriptValue scrollObj = engine->newObject();
+        scrollObj.setProperty("x", event._scroll.x);
+        scrollObj.setProperty("y", event._scroll.y);
+        obj.setProperty("scroll", scrollObj);
         break;
+    }
     default:
     case Move:
         obj.setProperty("type", "Move");
@@ -229,6 +234,9 @@ bool PointerEvent::fromScriptValue(const ScriptValue& object, PointerEvent& even
             event._type = Release;
         } else if (typeStr == "Scroll") {
             event._type = Scroll;
+
+            ScriptValue scroll = object.property("scroll");
+            event._scroll = glm::vec2(scroll.property("x").toNumber(), scroll.property("y").toNumber());
         } else {
             event._type = Move;
         }
