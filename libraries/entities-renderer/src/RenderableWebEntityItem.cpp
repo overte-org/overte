@@ -441,9 +441,6 @@ void WebEntityRenderer::handlePointerEvent(const PointerEvent& event) {
 }
 
 void WebEntityRenderer::handlePointerEventAsTouch(const PointerEvent& event) {
-    if (event.getType() == PointerEvent::Scroll) {
-        qInfo() << "RenderableWebEntityItem::handlePointerEventAsTouch: PointerEvent::Scroll" << QPointF(event.getScroll().x, event.getScroll().y);
-    }
     PointerEvent webEvent = event;
     webEvent.setPos2D(event.getPos2D() * (METERS_TO_INCHES * _dpi));
     _webSurface->handlePointerEvent(webEvent, _touchDevice);
@@ -482,10 +479,9 @@ void WebEntityRenderer::handlePointerEventAsMouse(const PointerEvent& event) {
     }
 
     if (type == QEvent::Wheel) {
-        const auto& scroll = event.getScroll() * -24.0f;
+        const auto& scroll = event.getScroll() * POINTEREVENT_SCROLL_SENSITIVITY;
         QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false);
         QCoreApplication::sendEvent(_webSurface->getWindow(), &wheelEvent);
-        qInfo() << "RenderableWebEntityItem::handlePointerEventAsMouse: QEvent::Wheel" << QPoint(scroll.x, scroll.y) << buttons;
     } else {
         QMouseEvent mouseEvent(type, windowPoint, windowPoint, windowPoint, button, buttons, event.getKeyboardModifiers());
         QCoreApplication::sendEvent(_webSurface->getWindow(), &mouseEvent);
