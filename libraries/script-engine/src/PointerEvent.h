@@ -26,6 +26,8 @@
 
 class ScriptEngine;
 
+#define POINTEREVENT_SCROLL_SENSITIVITY -16.0f
+
 /// Represents a 2D or 3D pointer to the scripting engine. Exposed as <code><a href="https://apidocs.overte.org/global.html#PointerEvent">PointerEvent</a></code>
 class PointerEvent {
 public:
