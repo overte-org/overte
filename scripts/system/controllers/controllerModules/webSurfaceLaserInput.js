@@ -241,23 +241,23 @@ Script.include("/~/system/libraries/controllers.js");
 
             if (type === intersectionType["HifiTablet"] && laserOn) {
                 if (this.shouldThisModuleRun(controllerData)) {
-                    Controller.captureActionEvents();
+                    Controller.captureActionEvents("webSurfaceLaserInput");
                     this.running = true;
                     return makeRunningValues(true, [], []);
                 }
             } else if ((type === intersectionType["WebOverlay"] || type === intersectionType["WebEntity"]) && laserOn) { // auto laser on WebEntities andWebOverlays
                 if (this.shouldThisModuleRun(controllerData)) {
-                    Controller.captureActionEvents();
+                    Controller.captureActionEvents("webSurfaceLaserInput");
                     this.running = true;
                     return makeRunningValues(true, [], []);
                 }
             } else if ((type === intersectionType["HifiKeyboard"] && laserOn) || type === intersectionType["Overlay"]) {
-                Controller.captureActionEvents();
+                Controller.captureActionEvents("webSurfaceLaserInput");
                 this.running = true;
                 return makeRunningValues(true, [], []);
             }
 
-            Controller.releaseActionEvents();
+            Controller.releaseActionEvents("webSurfaceLaserInput");
             this.running = false;
             this.dominantHandOverride = false;
             return makeRunningValues(false, [], []);

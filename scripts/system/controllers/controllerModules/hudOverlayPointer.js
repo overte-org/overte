@@ -80,18 +80,18 @@
             var controllerLocation = controllerData.controllerLocations[this.hand];
             if ((controllerData.triggerValues[this.hand] < ControllerDispatcherUtils.TRIGGER_ON_VALUE || !controllerLocation.valid) ||
                 this.pointingAtTablet(controllerData)) {
-                Controller.releaseActionEvents();
+                Controller.releaseActionEvents("hudOverlayPointer");
                 return false;
             }
             var hudRayPick = controllerData.hudRayPicks[this.hand];
             var point2d = this.calculateNewReticlePosition(hudRayPick.intersection);
             if (!Window.isPointOnDesktopWindow(point2d) && !this.triggerClicked) {
-                Controller.releaseActionEvents();
+                Controller.releaseActionEvents("hudOverlayPointer");
                 return false;
             }
 
             this.triggerClicked = controllerData.triggerClicks[this.hand];
-            Controller.captureActionEvents();
+            Controller.captureActionEvents("hudOverlayPointer");
             return true;
         };
 
