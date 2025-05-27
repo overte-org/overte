@@ -216,19 +216,23 @@ Pointer::PickedObject PathPointer::getHoveredObject(const PickResultPointer& pic
 }
 
 glm::vec2 PathPointer::getScroll(const PickResultPointer& pickResult) {
+    bool isActive = false;
     glm::vec2 accum { 0.0f };
 
     for (const PointerTrigger& trigger : _triggers) {
         std::string button = trigger.getButton();
 
-        if (button == "ScrollX") {
+        // don't activate scrolling if the laser isn't even on
+        if (button == "ScrollActive" && trigger.getEndpoint()->peek().value > 0.1f) {
+            isActive = true;
+        } else if (button == "ScrollX") {
             accum.x += trigger.getEndpoint()->peek().value;
         } else if (button == "ScrollY") {
             accum.y += trigger.getEndpoint()->peek().value;
         }
     }
 
-    return accum;
+    return isActive ? accum : glm::vec2(0.0f);
 }
 
 Pointer::Buttons PathPointer::getPressedButtons(const PickResultPointer& pickResult) {

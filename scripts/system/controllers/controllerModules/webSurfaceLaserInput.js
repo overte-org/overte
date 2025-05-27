@@ -232,6 +232,12 @@ Script.include("/~/system/libraries/controllers.js");
             return !otherModuleRunning && !grabModuleNeedsToRun;
         };
 
+        this.tryCaptureActions = function(isTriggerPressed) {
+            if (isTriggerPressed) {
+                Controller.captureActionEvents("webSurfaceLaserInput_" + this.hand);
+            }
+        };
+
         this.run = function(controllerData, deltaTime) {
             this.addObjectToIgnoreList(controllerData);
             var isTriggerPressed = controllerData.triggerValues[this.hand] > TRIGGER_OFF_VALUE;
@@ -241,23 +247,23 @@ Script.include("/~/system/libraries/controllers.js");
 
             if (type === intersectionType["HifiTablet"] && laserOn) {
                 if (this.shouldThisModuleRun(controllerData)) {
-                    Controller.captureActionEvents("webSurfaceLaserInput");
+                    this.tryCaptureActions(isTriggerPressed);
                     this.running = true;
                     return makeRunningValues(true, [], []);
                 }
             } else if ((type === intersectionType["WebOverlay"] || type === intersectionType["WebEntity"]) && laserOn) { // auto laser on WebEntities andWebOverlays
                 if (this.shouldThisModuleRun(controllerData)) {
-                    Controller.captureActionEvents("webSurfaceLaserInput");
+                    this.tryCaptureActions(isTriggerPressed);
                     this.running = true;
                     return makeRunningValues(true, [], []);
                 }
             } else if ((type === intersectionType["HifiKeyboard"] && laserOn) || type === intersectionType["Overlay"]) {
-                Controller.captureActionEvents("webSurfaceLaserInput");
+                this.tryCaptureActions(isTriggerPressed);
                 this.running = true;
                 return makeRunningValues(true, [], []);
             }
 
-            Controller.releaseActionEvents("webSurfaceLaserInput");
+            Controller.releaseActionEvents("webSurfaceLaserInput_" + this.hand);
             this.running = false;
             this.dominantHandOverride = false;
             return makeRunningValues(false, [], []);
