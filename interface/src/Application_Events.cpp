@@ -941,6 +941,7 @@ void Application::processDriverBlocklistReply(const QString& fullDriverToTest, c
     // - first_version (optional) (e.g. 32.0.15.6070): If a range is problematic, the first problematic version
     // - last_version (optional) (e.g. 32.0.15.6070): If a range is problematic, the final problematic version.  If this is not provided,
     //       all versions above first_version will trigger a warning.
+    // -  description: Description of the issue.
     // String values are *case insensitive*
     QNetworkReply* reply = static_cast<QNetworkReply*>(sender());
     QByteArray data = reply->readAll();
