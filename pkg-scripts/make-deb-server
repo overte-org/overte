@@ -5,14 +5,14 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if [ "$OVERTE" = "" ]; then
-	OVERTE=`realpath ..`
+    OVERTE=`realpath ..`
 fi
 
 sudo apt-get install chrpath binutils dh-make
 
 DEB_BUILD_ROOT=temp-make-deb/overte-server_$DEBVERSION
 if [ -d temp-make-deb ]; then
-	rm -r temp-make-deb
+    rm -r temp-make-deb
 fi
 mkdir -p $DEB_BUILD_ROOT
 
@@ -25,10 +25,10 @@ chrpath -d $DEB_BUILD_ROOT/*
 
 # TODO: get Qt from Conan if building without system Qt
 
-# hack: we get libnode.so.108 from conan-libs folder, because the dpkg command at the end of this file cannot always find libnode
-cp $OVERTE/build/conanlibs/Release/libnode.so.108 $DEB_BUILD_ROOT
-# hack: we get libttb.so.12 from conan-libs folder, because the dpkg command at the end of this file cannot always find libtbb12
-cp $OVERTE/build/conanlibs/Release/libttb.so.12 $DEB_BUILD_ROOT
+# Hack: Create libnode.so from libnode.so.108
+# We don't fail on error, in case libnode is provided by the system already.
+ln -s $OVERTE/build/conanlibs/Release/libnode.so.* $OVERTE/build/conanlibs/Release/libnode.so || True
+cp $OVERTE/build/conanlibs/Release/*.so $DEB_BUILD_ROOT
 
 strip --strip-all $DEB_BUILD_ROOT/*
 cp $OVERTE/pkg-scripts/new-server $DEB_BUILD_ROOT
@@ -68,27 +68,24 @@ echo domain-server opt/overte >> debian/install
 echo oven opt/overte >> debian/install
 echo new-server opt/overte >> debian/install
 for so in *.so*; do
-	echo $so opt/overte/lib >> debian/install
+    echo $so opt/overte/lib >> debian/install
 done
 #for service in *.service; do
-#	echo $service opt/overte/systemd >> debian/install
+#   echo $service opt/overte/systemd >> debian/install
 #done
 #for target in *.target; do
-#	echo $target opt/overte/systemd >> debian/install
+#   echo $target opt/overte/systemd >> debian/install
 #done
 find resources -type f -exec sh -c 'echo {} opt/overte/$(dirname "{}") >> debian/install' \;
 find plugins -type f -exec sh -c 'echo {} opt/overte/$(dirname "{}") >> debian/install' \;
 
-if [ ! "$OVERTE_USE_SYSTEM_QT" ]; then
-	SOFILES=`ls *.so *.so.*.*.* | grep -Po '^(.+\.so(\.\d+)?)' | sed 's/\./\\\./g' | paste -d'|' -s`
-else
-	SOFILES=`ls *.so | grep -Po '^(.+\.so(\.\d+)?)' | sed 's/\./\\\./g' | paste -d'|' -s`
-fi
+# We look for *.so.*.*.* as well, in case Qt is there.
+SOFILES=`ls *.so *.so.*.*.* | grep -Po '^(.+\.so(\.\d+)?)' | sed 's/\./\\\./g' | paste -d'|' -s`
 
 # dpkg -S can only find packages which are already installed on the system.
 DEPENDS=`find * -path debian -prune -o -type f -executable -exec sh -c 'objdump -p {} | grep NEEDED' \; \
-	| awk '{print $2}' | sort | uniq | egrep -v "^($SOFILES)$" \
-	| xargs -n 1 -I {} sh -c 'dpkg -S {} | head -n 1' | cut -d ':' -f 1 | sort | uniq | paste -d',' -s`
+    | awk '{print $2}' | sort | uniq | egrep -v "^($SOFILES)$" \
+    | xargs -n 1 -I {} sh -c 'dpkg -S {} | head -n 1' | cut -d ':' -f 1 | sort | uniq | paste -d',' -s`
 
 cp $OVERTE/pkg-scripts/server-rules debian/rules
 sed "s/{DEPENDS}/$DEPENDS/" $OVERTE/pkg-scripts/server-control > debian/control
