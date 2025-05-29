@@ -1991,3 +1991,14 @@ QDebug operator<<(QDebug debug, PolyVoxState state) {
     }
     return debug;
 }
+
+scriptable::ScriptableModelBase PolyVoxEntityRenderer::getScriptableModel() {
+    scriptable::ScriptableModelBase result = asTypedEntity<RenderablePolyVoxEntityItem>()->getScriptableModel();
+
+    {
+        std::lock_guard<std::mutex> lock(_materialsLock);
+        result.appendMaterials(_materials);
+    }
+
+    return result;
+}
