@@ -79,11 +79,8 @@ done
 find resources -type f -exec sh -c 'echo {} opt/overte/$(dirname "{}") >> debian/install' \;
 find plugins -type f -exec sh -c 'echo {} opt/overte/$(dirname "{}") >> debian/install' \;
 
-if [ ! "$OVERTE_USE_SYSTEM_QT" ]; then
-    SOFILES=`ls *.so *.so.*.*.* | grep -Po '^(.+\.so(\.\d+)?)' | sed 's/\./\\\./g' | paste -d'|' -s`
-else
-    SOFILES=`ls *.so | grep -Po '^(.+\.so(\.\d+)?)' | sed 's/\./\\\./g' | paste -d'|' -s`
-fi
+# We look for *.so.*.*.* as well, in case Qt is there.
+SOFILES=`ls *.so *.so.*.*.* | grep -Po '^(.+\.so(\.\d+)?)' | sed 's/\./\\\./g' | paste -d'|' -s`
 
 # dpkg -S can only find packages which are already installed on the system.
 DEPENDS=`find * -path debian -prune -o -type f -executable -exec sh -c 'objdump -p {} | grep NEEDED' \; \
