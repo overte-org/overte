@@ -6,6 +6,7 @@ runs:
   - name: "Prepare Conan Build Environment"
     shell: bash
     run: |
+      echo "Starting with a clean Conan profile…" && rm ~/.conan2/profiles/default || true  # Don't fail if missing.
       conan profile detect -e
       conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
       # Use our mirror of Conan Center to avoid rate limiting.
@@ -31,3 +32,11 @@ runs:
       echo "Printing Conan global.conf…" && cat ~/.conan2/global.conf
       echo "Printing Conan remotes.json…" && cat ~/.conan2/remotes.json
       echo "Printing Conan source_credentials.json…" && cat ~/.conan2/source_credentials.json
+
+      # We get CMake from Conan to avoid CMake 4.0 which some of our dependencies don't yet build with.
+      # FIXME: Remove once all our dependencies have CMake 4.0 compatibility.
+      cat >> ~/.conan2/profiles/default <<EOF
+      [tool_requires]
+      !cmake/*: cmake/[>=3 <4]
+      EOF
+      echo "Printing Conan default profile…" && cat ~/.conan2/profiles/default
