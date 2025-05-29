@@ -186,30 +186,23 @@ Overte Interface AppImages are built using [linuxdeploy](https://github.com/linu
 ```bash
 cd overte
 mkdir build
-cd build
-rm -rf *
+rm -rf build/*
+conan install . -s build_type=Release -b missing -pr:b=default -of build
 ```
 Add `PRODUCTION_BUILD=1` to below command for release and release candidate builds.
 ```bash
-OVERTE_USE_SYSTEM_QT=true cmake .. -DOVERTE_CPU_ARCHITECTURE=-msse3 -DVCPKG_BUILD_TYPE=release -DSERVER_ONLY=true -DBUILD_TOOLS=true
+cmake --preset conan-release -DOVERTE_CPU_ARCHITECTURE=-msse3
 ```
 
 4. Build
 ```bash
-make domain-server assignment-client oven -j$(nproc)
+cmake --build --preset conan-release --target domain-server assignment-client oven
 ```
 
 5. Create Debian package
 ```bash
-cd ../pkg-scripts
-```
-For Debian 11 and Ubuntu 22.04:
-```bash
-OVERTE_USE_SYSTEM_QT="true" DEBVERSION="1-experimental-debian-11" DEBEMAIL="julian.gro@overte.org" DEBFULLNAME="Julian Groß" ./make-deb-server
-```
-For Ubuntu 18.04 and 20.04:
-```bash
-DEBVERSION="1-experimental-ubuntu-18.04" DEBEMAIL="julian.gro@overte.org" DEBFULLNAME="Julian Groß" ./make-deb-server
+cd pkg-scripts
+DEBVERSION="1-experimental-debian-11" DEBEMAIL="julian.gro@overte.org" DEBFULLNAME="Julian Groß" ./make-deb-server
 ```
 
 ##### RPM package
@@ -225,23 +218,23 @@ DEBVERSION="1-experimental-ubuntu-18.04" DEBEMAIL="julian.gro@overte.org" DEBFUL
 ```bash
 cd overte
 mkdir build
-cd build
-rm -rf *
+rm -rf build/*
+conan install . -s build_type=Release -b missing -pr:b=default -of build
 ```
 Add `PRODUCTION_BUILD=1` to below command for release and release candidate builds.
 ```bash
-OVERTE_USE_SYSTEM_QT=true cmake .. -DOVERTE_CPU_ARCHITECTURE=-msse3 -DVCPKG_BUILD_TYPE=release -DSERVER_ONLY=true -DBUILD_TOOLS=true
+cmake --preset conan-release -DOVERTE_CPU_ARCHITECTURE=-msse3 -DSERVER_ONLY=true -DBUILD_TOOLS=true
 ```
 
 4. Build
 ```bash
-make domain-server assignment-client oven -j$(nproc)
+cmake --build --preset conan-release --target domain-server assignment-client oven
 ```
 
 5. Create RPM package
 ```bash
-cd ../pkg-scripts
+cd pkg-scripts
 ```
 ```bash
-OVERTE_USE_SYSTEM_QT="true" RPMVERSION="1.experimental" ./make-rpm-server
+RPMVERSION="1.experimental" ./make-rpm-server
 ```
