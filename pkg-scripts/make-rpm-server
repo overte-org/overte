@@ -13,9 +13,12 @@ VERSION=${RPMVERSION//-}
 
 # TODO: Handle Qt built by Conan
 
+# Hack: Create libnode.so from libnode.so.108
+# We don't fail on error, in case libnode is provided by the system already.
+ln -s $OVERTE/build/conanlibs/Release/libnode.so.* $OVERTE/build/conanlibs/Release/libnode.so || True
 SOFILES=`ls \
         $OVERTE/build/libraries/*/*.so \
-        $OVERTE/build/conanlibs/Release/libnode.so* \
+        $OVERTE/build/conanlibs/Release/*.so \
     | sed 's/\./\\\./g' \
     | paste -d'|' -s`
 
@@ -24,8 +27,7 @@ DEPENDS=mesa-libGL,`ls \
         $OVERTE/build/domain-server/domain-server \
         $OVERTE/build/tools/oven/oven \
         $OVERTE/build/libraries/*/*.so \
-        $OVERTE/build/conanlibs/Release/libnode.so* \
-        $OVERTE/build/conanlibs/Release/libtbb.so* \
+        $OVERTE/build/conanlibs/Release/*.so \
         $OVERTE/build/assignment-client/plugins/*.so \
         $OVERTE/build/assignment-client/plugins/*/*.so \
     | xargs -I {} sh -c 'objdump -p {} | grep NEEDED' \

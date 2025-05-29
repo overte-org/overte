@@ -25,10 +25,10 @@ chrpath -d $DEB_BUILD_ROOT/*
 
 # TODO: get Qt from Conan if building without system Qt
 
-# hack: we get libnode.so.108 from conan-libs folder, because the dpkg command at the end of this file cannot always find libnode
-cp $OVERTE/build/conanlibs/Release/libnode.so.108 $DEB_BUILD_ROOT
-# hack: we get libttb.so.12 from conan-libs folder, because the dpkg command at the end of this file cannot always find libtbb12
-cp $OVERTE/build/conanlibs/Release/libttb.so.12 $DEB_BUILD_ROOT
+# Hack: Create libnode.so from libnode.so.108
+# We don't fail on error, in case libnode is provided by the system already.
+ln -s $OVERTE/build/conanlibs/Release/libnode.so.* $OVERTE/build/conanlibs/Release/libnode.so || True
+cp $OVERTE/build/conanlibs/Release/*.so $DEB_BUILD_ROOT
 
 strip --strip-all $DEB_BUILD_ROOT/*
 cp $OVERTE/pkg-scripts/new-server $DEB_BUILD_ROOT
