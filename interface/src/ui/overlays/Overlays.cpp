@@ -89,6 +89,7 @@ void Overlays::init() {
     connect(pointerManager, &PointerManager::triggerBeginOverlay, entityScriptingInterface, &EntityScriptingInterface::mousePressOnEntity);
     connect(pointerManager, &PointerManager::triggerContinueOverlay, entityScriptingInterface, &EntityScriptingInterface::mouseMoveOnEntity);
     connect(pointerManager, &PointerManager::triggerEndOverlay, entityScriptingInterface, &EntityScriptingInterface::mouseReleaseOnEntity);
+    connect(pointerManager, &PointerManager::scrollOverlay, entityScriptingInterface, &EntityScriptingInterface::scrollOnEntity);
 
     connect(entityScriptingInterface, &EntityScriptingInterface::mousePressOnEntity, this, &Overlays::mousePressOnPointerEvent);
     connect(entityScriptingInterface, &EntityScriptingInterface::mousePressOffEntity, this, &Overlays::mousePressOffPointerEvent);
@@ -99,6 +100,7 @@ void Overlays::init() {
     connect(entityScriptingInterface, &EntityScriptingInterface::hoverEnterEntity , this, &Overlays::hoverEnterPointerEvent);
     connect(entityScriptingInterface, &EntityScriptingInterface::hoverOverEntity, this, &Overlays::hoverOverPointerEvent);
     connect(entityScriptingInterface, &EntityScriptingInterface::hoverLeaveEntity, this, &Overlays::hoverLeavePointerEvent);
+    connect(entityScriptingInterface, &EntityScriptingInterface::scrollOnEntity, this, &Overlays::scrollPointerEvent);
 }
 
 void Overlays::update(float deltatime) {
@@ -668,6 +670,17 @@ void Overlays::hoverLeavePointerEvent(const QUuid& id, const PointerEvent& event
         auto entity = DependencyManager::get<EntityTreeRenderer>()->getEntity(id);
         if (entity && entity->isLocalEntity()) {
             emit hoverLeaveOverlay(id, event);
+        }
+    }
+}
+
+void Overlays::scrollPointerEvent(const QUuid& id, const PointerEvent& event) {
+    auto keyboard = DependencyManager::get<Keyboard>();
+    // Do not send keyboard key event to scripts to prevent malignant scripts from gathering what you typed
+    if (!keyboard->getKeyIDs().contains(id)) {
+        auto entity = DependencyManager::get<EntityTreeRenderer>()->getEntity(id);
+        if (entity && entity->isLocalEntity()) {
+            emit scrollOverlay(id, event);
         }
     }
 }
