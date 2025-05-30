@@ -2455,6 +2455,16 @@ signals:
      */
     void hoverLeaveEntity(const EntityItemID& entityItemID, const PointerEvent& event);
 
+    /*@jsdoc
+     * Triggered when the mouse cursor or controller laser scrolls over an entity.
+     * <p>See also, {@link Entities|Entity Methods} and {@link Script.addEventHandler}.</p>
+     * @function Entities.scrollOnEntity
+     * @param {Uuid} entityID - The ID of the entity that was being hovered.
+     * @param {PointerEvent} event - Details of the event.
+     * @returns {Signal}
+     */
+    void scrollOnEntity(const EntityItemID& entityItemID, const PointerEvent& event);
+
 
     /*@jsdoc
      * Triggered when an avatar enters an entity.
