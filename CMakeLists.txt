@@ -134,6 +134,7 @@ else()
 endif()
 set(OVERTE_EXTERNAL_BUILD_ASSETS "https://build-deps.overte.org" CACHE INTERNAL "")
 set(OVERTE_TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256" CACHE STRING "URL to timeserver used for signing executables.")
+set(OVERTE_USE_KHR_ROBUSTNESS OFF CACHE BOOL "Use KHR_robustness.")
 
 
 set(HIFI_USE_OPTIMIZED_IK_OPTION OFF)
@@ -180,10 +181,9 @@ else ()
 endif()
 
 option(HIFI_USE_OPTIMIZED_IK "Use optimized IK" ${HIFI_USE_OPTIMIZED_IK_OPTION})
-option(USE_KHR_ROBUSTNESS "Use KHR_robustness" OFF)
 option(DISABLE_KTX_CACHE "Disable KTX Cache" OFF)
 
-if (USE_KHR_ROBUSTNESS)
+if (OVERTE_USE_KHR_ROBUSTNESS)
   add_definitions(-DUSE_KHR_ROBUSTNESS)
 endif()
 
