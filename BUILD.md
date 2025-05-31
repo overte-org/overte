@@ -124,13 +124,13 @@ In the examples below the variable $NAME would be replaced by the name of the de
 
 The following build options can be used when running CMake
 
-* BUILD_CLIENT
-* BUILD_SERVER
-* BUILD_TESTS
-* BUILD_TOOLS
 * CLIENT_ONLY // Will package only the Interface
 * SERVER_ONLY // Will package only the Server
 
+* OVERTE_BUILD_CLIENT
+* OVERTE_BUILD_SERVER
+* OVERTE_BUILD_TESTS
+* OVERTE_BUILD_TOOLS
 
 ### Developer Build Options
 

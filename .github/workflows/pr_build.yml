@@ -96,18 +96,18 @@ jobs:
 
           if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
             if [ "${{ matrix.build_type }}" = "full" ]; then
-              echo "CMAKE_EXTRA=-DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DOVERTE_BUILD_TOOLS=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             else
-              echo "CMAKE_EXTRA=-DCLIENT_ONLY=1 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DCLIENT_ONLY=1 -DOVERTE_BUILD_TOOLS=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             fi
 
           fi
 
           if [[ "${{ matrix.arch }}" = "amd64" ]]; then
             if [ "${{ matrix.build_type }}" = "full" ]; then
-              echo "CMAKE_EXTRA=-DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             else
-              echo "CMAKE_EXTRA=-DCLIENT_ONLY=1 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DCLIENT_ONLY=1 -DOVERTE_BUILD_TOOLS=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             fi
           fi
         fi

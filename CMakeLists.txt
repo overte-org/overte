@@ -126,6 +126,12 @@ endif()
 #
 # Overte build variables
 #
+set(OVERTE_BUILD_CLIENT ON CACHE BOOL "Build Interface.")
+set(OVERTE_BUILD_SERVER ON CACHE BOOL "Build domain-server, assignment-client, and ice-server.")
+set(OVERTE_BUILD_TESTS OFF CACHE BOOL "Build tests.")
+set(OVERTE_BUILD_MANUAL_TESTS OFF CACHE BOOL "Build manual tests.")
+set(OVERTE_BUILD_TOOLS ON CACHE BOOL "Build tools. Includes Oven, which is used for some server functionality.")
+set(OVERTE_BUILD_INSTALLER ON CACHE BOOL "Build installer.")
 # use OpenGL ES on Linux aarch64 and Android.
 if ((CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") OR ANDROID)
     set(OVERTE_RENDERING_BACKEND "GLES" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL', 'GLES', and 'Vulkan'.")
@@ -137,21 +143,15 @@ set(OVERTE_TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256" CACHE STRING
 
 
 set(HIFI_USE_OPTIMIZED_IK_OPTION OFF)
-set(BUILD_CLIENT_OPTION ON)
-set(BUILD_SERVER_OPTION ON)
-set(BUILD_TESTS_OPTION OFF)
-set(BUILD_MANUAL_TESTS_OPTION ${BUILD_TESTS_OPTION})
-set(BUILD_TOOLS_OPTION ON)
-set(BUILD_INSTALLER_OPTION ON)
 set(DISABLE_QML_OPTION OFF)
 set(DOWNLOAD_SERVERLESS_CONTENT_OPTION OFF)
 set(OVERTE_BACKTRACE_URL "" CACHE STRING "URL to an endpoint for uploading crash-dumps. For example Sentry.")
 set(OVERTE_BACKTRACE_TOKEN "" CACHE STRING "Token used to identify with release or build is uploading crash-dumps.")
 
 if (ANDROID OR UWP)
-  set(BUILD_SERVER_OPTION OFF)
-  set(BUILD_TOOLS_OPTION OFF)
-  set(BUILD_INSTALLER OFF)
+    set(OVERTE_BUILD_SERVER OFF CACHE BOOL FORCE "Overwritten (mobile build)")
+    set(OVERTE_BUILD_TOOLS OFF CACHE BOOL FORCE "Overwritten (mobile build)")
+    set(OVERTE_BUILD_INSTALLER OFF CACHE BOOL FORCE "Overwritten (mobile build)")
 endif()
 
 if (CLIENT_ONLY)
@@ -201,12 +201,6 @@ if (USE_GLES AND (NOT ANDROID AND NOT UNIX))
 endif()
 
 option(HIFI_USE_OPTIMIZED_IK "Use optimized IK" ${HIFI_USE_OPTIMIZED_IK_OPTION})
-option(BUILD_CLIENT "Build client components" ${BUILD_CLIENT_OPTION})
-option(BUILD_SERVER "Build server components" ${BUILD_SERVER_OPTION})
-option(BUILD_TESTS "Build tests" ${BUILD_TESTS_OPTION})
-option(BUILD_MANUAL_TESTS "Build manual tests" ${BUILD_MANUAL_TESTS_OPTION})
-option(BUILD_TOOLS "Build tools" ${BUILD_TOOLS_OPTION})
-option(BUILD_INSTALLER "Build installer" ${BUILD_INSTALLER_OPTION})
 option(USE_KHR_ROBUSTNESS "Use KHR_robustness" OFF)
 option(DISABLE_QML "Disable QML" ${DISABLE_QML_OPTION})
 option(DISABLE_KTX_CACHE "Disable KTX Cache" OFF)
@@ -241,11 +235,11 @@ foreach(PLATFORM_QT_COMPONENT ${PLATFORM_QT_COMPONENTS})
 endforeach()
 
 MESSAGE(STATUS "Use optimized IK:      " ${HIFI_USE_OPTIMIZED_IK})
-MESSAGE(STATUS "Build server:          " ${BUILD_SERVER})
-MESSAGE(STATUS "Build client:          " ${BUILD_CLIENT})
-MESSAGE(STATUS "Build tests:           " ${BUILD_TESTS})
-MESSAGE(STATUS "Build tools:           " ${BUILD_TOOLS})
-MESSAGE(STATUS "Build installer:       " ${BUILD_INSTALLER})
+message(STATUS "Build server:          " ${OVERTE_BUILD_SERVER})
+message(STATUS "Build client:          " ${OVERTE_BUILD_CLIENT})
+message(STATUS "Build tests:           " ${OVERTE_BUILD_TESTS})
+message(STATUS "Build tools:           " ${OVERTE_BUILD_TOOLS})
+message(STATUS "Build installer:       " ${OVERTE_BUILD_INSTALLER})
 message(STATUS "Rendering backend:     " ${OVERTE_RENDERING_BACKEND})
 MESSAGE(STATUS "DL serverless content: " ${DOWNLOAD_SERVERLESS_CONTENT})
 
@@ -327,11 +321,11 @@ if (BUILD_GPU_FRAME_PLAYER_ONLY)
     add_subdirectory(tools/gpu-frame-player)
 else()
 
-# BUILD_TOOLS option will be handled inside the tools's CMakeLists.txt because 'scribe' tool is required for build anyway
+# OVERTE_BUILD_TOOLS option will be handled inside the tools's CMakeLists.txt because 'scribe' tool is required for build anyway
 add_subdirectory(tools)
 
 # add subdirectories for all targets
-if (BUILD_SERVER)
+if (OVERTE_BUILD_SERVER)
   add_subdirectory(assignment-client)
   set_target_properties(assignment-client PROPERTIES FOLDER "Apps")
   add_subdirectory(domain-server)
@@ -340,7 +334,7 @@ if (BUILD_SERVER)
   set_target_properties(ice-server PROPERTIES FOLDER "Apps")
 endif()
 
-if (BUILD_CLIENT)
+if (OVERTE_BUILD_CLIENT)
   add_subdirectory(interface)
   if (APPLE)
     set_target_properties(Overte PROPERTIES FOLDER "Apps")
@@ -352,25 +346,25 @@ if (BUILD_CLIENT)
   option(USE_NEURON "Build Interface with Neuron library/plugin" OFF)
 endif()
 
-if (BUILD_CLIENT OR BUILD_SERVER)
+if (OVERTE_BUILD_CLIENT OR OVERTE_BUILD_SERVER)
   add_subdirectory(plugins)
   add_subdirectory(server-console)
 endif()
 
 endif()
 
-if (BUILD_TESTS)
+if (OVERTE_BUILD_TESTS)
   # Turn on testing so that add_test works
   # MUST be in the root cmake file for ctest to work
   include(CTest)
   enable_testing()
   add_subdirectory(tests)
-  if (BUILD_MANUAL_TESTS)
+  if (OVERTE_BUILD_MANUAL_TESTS)
     add_subdirectory(tests-manual)
   endif()
 endif()
 
-if (BUILD_INSTALLER)
+if (OVERTE_BUILD_INSTALLER)
   if (UNIX)
     install(
         DIRECTORY "${CMAKE_SOURCE_DIR}/scripts"

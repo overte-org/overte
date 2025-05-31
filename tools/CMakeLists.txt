@@ -22,8 +22,8 @@ function(check_test name)
     set(BUILD_TOOL_RESULT ${RESULT} PARENT_SCOPE)
 endfunction()
 
-if (BUILD_TOOLS)
-    set(ALL_TOOLS 
+if (OVERTE_BUILD_TOOLS)
+    set(ALL_TOOLS
         udt-test
         gpu-frame-player
         ice-client
