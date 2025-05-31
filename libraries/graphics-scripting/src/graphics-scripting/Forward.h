@@ -77,6 +77,8 @@ namespace scriptable {
         QString scatteringMap { "" };
         std::array<glm::mat4, graphics::Material::NUM_TEXCOORD_TRANSFORMS> texCoordTransforms;
         QString cullFaceMode { "" };
+        uint8_t layers { 1 };
+        QString splatMap { "" };
         bool defaultFallthrough { false };
         std::unordered_map<uint, bool> propertyFallthroughs; // not actually exposed to script
 
