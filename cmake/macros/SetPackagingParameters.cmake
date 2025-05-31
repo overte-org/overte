@@ -44,7 +44,8 @@ macro(SET_PACKAGING_PARAMETERS)
   string(TIMESTAMP BUILD_DATE "%Y-%m-%d" UTC)
 
   if (OVERTE_RELEASE_TYPE STREQUAL "PRODUCTION")
-    set(PRODUCTION_BUILD ON CACHE BOOL INTERNAL "")
+    # To not break our NSIS later down the line, we use `1` here instead of `ON`.
+    set(PRODUCTION_BUILD 1 CACHE BOOL INTERNAL "")
     set(BUILD_VERSION ${OVERTE_RELEASE_NUMBER})
     set(BUILD_ORGANIZATION "Overte")
     set(HIGH_FIDELITY_PROTOCOL "hifi")
@@ -63,7 +64,8 @@ macro(SET_PACKAGING_PARAMETERS)
     endif()
 
   elseif (OVERTE_RELEASE_TYPE STREQUAL "PR")
-    set(PR_BUILD ON CACHE BOOL INTERNAL "")
+    # To not break our NSIS later down the line, we use `1` here instead of `ON`.
+    set(PR_BUILD 1 CACHE BOOL INTERNAL "")
     set(BUILD_VERSION "PR${OVERTE_RELEASE_NUMBER}-${BUILD_DATE}")
     set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
@@ -72,7 +74,8 @@ macro(SET_PACKAGING_PARAMETERS)
     add_definitions(-DPR_BUILD)
 
   elseif (OVERTE_RELEASE_TYPE STREQUAL "NIGHTLY")
-    set(NIGHTLY_BUILD ON CACHE BOOL INTERNAL "")
+    # To not break our NSIS later down the line, we use `1` here instead of `ON`.
+    set(NIGHTLY_BUILD 1 CACHE BOOL INTERNAL "")
     set(BUILD_VERSION "Nightly-${BUILD_DATE}")
     set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
@@ -81,7 +84,8 @@ macro(SET_PACKAGING_PARAMETERS)
     add_definitions(-DPR_BUILD)
 
   elseif (OVERTE_RELEASE_TYPE STREQUAL "DEV")
-    set(DEV_BUILD ON CACHE BOOL INTERNAL "")
+    # To not break our NSIS later down the line, we use `1` here instead of `ON`.
+    set(DEV_BUILD 1 CACHE BOOL INTERNAL "")
     set(BUILD_VERSION "Dev-${BUILD_DATE}")
     set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
