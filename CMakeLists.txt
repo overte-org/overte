@@ -169,6 +169,8 @@ set(BUILD_TOOLS_OPTION ON)
 set(BUILD_INSTALLER_OPTION ON)
 set(DISABLE_QML_OPTION OFF)
 set(DOWNLOAD_SERVERLESS_CONTENT_OPTION OFF)
+set(OVERTE_BACKTRACE_URL "" CACHE STRING "URL to an endpoint for uploading crash-dumps. For example Sentry.")
+set(OVERTE_BACKTRACE_TOKEN "" CACHE STRING "Token used to identify with release or build is uploading crash-dumps.")
 
 if (ANDROID OR UWP)
   set(BUILD_SERVER_OPTION OFF)

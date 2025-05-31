@@ -60,11 +60,6 @@ Where `/path/to/directory` is the path to a directory where you wish the build f
 #### Possible Environment Variables
 
 ```text
-// The URL to post the dump to.
-CMAKE_BACKTRACE_URL
-// The identifying tag of the release.
-CMAKE_BACKTRACE_TOKEN
-
 // The release version, e.g., 2021.3.2.
 RELEASE_NUMBER
 // The build commit, e.g., use a Git hash for the most recent commit in the branch - fd6973b.
@@ -91,6 +86,15 @@ STABLE_BUILD=0|1
 // Determine if to utilize testing or stable directory services URLs
 USE_STABLE_GLOBAL_SERVICES=1
 BUILD_GLOBAL_SERVICES=STABLE
+```
+
+#### Possible CMake Variables
+
+```text
+// The URL to post the dump to.
+OVERTE_BACKTRACE_URL
+// The identifying tag of the release.
+OVERTE_BACKTRACE_TOKEN
 ```
 
 #### Generate Files

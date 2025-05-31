@@ -4,6 +4,7 @@
 //
 //  Created by Clement Brisset on 01/19/18.
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -47,8 +48,8 @@ Q_LOGGING_CATEGORY(crash_handler, "overte.crash_handler")
 
 
 
-static const std::string BACKTRACE_URL{ CMAKE_BACKTRACE_URL };
-static const std::string BACKTRACE_TOKEN{ CMAKE_BACKTRACE_TOKEN };
+static const std::string BACKTRACE_URL{ OVERTE_BACKTRACE_URL };
+static const std::string BACKTRACE_TOKEN{ OVERTE_BACKTRACE_TOKEN };
 
 std::string custom_backtrace_url;
 std::string custom_backtrace_token;
