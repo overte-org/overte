@@ -158,7 +158,6 @@ jobs:
 
         # Tagged builds. E.g. release or release candidate builds.
         if [ "${{github.ref_type}}" == "tag" ]; then
-          echo "PRODUCTION_BUILD=true" >> $GITHUB_ENV
           echo "OVERTE_RELEASE_TYPE=PRODUCTION" >> $GITHUB_ENV
         else
           echo "OVERTE_RELEASE_TYPE=PR" >> $GITHUB_ENV

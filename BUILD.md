@@ -70,11 +70,6 @@ PRELOADED_SCRIPT_WHITELIST=ListOfEntries
 HF_PFX_FILE=Path to certificate
 HF_PFX_PASSPHRASE=Passphrase for certificate
 
-// Determine the build type
-PRODUCTION_BUILD=0|1
-PR_BUILD=0|1
-STABLE_BUILD=0|1
-
 // Determine if to utilize testing or stable directory services URLs
 USE_STABLE_GLOBAL_SERVICES=1
 BUILD_GLOBAL_SERVICES=STABLE

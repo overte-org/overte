@@ -14,16 +14,12 @@
 # and decides how targets should be packaged.
 
 macro(SET_PACKAGING_PARAMETERS)
-  set(PR_BUILD 0)
-  set(PRODUCTION_BUILD 0)
-  set(DEV_BUILD 0)
   set(BUILD_GLOBAL_SERVICES "DEVELOPMENT")
   set(USE_STABLE_GLOBAL_SERVICES 0)
   set(OVERTE_GIT_COMMIT_SHORT 0 CACHE STRING "Short Git commit hash to use for versioning.")
 
   set(APP_USER_MODEL_ID "com.highfidelity.console-dev")
 
-  set_from_env(STABLE_BUILD STABLE_BUILD 0)
   set(OVERTE_RELEASE_TYPE "DEV" CACHE STRING "Valid options are: 'PRODUCTION', 'PR', 'NIGHTLY', and 'DEV'.")
   set(OVERTE_RELEASE_NUMBER "0000.00.0" CACHE STRING "Release version number. E.g. 2025.05.1-rc1 for the first release candidate of the first release in May 2025.")
 
@@ -67,8 +63,8 @@ macro(SET_PACKAGING_PARAMETERS)
     endif ()
 
     if (NOT BYPASS_SIGNING)
-      set(BYPASS_SIGNING 0)
-    endif ()      
+        set(BYPASS_SIGNING 0)
+    endif()
 
   elseif (OVERTE_RELEASE_TYPE STREQUAL "PR")
     set(PR_BUILD 1)
@@ -106,14 +102,6 @@ macro(SET_PACKAGING_PARAMETERS)
     set(NITPICK_ICON_PREFIX "nitpick")
   else ()
     set(NITPICK_ICON_PREFIX "nitpick-beta")
-  endif ()
-
-  # if STABLE_BUILD is 1, PRODUCTION_BUILD must be 1 and
-  # DEV_BUILD and PR_BUILD must be 0
-  if (STABLE_BUILD)
-    if ((NOT PRODUCTION_BUILD) OR PR_BUILD OR DEV_BUILD)
-      message(FATAL_ERROR "Cannot produce STABLE_BUILD without PRODUCTION_BUILD")
-    endif ()
   endif ()
 
   set(BUILD_VERSION_NO_SHA ${BUILD_VERSION})

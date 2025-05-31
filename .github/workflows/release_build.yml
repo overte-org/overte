@@ -16,8 +16,6 @@ env:
   APP_NAME: interface
   BUILD_TYPE: Release
   GIT_COMMIT: ${{ github.sha }}
-  PRODUCTION_BUILD: true
-  STABLE_BUILD: 1
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
