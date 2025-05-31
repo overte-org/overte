@@ -140,9 +140,9 @@ Overte Interface AppImages are built using [linuxdeploy](https://github.com/linu
 1. Prepare build environment
    Follow the [Linux build guide](BUILD_LINUX.md).
 
-2. Configure Interface (**Make sure that OVERTE_CPU_ARCHITECTURE is set to an empty string or `-msse3` depending on target CPU architecture!**)
+2. Configure Interface
    ```bash
-   cmake --preset conan-release -DOVERTE_CPU_ARCHITECTURE=-msse3
+   cmake --preset conan-release
    ```
 
 3. Create AppImage
