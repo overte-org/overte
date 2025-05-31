@@ -105,6 +105,8 @@ bool OpenXrContext::initInstance() {
     bool userPresenceSupported = false;
     bool odysseyControllerSupported = false;
     bool handTrackingSupported = false;
+    bool MNDX_xdevSpaceSupported = false;
+    bool HTCX_viveTrackerInteractionSupported = false;
 
     qCInfo(xr_context_cat, "Runtime supports %d extensions:", count);
     for (uint32_t i = 0; i < count; i++) {
@@ -117,6 +119,10 @@ bool OpenXrContext::initInstance() {
             odysseyControllerSupported = true;
         } else if (strcmp(XR_EXT_HAND_TRACKING_EXTENSION_NAME, properties[i].extensionName) == 0) {
             handTrackingSupported = true;
+        } else if (strcmp(XR_MNDX_XDEV_SPACE_EXTENSION_NAME, properties[i].extensionName) == 0) {
+            MNDX_xdevSpaceSupported = true;
+        } else if (strcmp(XR_HTCX_VIVE_TRACKER_INTERACTION_EXTENSION_NAME, properties[i].extensionName) == 0) {
+            HTCX_viveTrackerInteractionSupported = true;
         }
     }
 
@@ -138,6 +144,16 @@ bool OpenXrContext::initInstance() {
     if (handTrackingSupported) {
         enabled.push_back(XR_EXT_HAND_TRACKING_EXTENSION_NAME);
         _handTrackingSupported = true;
+    }
+
+    if (MNDX_xdevSpaceSupported) {
+        enabled.push_back(XR_MNDX_XDEV_SPACE_EXTENSION_NAME);
+        _MNDX_xdevSpaceSupported = true;
+    }
+
+    if (HTCX_viveTrackerInteractionSupported) {
+        enabled.push_back(XR_HTCX_VIVE_TRACKER_INTERACTION_EXTENSION_NAME);
+        _HTCX_viveTrackerInteractionSupported = true;
     }
 
     XrInstanceCreateInfo info = {
@@ -209,6 +225,15 @@ bool OpenXrContext::initSystem() {
         props.next = &handTrackingProps;
     }
 
+    XrSystemXDevSpacePropertiesMNDX xdevProps = {
+        .type =XR_TYPE_SYSTEM_XDEV_SPACE_PROPERTIES_MNDX,
+        .next = props.next,
+    };
+
+    if (_MNDX_xdevSpaceSupported) {
+        props.next = &xdevProps;
+    }
+
     result = xrGetSystemProperties(_instance, _systemId, &props);
     if (!xrCheck(_instance, result, "Failed to get System properties"))
         return false;
@@ -227,6 +252,11 @@ bool OpenXrContext::initSystem() {
         if (next->type == XR_TYPE_SYSTEM_HAND_TRACKING_PROPERTIES_EXT) {
             auto ext = reinterpret_cast<const XrSystemHandTrackingPropertiesEXT*>(next);
             _handTrackingSupported = ext->supportsHandTracking;
+
+            if (!_handTrackingSupported) {
+                next = reinterpret_cast<const XrExtensionProperties*>(next->next);
+                continue;
+            }
 
             xrGetInstanceProcAddr(
                 _instance,
@@ -247,12 +277,74 @@ bool OpenXrContext::initSystem() {
             );
         }
 
+        if (next->type == XR_TYPE_SYSTEM_XDEV_SPACE_PROPERTIES_MNDX) {
+            auto ext = reinterpret_cast<const XrSystemXDevSpacePropertiesMNDX*>(next);
+            _MNDX_xdevSpaceSupported = ext->supportsXDevSpace;
+
+            if (!_MNDX_xdevSpaceSupported) {
+                next = reinterpret_cast<const XrExtensionProperties*>(next->next);
+                continue;
+            }
+
+            xrGetInstanceProcAddr(
+                _instance,
+                "xrCreateXDevListMNDX",
+                reinterpret_cast<PFN_xrVoidFunction*>(&xrCreateXDevListMNDX)
+            );
+
+            xrGetInstanceProcAddr(
+                _instance,
+                "xrGetXDevListGenerationNumberMNDX",
+                reinterpret_cast<PFN_xrVoidFunction*>(&xrGetXDevListGenerationNumberMNDX)
+            );
+
+            xrGetInstanceProcAddr(
+                _instance,
+                "xrEnumerateXDevsMNDX",
+                reinterpret_cast<PFN_xrVoidFunction*>(&xrEnumerateXDevsMNDX)
+            );
+
+            xrGetInstanceProcAddr(
+                _instance,
+                "xrGetXDevPropertiesMNDX",
+                reinterpret_cast<PFN_xrVoidFunction*>(&xrGetXDevPropertiesMNDX)
+            );
+
+            xrGetInstanceProcAddr(
+                _instance,
+                "xrDestroyXDevListMNDX",
+                reinterpret_cast<PFN_xrVoidFunction*>(&xrDestroyXDevListMNDX)
+            );
+
+            xrGetInstanceProcAddr(
+                _instance,
+                "xrCreateXDevSpaceMNDX",
+                reinterpret_cast<PFN_xrVoidFunction*>(&xrCreateXDevSpaceMNDX)
+            );
+        }
+
         next = reinterpret_cast<const XrExtensionProperties*>(next->next);
     }
 
     // don't start up hand tracking stuff if it's force disabled
     if (qApp->arguments().contains("--xrNoHandTracking")) {
         _handTrackingSupported = false;
+    }
+
+    if (qApp->arguments().contains("--xrNoBodyTracking")) {
+        _MNDX_xdevSpaceSupported = false;
+        _HTCX_viveTrackerInteractionSupported = false;
+    }
+
+    // disable the MNDX tracker extension if they're both available
+    if (_HTCX_viveTrackerInteractionSupported) {
+        _MNDX_xdevSpaceSupported = false;
+
+        xrGetInstanceProcAddr(
+            _instance,
+            "xrEnumerateViveTrackerPathsHTCX",
+            reinterpret_cast<PFN_xrVoidFunction*>(&xrEnumerateViveTrackerPathsHTCX)
+        );
     }
 
     return true;
