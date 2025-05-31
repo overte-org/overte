@@ -177,10 +177,6 @@ if (ANDROID)
   endif()
 else ()
   set(PLATFORM_QT_COMPONENTS WebEngine Xml)
-endif ()
-
-if (USE_GLES AND (NOT ANDROID AND NOT UNIX))
-  set(DISABLE_QML_OPTION ON)
 endif()
 
 option(HIFI_USE_OPTIMIZED_IK "Use optimized IK" ${HIFI_USE_OPTIMIZED_IK_OPTION})
