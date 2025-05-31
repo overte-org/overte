@@ -65,9 +65,6 @@ RELEASE_NUMBER
 // The build commit, e.g., use a Git hash for the most recent commit in the branch - fd6973b.
 BUILD_NUMBER
 
-// The type of release.
-RELEASE_TYPE=PRODUCTION|PR|DEV
-
 // The Interface will have a custom default home and startup location.
 PRELOADED_STARTUP_LOCATION=Location/IP/URL
 // The Interface will have a custom default script whitelist, comma separated, no spaces.
@@ -95,6 +92,9 @@ BUILD_GLOBAL_SERVICES=STABLE
 OVERTE_BACKTRACE_URL
 // The identifying tag of the release.
 OVERTE_BACKTRACE_TOKEN
+
+// The type of release.
+OVERTE_RELEASE_TYPE=PRODUCTION|PR|DEV
 ```
 
 #### Generate Files

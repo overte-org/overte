@@ -22,16 +22,16 @@ macro(SET_PACKAGING_PARAMETERS)
   set(BUILD_NUMBER 0)
   set(APP_USER_MODEL_ID "com.highfidelity.console-dev")
 
-  set_from_env(RELEASE_TYPE RELEASE_TYPE "DEV")
   set_from_env(RELEASE_NUMBER RELEASE_NUMBER "")
   set_from_env(STABLE_BUILD STABLE_BUILD 0)
+  set(OVERTE_RELEASE_TYPE "DEV" CACHE STRING "Valid options are: 'PRODUCTION', 'PR', and 'DEV'.")
 
   set_from_env(PRELOADED_STARTUP_LOCATION PRELOADED_STARTUP_LOCATION "")
   set_from_env(PRELOADED_SCRIPT_ALLOWLIST PRELOADED_SCRIPT_ALLOWLIST "")
   
   set_from_env(BYPASS_SIGNING BYPASS_SIGNING 0)
 
-  message(STATUS "The RELEASE_TYPE variable is: ${RELEASE_TYPE}")
+  message(STATUS "The OVERTE_RELEASE_TYPE variable is: ${OVERTE_RELEASE_TYPE}")
 
   # setup component categories for installer
   set(DDE_COMPONENT dde)
@@ -44,7 +44,7 @@ macro(SET_PACKAGING_PARAMETERS)
     set(INTERFACE_BUNDLE_NAME "interface")
   endif()
 
-  if (RELEASE_TYPE STREQUAL "PRODUCTION")
+  if (OVERTE_RELEASE_TYPE STREQUAL "PRODUCTION")
     set(PRODUCTION_BUILD 1)
     set(BUILD_VERSION ${RELEASE_NUMBER})
     set(BUILD_ORGANIZATION "Overte")
@@ -67,7 +67,7 @@ macro(SET_PACKAGING_PARAMETERS)
       set(BYPASS_SIGNING 0)
     endif ()      
 
-  elseif (RELEASE_TYPE STREQUAL "PR")
+  elseif (OVERTE_RELEASE_TYPE STREQUAL "PR")
     set(PR_BUILD 1)
     set(BUILD_VERSION "PR${RELEASE_NUMBER}")
     set(BUILD_ORGANIZATION "Overte - PR${RELEASE_NUMBER}")
@@ -86,7 +86,7 @@ macro(SET_PACKAGING_PARAMETERS)
   endif ()
 
   set(NITPICK_BUNDLE_NAME "nitpick")
-  if (RELEASE_TYPE STREQUAL "PRODUCTION")
+  if (PRODUCTION_BUILD)
     set(NITPICK_ICON_PREFIX "nitpick")
   else ()
     set(NITPICK_ICON_PREFIX "nitpick-beta")

@@ -159,6 +159,9 @@ jobs:
         # Tagged builds. E.g. release or release candidate builds.
         if [ "${{github.ref_type}}" == "tag" ]; then
           echo "PRODUCTION_BUILD=true" >> $GITHUB_ENV
+          echo "OVERTE_RELEASE_TYPE=PRODUCTION" >> $GITHUB_ENV
+        else
+          echo "OVERTE_RELEASE_TYPE=PR" >> $GITHUB_ENV
         fi
 
         # Systems requiring our prebuilt Qt package
@@ -252,7 +255,7 @@ jobs:
     - name: Configure CMake
       shell: bash
            # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} $CMAKE_EXTRA
+      run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_TYPE=$OVERTE_RELEASE_TYPE $CMAKE_EXTRA
 
     - name: Build Domain Server
       working-directory: build

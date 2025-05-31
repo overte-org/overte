@@ -25,11 +25,6 @@ if (APPLE)
     set(CMAKE_OSX_DEPLOYMENT_TARGET "10.11" CACHE STRING "Specifies the minimum version of the target platform (e.g. macOS or iOS) on which the target binaries are to be deployed.")
 endif()
 
-set(RELEASE_TYPE "$ENV{RELEASE_TYPE}")
-if ((NOT "${RELEASE_TYPE}" STREQUAL "PRODUCTION") AND (NOT "${RELEASE_TYPE}" STREQUAL "PR"))
-    set(RELEASE_TYPE "DEV")
-endif()
-
 
 #
 # Default compiler flags
