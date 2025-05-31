@@ -128,11 +128,11 @@ macro(AUTOSCRIBE_SHADER)
     file(WRITE "${SHADER_SCRIBED}.name" "${SHADER_NAME}.${SHADER_TYPE}")
     AUTOSCRIBE_APPEND_QRC("${SHADER_COUNT}/name" "${SHADER_NAME_FILE}")
 
-    if (USE_GLES)
+    if (OVERTE_RENDERING_BACKEND STREQUAL "GLES")
         set(SPIRV_CROSS_ARGS --version 310es)
         AUTOSCRIBE_PLATFORM_SHADER("310es")
         AUTOSCRIBE_PLATFORM_SHADER("310es/stereo")
-    else()
+    else() # OpenGL
         set(SPIRV_CROSS_ARGS --version 410 --no-420pack-extension)
         AUTOSCRIBE_PLATFORM_SHADER("410")
         AUTOSCRIBE_PLATFORM_SHADER("410/stereo")

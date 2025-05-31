@@ -140,7 +140,7 @@ maximum compatibility.
 
 ### Developer Build Options
 
-* USE_GLES
+* OVERTE_RENDERING_BACKEND
 * DISABLE_UI
 
 ### Devices

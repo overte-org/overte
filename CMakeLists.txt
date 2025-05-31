@@ -13,20 +13,11 @@ cmake_minimum_required(VERSION 3.24)
 
 include(SelectLibraryConfigurations)
 
-# read USE_GLES enviroment variable and sets it as GLES option
-# TODO still gets overwritten by "use GLES on linux aarch64"
-set(GLES_OPTION "$ENV{USE_GLES}")
-
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)
 
 # Instruct CMake to run rcc automatically when needed
 set(CMAKE_AUTORCC ON)
-
-# use GLES on linux aarch64
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-    set(GLES_OPTION ON)
-endif()
 
 # set our OS X deployment target
 # (needs to be set before first project() call and before prebuild.py)
@@ -151,6 +142,15 @@ endif()
 
 
 
+#
+# Overte build variables
+#
+# use OpenGL ES on Linux aarch64 and Android.
+if ((CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") OR ANDROID)
+    set(OVERTE_RENDERING_BACKEND "GLES" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL', 'GLES', and 'Vulkan'.")
+else()
+    set(OVERTE_RENDERING_BACKEND "OpenGL" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL', 'GLES', and 'Vulkan'.")
+endif()
 
 # Use default time server if none defined in environment
 set_from_env(TIMESERVER_URL TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256")
@@ -183,7 +183,6 @@ if (SERVER_ONLY)
 endif()
 
 if (ANDROID)
-  set(GLES_OPTION ON)
   set(PLATFORM_QT_COMPONENTS AndroidExtras WebView)
   add_definitions(-DHIFI_ANDROID_APP=\"${HIFI_ANDROID_APP}\")
   if (
@@ -227,7 +226,6 @@ option(BUILD_TESTS "Build tests" ${BUILD_TESTS_OPTION})
 option(BUILD_MANUAL_TESTS "Build manual tests" ${BUILD_MANUAL_TESTS_OPTION})
 option(BUILD_TOOLS "Build tools" ${BUILD_TOOLS_OPTION})
 option(BUILD_INSTALLER "Build installer" ${BUILD_INSTALLER_OPTION})
-option(USE_GLES "Use OpenGL ES" ${GLES_OPTION})
 option(USE_KHR_ROBUSTNESS "Use KHR_robustness" OFF)
 option(DISABLE_QML "Disable QML" ${DISABLE_QML_OPTION})
 option(DISABLE_KTX_CACHE "Disable KTX Cache" OFF)
@@ -243,13 +241,18 @@ if (USE_KHR_ROBUSTNESS)
   add_definitions(-DUSE_KHR_ROBUSTNESS)
 endif()
 
-if (USE_GLES)
-  add_definitions(-DUSE_GLES)
-  add_definitions(-DGPU_POINTER_STORAGE_SHARED)
-  set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gles)
+if (OVERTE_RENDERING_BACKEND STREQUAL "GLES")
+    add_definitions(-DUSE_GLES)
+    add_definitions(-DGPU_POINTER_STORAGE_SHARED)
+    set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gles)
+elseif (OVERTE_RENDERING_BACKEND STREQUAL "OpenGL")
+    add_definitions(-DGPU_POINTER_STORAGE_RAW)
+    set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gl)
+elseif (OVERTE_RENDERING_BACKEND STREQUAL "Vulkan")
+    # TODO
+    message(FATAL_ERROR "Vulkan backend selected, but not implemented yet.")
 else()
-  add_definitions(-DGPU_POINTER_STORAGE_RAW)
-  set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gl)
+    message(FATAL_ERROR "Invalid OVERTE_RENDERING_BACKEND set. Expected 'GLES', 'OpenGL', or 'Vulkan'. Got '${OVERTE_RENDERING_BACKEND}'")
 endif()
 
 foreach(PLATFORM_QT_COMPONENT ${PLATFORM_QT_COMPONENTS})
@@ -262,7 +265,7 @@ MESSAGE(STATUS "Build client:          " ${BUILD_CLIENT})
 MESSAGE(STATUS "Build tests:           " ${BUILD_TESTS})
 MESSAGE(STATUS "Build tools:           " ${BUILD_TOOLS})
 MESSAGE(STATUS "Build installer:       " ${BUILD_INSTALLER})
-MESSAGE(STATUS "GL ES:                 " ${USE_GLES})
+message(STATUS "Rendering backend:     " ${OVERTE_RENDERING_BACKEND})
 MESSAGE(STATUS "DL serverless content: " ${DOWNLOAD_SERVERLESS_CONTENT})
 
 if (DISABLE_QML)
