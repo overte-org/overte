@@ -20,9 +20,9 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 # set our OS X deployment target
-# (needs to be set before first project() call and before prebuild.py)
 if (APPLE)
-  set(ENV{MACOSX_DEPLOYMENT_TARGET} 10.11)
+    # Needs to be set before the first project() call.
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.11" CACHE STRING "Specifies the minimum version of the target platform (e.g. macOS or iOS) on which the target binaries are to be deployed.")
 endif()
 
 set(EXTERNAL_BUILD_ASSETS "https://build-deps.overte.org")
