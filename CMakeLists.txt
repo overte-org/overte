@@ -3,11 +3,11 @@
 # Copyright 2020-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
-# 3.14 is the minimum version that supports symlinks on Windows
-cmake_minimum_required(VERSION 3.14)
 
 # This should allow using long paths on Windows
 SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
+# 3.24 is the minimum version that supports COMPILE_WARNING_AS_ERROR
+cmake_minimum_required(VERSION 3.24)
 
 include(SelectLibraryConfigurations)
 
@@ -93,6 +93,8 @@ if( NOT WIN32 )
     message($ENV{CXXFLAGS})
 endif()
 
+
+#
 # OVERTE_WARNINGS
 #
 # Here we add the ability to allowlist warnings we've determined we can't fix, or are safe to
@@ -101,14 +103,7 @@ endif()
 #
 # We can also treat warnings as errors. Without the allowlist this will almost certainly lead
 # to a build failure.
-
-if(NOT DEFINED OVERTE_WARNINGS_ALLOWLIST)
-    set(OVERTE_WARNINGS_ALLOWLIST true CACHE BOOL "Allowlist some warnings we can't currently fix")
-endif()
-
-if(NOT DEFINED OVERTE_WARNINGS_AS_ERRORS)
-    set(OVERTE_WARNINGS_AS_ERRORS false CACHE BOOL "Count warnings as errors")
-endif()
+set(OVERTE_WARNINGS_ALLOWLIST ON CACHE BOOL "Allowlist some warnings we can't currently fix.")
 
 if(OVERTE_WARNINGS_ALLOWLIST)
     if (NOT WIN32)
@@ -130,14 +125,13 @@ if(OVERTE_WARNINGS_ALLOWLIST)
     endif()
 endif()
 
-if(OVERTE_WARNINGS_AS_ERRORS)
-    if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "" AND WIN32))
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
-      set(CMAKE_CFLAGS "${CMAKE_CFLAGS} /WX")
-    else()
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-      set(CMAKE_CFLAGS "${CMAKE_CFLAGS} -Werror")
-    endif()
+# Enabling warnings-as-errors by default on our Linux target and on Windows.
+# Our current Linux development target is Ubuntu 22.04, which uses GCC 11.2.
+# TODO: Enable warnings-as-errors once we stop throwing warnings on the relevant platforms.
+if ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION MATCHES "11"))
+    set(COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC") # Windows
+    set(COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
 endif()
 
 
