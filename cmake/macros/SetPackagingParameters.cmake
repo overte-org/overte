@@ -22,9 +22,9 @@ macro(SET_PACKAGING_PARAMETERS)
   set(BUILD_NUMBER 0)
   set(APP_USER_MODEL_ID "com.highfidelity.console-dev")
 
-  set_from_env(RELEASE_NUMBER RELEASE_NUMBER "")
   set_from_env(STABLE_BUILD STABLE_BUILD 0)
   set(OVERTE_RELEASE_TYPE "DEV" CACHE STRING "Valid options are: 'PRODUCTION', 'PR', and 'DEV'.")
+  set(OVERTE_RELEASE_NUMBER "0000.00.0" CACHE STRING "Release version number. E.g. 2025.05.1-rc1 for the first release candidate of the first release in May 2025.")
 
   set_from_env(PRELOADED_STARTUP_LOCATION PRELOADED_STARTUP_LOCATION "")
   set_from_env(PRELOADED_SCRIPT_ALLOWLIST PRELOADED_SCRIPT_ALLOWLIST "")
@@ -48,7 +48,7 @@ macro(SET_PACKAGING_PARAMETERS)
 
   if (OVERTE_RELEASE_TYPE STREQUAL "PRODUCTION")
     set(PRODUCTION_BUILD 1)
-    set(BUILD_VERSION ${RELEASE_NUMBER})
+    set(BUILD_VERSION ${OVERTE_RELEASE_NUMBER})
     set(BUILD_ORGANIZATION "Overte")
     set(HIGH_FIDELITY_PROTOCOL "hifi")
     set(HIGH_FIDELITY_APP_PROTOCOL "hifiapp")
@@ -71,8 +71,8 @@ macro(SET_PACKAGING_PARAMETERS)
 
   elseif (OVERTE_RELEASE_TYPE STREQUAL "PR")
     set(PR_BUILD 1)
-    set(BUILD_VERSION "PR${RELEASE_NUMBER}")
     set(BUILD_ORGANIZATION "Overte - PR${RELEASE_NUMBER}")
+    set(BUILD_VERSION "PR${OVERTE_RELEASE_NUMBER}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
 
     # add definition for this release type
@@ -115,7 +115,7 @@ macro(SET_PACKAGING_PARAMETERS)
 
     # pass along a release number without the SHA in case somebody
     # wants to compare master or PR builds as integers
-    set(BUILD_NUMBER ${RELEASE_NUMBER})
+    set(BUILD_NUMBER ${OVERTE_RELEASE_NUMBER})
   endif ()
 
   if (APPLE)

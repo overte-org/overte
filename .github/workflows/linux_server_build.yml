@@ -255,7 +255,7 @@ jobs:
     - name: Configure CMake
       shell: bash
            # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_TYPE=$OVERTE_RELEASE_TYPE $CMAKE_EXTRA
+      run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_TYPE=$OVERTE_RELEASE_TYPE -DOVERTE_RELEASE_NUMBER=$RELEASE_NUMBER $CMAKE_EXTRA
 
     - name: Build Domain Server
       working-directory: build

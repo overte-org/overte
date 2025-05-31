@@ -17,7 +17,6 @@ env:
   BUILD_TYPE: Release
   GIT_COMMIT: ${{ github.sha }}
   PRODUCTION_BUILD: true
-  RELEASE_NUMBER: ${{ github.ref_name }}
   STABLE_BUILD: 1
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
@@ -80,7 +79,7 @@ jobs:
       run: |
 
         echo "BUILD_NUMBER=$GIT_COMMIT_SHORT" >> $GITHUB_ENV
-        echo "ARTIFACT_PATTERN=Overte-$RELEASE_NUMBER.$INSTALLER_EXT" >> $GITHUB_ENV
+        echo "ARTIFACT_PATTERN=Overte-${{ github.ref_name }}.$INSTALLER_EXT" >> $GITHUB_ENV
 
     - uses: actions/checkout@v4
       with:
@@ -128,7 +127,7 @@ jobs:
     - name: Configure CMake
       shell: bash
            # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_BUILD_TYPE=PRODUCTION -DJSDOC_ENABLED:BOOL=TRUE $CMAKE_EXTRA
+      run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_NUMBER=${{ github.ref_name }} -DOVERTE_BUILD_TYPE=PRODUCTION -DJSDOC_ENABLED:BOOL=TRUE $CMAKE_EXTRA
 
     - name: Build application
       shell: bash

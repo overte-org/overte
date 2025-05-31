@@ -60,8 +60,6 @@ Where `/path/to/directory` is the path to a directory where you wish the build f
 #### Possible Environment Variables
 
 ```text
-// The release version, e.g., 2021.3.2.
-RELEASE_NUMBER
 // The build commit, e.g., use a Git hash for the most recent commit in the branch - fd6973b.
 BUILD_NUMBER
 
@@ -93,6 +91,9 @@ OVERTE_BACKTRACE_URL
 // The identifying tag of the release.
 OVERTE_BACKTRACE_TOKEN
 
+// The release version, e.g., 2021.3.2. For PR builds the PR number, e.g. 577.
+// Not used for nightlies and development builds.
+OVERTE_RELEASE_NUMBER
 // The type of release.
 OVERTE_RELEASE_TYPE=PRODUCTION|PR|DEV
 ```
