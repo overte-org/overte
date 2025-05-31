@@ -34,7 +34,7 @@ namespace BuildInfo {
     enum BuildType {
         Dev,
         PR,
-        Master,
+        Nightly,
         Stable
     };
 
@@ -42,8 +42,11 @@ namespace BuildInfo {
     const BuildType BUILD_TYPE = PR;
     const QString BUILD_TYPE_STRING = "pr";
 #elif defined(PRODUCTION_BUILD)
-    const BuildType BUILD_TYPE = @STABLE_BUILD@ ? Stable : Master;
-    const QString BUILD_TYPE_STRING = @STABLE_BUILD@ ? "stable" : "master";
+    const BuildType BUILD_TYPE = Stable;
+    const QString BUILD_TYPE_STRING = "stable";
+#elif defined(NIGHTLY_BUILD)
+    const BuildType BUILD_TYPE = Nightly;
+    const QString BUILD_TYPE_STRING = "nightly";
 #else
     const BuildType BUILD_TYPE = Dev;
     const QString BUILD_TYPE_STRING = "dev";

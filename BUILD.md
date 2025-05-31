@@ -95,7 +95,7 @@ OVERTE_BACKTRACE_TOKEN
 // Not used for nightlies and development builds.
 OVERTE_RELEASE_NUMBER
 // The type of release.
-OVERTE_RELEASE_TYPE=PRODUCTION|PR|DEV
+OVERTE_RELEASE_TYPE=PRODUCTION|PR|NIGHTLY|DEV
 ```
 
 #### Generate Files

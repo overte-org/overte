@@ -23,7 +23,7 @@ macro(SET_PACKAGING_PARAMETERS)
   set(APP_USER_MODEL_ID "com.highfidelity.console-dev")
 
   set_from_env(STABLE_BUILD STABLE_BUILD 0)
-  set(OVERTE_RELEASE_TYPE "DEV" CACHE STRING "Valid options are: 'PRODUCTION', 'PR', and 'DEV'.")
+  set(OVERTE_RELEASE_TYPE "DEV" CACHE STRING "Valid options are: 'PRODUCTION', 'PR', 'NIGHTLY', and 'DEV'.")
   set(OVERTE_RELEASE_NUMBER "0000.00.0" CACHE STRING "Release version number. E.g. 2025.05.1-rc1 for the first release candidate of the first release in May 2025.")
 
   set_from_env(PRELOADED_STARTUP_LOCATION PRELOADED_STARTUP_LOCATION "")
@@ -71,8 +71,17 @@ macro(SET_PACKAGING_PARAMETERS)
 
   elseif (OVERTE_RELEASE_TYPE STREQUAL "PR")
     set(PR_BUILD 1)
-    set(BUILD_ORGANIZATION "Overte - PR${RELEASE_NUMBER}")
     set(BUILD_VERSION "PR${OVERTE_RELEASE_NUMBER}-${BUILD_DATE}")
+    set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
+    set(INTERFACE_ICON_PREFIX "interface-beta")
+
+    # add definition for this release type
+    add_definitions(-DPR_BUILD)
+
+  elseif (OVERTE_RELEASE_TYPE STREQUAL "NIGHTLY")
+    set(NIGHTLY_BUILD 1)
+    set(BUILD_VERSION "Nightly-${BUILD_DATE}")
+    set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
 
     # add definition for this release type
@@ -88,7 +97,7 @@ macro(SET_PACKAGING_PARAMETERS)
     add_definitions(-DDEV_BUILD)
 
   else()
-    message(FATAL_ERROR "OVERTE_RELEASE_TYPE invalid. Expected: 'RELEASE', 'PR', or 'DEV'. Got: '${OVERTE_RELEASE_TYPE}'")
+    message(FATAL_ERROR "OVERTE_RELEASE_TYPE invalid. Expected: 'RELEASE', 'PR', 'NIGHTLY', or 'DEV'. Got: '${OVERTE_RELEASE_TYPE}'")
   endif()
 
   set(NITPICK_BUNDLE_NAME "nitpick")
