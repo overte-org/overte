@@ -435,7 +435,7 @@ if (SCRIPTS_INSTALL_DIR)
   )
 endif()
 
-if (DOWNLOAD_SERVERLESS_CONTENT)
+if (OVERTE_DOWNLOAD_SERVERLESS_CONTENT)
   add_dependency_external_projects(serverless-content)
 
   ExternalProject_Get_Property(serverless-content SOURCE_DIR)

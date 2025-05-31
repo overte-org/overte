@@ -125,6 +125,7 @@ set(OVERTE_BUILD_MANUAL_TESTS OFF CACHE BOOL "Build manual tests.")
 set(OVERTE_BUILD_TOOLS ON CACHE BOOL "Build tools. Includes Oven, which is used for some server functionality.")
 set(OVERTE_BUILD_INSTALLER ON CACHE BOOL "Build installer.")
 set(OVERTE_DISABLE_QML OFF CACHE BOOL "Build without QML. (For graphics debugging.)")
+set(OVERTE_DOWNLOAD_SERVERLESS_CONTENT OFF CACHE BOOL "Download and setup default serverless content beside Interface.")
 # use OpenGL ES on Linux aarch64 and Android.
 if ((CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") OR ANDROID)
     set(OVERTE_RENDERING_BACKEND "GLES" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL', 'GLES', and 'Vulkan'.")
@@ -136,7 +137,6 @@ set(OVERTE_TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256" CACHE STRING
 
 
 set(HIFI_USE_OPTIMIZED_IK_OPTION OFF)
-set(DOWNLOAD_SERVERLESS_CONTENT_OPTION OFF)
 set(OVERTE_BACKTRACE_URL "" CACHE STRING "URL to an endpoint for uploading crash-dumps. For example Sentry.")
 set(OVERTE_BACKTRACE_TOKEN "" CACHE STRING "Token used to identify with release or build is uploading crash-dumps.")
 
@@ -182,11 +182,6 @@ endif()
 option(HIFI_USE_OPTIMIZED_IK "Use optimized IK" ${HIFI_USE_OPTIMIZED_IK_OPTION})
 option(USE_KHR_ROBUSTNESS "Use KHR_robustness" OFF)
 option(DISABLE_KTX_CACHE "Disable KTX Cache" OFF)
-option(
-  DOWNLOAD_SERVERLESS_CONTENT
-  "Download and setup default serverless content beside Interface"
-  ${DOWNLOAD_SERVERLESS_CONTENT_OPTION}
-)
 
 set(PLATFORM_QT_GL OpenGL)
 
