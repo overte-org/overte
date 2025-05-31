@@ -54,13 +54,9 @@ macro(SET_PACKAGING_PARAMETERS)
     # add definition for this release type
     add_definitions(-DPRODUCTION_BUILD)
 
-    # if the build is a PRODUCTION_BUILD from the "stable" branch
-    # then use the STABLE gobal services
-    if (STABLE_BUILD)
-      message(STATUS "The RELEASE_TYPE is PRODUCTION and STABLE_BUILD is 1")
-      set(BUILD_GLOBAL_SERVICES "STABLE")
-      set(USE_STABLE_GLOBAL_SERVICES 1)
-    endif ()
+    set(BUILD_GLOBAL_SERVICES "STABLE")
+    set(USE_STABLE_GLOBAL_SERVICES 1)
+
 
     if (NOT BYPASS_SIGNING)
         set(BYPASS_SIGNING 0)
