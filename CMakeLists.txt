@@ -183,8 +183,6 @@ option(HIFI_USE_OPTIMIZED_IK "Use optimized IK" ${HIFI_USE_OPTIMIZED_IK_OPTION})
 option(USE_KHR_ROBUSTNESS "Use KHR_robustness" OFF)
 option(DISABLE_KTX_CACHE "Disable KTX Cache" OFF)
 
-set(PLATFORM_QT_GL OpenGL)
-
 if (USE_KHR_ROBUSTNESS)
   add_definitions(-DUSE_KHR_ROBUSTNESS)
 endif()
