@@ -168,12 +168,7 @@ jobs:
           echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
         fi
 
-        # Architecture specific variables
-        if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
-          echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DSERVER_ONLY=true -DBUILD_TOOLS=true" >> $GITHUB_ENV
-        else # amd64
-          echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DSERVER_ONLY=true -DBUILD_TOOLS=true" >> $GITHUB_ENV
-        fi
+        echo "CMAKE_EXTRA=-DSERVER_ONLY=true -DBUILD_TOOLS=true" >> $GITHUB_ENV
 
     # Configuration is broken into multiple steps because you can't set an env var and also reference it in the same step
     - name: Configure Build Environment 2

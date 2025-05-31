@@ -191,7 +191,7 @@ conan install . -s build_type=Release -b missing -pr:b=default -of build
 ```
 Add `PRODUCTION_BUILD=1` to below command for release and release candidate builds.
 ```bash
-cmake --preset conan-release -DOVERTE_CPU_ARCHITECTURE=-msse3
+cmake --preset conan-release
 ```
 
 4. Build
@@ -223,7 +223,7 @@ conan install . -s build_type=Release -b missing -pr:b=default -of build
 ```
 Add `PRODUCTION_BUILD=1` to below command for release and release candidate builds.
 ```bash
-cmake --preset conan-release -DOVERTE_CPU_ARCHITECTURE=-msse3 -DSERVER_ONLY=true -DBUILD_TOOLS=true
+cmake --preset conan-release -DSERVER_ONLY=true -DBUILD_TOOLS=true
 ```
 
 4. Build

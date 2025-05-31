@@ -32,58 +32,41 @@ if ((NOT "${RELEASE_TYPE}" STREQUAL "PRODUCTION") AND (NOT "${RELEASE_TYPE}" STR
     set(RELEASE_TYPE "DEV")
 endif()
 
-# OVERTE_OPTIMIZE
-# Variable determining Overte optimization. If not set, it defaults to true.
-# Should be set to false to get completely unoptimized build for easier line-by-line debugging
 
+#
+# Default compiler flags
+#
+# Compiler flags need to be set before calling project().
 if( NOT WIN32 )
-    if(NOT DEFINED OVERTE_OPTIMIZE)
-        message("Enabling code optimization for Overte and compiled dependencies")
-        set(OVERTE_OPTIMIZE true CACHE BOOL "Enable code optimization for Overte and compiled dependencies")
-    endif()
-
-    set(OVERTE_OPTIMIZE_FLAGS "")
-
-    if(OVERTE_OPTIMIZE)
-        if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-            message("Clang compiler detected, adding -O3 -fPIC -g flags")
-            set(OVERTE_OPTIMIZE_FLAGS "-O3 -fPIC -g")
-        elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-            message("GCC compiler detected, adding -O3 -fPIC -ggdb flags")
-            set(OVERTE_OPTIMIZE_FLAGS "-O3 -fPIC -ggdb")
-        else()
-            message("No predefined optimization flags for compiler ${CMAKE_CXX_COMPILER_ID}")
-        endif()
-    endif()
-    MESSAGE(STATUS "OVERTE_OPTIMIZE: ${OVERTE_OPTIMIZE}")
-
-    # OVERTE_CPU_ARCHITECTURE
-    # Variable determining CPU architecture for which Overte will be built.
-    # If defined, it's appended to CXXFLAGS and CFLAGS for Overte
-
-    #Assume -march=native for compilers that allow it if architecture is not specified
-    if(NOT DEFINED OVERTE_CPU_ARCHITECTURE)
-        if(OVERTE_OPTIMIZE AND ( (CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR (CMAKE_CXX_COMPILER_ID MATCHES "GNU") ) )
-            message("Optimization is enabled, but architecture is not specified. Assuming native build")
-            set(OVERTE_CPU_ARCHITECTURE "-march=native -mtune=native" CACHE STRING "Specify architecture dependent compiler flags here")
-        endif()
-    endif()
-
-    if(DEFINED OVERTE_CPU_ARCHITECTURE)
-        set(OVERTE_OPTIMIZE_FLAGS "${OVERTE_OPTIMIZE_FLAGS} ${OVERTE_CPU_ARCHITECTURE}")
-        message("Adding CPU architecture flags: ${OVERTE_CPU_ARCHITECTURE}")
-        MESSAGE(STATUS "OVERTE_CPU_ARCHITECTURE: ${OVERTE_CPU_ARCHITECTURE}")
-    endif()
-
     # Function alignment is necessary for V8.
     # SetAlignedPointerInInternalField requires at least 2 byte alignment and -falign-functions will set alignment
     # to machine specific value which should be greater than 2.
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OVERTE_OPTIMIZE_FLAGS} -falign-functions")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OVERTE_OPTIMIZE_FLAGS} -falign-functions")
-
-    set(ENV{CXXFLAGS} "$ENV{CXXFLAGS} ${OVERTE_OPTIMIZE_FLAGS} -falign-functions")
-    set(ENV{CFLAGS} "$ENV{CFLAGS} ${OVERTE_OPTIMIZE_FLAGS} -falign-functions")
-    message($ENV{CXXFLAGS})
+    if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        set(CMAKE_CXX_FLAGS "-falign-functions -fPIC -m64 -mss3" CACHE STRING "C++ compiler flags for all build types.")
+        set(CMAKE_C_FLAGS "-falign-functions -fPIC -m64 -mss3" CACHE STRING "C compiler flags for all build types.")
+    elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        # TODO: Find out which architecture optimizations to use on aarch64.
+        # We should probably target the 64bit version of the Raspberry Pi 2 as minimum.
+        set(CMAKE_CXX_FLAGS "-falign-functions -fPIC" CACHE STRING "C++ compiler flags for all build types.")
+        set(CMAKE_C_FLAGS "-falign-functions -fPIC" CACHE STRING "C++ compiler flags for all build types.")
+    endif()
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message("Clang compiler detected, setting default flags.")
+        set(CMAKE_CXX_FLAGS_DEBUG "-Og -g" CACHE STRING "C++ compiler flags for Debug builds.")
+        set(CMAKE_C_FLAGS_DEBUG "-Og -g" CACHE STRING "C compiler flags for Debug builds.")
+        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -g" CACHE STRING "C++ compiler flags for RelWithDebInfo builds.")
+        set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -g" CACHE STRING "C compiler flags for RelWithDebInfo builds.")
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "C++ compiler flags for Release builds.")
+        set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "C compiler flags for Release builds.")
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        message("GCC compiler detected, setting default flags")
+        set(CMAKE_CXX_FLAGS_DEBUG "-Og -ggdb3" CACHE STRING "C++ compiler flags for Debug builds.")
+        set(CMAKE_C_FLAGS_DEBUG "-Og -ggdb3" CACHE STRING "C compiler flags for Debug builds.")
+        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -ggdb2" CACHE STRING "C++ compiler flags for RelWithDebInfo builds.")
+        set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -ggdb2" CACHE STRING "C compiler flags for RelWithDebInfo builds.")
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "C++ compiler flags for Release builds.")
+        set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "C compiler flags for Release builds.")
+    endif()
 endif()
 
 

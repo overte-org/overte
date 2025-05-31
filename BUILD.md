@@ -131,12 +131,6 @@ The following build options can be used when running CMake
 * CLIENT_ONLY // Will package only the Interface
 * SERVER_ONLY // Will package only the Server
 
-### Optimization build options
-
-* OVERTE_OPTIMIZE - This variable defaults to 1 if not set and enables compiler optimization flags on Linux and MacOS. Setting it to 0 will result in unoptimized build.
-* OVERTE_CPU_ARCHITECTURE - This variable contains architecture specific compiler flags which are used if `OVERTE_OPTIMIZE` is true. If it is not set, it defaults to `-march=native -mtune=native`, which helps yield more performance for locally used build, but for packaging it needs to be set to different value for portability, for example `-msse3`. Setting `OVERTE_CPU_ARCHITECTURE` to empty string will use default compiler settings and yield
-maximum compatibility.
-
 
 ### Developer Build Options
 
