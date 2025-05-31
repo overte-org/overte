@@ -75,7 +75,8 @@ macro(SET_PACKAGING_PARAMETERS)
 
     # add definition for this release type
     add_definitions(-DPR_BUILD)
-  else ()
+
+  elseif (OVERTE_RELEASE_TYPE STREQUAL "DEV")
     set(DEV_BUILD 1)
     set(BUILD_VERSION "dev")
     set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
@@ -83,7 +84,10 @@ macro(SET_PACKAGING_PARAMETERS)
 
     # add definition for this release type
     add_definitions(-DDEV_BUILD)
-  endif ()
+
+  else()
+    message(FATAL_ERROR "OVERTE_RELEASE_TYPE invalid. Expected: 'RELEASE', 'PR', or 'DEV'. Got: '${OVERTE_RELEASE_TYPE}'")
+  endif()
 
   set(NITPICK_BUNDLE_NAME "nitpick")
   if (PRODUCTION_BUILD)
