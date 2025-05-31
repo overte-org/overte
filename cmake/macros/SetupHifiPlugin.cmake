@@ -8,7 +8,7 @@
 macro(SETUP_HIFI_PLUGIN)
     set(${TARGET_NAME}_SHARED 1)
     setup_hifi_library(${ARGV})
-    if (BUILD_CLIENT)
+    if (OVERTE_BUILD_CLIENT)
         if (APPLE)
             add_dependencies(Overte ${TARGET_NAME})
         else()

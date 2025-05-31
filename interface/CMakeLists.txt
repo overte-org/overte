@@ -32,10 +32,10 @@ find_package(
 )
 
 
-if (BUILD_TOOLS AND JSDOC_ENABLED)
-  message(STATUS "JSDoc enabled, depending on jsdoc")
-  add_custom_qrc_path(CUSTOM_INTERFACE_QRC_PATHS "${CMAKE_BINARY_DIR}/tools/jsdoc/out/hifiJSDoc.json" "auto-complete/hifiJSDoc.json")
-endif ()
+if (OVERTE_BUILD_TOOLS AND JSDOC_ENABLED)
+    message(STATUS "JSDoc enabled, depending on jsdoc")
+    add_custom_qrc_path(CUSTOM_INTERFACE_QRC_PATHS "${CMAKE_BINARY_DIR}/tools/jsdoc/out/hifiJSDoc.json" "auto-complete/hifiJSDoc.json")
+endif()
 
 set(RESOURCES_QRC ${CMAKE_CURRENT_BINARY_DIR}/resources.qrc)
 set(RESOURCES_RCC ${CMAKE_CURRENT_BINARY_DIR}/resources.rcc)
@@ -48,8 +48,8 @@ else ()
   qt5_add_binary_resources(resources "${RESOURCES_QRC}" DESTINATION "${RESOURCES_RCC}")
 endif()
 
-if (BUILD_TOOLS AND JSDOC_ENABLED)
-  add_dependencies(resources jsdoc)
+if (OVERTE_BUILD_TOOLS AND JSDOC_ENABLED)
+    add_dependencies(resources jsdoc)
 endif()
 
 list(APPEND GENERATE_QRC_DEPENDS ${RESOURCES_RCC})
@@ -435,7 +435,7 @@ if (SCRIPTS_INSTALL_DIR)
   )
 endif()
 
-if (DOWNLOAD_SERVERLESS_CONTENT)
+if (OVERTE_DOWNLOAD_SERVERLESS_CONTENT)
   add_dependency_external_projects(serverless-content)
 
   ExternalProject_Get_Property(serverless-content SOURCE_DIR)

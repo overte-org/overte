@@ -13,7 +13,7 @@ Follow the [build guide](BUILD.md) to figure out how to build Overte for your pl
 
 During generation, CMake should produce an `install` target and a `package` target.
 
-The `install` target will copy the Overte targets and their dependencies to your `CMAKE_INSTALL_PREFIX`.  
+The `install` target will copy the Overte targets and their dependencies to your `CMAKE_INSTALL_PREFIX`.
 This variable is set by the `project(hifi)` command in `CMakeLists.txt` to `C:/Program Files/hifi` and stored in `build/CMakeCache.txt`
 
 ## Packaging
@@ -26,9 +26,9 @@ To produce an installer, run the `package` target. However you will want to foll
 
 To produce an executable installer on Windows, the following are required:
 
-1. [7-zip](<https://www.7-zip.org/download.html>)  
+1. [7-zip](<https://www.7-zip.org/download.html>)
 
-1. [Nullsoft Scriptable Install System](http://nsis.sourceforge.net/Download) - 3.04  
+1. [Nullsoft Scriptable Install System](http://nsis.sourceforge.net/Download) - 3.04
   Install using defaults (will install to `C:\Program Files (x86)\NSIS`)
 1. [NSIS Plugins](https://build-deps.overte.org/conan/nsis-overte-plugins/NSIS-hifi-plugins-1.0.zip)
   Copy contents to `C:\Program Files (x86)\NSIS\`.
@@ -38,39 +38,39 @@ To produce an executable installer on Windows, the following are required:
           1. Copy `UAC.nsh` to `C:\Program Files (x86)\NSIS\Include\`
           1. Copy `Plugins\x86-ansi\UAC.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-ansi\`
           1. Copy `Plugins\x86-unicode\UAC.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-unicode\`
-    
+
       1. [nsProcess Plug-in for Nullsoft](http://nsis.sourceforge.net/NsProcess_plugin) - 1.6 (use the link marked **nsProcess_1_6.7z**)
           1. Extract Zip
           1. Copy `Include\nsProcess.nsh` to `C:\Program Files (x86)\NSIS\Include\`
           1. Copy `Plugins\nsProcess.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-ansi\`
           1. Copy `Plugins\nsProcessW.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-unicode\`
-    
+
       1. [InetC Plug-in for Nullsoft](http://nsis.sourceforge.net/Inetc_plug-in) - 1.0
           1. Extract Zip
           1. Copy `Plugin\x86-ansi\InetC.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-ansi\`
           1. Copy `Plugin\x86-unicode\InetC.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-unicode\`
-    
+
       1. [NSISpcre Plug-in for Nullsoft](http://nsis.sourceforge.net/NSISpcre_plug-in) - 1.0
           1. Extract Zip
           1. Copy `NSISpre.nsh` to `C:\Program Files (x86)\NSIS\Include\`
           1. Copy `NSISpre.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-ansi\`
-    
+
       1. [nsisSlideshow Plug-in for Nullsoft](<http://wiz0u.free.fr/prog/nsisSlideshow/>) - 1.7
           1. Extract Zip
           1. Copy `bin\nsisSlideshow.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-ansi\`
           1. Copy `bin\nsisSlideshowW.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-unicode\`
-    
+
       1. [Nsisunz plug-in for Nullsoft](http://nsis.sourceforge.net/Nsisunz_plug-in)
           1. Download both Zips and unzip
           1. Copy `nsisunz\Release\nsisunz.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-ansi\`
           1. Copy `NSISunzU\Plugin unicode\nsisunz.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-unicode\`
-    
+
       1. [ApplicationID plug-in for Nullsoft]() - 1.0
           1. Download [`Pre-built DLLs`](<https://github.com/connectiblutz/NSIS-ApplicationID/releases/download/1.1/NSIS-ApplicationID.zip>)
           1. Extract Zip
           1. Copy `Release\ApplicationID.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-ansi\`
           1. Copy `ReleaseUnicode\ApplicationID.dll` to `C:\Program Files (x86)\NSIS\Plugins\x86-unicode\`
-    
+
       1. [Node.JS and NPM](https://nodejs.org/en/download/)
           1. Install version 10.15.0 LTS (or greater)
 #### Code Signing (optional)
@@ -78,15 +78,15 @@ To produce an executable installer on Windows, the following are required:
 For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PASSPHRASE` environment variables to be present during CMake runtime and globally as we proceed to package the installer.
 
 #### Creating the Installer
-    
+
 1.  Perform a clean cmake from a new terminal.
 1.  Open the `overte.sln` solution with elevated (administrator) permissions on Visual Studio and select the **Release** configuration.
 1.  Build the solution.
 1.  Build `packaged-server-console-npm-install` (found under **hidden/Server Console**)
-1.  Build `packaged-server-console` (found under **Server Console**)  
-    This will add 2 folders to `build\server-console\` -  
+1.  Build `packaged-server-console` (found under **Server Console**)
+    This will add 2 folders to `build\server-console\` -
     `server-console-win32-x64` and `x64`
-1.  Build CMakeTargets->PACKAGE   
+1.  Build CMakeTargets->PACKAGE
     The installer is now available in `build\_CPack_Packages\win64\NSIS`
 
 #### Create an MSIX Package
@@ -109,15 +109,15 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
 1. Ensure you have all the prerequisites fulfilled from the [MacOS Build Guide](BUILD_OSX.md).
 2. Perform a clean CMake in your build folder. e.g.
     ```bash
-    BUILD_GLOBAL_SERVICES=STABLE USE_STABLE_GLOBAL_SERVICES=1 RELEASE_BUILD=PRODUCTION BUILD_NUMBER="Insert Build Identifier here e.g. short hash of your last Git commit" STABLE_BUILD=1 PRODUCTION_BUILD=1 RELEASE_NUMBER="Insert Release Version Here e.g. 1.1.0" RELEASE_TYPE=PRODUCTION cmake -DCMAKE_OSX_SYSROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk" -DCLIENT_ONLY=1 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.12 -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOSX_SDK=10.12  ..
+    cmake -DOVERTE_GIT_COMMIT_SHORT="Insert short hash of your last Git commit" -DOVERTE_RELEASE_NUMBER="Insert Release Version Here e.g. 1.1.0" -DOVERTE_RELEASE_TYPE=PRODUCTION -DCMAKE_OSX_SYSROOT="/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk" -DOVERTE_BUILD_SERVER=0 -DCMAKE_OSX_DEPLOYMENT_TARGET=10.12 -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOSX_SDK=10.12  ..
     ```
 3. Pick a method to build and package your release.
 
 #### Option A: Use Xcode GUI
 
 1. Perform a Release build of ALL_BUILD
-2. Perform a Release build of `packaged-server-console` 
-     This will add a folder to `build\server-console\` -  
+2. Perform a Release build of `packaged-server-console`
+     This will add a folder to `build\server-console\` -
      Sandbox-darwin-x64
 3. Perform a Release build of `package`
       Installer is now available in `build/_CPack_Packages/Darwin/DragNDrop`
@@ -140,9 +140,9 @@ Overte Interface AppImages are built using [linuxdeploy](https://github.com/linu
 1. Prepare build environment
    Follow the [Linux build guide](BUILD_LINUX.md).
 
-2. Configure Interface (**Make sure that OVERTE_CPU_ARCHITECTURE is set to an empty string or `-msse3` depending on target CPU architecture!**)
+2. Configure Interface
    ```bash
-   cmake --preset conan-release -DOVERTE_CPU_ARCHITECTURE=-msse3
+   cmake --preset conan-release
    ```
 
 3. Create AppImage
@@ -180,7 +180,7 @@ Overte Interface AppImages are built using [linuxdeploy](https://github.com/linu
 1. Build Docker image as instructed in the relevant Dockerfile in [tools/ci-scripts/deb_package/](tools/ci-scripts/deb_package/)
 
 2. Create/Start container
-	Example: `docker run -v $(pwd)/../../..:/overte -it overte/overte-server-build:0.1.2-debian-11-amd64`
+    Example: `docker run -v $(pwd)/../../..:/overte -it overte/overte-server-build:0.1.2-debian-11-amd64`
 
 3. Prepare build environment
 ```bash
@@ -188,10 +188,7 @@ cd overte
 mkdir build
 rm -rf build/*
 conan install . -s build_type=Release -b missing -pr:b=default -of build
-```
-Add `PRODUCTION_BUILD=1` to below command for release and release candidate builds.
-```bash
-cmake --preset conan-release -DOVERTE_CPU_ARCHITECTURE=-msse3
+cmake --preset conan-release -DOVERTE_BUILD_CLIENT=false -DOVERTE_BUILD_TOOLS=true
 ```
 
 4. Build
@@ -212,7 +209,7 @@ DEBVERSION="1-experimental-debian-11" DEBEMAIL="julian.gro@overte.org" DEBFULLNA
 1. Build Docker image as instructed in the relevant Dockerfile in [tools/ci-scripts/rpm_package/](tools/ci-scripts/rpm_package/)
 
 2. Create/Start container
-	Example: `docker run -v $(pwd)/../../..:/overte -it overte/overte-server-build:0.1.2-fedora-36-amd64`
+    Example: `docker run -v $(pwd)/../../..:/overte -it overte/overte-server-build:0.1.2-fedora-36-amd64`
 
 3. Prepare build environment
 ```bash
@@ -220,10 +217,7 @@ cd overte
 mkdir build
 rm -rf build/*
 conan install . -s build_type=Release -b missing -pr:b=default -of build
-```
-Add `PRODUCTION_BUILD=1` to below command for release and release candidate builds.
-```bash
-cmake --preset conan-release -DOVERTE_CPU_ARCHITECTURE=-msse3 -DSERVER_ONLY=true -DBUILD_TOOLS=true
+cmake --preset conan-release -DOVERTE_BUILD_CLIENT=false -DOVERTE_BUILD_TOOLS=true
 ```
 
 4. Build

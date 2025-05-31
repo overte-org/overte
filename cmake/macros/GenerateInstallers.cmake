@@ -136,11 +136,11 @@ macro(GENERATE_INSTALLERS)
 
   set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
 
-  if (BUILD_CLIENT)
+  if (OVERTE_BUILD_CLIENT)
     cpack_add_component(${CLIENT_COMPONENT} DISPLAY_NAME "Overte Interface")
   endif ()
 
-  if (BUILD_SERVER)
+  if (OVERTE_BUILD_SERVER)
     cpack_add_component(${SERVER_COMPONENT} DISPLAY_NAME "Overte Server")
   endif ()
 
