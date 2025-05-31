@@ -203,8 +203,6 @@ jobs:
           fi
         fi
 
-        echo "BUILD_NUMBER=$GIT_COMMIT_SHORT" >> $GITHUB_ENV
-
     - name: Configure Build Environment 3
       shell: bash
       run: |
@@ -255,7 +253,7 @@ jobs:
     - name: Configure CMake
       shell: bash
            # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_TYPE=$OVERTE_RELEASE_TYPE -DOVERTE_RELEASE_NUMBER=$RELEASE_NUMBER $CMAKE_EXTRA
+      run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_TYPE=$OVERTE_RELEASE_TYPE -DOVERTE_RELEASE_NUMBER=$RELEASE_NUMBER -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT $CMAKE_EXTRA
 
     - name: Build Domain Server
       working-directory: build

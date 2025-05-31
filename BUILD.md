@@ -60,9 +60,6 @@ Where `/path/to/directory` is the path to a directory where you wish the build f
 #### Possible Environment Variables
 
 ```text
-// The build commit, e.g., use a Git hash for the most recent commit in the branch - fd6973b.
-BUILD_NUMBER
-
 // The Interface will have a custom default home and startup location.
 PRELOADED_STARTUP_LOCATION=Location/IP/URL
 // The Interface will have a custom default script whitelist, comma separated, no spaces.
@@ -94,6 +91,9 @@ OVERTE_BACKTRACE_TOKEN
 // The release version, e.g., 2021.3.2. For PR builds the PR number, e.g. 577.
 // Not used for nightlies and development builds.
 OVERTE_RELEASE_NUMBER
+// The build commit, e.g., use a Git hash for the most recent commit in the branch - fd6973b.
+OVERTE_GIT_COMMIT_SHORT
+
 // The type of release.
 OVERTE_RELEASE_TYPE=PRODUCTION|PR|NIGHTLY|DEV
 ```

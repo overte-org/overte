@@ -77,8 +77,6 @@ jobs:
     - name: Configure build environment 2
       shell: bash
       run: |
-
-        echo "BUILD_NUMBER=$GIT_COMMIT_SHORT" >> $GITHUB_ENV
         echo "ARTIFACT_PATTERN=Overte-${{ github.ref_name }}.$INSTALLER_EXT" >> $GITHUB_ENV
 
     - uses: actions/checkout@v4

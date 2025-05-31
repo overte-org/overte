@@ -13,7 +13,6 @@ on:
 env:
   APP_NAME: interface
   BUILD_TYPE: Release
-  BUILD_NUMBER: ${{ github.event.number }}_${{ github.sha }}
   GIT_COMMIT: ${{ github.sha }}
   STABLE_BUILD: 0
   UPLOAD_BUCKET: overte-public
@@ -51,12 +50,6 @@ jobs:
       fail-fast: false
     runs-on: ${{matrix.os}}
     steps:
-    - name: Report Build Number
-      shell: bash
-      run: |
-
-        echo "Build number: $BUILD_NUMBER"
-
     - name: Configure build environment 1
       shell: bash
       id: buildenv1
@@ -116,7 +109,7 @@ jobs:
         if [ "${{ matrix.build_type }}" = "full" ]; then
           echo "INSTALLER=Overte-${{ github.event.number }}_${{ github.sha }}-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         else
-          echo "INSTALLER=Overte-Interface-master$BUILD_NUMBER-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "INSTALLER=Overte-Interface-master-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
 
     - name: Clear Working Directories
@@ -211,10 +204,10 @@ jobs:
       run: |
         if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
           # This syntax requires CMake 3.23
-          cmake --preset conan-default -DOVERTE_RELEASE_TYPE=NIGHTLY $CMAKE_EXTRA
+          cmake --preset conan-default -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=NIGHTLY $CMAKE_EXTRA
         else
           # This syntax requires CMake 3.23
-          cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_TYPE=NIGHTLY $CMAKE_EXTRA
+          cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=NIGHTLY $CMAKE_EXTRA
         fi
 
     - name: Build application
@@ -283,7 +276,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.INSTALLER }}
-        path: build/${{ env.INSTALLER }}
+        path: build/Overte-*
         if-no-files-found: error
 
     #- name: Archive symbols

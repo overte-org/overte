@@ -19,7 +19,8 @@ macro(SET_PACKAGING_PARAMETERS)
   set(DEV_BUILD 0)
   set(BUILD_GLOBAL_SERVICES "DEVELOPMENT")
   set(USE_STABLE_GLOBAL_SERVICES 0)
-  set(BUILD_NUMBER 0)
+  set(OVERTE_GIT_COMMIT_SHORT 0 CACHE STRING "Short Git commit hash to use for versioning.")
+
   set(APP_USER_MODEL_ID "com.highfidelity.console-dev")
 
   set_from_env(STABLE_BUILD STABLE_BUILD 0)
@@ -115,16 +116,11 @@ macro(SET_PACKAGING_PARAMETERS)
     endif ()
   endif ()
 
-  if ((PRODUCTION_BUILD OR PR_BUILD) AND NOT STABLE_BUILD)
-    set(GIT_COMMIT_SHORT $ENV{GIT_COMMIT_SHORT})
+  set(BUILD_VERSION_NO_SHA ${BUILD_VERSION})
+  if (NOT PRODUCTION_BUILD)
     # append the abbreviated commit SHA to the build version
-    # since this is a PR build or master/nightly builds
-    set(BUILD_VERSION_NO_SHA ${BUILD_VERSION})
-    set(BUILD_VERSION "${BUILD_VERSION}-${GIT_COMMIT_SHORT}")
-
-    # pass along a release number without the SHA in case somebody
-    # wants to compare master or PR builds as integers
-    set(BUILD_NUMBER ${OVERTE_RELEASE_NUMBER})
+    # since this is a PR build or master/nightly build
+    set(BUILD_VERSION "${BUILD_VERSION}-${OVERTE_GIT_COMMIT_SHORT}")
   endif ()
 
   if (APPLE)

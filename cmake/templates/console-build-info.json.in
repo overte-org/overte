@@ -1,6 +1,6 @@
 {
-    "buildNumber": "@BUILD_NUMBER@",
     "releaseType": "@OVERTE_RELEASE_TYPE@",
+    "buildNumber": "@OVERTE_GIT_COMMIT_SHORT@",
     "stableBuild": "@STABLE_BUILD@",
     "buildIdentifier": "@BUILD_VERSION@",
     "organization": "@BUILD_ORGANIZATION@",
