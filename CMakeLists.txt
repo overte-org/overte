@@ -3,6 +3,8 @@
 # Copyright 2020-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
+# As the official CMake documentation is pretty bad for non-experts, Craig Scott's "Professional CMake: A Practical Guide" is a worthwhile investment,
+# both as a guide and as a reference manual. https://crascit.com/professional-cmake/
 
 # This should allow using long paths on Windows
 SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
