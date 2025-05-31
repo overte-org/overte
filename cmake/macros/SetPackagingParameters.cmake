@@ -72,7 +72,7 @@ macro(SET_PACKAGING_PARAMETERS)
   elseif (OVERTE_RELEASE_TYPE STREQUAL "PR")
     set(PR_BUILD 1)
     set(BUILD_ORGANIZATION "Overte - PR${RELEASE_NUMBER}")
-    set(BUILD_VERSION "PR${OVERTE_RELEASE_NUMBER}")
+    set(BUILD_VERSION "PR${OVERTE_RELEASE_NUMBER}-${BUILD_DATE}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
 
     # add definition for this release type
@@ -80,7 +80,7 @@ macro(SET_PACKAGING_PARAMETERS)
 
   elseif (OVERTE_RELEASE_TYPE STREQUAL "DEV")
     set(DEV_BUILD 1)
-    set(BUILD_VERSION "dev")
+    set(BUILD_VERSION "Dev-${BUILD_DATE}")
     set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
 
