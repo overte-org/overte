@@ -5,6 +5,7 @@
 #  Created by Leonardo Murillo on 07/14/2015.
 #  Copyright 2015 High Fidelity, Inc.
 #  Copyright 2020 Vircadia contributors.
+#  Copyright 2025 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -44,7 +45,6 @@ macro(SET_PACKAGING_PARAMETERS)
   endif()
 
   if (RELEASE_TYPE STREQUAL "PRODUCTION")
-    set(DEPLOY_PACKAGE TRUE)
     set(PRODUCTION_BUILD 1)
     set(BUILD_VERSION ${RELEASE_NUMBER})
     set(BUILD_ORGANIZATION "Overte")
@@ -68,7 +68,6 @@ macro(SET_PACKAGING_PARAMETERS)
     endif ()      
 
   elseif (RELEASE_TYPE STREQUAL "PR")
-    set(DEPLOY_PACKAGE TRUE)
     set(PR_BUILD 1)
     set(BUILD_VERSION "PR${RELEASE_NUMBER}")
     set(BUILD_ORGANIZATION "Overte - PR${RELEASE_NUMBER}")
@@ -113,14 +112,6 @@ macro(SET_PACKAGING_PARAMETERS)
     # pass along a release number without the SHA in case somebody
     # wants to compare master or PR builds as integers
     set(BUILD_NUMBER ${RELEASE_NUMBER})
-  endif ()
-
-  if (DEPLOY_PACKAGE)
-    # For deployed packages we do not grab the serverless content any longer.
-    # Instead, we deploy just the serverless content that is in the interface/resources/serverless
-    # directory. If we ever move back to delivering serverless via a hosted .zip file,
-    # we can re-enable this.
-    set(DOWNLOAD_SERVERLESS_CONTENT OFF)
   endif ()
 
   if (APPLE)
