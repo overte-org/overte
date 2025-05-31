@@ -134,10 +134,9 @@ else()
 endif()
 set(OVERTE_EXTERNAL_BUILD_ASSETS "https://build-deps.overte.org" CACHE INTERNAL "")
 set(OVERTE_TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256" CACHE STRING "URL to timeserver used for signing executables.")
+set(OVERTE_USE_OPTIMIZED_IK OFF CACHE BOOL "Use optimized IK.")
 set(OVERTE_USE_KHR_ROBUSTNESS OFF CACHE BOOL "Use KHR_robustness.")
 
-
-set(HIFI_USE_OPTIMIZED_IK_OPTION OFF)
 set(OVERTE_BACKTRACE_URL "" CACHE STRING "URL to an endpoint for uploading crash-dumps. For example Sentry.")
 set(OVERTE_BACKTRACE_TOKEN "" CACHE STRING "Token used to identify with release or build is uploading crash-dumps.")
 
@@ -180,7 +179,6 @@ else ()
   set(PLATFORM_QT_COMPONENTS WebEngine Xml)
 endif()
 
-option(HIFI_USE_OPTIMIZED_IK "Use optimized IK" ${HIFI_USE_OPTIMIZED_IK_OPTION})
 option(DISABLE_KTX_CACHE "Disable KTX Cache" OFF)
 
 if (OVERTE_USE_KHR_ROBUSTNESS)
@@ -277,9 +275,9 @@ add_definitions(-DGLM_FORCE_RADIANS)
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 add_definitions(-DGLM_FORCE_CTOR_INIT)
 
-if (HIFI_USE_OPTIMIZED_IK)
-  MESSAGE(STATUS "SET THE USE IK DEFINITION ")
-  add_definitions(-DHIFI_USE_OPTIMIZED_IK)
+if (OVERTE_USE_OPTIMIZED_IK)
+    message(STATUS "Setting definition for using optimized inverse kinematics.")
+    add_definitions(-DHIFI_USE_OPTIMIZED_IK)
 endif()
 set(HIFI_LIBRARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libraries")
 
