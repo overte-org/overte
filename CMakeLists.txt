@@ -149,11 +149,6 @@ if (NOT DEFINED SERVER_ONLY)
   set(SERVER_ONLY 0)
 endif()
 
-if (ANDROID OR UWP)
-  set(MOBILE 1)
-else()
-  set(MOBILE 0)
-endif()
 
 
 
