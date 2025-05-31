@@ -294,6 +294,10 @@ int main(int argc, const char* argv[]) {
         "xrNoHandTracking",
         "Debug option. Disables OpenXR hand tracking, even if it's supported by the runtime."
     );
+    QCommandLineOption xrNoBodyTrackingOption(
+        "xrNoBodyTracking",
+        "Debug option. Disables OpenXR body tracking (MNDX_xdev_space or HTCX_vive_tracker_interaction), even if it's supported by the runtime."
+    );
 
     // "--qmljsdebugger", which appears in output from "--help-all".
     // Those below don't seem to be optional.

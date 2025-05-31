@@ -405,6 +405,33 @@ controller::Input::NamedVector OpenXrInputPlugin::InputDevice::getAvailableInput
         makePair(RIGHT_HAND_PINKY2, "RightHandPinky2"),
         makePair(RIGHT_HAND_PINKY3, "RightHandPinky3"),
         makePair(RIGHT_HAND_PINKY4, "RightHandPinky4"),
+
+        // body tracking
+        makePair(LEFT_EYE, "LeftEye"),
+        makePair(RIGHT_EYE, "RightEye"),
+        makePair(EYEBLINK_L, "EyeBlink_L"),
+        makePair(EYEBLINK_R, "EyeBlink_R"),
+
+        makePair(HIPS, "Hips"),
+        makePair(LEFT_FOOT, "LeftFoot"),
+        makePair(RIGHT_FOOT, "RightFoot"),
+
+        makePair(TRACKED_OBJECT_00, "TrackedObject00"),
+        makePair(TRACKED_OBJECT_01, "TrackedObject01"),
+        makePair(TRACKED_OBJECT_02, "TrackedObject02"),
+        makePair(TRACKED_OBJECT_03, "TrackedObject03"),
+        makePair(TRACKED_OBJECT_04, "TrackedObject04"),
+        makePair(TRACKED_OBJECT_05, "TrackedObject05"),
+        makePair(TRACKED_OBJECT_06, "TrackedObject06"),
+        makePair(TRACKED_OBJECT_07, "TrackedObject07"),
+        makePair(TRACKED_OBJECT_08, "TrackedObject08"),
+        makePair(TRACKED_OBJECT_09, "TrackedObject09"),
+        makePair(TRACKED_OBJECT_10, "TrackedObject10"),
+        makePair(TRACKED_OBJECT_11, "TrackedObject11"),
+        makePair(TRACKED_OBJECT_12, "TrackedObject12"),
+        makePair(TRACKED_OBJECT_13, "TrackedObject13"),
+        makePair(TRACKED_OBJECT_14, "TrackedObject14"),
+        makePair(TRACKED_OBJECT_15, "TrackedObject15"),
     };
 
     return availableInputs;
@@ -432,9 +459,6 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
     if (!xrCheck(instance, result, "Failed to create action set."))
         return false;
 
-    // NOTE: The "squeeze" actions have quite a high deadzone in the controller config.
-    // A lot of our controller scripts currently only check for (squeeze > 0),
-    // which means controllers like the Index ones will be way too sensitive.
     std::map<std::string, std::pair<std::string, XrActionType>> actionTypes = {
         {"left_primary_click",     {"Left Primary", XR_ACTION_TYPE_BOOLEAN_INPUT}},
         {"left_secondary_click",   {"Left Secondary (Tablet)", XR_ACTION_TYPE_BOOLEAN_INPUT}},
@@ -457,6 +481,19 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
         {"right_thumbstick_touch", {"Right Thumbstick Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
         {"right_pose",             {"Right Hand Pose", XR_ACTION_TYPE_POSE_INPUT}},
         {"right_haptic",           {"Right Hand Haptic", XR_ACTION_TYPE_VIBRATION_OUTPUT}},
+
+        {"hips_pose",              {"Hips Pose", XR_ACTION_TYPE_POSE_INPUT}},
+        {"chest_pose",             {"Chest Pose", XR_ACTION_TYPE_POSE_INPUT}},
+
+        {"left_foot_pose",         {"Left Foot Pose", XR_ACTION_TYPE_POSE_INPUT}},
+        {"left_knee_pose",         {"Left Knee Pose", XR_ACTION_TYPE_POSE_INPUT}},
+        {"left_shoulder_pose",     {"Left Shoulder Pose", XR_ACTION_TYPE_POSE_INPUT}},
+        {"left_elbow_pose",        {"Left Elbow Pose", XR_ACTION_TYPE_POSE_INPUT}},
+
+        {"right_foot_pose",        {"Right Foot Pose", XR_ACTION_TYPE_POSE_INPUT}},
+        {"right_knee_pose",        {"Right Knee Pose", XR_ACTION_TYPE_POSE_INPUT}},
+        {"right_shoulder_pose",    {"Right Shoulder Pose", XR_ACTION_TYPE_POSE_INPUT}},
+        {"right_elbow_pose",       {"Right Elbow Pose", XR_ACTION_TYPE_POSE_INPUT}},
     };
 
     std::string hand_left = "/user/hand/left/input";
@@ -578,6 +615,21 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"right_pose",             hand_right  + "/grip/pose"},
             {"right_haptic",           "/user/hand/right/output/haptic"},
         }},
+        // vive puck roles, not a handheld controller
+        {"/interaction_profiles/htc/vive_tracker_htcx", {
+            {"hips_pose",           "/usr/vive_tracker_htcx/role/waist/input/grip/pose"},
+            {"chest_pose",          "/usr/vive_tracker_htcx/role/chest/input/grip/pose"},
+
+            {"left_foot_pose",      "/usr/vive_tracker_htcx/role/left_foot/input/grip/pose"},
+            {"left_knee_pose",      "/usr/vive_tracker_htcx/role/left_knee/input/grip/pose"},
+            {"left_shoulder_pose",  "/usr/vive_tracker_htcx/role/left_shoulder/input/grip/pose"},
+            {"left_elbow_pose",     "/usr/vive_tracker_htcx/role/left_elbow/input/grip/pose"},
+
+            {"right_foot_pose",     "/usr/vive_tracker_htcx/role/right_foot/input/grip/pose"},
+            {"right_knee_pose",     "/usr/vive_tracker_htcx/role/right_knee/input/grip/pose"},
+            {"right_shoulder_pose", "/usr/vive_tracker_htcx/role/right_shoulder/input/grip/pose"},
+            {"right_elbow_pose",    "/usr/vive_tracker_htcx/role/right_elbow/input/grip/pose"},
+        }},
     };
 
     for (const auto& [id, args] : actionTypes) {
@@ -618,6 +670,56 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
 
         createInfo.hand = XR_HAND_RIGHT_EXT;
         xrCheck(_context->_instance, _context->xrCreateHandTrackerEXT(_context->_session, &createInfo, &_handTracker[1]), "Failed to create right hand tracker");
+    }
+
+    if (_context->_MNDX_xdevSpaceSupported) {
+        _xdev.clear();
+
+        XrXDevListMNDX xdevList;
+        std::vector<XrXDevIdMNDX> xdevIDs(MAX_TRACKER_COUNT);
+        uint32_t _dummy = 0;
+
+        XrCreateXDevListInfoMNDX createInfo = {.type = XR_TYPE_CREATE_XDEV_LIST_INFO_MNDX};
+
+        _context->xrCreateXDevListMNDX(_context->_session, &createInfo, &xdevList);
+        _context->xrEnumerateXDevsMNDX(xdevList, MAX_TRACKER_COUNT, &_dummy, xdevIDs.data());
+
+        for (const auto id : xdevIDs) {
+            XrGetXDevInfoMNDX info = {.type = XR_TYPE_GET_XDEV_INFO_MNDX};
+            XrXDevPropertiesMNDX properties = {.type = XR_TYPE_XDEV_PROPERTIES_MNDX};
+
+            info.id = id;
+            _context->xrGetXDevPropertiesMNDX(xdevList, &info, &properties);
+
+            if (std::string(properties.name).find("Tracker") != std::string::npos) {
+                // it's probably a headset or a controller, discard
+                continue;
+            }
+
+            XDevTracker tracker;
+            tracker.properties = properties;
+
+            // TODO
+            tracker.offset_pose = {
+                .orientation = {0, 0, 0, 1},
+                .position = {0, 0, 0},
+            };
+
+            // TODO
+            tracker.pose_channel = {};
+
+            XrCreateXDevSpaceInfoMNDX createSpaceInfo = {
+                .type = XR_TYPE_CREATE_XDEV_SPACE_INFO_MNDX,
+                .next = nullptr,
+                .xdevList = xdevList,
+                .id = id,
+                .offset = tracker.offset_pose,
+            };
+
+            _context->xrCreateXDevSpaceMNDX(_context->_session, &createSpaceInfo, &tracker.space);
+
+            _xdev.insert({id, tracker});
+        }
     }
 
     _actionsInitialized = true;
@@ -801,6 +903,12 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         emulateStickFromTrackpad();
     }
 
+    if (_context->_HTCX_viveTrackerInteractionSupported) {
+        updateBodyFromViveTrackers(sensorToAvatar);
+    } else if (_context->_MNDX_xdevSpaceSupported) {
+        updateBodyFromXDevSpaces(sensorToAvatar);
+    }
+
     if (_context->_handTrackingSupported) {
         for (int i = 0; i < HAND_COUNT; i++) {
             getHandTrackingInputs(i, sensorToAvatar);
@@ -922,4 +1030,54 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
     _poseStateMap[i == 0 ? controller::LEFT_HAND_PINKY1 : controller::RIGHT_HAND_PINKY1] = xrJointToGlm(XR_HAND_JOINT_LITTLE_PROXIMAL_EXT);
     _poseStateMap[i == 0 ? controller::LEFT_HAND_PINKY2 : controller::RIGHT_HAND_PINKY2] = xrJointToGlm(XR_HAND_JOINT_LITTLE_INTERMEDIATE_EXT);
     _poseStateMap[i == 0 ? controller::LEFT_HAND_PINKY3 : controller::RIGHT_HAND_PINKY3] = xrJointToGlm(XR_HAND_JOINT_LITTLE_DISTAL_EXT);
+}
+
+void OpenXrInputPlugin::InputDevice::updateBodyFromViveTrackers(const mat4& sensorToAvatar) {
+    using namespace controller;
+
+    auto handlePose = [&](std::string action, StandardPoseChannel channel) {
+        XrSpaceLocation location = _actions.at(action)->getPose();
+        bool locationValid = (location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
+        if (locationValid) {
+            vec3 translation = xrVecToGlm(location.pose.position);
+            quat rotation = xrQuatToGlm(location.pose.orientation);
+            auto pose = controller::Pose(translation, rotation);
+
+            _poseStateMap[channel] = pose.transform(sensorToAvatar);
+        }
+    };
+
+    handlePose("hips_pose", HIPS);
+    handlePose("chest_pose", SPINE2);
+
+    handlePose("left_foot_pose", LEFT_FOOT);
+    handlePose("left_knee_pose", LEFT_LEG);
+    handlePose("left_shoulder_pose", LEFT_SHOULDER);
+    handlePose("left_elbow_pose", LEFT_FORE_ARM);
+
+    handlePose("right_foot_pose", RIGHT_FOOT);
+    handlePose("right_knee_pose", RIGHT_LEG);
+    handlePose("right_shoulder_pose", RIGHT_SHOULDER);
+    handlePose("right_elbow_pose", RIGHT_FORE_ARM);
+}
+
+void OpenXrInputPlugin::InputDevice::updateBodyFromXDevSpaces(const mat4& sensorToAvatar) {
+    using namespace controller;
+
+    for (const auto& [id, xdev] : _xdev) {
+        XrSpaceLocation location = {.type = XR_TYPE_SPACE_LOCATION};
+        if (_context->_lastPredictedDisplayTime.has_value()) {
+            XrResult result = xrLocateSpace(xdev.space, _context->_stageSpace, _context->_lastPredictedDisplayTime.value(), &location);
+            xrCheck(_context->_instance, result, "Failed to locate xdev space!");
+        }
+
+        bool locationValid = (location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
+        if (locationValid && xdev.pose_channel.has_value()) {
+            vec3 translation = xrVecToGlm(location.pose.position);
+            quat rotation = xrQuatToGlm(location.pose.orientation);
+            auto pose = controller::Pose(translation, rotation);
+
+            _poseStateMap[xdev.pose_channel.value()] = pose.transform(sensorToAvatar);
+        }
+    }
 }
