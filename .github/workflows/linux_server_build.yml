@@ -164,13 +164,6 @@ jobs:
           echo "OVERTE_RELEASE_TYPE=PR" >> $GITHUB_ENV
         fi
 
-        # Systems requiring our prebuilt Qt package
-        if [[ "${{ matrix.os }}" = "ubuntu-18.04" || "${{ matrix.os }}" = "ubuntu-20.04" ]]; then
-          echo  # false
-        else
-          echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
-        fi
-
         echo "CMAKE_EXTRA=-DOVERTE_BUILD_SERVER=true -DOVERTE_BUILD_TOOLS=true -DOVERTE_BUILD_CLIENT=false" >> $GITHUB_ENV
 
     # Configuration is broken into multiple steps because you can't set an env var and also reference it in the same step
