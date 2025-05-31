@@ -135,6 +135,7 @@ endif()
 set(OVERTE_EXTERNAL_BUILD_ASSETS "https://build-deps.overte.org" CACHE INTERNAL "")
 set(OVERTE_TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256" CACHE STRING "URL to timeserver used for signing executables.")
 set(OVERTE_USE_OPTIMIZED_IK OFF CACHE BOOL "Use optimized IK.")
+set(OVERTE_DISABLE_KTX_CACHE OFF CACHE BOOL "Disable KTX Cache.")
 set(OVERTE_USE_KHR_ROBUSTNESS OFF CACHE BOOL "Use KHR_robustness.")
 
 set(OVERTE_BACKTRACE_URL "" CACHE STRING "URL to an endpoint for uploading crash-dumps. For example Sentry.")
@@ -179,7 +180,6 @@ else ()
   set(PLATFORM_QT_COMPONENTS WebEngine Xml)
 endif()
 
-option(DISABLE_KTX_CACHE "Disable KTX Cache" OFF)
 
 if (OVERTE_USE_KHR_ROBUSTNESS)
   add_definitions(-DUSE_KHR_ROBUSTNESS)
@@ -217,9 +217,9 @@ if (OVERTE_DISABLE_QML)
     add_definitions(-DDISABLE_QML)
 endif()
 
-if (DISABLE_KTX_CACHE)
-  MESSAGE(STATUS "KTX cache disabled!")
-  add_definitions(-DDISABLE_KTX_CACHE)
+if (OVERTE_DISABLE_KTX_CACHE)
+    message(STATUS "KTX cache disabled!")
+    add_definitions(-DDISABLE_KTX_CACHE)
 endif()
 
 if (UNIX AND DEFINED ENV{HIFI_MEMORY_DEBUGGING})
