@@ -113,14 +113,6 @@ project(overte)
 include("cmake/init.cmake")
 include("cmake/compiler.cmake")
 
-if (NOT DEFINED CLIENT_ONLY)
-  set(CLIENT_ONLY 0)
-endif()
-
-if (NOT DEFINED SERVER_ONLY)
-  set(SERVER_ONLY 0)
-endif()
-
 
 
 #
@@ -152,15 +144,6 @@ if (ANDROID OR UWP)
     set(OVERTE_BUILD_SERVER OFF CACHE BOOL FORCE "Overwritten (mobile build)")
     set(OVERTE_BUILD_TOOLS OFF CACHE BOOL FORCE "Overwritten (mobile build)")
     set(OVERTE_BUILD_INSTALLER OFF CACHE BOOL FORCE "Overwritten (mobile build)")
-endif()
-
-if (CLIENT_ONLY)
-  set(BUILD_SERVER_OPTION OFF)
-endif()
-
-if (SERVER_ONLY)
-  set(BUILD_CLIENT_OPTION OFF)
-  set(BUILD_TESTS_OPTION OFF)
 endif()
 
 if (ANDROID)
@@ -256,6 +239,14 @@ endif()
 if (UNIX AND DEFINED ENV{HIFI_MEMORY_DEBUGGING})
   MESSAGE(STATUS "Memory debugging is enabled")
 endif()
+
+# Set SERVER_ONLY and CLIENT_ONLY for later packaging.
+if ((NOT OVERTE_BUILD_CLIENT) AND OVERTE_BUILD_SERVER)
+    set(SERVER_ONLY ON CACHE BOOL INTERNAL "")
+elseif ((NOT OVERTE_BUILD_SERVER) AND OVERTE_BUILD_CLIENT)
+    set(CLIENT_ONLY ON CACHE BOOL INTERNAL "")
+endif()
+
 
 #
 # Helper projects

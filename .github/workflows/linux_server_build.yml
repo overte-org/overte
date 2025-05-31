@@ -168,7 +168,7 @@ jobs:
           echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
         fi
 
-        echo "CMAKE_EXTRA=-DSERVER_ONLY=true -DBUILD_TOOLS=true" >> $GITHUB_ENV
+        echo "CMAKE_EXTRA=-DOVERTE_BUILD_SERVER=true -DOVERTE_BUILD_TOOLS=true -DOVERTE_BUILD_CLIENT=false" >> $GITHUB_ENV
 
     # Configuration is broken into multiple steps because you can't set an env var and also reference it in the same step
     - name: Configure Build Environment 2

@@ -82,7 +82,6 @@ jobs:
 
         echo "BUILD_NUMBER=$GIT_COMMIT_SHORT" >> $GITHUB_ENV
         echo "ARTIFACT_PATTERN=Overte-$RELEASE_NUMBER.$INSTALLER_EXT" >> $GITHUB_ENV
-        echo "CLIENT_ONLY=FALSE" >> $GITHUB_ENV
 
     - uses: actions/checkout@v4
       with:
@@ -130,7 +129,7 @@ jobs:
     - name: Configure CMake
       shell: bash
            # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} -DJSDOC_ENABLED:BOOL=TRUE -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
+      run: cmake --preset conan-${BUILD_TYPE,,} -DJSDOC_ENABLED:BOOL=TRUE -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
 
     - name: Build application
       shell: bash

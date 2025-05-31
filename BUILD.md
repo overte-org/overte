@@ -124,9 +124,6 @@ In the examples below the variable $NAME would be replaced by the name of the de
 
 The following build options can be used when running CMake
 
-* CLIENT_ONLY // Will package only the Interface
-* SERVER_ONLY // Will package only the Server
-
 * OVERTE_BUILD_CLIENT
 * OVERTE_BUILD_SERVER
 * OVERTE_BUILD_TESTS

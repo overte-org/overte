@@ -135,10 +135,10 @@ macro(SET_PACKAGING_PARAMETERS)
     set(INTERFACE_INSTALL_DIR     ".")
     set(NITPICK_INSTALL_DIR       ".")
 
-    if (CLIENT_ONLY)
-      set(CONSOLE_EXEC_NAME "Console.app")
+    if (NOT OVERTE_BUILD_SERVER)
+        set(CONSOLE_EXEC_NAME "Console.app")
     else ()
-      set(CONSOLE_EXEC_NAME "Sandbox.app")
+        set(CONSOLE_EXEC_NAME "Sandbox.app")
     endif()
     set(CONSOLE_INSTALL_APP_PATH "${CONSOLE_INSTALL_DIR}/${CONSOLE_EXEC_NAME}")
 
