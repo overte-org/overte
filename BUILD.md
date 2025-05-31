@@ -132,7 +132,7 @@ The following build options can be used when running CMake
 ### Developer Build Options
 
 * OVERTE_RENDERING_BACKEND
-* DISABLE_UI
+* OVERTE_DISABLE_QML
 
 ### Devices
 
