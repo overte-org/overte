@@ -199,7 +199,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
-        path: build/${{ env.ARTIFACT_PATTERN }}
+        path: build/Overte-*
         if-no-files-found: error
 
     - name: Archive symbols

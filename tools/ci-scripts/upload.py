@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2020 Vircadia contributors.
-# Copyright 2022 Overte e.V.
+# Copyright 2022-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 # Post build script
@@ -18,7 +18,7 @@ def main():
     release_number = os.environ['RELEASE_NUMBER']
     full_prefix = upload_prefix + release_number
     S3 = boto3.client('s3', region_name=os.environ['UPLOAD_REGION'], endpoint_url=os.environ['UPLOAD_ENDPOINT'])
-    path = os.path.join(os.getcwd(), os.environ['ARTIFACT_PATTERN'])
+    path = os.path.join(os.getcwd(), "Overte-*")
     print("Checking for files to upload in {}..".format(path))
     files = glob.glob(path, recursive=False)
     for archiveFile in files:
