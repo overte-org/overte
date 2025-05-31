@@ -155,6 +155,12 @@ cd overte
 conan install . -s build_type=Release -b missing -pr:b=default -of build
 ```
 
+On systems with GCC 15 additional parameter is needed:
+```bash
+cd overte
+conan install . -s build_type=Release -b missing -pr:b=default -of build -c tools.build:cxxflags="['-include', 'cstdint']"
+```
+
 Prepare makefiles:
 ```bash
 cmake --preset conan-release
