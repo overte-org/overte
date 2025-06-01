@@ -43,9 +43,16 @@ macro(SET_PACKAGING_PARAMETERS)
 
   string(TIMESTAMP BUILD_DATE "%Y-%m-%d" UTC)
 
+  # To not break our NSIS later down the line, we use `1` here instead of `ON`.
+  set(PRODUCTION_BUILD 0 CACHE INTERNAL "")
+  set(PR_BUILD 0 CACHE INTERNAL "")
+  set(NIGHTLY_BUILD 0 CACHE INTERNAL "")
+  set(DEV_BUILD 0 CACHE INTERNAL "")
+
   if (OVERTE_RELEASE_TYPE STREQUAL "PRODUCTION")
     # To not break our NSIS later down the line, we use `1` here instead of `ON`.
-    set(PRODUCTION_BUILD 1 CACHE BOOL INTERNAL "")
+    # INTERNAL implies FORCE and breaks if FORCE is added.
+    set(PRODUCTION_BUILD 1 CACHE INTERNAL "")
     set(BUILD_VERSION ${OVERTE_RELEASE_NUMBER})
     set(BUILD_ORGANIZATION "Overte")
     set(HIGH_FIDELITY_PROTOCOL "hifi")
@@ -65,7 +72,7 @@ macro(SET_PACKAGING_PARAMETERS)
 
   elseif (OVERTE_RELEASE_TYPE STREQUAL "PR")
     # To not break our NSIS later down the line, we use `1` here instead of `ON`.
-    set(PR_BUILD 1 CACHE BOOL INTERNAL "")
+    set(PR_BUILD 1 CACHE INTERNAL "")
     set(BUILD_VERSION "PR${OVERTE_RELEASE_NUMBER}-${BUILD_DATE}")
     set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
@@ -75,7 +82,7 @@ macro(SET_PACKAGING_PARAMETERS)
 
   elseif (OVERTE_RELEASE_TYPE STREQUAL "NIGHTLY")
     # To not break our NSIS later down the line, we use `1` here instead of `ON`.
-    set(NIGHTLY_BUILD 1 CACHE BOOL INTERNAL "")
+    set(NIGHTLY_BUILD 1 CACHE INTERNAL "")
     set(BUILD_VERSION "Nightly-${BUILD_DATE}")
     set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
@@ -85,7 +92,7 @@ macro(SET_PACKAGING_PARAMETERS)
 
   elseif (OVERTE_RELEASE_TYPE STREQUAL "DEV")
     # To not break our NSIS later down the line, we use `1` here instead of `ON`.
-    set(DEV_BUILD 1 CACHE BOOL INTERNAL "")
+    set(DEV_BUILD 1 CACHE INTERNAL "")
     set(BUILD_VERSION "Dev-${BUILD_DATE}")
     set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
