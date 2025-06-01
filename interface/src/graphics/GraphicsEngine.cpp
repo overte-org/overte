@@ -59,7 +59,7 @@ void GraphicsEngine::initializeGPU(GLWidget* glwidget) {
     _gpuContext = std::make_shared<gpu::Context>();
 
 #ifndef Q_OS_ANDROID
-    _gpuContext->pushProgramsToSync(shader::allPrograms(), [this] {
+    _gpuContext->pushProgramsToSync(shader::startupPrograms(), [this] {
         _programsCompiled.store(true);
     }, 1);
 #endif
