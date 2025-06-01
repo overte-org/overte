@@ -387,6 +387,7 @@ function makeNameTag(uuid) {
         .add("dimensions", scaledDimensions)
         .add("parentID", parentID)
         .add("localPosition", localPosition)
+        .add("grab", { grabbable: false })
         .create(CLEAR_ENTITY_EDIT_PROPS);
 
     Script.setTimeout(function () {
