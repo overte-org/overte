@@ -290,7 +290,7 @@ vec3 fetchLightMap(mat2 uvs) {
 
     // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
     vec3 blend = abs(normalMS.xyz);
-    blend = max(blend - 0.2, vec3(0.0));
+    blend = max(blend - vec3(0.2), vec3(0.0));
     blend /= (blend.x + blend.y + blend.z);
 
 <@if normal@>
@@ -685,7 +685,7 @@ float fetchUVAnimationMaskMap(mat2 uvs) {
 
     // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
     vec3 blend = abs(normalMS.xyz);
-    blend = max(blend - 0.2, vec3(0.0));
+    blend = max(blend - vec3(0.2), vec3(0.0));
     blend /= (blend.x + blend.y + blend.z);
 
 <@if normal@>
