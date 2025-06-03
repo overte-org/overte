@@ -34,13 +34,9 @@ LAYOUT(binding=0) uniform textParamsBuffer {
     TextParams params;
 };
 
-<@func declareEvalSDFSuperSampled()@>
-
-#define TAA_TEXTURE_LOD_BIAS    -3.0
+<@func declareEvalSDFColor()@>
 
 const float interiorCutoff = 0.5;
-const float smoothStrength = 4.0;
-const float taaBias = pow(2.0, TAA_TEXTURE_LOD_BIAS);
 
 // MSDF logic from: https://github.com/Chlumsky/msdfgen?tab=readme-ov-file#using-a-multi-channel-distance-field
 float median(float r, float g, float b) {
@@ -53,11 +49,19 @@ float screenPxRange(vec2 texCoord) {
 }
 
 vec2 evalSDF(vec2 texCoord) {
-    vec4 msdf = textureLod(fontTexture, texCoord, TAA_TEXTURE_LOD_BIAS);
+    vec4 msdf = texture(fontTexture, texCoord);
     float sdf = median(msdf.r, msdf.g, msdf.b);
     float screenPxDistance = screenPxRange(texCoord) * (sdf - 0.5);
     float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
     return vec2(opacity, msdf.a);
+}
+
+float evalSDFOutline(vec2 texCoord) {
+    vec3 msdf = texture(fontTexture, texCoord).rgb;
+    float sdf = median(msdf.r, msdf.g, msdf.b);
+    float screenPxDistance = screenPxRange(texCoord) * (sdf - (0.5 - params.effectThickness));
+    float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
+    return opacity;
 }
 
 vec4 evalSDFColor(vec2 texCoord, vec4 glyphBounds, float isTofu) {
@@ -72,14 +76,17 @@ vec4 evalSDFColor(vec2 texCoord, vec4 glyphBounds, float isTofu) {
 
     // Outline
     if (params.effect == 1 || params.effect == 2) {
-        float outline = float(sdf.x < interiorCutoff);
-        color = mix(color, params.effectColor, outline);
+        const float EPSILON = 0.00001;
+        float outline = smoothstep(0.0, 1.0, evalSDFOutline(texCoord)) - EPSILON;
 
         // with or without fill
-        sdf.x = mix(sdf.y, 0.0, float(params.effect == 1) * (1.0 - outline));
-
-        const float EPSILON = 0.00001;
-        sdf.x += mix(0.0, params.effectThickness - EPSILON, outline);
+        if (params.effect == 1) {
+            color = params.effectColor;
+            sdf.x = max(outline - sdf.x, 0.0);
+        } else {
+            color = mix(params.effectColor, color, sdf.x);
+            sdf.x = max(sdf.x, outline);
+        }
     } else if (params.effect == 3) { // Shadow
         // don't sample from outside of our glyph bounds
         sdf.x *= mix(1.0, 0.0, float(clamp(texCoord, glyphBounds.xy, glyphBounds.xy + glyphBounds.zw) != texCoord));
@@ -101,23 +108,14 @@ vec4 evalSDFColor(vec2 texCoord, vec4 glyphBounds, float isTofu) {
     return vec4(color, sdf.x);
 }
 
-vec4 evalSDFSuperSampled(vec2 texCoord, vec2 positionMS, vec4 glyphBounds, float isTofu) {
-    // Clip to edges. Note: We don't need to check the top edge.
-    if ((params.bounds.z > 0.0 && (positionMS.x < params.bounds.x || positionMS.x > (params.bounds.x + params.bounds.z))) ||
-        (params.bounds.w > 0.0 && (positionMS.y < params.bounds.y - params.bounds.w))) {
+vec4 evalSDFColor(vec2 texCoord, vec2 positionMS, vec4 glyphBounds, float isTofu) {
+    vec4 color = evalSDFColor(texCoord, glyphBounds, isTofu);
+
+    if (params.color.a == 1.0 && color.a < 0.5) {
         return vec4(0.0);
     }
 
-    vec4 color = evalSDFColor(texCoord, glyphBounds, isTofu);
-
-    // Rely on TAA for anti-aliasing but smooth transition when minification
-    // to help filtering
-    float uvFootprint = length(fwidth(texCoord) * smoothStrength);
-    float smoothStart = max(0.0, 0.5 - uvFootprint);
-    float smoothEnd = min(1.0, 0.5 + uvFootprint);
-    float alpha = max(smoothstep(smoothStart, smoothEnd, color.a), step(interiorCutoff, color.a));
-
-    return vec4(color.rgb, alpha);
+    return color;
 }
 
 <@endfunc@>
