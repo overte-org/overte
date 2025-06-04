@@ -35,7 +35,7 @@
 <@include render-utils/ShaderConstants.h@>
 
 <@include sdf_text3D.slh@>
-<$declareEvalSDFColor()$>
+<$declareEvalSDFSuperSampled()$>
 
 layout(location=RENDER_UTILS_ATTR_POSITION_MS) in vec2 _positionMS;
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
@@ -59,7 +59,7 @@ layout(location=RENDER_UTILS_ATTR_FADE2) flat in float _isTofu;
 <@endif@>
 
 void main() {
-    vec4 color = evalSDFColor(_texCoord0, _positionMS, _glyphBounds, _isTofu);
+    vec4 color = evalSDFSuperSampled(_texCoord0, _positionMS, _glyphBounds, _isTofu);
 
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     color.a *= params.color.a;

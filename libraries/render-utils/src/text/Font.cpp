@@ -232,7 +232,7 @@ void Font::read(QIODevice& in) {
     // and also calling textureLod.  Shouldn't this just use anisotropic filtering and auto-generate mips?
     // We should also use smoothstep for anti-aliasing, as explained here: https://github.com/libgdx/libgdx/wiki/Distance-field-fonts
     _texture = gpu::Texture::create2D(formatGPU, image.width(), image.height(), gpu::Texture::SINGLE_MIP,
-                                      gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR));
+                                      gpu::Sampler(gpu::Sampler::FILTER_MIN_POINT_MAG_LINEAR));
     _texture->setStoredMipFormat(formatMip);
     _texture->assignStoredMip(0, image.sizeInBytes(), image.constBits());
     _texture->setImportant(true);

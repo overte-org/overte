@@ -34,9 +34,12 @@ LAYOUT(binding=0) uniform textParamsBuffer {
     TextParams params;
 };
 
-<@func declareEvalSDFColor()@>
+<@func declareEvalSDFSuperSampled()@>
+
+#define TAA_TEXTURE_LOD_BIAS    -3.0
 
 const float interiorCutoff = 0.5;
+const float smoothStrength = 4.0;
 
 // MSDF logic from: https://github.com/Chlumsky/msdfgen?tab=readme-ov-file#using-a-multi-channel-distance-field
 float median(float r, float g, float b) {
@@ -49,7 +52,7 @@ float screenPxRange(vec2 texCoord) {
 }
 
 vec2 evalSDF(vec2 texCoord) {
-    vec4 msdf = texture(fontTexture, texCoord);
+    vec4 msdf = textureLod(fontTexture, texCoord, TAA_TEXTURE_LOD_BIAS);
     float sdf = median(msdf.r, msdf.g, msdf.b);
     float screenPxDistance = screenPxRange(texCoord) * (sdf - 0.5);
     float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
@@ -57,7 +60,7 @@ vec2 evalSDF(vec2 texCoord) {
 }
 
 float evalSDFOutline(vec2 texCoord) {
-    vec3 msdf = texture(fontTexture, texCoord).rgb;
+    vec3 msdf = textureLod(fontTexture, texCoord, TAA_TEXTURE_LOD_BIAS).rgb;
     float sdf = median(msdf.r, msdf.g, msdf.b);
     float screenPxDistance = screenPxRange(texCoord) * (sdf - (0.5 - params.effectThickness));
     float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
@@ -108,14 +111,27 @@ vec4 evalSDFColor(vec2 texCoord, vec4 glyphBounds, float isTofu) {
     return vec4(color, sdf.x);
 }
 
-vec4 evalSDFColor(vec2 texCoord, vec2 positionMS, vec4 glyphBounds, float isTofu) {
-    vec4 color = evalSDFColor(texCoord, glyphBounds, isTofu);
-
-    if (params.color.a == 1.0 && color.a < 0.5) {
+vec4 evalSDFSuperSampled(vec2 texCoord, vec2 positionMS, vec4 glyphBounds, float isTofu) {
+    // Clip to edges. Note: We don't need to check the top edge.
+    if ((params.bounds.z > 0.0 && (positionMS.x < params.bounds.x || positionMS.x > (params.bounds.x + params.bounds.z))) ||
+        (params.bounds.w > 0.0 && (positionMS.y < params.bounds.y - params.bounds.w))) {
         return vec4(0.0);
     }
 
-    return color;
+    vec4 color = evalSDFColor(texCoord, glyphBounds, isTofu);
+
+    if (params.color.a == 1.0) {
+        // Rely on TAA for anti-aliasing but smooth transition when minification
+        // to help filtering
+        float uvFootprint = length(fwidth(texCoord) * smoothStrength);
+        float smoothStart = max(0.0, 0.5 - uvFootprint);
+        float smoothEnd = min(1.0, 0.5 + uvFootprint);
+        float alpha = max(smoothstep(smoothStart, smoothEnd, color.a), step(interiorCutoff, color.a));
+
+        return vec4(color.rgb, alpha);
+    } else {
+        return color;
+    }
 }
 
 <@endfunc@>
