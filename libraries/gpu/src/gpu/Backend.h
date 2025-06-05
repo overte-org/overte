@@ -55,6 +55,7 @@ public:
 
     void setStereoState(const StereoState& stereo);
 
+    virtual void executeFrame(const FramePointer& frame) = 0;
     virtual void render(const Batch& batch) = 0;
     virtual void syncCache() = 0;
     virtual void syncProgram(const gpu::ShaderPointer& program) = 0;

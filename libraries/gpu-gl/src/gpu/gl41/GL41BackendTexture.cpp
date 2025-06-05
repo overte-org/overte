@@ -19,7 +19,7 @@ using namespace gpu;
 using namespace gpu::gl;
 using namespace gpu::gl41;
 
-bool GL41Backend::supportedTextureFormat(const gpu::Element& format) const {
+bool GL41Backend::supportedTextureFormat(const gpu::Element& format) {
     switch (format.getSemantic()) {
         case gpu::Semantic::COMPRESSED_ETC2_RGB:
         case gpu::Semantic::COMPRESSED_ETC2_SRGB:

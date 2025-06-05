@@ -134,6 +134,9 @@ void Context::executeFrame(const FramePointer& frame) const {
     static ContextStats beginStats;
     getStats(beginStats);
 
+    // FIXME? probably not necessary, but safe
+    consumeFrameUpdates(frame);
+
     _backend->executeFrame(frame);
 
     static ContextStats endStats;
