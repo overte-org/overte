@@ -170,7 +170,7 @@ bool VKBackend::isTextureManagementSparseEnabled() const {
     return _context.device->features.sparseResidencyImage2D == VK_TRUE;
 }
 
-bool VKBackend::supportedTextureFormat(const gpu::Element& format) const {
+bool VKBackend::supportedTextureFormat(const gpu::Element& format) {
     switch (format.getSemantic()) {
         case COMPRESSED_BC1_SRGB:
         case COMPRESSED_BC1_SRGBA:

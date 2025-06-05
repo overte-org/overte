@@ -27,7 +27,7 @@ INPUT(GPU_ATTR_NORMAL, vec4, inNormal);
     <@if HIFI_USE_FORWARD@>
         OUTPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
     <@endif@>
-    OUTPUT(RENDER_UTILS_ATTR_POSITION_MS, vec4, _positionMS);
+    OUTPUT(RENDER_UTILS_ATTR_POSITION_MS, vec3, _positionMS);
     OUTPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
     OUTPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
 <@endif@>

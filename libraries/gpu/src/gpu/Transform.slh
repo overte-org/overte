@@ -115,9 +115,9 @@ vec2 cam_getInvWidthHeight() {
 
 #if defined(GPU_VERTEX_SHADER)
 INPUT(GPU_ATTR_DRAW_CALL_INFO, ivec2, _inDrawCallInfo);
-OUTPUT_FLAT(GPU_ATTR_V2F_DRAW_CALL_INFO, ivec2, _drawCallInfo);
+FLAT_OUTPUT(GPU_ATTR_V2F_DRAW_CALL_INFO, ivec2, _drawCallInfo);
 #elif defined(GPU_PIXEL_SHADER)
-INPUT_FLAT(GPU_ATTR_V2F_DRAW_CALL_INFO, ivec2, _drawCallInfo);
+FLAT_INPUT(GPU_ATTR_V2F_DRAW_CALL_INFO, ivec2, _drawCallInfo);
 #endif
 
 #if defined(GPU_SSBO_TRANSFORM_OBJECT)

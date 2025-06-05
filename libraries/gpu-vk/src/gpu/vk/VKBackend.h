@@ -331,10 +331,10 @@ public:
     void syncCache() override {}
     void recycle() const override {}
     void setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool primary, bool reset = false) override;
-    uint32_t getTextureID(const TexturePointer&) override { return 0; }
+    //uint32_t getTextureID(const TexturePointer&) override { return 0; }
     void executeFrame(const FramePointer& frame) final;
     bool isTextureManagementSparseEnabled() const override;
-    bool supportedTextureFormat(const gpu::Element& format) const override;
+    bool supportedTextureFormat(const gpu::Element& format) override;
     const std::string& getVersion() const override;
     void downloadFramebuffer(const FramebufferPointer& srcFramebuffer, const Vec4i& region, QImage& destImage) final;
     void setDrawCommandBuffer(VkCommandBuffer commandBuffer);
