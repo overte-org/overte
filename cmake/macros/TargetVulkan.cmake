@@ -6,8 +6,11 @@
 # 
 macro(TARGET_VULKAN)
     find_package(Vulkan REQUIRED)
+    find_package(vulkan-memory-allocator REQUIRED)
     find_package(Qt5 COMPONENTS X11Extras REQUIRED)
     target_include_directories(${TARGET_NAME} PRIVATE ${VULKAN_INCLUDE_DIR})
+    #target_link_libraries(${PROJECT_NAME} PRIVATE vulkan-memory-allocator::vulkan-memory-allocator)
+    target_include_directories(${TARGET_NAME} SYSTEM PUBLIC ${vulkan-memory-allocator_INCLUDE_DIRS})
     target_link_libraries(${TARGET_NAME} ${VULKAN_LIBRARY})
     target_link_libraries(${TARGET_NAME} ${Qt5X11Extras_LIBRARIES})
 endmacro()
