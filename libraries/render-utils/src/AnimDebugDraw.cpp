@@ -33,8 +33,8 @@ public:
     AnimDebugDrawData() {
 
         _vertexFormat = std::make_shared<gpu::Stream::Format>();
-        _vertexBuffer = std::make_shared<gpu::Buffer>();
-        _indexBuffer = std::make_shared<gpu::Buffer>();
+        _vertexBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        _indexBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer);
 
         _vertexFormat->setAttribute(gpu::Stream::POSITION, 0, gpu::Element::VEC3F_XYZ, 0);
         _vertexFormat->setAttribute(gpu::Stream::COLOR, 0, gpu::Element::COLOR_RGBA_32, offsetof(Vertex, rgba));

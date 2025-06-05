@@ -14,6 +14,7 @@
 #include "stereo/InterleavedStereoDisplayPlugin.h"
 #include "hmd/DebugHmdDisplayPlugin.h"
 #include "Basic2DWindowOpenGLDisplayPlugin.h"
+#include "VulkanDisplayPlugin.h"
 
 const QString& DisplayPlugin::MENU_PATH() {
     static const QString value = "Display";
@@ -24,8 +25,9 @@ const QString& DisplayPlugin::MENU_PATH() {
 // TODO migrate to a DLL model where plugins are discovered and loaded at runtime by the PluginManager class
 DisplayPluginList getDisplayPlugins() {
     DisplayPlugin* PLUGIN_POOL[] = {
-        new Basic2DWindowOpenGLDisplayPlugin(),
-        new DebugHmdDisplayPlugin(),
+        new VulkanDisplayPlugin(),
+        //new Basic2DWindowOpenGLDisplayPlugin(),
+        //new DebugHmdDisplayPlugin(),
 #ifdef DEBUG
         new NullDisplayPlugin(),
 #endif
@@ -33,9 +35,9 @@ DisplayPluginList getDisplayPlugins() {
 #if !defined(Q_OS_ANDROID)
         // Stereo modes
         // SBS left/right
-        new SideBySideStereoDisplayPlugin(),
+        //new SideBySideStereoDisplayPlugin(),
         // Interleaved left/right
-        new InterleavedStereoDisplayPlugin(),
+        //new InterleavedStereoDisplayPlugin(),
 #endif        
         nullptr
     };

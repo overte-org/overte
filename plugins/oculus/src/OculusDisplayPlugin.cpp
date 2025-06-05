@@ -72,7 +72,6 @@ void OculusDisplayPlugin::cycleDebugOutput() {
 
 void OculusDisplayPlugin::customizeContext() {
     Parent::customizeContext();
-    _outputFramebuffer.reset(gpu::Framebuffer::create("OculusOutput", gpu::Element::COLOR_SRGBA_32, _renderTargetSize.x, _renderTargetSize.y));
     ovrTextureSwapChainDesc desc = { };
     desc.Type = ovrTexture_2D;
     desc.ArraySize = 1;
@@ -126,7 +125,6 @@ void OculusDisplayPlugin::uncustomizeContext() {
 
     ovr_DestroyTextureSwapChain(_session, _textureSwapChain);
     _textureSwapChain = nullptr;
-    _outputFramebuffer.reset();
     _customized = false;
     Parent::uncustomizeContext();
 }

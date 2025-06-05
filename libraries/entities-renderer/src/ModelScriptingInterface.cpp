@@ -116,27 +116,27 @@ ScriptValue ModelScriptingInterface::appendMeshes(MeshProxyList in) {
     graphics::MeshPointer result(std::make_shared<graphics::Mesh>());
 
     gpu::Element vertexElement = gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ);
-    gpu::Buffer* combinedVertexBuffer = new gpu::Buffer(combinedVertexSize, combinedVertexData.get());
+    gpu::Buffer* combinedVertexBuffer = new gpu::Buffer(gpu::Buffer::VertexBuffer, combinedVertexSize, combinedVertexData.get());
     gpu::BufferPointer combinedVertexBufferPointer(combinedVertexBuffer);
     gpu::BufferView combinedVertexBufferView(combinedVertexBufferPointer, vertexElement);
     result->setVertexBuffer(combinedVertexBufferView);
 
     int attributeTypeColor = gpu::Stream::InputSlot::COLOR; // libraries/gpu/src/gpu/Stream.h
     gpu::Element colorElement = gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ);
-    gpu::Buffer* combinedColorsBuffer = new gpu::Buffer(combinedColorSize, combinedColorData.get());
+    gpu::Buffer* combinedColorsBuffer = new gpu::Buffer(gpu::Buffer::VertexBuffer, combinedColorSize, combinedColorData.get());
     gpu::BufferPointer combinedColorsBufferPointer(combinedColorsBuffer);
     gpu::BufferView combinedColorsBufferView(combinedColorsBufferPointer, colorElement);
     result->addAttribute(attributeTypeColor, combinedColorsBufferView);
 
     int attributeTypeNormal = gpu::Stream::InputSlot::NORMAL; // libraries/gpu/src/gpu/Stream.h
     gpu::Element normalElement = gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ);
-    gpu::Buffer* combinedNormalsBuffer = new gpu::Buffer(combinedNormalSize, combinedNormalData.get());
+    gpu::Buffer* combinedNormalsBuffer = new gpu::Buffer(gpu::Buffer::VertexBuffer, combinedNormalSize, combinedNormalData.get());
     gpu::BufferPointer combinedNormalsBufferPointer(combinedNormalsBuffer);
     gpu::BufferView combinedNormalsBufferView(combinedNormalsBufferPointer, normalElement);
     result->addAttribute(attributeTypeNormal, combinedNormalsBufferView);
 
     gpu::Element indexElement = gpu::Element(gpu::SCALAR, gpu::UINT32, gpu::RAW);
-    gpu::Buffer* combinedIndexesBuffer = new gpu::Buffer(combinedIndexSize, combinedIndexData.get());
+    gpu::Buffer* combinedIndexesBuffer = new gpu::Buffer(gpu::Buffer::IndexBuffer, combinedIndexSize, combinedIndexData.get());
     gpu::BufferPointer combinedIndexesBufferPointer(combinedIndexesBuffer);
     gpu::BufferView combinedIndexesBufferView(combinedIndexesBufferPointer, indexElement);
     result->setIndexBuffer(combinedIndexesBufferView);
@@ -146,7 +146,7 @@ ScriptValue ModelScriptingInterface::appendMeshes(MeshProxyList in) {
                                          (graphics::Index)result->getNumIndices(), // numIndices
                                          (graphics::Index)0, // baseVertex
                                          graphics::Mesh::TRIANGLES)); // topology
-    result->setPartBuffer(gpu::BufferView(new gpu::Buffer(parts.size() * sizeof(graphics::Mesh::Part),
+    result->setPartBuffer(gpu::BufferView(new gpu::Buffer(gpu::Buffer::IndirectBuffer, parts.size() * sizeof(graphics::Mesh::Part),
                                                           (gpu::Byte*) parts.data()), gpu::Element::PART_DRAWCALL));
 
 
@@ -213,7 +213,7 @@ ScriptValue ModelScriptingInterface::newMesh(const QVector<glm::vec3>& vertices,
     graphics::MeshPointer mesh(std::make_shared<graphics::Mesh>());
 
     // vertices
-    auto vertexBuffer = std::make_shared<gpu::Buffer>(vertices.size() * sizeof(glm::vec3), (gpu::Byte*)vertices.data());
+    auto vertexBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer, vertices.size() * sizeof(glm::vec3), (gpu::Byte*)vertices.data());
     auto vertexBufferPtr = gpu::BufferPointer(vertexBuffer);
     gpu::BufferView vertexBufferView(vertexBufferPtr, 0, vertexBufferPtr->getSize(),
                                      sizeof(glm::vec3), gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ));
@@ -221,7 +221,7 @@ ScriptValue ModelScriptingInterface::newMesh(const QVector<glm::vec3>& vertices,
 
     if (vertices.size() == normals.size()) {
         // normals
-        auto normalBuffer = std::make_shared<gpu::Buffer>(normals.size() * sizeof(glm::vec3), (gpu::Byte*)normals.data());
+        auto normalBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer, normals.size() * sizeof(glm::vec3), (gpu::Byte*)normals.data());
         auto normalBufferPtr = gpu::BufferPointer(normalBuffer);
         gpu::BufferView normalBufferView(normalBufferPtr, 0, normalBufferPtr->getSize(),
                                          sizeof(glm::vec3), gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ));
@@ -241,7 +241,7 @@ ScriptValue ModelScriptingInterface::newMesh(const QVector<glm::vec3>& vertices,
             indexDataCursor += sizeof(uint32_t);
         }
     }
-    auto indexBuffer = std::make_shared<gpu::Buffer>(indexBufferSize, (gpu::Byte*)indexData);
+    auto indexBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer, indexBufferSize, (gpu::Byte*)indexData);
     auto indexBufferPtr = gpu::BufferPointer(indexBuffer);
     gpu::BufferView indexBufferView(indexBufferPtr, gpu::Element(gpu::SCALAR, gpu::UINT32, gpu::RAW));
     mesh->setIndexBuffer(indexBufferView);
@@ -252,7 +252,7 @@ ScriptValue ModelScriptingInterface::newMesh(const QVector<glm::vec3>& vertices,
                                          (graphics::Index)faces.size() * 3, // numIndices
                                          (graphics::Index)0, // baseVertex
                                          graphics::Mesh::TRIANGLES)); // topology
-    mesh->setPartBuffer(gpu::BufferView(new gpu::Buffer(parts.size() * sizeof(graphics::Mesh::Part),
+    mesh->setPartBuffer(gpu::BufferView(new gpu::Buffer(gpu::Buffer::IndirectBuffer, parts.size() * sizeof(graphics::Mesh::Part),
                                                         (gpu::Byte*) parts.data()), gpu::Element::PART_DRAWCALL));
 
 

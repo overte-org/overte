@@ -13,7 +13,10 @@
 //
 
 <@include gpu/Inputs.slh@>
+<@include gpu/ShaderConstants.h@>
 <@include gpu/Color.slh@>
+
+<@include gpu/Transform.slh@>
 <@include render-utils/ShaderConstants.h@>
 
 <@include gpu/Transform.slh@>
@@ -23,15 +26,17 @@
 
 layout(location=RENDER_UTILS_ATTR_POSITION_MS) out vec2 _positionMS;
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_ES) out vec4 _positionES;
+    OUTPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
 <@endif@>
 <@if not HIFI_USE_FORWARD@>
     layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) out vec4 _prevPositionCS;
 <@endif@>
-layout(location=RENDER_UTILS_ATTR_NORMAL_WS) out vec3 _normalWS;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
+OUTPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
+OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
+//VKTODO: what does flat mean?
+//layout(location=RENDER_UTILS_ATTR_FADE1) flat out vec4 _glyphBounds; // we're reusing the fade texcoord locations here
 // we're reusing the fade texcoord locations here:
-layout(location=RENDER_UTILS_ATTR_FADE1) flat out vec4 _glyphBounds;
+OUTPUT(RENDER_UTILS_ATTR_FADE1, vec4, _glyphBounds); // we're reusing the fade texcoord locations here
 layout(location=RENDER_UTILS_ATTR_FADE2) flat out float _isTofu;
 
 void main() {

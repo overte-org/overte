@@ -15,10 +15,10 @@
 <@include DeferredBufferWrite.slh@>
 <@include gpu/Paint.slh@>
 
-layout(location=0) in vec4 varColor;
-layout(location=1) in vec3 varTexcoord;
-layout(location=2) in vec3 varEyePos;
-layout(location=3) in vec4 _prevPositionCS;
+INPUT(0, vec4, varColor);
+INPUT(1, vec3, varTexcoord);
+INPUT(2, vec3, varEyePos);
+INPUT(3, vec4, _prevPositionCS);
 
 void main(void) {
     if (varColor.w > 0.0) {

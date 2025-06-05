@@ -97,6 +97,10 @@ struct Reflection {
     // Needed for procedural code, will map to push constants for Vulkan
     LocationMap uniforms;
 
+    size_t descriptorCount() const {
+        return textures.size() + uniformBuffers.size() + resourceBuffers.size();
+    }
+
     static std::vector<std::string> getNames(const LocationMap& locations);
 
 private:
@@ -142,6 +146,9 @@ struct Source {
     // The name of the shader file, with extension, i.e. DrawColor.frag
     std::string name;
 
+    // Generic reflection, copied from the 450 dialect / mono variant
+    Reflection reflection;
+
     // Map of platforms to their specific shaders
     std::unordered_map<Dialect, DialectSource, EnumClassHash> dialectSources;
 
@@ -171,6 +178,10 @@ inline uint32_t getVertexId(uint32_t programId) {
 
 inline uint32_t getFragmentId(uint32_t programId) {
     return programId & UINT16_MAX;
+}
+
+inline uint32_t makeProgramId(uint32_t vertexId, uint32_t fragmentId) {
+    return (vertexId << 16) | fragmentId;
 }
 
 }  // namespace shader
