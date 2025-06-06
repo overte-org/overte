@@ -3,7 +3,7 @@ if (WIN32)
   # Building with webrtc-audio-processing on Windows fails on cppstd 14.
   set(CMAKE_CXX_STANDARD 17)
 else ()
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
 endif ()
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
