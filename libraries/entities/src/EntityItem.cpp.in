@@ -77,11 +77,6 @@ EntityPropertyFlags EntityItem::getEntityProperties(EncodeBitstreamParams& param
 
 @Base_REQUESTED_PROPS@
 
-    // Some of the properties not transmitted over network need to be added manually here:
-    requestedProperties += PROP_ENTITY_HOST_TYPE;
-    requestedProperties += PROP_OWNING_AVATAR_ID;
-    requestedProperties += PROP_VISIBLE_IN_SECONDARY_CAMERA;
-
     return requestedProperties;
 }
 
