@@ -78,6 +78,8 @@ class Overte(ConanFile):
         self.requires("zlib/1.2.13")
         self.requires("glm/0.9.9.5", force=True)
         self.requires("jsoncpp/1.9.6", force=True)
+        # Fixes build errors on GCC 15. Check if this is still required when upgrading from sdl/2.30.3.
+        # https://github.com/conan-io/conan-center-index/issues/27265
         self.requires("libiconv/1.18", force=True)
         openssl = "openssl/1.1.1q"
 
