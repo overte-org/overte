@@ -15,7 +15,7 @@ Please read the [general build guide](BUILD.md) for information on dependencies 
 
 This documentation assumes that you are running our current target distribution, which is currently Ubuntu 22.04. The target distribution is usually the latest Ubuntu LTS still receiving standard support, though we may upgrade a little sooner if we require certain newer packages. Ubuntu version numbers are date codes and standard support is 5 years, meaning that Ubuntu 22.04 leaves standard support after around 2027-04.
 
-### Install build tools:
+## Install build tools:
 
 -  First update the package cache and your system:
 ```bash
@@ -38,7 +38,7 @@ sudo apt install ./conan-*.deb
 ```
 Verify Conan was installed by running `conan --version`.
 
-### Install build dependencies:
+## Install build dependencies:
 Most dependencies will be automatically installed by Conan. This section only lists dependencies which might not be handled by Conan.
 
 - OpenGL:
@@ -73,7 +73,7 @@ sudo apt-get install -y qtbase5-dev \
 ```
 
 
-### Extra dependencies to compile Interface on a server
+## Extra dependencies to compile Interface on a server
 
 
 - Install the following:
@@ -96,7 +96,7 @@ sudo apt install python python3 python3-distro
 sudo apt install nodejs
 ```
 
-### Get code and checkout the branch you need
+## Get code and checkout the branch you need
 
 Clone this repository:
 ```bash
@@ -114,8 +114,7 @@ git fetch --tags
 git tag
 ```
 
-
-### Prepare conan
+## Prepare conan
 
 The next step is setting up conan
 
@@ -135,7 +134,7 @@ echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
 echo "tools.system.package_manager:sudo = True" >> ~/.conan2/global.conf
 ```
 
-### Compiling
+## Compiling
 
 Install the dependencies with conan
 ```bash
@@ -143,12 +142,18 @@ cd overte
 conan install . -s build_type=Release -b missing -pr:b=default -of build
 ```
 
+On systems with GCC 15 additional parameter is needed:
+```bash
+cd overte
+conan install . -s build_type=Release -b missing -pr:b=default -of build -c tools.build:cxxflags="['-include', 'cstdint']"
+```
+
 Prepare makefiles:
 ```bash
 cmake --preset conan-release
 ```
 
-#### Server
+### Server
 
 To compile the Domain server:
 ```bash
@@ -157,7 +162,7 @@ make domain-server assignment-client
 
 *Note: For a server, it is not necessary to compile the Interface.*
 
-#### Interface
+### Interface
 
 To compile the Interface client:
 ```bash
@@ -169,23 +174,23 @@ The commands above will compile with a single thread. If you have enough memory,
 make -j4 interface
 ```
 
-### Running the software
+## Running the software
 
-#### Domain server
+### Domain server
 
 Running Domain server:
 ```bash
 ./domain-server/domain-server
 ```
 
-#### Assignment clients
+### Assignment clients
 
 Running assignment client:
 ```bash
 ./assignment-client/assignment-client -n 6
 ```
 
-#### Interface
+### Interface
 
 Running Interface:
 ```bash

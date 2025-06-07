@@ -2,6 +2,7 @@
 os=Windows
 arch=x86_64
 compiler=msvc
+compiler.cppstd=17
 compiler.version=192
 compiler.runtime=dynamic
 compiler.runtime_type=Release

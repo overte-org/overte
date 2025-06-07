@@ -55,9 +55,9 @@ class Overte(ConanFile):
         self.requires("gifcreator/2016.11@overte/stable")
         self.requires("glad/0.1.36")
         self.requires("gli/cci.20210515")
-        self.requires("glslang/1.3.236.0")
+        self.requires("glslang/1.3.268.0")
         self.requires("liblo/0.30@overte/stable")
-        self.requires("libnode/18.20.6@overte/stable")
+        self.requires("libnode/18.20.8@overte/stable")
         self.requires("nlohmann_json/3.11.2")
         self.requires("nvidia-texture-tools/2023.01@overte/stable")
         self.requires("onetbb/2021.10.0")
@@ -69,8 +69,8 @@ class Overte(ConanFile):
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.30.3")
-        self.requires("spirv-cross/1.3.231.1")
-        self.requires("spirv-tools/1.3.236.0")
+        self.requires("spirv-cross/1.3.268.0")
+        self.requires("spirv-tools/1.3.268.0")
         self.requires("steamworks/158a@overte/prebuild")
         self.requires("v-hacd/4.1.0")
         self.requires("vulkan-memory-allocator/3.0.1")
@@ -78,6 +78,9 @@ class Overte(ConanFile):
         self.requires("zlib/1.2.13")
         self.requires("glm/0.9.9.5", force=True)
         self.requires("jsoncpp/1.9.6", force=True)
+        # Fixes build errors on GCC 15. Check if this is still required when upgrading from sdl/2.30.3.
+        # https://github.com/conan-io/conan-center-index/issues/27265
+        self.requires("libiconv/1.18", force=True)
         openssl = "openssl/1.1.1q"
 
         if self.options.qt_source == "system":

@@ -35,23 +35,10 @@ const int NO_CURRENT_HISTORY_COMMAND = -1;
 const int MAX_HISTORY_SIZE = 256;
 const QString HISTORY_FILENAME = "JSConsole.history.json";
 
-const QString COMMAND_STYLE = "color: #266a9b;";
-
-const QString RESULT_SUCCESS_STYLE = "color: #677373;";
-const QString RESULT_INFO_STYLE = "color: #223bd1;";
-const QString RESULT_WARNING_STYLE = "color: #999922;";
-const QString RESULT_ERROR_STYLE = "color: #d13b22;";
-
-const QString GUTTER_PREVIOUS_COMMAND = "<span style=\"color: #57b8bb;\">&lt;</span>";
-const QString GUTTER_ERROR = "<span style=\"color: #d13b22;\">X</span>";
-
 const QString JSDOC_LINE_SEPARATOR = "\r";
 
 const QString JSDOC_STYLE =
     "<style type=\"text/css\"> \
-        .code { \
-            font-family: Consolas, Monaco, 'Andale Mono', monospace \
-        } \
         pre, code { \
             display: inline; \
         } \
@@ -71,7 +58,7 @@ QList<QString> _readLines(const QString& filename) {
     // TODO: check root["version"]
     return root[JSON_KEY].toVariant().toStringList();
 }
- 
+
 void _writeLines(const QString& filename, const QList<QString>& lines) {
     QFile file(filename);
     file.open(QFile::WriteOnly);
@@ -123,7 +110,7 @@ QStandardItemModel* JSConsole::getAutoCompleteModel(const QString& memberOf) {
             return nullptr;
         }
     }
-    
+
     foreach(auto doc, _apiDocs) {
         auto object = doc.toObject();
         auto scope = object.value("scope");
@@ -144,7 +131,11 @@ JSConsole::JSConsole(QWidget* parent, const ScriptManagerPointer& scriptManager)
     _currentCommandInHistory(NO_CURRENT_HISTORY_COMMAND),
     _savedHistoryFilename(QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/" + HISTORY_FILENAME),
     _commandHistory(_readLines(_savedHistoryFilename)),
-    _completer(new QCompleter(this)) {
+    _completer(new QCompleter(this)),
+    _monospaceFont(QFontDatabase::systemFont(QFontDatabase::FixedFont)),
+    // unfortunately we'll just have to use the first theme we get,
+    // because of the custom colored widgets that can't easily be recolored later
+    _lightTheme(!qApp->getDarkThemePreference()) {
 
     readAPI();
 
@@ -152,12 +143,14 @@ JSConsole::JSConsole(QWidget* parent, const ScriptManagerPointer& scriptManager)
     _ui->promptTextEdit->setLineWrapMode(QTextEdit::NoWrap);
     _ui->promptTextEdit->setWordWrapMode(QTextOption::NoWrap);
     _ui->promptTextEdit->installEventFilter(this);
+    _ui->promptTextEdit->setFont(_monospaceFont);
 
-    QFile styleSheet(PathUtils::resourcesPath() + "styles/console.qss");
-    if (styleSheet.open(QIODevice::ReadOnly)) {
-        QDir::setCurrent(PathUtils::resourcesPath());
-        setStyleSheet(styleSheet.readAll());
-    }
+    _ui->promptGutterLabel->setFont(_monospaceFont);
+
+    // to force the log to have the same background color as a text area
+    QString styleSheet = "background-color:" + qApp->palette().base().color().name();
+    _ui->scrollAreaWidgetContents->setStyleSheet(styleSheet);
+    _ui->logArea->setStyleSheet(styleSheet);
 
     connect(_ui->scrollArea->verticalScrollBar(), &QScrollBar::rangeChanged, this, &JSConsole::scrollToBottom);
     connect(_ui->promptTextEdit, &QTextEdit::textChanged, this, &JSConsole::resizeTextInput);
@@ -177,6 +170,7 @@ JSConsole::JSConsole(QWidget* parent, const ScriptManagerPointer& scriptManager)
     listView->setSelectionBehavior(QAbstractItemView::SelectRows);
     listView->setSelectionMode(QAbstractItemView::SingleSelection);
     listView->setModelColumn(_completer->completionColumn());
+    listView->setFont(_monospaceFont);
 
     _completer->setPopup(listView);
     _completer->popup()->installEventFilter(this);
@@ -350,7 +344,9 @@ void JSConsole::executeCommand(const QString& command) {
 
     _ui->promptTextEdit->setDisabled(true);
 
-    appendMessage(">", "<span style='" + COMMAND_STYLE + "'>" + command.toHtmlEscaped() + "</span>");
+    QColor commandColor = _lightTheme ? QColorConstants::Svg::black : QColorConstants::Svg::white;
+
+    appendMessage(">", command, commandColor);
 
     std::weak_ptr<ScriptManager> weakScriptManager = _scriptManager;
     auto consoleFileName = _consoleFileName;
@@ -379,34 +375,46 @@ void JSConsole::commandFinished() {
 
     // V8TODO:
     //bool error = (_scriptManager->engine()->hasUncaughtException() || result.isError());
-    //QString gutter = error ? GUTTER_ERROR : GUTTER_PREVIOUS_COMMAND;
-    //QString resultColor = error ? RESULT_ERROR_STYLE : RESULT_SUCCESS_STYLE;
-    QString gutter = GUTTER_PREVIOUS_COMMAND;
-    QString resultColor = RESULT_SUCCESS_STYLE;
-    QString resultStr = "<span style='" + resultColor + "'>" + result.toString().toHtmlEscaped() + "</span>";
-    appendMessage(gutter, resultStr);
+
+    QColor color = _lightTheme ? QColorConstants::Svg::gray : QColorConstants::Svg::darkgray;
+
+    appendMessage("<", result.toString(), color);
 
     resetCurrentCommandHistory();
 }
 
 void JSConsole::handleError(const QString& message, const QString& scriptName) {
     Q_UNUSED(scriptName);
-    appendMessage(GUTTER_ERROR, "<span style='" + RESULT_ERROR_STYLE + "'>" + message.toHtmlEscaped() + "</span>");
+
+    QColor color = _lightTheme ? QColorConstants::Svg::maroon : QColorConstants::Svg::lightpink;
+    QColor bgColor = _lightTheme ? QColorConstants::Svg::lavenderblush : QColorConstants::Svg::darkred;
+
+    appendMessage("X", message, color, bgColor);
 }
 
 void JSConsole::handlePrint(const QString& message, const QString& scriptName) {
     Q_UNUSED(scriptName);
-    appendMessage("", message);
+
+    QColor color = _lightTheme ? QColorConstants::Svg::black : QColorConstants::Svg::white;
+
+    appendMessage("", message, color);
 }
 
 void JSConsole::handleInfo(const QString& message, const QString& scriptName) {
     Q_UNUSED(scriptName);
-    appendMessage("", "<span style='" + RESULT_INFO_STYLE + "'>" + message.toHtmlEscaped() + "</span>");
+
+    QColor color = _lightTheme ? QColorConstants::Svg::steelblue : QColorConstants::Svg::paleturquoise;
+
+    appendMessage("", message, color);
 }
 
 void JSConsole::handleWarning(const QString& message, const QString& scriptName) {
     Q_UNUSED(scriptName);
-    appendMessage("", "<span style='" + RESULT_WARNING_STYLE + "'>" + message.toHtmlEscaped() + "</span>");
+
+    QColor color = _lightTheme ? QColorConstants::Svg::olive : QColorConstants::Svg::lightyellow;
+    QColor bgColor = _lightTheme ? QColorConstants::Svg::lemonchiffon : QColorConstants::Svg::olive;
+
+    appendMessage("!", message, color, bgColor);
 }
 
 void JSConsole::mouseReleaseEvent(QMouseEvent* event) {
@@ -491,9 +499,9 @@ bool JSConsole::eventFilter(QObject* sender, QEvent* event) {
             }
 
             auto textCursor = _ui->promptTextEdit->textCursor();
-                
+
             textCursor.select(QTextCursor::WordUnderCursor);
-                
+
             QString completionPrefix = textCursor.selectedText();
 
             auto leftOfCursor = _ui->promptTextEdit->toPlainText().left(textCursor.position());
@@ -580,7 +588,7 @@ void JSConsole::scrollToBottom() {
     scrollBar->setValue(scrollBar->maximum());
 }
 
-void JSConsole::appendMessage(const QString& gutter, const QString& message) {
+void JSConsole::appendMessage(const QString& gutter, const QString& message, const QColor& fgColor, const QColor& bgColor) {
     QWidget* logLine = new QWidget(_ui->logArea);
     QHBoxLayout* layout = new QHBoxLayout(logLine);
     layout->setMargin(0);
@@ -593,8 +601,8 @@ void JSConsole::appendMessage(const QString& gutter, const QString& message) {
     gutterLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
     messageLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
 
-    gutterLabel->setStyleSheet("font-size: 14px; font-family: Inconsolata, Lucida Console, Andale Mono, Monaco;");
-    messageLabel->setStyleSheet("font-size: 14px; font-family: Inconsolata, Lucida Console, Andale Mono, Monaco;");
+    gutterLabel->setFont(_monospaceFont);
+    messageLabel->setFont(_monospaceFont);
 
     gutterLabel->setText(gutter);
     messageLabel->setText(message);
@@ -602,6 +610,14 @@ void JSConsole::appendMessage(const QString& gutter, const QString& message) {
     layout->addWidget(gutterLabel);
     layout->addWidget(messageLabel);
     logLine->setLayout(layout);
+
+    QString style = "color:" + fgColor.name();
+    if (bgColor != Qt::transparent) {
+        style += ";background-color:" + bgColor.name();
+    }
+
+    logLine->setStyleSheet(style);
+    logLine->setAutoFillBackground(true);
 
     layout->setAlignment(gutterLabel, Qt::AlignTop);
 
