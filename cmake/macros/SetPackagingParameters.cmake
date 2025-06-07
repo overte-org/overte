@@ -5,6 +5,7 @@
 #  Created by Leonardo Murillo on 07/14/2015.
 #  Copyright 2015 High Fidelity, Inc.
 #  Copyright 2020 Vircadia contributors.
+#  Copyright 2025 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -13,24 +14,21 @@
 # and decides how targets should be packaged.
 
 macro(SET_PACKAGING_PARAMETERS)
-  set(PR_BUILD 0)
-  set(PRODUCTION_BUILD 0)
-  set(DEV_BUILD 0)
   set(BUILD_GLOBAL_SERVICES "DEVELOPMENT")
   set(USE_STABLE_GLOBAL_SERVICES 0)
-  set(BUILD_NUMBER 0)
+  set(OVERTE_GIT_COMMIT_SHORT 0 CACHE STRING "Short Git commit hash to use for versioning.")
+
   set(APP_USER_MODEL_ID "com.highfidelity.console-dev")
 
-  set_from_env(RELEASE_TYPE RELEASE_TYPE "DEV")
-  set_from_env(RELEASE_NUMBER RELEASE_NUMBER "")
-  set_from_env(STABLE_BUILD STABLE_BUILD 0)
+  set(OVERTE_RELEASE_TYPE "DEV" CACHE STRING "Valid options are: 'PRODUCTION', 'PR', 'NIGHTLY', and 'DEV'.")
+  set(OVERTE_RELEASE_NUMBER "0000.00.0" CACHE STRING "Release version number. E.g. 2025.05.1-rc1 for the first release candidate of the first release in May 2025.")
 
   set_from_env(PRELOADED_STARTUP_LOCATION PRELOADED_STARTUP_LOCATION "")
   set_from_env(PRELOADED_SCRIPT_ALLOWLIST PRELOADED_SCRIPT_ALLOWLIST "")
-  
+
   set_from_env(BYPASS_SIGNING BYPASS_SIGNING 0)
 
-  message(STATUS "The RELEASE_TYPE variable is: ${RELEASE_TYPE}")
+  message(STATUS "The OVERTE_RELEASE_TYPE variable is: ${OVERTE_RELEASE_TYPE}")
 
   # setup component categories for installer
   set(DDE_COMPONENT dde)
@@ -43,10 +41,19 @@ macro(SET_PACKAGING_PARAMETERS)
     set(INTERFACE_BUNDLE_NAME "interface")
   endif()
 
-  if (RELEASE_TYPE STREQUAL "PRODUCTION")
-    set(DEPLOY_PACKAGE TRUE)
-    set(PRODUCTION_BUILD 1)
-    set(BUILD_VERSION ${RELEASE_NUMBER})
+  string(TIMESTAMP BUILD_DATE "%Y-%m-%d" UTC)
+
+  # To not break our NSIS later down the line, we use `1` here instead of `ON`.
+  set(PRODUCTION_BUILD 0 CACHE INTERNAL "")
+  set(PR_BUILD 0 CACHE INTERNAL "")
+  set(NIGHTLY_BUILD 0 CACHE INTERNAL "")
+  set(DEV_BUILD 0 CACHE INTERNAL "")
+
+  if (OVERTE_RELEASE_TYPE STREQUAL "PRODUCTION")
+    # To not break our NSIS later down the line, we use `1` here instead of `ON`.
+    # INTERNAL implies FORCE and breaks if FORCE is added.
+    set(PRODUCTION_BUILD 1 CACHE INTERNAL "")
+    set(BUILD_VERSION ${OVERTE_RELEASE_NUMBER})
     set(BUILD_ORGANIZATION "Overte")
     set(HIGH_FIDELITY_PROTOCOL "hifi")
     set(HIGH_FIDELITY_APP_PROTOCOL "hifiapp")
@@ -55,72 +62,60 @@ macro(SET_PACKAGING_PARAMETERS)
     # add definition for this release type
     add_definitions(-DPRODUCTION_BUILD)
 
-    # if the build is a PRODUCTION_BUILD from the "stable" branch
-    # then use the STABLE gobal services
-    if (STABLE_BUILD)
-      message(STATUS "The RELEASE_TYPE is PRODUCTION and STABLE_BUILD is 1")
-      set(BUILD_GLOBAL_SERVICES "STABLE")
-      set(USE_STABLE_GLOBAL_SERVICES 1)
-    endif ()
+    set(BUILD_GLOBAL_SERVICES "STABLE")
+    set(USE_STABLE_GLOBAL_SERVICES 1)
+
 
     if (NOT BYPASS_SIGNING)
-      set(BYPASS_SIGNING 0)
-    endif ()      
+        set(BYPASS_SIGNING 0)
+    endif()
 
-  elseif (RELEASE_TYPE STREQUAL "PR")
-    set(DEPLOY_PACKAGE TRUE)
-    set(PR_BUILD 1)
-    set(BUILD_VERSION "PR${RELEASE_NUMBER}")
-    set(BUILD_ORGANIZATION "Overte - PR${RELEASE_NUMBER}")
+  elseif (OVERTE_RELEASE_TYPE STREQUAL "PR")
+    # To not break our NSIS later down the line, we use `1` here instead of `ON`.
+    set(PR_BUILD 1 CACHE INTERNAL "")
+    set(BUILD_VERSION "PR${OVERTE_RELEASE_NUMBER}-${BUILD_DATE}")
+    set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
 
     # add definition for this release type
     add_definitions(-DPR_BUILD)
-  else ()
-    set(DEV_BUILD 1)
-    set(BUILD_VERSION "dev")
+
+  elseif (OVERTE_RELEASE_TYPE STREQUAL "NIGHTLY")
+    # To not break our NSIS later down the line, we use `1` here instead of `ON`.
+    set(NIGHTLY_BUILD 1 CACHE INTERNAL "")
+    set(BUILD_VERSION "Nightly-${BUILD_DATE}")
+    set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
+    set(INTERFACE_ICON_PREFIX "interface-beta")
+
+    # add definition for this release type
+    add_definitions(-DPR_BUILD)
+
+  elseif (OVERTE_RELEASE_TYPE STREQUAL "DEV")
+    # To not break our NSIS later down the line, we use `1` here instead of `ON`.
+    set(DEV_BUILD 1 CACHE INTERNAL "")
+    set(BUILD_VERSION "Dev-${BUILD_DATE}")
     set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
 
     # add definition for this release type
     add_definitions(-DDEV_BUILD)
-  endif ()
+
+  else()
+    message(FATAL_ERROR "OVERTE_RELEASE_TYPE invalid. Expected: 'RELEASE', 'PR', 'NIGHTLY', or 'DEV'. Got: '${OVERTE_RELEASE_TYPE}'")
+  endif()
 
   set(NITPICK_BUNDLE_NAME "nitpick")
-  if (RELEASE_TYPE STREQUAL "PRODUCTION")
+  if (PRODUCTION_BUILD)
     set(NITPICK_ICON_PREFIX "nitpick")
   else ()
     set(NITPICK_ICON_PREFIX "nitpick-beta")
   endif ()
 
-  string(TIMESTAMP BUILD_TIME "%d/%m/%Y")
-
-  # if STABLE_BUILD is 1, PRODUCTION_BUILD must be 1 and
-  # DEV_BUILD and PR_BUILD must be 0
-  if (STABLE_BUILD)
-    if ((NOT PRODUCTION_BUILD) OR PR_BUILD OR DEV_BUILD)
-      message(FATAL_ERROR "Cannot produce STABLE_BUILD without PRODUCTION_BUILD")
-    endif ()
-  endif ()
-
-  if ((PRODUCTION_BUILD OR PR_BUILD) AND NOT STABLE_BUILD)
-    set(GIT_COMMIT_SHORT $ENV{GIT_COMMIT_SHORT})
+  set(BUILD_VERSION_NO_SHA ${BUILD_VERSION})
+  if (NOT PRODUCTION_BUILD)
     # append the abbreviated commit SHA to the build version
-    # since this is a PR build or master/nightly builds
-    set(BUILD_VERSION_NO_SHA ${BUILD_VERSION})
-    set(BUILD_VERSION "${BUILD_VERSION}-${GIT_COMMIT_SHORT}")
-
-    # pass along a release number without the SHA in case somebody
-    # wants to compare master or PR builds as integers
-    set(BUILD_NUMBER ${RELEASE_NUMBER})
-  endif ()
-
-  if (DEPLOY_PACKAGE)
-    # For deployed packages we do not grab the serverless content any longer.
-    # Instead, we deploy just the serverless content that is in the interface/resources/serverless
-    # directory. If we ever move back to delivering serverless via a hosted .zip file,
-    # we can re-enable this.
-    set(DOWNLOAD_SERVERLESS_CONTENT OFF)
+    # since this is a PR build or master/nightly build
+    set(BUILD_VERSION "${BUILD_VERSION}-${OVERTE_GIT_COMMIT_SHORT}")
   endif ()
 
   if (APPLE)
@@ -135,10 +130,10 @@ macro(SET_PACKAGING_PARAMETERS)
     set(INTERFACE_INSTALL_DIR     ".")
     set(NITPICK_INSTALL_DIR       ".")
 
-    if (CLIENT_ONLY)
-      set(CONSOLE_EXEC_NAME "Console.app")
+    if (NOT OVERTE_BUILD_SERVER)
+        set(CONSOLE_EXEC_NAME "Console.app")
     else ()
-      set(CONSOLE_EXEC_NAME "Sandbox.app")
+        set(CONSOLE_EXEC_NAME "Sandbox.app")
     endif()
     set(CONSOLE_INSTALL_APP_PATH "${CONSOLE_INSTALL_DIR}/${CONSOLE_EXEC_NAME}")
 
@@ -146,7 +141,7 @@ macro(SET_PACKAGING_PARAMETERS)
     set(COMPONENT_APP_PATH "${CONSOLE_APP_CONTENTS}/MacOS/Components.app")
     set(COMPONENT_INSTALL_DIR "${COMPONENT_APP_PATH}/Contents/MacOS")
     set(CONSOLE_PLUGIN_INSTALL_DIR "${COMPONENT_APP_PATH}/Contents/PlugIns")
-    
+
     set(INTERFACE_INSTALL_APP_PATH "${INTERFACE_INSTALL_DIR}/${INTERFACE_BUNDLE_NAME}.app")
     set(INTERFACE_ICON_FILENAME "${INTERFACE_ICON_PREFIX}.icns")
     set(NITPICK_ICON_FILENAME "${NITPICK_ICON_PREFIX}.icns")
@@ -188,7 +183,7 @@ macro(SET_PACKAGING_PARAMETERS)
     set(INTERFACE_HF_SHORTCUT_NAME "${INTERFACE_SHORTCUT_NAME}")
     set(CONSOLE_HF_SHORTCUT_NAME "Overte ${CONSOLE_SHORTCUT_NAME}")
     set(SANDBOX_HF_SHORTCUT_NAME "Overte ${SANDBOX_SHORTCUT_NAME}")
-	
+
     set(PRE_SANDBOX_INTERFACE_SHORTCUT_NAME "Overte")
     set(PRE_SANDBOX_CONSOLE_SHORTCUT_NAME "Server Console")
 

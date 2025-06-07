@@ -147,7 +147,7 @@ if (WIN32)
         COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/AppDataHighFidelity" "$<TARGET_FILE_DIR:${TARGET_NAME}>/AppDataHighFidelity"
     )
 
-    if (RELEASE_TYPE STREQUAL "DEV")
+    if (OVERTE_RELEASE_TYPE STREQUAL "DEV")
         # This to enable running from the IDE
         add_custom_command(
           TARGET ${TARGET_NAME}

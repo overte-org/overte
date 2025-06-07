@@ -1,14 +1,14 @@
 #
 #  Created by Bradley Austin Davis on 2015/10/25
 #  Copyright 2015 High Fidelity, Inc.
-#  Copyright 2023 Overte e.V.
+#  Copyright 2023-2025 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http:#www.apache.org/licenses/LICENSE-2.0.html
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-if (WIN32 AND (NOT USE_GLES))
+if (WIN32 AND (NOT OVERTE_RENDERING_BACKEND STREQUAL "GLES"))
 
   # if we were passed an Oculus App ID for entitlement checks, send that along
   if (DEFINED ENV{OCULUS_APP_ID})
