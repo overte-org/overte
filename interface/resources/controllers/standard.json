@@ -19,7 +19,7 @@
           "to": "Actions.StepYaw",
           "filters":
             [
-                { "type": "deadZone", "min": 0.15 },
+                { "type": "deadZone", "min": 0.65 },
                 "constrainToInteger",
                 { "type": "pulse", "interval": 0.25 },
                 { "type": "scale", "scale": 22.5 }
@@ -37,7 +37,7 @@
           "to": "Actions.StepYaw",
           "filters":
             [
-                { "type": "deadZone", "min": 0.15 },
+                { "type": "deadZone", "min": 0.65 },
                 "constrainToInteger",
                 { "type": "pulse", "interval": 0.25 },
                 { "type": "scale", "scale": 22.5 }

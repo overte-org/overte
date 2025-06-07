@@ -83,7 +83,6 @@ private:
         bool triggerHapticPulse(float strength, float duration, uint16_t index) override;
 
         void emulateStickFromTrackpad();
-        void awfulRightStickHackForBrokenScripts();
         void getHandTrackingInputs(int index, const mat4& sensorToAvatar);
 
         mutable std::recursive_mutex _lock;

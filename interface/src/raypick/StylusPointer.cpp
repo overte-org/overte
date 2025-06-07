@@ -176,6 +176,12 @@ Pointer::PickedObject StylusPointer::getHoveredObject(const PickResultPointer& p
     return PickedObject(stylusPickResult->objectID, stylusPickResult->type);
 }
 
+glm::vec2 StylusPointer::getScroll(const PickResultPointer& pickResult) {
+    glm::vec2 accum { 0.0f };
+    // TODO: thumbstick scrolling with stylus? probably not needed
+    return accum;
+}
+
 Pointer::Buttons StylusPointer::getPressedButtons(const PickResultPointer& pickResult) {
     // TODO: custom buttons for styluses
     Pointer::Buttons toReturn({ "Primary", "Focus" });
