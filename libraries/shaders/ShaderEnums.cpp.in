@@ -2,14 +2,14 @@
 #include <vector>
 
 namespace shader {
-const std::vector<uint32_t>& allPrograms() { 
-    static const std::vector<uint32_t> ALL_PROGRAMS{{
+const std::vector<uint32_t>& startupPrograms() {
+    static const std::vector<uint32_t> STARTUP_PROGRAMS{{
 @SHADER_PROGRAMS_ARRAY@
     }};
-    return ALL_PROGRAMS;
+    return STARTUP_PROGRAMS;
 }
 
-const std::vector<uint32_t>& allShaders() { 
+const std::vector<uint32_t>& allShaders() {
     static const std::vector<uint32_t> ALL_SHADERS{{
 @SHADER_SHADERS_ARRAY@
     }};

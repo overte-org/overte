@@ -36,7 +36,7 @@
 <@endif@>
 
 layout(location=RENDER_UTILS_ATTR_POSITION_WS) out vec4 _positionWS;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
+layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01[NUM_LAYERS];
 <@if not HIFI_USE_SHADOW@>
     layout(location=RENDER_UTILS_ATTR_POSITION_ES) out vec4 _positionES;
     layout(location=RENDER_UTILS_ATTR_NORMAL_WS) out vec3 _normalWS;
@@ -84,6 +84,10 @@ void main(void) {
     TransformCamera cam = getTransformCamera();
     TransformObject obj = getTransformObject();
 <@if not HIFI_USE_SHADOW@>
+    <@if not HIFI_USE_MTOON@>
+            _color = color_sRGBAToLinear(inColor);
+    <@endif@>
+
         <$transformModelToWorldEyeClipPosAndPrevClipPos(cam, obj, positionMS, _positionWS, _positionES, gl_Position, _prevPositionCS)$>
         <$transformModelToWorldDir(obj, normalMS, _normalWS)$>
 <@else@>
@@ -97,24 +101,21 @@ void main(void) {
     <@endif@>
 <@endif@>
 
-<@if HIFI_USE_SHADOW@>
-        Material mat = getMaterial();
-        BITFIELD matKey = getMaterialKey(mat);
-        // If we have an opacity mask than we need the first tex coord
-        if ((matKey & OPACITY_MASK_MAP_BIT) != 0) {
-            TexMapArray texMapArray = getTexMapArray();
-            <$evalTexMapArrayTexcoord0(texMapArray, inTexCoord0, _positionWS, _texCoord01.xy)$>
-            <$evalTexMapArrayTexcoord1(texMapArray, inTexCoord1, _positionWS, _texCoord01.zw)$>
-        } else {
-            _texCoord01 = vec4(0.0);
-        }
-<@else@>
-<@if not HIFI_USE_MTOON@>
-        _color = color_sRGBAToLinear(inColor);
-<@endif@>
-
-        TexMapArray texMapArray = getTexMapArray();
-        <$evalTexMapArrayTexcoord0(texMapArray, inTexCoord0, _positionWS, _texCoord01.xy)$>
-        <$evalTexMapArrayTexcoord1(texMapArray, inTexCoord1, _positionWS, _texCoord01.zw)$>
-<@endif@>
+    for (int layer = 0; layer < NUM_LAYERS; layer++) {
+        _texCoord01[layer] = vec4(0.0);
+    <@if HIFI_USE_SHADOW@>
+            Material mat = getMaterial(layer);
+            BITFIELD matKey = getMaterialKey(mat);
+            // If we have an opacity mask than we need the first tex coord
+            if ((matKey & OPACITY_MASK_MAP_BIT) != 0) {
+                TexMapArray texMapArray = getTexMapArray(layer);
+                <$evalTexMapArrayTexcoord0(texMapArray, inTexCoord0, _positionWS, _texCoord01[layer].xy)$>
+                <$evalTexMapArrayTexcoord1(texMapArray, inTexCoord1, _positionWS, _texCoord01[layer].zw)$>
+            }
+    <@else@>
+            TexMapArray texMapArray = getTexMapArray(layer);
+            <$evalTexMapArrayTexcoord0(texMapArray, inTexCoord0, _positionWS, _texCoord01[layer].xy)$>
+            <$evalTexMapArrayTexcoord1(texMapArray, inTexCoord1, _positionWS, _texCoord01[layer].zw)$>
+    <@endif@>
+    }
 }

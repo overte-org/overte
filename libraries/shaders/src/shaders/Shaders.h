@@ -24,7 +24,7 @@ namespace shader {
 static const uint32_t INVALID_SHADER = (uint32_t)-1;
 static const uint32_t INVALID_PROGRAM = (uint32_t)-1;
 
-const std::vector<uint32_t>& allPrograms();
+const std::vector<uint32_t>& startupPrograms();
 const std::vector<uint32_t>& allShaders();
 
 enum class Dialect
@@ -121,7 +121,7 @@ struct DialectVariantSource {
     // Optimized SPIRV version of the shader
     Binary spirv;
     // Regenerated GLSL from the optimized SPIRV
-    String glsl;
+    //String glsl;
     // Shader reflection from the optimized SPIRV
     Reflection reflection;
 
