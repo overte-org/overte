@@ -124,6 +124,13 @@ bool ReferenceMaterial::getDefaultFallthrough() const {
     });
 }
 
+uint8_t ReferenceMaterial::getLayers() const {
+    return resultWithLock<bool>([&] {
+        auto material = getMaterial();
+        return material ? material->getLayers() : 1;
+    });
+}
+
 // NetworkMaterial
 bool ReferenceMaterial::isMissingTexture() {
     return resultWithLock<bool>([&] {
