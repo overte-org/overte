@@ -318,6 +318,14 @@ static void setMaterialMap(const QJsonValue& value, const std::shared_ptr<Networ
  * @property {boolean} defaultFallthrough=false - <code>true</code> if all properties fall through to the material below 
  *     unless they are set, <code>false</code> if properties respect their individual fall-through settings. 
  *     Supported models: all.
+ * @property {number} layers=1 - The number of material layers to use, between <code>1</code> and <code>3</code>. If <code>splatMap</code> is
+ *     specified, the layers will be mixed based on that. If the top material is triplanar and <code>layers</code> is <code>3</code>, the top
+ *     3 materials will be applied to the X, Y, and Z planes respectively, and if <code>layers</code> is <code>2</code>, the top material will be
+ *     used for the Y plane and the second material will be used for X and Z. Otherwise, the layers will be blended based on alpha. You cannot mix
+ *     material of different <code>models</code>. Supported models: <code>"hifi_pbr"</code>, <code>"vrm_mtoon"</code>.
+ * @property {string|Entities.Texture} splatMap - The URL of the splat texture image, or an entity ID.  An entity ID may be that of an Image
+ *     or Web entity. The RGB channels define how material layers are mixed, if <code>layers > 1</code>. Supported models: <code>"hifi_pbr"</code>,
+ *     <code>"vrm_mtoon"</code>.
  * @property {ProceduralData} procedural - The definition of a procedural shader material.  Supported models: <code>"hifi_shader_simple"</code>.
  * @property {ColorFloat|RGBS|string} shade - The shade color. A {@link ColorFloat} value is treated as sRGB and must have
  *     component values in the range <code>0.0</code> &ndash; <code>1.0</code>. A {@link RGBS} value can be either RGB or sRGB.
@@ -490,6 +498,16 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
                 auto value = materialJSON.value(key);
                 setMaterialMap(value, material, graphics::MaterialKey::FlagBit::NORMAL_MAP_BIT, graphics::Material::MapChannel::NORMAL_MAP,
                     baseUrl, [&](const QUrl& url) { material->setNormalMap(url, true); });
+            } else if (key == "layers") {
+                auto value = materialJSON.value(key);
+                if (value.isDouble()) {
+                    material->setLayers(value.toInt());
+                }
+            } else if (key == "splatMap") {
+                auto value = materialJSON.value(key);
+                setMaterialMap(value, material, graphics::MaterialKey::FlagBit::SPLAT_MAP_BIT,
+                               graphics::Material::MapChannel::SPLAT_MAP, baseUrl,
+                               [&](const QUrl& url) { material->setSplatMap(url); });
             } else if (key == "texCoordTransform0") {
                 auto value = materialJSON.value(key);
                 if (value.isString()) {
@@ -932,6 +950,13 @@ void NetworkMaterial::setLightMap(const QUrl& url) {
         //map->setTextureTransform(_lightmapTransform);
         //map->setLightmapOffsetScale(_lightmapParams.x, _lightmapParams.y);
         setTextureMap(MapChannel::LIGHT_MAP, map);
+    }
+}
+
+void NetworkMaterial::setSplatMap(const QUrl& url) {
+    auto map = fetchTextureMap(url, image::TextureUsage::ALBEDO_TEXTURE, MapChannel::SPLAT_MAP);
+    if (map) {
+        setTextureMap(MapChannel::SPLAT_MAP, map);
     }
 }
 
