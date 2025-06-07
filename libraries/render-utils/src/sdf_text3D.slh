@@ -51,20 +51,12 @@ float screenPxRange(vec2 texCoord) {
     return max(0.5 * dot(params.unitRange, screenTexSize), 1.0);
 }
 
-vec2 evalSDF(vec2 texCoord) {
+vec2 evalSDF(vec2 texCoord, float bias) {
     vec4 msdf = textureLod(fontTexture, texCoord, TAA_TEXTURE_LOD_BIAS);
     float sdf = median(msdf.r, msdf.g, msdf.b);
-    float screenPxDistance = screenPxRange(texCoord) * (sdf - 0.5);
+    float screenPxDistance = screenPxRange(texCoord) * (sdf - (0.5 - bias));
     float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
     return vec2(opacity, msdf.a);
-}
-
-float evalSDFOutline(vec2 texCoord) {
-    vec3 msdf = textureLod(fontTexture, texCoord, TAA_TEXTURE_LOD_BIAS).rgb;
-    float sdf = median(msdf.r, msdf.g, msdf.b);
-    float screenPxDistance = screenPxRange(texCoord) * (sdf - (0.5 - params.effectThickness));
-    float opacity = clamp(screenPxDistance + 0.5, 0.0, 1.0);
-    return opacity;
 }
 
 vec4 evalSDFColor(vec2 texCoord, vec4 glyphBounds, float isTofu) {
@@ -75,12 +67,12 @@ vec4 evalSDFColor(vec2 texCoord, vec4 glyphBounds, float isTofu) {
         return vec4(color, any(greaterThan(abs(texCoord - vec2(0.5)), vec2(0.5 - OUTLINE_WIDTH, 0.5 - (glyphBounds.z / glyphBounds.w) * OUTLINE_WIDTH))));
     }
 
-    vec2 sdf = evalSDF(texCoord);
+    vec2 sdf = evalSDF(texCoord, 0.0);
 
     // Outline
     if (params.effect == 1 || params.effect == 2) {
         const float EPSILON = 0.00001;
-        float outline = smoothstep(0.0, 1.0, evalSDFOutline(texCoord)) - EPSILON;
+        float outline = smoothstep(0.0, 1.0, evalSDF(texCoord, params.effectThickness).x) - EPSILON;
 
         // with or without fill
         if (params.effect == 1) {
@@ -101,7 +93,7 @@ vec4 evalSDFColor(vec2 texCoord, vec4 glyphBounds, float isTofu) {
             // really match the LOD that we use in the textureLod call below
             vec2 textureOffset = vec2(params.effectThickness * DOUBLE_MAX_OFFSET_PIXELS) / vec2(textureSize(fontTexture, 0/*int(TAA_TEXTURE_LOD_BIAS)*/));
             vec2 shadowTexCoords = texCoord - textureOffset;
-            sdf.x = evalSDF(shadowTexCoords).x;
+            sdf.x = evalSDF(shadowTexCoords, 0.0).x;
 
             // don't sample from outside of our glyph bounds
             sdf.x *= mix(1.0, 0.0, float(clamp(shadowTexCoords, glyphBounds.xy, glyphBounds.xy + glyphBounds.zw) != shadowTexCoords));
