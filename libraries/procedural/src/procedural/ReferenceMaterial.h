@@ -34,6 +34,7 @@ public:
     graphics::Material::TextureMaps getTextureMaps() const override;
     glm::vec2 getLightmapParams() const override;
     bool getDefaultFallthrough() const override;
+    uint8_t getLayers() const override;
 
     // NetworkMaterial
     bool isMissingTexture() override;
