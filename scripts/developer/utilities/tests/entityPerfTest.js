@@ -81,11 +81,11 @@ function makeEntity () {
     }
     entityTests.addTestCase('findRayIntersection, precisionPicking=true')
         .withRay(function(){
-            Entities.findRayIntersection(this.ray, true);
+            Entities.findRayIntersection(this.ray, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES);
         })
     entityTests.addTestCase('findRayIntersection, precisionPicking=false')
         .withRay(function(){
-            Entities.findRayIntersection(this.ray, false);
+            Entities.findRayIntersection(this.ray);
         });
     entityTests.addTestCase('no-op')
         .run(function(){});

@@ -144,7 +144,7 @@
                 origin: spoutProps.position,
                 direction: direction
             };
-            var intersection = Entities.findRayIntersection(pickRay, true, _this.growableEntities);
+            var intersection = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES, _this.growableEntities);
 
             if (intersection.intersects) {
                 //We've intersected with a waterable object

@@ -501,7 +501,7 @@ function mousePressEvent(event) {
     }
 
     var pickRay = Camera.computePickRay(event.x, event.y);
-    var intersection = Entities.findRayIntersection(pickRay, true); // accurate picking
+    var intersection = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES); // accurate picking
 
     if (intersection.intersects) {
         if (attemptVoxelChange(pickRay.direction, intersection)) {
@@ -511,7 +511,7 @@ function mousePressEvent(event) {
 
     // if the PolyVox entity is empty, we can't pick against its "on" voxels.  try picking against its
     // bounding box, instead.
-    intersection = Entities.findRayIntersection(pickRay, false); // bounding box picking
+    intersection = Entities.findRayIntersection(pickRay); // bounding box picking
     if (intersection.intersects) {
         attemptVoxelChange(pickRay.direction, intersection);
     }

@@ -264,12 +264,8 @@ function findLineToHeightIntersectionCoords(px, py, pz, qx, qy, qz, planeY) {
 }
 
 function findRayIntersection(pickRay) {
-    // Check 3D overlays and entities. Argument is an object with origin and
-    // direction.
-    var result = Overlays.findRayIntersection(pickRay);
-    if (!result.intersects) {
-        result = Entities.findRayIntersection(pickRay, true);
-    }
+    // Check all entities. Argument is an object with origin and direction.
+    var result = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_LOCAL_ENTITIES);
     return result;
 }
 
@@ -518,8 +514,8 @@ function Teleporter() {
             var pickRay = Camera.computePickRay(touchEventPos.x,
                     touchEventPos.y);
             printd("newTeleportDetect - pickRay " + JSON.stringify(pickRay));
-            var destination = Entities.findRayIntersection(pickRay, true, [],
-                    [], false, true);
+            var destination = Entities.findRayIntersection(pickRay,
+                Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_INCLUDE_COLLIDABLE, [], []);
             printd("newTeleportDetect - destination "
                     + JSON.stringify(destination));
             return destination;
