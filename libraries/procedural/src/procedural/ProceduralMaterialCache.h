@@ -35,6 +35,7 @@ public:
     void setEmissiveMap(const QUrl& url);
     void setScatteringMap(const QUrl& url);
     void setLightMap(const QUrl& url);
+    void setSplatMap(const QUrl& url);
 
     virtual bool isMissingTexture();
     virtual bool checkResetOpacityMap();

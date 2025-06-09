@@ -277,6 +277,8 @@ void ModelMeshPartPayload::setShapeKey(bool invalidateShapeKey, PrimitiveMode pr
 
         builder.withMaterial();
 
+        builder.withLayers(_drawMaterials.getLayers());
+
         if (hasTangents) {
             builder.withTangents();
         }
@@ -295,6 +297,8 @@ void ModelMeshPartPayload::setShapeKey(bool invalidateShapeKey, PrimitiveMode pr
 
             if ((MaterialMappingMode)material->getMaterialParams().x == MaterialMappingMode::TRIPLANAR) {
                 builder.withTriplanar();
+            } else if (_drawMaterials.isSplatMap()) {
+                builder.withSplatMap();
             }
         }
     }

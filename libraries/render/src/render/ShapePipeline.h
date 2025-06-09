@@ -41,6 +41,9 @@ public:
         CULL_FACE_FRONT,
         MTOON,
         TRIPLANAR,
+        LAYERS2,  // if neither of these are set, we just have 1 layer
+        LAYERS3,
+        SPLATMAP,
 
         OWN_PIPELINE,
         INVALID,
@@ -113,6 +116,26 @@ public:
             return (*this);
         }
 
+        Builder& withLayers(uint8_t numLayers) {
+            switch (numLayers) {
+                case 3:
+                    _flags.set(LAYERS3);
+                    _flags.reset(LAYERS2);
+                    break;
+                case 2:
+                    _flags.reset(LAYERS3);
+                    _flags.set(LAYERS2);
+                    break;
+                default:
+                    _flags.reset(LAYERS3);
+                    _flags.reset(LAYERS2);
+                    break;
+            }
+            return (*this);
+        }
+
+        Builder& withSplatMap() { _flags.set(SPLATMAP); return (*this); }
+
         Builder& withOwnPipeline() { _flags.set(OWN_PIPELINE); return (*this); }
         Builder& invalidate() { _flags.set(INVALID); return (*this); }
 
@@ -132,7 +155,7 @@ public:
         Filter(Flags flags, Flags mask) : _flags{flags}, _mask{mask} {}
         Filter(const ShapeKey& key) : _flags{ key._flags } { _mask.set(); }
 
-        // Build a standard filter (will always exclude OWN_PIPELINE, INVALID)
+        // Build a standard filter (will always exclude OWN_PIPELINE and INVALID)
         class Builder {
         public:
             Builder();
@@ -197,6 +220,29 @@ public:
             Builder& withTriplanar() { _flags.set(TRIPLANAR); _mask.set(TRIPLANAR); return (*this); }
             Builder& withoutTriplanar() { _flags.reset(TRIPLANAR); _mask.set(TRIPLANAR); return (*this); }
 
+            Builder& withLayers(uint8_t numLayers) {
+                switch (numLayers) {
+                    case 3:
+                        _flags.set(LAYERS3);
+                        _flags.reset(LAYERS2);
+                        break;
+                    case 2:
+                        _flags.reset(LAYERS3);
+                        _flags.set(LAYERS2);
+                        break;
+                    default:
+                        _flags.reset(LAYERS3);
+                        _flags.reset(LAYERS2);
+                        break;
+                }
+                _mask.set(LAYERS3);
+                _mask.set(LAYERS2);
+                return (*this);
+            }
+
+            Builder& withSplatMap() { _flags.set(SPLATMAP); _mask.set(SPLATMAP); return (*this); }
+            Builder& withoutSplatMap() { _flags.reset(SPLATMAP); _mask.set(SPLATMAP); return (*this); }
+
             Builder& withCustom(uint8_t custom) { _flags &= (~CUSTOM_MASK); _flags |= (custom << CUSTOM_0); _mask |= (CUSTOM_MASK); return (*this); }
             Builder& withoutCustom() { _flags &= (~CUSTOM_MASK);  _mask |= (CUSTOM_MASK); return (*this); }
 
@@ -228,6 +274,8 @@ public:
     bool isFaded() const { return _flags[FADE]; }
     bool isMToon() const { return _flags[MTOON]; }
     bool isTriplanar() const { return _flags[TRIPLANAR]; }
+    uint8_t numLayers() const { return 1 + (uint8_t)_flags[LAYERS2] + 2 * (uint8_t)_flags[LAYERS3]; }
+    bool isSplatMap() const { return _flags[SPLATMAP]; }
 
     bool hasOwnPipeline() const { return _flags[OWN_PIPELINE]; }
     bool isValid() const { return !_flags[INVALID]; }
@@ -269,6 +317,8 @@ inline QDebug operator<<(QDebug debug, const ShapeKey& key) {
                 << "isFaded:" << key.isFaded()
                 << "isMToon:" << key.isMToon()
                 << "isTriplanar:" << key.isTriplanar()
+                << "numLayers:" << key.numLayers()
+                << "isSplatMap:" << key.isSplatMap()
                 << "]";
         }
     } else {
@@ -350,6 +400,8 @@ public:
     using Pipeline = ShapePipeline;
     using PipelinePointer = ShapePipelinePointer;
     using PipelineMap = std::unordered_map<ShapeKey, PipelinePointer, ShapeKey::Hash, ShapeKey::KeyEqual>;
+    using PipelineOperator = std::function<void(void)>;
+    using PipelineOperatorMap = std::unordered_map<ShapeKey, PipelineOperator, ShapeKey::Hash, ShapeKey::KeyEqual>;
     using Slot = int32_t;
     using Locations = Pipeline::Locations;
     using LocationsPointer = Pipeline::LocationsPointer;
@@ -361,11 +413,14 @@ public:
     void addPipeline(const Filter& filter, const gpu::ShaderPointer& program, const gpu::StatePointer& state,
         BatchSetter batchSetter = nullptr, ItemSetter itemSetter = nullptr);
 
+    void addPipelineOperator(const Key& key, const PipelineOperator& pipelineOperator) { _pipelineOperatorMap[key] = pipelineOperator; }
+
     const PipelinePointer pickPipeline(RenderArgs* args, const Key& key) const;
 
 protected:
     void addPipelineHelper(const Filter& filter, Key key, int bit, const PipelinePointer& pipeline) const;
     mutable PipelineMap _pipelineMap;
+    mutable PipelineOperatorMap _pipelineOperatorMap;
 
 private:
     mutable std::unordered_set<Key, Key::Hash, Key::KeyEqual> _missingKeys;

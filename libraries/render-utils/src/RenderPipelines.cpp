@@ -36,12 +36,19 @@ bool RenderPipelines::bindMaterial(graphics::MaterialPointer& material, Batch& b
 }
 
 void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial) {
-    auto& drawMaterialTextures = multiMaterial.getTextureTable();
+    auto& drawMaterialTextures = multiMaterial.getTextureTables();
     multiMaterial.setTexturesLoading(false);
     multiMaterial.resetReferenceTexturesAndMaterials();
-    multiMaterial.setisMToon(!multiMaterial.empty() && multiMaterial.top().material && multiMaterial.top().material->isMToon());
+    if (!multiMaterial.empty() && multiMaterial.top().material) {
+        multiMaterial.setisMToonAndLayers(multiMaterial.top().material->isMToon(),
+            std::max(1, std::min((int)multiMaterial.size(), (int)multiMaterial.top().material->getLayers())));
+    } else {    
+        multiMaterial.setisMToonAndLayers(false, 1);
+    }
     multiMaterial.resetOutline();
     multiMaterial.resetSamplers();
+
+    multiMaterial.setSplatMap(nullptr);
 
     // The total list of things we need to look for
     static std::set<uint> allFlags;
@@ -59,13 +66,19 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
     });
 
     graphics::MultiMaterial materials = multiMaterial;
-    graphics::MultiMaterial::Schema schema;
-    graphics::MultiMaterial::MToonSchema toonSchema;
-    graphics::MaterialKey schemaKey;
+    std::array<graphics::MultiMaterial::Schema, 3> schemas;
+    std::array<graphics::MultiMaterial::MToonSchema, 3> toonSchemas;
+    std::array<graphics::MaterialKey, 3> schemaKeys;
 
-    std::set<uint> flagsToCheck = allFlags;
-    std::set<uint> flagsToSetDefault;
+    std::array<std::set<uint>, 3> flagsToCheck;
+    flagsToCheck.fill(allFlags);
+    // We only look for splat maps on the first material
+    for (int i = 1; i < 3; i++) {
+        flagsToCheck[i].erase(graphics::MaterialKey::SPLAT_MAP_BIT);
+    }
+    std::array<std::set<uint>, 3> flagsToSetDefault;
 
+    uint8_t layerIndex = 0;
     while (!materials.empty()) {
         auto material = materials.top().material;
         if (!material) {
@@ -81,8 +94,8 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
         const auto materialKey = material->getKey();
         const auto textureMaps = material->getTextureMaps();
 
-        auto it = flagsToCheck.begin();
-        while (it != flagsToCheck.end()) {
+        auto it = flagsToCheck[layerIndex].begin();
+        while (it != flagsToCheck[layerIndex].end()) {
             auto flag = *it;
             bool fallthrough = defaultFallthrough || material->getPropertyFallthrough(flag);
 
@@ -92,56 +105,56 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                 switch (flag) {
                     case graphics::MaterialKey::EMISSIVE_VAL_BIT:
                         if (materialKey.isEmissive()) {
-                            schema._emissive = material->getEmissive(false);
-                            schemaKey.setEmissive(true);
+                            schemas[layerIndex]._emissive = material->getEmissive(false);
+                            schemaKeys[layerIndex].setEmissive(true);
                             wasSet = true;
                         }
                         break;
                     case graphics::MaterialKey::UNLIT_VAL_BIT:
                         if (materialKey.isUnlit()) {
-                            schemaKey.setUnlit(true);
+                            schemaKeys[layerIndex].setUnlit(true);
                             wasSet = true;
                         }
                         break;
                     case graphics::MaterialKey::ALBEDO_VAL_BIT:
                         if (materialKey.isAlbedo()) {
-                            schema._albedo = material->getAlbedo(false);
-                            schemaKey.setAlbedo(true);
+                            schemas[layerIndex]._albedo = material->getAlbedo(false);
+                            schemaKeys[layerIndex].setAlbedo(true);
                             wasSet = true;
                         }
                         break;
                     case graphics::MaterialKey::METALLIC_VAL_BIT:
                         if (materialKey.isMetallic()) {
-                            schema._metallic = material->getMetallic();
-                            schemaKey.setMetallic(true);
+                            schemas[layerIndex]._metallic = material->getMetallic();
+                            schemaKeys[layerIndex].setMetallic(true);
                             wasSet = true;
                         }
                         break;
                     case graphics::MaterialKey::GLOSSY_VAL_BIT:
                         if (materialKey.isRough() || materialKey.isGlossy()) {
-                            schema._roughness = material->getRoughness();
-                            schemaKey.setGlossy(materialKey.isGlossy());
+                            schemas[layerIndex]._roughness = material->getRoughness();
+                            schemaKeys[layerIndex].setGlossy(materialKey.isGlossy());
                             wasSet = true;
                         }
                         break;
                     case graphics::MaterialKey::OPACITY_VAL_BIT:
                         if (materialKey.isTranslucentFactor()) {
-                            schema._opacity = material->getOpacity();
-                            schemaKey.setTranslucentFactor(true);
+                            schemas[layerIndex]._opacity = material->getOpacity();
+                            schemaKeys[layerIndex].setTranslucentFactor(true);
                             wasSet = true;
                         }
                         break;
                     case graphics::MaterialKey::OPACITY_CUTOFF_VAL_BIT:
                         if (materialKey.isOpacityCutoff()) {
-                            schema._opacityCutoff = material->getOpacityCutoff();
-                            schemaKey.setOpacityCutoff(true);
+                            schemas[layerIndex]._opacityCutoff = material->getOpacityCutoff();
+                            schemaKeys[layerIndex].setOpacityCutoff(true);
                             wasSet = true;
                         }
                         break;
                     case graphics::MaterialKey::SCATTERING_VAL_BIT:
                         if (materialKey.isScattering()) {
-                            schema._scattering = material->getScattering();
-                            schemaKey.setScattering(true);
+                            schemas[layerIndex]._scattering = material->getScattering();
+                            schemaKeys[layerIndex].setScattering(true);
                             wasSet = true;
                         }
                         break;
@@ -151,7 +164,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
                                     material->resetOpacityMap();
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialAlbedo, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialAlbedo, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::ALBEDO_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -164,10 +177,10 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey.setAlbedoMap(true);
-                            schemaKey.setOpacityMaskMap(material->getKey().isOpacityMaskMap());
-                            schemaKey.setTranslucentMap(material->getKey().isTranslucentMap());
-                            schema.setTexCoordSet(gr::Texture::MaterialAlbedo, material->getTexCoordSet(graphics::MaterialKey::ALBEDO_MAP));
+                            schemaKeys[layerIndex].setAlbedoMap(true);
+                            schemaKeys[layerIndex].setOpacityMaskMap(material->getKey().isOpacityMaskMap());
+                            schemaKeys[layerIndex].setTranslucentMap(material->getKey().isTranslucentMap());
+                            schemas[layerIndex].setTexCoordSet(gr::Texture::MaterialAlbedo, material->getTexCoordSet(graphics::MaterialKey::ALBEDO_MAP));
                         }
                         break;
                     case graphics::MaterialKey::METALLIC_MAP_BIT:
@@ -175,7 +188,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::METALLIC_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialMetallic, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialMetallic, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::METALLIC_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -188,8 +201,8 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey.setMetallicMap(true);
-                            schema.setTexCoordSet(gr::Texture::MaterialMetallic, material->getTexCoordSet(graphics::MaterialKey::METALLIC_MAP));
+                            schemaKeys[layerIndex].setMetallicMap(true);
+                            schemas[layerIndex].setTexCoordSet(gr::Texture::MaterialMetallic, material->getTexCoordSet(graphics::MaterialKey::METALLIC_MAP));
                         }
                         break;
                     case graphics::MaterialKey::ROUGHNESS_MAP_BIT:
@@ -197,7 +210,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::ROUGHNESS_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialRoughness, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialRoughness, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::ROUGHNESS_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -210,8 +223,8 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey.setRoughnessMap(true);
-                            schema.setTexCoordSet(gr::Texture::MaterialRoughness, material->getTexCoordSet(graphics::MaterialKey::ROUGHNESS_MAP));
+                            schemaKeys[layerIndex].setRoughnessMap(true);
+                            schemas[layerIndex].setTexCoordSet(gr::Texture::MaterialRoughness, material->getTexCoordSet(graphics::MaterialKey::ROUGHNESS_MAP));
                         }
                         break;
                     case graphics::MaterialKey::NORMAL_MAP_BIT:
@@ -219,7 +232,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::NORMAL_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialNormal, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialNormal, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::NORMAL_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -232,8 +245,8 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey.setNormalMap(true);
-                            schema.setTexCoordSet(gr::Texture::MaterialNormal, material->getTexCoordSet(graphics::MaterialKey::NORMAL_MAP));
+                            schemaKeys[layerIndex].setNormalMap(true);
+                            schemas[layerIndex].setTexCoordSet(gr::Texture::MaterialNormal, material->getTexCoordSet(graphics::MaterialKey::NORMAL_MAP));
                         }
                         break;
                     case graphics::MaterialKey::OCCLUSION_MAP_BIT:
@@ -241,7 +254,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::OCCLUSION_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialOcclusion, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialOcclusion, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::OCCLUSION_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -254,8 +267,8 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey.setOcclusionMap(true);
-                            schema.setTexCoordSet(gr::Texture::MaterialOcclusion, material->getTexCoordSet(graphics::MaterialKey::OCCLUSION_MAP));
+                            schemaKeys[layerIndex].setOcclusionMap(true);
+                            schemas[layerIndex].setTexCoordSet(gr::Texture::MaterialOcclusion, material->getTexCoordSet(graphics::MaterialKey::OCCLUSION_MAP));
                         }
                         break;
                     case graphics::MaterialKey::SCATTERING_MAP_BIT:
@@ -263,7 +276,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::SCATTERING_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialScattering, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialScattering, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::SCATTERING_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -276,8 +289,8 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey.setScatteringMap(true);
-                            schema.setTexCoordSet(gr::Texture::MaterialScattering, material->getTexCoordSet(graphics::MaterialKey::SCATTERING_MAP));
+                            schemaKeys[layerIndex].setScatteringMap(true);
+                            schemas[layerIndex].setTexCoordSet(gr::Texture::MaterialScattering, material->getTexCoordSet(graphics::MaterialKey::SCATTERING_MAP));
                         }
                         break;
                     case graphics::MaterialKey::EMISSIVE_MAP_BIT:
@@ -286,7 +299,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::EMISSIVE_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialEmissiveLightmap, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialEmissiveLightmap, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::EMISSIVE_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -299,8 +312,8 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey.setEmissiveMap(true);
-                            schema.setTexCoordSet(gr::Texture::MaterialEmissiveLightmap, material->getTexCoordSet(graphics::MaterialKey::EMISSIVE_MAP));
+                            schemaKeys[layerIndex].setEmissiveMap(true);
+                            schemas[layerIndex].setTexCoordSet(gr::Texture::MaterialEmissiveLightmap, material->getTexCoordSet(graphics::MaterialKey::EMISSIVE_MAP));
                         } else if (materialKey.isLightMap()) {
                             // We'll set this later when we check the lightmap
                             wasSet = true;
@@ -311,7 +324,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::LIGHT_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialEmissiveLightmap, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialEmissiveLightmap, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::LIGHT_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -324,31 +337,51 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey.setLightMap(true);
-                            schema.setTexCoordSet(gr::Texture::MaterialEmissiveLightmap, material->getTexCoordSet(graphics::MaterialKey::LIGHT_MAP));
+                            schemaKeys[layerIndex].setLightMap(true);
+                            schemas[layerIndex].setTexCoordSet(gr::Texture::MaterialEmissiveLightmap, material->getTexCoordSet(graphics::MaterialKey::LIGHT_MAP));
                         }
                         break;
+                    case graphics::MaterialKey::SPLAT_MAP_BIT: {
+                        auto itr = textureMaps.find(graphics::MaterialKey::SPLAT_MAP);
+                        if (itr != textureMaps.end()) {
+                            if (itr->second->isDefined()) {
+                                multiMaterial.setSplatMap(itr->second->getTextureView()._texture);
+                                multiMaterial.addSamplerFunc([=]() { material->applySampler(graphics::MaterialKey::SPLAT_MAP); });
+                                if (itr->second->getTextureView().isReference()) {
+                                    multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                }
+                                wasSet = true;
+                            } else {
+                                multiMaterial.setTexturesLoading(true);
+                                forceDefault = true;
+                            }
+                            schemas[layerIndex].setTexCoordSet(gr::Texture::MaterialSplat, material->getTexCoordSet(graphics::MaterialKey::SPLAT_MAP));
+                        } else {
+                            forceDefault = true;
+                        }
+                        break;
+                    }
                     case graphics::Material::TEXCOORDTRANSFORM0:
                         if (!fallthrough) {
-                            schema._texcoordTransforms[0] = material->getTexCoordTransform(0);
+                            schemas[layerIndex]._texcoordTransforms[0] = material->getTexCoordTransform(0);
                             wasSet = true;
                         }
                         break;
                     case graphics::Material::TEXCOORDTRANSFORM1:
                         if (!fallthrough) {
-                            schema._texcoordTransforms[1] = material->getTexCoordTransform(1);
+                            schemas[layerIndex]._texcoordTransforms[1] = material->getTexCoordTransform(1);
                             wasSet = true;
                         }
                         break;
                     case graphics::Material::LIGHTMAP_PARAMS:
                         if (!fallthrough) {
-                            schema._lightmapParams = material->getLightmapParams();
+                            schemas[layerIndex]._lightmapParams = material->getLightmapParams();
                             wasSet = true;
                         }
                         break;
                     case graphics::Material::MATERIAL_PARAMS:
                         if (!fallthrough) {
-                            schema._materialParams = material->getMaterialParams();
+                            schemas[layerIndex]._materialParams = material->getMaterialParams();
                             wasSet = true;
                         }
                         break;
@@ -365,29 +398,29 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                 switch (flag) {
                     case graphics::MaterialKey::EMISSIVE_VAL_BIT:
                         if (materialKey.isEmissive()) {
-                            toonSchema._emissive = material->getEmissive(false);
-                            schemaKey.setEmissive(true);
+                            toonSchemas[layerIndex]._emissive = material->getEmissive(false);
+                            schemaKeys[layerIndex].setEmissive(true);
                             wasSet = true;
                         }
                         break;
                     case graphics::MaterialKey::ALBEDO_VAL_BIT:
                         if (materialKey.isAlbedo()) {
-                            toonSchema._albedo = material->getAlbedo(false);
-                            schemaKey.setAlbedo(true);
+                            toonSchemas[layerIndex]._albedo = material->getAlbedo(false);
+                            schemaKeys[layerIndex].setAlbedo(true);
                             wasSet = true;
                         }
                         break;
                     case graphics::MaterialKey::OPACITY_VAL_BIT:
                         if (materialKey.isTranslucentFactor()) {
-                            toonSchema._opacity = material->getOpacity();
-                            schemaKey.setTranslucentFactor(true);
+                            toonSchemas[layerIndex]._opacity = material->getOpacity();
+                            schemaKeys[layerIndex].setTranslucentFactor(true);
                             wasSet = true;
                         }
                         break;
                     case graphics::MaterialKey::OPACITY_CUTOFF_VAL_BIT:
                         if (materialKey.isOpacityCutoff()) {
-                            toonSchema._opacityCutoff = material->getOpacityCutoff();
-                            schemaKey.setOpacityCutoff(true);
+                            toonSchemas[layerIndex]._opacityCutoff = material->getOpacityCutoff();
+                            schemaKeys[layerIndex].setOpacityCutoff(true);
                             wasSet = true;
                         }
                         break;
@@ -397,7 +430,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
                                     material->resetOpacityMap();
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialAlbedo, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialAlbedo, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::ALBEDO_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -410,10 +443,10 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey.setAlbedoMap(true);
-                            schemaKey.setOpacityMaskMap(material->getKey().isOpacityMaskMap());
-                            schemaKey.setTranslucentMap(material->getKey().isTranslucentMap());
-                            toonSchema.setTexCoordSet(gr::Texture::MaterialAlbedo, material->getTexCoordSet(graphics::MaterialKey::ALBEDO_MAP));
+                            schemaKeys[layerIndex].setAlbedoMap(true);
+                            schemaKeys[layerIndex].setOpacityMaskMap(material->getKey().isOpacityMaskMap());
+                            schemaKeys[layerIndex].setTranslucentMap(material->getKey().isTranslucentMap());
+                            toonSchemas[layerIndex].setTexCoordSet(gr::Texture::MaterialAlbedo, material->getTexCoordSet(graphics::MaterialKey::ALBEDO_MAP));
                         }
                         break;
                     case graphics::MaterialKey::NORMAL_MAP_BIT:
@@ -421,7 +454,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::NORMAL_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialNormal, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialNormal, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::NORMAL_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -434,8 +467,8 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey.setNormalMap(true);
-                            toonSchema.setTexCoordSet(gr::Texture::MaterialNormal, material->getTexCoordSet(graphics::MaterialKey::NORMAL_MAP));
+                            schemaKeys[layerIndex].setNormalMap(true);
+                            toonSchemas[layerIndex].setTexCoordSet(gr::Texture::MaterialNormal, material->getTexCoordSet(graphics::MaterialKey::NORMAL_MAP));
                         }
                         break;
                     case graphics::MaterialKey::EMISSIVE_MAP_BIT:
@@ -444,7 +477,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::EMISSIVE_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialEmissiveLightmap, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialEmissiveLightmap, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::EMISSIVE_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -457,28 +490,48 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey.setEmissiveMap(true);
-                            toonSchema.setTexCoordSet(gr::Texture::MaterialEmissiveLightmap, material->getTexCoordSet(graphics::MaterialKey::EMISSIVE_MAP));
+                            schemaKeys[layerIndex].setEmissiveMap(true);
+                            toonSchemas[layerIndex].setTexCoordSet(gr::Texture::MaterialEmissiveLightmap, material->getTexCoordSet(graphics::MaterialKey::EMISSIVE_MAP));
                         } else if (materialKey.isLightMap()) {
                             // We'll set this later when we check the lightmap
                             wasSet = true;
                         }
                         break;
+                    case graphics::MaterialKey::SPLAT_MAP_BIT: {
+                        auto itr = textureMaps.find(graphics::MaterialKey::SPLAT_MAP);
+                        if (itr != textureMaps.end()) {
+                            if (itr->second->isDefined()) {
+                                multiMaterial.setSplatMap(itr->second->getTextureView()._texture);
+                                multiMaterial.addSamplerFunc([=]() { material->applySampler(graphics::MaterialKey::SPLAT_MAP); });
+                                if (itr->second->getTextureView().isReference()) {
+                                    multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                }
+                                wasSet = true;
+                            } else {
+                                multiMaterial.setTexturesLoading(true);
+                                forceDefault = true;
+                            }
+                            toonSchemas[layerIndex].setTexCoordSet(gr::Texture::MaterialSplat, material->getTexCoordSet(graphics::MaterialKey::SPLAT_MAP));
+                        } else {
+                            forceDefault = true;
+                        }
+                        break;
+                    }
                     case graphics::Material::TEXCOORDTRANSFORM0:
                         if (!fallthrough) {
-                            toonSchema._texcoordTransforms[0] = material->getTexCoordTransform(0);
+                            toonSchemas[layerIndex]._texcoordTransforms[0] = material->getTexCoordTransform(0);
                             wasSet = true;
                         }
                         break;
                     case graphics::Material::TEXCOORDTRANSFORM1:
                         if (!fallthrough) {
-                            toonSchema._texcoordTransforms[1] = material->getTexCoordTransform(1);
+                            toonSchemas[layerIndex]._texcoordTransforms[1] = material->getTexCoordTransform(1);
                             wasSet = true;
                         }
                         break;
                     case graphics::Material::MATERIAL_PARAMS:
                         if (!fallthrough) {
-                            toonSchema._materialParams = material->getMaterialParams();
+                            toonSchemas[layerIndex]._materialParams = material->getMaterialParams();
                             wasSet = true;
                         }
                         break;
@@ -490,31 +543,31 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::SHADE_VAL_BIT:
                         if (materialKey._flags[NetworkMToonMaterial::MToonFlagBit::SHADE_VAL_BIT]) {
-                            toonSchema._shade = material->getShade();
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::SHADE_VAL_BIT, true);
+                            toonSchemas[layerIndex]._shade = material->getShade();
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::SHADE_VAL_BIT, true);
                             wasSet = true;
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_VAL_BIT:
                         if (materialKey._flags[NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_VAL_BIT]) {
-                            toonSchema._shadingShift = material->getShadingShift();
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_VAL_BIT, true);
+                            toonSchemas[layerIndex]._shadingShift = material->getShadingShift();
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_VAL_BIT, true);
                             wasSet = true;
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::SHADING_TOONY_VAL_BIT:
                         if (materialKey._flags[NetworkMToonMaterial::MToonFlagBit::SHADING_TOONY_VAL_BIT]) {
-                            toonSchema._shadingToony = material->getShadingToony();
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::SHADING_TOONY_VAL_BIT, true);
+                            toonSchemas[layerIndex]._shadingToony = material->getShadingToony();
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::SHADING_TOONY_VAL_BIT, true);
                             wasSet = true;
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_SCROLL_VAL_BIT:
                         if (materialKey._flags[NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_SCROLL_VAL_BIT]) {
-                            toonSchema._uvAnimationScrollSpeed.x = material->getUVAnimationScrollXSpeed();
-                            toonSchema._uvAnimationScrollSpeed.y = material->getUVAnimationScrollYSpeed();
-                            toonSchema._uvAnimationScrollRotationSpeed = material->getUVAnimationRotationSpeed();
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_SCROLL_VAL_BIT, true);
+                            toonSchemas[layerIndex]._uvAnimationScrollSpeed.x = material->getUVAnimationScrollXSpeed();
+                            toonSchemas[layerIndex]._uvAnimationScrollSpeed.y = material->getUVAnimationScrollYSpeed();
+                            toonSchemas[layerIndex]._uvAnimationScrollRotationSpeed = material->getUVAnimationRotationSpeed();
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_SCROLL_VAL_BIT, true);
                             wasSet = true;
                         }
                         break;
@@ -523,7 +576,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find((graphics::Material::MapChannel) NetworkMToonMaterial::SHADE_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialShade, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialShade, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler((graphics::Material::MapChannel) NetworkMToonMaterial::SHADE_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -536,8 +589,8 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::SHADE_MAP_BIT, true);
-                            toonSchema.setTexCoordSet(gr::Texture::MaterialShade, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::SHADE_MAP));
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::SHADE_MAP_BIT, true);
+                            toonSchemas[layerIndex].setTexCoordSet(gr::Texture::MaterialShade, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::SHADE_MAP));
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_MAP_BIT:
@@ -545,7 +598,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find((graphics::Material::MapChannel) NetworkMToonMaterial::SHADING_SHIFT_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialShadingShift, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialShadingShift, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler((graphics::Material::MapChannel) NetworkMToonMaterial::SHADING_SHIFT_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -558,8 +611,8 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_MAP_BIT, true);
-                            toonSchema.setTexCoordSet(gr::Texture::MaterialShadingShift, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::SHADING_SHIFT_MAP));
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_MAP_BIT, true);
+                            toonSchemas[layerIndex].setTexCoordSet(gr::Texture::MaterialShadingShift, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::SHADING_SHIFT_MAP));
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::MATCAP_MAP_BIT:
@@ -567,7 +620,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find((graphics::Material::MapChannel) NetworkMToonMaterial::MATCAP_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialMatcap, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialMatcap, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler((graphics::Material::MapChannel) NetworkMToonMaterial::MATCAP_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -580,8 +633,8 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::MATCAP_MAP_BIT, true);
-                            toonSchema.setTexCoordSet(gr::Texture::MaterialMatcap, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::MATCAP_MAP));
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::MATCAP_MAP_BIT, true);
+                            toonSchemas[layerIndex].setTexCoordSet(gr::Texture::MaterialMatcap, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::MATCAP_MAP));
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::RIM_MAP_BIT:
@@ -589,7 +642,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find((graphics::Material::MapChannel) NetworkMToonMaterial::RIM_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialRim, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialRim, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler((graphics::Material::MapChannel) NetworkMToonMaterial::RIM_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -602,8 +655,8 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::RIM_MAP_BIT, true);
-                            toonSchema.setTexCoordSet(gr::Texture::MaterialRim, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::RIM_MAP));
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::RIM_MAP_BIT, true);
+                            toonSchemas[layerIndex].setTexCoordSet(gr::Texture::MaterialRim, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::RIM_MAP));
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_MASK_MAP_BIT:
@@ -611,7 +664,7 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find((graphics::Material::MapChannel) NetworkMToonMaterial::UV_ANIMATION_MASK_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures->setTexture(gr::Texture::MaterialUVAnimationMask, itr->second->getTextureView());
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialUVAnimationMask, itr->second->getTextureView());
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler((graphics::Material::MapChannel) NetworkMToonMaterial::UV_ANIMATION_MASK_MAP); });
                                     if (itr->second->getTextureView().isReference()) {
                                         multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
@@ -624,42 +677,42 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             } else {
                                 forceDefault = true;
                             }
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_MASK_MAP_BIT, true);
-                            toonSchema.setTexCoordSet(gr::Texture::MaterialUVAnimationMask, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::UV_ANIMATION_MASK_MAP));
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_MASK_MAP_BIT, true);
+                            toonSchemas[layerIndex].setTexCoordSet(gr::Texture::MaterialUVAnimationMask, material->getTexCoordSet((graphics::Material::MapChannel) NetworkMToonMaterial::UV_ANIMATION_MASK_MAP));
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::MATCAP_VAL_BIT:
                         if (materialKey._flags[NetworkMToonMaterial::MToonFlagBit::MATCAP_VAL_BIT]) {
-                            toonSchema._matcap = material->getMatcap(false);
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::MATCAP_VAL_BIT, true);
+                            toonSchemas[layerIndex]._matcap = material->getMatcap(false);
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::MATCAP_VAL_BIT, true);
                             wasSet = true;
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_VAL_BIT:
                         if (materialKey._flags[NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_VAL_BIT]) {
-                            toonSchema._parametricRim = material->getParametricRim(false);
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_VAL_BIT, true);
+                            toonSchemas[layerIndex]._parametricRim = material->getParametricRim(false);
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_VAL_BIT, true);
                             wasSet = true;
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_POWER_VAL_BIT:
                         if (materialKey._flags[NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_POWER_VAL_BIT]) {
-                            toonSchema._parametricRimFresnelPower = material->getParametricRimFresnelPower();
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_POWER_VAL_BIT, true);
+                            toonSchemas[layerIndex]._parametricRimFresnelPower = material->getParametricRimFresnelPower();
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_POWER_VAL_BIT, true);
                             wasSet = true;
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_LIFT_VAL_BIT:
                         if (materialKey._flags[NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_LIFT_VAL_BIT]) {
-                            toonSchema._parametricRimLift = material->getParametricRimLift();
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_LIFT_VAL_BIT, true);
+                            toonSchemas[layerIndex]._parametricRimLift = material->getParametricRimLift();
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::PARAMETRIC_RIM_LIFT_VAL_BIT, true);
                             wasSet = true;
                         }
                         break;
                     case NetworkMToonMaterial::MToonFlagBit::RIM_LIGHTING_MIX_VAL_BIT:
                         if (materialKey._flags[NetworkMToonMaterial::MToonFlagBit::RIM_LIGHTING_MIX_VAL_BIT]) {
-                            toonSchema._rimLightingMix = material->getRimLightingMix();
-                            schemaKey._flags.set(NetworkMToonMaterial::MToonFlagBit::RIM_LIGHTING_MIX_VAL_BIT, true);
+                            toonSchemas[layerIndex]._rimLightingMix = material->getRimLightingMix();
+                            schemaKeys[layerIndex]._flags.set(NetworkMToonMaterial::MToonFlagBit::RIM_LIGHTING_MIX_VAL_BIT, true);
                             wasSet = true;
                         }
                         break;
@@ -687,136 +740,152 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
             }
 
             if (wasSet) {
-                flagsToCheck.erase(it++);
+                flagsToCheck[layerIndex].erase(it++);
             } else if (forceDefault || !fallthrough) {
-                flagsToSetDefault.insert(flag);
-                flagsToCheck.erase(it++);
+                flagsToSetDefault[layerIndex].insert(flag);
+                flagsToCheck[layerIndex].erase(it++);
             } else {
                 ++it;
             }
         }
 
-        if (flagsToCheck.empty()) {
+        uint8_t numLayers = multiMaterial.getLayers();
+        if (numLayers > 1) {
+            // For layered materials, we stop when we reach the desired number of layers
+            if (layerIndex == numLayers - 1) {
+                break;
+            }
+            layerIndex++;
+        } else if (flagsToCheck[layerIndex].empty()) {
+            // For non-layered materials, we can stop once we've checked all the flags
             break;
         }
     }
 
-    for (auto flagBit : flagsToCheck) {
-        flagsToSetDefault.insert(flagBit);
-    }
+    for (uint8_t layerIndex = 0; layerIndex < multiMaterial.getLayers(); layerIndex++) {
+        for (auto flagBit : flagsToCheck[layerIndex]) {
+            flagsToSetDefault[layerIndex].insert(flagBit);
+        }
 
-    auto textureCache = DependencyManager::get<TextureCache>();
-    // Handle defaults
-    for (auto flag : flagsToSetDefault) {
-        if (!multiMaterial.isMToon()) {
-            switch (flag) {
-                case graphics::Material::CULL_FACE_MODE:
-                    multiMaterial.setCullFaceMode(graphics::Material::DEFAULT_CULL_FACE_MODE);
-                    break;
-                case graphics::MaterialKey::ALBEDO_MAP_BIT:
-                    if (schemaKey.isAlbedoMap()) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialAlbedo, textureCache->getWhiteTexture());
-                    }
-                    break;
-                case graphics::MaterialKey::METALLIC_MAP_BIT:
-                    if (schemaKey.isMetallicMap()) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialMetallic, textureCache->getBlackTexture());
-                    }
-                    break;
-                case graphics::MaterialKey::ROUGHNESS_MAP_BIT:
-                    if (schemaKey.isRoughnessMap()) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialRoughness, textureCache->getWhiteTexture());
-                    }
-                    break;
-                case graphics::MaterialKey::NORMAL_MAP_BIT:
-                    if (schemaKey.isNormalMap()) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialNormal, textureCache->getBlueTexture());
-                    }
-                    break;
-                case graphics::MaterialKey::OCCLUSION_MAP_BIT:
-                    if (schemaKey.isOcclusionMap()) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialOcclusion, textureCache->getWhiteTexture());
-                    }
-                    break;
-                case graphics::MaterialKey::SCATTERING_MAP_BIT:
-                    if (schemaKey.isScatteringMap()) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialScattering, textureCache->getWhiteTexture());
-                    }
-                    break;
-                case graphics::MaterialKey::EMISSIVE_MAP_BIT:
-                    if (schemaKey.isEmissiveMap() && !schemaKey.isLightMap()) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialEmissiveLightmap, textureCache->getGrayTexture());
-                    }
-                    break;
-                case graphics::MaterialKey::LIGHT_MAP_BIT:
-                    if (schemaKey.isLightMap()) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialEmissiveLightmap, textureCache->getBlackTexture());
-                    }
-                    break;
-                default:
-                    // everything else is initialized to the correct default values in Schema()
-                    break;
-            }
-        } else {
-            switch (flag) {
-                case graphics::Material::CULL_FACE_MODE:
-                    multiMaterial.setCullFaceMode(graphics::Material::DEFAULT_CULL_FACE_MODE);
-                    break;
-                case graphics::MaterialKey::ALBEDO_MAP_BIT:
-                    if (schemaKey.isAlbedoMap()) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialAlbedo, textureCache->getWhiteTexture());
-                    }
-                    break;
-                case graphics::MaterialKey::NORMAL_MAP_BIT:
-                    if (schemaKey.isNormalMap()) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialNormal, textureCache->getBlueTexture());
-                    }
-                    break;
-                case graphics::MaterialKey::EMISSIVE_MAP_BIT:
-                    if (schemaKey.isEmissiveMap() && !schemaKey.isLightMap()) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialEmissiveLightmap, textureCache->getGrayTexture());
-                    }
-                    break;
-                case NetworkMToonMaterial::MToonFlagBit::SHADE_MAP_BIT:
-                    if (schemaKey._flags[NetworkMToonMaterial::MToonFlagBit::SHADE_MAP_BIT]) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialShade, textureCache->getWhiteTexture());
-                    }
-                    break;
-                case NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_MAP_BIT:
-                    if (schemaKey._flags[NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_MAP_BIT]) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialShadingShift, textureCache->getBlackTexture());
-                    }
-                    break;
-                case NetworkMToonMaterial::MToonFlagBit::MATCAP_MAP_BIT:
-                    if (schemaKey._flags[NetworkMToonMaterial::MToonFlagBit::MATCAP_MAP_BIT]) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialMatcap, textureCache->getBlackTexture());
-                    }
-                    break;
-                case NetworkMToonMaterial::MToonFlagBit::RIM_MAP_BIT:
-                    if (schemaKey._flags[NetworkMToonMaterial::MToonFlagBit::RIM_MAP_BIT]) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialRim, textureCache->getWhiteTexture());
-                    }
-                    break;
-                case NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_MASK_MAP_BIT:
-                    if (schemaKey._flags[NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_MASK_MAP_BIT]) {
-                        drawMaterialTextures->setTexture(gr::Texture::MaterialUVAnimationMask, textureCache->getWhiteTexture());
-                    }
-                    break;
-                default:
-                    // everything else is initialized to the correct default values in ToonSchema()
-                    break;
+        auto textureCache = DependencyManager::get<TextureCache>();
+        // Handle defaults
+        for (auto flag : flagsToSetDefault[layerIndex]) {
+            if (!multiMaterial.isMToon()) {
+                switch (flag) {
+                    case graphics::Material::CULL_FACE_MODE:
+                        multiMaterial.setCullFaceMode(graphics::Material::DEFAULT_CULL_FACE_MODE);
+                        break;
+                    case graphics::MaterialKey::ALBEDO_MAP_BIT:
+                        if (schemaKeys[layerIndex].isAlbedoMap()) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialAlbedo, textureCache->getWhiteTexture());
+                        }
+                        break;
+                    case graphics::MaterialKey::METALLIC_MAP_BIT:
+                        if (schemaKeys[layerIndex].isMetallicMap()) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialMetallic, textureCache->getBlackTexture());
+                        }
+                        break;
+                    case graphics::MaterialKey::ROUGHNESS_MAP_BIT:
+                        if (schemaKeys[layerIndex].isRoughnessMap()) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialRoughness, textureCache->getWhiteTexture());
+                        }
+                        break;
+                    case graphics::MaterialKey::NORMAL_MAP_BIT:
+                        if (schemaKeys[layerIndex].isNormalMap()) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialNormal, textureCache->getBlueTexture());
+                        }
+                        break;
+                    case graphics::MaterialKey::OCCLUSION_MAP_BIT:
+                        if (schemaKeys[layerIndex].isOcclusionMap()) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialOcclusion, textureCache->getWhiteTexture());
+                        }
+                        break;
+                    case graphics::MaterialKey::SCATTERING_MAP_BIT:
+                        if (schemaKeys[layerIndex].isScatteringMap()) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialScattering, textureCache->getWhiteTexture());
+                        }
+                        break;
+                    case graphics::MaterialKey::EMISSIVE_MAP_BIT:
+                        if (schemaKeys[layerIndex].isEmissiveMap() && !schemaKeys[layerIndex].isLightMap()) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialEmissiveLightmap, textureCache->getGrayTexture());
+                        }
+                        break;
+                    case graphics::MaterialKey::LIGHT_MAP_BIT:
+                        if (schemaKeys[layerIndex].isLightMap()) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialEmissiveLightmap, textureCache->getBlackTexture());
+                        }
+                        break;
+                    default:
+                        // everything else is initialized to the correct default values in Schema()
+                        break;
+                }
+            } else {
+                switch (flag) {
+                    case graphics::Material::CULL_FACE_MODE:
+                        multiMaterial.setCullFaceMode(graphics::Material::DEFAULT_CULL_FACE_MODE);
+                        break;
+                    case graphics::MaterialKey::ALBEDO_MAP_BIT:
+                        if (schemaKeys[layerIndex].isAlbedoMap()) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialAlbedo, textureCache->getWhiteTexture());
+                        }
+                        break;
+                    case graphics::MaterialKey::NORMAL_MAP_BIT:
+                        if (schemaKeys[layerIndex].isNormalMap()) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialNormal, textureCache->getBlueTexture());
+                        }
+                        break;
+                    case graphics::MaterialKey::EMISSIVE_MAP_BIT:
+                        if (schemaKeys[layerIndex].isEmissiveMap() && !schemaKeys[layerIndex].isLightMap()) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialEmissiveLightmap, textureCache->getGrayTexture());
+                        }
+                        break;
+                    case NetworkMToonMaterial::MToonFlagBit::SHADE_MAP_BIT:
+                        if (schemaKeys[layerIndex]._flags[NetworkMToonMaterial::MToonFlagBit::SHADE_MAP_BIT]) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialShade, textureCache->getWhiteTexture());
+                        }
+                        break;
+                    case NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_MAP_BIT:
+                        if (schemaKeys[layerIndex]._flags[NetworkMToonMaterial::MToonFlagBit::SHADING_SHIFT_MAP_BIT]) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialShadingShift, textureCache->getBlackTexture());
+                        }
+                        break;
+                    case NetworkMToonMaterial::MToonFlagBit::MATCAP_MAP_BIT:
+                        if (schemaKeys[layerIndex]._flags[NetworkMToonMaterial::MToonFlagBit::MATCAP_MAP_BIT]) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialMatcap, textureCache->getBlackTexture());
+                        }
+                        break;
+                    case NetworkMToonMaterial::MToonFlagBit::RIM_MAP_BIT:
+                        if (schemaKeys[layerIndex]._flags[NetworkMToonMaterial::MToonFlagBit::RIM_MAP_BIT]) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialRim, textureCache->getWhiteTexture());
+                        }
+                        break;
+                    case NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_MASK_MAP_BIT:
+                        if (schemaKeys[layerIndex]._flags[NetworkMToonMaterial::MToonFlagBit::UV_ANIMATION_MASK_MAP_BIT]) {
+                            drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialUVAnimationMask, textureCache->getWhiteTexture());
+                        }
+                        break;
+                    default:
+                        // everything else is initialized to the correct default values in ToonSchema()
+                        break;
+                }
             }
         }
     }
 
     auto& schemaBuffer = multiMaterial.getSchemaBuffer();
-    if (multiMaterial.isMToon()) {
-        toonSchema._key = (uint32_t)schemaKey._flags.to_ulong();
-        schemaBuffer.edit<graphics::MultiMaterial::MToonSchema>() = toonSchema;
-    } else {
-        schema._key = (uint32_t)schemaKey._flags.to_ulong();
-        schemaBuffer.edit<graphics::MultiMaterial::Schema>() = schema;
+    uint32_t materialKey = 0;
+    for (uint8_t i = 0; i < multiMaterial.getLayers(); i++) {
+        uint32_t schemaKey = (uint32_t)schemaKeys[i]._flags.to_ulong();
+        materialKey |= schemaKey;
+        if (multiMaterial.isMToon()) {
+            toonSchemas[i]._key = schemaKey;
+            schemaBuffer._buffer->setSubData(i, toonSchemas[i]);
+        } else {
+            schemas[i]._key = schemaKey;
+            schemaBuffer._buffer->setSubData(i, schemas[i]);
+        }
     }
+    multiMaterial.setMaterialKey(graphics::MaterialKey(materialKey));
     multiMaterial.setNeedsUpdate(false);
     multiMaterial.setInitialized();
 }
@@ -880,7 +949,17 @@ bool RenderPipelines::bindMaterials(graphics::MultiMaterial& multiMaterial, Batc
         auto& schemaBuffer = multiMaterial.getSchemaBuffer();
         batch.setUniformBuffer(gr::Buffer::Material, schemaBuffer);
         if (enableTextures) {
-            batch.setResourceTextureTable(multiMaterial.getTextureTable());
+            uint8_t numLayers = multiMaterial.getLayers();
+            auto& textureTables = multiMaterial.getTextureTables();
+            // We are limited to 16 textures at once.  The last 3 slots are reserved for the splat map, skybox, and ambientFresnelLUT (the latter two for transparents only)
+            // So for 2 layers, we are limited to 6 textures each, and for 3 layers we are limited to 4 each
+            uint8_t offset = numLayers < 3 ? 6 : 4;
+            for (uint8_t i = 0; i < numLayers; i++) {
+                batch.setResourceTextureTable(textureTables[i], i * offset);
+            }
+            if (multiMaterial.isSplatMap()) {
+                batch.setResourceTexture(gr::Texture::MaterialSplat, multiMaterial.getSplatMap());
+            }
         } else {
             if (!multiMaterial.isMToon()) {
                 if (renderMode != Args::RenderMode::SHADOW_RENDER_MODE) {
