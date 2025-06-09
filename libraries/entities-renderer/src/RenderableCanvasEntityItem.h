@@ -29,7 +29,7 @@ public:
 
 protected:
     virtual void doRender(RenderArgs* args) override;
-    virtual bool isTransparent() const override { return _transparent; }
+    virtual bool isTransparent() const override;
 
     virtual void doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) override;
     virtual void doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) override;
@@ -42,6 +42,7 @@ private:
     int _geometryId { 0 };
     bool _unlit { false };
     bool _transparent { false };
+    PulsePropertyGroup _pulseProperties;
 
     std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };
 };

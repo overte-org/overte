@@ -32,6 +32,7 @@ CanvasEntityRenderer::~CanvasEntityRenderer() {
 
 void CanvasEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) {
     _transparent = entity->getTransparent();
+    _pulseProperties = entity->getPulseProperties();
 
     bool materialChanged = false;
     auto unlit = entity->getUnlit();
@@ -50,14 +51,7 @@ void CanvasEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoin
         auto height = entity->getImageHeight();
 
         // TODO: generic sampler properties
-        auto nearest = false;//entity->getPixelated();
-        auto wrapMode = true;//entity->getWrapMode();
-        auto sampler = gpu::Sampler(
-            nearest ? gpu::Sampler::FILTER_MIN_MAG_POINT : gpu::Sampler::FILTER_MIN_MAG_LINEAR,
-            wrapMode ? gpu::Sampler::WRAP_REPEAT : gpu::Sampler::WRAP_CLAMP
-        );
-
-        auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, width, height, 1, sampler);
+        auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, width, height, 1);
         texture->setSource("CanvasEntityRenderer");
         texture->assignStoredMip(0, data.length(), reinterpret_cast<const uint8_t*>(data.constData()));
         _texture = texture;
@@ -86,6 +80,11 @@ ShapeKey CanvasEntityRenderer::getShapeKey() {
     return builder.build();
 }
 
+bool CanvasEntityRenderer::isTransparent() const {
+    bool imageTransparent = _transparent || _pulseProperties.getAlphaMode() != PulseMode::NONE;
+    return imageTransparent || Parent::isTransparent() || materialsTransparent();
+}
+
 void CanvasEntityRenderer::doRender(RenderArgs* args) {
     PerformanceTimer perfTimer("RenderableCanvasEntityItem::render");
     Q_ASSERT(args->_batch);
@@ -97,6 +96,7 @@ void CanvasEntityRenderer::doRender(RenderArgs* args) {
     }
 
     glm::vec4 color = materials.getColor();
+    color = EntityRenderer::calculatePulseColor(color, _pulseProperties, _created);
 
     if (color.a == 0.0f) { return; }
 
@@ -108,8 +108,6 @@ void CanvasEntityRenderer::doRender(RenderArgs* args) {
         transform = _renderTransform;
         transparent = isTransparent();
     });
-
-    transparent |= color.a < 1.0f;
 
     bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
 

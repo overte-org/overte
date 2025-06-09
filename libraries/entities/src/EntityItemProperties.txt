@@ -330,6 +330,7 @@ enum:CANVAS_WIDTH prop:width type:uint16_t default:128 min:1 max:8192 debugStrin
 enum:CANVAS_HEIGHT prop:height type:uint16_t default:128 min:1 max:8192 debugString:"px" basicProp,
 enum:CANVAS_TRANSPARENT prop:transparent type:bool default:false renderProp,
 enum:UNLIT prop:unlit type:bool default:false common renderProp,
+group:pulse common renderUpdateOnSet,
 Empty
 Script
 enum:SCRIPT_URL prop:scriptURL type:QString default:"" urlPermission common,
