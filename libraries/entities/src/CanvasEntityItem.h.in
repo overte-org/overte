@@ -9,6 +9,7 @@
 #define hifi_CanvasEntityItem_h
 
 #include "EntityItem.h"
+#include "PulsePropertyGroup.h"
 #include <CanvasCommand.h>
 #include <mutex>
 
@@ -36,6 +37,8 @@ public:
     }
 
     void commit();
+
+    PulsePropertyGroup getPulseProperties() const { return _pulseProperties; }
 
     std::atomic<bool> _imageDataDirty;
     mutable std::recursive_mutex _imageDataMutex;
