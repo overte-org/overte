@@ -64,7 +64,7 @@ for (var i = 1; i <= SOUND_FILES.length; i++) {
 
 // if rezzed on/above something, wait until after model has loaded so you can read its dimensions then move object on to that surface.
 var pickRay = {origin: center, direction: {x: 0, y: -1, z: 0}};
-var intersection = Entities.findRayIntersection(pickRay, true);
+var intersection = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES);
 if (intersection.intersects && (intersection.distance < 10)) {
     var surfaceY = intersection.intersection.y;
     Script.setTimeout( function() {

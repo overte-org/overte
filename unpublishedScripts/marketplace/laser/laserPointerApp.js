@@ -67,7 +67,7 @@
             pickRay.direction = MyAvatar.jointToWorldDirection(Vec3.UP, MyAvatar.getJointIndex(jointName));
         }
 
-        var ray = Entities.findRayIntersection(pickRay, true, [], rayExclusionList, true);
+        var ray = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_INCLUDE_VISIBLE, [], rayExclusionList);
         var avatarRay = AvatarManager.findRayIntersection(pickRay, true, [], rayExclusionList, true);
 
         var dist = PICK_MAX_DISTANCE;

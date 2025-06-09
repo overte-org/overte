@@ -766,10 +766,13 @@ public slots:
         const QStringList& params = QStringList());
 
     /*@jsdoc
-     * Finds the domain or avatar entity with a position closest to a specified point and within a specified radius.
+     * Finds the entity with a position closest to a specified point and within a specified radius, according to <code>filter</code>.
      * @function Entities.findClosestEntity
      * @param {Vec3} center - The point about which to search.
      * @param {number} radius - The radius within which to search.
+     * @param {FilterFlags} [filter=Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_COARSE] - The filter
+     *     for this search to use. Construct using {@link Picks} FilterFlags property values (e.g., <code>Picks.PICK_DOMAIN_ENTITIES</code>)
+     *     combined with <code>|</code> (bitwise OR) operators.
      * @returns {Uuid} The ID of the entity that is closest to the <code>center</code> and within the <code>radius</code>, if
      *     there is one, otherwise <code>null</code>.
      * @example <caption>Find the closest entity within 10m of your avatar.</caption>
@@ -777,15 +780,18 @@ public slots:
      * print("Closest entity: " + entityID);
      */
     /// this function will not find any models in script engine contexts which don't have access to models
-    Q_INVOKABLE QUuid findClosestEntity(const glm::vec3& center, float radius) const;
+    Q_INVOKABLE QUuid findClosestEntity(const glm::vec3& center, float radius, uint filter = ENTITY_PICK_FILTER) const;
 
     /*@jsdoc
-     * Finds all domain and avatar entities that intersect a sphere.
+     * Finds all entities that intersect a sphere, according to <code>filter</code>.
      * <p><strong>Note:</strong> Server entity scripts only find entities that have a server entity script
      * running in them or a parent entity. You can apply a dummy script to entities that you want found in a search.</p>
      * @function Entities.findEntities
      * @param {Vec3} center - The point about which to search.
      * @param {number} radius - The radius within which to search.
+     * @param {FilterFlags} [filter=Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_COARSE] - The filter
+     *     for this search to use. Construct using {@link Picks} FilterFlags property values (e.g., <code>Picks.PICK_DOMAIN_ENTITIES</code>)
+     *     combined with <code>|</code> (bitwise OR) operators.
      * @returns {Uuid[]} An array of entity IDs that intersect the search sphere. The array is empty if no entities could be 
      *     found.
      * @example <caption>Report how many entities are within 10m of your avatar.</caption>
@@ -793,29 +799,38 @@ public slots:
      * print("Number of entities within 10m: " + entityIDs.length);
      */
     /// this function will not find any models in script engine contexts which don't have access to models
-    Q_INVOKABLE QVector<QUuid> findEntities(const glm::vec3& center, float radius) const;
+    Q_INVOKABLE QVector<QUuid> findEntities(const glm::vec3& center,
+                                            float radius, uint filter = ENTITY_PICK_FILTER) const;
 
     /*@jsdoc
-     * Finds all domain and avatar entities whose axis-aligned boxes intersect a search axis-aligned box.
+     * Finds all entities whose axis-aligned boxes intersect a search axis-aligned box, according to <code>filter</code>.
      * <p><strong>Note:</strong> Server entity scripts only find entities that have a server entity script
      * running in them or a parent entity. You can apply a dummy script to entities that you want found in a search.</p>
      * @function Entities.findEntitiesInBox
      * @param {Vec3} corner - The corner of the search AA box with minimum co-ordinate values.
      * @param {Vec3} dimensions - The dimensions of the search AA box.
+     * @param {FilterFlags} [filter=Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_COARSE] - The filter
+     *     for this search to use. Construct using {@link Picks} FilterFlags property values (e.g., <code>Picks.PICK_DOMAIN_ENTITIES</code>)
+     *     combined with <code>|</code> (bitwise OR) operators.
      * @returns {Uuid[]} An array of entity IDs whose AA boxes intersect the search AA box. The array is empty if no entities
      *     could be found.
      */
     /// this function will not find any models in script engine contexts which don't have access to models
-    Q_INVOKABLE QVector<QUuid> findEntitiesInBox(const glm::vec3& corner, const glm::vec3& dimensions) const;
+    Q_INVOKABLE QVector<QUuid> findEntitiesInBox(const glm::vec3& corner,
+                                                 const glm::vec3& dimensions,
+                                                 uint filter = ENTITY_PICK_FILTER) const;
 
     /*@jsdoc
-     * Finds all domain and avatar entities whose axis-aligned boxes intersect a search frustum.
+     * Finds all entities whose axis-aligned boxes intersect a search frustum, according to <code>filter</code>.
      * <p><strong>Note:</strong> Server entity scripts only find entities that have a server entity script
      * running in them or a parent entity. You can apply a dummy script to entities that you want found in a search.</p>
      * @function Entities.findEntitiesInFrustum
      * @param {ViewFrustum} frustum - The frustum to search in. The <code>position</code>, <code>orientation</code>, 
      *     <code>projection</code>, and <code>centerRadius</code> properties must be specified. The <code>fieldOfView</code> 
      *     and <code>aspectRatio</code> properties are not used; these values are specified by the <code>projection</code>.
+     * @param {FilterFlags} [filter=Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_COARSE] - The filter
+     *     for this search to use. Construct using {@link Picks} FilterFlags property values (e.g., <code>Picks.PICK_DOMAIN_ENTITIES</code>)
+     *     combined with <code>|</code> (bitwise OR) operators.
      * @returns {Uuid[]} An array of entity IDs whose axis-aligned boxes intersect the search frustum. The array is empty if no 
      *     entities could be found.
      * @example <caption>Report the number of entities in view.</caption>
@@ -823,16 +838,19 @@ public slots:
      * print("Number of entities in view: " + entityIDs.length);
      */
     /// this function will not find any models in script engine contexts which don't have access to entities
-    Q_INVOKABLE QVector<QUuid> findEntitiesInFrustum(QVariantMap frustum) const;
+    Q_INVOKABLE QVector<QUuid> findEntitiesInFrustum(QVariantMap frustum, uint filter = ENTITY_PICK_FILTER) const;
 
     /*@jsdoc
-     * Finds all domain and avatar entities of a particular type that intersect a sphere.
+     * Finds all entities of a particular type that intersect a sphere, according to <code>filter</code>.
      * <p><strong>Note:</strong> Server entity scripts only find entities that have a server entity script
      * running in them or a parent entity. You can apply a dummy script to entities that you want found in a search.</p>
      * @function Entities.findEntitiesByType
      * @param {Entities.EntityType} entityType - The type of entity to search for.
      * @param {Vec3} center - The point about which to search.
      * @param {number} radius - The radius within which to search.
+     * @param {FilterFlags} [filter=Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_COARSE] - The filter
+     *     for this search to use. Construct using {@link Picks} FilterFlags property values (e.g., <code>Picks.PICK_DOMAIN_ENTITIES</code>)
+     *     combined with <code>|</code> (bitwise OR) operators.
      * @returns {Uuid[]} An array of entity IDs of the specified type that intersect the search sphere. The array is empty if
      *     no entities could be found.
      * @example <caption>Report the number of Model entities within 10m of your avatar.</caption>
@@ -840,10 +858,13 @@ public slots:
      * print("Number of Model entities within 10m: " + entityIDs.length);
      */
     /// this function will not find any entities in script engine contexts which don't have access to entities
-    Q_INVOKABLE QVector<QUuid> findEntitiesByType(const QString entityType, const glm::vec3& center, float radius) const;
+    Q_INVOKABLE QVector<QUuid> findEntitiesByType(const QString entityType,
+                                                  const glm::vec3& center,
+                                                  float radius,
+                                                  uint filter = ENTITY_PICK_FILTER) const;
 
     /*@jsdoc
-     * Finds all domain and avatar entities with a particular name that intersect a sphere.
+     * Finds all entities with a particular name that intersect a sphere, according to <code>filter</code>.
      * <p><strong>Note:</strong> Server entity scripts only find entities that have a server entity script
      * running in them or a parent entity. You can apply a dummy script to entities that you want found in a search.</p>
      * @function Entities.findEntitiesByName
@@ -852,6 +873,9 @@ public slots:
      * @param {number} radius - The radius within which to search.
      * @param {boolean} [caseSensitive=false] - <code>true</code> if the search is case-sensitive, <code>false</code> if it is 
      *     case-insensitive.
+     * @param {FilterFlags} [filter=Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_COARSE] - The filter
+     *     for this search to use. Construct using {@link Picks} FilterFlags property values (e.g., <code>Picks.PICK_DOMAIN_ENTITIES</code>)
+     *     combined with <code>|</code> (bitwise OR) operators.
      * @returns {Uuid[]} An array of entity IDs that have the specified name and intersect the search sphere. The array is 
      *     empty if no entities could be found.
      * @example <caption>Report the number of entities with the name, "Light-Target".</caption>
@@ -859,10 +883,11 @@ public slots:
      * print("Number of entities with the name Light-Target: " + entityIDs.length);
      */
     Q_INVOKABLE QVector<QUuid> findEntitiesByName(const QString entityName, const glm::vec3& center, float radius,
-        bool caseSensitiveSearch = false) const;
+                                                  bool caseSensitiveSearch = false,
+                                                  uint filter = ENTITY_PICK_FILTER) const;
 
     /*@jsdoc
-     * Finds all domain and avatar entities with particular tags that intersect a sphere.
+     * Finds all entities with particular tags that intersect a sphere, according to <code>filter</code>.
      * <p><strong>Note:</strong> Server entity scripts only find entities that have a server entity script
      * running in them or a parent entity. You can apply a dummy script to entities that you want found in a search.</p>
      * @function Entities.findEntitiesByTags
@@ -871,6 +896,9 @@ public slots:
      * @param {number} radius - The radius within which to search.
      * @param {boolean} [caseSensitive=false] - <code>true</code> if the search is case-sensitive, <code>false</code> if it is
      *     case-insensitive.
+     * @param {FilterFlags} [filter=Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_COARSE] - The filter
+     *     for this search to use. Construct using {@link Picks} FilterFlags property values (e.g., <code>Picks.PICK_DOMAIN_ENTITIES</code>)
+     *     combined with <code>|</code> (bitwise OR) operators.
      * @returns {Uuid[]} An array of entity IDs that have the specified name and intersect the search sphere. The array is
      *     empty if no entities could be found.
      * @example <caption>Report the number of entities with the tag, "Light-Target".</caption>
@@ -878,26 +906,21 @@ public slots:
      * print("Number of entities with the tag Light-Target: " + entityIDs.length);
      */
     Q_INVOKABLE QVector<QUuid> findEntitiesByTags(const QVector<QString> entityTags, const glm::vec3& center, float radius,
-        bool caseSensitiveSearch = false) const;
+                                                  bool caseSensitiveSearch = false,
+                                                  uint filter = ENTITY_PICK_FILTER) const;
 
     /*@jsdoc
-     * Finds the first avatar or domain entity intersected by a {@link PickRay}. <code>Light</code> and <code>Zone</code> 
+     * Finds the first entity intersected by a {@link PickRay}, according to <code>filter</code>. <code>Light</code> and <code>Zone</code> 
      * entities are not intersected unless they've been configured as pickable using 
      * {@link Entities.setLightsArePickable|setLightsArePickable} and {@link Entities.setZonesArePickable|setZonesArePickable}, 
      * respectively.
      * @function Entities.findRayIntersection
      * @param {PickRay} pickRay - The pick ray to use for finding entities.
-     * @param {boolean} [precisionPicking=false] - <code>true</code> to pick against precise meshes, <code>false</code> to pick 
-     *     against coarse meshes. If <code>true</code> and the intersected entity is a <code>Model</code> entity, the result's 
-     *     <code>extraInfo</code> property includes more information than it otherwise would.
+     * @param {FilterFlags} [filter=Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_COARSE] - The filter
+     *     for this search to use. Construct using {@link Picks} FilterFlags property values (e.g., <code>Picks.PICK_DOMAIN_ENTITIES</code>)
+     *     combined with <code>|</code> (bitwise OR) operators.
      * @param {Uuid[]} [entitiesToInclude=[]] - If not empty, then the search is restricted to these entities.
      * @param {Uuid[]} [entitiesToDiscard=[]] - Entities to ignore during the search.
-     * @param {boolean} [visibleOnly=false] - <code>true</code> if only entities that are 
-     *     <code>{@link Entities.EntityProperties|visible}</code> are searched for, <code>false</code> if their visibility 
-     *     doesn't matter.
-     * @param {boolean} [collideableOnly=false] - <code>true</code> if only entities that are not 
-     *     <code>{@link Entities.EntityProperties|collisionless}</code> are searched, <code>false</code> if their 
-     *     collideability doesn't matter.
      * @returns {Entities.RayToEntityIntersectionResult} The result of the search for the first intersected entity.
      * @example <caption>Find the entity directly in front of your avatar.</caption>
      * var pickRay = {
@@ -905,7 +928,7 @@ public slots:
      *     direction: Quat.getFront(MyAvatar.orientation)
      * };
      *
-     * var intersection = Entities.findRayIntersection(pickRay, true);
+     * var intersection = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES);
      * if (intersection.intersects) {
      *     print("Entity in front of avatar: " + intersection.entityID);
      * } else {
@@ -915,9 +938,10 @@ public slots:
     /// If the scripting context has visible entities, this will determine a ray intersection, the results
     /// may be inaccurate if the engine is unable to access the visible entities, in which case result.accurate
     /// will be false.
-    Q_INVOKABLE RayToEntityIntersectionResult findRayIntersection(const PickRay& ray, bool precisionPicking = false,
-            const ScriptValue& entityIdsToInclude = ScriptValue(), const ScriptValue& entityIdsToDiscard = ScriptValue(),
-            bool visibleOnly = false, bool collidableOnly = false) const;
+    Q_INVOKABLE RayToEntityIntersectionResult findRayIntersection(const PickRay& ray,
+                                                                  uint filter = ENTITY_PICK_FILTER,
+                                                                  const ScriptValue& entityIdsToInclude = ScriptValue(),
+                                                                  const ScriptValue& entityIdsToDiscard = ScriptValue()) const;
 
     /*@jsdoc
      * Reloads an entity's server entity script such that the latest version re-downloaded.
@@ -2747,6 +2771,11 @@ private:
     bool _bidOnSimulationOwnership { false };
 
     ActivityTracking _activityTracking;
+
+    // By default, we do coarse picking against only domain and avatar entities
+    static const uint ENTITY_PICK_FILTER = PickFilter::getBitMask(PickFilter::FlagBit::DOMAIN_ENTITIES) |
+                                           PickFilter::getBitMask(PickFilter::FlagBit::AVATAR_ENTITIES) |
+                                           PickFilter::getBitMask(PickFilter::FlagBit::COARSE);
 };
 
 #endif // hifi_EntityScriptingInterface_h
