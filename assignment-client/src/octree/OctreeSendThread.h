@@ -57,6 +57,7 @@ protected:
     virtual bool traverseTreeAndBuildNextPacketPayload(EncodeBitstreamParams& params, const QJsonObject& jsonFilters) = 0;
 
     OctreePacketData _packetData;
+    OctreePacketData _packetDataLarge;
     QWeakPointer<Node> _node;
     OctreeServer* _myServer { nullptr };
     QUuid _nodeUuid;
@@ -65,6 +66,7 @@ private:
     /// Called before a packetDistributor pass to allow for pre-distribution processing
     virtual void preDistributionProcessing() = 0;
     int handlePacketSend(SharedNodePointer node, OctreeQueryNode* nodeData, bool dontSuppressDuplicate = false);
+    int handlePacketListSend(SharedNodePointer node, OctreeQueryNode* nodeData, bool dontSuppressDuplicate = false);
     int packetDistributor(SharedNodePointer node, OctreeQueryNode* nodeData, bool viewFrustumChanged);
 
     virtual bool hasSomethingToSend(OctreeQueryNode* nodeData) = 0;

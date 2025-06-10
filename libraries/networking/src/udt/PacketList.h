@@ -67,6 +67,7 @@ public:
 protected:
     PacketList(PacketType packetType, QByteArray extendedHeader = QByteArray(), bool isReliable = false, bool isOrdered = false);
     PacketList(PacketList&& other);
+    PacketList(const PacketList& other);
     
     void preparePackets(MessageNumber messageNumber);
 
@@ -84,8 +85,6 @@ private:
     friend class PacketQueue;
     friend class SendQueue;
     friend class Socket;
-
-    Q_DISABLE_COPY(PacketList)
     
     // Takes the first packet of the list and returns it.
     template<typename T> std::unique_ptr<T> takeFront();
