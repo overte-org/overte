@@ -65,6 +65,8 @@ public:
         EXTRA_4_BIT,
         EXTRA_5_BIT,
 
+        SPLAT_MAP_BIT, // Splat maps work differently than the other maps, so we put it at the end to not interfere with the extra bits
+
         NUM_FLAGS,
     };
     typedef std::bitset<NUM_FLAGS> Flags;
@@ -78,6 +80,7 @@ public:
         OCCLUSION_MAP,
         LIGHT_MAP,
         SCATTERING_MAP,
+        SPLAT_MAP,
 
         NUM_MAP_CHANNELS,
     };
@@ -425,6 +428,9 @@ public:
     virtual glm::vec2 getLightmapParams() const { return _lightmapParams; }
     virtual glm::vec2 getMaterialParams() const { return _materialParams; }
 
+    virtual uint8_t getLayers() const { return _layers; }
+    void setLayers(uint8_t layers) { _layers = std::min(3, std::max(1, (int)layers)); }
+
     virtual bool getDefaultFallthrough() const { return _defaultFallthrough; }
     void setDefaultFallthrough(bool defaultFallthrough) { _defaultFallthrough = defaultFallthrough; }
 
@@ -487,6 +493,7 @@ protected:
     std::string _name { "" };
     mutable MaterialKey _key { 0 };
     std::string _model { HIFI_PBR };
+    uint8_t _layers { 1 };
 
 private:
     // Material properties
@@ -580,6 +587,7 @@ public:
 
         glm::vec2 _lightmapParams { 0.0, 1.0 };
 
+        glm::vec3 spare { 0.0f };
         uint32_t _texCoordSets { 0 };
 
         Schema() {
@@ -630,6 +638,8 @@ public:
 
         uint32_t _texCoordSets { 0 };
 
+        float spare { 0.0f };
+
         MToonSchema() {
             for (auto& transform : _texcoordTransforms) {
                 transform = glm::mat4();
@@ -643,14 +653,9 @@ public:
         }
     };
 
+    void setMaterialKey(const graphics::MaterialKey& materialKey) { _materialKey = materialKey; }
+    graphics::MaterialKey getMaterialKey() const { return _materialKey; }
     gpu::BufferView& getSchemaBuffer() { return _schemaBuffer; }
-    graphics::MaterialKey getMaterialKey() const {
-        if (_isMToon) {
-            return graphics::MaterialKey(_schemaBuffer.get<graphics::MultiMaterial::MToonSchema>()._key);
-        } else {
-            return graphics::MaterialKey(_schemaBuffer.get<graphics::MultiMaterial::Schema>()._key);
-        }
-    }
     glm::vec4 getColor() const {
         glm::vec3 albedo;
         float opacity;
@@ -665,10 +670,12 @@ public:
         }
         return glm::vec4(ColorUtils::tosRGBVec3(albedo), opacity);
     }
-    const gpu::TextureTablePointer& getTextureTable() const { return _textureTable; }
+    const std::array<gpu::TextureTablePointer, 3>& getTextureTables() const { return _textureTables; }
 
     void setCullFaceMode(graphics::MaterialKey::CullFaceMode cullFaceMode) { _cullFaceMode = cullFaceMode; }
     graphics::MaterialKey::CullFaceMode getCullFaceMode() const { return _cullFaceMode; }
+
+    uint8_t getLayers() const { return _layers; }
 
     void setNeedsUpdate(bool needsUpdate) { _needsUpdate = needsUpdate; }
     void setTexturesLoading(bool value) { _texturesLoading = value; }
@@ -684,7 +691,7 @@ public:
     void addReferenceTexture(const std::function<gpu::TexturePointer()>& textureOperator);
     void addReferenceMaterial(const std::function<graphics::MaterialPointer()>& materialOperator);
 
-    void setisMToon(bool isMToon);
+    void setisMToonAndLayers(bool isMToon, uint8_t layers);
     bool isMToon() const { return _isMToon; }
     void setMToonTime();
     bool hasOutline() const { return _outlineWidthMode != 0 && _outlineWidth > 0.0f; }
@@ -696,17 +703,24 @@ public:
     void setOutlineWidth(float width) { _outlineWidth = width; }
     void setOutline(const glm::vec3& outline) { _outline = outline; }
 
+    void setSplatMap(const gpu::TexturePointer& splatMap) { _splatMap = splatMap; }
+    const gpu::TexturePointer& getSplatMap() const { return _splatMap; }
+    bool isSplatMap() const { return (bool)_splatMap; }
+
     void addSamplerFunc(std::function<void(void)> samplerFunc) { _samplerFuncs.push_back(samplerFunc); }
     void resetSamplers() { _samplerFuncs.clear(); }
     void applySamplers() const;
 
 private:
+    graphics::MaterialKey _materialKey;
     gpu::BufferView _schemaBuffer;
+    std::array<gpu::TextureTablePointer, 3> _textureTables;
     graphics::MaterialKey::CullFaceMode _cullFaceMode { graphics::Material::DEFAULT_CULL_FACE_MODE };
-    gpu::TextureTablePointer _textureTable { std::make_shared<gpu::TextureTable>() };
+    gpu::TexturePointer _splatMap { nullptr };
     bool _needsUpdate { false };
     bool _texturesLoading { false };
     bool _initialized { false };
+    uint8_t _layers { 1 };
 
     mutable size_t _textureSize { 0 };
     mutable int _textureCount { 0 };

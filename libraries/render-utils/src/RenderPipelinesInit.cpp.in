@@ -51,43 +51,66 @@ void lightBatchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* a
 static bool forceLightBatchSetter { false };
 
 // builder, deferred pipeline, shadow pipeline, forward pipeline (or 0 if unsupported)
-std::vector<std::tuple<Key::Builder, uint32_t, uint32_t, uint32_t>> ALL_PIPELINES = {
+typedef std::tuple<Key::Builder, uint32_t, uint32_t, uint32_t> PipelineInfo;
+std::vector<PipelineInfo> ALL_PIPELINES = {
 
 @ALL_PIPELINES_MAP@
 
 };
 
+static bool delayLoadingPipeline(const ShapeKey& shapeKey) {
+    return shapeKey.hasLightMap() || shapeKey.isTriplanar() || shapeKey.numLayers() > 1;
+}
+
 void initDeferredPipelines(ShapePlumber& plumber, const ShapePipeline::BatchSetter& batchSetter, const ShapePipeline::ItemSetter& itemSetter) {
-    auto addPipeline = std::bind(&addPlumberPipeline, std::ref(plumber), _1, _2, std::make_shared<State>(), _3, _4);
+    static std::unordered_map<ShapePlumber*, std::function<void(ShapeKey, int, ShapePipeline::BatchSetter, ShapePipeline::ItemSetter)>> addPipelineMap;
+    ShapePlumber* plumberKey = &plumber;
+    addPipelineMap[plumberKey] = std::bind(&addPlumberPipeline, std::ref(plumber), _1, _2, std::make_shared<State>(), _3, _4);
+    static auto addPipeline = [=](const ShapeKey& key, int programId, ShapePlumber* plumberKey) {
+        if (key.isFaded()) {
+            addPipelineMap[plumberKey](key, programId, batchSetter, itemSetter);
+        } else {
+            addPipelineMap[plumberKey](key, programId, nullptr, nullptr);
+        }
+    };
 
     for (auto& pipeline : ALL_PIPELINES) {
-        if (std::get<0>(pipeline).build().isFaded()) {
-            addPipeline(std::get<0>(pipeline), std::get<1>(pipeline), batchSetter, itemSetter);
+        render::ShapeKey shapeKey = std::get<0>(pipeline).build();
+        int programId = std::get<1>(pipeline);
+        if (delayLoadingPipeline(shapeKey)) {
+            plumber.addPipelineOperator(shapeKey, [=]() { addPipeline(shapeKey, programId, plumberKey); });
         } else {
-            addPipeline(std::get<0>(pipeline), std::get<1>(pipeline), nullptr, nullptr);
+            addPipeline(shapeKey, programId, plumberKey);
         }
     }
 }
 
 void initForwardPipelines(ShapePlumber& plumber) {
-    auto addPipelineBind = std::bind(&addPlumberPipeline, std::ref(plumber), _1, _2, std::make_shared<State>(), _3, _4);
+    static std::unordered_map<ShapePlumber*, std::function<void(ShapeKey, int, ShapePipeline::BatchSetter, ShapePipeline::ItemSetter)>> addPipelineMap;
+    ShapePlumber* plumberKey = &plumber;
+    addPipelineMap[plumberKey] = std::bind(&addPlumberPipeline, std::ref(plumber), _1, _2, std::make_shared<State>(), _3, _4);
+    static auto addPipeline = [=](const ShapeKey& key, int programId, ShapePlumber* plumberKey) {
+        // Forward pipelines need the lightBatchSetter for opaques and transparents
+        forceLightBatchSetter = true;
 
-    // Disable fade on the forward pipeline, all shaders get added twice, once with the fade key and once without
-    auto addPipeline = [&](const ShapeKey& key, int programId) {
-        addPipelineBind(key, programId, nullptr, nullptr);
-        addPipelineBind(Key::Builder(key).withFade(), programId, nullptr, nullptr);
+        // Disable fade on the forward pipeline, all shaders get added twice, once with the fade key and once without
+        addPipelineMap[plumberKey](key, programId, nullptr, nullptr);
+        addPipelineMap[plumberKey](Key::Builder(key).withFade(), programId, nullptr, nullptr);
+
+        forceLightBatchSetter = false;
     };
 
-    // Forward pipelines need the lightBatchSetter for opaques and transparents
-    forceLightBatchSetter = true;
-
     for (auto& pipeline : ALL_PIPELINES) {
-        if (std::get<3>(pipeline) != 0) {
-            addPipeline(std::get<0>(pipeline), std::get<3>(pipeline));
+        int programId = std::get<3>(pipeline);
+        if (programId != 0) {
+            render::ShapeKey shapeKey = std::get<0>(pipeline).build();
+            if (delayLoadingPipeline(shapeKey)) {
+                plumber.addPipelineOperator(shapeKey, [=]() { addPipeline(shapeKey, programId, plumberKey); });
+            } else {
+                addPipeline(shapeKey, programId, plumberKey);
+            }
         }
     }
-
-    forceLightBatchSetter = false;
 }
 
 void addPlumberPipeline(ShapePlumber& plumber,
@@ -184,13 +207,24 @@ void lightBatchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* a
 }
 
 void initZPassPipelines(ShapePlumber& plumber, StatePointer state, const ShapePipeline::BatchSetter& batchSetter, const ShapePipeline::ItemSetter& itemSetter) {
-    auto addPipeline = std::bind(&addPlumberPipeline, std::ref(plumber), _1, _2, state, _3, _4);
+    static std::unordered_map<ShapePlumber*, std::function<void(ShapeKey, int, ShapePipeline::BatchSetter, ShapePipeline::ItemSetter)>> addPipelineMap;
+    ShapePlumber* plumberKey = &plumber;
+    addPipelineMap[plumberKey] = std::bind(&addPlumberPipeline, std::ref(plumber), _1, _2, std::make_shared<State>(), _3, _4);
+    static auto addPipeline = [=](const ShapeKey& key, int programId, ShapePlumber* plumberKey) {
+        if (key.isFaded()) {
+            addPipelineMap[plumberKey](key, programId, batchSetter, itemSetter);
+        } else {
+            addPipelineMap[plumberKey](key, programId, nullptr, nullptr);
+        }
+    };
 
     for (auto& pipeline : ALL_PIPELINES) {
-        if (std::get<0>(pipeline).build().isFaded()) {
-            addPipeline(std::get<0>(pipeline), std::get<2>(pipeline), batchSetter, itemSetter);
+        render::ShapeKey shapeKey = std::get<0>(pipeline).build();
+        int programId = std::get<2>(pipeline);
+        if (delayLoadingPipeline(shapeKey)) {
+            plumber.addPipelineOperator(shapeKey, [=]() { addPipeline(shapeKey, programId, plumberKey); });
         } else {
-            addPipeline(std::get<0>(pipeline), std::get<2>(pipeline), nullptr, nullptr);
+            addPipeline(shapeKey, programId, plumberKey);
         }
     }
 }
@@ -236,6 +270,9 @@ void sortAndRenderZPassShapes(const ShapePlumberPointer& shapePlumber, const Ren
         if (items.first.isDepthBiased()) {
             variantKey.withDepthBias();
         }
+
+        //variantKey.withLayers(items.first.numLayers());
+        //splatmap?
 
         if (items.first.hasOwnPipeline()) {
             sortedOwnPipelineShapeKeys[variantKey.build()].push_back(items.first);

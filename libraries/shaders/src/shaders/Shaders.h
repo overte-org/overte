@@ -121,7 +121,7 @@ struct DialectVariantSource {
     // Optimized SPIRV version of the shader
     Binary spirv;
     // Regenerated GLSL from the optimized SPIRV
-    String glsl;
+    //String glsl;
     // Shader reflection from the optimized SPIRV
     Reflection reflection;
 
