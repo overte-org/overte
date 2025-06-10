@@ -675,18 +675,6 @@ void ParticleEffectEntityItem::appendSubclassData(OctreePacketData* packetData, 
                                                   OctreeElement::AppendState& appendState) const {
 
     bool successPropertyFits = true;
-<<<<<<< HEAD:libraries/entities/src/ParticleEffectEntityItem.cpp.in
-=======
-    APPEND_ENTITY_PROPERTY(PROP_SHAPE_TYPE, (uint32_t)getShapeType());
-    APPEND_ENTITY_PROPERTY(PROP_COMPOUND_SHAPE_URL, getCompoundShapeURL());
-    APPEND_ENTITY_PROPERTY(PROP_COLOR, getColor());
-    APPEND_ENTITY_PROPERTY(PROP_ALPHA, getAlpha());
-    withReadLock([&] {
-        _pulseProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
-            propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
-    });
-    APPEND_ENTITY_PROPERTY(PROP_TEXTURES, getTextures());
->>>>>>> 2b55dbf4c8 (support larger entity edit/data packets via packet lists):libraries/entities/src/ParticleEffectEntityItem.cpp
 
 @ParticleEffect_ENTITY_APPEND@
 

@@ -23,33 +23,7 @@ public:
     PolyLineEntityItem(const EntityItemID& entityItemID);
 
     ALLOW_INSTANTIATION // This class can be instantiated
-<<<<<<< HEAD:libraries/entities/src/PolyLineEntityItem.h.in
     ENTITY_PROPERTY_SUBCLASS_METHODS
-=======
-
-    // methods for getting/setting all properties of an entity
-    virtual EntityItemProperties getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const override;
-    virtual bool setSubClassProperties(const EntityItemProperties& properties) override;
-
-    virtual EntityPropertyFlags getEntityProperties(EncodeBitstreamParams& params) const override;
-
-    virtual void appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
-                                    EntityTreeElementExtraEncodeDataPointer modelTreeElementExtraEncodeData,
-                                    EntityPropertyFlags& requestedProperties,
-                                    EntityPropertyFlags& propertyFlags,
-                                    EntityPropertyFlags& propertiesDidntFit,
-                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
-                                    int& propertyCount,
-                                    OctreeElement::AppendState& appendState) const override;
-
-    virtual int readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
-                                                 ReadBitstreamToTreeParams& args,
-                                                 EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
-                                                 bool& somethingChanged) override;
-
-    glm::u8vec3 getColor() const;
-    void setColor(const glm::u8vec3& value);
->>>>>>> 2b55dbf4c8 (support larger entity edit/data packets via packet lists):libraries/entities/src/PolyLineEntityItem.h
 
     static const int MAX_POINTS_PER_LINE;
     static const float DEFAULT_LINE_WIDTH;

@@ -34,46 +34,6 @@ public:
     /// set dimensions in domain scale units (0.0 - 1.0) this will also reset radius appropriately
     virtual void setUnscaledDimensions(const glm::vec3& value) override;
 
-<<<<<<< HEAD:libraries/entities/src/LightEntityItem.h.in
-=======
-    // methods for getting/setting all properties of an entity
-    virtual EntityItemProperties getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const override;
-    virtual bool setSubClassProperties(const EntityItemProperties& properties) override;
-
-    virtual EntityPropertyFlags getEntityProperties(EncodeBitstreamParams& params) const override;
-
-    virtual void appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
-                                    EntityTreeElementExtraEncodeDataPointer modelTreeElementExtraEncodeData,
-                                    EntityPropertyFlags& requestedProperties,
-                                    EntityPropertyFlags& propertyFlags,
-                                    EntityPropertyFlags& propertiesDidntFit,
-                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
-                                    int& propertyCount,
-                                    OctreeElement::AppendState& appendState) const override;
-
-    virtual int readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
-                                                ReadBitstreamToTreeParams& args,
-                                                EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
-                                                bool& somethingChanged) override;
-
-    glm::u8vec3 getColor() const;
-    void setColor(const glm::u8vec3& value);
-
-    bool getIsSpotlight() const;
-    void setIsSpotlight(bool value);
-
-    float getIntensity() const;
-    void setIntensity(float value);
-    float getFalloffRadius() const;
-    void setFalloffRadius(float value);
-
-    float getExponent() const;
-    void setExponent(float value);
-
-    float getCutoff() const;
-    void setCutoff(float value);
-    
->>>>>>> 2b55dbf4c8 (support larger entity edit/data packets via packet lists):libraries/entities/src/LightEntityItem.h
     static bool getLightsArePickable() { return _lightsArePickable; }
     static void setLightsArePickable(bool value) { _lightsArePickable = value; }
 

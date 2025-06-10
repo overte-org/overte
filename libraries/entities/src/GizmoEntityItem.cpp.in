@@ -60,6 +60,7 @@ void GizmoEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBit
                                          EntityPropertyFlags& requestedProperties,
                                          EntityPropertyFlags& propertyFlags,
                                          EntityPropertyFlags& propertiesDidntFit,
+                                         bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                          int& propertyCount,
                                          OctreeElement::AppendState& appendState) const {
 
@@ -92,28 +93,6 @@ void GizmoEntityItem::debugDump() const {
 
 @Gizmo_ENTITY_DEBUG@
 
-<<<<<<< HEAD:libraries/entities/src/GizmoEntityItem.cpp.in
-=======
-    return requestedProperties;
-}
-
-void GizmoEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
-                                    EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
-                                    EntityPropertyFlags& requestedProperties,
-                                    EntityPropertyFlags& propertyFlags,
-                                    EntityPropertyFlags& propertiesDidntFit,
-                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
-                                    int& propertyCount,
-                                    OctreeElement::AppendState& appendState) const {
-
-    bool successPropertyFits = true;
-
-    APPEND_ENTITY_PROPERTY(PROP_GIZMO_TYPE, (uint32_t)getGizmoType());
-    withReadLock([&] {
-        _ringProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
-            propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
-    });
->>>>>>> 2b55dbf4c8 (support larger entity edit/data packets via packet lists):libraries/entities/src/GizmoEntityItem.cpp
 }
 
 bool GizmoEntityItem::supportsDetailedIntersection() const {

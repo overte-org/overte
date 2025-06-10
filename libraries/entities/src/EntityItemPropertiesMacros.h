@@ -506,7 +506,7 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
         T& get##N() { return _##n; }             \
     private:                                     \
         T _##n;                                  \
-        static T _static##N; 
+        static T _static##N;
 
 
 #define ADD_PROPERTY_TO_MAP(P, n, T) \
@@ -678,6 +678,7 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
                             EntityPropertyFlags& requestedProperties,                                   \
                             EntityPropertyFlags& propertyFlags,                                         \
                             EntityPropertyFlags& propertiesDidntFit,                                    \
+                            bool& firstProperty, EntityPropertyList& firstDidntFitProperty,             \
                             int& propertyCount,                                                         \
                             OctreeElement::AppendState& appendState) const override;                    \
     int readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,                \
@@ -701,6 +702,7 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
                                     EntityPropertyFlags& requestedProperties,                               \
                                     EntityPropertyFlags& propertyFlags,                                     \
                                     EntityPropertyFlags& propertiesDidntFit,                                \
+                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,         \
                                     int& propertyCount,                                                     \
                                     OctreeElement::AppendState& appendState) const override;                \
     virtual bool decodeFromEditPacket(EntityPropertyFlags& propertyFlags,                                   \

@@ -33,32 +33,7 @@ public:
     ZoneEntityItem(const EntityItemID& entityItemID);
 
     ALLOW_INSTANTIATION // This class can be instantiated
-<<<<<<< HEAD:libraries/entities/src/ZoneEntityItem.h.in
     ENTITY_PROPERTY_SUBCLASS_METHODS
-=======
-
-    // methods for getting/setting all properties of an entity
-    virtual EntityItemProperties getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const override;
-    virtual bool setSubClassProperties(const EntityItemProperties& properties) override;
-
-    virtual EntityPropertyFlags getEntityProperties(EncodeBitstreamParams& params) const override;
-
-    virtual void appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
-                                    EntityTreeElementExtraEncodeDataPointer modelTreeElementExtraEncodeData,
-                                    EntityPropertyFlags& requestedProperties,
-                                    EntityPropertyFlags& propertyFlags,
-                                    EntityPropertyFlags& propertiesDidntFit,
-                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
-                                    int& propertyCount,
-                                    OctreeElement::AppendState& appendState) const override;
-
-    virtual int readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
-                                                ReadBitstreamToTreeParams& args,
-                                                EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
-                                                bool& somethingChanged) override;
-
-
->>>>>>> 2b55dbf4c8 (support larger entity edit/data packets via packet lists):libraries/entities/src/ZoneEntityItem.h
 
     static bool getZonesArePickable() { return _zonesArePickable; }
     static void setZonesArePickable(bool value) { _zonesArePickable = value; }

@@ -121,6 +121,7 @@ void ShapeEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBit
                                          EntityPropertyFlags& requestedProperties,
                                          EntityPropertyFlags& propertyFlags,
                                          EntityPropertyFlags& propertiesDidntFit,
+                                         bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                          int& propertyCount,
                                          OctreeElement::AppendState& appendState) const {
 
@@ -143,63 +144,6 @@ int ShapeEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data,
     return bytesRead;
 }
 
-<<<<<<< HEAD:libraries/entities/src/ShapeEntityItem.cpp.in
-=======
-EntityPropertyFlags ShapeEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
-    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
-    requestedProperties += PROP_COLOR;
-    requestedProperties += PROP_ALPHA;
-    requestedProperties += _pulseProperties.getEntityProperties(params);
-    requestedProperties += PROP_SHAPE;
-    return requestedProperties;
-}
-
-void ShapeEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
-                                    EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
-                                    EntityPropertyFlags& requestedProperties,
-                                    EntityPropertyFlags& propertyFlags,
-                                    EntityPropertyFlags& propertiesDidntFit,
-                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
-                                    int& propertyCount, 
-                                    OctreeElement::AppendState& appendState) const { 
-
-    bool successPropertyFits = true;
-    APPEND_ENTITY_PROPERTY(PROP_COLOR, getColor());
-    APPEND_ENTITY_PROPERTY(PROP_ALPHA, getAlpha());
-    withReadLock([&] {
-        _pulseProperties.appendSubclassData(packetData, params, entityTreeElementExtraEncodeData, requestedProperties,
-            propertyFlags, propertiesDidntFit, firstProperty, firstDidntFitProperty, propertyCount, appendState);
-    });
-    APPEND_ENTITY_PROPERTY(PROP_SHAPE, entity::stringFromShape(getShape()));
-}
-
-void ShapeEntityItem::setColor(const glm::u8vec3& value) {
-    withWriteLock([&] {
-        _needsRenderUpdate |= _color != value;
-        _color = value;
-    });
-}
-
-glm::u8vec3 ShapeEntityItem::getColor() const {
-    return resultWithReadLock<glm::u8vec3>([&] {
-        return _color;
-    });
-}
-
-void ShapeEntityItem::setAlpha(float alpha) {
-    withWriteLock([&] {
-        _needsRenderUpdate |= _alpha != alpha;
-        _alpha = alpha;
-    });
-}
-
-float ShapeEntityItem::getAlpha() const {
-    return resultWithReadLock<float>([&] {
-        return _alpha;
-    });
-}
-
->>>>>>> 2b55dbf4c8 (support larger entity edit/data packets via packet lists):libraries/entities/src/ShapeEntityItem.cpp
 void ShapeEntityItem::setUnscaledDimensions(const glm::vec3& value) {
     const float MAX_FLAT_DIMENSION = 0.0001f;
     const auto shape = getShape();
