@@ -150,7 +150,7 @@ Rectangle {
 							property string appVersion: Object.keys(focusedApp.appScriptVersions)[index];
 							property string appUrl: focusedApp.appScriptVersions[Object.keys(focusedApp.appScriptVersions)[index]];
 							width: parent.width;
-							height: children[0].children[0].height + children[0].children[1].height + 10;
+							height: appUrlElement.visible ? children[0].children[0].height + children[0].children[1].height + 10 : children[0].children[0].height + 10  ;
 							color: colors.darkBackground2;
 
 							ColumnLayout {
