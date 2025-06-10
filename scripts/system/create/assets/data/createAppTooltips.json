@@ -698,6 +698,9 @@
     "renderWithZones": {
         "tooltip": "If set, this entity will only render when your avatar is inside of a zone in this list."
     },
+    "tags": {
+        "tooltip": "A set of tags describing this entity that can be used with the API."
+    },
     "groupCulled": {
         "tooltip": "If false, individual pieces of the entity may be culled by the render engine. If true, either the entire entity will be culled, or it won't at all."
     },
