@@ -51,17 +51,17 @@ Rectangle {
 
 					Text {
 						text: focusedApp && focusedApp.appName || "";
-						color: "white";
+						color: colors.lightText1;
 						font.pixelSize: 20;
 					}
 					Text {
 						text: focusedApp && focusedApp.appCategory || "";
-						color: "lightgray";
+						color: colors.lightText2;
 						font.pixelSize: 16;
 					}
 					Text {
 						text: focusedApp && focusedApp.appAgeMaturity || "";
-						color: "lightgray";
+						color: colors.lightText2;
 						font.pixelSize: 16;
 					}
 				}
@@ -99,7 +99,7 @@ Rectangle {
 				Text {
 					visible: isAppInstalled === true;
 					text: focusedApp && focusedApp.isInstalled ? "Installed:\n" + focusedApp.installedVersion + "\n" : "";
-					color: "lightgray";
+					color: colors.lightText2;
 					font.pixelSize: 16;
 					wrapMode: Text.Wrap;
 					width: parent.width;
@@ -107,7 +107,7 @@ Rectangle {
 
 				Text {
 					text: focusedApp && focusedApp.appDescription || "";
-					color: "lightgray";
+					color: colors.lightText2;
 					font.pixelSize: 16;
 					wrapMode: Text.Wrap;
 					width: parent.width;
@@ -179,7 +179,7 @@ Rectangle {
 									clip: true;
 									Text {
 										text: appUrl;
-										color: "lightgray";
+										color: colors.lightText2;
 										font.pixelSize: 16;
 										wrapMode: Text.Wrap;
 										width: parent.width;

@@ -7,6 +7,11 @@ QtObject {
 	readonly property color darkBackground3: "#333333"; 
 	readonly property color darkBackground4: "#454545"; 
 
+	// Text
+	readonly property color lightText1: "white"; 
+	readonly property color lightText2: "lightgray"; 
+	readonly property color lightText3: "gray"; 
+
 	// Buttons / Actions
 	readonly property color button: "#696e6f"; 
 	readonly property color buttonDanger: "#771D1D";

@@ -4,7 +4,7 @@ import QtQuick.Layouts 1.11
 
 Rectangle {
 	readonly property var maturityColors: {
-		"STABLE": "gray",
+		"STABLE": colors.lightText3,
 		"BETA": "lightblue",
 		"ALPHA": "yellow"
 	}
@@ -37,7 +37,7 @@ Rectangle {
 
 			Text {
 				text: "By: " + appList[index].appAuthor;
-				color: "gray";
+				color: colors.lightText2;
 				font.pixelSize: 18;
 			}
 
@@ -62,7 +62,7 @@ Rectangle {
 			Text {
 				visible: appList[index].isInstalled;
 				text: "( Installed )";
-				color: "gray";
+				color: colors.lightText2;
 				font.pixelSize: 16;
 			}
 
