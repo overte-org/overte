@@ -67,6 +67,7 @@ signals:
     void hoverBeginOverlay(const QUuid& id, const PointerEvent& pointerEvent);
     void hoverContinueOverlay(const QUuid& id, const PointerEvent& pointerEvent);
     void hoverEndOverlay(const QUuid& id, const PointerEvent& pointerEvent);
+    void scrollOverlay(const QUuid& id, const PointerEvent& pointerEvent);
 
     void triggerBeginEntity(const QUuid& id, const PointerEvent& pointerEvent);
     void triggerContinueEntity(const QUuid& id, const PointerEvent& pointerEvent);
@@ -74,6 +75,7 @@ signals:
     void hoverBeginEntity(const QUuid& id, const PointerEvent& pointerEvent);
     void hoverContinueEntity(const QUuid& id, const PointerEvent& pointerEvent);
     void hoverEndEntity(const QUuid& id, const PointerEvent& pointerEvent);
+    void scrollEntity(const QUuid& id, const PointerEvent& pointerEvent);
 
     void triggerBeginHUD(const PointerEvent& pointerEvent);
     void triggerContinueHUD(const PointerEvent& pointerEvent);
@@ -81,6 +83,7 @@ signals:
     void hoverBeginHUD(const PointerEvent& pointerEvent);
     void hoverContinueHUD(const PointerEvent& pointerEvent);
     void hoverEndHUD(const PointerEvent& pointerEvent);
+    void scrollHUD(const PointerEvent& pointerEvent);
 };
 
 #endif // hifi_pointers_PointerManager_h

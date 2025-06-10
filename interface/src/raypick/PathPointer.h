@@ -123,6 +123,7 @@ protected:
 
     PickedObject getHoveredObject(const PickResultPointer& pickResult) override;
     Pointer::Buttons getPressedButtons(const PickResultPointer& pickResult) override;
+    glm::vec2 getScroll(const PickResultPointer& pickResult) override;
 
     PickResultPointer getVisualPickResult(const PickResultPointer& pickResult) override;
     virtual glm::vec3 getPickOrigin(const PickResultPointer& pickResult) const = 0;

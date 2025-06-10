@@ -247,6 +247,21 @@ namespace controller {
         return nullptr;
     }
 
+    void ScriptingInterface::captureActionEvents(const QString& captureName) {
+        std::lock_guard lock(_actionCapturesMutex);
+
+        _actionCaptures.insert(captureName);
+        _actionsCaptured = true;
+    }
+
+    void ScriptingInterface::releaseActionEvents(const QString& captureName) {
+        std::lock_guard lock(_actionCapturesMutex);
+
+        _actionCaptures.erase(captureName);
+
+        // release the capture once all of the lock names are gone
+        if (_actionCaptures.size() == 0) { _actionsCaptured = false; }
+    }
 
 } // namespace controllers
 

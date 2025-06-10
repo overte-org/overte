@@ -20,6 +20,7 @@
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
+#include <mutex>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -515,23 +516,25 @@ namespace controller {
         /*@jsdoc
          * Disables translating and rotating the user's avatar in response to keyboard and controller controls.
          * @function Controller.captureActionEvents
+         * @param {string} [captureName] - An identifier for the capture. Action events will remain captured while there is at least one uniquely named capture active.
          * @example <caption>Disable avatar translation and rotation for a short period.</caption>
          * Script.setTimeout(function () {
-         *     Controller.captureActionEvents();
+         *     Controller.captureActionEvents("Example");
          * }, 5000);
          *
          * Script.setTimeout(function () {
-         *     Controller.releaseActionEvents();
+         *     Controller.releaseActionEvents("Example");
          * }, 10000);
          */
-        virtual void captureActionEvents() { _actionsCaptured = true; }
+        virtual void captureActionEvents(const QString& captureName = "");
 
         /*@jsdoc
          * Enables translating and rotating the user's avatar in response to keyboard and controller controls that were disabled 
          * using {@link Controller.captureActionEvents|captureActionEvents}.
+         * @param {string} [captureName] - An identifier for the capture. Action events will remain captured while there is at least one uniquely named capture active.
          * @function Controller.releaseActionEvents
          */
-        virtual void releaseActionEvents() { _actionsCaptured = false; }
+        virtual void releaseActionEvents(const QString& captureName = "");
 
         /*@jsdoc
          * @function Controller.updateRunningInputDevices
@@ -626,6 +629,9 @@ namespace controller {
         std::atomic<bool> _touchCaptured { false };
         std::atomic<bool> _wheelCaptured { false };
         std::atomic<bool> _actionsCaptured { false };
+
+        std::mutex _actionCapturesMutex;
+        std::unordered_set<QString> _actionCaptures;
 
         QMutex _runningDevicesMutex;
     };
