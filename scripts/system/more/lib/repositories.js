@@ -193,6 +193,7 @@ let repos = {
 				if (appVersionUrl === runningScripts[k].url) {
 					app.installedUrl = appVersionUrl;
 					app.isInstalled = true;
+					app.installedVersion = String(Object.keys(app.appScriptVersions)[i]);
 					break;
 				}
 			}
@@ -220,6 +221,7 @@ let repos = {
 				if (runningScripts.indexOf(appVersionUrl) > -1) {
 					app.installedUrl = appVersionUrl;
 					app.isInstalled = true;
+					app.installedVersion = String(Object.keys(app.appScriptVersions)[k]);
 					break;
 				}
 			}

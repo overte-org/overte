@@ -67,24 +67,28 @@ Rectangle {
 				}
 			}
 
-			Row {
+			RowLayout {
 				spacing: 10;
+				width: parent.width;
+				CustomButton {
+					buttonText: "View Repository";
+					buttonColor: colors.button;
+					Layout.fillWidth: true;
+					onClickedFunc: () => { openAppRepository(focusedApp.appHomeUrl || focusedApp.repository.baseRepositoryUrl) }
+				}
 				CustomButton {
 					visible: isAppInstalled === false;
 					buttonText: "Install";
 					buttonColor: colors.buttonSafe;
+					Layout.fillWidth: true;
 					onClickedFunc: () => { appVersionsElement.visible = true; appDetailsElement.visible = false; }
 				}
 				CustomButton {
 					visible: isAppInstalled === true;
 					buttonText: "Remove";
 					buttonColor: colors.buttonDanger;
+					Layout.fillWidth: true;
 					onClickedFunc: () => { uninstallApp(focusedApp.installedUrl) }
-				}
-				CustomButton {
-					buttonText: "View Repository";
-					buttonColor: colors.button;
-					onClickedFunc: () => { openAppRepository(focusedApp.appHomeUrl || focusedApp.repository.baseRepositoryUrl) }
 				}
 			}
 
@@ -94,7 +98,7 @@ Rectangle {
 
 				Text {
 					visible: isAppInstalled === true;
-					text: focusedApp && focusedApp.isInstalled ? "Installed:\n" + focusedApp.installedUrl + "\n" : "";
+					text: focusedApp && focusedApp.isInstalled ? "Installed:\n" + focusedApp.installedVersion + "\n" : "";
 					color: "gray";
 					font.pixelSize: 16;
 					wrapMode: Text.Wrap;
@@ -126,8 +130,9 @@ Rectangle {
 
 			CustomButton {
 				width: parent.width;
-				buttonText: "Go Back";
+				buttonText: "Back";
 				buttonColor: colors.button;
+				Layout.fillWidth: true;
 				onClickedFunc: () => { appVersionsElement.visible = false; appDetailsElement.visible = true; }
 			}
 			
@@ -145,22 +150,40 @@ Rectangle {
 							property string appVersion: Object.keys(focusedApp.appScriptVersions)[index];
 							property string appUrl: focusedApp.appScriptVersions[Object.keys(focusedApp.appScriptVersions)[index]];
 							width: parent.width;
-							height: 50;
+							height: children[0].children[0].height + children[0].children[1].height + 10;
 							color: colors.darkBackground2;
 
-							RowLayout {
-								width: parent.width;
-								height: 50;
+							ColumnLayout {
+								width: parent.width - 10;
+								height: parent.height - 10;
+								spacing: 0;
+								anchors.centerIn: parent;
 
-								Text {
-									text: appVersion;
-									color: "white";
+								Item {
+									width: parent.width - 10;
+									height: children[0].contentHeight;
+									Text {
+										text: appVersion;
+										color: "white";
+										font.pixelSize: 24;
+										wrapMode: Text.Wrap;
+										width: parent.width;
+									}
 								}
 
-								Text {
-									text: appUrl;
-									color: "orange";
-									font.pixelSize: 20;
+								Item {
+									id: appUrlElement;
+									width: parent.width - 10;
+									height: children[0].contentHeight;
+									visible: false;
+									clip: true;
+									Text {
+										text: appUrl;
+										color: "gray";
+										font.pixelSize: 16;
+										wrapMode: Text.Wrap;
+										width: parent.width;
+									}
 								}
 							}
 
@@ -170,15 +193,19 @@ Rectangle {
 								propagateComposedEvents: true;	
 
 								onPressed: {
-									installApp(focusedApp, appVersion)
+									installApp(focusedApp, appVersion);
+									appVersionsElement.visible = false; 
+									appDetailsElement.visible = true; 
 								}
 
 								onEntered: {
 									parent.color = colors.darkBackground3;
+									appUrlElement.visible = true;
 								}
 
 								onExited: {
 									parent.color = colors.darkBackground2;
+									appUrlElement.visible = false;
 								}
 							}
 						}
