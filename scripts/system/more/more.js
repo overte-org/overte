@@ -81,6 +81,6 @@ repos.fetchAllAppsFromSavedRepositories();
 if (Settings.getValue(settingsIsFirstRun, true) === true) {
 	// First run. Install the overte repository.
 	// NOTE: The url provided is parsed and handled differently using the legacy.requestCommunityApps() function.
-	repos.installRepository("https://raw.githubusercontent.com/overte-org/community-apps/refs/heads/master/applications/metadata.js");
+	repos.installRepository(legacy.COMMUNITY_APPS_URL);
 	Settings.setValue(settingsIsFirstRun, false);
 }

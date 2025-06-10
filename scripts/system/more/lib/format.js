@@ -23,6 +23,7 @@ let versioning = {
 }
 
 let legacy = {
+	COMMUNITY_APPS_URL: "https://more.overte.org/applications/metadata.js",
 	requestCommunityApps: async () => {
 		const repoHeader = {
 			title: "Overte Community Apps",
@@ -31,7 +32,7 @@ let legacy = {
 			baseRepositoryUrl: "https://github.com/overte-org/community-apps"
 		}
 
-		let response = await util.request(`https://more.overte.org/applications/metadata.js`, "GET");
+		let response = await util.request(legacy.COMMUNITY_APPS_URL, "GET");
 		response = _trimMetadataVariable(response);
 		response = util.toJSON(response);
 
@@ -90,5 +91,16 @@ let legacy = {
 
 			return response;
 		}
+	},
+	formatCommunityAppsUrl: (url) => {
+		// If the url is targeting the community apps repo, change the url
+		const urls = ["https://raw.githubusercontent.com/overte-org/community-apps/refs/heads/master/applications/metadata.js", legacy.COMMUNITY_APPS_URL]
+		const isLegacyUrl = urls.indexOf(url) > -1;
+
+		if (isLegacyUrl) {
+			return legacy.COMMUNITY_APPS_URL;
+		}
+
+		return url;
 	}
 }

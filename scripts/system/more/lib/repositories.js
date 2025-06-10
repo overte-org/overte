@@ -21,7 +21,7 @@ let repos = {
 		repos.loadRepositoriesFromStorage();
 		repos.applications = [];
 
-		const indexOfLegacyRepository = repos.repositories.indexOf("https://raw.githubusercontent.com/overte-org/community-apps/refs/heads/master/applications/metadata.js")
+		const indexOfLegacyRepository = repos.repositories.indexOf(legacy.COMMUNITY_APPS_URL)
 		if (indexOfLegacyRepository > -1) {
 			// We remove the legacy url here to prevent any further action being taken using this.
 			// This will be inserted back into the array just before we send the list of repositories to the UI
@@ -49,7 +49,7 @@ let repos = {
 		debugLog(`Finished fetching all repositories.`);
 
 		if (isLegacyInstalled) {
-			repos.repositories.push(`https://raw.githubusercontent.com/overte-org/community-apps/refs/heads/master/applications/metadata.js`);
+			repos.repositories.push(legacy.COMMUNITY_APPS_URL);
 		}
 
 		ui.sendAppListToQML();
@@ -73,6 +73,8 @@ let repos = {
 			debugLog(`No URL provided! Nothing to do.`);
 			return;
 		}
+		url = url.trim();
+		url = legacy.formatCommunityAppsUrl(url);
 
 		if (repos.doWeHaveThisRepositorySaved(url)) {
 			debugLog(`Repository is already saved.`);
@@ -81,9 +83,9 @@ let repos = {
 
 		debugLog(`Installing repository: ${url}`);
 
-		if (url === `https://raw.githubusercontent.com/overte-org/community-apps/refs/heads/master/applications/metadata.js`) {
+		if (url === legacy.COMMUNITY_APPS_URL) {
 			// Trying to install the legacy metadata.js repository
-			repos.repositories.push("https://raw.githubusercontent.com/overte-org/community-apps/refs/heads/master/applications/metadata.js");
+			repos.repositories.push(legacy.COMMUNITY_APPS_URL);
 			repos._saveRepositoriesToSettings();
 			ui.sendAppListToQML();
 			ui.sendRepositoryListToQML();
