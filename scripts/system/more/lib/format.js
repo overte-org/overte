@@ -49,6 +49,7 @@ let legacy = {
 				appAuthor: "Overte",
 				appAgeMaturity: null,				// null will be treaded as "unrated"
 				appCategory: null,					// null will be treated as "uncategorized"
+				appActive: app.isActive
 			}
 
 			// Format the base directory

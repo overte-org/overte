@@ -49,6 +49,7 @@ appAuthor | string | The author(s) of the application. Supplied as a string.
 appAgeMaturity | string | An age maturity rating of the application.
 appCategory | string | The category of the application.
 appHomeUrl | string | A human readable homepage for the application.
+appActive | bool | A boolean that determines whether to display the application in the application list. Normally this should always be 'true'. 
 
 ### Example
 Here is an example implementation of the above table. This example is non-functional and serves only to illustrate the expected structure.
@@ -66,7 +67,8 @@ Here is an example implementation of the above table. This example is non-functi
 		"appAuthor": "John Doe",
 		"appAgeMaturity": "EVERYONE",
 		"appCategory": "UTILITY",
-		"appHomeUrl": "https://example.com"
+		"appHomeUrl": "https://example.com",
+		"appActive": true
 	}
 ```
 

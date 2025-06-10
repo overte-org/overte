@@ -63,7 +63,8 @@ function debugLog(content) {
 
 let ui = {
 	sendAppListToQML: () => {
-		sendMessageToQML({ type: "appList", appList: repos.applications });
+		let visibleApplications = repos.applications.filter((item) => item.appActive === true);
+		sendMessageToQML({ type: "appList", appList: visibleApplications });
 		return;
 	},
 	sendRepositoryListToQML: () => {
