@@ -45,7 +45,7 @@ var DEFAULT_SCRIPTS_SEPARATE = [
     "system/controllers/squeezeHands.js",
     "communityScripts/notificationCore/notificationCore.js",
     "simplifiedUI/ui/simplifiedNametag/simplifiedNametag.js",
-    {"stable": "system/more/app-more.js", "beta": "https://more.overte.org/more/app-more.js"},
+    "system/more/more.js",
     "communityScripts/armored-chat/armored_chat.js",
     //"system/chat.js"
 ];
@@ -92,14 +92,14 @@ if (Menu.menuExists(MENU_CATEGORY) && !Menu.menuItemExists(MENU_CATEGORY, MENU_I
     });
 }
 
-if (Menu.menuExists(MENU_BETA_DEFAULT_SCRIPTS_CATEGORY) 
+if (Menu.menuExists(MENU_BETA_DEFAULT_SCRIPTS_CATEGORY)
     && !Menu.menuItemExists(MENU_BETA_DEFAULT_SCRIPTS_CATEGORY, MENU_BETA_DEFAULT_SCRIPTS_ITEM)) {
-        Menu.addMenuItem({
-            menuName: MENU_BETA_DEFAULT_SCRIPTS_CATEGORY,
-            menuItemName: MENU_BETA_DEFAULT_SCRIPTS_ITEM,
-            isCheckable: true,
-            isChecked: previousSettingBeta
-        });
+    Menu.addMenuItem({
+        menuName: MENU_BETA_DEFAULT_SCRIPTS_CATEGORY,
+        menuItemName: MENU_BETA_DEFAULT_SCRIPTS_ITEM,
+        isCheckable: true,
+        isChecked: previousSettingBeta
+    });
 }
 
 function loadSeparateDefaults() {
@@ -195,7 +195,7 @@ function menuItemEvent(menuItem) {
             Settings.setValue(SETTINGS_KEY, false);
         }
         Menu.triggerOption("Reload All Scripts");
-    } 
+    }
     if (menuItem === MENU_BETA_DEFAULT_SCRIPTS_ITEM) {
         var isChecked = Menu.isOptionChecked(MENU_BETA_DEFAULT_SCRIPTS_ITEM);
         if (isChecked) {
