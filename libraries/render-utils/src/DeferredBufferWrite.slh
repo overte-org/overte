@@ -21,12 +21,6 @@ layout(location = DEFERRED_SPECULAR_SLOT) out vec4 _scatteringEmissiveOcclusion;
 layout(location = DEFERRED_VELOCITY_SLOT) out vec4 _velocity;                    // velocity
 layout(location = DEFERRED_LIGHTING_SLOT) out vec4 _lighting;                    // emissive
 
-// the alpha threshold
-const float alphaThreshold = 0.5;
-float evalOpaqueFinalAlpha(float alpha, float mapAlpha) {
-    return mix(alpha, 1.0 - alpha, step(mapAlpha, alphaThreshold));
-}
-
 <@include VelocityWrite.slh@>
 <@include DefaultMaterials.slh@>
 <@include LightingModel.slh@>

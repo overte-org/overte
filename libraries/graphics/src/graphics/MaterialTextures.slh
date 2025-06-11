@@ -70,6 +70,12 @@
 }
 <@endfunc@>
 
+<@func evalLayeredOpacity(opacityPrev, opacityLayer, opacity)@>
+{
+    <$opacity$> = max(<$opacityPrev$>, mix(<$opacityPrev$>, <$opacityLayer$>, <$opacityLayer$>));
+}
+<@endfunc@>
+
 <@func evalMaterialEmissive(fetchedEmissive, materialEmissive, matKey, emissive)@>
 {
     <$emissive$> = mix(<$materialEmissive$>, <$fetchedEmissive$>, float((<$matKey$> & EMISSIVE_MAP_BIT) != 0));
@@ -111,6 +117,15 @@
 <@else@>
 #define SAMPLE_MAP_LAYER(name, layer, uv, comps) SAMPLE_MAP(name, name##Map, uv, comps)
 <@endif@>
+
+<@func declareMaterialSplatMap()@>
+
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SPLAT) uniform sampler2D splatMap;
+vec3 fetchSplatMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SPLAT);
+    return texture(splatMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
+}
+<@endfunc@>
 
 <@if not HIFI_USE_MTOON@>
 <@func declareMaterialTextures(withAlbedo, withRoughness, withNormal, withMetallic, withEmissive, withOcclusion, withScattering)@>
@@ -339,13 +354,16 @@ vec3 fetchLightMap(int layer, mat2 uvs) {
 }
 <@endfunc@>
 
-<@func fetchMaterialTextures(layer, matKey, texcoords, albedo, roughness, normal, metallic, emissive, scattering, occlusion, lightmap)@>
-    vec2 albedoTexCoords = evalTexCoordSet(<$layer$>, <$texcoords$>, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
-    if (getTexMapArray(<$layer$>)._materialParams.y != 1.0 && clamp(albedoTexCoords, vec2(0.0), vec2(1.0)) != albedoTexCoords) {
-        discard;
-    }
+<@func fetchMaterialTextures(layer, matKey, texcoords, albedo, opacity, roughness, normal, metallic, emissive, scattering, occlusion, lightmap)@>
 <@if albedo@>
     vec4 <$albedo$> = mix(vec4(1.0), fetchAlbedoMap(<$layer$>, <$texcoords$>), float((<$matKey$> & (ALBEDO_MAP_BIT | OPACITY_MASK_MAP_BIT | OPACITY_TRANSLUCENT_MAP_BIT)) != 0));
+    <@if opacity@>
+        float <$opacity$> = 1.0;
+        vec2 albedoTexCoords = evalTexCoordSet(<$layer$>, <$texcoords$>, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
+        if (getTexMapArray(<$layer$>)._materialParams.y != 1.0 && clamp(albedoTexCoords, vec2(0.0), vec2(1.0)) != albedoTexCoords) {
+            <$opacity$> = 0.0;
+        }
+    <@endif@>
 <@endif@>
 <@if normal@>
     vec3 <$normal$> = mix(vec3(0.0, 1.0, 0.0), fetchNormalMap(<$layer$>, <$texcoords$>), float((<$matKey$> & NORMAL_MAP_BIT) != 0));
@@ -391,14 +409,53 @@ vec3 fetchLightMap(int layer, mat2 uvs) {
 
 <@if HIFI_USE_TRIPLANAR@>
 
-<@func fetchMaterialTexturesTriplanar(matKeys, positionMS, normalMS, texCoords, triplanarScale, albedo, roughness, normal, metallic, emissive, scattering, occlusion, lightmap)@>
+<@func fetchMaterialTexturesTriplanarLayer(layer, layerUV, layerComp, tangentSigns, tangentComp, matKeys, texCoords, albedo, roughness, normal, metallic, emissive, scattering, occlusion, lightmap)@>
+{
+    BITFIELD matKey = <$matKeys$>[<$layer$>];
+    mat2 triplanarUVs = mat2(<$layerUV$>, <$texCoords$>[<$layer$>].zw);
+    <$fetchMaterialTextures($layer$, matKey, triplanarUVs, $albedo$, _SCRIBE_NULL, $roughness$, $normal$, $metallic$, $emissive$, $scattering$, $occlusion$, $lightmap$)$>
+    float magnitude = blend.<$layerComp$>;
+    <@if albedo@>
+        <$albedo$>Triplanar += magnitude * <$albedo$>;
+    <@endif@>
+    <@if roughness@>
+        <$roughness$>Triplanar += magnitude * <$roughness$>;
+    <@endif@>
+    <@if normal@>
+        vec3 tangentNormal = <$normal$>;
+        tangentNormal.y *= axisSign.<$layerComp$>;
+        <$normal$>Triplanar += magnitude * <$tangentSigns$> * tangentNormal.<$tangentComp$>;
+    <@endif@>
+    <@if metallic@>
+        <$metallic$>Triplanar += magnitude * <$metallic$>;
+    <@endif@>
+    <@if emissive@>
+        <$emissive$>Triplanar += magnitude * <$emissive$>;
+    <@endif@>
+    <@if scattering@>
+        <$scattering$>Triplanar += magnitude * <$scattering$>;
+    <@endif@>
+    <@if occlusion@>
+        <$occlusion$>Triplanar += magnitude * <$occlusion$>;
+    <@endif@>
+    <@if lightmap@>
+        <$lightmap$>Triplanar += magnitude * <$lightmap$>;
+    <@endif@>
+}
+<@endfunc@>
+
+<@func fetchMaterialTexturesTriplanar(layerBlend, matKeys, positionMS, normalMS, texCoords, triplanarScale, albedo, roughness, normal, metallic, emissive, scattering, occlusion, lightmap)@>
     vec3 inPosition = (<$positionMS$> - vec3(0.5)) / <$triplanarScale$>.xyz;
     vec3 normalMS = normalize(<$normalMS$>);
 
-    // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
-    vec3 blend = abs(normalMS.xyz);
-    blend = max(blend - 0.2, vec3(0.0));
-    blend /= (blend.x + blend.y + blend.z);
+    <@if not HIFI_USE_SPLATMAP@>
+        // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
+        vec3 blend = abs(normalMS.xyz);
+        blend = max(blend - 0.2, vec3(0.0));
+        blend /= (blend.x + blend.y + blend.z);
+    <@else@>
+        vec3 blend = fetchSplatMap(0, mat2(<$texCoords$>[0].xy, <$texCoords$>[0].zw));
+    <@endif@>
 
 <@if normal@>
     vec3 axisSign = sign(normalMS.xyz);
@@ -453,104 +510,14 @@ vec3 fetchLightMap(int layer, mat2 uvs) {
     vec3 <$lightmap$>Triplanar = vec3(0.0);
 <@endif@>
 
-    {
-        BITFIELD matKey = <$matKeys$>[LAYER_Z];
-        mat2 triplanarUVs = mat2(uvXY, <$texCoords$>[LAYER_Z].zw);
-        <$fetchMaterialTextures(LAYER_Z, matKey, triplanarUVs, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$, $occlusion$, $lightmap$)$>
-        float magnitude = blend.z;
-        <@if albedo@>
-            <$albedo$>Triplanar += magnitude * <$albedo$>;
-        <@endif@>
-        <@if roughness@>
-            <$roughness$>Triplanar += magnitude * <$roughness$>;
-        <@endif@>
-        <@if normal@>
-            vec3 tangentNormal = <$normal$>;
-            tangentNormal.y *= axisSign.z;
-            <$normal$>Triplanar += magnitude * vec3(-1, 1, 1) * tangentNormal.zxy;
-        <@endif@>
-        <@if metallic@>
-            <$metallic$>Triplanar += magnitude * <$metallic$>;
-        <@endif@>
-        <@if emissive@>
-            <$emissive$>Triplanar += magnitude * <$emissive$>;
-        <@endif@>
-        <@if scattering@>
-            <$scattering$>Triplanar += magnitude * <$scattering$>;
-        <@endif@>
-        <@if occlusion@>
-            <$occlusion$>Triplanar += magnitude * <$occlusion$>;
-        <@endif@>
-        <@if lightmap@>
-            <$lightmap$>Triplanar += magnitude * <$lightmap$>;
-        <@endif@>
-    }
+    vec3 tangentSigns = vec3(-1, 1, 1);
+    <$fetchMaterialTexturesTriplanarLayer(LAYER_Z, uvXY, z, tangentSigns, zxy, $matKeys$, $texCoords$, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$, $occlusion$, $lightmap$)$>
 
-    {
-        BITFIELD matKey = <$matKeys$>[LAYER_Y];
-        mat2 triplanarUVs = mat2(uvXZ, <$texCoords$>[LAYER_Y].zw);
-        <$fetchMaterialTextures(LAYER_Y, matKey, triplanarUVs, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$, $occlusion$, $lightmap$)$>
-        float magnitude = blend.y;
-        <@if albedo@>
-            <$albedo$>Triplanar += magnitude * <$albedo$>;
-        <@endif@>
-        <@if roughness@>
-            <$roughness$>Triplanar += magnitude * <$roughness$>;
-        <@endif@>
-        <@if normal@>
-            vec3 tangentNormal = <$normal$>;
-            tangentNormal.y *= axisSign.y;
-            <$normal$>Triplanar += magnitude * vec3(-1, 1, -1) * tangentNormal.zyx;
-        <@endif@>
-        <@if metallic@>
-            <$metallic$>Triplanar += magnitude * <$metallic$>;
-        <@endif@>
-        <@if emissive@>
-            <$emissive$>Triplanar += magnitude * <$emissive$>;
-        <@endif@>
-        <@if scattering@>
-            <$scattering$>Triplanar += magnitude * <$scattering$>;
-        <@endif@>
-        <@if occlusion@>
-            <$occlusion$>Triplanar += magnitude * <$occlusion$>;
-        <@endif@>
-        <@if lightmap@>
-            <$lightmap$>Triplanar += magnitude * <$lightmap$>;
-        <@endif@>
-    }
+    tangentSigns = vec3(-1, 1, -1);
+    <$fetchMaterialTexturesTriplanarLayer(LAYER_Y, uvXZ, y, tangentSigns, zyx, $matKeys$, $texCoords$, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$, $occlusion$, $lightmap$)$>
 
-    {
-        BITFIELD matKey = <$matKeys$>[LAYER_X];
-        mat2 triplanarUVs = mat2(uvYZ, <$texCoords$>[LAYER_X].zw);
-        <$fetchMaterialTextures(LAYER_X, matKey, triplanarUVs, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$, $occlusion$, $lightmap$)$>
-        float magnitude = blend.x;
-        <@if albedo@>
-            <$albedo$>Triplanar += magnitude * <$albedo$>;
-        <@endif@>
-        <@if roughness@>
-            <$roughness$>Triplanar += magnitude * <$roughness$>;
-        <@endif@>
-        <@if normal@>
-            vec3 tangentNormal = <$normal$>;
-            tangentNormal.y *= axisSign.x;
-            <$normal$>Triplanar += magnitude * tangentNormal.yxz;
-        <@endif@>
-        <@if metallic@>
-            <$metallic$>Triplanar += magnitude * <$metallic$>;
-        <@endif@>
-        <@if emissive@>
-            <$emissive$>Triplanar += magnitude * <$emissive$>;
-        <@endif@>
-        <@if scattering@>
-            <$scattering$>Triplanar += magnitude * <$scattering$>;
-        <@endif@>
-        <@if occlusion@>
-            <$occlusion$>Triplanar += magnitude * <$occlusion$>;
-        <@endif@>
-        <@if lightmap@>
-            <$lightmap$>Triplanar += magnitude * <$lightmap$>;
-        <@endif@>
-    }
+    tangentSigns = vec3(1, 1, 1);
+    <$fetchMaterialTexturesTriplanarLayer(LAYER_X, uvYZ, x, tangentSigns, yxz, $matKeys$, $texCoords$, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$, $occlusion$, $lightmap$)$>
 
 <@if albedo@>
     vec4 <$albedo$> = <$albedo$>Triplanar;
@@ -580,6 +547,8 @@ vec3 fetchLightMap(int layer, mat2 uvs) {
 <@if lightmap@>
     vec3 <$lightmap$> = <$lightmap$>Triplanar;
 <@endif@>
+
+    vec3 <$layerBlend$> = blend;
 
 <@endfunc@>
 
@@ -835,12 +804,7 @@ float fetchUVAnimationMaskMap(int layer, mat2 uvs) {
 
 <@endfunc@>
 
-<@func fetchMToonMaterialTextures(layer, matKey, texcoords, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
-    vec2 albedoTexCoords = evalTexCoordSet(<$layer$>, <$texcoords$>, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
-    if (getTexMapArray(<$layer$>)._materialParams.y != 1.0 && clamp(albedoTexCoords, vec2(0.0), vec2(1.0)) != albedoTexCoords) {
-        discard;
-    }
-
+<@func fetchMToonMaterialTextures(layer, matKey, texcoords, albedo, opacity, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
     vec2 texCoord = <$texcoords$>[0];
 
 <@if HIFI_USE_LAYERS2 or HIFI_USE_LAYERS3@>
@@ -861,6 +825,13 @@ float fetchUVAnimationMaskMap(int layer, mat2 uvs) {
 
 <@if albedo@>
     vec4 <$albedo$> = mix(vec4(1.0), fetchAlbedoMap(<$layer$>, texCoordsMToon), float((<$matKey$> & (ALBEDO_MAP_BIT | OPACITY_MASK_MAP_BIT | OPACITY_TRANSLUCENT_MAP_BIT)) != 0));
+    <@if opacity@>
+        float <$opacity$> = 1.0;
+        vec2 albedoTexCoords = evalTexCoordSet(<$layer$>, <$texcoords$>, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
+        if (getTexMapArray(<$layer$>)._materialParams.y != 1.0 && clamp(albedoTexCoords, vec2(0.0), vec2(1.0)) != albedoTexCoords) {
+            <$opacity$> = 0.0;
+        }
+    <@endif@>
 <@endif@>
 <@if normal@>
     vec3 <$normal$> = mix(vec3(0.0, 1.0, 0.0), fetchNormalMap(<$layer$>, texCoordsMToon), float((<$matKey$> & NORMAL_MAP_BIT) != 0));
@@ -900,14 +871,47 @@ float fetchUVAnimationMaskMap(int layer, mat2 uvs) {
 
 <@if HIFI_USE_TRIPLANAR@>
 
-<@func fetchMToonMaterialTexturesTriplanar(matKeys, positionMS, normalMS, texCoords, triplanarScale, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
+<@func fetchMToonMaterialTexturesTriplanarLayer(layer, layerUV, layerComp, tangentSigns, tangentComp, matKeys, texCoords, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
+{
+    BITFIELD matKey = <$matKeys$>[<$layer$>];
+    mat2 triplanarUVs = mat2(<$layerUV$>, <$texCoords$>[<$layer$>].zw);
+    <$fetchMToonMaterialTextures($layer$, matKey, triplanarUVs, $albedo$, _SCRIBE_NULL, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
+    float magnitude = blend.<$layerComp$>;
+    <@if albedo@>
+        <$albedo$>Triplanar += magnitude * <$albedo$>;
+    <@endif@>
+    <@if normal@>
+        vec3 tangentNormal = <$normal$>;
+        tangentNormal.y *= axisSign.<$layerComp$>;
+        <$normal$>Triplanar += magnitude * <$tangentSigns$> * tangentNormal.<$tangentComp$>;
+    <@endif@>
+    <@if shade@>
+        <$shade$>Triplanar += magnitude * <$shade$>;
+    <@endif@>
+    <@if emissive@>
+        <$emissive$>Triplanar += magnitude * <$emissive$>;
+    <@endif@>
+    <@if shadingShift@>
+        <$shadingShift$>Triplanar += magnitude * <$shadingShift$>;
+    <@endif@>
+    <@if rim@>
+        <$rim$>Triplanar += magnitude * <$rim$>;
+    <@endif@>
+}
+<@endfunc@>
+
+<@func fetchMToonMaterialTexturesTriplanar(layerBlend, matKeys, positionMS, normalMS, texCoords, triplanarScale, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
     vec3 inPosition = (<$positionMS$> - vec3(0.5)) / <$triplanarScale$>.xyz;
     vec3 normalMS = normalize(<$normalMS$>);
 
-    // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
-    vec3 blend = abs(normalMS.xyz);
-    blend = max(blend - 0.2, vec3(0.0));
-    blend /= (blend.x + blend.y + blend.z);
+    <@if not HIFI_USE_SPLATMAP@>
+        // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
+        vec3 blend = abs(normalMS.xyz);
+        blend = max(blend - 0.2, vec3(0.0));
+        blend /= (blend.x + blend.y + blend.z);
+    <@else@>
+        vec3 blend = fetchSplatMap(0, mat2(<$texCoords$>[0].xy, <$texCoords$>[0].zw));
+    <@endif@>
 
 <@if normal@>
     vec3 axisSign = sign(normalMS.xyz);
@@ -956,86 +960,14 @@ float fetchUVAnimationMaskMap(int layer, mat2 uvs) {
     vec3 <$rim$>Triplanar = vec3(0.0);
 <@endif@>
 
-    {
-        BITFIELD matKey = <$matKeys$>[LAYER_Z];
-        mat2 triplanarUVs = mat2(uvXY, <$texCoords$>[LAYER_Z].zw);
-        <$fetchMToonMaterialTextures(LAYER_Z, matKey, triplanarUVs, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
-        float magnitude = blend.z;
-        <@if albedo@>
-            <$albedo$>Triplanar += magnitude * <$albedo$>;
-        <@endif@>
-        <@if normal@>
-            vec3 tangentNormal = <$normal$>;
-            tangentNormal.y *= axisSign.z;
-            <$normal$>Triplanar += magnitude * vec3(-1, 1, 1) * tangentNormal.zxy;
-        <@endif@>
-        <@if shade@>
-            <$shade$>Triplanar += magnitude * <$shade$>;
-        <@endif@>
-        <@if emissive@>
-            <$emissive$>Triplanar += magnitude * <$emissive$>;
-        <@endif@>
-        <@if shadingShift@>
-            <$shadingShift$>Triplanar += magnitude * <$shadingShift$>;
-        <@endif@>
-        <@if rim@>
-            <$rim$>Triplanar += magnitude * <$rim$>;
-        <@endif@>
-    }
+    vec3 tangentSigns = vec3(-1, 1, 1);
+    <$fetchMToonMaterialTexturesTriplanarLayer(LAYER_Z, uvXY, z, tangentSigns, zxy, $matKeys$, $texCoords$, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
 
-    {
-        BITFIELD matKey = <$matKeys$>[LAYER_Y];
-        mat2 triplanarUVs = mat2(uvXZ, <$texCoords$>[LAYER_Y].zw);
-        <$fetchMToonMaterialTextures(LAYER_Y, matKey, triplanarUVs, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
-        float magnitude = blend.y;
-        <@if albedo@>
-            <$albedo$>Triplanar += magnitude * <$albedo$>;
-        <@endif@>
-        <@if normal@>
-            vec3 tangentNormal = <$normal$>;
-            tangentNormal.y *= axisSign.y;
-            <$normal$>Triplanar += magnitude * vec3(-1, 1, -1) * tangentNormal.zyx;
-        <@endif@>
-        <@if shade@>
-            <$shade$>Triplanar += magnitude * <$shade$>;
-        <@endif@>
-        <@if emissive@>
-            <$emissive$>Triplanar += magnitude * <$emissive$>;
-        <@endif@>
-        <@if shadingShift@>
-            <$shadingShift$>Triplanar += magnitude * <$shadingShift$>;
-        <@endif@>
-        <@if rim@>
-            <$rim$>Triplanar += magnitude * <$rim$>;
-        <@endif@>
-    }
+    tangentSigns = vec3(-1, 1, -1);
+    <$fetchMToonMaterialTexturesTriplanarLayer(LAYER_Y, uvXZ, y, tangentSigns, zyx, $matKeys$, $texCoords$, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
 
-    {
-        BITFIELD matKey = <$matKeys$>[LAYER_X];
-        mat2 triplanarUVs = mat2(uvYZ, <$texCoords$>[LAYER_X].zw);
-        <$fetchMToonMaterialTextures(LAYER_X, matKey, triplanarUVs, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
-        float magnitude = blend.x;
-        <@if albedo@>
-            <$albedo$>Triplanar += magnitude * <$albedo$>;
-        <@endif@>
-        <@if normal@>
-            vec3 tangentNormal = <$normal$>;
-            tangentNormal.y *= axisSign.x;
-            <$normal$>Triplanar += magnitude * tangentNormal.yxz;
-        <@endif@>
-        <@if shade@>
-            <$shade$>Triplanar += magnitude * <$shade$>;
-        <@endif@>
-        <@if emissive@>
-            <$emissive$>Triplanar += magnitude * <$emissive$>;
-        <@endif@>
-        <@if shadingShift@>
-            <$shadingShift$>Triplanar += magnitude * <$shadingShift$>;
-        <@endif@>
-        <@if rim@>
-            <$rim$>Triplanar += magnitude * <$rim$>;
-        <@endif@>
-    }
+    tangentSigns = vec3(1, 1, 1);
+    <$fetchMToonMaterialTexturesTriplanarLayer(LAYER_X, uvYZ, x, tangentSigns, yxz, $matKeys$, $texCoords$, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
 
 <@if albedo@>
     vec4 <$albedo$> = <$albedo$>Triplanar;
@@ -1059,6 +991,8 @@ float fetchUVAnimationMaskMap(int layer, mat2 uvs) {
 <@if rim@>
     vec3 <$rim$> = <$rim$>Triplanar;
 <@endif@>
+
+    vec3 <$layerBlend$> = blend;
 
 <@endfunc@>
 
