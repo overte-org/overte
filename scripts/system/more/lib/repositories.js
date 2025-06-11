@@ -222,10 +222,8 @@ let repos = {
 					app.installedUrl = appVersionUrl;
 					app.isInstalled = true;
 					app.installedVersion = String(Object.keys(app.appScriptVersions)[k]);
-					break;
 				}
 			}
-			if (app.isInstalled) break;
 		}
 
 		return true;
