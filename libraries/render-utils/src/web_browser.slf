@@ -14,7 +14,9 @@
 <@include gpu/Color.slh@>
 <@include render-utils/ShaderConstants.h@>
 
-<@if HIFI_USE_FORWARD@>
+<@if HIFI_USE_SHADOW@>
+    layout(location=0) out vec4 _fragColor0;
+<@elif HIFI_USE_FORWARD@>
     <@include LightingModel.slh@>
     <@include graphics/Haze.slh@>
 
@@ -29,12 +31,16 @@
     <@include DeferredBufferWrite.slh@>
 <@endif@>
 
+<@if HIFI_USE_FADE@>
+    <@include Fade.slh@>
+    <$declareFadeFragment()$>
+<@endif@>
+
 LAYOUT(binding=0) uniform sampler2D webTexture;
 
-<@if HIFI_USE_FORWARD@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_WS) in vec4 _positionWS;
-    layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
-<@else@>
+layout(location=RENDER_UTILS_ATTR_POSITION_WS) in vec4 _positionWS;
+layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
+<@if not HIFI_USE_FORWARD@>
     layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
     layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) in vec4 _prevPositionCS;
 <@endif@>
@@ -48,28 +54,45 @@ void main(void) {
     texel = color_sRGBAToLinear(texel);
     texel *= _color;
 
-<@if HIFI_USE_FORWARD@>
+<@if HIFI_USE_FADE@>
+    <@if not HIFI_USE_SHADOW@>
+        vec3 fadeEmissive;
+        FadeObjectParams fadeParams;
+        <$fetchFadeObjectParams(fadeParams)$>
+        applyFade(fadeParams, _positionWS.xyz, fadeEmissive);
+
+        texel.rgb += fadeEmissive;
+    <@else@>
+        FadeObjectParams fadeParams;
+        <$fetchFadeObjectParams(fadeParams)$>
+        applyFadeClip(fadeParams, _positionWS.xyz);
+    <@endif@>
+<@endif@>
+
+<@if HIFI_USE_FORWARD or HIFI_USE_SHADOW@>
     _fragColor0 = texel;
 
-    if (isHazeEnabled() > 0.0) {
-        // no light attenuation because we're unlit
+    <@if not HIFI_USE_SHADOW@>
+        if (isHazeEnabled() > 0.0) {
+            // no light attenuation because we're unlit
 
-        TransformCamera cam = getTransformCamera();
+            TransformCamera cam = getTransformCamera();
 
-        Light light = getKeyLight();
-        vec3 lightDirectionWS = getLightDirection(light);
+            Light light = getKeyLight();
+            vec3 lightDirectionWS = getLightDirection(light);
 
-        if ((hazeParams.hazeMode & HAZE_MODE_IS_ACTIVE) == HAZE_MODE_IS_ACTIVE) {
-            vec4 hazeColor = computeHazeColor(
-                _positionES.xyz,
-                _positionWS.xyz,
-                cam._viewInverse[3].xyz,
-                lightDirectionWS
-            );
+            if ((hazeParams.hazeMode & HAZE_MODE_IS_ACTIVE) == HAZE_MODE_IS_ACTIVE) {
+                vec4 hazeColor = computeHazeColor(
+                    _positionES.xyz,
+                    _positionWS.xyz,
+                    cam._viewInverse[3].xyz,
+                    lightDirectionWS
+                );
 
-            _fragColor0.xyz = mix(_fragColor0.rgb, hazeColor.rgb, hazeColor.a);
+                _fragColor0.xyz = mix(_fragColor0.rgb, hazeColor.rgb, hazeColor.a);
+            }
         }
-    }
+    <@endif@>
 <@else@>
     packDeferredFragmentUnlit(_prevPositionCS, normalize(_normalWS), 1.0, texel.rgb);
 <@endif@>

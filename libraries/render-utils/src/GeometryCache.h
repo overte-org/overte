@@ -168,10 +168,6 @@ public:
     static gpu::PipelinePointer getSimplePipeline(bool textured = false, bool transparent = false, bool unlit = false, bool depthBias = false,
         bool fading = false, bool isAntiAliased = true, bool forward = false, graphics::MaterialKey::CullFaceMode cullFaceMode = graphics::MaterialKey::CullFaceMode::CULL_BACK);
 
-    void bindWebBrowserProgram(gpu::Batch& batch, bool transparent, bool forward);
-    gpu::PipelinePointer getWebBrowserProgram(bool transparent, bool forward);
-    static std::map<std::pair<bool, bool>, gpu::PipelinePointer> _webPipelines;
-
     static void initializeShapePipelines();
     render::ShapePipelinePointer getShapePipelinePointer(bool transparent, bool unlit, bool forward,
         graphics::MaterialKey::CullFaceMode cullFaceMode = graphics::MaterialKey::CULL_BACK) { return _shapePipelines[std::make_tuple(transparent, unlit, forward, cullFaceMode)]; }

@@ -452,6 +452,7 @@ bool EntityRenderer::addToScene(const ScenePointer& scene, Transaction& transact
     makeStatusGetters(_entity, statusGetters);
     renderPayload->addStatusGetters(statusGetters);
     transaction.resetItem(_renderItemID, renderPayload);
+    fade(transaction, render::Transition::ELEMENT_ENTER_DOMAIN);
     onAddToScene(_entity);
     updateInScene(scene, transaction);
     return true;
@@ -478,6 +479,10 @@ void EntityRenderer::updateInScene(const ScenePointer& scene, Transaction& trans
         // Happens on the render thread.  Classes should use
         doRenderUpdateAsynchronous(_entity);
     });
+}
+
+void EntityRenderer::fade(render::Transaction& transaction, render::Transition::Type type) {
+    transaction.resetTransitionOnItem(_renderItemID, type);
 }
 
 //

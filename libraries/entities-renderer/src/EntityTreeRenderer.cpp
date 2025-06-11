@@ -1198,6 +1198,8 @@ void EntityTreeRenderer::fadeOutRenderable(const EntityRendererPointer& renderab
     render::Transaction transaction;
     auto scene = _viewState->getMain3DScene();
 
+    renderable->fade(transaction, render::Transition::ELEMENT_LEAVE_DOMAIN);
+
     EntityRendererWeakPointer weakRenderable = renderable;
     transaction.setTransitionFinishedOperator(renderable->getRenderItemID(), [scene, weakRenderable]() {
         auto renderable = weakRenderable.lock();
