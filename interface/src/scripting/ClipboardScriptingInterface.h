@@ -114,6 +114,17 @@ public:
     Q_INVOKABLE bool exportEntities(const QString& filename, float x, float y, float z, float scale);
 
     /*@jsdoc
+    * Exports all loaded domain entities to a JSON file, with their original global position.
+    * Saves as a serverless-compatible JSON file, with the default "/" path being your avatar's current position and rotation.
+    * Note: You must have permissions for modifying locks, viewing private userdata, and viewing asset URLs, or this function will fail and return <code>false</code>.
+    * @function Clipboard.exportWorldEntities
+    * @param {string} filename - Path and name of the file to export the entities to. Should have the extension ".json".
+    * @param {string[]} [propertiesToPrune] - Entity properties to exclude from the JSON export.
+    * @returns {boolean} <code>true</code> if permissions allow and the file was written, otherwise <code>false</code>.
+    */
+    Q_INVOKABLE bool exportWorldEntities(const QString& filename, const QVector<QString>& propertiesToPrune = QVector<QString>());
+
+    /*@jsdoc
      * Pastes the contents of the clipboard into the domain.
      * @function Clipboard.pasteEntities
      * @param {Vec3} position -  The position to paste the clipboard contents at.
