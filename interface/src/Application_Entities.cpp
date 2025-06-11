@@ -21,6 +21,7 @@
 #include <recording/ClipCache.h>
 #include <RenderableEntityItem.h>
 #include <SoundCache.h>
+#include <QSaveFile>
 
 #include "InterfaceLogging.h"
 #include "LODManager.h"
@@ -122,6 +123,107 @@ bool Application::exportEntities(const QString& filename, float x, float y, floa
         entityTree->evalEntitiesInCube(boundingCube, PickFilter(), entities);
     });
     return exportEntities(filename, entities, &center);
+}
+
+bool Application::exportWorldEntities(const QString& filename, const QVector<QString>& propertiesToPrune) {
+    auto nodeList = DependencyManager::get<NodeList>();
+
+    // only allow exporting if the user has edit, private userdata, and asset URL permissions
+    bool allowed = nodeList->isAllowedEditor() && nodeList->getThisNodeCanGetAndSetPrivateUserData() && nodeList->getThisNodeCanViewAssetURLs();
+
+    if (!allowed) { return false; }
+
+    qCDebug(interfaceapp) << "Starting world export";
+
+    auto entityTree = getEntities()->getTree();
+    auto exportTree = std::make_shared<EntityTree>();
+    exportTree->setMyAvatar(getMyAvatar());
+    exportTree->createRootElement();
+
+    entityTree->withReadLock([entityTree, &exportTree] {
+        // there's no tree iterator and no "eval all" operator, so use an infinite box
+        const vec3 vec3_inf(FLT_MAX, FLT_MAX, FLT_MAX);
+
+        QVector<QUuid> entityIDs;
+        entityTree->evalEntitiesInCube(AACube(Extents(-vec3_inf, vec3_inf)), PickFilter(), entityIDs);
+
+        for (auto entityID : entityIDs) {
+            auto entityItem = entityTree->findEntityByEntityItemID(entityID);
+
+            // only export domain entities
+            if (!entityItem->isDomainEntity()) { continue; }
+
+            exportTree->addEntity(entityID, entityItem->getProperties());
+        }
+    });
+
+    QJsonDocument jsonDocument;
+    bool success = exportTree->toJSONDocument(&jsonDocument);
+
+    if (!success) { return false; }
+
+    auto position = getMyAvatar()->getWorldFeetPosition();
+    auto rotation = getMyAvatar()->getWorldOrientation();
+
+    auto object = jsonDocument.object();
+
+    if (propertiesToPrune.size() != 0) {
+        auto entityList = object["Entities"].toArray();
+
+        for (int i = 0; i < entityList.size(); i++) {
+            auto entity = entityList[i].toObject();
+
+            for (auto property : propertiesToPrune) {
+                entity.remove(property);
+            }
+
+            entityList[i] = entity;
+        }
+
+        // these have to be re-assigned rather than modified by reference
+        // because it looks like Qt only gives us copies
+        object["Entities"] = entityList;
+    }
+
+    // set the "/" path to the avatar's current position
+    object["Paths"] = QJsonObject {
+        {
+            "/",
+            QString("/%1,%2,%3/%4,%5,%6,%7")
+            .arg(position[0])
+            .arg(position[1])
+            .arg(position[2])
+            .arg(rotation[0])
+            .arg(rotation[1])
+            .arg(rotation[2])
+            .arg(rotation[3])
+        }
+    };
+
+    // weirdly QJsonDocument::object returns a copy and not a reference
+    jsonDocument.setObject(object);
+
+    // Octree::writeToJSONFile
+    QSaveFile persistFile(filename);
+    if (persistFile.open(QIODevice::WriteOnly)) {
+        if (persistFile.write(jsonDocument.toJson()) != -1) {
+            success = persistFile.commit();
+            if (!success) {
+                qCritical() << "Failed to commit to JSON save file:" << persistFile.errorString();
+            }
+        } else {
+            qCritical("Failed to write to JSON file.");
+        }
+    } else {
+        qCritical("Failed to open JSON file for writing.");
+    }
+
+    qCDebug(interfaceapp) << "World export done";
+
+    // restore the main window's active state
+    _window->activateWindow();
+
+    return success;
 }
 
 bool Application::importEntities(const QString& urlOrFilename, const bool isObservable, const qint64 callerId) {

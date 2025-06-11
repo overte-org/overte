@@ -46,6 +46,15 @@ bool ClipboardScriptingInterface::exportEntities(const QString& filename, float 
     return retVal;
 }
 
+bool ClipboardScriptingInterface::exportWorldEntities(const QString& filename, const QVector<QString>& propertiesToPrune) {
+    bool retVal;
+    BLOCKING_INVOKE_METHOD(qApp, "exportWorldEntities",
+                              Q_RETURN_ARG(bool, retVal),
+                              Q_ARG(const QString&, filename),
+                              Q_ARG(const QVector<QString>&, propertiesToPrune));
+    return retVal;
+}
+
 bool ClipboardScriptingInterface::importEntities(
     const QString& filename,
     const bool isObservable,
