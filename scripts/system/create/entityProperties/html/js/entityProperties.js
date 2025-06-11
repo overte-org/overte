@@ -5709,12 +5709,11 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
                 }
                 case 'arrayOfStrings': {
                     property.elInput.value = JSON.stringify(propertyValue);
-                    //alert("HANDLE " + JSON.stringify(propertyValue)); //###???### TRASH
                     if (lockedMultiValue.isMultiDiffValue || lockedMultiValue.value) {
                         setArrayOfStringsUi(property.elInput.id, false);
                     } else {
                         setArrayOfStringsUi(property.elInput.id, true);
-                    } //###???###
+                    }
                     break;
                 }
                 case 'childList': {
