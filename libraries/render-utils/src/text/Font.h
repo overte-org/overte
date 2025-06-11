@@ -68,9 +68,9 @@ public:
     struct DrawProps {
         DrawProps(const QString& str, const glm::vec4& color, const glm::vec3& effectColor, const glm::vec2& origin, const glm::vec2& bounds,
                   float scale, float effectThickness, TextEffect effect, TextAlignment alignment, TextVerticalAlignment verticalAlignment, bool unlit,
-                  bool forward, bool mirror) :
+                  bool forward, bool mirror, bool fading) :
             str(str), color(color), effectColor(effectColor), origin(origin), bounds(bounds), scale(scale), effectThickness(effectThickness),
-            effect(effect), alignment(alignment), verticalAlignment(verticalAlignment), unlit(unlit), forward(forward), mirror(mirror) {}
+            effect(effect), alignment(alignment), verticalAlignment(verticalAlignment), unlit(unlit), forward(forward), mirror(mirror), fading(fading) {}
         DrawProps(const QString& str, const glm::vec4& color, const glm::vec2& origin, const glm::vec2& bounds, TextAlignment alignment, bool forward) :
             str(str), color(color), origin(origin), bounds(bounds), alignment(alignment), forward(forward) {}
 
@@ -87,6 +87,7 @@ public:
         bool unlit = true;
         bool forward;
         bool mirror = false;
+        bool fading = false;
     };
 
     // Render string to batch
@@ -132,7 +133,7 @@ private:
     gpu::TexturePointer _texture;
     gpu::BufferStreamPointer _stream;
 
-    static std::map<std::tuple<bool, bool, bool, bool>, gpu::PipelinePointer> _pipelines;
+    static std::map<std::tuple<bool, bool, bool, bool, bool>, gpu::PipelinePointer> _pipelines;
     static gpu::Stream::FormatPointer _format;
 };
 

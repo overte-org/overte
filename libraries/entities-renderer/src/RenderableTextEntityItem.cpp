@@ -13,6 +13,7 @@
 #include "RenderableTextEntityItem.h"
 
 #include <TextEntityItem.h>
+#include <FadeEffect.h>
 #include <GeometryCache.h>
 #include <PerfStat.h>
 #include <Transform.h>
@@ -204,7 +205,15 @@ void TextEntityRenderer::onAddToSceneTyped(const TypedEntityPointer& entity) {
     auto renderPayload = std::make_shared<TextPayload::Payload>(_textPayload);
     render::Transaction transaction;
     transaction.resetItem(_textRenderID, renderPayload);
+    transaction.resetTransitionOnItem(_textRenderID, render::Transition::ELEMENT_ENTER_DOMAIN);
     AbstractViewStateInterface::instance()->getMain3DScene()->enqueueTransaction(transaction);
+}
+
+void TextEntityRenderer::fade(render::Transaction& transaction, render::Transition::Type type) {
+    Parent::fade(transaction, type);
+    if (Item::isValidID(_textRenderID)) {
+        transaction.resetTransitionOnItem(_textRenderID, type);
+    }
 }
 
 void TextEntityRenderer::onRemoveFromSceneTyped(const TypedEntityPointer& entity) {
@@ -383,9 +392,15 @@ void entities::TextPayload::render(RenderArgs* args) {
         _prevRenderTransform = transform;
     }
 
+    bool fading = !forward && ShapeKey(args->_itemShapeKey).isFaded();
+    if (fading) {
+        FadeEffect::getBatchSetter()(*args->_shapePipeline, *args->_batch, args);
+        FadeEffect::getItemUniformSetter()(*args->_shapePipeline, args, AbstractViewStateInterface::instance()->getMain3DScene()->getItem(textRenderable->_textRenderID));
+    }
+
     glm::vec2 bounds = glm::vec2(dimensions.x - (textRenderable->_leftMargin + textRenderable->_rightMargin), dimensions.y - (textRenderable->_topMargin + textRenderable->_bottomMargin));
     textRenderer->draw(batch, textRenderable->_font, { textRenderable->_text, textColor, effectColor, { textRenderable->_leftMargin / scale, -textRenderable->_topMargin / scale },
-        bounds / scale, scale, textRenderable->_effectThickness, textRenderable->_effect, textRenderable->_alignment, textRenderable->_verticalAlignment, textRenderable->_unlit, forward, mirror });
+        bounds / scale, scale, textRenderable->_effectThickness, textRenderable->_effect, textRenderable->_alignment, textRenderable->_verticalAlignment, textRenderable->_unlit, forward, mirror, fading });
 }
 
 namespace render {

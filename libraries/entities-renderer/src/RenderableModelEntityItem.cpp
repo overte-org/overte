@@ -1407,6 +1407,7 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
             makeStatusGetters(entity, statusGetters);
             using namespace std::placeholders;
             model->addToScene(scene, transaction, statusGetters, std::bind(&ModelEntityRenderer::metaBlendshapeOperator, _renderItemID, _1, _2, _3, _4));
+            model->fade(transaction, render::Transition::ELEMENT_ENTER_DOMAIN);
             processMaterials();
         }
     }
@@ -1603,4 +1604,14 @@ void ModelEntityRenderer::metaBlendshapeOperator(render::ItemID renderItemID, in
         self.handleBlendedVertices(blendshapeNumber, blendshapeOffsets, blendedMeshSizes, subItemIDs);
     });
     AbstractViewStateInterface::instance()->getMain3DScene()->enqueueTransaction(transaction);
+}
+
+void ModelEntityRenderer::fade(render::Transaction& transaction, render::Transition::Type type) {
+    ModelPointer model = resultWithReadLock<ModelPointer>([&] {
+        return _model;
+    });
+
+    if (model) {
+        model->fade(transaction, type);
+    }
 }

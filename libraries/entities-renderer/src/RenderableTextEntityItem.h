@@ -34,6 +34,8 @@ public:
 
     QSizeF textSize(const QString& text) const;
 
+    void fade(render::Transaction& transaction, render::Transition::Type type) override;
+
 protected:
     bool isTransparent() const override;
     bool isTextTransparent() const;
@@ -82,7 +84,7 @@ private:
     int _geometryID { 0 };
 
     std::shared_ptr<TextPayload> _textPayload;
-    render::ItemID _textRenderID;
+    render::ItemID _textRenderID { render::Item::INVALID_ITEM_ID };
     void updateTextRenderItem() const;
 
     friend class render::entities::TextPayload;

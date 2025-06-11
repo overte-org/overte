@@ -56,6 +56,8 @@ public:
     virtual bool addToScene(const ScenePointer& scene, Transaction& transaction) final;
     virtual void removeFromScene(const ScenePointer& scene, Transaction& transaction);
 
+    virtual void fade(render::Transaction& transaction, render::Transition::Type type);
+
     const uint64_t& getUpdateTime() const { return _updateTime; }
 
     enum class Pipeline {

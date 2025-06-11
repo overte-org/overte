@@ -18,10 +18,12 @@
 #include <QtQuick/QQuickWindow>
 #include <QtQml/QQmlContext>
 
-
+#include <FadeEffect.h>
 #include <GeometryCache.h>
 #include <PathUtils.h>
 #include <PointerEvent.h>
+#include <StencilMaskPass.h>
+
 #include <gl/GLHelpers.h>
 #include <ui/OffscreenQmlSurface.h>
 #include <ui/TabletScriptingInterface.h>
@@ -60,6 +62,61 @@ static const uint32_t MAX_CONCURRENT_WEB_VIEWS = 20;
 
 static QTouchDevice _touchDevice;
 
+static uint8_t CUSTOM_PIPELINE_NUMBER;
+// transparent, forward, shadow, fade
+static std::map<std::tuple<bool, bool, bool, bool>, ShapePipelinePointer> _pipelines;
+
+static ShapePipelinePointer webPipelineFactory(const ShapePlumber& plumber, const ShapeKey& key, RenderArgs* args) {
+    if (_pipelines.empty()) {
+        using namespace shader::render_utils::program;
+
+        // transparent, forward, shadow, fade
+        static const std::vector<std::tuple<bool, bool, bool, bool, uint32_t>> keys = {
+            std::make_tuple(false, false, false, false, web_browser),
+            std::make_tuple(false, true, false, false, web_browser_forward),
+            std::make_tuple(false, false, true, false, web_browser_shadow),
+            // no such thing as forward + shadow
+            std::make_tuple(false, false, false, true, web_browser_fade),
+            std::make_tuple(false, false, true, true, web_browser_fade),
+            // no such thing as forward + fade/shadow
+            // transparent
+            std::make_tuple(true, false, false, false, web_browser_forward),
+            std::make_tuple(true, true, false, false, web_browser_forward),
+            // no such thing as transparent + shadow
+            // no such thing as forward + shadow
+            std::make_tuple(true, false, false, true, web_browser_fade),
+            std::make_tuple(true, false, true, true, web_browser_fade),
+            // no such thing as forward + fade/shadow
+        };
+        for (auto& key : keys) {
+            auto state = std::make_shared<gpu::State>();
+            state->setCullMode(gpu::State::CULL_NONE);
+            state->setDepthTest(true, !std::get<0>(key), gpu::LESS_EQUAL);
+            if (std::get<0>(key)) {
+                PrepareStencil::testMaskResetNoAA(*state);
+            } else {
+                PrepareStencil::testMaskDrawShapeNoAA(*state);
+            }
+            state->setBlendFunction(std::get<0>(key), gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD,
+                                    gpu::State::INV_SRC_ALPHA, gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD,
+                                    gpu::State::ONE);
+
+            auto pipeline = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<4>(key)), state);
+            if (!std::get<3>(key)) {
+                _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), std::get<2>(key), std::get<3>(key))] =
+                    std::make_shared<render::ShapePipeline>(pipeline, nullptr, nullptr, nullptr);
+            } else {
+                _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), std::get<2>(key), std::get<3>(key))] =
+                    std::make_shared<render::ShapePipeline>(pipeline, nullptr, FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter());
+            }
+        }
+    }
+
+    bool isFaded = key.isFaded() && args->_renderMethod != Args::RenderMethod::FORWARD;
+    return _pipelines[std::make_tuple(key.isTranslucent(), args->_renderMethod == Args::RenderMethod::FORWARD,
+                                      args->_renderMode == Args::RenderMode::SHADOW_RENDER_MODE, isFaded)];
+}
+
 WebEntityRenderer::ContentType WebEntityRenderer::getContentType(const QString& urlString) {
     if (urlString.isEmpty()) {
         return ContentType::NoContent;
@@ -82,6 +139,7 @@ WebEntityRenderer::ContentType WebEntityRenderer::getContentType(const QString& 
 WebEntityRenderer::WebEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {
     static std::once_flag once;
     std::call_once(once, [&]{
+        CUSTOM_PIPELINE_NUMBER = render::ShapePipeline::registerCustomShapePipelineFactory(webPipelineFactory);
         _touchDevice.setCapabilities(QTouchDevice::Position);
         _touchDevice.setType(QTouchDevice::TouchScreen);
         _touchDevice.setName("WebEntityRendererTouchDevice");
@@ -108,9 +166,19 @@ WebEntityRenderer::~WebEntityRenderer() {
     }
 }
 
+ShapeKey WebEntityRenderer::getShapeKey() {
+    ShapeKey::Builder builder = ShapeKey::Builder().withCustom(CUSTOM_PIPELINE_NUMBER);
+    if (isTransparent()) {
+        builder.withTranslucent();
+    }
+    if (_primitiveMode == PrimitiveMode::LINES) {
+        builder.withWireframe();
+    }
+    return builder.build();
+}
+
 bool WebEntityRenderer::isTransparent() const {
-    float fadeRatio = _isFading ? Interpolate::calculateFadeRatio(_fadeStartTime) : 1.0f;
-    return fadeRatio < OPAQUE_ALPHA_THRESHOLD || _alpha < 1.0f || _pulseProperties.getAlphaMode() != PulseMode::NONE || !_useBackground;
+    return Parent::isTransparent() || _alpha < 1.0f || _pulseProperties.getAlphaMode() != PulseMode::NONE || !_useBackground;
 }
 
 bool WebEntityRenderer::needsRenderUpdateFromTypedEntity(const TypedEntityPointer& entity) const {
@@ -332,7 +400,6 @@ void WebEntityRenderer::doRender(RenderArgs* args) {
 
     // Turn off jitter for these entities
     batch.pushProjectionJitterEnabled(false);
-    DependencyManager::get<GeometryCache>()->bindWebBrowserProgram(batch, transparent, forward);
     DependencyManager::get<GeometryCache>()->renderQuad(batch, topLeft, bottomRight, texMin, texMax, color, _geometryId);
     batch.popProjectionJitterEnabled();
     batch.setResourceTexture(0, nullptr);

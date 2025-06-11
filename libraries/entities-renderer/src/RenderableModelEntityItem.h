@@ -32,7 +32,6 @@ namespace render { namespace entities {
 class ModelEntityRenderer;
 } }
 
-// #define MODEL_ENTITY_USE_FADE_EFFECT
 class ModelEntityWrapper : public ModelEntityItem {
     using Parent = ModelEntityItem;
     friend class render::entities::ModelEntityRenderer;
@@ -149,7 +148,8 @@ public:
     void addMaterial(graphics::MaterialLayer material, const std::string& parentMaterialName) override;
     void removeMaterial(graphics::MaterialPointer material, const std::string& parentMaterialName) override;
 
-    // FIXME: model mesh parts should fade individually
+    // model mesh parts fade individually
+    void fade(render::Transaction& transaction, render::Transition::Type type) override;
     bool isFading() const override { return false; }
 
 protected:
@@ -186,9 +186,6 @@ private:
     QString _textures;
     bool _texturesLoaded { false };
     int _lastKnownCurrentIntegerFrame { -1 };
-#ifdef MODEL_ENTITY_USE_FADE_EFFECT
-    bool _hasTransitioned{ false };
-#endif
 
     QUrl _parsedModelURL;
     bool _jointMappingCompleted { false };
