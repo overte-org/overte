@@ -93,23 +93,23 @@
 
 #define SAMPLE_MAP(name, slot, uv, comps) name = texture(slot, uv, TAA_TEXTURE_LOD_BIAS).comps;
 <@if HIFI_USE_LAYERS2@>
-#define SAMPLE_MAP_LAYER(name, layer, uv, comps) \
+#define SAMPLE_MAP_LAYER(name, map, map2, map3, layer, uv, comps) \
     if (layer == 1) {                            \
-        SAMPLE_MAP(name, name##Map2, uv, comps)  \
+        SAMPLE_MAP(name, map2, uv, comps)  \
     } else {                                     \
-        SAMPLE_MAP(name, name##Map, uv, comps)   \
+        SAMPLE_MAP(name, map, uv, comps)   \
     }
 <@elif HIFI_USE_LAYERS3@>
-#define SAMPLE_MAP_LAYER(name, layer, uv, comps) \
+#define SAMPLE_MAP_LAYER(name, map, map2, map3, layer, uv, comps) \
     if (layer == 2) {                            \
-        SAMPLE_MAP(name, name##Map3, uv, comps)  \
+        SAMPLE_MAP(name, map3, uv, comps)  \
     } else if (layer == 1) {                     \
-        SAMPLE_MAP(name, name##Map2, uv, comps)  \
+        SAMPLE_MAP(name, map2, uv, comps)  \
     } else {                                     \
-        SAMPLE_MAP(name, name##Map, uv, comps)   \
+        SAMPLE_MAP(name, map, uv, comps)   \
     }
 <@else@>
-#define SAMPLE_MAP_LAYER(name, layer, uv, comps) SAMPLE_MAP(name, name##Map, uv, comps)
+#define SAMPLE_MAP_LAYER(name, map, map2, map3, layer, uv, comps) SAMPLE_MAP(name, map, uv, comps)
 <@endif@>
 
 <@if not HIFI_USE_MTOON@>
@@ -119,13 +119,13 @@
 
 #ifdef GPU_TEXTURE_TABLE_BINDLESS
 
-TextureTable(0, matTex);
+TextureTable(table0, matTex);
 <@if HIFI_USE_LAYERS2@>
-    TextureTable(1, matTex2);
+    TextureTable(table1, matTex2);
 #define DEFINE_MAT_TEXS const GPUTextureTable _matTexs[NUM_LAYERS] = GPUTextureTable[NUM_LAYERS](matTex, matTex2);
 <@elif HIFI_USE_LAYERS3@>
-    TextureTable(1, matTex2);
-    TextureTable(2, matTex3);
+    TextureTable(table1, matTex2);
+    TextureTable(table2, matTex3);
 #define DEFINE_MAT_TEXS const GPUTextureTable _matTexs[NUM_LAYERS] = GPUTextureTable[NUM_LAYERS](matTex, matTex2, matTex3);
 <@else@>
 #define DEFINE_MAT_TEXS const GPUTextureTable _matTexs[NUM_LAYERS] = GPUTextureTable[NUM_LAYERS](matTex);
@@ -224,7 +224,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO3_3) uniform sampler2D albedoMap3
 vec4 fetchAlbedoMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
     vec4 albedo;
-    SAMPLE_MAP_LAYER(albedo, layer, uv, rgba)
+    SAMPLE_MAP_LAYER(albedo, albedoMap, albedoMap2, albedoMap3, layer, uv, rgba)
     return albedo;
 }
 <@endif@>
@@ -241,7 +241,7 @@ vec3 fetchNormalMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_NORMAL);
     // unpack normal, swizzle to get into hifi tangent space with Y axis pointing out
     vec2 normal;
-    SAMPLE_MAP_LAYER(normal, layer, uv, rg)
+    SAMPLE_MAP_LAYER(normal, normalMap, normalMap2, normalMap3, layer, uv, rg)
     vec2 t = 2.0 * (normal - vec2(0.5, 0.5));
     vec2 t2 = t*t;
     return vec3(t.x, sqrt(max(0.0, 1.0 - t2.x - t2.y)), t.y);
@@ -259,7 +259,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_METALLIC3_3) uniform sampler2D metallic
 float fetchMetallicMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_METALLIC);
     float metallic;
-    SAMPLE_MAP_LAYER(metallic, layer, uv, r)
+    SAMPLE_MAP_LAYER(metallic, metallicMap, metallicMap2, metallicMap3, layer, uv, r)
     return metallic;
 }
 <@endif@>
@@ -275,7 +275,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP3_3) uniform sampler2D
 vec3 fetchEmissiveMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP);
     vec3 emissive;
-    SAMPLE_MAP_LAYER(emissive, layer, uv, rgb)
+    SAMPLE_MAP_LAYER(emissive, emissiveMap, emissiveMap2, emissiveMap3, layer, uv, rgb)
     return emissive;
 }
 <@endif@>
@@ -290,7 +290,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS2_2) uniform sampler2D roughne
 float fetchRoughnessMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS);
     float roughness;
-    SAMPLE_MAP_LAYER(roughness, layer, uv, r)
+    SAMPLE_MAP_LAYER(roughness, roughnessMap, roughnessMap2, roughnessMap3, layer, uv, r)
     return roughness;
 }
 <@endif@>
@@ -303,7 +303,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_OCCLUSION2_2) uniform sampler2D occlusi
 float fetchOcclusionMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_OCCLUSION);
     float occlusion;
-    SAMPLE_MAP_LAYER(occlusion, layer, uv, r)
+    SAMPLE_MAP_LAYER(occlusion, occlusionMap, occlusionMap2, occlusionMap3, layer, uv, r)
     return occlusion;
 }
 <@endif@>
@@ -317,7 +317,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SCATTERING) uniform sampler2D scatterin
 float fetchScatteringMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SCATTERING);
     float scattering; // boolean scattering for now
-    SAMPLE_MAP_LAYER(scattering, layer, uv, r)
+    SAMPLE_MAP_LAYER(scattering, scatteringMap, scatteringMap2, scatteringMap3, layer, uv, r)
     return max(((scattering - 0.1) / 0.9), 0.0);
 }
 <@endif@>
@@ -615,13 +615,13 @@ vec3 fetchLightMap(int layer, mat2 uvs) {
 
 #ifdef GPU_TEXTURE_TABLE_BINDLESS
 
-TextureTable(0, matTex);
+TextureTable(table0, matTex);
 <@if HIFI_USE_LAYERS2@>
-    TextureTable(1, matTex2);
+    TextureTable(table1, matTex2);
 #define DEFINE_MAT_TEXS const GPUTextureTable _matTexs[NUM_LAYERS] = GPUTextureTable[NUM_LAYERS](matTex, matTex2);
 <@elif HIFI_USE_LAYERS3@>
-    TextureTable(1, matTex2);
-    TextureTable(2, matTex3);
+    TextureTable(table1, matTex2);
+    TextureTable(table2, matTex3);
 #define DEFINE_MAT_TEXS const GPUTextureTable _matTexs[NUM_LAYERS] = GPUTextureTable[NUM_LAYERS](matTex, matTex2, matTex3);
 <@else@>
 #define DEFINE_MAT_TEXS const GPUTextureTable _matTexs[NUM_LAYERS] = GPUTextureTable[NUM_LAYERS](matTex);
@@ -723,7 +723,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO3_3) uniform sampler2D albedoMap3
 vec4 fetchAlbedoMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
     vec4 albedo;
-    SAMPLE_MAP_LAYER(albedo, layer, uv, rgba)
+    SAMPLE_MAP_LAYER(albedo, albedoMap, albedoMap2, albedoMap3, layer, uv, rgba)
     return albedo;
 }
 <@endif@>
@@ -740,7 +740,7 @@ vec3 fetchNormalMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_NORMAL);
     // unpack normal, swizzle to get into hifi tangent space with Y axis pointing out
     vec2 normal;
-    SAMPLE_MAP_LAYER(normal, layer, uv, rg)
+    SAMPLE_MAP_LAYER(normal, normalMap, normalMap2, normalMap3, layer, uv, rg)
     vec2 t = 2.0 * (normal - vec2(0.5, 0.5));
     vec2 t2 = t*t;
     return vec3(t.x, sqrt(max(0.0, 1.0 - t2.x - t2.y)), t.y);
@@ -758,7 +758,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SHADE3_3) uniform sampler2D shadeMap3;
 vec3 fetchShadeMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SHADE);
     vec3 shade;
-    SAMPLE_MAP_LAYER(shade, layer, uv, rgb)
+    SAMPLE_MAP_LAYER(shade, shadeMap, shadeMap2, shadeMap3, layer, uv, rgb)
     return shade;
 }
 <@endif@>
@@ -774,7 +774,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP3_3) uniform sampler2D
 vec3 fetchEmissiveMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP);
     vec3 emissive;
-    SAMPLE_MAP_LAYER(emissive, layer, uv, rgb)
+    SAMPLE_MAP_LAYER(emissive, emissiveMap, emissiveMap2, emissiveMap3, layer, uv, rgb)
     return emissive;
 }
 <@endif@>
@@ -789,7 +789,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SHADING_SHIFT2_2) uniform sampler2D sha
 float fetchShadingShiftMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SHADING_SHIFT);
     float shadingShift;
-    SAMPLE_MAP_LAYER(shadingShift, layer, uv, r)
+    SAMPLE_MAP_LAYER(shadingShift, shadingShiftMap, shadingShiftMap2, shadingShiftMap3, layer, uv, r)
     return shadingShift;
 }
 <@endif@>
@@ -801,7 +801,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MATCAP2_2) uniform sampler2D matcapMap2
 <@endif@>
 vec3 fetchMatcapMap(int layer, vec2 uv) {
     vec3 matcap;
-    SAMPLE_MAP_LAYER(matcap, layer, uv, rgb)
+    SAMPLE_MAP_LAYER(matcap, matcapMap, matcapMap2, matcapMap3, layer, uv, rgb)
     return matcap;
 }
 <@endif@>
@@ -815,7 +815,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_RIM) uniform sampler2D rimMap;
 vec3 fetchRimMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_RIM);
     vec3 rim;
-    SAMPLE_MAP_LAYER(rim, layer, uv, rgb)
+    SAMPLE_MAP_LAYER(rim, rimMap, rimMap2, rimMap3, layer, uv, rgb)
     return rim;
 }
 <@endif@>
@@ -825,7 +825,7 @@ LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_UV_ANIMATION_MASK) uniform sampler2D uv
 float fetchUVAnimationMaskMap(int layer, mat2 uvs) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_UV_ANIMATION_MASK);
     float uvAnimationMask;
-    SAMPLE_MAP_LAYER(uvAnimationMask, layer, uv, r)
+    SAMPLE_MAP_LAYER(uvAnimationMask, uvAnimationMaskMap, uvAnimationMaskMap2, uvAnimationMaskMap3, layer, uv, r)
     return uvAnimationMask;
 }
 <@endif@>
