@@ -59,7 +59,7 @@ std::vector<PipelineInfo> ALL_PIPELINES = {
 };
 
 static bool delayLoadingPipeline(const ShapeKey& shapeKey) {
-    return shapeKey.hasLightMap() || shapeKey.isTriplanar() || shapeKey.numLayers() > 1;
+    return shapeKey.hasLightMap() || shapeKey.isTriplanar() || shapeKey.isSplatMap() || shapeKey.numLayers() > 1;
 }
 
 void initDeferredPipelines(ShapePlumber& plumber, const ShapePipeline::BatchSetter& batchSetter, const ShapePipeline::ItemSetter& itemSetter) {
