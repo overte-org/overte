@@ -129,27 +129,6 @@ function sendTouchMoveEventToTouchTarget(hand, touchTarget) {
     }
 }
 
-function composeTouchTargetFromIntersection(intersection) {
-    var isEntity = (intersection.type === Picks.INTERSECTED_ENTITY);
-    var objectID = intersection.objectID;
-    var worldPos = intersection.intersection;
-    var props = null;
-    if (isEntity) {
-        props = Entities.getProperties(intersection.objectID);
-    }
-
-    var position2D =(isEntity ? controllerDispatcher.projectOntoEntityXYPlane(objectID, worldPos, props) :
-        controllerDispatcher.projectOntoOverlayXYPlane(objectID, worldPos));
-    return {
-        entityID: isEntity ? objectID : null,
-        overlayID: isEntity ? null : objectID,
-        distance: intersection.distance,
-        position: worldPos,
-        position2D: position2D,
-        normal: intersection.surfaceNormal
-    };
-}
-
 // will return undefined if overlayID does not exist.
 function calculateTouchTargetFromOverlay(touchTip, overlayID) {
     var overlayPosition = Entities.getEntityProperties(overlayID, ["position"]).position;
@@ -247,5 +226,4 @@ module.exports = {
     sendTouchStartEventToTouchTarget: sendTouchStartEventToTouchTarget,
     sendTouchEndEventToTouchTarget: sendTouchEndEventToTouchTarget,
     sendTouchMoveEventToTouchTarget: sendTouchMoveEventToTouchTarget,
-    composeTouchTargetFromIntersection: composeTouchTargetFromIntersection
 };

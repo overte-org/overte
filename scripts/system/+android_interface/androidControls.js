@@ -25,13 +25,6 @@
     this.touchStartTime = 0;
   }
 
-  AndroidControls.prototype.intersectsOverlay = function (intersection) {
-    if (intersection && intersection.intersects && intersection.overlayID) {
-      return true;
-    }
-    return false;
-  };
-
   AndroidControls.prototype.intersectsEntity = function (intersection) {
     if (intersection && intersection.intersects && intersection.entityID) {
       return true;
@@ -40,15 +33,11 @@
   };
 
   AndroidControls.prototype.findRayIntersection = function (pickRay) {
-    // Check 3D overlays and entities. Argument is an object with origin and direction.
-    var overlayRayIntersection = Overlays.findRayIntersection(pickRay);
-    var entityRayIntersection = Entities.findRayIntersection(pickRay, true);
-    var isOverlayInters = this.intersectsOverlay(overlayRayIntersection);
+    // Check all entities. Argument is an object with origin and direction.
+    var entityRayIntersection = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_LOCAL_ENTITIES);
     var isEntityInters = this.intersectsEntity(entityRayIntersection);
 
-    if (isOverlayInters && (!isEntityInters || overlayRayIntersection.distance < entityRayIntersection.distance)) {
-      return {type: 'overlay', obj: overlayRayIntersection};
-    } else if (isEntityInters) {
+    if (isEntityInters) {
       return {type: 'entity', obj: entityRayIntersection};
     }
     return false;
@@ -73,9 +62,7 @@
 
     var properties = Entities.getEntityProperties(entityId, DISPATCHER_TOUCH_PROPERTIES);
     if (properties.id === entityId) {
-      pointerEvent.pos2D = info.type === "entity"
-        ? projectOntoEntityXYPlane(entityId, info.obj.intersection, properties)
-        : projectOntoOverlayXYPlane(entityId, info.obj.intersection, properties);
+      pointerEvent.pos2D = projectOntoEntityXYPlane(entityId, info.obj.intersection, properties);
     }
 
     return pointerEvent;
@@ -88,7 +75,7 @@
       return;
     }
 
-    var entityId = info.type === "entity" ? info.obj.entityID : info.obj.overlayID;
+    var entityId = info.obj.entityID;
     var pressEvent = this.createEventProperties(entityId, info, 'Press');
     var releaseEvent = this.createEventProperties(entityId, info, 'Release');
 
