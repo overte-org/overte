@@ -1,6 +1,7 @@
 #
 #  Created by Brad Hefta-Gaub on 2016/07/07
 #  Copyright 2016 High Fidelity, Inc.
+#  Copyright 2025 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http:#www.apache.org/licenses/LICENSE-2.0.html
@@ -10,7 +11,7 @@ macro(SETUP_HIFI_CLIENT_SERVER_PLUGIN)
   set(PLUGIN_SUBFOLDER ${ARGN})
   setup_hifi_library()
 
-  if (BUILD_CLIENT)
+  if (OVERTE_BUILD_CLIENT)
     if (APPLE)
       add_dependencies(Overte ${TARGET_NAME})
     else()
@@ -18,7 +19,7 @@ macro(SETUP_HIFI_CLIENT_SERVER_PLUGIN)
     endif()
   endif()
 
-  if (BUILD_SERVER)
+  if (OVERTE_BUILD_SERVER)
     add_dependencies(assignment-client ${TARGET_NAME})
   endif()
 

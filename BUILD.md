@@ -60,19 +60,6 @@ Where `/path/to/directory` is the path to a directory where you wish the build f
 #### Possible Environment Variables
 
 ```text
-// The URL to post the dump to.
-CMAKE_BACKTRACE_URL
-// The identifying tag of the release.
-CMAKE_BACKTRACE_TOKEN
-
-// The release version, e.g., 2021.3.2.
-RELEASE_NUMBER
-// The build commit, e.g., use a Git hash for the most recent commit in the branch - fd6973b.
-BUILD_NUMBER
-
-// The type of release.
-RELEASE_TYPE=PRODUCTION|PR|DEV
-
 // The Interface will have a custom default home and startup location.
 PRELOADED_STARTUP_LOCATION=Location/IP/URL
 // The Interface will have a custom default script whitelist, comma separated, no spaces.
@@ -83,14 +70,27 @@ PRELOADED_SCRIPT_WHITELIST=ListOfEntries
 HF_PFX_FILE=Path to certificate
 HF_PFX_PASSPHRASE=Passphrase for certificate
 
-// Determine the build type
-PRODUCTION_BUILD=0|1
-PR_BUILD=0|1
-STABLE_BUILD=0|1
-
 // Determine if to utilize testing or stable directory services URLs
 USE_STABLE_GLOBAL_SERVICES=1
 BUILD_GLOBAL_SERVICES=STABLE
+```
+
+#### Possible CMake Variables
+
+```text
+// The URL to post the dump to.
+OVERTE_BACKTRACE_URL
+// The identifying tag of the release.
+OVERTE_BACKTRACE_TOKEN
+
+// The release version, e.g., 2021.3.2. For PR builds the PR number, e.g. 577.
+// Not used for nightlies and development builds.
+OVERTE_RELEASE_NUMBER
+// The build commit, e.g., use a Git hash for the most recent commit in the branch - fd6973b.
+OVERTE_GIT_COMMIT_SHORT
+
+// The type of release.
+OVERTE_RELEASE_TYPE=PRODUCTION|PR|NIGHTLY|DEV
 ```
 
 #### Generate Files
@@ -120,24 +120,15 @@ In the examples below the variable $NAME would be replaced by the name of the de
 
 The following build options can be used when running CMake
 
-* BUILD_CLIENT
-* BUILD_SERVER
-* BUILD_TESTS
-* BUILD_TOOLS
-* CLIENT_ONLY // Will package only the Interface
-* SERVER_ONLY // Will package only the Server
-
-### Optimization build options
-
-* OVERTE_OPTIMIZE - This variable defaults to 1 if not set and enables compiler optimization flags on Linux and MacOS. Setting it to 0 will result in unoptimized build.
-* OVERTE_CPU_ARCHITECTURE - This variable contains architecture specific compiler flags which are used if `OVERTE_OPTIMIZE` is true. If it is not set, it defaults to `-march=native -mtune=native`, which helps yield more performance for locally used build, but for packaging it needs to be set to different value for portability, for example `-msse3`. Setting `OVERTE_CPU_ARCHITECTURE` to empty string will use default compiler settings and yield
-maximum compatibility.
-
+* OVERTE_BUILD_CLIENT
+* OVERTE_BUILD_SERVER
+* OVERTE_BUILD_TESTS
+* OVERTE_BUILD_TOOLS
 
 ### Developer Build Options
 
-* USE_GLES
-* DISABLE_UI
+* OVERTE_RENDERING_BACKEND
+* OVERTE_DISABLE_QML
 
 ### Devices
 

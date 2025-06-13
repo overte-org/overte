@@ -3,6 +3,7 @@
 #  cmake/macros
 #
 #  Copyright 2019 High Fidelity, Inc.
+#  Copyright 2025 Overte e.V.
 #  Created by Nissim Hadar on January 14th, 2016
 #
 #  Distributed under the Apache License, Version 2.0.
@@ -24,7 +25,7 @@ macro(fixup_nitpick)
             ")
         endif ()
 
-        if (RELEASE_TYPE STREQUAL "DEV")
+        if (OVERTE_RELEASE_TYPE STREQUAL "DEV")
             install(CODE "
                 execute_process(COMMAND ${MACDEPLOYQT_COMMAND}\
                     \${CMAKE_INSTALL_PREFIX}/${_NITPICK_INSTALL_PATH}/\
