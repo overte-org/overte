@@ -170,7 +170,7 @@ void main(void) {
             <$fetchMToonMaterialTextures(0, matKeys[0], _texCoords[0], albedoTex)$>
         <@endif@>
     <@else@>
-        const vec3 triplanarScale = triplanarParams.scale.xyz;
+        vec3 triplanarScale = triplanarParams.scale.xyz;
         <@if not HIFI_USE_MTOON@>
             <$fetchMaterialTexturesTriplanar(matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex)$>
         <@else@>
@@ -330,7 +330,7 @@ void main(void) {
             <@endif@>
         <@endif@>
     <@else@>
-        const vec3 triplanarScale = triplanarParams.scale.xyz;
+        vec3 triplanarScale = triplanarParams.scale.xyz;
         <@if not HIFI_USE_LIGHTMAP@>
             <@if HIFI_USE_NORMALMAP and HIFI_USE_TRANSLUCENT@>
                 <$fetchMaterialTexturesTriplanar(matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, _SCRIBE_NULL, occlusionTex)$>
