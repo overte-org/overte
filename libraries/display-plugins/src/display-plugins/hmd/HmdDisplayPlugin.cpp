@@ -214,14 +214,16 @@ void HmdDisplayPlugin::internalPresent() {
         float newWidth = sourceSize.x - shiftLeftBy;
 
         // Experimentally adjusted the region presented in preview to avoid seeing the masked pixels and recenter the center...
-        static float SCALE_WIDTH = 0.8f;
+        static float SCALE_WIDTH = 1.0f;
         static float SCALE_OFFSET = 2.0f;
         newWidth *= SCALE_WIDTH;
         shiftLeftBy *= SCALE_OFFSET;
 
-        const unsigned int RATIO_Y = 9;
-        const unsigned int RATIO_X = 16;
-        glm::uvec2 originalClippedSize { newWidth, newWidth * RATIO_Y / RATIO_X };
+        auto window = _container->getPrimaryWidget();
+
+        auto ratioY = window->size().height();
+        auto ratioX = window->size().width();
+        glm::uvec2 originalClippedSize { newWidth, newWidth * ratioY / ratioX };
 
         glm::ivec4 viewport = getViewportForSourceSize(sourceSize);
         glm::ivec4 scissor = viewport;
@@ -231,7 +233,6 @@ void HmdDisplayPlugin::internalPresent() {
         render([&](gpu::Batch& batch) {
 
             if (_monoPreview) {
-                auto window = _container->getPrimaryWidget();
                 float devicePixelRatio = window->devicePixelRatio();
                 glm::vec2 windowSize = toGlm(window->size());
                 windowSize *= devicePixelRatio;
