@@ -247,6 +247,8 @@ Item {
                         if (loader.item.hasOwnProperty("pluginName")) {
                             if (openVRDevices.indexOf(box.textAt(box.currentIndex)) !== -1) {
                                 loader.item.pluginName = "OpenVR";
+                            } else if (box.currentIndex.startsWith("OpenXR")) {
+                                loader.item.pluginName = "OpenXR";
                             } else {
                                 loader.item.pluginName = box.textAt(box.currentIndex);
                             }
@@ -301,6 +303,8 @@ Item {
                 var source = "";
                 if (openVRDevices.indexOf(selectedDevice) !== -1) {
                     source = InputConfiguration.configurationLayout("OpenVR");
+                } else if (selectedDevice.startsWith("OpenXR")) {
+                    source = InputConfiguration.configurationLayout("OpenXR");
                 } else {
                     source = InputConfiguration.configurationLayout(selectedDevice);
                 }
