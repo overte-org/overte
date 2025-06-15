@@ -74,6 +74,8 @@ To create this variable:
 * Set "Variable name" to `CONAN_HOME`
 * Set "Variable value" to any directory that you have control over.
 
+*Make sure that you copy the contents of your old `.conan2` folder over, or that you add the remote from step 2 again.*
+
 ## Step 7. Running CMake to Generate Build Files
 
 These instructions only apply to Visual Studio 2019.

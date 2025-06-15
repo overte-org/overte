@@ -16,16 +16,9 @@ env:
   APP_NAME: interface
   BUILD_TYPE: Release
   GIT_COMMIT: ${{ github.sha }}
-  PRODUCTION_BUILD: true
-  RELEASE_TYPE: PRODUCTION
-  RELEASE_NUMBER: ${{ github.ref_name }}
-  STABLE_BUILD: 1
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
-  # Disabled until we build with Crashpad again.
-  # CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
-  # CMAKE_BACKTRACE_TOKEN: ${{ github.ref_name }}_Windows_${{ github.sha }}
 
   # WIN-specific variables
   PreferredToolArchitecture: X64
@@ -82,10 +75,7 @@ jobs:
     - name: Configure build environment 2
       shell: bash
       run: |
-
-        echo "BUILD_NUMBER=$GIT_COMMIT_SHORT" >> $GITHUB_ENV
-        echo "ARTIFACT_PATTERN=Overte-$RELEASE_NUMBER.$INSTALLER_EXT" >> $GITHUB_ENV
-        echo "CLIENT_ONLY=FALSE" >> $GITHUB_ENV
+        echo "ARTIFACT_PATTERN=Overte-${{ github.ref_name }}.$INSTALLER_EXT" >> $GITHUB_ENV
 
     - uses: actions/checkout@v4
       with:
@@ -133,7 +123,7 @@ jobs:
     - name: Configure CMake
       shell: bash
            # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} -DJSDOC_ENABLED:BOOL=TRUE -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
+      run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_NUMBER=${{ github.ref_name }} -DOVERTE_BUILD_TYPE=PRODUCTION -DJSDOC_ENABLED:BOOL=TRUE $CMAKE_EXTRA
 
     - name: Build application
       shell: bash
@@ -209,7 +199,7 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
-        path: build/${{ env.ARTIFACT_PATTERN }}
+        path: build/Overte-*
         if-no-files-found: error
 
     - name: Archive symbols

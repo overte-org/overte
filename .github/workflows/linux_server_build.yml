@@ -158,22 +158,12 @@ jobs:
 
         # Tagged builds. E.g. release or release candidate builds.
         if [ "${{github.ref_type}}" == "tag" ]; then
-          echo "PRODUCTION_BUILD=true" >> $GITHUB_ENV
-        fi
-
-        # Systems requiring our prebuilt Qt package
-        if [[ "${{ matrix.os }}" = "ubuntu-18.04" || "${{ matrix.os }}" = "ubuntu-20.04" ]]; then
-          echo  # false
+          echo "OVERTE_RELEASE_TYPE=PRODUCTION" >> $GITHUB_ENV
         else
-          echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
+          echo "OVERTE_RELEASE_TYPE=PR" >> $GITHUB_ENV
         fi
 
-        # Architecture specific variables
-        if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
-          echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DSERVER_ONLY=true -DBUILD_TOOLS=true" >> $GITHUB_ENV
-        else # amd64
-          echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DSERVER_ONLY=true -DBUILD_TOOLS=true" >> $GITHUB_ENV
-        fi
+        echo "CMAKE_EXTRA=-DOVERTE_BUILD_SERVER=true -DOVERTE_BUILD_TOOLS=true -DOVERTE_BUILD_CLIENT=false" >> $GITHUB_ENV
 
     # Configuration is broken into multiple steps because you can't set an env var and also reference it in the same step
     - name: Configure Build Environment 2
@@ -204,18 +194,6 @@ jobs:
             echo "UPLOAD_PREFIX=build/overte/release/" >> $GITHUB_ENV
           fi
         fi
-
-        echo "BUILD_NUMBER=$GIT_COMMIT_SHORT" >> $GITHUB_ENV
-
-        # Disabled until we build with Crashpad again.
-        #~ if [ "${{ github.ref_type }}" == "tag" ]; then
-          #~ export CMAKE_BACKTRACE_URL="${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}"
-          #~ export CMAKE_BACKTRACE_TOKEN="${{ github.ref_name }}_${{ matrix.os }}_${{ github.sha }}"
-        #~ else
-          #~ # We're building a PR, default to the PR endpoint
-          #~ export CMAKE_BACKTRACE_URL="https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
-          #~ export CMAKE_BACKTRACE_TOKEN="server_pr_${{ github.event.number }}_${{ github.sha }}"
-        #~ fi
 
     - name: Configure Build Environment 3
       shell: bash
@@ -267,7 +245,7 @@ jobs:
     - name: Configure CMake
       shell: bash
            # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} $CMAKE_EXTRA
+      run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_TYPE=$OVERTE_RELEASE_TYPE -DOVERTE_RELEASE_NUMBER=$RELEASE_NUMBER -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT $CMAKE_EXTRA
 
     - name: Build Domain Server
       working-directory: build

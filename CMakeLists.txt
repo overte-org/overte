@@ -3,17 +3,15 @@
 # Copyright 2020-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
-# 3.14 is the minimum version that supports symlinks on Windows
-cmake_minimum_required(VERSION 3.14)
+# As the official CMake documentation is pretty bad for non-experts, Craig Scott's "Professional CMake: A Practical Guide" is a worthwhile investment,
+# both as a guide and as a reference manual. https://crascit.com/professional-cmake/
 
 # This should allow using long paths on Windows
 SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
+# 3.24 is the minimum version that supports COMPILE_WARNING_AS_ERROR
+cmake_minimum_required(VERSION 3.24)
 
 include(SelectLibraryConfigurations)
-
-# read USE_GLES enviroment variable and sets it as GLES option
-# TODO still gets overwritten by "use GLES on linux aarch64"
-set(GLES_OPTION "$ENV{USE_GLES}")
 
 # Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)
@@ -21,78 +19,51 @@ set(CMAKE_AUTOMOC ON)
 # Instruct CMake to run rcc automatically when needed
 set(CMAKE_AUTORCC ON)
 
-# use GLES on linux aarch64
-if (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-    set(GLES_OPTION ON)
-endif()
-
 # set our OS X deployment target
-# (needs to be set before first project() call and before prebuild.py)
 if (APPLE)
-  set(ENV{MACOSX_DEPLOYMENT_TARGET} 10.11)
+    # Needs to be set before the first project() call.
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.11" CACHE STRING "Specifies the minimum version of the target platform (e.g. macOS or iOS) on which the target binaries are to be deployed.")
 endif()
 
-set(EXTERNAL_BUILD_ASSETS "https://build-deps.overte.org")
 
-set(RELEASE_TYPE "$ENV{RELEASE_TYPE}")
-if ((NOT "${RELEASE_TYPE}" STREQUAL "PRODUCTION") AND (NOT "${RELEASE_TYPE}" STREQUAL "PR"))
-    set(RELEASE_TYPE "DEV")
-endif()
-
-# OVERTE_OPTIMIZE
-# Variable determining Overte optimization. If not set, it defaults to true.
-# Should be set to false to get completely unoptimized build for easier line-by-line debugging
-
+#
+# Default compiler flags
+#
+# Compiler flags need to be set before calling project().
 if( NOT WIN32 )
-    if(NOT DEFINED OVERTE_OPTIMIZE)
-        message("Enabling code optimization for Overte and compiled dependencies")
-        set(OVERTE_OPTIMIZE true CACHE BOOL "Enable code optimization for Overte and compiled dependencies")
-    endif()
-
-    set(OVERTE_OPTIMIZE_FLAGS "")
-
-    if(OVERTE_OPTIMIZE)
-        if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-            message("Clang compiler detected, adding -O3 -fPIC -g flags")
-            set(OVERTE_OPTIMIZE_FLAGS "-O3 -fPIC -g")
-        elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-            message("GCC compiler detected, adding -O3 -fPIC -ggdb flags")
-            set(OVERTE_OPTIMIZE_FLAGS "-O3 -fPIC -ggdb")
-        else()
-            message("No predefined optimization flags for compiler ${CMAKE_CXX_COMPILER_ID}")
-        endif()
-    endif()
-    MESSAGE(STATUS "OVERTE_OPTIMIZE: ${OVERTE_OPTIMIZE}")
-
-    # OVERTE_CPU_ARCHITECTURE
-    # Variable determining CPU architecture for which Overte will be built.
-    # If defined, it's appended to CXXFLAGS and CFLAGS for Overte
-
-    #Assume -march=native for compilers that allow it if architecture is not specified
-    if(NOT DEFINED OVERTE_CPU_ARCHITECTURE)
-        if(OVERTE_OPTIMIZE AND ( (CMAKE_CXX_COMPILER_ID MATCHES "Clang") OR (CMAKE_CXX_COMPILER_ID MATCHES "GNU") ) )
-            message("Optimization is enabled, but architecture is not specified. Assuming native build")
-            set(OVERTE_CPU_ARCHITECTURE "-march=native -mtune=native" CACHE STRING "Specify architecture dependent compiler flags here")
-        endif()
-    endif()
-
-    if(DEFINED OVERTE_CPU_ARCHITECTURE)
-        set(OVERTE_OPTIMIZE_FLAGS "${OVERTE_OPTIMIZE_FLAGS} ${OVERTE_CPU_ARCHITECTURE}")
-        message("Adding CPU architecture flags: ${OVERTE_CPU_ARCHITECTURE}")
-        MESSAGE(STATUS "OVERTE_CPU_ARCHITECTURE: ${OVERTE_CPU_ARCHITECTURE}")
-    endif()
-
     # Function alignment is necessary for V8.
     # SetAlignedPointerInInternalField requires at least 2 byte alignment and -falign-functions will set alignment
     # to machine specific value which should be greater than 2.
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OVERTE_OPTIMIZE_FLAGS} -falign-functions")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OVERTE_OPTIMIZE_FLAGS} -falign-functions")
-
-    set(ENV{CXXFLAGS} "$ENV{CXXFLAGS} ${OVERTE_OPTIMIZE_FLAGS} -falign-functions")
-    set(ENV{CFLAGS} "$ENV{CFLAGS} ${OVERTE_OPTIMIZE_FLAGS} -falign-functions")
-    message($ENV{CXXFLAGS})
+    if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+        set(CMAKE_CXX_FLAGS "-falign-functions -fPIC -m64 -msse3" CACHE STRING "C++ compiler flags for all build types.")
+        set(CMAKE_C_FLAGS "-falign-functions -fPIC -m64 -msse3" CACHE STRING "C compiler flags for all build types.")
+    elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+        # TODO: Find out which architecture optimizations to use on aarch64.
+        # We should probably target the 64bit version of the Raspberry Pi 2 as minimum.
+        set(CMAKE_CXX_FLAGS "-falign-functions -fPIC" CACHE STRING "C++ compiler flags for all build types.")
+        set(CMAKE_C_FLAGS "-falign-functions -fPIC" CACHE STRING "C++ compiler flags for all build types.")
+    endif()
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        message("Clang compiler detected, setting default flags.")
+        set(CMAKE_CXX_FLAGS_DEBUG "-Og -g" CACHE STRING "C++ compiler flags for Debug builds.")
+        set(CMAKE_C_FLAGS_DEBUG "-Og -g" CACHE STRING "C compiler flags for Debug builds.")
+        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -g" CACHE STRING "C++ compiler flags for RelWithDebInfo builds.")
+        set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -g" CACHE STRING "C compiler flags for RelWithDebInfo builds.")
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "C++ compiler flags for Release builds.")
+        set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "C compiler flags for Release builds.")
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+        message("GCC compiler detected, setting default flags")
+        set(CMAKE_CXX_FLAGS_DEBUG "-Og -ggdb3" CACHE STRING "C++ compiler flags for Debug builds.")
+        set(CMAKE_C_FLAGS_DEBUG "-Og -ggdb3" CACHE STRING "C compiler flags for Debug builds.")
+        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -ggdb2" CACHE STRING "C++ compiler flags for RelWithDebInfo builds.")
+        set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -ggdb2" CACHE STRING "C compiler flags for RelWithDebInfo builds.")
+        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "C++ compiler flags for Release builds.")
+        set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "C compiler flags for Release builds.")
+    endif()
 endif()
 
+
+#
 # OVERTE_WARNINGS
 #
 # Here we add the ability to allowlist warnings we've determined we can't fix, or are safe to
@@ -101,14 +72,7 @@ endif()
 #
 # We can also treat warnings as errors. Without the allowlist this will almost certainly lead
 # to a build failure.
-
-if(NOT DEFINED OVERTE_WARNINGS_ALLOWLIST)
-    set(OVERTE_WARNINGS_ALLOWLIST true CACHE BOOL "Allowlist some warnings we can't currently fix")
-endif()
-
-if(NOT DEFINED OVERTE_WARNINGS_AS_ERRORS)
-    set(OVERTE_WARNINGS_AS_ERRORS false CACHE BOOL "Count warnings as errors")
-endif()
+set(OVERTE_WARNINGS_ALLOWLIST ON CACHE BOOL "Allowlist some warnings we can't currently fix.")
 
 if(OVERTE_WARNINGS_ALLOWLIST)
     if (NOT WIN32)
@@ -130,14 +94,13 @@ if(OVERTE_WARNINGS_ALLOWLIST)
     endif()
 endif()
 
-if(OVERTE_WARNINGS_AS_ERRORS)
-    if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "" AND WIN32))
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
-      set(CMAKE_CFLAGS "${CMAKE_CFLAGS} /WX")
-    else()
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror")
-      set(CMAKE_CFLAGS "${CMAKE_CFLAGS} -Werror")
-    endif()
+# Enabling warnings-as-errors by default on our Linux target and on Windows.
+# Our current Linux development target is Ubuntu 22.04, which uses GCC 11.2.
+# TODO: Enable warnings-as-errors once we stop throwing warnings on the relevant platforms.
+if ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION MATCHES "11"))
+    set(COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
+elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC") # Windows
+    set(COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
 endif()
 
 
@@ -145,52 +108,43 @@ project(overte)
 include("cmake/init.cmake")
 include("cmake/compiler.cmake")
 
-if (NOT DEFINED CLIENT_ONLY)
-  set(CLIENT_ONLY 0)
-endif()
 
-if (NOT DEFINED SERVER_ONLY)
-  set(SERVER_ONLY 0)
-endif()
 
-if (ANDROID OR UWP)
-  set(MOBILE 1)
+#
+# Overte build variables
+#
+set(OVERTE_BUILD_CLIENT ON CACHE BOOL "Build Interface.")
+set(OVERTE_BUILD_SERVER ON CACHE BOOL "Build domain-server, assignment-client, and ice-server.")
+set(OVERTE_BUILD_TESTS OFF CACHE BOOL "Build tests.")
+set(OVERTE_BUILD_MANUAL_TESTS OFF CACHE BOOL "Build manual tests.")
+set(OVERTE_BUILD_TOOLS ON CACHE BOOL "Build tools. Includes Oven, which is used for some server functionality.")
+set(OVERTE_BUILD_INSTALLER ON CACHE BOOL "Build installer.")
+set(OVERTE_DISABLE_QML OFF CACHE BOOL "Build without QML. (For graphics debugging.)")
+set(OVERTE_DOWNLOAD_SERVERLESS_CONTENT OFF CACHE BOOL "Download and setup default serverless content beside Interface.")
+# use OpenGL ES on Linux aarch64 and Android.
+if ((CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") OR ANDROID)
+    # TODO: Change to GLES on aarch64 once GLES builds again.
+    #set(OVERTE_RENDERING_BACKEND "GLES" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL', 'GLES', and 'Vulkan'.")
+    set(OVERTE_RENDERING_BACKEND "OpenGL" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL', 'GLES', and 'Vulkan'.")
 else()
-  set(MOBILE 0)
+    set(OVERTE_RENDERING_BACKEND "OpenGL" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL', 'GLES', and 'Vulkan'.")
 endif()
+set(OVERTE_EXTERNAL_BUILD_ASSETS "https://build-deps.overte.org" CACHE INTERNAL "")
+set(OVERTE_TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256" CACHE STRING "URL to timeserver used for signing executables.")
+set(OVERTE_USE_OPTIMIZED_IK OFF CACHE BOOL "Use optimized IK.")
+set(OVERTE_DISABLE_KTX_CACHE OFF CACHE BOOL "Disable KTX Cache.")
+set(OVERTE_USE_KHR_ROBUSTNESS OFF CACHE BOOL "Use KHR_robustness.")
 
-
-
-# Use default time server if none defined in environment
-set_from_env(TIMESERVER_URL TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256")
-
-set(HIFI_USE_OPTIMIZED_IK_OPTION OFF)
-set(BUILD_CLIENT_OPTION ON)
-set(BUILD_SERVER_OPTION ON)
-set(BUILD_TESTS_OPTION OFF)
-set(BUILD_MANUAL_TESTS_OPTION ${BUILD_TESTS_OPTION})
-set(BUILD_TOOLS_OPTION ON)
-set(BUILD_INSTALLER_OPTION ON)
-set(DISABLE_QML_OPTION OFF)
-set(DOWNLOAD_SERVERLESS_CONTENT_OPTION OFF)
+set(OVERTE_BACKTRACE_URL "" CACHE STRING "URL to an endpoint for uploading crash-dumps. For example Sentry.")
+set(OVERTE_BACKTRACE_TOKEN "" CACHE STRING "Token used to identify this build, for use in uploading crash-dumps.")
 
 if (ANDROID OR UWP)
-  set(BUILD_SERVER_OPTION OFF)
-  set(BUILD_TOOLS_OPTION OFF)
-  set(BUILD_INSTALLER OFF)
-endif()
-
-if (CLIENT_ONLY)
-  set(BUILD_SERVER_OPTION OFF)
-endif()
-
-if (SERVER_ONLY)
-  set(BUILD_CLIENT_OPTION OFF)
-  set(BUILD_TESTS_OPTION OFF)
+    set(OVERTE_BUILD_SERVER OFF CACHE BOOL FORCE "Overwritten (mobile build)")
+    set(OVERTE_BUILD_TOOLS OFF CACHE BOOL FORCE "Overwritten (mobile build)")
+    set(OVERTE_BUILD_INSTALLER OFF CACHE BOOL FORCE "Overwritten (mobile build)")
 endif()
 
 if (ANDROID)
-  set(GLES_OPTION ON)
   set(PLATFORM_QT_COMPONENTS AndroidExtras WebView)
   add_definitions(-DHIFI_ANDROID_APP=\"${HIFI_ANDROID_APP}\")
   if (
@@ -221,70 +175,61 @@ if (ANDROID)
   endif()
 else ()
   set(PLATFORM_QT_COMPONENTS WebEngine Xml)
-endif ()
-
-if (USE_GLES AND (NOT ANDROID AND NOT UNIX))
-  set(DISABLE_QML_OPTION ON)
 endif()
 
-option(HIFI_USE_OPTIMIZED_IK "Use optimized IK" ${HIFI_USE_OPTIMIZED_IK_OPTION})
-option(BUILD_CLIENT "Build client components" ${BUILD_CLIENT_OPTION})
-option(BUILD_SERVER "Build server components" ${BUILD_SERVER_OPTION})
-option(BUILD_TESTS "Build tests" ${BUILD_TESTS_OPTION})
-option(BUILD_MANUAL_TESTS "Build manual tests" ${BUILD_MANUAL_TESTS_OPTION})
-option(BUILD_TOOLS "Build tools" ${BUILD_TOOLS_OPTION})
-option(BUILD_INSTALLER "Build installer" ${BUILD_INSTALLER_OPTION})
-option(USE_GLES "Use OpenGL ES" ${GLES_OPTION})
-option(USE_KHR_ROBUSTNESS "Use KHR_robustness" OFF)
-option(DISABLE_QML "Disable QML" ${DISABLE_QML_OPTION})
-option(DISABLE_KTX_CACHE "Disable KTX Cache" OFF)
-option(
-  DOWNLOAD_SERVERLESS_CONTENT
-  "Download and setup default serverless content beside Interface"
-  ${DOWNLOAD_SERVERLESS_CONTENT_OPTION}
-)
 
-set(PLATFORM_QT_GL OpenGL)
-
-if (USE_KHR_ROBUSTNESS)
+if (OVERTE_USE_KHR_ROBUSTNESS)
   add_definitions(-DUSE_KHR_ROBUSTNESS)
 endif()
 
-if (USE_GLES)
-  add_definitions(-DUSE_GLES)
-  add_definitions(-DGPU_POINTER_STORAGE_SHARED)
-  set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gles)
+if (OVERTE_RENDERING_BACKEND STREQUAL "GLES")
+    add_definitions(-DUSE_GLES)
+    add_definitions(-DGPU_POINTER_STORAGE_SHARED)
+    set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gles)
+elseif (OVERTE_RENDERING_BACKEND STREQUAL "OpenGL")
+    add_definitions(-DGPU_POINTER_STORAGE_RAW)
+    set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gl)
+elseif (OVERTE_RENDERING_BACKEND STREQUAL "Vulkan")
+    # TODO
+    message(FATAL_ERROR "Vulkan backend selected, but not implemented yet.")
 else()
-  add_definitions(-DGPU_POINTER_STORAGE_RAW)
-  set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gl)
+    message(FATAL_ERROR "Invalid OVERTE_RENDERING_BACKEND set. Expected 'GLES', 'OpenGL', or 'Vulkan'. Got '${OVERTE_RENDERING_BACKEND}'")
 endif()
 
 foreach(PLATFORM_QT_COMPONENT ${PLATFORM_QT_COMPONENTS})
   list(APPEND PLATFORM_QT_LIBRARIES "Qt5::${PLATFORM_QT_COMPONENT}")
 endforeach()
 
-MESSAGE(STATUS "Use optimized IK:      " ${HIFI_USE_OPTIMIZED_IK})
-MESSAGE(STATUS "Build server:          " ${BUILD_SERVER})
-MESSAGE(STATUS "Build client:          " ${BUILD_CLIENT})
-MESSAGE(STATUS "Build tests:           " ${BUILD_TESTS})
-MESSAGE(STATUS "Build tools:           " ${BUILD_TOOLS})
-MESSAGE(STATUS "Build installer:       " ${BUILD_INSTALLER})
-MESSAGE(STATUS "GL ES:                 " ${USE_GLES})
-MESSAGE(STATUS "DL serverless content: " ${DOWNLOAD_SERVERLESS_CONTENT})
+message(STATUS "Use optimized IK:      " ${OVERTE_USE_OPTIMIZED_IK})
+message(STATUS "Build server:          " ${OVERTE_BUILD_SERVER})
+message(STATUS "Build client:          " ${OVERTE_BUILD_CLIENT})
+message(STATUS "Build tests:           " ${OVERTE_BUILD_TESTS})
+message(STATUS "Build tools:           " ${OVERTE_BUILD_TOOLS})
+message(STATUS "Build installer:       " ${OVERTE_BUILD_INSTALLER})
+message(STATUS "Rendering backend:     " ${OVERTE_RENDERING_BACKEND})
+message(STATUS "DL serverless content: " ${OVERTE_DOWNLOAD_SERVERLESS_CONTENT})
 
-if (DISABLE_QML)
-  MESSAGE(STATUS "QML disabled!")
-  add_definitions(-DDISABLE_QML)
+if (OVERTE_DISABLE_QML)
+    message(STATUS "QML disabled!")
+    add_definitions(-DDISABLE_QML)
 endif()
 
-if (DISABLE_KTX_CACHE)
-  MESSAGE(STATUS "KTX cache disabled!")
-  add_definitions(-DDISABLE_KTX_CACHE)
+if (OVERTE_DISABLE_KTX_CACHE)
+    message(STATUS "KTX cache disabled!")
+    add_definitions(-DDISABLE_KTX_CACHE)
 endif()
 
 if (UNIX AND DEFINED ENV{HIFI_MEMORY_DEBUGGING})
   MESSAGE(STATUS "Memory debugging is enabled")
 endif()
+
+# Set SERVER_ONLY and CLIENT_ONLY for later packaging.
+if ((NOT OVERTE_BUILD_CLIENT) AND OVERTE_BUILD_SERVER)
+    set(SERVER_ONLY ON CACHE BOOL INTERNAL "")
+elseif ((NOT OVERTE_BUILD_SERVER) AND OVERTE_BUILD_CLIENT)
+    set(CLIENT_ONLY ON CACHE BOOL INTERNAL "")
+endif()
+
 
 #
 # Helper projects
@@ -327,14 +272,9 @@ add_definitions(-DGLM_FORCE_RADIANS)
 add_definitions(-DGLM_ENABLE_EXPERIMENTAL)
 add_definitions(-DGLM_FORCE_CTOR_INIT)
 
-if (WIN32)
-    # Deal with fakakta Visual Studo 2017 bug
-    add_definitions(-DQT_NO_FLOAT16_OPERATORS -DWIN32)
-endif()
-
-if (HIFI_USE_OPTIMIZED_IK)
-  MESSAGE(STATUS "SET THE USE IK DEFINITION ")
-  add_definitions(-DHIFI_USE_OPTIMIZED_IK)
+if (OVERTE_USE_OPTIMIZED_IK)
+    message(STATUS "Setting definition for using optimized inverse kinematics.")
+    add_definitions(-DHIFI_USE_OPTIMIZED_IK)
 endif()
 set(HIFI_LIBRARY_DIR "${CMAKE_CURRENT_SOURCE_DIR}/libraries")
 
@@ -342,7 +282,7 @@ set(EXTERNAL_PROJECT_PREFIX "project")
 set_property(DIRECTORY PROPERTY EP_PREFIX ${EXTERNAL_PROJECT_PREFIX})
 setup_externals_binary_dir()
 
-option(USE_NSIGHT "Attempt to find the nSight libraries" 1)
+set(OVERTE_USE_NSIGHT ON CACHE BOOL "Attempt to find the Nvidia nSight libraries.")
 
 # FIXME hack to work on the proper Android toolchain
 if (ANDROID)
@@ -355,11 +295,11 @@ if (BUILD_GPU_FRAME_PLAYER_ONLY)
     add_subdirectory(tools/gpu-frame-player)
 else()
 
-# BUILD_TOOLS option will be handled inside the tools's CMakeLists.txt because 'scribe' tool is required for build anyway
+# OVERTE_BUILD_TOOLS option will be handled inside the tools's CMakeLists.txt because 'scribe' tool is required for build anyway
 add_subdirectory(tools)
 
 # add subdirectories for all targets
-if (BUILD_SERVER)
+if (OVERTE_BUILD_SERVER)
   add_subdirectory(assignment-client)
   set_target_properties(assignment-client PROPERTIES FOLDER "Apps")
   add_subdirectory(domain-server)
@@ -368,7 +308,7 @@ if (BUILD_SERVER)
   set_target_properties(ice-server PROPERTIES FOLDER "Apps")
 endif()
 
-if (BUILD_CLIENT)
+if (OVERTE_BUILD_CLIENT)
   add_subdirectory(interface)
   if (APPLE)
     set_target_properties(Overte PROPERTIES FOLDER "Apps")
@@ -380,25 +320,25 @@ if (BUILD_CLIENT)
   option(USE_NEURON "Build Interface with Neuron library/plugin" OFF)
 endif()
 
-if (BUILD_CLIENT OR BUILD_SERVER)
+if (OVERTE_BUILD_CLIENT OR OVERTE_BUILD_SERVER)
   add_subdirectory(plugins)
   add_subdirectory(server-console)
 endif()
 
 endif()
 
-if (BUILD_TESTS)
+if (OVERTE_BUILD_TESTS)
   # Turn on testing so that add_test works
   # MUST be in the root cmake file for ctest to work
   include(CTest)
   enable_testing()
   add_subdirectory(tests)
-  if (BUILD_MANUAL_TESTS)
+  if (OVERTE_BUILD_MANUAL_TESTS)
     add_subdirectory(tests-manual)
   endif()
 endif()
 
-if (BUILD_INSTALLER)
+if (OVERTE_BUILD_INSTALLER)
   if (UNIX)
     install(
         DIRECTORY "${CMAKE_SOURCE_DIR}/scripts"
