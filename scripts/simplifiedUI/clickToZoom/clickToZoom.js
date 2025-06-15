@@ -393,12 +393,12 @@
                     var pickRay = Camera.computePickRay(event.x, event.y);
                     var intersection = AvatarManager.findRayIntersection({origin: pickRay.origin, direction: pickRay.direction}, [], [MyAvatar.sessionUUID], false);
                     if (!intersection.intersects) {
-                        intersection = Entities.findRayIntersection({origin: pickRay.origin, direction: pickRay.direction}, true);
+                        intersection = Entities.findRayIntersection({ origin: pickRay.origin, direction: pickRay.direction }, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES);
                         var entityProps = Entities.getEntityProperties(intersection.entityID);
                         if (entityProps.type === "Shape") {
                             var FIND_SHAPES_DISTANCE = 10.0;
                             var shapes = Entities.findEntitiesByType("Shape", intersection.intersection, FIND_SHAPES_DISTANCE);
-                            intersection = Entities.findRayIntersection({origin: pickRay.origin, direction: pickRay.direction}, true, [], shapes);
+                            intersection = Entities.findRayIntersection({ origin: pickRay.origin, direction: pickRay.direction }, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES, [], shapes);
                             entityProps = Entities.getEntityProperties(intersection.entityID);
                         }
                         if (!entityProps.dimensions) {
