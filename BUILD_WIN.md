@@ -7,24 +7,24 @@ SPDX-License-Identifier: Apache-2.0
 
 # Build Windows
 
-*Last Updated on 2025-03-17*
+*Last Updated on 2025-06-09*
 
 This is a stand-alone guide for creating your first Overte build for Windows 64-bit.
 
-Note: We are now using Visual Studio 2019 and Qt 5.15.x.
+Note: We are now using Visual Studio 2022 and Qt 5.15.x.
 If you are upgrading from previous versions, do a clean uninstall of those versions before going through this guide.
 
 **Note: The prerequisites will require about 10 GB of space on your drive. You will also need a system with at least 8GB of main memory.**
 
 ## Step 1. Visual Studio & Python 3.x
 
-If you don't have Community or Professional edition of Visual Studio 2019, download [Visual Studio Community 2019](https://visualstudio.microsoft.com/vs/). If you have Visual Studio 2017, you need to download Visual Studio 2019.
+If you don't have Community or Professional edition of Visual Studio 2022, download [Visual Studio Community 2022](https://visualstudio.microsoft.com/vs/). While Visual Studio 2019 should still work, we don't support it anymore and might remove workarounds specific to it in the future.
 
 When selecting components, check "Desktop development with C++".
 
 If you do not already have a Python 3.x development environment installed and want to install it with Visual Studio, check "Python Development". If you already have Visual Studio installed and need to add Python, open the "Add or remove programs" control panel and find the "Microsoft Visual Studio Installer". Select it and click "Modify". In the installer, select "Modify" again, then check "Python Development" and allow the installer to apply the changes.
 
-### Visual Studio 2019
+### Visual Studio 2022
 
 On the right on the Summary toolbar, select the following components.
 
@@ -78,13 +78,13 @@ To create this variable:
 
 ## Step 7. Running CMake to Generate Build Files
 
-These instructions only apply to Visual Studio 2019.
+These instructions only apply to Visual Studio 2022.
 
 ### Automatic
 
 There is a batch file to automatically run the commands below for ease of use.
 
-`winprepareVS19.bat`
+`winprepareVS22.bat`
 
 ### Manual
 
@@ -92,8 +92,8 @@ Run the Command Prompt from Start and run the following commands:
 
 ```bash
 cd "%OVERTE_DIR%"
-conan install . -b missing -pr=tools/conan-profiles/vs-19-release -of build
-conan install . -b missing -pr=tools/conan-profiles/vs-19-debug -of build
+conan install . -b missing -pr=tools/conan-profiles/vs-22-release -of build
+conan install . -b missing -pr=tools/conan-profiles/vs-22-debug -of build
 cmake --preset conan-default
 ```
 
