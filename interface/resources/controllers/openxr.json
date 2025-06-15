@@ -69,6 +69,32 @@
         { "from": "OpenXR.RightHandPinky1", "to": "Standard.RightHandPinky1"},
         { "from": "OpenXR.RightHandPinky2", "to": "Standard.RightHandPinky2"},
         { "from": "OpenXR.RightHandPinky3", "to": "Standard.RightHandPinky3"},
-        { "from": "OpenXR.RightHandPinky4", "to": "Standard.RightHandPinky4"}
+        { "from": "OpenXR.RightHandPinky4", "to": "Standard.RightHandPinky4"},
+
+        { "from": "OpenXR.LeftEye", "to": "Standard.LeftEye"},
+        { "from": "OpenXR.EyeBlink_L", "to": "Standard.EyeBlink_L"},
+        { "from": "OpenXR.RightEye", "to": "Standard.RightEye"},
+        { "from": "OpenXR.EyeBlink_R", "to": "Standard.EyeBlink_R"},
+
+        { "from": "OpenXR.Hips", "to": "Standard.Hips"},
+        { "from": "OpenXR.LeftFoot", "to": "Standard.LeftFoot"},
+        { "from": "OpenXR.RightFoot", "to": "Standard.RightFoot"},
+
+        { "from": "OpenXR.TrackedObject00", "to": "Standard.TrackedObject00"},
+        { "from": "OpenXR.TrackedObject01", "to": "Standard.TrackedObject01"},
+        { "from": "OpenXR.TrackedObject02", "to": "Standard.TrackedObject02"},
+        { "from": "OpenXR.TrackedObject03", "to": "Standard.TrackedObject03"},
+        { "from": "OpenXR.TrackedObject04", "to": "Standard.TrackedObject04"},
+        { "from": "OpenXR.TrackedObject05", "to": "Standard.TrackedObject05"},
+        { "from": "OpenXR.TrackedObject06", "to": "Standard.TrackedObject06"},
+        { "from": "OpenXR.TrackedObject07", "to": "Standard.TrackedObject07"},
+        { "from": "OpenXR.TrackedObject08", "to": "Standard.TrackedObject08"},
+        { "from": "OpenXR.TrackedObject09", "to": "Standard.TrackedObject09"},
+        { "from": "OpenXR.TrackedObject10", "to": "Standard.TrackedObject10"},
+        { "from": "OpenXR.TrackedObject11", "to": "Standard.TrackedObject11"},
+        { "from": "OpenXR.TrackedObject12", "to": "Standard.TrackedObject12"},
+        { "from": "OpenXR.TrackedObject13", "to": "Standard.TrackedObject13"},
+        { "from": "OpenXR.TrackedObject14", "to": "Standard.TrackedObject14"},
+        { "from": "OpenXR.TrackedObject15", "to": "Standard.TrackedObject15"}
     ]
 }
