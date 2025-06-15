@@ -8,7 +8,7 @@
 
 # This should allow using long paths on Windows
 SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
-# 3.24 is the minimum version that supports COMPILE_WARNING_AS_ERROR
+# 3.24 is the minimum version that supports CMAKE_COMPILE_WARNING_AS_ERROR
 cmake_minimum_required(VERSION 3.24)
 
 include(SelectLibraryConfigurations)
