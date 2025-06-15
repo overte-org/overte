@@ -145,13 +145,14 @@ bool Application::exportWorldEntities(const QString& filename, const QVector<QSt
         const vec3 vec3_inf(FLT_MAX, FLT_MAX, FLT_MAX);
 
         QVector<QUuid> entityIDs;
-        entityTree->evalEntitiesInCube(AACube(Extents(-vec3_inf, vec3_inf)), PickFilter(), entityIDs);
+        entityTree->evalEntitiesInCube(
+            AACube(Extents(-vec3_inf, vec3_inf)),
+            PickFilter::Flags(PickFilter::getBitMask(PickFilter::DOMAIN_ENTITIES)),
+            entityIDs
+        );
 
         for (auto entityID : entityIDs) {
             auto entityItem = entityTree->findEntityByEntityItemID(entityID);
-
-            // only export domain entities
-            if (!entityItem->isDomainEntity()) { continue; }
 
             exportTree->addEntity(entityID, entityItem->getProperties());
         }
