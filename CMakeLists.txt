@@ -97,14 +97,14 @@ endif()
 # Enabling warnings-as-errors by default on our Linux target and on Windows.
 # Our current Linux development target is Ubuntu 22.04, which uses GCC 11.2.
 if ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION MATCHES "11"))
-    set(COMPILE_WARNING_AS_ERROR ON CACHE BOOL "")
+    set(CMAKE_COMPILE_WARNING_AS_ERROR ON CACHE BOOL "")
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC") # Windows
-    set(COMPILE_WARNING_AS_ERROR ON CACHE BOOL "")
+    set(CMAKE_COMPILE_WARNING_AS_ERROR ON CACHE BOOL "")
 else()
-    set(COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
+    set(CMAKE_COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
 endif()
 
-if (COMPILE_WARNING_AS_ERROR)
+if (CMAKE_COMPILE_WARNING_AS_ERROR)
     if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "" AND WIN32))
         # Silence a warning in Qt about stdext::checked_array_iterator
         add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
