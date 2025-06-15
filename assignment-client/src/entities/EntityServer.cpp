@@ -58,6 +58,7 @@ EntityServer::EntityServer(ReceivedMessage& message) :
     packetReceiver.registerListenerForTypes({ PacketType::EntityAdd,
         PacketType::EntityClone,
         PacketType::EntityEdit,
+        PacketType::EntityEditLarge,
         PacketType::EntityErase,
         PacketType::EntityPhysics },
         PacketReceiver::makeSourcedListenerReference<EntityServer>(this, &EntityServer::handleEntityPacket));
