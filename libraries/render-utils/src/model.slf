@@ -23,7 +23,11 @@
             LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
         <@endif@>
     <@else@>
-        <$declareMToonMaterialTextures(ALBEDO, HIFI_USE_NORMALMAP, SHADE, EMISSIVE, SHADING_SHIFT, MATCAP, RIM, UV_ANIMATION_MASK)$>
+        <@if HIFI_USE_NORMALMAP@>
+            <$declareMToonMaterialTextures(ALBEDO, NORMAL, SHADE, EMISSIVE, SHADING_SHIFT, MATCAP, RIM, UV_ANIMATION_MASK)$>
+        <@else@>
+            <$declareMToonMaterialTextures(ALBEDO, _SCRIBE_NULL, SHADE, EMISSIVE, SHADING_SHIFT, MATCAP, RIM, UV_ANIMATION_MASK)$>
+        <@endif@>
     <@endif@>
 <@else@>
     <@if HIFI_USE_SHADOW or HIFI_USE_UNLIT@>
@@ -34,12 +38,24 @@
     <@else@>
         <@if not HIFI_USE_LIGHTMAP@>
             <@if HIFI_USE_TRANSLUCENT@>
-                <$declareMaterialTextures(ALBEDO, ROUGHNESS, HIFI_USE_NORMALMAP, METALLIC, EMISSIVE, OCCLUSION)$>
+                <@if HIFI_USE_NORMALMAP@>
+                    <$declareMaterialTextures(ALBEDO, ROUGHNESS, NORMAL, METALLIC, EMISSIVE, OCCLUSION)$>
+                <@else@>
+                    <$declareMaterialTextures(ALBEDO, ROUGHNESS, _SCRIBE_NULL, METALLIC, EMISSIVE, OCCLUSION)$>
+                <@endif@>
             <@else@>
-                <$declareMaterialTextures(ALBEDO, ROUGHNESS, HIFI_USE_NORMALMAP, METALLIC, EMISSIVE, OCCLUSION, SCATTERING)$>
+                <@if HIFI_USE_NORMALMAP@>
+                    <$declareMaterialTextures(ALBEDO, ROUGHNESS, NORMAL, METALLIC, EMISSIVE, OCCLUSION, SCATTERING)$>
+                <@else@>
+                    <$declareMaterialTextures(ALBEDO, ROUGHNESS, _SCRIBE_NULL, METALLIC, EMISSIVE, OCCLUSION, SCATTERING)$>
+                <@endif@>
             <@endif@>
         <@else@>
-            <$declareMaterialTextures(ALBEDO, ROUGHNESS, HIFI_USE_NORMALMAP, METALLIC)$>
+            <@if HIFI_USE_NORMALMAP@>
+                <$declareMaterialTextures(ALBEDO, ROUGHNESS, NORMAL, METALLIC)$>
+            <@else@>
+                <$declareMaterialTextures(ALBEDO, ROUGHNESS, _SCRIBE_NULL, METALLIC)$>
+            <@endif@>
             <$declareMaterialLightmap()$>
         <@endif@>
     <@endif@>
@@ -74,7 +90,7 @@
             <@endif@>
             <$declareEvalGlobalLightingAlphaBlended()$>
         <@else@>
-            <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, HIFI_USE_FORWARD)$>
+            <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, 1)$>
         <@endif@>
         <@include gpu/Transform.slh@>
         <$declareStandardCameraTransform()$>

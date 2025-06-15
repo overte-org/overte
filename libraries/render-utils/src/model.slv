@@ -23,14 +23,26 @@
 
 <@if HIFI_USE_DEFORMED or HIFI_USE_DEFORMEDDQ@>
     <@include MeshDeformer.slh@>
-    <@if HIFI_USE_SHADOW@>
-        <$declareMeshDeformer(_SCRIBE_NULL, _SCRIBE_NULL, 1, HIFI_USE_DEFORMEDDQ, 1)$>
-    <@elif not HIFI_USE_NORMALMAP@>
-        <$declareMeshDeformer(1, _SCRIBE_NULL, 1, HIFI_USE_DEFORMEDDQ, 1)$>
-    <@elif HIFI_USE_TRIPLANAR@>
-        <$declareMeshDeformer(1, _SCRIBE_NULL, 1, HIFI_USE_DEFORMEDDQ, 1)$>
+    <@if HIFI_USE_DEFORMEDDQ@>
+        <@if HIFI_USE_SHADOW@>
+            <$declareMeshDeformer(_SCRIBE_NULL, _SCRIBE_NULL, 1, 1, 1)$>
+        <@elif not HIFI_USE_NORMALMAP@>
+            <$declareMeshDeformer(1, _SCRIBE_NULL, 1, 1, 1)$>
+        <@elif HIFI_USE_TRIPLANAR@>
+            <$declareMeshDeformer(1, _SCRIBE_NULL, 1, 1, 1)$>
+        <@else@>
+            <$declareMeshDeformer(1, 1, 1, 1, 1)$>
+        <@endif@>
     <@else@>
-        <$declareMeshDeformer(1, 1, 1, HIFI_USE_DEFORMEDDQ, 1)$>
+        <@if HIFI_USE_SHADOW@>
+            <$declareMeshDeformer(_SCRIBE_NULL, _SCRIBE_NULL, 1, _SCRIBE_NULL, 1)$>
+        <@elif not HIFI_USE_NORMALMAP@>
+            <$declareMeshDeformer(1, _SCRIBE_NULL, 1, _SCRIBE_NULL, 1)$>
+        <@elif HIFI_USE_TRIPLANAR@>
+            <$declareMeshDeformer(1, _SCRIBE_NULL, 1, _SCRIBE_NULL, 1)$>
+        <@else@>
+            <$declareMeshDeformer(1, 1, 1, _SCRIBE_NULL, 1)$>
+        <@endif@>
     <@endif@>
     <$declareMeshDeformerActivation(1, 1)$>
 <@endif@>
