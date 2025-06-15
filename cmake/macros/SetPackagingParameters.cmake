@@ -74,7 +74,7 @@ macro(SET_PACKAGING_PARAMETERS)
     # To not break our NSIS later down the line, we use `1` here instead of `ON`.
     set(PR_BUILD 1 CACHE INTERNAL "")
     set(BUILD_VERSION "PR${OVERTE_RELEASE_NUMBER}-${BUILD_DATE}")
-    set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
+    set(BUILD_ORGANIZATION "Overte - PR${OVERTE_RELEASE_NUMBER}")
     set(INTERFACE_ICON_PREFIX "interface-beta")
 
     # add definition for this release type
@@ -84,7 +84,7 @@ macro(SET_PACKAGING_PARAMETERS)
     # To not break our NSIS later down the line, we use `1` here instead of `ON`.
     set(NIGHTLY_BUILD 1 CACHE INTERNAL "")
     set(BUILD_VERSION "Nightly-${BUILD_DATE}")
-    set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
+    set(BUILD_ORGANIZATION "Overte - Nightly")
     set(INTERFACE_ICON_PREFIX "interface-beta")
 
     # add definition for this release type
@@ -94,7 +94,7 @@ macro(SET_PACKAGING_PARAMETERS)
     # To not break our NSIS later down the line, we use `1` here instead of `ON`.
     set(DEV_BUILD 1 CACHE INTERNAL "")
     set(BUILD_VERSION "Dev-${BUILD_DATE}")
-    set(BUILD_ORGANIZATION "Overte - ${BUILD_VERSION}")
+    set(BUILD_ORGANIZATION "Overte - Dev")
     set(INTERFACE_ICON_PREFIX "interface-beta")
 
     # add definition for this release type
