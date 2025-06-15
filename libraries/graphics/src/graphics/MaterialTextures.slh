@@ -17,6 +17,8 @@
 
 #define TAA_TEXTURE_LOD_BIAS    -1.0
 
+<@if not HIFI_USE_TRIPLANAR@>
+
 <@func evalMaterialNormalLOD(fragPosES, fetchedNormal, interpolatedNormal, interpolatedTangent, normal)@>
 {
     vec3 normalizedNormal = normalize(<$interpolatedNormal$>.xyz);
@@ -25,9 +27,22 @@
     // attenuate the normal map divergence from the mesh normal based on distance
     // The attenuation range [30,100] meters from the eye is arbitrary for now
     vec3 localNormal = mix(<$fetchedNormal$>, vec3(0.0, 1.0, 0.0), smoothstep(30.0, 100.0, (-<$fragPosES$>).z));
-    <$normal$> = vec3(normalizedBitangent * localNormal.x + normalizedNormal * localNormal.y + normalizedTangent * localNormal.z);
+    <$normal$> = normalize(vec3(normalizedBitangent * localNormal.x + normalizedNormal * localNormal.y + normalizedTangent * localNormal.z));
 }
 <@endfunc@>
+
+<@else@>
+
+// In triplanar mode, fetchedNormal is already in world space
+<@func evalMaterialNormalLODTriplanar(fragPosES, fetchedNormal, interpolatedNormal, normal)@>
+{
+    // attenuate the normal map divergence from the mesh normal based on distance
+    // The attenuation range [30,100] meters from the eye is arbitrary for now
+    <$normal$> = mix(<$fetchedNormal$>, <$interpolatedNormal$>, smoothstep(30.0, 100.0, (-<$fragPosES$>).z));
+}
+<@endfunc@>
+
+<@endif@>
 
 <@func evalMaterialAlbedo(fetchedAlbedo, materialAlbedo, matKey, albedo)@>
 {
@@ -76,6 +91,27 @@
 }
 <@endfunc@>
 
+#define SAMPLE_MAP(name, slot, uv, comps) name = texture(slot, uv, TAA_TEXTURE_LOD_BIAS).comps;
+<@if HIFI_USE_LAYERS2@>
+#define SAMPLE_MAP_LAYER(name, map, map2, map3, layer, uv, comps) \
+    if (layer == 1) {                            \
+        SAMPLE_MAP(name, map2, uv, comps)  \
+    } else {                                     \
+        SAMPLE_MAP(name, map, uv, comps)   \
+    }
+<@elif HIFI_USE_LAYERS3@>
+#define SAMPLE_MAP_LAYER(name, map, map2, map3, layer, uv, comps) \
+    if (layer == 2) {                            \
+        SAMPLE_MAP(name, map3, uv, comps)  \
+    } else if (layer == 1) {                     \
+        SAMPLE_MAP(name, map2, uv, comps)  \
+    } else {                                     \
+        SAMPLE_MAP(name, map, uv, comps)   \
+    }
+<@else@>
+#define SAMPLE_MAP_LAYER(name, map, map2, map3, layer, uv, comps) SAMPLE_MAP(name, map, uv, comps)
+<@endif@>
+
 <@if not HIFI_USE_MTOON@>
 <@func declareMaterialTextures(withAlbedo, withRoughness, withNormal, withMetallic, withEmissive, withOcclusion, withScattering)@>
 
@@ -83,70 +119,95 @@
 
 #ifdef GPU_TEXTURE_TABLE_BINDLESS
 
-TextureTable(0, matTex);
+TextureTable(table0, matTex);
+<@if HIFI_USE_LAYERS2@>
+    TextureTable(table1, matTex2);
+#define DEFINE_MAT_TEXS const GPUTextureTable _matTexs[NUM_LAYERS] = GPUTextureTable[NUM_LAYERS](matTex, matTex2);
+<@elif HIFI_USE_LAYERS3@>
+    TextureTable(table1, matTex2);
+    TextureTable(table2, matTex3);
+#define DEFINE_MAT_TEXS const GPUTextureTable _matTexs[NUM_LAYERS] = GPUTextureTable[NUM_LAYERS](matTex, matTex2, matTex3);
+<@else@>
+#define DEFINE_MAT_TEXS const GPUTextureTable _matTexs[NUM_LAYERS] = GPUTextureTable[NUM_LAYERS](matTex);
+<@endif@>
+
 <!
     ALBEDO = 0,
-    NORMAL, 1
-    METALLIC, 2
-    EMISSIVE_LIGHTMAP, 3
-    ROUGHNESS, 4
-    OCCLUSION, 5
-    SCATTERING, 6
+    NORMAL = 1,
+    METALLIC = 2,
+    EMISSIVE_LIGHTMAP = 3,
+    ROUGHNESS = 4, // only supported for 1 or 2 layers
+    OCCLUSION = 5, // only supported for 1 or 2 layers
+    SCATTERING = 6, // only supported for 1 layer
 !>
 
 <@if withAlbedo@>
 #define albedoMap 0
-vec4 fetchAlbedoMap(vec2 uv) {
+vec4 fetchAlbedoMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
     // Should take into account TAA_TEXTURE_LOD_BIAS?
-    return tableTexValue(matTex, albedoMap, uv);
+    return tableTexValue(_matTexs[layer], albedoMap, uv);
 }
 <@endif@>
 
 <@if withNormal@>
 #define normalMap 1
-vec3 fetchNormalMap(vec2 uv) {
+vec3 fetchNormalMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_NORMAL);
     // Should take into account TAA_TEXTURE_LOD_BIAS?
-    return tableTexValue(matTex, normalMap, uv).xyz;
+    return tableTexValue(_matTexs[layer], normalMap, uv).xyz;
 }
 <@endif@>
 
 <@if withMetallic@>
 #define metallicMap 2
-float fetchMetallicMap(vec2 uv) {
+float fetchMetallicMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_METALLIC);
     // Should take into account TAA_TEXTURE_LOD_BIAS?
-    return tableTexValue(matTex, metallicMap, uv).r;
+    return tableTexValue(_matTexs[layer], metallicMap, uv).r;
 }
 <@endif@>
 
 <@if withEmissive@>
 #define emissiveMap 3
-vec3 fetchEmissiveMap(vec2 uv) {
+vec3 fetchEmissiveMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP);
     // Should take into account TAA_TEXTURE_LOD_BIAS?
-    return tableTexValue(matTex, emissiveMap, uv).rgb;
+    return tableTexValue(_matTexs[layer], emissiveMap, uv).rgb;
 }
 <@endif@>
 
 <@if withRoughness@>
 #define roughnessMap 4
-float fetchRoughnessMap(vec2 uv) {
+float fetchRoughnessMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS);
     // Should take into account TAA_TEXTURE_LOD_BIAS?
-    return tableTexValue(matTex, roughnessMap, uv).r;
+    return tableTexValue(_matTexs[layer], roughnessMap, uv).r;
 }
 <@endif@>
 
 <@if withOcclusion@>
 #define occlusionMap 5
-float fetchOcclusionMap(vec2 uv) {
-    return tableTexValue(matTex, occlusionMap, uv).r;
+float fetchOcclusionMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_OCCLUSION);
+    return tableTexValue(_matTexs[layer], occlusionMap, uv).r;
 }
 <@endif@>
 
 <@if withScattering@>
 #define scatteringMap 6
-float fetchScatteringMap(vec2 uv) {
-    float scattering = texture(tableTex(matTex, scatteringMap), uv).r; // boolean scattering for now
+float fetchScatteringMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SCATTERING);
+    float scattering = texture(tableTex(_matTexs[layer], scatteringMap), uv).r; // boolean scattering for now
     return max(((scattering - 0.1) / 0.9), 0.0);
-    return tableTexValue(matTex, scatteringMap, uv).r; // boolean scattering for now
+    return tableTexValue(_matTexs[layer], scatteringMap, uv).r; // boolean scattering for now
 }
 <@endif@>
 
@@ -154,16 +215,34 @@ float fetchScatteringMap(vec2 uv) {
 
 <@if withAlbedo@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO) uniform sampler2D albedoMap;
-vec4 fetchAlbedoMap(vec2 uv) {
-    return texture(albedoMap, uv, TAA_TEXTURE_LOD_BIAS);
+<@if HIFI_USE_LAYERS2@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO2_2) uniform sampler2D albedoMap2;
+<@elif HIFI_USE_LAYERS3@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO2_3) uniform sampler2D albedoMap2;
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO3_3) uniform sampler2D albedoMap3;
+<@endif@>
+vec4 fetchAlbedoMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
+    vec4 albedo;
+    SAMPLE_MAP_LAYER(albedo, albedoMap, albedoMap2, albedoMap3, layer, uv, rgba)
+    return albedo;
 }
 <@endif@>
 
 <@if withNormal@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL) uniform sampler2D normalMap;
-vec3 fetchNormalMap(vec2 uv) {
+<@if HIFI_USE_LAYERS2@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL2_2) uniform sampler2D normalMap2;
+<@elif HIFI_USE_LAYERS3@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL2_3) uniform sampler2D normalMap2;
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL3_3) uniform sampler2D normalMap3;
+<@endif@>
+vec3 fetchNormalMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_NORMAL);
     // unpack normal, swizzle to get into hifi tangent space with Y axis pointing out
-    vec2 t = 2.0 * (texture(normalMap, uv, TAA_TEXTURE_LOD_BIAS).rg - vec2(0.5, 0.5));
+    vec2 normal;
+    SAMPLE_MAP_LAYER(normal, normalMap, normalMap2, normalMap3, layer, uv, rg)
+    vec2 t = 2.0 * (normal - vec2(0.5, 0.5));
     vec2 t2 = t*t;
     return vec3(t.x, sqrt(max(0.0, 1.0 - t2.x - t2.y)), t.y);
 }
@@ -171,85 +250,183 @@ vec3 fetchNormalMap(vec2 uv) {
 
 <@if withMetallic@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_METALLIC) uniform sampler2D metallicMap;
-float fetchMetallicMap(vec2 uv) {
-    return (texture(metallicMap, uv, TAA_TEXTURE_LOD_BIAS).r);
+<@if HIFI_USE_LAYERS2@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_METALLIC2_2) uniform sampler2D metallicMap2;
+<@elif HIFI_USE_LAYERS3@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_METALLIC2_3) uniform sampler2D metallicMap2;
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_METALLIC3_3) uniform sampler2D metallicMap3;
+<@endif@>
+float fetchMetallicMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_METALLIC);
+    float metallic;
+    SAMPLE_MAP_LAYER(metallic, metallicMap, metallicMap2, metallicMap3, layer, uv, r)
+    return metallic;
 }
 <@endif@>
 
 <@if withEmissive@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP) uniform sampler2D emissiveMap;
-vec3 fetchEmissiveMap(vec2 uv) {
-    return texture(emissiveMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
+<@if HIFI_USE_LAYERS2@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP2_2) uniform sampler2D emissiveMap2;
+<@elif HIFI_USE_LAYERS3@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP2_3) uniform sampler2D emissiveMap2;
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP3_3) uniform sampler2D emissiveMap3;
+<@endif@>
+vec3 fetchEmissiveMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP);
+    vec3 emissive;
+    SAMPLE_MAP_LAYER(emissive, emissiveMap, emissiveMap2, emissiveMap3, layer, uv, rgb)
+    return emissive;
 }
 <@endif@>
 
+<! only supported for 1 or 2 layers !>
+<@if not HIFI_USE_LAYERS3@>
 <@if withRoughness@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS) uniform sampler2D roughnessMap;
-float fetchRoughnessMap(vec2 uv) {
-    return (texture(roughnessMap, uv, TAA_TEXTURE_LOD_BIAS).r);
+<@if HIFI_USE_LAYERS2@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS2_2) uniform sampler2D roughnessMap2;
+<@endif@>
+float fetchRoughnessMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_ROUGHNESS);
+    float roughness;
+    SAMPLE_MAP_LAYER(roughness, roughnessMap, roughnessMap2, roughnessMap3, layer, uv, r)
+    return roughness;
 }
 <@endif@>
 
 <@if withOcclusion@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_OCCLUSION) uniform sampler2D occlusionMap;
-float fetchOcclusionMap(vec2 uv) {
-    return texture(occlusionMap, uv).r;
+<@if HIFI_USE_LAYERS2@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_OCCLUSION2_2) uniform sampler2D occlusionMap2;
+<@endif@>
+float fetchOcclusionMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_OCCLUSION);
+    float occlusion;
+    SAMPLE_MAP_LAYER(occlusion, occlusionMap, occlusionMap2, occlusionMap3, layer, uv, r)
+    return occlusion;
 }
 <@endif@>
+<@endif@>
 
+<@if HIFI_USE_LAYERS2 or HIFI_USE_LAYERS3@>
+<! only supported for 1 layer !>
+<@else@>
 <@if withScattering@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SCATTERING) uniform sampler2D scatteringMap;
-float fetchScatteringMap(vec2 uv) {
-    float scattering = texture(scatteringMap, uv, TAA_TEXTURE_LOD_BIAS).r; // boolean scattering for now
+float fetchScatteringMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SCATTERING);
+    float scattering; // boolean scattering for now
+    SAMPLE_MAP_LAYER(scattering, scatteringMap, scatteringMap2, scatteringMap3, layer, uv, r)
     return max(((scattering - 0.1) / 0.9), 0.0);
-    return texture(scatteringMap, uv).r; // boolean scattering for now
 }
+<@endif@>
 <@endif@>
 
 #endif
 
 <@endfunc@>
 
-<@func fetchMaterialTexturesCoord0(matKey, texcoord0, albedo, roughness, normal, metallic, emissive, scattering)@>
-    if (getTexMapArray()._materialParams.y != 1.0 && clamp(<$texcoord0$>, vec2(0.0), vec2(1.0)) != <$texcoord0$>) {
+<@func declareMaterialLightmap()@>
+
+<$declareMaterialTexMapArrayBuffer()$>
+
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP) uniform sampler2D emissiveMap;
+vec3 fetchLightMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP);
+    vec2 lightmapParams = getTexMapArray(layer)._lightmapParams;
+    return (vec3(lightmapParams.x) + lightmapParams.y * texture(emissiveMap, uv).rgb);
+}
+<@endfunc@>
+
+<@func fetchMaterialTextures(layer, matKey, texcoords, albedo, roughness, normal, metallic, emissive, scattering, occlusion, lightmap)@>
+    vec2 albedoTexCoords = evalTexCoordSet(<$layer$>, <$texcoords$>, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
+    if (getTexMapArray(<$layer$>)._materialParams.y != 1.0 && clamp(albedoTexCoords, vec2(0.0), vec2(1.0)) != albedoTexCoords) {
         discard;
     }
 <@if albedo@>
-    vec4 <$albedo$> = mix(vec4(1.0), fetchAlbedoMap(<$texcoord0$>), float((<$matKey$> & (ALBEDO_MAP_BIT | OPACITY_MASK_MAP_BIT | OPACITY_TRANSLUCENT_MAP_BIT)) != 0));
-<@endif@>
-<@if roughness@>
-    float <$roughness$> = mix(1.0, fetchRoughnessMap(<$texcoord0$>), float((<$matKey$> & ROUGHNESS_MAP_BIT) != 0));
+    vec4 <$albedo$> = mix(vec4(1.0), fetchAlbedoMap(<$layer$>, <$texcoords$>), float((<$matKey$> & (ALBEDO_MAP_BIT | OPACITY_MASK_MAP_BIT | OPACITY_TRANSLUCENT_MAP_BIT)) != 0));
 <@endif@>
 <@if normal@>
-    vec3 <$normal$> = mix(vec3(0.0, 1.0, 0.0), fetchNormalMap(<$texcoord0$>), float((<$matKey$> & NORMAL_MAP_BIT) != 0));
+    vec3 <$normal$> = mix(vec3(0.0, 1.0, 0.0), fetchNormalMap(<$layer$>, <$texcoords$>), float((<$matKey$> & NORMAL_MAP_BIT) != 0));
 <@endif@>
 <@if metallic@>
-    float <$metallic$> = float((<$matKey$> & METALLIC_MAP_BIT) != 0) * fetchMetallicMap(<$texcoord0$>);
+    float <$metallic$> = float((<$matKey$> & METALLIC_MAP_BIT) != 0) * fetchMetallicMap(<$layer$>, <$texcoords$>);
 <@endif@>
 <@if emissive@>
-    vec3 <$emissive$> = float((<$matKey$> & EMISSIVE_MAP_BIT) != 0) * fetchEmissiveMap(<$texcoord0$>);
+    vec3 <$emissive$> = float((<$matKey$> & EMISSIVE_MAP_BIT) != 0) * fetchEmissiveMap(<$layer$>, <$texcoords$>);
 <@endif@>
+<@if lightmap@>
+    vec3 <$lightmap$> = fetchLightMap(<$layer$>, <$texcoords$>);
+<@endif@>
+
+<@if not HIFI_USE_LAYERS3@>
+<@if roughness@>
+    float <$roughness$> = mix(1.0, fetchRoughnessMap(<$layer$>, <$texcoords$>), float((<$matKey$> & ROUGHNESS_MAP_BIT) != 0));
+<@endif@>
+<@if occlusion@>
+    float <$occlusion$> = mix(1.0, fetchOcclusionMap(<$layer$>, <$texcoords$>), float((<$matKey$> & OCCLUSION_MAP_BIT) != 0));
+<@endif@>
+<@else@>
+    // only supported for 1 or 2 layers
+<@if roughness@>
+    float <$roughness$> = 1.0;
+<@endif@>
+<@if occlusion@>
+    float <$occlusion$> = 1.0;
+<@endif@>
+<@endif@>
+
+<@if HIFI_USE_LAYERS2 or HIFI_USE_LAYERS3@>
 <@if scattering@>
-    float <$scattering$> = float((<$matKey$> & SCATTERING_MAP_BIT) != 0) * fetchScatteringMap(<$texcoord0$>);
+    // only supported for 1 layer
+    float <$scattering$> = 0.0;
+<@endif@>
+<@else@>
+<@if scattering@>
+    float <$scattering$> = float((<$matKey$> & SCATTERING_MAP_BIT) != 0) * fetchScatteringMap(<$layer$>, <$texcoords$>);
+<@endif@>
 <@endif@>
 <@endfunc@>
 
-<@func fetchMaterialTexturesCoord0Triplanar(matKey, positionMS, triplanarScale, albedo, roughness, normal, metallic, emissive, scattering)@>
+<@if HIFI_USE_TRIPLANAR@>
+
+<@func fetchMaterialTexturesTriplanar(matKeys, positionMS, normalMS, texCoords, triplanarScale, albedo, roughness, normal, metallic, emissive, scattering, occlusion, lightmap)@>
     vec3 inPosition = (<$positionMS$> - vec3(0.5)) / <$triplanarScale$>.xyz;
-    vec3 normalMS = normalize(cross(dFdy(<$positionMS$>.xyz), dFdx(<$positionMS$>.xyz)));
+    vec3 normalMS = normalize(<$normalMS$>);
 
     // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
     vec3 blend = abs(normalMS.xyz);
-    blend = max(blend - 0.2, vec3(0.0));
+    blend = max(blend - vec3(0.2), vec3(0.0));
     blend /= (blend.x + blend.y + blend.z);
 
-    TexMapArray texMapArray = getTexMapArray();
+<@if normal@>
+    vec3 axisSign = sign(normalMS.xyz);
+<@endif@>
+
+<@if HIFI_USE_LAYERS3@>
+    const int LAYER_X = 0;
+    const int LAYER_Y = 1;
+    const int LAYER_Z = 2;
+<@elif HIFI_USE_LAYERS2@>
+    const int LAYER_X = 1;
+    const int LAYER_Y = 0;
+    const int LAYER_Z = 1;
+<@else@>
+    const int LAYER_X = 0;
+    const int LAYER_Y = 0;
+    const int LAYER_Z = 0;
+<@endif@>
+
+    TexMapArray texMapArrayZ = getTexMapArray(LAYER_Z);
     vec2 uvXY = vec2(-inPosition.x, -inPosition.y);
-    <$evalTexMapArrayTexcoord0(texMapArray, uvXY, _positionWS, uvXY)$>
+    <$evalTexMapArrayTexcoord0(texMapArrayZ, uvXY, _positionWS, uvXY)$>
+    TexMapArray texMapArrayY = getTexMapArray(LAYER_Y);
     vec2 uvXZ = vec2(-inPosition.x, inPosition.z);
-    <$evalTexMapArrayTexcoord0(texMapArray, uvXZ, _positionWS, uvXZ)$>
+    <$evalTexMapArrayTexcoord0(texMapArrayY, uvXZ, _positionWS, uvXZ)$>
+    TexMapArray texMapArrayX = getTexMapArray(LAYER_X);
     vec2 uvYZ = vec2(inPosition.z, -inPosition.y);
-    <$evalTexMapArrayTexcoord0(texMapArray, uvYZ, _positionWS, uvYZ)$>
+    <$evalTexMapArrayTexcoord0(texMapArrayX, uvYZ, _positionWS, uvYZ)$>
 
 <@if albedo@>
     vec4 <$albedo$>Triplanar = vec4(0.0);
@@ -269,9 +446,17 @@ float fetchScatteringMap(vec2 uv) {
 <@if scattering@>
     float <$scattering$>Triplanar = 0.0;
 <@endif@>
+<@if occlusion@>
+    float <$occlusion$>Triplanar = 0.0;
+<@endif@>
+<@if lightmap@>
+    vec3 <$lightmap$>Triplanar = vec3(0.0);
+<@endif@>
 
     {
-        <$fetchMaterialTexturesCoord0($matKey$, uvXY, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$)$>
+        BITFIELD matKey = <$matKeys$>[LAYER_Z];
+        mat2 triplanarUVs = mat2(uvXY, <$texCoords$>[LAYER_Z].zw);
+        <$fetchMaterialTextures(LAYER_Z, matKey, triplanarUVs, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$, $occlusion$, $lightmap$)$>
         float magnitude = blend.z;
         <@if albedo@>
             <$albedo$>Triplanar += magnitude * <$albedo$>;
@@ -280,7 +465,9 @@ float fetchScatteringMap(vec2 uv) {
             <$roughness$>Triplanar += magnitude * <$roughness$>;
         <@endif@>
         <@if normal@>
-            <$normal$>Triplanar += magnitude * <$normal$>;
+            vec3 tangentNormal = <$normal$>;
+            tangentNormal.y *= axisSign.z;
+            <$normal$>Triplanar += magnitude * vec3(-1, 1, 1) * tangentNormal.zxy;
         <@endif@>
         <@if metallic@>
             <$metallic$>Triplanar += magnitude * <$metallic$>;
@@ -291,10 +478,18 @@ float fetchScatteringMap(vec2 uv) {
         <@if scattering@>
             <$scattering$>Triplanar += magnitude * <$scattering$>;
         <@endif@>
+        <@if occlusion@>
+            <$occlusion$>Triplanar += magnitude * <$occlusion$>;
+        <@endif@>
+        <@if lightmap@>
+            <$lightmap$>Triplanar += magnitude * <$lightmap$>;
+        <@endif@>
     }
 
     {
-        <$fetchMaterialTexturesCoord0($matKey$, uvXZ, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$)$>
+        BITFIELD matKey = <$matKeys$>[LAYER_Y];
+        mat2 triplanarUVs = mat2(uvXZ, <$texCoords$>[LAYER_Y].zw);
+        <$fetchMaterialTextures(LAYER_Y, matKey, triplanarUVs, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$, $occlusion$, $lightmap$)$>
         float magnitude = blend.y;
         <@if albedo@>
             <$albedo$>Triplanar += magnitude * <$albedo$>;
@@ -303,7 +498,9 @@ float fetchScatteringMap(vec2 uv) {
             <$roughness$>Triplanar += magnitude * <$roughness$>;
         <@endif@>
         <@if normal@>
-            <$normal$>Triplanar += magnitude * <$normal$>;
+            vec3 tangentNormal = <$normal$>;
+            tangentNormal.y *= axisSign.y;
+            <$normal$>Triplanar += magnitude * vec3(-1, 1, -1) * tangentNormal.zyx;
         <@endif@>
         <@if metallic@>
             <$metallic$>Triplanar += magnitude * <$metallic$>;
@@ -314,10 +511,18 @@ float fetchScatteringMap(vec2 uv) {
         <@if scattering@>
             <$scattering$>Triplanar += magnitude * <$scattering$>;
         <@endif@>
+        <@if occlusion@>
+            <$occlusion$>Triplanar += magnitude * <$occlusion$>;
+        <@endif@>
+        <@if lightmap@>
+            <$lightmap$>Triplanar += magnitude * <$lightmap$>;
+        <@endif@>
     }
 
     {
-        <$fetchMaterialTexturesCoord0($matKey$, uvYZ, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$)$>
+        BITFIELD matKey = <$matKeys$>[LAYER_X];
+        mat2 triplanarUVs = mat2(uvYZ, <$texCoords$>[LAYER_X].zw);
+        <$fetchMaterialTextures(LAYER_X, matKey, triplanarUVs, $albedo$, $roughness$, $normal$, $metallic$, $emissive$, $scattering$, $occlusion$, $lightmap$)$>
         float magnitude = blend.x;
         <@if albedo@>
             <$albedo$>Triplanar += magnitude * <$albedo$>;
@@ -326,7 +531,9 @@ float fetchScatteringMap(vec2 uv) {
             <$roughness$>Triplanar += magnitude * <$roughness$>;
         <@endif@>
         <@if normal@>
-            <$normal$>Triplanar += magnitude * <$normal$>;
+            vec3 tangentNormal = <$normal$>;
+            tangentNormal.y *= axisSign.x;
+            <$normal$>Triplanar += magnitude * tangentNormal.yxz;
         <@endif@>
         <@if metallic@>
             <$metallic$>Triplanar += magnitude * <$metallic$>;
@@ -336,6 +543,12 @@ float fetchScatteringMap(vec2 uv) {
         <@endif@>
         <@if scattering@>
             <$scattering$>Triplanar += magnitude * <$scattering$>;
+        <@endif@>
+        <@if occlusion@>
+            <$occlusion$>Triplanar += magnitude * <$occlusion$>;
+        <@endif@>
+        <@if lightmap@>
+            <$lightmap$>Triplanar += magnitude * <$lightmap$>;
         <@endif@>
     }
 
@@ -346,8 +559,11 @@ float fetchScatteringMap(vec2 uv) {
     float <$roughness$> = <$roughness$>Triplanar;
 <@endif@>
 <@if normal@>
-    // FIXME: this isn't strictly correct, as our tangents no longer match the space of our UVs
-    vec3 <$normal$> = normalize(<$normal$>Triplanar);
+    vec3 <$normal$> = normalize(<$normal$>Triplanar + normalMS.xyz);
+    {
+        TransformObject obj = getTransformObject();
+        <$transformModelToWorldDir(obj, $normal$, $normal$)$>
+    }
 <@endif@>
 <@if metallic@>
     float <$metallic$> = <$metallic$>Triplanar;
@@ -358,29 +574,16 @@ float fetchScatteringMap(vec2 uv) {
 <@if scattering@>
     float <$scattering$> = <$scattering$>Triplanar;
 <@endif@>
-
-<@endfunc@>
-
-<@func fetchMaterialTexturesCoord1(matKey, texcoord1, occlusion, lightmap)@>
 <@if occlusion@>
-    float <$occlusion$> = mix(1.0, fetchOcclusionMap(<$texcoord1$>), float((<$matKey$> & OCCLUSION_MAP_BIT) != 0));
+    float <$occlusion$> = <$occlusion$>Triplanar;
 <@endif@>
 <@if lightmap@>
-    vec3 <$lightmap$> = fetchLightMap(<$texcoord1$>);
+    vec3 <$lightmap$> = <$lightmap$>Triplanar;
 <@endif@>
+
 <@endfunc@>
 
-
-<@func declareMaterialLightmap()@>
-
-<$declareMaterialTexMapArrayBuffer()$>
-
-LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP) uniform sampler2D emissiveMap;
-vec3 fetchLightMap(vec2 uv) {
-    vec2 lightmapParams = getTexMapArray()._lightmapParams;
-    return (vec3(lightmapParams.x) + lightmapParams.y * texture(emissiveMap, uv).rgb);
-}
-<@endfunc@>
+<@endif@>
 
 <@func evalMaterialRoughness(fetchedRoughness, materialRoughness, matKey, roughness)@>
 {
@@ -412,71 +615,98 @@ vec3 fetchLightMap(vec2 uv) {
 
 #ifdef GPU_TEXTURE_TABLE_BINDLESS
 
-TextureTable(0, matTex);
+TextureTable(table0, matTex);
+<@if HIFI_USE_LAYERS2@>
+    TextureTable(table1, matTex2);
+#define DEFINE_MAT_TEXS const GPUTextureTable _matTexs[NUM_LAYERS] = GPUTextureTable[NUM_LAYERS](matTex, matTex2);
+<@elif HIFI_USE_LAYERS3@>
+    TextureTable(table1, matTex2);
+    TextureTable(table2, matTex3);
+#define DEFINE_MAT_TEXS const GPUTextureTable _matTexs[NUM_LAYERS] = GPUTextureTable[NUM_LAYERS](matTex, matTex2, matTex3);
+<@else@>
+#define DEFINE_MAT_TEXS const GPUTextureTable _matTexs[NUM_LAYERS] = GPUTextureTable[NUM_LAYERS](matTex);
+<@endif@>
+
 <!
     ALBEDO = 0,
-    NORMAL, 1
-    SHADE, 2
-    EMISSIVE, 3
-    SHADING_SHIFT, 4
-    MATCAP, 5
-    RIM, 6
-    UV_ANIMATION_MASK, 7
+    NORMAL = 1,
+    SHADE = 2,
+    EMISSIVE = 3,
+    SHADING_SHIFT = 4, // only for 1 or 2 layers
+    MATCAP = 5, // only for 1 or 2 layers
+    RIM = 6, // only for 1 layer
+    UV_ANIMATION_MASK = 7, // only for 1 layer
 !>
 
 <@if withAlbedo@>
 #define albedoMap 0
-vec4 fetchAlbedoMap(vec2 uv) {
-    return tableTexValue(matTex, albedoMap, uv);
+vec4 fetchAlbedoMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
+    return tableTexValue(_matTexs[layer], albedoMap, uv);
 }
 <@endif@>
 
 <@if withNormal@>
 #define normalMap 1
-vec3 fetchNormalMap(vec2 uv) {
-    return tableTexValue(matTex, normalMap, uv).xyz;
+vec3 fetchNormalMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_NORMAL);
+    return tableTexValue(_matTexs[layer], normalMap, uv).xyz;
 }
 <@endif@>
 
 <@if withShade@>
 #define shadeMap 2
-vec3 fetchShadeMap(vec2 uv) {
-    return tableTexValue(matTex, shadeMap, uv).rgb;
+vec3 fetchShadeMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SHADE);
+    return tableTexValue(_matTexs[layer], shadeMap, uv).rgb;
 }
 <@endif@>
 
 <@if withEmissive@>
 #define emissiveMap 3
-vec3 fetchEmissiveMap(vec2 uv) {
-    return tableTexValue(matTex, emissiveMap, uv).rgb;
+vec3 fetchEmissiveMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP);
+    return tableTexValue(_matTexs[layer], emissiveMap, uv).rgb;
 }
 <@endif@>
 
 <@if withShadingShift@>
 #define shadingShiftMap 4
-float fetchShadingShiftMap(vec2 uv) {
-    return tableTexValue(matTex, shadingShiftMap, uv).r;
+float fetchShadingShiftMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SHADING_SHIFT);
+    return tableTexValue(_matTexs[layer], shadingShiftMap, uv).r;
 }
 <@endif@>
 
 <@if withMatcap@>
 #define matcapMap 5
-vec3 fetchMatcapMap(vec2 uv) {
-    return tableTexValue(matTex, matcapMap, uv).rgb;
+vec3 fetchMatcapMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_MATCAP);
+    return tableTexValue(_matTexs[layer], matcapMap, uv).rgb;
 }
 <@endif@>
 
 <@if withRim@>
 #define rimMap 6
-vec3 fetchRimMap(vec2 uv) {
-    return tableTexValue(matTex, rimMap, uv).rgb;
+vec3 fetchRimMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_RIM);
+    return tableTexValue(_matTexs[layer], rimMap, uv).rgb;
 }
 <@endif@>
 
 <@if withUVAnimationMask@>
 #define uvAnimationMaskMap 7
-float fetchUVAnimationMaskMap(vec2 uv) {
-    return tableTexValue(matTex, uvAnimationMaskMap, uv).r;
+float fetchUVAnimationMaskMap(int layer, mat2 uvs) {
+    DEFINE_MAT_TEXS
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_UV_ANIMATION_MASK);
+    return tableTexValue(_matTexs[layer], uvAnimationMaskMap, uv).r;
 }
 <@endif@>
 
@@ -484,16 +714,34 @@ float fetchUVAnimationMaskMap(vec2 uv) {
 
 <@if withAlbedo@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO) uniform sampler2D albedoMap;
-vec4 fetchAlbedoMap(vec2 uv) {
-    return texture(albedoMap, uv, TAA_TEXTURE_LOD_BIAS);
+<@if HIFI_USE_LAYERS2@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO2_2) uniform sampler2D albedoMap2;
+<@elif HIFI_USE_LAYERS3@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO2_3) uniform sampler2D albedoMap2;
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_ALBEDO3_3) uniform sampler2D albedoMap3;
+<@endif@>
+vec4 fetchAlbedoMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
+    vec4 albedo;
+    SAMPLE_MAP_LAYER(albedo, albedoMap, albedoMap2, albedoMap3, layer, uv, rgba)
+    return albedo;
 }
 <@endif@>
 
 <@if withNormal@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL) uniform sampler2D normalMap;
-vec3 fetchNormalMap(vec2 uv) {
+<@if HIFI_USE_LAYERS2@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL2_2) uniform sampler2D normalMap2;
+<@elif HIFI_USE_LAYERS3@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL2_3) uniform sampler2D normalMap2;
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_NORMAL3_3) uniform sampler2D normalMap3;
+<@endif@>
+vec3 fetchNormalMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_NORMAL);
     // unpack normal, swizzle to get into hifi tangent space with Y axis pointing out
-    vec2 t = 2.0 * (texture(normalMap, uv, TAA_TEXTURE_LOD_BIAS).rg - vec2(0.5, 0.5));
+    vec2 normal;
+    SAMPLE_MAP_LAYER(normal, normalMap, normalMap2, normalMap3, layer, uv, rg)
+    vec2 t = 2.0 * (normal - vec2(0.5, 0.5));
     vec2 t2 = t*t;
     return vec3(t.x, sqrt(max(0.0, 1.0 - t2.x - t2.y)), t.y);
 }
@@ -501,103 +749,193 @@ vec3 fetchNormalMap(vec2 uv) {
 
 <@if withShade@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SHADE) uniform sampler2D shadeMap;
-vec3 fetchShadeMap(vec2 uv) {
-    return texture(shadeMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
+<@if HIFI_USE_LAYERS2@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SHADE2_2) uniform sampler2D shadeMap2;
+<@elif HIFI_USE_LAYERS3@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SHADE2_3) uniform sampler2D shadeMap2;
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SHADE3_3) uniform sampler2D shadeMap3;
+<@endif@>
+vec3 fetchShadeMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SHADE);
+    vec3 shade;
+    SAMPLE_MAP_LAYER(shade, shadeMap, shadeMap2, shadeMap3, layer, uv, rgb)
+    return shade;
 }
 <@endif@>
 
 <@if withEmissive@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP) uniform sampler2D emissiveMap;
-vec3 fetchEmissiveMap(vec2 uv) {
-    return texture(emissiveMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
+<@if HIFI_USE_LAYERS2@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP2_2) uniform sampler2D emissiveMap2;
+<@elif HIFI_USE_LAYERS3@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP2_3) uniform sampler2D emissiveMap2;
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP3_3) uniform sampler2D emissiveMap3;
+<@endif@>
+vec3 fetchEmissiveMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_EMISSIVE_LIGHTMAP);
+    vec3 emissive;
+    SAMPLE_MAP_LAYER(emissive, emissiveMap, emissiveMap2, emissiveMap3, layer, uv, rgb)
+    return emissive;
 }
 <@endif@>
 
+<! only supported for 1 or 2 layers !>
+<@if not HIFI_USE_LAYERS3@>
 <@if withShadingShift@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SHADING_SHIFT) uniform sampler2D shadingShiftMap;
-float fetchShadingShiftMap(vec2 uv) {
-    return texture(shadingShiftMap, uv, TAA_TEXTURE_LOD_BIAS).r;
+<@if HIFI_USE_LAYERS2@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SHADING_SHIFT2_2) uniform sampler2D shadingShiftMap2;
+<@endif@>
+float fetchShadingShiftMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SHADING_SHIFT);
+    float shadingShift;
+    SAMPLE_MAP_LAYER(shadingShift, shadingShiftMap, shadingShiftMap2, shadingShiftMap3, layer, uv, r)
+    return shadingShift;
 }
 <@endif@>
 
 <@if withMatcap@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MATCAP) uniform sampler2D matcapMap;
-vec3 fetchMatcapMap(vec2 uv) {
-    return texture(matcapMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
+<@if HIFI_USE_LAYERS2@>
+LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MATCAP2_2) uniform sampler2D matcapMap2;
+<@endif@>
+vec3 fetchMatcapMap(int layer, vec2 uv) {
+    vec3 matcap;
+    SAMPLE_MAP_LAYER(matcap, matcapMap, matcapMap2, matcapMap3, layer, uv, rgb)
+    return matcap;
 }
 <@endif@>
+<@endif@>
 
+<@if HIFI_USE_LAYERS2 or HIFI_USE_LAYERS3@>
+<! only supported for 1 layer !>
+<@else@>
 <@if withRim@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_RIM) uniform sampler2D rimMap;
-vec3 fetchRimMap(vec2 uv) {
-    return texture(rimMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
+vec3 fetchRimMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_RIM);
+    vec3 rim;
+    SAMPLE_MAP_LAYER(rim, rimMap, rimMap2, rimMap3, layer, uv, rgb)
+    return rim;
 }
 <@endif@>
 
 <@if withUVAnimationMask@>
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_UV_ANIMATION_MASK) uniform sampler2D uvAnimationMaskMap;
-float fetchUVAnimationMaskMap(vec2 uv) {
-    return texture(uvAnimationMaskMap, uv, TAA_TEXTURE_LOD_BIAS).r;
+float fetchUVAnimationMaskMap(int layer, mat2 uvs) {
+    vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_UV_ANIMATION_MASK);
+    float uvAnimationMask;
+    SAMPLE_MAP_LAYER(uvAnimationMask, uvAnimationMaskMap, uvAnimationMaskMap2, uvAnimationMaskMap3, layer, uv, r)
+    return uvAnimationMask;
 }
+<@endif@>
 <@endif@>
 
 #endif
 
 <@endfunc@>
 
-<@func fetchMToonMaterialTexturesCoord0(matKey, texcoord0, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
-    if (getTexMapArray()._materialParams.y != 1.0 && clamp(<$texcoord0$>, vec2(0.0), vec2(1.0)) != <$texcoord0$>) {
+<@func fetchMToonMaterialTextures(layer, matKey, texcoords, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
+    vec2 albedoTexCoords = evalTexCoordSet(<$layer$>, <$texcoords$>, GRAPHICS_TEXTURE_MATERIAL_ALBEDO);
+    if (getTexMapArray(<$layer$>)._materialParams.y != 1.0 && clamp(albedoTexCoords, vec2(0.0), vec2(1.0)) != albedoTexCoords) {
         discard;
     }
 
-    vec2 texCoord = <$texcoord0$>;
+    vec2 texCoord = <$texcoords$>[0];
 
+<@if HIFI_USE_LAYERS2 or HIFI_USE_LAYERS3@>
+    <! only supported for 1 layer !>
+<@else@>
 <@if uvScrollSpeed and time@>
     if ((<$matKey$> & UV_ANIMATION_SCROLL_VAL_BIT) != 0) {
-        <$uvScrollSpeed$> *= mix(1.0, fetchUVAnimationMaskMap(texCoord), float((<$matKey$> & UV_ANIMATION_MASK_MAP_BIT) != 0));
+        <$uvScrollSpeed$> *= mix(1.0, fetchUVAnimationMaskMap(<$layer$>, <$texcoords$>), float((<$matKey$> & UV_ANIMATION_MASK_MAP_BIT) != 0));
         <$uvScrollSpeed$> *= time;
         float cosTime = cos(<$uvScrollSpeed$>.z);
         float sinTime = sin(<$uvScrollSpeed$>.z);
         texCoord = (mat3(cosTime, sinTime, 0, -sinTime, cosTime, 0, 0, 0, 1) * vec3(texCoord - vec2(0.5), 1.0)).xy + vec2(0.5) + <$uvScrollSpeed$>.xy;
     }
 <@endif@>
+<@endif@>
+
+    mat2 texCoordsMToon = mat2(texCoord, <$texcoords$>[1]);
 
 <@if albedo@>
-    vec4 <$albedo$> = mix(vec4(1.0), fetchAlbedoMap(texCoord), float((<$matKey$> & (ALBEDO_MAP_BIT | OPACITY_MASK_MAP_BIT | OPACITY_TRANSLUCENT_MAP_BIT)) != 0));
+    vec4 <$albedo$> = mix(vec4(1.0), fetchAlbedoMap(<$layer$>, texCoordsMToon), float((<$matKey$> & (ALBEDO_MAP_BIT | OPACITY_MASK_MAP_BIT | OPACITY_TRANSLUCENT_MAP_BIT)) != 0));
 <@endif@>
 <@if normal@>
-    vec3 <$normal$> = mix(vec3(0.0, 1.0, 0.0), fetchNormalMap(texCoord), float((<$matKey$> & NORMAL_MAP_BIT) != 0));
+    vec3 <$normal$> = mix(vec3(0.0, 1.0, 0.0), fetchNormalMap(<$layer$>, texCoordsMToon), float((<$matKey$> & NORMAL_MAP_BIT) != 0));
 <@endif@>
 <@if shade@>
-    vec3 <$shade$> = float((<$matKey$> & SHADE_MAP_BIT) != 0) * fetchShadeMap(texCoord);
+    vec3 <$shade$> = float((<$matKey$> & SHADE_MAP_BIT) != 0) * fetchShadeMap(<$layer$>, texCoordsMToon);
 <@endif@>
 <@if emissive@>
-    vec3 <$emissive$> = float((<$matKey$> & EMISSIVE_MAP_BIT) != 0) * fetchEmissiveMap(texCoord);
+    vec3 <$emissive$> = float((<$matKey$> & EMISSIVE_MAP_BIT) != 0) * fetchEmissiveMap(<$layer$>, texCoordsMToon);
 <@endif@>
+
+
+<@if not HIFI_USE_LAYERS3@>
 <@if shadingShift@>
-    float <$shadingShift$> = float((<$matKey$> & SHADING_SHIFT_MAP_BIT) != 0) * fetchShadingShiftMap(texCoord);
+    float <$shadingShift$> = float((<$matKey$> & SHADING_SHIFT_MAP_BIT) != 0) * fetchShadingShiftMap(<$layer$>, texCoordsMToon);
 <@endif@>
+<@else@>
+    // only supported for 1 or 2 layers
+<@if shadingShift@>
+    float <$shadingShift$> = 0.0;
+<@endif@>
+<@endif@>
+
+
+<@if HIFI_USE_LAYERS2 or HIFI_USE_LAYERS3@>
 <@if rim@>
-    vec3 <$rim$> = mix(vec3(1.0), fetchRimMap(texCoord), float((<$matKey$> & RIM_MAP_BIT) != 0));
+    // only supported for 1 layer
+    vec3 <$rim$> = vec3(1.0);
 <@endif@>
+<@else@>
+<@if rim@>
+    vec3 <$rim$> = mix(vec3(1.0), fetchRimMap(<$layer$>, texCoordsMToon), float((<$matKey$> & RIM_MAP_BIT) != 0));
+<@endif@>
+<@endif@>
+
 <@endfunc@>
 
-<@func fetchMToonMaterialTexturesCoord0Triplanar(matKey, positionMS, triplanarScale, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
+<@if HIFI_USE_TRIPLANAR@>
+
+<@func fetchMToonMaterialTexturesTriplanar(matKeys, positionMS, normalMS, texCoords, triplanarScale, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
     vec3 inPosition = (<$positionMS$> - vec3(0.5)) / <$triplanarScale$>.xyz;
-    vec3 normalMS = normalize(cross(dFdy(<$positionMS$>.xyz), dFdx(<$positionMS$>.xyz)));
+    vec3 normalMS = normalize(<$normalMS$>);
 
     // From https://bgolus.medium.com/normal-mapping-for-a-triplanar-shader-10bf39dca05a
     vec3 blend = abs(normalMS.xyz);
-    blend = max(blend - 0.2, vec3(0.0));
+    blend = max(blend - vec3(0.2), vec3(0.0));
     blend /= (blend.x + blend.y + blend.z);
 
-    TexMapArray texMapArray = getTexMapArray();
+<@if normal@>
+    vec3 axisSign = sign(normalMS.xyz);
+<@endif@>
+
+<@if HIFI_USE_LAYERS3@>
+    const int LAYER_X = 0;
+    const int LAYER_Y = 1;
+    const int LAYER_Z = 2;
+<@elif HIFI_USE_LAYERS2@>
+    const int LAYER_X = 1;
+    const int LAYER_Y = 0;
+    const int LAYER_Z = 1;
+<@else@>
+    const int LAYER_X = 0;
+    const int LAYER_Y = 0;
+    const int LAYER_Z = 0;
+<@endif@>
+
+    TexMapArray texMapArrayZ = getTexMapArray(LAYER_Z);
     vec2 uvXY = vec2(-inPosition.x, -inPosition.y);
-    <$evalTexMapArrayTexcoord0(texMapArray, uvXY, _positionWS, uvXY)$>
+    <$evalTexMapArrayTexcoord0(texMapArrayZ, uvXY, _positionWS, uvXY)$>
+    TexMapArray texMapArrayY = getTexMapArray(LAYER_Y);
     vec2 uvXZ = vec2(-inPosition.x, inPosition.z);
-    <$evalTexMapArrayTexcoord0(texMapArray, uvXZ, _positionWS, uvXZ)$>
+    <$evalTexMapArrayTexcoord0(texMapArrayY, uvXZ, _positionWS, uvXZ)$>
+    TexMapArray texMapArrayX = getTexMapArray(LAYER_X);
     vec2 uvYZ = vec2(inPosition.z, -inPosition.y);
-    <$evalTexMapArrayTexcoord0(texMapArray, uvYZ, _positionWS, uvYZ)$>
+    <$evalTexMapArrayTexcoord0(texMapArrayX, uvYZ, _positionWS, uvYZ)$>
 
 <@if albedo@>
     vec4 <$albedo$>Triplanar = vec4(0.0);
@@ -619,13 +957,17 @@ float fetchUVAnimationMaskMap(vec2 uv) {
 <@endif@>
 
     {
-        <$fetchMToonMaterialTexturesCoord0($matKey$, uvXY, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
+        BITFIELD matKey = <$matKeys$>[LAYER_Z];
+        mat2 triplanarUVs = mat2(uvXY, <$texCoords$>[LAYER_Z].zw);
+        <$fetchMToonMaterialTextures(LAYER_Z, matKey, triplanarUVs, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
         float magnitude = blend.z;
         <@if albedo@>
             <$albedo$>Triplanar += magnitude * <$albedo$>;
         <@endif@>
         <@if normal@>
-            <$normal$>Triplanar += magnitude * <$normal$>;
+            vec3 tangentNormal = <$normal$>;
+            tangentNormal.y *= axisSign.z;
+            <$normal$>Triplanar += magnitude * vec3(-1, 1, 1) * tangentNormal.zxy;
         <@endif@>
         <@if shade@>
             <$shade$>Triplanar += magnitude * <$shade$>;
@@ -642,13 +984,17 @@ float fetchUVAnimationMaskMap(vec2 uv) {
     }
 
     {
-        <$fetchMToonMaterialTexturesCoord0($matKey$, uvXZ, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
+        BITFIELD matKey = <$matKeys$>[LAYER_Y];
+        mat2 triplanarUVs = mat2(uvXZ, <$texCoords$>[LAYER_Y].zw);
+        <$fetchMToonMaterialTextures(LAYER_Y, matKey, triplanarUVs, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
         float magnitude = blend.y;
         <@if albedo@>
             <$albedo$>Triplanar += magnitude * <$albedo$>;
         <@endif@>
         <@if normal@>
-            <$normal$>Triplanar += magnitude * <$normal$>;
+            vec3 tangentNormal = <$normal$>;
+            tangentNormal.y *= axisSign.y;
+            <$normal$>Triplanar += magnitude * vec3(-1, 1, -1) * tangentNormal.zyx;
         <@endif@>
         <@if shade@>
             <$shade$>Triplanar += magnitude * <$shade$>;
@@ -665,13 +1011,17 @@ float fetchUVAnimationMaskMap(vec2 uv) {
     }
 
     {
-        <$fetchMToonMaterialTexturesCoord0($matKey$, uvYZ, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
+        BITFIELD matKey = <$matKeys$>[LAYER_X];
+        mat2 triplanarUVs = mat2(uvYZ, <$texCoords$>[LAYER_X].zw);
+        <$fetchMToonMaterialTextures(LAYER_X, matKey, triplanarUVs, $albedo$, $normal$, $shade$, $emissive$, $shadingShift$, $rim$, $uvScrollSpeed$, $time$)$>
         float magnitude = blend.x;
         <@if albedo@>
             <$albedo$>Triplanar += magnitude * <$albedo$>;
         <@endif@>
         <@if normal@>
-            <$normal$>Triplanar += magnitude * <$normal$>;
+            vec3 tangentNormal = <$normal$>;
+            tangentNormal.y *= axisSign.x;
+            <$normal$>Triplanar += magnitude * tangentNormal.yxz;
         <@endif@>
         <@if shade@>
             <$shade$>Triplanar += magnitude * <$shade$>;
@@ -691,8 +1041,11 @@ float fetchUVAnimationMaskMap(vec2 uv) {
     vec4 <$albedo$> = <$albedo$>Triplanar;
 <@endif@>
 <@if normal@>
-    // FIXME: this isn't strictly correct, as our tangents no longer match the space of our UVs
-    vec3 <$normal$> = normalize(<$normal$>Triplanar);
+    vec3 <$normal$> = normalize(<$normal$>Triplanar + normalMS.xyz);
+    {
+        TransformObject obj = getTransformObject();
+        <$transformModelToWorldDir(obj, $normal$, $normal$)$>
+    }
 <@endif@>
 <@if shade@>
     vec3 <$shade$> = <$shade$>Triplanar;
@@ -709,6 +1062,8 @@ float fetchUVAnimationMaskMap(vec2 uv) {
 
 <@endfunc@>
 
+<@endif@>
+
 <@func evalMaterialShade(fetchedShade, materialShade, matKey, shade)@>
 {
     <$shade$> = mix(vec3(1.0), <$materialShade$>, float((<$matKey$> & SHADE_VAL_BIT) != 0));
@@ -723,13 +1078,16 @@ float fetchUVAnimationMaskMap(vec2 uv) {
 }
 <@endfunc@>
 
-<@func evalMaterialMatcap(texcoord0, materialMatcap, matKey, matcap)@>
+<@func evalMaterialMatcap(layer, texcoord, materialMatcap, matKey, matcap)@>
 {
     if ((<$matKey$> & (MATCAP_VAL_BIT | MATCAP_MAP_BIT)) == 0) {
         <$matcap$> = vec3(0.0);
     } else {
         <$matcap$> = mix(vec3(1.0), <$materialMatcap$>, float((<$matKey$> & MATCAP_VAL_BIT) != 0));
-        <$matcap$> *= mix(vec3(1.0), fetchMatcapMap(<$texcoord0$>), float((<$matKey$> & MATCAP_MAP_BIT) != 0));
+        <! only supported for 1 or 2 layers !>
+<@if not HIFI_USE_LAYERS3@>
+        <$matcap$> *= mix(vec3(1.0), fetchMatcapMap(<$layer$>, <$texcoord$>), float((<$matKey$> & MATCAP_MAP_BIT) != 0));
+<@endif@>
     }
 }
 <@endfunc@>

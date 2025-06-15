@@ -224,6 +224,7 @@ void Application::clearDomainOctreeDetails(bool clearAll) {
 
     qCDebug(interfaceapp) << "Clearing domain octree details...";
 
+    _waitForServerlessToBeSet = true;
     resetPhysicsReadyInformation();
     setIsInterstitialMode(true);
 

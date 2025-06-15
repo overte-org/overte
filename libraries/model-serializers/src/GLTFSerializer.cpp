@@ -1334,9 +1334,9 @@ static gpu::Sampler::WrapMode wrapModeFromGL(cgltf_int wrapMode) {
     return gpu::Sampler::WrapMode::WRAP_REPEAT;
 }
 
-HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture) {
+HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture, cgltf_int texCoordSet) {
     HFMTexture hfmTex = HFMTexture();
-    hfmTex.texcoordSet = 0;
+    hfmTex.texcoordSet = texCoordSet;
 
     auto image = texture->image;
 
@@ -1424,7 +1424,8 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
                     if (mToonExtension["shadeMultiplyTexture"].isObject()) {
                         QJsonObject object = mToonExtension["shadeMultiplyTexture"].toObject();
                         if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
-                            hfmMat.shadeTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                            hfmMat.shadeTexture = getHFMTexture(&_data->textures[object["index"].toInt()],
+                                object.contains("texCoord") && object["texCoord"].isDouble() ? object["texCoord"].toInt() : 0);
                         }
                     }
                     if (mToonExtension["shadingShiftFactor"].isDouble()) {
@@ -1433,7 +1434,8 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
                     if (mToonExtension["shadingShiftTexture"].isObject()) {
                         QJsonObject object = mToonExtension["shadingShiftTexture"].toObject();
                         if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
-                            hfmMat.shadingShiftTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                            hfmMat.shadingShiftTexture = getHFMTexture(&_data->textures[object["index"].toInt()],
+                                object.contains("texCoord") && object["texCoord"].isDouble() ? object["texCoord"].toInt() : 0);
                         }
                     }
                     if (mToonExtension["shadingToonyFactor"].isDouble()) {
@@ -1448,7 +1450,8 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
                     if (mToonExtension["matcapTexture"].isObject()) {
                         QJsonObject object = mToonExtension["matcapTexture"].toObject();
                         if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
-                            hfmMat.matcapTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                            hfmMat.matcapTexture = getHFMTexture(&_data->textures[object["index"].toInt()],
+                                object.contains("texCoord") && object["texCoord"].isDouble() ? object["texCoord"].toInt() : 0);
                         }
                     }
                     if (mToonExtension["parametricRimColorFactor"].isArray()) {
@@ -1466,7 +1469,8 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
                     if (mToonExtension["rimMultiplyTexture"].isObject()) {
                         QJsonObject object = mToonExtension["rimMultiplyTexture"].toObject();
                         if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
-                            hfmMat.rimTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                            hfmMat.rimTexture = getHFMTexture(&_data->textures[object["index"].toInt()],
+                                object.contains("texCoord") && object["texCoord"].isDouble() ? object["texCoord"].toInt() : 0);
                         }
                     }
                     if (mToonExtension["rimLightingMixFactor"].isDouble()) {
@@ -1495,7 +1499,8 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
                     if (mToonExtension["uvAnimationMaskTexture"].isObject()) {
                         QJsonObject object = mToonExtension["uvAnimationMaskTexture"].toObject();
                         if (object["index"].isDouble() && object["index"].toInt() < (int)_data->textures_count) {
-                            hfmMat.uvAnimationTexture = getHFMTexture(&_data->textures[object["index"].toInt()]);
+                            hfmMat.uvAnimationTexture = getHFMTexture(&_data->textures[object["index"].toInt()],
+                                object.contains("texCoord") && object["texCoord"].isDouble() ? object["texCoord"].toInt() : 0);
                         }
                     }
                     if (mToonExtension["uvAnimationScrollXSpeedFactor"].isDouble()) {
@@ -1539,17 +1544,17 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
     hfmMat._material->setEmissive(emissive);
 
     if (material.emissive_texture.texture != nullptr) {
-        hfmMat.emissiveTexture = getHFMTexture(material.emissive_texture.texture);
+        hfmMat.emissiveTexture = getHFMTexture(material.emissive_texture.texture, material.emissive_texture.texcoord);
         hfmMat.useEmissiveMap = true;
     }
 
     if (material.normal_texture.texture != nullptr) {
-        hfmMat.normalTexture = getHFMTexture(material.normal_texture.texture);
+        hfmMat.normalTexture = getHFMTexture(material.normal_texture.texture, material.normal_texture.texcoord);
         hfmMat.useNormalMap = true;
     }
 
     if (material.occlusion_texture.texture != nullptr) {
-        hfmMat.occlusionTexture = getHFMTexture(material.occlusion_texture.texture);
+        hfmMat.occlusionTexture = getHFMTexture(material.occlusion_texture.texture, material.occlusion_texture.texcoord);
         hfmMat.useOcclusionMap = true;
     }
 
@@ -1560,15 +1565,19 @@ void GLTFSerializer::setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& m
         hfmMat._material->setMetallic(hfmMat.metallic);
 
         if (material.pbr_metallic_roughness.base_color_texture.texture != nullptr) {
-            hfmMat.opacityTexture = getHFMTexture(material.pbr_metallic_roughness.base_color_texture.texture);
-            hfmMat.albedoTexture = getHFMTexture(material.pbr_metallic_roughness.base_color_texture.texture);
+            hfmMat.opacityTexture = getHFMTexture(material.pbr_metallic_roughness.base_color_texture.texture,
+                material.pbr_metallic_roughness.base_color_texture.texcoord);
+            hfmMat.albedoTexture = getHFMTexture(material.pbr_metallic_roughness.base_color_texture.texture,
+                material.pbr_metallic_roughness.base_color_texture.texcoord);
             hfmMat.useAlbedoMap = true;
         }
         if (material.pbr_metallic_roughness.metallic_roughness_texture.texture) {
-            hfmMat.roughnessTexture = getHFMTexture(material.pbr_metallic_roughness.metallic_roughness_texture.texture);
+            hfmMat.roughnessTexture = getHFMTexture(material.pbr_metallic_roughness.metallic_roughness_texture.texture,
+                material.pbr_metallic_roughness.metallic_roughness_texture.texcoord);
             hfmMat.roughnessTexture.sourceChannel = image::ColorChannel::GREEN;
             hfmMat.useRoughnessMap = true;
-            hfmMat.metallicTexture = getHFMTexture(material.pbr_metallic_roughness.metallic_roughness_texture.texture);
+            hfmMat.metallicTexture = getHFMTexture(material.pbr_metallic_roughness.metallic_roughness_texture.texture,
+                material.pbr_metallic_roughness.metallic_roughness_texture.texcoord);
             hfmMat.metallicTexture.sourceChannel = image::ColorChannel::BLUE;
             hfmMat.useMetallicMap = true;
         }

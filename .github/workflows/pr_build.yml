@@ -13,19 +13,9 @@ on:
 env:
   APP_NAME: interface
   BUILD_TYPE: Release
-  CI_BUILD: Github
   GIT_COMMIT: ${{ github.event.pull_request.head.sha }}
-  # VCPKG did not build well on OSX disabling HIFI_VCPKG_BOOTSTRAP, which invokes a download to a working version of vcpkg
-  # HIFI_VCPKG_BOOTSTRAP: true
-  RELEASE_TYPE: PR
-  RELEASE_NUMBER: ${{ github.event.number }}
+  # Android
   VERSION_CODE: ${{ github.event.number }}
-  # Sentry Crash Reporting
-  # We can't use secrets or actions here, so the actual value has to be hardcoded.
-  CMAKE_BACKTRACE_URL: "https://o4504831972343808.ingest.sentry.io/api/4504832427950080/minidump/?sentry_key=f511de295975461b8f92a36f4a4a4f32"
-  CMAKE_BACKTRACE_TOKEN: PR_${{ github.event.number }}_${{ github.sha }}
-  # Disable VCPKG caching to save time.
-  VCPKG_FEATURE_FLAGS: -binarycaching
 
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
@@ -43,6 +33,12 @@ env:
   # Ensure XZ always runs with muticore support
   XZ_OPT: -T0
 
+  # Specify build preset, since on Windows, `cmake --build` appears to be unaware of of which build preset to use, using defaults instead.
+  CMAKE_BUILD_EXTRA: --preset conan-release
+
+  # Work around AppImages not executing in Docker. https://github.com/AppImage/AppImageKit/issues/912#issuecomment-528669441
+  APPIMAGE_EXTRACT_AND_RUN: 1
+
 jobs:
   build_pr:
     name: "${{matrix.os}}, ${{matrix.arch}}"
@@ -53,30 +49,29 @@ jobs:
               runner: windows-2019
               arch: x86_64
               build_type: full
+              qt_source: aqt
             #- os: macOS-10.15
             #  build_type: full
-            - os: Ubuntu 20.04
-              # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Meta-Labels
-              # self_hosted makes the Hetzner auto-scaler put up the job.
-              # type-cx52 is a Hetzner VPS server type. In this case cs52 is a server with 16-cores and 32GB of RAM.
-              # image-x86-app-docker-ce is a Hetzner image.
-              # https://github.com/testflows/TestFlows-GitHub-Hetzner-Runners/wiki/Specifying-The-Runner-Image
-              runner: [self_hosted, type-cx52, image-x86-app-docker-ce]
+            #  qt_source: aqt
+            - os: Ubuntu 22.04
+              image: docker.io/overte/overte-full-build:0.1.7-ubuntu-22.04-amd64
+              runner: ubuntu-latest
               arch: amd64
               build_type: full
-              apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
-              image: docker.io/overte/overte-full-build:0.1.6-ubuntu-20.04-amd64
+              qt_source: system
+              apt-dependencies: qt5-image-formats-plugins # add missing dependencies to docker image when convenient
             # Android builds are currently failing
             #- os: ubuntu-18.04
             #  build_type: android
             #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
             - os: Ubuntu 22.04
-              runner: [self_hosted, type-cax41, image-arm-app-docker-ce]
+              image: docker.io/overte/overte-full-build:0.1.7-ubuntu-22.04-aarch64
+              runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
-              apt-dependencies: libxcb-glx0-dev # add missing dependencies to docker image when convenient
-              image: docker.io/overte/overte-full-build:0.1.6-ubuntu-22.04-aarch64
+              qt_source: system
+              apt-dependencies: qt5-image-formats-plugins # add missing dependencies to docker image when convenient
         fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
@@ -93,54 +88,56 @@ jobs:
 
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
+          echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=*" >> $GITHUB_ENV
-          echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
-          # Don't optimize builds to save build time.
-          echo "OVERTE_OPTIMIZE=false" >> $GITHUB_ENV
-          # Starting with Ubuntu 22.04 we can use system Qt
-          if [[ "${{ matrix.image }}" = *"ubuntu-22.04"* ]]; then
-            echo "OVERTE_USE_SYSTEM_QT=true" >> $GITHUB_ENV
-          fi
+          echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
+          echo "CMAKE_BUILD_EXTRA=$CMAKE_BUILD_EXTRA -- -j$(nproc)" >> $GITHUB_ENV
 
           if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
-            echo "VCPKG_FORCE_SYSTEM_BINARIES=true" >> $GITHUB_ENV
             if [ "${{ matrix.build_type }}" = "full" ]; then
-              echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DOVERTE_BUILD_TOOLS=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             else
-              echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DCLIENT_ONLY=1 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DOVERTE_BUILD_SERVER=FALSE -DOVERTE_BUILD_TOOLS=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             fi
 
           fi
 
           if [[ "${{ matrix.arch }}" = "amd64" ]]; then
             if [ "${{ matrix.build_type }}" = "full" ]; then
-              echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             else
-              echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE=-msse3 -DCLIENT_ONLY=1 -DBUILD_TOOLS:BOOLEAN=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DOVERTE_BUILD_SERVER=FALSE -DOVERTE_BUILD_TOOLS=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
             fi
           fi
         fi
+        echo "CONAN_PROFILE=default" >> $GITHUB_ENV
 
         # Mac build variables
         if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=dmg" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
-            echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
+            echo "CMAKE_EXTRA=-DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           else
-            echo "CMAKE_EXTRA=-DOVERTE_CPU_ARCHITECTURE= -DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCLIENT_ONLY=1 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
+            echo "CMAKE_EXTRA=-DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCLIENT_ONLY=1 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           fi
           echo "APP_TARGET_NAME=Overte" >> $GITHUB_ENV
+          echo "CONAN_PROFILE=default" >> $GITHUB_ENV
         fi
         # Windows build variables
-        if [ "${{ matrix.os }}" = "Windows 2019" ]; then
+        if [[ "${{ matrix.os }}" = "Windows"* ]]; then
+          echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
             echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
           else
             echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE -DCLIENT_ONLY=1" >> $GITHUB_ENV
+          fi
+          if [[ "${{ matrix.runner }}" = "windows-2019" ]]; then
+            echo "CONAN_PROFILE='./tools/conan-profiles/vs-19-release'" >> $GITHUB_ENV
+          else
+            echo "Not sure which Conan profile to use. Exiting." && exit 1
           fi
         fi
         # Android + Quest build variables
@@ -158,25 +155,26 @@ jobs:
 
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
         if [ "${{ matrix.build_type }}" = "full" ]; then
-          echo "ARTIFACT_PATTERN=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
-          echo "INSTALLER=Overte-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
+          if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
+            echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}-$(uname -m).$INSTALLER_EXT" >> $GITHUB_ENV
+          else
+            echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
+          fi
         else
-          echo "ARTIFACT_PATTERN=Overte-Interface-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
-          echo "INSTALLER=Overte-Interface-$RELEASE_NUMBER-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
+          echo "ARTIFACT_NAME=Overte-Interface-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
-
-    - name: Clear Working Directories
-      if: contains(matrix.runner, 'linux_aarch64') || contains(matrix.runner, 'linux_amd64')
-      shell: bash
-      run: |
-        rm -rf ./*
-        rm -rf ~/overte-files
-        rm -rf ~/.cache
 
     - uses: actions/checkout@v4
       with:
         submodules: false
         fetch-depth: 1
+
+    - name: Cache conan
+      id: conan-cache
+      uses: actions/cache@v4
+      with:
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: ~/.conan2/
 
     - name: Install dependencies
       shell: bash
@@ -189,16 +187,6 @@ jobs:
 
           echo "Installing apt packages"
           sudo apt install -y ${{ matrix.apt-dependencies }} || exit 1
-
-          echo "Adding Toolchain test PPA"
-          apt install -y software-properties-common
-          add-apt-repository ppa:ubuntu-toolchain-r/test
-
-          echo "Installing gcc-13"
-          apt install -y gcc-13 g++-13 || exit 1
-
-          # Set GCC 13 as default
-          update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100 --slave /usr/bin/g++ g++ /usr/bin/g++-13 --slave /usr/bin/gcov gcov /usr/bin/gcov-13
 
         else # macOS
           echo "Downloading MacOSX10.12 SDK.."
@@ -215,13 +203,6 @@ jobs:
           sudo cp -rp MacOSX10.12.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/ || exit 0
           echo "  done"
         fi
-        if [[ "${{ matrix.os }}" =~ "Debian 11" ]]; then
-          echo "Installing CMake from Debian Backports"
-          echo deb http://deb.debian.org/debian bullseye-backports main > /etc/apt/sources.list.d/bullseye-backports.list
-          sudo apt update
-          sudo apt-get -t bullseye-backports install -y cmake
-        fi
-
 
     - name: Override Windows package versions
       shell: pwsh
@@ -229,68 +210,77 @@ jobs:
       run: |
         choco install nsis --allow-downgrade --version=3.06.1
         choco install cmake --allow-downgrade --version=3.31.6  # Our dependencies don't support CMake 4.0 yet.
+        Invoke-WebRequest https://build-deps.overte.org/conan/nsis-overte-plugins/NSIS-hifi-plugins-1.0.zip -OutFile NSIS-hifi-plugins.zip
+        Expand-Archive -LiteralPath 'NSIS-hifi-plugins.zip' -DestinationPath 'C:/Program Files (x86)/'
 
     - name: Install Python modules
       if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS')
       shell: bash
-      run: $PYTHON_EXEC -m pip install boto3 PyGithub
+      run: $PYTHON_EXEC -m pip install boto3 PyGithub conan
 
-    - name: Create Build Environment
+    - name: Prepare Conan Build Environment
+      uses: ./.github/actions/setup-conan
+
+    - name: Install Conan dependencies
+      uses: ./.github/actions/conan-install
+      with:
+        qt_source: ${{matrix.qt_source}}
+        build_type: ${{env.BUILD_TYPE}}
+        cppstd: ${{env.CONAN_CPPSTD}}
+        conan_profile: ${{env.CONAN_PROFILE}}
+
+    - name: Upload dependency source backups
       shell: bash
-      run: cmake -E make_directory ./build
+      env:
+        # Token for uploading dependency source backups.
+        CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN: ${{ secrets.CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN }}
+      run: conan cache backup-upload || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
+
+    - name: Cleanup Conan dependencies
+      run: conan cache clean "*" -sbd
+      shell: bash
+
+    - name: Save Conan cache
+      if: always() && steps.conan-cache.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: ~/.conan2/
 
     - name: Configure CMake
-      working-directory: build
-      shell: bash
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release $CMAKE_EXTRA
-
-    - name: Compress cmake logs
-      if: always()
       shell: bash
       run: |
-        if [ "${{ matrix.os }}" == "macOS-10.15" ]; then
-          TAR=gtar
+        if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
+          # This syntax requires CMake 3.23
+          cmake --preset conan-default -DOVERTE_RELEASE_NUMBER=${{ github.event.number }} -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=PR $CMAKE_EXTRA
         else
-          TAR=tar
+          # This syntax requires CMake 3.23
+          cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_NUMBER=${{ github.event.number }} -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=PR $CMAKE_EXTRA
         fi
-          find "$HOME/overte-files/vcpkg" -name '*log' -type f -print0 | $TAR --null --force-local -T - -c --xz -v -f "./cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz"
-
-    - name: Archive cmake logs
-      if: always()
-      uses: actions/upload-artifact@v4
-      with:
-        name: cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz
-        path: ./cmake-logs-${{ matrix.os }}-${{ github.event.number }}.tar.xz
-        if-no-files-found: error
 
     - name: Build Application
       if: matrix.build_type == 'full' || matrix.build_type == 'client'
-      working-directory: build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
 
     - name: Build Domain Server
       if: matrix.build_type == 'full'
-      working-directory: build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target domain-server $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build Assignment Client
       if: matrix.build_type == 'full'
-      working-directory: build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target assignment-client $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build Console
       if: matrix.build_type == 'full' && matrix.arch != 'aarch64' || startsWith(matrix.os, 'windows')
-      working-directory: build
       shell: bash
       run: |
-        cmake --build . --config $BUILD_TYPE --target packaged-server-console $CMAKE_BUILD_EXTRA
+        cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build Installer
-      if: matrix.build_type != 'android' && matrix.arch != 'aarch64'
-      working-directory: build
+      if: matrix.build_type != 'android'
       shell: bash
       run: |
         echo "Retry code from https://unix.stackexchange.com/a/137639"
@@ -354,17 +344,8 @@ jobs:
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Upload Artifact
-      if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS')
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.ARTIFACT_PATTERN }}
-        path: ./build/${{ env.ARTIFACT_PATTERN }}
+        name: ${{ env.ARTIFACT_NAME }}
+        path: ./build/Overte-*
         if-no-files-found: error
-
-    - name: Clear Working Directories
-      if: contains(matrix.runner, 'linux_aarch64') || contains(matrix.runner, 'linux_amd64')
-      shell: bash
-      run: |
-        rm -rf ./*
-        rm -rf ~/overte-files
-        rm -rf ~/.cache

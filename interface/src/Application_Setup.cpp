@@ -6,7 +6,7 @@
 //  Created by Andrzej Kapolka on 5/10/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -597,7 +597,7 @@ void Application::initialize(const QCommandLineParser &parser) {
 
         // If launched from Steam, let it handle updates
         bool buildCanUpdate = BuildInfo::BUILD_TYPE == BuildInfo::BuildType::Stable
-            || BuildInfo::BUILD_TYPE == BuildInfo::BuildType::Master;
+            || BuildInfo::BUILD_TYPE == BuildInfo::BuildType::Nightly;
         if (!parser.isSet("no-updater") && buildCanUpdate) {
             constexpr auto INSTALLER_TYPE_CLIENT_ONLY = "client_only";
 
@@ -2170,5 +2170,6 @@ void Application::setupSignalsAndOperators() {
             connect(this, &Application::activeDisplayPluginChanged,
                 scriptingAudioSharedPointer.data(), &scripting::Audio::onContextChanged);
         }
+        dynamic_cast<scripting::Audio*>(audioScriptingInterface)->onContextChanged();
     }
 }

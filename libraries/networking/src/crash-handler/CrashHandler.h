@@ -3,7 +3,7 @@
 //
 //
 //  Created by Dale Glass on 25/06/2023.
-//  Copyright 2023 Overte e.V.
+//  Copyright 2023-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -103,7 +103,7 @@ public slots:
      * Reasons for it failing to start include:
      *
      *  * Not having a crash reporter for the platform
-     *  * Crash reporter not being configured with reporting URLs (CMAKE_BACKTRACE_TOKEN and CMAKE_BACKTRACE_URL)
+     *  * Crash reporter not being configured with reporting URLs (OVERTE_BACKTRACE_TOKEN and OVERTE_BACKTRACE_URL)
      *  * Crash reporter is present and configured, but failed to initialize for some reason
      *
      * @return true Crash reporter is present, configured and working.
@@ -118,7 +118,7 @@ public slots:
      * This setting is independent of isCrashMonitorStarted() -- crash reporting may be enabled but fail to work
      * due to the crash reporting component being missing or failing to initialize.
      *
-     * @return true Crashes will be reported to CMAKE_BACKTRACE_URL
+     * @return true Crashes will be reported to OVERTE_BACKTRACE_URL
      * @return false Crashes will not be reported
      */
     bool isEnabled() const { return _crashReportingEnabled; }
@@ -126,7 +126,7 @@ public slots:
     /**
      * @brief Set whether we want to submit crash reports to the report server
      *
-     * The report server is configured with CMAKE_BACKTRACE_URL.
+     * The report server is configured with OVERTE_BACKTRACE_URL.
      * Emits crashReportingEnabledChanged signal.
      *
      * @note This automatically calls start(), so it should be called after setPath(), setUrl() and setToken()
@@ -137,7 +137,7 @@ public slots:
     /**
      * @brief Set the URL where to send crash reports to
      *
-     * If not set, a predefined URL specified at compile time via CMAKE_BACKTRACE_URL
+     * If not set, a predefined URL specified at compile time via OVERTE_BACKTRACE_URL
      * will be used.
      *
      * @param url URL
@@ -150,7 +150,7 @@ public slots:
      * This is an identifier in the crash collection service, such as Sentry, and may contain
      * a branch name or a version number.
      *
-     * If not set, a predefined token specified at compile time via CMAKE_BACKTRACE_TOKEN
+     * If not set, a predefined token specified at compile time via OVERTE_BACKTRACE_TOKEN
      * will be used.
      *
      * @param token Token

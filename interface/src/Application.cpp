@@ -231,6 +231,7 @@ Application::Application(
     _constrainToolbarPosition("toolbar/constrainToolbarToCenterX", true),
     _awayStateWhenFocusLostInVREnabled("awayStateWhenFocusLostInVREnabled", DEFAULT_AWAY_STATE_WHEN_FOCUS_LOST_IN_VR_ENABLED),
     _preferredCursor("preferredCursor", DEFAULT_CURSOR_NAME),
+    _darkTheme("darkTheme", true),
     _miniTabletEnabledSetting("miniTabletEnabled", DEFAULT_MINI_TABLET_ENABLED),
     // Entities
     _maxOctreePacketsPerSecond("maxOctreePPS", DEFAULT_MAX_OCTREE_PPS),
@@ -950,6 +951,7 @@ void Application::setIsServerlessMode(bool serverlessDomain) {
     auto tree = getEntities()->getTree();
     if (tree) {
         tree->setIsServerlessMode(serverlessDomain);
+        _waitForServerlessToBeSet = false;
     }
 }
 
@@ -1259,6 +1261,9 @@ void Application::loadSettings(const QCommandLineParser& parser) {
         Setting::Handle<QString> url(setting, externalResource->getBase(bucket));
         externalResource->setBase(bucket, url.get());
     }
+
+    // the setter function isn't called, so update the theme colors now
+    updateThemeColors();
 
     _settingsLoaded = true;
 }
@@ -1911,7 +1916,7 @@ void Application::update(float deltaTime) {
 
         // we haven't yet enabled physics.  we wait until we think we have all the collision information
         // for nearby entities before starting bullet up.
-        if (isServerlessMode()) {
+        if (isServerlessMode() && !_waitForServerlessToBeSet) {
             tryToEnablePhysics();
         } else if (_failedToConnectToEntityServer) {
             if (_octreeProcessor->safeLandingIsActive()) {

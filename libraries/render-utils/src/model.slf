@@ -106,10 +106,23 @@
     <$declareFadeFragment()$>
 <@endif@>
 
+<@if HIFI_USE_NORMALMAP and HIFI_USE_TRIPLANAR@>
+    <@include gpu/Transform.slh@>
+    <$declareStandardObjectTransform()$>
+<@endif@>
+
 layout(location=RENDER_UTILS_ATTR_POSITION_WS) in vec4 _positionWS;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
-#define _texCoord0 _texCoord01.xy
-#define _texCoord1 _texCoord01.zw
+layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4  _texCoord01[NUM_LAYERS];
+#define _texCoords mat2[NUM_LAYERS](                \
+    mat2(_texCoord01[0].xy, _texCoord01[0].zw)      \
+<@if HIFI_USE_LAYERS2 or HIFI_USE_LAYERS3@>
+    , mat2(_texCoord01[1].xy, _texCoord01[1].zw)    \
+<@endif@>
+<@if HIFI_USE_LAYERS3@>
+    , mat2(_texCoord01[2].xy, _texCoord01[2].zw)    \
+<@endif@>
+)
+
 <@if not HIFI_USE_SHADOW@>
     layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
     layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
@@ -117,12 +130,15 @@ layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
         layout(location=RENDER_UTILS_ATTR_COLOR) in vec4 _color;
     <@endif@>
     layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) in vec4 _prevPositionCS;
-    <@if HIFI_USE_NORMALMAP@>
-        layout(location=RENDER_UTILS_ATTR_TANGENT_WS) in vec3 _tangentWS;
+    <@if not HIFI_USE_TRIPLANAR@>
+        <@if HIFI_USE_NORMALMAP@>
+            layout(location=RENDER_UTILS_ATTR_TANGENT_WS) in vec3 _tangentWS;
+        <@endif@>
     <@endif@>
 <@endif@>
 <@if HIFI_USE_TRIPLANAR@>
     layout(location=RENDER_UTILS_ATTR_POSITION_MS) in vec3 _positionMS;
+    layout(location=RENDER_UTILS_ATTR_NORMAL_MS) in vec3 _normalMS;
 <@endif@>
 
 void main(void) {
@@ -139,41 +155,46 @@ void main(void) {
     <@endif@>
 <@endif@>
 
-    Material mat = getMaterial();
-    BITFIELD matKey = getMaterialKey(mat);
+    Material mats[NUM_LAYERS];
+    BITFIELD matKeys[NUM_LAYERS];
+    for (int layer = 0; layer < NUM_LAYERS; layer++) {
+        Material mat = getMaterial(layer);
+        mats[layer] = mat;
+        matKeys[layer] = getMaterialKey(mat);
+    }
 <@if HIFI_USE_SHADOW or HIFI_USE_UNLIT@>
     <@if not HIFI_USE_TRIPLANAR@>
         <@if not HIFI_USE_MTOON@>
-            <$fetchMaterialTexturesCoord0(matKey, _texCoord0, albedoTex)$>
+            <$fetchMaterialTextures(0, matKeys[0], _texCoords[0], albedoTex)$>
         <@else@>
-            <$fetchMToonMaterialTexturesCoord0(matKey, _texCoord0, albedoTex)$>
+            <$fetchMToonMaterialTextures(0, matKeys[0], _texCoords[0], albedoTex)$>
         <@endif@>
     <@else@>
-        const vec3 triplanarScale = triplanarParams.scale.xyz;
+        vec3 triplanarScale = triplanarParams.scale.xyz;
         <@if not HIFI_USE_MTOON@>
-            <$fetchMaterialTexturesCoord0Triplanar(matKey, _positionMS, triplanarScale, albedoTex)$>
+            <$fetchMaterialTexturesTriplanar(matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex)$>
         <@else@>
-            <$fetchMToonMaterialTexturesCoord0Triplanar(matKey, _positionMS, triplanarScale, albedoTex)$>
+            <$fetchMToonMaterialTexturesTriplanar(matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex)$>
         <@endif@>
     <@endif@>
 
-        float cutoff = getMaterialOpacityCutoff(mat);
+        float cutoff = getMaterialOpacityCutoff(mats[0]);
     <@if HIFI_USE_TRANSLUCENT@>
-        float opacity = getMaterialOpacity(mat);
+        float opacity = getMaterialOpacity(mats[0]);
         <@if not HIFI_USE_MTOON@>
             opacity *= _color.a;
         <@endif@>
-        <$evalMaterialOpacity(albedoTex.a, cutoff, opacity, matKey, opacity)$>;
+        <$evalMaterialOpacity(albedoTex.a, cutoff, opacity, matKeys[0], opacity)$>;
         <$discardInvisible(opacity)$>;
     <@else@>
         float opacity = 1.0;
-        <$evalMaterialOpacityMask(albedoTex.a, cutoff, opacity, matKey, opacity)$>;
+        <$evalMaterialOpacityMask(albedoTex.a, cutoff, opacity, matKeys[0], opacity)$>;
         <$discardTransparent(opacity)$>;
     <@endif@>
 
     <@if not HIFI_USE_SHADOW@>
-            vec3 albedo = getMaterialAlbedo(mat);
-            <$evalMaterialAlbedo(albedoTex, albedo, matKey, albedo)$>;
+            vec3 albedo = getMaterialAlbedo(mats[0]);
+            <$evalMaterialAlbedo(albedoTex, albedo, matKeys[0], albedo)$>;
             <@if not HIFI_USE_MTOON@>
                 albedo *= _color.rgb;
             <@endif@>
@@ -208,44 +229,48 @@ void main(void) {
                 albedo * isUnlitEnabled());
     <@endif@>
 <@elif HIFI_USE_MTOON@>
-        vec3 uvScrollSpeed = getMaterialUVScrollSpeed(mat);
-        float time = getMaterialTime(mat);
+        vec3 uvScrollSpeed = getMaterialUVScrollSpeed(mats[0]);
+        float time = getMaterialTime(mats[0]); // time is only stored in the first material
     <@if HIFI_USE_NORMALMAP@>
-        <$fetchMToonMaterialTexturesCoord0(matKey, _texCoord0, albedoTex, normalTex, shadeTex, emissiveTex, shadingShiftTex, rimTex, uvScrollSpeed, time)$>
+        <$fetchMToonMaterialTextures(0, matKeys[0], _texCoords[0], albedoTex, normalTex, shadeTex, emissiveTex, shadingShiftTex, rimTex, uvScrollSpeed, time)$>
     <@else@>
-        <$fetchMToonMaterialTexturesCoord0(matKey, _texCoord0, albedoTex, _SCRIBE_NULL, shadeTex, emissiveTex, shadingShiftTex, rimTex, uvScrollSpeed, time)$>
+        <$fetchMToonMaterialTextures(0, matKeys[0], _texCoords[0], albedoTex, _SCRIBE_NULL, shadeTex, emissiveTex, shadingShiftTex, rimTex, uvScrollSpeed, time)$>
     <@endif@>
 
-        float cutoff = getMaterialOpacityCutoff(mat);
+        float cutoff = getMaterialOpacityCutoff(mats[0]);
         <@if HIFI_USE_TRANSLUCENT@>
-            float opacity = getMaterialOpacity(mat);
-            <$evalMaterialOpacity(albedoTex.a, cutoff, opacity, matKey, opacity)$>;
+            float opacity = getMaterialOpacity(mats[0]);
+            <$evalMaterialOpacity(albedoTex.a, cutoff, opacity, matKeys[0], opacity)$>;
             <$discardInvisible(opacity)$>;
         <@else@>
             float opacity = 1.0;
-            <$evalMaterialOpacityMask(albedoTex.a, cutoff, opacity, matKey, opacity)$>;
+            <$evalMaterialOpacityMask(albedoTex.a, cutoff, opacity, matKeys[0], opacity)$>;
             <$discardTransparent(opacity)$>;
         <@endif@>
 
-        vec3 albedo = getMaterialAlbedo(mat);
-        <$evalMaterialAlbedo(albedoTex, albedo, matKey, albedo)$>;
+        vec3 albedo = getMaterialAlbedo(mats[0]);
+        <$evalMaterialAlbedo(albedoTex, albedo, matKeys[0], albedo)$>;
 
-        vec3 emissive = getMaterialEmissive(mat);
-        <$evalMaterialEmissive(emissiveTex, emissive, matKey, emissive)$>;
+        vec3 emissive = getMaterialEmissive(mats[0]);
+        <$evalMaterialEmissive(emissiveTex, emissive, matKeys[0], emissive)$>;
 
     <@if HIFI_USE_NORMALMAP@>
             vec3 fragNormalWS;
-            <$evalMaterialNormalLOD(_positionES, normalTex, _normalWS, _tangentWS, fragNormalWS)$>
+        <@if not HIFI_USE_TRIPLANAR@>
+                <$evalMaterialNormalLOD(_positionES, normalTex, _normalWS, _tangentWS, fragNormalWS)$>
+        <@else@>
+                <$evalMaterialNormalLODTriplanar(_positionES, normalTex, _normalWS, fragNormalWS)$>
+        <@endif@>
     <@else@>
             vec3 fragNormalWS = _normalWS;
     <@endif@>
         fragNormalWS = evalFrontOrBackFaceNormal(normalize(fragNormalWS));
 
-        vec3 shade = getMaterialShade(mat);
-        <$evalMaterialShade(shadeTex, shade, matKey, shade)$>;
+        vec3 shade = getMaterialShade(mats[0]);
+        <$evalMaterialShade(shadeTex, shade, matKeys[0], shade)$>;
 
-        float shadingShift = getMaterialShadingShift(mat);
-        <$evalMaterialShadingShift(shadingShiftTex, shadingShift, matKey, shadingShift)$>;
+        float shadingShift = getMaterialShadingShift(mats[0]);
+        <$evalMaterialShadingShift(shadingShiftTex, shadingShift, matKeys[0], shadingShift)$>;
 
         TransformCamera cam = getTransformCamera();
         float metallic = DEFAULT_METALLIC;
@@ -254,8 +279,8 @@ void main(void) {
         vec4 color = vec4(evalGlobalLightingAlphaBlendedMToon(
             cam._viewInverse, 1.0, _positionES.xyz, fragNormalWS,
             albedo, fresnel, metallic, emissive, DEFAULT_ROUGHNESS, opacity,
-            shade, shadingShift, getMaterialShadingToony(mat), getMaterialMatcap(mat), getMaterialParametricRim(mat),
-            getMaterialParametricRimFresnelPower(mat), getMaterialParametricRimLift(mat), rimTex, getMaterialRimLightingMix(mat), matKey), opacity);
+            shade, shadingShift, getMaterialShadingToony(mats[0]), getMaterialMatcap(mats[0]), getMaterialParametricRim(mats[0]),
+            getMaterialParametricRimFresnelPower(mats[0]), getMaterialParametricRimLift(mats[0]), rimTex, getMaterialRimLightingMix(mats[0]), matKeys[0]), opacity);
 
         <@if HIFI_USE_FORWARD@>
             _fragColor0 = isUnlitEnabled() * vec4(color.rgb
@@ -289,83 +314,83 @@ void main(void) {
     <@if not HIFI_USE_TRIPLANAR@>
         <@if not HIFI_USE_LIGHTMAP@>
             <@if HIFI_USE_NORMALMAP and HIFI_USE_TRANSLUCENT@>
-                <$fetchMaterialTexturesCoord0(matKey, _texCoord0, albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, _SCRIBE_NULL)$>
+                <$fetchMaterialTextures(0, matKeys[0], _texCoords[0], albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, _SCRIBE_NULL, occlusionTex)$>
             <@elif HIFI_USE_NORMALMAP@>
-                <$fetchMaterialTexturesCoord0(matKey, _texCoord0, albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, scatteringTex)$>
+                <$fetchMaterialTextures(0, matKeys[0], _texCoords[0], albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, scatteringTex, occlusionTex)$>
             <@elif HIFI_USE_TRANSLUCENT@>
-                <$fetchMaterialTexturesCoord0(matKey, _texCoord0, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, emissiveTex, _SCRIBE_NULL)$>
+                <$fetchMaterialTextures(0, matKeys[0], _texCoords[0], albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, emissiveTex, _SCRIBE_NULL, occlusionTex)$>
             <@else@>
-                <$fetchMaterialTexturesCoord0(matKey, _texCoord0, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, emissiveTex, scatteringTex)$>
+                <$fetchMaterialTextures(0, matKeys[0], _texCoords[0], albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, emissiveTex, scatteringTex, occlusionTex)$>
             <@endif@>
-                <$fetchMaterialTexturesCoord1(matKey, _texCoord1, occlusionTex)$>
         <@else@>
             <@if HIFI_USE_NORMALMAP@>
-                <$fetchMaterialTexturesCoord0(matKey, _texCoord0, albedoTex, roughnessTex, normalTex, metallicTex)$>
+                <$fetchMaterialTextures(0, matKeys[0], _texCoords[0], albedoTex, roughnessTex, normalTex, metallicTex, _SCRIBE_NULL, _SCRIBE_NULL, _SCRIBE_NULL, lightmap)$>
             <@else@>
-                <$fetchMaterialTexturesCoord0(matKey, _texCoord0, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex)$>
+                <$fetchMaterialTextures(0, matKeys[0], _texCoords[0], albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, _SCRIBE_NULL, _SCRIBE_NULL, _SCRIBE_NULL, lightmap)$>
             <@endif@>
-                <$fetchMaterialTexturesCoord1(matKey, _texCoord1, _SCRIBE_NULL, lightmap)$>
         <@endif@>
     <@else@>
-        const vec3 triplanarScale = triplanarParams.scale.xyz;
+        vec3 triplanarScale = triplanarParams.scale.xyz;
         <@if not HIFI_USE_LIGHTMAP@>
             <@if HIFI_USE_NORMALMAP and HIFI_USE_TRANSLUCENT@>
-                <$fetchMaterialTexturesCoord0Triplanar(matKey, _positionMS, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, _SCRIBE_NULL)$>
+                <$fetchMaterialTexturesTriplanar(matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, _SCRIBE_NULL, occlusionTex)$>
             <@elif HIFI_USE_NORMALMAP@>
-                <$fetchMaterialTexturesCoord0Triplanar(matKey, _positionMS, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, scatteringTex)$>
+                <$fetchMaterialTexturesTriplanar(matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, scatteringTex, occlusionTex)$>
             <@elif HIFI_USE_TRANSLUCENT@>
-                <$fetchMaterialTexturesCoord0Triplanar(matKey, _positionMS, triplanarScale, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, emissiveTex, _SCRIBE_NULL)$>
+                <$fetchMaterialTexturesTriplanar(matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, emissiveTex, _SCRIBE_NULL, occlusionTex)$>
             <@else@>
-                <$fetchMaterialTexturesCoord0Triplanar(matKey, _positionMS, triplanarScale, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, emissiveTex, scatteringTex)$>
+                <$fetchMaterialTexturesTriplanar(matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, emissiveTex, scatteringTex, occlusionTex)$>
             <@endif@>
-                <$fetchMaterialTexturesCoord1(matKey, _texCoord1, occlusionTex)$>
         <@else@>
             <@if HIFI_USE_NORMALMAP@>
-                <$fetchMaterialTexturesCoord0Triplanar(matKey, _positionMS, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex)$>
+                <$fetchMaterialTexturesTriplanar(matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex, _SCRIBE_NULL, _SCRIBE_NULL, _SCRIBE_NULL, lightmap)$>
             <@else@>
-                <$fetchMaterialTexturesCoord0Triplanar(matKey, _positionMS, triplanarScale, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex)$>
+                <$fetchMaterialTexturesTriplanar(matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, _SCRIBE_NULL, _SCRIBE_NULL, _SCRIBE_NULL, lightmap)$>
             <@endif@>
-                <$fetchMaterialTexturesCoord1(matKey, _texCoord1, _SCRIBE_NULL, lightmap)$>
         <@endif@>
     <@endif@>
     
-        float cutoff = getMaterialOpacityCutoff(mat);
+        float cutoff = getMaterialOpacityCutoff(mats[0]);
     <@if HIFI_USE_TRANSLUCENT@>
-        float opacity = getMaterialOpacity(mat) * _color.a;
-        <$evalMaterialOpacity(albedoTex.a, cutoff, opacity, matKey, opacity)$>;
+        float opacity = getMaterialOpacity(mats[0]) * _color.a;
+        <$evalMaterialOpacity(albedoTex.a, cutoff, opacity, matKeys[0], opacity)$>;
         <$discardInvisible(opacity)$>;
     <@else@>
         float opacity = 1.0;
-        <$evalMaterialOpacityMask(albedoTex.a, cutoff, opacity, matKey, opacity)$>;
+        <$evalMaterialOpacityMask(albedoTex.a, cutoff, opacity, matKeys[0], opacity)$>;
         <$discardTransparent(opacity)$>;
     <@endif@>
 
-        vec3 albedo = getMaterialAlbedo(mat);
-        <$evalMaterialAlbedo(albedoTex, albedo, matKey, albedo)$>;
+        vec3 albedo = getMaterialAlbedo(mats[0]);
+        <$evalMaterialAlbedo(albedoTex, albedo, matKeys[0], albedo)$>;
         albedo *= _color.rgb;
 
-        float roughness = getMaterialRoughness(mat);
-        <$evalMaterialRoughness(roughnessTex, roughness, matKey, roughness)$>;
+        float roughness = getMaterialRoughness(mats[0]);
+        <$evalMaterialRoughness(roughnessTex, roughness, matKeys[0], roughness)$>;
 
-        float metallic = getMaterialMetallic(mat);
-        <$evalMaterialMetallic(metallicTex, metallic, matKey, metallic)$>;
+        float metallic = getMaterialMetallic(mats[0]);
+        <$evalMaterialMetallic(metallicTex, metallic, matKeys[0], metallic)$>;
 
     <@if not HIFI_USE_LIGHTMAP@>
-            vec3 emissive = getMaterialEmissive(mat);
-            <$evalMaterialEmissive(emissiveTex, emissive, matKey, emissive)$>;
+            vec3 emissive = getMaterialEmissive(mats[0]);
+            <$evalMaterialEmissive(emissiveTex, emissive, matKeys[0], emissive)$>;
 
             float occlusion = DEFAULT_OCCLUSION;
-            <$evalMaterialOcclusion(occlusionTex, matKey, occlusion)$>;
+            <$evalMaterialOcclusion(occlusionTex, matKeys[0], occlusion)$>;
 
         <@if not HIFI_USE_TRANSLUCENT@>
-                float scattering = getMaterialScattering(mat);
-                <$evalMaterialScattering(scatteringTex, scattering, matKey, scattering)$>;
+                float scattering = getMaterialScattering(mats[0]);
+                <$evalMaterialScattering(scatteringTex, scattering, matKeys[0], scattering)$>;
         <@endif@>
     <@endif@>
 
     <@if HIFI_USE_NORMALMAP@>
             vec3 fragNormalWS;
-            <$evalMaterialNormalLOD(_positionES, normalTex, _normalWS, _tangentWS, fragNormalWS)$>
+        <@if not HIFI_USE_TRIPLANAR@>
+                <$evalMaterialNormalLOD(_positionES, normalTex, _normalWS, _tangentWS, fragNormalWS)$>
+        <@else@>
+                <$evalMaterialNormalLODTriplanar(_positionES, normalTex, _normalWS, fragNormalWS)$>
+        <@endif@>
     <@else@>
             vec3 fragNormalWS = _normalWS;
     <@endif@>
@@ -445,7 +470,7 @@ void main(void) {
                 packDeferredFragmentLightmap(
                     _prevPositionCS,
                     fragNormalWS,
-                    evalOpaqueFinalAlpha(getMaterialOpacity(mat), opacity),
+                    evalOpaqueFinalAlpha(getMaterialOpacity(mats[0]), opacity),
                     albedo,
                     roughness,
                     metallic,

@@ -2,13 +2,13 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte Server
-# Example build: docker build -t overte/overte-server-build:0.1.6-fedora-42 -f Dockerfile_build_fedora-42 .
+# Example build: docker build --no-cache -t overte/overte-server-build:0.1.7-fedora-42-amd64 -f Dockerfile_build_fedora-42 .
 FROM fedora:42
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
 
 # Install Overte domain-server and assignment-client build dependencies
-RUN dnf -y install curl ninja-build git cmake gcc gcc-c++ openssl-devel qt5-qtwebsockets-devel qt5-qtmultimedia-devel unzip libXext-devel qt5-qtwebchannel-devel qt5-qtwebengine-devel qt5-qtxmlpatterns-devel systemd-devel python3 python3-packaging
+RUN dnf -y install curl ninja-build git cmake gcc gcc-c++ libstdc++-static openssl-devel qt5-qtwebsockets-devel qt5-qtmultimedia-devel unzip libXext-devel qt5-qtwebchannel-devel qt5-qtwebengine-devel qt5-qtxmlpatterns-devel systemd-devel python3 python3-packaging
 
 # Install additional build tools
 RUN dnf -y install zip unzip

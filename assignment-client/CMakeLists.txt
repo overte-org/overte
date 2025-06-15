@@ -1,5 +1,5 @@
 # Copyright 2013-2019 High Fidelity, Inc.
-# Copyright 2021-2022 Overte e.V.
+# Copyright 2021-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 set(TARGET_NAME assignment-client)
@@ -27,7 +27,7 @@ include_hifi_library_headers(entities)
 add_crashpad()
 target_breakpad()
 
-if (BUILD_TOOLS)
+if (OVERTE_BUILD_TOOLS)
   add_dependencies(${TARGET_NAME} oven)
 
   if (WIN32)
@@ -43,7 +43,7 @@ if (BUILD_TOOLS)
               $<TARGET_FILE:oven>
               $<TARGET_FILE_DIR:${TARGET_NAME}>/oven)
   endif()
-endif (BUILD_TOOLS)
+endif()
 
 if (WIN32)
   package_libraries_for_deployment()

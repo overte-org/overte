@@ -51,11 +51,16 @@ macro(GENERATE_ENTITY_PROPERTIES)
     file(STRINGS src/EntityItemProperties.txt ENTITY_PROPERTIES_FILE)
     while(ENTITY_PROPERTIES_FILE)
         list(POP_FRONT ENTITY_PROPERTIES_FILE LINE)
+        # Handle both trailing comments and full line comments
+        string(REGEX REPLACE " #.*$" "" LINE ${LINE})
+        string(REGEX REPLACE "#.*$" "" LINE ${LINE})
 
-        # Single-word lines represent sections of properties, which can be base properties like "Physics" or
-        # Entity types like "Model".  We use the section names to generate comments, and also handle indentation
-        # and opening/closing braces.
-        if(NOT LINE MATCHES ".*:.*")
+        if(LINE STREQUAL "")
+            continue()
+        elseif(NOT LINE MATCHES ".*:.*")
+            # Single-word lines represent sections of properties, which can be base properties like "Physics" or
+            # Entity types like "Model".  We use the section names to generate comments, and also handle indentation
+            # and opening/closing braces.
             if(LINE STREQUAL "Common")
                 set(COMMON_PROPS true)
             else()
@@ -108,11 +113,11 @@ macro(GENERATE_ENTITY_PROPERTIES)
             endif()
 
             if (NOT COMMON_PROPS)
-                string(CONCAT ${CURRENT_TYPE}_REQUESTED_PROPS "${${CURRENT_TYPE}_REQUESTED_PROPS}" "\t// ${LINE}\n")
                 string(CONCAT ${CURRENT_TYPE}_ENTITY_APPEND "${${CURRENT_TYPE}_ENTITY_APPEND}" "\t\t// ${LINE}\n")
                 string(CONCAT ${CURRENT_TYPE}_ENTITY_READ "${${CURRENT_TYPE}_ENTITY_READ}" "\t// ${LINE}\n")
                 string(CONCAT ${CURRENT_TYPE}_ENTITY_COPY_TO "${${CURRENT_TYPE}_ENTITY_COPY_TO}" "\t// ${LINE}\n")
                 if (NOT LOCAL_PROPS)
+                    string(CONCAT ${CURRENT_TYPE}_REQUESTED_PROPS "${${CURRENT_TYPE}_REQUESTED_PROPS}" "\t// ${LINE}\n")
                     string(CONCAT ${CURRENT_TYPE}_ENTITY_SET_FROM "${${CURRENT_TYPE}_ENTITY_SET_FROM}" "\t// ${LINE}\n")
                 endif()
             endif()
@@ -298,7 +303,6 @@ macro(GENERATE_ENTITY_PROPERTIES)
                             string(CONCAT ENTITY_ITEM_PROPERTY_APPEND "${ENTITY_ITEM_PROPERTY_APPEND}" "\t\t\tAPPEND_ENTITY_PROPERTY(${ENTITY_PROPERTY_ENUM}, properties.get${ENTITY_PROPERTY_NAME_CAPS}());\n")
                         endif()
                         string(CONCAT ENTITY_ITEM_PROPERTY_READ "${ENTITY_ITEM_PROPERTY_READ}" "\tREAD_ENTITY_PROPERTY_TO_PROPERTIES(${ENTITY_PROPERTY_ENUM}, ${ENTITY_PROPERTY_READ_TYPE}, set${ENTITY_PROPERTY_NAME_CAPS});\n")
-                        string(CONCAT ${CURRENT_TYPE}_REQUESTED_PROPS "${${CURRENT_TYPE}_REQUESTED_PROPS}" "\trequestedProperties += ${ENTITY_PROPERTY_ENUM};\n")
                         if(LINE MATCHES ".*enum( |,).*")
                             string(CONCAT ${CURRENT_TYPE}_ENTITY_APPEND "${${CURRENT_TYPE}_ENTITY_APPEND}" "\tAPPEND_ENTITY_PROPERTY(${ENTITY_PROPERTY_ENUM}, (uint8_t)get${ENTITY_PROPERTY_NAME_CAPS}());\n")
                         elseif(ENTITY_VARIABLE_NETWORK_GETTER)
@@ -317,6 +321,9 @@ macro(GENERATE_ENTITY_PROPERTIES)
                 endif()
 
                 if (NOT COMMON_PROPS)
+                    if (NOT LOCAL_PROPS)
+                        string(CONCAT ${CURRENT_TYPE}_REQUESTED_PROPS "${${CURRENT_TYPE}_REQUESTED_PROPS}" "\trequestedProperties += ${ENTITY_PROPERTY_ENUM};\n")
+                    endif()
                     set(VARIABLE_DEFINE_FUNC "DEFINE_VARIABLE_REF")
                     if(LINE MATCHES ".*noGetterSetterProp( |,).*")
                         set(VARIABLE_DEFINE_FUNC "DEFINE_VARIABLE_NO_GETTER_SETTER")
@@ -426,9 +433,14 @@ macro(GENERATE_ENTITY_PROPERTIES)
     file(STRINGS src/EntityItemGroupProperties.txt GROUP_PROPERTIES_FILE)
     while(GROUP_PROPERTIES_FILE)
         list(POP_FRONT GROUP_PROPERTIES_FILE LINE)
+        # Handle both trailing comments and full line comments
+        string(REGEX REPLACE " #.*$" "" LINE ${LINE})
+        string(REGEX REPLACE "#.*$" "" LINE ${LINE})
 
-        # Lines that don't end in a comma represent the start of a new property group.
-        if(NOT LINE MATCHES ".*,")
+        if(LINE STREQUAL "")
+            continue()
+        elseif(NOT LINE MATCHES ".*,")
+            # Lines that don't end in a comma represent the start of a new property group.
             string(REGEX MATCH ".*type:+([A-Z0-9a-z_<>::\/\.\"\(\)\+\-]+).*" GROUP_PROPERTY_TYPE ${LINE})
             set(GROUP_PROPERTY_TYPE ${CMAKE_MATCH_1})
 

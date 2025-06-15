@@ -57,7 +57,6 @@ Audio::Audio() : _devices(_contextIsHMD) {
     setNoiseReductionThreshold(setNoiseReductionThresholdSetting.get());
     enableWarnWhenMuted(enableWarnWhenMutedSetting.get());
     enableAcousticEchoCancellation(enableAcousticEchoCancellationSetting.get());
-    onContextChanged();
 }
 
 QUuid Audio::startRecording() {

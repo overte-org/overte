@@ -11,8 +11,8 @@
 #include "TestRailInterface.h"
 #include "TestCreator.h"
 
-#include <quazip5/quazip.h>
-#include <quazip5/JlCompress.h>
+#include <quazip/quazip.h>
+#include <quazip/JlCompress.h>
 
 #include <QDateTime>
 #include <QFile>

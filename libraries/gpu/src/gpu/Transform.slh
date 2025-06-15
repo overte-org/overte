@@ -113,13 +113,21 @@ vec2 cam_getInvWidthHeight() {
 <@func declareStandardObjectTransform()@>
 <@include gpu/TransformObject_shared.slh@>
 
-layout(location=GPU_ATTR_DRAW_CALL_INFO) in ivec2 _drawCallInfo;
+#if defined(GPU_VERTEX_SHADER)
+layout(location=GPU_ATTR_DRAW_CALL_INFO) in ivec2 _inDrawCallInfo;
+layout(location=GPU_ATTR_V2F_DRAW_CALL_INFO) flat out ivec2 _drawCallInfo;
+#elif defined(GPU_PIXEL_SHADER)
+layout(location=GPU_ATTR_V2F_DRAW_CALL_INFO) flat in ivec2 _drawCallInfo;
+#endif
 
 #if defined(GPU_SSBO_TRANSFORM_OBJECT)
 LAYOUT_STD140(binding=GPU_STORAGE_TRANSFORM_OBJECT) buffer transformObjectBuffer {
     TransformObject _object[];
 };
 TransformObject getTransformObject() {
+#ifdef GPU_VERTEX_SHADER
+    _drawCallInfo = _inDrawCallInfo;
+#endif
     TransformObject transformObject = _object[_drawCallInfo.x];
     return transformObject;
 }
@@ -127,6 +135,9 @@ TransformObject getTransformObject() {
 LAYOUT(binding=GPU_TEXTURE_TRANSFORM_OBJECT) uniform samplerBuffer transformObjectBuffer;
 
 TransformObject getTransformObject() {
+#ifdef GPU_VERTEX_SHADER
+    _drawCallInfo = _inDrawCallInfo;
+#endif
     int offset = 8 * _drawCallInfo.x;
     TransformObject object;
     object._model[0] = texelFetch(transformObjectBuffer, offset);
@@ -315,7 +326,7 @@ TransformObject getTransformObject() {
     }
 <@endfunc@>
 
-<@func transformModelToWorldDir(cameraTransform, objectTransform, modelDir, worldDir)@>
+<@func transformModelToWorldDir(objectTransform, modelDir, worldDir)@>
     { // transformModelToWorldDir
         vec3 mr0 = <$objectTransform$>._modelInverse[0].xyz;
         vec3 mr1 = <$objectTransform$>._modelInverse[1].xyz;

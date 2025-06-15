@@ -84,6 +84,7 @@ private:
 
         void emulateStickFromTrackpad();
         void awfulRightStickHackForBrokenScripts();
+        void getHandTrackingInputs(int index, const mat4& sensorToAvatar);
 
         mutable std::recursive_mutex _lock;
         template <typename F>
@@ -99,6 +100,8 @@ private:
         std::map<std::string, std::shared_ptr<Action>> _actions;
         std::shared_ptr<OpenXrContext> _context;
         bool _actionsInitialized = false;
+
+        XrHandTrackerEXT _handTracker[2] = {XR_NULL_HANDLE, XR_NULL_HANDLE};
 
         bool initActions();
         bool initBindings(const std::string& profileName, const std::map<std::string, std::string>& actionsToBind);

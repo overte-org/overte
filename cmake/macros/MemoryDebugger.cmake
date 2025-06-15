@@ -2,7 +2,7 @@
 #  MemoryDebugger.cmake
 #
 #  Copyright 2015 High Fidelity, Inc.
-#  Copyright 2023 Overte e.V.
+#  Copyright 2023-2025 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -15,9 +15,6 @@ if ("$ENV{OVERTE_MEMORY_DEBUGGING}")
     message(FATAL_ERROR "Thread debugging and memory debugging can't be enabled at the same time." )
   endif()
 
-  if (OVERTE_OPTIMIZE)
-    message(WARNING "You should consider building without optimization by passing -DOVERTE_OPTIMIZE=false to CMake")
-  endif()
   if (NOT CMAKE_BUILD_TYPE MATCHES "Debug")
     message(WARNING "You should consider building with debugging enabled by passing -DCMAKE_BUILD_TYPE=Debug to CMake. Current type is ${CMAKE_BUILD_TYPE}")
   endif()

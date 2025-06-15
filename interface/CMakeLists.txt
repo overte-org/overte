@@ -32,10 +32,10 @@ find_package(
 )
 
 
-if (BUILD_TOOLS AND JSDOC_ENABLED)
-  message(STATUS "JSDoc enabled, depending on jsdoc")
-  add_custom_qrc_path(CUSTOM_INTERFACE_QRC_PATHS "${CMAKE_BINARY_DIR}/tools/jsdoc/out/hifiJSDoc.json" "auto-complete/hifiJSDoc.json")
-endif ()
+if (OVERTE_BUILD_TOOLS AND JSDOC_ENABLED)
+    message(STATUS "JSDoc enabled, depending on jsdoc")
+    add_custom_qrc_path(CUSTOM_INTERFACE_QRC_PATHS "${CMAKE_BINARY_DIR}/tools/jsdoc/out/hifiJSDoc.json" "auto-complete/hifiJSDoc.json")
+endif()
 
 set(RESOURCES_QRC ${CMAKE_CURRENT_BINARY_DIR}/resources.qrc)
 set(RESOURCES_RCC ${CMAKE_CURRENT_BINARY_DIR}/resources.rcc)
@@ -48,8 +48,8 @@ else ()
   qt5_add_binary_resources(resources "${RESOURCES_QRC}" DESTINATION "${RESOURCES_RCC}")
 endif()
 
-if (BUILD_TOOLS AND JSDOC_ENABLED)
-  add_dependencies(resources jsdoc)
+if (OVERTE_BUILD_TOOLS AND JSDOC_ENABLED)
+    add_dependencies(resources jsdoc)
 endif()
 
 list(APPEND GENERATE_QRC_DEPENDS ${RESOURCES_RCC})
@@ -68,8 +68,8 @@ foreach(EXTERNAL ${OPTIONAL_EXTERNALS})
   endif ()
 endforeach()
 
-find_package(Qt5LinguistTools REQUIRED)
-find_package(Qt5LinguistToolsMacros)
+# find_package(Qt5LinguistTools REQUIRED)
+# find_package(Qt5LinguistToolsMacros)
 
 if (WIN32)
   set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -bigobj")
@@ -195,16 +195,15 @@ endif()
 
 
 if (WIN32)
-  # These are external plugins, but we need to do the 'add dependency' here so that their
-  # binary directories get added to the fixup path
 
   if (USE_SIXENSE)
-    add_dependency_external_projects(sixense)
+    find_package(sixense REQUIRED)
+    target_link_libraries(${TARGET_NAME} Sixense::Sixense)
   endif ()
 
-  add_dependency_external_projects(neuron)
-  add_dependency_external_projects(wasapi)
-  add_dependency_external_projects(steamworks)
+  find_package(neuron REQUIRED)
+  find_package(steamworks REQUIRED)
+  target_link_libraries(${TARGET_NAME} Neuron::Datareader Steam::Works)
 endif()
 
 # disable /OPT:REF and /OPT:ICF for the Debug builds
@@ -231,6 +230,7 @@ link_hifi_libraries(
 )
 include_hifi_library_headers(script-engine)
 include_hifi_library_headers(entities)
+include_hifi_library_headers(render-utils)
 
 # include the binary directory of render-utils for shader includes
 target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/libraries/render-utils")
@@ -245,6 +245,7 @@ target_opengl()
 add_crashpad()
 target_breakpad()
 target_json()
+target_glm()
 target_discord_rpc()
 
 # perform standard include and linking for found externals
@@ -425,22 +426,6 @@ else()
   endif()
 endif()
 
-if ("$ENV{OVERTE_USE_SYSTEM_QT}" STREQUAL "")
-  if (DEV_BUILD AND (APPLE OR UNIX))
-    # create a qt.conf file to override hard-coded search paths in Qt libs
-    set(QT_LIB_PATH "${QT_CMAKE_PREFIX_PATH}/../..")
-    if (APPLE)
-      set(QT_CONF_FILE "${RESOURCES_DEV_DIR}/../Resources/qt.conf")
-    else ()
-      set(QT_CONF_FILE "${INTERFACE_EXEC_DIR}/qt.conf")
-    endif ()
-    file(GENERATE
-      OUTPUT "${QT_CONF_FILE}"
-      CONTENT "[Paths]\nPrefix=${QT_LIB_PATH}\n"
-    )
-  endif()
-endif()
-
 if (SCRIPTS_INSTALL_DIR)
   # setup install of scripts beside interface executable
   install(
@@ -450,7 +435,7 @@ if (SCRIPTS_INSTALL_DIR)
   )
 endif()
 
-if (DOWNLOAD_SERVERLESS_CONTENT)
+if (OVERTE_DOWNLOAD_SERVERLESS_CONTENT)
   add_dependency_external_projects(serverless-content)
 
   ExternalProject_Get_Property(serverless-content SOURCE_DIR)
@@ -463,19 +448,15 @@ if (DOWNLOAD_SERVERLESS_CONTENT)
   )
 endif ()
 
-if (WIN32)
-    set(EXTRA_DEPLOY_OPTIONS "--qmldir  \"${PROJECT_SOURCE_DIR}/resources/qml\"")
+set(EXTRA_DEPLOY_OPTIONS "--qmldir  \"${PROJECT_SOURCE_DIR}/resources/qml\"")
 
-    set(TARGET_INSTALL_DIR ${INTERFACE_INSTALL_DIR})
-    set(TARGET_INSTALL_COMPONENT ${CLIENT_COMPONENT})
-    manually_install_openssl_for_qt()
+set(TARGET_INSTALL_DIR ${INTERFACE_INSTALL_DIR})
+set(TARGET_INSTALL_COMPONENT ${CLIENT_COMPONENT})
+manually_install_openssl_for_qt()
+package_libraries_for_deployment()
 
-    package_libraries_for_deployment()
-endif()
-
-add_dependency_external_projects(GifCreator)
 find_package(GifCreator REQUIRED)
-target_include_directories(${TARGET_NAME} PUBLIC ${GIFCREATOR_INCLUDE_DIRS})
+target_link_libraries(${TARGET_NAME} GifCreator::GifCreator)
 
 # tell CMake to exclude ui_console.h for policy CMP0071
 set_property(SOURCE ui_console.h PROPERTY SKIP_AUTOMOC ON)

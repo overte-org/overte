@@ -26,7 +26,8 @@
 #include "OpenVrHelpers.h"
 
 #ifdef Q_OS_WIN
-#define VIVE_PRO_EYE
+// Disabled Vive Pro Eye support, because SRanipal isn't packaged in Conan.
+// #define VIVE_PRO_EYE
 #endif
 
 using PuckPosePair = std::pair<uint32_t, controller::Pose>;

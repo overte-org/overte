@@ -808,6 +808,7 @@ void EntityRenderer::updateShapeKeyBuilderFromMaterials(ShapeKey::Builder& build
     builder.withCullFaceMode(materials->second.getCullFaceMode());
 
     graphics::MaterialKey drawMaterialKey = materials->second.getMaterialKey();
+    // TODO: support lit/unlit mtoon
     if (!materials->second.isMToon() && drawMaterialKey.isUnlit()) {
         builder.withUnlit();
     }
@@ -815,6 +816,9 @@ void EntityRenderer::updateShapeKeyBuilderFromMaterials(ShapeKey::Builder& build
     auto pipelineType = getPipelineType(materials->second);
     if (pipelineType == Pipeline::MATERIAL) {
         builder.withMaterial();
+
+        builder.withLayers(materials->second.getLayers());
+
         if (drawMaterialKey.isNormalMap()) {
             builder.withTangents();
         }
@@ -829,6 +833,8 @@ void EntityRenderer::updateShapeKeyBuilderFromMaterials(ShapeKey::Builder& build
         if (materials->second.size() > 0 && materials->second.top().material &&
             (MaterialMappingMode)materials->second.top().material->getMaterialParams().x == MaterialMappingMode::TRIPLANAR) {
             builder.withTriplanar();
+        } else if (materials->second.isSplatMap()) {
+            builder.withSplatMap();
         }
     } else if (pipelineType == Pipeline::PROCEDURAL) {
         builder.withOwnPipeline();

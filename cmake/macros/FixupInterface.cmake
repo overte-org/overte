@@ -3,6 +3,7 @@
 #  cmake/macros
 #
 #  Copyright 2016 High Fidelity, Inc.
+#  Copyright 2025 Overte e.V.
 #  Created by Stephen Birarda on January 6th, 2016
 #
 #  Distributed under the Apache License, Version 2.0.
@@ -24,7 +25,7 @@ macro(fixup_interface)
             ")
         endif ()
 
-        if (RELEASE_TYPE STREQUAL "DEV")
+        if (OVERTE_RELEASE_TYPE STREQUAL "DEV")
             install(CODE "
                 execute_process(COMMAND ${MACDEPLOYQT_COMMAND}\
                     \${CMAKE_INSTALL_PREFIX}/${_INTERFACE_INSTALL_PATH}/\

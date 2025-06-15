@@ -17,6 +17,9 @@
 #include "ModelBakerLogging.h"
 #include "ModelMath.h"
 
+// Uncomment this to use 16-bit float texture coordinates instead of 32-bit ones.
+//#define OVERTE_16_BIT_TEXCOORDS
+
 using vec2h = glm::tvec2<glm::detail::hdata>;
 
 glm::vec3 normalizeDirForPacking(const glm::vec3& dir) {
@@ -80,7 +83,12 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
     const int colorsSize = hfmMesh.colors.size() * colorElement.getSize();
 
     // Texture coordinates are stored in 2 half floats
+#ifdef OVERTE_16_BIT_TEXCOORDS
     const auto texCoordsElement = gpu::Element(gpu::VEC2, gpu::HALF, gpu::UV);
+#else
+    const auto texCoordsElement = gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::UV);
+#endif
+
     const int texCoordsSize = hfmMesh.texCoords.size() * texCoordsElement.getSize();
     const int texCoords1Size = hfmMesh.texCoords1.size() * texCoordsElement.getSize();
 
@@ -155,6 +163,7 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
 
     // Pack Texcoords 0 and 1 (if exists)
     if (texCoordsSize > 0) {
+#ifdef OVERTE_16_BIT_TEXCOORDS
         QVector<vec2h> texCoordData;
         texCoordData.reserve(hfmMesh.texCoords.size());
         for (auto& texCoordVec2f : hfmMesh.texCoords) {
@@ -165,8 +174,12 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
             texCoordData.push_back(texCoordVec2h);
         }
         vertBuffer->setSubData(texCoordsOffset, texCoordsSize, (const gpu::Byte*) texCoordData.constData());
+#else
+        vertBuffer->setSubData(texCoordsOffset, texCoordsSize, (const gpu::Byte*) hfmMesh.texCoords.data());
+#endif
     }
     if (texCoords1Size > 0) {
+#ifdef OVERTE_16_BIT_TEXCOORDS
         QVector<vec2h> texCoordData;
         texCoordData.reserve(hfmMesh.texCoords1.size());
         for (auto& texCoordVec2f : hfmMesh.texCoords1) {
@@ -177,6 +190,9 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
             texCoordData.push_back(texCoordVec2h);
         }
         vertBuffer->setSubData(texCoords1Offset, texCoords1Size, (const gpu::Byte*) texCoordData.constData());
+#else
+        vertBuffer->setSubData(texCoords1Offset, texCoords1Size, (const gpu::Byte*) hfmMesh.texCoords1.data());
+#endif
     }
 
     // Clusters data

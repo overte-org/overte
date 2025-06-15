@@ -198,9 +198,8 @@ class PolyVoxEntityRenderer : public TypedEntityRenderer<RenderablePolyVoxEntity
 
 public:
     PolyVoxEntityRenderer(const EntityItemPointer& entity);
-    virtual scriptable::ScriptableModelBase getScriptableModel() override {
-        return asTypedEntity<RenderablePolyVoxEntityItem>()->getScriptableModel();
-    }
+
+    virtual scriptable::ScriptableModelBase getScriptableModel() override;
 
 protected:
     virtual ShapeKey getShapeKey() override;

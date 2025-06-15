@@ -5,7 +5,7 @@
 //  Created by Stephen Birarda on 1/22/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
-//  Copyright 2023 Overte e.V.
+//  Copyright 2023-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -1194,18 +1194,12 @@ void AudioClient::configureWebrtc() {
     config.high_pass_filter.enabled = false;
     config.echo_canceller.enabled = true;
     config.echo_canceller.mobile_mode = false;
-#if defined(WEBRTC_LEGACY)
-    config.echo_canceller.use_legacy_aec = false;
-#endif
     config.noise_suppression.enabled = false;
     config.noise_suppression.level = webrtc::AudioProcessing::Config::NoiseSuppression::kModerate;
-    config.voice_detection.enabled = false;
     config.gain_controller1.enabled = false;
     config.gain_controller2.enabled = false;
     config.gain_controller2.fixed_digital.gain_db = 0.0f;
     config.gain_controller2.adaptive_digital.enabled = false;
-    config.residual_echo_detector.enabled = true;
-    config.level_estimation.enabled = false;
 
     _apm->ApplyConfig(config);
 }

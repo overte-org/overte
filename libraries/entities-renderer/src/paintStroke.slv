@@ -69,7 +69,7 @@ void main(void) {
         <$transformModelToClipPos(cam, obj, position, gl_Position)$>
 <@else@>
         <$transformModelToClipPosAndPrevClipPos(cam, obj, position, gl_Position, _prevPositionCS)$>
-        <$transformModelToWorldDir(cam, obj, normal, _normalWS)$>
+        <$transformModelToWorldDir(obj, normal, _normalWS)$>
 <@endif@>
     }
 }

@@ -173,12 +173,12 @@
  *     avatar entities, <code>false</code> if they won't be.
  * @property {Uuid} cloneOriginID - The ID of the entity that this entity was cloned from.
  *
- * @property {Uuid[]} renderWithZones=[] - A list of entity IDs representing with which zones this entity should render.
+ * @property {Uuid[]} renderWithZones=[]] - A list of entity IDs representing with which zones this entity should render.
  *     If it is empty, this entity will render normally.  Otherwise, this entity will only render if your avatar is within
  *     one of the zones in this list.
  * @property {BillboardMode} billboardMode="none" - Whether the entity is billboarded to face the camera.  Use the rotation
  *     property to control which axis is facing you.
- * @property {string[]} tags=[] - A set of tags describing this entity.
+ * @property {string[]} tags=[]] - A set of tags describing this entity.
  *
  * @property {Entities.Grab} grab - The entity's grab-related properties.
  *

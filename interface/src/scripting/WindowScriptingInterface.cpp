@@ -62,6 +62,10 @@ WindowScriptingInterface::WindowScriptingInterface() {
     connect(qApp, &Application::interstitialModeChanged, [this] (bool interstitialMode) {
         emit interstitialModeChanged(interstitialMode);
     });
+
+    connect(qApp, &Application::darkThemePreferenceChanged, [this](bool useDarkTheme) {
+        emit darkThemePreferenceChanged(useDarkTheme);
+    });
 }
 
 WindowScriptingInterface::~WindowScriptingInterface() {
@@ -671,4 +675,8 @@ void WindowScriptingInterface::openWebBrowser(const QString& url) {
             newObject->setProperty("url", url);
         }
     });
+}
+
+bool WindowScriptingInterface::getDarkThemePreference() {
+    return qApp->getDarkThemePreference();
 }

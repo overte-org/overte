@@ -4,7 +4,7 @@
 //
 //  Created by Leonardo Murillo on 6/1/2015.
 //  Copyright 2015 High Fidelity, Inc.
-//  Copyright 2023 Overte e.V.
+//  Copyright 2023-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -46,10 +46,10 @@ void AutoUpdater::getLatestVersionData() {
 
     if (BuildInfo::BUILD_TYPE == BuildInfo::BuildType::Stable) {
         buildsURL = NetworkingConstants::BUILDS_XML_URL;
-    } else if (BuildInfo::BUILD_TYPE == BuildInfo::BuildType::Master) {
+    } else if (BuildInfo::BUILD_TYPE == BuildInfo::BuildType::Nightly) {
         buildsURL = NetworkingConstants::MASTER_BUILDS_XML_URL;
     }
-    
+
     QNetworkRequest latestVersionRequest(buildsURL);
 
     latestVersionRequest.setAttribute(QNetworkRequest::RedirectPolicyAttribute, QNetworkRequest::NoLessSafeRedirectPolicy);
@@ -82,10 +82,10 @@ void AutoUpdater::parseLatestVersionData() {
     // master builds look at the version node (build number)
     if (BuildInfo::BUILD_TYPE == BuildInfo::BuildType::Stable) {
         versionKey = "stable_version";
-    } else if (BuildInfo::BUILD_TYPE == BuildInfo::BuildType::Master) {
+    } else if (BuildInfo::BUILD_TYPE == BuildInfo::BuildType::Nightly) {
         versionKey = "version";
     }
-    
+
     while (xml.readNextStartElement()) {
         if (xml.name() == "projects") {
             while (xml.readNextStartElement()) {

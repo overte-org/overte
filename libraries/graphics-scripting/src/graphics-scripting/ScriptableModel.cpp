@@ -38,6 +38,9 @@ scriptable::ScriptableMaterial& scriptable::ScriptableMaterial::operator=(const 
         bumpMap = material.bumpMap;
         cullFaceMode = material.cullFaceMode;
 
+        layers = material.layers;
+        splatMap = material.splatMap;
+
         if (model.toStdString() == graphics::Material::HIFI_PBR) {
             roughness = material.roughness;
             metallic = material.metallic;
@@ -122,6 +125,12 @@ scriptable::ScriptableMaterial::ScriptableMaterial(const graphics::MaterialPoint
             }
 
             cullFaceMode = QString(graphics::MaterialKey::getCullFaceModeName(material->getCullFaceMode()).c_str());
+
+            layers = material->getLayers();
+            map = material->getTextureMap(graphics::Material::MapChannel::SPLAT_MAP);
+            if (map && map->getTextureSource()) {
+                splatMap = map->getTextureSource()->getUrl().toString();
+            }
 
             if (model.toStdString() == graphics::Material::HIFI_PBR) {
                 roughness = material->getRoughness();
@@ -257,8 +266,9 @@ void scriptable::ScriptableModelBase::append(const ScriptableMeshBase& mesh) {
 }
 
 void scriptable::ScriptableModelBase::appendMaterial(const graphics::MaterialLayer& materialLayer, int shapeID, std::string materialName) {
-    materialLayers[QString::number(shapeID)].push_back(ScriptableMaterialLayer(materialLayer));
-    materialLayers["mat::" + QString::fromStdString(materialName)].push_back(ScriptableMaterialLayer(materialLayer));
+    ScriptableMaterialLayer layer = ScriptableMaterialLayer(materialLayer);
+    materialLayers[QString::number(shapeID)].push_back(layer);
+    materialLayers["mat::" + QString::fromStdString(materialName)].push_back(layer);
 }
 
 void scriptable::ScriptableModelBase::appendMaterials(const std::unordered_map<std::string, graphics::MultiMaterial>& materialsToAppend) {

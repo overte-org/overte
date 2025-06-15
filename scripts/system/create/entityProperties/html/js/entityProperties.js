@@ -23,6 +23,8 @@ const ENTITY_HOST_TYPE_COLOR_LOCAL = "#f0d769";
 
 const NO_SELECTION = ",";
 
+const MAX_TAGS_PER_ROWS = 5;
+
 const PROPERTY_SPACE_MODE = Object.freeze({
     ALL: 0,
     LOCAL: 1,
@@ -154,7 +156,13 @@ const GROUPS = [
                 label: "Render With Zones",
                 type: "multipleZonesSelection",
                 propertyID: "renderWithZones",
-            }
+            },
+            {
+                label: "Tags",
+                type: "arrayOfStrings",
+                propertyID: "tags",
+                useStringColor: true,
+            },
         ]
     },
     {
@@ -1136,7 +1144,7 @@ const GROUPS = [
                 vec2Type: "xyz",
                 min: 0,
                 max: 1,
-                step: 0.1,
+                step: 0.005,
                 decimals: 4,
                 subLabels: [ "x", "y" ],
                 propertyID: "materialMappingPos",
@@ -1145,7 +1153,7 @@ const GROUPS = [
                 label: "Material Scale",
                 type: "vec2",
                 vec2Type: "xyz",
-                step: 0.1,
+                step: 0.005,
                 decimals: 4,
                 subLabels: [ "x", "y" ],
                 propertyID: "materialMappingScale",
@@ -2007,14 +2015,14 @@ const GROUPS = [
         properties: [
             {
                 label: "Script",
-                type: "string",
+                type: "code",
                 buttons: [ { id: "reload", label: "F", className: "glyph", onClick: reloadScripts } ],
                 propertyID: "script",
                 placeholder: "URL",
             },
             {
                 label: "Server Script",
-                type: "string",
+                type: "code",
                 buttons: [ { id: "reload", label: "F", className: "glyph", onClick: reloadServerScripts } ],
                 propertyID: "serverScripts",
                 placeholder: "URL",
@@ -2302,9 +2310,12 @@ function getPropertyInputElement(propertyID) {
         case 'bool':
         case 'dropdown':
         case 'textarea':
+        case 'code':
         case 'texture':
             return property.elInput;
         case 'multipleZonesSelection':
+            return property.elInput;
+        case 'arrayOfStrings':
             return property.elInput;
         case 'number-draggable':
             return property.elNumber.elInput;
@@ -2460,7 +2471,8 @@ function resetProperties() {
                 setDropdownText(property.elInput);
                 break;
             }
-            case 'textarea': {
+            case 'textarea':
+            case 'code': {
                 property.elInput.classList.remove('multi-diff');
                 property.elInput.value = "";
                 setTextareaScrolling(property.elInput);
@@ -2470,6 +2482,12 @@ function resetProperties() {
                 property.elInput.classList.remove('multi-diff');
                 property.elInput.value = "[]";
                 setZonesSelectionData(property.elInput, false);
+                break;
+            }
+            case 'arrayOfStrings': {
+                property.elInput.classList.remove('multi-diff');
+                property.elInput.value = "[]";
+                setArrayOfStringsUi(property.elInput.id, false);
                 break;
             }
             case 'childList': {
@@ -3438,6 +3456,47 @@ function createTextareaProperty(property, elProperty) {
     return elInput;
 }
 
+function createCodeProperty(property, elProperty) {
+    let elementID = property.elementID;
+    let propertyData = property.data;
+
+    elProperty.className = "textarea";
+
+    let elInput = document.createElement('textarea');
+    elInput.setAttribute("id", elementID);
+    if (propertyData.readOnly) {
+        elInput.readOnly = true;
+    }
+
+    elInput.addEventListener('change', createEmitTextPropertyUpdateFunction(property));
+    elInput.addEventListener('keydown', function(event) {
+        if (event.key === 'Tab') {
+            event.preventDefault();
+            const prevStart = this.selectionStart + 1;
+            this.value = this.value.substring(0, this.selectionStart)
+                       + "\t"
+                       + this.value.substring(this.selectionEnd);
+            this.selectionStart = prevStart;
+            this.selectionEnd = prevStart;
+        } else if (event.key === 'Escape') {
+            event.preventDefault();
+            this.blur();
+        }
+    });
+
+    let elMultiDiff = document.createElement('span');
+    elMultiDiff.className = "multi-diff";
+
+    elProperty.appendChild(elInput);
+    elProperty.appendChild(elMultiDiff);
+
+    if (propertyData.buttons !== undefined) {
+        addButtons(elProperty, elementID, propertyData.buttons, true);
+    }
+
+    return elInput;
+}
+
 function createIconProperty(property, elProperty) {
     let elementID = property.elementID;
 
@@ -3675,9 +3734,17 @@ function createProperty(propertyData, propertyElementID, propertyName, propertyI
             property.elInput = createTextareaProperty(property, elProperty);
             break;
         }
+        case 'code': {
+            property.elInput = createCodeProperty(property, elProperty);
+            break;
+        }
         case 'multipleZonesSelection': {
             property.elInput = createZonesSelection(property, elProperty);
             break;            
+        }
+        case 'arrayOfStrings': {
+            property.elInput = createArrayOfStrings(property, elProperty);
+            break;
         }
         case 'childList': {
             property.elInput = createChildList(property, elProperty);
@@ -4797,6 +4864,155 @@ function setZonesSelectionData(element, isEditable) {
     displaySelectedZones(element.id, isEditable);
 }
 
+/**
+ * ARRAY-OF-STRINGS FUNCTIONS
+ */
+
+function createArrayOfStrings(property, elProperty) {
+    let propertyData = property.data;
+    let elementID = property.elementID;
+    elProperty.className = "arrayOfStrings";
+    let elInput = document.createElement('input');
+    elInput.setAttribute("id", elementID);
+    elInput.setAttribute("type", "hidden");
+    elInput.setAttribute("useStringColor", propertyData.useStringColor);
+    elInput.className = "hiddenArrayOfStrings";
+
+    let elArrayOfStringsSelector = document.createElement('div');
+    elArrayOfStringsSelector.setAttribute("id", "arrayOfStrings-selector-" + elementID);
+
+    let elMultiDiff = document.createElement('span');
+    elMultiDiff.className = "multi-diff";
+
+    elProperty.appendChild(elInput);
+    elProperty.appendChild(elArrayOfStringsSelector);
+    elProperty.appendChild(elMultiDiff);
+
+    return elInput;
+}
+
+function setArrayOfStringsUi(propertyId, isEditable) {
+    let i, listedStringsInner, hiddenData, isMultiple, useStringColor, tagStyle;
+    hiddenData = document.getElementById(propertyId).value;
+    useStringColor = document.getElementById(propertyId).getAttribute('useStringColor').toLowerCase() === "true";
+    if (JSON.stringify(hiddenData) === '"undefined"') {
+        isMultiple = true;
+        hiddenData = "[]";
+    } else {
+        isMultiple = false;
+    }
+    listedStringsInner = "<div class='arrayOfStringsContainer'>";
+    let selectedStrings = JSON.parse(hiddenData);
+    if (selectedStrings.length === 0) {
+        if (isMultiple) {
+            listedStringsInner += "<br>"; //or anything saying we dont suport multiple selection, but we might by the list with bulk actions.
+        }
+    } else {
+        selectedStrings.sort();
+        let counter = 0;
+        for (i = 0; i < selectedStrings.length; i++) {
+            tagStyle = "";
+            if (useStringColor) {
+                tagStyle = " style='color:#bbbbbb; background-color:" + getColorOfString(selectedStrings[i]) + ";'";
+            }
+            if (isEditable) {
+                listedStringsInner += "<div class='arrayOfStringsTags'" + tagStyle + ">" + selectedStrings[i] + "&nbsp;&nbsp;"; 
+                listedStringsInner += "<span class='arrayOfStringsTagsRemove' onClick='removeElementFromArrayOfStrings(" + '"' + propertyId + '"' + ", " + '"' + selectedStrings[i] + '"' + ");' >&#10006;</span>"
+                listedStringsInner += "</div>";
+            } else {
+                listedStringsInner += "<div class='arrayOfStringsTags'" + tagStyle + ">" + selectedStrings[i] + "</div>";
+            }
+            counter++;
+            if (counter === MAX_TAGS_PER_ROWS) {
+                listedStringsInner += "<br>";
+                counter = 0;
+            }
+        }
+    }
+    if (isEditable && !isMultiple) {
+        let addComponent = "<div class='arrayOfStringsAddComponentContainer'><input class='arrayOfStringsStringToAdd' type='text' id='arrayOfStringsStringToAdd-" + propertyId + "'>";
+        addComponent += " <input type='button' class='glyph' value = 'K' id='arrayOfStringsAddButton-" + propertyId + "' onClick='addElementToArrayOfStrings(" + '"' + propertyId + '", "';
+        addComponent += "arrayOfStringsStringToAdd-" + propertyId + '"' + ");'>";
+        addComponent += "</div>";
+        listedStringsInner += addComponent;
+    }
+    listedStringsInner += "</div>";
+    document.getElementById("arrayOfStrings-selector-" + propertyId).innerHTML = listedStringsInner;
+}
+
+function removeElementFromArrayOfStrings(propertyId, stringText) {
+    let hiddenField = document.getElementById(propertyId);
+    if (JSON.stringify(hiddenField.value) === '"undefined"') {
+        hiddenField.value = "[]";
+    }
+    let selectedStrings = JSON.parse(hiddenField.value);
+    let index = selectedStrings.indexOf(stringText);
+    if (index > -1) {
+      selectedStrings.splice(index, 1);
+    }  
+    hiddenField.value = JSON.stringify(selectedStrings);
+    setArrayOfStringsUi(propertyId, true);
+    let propertyName = propertyId.replace("property-", "");
+    propertyName = propertyName.replace("-", ".");
+    updateProperty(propertyName, selectedStrings, false);
+}
+
+function addElementToArrayOfStrings(propertyId, elementToGetText) {
+    let stringText = document.getElementById(elementToGetText).value;
+    if (stringText === "") {
+        return;
+    } else {
+        let hiddenField = document.getElementById(propertyId);
+        if (JSON.stringify(hiddenField.value) === '"undefined"') {
+            hiddenField.value = "[]";
+        }
+        let selectedStrings = JSON.parse(hiddenField.value);
+        if (!selectedStrings.includes(stringText)) {
+            selectedStrings.push(stringText);
+        }
+        hiddenField.value = JSON.stringify(selectedStrings);
+        setArrayOfStringsUi(propertyId, true);
+        let propertyName = propertyId.replace("property-", "");
+        propertyName = propertyName.replace("-", ".");
+        updateProperty(propertyName, selectedStrings, false);
+    }
+}
+
+function getColorOfString(input) {
+    let sum = 0;
+    for (let i = 0; i < input.length; i++) {
+        sum += input.charCodeAt(i);
+    }
+    let hue = sum % 360;
+    return hslToHex(hue, 100, 20);
+}
+
+function hslToHex(h, s, l) {
+    s /= 100;
+    l /= 100;
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = l - c / 2;
+    let r = 0, g = 0, b = 0;
+    if (0 <= h && h < 60) {
+        [r, g, b] = [c, x, 0];
+    } else if (60 <= h && h < 120) {
+        [r, g, b] = [x, c, 0];
+    } else if (120 <= h && h < 180) {
+        [r, g, b] = [0, c, x];
+    } else if (180 <= h && h < 240) {
+        [r, g, b] = [0, x, c];
+    } else if (240 <= h && h < 300) {
+        [r, g, b] = [x, 0, c];
+    } else if (300 <= h && h < 360) {
+        [r, g, b] = [c, 0, x];
+    }
+    const toHex = (n) => {
+        const hex = Math.round((n + m) * 255).toString(16);
+        return hex.padStart(2, '0');
+    };
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
 
 /**
  * CHILD ENTITIES FUNCTIONS
@@ -5486,17 +5702,27 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
                     setDropdownText(property.elInput);
                     break;
                 }
-                case 'textarea': {
+                case 'textarea':
+                case 'code': {
                     property.elInput.value = propertyValue;
                     setTextareaScrolling(property.elInput);
                     break;
                 }
                 case 'multipleZonesSelection': {
-                    property.elInput.value =  JSON.stringify(propertyValue);
+                    property.elInput.value = JSON.stringify(propertyValue);
                     if (lockedMultiValue.isMultiDiffValue || lockedMultiValue.value) {
                         setZonesSelectionData(property.elInput, false);
                     } else {
                         setZonesSelectionData(property.elInput, true);
+                    }
+                    break;
+                }
+                case 'arrayOfStrings': {
+                    property.elInput.value = JSON.stringify(propertyValue);
+                    if (lockedMultiValue.isMultiDiffValue || lockedMultiValue.value) {
+                        setArrayOfStringsUi(property.elInput.id, false);
+                    } else {
+                        setArrayOfStringsUi(property.elInput.id, true);
                     }
                     break;
                 }

@@ -6,7 +6,6 @@
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 # 
 macro(TARGET_SDL2)
-   	# using VCPKG for SDL2
     find_package(SDL2 CONFIG REQUIRED)
     if (WIN32)
         target_link_libraries(${TARGET_NAME} SDL2::SDL2)

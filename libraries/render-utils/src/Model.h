@@ -371,6 +371,8 @@ public:
 
     void setBlendshapeCoefficients(const QVector<float>& coefficients) { _blendshapeCoefficients = coefficients; }
 
+    std::set<std::pair<uint, std::string>> getMeshIDsAndMaterialNamesFromMaterialID(QString parentMaterialName);
+
 public slots:
     void loadURLFinished(bool success);
 
@@ -521,8 +523,6 @@ private:
     std::function<float()> _loadingPriorityOperator { []() { return 0.0f; } };
 
     void calculateTextureInfo();
-
-    std::set<unsigned int> getMeshIDsFromMaterialID(QString parentMaterialName);
 };
 
 Q_DECLARE_METATYPE(ModelPointer)

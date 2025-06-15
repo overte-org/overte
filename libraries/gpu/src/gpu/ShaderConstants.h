@@ -17,7 +17,6 @@
 #define GPU_BUFFER_TRANSFORM_CAMERA 15
 #define GPU_BUFFER_TEXTURE_TABLE0 16
 #define GPU_BUFFER_TEXTURE_TABLE1 17
-#define GPU_BUFFER_CAMERA_CORRECTION 18
 
 #define GPU_TEXTURE_TRANSFORM_OBJECT 31
 
@@ -45,8 +44,8 @@
 #define GPU_ATTR_STEREO_SIDE 14
 #define GPU_ATTR_DRAW_CALL_INFO 15
 
-// OSX seems to have an issue using 14 as an attribute location for passing from the vertex to the fragment shader
-#define GPU_ATTR_V2F_STEREO_SIDE 8
+#define GPU_ATTR_V2F_STEREO_SIDE 14
+#define GPU_ATTR_V2F_DRAW_CALL_INFO 15
 
 #define GPU_UNIFORM_EXTRA0 110
 #define GPU_UNIFORM_EXTRA1 111
@@ -68,7 +67,6 @@ enum Buffer {
     CameraTransform = GPU_BUFFER_TRANSFORM_CAMERA,
     TextureTable0 = GPU_BUFFER_TEXTURE_TABLE0,
     TextureTable1 = GPU_BUFFER_TEXTURE_TABLE1,
-    CameraCorrection = GPU_BUFFER_CAMERA_CORRECTION,
 };
 } // namespace buffer
 

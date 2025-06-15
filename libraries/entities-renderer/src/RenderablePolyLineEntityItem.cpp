@@ -27,7 +27,7 @@ using namespace render::entities;
 
 std::map<std::pair<render::Args::RenderMethod, bool>, gpu::PipelinePointer> PolyLineEntityRenderer::_pipelines;
 
-static const QUrl DEFAULT_POLYLINE_TEXTURE = PathUtils::resourcesUrl("images/paintStroke.png");
+static const QUrl DEFAULT_POLYLINE_TEXTURE = PathUtils::resourcesUrl("images/whitePixel.png");
 
 PolyLineEntityRenderer::PolyLineEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {
     _texture = DependencyManager::get<TextureCache>()->getTexture(DEFAULT_POLYLINE_TEXTURE);

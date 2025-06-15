@@ -22,6 +22,12 @@ struct TexMapArray {
     vec2 _materialParams;
 <@if not HIFI_USE_MTOON@>
     vec2 _lightmapParams;
+
+    vec3 spare;
+    uint _texCoordSets;
+<@else@>
+    uint _texCoordSets;
+    float spare;
 <@endif@>
 };
 
@@ -67,16 +73,33 @@ struct Material {
 };
 <@endif@>
 
-LAYOUT_STD140(binding=GRAPHICS_BUFFER_MATERIAL) uniform materialBuffer {
+struct MaterialBuffer {
     Material _mat;
     TexMapArray _texMapArray;
 };
 
-Material getMaterial() {
-    return _mat;
+<@if HIFI_USE_LAYERS3@>
+#define NUM_LAYERS 3
+<@elif HIFI_USE_LAYERS2@>
+#define NUM_LAYERS 2
+<@else@>
+#define NUM_LAYERS 1
+<@endif@>
+
+LAYOUT_STD140(binding=GRAPHICS_BUFFER_MATERIAL) uniform MaterialBinding {
+    MaterialBuffer materialBuffers[NUM_LAYERS];
+};
+
+Material getMaterial(int layer) {
+    return materialBuffers[layer]._mat;
 }
-TexMapArray getTexMapArray() {
-    return _texMapArray;
+TexMapArray getTexMapArray(int layer) {
+    return materialBuffers[layer]._texMapArray;
+}
+vec2 evalTexCoordSet(int layer, mat2 uvs, int channel) {
+    // We support up to 4 texCoord sets (0 - 3, 2 bits per channel), but currently we only use 0 and 1 (see setTexCoordSet in Material.h)
+    const uint MAX_TEX_COORD_SET = 3u;
+    return uvs[(materialBuffers[layer]._texMapArray._texCoordSets >> (2 * channel)) & MAX_TEX_COORD_SET];
 }
 
 <@if not HIFI_USE_MTOON@>

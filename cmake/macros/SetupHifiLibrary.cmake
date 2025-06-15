@@ -2,6 +2,7 @@
 #  SetupHifiLibrary.cmake
 #
 #  Copyright 2013 High Fidelity, Inc.
+#  Copyright 2024 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -57,9 +58,9 @@ macro(SETUP_HIFI_LIBRARY)
 
   # create a library and set the property so it can be referenced later
   if (${${TARGET_NAME}_SHARED})
-    add_library(${TARGET_NAME} SHARED ${LIB_SRCS} ${AUTOSCRIBE_SHADER_LIB_SRC} ${GENERATE_ENTITIES_LIB_SRC} ${QT_RESOURCES_FILE})
+    add_library(${TARGET_NAME} SHARED ${LIB_SRCS} ${AUTOSCRIBE_SHADER_LIB_SRC} ${GENERATE_ENTITIES_LIB_SRC} ${GENERATE_RENDER_PIPELINES_LIB_SRC} ${QT_RESOURCES_FILE})
   else ()
-    add_library(${TARGET_NAME} ${LIB_SRCS} ${AUTOSCRIBE_SHADER_LIB_SRC} ${GENERATE_ENTITIES_LIB_SRC} ${QT_RESOURCES_FILE})
+    add_library(${TARGET_NAME} ${LIB_SRCS} ${AUTOSCRIBE_SHADER_LIB_SRC} ${GENERATE_ENTITIES_LIB_SRC} ${GENERATE_RENDER_PIPELINES_LIB_SRC} ${QT_RESOURCES_FILE})
   endif ()
 
   set(${TARGET_NAME}_DEPENDENCY_QT_MODULES ${ARGN})
@@ -72,9 +73,10 @@ macro(SETUP_HIFI_LIBRARY)
     target_link_libraries(${TARGET_NAME} Qt5::${QT_MODULE})
   endforeach()
 
-  # Don't make scribed shaders, generated entity files, or QT resource files cumulative
+  # Don't make scribed shaders, generated entity files, generated pipelines, or QT resource files cumulative
   set(AUTOSCRIBE_SHADER_LIB_SRC "")
   set(GENERATE_ENTITIES_LIB_SRC "")
+  set(GENERATE_RENDER_PIPELINES_LIB_SRC "")
   set(QT_RESOURCES_FILE "")
 
   target_glm()

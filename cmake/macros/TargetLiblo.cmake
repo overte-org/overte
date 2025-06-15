@@ -1,4 +1,4 @@
 macro(target_liblo)
-    find_library(LIBLO LIBLO)
-    target_link_libraries(${TARGET_NAME} ${LIBLO})
+    find_package(liblo REQUIRED)
+    target_link_libraries(${TARGET_NAME} liblo::liblo)
 endmacro()

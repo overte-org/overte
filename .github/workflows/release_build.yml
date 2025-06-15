@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2020-2022 Vircadia contributors
-# Copyright 2021-2024 Overte e.V.
+# Copyright 2021-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 name: Windows Release Build
@@ -15,30 +15,26 @@ on:
 env:
   APP_NAME: interface
   BUILD_TYPE: Release
-  CI_BUILD: Github
   GIT_COMMIT: ${{ github.sha }}
-  PRODUCTION_BUILD: true
-  RELEASE_TYPE: PRODUCTION
-  RELEASE_NUMBER: ${{ github.ref_name }}
-  STABLE_BUILD: 1
   UPLOAD_BUCKET: overte-public
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
-  CMAKE_BACKTRACE_URL: ${{ secrets.SENTRY_MINIDUMP_ENDPOINT }}
-  CMAKE_BACKTRACE_TOKEN: ${{ github.ref_name }}_Windows_${{ github.sha }}
-  # Disable VCPKG caching to save time.
-  VCPKG_FEATURE_FLAGS: -binarycaching
 
   # WIN-specific variables
   PreferredToolArchitecture: X64
 
+  # Specify build preset, since on Windows, `cmake --build` appears to be unaware of of which build preset to use, using defaults instead.
+  CMAKE_BUILD_EXTRA: --preset conan-release
+
 jobs:
   build:
+    name: "${{matrix.os}}"
     strategy:
       matrix:
         include:
           - os: windows-2019
             build_type: full
+            qt_source: aqt
       fail-fast: false
     runs-on: ${{matrix.os}}
     steps:
@@ -58,6 +54,7 @@ jobs:
 
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
+        echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
 
         echo "PYTHON_EXEC=python" >> $GITHUB_ENV
         echo "ZIP_COMMAND=7z" >> $GITHUB_ENV
@@ -68,15 +65,17 @@ jobs:
         echo "SYMBOLS_ARCHIVE=$RELEASE_NUMBER-${{ github.sha }}-win-symbols.zip" >> $GITHUB_ENV
         # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
         # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
+        if [[ "${{ matrix.os }}" = "windows-2019" ]]; then
+          echo "CONAN_PROFILE='./tools/conan-profiles/vs-19-release'" >> $GITHUB_ENV
+        else
+          echo "Not sure which Conan profile to use. Exiting." && exit 1
+        fi
 
     # Configuration is broken into two steps because you can't set an env var and also reference it in the same step
     - name: Configure build environment 2
       shell: bash
       run: |
-
-        echo "BUILD_NUMBER=$GIT_COMMIT_SHORT" >> $GITHUB_ENV
-        echo "ARTIFACT_PATTERN=Overte-$RELEASE_NUMBER.$INSTALLER_EXT" >> $GITHUB_ENV
-        echo "CLIENT_ONLY=FALSE" >> $GITHUB_ENV
+        echo "ARTIFACT_PATTERN=Overte-${{ github.ref_name }}.$INSTALLER_EXT" >> $GITHUB_ENV
 
     - uses: actions/checkout@v4
       with:
@@ -89,43 +88,60 @@ jobs:
       run: |
         choco install nsis --allow-downgrade --version=3.06.1
         choco install cmake --allow-downgrade --version=3.31.6  # Our dependencies don't support CMake 4.0 yet.
+        Invoke-WebRequest https://build-deps.overte.org/conan/nsis-overte-plugins/NSIS-hifi-plugins-1.0.zip -OutFile NSIS-hifi-plugins.zip
+        Expand-Archive -LiteralPath 'NSIS-hifi-plugins.zip' -DestinationPath 'C:/Program Files (x86)/'
 
     - name: Install Python modules
       if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
       shell: bash
-      run: $PYTHON_EXEC -m pip install boto3 PyGithub
+      run: $PYTHON_EXEC -m pip install boto3 PyGithub conan
 
-    - name: Create build environment
+    - name: Prepare Conan Build Environment
+      uses: ./.github/actions/setup-conan
+
+    - name: Install Conan dependencies
+      uses: ./.github/actions/conan-install
+      with:
+        qt_source: ${{matrix.qt_source}}
+        build_type: ${{env.BUILD_TYPE}}
+        cppstd: ${{env.CONAN_CPPSTD}}
+        conan_profile: ${{env.CONAN_PROFILE}}
+
+    - name: Upload Conan dependencies
+      # Conan isn't glibc aware, so we need to be really careful what we upload to the binary cache on Linux.
+      # See the upstream discussion: https://github.com/conan-io/conan/issues/7121
+      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
+      continue-on-error: true
       shell: bash
-      run: cmake -E make_directory "${{runner.workspace}}/build"
+      env:
+        CONAN_LOGIN_USERNAME_OVERTE: ${{ secrets.conan_login_username_overte }}
+        CONAN_PASSWORD_OVERTE: ${{ secrets.conan_password_overte }}
+      run: |
+        conan list --graph=build.json --graph-binaries=build --format=json > pkglist.json
+        conan upload --list=pkglist.json -r=overte -c
 
     - name: Configure CMake
-      working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DVCPKG_BUILD_TYPE=release -DJSDOC_ENABLED:BOOL=TRUE -DCLIENT_ONLY:BOOLEAN=$CLIENT_ONLY -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
+           # This syntax requires CMake 3.23
+      run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_NUMBER=${{ github.ref_name }} -DOVERTE_BUILD_TYPE=PRODUCTION -DJSDOC_ENABLED:BOOL=TRUE $CMAKE_EXTRA
 
     - name: Build application
-      working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
 
     - name: Build domain server
-      working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target domain-server $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build assignment client
-      working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target assignment-client $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build console
-      working-directory: ${{runner.workspace}}/build
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target packaged-server-console $CMAKE_BUILD_EXTRA
+      run: cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build installer
-      working-directory: ${{runner.workspace}}/build
       shell: bash
       run: |
         echo "Retry code from https://unix.stackexchange.com/a/137639"
@@ -183,12 +199,11 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
-        path: ${{runner.workspace}}/build/${{ env.ARTIFACT_PATTERN }}
+        path: build/Overte-*
         if-no-files-found: error
 
     - name: Archive symbols
       if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
-      working-directory: ${{runner.workspace}}
       shell: bash
       run: |
         SYMBOLS_TEMP="symbols-temp"
@@ -201,13 +216,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.SYMBOLS_ARCHIVE }}
-        path: ${{runner.workspace}}/${{ env.SYMBOLS_ARCHIVE }}
+        path: ${{ env.SYMBOLS_ARCHIVE }}
         if-no-files-found: error
-
-    - name: Clear Working Directories
-      if: contains(matrix.runner, 'linux_aarch64')
-      shell: bash
-      run: |
-        rm -rf ./*
-        rm -rf ~/overte-files
-        rm -rf ~/.cache

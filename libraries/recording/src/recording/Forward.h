@@ -13,6 +13,7 @@
 #include <memory>
 #include <list>
 #include <limits>
+#include <cstdint>
 
 namespace recording {
 

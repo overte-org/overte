@@ -76,9 +76,10 @@ macro (setup_testcase_dependencies)
     ExternalProject_Add(
       gltf_samples
       PREFIX "models"
-      GIT_REPOSITORY "https://github.com/KhronosGroup/glTF-Sample-models"
-      GIT_TAG "main"
-      DOWNLOAD_NO_EXTRACT true CONFIGURE_COMMAND "" BUILD_COMMAND "" INSTALL_COMMAND ""
+      URL "https://github.com/KhronosGroup/glTF-Sample-Models/archive/d7a3cc8e51d7c573771ae77a57f16b0662a905c6.tar.gz"
+      URL_HASH SHA512=38e1af72f5748356098d2b948fe19442c200c1b824276bad0f1406f0ee4eb62126891049c0ae795127a92d364a47fd8ec8d29f211a5b19d263a78124aff3c11d
+      DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+      CONFIGURE_COMMAND "" BUILD_COMMAND "" INSTALL_COMMAND ""
     )
 
 
@@ -96,4 +97,4 @@ macro (setup_testcase_dependencies)
   package_libraries_for_deployment()
 endmacro ()
 
-setup_hifi_testcase(Script Network)
+setup_hifi_testcase(Network)

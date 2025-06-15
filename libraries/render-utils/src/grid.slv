@@ -31,6 +31,6 @@ void main(void) {
     TransformCamera cam = getTransformCamera();
     TransformObject obj = getTransformObject();
     <$transformModelToClipPosAndPrevClipPos(cam, obj, inPosition, gl_Position, _prevPositionCS)$>
-    <$transformModelToWorldDir(cam, obj, inNormal.xyz, varNormal)$>
+    <$transformModelToWorldDir(obj, inNormal.xyz, varNormal)$>
     varPosition = inPosition.xyz;
 }

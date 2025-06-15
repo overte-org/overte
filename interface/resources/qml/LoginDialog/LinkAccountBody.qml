@@ -282,6 +282,7 @@ Item {
                 }
                 placeholderText: "Username or Email"
                 activeFocusOnPress: true
+                prohibitedCharacters: ["\n", "\r"];
                 Keys.onPressed: {
                     switch (event.key) {
                         case Qt.Key_Tab:
@@ -315,6 +316,7 @@ Item {
                 styleRenderType: Text.QtRendering
                 placeholderText: "Password"
                 activeFocusOnPress: true
+                prohibitedCharacters: ["\n", "\r"];
                 echoMode: passwordFieldMouseArea.showPassword ? TextInput.Normal : TextInput.Password
                 anchors {
                     top: emailField.bottom
