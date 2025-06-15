@@ -76,8 +76,8 @@ set(OVERTE_WARNINGS_ALLOWLIST ON CACHE BOOL "Allowlist some warnings we can't cu
 
 if(OVERTE_WARNINGS_ALLOWLIST)
     if (NOT WIN32)
-      set(CMAKE_PLATFORM_INFO_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-      include(CMakeDetermineCXXCompiler)
+        set(CMAKE_PLATFORM_INFO_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+        include(CMakeDetermineCXXCompiler)
     endif()
 
     if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
@@ -96,11 +96,24 @@ endif()
 
 # Enabling warnings-as-errors by default on our Linux target and on Windows.
 # Our current Linux development target is Ubuntu 22.04, which uses GCC 11.2.
-# TODO: Enable warnings-as-errors once we stop throwing warnings on the relevant platforms.
 if ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION MATCHES "11"))
-    set(CMAKE_COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
+    set(CMAKE_COMPILE_WARNING_AS_ERROR ON CACHE BOOL "")
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC") # Windows
+    set(CMAKE_COMPILE_WARNING_AS_ERROR ON CACHE BOOL "")
+else()
     set(CMAKE_COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
+endif()
+
+if (CMAKE_COMPILE_WARNING_AS_ERROR)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "" AND WIN32))
+        # Silence a warning in Qt about stdext::checked_array_iterator
+        add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
+    else()
+        # Silence multichar to work around an issue in crashpad
+        # Silence stringop-overflow to work around an issue in tbb
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar -Wno-stringop-overflow")
+        set(CMAKE_CFLAGS "${CMAKE_CFLAGS} -Wno-multichar -Wno-stringop-overflow")
+    endif()
 endif()
 
 
