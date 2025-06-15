@@ -111,14 +111,6 @@ jobs:
           echo "INSTALLER=Overte-Interface-master-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
 
-    - name: Clear Working Directories
-      if: contains(matrix.runner, 'linux_aarch64')
-      shell: bash
-      run: |
-        rm -rf ./*
-        rm -rf ~/overte-files
-        rm -rf ~/.cache
-
     - uses: actions/checkout@v4
       with:
         submodules: false
