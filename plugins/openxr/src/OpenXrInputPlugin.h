@@ -14,7 +14,10 @@
 #include "OpenXrContext.h"
 
 #define HAND_COUNT 2
-#define MAX_TRACKER_COUNT 16
+
+// most of the time this should be less than 16, but some devices like
+// SlimeVR report xdev trackers for the joints of a simulated skeleton
+#define MAX_TRACKER_COUNT 64
 
 class OpenXrInputPlugin : public InputPlugin {
     Q_OBJECT
@@ -112,6 +115,7 @@ private:
         bool _actionsInitialized = false;
 
         std::unordered_map<XrXDevIdMNDX, XDevTracker> _xdev;
+        std::unordered_map<controller::StandardPoseChannel, controller::Pose> _trackerCalibrations;
 
         XrHandTrackerEXT _handTracker[2] = {XR_NULL_HANDLE, XR_NULL_HANDLE};
 

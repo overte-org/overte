@@ -8,31 +8,102 @@
 //
 
 #include <glm/ext.hpp>
+#include <QJsonArray>
 
 #include "OpenXrInputPlugin.h"
 
 #include "AvatarConstants.h"
 #include "PathUtils.h"
 
+#include "SettingHandle.h"
 #include "controllers/UserInputMapper.h"
+#include "plugins/InputConfiguration.h"
 
 Q_DECLARE_LOGGING_CATEGORY(xr_input_cat)
 Q_LOGGING_CATEGORY(xr_input_cat, "openxr.input")
+
+static const std::unordered_map<controller::StandardPoseChannel, QString> poseChannelToString = {
+    {controller::HIPS, "Hips"},
+    {controller::LEFT_LEG, "LeftLeg"},
+    {controller::LEFT_FOOT, "LeftFoot"},
+    {controller::SPINE2, "Spine2"},
+    {controller::HEAD, "Head"},
+    {controller::RIGHT_ARM, "RightArm"},
+    {controller::RIGHT_HAND, "RightHand"},
+    {controller::LEFT_ARM, "LeftArm"},
+    {controller::LEFT_HAND, "LeftHand"},
+};
+
+static const std::unordered_map<QString, controller::StandardPoseChannel> stringToPoseChannel = {
+    {"Hips", controller::HIPS},
+    {"LeftLeg", controller::LEFT_LEG},
+    {"LeftFoot", controller::LEFT_FOOT},
+    {"Spine2", controller::SPINE2},
+    {"Head", controller::HEAD},
+    {"RightArm", controller::RIGHT_ARM},
+    {"RightHand", controller::RIGHT_HAND},
+    {"LeftArm", controller::LEFT_ARM},
+    {"LeftHand", controller::LEFT_HAND},
+};
 
 OpenXrInputPlugin::OpenXrInputPlugin(std::shared_ptr<OpenXrContext> c) {
     _context = c;
     _inputDevice = std::make_shared<InputDevice>(_context);
 }
 
-// TODO: Config options
-static const QString XR_CONFIGURATION_LAYOUT = QString("");
+static const QString XR_CONFIGURATION_LAYOUT = QString("OpenXrConfiguration.qml");
 
-// TODO: full-body-tracking
-void OpenXrInputPlugin::calibrate() {
+static glm::mat4 defaultPoseOffset(const controller::InputCalibrationData& data, controller::StandardPoseChannel channel) {
+    switch (channel) {
+        case controller::HEAD:
+            return data.defaultHeadMat;
+
+        case controller::SPINE2:
+            return data.defaultSpine2;
+
+        case controller::HIPS:
+            return data.defaultHips;
+
+        case controller::LEFT_FOOT:
+            return data.defaultLeftFoot;
+
+        case controller::RIGHT_FOOT:
+            return data.defaultRightFoot;
+
+        case controller::LEFT_ARM:
+            return data.defaultLeftArm;
+
+        case controller::RIGHT_ARM:
+            return data.defaultRightArm;
+
+        case controller::LEFT_HAND:
+            return data.defaultLeftHand;
+
+        case controller::RIGHT_HAND:
+            return data.defaultRightHand;
+
+        default:
+            return glm::mat4();
+    }
 }
 
-// TODO: full-body-tracking
+static glm::mat4 computeOffset(glm::mat4 defaultToReferenceMat, glm::mat4 defaultJointMat, controller::Pose puckPose) {
+    glm::mat4 poseMat = createMatFromQuatAndPos(puckPose.rotation, puckPose.translation);
+    glm::mat4 referenceJointMat = defaultToReferenceMat * defaultJointMat;
+    return glm::inverse(poseMat) * referenceJointMat;
+}
+
+void OpenXrInputPlugin::calibrate() {
+    qCInfo(xr_input_cat) << "OpenXrInputPlugin::calibrate";
+
+    // TODO
+}
+
 bool OpenXrInputPlugin::uncalibrate() {
+    qCInfo(xr_input_cat) << "OpenXrInputPlugin::uncalibrate";
+
+    // TODO
+
     return true;
 }
 
@@ -40,13 +111,47 @@ bool OpenXrInputPlugin::isSupported() const {
     return _context->_isValid && _context->_isSupported;
 }
 
-// TODO: Config options
 void OpenXrInputPlugin::setConfigurationSettings(const QJsonObject configurationSettings) {
+    const auto& calibration = configurationSettings["tracker_calibration"].toObject();
+
+    // grr qt5 doesnt support destructured iterating like std::map
+    foreach (const auto& key, calibration.keys()) {
+        const auto& value = calibration.value(key).toObject();
+
+        // some kind of invalid channel name, don't read it
+        if (!stringToPoseChannel.contains(key)) { continue; }
+
+        // broken setting, don't read it
+        if (!value.contains("translation") || !value.contains("rotation")) { continue; }
+
+        auto translationArray = value.value("translation").toArray();
+        auto rotationArray = value.value("rotation").toArray();
+
+        auto channel = stringToPoseChannel.at(key);
+        auto translation = vec3(translationArray[0].toDouble(), translationArray[1].toDouble(), translationArray[2].toDouble());
+        auto rotation = quat(rotationArray[0].toDouble(), rotationArray[1].toDouble(), rotationArray[2].toDouble(), rotationArray[3].toDouble());
+
+        _inputDevice->_trackerCalibrations[channel] = controller::Pose(translation, rotation);
+    }
 }
 
-// TODO: Config options
 QJsonObject OpenXrInputPlugin::configurationSettings() {
-    return QJsonObject();
+    QJsonObject calibration;
+
+    for (const auto& [channel, pose] : _inputDevice->_trackerCalibrations) {
+        const auto& translation = pose.getTranslation();
+        const auto& rotation = pose.getRotation();
+        auto object = QJsonObject {
+            {"translation", QJsonArray { translation.x, translation.y, translation.z }},
+            {"rotation", QJsonArray { rotation.x, rotation.y, rotation.z, rotation.w }},
+        };
+
+        calibration[poseChannelToString.at(channel)] = object;
+    }
+
+    QJsonObject configurationSettings;
+    configurationSettings["tracker_calibration"] = calibration;
+    return configurationSettings;
 }
 
 QString OpenXrInputPlugin::configurationLayout() {
@@ -115,12 +220,18 @@ void OpenXrInputPlugin::pluginUpdate(float deltaTime, const controller::InputCal
     }
 }
 
-// TODO: Config options
 void OpenXrInputPlugin::loadSettings() {
+    Settings settings;
+    settings.beginGroup(getName());
+
+    settings.endGroup();
 }
 
-// TODO: Config options
 void OpenXrInputPlugin::saveSettings() const {
+    Settings settings;
+    settings.beginGroup(getName());
+
+    settings.endGroup();
 }
 
 OpenXrInputPlugin::InputDevice::InputDevice(std::shared_ptr<OpenXrContext> c) : controller::InputDevice("OpenXR") {
@@ -615,22 +726,26 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"right_pose",             hand_right  + "/grip/pose"},
             {"right_haptic",           "/user/hand/right/output/haptic"},
         }},
-        // vive puck roles, not a handheld controller
-        {"/interaction_profiles/htc/vive_tracker_htcx", {
-            {"hips_pose",           "/usr/vive_tracker_htcx/role/waist/input/grip/pose"},
-            {"chest_pose",          "/usr/vive_tracker_htcx/role/chest/input/grip/pose"},
-
-            {"left_foot_pose",      "/usr/vive_tracker_htcx/role/left_foot/input/grip/pose"},
-            {"left_knee_pose",      "/usr/vive_tracker_htcx/role/left_knee/input/grip/pose"},
-            {"left_shoulder_pose",  "/usr/vive_tracker_htcx/role/left_shoulder/input/grip/pose"},
-            {"left_elbow_pose",     "/usr/vive_tracker_htcx/role/left_elbow/input/grip/pose"},
-
-            {"right_foot_pose",     "/usr/vive_tracker_htcx/role/right_foot/input/grip/pose"},
-            {"right_knee_pose",     "/usr/vive_tracker_htcx/role/right_knee/input/grip/pose"},
-            {"right_shoulder_pose", "/usr/vive_tracker_htcx/role/right_shoulder/input/grip/pose"},
-            {"right_elbow_pose",    "/usr/vive_tracker_htcx/role/right_elbow/input/grip/pose"},
-        }},
     };
+
+    if (_context->_HTCX_viveTrackerInteractionSupported) {
+        actionSuggestions.insert(
+            {"/interaction_profiles/htc/vive_tracker_htcx", {
+                {"hips_pose",           "/usr/vive_tracker_htcx/role/waist/input/grip/pose"},
+                {"chest_pose",          "/usr/vive_tracker_htcx/role/chest/input/grip/pose"},
+
+                {"left_foot_pose",      "/usr/vive_tracker_htcx/role/left_foot/input/grip/pose"},
+                {"left_knee_pose",      "/usr/vive_tracker_htcx/role/left_knee/input/grip/pose"},
+                {"left_shoulder_pose",  "/usr/vive_tracker_htcx/role/left_shoulder/input/grip/pose"},
+                {"left_elbow_pose",     "/usr/vive_tracker_htcx/role/left_elbow/input/grip/pose"},
+
+                {"right_foot_pose",     "/usr/vive_tracker_htcx/role/right_foot/input/grip/pose"},
+                {"right_knee_pose",     "/usr/vive_tracker_htcx/role/right_knee/input/grip/pose"},
+                {"right_shoulder_pose", "/usr/vive_tracker_htcx/role/right_shoulder/input/grip/pose"},
+                {"right_elbow_pose",    "/usr/vive_tracker_htcx/role/right_elbow/input/grip/pose"},
+            }}
+        );
+    }
 
     for (const auto& [id, args] : actionTypes) {
         auto friendlyName = args.first;
@@ -677,12 +792,15 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
 
         XrXDevListMNDX xdevList;
         std::vector<XrXDevIdMNDX> xdevIDs(MAX_TRACKER_COUNT);
-        uint32_t _dummy = 0;
+        uint32_t xdevIDsCount = 0;
 
         XrCreateXDevListInfoMNDX createInfo = {.type = XR_TYPE_CREATE_XDEV_LIST_INFO_MNDX};
 
         _context->xrCreateXDevListMNDX(_context->_session, &createInfo, &xdevList);
-        _context->xrEnumerateXDevsMNDX(xdevList, MAX_TRACKER_COUNT, &_dummy, xdevIDs.data());
+        _context->xrEnumerateXDevsMNDX(xdevList, MAX_TRACKER_COUNT, &xdevIDsCount, xdevIDs.data());
+
+        // shrink the list to the number of xdevs we actually received
+        xdevIDs.resize(xdevIDsCount);
 
         for (const auto id : xdevIDs) {
             XrGetXDevInfoMNDX info = {.type = XR_TYPE_GET_XDEV_INFO_MNDX};
@@ -691,7 +809,9 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             info.id = id;
             _context->xrGetXDevPropertiesMNDX(xdevList, &info, &properties);
 
-            if (std::string(properties.name).find("Tracker") != std::string::npos) {
+            qCDebug(xr_input_cat, "XDev %lx \"%s\"", id, properties.name);
+
+            if (std::string(properties.name).find("Tracker") == std::string::npos) {
                 // it's probably a headset or a controller, discard
                 continue;
             }
@@ -1043,7 +1163,11 @@ void OpenXrInputPlugin::InputDevice::updateBodyFromViveTrackers(const mat4& sens
             quat rotation = xrQuatToGlm(location.pose.orientation);
             auto pose = controller::Pose(translation, rotation);
 
-            _poseStateMap[channel] = pose.transform(sensorToAvatar);
+            if (_trackerCalibrations.contains(channel)) {
+                _poseStateMap[channel] = pose.transform(_trackerCalibrations[channel].getMatrix()).transform(sensorToAvatar);
+            } else {
+                _poseStateMap[channel] = pose.transform(sensorToAvatar);
+            }
         }
     };
 
@@ -1077,7 +1201,13 @@ void OpenXrInputPlugin::InputDevice::updateBodyFromXDevSpaces(const mat4& sensor
             quat rotation = xrQuatToGlm(location.pose.orientation);
             auto pose = controller::Pose(translation, rotation);
 
-            _poseStateMap[xdev.pose_channel.value()] = pose.transform(sensorToAvatar);
+            auto channel = xdev.pose_channel.value();
+
+            if (_trackerCalibrations.contains(channel)) {
+                _poseStateMap[channel] = pose.transform(_trackerCalibrations[channel].getMatrix()).transform(sensorToAvatar);
+            } else {
+                _poseStateMap[channel] = pose.transform(sensorToAvatar);
+            }
         }
     }
 }
