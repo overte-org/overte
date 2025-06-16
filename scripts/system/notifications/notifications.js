@@ -1,5 +1,5 @@
 //
-//  more.js
+//  notifications.js
 //
 //  Created by Armored Dragon on 3 June 2025.
 //  Copyright 2025 Overte e.V contributors.
@@ -48,6 +48,7 @@ function addNotificationUIToInterface() {
 function subscribeToMessages() {
 	Messages.subscribe("overte.notification");
 	Messages.subscribe("Floof-Notif");
+	Messages.subscribe("Hifi-Notifications");
 }
 
 Messages.messageReceived.connect(receivedMessage);

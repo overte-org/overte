@@ -26,7 +26,7 @@ var DEFAULT_SCRIPTS_COMBINED = [
     "system/avatarapp.js",
     "system/settings/settings.js",
     "system/makeUserConnection.js",
-    "system/notifications.js",
+    "system/notifications/notifications.js",
     "system/create/edit.js",
     "system/dialTone.js",
     "system/firstPersonHMD.js",
