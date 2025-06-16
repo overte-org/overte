@@ -102,7 +102,7 @@ FadeConfig::FadeConfig()
     events[FADE_ELEMENT_ENTER_LEAVE_DOMAIN].noiseSize = glm::vec3{ 0.75f, 0.75f, 0.75f };
     events[FADE_ELEMENT_ENTER_LEAVE_DOMAIN].noiseLevel = 1.f;
     events[FADE_ELEMENT_ENTER_LEAVE_DOMAIN].noiseSpeed = glm::vec3{ 0.0f, 0.0f, 0.0f };
-    events[FADE_ELEMENT_ENTER_LEAVE_DOMAIN].timing = FadeConfig::LINEAR;
+    events[FADE_ELEMENT_ENTER_LEAVE_DOMAIN].timing = (int)FadeTiming::LINEAR;
     events[FADE_ELEMENT_ENTER_LEAVE_DOMAIN].baseSize = glm::vec3{ 1.0f, 1.0f, 1.0f };
     events[FADE_ELEMENT_ENTER_LEAVE_DOMAIN].baseLevel = 0.f;
     events[FADE_ELEMENT_ENTER_LEAVE_DOMAIN].isInverted = false;
@@ -114,7 +114,7 @@ FadeConfig::FadeConfig()
     events[FADE_BUBBLE_ISECT_OWNER].noiseSize = glm::vec3{ 1.5f, 1.0f / 25.f, 0.5f };
     events[FADE_BUBBLE_ISECT_OWNER].noiseLevel = 0.37f;
     events[FADE_BUBBLE_ISECT_OWNER].noiseSpeed = glm::vec3{ 1.0f, 0.2f, 1.0f };
-    events[FADE_BUBBLE_ISECT_OWNER].timing = FadeConfig::LINEAR;
+    events[FADE_BUBBLE_ISECT_OWNER].timing = (int)FadeTiming::LINEAR;
     events[FADE_BUBBLE_ISECT_OWNER].baseSize = glm::vec3{ 2.0f, 2.0f, 2.0f };
     events[FADE_BUBBLE_ISECT_OWNER].baseLevel = 1.f;
     events[FADE_BUBBLE_ISECT_OWNER].isInverted = false;
@@ -126,7 +126,7 @@ FadeConfig::FadeConfig()
     events[FADE_BUBBLE_ISECT_TRESPASSER].noiseSize = glm::vec3{ 0.5f, 1.0f / 25.f, 0.5f };
     events[FADE_BUBBLE_ISECT_TRESPASSER].noiseLevel = 1.f;
     events[FADE_BUBBLE_ISECT_TRESPASSER].noiseSpeed = glm::vec3{ 1.0f, -5.f, 1.0f };
-    events[FADE_BUBBLE_ISECT_TRESPASSER].timing = FadeConfig::LINEAR;
+    events[FADE_BUBBLE_ISECT_TRESPASSER].timing = (int)FadeTiming::LINEAR;
     events[FADE_BUBBLE_ISECT_TRESPASSER].baseSize = glm::vec3{ 2.0f, 2.0f, 2.0f };
     events[FADE_BUBBLE_ISECT_TRESPASSER].baseLevel = 0.f;
     events[FADE_BUBBLE_ISECT_TRESPASSER].isInverted = false;
@@ -138,7 +138,7 @@ FadeConfig::FadeConfig()
     events[FADE_USER_ENTER_LEAVE_DOMAIN].noiseSize = glm::vec3{ 10.f, 0.01f, 10.0f };
     events[FADE_USER_ENTER_LEAVE_DOMAIN].noiseLevel = 0.3f;
     events[FADE_USER_ENTER_LEAVE_DOMAIN].noiseSpeed = glm::vec3{ 0.0f, -5.0f, 0.0f };
-    events[FADE_USER_ENTER_LEAVE_DOMAIN].timing = FadeConfig::LINEAR;
+    events[FADE_USER_ENTER_LEAVE_DOMAIN].timing = (int)FadeTiming::LINEAR;
     events[FADE_USER_ENTER_LEAVE_DOMAIN].baseSize = glm::vec3{ 10000.f, 1.0f, 10000.0f };
     events[FADE_USER_ENTER_LEAVE_DOMAIN].baseLevel = 1.f;
     events[FADE_USER_ENTER_LEAVE_DOMAIN].isInverted = true;
@@ -150,7 +150,7 @@ FadeConfig::FadeConfig()
     events[FADE_AVATAR_CHANGE].noiseSize = glm::vec3{ 0.4f, 0.4f, 0.4f };
     events[FADE_AVATAR_CHANGE].noiseLevel = 1.f;
     events[FADE_AVATAR_CHANGE].noiseSpeed = glm::vec3{ 0.0f, 0.0f, 0.0f };
-    events[FADE_AVATAR_CHANGE].timing = FadeConfig::LINEAR;
+    events[FADE_AVATAR_CHANGE].timing = (int)FadeTiming::LINEAR;
     events[FADE_AVATAR_CHANGE].baseSize = glm::vec3{ 0.4f, 0.4f, 0.4f };
     events[FADE_AVATAR_CHANGE].baseLevel = 1.f;
     events[FADE_AVATAR_CHANGE].isInverted = false;
@@ -509,7 +509,7 @@ void FadeConfig::load(const QString& configFilePath) {
 
             value = jsonObject["timing"];
             if (value.isDouble()) {
-                event.timing = std::max(0, std::min(TIMING_COUNT - 1, value.toInt()));
+                event.timing = std::max(0, std::min((int)FadeTiming::TIMING_COUNT - 1, value.toInt()));
             }
             else {
                 qWarning() << "Fade event configuration file " << configFilePath << " contains an invalid 'timing' field. Expected integer value";
@@ -607,7 +607,7 @@ bool FadeJob::update(RenderArgs* args, const Config& config, const render::Scene
     auto& eventConfig = config.events[fadeCategory];
     auto item = scene->getItemSafe(transition.itemId);
     const double eventDuration = (double)eventConfig.duration;
-    const FadeConfig::Timing timing = (FadeConfig::Timing) eventConfig.timing;
+    const FadeTiming timing = (FadeTiming) eventConfig.timing;
 
     if (item.exist()) {
         auto aabb = item.getBound(args);
@@ -690,7 +690,7 @@ bool FadeJob::update(RenderArgs* args, const Config& config, const render::Scene
     return false;
 }
 
-float FadeJob::computeElementEnterRatio(double time, const double period, FadeConfig::Timing timing) {
+float FadeJob::computeElementEnterRatio(double time, const double period, FadeTiming timing) {
     assert(period > 0.0);
     float fadeAlpha = 1.0f;
     const double INV_FADE_PERIOD = 1.0 / period;
@@ -701,14 +701,14 @@ float FadeJob::computeElementEnterRatio(double time, const double period, FadeCo
         default:
             fadeAlpha = (float)fraction;
             break;
-        case FadeConfig::EASE_IN:
+        case FadeTiming::EASE_IN:
             fadeAlpha = (float)(fraction*fraction*fraction);
             break;
-        case FadeConfig::EASE_OUT:
+        case FadeTiming::EASE_OUT:
             fadeAlpha = 1.f - (float)fraction;
             fadeAlpha = 1.f- fadeAlpha*fadeAlpha*fadeAlpha;
             break;
-        case FadeConfig::EASE_IN_OUT:
+        case FadeTiming::EASE_IN_OUT:
             fadeAlpha = (float)(fraction*fraction*fraction*(fraction*(fraction * 6 - 15) + 10));
             break;
         }

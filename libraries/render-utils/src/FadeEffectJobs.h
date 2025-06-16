@@ -13,6 +13,7 @@
 
 #include "FadeEffect.h"
 
+#include <FadeTiming.h>
 #include <gpu/Pipeline.h>
 #include <render/ShapePipeline.h>
 #include <render/RenderFetchCullSortTask.h>
@@ -69,15 +70,6 @@ class FadeConfig : public render::Job::Config {
         Q_PROPERTY(float manualThreshold MEMBER manualThreshold NOTIFY dirty)
 
 public:
-
-    enum Timing {
-        LINEAR,
-        EASE_IN,
-        EASE_OUT,
-        EASE_IN_OUT,
-
-        TIMING_COUNT
-    };
 
     FadeConfig();
 
@@ -224,7 +216,7 @@ private:
     uint64_t _previousTime{ 0 };
 
     bool update(RenderArgs* args, const Config& config, const render::ScenePointer& scene, render::Transaction& transaction, render::Transition& transition, const double deltaTime) const;
-    static float computeElementEnterRatio(double time, const double period, FadeConfig::Timing timing);
+    static float computeElementEnterRatio(double time, const double period, FadeTiming timing);
 
 };
 

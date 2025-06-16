@@ -1407,7 +1407,13 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
             makeStatusGetters(entity, statusGetters);
             using namespace std::placeholders;
             model->addToScene(scene, transaction, statusGetters, std::bind(&ModelEntityRenderer::metaBlendshapeOperator, _renderItemID, _1, _2, _3, _4));
-            model->fade(transaction, render::Transition::ELEMENT_ENTER_DOMAIN);
+            auto renderer = DependencyManager::get<EntityTreeRenderer>();
+            if (renderer) {
+                if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED ||
+                    (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(true))) {
+                    model->fade(transaction, render::Transition::ELEMENT_ENTER_DOMAIN);
+                }
+            }
             processMaterials();
         }
     }

@@ -187,6 +187,13 @@
  * @property {Uuid} portalExitID=Uuid.NONE - The ID of the entity that should act as the portal exit if the <code>mirrorMode</code>
  *     is set to <code>portal</code>.
  *
+ * @property {Entities.Fade} fadeIn - The entity's fade in properties. For zones, this defines the default fade in properties for entities
+ *     while you are in this zone.
+ * @property {Entities.Fade} fadeOut - The entity's fade out properties. For zones, this defines the default fade out properties for entities
+ *     while you are in this zone.
+ * @property {Entities.ComponentMode} fadeInMode="inherit" - Configures the fade in for this entity.
+ * @property {Entities.ComponentMode} fadeOutMode="inherit" - Configures the fade out for this entity.
+ *
  * @comment The different entity types have additional properties as follows:
  * @see {@link Entities.EntityProperties-Box|EntityProperties-Box}
  * @see {@link Entities.EntityProperties-Gizmo|EntityProperties-Gizmo}

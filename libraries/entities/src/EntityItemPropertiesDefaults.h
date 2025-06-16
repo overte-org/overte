@@ -100,4 +100,6 @@ const bool ENTITY_ITEM_DEFAULT_CLONE_DYNAMIC = false;
 const bool ENTITY_ITEM_DEFAULT_CLONE_AVATAR_ENTITY = false;
 const QUuid ENTITY_ITEM_DEFAULT_CLONE_ORIGIN_ID = QUuid();
 
+const glm::u8vec3 ENTITY_ITEM_DEFAULT_FADE_COLOR = glm::u8vec3(78, 215, 255);
+
 #endif // hifi_EntityItemPropertiesDefaults_h

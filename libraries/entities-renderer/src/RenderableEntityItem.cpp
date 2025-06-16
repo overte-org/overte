@@ -134,7 +134,13 @@ std::shared_ptr<T> make_renderer(const EntityItemPointer& entity) {
     return std::shared_ptr<T>(new T(entity), [](T* ptr) { ptr->deleteLater(); });
 }
 
-EntityRenderer::EntityRenderer(const EntityItemPointer& entity) : _created(entity->getCreated()), _entity(entity), _entityID(entity->getID()) {}
+EntityRenderer::EntityRenderer(const EntityItemPointer& entity) :
+    _fadeInProperties(entity->getFadeInProperties()),
+    _fadeInMode((ComponentMode)entity->getFadeInMode()),
+    _created(entity->getCreated()),
+    _entity(entity),
+    _entityID(entity->getID()) {
+}
 
 EntityRenderer::~EntityRenderer() {}
 
@@ -452,7 +458,13 @@ bool EntityRenderer::addToScene(const ScenePointer& scene, Transaction& transact
     makeStatusGetters(_entity, statusGetters);
     renderPayload->addStatusGetters(statusGetters);
     transaction.resetItem(_renderItemID, renderPayload);
-    fade(transaction, render::Transition::ELEMENT_ENTER_DOMAIN);
+    auto renderer = DependencyManager::get<EntityTreeRenderer>();
+    if (renderer) {
+        if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED ||
+            (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(true))) {
+            fade(transaction, render::Transition::ELEMENT_ENTER_DOMAIN);
+        }
+    }
     onAddToScene(_entity);
     updateInScene(scene, transaction);
     return true;
@@ -591,6 +603,9 @@ void EntityRenderer::doRenderUpdateAsynchronous(const EntityItemPointer& entity)
         entity->resetNeedsZoneOcclusionUpdate();
         _renderWithZones = entity->getRenderWithZones();
     }
+    // TODO: pass to mesh parts?
+    _fadeOutProperties = entity->getFadeOutProperties();
+    _fadeOutMode = (ComponentMode)entity->getFadeOutMode();
 }
 
 void EntityRenderer::onAddToScene(const EntityItemPointer& entity) {

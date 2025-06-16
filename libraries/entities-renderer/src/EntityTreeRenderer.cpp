@@ -1198,7 +1198,11 @@ void EntityTreeRenderer::fadeOutRenderable(const EntityRendererPointer& renderab
     render::Transaction transaction;
     auto scene = _viewState->getMain3DScene();
 
-    renderable->fade(transaction, render::Transition::ELEMENT_LEAVE_DOMAIN);
+    auto fadeOutMode = renderable->getFadeOutMode();
+    if (fadeOutMode == ComponentMode::COMPONENT_MODE_ENABLED ||
+        (fadeOutMode == ComponentMode::COMPONENT_MODE_INHERIT && _layeredZones.hasFade(false))) {
+        renderable->fade(transaction, render::Transition::ELEMENT_LEAVE_DOMAIN);
+    }
 
     EntityRendererWeakPointer weakRenderable = renderable;
     transaction.setTransitionFinishedOperator(renderable->getRenderItemID(), [scene, weakRenderable]() {
@@ -1372,6 +1376,21 @@ std::pair<bool, bool> EntityTreeRenderer::LayeredZones::getZoneInteractionProper
         }
     }
     return { true, true };
+}
+
+bool EntityTreeRenderer::LayeredZones::hasFade(bool in) const {
+    for (auto it = cbegin(); it != cend(); it++) {
+        auto zone = it->zone.lock();
+        if (zone) {
+            auto mode = in ? zone->getFadeInMode() : zone->getFadeOutMode();
+            if (mode == ComponentMode::COMPONENT_MODE_DISABLED) {
+                return false;
+            } else if (mode == ComponentMode::COMPONENT_MODE_ENABLED) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 bool EntityTreeRenderer::LayeredZones::update(std::shared_ptr<ZoneEntityItem> zone, const glm::vec3& position, EntityTreeRenderer* entityTreeRenderer) {

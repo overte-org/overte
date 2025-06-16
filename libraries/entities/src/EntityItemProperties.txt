@@ -73,6 +73,10 @@ enum:TAGS prop:tags type:qSetQString default:QSet<QString>() fromScriptType:qVec
 group:grab,
 enum:MIRROR_MODE prop:mirrorMode type:MirrorMode default:MirrorMode::NONE enum renderProp,
 enum:PORTAL_EXIT_ID prop:portalExitID type:QUuid default:UNKNOWN_ENTITY_ID renderProp,
+group:fadeIn renderUpdateOnSet,
+group:fadeOut renderUpdateOnSet,
+enum:FADE_IN_MODE prop:fadeInMode type:uint8_t default:(uint8_t)COMPONENT_MODE_INHERIT enum renderProp,
+enum:FADE_OUT_MODE prop:fadeOutMode type:uint8_t default:(uint8_t)COMPONENT_MODE_INHERIT enum renderProp,
 Physics
 enum:DENSITY prop:density type:float default:ENTITY_ITEM_DEFAULT_DENSITY min:ENTITY_ITEM_MIN_DENSITY max:ENTITY_ITEM_MAX_DENSITY,
 enum:VELOCITY prop:velocity type:vec3 default:ENTITY_ITEM_DEFAULT_VELOCITY inherited variableCopyGetter:getLocalVelocity variableNetworkGetter:getLocalVelocity() variableNetworkSetter:customUpdateVelocityFromNetwork debugString:"m/s" debugGetter:getWorldVelocity(),

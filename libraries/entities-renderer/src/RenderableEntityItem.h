@@ -81,10 +81,13 @@ public:
     virtual Item::Bound getBound(RenderArgs* args) override;
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const override;
     ItemID computeMirrorView(ViewFrustum& viewFrustum) const override;
+
     static ItemID computeMirrorViewOperator(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
                                             MirrorMode mirrorMode, const QUuid& portalExitID);
     virtual void renderSimulate(RenderArgs* args) override {}
     virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const override;
+
+    ComponentMode getFadeOutMode() const { return _fadeOutMode; }
 
 protected:
     virtual bool needsRenderUpdateFromEntity() const final { return needsRenderUpdateFromEntity(_entity); }
@@ -169,6 +172,11 @@ protected:
     QUuid _portalExitID;
     Transform _renderTransform;
     Transform _prevRenderTransform; // each subclass is responsible for updating this after they render because they all handle transforms differently
+
+    FadeInPropertyGroup _fadeInProperties;
+    FadeOutPropertyGroup _fadeOutProperties;
+    ComponentMode _fadeInMode { COMPONENT_MODE_INHERIT };
+    ComponentMode _fadeOutMode { COMPONENT_MODE_INHERIT };
 
     MaterialMap _materials;
     mutable std::mutex _materialsLock;

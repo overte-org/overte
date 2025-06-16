@@ -205,7 +205,13 @@ void TextEntityRenderer::onAddToSceneTyped(const TypedEntityPointer& entity) {
     auto renderPayload = std::make_shared<TextPayload::Payload>(_textPayload);
     render::Transaction transaction;
     transaction.resetItem(_textRenderID, renderPayload);
-    transaction.resetTransitionOnItem(_textRenderID, render::Transition::ELEMENT_ENTER_DOMAIN);
+    auto renderer = DependencyManager::get<EntityTreeRenderer>();
+    if (renderer) {
+        if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED ||
+            (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(true))) {
+            transaction.resetTransitionOnItem(_textRenderID, render::Transition::ELEMENT_ENTER_DOMAIN);
+        }
+    }
     AbstractViewStateInterface::instance()->getMain3DScene()->enqueueTransaction(transaction);
 }
 
