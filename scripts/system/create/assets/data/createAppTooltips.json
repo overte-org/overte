@@ -836,5 +836,83 @@
     },
     "localOnly": {
         "tooltip": "Whether the sound should play locally for everyone separately, or globally via the audio mixer."
+    },
+    "fadeInMode": {
+        "tooltip": "Configures the fade in."
+    },
+    "fadeIn.duration": {
+        "tooltip": "The time (seconds) for the fade to complete."
+    },
+    "fadeIn.noiseSize": {
+        "tooltip": "The scale of the noise."
+    },
+    "fadeIn.noiseLevel": {
+        "tooltip": "The noise multiplier."
+    },
+    "fadeIn.noiseSpeed": {
+        "tooltip": "The noise speed."
+    },
+    "fadeIn.baseSize": {
+        "tooltip": "The scale of the base."
+    },
+    "fadeIn.baseLevel": {
+        "tooltip": "The base multiplier."
+    },
+    "fadeIn.edgeWidth": {
+        "tooltip": "The width of the edge, as a fraction of the fade."
+    },
+    "fadeIn.edgeInnerColor": {
+        "tooltip": "The inner color of the edge."
+    },
+    "fadeIn.edgeInnerAlpha": {
+        "tooltip": "The inner alpha of the edge."
+    },
+    "fadeIn.edgeOuterColor": {
+        "tooltip": "The outer color of the edge."
+    },
+    "fadeIn.edgeOuterAlpha": {
+        "tooltip": "The outer alpha of the edge."
+    },
+    "fadeIn.timing": {
+        "tooltip": "The timing curve for the fade."
+    },
+    "fadeOutMode": {
+        "tooltip": "Configures the fade in."
+    },
+    "fadeOut.duration": {
+        "tooltip": "The time (seconds) for the fade to complete."
+    },
+    "fadeOut.noiseSize": {
+        "tooltip": "The scale of the noise."
+    },
+    "fadeOut.noiseLevel": {
+        "tooltip": "The noise multiplier."
+    },
+    "fadeOut.noiseSpeed": {
+        "tooltip": "The noise speed."
+    },
+    "fadeOut.baseSize": {
+        "tooltip": "The scale of the base."
+    },
+    "fadeOut.baseLevel": {
+        "tooltip": "The base multiplier."
+    },
+    "fadeOut.edgeWidth": {
+        "tooltip": "The width of the edge, as a fraction of the fade."
+    },
+    "fadeOut.edgeInnerColor": {
+        "tooltip": "The inner color of the edge."
+    },
+    "fadeOut.edgeInnerAlpha": {
+        "tooltip": "The inner alpha of the edge."
+    },
+    "fadeOut.edgeOuterColor": {
+        "tooltip": "The outer color of the edge."
+    },
+    "fadeOut.edgeOuterAlpha": {
+        "tooltip": "The outer alpha of the edge."
+    },
+    "fadeOut.timing": {
+        "tooltip": "The timing curve for the fade."
     }
 }

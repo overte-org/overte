@@ -29,6 +29,7 @@
 #include <Transform.h>
 #include <SpatiallyNestable.h>
 #include <Interpolate.h>
+#include <ComponentMode.h>
 
 #include "EntityItemID.h"
 #include "EntityItemPropertiesDefaults.h"
@@ -37,6 +38,8 @@
 #include "SimulationOwner.h"
 #include "EntityDynamicInterface.h"
 #include "GrabPropertyGroup.h"
+#include "FadeInPropertyGroup.h"
+#include "FadeOutPropertyGroup.h"
 
 class EntitySimulation;
 using EntitySimulationPointer = std::shared_ptr<EntitySimulation>;
@@ -446,6 +449,9 @@ public:
 
     bool needsZoneOcclusionUpdate() const { return _needsZoneOcclusionUpdate; }
     void resetNeedsZoneOcclusionUpdate() { withWriteLock([&] { _needsZoneOcclusionUpdate = false; }); }
+
+    const FadeInPropertyGroup& getFadeInProperties() const { return _fadeInProperties; }
+    const FadeOutPropertyGroup& getFadeOutProperties() const { return _fadeOutProperties; }
 
 signals:
     void spaceUpdate(std::pair<int32_t, glm::vec4> data);

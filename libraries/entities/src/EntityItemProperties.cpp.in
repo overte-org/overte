@@ -260,12 +260,28 @@ const QHash<QString, ComponentMode> stringToComponentMode = [] {
 }();
 QString EntityItemProperties::getComponentModeAsString(uint8_t mode) { return ComponentModeHelpers::getNameForComponentMode((ComponentMode)mode); }
 QString EntityItemProperties::getSkyboxModeAsString() const { return getComponentModeAsString(_skyboxMode); }
+QString EntityItemProperties::getFadeInModeAsString() const { return getComponentModeAsString(_fadeInMode); }
+QString EntityItemProperties::getFadeOutModeAsString() const { return getComponentModeAsString(_fadeOutMode); }
 QString EntityItemProperties::getKeyLightModeAsString() const { return getComponentModeAsString(_keyLightMode); }
 QString EntityItemProperties::getAmbientLightModeAsString() const { return getComponentModeAsString(_ambientLightMode); }
 QString EntityItemProperties::getHazeModeAsString() const { return getComponentModeAsString(_hazeMode); }
 QString EntityItemProperties::getBloomModeAsString() const { return getComponentModeAsString(_bloomMode); }
 QString EntityItemProperties::getTonemappingModeAsString() const { return getComponentModeAsString(_tonemappingMode); }
 QString EntityItemProperties::getAmbientOcclusionModeAsString() const { return getComponentModeAsString(_ambientOcclusionMode); }
+void EntityItemProperties::setFadeInModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _fadeInMode = modeItr.value();
+        _fadeInModeChanged = true;
+    }
+}
+void EntityItemProperties::setFadeOutModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _fadeOutMode = modeItr.value();
+        _fadeOutModeChanged = true;
+    }
+}
 void EntityItemProperties::setSkyboxModeFromString(const QString& mode) {
     auto modeItr = stringToComponentMode.find(mode.toLower());
     if (modeItr != stringToComponentMode.end()) {
