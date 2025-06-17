@@ -866,7 +866,6 @@ void Keyboard::loadKeyboardFile(const QString& keyboardFile) {
             return;
         }
 
-        auto hmdScriptingInterface = DependencyManager::get<HMDScriptingInterface>();
         auto myAvatar = DependencyManager::get<AvatarManager>()->getMyAvatar();
 
         auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
@@ -883,12 +882,7 @@ void Keyboard::loadKeyboardFile(const QString& keyboardFile) {
             properties.setPosition(vec3FromVariant(anchorObject["position"].toVariant()));
             properties.setRotation(quatFromVariant(anchorObject["rotation"].toVariant()));
             properties.setParentID(myAvatar->getSelfID());
-
-            if (hmdScriptingInterface->isMounted()) {
-                properties.setParentJointIndex(SENSOR_TO_WORLD_MATRIX_INDEX);
-            } else {
-                properties.setParentJointIndex(CAMERA_MATRIX_INDEX);
-            }
+            properties.setParentJointIndex(SENSOR_TO_WORLD_MATRIX_INDEX);
 
             Anchor anchor;
             anchor.entityID = entityScriptingInterface->addEntityInternal(properties, entity::HostType::LOCAL);
