@@ -33,7 +33,7 @@ OpenXrDisplayPlugin::OpenXrDisplayPlugin(std::shared_ptr<OpenXrContext> c) {
 }
 
 bool OpenXrDisplayPlugin::isSupported() const {
-    return _context->_isSupported;
+    return _context->_isValid && _context->_isSupported;
 }
 
 // Slightly differs from glm::ortho
@@ -263,25 +263,15 @@ const QString OpenXrDisplayPlugin::getName() const {
 }
 
 bool OpenXrDisplayPlugin::internalActivate() {
+    if (!_context->_isValid) { return false; }
+
     _context->reset();
+    _context->_isDisplayActive = true;
     return HmdDisplayPlugin::internalActivate();
 }
 
 void OpenXrDisplayPlugin::internalDeactivate() {
-    // We can get into a state where activate -> deactivate -> activate is called in a chain.
-    // We are probably gonna have a bad time then. At least check if the session is already running.
-    // This happens when the application decides to switch display plugins back and forth. This should
-    // probably be fixed there.
-    if (_context->_isSessionRunning) {
-        if (!_context->requestExitSession()) {
-            qCCritical(xr_display_cat, "Failed to request exit session");
-        } else {
-            // Poll events until runtime wants to quit
-            while (!_context->_shouldQuit) {
-                _context->pollEvents();
-            }
-        }
-    }
+    _context->_isDisplayActive = false;
     HmdDisplayPlugin::internalDeactivate();
 }
 
@@ -326,6 +316,11 @@ void OpenXrDisplayPlugin::resetSensors() {
 }
 
 bool OpenXrDisplayPlugin::beginFrameRender(uint32_t frameIndex) {
+    if (!_context->_isValid) {
+        deactivate();
+        return false;
+    }
+
     _context->pollEvents();
 
     if (_context->_shouldQuit) {
@@ -366,6 +361,11 @@ void OpenXrDisplayPlugin::compositeLayers() {
 }
 
 void OpenXrDisplayPlugin::hmdPresent() {
+    if (!_context->_isValid) {
+        deactivate();
+        return;
+    }
+
     if (!_context->_shouldRunFrameCycle) {
         qCWarning(xr_display_cat, "hmdPresent: Shouldn't run frame cycle. Skipping renderin frame %d",
                   _currentFrame->frameIndex);
@@ -464,6 +464,11 @@ bool OpenXrDisplayPlugin::isHmdMounted() const {
 }
 
 void OpenXrDisplayPlugin::updatePresentPose() {
+    if (!_context->_isValid) {
+        deactivate();
+        return;
+    }
+
     if (_lastFrameState.predictedDisplayTime == 0) { return; }
 
     _context->_lastPredictedDisplayTime = _lastFrameState.predictedDisplayTime;

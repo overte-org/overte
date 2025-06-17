@@ -61,8 +61,10 @@ public:
     controller::Pose _lastHeadPose;
     std::optional<XrTime> _lastPredictedDisplayTime;
 
+    bool _isValid = true; // set to false when the context is lost
     bool _shouldQuit = false;
     bool _shouldRunFrameCycle = false;
+    bool _isDisplayActive = false;
 
     bool _isSupported = false;
 
