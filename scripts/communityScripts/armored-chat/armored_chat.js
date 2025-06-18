@@ -28,6 +28,7 @@
     var maxLocalDistance = 20; // Maximum range for the local chat
     var palData = AvatarManager.getPalData().data;
     var isTyping = false;
+    var notificationOverlay = null;
 
     Controller.keyPressEvent.connect(keyPressEvent);
     Messages.subscribe("Chat"); // Floofchat
@@ -44,6 +45,11 @@
 
     function startup() {
         tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+
+        // Add the notification area
+        notificationOverlay = new OverlayWindow({
+            source: Script.resolvePath("./Notifications.qml"),
+        });
 
         appButton = tablet.addButton({
             icon: Script.resolvePath("./img/icon_white.png"),
@@ -283,13 +289,7 @@
 
             // Show new message on screen
             if (settings.join_notification) {
-                Messages.sendLocalMessage(
-                    "Floof-Notif",
-                    JSON.stringify({
-                        sender: displayName,
-                        text: type,
-                    })
-                );
+                showChatMessageOnOverlay(displayName, type);
             }
 
             _emitEvent({ type: "notification", ...message });
@@ -332,6 +332,10 @@
         }));
 
         return timeArray;
+    }
+    function showChatMessageOnOverlay(author, message) {
+        if (!author) author = "anonymous";
+        notificationOverlay.sendToQml({ type: "message", author, message });
     }
 
     /**
