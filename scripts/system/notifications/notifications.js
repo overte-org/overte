@@ -16,6 +16,7 @@
 Script.include('./lib/utility.js');
 Script.include('./lib/io.js');
 Script.include('./lib/sound.js');
+Script.include('./lib/window.js');
 
 let app = {
 	_config: {
@@ -52,6 +53,7 @@ function subscribeToMessages() {
 }
 
 Messages.messageReceived.connect(receivedMessage);
+
 
 const notification = {
 	system: (title = "No title", description = "No further information.", sound = false) => {
@@ -146,3 +148,14 @@ function debugLog(content) {
 
 	console.log(`[ Debug ] ${content}`);
 }
+
+Window.domainConnectionRefused.connect(windowFunc.domainConnectionRefused);
+Window.stillSnapshotTaken.connect(windowFunc.stillSnapshotTaken);
+Window.snapshot360Taken.connect(windowFunc.stillSnapshotTaken); // Same as still snapshot
+Window.processingGifStarted.connect(windowFunc.processingGifStarted);
+Window.connectionAdded.connect(windowFunc.connectionAdded);
+Window.connectionError.connect(windowFunc.connectionError);
+Window.announcement.connect(windowFunc.announcement);
+Window.notifyEditError = windowFunc.notifyEditError;
+Window.notify = windowFunc.notify;
+Tablet.tabletNotification.connect(windowFunc.tabletNotification);
