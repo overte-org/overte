@@ -701,8 +701,7 @@
                 }], [], true);
 
             } else {
-                Window.notifyEditError("Can't create " + properties.type + ": " +
-                                        properties.type + " would be out of bounds.");
+                Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `Can't create ${properties.type}: ${properties.type} would be out of bounds.`}))
             }
 
             selectionManager.clearSelections(this);
@@ -1055,7 +1054,7 @@
 
             createButton.clicked.connect(function() {
                 if ( ! (Entities.canRez() || Entities.canRezTmp()) ) {
-                    Window.notifyEditError(INSUFFICIENT_PERMISSIONS_ERROR_MSG);
+                    Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: INSUFFICIENT_PERMISSIONS_ERROR_MSG}))
                     return;
                 }
 
@@ -1181,7 +1180,8 @@
                 return;
             }
             if (active && !Entities.canRez() && !Entities.canRezTmp()) {
-                Window.notifyEditError(INSUFFICIENT_PERMISSIONS_ERROR_MSG);
+                Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: INSUFFICIENT_PERMISSIONS_ERROR_MSG}))
+                
                 return;
             }
             Messages.sendLocalMessage("edit-events", JSON.stringify({
@@ -1295,7 +1295,7 @@
         if (createApp.expectingRotateAsClickedSurface) {
             if (!SelectionManager.hasSelection() || !SelectionManager.hasUnlockedSelection()) {
                 audioFeedback.rejection();
-                Window.notifyEditError("You have nothing selected, or the selection is locked.");
+                Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `You have nothing selected, or the selection is locked.`}))
                 createApp.expectingRotateAsClickedSurface = false;
             } else {
                 //Rotate Selection according the Surface Normal
@@ -1865,7 +1865,8 @@
 
             if (selectedEntities.length < 1) {
                 audioFeedback.rejection();
-                Window.notifyEditError("You must have an entity selected in order to unparent it.");
+                Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `You must have an entity selected in order to unparent it.`}))
+                
                 return;
             }
             selectedEntities.forEach(function (id, index) {
@@ -1879,9 +1880,9 @@
             if (parentCheck) {
                 audioFeedback.confirmation();
                 if (selectedEntities.length > 1) {
-                    Window.notify("Entities unparented");
+                    Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `Entities unparented`}));
                 } else {
-                    Window.notify("Entity unparented");
+                    Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `Entity unparented`}));
                 }
                 //Refresh
                 entityListTool.sendUpdate();
@@ -1889,14 +1890,14 @@
             } else {
                 audioFeedback.rejection();
                 if (selectedEntities.length > 1) {
-                    Window.notify("Selected Entities have no parents");
+                    Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `Selected Entities have no parents`}));
                 } else {
-                    Window.notify("Selected Entity does not have a parent");
+                    Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `Selected Entity does not have a parent`}));
                 }
             }
         } else {
             audioFeedback.rejection();
-            Window.notifyEditError("You have nothing selected or the selection has locked entities.");
+            Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `You have nothing selected or the selection has locked entities`}));
         }
     }
     createApp.parentSelectedEntities = function() {
@@ -1904,7 +1905,7 @@
             var selectedEntities = selectionManager.selections;
             if (selectedEntities.length <= 1) {
                 audioFeedback.rejection();
-                Window.notifyEditError("You must have multiple entities selected in order to parent them");
+                Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `You must have multiple entities selected in order to parent them`}));
                 return;
             }
             var parentCheck = false;
@@ -1921,17 +1922,17 @@
 
             if (parentCheck) {
                 audioFeedback.confirmation();
-                Window.notify("Entities parented");
+                Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `Entities parented`}));
                 //Refresh
                 entityListTool.sendUpdate();
                 selectionManager._update(false, this);
             } else {
                 audioFeedback.rejection();
-                Window.notify("Entities are already parented to last");
+                Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `Entities are already parented to last`}));
             }
         } else {
             audioFeedback.rejection();
-            Window.notifyEditError("You have nothing selected or the selection has locked entities.");
+            Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `You have nothing selected or the selection has locked entities.`}));
         }
     }
     createApp.deleteSelectedEntities = function() {
@@ -1968,7 +1969,7 @@
             }
         } else {
             audioFeedback.rejection();
-            Window.notifyEditError("You have nothing selected or the selection has locked entities.");
+            Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `You have nothing selected or the selection has locked entities.`}));
         }
     }
 
@@ -2005,7 +2006,7 @@
         if (filename !== "") {
             var success = Clipboard.exportEntities(filename, selectionManager.selections);
             if (!success) {
-                Window.notifyEditError("Export failed.");
+                Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `Export failed.`}));
             }
         }
     }
@@ -2104,7 +2105,7 @@
     function importSVO(importURL, importEntityHostType) {
         importEntityHostType = importEntityHostType || "domain";
         if (!Entities.canRez() && !Entities.canRezTmp()) {
-            Window.notifyEditError(INSUFFICIENT_PERMISSIONS_IMPORT_ERROR_MSG);
+            Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: INSUFFICIENT_PERMISSIONS_IMPORT_ERROR_MSG}));
             return;
         }
 
@@ -2189,10 +2190,10 @@
                     selectionManager.setSelections(pastedEntityIDs, this);
                 }
             } else {
-                Window.notifyEditError("Can't import entities: entities would be out of bounds.");
+                Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `Can't import entities: entities would be out of bounds.`}));
             }
         } else {
-            Window.notifyEditError("There was an error importing the entity file.");
+            Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `There was an error importing the entity file.`}));
         }
 
         Overlays.editOverlay(importingSVOTextOverlay, {
@@ -2759,8 +2760,7 @@
                             // If any of the natural dimensions are not 0, resize
                             if (properties.type === "Model" && naturalDimensions.x === 0 && naturalDimensions.y === 0 &&
                                 naturalDimensions.z === 0) {
-                                Window.notifyEditError("Cannot reset entity to its natural dimensions: Model URL" +
-                                    " is invalid or the model has not yet been loaded.");
+                                Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `Cannot reset entity to its natural dimensions: Model URL is invalid or the model has not yet been loaded.`}));
                             } else {
                                 Entities.editEntity(selectionManager.selections[i], {
                                     dimensions: properties.naturalDimensions
@@ -3405,7 +3405,7 @@
     createApp.rotateAsNextClickedSurface = function() {
         if (!SelectionManager.hasSelection() || !SelectionManager.hasUnlockedSelection()) {
             audioFeedback.rejection();
-            Window.notifyEditError("You have nothing selected, or the selection is locked.");
+            Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: `You have nothing selected, or the selection is locked.`}));
             createApp.expectingRotateAsClickedSurface = false;
         } else {
             createApp.expectingRotateAsClickedSurface = true;

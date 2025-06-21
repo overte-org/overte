@@ -26,6 +26,7 @@
     var messageHistory = Settings.getValue("ArmoredChat-Messages", []) || [];
     var maxLocalDistance = 20; // Maximum range for the local chat
     var palData = AvatarManager.getPalData().data;
+    var notificationOverlay = null;
 
     Controller.keyPressEvent.connect(keyPressEvent);
     Messages.subscribe("Chat"); // Floofchat
@@ -42,6 +43,11 @@
 
     function startup() {
         tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+
+        // Add the notification area
+        notificationOverlay = new OverlayWindow({
+            source: Script.resolvePath("./Notifications.qml"),
+        });
 
         appButton = tablet.addButton({
             icon: Script.resolvePath("./img/icon_white.png"),
@@ -114,7 +120,7 @@
         if (!channels.includes(message.channel)) return;
 
         // If message is local, and if player is too far away from location, do nothing.
-        if (message.channel == "local" && isTooFar(message.position)) return; 
+        if (message.channel == "local" && isTooFar(message.position)) return;
 
         // Format the timestamp 
         message.timeString = timeArray[0];
@@ -124,13 +130,7 @@
         _emitEvent({ type: "show_message", ...message });
 
         // Show new message on screen
-        Messages.sendLocalMessage(
-            "Floof-Notif",
-            JSON.stringify({
-                sender: message.displayName,
-                text: message.message,
-            })
-        );
+        showChatMessageOnOverlay(message.displayName, message.message);
 
         // Save message to history
         let savedMessage = message;
@@ -244,14 +244,8 @@
             message.message = `${displayName} ${type}`;
 
             // Show new message on screen
-            if (settings.join_notification){
-                Messages.sendLocalMessage(
-                    "Floof-Notif",
-                    JSON.stringify({
-                        sender: displayName,
-                        text: type,
-                    })
-                );
+            if (settings.join_notification) {
+                showChatMessageOnOverlay(displayName, type);
             }
 
             _emitEvent({ type: "notification", ...message });
@@ -277,10 +271,10 @@
         console.log("Saving config");
         Settings.setValue("ArmoredChat-Config", settings);
     }
-    function _getTimestamp(){
+    function _getTimestamp() {
         return Date.now();
     }
-    function _formatTimestamp(timestamp){
+    function _formatTimestamp(timestamp) {
         let timeArray = [];
 
         timeArray.push(new Date().toLocaleTimeString(undefined, {
@@ -288,12 +282,16 @@
         }));
 
         timeArray.push(new Date(timestamp).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
         }));
 
         return timeArray;
+    }
+    function showChatMessageOnOverlay(author, message) {
+        if (!author) author = "anonymous";
+        notificationOverlay.sendToQml({ type: "message", author, message });
     }
 
     /**
