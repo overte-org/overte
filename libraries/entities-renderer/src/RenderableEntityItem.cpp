@@ -351,6 +351,55 @@ HighlightStyle EntityRenderer::getOutlineStyle(const ViewFrustum& viewFrustum, c
     return HighlightStyle();
 }
 
+FadeProperties EntityRenderer::getFadeProperties(const TransitionType type) const {
+    FadeProperties fadeProperties;
+    switch (type) {
+        case TransitionType::ELEMENT_ENTER_DOMAIN: {
+            if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED) {
+                fadeProperties = {
+                    _fadeInProperties.getDuration(),
+                    _fadeInProperties.getTiming(),
+                    _fadeInProperties.getNoiseSpeed(),
+                    1.0f / _fadeInProperties.getNoiseSize(),
+                    _fadeInProperties.getNoiseLevel(),
+                    1.0f / _fadeInProperties.getBaseSize(),
+                    _fadeInProperties.getBaseLevel(),
+                    vec4(vec3(_fadeInProperties.getEdgeInnerColor()) / 255.0f, _fadeInProperties.getEdgeInnerAlpha()),
+                    vec4(vec3(_fadeInProperties.getEdgeOuterColor()) / 255.0f, _fadeInProperties.getEdgeOuterAlpha()),
+                    _fadeInProperties.getEdgeWidth(),
+                    _fadeInProperties.getInverted()
+                };
+            } else if (auto renderer = DependencyManager::get<EntityTreeRenderer>()) {
+                fadeProperties = renderer->getLayeredZoneFadeProperties(type);
+            }
+            break;
+        }
+        case TransitionType::ELEMENT_LEAVE_DOMAIN: {
+            if (_fadeOutMode == ComponentMode::COMPONENT_MODE_ENABLED) {
+                fadeProperties = {
+                    _fadeOutProperties.getDuration(),
+                    _fadeOutProperties.getTiming(),
+                    _fadeOutProperties.getNoiseSpeed(),
+                    1.0f / _fadeOutProperties.getNoiseSize(),
+                    _fadeOutProperties.getNoiseLevel(),
+                    1.0f / _fadeOutProperties.getBaseSize(),
+                    _fadeOutProperties.getBaseLevel(),
+                    vec4(vec3(_fadeOutProperties.getEdgeInnerColor()) / 255.0f, _fadeOutProperties.getEdgeInnerAlpha()),
+                    vec4(vec3(_fadeOutProperties.getEdgeOuterColor()) / 255.0f, _fadeOutProperties.getEdgeOuterAlpha()),
+                    _fadeOutProperties.getEdgeWidth(),
+                    _fadeOutProperties.getInverted()
+                };
+            } else if (auto renderer = DependencyManager::get<EntityTreeRenderer>()) {
+                fadeProperties = renderer->getLayeredZoneFadeProperties(type);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return fadeProperties;
+}
+
 void EntityRenderer::render(RenderArgs* args) {
     if (!isValidRenderItem()) {
         return;
@@ -462,7 +511,7 @@ bool EntityRenderer::addToScene(const ScenePointer& scene, Transaction& transact
     if (renderer) {
         if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED ||
             (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(true))) {
-            fade(transaction, render::Transition::ELEMENT_ENTER_DOMAIN);
+            fade(transaction, TransitionType::ELEMENT_ENTER_DOMAIN);
         }
     }
     onAddToScene(_entity);
@@ -493,7 +542,7 @@ void EntityRenderer::updateInScene(const ScenePointer& scene, Transaction& trans
     });
 }
 
-void EntityRenderer::fade(render::Transaction& transaction, render::Transition::Type type) {
+void EntityRenderer::fade(render::Transaction& transaction, TransitionType type) {
     transaction.resetTransitionOnItem(_renderItemID, type);
 }
 

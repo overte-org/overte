@@ -13,6 +13,8 @@
 //
 
 <@include gpu/Inputs.slh@>
+<$declareMultipleTexCoords()$>
+
 <@include gpu/Color.slh@>
 <@include render-utils/ShaderConstants.h@>
 

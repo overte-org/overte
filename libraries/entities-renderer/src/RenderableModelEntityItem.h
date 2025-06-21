@@ -149,7 +149,7 @@ public:
     void removeMaterial(graphics::MaterialPointer material, const std::string& parentMaterialName) override;
 
     // model mesh parts fade individually
-    void fade(render::Transaction& transaction, render::Transition::Type type) override;
+    void fade(render::Transaction& transaction, TransitionType type) override;
     bool isFading() const override { return false; }
 
 protected:

@@ -19,24 +19,15 @@
 #include <render/RenderFetchCullSortTask.h>
 #include <render/Transition.h>
 
-enum FadeCategory {
-    FADE_ELEMENT_ENTER_LEAVE_DOMAIN = 0,
-    FADE_BUBBLE_ISECT_OWNER,
-    FADE_BUBBLE_ISECT_TRESPASSER,
-    FADE_USER_ENTER_LEAVE_DOMAIN,
-    FADE_AVATAR_CHANGE,
-
-    // Don't forget to modify Fade.slh to reflect the change in number of categories
-    FADE_CATEGORY_COUNT,
-};
-
 class FadeEditConfig : public render::Job::Config {
     Q_OBJECT
         Q_PROPERTY(bool editFade MEMBER editFade NOTIFY dirty)
+        Q_PROPERTY(int editedCategory MEMBER editedCategory NOTIFY dirty)
 
 public:
 
-    bool editFade{ false };
+    bool editFade { false };
+    int editedCategory { (int)TransitionType::ELEMENT_ENTER_DOMAIN };
 
 signals:
 
@@ -45,7 +36,6 @@ signals:
 
 class FadeConfig : public render::Job::Config {
     Q_OBJECT
-        Q_PROPERTY(int editedCategory MEMBER editedCategory WRITE setEditedCategory NOTIFY dirtyCategory)
         Q_PROPERTY(float duration READ getDuration WRITE setDuration NOTIFY dirty)
         Q_PROPERTY(float baseSizeX READ getBaseSizeX WRITE setBaseSizeX NOTIFY dirty)
         Q_PROPERTY(float baseSizeY READ getBaseSizeY WRITE setBaseSizeY NOTIFY dirty)
@@ -88,7 +78,7 @@ public:
     float getBaseSizeZ() const;
 
     void setBaseLevel(float value);
-    float getBaseLevel() const { return events[editedCategory].baseLevel; }
+    float getBaseLevel() const { return props.baseLevel; }
 
     void setInverted(bool value);
     bool isInverted() const;
@@ -103,7 +93,7 @@ public:
     float getNoiseSizeZ() const;
 
     void setNoiseLevel(float value);
-    float getNoiseLevel() const { return events[editedCategory].noiseLevel; }
+    float getNoiseLevel() const { return props.noiseLevel; }
 
     void setNoiseSpeedX(float value);
     float getNoiseSpeedX() const;
@@ -121,41 +111,21 @@ public:
     QColor getEdgeInnerColor() const;
 
     void setEdgeInnerIntensity(float value);
-    float getEdgeInnerIntensity() const { return events[editedCategory].edgeInnerColor.a; }
+    float getEdgeInnerIntensity() const { return props.innerEdgeColor.a; }
 
     void setEdgeOuterColor(const QColor& value);
     QColor getEdgeOuterColor() const;
 
     void setEdgeOuterIntensity(float value);
-    float getEdgeOuterIntensity() const { return events[editedCategory].edgeOuterColor.a; }
+    float getEdgeOuterIntensity() const { return props.outerEdgeColor.a; }
 
     void setTiming(int value);
-    int getTiming() const { return events[editedCategory].timing; }
+    int getTiming() const { return (int)props.timing; }
 
-    struct Event {
-        glm::vec4 edgeInnerColor;
-        glm::vec4 edgeOuterColor;
-        glm::vec3 noiseSize;
-        glm::vec3 noiseSpeed;
-        glm::vec3 baseSize;
-        float noiseLevel;
-        float baseLevel;
-        float duration;
-        float edgeWidth;
-        int timing;
-        bool isInverted;
-    };
-
-    Event events[FADE_CATEGORY_COUNT];
-    int editedCategory{ FADE_ELEMENT_ENTER_LEAVE_DOMAIN };
-    float threshold{ 0.f };
-    float manualThreshold{ 0.f };
-    bool manualFade{ false };
-
-    Q_INVOKABLE void save(const QString& filePath) const;
-    Q_INVOKABLE void load(const QString& filePath);
-
-    static QString eventNames[FADE_CATEGORY_COUNT];
+    FadeProperties props;
+    float threshold { 0.f };
+    float manualThreshold { 0.f };
+    bool manualFade { false };
 
 signals:
 
@@ -169,53 +139,45 @@ class FadeEditJob {
 public:
 
     using Config = FadeEditConfig;
-    using Input = FadeCategory;
-    using JobModel = render::Job::ModelI<FadeEditJob, Input, Config>;
+    using Output = render::ItemID;
+    using JobModel = render::Job::ModelO<FadeEditJob, Output, Config>;
 
     FadeEditJob() {}
 
     void configure(const Config& config);
-    void run(const render::RenderContextPointer& renderContext, const FadeEditJob::Input& input);
+    void run(const render::RenderContextPointer& renderContext, Output& output);
 
 private:
 
-    bool _isEditEnabled{ false };
-    render::ItemID _editedItem{ render::Item::INVALID_ITEM_ID };
+    bool _isEditEnabled { false };
+    int _editedCategory { (int)TransitionType::ELEMENT_ENTER_DOMAIN };
+    render::ItemID _editedItem { render::Item::INVALID_ITEM_ID };
 
 };
 
 class FadeJob {
 
 public:
-
-    static const FadeCategory transitionToCategory[render::Transition::TYPE_COUNT];
-
     using Config = FadeConfig;
-    using Output = FadeCategory;
-    using JobModel = render::Job::ModelO<FadeJob, Output, Config>;
+    using Input = render::ItemID;
+    using JobModel = render::Job::ModelI<FadeJob, Input, Config>;
 
     FadeJob();
 
     void configure(const Config& config);
-    void run(const render::RenderContextPointer& renderContext, FadeJob::Output& output);
-
-    static gpu::BufferView getConfigurationBuffer() { return _configurations; }
+    void run(const render::RenderContextPointer& renderContext, const Input& input);
 
 private:
-
-#include "Fade_shared.slh"
-
-    struct FadeConfiguration
-    {
-        FadeParameters  parameters[FADE_CATEGORY_COUNT];
-    };
-    using FadeConfigurationBuffer = gpu::StructBuffer<FadeConfiguration>;
-
-    static FadeConfigurationBuffer _configurations;
-    float _thresholdScale[FADE_CATEGORY_COUNT];
+    FadeProperties _editedFadeProperties;
     uint64_t _previousTime{ 0 };
 
-    bool update(RenderArgs* args, const Config& config, const render::ScenePointer& scene, render::Transaction& transaction, render::Transition& transition, const double deltaTime) const;
+    bool update(RenderArgs* args,
+                const Config& config,
+                const render::ScenePointer& scene,
+                render::Transaction& transaction,
+                render::Transition& transition,
+                const double deltaTime,
+                const render::ItemID editedItemID) const;
     static float computeElementEnterRatio(double time, const double period, FadeTiming timing);
 
 };
