@@ -14,7 +14,6 @@
 
 #include "render/TransitionStage.h"
 
-#include "FadeObjectParams.shared.slh"
 #include "render-utils/ShaderConstants.h"
 #include <PathUtils.h>
 
@@ -29,14 +28,13 @@ FadeEffect::FadeEffect() {
 }
 
 void FadeEffect::build(JobModel& task, const render::Varying& inputs, render::Varying& outputs) {
-    const auto editedFadeCategory = task.addJob<FadeJob>("Fade");
-    task.addJob<FadeEditJob>("FadeEdit", editedFadeCategory);
+    const auto editedItem = task.addJob<FadeEditJob>("FadeEdit");
+    task.addJob<FadeJob>("Fade", editedItem);
 }
 
 render::ShapePipeline::BatchSetter FadeEffect::getBatchSetter() {
     return [](const render::ShapePipeline& shapePipeline, gpu::Batch& batch, render::Args*) {
         batch.setResourceTexture(render_utils::slot::texture::FadeMask, _maskMap);
-        batch.setUniformBuffer(render_utils::slot::buffer::FadeParameters, FadeJob::getConfigurationBuffer());
     };
 }
 
@@ -47,28 +45,6 @@ render::ShapePipeline::ItemSetter FadeEffect::getItemUniformSetter() {
             const auto& batch = args->_batch;
             auto transitionStage = scene->getStage<render::TransitionStage>();
             auto& transitionState = transitionStage->getElement(item.getTransitionId());
-
-            if (transitionState.paramsBuffer._size != sizeof(gpu::StructBuffer<FadeObjectParams>)) {
-                static_assert(sizeof(transitionState.paramsBuffer) == sizeof(gpu::StructBuffer<FadeObjectParams>), "Assuming gpu::StructBuffer is a helper class for gpu::BufferView");
-                transitionState.paramsBuffer = gpu::StructBuffer<FadeObjectParams>();
-            }
-
-            const auto fadeCategory = FadeJob::transitionToCategory[transitionState.eventType];
-            auto& paramsConst = static_cast<gpu::StructBuffer<FadeObjectParams>&>(transitionState.paramsBuffer).get();
-
-            if (paramsConst.category != fadeCategory
-                || paramsConst.threshold != transitionState.threshold
-                || glm::vec3(paramsConst.baseOffset) != transitionState.baseOffset
-                || glm::vec3(paramsConst.noiseOffset) != transitionState.noiseOffset
-                || glm::vec3(paramsConst.baseInvSize) != transitionState.baseInvSize) {
-                auto& params = static_cast<gpu::StructBuffer<FadeObjectParams>&>(transitionState.paramsBuffer).edit();
-
-                params.category = fadeCategory;
-                params.threshold = transitionState.threshold;
-                params.baseInvSize = glm::vec4(transitionState.baseInvSize, 0.0f);
-                params.noiseOffset = glm::vec4(transitionState.noiseOffset, 0.0f);
-                params.baseOffset = glm::vec4(transitionState.baseOffset, 0.0f);
-            }
             batch->setUniformBuffer(render_utils::slot::buffer::FadeObjectParameters, transitionState.paramsBuffer);
         }
     };

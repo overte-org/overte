@@ -209,13 +209,13 @@ void TextEntityRenderer::onAddToSceneTyped(const TypedEntityPointer& entity) {
     if (renderer) {
         if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED ||
             (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(true))) {
-            transaction.resetTransitionOnItem(_textRenderID, render::Transition::ELEMENT_ENTER_DOMAIN);
+            transaction.resetTransitionOnItem(_textRenderID, TransitionType::ELEMENT_ENTER_DOMAIN);
         }
     }
     AbstractViewStateInterface::instance()->getMain3DScene()->enqueueTransaction(transaction);
 }
 
-void TextEntityRenderer::fade(render::Transaction& transaction, render::Transition::Type type) {
+void TextEntityRenderer::fade(render::Transaction& transaction, TransitionType type) {
     Parent::fade(transaction, type);
     if (Item::isValidID(_textRenderID)) {
         transaction.resetTransitionOnItem(_textRenderID, type);
@@ -338,6 +338,20 @@ ItemID entities::TextPayload::computeMirrorView(ViewFrustum& viewFrustum) const 
     return Item::INVALID_ITEM_ID;
 }
 
+FadeProperties entities::TextPayload::getFadeProperties(const TransitionType type) const {
+    auto entityTreeRenderer = DependencyManager::get<EntityTreeRenderer>();
+    if (!entityTreeRenderer) {
+        return FadeProperties();
+    }
+    auto renderable = entityTreeRenderer->renderableForEntityId(_entityID);
+    if (!renderable) {
+        return FadeProperties();
+    }
+
+    auto textRenderable = std::static_pointer_cast<TextEntityRenderer>(renderable);
+    return textRenderable->getFadeProperties(type);
+}
+
 void entities::TextPayload::render(RenderArgs* args) {
     PerformanceTimer perfTimer("TextPayload::render");
     Q_ASSERT(args->_batch);
@@ -447,6 +461,13 @@ template <> ItemID payloadComputeMirrorView(const entities::TextPayload::Pointer
         return payload->computeMirrorView(viewFrustum);
     }
     return Item::INVALID_ITEM_ID;
+}
+
+template <> FadeProperties payloadGetFadeProperties(const entities::TextPayload::Pointer& payload, const TransitionType type) {
+    if (payload) {
+        return payload->getFadeProperties(type);
+    }
+    return FadeProperties();
 }
 
 }

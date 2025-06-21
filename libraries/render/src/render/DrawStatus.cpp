@@ -163,16 +163,16 @@ void DrawStatus::run(const RenderContextPointer& renderContext, const Input& inI
                             // Set icon based on transition type
                             auto& transition = transitionStage->getElement(transitionID);
                             switch (transition.eventType) {
-                            case Transition::Type::USER_ENTER_DOMAIN:
+                            case TransitionType::USER_ENTER_DOMAIN:
                                 status.setIcon((unsigned char)Item::Status::Icon::USER_TRANSITION_IN);
                                 break;
-                            case Transition::Type::USER_LEAVE_DOMAIN:
+                            case TransitionType::USER_LEAVE_DOMAIN:
                                 status.setIcon((unsigned char)Item::Status::Icon::USER_TRANSITION_OUT);
                                 break;
-                            case Transition::ELEMENT_ENTER_DOMAIN:
+                            case TransitionType::ELEMENT_ENTER_DOMAIN:
                                 status.setIcon((unsigned char)Item::Status::Icon::GENERIC_TRANSITION_IN);
                                 break;
-                            case Transition::ELEMENT_LEAVE_DOMAIN:
+                            case TransitionType::ELEMENT_LEAVE_DOMAIN:
                                 status.setIcon((unsigned char)Item::Status::Icon::GENERIC_TRANSITION_OUT);
                                 break;
                             default:

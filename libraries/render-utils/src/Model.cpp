@@ -1182,12 +1182,6 @@ void Model::removeFromScene(const render::ScenePointer& scene, render::Transacti
     _renderInfoHasTransparent = false;
 }
 
-void Model::fade(render::Transaction& transaction, render::Transition::Type type) {
-    for (auto item : _modelMeshRenderItemIDs) {
-        transaction.resetTransitionOnItem(item, type);
-    }
-}
-
 void Model::renderDebugMeshBoxes(gpu::Batch& batch, bool forward) {
     int colorNdx = 0;
     _mutex.lock();

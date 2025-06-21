@@ -31,6 +31,7 @@
 
 #include "BlendshapeConstants.h"
 #include "HighlightStyle.h"
+#include "FadeProperties.h"
 
 namespace render {
 
@@ -474,6 +475,8 @@ public:
 
         virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const = 0;
 
+        virtual FadeProperties getFadeProperties(const TransitionType type) const = 0;
+
         ~PayloadInterface() {}
 
         // Status interface is local to the base class
@@ -533,6 +536,8 @@ public:
     ItemID computeMirrorView(ViewFrustum& viewFrustum) const { return _payload->computeMirrorView(viewFrustum); }
 
     HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const { return _payload->getOutlineStyle(viewFrustum, height); }
+
+    FadeProperties getFadeProperties(const TransitionType type) const { return _payload->getFadeProperties(type); }
 
     // Access the status
     const StatusPointer& getStatus() const { return _payload->getStatus(); }
@@ -598,6 +603,10 @@ template <class T> HighlightStyle payloadGetOutlineStyle(const std::shared_ptr<T
     return HighlightStyle();
 }
 
+// Fading Interface
+// Allows payloads to supply their fade properties for different types of fades
+template <class T> FadeProperties payloadGetFadeProperties(const std::shared_ptr<T>& payloadData, const TransitionType type) { return FadeProperties(); }
+
 // THe Payload class is the real Payload to be used
 // THis allow anything to be turned into a Payload as long as the required interface functions are available
 // When creating a new kind of payload from a new "stuff" class then you need to create specialized version for "stuff"
@@ -628,6 +637,8 @@ public:
     virtual ItemID computeMirrorView(ViewFrustum& viewFrustum) const override { return payloadComputeMirrorView<T>(_data, viewFrustum); }
 
     virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const override { return payloadGetOutlineStyle<T>(_data, viewFrustum, height); }
+
+    virtual FadeProperties getFadeProperties(const TransitionType type) const override { return payloadGetFadeProperties<T>(_data, type); }
 
 protected:
     DataPointer _data;
@@ -687,6 +698,7 @@ public:
     virtual bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const = 0;
     virtual ItemID computeMirrorView(ViewFrustum& viewFrustum) const = 0;
     virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const = 0;
+    virtual FadeProperties getFadeProperties(const TransitionType type) const = 0;
 
     // FIXME: this isn't the best place for this since it's only used for ModelEntities, but currently all Entities use PayloadProxyInterface
     virtual void handleBlendedVertices(int blendshapeNumber, const QVector<BlendshapeOffset>& blendshapeOffsets,
@@ -702,6 +714,7 @@ template <> const ShapeKey shapeGetShapeKey(const PayloadProxyInterface::Pointer
 template <> bool payloadPassesZoneOcclusionTest(const PayloadProxyInterface::Pointer& payload, const std::unordered_set<QUuid>& containingZones);
 template <> ItemID payloadComputeMirrorView(const PayloadProxyInterface::Pointer& payload, ViewFrustum& viewFrustum);
 template <> HighlightStyle payloadGetOutlineStyle(const PayloadProxyInterface::Pointer& payload, const ViewFrustum& viewFrustum, const size_t height);
+template <> FadeProperties payloadGetFadeProperties(const PayloadProxyInterface::Pointer& payload, const TransitionType type);
 
 typedef Item::PayloadPointer PayloadPointer;
 typedef std::vector<PayloadPointer> Payloads;

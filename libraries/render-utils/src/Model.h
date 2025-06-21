@@ -160,7 +160,6 @@ public:
                     render::Item::Status::Getters& statusGetters,
                     BlendShapeOperator modelBlendshapeOperator = nullptr);
     void removeFromScene(const render::ScenePointer& scene, render::Transaction& transaction);
-    void fade(render::Transaction& transaction, render::Transition::Type type);
     bool isRenderable() const;
 
     void updateRenderItemsKey(const render::ScenePointer& scene);

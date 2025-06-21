@@ -1201,7 +1201,7 @@ void EntityTreeRenderer::fadeOutRenderable(const EntityRendererPointer& renderab
     auto fadeOutMode = renderable->getFadeOutMode();
     if (fadeOutMode == ComponentMode::COMPONENT_MODE_ENABLED ||
         (fadeOutMode == ComponentMode::COMPONENT_MODE_INHERIT && _layeredZones.hasFade(false))) {
-        renderable->fade(transaction, render::Transition::ELEMENT_LEAVE_DOMAIN);
+        renderable->fade(transaction, TransitionType::ELEMENT_LEAVE_DOMAIN);
     }
 
     EntityRendererWeakPointer weakRenderable = renderable;
@@ -1376,6 +1376,52 @@ std::pair<bool, bool> EntityTreeRenderer::LayeredZones::getZoneInteractionProper
         }
     }
     return { true, true };
+}
+
+FadeProperties EntityTreeRenderer::LayeredZones::getFadeProperties(const TransitionType type) const {
+    for (auto it = cbegin(); it != cend(); it++) {
+        auto zone = it->zone.lock();
+        if (zone) {
+            if (type == TransitionType::ELEMENT_ENTER_DOMAIN) {
+                auto mode = zone->getFadeInMode();
+                if (mode == ComponentMode::COMPONENT_MODE_ENABLED) {
+                    const auto& fadeProperties = zone->getFadeInProperties();
+                    return {
+                        fadeProperties.getDuration(),
+                        fadeProperties.getTiming(),
+                        fadeProperties.getNoiseSpeed(),
+                        1.0f / fadeProperties.getNoiseSize(),
+                        fadeProperties.getNoiseLevel(),
+                        1.0f / fadeProperties.getBaseSize(),
+                        fadeProperties.getBaseLevel(),
+                        vec4(vec3(fadeProperties.getEdgeInnerColor()) / 255.0f, fadeProperties.getEdgeInnerAlpha()),
+                        vec4(vec3(fadeProperties.getEdgeOuterColor()) / 255.0f, fadeProperties.getEdgeOuterAlpha()),
+                        fadeProperties.getEdgeWidth(),
+                        fadeProperties.getInverted()
+                    };
+                }
+            } else if (type == TransitionType::ELEMENT_LEAVE_DOMAIN) {
+                auto mode = zone->getFadeOutMode();
+                if (mode == ComponentMode::COMPONENT_MODE_ENABLED) {
+                    const auto& fadeProperties = zone->getFadeOutProperties();
+                    return {
+                        fadeProperties.getDuration(),
+                        fadeProperties.getTiming(),
+                        fadeProperties.getNoiseSpeed(),
+                        1.0f / fadeProperties.getNoiseSize(),
+                        fadeProperties.getNoiseLevel(),
+                        1.0f / fadeProperties.getBaseSize(),
+                        fadeProperties.getBaseLevel(),
+                        vec4(vec3(fadeProperties.getEdgeInnerColor()) / 255.0f, fadeProperties.getEdgeInnerAlpha()),
+                        vec4(vec3(fadeProperties.getEdgeOuterColor()) / 255.0f, fadeProperties.getEdgeOuterAlpha()),
+                        fadeProperties.getEdgeWidth(),
+                        fadeProperties.getInverted()
+                    };
+                }
+            }
+        }
+    }
+    return FadeProperties();
 }
 
 bool EntityTreeRenderer::LayeredZones::hasFade(bool in) const {

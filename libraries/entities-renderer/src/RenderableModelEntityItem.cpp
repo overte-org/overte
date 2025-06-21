@@ -1411,7 +1411,7 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
             if (renderer) {
                 if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED ||
                     (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(true))) {
-                    model->fade(transaction, render::Transition::ELEMENT_ENTER_DOMAIN);
+                    Parent::fade(transaction, TransitionType::ELEMENT_ENTER_DOMAIN);
                 }
             }
             processMaterials();
@@ -1612,12 +1612,9 @@ void ModelEntityRenderer::metaBlendshapeOperator(render::ItemID renderItemID, in
     AbstractViewStateInterface::instance()->getMain3DScene()->enqueueTransaction(transaction);
 }
 
-void ModelEntityRenderer::fade(render::Transaction& transaction, render::Transition::Type type) {
-    ModelPointer model = resultWithReadLock<ModelPointer>([&] {
-        return _model;
-    });
-
-    if (model) {
-        model->fade(transaction, type);
+void ModelEntityRenderer::fade(render::Transaction& transaction, TransitionType type) {
+    // Fade in is handled when the model actually loads
+    if (type == TransitionType::ELEMENT_LEAVE_DOMAIN) {
+        Parent::fade(transaction, type);
     }
 }

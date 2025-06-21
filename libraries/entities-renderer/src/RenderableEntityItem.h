@@ -56,7 +56,7 @@ public:
     virtual bool addToScene(const ScenePointer& scene, Transaction& transaction) final;
     virtual void removeFromScene(const ScenePointer& scene, Transaction& transaction);
 
-    virtual void fade(render::Transaction& transaction, render::Transition::Type type);
+    virtual void fade(render::Transaction& transaction, TransitionType type);
 
     const uint64_t& getUpdateTime() const { return _updateTime; }
 
@@ -81,12 +81,12 @@ public:
     virtual Item::Bound getBound(RenderArgs* args) override;
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const override;
     ItemID computeMirrorView(ViewFrustum& viewFrustum) const override;
-
     static ItemID computeMirrorViewOperator(ViewFrustum& viewFrustum, const glm::vec3& inPropertiesPosition, const glm::quat& inPropertiesRotation,
                                             MirrorMode mirrorMode, const QUuid& portalExitID);
     virtual void renderSimulate(RenderArgs* args) override {}
     virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const override;
 
+    virtual FadeProperties getFadeProperties(const TransitionType type) const override;
     ComponentMode getFadeOutMode() const { return _fadeOutMode; }
 
 protected:

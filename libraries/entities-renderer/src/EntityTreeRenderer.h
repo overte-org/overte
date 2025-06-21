@@ -30,6 +30,7 @@
 #include <OctreeProcessor.h>
 #include <render/Forward.h>
 #include <workload/Space.h>
+#include <FadeProperties.h>
 
 class AbstractScriptingServicesInterface;
 class AbstractViewStateInterface;
@@ -105,6 +106,7 @@ public:
     void reloadEntityScripts();
 
     void fadeOutRenderable(const EntityRendererPointer& renderable);
+    FadeProperties getLayeredZoneFadeProperties(const TransitionType type) const { return _layeredZones.getFadeProperties(type); }
 
     // event handles which may generate entity related events
     QUuid mousePressEvent(QMouseEvent* event);
@@ -253,6 +255,7 @@ private:
 
         void appendRenderIDs(render::ItemIDs& list, EntityTreeRenderer* entityTreeRenderer) const;
         std::pair<bool, bool> getZoneInteractionProperties() const;
+        FadeProperties getFadeProperties(const TransitionType type) const;
         bool hasFade(bool in) const;
     };
 
