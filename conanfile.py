@@ -25,6 +25,7 @@ class Overte(ConanFile):
         "qt*:shared": "True",
         "qt*:gui": "True",
         "qt*:qtdeclarative": "True",
+        "qt*:qtimageformats": "True",
         "qt*:qtlocation": "True",
         "qt*:qtmultimedia": "True",
         "qt*:qtquickcontrols2": "True",
