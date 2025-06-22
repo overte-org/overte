@@ -22,7 +22,7 @@ const BUBBLE_LINE_HEIGHT = 0.07;
 const BUBBLE_WIDTH = 1.3;
 const BUBBLE_WIDTH_MAX_CHARS = 24; // roughly 18 ems per meter
 const MAX_DISTANCE = 20;
-const SELF_BUBBLES = true;
+const SELF_BUBBLES = false;
 
 let settings = {
 	enabled: true,
@@ -298,11 +298,10 @@ function ChatBubbles_Delete(sessionID) {
     const bubbleList = currentBubbles[sessionID];
     const indicator = typingIndicators[sessionID];
 
-    if (bubble) {
-        for (const [id, bubble] of Object.entries(bubbleList)) {
+    if (bubbleList) {
+        for (const [_, bubble] of Object.entries(bubbleList)) {
             Entities.deleteEntity(bubble.entity);
             Script.clearTimeout(bubble.timeout);
-            delete bubbleList[id];
         }
         delete currentBubbles[sessionID];
     }
