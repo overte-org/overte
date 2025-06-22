@@ -16,6 +16,11 @@ const TYPING_NOTIFICATION_CHANNEL = "ChatBubbles-Typing";
 const CONFIG_UPDATE_CHANNEL = "ChatBubbles-Config";
 
 const BUBBLE_LIFETIME_SECS = 10;
+const BUBBLE_FADE_TIME = 1;
+const BUBBLE_ANIM_FPS = 15;
+const BUBBLE_LINE_HEIGHT = 0.07;
+const BUBBLE_WIDTH = 1.3;
+const BUBBLE_WIDTH_MAX_CHARS = 24; // roughly 18 ems per meter
 const MAX_DISTANCE = 20;
 const SELF_BUBBLES = true;
 
@@ -26,40 +31,145 @@ let settings = {
 let currentBubbles = {};
 let typingIndicators = {};
 
+// NOTE: naive wrapping algorithm that doesn't account
+// for languages with non-latin scripts, though our SDF
+// fonts and text renderer don't support them anyway
+function ChatBubbles_WrapText(text, maxChars = BUBBLE_WIDTH_MAX_CHARS) {
+    // split on spaces, periods, commas, slashes, hyphens, colons, and semicolons,
+    // collapsing whitespace down to one space
+    let tokens = text.replace(/\s+/g, " ").split(/([ \.,\/\-:;])/);
+    let lineWidth = 0;
+    let lineChunk = [];
+    let linesAccum = [];
+
+    for (const token of tokens) {
+        // the split regex sometimes produces empty space tokens too, so skip those
+        if (token.length < 1) { continue; }
+
+        // this token would go over the limit,
+        // push the line we have and start a new one
+        if (lineWidth + token.length > maxChars && lineWidth !== 0) {
+            linesAccum.push(lineChunk.join(""));
+            lineChunk = [];
+            lineWidth = 0;
+        }
+
+        // it's *still* too long for an empty line,
+        // so break it apart into smaller chunks
+        if (lineWidth + token.length > maxChars) {
+            // split by codepoints so we don't get orphaned UTF16 surrogates
+            let chars = [...token];
+            let i = 0;
+
+            while (i < chars.length) {
+                const token = chars.slice(i, i + maxChars).join("");
+
+                i += maxChars;
+
+                // this token would go over the limit,
+                // push the line we have and start a new one
+                if (lineWidth + token.length > maxChars && lineWidth !== 0) {
+                    linesAccum.push(lineChunk.join(""));
+                    lineChunk = [];
+                    lineWidth = 0;
+                    lineChunk.push(token);
+                } else {
+                    // this token will fit, so add it to the current line
+                    lineChunk.push(token);
+                    lineWidth += token.length;
+                }
+            }
+        } else {
+            // this token will fit, so add it to the current line
+            lineChunk.push(token);
+            lineWidth += token.length;
+        }
+    }
+
+    // push the trailing line
+    linesAccum.push(lineChunk.join(""));
+
+    return [linesAccum.join("\n"), linesAccum.length];
+}
+
 function ChatBubbles_SpawnBubble(data, senderID) {
-	if (currentBubbles[senderID]) {
-		Entities.deleteEntity(currentBubbles[senderID].entity);
-		Script.clearTimeout(currentBubbles[senderID].timeout);
-		delete currentBubbles[senderID];
-	}
+    // this user doesn't have a bubble stack, so add one
+    if (!currentBubbles[senderID]) {
+        currentBubbles[senderID] = {};
+    }
 
     const scale = AvatarList.getAvatar(senderID).scale;
+
+    let link;
+
+    try {
+        const maybeURL = data.message.trim();
+
+        if (maybeURL.startsWith("https://") || maybeURL.startsWith("http://")) {
+            link = maybeURL;
+        }
+    } catch (e) {}
+
+    const [text, lineCount] = ChatBubbles_WrapText(data.message);
+    const height = lineCount * BUBBLE_LINE_HEIGHT;
 
 	const bubbleEntity = Entities.addEntity({
 		type: "Text",
 		parentID: senderID,
-		text: data.message,
+		text: text,
 		unlit: true,
-		lineHeight: 0.07,
-		dimensions: [1.3, 4, 0.01],
-		localPosition: [0, scale + 2.1, 0],
-		backgroundAlpha: 0,
+        ignorePickIntersection: (link === undefined),
+		lineHeight: BUBBLE_LINE_HEIGHT,
+		dimensions: [BUBBLE_WIDTH, height + 0.04, 0.01],
+		localPosition: [0, scale + (height / 2) + 0.1, 0],
+		backgroundAlpha: 0.5,
+        textColor: (link === undefined) ? [255, 255, 255] : [128, 240, 255],
 		textEffect: "outline fill",
 		textEffectColor: "#000",
-		textEffectThickness: 0.5,
+		textEffectThickness: 0.4,
 		canCastShadow: false,
 		billboardMode: "yaw",
 		alignment: "center",
-		verticalAlignment: "bottom",
+		verticalAlignment: "center",
+        grab: {grabbable: false},
+        script: (link === undefined) ? undefined :
+`(function() {
+    this.mousePressOnEntity = function(entity, event) {
+        if (event.isPrimaryButton) {
+            const url = ${JSON.stringify(link)};
+            Window.openWebBrowser(url);
+        }
+    };
+})`
 	}, "local");
 
-	currentBubbles[senderID] = {
+    for (const bubble of Object.values(currentBubbles[senderID])) {
+        let { localPosition } = Entities.getEntityProperties(bubble.entity, "localPosition");
+        localPosition = Vec3.sum(localPosition, [0, height + 0.05, 0]);
+        Entities.editEntity(bubble.entity, { localPosition: localPosition });
+    }
+
+    let bubbleIndex = Uuid.generate();
+
+    let bubble = {
 		entity: bubbleEntity,
 		timeout: Script.setTimeout(() => {
-			Entities.deleteEntity(bubbleEntity);
-			delete currentBubbles[senderID];
+            let fade = 1.0;
+
+            const fadeInterval = Script.setInterval(() => {
+                Entities.editEntity(bubble.entity, { textAlpha: fade, backgroundAlpha: fade * 0.5 });
+                fade -= (1 / BUBBLE_ANIM_FPS) / BUBBLE_FADE_TIME;
+            }, 1000 / BUBBLE_ANIM_FPS);
+
+            bubble.timeout = Script.setTimeout(() => {
+                Script.clearInterval(fadeInterval);
+                Entities.deleteEntity(bubble.entity);
+                delete currentBubbles[senderID][bubbleIndex];
+            }, BUBBLE_FADE_TIME * 1000);
 		}, BUBBLE_LIFETIME_SECS * 1000),
 	};
+
+	currentBubbles[senderID][bubbleIndex] = bubble;
 }
 
 function ChatBubbles_IndicatorTick(senderID) {
@@ -85,18 +195,22 @@ function ChatBubbles_ShowTypingIndicator(senderID) {
 		parentID: senderID,
 		text: "•••",
 		unlit: true,
-		lineHeight: 0.2,
-		dimensions: [0.22, 0.1, 0.01],
+		lineHeight: 0.15,
+		dimensions: [0.18, 0.08, 0.01],
 		localPosition: [0, scale, 0],
 		backgroundAlpha: 0.8,
 		canCastShadow: false,
 		billboardMode: "full",
 		alignment: "center",
 		verticalAlignment: "center",
-		topMargin: -0.08,
+		textEffect: "outline fill",
+		textEffectColor: "#000",
+		textEffectThickness: 0.3,
+		topMargin: -0.06,
+        grab: {grabbable: false},
 	}, "local");
 
-	const indicatorInterval = Script.setInterval(() => ChatBubbles_IndicatorTick(senderID), 50);
+	const indicatorInterval = Script.setInterval(() => ChatBubbles_IndicatorTick(senderID), 1000 / BUBBLE_ANIM_FPS);
 
 	typingIndicators[senderID] = {
 		entity: indicatorEntity,
@@ -163,9 +277,12 @@ function ChatBubbles_RecvMsg(channel, msg, senderID, localOnly) {
 }
 
 function ChatBubbles_DeleteAll() {
-	for (const [_, bubble] of Object.entries(currentBubbles)) {
-		Entities.deleteEntity(bubble.entity);
-		Script.clearTimeout(bubble.timeout);
+	for (const [_, bubbleList] of Object.entries(currentBubbles)) {
+        for (const [id, bubble] of Object.entries(bubbleList)) {
+            Entities.deleteEntity(bubble.entity);
+            Script.clearTimeout(bubble.timeout);
+            delete bubbleList[id];
+        }
 	}
 
 	for (const [_, indicator] of Object.entries(typingIndicators)) {
@@ -178,12 +295,15 @@ function ChatBubbles_DeleteAll() {
 }
 
 function ChatBubbles_Delete(sessionID) {
-    const bubble = currentBubbles[sessionID];
+    const bubbleList = currentBubbles[sessionID];
     const indicator = typingIndicators[sessionID];
 
     if (bubble) {
-        Entities.deleteEntity(bubble.entity);
-        Script.clearTimeout(bubble.timeout);
+        for (const [id, bubble] of Object.entries(bubbleList)) {
+            Entities.deleteEntity(bubble.entity);
+            Script.clearTimeout(bubble.timeout);
+            delete bubbleList[id];
+        }
         delete currentBubbles[sessionID];
     }
 
