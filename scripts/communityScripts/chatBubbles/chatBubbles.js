@@ -24,8 +24,10 @@ const BUBBLE_WIDTH_MAX_CHARS = 24; // roughly 18 ems per meter
 const MAX_DISTANCE = 20;
 const SELF_BUBBLES = false;
 
+const NOTIFY_SOUND = SoundCache.getSound(Script.resolvePath("./assets/notify.wav"));
+
 let settings = {
-	enabled: true,
+    enabled: true,
 };
 
 let currentBubbles = {};
@@ -101,38 +103,72 @@ function ChatBubbles_SpawnBubble(data, senderID) {
     const scale = AvatarList.getAvatar(senderID).scale;
 
     let link;
+    let linkIsImage = false;
 
-    try {
-        const maybeURL = data.message.trim();
+    // only handles cases where the whole message is just a URL,
+    // text with a URL in the middle is ignored
+    const maybeURL = data.message.trim();
 
-        if (maybeURL.startsWith("https://") || maybeURL.startsWith("http://")) {
-            link = maybeURL;
+    if (
+        (maybeURL.startsWith("https://") || maybeURL.startsWith("http://")) &&
+            !/\s+/g.test(maybeURL) &&
+            /[A-Za-z0-9-._~:/?#\[\]@!$&'()*+,;%=]+/g.test(maybeURL)
+    ) {
+        link = maybeURL;
+
+        const chunkBeforeQuery = maybeURL.split("?", 2)[0];
+
+        if (
+            chunkBeforeQuery.endsWith(".jpg") ||
+                chunkBeforeQuery.endsWith(".png") ||
+                chunkBeforeQuery.endsWith(".gif") ||
+                chunkBeforeQuery.endsWith(".svg") ||
+                chunkBeforeQuery.endsWith(".webp")
+        ) {
+            linkIsImage = true;
         }
-    } catch (e) {}
+    }
 
     const [text, lineCount] = ChatBubbles_WrapText(data.message);
-    const height = lineCount * BUBBLE_LINE_HEIGHT;
+    let height = lineCount * BUBBLE_LINE_HEIGHT;
 
-	const bubbleEntity = Entities.addEntity({
-		type: "Text",
-		parentID: senderID,
-		text: text,
-		unlit: true,
-        ignorePickIntersection: (link === undefined),
-		lineHeight: BUBBLE_LINE_HEIGHT,
-		dimensions: [BUBBLE_WIDTH, height + 0.04, 0.01],
-		localPosition: [0, scale + (height / 2) + 0.1, 0],
-		backgroundAlpha: 0.5,
-        textColor: (link === undefined) ? [255, 255, 255] : [128, 240, 255],
-		textEffect: "outline fill",
-		textEffectColor: "#000",
-		textEffectThickness: 0.4,
-		canCastShadow: false,
-		billboardMode: "yaw",
-		alignment: "center",
-		verticalAlignment: "center",
-        grab: {grabbable: false},
-        script: (link === undefined) ? undefined :
+    let bubbleEntity;
+    if (link !== undefined && linkIsImage) {
+        height = BUBBLE_WIDTH / 3;
+        bubbleEntity = Entities.addEntity({
+            type: "Image",
+            parentID: senderID,
+            imageURL: link,
+            emissive: true,
+            keepAspectRatio: true,
+            ignorePickIntersection: true,
+            dimensions: [BUBBLE_WIDTH, height, 0.01],
+            localPosition: [0, scale + (height / 2) + 0.1, 0],
+            canCastShadow: false,
+            billboardMode: "yaw",
+            grab: {grabbable: false},
+        }, "local");
+    } else {
+        bubbleEntity = Entities.addEntity({
+            type: "Text",
+            parentID: senderID,
+            text: text,
+            unlit: true,
+            ignorePickIntersection: (link === undefined),
+            lineHeight: BUBBLE_LINE_HEIGHT,
+            dimensions: [BUBBLE_WIDTH, height + 0.04, 0.01],
+            localPosition: [0, scale + (height / 2) + 0.1, 0],
+            backgroundAlpha: 0.5,
+            textColor: (link === undefined) ? [255, 255, 255] : [128, 240, 255],
+            textEffect: "outline fill",
+            textEffectColor: "#000",
+            textEffectThickness: 0.4,
+            canCastShadow: false,
+            billboardMode: "yaw",
+            alignment: "center",
+            verticalAlignment: "center",
+            grab: {grabbable: false},
+            script: (link === undefined && !linkIsImage) ? undefined :
 `(function() {
     this.mousePressOnEntity = function(entity, event) {
         if (event.isPrimaryButton) {
@@ -141,7 +177,8 @@ function ChatBubbles_SpawnBubble(data, senderID) {
         }
     };
 })`
-	}, "local");
+        }, "local");
+    }
 
     for (const bubble of Object.values(currentBubbles[senderID])) {
         let { localPosition } = Entities.getEntityProperties(bubble.entity, "localPosition");
@@ -152,12 +189,16 @@ function ChatBubbles_SpawnBubble(data, senderID) {
     let bubbleIndex = Uuid.generate();
 
     let bubble = {
-		entity: bubbleEntity,
-		timeout: Script.setTimeout(() => {
+        entity: bubbleEntity,
+        timeout: Script.setTimeout(() => {
             let fade = 1.0;
 
             const fadeInterval = Script.setInterval(() => {
-                Entities.editEntity(bubble.entity, { textAlpha: fade, backgroundAlpha: fade * 0.5 });
+                if (linkIsImage) {
+                    Entities.editEntity(bubble.entity, { alpha: fade });
+                } else {
+                    Entities.editEntity(bubble.entity, { textAlpha: fade, backgroundAlpha: fade * 0.5 });
+                }
                 fade -= (1 / BUBBLE_ANIM_FPS) / BUBBLE_FADE_TIME;
             }, 1000 / BUBBLE_ANIM_FPS);
 
@@ -166,67 +207,73 @@ function ChatBubbles_SpawnBubble(data, senderID) {
                 Entities.deleteEntity(bubble.entity);
                 delete currentBubbles[senderID][bubbleIndex];
             }, BUBBLE_FADE_TIME * 1000);
-		}, BUBBLE_LIFETIME_SECS * 1000),
-	};
+        }, BUBBLE_LIFETIME_SECS * 1000),
+    };
 
-	currentBubbles[senderID][bubbleIndex] = bubble;
+    currentBubbles[senderID][bubbleIndex] = bubble;
+
+    Audio.playSound(NOTIFY_SOUND, {
+        position: data.position,
+        volume: 0.25,
+        localOnly: true,
+    });
 }
 
 function ChatBubbles_IndicatorTick(senderID) {
-	const data = typingIndicators[senderID];
+    const data = typingIndicators[senderID];
 
-	const lowColor = [128, 192, 192];
-	const hiColor = [255, 255, 255];
+    const lowColor = [128, 192, 192];
+    const hiColor = [255, 255, 255];
 
-	let colorFade = 0.5 + (Math.cos(data.age / 5) * 0.5);
+    let colorFade = 0.5 + (Math.cos(data.age / 5) * 0.5);
 
-	Entities.editEntity(data.entity, {textColor: Vec3.mix(lowColor, hiColor, colorFade)});
+    Entities.editEntity(data.entity, {textColor: Vec3.mix(lowColor, hiColor, colorFade)});
 
-	data.age += 1;
+    data.age += 1;
 }
 
 function ChatBubbles_ShowTypingIndicator(senderID) {
-	if (typingIndicators[senderID]) { return; }
+    if (typingIndicators[senderID]) { return; }
 
     const scale = AvatarList.getAvatar(senderID).scale;
 
-	const indicatorEntity = Entities.addEntity({
-		type: "Text",
-		parentID: senderID,
-		text: "•••",
-		unlit: true,
-		lineHeight: 0.15,
-		dimensions: [0.18, 0.08, 0.01],
-		localPosition: [0, scale, 0],
-		backgroundAlpha: 0.8,
-		canCastShadow: false,
-		billboardMode: "full",
-		alignment: "center",
-		verticalAlignment: "center",
-		textEffect: "outline fill",
-		textEffectColor: "#000",
-		textEffectThickness: 0.3,
-		topMargin: -0.06,
+    const indicatorEntity = Entities.addEntity({
+        type: "Text",
+        parentID: senderID,
+        text: "•••",
+        unlit: true,
+        lineHeight: 0.15,
+        dimensions: [0.18, 0.08, 0.01],
+        localPosition: [0, scale, 0],
+        backgroundAlpha: 0.8,
+        canCastShadow: false,
+        billboardMode: "full",
+        alignment: "center",
+        verticalAlignment: "center",
+        textEffect: "outline fill",
+        textEffectColor: "#000",
+        textEffectThickness: 0.3,
+        topMargin: -0.06,
         grab: {grabbable: false},
-	}, "local");
+    }, "local");
 
-	const indicatorInterval = Script.setInterval(() => ChatBubbles_IndicatorTick(senderID), 1000 / BUBBLE_ANIM_FPS);
+    const indicatorInterval = Script.setInterval(() => ChatBubbles_IndicatorTick(senderID), 1000 / BUBBLE_ANIM_FPS);
 
-	typingIndicators[senderID] = {
-		entity: indicatorEntity,
-		interval: indicatorInterval,
-		age: 0,
-	};
+    typingIndicators[senderID] = {
+        entity: indicatorEntity,
+        interval: indicatorInterval,
+        age: 0,
+    };
 }
 
 function ChatBubbles_HideTypingIndicator(senderID) {
-	const data = typingIndicators[senderID];
+    const data = typingIndicators[senderID];
 
-	if (!data) { return; }
+    if (!data) { return; }
 
-	Entities.deleteEntity(data.entity);
-	Script.clearInterval(data.interval);
-	delete typingIndicators[senderID];
+    Entities.deleteEntity(data.entity);
+    Script.clearInterval(data.interval);
+    delete typingIndicators[senderID];
 }
 
 function ChatBubbles_RecvMsg(channel, msg, senderID, localOnly) {
@@ -243,6 +290,8 @@ function ChatBubbles_RecvMsg(channel, msg, senderID, localOnly) {
         for (const [key, value] of Object.entries(data)) {
             settings[key] = value;
         }
+
+        Settings.setValue("ChatBubbles-Config", settings);
         return;
     }
 
@@ -252,43 +301,43 @@ function ChatBubbles_RecvMsg(channel, msg, senderID, localOnly) {
     // don't spawn bubbles for MyAvatar if the setting is disabled
     if (!SELF_BUBBLES && (senderID === MyAvatar.sessionUUID || !MyAvatar.sessionUUID)) { return; }
 
-	let data;
-	try {
-		data = JSON.parse(msg);
-	} catch (e) {
-		console.error(e);
-		return;
-	}
+    let data;
+    try {
+        data = JSON.parse(msg);
+    } catch (e) {
+        console.error(e);
+        return;
+    }
 
-	if (channel === TYPING_NOTIFICATION_CHANNEL) {
-		if (data.action === "typing_start") {
+    if (channel === TYPING_NOTIFICATION_CHANNEL) {
+        if (data.action === "typing_start") {
             // don't spawn a bubble if they're too far away
             if (Vec3.distance(MyAvatar.position, data.position) > MAX_DISTANCE) { return; }
-			ChatBubbles_ShowTypingIndicator(senderID);
-		} else if (data.action === "typing_stop") {
-			ChatBubbles_HideTypingIndicator(senderID);
-		}
-	} else if (data.action === "send_chat_message" && settings.enabled) {
+            ChatBubbles_ShowTypingIndicator(senderID);
+        } else if (data.action === "typing_stop") {
+            ChatBubbles_HideTypingIndicator(senderID);
+        }
+    } else if (data.action === "send_chat_message" && settings.enabled) {
         // don't spawn a bubble if they're too far away
         if (data.channel !== "local") { return; }
         if (Vec3.distance(MyAvatar.position, data.position) > MAX_DISTANCE) { return; }
-		ChatBubbles_SpawnBubble(data, senderID);
+        ChatBubbles_SpawnBubble(data, senderID);
     }
 }
 
 function ChatBubbles_DeleteAll() {
-	for (const [_, bubbleList] of Object.entries(currentBubbles)) {
+    for (const [_, bubbleList] of Object.entries(currentBubbles)) {
         for (const [id, bubble] of Object.entries(bubbleList)) {
             Entities.deleteEntity(bubble.entity);
             Script.clearTimeout(bubble.timeout);
             delete bubbleList[id];
         }
-	}
+    }
 
-	for (const [_, indicator] of Object.entries(typingIndicators)) {
-		Entities.deleteEntity(indicator.entity);
-		Script.clearInterval(indicator.interval);
-	}
+    for (const [_, indicator] of Object.entries(typingIndicators)) {
+        Entities.deleteEntity(indicator.entity);
+        Script.clearInterval(indicator.interval);
+    }
 
     currentBubbles = {};
     typingIndicators = {};
@@ -326,8 +375,8 @@ Messages.messageReceived.connect(ChatBubbles_RecvMsg);
 Messages.subscribe(TYPING_NOTIFICATION_CHANNEL);
 
 Script.scriptEnding.connect(() => {
-	Settings.setValue("ChatBubbles-Config", settings);
-	Messages.messageReceived.disconnect(ChatBubbles_RecvMsg);
+    Settings.setValue("ChatBubbles-Config", settings);
+    Messages.messageReceived.disconnect(ChatBubbles_RecvMsg);
     Messages.unsubscribe(TYPING_NOTIFICATION_CHANNEL);
     ChatBubbles_DeleteAll();
 });

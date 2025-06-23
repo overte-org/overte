@@ -14,7 +14,8 @@
     var settings = {
         external_window: false,
         maximum_messages: 200,
-        join_notification: true
+        join_notification: true,
+        use_chat_bubbles: true,
     };
 
     // Global vars
@@ -27,7 +28,6 @@
     var maxLocalDistance = 20; // Maximum range for the local chat
     var palData = AvatarManager.getPalData().data;
     var isTyping = false;
-    var useChatBubbles = false;
 
     Controller.keyPressEvent.connect(keyPressEvent);
     Messages.subscribe("Chat"); // Floofchat
@@ -128,7 +128,7 @@
         _emitEvent({ type: "show_message", ...message });
 
         // Show new message on screen
-        if (message.channel !== "local" || !useChatBubbles) {
+        if (message.channel !== "local" || !settings.use_chat_bubbles) {
             Messages.sendLocalMessage(
                 "Floof-Notif",
                 JSON.stringify({
@@ -167,7 +167,7 @@
                 break;
             case "setting_change":
                 if (event.setting === "worldspace_chat_bubbles") {
-                    useChatBubbles = event.value;
+                    settings.use_chat_bubbles = event.value;
                     Messages.sendLocalMessage(
                         "ChatBubbles-Config",
                         JSON.stringify({
@@ -301,7 +301,7 @@
         settings = Settings.getValue("ArmoredChat-Config", settings);
 
         const chatBubbleSettings = Settings.getValue("ChatBubbles-Config", { enabled: true });
-        if (chatBubbleSettings.enabled) { useChatBubbles = true; }
+        if (chatBubbleSettings.enabled) { settings.use_chat_bubbles = true; }
 
         if (messageHistory) {
             // Load message history
@@ -314,13 +314,7 @@
         }
 
         // Send current settings to the app
-        _emitEvent({
-            type: "initial_settings",
-            settings: {
-                worldspace_chat_bubbles: useChatBubbles,
-                ...settings
-            }
-        });
+        _emitEvent({ type: "initial_settings", settings: settings });
     }
     function _saveSettings() {
         console.log("Saving config");
