@@ -166,16 +166,6 @@
                 _sendMessage(event.message, event.channel);
                 break;
             case "setting_change":
-                if (event.setting === "worldspace_chat_bubbles") {
-                    settings.use_chat_bubbles = event.value;
-                    Messages.sendLocalMessage(
-                        "ChatBubbles-Config",
-                        JSON.stringify({
-                            enabled: event.value,
-                        })
-                    );
-                    break;
-                }
 
                 // Set the setting value, and save the config
                 settings[event.setting] = event.value; // Update local settings
@@ -188,6 +178,13 @@
                             ? Desktop.PresentationMode.NATIVE
                             : Desktop.PresentationMode.VIRTUAL;
                         break;
+                    case "use_chat_bubbles":
+                        Messages.sendLocalMessage(
+                            "ChatBubbles-Config",
+                            JSON.stringify({
+                                enabled: event.value,
+                            })
+                        );
                 }
 
                 break;
@@ -299,9 +296,6 @@
     }
     function _loadSettings() {
         settings = Settings.getValue("ArmoredChat-Config", settings);
-
-        const chatBubbleSettings = Settings.getValue("ChatBubbles-Config", { enabled: true });
-        if (chatBubbleSettings.enabled) { settings.use_chat_bubbles = true; }
 
         if (messageHistory) {
             // Load message history

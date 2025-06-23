@@ -407,7 +407,7 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'worldspace_chat_bubbles', value: checked})
+                            toScript({type: 'setting_change', setting: 'use_chat_bubbles', value: checked})
                         }
                     }
                 }
