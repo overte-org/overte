@@ -413,20 +413,22 @@ public slots:
     void makeConnection(bool success, const QString& userNameOrError);
 
     /*@jsdoc
-     * Displays a notification message. Notifications are displayed in panels by the default script, nofications.js. An
+     * Displays a notification message. Notifications are displayed in panels by the default script, notifications/nofications.js. An
      * {@link Window.announcement|announcement} signal is emitted when this function is called.
      * @function Window.displayAnnouncement
      * @param {string} message - The announcement message.
+     * @param {string} details - The announcement details.
      * @example <caption>Send and capture an announcement message.</caption>
-     * function onAnnouncement(message) {
+     * function onAnnouncement(message, details) {
      *     // The message is also displayed as a notification by notifications.js.
      *     print("Announcement: " + message);
+     *     print("Details: " + details);
      * }
      * Window.announcement.connect(onAnnouncement);
      *
-     * Window.displayAnnouncement("Hello");
+     * Window.displayAnnouncement("Hello", "World");
      */
-    void displayAnnouncement(const QString& message);
+    void displayAnnouncement(const QString& message, const QString& details);
 
     /*@jsdoc
      * Prepares a snapshot ready for sharing. A {@link Window.snapshotShared|snapshotShared} signal is emitted when the snapshot
@@ -765,7 +767,7 @@ signals:
      * @param {string} message - The message text.
      * @returns {Signal}
      */
-    void announcement(const QString& message);
+    void announcement(const QString& message, const QString& details);
 
 
     /*@jsdoc

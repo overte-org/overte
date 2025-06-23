@@ -56,9 +56,9 @@ Messages.messageReceived.connect(receivedMessage);
 
 
 const notification = {
-	system: (title = "No title", description = "No further information.", sound = false) => {
+	system: (message = "No title", details = "No further information.", sound = false) => {
 		// Tell QML to render the announcement
-		sendMessageToQML({ type: "addSystemNotification", title, description });
+		sendMessageToQML({ type: "addSystemNotification", message, details });
 
 		// If the notification window is open, add that notification to the list.
 		sendNotificationListToNotificationPopout();
@@ -77,7 +77,8 @@ const notification = {
 	}
 }
 
-function receivedMessage(channel, message) {
+function receivedMessage(channel, message, senderID, localOnly) {
+	if (localOnly === false) return;
 	if (channel !== "overte.notification") return;
 
 	message = util.toJSON(message);
@@ -88,7 +89,7 @@ function receivedMessage(channel, message) {
 	io.saveNotification(message);
 
 	if (message.type === "system") {
-		notification.system(message.title, message.description);
+		notification.system(message.message, message.details);
 		return;
 	}
 

@@ -1,17 +1,16 @@
-
+const NOTIFICATION_CHANNEL = "overte.notification";
 
 const windowFunc = {
 	domainConnectionRefused: (reason, code, extra) => {
-		notification.system(`Domain Connection Refused`, `${reason}\nCODE: '${code}'\nEXTRA: ${extra}`);
+		receivedMessage(NOTIFICATION_CHANNEL, { type: 'system', message: `Domain Connection Refused`, details: `${reason}\nCODE: '${code}'\nEXTRA: ${extra}` }, null, true)
 	},
 	stillSnapshotTaken: (path, notify) => {
 		// TODO: Check if snapshot notification is enabled
 		if (notify !== true) return;
-
-		notification.system(`Snapshot saved`, `Directory:\n'${path}'`);
+		receivedMessage(NOTIFICATION_CHANNEL, { type: 'system', message: `Snapshot saved`, details: `Directory:\n'${path}'` }, null, true)
 	},
 	processingGifStarted: (path) => {
-		notification.system(`Processing .gif snapshot...`)
+		receivedMessage(NOTIFICATION_CHANNEL, { type: 'system', message: `Processing .gif snapshot...` }, null, true)
 	},
 	connectionAdded: (connectionName) => {
 		notification.connection(`Added ${connectionName}`);
@@ -19,8 +18,8 @@ const windowFunc = {
 	connectionError: (error) => {
 		notification.connection(`Error adding connection`, `${error}`);
 	},
-	announcement: (message) => {
-		notification.system(`${message}`)
+	announcement: (message, details) => {
+		receivedMessage(NOTIFICATION_CHANNEL, { type: 'system', message, details }, null, true)
 	},
 	notifyEditError: (message) => {
 		// Seems to only be for edit.js. Deprecate but allow use.
@@ -35,6 +34,6 @@ const windowFunc = {
 	},
 	tabletNotification: (message = null) => {
 		// Currently hardcoded value.
-		notification.system(`Tablet needs your attention`);
+		receivedMessage(NOTIFICATION_CHANNEL, { type: 'system', message: `Tablet needs your attention` }, null, true)
 	},
 }

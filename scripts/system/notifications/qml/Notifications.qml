@@ -58,11 +58,11 @@ Item {
     }
 
 
-	function addSystemNotification(text, details) {
+	function addSystemNotification(message, details) {
 		var targetNotification = notificationId;
 
 		// Insert notification to the stack
-		notifications.append({bubbleText: text, bubbleDetails: details, id: targetNotification});
+		notifications.append({bubbleText: message, bubbleDetails: details, id: targetNotification});
 
 		print(JSON.stringify(notifications))
 
@@ -74,7 +74,7 @@ Item {
 		print(JSON.stringify(message));
         switch (message.type){
             case "addSystemNotification":
-				addSystemNotification(message.title, message.description)
+				addSystemNotification(message.message, message.details)
                 break;
         }
     }
