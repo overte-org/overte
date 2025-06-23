@@ -185,6 +185,7 @@
                                 enabled: event.value,
                             })
                         );
+                        break;
                 }
 
                 break;
