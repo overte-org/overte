@@ -208,7 +208,7 @@ void TextEntityRenderer::onAddToSceneTyped(const TypedEntityPointer& entity) {
     auto renderer = DependencyManager::get<EntityTreeRenderer>();
     if (renderer) {
         if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED ||
-            (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(true))) {
+            (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(TransitionType::ELEMENT_ENTER_DOMAIN))) {
             transaction.resetTransitionOnItem(_textRenderID, TransitionType::ELEMENT_ENTER_DOMAIN);
         }
     }

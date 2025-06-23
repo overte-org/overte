@@ -1,0 +1,43 @@
+//
+//  AvatarFadeOutPropertyGroup.h
+//  libraries/entities/src
+//
+//  Created by HifiExperiments on 6/22/25
+//  Copyright 2025 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#ifndef hifi_AvatarFadeOutPropertyGroup_h
+#define hifi_AvatarFadeOutPropertyGroup_h
+
+#include <stdint.h>
+#include <glm/glm.hpp>
+
+#include "PropertyGroup.h"
+#include "EntityItemPropertiesMacros.h"
+#include "EntityItemPropertiesDefaults.h"
+
+#include <FadeTiming.h>
+
+class EntityItemProperties;
+class EncodeBitstreamParams;
+class OctreePacketData;
+class EntityTreeElementExtraEncodeData;
+class ReadBitstreamToTreeParams;
+class ScriptEngine;
+class ScriptValue;
+
+class AvatarFadeOutPropertyGroup : public PropertyGroup {
+public:
+    ENTITY_PROPERTY_GROUP_METHODS(AvatarFadeOutPropertyGroup)
+
+protected:
+
+@AvatarFadeOut_GROUP_PROPS@
+
+};
+
+#endif // hifi_AvatarFadeOutPropertyGroup_h

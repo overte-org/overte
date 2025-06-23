@@ -262,6 +262,8 @@ QString EntityItemProperties::getComponentModeAsString(uint8_t mode) { return Co
 QString EntityItemProperties::getSkyboxModeAsString() const { return getComponentModeAsString(_skyboxMode); }
 QString EntityItemProperties::getFadeInModeAsString() const { return getComponentModeAsString(_fadeInMode); }
 QString EntityItemProperties::getFadeOutModeAsString() const { return getComponentModeAsString(_fadeOutMode); }
+QString EntityItemProperties::getAvatarFadeInModeAsString() const { return getComponentModeAsString(_avatarFadeInMode); }
+QString EntityItemProperties::getAvatarFadeOutModeAsString() const { return getComponentModeAsString(_avatarFadeOutMode); }
 QString EntityItemProperties::getKeyLightModeAsString() const { return getComponentModeAsString(_keyLightMode); }
 QString EntityItemProperties::getAmbientLightModeAsString() const { return getComponentModeAsString(_ambientLightMode); }
 QString EntityItemProperties::getHazeModeAsString() const { return getComponentModeAsString(_hazeMode); }
@@ -280,6 +282,20 @@ void EntityItemProperties::setFadeOutModeFromString(const QString& mode) {
     if (modeItr != stringToComponentMode.end()) {
         _fadeOutMode = modeItr.value();
         _fadeOutModeChanged = true;
+    }
+}
+void EntityItemProperties::setAvatarFadeInModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _avatarFadeInMode = modeItr.value();
+        _avatarFadeInModeChanged = true;
+    }
+}
+void EntityItemProperties::setAvatarFadeOutModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _avatarFadeOutMode = modeItr.value();
+        _avatarFadeOutModeChanged = true;
     }
 }
 void EntityItemProperties::setSkyboxModeFromString(const QString& mode) {

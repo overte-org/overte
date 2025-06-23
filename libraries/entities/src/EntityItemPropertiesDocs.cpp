@@ -925,6 +925,11 @@
  * @property {Entities.AvatarPriorityMode} avatarPriority="inherit" - Configures the priority of updates from avatars in the
  *     zone to other clients.
  *
+ * @property {Entities.Fade} avatarFadeIn - The zone's fade in properties for avatars.
+ * @property {Entities.Fade} avatarFadeOut - The zone's fade out properties for avatars.
+ * @property {Entities.ComponentMode} avatarFadeInMode="inherit" - Configures the avatar fade in for this zone.
+ * @property {Entities.ComponentMode} avatarFadeOutMode="inherit" - Configures the avatar fade out for this zone.
+ *
  * @example <caption>Create a zone that casts a red key light along the x-axis.</caption>
  * var zone = Entities.addEntity({
  *     type: "Zone",

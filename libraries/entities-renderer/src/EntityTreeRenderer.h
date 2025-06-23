@@ -150,7 +150,7 @@ public:
     size_t getPrevNumEntityUpdates() const { return _prevNumEntityUpdates; }
     size_t getPrevTotalNeededEntityUpdates() const { return _prevTotalNeededEntityUpdates; }
 
-    bool layeredZonesHaveFade(bool in) const { return _layeredZones.hasFade(in); }
+    bool layeredZonesHaveFade(const TransitionType type) const { return _layeredZones.hasFade(type); }
 
 signals:
     void enterEntity(const EntityItemID& entityItemID);
@@ -256,7 +256,7 @@ private:
         void appendRenderIDs(render::ItemIDs& list, EntityTreeRenderer* entityTreeRenderer) const;
         std::pair<bool, bool> getZoneInteractionProperties() const;
         FadeProperties getFadeProperties(const TransitionType type) const;
-        bool hasFade(bool in) const;
+        bool hasFade(const TransitionType type) const;
     };
 
     LayeredZones _layeredZones;
