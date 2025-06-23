@@ -1410,7 +1410,7 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
             auto renderer = DependencyManager::get<EntityTreeRenderer>();
             if (renderer) {
                 if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED ||
-                    (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(true))) {
+                    (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(TransitionType::ELEMENT_ENTER_DOMAIN))) {
                     Parent::fade(transaction, TransitionType::ELEMENT_ENTER_DOMAIN);
                 }
             }

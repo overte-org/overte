@@ -664,9 +664,13 @@ void Avatar::addToScene(AvatarSharedPointer self, const render::ScenePointer& sc
 }
 
 void Avatar::fadeIn(render::ScenePointer scene) {
-    render::Transaction transaction;
-    fade(transaction, TransitionType::USER_ENTER_DOMAIN);
-    scene->enqueueTransaction(transaction);
+    if (auto renderer = DependencyManager::get<EntityTreeRenderer>()) {
+        if (renderer->layeredZonesHaveFade(TransitionType::USER_ENTER_DOMAIN)) {
+            render::Transaction transaction;
+            fade(transaction, TransitionType::USER_ENTER_DOMAIN);
+            scene->enqueueTransaction(transaction);
+        }
+    }
 }
 
 void Avatar::fadeOut(render::Transaction& transaction, KillAvatarReason reason) {
@@ -690,7 +694,6 @@ TransitionType Avatar::getLastFadeRequested() const {
 }
 
 FadeProperties Avatar::getFadeProperties(const TransitionType type) const {
-    // TODO get zone properties
     switch (type) {
         case TransitionType::BUBBLE_ISECT_OWNER:
             return {
@@ -722,19 +725,13 @@ FadeProperties Avatar::getFadeProperties(const TransitionType type) const {
             };
         case TransitionType::USER_ENTER_DOMAIN:
         case TransitionType::USER_LEAVE_DOMAIN:
-            return {
-                2.0f,
-                FadeTiming::LINEAR,
-                vec3(0.0f, -5.0f, 0.0f),
-                1.0f / vec3(10.f, 0.01f, 10.0f),
-                0.3f,
-                1.0f / vec3(10000.f, 1.0f, 10000.0f),
-                1.0f,
-                vec4(1.0f, 0.63f, 0.13f, 0.5f),
-                vec4(1.0f, 1.0f, 1.0f, 1.0f),
-                0.229f,
-                true
-            };
+            if (auto renderer = DependencyManager::get<EntityTreeRenderer>()) {
+                if (renderer->layeredZonesHaveFade(type)) {
+                    return renderer->getLayeredZoneFadeProperties(type);
+                }
+            }
+            return FadeProperties();
+            break;
         case TransitionType::AVATAR_CHANGE:
             return {
                 3.0f,

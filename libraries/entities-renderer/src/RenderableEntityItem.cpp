@@ -510,7 +510,7 @@ bool EntityRenderer::addToScene(const ScenePointer& scene, Transaction& transact
     auto renderer = DependencyManager::get<EntityTreeRenderer>();
     if (renderer) {
         if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED ||
-            (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(true))) {
+            (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(TransitionType::ELEMENT_ENTER_DOMAIN))) {
             fade(transaction, TransitionType::ELEMENT_ENTER_DOMAIN);
         }
     }
@@ -652,7 +652,6 @@ void EntityRenderer::doRenderUpdateAsynchronous(const EntityItemPointer& entity)
         entity->resetNeedsZoneOcclusionUpdate();
         _renderWithZones = entity->getRenderWithZones();
     }
-    // TODO: pass to mesh parts?
     _fadeOutProperties = entity->getFadeOutProperties();
     _fadeOutMode = (ComponentMode)entity->getFadeOutMode();
 }

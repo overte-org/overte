@@ -101,5 +101,10 @@ const bool ENTITY_ITEM_DEFAULT_CLONE_AVATAR_ENTITY = false;
 const QUuid ENTITY_ITEM_DEFAULT_CLONE_ORIGIN_ID = QUuid();
 
 const glm::u8vec3 ENTITY_ITEM_DEFAULT_FADE_COLOR = glm::u8vec3(78, 215, 255);
+const glm::u8vec3 ENTITY_ITEM_DEFAULT_AVATAR_FADE_INNER_COLOR = glm::u8vec3(255, 161, 33);
+const glm::u8vec3 ENTITY_ITEM_DEFAULT_AVATAR_FADE_OUTER_COLOR = glm::u8vec3(255, 255, 255);
+const glm::vec3 ENTITY_ITEM_DEFAULT_AVATAR_NOISE_SIZE = glm::vec3(10.0f, 0.01f, 10.0f);
+const glm::vec3 ENTITY_ITEM_DEFAULT_AVATAR_NOISE_SPEED = glm::vec3(0.0f, -5.0f, 0.0f);
+const glm::vec3 ENTITY_ITEM_DEFAULT_AVATAR_BASE_SIZE = glm::vec3(10000.f, 1.0f, 10000.0f);
 
 #endif // hifi_EntityItemPropertiesDefaults_h
