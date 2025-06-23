@@ -10,9 +10,7 @@
 
 const CHAT_CHANNEL = "chat";
 
-// can't reuse the chat channel because ArmoredChat passes
-// anything on "chat" into FloofChat-Notif and throws an error
-const TYPING_NOTIFICATION_CHANNEL = "ChatBubbles-Typing";
+const TYPING_NOTIFICATION_CHANNEL = "Chat-Typing";
 const CONFIG_UPDATE_CHANNEL = "ChatBubbles-Config";
 
 const BUBBLE_LIFETIME_SECS = 10;

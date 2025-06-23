@@ -203,7 +203,7 @@
                     case "start_typing":
                         if (!isTyping) {
                             Messages.sendMessage(
-                                "ChatBubbles-Typing",
+                                "Chat-Typing",
                                 JSON.stringify({
                                     action: "typing_start",
                                     position: MyAvatar.position,
@@ -215,7 +215,7 @@
                     case "end_typing":
                         if (isTyping) {
                             Messages.sendMessage(
-                                "ChatBubbles-Typing",
+                                "Chat-Typing",
                                 JSON.stringify({
                                     action: "typing_stop"
                                 })
