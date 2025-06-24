@@ -11,8 +11,6 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-// TODO: Chat notifications?
-
 Script.include('./lib/utility.js');
 Script.include('./lib/io.js');
 Script.include('./lib/sound.js');
@@ -133,7 +131,16 @@ function notificationFormat(notificationObject) {
 	// This formats a notification object to human readable data where needed.
 	// This modified data should not be saved anywhere, and should only be sent to the UI.
 	if (notificationObject.timestamp) {
-		notificationObject.timestamp = new Date(notificationObject.timestamp).toLocaleString();
+		const date = new Date(notificationObject.timestamp);
+
+		const year = date.getFullYear();
+		const month = String(date.getMonth() + 1).padStart(2, '0');
+		const day = String(date.getDate()).padStart(2, '0');
+		const hours = String(date.getHours()).padStart(2, '0');
+		const minutes = String(date.getMinutes()).padStart(2, '0');
+		const seconds = String(date.getSeconds()).padStart(2, '0');
+
+		notificationObject.timestamp = `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 	}
 
 	return notificationObject;
