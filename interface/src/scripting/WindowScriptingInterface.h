@@ -428,7 +428,7 @@ public slots:
      *
      * Window.displayAnnouncement("Hello", "World");
      */
-    void displayAnnouncement(const QString& message, const QString& details);
+    void displayAnnouncement(const QString& message, const QString& details = QString());
 
     /*@jsdoc
      * Prepares a snapshot ready for sharing. A {@link Window.snapshotShared|snapshotShared} signal is emitted when the snapshot
@@ -764,10 +764,11 @@ signals:
     /*@jsdoc
      * Triggered when a message is announced by {@link Window.displayAnnouncement|displayAnnouncement}.
      * @function Window.announcement
-     * @param {string} message - The message text.
+     * @param {string} message - The announcement message.
+     * @param {string} details - The announcement details.
      * @returns {Signal}
      */
-    void announcement(const QString& message, const QString& details);
+    void announcement(const QString& message, const QString& details = QString());
 
 
     /*@jsdoc
