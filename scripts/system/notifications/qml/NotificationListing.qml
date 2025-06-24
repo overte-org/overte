@@ -10,9 +10,10 @@ Rectangle {
 	property string time: "";
 	property bool isOpen: false;
 
-	color: Qt.rgba(0,0,0,0.9);
-	width: parent && parent.width
-	height: 50;
+	color: "transparent";
+	width: parent && parent.width - 10;
+	x: 5;
+	height: 75;
 	clip: true;
 	id: root;
 
@@ -28,7 +29,7 @@ Rectangle {
 		height: parent.height;
 
 		Text {
-			height: 50;
+			height: 75;
 			width: parent.width - 15;
 			color: "white";
 			text: title;
@@ -41,7 +42,7 @@ Rectangle {
 		// Extra information
 		Rectangle {
 			id: notificationDetailsElement;
-			color: colors.darkBackground2;
+			color: Qt.rgba(1,1,1,0.05);
 			width: parent.width;
 			height: 200;
 
@@ -78,10 +79,9 @@ Rectangle {
 		}
 	}
 
-
 	// Bottom border
 	Rectangle {
-		color: Qt.rgba(1,1,1,0.5);
+		color: Qt.rgba(1,1,1,0.1);
 		height: 2;
 		width: parent.width;
 		y: parent.height - height;
@@ -95,7 +95,7 @@ Rectangle {
 		onPressed: {
 			isOpen = !isOpen;
 			notificationDetailsElement.height = isOpen ? 200 : 0;
-			root.height = isOpen ? 250 : 50;
+			root.height = isOpen ? 250 : 75;
 		}
 
 		onEntered: {
@@ -103,7 +103,7 @@ Rectangle {
 		}
 
 		onExited: {
-			parent.color = Qt.rgba(0,0,0,0.9);
+			parent.color = "transparent";
 		}
 	}
 }

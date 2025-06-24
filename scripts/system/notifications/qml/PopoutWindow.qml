@@ -27,7 +27,7 @@ Rectangle {
 
 		Column {
 			width: parent.width - 10;
-			spacing: 5;
+			spacing: 0;
 			id: notificationListColumn;
 
 			Repeater {
