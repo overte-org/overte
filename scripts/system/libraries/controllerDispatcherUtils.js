@@ -257,6 +257,8 @@ var getGrabbableData = function (ggdProps) {
         grabbableData = ggdProps.grab;
     }
 
+    if (!grabbableData) { return {}; }
+
     // extract grab-related properties, provide defaults if any are missing
     if (!grabbableData.hasOwnProperty("grabbable")) {
         grabbableData.grabbable = true;
