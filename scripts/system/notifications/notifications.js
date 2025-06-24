@@ -87,7 +87,7 @@ function receivedMessage(channel, message, senderID, localOnly) {
 	io.saveNotification(message);
 
 	if (message.type === "system") {
-		notification.system(message.message, message.details);
+		notification.system(message.message, message.details, message.sound);
 		return;
 	}
 
