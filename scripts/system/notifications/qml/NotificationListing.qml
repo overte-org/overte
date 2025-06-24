@@ -9,6 +9,7 @@ Rectangle {
 	property string type: "";
 	property string time: "";
 	property bool isOpen: false;
+	property int expandHeight: description !== "" ? 250 : 110;
 
 	color: "transparent";
 	width: parent && parent.width - 10;
@@ -94,8 +95,8 @@ Rectangle {
 
 		onPressed: {
 			isOpen = !isOpen;
-			notificationDetailsElement.height = isOpen ? 200 : 0;
-			root.height = isOpen ? 250 : 75;
+			notificationDetailsElement.height = isOpen ? expandHeight : 0;
+			root.height = isOpen ? expandHeight : 75;
 		}
 
 		onEntered: {
