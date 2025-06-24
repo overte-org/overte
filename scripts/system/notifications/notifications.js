@@ -100,7 +100,6 @@ function receivedMessage(channel, message, senderID, localOnly) {
 }
 
 function onMessageFromQML(event) {
-	debugLog(event);
 	switch (event.type) {
 		case "openNotificationFromOverlay":
 			if (app._ui.notificationPopout === null) {

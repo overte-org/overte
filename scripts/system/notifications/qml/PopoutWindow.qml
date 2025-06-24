@@ -54,7 +54,6 @@ Rectangle {
 	}
 
 	function fromScript(message) {
-		print(JSON.stringify(message));
 		switch (message.type){
 			case "notificationList":
 				notificationList = message.messages;
