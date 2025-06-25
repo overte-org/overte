@@ -51,7 +51,6 @@ Item {
 		}
     }
 
-
 	function addMessage(author, message) {
 		// Insert notification to the stack
 		notifications.append({author, message});

@@ -29,6 +29,12 @@
     var palData = AvatarManager.getPalData().data;
     var isTyping = false;
     var notificationOverlay = null;
+    var notificationSound = SoundCache.getSound(Script.resolvePath("sound/click.wav"));
+    var soundInjectorOptions = {
+        localOnly: true,
+        position: MyAvatar.position,
+        volume: 0.04
+    };
 
     Controller.keyPressEvent.connect(keyPressEvent);
     Messages.subscribe("Chat"); // Floofchat
@@ -335,6 +341,8 @@
     }
     function showChatMessageOnOverlay(author, message) {
         if (!author) author = "anonymous";
+        Audio.playSound(notificationSound, soundInjectorOptions);
+        console.log("Hai")
         notificationOverlay.sendToQml({ type: "message", author, message });
     }
 
