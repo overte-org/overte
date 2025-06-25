@@ -50,7 +50,7 @@ function removeAppFromToolbar() {
 }
 
 function toolbarButtonClicked() {
-	Messages.sendLocalMessage("overte.notification", JSON.stringify({ type: "system", message: `Debug ${Uuid.generate()}`, details: `Comment ${Uuid.generate()}`, sound: true }))
+	Window.displayAnnouncement(`Debug ${Uuid.generate()}`, `Comment ${Uuid.generate()}`);
 }
 
 app.add();

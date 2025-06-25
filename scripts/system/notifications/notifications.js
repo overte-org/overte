@@ -32,7 +32,6 @@ let app = {
 	}
 }
 addNotificationUIToInterface();
-subscribeToMessages();
 io.getNotifications();
 
 function addNotificationUIToInterface() {
@@ -44,17 +43,10 @@ function addNotificationUIToInterface() {
 	app._ui.overlay.fromQml.connect(onMessageFromQML);
 }
 
-function subscribeToMessages() {
-	Messages.subscribe("overte.notification");
-	Messages.subscribe("Floof-Notif");
-	Messages.subscribe("Hifi-Notifications");
-}
-
-Messages.messageReceived.connect(receivedMessage);
-
-
 const notification = {
 	system: (message = "No title", details = "No further information.", sound = false) => {
+		io.saveNotification({ message, details, type: `system`, id: Uuid.generate(), timestamp: Date.now() });
+
 		// Tell QML to render the announcement
 		sendMessageToQML({ type: "addSystemNotification", message, details });
 
@@ -72,28 +64,6 @@ const notification = {
 
 		// Play a sound
 		// TODO: 
-	}
-}
-
-function receivedMessage(channel, message, senderID, localOnly) {
-	if (localOnly === false) return;
-	if (channel !== "overte.notification") return;
-
-	message = util.toJSON(message);
-	if (!message) return util.debugLog(`Failed to parse message to JSON.`);
-
-	message.id = Uuid.generate();
-	message.timestamp = Date.now();
-	io.saveNotification(message);
-
-	if (message.type === "system") {
-		notification.system(message.message, message.details, message.sound);
-		return;
-	}
-
-	if (message.type === "connection") {
-		// TODO
-		return;
 	}
 }
 
