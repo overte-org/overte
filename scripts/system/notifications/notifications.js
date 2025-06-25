@@ -80,7 +80,7 @@ function receivedMessage(channel, message, senderID, localOnly) {
 	if (channel !== "overte.notification") return;
 
 	message = util.toJSON(message);
-	if (!message) return debugLog(`Failed to parse message to JSON.`);
+	if (!message) return util.debugLog(`Failed to parse message to JSON.`);
 
 	message.id = Uuid.generate();
 	message.timestamp = Date.now();
@@ -110,7 +110,7 @@ function onMessageFromQML(event) {
 }
 
 function sendNotificationListToNotificationPopout() {
-	if (app._ui.notificationPopout === null) return debugLog(`Notification window is not open. Not sending a message.`);
+	if (app._ui.notificationPopout === null) return util.debugLog(`Notification window is not open. Not sending a message.`);
 
 	let connectionNotificationsReversed = [...app._data.connectionNotifications];
 	connectionNotificationsReversed.reverse();
@@ -150,11 +150,6 @@ function sendMessageToQML(message) {
 	app._ui.overlay.sendToQml(message);
 }
 
-function debugLog(content) {
-	if (typeof content === "object") content = JSON.stringify(content, null, 4);
-
-	console.log(`[ Debug ] ${content}`);
-}
 
 Window.domainConnectionRefused.connect(windowFunc.domainConnectionRefused);
 Window.stillSnapshotTaken.connect(windowFunc.stillSnapshotTaken);

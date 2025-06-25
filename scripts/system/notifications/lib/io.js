@@ -21,7 +21,7 @@ const io = {
 			return;
 		}
 
-		debugLog(`Unknown message type '${messageJSON.type}'. Not saving notification.`)
+		util.debugLog(`Unknown message type '${messageJSON.type}'. Not saving notification.`)
 	}
 }
 

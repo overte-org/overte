@@ -17,9 +17,15 @@ const util = {
 		}
 		catch (error) {
 			// Failed to convert to JSON, fail gracefully.
-			debugLog(`Error parsing ${input} to JSON.`);
-			debugLog(error);
+			util.debugLog(`Error parsing ${input} to JSON.`);
+			util.debugLog(error);
 			return null;
 		}
+	},
+
+	debugLog: (content) => {
+		if (typeof content === "object") content = JSON.stringify(content, null, 4);
+
+		console.log(`[ Debug ] ${content}`);
 	}
 }

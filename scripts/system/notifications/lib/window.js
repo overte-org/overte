@@ -23,13 +23,13 @@ const windowFunc = {
 	},
 	notifyEditError: (message) => {
 		// Seems to only be for edit.js. Deprecate but allow use.
-		debugLog(`window.notifyEditError is deprecated. Please use 'window.announcement()'`);
+		util.debugLog(`window.notifyEditError is deprecated. Please use 'window.announcement()'`);
 		windowFunc.announcement(message);
 	},
 	notify: (message) => {
 		// Not sure what this one is used for, only for edit.js?
 		// If so, log deprecation notice to console, but use anyways.
-		debugLog(`window.notify is deprecated. Please use 'window.announcement()'`);
+		util.debugLog(`window.notify is deprecated. Please use 'window.announcement()'`);
 		windowFunc.announcement(message);
 	},
 	tabletNotification: (message = null) => {
