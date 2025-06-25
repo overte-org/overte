@@ -487,10 +487,9 @@ public slots:
 
     // Entities
     QVector<EntityItemID> pasteEntities(const QString& entityHostType, float x, float y, float z);
-    bool exportEntities(const QString& filename, const QVector<QUuid>& entityIDs, const glm::vec3* givenOffset = nullptr);
-    bool exportEntities(const QString& filename, float x, float y, float z, float scale);
+    bool exportEntities(const QString& filename, const QVector<QUuid>& entityIDs, const glm::vec3* givenOffset = nullptr, const QVariantMap& options = QVariantMap());
+    bool exportEntities(const QString& filename, float x, float y, float z, float scale, const QVariantMap& options = QVariantMap());
     bool importEntities(const QString& url, const bool isObservable = true, const qint64 callerId = -1);
-    bool exportWorldEntities(const QString& filename, const QVector<QString>& propertiesToPrune = QVector<QString>());
 
     void setKeyboardFocusHighlight(const glm::vec3& position, const glm::quat& rotation, const glm::vec3& dimensions);
     QUuid getKeyboardFocusEntity() const { return _keyboardFocusedEntity.get(); }  // thread-safe

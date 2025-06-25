@@ -25,16 +25,18 @@ float ClipboardScriptingInterface::getClipboardContentsLargestDimension() {
     return qApp->getEntityClipboard()->getContentsLargestDimension();
 }
 
-bool ClipboardScriptingInterface::exportEntities(const QString& filename, const QVector<QUuid>& entityIDs) {
+bool ClipboardScriptingInterface::exportEntities(const QString& filename, const QVector<QUuid>& entityIDs, const QVariantMap& options) {
     bool retVal;
     BLOCKING_INVOKE_METHOD(qApp, "exportEntities",
                               Q_RETURN_ARG(bool, retVal),
                               Q_ARG(const QString&, filename),
-                              Q_ARG(const QVector<QUuid>&, entityIDs));
+                              Q_ARG(const QVector<QUuid>&, entityIDs),
+                              Q_ARG(const glm::vec3*, nullptr),
+                              Q_ARG(const QVariantMap&, options));
     return retVal;
 }
 
-bool ClipboardScriptingInterface::exportEntities(const QString& filename, float x, float y, float z, float scale) {
+bool ClipboardScriptingInterface::exportEntities(const QString& filename, float x, float y, float z, float scale, const QVariantMap& options) {
     bool retVal;
     BLOCKING_INVOKE_METHOD(qApp, "exportEntities",
                               Q_RETURN_ARG(bool, retVal),
@@ -42,16 +44,8 @@ bool ClipboardScriptingInterface::exportEntities(const QString& filename, float 
                               Q_ARG(float, x),
                               Q_ARG(float, y),
                               Q_ARG(float, z),
-                              Q_ARG(float, scale));
-    return retVal;
-}
-
-bool ClipboardScriptingInterface::exportWorldEntities(const QString& filename, const QVector<QString>& propertiesToPrune) {
-    bool retVal;
-    BLOCKING_INVOKE_METHOD(qApp, "exportWorldEntities",
-                              Q_RETURN_ARG(bool, retVal),
-                              Q_ARG(const QString&, filename),
-                              Q_ARG(const QVector<QString>&, propertiesToPrune));
+                              Q_ARG(float, scale),
+                              Q_ARG(const QVariantMap&, options));
     return retVal;
 }
 
