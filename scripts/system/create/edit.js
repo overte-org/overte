@@ -1054,7 +1054,7 @@
 
             createButton.clicked.connect(function() {
                 if ( ! (Entities.canRez() || Entities.canRezTmp()) ) {
-                    Messages.sendLocalMessage('overte.notification', JSON.stringify({type: 'system', title: INSUFFICIENT_PERMISSIONS_ERROR_MSG}))
+                    Window.displayAnnouncement(INSUFFICIENT_PERMISSIONS_ERROR_MSG)
                     return;
                 }
 
