@@ -32,11 +32,10 @@ Rectangle {
 
 			Repeater {
 				model: notificationList.length;
-				delegate: NotificationListing {
-					title: notificationList[index].message;
-					description: notificationList[index].details;
-					type: notificationList[index].type;
-					time: notificationList[index].timestamp;
+				delegate: PopoutListing {
+					listingMessage: notificationList[index].message;
+					listingDetails: notificationList[index].details;
+					listingTime: notificationList[index].timestamp;
 				}
 			}
 
