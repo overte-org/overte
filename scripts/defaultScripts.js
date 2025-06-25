@@ -47,6 +47,7 @@ var DEFAULT_SCRIPTS_SEPARATE = [
     "simplifiedUI/ui/simplifiedNametag/simplifiedNametag.js",
     {"stable": "system/more/app-more.js", "beta": "https://more.overte.org/more/app-more.js"},
     "communityScripts/armored-chat/armored_chat.js",
+    "communityScripts/chatBubbles/chatBubbles.js",
     //"system/chat.js"
 ];
 
