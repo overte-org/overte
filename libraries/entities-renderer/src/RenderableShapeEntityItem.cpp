@@ -14,8 +14,10 @@
 #include <gpu/Batch.h>
 #include <DependencyManager.h>
 #include <PerfStat.h>
+#include <render/TransitionStage.h>
 
 #include "RenderPipelines.h"
+
 
 using namespace render;
 using namespace render::entities;
@@ -171,28 +173,65 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         // FIXME, support instanced multi-shape rendering using multidraw indirect
         outColor.a *= _isFading ? Interpolate::calculateFadeRatio(_fadeStartTime) : 1.0f;
         bool forward = _renderLayer != RenderLayer::WORLD || args->_renderMethod == Args::RenderMethod::FORWARD;
+        bool fading = ShapeKey(args->_itemShapeKey).isFaded();
         if (outColor.a >= 1.0f) {
             render::ShapePipelinePointer pipeline = geometryCache->getShapePipelinePointer(false, wireframe || materials.top().material->isUnlit(),
-                forward, materials.top().material->getCullFaceMode());
+                forward, fading, materials.top().material->getCullFaceMode());
             if (geometryShape != GeometryCache::Shape::Torus) {
-                if (wireframe) {
-                    geometryCache->renderWireShapeInstance(args, batch, geometryShape, outColor, pipeline);
+                if (!fading) {
+                    geometryCache->renderShapeInstance(args, batch, geometryShape, wireframe, outColor, pipeline);
                 } else {
-                    geometryCache->renderSolidShapeInstance(args, batch, geometryShape, outColor, pipeline);
+                    FadeObjectParams fadeParams;
+                    auto item = args->_scene->getItemSafe(_renderItemID);
+                    if (item.exist()) {
+                        auto transitionStage = args->_scene->getStage<render::TransitionStage>();
+                        if (transitionStage && transitionStage->checkId(item.getTransitionId())) {
+                            auto& transition = transitionStage->getElement(item.getTransitionId());
+                            if (transition.paramsBuffer._size == sizeof(FadeObjectParams)) {
+                                fadeParams = static_cast<gpu::StructBuffer<FadeObjectParams>&>(transition.paramsBuffer).get();
+                            }
+                        }
+                    }
+                    geometryCache->renderShapeFadeInstance(args, batch, geometryShape, wireframe, outColor, fadeParams, pipeline);
                 }
             } else {
                 const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
                 _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*)&compactColor);
-                geometryCache->renderTorus(batch, _innerRadius, _colorBuffer, _torusID);
+                if (!fading) {
+                    geometryCache->renderTorus(batch, _innerRadius, _colorBuffer, _torusID);
+                } else {
+                    // TODO: torus fading
+                }
             }
         } else {
             const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
             _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
             if (geometryShape != GeometryCache::Shape::Torus) {
-                if (wireframe) {
-                    geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
+                if (!fading) {
+                    if (wireframe) {
+                        geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
+                    } else {
+                        geometryCache->renderShape(batch, geometryShape, _colorBuffer);
+                    }
                 } else {
-                    geometryCache->renderShape(batch, geometryShape, _colorBuffer);
+                    FadeObjectParams fadeParams;
+                    auto item = args->_scene->getItemSafe(_renderItemID);
+                    if (item.exist()) {
+                        auto transitionStage = args->_scene->getStage<render::TransitionStage>();
+                        if (transitionStage && transitionStage->checkId(item.getTransitionId())) {
+                            auto& transition = transitionStage->getElement(item.getTransitionId());
+                            if (transition.paramsBuffer._size == sizeof(FadeObjectParams)) {
+                                fadeParams = static_cast<gpu::StructBuffer<FadeObjectParams>&>(transition.paramsBuffer).get();
+                            }
+                        }
+                    }
+                    _fadeBuffers.clear();
+                    _fadeBuffers.update(fadeParams);
+                    if (wireframe) {
+                        geometryCache->renderWireShapeFade(batch, geometryShape, _colorBuffer, _fadeBuffers);
+                    } else {
+                        geometryCache->renderShapeFade(batch, geometryShape, _colorBuffer, _fadeBuffers);
+                    }
                 }
             } else {
                 geometryCache->renderTorus(batch, _innerRadius, _colorBuffer, _torusID);

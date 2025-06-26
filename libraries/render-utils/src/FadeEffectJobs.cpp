@@ -313,7 +313,7 @@ bool FadeJob::update(RenderArgs* args,
         return false;
     }
 
-    bool hasParamsBuffer = transition.paramsBuffer._size == sizeof(gpu::StructBuffer<FadeObjectParams>);
+    bool hasParamsBuffer = transition.paramsBuffer._size == sizeof(FadeObjectParams);
     FadeProperties fadeProperties;
     if (transition.itemId == editedItemID) {
         fadeProperties = _editedFadeProperties;
