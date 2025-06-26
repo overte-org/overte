@@ -353,7 +353,7 @@ void SkeletonModel::renderBoundingCollisionShapes(RenderArgs* args, gpu::Batch& 
     float capsuleDiameter = 2.0f * _boundingCapsuleRadius;
     glm::vec3 cylinderDimensions = glm::vec3(capsuleDiameter, _boundingCapsuleHeight, capsuleDiameter);
     batch.setModelTransform(Transform().setScale(scale * cylinderDimensions).setRotation(_rotation).setTranslation(0.5f * (topPoint + bottomPoint)));
-    geometryCache->renderSolidShapeInstance(args, batch, GeometryCache::Shape::Cylinder, glm::vec4(0.6f, 0.8f, 0.6f, alpha), pipeline);
+    geometryCache->renderShapeInstance(args, batch, GeometryCache::Shape::Cylinder, false, glm::vec4(0.6f, 0.8f, 0.6f, alpha), pipeline);
 }
 
 bool SkeletonModel::hasSkeleton() {

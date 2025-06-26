@@ -31,6 +31,8 @@
 #include <graphics/Material.h>
 #include <graphics/Asset.h>
 
+#include "FadeObjectParams.shared.slh"
+
 class SimpleProgramKey;
 
 typedef QPair<glm::vec2, float> Vec2FloatPair;
@@ -123,6 +125,36 @@ inline uint qHash(const Vec4PairVec4Pair& v, uint seed) {
                 seed);
 }
 
+struct FadeBuffers {
+    void update(const FadeObjectParams& fadeParams) {
+        _fade1Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.noiseOffsetAndInverted));
+        _fade2Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.baseOffsetAndThreshold));
+        _fade3Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.baseInvSizeAndLevel));
+        _fade4Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.noiseInvSizeAndLevel));
+        _fade5Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.innerEdgeColor));
+        _fade6Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.outerEdgeColor));
+        _fade7Buffer->append(1 * sizeof(float), (gpu::Byte*)(&fadeParams.edgeWidthInv));
+    }
+
+    void clear() {
+        _fade1Buffer->resize(0);
+        _fade2Buffer->resize(0);
+        _fade3Buffer->resize(0);
+        _fade4Buffer->resize(0);
+        _fade5Buffer->resize(0);
+        _fade6Buffer->resize(0);
+        _fade7Buffer->resize(0);
+    }
+
+    gpu::BufferPointer _fade1Buffer { std::make_shared<gpu::Buffer>() };
+    gpu::BufferPointer _fade2Buffer { std::make_shared<gpu::Buffer>() };
+    gpu::BufferPointer _fade3Buffer { std::make_shared<gpu::Buffer>() };
+    gpu::BufferPointer _fade4Buffer { std::make_shared<gpu::Buffer>() };
+    gpu::BufferPointer _fade5Buffer { std::make_shared<gpu::Buffer>() };
+    gpu::BufferPointer _fade6Buffer { std::make_shared<gpu::Buffer>() };
+    gpu::BufferPointer _fade7Buffer { std::make_shared<gpu::Buffer>() };
+};
+
 /// Stores cached geometry.
 class GeometryCache : public Dependency {
     SINGLETON_DEPENDENCY
@@ -169,35 +201,40 @@ public:
         bool fading = false, bool isAntiAliased = true, bool forward = false, graphics::MaterialKey::CullFaceMode cullFaceMode = graphics::MaterialKey::CullFaceMode::CULL_BACK);
 
     static void initializeShapePipelines();
-    render::ShapePipelinePointer getShapePipelinePointer(bool transparent, bool unlit, bool forward,
-        graphics::MaterialKey::CullFaceMode cullFaceMode = graphics::MaterialKey::CULL_BACK) { return _shapePipelines[std::make_tuple(transparent, unlit, forward, cullFaceMode)]; }
+    render::ShapePipelinePointer getShapePipelinePointer(bool transparent, bool unlit, bool forward, bool fading = false,
+        graphics::MaterialKey::CullFaceMode cullFaceMode = graphics::MaterialKey::CULL_BACK) { return _shapePipelines[std::make_tuple(transparent, unlit, forward, fading, cullFaceMode)]; }
 
     // Static (instanced) geometry
     void renderShapeInstances(gpu::Batch& batch, Shape shape, size_t count, gpu::BufferPointer& colorBuffer);
     void renderWireShapeInstances(gpu::Batch& batch, Shape shape, size_t count, gpu::BufferPointer& colorBuffer);
+    void renderShapeFadeInstances(gpu::Batch& batch, Shape shape, size_t count, gpu::BufferPointer& colorBuffer, const FadeBuffers& fadeBuffers);
+    void renderWireShapeFadeInstances(gpu::Batch& batch, Shape shape, size_t count, gpu::BufferPointer& colorBuffer, const FadeBuffers& fadeBuffers);
 
-    void renderSolidShapeInstance(RenderArgs* args, gpu::Batch& batch, Shape shape, const glm::vec4& color,
+    void renderShapeInstance(RenderArgs* args, gpu::Batch& batch, Shape shape, bool wire, const glm::vec4& color,
                                   const render::ShapePipelinePointer& pipeline);
-    void renderWireShapeInstance(RenderArgs* args, gpu::Batch& batch, Shape shape, const glm::vec4& color,
-        const render::ShapePipelinePointer& pipeline);
 
     void renderSolidSphereInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec4& color,
-                                    const render::ShapePipelinePointer& pipeline);
+                                   const render::ShapePipelinePointer& pipeline);
     void renderSolidSphereInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec3& color,
-                                    const render::ShapePipelinePointer& pipeline) {
+                                   const render::ShapePipelinePointer& pipeline) {
         renderSolidSphereInstance(args, batch, glm::vec4(color, 1.0f), pipeline);
     }
 
     void renderWireCubeInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec4& color,
-                                    const render::ShapePipelinePointer& pipeline);
+                                const render::ShapePipelinePointer& pipeline);
     void renderWireCubeInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec3& color,
-                                    const render::ShapePipelinePointer& pipeline) {
+                                const render::ShapePipelinePointer& pipeline) {
         renderWireCubeInstance(args, batch, glm::vec4(color, 1.0f), pipeline);
     }
+
+    void renderShapeFadeInstance(RenderArgs* args, gpu::Batch& batch, Shape shape, bool wire, const glm::vec4& color,
+                                 const FadeObjectParams& fadeParams, const render::ShapePipelinePointer& pipeline);
 
     // Dynamic geometry
     void renderShape(gpu::Batch& batch, Shape shape, gpu::BufferPointer& colorBuffer);
     void renderWireShape(gpu::Batch& batch, Shape shape, gpu::BufferPointer& colorBuffer);
+    void renderShapeFade(gpu::Batch& batch, Shape shape, gpu::BufferPointer& colorBuffer, const FadeBuffers& fadeBuffers);
+    void renderWireShapeFade(gpu::Batch& batch, Shape shape, gpu::BufferPointer& colorBuffer, const FadeBuffers& fadeBuffers);
     size_t getShapeTriangleCount(Shape shape);
 
     void renderGrid(gpu::Batch& batch, const glm::vec2& minCorner, const glm::vec2& maxCorner,
@@ -385,8 +422,8 @@ private:
 
     // transparent, unlit, forward, fade
     static std::map<std::tuple<bool, bool, bool, bool>, gpu::ShaderPointer> _shapeShaders;
-    // transparent, unlit, forward
-    static std::map<std::tuple<bool, bool, bool, graphics::MaterialKey::CullFaceMode>, render::ShapePipelinePointer> _shapePipelines;
+    // transparent, unlit, forward, fade
+    static std::map<std::tuple<bool, bool, bool, bool, graphics::MaterialKey::CullFaceMode>, render::ShapePipelinePointer> _shapePipelines;
     static QHash<SimpleProgramKey, gpu::PipelinePointer> _simplePrograms;
 
     static render::ShapePipelinePointer getShapePipeline(bool textured = false, bool transparent = false, bool unlit = false,
