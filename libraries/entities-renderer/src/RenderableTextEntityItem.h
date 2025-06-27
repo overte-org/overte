@@ -35,8 +35,6 @@ public:
 
     QSizeF textSize(const QString& text) const;
 
-    void fade(render::Transaction& transaction, TransitionType type) override;
-
 protected:
     bool isTransparent() const override;
     bool isTextTransparent() const;
@@ -108,7 +106,6 @@ public:
     void render(RenderArgs* args);
     bool passesZoneOcclusionTest(const std::unordered_set<QUuid>& containingZones) const;
     ItemID computeMirrorView(ViewFrustum& viewFrustum) const;
-    FadeProperties getFadeProperties(const TransitionType type) const;
 
 protected:
     QUuid _entityID;
@@ -127,7 +124,6 @@ namespace render {
     template <> void payloadRender(const entities::TextPayload::Pointer& payload, RenderArgs* args);
     template <> bool payloadPassesZoneOcclusionTest(const entities::TextPayload::Pointer& payload, const std::unordered_set<QUuid>& containingZones);
     template <> ItemID payloadComputeMirrorView(const entities::TextPayload::Pointer& payload, ViewFrustum& viewFrustum);
-    template <> FadeProperties payloadGetFadeProperties(const entities::TextPayload::Pointer& payload, const TransitionType type);
 }
 
 #endif // hifi_RenderableTextEntityItem_h
