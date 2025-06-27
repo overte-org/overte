@@ -1479,6 +1479,11 @@ FadeProperties EntityTreeRenderer::LayeredZones::getFadeProperties(const Transit
 }
 
 bool EntityTreeRenderer::LayeredZones::hasFade(const TransitionType type) const {
+    if (type == TransitionType::BUBBLE_ISECT_OWNER || type == TransitionType::BUBBLE_ISECT_TRESPASSER ||
+        type == TransitionType::AVATAR_CHANGE) {
+        return true;
+    }
+
     for (auto it = cbegin(); it != cend(); it++) {
         auto zone = it->zone.lock();
         if (zone) {

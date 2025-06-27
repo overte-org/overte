@@ -2310,7 +2310,7 @@ void renderFadeInstances(RenderArgs* args, gpu::Batch& batch, const glm::vec4& c
             batch.getNamedBuffer(instanceName, INSTANCE_FADE6_BUFFER),
             batch.getNamedBuffer(instanceName, INSTANCE_FADE7_BUFFER),
         };
-        fadeBuffers.update(fadeParams);
+        fadeBuffers.append(fadeParams);
     }
 
     // Add call to named buffer
@@ -2391,7 +2391,7 @@ graphics::MeshPointer GeometryCache::meshFromShape(Shape geometryShape, glm::vec
     return mesh;
 }
 
-void FadeBuffers::update(const FadeObjectParams& fadeParams) {
+void FadeBuffers::append(const FadeObjectParams& fadeParams) {
     _fade1Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.noiseOffsetAndInverted));
     _fade2Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.baseOffsetAndThreshold));
     _fade3Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.baseInvSizeAndLevel));

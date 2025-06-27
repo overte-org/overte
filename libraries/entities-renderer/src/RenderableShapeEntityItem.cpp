@@ -198,7 +198,7 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             } else {
                 FadeObjectParams fadeParams = getFadeParams(args->_scene);
                 _fadeBuffers.clear();
-                _fadeBuffers.update(fadeParams);
+                _fadeBuffers.append(fadeParams);
                 if (wireframe) {
                     geometryCache->renderWireShapeFade(batch, geometryShape, _colorBuffer, _fadeBuffers);
                 } else {
