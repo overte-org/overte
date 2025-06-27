@@ -212,7 +212,7 @@ void ImageEntityRenderer::doRender(RenderArgs* args) {
     if (fading && pipelineType == Pipeline::SIMPLE) {
         FadeObjectParams fadeParams = getFadeParams(args->_scene);
         _fadeBuffers.clear();
-        _fadeBuffers.update(fadeParams);
+        _fadeBuffers.append(fadeParams);
         DependencyManager::get<GeometryCache>()->renderQuadFade(*batch, glm::vec2(-0.5f), glm::vec2(0.5f), texCoordBottomLeft,
                                                                 texCoordTopRight, color, _fadeBuffers, _geometryId);
     } else {

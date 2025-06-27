@@ -189,7 +189,7 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
         } else {
             FadeObjectParams fadeParams = getFadeParams(args->_scene);
             _fadeBuffers.clear();
-            _fadeBuffers.update(fadeParams);
+            _fadeBuffers.append(fadeParams);
             geometryCache->renderQuadFade(batch, glm::vec2(-0.5f), glm::vec2(0.5f), backgroundColor, _fadeBuffers, _geometryID);
         }
     } else {

@@ -126,7 +126,7 @@ inline uint qHash(const Vec4PairVec4Pair& v, uint seed) {
 }
 
 struct FadeBuffers {
-    void update(const FadeObjectParams& fadeParams);
+    void append(const FadeObjectParams& fadeParams);
 
     void clear();
 
