@@ -554,10 +554,6 @@ void EntityRenderer::fade(render::Transaction& transaction, TransitionType type)
 // Returns true if the item needs to have updateInscene called because of internal rendering 
 // changes (animation, fading, etc)
 bool EntityRenderer::needsRenderUpdate() const {
-    if (isFading()) {
-        return true;
-    }
-
     if (_prevIsTransparent != isTransparent()) {
         return true;
     }
@@ -621,12 +617,8 @@ void EntityRenderer::doRenderUpdateSynchronous(const ScenePointer& scene, Transa
     DETAILED_PROFILE_RANGE(simulation_physics, __FUNCTION__);
     withWriteLock([&] {
         auto transparent = isTransparent();
-        auto fading = isFading();
-        if (fading || _prevIsTransparent != transparent || !entity->isVisuallyReady()) {
+        if (_prevIsTransparent != transparent || !entity->isVisuallyReady()) {
             emit requestRenderUpdate();
-        }
-        if (fading) {
-            _isFading = Interpolate::calculateFadeRatio(_fadeStartTime) < 1.0f;
         }
 
         _prevIsTransparent = transparent;
@@ -739,13 +731,6 @@ bool EntityRenderer::needsRenderUpdateFromMaterials() const {
         return true;
     }
 
-    if (materials->second.size() > 0 && materials->second.top().material && materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
-        auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials->second.top().material);
-        if (procedural->isFading()) {
-            return true;
-        }
-    }
-
     return false;
 }
 
@@ -765,14 +750,6 @@ void EntityRenderer::updateMaterials(bool baseMaterialChanged) {
     }
 
     bool requestUpdate = false;
-    if (materials->second.size() > 0 && materials->second.top().material && materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
-        auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials->second.top().material);
-        if (procedural->isFading()) {
-            procedural->setIsFading(Interpolate::calculateFadeRatio(procedural->getFadeStartTime()) < 1.0f);
-            requestUpdate = true;
-        }
-    }
-
     if (materials->second.shouldUpdate()) {
         RenderPipelines::updateMultiMaterial(materials->second);
         requestUpdate = true;
@@ -795,13 +772,6 @@ bool EntityRenderer::materialsTransparent() const {
     }
 
     if (materials->second.size() > 0 && materials->second.top().material) {
-        if (materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
-            auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials->second.top().material);
-            if (procedural->isFading()) {
-                return true;
-            }
-        }
-
         if (materials->second.getMaterialKey().isTranslucent()) {
             return true;
         }

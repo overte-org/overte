@@ -1712,11 +1712,6 @@ void Application::setupSignalsAndOperators() {
             return nullptr;
         });
 
-        EntityTreeRenderer::setEntitiesShouldFadeFunction([this]() {
-            SharedNodePointer entityServerNode = DependencyManager::get<NodeList>()->soloNodeOfType(NodeType::EntityServer);
-            return entityServerNode && !isPhysicsEnabled();
-        });
-
         DependencyManager::get<EntityTreeRenderer>()->setMouseRayPickResultOperator([](unsigned int rayPickID) {
             RayToEntityIntersectionResult entityResult;
             entityResult.intersects = false;

@@ -152,7 +152,6 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
     if (pipelineType == Pipeline::PROCEDURAL) {
         auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials.top().material);
         outColor = procedural->getColor(outColor);
-        outColor.a *= procedural->isFading() ? Interpolate::calculateFadeRatio(procedural->getFadeStartTime()) : 1.0f;
         withReadLock([&] {
             procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(outColor.a < 1.0f));
         });
@@ -170,7 +169,6 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         }
     } else if (pipelineType == Pipeline::SIMPLE) {
         // FIXME, support instanced multi-shape rendering using multidraw indirect
-        outColor.a *= _isFading ? Interpolate::calculateFadeRatio(_fadeStartTime) : 1.0f;
         bool forward = _renderLayer != RenderLayer::WORLD || args->_renderMethod == Args::RenderMethod::FORWARD;
         bool fading = ShapeKey(args->_itemShapeKey).isFaded();
         if (outColor.a >= 1.0f) {

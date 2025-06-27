@@ -375,8 +375,7 @@ void WebEntityRenderer::doRender(RenderArgs* args) {
     Transform transform;
     bool transparent;
     withReadLock([&] {
-        float fadeRatio = _isFading ? Interpolate::calculateFadeRatio(_fadeStartTime) : 1.0f;
-        color = glm::vec4(toGlm(_color), _alpha * fadeRatio);
+        color = glm::vec4(toGlm(_color), _alpha);
         color = EntityRenderer::calculatePulseColor(color, _pulseProperties, _created);
         transform = _renderTransform;
         transparent = isTransparent();
@@ -416,7 +415,6 @@ void WebEntityRenderer::buildWebSurface(const EntityItemPointer& entity, const Q
         ++_currentWebCount;
     }
     WebEntityRenderer::acquireWebSurface(newSourceURL, isHTML, _webSurface, _cachedWebSurface);
-    _fadeStartTime = usecTimestampNow();
     _webSurface->resume();
 
     _connections.push_back(QObject::connect(this, &WebEntityRenderer::scriptEventReceived, _webSurface.data(), &OffscreenQmlSurface::emitScriptEvent));

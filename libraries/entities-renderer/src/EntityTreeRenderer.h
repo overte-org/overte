@@ -63,9 +63,6 @@ using CalculateEntityLoadingPriority = std::function<float(const EntityItem& ite
 class EntityTreeRenderer : public OctreeProcessor, public Dependency {
     Q_OBJECT
 public:
-    static void setEntitiesShouldFadeFunction(std::function<bool()> func) { _entitiesShouldFadeFunction = func; }
-    static std::function<bool()> getEntitiesShouldFadeFunction() { return _entitiesShouldFadeFunction; }
-
     EntityTreeRenderer(bool wantScripts, AbstractViewStateInterface* viewState,
                                 AbstractScriptingServicesInterface* scriptingServices);
     virtual ~EntityTreeRenderer();
@@ -280,7 +277,6 @@ private:
 
     static int _entitiesScriptEngineCount;
     static CalculateEntityLoadingPriority _calculateEntityLoadingPriorityFunc;
-    static std::function<bool()> _entitiesShouldFadeFunction;
 
     mutable std::mutex _spaceLock;
     workload::SpacePointer _space{ new workload::Space() };

@@ -21,14 +21,12 @@ ProceduralParticleEffectEntityRenderer::ProceduralParticleEffectEntityRenderer(c
     Parent(entity) {
     _updateProcedural._vertexSource = shader::Source::get(shader::gpu::vertex::DrawUnitQuadTexcoord);
     _updateProcedural._opaqueFragmentSource = shader::Source::get(shader::entities_renderer::fragment::proceduralParticleUpdate);
-    _updateProcedural.setDoesFade(false);
 
     _renderProcedural._vertexSource = shader::Source::get(shader::entities_renderer::vertex::proceduralParticle);
     _renderProcedural._opaqueFragmentSource = shader::Source::get(shader::entities_renderer::fragment::proceduralParticle);
     _renderProcedural._transparentFragmentSource = shader::Source::get(shader::entities_renderer::fragment::proceduralParticle_translucent);
     _renderProcedural._transparentState->setBlendFunction(true, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE,
                                                           gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
-    _renderProcedural.setDoesFade(false);
 }
 
 void ProceduralParticleEffectEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) {
