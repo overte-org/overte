@@ -126,25 +126,11 @@ inline uint qHash(const Vec4PairVec4Pair& v, uint seed) {
 }
 
 struct FadeBuffers {
-    void update(const FadeObjectParams& fadeParams) {
-        _fade1Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.noiseOffsetAndInverted));
-        _fade2Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.baseOffsetAndThreshold));
-        _fade3Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.baseInvSizeAndLevel));
-        _fade4Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.noiseInvSizeAndLevel));
-        _fade5Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.innerEdgeColor));
-        _fade6Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.outerEdgeColor));
-        _fade7Buffer->append(1 * sizeof(float), (gpu::Byte*)(&fadeParams.edgeWidthInv));
-    }
+    void update(const FadeObjectParams& fadeParams);
 
-    void clear() {
-        _fade1Buffer->resize(0);
-        _fade2Buffer->resize(0);
-        _fade3Buffer->resize(0);
-        _fade4Buffer->resize(0);
-        _fade5Buffer->resize(0);
-        _fade6Buffer->resize(0);
-        _fade7Buffer->resize(0);
-    }
+    void clear();
+
+    void bind(gpu::Batch& batch) const;
 
     gpu::BufferPointer _fade1Buffer { std::make_shared<gpu::Buffer>() };
     gpu::BufferPointer _fade2Buffer { std::make_shared<gpu::Buffer>() };
@@ -248,15 +234,16 @@ public:
 
     void renderQuad(gpu::Batch& batch, int x, int y, int width, int height, const glm::vec4& color, int id)
             { renderQuad(batch, glm::vec2(x,y), glm::vec2(x + width, y + height), color, id); }
-            
-    // TODO: I think there's a bug in this version of the renderQuad() that's not correctly rebuilding the vbos
-    // if the color changes by the corners are the same, as evidenced by the audio meter which should turn white
-    // when it's clipping
+
     void renderQuad(gpu::Batch& batch, const glm::vec2& minCorner, const glm::vec2& maxCorner, const glm::vec4& color, int id);
+    void renderQuadFade(gpu::Batch& batch, const glm::vec2& minCorner, const glm::vec2& maxCorner, const glm::vec4& color, const FadeBuffers& fadeBuffers, int id);
 
     void renderQuad(gpu::Batch& batch, const glm::vec2& minCorner, const glm::vec2& maxCorner,
-                    const glm::vec2& texCoordMinCorner, const glm::vec2& texCoordMaxCorner, 
+                    const glm::vec2& texCoordMinCorner, const glm::vec2& texCoordMaxCorner,
                     const glm::vec4& color, int id);
+    void renderQuadFade(gpu::Batch& batch, const glm::vec2& minCorner, const glm::vec2& maxCorner,
+                        const glm::vec2& texCoordMinCorner, const glm::vec2& texCoordMaxCorner,
+                        const glm::vec4& color, const FadeBuffers& fadeBuffers, int id);
 
     void renderQuad(gpu::Batch& batch, const glm::vec3& minCorner, const glm::vec3& maxCorner, const glm::vec4& color, int id);
 
@@ -394,11 +381,17 @@ private:
     QHash<int, Vec4PairVec4> _lastRegisteredQuad2DTexture;
     QHash<int, BatchItemDetails> _registeredQuad2DTextures;
 
+    QHash<int, Vec4PairVec4> _lastRegisteredQuad2DTextureFade;
+    QHash<int, BatchItemDetails> _registeredQuad2DTexturesFade;
+
     QHash<int, Vec3PairVec4> _lastRegisteredQuad3D;
     QHash<int, BatchItemDetails> _registeredQuad3D;
 
     QHash<int, Vec4Pair> _lastRegisteredQuad2D;
     QHash<int, BatchItemDetails> _registeredQuad2D;
+
+    QHash<int, Vec4Pair> _lastRegisteredQuad2DFade;
+    QHash<int, BatchItemDetails> _registeredQuad2DFade;
 
     QHash<int, Vec3Pair> _lastRegisteredBevelRects;
     QHash<int, BatchItemDetails> _registeredBevelRects;
