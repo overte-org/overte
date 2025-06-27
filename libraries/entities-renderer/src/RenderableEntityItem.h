@@ -123,9 +123,8 @@ protected:
     // Called by the `render` method after `needsRenderUpdate`
     virtual void doRender(RenderArgs* args) = 0;
 
-    virtual bool isFading() const { return _isFading; }
     virtual void updateModelTransformAndBound(const EntityItemPointer& entity);
-    virtual bool isTransparent() const { return _isFading ? Interpolate::calculateFadeRatio(_fadeStartTime) < 1.0f : false; }
+    virtual bool isTransparent() const { return false; }
     inline bool isValidRenderItem() const { return _renderItemID != Item::INVALID_ITEM_ID; }
 
     virtual void setIsVisibleInSecondaryCamera(bool value) { _isVisibleInSecondaryCamera = value; }
@@ -157,9 +156,7 @@ protected:
     SharedSoundPointer _collisionSound;
     QUuid _changeHandlerId;
     ItemID _renderItemID{ Item::INVALID_ITEM_ID };
-    uint64_t _fadeStartTime{ usecTimestampNow() };
     uint64_t _updateTime{ usecTimestampNow() }; // used when sorting/throttling render updates
-    bool _isFading { EntityTreeRenderer::getEntitiesShouldFadeFunction()() };
     bool _prevIsTransparent { false };
     bool _visible { false };
     bool _isVisibleInSecondaryCamera { false };

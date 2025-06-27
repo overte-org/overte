@@ -1917,7 +1917,6 @@ void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
         if (pipelineType == Pipeline::PROCEDURAL) {
             auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials.top().material);
             outColor = procedural->getColor(outColor);
-            outColor.a *= procedural->isFading() ? Interpolate::calculateFadeRatio(procedural->getFadeStartTime()) : 1.0f;
             withReadLock([&] {
                 procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created,
                                     ProceduralProgramKey(outColor.a < 1.0f));

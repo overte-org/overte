@@ -44,8 +44,6 @@
 #include <PointerManager.h>
 #include <QtConcurrent/QtConcurrentRun>
 
-std::function<bool()> EntityTreeRenderer::_entitiesShouldFadeFunction = []() { return true; };
-
 QString resolveScriptURL(const QString& scriptUrl) {
     auto normalizedScriptUrl = DependencyManager::get<ResourceManager>()->normalizeURL(scriptUrl);
     QUrl url { normalizedScriptUrl };
