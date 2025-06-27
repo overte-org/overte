@@ -1,4 +1,8 @@
 // glsl / C++ compatible source as interface for FadeObjectParams
+
+#ifndef hifi_render_utils_FadeObjectParams_shared_slh
+#define hifi_render_utils_FadeObjectParams_shared_slh
+
 #ifdef __cplusplus
 #   define FOP_VEC4 glm::vec4
 #   define FOP_FLOAT32 glm::float32
@@ -18,6 +22,8 @@ struct FadeObjectParams {
 
     FOP_FLOAT32 edgeWidthInv;
 };
+
+#endif // hifi_render_utils_FadeObjectParams_shared_slh
 
     // <@if 1@>
     // Trigger Scribe include 

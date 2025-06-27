@@ -15,6 +15,7 @@
 
 #include <glm/gtx/transform.hpp>
 #include <ObjectMotionState.h>
+#include <render/TransitionStage.h>
 
 #include "RenderableShapeEntityItem.h"
 #include "RenderableModelEntityItem.h"
@@ -959,4 +960,20 @@ glm::vec3 EntityRenderer::calculatePulseColor(const glm::vec3& color, const Puls
     }
 
     return result;
+}
+
+FadeObjectParams EntityRenderer::getFadeParams(const render::ScenePointer& scene) const {
+    FadeObjectParams fadeParams;
+    auto item = scene->getItemSafe(_renderItemID);
+    if (item.exist()) {
+        auto transitionStage = scene->getStage<render::TransitionStage>();
+        if (transitionStage && transitionStage->checkId(item.getTransitionId())) {
+            auto& transition = transitionStage->getElement(item.getTransitionId());
+            if (transition.paramsBuffer._size == sizeof(FadeObjectParams)) {
+                fadeParams = static_cast<gpu::StructBuffer<FadeObjectParams>&>(transition.paramsBuffer).get();
+            }
+        }
+    }
+
+    return fadeParams;
 }

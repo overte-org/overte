@@ -16,6 +16,7 @@
 
 #include "RenderableEntityItem.h"
 
+#include <GeometryCache.h>
 #include <procedural/Procedural.h>
 
 class TextEntityItem;
@@ -80,6 +81,8 @@ private:
     TextEffect _effect { TextEffect::NO_EFFECT };
     glm::vec3 _effectColor { 0 };
     float _effectThickness { 0.0f };
+
+    FadeBuffers _fadeBuffers;
 
     int _geometryID { 0 };
 

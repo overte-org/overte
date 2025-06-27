@@ -711,14 +711,23 @@ GeometryCache::~GeometryCache() {
 }
 
 void GeometryCache::releaseID(int id) {
+    _lastRegisteredQuad3DTexture.remove(id);
     _registeredQuad3DTextures.remove(id);
+
     _lastRegisteredQuad2DTexture.remove(id);
     _registeredQuad2DTextures.remove(id);
+
+    _lastRegisteredQuad2DTextureFade.remove(id);
+    _registeredQuad2DTexturesFade.remove(id);
+
     _lastRegisteredQuad3D.remove(id);
     _registeredQuad3D.remove(id);
 
     _lastRegisteredQuad2D.remove(id);
     _registeredQuad2D.remove(id);
+
+    _lastRegisteredQuad2DFade.remove(id);
+    _registeredQuad2DFade.remove(id);
 
     _lastRegisteredBevelRects.remove(id);
     _registeredBevelRects.remove(id);
@@ -814,20 +823,7 @@ void GeometryCache::renderWireShapeInstances(gpu::Batch& batch, Shape shape, siz
 }
 
 void setupFadeInputBuffers(gpu::Batch& batch, const FadeBuffers& fadeBuffers) {
-    gpu::BufferView fade1View(fadeBuffers._fade1Buffer, FADE4_ELEMENT);
-    gpu::BufferView fade2View(fadeBuffers._fade2Buffer, FADE4_ELEMENT);
-    gpu::BufferView fade3View(fadeBuffers._fade3Buffer, FADE4_ELEMENT);
-    gpu::BufferView fade4View(fadeBuffers._fade4Buffer, FADE4_ELEMENT);
-    gpu::BufferView fade5View(fadeBuffers._fade5Buffer, FADE4_ELEMENT);
-    gpu::BufferView fade6View(fadeBuffers._fade6Buffer, FADE4_ELEMENT);
-    gpu::BufferView fade7View(fadeBuffers._fade7Buffer, FADE1_ELEMENT);
-    batch.setInputBuffer(gpu::Stream::FADE1, fade1View);
-    batch.setInputBuffer(gpu::Stream::FADE2, fade2View);
-    batch.setInputBuffer(gpu::Stream::FADE3, fade3View);
-    batch.setInputBuffer(gpu::Stream::FADE4, fade4View);
-    batch.setInputBuffer(gpu::Stream::FADE5, fade5View);
-    batch.setInputBuffer(gpu::Stream::FADE6, fade6View);
-    batch.setInputBuffer(gpu::Stream::FADE7, fade7View);
+    fadeBuffers.bind(batch);
 }
 
 void GeometryCache::renderShapeFade(gpu::Batch& batch, Shape shape, gpu::BufferPointer& colorBuffer, const FadeBuffers& fadeBuffers) {
@@ -1285,6 +1281,83 @@ void GeometryCache::renderQuad(gpu::Batch& batch, const glm::vec2& minCorner, co
     batch.draw(gpu::TRIANGLE_STRIP, 4, 0);
 }
 
+void GeometryCache::renderQuadFade(gpu::Batch& batch, const glm::vec2& minCorner, const glm::vec2& maxCorner, const glm::vec4& color, const FadeBuffers& fadeBuffers, int id) {
+    bool registered = (id != UNKNOWN_ID);
+    Vec4Pair key(glm::vec4(minCorner.x, minCorner.y, maxCorner.x, maxCorner.y), color);
+    BatchItemDetails& details = _registeredQuad2DFade[id];
+
+    // if this is a registered quad, and we have buffers, then check to see if the geometry changed and rebuild if needed
+    if (registered && details.isCreated) {
+        Vec4Pair& lastKey = _lastRegisteredQuad2DFade[id];
+        if (lastKey != key) {
+            details.clear();
+            _lastRegisteredQuad2DFade[id] = key;
+#ifdef WANT_DEBUG
+            qCDebug(renderutils) << "renderQuadFade() 2D ... RELEASING REGISTERED";
+#endif // def WANT_DEBUG
+        }
+#ifdef WANT_DEBUG
+        else {
+            qCDebug(renderutils) << "renderQuadFade() 2D ... REUSING PREVIOUSLY REGISTERED";
+        }
+#endif // def WANT_DEBUG
+    }
+
+    if (!details.isCreated) {
+        static const int FLOATS_PER_VERTEX = 2; // vertices
+        static const int VERTICES = 4; // 1 quad = 4 vertices
+
+        details.isCreated = true;
+        details.vertices = VERTICES;
+        details.vertexSize = FLOATS_PER_VERTEX;
+
+        auto verticesBuffer = std::make_shared<gpu::Buffer>();
+        auto normalBuffer = std::make_shared<gpu::Buffer>();
+        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto streamFormat = std::make_shared<gpu::Stream::Format>();
+        auto stream = std::make_shared<gpu::BufferStream>();
+
+        details.verticesBuffer = verticesBuffer;
+        details.normalBuffer = normalBuffer;
+        details.colorBuffer = colorBuffer;
+        details.streamFormat = streamFormat;
+        details.stream = stream;
+
+        details.streamFormat->setAttribute(gpu::Stream::POSITION, gpu::Stream::POSITION, gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::XYZ));
+        details.streamFormat->setAttribute(gpu::Stream::NORMAL, gpu::Stream::NORMAL, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::COLOR, gpu::Stream::COLOR, gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA), 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE1, gpu::Stream::FADE1, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE2, gpu::Stream::FADE2, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE3, gpu::Stream::FADE3, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE4, gpu::Stream::FADE4, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE5, gpu::Stream::FADE5, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE6, gpu::Stream::FADE6, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE7, gpu::Stream::FADE7, FADE1_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+
+        details.stream->addBuffer(details.verticesBuffer, 0, details.streamFormat->getChannels().at(gpu::Stream::POSITION)._stride);
+        details.stream->addBuffer(details.normalBuffer, 0, details.streamFormat->getChannels().at(gpu::Stream::NORMAL)._stride);
+        details.stream->addBuffer(details.colorBuffer, 0, details.streamFormat->getChannels().at(gpu::Stream::COLOR)._stride);
+
+        float vertexBuffer[VERTICES * FLOATS_PER_VERTEX] = {
+            minCorner.x, minCorner.y,
+            maxCorner.x, minCorner.y,
+            minCorner.x, maxCorner.y,
+            maxCorner.x, maxCorner.y,
+        };
+
+        details.verticesBuffer->append(sizeof(vertexBuffer), (gpu::Byte*) vertexBuffer);
+        const glm::vec3 NORMAL(0.0f, 0.0f, 1.0f);
+        details.normalBuffer->append(3 * sizeof(float), (gpu::Byte*) glm::value_ptr(NORMAL));
+        int compactColor = GeometryCache::toCompactColor(color);
+        details.colorBuffer->append(sizeof(compactColor), (gpu::Byte*) &compactColor);
+    }
+
+    batch.setInputFormat(details.streamFormat);
+    batch.setInputStream(0, *details.stream);
+    fadeBuffers.bind(batch);
+    batch.draw(gpu::TRIANGLE_STRIP, 4, 0);
+}
+
 void GeometryCache::renderUnitQuad(gpu::Batch& batch, const glm::vec4& color, int id) {
     static const glm::vec2 topLeft(-1, 1);
     static const glm::vec2 bottomRight(1, -1);
@@ -1366,6 +1439,90 @@ void GeometryCache::renderQuad(gpu::Batch& batch, const glm::vec2& minCorner, co
 
     batch.setInputFormat(details.streamFormat);
     batch.setInputStream(0, *details.stream);
+    batch.draw(gpu::TRIANGLE_STRIP, 4, 0);
+}
+
+void GeometryCache::renderQuadFade(gpu::Batch& batch, const glm::vec2& minCorner, const glm::vec2& maxCorner,
+    const glm::vec2& texCoordMinCorner, const glm::vec2& texCoordMaxCorner,
+    const glm::vec4& color, const FadeBuffers& fadeBuffers, int id) {
+
+    Vec4PairVec4 key(Vec4Pair(glm::vec4(minCorner.x, minCorner.y, maxCorner.x, maxCorner.y),
+        glm::vec4(texCoordMinCorner.x, texCoordMinCorner.y, texCoordMaxCorner.x, texCoordMaxCorner.y)),
+        color);
+    BatchItemDetails& details = _registeredQuad2DTexturesFade[id];
+
+    // if this is a registered quad, and we have buffers, then check to see if the geometry changed and rebuild if needed
+    if (details.isCreated) {
+        Vec4PairVec4& lastKey = _lastRegisteredQuad2DTextureFade[id];
+        if (lastKey != key) {
+            details.clear();
+            _lastRegisteredQuad2DTextureFade[id] = key;
+#ifdef WANT_DEBUG
+            qCDebug(renderutils) << "renderQuad() 2D+texture ... RELEASING REGISTERED";
+#endif // def WANT_DEBUG
+        }
+#ifdef WANT_DEBUG
+        else {
+            qCDebug(renderutils) << "renderQuad() 2D+texture ... REUSING PREVIOUSLY REGISTERED";
+        }
+#endif // def WANT_DEBUG
+    }
+
+    if (!details.isCreated) {
+        static const int FLOATS_PER_VERTEX = 2 + 2; // vertices + tex coords
+        static const int VERTICES = 4; // 1 quad = 4 vertices
+        static const int NUM_POS_COORDS = 2;
+        static const int VERTEX_TEXCOORD_OFFSET = NUM_POS_COORDS * sizeof(float);
+
+        details.isCreated = true;
+        details.vertices = VERTICES;
+        details.vertexSize = FLOATS_PER_VERTEX;
+
+        auto verticesBuffer = std::make_shared<gpu::Buffer>();
+        auto normalBuffer = std::make_shared<gpu::Buffer>();
+        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto streamFormat = std::make_shared<gpu::Stream::Format>();
+        auto stream = std::make_shared<gpu::BufferStream>();
+
+        details.verticesBuffer = verticesBuffer;
+        details.normalBuffer = normalBuffer;
+        details.colorBuffer = colorBuffer;
+        details.streamFormat = streamFormat;
+        details.stream = stream;
+
+        details.streamFormat->setAttribute(gpu::Stream::POSITION, 0, gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::XYZ));
+        details.streamFormat->setAttribute(gpu::Stream::TEXCOORD, 0, gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::UV), VERTEX_TEXCOORD_OFFSET);
+        details.streamFormat->setAttribute(gpu::Stream::NORMAL, 1, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::COLOR, 2, gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA), 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE1, gpu::Stream::FADE1, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE2, gpu::Stream::FADE2, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE3, gpu::Stream::FADE3, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE4, gpu::Stream::FADE4, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE5, gpu::Stream::FADE5, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE6, gpu::Stream::FADE6, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE7, gpu::Stream::FADE7, FADE1_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+
+        details.stream->addBuffer(details.verticesBuffer, 0, details.streamFormat->getChannels().at(0)._stride);
+        details.stream->addBuffer(details.normalBuffer, 0, details.streamFormat->getChannels().at(1)._stride);
+        details.stream->addBuffer(details.colorBuffer, 0, details.streamFormat->getChannels().at(2)._stride);
+
+        float vertexBuffer[VERTICES * FLOATS_PER_VERTEX] = {
+            minCorner.x, minCorner.y, texCoordMinCorner.x, texCoordMinCorner.y,
+            maxCorner.x, minCorner.y, texCoordMaxCorner.x, texCoordMinCorner.y,
+            minCorner.x, maxCorner.y, texCoordMinCorner.x, texCoordMaxCorner.y,
+            maxCorner.x, maxCorner.y, texCoordMaxCorner.x, texCoordMaxCorner.y,
+        };
+
+        details.verticesBuffer->append(sizeof(vertexBuffer), (gpu::Byte*) vertexBuffer);
+        const glm::vec3 NORMAL(0.0f, 0.0f, 1.0f);
+        details.normalBuffer->append(3 * sizeof(float), (gpu::Byte*) glm::value_ptr(NORMAL));
+        int compactColor = GeometryCache::toCompactColor(color);
+        details.colorBuffer->append(sizeof(compactColor), (gpu::Byte*) &compactColor);
+    }
+
+    batch.setInputFormat(details.streamFormat);
+    batch.setInputStream(0, *details.stream);
+    fadeBuffers.bind(batch);
     batch.draw(gpu::TRIANGLE_STRIP, 4, 0);
 }
 
@@ -2232,4 +2389,41 @@ graphics::MeshPointer GeometryCache::meshFromShape(Shape geometryShape, glm::vec
     mesh->displayName = QString("GeometryCache/shape::%1").arg(GeometryCache::stringFromShape(geometryShape)).toStdString();
 
     return mesh;
+}
+
+void FadeBuffers::update(const FadeObjectParams& fadeParams) {
+    _fade1Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.noiseOffsetAndInverted));
+    _fade2Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.baseOffsetAndThreshold));
+    _fade3Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.baseInvSizeAndLevel));
+    _fade4Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.noiseInvSizeAndLevel));
+    _fade5Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.innerEdgeColor));
+    _fade6Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.outerEdgeColor));
+    _fade7Buffer->append(1 * sizeof(float), (gpu::Byte*)(&fadeParams.edgeWidthInv));
+}
+
+void FadeBuffers::clear() {
+    _fade1Buffer->resize(0);
+    _fade2Buffer->resize(0);
+    _fade3Buffer->resize(0);
+    _fade4Buffer->resize(0);
+    _fade5Buffer->resize(0);
+    _fade6Buffer->resize(0);
+    _fade7Buffer->resize(0);
+}
+
+void FadeBuffers::bind(gpu::Batch& batch) const {
+    gpu::BufferView fade1View(_fade1Buffer, FADE4_ELEMENT);
+    gpu::BufferView fade2View(_fade2Buffer, FADE4_ELEMENT);
+    gpu::BufferView fade3View(_fade3Buffer, FADE4_ELEMENT);
+    gpu::BufferView fade4View(_fade4Buffer, FADE4_ELEMENT);
+    gpu::BufferView fade5View(_fade5Buffer, FADE4_ELEMENT);
+    gpu::BufferView fade6View(_fade6Buffer, FADE4_ELEMENT);
+    gpu::BufferView fade7View(_fade7Buffer, FADE1_ELEMENT);
+    batch.setInputBuffer(gpu::Stream::FADE1, fade1View);
+    batch.setInputBuffer(gpu::Stream::FADE2, fade2View);
+    batch.setInputBuffer(gpu::Stream::FADE3, fade3View);
+    batch.setInputBuffer(gpu::Stream::FADE4, fade4View);
+    batch.setInputBuffer(gpu::Stream::FADE5, fade5View);
+    batch.setInputBuffer(gpu::Stream::FADE6, fade6View);
+    batch.setInputBuffer(gpu::Stream::FADE7, fade7View);
 }

@@ -23,6 +23,7 @@
 #include <graphics-scripting/Forward.h>
 #include <RenderHifi.h>
 #include "EntityTreeRenderer.h"
+#include "FadeObjectParams.shared.slh"
 
 class EntityTreeRenderer;
 
@@ -140,6 +141,8 @@ protected:
     const Transform& getModelTransform() const;
 
     Transform getTransformToCenterWithMaybeOnlyLocalRotation(const EntityItemPointer& entity, bool& success) const;
+
+    FadeObjectParams getFadeParams(const render::ScenePointer& scene) const;
 
     // Shared methods for entities that support materials
     using MaterialMap = std::unordered_map<std::string, graphics::MultiMaterial>;

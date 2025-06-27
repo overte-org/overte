@@ -183,7 +183,15 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
 
     auto geometryCache = DependencyManager::get<GeometryCache>();
     if (pipelineType == Pipeline::SIMPLE || pipelineType == Pipeline::MIRROR) {
-        geometryCache->renderQuad(batch, glm::vec2(-0.5f), glm::vec2(0.5f), backgroundColor, _geometryID);
+        bool fading = ShapeKey(args->_itemShapeKey).isFaded();
+        if (!fading) {
+            geometryCache->renderQuad(batch, glm::vec2(-0.5f), glm::vec2(0.5f), backgroundColor, _geometryID);
+        } else {
+            FadeObjectParams fadeParams = getFadeParams(args->_scene);
+            _fadeBuffers.clear();
+            _fadeBuffers.update(fadeParams);
+            geometryCache->renderQuadFade(batch, glm::vec2(-0.5f), glm::vec2(0.5f), backgroundColor, _fadeBuffers, _geometryID);
+        }
     } else {
         geometryCache->renderQuad(batch, glm::vec2(-0.5f), glm::vec2(0.5f), glm::vec2(0.0f), glm::vec2(1.0f), backgroundColor, _geometryID);
     }
