@@ -91,9 +91,9 @@ class Overte(ConanFile):
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
-            self.requires("qt/5.15.16-2025.01.23@overte/stable", force=True)
             # Upstream NSS is broken, so we use https://github.com/conan-io/conan-center-index/pull/19262/commits/735df499341924901089fd512a8ac56ac83d1e6a
             self.requires("nss/3.107@overte/stable", force=True)
+            self.requires("qt/5.15.17-2025.06.07@overte/stable", force=True)
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")
