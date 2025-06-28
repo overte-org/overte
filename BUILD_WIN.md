@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Build Windows
 
-*Last Updated on 2025-06-09*
+*Last Updated on 2025-06-28*
 
 This is a stand-alone guide for creating your first Overte build for Windows 64-bit.
 
@@ -18,19 +18,18 @@ If you are upgrading from previous versions, do a clean uninstall of those versi
 
 ## Step 1. Visual Studio & Python 3.x
 
-If you don't have Community or Professional edition of Visual Studio 2022, download [Visual Studio Community 2022](https://visualstudio.microsoft.com/vs/). While Visual Studio 2019 should still work, we don't support it anymore and might remove workarounds specific to it in the future.
+If you don't have Community or Professional edition of Visual Studio 2022, download [Visual Studio Community 2022](https://visualstudio.microsoft.com/vs/).
+While Visual Studio 2019 should still work, we don't support it anymore and might remove workarounds specific to it in the future.
 
 When selecting components, check "Desktop development with C++".
 
-If you do not already have a Python 3.x development environment installed and want to install it with Visual Studio, check "Python Development". If you already have Visual Studio installed and need to add Python, open the "Add or remove programs" control panel and find the "Microsoft Visual Studio Installer". Select it and click "Modify". In the installer, select "Modify" again, then check "Python Development" and allow the installer to apply the changes.
+If you do not already have a Python 3.x development environment installed and want to install it with Visual Studio, check "Python Development".
+If you already have Visual Studio installed and need to add Python, open the "Add or remove programs" control panel and find the "Microsoft Visual Studio Installer". Select it and click "Modify". In the installer, select "Modify" again, then check "Python Development" and allow the installer to apply the changes.
 
-### Visual Studio 2022
-
-On the right on the Summary toolbar, select the following components.
-
-* MSVC v142 - VS 2019 C++ X64/x86 build tools
-* MSVC v141 - VS 2017 C++ x64/x86 build tools
-* MSVC v140 - VS 2015 C++ build tools (v14.00)
+Note: MSVC 14.44.35207 seems to be bugged and cannot compile libnode.
+Get an older MSVC 143 version using `.\VisualStudioSetup.exe modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Community" --add Microsoft.VisualStudio.Component.VC.14.33.17.3.x86.x64` (this installs version 14.33.31629).
+Notice how the relevant component has been added to the "Single components" section on the right.
+Make sure to reload your environment (by restarting your terminal for example), otherwise the new compiler version won't be found.
 
 ## Step 1a. Alternate Python
 
@@ -40,7 +39,7 @@ If you do not wish to use the Python installation bundled with Visual Studio, yo
 
 In an administrator command-line that can access Python's pip you will need to run the following command:
 
-`pip install distro`
+`pip install distro setuptools html5lib`
 
 If you do not use an administrator command-line, you will get errors.
 
@@ -58,23 +57,25 @@ Download and install CMake version 3.15 or higher.
 
 Download the file named cmake-[version]-windows-x86_64.msi Installer from the [CMake Website](https://cmake.org/download/). During installation, make sure to check "Add CMake to system PATH for all users" when prompted.
 
-## Step 5. (Optional) Node.JS and NPM
+## Step 5. Create conan environment variable
 
-Install the latest LTS version of [Node.JS and NPM](<https://nodejs.org/en/download/>).
-This is required to build the server-console and jsdoc, and for JavaScript console autocompletion.
-
-## Step 6. (Optional) Create conan environment variable
 In the next step, you will use conan to install the dependencies required to build Overte. By default, conan will build and install the dependencies in `<username>/.conan2`.
-If you want to change that location you can create a `CONAN_HOME` environment variable linked to a directory somewhere on your machine.
+Because Windows doesn't support paths which are longer than 260 characters, we need to move this folder to a more shallow location like `C:\`.
+If you don't do this, some things will fail with `No such file or directory`, namely building Qt WebEngine from source.
 
 To create this variable:
 * Navigate to 'Edit the System Environment Variables' Through the Start menu.
 * Click on 'Environment Variables'
 * Select 'New'
 * Set "Variable name" to `CONAN_HOME`
-* Set "Variable value" to any directory that you have control over.
+* Set "Variable value" to any directory that you have control over. For example `C:\Conan2`.
 
 *Make sure that you copy the contents of your old `.conan2` folder over, or that you add the remote from step 2 again.*
+
+## Step 6. (Optional) Node.JS and NPM
+
+Install the latest LTS version of [Node.JS and NPM](<https://nodejs.org/en/download/>).
+This is required to build the server-console and jsdoc, and for JavaScript console autocompletion.
 
 ## Step 7. Running CMake to Generate Build Files
 
@@ -134,3 +135,53 @@ For any problems after Step #7, first try this:
 ## CMake gives you the same error message repeatedly after the build fails
 
 Remove `CMakeCache.txt` found in the `%OVERTE_DIR%\build` directory.
+
+## MSVC bugs
+MSVC is apparently a buggy mess, and almost every version has *something* broken in it.
+
+Available MSVC versions can be found here: https://learn.microsoft.com/en-us/visualstudio/install/workload-component-id-vs-community?view=vs-2022
+Just search for `Microsoft.VisualStudio.Component.VC.14.` using your internet browser search.
+
+### `EtcLib.lib(EtcImage.obj) : error LNK2019: unresolved external symbol __std_init_once_link_alternate_names_and_abort`
+This is a bug in MSVC 14.31.31103. Solution is to upgrade or downgrade from that specific version.
+
+The issue if fixed in MSVC 14.32.31326. Install a probably working version using:
+`.\VisualStudioSetup.exe modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Community" --add Microsoft.VisualStudio.Component.VC.14.33.17.3.x86.x64`
+Notice how the relevant component has been added to the "Single components" section on the right.
+Make sure to reload your environment (by restarting your terminal for example), otherwise the new compiler version won't be found.
+
+### `v8_compiler.lib(v8_pch.obj) : error LNK2019: unresolved external symbol "protected: static class v8::internal::Handle<class v8::internal::NameDictionary> ?`
+This is a bug in MSVC 14.44.35207. Solution is to upgrade or downgrade from that specific version.
+
+Currently (2025-06-28), this is the latest version, so we need to downgrade to an older version.
+A probably working version is MSVC 14.33.17.3, which can be installed using:
+`.\VisualStudioSetup.exe modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Community" --add Microsoft.VisualStudio.Component.VC.14.33.17.3.x86.x64`
+Notice how the relevant component has been added to the "Single components" section on the right.
+Make sure to reload your environment (by restarting your terminal for example), otherwise the new compiler version won't be found.
+
+### `draco.lib(point_cloud.obj) : error LNK2019: unresolved external symbol "__std_find_trivial_4"`
+This is a bug in MSVC 14.32.31326. Solution is to upgrade or downgrade from that specific version.
+
+Install a probably working version using:
+`.\VisualStudioSetup.exe modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Community" --add Microsoft.VisualStudio.Component.VC.14.33.17.3.x86.x64`
+Notice how the relevant component has been added to the "Single components" section on the right.
+Make sure to reload your environment (by restarting your terminal for example), otherwise the new compiler version won't be found.
+
+### Removing specific MSVC versions
+
+To remove a version, replace `--add` with `--remove`.
+E.g. `.\VisualStudioSetup.exe modify --installPath "C:\Program Files\Microsoft Visual Studio\2022\Community" --remove Microsoft.VisualStudio.Component.VC.14.31.17.1.x86.x64`
+Don't uninstall or manually delete the latest version! This will make your build tools unable to find Visual Studio.
+Instead, just install whatever compiler version you need. The last installed version will be given priority.
+If you don't know the version number Visual Studio uses to select MSVC versions, just open the `VisualStudioSetup.exe` directly,
+press "modify", and deselect it from the "Single components" section on the right. The tooltips help determining what is what.
+
+### `"atlbase.h": No such file or directory`
+
+*Sometimes* the build process requires ATL support.
+To fix this, install "C++ vXX.XX (...) ATL (...)" replacing XX.XX with the first two numbers that you used to install an specific MSVC version above using the `VisualStudioSetup.exe`. E.g. "C++ v14.32 (...) ATL (...)".
+
+### `warning : cannot resolve item 'api-ms-win-(...)-l1-1-0.dll'`
+
+You may be able to ignore this warning. My assumption is that the MSVC version used is incompatible with the currently installed Windows SDK,
+and Overte will just use the newer SDK during runtime.
