@@ -25,9 +25,10 @@ class Overte(ConanFile):
         "qt*:shared": "True",
         "qt*:gui": "True",
         "qt*:qtdeclarative": "True",
-        "qt*:qtimageformats": "True",
+        "qt*:qtimageformats": "True",  # WebP texture support
         "qt*:qtlocation": "True",
         "qt*:qtmultimedia": "True",
+        "qt*:qtquickcontrols": "True",  # For QtQuick.Dialogs
         "qt*:qtquickcontrols2": "True",
         "qt*:qtscxml": "True",
         "qt*:qtsvg": "True",
@@ -36,6 +37,7 @@ class Overte(ConanFile):
         "qt*:qtwebsockets": "True",
         "qt*:qtwebview": "True",
         "qt*:qtxmlpatterns": "True",
+        "qt*:qttools": "True",  # windeployqt for Windows
         "glad*:spec": "gl",
         "glad*:gl_profile": "core",
         "glad*:gl_version": "4.6",
