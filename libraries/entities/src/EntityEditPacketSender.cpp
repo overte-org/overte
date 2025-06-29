@@ -35,7 +35,7 @@ void EntityEditPacketSender::processEntityEditNackPacket(QSharedPointer<Received
 }
 
 void EntityEditPacketSender::adjustEditPacketForClockSkew(PacketType type, QByteArray& buffer, qint64 clockSkew) {
-    if (type == PacketType::EntityAdd || type == PacketType::EntityEdit || type == PacketType::EntityPhysics) {
+    if (type == PacketType::EntityAdd || type == PacketType::EntityEdit || type == PacketType::EntityEditLarge || type == PacketType::EntityPhysics) {
         EntityItem::adjustEditPacketForClockSkew(buffer, clockSkew);
     }
 }
@@ -56,9 +56,11 @@ void EntityEditPacketSender::queueEditAvatarEntityMessage(EntityTreePointer enti
     OctreePacketData packetData(false, AvatarTraits::MAXIMUM_TRAIT_SIZE);
     EncodeBitstreamParams params;
     EntityTreeElementExtraEncodeDataPointer extra { nullptr };
-    OctreeElement::AppendState appendState = entity->appendEntityData(&packetData, params, extra);
+    EntityPropertyList firstDidntFitProperty;
+    OctreeElement::AppendState appendState = entity->appendEntityData(&packetData, params, extra, firstDidntFitProperty);
 
     if (appendState != OctreeElement::COMPLETED) {
+        // TODO: handle EntityDataLarge
         // this entity's payload is too big
         return;
     }
@@ -119,15 +121,29 @@ void EntityEditPacketSender::queueEditEntityMessage(PacketType type,
         requestedProperties -= PROP_PRIVATE_USER_DATA;
     }
 
-    while (encodeResult == OctreeElement::PARTIAL) {
-        encodeResult = EntityItemProperties::encodeEntityEditPacket(type, entityItemID, propertiesCopy, bufferOut, requestedProperties, didntFitProperties);
+    while (encodeResult == OctreeElement::PARTIAL && !requestedProperties.isEmpty()) {
+        EntityPropertyList firstDidntFitProperty = (EntityPropertyList)0;
+        encodeResult = EntityItemProperties::encodeEntityEditPacket(type, entityItemID, propertiesCopy, bufferOut, requestedProperties, didntFitProperties, firstDidntFitProperty);
 
         if (encodeResult == OctreeElement::NONE) {
-            // This can happen for two reasons:
-            // 1. One of the properties is too large to fit in a single packet.
-            // 2. The requested properties don't exist in this entity type (e.g., 'modelUrl' in a Zone Entity).
-            // Since case #1 is more likely (and more critical), that's the one we warn about.
-            qCWarning(entities).nospace() << "queueEditEntityMessage: some of the properties don't fit and can't be sent. entityID=" << uuidStringWithoutCurlyBraces(entityItemID);
+            if (firstDidntFitProperty != 0) {
+                type = PacketType::EntityEditLarge;
+                const EntityPropertyFlags originalRequestedProperties = requestedProperties;
+                requestedProperties = firstDidntFitProperty;
+                size_t bufferMultiplier = 2;
+                const int bufferSize = NLPacket::maxPayloadSize(type);
+                while (true) {
+                    bufferOut.resize(bufferMultiplier * bufferSize);
+                    encodeResult = EntityItemProperties::encodeEntityEditPacket(type, entityItemID, propertiesCopy, bufferOut, requestedProperties, didntFitProperties, firstDidntFitProperty);
+                    if (encodeResult == OctreeElement::COMPLETED) {
+                        queueOctreeEditMessage(type, bufferOut);
+                        encodeResult = OctreeElement::PARTIAL;
+                        break;
+                    }
+                    bufferMultiplier++;
+                }
+                didntFitProperties = originalRequestedProperties - firstDidntFitProperty;
+            }
         } else {
             #ifdef WANT_DEBUG
                 qCDebug(entities) << "calling queueOctreeEditMessage()...";

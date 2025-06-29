@@ -119,7 +119,7 @@ Agent::Agent(ReceivedMessage& message) :
         { PacketType::MixedAudio, PacketType::SilentAudioFrame },
         PacketReceiver::makeUnsourcedListenerReference<Agent>(this, &Agent::handleAudioPacket));
     packetReceiver.registerListenerForTypes(
-        { PacketType::OctreeStats, PacketType::EntityData, PacketType::EntityErase },
+        { PacketType::OctreeStats, PacketType::EntityData, PacketType::EntityDataLarge, PacketType::EntityErase },
         PacketReceiver::makeSourcedListenerReference<Agent>(this, &Agent::handleOctreePacket));
     packetReceiver.registerListener(PacketType::SelectedAudioFormat,
         PacketReceiver::makeUnsourcedListenerReference<Agent>(this, &Agent::handleSelectedAudioFormat));
@@ -168,7 +168,7 @@ void Agent::handleOctreePacket(QSharedPointer<ReceivedMessage> message, SharedNo
         packetType = message->getType();
     } // fall through to piggyback message
 
-    if (packetType == PacketType::EntityData) {
+    if (packetType == PacketType::EntityData || packetType == PacketType::EntityDataLarge) {
         _entityViewer.processDatagram(*message, senderNode);
     } else if (packetType == PacketType::EntityErase) {
         _entityViewer.processEraseMessage(*message, senderNode);
