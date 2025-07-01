@@ -335,6 +335,15 @@ TransformObject getTransformObject() {
     }
 <@endfunc@>
 
+<@func transformModelToWorldDirNoScale(objectTransform, modelDir, worldDir)@>
+    { // transformModelToWorldDir
+        vec3 mr0 = normalize(vec3(<$objectTransform$>._modelInverse[0].x, <$objectTransform$>._modelInverse[1].x, <$objectTransform$>._modelInverse[2].x));
+        vec3 mr1 = normalize(vec3(<$objectTransform$>._modelInverse[0].y, <$objectTransform$>._modelInverse[1].y, <$objectTransform$>._modelInverse[2].y));
+        vec3 mr2 = normalize(vec3(<$objectTransform$>._modelInverse[0].z, <$objectTransform$>._modelInverse[1].z, <$objectTransform$>._modelInverse[2].z));
+        <$worldDir$> = vec3(dot(mr0, <$modelDir$>), dot(mr1, <$modelDir$>), dot(mr2, <$modelDir$>));
+    }
+<@endfunc@>
+
 <@func transformModelToEyeDir(cameraTransform, objectTransform, modelDir, eyeDir)@>
     { // transformModelToEyeDir
         vec3 mr0 = vec3(<$objectTransform$>._modelInverse[0].x, <$objectTransform$>._modelInverse[1].x, <$objectTransform$>._modelInverse[2].x);
