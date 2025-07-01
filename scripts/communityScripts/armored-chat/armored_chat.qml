@@ -467,7 +467,7 @@ Rectangle {
         var arrow = /\</gi
         mess = mess.replace(arrow, "&lt;");
 
-        var link = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
+        var link = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&=,\/]*)/g;
         mess = mess.replace(link, (match) => {return `<a style="color:#4EBAFD" href='` + match + `?noOpen=true'>` + match + `</a> <a href='` + match + `'>🗗</a>`});
 
         var newline = /\n/gi;
