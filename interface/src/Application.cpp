@@ -231,7 +231,6 @@ Application::Application(
     _preferStylusOverLaserSetting("preferStylusOverLaser", DEFAULT_PREFER_STYLUS_OVER_LASER),
     _preferAvatarFingerOverStylusSetting("preferAvatarFingerOverStylus", DEFAULT_PREFER_AVATAR_FINGER_OVER_STYLUS),
     _defaultMouseCaptureVR("defaultMouseCaptureVR", DEFAULT_MOUSE_CAPTURE_VR),
-    _showGraphicsIconSetting("showGraphicsIcon", DEFAULT_SHOW_GRAPHICS_ICON),
     _constrainToolbarPosition("toolbar/constrainToolbarToCenterX", true),
     _awayStateWhenFocusLostInVREnabled("awayStateWhenFocusLostInVREnabled", DEFAULT_AWAY_STATE_WHEN_FOCUS_LOST_IN_VR_ENABLED),
     _preferredCursor("preferredCursor", DEFAULT_CURSOR_NAME),

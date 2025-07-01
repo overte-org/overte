@@ -192,9 +192,6 @@ public:
     void setMouseCaptureVR(bool value);
     bool getMouseCaptureVR();
 
-    bool getShowGraphicsIcon() { return _showGraphicsIconSetting.get(); }
-    void setShowGraphicsIcon(bool value);
-
     bool getMiniTabletEnabled() { return _miniTabletEnabledSetting.get(); }
     void setMiniTabletEnabled(bool enabled);
 
@@ -803,7 +800,6 @@ private:
     Setting::Handle<bool> _preferStylusOverLaserSetting;
     Setting::Handle<bool> _preferAvatarFingerOverStylusSetting;
     Setting::Handle<bool> _defaultMouseCaptureVR;
-    Setting::Handle<bool> _showGraphicsIconSetting;
     Setting::Handle<bool> _constrainToolbarPosition;
     Setting::Handle<bool> _awayStateWhenFocusLostInVREnabled;
     Setting::Handle<QString> _preferredCursor;

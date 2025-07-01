@@ -282,11 +282,6 @@ bool Application::getMouseCaptureVR() {
     return _defaultMouseCaptureVR.get();
 }
 
-void Application::setShowGraphicsIcon(bool value) {
-    _showGraphicsIconSetting.set(value);
-    DependencyManager::get<MessagesClient>()->sendLocalMessage("Overte-ShowGraphicsIconChanged", "");
-}
-
 void Application::setMiniTabletEnabled(bool enabled) {
     _miniTabletEnabledSetting.set(enabled);
     emit miniTabletEnabledChanged(enabled);
