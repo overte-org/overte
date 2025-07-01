@@ -27,7 +27,8 @@ Rectangle {
 
     // User view
     Item {
-        anchors.fill: parent
+        anchors.fill: parent;
+        width: parent.width;
 
         // Navigation Bar
         Rectangle {
@@ -147,7 +148,7 @@ Rectangle {
                 spacing: 5;
 
                 delegate: ChatMessage {
-                    delegateText: model.text;
+                    delegateMessage: model.text;
                     delegateUsername: model.username;
                     delegateDate: model.date;
                 }
@@ -441,9 +442,7 @@ Rectangle {
                     font.italic: true
                 }
             }
-
         }
-
     }
 
     function scrollToBottom() {
@@ -453,7 +452,7 @@ Rectangle {
 
     function addMessage(username, message, date, channel, type){
         // Format content
-        // message = formatContent(message);
+        message = formatContent(message);
         // message = embedImages(message);
 
         if (type === "notification"){ }
@@ -469,7 +468,7 @@ Rectangle {
         mess = mess.replace(arrow, "&lt;");
 
         var link = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
-        mess = mess.replace(link, (match) => {return `<a style="color:#4EBAFD" onclick='Window.openUrl("+match+")' href='` + match + `'>` + match + `</a> <a onclick='Window.openUrl(`+match+`)'>🗗</a>`});
+        mess = mess.replace(link, (match) => {return `<a style="color:#4EBAFD" href='` + match + `?noOpen=true'>` + match + `</a> <a href='` + match + `'>🗗</a>`});
 
         var newline = /\n/gi;
         mess = mess.replace(newline, "<br>");

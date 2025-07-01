@@ -1,4 +1,4 @@
-import QtQuick 2.7
+import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 
@@ -6,7 +6,7 @@ Item {
 	width: parent && parent.width - 10 || 0;
 	height: children[0].height + 10;
 	property int delegateIndex: 0;
-	property string delegateText: "";
+	property string delegateMessage: "";
 	property string delegateUsername: "";
 	property string delegateDate: "";
 
@@ -17,7 +17,6 @@ Item {
 		// Message head
 		RowLayout {
 			width: parent.width;
-			height: 50;
 
 			Text {
 				text: delegateUsername;
@@ -37,15 +36,25 @@ Item {
 		// Message body
 		Item {
 			width: parent.width;
-			height: children[0].contentHeight;
-
-			Text {
-				text: delegateText;
-				width: parent.width;
+			height: children[0].height;
+			
+			Text { 
+				text: delegateMessage;
 				color: "white";
 				font.pixelSize: 18;
 				wrapMode: Text.Wrap;
-				height: contentHeight;
+				textFormat: TextEdit.RichText;
+				width: parent.parent.width;
+				onLinkActivated: {
+					if (link.includes("?noOpen=true")) {
+						// Don't open this in external browser
+						link = link.replace("?noOpen=true", "");
+						Window.openWebBrowser(link);
+						return;
+					} else {
+						Qt.openUrlExternally(link);
+					}
+				}
 			}
 		}
 
