@@ -580,7 +580,6 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             joint: "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND",
             filter: Picks.PICK_OVERLAYS | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
             triggers: [
-                {action: controllerStandard.LTClick, button: "Focus"},
                 {action: controllerStandard.LTClick, button: "Primary"},
                 {action: controllerStandard.LT, button: "ScrollActive"},
                 {action: controllerStandard.LX, button: "ScrollX"},
@@ -598,7 +597,6 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             joint: "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND",
             filter: Picks.PICK_OVERLAYS | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
             triggers: [
-                {action: controllerStandard.RTClick, button: "Focus"},
                 {action: controllerStandard.RTClick, button: "Primary"},
                 {action: controllerStandard.RT, button: "ScrollActive"},
                 {action: controllerStandard.RX, button: "ScrollX"},
@@ -618,7 +616,6 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             maxDistance: DEFAULT_SEARCH_SPHERE_DISTANCE,
             posOffset: getGrabPointSphereOffset(controllerStandard.LeftHand, true),
             triggers: [
-                {action: controllerStandard.LTClick, button: "Focus"},
                 {action: controllerStandard.LTClick, button: "Primary"},
                 {action: controllerStandard.LT, button: "ScrollActive"},
                 {action: controllerStandard.LX, button: "ScrollX"},
@@ -636,7 +633,6 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             maxDistance: DEFAULT_SEARCH_SPHERE_DISTANCE,
             posOffset: getGrabPointSphereOffset(controllerStandard.RightHand, true),
             triggers: [
-                {action: controllerStandard.RTClick, button: "Focus"},
                 {action: controllerStandard.RTClick, button: "Primary"},
                 {action: controllerStandard.RT, button: "ScrollActive"},
                 {action: controllerStandard.RX, button: "ScrollX"},
