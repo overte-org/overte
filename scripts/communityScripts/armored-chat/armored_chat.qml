@@ -168,7 +168,6 @@ Rectangle {
                 }
             }
 
-
             ListModel {
                 id: localMessages;
             }
@@ -385,75 +384,14 @@ Rectangle {
 
     }
 
-    // Templates
-
-    Component {
-        id: template_notification
-
-        Rectangle{
-            property int index: delegateIndex
-            property string texttest: delegateText
-            property string username: delegateUsername
-            property string date: delegateDate
-            color: "#171717"
-            width: parent.width
-            height: 40
-
-            Item {
-                width: 10
-                height: parent.height
-
-                Rectangle {
-                    height: parent.height
-                    width: 5
-                    color: "#505186"
-                }
-            }
-
-
-            Item {
-                width: parent.width - parent.children[0].width - 5
-                height: parent.height
-                anchors.left: parent.children[0].right
-
-                TextEdit{
-                    text: texttest
-                    color:"white"
-                    font.pointSize: 12
-                    readOnly: true
-                    width: parent.width * 0.8
-                    selectByMouse: true
-                    selectByKeyboard: true
-                    height: parent.height
-                    wrapMode: Text.Wrap
-                    verticalAlignment: Text.AlignVCenter
-                    font.italic: true
-                }
-
-                Text {
-                    text: date
-                    color:"white"
-                    font.pointSize: 12
-                    anchors.right: parent.right
-                    height: parent.height
-                    wrapMode: Text.Wrap
-                    horizontalAlignment: Text.AlignRight
-                    verticalAlignment: Text.AlignVCenter
-                    font.italic: true
-                }
-            }
-        }
-    }
-
     function scrollToBottom() {
         listview.positionViewAtEnd();
     }
 
-
     function addMessage(username, message, date, channel, type){
         // Format content
         message = formatContent(message);
-        // message = embedImages(message);
+        message = embedImages(message);
 
         if (type === "notification"){ }
 

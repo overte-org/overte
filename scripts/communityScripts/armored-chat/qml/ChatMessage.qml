@@ -10,7 +10,7 @@ Item {
 	property string delegateUsername: "";
 	property string delegateDate: "";
 
-	ColumnLayout {
+	Column {
 		width: parent.width - 20;
 		x: 10;
 
@@ -34,37 +34,25 @@ Item {
 		}
 
 		// Message body
-		Item {
+		Text { 
+			text: delegateMessage;
+			color: "white";
+			font.pixelSize: 18;
+			wrapMode: Text.Wrap;
+			textFormat: TextEdit.RichText;
 			width: parent.width;
-			height: children[0].height;
-			
-			Text { 
-				text: delegateMessage;
-				color: "white";
-				font.pixelSize: 18;
-				wrapMode: Text.Wrap;
-				textFormat: TextEdit.RichText;
-				width: parent.parent.width;
-				onLinkActivated: {
-					if (link.includes("?noOpen=true")) {
-						// Don't open this in external browser
-						link = link.replace("?noOpen=true", "");
-						Window.openWebBrowser(link);
-						return;
-					} else {
-						Qt.openUrlExternally(link);
-					}
+
+			onLinkActivated: {
+				if (link.includes("?noOpen=true")) {
+					// Don't open this in external browser
+					link = link.replace("?noOpen=true", "");
+					Window.openWebBrowser(link);
+					return;
+				} else {
+					Qt.openUrlExternally(link);
 				}
 			}
 		}
-
-		// Embed area 
-		// ColumnLayout {
-		// 	width: parent.width;
-			
-
-		// }
-
 	}
 
 	Rectangle {
