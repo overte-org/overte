@@ -9,6 +9,7 @@ Item {
 	property string delegateMessage: "";
 	property string delegateUsername: "";
 	property string delegateDate: "";
+	property bool isSystem: false;
 
 	Column {
 		width: parent.width - 20;
@@ -21,7 +22,7 @@ Item {
 			Text {
 				text: delegateUsername;
 				font.pixelSize: 16;
-				color: "gray";
+				color: isSystem ? "#00aaff" : "gray";
 			}
 
 			Text {
@@ -60,5 +61,13 @@ Item {
 		z: -1;
 		anchors.centerIn: parent;
 		anchors.fill: parent;
+	}
+
+	Rectangle {
+		visible: isSystem;
+		color: "#00aaff";
+		z: -1;
+		width: 5;
+		height: parent.height;
 	}
 }

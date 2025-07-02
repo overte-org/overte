@@ -151,6 +151,7 @@ Rectangle {
                     delegateMessage: model.text;
                     delegateUsername: model.username;
                     delegateDate: model.date;
+                    isSystem: model.type === "notification";
                 }
 
                 ScrollBar.vertical: ScrollBar {
@@ -393,7 +394,11 @@ Rectangle {
         message = formatContent(message);
         message = embedImages(message);
 
-        if (type === "notification"){ }
+        if (type === "notification"){ 
+            domainMessages.append({ text: message, username, date, type });
+            scrollToBottom();
+            return;
+        }
 
         if (channel === "local") localMessages.append({ text: message, username, date, type });
         if (channel === "domain") domainMessages.append({ text: message, username, date, type });
