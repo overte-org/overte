@@ -28,7 +28,7 @@ set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Server Console")
 set_target_properties(${TARGET_NAME}-npm-install PROPERTIES FOLDER "hidden/Server Console")
 
 # add a dependency from the package target to the server components
-if (BUILD_CLIENT)
+if (OVERTE_BUILD_CLIENT)
   if (APPLE)
     add_dependencies(${TARGET_NAME} Overte)
   else()
@@ -36,7 +36,7 @@ if (BUILD_CLIENT)
   endif()
 endif()
 
-if (BUILD_SERVER)
+if (OVERTE_BUILD_SERVER)
   add_dependencies(${TARGET_NAME} assignment-client domain-server)
 endif()
 

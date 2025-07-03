@@ -53,7 +53,7 @@ const std::vector<Dialect>& allDialects() {
 const Dialect DEFAULT_DIALECT = Dialect::glsl450;
 
 const std::vector<Dialect> & allDialects() {
-    static const std::vector<Dialect> ALL_DIALECTS{ { Dialect::glsl450, Dialect::glsl410 } };
+    static const std::vector<Dialect> ALL_DIALECTS{ { Dialect::glsl450 } };
     return ALL_DIALECTS;
 }
 #endif
@@ -70,11 +70,10 @@ const std::string& dialectPath(Dialect dialect) {
     switch (dialect) {
 #if defined(USE_GLES) 
         case Dialect::glsl310es: return e310esPath;
-#else
-#if !defined(Q_OS_MAC)
-        case Dialect::glsl450: return e450Path;
-#endif
+#elif defined(Q_OS_MAC)
         case Dialect::glsl410: return e410Path;
+#else
+        case Dialect::glsl450: return e450Path;
 #endif
         default: break;
     }
@@ -106,7 +105,7 @@ DialectVariantSource loadDialectVariantSource(const std::string& basePath) {
     DialectVariantSource result;
     result.scribe = loadResource(basePath + "scribe");
     result.spirv = loadSpirvResource(basePath + "spirv");
-    result.glsl = loadResource(basePath + "glsl");
+    //result.glsl = loadResource(basePath + "glsl");
     String reflectionJson = loadResource(basePath + "json");
     result.reflection.parse(reflectionJson);
     return result;
@@ -227,10 +226,10 @@ String Source::getSource(Dialect dialect, Variant variant) const {
     // which breaks android rendering
     return variantSource.scribe;
 #else
-    if (variantSource.glsl.empty()) {
+    //if (variantSource.glsl.empty()) {
         return variantSource.scribe;
-    }
-    return variantSource.glsl;
+    //}
+    //return variantSource.glsl;
 #endif
 }
 

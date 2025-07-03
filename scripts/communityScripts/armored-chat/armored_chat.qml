@@ -232,6 +232,13 @@ Rectangle {
                                 text = ""
                             }
                         }
+                        onTextChanged: {
+                            if (text === "") {
+                                toScript({type: "action", action: "end_typing"});
+                            } else {
+                                toScript({type: "action", action: "start_typing"});
+                            }
+                        }
                         onFocusChanged: {
                             if (!HMD.active) return;
                             if (focus) return ApplicationInterface.showVRKeyboardForHudUI(true);
@@ -377,6 +384,30 @@ Rectangle {
 
                         onCheckedChanged: {
                             toScript({type: 'setting_change', setting: 'join_notification', value: checked})
+                        }
+                    }
+                }
+
+                // Chat bubbles
+                Rectangle {
+                    width: parent.width
+                    height: 40
+                    color: "transparent"
+
+                    Text{
+                        text: "In-world chat bubbles"
+                        color: "white"
+                        font.pointSize: 12
+                        anchors.verticalCenter: parent.verticalCenter
+                    }
+
+                    CheckBox{
+                        id: s_chat_bubbles
+                        anchors.right: parent.right
+                        anchors.verticalCenter: parent.verticalCenter
+
+                        onCheckedChanged: {
+                            toScript({type: 'setting_change', setting: 'use_chat_bubbles', value: checked})
                         }
                     }
                 }
@@ -610,6 +641,7 @@ Rectangle {
                 if (message.settings.external_window) s_external_window.checked = true;
                 if (message.settings.maximum_messages) s_maximum_messages.value = message.settings.maximum_messages;
                 if (message.settings.join_notification) s_join_notification.checked = true;
+                if (message.settings.use_chat_bubbles) s_chat_bubbles.checked = true;
                 break;
         }
     }

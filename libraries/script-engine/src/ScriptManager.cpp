@@ -2431,7 +2431,7 @@ void ScriptManager::entityScriptContentAvailable(const EntityItemID& entityID, c
 
 /*@jsdoc
  * Triggered when the script terminates for a user.
- * <p>Note: Can only be connected to via <code>this.unoad = function () { ... }</code> in the entity script.</p>
+ * <p>Note: Can only be connected to via <code>this.unload = function () { ... }</code> in the entity script.</p>
  * <p class="availableIn"><strong>Supported Script Types:</strong> Client Entity Scripts &bull; Server Entity Scripts</p>
  * @function Entities.unload
  * @param {Uuid} entityID - The ID of the entity that the script is running in.

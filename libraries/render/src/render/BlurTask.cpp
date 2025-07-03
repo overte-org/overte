@@ -91,8 +91,12 @@ void BlurParams::setFilterGaussianTaps(int numHalfTaps, float sigma) {
         weight = (float)exp(-offset*offset * inverseTwoSigmaSquared);
         params.filterTaps[i + 1].x = offset;
         params.filterTaps[i + 1].y = weight;
+        params.filterTaps[i + 1].z = 0.0f;
+        params.filterTaps[i + 1].w = 0.0f;
         params.filterTaps[i + 1 + numHalfTaps].x = -offset;
         params.filterTaps[i + 1 + numHalfTaps].y = weight;
+        params.filterTaps[i + 1 + numHalfTaps].z = 0.0f;
+        params.filterTaps[i + 1 + numHalfTaps].w = 0.0f;
         totalWeight += 2 * weight;
     }
 

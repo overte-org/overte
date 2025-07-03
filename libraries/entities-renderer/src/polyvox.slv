@@ -41,7 +41,7 @@ void main(void) {
         <$transformModelToEyeAndClipPos(cam, obj, inPosition, _positionES, gl_Position)$>
     <@endif@>
 
-    <$transformModelToWorldDir(cam, obj, inNormal.xyz, _normalWS)$>
+    <$transformModelToWorldDir(obj, inNormal.xyz, _normalWS)$>
     _positionMS = inPosition.xyz;
 <@endif@>
 <@if HIFI_USE_FADE@>

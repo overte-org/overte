@@ -142,6 +142,17 @@ const ShapePipelinePointer ShapePlumber::pickPipeline(RenderArgs* args, const Ke
                 } else {
                     qCDebug(renderlogging) << "ShapePlumber::Couldn't find a custom pipeline factory for " << key.getCustom() << " key is: " << key;
                 }
+            } else {
+                auto pipelineOperatorItr = _pipelineOperatorMap.find(key);
+                if (pipelineOperatorItr != _pipelineOperatorMap.end()) {
+                    // We have a deferred pipeline operator - lets call it to populate the pipelines
+                    pipelineOperatorItr->second();
+
+                    // We're done with this operator for good.
+                    _pipelineOperatorMap.erase(pipelineOperatorItr);
+
+                    return pickPipeline(args, key);
+                }
             }
 
            _missingKeys.insert(key);

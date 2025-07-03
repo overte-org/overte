@@ -612,8 +612,11 @@ var worldPositionToRegistrationFrameMatrix = function(wptrProps, pos) {
 };
 
 var handsAreTracked = function () {
-    return Controller.getPoseValue(controllerStandard.LeftHandIndex3).valid ||
-        Controller.getPoseValue(controllerStandard.RightHandIndex3).valid;
+    // FIXME: This currently breaks interaction lasers on controllers
+    // that have both hand tracking and physical buttons
+    /*return Controller.getPoseValue(controllerStandard.LeftHandIndex3).valid ||
+        Controller.getPoseValue(controllerStandard.RightHandIndex3).valid;*/
+    return false;
 };
 
 if (typeof module !== 'undefined') {

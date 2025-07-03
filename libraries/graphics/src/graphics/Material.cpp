@@ -74,6 +74,7 @@ Material::Material(const Material& material) :
     _name(material._name),
     _key(material._key),
     _model(material._model),
+    _layers(material._layers),
     _emissive(material._emissive),
     _opacity(material._opacity),
     _albedo(material._albedo),
@@ -87,6 +88,7 @@ Material::Material(const Material& material) :
     _cullFaceMode(material._cullFaceMode),
     _textureMaps(material._textureMaps),
     _samplers(material._samplers),
+    _texCoordSets(material._texCoordSets),
     _defaultFallthrough(material._defaultFallthrough),
     _propertyFallthroughs(material._propertyFallthroughs)
 {
@@ -98,6 +100,7 @@ Material& Material::operator=(const Material& material) {
     _name = material._name;
     _model = material._model;
     _key = material._key;
+    _layers = material._layers;
     _emissive = material._emissive;
     _opacity = material._opacity;
     _albedo = material._albedo;
@@ -111,6 +114,7 @@ Material& Material::operator=(const Material& material) {
     _cullFaceMode = material._cullFaceMode;
     _textureMaps = material._textureMaps;
     _samplers = material._samplers;
+    _texCoordSets = material._texCoordSets;
 
     _defaultFallthrough = material._defaultFallthrough;
     _propertyFallthroughs = material._propertyFallthroughs;
@@ -214,6 +218,22 @@ void Material::applySampler(MapChannel channel) {
     }
 }
 
+void Material::setTexCoordSet(MapChannel channel, int texCoordSet) {
+    std::lock_guard<std::recursive_mutex> locker(_textureMapsMutex);
+    _texCoordSets[channel] = texCoordSet;
+}
+
+int Material::getTexCoordSet(MapChannel channel) {
+    std::lock_guard<std::recursive_mutex> locker(_textureMapsMutex);
+
+    auto result = _texCoordSets.find(channel);
+    if (result != _texCoordSets.end()) {
+        return (result->second);
+    } else {
+        return 0;
+    }
+}
+
 bool Material::resetOpacityMap() const {
     // If OpacityMapMode explicit then nothing need to change here.
     if (_key.isOpacityMapMode()) {
@@ -291,6 +311,9 @@ const glm::vec3 Material::DEFAULT_OUTLINE = glm::vec3(0.0f);
 MultiMaterial::MultiMaterial() {
     Schema schema;
     _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+    for (int i = 0; i < _textureTables.size(); i++) {
+        _textureTables[i] = std::make_shared<gpu::TextureTable>();
+    }
 }
 
 void MultiMaterial::calculateMaterialInfo() const {
@@ -299,14 +322,16 @@ void MultiMaterial::calculateMaterialInfo() const {
         _textureSize = 0;
         _textureCount = 0;
 
-        auto textures = _textureTable->getTextures();
-        for (auto const &texture : textures) {
-            if (texture && texture->isDefined()) {
-                auto size = texture->getSize();
-                _textureSize += size;
-                _textureCount++;
-            } else {
-                allTextures = false;
+        for (uint8_t i = 0; i < _layers; i++) {
+            auto textures = _textureTables[i]->getTextures();
+            for (auto const& texture : textures) {
+                if (texture && texture->isDefined()) {
+                    auto size = texture->getSize();
+                    _textureSize += size;
+                    _textureCount++;
+                } else {
+                    allTextures = false;
+                }
             }
         }
         _hasCalculatedTextureInfo = allTextures;
@@ -342,17 +367,21 @@ bool MultiMaterial::anyReferenceMaterialsOrTexturesChanged() const {
     return false;
 }
 
-void MultiMaterial::setisMToon(bool isMToon) {
-    if (isMToon != _isMToon) {
+void MultiMaterial::setisMToonAndLayers(bool isMToon, uint8_t layers) {
+    if (isMToon != _isMToon || layers != _layers) {
+        _isMToon = isMToon;
+        _layers = layers;
+
         if (isMToon) {
-            MToonSchema toonSchema;
-            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(MToonSchema), (const gpu::Byte*) &toonSchema, sizeof(MToonSchema)));
+            std::array<MToonSchema, 3> toonSchemas;
+            size_t size = _layers * sizeof(MToonSchema);
+            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(size, (const gpu::Byte*)toonSchemas.data(), size));
         } else {
-            Schema schema;
-            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+            std::array<Schema, 3> schemas;
+            size_t size = _layers * sizeof(Schema);
+            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(size, (const gpu::Byte*)schemas.data(), size));
         }
     }
-    _isMToon = isMToon;
 }
 
 void MultiMaterial::setMToonTime() {
@@ -366,7 +395,9 @@ void MultiMaterial::setMToonTime() {
     });
 
     // Minimize floating point error by doing an integer division to milliseconds, before the floating point division to seconds
-    _schemaBuffer.edit<graphics::MultiMaterial::MToonSchema>()._time = (float)((usecTimestampNow() - mtoonStartTime) / USECS_PER_MSEC) / MSECS_PER_SECOND;
+    float mtoonTime = (float)((usecTimestampNow() - mtoonStartTime) / USECS_PER_MSEC) / MSECS_PER_SECOND;
+    // MToon time is only stored in the first material
+    _schemaBuffer.edit<graphics::MultiMaterial::MToonSchema>()._time = mtoonTime;
 }
 
 void MultiMaterial::applySamplers() const {

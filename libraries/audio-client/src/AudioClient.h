@@ -5,6 +5,7 @@
 //  Created by Stephen Birarda on 1/22/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
+//  Copyright 2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -60,8 +61,7 @@
 
 #if defined(WEBRTC_AUDIO)
 #  define WEBRTC_APM_DEBUG_DUMP 0
-#  include <modules/audio_processing/include/audio_processing.h>
-#  include "modules/audio_processing/audio_processing_impl.h"
+#  include <api/audio/audio_processing.h>
 #endif
 
 #ifdef _WIN32
@@ -463,7 +463,7 @@ private:
     static const int WEBRTC_CHANNELS_MAX = 2;
     static const int WEBRTC_FRAMES_MAX = webrtc::AudioProcessing::kChunkSizeMs * WEBRTC_SAMPLE_RATE_MAX / 1000;
 
-    webrtc::AudioProcessing* _apm { nullptr };
+    webrtc::scoped_refptr<webrtc::AudioProcessing> _apm { nullptr };
 
     int16_t _fifoFarEnd[WEBRTC_CHANNELS_MAX * WEBRTC_FRAMES_MAX] {};
     int _numFifoFarEnd = 0; // numFrames saved in fifo

@@ -110,7 +110,7 @@ void TestWindow::beginFrame() {
 
     _renderDeferredInputs.edit0() = frameTransform; // Pass the deferredFrameTransform
     _renderDeferredInputs.edit1() = _prepareDeferredOutputs.get0(); // Pass the deferredFramebuffer
-    _renderDeferredInputs.edit2() = lightingModel; // Pass the lightingModel
+    _renderDeferredInputs.edit3() = lightingModel; // Pass the lightingModel
     // the rest of the renderDeferred inputs can be omitted
 
 #else

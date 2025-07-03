@@ -304,6 +304,8 @@ void handleOpenVrEvents() {
             }
         }
 
+// GetEventTypeNameFromEnum is unimplemented in OpenComposite and xrizer
+#if 0
         #if DEV_BUILD
             //qDebug() << "OpenVR: Event " << activeHmd->GetEventTypeNameFromEnum((vr::EVREventType)event.eventType) << "(" << event.eventType << ")";
             // FIXME: Reinstate the line above and remove the following lines once the problem with excessive occurrences of 
@@ -317,6 +319,7 @@ void handleOpenVrEvents() {
                 qDebug() << "OpenVR: Event " << activeHmd->GetEventTypeNameFromEnum((vr::EVREventType)event.eventType) << "(" << event.eventType << ")";
             #endif
         #endif
+#endif
     }
 
 }

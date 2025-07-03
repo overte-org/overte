@@ -16,8 +16,8 @@
 #include <QImageReader>
 #include <QImageWriter>
 
-#include <quazip5/quazip.h>
-#include <quazip5/JlCompress.h>
+#include <quazip/quazip.h>
+#include <quazip/JlCompress.h>
 
 #include "Nitpick.h"
 extern Nitpick* nitpick;

@@ -335,6 +335,10 @@ input[type="text"] {
     width: 100%;
 }
 
+input.arrayOfStringsStringToAdd {
+    width: 70%;
+}
+
 input.multi-diff:not(:focus) + span.multi-diff,
 textarea.multi-diff:not(:focus) + span.multi-diff,
 .draggable-number.multi-diff>input:not(:focus)+span.multi-diff,
@@ -2290,5 +2294,37 @@ span.viewParent {
 font.viewParentIcon {
     font-family: HiFi-Glyphs;
     font-weight: bold;
+}
+
+div.arrayOfStringsContainer {
+    width: 100%;
+    overflow: hidden;
+}
+
+div.arrayOfStringsAddComponentContainer {
+    margin-top: 2px;
+}
+
+div.arrayOfStringsTags {
+    color: #000000;
+    font-family: FiraSans-SemiBold;
+    font-size: 12px;
+    border-radius: 10px;
+    padding: 5px 8px 5px 8px;
+    margin: 2px;
+    text-align: left;
+    background-color: #dddddd;
+    border: none;
+    display: inline-block;
+    width: auto;
+    max-width: none;
+}
+
+span.arrayOfStringsTagsRemove {
+    color: #777777;
+}
+
+span.arrayOfStringsTagsRemove:hover {
+    color: #000000;
 }
 

@@ -11,6 +11,66 @@ like documentaion or CI pipeline.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [2025.05.1] 2025.05.12
+
+### Fixes
+- fix domain entity lifetime in serverless mode (PR1321)
+- Fix keyboard preview not being unlit (PR1399)
+- Fix Armored Chat always scrolling on a new message (PR1382)
+- fix font assert (PR1407)
+- Fix breakage in controller scripts relating to hudRayPicks (PR1380)
+- Trigger click emulation for XR (PR1423)
+- add missing simple pipelines (PR1445)
+- restore default sampler (PR1446)
+- Fix audio crashes in VR on Linux (PR1467)
+- Fix typo in docs "unoad" (PR1474)
+- Stop testing your voice when closing the audio window (PR1488)
+- Change texture coordinate precision to 32 bit float (PR1498)
+- Prohibit characters option for TextField (PR1484)
+- fix material inspector not grabbing correct material sometimes (PR1392)
+- fix sampler assert (PR1500)
+- Places App: Make navigation buttons not draggable (PR1503)
+- Squeeze force for grab on Index, tweak offsets for non-Vive controllers, xrNoHandTracking debug option (PR1508)
+- Fix flickering on OpenXR  (PR1516)
+- Fix movement speed resetting when snap-turning in VR  (PR1516)
+- Fix VR teleport indicator (PR1513)
+- Fix falling through the ground after leaving a serverless world (PR1523)
+
+### Changes
+- Create App: Text Entity: Support for line breaks, Replace unlit material entity for shape unlit in selection tool (PR1367)
+- warning when avatar bookmarks JSON is malformed (PR1394)
+- automated render pipelines (PR1416)
+- Bringing VRAM up to spec with latest cards. (PR1434)
+- Give JS console black default text color and disable rich text pasting (PR1469)
+- Textareas for script fields in Create app (PR1460)
+- Change "Interface already running" message to be a critical error (PR1471)
+- New Graphics SettingsUI (PR1385)
+- Change default PolyLine texture to whitePixel.png (PR1504)
+
+### Additions
+- Option to stop VR mouse capture (PR1317)
+- MVP OpenXR Support (PR1325)
+- Create App: View "Local Entities" in Entity List (PR1374)
+- show tofu character on missing character (PR1395)
+- Create app: child entities tab, Copy Color from Skybox Color, Hifi-Glyphs font update. (PR1342)
+- support PBR materials on polyvox, and triplanar material entities (PR1398)
+- ability to specify texture samplers (PR1393)
+- VR Keyboard Shortcuts (PR1412)
+- OpenXR controller bindings for Odyssey+ (PR1437)
+- support specifying per-texture texCoord set (PR1417)
+- Primary button for XR controllers without one (PR1440)
+- support normal mapping for triplanar materials (PR1486)
+- OpenXR Hand Tracking (PR1505)
+- Dark theme setting (PR1472)
+
+### Build System
+- Downgrade CMake on Windows Runners (PR1396)
+- Little CMake cleanup (PR1449)
+- Fix build error on newer compilers, add missing header (PR1494)
+- Fix Node build on newer compilers; add missing header (PR1515)
+
+
 ## [2025.03.3] 2025.03.25
 
 ### Fixes
@@ -27,7 +87,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Initial fix for blurry/noisy transparencies on TAA (PR1358)
 
 
-## [2025.03.1] 2025.03.8
+## [2025.03.1] 2025.03.08
 
 ### Fixes
 - Fix for missing jsdoc (PR1226)

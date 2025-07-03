@@ -987,10 +987,23 @@ scriptable::ScriptableModelBase render::entities::ModelEntityRenderer::getScript
 
     auto result = model->getScriptableModel();
     result.objectID = getEntity()->getID();
+
+    std::unordered_map<std::string, graphics::MultiMaterial> materials;
     {
         std::lock_guard<std::mutex> lock(_materialsLock);
-        result.appendMaterials(_materials);
+        materials = _materials;
     }
+
+    for (auto& multiMaterial : materials) {
+        while (!multiMaterial.second.empty()) {
+            auto shapeIDs = model->getMeshIDsAndMaterialNamesFromMaterialID(multiMaterial.first.c_str());
+            for (const auto& shapeID : shapeIDs) {
+                result.appendMaterial(multiMaterial.second.top(), shapeID.first, shapeID.second);
+            }
+            multiMaterial.second.pop();
+        }
+    }
+
     return result;
 }
 

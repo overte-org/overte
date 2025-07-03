@@ -65,7 +65,7 @@ private slots:
     void highlightedCompletion(const QModelIndex& completion);
 
 private:
-    void appendMessage(const QString& gutter, const QString& message);
+    void appendMessage(const QString& gutter, const QString& message, const QColor& fgColor, const QColor& bgColor = Qt::transparent);
     void setToNextCommandInHistory();
     void setToPreviousCommandInHistory();
     void resetCurrentCommandHistory();
@@ -85,6 +85,8 @@ private:
     QJsonArray _apiDocs;
     QCompleter* _completer;
     QString _completerModule {""};
+    QFont _monospaceFont;
+    bool _lightTheme;
 };
 
 

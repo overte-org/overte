@@ -236,14 +236,6 @@ uint16_t gl::getAvailableVersion() {
         }
         gl::initModuleGl();
 
-        std::string glvendor{ (const char*)glGetString(GL_VENDOR) };
-        std::transform(glvendor.begin(), glvendor.end(), glvendor.begin(), ::tolower); 
-
-        // Intel has *notoriously* buggy DSA implementations, especially around cubemaps
-        if (std::string::npos != glvendor.find("intel")) {
-            gl::setDisableGl45(true);
-        }
-
         wglMakeCurrent(0, 0);
         hGLRC.reset();
         if (!wglChoosePixelFormatARB || !wglCreateContextAttribsARB) {

@@ -44,6 +44,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         solid: true,
         color: COLORS_GRAB_SEARCHING_HALF_SQUEEZE,
         alpha: 0.9,
+        unlit: true,
         ignorePickIntersection: true,
         renderLayer: this.renderLayer,
         visible: true
@@ -66,6 +67,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         solid: true,
         color: COLORS_GRAB_SEARCHING_FULL_SQUEEZE,
         alpha: 0.9,
+        unlit: true,
         ignorePickIntersection: true,
         renderLayer: this.renderLayer,
         visible: true

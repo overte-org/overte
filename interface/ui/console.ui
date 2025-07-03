@@ -13,9 +13,6 @@
   <property name="windowTitle">
    <string>Dialog</string>
   </property>
-  <property name="styleSheet">
-   <string notr="true">QDialog { background: white }</string>
-  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
     <number>0</number>
@@ -79,9 +76,6 @@
            <height>205</height>
           </rect>
          </property>
-         <property name="styleSheet">
-          <string notr="true">background-color: white;</string>
-         </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <property name="spacing">
            <number>4</number>
@@ -129,9 +123,6 @@
                  <horstretch>0</horstretch>
                  <verstretch>0</verstretch>
                 </sizepolicy>
-               </property>
-               <property name="styleSheet">
-                <string notr="true">background-color: white;</string>
                </property>
                <layout class="QVBoxLayout" name="verticalLayout_5">
                 <property name="spacing">
@@ -196,12 +187,6 @@
                     <height>23</height>
                    </size>
                   </property>
-                  <property name="font">
-                   <font>
-                    <weight>50</weight>
-                    <bold>false</bold>
-                   </font>
-                  </property>
                   <property name="styleSheet">
                    <string notr="true">padding: 0px 0 0 0;</string>
                   </property>
@@ -221,15 +206,6 @@
                     <verstretch>0</verstretch>
                    </sizepolicy>
                   </property>
-                  <property name="font">
-                   <font>
-                    <family>Inconsolata,Lucida Console,Andale Mono,Monaco</family>
-                    <pointsize>-1</pointsize>
-                   </font>
-                  </property>
-                  <property name="textColor">
-                   <color>black</color>
-                  </property>
                   <property name="frameShape">
                    <enum>QFrame::NoFrame</enum>
                   </property>
@@ -238,6 +214,9 @@
                   </property>
                   <property name="horizontalScrollBarPolicy">
                    <enum>Qt::ScrollBarAlwaysOff</enum>
+                  </property>
+                  <property name="acceptRichText">
+                   <bool>false</bool>
                   </property>
                  </widget>
                 </item>

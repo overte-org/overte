@@ -149,7 +149,7 @@ void main(void) {
     mat3 view3 = mat3(cam._view);
     vec3 UP = vec3(0, 1, 0);
     vec3 modelUpWorld;
-    <$transformModelToWorldDir(cam, obj, UP, modelUpWorld)$>
+    <$transformModelToWorldDir(obj, UP, modelUpWorld)$>
     vec3 upWorld = mix(UP, normalize(modelUpWorld), float(particle.rotateWithEntity));
     vec3 upEye = normalize(view3 * upWorld);
     vec3 eyeToParticle = normalize(anchorPoint.xyz - vec3(0.0));
