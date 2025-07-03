@@ -866,6 +866,8 @@ void Keyboard::loadKeyboardFile(const QString& keyboardFile) {
             return;
         }
 
+        auto myAvatar = DependencyManager::get<AvatarManager>()->getMyAvatar();
+
         auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
         {
             glm::vec3 dimensions = vec3FromVariant(anchorObject["dimensions"].toVariant());
@@ -879,6 +881,8 @@ void Keyboard::loadKeyboardFile(const QString& keyboardFile) {
             properties.setDimensions(dimensions);
             properties.setPosition(vec3FromVariant(anchorObject["position"].toVariant()));
             properties.setRotation(quatFromVariant(anchorObject["rotation"].toVariant()));
+            properties.setParentID(myAvatar->getSelfID());
+            properties.setParentJointIndex(SENSOR_TO_WORLD_MATRIX_INDEX);
 
             Anchor anchor;
             anchor.entityID = entityScriptingInterface->addEntityInternal(properties, entity::HostType::LOCAL);
@@ -1014,7 +1018,6 @@ void Keyboard::loadKeyboardFile(const QString& keyboardFile) {
         _layerIndex = 0;
         addIncludeItemsToMallets();
 
-        auto myAvatar = DependencyManager::get<AvatarManager>()->getMyAvatar();
         scaleKeyboard(myAvatar->getSensorToWorldScale());
     });
 

@@ -36,18 +36,21 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-2019
+          - os: Windows 2022
+            runner: windows-2022
             build_type: full
             qt_source: aqt
-          #- os: macOS-10.15
+          #- os: macOS 10.15
+          #  runner: macOS-10.15
           #  build_type: full
           #  qt_source: source
-          #- os: ubuntu-20.04
+          #- os: Ubuntu 22.04
+          #  runner: ubuntu-latest
           #  build_type: full
           #  qt_source: source
           #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion3 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
       fail-fast: false
-    runs-on: ${{matrix.os}}
+    runs-on: ${{matrix.runner}}
     steps:
     - name: Configure build environment 1
       shell: bash
@@ -59,7 +62,7 @@ jobs:
         echo "JOB_NAME=build (${{matrix.os}}, ${{matrix.build_type}})" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
         # Linux build variables
-        if [[ "${{ matrix.os }}" = "ubuntu-"* ]]; then
+        if [[ "${{ matrix.os }}" =~ "Ubuntu" ]]; then
           echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=tgz" >> $GITHUB_ENV
@@ -68,7 +71,7 @@ jobs:
           echo "CONAN_PROFILE=default" >> $GITHUB_ENV
         fi
         # Mac build variables
-        if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
+        if [[ "${{ matrix.os }}" =~ "macOS" ]]; then
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "ZIP_COMMAND=zip" >> $GITHUB_ENV
           echo "ZIP_ARGS=-r" >> $GITHUB_ENV
@@ -79,7 +82,7 @@ jobs:
           echo "CONAN_PROFILE=default" >> $GITHUB_ENV
         fi
         # Windows build variables
-        if [ "${{ matrix.os }}" = "windows-2019" ]; then
+        if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
           echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "ZIP_COMMAND=7z" >> $GITHUB_ENV
@@ -90,8 +93,8 @@ jobs:
           echo "symbols_archive=${BUILD_NUMBER}-${{ matrix.build_type }}-win-symbols.zip" >> $GITHUB_ENV
           # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
           # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
-          if [[ "${{ matrix.os }}" = "windows-2019" ]]; then
-            echo "CONAN_PROFILE='./tools/conan-profiles/vs-19-release'" >> $GITHUB_ENV
+          if [[ "${{ matrix.os }}" = "Windows 2022" ]]; then
+            echo "CONAN_PROFILE='./tools/conan-profiles/vs-22-release'" >> $GITHUB_ENV
           else
             echo "Not sure which Conan profile to use. Exiting." && exit 1
           fi
@@ -111,14 +114,6 @@ jobs:
           echo "INSTALLER=Overte-Interface-master-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
 
-    - name: Clear Working Directories
-      if: contains(matrix.runner, 'linux_aarch64')
-      shell: bash
-      run: |
-        rm -rf ./*
-        rm -rf ~/overte-files
-        rm -rf ~/.cache
-
     - uses: actions/checkout@v4
       with:
         submodules: false
@@ -133,9 +128,9 @@ jobs:
 
     - name: Install dependencies
       shell: bash
-      if: startsWith(matrix.os, 'ubuntu') || contains(matrix.os, 'debian') || startsWith(matrix.os, 'macOS')
+      if: startsWith(matrix.os, 'Ubuntu') || contains(matrix.os, 'debian') || startsWith(matrix.os, 'macOS')
       run: |
-        if [[ "${{ matrix.os }}" =~ "ubuntu" || "${{ matrix.os }}" =~ "debian" ]]; then
+        if [[ "${{ matrix.os }}" =~ "Ubuntu" || "${{ matrix.os }}" =~ "debian" ]]; then
 
           echo "Updating apt repository index"
           sudo apt update || exit 1

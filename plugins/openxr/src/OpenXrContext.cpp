@@ -390,6 +390,7 @@ bool OpenXrContext::updateSessionState(XrSessionState newState) {
                 _isSessionRunning = true;
             }
             _shouldRunFrameCycle = true;
+            _isValid = true;
             break;
         }
 
@@ -414,6 +415,7 @@ bool OpenXrContext::updateSessionState(XrSessionState newState) {
             _shouldQuit = true;
             _shouldRunFrameCycle = false;
             _session = XR_NULL_HANDLE;
+            _isValid = false;
             qCDebug(xr_context_cat, "Destroyed session");
             break;
         }
@@ -433,6 +435,7 @@ bool OpenXrContext::pollEvents() {
                 const auto& instanceLossPending = *reinterpret_cast<XrEventDataInstanceLossPending*>(&event);
                 qCCritical(xr_context_cat, "Instance loss pending at %lu! Destroying instance.", instanceLossPending.lossTime);
                 _shouldQuit = true;
+                _isValid = false;
                 continue;
             }
             case XR_TYPE_EVENT_DATA_SESSION_STATE_CHANGED: {
@@ -480,6 +483,7 @@ bool OpenXrContext::pollEvents() {
 
     if (result != XR_EVENT_UNAVAILABLE) {
         qCCritical(xr_context_cat, "Failed to poll events!");
+        _isValid = false;
         return false;
     }
 

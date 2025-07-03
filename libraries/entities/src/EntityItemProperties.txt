@@ -276,7 +276,7 @@ enum:SHAPE prop:shape type:EntityShape default:EntityShape::Sphere enum,
 enum:SHAPE_INNER_RADIUS prop:innerRadius type:float default:0.25f min:0.0f max:0.25f renderProp,
 Material
 enum:MATERIAL_URL prop:materialURL type:QString default:"" urlPermission renderProp,
-enum:MATERIAL_MAPPING_MODE prop:materialMappingMode type:MaterialMappingMode default:UV enum renderProp,
+enum:MATERIAL_MAPPING_MODE prop:materialMappingMode type:MaterialMappingMode default:UV enum,
 enum:MATERIAL_PRIORITY prop:priority type:quint16 default:0 renderProp,
 enum:PARENT_MATERIAL_NAME prop:parentMaterialName type:QString default:"0" renderProp,
 enum:MATERIAL_MAPPING_POS prop:materialMappingPos type:vec2 default:glm::vec2(0.0f) renderProp,

@@ -37,7 +37,7 @@ bool OpenXrInputPlugin::uncalibrate() {
 }
 
 bool OpenXrInputPlugin::isSupported() const {
-    return _context->_isSupported;
+    return _context->_isValid && _context->_isSupported;
 }
 
 // TODO: Config options
@@ -54,6 +54,8 @@ QString OpenXrInputPlugin::configurationLayout() {
 }
 
 bool OpenXrInputPlugin::activate() {
+    if (!_context->_isValid) { return false; }
+
     InputPlugin::activate();
 
     loadSettings();
@@ -80,12 +82,25 @@ void OpenXrInputPlugin::deactivate() {
 }
 
 void OpenXrInputPlugin::pluginUpdate(float deltaTime, const controller::InputCalibrationData& inputCalibrationData) {
-    if (_context->_shouldQuit) {
+    if (_context->_shouldQuit || !_context->_isValid) {
         deactivate();
         return;
     }
 
     auto userInputMapper = DependencyManager::get<controller::UserInputMapper>();
+
+    if (_registeredWithInputMapper && !_context->_isDisplayActive) {
+        userInputMapper->removeDevice(_inputDevice->_deviceID);
+        _registeredWithInputMapper = false;
+        _inputDevice->_poseStateMap.clear();
+        return;
+    } else if (!_registeredWithInputMapper && _context->_isDisplayActive) {
+        userInputMapper->registerDevice(_inputDevice);
+        _registeredWithInputMapper = true;
+    }
+
+    if (!_registeredWithInputMapper) { return; }
+
     userInputMapper->withLock([&, this]() { _inputDevice->update(deltaTime, inputCalibrationData); });
 
     if (_inputDevice->_trackedControllers == 0 && _registeredWithInputMapper) {
