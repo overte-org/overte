@@ -1,0 +1,65 @@
+//
+//  Created by HifiExperiments on 1/21/2025
+//  Copyright 2025 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#ifndef hifi_ScriptEntityItem_h
+#define hifi_ScriptEntityItem_h
+
+#include "EntityItem.h"
+
+class ScriptEntityItem : public EntityItem {
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    ScriptEntityItem(const EntityItemID& entityItemID);
+    ~ScriptEntityItem();
+
+    ALLOW_INSTANTIATION  // This class can be instantiated
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+
+    bool shouldBePhysical() const override { return false; }
+
+    virtual bool supportsDetailedIntersection() const override { return false; }
+
+    AACube calculateInitialQueryAACube(bool& success) override;
+
+    virtual void update(const quint64& now) override;
+    bool needsToCallUpdate() const override { return _updateNeeded; }
+
+    virtual void setUnscaledDimensions(const glm::vec3& value) override;
+    void setParentID(const QUuid& parentID) override;
+
+    void setUserData(const QString& value) override;
+
+    static void setLoadOrReloadScriptOperator(std::function<bool(const EntityItemID&, const QString&, const QString&)> loadOrReloadScriptOperator) {
+        _loadOrReloadScriptOperator = loadOrReloadScriptOperator;
+    }
+    static bool loadOrReloadScript(const EntityItemID& entityID, const QString& oldScriptURL, const QString& newScriptURL) {
+        return _loadOrReloadScriptOperator(entityID, oldScriptURL, newScriptURL);
+    }
+    static void setUnloadScriptOperator(std::function<void(const EntityItemID&, const QString&)> unloadScriptOperator) {
+        _unloadScriptOperator = unloadScriptOperator;
+    }
+    static void unloadScript(const EntityItemID& entityID, const QString& scriptURL) {
+        _unloadScriptOperator(entityID, scriptURL);
+    }
+
+protected:
+
+@Script_ENTITY_PROPS@
+
+    void updateScript();
+
+    QUuid _runningParentID;
+    QString _runningScriptURL { "" };
+    bool _updateNeeded { false };
+
+    static std::function<bool(const EntityItemID&, const QString&, const QString&)> _loadOrReloadScriptOperator;
+    static std::function<void(const EntityItemID&, const QString&)> _unloadScriptOperator;
+};
+
+#endif // hifi_ScriptEntityItem_h
