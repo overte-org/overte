@@ -16,6 +16,13 @@ Script.include('./lib/io.js');
 Script.include('./lib/sound.js');
 Script.include('./lib/window.js');
 
+Script.scriptEnding.connect(shutDown);
+HMD.displayModeChanged.connect(changeOverlayBasedOnViewMode)
+
+const CAMERA_MATRIX_INDEX = -7;
+const hmdPanelLocalPosition = { "x": 0.3, "y": 0.25, "z": -1.5 };
+const hmdPanelLocalRotation = Quat.fromVec3Degrees({ "x": 0, "y": -3, "z": 0 });
+
 let app = {
 	_config: {
 		enabled: true,				// Global enable / disable
@@ -24,6 +31,7 @@ let app = {
 	},
 	_ui: {
 		overlay: null,
+		overlayVR: null,
 		notificationPopout: null
 	},
 	_data: {
@@ -31,16 +39,50 @@ let app = {
 		connectionNotifications: [],
 	}
 }
-addNotificationUIToInterface();
 io.getNotifications();
+changeOverlayBasedOnViewMode();
 
-function addNotificationUIToInterface() {
-	// Generates the QML element(s) required to present the notifications to the screen
-	app._ui.overlay = new OverlayWindow({
-		source: Script.resolvePath("./qml/Notifications.qml"),
-	});
+function changeOverlayBasedOnViewMode() {
+	util.debugLog(`Deploying notification interface...`)
+	closeAllWindows()
 
-	app._ui.overlay.fromQml.connect(onMessageFromQML);
+	if (util.userIsUsingVR()) {
+		util.debugLog(`User is in VR, creating web entity`);
+		// Create the notification web entity
+		const properties = {
+			type: "Web",
+			sourceUrl: Script.resolvePath("./qml/NotificationsVR.qml"),
+			position: { x: 0, y: 1, z: 0 },
+			dimensions: { "x": 0.4, "y": 0.37, "z": 0.1 },
+			alpha: 0.9,
+			dpi: 20,
+			maxFPS: 60,
+			useBackground: false,
+			parentID: MyAvatar.sessionUUID,
+			parentJointIndex: CAMERA_MATRIX_INDEX,
+			localPosition: hmdPanelLocalPosition,
+			localRotation: hmdPanelLocalRotation,
+			wantsKeyboardFocus: false,
+			showKeyboardFocusHighlight: false,
+			localEntity: true,
+			grab: {
+				grabbable: false,
+			}
+		};
+
+		app._ui.overlayVR = Entities.addEntity(properties, "local");
+	}
+	else {
+		util.debugLog(`User is on Desktop, creating Overlay`);
+		// Just rely in the overlay
+		app._ui.overlay = new OverlayWindow({
+			source: Script.resolvePath("./qml/Notifications.qml"),
+		});
+		app._ui.overlay.fromQml.connect(onMessageFromQML);
+	}
+
+
+	sendMessageToQML({ type: "initialized", isVRMode: util.userIsUsingVR() })
 }
 
 const notification = {
@@ -117,7 +159,26 @@ function notificationFormat(notificationObject) {
 }
 
 function sendMessageToQML(message) {
-	app._ui.overlay.sendToQml(message);
+	util.debugLog(`Sending message to qml: ${message}`);
+	if (app._ui.overlay) app._ui.overlay.sendToQml(message);
+	if (app._ui.overlayVR) Entities.emitScriptEvent(app._ui.overlayVR, message);
+}
+
+function shutDown() {
+	closeAllWindows();
+}
+
+function closeAllWindows() {
+	util.debugLog('Closing all notification windows.')
+	if (app._ui.overlayVR) {
+		Entities.deleteEntity(app._ui.overlayVR);
+		app._ui.overlayVR = null;
+	}
+	if (app._ui.overlay) {
+		app._ui.overlay.fromQml.disconnect(onMessageFromQML);
+		app._ui.overlay.close();
+		app._ui.overlay = null;
+	}
 }
 
 

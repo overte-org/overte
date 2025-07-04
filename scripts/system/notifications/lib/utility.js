@@ -27,5 +27,9 @@ const util = {
 		if (typeof content === "object") content = JSON.stringify(content, null, 4);
 
 		console.log(`[ Debug ] ${content}`);
+	},
+
+	userIsUsingVR: () => {
+		return HMD.active;
 	}
 }

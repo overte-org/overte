@@ -15,11 +15,7 @@ Item {
         id: notifications;
     }
 
-    Binding { target: root; property:'window'; value: parent.parent; when: Boolean(parent.parent) }
-    Binding { target: window; property: 'shown'; value: false; when: Boolean(window) }
-
     Rectangle {
-        parent: desktop;
         x: parent.width - width - 10;
         y: 10;
         width: 300;
@@ -82,5 +78,9 @@ Item {
     // Send message to script
     function toScript(packet){
         sendToScript(packet)
+    }
+
+	Component.onCompleted: {
+		eventBridge.scriptEventReceived.connect(fromScript);
     }
 }
