@@ -28,6 +28,7 @@
 
 #include "BloomStage.h"
 #include "TonemappingStage.h"
+#include "NormalMapAttenuationStage.h"
 
 namespace ru {
     using render_utils::slot::texture::Texture;
@@ -42,7 +43,6 @@ namespace gr {
 using namespace render;
 
 const Selection::Name ZoneRendererTask::ZONES_SELECTION { "RankedZones" };
-LightingModelPointer ZoneRendererTask::_lightingModel { nullptr };
 
 void ZoneRendererTask::build(JobModel& task, const Varying& input, Varying& output) {
     // Filter out the sorted list of zones
@@ -82,6 +82,10 @@ void SetupZones::run(const RenderContextPointer& context, const Input& input) {
     assert(ambientOcclusionStage);
     ambientOcclusionStage->_currentFrame.clear();
 
+    auto normalMapAttenuationStage = context->_scene->getStage<NormalMapAttenuationStage>();
+    assert(normalMapAttenuationStage);
+    normalMapAttenuationStage->_currentFrame.clear();
+
     // call render over the zones to grab their components in the correct order first...
     render::renderItems(context, input);
 
@@ -93,6 +97,7 @@ void SetupZones::run(const RenderContextPointer& context, const Input& input) {
     bloomStage->_currentFrame.pushElement(INVALID_INDEX);
     tonemappingStage->_currentFrame.pushElement(0);
     ambientOcclusionStage->_currentFrame.pushElement(INVALID_INDEX);
+    normalMapAttenuationStage->_currentFrame.pushElement(0);
 }
 
 gpu::PipelinePointer DebugZoneLighting::_keyLightPipeline;
