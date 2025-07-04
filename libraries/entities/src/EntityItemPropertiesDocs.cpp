@@ -894,10 +894,12 @@
  *
  * @property {Entities.ComponentMode} tonemappingMode="inherit" - Configures the tonemapping in the zone.
  * @property {Entities.Tonemapping} tonemapping - The tonemapping properties of the zone.
- * @property {Entities.NormalMapAttenuation} normalMapAttenuation - The normal map attenuation properties of the zone.
  *
  * @property {Entities.ComponentMode} ambientOcclusionMode="inherit" - Configures the ambient occlusion in the zone.
  * @property {Entities.AmbientOcclusion} ambientOcclusion - The ambient occlusion properties of the zone.
+ *
+ * @property {Entities.ComponentMode} normalMapAttenuationMode="inherit" - Configures the normal map attenuation in the zone.
+ * @property {Entities.NormalMapAttenuation} normalMapAttenuation - The normal map attenuation properties of the zone.
  *
  * @property {boolean} flyingAllowed=true - <code>true</code> if visitors can fly in the zone; <code>false</code> if they
  *     cannot. Only works for domain entities.

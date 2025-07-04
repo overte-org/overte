@@ -22,7 +22,6 @@
 #include <procedural/ProceduralSkybox.h>
 #include <LightPayload.h>
 #include <DeferredLightingEffect.h>
-#include <ZoneRenderer.h>
 
 #include "EntityTreeRenderer.h"
 
@@ -84,6 +83,13 @@ void ZoneEntityRenderer::onRemoveFromSceneTyped(const TypedEntityPointer& entity
             _ambientOcclusionIndex = INVALID_INDEX;
         }
     }
+
+    if (_normalMapAttenuationStage) {
+        if (!NormalMapAttenuationStage::isIndexInvalid(_normalMapAttenuationIndex)) {
+            _normalMapAttenuationStage->removeElement(_normalMapAttenuationIndex);
+            _normalMapAttenuationIndex = INVALID_INDEX;
+        }
+    }
 }
 
 void ZoneEntityRenderer::doRender(RenderArgs* args) {
@@ -120,6 +126,11 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
     if (!_ambientOcclusionStage) {
         _ambientOcclusionStage = args->_scene->getStage<AmbientOcclusionStage>();
         assert(_ambientOcclusionStage);
+    }
+
+    if (!_normalMapAttenuationStage) {
+        _normalMapAttenuationStage = args->_scene->getStage<NormalMapAttenuationStage>();
+        assert(_normalMapAttenuationStage);
     }
 
     { // Sun 
@@ -193,6 +204,15 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
         }
     }
 
+    {
+        if (_needNormalMapAttenuationUpdate) {
+            if (NormalMapAttenuationStage::isIndexInvalid(_normalMapAttenuationIndex)) {
+                _normalMapAttenuationIndex = _normalMapAttenuationStage->addElement(_normalMapAttenuation);
+            }
+            _needNormalMapAttenuationUpdate = false;
+        }
+    }
+
     if (_visible) {
         // Finally, push the lights visible in the frame
         //
@@ -241,11 +261,10 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
             _ambientOcclusionStage->_currentFrame.pushElement(_ambientOcclusionIndex);
         }
 
-        // Hack: CullTest::_containingZones is empty at the beginning of a frame, and our zones render in order,
-        // so we know we're in the first/smallest zone if CullTest::_containingZones.empty()
-        if (CullTest::_containingZones.empty() && ZoneRendererTask::_lightingModel) {
-            ZoneRendererTask::_lightingModel->setNormalMapAttenuation(_normalMapAttenuationProperties.getMin(),
-                _normalMapAttenuationProperties.getMax());
+        if (_normalMapAttenuationMode == COMPONENT_MODE_DISABLED) {
+            _normalMapAttenuationStage->_currentFrame.pushElement(INVALID_INDEX);
+        } else if (_normalMapAttenuationMode == COMPONENT_MODE_ENABLED) {
+            _normalMapAttenuationStage->_currentFrame.pushElement(_normalMapAttenuationIndex);
         }
     }
 
@@ -333,6 +352,7 @@ void ZoneEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointe
 
     if (normalMapAttenuationChanged) {
         _normalMapAttenuationProperties = entity->getNormalMapAttenuationProperties();
+        updateNormalMapAttenuationFromEntity(entity);
     }
 
     bool visuallyReady = true;
@@ -467,6 +487,15 @@ void ZoneEntityRenderer::updateAmbientOcclusionFromEntity(const TypedEntityPoint
     ambientOcclusion->setAOFalloffAngle(_ambientOcclusionProperties.getAoFalloffAngle());
     ambientOcclusion->setAOSamplingAmount(_ambientOcclusionProperties.getAoSamplingAmount());
     ambientOcclusion->setSSAONumSpiralTurns(_ambientOcclusionProperties.getSsaoNumSpiralTurns());
+}
+
+void ZoneEntityRenderer::updateNormalMapAttenuationFromEntity(const TypedEntityPointer& entity) {
+    _normalMapAttenuationMode = (ComponentMode)entity->getNormalMapAttenuationMode();
+
+    const auto& normalMapAttenuation = editNormalMapAttenuation();
+
+    normalMapAttenuation->setMin(_normalMapAttenuationProperties.getMin());
+    normalMapAttenuation->setMax(_normalMapAttenuationProperties.getMax());
 }
 
 void ZoneEntityRenderer::updateKeyBackgroundFromEntity(const TypedEntityPointer& entity) {

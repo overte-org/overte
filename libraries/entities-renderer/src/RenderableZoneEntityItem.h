@@ -22,6 +22,7 @@
 #include <BloomStage.h>
 #include <TonemappingStage.h>
 #include <AmbientOcclusionStage.h>
+#include <NormalMapAttenuationStage.h>
 #include <TextureCache.h>
 #include "RenderableEntityItem.h"
 #include <ComponentMode.h>
@@ -51,6 +52,7 @@ private:
     void updateBloomFromEntity(const TypedEntityPointer& entity);
     void updateTonemappingFromEntity(const TypedEntityPointer& entity);
     void updateAmbientOcclusionFromEntity(const TypedEntityPointer& entity);
+    void updateNormalMapAttenuationFromEntity(const TypedEntityPointer& entity);
     void updateAmbientMap();
     void updateSkyboxMap();
     void setAmbientURL(const QString& ambientUrl);
@@ -67,6 +69,7 @@ private:
     graphics::BloomPointer editBloom() { _needBloomUpdate = true; return _bloom; }
     graphics::TonemappingPointer editTonemapping() { _needTonemappingUpdate = true; return _tonemapping; }
     graphics::AmbientOcclusionPointer editAmbientOcclusion() { _needAmbientOcclusionUpdate = true; return _ambientOcclusion; }
+    graphics::NormalMapAttenuationPointer editNormalMapAttenuation() { _needNormalMapAttenuationUpdate = true; return _normalMapAttenuation; }
 
     glm::vec3 _lastPosition;
     glm::vec3 _lastDimensions;
@@ -81,6 +84,7 @@ private:
     const graphics::BloomPointer _bloom { std::make_shared<graphics::Bloom>() };
     const graphics::TonemappingPointer _tonemapping { std::make_shared<graphics::Tonemapping>() };
     const graphics::AmbientOcclusionPointer _ambientOcclusion { std::make_shared<graphics::AmbientOcclusion>() };
+    const graphics::NormalMapAttenuationPointer _normalMapAttenuation { std::make_shared<graphics::NormalMapAttenuation>() };
 
     ComponentMode _keyLightMode { COMPONENT_MODE_INHERIT };
     ComponentMode _ambientLightMode { COMPONENT_MODE_INHERIT };
@@ -89,6 +93,7 @@ private:
     ComponentMode _bloomMode { COMPONENT_MODE_INHERIT };
     ComponentMode _tonemappingMode { COMPONENT_MODE_INHERIT };
     ComponentMode _ambientOcclusionMode { COMPONENT_MODE_INHERIT };
+    ComponentMode _normalMapAttenuationMode { COMPONENT_MODE_INHERIT };
 
     indexed_container::Index _sunIndex { LightStage::INVALID_INDEX };
     indexed_container::Index _ambientIndex { LightStage::INVALID_INDEX };
@@ -108,6 +113,9 @@ private:
     AmbientOcclusionStagePointer _ambientOcclusionStage;
     AmbientOcclusionStage::Index _ambientOcclusionIndex { AmbientOcclusionStage::INVALID_INDEX };
 
+    NormalMapAttenuationStagePointer _normalMapAttenuationStage;
+    NormalMapAttenuationStage::Index _normalMapAttenuationIndex { NormalMapAttenuationStage::INVALID_INDEX };
+
     bool _needUpdate { true };
     bool _needSunUpdate { true };
     bool _needAmbientUpdate { true };
@@ -116,6 +124,7 @@ private:
     bool _needBloomUpdate { true };
     bool _needTonemappingUpdate { true };
     bool _needAmbientOcclusionUpdate { true };
+    bool _needNormalMapAttenuationUpdate { true };
 
     KeyLightPropertyGroup _keyLightProperties;
     AmbientLightPropertyGroup _ambientLightProperties;

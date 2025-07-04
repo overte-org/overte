@@ -329,7 +329,6 @@ void MakeLightingModel::configure(const Config& config) {
 void MakeLightingModel::run(const render::RenderContextPointer& renderContext, LightingModelPointer& lightingModel) {
 
     lightingModel = _lightingModel;
-    ZoneRendererTask::_lightingModel = _lightingModel;
 
     // make sure the enableTexturing flag of the render ARgs is in sync
     renderContext->args->_enableTexturing = _lightingModel->isMaterialTexturingEnabled();
