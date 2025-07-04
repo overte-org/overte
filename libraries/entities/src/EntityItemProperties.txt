@@ -229,6 +229,7 @@ enum:BLOOM_MODE prop:bloomMode type:uint8_t default:(uint8_t)COMPONENT_MODE_INHE
 enum:AVATAR_PRIORITY prop:avatarPriority type:uint8_t default:(uint8_t)COMPONENT_MODE_INHERIT enum basicProp,
 enum:TONEMAPPING_MODE prop:tonemappingMode type:uint8_t default:(uint8_t)COMPONENT_MODE_INHERIT enum,
 enum:AMBIENT_OCCLUSION_MODE prop:ambientOcclusionMode type:uint8_t default:(uint8_t)COMPONENT_MODE_INHERIT enum,
+enum:NORMAL_MAP_ATTENUATION_MODE prop:normalMapAttenuationMode type:uint8_t default:(uint8_t)COMPONENT_MODE_INHERIT enum,
 PolyVox
 enum:VOXEL_VOLUME_SIZE prop:voxelVolumeSize type:vec3 default:PolyVoxEntityItem::DEFAULT_VOXEL_VOLUME_SIZE noGetterSetterProp,
 enum:VOXEL_DATA prop:voxelData type:QByteArray default:PolyVoxEntityItem::DEFAULT_VOXEL_DATA noGetterSetterProp,

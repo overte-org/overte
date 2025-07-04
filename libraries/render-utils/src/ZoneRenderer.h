@@ -61,9 +61,6 @@ public:
 
     void configure(const Config& config) { _maxDrawn = config.maxDrawn; }
 
-    // We use this to pass the normalMapAttenuation from the current Zone to the LightingModel
-    static LightingModelPointer _lightingModel;
-
 protected:
     int _maxDrawn; // initialized by Config
 };
