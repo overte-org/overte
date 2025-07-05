@@ -96,9 +96,11 @@ protected:
 
     virtual PickedObject getHoveredObject(const PickResultPointer& pickResult) = 0;
     virtual Buttons getPressedButtons(const PickResultPointer& pickResult) = 0;
+    virtual glm::vec2 getScroll(const PickResultPointer& pickResult) = 0;
 
     virtual bool shouldHover(const PickResultPointer& pickResult) { return true; }
     virtual bool shouldTrigger(const PickResultPointer& pickResult) { return true; }
+    virtual bool shouldScroll(const PickResultPointer& pickResult) { return true; }
     virtual PickResultPointer getPickResultCopy(const PickResultPointer& pickResult) const = 0;
     virtual PickResultPointer getVisualPickResult(const PickResultPointer& pickResult) { return pickResult; };
 

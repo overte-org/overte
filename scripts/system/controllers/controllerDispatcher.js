@@ -505,7 +505,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                         // plugin was deactivated while running.  find the activity-slots it was using and make
                         // them available.
                         delete _this.runningPluginNames[runningPluginName];
-                        _this.unmarkSlotsForPluginName(runningPluginName);
+                        _this.unmarkSlotsForPluginName(runningPluginName);{dd2b3a36-b58a-4f07-b0ae-6fe52a8c61fd}
                     } else {
                         if (PROFILE) {
                             Script.beginProfileRange("dispatch.run." + runningPluginName);
@@ -579,7 +579,12 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
         this.leftPointer = this.pointerManager.createPointer(false, PickType.Ray, {
             joint: "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND",
             filter: Picks.PICK_OVERLAYS | Picks.PICK_LOCAL_ENTITIES | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
-            triggers: [{action: controllerStandard.LTClick, button: "Focus"}, {action: controllerStandard.LTClick, button: "Primary"}],
+            triggers: [
+                {action: controllerStandard.LTClick, button: "Primary"},
+                {action: controllerStandard.LT, button: "ScrollActive"},
+                {action: controllerStandard.LX, button: "ScrollX"},
+                {action: controllerStandard.LY, button: "ScrollY"},
+            ],
             posOffset: getGrabPointSphereOffset(controllerStandard.LeftHand, true),
             hover: true,
             scaleWithParent: true,
@@ -591,7 +596,12 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
         this.rightPointer = this.pointerManager.createPointer(false, PickType.Ray, {
             joint: "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND",
             filter: Picks.PICK_OVERLAYS | Picks.PICK_LOCAL_ENTITIES | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
-            triggers: [{action: controllerStandard.RTClick, button: "Focus"}, {action: controllerStandard.RTClick, button: "Primary"}],
+            triggers: [
+                {action: controllerStandard.RTClick, button: "Primary"},
+                {action: controllerStandard.RT, button: "ScrollActive"},
+                {action: controllerStandard.RX, button: "ScrollX"},
+                {action: controllerStandard.RY, button: "ScrollY"},
+            ],
             posOffset: getGrabPointSphereOffset(controllerStandard.RightHand, true),
             hover: true,
             scaleWithParent: true,
@@ -605,7 +615,12 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             filter: Picks.PICK_HUD,
             maxDistance: DEFAULT_SEARCH_SPHERE_DISTANCE,
             posOffset: getGrabPointSphereOffset(controllerStandard.LeftHand, true),
-            triggers: [{action: controllerStandard.LTClick, button: "Focus"}, {action: controllerStandard.LTClick, button: "Primary"}],
+            triggers: [
+                {action: controllerStandard.LTClick, button: "Primary"},
+                {action: controllerStandard.LT, button: "ScrollActive"},
+                {action: controllerStandard.LX, button: "ScrollX"},
+                {action: controllerStandard.LY, button: "ScrollY"},
+            ],
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
@@ -617,7 +632,12 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             filter: Picks.PICK_HUD,
             maxDistance: DEFAULT_SEARCH_SPHERE_DISTANCE,
             posOffset: getGrabPointSphereOffset(controllerStandard.RightHand, true),
-            triggers: [{action: controllerStandard.RTClick, button: "Focus"}, {action: controllerStandard.RTClick, button: "Primary"}],
+            triggers: [
+                {action: controllerStandard.RTClick, button: "Primary"},
+                {action: controllerStandard.RT, button: "ScrollActive"},
+                {action: controllerStandard.RX, button: "ScrollX"},
+                {action: controllerStandard.RY, button: "ScrollY"},
+            ],
             hover: true,
             scaleWithParent: true,
             distanceScaleEnd: true,
