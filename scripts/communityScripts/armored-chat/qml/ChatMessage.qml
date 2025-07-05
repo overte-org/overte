@@ -35,13 +35,16 @@ Item {
 		}
 
 		// Message body
-		Text { 
+		TextEdit { 
 			text: delegateMessage;
 			color: "white";
 			font.pixelSize: 18;
 			wrapMode: Text.Wrap;
 			textFormat: TextEdit.RichText;
 			width: parent.width;
+			readOnly: true
+			selectByMouse: true
+			selectByKeyboard: true
 
 			onLinkActivated: {
 				if (link.includes("?noOpen=true")) {
