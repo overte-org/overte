@@ -223,7 +223,7 @@
         "tooltip": "A list of entity IDs representing listener zones with this zone as a source."
     },
     "audio.listenerAttenuationCoefficients": {
-        "tooltip": "A list of attenuation coefficients."
+        "tooltip": "Each coefficient will be applied to sounds coming from this zone and being heard by a listener in the corresponding listenerZone. Factor between 0 and 1: 0 = No attenuation/full sound, 1 = extreme attenuation/no sound. Negative values: interpreted as sound distance limit in meters."
     },
     "avatarPriority": {
         "tooltip": "Alter Avatars' update priorities."

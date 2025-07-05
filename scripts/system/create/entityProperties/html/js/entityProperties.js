@@ -25,6 +25,8 @@ const NO_SELECTION = ",";
 
 const MAX_TAGS_PER_ROWS = 5;
 
+const AUDIO_ATTENUATION_COEFFICIENT_DEFAULT_VALUE = 0.5;
+
 const PROPERTY_SPACE_MODE = Object.freeze({
     ALL: 0,
     LOCAL: 1,
@@ -814,6 +816,13 @@ const GROUPS = [
                 label: "Listener Zones",
                 type: "multipleZonesSelection",
                 propertyID: "audio.listenerZones",
+                zonesCoefficientID: "audio.listenerAttenuationCoefficients",
+            },
+            {
+                label: "Attenuation Coef.",
+                type: "zonesCoefficient",
+                propertyID: "audio.listenerAttenuationCoefficients",
+                multipleZonesSelectionID: "audio.listenerZones",
             }
         ]
     },
@@ -2305,6 +2314,8 @@ function getPropertyInputElement(propertyID) {
             return property.elInput;
         case 'multipleZonesSelection':
             return property.elInput;
+        case 'zonesCoefficient':
+            return property.elInput;
         case 'arrayOfStrings':
             return property.elInput;
         case 'number-draggable':
@@ -2478,6 +2489,12 @@ function resetProperties() {
                 property.elInput.classList.remove('multi-diff');
                 property.elInput.value = "[]";
                 setArrayOfStringsUi(property.elInput.id, false);
+                break;
+            }
+            case 'zonesCoefficient': {
+                property.elInput.classList.remove('multi-diff');
+                property.elInput.value = "[]";
+                setZonesCoefficientUi(property.elInput.id, false);
                 break;
             }
             case 'childList': {
@@ -3730,10 +3747,14 @@ function createProperty(propertyData, propertyElementID, propertyName, propertyI
         }
         case 'multipleZonesSelection': {
             property.elInput = createZonesSelection(property, elProperty);
-            break;            
+            break;
         }
         case 'arrayOfStrings': {
             property.elInput = createArrayOfStrings(property, elProperty);
+            break;
+        }
+        case 'zonesCoefficient': {
+            property.elInput = createZonesCoefficient(property, elProperty);
             break;
         }
         case 'childList': {
@@ -4717,16 +4738,23 @@ function addZoneToZonesSelection(propertyId, id) {
     if (JSON.stringify(hiddenField.value) === '"undefined"') {
         hiddenField.value = "[]";
     }
+    let zonesCoefficientID = document.getElementById(propertyId).getAttribute('zonesCoefficientID');
     let selectedZones = JSON.parse(hiddenField.value);
     if (id === "ALL") {
         for (let i = 0; i < zonesList.length; i++) {
             if (!selectedZones.includes(zonesList[i].id)) {
                 selectedZones.push(zonesList[i].id);
+                if (zonesCoefficientID !== "") {
+                    addElementToZonesCoefficient("property-" + zonesCoefficientID.replace(".", "-"));
+                }
             }
         }        
     } else {
         if (!selectedZones.includes(id)) {
             selectedZones.push(id);
+            if (zonesCoefficientID !== "") {
+                addElementToZonesCoefficient("property-" + zonesCoefficientID.replace(".", "-"));
+            }
         }
     }
     hiddenField.value = JSON.stringify(selectedZones);
@@ -4738,6 +4766,7 @@ function addZoneToZonesSelection(propertyId, id) {
 }
 
 function removeZoneFromZonesSelection(propertyId, zoneId) {
+    let zonesCoefficientID = document.getElementById(propertyId).getAttribute('zonesCoefficientID');
     let hiddenField = document.getElementById(propertyId);
     if (JSON.stringify(hiddenField.value) === '"undefined"') {
         hiddenField.value = "[]";
@@ -4745,7 +4774,10 @@ function removeZoneFromZonesSelection(propertyId, zoneId) {
     let selectedZones = JSON.parse(hiddenField.value);
     let index = selectedZones.indexOf(zoneId);
     if (index > -1) {
-      selectedZones.splice(index, 1);
+        selectedZones.splice(index, 1);
+        if (zonesCoefficientID !== "") {
+            removeElementFromZonesCoefficient("property-" + zonesCoefficientID.replace(".", "-"), index);
+        }
     }
     hiddenField.value = JSON.stringify(selectedZones);
     displaySelectedZones(propertyId, true);
@@ -4773,17 +4805,7 @@ function displaySelectedZones(propertyId, isEditable) {
         }
     } else {
         for (i = 0; i < selectedZones.length; i++) {
-            name = "{ERROR: NOT FOUND}";
-            for (j = 0; j < zonesList.length; j++) {
-                if (selectedZones[i] === zonesList[j].id) {
-                    if (zonesList[j].name !== "") {
-                        name = zonesList[j].name;
-                    } else {
-                        name = zonesList[j].id;
-                    }
-                    break;
-                }
-            }
+            name = getZoneName(selectedZones[i]);
             if (isEditable) {
                 listedZoneInner += "<tr><td class='zoneItem'>" + name + "</td><td><a href='#' onClick='removeZoneFromZonesSelection(" + '"' + propertyId + '"' + ", " + '"' + selectedZones[i] + '"' + ");' >";
                 listedZoneInner += "<img src='../../../html/css/img/remove_icon.png'></a></td></tr>";
@@ -4802,12 +4824,14 @@ function displaySelectedZones(propertyId, isEditable) {
 }
 
 function createZonesSelection(property, elProperty) {
+    let propertyData = property.data;
     let elementID = property.elementID;
     requestZoneList();
     elProperty.className = "multipleZonesSelection";
     let elInput = document.createElement('input');
     elInput.setAttribute("id", elementID);
     elInput.setAttribute("type", "hidden");
+    elInput.setAttribute("zonesCoefficientID", propertyData.zonesCoefficientID ?? "");
     elInput.className = "hiddenMultiZonesSelection";
 
     let elZonesSelector = document.createElement('div');
@@ -4853,6 +4877,176 @@ function setZonesSelectionData(element, isEditable) {
     zoneSelectorContainer.innerHTML = zoneSelector;
     displaySelectedZones(element.id, isEditable);
 }
+
+function getZoneName(zoneID) {
+    let name = "{ERROR: NOT FOUND}";
+    let j;
+    for (j = 0; j < zonesList.length; j++) {
+        if (zoneID === zonesList[j].id) {
+            if (zonesList[j].name !== "") {
+                name = zonesList[j].name;
+            } else {
+                name = zonesList[j].id;
+            }
+            break;
+        }
+    }
+    return name;
+}
+
+/**
+ * ZONES COEFFICIENT
+ */
+
+function createZonesCoefficient(property, elProperty) {
+    let propertyData = property.data;
+    let elementID = property.elementID;
+    elProperty.className = "zonesCoefficient";
+    let elInput = document.createElement('input');
+    elInput.setAttribute("id", elementID);
+    elInput.setAttribute("type", "hidden");
+    elInput.setAttribute("multipleZonesSelectionID", propertyData.multipleZonesSelectionID);
+    elInput.className = "hiddenZonesCoefficient";
+
+    let elZonesCoefficientSelector = document.createElement('div');
+    elZonesCoefficientSelector.setAttribute("id", "zonesCoefficient-selector-" + elementID);
+
+    let elMultiDiff = document.createElement('span');
+    elMultiDiff.className = "multi-diff";
+
+    elProperty.appendChild(elInput);
+    elProperty.appendChild(elZonesCoefficientSelector);
+    elProperty.appendChild(elMultiDiff);
+
+    return elInput;
+}
+
+function setZonesCoefficientUi(propertyId, isEditable) {
+    let i, listedCoefficientsInner, hiddenData, isMultiple, multipleZonesSelectionID, zoneListData;
+    hiddenData = document.getElementById(propertyId).value;
+    multipleZonesSelectionID = document.getElementById(propertyId).getAttribute('multipleZonesSelectionID');
+    zoneListData = JSON.parse(document.getElementById("property-"  + multipleZonesSelectionID.replace(".", "-")).value);
+    if (JSON.stringify(hiddenData) === '"undefined"') {
+        isMultiple = true;
+        hiddenData = "[]";
+    } else {
+        isMultiple = false;
+    }
+    listedCoefficientsInner = "<div class='zonesCoefficientContainer'>";
+    let coefficients = JSON.parse(hiddenData);
+    if (coefficients.length !== zoneListData.length) {
+        listedCoefficientsInner += "<div class='zonesCoefficientWarning'>";
+        listedCoefficientsInner += "WARNING: Zones and coefficients are desynchronized.<br>";
+        listedCoefficientsInner += "<input type='button' value = 'Fix this' onClick='fixUnsynchZonesCoefficients(" + '"' + propertyId + '", ' + zoneListData.length + ");'>";
+        listedCoefficientsInner += "</div>";
+    } else {
+        if (coefficients.length === 0) {
+            if (isMultiple) {
+                listedCoefficientsInner += "Not available.";
+            }
+            listedCoefficientsInner += "<br>";
+        } else {
+            let zoneName, lineColor;
+            for (i = 0; i < coefficients.length; i++) {
+                zoneName = getZoneName(zoneListData[i]);
+                lineColor = "";
+                if (i % 2 !== 0) {
+                    lineColor = " zonesCoefficientDarkLine";
+                }
+                if (isEditable) {
+                    listedCoefficientsInner += "<div class='zonesCoefficientLine" + lineColor + "'>";
+                    listedCoefficientsInner += "<span class='zonesCoefficientCoef'>";
+                    listedCoefficientsInner += "<input class='zonesCoefficient' type='number' step='0.005' max = '1.0' value='" + +coefficients[i].toFixed(4) + "' onChange='setZonesCoefficientValue(" + '"' + propertyId + '", ' + i + ", this.value);'>";
+                    listedCoefficientsInner += "</span>";
+                    listedCoefficientsInner += "<span class='zonesCoefficientZone'>&nbsp;" + zoneName + "</span>";
+                    listedCoefficientsInner += "</div>";
+                } else {
+                    listedCoefficientsInner += "<div class='zonesCoefficientLine" + lineColor + "'>";
+                    listedCoefficientsInner += "<span class='zonesCoefficientCoef'><div class='zonesCoefficientReadOnly'>" + +coefficients[i].toFixed(4) + "</div></span>";
+                    listedCoefficientsInner += "<span class='zonesCoefficientZone'>&nbsp;&nbsp;" + zoneName + "</span>";
+                    listedCoefficientsInner += "</div>";
+                }
+            }
+        }
+    }
+    listedCoefficientsInner += "</div>";
+    document.getElementById("zonesCoefficient-selector-" + propertyId).innerHTML = listedCoefficientsInner;
+}
+
+function fixUnsynchZonesCoefficients(propertyId, expectedLength) {
+    let hiddenField = document.getElementById(propertyId);
+    if (JSON.stringify(hiddenField.value) === '"undefined"') {
+        hiddenField.value = "[]";
+    }
+    let originalCoefficients = JSON.parse(hiddenField.value);
+    let coefficients = [];
+    let i;
+    for (i = 0; i < expectedLength; i++) {
+        if ( i < originalCoefficients.length) {
+            coefficients[i] = originalCoefficients[i];
+        } else {
+            coefficients[i] = AUDIO_ATTENUATION_COEFFICIENT_DEFAULT_VALUE;
+        }
+    }
+    hiddenField.value = JSON.stringify(coefficients);
+    
+    let propertyName = propertyId.replace("property-", "");
+    propertyName = propertyName.replace("-", ".");
+    updateProperty(propertyName, coefficients, false);
+}
+
+function setZonesCoefficientValue(propertyId, index, coef) {
+    function cleanFloat(val) {
+        let num = parseFloat(val);
+        if (Number.isNaN(num)) {
+            return 0;
+        }
+        return num;
+    }
+    
+    let newCoefValue = cleanFloat(coef);
+    let hiddenField = document.getElementById(propertyId);
+    if (JSON.stringify(hiddenField.value) === '"undefined"') {
+        hiddenField.value = "[]";
+    }
+    let coefficients = JSON.parse(hiddenField.value);
+    coefficients[index] = newCoefValue;
+    hiddenField.value = JSON.stringify(coefficients);
+    
+    let propertyName = propertyId.replace("property-", "");
+    propertyName = propertyName.replace("-", ".");
+    updateProperty(propertyName, coefficients, false);
+
+}
+
+function removeElementFromZonesCoefficient(propertyId, index) {
+    let hiddenField = document.getElementById(propertyId);
+    if (JSON.stringify(hiddenField.value) === '"undefined"') {
+        hiddenField.value = "[]";
+    }
+    let coefficients = JSON.parse(hiddenField.value);
+    coefficients.splice(index, 1);
+    hiddenField.value = JSON.stringify(coefficients);
+    
+    let propertyName = propertyId.replace("property-", "");
+    propertyName = propertyName.replace("-", ".");
+    updateProperty(propertyName, coefficients, false);
+}
+
+function addElementToZonesCoefficient(propertyId) {
+    let hiddenField = document.getElementById(propertyId);
+    if (JSON.stringify(hiddenField.value) === '"undefined"') {
+        hiddenField.value = "[]";
+    }
+    let coefficients = JSON.parse(hiddenField.value);
+    coefficients.push(AUDIO_ATTENUATION_COEFFICIENT_DEFAULT_VALUE);
+    hiddenField.value = JSON.stringify(coefficients);
+    
+    let propertyName = propertyId.replace("property-", "");
+    propertyName = propertyName.replace("-", ".");
+    updateProperty(propertyName, coefficients, false);
+}
+
 
 /**
  * ARRAY-OF-STRINGS FUNCTIONS
@@ -5713,6 +5907,15 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
                         setArrayOfStringsUi(property.elInput.id, false);
                     } else {
                         setArrayOfStringsUi(property.elInput.id, true);
+                    }
+                    break;
+                }
+                case 'zonesCoefficient': {
+                    property.elInput.value =  JSON.stringify(propertyValue);
+                    if (lockedMultiValue.isMultiDiffValue || lockedMultiValue.value) {
+                        setZonesCoefficientUi(property.elInput.id, false);
+                    } else {
+                        setZonesCoefficientUi(property.elInput.id, true);
                     }
                     break;
                 }

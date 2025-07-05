@@ -505,7 +505,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                         // plugin was deactivated while running.  find the activity-slots it was using and make
                         // them available.
                         delete _this.runningPluginNames[runningPluginName];
-                        _this.unmarkSlotsForPluginName(runningPluginName);
+                        _this.unmarkSlotsForPluginName(runningPluginName);{dd2b3a36-b58a-4f07-b0ae-6fe52a8c61fd}
                     } else {
                         if (PROFILE) {
                             Script.beginProfileRange("dispatch.run." + runningPluginName);
@@ -578,7 +578,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 
         this.leftPointer = this.pointerManager.createPointer(false, PickType.Ray, {
             joint: "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND",
-            filter: Picks.PICK_OVERLAYS | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
+            filter: Picks.PICK_OVERLAYS | Picks.PICK_LOCAL_ENTITIES | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
             triggers: [
                 {action: controllerStandard.LTClick, button: "Primary"},
                 {action: controllerStandard.LT, button: "ScrollActive"},
@@ -595,7 +595,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
         Keyboard.setLeftHandLaser(this.leftPointer);
         this.rightPointer = this.pointerManager.createPointer(false, PickType.Ray, {
             joint: "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND",
-            filter: Picks.PICK_OVERLAYS | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
+            filter: Picks.PICK_OVERLAYS | Picks.PICK_LOCAL_ENTITIES | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
             triggers: [
                 {action: controllerStandard.RTClick, button: "Primary"},
                 {action: controllerStandard.RT, button: "ScrollActive"},
@@ -647,7 +647,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 
         this.mouseRayPointer = Pointers.createRayPointer({
             joint: "Mouse",
-            filter: Picks.PICK_OVERLAYS | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
+            filter: Picks.PICK_OVERLAYS | Picks.PICK_LOCAL_ENTITIES | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
             enabled: true
         });
         this.handleMessage = function (channel, data, sender) {
