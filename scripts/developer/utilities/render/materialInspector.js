@@ -52,8 +52,7 @@ function getHoveredMaterialLocation(event) {
     var id;
     var type = "Entity";
     var avatar = AvatarManager.findRayIntersection(pickRay);
-    var entity = Entities.findRayIntersection(pickRay, true);
-    var overlay = Overlays.findRayIntersection(pickRay, true);
+    var entity = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_LOCAL_ENTITIES);
 
     closest = entity;
     id = entity.entityID;
@@ -62,10 +61,6 @@ function getHoveredMaterialLocation(event) {
         closest = avatar;
         id = avatar.avatarID;
         type = "Avatar";
-    } else if (overlay.intersects && overlay.distance < closest.distance) {
-        closest = overlay;
-        id = overlay.overlayID;
-        type = "Overlay";
     }
 
     if (closest.intersects) {

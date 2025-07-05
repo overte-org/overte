@@ -257,7 +257,7 @@
         direction: { x: 0, y: -1, z: 0 },
         length: 20
     };
-    var intersection = Entities.findRayIntersection(pickRay, true, [], [], true);
+    var intersection = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_INCLUDE_VISIBLE);
 
     if (intersection.intersects) {
         var testBaseTransform = Mat4.createFromRotAndTrans(MyAvatar.rotation, intersection.intersection);
