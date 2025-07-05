@@ -3,6 +3,7 @@
 #  cmake/macros
 #
 #  Copyright 2015 High Fidelity, Inc.
+#  Copyright 2025 Overte e.V.
 #  Created by Stephen Birarda on February 17, 2014
 #
 #  Distributed under the Apache License, Version 2.0.
@@ -31,16 +32,15 @@ macro(PACKAGE_LIBRARIES_FOR_DEPLOYMENT)
                 COMMAND "${CMAKE_CURRENT_BINARY_DIR}/windeploy-${TARGET_NAME}.bat" $<$<OR:$<CONFIG:Release>,$<CONFIG:MinSizeRel>,$<CONFIG:RelWithDebInfo>>:--release> \"$<TARGET_FILE:${TARGET_NAME}>\"
         )
 
+        # Add a post-build command to copy the DLLs beside the executable
+        add_custom_command(
+                TARGET ${TARGET_NAME}
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND}
+                -DBUNDLE_EXECUTABLE="$<TARGET_FILE:${TARGET_NAME}>"
+                -DBUNDLE_PLUGIN_DIR="$<TARGET_FILE_DIR:${TARGET_NAME}>/${PLUGIN_PATH}"
+                -DLIB_PATHS="${CMAKE_BINARY_DIR}/conanlibs/$<CONFIGURATION>"
+                -P "${CMAKE_SOURCE_DIR}/cmake/FixupBundlePostBuild.cmake"
+        )
     endif ()
-
-    # Add a post-build command to copy the libraries beside the executable
-    add_custom_command(
-            TARGET ${TARGET_NAME}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND}
-            -DBUNDLE_EXECUTABLE="$<TARGET_FILE:${TARGET_NAME}>"
-            -DBUNDLE_PLUGIN_DIR="$<TARGET_FILE_DIR:${TARGET_NAME}>/${PLUGIN_PATH}"
-            -DLIB_PATHS="${CMAKE_BINARY_DIR}/conanlibs/$<CONFIGURATION>"
-            -P "${CMAKE_SOURCE_DIR}/cmake/FixupBundlePostBuild.cmake"
-    )
 endmacro()
