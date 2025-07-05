@@ -138,7 +138,7 @@ function notif(text, colour) {
         text: '',
         font: {size: sizeData[DEFAULT_SIZE].size},
         x: 0,
-        y: Window.innerHeight,
+        y: Overlays.height(),
         color: colour.text,
         backgroundColor: colour.bg,
         backgroundAlpha: noti.alpha.bg,
@@ -148,14 +148,14 @@ function notif(text, colour) {
     var ts = Overlays.textSize(noti.id, noti.text);
     ts.height *= sizeData[DEFAULT_SIZE].heightMul;
     ts.width *= sizeData[DEFAULT_SIZE].widthMul;
-    ts.y = Window.innerHeight - (sizeData[DEFAULT_SIZE].split * (notificationList.length)) - offset;
+    ts.y = Overlays.height() - (sizeData[DEFAULT_SIZE].split * (notificationList.length)) - offset;
     ts.text = noti.text;
     Overlays.editOverlay(noti.id, ts);
 
     noti.update = function () {
         var i = notificationList.length - findIndex(noti.id);
         Overlays.editOverlay(noti.id, {
-            y: Window.innerHeight - (sizeData[DEFAULT_SIZE].split * (i)) - offset
+            y: Overlays.height() - (sizeData[DEFAULT_SIZE].split * (i)) - offset
         });
     };
 
