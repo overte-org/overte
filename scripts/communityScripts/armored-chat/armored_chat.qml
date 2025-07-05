@@ -448,8 +448,8 @@ Rectangle {
                 addMessage("SYSTEM", message.message, `[ ${message.timeString} - ${message.dateString} ]`, "domain", "notification");
                 break;
             case "clear_messages":
-                local.clear();
-                domain.clear();
+                localMessages.clear();
+                domainMessages.clear();
                 break;
             case "initial_settings":
                 if (message.settings.external_window) s_external_window.checked = true;
