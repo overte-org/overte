@@ -103,6 +103,20 @@ void MaterialEntityItem::setParentID(const QUuid& parentID) {
     }
 }
 
+MaterialMappingMode MaterialEntityItem::getMaterialMappingMode() const {
+    return resultWithReadLock<MaterialMappingMode>([&] {
+        return _materialMappingMode;
+    });
+}
+
+void MaterialEntityItem::setMaterialMappingMode(MaterialMappingMode mode) {
+    withWriteLock([&] {
+        _needsRenderUpdate |= _materialMappingMode != mode;
+        _materialMappingMode = mode;
+    });
+    setUnscaledDimensions(_desiredDimensions);
+}
+
 AACube MaterialEntityItem::calculateInitialQueryAACube(bool& success) {
     AACube aaCube = EntityItem::calculateInitialQueryAACube(success);
     // A Material entity's queryAACube contains its parent's queryAACube

@@ -23,7 +23,11 @@
             LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_MIRROR) uniform sampler2D mirrorMap;
         <@endif@>
     <@else@>
-        <$declareMToonMaterialTextures(ALBEDO, HIFI_USE_NORMALMAP, SHADE, EMISSIVE, SHADING_SHIFT, MATCAP, RIM, UV_ANIMATION_MASK)$>
+        <@if HIFI_USE_NORMALMAP@>
+            <$declareMToonMaterialTextures(ALBEDO, NORMAL, SHADE, EMISSIVE, SHADING_SHIFT, MATCAP, RIM, UV_ANIMATION_MASK)$>
+        <@else@>
+            <$declareMToonMaterialTextures(ALBEDO, _SCRIBE_NULL, SHADE, EMISSIVE, SHADING_SHIFT, MATCAP, RIM, UV_ANIMATION_MASK)$>
+        <@endif@>
     <@endif@>
 <@else@>
     <@if HIFI_USE_SHADOW or HIFI_USE_UNLIT@>
@@ -34,12 +38,24 @@
     <@else@>
         <@if not HIFI_USE_LIGHTMAP@>
             <@if HIFI_USE_TRANSLUCENT@>
-                <$declareMaterialTextures(ALBEDO, ROUGHNESS, HIFI_USE_NORMALMAP, METALLIC, EMISSIVE, OCCLUSION)$>
+                <@if HIFI_USE_NORMALMAP@>
+                    <$declareMaterialTextures(ALBEDO, ROUGHNESS, NORMAL, METALLIC, EMISSIVE, OCCLUSION)$>
+                <@else@>
+                    <$declareMaterialTextures(ALBEDO, ROUGHNESS, _SCRIBE_NULL, METALLIC, EMISSIVE, OCCLUSION)$>
+                <@endif@>
             <@else@>
-                <$declareMaterialTextures(ALBEDO, ROUGHNESS, HIFI_USE_NORMALMAP, METALLIC, EMISSIVE, OCCLUSION, SCATTERING)$>
+                <@if HIFI_USE_NORMALMAP@>
+                    <$declareMaterialTextures(ALBEDO, ROUGHNESS, NORMAL, METALLIC, EMISSIVE, OCCLUSION, SCATTERING)$>
+                <@else@>
+                    <$declareMaterialTextures(ALBEDO, ROUGHNESS, _SCRIBE_NULL, METALLIC, EMISSIVE, OCCLUSION, SCATTERING)$>
+                <@endif@>
             <@endif@>
         <@else@>
-            <$declareMaterialTextures(ALBEDO, ROUGHNESS, HIFI_USE_NORMALMAP, METALLIC)$>
+            <@if HIFI_USE_NORMALMAP@>
+                <$declareMaterialTextures(ALBEDO, ROUGHNESS, NORMAL, METALLIC)$>
+            <@else@>
+                <$declareMaterialTextures(ALBEDO, ROUGHNESS, _SCRIBE_NULL, METALLIC)$>
+            <@endif@>
             <$declareMaterialLightmap()$>
         <@endif@>
     <@endif@>
@@ -78,7 +94,7 @@
             <@endif@>
             <$declareEvalGlobalLightingAlphaBlended()$>
         <@else@>
-            <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, HIFI_USE_FORWARD)$>
+            <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, 1)$>
         <@endif@>
         <@include gpu/Transform.slh@>
         <$declareStandardCameraTransform()$>
@@ -159,6 +175,10 @@ void main(void) {
     <@endif@>
 <@endif@>
 
+<@if not HIFI_USE_SHADOW@>
+    vec3 normalWS = normalize(_normalWS);
+<@endif@>
+
     Material mats[NUM_LAYERS];
     BITFIELD matKeys[NUM_LAYERS];
     for (int layer = 0; layer < NUM_LAYERS; layer++) {
@@ -185,9 +205,9 @@ void main(void) {
     <@else@>
         vec3 triplanarScale = triplanarParams.scale.xyz;
         <@if not HIFI_USE_MTOON@>
-            <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex)$>
+            <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _SCRIBE_NULL, _texCoord01, triplanarScale, albedoTex)$>
         <@else@>
-            <$fetchMToonMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex)$>
+            <$fetchMToonMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _SCRIBE_NULL, _texCoord01, triplanarScale, albedoTex)$>
         <@endif@>
 
         float opacityCutoffTex = 1.0;
@@ -275,13 +295,13 @@ void main(void) {
     <@elif HIFI_USE_TRANSLUCENT@>
             packDeferredFragmentTranslucentUnlit(
                 _prevPositionCS,
-                evalFrontOrBackFaceNormal(normalize(_normalWS)),
+                evalFrontOrBackFaceNormal(normalWS),
                 opacity,
                 albedo * isUnlitEnabled());
     <@else@>
             packDeferredFragmentUnlit(
                 _prevPositionCS,
-                evalFrontOrBackFaceNormal(normalize(_normalWS)),
+                evalFrontOrBackFaceNormal(normalWS),
                 opacity,
                 albedo * isUnlitEnabled());
     <@endif@>
@@ -291,7 +311,7 @@ void main(void) {
     vec3 albedo = vec3(0.0);
     float opacity = 0.0;
     vec3 emissive = vec3(0.0);
-    vec3 fragNormalWS = _normalWS;
+    vec3 fragNormalWS = normalWS;
     vec3 shade = vec3(0.0);
     float shadingShift = 0.0;
     float shadingToony = 0.0;
@@ -318,9 +338,9 @@ void main(void) {
         vec3 triplanarScale = triplanarParams.scale.xyz;
         vec3 uvScrollSpeed = getMaterialUVScrollSpeed(mats[0]);
         <@if HIFI_USE_NORMALMAP@>
-            <$fetchMToonMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, normalTex, shadeTex, emissiveTex, shadingShiftTex, rimTexLayer, uvScrollSpeed, time)$>
+            <$fetchMToonMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, normalWS, _texCoord01, triplanarScale, albedoTex, normalTex, shadeTex, emissiveTex, shadingShiftTex, rimTexLayer, uvScrollSpeed, time)$>
         <@else@>
-            <$fetchMToonMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, _SCRIBE_NULL, shadeTex, emissiveTex, shadingShiftTex, rimTexLayer, uvScrollSpeed, time)$>
+            <$fetchMToonMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _SCRIBE_NULL, _texCoord01, triplanarScale, albedoTex, _SCRIBE_NULL, shadeTex, emissiveTex, shadingShiftTex, rimTexLayer, uvScrollSpeed, time)$>
         <@endif@>
 
         float opacityCutoffTex = 1.0;
@@ -354,14 +374,14 @@ void main(void) {
         <@if HIFI_USE_NORMALMAP@>
             vec3 fragNormalWSLayer;
             <@if not HIFI_USE_TRIPLANAR@>
-                <$evalMaterialNormalLOD(_positionES, normalTex, _normalWS, _tangentWS, fragNormalWSLayer)$>
+                <$evalMaterialNormalLOD(_positionES, normalTex, normalWS, _tangentWS, fragNormalWSLayer)$>
             <@else@>
-                <$evalMaterialNormalLODTriplanar(_positionES, normalTex, _normalWS, fragNormalWSLayer)$>
+                <$evalMaterialNormalLODTriplanar(_positionES, normalTex, normalWS, fragNormalWSLayer)$>
             <@endif@>
         <@else@>
-            vec3 fragNormalWSLayer = _normalWS;
+            vec3 fragNormalWSLayer = normalWS;
         <@endif@>
-        fragNormalWSLayer = evalFrontOrBackFaceNormal(normalize(fragNormalWSLayer));
+        fragNormalWSLayer = evalFrontOrBackFaceNormal(fragNormalWSLayer);
 
         vec3 shadeLayer = getMaterialShade(mats[layer]);
         <$evalMaterialShade(shadeTex, shadeLayer, matKeys[layer], shadeLayer)$>
@@ -476,7 +496,7 @@ void main(void) {
 <@else@>
     vec3 albedo = vec3(0.0);
     float opacity = 0.0;
-    vec3 fragNormalWS = _normalWS;
+    vec3 fragNormalWS = normalWS;
     float roughness = 0.0;
     float metallic = 0.0;
     <@if not HIFI_USE_LIGHTMAP@>
@@ -515,19 +535,19 @@ void main(void) {
         vec3 triplanarScale = triplanarParams.scale.xyz;
         <@if not HIFI_USE_LIGHTMAP@>
             <@if HIFI_USE_NORMALMAP and HIFI_USE_TRANSLUCENT@>
-                <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, _SCRIBE_NULL, occlusionTex)$>
+                <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, normalWS, _texCoord01, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, _SCRIBE_NULL, occlusionTex)$>
             <@elif HIFI_USE_NORMALMAP@>
-                <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, scatteringTex, occlusionTex)$>
+                <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, normalWS, _texCoord01, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex, emissiveTex, scatteringTex, occlusionTex)$>
             <@elif HIFI_USE_TRANSLUCENT@>
-                <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, emissiveTex, _SCRIBE_NULL, occlusionTex)$>
+                <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _SCRIBE_NULL, _texCoord01, triplanarScale, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, emissiveTex, _SCRIBE_NULL, occlusionTex)$>
             <@else@>
-                <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, emissiveTex, scatteringTex, occlusionTex)$>
+                <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _SCRIBE_NULL, _texCoord01, triplanarScale, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, emissiveTex, scatteringTex, occlusionTex)$>
             <@endif@>
         <@else@>
             <@if HIFI_USE_NORMALMAP@>
-                <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex, _SCRIBE_NULL, _SCRIBE_NULL, _SCRIBE_NULL, lightmapTex)$>
+                <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, normalWS, _texCoord01, triplanarScale, albedoTex, roughnessTex, normalTex, metallicTex, _SCRIBE_NULL, _SCRIBE_NULL, _SCRIBE_NULL, lightmapTex)$>
             <@else@>
-                <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _texCoord01, triplanarScale, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, _SCRIBE_NULL, _SCRIBE_NULL, _SCRIBE_NULL, lightmapTex)$>
+                <$fetchMaterialTexturesTriplanar(layerBlend, matKeys, _positionMS, _normalMS, _SCRIBE_NULL, _texCoord01, triplanarScale, albedoTex, roughnessTex, _SCRIBE_NULL, metallicTex, _SCRIBE_NULL, _SCRIBE_NULL, _SCRIBE_NULL, lightmapTex)$>
             <@endif@>
         <@endif@>
 
@@ -578,14 +598,14 @@ void main(void) {
         <@if HIFI_USE_NORMALMAP@>
             vec3 fragNormalWSLayer;
             <@if not HIFI_USE_TRIPLANAR@>
-                <$evalMaterialNormalLOD(_positionES, normalTex, _normalWS, _tangentWS, fragNormalWSLayer)$>
+                <$evalMaterialNormalLOD(_positionES, normalTex, normalWS, _tangentWS, fragNormalWSLayer)$>
             <@else@>
-                <$evalMaterialNormalLODTriplanar(_positionES, normalTex, _normalWS, fragNormalWSLayer)$>
+                <$evalMaterialNormalLODTriplanar(_positionES, normalTex, normalWS, fragNormalWSLayer)$>
             <@endif@>
         <@else@>
-            vec3 fragNormalWSLayer = _normalWS;
+            vec3 fragNormalWSLayer = normalWS;
         <@endif@>
-        fragNormalWSLayer = evalFrontOrBackFaceNormal(normalize(fragNormalWSLayer));
+        fragNormalWSLayer = evalFrontOrBackFaceNormal(fragNormalWSLayer);
 
         <@if HIFI_USE_TRIPLANAR or HIFI_USE_SPLATMAP@>
             <@if HIFI_USE_TRIPLANAR@>

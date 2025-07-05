@@ -8,7 +8,7 @@
 
 # This should allow using long paths on Windows
 SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
-# 3.24 is the minimum version that supports COMPILE_WARNING_AS_ERROR
+# 3.24 is the minimum version that supports CMAKE_COMPILE_WARNING_AS_ERROR
 cmake_minimum_required(VERSION 3.24)
 
 include(SelectLibraryConfigurations)
@@ -98,9 +98,9 @@ endif()
 # Our current Linux development target is Ubuntu 22.04, which uses GCC 11.2.
 # TODO: Enable warnings-as-errors once we stop throwing warnings on the relevant platforms.
 if ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION MATCHES "11"))
-    set(COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
+    set(CMAKE_COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC") # Windows
-    set(COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
+    set(CMAKE_COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
 endif()
 
 

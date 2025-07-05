@@ -38,7 +38,7 @@
 {
     // attenuate the normal map divergence from the mesh normal based on distance
     // The attenuation range [30,100] meters from the eye is arbitrary for now
-    <$normal$> = mix(<$fetchedNormal$>, <$interpolatedNormal$>, smoothstep(30.0, 100.0, (-<$fragPosES$>).z));
+    <$normal$> = normalize(mix(<$fetchedNormal$>, <$interpolatedNormal$>, smoothstep(30.0, 100.0, (-<$fragPosES$>).z)));
 }
 <@endfunc@>
 
@@ -84,7 +84,7 @@
 
 <@func discardTransparent(opacity)@>
 {
-    if (<$opacity$> < 1.0) {
+    if (<$opacity$> < 0.99999) {
         discard;
     }
 }
@@ -444,7 +444,7 @@ vec3 fetchLightMap(int layer, mat2 uvs) {
 }
 <@endfunc@>
 
-<@func fetchMaterialTexturesTriplanar(layerBlend, matKeys, positionMS, normalMS, texCoords, triplanarScale, albedo, roughness, normal, metallic, emissive, scattering, occlusion, lightmap)@>
+<@func fetchMaterialTexturesTriplanar(layerBlend, matKeys, positionMS, normalMS, normalWS, texCoords, triplanarScale, albedo, roughness, normal, metallic, emissive, scattering, occlusion, lightmap)@>
     vec3 inPosition = (<$positionMS$> - vec3(0.5)) / <$triplanarScale$>.xyz;
     vec3 normalMS = normalize(<$normalMS$>);
 
@@ -526,10 +526,11 @@ vec3 fetchLightMap(int layer, mat2 uvs) {
     float <$roughness$> = <$roughness$>Triplanar;
 <@endif@>
 <@if normal@>
-    vec3 <$normal$> = normalize(<$normal$>Triplanar + normalMS.xyz);
+    vec3 <$normal$> = <$normal$>Triplanar;
     {
         TransformObject obj = getTransformObject();
-        <$transformModelToWorldDir(obj, $normal$, $normal$)$>
+        <$transformModelToWorldDirNoScale(obj, $normal$, $normal$)$>
+        <$normal$> = normalize(<$normal$> + normalWS);
     }
 <@endif@>
 <@if metallic@>
@@ -900,7 +901,7 @@ float fetchUVAnimationMaskMap(int layer, mat2 uvs) {
 }
 <@endfunc@>
 
-<@func fetchMToonMaterialTexturesTriplanar(layerBlend, matKeys, positionMS, normalMS, texCoords, triplanarScale, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
+<@func fetchMToonMaterialTexturesTriplanar(layerBlend, matKeys, positionMS, normalMS, normalWS, texCoords, triplanarScale, albedo, normal, shade, emissive, shadingShift, rim, uvScrollSpeed, time)@>
     vec3 inPosition = (<$positionMS$> - vec3(0.5)) / <$triplanarScale$>.xyz;
     vec3 normalMS = normalize(<$normalMS$>);
 
@@ -973,10 +974,11 @@ float fetchUVAnimationMaskMap(int layer, mat2 uvs) {
     vec4 <$albedo$> = <$albedo$>Triplanar;
 <@endif@>
 <@if normal@>
-    vec3 <$normal$> = normalize(<$normal$>Triplanar + normalMS.xyz);
+    vec3 <$normal$> = <$normal$>Triplanar;
     {
         TransformObject obj = getTransformObject();
-        <$transformModelToWorldDir(obj, $normal$, $normal$)$>
+        <$transformModelToWorldDirNoScale(obj, $normal$, $normal$)$>
+        <$normal$> = normalize(<$normal$> + normalWS);
     }
 <@endif@>
 <@if shade@>

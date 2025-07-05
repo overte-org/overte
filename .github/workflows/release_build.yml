@@ -32,7 +32,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-2019
+          - os: windows-2022
             build_type: full
             qt_source: aqt
       fail-fast: false
@@ -65,8 +65,8 @@ jobs:
         echo "SYMBOLS_ARCHIVE=$RELEASE_NUMBER-${{ github.sha }}-win-symbols.zip" >> $GITHUB_ENV
         # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
         # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
-        if [[ "${{ matrix.os }}" = "windows-2019" ]]; then
-          echo "CONAN_PROFILE='./tools/conan-profiles/vs-19-release'" >> $GITHUB_ENV
+        if [[ "${{ matrix.os }}" = "windows-2022" ]]; then
+          echo "CONAN_PROFILE='./tools/conan-profiles/vs-22-release'" >> $GITHUB_ENV
         else
           echo "Not sure which Conan profile to use. Exiting." && exit 1
         fi

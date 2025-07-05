@@ -240,12 +240,6 @@ void setupPreferences() {
         preferences->addPreference(delaySlider);
     }
 
-    {
-        auto getter = []() -> bool { return qApp->getShowGraphicsIcon(); };
-        auto setter = [](bool value) { qApp->setShowGraphicsIcon(value); };
-        preferences->addPreference(new CheckPreference(UI_CATEGORY, "Show Graphics icon on tablet and toolbar", getter, setter));
-    }
-
     static const QString VIEW_CATEGORY { "View" };
     {
         auto getter = [myAvatar]()->float { return myAvatar->getRealWorldFieldOfView(); };
