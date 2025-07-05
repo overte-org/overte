@@ -505,7 +505,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
                         // plugin was deactivated while running.  find the activity-slots it was using and make
                         // them available.
                         delete _this.runningPluginNames[runningPluginName];
-                        _this.unmarkSlotsForPluginName(runningPluginName);{dd2b3a36-b58a-4f07-b0ae-6fe52a8c61fd}
+                        _this.unmarkSlotsForPluginName(runningPluginName);
                     } else {
                         if (PROFILE) {
                             Script.beginProfileRange("dispatch.run." + runningPluginName);
