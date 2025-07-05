@@ -25,6 +25,7 @@
 #include "ZoneAudioPropertyGroup.h"
 #include "TonemappingPropertyGroup.h"
 #include "AmbientOcclusionPropertyGroup.h"
+#include "NormalMapAttenuationPropertyGroup.h"
 
 class ZoneEntityItem : public EntityItem {
 public:
@@ -56,6 +57,7 @@ public:
     const ZoneAudioPropertyGroup& getAudioProperties() const { return _audioProperties; }
     const TonemappingPropertyGroup& getTonemappingProperties() const { return _tonemappingProperties; }
     const AmbientOcclusionPropertyGroup& getAmbientOcclusionProperties() const { return _ambientOcclusionProperties; }
+    const NormalMapAttenuationPropertyGroup& getNormalMapAttenuationProperties() const { return _normalMapAttenuationProperties; }
 
     void setUserData(const QString& value) override;
 
@@ -66,6 +68,7 @@ public:
     bool bloomPropertiesChanged() const { return _bloomPropertiesChanged; }
     bool tonemappingPropertiesChanged() const { return _tonemappingPropertiesChanged; }
     bool ambientOcclusionPropertiesChanged() const { return _ambientOcclusionPropertiesChanged; }
+    bool normalMapAttenuationPropertiesChanged() const { return _normalMapAttenuationPropertiesChanged; }
 
     void resetRenderingPropertiesChanged();
 
@@ -99,6 +102,7 @@ protected:
     bool _bloomPropertiesChanged { false };
     bool _tonemappingPropertiesChanged { false };
     bool _ambientOcclusionPropertiesChanged { false };
+    bool _normalMapAttenuationPropertiesChanged { false };
 
     static bool _drawZoneBoundaries;
     static bool _zonesArePickable;
