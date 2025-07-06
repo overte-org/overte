@@ -60,7 +60,8 @@ function changeOverlayBasedOnViewMode() {
 			type: "Web",
 			sourceUrl: Script.resolvePath("./qml/NotificationsBaseVR.qml"),
 			position: { x: 0, y: 1, z: 0 },
-			dimensions: { "x": 0.4, "y": 0.37, "z": 0.1 },
+			dimensions: { "x": 0.4, "y": 0.0, "z": 0.1 },
+			visible: false,
 			alpha: 0.9,
 			dpi: 20,
 			maxFPS: 60,
@@ -78,6 +79,7 @@ function changeOverlayBasedOnViewMode() {
 		};
 
 		app._ui.overlayVR = Entities.addEntity(properties, "local");
+		Entities.webEventReceived.connect((entityID, message) => { onMessageFromQML(JSON.parse(message)) })
 	}
 	else {
 		util.debugLog(`User is on Desktop, creating Overlay`);
@@ -124,6 +126,15 @@ function onMessageFromQML(event) {
 				app._ui.notificationPopout.closed.connect(() => { app._ui.notificationPopout = null });
 				sendNotificationListToNotificationPopout();
 			}
+			break;
+		case "bubbleCount":
+			if (!app._ui.overlayVR) return;
+
+			let dimensions = (Entities.getEntityProperties(app._ui.overlayVR, "dimensions")).dimensions;
+			util.debugLog(`Got ${JSON.stringify(dimensions)} for dimensions.`);
+			dimensions.y = 0.1 * Math.min(event.count, 4); // Never show more than 4 bubbles at once
+			util.debugLog(`New dimensions to set: ${dimensions.y}.`);
+			Entities.editEntity(app._ui.overlayVR, { dimensions, visible: event.count > 0 });
 			break;
 	}
 }
@@ -215,6 +226,7 @@ function closeAllWindows() {
 	util.debugLog('Closing all notification windows.')
 	if (app._ui.overlayVR) {
 		Entities.deleteEntity(app._ui.overlayVR);
+		Entities.webEventReceived.disconnect((entityID, message) => { onMessageFromQML(JSON.parse(message)) })
 		app._ui.overlayVR = null;
 	}
 	if (app._ui.overlay) {

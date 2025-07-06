@@ -31,7 +31,8 @@ Item {
 		print(JSON.stringify(message));
         switch (message.type){
             case "addSystemNotification":
-				addSystemNotification(message.message, message.details)
+				addSystemNotification(message.message, message.details);
+                sendBubbleCountUpdate();
                 break;
             case "closeAllNotifications":
                 notifications.clear();
@@ -41,7 +42,11 @@ Item {
 
     // Send message to script
     function toScript(packet){
-        sendToScript(packet)
+        eventBridge.emitWebEvent(packet);
+    }
+
+    function sendBubbleCountUpdate(){
+        toScript(JSON.stringify({type: "bubbleCount", count: notifications.count}));
     }
 
     Component.onCompleted: {

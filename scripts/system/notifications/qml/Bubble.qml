@@ -98,5 +98,6 @@ Rectangle {
 
 	function removeBubble() {
 		notifications.remove(bubbleId);
+		if (typeof sendBubbleCountUpdate == 'function') sendBubbleCountUpdate();
 	}
 }
