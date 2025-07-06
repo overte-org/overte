@@ -39,7 +39,7 @@ jobs:
           - os: Windows 2022
             runner: windows-2022
             build_type: full
-            qt_source: aqt
+            qt_source: source
           #- os: macOS 10.15
           #  runner: macOS-10.15
           #  build_type: full
