@@ -15,52 +15,16 @@ Item {
         id: notifications;
     }
 
-    Rectangle {
-        x: parent.width - width - 10;
-        y: 10;
-        width: 300;
-        height: 260;
-        z: 99;
-        visible: true;
-		color: "transparent";
+    Binding { target: root; property:'window'; value: parent.parent; when: Boolean(parent.parent) }
+    Binding { target: window; property: 'shown'; value: false; when: Boolean(window) }
 
-		Column {
-			id: columnContainer;
-			width: parent.width;
-			height: parent.height;
-			spacing: 5;
-
-			Repeater {
-				model: notifications.length;
-				delegate: Bubble {
-					bubbleText: notifications[index].bubbleText;
-					bubbleDetails: notifications[index].bubbleDetails;
-				}
-			}
-
-			ListView {
-				id: bubbleInstance;
-				width: parent.width;
-				height: parent.height;
-				model: notifications;
-				spacing: 5;
-
-				delegate: Bubble {
-					bubbleText: notifications.get(index) && notifications.get(index).bubbleText || "";
-					bubbleDetails: notifications.get(index) && notifications.get(index).bubbleDetails || "";
-				}
-			}
-		}
-    }
-
+	NotificationsPart { parent: desktop; }
 
 	function addSystemNotification(message, details) {
 		var targetNotification = notificationId;
 
 		// Insert notification to the stack
 		notifications.append({bubbleText: message, bubbleDetails: details, id: targetNotification});
-
-		print(JSON.stringify(notifications))
 
 		notificationId = notificationId + 1;
 	}
@@ -78,9 +42,5 @@ Item {
     // Send message to script
     function toScript(packet){
         sendToScript(packet)
-    }
-
-	Component.onCompleted: {
-		eventBridge.scriptEventReceived.connect(fromScript);
     }
 }

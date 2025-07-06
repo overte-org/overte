@@ -51,7 +51,7 @@ function changeOverlayBasedOnViewMode() {
 		// Create the notification web entity
 		const properties = {
 			type: "Web",
-			sourceUrl: Script.resolvePath("./qml/NotificationsVR.qml"),
+			sourceUrl: Script.resolvePath("./qml/NotificationsBaseVR.qml"),
 			position: { x: 0, y: 1, z: 0 },
 			dimensions: { "x": 0.4, "y": 0.37, "z": 0.1 },
 			alpha: 0.9,
@@ -76,7 +76,7 @@ function changeOverlayBasedOnViewMode() {
 		util.debugLog(`User is on Desktop, creating Overlay`);
 		// Just rely in the overlay
 		app._ui.overlay = new OverlayWindow({
-			source: Script.resolvePath("./qml/Notifications.qml"),
+			source: Script.resolvePath("./qml/NotificationsBase.qml"),
 		});
 		app._ui.overlay.fromQml.connect(onMessageFromQML);
 	}
