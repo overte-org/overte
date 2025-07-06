@@ -39,8 +39,15 @@ let app = {
 		connectionNotifications: [],
 	}
 }
+
+// This stores the state of active gestures. It is only used to make sure we don't spam actions.
+let gestures = {
+	quickCloseVR: false
+}
+
 io.getNotifications();
 changeOverlayBasedOnViewMode();
+Script.update.connect(update);
 
 function changeOverlayBasedOnViewMode() {
 	util.debugLog(`Deploying notification interface...`)
@@ -158,14 +165,50 @@ function notificationFormat(notificationObject) {
 	return notificationObject;
 }
 
+function update() {
+	if (util.userIsUsingVR()) {
+		checkGestureDismissNotification();
+	}
+}
+
+function checkGestureDismissNotification() {
+	const myLeftHand = Controller.getPoseValue(Controller.Standard.LeftHand);
+	const myRightHand = Controller.getPoseValue(Controller.Standard.RightHand);
+	const eyesPosition = MyAvatar.getEyePosition();
+	const hipsPosition = MyAvatar.getJointPosition("Hips");
+	const eyesRelativeHeight = eyesPosition.y - hipsPosition.y;
+
+	if (myLeftHand.translation.y > eyesRelativeHeight || myRightHand.translation.y > eyesRelativeHeight) {
+		if (gestures.quickCloseVR === true) return;
+		closeAllNotifications();
+		gestures.quickCloseVR = true;
+	} else {
+		gestures.quickCloseVR = false;
+	}
+}
+
+function closeAllNotifications() {
+	util.debugLog("Closing all active notifications.");
+	sendMessageToQML({ type: "closeAllNotifications" });
+}
+
 function sendMessageToQML(message) {
-	util.debugLog(`Sending message to qml: ${message}`);
+	util.debugLog(`Sending message to qml: ${JSON.stringify(message)}`);
 	if (app._ui.overlay) app._ui.overlay.sendToQml(message);
 	if (app._ui.overlayVR) Entities.emitScriptEvent(app._ui.overlayVR, message);
 }
 
 function shutDown() {
 	closeAllWindows();
+	Script.update.disconnect(update);
+	Window.domainConnectionRefused.disconnect(windowFunc.domainConnectionRefused);
+	Window.stillSnapshotTaken.disconnect(windowFunc.stillSnapshotTaken);
+	Window.snapshot360Taken.disconnect(windowFunc.stillSnapshotTaken); // Same as still snapshot
+	Window.processingGifStarted.disconnect(windowFunc.processingGifStarted);
+	Window.connectionAdded.disconnect(windowFunc.connectionAdded);
+	Window.connectionError.disconnect(windowFunc.connectionError);
+	Window.announcement.disconnect(windowFunc.announcement);
+	Tablet.tabletNotification.disconnect(windowFunc.tabletNotification);
 }
 
 function closeAllWindows() {
@@ -180,7 +223,6 @@ function closeAllWindows() {
 		app._ui.overlay = null;
 	}
 }
-
 
 Window.domainConnectionRefused.connect(windowFunc.domainConnectionRefused);
 Window.stillSnapshotTaken.connect(windowFunc.stillSnapshotTaken);

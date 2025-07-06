@@ -36,6 +36,9 @@ Item {
             case "addSystemNotification":
 				addSystemNotification(message.message, message.details)
                 break;
+            case "closeAllNotifications":
+                notifications.clear();
+                break;
         }
     }
 

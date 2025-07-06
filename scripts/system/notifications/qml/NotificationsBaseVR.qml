@@ -33,11 +33,18 @@ Item {
             case "addSystemNotification":
 				addSystemNotification(message.message, message.details)
                 break;
+            case "closeAllNotifications":
+                notifications.clear();
+                break;
         }
     }
 
     // Send message to script
     function toScript(packet){
         sendToScript(packet)
+    }
+
+    Component.onCompleted: {
+		eventBridge.scriptEventReceived.connect(fromScript);
     }
 }
