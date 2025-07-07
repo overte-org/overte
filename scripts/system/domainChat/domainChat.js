@@ -23,7 +23,7 @@
     var chatOverlayWindow;
     var appButton;
     var quickMessage;
-    const channels = ["domain", "local"];
+    const CHANNELS = ["domain", "local"];
     var messageHistory = Settings.getValue("DomainChat-Messages", []) || [];
     var maxLocalDistance = 20; // Maximum range for the local chat
     var palData = AvatarManager.getPalData().data;
@@ -104,8 +104,8 @@
         if (message.action !== "sendChatMessage") return;
 
         // Get the message data
-        const currentTimestamp = _getTimestamp();
-        const timeArray = _formatTimestamp(currentTimestamp);
+        const CURRENT_TIMESTAMP = _getTimestamp();
+        const TIME_ARRAY = _formatTimestamp(CURRENT_TIMESTAMP);
 
         if (!message.channel) message.channel = "domain"; // We don't know where to put this message. Assume it is a domain wide message.
         if (message.forApp) return; // Floofchat
@@ -115,14 +115,14 @@
         message.channel = message.channel.toLowerCase();
 
         // Check the channel. If the channel is not one we have, do nothing.
-        if (!channels.includes(message.channel)) return;
+        if (!CHANNELS.includes(message.channel)) return;
 
         // If message is local, and if player is too far away from location, do nothing.
         if (message.channel == "local" && isTooFar(message.position)) return;
 
         // Format the timestamp 
-        message.timeString = timeArray[0];
-        message.dateString = timeArray[1];
+        message.timeString = TIME_ARRAY[0];
+        message.dateString = TIME_ARRAY[1];
 
         // Update qml view of to new message
         _emitEvent({ type: "showMessage", ...message });
@@ -147,7 +147,7 @@
         delete savedMessage.dateString;
         delete savedMessage.action;
 
-        savedMessage.timestamp = currentTimestamp;
+        savedMessage.timestamp = CURRENT_TIMESTAMP;
 
         messageHistory.push(savedMessage);
         while (messageHistory.length > settings.maximumMessages) {
@@ -276,9 +276,9 @@
 
             // Format the packet
             let message = {};
-            const timeArray = _formatTimestamp(_getTimestamp());
-            message.timeString = timeArray[0];
-            message.dateString = timeArray[1];
+            const TIME_ARRAY = _formatTimestamp(_getTimestamp());
+            message.timeString = TIME_ARRAY[0];
+            message.dateString = TIME_ARRAY[1];
             message.message = `${displayName} ${type}`;
 
             // Show new message on screen
@@ -301,9 +301,9 @@
         if (messageHistory) {
             // Load message history
             messageHistory.forEach((message) => {
-                const timeArray = _formatTimestamp(_getTimestamp());
-                message.timeString = timeArray[0];
-                message.dateString = timeArray[1];
+                const TIME_ARRAY = _formatTimestamp(_getTimestamp());
+                message.timeString = TIME_ARRAY[0];
+                message.dateString = TIME_ARRAY[1];
                 _emitEvent({ type: "showMessage", ...message });
             });
         }
