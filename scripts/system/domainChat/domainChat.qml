@@ -198,7 +198,7 @@ Rectangle {
                         Keys.onPressed: {
                             if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && !(event.modifiers & Qt.ShiftModifier)) {
                                 event.accepted = true;
-                                toScript({type: "send_message", message: text, channel: pageVal});
+                                toScript({type: "sendMessage", message: text, channel: pageVal});
                                 text = ""
                             }
                         }
@@ -227,12 +227,12 @@ Rectangle {
                         }
 
                         onClicked: {
-                            toScript({type: "send_message", message: parent.children[0].text, channel: pageVal});
+                            toScript({type: "sendMessage", message: parent.children[0].text, channel: pageVal});
                             parent.children[0].text = ""
                         }
                         Keys.onPressed: {
                             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                toScript({type: "send_message", message: parent.children[0].text, channel: pageVal});
+                                toScript({type: "sendMessage", message: parent.children[0].text, channel: pageVal});
                                 parent.children[0].text = ""
                             }
                         }
@@ -272,7 +272,7 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'externalWindow', value: checked})
+                            toScript({type: 'settingChange', setting: 'externalWindow', value: checked})
                         }
                     }
                 }
@@ -303,7 +303,7 @@ Rectangle {
                         backgroundColor: "#cccccc"
 
                         onValueChanged: {
-                            toScript({type: 'setting_change', setting: 'maximumMessages', value: value})
+                            toScript({type: 'settingChange', setting: 'maximumMessages', value: value})
                         }
                     }
                 }
@@ -328,7 +328,7 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
 
                         onClicked: {
-                            toScript({type: "action", action: "erase_history"})
+                            toScript({type: "action", action: "eraseHistory"})
                         }
                     }
                 }
@@ -353,7 +353,7 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'joinNotification', value: checked})
+                            toScript({type: 'settingChange', setting: 'joinNotification', value: checked})
                         }
                     }
                 }
@@ -377,7 +377,7 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'useChatBubbles', value: checked})
+                            toScript({type: 'settingChange', setting: 'useChatBubbles', value: checked})
                         }
                     }
                 }
@@ -442,17 +442,17 @@ Rectangle {
     function fromScript(message) {
 
         switch (message.type){
-            case "show_message":
+            case "showMessage":
                 addMessage(message.displayName, message.message, `[ ${message.timeString} - ${message.dateString} ]`, message.channel, "chat");
                 break;
             case "notification":
                 addMessage("SYSTEM", message.message, `[ ${message.timeString} - ${message.dateString} ]`, "domain", "notification");
                 break;
-            case "clear_messages":
+            case "clearMessages":
                 localMessages.clear();
                 domainMessages.clear();
                 break;
-            case "initial_settings":
+            case "initialSettings":
                 if (message.settings.externalWindow) s_externalWindow.checked = true;
                 if (message.settings.maximumMessages) s_maximumMessages.value = message.settings.maximumMessages;
                 if (message.settings.joinNotification) s_joinNotification.checked = true;

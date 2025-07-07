@@ -101,7 +101,7 @@
         if (channel !== "chat") return;
         message = JSON.parse(message);
 
-        if (message.action !== "send_chat_message") return;
+        if (message.action !== "sendChatMessage") return;
 
         // Get the message data
         const currentTimestamp = _getTimestamp();
@@ -125,7 +125,7 @@
         message.dateString = timeArray[1];
 
         // Update qml view of to new message
-        _emitEvent({ type: "show_message", ...message });
+        _emitEvent({ type: "showMessage", ...message });
 
         // Show new message on screen
         if (message.channel !== "local" || !settings.useChatBubbles) {
@@ -162,10 +162,10 @@
     }
     function fromQML(event) {
         switch (event.type) {
-            case "send_message":
+            case "sendMessage":
                 _sendMessage(event.message, event.channel);
                 break;
-            case "setting_change":
+            case "settingChange":
 
                 // Set the setting value, and save the config
                 settings[event.setting] = event.value; // Update local settings
@@ -191,11 +191,11 @@
                 break;
             case "action":
                 switch (event.action) {
-                    case "erase_history":
+                    case "eraseHistory":
                         Settings.setValue("DomainChat-Messages", null);
                         messageHistory = [];
                         _emitEvent({
-                            type: "clear_messages",
+                            type: "clearMessages",
                         });
                         break;
                     case "start_typing":
@@ -236,7 +236,7 @@
                 if (HMD.active) return; // Don't allow in VR
 
                 quickMessage.sendToQml({
-                    type: "change_visibility",
+                    type: "changeVisibility",
                     value: true,
                 });
         }
@@ -251,7 +251,7 @@
                 message: message,
                 displayName: MyAvatar.sessionDisplayName,
                 channel: channel,
-                action: "send_chat_message",
+                action: "sendChatMessage",
             })
         );
 
@@ -304,12 +304,12 @@
                 const timeArray = _formatTimestamp(_getTimestamp());
                 message.timeString = timeArray[0];
                 message.dateString = timeArray[1];
-                _emitEvent({ type: "show_message", ...message });
+                _emitEvent({ type: "showMessage", ...message });
             });
         }
 
         // Send current settings to the app
-        _emitEvent({ type: "initial_settings", settings: settings });
+        _emitEvent({ type: "initialSettings", settings: settings });
     }
     function _saveSettings() {
         console.log("Saving config");
@@ -337,7 +337,7 @@
     /**
      * Emit a packet to the HTML front end. Easy communication!
      * @param {Object} packet - The Object packet to emit to the HTML
-     * @param {("show_message"|"clear_messages"|"notification"|"initial_settings")} packet.type - The type of packet it is
+     * @param {("showMessage"|"clearMessages"|"notification"|"initialSettings")} packet.type - The type of packet it is
      */
     function _emitEvent(packet = { type: "" }) {
         chatOverlayWindow.sendToQml(packet);

@@ -99,10 +99,10 @@ When you call the `_emitEvent()` function be sure to include the following signa
 Example:
 
 ```json
-{ type: "show_message", displayName: "username", ...}
+{ type: "showMessage", displayName: "username", ...}
 ```
 
-#### "show_message"
+#### "showMessage"
 
 This signal tells the QML to add a new message to the ListView element list.
 
@@ -117,7 +117,7 @@ Supply a `JSON` object.
 }
 ```
 
-#### "clear_messages"
+#### "clearMessages"
 
 Clear all messages displayed in the ListView elements. Note this does not clear the history and this is only a visual erasure.
 
@@ -136,7 +136,7 @@ Supply a `JSON` object.
 }
 ```
 
-#### "initial_settings"
+#### "initialSettings"
 
 Visually set the settings in the QML interface based on the supplied object.
 
@@ -159,7 +159,7 @@ This means that what ever action you want to preform must go though the JavaScri
 
 This is formatted the same was as the communication packets to the QML interface. Supply the following entries as "type"s in your packet.
 
-#### "send_message"
+#### "sendMessage"
 
 Tell AC to broadcast a message to the domain.
 
@@ -172,7 +172,7 @@ Supply a `JSON` object.
 }
 ```
 
-#### "setting_change"
+#### "settingChange"
 
 Tell AC to change a setting. Exercise caution when using this as you can add new settings unintentionally if you are not careful.
 
@@ -193,7 +193,7 @@ Supply a `JSON` object
 
 ```json
 {
-    "action": "erase_history" // The action to preform
+    "action": "eraseHistory" // The action to preform
 }
 ```
 
