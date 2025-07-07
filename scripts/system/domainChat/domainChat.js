@@ -1,8 +1,8 @@
 //
-//  armored_chat.js
+//  domainChat.js
 //
 //  Created by Armored Dragon, May 17th, 2024.
-//  Copyright 2024 Overte e.V.
+//  Copyright 2024-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -24,7 +24,7 @@
     var appButton;
     var quickMessage;
     const channels = ["domain", "local"];
-    var messageHistory = Settings.getValue("ArmoredChat-Messages", []) || [];
+    var messageHistory = Settings.getValue("DomainChat-Messages", []) || [];
     var maxLocalDistance = 20; // Maximum range for the local chat
     var palData = AvatarManager.getPalData().data;
     var isTyping = false;
@@ -64,7 +64,7 @@
         appButton.clicked.connect(toggleMainChatWindow);
 
         quickMessage = new OverlayWindow({
-            source: Script.resolvePath("./armored_chat_quick_message.qml"),
+            source: Script.resolvePath("./domainChatQuick.qml"),
         });
 
         _openWindow();
@@ -81,7 +81,7 @@
     }
     function _openWindow() {
         chatOverlayWindow = new Desktop.createWindow(
-            Script.resolvePath("./armored_chat.qml"),
+            Script.resolvePath("./domainChat.qml"),
             {
                 title: "Chat",
                 size: { x: 550, y: 400 },
@@ -153,7 +153,7 @@
         while (messageHistory.length > settings.maximum_messages) {
             messageHistory.shift();
         }
-        Settings.setValue("ArmoredChat-Messages", messageHistory);
+        Settings.setValue("DomainChat-Messages", messageHistory);
 
         // Check to see if the message is close enough to the user
         function isTooFar(messagePosition) {
@@ -192,7 +192,7 @@
             case "action":
                 switch (event.action) {
                     case "erase_history":
-                        Settings.setValue("ArmoredChat-Messages", null);
+                        Settings.setValue("DomainChat-Messages", null);
                         messageHistory = [];
                         _emitEvent({
                             type: "clear_messages",
@@ -296,7 +296,7 @@
         }, 1500);
     }
     function _loadSettings() {
-        settings = Settings.getValue("ArmoredChat-Config", settings);
+        settings = Settings.getValue("DomainChat-Config", settings);
 
         if (messageHistory) {
             // Load message history
@@ -313,7 +313,7 @@
     }
     function _saveSettings() {
         console.log("Saving config");
-        Settings.setValue("ArmoredChat-Config", settings);
+        Settings.setValue("DomainChat-Config", settings);
     }
     function _getTimestamp() {
         return Date.now();
