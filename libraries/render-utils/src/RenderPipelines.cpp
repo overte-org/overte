@@ -923,7 +923,7 @@ bool RenderPipelines::bindMaterials(graphics::MultiMaterial& multiMaterial, Batc
         // MaterialEmissiveLightmap has to be set later
 
         graphics::MultiMaterial::MToonSchema toonSchema;
-        defaultMToonMaterialSchema = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(toonSchema), (const gpu::Byte*) &toonSchema, sizeof(toonSchema)));
+        defaultMToonMaterialSchema = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(toonSchema), (const gpu::Byte*) &toonSchema, sizeof(toonSchema)));
 
         defaultMToonMaterialTextures->setTexture(gr::Texture::MaterialAlbedo, textureCache->getWhiteTexture());
         defaultMToonMaterialTextures->setTexture(gr::Texture::MaterialNormal, textureCache->getBlueTexture());
@@ -935,7 +935,7 @@ bool RenderPipelines::bindMaterials(graphics::MultiMaterial& multiMaterial, Batc
         defaultMToonMaterialTextures->setTexture(gr::Texture::MaterialUVAnimationMask, textureCache->getWhiteTexture());
 
         vec4 triplanarScale = vec4(1.0f);
-        defaultTriplanarScale = BufferView(std::make_shared<Buffer>(sizeof(triplanarScale), (const Byte*) &triplanarScale, sizeof(triplanarScale)));
+        defaultTriplanarScale = BufferView(std::make_shared<Buffer>(gpu::Buffer::UniformBuffer, sizeof(triplanarScale), (const Byte*) &triplanarScale, sizeof(triplanarScale)));
     });
 
     if (multiMaterial.size() > 0 &&

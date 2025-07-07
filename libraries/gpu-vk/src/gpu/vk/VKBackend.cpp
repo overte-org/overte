@@ -170,7 +170,7 @@ bool VKBackend::isTextureManagementSparseEnabled() const {
     return _context.device->features.sparseResidencyImage2D == VK_TRUE;
 }
 
-bool VKBackend::supportedTextureFormat(const gpu::Element& format) {
+bool VKBackend::supportedTextureFormat(const gpu::Element& format) const {
     switch (format.getSemantic()) {
         case COMPRESSED_BC1_SRGB:
         case COMPRESSED_BC1_SRGBA:
@@ -250,6 +250,20 @@ void VKBackend::executeFrame(const FramePointer& frame) {
         const auto& commandBuffer = _currentCommandBuffer;
         for (const auto& batchPtr : frame->batches) {
             const auto& batch = *batchPtr;
+
+            _transform._skybox = _stereo._skybox = batch.isSkyboxEnabled();
+            // FIXME move this to between the transfer and draw passes, so that
+            // framebuffer setup can see the proper stereo state and enable things
+            // like foveation
+            // Allow the batch to override the rendering stereo settings
+            // for things like full framebuffer copy operations (deferred lighting passes)
+            bool savedStereo = _stereo._enable;
+            if (!batch.isStereoEnabled()) {
+                _stereo._enable = false;
+            }
+
+            // Reset jitter
+            _transform._projectionJitter._isEnabled = false;
             /*if (batch.getName() == "SubsurfaceScattering::diffuseProfileGPU") {
                 continue;
             }*/
@@ -316,7 +330,11 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                         case Batch::COMMAND_setModelTransform:
                         case Batch::COMMAND_setViewTransform:
                         case Batch::COMMAND_setProjectionTransform:
-                        case Batch::COMMAND_setProjectionJitter:
+                        case Batch::COMMAND_setProjectionJitterEnabled:
+                        case Batch::COMMAND_setProjectionJitterSequence:
+                        case Batch::COMMAND_setProjectionJitterScale:
+                        case Batch::COMMAND_saveViewProjectionTransform:
+                        case Batch::COMMAND_setSavedViewProjectionTransform:
                         case Batch::COMMAND_setViewportTransform:
                         case Batch::COMMAND_setDepthRangeTransform:
 
@@ -385,10 +403,24 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                 renderPassTransfer(batch);
             }
 
+            //VKTODO
+/*#ifdef GPU_STEREO_DRAWCALL_INSTANCED
+            if (_stereo.isStereo()) {
+                glEnable(GL_CLIP_DISTANCE0);
+            }
+#endif*/
+
             {
                 PROFILE_RANGE(gpu_vk_detail, _stereo._enable ? "Render Stereo" : "Render");
                 renderPassDraw(batch);
             }
+
+            //VKTODO
+/*#ifdef GPU_STEREO_DRAWCALL_INSTANCED
+            if (_stereo.isStereo()) {
+                glDisable(GL_CLIP_DISTANCE0);
+            }
+#endif*/
 
             if (batch.getName() == "Resample::run") {
                 _outputTexture = syncGPUObject(*_cache.pipelineState.framebuffer);
@@ -400,6 +432,18 @@ void VKBackend::executeFrame(const FramePointer& frame) {
                 cmdEndLabel(commandBuffer);
                 renderpassActive = false;
             }
+
+            // Restore the saved stereo state for the next batch
+            _stereo._enable = savedStereo;
+
+            if (batch._mustUpdatePreviousModels) {
+                // Update object transform history for when the batch will be reexecuted
+                for (auto& objectTransform : batch._objects) {
+                    objectTransform._previousModel = objectTransform._model;
+                }
+                batch._mustUpdatePreviousModels = false;
+            }
+
             cmdEndLabel(commandBuffer);
             batch_count++;
         }
@@ -418,9 +462,14 @@ void VKBackend::executeFrame(const FramePointer& frame) {
 
     //
 
-
+    // TODO: needs to be done pre batch
     // Restore the saved stereo state for the next batch
     // _stereo._enable = savedStereo;
+
+}
+
+void VKBackend::render(const Batch& batch) {
+    // VKTODO: move code from executeFrame to here
 }
 
 void VKBackend::setDrawCommandBuffer(VkCommandBuffer commandBuffer) {
@@ -431,37 +480,38 @@ VkDescriptorImageInfo VKBackend::getDefaultTextureDescriptorInfo() {
     return _defaultTextureVk->getDescriptorImageInfo();
 }
 
-void VKBackend::TransformStageState::preUpdate(size_t commandIndex, const StereoState& stereo, Vec2u framebufferSize) {
+void VKBackend::TransformStageState::preUpdate(size_t commandIndex, const StereoState& stereo, const StereoState& prevStereo, Vec2u framebufferSize) {
     // Check all the dirty flags and update the state accordingly
     if (_invalidViewport) {
         _camera._viewport = glm::vec4(_viewport);
     }
 
     if (_invalidProj) {
-        _camera._projection = _projection;
+        _camera._projection = _viewProjectionState._projection;
     }
 
     if (_invalidView) {
         // Apply the correction
-        if (_viewIsCamera && ((_viewCorrectionEnabled || _viewCorrectionEnabledForFramePlayer) && _correction.correction != glm::mat4())) {
+        if (_viewProjectionState._viewIsCamera && ((_viewCorrectionEnabled || _viewCorrectionEnabledForFramePlayer) && _presentFrame.correction != glm::mat4())) {
             // FIXME should I switch to using the camera correction buffer in Transform.slf and leave this out?
-            Transform result;
-            _view.mult(result, _view, _correction.correctionInverse);
-            if (_skybox) {
-                result.setTranslation(vec3());
-            }
-            _view = result;
+            Transform::mult(_viewProjectionState._correctedView, _viewProjectionState._view, _presentFrame.correctionInverse);
+        } else {
+            _viewProjectionState._correctedView = _viewProjectionState._view;
+        }
+
+        if (_skybox) {
+            _viewProjectionState._correctedView.setTranslation(vec3());
         }
         // This is when the _view matrix gets assigned
-        _view.getInverseMatrix(_camera._view);
+        _viewProjectionState._correctedView.getInverseMatrix(_camera._view);
     }
 
     if (_invalidView || _invalidProj || _invalidViewport) {
         size_t offset = _cameraUboSize * _cameras.size();
-        Vec2 finalJitter = _projectionJitter / Vec2(framebufferSize);
         _cameraOffsets.push_back(TransformStageState::Pair(commandIndex, offset));
 
-        if (stereo.isStereo()) {
+        // VKTODO: check if this is in newest GL backend or not
+        /*if (stereo.isStereo()) {
 #ifdef GPU_STEREO_CAMERA_BUFFER
             _cameras.push_back(CameraBufferElement(_camera.getEyeCamera(0, stereo, _view, finalJitter), _camera.getEyeCamera(1, stereo, _view, finalJitter)));
 #else
@@ -473,7 +523,12 @@ void VKBackend::TransformStageState::preUpdate(size_t commandIndex, const Stereo
             _cameras.push_back(CameraBufferElement(_camera.getMonoCamera(_view, finalJitter)));
 #else
             _cameras.push_back((_camera.getMonoCamera(_view, finalJitter)));
-#endif
+#endif*/
+        pushCameraBufferElement(stereo, prevStereo, _cameras);
+        if (_currentSavedTransformSlot != INVALID_SAVED_CAMERA_SLOT) {
+            // Save the offset of the saved camera slot in the camera buffer. Can be used to copy
+            // that data, or (in the future) to reuse the offset.
+            _savedTransforms[_currentSavedTransformSlot]._cameraOffset = offset;
         }
     }
 
@@ -511,6 +566,41 @@ void VKBackend::TransformStageState::bindCurrentCamera(int eye, VKBackend::Unifo
         buffer.offset = _currentCameraOffset + eye * _cameraUboSize;
         //glBindBufferRange(GL_UNIFORM_BUFFER, slot::buffer::Buffer::CameraTransform, _cameraBuffer, _currentCameraOffset + eye * _cameraUboSize, sizeof(CameraBufferElement));
     }
+}
+
+void VKBackend::TransformStageState::pushCameraBufferElement(const StereoState& stereo, const StereoState& prevStereo, TransformCameras& cameras) const {
+    const float jitterAmplitude = _projectionJitter._scale;
+    const Vec2 jitterScale = Vec2(jitterAmplitude * float(_projectionJitter._isEnabled & 1)) / Vec2(_viewport.z, _viewport.w);
+    const Vec2 jitter = jitterScale * _projectionJitter._offset;
+
+    if (stereo.isStereo()) {
+#ifdef GPU_STEREO_CAMERA_BUFFER
+        cameras.push_back(CameraBufferElement(_camera.getEyeCamera(0, stereo, prevStereo, _viewProjectionState._correctedView,
+                                                                   _viewProjectionState._previousCorrectedView, jitter),
+                                              _camera.getEyeCamera(1, stereo, prevStereo, _viewProjectionState._correctedView,
+                                                                   _viewProjectionState._previousCorrectedView, jitter)));
+#else
+        cameras.push_back((_camera.getEyeCamera(0, stereo, prevStereo, _viewProjectionState._correctedView,
+                                                _viewProjectionState._previousCorrectedView, jitter)));
+        cameras.push_back((_camera.getEyeCamera(1, stereo, prevStereo, _viewProjectionState._correctedView,
+                                                _viewProjectionState._previousCorrectedView, jitter)));
+#endif
+    } else {
+#ifdef GPU_STEREO_CAMERA_BUFFER
+        cameras.push_back(CameraBufferElement(
+            _camera.getMonoCamera(_skybox, _viewProjectionState._correctedView, _viewProjectionState._previousCorrectedView,
+                                  _viewProjectionState._previousProjection, jitter)));
+#else
+        cameras.push_back((_camera.getMonoCamera(_skybox, _viewProjectionState._correctedView,
+                                                 _viewProjectionState._previousCorrectedView, _viewProjectionState._previousProjection,
+                                                 jitter)));
+#endif
+    }
+}
+
+void VKBackend::preUpdateTransform() {
+    // VKTODO: use proper viewport size or remove parameter
+    _transform.preUpdate(_commandIndex, _stereo, _prevStereo, Vec2u(640, 480));
 }
 
 void VKBackend::store_glUniform1f(const Batch& batch, size_t paramOffset) {
@@ -598,7 +688,13 @@ void VKBackend::do_restoreContextViewCorrection(const Batch& batch, size_t param
 }
 
 void VKBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) {
-    //VKTODO
+    bool prevMirrorViewCorrection = _transform._presentFrame.mirrorViewCorrection;
+    _transform._presentFrame.mirrorViewCorrection = batch._params[paramOffset]._uint != 0;
+
+    if (_transform._presentFrame.correction != glm::mat4()) {
+        updatePresentFrame(_transform._presentFrame.mirrorViewCorrection ? _transform._presentFrame.flippedCorrection : _transform._presentFrame.unflippedCorrection, false);
+        _transform._invalidView = true;
+    }
 }
 
 void VKBackend::do_disableContextStereo(const Batch& batch, size_t paramOffset) {
@@ -807,24 +903,27 @@ void VKBackend::do_popProfileRange(const Batch& batch, size_t paramOffset) {
     ::vks::debugutils::cmdEndLabel(_currentCommandBuffer);
 }
 
-void VKBackend::setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool primary, bool reset) {
+void VKBackend::updatePresentFrame(const Mat4& correction, bool primary) {
     // VKTODO: `primary` property is not used yet
-    auto invCorrection = glm::inverse(correction);
-    auto invPrevView = glm::inverse(prevRenderView);
-    _transform._correction.prevView = (reset ? Mat4() : prevRenderView);
-    _transform._correction.prevViewInverse = (reset ? Mat4() : invPrevView);
-    _transform._correction.correction = correction;
-    _transform._correction.correctionInverse = invCorrection;
-    std::vector<uint8_t> bufferData;
-    bufferData.resize(_transform._cameraUboSize * _transform._cameras.size());
-    for (size_t i = 0; i < _transform._cameras.size(); ++i) {
-        memcpy(bufferData.data() + (_transform._cameraUboSize * i), &_transform._cameras[i], sizeof(TransformStageState::CameraBufferElement));
+    _transform._presentFrame.correction = correction;
+    _transform._presentFrame.correctionInverse = glm::inverse(correction);
+
+    // Update previous views of saved transforms
+    for (auto& viewProjState : _transform._savedTransforms) {
+        viewProjState._state._previousCorrectedView = viewProjState._state._correctedView;
+        viewProjState._state._previousProjection = viewProjState._state._projection;
     }
-    if (_currentFrame && _currentFrame->_cameraBuffer) {
-        _currentFrame->_cameraBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, bufferData.size(), bufferData.data());
-        _currentFrame->_cameraBuffer->flush();
-        _currentFrame->_buffers.push_back(_currentFrame->_cameraBuffer);
-        syncGPUObject(*_currentFrame->_cameraBuffer);
+
+    if (primary) {
+        _transform._projectionJitter._currentSampleIndex++;
+        _transform._presentFrame.unflippedCorrection = _transform._presentFrame.correction;
+        quat flippedRotation = glm::quat_cast(_transform._presentFrame.unflippedCorrection);
+        flippedRotation.y *= -1.0f;
+        flippedRotation.z *= -1.0f;
+        vec3 flippedTranslation = _transform._presentFrame.unflippedCorrection[3];
+        flippedTranslation.x *= -1.0f;
+        _transform._presentFrame.flippedCorrection = glm::translate(glm::mat4_cast(flippedRotation), flippedTranslation);
+        _transform._presentFrame.mirrorViewCorrection = false;
     }
 }
 
@@ -1268,13 +1367,21 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
                 case Batch::COMMAND_drawIndexedInstanced:
                 case Batch::COMMAND_multiDrawIndirect:
                 case Batch::COMMAND_multiDrawIndexedIndirect:
-                    // VKTODO: pass current framebuffer size
-                    _transform.preUpdate(_commandIndex, _stereo, Vec2u(640, 480));
+                case Batch::COMMAND_copySavedViewProjectionTransformToBuffer: // We need to store this transform state in the transform buffer
+                    // VKTODO: pass current viewport size or remove parameter
+                    //_transform.preUpdate(_commandIndex, _stereo, _prevStereo, Vec2u(640, 480));
+                    preUpdateTransform();
                     break;
 
                 case Batch::COMMAND_setViewportTransform:
                 case Batch::COMMAND_setViewTransform:
-                case Batch::COMMAND_setProjectionTransform: {
+                case Batch::COMMAND_setProjectionTransform:
+                case Batch::COMMAND_setProjectionJitterEnabled:
+                case Batch::COMMAND_setProjectionJitterSequence:
+                case Batch::COMMAND_setProjectionJitterScale:
+                case Batch::COMMAND_saveViewProjectionTransform:
+                case Batch::COMMAND_setSavedViewProjectionTransform:
+                case Batch::COMMAND_setContextMirrorViewCorrection: {
                     CommandCall call = _commandCalls[(*command)];
                     (this->*(call))(batch, *offset);
                     break;
@@ -1911,10 +2018,6 @@ void VKBackend::FrameData::addGlUniform(size_t size, const void* data, size_t co
 
 VKBackend::FrameData::FrameData(VKBackend *backend) : _backend(backend) {
     createDescriptorPool();
-    _cameraCorrectionBuffer.edit<CameraCorrection>() = CameraCorrection();
-    _cameraCorrectionBuffer._buffer->flush();
-    _cameraCorrectionBufferIdentity.edit<CameraCorrection>() = CameraCorrection();
-    _cameraCorrectionBufferIdentity._buffer->flush();
 }
 
 VKBackend::FrameData::~FrameData() {
@@ -2447,11 +2550,11 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
     }
 
     // VKTODO: camera correction
-    auto* cameraCorrectionObject = syncGPUObject(*_currentFrame->_cameraCorrectionBuffer._buffer);
+    /*auto* cameraCorrectionObject = syncGPUObject(*_currentFrame->_cameraCorrectionBuffer._buffer);
     Q_ASSERT(cameraCorrectionObject);
     _uniform._buffers[gpu::slot::buffer::CameraCorrection].buffer = _currentFrame->_cameraCorrectionBuffer._buffer.get();
     _uniform._buffers[gpu::slot::buffer::CameraCorrection].offset = _currentFrame->_cameraCorrectionBuffer._offset;
-    _uniform._buffers[gpu::slot::buffer::CameraCorrection].size = _currentFrame->_cameraCorrectionBuffer._size;
+    _uniform._buffers[gpu::slot::buffer::CameraCorrection].size = _currentFrame->_cameraCorrectionBuffer._size;*/
 }
 
 void VKBackend::updatePipeline() {
@@ -3313,21 +3416,24 @@ void VKBackend::do_setModelTransform(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_setViewTransform(const Batch& batch, size_t paramOffset) {
-    _transform._view = batch._transforms.get(batch._params[paramOffset]._uint);
-    _transform._viewIsCamera = batch._params[paramOffset + 1]._uint != 0;
+    _transform._viewProjectionState._view = batch._transforms.get(batch._params[paramOffset]._uint);
+    // View history is only supported with saved transforms and if setViewTransform is called (and not setSavedViewProjectionTransform)
+    // then, in consequence, the view will NOT be corrected in the present thread. In which case
+    // the previousCorrectedView should be the same as the view.
+    _transform._viewProjectionState._previousCorrectedView = _transform._viewProjectionState._view;
+    _transform._viewProjectionState._previousProjection = _transform._viewProjectionState._projection;
+    _transform._viewProjectionState._viewIsCamera = batch._params[paramOffset + 1]._uint != 0;
     _transform._invalidView = true;
+    // The current view / proj doesn't correspond to a saved camera slot
+    _transform._currentSavedTransformSlot = INVALID_SAVED_CAMERA_SLOT;
 }
 
 void VKBackend::do_setProjectionTransform(const Batch& batch, size_t paramOffset) {
-    memcpy(glm::value_ptr(_transform._projection), batch.readData(batch._params[paramOffset]._uint), sizeof(Mat4));
-    _transform._projection = glm::scale(_transform._projection, glm::vec3(1.0f, -1.0f, 1.0f));
+    memcpy(glm::value_ptr(_transform._viewProjectionState._projection), batch.readData(batch._params[paramOffset]._uint), sizeof(Mat4));
+    _transform._viewProjectionState._projection = glm::scale(_transform._viewProjectionState._projection, glm::vec3(1.0f, -1.0f, 1.0f));
     _transform._invalidProj = true;
-}
-
-void VKBackend::do_setProjectionJitter(const Batch& batch, size_t paramOffset) {
-    _transform._projectionJitter.x = batch._params[paramOffset]._float;
-    _transform._projectionJitter.y = batch._params[paramOffset+1]._float;
-    _transform._invalidProj = true;
+    // The current view / proj doesn't correspond to a saved camera slot
+    _transform._currentSavedTransformSlot = INVALID_SAVED_CAMERA_SLOT;
 }
 
 void VKBackend::do_setViewportTransform(const Batch& batch, size_t paramOffset) {
@@ -3342,6 +3448,38 @@ void VKBackend::do_setViewportTransform(const Batch& batch, size_t paramOffset) 
     _transform._invalidViewport = true;
 }
 
+// VKTODO:
+// void GLBackend::syncTransformStateCache() is missing, including
+// _transform._viewProjectionState._view.evalFromRawMatrix(modelViewInv);
+
+void VKBackend::do_setProjectionJitterEnabled(const Batch& batch, size_t paramOffset) {
+    _transform._projectionJitter._isEnabled = (batch._params[paramOffset]._int & 1) != 0;
+    _transform._invalidProj = true;
+    // The current view / proj doesn't correspond to a saved camera slot
+    _transform._currentSavedTransformSlot = INVALID_SAVED_CAMERA_SLOT;
+}
+
+void VKBackend::do_setProjectionJitterSequence(const Batch& batch, size_t paramOffset) {
+    auto count = batch._params[paramOffset + 0]._uint;
+    auto& projectionJitter = _transform._projectionJitter;
+    projectionJitter._offsetSequence.resize(count);
+    if (count) {
+        const Vec2* data = (Vec2 *)batch.readData(batch._params[paramOffset + 1]._uint);
+        for (uint32 i = 0; i < count; i++) {
+            projectionJitter._offsetSequence[i] = data[i];
+        }
+        projectionJitter._offset = projectionJitter._offsetSequence[projectionJitter._currentSampleIndex  % count];
+    } else {
+        projectionJitter._offset = Vec2(0.0f);
+    }
+}
+
+void VKBackend::do_setProjectionJitterScale(const Batch& batch, size_t paramOffset) {
+    // Should be 2 for one pixel amplitude as clip space is between -1 and 1, but lower values give less blur
+    // but more aliasing...
+    _transform._projectionJitter._scale = 2.0f * batch._params[paramOffset + 0]._float;
+}
+
 void VKBackend::do_setDepthRangeTransform(const Batch& batch, size_t paramOffset) {
     //VKTODO
     /*Vec2 depthRange(batch._params[paramOffset + 1]._float, batch._params[paramOffset + 0]._float);
@@ -3351,6 +3489,59 @@ void VKBackend::do_setDepthRangeTransform(const Batch& batch, size_t paramOffset
 
         glDepthRangef(depthRange.x, depthRange.y);
     }*/
+}
+
+void VKBackend::do_saveViewProjectionTransform(const Batch& batch, size_t paramOffset) {
+    auto slotId = batch._params[paramOffset + 0]._uint;
+    slotId = std::min<gpu::uint32>(slotId, gpu::Batch::MAX_TRANSFORM_SAVE_SLOT_COUNT);
+
+    auto& savedTransform = _transform._savedTransforms[slotId];
+    savedTransform._cameraOffset = INVALID_OFFSET;
+    _transform._currentSavedTransformSlot = slotId;
+    // If we are saving this transform to a save slot, then it means we are tracking the history of the view
+    // so copy the previous corrected view to the transform state.
+    _transform._viewProjectionState._previousCorrectedView = savedTransform._state._previousCorrectedView;
+    _transform._viewProjectionState._previousProjection = savedTransform._state._previousProjection;
+    preUpdateTransform();
+    savedTransform._state.copyExceptPrevious(_transform._viewProjectionState);
+}
+
+void VKBackend::do_setSavedViewProjectionTransform(const Batch& batch, size_t paramOffset) {
+    auto slotId = batch._params[paramOffset + 0]._uint;
+    slotId = std::min<gpu::uint32>(slotId, gpu::Batch::MAX_TRANSFORM_SAVE_SLOT_COUNT);
+
+    _transform._viewProjectionState = _transform._savedTransforms[slotId]._state;
+    _transform._invalidView = true;
+    _transform._invalidProj = true;
+    _transform._currentSavedTransformSlot = slotId;
+}
+
+void VKBackend::do_copySavedViewProjectionTransformToBuffer(const Batch& batch, size_t paramOffset) {
+    // VKTODO: this is for OpenGL
+    auto slotId = batch._params[paramOffset + 0]._uint;
+    BufferPointer buffer = batch._buffers.get(batch._params[paramOffset + 1]._uint);
+    auto dstOffset = batch._params[paramOffset + 2]._uint;
+    size_t size = _transform._cameraUboSize;
+
+    slotId = std::min<gpu::uint32>(slotId, gpu::Batch::MAX_TRANSFORM_SAVE_SLOT_COUNT);
+    const auto& savedTransform = _transform._savedTransforms[slotId];
+
+    if ((dstOffset + size) > buffer->getBufferCPUMemSize()) {
+        qCWarning(gpu_vk_logging) << "Copying saved TransformCamera data out of bounds of uniform buffer";
+        size = (size_t)std::max<ptrdiff_t>((ptrdiff_t)buffer->getBufferCPUMemSize() - (ptrdiff_t)dstOffset, 0);
+    }
+    if (savedTransform._cameraOffset == INVALID_OFFSET) {
+        qCWarning(gpu_vk_logging) << "Saved TransformCamera data has an invalid transform offset. Copy aborted.";
+        return;
+    }
+
+    // Sync BufferObject
+    auto* object = syncGPUObject(*buffer);
+    if (object) {
+        // VKTODO: set the buffer
+        //glCopyNamedBufferSubData(_transform._cameraBuffer, object->_buffer, savedTransform._cameraOffset, dstOffset, size);
+        //(void)CHECK_GL_ERROR();
+    }
 }
 
 void VKBackend::do_setStateScissorRect(const Batch& batch, size_t paramOffset) {
@@ -3615,9 +3806,15 @@ std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> VKBackend::_commandCalls
     (&::gpu::vk::VKBackend::do_setModelTransform),
     (&::gpu::vk::VKBackend::do_setViewTransform),
     (&::gpu::vk::VKBackend::do_setProjectionTransform),
-    (&::gpu::vk::VKBackend::do_setProjectionJitter),
+    (&::gpu::vk::VKBackend::do_setProjectionJitterEnabled),
+    (&::gpu::vk::VKBackend::do_setProjectionJitterSequence),
+    (&::gpu::vk::VKBackend::do_setProjectionJitterScale),
     (&::gpu::vk::VKBackend::do_setViewportTransform),
     (&::gpu::vk::VKBackend::do_setDepthRangeTransform),
+
+    (&::gpu::vk::VKBackend::do_saveViewProjectionTransform),
+    (&::gpu::vk::VKBackend::do_setSavedViewProjectionTransform),
+    (&::gpu::vk::VKBackend::do_copySavedViewProjectionTransformToBuffer),
 
     (&::gpu::vk::VKBackend::do_setPipeline),
     (&::gpu::vk::VKBackend::do_setStateBlendFactor),
@@ -3647,7 +3844,6 @@ std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> VKBackend::_commandCalls
     (&::gpu::vk::VKBackend::do_disableContextViewCorrection),
     (&::gpu::vk::VKBackend::do_restoreContextViewCorrection),
     (&::gpu::vk::VKBackend::do_setContextMirrorViewCorrection),
-
     (&::gpu::vk::VKBackend::do_disableContextStereo),
     (&::gpu::vk::VKBackend::do_restoreContextStereo),
 

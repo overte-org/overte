@@ -80,16 +80,19 @@ class VKBackend : public Backend, public std::enable_shared_from_this<VKBackend>
     static BackendPointer createBackend();
 
 protected:
+    static const uint INVALID_SAVED_CAMERA_SLOT = (uint)-1;
+
     class FrameData;
     // Allows for correction of the camera pose to account for changes
     // between the time when a was recorded and the time(s) when it is
     // executed
     // Prev is the previous correction used at previous frame
-    struct CameraCorrection {
+    struct PresentFrame {
         mat4 correction;
         mat4 correctionInverse;
-        mat4 prevView;
-        mat4 prevViewInverse;
+        mat4 unflippedCorrection;
+        mat4 flippedCorrection;
+        bool mirrorViewCorrection { false };
     };
 
     struct UniformStageState;
@@ -113,25 +116,55 @@ protected:
 #endif
         using TransformCameras = std::vector<CameraBufferElement>;
 
+        struct ViewProjectionState {
+            Transform _view;
+            Transform _correctedView;
+            Transform _previousCorrectedView;
+            Mat4 _projection;
+            Mat4 _previousProjection;
+            bool _viewIsCamera;
+
+            void copyExceptPrevious(const ViewProjectionState& other) {
+                _view = other._view;
+                _correctedView = other._correctedView;
+                _projection = other._projection;
+                _viewIsCamera = other._viewIsCamera;
+            }
+        };
+
+        struct SaveTransform {
+            ViewProjectionState _state;
+            size_t _cameraOffset { INVALID_OFFSET };
+        };
+
         TransformCamera _camera;
         TransformCameras _cameras;
+        std::array<SaveTransform, gpu::Batch::MAX_TRANSFORM_SAVE_SLOT_COUNT> _savedTransforms;
 
         mutable std::map<std::string, VkDeviceSize> _drawCallInfoOffsets;
 
         //uint32_t _objectBufferTexture{ 0 };
         size_t _cameraUboSize{ 0 };
-        bool _viewIsCamera{ false };
+        ViewProjectionState _viewProjectionState;
+        uint _currentSavedTransformSlot { INVALID_SAVED_CAMERA_SLOT };
         bool _skybox{ false };
         Transform _view;
-        CameraCorrection _correction;
+        PresentFrame _presentFrame;
         bool _viewCorrectionEnabled{ true };
         // This is set by frame player to override camera correction setting
         bool _viewCorrectionEnabledForFramePlayer{ false };
 
-        Mat4 _projection;
+        struct Jitter {
+            std::vector<Vec2> _offsetSequence;
+            Vec2 _offset { 0.0f };
+            float _scale { 0.f };
+            unsigned int _currentSampleIndex { 0 };
+            bool _isEnabled { false };
+        };
+
+        Jitter _projectionJitter;
         Vec4i _viewport{ 0, 0, 1, 1 };
         Vec2 _depthRange{ 0.0f, 1.0f };
-        Vec2 _projectionJitter{ 0.0f, 0.0f };
         bool _invalidView{ false };
         bool _invalidProj{ false };
         bool _invalidViewport{ false };
@@ -144,10 +177,14 @@ protected:
         mutable List::const_iterator _camerasItr;
         mutable size_t _currentCameraOffset{ INVALID_OFFSET };
 
-        void preUpdate(size_t commandIndex, const StereoState& stereo, Vec2u framebufferSize);
+        void pushCameraBufferElement(const StereoState& stereo, const StereoState& prevStereo, TransformCameras& cameras) const;
+        void preUpdate(size_t commandIndex, const StereoState& stereo, const StereoState& prevStereo, Vec2u framebufferSize);
         void update(size_t commandIndex, const StereoState& stereo, VKBackend::UniformStageState &uniform, FrameData &currentFrame) const;
         void bindCurrentCamera(int stereoSide, VKBackend::UniformStageState &uniform, FrameData &currentFrame) const;
     } _transform;
+
+    void preUpdateTransform();
+    void transferTransformState(const Batch& batch);
 
 protected:
     struct InputStageState {
@@ -289,9 +326,6 @@ protected:
         std::unordered_map<int, size_t> _glUniformOffsetMap;
         size_t _glUniformBufferPosition {0}; // Position where data from next glUniform... call is placed
 
-        BufferView _cameraCorrectionBuffer { gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(CameraCorrection), nullptr )) };
-        BufferView _cameraCorrectionBufferIdentity { gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(CameraCorrection), nullptr )) };
-
         void addGlUniform(size_t size, const void *data, size_t commandIndex);
 
         FrameData(VKBackend *backend);
@@ -310,7 +344,6 @@ private:
     void renderPassTransfer(const Batch& batch);
     void renderPassDraw(const Batch& batch);
     void transferGlUniforms();
-    void transferTransformState(const Batch& batch);
     void updateInput();
     void updateTransform(const Batch& batch);
     void updatePipeline();
@@ -330,11 +363,12 @@ public:
     void syncProgram(const gpu::ShaderPointer& program) override {}
     void syncCache() override {}
     void recycle() const override {}
-    void setCameraCorrection(const Mat4& correction, const Mat4& prevRenderView, bool primary, bool reset = false) override;
+    void updatePresentFrame(const Mat4& correction = Mat4(), bool primary = true) override;
     //uint32_t getTextureID(const TexturePointer&) override { return 0; }
     void executeFrame(const FramePointer& frame) final;
+    void render(const Batch& batch) final;
     bool isTextureManagementSparseEnabled() const override;
-    bool supportedTextureFormat(const gpu::Element& format) override;
+    bool supportedTextureFormat(const gpu::Element& format) const override;
     const std::string& getVersion() const override;
     void downloadFramebuffer(const FramebufferPointer& srcFramebuffer, const Vec4i& region, QImage& destImage) final;
     void setDrawCommandBuffer(VkCommandBuffer commandBuffer);
@@ -388,9 +422,15 @@ public:
     virtual void do_setModelTransform(const Batch& batch, size_t paramOffset) final;
     virtual void do_setViewTransform(const Batch& batch, size_t paramOffset) final;
     virtual void do_setProjectionTransform(const Batch& batch, size_t paramOffset) final;
-    virtual void do_setProjectionJitter(const Batch& batch, size_t paramOffset) final;
+    virtual void do_setProjectionJitterEnabled(const Batch& batch, size_t paramOffset) final;
+    virtual void do_setProjectionJitterSequence(const Batch& batch, size_t paramOffset) final;
+    virtual void do_setProjectionJitterScale(const Batch& batch, size_t paramOffset) final;
+
     virtual void do_setViewportTransform(const Batch& batch, size_t paramOffset) final;
     virtual void do_setDepthRangeTransform(const Batch& batch, size_t paramOffset) final;
+    virtual void do_saveViewProjectionTransform(const Batch& batch, size_t paramOffset) final;
+    virtual void do_setSavedViewProjectionTransform(const Batch& batch, size_t paramOffset) final;
+    virtual void do_copySavedViewProjectionTransformToBuffer(const Batch& batch, size_t paramOffset) final;
 
     // Uniform Stage
     virtual void do_setUniformBuffer(const Batch& batch, size_t paramOffset) final;

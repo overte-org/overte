@@ -392,7 +392,7 @@ void VulkanDisplayPlugin::customizeContext() {
     auto presentThread = DependencyManager::get<VulkanPresentThread>();
     Q_ASSERT(thread() == presentThread->thread());
 
-    getBackend()->setCameraCorrection(mat4(), mat4(), true);
+    getBackend()->updatePresentFrame();
 
     for (auto& cursorValue : _cursorsData) {
         auto& cursorData = cursorValue.second;
@@ -744,8 +744,7 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(getBackend());
         auto vkDevice = vkBackend->getContext().device->logicalDevice;
         Q_ASSERT(vkBackend);
-        vkBackend->setCameraCorrection(correction, _prevRenderView, true);
-        _prevRenderView = correction * _currentFrame->view;
+        vkBackend->updatePresentFrame(correction);
 
         uint32_t currentImageIndex = UINT32_MAX;
         //VK_CHECK_RESULT(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex));

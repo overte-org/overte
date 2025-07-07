@@ -44,6 +44,7 @@
 #include "ui/overlays/Overlays.h"
 #include "VisionSqueeze.h"
 #include "workload/GameWorkload.h"
+#include "VKCanvas.h"
 
 class ArchiveDownloadInterface;
 class AudioInjector;

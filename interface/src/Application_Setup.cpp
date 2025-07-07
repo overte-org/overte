@@ -138,6 +138,7 @@
 #include "LODManager.h"
 #include "Menu.h"
 #include "ResourceRequestObserver.h"
+#include "vk/VKWindow.h"
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
 #include "SpeechRecognizer.h"
 #endif

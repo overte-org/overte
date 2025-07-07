@@ -42,7 +42,7 @@ if (WIN32)
 else ()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fno-strict-aliasing -Wno-unused-parameter")
   if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Woverloaded-virtual -Wdouble-promotion -Wsuggest-override")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Woverloaded-virtual -Wdouble-promotion -Wsuggest-override -falign-functions=16")
   endif ()
 endif()
 
