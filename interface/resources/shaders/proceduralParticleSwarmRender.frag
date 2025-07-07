@@ -1,4 +1,4 @@
-layout(location=2) in vec3 _normalWS;
+INPUT(2, vec3, _normalWS);
 
 float getProceduralFragment(inout ProceduralFragment proceduralData) {
     proceduralData.normal = normalize(_normalWS);

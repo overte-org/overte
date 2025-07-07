@@ -16,9 +16,9 @@
 
 <@if not HIFI_USE_FORWARD@>
     <@include DeferredBufferWrite.slh@>
-    layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) in vec4 _prevPositionCS;
+    INPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
 <@else@>
-    layout(location=0) out vec4 _fragColor0;
+    OUTPUT(0, vec4, _fragColor0);
 <@endif@>
 
 struct Grid {

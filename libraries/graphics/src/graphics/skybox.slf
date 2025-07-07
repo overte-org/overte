@@ -21,7 +21,7 @@
 
     <@include graphics/Haze.slh@>
 
-    layout(location=0) out vec4 _fragColor;
+    OUTPUT(0, vec4, _fragColor);
 <@else@>
     <$declarePackDeferredFragmentSky()$>
 <@endif@>

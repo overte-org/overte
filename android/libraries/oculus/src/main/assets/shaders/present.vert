@@ -1,6 +1,6 @@
 #version 320 es
 
-layout(location = 0) out vec4 vTexCoordLR;
+OUTPUT(0, vec4, vTexCoordLR);
 
 void main(void) {
     const float depth = 0.0;

@@ -41,7 +41,7 @@ INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
     <@endif@>
 <@endif@>
 <@if not HIFI_USE_FORWARD@>
-    layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) out vec4 _prevPositionCS;
+    OUTPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
 <@endif@>
 OUTPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
 OUTPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);

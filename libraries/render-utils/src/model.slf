@@ -149,7 +149,7 @@ INPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01[NUM_LAYERS]);
     <@if not HIFI_USE_MTOON@>
         INPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
     <@endif@>
-    layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) in vec4 _prevPositionCS;
+    INPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
     <@if not HIFI_USE_TRIPLANAR@>
         <@if HIFI_USE_NORMALMAP@>
             INPUT(RENDER_UTILS_ATTR_TANGENT_WS, vec3, _tangentWS);
@@ -157,8 +157,8 @@ INPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01[NUM_LAYERS]);
     <@endif@>
 <@endif@>
 <@if HIFI_USE_TRIPLANAR@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_MS) in vec3 _positionMS;
-    layout(location=RENDER_UTILS_ATTR_NORMAL_MS) in vec3 _normalMS;
+    INPUT(RENDER_UTILS_ATTR_POSITION_MS, vec3, _positionMS);
+    INPUT(RENDER_UTILS_ATTR_NORMAL_MS, vec3, _normalMS);
 <@endif@>
 
 void main(void) {
