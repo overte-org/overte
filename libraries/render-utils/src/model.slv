@@ -57,7 +57,7 @@ OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01[NUM_LAYERS]);
     <@if not HIFI_USE_MTOON@>
         OUTPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
     <@endif@>
-    layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) out vec4 _prevPositionCS;
+    OUTPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
     <@if not HIFI_USE_TRIPLANAR@>
         <@if HIFI_USE_NORMALMAP@>
             OUTPUT(RENDER_UTILS_ATTR_TANGENT_WS, vec3, _tangentWS);
@@ -65,8 +65,8 @@ OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01[NUM_LAYERS]);
     <@endif@>
 <@endif@>
 <@if HIFI_USE_TRIPLANAR@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_MS) out vec3 _positionMS;
-    layout(location=RENDER_UTILS_ATTR_NORMAL_MS) out vec3 _normalMS;
+    OUTPUT(RENDER_UTILS_ATTR_POSITION_MS, vec3, _positionMS);
+    OUTPUT(RENDER_UTILS_ATTR_NORMAL_MS, vec3, _normalMS);
 <@endif@>
 
 void main(void) {

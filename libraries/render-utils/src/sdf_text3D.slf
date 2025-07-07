@@ -42,26 +42,24 @@
 <@include sdf_text3D.slh@>
 <$declareEvalSDFSuperSampled()$>
 
-layout(location=RENDER_UTILS_ATTR_POSITION_MS) in vec2 _positionMS;
+INPUT(RENDER_UTILS_ATTR_POSITION_MS, vec2, _positionMS);
 <@if HIFI_USE_FADE@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_WS) in vec4 _positionWS;
+    INPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
 <@endif@>
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     INPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
 <@endif@>
 <@if not HIFI_USE_FORWARD@>
-    layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) in vec4 _prevPositionCS;
+    INPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
 <@endif@>
 // the interpolated normal
 INPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
 INPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 #define _texCoord0 _texCoord01.xy
 #define _texCoord1 _texCoord01.zw
-// VKTODO: what does flat mean?
-//layout(location=RENDER_UTILS_ATTR_FADE1) flat in vec4 _glyphBounds; // we're reusing the fade texcoord locations here
 // we're reusing the fade texcoord locations here:
-INPUT(RENDER_UTILS_ATTR_FADE1, vec4, _glyphBounds); // we're reusing the fade texcoord locations here
-layout(location=RENDER_UTILS_ATTR_FADE2) flat in float _isTofu;
+FLAT_INPUT(RENDER_UTILS_ATTR_FADE1, vec4, _glyphBounds); // we're reusing the fade texcoord locations here
+FLAT_INPUT(RENDER_UTILS_ATTR_FADE2, float, _isTofu);
 
 <@if HIFI_USE_MIRROR@>
     <@include graphics/ShaderConstants.h@>

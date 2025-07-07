@@ -13,22 +13,22 @@
 <@include procedural/ProceduralCommon.slh@>
 <@include procedural/ProceduralParticleCommon.slh@>
 
-layout(location=0) in vec2 varTexCoord0;
+INPUT(0, vec2, varTexCoord0);
 
 #if NUM_UPDATE_PROPS > 0
-layout(location=0) out vec4 _prop0;
+OUTPUT(0, vec4, _prop0);
 #endif
 #if NUM_UPDATE_PROPS > 1
-layout(location=1) out vec4 _prop1;
+OUTPUT(1, vec4, _prop1);
 #endif
 #if NUM_UPDATE_PROPS > 2
-layout(location=2) out vec4 _prop2;
+OUTPUT(2, vec4, _prop2);
 #endif
 #if NUM_UPDATE_PROPS > 3
-layout(location=3) out vec4 _prop3;
+OUTPUT(3, vec4, _prop3);
 #endif
 #if NUM_UPDATE_PROPS > 4
-layout(location=4) out vec4 _prop4;
+OUTPUT(4, vec4, _prop4);
 #endif
 
 #if NUM_UPDATE_PROPS > 0

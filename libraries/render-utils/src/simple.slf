@@ -51,7 +51,7 @@
     <@endif@>
 <@endif@>
 <@if not HIFI_USE_FORWARD@>
-    layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) in vec4 _prevPositionCS;
+    INPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
 <@endif@>
 <@if HIFI_USE_FADE@>
     INPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);

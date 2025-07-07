@@ -16,7 +16,7 @@
 
 OUTPUT(0, vec3, _normal);
 <@if not HIFI_USE_FORWARD@>
-    layout(location=1) out vec4 _prevPositionCS;
+    OUTPUT(1, vec4, _prevPositionCS);
 <@endif@>
 
 void main(void) {
