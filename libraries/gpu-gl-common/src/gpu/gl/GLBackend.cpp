@@ -700,6 +700,20 @@ void GLBackend::do_popProfileRange(const Batch& batch, size_t paramOffset) {
     }
 }
 
+void GLBackend::do_glUniform1i(const Batch& batch, size_t paramOffset) {
+    if (_pipeline._program == 0) {
+        // We should call updatePipeline() to bind the program but we are not doing that
+        // because these uniform setters are deprecated and we don;t want to create side effect
+        return;
+    }
+    updatePipeline();
+
+    GLint location = getRealUniformLocation(batch._params[paramOffset + 1]._int);
+    glUniform1i(
+        location,
+        batch._params[paramOffset + 0]._int);
+    (void)CHECK_GL_ERROR();
+}
 
 void GLBackend::do_glUniform1f(const Batch& batch, size_t paramOffset) {
     if (_pipeline._program == 0) {

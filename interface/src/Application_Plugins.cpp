@@ -29,6 +29,7 @@
 #include "AudioClient.h"
 #include "InterfaceLogging.h"
 #include "Menu.h"
+#include "display-plugins/VulkanDisplayPlugin.h"
 
 static const int INTERVAL_TO_CHECK_HMD_WORN_STATUS = 500;  // milliseconds
 static const QString ACTIVE_DISPLAY_PLUGIN_SETTING_NAME = "activeDisplayPlugin";

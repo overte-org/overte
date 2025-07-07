@@ -130,6 +130,7 @@
 #include "SpeechRecognizer.h"
 #endif
 #include "Util.h"
+#include "vk/VKWindow.h"
 
 #if defined(Q_OS_WIN)
 #include "WindowsSystemInfo.h"
@@ -1964,7 +1965,7 @@ void Application::update(float deltaTime) {
     }
 
      if (shouldCaptureMouse()) {
-        QPoint point = _glWidget->mapToGlobal(_glWidget->geometry().center());
+        QPoint point = _primaryWidget->mapToGlobal(_primaryWidget->geometry().center());
         if (QCursor::pos() != point) {
             _mouseCaptureTarget = point;
             _ignoreMouseMove = true;

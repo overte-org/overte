@@ -35,13 +35,13 @@ if( NOT WIN32 )
     # SetAlignedPointerInInternalField requires at least 2 byte alignment and -falign-functions will set alignment
     # to machine specific value which should be greater than 2.
     if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-        set(CMAKE_CXX_FLAGS "-falign-functions -fPIC -m64 -msse3" CACHE STRING "C++ compiler flags for all build types.")
-        set(CMAKE_C_FLAGS "-falign-functions -fPIC -m64 -msse3" CACHE STRING "C compiler flags for all build types.")
+        set(CMAKE_CXX_FLAGS "-falign-functions=16 -fPIC -m64 -msse3" CACHE STRING "C++ compiler flags for all build types.")
+        set(CMAKE_C_FLAGS "-falign-functions=16 -fPIC -m64 -msse3" CACHE STRING "C compiler flags for all build types.")
     elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
         # TODO: Find out which architecture optimizations to use on aarch64.
         # We should probably target the 64bit version of the Raspberry Pi 2 as minimum.
-        set(CMAKE_CXX_FLAGS "-falign-functions -fPIC" CACHE STRING "C++ compiler flags for all build types.")
-        set(CMAKE_C_FLAGS "-falign-functions -fPIC" CACHE STRING "C++ compiler flags for all build types.")
+        set(CMAKE_CXX_FLAGS "-falign-functions=16 -fPIC" CACHE STRING "C++ compiler flags for all build types.")
+        set(CMAKE_C_FLAGS "-falign-functions=16 -fPIC" CACHE STRING "C++ compiler flags for all build types.")
     endif()
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         message("Clang compiler detected, setting default flags.")

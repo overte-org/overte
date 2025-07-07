@@ -226,7 +226,7 @@ private:
     PolyVoxEntityItem::PolyVoxSurfaceStyle _lastSurfaceStyle { PolyVoxEntityItem::SURFACE_MARCHING_CUBES };
     std::array<QString, 3> _xyzTextureUrls;
 
-    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>() };
+    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
 };
 
 } }

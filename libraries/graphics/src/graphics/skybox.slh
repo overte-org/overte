@@ -18,13 +18,13 @@
 
 <@include gpu/PackedNormal.slh@>
 
-LAYOUT(binding=GRAPHICS_TEXTURE_SKYBOX) uniform samplerCube cubeMap;
+TEXTURE(GRAPHICS_TEXTURE_SKYBOX, samplerCube, cubeMap);
 
 struct Skybox {
     vec4 color;
 };
 
-LAYOUT(binding=GRAPHICS_BUFFER_SKYBOX_PARAMS) uniform skyboxBuffer {
+UNIFORM_BUFFER(GRAPHICS_BUFFER_SKYBOX_PARAMS, skyboxBuffer) {
     Skybox skybox;
 };
 

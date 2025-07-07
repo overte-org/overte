@@ -16,7 +16,7 @@ if (APPLE)
     unset(CMAKE_MACOSX_BUNDLE)
 endif()
 
-option(BUILD_FRAME_PLAYER_GL "Use OpenGL backend for frame player" ON)
+option(BUILD_FRAME_PLAYER_GL "Use OpenGL backend for frame player" OFF)
 
 if (BUILD_FRAME_PLAYER_GL)
     target_compile_definitions(${TARGET_NAME} PRIVATE USE_GL)

@@ -364,7 +364,7 @@ void OpenGLDisplayPlugin::customizeContext() {
     auto presentThread = DependencyManager::get<OpenGLPresentThread>();
     Q_ASSERT(thread() == presentThread->thread());
 
-    getGLBackend()->updatePresentFrame();
+    getBackend()->updatePresentFrame();
 
     for (auto& cursorValue : _cursorsData) {
         auto& cursorData = cursorValue.second;
@@ -708,7 +708,7 @@ void OpenGLDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
 
     if (_currentFrame) {
         auto correction = getViewCorrection();
-        getGLBackend()->updatePresentFrame(correction);
+        getBackend()->updatePresentFrame(correction);
         {
             withPresentThreadLock([&] {
                 _renderRate.increment();

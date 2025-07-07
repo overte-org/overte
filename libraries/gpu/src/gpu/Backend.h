@@ -63,7 +63,7 @@ public:
     virtual void downloadFramebuffer(const FramebufferPointer& srcFramebuffer, const Vec4i& region, QImage& destImage) = 0;
     virtual void updatePresentFrame(const Mat4& correction = Mat4(), bool primary = true) = 0;
 
-    virtual bool supportedTextureFormat(const gpu::Element& format) = 0;
+    virtual bool supportedTextureFormat(const gpu::Element& format) const = 0;
 
         // Shared header between C++ and GLSL
 #include "TransformCamera_shared.slh"
