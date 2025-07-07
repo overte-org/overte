@@ -12,10 +12,10 @@
 
     var appIsVisible = false;
     var settings = {
-        external_window: false,
-        maximum_messages: 200,
-        join_notification: true,
-        use_chat_bubbles: true,
+        externalWindow: false,
+        maximumMessages: 200,
+        joinNotification: true,
+        useChatBubbles: true,
     };
 
     // Global vars
@@ -128,7 +128,7 @@
         _emitEvent({ type: "show_message", ...message });
 
         // Show new message on screen
-        if (message.channel !== "local" || !settings.use_chat_bubbles) {
+        if (message.channel !== "local" || !settings.useChatBubbles) {
             Messages.sendLocalMessage(
                 "Floof-Notif",
                 JSON.stringify({
@@ -150,7 +150,7 @@
         savedMessage.timestamp = currentTimestamp;
 
         messageHistory.push(savedMessage);
-        while (messageHistory.length > settings.maximum_messages) {
+        while (messageHistory.length > settings.maximumMessages) {
             messageHistory.shift();
         }
         Settings.setValue("DomainChat-Messages", messageHistory);
@@ -173,12 +173,12 @@
 
                 // Extra actions to preform. 
                 switch (event.setting) {
-                    case "external_window":
+                    case "externalWindow":
                         chatOverlayWindow.presentationMode = event.value
                             ? Desktop.PresentationMode.NATIVE
                             : Desktop.PresentationMode.VIRTUAL;
                         break;
-                    case "use_chat_bubbles":
+                    case "useChatBubbles":
                         Messages.sendLocalMessage(
                             "ChatBubbles-Config",
                             JSON.stringify({
@@ -282,7 +282,7 @@
             message.message = `${displayName} ${type}`;
 
             // Show new message on screen
-            if (settings.join_notification) {
+            if (settings.joinNotification) {
                 Messages.sendLocalMessage(
                     "Floof-Notif",
                     JSON.stringify({

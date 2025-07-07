@@ -267,12 +267,12 @@ Rectangle {
                     }
 
                     CheckBox{
-                        id: s_external_window
+                        id: s_externalWindow
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'external_window', value: checked})
+                            toScript({type: 'setting_change', setting: 'externalWindow', value: checked})
                         }
                     }
                 }
@@ -292,7 +292,7 @@ Rectangle {
 
                     
                     HifiControlsUit.SpinBox {
-                        id: s_maximum_messages
+                        id: s_maximumMessages
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
                         decimals: 0
@@ -303,7 +303,7 @@ Rectangle {
                         backgroundColor: "#cccccc"
 
                         onValueChanged: {
-                            toScript({type: 'setting_change', setting: 'maximum_messages', value: value})
+                            toScript({type: 'setting_change', setting: 'maximumMessages', value: value})
                         }
                     }
                 }
@@ -348,12 +348,12 @@ Rectangle {
                     }
 
                     CheckBox{
-                        id: s_join_notification
+                        id: s_joinNotification
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'join_notification', value: checked})
+                            toScript({type: 'setting_change', setting: 'joinNotification', value: checked})
                         }
                     }
                 }
@@ -372,12 +372,12 @@ Rectangle {
                     }
 
                     CheckBox{
-                        id: s_chat_bubbles
+                        id: s_useChatBubbles
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'use_chat_bubbles', value: checked})
+                            toScript({type: 'setting_change', setting: 'useChatBubbles', value: checked})
                         }
                     }
                 }
@@ -453,10 +453,10 @@ Rectangle {
                 domainMessages.clear();
                 break;
             case "initial_settings":
-                if (message.settings.external_window) s_external_window.checked = true;
-                if (message.settings.maximum_messages) s_maximum_messages.value = message.settings.maximum_messages;
-                if (message.settings.join_notification) s_join_notification.checked = true;
-                if (message.settings.use_chat_bubbles) s_chat_bubbles.checked = true;
+                if (message.settings.externalWindow) s_externalWindow.checked = true;
+                if (message.settings.maximumMessages) s_maximumMessages.value = message.settings.maximumMessages;
+                if (message.settings.joinNotification) s_joinNotification.checked = true;
+                if (message.settings.useChatBubbles) s_useChatBubbles.checked = true;
                 break;
         }
     }

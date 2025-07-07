@@ -146,8 +146,8 @@ Supply a `JSON` object.
 {
     "settings": {
         // JSON object of current AC settings
-        "external_window": false,
-        "maximum_messages": 200
+        "externalWindow": false,
+        "maximumMessages": 200
     }
 }
 ```
@@ -180,7 +180,7 @@ Supply a `JSON` object
 
 ```json
 {
-    "setting": "external_window", // The name of the setting to change
+    "setting": "externalWindow", // The name of the setting to change
     "value": true // The value to change the setting to
 }
 ```
