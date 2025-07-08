@@ -72,7 +72,6 @@ function changeOverlayBasedOnViewMode() {
 			localRotation: hmdPanelLocalRotation,
 			wantsKeyboardFocus: false,
 			showKeyboardFocusHighlight: false,
-			localEntity: true,
 			grab: {
 				grabbable: false,
 			}
@@ -95,7 +94,7 @@ function changeOverlayBasedOnViewMode() {
 }
 
 const notification = {
-	system: (message = "No title", details = "No further information.", sound = false) => {
+	system: (message = "No title", details = "", sound = false) => {
 		io.saveNotification({ message, details, type: `system`, id: Uuid.generate(), timestamp: Date.now() });
 
 		// Tell QML to render the announcement
