@@ -81,6 +81,7 @@ private:
         std::optional<controller::StandardPoseChannel> pose_channel;
         XrXDevPropertiesMNDX properties;
     };
+    void guessXDevRoles(std::unordered_map<XrXDevIdMNDX, XDevTracker>& trackers);
 
     class InputDevice : public controller::InputDevice {
     public:
@@ -98,6 +99,7 @@ private:
 
         void updateBodyFromViveTrackers(const mat4& sensorToAvatar);
         void updateBodyFromXDevSpaces(const mat4& sensorToAvatar);
+        void calibratePucks(const controller::InputCalibrationData& inputCalibrationData);
 
         mutable std::recursive_mutex _lock;
         template <typename F>
@@ -116,6 +118,7 @@ private:
 
         std::unordered_map<XrXDevIdMNDX, XDevTracker> _xdev;
         std::unordered_map<controller::StandardPoseChannel, controller::Pose> _trackerCalibrations;
+        bool _wantsCalibrate = false;
 
         XrHandTrackerEXT _handTracker[2] = {XR_NULL_HANDLE, XR_NULL_HANDLE};
 
