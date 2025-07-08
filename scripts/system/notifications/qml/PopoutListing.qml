@@ -23,7 +23,7 @@ Item {
 		}
 	}
 
-	ColumnLayout {
+	Column {
 		id: columnElement;
 		width: parent.width;
 		spacing: 0;
@@ -47,6 +47,7 @@ Item {
 		Item {
 			id: messageDetailsElement;
 			width: parent.width;
+			clip: true;
 
 			Rectangle {
 				anchors.fill: parent;
