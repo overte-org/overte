@@ -3,11 +3,8 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 
 Rectangle {
-	x: parent.width - width - 10;
-	y: 10;
 	width: 300;
 	height: 260;
-	z: 99;
 	visible: true;
 	color: "transparent";
 

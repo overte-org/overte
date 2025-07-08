@@ -90,7 +90,7 @@ function changeOverlayBasedOnViewMode() {
 		app._ui.overlay.fromQml.connect(onMessageFromQML);
 	}
 
-
+	populateNotificationOverlay();
 	sendMessageToQML({ type: "initialized", isVRMode: util.userIsUsingVR() })
 }
 
@@ -155,6 +155,24 @@ function sendNotificationListToNotificationPopout() {
 	})
 
 	app._ui.notificationPopout.sendToQml({ type: "notificationList", messages: [...connectionNotificationsReversed, ...systemNotificationsReversed] });
+}
+
+function populateNotificationOverlay() {
+	if (app._ui.overlay === null) return util.debugLog(`Notification desktop overlay is not open. Not sending a message.`);
+
+	let connectionNotificationsReversed = [...app._data.connectionNotifications];
+	connectionNotificationsReversed.reverse();
+	connectionNotificationsReversed.forEach((obj, index) => {
+		connectionNotificationsReversed[index] = notificationFormat(obj);
+	})
+
+	let systemNotificationsReversed = [...app._data.systemNotifications];
+	systemNotificationsReversed.reverse();
+	systemNotificationsReversed.forEach((obj, index) => {
+		systemNotificationsReversed[index] = notificationFormat(obj);
+	})
+
+	sendMessageToQML({ type: "notificationList", messages: [...connectionNotificationsReversed, ...systemNotificationsReversed] });
 }
 
 function notificationFormat(notificationObject) {
