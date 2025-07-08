@@ -44,7 +44,7 @@ const UI = {
 	},
 	openDesktop: () => {
 		app._ui.overlay = new OverlayWindow({
-			source: Script.resolvePath("../qml/NotificationsBase.qml"),
+			source: Script.resolvePath("../qml/NotificationsDesktop.qml"),
 		});
 		app._ui.overlay.fromQml.connect(onMessageFromQML);
 	},
