@@ -34,9 +34,10 @@ HMD.displayModeChanged.connect(changeOverlayBasedOnViewMode)
 
 let app = {
 	_config: {
-		enabled: true,				// Global enable / disable
+		enabled: true,								// Global enable / disable
 		maximumSavedSystemNotifications: 20,
 		maximumSavedConnectionNotifications: 20,
+		doNotDisturb: false
 	},
 	_ui: {
 		overlay: null,
@@ -76,7 +77,7 @@ const notification = {
 		sendMessageToQML({ type: "addSystemNotification", message, details });
 
 		// Play a sound
-		if (sound) playSound.system();
+		if (sound && !app._config.doNotDisturb) playSound.system();
 
 	},
 	// connection: () => { }
@@ -84,6 +85,7 @@ const notification = {
 
 function onMessageFromQML(event) {
 	if (event.type === "bubbleCount") return UI.resizeVROverlayFromActiveCount(event.count);
+	if (event.type === "doNotDisturbState") return app._config.doNotDisturb = Boolean(event.state);
 }
 
 function notificationFormat(notificationObject) {

@@ -13,6 +13,7 @@ Item {
     property bool announcementHistoryVisible: false;
     property bool previewNotificationActive: false;
     property bool hasUnread: false;
+    property bool doNotDisturb: false;
 
 	ListModel { id: notifications }         // Main storage of notifications
 
@@ -31,102 +32,158 @@ Item {
         // Notification history
         Rectangle {
             width: 300;
-            height: 300;
+            height: 330;
             color: Qt.rgba(0,0,0,0.5);
             radius: 5;
             visible: announcementHistoryVisible;
 
-            Flickable {
-                x: 5;
-                y: 5
-                width: parent.width - 5;
-                height: parent.height - 10;
-                clip: true;
-                contentHeight: notificationHistoryListView.contentHeight;
+            Column {
+                width: parent.width;
+                height: parent.height;
+                spacing: 2;
 
-                Column {
-                    width: parent.width - 10;
-                    height: parent.height - 10;
+                Item {
+                    height: 30;
+                    width: parent.width;
 
-                    ListView {
-                        id: notificationHistoryListView;
+                    Row {
                         width: parent.width;
                         height: parent.height;
-                        model: notifications;
-                        spacing: 2;
 
-                        delegate: Rectangle {
-                            width: parent && parent.width || 0;
-                            height: 50;
-                            color: Qt.rgba(0,0,0,0.8);
-                            opacity: 0.9;
-                            radius: 5;
+                        Switch { 
+                            height: 20;
+                            id: doNotDisturbSwitch;
 
-                            RowLayout {
-                                width: parent.width - 10;
-                                height: parent.height;
-                                anchors.centerIn: parent;
+                            indicator: Rectangle {
+                                implicitWidth: 48;
+                                implicitHeight: 20;
+                                x: doNotDisturbSwitch.leftPadding;
+                                y: parent.height / 2 - height / 2 + 5;
+                                radius: 13;
+                                color: doNotDisturbSwitch.checked ? "#17a81a" : "#ffffff";
+                                border.color: doNotDisturbSwitch.checked ? "#17a81a" : "#cccccc";
 
-                                // TODO: Announcement icons?
-                                // Rectangle {
-                                //     width: 40;
-                                //     height: 40;
-                                //     color: "orange";
-                                // }
-
-                                Text {
-                                    Layout.fillWidth: true;
-                                    Layout.fillHeight: true;
-                                    text: notifications.get(index) && notifications.get(index).bubbleText || "";
-                                    color: "white";
-                                    font.pixelSize: 18;
-		                            wrapMode: Text.Wrap;
-                                    clip: true;
-                                }
-                            }
-                            MouseArea {
-                                anchors.fill: parent;
-                                hoverEnabled: true;
-                                propagateComposedEvents: true;	
-
-                                onEntered: {
-                                    parent.color = Qt.rgba(0,0,0,0.9);
-                                    parent.opacity = 1;
-                                }
-
-                                onExited: {
-                                    parent.color = Qt.rgba(0,0,0,0.8);
-                                    parent.opacity = 0.9;
+                                Rectangle {
+                                    x: doNotDisturbSwitch.checked ? parent.width - width : 0;
+                                    width: 20;
+                                    height: 20;
+                                    radius: 13;
+                                    color: doNotDisturbSwitch.down ? "#cccccc" : "#ffffff";
+                                    border.color: doNotDisturbSwitch.checked ? (doNotDisturbSwitch.down ? "#17a81a" : "#21be2b") : "#999999";
                                 }
                             }
 
-                            Behavior on color {
-                                ColorAnimation {
-                                    duration: 100;
-                                    easing.type: Easing.InOutCubic;
+                            onClicked: {
+                                doNotDisturb = checked;
+                                toScript({type: "doNotDisturbState", state: doNotDisturb});
+                            }
+                        }
+
+                        Text {
+                            color: "White";
+                            font.pixelSize: 18;
+                            width: 10;
+                            text: "Do not disturb";
+                            font.weight: Font.Medium;
+                        }
+                    }
+
+                }
+
+                Flickable {
+                    x: 5;
+                    y: 5
+                    width: parent.width - 5;
+                    height: parent.height - 40;
+                    clip: true;
+                    contentHeight: notificationHistoryListView.contentHeight;
+
+                    Column {
+                        width: parent.width - 10;
+                        height: parent.height - 10;
+
+                        ListView {
+                            id: notificationHistoryListView;
+                            width: parent.width;
+                            height: parent.height;
+                            model: notifications;
+                            spacing: 2;
+
+                            delegate: Rectangle {
+                                width: parent && parent.width || 0;
+                                height: 50;
+                                color: Qt.rgba(0,0,0,0.8);
+                                opacity: 0.9;
+                                radius: 5;
+
+                                RowLayout {
+                                    width: parent.width - 10;
+                                    height: parent.height;
+                                    anchors.centerIn: parent;
+
+                                    // TODO: Announcement icons?
+                                    // Rectangle {
+                                    //     width: 40;
+                                    //     height: 40;
+                                    //     color: "orange";
+                                    // }
+
+                                    Text {
+                                        Layout.fillWidth: true;
+                                        Layout.fillHeight: true;
+                                        text: notifications.get(index) && notifications.get(index).bubbleText || "";
+                                        color: "white";
+                                        font.pixelSize: 18;
+                                        wrapMode: Text.Wrap;
+                                        clip: true;
+                                    }
+                                }
+                                MouseArea {
+                                    anchors.fill: parent;
+                                    hoverEnabled: true;
+                                    propagateComposedEvents: true;	
+
+                                    onEntered: {
+                                        parent.color = Qt.rgba(0,0,0,0.9);
+                                        parent.opacity = 1;
+                                    }
+
+                                    onExited: {
+                                        parent.color = Qt.rgba(0,0,0,0.8);
+                                        parent.opacity = 0.9;
+                                    }
+                                }
+
+                                Behavior on color {
+                                    ColorAnimation {
+                                        duration: 100;
+                                        easing.type: Easing.InOutCubic;
+                                    }
                                 }
                             }
                         }
                     }
+
+                    ScrollBar.vertical: ScrollBar {
+                        policy: Qt.ScrollBarAlwaysOn;
+
+                        background: Rectangle {
+                            color: "transparent";
+                            radius: 5;
+                            visible: parent.visible;
+                        }
+
+                        contentItem: Rectangle {
+                            implicitWidth: 6;
+                            implicitHeight: 100;
+                            radius: width / 2;
+                            color: Qt.rgba(1,1,1,1);
+                        }
+                    }
                 }
 
-                ScrollBar.vertical: ScrollBar {
-                    policy: Qt.ScrollBarAlwaysOn;
-
-                    background: Rectangle {
-                        color: "transparent";
-                        radius: 5;
-                        visible: parent.visible;
-                    }
-
-                    contentItem: Rectangle {
-                        implicitWidth: 6;
-                        implicitHeight: 100;
-                        radius: width / 2;
-                        color: Qt.rgba(1,1,1,1);
-                    }
-                }
             }
+
         }
 
         // Preview New Notification
@@ -286,6 +343,7 @@ Item {
     }
 
 	function addSystemNotification(message, details, skipVisualEffects = false) {
+        var maximumNotifications = 20;
 		var targetNotification = notificationId;
 
 		// Insert notification to the stack
@@ -293,7 +351,12 @@ Item {
 
 		notificationId = notificationId + 1;
 
-        if (skipVisualEffects === false) {
+        // Limit maximum displayed notifications
+        if (notifications.count > maximumNotifications){
+            notifications.remove(notifications.count - 1, 1);
+        }
+
+        if (skipVisualEffects === false && doNotDisturb === false) {
             // Display a preview
             if (announcementHistoryVisible === false) {
                 if (previewNotificationTimer.running) {
