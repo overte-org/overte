@@ -21,11 +21,11 @@ Item {
 
     Row {
         parent: desktop;
-	    x: announcementHistoryVisible || previewNotificationActive ? parent.width - width : parent.width - 45;
+	    x: announcementHistoryVisible || previewNotificationActive ? parent.width - width + 5 : parent.width - 45;
     	y: 5;
 	    z: 99;
 
-        width: 350;
+        width: 355;
         spacing: 5;
 
         // Notification history
@@ -37,16 +37,19 @@ Item {
             visible: announcementHistoryVisible;
 
             Flickable {
-                width: parent.width;
-                height: parent.height;
+                x: 5;
+                y: 5
+                width: parent.width - 5;
+                height: parent.height - 10;
                 clip: true;
+                contentHeight: notificationHistoryListView.contentHeight;
 
                 Column {
                     width: parent.width - 10;
                     height: parent.height - 10;
-                    anchors.centerIn: parent;
 
                     ListView {
+                        id: notificationHistoryListView;
                         width: parent.width;
                         height: parent.height;
                         model: notifications;
@@ -107,6 +110,22 @@ Item {
                     }
                 }
 
+                ScrollBar.vertical: ScrollBar {
+                    policy: Qt.ScrollBarAlwaysOn;
+
+                    background: Rectangle {
+                        color: "transparent";
+                        radius: 5;
+                        visible: parent.visible;
+                    }
+
+                    contentItem: Rectangle {
+                        implicitWidth: 6;
+                        implicitHeight: 100;
+                        radius: width / 2;
+                        color: Qt.rgba(1,1,1,1);
+                    }
+                }
             }
         }
 
@@ -257,9 +276,12 @@ Item {
         }
     }
 
-    onHasUnreadChanged: {
-        if (hasUnread === false) {
+    onAnnouncementHistoryVisibleChanged: {
+        if (announcementHistoryVisible === true) {
             shakeAnimationTimer.running = false;
+            hasUnread = false;
+            previewNotificationTimer.running = false;
+            previewNotificationActive = false;
         }
     }
 
