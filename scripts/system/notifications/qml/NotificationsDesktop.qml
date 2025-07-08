@@ -34,7 +34,7 @@ Item {
         Rectangle {
             width: 300;
             height: 330;
-            color: Qt.rgba(0,0,0,0.5);
+            color: Qt.rgba(0,0,0,0.8);
             radius: 5;
             visible: announcementHistoryVisible;
 
@@ -322,7 +322,7 @@ Item {
 
         // Bell Icon and container
         Rectangle {
-            color: Qt.rgba(0,0,0,0.5);
+            color: Qt.rgba(0,0,0,0.8);
             width: 40;
             height: 40;
             radius: 5;
@@ -364,12 +364,12 @@ Item {
                 }
 
                 onEntered: {
-                    parent.color = Qt.rgba(0,0,0,0.75);
+                    parent.color = Qt.rgba(0,0,0,0.95);
                     parent.children[0].opacity = 1;
                 }
 
                 onExited: {
-                    parent.color = Qt.rgba(0,0,0,0.5);
+                    parent.color = Qt.rgba(0,0,0,0.8);
                     parent.children[0].opacity = 0.9;
                 }
             }
