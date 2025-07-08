@@ -31,8 +31,7 @@ let app = {
 	},
 	_ui: {
 		overlay: null,
-		overlayVR: null,
-		notificationPopout: null
+		overlayVR: null
 	},
 	_data: {
 		systemNotifications: [],
@@ -100,9 +99,6 @@ const notification = {
 		// Tell QML to render the announcement
 		sendMessageToQML({ type: "addSystemNotification", message, details });
 
-		// If the notification window is open, add that notification to the list.
-		sendNotificationListToNotificationPopout();
-
 		// Play a sound
 		if (sound) playSound.system();
 
@@ -119,13 +115,6 @@ const notification = {
 
 function onMessageFromQML(event) {
 	switch (event.type) {
-		case "openNotificationFromOverlay":
-			if (app._ui.notificationPopout === null) {
-				app._ui.notificationPopout = new OverlayWindow({ source: Script.resolvePath("./qml/PopoutWindow.qml"), title: "Notifications", width: 400, height: 600 });
-				app._ui.notificationPopout.closed.connect(() => { app._ui.notificationPopout = null });
-				sendNotificationListToNotificationPopout();
-			}
-			break;
 		case "bubbleCount":
 			if (!app._ui.overlayVR) return;
 
@@ -136,24 +125,6 @@ function onMessageFromQML(event) {
 			Entities.editEntity(app._ui.overlayVR, { dimensions, visible: event.count > 0 });
 			break;
 	}
-}
-
-function sendNotificationListToNotificationPopout() {
-	if (app._ui.notificationPopout === null) return util.debugLog(`Notification window is not open. Not sending a message.`);
-
-	let connectionNotificationsReversed = [...app._data.connectionNotifications];
-	connectionNotificationsReversed.reverse();
-	connectionNotificationsReversed.forEach((obj, index) => {
-		connectionNotificationsReversed[index] = notificationFormat(obj);
-	})
-
-	let systemNotificationsReversed = [...app._data.systemNotifications];
-	systemNotificationsReversed.reverse();
-	systemNotificationsReversed.forEach((obj, index) => {
-		systemNotificationsReversed[index] = notificationFormat(obj);
-	})
-
-	app._ui.notificationPopout.sendToQml({ type: "notificationList", messages: [...connectionNotificationsReversed, ...systemNotificationsReversed] });
 }
 
 function populateNotificationOverlay() {
