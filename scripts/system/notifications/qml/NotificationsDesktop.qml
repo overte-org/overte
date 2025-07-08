@@ -12,17 +12,18 @@ Item {
 	property bool isHovered: false;
     property bool announcementHistoryVisible: false;
     property bool previewNotificationActive: false;
+    property bool notificationDetailsActive: false;
     property bool hasUnread: false;
     property bool doNotDisturb: false;
 
 	ListModel { id: notifications }         // Main storage of notifications
 
-    Binding { target: root; property:'window'; value: parent.parent; when: Boolean(parent.parent) }
+    Binding { target: root; property: 'window'; value: parent.parent; when: Boolean(parent.parent) }
     Binding { target: window; property: 'shown'; value: false; when: Boolean(window) }
 
     Row {
         parent: desktop;
-	    x: announcementHistoryVisible || previewNotificationActive ? parent.width - width + 5 : parent.width - 45;
+	    x: announcementHistoryVisible || previewNotificationActive || notificationDetailsActive ? parent.width - width + 5 : parent.width - 45;
     	y: 5;
 	    z: 99;
 
@@ -143,6 +144,10 @@ Item {
                                     hoverEnabled: true;
                                     propagateComposedEvents: true;	
 
+                                    onClicked: {
+                                        showNotificationDetails(notifications.get(index).bubbleText, notifications.get(index).bubbleDetails)
+                                    }
+
                                     onEntered: {
                                         parent.color = Qt.rgba(0,0,0,0.9);
                                         parent.opacity = 1;
@@ -260,6 +265,61 @@ Item {
             }
         }
 
+        // Notification Details
+        Rectangle {
+            width: 300;
+            height: children[0].height + 10;
+            color: Qt.rgba(0,0,0,0.9);
+            visible: notificationDetailsActive;
+            radius: 5;
+
+            ColumnLayout {
+                width: parent.width - 10;
+                height: children[0].contentHeight + children[1].height + 10;
+                anchors.centerIn: parent;
+                spacing: 5;
+                
+                Text {
+                    id: notificationDetailsTitle;
+                    color: "white";
+                    font.pixelSize: 20;
+                    text: "";
+                    wrapMode: Text.Wrap;
+                    Layout.fillWidth: true;
+                }
+
+                Rectangle {
+                    color: Qt.rgba(0,0,0,0.5);
+                    width: parent.width;
+                    Layout.fillHeight: true;
+                    Layout.alignment: Qt.AlignHCenter;
+                    x: 5;
+                    radius: 5;
+                    height: children[0].contentHeight;
+
+                    Text {
+                        id: notificationDetailsDetails;
+                        width: parent.width - 10;
+                        anchors.centerIn: parent;
+                        wrapMode: Text.Wrap;
+                        text: "";
+                        color: "white";
+                        font.pixelSize: 18;
+                    }
+                }
+            }
+
+
+            MouseArea {
+                anchors.fill: parent;
+
+                onPressed: {
+                    notificationDetailsActive = false;
+                }
+            }
+
+        }
+
         // Bell Icon and container
         Rectangle {
             color: Qt.rgba(0,0,0,0.5);
@@ -339,6 +399,7 @@ Item {
             hasUnread = false;
             previewNotificationTimer.running = false;
             previewNotificationActive = false;
+            notificationDetailsActive = false;
         }
     }
 
@@ -358,7 +419,7 @@ Item {
 
         if (skipVisualEffects === false && doNotDisturb === false) {
             // Display a preview
-            if (announcementHistoryVisible === false) {
+            if (announcementHistoryVisible === false && notificationDetailsActive === false) {
                 if (previewNotificationTimer.running) {
                     previewNotificationTimer.restart();
                 }
@@ -374,6 +435,15 @@ Item {
             }
         }
 	}
+
+    function showNotificationDetails(title, details) {
+        notificationDetailsTitle.text = title;
+        notificationDetailsDetails.text = details;
+
+        announcementHistoryVisible = false;
+        previewNotificationActive = false;
+        notificationDetailsActive = true;
+    }
 
     // Messages from script
     function fromScript(message) {
