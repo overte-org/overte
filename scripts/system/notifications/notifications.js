@@ -15,6 +15,7 @@ Script.include('./lib/utility.js');
 Script.include('./lib/io.js');
 Script.include('./lib/sound.js');
 Script.include('./lib/window.js');
+Script.include('./lib/gesture.js');
 
 Script.scriptEnding.connect(shutDown);
 HMD.displayModeChanged.connect(changeOverlayBasedOnViewMode)
@@ -166,23 +167,7 @@ function notificationFormat(notificationObject) {
 
 function update() {
 	if (util.userIsUsingVR()) {
-		checkGestureDismissNotification();
-	}
-}
-
-function checkGestureDismissNotification() {
-	const myLeftHand = Controller.getPoseValue(Controller.Standard.LeftHand);
-	const myRightHand = Controller.getPoseValue(Controller.Standard.RightHand);
-	const eyesPosition = MyAvatar.getEyePosition();
-	const hipsPosition = MyAvatar.getJointPosition("Hips");
-	const eyesRelativeHeight = eyesPosition.y - hipsPosition.y;
-
-	if (myLeftHand.translation.y > eyesRelativeHeight || myRightHand.translation.y > eyesRelativeHeight) {
-		if (gestures.quickCloseVR === true) return;
-		closeAllNotifications();
-		gestures.quickCloseVR = true;
-	} else {
-		gestures.quickCloseVR = false;
+		GESTURE.dismiss();
 	}
 }
 
