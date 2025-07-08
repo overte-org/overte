@@ -1,12 +1,13 @@
+const SOUND_EFFECTS = {
+	SYSTEM: SoundCache.getSound(Script.resolvePath("../sound/systemNotification.mp3")),
+	CONNECTION: SoundCache.getSound(Script.resolvePath("../sound/connectionNotification.mp3"))
+}
+
 const playSound = {
 	system: () => {
-		playSound._playSound(Script.resolvePath("../sound/systemNotification.mp3"));
+		Audio.playSystemSound(SOUND_EFFECTS.SYSTEM, { volume: 0.5 })
 	},
 	connection: () => {
-		playSound._playSound(Script.resolvePath("../sound/connectionNotification.mp3"));
-	},
-	_playSound: (url) => {
-		const sound = SoundCache.getSound(url);
-		Audio.playSystemSound(sound, { volume: 0.5 });
+		Audio.playSystemSound(SOUND_EFFECTS.CONNECTION, { volume: 0.5 })
 	}
 }
