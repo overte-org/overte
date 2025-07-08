@@ -9,6 +9,8 @@
 
 #include <glm/ext.hpp>
 #include <QJsonArray>
+#include <tuple>
+#include <algorithm>
 
 #include "OpenXrInputPlugin.h"
 
@@ -18,6 +20,7 @@
 #include "SettingHandle.h"
 #include "controllers/UserInputMapper.h"
 #include "plugins/InputConfiguration.h"
+#include "src/OpenXrContext.h"
 
 Q_DECLARE_LOGGING_CATEGORY(xr_input_cat)
 Q_LOGGING_CATEGORY(xr_input_cat, "openxr.input")
@@ -26,6 +29,8 @@ static const std::unordered_map<controller::StandardPoseChannel, QString> poseCh
     {controller::HIPS, "Hips"},
     {controller::LEFT_LEG, "LeftLeg"},
     {controller::LEFT_FOOT, "LeftFoot"},
+    {controller::RIGHT_LEG, "RightLeg"},
+    {controller::RIGHT_FOOT, "RightFoot"},
     {controller::SPINE2, "Spine2"},
     {controller::HEAD, "Head"},
     {controller::RIGHT_ARM, "RightArm"},
@@ -38,6 +43,8 @@ static const std::unordered_map<QString, controller::StandardPoseChannel> string
     {"Hips", controller::HIPS},
     {"LeftLeg", controller::LEFT_LEG},
     {"LeftFoot", controller::LEFT_FOOT},
+    {"RightLeg", controller::RIGHT_LEG},
+    {"RightFoot", controller::RIGHT_FOOT},
     {"Spine2", controller::SPINE2},
     {"Head", controller::HEAD},
     {"RightArm", controller::RIGHT_ARM},
@@ -93,16 +100,82 @@ static glm::mat4 computeOffset(glm::mat4 defaultToReferenceMat, glm::mat4 defaul
     return glm::inverse(poseMat) * referenceJointMat;
 }
 
-void OpenXrInputPlugin::calibrate() {
-    qCInfo(xr_input_cat) << "OpenXrInputPlugin::calibrate";
+void OpenXrInputPlugin::guessXDevRoles(std::unordered_map<XrXDevIdMNDX, XDevTracker>& tracker_map) {
+    std::vector<std::tuple<XrXDevIdMNDX, glm::vec3, controller::Pose>> tracker_list;
 
-    // TODO
+    for (auto [id, tracker] : tracker_map) {
+        XrResult result = XR_SUCCESS;
+        XrSpaceLocation stageSpace = { XR_TYPE_SPACE_LOCATION };
+        XrSpaceLocation localSpace = { XR_TYPE_SPACE_LOCATION };
+        XrSpaceLocation headSpace = { XR_TYPE_SPACE_LOCATION };
+        result = xrLocateSpace(tracker.space, _context->_stageSpace, _context->_lastPredictedDisplayTime.value(), &stageSpace);
+        xrCheck(_context->_instance, result, "guessXDevRoles: tracker stage space fail");
+        result = xrLocateSpace(tracker.space, _context->_viewSpace, _context->_lastPredictedDisplayTime.value(), &localSpace);
+        xrCheck(_context->_instance, result, "guessXDevRoles: tracker local space fail");
+        result = xrLocateSpace(_context->_viewSpace, _context->_stageSpace, _context->_lastPredictedDisplayTime.value(), &headSpace);
+        xrCheck(_context->_instance, result, "guessXDevRoles: head space fail");
+
+        // the tracker's position, relative horizontally to the headset
+        // and vertically to the floor, normalized by the headset height
+        // so we can check relative height rather than absolute meters
+        auto position = xrVecToGlm(localSpace.pose.position);
+        position.y = stageSpace.pose.position.y / headSpace.pose.position.y;
+        tracker_list.push_back({
+            id,
+            position,
+            controller::Pose(xrVecToGlm(stageSpace.pose.position), xrQuatToGlm(stageSpace.pose.orientation)),
+        });
+    }
+
+    for (auto& tracker : tracker_list) {
+        using namespace controller;
+
+        auto position = std::get<1>(tracker);
+        auto id = std::get<0>(tracker);
+        auto& state = tracker_map[id];
+
+        // TODO: our input system only really expects 7-point tracking,
+        // (i.e. head, hands, chest, hips, and feet), but we can expand
+        // it later to support more joints if there's demand for it
+
+        if (position.y < 0.2f) {
+            state.pose_channel = position.x < 0.0f ? LEFT_FOOT : RIGHT_FOOT;
+        }
+
+        if (position.y > 0.4f && position.y < 0.6f) {
+            state.pose_channel = HIPS;
+        }
+
+        if (position.y > 0.65f && position.y < 0.8f) {
+            state.pose_channel = SPINE2;
+        }
+
+        qCDebug(xr_input_cat) <<
+            id <<
+            ":" <<
+            (state.pose_channel.has_value() ? poseChannelToString.at(state.pose_channel.value()) : "None");
+    }
+}
+
+void OpenXrInputPlugin::calibrate() {
+    qCDebug(xr_input_cat) << "OpenXrInputPlugin::calibrate";
+
+    if (_context->_MNDX_xdevSpaceSupported) {
+        guessXDevRoles(_inputDevice->_xdev);
+    }
+    _inputDevice->_trackerCalibrations.clear();
+    _inputDevice->_wantsCalibrate = true;
 }
 
 bool OpenXrInputPlugin::uncalibrate() {
-    qCInfo(xr_input_cat) << "OpenXrInputPlugin::uncalibrate";
+    qCDebug(xr_input_cat) << "OpenXrInputPlugin::uncalibrate";
 
-    // TODO
+    for (auto [_, tracker] : _inputDevice->_xdev) {
+        tracker.pose_channel = {};
+    }
+
+    _inputDevice->_trackerCalibrations.clear();
+    _inputDevice->_wantsCalibrate = false;
 
     return true;
 }
@@ -252,12 +325,8 @@ bool OpenXrInputPlugin::InputDevice::triggerHapticPulse(float strength, float du
 
     std::unique_lock<std::recursive_mutex> locker(_lock);
 
-    // TODO: Haptic values in overte are always strengh 1.0 and duration only 13.0 or 16.0. So it's not really used.
-    // The duration does not seem to map to a time unit. 16ms seems quite short for a haptic vibration.
-    // Let's assume the duration is in 10 milliseconds.
-    // Let's also assume strength 1.0 is the middle value, which is 0.5 in OpenXR.
     using namespace std::chrono;
-    nanoseconds durationNs = duration_cast<nanoseconds>(milliseconds(static_cast<int>(duration * 10.0f)));
+    nanoseconds durationNs = duration_cast<nanoseconds>(milliseconds(static_cast<int>(duration)));
     XrDuration xrDuration = durationNs.count();
 
     auto path = (index == 0) ? "left_haptic" : "right_haptic";
@@ -265,8 +334,7 @@ bool OpenXrInputPlugin::InputDevice::triggerHapticPulse(float strength, float du
     // FIXME: sometimes something bugs out and hammers this,
     // and the controller vibrates really loudly until another
     // haptic pulse is triggered
-    // The OpenVR plugin has a lock protecting these
-    if (!_actions.at(path)->applyHaptic(xrDuration, XR_FREQUENCY_UNSPECIFIED, 0.5f * strength)) {
+    if (!_actions.at(path)->applyHaptic(xrDuration, 50, 0.5f * strength)) {
         qCCritical(xr_input_cat) << "Failed to apply haptic feedback!";
     }
 
@@ -523,6 +591,7 @@ controller::Input::NamedVector OpenXrInputPlugin::InputDevice::getAvailableInput
         makePair(EYEBLINK_L, "EyeBlink_L"),
         makePair(EYEBLINK_R, "EyeBlink_R"),
 
+        makePair(SPINE2, "Spine2"),
         makePair(HIPS, "Hips"),
         makePair(LEFT_FOOT, "LeftFoot"),
         makePair(RIGHT_FOOT, "RightFoot"),
@@ -819,13 +888,6 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             XDevTracker tracker;
             tracker.properties = properties;
 
-            // TODO
-            tracker.offset_pose = {
-                .orientation = {0, 0, 0, 1},
-                .position = {0, 0, 0},
-            };
-
-            // TODO
             tracker.pose_channel = {};
 
             XrCreateXDevSpaceInfoMNDX createSpaceInfo = {
@@ -833,7 +895,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
                 .next = nullptr,
                 .xdevList = xdevList,
                 .id = id,
-                .offset = tracker.offset_pose,
+                .offset = { {0, 0, 0, 1}, {} },
             };
 
             _context->xrCreateXDevSpaceMNDX(_context->_session, &createSpaceInfo, &tracker.space);
@@ -1029,6 +1091,10 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         updateBodyFromXDevSpaces(sensorToAvatar);
     }
 
+    if (_wantsCalibrate) {
+        calibratePucks(inputCalibrationData);
+    }
+
     if (_context->_handTrackingSupported) {
         for (int i = 0; i < HAND_COUNT; i++) {
             getHandTrackingInputs(i, sensorToAvatar);
@@ -1152,6 +1218,25 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
     _poseStateMap[i == 0 ? controller::LEFT_HAND_PINKY3 : controller::RIGHT_HAND_PINKY3] = xrJointToGlm(XR_HAND_JOINT_LITTLE_DISTAL_EXT);
 }
 
+void OpenXrInputPlugin::InputDevice::calibratePucks(const controller::InputCalibrationData& data) {
+    using namespace controller;
+    static const std::array posesToCalibrate = {
+        HIPS, LEFT_LEG, LEFT_FOOT, RIGHT_LEG, RIGHT_FOOT, SPINE2,
+    };
+
+    for (auto channel : posesToCalibrate) {
+        // not connected, don't calibrate
+        if (!_poseStateMap[channel].isValid()) { continue; }
+
+        auto position = _poseStateMap[channel].getTranslation();
+        auto rotation = _poseStateMap[channel].getRotation();
+
+        _trackerCalibrations[channel] = Pose(vec3(), glm::inverse(rotation) * quat(defaultPoseOffset(data, channel)));
+    }
+
+    _wantsCalibrate = false;
+}
+
 void OpenXrInputPlugin::InputDevice::updateBodyFromViveTrackers(const mat4& sensorToAvatar) {
     using namespace controller;
 
@@ -1163,10 +1248,15 @@ void OpenXrInputPlugin::InputDevice::updateBodyFromViveTrackers(const mat4& sens
             quat rotation = xrQuatToGlm(location.pose.orientation);
             auto pose = controller::Pose(translation, rotation);
 
-            if (_trackerCalibrations.contains(channel)) {
-                _poseStateMap[channel] = pose.transform(_trackerCalibrations[channel].getMatrix()).transform(sensorToAvatar);
+            if (_wantsCalibrate) {
+                // use the raw sensor pose for calibration
+                _poseStateMap[channel] = pose;
             } else {
-                _poseStateMap[channel] = pose.transform(sensorToAvatar);
+                if (_trackerCalibrations.contains(channel)) {
+                    _poseStateMap[channel] = pose.postTransform(_trackerCalibrations[channel].getMatrix()).transform(sensorToAvatar);
+                } else {
+                    _poseStateMap[channel] = pose.transform(sensorToAvatar);
+                }
             }
         }
     };
@@ -1196,6 +1286,7 @@ void OpenXrInputPlugin::InputDevice::updateBodyFromXDevSpaces(const mat4& sensor
         }
 
         bool locationValid = (location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
+
         if (locationValid && xdev.pose_channel.has_value()) {
             vec3 translation = xrVecToGlm(location.pose.position);
             quat rotation = xrQuatToGlm(location.pose.orientation);
@@ -1203,10 +1294,15 @@ void OpenXrInputPlugin::InputDevice::updateBodyFromXDevSpaces(const mat4& sensor
 
             auto channel = xdev.pose_channel.value();
 
-            if (_trackerCalibrations.contains(channel)) {
-                _poseStateMap[channel] = pose.transform(_trackerCalibrations[channel].getMatrix()).transform(sensorToAvatar);
+            if (_wantsCalibrate) {
+                // use the raw sensor pose for calibration
+                _poseStateMap[channel] = pose;
             } else {
-                _poseStateMap[channel] = pose.transform(sensorToAvatar);
+                if (_trackerCalibrations.contains(channel)) {
+                    _poseStateMap[channel] = pose.postTransform(_trackerCalibrations[channel].getMatrix()).transform(sensorToAvatar);
+                } else {
+                    _poseStateMap[channel] = pose.transform(sensorToAvatar);
+                }
             }
         }
     }

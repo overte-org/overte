@@ -23,7 +23,6 @@ Flickable {
     anchors.fill: parent
     contentHeight: 550
     flickableDirection: Flickable.VerticalFlick
-    property string pluginName: ""
     property var page: null;
 
     ScrollBar.vertical: ScrollBar {
@@ -59,13 +58,6 @@ Flickable {
         }
     }
 
-    onPluginNameChanged: {
-        if (page !== null) {
-            page.pluginName = flick.pluginName;
-            page.displayConfiguration();
-        }
-    }
-
     function bringToView(item) {
         var yTop = item.mapToItem(contentItem, 0, 0).y;
         var yBottom = yTop + item.height;
@@ -89,7 +81,6 @@ Flickable {
 
             property int leftMargin: 75
             property int countDown: 0
-            property string pluginName: ""
             property var displayInformation: null
 
             property var lastConfiguration:  null
@@ -288,7 +279,7 @@ Flickable {
                 repeat: false
                 interval: 20
                 onTriggered: {
-                    InputConfiguration.calibratePlugin(openXrConfiguration.pluginName);
+                    InputConfiguration.calibratePlugin("OpenXR");
                     stack.currentItem.success();
                 }
             }
@@ -306,7 +297,7 @@ Flickable {
             }
 
             Component.onDestruction: {
-                var settings = InputConfiguration.configurationSettings(openXrConfiguration.pluginName);
+                var settings = InputConfiguration.configurationSettings("OpenXR");
                 var data = {};
                 UserActivityLogger.logAction("mocap_ui_close_dialog", data);
             }
@@ -418,7 +409,7 @@ Flickable {
             function displayConfiguration() {
                 isConfiguring = true;
 
-                var settings = InputConfiguration.configurationSettings(openXrConfiguration.pluginName);
+                var settings = InputConfiguration.configurationSettings("OpenXR");
 
                 // default offset for user wearing puck on the center of their forehead.
                 headYOffset.realValue = 4; // (cm), puck is above the head joint.
@@ -461,7 +452,7 @@ Flickable {
                     return;
                 }
                 var settings = composeConfigurationSettings();
-                InputConfiguration.setConfigurationSettings(settings, openXrConfiguration.pluginName);
+                InputConfiguration.setConfigurationSettings(settings, "OpenXR");
             }
         }
     }
