@@ -69,6 +69,7 @@ function changeOverlayBasedOnViewMode() {
 
 const notification = {
 	system: (message = "No title", details = "", sound = false) => {
+		// Save the notification
 		io.saveNotification({ message, details, type: `system`, id: Uuid.generate(), timestamp: Date.now() });
 
 		// Tell QML to render the announcement
@@ -105,6 +106,8 @@ function notificationFormat(notificationObject) {
 }
 
 function update() {
+	// The update function is currently only used to check the status of gestures.
+	// So if we are not in VR, just do nothing.
 	if (util.userIsUsingVR() === false) return;
 
 	GESTURE.dismiss();

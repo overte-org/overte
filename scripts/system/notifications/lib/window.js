@@ -13,10 +13,10 @@ const windowFunc = {
 		Window.displayAnnouncement(`Processing .gif snapshot...`);
 	},
 	connectionAdded: (connectionName) => {
-		notification.connection(`Added ${connectionName}`);
+		notification.system(`Added ${connectionName}`);
 	},
 	connectionError: (error) => {
-		notification.connection(`Error adding connection`, `${error}`);
+		notification.system(`Error adding connection`, `${error}`);
 	},
 	announcement: (message, details) => {
 		notification.system(message, details, `system`);
