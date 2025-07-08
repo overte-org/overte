@@ -11,6 +11,7 @@ Item {
 	property int notificationId: 0; // Incremental value used to reference each individual notification 
 	property bool isHovered: false;
     property bool announcementHistoryVisible: false;
+    property bool hasUnread: false;
 
 	ListModel {
         id: notifications;
@@ -116,7 +117,7 @@ Item {
             radius: 5;
 
             Image {
-                source: "../img/notification-bell.svg";
+                source: hasUnread ? "../img/notification-bell-unread.svg" : "../img/notification-bell.svg";
                 height: 30;
                 width: 30;
                 sourceSize.width: 128;
@@ -124,12 +125,20 @@ Item {
                 fillMode: Image.PreserveAspectFit;
                 anchors.centerIn: parent;
                 opacity: 0.9;
+                id: notificationIcon;
 
                 Behavior on opacity {
                     NumberAnimation {
                         duration: 100;
                         easing.type: Easing.InOutCubic;
                     }
+                }
+                SequentialAnimation {
+                    id: shakeAnimation
+                    NumberAnimation { target: notificationIcon; property: "rotation"; to: 20; duration: 200}
+                    NumberAnimation { target: notificationIcon; property: "rotation"; to: -20; duration: 200}
+                    NumberAnimation { target: notificationIcon; property: "rotation"; to: 20; duration: 200}
+                    NumberAnimation { target: notificationIcon; property: "rotation"; to: 0; duration: 200}
                 }
             }
 
@@ -140,6 +149,7 @@ Item {
 
                 onPressed: {
                     announcementHistoryVisible = !announcementHistoryVisible;
+                    if (announcementHistoryVisible) hasUnread = false;
                 }
 
                 onEntered: {
@@ -160,9 +170,23 @@ Item {
                 }
             }
         }
-
     }
 
+    Timer {
+        id: shakeAnimationTimer;
+        running: false;
+        repeat: true;
+        interval: 5000;
+        onTriggered: {
+            shakeAnimation.start();
+        }
+    }
+
+    onHasUnreadChanged: {
+        if (hasUnread === false) {
+            shakeAnimationTimer.running = false;
+        }
+    }
 
 	function addSystemNotification(message, details) {
 		var targetNotification = notificationId;
@@ -178,7 +202,12 @@ Item {
 		print(JSON.stringify(message));
         switch (message.type){
             case "addSystemNotification":
-				addSystemNotification(message.message, message.details)
+				addSystemNotification(message.message, message.details);
+                shakeAnimation.start();
+                if (announcementHistoryVisible === false) {
+                    hasUnread = true;
+                    shakeAnimationTimer.running = true;
+                }
                 break;
             case "closeAllNotifications":
                 notifications.clear();
