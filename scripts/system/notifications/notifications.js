@@ -16,13 +16,21 @@ Script.include('./lib/io.js');
 Script.include('./lib/sound.js');
 Script.include('./lib/window.js');
 Script.include('./lib/gesture.js');
+Script.include('./lib/ui.js');
 
+Window.domainConnectionRefused.connect(windowFunc.domainConnectionRefused);
+Window.stillSnapshotTaken.connect(windowFunc.stillSnapshotTaken);
+Window.snapshot360Taken.connect(windowFunc.stillSnapshotTaken); // Same as still snapshot
+Window.processingGifStarted.connect(windowFunc.processingGifStarted);
+Window.connectionAdded.connect(windowFunc.connectionAdded);
+Window.connectionError.connect(windowFunc.connectionError);
+Window.announcement.connect(windowFunc.announcement);
+Window.notifyEditError = windowFunc.notifyEditError;
+Window.notify = windowFunc.notify;
+Tablet.tabletNotification.connect(windowFunc.tabletNotification);
 Script.scriptEnding.connect(shutDown);
+Script.update.connect(update);
 HMD.displayModeChanged.connect(changeOverlayBasedOnViewMode)
-
-const CAMERA_MATRIX_INDEX = -7;
-const hmdPanelLocalPosition = { "x": 0.3, "y": 0.25, "z": -1.5 };
-const hmdPanelLocalRotation = Quat.fromVec3Degrees({ "x": 0, "y": -3, "z": 0 });
 
 let app = {
 	_config: {
@@ -40,57 +48,23 @@ let app = {
 	}
 }
 
-// This stores the state of active gestures. It is only used to make sure we don't spam actions.
-let gestures = {
-	quickCloseVR: false
-}
-
 io.getNotifications();
 changeOverlayBasedOnViewMode();
-Script.update.connect(update);
 
 function changeOverlayBasedOnViewMode() {
-	util.debugLog(`Deploying notification interface...`)
-	closeAllWindows()
+	util.debugLog(`Deploying notification interface...`);
+	UI.closeAll();
 
 	if (util.userIsUsingVR()) {
 		util.debugLog(`User is in VR, creating web entity`);
-		// Create the notification web entity
-		const properties = {
-			type: "Web",
-			sourceUrl: Script.resolvePath("./qml/NotificationsBaseVR.qml"),
-			position: { x: 0, y: 1, z: 0 },
-			dimensions: { "x": 0.4, "y": 0.0, "z": 0.1 },
-			visible: false,
-			alpha: 0.9,
-			dpi: 20,
-			maxFPS: 60,
-			useBackground: false,
-			parentID: MyAvatar.sessionUUID,
-			parentJointIndex: CAMERA_MATRIX_INDEX,
-			localPosition: hmdPanelLocalPosition,
-			localRotation: hmdPanelLocalRotation,
-			wantsKeyboardFocus: false,
-			showKeyboardFocusHighlight: false,
-			grab: {
-				grabbable: false,
-			}
-		};
-
-		app._ui.overlayVR = Entities.addEntity(properties, "local");
-		Entities.webEventReceived.connect((entityID, message) => { if (entityID === app._ui.overlayVR) onMessageFromQML(JSON.parse(message)) })
+		UI.openVR();
 	}
 	else {
 		util.debugLog(`User is on Desktop, creating Overlay`);
-		// Just rely in the overlay
-		app._ui.overlay = new OverlayWindow({
-			source: Script.resolvePath("./qml/NotificationsBase.qml"),
-		});
-		app._ui.overlay.fromQml.connect(onMessageFromQML);
+		UI.openDesktop();
 	}
 
-	populateNotificationOverlay();
-	sendMessageToQML({ type: "initialized", isVRMode: util.userIsUsingVR() })
+	UI.sendNotificationHistory();
 }
 
 const notification = {
@@ -104,46 +78,11 @@ const notification = {
 		if (sound) playSound.system();
 
 	},
-	connection: (text = "") => {
-		// Once we have connections implemented, finish this.
-		// Tell QML to render the announcement
-		// TODO
-
-		// Play a sound
-		// TODO: 
-	}
+	// connection: () => { }
 }
 
 function onMessageFromQML(event) {
-	switch (event.type) {
-		case "bubbleCount":
-			if (!app._ui.overlayVR) return;
-
-			let dimensions = (Entities.getEntityProperties(app._ui.overlayVR, "dimensions")).dimensions;
-			util.debugLog(`Got ${JSON.stringify(dimensions)} for dimensions.`);
-			dimensions.y = 0.1 * Math.min(event.count, 4); // Never show more than 4 bubbles at once
-			util.debugLog(`New dimensions to set: ${dimensions.y}.`);
-			Entities.editEntity(app._ui.overlayVR, { dimensions, visible: event.count > 0 });
-			break;
-	}
-}
-
-function populateNotificationOverlay() {
-	if (app._ui.overlay === null) return util.debugLog(`Notification desktop overlay is not open. Not sending a message.`);
-
-	let connectionNotificationsReversed = [...app._data.connectionNotifications];
-	connectionNotificationsReversed.reverse();
-	connectionNotificationsReversed.forEach((obj, index) => {
-		connectionNotificationsReversed[index] = notificationFormat(obj);
-	})
-
-	let systemNotificationsReversed = [...app._data.systemNotifications];
-	systemNotificationsReversed.reverse();
-	systemNotificationsReversed.forEach((obj, index) => {
-		systemNotificationsReversed[index] = notificationFormat(obj);
-	})
-
-	sendMessageToQML({ type: "notificationList", messages: [...connectionNotificationsReversed, ...systemNotificationsReversed] });
+	if (event.type === "bubbleCount") return UI.resizeVROverlayFromActiveCount(event.count);
 }
 
 function notificationFormat(notificationObject) {
@@ -166,14 +105,9 @@ function notificationFormat(notificationObject) {
 }
 
 function update() {
-	if (util.userIsUsingVR()) {
-		GESTURE.dismiss();
-	}
-}
+	if (util.userIsUsingVR() === false) return;
 
-function closeAllNotifications() {
-	util.debugLog("Closing all active notifications.");
-	sendMessageToQML({ type: "closeAllNotifications" });
+	GESTURE.dismiss();
 }
 
 function sendMessageToQML(message) {
@@ -183,7 +117,7 @@ function sendMessageToQML(message) {
 }
 
 function shutDown() {
-	closeAllWindows();
+	UI.closeAll();
 	Script.update.disconnect(update);
 	Window.domainConnectionRefused.disconnect(windowFunc.domainConnectionRefused);
 	Window.stillSnapshotTaken.disconnect(windowFunc.stillSnapshotTaken);
@@ -194,28 +128,3 @@ function shutDown() {
 	Window.announcement.disconnect(windowFunc.announcement);
 	Tablet.tabletNotification.disconnect(windowFunc.tabletNotification);
 }
-
-function closeAllWindows() {
-	util.debugLog('Closing all notification windows.')
-	if (app._ui.overlayVR) {
-		Entities.deleteEntity(app._ui.overlayVR);
-		Entities.webEventReceived.disconnect((entityID, message) => { onMessageFromQML(JSON.parse(message)) })
-		app._ui.overlayVR = null;
-	}
-	if (app._ui.overlay) {
-		app._ui.overlay.fromQml.disconnect(onMessageFromQML);
-		app._ui.overlay.close();
-		app._ui.overlay = null;
-	}
-}
-
-Window.domainConnectionRefused.connect(windowFunc.domainConnectionRefused);
-Window.stillSnapshotTaken.connect(windowFunc.stillSnapshotTaken);
-Window.snapshot360Taken.connect(windowFunc.stillSnapshotTaken); // Same as still snapshot
-Window.processingGifStarted.connect(windowFunc.processingGifStarted);
-Window.connectionAdded.connect(windowFunc.connectionAdded);
-Window.connectionError.connect(windowFunc.connectionError);
-Window.announcement.connect(windowFunc.announcement);
-Window.notifyEditError = windowFunc.notifyEditError;
-Window.notify = windowFunc.notify;
-Tablet.tabletNotification.connect(windowFunc.tabletNotification);
