@@ -1229,16 +1229,15 @@ void OpenXrInputPlugin::InputDevice::calibratePucks(const controller::InputCalib
         if (!_poseStateMap[channel].isValid()) { continue; }
 
         // get the heading of the headset for the forward direction
-        vec3 headEuler = glm::eulerAngles(_context->_lastHeadPose.getRotation());
-        headEuler.x = 0.0f;
-        quat headAngle = glm::inverse(quat(headEuler));
+        auto heading = glm::eulerAngles(_context->_lastHeadPose.getRotation()).y;
+        auto headAngle = glm::inverse(quat(vec3(0.0f, heading, 0.0f)));
 
-        auto position = headAngle * _poseStateMap[channel].getTranslation();
+        //auto position = glm::inverse(headAngle) * _poseStateMap[channel].getTranslation();
         auto rotation = headAngle * _poseStateMap[channel].getRotation();
         auto offset = defaultPoseOffset(data, channel);
 
         _trackerCalibrations[channel] = Pose(
-            vec3(),//position - vec3(offset[3]),
+            glm::inverse(rotation) * vec3(0.0f, channel == HIPS ? -0.05f : 0.0f, 0.1f),
             glm::inverse(rotation) * quat(offset)
         );
     }

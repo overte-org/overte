@@ -58,18 +58,6 @@ Flickable {
         }
     }
 
-    function bringToView(item) {
-        var yTop = item.mapToItem(contentItem, 0, 0).y;
-        var yBottom = yTop + item.height;
-
-        var surfaceTop = contentY;
-        var surfaceBottom = contentY + height;
-
-        if(yTop < surfaceTop || yBottom > surfaceBottom) {
-            contentY = yTop - height / 2 + item.height
-        }
-    }
-
     Component.onCompleted: {
         page = config.createObject(flick.contentItem);
     }
@@ -363,41 +351,6 @@ Flickable {
                 to: 0
             }
 
-
-            function logAction(action, status) {
-                var data = {
-                    "puck_configuration": status["configuration"],
-                }
-                UserActivityLogger.logAction(action, data);
-            }
-
-
-            function trackersForConfiguration() {
-                var pucksNeeded = 0;
-
-                if (headPuckBox.checked) {
-                    pucksNeeded++;
-                }
-
-                if (feetBox.checked) {
-                    pucksNeeded++;
-                }
-
-                if (hipBox.checked) {
-                    pucksNeeded++;
-                }
-
-                if (chestBox.checked) {
-                    pucksNeeded++;
-                }
-
-                if (shoulderBox.checked) {
-                    pucksNeeded++;
-                }
-
-                return pucksNeeded;
-            }
-
             function cancelCalibration() {
                 calibrationTimer.stop();
             }
@@ -408,51 +361,7 @@ Flickable {
 
             function displayConfiguration() {
                 isConfiguring = true;
-
-                var settings = InputConfiguration.configurationSettings("OpenXR");
-
-                // default offset for user wearing puck on the center of their forehead.
-                headYOffset.realValue = 4; // (cm), puck is above the head joint.
-                headZOffset.realValue = 8; // (cm), puck is in front of the head joint.
-
-                // defaults for user wearing the pucks on the backs of their palms.
-                handYOffset.realValue = 8; // (cm), puck is past the the hand joint.  (set this to zero if puck is on the wrist)
-                handZOffset.realValue = -4; // (cm), puck is on above hand joint.
-
-                var eyeTrackingEnabled = settings["eyeTrackingEnabled"];
-
-                armCircumference.realValue = settings["armCircumference"];
-                shoulderWidth.realValue = settings["shoulderWidth"];
-
-                eyeTracking.checked = eyeTrackingEnabled;
-                outOfRangeDataStrategyComboBox.currentIndex = outOfRangeDataStrategyComboBox.model.indexOf(settings.outOfRangeDataStrategy);
-
-                var data = {
-                    "num_pucks": settings["puckCount"]
-                };
-
-                UserActivityLogger.logAction("mocap_ui_open_dialog", data);
-
                 isConfiguring = false;
-            }
-
-            function composeConfigurationSettings() {
-                var settingsObject = {
-                    "armCircumference": armCircumference.realValue,
-                    "shoulderWidth": shoulderWidth.realValue,
-                    "outOfRangeDataStrategy": outOfRangeDataStrategyComboBox.model[outOfRangeDataStrategyComboBox.currentIndex],
-                }
-
-                return settingsObject;
-            }
-
-            function sendConfigurationSettings() {
-                if (isConfiguring) {
-                    // Ignore control value changes during dialog initialization.
-                    return;
-                }
-                var settings = composeConfigurationSettings();
-                InputConfiguration.setConfigurationSettings(settings, "OpenXR");
             }
         }
     }
