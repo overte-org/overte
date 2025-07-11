@@ -25,6 +25,6 @@ This script is branched into a few smaller scripts, see `/lib` for the important
 # Credits
 - Sound effects
 	- `/sound/systemNotification.mp3`
-		- https://pixabay.com/sound-effects/new-notification-017-352293/
+		- https://pixabay.com/sound-effects/new-notification-014-363678/
 		- Universfield
 		- https://pixabay.com/service/license-summary/
