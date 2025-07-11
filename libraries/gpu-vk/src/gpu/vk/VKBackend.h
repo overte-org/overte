@@ -492,7 +492,7 @@ protected:
     void releaseFrameData() { _currentFrame.reset(); };
 public:
     // Called after frame finishes rendering. Cleans up and puts frame data object back to the pool.
-    void recycleFrame();
+    void recyclePreviousFrame();
     void waitForGPU();
 
     void releaseExternalTexture(GLuint id, const Texture::ExternalRecycler& recycler);
@@ -546,6 +546,8 @@ protected:
     std::shared_ptr<FrameData> _currentFrame;
     // Frame for which command buffer is already generated and it's currently being rendered.
     std::shared_ptr<FrameData> _currentlyRenderedFrame;
+    // Frame that was previously rendered. Can be recycled after waiting for _vkWindow->_previousFrameFence.
+    std::shared_ptr<FrameData> _previouslyRenderedFrame;
     size_t _frameCounter{ 0 };
 
     // Safety check to ensure that shutdown was completed before destruction.

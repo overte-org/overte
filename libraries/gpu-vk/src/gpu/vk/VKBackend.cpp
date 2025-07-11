@@ -451,6 +451,7 @@ void VKBackend::executeFrame(const FramePointer& frame) {
 
     //auto frameToRecycle = _currentFrame;
     // Move pointer to current frame to property that will store it while it's being rendered and before it's recycled.
+    _previouslyRenderedFrame = _currentlyRenderedFrame;
     _currentlyRenderedFrame = _currentFrame;
     releaseFrameData();
     // VKTODO: provide nicer way of doing this
@@ -1373,6 +1374,14 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
                     preUpdateTransform();
                     break;
 
+                case Batch::COMMAND_disableContextStereo:
+                    _stereo._contextDisable = true;
+                    break;
+
+                case Batch::COMMAND_restoreContextStereo:
+                    _stereo._contextDisable = false;
+                    break;
+
                 case Batch::COMMAND_setViewportTransform:
                 case Batch::COMMAND_setViewTransform:
                 case Batch::COMMAND_setProjectionTransform:
@@ -1428,6 +1437,9 @@ void VKBackend::renderPassDraw(const Batch& batch) {
         case Batch::COMMAND_setModelTransform:
         case Batch::COMMAND_setViewTransform:
         case Batch::COMMAND_setProjectionTransform:
+        case Batch::COMMAND_saveViewProjectionTransform:
+        case Batch::COMMAND_setSavedViewProjectionTransform:
+        case Batch::COMMAND_setProjectionJitterSequence:
             break;
 
         case Batch::COMMAND_draw:
@@ -2098,11 +2110,11 @@ void VKBackend::acquireFrameData() {
     _framesToReuse.pop_front();
 }
 
-void VKBackend::recycleFrame() {
-    if (_currentlyRenderedFrame) {
-        _currentlyRenderedFrame->cleanup();
-        _framesToReuse.push_back(_currentlyRenderedFrame);
-        _currentlyRenderedFrame.reset();
+void VKBackend::recyclePreviousFrame() {
+    if (_previouslyRenderedFrame) {
+        _previouslyRenderedFrame->cleanup();
+        _framesToReuse.push_back(_previouslyRenderedFrame);
+        _previouslyRenderedFrame.reset();
     }
 }
 
@@ -3536,7 +3548,14 @@ void VKBackend::do_copySavedViewProjectionTransformToBuffer(const Batch& batch, 
     }
 
     // Sync BufferObject
+    // VKTODO: buffer needs to be edited GPU side instead and two copies are needed,
+    //  one for frame that is being rendered and one for frame that is having command buffers generated.
+    buffer->setSubData(dstOffset, size, (uint8_t *)(_transform._cameras.data()) + savedTransform._cameraOffset);
     auto* object = syncGPUObject(*buffer);
+    //object->map();
+    //object->copy(size, (uint8_t *)(_transform._cameras.data()) + savedTransform._cameraOffset);
+    //object->flush(VK_WHOLE_SIZE);
+    //object->unmap();
     if (object) {
         // VKTODO: set the buffer
         //glCopyNamedBufferSubData(_transform._cameraBuffer, object->_buffer, savedTransform._cameraOffset, dstOffset, size);

@@ -954,13 +954,20 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
                 VK_CHECK_RESULT(vkWaitForFences(vkDevice, 1, &frameFence, VK_TRUE, DEFAULT_FENCE_TIMEOUT));
                 vkDestroyFence(vkDevice, frameFence, nullptr);
             }
+            if (_vkWindow->_previousCommandBuffer != VK_NULL_HANDLE) {
+                VK_CHECK_RESULT(vkResetCommandBuffer(commandBuffer, 0));
+            }
+
+            // Recycles frame to which _previousFrameFence and _previousCommandBuffer belongs.
+            vkBackend->recyclePreviousFrame();
+
             _vkWindow->_previousFrameFence = frameFence;
+            _vkWindow->_previousCommandBuffer = commandBuffer;
         }
         _vkWindow->_swapchain.queuePresent(_vkWindow->_context.graphicsQueue, currentImageIndex, _vkWindow->_renderCompleteSemaphore);
         //_vkWidget->_swapchain.queuePresent(_vkWidget->_vksContext.graphicsQueue, currentImageIndex, _vkWidget->_renderCompleteSemaphore);
-
-        vkBackend->recycleFrame();
-
+        
+        // VKTODO
         gpu::Backend::freeGPUMemSize.set(gpu::gl::getFreeDedicatedMemory());
     } else if (alwaysPresent()) {
         refreshRateController->clockEndTime();
