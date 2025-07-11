@@ -15,6 +15,10 @@
 
 #define HAND_COUNT 2
 
+// most of the time this should be less than 16, but some devices like
+// SlimeVR report xdev trackers for the joints of a simulated skeleton
+#define MAX_TRACKER_COUNT 64
+
 class OpenXrInputPlugin : public InputPlugin {
     Q_OBJECT
 public:
@@ -71,6 +75,14 @@ private:
         XrSpace _poseSpace = XR_NULL_HANDLE;
     };
 
+    struct XDevTracker {
+        XrSpace space;
+        XrPosef offset_pose;
+        std::optional<controller::StandardPoseChannel> pose_channel;
+        XrXDevPropertiesMNDX properties;
+    };
+    void guessXDevRoles(std::unordered_map<XrXDevIdMNDX, XDevTracker>& trackers);
+
     class InputDevice : public controller::InputDevice {
     public:
         InputDevice(std::shared_ptr<OpenXrContext> c);
@@ -84,6 +96,10 @@ private:
 
         void emulateStickFromTrackpad();
         void getHandTrackingInputs(int index, const mat4& sensorToAvatar);
+
+        void updateBodyFromViveTrackers(const mat4& sensorToAvatar);
+        void updateBodyFromXDevSpaces(const mat4& sensorToAvatar);
+        void calibratePucks(const controller::InputCalibrationData& inputCalibrationData);
 
         mutable std::recursive_mutex _lock;
         template <typename F>
@@ -99,6 +115,10 @@ private:
         std::map<std::string, std::shared_ptr<Action>> _actions;
         std::shared_ptr<OpenXrContext> _context;
         bool _actionsInitialized = false;
+
+        std::unordered_map<XrXDevIdMNDX, XDevTracker> _xdev;
+        std::unordered_map<controller::StandardPoseChannel, controller::Pose> _trackerCalibrations;
+        bool _wantsCalibrate = false;
 
         XrHandTrackerEXT _handTracker[2] = {XR_NULL_HANDLE, XR_NULL_HANDLE};
 
