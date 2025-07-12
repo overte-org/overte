@@ -357,7 +357,7 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     _swapchain.queuePresent(_vkcontext.graphicsQueue, swapchainIndex, renderComplete);
     //VKTODO _vkcontext.trashCommandBuffers({ commandBuffer });
     vkBackend->waitForGPU();
-    vkBackend->recycleFrame();
+    vkBackend->recyclePreviousFrame();
     if (frame && !frame->batches.empty()) {
         if (rdoc_api)
             rdoc_api->EndFrameCapture(NULL, NULL);
