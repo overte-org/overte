@@ -44,6 +44,7 @@
 #include "ui/overlays/Overlays.h"
 #include "VisionSqueeze.h"
 #include "workload/GameWorkload.h"
+#include "VKCanvas.h"
 
 class ArchiveDownloadInterface;
 class AudioInjector;
@@ -152,7 +153,11 @@ public:
     // UI
     virtual ui::Menu* getPrimaryMenu() override;
     virtual void showDisplayPluginsTools(bool show) override;
+#ifdef USE_GL
     virtual GLWidget* getPrimaryWidget() override;
+#else
+    virtual VKWidget* getPrimaryWidget() override;
+#endif
     virtual MainWindow* getPrimaryWindow() override;
     virtual QOpenGLContext* getPrimaryContext() override;
     virtual bool isForeground() const override;
@@ -692,6 +697,8 @@ private:
     // Member Variables
     // The window needs to be initialized early as other initializers try to access it
     MainWindow* _window;
+    VKWindow* _vkWindow;
+    QWidget *_vkWindowWrapper;
     // _isMenuInitialized: used to initialize menu early enough before it's needed by other
     // initializers. Fixes a deadlock issue with recent Qt versions.
     bool _isMenuInitialized;
@@ -755,7 +762,11 @@ private:
 
 
     // UI
-    GLCanvas* _glWidget { nullptr };
+#ifdef USE_GL
+    GLCanvas* _primaryWidget{ nullptr };
+#else
+    VKCanvas* _primaryWidget{ nullptr };
+#endif
 
     Overlays _overlays;
     std::shared_ptr<ApplicationOverlay> _applicationOverlay;

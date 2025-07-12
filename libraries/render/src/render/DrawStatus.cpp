@@ -205,7 +205,7 @@ void DrawStatus::run(const RenderContextPointer& renderContext, const Input& inI
     }
 
     if (!_boundsBuffer) {
-        _boundsBuffer = std::make_shared<gpu::Buffer>(sizeof(render::ItemBound));
+        _boundsBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer, sizeof(render::ItemBound));
     }
 
     // Alright, something to render let's do it
@@ -231,7 +231,7 @@ void DrawStatus::run(const RenderContextPointer& renderContext, const Input& inI
 
         if (_showNetwork || _showFade) {
             if (!_instanceBuffer) {
-                _instanceBuffer = std::make_shared<gpu::Buffer>();
+                _instanceBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);// VKTODO: is this correct?
             }
 
             struct InstanceData {

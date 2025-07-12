@@ -15,11 +15,11 @@
 <@include DeferredBuffer.slh@>
 <@include DeferredBufferWrite_shared.slh@>
 
-layout(location = DEFERRED_COLOR_SLOT) out vec4 _albedoMetallic;                 // albedo / metallic
-layout(location = DEFERRED_NORMAL_SLOT) out vec4 _normalRoughness;               // normal / roughness
-layout(location = DEFERRED_SPECULAR_SLOT) out vec4 _scatteringEmissiveOcclusion; // scattering / emissive / occlusion
-layout(location = DEFERRED_VELOCITY_SLOT) out vec4 _velocity;                    // velocity
-layout(location = DEFERRED_LIGHTING_SLOT) out vec4 _lighting;                    // emissive
+OUTPUT(DEFERRED_COLOR_SLOT, vec4, _albedoMetallic);                 // albedo / metallic
+OUTPUT(DEFERRED_NORMAL_SLOT, vec4, _normalRoughness);               // normal / roughness
+OUTPUT(DEFERRED_SPECULAR_SLOT, vec4, _scatteringEmissiveOcclusion); // scattering / emissive / occlusion
+OUTPUT(DEFERRED_VELOCITY_SLOT, vec4, _velocity);                    // velocity
+OUTPUT(DEFERRED_LIGHTING_SLOT, vec4, _lighting);                    // emissive
 
 // the alpha threshold
 const float alphaThreshold = 0.5;

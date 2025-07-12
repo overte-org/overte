@@ -22,16 +22,16 @@ Buffer::Size Buffer::getBufferCPUMemSize() {
     return _bufferCPUMemSize.getValue();
 }
 
-Buffer::Buffer(Size pageSize) :
-    _renderPages(pageSize), _pages(pageSize) {
+Buffer::Buffer(uint32_t usage, Size pageSize) :
+    _renderPages(pageSize), _pages(pageSize), _usage(usage) {
     _bufferCPUCount.increment();
 }
 
-Buffer::Buffer(Size size, const Byte* bytes, Size pageSize) : Buffer(pageSize) {
+Buffer::Buffer(uint32_t usage, Size size, const Byte* bytes, Size pageSize) : Buffer(usage, pageSize) {
     setData(size, bytes);
 }
 
-Buffer::Buffer(const Buffer& buf) : Buffer(buf._pages._pageSize) {
+Buffer::Buffer(const Buffer& buf) : Buffer(buf._usage, buf._pages._pageSize) {
     setData(buf.getSize(), buf.getData());
 }
 
