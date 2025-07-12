@@ -3547,15 +3547,15 @@ void VKBackend::do_copySavedViewProjectionTransformToBuffer(const Batch& batch, 
         return;
     }
 
-    // Sync BufferObject
     // VKTODO: buffer needs to be edited GPU side instead and two copies are needed,
     //  one for frame that is being rendered and one for frame that is having command buffers generated.
-    buffer->setSubData(dstOffset, size, (uint8_t *)(_transform._cameras.data()) + savedTransform._cameraOffset);
+    // Sync BufferObject
     auto* object = syncGPUObject(*buffer);
-    //object->map();
-    //object->copy(size, (uint8_t *)(_transform._cameras.data()) + savedTransform._cameraOffset);
-    //object->flush(VK_WHOLE_SIZE);
-    //object->unmap();
+    // Copy camera data to the buffer.
+    object->map();
+    object->copy(size, (uint8_t *)(_transform._cameras.data()) + savedTransform._cameraOffset, dstOffset);
+    object->flush(VK_WHOLE_SIZE);
+    object->unmap();
     if (object) {
         // VKTODO: set the buffer
         //glCopyNamedBufferSubData(_transform._cameraBuffer, object->_buffer, savedTransform._cameraOffset, dstOffset, size);
