@@ -169,6 +169,19 @@ Rectangle {
                 }
             }
 
+            Item {
+                width: parent.width;
+                height: parent.height - 40;
+                visible: doesChannelHaveMessages(pageVal) === false;
+
+                Text {
+                    text: "No messages to display";
+                    font.pixelSize: 20;
+                    color: "white";
+                    anchors.centerIn: parent;
+                }
+            }
+
             ListModel {
                 id: localMessages;
             }
@@ -436,6 +449,16 @@ Rectangle {
             } 
         }
         return new_message;
+    }
+
+    function doesChannelHaveMessages(targetChannel) {
+        if (targetChannel === "local") {
+            return localMessages.count > 0;
+        }
+        if (targetChannel === "domain") {
+            return domainMessages.count > 0;
+        }
+        return false;
     }
 
     // Messages from script
