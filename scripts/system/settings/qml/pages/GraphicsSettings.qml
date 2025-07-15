@@ -311,9 +311,14 @@ Flickable {
             settingText: "Anti-aliasing";
             optionIndex: Render.antialiasingMode;
             options: ["None", "TAA", "FXAA"];
+            disabled: Render.renderMethod;
 
             onValueChanged: {
                 Render.antialiasingMode = index;
+            }
+
+            onDisabledChanged: {
+                if (disabled) setOptionIndex(0);
             }
         }
     }
