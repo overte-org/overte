@@ -19,7 +19,7 @@ const windowFunc = {
 		notification.system(`Error adding connection`, `${error}`);
 	},
 	announcement: (message, details) => {
-		notification.system(message, details, `system`);
+		notification.system(message, details);
 	},
 	notifyEditError: (message) => {
 		// Seems to only be for edit.js. Deprecate but allow use.

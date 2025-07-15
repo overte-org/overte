@@ -34,7 +34,7 @@ Item {
         Rectangle {
             width: 300;
             height: 330;
-            color: Qt.rgba(0,0,0,0.8);
+            color: Qt.rgba(0,0,0,0.95);
             radius: 5;
             visible: announcementHistoryVisible;
 
@@ -44,48 +44,77 @@ Item {
                 spacing: 2;
 
                 Item {
-                    height: 30;
+                    height: 35;
                     width: parent.width;
 
-                    Row {
+                    RowLayout {
                         width: parent.width;
                         height: parent.height;
 
-                        Switch { 
+                        Row {
                             height: 20;
-                            id: doNotDisturbSwitch;
 
-                            indicator: Rectangle {
-                                implicitWidth: 48;
-                                implicitHeight: 20;
-                                x: doNotDisturbSwitch.leftPadding;
-                                y: parent.height / 2 - height / 2 + 5;
-                                radius: 13;
-                                color: doNotDisturbSwitch.checked ? "#17a81a" : "#ffffff";
-                                border.color: doNotDisturbSwitch.checked ? "#17a81a" : "#cccccc";
+                            Switch { 
+                                height: 20;
+                                id: doNotDisturbSwitch;
 
-                                Rectangle {
-                                    x: doNotDisturbSwitch.checked ? parent.width - width : 0;
-                                    width: 20;
-                                    height: 20;
+                                indicator: Rectangle {
+                                    implicitWidth: 48;
+                                    implicitHeight: 20;
+                                    x: doNotDisturbSwitch.leftPadding;
+                                    y: parent.height / 2 - height / 2 + 5;
                                     radius: 13;
-                                    color: doNotDisturbSwitch.down ? "#cccccc" : "#ffffff";
-                                    border.color: doNotDisturbSwitch.checked ? (doNotDisturbSwitch.down ? "#17a81a" : "#21be2b") : "#999999";
+                                    color: doNotDisturbSwitch.checked ? "#17a81a" : "#ffffff";
+                                    border.color: doNotDisturbSwitch.checked ? "#17a81a" : "#cccccc";
+
+                                    Rectangle {
+                                        x: doNotDisturbSwitch.checked ? parent.width - width : 0;
+                                        width: 20;
+                                        height: 20;
+                                        radius: 13;
+                                        color: doNotDisturbSwitch.down ? "#cccccc" : "#ffffff";
+                                        border.color: doNotDisturbSwitch.checked ? (doNotDisturbSwitch.down ? "#17a81a" : "#21be2b") : "#999999";
+                                    }
+                                }
+
+                                onClicked: {
+                                    doNotDisturb = checked;
+                                    toScript({type: "doNotDisturbState", state: doNotDisturb});
                                 }
                             }
 
-                            onClicked: {
-                                doNotDisturb = checked;
-                                toScript({type: "doNotDisturbState", state: doNotDisturb});
+                            Text {
+                                color: "White";
+                                font.pixelSize: 18;
+                                text: "Do not disturb";
+                                font.weight: Font.Medium;
+                                anchors.verticalCenter: parent.verticalCenter;
                             }
                         }
 
-                        Text {
-                            color: "White";
-                            font.pixelSize: 18;
-                            width: 10;
-                            text: "Do not disturb";
-                            font.weight: Font.Medium;
+                        Row {
+                            Layout.fillHeight: true;
+                            width: 20;
+
+                            Image {
+                                source: "../img/delete.svg";
+                                height: 20;
+                                width: 20;
+                                sourceSize.width: 128;
+                                sourceSize.height: 128;
+                                fillMode: Image.PreserveAspectFit;
+                                anchors.centerIn: parent;
+
+                                MouseArea {
+                                    anchors.fill: parent;
+                                    hoverEnabled: true;
+                                    propagateComposedEvents: true;	
+
+                                    onClicked: {
+                                        notifications.clear();
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -113,8 +142,7 @@ Item {
                             delegate: Rectangle {
                                 width: parent && parent.width || 0;
                                 height: 50;
-                                color: Qt.rgba(0,0,0,0.8);
-                                opacity: 0.9;
+                                color: Qt.rgba(0,0,0,0.95);
                                 radius: 5;
 
                                 RowLayout {
@@ -149,13 +177,11 @@ Item {
                                     }
 
                                     onEntered: {
-                                        parent.color = Qt.rgba(0,0,0,0.9);
-                                        parent.opacity = 1;
+                                        parent.color = Qt.rgba(0,0,0,1);
                                     }
 
                                     onExited: {
-                                        parent.color = Qt.rgba(0,0,0,0.8);
-                                        parent.opacity = 0.9;
+                                        parent.color = Qt.rgba(0,0,0,0.95);
                                     }
                                 }
 
@@ -195,8 +221,7 @@ Item {
         Rectangle {
             width: 300;
             height: 50;
-            color: Qt.rgba(0,0,0,0.8);
-            opacity: 0.9;
+            color: Qt.rgba(0,0,0,0.95);
             radius: 5;
             visible: !announcementHistoryVisible && previewNotificationActive;
 
@@ -233,13 +258,11 @@ Item {
                 }
 
                 onEntered: {
-                    parent.color = Qt.rgba(0,0,0,0.9);
-                    parent.opacity = 1;
+                    parent.color = Qt.rgba(0,0,0,1);
                 }
 
                 onExited: {
-                    parent.color = Qt.rgba(0,0,0,0.8);
-                    parent.opacity = 0.9;
+                    parent.color = Qt.rgba(0,0,0,0.95);
                 }
             }
 
@@ -269,13 +292,13 @@ Item {
         Rectangle {
             width: 300;
             height: children[0].height + 10;
-            color: Qt.rgba(0,0,0,0.9);
+            color: Qt.rgba(0,0,0,0.95);
             visible: notificationDetailsActive;
             radius: 5;
 
             ColumnLayout {
-                width: parent.width - 10;
-                height: children[0].contentHeight + children[1].height + 10;
+                width: parent.width - 15;
+                height: notificationDetailsDetails.text == "" ? children[0].contentHeight + 10 : children[0].contentHeight + children[1].height + 10;
                 anchors.centerIn: parent;
                 spacing: 5;
                 
@@ -296,6 +319,7 @@ Item {
                     x: 5;
                     radius: 5;
                     height: children[0].contentHeight;
+                    visible: children[0].text != "";
 
                     Text {
                         id: notificationDetailsDetails;
@@ -309,7 +333,6 @@ Item {
                 }
             }
 
-
             MouseArea {
                 anchors.fill: parent;
 
@@ -322,7 +345,7 @@ Item {
 
         // Bell Icon and container
         Rectangle {
-            color: Qt.rgba(0,0,0,0.8);
+            color: Qt.rgba(0,0,0,0.95);
             width: 40;
             height: 40;
             radius: 5;
@@ -335,15 +358,8 @@ Item {
                 sourceSize.height: 128;
                 fillMode: Image.PreserveAspectFit;
                 anchors.centerIn: parent;
-                opacity: 0.9;
                 id: notificationIcon;
 
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 100;
-                        easing.type: Easing.InOutCubic;
-                    }
-                }
                 SequentialAnimation {
                     id: shakeAnimation
                     NumberAnimation { target: notificationIcon; property: "rotation"; to: 20; duration: 200}
@@ -364,13 +380,11 @@ Item {
                 }
 
                 onEntered: {
-                    parent.color = Qt.rgba(0,0,0,0.95);
-                    parent.children[0].opacity = 1;
+                    parent.color = Qt.rgba(0,0,0,1);
                 }
 
                 onExited: {
-                    parent.color = Qt.rgba(0,0,0,0.8);
-                    parent.children[0].opacity = 0.9;
+                    parent.color = Qt.rgba(0,0,0,0.95);
                 }
             }
 
@@ -428,10 +442,10 @@ Item {
             }
 
             // Visual effects.
-            shakeAnimation.start();
+            // shakeAnimation.start();
             if (announcementHistoryVisible === false) {
                 hasUnread = true;
-                shakeAnimationTimer.running = true;
+                // shakeAnimationTimer.running = true;
             }
         }
 	}
@@ -447,7 +461,6 @@ Item {
 
     // Messages from script
     function fromScript(message) {
-		print(JSON.stringify(message));
         switch (message.type){
             case "addSystemNotification":
 				addSystemNotification(message.message, message.details);
