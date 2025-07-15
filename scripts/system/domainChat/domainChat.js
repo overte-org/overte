@@ -301,7 +301,7 @@
         if (messageHistory) {
             // Load message history
             messageHistory.forEach((message) => {
-                const TIME_ARRAY = _formatTimestamp(_getTimestamp());
+                const TIME_ARRAY = _formatTimestamp(message.timestamp);
                 message.timeString = TIME_ARRAY[0];
                 message.dateString = TIME_ARRAY[1];
                 _emitEvent({ type: "showMessage", ...message });
@@ -321,7 +321,7 @@
     function _formatTimestamp(timestamp) {
         let timeArray = [];
 
-        timeArray.push(new Date().toLocaleTimeString(undefined, {
+        timeArray.push(new Date(timestamp).toLocaleTimeString(undefined, {
             hour12: false,
         }));
 
