@@ -34,6 +34,8 @@ class MenuItemProperties;
  * @hifi-interface
  * @hifi-client-entity
  * @hifi-avatar
+ *
+ * @property {boolean} visible - <code>true</code> if the menu bar is visible on the desktop window.
  */
 
 /**
@@ -48,6 +50,8 @@ class MenuItemProperties;
 
 class MenuScriptingInterface : public QObject {
     Q_OBJECT
+    Q_PROPERTY(bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
+
     MenuScriptingInterface() { };
 public:
     static MenuScriptingInterface* getInstance();
@@ -218,6 +222,20 @@ public slots:
      */
     void setMenuEnabled(const QString& menuName, bool isEnabled);
 
+    /*@jsdoc
+     * Sets the visibility of the desktop menubar.
+     * @function Menu.setVisible
+     * @param {boolean} visible - If <code>true</code>, the menubar is visible on the desktop window.
+     */
+    void setVisible(bool visible);
+
+    /*@jsdoc
+     * Gets the visibility of the desktop menubar.
+     * @function Menu.isVisible
+     * @returns {boolean} <code>true</code> if the menubar is visible on the desktop window.
+     */
+    bool isVisible();
+
 signals:
     /*@jsdoc
      * Triggered when a menu item is clicked or triggered by {@link Menu.triggerOption}.
@@ -232,6 +250,14 @@ signals:
      * Menu.menuItemEvent.connect(onMenuItemEvent);
      */
     void menuItemEvent(const QString& menuItem);
+
+    /*@jsdoc
+     * Triggered when <code>Menu.visible</code> is changed.
+     * @function Menu.visibilityChanged
+     * @param {boolean} visible - <code>true</code> if the menubar is visible on the desktop window.
+     * @returns {Signal}
+     */
+    void visibilityChanged(bool visible);
 };
 
 #endif // hifi_MenuScriptingInterface_h
