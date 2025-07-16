@@ -78,6 +78,10 @@ public:
      * @function Clipboard.exportEntities
      * @param {string} filename - Path and name of the file to export the entities to. Should have the extension ".json".
      * @param {Uuid[]} entityIDs - The IDs of the entities to export.
+    * @param {object} [options] - Export options
+    * @param {boolean} [options.domainOnly] - Only export persistent domain entities.
+    * @param {boolean} [options.globalPositions] - Export with global positions, rather than relative to {@link MyAvatar}
+    * @param {object} [options.paths] - Place paths to export. The key being the path name, and the value being an object containing a {@link Vec3} <code>position</code> and {@link Quat}<code>orientation</code>.
      * @returns {boolean} <code>true</code> if entities were found and the file was written, otherwise <code>false</code>.
      * @example <caption>Create and export a cube and a sphere.</caption>
      * // Create entities.
@@ -98,7 +102,7 @@ public:
      *     Clipboard.exportEntities(filename, [box, sphere]);
      * }
      */
-    Q_INVOKABLE bool exportEntities(const QString& filename, const QVector<QUuid>& entityIDs);
+    Q_INVOKABLE bool exportEntities(const QString& filename, const QVector<QUuid>& entityIDs, const QVariantMap& options = QVariantMap());
     
     /*@jsdoc
     * Exports all entities that have centers within a cube to a JSON file.
@@ -109,9 +113,13 @@ public:
     * @param {number} y - Y-coordinate of the cube center.
     * @param {number} z - Z-coordinate of the cube center.
     * @param {number} scale - Half dimension of the cube.
+    * @param {object} [options] - Export options
+    * @param {boolean} [options.domainOnly] - Only export persistent domain entities.
+    * @param {boolean} [options.globalPositions] - Export with global positions, rather than relative to {@link MyAvatar}
+    * @param {object} [options.paths] - Place paths to export. The key being the path name, and the value being an object containing a {@link Vec3} <code>position</code> and {@link Quat}<code>orientation</code>.
     * @returns {boolean} <code>true</code> if entities were found and the file was written, otherwise <code>false</code>.
     */
-    Q_INVOKABLE bool exportEntities(const QString& filename, float x, float y, float z, float scale);
+    Q_INVOKABLE bool exportEntities(const QString& filename, float x, float y, float z, float scale, const QVariantMap& options = QVariantMap());
 
     /*@jsdoc
      * Pastes the contents of the clipboard into the domain.
