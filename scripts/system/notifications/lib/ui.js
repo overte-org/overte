@@ -40,7 +40,7 @@ const UI = {
 		};
 
 		app._ui.overlayVR = Entities.addEntity(properties, "local");
-		Entities.webEventReceived.connect((entityID, message) => { if (entityID === app._ui.overlayVR) onMessageFromQML(JSON.parse(message)) })
+		Entities.webEventReceived.connect((entityID, message) => { if (entityID === app._ui.overlayVR) onMessageFromQML(util.toJSON(message)) })
 	},
 	openDesktop: () => {
 		app._ui.overlay = new OverlayWindow({

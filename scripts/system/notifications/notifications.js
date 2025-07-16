@@ -84,6 +84,7 @@ const notification = {
 }
 
 function onMessageFromQML(event) {
+	if (!event || !event.type) return;
 	if (event.type === "bubbleCount") return UI.resizeVROverlayFromActiveCount(event.count);
 	if (event.type === "doNotDisturbState") return app._config.doNotDisturb = Boolean(event.state);
 }
