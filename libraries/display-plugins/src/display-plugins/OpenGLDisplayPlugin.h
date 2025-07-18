@@ -53,6 +53,7 @@ public:
     void endSession() override final;
     bool eventFilter(QObject* receiver, QEvent* event) override;
     bool isDisplayVisible() const override { return true; }
+    bool isSupported() const override;
     void captureFrame(const std::string& outputName) const override;
     void submitFrame(const gpu::FramePointer& newFrame) override;
 
@@ -196,7 +197,7 @@ protected:
     }
 
     const gpu::BackendPointer& getBackend() const;
-    gpu::gl::GLBackend* getGLBackend();
+    //gpu::gl::GLBackend* getGLBackend();
 
     // Any resource shared by the main thread and the presentation thread must
     // be serialized through this mutex

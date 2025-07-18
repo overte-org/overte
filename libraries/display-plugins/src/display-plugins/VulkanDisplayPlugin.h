@@ -50,6 +50,7 @@ public:
     void endSession() override final;
     bool eventFilter(QObject* receiver, QEvent* event) override;
     bool isDisplayVisible() const override { return true; }
+    bool isSupported() const override;
     void captureFrame(const std::string& outputName) const override;
     void submitFrame(const gpu::FramePointer& newFrame) override;
 

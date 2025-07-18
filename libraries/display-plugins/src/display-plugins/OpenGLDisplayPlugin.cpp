@@ -481,6 +481,14 @@ bool OpenGLDisplayPlugin::eventFilter(QObject* receiver, QEvent* event) {
     return false;
 }
 
+bool OpenGLDisplayPlugin::isSupported() const {
+#ifdef USE_GL
+    return true;
+#else
+    return false;
+#endif
+}
+
 void OpenGLDisplayPlugin::submitFrame(const gpu::FramePointer& newFrame) {
     withNonPresentThreadLock([&] {
         _newFrameQueue.push(newFrame);
@@ -909,10 +917,10 @@ void OpenGLDisplayPlugin::updateCompositeFramebuffer() {
 }
 
 void OpenGLDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer networkTexture, QOpenGLFramebufferObject* target, GLsync* fenceSync) {
-
-#if 0
 #if !defined(USE_GLES)
-    auto glBackend = const_cast<OpenGLDisplayPlugin&>(*this).getGLBackend();
+    auto backend = const_cast<OpenGLDisplayPlugin&>(*this).getBackend();
+    auto glBackend = std::dynamic_pointer_cast<gpu::gl::GLBackend>(backend);
+    Q_ASSERT(glBackend);
     withOtherThreadContext([&] {
         GLuint sourceTexture = glBackend->getTextureID(networkTexture->getGPUTexture());
         GLuint targetTexture = target->texture();
@@ -958,7 +966,6 @@ void OpenGLDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer ne
         glDeleteFramebuffers(2, fbo);
         *fenceSync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
     });
-#endif
 #endif
 }
 

@@ -78,7 +78,11 @@ void Application::initializeGL() {
         _isGLInitialized = true;
     }
 
+#ifdef USE_GL
+    _primaryWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat());
+#else
     //_primaryWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat()); // VKTODO
+#endif
 
     // When loading QtWebEngineWidgets, it creates a global share context on startup.
     // We have to account for this possibility by checking here for an existing

@@ -54,9 +54,9 @@ void RenderThread::initialize(QWindow* window) {
     _vkcontext.setValidationEnabled(true);
 
 #ifdef USE_GL
-    _vkcontext.createInstance();
-    _vkcontext.createDevice();
-    _vkstagingBuffer = _vkcontext.createStagingBuffer(1024 * 1024 * 512, nullptr);
+    //_vkcontext.createInstance();
+    //_vkcontext.createDevice();
+    //_vkstagingBuffer = _vkcontext.createStagingBuffer(1024 * 1024 * 512, nullptr);
 
     _window->setFormat(getDefaultOpenGLSurfaceFormat());
     _context.setWindow(window);
@@ -224,11 +224,12 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     glClearDepth(0);
     glClear(GL_DEPTH_BUFFER_BIT);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-#endif
+#else
 
     //_gpuContext->enableStereo(true);
     //auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(_gpuContext->getBackend());
     vkBackend->setDrawCommandBuffer(commandBuffer);
+#endif
 
     if (frame && !frame->batches.empty()) {
         // VKTODO: this is a temporary workaround, until render passes are selected inside Vulkan backend
