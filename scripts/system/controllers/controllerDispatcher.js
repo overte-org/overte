@@ -581,7 +581,6 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             filter: Picks.PICK_OVERLAYS | Picks.PICK_LOCAL_ENTITIES | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
             triggers: [
                 {action: controllerStandard.LTClick, button: "Primary"},
-                {action: controllerStandard.LT, button: "ScrollActive"},
                 {action: controllerStandard.LX, button: "ScrollX"},
                 {action: controllerStandard.LY, button: "ScrollY"},
             ],
@@ -598,7 +597,6 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             filter: Picks.PICK_OVERLAYS | Picks.PICK_LOCAL_ENTITIES | Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
             triggers: [
                 {action: controllerStandard.RTClick, button: "Primary"},
-                {action: controllerStandard.RT, button: "ScrollActive"},
                 {action: controllerStandard.RX, button: "ScrollX"},
                 {action: controllerStandard.RY, button: "ScrollY"},
             ],
