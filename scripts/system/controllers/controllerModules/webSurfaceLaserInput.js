@@ -232,11 +232,15 @@ Script.include("/~/system/libraries/controllers.js");
             return !otherModuleRunning && !grabModuleNeedsToRun;
         };
 
-        this.tryCaptureActions = function(isTriggerPressed) {
-            if (isTriggerPressed) {
-                Controller.captureActionEvents("webSurfaceLaserInput_" + this.hand);
-            }
-        };
+        const SCROLL_MAPPING_NAME = `overte.thumbstick_scroll_${this.hand}.web`;
+        this.scrollMappingEnabled = false;
+        this.scrollMapping = Controller.newMapping(SCROLL_MAPPING_NAME);
+        this.stickXMapping = this.scrollMapping.from(
+            this.hand == LEFT_HAND ? Controller.Standard.LX : Controller.Standard.RX
+        ).to(function(_value) { /* dummy to temporarily eat stick input */ });
+        this.stickYMapping = this.scrollMapping.from(
+            this.hand == LEFT_HAND ? Controller.Standard.LY : Controller.Standard.RY
+        ).to(function(_value) { /* dummy to temporarily eat stick input */ });
 
         this.run = function(controllerData, deltaTime) {
             this.addObjectToIgnoreList(controllerData);
@@ -247,23 +251,33 @@ Script.include("/~/system/libraries/controllers.js");
 
             if (type === intersectionType["HifiTablet"] && laserOn) {
                 if (this.shouldThisModuleRun(controllerData)) {
-                    this.tryCaptureActions(isTriggerPressed);
+                    if (!this.scrollMappingEnabled) {
+                        this.scrollMapping.enable();
+                        this.scrollMappingEnabled = true;
+                    }
                     this.running = true;
                     return makeRunningValues(true, [], []);
                 }
             } else if ((type === intersectionType["WebOverlay"] || type === intersectionType["WebEntity"]) && laserOn) { // auto laser on WebEntities andWebOverlays
                 if (this.shouldThisModuleRun(controllerData)) {
-                    this.tryCaptureActions(isTriggerPressed);
+                    if (!this.scrollMappingEnabled) {
+                        this.scrollMapping.enable();
+                        this.scrollMappingEnabled = true;
+                    }
                     this.running = true;
                     return makeRunningValues(true, [], []);
                 }
             } else if ((type === intersectionType["HifiKeyboard"] && laserOn) || type === intersectionType["Overlay"]) {
-                this.tryCaptureActions(isTriggerPressed);
+                if (!this.scrollMappingEnabled) {
+                    this.scrollMapping.enable();
+                    this.scrollMappingEnabled = true;
+                }
                 this.running = true;
                 return makeRunningValues(true, [], []);
             }
 
-            Controller.releaseActionEvents("webSurfaceLaserInput_" + this.hand);
+            this.scrollMapping.disable();
+            this.scrollMappingEnabled = false;
             this.running = false;
             this.dominantHandOverride = false;
             return makeRunningValues(false, [], []);
