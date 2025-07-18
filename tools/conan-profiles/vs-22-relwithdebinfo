@@ -10,4 +10,4 @@ build_type=RelWithDebInfo
 # Build fails on Windows with C++17
 webrtc-audio-processing*:compiler.cppstd=20
 [options]
-Overte/*:qt_source=aqt
+Overte/*:qt_source=source
