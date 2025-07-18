@@ -764,9 +764,10 @@ void Application::initialize(const QCommandLineParser &parser) {
 
 #ifdef USE_GL
     _primaryWidget = new GLCanvas();
+    getApplicationCompositor().setRenderingWidget(_primaryWidget);
+    _window->setCentralWidget(_primaryWidget);
 #else
     _primaryWidget = new VKCanvas();
-#endif
     _vkWindowWrapper = QWidget::createWindowContainer(_vkWindow);
     _vkWindowWrapper->setFocusProxy(_primaryWidget);
     _vkWindowWrapper->setFocusPolicy(Qt::StrongFocus);
@@ -775,6 +776,7 @@ void Application::initialize(const QCommandLineParser &parser) {
     _vkWindow->_primaryWidget = _primaryWidget;
     _window->setCentralWidget(_vkWindowWrapper);
     //_window->setCentralWidget(_primaryWidget); //VKTODO
+#endif
 
     _window->restoreGeometry();
     _window->setVisible(true);
@@ -782,7 +784,9 @@ void Application::initialize(const QCommandLineParser &parser) {
     _primaryWidget->setFocusPolicy(Qt::StrongFocus);
     _primaryWidget->setFocus();
 
+#ifndef USE_GL
     _primaryWidget->_mainWindow = _vkWindow;
+#endif
 
     showCursor(Cursor::Manager::lookupIcon(_preferredCursor.get()));
 

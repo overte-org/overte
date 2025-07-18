@@ -120,7 +120,7 @@ void Application::showDisplayPluginsTools(bool show) {
 
 #ifdef USE_GL
 GLWidget* Application::getPrimaryWidget() {
-    return _glWidget;
+    return _primaryWidget;
 }
 #else
 VKWidget* Application::getPrimaryWidget() {

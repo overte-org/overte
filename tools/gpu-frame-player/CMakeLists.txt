@@ -16,9 +16,7 @@ if (APPLE)
     unset(CMAKE_MACOSX_BUNDLE)
 endif()
 
-option(BUILD_FRAME_PLAYER_GL "Use OpenGL backend for frame player" OFF)
-
-if (BUILD_FRAME_PLAYER_GL)
+if (OVERTE_RENDERING_BACKEND STREQUAL "OpenGL" OR OVERTE_RENDERING_BACKEND STREQUAL "GLES")
     target_compile_definitions(${TARGET_NAME} PRIVATE USE_GL)
     set(OpenGL_GL_PREFERENCE "GLVND")
     link_hifi_libraries(gl ${PLATFORM_GL_BACKEND})

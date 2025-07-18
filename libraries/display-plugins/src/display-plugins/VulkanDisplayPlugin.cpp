@@ -260,6 +260,9 @@ private:
 };
 
 bool VulkanDisplayPlugin::activate() {
+#ifdef USE_GL
+    return false;
+#endif
     if (!_cursorsData.size()) {
         auto& cursorManager = Cursor::Manager::instance();
         for (const auto iconId : cursorManager.registeredIcons()) {
@@ -292,13 +295,15 @@ bool VulkanDisplayPlugin::activate() {
         //CHECK_GL_ERROR();
         widget->context()->doneCurrent();
         widget->context()->moveToThread(presentThread.get());
+#ifdef USE_GL
+#else
         VKWidget *vkWidget = _container->getPrimaryWidget();
         _vkWindow = vkWidget->_mainWindow;
         _vkWindow->setVisible(true);
         _vkWindow->createSurface();
         _vkWindow->createSwapchain();
         _vkWindow->moveToThread(presentThread.get());
-
+#endif
         //_vkWindow->connectResizeTimer(presentThread.get());
 
         presentThread->setContext(&vks::Context::get());
@@ -507,6 +512,14 @@ bool VulkanDisplayPlugin::eventFilter(QObject* receiver, QEvent* event) {
             break;
     }
     return false;
+}
+
+bool VulkanDisplayPlugin::isSupported() const {
+#ifdef USE_GL
+    return false;
+#else
+    return true;
+#endif
 }
 
 void VulkanDisplayPlugin::submitFrame(const gpu::FramePointer& newFrame) {
@@ -1132,7 +1145,7 @@ void VulkanDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer ne
 
 #if 0
 #if !defined(USE_GLES)
-    auto glBackend = const_cast<VulkanDisplayPlugin&>(*this).getGLBackend();
+    auto glBackend = const_cast<VulkanDisplayPlugin&>(*this).getBackend();
     withOtherThreadContext([&] {
         GLuint sourceTexture = glBackend->getTextureID(networkTexture->getGPUTexture());
         GLuint targetTexture = target->texture();
