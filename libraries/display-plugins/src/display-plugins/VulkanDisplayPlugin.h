@@ -1,6 +1,6 @@
-// TODO: fix header
 //
-//  Created by Bradley Austin Davis on 2015/05/29
+//  Created by dr Karol Suprynowicz on 2024/08/12
+//  Based on OpenGLDisplayPlugin.h, originally created by Bradley Austin Davis on 2015/05/29
 //  Copyright 2015 High Fidelity, Inc.
 //
 //  Distributed under the Apache License, Version 2.0.

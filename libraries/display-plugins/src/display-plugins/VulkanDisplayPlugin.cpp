@@ -1,6 +1,6 @@
-// TODO: fix header
 //
-//  Created by Bradley Austin Davis on 2015/05/29
+//  Created by dr Karol Suprynowicz on 2024/08/12
+//  Based on OpenGLDisplayPlugin.cpp, originally created by Bradley Austin Davis on 2015/05/29
 //  Copyright 2015 High Fidelity, Inc.
 //
 //  Distributed under the Apache License, Version 2.0.
@@ -109,7 +109,7 @@ public:
         // Move the OpenGL context to the present thread
         // Extra code because of the widget 'wrapper' context
         _context = context;
-        //_context->doneCurrent();
+        //_context->doneCurrent(); // VKTODO: is this needed?
         //_context->moveToThread(this);
     }
 
@@ -124,14 +124,14 @@ public:
         setPriority(QThread::HighPriority);
         VulkanDisplayPlugin* currentPlugin{ nullptr };
         Q_ASSERT(_context);
-        //_context->makeCurrent();
+        //_context->makeCurrent(); // VKTODO: is this needed?
         //CHECK_GL_ERROR();
         while (!_shutdown) {
             if (_pendingOtherThreadOperation) {
                 PROFILE_RANGE(render, "MainThreadOp")
                 {
                     Lock lock(_mutex);
-                    //_context->doneCurrent();
+                    //_context->doneCurrent(); // VKTODO: is this needed?
                     // Move the context to the main thread
                     //_context->moveToThread(_targetOperationThread);
                     _pendingOtherThreadOperation = false;
@@ -144,7 +144,7 @@ public:
                     Lock lock(_mutex);
                     _condition.wait(lock, [&] { return _finishedOtherThreadOperation; });
                 }
-                //_context->makeCurrent();
+                //_context->makeCurrent(); // VKTODO: is this needed?
             }
 
             // Check for a new display plugin
@@ -159,7 +159,7 @@ public:
                             currentPlugin->uncustomizeContext();
                             //CHECK_GL_ERROR();
                             // Force completion of all pending GL commands
-                            //glFinish();
+                            //glFinish(); // VKTODO: is this needed?
                         }
 
                         if (newPlugin) {
@@ -169,11 +169,12 @@ public:
 #if defined(Q_OS_MAC)
                             newPlugin->swapBuffers();
 #endif
+                            // VKTODO
                             //gl::setSwapInterval(wantVsync ? 1 : 0);
 #if defined(Q_OS_MAC)
                             newPlugin->swapBuffers();
 #endif
-                            //hasVsync = gl::getSwapInterval() != 0;
+                            //hasVsync = gl::getSwapInterval() != 0; // VKTODO: is this needed?
                             //newPlugin->setVsyncEnabled(hasVsync);
                             //newPlugin->customizeContext();
                             //CHECK_GL_ERROR();
@@ -200,7 +201,7 @@ public:
             // Execute the frame and present it to the display device.
             {
                 //PROFILE_RANGE(render, "PluginPresent")
-                //gl::globalLock();
+                //gl::globalLock(); // VKTODO: is this needed?
                 currentPlugin->present(_refreshRateController);
                 //gl::globalRelease(false);
                 //CHECK_GL_ERROR();
@@ -214,7 +215,7 @@ public:
 
         //_context->doneCurrent();
         Lock lock(_mutex);
-        //_context->moveToThread(qApp->thread());
+        //_context->moveToThread(qApp->thread()); // VKTODO: is this needed?
         _shutdown = false;
         _condition.notify_one();
     }
@@ -229,7 +230,7 @@ public:
 
         //_context->makeCurrent();
         f();
-        //_context->doneCurrent();
+        //_context->doneCurrent(); // VKTODO: is this needed?
 
         _targetOperationThread = nullptr;
         // Move the context back to the presentation thread
@@ -338,19 +339,6 @@ bool VulkanDisplayPlugin::activate() {
     if (isHmd() && (getHmdScreen() >= 0)) {
         _container->showDisplayPluginsTools();
     }
-
-    //_vkWindow = std::make_shared<VKWindow>();
-    //_vkWindow = new VKWindow();
-    /*VKWidget *vkWidget = _container->getPrimaryWidget();
-    _vkWindow = vkWidget->_mainWindow;
-    _vkWindow->setVisible(true);
-    _vkWindow->createSurface();
-    _vkWindow->createSwapchain();
-    _vkWindow->moveToThread(presentThread.get());*/
-    /*_vkWidget = _container->getPrimaryWidget();
-    _vkWidget->setVisible(true);
-    _vkWidget->createSurface();
-    _vkWidget->createSwapchain();*/
 
     // VKTODO: Should this be here?
     customizeContext();
@@ -769,22 +757,14 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             refreshRateController->clockEndTime();
             return;
         }
-        //auto framebuffer = _vkWindow->_frameBuffers[currentImageIndex];
         const auto& commandBuffer = _vkWindow->_drawCommandBuffers[currentImageIndex];
-        /*VK_CHECK_RESULT(_vkWidget->_swapchain.acquireNextImage(_vkWidget->_acquireCompleteSemaphore, &currentImageIndex));
-        auto framebuffer = _vkWidget->_frameBuffers[currentImageIndex];
-        const auto& commandBuffer = _vkWidget->_drawCommandBuffers[currentImageIndex];*/        //auto vkBackend = dynamic_pointer_cast<gpu::vulkan::VKBackend>(getBackend());
-        //Q_ASSERT(vkBackend);
 
-        //_renderPass, framebuffer, rect, (uint32_t)clearValues.size(), clearValues.data() };
         VkCommandBufferBeginInfo commandBufferBeginInfo = vks::initializers::commandBufferBeginInfo();
         commandBufferBeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
         VK_CHECK_RESULT(vkBeginCommandBuffer(commandBuffer, &commandBufferBeginInfo));
 
         using namespace vks::debugutils;
         cmdBeginLabel(commandBuffer, "executeFrame", glm::vec4{ 1, 1, 1, 1 });
-        //auto& glbackend = (gpu::gl::GLBackend&)(*_backend);
-        //glm::uvec2 fboSize{ frame->framebuffer->getWidth(), frame->framebuffer->getHeight() };
 
         Q_ASSERT(currentImageIndex != UINT32_MAX);
         {
@@ -804,7 +784,6 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             _gpuContext->executeFrame(_currentFrame);
             context->doneCurrent();
             _renderedFrameCount++;
-            //qDebug() << "Frame rendered: " << _renderedFrameCount;
         }
 
         // Write all layers to a local framebuffer
@@ -838,30 +817,6 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
         {
             PROFILE_RANGE_EX(render, "internalPresent", 0xff00ffff, frameId)
 
-            /*static const std::array<VkClearValue, 2> clearValues{
-                VkClearValue{color: VkClearColorValue{float32: { 0.2f, 0.2f, 0.2f, 0.2f }}},
-                VkClearValue{depthStencil: VkClearDepthStencilValue{ 1.0f, 0 }},
-            };*/
-
-            //auto rect = VkRect2D{ VkOffset2D{ 0, 0 }, _vkWindow->_extent };
-            //auto rect = VkRect2D{ VkOffset2D{ 0, 0 }, _vkWidget->_extent };
-            /*VkRenderPassBeginInfo beginInfo = vks::initializers::renderPassBeginInfo();
-            beginInfo.renderPass = _renderPass;
-            beginInfo.framebuffer = framebuffer;
-            beginInfo.renderArea = rect;
-            beginInfo.clearValueCount = (uint32_t)clearValues.size();
-            beginInfo.pClearValues = clearValues.data();
-
-            cmdEndLabel(commandBuffer);
-            cmdBeginLabel(commandBuffer, "renderpass:testClear", glm::vec4{ 0, 1, 1, 1 });
-            vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdEndRenderPass(commandBuffer);
-
-            cmdEndLabel(commandBuffer);
-            cmdBeginLabel(commandBuffer, "renderpass:testClear", glm::vec4{ 0, 1, 1, 1 });
-            vkCmdBeginRenderPass(commandBuffer, &beginInfo, VK_SUBPASS_CONTENTS_INLINE);
-            vkCmdEndRenderPass(commandBuffer);*/
-
             // Blit the image into the swapchain.
             // is vks::tools::insertImageMemoryBarrier needed?
             VkImageBlit imageBlit{};
@@ -877,8 +832,6 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             imageBlit.dstSubresource.mipLevel = 0;
             imageBlit.dstOffsets[1].x = (int32_t)_vkWindow->_swapchain.extent.width;
             imageBlit.dstOffsets[1].y = (int32_t)_vkWindow->_swapchain.extent.height;
-            //imageBlit.dstOffsets[1].x = (int32_t)_vkWidget->_swapchain.extent.width;
-            //imageBlit.dstOffsets[1].y = (int32_t)_vkWidget->_swapchain.extent.height;
             imageBlit.dstOffsets[1].z = 1;
 
             VkImageSubresourceRange mipSubRange = {};
@@ -901,7 +854,6 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             vks::tools::insertImageMemoryBarrier(
                 commandBuffer,
                 _vkWindow->_swapchain.images[currentImageIndex],
-                //_vkWidget->_swapchain.images[currentImageIndex],
                 0,
                 VK_ACCESS_TRANSFER_WRITE_BIT,
                 VK_IMAGE_LAYOUT_UNDEFINED,
@@ -915,7 +867,6 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
                 vkBackend->_outputTexture->attachments[0].image,
                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
                 _vkWindow->_swapchain.images[currentImageIndex],
-                //_vkWidget->_swapchain.images[currentImageIndex],
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                 1,
                 &imageBlit,
@@ -924,7 +875,6 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             vks::tools::insertImageMemoryBarrier(
                 commandBuffer,
                 _vkWindow->_swapchain.images[currentImageIndex],
-                //_vkWidget->_swapchain.images[currentImageIndex],
                 0,
                 VK_ACCESS_TRANSFER_WRITE_BIT,
                 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
@@ -951,13 +901,11 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             VkSubmitInfo submitInfo = vks::initializers::submitInfo();
             submitInfo.waitSemaphoreCount = 1;
             submitInfo.pWaitSemaphores = &_vkWindow->_acquireCompleteSemaphore;
-            //submitInfo.pWaitSemaphores = &_vkWidget->_acquireCompleteSemaphore;
             submitInfo.pWaitDstStageMask = &waitFlags;
             submitInfo.commandBufferCount = 1;
             submitInfo.pCommandBuffers = &commandBuffer;
             submitInfo.signalSemaphoreCount = 1;
             submitInfo.pSignalSemaphores = &_vkWindow->_renderCompleteSemaphore;
-            //submitInfo.pSignalSemaphores = &_vkWidget->_renderCompleteSemaphore;
             submitInfo.commandBufferCount = 1;
             VkFenceCreateInfo fenceCI = vks::initializers::fenceCreateInfo();
             VkFence frameFence;
@@ -978,7 +926,6 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             _vkWindow->_previousCommandBuffer = commandBuffer;
         }
         _vkWindow->_swapchain.queuePresent(_vkWindow->_context.graphicsQueue, currentImageIndex, _vkWindow->_renderCompleteSemaphore);
-        //_vkWidget->_swapchain.queuePresent(_vkWidget->_vksContext.graphicsQueue, currentImageIndex, _vkWidget->_renderCompleteSemaphore);
 
         // VKTODO
         gpu::Backend::freeGPUMemSize.set(gpu::gl::getFreeDedicatedMemory());
@@ -1142,7 +1089,7 @@ void VulkanDisplayPlugin::updateCompositeFramebuffer() {
 }
 
 void VulkanDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer networkTexture, QOpenGLFramebufferObject* target, GLsync* fenceSync) {
-
+    // VKTODO
 #if 0
 #if !defined(USE_GLES)
     auto glBackend = const_cast<VulkanDisplayPlugin&>(*this).getBackend();

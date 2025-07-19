@@ -37,10 +37,12 @@ DisplayPluginList getDisplayPlugins() {
 
 #if !defined(Q_OS_ANDROID)
         // Stereo modes
+#if USE_GL
         // SBS left/right
-        //new SideBySideStereoDisplayPlugin(),
+        new SideBySideStereoDisplayPlugin(),
         // Interleaved left/right
-        //new InterleavedStereoDisplayPlugin(),
+        new InterleavedStereoDisplayPlugin(),
+#endif
 #endif        
         nullptr
     };

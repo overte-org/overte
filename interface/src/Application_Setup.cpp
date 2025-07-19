@@ -775,7 +775,6 @@ void Application::initialize(const QCommandLineParser &parser) {
     _primaryWidget->setParent(_vkWindowWrapper);
     _vkWindow->_primaryWidget = _primaryWidget;
     _window->setCentralWidget(_vkWindowWrapper);
-    //_window->setCentralWidget(_primaryWidget); //VKTODO
 #endif
 
     _window->restoreGeometry();

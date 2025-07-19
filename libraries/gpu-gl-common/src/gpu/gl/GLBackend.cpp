@@ -97,6 +97,7 @@ GLBackend::CommandCall GLBackend::_commandCalls[Batch::NUM_COMMANDS] =
     (&::gpu::gl::GLBackend::do_startNamedCall),
     (&::gpu::gl::GLBackend::do_stopNamedCall),
 
+    (&::gpu::gl::GLBackend::do_glUniform1i),
     (&::gpu::gl::GLBackend::do_glUniform1f),
     (&::gpu::gl::GLBackend::do_glUniform2f),
     (&::gpu::gl::GLBackend::do_glUniform3f),
@@ -637,7 +638,7 @@ void GLBackend::do_restoreContextViewCorrection(const Batch& batch, size_t param
 }
 
 void GLBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) {
-    bool prevMirrorViewCorrection = _transform._presentFrame.mirrorViewCorrection;
+    //bool prevMirrorViewCorrection = _transform._presentFrame.mirrorViewCorrection;
     _transform._presentFrame.mirrorViewCorrection = batch._params[paramOffset]._uint != 0;
 
     if (prevMirrorViewCorrection != _transform._presentFrame.mirrorViewCorrection && _transform._presentFrame.correction != glm::mat4()) {
@@ -699,6 +700,10 @@ void GLBackend::do_popProfileRange(const Batch& batch, size_t paramOffset) {
 #endif
     }
 }
+
+// TODO: As long as we have gl calls explicitely issued from interface
+// code, we need to be able to record and batch these calls. THe long
+// term strategy is to get rid of any GL calls in favor of the HIFI GPU API
 
 void GLBackend::do_glUniform1i(const Batch& batch, size_t paramOffset) {
     if (_pipeline._program == 0) {

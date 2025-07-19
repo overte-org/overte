@@ -1,12 +1,9 @@
 //
-// Created by ksuprynowicz on 1/27/25.
-//
-
-//
-//  GLCanvas.cpp
+//  VKCanvas.cpp
 //  interface/src
 //
-//  Created by Stephen Birarda on 8/14/13.
+//  Copied from GLCanvas.cpp on 2025/01/27.
+//  Created by Stephen Birarda on 2013/08/14.
 //  Copyright 2013 High Fidelity, Inc.
 //
 //  Distributed under the Apache License, Version 2.0.

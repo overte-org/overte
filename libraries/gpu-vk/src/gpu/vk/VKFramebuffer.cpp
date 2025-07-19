@@ -53,7 +53,7 @@ void gpu::vk::VKFramebuffer::update() {
                 surface = b._texture;
                 if (surface) {
                     Q_ASSERT(TextureUsageType::RENDERBUFFER == surface->getUsageType());
-                    vkTexture = backend->syncGPUObject(*surface.get());
+                    vkTexture = backend->syncGPUObject(surface.get());
                 } else {
                     vkTexture = nullptr;
                 }
@@ -104,7 +104,7 @@ void gpu::vk::VKFramebuffer::update() {
         auto backend = _backend.lock();
         if (_gpuObject.hasDepthStencil() && surface) {
             Q_ASSERT(TextureUsageType::RENDERBUFFER == surface->getUsageType());
-            vkTexture = backend->syncGPUObject(*surface.get());
+            vkTexture = backend->syncGPUObject(surface.get());
         }
 
         if (vkTexture) {

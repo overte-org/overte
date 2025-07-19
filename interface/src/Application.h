@@ -704,8 +704,10 @@ private:
     // Member Variables
     // The window needs to be initialized early as other initializers try to access it
     MainWindow* _window;
+#ifndef USE_GL
     VKWindow* _vkWindow;
     QWidget *_vkWindowWrapper;
+#endif
     // _isMenuInitialized: used to initialize menu early enough before it's needed by other
     // initializers. Fixes a deadlock issue with recent Qt versions.
     bool _isMenuInitialized;
