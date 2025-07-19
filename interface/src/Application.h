@@ -124,7 +124,7 @@ public:
 #endif
 
     bool getUseDiscordPresence() const { return _useDiscordPresence.get(); }
-    void setUseDiscordPresence(bool enable) { _useDiscordPresence.set(enable); }
+    void setUseDiscordPresence(bool enable);
 
     QString getPreviousScriptLocation() { return _previousScriptLocation.get(); }
     void setPreviousScriptLocation(const QString& previousScriptLocation) { _previousScriptLocation.set(previousScriptLocation); }

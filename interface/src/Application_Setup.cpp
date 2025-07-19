@@ -1294,10 +1294,9 @@ void Application::initialize(const QCommandLineParser &parser) {
     DependencyManager::get<TabletScriptingInterface>()->preloadSounds();
     DependencyManager::get<Keyboard>()->createKeyboard();
 
-    if (_useDiscordPresence.get()) {
-        // Needs to happen later in the constructor as it depends on some other things being set up
-        _discordPresence = new DiscordPresence();
-    }
+    // Needs to happen later in the constructor as it depends on some other things being set up
+    _discordPresence = new DiscordPresence();
+    _discordPresence->setEnabled(_useDiscordPresence.get());
 
     _pendingIdleEvent = false;
     _graphicsEngine->startup();
@@ -2173,5 +2172,13 @@ void Application::setupSignalsAndOperators() {
                 scriptingAudioSharedPointer.data(), &scripting::Audio::onContextChanged);
         }
         dynamic_cast<scripting::Audio*>(audioScriptingInterface)->onContextChanged();
+    }
+}
+
+void Application::setUseDiscordPresence(bool enable) {
+    _useDiscordPresence.set(enable);
+
+    if (_discordPresence) {
+        _discordPresence->setEnabled(enable);
     }
 }
