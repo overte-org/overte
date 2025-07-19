@@ -29,14 +29,6 @@ Q_LOGGING_CATEGORY(discord_rich_presence, "overte.discord_rich_presence")
 
 DiscordPresence::DiscordPresence()
 {
-    DiscordEventHandlers handlers;
-    Discord_Initialize(DISCORD_APPLICATION_CLIENT_ID, &handlers, 1, STEAM_APPLICATION_ID);
-    discordPresence.largeImageKey = "header";
-    discordPresence.smallImageKey = "";
-    discordPresence.smallImageText = "";
-    const int64_t startEpoch = QDateTime::currentSecsSinceEpoch();
-    discordPresence.startTimestamp = startEpoch;
-
     auto addressManager = DependencyManager::get<AddressManager>();
     connect(addressManager.data(), &AddressManager::hostChanged, this, &DiscordPresence::domainChanged);
 
@@ -47,11 +39,41 @@ DiscordPresence::DiscordPresence()
 
 void DiscordPresence::shutdown()
 {
+    qCDebug(discord_rich_presence, "Shutting down");
     Discord_Shutdown();
+    discordPresence = {};
+    running = false;
+}
+
+void DiscordPresence::startup()
+{
+    DiscordEventHandlers handlers;
+    Discord_Initialize(DISCORD_APPLICATION_CLIENT_ID, &handlers, 1, STEAM_APPLICATION_ID);
+    discordPresence.largeImageKey = "header";
+    discordPresence.smallImageKey = "";
+    discordPresence.smallImageText = "";
+    const int64_t startEpoch = QDateTime::currentSecsSinceEpoch();
+    discordPresence.startTimestamp = startEpoch;
+    qCDebug(discord_rich_presence, "Started");
+
+    running = true;
+}
+
+void DiscordPresence::setEnabled(bool enable)
+{
+    enabled = enable;
+
+    if (enabled && !running) {
+        startup();
+    } else if (!enabled && running) {
+        shutdown();
+    }
 }
 
 void DiscordPresence::domainChanged()
 {
+    if (!running) return;
+
     const auto addressManager = DependencyManager::get<AddressManager>();
     if (!addressManager) return;
 
@@ -74,6 +96,8 @@ void DiscordPresence::domainChanged()
 
 void DiscordPresence::vrChanged(bool isHMDMode = false)
 {
+    if (!running) return;
+
     if (isHMDMode) {
         discordPresence.smallImageKey = "hmd";
         discordPresence.smallImageText = "in VR";
