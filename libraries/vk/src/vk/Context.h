@@ -1,3 +1,14 @@
+//
+//  Created by Bradley Austin Davis on 2018/10/29
+//  Adapted for Vulkan in 2021-2025 by dr Karol Suprynowicz.
+//  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023-2025 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
 #pragma once
 
 #include "Config.h"
@@ -7,7 +18,6 @@
 #include <memory>
 
 #include "Debug.h"
-#include "VulkanBuffer.h"
 #include "Helpers.h"
 #include "VulkanDevice.h"
 #include "VulkanDebug.h"
@@ -113,10 +123,6 @@ public:
 
     void unregisterWindow(VKWindow *window); // When window closes before backend was shut down, it removes itself from the list.
 
-    //void registerWidget(VKWidget *widget); // Every Vulkan widget registers itself here, so its.
-
-    //void unregisterWidget(VKWidget *widget); // When widget closes before backend was shut down, it removes itself from the list.
-
     void shutdownWindows(); // When backend shuts down, it cleans up after all windows and removes them from the list.
 
     // Contains objects that need to be deleted on Vulkan backend thread after frame is rendered.
@@ -179,7 +185,6 @@ public:
 private:
     std::recursive_mutex vulkanWindowsMutex;
     std::list<VKWindow*> vulkanWindows;
-    //std::list<VKWidget*> vulkanWidgets;
 
 };
 

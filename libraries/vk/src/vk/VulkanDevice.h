@@ -10,7 +10,6 @@
 
 #pragma once
 
-#include "VulkanBuffer.h"
 #include "VulkanTools.h"
 #include "Allocation.h"
 #include "vulkan/vulkan.h"

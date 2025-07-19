@@ -1,6 +1,7 @@
 //
 //  Created by Bradley Austin Davis on 2016/03/19
-//  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2016-2018 High Fidelity, Inc.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -26,21 +27,14 @@ public:
     virtual ~VKWindow();
 
     void createSwapchain();
-    //void queuePresent(const vk::ArrayProxy<const VkSemaphore>& waitSemaphores);
     void createSurface();
-    //const VkSurfaceKHR& getSurface() { return _surface; }
-    //VulkanSwapChain& getSwapchain() { return _swapchain; }
-    //VkFramebuffer acquireFramebuffer(const VkSemaphore& semaphore);
 
     bool event(QEvent *event) override;
-
-    //void connectResizeTimer(QThread *timerThread);
 
 signals:
     void aboutToClose();
 
 protected:
-    //friend class VkCloseEventFilter;
     friend struct vks::Context;
     void emitClosing();
 
@@ -59,8 +53,6 @@ protected:
 public:
     VKWidget *_primaryWidget{ nullptr };
     vks::Context& _context{ vks::Context::get() };
-    //const VkDevice& _device{ _context.device->logicalDevice };
-    //VkSurfaceKHR _surface;
     VkRenderPass _renderPass{};
     VkExtent2D _extent;
     VulkanSwapChain _swapchain;
@@ -73,7 +65,6 @@ public:
         VkImageView view;
     } _depthStencil{};
     std::vector<VkFramebuffer> _frameBuffers;
-    //QTimer* _resizeTimer{ nullptr };
     std::atomic<bool> _isVulkanCleanupComplete{ false };
     std::atomic<bool> _needsResizing{ true };
     VkFence _previousFrameFence{ VK_NULL_HANDLE };

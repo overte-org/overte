@@ -1,11 +1,13 @@
 //
 //  Created by Bradley Austin Davis on 2016/05/26
-//  Copyright 2013-2016 High Fidelity, Inc.
+//  Copyright 2013-2018 High Fidelity, Inc.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
-// TODO: based on Vulkan Samples
+//  Contains parts of Vulkan Samples, Copyright (c) 2018, Sascha Willems, distributed on MIT License.
+//
 
 #include <QtCore/QCoreApplication>
 #include <QGuiApplication>
@@ -378,9 +380,3 @@ VKWindow::~VKWindow() {
 void VKWindow::emitClosing() {
     emit aboutToClose();
 }
-
-/*VkFramebuffer VKWindow::acquireFramebuffer(const VkSemaphore& semaphore) {
-    uint32_t imageIndex;
-    VK_CHECK_RESULT(_swapchain.acquireNextImage(semaphore, &imageIndex));
-    return _framebuffers[imageIndex];
-}*/

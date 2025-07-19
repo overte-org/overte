@@ -1,10 +1,14 @@
 //
 //  Created by Bradley Austin Davis on 2016/08/07
-//  Copyright 2013-2016 High Fidelity, Inc.
+//  Adapted for Vulkan in 2022-2025 by dr Karol Suprynowicz.
+//  Copyright 2013-2018 High Fidelity, Inc.
+//  Copyright 2023-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
+
 #ifndef hifi_gpu_vk_VKBackend_h
 #define hifi_gpu_vk_VKBackend_h
 
@@ -223,24 +227,16 @@ protected:
 
     struct UniformStageState {
         struct BufferState {
-            // Only one of buffer or vksBuffer may be not NULL
             BufferReference buffer{};
-            //vks::Buffer *vksBuffer{};
-            uint32_t offset{ 0 }; // VKTODO: is it correct type
-            uint32_t size{ 0 }; // VKTODO: is it correct type
+            uint32_t offset{ 0 }; // VKTODO: Vulkan uses 64-bit offset and size
+            uint32_t size{ 0 }; // VKTODO
 
             BufferState& operator=(const BufferState& other) = delete;
             void reset() {
                 gpu::reset(buffer);
-                //gpu::reset(vksBuffer);
                 offset = 0;
                 size = 0;
             }
-
-            /*bool compare(const BufferPointer& buffer, uint32_t offset, uint32_t size) {
-                const auto& self = *this;
-                return (self.offset == offset && self.size == size && gpu::compare(self.buffer, buffer));
-            }*/
         };
 
         // MAX_NUM_UNIFORM_BUFFERS-1 is the max uniform index BATCHES are allowed to set, but
@@ -253,7 +249,6 @@ protected:
     void releaseUniformBuffer(uint32_t slot);
     void resetUniformStage();
 
-    // VKTODO
     struct ResourceStageState {
         struct TextureState {
             TextureReference texture{};
@@ -264,16 +259,13 @@ protected:
         };
         struct BufferState {
             BufferReference buffer{};
-            //vks::Buffer *vksBuffer{};
             BufferState& operator=(const BufferState& other) = delete;
             void reset() {
                 gpu::reset(buffer);
-                //gpu::reset(vksBuffer);
             }
         };
         std::array<BufferState, MAX_NUM_RESOURCE_BUFFERS> _buffers{};
         std::array<TextureState, MAX_NUM_RESOURCE_TEXTURES> _textures{};
-        //int findEmptyTextureSlot() const;
     } _resource;
 
     void updateVkDescriptorWriteSetsTexture(VkDescriptorSet target);
@@ -364,7 +356,6 @@ public:
     void syncCache() override {}
     void recycle() const override {}
     void updatePresentFrame(const Mat4& correction = Mat4(), bool primary = true) override;
-    //uint32_t getTextureID(const TexturePointer&) override { return 0; }
     void executeFrame(const FramePointer& frame) final;
     void render(const Batch& batch) final;
     bool isTextureManagementSparseEnabled() const override;
@@ -373,7 +364,7 @@ public:
     void downloadFramebuffer(const FramebufferPointer& srcFramebuffer, const Vec4i& region, QImage& destImage) final;
     void setDrawCommandBuffer(VkCommandBuffer commandBuffer);
     size_t getNumInputBuffers() const { return _input._invalidBuffers.size(); }
-    VkDescriptorImageInfo getDefaultTextureDescriptorInfo() ;
+    VkDescriptorImageInfo getDefaultTextureDescriptorInfo();
     // Used by GPU frame player to move camera around
     void enableContextViewCorrectionForFramePlayer() { _transform._viewCorrectionEnabledForFramePlayer = true; };
     void setIsFramePlayer(bool isFramePlayer) { _isFramePlayer = isFramePlayer; };
@@ -525,8 +516,6 @@ protected:
     VkPipelineCache _pipelineCache;
 
     vks::Context& _context{ vks::Context::get() };
-    //VkQueue _graphicsQueue; //TODO: initialize from device
-    //VkQueue _transferQueue; //TODO: initialize from device
     std::shared_ptr<gpu::Texture> _defaultTexture;
     VKTexture* _defaultTextureVk{ nullptr };
     VkDescriptorImageInfo _defaultTextureImageInfo{};

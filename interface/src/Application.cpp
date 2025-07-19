@@ -213,7 +213,9 @@ Application::Application(
     QElapsedTimer& startupTimer
 ) :
     QApplication(argc, argv),
+//#ifdef USE_GL
     _window(new MainWindow(desktop())),
+//#endif
     // Menu needs to be initialized before other initializers. Otherwise deadlock happens on qApp->getWindow()->menuBar().
     _isMenuInitialized(initMenu()),
 #ifndef Q_OS_ANDROID
@@ -248,8 +250,8 @@ Application::Application(
 #ifndef USE_GL
     _vkWindow = new VKWindow();
     _vkWindowWrapper = QWidget::createWindowContainer(_vkWindow);
-#endif
     _window = new MainWindow(_vkWindowWrapper);
+#endif
 
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
 

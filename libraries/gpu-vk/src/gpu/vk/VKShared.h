@@ -1,9 +1,12 @@
 //
 //  Created by Bradley Austin Davis on 2016/08/07
-//  Copyright 2013-2016 High Fidelity, Inc.
+//  Adapted for Vulkan in 2022-2025 by dr Karol Suprynowicz.
+//  Copyright 2013-2018 High Fidelity, Inc.
+//  Copyright 2023-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #ifndef hifi_gpu_VKShared_h
 #define hifi_gpu_VKShared_h
@@ -25,12 +28,6 @@ ComparisonFunction comparisonFuncFromGL(VkCompareOp func);
 State::StencilOp stencilOpFromGL(VkStencilOp stencilOp);
 State::BlendOp blendOpFromGL(VkBlendOp blendOp);
 State::BlendArg blendArgFromGL(VkBlendFactor blendArg);
-
-struct ShaderObject {
-    VkShaderModule glshader{ nullptr };
-    int32_t transformCameraSlot { -1 };
-    int32_t transformObjectSlot { -1 };
-};
 
 VkFormat evalTexelFormatInternal(const Element& dstFormat);
 

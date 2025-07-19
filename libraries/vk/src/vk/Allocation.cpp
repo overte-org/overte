@@ -1,3 +1,16 @@
+//
+//  Created by Bradley Austin Davis on 2018/10/29
+//  Adapted for Vulkan in 2022-2025 by dr Karol Suprynowicz.
+//  Copyright 2013-2018 High Fidelity, Inc.
+//  Copyright 2023-2025 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+//  Contains parts of Vulkan Samples, Copyright (c) 2018, Sascha Willems, distributed on MIT License.
+//
+
 #include "Allocation.h"
 
 #include <mutex>
@@ -40,8 +53,8 @@ void Allocation::invalidate(VkDeviceSize size, VkDeviceSize offset) {
 
 void* Allocation::rawmap(size_t offset, VkDeviceSize size) {
     if (offset != 0 || size != VK_WHOLE_SIZE) {
-        //throw std::runtime_error("Unsupported");
         Q_ASSERT(false);
+        throw std::runtime_error("Unsupported");
     }
 
     if (!mapped) {
