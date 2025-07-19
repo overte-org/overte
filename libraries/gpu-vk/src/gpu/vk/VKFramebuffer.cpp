@@ -1,9 +1,12 @@
 //
 //  Created by Bradley Austin Davis on 2016/08/07
-//  Copyright 2013-2016 High Fidelity, Inc.
+//  Adapted for Vulkan in 2022-2025 by dr Karol Suprynowicz.
+//  Copyright 2013-2018 High Fidelity, Inc.
+//  Copyright 2023-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "VKFramebuffer.h"
@@ -11,12 +14,14 @@
 #include "VKTexture.h"
 #include "VKShared.h"
 
+// VKTODO: this part needs a lot of work
+
 void gpu::vk::VKFramebuffer::update() {
     auto backend = _backend.lock();
     VkDevice device = backend->getContext().device->logicalDevice;
     // VKTODO: this is wrong, most of framebuffer code will need to be rewritten
     if (vkFramebuffer != VK_NULL_HANDLE) {
-        // VKTODO: don't destroy immediately
+        // VKTODO: don't destroy immediately, recycle instead for deletion after current frame completes.
         vkDestroyFramebuffer(device, vkFramebuffer, nullptr);
     }
     if (vkRenderPass) {
@@ -30,23 +35,6 @@ void gpu::vk::VKFramebuffer::update() {
         if (_gpuObject.hasColor()) {
             // VKTODO: Do these need to be deleted?
             attachments.clear();
-            /*static const GLenum colorAttachments[] = {
-                GL_COLOR_ATTACHMENT0,
-                GL_COLOR_ATTACHMENT1,
-                GL_COLOR_ATTACHMENT2,
-                GL_COLOR_ATTACHMENT3,
-                GL_COLOR_ATTACHMENT4,
-                GL_COLOR_ATTACHMENT5,
-                GL_COLOR_ATTACHMENT6,
-                GL_COLOR_ATTACHMENT7,
-                GL_COLOR_ATTACHMENT8,
-                GL_COLOR_ATTACHMENT9,
-                GL_COLOR_ATTACHMENT10,
-                GL_COLOR_ATTACHMENT11,
-                GL_COLOR_ATTACHMENT12,
-                GL_COLOR_ATTACHMENT13,
-                GL_COLOR_ATTACHMENT14,
-                GL_COLOR_ATTACHMENT15 };*/
 
             //int unit = 0;
             for (auto& b : _gpuObject.getRenderBuffers()) {

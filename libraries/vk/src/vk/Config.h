@@ -1,9 +1,11 @@
 //
 //  Created by Bradley Austin Davis on 2016/03/19
-//  Copyright 2013 High Fidelity, Inc.
+//  Copyright 2013-2018 High Fidelity, Inc.
+//  Copyright 2024 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 
 #pragma once
@@ -26,7 +28,6 @@
 #define VK_USE_PLATFORM_ANDROID_KHR
 #elif defined(Q_OS_DARWIN)
 #else
-//#define VK_USE_PLATFORM_XLIB_KHR
 #define VK_USE_PLATFORM_XCB_KHR
 #endif
 

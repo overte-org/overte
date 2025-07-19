@@ -1,12 +1,8 @@
 //
-// Created by ksuprynowicz on 25.01.25.
-//
-
-//
-//
 //  Created by Bradley Austin Davis on 2015/12/03
-//  Derived from interface/src/GLCanvas.cpp created by Stephen Birarda on 8/14/13.
-//  Copyright 2013-2015 High Fidelity, Inc.
+//  Copyright 2013-2018 High Fidelity, Inc.
+//  Copyright 2020 Maki.
+//  Copyright 2023-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -40,9 +36,6 @@ public:
     VKWidget(QWidget *parent = nullptr);
     ~VKWidget() override;
 
-    //void createSwapchain();
-    //void createSurface();
-
     [[nodiscard]] int getDeviceWidth() const;
     [[nodiscard]] int getDeviceHeight() const;
     [[nodiscard]] QSize getDeviceSize() const { return QSize(getDeviceWidth(), getDeviceHeight()); }
@@ -52,23 +45,13 @@ public:
     void doneCurrent();
     void swapBuffers();
     gl::OffscreenContext* context() { return _context; }
-    //gl::Context* context() { return _context; }
     QOpenGLContext* qglContext();
     [[nodiscard]] QVariant inputMethodQuery(Qt::InputMethodQuery query) const override;
-
-//protected slots:
-//    virtual void resizeFramebuffer();
 
 protected:
     bool nativeEvent(const QByteArray &eventType, void *message, long *result) override;
     bool event(QEvent* event) override;
     gl::OffscreenContext* _context { nullptr };
-    //gl::Context* _context { nullptr };
-    /*void setupRenderPass();
-    void setupDepthStencil();
-    void setupFramebuffers();
-    void createCommandBuffers();
-    void vulkanCleanup(); // Called by the context before backend is destroyed.*/
 
 private:
     QPaintEngine* _paintEngine { nullptr };
@@ -77,21 +60,4 @@ private:
 
 public:
     VKWindow *_mainWindow; // For getting Vulkan surface, VKTODO: make a better way of setting it
-    /*vks::Context& _vksContext{ vks::Context::get() };
-    //VkDevice _device{ VK_NULL_HANDLE };
-    //VkSurfaceKHR _surface;
-    VkRenderPass _renderPass{};
-    VkExtent2D _extent;
-    VulkanSwapChain _swapchain;
-    VkSemaphore _acquireCompleteSemaphore{};
-    VkSemaphore _renderCompleteSemaphore{};
-    std::vector<VkCommandBuffer> _drawCommandBuffers;
-    struct : vks::Allocation {
-        bool isAllocated {false};
-        VkImage image;
-        VkImageView view;
-    } _depthStencil{};
-    std::vector<VkFramebuffer> _frameBuffers;
-    QTimer* _resizeTimer{ nullptr };
-    std::atomic<bool> _isVulkanCleanupComplete{ false };*/
 };

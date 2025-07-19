@@ -11,6 +11,11 @@
     #define gl_VertexID  gl_VertexIndex
 #endif
 
+#extension GL_EXT_texture_buffer : enable
+#if defined(HAVE_EXT_clip_cull_distance) && !defined(VULKAN)
+#extension GL_EXT_clip_cull_distance : enable
+#endif
+
 #define UNIFORM_BUFFER(SLOT, NAME) layout(std140, binding=SLOT) uniform NAME
 #define TEXTURE(SLOT, TYPE, NAME) layout(binding=SLOT) uniform TYPE NAME
 #define RESOURCE_BUFFER(SLOT, NAME) layout(binding=SLOT) uniform samplerBuffer NAME
@@ -23,3 +28,4 @@ precision highp float;
 precision highp samplerBuffer;
 precision highp sampler2DShadow;
 precision highp sampler2DArrayShadow;
+precision lowp sampler2DArray;

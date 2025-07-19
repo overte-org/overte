@@ -1,5 +1,15 @@
-// Based on Vulkan samples.
-// TODO: add copyright header
+//
+//  Created by Bradley Austin Davis on 2018/10/29
+//  Adapted for Vulkan in 2022-2025 by dr Karol Suprynowicz.
+//  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2023-2025 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+//  Contains parts of Vulkan Samples, Copyright (c) 2018, Sascha Willems, distributed on MIT License.
+//
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDebug>
@@ -272,22 +282,9 @@ void Context::unregisterWindow(VKWindow* window) {
     vulkanWindows.remove(window);
 }
 
-/*void Context::registerWidget(VKWidget* widget) {
-    std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
-    vulkanWidgets.push_back(widget);
-}
-
-void Context::unregisterWidget(VKWidget* widget) {
-    std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
-    vulkanWidgets.remove(widget);
-}*/
-
 void Context::shutdownWindows() {
     std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);
-    /*for (auto widget : vulkanWidgets) {
-        widget->vulkanCleanup();
-    }
-    vulkanWidgets.clear();*/
+
     for (auto window : vulkanWindows) {
         window->vulkanCleanup();
     }

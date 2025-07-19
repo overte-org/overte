@@ -6,6 +6,7 @@
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #include "VKBackend.h"
 
@@ -1417,6 +1418,7 @@ VKTexture* VKBackend::syncGPUObject(const Texture *texture) {
             //new GLExternalTexture(shared_from_this(), texture, update.first);
         }
 
+        // VKTODO: I'm not sure about these. External textures work well on Nvidia and Intel, but break on AMD on Linux so I'm not removing this yet.
         // Return the texture object (if any) associated with the texture, without extensive logic
         // (external textures are
         //return Backend::getGPUObject<GLTexture>(texture);*/
@@ -1504,7 +1506,7 @@ VKTexture* VKBackend::syncGPUObject(const Texture *texture) {
                 break;
 
 #if !FORCE_STRICT_TEXTURE
-                //VKTODO:
+                //VKTODO: there's no transfer engine for Vulkan yet
             case TextureUsageType::RESOURCE: {
                 // VKTODO
                 /*auto& transferEngine  = _textureManagement._transferEngine;
@@ -1564,7 +1566,6 @@ VKQuery* VKBackend::syncGPUObject(const Query *query) {
 }
 
 void VKBackend::blitToFramebuffer(VKAttachmentTexture &input, const Vec4i& srcViewport, VKAttachmentTexture &output, const Vec4i& dstViewport) {
-    // is vks::tools::insertImageMemoryBarrier needed?
     VkImageBlit imageBlit{};
     // Do we ever want to blit multiple layers/mips?
     imageBlit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -2274,19 +2275,13 @@ void VKBackend::initTransform() {
 }
 
 void VKBackend::updateTransform(const gpu::Batch& batch) {
-    // VKTODO
     _transform.update(_commandIndex, _stereo, _uniform, *_currentFrame);
 
-    //auto& drawCallInfoBuffer = batch.getDrawCallInfoBuffer();
     if (batch._currentNamedCall.empty()) {
-        //auto& drawCallInfo = drawCallInfoBuffer[_currentDraw];
         if (_transform._enabledDrawcallInfoBuffer) {
-            //glDisableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is disabled
             _transform._enabledDrawcallInfoBuffer = false;
         }
-        // VKTODO
         // Since Vulkan has no glVertexAttrib equivalent we need to pass a buffer pointer here
-        //glVertexAttribI2i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.unused);
         // Draw call info for unnamed calls starts at the beginning of the buffer, with offset dependent on _currentDraw
         VkDeviceSize vkOffset = _currentDraw * sizeof(gpu::Batch::DrawCallInfo);
         Q_ASSERT(_currentFrame->_drawCallInfoBuffer);
@@ -2294,25 +2289,22 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
         vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &gpuBuffer->buffer, &vkOffset);
     } else {
         if (!_transform._enabledDrawcallInfoBuffer) {
-            //glEnableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is enabled
-            //glVertexAttribIFormat(gpu::Stream::DRAW_CALL_INFO, 2, GL_UNSIGNED_SHORT, 0);
-            //glVertexAttribBinding(gpu::Stream::DRAW_CALL_INFO, gpu::Stream::DRAW_CALL_INFO);
+            // VKTODO: I'm not sure what to do here, I will figure it out when we get to stereo rendering.
 #ifdef GPU_STEREO_DRAWCALL_INSTANCED
             //glVertexBindingDivisor(gpu::Stream::DRAW_CALL_INFO, (isStereo() ? 2 : 1));
 #else
             //glVertexBindingDivisor(gpu::Stream::DRAW_CALL_INFO, 1);
 #endif
+            // Make sure attrib array is enabled
             _transform._enabledDrawcallInfoBuffer = true;
         }
         // NOTE: A stride of zero in BindVertexBuffer signifies that all elements are sourced from the same location,
         //       so we must provide a stride.
         //       This is in contrast to VertexAttrib*Pointer, where a zero signifies tightly-packed elements.
-        // VKTODO: _drawCallInfoBuffer is empty currently
         VkDeviceSize vkOffset = _transform._drawCallInfoOffsets[batch._currentNamedCall];
         Q_ASSERT(_currentFrame->_drawCallInfoBuffer);
         auto gpuBuffer = syncGPUObject(_currentFrame->_drawCallInfoBuffer.get());
         vkCmdBindVertexBuffers(_currentCommandBuffer, gpu::Stream::DRAW_CALL_INFO, 1, &gpuBuffer->buffer, &vkOffset);
-        //glBindVertexBuffer(gpu::Stream::DRAW_CALL_INFO, _transform._drawCallInfoBuffer, (GLintptr)_transform._drawCallInfoOffsets[batch._currentNamedCall], 2 * sizeof(GLushort));
     }
 
     // VKTODO: camera correction
@@ -2324,7 +2316,7 @@ void VKBackend::updateTransform(const gpu::Batch& batch) {
 }
 
 void VKBackend::updatePipeline() {
-    // VKTODO
+    // VKTODO: I'm not sure how it's intended to work or if it's needed
     /*if (_pipeline._invalidProgram) {
         // doing it here is aproblem for calls to glUniform.... so will do it on assing...
         glUseProgram(_pipeline._program);
@@ -2394,7 +2386,6 @@ void VKBackend::transferTransformState(const Batch& batch) {
     if (!batch._namedData.empty() || !batch._drawCallInfos.empty()) {
         bufferData.clear();
         bufferData.reserve(batch._drawCallInfos.size() * sizeof(Batch::DrawCallInfo));
-        // VKTODO
         {
             auto currentSize = bufferData.size();
             auto bytesToCopy = batch._drawCallInfos.size() * sizeof(Batch::DrawCallInfo);
@@ -2408,8 +2399,6 @@ void VKBackend::transferTransformState(const Batch& batch) {
             memcpy(bufferData.data() + currentSize, data.second.drawCallInfos.data(), bytesToCopy);
             _transform._drawCallInfoOffsets[data.first] = currentSize;
         }
-        //_transform._drawCallInfoBuffer = std::make_shared<vks::Buffer>();
-        //_frameData._buffers.push_back(_transform._drawCallInfoBuffer);
         _currentFrame->_drawCallInfoBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer,
                                                                            bufferData.size(),
                                                                            bufferData.data());
@@ -2419,11 +2408,9 @@ void VKBackend::transferTransformState(const Batch& batch) {
         _currentFrame->_drawCallInfoBuffer.reset();
     }
 
-    // VKTODO
     if (_currentFrame->_objectBuffer) {
         _resource._buffers[slot::storage::ObjectTransforms].buffer = _currentFrame->_objectBuffer.get();
     }
-    //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, slot::storage::ObjectTransforms, _transform._objectBuffer);
 
     // Make sure the current Camera offset is unknown before render Draw
     _transform._currentCameraOffset = INVALID_OFFSET;
@@ -2471,22 +2458,16 @@ void VKBackend::do_draw(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_drawIndexed(const Batch& batch, size_t paramOffset) {
-    //Primitive primitiveType = (Primitive)batch._params[paramOffset + 2]._uint; // Do not remove, it's here for readability
+    // Do not remove, it's here for readability
+    //Primitive primitiveType = (Primitive)batch._params[paramOffset + 2]._uint;
     uint32 numIndices = batch._params[paramOffset + 1]._uint;
     uint32 startIndex = batch._params[paramOffset + 0]._uint;
 
-    // VKTODO: index element type is set on index buffer binding with vkCmdBindIndexBuffer.
-    //GLenum glType = gl::ELEMENT_TYPE_TO_VK_INDEX_TYPE[_input._indexBufferType];
-
-    //auto typeByteSize = TYPE_SIZE[_input._indexBufferType];
-    //GLvoid* indexBufferByteOffset = reinterpret_cast<GLvoid*>(startIndex * typeByteSize + _input._indexBufferOffset);
-
     if (isStereo()) {
 #ifdef GPU_STEREO_DRAWCALL_INSTANCED
-        // VKTODO: what should vertexOffest be?
-        // VKTODO: mode needs to be in the pipeline
         vkCmdDrawIndexed(_currentCommandBuffer, numIndices, 2, startIndex, 0, 0);
 #else
+        // VKTODO:
         setupStereoSide(0);
         glDrawElements(mode, numIndices, glType, indexBufferByteOffset);
         setupStereoSide(1);
@@ -2498,7 +2479,6 @@ void VKBackend::do_drawIndexed(const Batch& batch, size_t paramOffset) {
         // VKTODO: what should vertexOffset be?
         // VKTODO: mode needs to be in the pipeline
         vkCmdDrawIndexed(_currentCommandBuffer, numIndices, 1, startIndex, 0, 0);
-        //glDrawElements(mode, numIndices, glType, indexBufferByteOffset);
         _stats._DSNumTriangles += numIndices / 3;
         _stats._DSNumDrawcalls++;
     }
@@ -2507,7 +2487,8 @@ void VKBackend::do_drawIndexed(const Batch& batch, size_t paramOffset) {
 
 void VKBackend::do_drawInstanced(const Batch& batch, size_t paramOffset) {
     int numInstances = batch._params[paramOffset + 4]._uint;
-    //Primitive primitiveType = (Primitive)batch._params[paramOffset + 3]._uint; // Do not remove, it's here for readability
+    // Do not remove, it's here for readability
+    //Primitive primitiveType = (Primitive)batch._params[paramOffset + 3]._uint;
     uint32 numVertices = batch._params[paramOffset + 2]._uint;
     uint32 startVertex = batch._params[paramOffset + 1]._uint;
 
@@ -2516,9 +2497,9 @@ void VKBackend::do_drawInstanced(const Batch& batch, size_t paramOffset) {
         int trueNumInstances = 2 * numInstances;
 
 #ifdef GPU_STEREO_DRAWCALL_INSTANCED
-        vkCmdDraw(_currentCommandBuffer, numVertices, numInstances, startVertex, 0);
-        //glDrawArraysInstanced(mode, startVertex, numVertices, trueNumInstances);
+        vkCmdDraw(_currentCommandBuffer, numVertices, trueNumInstances, startVertex, 0);
 #else
+        // VKTODO:
         setupStereoSide(0);
         glDrawArraysInstanced(mode, startVertex, numVertices, numInstances);
         setupStereoSide(1);
@@ -2530,7 +2511,6 @@ void VKBackend::do_drawInstanced(const Batch& batch, size_t paramOffset) {
         _stats._DSNumDrawcalls += trueNumInstances;
     } else {
         vkCmdDraw(_currentCommandBuffer, numVertices, numInstances, startVertex, 0);
-        //glDrawArraysInstanced(mode, startVertex, numVertices, numInstances);
         _stats._DSNumTriangles += (numInstances * numVertices) / 3;
         // VKTODO: should that count as 1 draw call for whole set of instances?
         _stats._DSNumDrawcalls += numInstances;
@@ -2540,21 +2520,20 @@ void VKBackend::do_drawInstanced(const Batch& batch, size_t paramOffset) {
 
 void VKBackend::do_drawIndexedInstanced(const Batch& batch, size_t paramOffset) {
     int numInstances = batch._params[paramOffset + 4]._uint;
-    //Primitive primitiveType = (Primitive)batch._params[paramOffset + 3]._uint; // Do not remove, it's here for readability
+    // Do not remove, it's here for readability
+    //Primitive primitiveType = (Primitive)batch._params[paramOffset + 3]._uint;
     uint32 numIndices = batch._params[paramOffset + 2]._uint;
     uint32 startIndex = batch._params[paramOffset + 1]._uint;
-    //uint32 startInstance = batch._params[paramOffset + 0]._uint; // VKTODO: what to do with this
-    //GLenum glType = gl::ELEMENT_TYPE_TO_GL[_input._indexBufferType];
-    //auto typeByteSize = TYPE_SIZE[_input._indexBufferType];
-    //void* indexBufferByteOffset = reinterpret_cast<void*>(startIndex * typeByteSize + _input._indexBufferOffset);
+    uint32 startInstance = batch._params[paramOffset + 0]._uint;
 
     if (isStereo()) {
         int trueNumInstances = 2 * numInstances;
 
 #ifdef GPU_STEREO_DRAWCALL_INSTANCED
-        vkCmdDrawIndexed(_currentCommandBuffer, numIndices, trueNumInstances, startIndex, 0, 0); // VKTODO: where to get vertexOffset?
-        //glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, trueNumInstances, 0, startInstance);
+        // VKTODO: Shouldn't it be startInstance * 2? Although on OpenGL it's just startInstance.
+        vkCmdDrawIndexed(_currentCommandBuffer, numIndices, trueNumInstances, startIndex, 0, startInstance);
 #else
+        // VKTODO
         setupStereoSide(0);
         glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, numInstances, 0, startInstance);
         setupStereoSide(1);
@@ -2563,8 +2542,7 @@ void VKBackend::do_drawIndexedInstanced(const Batch& batch, size_t paramOffset) 
         _stats._DSNumTriangles += (trueNumInstances * numIndices) / 3;
         _stats._DSNumDrawcalls += trueNumInstances;
     } else {
-        vkCmdDrawIndexed(_currentCommandBuffer, numIndices, numInstances, startIndex, 0, 0); // VKTODO: where to get vertexOffset?
-        //glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, numInstances, 0, startInstance);
+        vkCmdDrawIndexed(_currentCommandBuffer, numIndices, numInstances, startIndex, 0, startInstance);
         _stats._DSNumTriangles += (numInstances * numIndices) / 3;
         _stats._DSNumDrawcalls += numInstances;
     }
@@ -2574,23 +2552,10 @@ void VKBackend::do_drawIndexedInstanced(const Batch& batch, size_t paramOffset) 
 
 void VKBackend::do_multiDrawIndirect(const Batch& batch, size_t paramOffset) {
     // VKTODO: can be done later
-    /*uint commandCount = batch._params[paramOffset + 0]._uint;
-    GLenum mode = gl::PRIMITIVE_TO_GL[(Primitive)batch._params[paramOffset + 1]._uint];
-    glMultiDrawArraysIndirect(mode, reinterpret_cast<GLvoid*>(_input._indirectBufferOffset), commandCount, (GLsizei)_input._indirectBufferStride);
-    _stats._DSNumDrawcalls += commandCount;
-    _stats._DSNumAPIDrawcalls++;
-    (void)CHECK_GL_ERROR();*/
 }
 
 void VKBackend::do_multiDrawIndexedIndirect(const Batch& batch, size_t paramOffset) {
     // VKTODO: can be done later
-    /*uint commandCount = batch._params[paramOffset + 0]._uint;
-    GLenum mode = gl::PRIMITIVE_TO_GL[(Primitive)batch._params[paramOffset + 1]._uint];
-    GLenum indexType = gl::ELEMENT_TYPE_TO_GL[_input._indexBufferType];
-    glMultiDrawElementsIndirect(mode, indexType, reinterpret_cast<GLvoid*>(_input._indirectBufferOffset), commandCount, (GLsizei)_input._indirectBufferStride);
-    _stats._DSNumDrawcalls += commandCount;
-    _stats._DSNumAPIDrawcalls++;
-    (void)CHECK_GL_ERROR();*/
 }
 
 void VKBackend::do_setFramebuffer(const Batch& batch, size_t paramOffset) {
@@ -2599,20 +2564,9 @@ void VKBackend::do_setFramebuffer(const Batch& batch, size_t paramOffset) {
 
     resetRenderPass();
     _hasFramebufferChanged = true;
-    // VKTODO?
-    /*auto framebuffer = batch._framebuffers.get(batch._params[paramOffset]._uint);
-    if (_output._framebuffer != framebuffer) {
-        auto newFBO = getFramebufferID(framebuffer);
-        if (_output._drawFBO != newFBO) {
-            _output._drawFBO = newFBO;
-            glBindFramebuffer(VK_DRAW_FRAMEBUFFER, newFBO);
-        }
-        _output._framebuffer = framebuffer;
-    }*/
 }
 
 void VKBackend::do_setFramebufferSwapChain(const Batch& batch, size_t paramOffset) {
-    // VKTODO?
     auto swapChain = std::static_pointer_cast<FramebufferSwapChain>(batch._swapChains.get(batch._params[paramOffset]._uint));
     if (swapChain) {
         auto index = batch._params[paramOffset + 1]._uint;
@@ -2653,9 +2607,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
     VkAttachmentReference depthReference{};
     for (size_t i = 0; i < key.size(); i++) {
         const auto& formatAndLayout = key[i];
-        /*if (surface) {
-            Q_ASSERT(TextureUsageType::RENDERBUFFER == surface->getUsageType());
-            vkTexture = backend->syncGPUObject(*surface.get());*/
+
         auto texture = renderBuffers[i]._texture;
         if (!texture) {
             // Last texture of the key can be depth stencil attachment
@@ -2664,12 +2616,10 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
         }
         Q_ASSERT(texture);
         VKAttachmentTexture *attachmentTexture = nullptr;
-        //if (texture) {
         auto gpuTexture = syncGPUObject(texture.get());
         Q_ASSERT(gpuTexture);
         attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
         Q_ASSERT(attachmentTexture);
-        //}
         VkAttachmentDescription attachment{};
         attachment.format = formatAndLayout.first;
         attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -2678,7 +2628,6 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
         } else {
             attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
         }
-        //attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         attachment.samples = VK_SAMPLE_COUNT_1_BIT;
         if (texture->isDepthStencilRenderTarget()) {
             clearValues.push_back(VkClearValue{.depthStencil =  VkClearDepthStencilValue{ depth, (uint32_t)stencil }});
@@ -2756,12 +2705,6 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
     renderPassInfo.subpassCount = (uint32_t)subpasses.size();
     renderPassInfo.pSubpasses = subpasses.data();
 
-    /*static const std::array<VkClearValue, 2> clearValuesx{
-        VkClearValue{.color =  VkClearColorValue{.float32 =  { color.x, color.y, color.z, color.w }}},
-        VkClearValue{.depthStencil =  VkClearDepthStencilValue{ depth, (uint32_t)stencil }},
-    };*/
-
-
     VkRenderPass renderPass;
     VK_CHECK_RESULT(vkCreateRenderPass(_context.device->logicalDevice, &renderPassInfo, nullptr, &renderPass));
 
@@ -2778,7 +2721,6 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
     vkCmdEndRenderPass(_currentCommandBuffer);
     _currentFrame->_renderPasses.push_back(renderPass); // To be deleted after frame rendering is complete
 
-    // VKTODO: some sort of barrier is needed?
     for (auto &renderBuffer : renderBuffers) {
         auto texture = renderBuffer._texture;
         if (!texture) {
@@ -2857,80 +2799,6 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
 
         attachmentTexture->_vkImageLayout = layout;
     }
-
-    /*VKuint glmask = 0;
-    if (masks & Framebuffer::BUFFER_STENCIL) {
-        glClearStencil(stencil);
-        glmask |= VK_STENCIL_BUFFER_BIT;
-        // TODO: we will probably need to also check the write mask of stencil like we do
-        // for depth buffer, but as would say a famous Fez owner "We'll cross that bridge when we come to it"
-    }
-
-    bool restoreDepthMask = false;
-    if (masks & Framebuffer::BUFFER_DEPTH) {
-        glClearDepth(depth);
-        glmask |= VK_DEPTH_BUFFER_BIT;
-
-        bool cacheDepthMask = _pipeline._stateCache.depthTest.getWriteMask();
-        if (!cacheDepthMask) {
-            restoreDepthMask = true;
-            glDepthMask(VK_TRUE);
-        }
-    }
-
-    std::vector<VKenum> drawBuffers;
-    if (masks & Framebuffer::BUFFER_COLORS) {
-        if (_output._framebuffer) {
-            for (unsigned int i = 0; i < Framebuffer::MAX_NUM_RENDER_BUFFERS; i++) {
-                if (masks & (1 << i)) {
-                    drawBuffers.push_back(VK_COLOR_ATTACHMENT0 + i);
-                }
-            }
-
-            if (!drawBuffers.empty()) {
-                glDrawBuffers((VKsizei)drawBuffers.size(), drawBuffers.data());
-                glClearColor(color.x, color.y, color.z, color.w);
-                glmask |= VK_COLOR_BUFFER_BIT;
-
-                (void)CHECK_VK_ERROR();
-            }
-        } else {
-            glClearColor(color.x, color.y, color.z, color.w);
-            glmask |= VK_COLOR_BUFFER_BIT;
-        }
-
-        // Force the color mask cache to WRITE_ALL if not the case
-        do_setStateColorWriteMask(State::ColorMask::WRITE_ALL);
-    }*/
-
-    // Apply scissor if needed and if not already on
-    // VKTODO: how to do this here?
-    /*bool doEnableScissor = (useScissor && (!_pipeline._stateCache.scissorEnable));
-    if (doEnableScissor) {
-        glEnable(VK_SCISSOR_TEST);
-    }*/
-
-    // Clear!
-    //glClear(glmask);
-
-    // VKTODO: how to do this here?
-    // Restore scissor if needed
-    /*if (doEnableScissor) {
-        glDisable(VK_SCISSOR_TEST);
-    }*/
-
-    // Restore write mask meaning turn back off
-    /*if (restoreDepthMask) {
-        glDepthMask(VK_FALSE);
-    }
-
-    // Restore the color draw buffers only if a frmaebuffer is bound
-    if (_output._framebuffer && !drawBuffers.empty()) {
-        auto glFramebuffer = syncGPUObject(*_output._framebuffer);
-        if (glFramebuffer) {
-            glDrawBuffers((VKsizei)glFramebuffer->_colorBuffers.size(), glFramebuffer->_colorBuffers.data());
-        }
-    }*/
 }
 
 void VKBackend::do_blit(const Batch& batch, size_t paramOffset) {
@@ -3004,7 +2872,6 @@ void VKBackend::do_setInputFormat(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_setInputBuffer(const Batch& batch, size_t paramOffset) {
-    // VKTODO
     Offset stride = batch._params[paramOffset + 0]._uint;
     Offset offset = batch._params[paramOffset + 1]._uint;
     BufferPointer buffer = batch._buffers.get(batch._params[paramOffset + 2]._uint);
@@ -3018,7 +2885,6 @@ void VKBackend::do_setInputBuffer(const Batch& batch, size_t paramOffset) {
 
             VkBuffer vkBuffer = VK_NULL_HANDLE;
             if (buffer) {
-                //vkBuffer = VKBuffer::getBuffer(*this, *buffer);
                 auto backendBuffer = syncGPUObject(buffer.get());
                 if (backendBuffer) {
                     vkBuffer = backendBuffer->buffer;
@@ -3046,7 +2912,6 @@ void VKBackend::do_setInputBuffer(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_setIndexBuffer(const Batch& batch, size_t paramOffset) {
-    // VKTODO
     _input._indexBufferType = (Type)batch._params[paramOffset + 2]._uint;
     gpu::Offset newOffset = batch._params[paramOffset + 0]._uint;
 
@@ -3055,8 +2920,6 @@ void VKBackend::do_setIndexBuffer(const Batch& batch, size_t paramOffset) {
         _input._indexBuffer = indexBuffer.get();
         _input._indexBufferOffset = batch._params[paramOffset + 0]._uint;
         if (indexBuffer) {
-            //auto vulkanBuffer = getGPUObject<VKBuffer>(*indexBuffer);
-            // VKTODO: which index type?
             VkIndexType indexType = VK_INDEX_TYPE_NONE_KHR;
             if (_input._indexBufferType == gpu::UINT32) {
                 indexType = VK_INDEX_TYPE_UINT32;
@@ -3072,7 +2935,6 @@ void VKBackend::do_setIndexBuffer(const Batch& batch, size_t paramOffset) {
             }
             Q_ASSERT(vkBuffer != VK_NULL_HANDLE);
             vkCmdBindIndexBuffer(_currentCommandBuffer, vkBuffer, _input._indexBufferOffset, indexType);
-            //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, getBufferID(*indexBuffer));
         } else {
             // FIXME do we really need this?  Is there ever a draw call where we care that the element buffer is null?
             Q_ASSERT(false);
@@ -3083,37 +2945,10 @@ void VKBackend::do_setIndexBuffer(const Batch& batch, size_t paramOffset) {
 
 void VKBackend::do_setIndirectBuffer(const Batch& batch, size_t paramOffset) {
     // VKTODO
-    /*_input._indirectBufferOffset = batch._params[paramOffset + 1]._uint;
-    _input._indirectBufferStride = batch._params[paramOffset + 2]._uint;
-
-    BufferPointer buffer = batch._buffers.get(batch._params[paramOffset]._uint);
-    if (buffer != _input._indirectBuffer) {
-        _input._indirectBuffer = buffer;
-        if (buffer) {
-            glBindBuffer(VK_DRAW_INDIRECT_BUFFER, getBufferID(*buffer));
-        } else {
-            // FIXME do we really need this?  Is there ever a draw call where we care that the element buffer is null?
-            glBindBuffer(VK_DRAW_INDIRECT_BUFFER, 0);
-        }
-    }
-
-    (void)CHECK_VK_ERROR();*/
 }
 
 void VKBackend::do_generateTextureMips(const Batch& batch, size_t paramOffset) {
     // VKTODO
-    /*TexturePointer resourceTexture = batch._textures.get(batch._params[paramOffset + 0]._uint);
-    if (!resourceTexture) {
-        return;
-    }
-
-    // DO not transfer the texture, this call is expected for rendering texture
-    VKTexture* object = syncGPUObject(resourceTexture, false);
-    if (!object) {
-        return;
-    }
-
-    object->generateMips();*/
 }
 
 void VKBackend::do_generateTextureMipsWithPipeline(const Batch& batch, size_t paramOffset) {
@@ -3129,51 +2964,14 @@ void VKBackend::do_advance(const Batch& batch, size_t paramOffset) {
 
 void VKBackend::do_beginQuery(const Batch& batch, size_t paramOffset) {
     // VKTODO
-    /*auto query = batch._queries.get(batch._params[paramOffset]._uint);
-    VKQuery* glquery = syncGPUObject(*query);
-    if (glquery) {
-        if (timeElapsed) {
-            glBeginQuery(VK_TIME_ELAPSED, glquery->_endqo);
-        } else {
-            glQueryCounter(glquery->_beginqo, VK_TIMESTAMP);
-        }
-        (void)CHECK_VK_ERROR();
-    }*/
 }
 
 void VKBackend::do_endQuery(const Batch& batch, size_t paramOffset) {
     // VKTODO
-    /*auto query = batch._queries.get(batch._params[paramOffset]._uint);
-    VKQuery* glquery = syncGPUObject(*query);
-    if (glquery) {
-        if (timeElapsed) {
-            glEndQuery(VK_TIME_ELAPSED);
-        } else {
-            glQueryCounter(glquery->_endqo, VK_TIMESTAMP);
-        }
-        (void)CHECK_VK_ERROR();
-    }*/
 }
 
 void VKBackend::do_getQuery(const Batch& batch, size_t paramOffset) {
     //VKTODO
-    /*auto query = batch._queries.get(batch._params[paramOffset]._uint);
-    VKQuery* glquery = syncGPUObject(*query);
-    if (glquery) {
-        glGetQueryObjectui64v(glquery->_endqo, VK_QUERY_RESULT_AVAILABLE, &glquery->_result);
-        if (glquery->_result == VK_TRUE) {
-            if (timeElapsed) {
-                glGetQueryObjectui64v(glquery->_endqo, VK_QUERY_RESULT, &glquery->_result);
-            } else {
-                VKuint64 start, end;
-                glGetQueryObjectui64v(glquery->_beginqo, VK_QUERY_RESULT, &start);
-                glGetQueryObjectui64v(glquery->_endqo, VK_QUERY_RESULT, &end);
-                glquery->_result = end - start;
-            }
-            query->triggerReturnHandler(glquery->_result);
-        }
-        (void)CHECK_VK_ERROR();
-    }*/
 }
 
 // Transform Stage
@@ -3204,19 +3002,10 @@ void VKBackend::do_setProjectionTransform(const Batch& batch, size_t paramOffset
 
 void VKBackend::do_setViewportTransform(const Batch& batch, size_t paramOffset) {
     memcpy(glm::value_ptr(_transform._viewport), batch.readData(batch._params[paramOffset]._uint), sizeof(Vec4i));
-    //memcpy(&_transform._viewport, batch.editData(batch._params[paramOffset]._uint), sizeof(Vec4i));
-
-    /*if (!_inRenderTransferPass && !isStereo()) {
-        ivec4& vp = _transform._viewport;
-    }*/
 
     // The Viewport is tagged invalid because the CameraTransformUBO is not up to date and will need update on next drawcall
     _transform._invalidViewport = true;
 }
-
-// VKTODO:
-// void GLBackend::syncTransformStateCache() is missing, including
-// _transform._viewProjectionState._view.evalFromRawMatrix(modelViewInv);
 
 void VKBackend::do_setProjectionJitterEnabled(const Batch& batch, size_t paramOffset) {
     _transform._projectionJitter._isEnabled = (batch._params[paramOffset]._int & 1) != 0;
@@ -3248,13 +3037,6 @@ void VKBackend::do_setProjectionJitterScale(const Batch& batch, size_t paramOffs
 
 void VKBackend::do_setDepthRangeTransform(const Batch& batch, size_t paramOffset) {
     //VKTODO
-    /*Vec2 depthRange(batch._params[paramOffset + 1]._float, batch._params[paramOffset + 0]._float);
-
-    if ((depthRange.x != _transform._depthRange.x) || (depthRange.y != _transform._depthRange.y)) {
-        _transform._depthRange = depthRange;
-
-        glDepthRangef(depthRange.x, depthRange.y);
-    }*/
 }
 
 void VKBackend::do_saveViewProjectionTransform(const Batch& batch, size_t paramOffset) {
@@ -3283,7 +3065,6 @@ void VKBackend::do_setSavedViewProjectionTransform(const Batch& batch, size_t pa
 }
 
 void VKBackend::do_copySavedViewProjectionTransformToBuffer(const Batch& batch, size_t paramOffset) {
-    // VKTODO: this is for OpenGL
     auto slotId = batch._params[paramOffset + 0]._uint;
     BufferPointer buffer = batch._buffers.get(batch._params[paramOffset + 1]._uint);
     auto dstOffset = batch._params[paramOffset + 2]._uint;
@@ -3301,8 +3082,6 @@ void VKBackend::do_copySavedViewProjectionTransformToBuffer(const Batch& batch, 
         return;
     }
 
-    // VKTODO: buffer needs to be edited GPU side instead and two copies are needed,
-    //  one for frame that is being rendered and one for frame that is having command buffers generated.
     // Sync BufferObject
     auto* object = syncGPUObject(buffer.get());
     // Copy camera data to the buffer.
@@ -3310,15 +3089,9 @@ void VKBackend::do_copySavedViewProjectionTransformToBuffer(const Batch& batch, 
     object->copy(size, (uint8_t *)(_transform._cameras.data()) + savedTransform._cameraOffset, dstOffset);
     object->flush(VK_WHOLE_SIZE);
     object->unmap();
-    if (object) {
-        // VKTODO: set the buffer
-        //glCopyNamedBufferSubData(_transform._cameraBuffer, object->_buffer, savedTransform._cameraOffset, dstOffset, size);
-        //(void)CHECK_GL_ERROR();
-    }
 }
 
 void VKBackend::do_setStateScissorRect(const Batch& batch, size_t paramOffset) {
-    //VKTODO: this is ugly but should work
     Vec4i rect;
     memcpy(glm::value_ptr(rect), batch.readData(batch._params[paramOffset]._uint), sizeof(Vec4i));
 
@@ -3329,13 +3102,12 @@ void VKBackend::do_setStateScissorRect(const Batch& batch, size_t paramOffset) {
         }
     }
     _currentScissorRect = rect;
-    //glScissor(rect.x, rect.y, rect.z, rect.w);
 }
 
 void VKBackend::do_setPipeline(const Batch& batch, size_t paramOffset) {
-    //VKTODO
     PipelinePointer pipeline = batch._pipelines.get(batch._params[paramOffset + 0]._uint);
 
+    // VKTODO: Should there be a check if given pipeline is alreday set?
     /*auto currentPipeline = _cache.pipelineState;
     if (currentPipeline.pipeline == pipeline.get()) {
         return;
@@ -3347,55 +3119,7 @@ void VKBackend::do_setPipeline(const Batch& batch, size_t paramOffset) {
     _stats._PSNumSetPipelines++;
 
     // null pipeline == reset
-    /*if (!pipeline) {
-
-        currentPipeline._pipeline.reset();
-
-        _pipeline._program = 0;
-        _pipeline._cameraCorrectionLocation = -1;
-        _pipeline._programShader = nullptr;
-        _pipeline._invalidProgram = true;
-
-        _pipeline._state = nullptr;
-        _pipeline._invalidState = true;
-    } else {
-        auto pipelineObject = VKPipeline::sync(*this, *pipeline);
-        if (!pipelineObject) {
-            return;
-        }
-
-        // check the program cache
-        // pick the program version
-        VKuint glprogram = pipelineObject->_program->getProgram();
-
-        if (_pipeline._program != glprogram) {
-            _pipeline._program = glprogram;
-            _pipeline._programShader = pipelineObject->_program;
-            _pipeline._invalidProgram = true;
-            _pipeline._cameraCorrectionLocation = pipelineObject->_cameraCorrection;
-        }
-
-        // Now for the state
-        if (_pipeline._state != pipelineObject->_state) {
-            _pipeline._state = pipelineObject->_state;
-            _pipeline._invalidState = true;
-        }
-
-        // Remember the new pipeline
-        _pipeline._pipeline = pipeline;
-    }
-
-    // THis should be done on Pipeline::update...
-    if (_pipeline._invalidProgram) {
-        glUseProgram(_pipeline._program);
-        if (_pipeline._cameraCorrectionLocation != -1) {
-            auto cameraCorrectionBuffer = syncGPUObject(*_pipeline._cameraCorrectionBuffer._buffer);
-            glBindBufferRange(VK_UNIFORM_BUFFER, _pipeline._cameraCorrectionLocation, cameraCorrectionBuffer->_id, 0,
-                              sizeof(CameraCorrection));
-        }
-        (void)CHECK_VK_ERROR();
-        _pipeline._invalidProgram = false;
-    }*/
+    // VKTODO: Is reset needed?
 }
 
 void VKBackend::do_setStateBlendFactor(const Batch& batch, size_t paramOffset) {
@@ -3410,7 +3134,6 @@ void VKBackend::do_setStateBlendFactor(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_setUniformBuffer(const Batch& batch, size_t paramOffset) {
-    //VKTODO
     uint32_t slot = batch._params[paramOffset + 3]._uint;
     BufferPointer uniformBuffer = batch._buffers.get(batch._params[paramOffset + 2]._uint);
     uint32_t rangeStart = batch._params[paramOffset + 1]._uint;
@@ -3431,8 +3154,6 @@ void VKBackend::do_setUniformBuffer(const Batch& batch, size_t paramOffset) {
     // Sync BufferObject
     auto* object = syncGPUObject(uniformBuffer.get());
     if (object) {
-        //glBindBufferRange(VK_UNIFORM_BUFFER, slot, object->_buffer, rangeStart, rangeSize);
-
         _uniform._buffers[slot].buffer = uniformBuffer.get();
         _uniform._buffers[slot].offset = rangeStart;
         _uniform._buffers[slot].size = rangeSize;
@@ -3443,7 +3164,6 @@ void VKBackend::do_setUniformBuffer(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_setResourceBuffer(const Batch& batch, size_t paramOffset) {
-    //VKTODO:
     uint32_t slot = batch._params[paramOffset + 1]._uint;
     if (slot >= (uint32_t)MAX_NUM_RESOURCE_BUFFERS) {
         qCDebug(gpu_vk_logging) << "GLBackend::do_setResourceBuffer: Trying to set a resource Buffer at slot #" << slot
@@ -3476,7 +3196,6 @@ void VKBackend::do_setResourceBuffer(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_setResourceTexture(const Batch& batch, size_t paramOffset) {
-    // VKTODO:
     uint32_t slot = batch._params[paramOffset + 1]._uint;
     TexturePointer resourceTexture = batch._textures.get(batch._params[paramOffset + 0]._uint);
 
@@ -3494,22 +3213,12 @@ void VKBackend::do_setResourceTexture(const Batch& batch, size_t paramOffset) {
     _stats._RSNumTextureBounded++;
 
     // Always make sure the VKObject is in sync
-    // VKTODO
-    //VKTexture* object = syncGPUObject(resourceTexture);
-    //if (object) {
-        //uint32_t to = object->_texture;
-        //uint32_t target = object->_target;
-        //glActiveTexture(VK_TEXTURE0 + slot);
-        //glBindTexture(target, to);
+    // VKTODO: Check when GLBacked synchronizes textures
 
-        _resource._textures[slot].texture = resourceTexture.get();
+    _resource._textures[slot].texture = resourceTexture.get();
 
-        //_stats._RSAmountTextureMemoryBounded += object->size();
-
-    //} else {
-    //    releaseResourceTexture(slot);
-    //    return;
-    //}
+    // VKTODO:
+    //_stats._RSAmountTextureMemoryBounded += object->size();
 }
 
 void VKBackend::do_setResourceTextureTable(const gpu::Batch& batch, size_t paramOffset) {
@@ -3545,7 +3254,6 @@ void VKBackend::do_setResourceFramebufferSwapChainTexture(const Batch& batch, si
     auto renderBufferSlot = batch._params[paramOffset + 3]._uint;
     const auto& resourceFramebuffer = swapChain->get(index);
     const auto& resourceTexture = resourceFramebuffer->getRenderBuffer(renderBufferSlot);
-    //setResourceTexture(slot, resourceTexture);
 
     if (!resourceTexture) {
         releaseResourceTexture(slot);
@@ -3658,5 +3366,3 @@ VKInputFormat* VKInputFormat::sync(const Stream::Format& inputFormat) {
 
     return object;
 }
-
-// VKTODO: all syncGPUObject calls should be done before the frame drawing begins

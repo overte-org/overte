@@ -163,9 +163,9 @@ public:
                         }
 
                         if (newPlugin) {
-                            bool hasVsync = true;
+                            //bool hasVsync = true;
                             QThread::setPriority(newPlugin->getPresentPriority());
-                            bool wantVsync = newPlugin->wantVsync();
+                            //bool wantVsync = newPlugin->wantVsync();
 #if defined(Q_OS_MAC)
                             newPlugin->swapBuffers();
 #endif

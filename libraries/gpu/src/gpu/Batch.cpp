@@ -146,7 +146,6 @@ void Batch::validateDrawState() const {
     const auto variant = _enableStereo ? shader::Variant::Stereo : shader::Variant::Mono;
     const auto dialect = shader::allDialects()[0];
     const auto& vertexSource = vertexShader->getSource();
-    //const auto& vertexName = vertexSource.name;
     const auto& vertexReflection = vertexSource.getReflection(dialect, variant);
     const auto& vertexInputs = vertexReflection.inputs;
 

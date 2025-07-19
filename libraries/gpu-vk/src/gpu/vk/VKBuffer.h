@@ -1,16 +1,18 @@
 //
 //  Created by Bradley Austin Davis on 2016/08/07
-//  Copyright 2013-2016 High Fidelity, Inc.
+//  Adapted for Vulkan in 2022-2025 by dr Karol Suprynowicz.
+//  Copyright 2013-2018 High Fidelity, Inc.
+//  Copyright 2023-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
 #ifndef hifi_gpu_vk_VKBuffer_h
 #define hifi_gpu_vk_VKBuffer_h
 
 #include "VKForward.h"
 #include "VKShared.h"
-#include <vk/VulkanBuffer.h>
 
 namespace gpu { namespace vk {
 

@@ -1,10 +1,15 @@
 //
 //  Created by Bradley Austin Davis on 2016/08/07
-//  Copyright 2013-2016 High Fidelity, Inc.
+//  Adapted for Vulkan in 2022-2025 by dr Karol Suprynowicz.
+//  Copyright 2013-2018 High Fidelity, Inc.
+//  Copyright 2023-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
 //
+//  Contains parts of Vulkan Samples, Copyright (c) 2018, Sascha Willems, distributed on MIT License.
+
 #ifndef hifi_gpu_vk_VKFramebuffer_h
 #define hifi_gpu_vk_VKFramebuffer_h
 
@@ -106,8 +111,6 @@ public:
     std::vector<FramebufferAttachment> attachments;
 
 protected:
-    //VkImageLayout _currentLayout {VK_IMAGE_LAYOUT_UNDEFINED}; // Used by render passes. If it's VK_IMAGE_LAYOUT_UNDEFINED, then image will be cleared in the render pass
-    //enum FramebufferStatus { VK_FRAMEBUFFER_COMPLETE } _status;
 
     virtual void update();
     //bool checkStatus(FramebufferStatus target) const;
