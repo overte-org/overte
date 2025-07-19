@@ -124,6 +124,7 @@ public:
 
     void updatePresentFrame(const Mat4& correction = Mat4(), bool primary = true) override;
 
+    void executeFrame(const FramePointer& frame) override;
     void render(const Batch& batch) final override;
 
     // This call synchronize the Full Backend cache with the current GLState

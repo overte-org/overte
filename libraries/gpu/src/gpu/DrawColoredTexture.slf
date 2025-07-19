@@ -13,18 +13,18 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-LAYOUT(binding=0) uniform sampler2D colorMap;
+TEXTURE(0, sampler2D, colorMap);
 
 struct DrawColorParams {
     vec4 color;
 };
 
-LAYOUT(binding=0) uniform drawColorParams {
+UNIFORM_BUFFER(0, drawColorParams) {
     DrawColorParams params;
 };
 
-layout(location=0) in vec2 varTexCoord0;
-layout(location=0) out vec4 outFragColor;
+INPUT(0, vec2, varTexCoord0);
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
     outFragColor = texture(colorMap, varTexCoord0) * params.color;

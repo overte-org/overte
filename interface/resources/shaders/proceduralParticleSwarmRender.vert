@@ -1,7 +1,7 @@
 uniform float radius = 0.01;
 uniform float lifespan = 1.0; // seconds
 
-layout(location=2) out vec3 _normalWS;
+OUTPUT(2, vec3, _normalWS);
 
 float bezierInterpolate(float y1, float y2, float y3, float u) {
     // https://en.wikipedia.org/wiki/Bezier_curve

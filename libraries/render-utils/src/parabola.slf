@@ -11,13 +11,13 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-layout(location=0) in vec4 _color;
+INPUT(0, vec4, _color);
 
 <@if not HIFI_USE_FORWARD@>
     <@include DeferredBufferWrite.slh@>
-    layout(location=1) in vec4 _prevPositionCS;
+    INPUT(1, vec4, _prevPositionCS);
 <@else@>
-    layout(location=0) out vec4 _fragColor0;
+    OUTPUT(0, vec4, _fragColor0);
 <@endif@>
 
 void main(void) {

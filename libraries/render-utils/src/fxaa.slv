@@ -12,13 +12,16 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-<@include gpu/Inputs.slh@>
+<@include gpu/ShaderConstants.h@>
+INPUT(GPU_ATTR_POSITION, vec4, inPosition);
+INPUT(GPU_ATTR_TEXCOORD0, vec4, inTexCoord0);
+
 
 <@include gpu/Transform.slh@>
 
 <$declareStandardTransform()$>
 
-layout(location=0) out vec2 varTexcoord;
+OUTPUT(0, vec2, varTexcoord);
 
 void main(void) {
     varTexcoord = inTexCoord0.xy;

@@ -55,6 +55,7 @@ public:
 
     void setStereoState(const StereoState& stereo);
 
+    virtual void executeFrame(const FramePointer& frame) = 0;
     virtual void render(const Batch& batch) = 0;
     virtual void syncCache() = 0;
     virtual void syncProgram(const gpu::ShaderPointer& program) = 0;
@@ -62,7 +63,7 @@ public:
     virtual void downloadFramebuffer(const FramebufferPointer& srcFramebuffer, const Vec4i& region, QImage& destImage) = 0;
     virtual void updatePresentFrame(const Mat4& correction = Mat4(), bool primary = true) = 0;
 
-    virtual bool supportedTextureFormat(const gpu::Element& format) = 0;
+    virtual bool supportedTextureFormat(const gpu::Element& format) const = 0;
 
         // Shared header between C++ and GLSL
 #include "TransformCamera_shared.slh"

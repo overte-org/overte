@@ -46,6 +46,7 @@
 #include <ui/TabletScriptingInterface.h>
 #include <ui/types/ContextAwareProfile.h>
 #include <ui/UpdateDialog.h>
+#include <vk/VKWindow.h>
 
 #include "DeadlockWatchdog.h"
 #include "GLCanvas.h"
@@ -77,7 +78,11 @@ void Application::initializeGL() {
         _isGLInitialized = true;
     }
 
-    _glWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat());
+#ifdef USE_GL
+    _primaryWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat());
+#else
+    //_primaryWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat()); // VKTODO
+#endif
 
     // When loading QtWebEngineWidgets, it creates a global share context on startup.
     // We have to account for this possibility by checking here for an existing
@@ -118,9 +123,9 @@ void Application::initializeGL() {
     }
 #endif
 
-    _glWidget->createContext(globalShareContext);
+    _primaryWidget->createContext(globalShareContext);
 
-    if (!_glWidget->makeCurrent()) {
+    if (!_primaryWidget->makeCurrent()) {
         qCWarning(interfaceapp, "Unable to make window context current");
     }
 
@@ -147,7 +152,7 @@ void Application::initializeGL() {
 #endif
 
     if (!globalShareContext) {
-        globalShareContext = _glWidget->qglContext();
+        globalShareContext = _primaryWidget->qglContext();
         qt_gl_set_global_share_context(globalShareContext);
     }
 
@@ -162,19 +167,19 @@ void Application::initializeGL() {
         }
         OffscreenQmlSurface::setSharedContext(qmlShareContext->getContext());
         qmlShareContext->doneCurrent();
-        if (!_glWidget->makeCurrent()) {
+        if (!_primaryWidget->makeCurrent()) {
             qCWarning(interfaceapp, "Unable to make window context current");
         }
     }
 #endif
 
     // Build an offscreen GL context for the main thread.
-    _glWidget->makeCurrent();
+    _primaryWidget->makeCurrent();
     glClearColor(0.2f, 0.2f, 0.2f, 1);
     glClear(GL_COLOR_BUFFER_BIT);
-    _glWidget->swapBuffers();
+    _primaryWidget->swapBuffers(); //VKTODO
 
-    _graphicsEngine->initializeGPU(_glWidget);
+    _graphicsEngine->initializeGPU(_primaryWidget);
 }
 
 void Application::initializeRenderEngine() {
@@ -318,7 +323,11 @@ void Application::initializeUi() {
     setupPreferences();
 
 #if !defined(DISABLE_QML)
-    _glWidget->installEventFilter(offscreenUi.data());
+#ifdef USE_GL
+    _primaryWidget->installEventFilter(offscreenUi.data());
+#else
+    _vkWindow->installEventFilter(offscreenUi.data());
+#endif
     offscreenUi->setMouseTranslator([=](const QPointF& pt) {
         QPointF result = pt;
         auto displayPlugin = getActiveDisplayPlugin();
@@ -456,7 +465,7 @@ void Application::resizeGL() {
 }
 
 glm::uvec2 Application::getCanvasSize() const {
-    return glm::uvec2(_glWidget->width(), _glWidget->height());
+    return glm::uvec2(_primaryWidget->width(), _primaryWidget->height());
 }
 
 float Application::getRenderResolutionScale() const {

@@ -19,6 +19,7 @@ namespace gpu {
 
     class Frame {
         friend class Context;
+        friend class Backend;
 
     public:
         Frame();
@@ -44,12 +45,12 @@ namespace gpu {
 
         std::queue<std::tuple<std::function<void(const QImage&)>, float, bool>> snapshotOperators;
 
+        void preRender();
     protected:
         friend class Deserializer;
 
         // Should be called once per frame, on the recording thred
         void finish();
-        void preRender();
     };
 
 };

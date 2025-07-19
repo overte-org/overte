@@ -396,7 +396,10 @@ void OpenXrDisplayPlugin::hmdPresent() {
                 return;
         }
 
-        GLuint glTexId = getGLBackend()->getTextureID(_compositeFramebuffer->getRenderBuffer(0));
+        auto backend = getBackend();
+        auto glBackend = std::dynamic_pointer_cast<gpu::gl::GLBackend>(backend);
+        Q_ASSERT(glBackend);
+        GLuint glTexId = glBackend->getTextureID(_compositeFramebuffer->getRenderBuffer(0));
 
         glCopyImageSubData(glTexId, GL_TEXTURE_2D, 0, 0, 0, 0, _images[0][_swapChainIndices[0]].image, GL_TEXTURE_2D, 0, 0, 0,
                            0, _renderTargetSize.x / 2, _renderTargetSize.y, 1);

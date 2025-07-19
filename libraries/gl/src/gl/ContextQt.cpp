@@ -92,7 +92,7 @@ bool Context::makeCurrent() {
 }
 
 void Context::swapBuffers() {
-    qglContext()->swapBuffers(_window);
+    qglContext()->swapBuffers(_window); // VKTODO
 }
 
 void Context::doneCurrent() {

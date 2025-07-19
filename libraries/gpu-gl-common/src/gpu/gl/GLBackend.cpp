@@ -589,6 +589,17 @@ void GLBackend::render(const Batch& batch) {
     }
 }
 
+void GLBackend::executeFrame(const FramePointer& frame) {
+    setStereoState(frame->stereoState);
+    // Execute the frame rendering commands
+    //VKTODO add executeBatch("Context::executeFrame::begin", [&](Batch& batch){ and so on
+    for (auto& batch : frame->batches) {
+        render(*batch);
+    }
+    //VKTODO add executeBatch("Context::executeFrame::end", [&](Batch& batch){ and so on
+}
+
+
 
 void GLBackend::syncCache() {
     PROFILE_RANGE(render_gpu_gl_detail, __FUNCTION__);
@@ -629,7 +640,7 @@ void GLBackend::do_restoreContextViewCorrection(const Batch& batch, size_t param
 }
 
 void GLBackend::do_setContextMirrorViewCorrection(const Batch& batch, size_t paramOffset) {
-    bool prevMirrorViewCorrection = _transform._presentFrame.mirrorViewCorrection;
+    //bool prevMirrorViewCorrection = _transform._presentFrame.mirrorViewCorrection;
     _transform._presentFrame.mirrorViewCorrection = batch._params[paramOffset]._uint != 0;
 
     if (_transform._presentFrame.correction != glm::mat4()) {
@@ -675,7 +686,7 @@ void GLBackend::resetStages() {
 
 void GLBackend::do_pushProfileRange(const Batch& batch, size_t paramOffset) {
     if (trace_render_gpu_gl_detail().isDebugEnabled()) {
-        auto name = batch._profileRanges.get(batch._params[paramOffset]._uint);
+        const auto& name = batch._profileRanges.get(batch._params[paramOffset]._uint);
         profileRanges.push_back(name);
 #if defined(NSIGHT_FOUND)
         nvtxRangePush(name.c_str());
@@ -692,9 +703,8 @@ void GLBackend::do_popProfileRange(const Batch& batch, size_t paramOffset) {
     }
 }
 
-
 // TODO: As long as we have gl calls explicitely issued from interface
-// code, we need to be able to record and batch these calls. THe long 
+// code, we need to be able to record and batch these calls. THe long
 // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
 
 void GLBackend::do_glUniform1i(const Batch& batch, size_t paramOffset) {

@@ -35,7 +35,7 @@ static const QString TEST_DIR_NAME("{630b8f02-52af-4cdf-a896-24e472b94b28}");
 static const QString KTX_TEST_DIR_ENV("HIFI_KTX_TEST_DIR");
 
 std::string vertexShaderSource = R"SHADER(
-layout(location = 0) out vec2 outTexCoord0;
+OUTPUT(0, vec2, outTexCoord0);
 
 const vec4 VERTICES[] = vec4[](
     vec4(-1.0, -1.0, 0.0, 1.0),
@@ -55,8 +55,8 @@ void main() {
 std::string fragmentShaderSource = R"SHADER(
 uniform sampler2D tex;
 
-layout(location = 0) in vec2 inTexCoord0;
-layout(location = 0) out vec4 outFragColor;
+INPUT(0, vec2, inTexCoord0);
+OUTPUT(0, vec4, outFragColor);
 
 void main() {
     outFragColor = texture(tex, inTexCoord0);

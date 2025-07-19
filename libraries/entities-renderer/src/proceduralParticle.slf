@@ -18,7 +18,7 @@
     <@include GlobalLight.slh@>
     <$declareEvalGlobalLightingAlphaBlended()$>
 
-    layout(location=0) out vec4 _fragColor0;
+    OUTPUT(0, vec4, _fragColor0);
 <@endif@>
 
 <@include gpu/Transform.slh@>
@@ -30,8 +30,8 @@
 <@include procedural/ProceduralParticleCommon.slh@>
 <$declareProceduralParticleRender()$>
 
-layout(location=0) flat in int particleID;
-layout(location=1) in vec4 _positionES;
+FLAT_INPUT(0, int, particleID);
+INPUT(1, vec4, _positionES);
 
 #line 1001
 //PROCEDURAL_BLOCK_BEGIN

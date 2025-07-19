@@ -115,7 +115,7 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
     const int totalVertsSize = clusterWeightsOffset + clusterWeightsSize;
 
     // Copy all vertex data in a single buffer
-    auto vertBuffer = std::make_shared<gpu::Buffer>();
+    auto vertBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
     vertBuffer->resize(totalVertsSize);
 
     // First positions
@@ -222,7 +222,6 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
     auto vertexBufferStream = std::make_shared<gpu::BufferStream>();
 
     gpu::BufferPointer attribBuffer;
-    int totalAttribBufferSize = totalVertsSize;
     gpu::uint8 posChannel = 0;
     gpu::uint8 tangentChannel = posChannel;
     gpu::uint8 attribChannel = posChannel;
@@ -296,9 +295,12 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
         auto vClusterWeightSize = clusterWeightsSize / numVerts;
 
         auto vStride = vClusterWeightOffset + vClusterWeightSize;
+        if (vStride % 4 != 0) {
+            vStride += 4 - vStride % 4;
+        }
 
         std::vector<gpu::Byte> dest;
-        dest.resize(totalAttribBufferSize);
+        dest.resize(vStride * numVerts);
         auto vDest = dest.data();
 
         auto source = vertBuffer->getData();
@@ -316,8 +318,8 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
             vDest += vStride;
         }
 
-        auto attribBuffer = std::make_shared<gpu::Buffer>();
-        attribBuffer->setData(totalAttribBufferSize, dest.data());
+        auto attribBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        attribBuffer->setData(dest.size(), dest.data());
         vertexBufferStream->addBuffer(attribBuffer, 0, vStride);
     }
 
@@ -335,7 +337,7 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
         return;
     }
 
-    auto indexBuffer = std::make_shared<gpu::Buffer>();
+    auto indexBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer);
     indexBuffer->resize(totalIndices * sizeof(int));
 
     int indexNum = 0;
@@ -373,7 +375,7 @@ void buildGraphicsMesh(const hfm::Mesh& hfmMesh, graphics::MeshPointer& graphics
     graphicsMesh->setIndexBuffer(indexBufferView);
 
     if (parts.size()) {
-        auto pb = std::make_shared<gpu::Buffer>();
+        auto pb = std::make_shared<gpu::Buffer>(gpu::Buffer::IndirectBuffer);
         pb->setData(parts.size() * sizeof(graphics::Mesh::Part), (const gpu::Byte*) parts.data());
         gpu::BufferView pbv(pb, gpu::Element(gpu::VEC4, gpu::UINT32, gpu::XYZW));
         graphicsMesh->setPartBuffer(pbv);
