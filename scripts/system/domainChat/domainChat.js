@@ -321,15 +321,17 @@
     function _formatTimestamp(timestamp) {
         let timeArray = [];
 
-        timeArray.push(new Date(timestamp).toLocaleTimeString(undefined, {
-            hour12: false,
-        }));
+        const DATE = new Date(timestamp);
 
-        timeArray.push(new Date(timestamp).toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        }));
+        const YEAR = DATE.getFullYear();
+        const MONTH = String(DATE.getMonth() + 1).padStart(2, '0');
+        const DAY = String(DATE.getDate()).padStart(2, '0');
+        const HOURS = String(DATE.getHours()).padStart(2, '0');
+        const MINUTES = String(DATE.getMinutes()).padStart(2, '0');
+        const SECONDS = String(DATE.getSeconds()).padStart(2, '0');
+
+        timeArray.push(`${HOURS}:${MINUTES}:${SECONDS}`);
+        timeArray.push(`${YEAR}-${MONTH}-${DAY}`);
 
         return timeArray;
     }
