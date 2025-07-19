@@ -1,12 +1,9 @@
 //
-// Created by ksuprynowicz on 1/27/25.
-//
-
-//
-//  GLCanvas.h
+//  VKCanvas.h
 //  interface/src
 //
-//  Created by Stephen Birarda on 8/14/13.
+//  Copied from GLCanvas.h on 2025/01/27.
+//  originally created by Stephen Birarda on 8/14/13.
 //  Copyright 2013 High Fidelity, Inc.
 //
 //  Distributed under the Apache License, Version 2.0.
@@ -14,8 +11,6 @@
 //
 
 #pragma once
-
-//#include "src/vk/VKWidget.h"
 
 #include "vk/VKWidget.h"
 

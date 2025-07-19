@@ -348,10 +348,10 @@ private:
     void updateTransform(const Batch& batch);
     void updatePipeline();
 
-    vk::VKFramebuffer* syncGPUObject(const Framebuffer& framebuffer);
-    VKBuffer* syncGPUObject(const Buffer& buffer);
-    VKTexture* syncGPUObject(const Texture& texture);
-    VKQuery* syncGPUObject(const Query& query);
+    vk::VKFramebuffer* syncGPUObject(const Framebuffer *framebuffer);
+    VKBuffer* syncGPUObject(const Buffer *buffer);
+    VKTexture* syncGPUObject(const Texture *texture);
+    VKQuery* syncGPUObject(const Query *query);
 
     void blitToFramebuffer(VKAttachmentTexture &input, const Vec4i& srcViewport, VKAttachmentTexture &output, const Vec4i& dstViewport);
 
@@ -382,6 +382,7 @@ public:
 
     int getRealUniformLocation(int location);
 
+    virtual void store_glUniform1i(const Batch& batch, size_t paramOffset) final;
     virtual void store_glUniform1f(const Batch& batch, size_t paramOffset) final;
     virtual void store_glUniform2f(const Batch& batch, size_t paramOffset) final;
     virtual void store_glUniform3f(const Batch& batch, size_t paramOffset) final;
@@ -408,6 +409,7 @@ public:
     virtual void do_generateTextureMips(const Batch& batch, size_t paramOffset) final;
     virtual void do_generateTextureMipsWithPipeline(const Batch& batch, size_t paramOffset) final;
 
+    virtual void do_glUniform1i(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform1f(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform2f(const Batch& batch, size_t paramOffset) final;
     virtual void do_glUniform3f(const Batch& batch, size_t paramOffset) final;

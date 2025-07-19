@@ -737,6 +737,15 @@ void Batch::popProfileRange() {
 #endif
 }
 
+void Batch::_glUniform1i(int32 location, int32 v0) {
+    if (location < 0) {
+        return;
+    }
+    ADD_COMMAND(glUniform1i);
+    _params.emplace_back(v0);
+    _params.emplace_back(location);
+}
+
 void Batch::_glUniform1f(int32 location, float v0) {
     if (location < 0) {
         return;

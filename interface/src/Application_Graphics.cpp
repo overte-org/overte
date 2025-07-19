@@ -324,7 +324,7 @@ void Application::initializeUi() {
 
 #if !defined(DISABLE_QML)
 #ifdef USE_GL
-    _primaryWidget->installEventFilter(offscreenUi.data()); //VKTODO
+    _primaryWidget->installEventFilter(offscreenUi.data());
 #else
     _vkWindow->installEventFilter(offscreenUi.data());
 #endif
