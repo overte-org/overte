@@ -221,6 +221,7 @@ Application::Application(
     _sessionRunTimer(startupTimer),
     _lastNackTime(usecTimestampNow()),
     _lastSendDownstreamAudioStats(usecTimestampNow()),
+    _useDiscordPresence("useDiscordPresence", true),
     _firstRun(Settings::firstRun, true),
     _previousScriptLocation("LastScriptLocation", DESKTOP_LOCATION),
     // UI

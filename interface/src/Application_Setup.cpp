@@ -1294,8 +1294,10 @@ void Application::initialize(const QCommandLineParser &parser) {
     DependencyManager::get<TabletScriptingInterface>()->preloadSounds();
     DependencyManager::get<Keyboard>()->createKeyboard();
 
-    // Needs to happen later in the constructor as it depends on some other things being set up
-    _discordPresence = new DiscordPresence();
+    if (_useDiscordPresence.get()) {
+        // Needs to happen later in the constructor as it depends on some other things being set up
+        _discordPresence = new DiscordPresence();
+    }
 
     _pendingIdleEvent = false;
     _graphicsEngine->startup();

@@ -340,6 +340,12 @@ void setupPreferences() {
                                 "this information you are helping to improve the product. ", getter, setter));
     }
 
+    {
+        auto getter = []()->bool { return qApp->getUseDiscordPresence(); };
+        auto setter = [](bool value) { qApp->setUseDiscordPresence(value); };
+        preferences->addPreference(new CheckPreference("Privacy", "Use Discord Rich Presence", getter, setter));
+    }
+
     static const QString AVATAR_TUNING { "Avatar Tuning" };
     {
         auto getter = [myAvatar]()->QString { return myAvatar->getDominantHand(); };
