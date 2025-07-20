@@ -13,7 +13,6 @@
 //
 
 <@include gpu/Inputs.slh@>
-
 <@include gpu/Color.slh@>
 <@include gpu/Transform.slh@>
 <$declareStandardTransform()$>

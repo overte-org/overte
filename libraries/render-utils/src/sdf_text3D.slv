@@ -14,7 +14,6 @@
 
 <@include gpu/Inputs.slh@>
 <@include gpu/Color.slh@>
-
 <@include render-utils/ShaderConstants.h@>
 
 <@include gpu/Transform.slh@>
