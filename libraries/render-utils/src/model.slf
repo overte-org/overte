@@ -311,7 +311,7 @@ void main(void) {
     vec3 albedo = vec3(0.0);
     float opacity = 0.0;
     vec3 emissive = vec3(0.0);
-    vec3 fragNormalWS = normalWS;
+    vec3 fragNormalWS = vec3(0.0);
     vec3 shade = vec3(0.0);
     float shadingShift = 0.0;
     float shadingToony = 0.0;
@@ -445,9 +445,7 @@ void main(void) {
         <@endif@>
     }
 
-    <@if HIFI_USE_LAYERS2 or HIFI_USE_LAYERS3@>
-        fragNormalWS = normalize(fragNormalWS);
-    <@endif@>
+    fragNormalWS = normalize(fragNormalWS);
 
     <@if HIFI_USE_TRANSLUCENT@>
         <$discardInvisible(opacity)$>
@@ -496,7 +494,7 @@ void main(void) {
 <@else@>
     vec3 albedo = vec3(0.0);
     float opacity = 0.0;
-    vec3 fragNormalWS = normalWS;
+    vec3 fragNormalWS = vec3(0.0);
     float roughness = 0.0;
     float metallic = 0.0;
     <@if not HIFI_USE_LIGHTMAP@>
@@ -664,9 +662,7 @@ void main(void) {
 
     albedo *= _color.rgb;
 
-    <@if HIFI_USE_LAYERS2 or HIFI_USE_LAYERS3@>
-        fragNormalWS = normalize(fragNormalWS);
-    <@endif@>
+    fragNormalWS = normalize(fragNormalWS);
 
     <@if HIFI_USE_TRANSLUCENT@>
         opacity *= _color.a;
