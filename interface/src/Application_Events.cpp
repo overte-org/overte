@@ -1001,7 +1001,7 @@ void Application::processDriverBlocklistReply(const QString& fullDriverToTest, c
                 return false;
             }
 
-            for (size_t i = 0; i < driver1.size(); i++) {
+            for (int i = 0; i < driver1.size(); i++) {
                 if (!func(driver1[i].toInt(), driver2[i].toInt())) {
                     return false;
                 }
