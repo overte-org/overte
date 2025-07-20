@@ -73,7 +73,6 @@ void DrawSceneOctree::configure(const Config& config) {
     _showLODReticle = config.showLODReticle;
 }
 
-
 void DrawSceneOctree::run(const RenderContextPointer& renderContext, const ItemSpatialTree::ItemSelection& inSelection) {
     assert(renderContext->args);
     assert(renderContext->args->hasViewFrustum());

@@ -140,8 +140,19 @@ void Context::executeFrame(const FramePointer& frame) const {
 
     // FIXME? probably not necessary, but safe
     consumeFrameUpdates(frame);
+    _backend->setStereoState(frame->stereoState);
+
+    executeBatch("Context::executeFrame::begin", [&](Batch& batch){
+        batch.pushProfileRange("Frame");
+        _frameRangeTimer->begin(batch);
+    });
 
     _backend->executeFrame(frame);
+
+    executeBatch("Context::executeFrame::end", [&](Batch& batch){
+        batch.popProfileRange();
+        _frameRangeTimer->end(batch);
+    });
 
     static ContextStats endStats;
     getStats(endStats);

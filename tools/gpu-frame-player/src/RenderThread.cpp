@@ -11,7 +11,6 @@
 #include <QtGui/QWindow>
 #include <QtCore/QThreadPool>
 #include <QtX11Extras/QX11Info>
-//#include <QVulkanInstance>
 #ifdef USE_GL
 #include <gl/OffscreenGLCanvas.h>
 #include <gl/QOpenGLContextWrapper.h>

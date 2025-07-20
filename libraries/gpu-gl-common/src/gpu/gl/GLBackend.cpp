@@ -588,13 +588,10 @@ void GLBackend::render(const Batch& batch) {
 }
 
 void GLBackend::executeFrame(const FramePointer& frame) {
-    setStereoState(frame->stereoState);
     // Execute the frame rendering commands
-    //VKTODO add executeBatch("Context::executeFrame::begin", [&](Batch& batch){ and so on
     for (auto& batch : frame->batches) {
         render(*batch);
     }
-    //VKTODO add executeBatch("Context::executeFrame::end", [&](Batch& batch){ and so on
 }
 
 

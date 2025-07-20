@@ -213,9 +213,13 @@ Application::Application(
     QElapsedTimer& startupTimer
 ) :
     QApplication(argc, argv),
-//#ifdef USE_GL
+#ifdef USE_GL
     _window(new MainWindow(desktop())),
-//#endif
+#else
+    _vkWindow(new VKWindow()),
+    _vkWindowWrapper(QWidget::createWindowContainer(_vkWindow)),
+    _window(new MainWindow(_vkWindowWrapper)),
+#endif
     // Menu needs to be initialized before other initializers. Otherwise deadlock happens on qApp->getWindow()->menuBar().
     _isMenuInitialized(initMenu()),
 #ifndef Q_OS_ANDROID
@@ -247,11 +251,6 @@ Application::Application(
     _fieldOfView("fieldOfView", DEFAULT_FIELD_OF_VIEW_DEGREES),
     _cameraClippingEnabled("cameraClippingEnabled", false)
 {
-#ifndef USE_GL
-    _vkWindow = new VKWindow();
-    _vkWindowWrapper = QWidget::createWindowContainer(_vkWindow);
-    _window = new MainWindow(_vkWindowWrapper);
-#endif
 
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
 
