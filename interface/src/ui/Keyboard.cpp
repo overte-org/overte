@@ -115,6 +115,19 @@ static const QVariantMap KEY_PRESSING_STYLE {
     { "fillOccludedAlpha", 0.0 }
 };
 
+/*
+ * FIXME: Scaling is bugged with entities attached to the SENSOR_TO_WORLD_MATRIX joint.
+ * localPosition works correctly, but rendered entity dimensions and text line heights
+ * are incorrect. (foo * sensorToWorldScale) shouldn't be necessary when an entity is
+ * attached to the SENSOR_TO_WORLD_MATRIX joint, because the joint transform already
+ * includes the scale. Note that (it appears that) ray picks behave properly, so it's
+ * probably only the rendering that's bugged.
+ *
+ * Even weirder, it looks like (lineHeight * sensorToWorldScale) is *also* affected,
+ * and cuts off the character cells incorrectly. Because of that, the keyboard
+ * preview has been temporarily disabled.
+ */
+
 std::pair<glm::vec3, glm::quat> calculateKeyboardPositionAndOrientation() {
     auto myAvatar = DependencyManager::get<AvatarManager>()->getMyAvatar();
     auto hmd = DependencyManager::get<HMDScriptingInterface>();
@@ -164,7 +177,7 @@ void Key::saveDimensionsAndLocalPosition() {
 
 void Key::scaleKey(float sensorToWorldScale) {
     if (_originalDimensionsAndLocalPositionSaved) {
-        glm::vec3 scaledLocalPosition = _originalLocalPosition * sensorToWorldScale;
+        glm::vec3 scaledLocalPosition = _originalLocalPosition;
         glm::vec3 scaledDimensions = _originalDimensions * sensorToWorldScale;
         _currentLocalPosition = scaledLocalPosition;
 
@@ -386,7 +399,8 @@ void Keyboard::raiseKeyboardAnchor(bool raise) const {
     EntityItemProperties properties;
     properties.setVisible(raise);
 
-    entityScriptingInterface->editEntity(_textDisplay.entityID, properties);
+    // FIXME: bugged scaling with sensor matrix joint
+    //entityScriptingInterface->editEntity(_textDisplay.entityID, properties);
     entityScriptingInterface->editEntity(_backPlate.entityID, properties);
 
     if (_resetKeyboardPositionOnRaise) {
@@ -408,7 +422,7 @@ void Keyboard::scaleKeyboard(float sensorToWorldScale) {
 
     {
         EntityItemProperties properties;
-        properties.setLocalPosition(_backPlate.localPosition * sensorToWorldScale);
+        properties.setLocalPosition(_backPlate.localPosition);
         properties.setDimensions(_backPlate.dimensions * sensorToWorldScale);
         entityScriptingInterface->editEntity(_backPlate.entityID, properties);
     }
@@ -421,7 +435,7 @@ void Keyboard::scaleKeyboard(float sensorToWorldScale) {
 
     {
         EntityItemProperties properties;
-        properties.setLocalPosition(_textDisplay.localPosition * sensorToWorldScale);
+        properties.setLocalPosition(_textDisplay.localPosition);
         properties.setDimensions(_textDisplay.dimensions * sensorToWorldScale);
         properties.setLineHeight(_textDisplay.lineHeight * sensorToWorldScale);
         entityScriptingInterface->editEntity(_textDisplay.entityID, properties);
@@ -899,7 +913,7 @@ void Keyboard::loadKeyboardFile(const QString& keyboardFile) {
             EntityItemProperties properties;
             properties.setType(EntityTypes::Box);
             properties.setName("Keyboard-BackPlate");
-            properties.setVisible(true);
+            properties.setVisible(false);
             properties.getGrab().setGrabbable(false);
             properties.setAlpha(0.0f);
             properties.setIgnorePickIntersection(false);
@@ -1001,7 +1015,12 @@ void Keyboard::loadKeyboardFile(const QString& keyboardFile) {
             properties.setText("");
             properties.setTextAlpha(1.0f);
             properties.setBackgroundAlpha(0.7f);
-            properties.setParentID(_anchor.entityID);
+            properties.setIgnorePickIntersection(true);
+            properties.setTextEffect(TextEffect::OUTLINE_WITH_FILL_EFFECT);
+            properties.setTextEffectColor(u8vec3Color(0, 0, 0));
+            properties.setTextEffectThickness(0.4f);
+            // FIXME: bugged scaling with sensor matrix joint
+            //properties.setParentID(_anchor.entityID);
 
             TextDisplay textDisplay;
             textDisplay.entityID = entityScriptingInterface->addEntityInternal(properties, entity::HostType::LOCAL);
