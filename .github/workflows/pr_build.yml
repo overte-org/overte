@@ -89,7 +89,7 @@ jobs:
 
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-          echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
+          echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           echo "CMAKE_BUILD_EXTRA=$CMAKE_BUILD_EXTRA -- -j$(nproc)" >> $GITHUB_ENV
@@ -127,7 +127,7 @@ jobs:
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" = "Windows"* ]]; then
-          echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
+          echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
