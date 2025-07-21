@@ -318,7 +318,12 @@ Flickable {
             }
 
             onDisabledChanged: {
-                if (disabled) setOptionIndex(0);
+                if (disabled) {
+                    options = ["MSAA"];
+                }
+                else {
+                    options = ["None", "TAA", "FXAA"];
+                }
             }
         }
     }
