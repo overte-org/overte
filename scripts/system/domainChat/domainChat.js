@@ -104,8 +104,8 @@
         if (message.action !== "sendChatMessage") return;
 
         // Get the message data
-        const CURRENT_TIMESTAMP = _getTimestamp();
-        const TIME_ARRAY = _formatTimestamp(CURRENT_TIMESTAMP);
+        const currentTimestamp = _getTimestamp();
+        const timeArray = _formatTimestamp(currentTimestamp);
 
         if (!message.channel) message.channel = "domain"; // We don't know where to put this message. Assume it is a domain wide message.
         if (message.forApp) return; // Floofchat
@@ -121,8 +121,8 @@
         if (message.channel == "local" && isTooFar(message.position)) return;
 
         // Format the timestamp 
-        message.timeString = TIME_ARRAY[0];
-        message.dateString = TIME_ARRAY[1];
+        message.timeString = timeArray[0];
+        message.dateString = timeArray[1];
 
         // Update qml view of to new message
         _emitEvent({ type: "showMessage", ...message });
@@ -147,7 +147,7 @@
         delete savedMessage.dateString;
         delete savedMessage.action;
 
-        savedMessage.timestamp = CURRENT_TIMESTAMP;
+        savedMessage.timestamp = currentTimestamp;
 
         messageHistory.push(savedMessage);
         while (messageHistory.length > settings.maximumMessages) {
@@ -276,9 +276,9 @@
 
             // Format the packet
             let message = {};
-            const TIME_ARRAY = _formatTimestamp(_getTimestamp());
-            message.timeString = TIME_ARRAY[0];
-            message.dateString = TIME_ARRAY[1];
+            const timeArray = _formatTimestamp(_getTimestamp());
+            message.timeString = timeArray[0];
+            message.dateString = timeArray[1];
             message.message = `${displayName} ${type}`;
 
             // Show new message on screen
@@ -301,9 +301,9 @@
         if (messageHistory) {
             // Load message history
             messageHistory.forEach((message) => {
-                const TIME_ARRAY = _formatTimestamp(_getTimestamp());
-                message.timeString = TIME_ARRAY[0];
-                message.dateString = TIME_ARRAY[1];
+                const timeArray = _formatTimestamp(_getTimestamp());
+                message.timeString = timeArray[0];
+                message.dateString = timeArray[1];
                 _emitEvent({ type: "showMessage", ...message });
             });
         }
