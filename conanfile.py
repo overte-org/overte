@@ -112,21 +112,21 @@ class Overte(ConanFile):
                 tc.cache_variables.update({
                     # Enable function alignment to fix crashes in relation to V8 scripting engine and enable SSE3 architecture optimization.
                     # TODO: Use `-fmin-function-alignment=16` once we switch to GCC 14 as minimum, which would be once we switch to Ubuntu 26.04 as our target.
-                    "CMAKE_CXX_FLAGS_INIT": "-falign-functions=16 -fPIC -m64 -msse3",
-                    "CMAKE_C_FLAGS_INIT": "-falign-functions=16 -fPIC -m64 -msse3",
+                    "CMAKE_CXX_FLAGS_INIT": "-falign-functions=32 -fPIC -m64 -msse3",
+                    "CMAKE_C_FLAGS_INIT": "-falign-functions=32 -fPIC -m64 -msse3",
                     })
             elif self.settings.arch == "armv8":
                 self.output.status("aarch64 architecture detected, setting default flags.")
                 # TODO: What architecture optimizations should we use on aarch64? We should target the 64 bit version of the Raspberry Pi 2 as a minimum.
                 tc.cache_variables.update({
-                    "CMAKE_CXX_FLAGS_INIT": "-falign-functions=16 -fPIC",
-                    "CMAKE_C_FLAGS_INIT": "-falign-functions=16 -fPIC",
+                    "CMAKE_CXX_FLAGS_INIT": "-falign-functions=32 -fPIC",
+                    "CMAKE_C_FLAGS_INIT": "-falign-functions=32 -fPIC",
                     })
             else:
                 self.output.warning(f"Architecture '{self.settings.arch}' isn't supported by Overte. Falling back to defaults.", warn_tag=None)
                 tc.cache_variables.update({
-                    "CMAKE_CXX_FLAGS_INIT": "-falign-functions=16 -fPIC",
-                    "CMAKE_C_FLAGS_INIT": "-falign-functions=16 -fPIC",
+                    "CMAKE_CXX_FLAGS_INIT": "-falign-functions=32 -fPIC",
+                    "CMAKE_C_FLAGS_INIT": "-falign-functions=32 -fPIC",
                     })
 
             if self.settings.compiler == "gcc":
