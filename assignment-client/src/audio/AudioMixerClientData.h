@@ -14,17 +14,13 @@
 
 #include <queue>
 
-#if !defined(Q_MOC_RUN)
-// Work around https://bugreports.qt.io/browse/QTBUG-80990
-#include <tbb/concurrent_vector.h>
-#endif
-
 #include <QtCore/QJsonObject>
 #include <QtCore/QSharedPointer>
 
 #include <AABox.h>
 #include <AudioHRTF.h>
 #include <AudioLimiter.h>
+#include <TBBHelpers.h>
 #include <UUIDHasher.h>
 
 #include <plugins/Forward.h>
