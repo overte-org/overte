@@ -123,6 +123,9 @@ public:
     FileLogger* getLogger() const { return _logger; }
 #endif
 
+    bool getUseDiscordPresence() const { return _useDiscordPresence.get(); }
+    void setUseDiscordPresence(bool enable);
+
     QString getPreviousScriptLocation() { return _previousScriptLocation.get(); }
     void setPreviousScriptLocation(const QString& previousScriptLocation) { _previousScriptLocation.set(previousScriptLocation); }
 
@@ -749,6 +752,7 @@ private:
     VisionSqueeze _visionSqueeze;
 
     DiscordPresence* _discordPresence { nullptr };
+    Setting::Handle<bool> _useDiscordPresence;
 
     Setting::Handle<bool> _firstRun;
     Setting::Handle<QString> _previousScriptLocation;
