@@ -260,6 +260,20 @@ Flickable {
             }
         }
 
+        SettingComboBox {
+            settingText: "LOD Settings";
+            options: ["Low Detail", "Medium Detail",  "High Detail" ];
+            optionIndex: LODManager.worldDetailQuality;
+
+            onValueChanged: {
+                LODManager.worldDetailQuality = index;
+            }
+
+            Component.onCompleted: {
+                optionIndex = LODManager.worldDetailQuality;
+            }
+        }
+
         // Fullscreen Display
         SettingComboBox {
             settingText: "Fullscreen Display";
