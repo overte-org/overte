@@ -262,7 +262,7 @@ Flickable {
 
         SettingComboBox {
             settingText: "LOD Settings";
-            options: ["High Detail", "Medium Detail",  "Low Detail" ];
+            options: ["Low Detail", "Medium Detail",  "High Detail" ];
             optionIndex: LODManager.worldDetailQuality;
 
             onValueChanged: {
