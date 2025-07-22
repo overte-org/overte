@@ -38,6 +38,8 @@
 GraphicsEngine::GraphicsEngine() {
     const QString SPLASH_SKYBOX { "{\"ProceduralEntity\":{ \"version\":2, \"shaderUrl\":\"qrc:///shaders/splashSkybox.frag\" } }" };
     _splashScreen->parse(SPLASH_SKYBOX);
+    const QUrl SPLASH_IMAGE { PathUtils::resourcesUrl("images/splashShaders.png") };
+    _texture = DependencyManager::get<TextureCache>()->getTexture(SPLASH_IMAGE);
 }
 
 GraphicsEngine::~GraphicsEngine() {
@@ -256,14 +258,17 @@ void GraphicsEngine::render_performFrame() {
 
     std::queue<Application::SnapshotOperator> snapshotOperators;
     if (!_programsCompiled.load()) {
-        gpu::doInBatch("splashFrame", _gpuContext, [&](gpu::Batch& batch) {
-            batch.setFramebuffer(finalFramebuffer);
-            batch.enableSkybox(true);
-            batch.enableStereo(isStereo);
-            batch.clearDepthStencilFramebuffer(1.0, 0);
-            batch.setViewportTransform({ 0, 0, finalFramebuffer->getSize() });
-            _splashScreen->render(batch, viewFrustum, renderArgs._renderMethod == RenderArgs::RenderMethod::FORWARD, render::RenderEngine::TS_BACKGROUND_VIEW);
-        });
+        if (_texture->isLoaded()) {
+            gpu::doInBatch("splashFrame", _gpuContext, [&](gpu::Batch& batch) {
+                batch.setFramebuffer(finalFramebuffer);
+                batch.enableSkybox(true);
+                batch.enableStereo(isStereo);
+                batch.clearDepthStencilFramebuffer(1.0, 0);
+                batch.setViewportTransform({ 0, 0, finalFramebuffer->getSize() });
+                batch.setResourceTexture(0, _texture->getGPUTexture());
+                _splashScreen->render(batch, viewFrustum, renderArgs._renderMethod == RenderArgs::RenderMethod::FORWARD, render::RenderEngine::TS_BACKGROUND_VIEW);
+            });
+        }
     } else {
         {
             PROFILE_RANGE(render, "/renderOverlay");
