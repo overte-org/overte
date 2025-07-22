@@ -92,6 +92,8 @@ public:
      *       <td>{@link Entities.EntityProperties-Material|EntityProperties-Material}</td></tr>
      *     <tr><td><code>"Sound"</code></td><td>Plays a sound.</td>
      *       <td>{@link Entities.EntityProperties-Sound|EntityProperties-Sound}</td></tr>
+     *     <tr><td><code>"Script"</code></td><td>Starts an entity script on its parent.</td>
+     *       <td>{@link Entities.EntityProperties-Script|EntityProperties-Script}</td></tr>
      *   </tbody>
      * </table>
      * @typedef {string} Entities.EntityType
@@ -116,6 +118,7 @@ public:
         Zone,
         Material,
         Sound,
+        Script,
         NUM_TYPES
     } EntityType;
 
