@@ -17,7 +17,7 @@ const float HORIZONTAL_OFFSET = 3.75;
 
 // Compiling shaders notice
 const float NORMAL_HORIZ_CUTOFF = 0.3;
-const float NOROMAL_Y_CUTOFF = 0.25;
+const float NORMAL_Y_CUTOFF = 0.25;
 
 uniform sampler2D shaderNotice;
 
@@ -36,7 +36,7 @@ vec3 getSkyboxColor() {
     horizonColor = mix(horizonColor, BLACK, smoothstep(0.04, 0.15, normal.y));
     horizonColor = mix(BLACK, horizonColor, smoothstep(-0.01, 0.0, normal.y));
     vec3 color = horizonColor;
-    float noticeUVY = (normal.y + NOROMAL_Y_CUTOFF) / (2.0 * NOROMAL_Y_CUTOFF);
+    float noticeUVY = (normal.y + NORMAL_Y_CUTOFF) / (2.0 * NORMAL_Y_CUTOFF);
     vec2 uv1 = vec2((normal.x + NORMAL_HORIZ_CUTOFF) / (2.0 * NORMAL_HORIZ_CUTOFF), noticeUVY);
     uv1.y = 1.0 - uv1.y;
     vec2 uv2 = vec2((normal.z + NORMAL_HORIZ_CUTOFF) / (2.0 * NORMAL_HORIZ_CUTOFF), noticeUVY);
