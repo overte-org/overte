@@ -9,8 +9,6 @@ Rectangle {
     signal sendToScript(var message);
 
     property string pageVal: "local"
-    property string last_message_user: ""
-    property date last_message_time: new Date()
 
     // When the window is created on the script side, the window starts open.
     // Once the QML window is created wait, then send the initialized signal.
@@ -32,7 +30,7 @@ Rectangle {
 
         // Navigation Bar
         Rectangle {
-            id: navigation_bar
+            id: navigationBar
             width: parent.width
             height: 40
             color:Qt.rgba(0,0,0,1)
@@ -46,7 +44,7 @@ Rectangle {
                     width: pageVal === "local" ? 100 : 60
                     height: parent.height
                     color: pageVal === "local" ? "#505186" : "white"
-                    id: local_page
+                    id: localPage
 
                     Image {
                         source: "./img/ui/" + (pageVal === "local" ? "social_white.png" : "social_black.png")
@@ -73,9 +71,9 @@ Rectangle {
                     width: pageVal === "domain" ? 100 : 60
                     height: parent.height
                     color: pageVal === "domain" ? "#505186" : "white"
-                    anchors.left: local_page.right
+                    anchors.left: localPage.right
                     anchors.leftMargin: 5
-                    id: domain_page
+                    id: domainPage
 
                     Image {
                         source: "./img/ui/" + (pageVal === "domain" ? "world_white.png" : "world_black.png")
@@ -104,7 +102,7 @@ Rectangle {
                         height: parent.height
                         color: pageVal === "settings" ? "#505186" : "white"
                         anchors.right: parent.right
-                        id: settings_page
+                        id: settingsPage
 
                         Image {
                             source: "./img/ui/" + (pageVal === "settings" ? "settings_white.png" : "settings_black.png")
@@ -134,7 +132,7 @@ Rectangle {
         Item {
             width: parent.width
             height: parent.height - 40
-            anchors.top: navigation_bar.bottom
+            anchors.top: navigationBar.bottom
             visible: ["local", "domain"].includes(pageVal) ? true : false
 
             // Chat Message History
@@ -244,7 +242,7 @@ Rectangle {
         Item {
             width: parent.width
             height: parent.height - 40
-            anchors.top: navigation_bar.bottom
+            anchors.top: navigationBar.bottom
             visible: ["local", "domain"].includes(pageVal) ? false : true
 
             Column {
@@ -420,22 +418,22 @@ Rectangle {
     }
 
     function embedImages(mess){
-        var image_link = /(https?:(\/){2})[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)(?:png|jpe?g|gif|bmp|svg|webp)/g;
-        var matches = mess.match(image_link);
-        var new_message = ""
+        var imageLink = /(https?:(\/){2})[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)(?:png|jpe?g|gif|bmp|svg|webp)/g;
+        var matches = mess.match(imageLink);
+        var newMessage = ""
         var listed = []
-        var total_emeds = 0
+        var totalEmbeds = 0
 
-        new_message += mess
+        newMessage += mess
 
-        for (var i = 0; matches && matches.length > i && total_emeds < 3; i++){
+        for (var i = 0; matches && matches.length > i && totalEmbeds < 3; i++){
             if (!listed.includes(matches[i])) {
-                new_message += "<br><img src="+ matches[i] +" width='250' >"
+                newMessage += "<br><img src="+ matches[i] +" width='250' >"
                 listed.push(matches[i]);
-                total_emeds++
+                totalEmbeds++
             } 
         }
-        return new_message;
+        return newMessage;
     }
 
     // Messages from script
