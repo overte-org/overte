@@ -202,19 +202,13 @@ function Grabber() {
     this.liftKey = false; // SHIFT
     this.rotateKey = false; // CONTROL
 
-    this.mouseRayOverlays = Picks.createPick(PickType.Ray, {
-        joint: "Mouse",
-        filter: Picks.PICK_OVERLAYS | Picks.PICK_INCLUDE_NONCOLLIDABLE,
-        enabled: true
-    });
-    var tabletItems = getMainTabletIDs();
-    if (tabletItems.length > 0) {
-        Picks.setIncludeItems(this.mouseRayOverlays, tabletItems);
-    }
     var renderStates = [{name: "grabbed", end: beacon}];
     this.mouseRayEntities = Pointers.createRayPointer({
         joint: "Mouse",
-        filter: Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_NONCOLLIDABLE,
+        filter: Picks.PICK_DOMAIN_ENTITIES |
+                Picks.PICK_AVATAR_ENTITIES |
+                Picks.PICK_LOCAL_ENTITIES |
+                Picks.PICK_INCLUDE_NONCOLLIDABLE,
         faceAvatar: true,
         scaleWithParent: true,
         enabled: true,
@@ -224,10 +218,8 @@ function Grabber() {
 
 Grabber.prototype.setPicksAndPointersEnabled = function(enabled) {
     if (enabled) {
-        Picks.enablePick(this.mouseRayOverlays);
         Pointers.enablePointer(this.mouseRayEntities);
     } else {
-        Picks.disablePick(this.mouseRayOverlays);
         Pointers.disablePointer(this.mouseRayEntities);
     }
 }
@@ -280,11 +272,6 @@ Grabber.prototype.pressEvent = function(event) {
     }
     if (Overlays.getOverlayAtPoint(Reticle.position) > 0) {
         // the mouse is pointing at an overlay; don't look for entities underneath the overlay.
-        return;
-    }
-
-    var overlayResult = Picks.getPrevPickResult(this.mouseRayOverlays);
-    if (overlayResult.type != Picks.INTERSECTED_NONE) {
         return;
     }
 
@@ -494,7 +481,6 @@ Grabber.prototype.keyPressEvent = function(event) {
 
 Grabber.prototype.cleanup = function() {
     Pointers.removePointer(this.mouseRayEntities);
-    Picks.removePick(this.mouseRayOverlays);
     if (this.grabID) {
         MyAvatar.releaseGrab(this.grabID);
         this.grabID = null;

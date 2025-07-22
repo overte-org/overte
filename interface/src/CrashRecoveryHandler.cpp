@@ -4,6 +4,7 @@
 //
 //  Created by David Rowe on 24 Aug 2015.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -103,7 +104,7 @@ bool CrashRecoveryHandler::suggestCrashReporting() {
                         "and not yet part of the official code. We'd highly appreciate it if you enabled\n"
                         "crash reporting to help us test this potential addition.";
             break;
-        case BuildInfo::BuildType::Master:
+        case BuildInfo::BuildType::Nightly:
             explainText = "You're running a pre-release version. This is an official release, but the code\n"
                         "is not yet considered to be fully stable. We'd highly appreciate it if you enabled\n"
                         "crash reporting to help us test the upcoming release.";

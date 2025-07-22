@@ -387,9 +387,7 @@ void Batch::setResourceTexture(uint32 slot, const TexturePointer& texture) {
 
     _params.emplace_back(_textures.cache(texture));
     _params.emplace_back(slot);
-    if (texture) {
-        _params.emplace_back(_samplers.cache(texture->getSampler()));
-    }
+    _params.emplace_back(_samplers.cache(texture ? texture->getSampler() : Sampler()));
 }
 
 void Batch::setResourceTexture(uint32 slot, const TextureView& view) {
@@ -403,9 +401,7 @@ void Batch::setResourceTextureTable(const TextureTablePointer& textureTable, uin
     if (textureTable) {
         TextureTable::Array textures = textureTable->getTextures();
         for (auto& texture : textures) {
-            if (texture) {
-                _params.emplace_back(_samplers.cache(texture->getSampler()));
-            }
+            _params.emplace_back(_samplers.cache(texture ? texture->getSampler() : Sampler()));
         }
     }
 }
@@ -421,6 +417,8 @@ void Batch::setResourceFramebufferSwapChainTexture(uint32 slot, const Framebuffe
         const auto& resourceFramebuffer = framebuffer->get(swapChainIndex);
         const auto& resourceTexture = resourceFramebuffer->getRenderBuffer(renderBufferSlot);
         _params.emplace_back(_samplers.cache(resourceTexture->getSampler()));
+    } else {
+        _params.emplace_back(_samplers.cache(Sampler()));
     }
 }
 

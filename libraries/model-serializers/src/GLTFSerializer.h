@@ -57,7 +57,7 @@ private:
     QNetworkReply* request(hifi::URL& url, bool isTest);
 
     void setHFMMaterial(HFMMaterial& hfmMat, const cgltf_material& material);
-    HFMTexture getHFMTexture(const cgltf_texture *texture);
+    HFMTexture getHFMTexture(const cgltf_texture *texture, cgltf_int texCoordSet);
 };
 
 #endif // hifi_GLTFSerializer_h

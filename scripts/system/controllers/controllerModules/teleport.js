@@ -76,24 +76,22 @@ Script.include("/~/system/libraries/controllers.js");
         drawInFront: true
     };
 
-    //V8TODO: check render states
     var teleportEnd = {
         type: "Model",
-        url: TARGET_MODEL_URL,
+        modelURL: TARGET_MODEL_URL,
         dimensions: TARGET_MODEL_DIMENSIONS,
         ignorePickIntersection: true
     };
     
     var seatEnd = {
         type: "Model",
-        url: SEAT_MODEL_URL,
+        modelURL: SEAT_MODEL_URL,
         dimensions: TARGET_MODEL_DIMENSIONS,
         ignorePickIntersection: true
     };
     
     var collisionEnd = {
-        type: "Shape",
-        shape: "box",
+        type: "Box",
         dimensions: { x: 1.0, y: 0.001, z: 1.0 },
         alpha: 0.0,
         ignorePickIntersection: true
@@ -236,7 +234,7 @@ Script.include("/~/system/libraries/controllers.js");
                 }
             }
 
-            Overlays.editOverlay(_this.playAreaOverlay, playAreaOverlayProperties);
+            Entities.editEntity(_this.playAreaOverlay, playAreaOverlayProperties);
 
             for (var i = 0; i < _this.playAreaSensorPositionOverlays.length; i++) {
                 localPosition = _this.playAreaSensorPositions[i];
@@ -244,7 +242,7 @@ Script.include("/~/system/libraries/controllers.js");
                 // Position relative to the play area.
                 localPosition.y = avatarScale * (_this.PLAY_AREA_SENSOR_OVERLAY_DIMENSIONS.y / 2
                     - _this.PLAY_AREA_OVERLAY_MODEL_DIMENSIONS.y / 2);
-                Overlays.editOverlay(_this.playAreaSensorPositionOverlays[i], {
+                Entities.editEntity(_this.playAreaSensorPositionOverlays[i], {
                     dimensions: Vec3.multiply(_this.teleportScaleFactor * avatarScale, _this.PLAY_AREA_SENSOR_OVERLAY_DIMENSIONS),
                     parentID: _this.playAreaOverlay,
                     localPosition: localPosition
@@ -277,7 +275,7 @@ Script.include("/~/system/libraries/controllers.js");
             for (var i = 0, length = teleportRenderStates.length; i < length; i++) {
                 var state = properties.renderStates[teleportRenderStates[i].name];
                 if (state && state.end) {
-                    Selection.addToSelectedItemsList(_this.teleporterSelectionName, "overlay", state.end);
+                    Selection.addToSelectedItemsList(_this.teleporterSelectionName, "entity", state.end);
                 }
             }
         };
@@ -291,10 +289,10 @@ Script.include("/~/system/libraries/controllers.js");
             Pointers.removePointer(_this.teleportParabolaHeadCollisions);
             Picks.removePick(_this.teleportHandCollisionPick);
             Picks.removePick(_this.teleportHeadCollisionPick);
-            Overlays.deleteOverlay(_this.teleportedTargetOverlay);
-            Overlays.deleteOverlay(_this.playAreaOverlay);
+            Entities.deleteEntity(_this.teleportedTargetOverlay);
+            Entities.deleteEntity(_this.playAreaOverlay);
             for (var i = 0; i < _this.playAreaSensorPositionOverlays.length; i++) {
-                Overlays.deleteOverlay(_this.playAreaSensorPositionOverlays[i]);
+                Entities.deleteEntity(_this.playAreaSensorPositionOverlays[i]);
             }
             _this.playAreaSensorPositionOverlays = [];
         };
@@ -304,7 +302,9 @@ Script.include("/~/system/libraries/controllers.js");
                 _this.cleanup();
             }
 
-            //V8TODO
+            // FIXME: the documentation has Pointers.createPointer(PickType.Parabola, ...),
+            // but that's a nonexistent function here. Is the documentation wrong or is
+            // the Pointers here from a library that's getting included?
             _this.teleportParabolaHandVisuals = Pointers.createParabolaPointer({
                 joint: (_this.hand === RIGHT_HAND) ? "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND" : "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND",
                 dirOffset: { x: 0, y: 1, z: 0.1 },
@@ -321,7 +321,6 @@ Script.include("/~/system/libraries/controllers.js");
                 maxDistance: 8.0
             });
 
-            //V8TODO
             _this.teleportParabolaHandCollisions = Pointers.createParabolaPointer({
                 joint: (_this.hand === RIGHT_HAND) ? "_CAMERA_RELATIVE_CONTROLLER_RIGHTHAND" : "_CAMERA_RELATIVE_CONTROLLER_LEFTHAND",
                 dirOffset: { x: 0, y: 1, z: 0.1 },
@@ -337,7 +336,6 @@ Script.include("/~/system/libraries/controllers.js");
                 maxDistance: 8.0
             });
 
-            //V8TODO
             _this.teleportParabolaHeadVisuals = Pointers.createParabolaPointer({
                 joint: "Avatar",
                 filter: Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_INVISIBLE,
@@ -352,7 +350,6 @@ Script.include("/~/system/libraries/controllers.js");
                 maxDistance: 8.0
             });
 
-            //V8TODO
             _this.teleportParabolaHeadCollisions = Pointers.createParabolaPointer({
                 joint: "Avatar",
                 filter: Picks.PICK_ENTITIES | Picks.PICK_INCLUDE_INVISIBLE,
@@ -412,21 +409,22 @@ Script.include("/~/system/libraries/controllers.js");
             });
 
 
-            //V8TODO: this won't work anymore
-            _this.playAreaOverlay = Overlays.addOverlay("model", {
-                url: _this.PLAY_AREA_OVERLAY_MODEL,
+            _this.playAreaOverlay = Entities.addEntity({
+                type: "Model",
+                modelURL: _this.PLAY_AREA_OVERLAY_MODEL,
                 drawInFront: false,
                 visible: false
-            });
+            }, "local");
 
-            _this.teleportedTargetOverlay = Overlays.addOverlay("model", {
-                url: TARGET_MODEL_URL,
+            _this.teleportedTargetOverlay = Entities.addEntity({
+                type: "Model",
+                modelURL: TARGET_MODEL_URL,
                 alpha: _this.TELEPORTED_TARGET_ALPHA,
                 visible: false
-            });
+            }, "local");
 
-            Selection.addToSelectedItemsList(_this.teleporterSelectionName, "overlay", _this.playAreaOverlay);
-            Selection.addToSelectedItemsList(_this.teleporterSelectionName, "overlay", _this.teleportedTargetOverlay);
+            Selection.addToSelectedItemsList(_this.teleporterSelectionName, "entity", _this.playAreaOverlay);
+            Selection.addToSelectedItemsList(_this.teleporterSelectionName, "entity", _this.teleportedTargetOverlay);
 
 
             _this.playArea = HMD.playArea;
@@ -438,17 +436,17 @@ Script.include("/~/system/libraries/controllers.js");
 
                 for (var i = 0; i < _this.playAreaSensorPositions.length; i++) {
                     if (i > _this.playAreaSensorPositionOverlays.length - 1) {
-                        //V8TODO: replace with local entity
-                        var overlay = Overlays.addOverlay("model", {
-                            url: _this.PLAY_AREA_SENSOR_OVERLAY_MODEL,
+                        var overlay = Entities.addEntity({
+                            type: "Model",
+                            modelURL: _this.PLAY_AREA_SENSOR_OVERLAY_MODEL,
                             dimensions: _this.PLAY_AREA_SENSOR_OVERLAY_DIMENSIONS,
                             parentID: _this.playAreaOverlay,
                             localRotation: _this.PLAY_AREA_SENSOR_OVERLAY_ROTATION,
                             drawInFront: false,
                             visible: false
-                        });
+                        }, "local");
                         _this.playAreaSensorPositionOverlays.push(overlay);
-                        Selection.addToSelectedItemsList(_this.teleporterSelectionName, "overlay", overlay);
+                        Selection.addToSelectedItemsList(_this.teleporterSelectionName, "entity", overlay);
                     }
                 }
 
@@ -481,19 +479,19 @@ Script.include("/~/system/libraries/controllers.js");
             if (visible || !fade) {
                 // Immediately make visible or invisible.
                 _this.isPlayAreaVisible = visible;
-                Overlays.editOverlay(_this.playAreaOverlay, {
+                Entities.editEntity(_this.playAreaOverlay, {
                     dimensions: Vec3.ZERO,
                     alpha: _this.PLAY_AREA_BOX_ALPHA,
                     visible: visible
                 });
                 for (var i = 0; i < _this.playAreaSensorPositionOverlays.length; i++) {
-                    Overlays.editOverlay(_this.playAreaSensorPositionOverlays[i], {
+                    Entities.editEntity(_this.playAreaSensorPositionOverlays[i], {
                         dimensions: Vec3.ZERO,
                         alpha: _this.PLAY_AREA_SENSOR_ALPHA,
                         visible: visible
                     });
                 }
-                Overlays.editOverlay(_this.teleportedTargetOverlay, { visible: false });
+                Entities.editEntity(_this.teleportedTargetOverlay, { visible: false });
             } else {
                 // Fading out of overlays is initiated in setTeleportVisible().
             }
@@ -512,7 +510,7 @@ Script.include("/~/system/libraries/controllers.js");
             var MIN_PARENTING_DISTANCE = 0.2; // Parenting under this distance results in the play area's rotation jittering.
             if (Vec3.distance(targetXZPosition, avatarXZPosition) < MIN_PARENTING_DISTANCE) {
                 // Set play area position and rotation in world coordinates with no parenting.
-                Overlays.editOverlay(_this.playAreaOverlay, {
+                Entities.editEntity(_this.playAreaOverlay, {
                     parentID: Uuid.NONE,
                     position: Vec3.sum(position,
                         Vec3.multiplyQbyV(sensorToWorldRotation,
@@ -528,7 +526,7 @@ Script.include("/~/system/libraries/controllers.js");
                     var sensorToTargetRotation = Quat.multiply(Quat.inverse(targetRotation), sensorToWorldRotation);
                     var relativePlayAreaCenterOffset =
                         Vec3.sum(_this.playAreaCenterOffset, {x: 0, y: -TARGET_MODEL_DIMENSIONS.y / 2, z: 0});
-                    Overlays.editOverlay(_this.playAreaOverlay, {
+                    Entities.editEntity(_this.playAreaOverlay, {
                         parentID: _this.targetOverlayID,
                         localPosition: Vec3.multiplyQbyV(Quat.inverse(targetRotation),
                             Vec3.multiplyQbyV(sensorToWorldRotation,
@@ -576,26 +574,26 @@ Script.include("/~/system/libraries/controllers.js");
             } else if (_this.teleportedFadeFactor > 0 && !_this.isTeleportVisible && !isAvatarMoving) {
                 // Fade.
                 _this.teleportedFadeFactor = _this.teleportedFadeFactor - _this.TELEPORTED_FADE_DELTA;
-                Overlays.editOverlay(_this.teleportedTargetOverlay, {
+                Entities.editEntity(_this.teleportedTargetOverlay, {
                     alpha: _this.teleportedFadeFactor * _this.TELEPORTED_TARGET_ALPHA
                 });
                 if (_this.wasPlayAreaVisible) {
-                    Overlays.editOverlay(_this.playAreaOverlay, {
+                    Entities.editEntity(_this.playAreaOverlay, {
                         alpha: _this.teleportedFadeFactor * _this.PLAY_AREA_BOX_ALPHA
                     });
                     var sensorAlpha = _this.teleportedFadeFactor * _this.PLAY_AREA_SENSOR_ALPHA;
                     for (i = 0, length = _this.playAreaSensorPositionOverlays.length; i < length; i++) {
-                        Overlays.editOverlay(_this.playAreaSensorPositionOverlays[i], { alpha: sensorAlpha });
+                        Entities.editEntity(_this.playAreaSensorPositionOverlays[i], { alpha: sensorAlpha });
                     }
                 }
                 _this.teleportedFadeTimer = Script.setTimeout(_this.fadeOutTeleport, _this.TELEPORTED_FADE_INTERVAL);
             } else {
                 // Make invisible.
-                Overlays.editOverlay(_this.teleportedTargetOverlay, { visible: false });
+                Entities.editEntity(_this.teleportedTargetOverlay, { visible: false });
                 if (_this.wasPlayAreaVisible) {
-                    Overlays.editOverlay(_this.playAreaOverlay, { visible: false });
+                    Entities.editEntity(_this.playAreaOverlay, { visible: false });
                     for (i = 0, length = _this.playAreaSensorPositionOverlays.length; i < length; i++) {
-                        Overlays.editOverlay(_this.playAreaSensorPositionOverlays[i], { visible: false });
+                        Entities.editEntity(_this.playAreaSensorPositionOverlays[i], { visible: false });
                     }
                 }
                 _this.teleportedFadeTimer = null;
@@ -607,11 +605,11 @@ Script.include("/~/system/libraries/controllers.js");
             // Other hand may call this to immediately hide fading overlays.
             var i, length;
             if (_this.teleportedFadeTimer) {
-                Overlays.editOverlay(_this.teleportedTargetOverlay, { visible: false });
+                Entities.editEntity(_this.teleportedTargetOverlay, { visible: false });
                 if (_this.wasPlayAreaVisible) {
-                    Overlays.editOverlay(_this.playAreaOverlay, { visible: false });
+                    Entities.editEntity(_this.playAreaOverlay, { visible: false });
                     for (i = 0, length = _this.playAreaSensorPositionOverlays.length; i < length; i++) {
-                        Overlays.editOverlay(_this.playAreaSensorPositionOverlays[i], { visible: false });
+                        Entities.editEntity(_this.playAreaSensorPositionOverlays[i], { visible: false });
                     }
                 }
                 _this.teleportedFadeTimer = null;
@@ -648,7 +646,7 @@ Script.include("/~/system/libraries/controllers.js");
                 if (fade) {
                     // Copy of target at teleported position for fading.
                     var avatarScale = MyAvatar.sensorToWorldScale;
-                    Overlays.editOverlay(_this.teleportedTargetOverlay, {
+                    Entities.editEntity(_this.teleportedTargetOverlay, {
                         position: Vec3.sum(_this.teleportedPosition, {
                             x: 0,
                             y: -getAvatarFootOffset() + avatarScale * TARGET_MODEL_DIMENSIONS.y / 2,

@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include "RenderDeferredTask.h"
+
 #include <QtGui/QWindow>
 #include <QtCore/QTime>
 

@@ -2,7 +2,7 @@
     "name": "Standard to Action",
     "channels": [
         { "from": "Standard.LY",
-		  "when": ["Application.RightHandDominant", "!Standard.RY"],
+		  "when": ["Application.RightHandDominant"],
 		  "to": "Actions.TranslateZ"
         },
 
@@ -14,7 +14,7 @@
         { "from": "Standard.LX",
           "when": [
             "Application.InHMD", "!Application.AdvancedMovement", "Application.RightHandDominant",
-            "Application.SnapTurn", "!Standard.RX"
+            "Application.SnapTurn"
           ],
           "to": "Actions.StepYaw",
           "filters":
@@ -58,7 +58,7 @@
         },
 		
         { "from": "Standard.RY",
-		  "when": ["Application.LeftHandDominant", "!Standard.LY"],
+		  "when": ["Application.LeftHandDominant"],
 		  "to": "Actions.TranslateZ"
         },
 
@@ -70,7 +70,7 @@
         { "from": "Standard.RX",
           "when": [
             "Application.InHMD", "!Application.AdvancedMovement", "Application.LeftHandDominant",
-            "Application.SnapTurn", "!Standard.RX"
+            "Application.SnapTurn"
           ],
           "to": "Actions.StepYaw",
           "filters":

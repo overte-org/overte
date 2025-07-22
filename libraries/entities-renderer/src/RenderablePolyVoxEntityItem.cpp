@@ -1801,8 +1801,6 @@ ShapeKey PolyVoxEntityRenderer::getShapeKey() {
         if (pipelineType == Pipeline::MATERIAL) {
             builder.withTriplanar();
         }
-        // FIXME: We don't currently generate tangents for PolyVox, so they don't support normal maps
-        builder.withoutTangents();
     }
     return builder.build();
 }
@@ -1992,4 +1990,15 @@ QDebug operator<<(QDebug debug, PolyVoxState state) {
             break;
     }
     return debug;
+}
+
+scriptable::ScriptableModelBase PolyVoxEntityRenderer::getScriptableModel() {
+    scriptable::ScriptableModelBase result = asTypedEntity<RenderablePolyVoxEntityItem>()->getScriptableModel();
+
+    {
+        std::lock_guard<std::mutex> lock(_materialsLock);
+        result.appendMaterials(_materials);
+    }
+
+    return result;
 }

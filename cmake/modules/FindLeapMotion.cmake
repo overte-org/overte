@@ -45,8 +45,5 @@ endif ()
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(LeapMotion DEFAULT_MSG ${LEAPMOTION_REQUIREMENTS})
 
-if (WIN32)
-  add_paths_to_fixup_libs(${LEAPMOTION_DLL_PATH})
-endif ()
 
 mark_as_advanced(LEAPMOTION_INCLUDE_DIRS LEAPMOTION_LIBRARIES LEAPMOTION_SEARCH_DIRS)

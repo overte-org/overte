@@ -51,9 +51,7 @@
                 return;
             }
 
-            if (value === 1 && Controller.Hardware.OculusTouch !== undefined) {
-                rotate180();
-            } else if (Controller.Hardware.Vive !== undefined) {
+            if (Controller.Hardware.Vive !== undefined) {
                 if (value > 0.75 && inFlipTurn === false) {
                     inFlipTurn = true;
                     rotate180();
@@ -61,6 +59,8 @@
                         inFlipTurn = false;
                     }, TURN_RATE);
                 }
+            } else {
+                rotate180();
             }
             return;
         });
@@ -71,9 +71,7 @@
                 return;
             }
 
-            if (value === 1 && Controller.Hardware.OculusTouch !== undefined) {
-                rotate180();
-            } else if (Controller.Hardware.Vive !== undefined) {
+            if (Controller.Hardware.Vive !== undefined) {
                 if (value > 0.75 && inFlipTurn === false) {
                     inFlipTurn = true;
                     rotate180();
@@ -81,6 +79,8 @@
                         inFlipTurn = false;
                     }, TURN_RATE);
                 }
+            } else {
+                rotate180();
             }
             return;
         });
@@ -96,7 +96,7 @@
     registerBasicMapping();
 
     Script.setTimeout(function() {
-        if (MyAvatar.useAdvanceMovementControls) {
+        if (MyAvatar.useAdvancedMovementControls) {
             Controller.disableMapping(DRIVING_MAPPING_NAME);
         } else {
             Controller.enableMapping(DRIVING_MAPPING_NAME);
@@ -112,7 +112,7 @@
 
     HMD.displayModeChanged.connect(function(isHMDMode) {
         if (isHMDMode) {
-            if (Controller.Hardware.Vive !== undefined || Controller.Hardware.OculusTouch !== undefined) {
+            if (Controller.Hardware.OpenXR !== undefined || Controller.Hardware.Vive !== undefined || Controller.Hardware.OculusTouch !== undefined) {
                 if (MyAvatar.useAdvancedMovementControls) {
                     Controller.disableMapping(DRIVING_MAPPING_NAME);
                 } else {
@@ -131,7 +131,7 @@
 
 
     function update() {
-        if ((Controller.Hardware.Vive !== undefined || Controller.Hardware.OculusTouch !== undefined) && HMD.active) {
+        if ((Controller.Hardware.OpenXR !== undefined || Controller.Hardware.Vive !== undefined || Controller.Hardware.OculusTouch !== undefined) && HMD.active) {
             var flying = MyAvatar.getFlyingEnabled();
             var driving = MyAvatar.useAdvancedMovementControls;
 

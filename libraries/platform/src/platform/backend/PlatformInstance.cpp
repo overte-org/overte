@@ -226,8 +226,7 @@ Instance::~Instance() {
 }
 
 json Instance::listAllKeys() {
-    json allKeys;
-    allKeys.array({{
+    json allKeys = json::array({{
         keys::cpu::vendor,
         keys::cpu::vendor_Intel,
         keys::cpu::vendor_AMD,

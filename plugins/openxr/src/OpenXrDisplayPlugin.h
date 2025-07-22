@@ -26,8 +26,6 @@ public:
 
     void init() override;
 
-    void idle() override;
-
     float getTargetFrameRate() const override;
     bool hasAsyncReprojection() const override { return true; }
 
@@ -86,7 +84,4 @@ private:
 
     bool _haveFrameToSubmit = false;
     std::mutex _haveFrameMutex;
-
-    float _lastFrameTime;
-    float _estimatedTargetFramerate;
 };

@@ -50,9 +50,9 @@
                 <tr valign = 'middle'>
                     <td width = '20%'>
                         <div id='navigationBar'>
-                            <input type='image' class='navBtn' src='icons/home.png' onClick = 'goHome();'>
-                            <input type='image' class='navBtn' src='icons/back.png' onClick = 'goBack();'>
-                            <input type='image' class='navBtn' src='icons/forward.png' onClick = 'goForward();'>
+                            <input type='image' draggable="false" class='navBtn' src='icons/home.png' onClick = 'goHome();'>
+                            <input type='image' draggable="false" class='navBtn' src='icons/back.png' onClick = 'goBack();'>
+                            <input type='image' draggable="false" class='navBtn' src='icons/forward.png' onClick = 'goForward();'>
                         </div>
                     </td>
                     <td width = '80%'>
@@ -68,7 +68,7 @@
                                         </table>
                                     </div>
                                 </td>
-                                <td width='10%' align='left'><input type='image' class='searchBtn' src='icons/teleport.png' onClick = 'teleportUsingAddressBarValue(document.getElementById("search").value);'></td>
+                                <td width='10%' align='left'><input type='image' draggable="false" class='searchBtn' src='icons/teleport.png' onClick = 'teleportUsingAddressBarValue(document.getElementById("search").value);'></td>
                             </tr>
                         </table>
                     </td>

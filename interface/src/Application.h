@@ -386,6 +386,8 @@ signals:
     void miniTabletEnabledChanged(bool enabled);
     void awayStateWhenFocusLostInVRChanged(bool enabled);
 
+    void darkThemePreferenceChanged(bool useDarkTheme);
+
 public slots:
     void updateThreadPoolCount() const;
 
@@ -459,6 +461,9 @@ public slots:
 
     const QString getPreferredCursor() const { return _preferredCursor.get(); }
     void setPreferredCursor(const QString& cursor);
+
+    bool getDarkThemePreference() const { return _darkTheme.get(); }
+    void setDarkThemePreference(bool value);
 
     /**
      * @brief Shows/hides VR keyboard input for Overlay windows
@@ -650,6 +655,9 @@ private:
     bool handleKeyEventForFocusedEntity(QEvent* event);
     bool handleFileOpenEvent(QFileOpenEvent* event);
 
+    void processDriverBlocklistReply(const QString& fullDriverToTest, const QString& os, const QString& vendor, const QString& renderer, const QString& api,
+        const QString& driver);
+
 
     // Entities
     void queryOctree(NodeType_t serverType, PacketType packetType);
@@ -799,8 +807,12 @@ private:
     Setting::Handle<bool> _constrainToolbarPosition;
     Setting::Handle<bool> _awayStateWhenFocusLostInVREnabled;
     Setting::Handle<QString> _preferredCursor;
+    // TODO Qt6: Qt5 doesn't have anything for system theme preferences, Qt6.5+ does
+    Setting::Handle<bool> _darkTheme;
     Setting::Handle<bool> _miniTabletEnabledSetting;
     Setting::Handle<bool> _keepLogWindowOnTop { "keepLogWindowOnTop", false };
+
+    void updateThemeColors();
 
 
     // Plugins
@@ -897,6 +909,7 @@ private:
     std::shared_ptr<GraphicsEngine> _graphicsEngine;
     glm::uvec2 _renderResolution;
 
+    Setting::Handle<QString> _prevCheckedDriver { "prevCheckedDriver", "" };
     bool _isGLInitialized { false };
 
 
@@ -914,6 +927,10 @@ private:
     PhysicsEnginePointer _physicsEngine;
 
     bool _physicsEnabled { false };
+    // This is needed so that physics do not get re-enabled before safe landing starts when moving from
+    // serverless to domain server.
+    // It's set to true by Application::clearDomainOctreeData and is cleared by Application::setIsServerlessMode
+    bool _waitForServerlessToBeSet { true };
 
     bool _showTrackedObjects { false };
     bool _prevShowTrackedObjects { false };

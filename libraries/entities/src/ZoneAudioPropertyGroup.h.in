@@ -33,10 +33,10 @@ class ScriptValue;
  * @property {boolean} reverbEnabled=false - If reverb should be enabled for listeners in this zone.
  * @property {number} reverbTime=1.0 - The time (seconds) for the reverb tail to decay by 60dB, also known as RT60.
  * @property {number} reverbWetLevel=50 - Adjusts the wet/dry percentage, from completely dry (0%) to completely wet (100%).
- * @property {Uuid[]} listenerZones=[] - A list of entity IDs representing listener zones with this zone as a source.
+ * @property {Uuid[]} listenerZones=[]] - A list of entity IDs representing listener zones with this zone as a source.
  *     Sounds from this zone being heard by a listener in a listener zone will be attenuated by the corresponding
  *     <code>listenerAttenuationCoefficient</code>.
- * @property {number[]} listenerAttenuationCoefficients=[] - A list of attenuation coefficients.  Each coefficient will be
+ * @property {number[]} listenerAttenuationCoefficients=[]] - A list of attenuation coefficients.  Each coefficient will be
  *     applied to sounds coming from this zone and being heard by a listener in the corresponding <code>listenerZone</code>.
  */
 class ZoneAudioPropertyGroup : public PropertyGroup {

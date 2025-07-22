@@ -58,5 +58,5 @@ void main(void) {
     <$transformModelToWorldPos(obj, inPosition, _positionWS)$>
     <$passThroughFadeObjectParams()$>
 <@endif@>
-    <$transformModelToWorldDir(cam, obj, inNormal.xyz, _normalWS)$>
+    <$transformModelToWorldDir(obj, inNormal.xyz, _normalWS)$>
 }

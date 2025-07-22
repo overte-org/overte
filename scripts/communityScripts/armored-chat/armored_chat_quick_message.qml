@@ -43,6 +43,14 @@ Item {
             Keys.onLeftPressed: { moveLeft(); }
             Keys.onRightPressed: { moveRight(); }
 
+            onTextChanged: {
+                if (text === "") {
+                    toScript({type: "action", action: "end_typing"});
+                } else {
+                    toScript({type: "action", action: "start_typing"});
+                }
+            }
+
             function moveLeft(){
                 if (cursorPosition > 0){
                     cursorPosition--

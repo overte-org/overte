@@ -60,7 +60,7 @@ public:
         glm::vec4 linearDepthInfo{ 0.0f };
 
         // Taps (offset, weight)
-        glm::vec2 filterTaps[BLUR_MAX_NUM_TAPS];
+        glm::vec4 filterTaps[BLUR_MAX_NUM_TAPS];
 
         Params() {}
     };

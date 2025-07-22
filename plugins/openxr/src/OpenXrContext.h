@@ -61,8 +61,10 @@ public:
     controller::Pose _lastHeadPose;
     std::optional<XrTime> _lastPredictedDisplayTime;
 
+    bool _isValid = true; // set to false when the context is lost
     bool _shouldQuit = false;
     bool _shouldRunFrameCycle = false;
+    bool _isDisplayActive = false;
 
     bool _isSupported = false;
 
@@ -78,6 +80,12 @@ public:
 
     // whether the headset is on, using XR_EXT_user_presence
     bool _hmdMounted = true;
+
+    bool _handTrackingSupported = false;
+
+    PFN_xrCreateHandTrackerEXT xrCreateHandTrackerEXT = nullptr;
+    PFN_xrLocateHandJointsEXT xrLocateHandJointsEXT = nullptr;
+    PFN_xrDestroyHandTrackerEXT xrDestroyHandTrackerEXT = nullptr;
 
 private:
     XrSessionState _lastSessionState = XR_SESSION_STATE_UNKNOWN;

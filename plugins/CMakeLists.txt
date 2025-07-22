@@ -1,7 +1,7 @@
 #
 #  Created by Bradley Austin Davis on 2015/10/25
 #  Copyright 2015 High Fidelity, Inc.
-#  Copyright 2023-2024 Overte e.V.
+#  Copyright 2023-2025 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -12,8 +12,8 @@ file(GLOB PLUGIN_SUBDIRS RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT
 list(REMOVE_ITEM PLUGIN_SUBDIRS "CMakeFiles")
 
 # client-side plugins
-if (NOT SERVER_ONLY AND NOT ANDROID)
-  if (WIN32 AND (NOT USE_GLES))
+if (OVERTE_BUILD_CLIENT AND NOT ANDROID)
+  if (WIN32 AND (NOT OVERTE_RENDERING_BACKEND STREQUAL "GLES"))
       set(DIR "oculus")
       add_subdirectory(${DIR})
       set(DIR "oculusLegacy")

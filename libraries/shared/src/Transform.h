@@ -455,7 +455,11 @@ inline Transform::Mat4& Transform::getRotationScaleMatrixInverse(Mat4& result) c
 
 inline Transform& Transform::evalFromRawMatrix(const Mat4& matrix) {
     // for now works only in the case of TRS transformation
-    if ((matrix[0][3] == 0.0f) && (matrix[1][3] == 0.0f) && (matrix[2][3] == 0.0f) && (matrix[3][3] == 1.0f)) {
+    constexpr float MATRIX_CHECK_EPSILON = 0.0001f;
+    if ((fabsf(matrix[0][3]) <= MATRIX_CHECK_EPSILON)
+        && (fabsf(matrix[1][3]) <= MATRIX_CHECK_EPSILON)
+        && (fabsf(matrix[2][3]) <= MATRIX_CHECK_EPSILON)
+        && (fabsf(1.0f - matrix[3][3]) <= MATRIX_CHECK_EPSILON)) {
         setTranslation(extractTranslation(matrix));
         evalFromRawMatrix(Mat3(matrix));
     }
