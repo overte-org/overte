@@ -16,7 +16,7 @@ const vec3 SPACE_BLUE = vec3(0.0, 0.118, 0.392);
 const float HORIZONTAL_OFFSET = 3.75;
 
 // Compiling shaders notice
-const float NORMAL_X_CUTOFF = 0.3;
+const float NORMAL_HORIZ_CUTOFF = 0.3;
 const float NOROMAL_Y_CUTOFF = 0.25;
 
 uniform sampler2D shaderNotice;
@@ -36,10 +36,22 @@ vec3 getSkyboxColor() {
     horizonColor = mix(horizonColor, BLACK, smoothstep(0.04, 0.15, normal.y));
     horizonColor = mix(BLACK, horizonColor, smoothstep(-0.01, 0.0, normal.y));
     vec3 color = horizonColor;
-    vec2 uv = vec2((normal.x + NORMAL_X_CUTOFF) / (2.0 * NORMAL_X_CUTOFF), (normal.y + NOROMAL_Y_CUTOFF) / (2.0 * NOROMAL_Y_CUTOFF));
-    uv.y = 1.0 - uv.y;
-    if (normal.z < 0.0 && uv.x > 0.0 && uv.x < 1.0 && uv.y > 0.0 && uv.y < 1.0) {
-        vec4 noticeColor = texture(shaderNotice, uv);
+    float noticeUVY = (normal.y + NOROMAL_Y_CUTOFF) / (2.0 * NOROMAL_Y_CUTOFF);
+    vec2 uv1 = vec2((normal.x + NORMAL_HORIZ_CUTOFF) / (2.0 * NORMAL_HORIZ_CUTOFF), noticeUVY);
+    uv1.y = 1.0 - uv1.y;
+    vec2 uv2 = vec2((normal.z + NORMAL_HORIZ_CUTOFF) / (2.0 * NORMAL_HORIZ_CUTOFF), noticeUVY);
+    uv2.y = 1.0 - uv2.y;
+    if (uv1.x > 0.0 && uv1.x < 1.0 && uv1.y > 0.0 && uv1.y < 1.0) {
+        if (normal.z > 0.0) {
+            uv1.x = 1.0 - uv1.x;
+        }
+        vec4 noticeColor = texture(shaderNotice, uv1);
+        color = mix(color, noticeColor.rgb, noticeColor.a);
+    } else if (uv2.x > 0.0 && uv2.x < 1.0 && uv2.y > 0.0 && uv2.y < 1.0) {
+        if (normal.x < 0.0) {
+            uv2.x = 1.0 - uv2.x;
+        }
+        vec4 noticeColor = texture(shaderNotice, uv2);
         color = mix(color, noticeColor.rgb, noticeColor.a);
     }
     color = pow(color, vec3(0.4545));
