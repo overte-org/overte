@@ -1,0 +1,93 @@
+//
+//  Created by Ada <ada@thingvellir.net> on 2025-07-24
+//  Copyright Overte e.V. 2025
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "EmptyEntityItem.h"
+#include "EntityItemProperties.h"
+
+EntityItemPointer EmptyEntityItem::factory(
+    const EntityItemID& entityID,
+    const EntityItemProperties& properties
+) {
+    Pointer entity(new EmptyEntityItem(entityID), [](EmptyEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+EmptyEntityItem::EmptyEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
+    _type = EntityTypes::Empty;
+}
+
+EntityItemProperties EmptyEntityItem::getProperties(
+    const EntityPropertyFlags& desiredProperties,
+    bool allowEmptyDesiredProperties
+) const {
+    // get the properties from our base class
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties);
+
+@Empty_ENTITY_COPY_TO@
+
+    return properties;
+}
+
+bool EmptyEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Empty_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags EmptyEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+@Empty_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+void EmptyEntityItem::appendSubclassData(
+    OctreePacketData* packetData, EncodeBitstreamParams& params,
+    EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+    EntityPropertyFlags& requestedProperties,
+    EntityPropertyFlags& propertyFlags,
+    EntityPropertyFlags& propertiesDidntFit,
+    int& propertyCount,
+    OctreeElement::AppendState& appendState
+) const {
+    bool successPropertyFits = true;
+
+@Empty_ENTITY_APPEND@
+
+}
+
+int EmptyEntityItem::readEntitySubclassDataFromBuffer(
+    const unsigned char* data, int bytesLeftToRead,
+    ReadBitstreamToTreeParams& args,
+    EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+    bool& somethingChanged
+) {
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Empty_ENTITY_READ@
+
+    return bytesRead;
+}
+
+void EmptyEntityItem::debugDump() const {
+    qCDebug(entities) << "EmptyEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+@Empty_ENTITY_DEBUG@
+
+}

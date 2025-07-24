@@ -1721,6 +1721,11 @@ const GROUPS = [
         ]
     },
     {
+        id: "empty",
+        label: "EMPTY",
+        properties: []
+    },
+    {
         id: "spatial",
         label: "SPATIAL",
         properties: [
@@ -2216,6 +2221,7 @@ const GROUPS_PER_TYPE = {
   PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  Empty: [ 'base', 'spatial', 'scripts', 'children' ],
   Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
 };
 
@@ -5109,6 +5115,7 @@ function generateCreateChildEntityAssistant(entityHostType) {
         {"type": "Material", "name": "Material"},
         {"type": "Sound", "name": "Sound"},
         {"type": "PolyVox", "name": "Voxel"},
+        {"type": "Empty", "name": "Empty"},
     ];
     const TILES_PER_ROW = 4;
     let renderer = "<div id='typeSelectorCreateChildEntityAssistant' style = 'display: block;'>";
@@ -5237,6 +5244,12 @@ function createChildEntity(type, entityHostType) {
             };
             break;
         case "PolyVox":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Empty":
             properties = {
                 "type": type,
                 "parentID": parentID
