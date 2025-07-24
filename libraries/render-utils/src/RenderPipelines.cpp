@@ -955,7 +955,23 @@ bool RenderPipelines::bindMaterials(graphics::MultiMaterial& multiMaterial, Batc
             // So for 2 layers, we are limited to 6 textures each, and for 3 layers we are limited to 4 each
             uint8_t offset = numLayers < 3 ? 6 : 4;
             for (uint8_t i = 0; i < numLayers; i++) {
-                batch.setResourceTextureTable(textureTables[i], i * offset);
+                // Since material's texture table has 8 slots, for second and third material we have to make sure that these
+                // won't overwrite or unbind ambientFresnelLUT texture slot.
+                size_t slotLimit = 8;
+                if (i == 1) {
+                    slotLimit = 6;
+                } else if (i == 2) {
+                    slotLimit = 4;
+                }
+                if (slotLimit < 8) {
+                    TextureTable::Array textures = textureTables[i]->getTextures();
+                    for (size_t textureIndex = 0; textureIndex < std::min(size_t(slotLimit), textures.size()); textureIndex++) {
+                        batch.setResourceTexture(i * offset + textureIndex, textures[textureIndex]);
+                    }
+                    auto newTable = std::make_shared<TextureTable>(textures);
+                } else {
+                    batch.setResourceTextureTable(textureTables[i], i * offset);
+                }
             }
             if (multiMaterial.isSplatMap()) {
                 batch.setResourceTexture(gr::Texture::MaterialSplat, multiMaterial.getSplatMap());
