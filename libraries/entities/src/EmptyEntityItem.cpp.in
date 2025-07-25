@@ -60,7 +60,6 @@ void EmptyEntityItem::appendSubclassData(
     int& propertyCount,
     OctreeElement::AppendState& appendState
 ) const {
-    bool successPropertyFits = true;
 
 @Empty_ENTITY_APPEND@
 
@@ -73,7 +72,6 @@ int EmptyEntityItem::readEntitySubclassDataFromBuffer(
     bool& somethingChanged
 ) {
     int bytesRead = 0;
-    const unsigned char* dataAt = data;
 
 @Empty_ENTITY_READ@
 
