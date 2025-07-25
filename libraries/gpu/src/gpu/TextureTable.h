@@ -10,19 +10,20 @@
 
 #include "Forward.h"
 
-#include <array>
+#include <vector>
 
-#define TEXTURE_TABLE_COUNT 8
+#define TEXTURE_TABLE_COUNT_1_LAYER_MATERIAL 8
+#define TEXTURE_TABLE_COUNT_2_LAYER_MATERIAL 6
+#define TEXTURE_TABLE_COUNT_3_LAYER_MATERIAL 4
 
 namespace gpu {
 
 class TextureTable {
 public:
-    static const size_t COUNT;
-    using Array = std::array<TexturePointer, TEXTURE_TABLE_COUNT>;
-    TextureTable();
-    TextureTable(const std::initializer_list<TexturePointer>& textures);
-    TextureTable(const Array& textures);
+    using Vector = std::vector<TexturePointer>;
+    TextureTable(size_t tableSize);
+    TextureTable(const std::initializer_list<TexturePointer>& textures, size_t tableSize);
+    TextureTable(const Vector& textures, size_t tableSize);
 
     // Only for gpu::Context
     const GPUObjectPointer gpuObject{};
@@ -30,12 +31,14 @@ public:
     void setTexture(size_t index, const TexturePointer& texturePointer);
     void setTexture(size_t index, const TextureView& texturePointer);
 
-    Array getTextures() const;
+    Vector getTextures() const;
     Stamp getStamp() const { return _stamp; }
+
+    void resize(size_t tableSize) { _textures.resize(tableSize); };
 
 private:
     mutable Mutex _mutex;
-    Array _textures;
+    Vector _textures;
     Stamp _stamp{ 1 };
 };
 

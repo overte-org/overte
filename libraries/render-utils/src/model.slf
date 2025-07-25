@@ -193,7 +193,7 @@ void main(void) {
     float opacity = 0.0;
     <@if not HIFI_USE_TRIPLANAR@>
         <@if HIFI_USE_SPLATMAP@>
-            vec3 layerBlend = fetchSplatMap(0, _texCoords[0]); // splatMap is only stored in the first material
+            vec3 layerBlend = fetchSplatMap(0, _texCoords[0], NUM_LAYERS); // splatMap is only stored in the first material
         <@endif@>
 
         for (int layer = NUM_LAYERS - 1; layer >= 0; layer--) {
@@ -324,7 +324,7 @@ void main(void) {
 
     <@if not HIFI_USE_TRIPLANAR@>
         <@if HIFI_USE_SPLATMAP@>
-            vec3 layerBlend = fetchSplatMap(0, _texCoords[0]); // splatMap is only stored in the first material
+            vec3 layerBlend = fetchSplatMap(0, _texCoords[0], NUM_LAYERS); // splatMap is only stored in the first material
         <@endif@>
 
         for (int layer = NUM_LAYERS - 1; layer >= 0; layer--) {
@@ -508,7 +508,7 @@ void main(void) {
     <@endif@>
     <@if not HIFI_USE_TRIPLANAR@>
         <@if HIFI_USE_SPLATMAP@>
-            vec3 layerBlend = fetchSplatMap(0, _texCoords[0]); // splatMap is only stored in the first material
+            vec3 layerBlend = fetchSplatMap(0, _texCoords[0], NUM_LAYERS); // splatMap is only stored in the first material
         <@endif@>
 
         for (int layer = NUM_LAYERS - 1; layer >= 0; layer--) {

@@ -121,9 +121,18 @@
 <@func declareMaterialSplatMap()@>
 
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SPLAT) uniform sampler2D splatMap;
-vec3 fetchSplatMap(int layer, mat2 uvs) {
+vec3 fetchSplatMap(int layer, mat2 uvs, int num_layers) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SPLAT);
-    return texture(splatMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
+    vec3 textureValue = texture(splatMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
+    if (num_layers == 2) {
+        textureValue.z = 0;
+    }
+    float sum = textureValue.x + textureValue.y + textureValue.z;
+    if (sum == 0) {
+        sum = 1.0; // Avoid dividing by zero
+        textureValue.x = 1.0;
+    }
+    return textureValue /= sum;
 }
 <@endfunc@>
 
@@ -454,7 +463,7 @@ vec3 fetchLightMap(int layer, mat2 uvs) {
     blend = max(blend - vec3(0.2), vec3(0.0));
     blend /= (blend.x + blend.y + blend.z);
 <@else@>
-    vec3 blend = fetchSplatMap(0, mat2(<$texCoords$>[0].xy, <$texCoords$>[0].zw));
+    vec3 blend = fetchSplatMap(0, mat2(<$texCoords$>[0].xy, <$texCoords$>[0].zw), NUM_LAYERS);
 <@endif@>
 
 <@if normal@>
@@ -911,7 +920,7 @@ float fetchUVAnimationMaskMap(int layer, mat2 uvs) {
     blend = max(blend - vec3(0.2), vec3(0.0));
     blend /= (blend.x + blend.y + blend.z);
 <@else@>
-    vec3 blend = fetchSplatMap(0, mat2(<$texCoords$>[0].xy, <$texCoords$>[0].zw));
+    vec3 blend = fetchSplatMap(0, mat2(<$texCoords$>[0].xy, <$texCoords$>[0].zw), NUM_LAYERS);
 <@endif@>
 
 <@if normal@>

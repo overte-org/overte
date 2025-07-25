@@ -12,12 +12,13 @@
 using namespace gpu;
 
 
-const size_t TextureTable::COUNT{ TEXTURE_TABLE_COUNT };
+TextureTable::TextureTable(size_t tableSize) {
+    _textures.resize(tableSize);
+}
 
-TextureTable::TextureTable() { }
-
-TextureTable::TextureTable(const std::initializer_list<TexturePointer>& textures) {
-    auto max = std::min<size_t>(COUNT, textures.size());
+TextureTable::TextureTable(const std::initializer_list<TexturePointer>& textures, size_t tableSize) {
+    _textures.resize(tableSize);
+    auto max = std::min<size_t>(_textures.size(), textures.size());
     auto itr = textures.begin();
     size_t index = 0;
     while (itr != textures.end() && index < max) {
@@ -26,11 +27,12 @@ TextureTable::TextureTable(const std::initializer_list<TexturePointer>& textures
     }
 }
 
-TextureTable::TextureTable(const Array& textures) : _textures(textures) {
+TextureTable::TextureTable(const Vector& textures, size_t tableSize) : _textures(textures) {
+    _textures.resize(tableSize);
 }
 
 void TextureTable::setTexture(size_t index, const TexturePointer& texturePointer) {
-    if (index >= COUNT || _textures[index] == texturePointer) {
+    if (index >= _textures.size() || _textures[index] == texturePointer) {
         return;
     }
     {
@@ -44,8 +46,8 @@ void TextureTable::setTexture(size_t index, const TextureView& textureView) {
     setTexture(index, textureView._texture);
 }
 
-TextureTable::Array TextureTable::getTextures() const {
-     Array result; 
+TextureTable::Vector TextureTable::getTextures() const {
+     Vector result;
      {
          Lock lock(_mutex);
          result = _textures;
