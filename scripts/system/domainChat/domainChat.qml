@@ -390,8 +390,9 @@ Rectangle {
 
     function addMessage(username, message, date, channel, type){
         // Format content
+        var messageImages = getMessageImages(message);
         message = formatContent(message);
-        message = embedImages(message);
+        message = embedImages(message, messageImages);
 
         if (type === "notification"){ 
             domainMessages.append({ text: message, username, date, type });
@@ -417,23 +418,33 @@ Rectangle {
         return mess
     }
 
-    function embedImages(mess){
-        var imageLink = /(https?:(\/){2})[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)(?:png|jpe?g|gif|bmp|svg|webp)/g;
-        var matches = mess.match(imageLink);
-        var newMessage = ""
-        var listed = []
-        var totalEmbeds = 0
+    function embedImages(mess, imageEmbeds){
+        var maximumEmbedsPerMessage = 3;
+        var returnMessageValue = "";        // The value we  return
+        var listed = [];                    // List of already embedded images. We do not want duplicates.
+        var totalEmbeds = 0;
 
-        newMessage += mess
+        // Initialize our return value
+        returnMessageValue += mess
 
-        for (var i = 0; matches && matches.length > i && totalEmbeds < 3; i++){
-            if (!listed.includes(matches[i])) {
-                newMessage += "<br><img src="+ matches[i] +" width='250' >"
-                listed.push(matches[i]);
-                totalEmbeds++
-            } 
+        // No matches. Nothing to do.
+        if (!imageEmbeds) return mess;
+
+        // Append the RichText image embeds to the end of the message we render
+        for (var i = 0; imageEmbeds.length > i && totalEmbeds < maximumEmbedsPerMessage; i++){
+            if (listed.includes(imageEmbeds[i])) continue; // Exact image already embedded once.
+
+            returnMessageValue += "<br><img src='"+ imageEmbeds[i] +"' width='250' >";
+            listed.push(imageEmbeds[i]);
+            totalEmbeds++;
         }
-        return newMessage;
+        return returnMessageValue;
+    }
+
+    function getMessageImages(message) {
+        var imageLink = /(https?:(\/){2})[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.]*)(?:png|jpe?g|gif|bmp|svg|webp)(\?.*[^'])?/g;
+        var images = message.match(imageLink);
+        return images;
     }
 
     // Messages from script
