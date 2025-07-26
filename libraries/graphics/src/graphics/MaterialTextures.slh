@@ -123,14 +123,17 @@
 LAYOUT(binding=GRAPHICS_TEXTURE_MATERIAL_SPLAT) uniform sampler2D splatMap;
 vec3 fetchSplatMap(int layer, mat2 uvs, int num_layers) {
     vec2 uv = evalTexCoordSet(layer, uvs, GRAPHICS_TEXTURE_MATERIAL_SPLAT);
-    vec3 textureValue = texture(splatMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
-    if (num_layers == 2) {
-        textureValue.z = 0;
-    }
+    vec3 textureValue;
+    <@if HIFI_USE_LAYERS3@>
+        textureValue = texture(splatMap, uv, TAA_TEXTURE_LOD_BIAS).rgb;
+    <@elif HIFI_USE_LAYERS2@>
+        textureValue = vec3(texture(splatMap, uv, TAA_TEXTURE_LOD_BIAS).rg, 0.0);
+    <@else@>
+        textureValue = vec3(texture(splatMap, uv, TAA_TEXTURE_LOD_BIAS).r, 0.0, 0.0);
+    <@endif@>
     float sum = textureValue.x + textureValue.y + textureValue.z;
     if (sum == 0) {
-        sum = 1.0; // Avoid dividing by zero
-        textureValue.x = 1.0;
+        return textureValue;
     }
     return textureValue /= sum;
 }
