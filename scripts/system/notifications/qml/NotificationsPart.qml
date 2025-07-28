@@ -3,8 +3,8 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 
 Rectangle {
-	width: 300;
-	height: 260;
+	width: HMD.active ? parent.width : 300;
+	height: HMD.active ? 520 : 260;
 	visible: true;
 	color: "transparent";
 
@@ -13,14 +13,6 @@ Rectangle {
 		width: parent.width;
 		height: parent.height;
 		spacing: 5;
-
-		Repeater {
-			model: notifications.length;
-			delegate: Bubble {
-				bubbleText: notifications[index].bubbleText;
-				bubbleDetails: notifications[index].bubbleDetails;
-			}
-		}
 
 		ListView {
 			id: bubbleInstance;

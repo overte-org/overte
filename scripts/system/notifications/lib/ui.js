@@ -22,7 +22,7 @@ const UI = {
 			type: "Web",
 			sourceUrl: Script.resolvePath("../qml/NotificationsBaseVR.qml"),
 			position: { x: 0, y: 1, z: 0 },
-			dimensions: { "x": 0.4, "y": 0.0, "z": 0.1 },
+			dimensions: { "x": 0.8, "y": 0.0, "z": 0.2 },
 			visible: false,
 			alpha: 0.9,
 			dpi: 20,
@@ -51,7 +51,7 @@ const UI = {
 	resizeVROverlayFromActiveCount: (activeNotifications = 0) => {
 		if (!app._ui.overlayVR) return;
 
-		const DIMENSION_Y_VALUE = Math.min(activeNotifications, 4) * 0.1; 	// Never show more than 4 bubbles at once
+		const DIMENSION_Y_VALUE = Math.min(activeNotifications, 4) * 0.2; 	// Never show more than 4 bubbles at once
 		const OVERLAY_IS_ACTIVE = activeNotifications > 0;					// Don't have the overlay active if it is not needed.
 
 		let dimensions = (Entities.getEntityProperties(app._ui.overlayVR, "dimensions")).dimensions;

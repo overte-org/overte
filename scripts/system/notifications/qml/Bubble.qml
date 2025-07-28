@@ -5,6 +5,7 @@ import QtQuick.Layouts 1.3
 Rectangle {
 	property string bubbleText: "";
 	property string bubbleDetails: "";
+	property int bubbleHeight: HMD.active ? 100 : 50;
 	property int bubbleId: 0;
 	property bool isClosing: false;
 	property int notificationLifetimeMS: 5000;
@@ -22,14 +23,14 @@ Rectangle {
 		anchors.centerIn: parent;
 		color: "white";
 		text: bubbleText;
-		font.pixelSize: 16;
+		font.pixelSize: HMD.active ? 30 : 16;
 		wrapMode: Text.Wrap;
 		horizontalAlignment: Text.AlignHCenter;
 	}
 
 	// Timeout progress bar
 	Rectangle {
-		y: 45;
+		anchors.top: parent.height;
 		width: parent.width;
 		height: 5;
 		color: Qt.rgba(1,1,1,0.8);
@@ -73,7 +74,7 @@ Rectangle {
 	}
 
 	Component.onCompleted: {
-		bubble.height = 50;
+		bubble.height = bubbleHeight;
 		fadeoutTimeout.running = true;
 		deleteTimeout.running = true;
 	}
