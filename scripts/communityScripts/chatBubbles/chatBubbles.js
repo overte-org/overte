@@ -6,6 +6,9 @@
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+//  SPDX-License-Identifier: Apache-2.0
+//
 "use strict";
 
 const CHAT_CHANNEL = "chat";
@@ -20,6 +23,8 @@ const BUBBLE_LINE_HEIGHT = 0.07;
 const BUBBLE_WIDTH = 1.3;
 const BUBBLE_WIDTH_MAX_CHARS = 24; // roughly 18 ems per meter
 const MAX_DISTANCE = 20;
+const TYPING_NOTIF_HEAD_OFFSET_HEIGHT = 0.48;
+const MSG_HEAD_OFFSET_HEIGHT = 0.6;
 const SELF_BUBBLES = false;
 
 const NOTIFY_SOUND = SoundCache.getSound(Script.resolvePath("./assets/notify.wav"));
@@ -98,7 +103,10 @@ function ChatBubbles_SpawnBubble(data, senderID) {
         currentBubbles[senderID] = {};
     }
 
-    const scale = AvatarList.getAvatar(senderID).scale;
+    const avatar = AvatarList.getAvatar(senderID);
+    const scale = avatar.scale;
+    const headIndex = avatar.getJointIndex("Head");
+    const headPos = avatar.getAbsoluteJointTranslationInObjectFrame(headIndex);
 
     let link;
     let linkIsImage = false;
@@ -109,8 +117,8 @@ function ChatBubbles_SpawnBubble(data, senderID) {
 
     if (
         (maybeURL.startsWith("https://") || maybeURL.startsWith("http://")) &&
-            !/\s+/g.test(maybeURL) &&
-            /[A-Za-z0-9-._~:/?#\[\]@!$&'()*+,;%=]+/g.test(maybeURL)
+        !/\s+/g.test(maybeURL) &&
+        /[A-Za-z0-9-._~:/?#\[\]@!$&'()*+,;%=]+/g.test(maybeURL)
     ) {
         link = maybeURL;
 
@@ -118,10 +126,10 @@ function ChatBubbles_SpawnBubble(data, senderID) {
 
         if (
             chunkBeforeQuery.endsWith(".jpg") ||
-                chunkBeforeQuery.endsWith(".png") ||
-                chunkBeforeQuery.endsWith(".gif") ||
-                chunkBeforeQuery.endsWith(".svg") ||
-                chunkBeforeQuery.endsWith(".webp")
+            chunkBeforeQuery.endsWith(".png") ||
+            chunkBeforeQuery.endsWith(".gif") ||
+            chunkBeforeQuery.endsWith(".svg") ||
+            chunkBeforeQuery.endsWith(".webp")
         ) {
             linkIsImage = true;
         }
@@ -133,6 +141,7 @@ function ChatBubbles_SpawnBubble(data, senderID) {
     let bubbleEntity;
     if (link !== undefined && linkIsImage) {
         height = BUBBLE_WIDTH / 3;
+        height *= scale;
         bubbleEntity = Entities.addEntity({
             type: "Image",
             parentID: senderID,
@@ -140,23 +149,25 @@ function ChatBubbles_SpawnBubble(data, senderID) {
             emissive: true,
             keepAspectRatio: true,
             ignorePickIntersection: true,
-            dimensions: [BUBBLE_WIDTH, height, 0.01],
-            localPosition: [0, scale + (height / 2) + 0.1, 0],
+            dimensions: Vec3.multiply(scale, [BUBBLE_WIDTH, height, 0.01]),
+            localPosition: [0, MSG_HEAD_OFFSET_HEIGHT + headPos.y + (height / 2), 0],
             canCastShadow: false,
             billboardMode: "yaw",
             grab: {grabbable: false},
+            renderLayer: "front",
         }, "local");
     } else {
+        height *= scale;
         bubbleEntity = Entities.addEntity({
             type: "Text",
             parentID: senderID,
             text: text,
             unlit: true,
             ignorePickIntersection: (link === undefined),
-            lineHeight: BUBBLE_LINE_HEIGHT,
-            dimensions: [BUBBLE_WIDTH, height + 0.04, 0.01],
-            localPosition: [0, scale + (height / 2) + 0.1, 0],
-            backgroundAlpha: 0.5,
+            lineHeight: BUBBLE_LINE_HEIGHT * scale,
+            dimensions: Vec3.multiply(scale, [BUBBLE_WIDTH, height + 0.04, 0.01]),
+            localPosition: [0, MSG_HEAD_OFFSET_HEIGHT + headPos.y + (height / 2), 0],
+            backgroundAlpha: 0.8,
             textColor: (link === undefined) ? [255, 255, 255] : [128, 240, 255],
             textEffect: "outline fill",
             textEffectColor: "#000",
@@ -166,6 +177,7 @@ function ChatBubbles_SpawnBubble(data, senderID) {
             alignment: "center",
             verticalAlignment: "center",
             grab: {grabbable: false},
+            renderLayer: "front",
             script: (link === undefined && !linkIsImage) ? undefined :
 `(function() {
     this.mousePressOnEntity = function(entity, event) {
@@ -233,16 +245,19 @@ function ChatBubbles_IndicatorTick(senderID) {
 function ChatBubbles_ShowTypingIndicator(senderID) {
     if (typingIndicators[senderID]) { return; }
 
-    const scale = AvatarList.getAvatar(senderID).scale;
+    const avatar = AvatarList.getAvatar(senderID);
+    const scale = avatar.scale;
+    const headIndex = avatar.getJointIndex("Head");
+    const headPos = avatar.getAbsoluteJointTranslationInObjectFrame(headIndex);
 
     const indicatorEntity = Entities.addEntity({
         type: "Text",
         parentID: senderID,
         text: "•••",
         unlit: true,
-        lineHeight: 0.15,
-        dimensions: [0.18, 0.08, 0.01],
-        localPosition: [0, scale, 0],
+        lineHeight: 0.15 * scale,
+        localDimensions: Vec3.multiply(scale, [0.18, 0.08, 0.01]),
+        localPosition: [0, (TYPING_NOTIF_HEAD_OFFSET_HEIGHT * scale) + headPos.y, 0],
         backgroundAlpha: 0.8,
         canCastShadow: false,
         billboardMode: "full",
@@ -251,8 +266,10 @@ function ChatBubbles_ShowTypingIndicator(senderID) {
         textEffect: "outline fill",
         textEffectColor: "#000",
         textEffectThickness: 0.3,
-        topMargin: -0.06,
+        topMargin: -0.06 * scale,
         grab: {grabbable: false},
+        ignorePickIntersection: true,
+        renderLayer: "front",
     }, "local");
 
     const indicatorInterval = Script.setInterval(() => ChatBubbles_IndicatorTick(senderID), 1000 / BUBBLE_ANIM_FPS);
