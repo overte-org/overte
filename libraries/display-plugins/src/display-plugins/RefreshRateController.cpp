@@ -34,6 +34,9 @@ std::chrono::nanoseconds RefreshRateController::sleepThreadIfNeeded(QThread* thr
     if (!isHmd) {
         static const std::chrono::nanoseconds EPSILON = std::chrono::milliseconds(1);
         auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(_endTime - _startTime);
+        if (duration.count() < 0) {
+            return std::chrono::nanoseconds(0);
+        }
         auto refreshRateLimitPeriod = std::chrono::nanoseconds(_refreshRateLimitPeriod);
         auto sleepDuration = refreshRateLimitPeriod - (duration + EPSILON);
         if (sleepDuration.count() > 0) {

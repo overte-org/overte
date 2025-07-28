@@ -20,10 +20,10 @@
 <$declareWorkloadProxies()$>
 
 
-layout(location=0) out vec4 varColor;
-layout(location=1) out vec3 varTexcoord;
-layout(location=2) out vec3 varEyePos;
-layout(location=3) out vec4 _prevPositionCS;
+OUTPUT(0, vec4, varColor);
+OUTPUT(1, vec3, varTexcoord);
+OUTPUT(2, vec3, varEyePos);
+OUTPUT(3, vec4, _prevPositionCS);
 
 vec4 getPosition(WorkloadProxy proxy, vec4 spriteVert, vec4 proxyPosEye) {
     vec3 dirZ = -normalize(proxyPosEye.xyz);

@@ -8,14 +8,17 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-<@include gpu/Inputs.slh@>
+<@include gpu/ShaderConstants.h@>
+INPUT(GPU_ATTR_POSITION, vec4, inPosition);
+INPUT(GPU_ATTR_COLOR, vec4, inColor);
+
 <@include gpu/Color.slh@>
 <@include gpu/Transform.slh@>
 <$declareStandardTransform()$>
 
 <@include render-utils/ShaderConstants.h@>
 
-layout(location=RENDER_UTILS_ATTR_COLOR) out vec4 _color;
+OUTPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
 
 void main(void) {
     // pass along the color

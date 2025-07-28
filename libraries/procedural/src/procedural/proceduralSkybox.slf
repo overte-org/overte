@@ -16,8 +16,8 @@
 
 <@include procedural/ProceduralCommon.slh@>
 
-layout(location=0) in vec3 _normal;
-layout(location=1) in vec4 _prevPositionCS;
+INPUT(0, vec3, _normal);
+INPUT(1, vec4, _prevPositionCS);
 
 #line 1001
 //PROCEDURAL_BLOCK_BEGIN

@@ -3,10 +3,10 @@
 precision highp float;
 precision highp sampler2D;
 
-layout(location = 0) in vec4 vTexCoordLR;
+INPUT(0, vec4, vTexCoordLR);
 
-layout(location = 0) out vec4 FragColorL;
-layout(location = 1) out vec4 FragColorR;
+OUTPUT(0, vec4, FragColorL);
+OUTPUT(1, vec4, FragColorR);
 
 uniform sampler2D sampler;
 

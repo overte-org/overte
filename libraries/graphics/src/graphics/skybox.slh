@@ -18,13 +18,13 @@
 
 <@include gpu/PackedNormal.slh@>
 
-LAYOUT(binding=GRAPHICS_TEXTURE_SKYBOX) uniform samplerCube cubeMap;
+TEXTURE(GRAPHICS_TEXTURE_SKYBOX, samplerCube, cubeMap);
 
 struct Skybox {
     vec4 color;
 };
 
-LAYOUT(binding=GRAPHICS_BUFFER_SKYBOX_PARAMS) uniform skyboxBuffer {
+UNIFORM_BUFFER(GRAPHICS_BUFFER_SKYBOX_PARAMS, skyboxBuffer) {
     Skybox skybox;
 };
 
@@ -47,8 +47,8 @@ vec2 packVelocity(vec4 prevPositionCS) {
     return deltaUV;
 }
 
-layout(location = 0) out vec4 _lighting; // calculated lighting
-layout(location = 1) out vec4 _velocity; // velocity
+OUTPUT(0, vec4, _lighting); // calculated lighting
+OUTPUT(1, vec4, _velocity); // velocity
 
 void packDeferredFragmentSky(vec4 prevPositionCS, vec3 color) {
     _lighting = vec4(color, 1.0f);

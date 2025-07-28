@@ -20,9 +20,9 @@
 <$declarePackOcclusionDepth()$>
 
 // the source occlusion texture
-LAYOUT(binding=RENDER_UTILS_TEXTURE_SSAO_OCCLUSION) uniform sampler2D occlusionMap;
+TEXTURE(RENDER_UTILS_TEXTURE_SSAO_OCCLUSION, sampler2D, occlusionMap);
 
-LAYOUT(binding=RENDER_UTILS_BUFFER_SSAO_BLUR_PARAMS) uniform blurParamsBuffer {
+UNIFORM_BUFFER(RENDER_UTILS_BUFFER_SSAO_BLUR_PARAMS, blurParamsBuffer) {
     AmbientOcclusionBlurParams blurParams;
 };
 
@@ -126,9 +126,9 @@ vec4 getBlurredOcclusion(ivec2 destPixelCoord, vec2 occlusionTexCoord, vec2 dept
     return packOcclusionOutput(result, fragDepth, fragNormal);
 }
 
-layout(location=0) in vec4 varTexCoord0;
+INPUT(0, vec4, varTexCoord0);
 
-layout(location=0) out vec4 outFragColor;
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
     outFragColor = getBlurredOcclusion(ivec2(gl_FragCoord.xy), varTexCoord0.xy, varTexCoord0.zw);

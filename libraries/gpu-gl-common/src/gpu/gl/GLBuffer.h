@@ -19,10 +19,10 @@ public:
     static GLBufferType* sync(GLBackend& backend, const Buffer& buffer) {
         if (buffer.getSysmem().getSize() != 0) {
             if (buffer._getUpdateCount == 0) {
-                qWarning() << "Unsynced buffer";
+                qWarning(gpugllogging) << "Unsynced buffer";
             }
             if (buffer._getUpdateCount < buffer._applyUpdateCount) {
-                qWarning() << "Unsynced buffer " << buffer._getUpdateCount << " " << buffer._applyUpdateCount;
+                qWarning(gpugllogging) << "Unsynced buffer " << buffer._getUpdateCount << " " << buffer._applyUpdateCount;
             }
         }
         GLBufferType* object = Backend::getGPUObject<GLBufferType>(buffer);

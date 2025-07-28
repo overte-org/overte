@@ -1,0 +1,382 @@
+//
+//  Created by Bradley Austin Davis on 2016/05/26
+//  Copyright 2013-2018 High Fidelity, Inc.
+//  Copyright 2022-2025 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+//  Contains parts of Vulkan Samples, Copyright (c) 2018, Sascha Willems, distributed on MIT License.
+//
+
+#include <QtCore/QCoreApplication>
+#include <QGuiApplication>
+#include <QtGui/QWindow>
+#include <QtGui/qevent.h>
+#include <QtCore/QTimer>
+#include <QtCore/QDebug>
+#include <QtPlatformHeaders/QXcbWindowFunctions>
+#include <qpa/qplatformnativeinterface.h>
+#include <QtX11Extras/QX11Info>
+#include <QWidget>
+
+#include "VKWindow.h"
+#include "VKWidget.h"
+#include "Config.h"
+#include "VulkanSwapChain.h"
+#include "Context.h"
+
+VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
+    vks::Context::get().registerWindow(this);
+    setBaseSize(QSize(1280, 720));
+    resize(QSize(1280, 720));
+    /*_resizeTimer = new QTimer(this);
+    _resizeTimer->setTimerType(Qt::TimerType::PreciseTimer);
+    _resizeTimer->setInterval(50);
+    _resizeTimer->setSingleShot(true);
+    connect(_resizeTimer, &QTimer::timeout, this, &VKWindow::resizeFramebuffer);*/
+}
+
+/*void VKWindow::connectResizeTimer(QThread *timerThread) {
+    _resizeTimer = new QTimer(this);
+    _resizeTimer->moveToThread(timerThread);
+    _resizeTimer->setTimerType(Qt::TimerType::PreciseTimer);
+    _resizeTimer->setInterval(50);
+    _resizeTimer->setSingleShot(true);
+    connect(_resizeTimer, &QTimer::timeout, this, &VKWindow::resizeFramebuffer,  Qt::QueuedConnection);
+    //connect(_resizeTimer, &QTimer::timeout, this, [this] { QMetaObject::invokeMethod(this, "resizeFramebuffer", Qt::QueuedConnection); },  Qt::QueuedConnection);
+}*/
+
+void VKWindow::createSurface() {
+    _swapchain.setContext(&_context);
+#ifdef WIN32
+    // TODO
+    _surface = _context.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)winId() });
+#else
+    setSurfaceType(QSurface::VulkanSurface);
+    //VkXcbSurfaceCreateInfoKHR surfaceCreateInfo{};
+    //dynamic_cast<QGuiApplication*>(QGuiApplication::instance())->platformNativeInterface()->connection();
+
+    //auto* platformInterface = QGuiApplication::platformNativeInterface();
+    //auto* handle = platformInterface->nativeResourceForWindow("handle", this);
+    Q_ASSERT(winId());
+    qDebug() << "VKWindow::createSurface winId:" << winId();
+    _swapchain.initSurface(QX11Info::connection(), winId());
+    //_swapchain.initSurface(QX11Info::connection(), QX11Info::appRootWindow());
+    //VkSurfaceKHR surface;
+    //VK_CHECK_RESULT(vkCreateXcbSurfaceKHR(_context.instance, &surfaceCreateInfo, nullptr, &surface));
+#endif
+    //_swapchain.setSurface(_surface);
+}
+
+void VKWindow::createSwapchain() {
+    {
+        auto qsize = size();
+        _extent = VkExtent2D{(uint32_t)qsize.width(), (uint32_t)qsize.height()};
+    }
+    _swapchain.create(&_extent.width, &_extent.height, false, false);
+
+    createCommandBuffers();
+    setupRenderPass();
+    setupDepthStencil();
+    setupFramebuffers();
+}
+
+void VKWindow::createCommandBuffers() {
+    VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::semaphoreCreateInfo();
+    // Create a semaphore used to synchronize image presentation
+    // Ensures that the image is displayed before we start submitting new commands to the queue
+    VK_CHECK_RESULT(vkCreateSemaphore(_context.device->logicalDevice, &semaphoreCreateInfo, nullptr, &_acquireCompleteSemaphore));
+    // Create a semaphore used to synchronize command submission
+    // Ensures that the image is not presented until all commands have been submitted and executed
+    VK_CHECK_RESULT(vkCreateSemaphore(_context.device->logicalDevice, &semaphoreCreateInfo, nullptr, &_renderCompleteSemaphore));
+    // Create one command buffer for each swap chain image
+    _drawCommandBuffers.resize(_swapchain.imageCount);
+    VkCommandBufferAllocateInfo cmdBufAllocateInfo = vks::initializers::commandBufferAllocateInfo(_context.device->graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, static_cast<uint32_t>(_drawCommandBuffers.size()));
+    VK_CHECK_RESULT(vkAllocateCommandBuffers(_context.device->logicalDevice, &cmdBufAllocateInfo, _drawCommandBuffers.data()));
+}
+
+void VKWindow::vulkanCleanup() {
+    _isVulkanCleanupComplete = true;
+
+    if (_previousFrameFence) {
+        _context.recycler.trashVkFence(_previousFrameFence);
+        _previousFrameFence = VK_NULL_HANDLE;
+    }
+
+    _context.recycler.trashVkSemaphore(_acquireCompleteSemaphore);
+    _context.recycler.trashVkSemaphore(_renderCompleteSemaphore);
+
+    if (_renderPass) {
+        _context.recycler.trashVkRenderPass(_renderPass);
+    }
+
+    if (_depthStencil.image) {
+        _context.recycler.trashVkImage(_depthStencil.image);
+    }
+
+    if (_depthStencil.view) {
+        _context.recycler.trashVkImageView(_depthStencil.view);
+    }
+
+    if (_depthStencil.allocation) {
+        _context.recycler.trashVmaAllocation(_depthStencil.allocation);
+    }
+
+    for (auto& framebuffer : _frameBuffers) {
+        _context.recycler.trashVkFramebuffer(framebuffer);
+    }
+    _frameBuffers.clear();
+
+    _swapchain.cleanup();
+}
+
+void VKWindow::setupDepthStencil() {
+    auto &device = _context.device->logicalDevice;
+    if (_depthStencil.isAllocated) {
+        auto &recycler = _context.recycler;
+        recycler.trashVkImageView(_depthStencil.view);
+        recycler.trashVkImage(_depthStencil.image);
+#if VULKAN_USE_VMA
+        recycler.trashVmaAllocation(_depthStencil.allocation);
+#else
+        vkFreeMemory(device, _depthStencil.memory, nullptr);
+#endif
+        _depthStencil.isAllocated = false;
+    }
+
+    const VkFormat depthFormat = VK_FORMAT_D24_UNORM_S8_UINT;
+    VkImageCreateInfo imageCI{};
+    imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageCI.imageType = VK_IMAGE_TYPE_2D;
+    imageCI.format = depthFormat;
+    imageCI.extent = { _extent.width, _extent.height, 1 };
+    imageCI.mipLevels = 1;
+    imageCI.arrayLayers = 1;
+    imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+
+    VK_CHECK_RESULT(vkCreateImage(device, &imageCI, nullptr, &_depthStencil.image));
+    VkMemoryRequirements memReqs{};
+    vkGetImageMemoryRequirements(device, _depthStencil.image, &memReqs);
+
+#if VULKAN_USE_VMA
+    VmaAllocationCreateInfo allocationCI {};
+    allocationCI.pool = VK_NULL_HANDLE;
+    allocationCI.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+    // TODO: I'm not sure of this part, how does it know size and does it call vkBindImageMemory?
+    VK_CHECK_RESULT(vmaAllocateMemoryForImage(_depthStencil.getAllocator(), _depthStencil.image, &allocationCI, &_depthStencil.allocation, nullptr));
+    VK_CHECK_RESULT(vmaBindImageMemory(_depthStencil.getAllocator(), _depthStencil.allocation, _depthStencil.image));
+#else
+    VkMemoryAllocateInfo memAlloc{};
+    memAlloc.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    memAlloc.allocationSize = memReqs.size;
+    memAlloc.memoryTypeIndex = _context.device->getMemoryType(memReqs.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    VK_CHECK_RESULT(vkAllocateMemory(device, &memAlloc, nullptr, &depthStencil.memory));
+    VK_CHECK_RESULT(vkBindImageMemory(device, depthStencil.image, depthStencil.memory, 0));
+#endif
+
+    VkImageViewCreateInfo imageViewCI{};
+    imageViewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imageViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imageViewCI.image = _depthStencil.image;
+    imageViewCI.format = depthFormat;
+    imageViewCI.subresourceRange.baseMipLevel = 0;
+    imageViewCI.subresourceRange.levelCount = 1;
+    imageViewCI.subresourceRange.baseArrayLayer = 0;
+    imageViewCI.subresourceRange.layerCount = 1;
+    imageViewCI.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    // Stencil aspect should only be set on depth + stencil formats (VK_FORMAT_D16_UNORM_S8_UINT..VK_FORMAT_D32_SFLOAT_S8_UINT
+    if (depthFormat >= VK_FORMAT_D16_UNORM_S8_UINT) {
+        imageViewCI.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+    }
+
+    VK_CHECK_RESULT(vkCreateImageView(device, &imageViewCI, nullptr, &_depthStencil.view));
+    _depthStencil.isAllocated = true;
+}
+
+void VKWindow::setupFramebuffers() {
+    // Recreate the frame buffers
+    if (!_frameBuffers.empty()) {
+        for (auto& framebuffer : _frameBuffers) {
+            _context.recycler.trashVkFramebuffer(framebuffer);
+        }
+        _frameBuffers.clear();
+    }
+
+    VkImageView attachments[2];
+
+    // Depth/Stencil attachment is the same for all frame buffers
+    attachments[1] = _depthStencil.view;
+
+    VkFramebufferCreateInfo frameBufferCreateInfo = {};
+    frameBufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    frameBufferCreateInfo.pNext = NULL;
+    frameBufferCreateInfo.renderPass = _renderPass;
+    frameBufferCreateInfo.attachmentCount = 2;
+    frameBufferCreateInfo.pAttachments = attachments;
+    frameBufferCreateInfo.width = _extent.width;
+    frameBufferCreateInfo.height = _extent.height;
+    frameBufferCreateInfo.layers = 1;
+
+    // Create frame buffers for every swap chain image
+    _frameBuffers.resize(_swapchain.imageCount);
+    for (uint32_t i = 0; i < _frameBuffers.size(); i++)
+    {
+        attachments[0] = _swapchain.buffers[i].view;
+        VK_CHECK_RESULT(vkCreateFramebuffer(_context.device->logicalDevice, &frameBufferCreateInfo, nullptr, &_frameBuffers[i]));
+    }
+}
+
+void VKWindow::setupRenderPass() {
+    if (_renderPass) {
+        _context.recycler.trashVkRenderPass(_renderPass);
+    }
+
+    std::array<VkAttachmentDescription, 2> attachments{};
+    // Color attachment
+    attachments[0].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[0].format = _swapchain.colorFormat;
+    attachments[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachments[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[0].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    // VKTODO: not needed currently
+    // Depth attachment
+    attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
+    attachments[1].format = VK_FORMAT_D24_UNORM_S8_UINT;
+    attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachments[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachments[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachments[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    // Only one depth attachment, so put it first in the references
+    VkAttachmentReference depthReference;
+    depthReference.attachment = 1;
+    depthReference.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+    std::vector<VkAttachmentReference> colorAttachmentReferences;
+    {
+        VkAttachmentReference colorReference{};
+        colorReference.attachment = 0;
+        colorReference.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        colorAttachmentReferences.push_back(colorReference);
+    }
+
+    std::vector<VkSubpassDescription> subpasses;
+    std::vector<VkSubpassDependency> subpassDependencies;
+    {
+        {
+            VkSubpassDependency dependency{};
+            dependency.srcSubpass = 0;
+            dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+            dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            dependency.dstSubpass = VK_SUBPASS_EXTERNAL;
+            dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+            dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+            subpassDependencies.push_back(dependency);
+        }
+
+        VkSubpassDescription subpass{};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.pDepthStencilAttachment = &depthReference;
+        subpass.colorAttachmentCount = (uint32_t)colorAttachmentReferences.size();
+        subpass.pColorAttachments = colorAttachmentReferences.data();
+        subpasses.push_back(subpass);
+    }
+
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = (uint32_t)attachments.size();
+    renderPassInfo.pAttachments = attachments.data();
+    renderPassInfo.subpassCount = (uint32_t)subpasses.size();
+    renderPassInfo.pSubpasses = subpasses.data();
+    renderPassInfo.dependencyCount = (uint32_t)subpassDependencies.size();
+    renderPassInfo.pDependencies = subpassDependencies.data();
+    VK_CHECK_RESULT(vkCreateRenderPass(_context.device->logicalDevice, &renderPassInfo, nullptr, &_renderPass));
+}
+
+
+void VKWindow::resizeEvent(QResizeEvent* event) {
+    QWindow::resizeEvent(event);
+    auto qsize = event->size();
+    if (qsize.width() != (int)(_extent.width) || qsize.height() != (int)(_extent.height)) {
+        /*if (_resizeTimer) {
+            _resizeTimer->start();
+        }*/
+        _needsResizing = true;
+    }
+}
+
+bool VKWindow::event(QEvent* event) {
+    switch (event->type()) {
+        case QEvent::MouseMove:
+        case QEvent::MouseButtonPress:
+        case QEvent::MouseButtonRelease:
+        case QEvent::MouseButtonDblClick:
+        case QEvent::KeyPress:
+        case QEvent::KeyRelease:
+        case QEvent::FocusIn:
+        case QEvent::FocusOut:
+        case QEvent::Resize:
+        case QEvent::TouchBegin:
+        case QEvent::TouchEnd:
+        case QEvent::TouchUpdate:
+        case QEvent::Gesture:
+        case QEvent::Wheel:
+        case QEvent::DragEnter:
+        case QEvent::Drop:
+            if (QCoreApplication::sendEvent(QCoreApplication::instance(), event)) {
+                return true;
+            }
+            break;
+        case QEvent::InputMethod:
+            if (QCoreApplication::sendEvent(QCoreApplication::instance(), event)) {
+                return true;
+            }
+            break;
+        case QEvent::InputMethodQuery:
+            if (QCoreApplication::sendEvent(QCoreApplication::instance(), event)) {
+                return true;
+            }
+            break;
+
+        default:
+            break;
+    }
+    return QWindow::event(event);
+}
+
+void VKWindow::resizeFramebuffer() {
+    auto qsize = size();
+    _extent = VkExtent2D{
+        .width = (uint32_t)qsize.width(),
+        .height = (uint32_t)qsize.height()
+    };
+    if (_primaryWidget) {
+        _primaryWidget->resize(qsize);
+    }
+    //vkQueueWaitIdle();
+    VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
+    _swapchain.create(&_extent.width, &_extent.height, false, false);
+    // TODO: add an assert here to see if width and height changed?
+    setupDepthStencil();
+    setupFramebuffers();
+}
+
+VKWindow::~VKWindow() {
+    // Depending on what is shut down first, cleanup is done either by window or Vulkan backend.
+    std::lock_guard<std::recursive_mutex> lock(_context.vulkanWindowsMutex);
+    if (!_isVulkanCleanupComplete) {
+        _context.unregisterWindow(this);
+        vulkanCleanup();
+    }
+}
+
+void VKWindow::emitClosing() {
+    emit aboutToClose();
+}

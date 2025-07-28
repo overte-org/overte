@@ -192,7 +192,9 @@ void DialogsManager::hmdTools(bool showTools) {
         }
         _hmdToolsDialog->show();
         _hmdToolsDialog->raise();
-        qApp->getWindow()->activateWindow();
+#ifdef USE_GL
+        qApp->getWindow()->activateWindow(); //VKTODO
+#endif
     } else {
         hmdToolsClosed();
     }

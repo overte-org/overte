@@ -19,6 +19,7 @@ namespace gpu {
 
     class Frame {
         friend class Context;
+        friend class Backend;
 
     public:
         Frame();

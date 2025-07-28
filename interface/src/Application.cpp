@@ -130,6 +130,7 @@
 #include "SpeechRecognizer.h"
 #endif
 #include "Util.h"
+#include "vk/VKWindow.h"
 
 #if defined(Q_OS_WIN)
 #include "WindowsSystemInfo.h"
@@ -212,7 +213,13 @@ Application::Application(
     QElapsedTimer& startupTimer
 ) :
     QApplication(argc, argv),
+#ifdef USE_GL
     _window(new MainWindow(desktop())),
+#else
+    _vkWindow(new VKWindow()),
+    _vkWindowWrapper(QWidget::createWindowContainer(_vkWindow)),
+    _window(new MainWindow(_vkWindowWrapper)),
+#endif
     // Menu needs to be initialized before other initializers. Otherwise deadlock happens on qApp->getWindow()->menuBar().
     _isMenuInitialized(initMenu()),
 #ifndef Q_OS_ANDROID
@@ -244,6 +251,7 @@ Application::Application(
     _fieldOfView("fieldOfView", DEFAULT_FIELD_OF_VIEW_DEGREES),
     _cameraClippingEnabled("cameraClippingEnabled", false)
 {
+
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
 
     LogHandler::getInstance().moveToThread(thread());
@@ -826,7 +834,9 @@ void Application::handleLocalServerConnection() const {
     connect(socket, &QLocalSocket::readyRead, this, &Application::readArgumentsFromLocalSocket);
 
     qApp->getWindow()->raise();
-    qApp->getWindow()->activateWindow();
+#ifdef USE_GL
+    qApp->getWindow()->activateWindow(); //VKTODO
+#endif
 }
 
 void Application::readArgumentsFromLocalSocket() const {
@@ -1957,7 +1967,7 @@ void Application::update(float deltaTime) {
     }
 
      if (shouldCaptureMouse()) {
-        QPoint point = _glWidget->mapToGlobal(_glWidget->geometry().center());
+        QPoint point = _primaryWidget->mapToGlobal(_primaryWidget->geometry().center());
         if (QCursor::pos() != point) {
             _mouseCaptureTarget = point;
             _ignoreMouseMove = true;
