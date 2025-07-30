@@ -20,6 +20,7 @@
 #include <OffscreenUi.h>
 
 #include "Menu.h"
+#include "ScriptPermissions.h"
 
 const QString LocationBookmarks::HOME_BOOKMARK = "Home";
 
@@ -61,16 +62,28 @@ void LocationBookmarks::setHomeLocation() {
 }
 
 void LocationBookmarks::setHomeLocationToAddress(const QVariant& address) {
+    if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
+        return;
+    }
+
     Bookmarks::insert(HOME_BOOKMARK, address);
 }
 
 
 QString LocationBookmarks::getHomeLocationAddress() {
-    return addressForBookmark(HOME_BOOKMARK);
+    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
+        return addressForBookmark(HOME_BOOKMARK);
+    } else {
+        return {};
+    }
 }
 
 QString LocationBookmarks::getAddress(const QString& bookmarkName) {
-    return addressForBookmark(bookmarkName);
+    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
+        return addressForBookmark(bookmarkName);
+    } else {
+        return {};
+    }
 }
 
 void LocationBookmarks::teleportToBookmark() {
@@ -81,6 +94,10 @@ void LocationBookmarks::teleportToBookmark() {
 }
 
 void LocationBookmarks::addBookmark() {
+    if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
+        return;
+    }
+
     ModalDialogListener* dlg = OffscreenUi::getTextAsync(OffscreenUi::ICON_PLACEMARK, "Bookmark Location", "Name", QString());
 
     connect(dlg, &ModalDialogListener::response, this, [=] (QVariant response) {
@@ -108,5 +125,13 @@ void LocationBookmarks::addBookmarkToMenu(Menu* menubar, const QString& name, co
         // TODO: this is aggressive but other alternatives have proved less fruitful so far.
         menubar->addActionToQMenuAndActionHash(_bookmarksMenu, teleportAction, name, 0, QAction::NoRole);
         Bookmarks::sortActions(menubar, _bookmarksMenu);
+    }
+}
+
+QVariantMap LocationBookmarks::getBookmarks() {
+    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
+        return _bookmarks;
+    } else {
+        return {};
     }
 }

@@ -20,6 +20,10 @@
  * The <code>LocationBookmarks</code> API provides facilities for working with location bookmarks. A location bookmark 
  * associates a name with a directory services address.
  *
+ * <p><strong>Note:</strong> This is a protected API and it is only available
+ * to scripts with the appropriate permissions. Without them, the functions in
+ * this namespace won't do anything and will return empty values.</p>
+ *
  * @namespace LocationBookmarks
  *
  * @hifi-client-entity
@@ -69,6 +73,20 @@ public slots:
      * @returns {string} The directory services address for the "Home" bookmark.
      */
     QString getHomeLocationAddress();
+
+    /*@jsdoc
+     * Gets the details of all bookmarks.
+     * @function LocationBookmarks.getBookmarks
+     * @returns {object} The current bookmarks in an object where the keys
+     * are the bookmark names and the values are the bookmark URLs.
+     * @example <caption>List the names and URLs of all the bookmarks.</caption>
+     * var bookmarks = LocationBookmarks.getBookmarks();
+     * print("Location bookmarks:");
+     * for (const [name, url] of Object.entries(bookmarks)) {
+     *     print(`- ${name} ${url}`);
+     * }
+     */
+    QVariantMap getBookmarks();
 
 protected:
     void addBookmarkToMenu(Menu* menubar, const QString& name, const QVariant& address) override;

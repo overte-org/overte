@@ -20,6 +20,10 @@
  * The <code>AvatarBookmarks</code> API provides facilities for working with avatar bookmarks ("favorites" in the Avatar app). 
  * An avatar bookmark associates a name with an avatar model, scale, and avatar entities (wearables).
  *
+ * <p><strong>Note:</strong> This is a protected API and it is only available
+ * to scripts with the appropriate permissions. Without them, the functions in
+ * this namespace won't do anything and will return empty values.</p>
+ *
  * @namespace AvatarBookmarks
  *
  * @hifi-interface
