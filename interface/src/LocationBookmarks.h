@@ -88,6 +88,22 @@ public slots:
      */
     QVariantMap getBookmarks();
 
+    /*@jsdoc
+     * Adds a new bookmark or replaces an existing one.
+     * @function LocationBookmarks.addBookmark
+     * @param {string} name - The name of the bookmark.
+     * @param {string} url - The bookmark's URL.
+     */
+    void addBookmark(const QString& name, const QString& url);
+
+
+    /*@jsdoc
+     * Deletes a bookmark, if it exists.
+     * @function LocationBookmarks.removeBookmark
+     * @param {string} name - The name of the bookmark.
+     */
+    void removeBookmark(const QString& name);
+
 protected:
     void addBookmarkToMenu(Menu* menubar, const QString& name, const QVariant& address) override;
 

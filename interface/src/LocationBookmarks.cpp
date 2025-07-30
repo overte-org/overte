@@ -135,3 +135,19 @@ QVariantMap LocationBookmarks::getBookmarks() {
         return {};
     }
 }
+
+void LocationBookmarks::addBookmark(const QString& name, const QString& url) {
+    if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
+        return;
+    }
+
+    Bookmarks::insert(name, url);
+}
+
+void LocationBookmarks::removeBookmark(const QString& name) {
+    if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
+        return;
+    }
+
+    Bookmarks::remove(name);
+}
