@@ -42,6 +42,8 @@
     var PORTAL_DURATION_MILLISEC = 45000; //45 sec
     var rezzerPortalCount = 0;
     var MAX_REZZED_PORTAL = 15;
+    
+    var placesOfTheCurrentDomain = [];
 
     var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
@@ -386,15 +388,15 @@
 
     function processData(metaverseInfo){
         var supportedProtocole = Window.protocolSignature();
-
+        
         var places = placesData.data.places;
-        for (var i = 0;i < places.length; i++) {
+        var i, j;
+        for (i = 0;i < places.length; i++) {
 
             var region, category, accessStatus;
             
             var description = (places[i].description ? places[i].description : "");
             var thumbnail = (places[i].thumbnail ? places[i].thumbnail : "");
-
             if ( places[i].domain.protocol_version === supportedProtocole ) {
                   
                     region = metaverseInfo.order;
@@ -402,7 +404,7 @@
                     if ( thumbnail.substr(0, 4).toLocaleLowerCase() !== "http") {
                         category = "O"; //Other
                     } else {
-                        category = "A"; //Attraction                        
+                        category = "A"; //Attraction
                     }
                     
                     if (places[i].domain.num_users > 0) {
@@ -419,12 +421,14 @@
                         "order": category + "_" + region + "_" + getSeededRandomForString(places[i].id),
                         "category": category,
                         "accessStatus": accessStatus,
+                        "domainAccessStatus": accessStatus,
                         "name": places[i].name,
                         "description": description,
                         "thumbnail": thumbnail,
                         "maturity": places[i].maturity,
                         "address": places[i].address,
                         "current_attendance": places[i].domain.num_users,
+                        "place_attendance": -1,
                         "id": places[i].id,
                         "visibility": places[i].visibility,
                         "capacity": places[i].domain.capacity,
@@ -436,14 +440,61 @@
                         "metaverseRegion": metaverseInfo.region
                     };
                     portalList.push(portal);
+                    
+                    if ("{" + places[i].domain.id + "}" === location.domainID) {
+                        placesOfTheCurrentDomain.push({"index": (portalList.length - 1), "position": getPositionFromPath(places[i].path)});
+                    }
 
             } else {
                 nbrPlacesNoProtocolMatch++;
             }
         }
         
+        //counting for current domain's places count
+        if (placesOfTheCurrentDomain.length > 0) {
+            var presences = AvatarList.getAvatarIdentifiers();
+            var avatarsPlace = [];
+            for (i = 0;i < presences.length; i++) {
+                var avatarPosition = AvatarList.getAvatar(presences[i]).position;
+                var minDistance = 100000;
+                var leadingIndex = -1;
+                for (j = 0; j < placesOfTheCurrentDomain.length; j++) {
+                    var avatarPlacedistance = Vec3.distance(placesOfTheCurrentDomain[j].position, avatarPosition);
+                    if (avatarPlacedistance <= minDistance) {
+                        leadingIndex = placesOfTheCurrentDomain[j].index;
+                        minDistance = avatarPlacedistance;
+                    }
+                }
+                avatarsPlace.push(leadingIndex);
+            }
+            for (i = 0;i < placesOfTheCurrentDomain.length; i++) {
+                var count = 0;
+                for (j = 0;j < avatarsPlace.length; j++) {
+                    if (avatarsPlace[j] === placesOfTheCurrentDomain[i].index) {
+                        count = count + 1;
+                    }
+                }
+                portalList[placesOfTheCurrentDomain[i].index].place_attendance = count;
+                if (count === 0) {
+                    portalList[placesOfTheCurrentDomain[i].index].accessStatus = "NOBODY";
+                }
+            }
+        }
+        
         nbrPlaceProtocolKnown = nbrPlaceProtocolKnown + places.length;
     
+    }
+
+    function getPositionFromPath(path) {
+        var position = {"x": 0.0, "y": 0.0, "z": 0.0};
+        var extracted = path.split("/");
+        if (extracted.length > 1) {
+            var stringXyz = extracted[1].split(",");
+            position.x = parseFloat(stringXyz[0]);
+            position.y = parseFloat(stringXyz[1]);
+            position.z = parseFloat(stringXyz[2]);
+        }
+        return position;
     }
 
     function addUtilityPortals() {

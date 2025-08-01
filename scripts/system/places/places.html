@@ -320,6 +320,12 @@
                                 //This indicate if there are presence of people or not, and if the domain is full capacity.
                                 //This will be used to display "Life" indicator (green) or "Full" (red)
                                 
+                            placeRecords[i].domainAccessStatus
+                                //String (Possible values: FULL/LIFE/NOBODY 
+                                //This indicate if there are presence of people or not, and if the domain is full capacity.
+                                //This will be used to display "Life" indicator (green) or "Full" (red)
+                                //But this one is never overriden in case there is a place specific count to 0.
+                                
                             placeRecords[i].name
                                 //String (This is the name of the Place. We might want a keyword filter based on this content)
                                 
@@ -339,6 +345,9 @@
                             placeRecords[i].current_attendance
                                 Number (The number of people currently in the Domain. domain.num_users)
                                 
+                            placeRecords[i].place_attendance
+                                Number (The number of people currently in this spacific Domain. Default -1, available only if the place is in the domain where the user is currently connected to. In that cause it must be 0 or greater)
+                            
                             placeRecords[i].id
                                 String (This is the place ID, this can be used for any external storage)
                                 
@@ -406,7 +415,7 @@
                                             formatedList = formatedList + "<tr>";
                                             formatedList = formatedList + "<td width='5%'>&nbsp;</td>";
                                             formatedList = formatedList + "<td width='70%' valign='top' class='domainTitle'>" + placeRecords[i].domain + "</td>";
-                                            formatedList = formatedList + "<td width='25%' align='right' valign='top'><font class='domain-nbrUser " + placeRecords[i].accessStatus + "'><font class='domain-nbrUser_small'>USERS:</font> " + placeRecords[i].current_attendance + "</font>";
+                                            formatedList = formatedList + "<td width='25%' align='right' valign='top'><font class='domain-nbrUser " + placeRecords[i].domainAccessStatus + "'><font class='domain-nbrUser_small'>USERS:</font> " + placeRecords[i].current_attendance + "</font>";
                                             formatedList = formatedList + "<font class='domain-capacity'><br>CAPACITY: " + capacity + "</font></td>";
                                             formatedList = formatedList + "</tr>";
                                             formatedList = formatedList + "</table>";
@@ -470,11 +479,15 @@
                                         formatedList = formatedList + "    </tr>";
                                         formatedList = formatedList + "</table>";
                                         if (placeRecords[i].category !== "Z") {
+                                            var indicator = "&#9603;";
+                                            if (placeRecords[i].accessStatus !== "NOBODY" && placeRecords[i].place_attendance > 0) {
+                                                indicator = "" + placeRecords[i].place_attendance;
+                                            }
                                             formatedList = formatedList + "<table class='placeTable'" + prompotionDescHeight + ">";
                                             formatedList = formatedList + "    <tr valign = 'bottom'>";
                                             formatedList = formatedList + "        <td width='2%'></td>";
                                             formatedList = formatedList + "        <td align='left' width='88%' class='place-entry-description' onclick='teleport(" + '"' + placeRecords[i].id + '"' + ", " + '"' + placeUrl + '"' + "); return false;'>" + shortenedDescription + "</td>";
-                                            formatedList = formatedList + "        <td align='right' class='presenceOfLife-" + placeRecords[i].accessStatus + "'>&#9603;</td>";
+                                            formatedList = formatedList + "        <td align='right' class='presenceOfLife-" + placeRecords[i].accessStatus + "'>" + indicator + "</td>";
                                             formatedList = formatedList + "    </tr>";
                                             formatedList = formatedList + "</table>";
                                         }
@@ -808,7 +821,18 @@
                 document.getElementById("placeDetail-maturity").innerHTML = placeDetail.maturity.toUpperCase();
                 document.getElementById("placeDetail-maturity").className = placeDetail.maturity + "FilterOn placeMaturity";
                 document.getElementById("placeDetail-domain").innerHTML = placeDetail.domain.toUpperCase();
-                document.getElementById("placeDetail-users").innerHTML = "<font class='" + placeDetail.accessStatus + "'>" + placeDetail.current_attendance + "</font>";
+                var placeAttendance = "" + placeDetail.place_attendance;
+                if (placeDetail.place_attendance === -1) {
+                    placeAttendance = "-";
+                }
+                var userBlock = "<table class='detailUserCount'><tr>";
+                userBlock += "<td class='detailUserCountHeader'>PLACE</td>";
+                userBlock += "<td class='detailUserCountHeader'>DOMAIN</td>";
+                userBlock += "</tr><tr>";
+                userBlock += "<td class='detailUserCount'><font class='" + placeDetail.accessStatus + "'>" + placeAttendance + "</font></td>";
+                userBlock += "<td class='detailUserCount'><font class='" + placeDetail.domainAccessStatus + "'>" + placeDetail.current_attendance + "</font></td>";
+                userBlock += "</tr></table>";
+                document.getElementById("placeDetail-users").innerHTML = userBlock;
                 var capacity = "UNDEFINED";
                 if (placeDetail.capacity !== 0) {
                     capacity = placeDetail.capacity;
