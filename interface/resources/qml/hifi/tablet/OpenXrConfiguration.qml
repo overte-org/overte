@@ -60,6 +60,7 @@ Flickable {
 
     Component.onCompleted: {
         page = config.createObject(flick.contentItem);
+        page.displayConfiguration();
     }
     Component {
         id: config
@@ -88,6 +89,30 @@ Flickable {
                 }
             }
 
+            Row {
+                id: otherConfig
+                anchors.left: parent.left
+                anchors.leftMargin: leftMargin + 10
+                spacing: 10
+
+                HifiControls.CheckBox {
+                    id: hapticsBox
+                    width: 15
+                    height: 15
+                    boxRadius: 7
+
+                    onClicked: {
+                        sendConfigurationSettings();
+                    }
+                }
+
+                RalewayBold {
+                    size: 12
+                    text: "Enable Controller Haptics"
+                    color: hifi.colors.lightGrayText
+                }
+            }
+
             RalewayBold {
                 id: bodyTracking
 
@@ -96,8 +121,10 @@ Flickable {
 
                 color: hifi.colors.white
 
+                anchors.top: otherConfig.bottom
                 anchors.left: parent.left
                 anchors.leftMargin: leftMargin
+                anchors.topMargin: 10
             }
 
             RalewayRegular {
@@ -110,6 +137,8 @@ Flickable {
                     left: bodyTracking.right
                     leftMargin: 10
                     verticalCenter: bodyTracking.verticalCenter
+                    topMargin: 10
+                    top: bodyTracking.bottom
                 }
 
                 Rectangle {
@@ -280,10 +309,6 @@ Flickable {
                 }
             }
 
-            Component.onCompleted: {
-                lastConfiguration = composeConfigurationSettings();
-            }
-
             Component.onDestruction: {
                 var settings = InputConfiguration.configurationSettings("OpenXR");
                 var data = {};
@@ -361,7 +386,19 @@ Flickable {
 
             function displayConfiguration() {
                 isConfiguring = true;
+
+                var settings = InputConfiguration.configurationSettings("OpenXR");
+                hapticsBox.checked = settings["enable_haptics"];
+
                 isConfiguring = false;
+            }
+
+            function sendConfigurationSettings() {
+                var settings = InputConfiguration.configurationSettings("OpenXR");
+
+                settings["enable_haptics"] = hapticsBox.checked;
+
+                InputConfiguration.setConfigurationSettings(settings, "OpenXR");
             }
         }
     }

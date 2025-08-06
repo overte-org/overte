@@ -105,6 +105,7 @@ bool OpenXrContext::initInstance() {
     bool userPresenceSupported = false;
     bool odysseyControllerSupported = false;
     bool handTrackingSupported = false;
+    bool palmPoseSupported = false;
     bool MNDX_xdevSpaceSupported = false;
     bool HTCX_viveTrackerInteractionSupported = false;
 
@@ -123,6 +124,8 @@ bool OpenXrContext::initInstance() {
             MNDX_xdevSpaceSupported = true;
         } else if (strcmp(XR_HTCX_VIVE_TRACKER_INTERACTION_EXTENSION_NAME, properties[i].extensionName) == 0) {
             HTCX_viveTrackerInteractionSupported = true;
+        } else if (strcmp(XR_EXT_PALM_POSE_EXTENSION_NAME, properties[i].extensionName) == 0) {
+            palmPoseSupported = true;
         }
     }
 
@@ -154,6 +157,11 @@ bool OpenXrContext::initInstance() {
     if (HTCX_viveTrackerInteractionSupported) {
         enabled.push_back(XR_HTCX_VIVE_TRACKER_INTERACTION_EXTENSION_NAME);
         _HTCX_viveTrackerInteractionSupported = true;
+    }
+
+    if (palmPoseSupported) {
+        enabled.push_back(XR_EXT_PALM_POSE_EXTENSION_NAME);
+        _palmPoseSupported = true;
     }
 
     XrInstanceCreateInfo info = {
@@ -334,6 +342,10 @@ bool OpenXrContext::initSystem() {
     if (qApp->arguments().contains("--xrNoBodyTracking")) {
         _MNDX_xdevSpaceSupported = false;
         _HTCX_viveTrackerInteractionSupported = false;
+    }
+
+    if (qApp->arguments().contains("--xrNoPalmPose")) {
+        _palmPoseSupported = false;
     }
 
     // disable the MNDX tracker extension if they're both available
