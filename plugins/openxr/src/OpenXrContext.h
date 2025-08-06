@@ -89,6 +89,8 @@ public:
     PFN_xrLocateHandJointsEXT xrLocateHandJointsEXT = nullptr;
     PFN_xrDestroyHandTrackerEXT xrDestroyHandTrackerEXT = nullptr;
 
+    bool _palmPoseSupported = false;
+
     bool _MNDX_xdevSpaceSupported = false;
     PFN_xrCreateXDevListMNDX xrCreateXDevListMNDX = nullptr;
     PFN_xrGetXDevListGenerationNumberMNDX xrGetXDevListGenerationNumberMNDX = nullptr;

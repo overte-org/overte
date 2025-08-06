@@ -64,6 +64,7 @@ private:
         XrActionStateVector2f getVector2f();
         XrActionStateBoolean getBool();
         XrSpaceLocation getPose();
+        bool isPoseActive();
         bool applyHaptic(XrDuration duration, float frequency, float amplitude);
 
         XrAction _action = XR_NULL_HANDLE;
@@ -121,6 +122,8 @@ private:
         bool _wantsCalibrate = false;
 
         XrHandTrackerEXT _handTracker[2] = {XR_NULL_HANDLE, XR_NULL_HANDLE};
+
+        bool _hapticsEnabled = true;
 
         bool initActions();
         bool initBindings(const std::string& profileName, const std::map<std::string, std::string>& actionsToBind);
