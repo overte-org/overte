@@ -181,7 +181,7 @@
                 fetchedServers.push(metaverseServers[q].url);
             }
         }
-        Settings.setValue(SETTING_METAVERSE_TO_FETCH, fetchedServers);        
+        Settings.setValue(SETTING_METAVERSE_TO_FETCH, fetchedServers);
     }
 
     function onHostChanged(host) {

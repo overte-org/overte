@@ -317,14 +317,14 @@
                                     
                             placeRecords[i].accessStatus
                                 //String (Possible values: FULL/LIFE/NOBODY 
-                                //This indicate if there are presence of people or not, and if the domain is full capacity.
+                                //This indicates if there are presence of people or not, and if the domain is at full capacity.
                                 //This will be used to display "Life" indicator (green) or "Full" (red)
                                 
                             placeRecords[i].domainAccessStatus
                                 //String (Possible values: FULL/LIFE/NOBODY 
-                                //This indicate if there are presence of people or not, and if the domain is full capacity.
+                                //This indicates if there are presence of people or not, and if the domain is at full capacity.
                                 //This will be used to display "Life" indicator (green) or "Full" (red)
-                                //But this one is never overriden in case there is a place specific count to 0.
+                                //But this one is overridden in case there is a place specific count to 0.
                                 
                             placeRecords[i].name
                                 //String (This is the name of the Place. We might want a keyword filter based on this content)
@@ -346,7 +346,7 @@
                                 Number (The number of people currently in the Domain. domain.num_users)
                                 
                             placeRecords[i].place_attendance
-                                Number (The number of people currently in this spacific Domain. Default -1, available only if the place is in the domain where the user is currently connected to. In that cause it must be 0 or greater)
+                                Number (The number of people currently in this specific Place in the domain. Default -1, available only if the place is in the domain where the user is currently connected to. In that case, it must be 0 or greater)
                             
                             placeRecords[i].id
                                 String (This is the place ID, this can be used for any external storage)
