@@ -185,6 +185,8 @@
     }
 
     function onHostChanged(host) {
+        sendPersistedMaturityFilter();
+        transmitPortalList();
         sendCurrentLocationToUI();
     }
 
