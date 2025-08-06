@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Build Windows
 
-*Last Updated on 2025-06-28*
+*Last Updated on 2025-08-01*
 
 This is a stand-alone guide for creating your first Overte build for Windows 64-bit.
 
@@ -49,6 +49,10 @@ Download and install Conan from the [Conan website](https://conan.io/downloads).
 Next, add the Overte remote to Conan:
 ```bash
 conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte
+```
+We also need to generate a default Conan profile:
+```
+conan profile detect
 ```
 
 ## Step 4. Installing CMake
