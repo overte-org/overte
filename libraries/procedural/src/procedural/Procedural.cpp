@@ -401,7 +401,7 @@ void Procedural::prepare(gpu::Batch& batch,
                             for (const QJsonValue& value : valueArray) {
                                 if (value.isArray()) {
                                     const QJsonArray innerValueArray = value.toArray();
-                                    if (innerValueArray.size() == valueLength) {
+                                    if (static_cast<size_t>(innerValueArray.size()) == valueLength) {
                                         if (valueLength == 3 || valueLength == 4 || valueLength == 9 || valueLength == 16) {
                                             count++;
                                             isArrayUniform = true;
@@ -533,7 +533,7 @@ void Procedural::setupUniforms() {
                     for (const QJsonValue& value : valueArray) {
                         if (value.isArray()) {
                             const QJsonArray innerValueArray = value.toArray();
-                            if (innerValueArray.size() == valueLength) {
+                            if (static_cast<size_t>(innerValueArray.size()) == valueLength) {
                                 if (valueLength == 3 || valueLength == 4 || valueLength == 9 || valueLength == 16) {
                                     for (size_t i = 0; i < valueLength; i++) {
                                         vs.push_back(innerValueArray[i].toDouble());
