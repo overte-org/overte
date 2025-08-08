@@ -184,8 +184,8 @@ function ChatBubbles_SpawnBubble(data, senderID) {
             canCastShadow: false,
             billboardMode: "yaw",
             alignment: "center",
-            verticalAlignment: "top",
-            topMargin: 0.015,
+            verticalAlignment: "center",
+            topMargin: -0.004 * scale, // center isn't exactly centered?
             grab: {grabbable: false},
             renderLayer: "front",
             script: (link === undefined && !linkIsImage) ? undefined :
@@ -200,11 +200,10 @@ function ChatBubbles_SpawnBubble(data, senderID) {
         }, "local");
 
         Script.setTimeout(() => {
-            const { dimensions, text } = Entities.getEntityProperties(bubbleEntity, ["dimensions", "text"]);
             const size = Entities.textSize(bubbleEntity, text);
             Entities.editEntity(bubbleEntity, {
                 visible: true,
-                dimensions: [size.width + 0.06, dimensions.y, 0.01],
+                dimensions: [size.width + (0.06 * scale), size.height + (0.04 * scale), 0.01],
             });
         }, 100);
         // this wait time is annoyingly inconsistent,
@@ -213,7 +212,7 @@ function ChatBubbles_SpawnBubble(data, senderID) {
 
     for (const bubble of Object.values(currentBubbles[senderID])) {
         let { localPosition } = Entities.getEntityProperties(bubble.entity, "localPosition");
-        localPosition = Vec3.sum(localPosition, [0, height + 0.05, 0]);
+        localPosition = Vec3.sum(localPosition, [0, height + (0.05 * scale), 0]);
         Entities.editEntity(bubble.entity, { localPosition: localPosition });
     }
 
