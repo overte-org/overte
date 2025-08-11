@@ -389,6 +389,7 @@ function makeNameTag(uuid) {
         .add("localPosition", localPosition)
         .add("grab", { grabbable: false })
         .add("ignorePickIntersection", true)
+        .add("renderLayer", "front")
         .add("alignment", "center")
         .add("textEffect", "outline fill")
         .add("textEffectColor", [0, 0, 0])
