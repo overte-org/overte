@@ -9,7 +9,5 @@ compiler.runtime_type=Debug
 build_type=Debug
 # Build fails on Windows with C++17
 webrtc-audio-processing*:compiler.cppstd=20
-# Qt debug builds contain asserts which usually just get in our way.
-qt/*:build_type=RelWithDebInfo
 [options]
 Overte/*:qt_source=source
