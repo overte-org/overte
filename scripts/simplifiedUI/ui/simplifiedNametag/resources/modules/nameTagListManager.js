@@ -388,6 +388,12 @@ function makeNameTag(uuid) {
         .add("parentID", parentID)
         .add("localPosition", localPosition)
         .add("grab", { grabbable: false })
+        .add("ignorePickIntersection", true)
+        .add("renderLayer", "front")
+        .add("alignment", "center")
+        .add("textEffect", "outline fill")
+        .add("textEffectColor", [0, 0, 0])
+        .add("textEffectThickness", 0.4)
         .create(CLEAR_ENTITY_EDIT_PROPS);
 
     Script.setTimeout(function () {
