@@ -23,11 +23,7 @@
 #include "scripting/HMDScriptingInterface.h"
 #include "Application.h"
 
-AboutUtil::AboutUtil(QObject *parent) : QObject(parent) {
-    QLocale locale;
-    _dateConverted = QDate::fromString(BuildInfo::BUILD_TIME, "dd/MM/yyyy").
-            toString(locale.dateFormat(QLocale::ShortFormat));
-}
+AboutUtil::AboutUtil(QObject *parent) : QObject(parent) {}
 
 AboutUtil *AboutUtil::getInstance() {
     static AboutUtil instance;
@@ -35,7 +31,7 @@ AboutUtil *AboutUtil::getInstance() {
 }
 
 QString AboutUtil::getBuildDate() const {
-    return _dateConverted;
+    return BuildInfo::BUILD_TIME;
 }
 
 QString AboutUtil::getBuildVersion() const {
