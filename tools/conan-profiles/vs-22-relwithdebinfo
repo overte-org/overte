@@ -9,5 +9,7 @@ compiler.runtime_type=RelWithDebInfo
 build_type=RelWithDebInfo
 # Build fails on Windows with C++17
 webrtc-audio-processing*:compiler.cppstd=20
+# libnode's build system seems to only support Release and Debug on Windows. RelWithDebInfo is not a valid option.
+libnode/*:build_type=Debug
 [options]
 Overte/*:qt_source=source
