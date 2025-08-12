@@ -16,7 +16,11 @@
 #include <QJsonObject>
 #include <QNetworkReply>
 #include <QProcess>
+
+#if !defined(Q_OS_WIN)
+#include <QMessageBox>
 #include <csignal>
+#endif
 
 #include <NumericalConstants.h>
 #include <SharedUtil.h>
@@ -106,11 +110,17 @@ void runLocalSandbox(QString contentPath, bool autoShutdown, bool noUpdater) {
         &domainPid
     );
 
-    if (!domainSuccess) { return; }
-    qCDebug(networking) << "Domain server successfully launched";
+    if (domainSuccess) {
+        qCDebug(networking) << "Sandbox domain-server started";
+    } else {
+        qCCritical(networking) << "Sandbox domain-server couldn't be started";
+        // safe to use QMessageBox because SandboxUtils is only used by interface
+        QMessageBox::critical(nullptr, "Sandbox Server Error", "The domain-server executable couldn't be started. Overte will continue running without the sandbox server.");
+        return;
+    }
 
     assignmentArgs << "--parent-pid" << QString::number(myPid);
-    assignmentArgs << "-n" << QString::number(7);
+    assignmentArgs << "-n7";
 
     auto assignmentSuccess = QProcess::startDetached(
         "./assignment-client/assignment-client",
@@ -119,13 +129,17 @@ void runLocalSandbox(QString contentPath, bool autoShutdown, bool noUpdater) {
         &assignmentPid
     );
 
-    if (!assignmentSuccess) {
+    if (assignmentSuccess) {
+        qCDebug(networking) << "Sandbox assignment-client started";
+    } else {
+        qCCritical(networking) << "Sandbox assignment-client failed to start";
+
         // kill the domain server if we can't start the assignment client
         if (domainPid) { kill(domainPid, SIGINT); }
-        return;
-    }
 
-    qCDebug(networking) << "Assignment client successfully launched";
+        // safe to use QMessageBox because SandboxUtils is only used by interface
+        QMessageBox::critical(nullptr, "Sandbox Server Error", "The assignment-client executable couldn't be started. Overte will continue running without the sandbox server.");
+    }
 #endif
 }
 
