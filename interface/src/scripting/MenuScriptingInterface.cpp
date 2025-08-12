@@ -20,6 +20,10 @@
 #include <MenuItemProperties.h>
 #include "Menu.h"
 
+MenuScriptingInterface::MenuScriptingInterface() {
+    connect(qApp, &Application::menuBarVisibilityChanged, this, &MenuScriptingInterface::visibilityChanged);
+}
+
 MenuScriptingInterface* MenuScriptingInterface::getInstance() {
     static MenuScriptingInterface sharedInstance;
     return &sharedInstance;
@@ -220,21 +224,9 @@ void MenuScriptingInterface::triggerOption(const QString& menuOption) {
 }
 
 void MenuScriptingInterface::setVisible(bool visible) {
-    if (QThread::currentThread() != qApp->thread()) {
-        QMetaObject::invokeMethod(this, "setVisible", Q_ARG(bool, visible));
-        return;
-    }
-
-    auto* menuBar = qApp->getWindow()->menuBar();
-    bool wasVisible = menuBar->isVisible();
-
-    if (visible != wasVisible) {
-        menuBar->setVisible(visible);
-
-        emit visibilityChanged(visible);
-    }
+    qApp->setMenuBarVisible(visible);
 }
 
 bool MenuScriptingInterface::isVisible() {
-    return qApp->getWindow()->menuBar()->isVisible();
+    return qApp->getMenuBarVisible();
 }

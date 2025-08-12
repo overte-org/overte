@@ -50,9 +50,9 @@ class MenuItemProperties;
 
 class MenuScriptingInterface : public QObject {
     Q_OBJECT
-    Q_PROPERTY(bool visible READ isVisible WRITE setVisible NOTIFY visibilityChanged)
+    Q_PROPERTY(bool visible READ isVisible WRITE setVisible)
 
-    MenuScriptingInterface() { };
+    MenuScriptingInterface();
 public:
     static MenuScriptingInterface* getInstance();
 
