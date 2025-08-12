@@ -220,6 +220,11 @@ void MenuScriptingInterface::triggerOption(const QString& menuOption) {
 }
 
 void MenuScriptingInterface::setVisible(bool visible) {
+    if (QThread::currentThread() != qApp->thread()) {
+        QMetaObject::invokeMethod(this, "setVisible", Q_ARG(bool, visible));
+        return;
+    }
+
     auto* menuBar = qApp->getWindow()->menuBar();
     bool wasVisible = menuBar->isVisible();
 
