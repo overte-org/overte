@@ -389,6 +389,7 @@
     }
 
     function processData(metaverseInfo){
+        placesOfTheCurrentDomain = [];
         var supportedProtocole = Window.protocolSignature();
         
         var places = placesData.data.places;

@@ -522,7 +522,7 @@
                     "address": address
                     };
                 EventBridge.emitWebEvent(JSON.stringify(teleportOrder));
-                
+                reload();
             }
 
             function rezPortal(name, address, placeID) {
@@ -534,7 +534,7 @@
                     "placeID": placeID
                     };
                 EventBridge.emitWebEvent(JSON.stringify(portalOrder));
-                
+                closeDetail();
             }
 
             function copyPlaceURL(address) {
@@ -593,8 +593,8 @@
                     };
                 EventBridge.emitWebEvent(JSON.stringify(message));
                 document.getElementById("reloading").innerHTML = "RELOADING...";
-                sleepFor(210);                
-                reload();                
+                sleepFor(210);
+                reload();
             }
 
             function filterLifeOnly() {
