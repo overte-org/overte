@@ -263,11 +263,6 @@ void setupPreferences() {
         auto setter = [](bool value) { qApp->setCameraClippingEnabled(value); };
         preferences->addPreference(new CheckPreference(VIEW_CATEGORY, "Enable 3rd Person Camera Clipping?", getter, setter));
     }
-    {
-        auto getter = [myAvatar]()->bool { return myAvatar->getHeadClippingEnabled(); };
-        auto setter = [myAvatar](bool value) { myAvatar->setHeadClippingEnabled(value); };
-        preferences->addPreference(new CheckPreference(VIEW_CATEGORY, "Hide Head in 1st Person", getter, setter));
-    }
 
     // Snapshots
     static const QString SNAPSHOTS { "Snapshots" };
