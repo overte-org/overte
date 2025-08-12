@@ -478,6 +478,7 @@
                     }
                 }
                 portalList[placesOfTheCurrentDomain[i].index].place_attendance = count;
+                portalList[placesOfTheCurrentDomain[i].index].current_attendance = presences.length;
                 if (count === 0) {
                     portalList[placesOfTheCurrentDomain[i].index].accessStatus = "NOBODY";
                 }
