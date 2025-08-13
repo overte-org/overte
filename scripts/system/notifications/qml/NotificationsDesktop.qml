@@ -64,8 +64,8 @@ Item {
                                     x: doNotDisturbSwitch.leftPadding;
                                     y: parent.height / 2 - height / 2 + 5;
                                     radius: 13;
-                                    color: doNotDisturbSwitch.checked ? "#17a81a" : "#ffffff";
-                                    border.color: doNotDisturbSwitch.checked ? "#17a81a" : "#cccccc";
+                                    color: doNotDisturbSwitch.checked ? "#5153bd" : "#ffffff";
+                                    border.color: doNotDisturbSwitch.checked ? "#5153bd" : "#cccccc";
 
                                     Rectangle {
                                         x: doNotDisturbSwitch.checked ? parent.width - width : 0;
@@ -73,7 +73,7 @@ Item {
                                         height: 20;
                                         radius: 13;
                                         color: doNotDisturbSwitch.down ? "#cccccc" : "#ffffff";
-                                        border.color: doNotDisturbSwitch.checked ? (doNotDisturbSwitch.down ? "#17a81a" : "#21be2b") : "#999999";
+                                        border.color: doNotDisturbSwitch.checked ? (doNotDisturbSwitch.down ? "#5153bd" : "#43449dff") : "#999999";
                                     }
                                 }
 
