@@ -11,19 +11,35 @@ Rectangle {
 
 	color: Qt.rgba(0,0,0,0.95);
 	width: parent && parent.width || 0;
-	height: children[0].contentHeight;
+	height: children[0].height;
 	radius: 5;
 	clip: true;
 	id: root;
-	
-	Text {
+
+	Column {
+		height: children[0].contentHeight + children[1].contentHeight + 10;
 		width: parent.width - 10;
 		anchors.centerIn: parent;
-		color: "white";
-		text: chatAuthor + ":\n " + chatMessage;
-		font.pixelSize: 16;
-		wrapMode: Text.Wrap;
-		horizontalAlignment: Text.AlignLeft;
+		clip: true;
+
+		Text {
+			width: parent.width - 10;
+			color: "white";
+			text: chatAuthor;
+			font.pixelSize: 16;
+			wrapMode: Text.Wrap;
+			horizontalAlignment: Text.AlignLeft;
+		}
+
+		Text {
+			width: parent.width - 20;
+			color: "white";
+			text: chatMessage;
+			font.pixelSize: 16;
+			wrapMode: Text.Wrap;
+			horizontalAlignment: Text.AlignLeft;
+			anchors.horizontalCenter: parent.horizontalCenter;
+		}
 	}
 
 	Behavior on height {
