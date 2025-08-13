@@ -17,6 +17,7 @@ Rectangle {
 	id: root;
 
 	Column {
+		id: messageNotification;
 		height: children[0].contentHeight + children[1].contentHeight + 10;
 		width: parent.width - 10;
 		anchors.centerIn: parent;
@@ -53,6 +54,13 @@ Rectangle {
 		root.height = Math.max(children[0].contentHeight + 10, 50);
 		fadeoutTimeout.running = true;
 		deleteTimeout.running = true;
+
+		const totalMessageWidth = messageNotification.children[0].contentWidth + messageNotification.children[1].contentWidth;
+
+		if (messageNotification.parent.width - 10 > totalMessageWidth) {
+			messageNotification.width = totalMessageWidth;
+			messageNotification.parent.width = totalMessageWidth + 10;
+		}
 	}
 	
 	Timer {
