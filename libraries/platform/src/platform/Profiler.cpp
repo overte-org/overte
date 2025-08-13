@@ -39,8 +39,13 @@ Profiler::Tier Profiler::profilePlatform() {
         return platformTier;
     }
 
+#ifdef Q_OS_LINUX
+    // GPUIdent.cpp is missing GPU detection on Linux and most currently available GPUs should handle high detail mode.
+    return Profiler::Tier::HIGH;
+#else
     // Default answer is 
     return Profiler::Tier::LOW;
+#endif
 }
 
 // tier filter on computer info

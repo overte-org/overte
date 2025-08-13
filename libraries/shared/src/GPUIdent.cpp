@@ -310,6 +310,8 @@ GPUIdent* GPUIdent::ensureQuery(const QString& vendor, const QString& renderer) 
         _isValid = true;
     }
 
+    // TODO: Linux is not handled here
+
 #endif
     return this;
 }
