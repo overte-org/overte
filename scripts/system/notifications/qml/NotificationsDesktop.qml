@@ -94,15 +94,14 @@ Item {
 
                         Row {
                             Layout.fillHeight: true;
-                            width: 20;
+                            width: 35;
+                            height: 35;
 
-                            Image {
-                                source: "../img/delete.svg";
-                                height: 20;
-                                width: 20;
-                                sourceSize.width: 128;
-                                sourceSize.height: 128;
-                                fillMode: Image.PreserveAspectFit;
+                            Text {
+                                text: "{";
+                                font.family: "hifi-glyphs"
+                                font.pixelSize: 30;
+                                color: Qt.rgba(0.95,0.3,0.3,1);
                                 anchors.centerIn: parent;
 
                                 MouseArea {
