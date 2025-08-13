@@ -96,12 +96,15 @@
         quickMessage.fromQml.connect(fromQML);
     }
     function receivedMessage(channel, message) {
+        const MESSAGE_ACTION_KEY = "sendChatMessage";
+        const MESSAGE_ACTION_KEY_LEGACY = "send_chat_message"; // NOTE: Old key before https://github.com/overte-org/overte/pull/1679. Kept for legacy support.
+
         // Is the message a chat message?
         channel = channel.toLowerCase();
         if (channel !== "chat") return;
         message = JSON.parse(message);
 
-        if (message.action !== "sendChatMessage") return;
+        if (message.action !== MESSAGE_ACTION_KEY && message.action !== MESSAGE_ACTION_KEY_LEGACY) return;
 
         // Get the message data
         const currentTimestamp = _getTimestamp();
