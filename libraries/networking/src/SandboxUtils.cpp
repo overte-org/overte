@@ -17,6 +17,11 @@
 #include <QNetworkReply>
 #include <QProcess>
 
+#if !defined(Q_OS_WIN)
+#include <QMessageBox>
+#include <csignal>
+#endif
+
 #include <NumericalConstants.h>
 #include <SharedUtil.h>
 #include <RunningMarker.h>
@@ -55,6 +60,8 @@ bool readStatus(QByteArray statusData) {
 }
 
 void runLocalSandbox(QString contentPath, bool autoShutdown, bool noUpdater) {
+    // use the current behavior on windows to not break anyone's setup
+#if defined (Q_OS_WIN)
     QString serverPath = "./server-console/server-console.exe";
     qCDebug(networking) << "Server path is: " << serverPath;
     qCDebug(networking) << "autoShutdown: " << autoShutdown;
@@ -85,6 +92,55 @@ void runLocalSandbox(QString contentPath, bool autoShutdown, bool noUpdater) {
 
     qCDebug(networking) << "Launching sandbox with:" << args;
     qCDebug(networking) << QProcess::startDetached(serverPath, args);
+#else
+    auto myPid = QCoreApplication::applicationPid();
+    QStringList domainArgs, assignmentArgs;
+
+    qint64 domainPid = 0, assignmentPid = 0;
+
+    qCDebug(networking) << "Launching sandbox";
+
+    domainArgs << "--parent-pid" << QString::number(myPid);
+    domainArgs << "--get-temp-name";
+
+    auto domainSuccess = QProcess::startDetached(
+        "./domain-server/domain-server",
+        domainArgs,
+        QString(),
+        &domainPid
+    );
+
+    if (domainSuccess) {
+        qCDebug(networking) << "Sandbox domain-server started";
+    } else {
+        qCCritical(networking) << "Sandbox domain-server couldn't be started";
+        // safe to use QMessageBox because SandboxUtils is only used by interface
+        QMessageBox::critical(nullptr, "Sandbox Server Error", "The domain-server executable couldn't be started. Overte will continue running without the sandbox server.");
+        return;
+    }
+
+    assignmentArgs << "--parent-pid" << QString::number(myPid);
+    assignmentArgs << "-n7";
+
+    auto assignmentSuccess = QProcess::startDetached(
+        "./assignment-client/assignment-client",
+        assignmentArgs,
+        QString(),
+        &assignmentPid
+    );
+
+    if (assignmentSuccess) {
+        qCDebug(networking) << "Sandbox assignment-client started";
+    } else {
+        qCCritical(networking) << "Sandbox assignment-client failed to start";
+
+        // kill the domain server if we can't start the assignment client
+        if (domainPid) { kill(domainPid, SIGINT); }
+
+        // safe to use QMessageBox because SandboxUtils is only used by interface
+        QMessageBox::critical(nullptr, "Sandbox Server Error", "The assignment-client executable couldn't be started. Overte will continue running without the sandbox server.");
+    }
+#endif
 }
 
 }
