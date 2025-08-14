@@ -58,7 +58,6 @@ class Overte(ConanFile):
         self.requires("gifcreator/2016.11@overte/stable")
         self.requires("glad/0.1.36")
         self.requires("gli/cci.20210515")
-        self.requires("glslang/1.3.268.0")
         self.requires("liblo/0.30@overte/stable")
         self.requires("libnode/18.20.8@overte/stable")
         self.requires("nlohmann_json/3.11.2")
@@ -72,8 +71,6 @@ class Overte(ConanFile):
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.8")
-        self.requires("spirv-cross/1.3.268.0")
-        self.requires("spirv-tools/1.3.268.0")
         self.requires("steamworks/158a@overte/prebuild")
         self.requires("v-hacd/4.1.0")
         self.requires("vulkan-memory-allocator/3.0.1")
@@ -85,6 +82,10 @@ class Overte(ConanFile):
         # https://github.com/conan-io/conan-center-index/issues/27265
         self.requires("libiconv/1.18", force=True)
         openssl = "openssl/1.1.1q"
+
+        self.requires("glslang/[>=1.3.268.0]")
+        self.requires("spirv-cross/[>=1.3.268.0]")
+        self.requires("spirv-tools/[>=1.3.268.0]")
 
         if self.options.qt_source == "system":
             self.requires("qt/5.15.2@overte/system", force=True)
