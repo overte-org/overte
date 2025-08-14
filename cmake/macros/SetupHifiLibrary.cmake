@@ -2,7 +2,7 @@
 #  SetupHifiLibrary.cmake
 #
 #  Copyright 2013 High Fidelity, Inc.
-#  Copyright 2024 Overte e.V.
+#  Copyright 2024-2025 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -21,7 +21,7 @@ macro(SETUP_HIFI_LIBRARY)
   foreach(SRC ${AVX_SRCS})
     if (WIN32)
       set_source_files_properties(${SRC} PROPERTIES COMPILE_FLAGS /arch:AVX)
-    elseif (APPLE OR (UNIX AND NOT ANDROID))
+    elseif (UNIX AND NOT ANDROID AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
       set_source_files_properties(${SRC} PROPERTIES COMPILE_FLAGS -mavx)
     endif()
   endforeach()
@@ -31,7 +31,7 @@ macro(SETUP_HIFI_LIBRARY)
   foreach(SRC ${AVX2_SRCS})
     if (WIN32)
       set_source_files_properties(${SRC} PROPERTIES COMPILE_FLAGS /arch:AVX2)
-    elseif (APPLE OR (UNIX AND NOT ANDROID AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64"))
+    elseif (UNIX AND NOT ANDROID AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64" AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "arm64")
       set_source_files_properties(${SRC} PROPERTIES COMPILE_FLAGS "-mavx2 -mfma")
     endif()
   endforeach()
