@@ -100,6 +100,11 @@ class Overte(ConanFile):
             self.requires("ovr-skd/1.35.0@overte/prebuild")
             self.requires("ovr-platform-skd/1.10.0@overte/prebuild")
 
+        if self.settings.os == "Macos":
+            self.requires("moltenvk/1.3.0")
+            # MoltenVK and VulkanMemoryAllocator depend on different exact versions of vulkan-headers, so we solve this conflict here.
+            self.requires("vulkan-headers/1.4.313.0", force=True)
+
         self.requires(openssl, force=True)
 
     def generate(self):
