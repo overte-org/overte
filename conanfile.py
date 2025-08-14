@@ -57,7 +57,7 @@ class Overte(ConanFile):
         self.requires("gli/cci.20210515")
         self.requires("glslang/1.3.268.0")
         self.requires("liblo/0.30@overte/stable")
-        self.requires("libnode/18.20.8@overte/stable")
+        self.requires("libnode/22.17.1@overte/experimental#7005e423431c2b43ffc7a1a288099bea")
         self.requires("nlohmann_json/3.11.2")
         self.requires("nvidia-texture-tools/2023.01@overte/stable")
         self.requires("onetbb/2021.10.0")
@@ -75,7 +75,7 @@ class Overte(ConanFile):
         self.requires("v-hacd/4.1.0")
         self.requires("vulkan-memory-allocator/3.0.1")
         self.requires("webrtc-audio-processing/2.1@overte/stable")
-        self.requires("zlib/1.2.13")
+        self.requires("zlib/[>=1.3 <1.4]")
         self.requires("glm/0.9.9.5", force=True)
         self.requires("jsoncpp/1.9.6", force=True)
         # Fixes build errors on GCC 15. Check if this is still required when upgrading from sdl/2.30.3.

@@ -140,7 +140,7 @@ jobs:
         echo "REFNAME=${{ github.ref_name }}" >> $GITHUB_ENV
 
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.arch}}" >> $GITHUB_ENV
-        echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
+        echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
 
         echo "CMAKE_BUILD_EXTRA=-- -j$(nproc)" >> $GITHUB_ENV
 
