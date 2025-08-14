@@ -25,8 +25,10 @@ class Overte(ConanFile):
         "qt*:shared": "True",
         "qt*:gui": "True",
         "qt*:qtdeclarative": "True",
+        "qt*:qtimageformats": "True",  # WebP texture support
         "qt*:qtlocation": "True",
         "qt*:qtmultimedia": "True",
+        "qt*:qtquickcontrols": "True",  # For QtQuick.Dialogs
         "qt*:qtquickcontrols2": "True",
         "qt*:qtscxml": "True",
         "qt*:qtsvg": "True",
@@ -35,6 +37,7 @@ class Overte(ConanFile):
         "qt*:qtwebsockets": "True",
         "qt*:qtwebview": "True",
         "qt*:qtxmlpatterns": "True",
+        "qt*:qttools": "True",  # windeployqt for Windows
         "glad*:spec": "gl",
         "glad*:gl_profile": "core",
         "glad*:gl_version": "4.6",
@@ -90,9 +93,7 @@ class Overte(ConanFile):
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
-            self.requires("qt/5.15.16-2025.01.23@overte/stable", force=True)
-            # Upstream NSS is broken, so we use https://github.com/conan-io/conan-center-index/pull/19262/commits/735df499341924901089fd512a8ac56ac83d1e6a
-            self.requires("nss/3.107@overte/stable", force=True)
+            self.requires("qt/5.15.17-2025.06.07@overte/stable#7f723980c8ffcae0e832156b5857c396", force=True)
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")

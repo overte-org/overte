@@ -5,9 +5,11 @@ compiler=msvc
 compiler.cppstd=17
 compiler.version=194
 compiler.runtime=dynamic
-compiler.runtime_type=RelWithDebInfo
+compiler.runtime_type=Release
 build_type=RelWithDebInfo
 # Build fails on Windows with C++17
 webrtc-audio-processing*:compiler.cppstd=20
+# libnode's build system seems to only support Release and Debug on Windows. RelWithDebInfo is not a valid option.
+libnode/*:build_type=Release
 [options]
-Overte/*:qt_source=aqt
+Overte/*:qt_source=source
