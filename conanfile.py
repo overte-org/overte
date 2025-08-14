@@ -83,9 +83,9 @@ class Overte(ConanFile):
         self.requires("libiconv/1.18", force=True)
         openssl = "openssl/1.1.1q"
 
-        self.requires("glslang/[>=1.3.268.0]")
-        self.requires("spirv-cross/[>=1.3.268.0]")
-        self.requires("spirv-tools/[>=1.3.268.0]")
+        self.requires("glslang/[>=1.3.268.0 <2.0]")
+        self.requires("spirv-cross/[>=1.3.268.0 <2.0]")
+        self.requires("spirv-tools/[>=1.3.268.0 <2.0]")
 
         if self.options.qt_source == "system":
             self.requires("qt/5.15.2@overte/system", force=True)
