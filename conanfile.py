@@ -140,7 +140,7 @@ class Overte(ConanFile):
                     "CMAKE_CXX_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
                     "CMAKE_C_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
                     })
-            elif self.settings.compiler == "clang":
+            elif self.settings.compiler == "clang" or self.settings.compiler == "apple-clang":
                 self.output.status("Clang compiler detected, setting default flags.")
                 tc.cache_variables.update({
                     "CMAKE_CXX_FLAGS_DEBUG_INIT": "-Og -g",
