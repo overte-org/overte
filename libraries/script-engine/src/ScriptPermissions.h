@@ -20,6 +20,7 @@ class ScriptPermissions {
 public:
     enum class Permission {
         SCRIPT_PERMISSION_GET_AVATAR_URL,
+        SCRIPT_PERMISSION_BOOKMARKS,
         SCRIPT_PERMISSIONS_SIZE
     };
 
