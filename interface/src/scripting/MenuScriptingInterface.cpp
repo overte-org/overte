@@ -10,6 +10,8 @@
 //
 
 #include "MenuScriptingInterface.h"
+#include "Application.h"
+#include "MainWindow.h"
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QThread>
@@ -17,6 +19,10 @@
 #include <shared/QtHelpers.h>
 #include <MenuItemProperties.h>
 #include "Menu.h"
+
+MenuScriptingInterface::MenuScriptingInterface() {
+    connect(qApp, &Application::menuBarVisibilityChanged, this, &MenuScriptingInterface::visibilityChanged);
+}
 
 MenuScriptingInterface* MenuScriptingInterface::getInstance() {
     static MenuScriptingInterface sharedInstance;
@@ -215,4 +221,12 @@ void MenuScriptingInterface::triggerOption(const QString& menuOption) {
     }
 
     QMetaObject::invokeMethod(menuInstance, "triggerOption", Q_ARG(const QString&, menuOption));
+}
+
+void MenuScriptingInterface::setVisible(bool visible) {
+    qApp->setMenuBarVisible(visible);
+}
+
+bool MenuScriptingInterface::isVisible() {
+    return qApp->getMenuBarVisible();
 }

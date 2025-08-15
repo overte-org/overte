@@ -1237,6 +1237,7 @@ void Application::loadSettings(const QCommandLineParser& parser) {
     // dictated that we should be in first person
     Menu::getInstance()->setIsOptionChecked(MenuOption::FirstPersonLookAt, isFirstPerson);
     Menu::getInstance()->setIsOptionChecked(MenuOption::ThirdPerson, !isFirstPerson);
+    Menu::getInstance()->setVisible(_menuBarVisible.get());
     _myCamera.setMode((isFirstPerson) ? CAMERA_MODE_FIRST_PERSON_LOOK_AT : CAMERA_MODE_LOOK_AT);
     cameraMenuChanged();
 
