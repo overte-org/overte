@@ -92,7 +92,7 @@ AvatarMixer::AvatarMixer(ReceivedMessage& message) :
         PacketReceiver::makeSourcedListenerReference<AvatarMixer>(this, &AvatarMixer::queueIncomingPacket));
     packetReceiver.registerListener(PacketType::BulkAvatarTraitsAck,
         PacketReceiver::makeSourcedListenerReference<AvatarMixer>(this, &AvatarMixer::queueIncomingPacket));
-    packetReceiver.registerListenerForTypes({ PacketType::OctreeStats, PacketType::EntityData, PacketType::EntityErase },
+    packetReceiver.registerListenerForTypes({ PacketType::OctreeStats, PacketType::EntityData, PacketType::EntityDataLarge, PacketType::EntityErase },
         PacketReceiver::makeSourcedListenerReference<AvatarMixer>(this, &AvatarMixer::handleOctreePacket));
 
     packetReceiver.registerListenerForTypes({
@@ -1124,6 +1124,7 @@ void AvatarMixer::handleOctreePacket(QSharedPointer<ReceivedMessage> message, Sh
     }
 
     case PacketType::EntityData:
+    case PacketType::EntityDataLarge:
         _entityViewer.processDatagram(*message, senderNode);
         break;
 

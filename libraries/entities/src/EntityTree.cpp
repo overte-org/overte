@@ -277,6 +277,7 @@ bool EntityTree::handlesEditPacketType(PacketType packetType) const {
         case PacketType::EntityAdd:
         case PacketType::EntityClone:
         case PacketType::EntityEdit:
+        case PacketType::EntityEditLarge:
         case PacketType::EntityErase:
         case PacketType::EntityPhysics:
             return true;
@@ -1492,7 +1493,8 @@ int EntityTree::processEditPacketData(ReceivedMessage& message, const unsigned c
             isAdd = true;  // fall through to next case
             // FALLTHRU
         case PacketType::EntityPhysics:
-        case PacketType::EntityEdit: {
+        case PacketType::EntityEdit:
+        case PacketType::EntityEditLarge: {
             quint64 startDecode = 0, endDecode = 0;
             quint64 startLookup = 0, endLookup = 0;
             quint64 startUpdate = 0, endUpdate = 0;

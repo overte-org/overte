@@ -130,7 +130,8 @@ public:
     bool containsDimensionsChange() const { return _dimensionsChanged; }
 
     static OctreeElement::AppendState encodeEntityEditPacket(PacketType command, EntityItemID id, const EntityItemProperties& properties,
-                                       QByteArray& buffer, EntityPropertyFlags requestedProperties, EntityPropertyFlags& didntFitProperties);
+                                       QByteArray& buffer, EntityPropertyFlags requestedProperties, EntityPropertyFlags& didntFitProperties,
+                                       EntityPropertyList& firstDidntFitProperty);
 
     static bool encodeEraseEntityMessage(const EntityItemID& entityItemID, QByteArray& buffer);
     static bool encodeCloneEntityMessage(const EntityItemID& entityIDToClone, const EntityItemID& newEntityID, QByteArray& buffer);
