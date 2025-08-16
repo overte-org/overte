@@ -55,9 +55,8 @@ class Overte(ConanFile):
         self.requires("gifcreator/2016.11@overte/stable")
         self.requires("glad/0.1.36")
         self.requires("gli/cci.20210515")
-        self.requires("glslang/1.3.268.0")
         self.requires("liblo/0.30@overte/stable")
-        self.requires("libnode/18.20.8@overte/stable")
+        self.requires("libnode/22.17.1@overte/experimental#14ceeda4d31bb29f436ec947fb1e8152")
         self.requires("nlohmann_json/3.11.2")
         self.requires("nvidia-texture-tools/2023.01@overte/stable")
         self.requires("onetbb/2021.10.0")
@@ -69,19 +68,21 @@ class Overte(ConanFile):
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.30.3")
-        self.requires("spirv-cross/1.3.268.0")
-        self.requires("spirv-tools/1.3.268.0")
         self.requires("steamworks/158a@overte/prebuild")
         self.requires("v-hacd/4.1.0")
         self.requires("vulkan-memory-allocator/3.0.1")
         self.requires("webrtc-audio-processing/2.1@overte/stable")
-        self.requires("zlib/1.2.13")
+        self.requires("zlib/[>=1.3 <1.4]")
         self.requires("glm/0.9.9.5", force=True)
         self.requires("jsoncpp/1.9.6", force=True)
         # Fixes build errors on GCC 15. Check if this is still required when upgrading from sdl/2.30.3.
         # https://github.com/conan-io/conan-center-index/issues/27265
         self.requires("libiconv/1.18", force=True)
         openssl = "openssl/1.1.1q"
+
+        self.requires("glslang/[>=1.3.268.0 <2.0]")
+        self.requires("spirv-cross/[>=1.3.268.0 <2.0]")
+        self.requires("spirv-tools/[>=1.3.268.0 <2.0]")
 
         if self.options.qt_source == "system":
             self.requires("qt/5.15.2@overte/system", force=True)
@@ -98,6 +99,11 @@ class Overte(ConanFile):
             self.requires("neuron/12.2@overte/prebuild")
             self.requires("ovr-skd/1.35.0@overte/prebuild")
             self.requires("ovr-platform-skd/1.10.0@overte/prebuild")
+
+        if self.settings.os == "Macos":
+            self.requires("moltenvk/1.3.0")
+            # MoltenVK and VulkanMemoryAllocator depend on different exact versions of vulkan-headers, so we solve this conflict here.
+            self.requires("vulkan-headers/1.4.313.0", force=True)
 
         self.requires(openssl, force=True)
 
@@ -139,7 +145,7 @@ class Overte(ConanFile):
                     "CMAKE_CXX_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
                     "CMAKE_C_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
                     })
-            elif self.settings.compiler == "clang":
+            elif self.settings.compiler == "clang" or self.settings.compiler == "apple-clang":
                 self.output.status("Clang compiler detected, setting default flags.")
                 tc.cache_variables.update({
                     "CMAKE_CXX_FLAGS_DEBUG_INIT": "-Og -g",
