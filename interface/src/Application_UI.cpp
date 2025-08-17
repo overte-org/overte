@@ -1449,3 +1449,19 @@ void Application::addAssetToWorldError(QString modelName, QString errorText) {
 
     _addAssetToWorldErrorTimer.start();
 }
+
+void Application::setMenuBarVisible(bool visible) {
+    if (QThread::currentThread() != qApp->thread()) {
+        QMetaObject::invokeMethod(this, "setMenuBarVisible", Q_ARG(bool, visible));
+        return;
+    }
+
+    auto* menuBar = qApp->getWindow()->menuBar();
+    bool wasVisible = menuBar->isVisible();
+
+    if (visible != wasVisible) {
+        _menuBarVisible.set(visible);
+        menuBar->setVisible(visible);
+        emit menuBarVisibilityChanged(visible);
+    }
+}
