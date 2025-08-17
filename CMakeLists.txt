@@ -10,7 +10,8 @@
 SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
 # 3.24 is the minimum version that supports CMAKE_COMPILE_WARNING_AS_ERROR
 cmake_minimum_required(VERSION 3.24)
-
+# Avoid CMP0177 policy warning introduced in CMake 3.31.
+cmake_policy(VERSION 3.24...3.31)
 include(SelectLibraryConfigurations)
 
 # Instruct CMake to run moc automatically when needed.
