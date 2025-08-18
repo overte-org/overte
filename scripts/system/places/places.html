@@ -42,6 +42,9 @@
             var NUMBER_OF_RECORDS_PER_LOAD = 20;
             var loadRecordsUpTo = NUMBER_OF_RECORDS_PER_LOAD;
             var currentListFormat = "PLACES";
+            
+            var locationBookmarks = {};
+            var bookmarkEditMode = false;
         </script>
     </head>
     <body>
@@ -82,6 +85,13 @@
                 <button title="Tags" class='fieldsSearchFilterOn' id='searchFilterTags' onClick = 'filterSearchField("tags");'>TAGS</button>
                 &nbsp;&nbsp;&nbsp;
                 </div>
+                <div id="noFiltersBar">&nbsp;</div>
+                <div id="bookmarkToolBar">
+                    <button class='bookmarkCreate' id='bookmarkAdd' onClick = 'addBookmark();'>+ Bookmark Location</button>&nbsp;
+                    <button class='bookmarkCreate' id='bookmarkHome' onClick = 'setHomeBookmark();'>Set Home Location</button>&nbsp;&nbsp;&nbsp;
+                    <button class='bookmarkActionOff' id='bookmarkEditMode' onClick = 'toggleBookmarkEditMode();'>MANAGE</button>
+                </div>
+                <div id="placesFiltersBar">
                 <button class='localFilterOn' id='localPlacesFilter' onClick = 'filterRegion("local");'>LOC</button>
                 <button class='federationFilterOn' id='fedPlacesFilter' onClick = 'filterRegion("federation");'>FED</button>
                 <button class='externalFilterOn' id='extPlacesFilter' onClick = 'filterRegion("external");'>EXT</button>
@@ -93,12 +103,13 @@
                 <button title="Teen" class='teenFilterOn' id='maturityTeen' onClick = 'filterMaturity("teen");'>T</button>
                 <button title="Everyone" class='everyoneFilterOn' id='maturityEveryone' onClick = 'filterMaturity("everyone");'>E</button>
                 <button title="Unrated" class='unratedFilterOn' id='maturityUnrated' onClick = 'filterMaturity("unrated");'>U</button>
+                </div>
             </div>
             <div id='tabs'>
                 <button id='listFormatMetaverse' class='tabBtn' onclick='displayTab("REGIONS");' >Regions</button>
                 <button id='listFormatDomains' class='tabBtn' onclick='displayTab("DOMAINS");'>Domains</button>
                 <button id='listFormatPlaces' class='tabBtn' onclick='displayTab("PLACES");' disabled>Places</button>
-                
+                <button id='listFormatBookmarks' class='tabBtn' onclick='displayTab("BOOKMARKS");'>Bookmarks</button>
             </div>
         </div>
         <div id='list_content'><br>&nbsp;&nbsp;Loading...</div>
@@ -138,6 +149,29 @@
                 </table>
           </div>
         </div>
+        <div id="bookmarkNameEditor" class="overlay">
+            <div id='bookmarkEditorAddUi'>
+                <br><br><br><br><br><br>
+                <h1 class='popupTitle'>Bookmark the current location</h1><br>
+                Name: <input id='nameAddBookmark' type = 'text' maxlength='64'><br><br>
+                <div style = 'text-align: right;'>
+                    <button class='BookMarkNameEditorAction' id='saveBookMarkActionAdd' onClick='requestBookmarkToAdd();'>Save</button>&nbsp;&nbsp;
+                    <button class='BookMarkNameEditorAction' id='cancelBookMarkActionAdd' onClick='cancelBookMarkAction();'>Cancel</button>
+                </div>
+            </div>
+            <div id='bookmarkEditorRenameUi'>
+                <br><br><br><br><br><br>
+                <h1 class='popupTitle'>Rename Bookmark</h1><br>
+                Url: <span id='bookmarkUrl'></span><br><br>
+                Name: <input id='nameRenameBookmark' type = 'text' maxlength='64'>
+                <input type='hidden' id='originalName'>
+                <input type='hidden' id='urlRenameBookmark'><br><br>
+                <div style = 'text-align: right;'>
+                    <button class='BookMarkNameEditorAction' id='saveBookMarkActionRename' onClick='requestBookmartToRename();'>Rename</button>&nbsp;&nbsp;
+                    <button class='BookMarkNameEditorAction' id='cancelBookMarkActionRename' onClick='cancelBookMarkAction();'>Cancel</button>
+                </div>
+            </div>
+        </div>
 
         <script>
             //LISTENER FROM JS FILE:
@@ -156,6 +190,12 @@
                 if (message.channel === channel && message.action === "MATURITY_FILTER") {
                     maturityFilter = message.filter;
                     displayMaturityFilter();
+                }
+                if (message.channel === channel && message.action === "BOOKMARKS_DATA") {
+                    locationBookmarks = message.data;
+                    if (currentListFormat === "BOOKMARKS") {
+                        generateContent();
+                    }
                 }
             });
             
@@ -182,6 +222,88 @@
                 document.getElementById("currentLocation").value = currentLocation;
             }
 
+            function toggleBookmarkEditMode() {
+                if (bookmarkEditMode) {
+                    bookmarkEditMode = false;
+                    document.getElementById("bookmarkEditMode").className = "bookmarkActionOff";
+                } else {
+                    bookmarkEditMode = true;
+                    document.getElementById("bookmarkEditMode").className = "bookmarkActionOn";
+                }
+                generateContent();
+            }
+
+            function deleteBookmark(name) {
+                let bookmarkOrder = {
+                    "channel": channel,
+                    "action": "DELETE_BOOKMARK",
+                    "name": name
+                };
+                EventBridge.emitWebEvent(JSON.stringify(bookmarkOrder));
+            }
+
+            function renameBookmark(name, url) {
+                document.getElementById("originalName").value = name;
+                document.getElementById("nameRenameBookmark").value = name;
+                document.getElementById("bookmarkUrl").innerHTML = url;
+                document.getElementById("bookmarkEditorAddUi").style.display = "none";
+                document.getElementById("bookmarkEditorRenameUi").style.display = "block";
+                document.getElementById("bookmarkNameEditor").style.width = "100%";
+            }
+
+            function requestBookmartToRename() {
+                let originalName = document.getElementById("originalName").value;
+                let name = document.getElementById("nameRenameBookmark").value;
+                let url = document.getElementById("urlRenameBookmark").value;
+                if (name === originalName) { 
+                    return; 
+                } else {
+                    let bookmarkOrder = {
+                        "channel": channel,
+                        "action": "RENAME_BOOKMARK",
+                        "originalName": originalName,
+                        "name": name,
+                        "url": url
+                    };
+                    EventBridge.emitWebEvent(JSON.stringify(bookmarkOrder));
+                    cancelBookMarkAction();
+                }
+            }
+
+            function addBookmark() {
+                document.getElementById("nameAddBookmark").value = "";
+                document.getElementById("bookmarkEditorAddUi").style.display = "block";
+                document.getElementById("bookmarkEditorRenameUi").style.display = "none";
+                document.getElementById("bookmarkNameEditor").style.width = "100%";
+            }
+            
+            function requestBookmarkToAdd() {
+                let name = document.getElementById("nameAddBookmark").value;
+                if (name === "") { 
+                    return; 
+                } else {
+                    let bookmarkOrder = {
+                        "channel": channel,
+                        "action": "ADD_BOOKMARK",
+                        "name": name
+                    };
+                    EventBridge.emitWebEvent(JSON.stringify(bookmarkOrder));
+                    cancelBookMarkAction();
+                }
+            }
+            
+            function setHomeBookmark() {
+                let bookmarkOrder = {
+                    "channel": channel,
+                    "action": "SET_HOME"
+                };
+                EventBridge.emitWebEvent(JSON.stringify(bookmarkOrder));
+            }
+            
+            function cancelBookMarkAction() {
+                document.getElementById("bookmarkNameEditor").style.width = "0%";
+            }
+            
             function sortDomainsOrder(a, b) {
                 var orderA = a.domainOrder.toUpperCase();
                 var orderB = b.domainOrder.toUpperCase();
@@ -199,6 +321,10 @@
             }
 
             function generateContent() {
+                let searchedText = document.getElementById("search").value;
+                document.getElementById("placesFiltersBar").style.display = "none";
+                document.getElementById("bookmarkToolBar").style.display = "none";
+                
                 if (currentListFormat === "REGIONS") {
                     //Display directory services page here
                     
@@ -269,7 +395,60 @@
                         metaversePageInfo = " node";
                     }
                     document.getElementById("listInfo").innerHTML = metaverseCounter + metaversePageInfo + " of " + metaverseList.length + ".";
+                } else if (currentListFormat === "BOOKMARKS") { 
+                    // ########## BOOKMARK ############
+                    var formattedBookmarkList = "";
+                    var bookmarksCounter = 0;
+                    var totalBookmarksCounter = 0;
+                
+                    document.getElementById("searchFiltersBar").style.display = "none";
+                    document.getElementById("bookmarkToolBar").style.display = "inline-block";
+
+                    for (const [name, url] of Object.entries(locationBookmarks)) {
+                        let lowerCasename = name.toLowerCase();
+                        if (lowerCasename.indexOf(searchedText.toLowerCase()) !== -1) {
+                        
+                            let bookmarkType = "Unknown";
+                            if (url.slice(0, 5).toLowerCase() === "hifi:") {
+                                bookmarkType = "Domain";
+                            } else if (url.slice(-5).toLowerCase() === ".json") {
+                                bookmarkType = "Serverless";
+                            }
+                            
+                            formattedBookmarkList += "<div class='bookmarkEntry" + bookmarkType + "' id='bookmark-" + bookmarksCounter + "'>";
+                            formattedBookmarkList += "<table style = 'width: 100%; height: 100%; border-collapse: collapse;'>";
+                            formattedBookmarkList += "<tr><td class='bookmarkName'>";
+                            formattedBookmarkList += "<span class='bookmark' onclick='teleport(" + '""' + ", " + '"' + url + '"' + "); return false;'>" + name + "</span>";
+                            formattedBookmarkList += "</td><td class='bookmarkActions'>";
+                            if (bookmarkEditMode) {
+                                formattedBookmarkList += "<a class='bookmarkInlineAction' onClick='renameBookmark(" + '"' + name + '"' + ", " + '"' + url + '"' + "); return false;'>s</a>";
+                                formattedBookmarkList += "&nbsp;";
+                                formattedBookmarkList += "<a class='bookmarkInlineDelete' onClick='deleteBookmark(" + '"' + name + '"' + "); return false;'>w</a>";
+                            } else {
+                                formattedBookmarkList += "<a class='bookmarkInlineAction' onClick='copyPlaceURL(" + '"' + url + '"' + "); return false;'>.</a>";
+                                formattedBookmarkList += "&nbsp;";
+                                formattedBookmarkList += "<a class='bookmarkInlineAction' onClick='rezPortal(" + '"' + name + '"' + ", " + '"' + url + '"' + ", " + '"' + name + url + '"' + "); return false;'>/</a>";
+                            }
+                            formattedBookmarkList += "</td></tr>";
+                            formattedBookmarkList += "</table>";
+                            formattedBookmarkList += "</div>";
+
+                            bookmarksCounter++;
+                        }
+                        totalBookmarksCounter++;
+                    }
+
+                    document.getElementById("list_content").innerHTML = formattedBookmarkList;
+                    
+                    var bookmarksPageInfo = " bookmarks";
+                    if (bookmarksCounter <= 1) {
+                        bookmarksPageInfo = " bookmark";
+                    }
+                    document.getElementById("listInfo").innerHTML = bookmarksCounter + bookmarksPageInfo + " of " + totalBookmarksCounter + ".";
+                    // ########## END BOOKMARK ############
+                    
                 } else {
+                    document.getElementById("placesFiltersBar").style.display = "inline-block";
                     var placeRecords = placeList.slice();
 
                     if (currentListFormat === "DOMAINS") {
@@ -371,7 +550,6 @@
                                 String: metaverse server regionality: local, federation, external 
                         
                         */
-                        var searchedText = document.getElementById("search").value;
                         if (searchedText !== "") {
                             displaySearchFieldsFilter();
                             document.getElementById("searchFiltersBar").style.display = "inline-block";
@@ -756,20 +934,27 @@
 
             function displayTab(tab) {
                 currentListFormat = tab;
-                if (tab === "PLACES") {
-                    document.getElementById("listFormatPlaces").disabled = true;
-                    document.getElementById("listFormatDomains").disabled = false;
-                    document.getElementById("listFormatMetaverse").disabled = false;
-                } else if (tab === "DOMAINS") {
-                    document.getElementById("listFormatPlaces").disabled = false;
-                    document.getElementById("listFormatDomains").disabled = true;
-                    document.getElementById("listFormatMetaverse").disabled = false;
-                } else if (tab === "REGIONS") {
-                    document.getElementById("listFormatPlaces").disabled = false;
-                    document.getElementById("listFormatDomains").disabled = false;
-                    document.getElementById("listFormatMetaverse").disabled = true;
-                }
+                
+                const buttons = {
+                    "PLACES": "listFormatPlaces",
+                    "DOMAINS": "listFormatDomains",
+                    "REGIONS": "listFormatMetaverse",
+                    "BOOKMARKS": "listFormatBookmarks"
+                };
 
+                Object.values(buttons).forEach(id => {
+                    document.getElementById(id).disabled = false;
+                });
+
+                if (buttons[tab]) {
+                    document.getElementById(buttons[tab]).disabled = true;
+                }
+                
+                if (tab === "BOOKMARKS") {
+                    bookmarkEditMode = false;
+                    document.getElementById("bookmarkEditMode").className = "bookmarkActionOff";
+                }
+                
                 loadRecordsUpTo = NUMBER_OF_RECORDS_PER_LOAD;
                 generateContent();
             }
@@ -847,6 +1032,8 @@
             displayMaturityFilter();
             document.getElementById("clearBtn").style.display = "none";
             document.getElementById("searchFiltersBar").style.display = "none";
-        </script>            
+            document.getElementById("placesFiltersBar").style.display = "none";
+            document.getElementById("bookmarkToolBar").style.display = "none";
+        </script>
     </body>
 </html>
