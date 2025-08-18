@@ -110,7 +110,36 @@
                     "placeID": messageObj.placeID
                 };
                 Messages.sendMessage(portalChannelName, JSON.stringify(requestToSend), false);
+            
+            } else if (messageObj.action === "GET_BOOKMARKS" && (n - timestamp) > INTERCALL_DELAY) {
+                d = new Date();
+                timestamp = d.getTime();
+                getLocationBookmarks();
+                sendCurrentLocationToUI();
                 
+            } else if (messageObj.action === "DELETE_BOOKMARK" && (n - timestamp) > INTERCALL_DELAY) {
+                d = new Date();
+                timestamp = d.getTime();
+                LocationBookmarks.removeBookmark(messageObj.name);
+                getLocationBookmarks();
+                
+            } else if (messageObj.action === "ADD_BOOKMARK" && (n - timestamp) > INTERCALL_DELAY) {
+                d = new Date();
+                timestamp = d.getTime();
+                LocationBookmarks.addBookmark(messageObj.name, location.href);
+                getLocationBookmarks();
+                
+            } else if (messageObj.action === "RENAME_BOOKMARK" && (n - timestamp) > INTERCALL_DELAY) {
+                d = new Date();
+                timestamp = d.getTime();
+                renameLocationBookmark(messageObj.originalName, messageObj.name, messageObj.url);
+                getLocationBookmarks();
+                
+            } else if (messageObj.action === "SET_HOME" && (n - timestamp) > INTERCALL_DELAY) {
+                d = new Date();
+                timestamp = d.getTime();
+                LocationBookmarks.setHomeLocationToAddress(location.href);
+                Window.displayAnnouncement("Home location has been set.");
             } else if (messageObj.action === "COPY_URL" && (n - timestamp) > INTERCALL_DELAY) {
                 d = new Date();
                 timestamp = d.getTime();
@@ -179,7 +208,7 @@
                 fetchedServers.push(metaverseServers[q].url);
             }
         }
-        Settings.setValue(SETTING_METAVERSE_TO_FETCH, fetchedServers);        
+        Settings.setValue(SETTING_METAVERSE_TO_FETCH, fetchedServers);
     }
 
     function onHostChanged(host) {
@@ -195,7 +224,7 @@
             "data": location.href
         };
 
-        tablet.emitScriptEvent(currentLocationMessage);        
+        tablet.emitScriptEvent(currentLocationMessage);
     }
     
     function onScreenChanged(type, url) {
@@ -257,7 +286,7 @@
         };
 
         tablet.emitScriptEvent(message);
-        
+        getLocationBookmarks();
     };
 
     function sendPersistedMaturityFilter() {
@@ -372,6 +401,21 @@
         metaverseServers.sort(sortOrder);
     }
 
+    function getLocationBookmarks() {
+        let bookmarks = LocationBookmarks.getBookmarks();
+        let message = {
+            "channel": channel,
+            "action": "BOOKMARKS_DATA",
+            "data": bookmarks
+        };
+        tablet.emitScriptEvent(message);
+    }
+
+    function renameLocationBookmark(originalName, name, url) {
+        LocationBookmarks.addBookmark(name, url);
+        LocationBookmarks.removeBookmark(originalName);
+    }
+
     function getContent(url) {
         httpRequest = new XMLHttpRequest();
         httpRequest.open("GET", url, false); // false for synchronous request
@@ -443,7 +487,6 @@
         }
         
         nbrPlaceProtocolKnown = nbrPlaceProtocolKnown + places.length;
-    
     }
 
     function addUtilityPortals() {
