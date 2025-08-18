@@ -52,7 +52,7 @@ body {
   color: #CCCCCC;
   background-color: rgba(255,255,255,0);
   font-size: 11px;
-  border: 0px;
+  border: none;
   border-top: solid 1px #555555;
   padding: 3px;
   width: 96%;
@@ -63,14 +63,14 @@ body {
     color: #ffffff;
     background-color: rgba(255,255,255,0);
     font-size: 16px;
-    border: 0px;
+    border: none;
     width: 96%;
 }
 
 #searchFrame {
     background-color: rgba(255,255,255,0.5);
     padding: 2px;
-    border: 0px;
+    border: none;
     border-radius: 10px;
     width: 96%;
     margin: 0 auto;
@@ -146,13 +146,13 @@ body {
 .maturityFilter {
     width: 16px;
     height: 16px;
-    border: 0px;
+    border: none;
 }
 
 .presenceOfLifeFilter {
     width: 64px;
     height: 16px;
-    border: 0px;
+    border: none;
 }
 
 .overlay {
@@ -264,7 +264,7 @@ td.rightInvite {
 #cancelInvite {
     background: #405270;
     background-image: linear-gradient(to bottom, #405270, #0d1117);
-    border: 0px;
+    border: none;
     border-radius: 10px;
     font-weight: 700;
     color: #ffffff;
@@ -337,7 +337,7 @@ td.rightInvite {
 
 .tabBtn {
   border-radius: 9px 9px 0px 0px;
-  border: 0px;
+  border: none;
   font-weight: 700;
   color: #808080;
   font-size: 14px;
@@ -480,7 +480,7 @@ div.placeEntry {
     width: 85%;
     height: 60px;
     background: #292929;
-    border: 0px;
+    border: none;
     border-radius: 6px;
     box-shadow: 3px 3px 5px rgba(0,0,0,0.8);
     margin: 6px 0px 9px 6px;
@@ -499,7 +499,7 @@ div.addMsEntry {
     width: 85%;
     height: 38px;
     background: #292929;
-    border: 0px;
+    border: none;
     border-radius: 6px;
     box-shadow: 3px 3px 5px rgba(0,0,0,0.8);
     margin: 6px 0px 9px 6px;
@@ -518,7 +518,7 @@ div.addMsEntry {
   color: #ffffff;
   font-size: 18px;
   padding: 1px 5px 1px 5px;
-  border: 0px;
+  border: none;
   text-decoration: none;
   font-weight: 700;
 }
@@ -535,7 +535,7 @@ div.placeEntryHighlighter {
     height: 80px;
     font-size: 14px;
     font-weight: 700;
-    border: 0px;
+    border: none;
     border-radius: 6px;
     box-shadow: 3px 3px 5px rgba(0,0,0,0.8);
     margin: 6px 0px 9px 6px;
@@ -577,7 +577,7 @@ div.placeEntryHighlighted {
     width: 100%;
     height: 60px;
     background: #292929;
-    border: 0px;
+    border: none;
     border-radius: 6px;
     text-align: center;
 }
@@ -610,7 +610,7 @@ div.placeDetail-event {
   background: #a6a6a6;
   background-image: linear-gradient(to bottom, #a6a6a6, #525252);
   border-radius: 10px;
-  border: 0px;
+  border: none;
   color: #ffffff;
   font-size: 14px;
   font-weight: 500;
@@ -630,7 +630,7 @@ div.placeDetail-event {
     backdrop-filter: blur(6px);
     padding: 0px;
     border-radius: 6px;
-    border: 0px;
+    border: none;
 }
 
 .promotedblur {
@@ -687,7 +687,7 @@ div.domainEntry {
     width: 100%;
     height: 40px;
     background: rgba(32,0,255,0.15);
-    border: 0px;
+    border: none;
     text-align: left;
     padding-bottom: 4px;
 }
@@ -760,7 +760,7 @@ font.domain-nbrUser_small {
 #placeDetail-visitBtn {
   background: #0000ff;
   background-image: linear-gradient(to bottom, #0000ff, #000020);
-  border: 0px;
+  border: none;
   border-radius: 6px;
   font-weight: 700;
   color: #ffffff;
@@ -785,7 +785,7 @@ font.domain-nbrUser_small {
 #placeDetail-rezPortalBtn {
   background: #0000ff;
   background-image: linear-gradient(to bottom, #0000ff, #000020);
-  border: 0px;
+  border: none;
   border-radius: 6px;
   font-weight: 700;
   color: #ffffff;
@@ -810,7 +810,7 @@ font.domain-nbrUser_small {
 #placeDetail-copyPlaceURLBtn {
   background: #0000ff;
   background-image: linear-gradient(to bottom, #0000ff, #000020);
-  border: 0px;
+  border: none;
   border-radius: 6px;
   font-weight: 700;
   color: #ffffff;
@@ -919,7 +919,7 @@ div.warningEntry {
     width: 100%;
     height: 30px;
     background: rgba(255,128,0,0.2);
-    border: 0px;
+    border: none;
     text-align: left;
     padding-bottom: 4px;
 }
@@ -1030,7 +1030,7 @@ div.bookmarkEntryUnknown {
     width: 85%;
     height: 40px;
     background-color: #292929;
-    border: 0px;
+    border: none;
     border-radius: 6px;
     box-shadow: 3px 3px 5px rgba(0,0,0,0.8);
     margin: 6px 0px 9px 6px;
@@ -1044,7 +1044,7 @@ div.bookmarkEntryServerless {
     width: 85%;
     height: 40px;
     background-color: #292929;
-    border: 0px;
+    border: none;
     border-radius: 6px;
     box-shadow: 3px 3px 5px rgba(0,0,0,0.8);
     margin: 6px 0px 9px 6px;
@@ -1058,7 +1058,7 @@ div.bookmarkEntryDomain {
     width: 85%;
     height: 40px;
     background-color: #292929;
-    border: 0px;
+    border: none;
     border-radius: 6px;
     box-shadow: 3px 3px 5px rgba(0,0,0,0.8);
     margin: 6px 0px 9px 6px;
@@ -1067,7 +1067,7 @@ div.bookmarkEntryDomain {
 
 span.bookmark{
     width: 100%;
-    color: #bbbbbb;
+    color: #cccccc;
 }
 span.bookmark:hover{
     color: #ffffff;
@@ -1088,7 +1088,8 @@ button.bookmarkActionOn {
   padding: 1px 2px 1px 2px;
   border: solid #000000 1px;
   text-decoration: none;
-  text-align: center;  
+  text-align: center;
+  margin-left: 1.0em;
 }
 
 button.bookmarkActionOn:hover {
@@ -1102,7 +1103,8 @@ button.bookmarkActionOff {
   padding: 1px 2px 1px 2px;
   border: solid #000000 1px;
   text-decoration: none;
-  text-align: center;  
+  text-align: center;
+  margin-left: 1.0em;
 }
 
 button.bookmarkActionOff:hover {
@@ -1122,24 +1124,24 @@ td.bookmarkActions {
     vertical-align: middle;
     padding: 0px 6px 0px 0px;
     font-size: 22px;
-    color: #777777;
+    color: #999999;
 }
 
 a.bookmarkInlineAction {
     font-family: HiFi-Glyphs;
-    color: #777777;
+    color: #999999;
 }
 
 a.bookmarkInlineAction:hover {
-    color: #dddddd;
+    color: #eeeeee;
 }
 a.bookmarkInlineDelete {
     font-family: HiFi-Glyphs;
-    color: #880000;
+    color: #c63333;
 }
 
 a.bookmarkInlineDelete:hover {
-    color: #ee0000;
+    color: #e55959;
 }
 
 button.bookmarkCreate {
@@ -1148,10 +1150,11 @@ button.bookmarkCreate {
   font-size: 10px;
   padding: 1px 4px 1px 4px;
   border-radius: 6px;
-  border: 0;
+  border: none;
   text-decoration: none;
   text-align: center;
   font-weight: bold;
+  margin-right: 0.5em;
 }
 
 button.bookmarkCreate:hover {
@@ -1169,7 +1172,7 @@ button.BookMarkNameEditorAction {
     font-size: 12px;
     padding: 3px 10px 3px 10px;
     border-radius: 10px;
-    border: 0;
+    border: none;
     text-decoration: none;
     text-align: center;
     font-weight: bold;

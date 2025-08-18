@@ -87,8 +87,8 @@
                 </div>
                 <div id="noFiltersBar">&nbsp;</div>
                 <div id="bookmarkToolBar">
-                    <button class='bookmarkCreate' id='bookmarkAdd' onClick = 'addBookmark();'>+ Bookmark Location</button>&nbsp;
-                    <button class='bookmarkCreate' id='bookmarkHome' onClick = 'setHomeBookmark();'>Set Home Location</button>&nbsp;&nbsp;&nbsp;
+                    <button class='bookmarkCreate' id='bookmarkAdd' onClick = 'addBookmark();'>+ Bookmark Location</button>
+                    <button class='bookmarkCreate' id='bookmarkHome' onClick = 'setHomeBookmark();'>Set Home Location</button>
                     <button class='bookmarkActionOff' id='bookmarkEditMode' onClick = 'toggleBookmarkEditMode();'>MANAGE</button>
                 </div>
                 <div id="placesFiltersBar">
@@ -246,6 +246,7 @@
                 document.getElementById("originalName").value = name;
                 document.getElementById("nameRenameBookmark").value = name;
                 document.getElementById("bookmarkUrl").innerHTML = url;
+                document.getElementById("urlRenameBookmark").value = url;
                 document.getElementById("bookmarkEditorAddUi").style.display = "none";
                 document.getElementById("bookmarkEditorRenameUi").style.display = "block";
                 document.getElementById("bookmarkNameEditor").style.width = "100%";
@@ -256,7 +257,7 @@
                 let name = document.getElementById("nameRenameBookmark").value;
                 let url = document.getElementById("urlRenameBookmark").value;
                 if (name === originalName) { 
-                    return; 
+                    return;
                 } else {
                     let bookmarkOrder = {
                         "channel": channel,
@@ -411,7 +412,7 @@
                             let bookmarkType = "Unknown";
                             if (url.slice(0, 5).toLowerCase() === "hifi:") {
                                 bookmarkType = "Domain";
-                            } else if (url.slice(-5).toLowerCase() === ".json") {
+                            } else if ((url.split("?")[0]).slice(-5).toLowerCase() === ".json") {
                                 bookmarkType = "Serverless";
                             }
                             
