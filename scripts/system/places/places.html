@@ -165,7 +165,7 @@
                 <input type='hidden' id='originalName'>
                 <input type='hidden' id='urlRenameBookmark'><br><br>
                 <div style = 'text-align: right;'>
-                    <button class='BookMarkNameEditorAction' id='saveBookMarkActionRename' onClick='requestBookmartToRename();'>Rename</button>&nbsp;&nbsp;
+                    <button class='BookMarkNameEditorAction' id='saveBookMarkActionRename' onClick='requestBookmarkToRename();'>Rename</button>&nbsp;&nbsp;
                     <button class='BookMarkNameEditorAction' id='cancelBookMarkActionRename' onClick='cancelBookMarkAction();'>Cancel</button>
                 </div>
             </div>
@@ -250,7 +250,7 @@
                 document.getElementById("bookmarkNameEditor").style.transform = "translateX(0%)";
             }
 
-            function requestBookmartToRename() {
+            function requestBookmarkToRename() {
                 let originalName = document.getElementById("originalName").value;
                 let name = document.getElementById("nameRenameBookmark").value;
                 let url = document.getElementById("urlRenameBookmark").value;
@@ -425,7 +425,7 @@
                             formattedBookmarkList += "<div class='bookmarkEntry" + bookmarkType + "' id='bookmark-" + bookmarksCounter + "'>";
                             formattedBookmarkList += "<table style = 'width: 100%; height: 100%; border-collapse: collapse;'>";
                             formattedBookmarkList += "<tr><td class='bookmarkName'>";
-                            formattedBookmarkList += "<span class='bookmark' onclick='teleport(" + '""' + ", " + '"' + url + '"' + "); return false;'>" + name + "</span>";
+                            formattedBookmarkList += "<span class='bookmark' onclick='teleport(" + '""' + ", " + '"' + url + '"' + "); return false;'>" + escapeHTML(name) + "</span>";
                             formattedBookmarkList += "</td><td class='bookmarkActions'>";
                             if (bookmarkEditMode) {
                                 formattedBookmarkList += "<a class='bookmarkInlineAction' onClick='renameBookmark(" + '"' + name + '"' + ", " + '"' + url + '"' + "); return false;'>s</a>";
@@ -1034,6 +1034,15 @@
                     sleepFor(210);
                     reload();
                 }
+            }
+            
+            function escapeHTML(str) {
+                return str
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
             }
             
             displayMaturityFilter();
