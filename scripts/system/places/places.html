@@ -151,7 +151,6 @@
         </div>
         <div id="bookmarkNameEditor" class="overlay">
             <div id='bookmarkEditorAddUi'>
-                <br><br><br><br><br><br>
                 <h1 class='popupTitle'>Bookmark the current location</h1><br>
                 Name: <input id='nameAddBookmark' type = 'text' maxlength='64'><br><br>
                 <div style = 'text-align: right;'>
@@ -160,7 +159,6 @@
                 </div>
             </div>
             <div id='bookmarkEditorRenameUi'>
-                <br><br><br><br><br><br>
                 <h1 class='popupTitle'>Rename Bookmark</h1><br>
                 Url: <span id='bookmarkUrl'></span><br><br>
                 Name: <input id='nameRenameBookmark' type = 'text' maxlength='64'>
@@ -249,7 +247,7 @@
                 document.getElementById("urlRenameBookmark").value = url;
                 document.getElementById("bookmarkEditorAddUi").style.display = "none";
                 document.getElementById("bookmarkEditorRenameUi").style.display = "block";
-                document.getElementById("bookmarkNameEditor").style.width = "100%";
+                document.getElementById("bookmarkNameEditor").style.transform = "translateX(0%)";
             }
 
             function requestBookmartToRename() {
@@ -272,10 +270,10 @@
             }
 
             function addBookmark() {
-                document.getElementById("nameAddBookmark").value = "";
+                document.getElementById("nameAddBookmark").value = getPossiblePlaceName(currentLocation);
                 document.getElementById("bookmarkEditorAddUi").style.display = "block";
                 document.getElementById("bookmarkEditorRenameUi").style.display = "none";
-                document.getElementById("bookmarkNameEditor").style.width = "100%";
+                document.getElementById("bookmarkNameEditor").style.transform = "translateX(0%)";
             }
             
             function requestBookmarkToAdd() {
@@ -302,7 +300,15 @@
             }
             
             function cancelBookMarkAction() {
-                document.getElementById("bookmarkNameEditor").style.width = "0%";
+                document.getElementById("bookmarkNameEditor").style.transform = "translateX(-100%)";
+            }
+            
+            function getPossiblePlaceName(url) {
+                if (url.slice(0, 5).toLowerCase() === "hifi:") {
+                    return url.split("/")[2];
+                } else {
+                    return url.match(/([^\/]+)\.json(?:\?.+)?$/)[1];
+                }
             }
             
             function sortDomainsOrder(a, b) {
@@ -1003,11 +1009,11 @@
                 document.getElementById("placeDetail-metaverse").innerHTML = "<font class='region-" + placeDetail.metaverseRegion.toUpperCase() + "'>" + placeDetail.metaverseServer + "</font>";
                 document.getElementById("placeDetail-region").innerHTML = "<font class='region-" + placeDetail.metaverseRegion.toUpperCase() + "'>" + placeDetail.metaverseRegion.toUpperCase() + "</font>";
 
-                document.getElementById("placeDetail").style.width = "100%";
+                document.getElementById("placeDetail").style.transform = "translateX(0%)";
             }
 
             function closeDetail() {
-                document.getElementById("placeDetail").style.width = "0%";
+                document.getElementById("placeDetail").style.transform = "translateX(-100%)";
             }
 
             function sleepFor( milliseconds ){

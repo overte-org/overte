@@ -157,7 +157,7 @@ body {
 
 .overlay {
   height: 100%;
-  width: 0;
+  width: 100%;
   position: fixed;
   z-index: 1;
   top: 0;
@@ -165,6 +165,7 @@ body {
   background-color: rgba(0,0,0, 1);
   overflow: hidden;
   transition: 0.5s;
+  transform: translateX(-100%);
 }
 
 .overlay-content {
@@ -1191,11 +1192,13 @@ button.BookMarkNameEditorAction:active {
 #bookmarkEditorAddUi {
     color: #ffffff;
     padding: 10px;
+    margin-top: 150px;
 }
 
 #bookmarkEditorRenameUi {
     color: #ffffff;
     padding: 10px;
+    margin-top: 150px;
 }
 
 #nameAddBookmark {
