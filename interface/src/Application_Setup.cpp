@@ -296,17 +296,6 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
 
     PROFILE_SET_THREAD_NAME("Main Thread");
 
-#if defined(Q_OS_WIN)
-    // Select appropriate audio DLL
-    QString audioDLLPath = QCoreApplication::applicationDirPath();
-    if (IsWindows8OrGreater()) {
-        audioDLLPath += "/audioWin8";
-    } else {
-        audioDLLPath += "/audioWin7";
-    }
-    QCoreApplication::addLibraryPath(audioDLLPath);
-#endif
-
     QString defaultScriptsOverrideOption = parser.value("defaultScriptsOverride");
 
     DependencyManager::registerInheritance<LimitedNodeList, NodeList>();
