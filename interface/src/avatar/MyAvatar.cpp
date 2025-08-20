@@ -3257,7 +3257,7 @@ bool MyAvatar::shouldRenderHead(const RenderArgs* renderArgs) const {
     bool overrideAnim = _skeletonModel ? _skeletonModel->getRig().isPlayingOverrideAnimation() : false;
     bool isInMirror = renderArgs->_mirrorDepth > 0;
     bool insideHead = cameraInsideHead(renderArgs->getViewFrustum().getPosition());
-    return !defaultMode || isInMirror || (!firstPerson && !insideHead) || (overrideAnim && !insideHead);
+    return !_preventHeadClipping || !defaultMode || isInMirror || (!firstPerson && !insideHead) || (overrideAnim && !insideHead);
 }
 
 void MyAvatar::setRotationRecenterFilterLength(float length) {
