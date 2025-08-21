@@ -346,7 +346,7 @@
  */
 
 /*@jsdoc
- * The <code>"Model"</code> {@link Entities.EntityType|EntityType} displays a glTF, FBX, or OBJ model. When adding an entity,
+ * The <code>"Model"</code> {@link Entities.EntityType|EntityType} displays a glTF, VRM, FBX, or OBJ model. When adding an entity,
  * if no <code>dimensions</code> value is specified then the model is automatically sized to its
  * <code>{@link Entities.EntityProperties|naturalDimensions}</code>. It has properties in addition to the common
  * {@link Entities.EntityProperties|EntityProperties}.
@@ -355,7 +355,7 @@
  * @property {Vec3} dimensions=0.1,0.1,0.1 - The dimensions of the entity. When adding an entity, if no <code>dimensions</code>
  *     value is specified then the model is automatically sized to its
  *     <code>{@link Entities.EntityProperties|naturalDimensions}</code>.
- * @property {string} modelURL="" - The URL of the glTF, FBX, or OBJ model. glTF models may be in JSON or binary format
+ * @property {string} modelURL="" - The URL of the glTF, VRM, FBX, or OBJ model. glTF models may be in JSON or binary format
  *     (".gltf" or ".glb" URLs respectively). Baked models' URLs have ".baked" before the file type. Model files may also be
  *     compressed in GZ format, in which case the URL ends in ".gz".
  * @property {Vec3} modelScale - The scale factor applied to the model's dimensions.
