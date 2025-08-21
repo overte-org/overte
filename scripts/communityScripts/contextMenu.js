@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 "use strict";
-const CONTEXT_MENU_SETTINGS = Settings.getValue("Context Menu");
+const CONTEXT_MENU_SETTINGS = Settings.getValue("Context Menu", {
+    actionsPerPage: 6,
+    font: "Roboto",
+    noSfx: false,
+    parented: true,
+    public: false,
+});
 
 const ACTIONS_PER_PAGE = CONTEXT_MENU_SETTINGS["actionsPerPage"] ?? 6;
 
@@ -78,9 +84,9 @@ const OBJECT_ACTIONS = [
 	},
 	ent => {
 		if (Entities.getNestableType(ent) !== "entity") { return; }
-		const {locked, cloneOriginID} = Entities.getEntityProperties(ent, ["locked", "cloneOriginID"]);
+		const {cloneOriginID} = Entities.getEntityProperties(ent, "cloneOriginID");
 
-		if (locked || !cloneOriginID || !Entities.canAdjustLocks()) { return; }
+		if (Uuid.isNull(cloneOriginID)) { return; }
 
 		return {
 			text: "Delete",
@@ -91,16 +97,9 @@ const OBJECT_ACTIONS = [
 ];
 
 const ROOT_ACTIONS = [
-	_target => ({
-		text: "My Avatar",
-		textColor: [127, 255, 255],
-		keepMenuOpen: true,
-		submenu: "_SELF",
-		priority: -102,
-	}),
 	target => {
 		if (Entities.getNestableType(target) !== "entity") { return; }
-		let userData = Entities.getEntityProperties(target, "userData").userData;
+		let { userData } = Entities.getEntityProperties(target, "userData");
 
 		if (userData) {
 			try {
@@ -130,9 +129,16 @@ const ROOT_ACTIONS = [
 			textColor: [255, 255, 0],
 			keepMenuOpen: true,
 			submenu: "_AVATAR",
-			priority: -100,
+			priority: -101,
 		};
 	},
+	_target => ({
+		text: "My Avatar",
+		textColor: [126, 255, 255],
+		keepMenuOpen: true,
+		submenu: "_SELF",
+		priority: -100,
+	}),
 ];
 
 let registeredActionSets = {
@@ -776,6 +782,4 @@ Script.scriptEnding.connect(() => {
 	ContextMenu_DeleteMenu();
 
 	Messages.sendLocalMessage(MAIN_CHANNEL, JSON.stringify({func: "shutdown"}));
-
-	Settings.setValue("Context Menu", CONTEXT_MENU_SETTINGS);
 });
