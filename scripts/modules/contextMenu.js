@@ -71,37 +71,65 @@ Script.scriptEnding.connect(() => {
 });
 
 /**
- * @module ContextMenu
+ * @namespace ContextMenu
+ *
+ * See <code>scripts/tutorials/contextMenu</code> for examples.
+ */
+
+// FIXME: How do I express a userdata schema?
+/**
+ * @namespace userdata.contextMenu
+ * @property {ContextMenu.Action[]|ContextMenu.Action} actions - Either a list of available actions, or one action that will be triggered without opening the context menu.
+ * @property {string} [title] - The title of this action set. The title is above the action buttons and between the page buttons.
+ * @property {string} [description] - The description text of this action set. The description is above the title and page buttons.
+ */
+
+/**
+ * @typedef {Object} Action
+ * @property {string} text
+ * @property {Color} [textColor=[255, 255, 255]]
+ * @property {Color} [backgroundColor=[0, 0, 0]]
+ * @property {number} [backgroundAlpha=0.8]
+ * @property {string} [iconImage] - URL to an image that will be used as an icon, to the left of the action text.
+ * @property {string} [remoteClickFunc] - A string that will be sent with @link{Messages.sendMessage} when clicked. See @link{ContextMenu.CLICK_FUNC_CHANNEL}.
+ * @property {string} [localClickFunc] - A string that will be sent with @link{Messages.sendLocalMessage} when clicked. See @link{ContextMenu.CLICK_FUNC_CHANNEL}.
+ * @property {boolean} [keepMenuOpen=false] - If <code>true</code>, then the context menu will stay open when this action is clicked. Otherwise, the context menu will close when the action is clicked.
  */
 module.exports = {
+	/**
+	 * The message channel that @link{ContextMenu.Action.remoteClickFunc} and @link{ContextMenu.Action.localClickFunc} use.
+	 * @readonly
+	 */
 	CLICK_FUNC_CHANNEL: CLICK_FUNC_CHANNEL,
-	ACTIONS_CHANNEL: ACTIONS_CHANNEL,
-	MAIN_CHANNEL: MAIN_CHANNEL,
 
 	/**
 	 * The top-level set first opened if not overridden by the target.
+	 * @readonly
 	 */
 	ROOT_SET: "_ROOT",
 
 	/**
 	 * The "My Avatar" submenu in the context menu root.
+	 * @readonly
 	 */
 	SELF_SET: "_SELF",
 
 	/**
 	 * The "Object" submenu in the context menu root when an object is targeted.
+	 * @readonly
 	 */
 	OBJECT_SET: "_OBJECT",
 
 	/**
 	 * The "Avatar" submenu in the context menu root when an avatar is targeted.
+	 * @readonly
 	 */
 	AVATAR_SET: "_AVATAR",
 
 	/**
 	 * Registers a new action set for the context menu.
 	 * @param {string} name - The name of the action set
-	 * @param {(Object|Object[])} actions - The action information
+	 * @param {(Object.<string, ContextMenu.Action>|ContextMenu.Action[])} actions - The action information
 	 * @param {string} [parent] - The parent of the action set. If no parent is set, the action set will only be accessible through another action's "submenu" property. See @link{ROOT_SET}, @link{SELF_SET}, @link{OBJECT_SET}, and @link{AVATAR_SET}.
 	 * @param {string} [title] - The name of this action set, if used as a submenu.
 	 * @param {string} [desc] - The description of this action set, if used as a submenu.
@@ -117,7 +145,7 @@ module.exports = {
 	/**
 	 * Edits a previously registered context menu action set. An action set can only be edited by the script that registered it.
 	 * @param {string} name - The name of the action set
-	 * @param {(Object|Object[])} actions - The action information, present object keys or array indices will replace the registered ones
+	 * @param {(Object.<string, ContextMenu.Action>|ContextMenu.Action[])} actions - The action information, present object keys or array indices will replace the registered ones
 	 */
 	editActionSet: ContextMenu_editActionSet,
 };
