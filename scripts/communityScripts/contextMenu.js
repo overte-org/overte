@@ -66,7 +66,7 @@ const SELF_ACTIONS = [
 const OBJECT_ACTIONS = [
 	ent => {
 		if (Entities.getNestableType(ent) !== "entity") { return; }
-		const cloneable = Entities.getEntityProperties(ent, "cloneable").cloneable;
+		const { cloneable } = Entities.getEntityProperties(ent, "cloneable");
 
 		if (!cloneable) { return; }
 
@@ -84,7 +84,7 @@ const OBJECT_ACTIONS = [
 	},
 	ent => {
 		if (Entities.getNestableType(ent) !== "entity") { return; }
-		const {cloneOriginID} = Entities.getEntityProperties(ent, "cloneOriginID");
+		const { cloneOriginID } = Entities.getEntityProperties(ent, "cloneOriginID");
 
 		if (Uuid.isNull(cloneOriginID)) { return; }
 
@@ -608,10 +608,52 @@ function ContextMenu_OpenRoot() {
 	registeredActionSets["_TARGET"] = [];
 	delete registeredActionSetTitles["_TARGET"];
 
-	if (currentMenuTarget) {
+	// check if the target is worth selecting, so we don't
+	// start highlighting something that we can't do anything with
+	if (currentMenuTarget && !currentMenuTargetIsAvatar) {
+		const {
+			userData,
+			cloneable,
+			cloneOriginID,
+		} = Entities.getEntityProperties(currentMenuTarget, [
+			"userData",
+			"cloneable",
+			"cloneOriginID",
+		]);
+
+		let data = {};
 		try {
-			const userData = Entities.getEntityProperties(currentMenuTarget, "userData").userData;
+			data = JSON.parse(userData);
+		} catch (e) {}
+
+		if (
+			data?.contextMenu === undefined &&
+			!cloneable &&
+			Uuid.isNull(cloneOriginID)
+		) {
+			// doesn't do anything interesting, don't bother highlighting
+			currentMenuTarget = undefined;
+		}
+
+		// don't target UI elements
+		if (
+			Keyboard.containsID(currentMenuTarget) ||
+			currentMenuTarget === HMD.tabletID ||
+			currentMenuTarget === HMD.tabletScreenID ||
+			currentMenuTarget === HMD.homeButtonID ||
+			currentMenuTarget === HMD.homeButtonHighlightID ||
+			currentMenuTarget === HMD.miniTabletID ||
+			currentMenuTarget === HMD.miniTabletScreenID
+		) {
+			currentMenuTarget = undefined;
+		}
+	}
+
+	if (currentMenuTarget && !currentMenuTargetIsAvatar) {
+		try {
+			const { userData } = Entities.getEntityProperties(currentMenuTarget, "userData");
 			const data = userData ? JSON.parse(userData) : undefined;
+
 			if (data?.contextMenu?.actions) {
 				if (Array.isArray(data.contextMenu.actions)) {
 					// objects with custom context menu actions
