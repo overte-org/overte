@@ -100,11 +100,14 @@ const ROOT_ACTIONS = [
 	target => {
 		if (Entities.getNestableType(target) !== "entity") { return; }
 		let { userData } = Entities.getEntityProperties(target, "userData");
+		let submenu = "_OBJECT";
 
 		if (userData) {
 			try {
 				userData = JSON.parse(userData);
-				if (userData?.contextMenu?.noObjectMenu) { return; }
+				if (!(userData?.contextMenu?.root ?? true)) {
+					submenu = "_TARGET";
+				}
 			} catch (e) {
 				console.error(`ROOT_ACTIONS._OBJECT: ${e}`);
 			}
@@ -114,7 +117,7 @@ const ROOT_ACTIONS = [
 			text: "Object",
 			textColor: [0, 255, 0],
 			keepMenuOpen: true,
-			submenu: "_OBJECT",
+			submenu: submenu,
 			priority: -101,
 		};
 	},
@@ -361,16 +364,6 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		}
 
 		descriptionText = data.description;
-
-		if (data.userData) {
-			try {
-				const userData = JSON.parse(data.userData);
-				titleText = userData?.contextMenu?.title ?? titleText;
-				descriptionText = userData?.contextMenu?.description ?? descriptionText;
-			} catch (e) {
-				console.error(`ContextMenu_OpenActions: ${e}`);
-			}
-		}
 	} else {
 		titleText = "Self";
 	}
@@ -613,6 +606,7 @@ function ContextMenu_MouseReleaseEvent(event) {
 
 function ContextMenu_OpenRoot() {
 	registeredActionSets["_TARGET"] = [];
+	delete registeredActionSetTitles["_TARGET"];
 
 	if (currentMenuTarget) {
 		try {
@@ -625,7 +619,16 @@ function ContextMenu_OpenRoot() {
 						registeredActionSets["_TARGET"].push(_entity => action);
 					}
 
-					ContextMenu_OpenActions("_TARGET");
+					registeredActionSetTitles["_TARGET"] = {
+						title: data.contextMenu.title,
+						description: data.contextMenu.description,
+					};
+
+					if (data.contextMenu.root ?? true) {
+						ContextMenu_OpenActions("_TARGET");
+					} else {
+						ContextMenu_OpenActions("_ROOT");
+					}
 
 					if (!(CONTEXT_MENU_SETTINGS.noSfx)) { Audio.playSystemSound(SOUND_OPEN); }
 				} else {

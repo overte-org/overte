@@ -82,6 +82,7 @@ Script.scriptEnding.connect(() => {
  * @property {ContextMenu.Action[]|ContextMenu.Action} actions - Either a list of available actions, or one action that will be triggered without opening the context menu.
  * @property {string} [title] - The title of this action set. The title is above the action buttons and between the page buttons.
  * @property {string} [description] - The description text of this action set. The description is above the title and page buttons.
+ * @property {boolean} [root=true] - If <code>true</code>, then when the context menu is opened targeting the parent entity it'll open this action set, rather than opening @link{ContextMenu.ROOT_SET}. If <code>false</code>, then this action set will be a child of @link{ContextMenu.OBJECT_SET}.
  */
 
 /**
