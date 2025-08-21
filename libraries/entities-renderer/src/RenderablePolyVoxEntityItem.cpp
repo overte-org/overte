@@ -1921,11 +1921,11 @@ void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
         batch.setInputFormat(_vertexFormat);
         batch.setUniformBuffer(0, _params);
     } else {
-        glm::vec4 outColor = materials.getColor();
-
-        if (outColor.a == 0.0f) {
+        if (materials.isInvisible()) {
             return;
         }
+
+        glm::vec4 outColor = glm::vec4(1.0f); // albedo comes from the material instead of vertex colors
 
         Pipeline pipelineType = getPipelineType(materials);
         if (pipelineType == Pipeline::PROCEDURAL) {

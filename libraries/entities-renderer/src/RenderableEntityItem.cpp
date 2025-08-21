@@ -642,7 +642,7 @@ EntityRenderer::Pipeline EntityRenderer::getPipelineType(const graphics::MultiMa
     }
 
     graphics::MaterialKey drawMaterialKey = materials.getMaterialKey();
-    if (materials.isMToon() || drawMaterialKey.isEmissive() || drawMaterialKey.isMetallic() || drawMaterialKey.isScattering()) {
+    if (materials.isMToon() || materials.getLayers() > 1 || drawMaterialKey.isEmissive() || drawMaterialKey.isMetallic() || drawMaterialKey.isScattering()) {
         return Pipeline::MATERIAL;
     }
 
