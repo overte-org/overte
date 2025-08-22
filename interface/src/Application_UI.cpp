@@ -282,11 +282,6 @@ bool Application::getMouseCaptureVR() {
     return _defaultMouseCaptureVR.get();
 }
 
-void Application::setShowGraphicsIcon(bool value) {
-    _showGraphicsIconSetting.set(value);
-    DependencyManager::get<MessagesClient>()->sendLocalMessage("Overte-ShowGraphicsIconChanged", "");
-}
-
 void Application::setMiniTabletEnabled(bool enabled) {
     _miniTabletEnabledSetting.set(enabled);
     emit miniTabletEnabledChanged(enabled);
@@ -1453,4 +1448,20 @@ void Application::addAssetToWorldError(QString modelName, QString errorText) {
     _addAssetToWorldMessageBox->setVisible(true);
 
     _addAssetToWorldErrorTimer.start();
+}
+
+void Application::setMenuBarVisible(bool visible) {
+    if (QThread::currentThread() != qApp->thread()) {
+        QMetaObject::invokeMethod(this, "setMenuBarVisible", Q_ARG(bool, visible));
+        return;
+    }
+
+    auto* menuBar = qApp->getWindow()->menuBar();
+    bool wasVisible = menuBar->isVisible();
+
+    if (visible != wasVisible) {
+        _menuBarVisible.set(visible);
+        menuBar->setVisible(visible);
+        emit menuBarVisibilityChanged(visible);
+    }
 }

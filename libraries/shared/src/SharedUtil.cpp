@@ -1125,9 +1125,7 @@ void watchParentProcess(int parentPID) {
     auto timer = new QTimer(qApp);
     timer->setInterval(MSECS_PER_SECOND);
     QObject::connect(timer, &QTimer::timeout, qApp, [parentPID]() {
-        auto ppid = getppid();
-        if (parentPID != ppid) {
-            // If the PPID changed, then that means our parent process died.
+        if (!processIsRunning(parentPID)) {
             quitWithParentProcess();
         }
     });

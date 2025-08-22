@@ -215,6 +215,27 @@ Pointer::PickedObject PathPointer::getHoveredObject(const PickResultPointer& pic
     return PickedObject(getPickedObjectID(pickResult), getPickedObjectType(pickResult));
 }
 
+glm::vec2 PathPointer::getScroll(const PickResultPointer& pickResult) {
+    bool isActive = true;
+    glm::vec2 accum { 0.0f };
+
+    for (const PointerTrigger& trigger : _triggers) {
+        std::string button = trigger.getButton();
+
+        // if ScrollActive is available, use it to lock out accidental scrolls
+        // (like on the UI, where the lasers are always active even though they're invisible)
+        if (button == "ScrollActive" && trigger.getEndpoint()->peek().value < 0.1f) {
+            isActive = false;
+        } else if (button == "ScrollX") {
+            accum.x += trigger.getEndpoint()->peek().value;
+        } else if (button == "ScrollY") {
+            accum.y += trigger.getEndpoint()->peek().value;
+        }
+    }
+
+    return isActive ? accum : glm::vec2(0.0f);
+}
+
 Pointer::Buttons PathPointer::getPressedButtons(const PickResultPointer& pickResult) {
     std::unordered_set<std::string> toReturn;
 

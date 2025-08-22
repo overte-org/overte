@@ -260,6 +260,20 @@ Flickable {
             }
         }
 
+        SettingComboBox {
+            settingText: "LOD Settings";
+            options: ["Low Detail", "Medium Detail",  "High Detail" ];
+            optionIndex: LODManager.worldDetailQuality;
+
+            onValueChanged: {
+                LODManager.worldDetailQuality = index;
+            }
+
+            Component.onCompleted: {
+                optionIndex = LODManager.worldDetailQuality;
+            }
+        }
+
         // Fullscreen Display
         SettingComboBox {
             settingText: "Fullscreen Display";
@@ -311,9 +325,19 @@ Flickable {
             settingText: "Anti-aliasing";
             optionIndex: Render.antialiasingMode;
             options: ["None", "TAA", "FXAA"];
+            disabled: Render.renderMethod;
 
             onValueChanged: {
                 Render.antialiasingMode = index;
+            }
+
+            onDisabledChanged: {
+                if (disabled) {
+                    options = ["MSAA"];
+                }
+                else {
+                    options = ["None", "TAA", "FXAA"];
+                }
             }
         }
     }

@@ -336,7 +336,7 @@ TransformObject getTransformObject() {
 <@endfunc@>
 
 <@func transformModelToWorldDirNoScale(objectTransform, modelDir, worldDir)@>
-    { // transformModelToWorldDir
+    { // transformModelToWorldDirNoScale
         vec3 mr0 = normalize(vec3(<$objectTransform$>._modelInverse[0].x, <$objectTransform$>._modelInverse[1].x, <$objectTransform$>._modelInverse[2].x));
         vec3 mr1 = normalize(vec3(<$objectTransform$>._modelInverse[0].y, <$objectTransform$>._modelInverse[1].y, <$objectTransform$>._modelInverse[2].y));
         vec3 mr2 = normalize(vec3(<$objectTransform$>._modelInverse[0].z, <$objectTransform$>._modelInverse[1].z, <$objectTransform$>._modelInverse[2].z));

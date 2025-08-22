@@ -118,7 +118,7 @@
         if (!channels.includes(message.channel)) return;
 
         // If message is local, and if player is too far away from location, do nothing.
-        if (message.channel == "local" && isTooFar(message.position)) return; 
+        if (message.channel == "local" && isTooFar(message.position)) return;
 
         // Format the timestamp 
         message.timeString = timeArray[0];
@@ -282,7 +282,7 @@
             message.message = `${displayName} ${type}`;
 
             // Show new message on screen
-            if (settings.join_notification){
+            if (settings.join_notification) {
                 Messages.sendLocalMessage(
                     "Floof-Notif",
                     JSON.stringify({
@@ -315,10 +315,10 @@
         console.log("Saving config");
         Settings.setValue("ArmoredChat-Config", settings);
     }
-    function _getTimestamp(){
+    function _getTimestamp() {
         return Date.now();
     }
-    function _formatTimestamp(timestamp){
+    function _formatTimestamp(timestamp) {
         let timeArray = [];
 
         timeArray.push(new Date().toLocaleTimeString(undefined, {
@@ -326,9 +326,9 @@
         }));
 
         timeArray.push(new Date(timestamp).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
         }));
 
         return timeArray;

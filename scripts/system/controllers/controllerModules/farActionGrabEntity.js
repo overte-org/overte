@@ -310,8 +310,9 @@ Script.include("/~/system/libraries/controllers.js");
             var entityType = entityProperty.type;
             var hudRayPick = controllerData.hudRayPicks[this.hand];
             var point2d = this.calculateNewReticlePosition(hudRayPick.intersection);
-            if ((intersection.type === Picks.INTERSECTED_ENTITY && entityType === "Web") ||
-                intersection.type === Picks.INTERSECTED_OVERLAY || Window.isPointOnDesktopWindow(point2d)) {
+            if (intersection.objectID === HMD.tabletID ||
+                entityType === "Web" ||
+                Window.isPointOnDesktopWindow(point2d)) {
                 return true;
             }
             return false;
@@ -387,7 +388,7 @@ Script.include("/~/system/libraries/controllers.js");
         this.run = function (controllerData) {
 
             var intersection = controllerData.rayPicks[this.hand];
-            if (intersection.type === Picks.INTERSECTED_ENTITY && !Window.isPhysicsEnabled()) {
+            if (!Window.isPhysicsEnabled()) {
                 // add to ignored items.
                 if (this.ignoredEntities.indexOf(intersection.objectID) === -1) {
                     var data = {
@@ -451,47 +452,50 @@ Script.include("/~/system/libraries/controllers.js");
                 }
 
                 var rayPickInfo = controllerData.rayPicks[this.hand];
-                if (rayPickInfo.type === Picks.INTERSECTED_ENTITY) {
-                    if (controllerData.triggerClicks[this.hand]) {
-                        var entityID = rayPickInfo.objectID;
-                        var targetProps = Entities.getEntityProperties(entityID, DISPATCHER_PROPERTIES);
-                        if (targetProps.href !== "") {
-                            AddressManager.handleLookupString(targetProps.href);
-                            this.restoreIgnoredEntities();
-                            return makeRunningValues(false, [], []);
+                if (controllerData.triggerClicks[this.hand]) {
+                    var entityID = rayPickInfo.objectID;
+                    var targetProps = Entities.getEntityProperties(entityID, DISPATCHER_PROPERTIES);
+                    if (targetProps.href !== "") {
+                        AddressManager.handleLookupString(targetProps.href);
+                        this.restoreIgnoredEntities();
+                        return makeRunningValues(false, [], []);
+                    }
+
+                    this.targetObject = new TargetObject(entityID, targetProps);
+                    this.targetObject.parentProps = getEntityParents(targetProps);
+
+                    Selection.removeFromSelectedItemsList("contextOverlayHighlightList", "entity", entityID);
+
+                    var targetEntity = this.targetObject.getTargetEntity();
+                    entityID = targetEntity.id;
+                    targetProps = targetEntity.props;
+
+                    if (
+                        entityID !== HMD.tabletID &&
+                        (entityIsGrabbable(targetProps) ||
+                        entityIsGrabbable(this.targetObject.entityProps))
+                    ) {
+                        if (!entityIsDistanceGrabbable(targetProps)) {
+                            this.targetObject.makeDynamic();
                         }
 
-                        this.targetObject = new TargetObject(entityID, targetProps);
-                        this.targetObject.parentProps = getEntityParents(targetProps);
+                        if (!this.distanceRotating) {
+                            this.grabbedThingID = entityID;
+                            this.grabbedDistance = rayPickInfo.distance;
+                        }
 
-                        Selection.removeFromSelectedItemsList("contextOverlayHighlightList", "entity", entityID);
-
-                        var targetEntity = this.targetObject.getTargetEntity();
-                        entityID = targetEntity.id;
-                        targetProps = targetEntity.props;
-
-                        if (entityIsGrabbable(targetProps) || entityIsGrabbable(this.targetObject.entityProps)) {
-                            if (!entityIsDistanceGrabbable(targetProps)) {
-                                this.targetObject.makeDynamic();
-                            }
-
-                            if (!this.distanceRotating) {
-                                this.grabbedThingID = entityID;
-                                this.grabbedDistance = rayPickInfo.distance;
-                            }
-
-                            if (otherFarGrabModule.grabbedThingID === this.grabbedThingID &&
-                                otherFarGrabModule.distanceHolding) {
-                                this.prepareDistanceRotatingData(controllerData);
-                                this.distanceRotate(otherFarGrabModule);
-                            } else {
-                                this.distanceHolding = true;
-                                this.distanceRotating = false;
-                                this.startFarGrabAction(controllerData, targetProps);
-                            }
+                        if (otherFarGrabModule.grabbedThingID === this.grabbedThingID &&
+                            otherFarGrabModule.distanceHolding) {
+                            this.prepareDistanceRotatingData(controllerData);
+                            this.distanceRotate(otherFarGrabModule);
+                        } else {
+                            this.distanceHolding = true;
+                            this.distanceRotating = false;
+                            this.startFarGrabAction(controllerData, targetProps);
                         }
                     }
-                } else if (this.distanceRotating) {
+                }
+                if (this.distanceRotating) {
                     this.distanceRotate(otherFarGrabModule);
                 }
             }

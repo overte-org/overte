@@ -672,6 +672,8 @@ signals:
      */
     void hoverLeaveOverlay(const QUuid& id, const PointerEvent& event);
 
+    void scrollOverlay(const QUuid& id, const PointerEvent& event);
+
 private:
     void cleanupOverlaysToDelete();
 
@@ -700,7 +702,7 @@ private slots:
     void hoverEnterPointerEvent(const QUuid& id, const PointerEvent& event);
     void hoverOverPointerEvent(const QUuid& id, const PointerEvent& event);
     void hoverLeavePointerEvent(const QUuid& id, const PointerEvent& event);
-
+    void scrollPointerEvent(const QUuid& id, const PointerEvent& event);
 
 };
 

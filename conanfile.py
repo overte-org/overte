@@ -25,8 +25,10 @@ class Overte(ConanFile):
         "qt*:shared": "True",
         "qt*:gui": "True",
         "qt*:qtdeclarative": "True",
+        "qt*:qtimageformats": "True",  # WebP texture support
         "qt*:qtlocation": "True",
         "qt*:qtmultimedia": "True",
+        "qt*:qtquickcontrols": "True",  # For QtQuick.Dialogs
         "qt*:qtquickcontrols2": "True",
         "qt*:qtscxml": "True",
         "qt*:qtsvg": "True",
@@ -35,6 +37,7 @@ class Overte(ConanFile):
         "qt*:qtwebsockets": "True",
         "qt*:qtwebview": "True",
         "qt*:qtxmlpatterns": "True",
+        "qt*:qttools": "True",  # windeployqt for Windows
         "glad*:spec": "gl",
         "glad*:gl_profile": "core",
         "glad*:gl_version": "4.6",
@@ -90,9 +93,7 @@ class Overte(ConanFile):
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
-            self.requires("qt/5.15.16-2025.01.23@overte/stable", force=True)
-            # Upstream NSS is broken, so we use https://github.com/conan-io/conan-center-index/pull/19262/commits/735df499341924901089fd512a8ac56ac83d1e6a
-            self.requires("nss/3.107@overte/stable", force=True)
+            self.requires("qt/5.15.17-2025.06.07@overte/stable#7f723980c8ffcae0e832156b5857c396", force=True)
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")
@@ -103,6 +104,70 @@ class Overte(ConanFile):
 
     def generate(self):
         tc = CMakeToolchain(self)
+
+        # Settings a whole bunch of defaults for CMake.
+        # These are only defaults and can be changed at any point using the CMake GUI (or your preferred IDE).
+        if self.settings.compiler != "msvc":
+            if self.settings.arch == "x86_64":
+                self.output.status("x86_64 architecture detected, setting default flags.")
+                tc.cache_variables.update({
+                    # Enable function alignment to fix crashes in relation to V8 scripting engine and enable SSE3 architecture optimization.
+                    # TODO: Use `-fmin-function-alignment=16` once we switch to GCC 14 as minimum, which would be once we switch to Ubuntu 26.04 as our target.
+                    "CMAKE_CXX_FLAGS_INIT": "-falign-functions=32 -fPIC -m64 -msse3",
+                    "CMAKE_C_FLAGS_INIT": "-falign-functions=32 -fPIC -m64 -msse3",
+                    })
+            elif self.settings.arch == "armv8":
+                self.output.status("aarch64 architecture detected, setting default flags.")
+                # TODO: What architecture optimizations should we use on aarch64? We should target the 64 bit version of the Raspberry Pi 2 as a minimum.
+                tc.cache_variables.update({
+                    "CMAKE_CXX_FLAGS_INIT": "-falign-functions=32 -fPIC",
+                    "CMAKE_C_FLAGS_INIT": "-falign-functions=32 -fPIC",
+                    })
+            else:
+                self.output.warning(f"Architecture '{self.settings.arch}' isn't supported by Overte. Falling back to defaults.", warn_tag=None)
+                tc.cache_variables.update({
+                    "CMAKE_CXX_FLAGS_INIT": "-falign-functions=32 -fPIC",
+                    "CMAKE_C_FLAGS_INIT": "-falign-functions=32 -fPIC",
+                    })
+
+            if self.settings.compiler == "gcc":
+                self.output.status("GCC compiler detected, setting default flags.")
+                tc.cache_variables.update({
+                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-Og -ggdb3",
+                    "CMAKE_C_FLAGS_DEBUG_INIT": "-Og -ggdb3",
+                    "CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -ggdb2",
+                    "CMAKE_C_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -ggdb2",
+                    "CMAKE_CXX_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
+                    "CMAKE_C_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
+                    })
+            elif self.settings.compiler == "clang":
+                self.output.status("Clang compiler detected, setting default flags.")
+                tc.cache_variables.update({
+                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-Og -g",
+                    "CMAKE_C_FLAGS_DEBUG_INIT": "-Og -g",
+                    "CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -g",
+                    "CMAKE_C_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -g",
+                    "CMAKE_CXX_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
+                    "CMAKE_C_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
+                    })
+            else:
+                self.output.warning(f"Unknown compiler '{self.settings.compiler}'. Not setting default optimization flags.", warn_tag=None)
+
+        # Enabling warnings-as-errors by default on our Linux target and on Windows.
+        # Our current Linux development target is Ubuntu 22.04, which uses GCC 11.2.
+        if self.settings.compiler == "gcc" and self.settings.compiler.version == "11":
+            tc.cache_variables.update({
+                "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
+            })
+        elif self.settings.compiler == "msvc":
+            tc.cache_variables.update({
+                "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
+            })
+        else:
+            tc.cache_variables.update({
+                "CMAKE_COMPILE_WARNING_AS_ERROR": "OFF",
+            })
+
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
