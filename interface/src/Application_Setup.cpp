@@ -1364,7 +1364,11 @@ void Application::setupSignalsAndOperators() {
 
         // setup a timer for domain-server check ins
         QTimer* domainCheckInTimer = new QTimer(this);
-        connect(domainCheckInTimer, &QTimer::timeout, nodeList.data(), &NodeList::sendDomainServerCheckIn);
+        connect(domainCheckInTimer, &QTimer::timeout, [this, nodeList] {
+            if (!isServerlessMode()) {
+                nodeList->sendDomainServerCheckIn();
+            }
+        });
         domainCheckInTimer->start(DOMAIN_SERVER_CHECK_IN_MSECS);
         connect(this, &QCoreApplication::aboutToQuit, [domainCheckInTimer] {
             domainCheckInTimer->stop();
