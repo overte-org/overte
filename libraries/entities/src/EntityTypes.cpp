@@ -37,6 +37,7 @@
 #include "ZoneEntityItem.h"
 #include "MaterialEntityItem.h"
 #include "SoundEntityItem.h"
+#include "EmptyEntityItem.h"
 
 QMap<EntityTypes::EntityType, QString> EntityTypes::_typeToNameMap;
 QMap<QString, EntityTypes::EntityType> EntityTypes::_nameToTypeMap;
@@ -64,6 +65,7 @@ REGISTER_ENTITY_TYPE(Light)
 REGISTER_ENTITY_TYPE(Zone)
 REGISTER_ENTITY_TYPE(Material)
 REGISTER_ENTITY_TYPE(Sound)
+REGISTER_ENTITY_TYPE(Empty)
 
 bool EntityTypes::typeIsValid(EntityType type) {
     return type > EntityType::Unknown && type <= EntityType::NUM_TYPES;

@@ -96,8 +96,9 @@
     var ZONE_URL = Script.resolvePath("assets/images/icon-zone.svg");
     var MATERIAL_URL = Script.resolvePath("assets/images/icon-material.svg");
     var SOUND_URL = Script.resolvePath("assets/images/icon-sound.svg");
+    var EMPTY_URL = Script.resolvePath("assets/images/icon-empty.svg");
 
-    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "ProceduralParticleEffect", "Zone", "Material", "Sound"], function(entityID) {
+    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "ProceduralParticleEffect", "Zone", "Material", "Sound", "Empty"], function(entityID) {
         var properties = Entities.getEntityProperties(entityID, ["type", "isSpotlight", "parentID", "name"]);
         if (properties.type === "Light") {
             return {
@@ -113,6 +114,8 @@
             }
         } else if (properties.type === "Sound") {
             return { imageURL: SOUND_URL, rotation: Quat.fromPitchYawRollDegrees(0, 0, 0) };
+        } else if (properties.type === "Empty") {
+            return { imageURL: EMPTY_URL, rotation: Quat.fromPitchYawRollDegrees(0, 0, 0) };
         } else {
             return { imageURL: PARTICLE_SYSTEM_URL };
         }
@@ -1145,6 +1148,12 @@
             addButton("newPolyVoxButton", createNewEntityDialogButtonCallback("PolyVox"));
 
             addButton("newSoundButton", createNewEntityDialogButtonCallback("Sound"));
+
+            addButton("newEmptyButton", function () {
+                createNewEntity({
+                    type: "Empty",
+                });
+            });
 
             var deactivateCreateIfDesktopWindowsHidden = function() {
                 if (!shouldUseEditTabletApp() && !entityListTool.isVisible() && !createToolsWindow.isVisible()) {
