@@ -903,9 +903,9 @@ bool RenderPipelines::bindMaterials(graphics::MultiMaterial& multiMaterial, Batc
 
     auto textureCache = DependencyManager::get<TextureCache>();
 
-    static TextureTablePointer defaultMaterialTextures = std::make_shared<TextureTable>();
+    static TextureTablePointer defaultMaterialTextures = std::make_shared<TextureTable>(TEXTURE_TABLE_COUNT_1_LAYER_MATERIAL);
     static BufferView defaultMaterialSchema;
-    static TextureTablePointer defaultMToonMaterialTextures = std::make_shared<TextureTable>();
+    static TextureTablePointer defaultMToonMaterialTextures = std::make_shared<TextureTable>(TEXTURE_TABLE_COUNT_1_LAYER_MATERIAL);
     static BufferView defaultMToonMaterialSchema;
     static BufferView defaultTriplanarScale;
 
@@ -955,6 +955,9 @@ bool RenderPipelines::bindMaterials(graphics::MultiMaterial& multiMaterial, Batc
             // So for 2 layers, we are limited to 6 textures each, and for 3 layers we are limited to 4 each
             uint8_t offset = numLayers < 3 ? 6 : 4;
             for (uint8_t i = 0; i < numLayers; i++) {
+                // Since material's texture table has 8 slots, for second and third material we have to make sure that these
+                // won't overwrite or unbind ambientFresnelLUT texture slot.
+
                 batch.setResourceTextureTable(textureTables[i], i * offset);
             }
             if (multiMaterial.isSplatMap()) {

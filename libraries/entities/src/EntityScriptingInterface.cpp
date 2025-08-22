@@ -222,6 +222,8 @@ void EntityScriptingInterface::attachDefaultEventHandlers(ScriptManager* manager
          *       <td>{@link Entities.hoverOverEntity}</td></tr>
          *     <tr><td><code>"hoverLeaveEntity"</code></td><td>{@link Script~pointerEventCallback|pointerEventCallback}</td>
          *       <td>{@link Entities.hoverLeaveEntity}</td></tr>
+         *     <tr><td><code>"scrollOnEntity"</code></td><td>{@link Script~pointerEventCallback|pointerEventCallback}</td>
+         *       <td>{@link Entities.scrollOnEntity}</td></tr>
          *     <tr><td><code>"collisionWithEntity"</code><td>{@link Script~collisionEventCallback|collisionEventCallback}</td>
          *       </td><td>{@link Entities.collisionWithEntity}</td></tr>
          *   </tbody>
@@ -242,6 +244,8 @@ void EntityScriptingInterface::attachDefaultEventHandlers(ScriptManager* manager
     connect(this, &EntityScriptingInterface::hoverEnterEntity, manager, makePointerHandler("hoverEnterEntity"));
     connect(this, &EntityScriptingInterface::hoverOverEntity, manager, makePointerHandler("hoverOverEntity"));
     connect(this, &EntityScriptingInterface::hoverLeaveEntity, manager, makePointerHandler("hoverLeaveEntity"));
+
+    connect(this, &EntityScriptingInterface::scrollOnEntity, manager, makePointerHandler("scrollOnEntity"));
 
     connect(this, &EntityScriptingInterface::collisionWithEntity, manager, makeCollisionHandler("collisionWithEntity"));
 }

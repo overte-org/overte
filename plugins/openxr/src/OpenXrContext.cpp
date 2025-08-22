@@ -12,6 +12,10 @@
 #include <QString>
 #include <QGuiApplication>
 
+#if defined(Q_OS_LINUX)
+#include <QMessageBox>
+#endif
+
 #include <sstream>
 
 Q_DECLARE_LOGGING_CATEGORY(xr_context_cat)
@@ -67,12 +71,13 @@ OpenXrContext::~OpenXrContext() {
 }
 
 bool OpenXrContext::initInstance() {
-    auto myApp = static_cast<QGuiApplication*>(qApp);
-    if (myApp->platformName() == "wayland") {
-        auto msg = QString::fromUtf8("The OpenXR plugin does not support Wayland yet! Use the QT_QPA_PLATFORM=xcb environment variable to force Overte to launch with X11.");
-        qCCritical(xr_context_cat) << msg;
+#if defined(Q_OS_LINUX)
+    if (qApp->platformName() == "wayland") {
+        qCCritical(xr_context_cat) << "The OpenXR plugin can't run on Wayland yet. This will hopefully be resolved with Qt 6.";
+        QMessageBox::warning(nullptr, "Warning", "Overte cannot use OpenXR on Wayland yet. Use the QT_QPA_PLATFORM=xcb environment variable to launch Overte through XWayland.");
         return false;
     }
+#endif
 
     uint32_t count = 0;
     XrResult result = xrEnumerateInstanceExtensionProperties(nullptr, 0, &count, nullptr);

@@ -123,6 +123,9 @@ public:
     FileLogger* getLogger() const { return _logger; }
 #endif
 
+    bool getUseDiscordPresence() const { return _useDiscordPresence.get(); }
+    void setUseDiscordPresence(bool enable);
+
     QString getPreviousScriptLocation() { return _previousScriptLocation.get(); }
     void setPreviousScriptLocation(const QString& previousScriptLocation) { _previousScriptLocation.set(previousScriptLocation); }
 
@@ -191,9 +194,6 @@ public:
     
     void setMouseCaptureVR(bool value);
     bool getMouseCaptureVR();
-
-    bool getShowGraphicsIcon() { return _showGraphicsIconSetting.get(); }
-    void setShowGraphicsIcon(bool value);
 
     bool getMiniTabletEnabled() { return _miniTabletEnabledSetting.get(); }
     void setMiniTabletEnabled(bool enabled);
@@ -387,6 +387,7 @@ signals:
     void awayStateWhenFocusLostInVRChanged(bool enabled);
 
     void darkThemePreferenceChanged(bool useDarkTheme);
+    void menuBarVisibilityChanged(bool visible);
 
 public slots:
     void updateThreadPoolCount() const;
@@ -464,6 +465,9 @@ public slots:
 
     bool getDarkThemePreference() const { return _darkTheme.get(); }
     void setDarkThemePreference(bool value);
+
+    bool getMenuBarVisible() const { return _menuBarVisible.get(); }
+    void setMenuBarVisible(bool visible);
 
     /**
      * @brief Shows/hides VR keyboard input for Overlay windows
@@ -752,6 +756,7 @@ private:
     VisionSqueeze _visionSqueeze;
 
     DiscordPresence* _discordPresence { nullptr };
+    Setting::Handle<bool> _useDiscordPresence;
 
     Setting::Handle<bool> _firstRun;
     Setting::Handle<QString> _previousScriptLocation;
@@ -803,7 +808,6 @@ private:
     Setting::Handle<bool> _preferStylusOverLaserSetting;
     Setting::Handle<bool> _preferAvatarFingerOverStylusSetting;
     Setting::Handle<bool> _defaultMouseCaptureVR;
-    Setting::Handle<bool> _showGraphicsIconSetting;
     Setting::Handle<bool> _constrainToolbarPosition;
     Setting::Handle<bool> _awayStateWhenFocusLostInVREnabled;
     Setting::Handle<QString> _preferredCursor;
@@ -811,6 +815,7 @@ private:
     Setting::Handle<bool> _darkTheme;
     Setting::Handle<bool> _miniTabletEnabledSetting;
     Setting::Handle<bool> _keepLogWindowOnTop { "keepLogWindowOnTop", false };
+    Setting::Handle<bool> _menuBarVisible { "menuBarVisible", true };
 
     void updateThemeColors();
 

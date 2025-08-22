@@ -975,7 +975,7 @@ v8::Local<v8::ObjectTemplate> ScriptEngineV8::getFunctionDataTemplate() {
     v8::EscapableHandleScope handleScope(_v8Isolate);
     if (_functionDataTemplate.IsEmpty()) {
         auto functionDataTemplate = v8::ObjectTemplate::New(_v8Isolate);
-        functionDataTemplate->SetInternalFieldCount(2);
+        functionDataTemplate->SetInternalFieldCount(3);
         _functionDataTemplate.Reset(_v8Isolate, functionDataTemplate);
     }
 
@@ -1309,11 +1309,16 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
         v8::Context::Scope contextScope(context);
         Q_ASSERT(info.Data()->IsObject());
         auto object = v8::Local<v8::Object>::Cast(info.Data());
-        Q_ASSERT(object->InternalFieldCount() == 2);
-        auto function = reinterpret_cast<ScriptEngine::FunctionSignature>
+        Q_ASSERT(object->InternalFieldCount() == 3);
+        // Pointers need to be decoded from two internal fields after storing.
+        auto pointerValueLow = reinterpret_cast<uint64_t>
             (object->GetAlignedPointerFromInternalField(0));
-        ScriptEngineV8 *scriptEngine = reinterpret_cast<ScriptEngineV8*>
+        auto pointerValueHigh =reinterpret_cast<uint64_t>
             (object->GetAlignedPointerFromInternalField(1));
+        auto pointer = reinterpret_cast<void*>(pointerValueHigh | (pointerValueLow >> 32));
+        auto function = reinterpret_cast<ScriptEngine::FunctionSignature>(pointer);
+        auto *scriptEngine = reinterpret_cast<ScriptEngineV8*>
+            (object->GetAlignedPointerFromInternalField(2));
         ContextScopeV8 contextScopeV8(scriptEngine);
         ScriptContextV8Wrapper scriptContext(scriptEngine, &info, scriptEngine->getContext(), scriptEngine->currentContext()->parentContext());
         ScriptContextGuard scriptContextGuard(&scriptContext);
@@ -1325,8 +1330,13 @@ ScriptValue ScriptEngineV8::newFunction(ScriptEngine::FunctionSignature fun, int
     };
     auto functionDataTemplate = getFunctionDataTemplate();
     auto functionData = functionDataTemplate->NewInstance(context).ToLocalChecked();
-    functionData->SetAlignedPointerInInternalField(0, reinterpret_cast<void*>(fun));
-    functionData->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(this));
+    auto pointerValue = reinterpret_cast<uint64_t>(reinterpret_cast<void*>(fun));
+    // Pointer value needs to be split into two parts as a workaround, because MSVC sometimes does not align functions.
+    uint64_t pointerValueLow = (pointerValue & 0xFFFFFFFF) << 32;
+    uint64_t pointerValueHigh = pointerValue & 0xFFFFFFFF00000000;
+    functionData->SetAlignedPointerInInternalField(0, reinterpret_cast<void*>(pointerValueLow));
+    functionData->SetAlignedPointerInInternalField(1, reinterpret_cast<void*>(pointerValueHigh));
+    functionData->SetAlignedPointerInInternalField(2, reinterpret_cast<void*>(this));
     auto v8Function = v8::Function::New(context, v8FunctionCallback, functionData, length).ToLocalChecked();
     V8ScriptValue result(this, v8Function);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(result)));

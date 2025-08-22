@@ -84,6 +84,7 @@ EntityTreeRenderer::EntityTreeRenderer(bool wantScripts, AbstractViewStateInterf
     connect(pointerManager.data(), &PointerManager::triggerBeginEntity, entityScriptingInterface, &EntityScriptingInterface::mousePressOnEntity);
     connect(pointerManager.data(), &PointerManager::triggerContinueEntity, entityScriptingInterface, &EntityScriptingInterface::mouseMoveOnEntity);
     connect(pointerManager.data(), &PointerManager::triggerEndEntity, entityScriptingInterface, &EntityScriptingInterface::mouseReleaseOnEntity);
+    connect(pointerManager.data(), &PointerManager::scrollEntity, entityScriptingInterface, &EntityScriptingInterface::scrollOnEntity);
 
     // Forward mouse events to web entities
     auto handlePointerEvent = [&](const QUuid& entityID, const PointerEvent& event) {
@@ -135,6 +136,7 @@ EntityTreeRenderer::EntityTreeRenderer(bool wantScripts, AbstractViewStateInterf
             QMetaObject::invokeMethod(thisEntity.get(), "hoverLeaveEntity", Q_ARG(const PointerEvent&, event));
         }
     });
+    connect(entityScriptingInterface, &EntityScriptingInterface::scrollOnEntity, this, handlePointerEvent);
 }
 
 EntityTreeRenderer::~EntityTreeRenderer() {
@@ -207,6 +209,10 @@ void EntityTreeRenderer::setupEntityScriptEngineSignals(const ScriptManagerPoint
     connect(entityScriptingInterface.data(), &EntityScriptingInterface::hoverLeaveEntity, scriptManager.get(),
             [&](const EntityItemID& entityID, const PointerEvent& event) {
         scriptManager->callEntityScriptMethod(entityID, "hoverLeaveEntity", event);
+    });
+    connect(entityScriptingInterface.data(), &EntityScriptingInterface::scrollOnEntity, scriptManager.get(),
+            [&](const EntityItemID& entityID, const PointerEvent& event) {
+        scriptManager->callEntityScriptMethod(entityID, "scrollOnEntity", event);
     });
 
     connect(scriptManager.get(), &ScriptManager::entityScriptPreloadFinished, [&](const EntityItemID& entityID) {

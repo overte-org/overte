@@ -22,6 +22,8 @@
     #undef Unsorted
     // MappingPointer from X11 conflicts with one from controllers/Forward.h
     #undef MappingPointer
+    // CursorShape conflicts with QCursor
+    #undef CursorShape
 #elif defined(Q_OS_WIN)
     #define XR_USE_PLATFORM_WIN32
     #include <Unknwn.h>

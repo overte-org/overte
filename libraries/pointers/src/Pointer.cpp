@@ -113,6 +113,12 @@ void Pointer::generatePointerEvents(unsigned int pointerID, const PickResultPoin
     if (_enabled && shouldTrigger(pickResult)) {
         buttons = getPressedButtons(pickResult);
         for (const std::string& button : buttons) {
+            auto buttonType = chooseButton(button);
+            if (buttonType == PointerEvent::NoButtons) {
+                // don't issue trigger events for virtual triggers
+                continue;
+            }
+
             if (_prevButtons.find(button) == _prevButtons.end()) {
                 newButtons.insert(button);
             } else {
@@ -209,12 +215,26 @@ void Pointer::generatePointerEvents(unsigned int pointerID, const PickResultPoin
         }
     }
 
+    // scroll events
+    PointerEvent scrollEvent = buildPointerEvent(hoveredObject, pickResult);
+    scrollEvent.setType(PointerEvent::Scroll);
+    scrollEvent.setID(pointerID);
+    scrollEvent.setScroll(getScroll(pickResult));
+    if (glm::length(scrollEvent.getScroll()) > 0.01f) {
+        if (hoveredObject.type == ENTITY) {
+            emit pointerManager->scrollEntity(hoveredObject.objectID, scrollEvent);
+        } else if (hoveredObject.type == LOCAL_ENTITY) {
+            emit pointerManager->scrollOverlay(hoveredObject.objectID, scrollEvent);
+        } else if (hoveredObject.type == HUD) {
+            emit pointerManager->scrollHUD(scrollEvent);
+        }
+    }
+
     // Trigger begin
-    const std::string SHOULD_FOCUS_BUTTON = "Focus";
     for (const std::string& button : newButtons) {
         hoveredEvent.setType(PointerEvent::Press);
         hoveredEvent.setButton(chooseButton(button));
-        hoveredEvent.setShouldFocus(button == SHOULD_FOCUS_BUTTON);
+        hoveredEvent.setShouldFocus(true);
         if (hoveredObject.type == ENTITY) {
             emit pointerManager->triggerBeginEntity(hoveredObject.objectID, hoveredEvent);
         } else if (hoveredObject.type == LOCAL_ENTITY) {

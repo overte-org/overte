@@ -94,7 +94,6 @@ public slots:
     void openUrl(const QString &url) const;
 private:
     AboutUtil(QObject* parent = nullptr);
-    QString _dateConverted;
 };
 
 #endif // hifi_AboutUtil_h

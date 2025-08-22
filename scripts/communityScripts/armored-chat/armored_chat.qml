@@ -2,6 +2,7 @@ import QtQuick 2.7
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import controlsUit 1.0 as HifiControlsUit
+import "./qml"
 
 Rectangle {
     color: Qt.rgba(0.1,0.1,0.1,1)
@@ -21,27 +22,13 @@ Rectangle {
         repeat: false
         onTriggered: {
             toScript({type: "initialized"});
-            load_scroll_timer.bypassDistanceCheck = true
-            load_scroll_timer.running = true
-        }
-    }
-    Timer {
-        id: load_scroll_timer
-        interval: 100
-        running: false
-        repeat: false
-
-        property bool bypassDistanceCheck: false    // One time event. Whether we should bypass the distance check, and scroll to the bottom regardless or not.
-
-        onTriggered: {
-           scrollToBottom(bypassDistanceCheck);
-           bypassDistanceCheck = false;             // Set the property to false, this was a one time event!
         }
     }
 
     // User view
     Item {
-        anchors.fill: parent
+        anchors.fill: parent;
+        width: parent.width;
 
         // Navigation Bar
         Rectangle {
@@ -78,8 +65,7 @@ Rectangle {
                         anchors.fill: parent
                         onClicked: {
                             pageVal = "local";
-                            load_scroll_timer.bypassDistanceCheck = true;
-                            load_scroll_timer.running = true;
+                            scrollToBottom();
                         }
                     }
                 }
@@ -108,8 +94,7 @@ Rectangle {
                         anchors.fill: parent
                         onClicked: {
                             pageVal = "domain";
-                            load_scroll_timer.bypassDistanceCheck = true;
-                            load_scroll_timer.running = true;
+                            scrollToBottom();
                         }
                     }
                 }
@@ -153,58 +138,42 @@ Rectangle {
             visible: ["local", "domain"].includes(pageVal) ? true : false
 
             // Chat Message History
-            Flickable {
-                width: parent.width
-                height: parent.height - 40
-                contentWidth: parent.width
-                contentHeight: listview.height
-                clip: true
-                id: messageViewFlickable
+            ListView {
+                id: listview;
+                width: parent.width;
+                height: parent.height - 40;
+                clip: true;
+                model: pageVal == "local" ? localMessages : domainMessages;
+                orientation: ListView.Vertical;
+                spacing: 5;
 
-                ColumnLayout {
-                    id: listview 
-                    Layout.fillWidth: true
+                delegate: ChatMessage {
+                    delegateMessage: model.text;
+                    delegateUsername: model.username;
+                    delegateDate: model.date;
+                    isSystem: model.type === "notification";
+                }
 
-                    Repeater {
-                        model: getChannel(pageVal)
-                        delegate: Loader {
-                            property int delegateIndex: model.index
-                            property string delegateText: model.text
-                            property string delegateUsername: model.username
-                            property string delegateDate: model.date
+                ScrollBar.vertical: ScrollBar {
+                    policy: Qt.ScrollBarAlwaysOn;
 
-                            sourceComponent: {
-                                if (model.type === "chat") {
-                                    return template_chat_message;
-                                } else if (model.type === "notification") {
-                                    return template_notification;
-                                }
-                            }
-                        
-                        }
+                    background: Rectangle {
+                        color: "transparent";
+                        radius: 5;
+                        visible: parent.visible;
                     }
                 }
 
-                ScrollBar.vertical: ScrollBar { 
-                    size: 100
-                    minimumSize: 0.1
-                }
-
-                rebound: Transition {
-                    NumberAnimation {
-                        properties: "x,y"
-                        duration: 1
-                    }
+                Component.onCompleted: {
+                    listview.positionViewAtEnd();
                 }
             }
 
-
             ListModel {
-                id: local
+                id: localMessages;
             }
-
             ListModel {
-                id: domain
+                id: domainMessages;
             }
 
             // Chat Entry
@@ -219,11 +188,12 @@ Rectangle {
                     height: parent.height
 
                     TextField {
-                        width: parent.width - 60
-                        height: parent.height
-                        placeholderText: pageVal.charAt(0).toUpperCase() + pageVal.slice(1) + " chat message..."
-                        clip: false
-                        font.italic: text == ""
+                        width: parent.width - 60;
+                        height: parent.height;
+                        placeholderText: pageVal.charAt(0).toUpperCase() + pageVal.slice(1) + " chat message...";
+                        clip: false;
+                        font.italic: text == "";
+                        selectByMouse: true;
 
                         Keys.onPressed: {
                             if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && !(event.modifiers & Qt.ShiftModifier)) {
@@ -416,188 +386,33 @@ Rectangle {
 
     }
 
-    // Templates
-    Component {
-        id: template_chat_message
-
-        Rectangle {
-            property int index: delegateIndex
-            property string texttest: delegateText
-            property string username: delegateUsername
-            property string date: delegateDate
-
-            height: Math.max(65, children[1].height + 30)
-            color: index % 2 === 0 ? "transparent" : Qt.rgba(0.15,0.15,0.15,1)
-            width: listview.parent.parent.width
-            Layout.fillWidth: true
-
-            Item {
-                width: parent.width - 10
-                anchors.horizontalCenter: parent.horizontalCenter
-                height: 22
-
-                Text{
-                    text: username
-                    color: "lightgray"
-                }
-
-                Text{
-                    anchors.right: parent.right
-                    text: date
-                    color: "lightgray"
-                }
-            }
-
-            TextEdit {
-                anchors.top: parent.children[0].bottom
-                x: 5
-                text: texttest
-                color:"white"
-                font.pointSize: 12
-                readOnly: true
-                selectByMouse: true
-                selectByKeyboard: true
-                width: parent.width * 0.8
-                height: contentHeight
-                wrapMode: Text.Wrap
-                textFormat: TextEdit.RichText
-
-                onLinkActivated: {
-                    Window.openWebBrowser(link)
-                }
-            }
-        }
+    function scrollToBottom() {
+        listview.positionViewAtEnd();
     }
-
-    Component {
-        id: template_notification
-
-        Rectangle{
-            property int index: delegateIndex
-            property string texttest: delegateText
-            property string username: delegateUsername
-            property string date: delegateDate
-            color: "#171717"
-            width: parent.width
-            height: 40
-
-            Item {
-                width: 10
-                height: parent.height
-
-                Rectangle {
-                    height: parent.height
-                    width: 5
-                    color: "#505186"
-                }
-            }
-
-
-            Item {
-                width: parent.width - parent.children[0].width - 5
-                height: parent.height
-                anchors.left: parent.children[0].right
-
-                TextEdit{
-                    text: texttest
-                    color:"white"
-                    font.pointSize: 12
-                    readOnly: true
-                    width: parent.width * 0.8
-                    selectByMouse: true
-                    selectByKeyboard: true
-                    height: parent.height
-                    wrapMode: Text.Wrap
-                    verticalAlignment: Text.AlignVCenter
-                    font.italic: true
-                }
-
-                Text {
-                    text: date
-                    color:"white"
-                    font.pointSize: 12
-                    anchors.right: parent.right
-                    height: parent.height
-                    wrapMode: Text.Wrap
-                    horizontalAlignment: Text.AlignRight
-                    verticalAlignment: Text.AlignVCenter
-                    font.italic: true
-                }
-            }
-
-        }
-
-    }
-
-    property var channels: {
-        "local": local,
-        "domain": domain,
-    }
-
-    function scrollToBottom(bypassDistanceCheck = false, extraMoveDistance = 0) {
-        const totalHeight = listview.height; // Total height of the content
-        const currentPosition = messageViewFlickable.contentY; // Current position of the view
-        const windowHeight = listview.parent.parent.height; // Total height of the window
-        const bottomPosition = currentPosition + windowHeight;
-
-        // Check if the view is within 300 units from the bottom
-        const closeEnoughToBottom = totalHeight - bottomPosition <= 300;
-        if (!bypassDistanceCheck && !closeEnoughToBottom) return;
-        if (totalHeight < windowHeight) return; // No reason to scroll, we don't have an overflow.
-        if (bottomPosition == totalHeight) return; // At the bottom, do nothing.
-
-        messageViewFlickable.contentY = listview.height - listview.parent.parent.height;
-        messageViewFlickable.returnToBounds();
-    }
-
 
     function addMessage(username, message, date, channel, type){
-        channel = getChannel(channel)
-
         // Format content
         message = formatContent(message);
         message = embedImages(message);
 
-        if (type === "notification"){
-            channel.append({ text: message, date: date, type: "notification" });
-            last_message_user = "";
-            scrollToBottom(null, 30);
-
-            last_message_time = new Date();
+        if (type === "notification"){ 
+            domainMessages.append({ text: message, username, date, type });
+            scrollToBottom();
             return;
         }
 
-        var current_time = new Date();
-        var elapsed_time = current_time - last_message_time;
-        var elapsed_minutes = elapsed_time / (1000 * 60); 
+        if (channel === "local") localMessages.append({ text: message, username, date, type });
+        if (channel === "domain") domainMessages.append({ text: message, username, date, type });
 
-        var last_item_index = channel.count - 1;
-        var last_item = channel.get(last_item_index);
-
-        if (last_message_user === username && elapsed_minutes < 1 && last_item){
-            message = "<br>" + message 
-            last_item.text = last_item.text += "\n" + message;
-            load_scroll_timer.running = true;
-            last_message_time = new Date();
-            return;
-        }
-
-        last_message_user = username;
-        last_message_time = new Date();
-        channel.append({ text: message, username: username, date: date, type: type });
-        load_scroll_timer.running = true;
-    }
-
-    function getChannel(id) {
-        return channels[id];
+        scrollToBottom();
     }
 
     function formatContent(mess) {
         var arrow = /\</gi
         mess = mess.replace(arrow, "&lt;");
 
-        var link = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g;
-        mess = mess.replace(link, (match) => {return `<a style="color:#4EBAFD" onclick='Window.openUrl("+match+")' href='` + match + `'>` + match + `</a> <a onclick='Window.openUrl(`+match+`)'>🗗</a>`});
+        var link = /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&=,\/]*)/g;
+        mess = mess.replace(link, (match) => {return `<a style="color:#4EBAFD" href='` + match + `?noOpen=true'>` + match + `</a> <a href='` + match + `'>🗗</a>`});
 
         var newline = /\n/gi;
         mess = mess.replace(newline, "<br>");
@@ -634,8 +449,8 @@ Rectangle {
                 addMessage("SYSTEM", message.message, `[ ${message.timeString} - ${message.dateString} ]`, "domain", "notification");
                 break;
             case "clear_messages":
-                local.clear();
-                domain.clear();
+                localMessages.clear();
+                domainMessages.clear();
                 break;
             case "initial_settings":
                 if (message.settings.external_window) s_external_window.checked = true;

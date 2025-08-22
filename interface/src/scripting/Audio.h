@@ -584,11 +584,11 @@ private:
     bool _contextIsHMD { false };
     AudioDevices* getDevices() { return &_devices; }
     AudioDevices _devices;
-    Setting::Handle<bool> _mutedDesktopSetting{ QStringList { Audio::AUDIO, "mutedDesktop" }, true };
-    Setting::Handle<bool> _mutedHMDSetting{ QStringList { Audio::AUDIO, "mutedHMD" }, true };
+    Setting::Handle<bool> _mutedDesktopSetting{ QStringList { Audio::AUDIO, "mutedDesktop" }, false };
+    Setting::Handle<bool> _mutedHMDSetting{ QStringList { Audio::AUDIO, "mutedHMD" }, false };
     Setting::Handle<bool> _pttDesktopSetting{ QStringList { Audio::AUDIO, "pushToTalkDesktop" }, false };
     Setting::Handle<bool> _pttHMDSetting{ QStringList { Audio::AUDIO, "pushToTalkHMD" }, false };
-    bool _mutedDesktop{ true };
+    bool _mutedDesktop{ false };
     bool _mutedHMD{ false };
     bool _pttDesktop{ false };
     bool _pttHMD{ false };

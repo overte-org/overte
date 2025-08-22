@@ -797,8 +797,6 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         }
     }
 
-    awfulRightStickHackForBrokenScripts();
-
     if (_context->_stickEmulation) {
         emulateStickFromTrackpad();
     }
@@ -846,31 +844,6 @@ void OpenXrInputPlugin::InputDevice::emulateStickFromTrackpad() {
         right_stick.y < 0.4f
     ) {
         _buttonPressedMap.insert(controller::RIGHT_PRIMARY_THUMB);
-    }
-}
-
-// FIXME: the vr controller scripts are horribly broken and don't work properly,
-// this emulates a segmented vive trackpad to get teleport and snap turning behaving
-void OpenXrInputPlugin::InputDevice::awfulRightStickHackForBrokenScripts() {
-    auto stick = _actions.at("right_thumbstick")->getVector2f().currentState;
-
-    _axisStateMap[controller::RX].value = 0.0f;
-    _axisStateMap[controller::RY].value = 0.0f;
-
-    if (stick.x < -0.6f && stick.y > -0.4f && stick.y < 0.4f) {
-        _axisStateMap[controller::RX].value = -1.0f;
-    }
-
-    if (stick.x > 0.6f && stick.y > -0.4f && stick.y < 0.4f) {
-        _axisStateMap[controller::RX].value = 1.0f;
-    }
-
-    if (stick.y > 0.6f && stick.x > -0.4f && stick.x < 0.4f) {
-        _axisStateMap[controller::RY].value = -1.0f;
-    }
-
-    if (stick.y < -0.6f && stick.x > -0.4f && stick.x < 0.4f) {
-        _axisStateMap[controller::RY].value = 1.0f;
     }
 }
 
