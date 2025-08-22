@@ -837,6 +837,38 @@ const GROUPS = [
         ]
     },
     {
+        id: "zone_normal_map_attenuation",
+        label: "NORMAL MAP ATTENUATION",
+        properties: [
+            {
+                label: "Attenuation",
+                type: "dropdown",
+                options: { inherit: "Inherit", disabled: "Off", enabled: "On" },
+                propertyID: "normalMapAttenuationMode",
+            },
+            {
+                label: "Fade Min Distance",
+                type: "number-draggable",
+                min: 0,
+                max: 16000,
+                step: 1,
+                decimals: 2,
+                propertyID: "normalMapAttenuation.min",
+                showPropertyRule: { "normalMapAttenuationMode": "enabled" },
+            },
+            {
+                label: "Fade Max Distance",
+                type: "number-draggable",
+                min: 0,
+                max: 16000,
+                step: 1,
+                decimals: 2,
+                propertyID: "normalMapAttenuation.max",
+                showPropertyRule: { "normalMapAttenuationMode": "enabled" },
+            }
+        ]
+    },
+    {
         id: "model",
         label: "MODEL",
         properties: [
@@ -2212,7 +2244,7 @@ const GROUPS_PER_TYPE = {
   Text: [ 'base', 'text', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Zone: [ 'base', 'zone', 'zone_key_light', 'zone_skybox', 'zone_ambient_light', 'zone_haze',
             'zone_bloom', 'zone_tonemapping', 'zone_ambient_occlusion', 'zone_avatar_priority',
-            'zone_audio', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+            'zone_audio', 'zone_normal_map_attenuation', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Model: [ 'base', 'model', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Image: [ 'base', 'image', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Web: [ 'base', 'web', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],

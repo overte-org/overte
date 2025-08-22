@@ -117,9 +117,7 @@
     <@endif@>
 <@endif@>
 
-<@if HIFI_USE_UNLIT@>
-    <@include LightingModel.slh@>
-<@endif@>
+<@include LightingModel.slh@>
 
 <@if HIFI_USE_FADE@>
     <@include Fade.slh@>

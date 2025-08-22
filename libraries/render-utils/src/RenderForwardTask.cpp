@@ -107,12 +107,16 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     const auto& lightingStageInputs = inputs.get2();
         // Fetch the current frame stacks from all the stages
         const auto currentStageFrames = lightingStageInputs.get0();
-            const auto lightFrame = currentStageFrames[0];
-            const auto backgroundFrame = currentStageFrames[1];
-            const auto hazeFrame = currentStageFrames[2];
-            const auto tonemappingFrame = currentStageFrames[4];
+            const auto& lightFrame = currentStageFrames[0];
+            const auto& backgroundFrame = currentStageFrames[1];
+            const auto& hazeFrame = currentStageFrames[2];
+            const auto& tonemappingFrame = currentStageFrames[4];
+            const auto& normalMapAttenuationFrame = currentStageFrames[6];
  
         const auto& zones = lightingStageInputs[1];
+
+    const auto setNormalMapAttenuationInputs = SetNormalMapAttenuation::Inputs(lightingModel, normalMapAttenuationFrame).asVarying();
+    task.addJob<SetNormalMapAttenuation>("SetNormalMapAttenuation", setNormalMapAttenuationInputs);
 
     // GPU jobs: Start preparing the main framebuffer
     const auto scaledPrimaryFramebuffer = task.addJob<PreparePrimaryFramebufferMSAA>("PreparePrimaryBufferForward");
@@ -120,7 +124,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     // Prepare deferred, generate the shared Deferred Frame Transform. Only valid with the scaled frame buffer
     const auto deferredFrameTransform = task.addJob<GenerateDeferredFrameTransform>("DeferredFrameTransform", mainViewTransformSlot);
 
-    // Prepare Forward Framebuffer pass 
+    // Prepare Forward Framebuffer pass
     const auto prepareForwardInputs = PrepareForward::Inputs(scaledPrimaryFramebuffer, lightFrame).asVarying();
     task.addJob<PrepareForward>("PrepareForward", prepareForwardInputs);
 
