@@ -43,6 +43,9 @@ if( NOT WIN32 )
     endif()
 endif()
 
+# QT_NO_DEBUG isn't being defined on Windows, so we do that here.
+add_compile_definitions($<$<CONFIG:Release>:QT_NO_DEBUG>)
+add_compile_definitions($<$<CONFIG:RelWithDebInfo>:QT_NO_DEBUG>)
 
 #
 # OVERTE_WARNINGS
