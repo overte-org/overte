@@ -201,7 +201,7 @@ void GLBackend::do_setStateDepthTest(State::DepthTest test) {
             glDepthMask(test.getWriteMask());
         }
         if (test.getFunction() != current.getFunction()) {
-            glDepthFunc(COMPARISON_TO_GL[test.getFunction()]);
+            glDepthFunc(COMPARISON_TO_GL[(uint8_t)test.getFunction()]);
         }
         if (CHECK_GL_ERROR()) {
             qCDebug(gpulogging) << "DepthTest = " << test;
@@ -243,13 +243,13 @@ void GLBackend::do_setStateStencil(State::StencilActivation activation, State::S
 
         if (testFront != testBack) {
             glStencilOpSeparate(GL_FRONT, STENCIL_OPS[testFront.getFailOp()], STENCIL_OPS[testFront.getDepthFailOp()], STENCIL_OPS[testFront.getPassOp()]);
-            glStencilFuncSeparate(GL_FRONT, COMPARISON_TO_GL[testFront.getFunction()], testFront.getReference(), testFront.getReadMask());
+            glStencilFuncSeparate(GL_FRONT, COMPARISON_TO_GL[(uint8_t)testFront.getFunction()], testFront.getReference(), testFront.getReadMask());
 
             glStencilOpSeparate(GL_BACK, STENCIL_OPS[testBack.getFailOp()], STENCIL_OPS[testBack.getDepthFailOp()], STENCIL_OPS[testBack.getPassOp()]);
-            glStencilFuncSeparate(GL_BACK, COMPARISON_TO_GL[testBack.getFunction()], testBack.getReference(), testBack.getReadMask());
+            glStencilFuncSeparate(GL_BACK, COMPARISON_TO_GL[(uint8_t)testBack.getFunction()], testBack.getReference(), testBack.getReadMask());
         } else {
             glStencilOp(STENCIL_OPS[testFront.getFailOp()], STENCIL_OPS[testFront.getDepthFailOp()], STENCIL_OPS[testFront.getPassOp()]);
-            glStencilFunc(COMPARISON_TO_GL[testFront.getFunction()], testFront.getReference(), testFront.getReadMask());
+            glStencilFunc(COMPARISON_TO_GL[(uint8_t)testFront.getFunction()], testFront.getReference(), testFront.getReadMask());
         }
 
         (void)CHECK_GL_ERROR();

@@ -365,6 +365,7 @@ enum class EntityVersion : PacketVersion {
     TextVerticalAlignment,
     RemoveScreenshare,
     TorusInnerRadius,
+    Sampler,
 
     // Add new versions above here
     NUM_PACKET_TYPE,

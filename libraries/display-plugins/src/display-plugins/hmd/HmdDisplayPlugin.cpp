@@ -286,7 +286,7 @@ void HmdDisplayPlugin::internalPresent() {
                 gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA),
                 image.width(), image.height(),
                 gpu::Texture::MAX_NUM_MIPS,
-                gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+                Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR));
             _previewTexture->setSource("HMD Preview Texture");
             _previewTexture->setUsage(gpu::Texture::Usage::Builder().withColor().build());
             _previewTexture->setStoredMipFormat(gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA));
@@ -420,7 +420,7 @@ void HmdDisplayPlugin::HUDRenderer::build() {
 
     auto program = gpu::Shader::createProgram(shader::render_utils::program::hmd_ui);
     gpu::StatePointer state = std::make_shared<gpu::State>();
-    state->setDepthTest(gpu::State::DepthTest(true, true, gpu::LESS_EQUAL));
+    state->setDepthTest(gpu::State::DepthTest(true, true, ComparisonFunction::LESS_EQUAL));
     state->setBlendFunction(true,
                             gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
                             gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);

@@ -51,7 +51,7 @@ static ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, co
                     state->setFillMode(gpu::State::FILL_LINE);
                 }
 
-                state->setDepthTest(true, !transparent, gpu::LESS_EQUAL);
+                state->setDepthTest(true, !transparent, ComparisonFunction::LESS_EQUAL);
                 state->setBlendFunction(transparent, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE,
                     gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
                 transparent ? PrepareStencil::testMaskResetNoAA(*state) : PrepareStencil::testMaskDrawShapeNoAA(*state);

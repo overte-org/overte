@@ -181,7 +181,7 @@ void NewFramebuffer::run(const render::RenderContextPointer& renderContext, Outp
     if (!_outputFramebuffer) {
         _outputFramebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("newFramebuffer.out"));
         auto colorFormat = _pixelFormat;
-        auto defaultSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR);
+        auto defaultSampler = Sampler(Sampler::FILTER_MIN_MAG_LINEAR);
         auto colorTexture = gpu::Texture::createRenderBuffer(colorFormat, frameSize.x, frameSize.y, gpu::Texture::SINGLE_MIP, defaultSampler);
         _outputFramebuffer->setRenderBuffer(0, colorTexture);
     }
@@ -210,7 +210,7 @@ void NewOrDefaultFramebuffer::run(const render::RenderContextPointer& renderCont
     if (!_outputFramebuffer) {
         _outputFramebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("newOrDefaultFramebuffer.out"));
         auto colorFormat = gpu::Element::COLOR_SRGBA_32;
-        auto defaultSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR);
+        auto defaultSampler = Sampler(Sampler::FILTER_MIN_MAG_LINEAR);
         auto colorTexture = gpu::Texture::createRenderBuffer(colorFormat, frameSize.x, frameSize.y, gpu::Texture::SINGLE_MIP, defaultSampler);
         _outputFramebuffer->setRenderBuffer(0, colorTexture);
     }
@@ -350,7 +350,7 @@ public:
         std::call_once(once, [this] {
             auto state = std::make_shared<gpu::State>();
             state->setCullMode(gpu::State::CULL_BACK);
-            state->setDepthTest(true, true, gpu::LESS_EQUAL);
+            state->setDepthTest(true, true, ComparisonFunction::LESS_EQUAL);
             PrepareStencil::testMaskDrawShapeNoAA(*state);
 
             initMirrorPipelines(*_forwardPipelines, state, FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter(), true);

@@ -62,7 +62,7 @@ void BloomThreshold::run(const render::RenderContextPointer& renderContext, cons
 
     if (!_outputBuffer || _outputBuffer->getSize() != bufferSize) {
         auto colorTexture = gpu::TexturePointer(gpu::Texture::createRenderBuffer(inputBuffer->getTexelFormat(), bufferSize.x, bufferSize.y,
-                                                gpu::Texture::SINGLE_MIP, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT, gpu::Sampler::WRAP_CLAMP)));
+                                                gpu::Texture::SINGLE_MIP, Sampler(Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT, Sampler::WRAP_CLAMP)));
 
         _outputBuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("BloomThreshold"));
         _outputBuffer->setRenderBuffer(0, colorTexture);

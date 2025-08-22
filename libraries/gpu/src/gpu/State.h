@@ -20,6 +20,8 @@
 #include <bitset>
 #include <QString>
 
+#include "Sampler.h"
+
 // Why a macro and not a fancy template you will ask me ?
 // Because some of the fields are bool packed tightly in the State::Cache class
 // and it s just not good anymore for template T& variable manipulation...
@@ -45,8 +47,6 @@ public:
     virtual ~State();
 
     Stamp getStamp() const { return _stamp; }
-
-    typedef ::gpu::ComparisonFunction ComparisonFunction;
 
     enum FillMode
     {
@@ -126,10 +126,10 @@ public:
     public:
         uint8 writeMask{ true };
         uint8 enabled{ false };
-        ComparisonFunction function{ LESS };
+        ComparisonFunction function{ ComparisonFunction::LESS };
 
     public:
-        DepthTest(bool enabled = false, bool writeMask = true, ComparisonFunction func = LESS) :
+        DepthTest(bool enabled = false, bool writeMask = true, ComparisonFunction func = ComparisonFunction::LESS) :
             writeMask(writeMask), enabled(enabled), function(func) {}
 
         bool isEnabled() const { return enabled != 0; }
@@ -148,7 +148,7 @@ public:
         }
 
         operator QString() const {
-            return QString("{ writeMask = %1, enabled = %2, function = %3 }").arg(writeMask).arg(enabled).arg(function);
+            return QString("{ writeMask = %1, enabled = %2, function = %3 }").arg(writeMask).arg(enabled).arg((uint8_t)function);
         }
     };
 
@@ -163,7 +163,7 @@ public:
     public:
         StencilTest(int8 reference = 0,
                     uint8 readMask = 0xFF,
-                    ComparisonFunction func = ALWAYS,
+                    ComparisonFunction func = ComparisonFunction::ALWAYS,
                     StencilOp failOp = STENCIL_OP_KEEP,
                     StencilOp depthFailOp = STENCIL_OP_KEEP,
                     StencilOp passOp = STENCIL_OP_KEEP) :

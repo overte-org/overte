@@ -79,7 +79,7 @@ static const GLenum BLEND_ARGS_TO_GL[State::NUM_BLEND_ARGS] = {
     GL_ONE_MINUS_CONSTANT_ALPHA,
 };
 
-static const GLenum COMPARISON_TO_GL[gpu::NUM_COMPARISON_FUNCS] = {
+static const GLenum COMPARISON_TO_GL[(uint8_t)ComparisonFunction::NUM_COMPARISON_FUNCS] = {
     GL_NEVER,
     GL_LESS,
     GL_EQUAL,

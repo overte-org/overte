@@ -958,6 +958,7 @@
  *     <code>false</code> if it isn't. Setting this property to <code>false</code> sets the <code>billboardMode</code> to
  *     <code>"none"</code>.
  *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
+ * @property {Entities.Sampler} sampler - The texture sampler used to render the image.
  * @example <caption>Create an image entity.</caption>
  * var image = Entities.addEntity({
  *     type: "Image",

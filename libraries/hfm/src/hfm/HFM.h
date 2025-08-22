@@ -146,7 +146,7 @@ public:
 
     bool isBumpmap { false };
 
-    gpu::Sampler sampler;
+    Sampler sampler;
 
     bool isNull() const { return name.isEmpty() && filename.isEmpty() && content.isEmpty(); }
 };

@@ -150,7 +150,7 @@ const gpu::PipelinePointer GameWorkloadRenderItem::getProxiesPipeline() {
     if (!_drawAllProxiesPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::drawWorkloadProxy);
         auto state = std::make_shared<gpu::State>();
-        state->setDepthTest(true, true, gpu::LESS_EQUAL);
+        state->setDepthTest(true, true, ComparisonFunction::LESS_EQUAL);
       /*  state->setBlendFunction(true,
             gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
             gpu::State::DEST_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ZERO);*/
@@ -168,7 +168,7 @@ const gpu::PipelinePointer GameWorkloadRenderItem::getViewsPipeline() {
     if (!_drawAllViewsPipeline) {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::drawWorkloadView);
         auto state = std::make_shared<gpu::State>();
-        state->setDepthTest(true, true, gpu::LESS_EQUAL);
+        state->setDepthTest(true, true, ComparisonFunction::LESS_EQUAL);
         /*  state->setBlendFunction(true,
         gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
         gpu::State::DEST_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ZERO);*/

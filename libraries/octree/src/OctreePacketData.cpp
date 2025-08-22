@@ -601,6 +601,17 @@ bool OctreePacketData::appendValue(const QRect& value) {
     return success;
 }
 
+bool OctreePacketData::appendValue(const Sampler& value) {
+    const unsigned char* data = (const unsigned char*)&value;
+    int length = sizeof(Sampler);
+    bool success = append(data, length);
+    if (success) {
+        _bytesOfValues += length;
+        _totalBytesOfValues += length;
+    }
+    return success;
+}
+
 bool OctreePacketData::appendPosition(const glm::vec3& value) {
     const unsigned char* data = (const unsigned char*)&value;
     int length = sizeof(value);
@@ -864,4 +875,13 @@ int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, AACube
 int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, QRect& result) {
     memcpy(&result, dataBytes, sizeof(result));
     return sizeof(result);
+}
+
+int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, Sampler& result) {
+    DataDeserializer des(dataBytes, sizeof(Sampler::Desc));
+    Sampler::Desc desc;
+    des >> desc;
+    result = Sampler(desc);
+
+    return (int)des.length();
 }

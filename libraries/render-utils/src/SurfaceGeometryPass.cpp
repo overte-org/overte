@@ -75,7 +75,7 @@ void LinearDepthFramebuffer::allocate() {
     // For Linear Depth:
     const uint16_t LINEAR_DEPTH_MAX_MIP_LEVEL = 5;
     // Point sampling of the depth, as well as the clamp to edge, are needed for the AmbientOcclusionEffect with HBAO
-    const auto depthSamplerFull = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_POINT, gpu::Sampler::WRAP_CLAMP);
+    const auto depthSamplerFull = Sampler(Sampler::FILTER_MIN_MAG_MIP_POINT, Sampler::WRAP_CLAMP);
     _linearDepthTexture = gpu::Texture::createRenderBuffer(gpu::Element(gpu::SCALAR, gpu::FLOAT, gpu::RED), width, height, LINEAR_DEPTH_MAX_MIP_LEVEL,
         depthSamplerFull);
     _linearDepthFramebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("linearDepth"));
@@ -85,13 +85,13 @@ void LinearDepthFramebuffer::allocate() {
     // For Downsampling:
     const uint16_t HALF_LINEAR_DEPTH_MAX_MIP_LEVEL = 5;
     // Point sampling of the depth, as well as the clamp to edge, are needed for the AmbientOcclusionEffect with HBAO
-    const auto depthSamplerHalf = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_POINT, gpu::Sampler::WRAP_CLAMP);
+    const auto depthSamplerHalf = Sampler(Sampler::FILTER_MIN_MAG_MIP_POINT, Sampler::WRAP_CLAMP);
     // The depth format here is half float as it increases performance in the AmbientOcclusion. But it might be needed elsewhere...
     _halfLinearDepthTexture = gpu::Texture::createRenderBuffer(gpu::Element(gpu::SCALAR, gpu::HALF, gpu::RED), _halfFrameSize.x, _halfFrameSize.y, HALF_LINEAR_DEPTH_MAX_MIP_LEVEL,
         depthSamplerHalf);
 
     _halfNormalTexture = gpu::Texture::createRenderBuffer(gpu::Element::COLOR_RGBA_32, _halfFrameSize.x, _halfFrameSize.y, gpu::Texture::SINGLE_MIP,
-        gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT));
+        Sampler(Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT));
 
     _downsampleFramebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("halfLinearDepth"));
     _downsampleFramebuffer->setRenderBuffer(0, _halfLinearDepthTexture);
@@ -301,15 +301,15 @@ void SurfaceGeometryFramebuffer::allocate() {
     auto width = _frameSize.x;
     auto height = _frameSize.y;
 
-    _curvatureTexture = gpu::Texture::createRenderBuffer(gpu::Element::COLOR_RGBA_32, width, height, gpu::Texture::SINGLE_MIP, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT));
+    _curvatureTexture = gpu::Texture::createRenderBuffer(gpu::Element::COLOR_RGBA_32, width, height, gpu::Texture::SINGLE_MIP, Sampler(Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT));
     _curvatureFramebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("surfaceGeometry::curvature"));
     _curvatureFramebuffer->setRenderBuffer(0, _curvatureTexture);
 
-    _lowCurvatureTexture = gpu::Texture::createRenderBuffer(gpu::Element::COLOR_RGBA_32, width, height, gpu::Texture::SINGLE_MIP, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT));
+    _lowCurvatureTexture = gpu::Texture::createRenderBuffer(gpu::Element::COLOR_RGBA_32, width, height, gpu::Texture::SINGLE_MIP, Sampler(Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT));
     _lowCurvatureFramebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("surfaceGeometry::lowCurvature"));
     _lowCurvatureFramebuffer->setRenderBuffer(0, _lowCurvatureTexture);
 
-    _blurringTexture = gpu::Texture::createRenderBuffer(gpu::Element::COLOR_RGBA_32, width, height, gpu::Texture::SINGLE_MIP, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT));
+    _blurringTexture = gpu::Texture::createRenderBuffer(gpu::Element::COLOR_RGBA_32, width, height, gpu::Texture::SINGLE_MIP, Sampler(Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT));
     _blurringFramebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("surfaceGeometry::blurring"));
     _blurringFramebuffer->setRenderBuffer(0, _blurringTexture);
 }

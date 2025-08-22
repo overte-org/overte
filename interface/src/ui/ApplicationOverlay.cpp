@@ -172,7 +172,7 @@ void ApplicationOverlay::renderDomainConnectionStatusBorder(RenderArgs* renderAr
 }
 
 static const auto COLOR_FORMAT = gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA);
-static const auto DEFAULT_SAMPLER = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR);
+static const auto DEFAULT_SAMPLER = Sampler(Sampler::FILTER_MIN_MAG_LINEAR);
 static const auto DEPTH_FORMAT = gpu::Element(gpu::SCALAR, gpu::FLOAT, gpu::DEPTH);
 
 void ApplicationOverlay::buildFramebufferObject() {
@@ -191,7 +191,7 @@ void ApplicationOverlay::buildFramebufferObject() {
     }
 
     if (!_overlayFramebuffer->getRenderBuffer(0)) {
-        const gpu::Sampler OVERLAY_SAMPLER(gpu::Sampler::FILTER_MIN_MAG_LINEAR, gpu::Sampler::WRAP_CLAMP);
+        const Sampler OVERLAY_SAMPLER(Sampler::FILTER_MIN_MAG_LINEAR, Sampler::WRAP_CLAMP);
         auto colorBuffer = gpu::Texture::createRenderBuffer(COLOR_FORMAT, width, height, gpu::Texture::SINGLE_MIP, OVERLAY_SAMPLER);
         _overlayFramebuffer->setRenderBuffer(0, colorBuffer);
     }

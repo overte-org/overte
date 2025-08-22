@@ -57,6 +57,14 @@ void ImageEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
         _textureIsLoaded = false;
     }
 
+    auto sampler = entity->getSampler();
+    if (_sampler != sampler) {
+        _sampler = sampler;
+        if (_textureIsLoaded) {
+            _texture->getGPUTexture()->setSampler(sampler);
+        }
+    }
+
     _keepAspectRatio = entity->getKeepAspectRatio();
     _subImage = entity->getSubImage();
     _pulseProperties = entity->getPulseProperties();
@@ -100,6 +108,7 @@ void ImageEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
             // Unlike Models (where the Renderer also doubles as the EntityItem), Images need to
             // convey this information back to the game object from the Renderer
             entity->setNaturalDimension(naturalDimensions);
+            _texture->getGPUTexture()->setSampler(sampler);
         }
     }
     _textureIsLoaded = nextTextureLoaded;
