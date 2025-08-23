@@ -107,10 +107,10 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         materials = _materials["0"];
     }
 
-    glm::vec4 outColor = materials.getColor();
+    glm::vec4 outColor = glm::vec4(_color, _alpha);
     outColor = EntityRenderer::calculatePulseColor(outColor, _pulseProperties, _created);
 
-    if (outColor.a == 0.0f) {
+    if (outColor.a == 0.0f || materials.isInvisible()) {
         return;
     }
 
@@ -172,9 +172,12 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             }
         }
     } else {
-        if (pipelineType == Pipeline::MATERIAL && RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
-            args->_details._materialSwitches++;
-        }
+        if (pipelineType == Pipeline::MATERIAL) {
+            outColor = glm::vec4(1.0f);  // for model shaders, albedo comes from the material instead of vertex colors
+            if (RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
+                args->_details._materialSwitches++;
+            }
+		}
 
         const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
         _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
@@ -189,14 +192,10 @@ scriptable::ScriptableModelBase ShapeEntityRenderer::getScriptableModel()  {
     scriptable::ScriptableModelBase result;
     auto geometryCache = DependencyManager::get<GeometryCache>();
     auto geometryShape = geometryCache->getShapeForEntityShape((int)_shape);
-    glm::vec3 vertexColor;
+    glm::vec3 vertexColor = _color;
     {
         std::lock_guard<std::mutex> lock(_materialsLock);
         result.appendMaterials(_materials);
-        auto materials = _materials.find("0");
-        if (materials != _materials.end()) {
-            vertexColor = materials->second.getColor();
-        }
     }
     if (auto mesh = geometryCache->meshFromShape(geometryShape, vertexColor)) {
         result.objectID = getEntity()->getID();
