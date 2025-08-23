@@ -1240,6 +1240,10 @@ void Application::loadSettings(const QCommandLineParser& parser) {
     _myCamera.setMode((isFirstPerson) ? CAMERA_MODE_FIRST_PERSON_LOOK_AT : CAMERA_MODE_LOOK_AT);
     cameraMenuChanged();
 
+    if (!isFirstPerson) {
+        // When camera changes from first person to third person, boom distance may be set to ZOOM_MIN so it needs to be reset to default.
+        getMyAvatar()->setBoomLength(MyAvatar::ZOOM_DEFAULT);
+    }
     const auto& inputs = pluginManager->getInputPlugins();
     for (const auto& plugin : inputs) {
         if (!plugin->isActive()) {
