@@ -701,8 +701,10 @@ void OffscreenQmlSurface::lowerKeyboard() {
 }
 
 void OffscreenQmlSurface::setKeyboardRaised(QObject* object, bool raised, bool numeric, bool passwordField) {
+#if 0
     qCDebug(uiLogging) << "setKeyboardRaised: " << object << ", raised: " << raised << ", numeric: " << numeric
                        << ", password: " << passwordField;
+#endif
 
     if (!object) {
         return;
