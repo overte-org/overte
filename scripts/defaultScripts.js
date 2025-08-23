@@ -48,6 +48,7 @@ var DEFAULT_SCRIPTS_SEPARATE = [
     {"stable": "system/more/app-more.js", "beta": "https://more.overte.org/more/app-more.js"},
     "communityScripts/armored-chat/armored_chat.js",
     "communityScripts/chatBubbles/chatBubbles.js",
+    "communityScripts/contextMenu.js",
     //"system/chat.js"
 ];
 
