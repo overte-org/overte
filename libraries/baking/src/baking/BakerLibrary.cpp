@@ -23,7 +23,8 @@ QUrl getBakeableModelURL(const QUrl& url) {
         FBX_EXTENSION,
         BAKED_FBX_EXTENSION,
         OBJ_EXTENSION,
-        GLTF_EXTENSION
+        GLTF_EXTENSION,
+        VRM_EXTENSION
     };
 
     QString filename = url.fileName();
@@ -72,7 +73,7 @@ std::unique_ptr<ModelBaker> getModelBakerWithOutputDirectories(const QUrl& bakea
         baker = std::make_unique<FBXBaker>(bakeableModelURL, bakedOutputDirectory, originalOutputDirectory, filename.endsWith(BAKED_FBX_EXTENSION, Qt::CaseInsensitive));
     } else if (filename.endsWith(OBJ_EXTENSION, Qt::CaseInsensitive)) {
         baker = std::make_unique<OBJBaker>(bakeableModelURL, bakedOutputDirectory, originalOutputDirectory);
-    //} else if (filename.endsWith(GLTF_EXTENSION, Qt::CaseInsensitive)) {
+    //} else if (filename.endsWith(GLTF_EXTENSION, Qt::CaseInsensitive) || filename.endsWith(VRM_EXTENSION, Qt::CaseInsensitive)) {
         //baker = std::make_unique<GLTFBaker>(bakeableModelURL, inputTextureThreadGetter, bakedOutputDirectory, originalOutputDirectory);
     } else {
         qDebug() << "Could not create ModelBaker for url" << bakeableModelURL;

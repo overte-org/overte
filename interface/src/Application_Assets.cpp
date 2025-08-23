@@ -36,6 +36,7 @@ static const QString FBX_EXTENSION = ".fbx";
 static const QString OBJ_EXTENSION = ".obj";
 static const QString GLTF_EXTENSION = ".gltf";
 static const QString GLB_EXTENSION = ".glb";
+static const QString VRM_EXTENSION = ".vrm";
 static const QString JSON_GZ_EXTENSION = ".json.gz";
 static const QString CONTENT_ZIP_EXTENSION = ".content.zip";
 static const QString ZIP_EXTENSION = ".zip";
@@ -264,9 +265,9 @@ void Application::addAssetToWorldSetMapping(QString filePath, QString mapping, Q
         } else {
             // to prevent files that aren't models or texture files from being loaded into world automatically
             if ((filePath.toLower().endsWith(OBJ_EXTENSION) || filePath.toLower().endsWith(FBX_EXTENSION) ||
-                 filePath.toLower().endsWith(GLTF_EXTENSION) || filePath.toLower().endsWith(GLB_EXTENSION)) ||
-                ((filePath.toLower().endsWith(JPG_EXTENSION) || filePath.toLower().endsWith(PNG_EXTENSION)) &&
-                !isZip)) {
+                 filePath.toLower().endsWith(GLTF_EXTENSION) || filePath.toLower().endsWith(GLB_EXTENSION) ||
+                 filePath.toLower().endsWith(VRM_EXTENSION)) || ((filePath.toLower().endsWith(JPG_EXTENSION) ||
+                 filePath.toLower().endsWith(PNG_EXTENSION)) && !isZip)) {
                 addAssetToWorldAddEntity(filePath, mapping);
             } else {
                 qCDebug(interfaceapp) << "Zipped contents are not supported entity files";

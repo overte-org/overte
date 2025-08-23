@@ -1164,6 +1164,8 @@ MediaType GLTFSerializer::getMediaType() const {
     mediaType.extensions.push_back("glb");
     mediaType.webMediaTypes.push_back("model/gltf-binary");
 
+    mediaType.extensions.push_back("vrm");
+
     return mediaType;
 }
 
@@ -1365,7 +1367,7 @@ HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture, cgltf_int
         hfmTex.name = fileName;
         hfmTex.filename = textureUrl.toEncoded();
 
-        if (_url.path().endsWith("glb")) {
+        if (_url.path().endsWith("glb") || _url.path().endsWith("vrm")) {
             cgltf_buffer_view *bufferView = image->buffer_view;
 
             size_t offset = bufferView->offset;

@@ -116,7 +116,7 @@ void ModelBakeWidget::chooseFileButtonClicked() {
         startDir = QDir::homePath();
     }
 
-    auto selectedFiles = QFileDialog::getOpenFileNames(this, "Choose Model", startDir, "Models (*.fbx *.obj *.gltf *.fst)");
+    auto selectedFiles = QFileDialog::getOpenFileNames(this, "Choose Model", startDir, "Models (*.fbx *.obj *.gltf *.fst *.vrm)");
 
     if (!selectedFiles.isEmpty()) {
         // set the contents of the model file text box to be the path to the selected file
