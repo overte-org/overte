@@ -728,14 +728,14 @@ var takePhotoControllerMappingName = 'Hifi-SnapshotApp-Mapping-TakePhoto';
 function registerTakePhotoControllerMapping() {
     takePhotoControllerMapping = Controller.newMapping(takePhotoControllerMappingName);
     if (controllerType === "OculusTouch" || controllerType === "OpenXR") {
-        takePhotoControllerMapping.from(Controller.Standard.RS).to(function (value) {
+        takePhotoControllerMapping.from(Controller.Standard.LS).to(function (value) {
             if (value === 1.0) {
                 takeSnapshot();
             }
             return;
         });
     } else if (controllerType === "Vive") {
-        takePhotoControllerMapping.from(Controller.Standard.RightPrimaryThumb).to(function (value) {
+        takePhotoControllerMapping.from(Controller.Standard.LeftPrimaryThumb).to(function (value) {
             if (value === 1.0) {
                 takeSnapshot();
             }
