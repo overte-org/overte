@@ -372,6 +372,11 @@ int main(int argc, const char* argv[]) {
     // to handle events. Needs splitting into two parts: enough initialization
     // for Application to work, and then thread start afterwards.
     Setting::init();
+#ifdef NDEBUG
+    // Fail if asserts are enabled on release build.
+    Q_ASSERT_X(false, "Interface", "This is not a debug build, but somehow Q_ASSERTs are enabled. \
+               This is known to happen on Windows if QT_NO_DEBUG isn't set by us.");
+#endif
     Application app(argcExtended, const_cast<char**>(argvExtended.data()), parser, startupTime);
 
     if (parser.isSet("abortAfterStartup")) {

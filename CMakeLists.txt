@@ -43,6 +43,9 @@ if( NOT WIN32 )
     endif()
 endif()
 
+# QT_NO_DEBUG isn't being defined on Windows, so we do that here.
+add_compile_definitions($<$<CONFIG:Release>:QT_NO_DEBUG>)
+add_compile_definitions($<$<CONFIG:RelWithDebInfo>:QT_NO_DEBUG>)
 
 #
 # OVERTE_WARNINGS
@@ -62,16 +65,16 @@ if(OVERTE_WARNINGS_ALLOWLIST)
     endif()
 
     if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        message("GCC compiler detected, suppressing some unsolvable warnings.")
+        message(STATUS "GCC compiler detected, suppressing some unsolvable warnings.")
         add_compile_definitions(OVERTE_WARNINGS_ALLOWLIST_GCC)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        message("Clang compiler detected, suppressing some unsolvable warnings.")
+        message(STATUS "Clang compiler detected, suppressing some unsolvable warnings.")
         add_compile_definitions(OVERTE_WARNINGS_ALLOWLIST_CLANG)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "" AND WIN32))
-        message("Microsoft Visual Studio compiler detected, suppressing some unsolvable warnings.")
+        message(STATUS "Microsoft Visual Studio compiler detected, suppressing some unsolvable warnings.")
         add_compile_definitions(OVERTE_WARNINGS_ALLOWLIST_MSVC)
     else()
-        message("We don't know yet how to allowlist warnings for ${CMAKE_CXX_COMPILER_ID}")
+        message(NOTICE "We don't know yet how to allowlist warnings for ${CMAKE_CXX_COMPILER_ID}")
     endif()
 endif()
 
