@@ -2217,9 +2217,9 @@ bool AudioClient::switchOutputToAudioDevice(const HifiAudioDeviceInfo outputDevi
 
             // Workaround for a bug in Windows Qt audio plugin causing very high latency.
 #ifdef Q_OS_WINDOWS
-            _audioOutput->setBufferSize(static_cast<int>(requestedSize * 1.6));
+            _audioOutput->setBufferSize(requestedSize);
 #else
-            _audioOutput->setBufferSize(requestedSize * 16);
+            _audioOutput->setBufferSize(requestedSize * 8);
 #endif
 
             connect(_audioOutput, &QAudioOutput::notify, this, &AudioClient::outputNotify);
