@@ -8,6 +8,7 @@ const MAIN_CHANNEL = "org.overte.context-menu";
 let registeredActionSets = {};
 let registeredActionSetParents = {};
 let registeredActionSetTitles = {};
+let disabled = false;
 
 function ContextMenu_registerActionSet(name, itemData, parent, title, desc) {
 	registeredActionSets[name] = itemData;
@@ -64,10 +65,31 @@ function ContextMenu_editActionSet(name, itemData) {
 	}));
 }
 
+function ContextMenu_disable() {
+	if (disabled) { return; }
+
+	Messages.sendLocalMessage(MAIN_CHANNEL, JSON.stringify({ func: "disable" }));
+	disabled = true;
+}
+
+function ContextMenu_enable() {
+	if (!disabled) { return; }
+
+	Messages.sendLocalMessage(MAIN_CHANNEL, JSON.stringify({ func: "enable" }));
+	disabled = false;
+}
+
 Messages.messageReceived.connect(ContextMenu_messageReceived);
 
+// This would be helpful for automatically unregistering action sets
+// registered by a script that's about to close, but see
+// https://github.com/overte-org/overte/issues/1767
 Script.scriptEnding.connect(() => {
 	Messages.messageReceived.disconnect(ContextMenu_messageReceived);
+
+	if (disabled) {
+		Messages.sendLocalMessage(MAIN_CHANNEL, JSON.stringify({ func: "enable" }));
+	}
 });
 
 /**
@@ -149,4 +171,16 @@ module.exports = {
 	 * @param {(Object.<string, ContextMenu.Action>|ContextMenu.Action[])} actions - The action information, present object keys or array indices will replace the registered ones
 	 */
 	editActionSet: ContextMenu_editActionSet,
+
+	/*
+	 * Disables the context menu open action so the bound buttons can be reused.
+	 *
+	 * NOTE: Call @link{ContextMenu.enable} in @link{Script.scriptEnding} to prevent deadlocks.
+	 */
+	disable: ContextMenu_disable,
+
+	/**
+	 * Re-enables the context menu open action, after @link{ContextMenu.disable} has been called.
+	 */
+	enable: ContextMenu_enable,
 };
