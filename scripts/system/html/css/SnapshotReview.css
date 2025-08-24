@@ -268,11 +268,12 @@ input[type=button].naked:active {
     box-sizing: content-box;
     display: inline;
     outline:none;
-    color: #f59da7;
+    color: #f5bdc7;
     font-size: 11px;
 }
 #snap-button:disabled {
     background: gray;
+    color: #eee;
 }
 #snap-button:hover:enabled {
     background: #C62147;

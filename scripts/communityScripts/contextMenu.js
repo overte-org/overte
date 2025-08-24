@@ -177,6 +177,7 @@ let currentMenuTargetIsAvatar = false;
 let currentMenuInSubmenu = false;
 let currentMenuTargetLine = Uuid.NULL;
 let mouseWasCaptured = false;
+let disableCounter = 0;
 
 function ContextMenu_DeleteMenu() {
 	currentMenuEntities.forEach((_, e) => Entities.deleteEntity(e));
@@ -714,7 +715,7 @@ function ContextMenu_KeyEvent(event) {
 			ContextMenu_DeleteMenu();
 
 			if (!(CONTEXT_MENU_SETTINGS.noSfx ?? false)) { Audio.playSystemSound(SOUND_CLOSE); }
-		} else {
+		} else if (disableCounter === 0) {
 			if (mouseButtonHeld) { ContextMenu_FindTarget(); }
 			ContextMenu_OpenRoot();
 		}
@@ -732,7 +733,7 @@ function ContextMenu_ActionEvent(action, value) {
 			ContextMenu_DeleteMenu();
 
 			if (!(CONTEXT_MENU_SETTINGS.noSfx ?? false)) { Audio.playSystemSound(SOUND_CLOSE); }
-		} else {
+		} else if (disableCounter === 0) {
 			if (controllerHovering[1]) { ContextMenu_FindTarget(1); }
 			else if (controllerHovering[0]) { ContextMenu_FindTarget(0); }
 			ContextMenu_OpenRoot();
@@ -762,6 +763,18 @@ function ContextMenu_ActionEvent(action, value) {
 }*/
 
 function ContextMenu_Message(channel, msg, _senderID, _localOnly) {
+	if (channel === MAIN_CHANNEL) {
+		let data; try { data = JSON.parse(msg); } catch (e) {}
+
+		if (data?.func === "disable") {
+			disableCounter += 1;
+		} else if (data?.func === "enable" && disableCounter > 0) {
+			disableCounter -= 1;
+		}
+
+		return;
+	}
+
 	if (channel !== ACTIONS_CHANNEL) { return; }
 
 	let data; try { data = JSON.parse(msg); } catch (e) {}
