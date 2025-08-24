@@ -282,6 +282,7 @@ public:
     void renderVertices(gpu::Batch& batch, gpu::Primitive primitiveType, int id);
 
     void renderTorus(gpu::Batch& batch, float innerRadius, gpu::BufferPointer& colorBuffer, int id);
+    void renderTorusFade(gpu::Batch& batch, float innerRadius, gpu::BufferPointer& colorBuffer, const FadeBuffers& fadeBuffers, int id);
 
     /// Set a batch to the simple pipeline, returning the previous pipeline
     void useSimpleDrawPipeline(gpu::Batch& batch, bool noBlend = false);
@@ -412,6 +413,9 @@ private:
 
     QHash<int, float> _lastRegisteredTorusBuffer;
     QHash<int, BatchItemDetails> _registeredTorusBuffers;
+
+    QHash<int, float> _lastRegisteredTorusBufferFade;
+    QHash<int, BatchItemDetails> _registeredTorusBuffersFade;
 
     // transparent, unlit, forward, fade
     static std::map<std::tuple<bool, bool, bool, bool>, gpu::ShaderPointer> _shapeShaders;
