@@ -68,16 +68,6 @@ float Interpolate::simpleNonLinearBlend(float fraction) {
     return 0.5f + atanf(WIDTH * (fraction - 0.5f)) * INV_ARCTAN_WIDTH;
 }
 
-float Interpolate::calculateFadeRatio(quint64 start) {
-    const float FADE_TIME = 0.5f;
-    float t = 2.0f * std::min(((float)(usecTimestampNow() - start)) / ((float)(FADE_TIME * USECS_PER_SECOND)), 1.0f);
-    float fadeRatio = (t < 1.0f) ? 0.5f * powf(2.0f, 10.0f * (t - 1.0f)) : 0.5f * (-powf(2.0f, -10.0f * (t - 1.0f)) + 2.0f);
-
-    // The easing function isn't exactly 1 at t = 2, so we need to scale the whole function up slightly
-    const float EASING_SCALE = 1.001f;
-    return std::min(EASING_SCALE * fadeRatio, 1.0f);
-}
-
 float Interpolate::easeInOutQuad(float lerpValue) {
     assert(!((lerpValue < 0.0f) || (lerpValue > 1.0f)));
 

@@ -58,7 +58,7 @@ public:
     void updateItem(ItemID id) { updateItem(id, nullptr); }
 
     // Transition (applied to an item) transactions
-    void resetTransitionOnItem(ItemID id, Transition::Type transition, ItemID boundId = render::Item::INVALID_ITEM_ID);
+    void resetTransitionOnItem(ItemID id, TransitionType transition, ItemID boundId = render::Item::INVALID_ITEM_ID);
     void removeTransitionFromItem(ItemID id);
     void setTransitionFinishedOperator(ItemID id, TransitionFinishedFunc func);
     void queryTransitionOnItem(ItemID id, TransitionQueryFunc func);
@@ -83,7 +83,7 @@ protected:
     using Remove = ItemID;
     using Update = std::tuple<ItemID, UpdateFunctorPointer>;
 
-    using TransitionReset = std::tuple<ItemID, Transition::Type, ItemID>;
+    using TransitionReset = std::tuple<ItemID, TransitionType, ItemID>;
     using TransitionRemove = ItemID;
     using TransitionFinishedOperator = std::tuple<ItemID, TransitionFinishedFunc>;
     using TransitionQuery = std::tuple<ItemID, TransitionQueryFunc>;

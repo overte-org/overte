@@ -12,6 +12,8 @@
 //
 
 <@include gpu/Inputs.slh@>
+<$declareMultipleTexCoords()$>
+
 <@include gpu/Color.slh@>
 <@include gpu/Transform.slh@>
 <$declareStandardTransform()$>

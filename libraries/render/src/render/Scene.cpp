@@ -32,7 +32,7 @@ void Transaction::removeItem(ItemID id) {
     _removedItems.emplace_back(id);
 }
 
-void Transaction::resetTransitionOnItem(ItemID id, Transition::Type transition, ItemID boundId) {
+void Transaction::resetTransitionOnItem(ItemID id, TransitionType transition, ItemID boundId) {
     _resetTransitions.emplace_back(id, transition, boundId);
 }
 
@@ -402,7 +402,7 @@ void Scene::resetTransitionItems(const Transaction::TransitionResets& transactio
         }
 
         // Add a new one.
-        if (transitionType != Transition::NONE) {
+        if (transitionType != TransitionType::NONE) {
             transitionId = transitionStage->addTransition(itemId, transitionType, boundId);
 
             if (!TransitionStage::isIndexInvalid(transitionId)) {

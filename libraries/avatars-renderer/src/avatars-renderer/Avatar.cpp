@@ -91,6 +91,13 @@ namespace render {
         }
         return 0;
     }
+    template <> FadeProperties payloadGetFadeProperties(const AvatarSharedPointer& avatar, const TransitionType type) {
+        auto avatarPtr = static_pointer_cast<Avatar>(avatar);
+        if (avatarPtr) {
+            return avatarPtr->getFadeProperties(type);
+        }
+        return FadeProperties();
+    }
 }
 
 bool showAvatars { true };
@@ -657,29 +664,91 @@ void Avatar::addToScene(AvatarSharedPointer self, const render::ScenePointer& sc
 }
 
 void Avatar::fadeIn(render::ScenePointer scene) {
-    render::Transaction transaction;
-    fade(transaction, render::Transition::USER_ENTER_DOMAIN);
-    scene->enqueueTransaction(transaction);
+    if (auto renderer = DependencyManager::get<EntityTreeRenderer>()) {
+        if (renderer->layeredZonesHaveFade(TransitionType::USER_ENTER_DOMAIN)) {
+            render::Transaction transaction;
+            fade(transaction, TransitionType::USER_ENTER_DOMAIN);
+            scene->enqueueTransaction(transaction);
+        }
+    }
 }
 
 void Avatar::fadeOut(render::Transaction& transaction, KillAvatarReason reason) {
-    render::Transition::Type transitionType = render::Transition::USER_LEAVE_DOMAIN;
+    TransitionType transitionType = TransitionType::USER_LEAVE_DOMAIN;
 
     if (reason == KillAvatarReason::YourAvatarEnteredTheirBubble) {
-        transitionType = render::Transition::BUBBLE_ISECT_TRESPASSER;
+        transitionType = TransitionType::BUBBLE_ISECT_TRESPASSER;
     } else if (reason == KillAvatarReason::TheirAvatarEnteredYourBubble) {
-        transitionType = render::Transition::BUBBLE_ISECT_OWNER;
+        transitionType = TransitionType::BUBBLE_ISECT_OWNER;
     }
     fade(transaction, transitionType);
 }
 
-void Avatar::fade(render::Transaction& transaction, render::Transition::Type type) {
+void Avatar::fade(render::Transaction& transaction, TransitionType type) {
     transaction.resetTransitionOnItem(_renderItemID, type);
     _lastFadeRequested = type;
 }
 
-render::Transition::Type Avatar::getLastFadeRequested() const {
+TransitionType Avatar::getLastFadeRequested() const {
     return _lastFadeRequested;
+}
+
+FadeProperties Avatar::getFadeProperties(const TransitionType type) const {
+    switch (type) {
+        case TransitionType::BUBBLE_ISECT_OWNER:
+            return {
+                4.0f,
+                FadeTiming::LINEAR,
+                vec3(1.0f, 0.2f, 1.0f),
+                1.0f / vec3(1.5f, 1.0f / 25.f, 0.5f),
+                0.37f,
+                1.0f / vec3(2.0f, 2.0f, 2.0f),
+                1.0f,
+                vec4(31.f / 255.f, 198.f / 255.f, 166.f / 255.f, 1.0f),
+                vec4(31.f / 255.f, 198.f / 255.f, 166.f / 255.f, 2.0f),
+                0.02f,
+                false
+            };
+        case TransitionType::BUBBLE_ISECT_TRESPASSER:
+            return {
+                4.0f,
+                FadeTiming::LINEAR,
+                vec3(1.0f, -5.f, 1.0f),
+                1.0f / vec3(0.5f, 1.0f / 25.f, 0.5f),
+                1.0f,
+                1.0f / vec3(2.0f, 2.0f, 2.0f),
+                0.0f,
+                vec4(31.f / 255.f, 198.f / 255.f, 166.f / 255.f, 1.0f),
+                vec4(31.f / 255.f, 198.f / 255.f, 166.f / 255.f, 2.0f),
+                0.025f,
+                false
+            };
+        case TransitionType::USER_ENTER_DOMAIN:
+        case TransitionType::USER_LEAVE_DOMAIN:
+            if (auto renderer = DependencyManager::get<EntityTreeRenderer>()) {
+                if (renderer->layeredZonesHaveFade(type)) {
+                    return renderer->getLayeredZoneFadeProperties(type);
+                }
+            }
+            return FadeProperties();
+            break;
+        case TransitionType::AVATAR_CHANGE:
+            return {
+                3.0f,
+                FadeTiming::LINEAR,
+                vec3(0.0f, 0.0f, 0.0f),
+                1.0f / vec3(0.4f, 0.4f, 0.4f),
+                1.0f,
+                1.0f / vec3(0.4f, 0.4f, 0.4f),
+                1.0f,
+                vec4(1.0f, 1.0f, 1.0f, 1.0f),
+                vec4(1.0f, 1.0f, 1.0f, 1.0f),
+                0.05f,
+                false
+            };
+        default:
+            return FadeProperties();
+    }
 }
 
 void Avatar::removeFromScene(AvatarSharedPointer self, const render::ScenePointer& scene, render::Transaction& transaction) {
@@ -889,7 +958,7 @@ void Avatar::fixupModelsInScene(const render::ScenePointer& scene) {
 
     if (_mustFadeIn && canTryFade) {
         // Do it now to be sure all the sub items are ready and the fade is sent to them too
-        fade(transaction, render::Transition::USER_ENTER_DOMAIN);
+        fade(transaction, TransitionType::USER_ENTER_DOMAIN);
         _mustFadeIn = false;
     }
 

@@ -1715,7 +1715,7 @@ static std::map<std::tuple<bool, bool, bool, bool>, ShapePipelinePointer> _pipel
 static gpu::Stream::FormatPointer _vertexFormat;
 static gpu::Stream::FormatPointer _vertexColorFormat;
 
-ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, const ShapeKey& key, RenderArgs* args) {
+static ShapePipelinePointer polyvoxPipelineFactory(const ShapePlumber& plumber, const ShapeKey& key, RenderArgs* args) {
     if (_pipelines.empty()) {
         using namespace shader::entities_renderer::program;
 
@@ -1725,15 +1725,9 @@ ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, const Sha
             std::make_tuple(true, false, false, polyvox_forward),
             std::make_tuple(false, true, false, polyvox_shadow),
             // no such thing as forward + shadow
-#ifdef POLYVOX_ENTITY_USE_FADE_EFFECT
             std::make_tuple(false, false, true, polyvox_fade),
             std::make_tuple(false, true, true, polyvox_shadow_fade),
             // no such thing as forward + fade/shadow
-#else
-            std::make_tuple(false, false, true, polyvox),
-            std::make_tuple(false, true, true, polyvox_shadow),
-            // no such thing as forward + fade/shadow
-#endif
         };
         for (auto& key : keys) {
             for (int i = 0; i < 2; ++i) {
@@ -1759,13 +1753,14 @@ ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, const Sha
         }
     }
 
-    return _pipelines[std::make_tuple(args->_renderMethod == Args::RenderMethod::FORWARD, args->_renderMode == Args::RenderMode::SHADOW_RENDER_MODE, key.isFaded(), key.isWireframe())];
+    bool isFaded = key.isFaded() && args->_renderMethod != Args::RenderMethod::FORWARD;
+    return _pipelines[std::make_tuple(args->_renderMethod == Args::RenderMethod::FORWARD, args->_renderMode == Args::RenderMode::SHADOW_RENDER_MODE, isFaded, key.isWireframe())];
 }
 
 PolyVoxEntityRenderer::PolyVoxEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {
     static std::once_flag once;
     std::call_once(once, [&] {
-        CUSTOM_PIPELINE_NUMBER = render::ShapePipeline::registerCustomShapePipelineFactory(shapePipelineFactory);
+        CUSTOM_PIPELINE_NUMBER = render::ShapePipeline::registerCustomShapePipelineFactory(polyvoxPipelineFactory);
         _vertexFormat = std::make_shared<gpu::Stream::Format>();
         _vertexFormat->setAttribute(gpu::Stream::POSITION, 0, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 0);
         _vertexFormat->setAttribute(gpu::Stream::NORMAL, 0, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 12);
@@ -1825,15 +1820,6 @@ bool PolyVoxEntityRenderer::needsRenderUpdateFromTypedEntity(const TypedEntityPo
     }
 
     return Parent::needsRenderUpdateFromTypedEntity(entity);
-}
-
-void PolyVoxEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) {
-#ifdef POLYVOX_ENTITY_USE_FADE_EFFECT
-    if (!_hasTransitioned) {
-        transaction.resetTransitionOnItem(_renderItemID, render::Transition::ELEMENT_ENTER_DOMAIN);
-        _hasTransitioned = true;
-    }
-#endif
 }
 
 void PolyVoxEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) {
@@ -1931,7 +1917,6 @@ void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
         if (pipelineType == Pipeline::PROCEDURAL) {
             auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials.top().material);
             outColor = procedural->getColor(outColor);
-            outColor.a *= procedural->isFading() ? Interpolate::calculateFadeRatio(procedural->getFadeStartTime()) : 1.0f;
             withReadLock([&] {
                 procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created,
                                     ProceduralProgramKey(outColor.a < 1.0f));

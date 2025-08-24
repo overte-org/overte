@@ -49,6 +49,8 @@ private:
 
     gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>() };
     int _torusID { GeometryCache::UNKNOWN_ID };
+
+    FadeBuffers _fadeBuffers;
 };
 
 } } 

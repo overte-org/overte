@@ -182,4 +182,11 @@ namespace render {
         }
         return payload->getOutlineStyle(viewFrustum, height);
     }
+
+    template <> FadeProperties payloadGetFadeProperties(const PayloadProxyInterface::Pointer& payload, const TransitionType type) {
+        if (!payload) {
+            return FadeProperties();
+        }
+        return payload->getFadeProperties(type);
+    }
 }

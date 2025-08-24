@@ -16,7 +16,7 @@ using namespace render;
 template <>
 std::string TypedStage<Transition>::_name { "TRANSITION_STAGE" };
 
-TransitionStage::Index TransitionStage::addTransition(ItemID itemId, Transition::Type type, ItemID boundId) {
+TransitionStage::Index TransitionStage::addTransition(ItemID itemId, TransitionType type, ItemID boundId) {
     Transition transition;
     transition.eventType = type;
     transition.itemId = itemId;

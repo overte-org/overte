@@ -275,7 +275,6 @@ void GizmoEntityRenderer::doRender(RenderArgs* args) {
         Pipeline pipelineType = getPipelineType(materials);
         if (pipelineType == Pipeline::PROCEDURAL) {
             auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials.top().material);
-            transparent |= procedural->isFading();
             procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(transparent));
         } else if (pipelineType == Pipeline::MATERIAL) {
             if (RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {

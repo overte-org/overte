@@ -13,26 +13,9 @@
 
 <@func declareFadeFragmentCommon()@>
 
-#define CATEGORY_COUNT    5
-
-<@include Fade_shared.slh@>
 <@include FadeObjectParams.shared.slh@>
 
-// See ShapePipeline::Slot::BUFFER in ShapePipeline.h
-LAYOUT_STD140(binding=RENDER_UTILS_BUFFER_FADE_PARAMS) uniform fadeParametersBuffer {
-    FadeParameters fadeParameters[CATEGORY_COUNT];
-};
-
-// See ShapePipeline::Slot::MAP in ShapePipeline.h
 LAYOUT(binding=RENDER_UTILS_TEXTURE_FADE_MASK) uniform sampler2D fadeMaskMap;
-
-vec3 getNoiseInverseSize(int category) {
-    return fadeParameters[category]._noiseInvSizeAndLevel.xyz;
-}
-
-float getNoiseLevel(int category) {
-    return fadeParameters[category]._noiseInvSizeAndLevel.w;
-}
 
 vec2 hash2D(vec3 position) {
     return position.xy* vec2(0.1677,  0.221765) + position.z*0.561;
@@ -45,7 +28,7 @@ float noise3D(vec3 position) {
 
 float evalFadeNoiseGradient(FadeObjectParams params, vec3 position) {
     // Do tri-linear interpolation
-    vec3    noisePosition = position * getNoiseInverseSize(params.category) + params.noiseOffset.xyz;
+    vec3    noisePosition = position * params.noiseInvSizeAndLevel.xyz + params.noiseOffsetAndInverted.xyz;
     vec3    noisePositionFloored = floor(noisePosition);
     vec3    noisePositionFraction = fract(noisePosition);
 
@@ -66,13 +49,13 @@ float evalFadeNoiseGradient(FadeObjectParams params, vec3 position) {
 
     float noise = mix(maskY.x, maskY.y, noisePositionFraction.y);
     noise -= 0.5;   // Center on value 0
-    return noise * getNoiseLevel(params.category);
+    return noise * params.noiseInvSizeAndLevel.w;
 }
 
 float evalFadeBaseGradient(FadeObjectParams params, vec3 position) {
-    float gradient = length((position - params.baseOffset.xyz) * params.baseInvSize.xyz);
+    float gradient = length((position - params.baseOffsetAndThreshold.xyz) * params.baseInvSizeAndLevel.xyz);
     gradient = gradient-0.5;  // Center on value 0.5
-    gradient *= fadeParameters[params.category]._baseLevel;
+    gradient *= params.baseInvSizeAndLevel.w;
     return gradient;
 }
 
@@ -85,8 +68,8 @@ float evalFadeGradient(FadeObjectParams params, vec3 position) {
 }
 
 float evalFadeAlpha(FadeObjectParams params, vec3 position) {
-    float alpha = evalFadeGradient(params, position) - params.threshold;
-    alpha *= 1.0 - 2.0 * float(fadeParameters[params.category]._isInverted);
+    float alpha = evalFadeGradient(params, position) - params.baseOffsetAndThreshold.w;
+    alpha *= 1.0 - 2.0 * params.noiseOffsetAndInverted.w;
     return alpha;
 }
 
@@ -103,12 +86,12 @@ void applyFade(FadeObjectParams params, vec3 position, out vec3 emissive) {
         discard;
     }
     
-    float edgeMask = alpha * fadeParameters[params.category]._edgeWidthInvWidth.y;
+    float edgeMask = alpha * params.edgeWidthInv;
     float edgeAlpha = 1.0-clamp(edgeMask, 0.0, 1.0);
 
     edgeMask = step(edgeMask, 1.0);
     edgeAlpha *= edgeAlpha; // Square to have a nice ease out
-    vec4 color = mix(fadeParameters[params.category]._innerEdgeColor, fadeParameters[params.category]._outerEdgeColor, edgeAlpha);
+    vec4 color = mix(params.innerEdgeColor, params.outerEdgeColor, edgeAlpha);
     emissive = color.rgb * edgeMask * color.a;
 }
 
@@ -128,18 +111,24 @@ LAYOUT_STD140(binding=RENDER_UTILS_BUFFER_FADE_OBJECT_PARAMS) uniform fadeObject
 
 <@func declareFadeFragmentVertexInput()@>
 
-layout(location=RENDER_UTILS_ATTR_FADE1) in vec4 _fadeData1;
-layout(location=RENDER_UTILS_ATTR_FADE2) in vec4 _fadeData2;
-layout(location=RENDER_UTILS_ATTR_FADE3) in vec4 _fadeData3;
+layout(location=RENDER_UTILS_ATTR_FADE1) flat in vec4 _fadeData1;
+layout(location=RENDER_UTILS_ATTR_FADE2) flat in vec4 _fadeData2;
+layout(location=RENDER_UTILS_ATTR_FADE3) flat in vec4 _fadeData3;
+layout(location=RENDER_UTILS_ATTR_FADE4) flat in vec4 _fadeData4;
+layout(location=RENDER_UTILS_ATTR_FADE5) flat in vec4 _fadeData5;
+layout(location=RENDER_UTILS_ATTR_FADE6) flat in vec4 _fadeData6;
+layout(location=RENDER_UTILS_ATTR_FADE7) flat in float _fadeData7;
 
 <@endfunc@>
 
 <@func fetchFadeObjectParamsInstanced(fadeParams)@>
-    <$fadeParams$>.category = int(_fadeData1.w);
-    <$fadeParams$>.threshold = _fadeData2.w;
-    <$fadeParams$>.noiseOffset = _fadeData1;
-    <$fadeParams$>.baseOffset = _fadeData2;
-    <$fadeParams$>.baseInvSize = _fadeData3;
+    <$fadeParams$>.noiseOffsetAndInverted = _fadeData1;
+    <$fadeParams$>.baseOffsetAndThreshold = _fadeData2;
+    <$fadeParams$>.baseInvSizeAndLevel = _fadeData3;
+    <$fadeParams$>.noiseInvSizeAndLevel = _fadeData4;
+    <$fadeParams$>.innerEdgeColor = _fadeData5;
+    <$fadeParams$>.outerEdgeColor = _fadeData6;
+    <$fadeParams$>.edgeWidthInv = _fadeData7;
 <@endfunc@>
 
 <@func declareFadeFragment()@>
@@ -153,15 +142,31 @@ layout(location=RENDER_UTILS_ATTR_FADE3) in vec4 _fadeData3;
 <@endfunc@>
 
 <@func declareFadeVertexInstanced()@>
-layout(location=RENDER_UTILS_ATTR_FADE1) out vec4 _fadeData1;
-layout(location=RENDER_UTILS_ATTR_FADE2) out vec4 _fadeData2;
-layout(location=RENDER_UTILS_ATTR_FADE3) out vec4 _fadeData3;
+layout(location=GPU_ATTR_FADEDATA1) in vec4 fadeData1;
+layout(location=GPU_ATTR_FADEDATA2) in vec4 fadeData2;
+layout(location=GPU_ATTR_FADEDATA3) in vec4 fadeData3;
+layout(location=GPU_ATTR_FADEDATA4) in vec4 fadeData4;
+layout(location=GPU_ATTR_FADEDATA5) in vec4 fadeData5;
+layout(location=GPU_ATTR_FADEDATA6) in vec4 fadeData6;
+layout(location=GPU_ATTR_FADEDATA7) in float fadeData7;
+
+layout(location=RENDER_UTILS_ATTR_FADE1) flat out vec4 _fadeData1;
+layout(location=RENDER_UTILS_ATTR_FADE2) flat out vec4 _fadeData2;
+layout(location=RENDER_UTILS_ATTR_FADE3) flat out vec4 _fadeData3;
+layout(location=RENDER_UTILS_ATTR_FADE4) flat out vec4 _fadeData4;
+layout(location=RENDER_UTILS_ATTR_FADE5) flat out vec4 _fadeData5;
+layout(location=RENDER_UTILS_ATTR_FADE6) flat out vec4 _fadeData6;
+layout(location=RENDER_UTILS_ATTR_FADE7) flat out float _fadeData7;
 <@endfunc@>
 
 <@func passThroughFadeObjectParams()@>
-    _fadeData1 = inTexCoord2;
-    _fadeData2 = inTexCoord3;
-    _fadeData3 = inTexCoord4;    
+    _fadeData1 = fadeData1;
+    _fadeData2 = fadeData2;
+    _fadeData3 = fadeData3;
+    _fadeData4 = fadeData4;
+    _fadeData5 = fadeData5;
+    _fadeData6 = fadeData6;
+    _fadeData7 = fadeData7;
 <@endfunc@>
 
 <@endif@>
