@@ -268,40 +268,40 @@ Element Deserializer::readElement(const json& node) {
 }
 
 Sampler Deserializer::readSampler(const json& node) {
-    Sampler result;
+    Sampler::Desc result;
     if (!node.is_null()) {
         if (node.count(keys::borderColor)) {
-            result._desc._borderColor = readVec4(node[keys::borderColor]);
+            result._borderColor = readVec4(node[keys::borderColor]);
         }
         if (node.count(keys::maxAnisotropy)) {
-            result._desc._maxAnisotropy = node[keys::maxAnisotropy];
+            result._maxAnisotropy = node[keys::maxAnisotropy];
         }
         if (node.count(keys::wrapModeU)) {
-            result._desc._wrapModeU = node[keys::wrapModeU];
+            result._wrapModeU = node[keys::wrapModeU];
         }
         if (node.count(keys::wrapModeV)) {
-            result._desc._wrapModeV = node[keys::wrapModeV];
+            result._wrapModeV = node[keys::wrapModeV];
         }
         if (node.count(keys::wrapModeW)) {
-            result._desc._wrapModeW = node[keys::wrapModeW];
+            result._wrapModeW = node[keys::wrapModeW];
         }
         if (node.count(keys::filter)) {
-            result._desc._filter = node[keys::filter];
+            result._filter = node[keys::filter];
         }
         if (node.count(keys::comparisonFunction)) {
-            result._desc._comparisonFunc = node[keys::comparisonFunction];
+            result._comparisonFunc = node[keys::comparisonFunction];
         }
         if (node.count(keys::minMip)) {
-            result._desc._minMip = node[keys::minMip];
+            result._minMip = node[keys::minMip];
         }
         if (node.count(keys::maxMip)) {
-            result._desc._maxMip = node[keys::maxMip];
+            result._maxMip = node[keys::maxMip];
         }
         if (node.count(keys::mipOffset)) {
-            result._desc._mipOffset = node[keys::mipOffset];
+            result._mipOffset = node[keys::mipOffset];
         }
     }
-    return result;
+    return Sampler(result);
 }
 
 constexpr uint32_t INVALID_CHUNK_INDEX{ (uint32_t)-1 };
@@ -520,7 +520,7 @@ static State::DepthTest readDepthTest(const json& node) {
 
 static State::StencilTest readStencilTest(const json& node) {
     State::StencilTest result;
-    State::ComparisonFunction compareOp;
+    ComparisonFunction compareOp;
     State::StencilOp stencilOp;
     if (Deserializer::readOptional(compareOp, node, keys::function)) {
         result.function = compareOp;

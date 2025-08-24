@@ -298,7 +298,7 @@ void OpenXrDisplayPlugin::customizeContext() {
     for (size_t i = 0; i < _swapChainLengths[0]; ++i) {
         gpu::TexturePointer texture =
             gpu::Texture::createRenderBuffer(gpu::Element::COLOR_SRGBA_32, _renderTargetSize.x, _renderTargetSize.y,
-                                             gpu::Texture::SINGLE_MIP, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_POINT));
+                                             gpu::Texture::SINGLE_MIP, Sampler(Sampler::FILTER_MIN_MAG_POINT));
         _compositeSwapChain.push_back(texture);
     }
 }

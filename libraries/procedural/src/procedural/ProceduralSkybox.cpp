@@ -30,7 +30,7 @@ ProceduralSkybox::ProceduralSkybox(uint64_t created) : graphics::Skybox(), _crea
     // Adjust the pipeline state for background using the stencil test
     // Must match PrepareStencil::STENCIL_BACKGROUND
     const int8_t STENCIL_BACKGROUND = 0;
-    _procedural._opaqueState->setStencilTest(true, 0xFF, gpu::State::StencilTest(STENCIL_BACKGROUND, 0xFF, gpu::EQUAL,
+    _procedural._opaqueState->setStencilTest(true, 0xFF, gpu::State::StencilTest(STENCIL_BACKGROUND, 0xFF, ComparisonFunction::EQUAL,
         gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP));
     _procedural._opaqueState->setDepthTest(gpu::State::DepthTest(false));
 }

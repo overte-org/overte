@@ -385,7 +385,7 @@ gpu::TexturePointer SubsurfaceScatteringResource::generateScatteringProfile(Rend
     const int PROFILE_RESOLUTION = 512;
     //  const auto pixelFormat = gpu::Element::COLOR_SRGBA_32;
     const auto pixelFormat = gpu::Element::COLOR_R11G11B10;
-    auto profileMap = gpu::Texture::createRenderBuffer(pixelFormat, PROFILE_RESOLUTION, 1, gpu::Texture::SINGLE_MIP, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR, gpu::Sampler::WRAP_CLAMP));
+    auto profileMap = gpu::Texture::createRenderBuffer(pixelFormat, PROFILE_RESOLUTION, 1, gpu::Texture::SINGLE_MIP, Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR, Sampler::WRAP_CLAMP));
     profileMap->setSource("Generated Scattering Profile");
     diffuseProfileGPU(profileMap, args);
     return profileMap;
@@ -396,7 +396,7 @@ gpu::TexturePointer SubsurfaceScatteringResource::generatePreIntegratedScatterin
     const int TABLE_RESOLUTION = 512;
   //  const auto pixelFormat = gpu::Element::COLOR_SRGBA_32;
     const auto pixelFormat = gpu::Element::COLOR_R11G11B10;
-    auto scatteringLUT = gpu::Texture::createRenderBuffer(pixelFormat, TABLE_RESOLUTION, TABLE_RESOLUTION, gpu::Texture::SINGLE_MIP, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR, gpu::Sampler::WRAP_CLAMP));
+    auto scatteringLUT = gpu::Texture::createRenderBuffer(pixelFormat, TABLE_RESOLUTION, TABLE_RESOLUTION, gpu::Texture::SINGLE_MIP, Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR, Sampler::WRAP_CLAMP));
     //diffuseScatter(scatteringLUT);
     scatteringLUT->setSource("Generated pre-integrated scattering");
     diffuseScatterGPU(profile, scatteringLUT, args);
@@ -405,7 +405,7 @@ gpu::TexturePointer SubsurfaceScatteringResource::generatePreIntegratedScatterin
 
 gpu::TexturePointer SubsurfaceScatteringResource::generateScatteringSpecularBeckmann(RenderArgs* args) {
     const int SPECULAR_RESOLUTION = 256;
-    auto beckmannMap = gpu::Texture::createRenderBuffer(gpu::Element::COLOR_RGBA_32, SPECULAR_RESOLUTION, SPECULAR_RESOLUTION, gpu::Texture::SINGLE_MIP, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR, gpu::Sampler::WRAP_CLAMP));
+    auto beckmannMap = gpu::Texture::createRenderBuffer(gpu::Element::COLOR_RGBA_32, SPECULAR_RESOLUTION, SPECULAR_RESOLUTION, gpu::Texture::SINGLE_MIP, Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR, Sampler::WRAP_CLAMP));
     beckmannMap->setSource("Generated beckmannMap");
     computeSpecularBeckmannGPU(beckmannMap, args);
     return beckmannMap;

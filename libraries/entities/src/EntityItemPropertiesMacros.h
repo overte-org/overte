@@ -21,6 +21,7 @@
 #include <ScriptEngine.h>
 #include <ScriptValue.h>
 #include <ScriptValueUtils.h>
+#include "Sampler.h"
 
 const quint64 UNKNOWN_CREATED_TIME = 0;
 
@@ -164,6 +165,8 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const QByteArray& v) {
 inline ScriptValue convertScriptValue(ScriptEngine* e, const EntityItemID& v) { return e->newValue(QUuid(v).toString()); }
 
 inline ScriptValue convertScriptValue(ScriptEngine* e, const AACube& v) { return aaCubeToScriptValue(e, v); }
+
+inline ScriptValue convertScriptValue(ScriptEngine* e, const Sampler& v) { return samplerToScriptValue(e, v); }
 
 #define COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE(X,G,g,P,p) \
     if (((!returnNothingOnEmptyPropertyFlags && desiredProperties.isEmpty()) || desiredProperties.getHasProperty(X)) && \
@@ -399,6 +402,13 @@ inline QRect QRect_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
     QRect rect;
     qRectFromScriptValue(v, rect);
     return rect;
+}
+
+inline Sampler Sampler_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
+    isValid = true;
+    Sampler sampler;
+    samplerFromScriptValue(v, sampler);
+    return sampler;
 }
 
 #define COPY_PROPERTY_IF_CHANGED(P) \

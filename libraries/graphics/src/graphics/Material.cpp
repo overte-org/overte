@@ -203,7 +203,7 @@ void Material::setTextureMap(MapChannel channel, const TextureMapPointer& textur
 
 }
 
-void Material::setSampler(MapChannel channel, const gpu::Sampler& sampler) {
+void Material::setSampler(MapChannel channel, const Sampler& sampler) {
     std::lock_guard<std::recursive_mutex> locker(_textureMapsMutex);
     _samplers[channel] = sampler;
 }

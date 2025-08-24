@@ -161,7 +161,7 @@ bool BlurInOutResource::updateResources(const gpu::FramebufferPointer& sourceFra
         //if (sourceFramebuffer->hasDepthStencil()) {
         //    _blurredFramebuffer->setDepthStencilBuffer(sourceFramebuffer->getDepthStencilBuffer(), sourceFramebuffer->getDepthStencilBufferFormat());
         //}
-        auto blurringSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT, gpu::Sampler::WRAP_CLAMP);
+        auto blurringSampler = Sampler(Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT, Sampler::WRAP_CLAMP);
         auto blurringTarget = gpu::Texture::createRenderBuffer(sourceFramebuffer->getRenderBuffer(0)->getTexelFormat(), blurBufferSize.x, blurBufferSize.y, gpu::Texture::SINGLE_MIP, blurringSampler);
         _blurredFramebuffer->setRenderBuffer(0, blurringTarget);
     } 
@@ -184,7 +184,7 @@ bool BlurInOutResource::updateResources(const gpu::FramebufferPointer& sourceFra
          /*   if (sourceFramebuffer->hasDepthStencil()) {
                 _outputFramebuffer->setDepthStencilBuffer(sourceFramebuffer->getDepthStencilBuffer(), sourceFramebuffer->getDepthStencilBufferFormat());
             }*/
-            auto blurringSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT, gpu::Sampler::WRAP_CLAMP);
+            auto blurringSampler = Sampler(Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT, Sampler::WRAP_CLAMP);
             auto blurringTarget = gpu::Texture::createRenderBuffer(sourceFramebuffer->getRenderBuffer(0)->getTexelFormat(), blurBufferSize.x, blurBufferSize.y, gpu::Texture::SINGLE_MIP, blurringSampler);
             _outputFramebuffer->setRenderBuffer(0, blurringTarget);
         }
@@ -212,7 +212,7 @@ gpu::PipelinePointer BlurGaussian::getBlurVPipeline() {
         gpu::StatePointer state = std::make_shared<gpu::State>();
 
         // Stencil test the curvature pass for objects pixels only, not the background
-      //  state->setStencilTest(true, 0xFF, gpu::State::StencilTest(0, 0xFF, gpu::NOT_EQUAL, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP));
+      //  state->setStencilTest(true, 0xFF, gpu::State::StencilTest(0, 0xFF, ComparisonFunction::NOT_EQUAL, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP));
 
         _blurVPipeline = gpu::Pipeline::create(program, state);
     }
@@ -226,7 +226,7 @@ gpu::PipelinePointer BlurGaussian::getBlurHPipeline() {
         gpu::StatePointer state = std::make_shared<gpu::State>();
 
         // Stencil test the curvature pass for objects pixels only, not the background
-       // state->setStencilTest(true, 0xFF, gpu::State::StencilTest(0, 0xFF, gpu::NOT_EQUAL, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP));
+       // state->setStencilTest(true, 0xFF, gpu::State::StencilTest(0, 0xFF, ComparisonFunction::NOT_EQUAL, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP));
 
         _blurHPipeline = gpu::Pipeline::create(program, state);
     }
@@ -316,7 +316,7 @@ gpu::PipelinePointer BlurGaussianDepthAware::getBlurVPipeline() {
         gpu::StatePointer state = std::make_shared<gpu::State>();
 
         // Stencil test the curvature pass for objects pixels only, not the background
-      //  state->setStencilTest(true, 0xFF, gpu::State::StencilTest(0, 0xFF, gpu::NOT_EQUAL, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP));
+      //  state->setStencilTest(true, 0xFF, gpu::State::StencilTest(0, 0xFF, ComparisonFunction::NOT_EQUAL, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP));
 
         _blurVPipeline = gpu::Pipeline::create(program, state);
     }
@@ -330,7 +330,7 @@ gpu::PipelinePointer BlurGaussianDepthAware::getBlurHPipeline() {
         gpu::StatePointer state = std::make_shared<gpu::State>();
 
         // Stencil test the curvature pass for objects pixels only, not the background
-    //    state->setStencilTest(true, 0xFF, gpu::State::StencilTest(0, 0xFF, gpu::NOT_EQUAL, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP));
+    //    state->setStencilTest(true, 0xFF, gpu::State::StencilTest(0, 0xFF, ComparisonFunction::NOT_EQUAL, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP));
 
         _blurHPipeline = gpu::Pipeline::create(program, state);
     }

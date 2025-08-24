@@ -29,9 +29,9 @@ void FramebufferCache::setFrameBufferSize(QSize frameBufferSize) {
 }
 
 void FramebufferCache::createPrimaryFramebuffer() {
-    auto defaultSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_POINT);
+    auto defaultSampler = Sampler(Sampler::FILTER_MIN_MAG_POINT);
 
-    auto smoothSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR);
+    auto smoothSampler = Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR);
 }
 
 

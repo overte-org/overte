@@ -158,7 +158,7 @@ public:
             glSamplerParameteri(result, GL_TEXTURE_MAG_FILTER, fm.magFilter);
             if (sampler.doComparison()) {
                 glSamplerParameteri(result, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-                glSamplerParameteri(result, GL_TEXTURE_COMPARE_FUNC, COMPARISON_TO_GL[sampler.getComparisonFunction()]);
+                glSamplerParameteri(result, GL_TEXTURE_COMPARE_FUNC, COMPARISON_TO_GL[(uint8_t)sampler.getComparisonFunction()]);
             } else {
                 glSamplerParameteri(result, GL_TEXTURE_COMPARE_MODE, GL_NONE);
             }
@@ -304,7 +304,7 @@ void GL45Texture::syncSampler(const Sampler& sampler) const {
 
     if (sampler.doComparison()) {
         glTextureParameteri(_id, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE);
-        glTextureParameteri(_id, GL_TEXTURE_COMPARE_FUNC, COMPARISON_TO_GL[sampler.getComparisonFunction()]);
+        glTextureParameteri(_id, GL_TEXTURE_COMPARE_FUNC, COMPARISON_TO_GL[(uint8_t)sampler.getComparisonFunction()]);
     } else {
         glTextureParameteri(_id, GL_TEXTURE_COMPARE_MODE, GL_NONE);
     }

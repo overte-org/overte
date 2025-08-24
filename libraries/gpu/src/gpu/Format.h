@@ -376,20 +376,6 @@ public:
     uint16 _type : 5;
 };
 
-  
-enum ComparisonFunction {
-    NEVER = 0,
-    LESS,
-    EQUAL,
-    LESS_EQUAL,
-    GREATER,
-    NOT_EQUAL,
-    GREATER_EQUAL,
-    ALWAYS,
-
-    NUM_COMPARISON_FUNCS,
-};
-
 enum Primitive {
     POINTS = 0,
     LINES,

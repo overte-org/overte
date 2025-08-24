@@ -96,7 +96,7 @@ void AmbientOcclusionFramebuffer::allocate() {
     {
         auto width = _frameSize.x;
         auto height = _frameSize.y;
-        auto sampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR, gpu::Sampler::WRAP_CLAMP);
+        auto sampler = Sampler(Sampler::FILTER_MIN_MAG_LINEAR, Sampler::WRAP_CLAMP);
 
         _occlusionTexture = gpu::Texture::createRenderBuffer(occlusionformat, width, height, gpu::Texture::SINGLE_MIP, sampler);
         _occlusionFramebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("occlusion"));
@@ -121,7 +121,7 @@ void AmbientOcclusionFramebuffer::allocate() {
         auto height = sideSize.y;
         auto format = gpu::Element{ gpu::VEC4, gpu::NINT2_10_10_10, gpu::RGBA };
         _normalTexture = gpu::Texture::createRenderBuffer(format, width, height, gpu::Texture::SINGLE_MIP, 
-                                                          gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_POINT, gpu::Sampler::WRAP_CLAMP));
+                                                          Sampler(Sampler::FILTER_MIN_MAG_POINT, Sampler::WRAP_CLAMP));
         _normalFramebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("ssaoNormals"));
         _normalFramebuffer->setRenderBuffer(0, _normalTexture);
     }
@@ -140,7 +140,7 @@ void AmbientOcclusionFramebuffer::allocate() {
         auto height = splitSize.y;
 
         _occlusionSplitTexture = gpu::Texture::createRenderBufferArray(occlusionformat, width, height, SSAO_SPLIT_COUNT*SSAO_SPLIT_COUNT, gpu::Texture::SINGLE_MIP,
-                                                                       gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR, gpu::Sampler::WRAP_CLAMP));
+                                                                       Sampler(Sampler::FILTER_MIN_MAG_LINEAR, Sampler::WRAP_CLAMP));
         for (int i = 0; i < SSAO_SPLIT_COUNT*SSAO_SPLIT_COUNT; i++) {
             _occlusionSplitFramebuffers[i] = gpu::FramebufferPointer(gpu::Framebuffer::create("occlusion"));
             _occlusionSplitFramebuffers[i]->setRenderBuffer(0, _occlusionSplitTexture, i);
