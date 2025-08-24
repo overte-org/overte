@@ -34,6 +34,7 @@
 #include <PickFilter.h>
 #include <ScriptManager.h>
 #include <ScriptValue.h>
+#include <CanvasCommand.h>
 
 #include "PolyVoxEntityItem.h"
 #include "LineEntityItem.h"
@@ -2194,6 +2195,48 @@ public slots:
      * print("script: " + JSON.stringify(Entities.getPropertyInfo("script")));
      */
     Q_INVOKABLE const EntityPropertyInfo getPropertyInfo(const QString& propertyName) const;
+
+    /*@jsdoc
+     * Replaces the contents of a canvas entity's pixel buffer.
+     * @function Entities.canvasPushImage
+     * @param {Uuid} entityID - The Canvas entity that this image will be submitted to.
+     * @param {CanvasImage} image - The image to submit. Must have the same dimensions as the target Canvas entity.
+     */
+    Q_INVOKABLE void canvasPushPixels(const QUuid& entityID, const CanvasImage& image);
+
+    /*@jsdoc
+     * Retrieves a copy of the current sRGBA8 pixel buffer of a canvas.
+     * The contents are determined by the last call to Entities.canvasCommit.
+     * @function Entities.canvasGetImage
+     * @param {Uuid} entityID - The canvas entity to retrieve the buffer from.
+     * @returns {CanvasImage}
+     */
+    Q_INVOKABLE CanvasImage canvasGetPixels(const QUuid& entityID);
+
+    /*@jsdoc
+     * Pushes a list of high-level drawing commands into a Canvas entity's internal queue.
+     * See {@link CanvasCommand}
+     * @function Entities.canvasPushCommands
+     * @param {Uuid} entityID - The canvas entity to push commands to.
+     * @param {Object[]} commands - The drawing commands to push. See CanvasCommand for more info.
+     */
+    Q_INVOKABLE void canvasPushCommands(const QUuid& entityID, const QVector<CanvasCommand>& commands);
+
+    /*@jsdoc
+     * Completes any pending drawing commands and updates the texture of a Canvas entity.
+     * The Canvas entity's internal command queue is cleared after this function is called.
+     * @function Entities.canvasCommit
+     * @param {Uuid} entityID - The canvas entity to update the texture of.
+     */
+    Q_INVOKABLE void canvasCommit(const QUuid& entityID);
+
+    /*@jsdoc
+     * Creates a PNG image binary that can be saved to disk or the asset server.
+     * @function Entities.canvasToImageData
+     * @param {Uuid} entityID - The canvas entity to make an image from.
+     * @returns {ArrayBuffer}
+     */
+    Q_INVOKABLE QByteArray canvasToImageData(const QUuid& entityID);
 
 signals:
     /*@jsdoc
