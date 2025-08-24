@@ -15,6 +15,7 @@
 (function () { // BEGIN LOCAL_SCOPE
 Script.include("/~/system/libraries/accountUtils.js");
 var AppUi = Script.require('appUi');
+var ContextMenu = Script.require('contextMenu');
 
 var SNAPSHOT_DELAY = 500; // 500ms
 var FINISH_SOUND_DELAY = 350;
@@ -718,8 +719,10 @@ function setTakePhotoControllerMappingStatus(status) {
     }
     if (status) {
         takePhotoControllerMapping.enable();
+        ContextMenu.disable();
     } else {
         takePhotoControllerMapping.disable();
+        ContextMenu.enable();
     }
 }
 
@@ -728,14 +731,14 @@ var takePhotoControllerMappingName = 'Hifi-SnapshotApp-Mapping-TakePhoto';
 function registerTakePhotoControllerMapping() {
     takePhotoControllerMapping = Controller.newMapping(takePhotoControllerMappingName);
     if (controllerType === "OculusTouch" || controllerType === "OpenXR") {
-        takePhotoControllerMapping.from(Controller.Standard.LS).to(function (value) {
+        takePhotoControllerMapping.from(Controller.Standard.RS).to(function (value) {
             if (value === 1.0) {
                 takeSnapshot();
             }
             return;
         });
     } else if (controllerType === "Vive") {
-        takePhotoControllerMapping.from(Controller.Standard.LeftPrimaryThumb).to(function (value) {
+        takePhotoControllerMapping.from(Controller.Standard.RightPrimaryThumb).to(function (value) {
             if (value === 1.0) {
                 takeSnapshot();
             }
@@ -799,6 +802,9 @@ function shutdown() {
     Entities.canRezChanged.disconnect(updatePrintPermissions);
     Entities.canRezTmpChanged.disconnect(updatePrintPermissions);
     HMD.displayModeChanged.disconnect(onHMDChanged);
+
+    // prevent deadlock
+    ContextMenu.enable();
 }
 Script.scriptEnding.connect(shutdown);
 
