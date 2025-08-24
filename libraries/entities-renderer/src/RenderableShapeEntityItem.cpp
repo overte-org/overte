@@ -165,25 +165,25 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
                 geometryCache->renderShape(batch, geometryShape, _colorBuffer);
             }
         } else {
-            geometryCache->renderTorus(batch, 0.25, _colorBuffer, _torusID);
+            geometryCache->renderTorus(batch, _innerRadius, _colorBuffer, _torusID);
         }
     } else if (pipelineType == Pipeline::SIMPLE) {
         // FIXME, support instanced multi-shape rendering using multidraw indirect
         bool forward = _renderLayer != RenderLayer::WORLD || args->_renderMethod == Args::RenderMethod::FORWARD;
         bool fading = ShapeKey(args->_itemShapeKey).isFaded();
-        if (outColor.a >= 1.0f) {
-            render::ShapePipelinePointer pipeline = geometryCache->getShapePipelinePointer(false, wireframe || materials.top().material->isUnlit(),
-                forward, fading, materials.top().material->getCullFaceMode());
-            if (!fading) {
-                geometryCache->renderShapeInstance(args, batch, geometryShape, wireframe, outColor, pipeline);
+        if (geometryShape != GeometryCache::Shape::Torus) {
+            if (outColor.a >= 1.0f) {
+                render::ShapePipelinePointer pipeline = geometryCache->getShapePipelinePointer(false, wireframe || materials.top().material->isUnlit(),
+                    forward, fading, materials.top().material->getCullFaceMode());
+                if (!fading) {
+                    geometryCache->renderShapeInstance(args, batch, geometryShape, wireframe, outColor, pipeline);
+                } else {
+                    FadeObjectParams fadeParams = getFadeParams(args->_scene);
+                    geometryCache->renderShapeFadeInstance(args, batch, geometryShape, wireframe, outColor, fadeParams, pipeline);
+                }
             } else {
-                FadeObjectParams fadeParams = getFadeParams(args->_scene);
-                geometryCache->renderShapeFadeInstance(args, batch, geometryShape, wireframe, outColor, fadeParams, pipeline);
-            }
-        } else {
-            const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
-            _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
-            if (geometryShape != GeometryCache::Shape::Torus) {
+                const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+                _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
                 if (!fading) {
                     if (wireframe) {
                         geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
@@ -191,17 +191,26 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
                         geometryCache->renderShape(batch, geometryShape, _colorBuffer);
                     }
                 } else {
-                    geometryCache->renderShape(batch, geometryShape, _colorBuffer);
+                    FadeObjectParams fadeParams = getFadeParams(args->_scene);
+                    _fadeBuffers.clear();
+                    _fadeBuffers.append(fadeParams);
+                    if (wireframe) {
+                        geometryCache->renderWireShapeFade(batch, geometryShape, _colorBuffer, _fadeBuffers);
+                    } else {
+                        geometryCache->renderShapeFade(batch, geometryShape, _colorBuffer, _fadeBuffers);
+                    }
                 }
+            }
+        } else {
+            const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+            _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*)&compactColor);
+            if (!fading) {
+                geometryCache->renderTorus(batch, _innerRadius, _colorBuffer, _torusID);
             } else {
                 FadeObjectParams fadeParams = getFadeParams(args->_scene);
                 _fadeBuffers.clear();
                 _fadeBuffers.append(fadeParams);
-                if (wireframe) {
-                    geometryCache->renderWireShapeFade(batch, geometryShape, _colorBuffer, _fadeBuffers);
-                } else {
-                    geometryCache->renderShapeFade(batch, geometryShape, _colorBuffer, _fadeBuffers);
-                }
+                geometryCache->renderTorusFade(batch, _innerRadius, _colorBuffer, _fadeBuffers, _torusID);
             }
         }
     } else {
