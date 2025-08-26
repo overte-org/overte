@@ -526,7 +526,7 @@ void OpenVrDisplayPlugin::customizeContext() {
             if (0 != i) {
                 _compositeInfos[i].texture = gpu::Texture::createRenderBuffer(gpu::Element::COLOR_RGBA_32, _renderTargetSize.x,
                                                                               _renderTargetSize.y, gpu::Texture::SINGLE_MIP,
-                                                                              gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_POINT));
+                                                                              Sampler(Sampler::FILTER_MIN_MAG_POINT));
             }
             _compositeInfos[i].textureID = getGLBackend()->getTextureID(_compositeInfos[i].texture);
         }

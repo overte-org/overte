@@ -160,7 +160,7 @@ void ProceduralParticleEffectEntityRenderer::recreateParticles() {
         buffer->removeRenderBuffers();
         for (size_t i = 0; i < _numUpdateProps; i++) {
             TexturePointer texture = TexturePointer(gpu::Texture::createRenderBuffer(gpu::Element(gpu::VEC4, gpu::FLOAT, gpu::RGBA),
-                (gpu::uint16)_particlePropTextureDim, (gpu::uint16)_particlePropTextureDim, gpu::Texture::SINGLE_MIP, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_POINT)));
+                (gpu::uint16)_particlePropTextureDim, (gpu::uint16)_particlePropTextureDim, gpu::Texture::SINGLE_MIP, Sampler(Sampler::FILTER_MIN_MAG_POINT)));
             texture->setSource(("RenderableProceduralParticleEffectEntity " + _entityID.toString() + " " + (char)i).toStdString());
             buffer->setRenderBuffer((gpu::uint32)i, texture);
         }

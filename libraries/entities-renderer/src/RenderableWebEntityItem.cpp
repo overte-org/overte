@@ -181,6 +181,12 @@ void WebEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene
             return;
         }
 
+        //Sampler sampler = entity->getSampler();
+        //if (sampler != _sampler) {
+        //    _texture->setSampler(sampler);
+        //    _sampler = sampler;
+        //}
+
         // This work must be done on the main thread
         bool localSafeContext = entity->getLocalSafeContext();
         if (!_webSurface) {
@@ -274,8 +280,10 @@ void WebEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene
 
 void WebEntityRenderer::doRender(RenderArgs* args) {
     PerformanceTimer perfTimer("WebEntityRenderer::render");
+    // Sampler sampler;
     withWriteLock([&] {
         _lastRenderTime = usecTimestampNow();
+        // sampler = _sampler;
     });
 
     // Try to update the texture
@@ -298,6 +306,8 @@ void WebEntityRenderer::doRender(RenderArgs* args) {
         _texture->setExternalTexture(newTextureAndFence.first, newTextureAndFence.second);
         _texture->setSize(windowSize.width(), windowSize.height());
         _texture->setOriginalSize(windowSize.width(), windowSize.height());
+        // FIXME: external textures do not currently support modifying their samplers
+        // _texture->setSampler(sampler);
     }
 
     static const glm::vec2 texMin(0.0f), texMax(1.0f), topLeft(-0.5f), bottomRight(0.5f);

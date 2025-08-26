@@ -35,6 +35,7 @@
 #include "ScriptEngineLogging.h"
 #include "v8/FastScriptValueUtils.h"
 #include "AddressManager.h"
+#include "Sampler.h"
 
 bool isListOfStrings(const ScriptValue& arg) {
     if (!arg.isArray()) {
@@ -403,6 +404,35 @@ ScriptValue vec4toScriptValue(ScriptEngine* engine, const glm::vec4& vec4) {
     obj.setProperty("z", vec4.z);
     obj.setProperty("w", vec4.w);
     return obj;
+}
+
+ScriptValue vec4ColorToScriptValue(ScriptEngine* engine, const glm::vec4& vec4) {
+    auto prototype = engine->globalObject().property("__hifi_vec4_color__");
+    if (!prototype.property("defined").toBool()) {
+        prototype = engine->evaluate(
+            "globalThis.__hifi_vec4_color__ = Object.defineProperties({}, { "
+            "defined: { value: true },"
+            "0: { set: function(nv) { return this.red = nv; }, get: function() { return this.red; } },"
+            "1: { set: function(nv) { return this.green = nv; }, get: function() { return this.green; } },"
+            "2: { set: function(nv) { return this.blue = nv; }, get: function() { return this.blue; } },"
+            "3: { set: function(nv) { return this.alpha = nv; }, get: function() { return this.alpha; } },"
+            "r: { set: function(nv) { return this.red = nv; }, get: function() { return this.red; } },"
+            "g: { set: function(nv) { return this.green = nv; }, get: function() { return this.green; } },"
+            "b: { set: function(nv) { return this.blue = nv; }, get: function() { return this.blue; } },"
+            "a: { set: function(nv) { return this.alpha = nv; }, get: function() { return this.alpha; } },"
+            "x: { set: function(nv) { return this.red = nv; }, get: function() { return this.red; } },"
+            "y: { set: function(nv) { return this.green = nv; }, get: function() { return this.green; } },"
+            "z: { set: function(nv) { return this.blue = nv; }, get: function() { return this.blue; } },"
+            "a: { set: function(nv) { return this.alpha = nv; }, get: function() { return this.alpha; } }"
+            "})");
+    }
+    ScriptValue value = engine->newObject();
+    value.setProperty("red", vec4.x);
+    value.setProperty("green", vec4.y);
+    value.setProperty("blue", vec4.z);
+    value.setProperty("alpha", vec4.w);
+    value.setPrototype(prototype);
+    return value;
 }
 
 bool vec4FromScriptValue(const ScriptValue& object, glm::vec4& vec4) {
@@ -1059,4 +1089,69 @@ QVector<QString> qVectorQStringFromScriptValue(const ScriptValue& array) {
         newVector << string;
     }
     return newVector;
+}
+
+ScriptValue samplerToScriptValue(ScriptEngine* engine, const Sampler& sampler) {
+    ScriptValue obj = engine->newObject();
+    obj.setProperty("borderColor", vec4ColorToScriptValue(engine, sampler.getBorderColor()));
+    Sampler::Filter filter = sampler.getFilter();
+    switch (filter) {
+        case Sampler::Filter::FILTER_MIN_MAG_POINT:
+            obj.setProperty("minFilter", qStringToScriptValue(engine, "point"));
+            obj.setProperty("magFilter", qStringToScriptValue(engine, "point"));
+            break;
+        case Sampler::Filter::FILTER_MIN_LINEAR_MAG_POINT:
+            obj.setProperty("minFilter", qStringToScriptValue(engine, "linear"));
+            obj.setProperty("magFilter", qStringToScriptValue(engine, "point"));
+            break;
+        case Sampler::Filter::FILTER_MIN_MAG_MIP_POINT:
+            obj.setProperty("minFilter", qStringToScriptValue(engine, "mipmapPoint"));
+            obj.setProperty("magFilter", qStringToScriptValue(engine, "point"));
+            break;
+        case Sampler::Filter::FILTER_MIN_MAG_POINT_MIP_LINEAR:
+            obj.setProperty("minFilter", qStringToScriptValue(engine, "mipmapLinear"));
+            obj.setProperty("magFilter", qStringToScriptValue(engine, "point"));
+            break;
+        case Sampler::Filter::FILTER_MIN_LINEAR_MAG_MIP_POINT:
+            obj.setProperty("minFilter", qStringToScriptValue(engine, "linearMipmapPoint"));
+            obj.setProperty("magFilter", qStringToScriptValue(engine, "point"));
+            break;
+        case Sampler::Filter::FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR:
+            obj.setProperty("minFilter", qStringToScriptValue(engine, "linearMipmapLinear"));
+            obj.setProperty("magFilter", qStringToScriptValue(engine, "point"));
+            break;
+        case Sampler::Filter::FILTER_MIN_POINT_MAG_LINEAR:
+            obj.setProperty("minFilter", qStringToScriptValue(engine, "point"));
+            obj.setProperty("magFilter", qStringToScriptValue(engine, "linear"));
+            break;
+        case Sampler::Filter::FILTER_MIN_MAG_LINEAR:
+            obj.setProperty("minFilter", qStringToScriptValue(engine, "linear"));
+            obj.setProperty("magFilter", qStringToScriptValue(engine, "linear"));
+            break;
+        case Sampler::Filter::FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT:
+            obj.setProperty("minFilter", qStringToScriptValue(engine, "mipmapPoint"));
+            obj.setProperty("magFilter", qStringToScriptValue(engine, "linear"));
+            break;
+        case Sampler::Filter::FILTER_MIN_POINT_MAG_MIP_LINEAR:
+            obj.setProperty("minFilter", qStringToScriptValue(engine, "mipmapLinear"));
+            obj.setProperty("magFilter", qStringToScriptValue(engine, "linear"));
+            break;
+        case Sampler::Filter::FILTER_MIN_MAG_LINEAR_MIP_POINT:
+            obj.setProperty("minFilter", qStringToScriptValue(engine, "linearMipmapPoint"));
+            obj.setProperty("magFilter", qStringToScriptValue(engine, "linear"));
+            break;
+        case Sampler::Filter::FILTER_MIN_MAG_MIP_LINEAR:
+            obj.setProperty("minFilter", qStringToScriptValue(engine, "linearMipmapLinear"));
+            obj.setProperty("magFilter", qStringToScriptValue(engine, "linear"));
+            break;
+    }
+    obj.setProperty("wrapModeU", qStringToScriptValue(engine, wrapModeToString(sampler.getWrapModeU())));
+    obj.setProperty("wrapModeV", qStringToScriptValue(engine, wrapModeToString(sampler.getWrapModeV())));
+    obj.setProperty("wrapModeW", qStringToScriptValue(engine, wrapModeToString(sampler.getWrapModeW())));
+    return obj;
+}
+
+bool samplerFromScriptValue(const ScriptValue& object, Sampler& sampler) {
+    sampler = Sampler::parseSampler(QJsonObject::fromVariantMap(object.toVariant().toMap()));
+    return true;
 }

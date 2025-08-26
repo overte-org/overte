@@ -155,7 +155,7 @@ static void setMaterialMap(const QJsonValue& value, const std::shared_ptr<Networ
             auto samplerItr = valueMap.constFind("sampler");
             if (samplerItr != valueMap.constEnd() && samplerItr->isObject()) {
                 auto samplerObject = samplerItr->toObject();
-                material->setSampler(channel, gpu::Sampler::parseSampler(samplerObject));
+                material->setSampler(channel, Sampler::parseSampler(samplerObject));
             }
 
             auto texCoordItr = valueMap.constFind("texCoord");

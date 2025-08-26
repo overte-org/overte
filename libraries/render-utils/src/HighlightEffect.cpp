@@ -137,14 +137,14 @@ void DrawHighlightMask::run(const render::RenderContextPointer& renderContext, c
 
     if (!_stencilMaskPipeline || !_stencilMaskFillPipeline) {
         gpu::StatePointer state = std::make_shared<gpu::State>();
-        state->setDepthTest(true, false, gpu::LESS_EQUAL);
-        state->setStencilTest(true, 0xFF, gpu::State::StencilTest(OUTLINE_STENCIL_MASK, 0xFF, gpu::NOT_EQUAL, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_REPLACE));
+        state->setDepthTest(true, false, ComparisonFunction::LESS_EQUAL);
+        state->setStencilTest(true, 0xFF, gpu::State::StencilTest(OUTLINE_STENCIL_MASK, 0xFF, ComparisonFunction::NOT_EQUAL, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_REPLACE));
         state->setColorWriteMask(false, false, false, false);
         state->setCullMode(gpu::State::CULL_FRONT);
 
         gpu::StatePointer fillState = std::make_shared<gpu::State>();
-        fillState->setDepthTest(false, false, gpu::LESS_EQUAL);
-        fillState->setStencilTest(true, 0xFF, gpu::State::StencilTest(OUTLINE_STENCIL_MASK, 0xFF, gpu::NOT_EQUAL, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_REPLACE));
+        fillState->setDepthTest(false, false, ComparisonFunction::LESS_EQUAL);
+        fillState->setStencilTest(true, 0xFF, gpu::State::StencilTest(OUTLINE_STENCIL_MASK, 0xFF, ComparisonFunction::NOT_EQUAL, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_REPLACE));
         fillState->setColorWriteMask(false, false, false, false);
         fillState->setCullMode(gpu::State::CULL_FRONT);
 
@@ -298,7 +298,7 @@ const gpu::PipelinePointer& DrawHighlight::getPipeline(const render::HighlightSt
         gpu::StatePointer state = std::make_shared<gpu::State>();
         state->setDepthTest(gpu::State::DepthTest(false, false));
         state->setBlendFunction(true, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA);
-        state->setStencilTest(true, 0, gpu::State::StencilTest(OUTLINE_STENCIL_MASK, 0xFF, gpu::EQUAL));
+        state->setStencilTest(true, 0, gpu::State::StencilTest(OUTLINE_STENCIL_MASK, 0xFF, ComparisonFunction::EQUAL));
         state->setColorWriteMask(true, true, true, true);
 
         auto program = gpu::Shader::createProgram(shader::render_utils::program::highlight);
@@ -381,7 +381,7 @@ void DebugHighlight::initializePipelines() {
 
     auto state = std::make_shared<gpu::State>();
     state->setDepthTest(gpu::State::DepthTest(false, false));
-    state->setStencilTest(true, 0, gpu::State::StencilTest(OUTLINE_STENCIL_MASK, 0xFF, gpu::EQUAL));
+    state->setStencilTest(true, 0, gpu::State::StencilTest(OUTLINE_STENCIL_MASK, 0xFF, ComparisonFunction::EQUAL));
     state->setColorWriteMask(true, true, true, true);
 
     _depthPipeline = gpu::Pipeline::create(program, state);

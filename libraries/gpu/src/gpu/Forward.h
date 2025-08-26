@@ -85,7 +85,6 @@ namespace gpu {
     class Texture;
     class SphericalHarmonics;
     using SHPointer = std::shared_ptr<SphericalHarmonics>;
-    class Sampler;
     class Texture;
     using TexturePointer = std::shared_ptr<Texture>;
     using TextureWeakPointer = std::weak_ptr<Texture>;

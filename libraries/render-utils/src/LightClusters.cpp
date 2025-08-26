@@ -592,7 +592,7 @@ gpu::PipelinePointer DebugLightClusters::getDrawClusterGridPipeline() {
         gpu::ShaderPointer program = gpu::Shader::createProgram(shader::render_utils::program::lightClusters_drawGrid);
         auto state = std::make_shared<gpu::State>();
 
-        state->setDepthTest(true, false, gpu::LESS_EQUAL);
+        state->setDepthTest(true, false, ComparisonFunction::LESS_EQUAL);
 
         // Blend on transparent
         state->setBlendFunction(true, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA);

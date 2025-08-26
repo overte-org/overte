@@ -578,7 +578,7 @@ std::pair<TexturePointer, glm::ivec2> Texture::build(const ktx::KTXDescriptor& d
     }
 
     auto samplerDesc = gpuktxKeyValue._samplerDesc;
-    samplerDesc._maxMip = gpu::Sampler::MAX_MIP_LEVEL;
+    samplerDesc._maxMip = Sampler::MAX_MIP_LEVEL;
     auto texture = create(gpuktxKeyValue._usageType,
         type,
         texelFormat,

@@ -83,7 +83,7 @@ void PolyLineEntityRenderer::buildPipelines() {
         gpu::StatePointer state = std::make_shared<gpu::State>();
 
         state->setCullMode(gpu::State::CullMode::CULL_NONE);
-        state->setDepthTest(true, !transparent, gpu::LESS_EQUAL);
+        state->setDepthTest(true, !transparent, ComparisonFunction::LESS_EQUAL);
         if (transparent) {
             PrepareStencil::testMask(*state);
         } else {

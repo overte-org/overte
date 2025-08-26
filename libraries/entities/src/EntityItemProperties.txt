@@ -115,6 +115,7 @@ enum:COMPOUND_SHAPE_URL prop:compoundShapeURL type:QString default:"" urlPermiss
 enum:COLOR prop:color type:u8vec3Color default:ENTITY_ITEM_DEFAULT_COLOR,
 enum:ALPHA prop:alpha type:float default:ENTITY_ITEM_DEFAULT_ALPHA min:0.0f max:1.0f,
 enum:UNLIT prop:unlit type:bool default:false,
+enum:SAMPLER prop:sampler type:Sampler default:ENTITY_ITEM_DEFAULT_SAMPLER,
 group:pulse,
 enum:TEXTURES prop:textures type:QString default:"",
 enum:LINE_POINTS prop:linePoints type:qVectorVec3 default:ENTITY_ITEM_DEFAULT_EMPTY_VEC3_QVEC,
@@ -254,6 +255,7 @@ enum:WANTS_KEYBOARD_FOCUS prop:wantsKeyboardFocus type:bool default:true renderP
 enum:SHOW_KEYBOARD_FOCUS_HIGHLIGHT prop:showKeyboardFocusHighlight type:bool default:true basicProp,
 enum:WEB_USE_BACKGROUND prop:useBackground type:bool default:true renderProp,
 enum:USER_AGENT prop:userAgent type:QString default:WebEntityItem::DEFAULT_USER_AGENT renderProp,
+# enum:SAMPLER prop:sampler type:Sampler default:ENTITY_ITEM_DEFAULT_SAMPLER common renderProp,
 Line
 enum:COLOR prop:color type:u8vec3Color default:ENTITY_ITEM_DEFAULT_COLOR common renderProp,
 enum:LINE_POINTS prop:linePoints type:qVectorVec3 default:ENTITY_ITEM_DEFAULT_EMPTY_VEC3_QVEC common noGetterSetterProp,
@@ -292,6 +294,7 @@ enum:IMAGE_URL prop:imageURL type:QString default:"" urlPermission renderProp,
 enum:EMISSIVE prop:emissive type:bool default:false renderProp,
 enum:KEEP_ASPECT_RATIO prop:keepAspectRatio type:bool default:true renderProp,
 enum:SUB_IMAGE prop:subImage type:QRect default:QRect() renderProp,
+enum:SAMPLER prop:sampler type:Sampler default:ENTITY_ITEM_DEFAULT_SAMPLER common renderProp,
 Grid
 enum:COLOR prop:color type:u8vec3Color default:ENTITY_ITEM_DEFAULT_COLOR common renderProp,
 enum:ALPHA prop:alpha type:float default:ENTITY_ITEM_DEFAULT_ALPHA min:0.0f max:1.0f common renderProp,

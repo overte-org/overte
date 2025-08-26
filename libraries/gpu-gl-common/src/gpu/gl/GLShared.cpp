@@ -52,24 +52,24 @@ gpu::Size getFreeDedicatedMemory() {
 
 ComparisonFunction comparisonFuncFromGL(GLenum func) {
     if (func == GL_NEVER) {
-        return NEVER;
+        return ComparisonFunction::NEVER;
     } else if (func == GL_LESS) {
-        return LESS;
+        return ComparisonFunction::LESS;
     } else if (func == GL_EQUAL) {
-        return EQUAL;
+        return ComparisonFunction::EQUAL;
     } else if (func == GL_LEQUAL) {
-        return LESS_EQUAL;
+        return ComparisonFunction::LESS_EQUAL;
     } else if (func == GL_GREATER) {
-        return GREATER;
+        return ComparisonFunction::GREATER;
     } else if (func == GL_NOTEQUAL) {
-        return NOT_EQUAL;
+        return ComparisonFunction::NOT_EQUAL;
     } else if (func == GL_GEQUAL) {
-        return GREATER_EQUAL;
+        return ComparisonFunction::GREATER_EQUAL;
     } else if (func == GL_ALWAYS) {
-        return ALWAYS;
+        return ComparisonFunction::ALWAYS;
     }
 
-    return ALWAYS;
+    return ComparisonFunction::ALWAYS;
 }
 
 State::StencilOp stencilOpFromGL(GLenum stencilOp) {
