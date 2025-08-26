@@ -37,7 +37,8 @@ jobs:
       matrix:
         include:
           - os: Windows 2022
-            runner: windows-2022
+            # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
+            runner: depot-windows-2022-8
             build_type: full
             qt_source: source
           #- os: macOS 10.15

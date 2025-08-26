@@ -14,6 +14,7 @@ SPDX-License-Identifier: Apache-2.0
     <a href="https://github.com/overte-org/overte/network"><img alt="GitHub forks" src="https://img.shields.io/github/forks/overte-org/overte"></a>
     <a href="https://www.apache.org/licenses/LICENSE-2.0"><img alt="Apache 2.0" src="https://img.shields.io/badge/license-Apache--2.0-%230A7BBB?style=flat"></a>
     <a href="https://matrix.to/#/#overte:matrix.org"><img alt="Matrix" src="https://img.shields.io/matrix/overte:matrix.org?label=Matrix%20chat"></a>
+    <a href="https://depot.dev/?utm_source=Overte"><img alt="Built with Depot" src="https://depot.dev/badges/built-with-depot.svg"></a>
 </p>
 <h3 align="center">Build Status</h3>
 <p align="center">
