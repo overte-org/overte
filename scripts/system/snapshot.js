@@ -15,6 +15,9 @@
 (function () { // BEGIN LOCAL_SCOPE
 Script.include("/~/system/libraries/accountUtils.js");
 var AppUi = Script.require('appUi');
+
+// The context menu uses the thumbstick click button on some controllers,
+// temporarily block it so it doesn't conflict with the snap app shortcut
 var ContextMenu = Script.require('contextMenu');
 
 var SNAPSHOT_DELAY = 500; // 500ms
@@ -803,7 +806,7 @@ function shutdown() {
     Entities.canRezTmpChanged.disconnect(updatePrintPermissions);
     HMD.displayModeChanged.disconnect(onHMDChanged);
 
-    // prevent deadlock
+    // release the context menu if we disabled it
     ContextMenu.enable();
 }
 Script.scriptEnding.connect(shutdown);

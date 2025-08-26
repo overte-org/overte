@@ -175,12 +175,22 @@ module.exports = {
 	/*
 	 * Disables the context menu open action so the bound buttons can be reused.
 	 *
-	 * NOTE: Call @link{ContextMenu.enable} in @link{Script.scriptEnding} to prevent deadlocks.
+	 * The context menu will stay disabled if another script
+	 * has disabled it and hasn't re-enabled it yet.
+	 *
+	 * NOTE: If your script uses @link{ContextMenu.disable}, you should
+	 * call @link{ContextMenu.enable} in @link{Script.scriptEnding}.
 	 */
 	disable: ContextMenu_disable,
 
 	/**
 	 * Re-enables the context menu open action, after @link{ContextMenu.disable} has been called.
+	 *
+	 * The context menu will stay disabled if another script
+	 * has disabled it and hasn't re-enabled it yet.
+	 *
+	 * NOTE: If your script uses @link{ContextMenu.disable}, you should
+	 * call @link{ContextMenu.enable} in @link{Script.scriptEnding}.
 	 */
 	enable: ContextMenu_enable,
 };
