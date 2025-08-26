@@ -71,7 +71,7 @@ class Overte(ConanFile):
         self.requires("polyvox/0.2.1@overte/stable")
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
-        self.requires("sdl/2.30.3")
+        self.requires("sdl/2.32.8")
         self.requires("spirv-cross/1.3.268.0")
         self.requires("spirv-tools/1.3.268.0")
         self.requires("steamworks/158a@overte/prebuild")
