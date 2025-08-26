@@ -8,11 +8,18 @@ runs:
     run: |
       echo "Starting with a clean Conan profile…" && rm ~/.conan2/profiles/default || true  # Don't fail if missing.
       conan profile detect -e
+      # Allow Conan to install packages on the CI pipeline.
+      cat >> ~/.conan2/profiles/default <<EOF
+      [conf]
+      tools.system.package_manager:mode=install
+      EOF
+      echo "Printing Conan default profile…" && cat ~/.conan2/profiles/default
+
       conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
       # Use our mirror of Conan Center to avoid rate limiting.
       conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center
+
       echo "Starting with a clean Conan global.conf…" && rm ~/.conan2/global.conf
-      echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
       # Try downloading source files from conandata.yml first. Fall back to our backup if the upstream source is down.
       echo "core.sources:download_urls=['origin', 'https://artifactory.overte.org/artifactory/build-dependencies-backup/']" >> ~/.conan2/global.conf
       echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ~/.conan2/global.conf

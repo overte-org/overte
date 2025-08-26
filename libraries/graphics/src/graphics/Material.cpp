@@ -339,6 +339,24 @@ void MultiMaterial::calculateMaterialInfo() const {
     }
 }
 
+bool MultiMaterial::isInvisible() const {
+    for (uint8_t i = 0; i < _layers; i++) {
+        float opacity;
+        if (_isMToon) {
+            const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::MToonSchema>(i);
+            opacity = schema._opacity;
+        } else {
+            const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::Schema>(i);
+            opacity = schema._opacity;
+        }
+
+        if (opacity > 0.0f) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void MultiMaterial::resetReferenceTexturesAndMaterials() {
     _referenceTextures.clear();
     _referenceMaterials.clear();

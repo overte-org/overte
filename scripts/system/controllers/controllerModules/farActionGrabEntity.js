@@ -310,9 +310,7 @@ Script.include("/~/system/libraries/controllers.js");
             var entityType = entityProperty.type;
             var hudRayPick = controllerData.hudRayPicks[this.hand];
             var point2d = this.calculateNewReticlePosition(hudRayPick.intersection);
-            if (intersection.objectID === HMD.tabletID ||
-                Keyboard.containsID(intersection.objectID) ||
-                entityType === "Web" ||
+            if (entityType === "Web" ||
                 Window.isPointOnDesktopWindow(point2d)) {
                 return true;
             }
@@ -453,7 +451,7 @@ Script.include("/~/system/libraries/controllers.js");
                 }
 
                 var rayPickInfo = controllerData.rayPicks[this.hand];
-                if (controllerData.triggerClicks[this.hand]) {
+                if (controllerData.triggerClicks[this.hand] && rayPickInfo.intersects) {
                     var entityID = rayPickInfo.objectID;
                     var targetProps = Entities.getEntityProperties(entityID, DISPATCHER_PROPERTIES);
                     if (targetProps.href !== "") {
@@ -473,7 +471,7 @@ Script.include("/~/system/libraries/controllers.js");
 
                     if (
                         entityID !== HMD.tabletID &&
-                        !Keyboard.containsID(intersection.objectID) &&
+                        !Keyboard.containsID(entityID) &&
                         (entityIsGrabbable(targetProps) ||
                         entityIsGrabbable(this.targetObject.entityProps))
                     ) {

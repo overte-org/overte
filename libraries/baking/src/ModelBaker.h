@@ -35,6 +35,7 @@ static const QString FBX_EXTENSION { ".fbx" };
 static const QString BAKED_FBX_EXTENSION { ".baked.fbx" };
 static const QString OBJ_EXTENSION { ".obj" };
 static const QString GLTF_EXTENSION { ".gltf" };
+static const QString VRM_EXTENSION { ".vrm" };
 
 class ModelBaker : public Baker {
     Q_OBJECT

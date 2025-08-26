@@ -27,10 +27,13 @@ var HOME_BUTTON_TEXTURE = Script.getExternalPath(Script.ExternalPaths.HF_Content
     var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
     var button = null;
 
-    if (HMD.active) {
+    if (HMD.active || !Menu.visible) {
         button = tablet.addButton(buttonProperties);
         button.clicked.connect(onClicked);
-        lastHMDStatus = true;
+
+        if (HMD.active) {
+            lastHMDStatus = true;
+        }
     }
 
     var onMenuScreen = false;
@@ -47,18 +50,28 @@ var HOME_BUTTON_TEXTURE = Script.getExternalPath(Script.ExternalPaths.HF_Content
         }
     }
 
-    HMD.displayModeChanged.connect(function(isHMDMode) {
-        if (lastHMDStatus !== isHMDMode) {
-            if (isHMDMode) {
+    function buttonVisibilityChanged() {
+        if (HMD.active || !Menu.visible) {
+            if (!button) {
                 button = tablet.addButton(buttonProperties);
                 button.clicked.connect(onClicked);
-            } else if (button) {
-                button.clicked.disconnect(onClicked);
-                tablet.removeButton(button);
-                button = null;
             }
+        } else if (button) {
+            button.clicked.disconnect(onClicked);
+            tablet.removeButton(button);
+            button = null;
+        }
+    }
+
+    HMD.displayModeChanged.connect(function(isHMDMode) {
+        if (lastHMDStatus !== isHMDMode) {
+            buttonVisibilityChanged();
             lastHMDStatus = isHMDMode;
         }
+    });
+
+    Menu.visibilityChanged.connect(function(_visible) {
+        buttonVisibilityChanged();
     });
 
     function onScreenChanged(type, url) {

@@ -1210,6 +1210,11 @@ Section "-Core installation"
   ; Delete old hifiNeuron.dll, since we dropped support for it and it causes a crash on startup.
   Delete "$INSTDIR\plugins\hifiNeuron.dll"
 
+  ; Delete old audioWin7 and audioWin8 folders, since we dropped support for Windows 7.
+  ; This isn't necessary, but saves disk space.
+  RMDir /r "$INSTDIR\audioWin7"
+  RMDir /r "$INSTDIR\audioWin8"
+
   ;Use the entire tree produced by the INSTALL target.  Keep the
   ;list of directories here in sync with the RMDir commands below.
   SetOutPath "$INSTDIR"

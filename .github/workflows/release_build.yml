@@ -34,7 +34,7 @@ jobs:
         include:
           - os: windows-2022
             build_type: full
-            qt_source: aqt
+            qt_source: source
       fail-fast: false
     runs-on: ${{matrix.os}}
     steps:

@@ -656,20 +656,7 @@ public:
     void setMaterialKey(const graphics::MaterialKey& materialKey) { _materialKey = materialKey; }
     graphics::MaterialKey getMaterialKey() const { return _materialKey; }
     gpu::BufferView& getSchemaBuffer() { return _schemaBuffer; }
-    glm::vec4 getColor() const {
-        glm::vec3 albedo;
-        float opacity;
-        if (_isMToon) {
-            const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::MToonSchema>();
-            albedo = schema._albedo;
-            opacity = schema._opacity;
-        } else {
-            const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::Schema>();
-            albedo = schema._albedo;
-            opacity = schema._opacity;
-        }
-        return glm::vec4(ColorUtils::tosRGBVec3(albedo), opacity);
-    }
+    bool isInvisible() const;
     const std::array<gpu::TextureTablePointer, 3>& getTextureTables() const { return _textureTables; }
 
     void setCullFaceMode(graphics::MaterialKey::CullFaceMode cullFaceMode) { _cullFaceMode = cullFaceMode; }
