@@ -286,7 +286,7 @@ bool LightingModel::isShadowEnabled() const {
 
 void LightingModel::setNormalMapAttenuation(float min, float max) {
     Parameters& parameters = _parametersBuffer.edit<Parameters>();
-    parameters.normalMapAttenuationMin = std::min(min, max);
+    parameters.normalMapAttenuationMin = std::min(min, max - FLT_EPSILON);
     parameters.normalMapAttenuationMax = max;
 }
 
