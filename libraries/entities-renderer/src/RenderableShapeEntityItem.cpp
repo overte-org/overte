@@ -107,10 +107,10 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         materials = _materials["0"];
     }
 
-    glm::vec4 outColor = glm::vec4(_color, _alpha);
+    glm::vec4 outColor = materials.getTopColor();
     outColor = EntityRenderer::calculatePulseColor(outColor, _pulseProperties, _created);
 
-    if (outColor.a == 0.0f || materials.isInvisible()) {
+    if (materials.isInvisible()) {
         return;
     }
 

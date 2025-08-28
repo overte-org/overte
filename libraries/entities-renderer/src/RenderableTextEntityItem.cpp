@@ -145,10 +145,10 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
         materials = _materials["0"];
     }
 
-    glm::vec4 backgroundColor = glm::vec4(_backgroundColor, _backgroundAlpha);
+    glm::vec4 backgroundColor = materials.getTopColor();
     backgroundColor = EntityRenderer::calculatePulseColor(backgroundColor, _pulseProperties, _created);
 
-    if (backgroundColor.a <= 0.0f || materials.isInvisible()) {
+    if (materials.isInvisible()) {
         return;
     }
 
