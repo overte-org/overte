@@ -37,8 +37,8 @@
 <@func evalMaterialNormalLODTriplanar(fragPosES, fetchedNormal, interpolatedNormal, normal)@>
 {
     // attenuate the normal map divergence from the mesh normal based on distance
-    // The attenuation range [30,100] meters from the eye is arbitrary for now
-    <$normal$> = normalize(mix(<$fetchedNormal$>, <$interpolatedNormal$>, smoothstep(30.0, 100.0, (-<$fragPosES$>).z)));
+    vec2 normalMapAttenuation = getNormalMapAttenuation();
+    <$normal$> = normalize(mix(<$fetchedNormal$>, <$interpolatedNormal$>, smoothstep(normalMapAttenuation.x, normalMapAttenuation.y, (-<$fragPosES$>).z)));
 }
 <@endfunc@>
 
