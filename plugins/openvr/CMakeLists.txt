@@ -19,6 +19,7 @@ if ((WIN32 OR UNIX AND NOT APPLE) AND (NOT OVERTE_RENDERING_BACKEND STREQUAL "GL
     include_hifi_library_headers(script-engine)
 
     target_openvr()
+    target_webrtc()
     if (WIN32)
         target_link_libraries(${TARGET_NAME} Winmm.lib)
     endif()
