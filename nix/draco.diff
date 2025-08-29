@@ -1,0 +1,24 @@
+diff --git a/src/draco/core/hash_utils.h b/src/draco/core/hash_utils.h
+index 0e8da60..c4a0b3f 100644
+--- a/src/draco/core/hash_utils.h
++++ b/src/draco/core/hash_utils.h
+@@ -17,6 +17,7 @@
+ 
+ #include <stdint.h>
+ #include <functional>
++#include <cstddef>
+ 
+ // TODO(fgalligan): Move this to core.
+ 
+diff --git a/src/draco/io/parser_utils.cc b/src/draco/io/parser_utils.cc
+index 0a22ba1..f6d040a 100644
+--- a/src/draco/io/parser_utils.cc
++++ b/src/draco/io/parser_utils.cc
+@@ -18,6 +18,7 @@
+ #include <cctype>
+ #include <cmath>
+ #include <iterator>
++#include <limits>
+ 
+ namespace draco {
+ namespace parser {
