@@ -106,7 +106,7 @@ class Overte(ConanFile):
         if self.settings.os == "Macos":
             self.requires("moltenvk/1.3.0")
             # MoltenVK and VulkanMemoryAllocator depend on different exact versions of vulkan-headers, so we solve this conflict here.
-            self.requires("vulkan-headers/1.4.313.0", force=True)
+            self.requires("vulkan-headers/1.4.313.0", override=True)
 
         self.requires(openssl, force=True)
 
