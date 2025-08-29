@@ -7,6 +7,14 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 macro(TARGET_V8)
-    find_package(libnode REQUIRED)
-    target_link_libraries(${TARGET_NAME} libnode::libnode)
+    if(OVERTE_USE_SYSTEM_LIBS)
+        # NOTE: this is configured for NixOS specifically
+        find_package(PkgConfig REQUIRED)
+        pkg_check_modules(libv8 REQUIRED v8)
+        target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${libv8_INCLUDE_DIRS})
+        target_link_libraries(${TARGET_NAME} ${libv8_LINK_LIBRARIES})
+    else()
+        find_package(libnode REQUIRED)
+        target_link_libraries(${TARGET_NAME} libnode::libnode)
+    endif()
 endmacro()
