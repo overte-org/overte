@@ -50,7 +50,6 @@ public:
 
     static const render::Selection::Name ZONES_SELECTION;
 
-
     using Input = render::ItemBounds;
     using Output = render::ItemBounds;
     using Config = ZoneRendererConfig;

@@ -676,4 +676,14 @@ void DefaultLightingSetup::run(const RenderContextPointer& renderContext) {
             _defaultTonemappingID = tonemappingStage->addElement(_defaultTonemapping);
         }
     }
+
+    if (!_defaultNormalMapAttenuation) {
+        auto normalMapAttenuationStage = renderContext->_scene->getStage<NormalMapAttenuationStage>();
+        if (normalMapAttenuationStage) {
+            auto normalMapAttenuation = std::make_shared<graphics::NormalMapAttenuation>();
+
+            _defaultNormalMapAttenuation = normalMapAttenuation;
+            _defaultNormalMapAttenuationID = normalMapAttenuationStage->addElement(_defaultNormalMapAttenuation);
+        }
+    }
 }

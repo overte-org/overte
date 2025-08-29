@@ -11,6 +11,7 @@
 #include "LightingModel.h"
 #include "RandomAndNoise.h"
 #include "BRDF.h"
+#include "ZoneRenderer.h"
 
 #include "render-utils/ShaderConstants.h"
 
@@ -281,6 +282,12 @@ void LightingModel::setShadow(bool enable) {
 }
 bool LightingModel::isShadowEnabled() const {
     return (bool)_parametersBuffer.get<Parameters>().enableShadow;
+}
+
+void LightingModel::setNormalMapAttenuation(float min, float max) {
+    Parameters& parameters = _parametersBuffer.edit<Parameters>();
+    parameters.normalMapAttenuationMin = std::min(min, max - FLT_EPSILON);
+    parameters.normalMapAttenuationMax = max;
 }
 
 MakeLightingModel::MakeLightingModel() {
