@@ -9,8 +9,6 @@ Rectangle {
     signal sendToScript(var message);
 
     property string pageVal: "local"
-    property string last_message_user: ""
-    property date last_message_time: new Date()
 
     // When the window is created on the script side, the window starts open.
     // Once the QML window is created wait, then send the initialized signal.
@@ -32,7 +30,7 @@ Rectangle {
 
         // Navigation Bar
         Rectangle {
-            id: navigation_bar
+            id: navigationBar
             width: parent.width
             height: 40
             color:Qt.rgba(0,0,0,1)
@@ -46,7 +44,7 @@ Rectangle {
                     width: pageVal === "local" ? 100 : 60
                     height: parent.height
                     color: pageVal === "local" ? "#505186" : "white"
-                    id: local_page
+                    id: localPage
 
                     Image {
                         source: "./img/ui/" + (pageVal === "local" ? "social_white.png" : "social_black.png")
@@ -73,9 +71,9 @@ Rectangle {
                     width: pageVal === "domain" ? 100 : 60
                     height: parent.height
                     color: pageVal === "domain" ? "#505186" : "white"
-                    anchors.left: local_page.right
+                    anchors.left: localPage.right
                     anchors.leftMargin: 5
-                    id: domain_page
+                    id: domainPage
 
                     Image {
                         source: "./img/ui/" + (pageVal === "domain" ? "world_white.png" : "world_black.png")
@@ -104,7 +102,7 @@ Rectangle {
                         height: parent.height
                         color: pageVal === "settings" ? "#505186" : "white"
                         anchors.right: parent.right
-                        id: settings_page
+                        id: settingsPage
 
                         Image {
                             source: "./img/ui/" + (pageVal === "settings" ? "settings_white.png" : "settings_black.png")
@@ -134,7 +132,7 @@ Rectangle {
         Item {
             width: parent.width
             height: parent.height - 40
-            anchors.top: navigation_bar.bottom
+            anchors.top: navigationBar.bottom
             visible: ["local", "domain"].includes(pageVal) ? true : false
 
             // Chat Message History
@@ -198,7 +196,7 @@ Rectangle {
                         Keys.onPressed: {
                             if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && !(event.modifiers & Qt.ShiftModifier)) {
                                 event.accepted = true;
-                                toScript({type: "send_message", message: text, channel: pageVal});
+                                toScript({type: "sendMessage", message: text, channel: pageVal});
                                 text = ""
                             }
                         }
@@ -227,12 +225,12 @@ Rectangle {
                         }
 
                         onClicked: {
-                            toScript({type: "send_message", message: parent.children[0].text, channel: pageVal});
+                            toScript({type: "sendMessage", message: parent.children[0].text, channel: pageVal});
                             parent.children[0].text = ""
                         }
                         Keys.onPressed: {
                             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                toScript({type: "send_message", message: parent.children[0].text, channel: pageVal});
+                                toScript({type: "sendMessage", message: parent.children[0].text, channel: pageVal});
                                 parent.children[0].text = ""
                             }
                         }
@@ -244,7 +242,7 @@ Rectangle {
         Item {
             width: parent.width
             height: parent.height - 40
-            anchors.top: navigation_bar.bottom
+            anchors.top: navigationBar.bottom
             visible: ["local", "domain"].includes(pageVal) ? false : true
 
             Column {
@@ -267,12 +265,12 @@ Rectangle {
                     }
 
                     CheckBox{
-                        id: s_external_window
+                        id: s_externalWindow
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'external_window', value: checked})
+                            toScript({type: 'settingChange', setting: 'externalWindow', value: checked})
                         }
                     }
                 }
@@ -292,7 +290,7 @@ Rectangle {
 
                     
                     HifiControlsUit.SpinBox {
-                        id: s_maximum_messages
+                        id: s_maximumMessages
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
                         decimals: 0
@@ -303,7 +301,7 @@ Rectangle {
                         backgroundColor: "#cccccc"
 
                         onValueChanged: {
-                            toScript({type: 'setting_change', setting: 'maximum_messages', value: value})
+                            toScript({type: 'settingChange', setting: 'maximumMessages', value: value})
                         }
                     }
                 }
@@ -328,7 +326,7 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
 
                         onClicked: {
-                            toScript({type: "action", action: "erase_history"})
+                            toScript({type: "action", action: "eraseHistory"})
                         }
                     }
                 }
@@ -348,12 +346,12 @@ Rectangle {
                     }
 
                     CheckBox{
-                        id: s_join_notification
+                        id: s_joinNotification
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'join_notification', value: checked})
+                            toScript({type: 'settingChange', setting: 'joinNotification', value: checked})
                         }
                     }
                 }
@@ -372,12 +370,12 @@ Rectangle {
                     }
 
                     CheckBox{
-                        id: s_chat_bubbles
+                        id: s_useChatBubbles
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'use_chat_bubbles', value: checked})
+                            toScript({type: 'settingChange', setting: 'useChatBubbles', value: checked})
                         }
                     }
                 }
@@ -392,8 +390,9 @@ Rectangle {
 
     function addMessage(username, message, date, channel, type){
         // Format content
+        var messageImages = getMessageImages(message);
         message = formatContent(message);
-        message = embedImages(message);
+        message = embedImages(message, messageImages);
 
         if (type === "notification"){ 
             domainMessages.append({ text: message, username, date, type });
@@ -419,44 +418,54 @@ Rectangle {
         return mess
     }
 
-    function embedImages(mess){
-        var image_link = /(https?:(\/){2})[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:/?#[\]@!\$&'\(\)\*\+,;=.]*)(?:png|jpe?g|gif|bmp|svg|webp)/g;
-        var matches = mess.match(image_link);
-        var new_message = ""
-        var listed = []
-        var total_emeds = 0
+    function embedImages(mess, imageEmbeds){
+        var maximumEmbedsPerMessage = 3;
+        var returnMessageValue = "";        // The value we  return
+        var listed = [];                    // List of already embedded images. We do not want duplicates.
+        var totalEmbeds = 0;
 
-        new_message += mess
+        // Initialize our return value
+        returnMessageValue += mess
 
-        for (var i = 0; matches && matches.length > i && total_emeds < 3; i++){
-            if (!listed.includes(matches[i])) {
-                new_message += "<br><img src="+ matches[i] +" width='250' >"
-                listed.push(matches[i]);
-                total_emeds++
-            } 
+        // No matches. Nothing to do.
+        if (!imageEmbeds) return mess;
+
+        // Append the RichText image embeds to the end of the message we render
+        for (var i = 0; imageEmbeds.length > i && totalEmbeds < maximumEmbedsPerMessage; i++){
+            if (listed.includes(imageEmbeds[i])) continue; // Exact image already embedded once.
+
+            returnMessageValue += "<br><img src='"+ imageEmbeds[i] +"' width='250' >";
+            listed.push(imageEmbeds[i]);
+            totalEmbeds++;
         }
-        return new_message;
+        return returnMessageValue;
+    }
+
+    function getMessageImages(message) {
+        var imageLink = /(https?:(\/){2})[\w.-]+(?:\.[\w\.-]+)+(?:\/[\w\-\._~:\/?#[\]@!\$&'\(\)\*\+,;=.]*)(?:png|jpe?g|gif|bmp|svg|webp)(\?.*[^'])?/g;
+        var images = message.match(imageLink);
+        return images;
     }
 
     // Messages from script
     function fromScript(message) {
 
         switch (message.type){
-            case "show_message":
+            case "showMessage":
                 addMessage(message.displayName, message.message, `[ ${message.timeString} - ${message.dateString} ]`, message.channel, "chat");
                 break;
             case "notification":
                 addMessage("SYSTEM", message.message, `[ ${message.timeString} - ${message.dateString} ]`, "domain", "notification");
                 break;
-            case "clear_messages":
+            case "clearMessages":
                 localMessages.clear();
                 domainMessages.clear();
                 break;
-            case "initial_settings":
-                if (message.settings.external_window) s_external_window.checked = true;
-                if (message.settings.maximum_messages) s_maximum_messages.value = message.settings.maximum_messages;
-                if (message.settings.join_notification) s_join_notification.checked = true;
-                if (message.settings.use_chat_bubbles) s_chat_bubbles.checked = true;
+            case "initialSettings":
+                if (message.settings.externalWindow) s_externalWindow.checked = true;
+                if (message.settings.maximumMessages) s_maximumMessages.value = message.settings.maximumMessages;
+                if (message.settings.joinNotification) s_joinNotification.checked = true;
+                if (message.settings.useChatBubbles) s_useChatBubbles.checked = true;
                 break;
         }
     }
