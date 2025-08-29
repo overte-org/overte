@@ -131,10 +131,10 @@ void ImageEntityRenderer::doRender(RenderArgs* args) {
         materials = _materials["0"];
     }
 
-    glm::vec4 color = glm::vec4(_color, _alpha);
+    glm::vec4 color = materials.getTopColor();
     color = EntityRenderer::calculatePulseColor(color, _pulseProperties, _created);
 
-    if (!_texture || !_texture->isLoaded() || color.a == 0.0f || materials.isInvisible()) {
+    if (!_texture || !_texture->isLoaded()|| materials.isInvisible()) {
         return;
     }
 

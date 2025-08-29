@@ -339,6 +339,21 @@ void MultiMaterial::calculateMaterialInfo() const {
     }
 }
 
+glm::vec4 MultiMaterial::getTopColor() const {
+    glm::vec3 albedo;
+    float opacity;
+    if (_isMToon) {
+        const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::MToonSchema>();
+        albedo = schema._albedo;
+        opacity = schema._opacity;
+    } else {
+        const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::Schema>();
+        albedo = schema._albedo;
+        opacity = schema._opacity;
+    }
+    return glm::vec4(ColorUtils::tosRGBVec3(albedo), opacity);
+}
+
 bool MultiMaterial::isInvisible() const {
     for (uint8_t i = 0; i < _layers; i++) {
         float opacity;

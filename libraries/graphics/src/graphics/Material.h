@@ -656,6 +656,7 @@ public:
     void setMaterialKey(const graphics::MaterialKey& materialKey) { _materialKey = materialKey; }
     graphics::MaterialKey getMaterialKey() const { return _materialKey; }
     gpu::BufferView& getSchemaBuffer() { return _schemaBuffer; }
+    glm::vec4 getTopColor() const;
     bool isInvisible() const;
     const std::array<gpu::TextureTablePointer, 3>& getTextureTables() const { return _textureTables; }
 
