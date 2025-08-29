@@ -59,7 +59,6 @@ class Overte(ConanFile):
         self.requires("glad/0.1.36")
         self.requires("gli/cci.20210515")
         self.requires("liblo/0.30@overte/stable")
-        self.requires("libnode/22.17.1@overte/experimental#7005e423431c2b43ffc7a1a288099bea")
         self.requires("nlohmann_json/3.11.2")
         self.requires("nvidia-texture-tools/2023.01@overte/stable")
         self.requires("onetbb/2021.10.0")
@@ -80,8 +79,8 @@ class Overte(ConanFile):
         self.requires("jsoncpp/1.9.6", force=True)
         # Fixes build errors on GCC 15. Check if this is still required when upgrading from sdl/2.30.3.
         # https://github.com/conan-io/conan-center-index/issues/27265
-        self.requires("libiconv/1.18", force=True)
         openssl = "openssl/1.1.1q"
+        self.requires("libiconv/1.18", override=True)
 
         self.requires("glslang/[>=1.3.268.0 <2.0]")
         self.requires("spirv-cross/[>=1.3.268.0 <2.0]")
@@ -104,7 +103,7 @@ class Overte(ConanFile):
         if self.settings.os == "Macos":
             self.requires("moltenvk/1.3.0")
             # MoltenVK and VulkanMemoryAllocator depend on different exact versions of vulkan-headers, so we solve this conflict here.
-            self.requires("vulkan-headers/1.4.313.0", force=True)
+            self.requires("vulkan-headers/1.4.313.0", override=True)
 
         self.requires(openssl, force=True)
 
