@@ -140,36 +140,16 @@ Script.include("/~/system/libraries/controllers.js");
             this.ignoredObjects = [];
         };
 
-        this.getInteractableType = function(controllerData, triggerPressed, checkEntitiesOnly) {
+        this.getInteractableType = function(controllerData, triggerPressed) {
             // allow pointing at tablet, unlocked web entities, or web overlays automatically without pressing trigger,
             // but for pointing at locked web entities or non-web overlays user must be pressing trigger
             var intersection = controllerData.rayPicks[this.hand];
             var objectID = intersection.objectID;
-            if (intersection.type === Picks.INTERSECTED_OVERLAY && !checkEntitiesOnly) {
-                if ((HMD.tabletID && objectID === HMD.tabletID) ||
-                    (HMD.tabletScreenID && objectID === HMD.tabletScreenID) ||
-                    (HMD.homeButtonID && objectID === HMD.homeButtonID)) {
-                    return intersectionType["HifiTablet"];
-                } else {
-                    var overlayType = Overlays.getOverlayType(objectID);
-                    var type = intersectionType["None"];
-                    if (Keyboard.containsID(objectID) && !Keyboard.preferMalletsOverLasers) {
-                        type = intersectionType["HifiKeyboard"];
-                    } else if (overlayType === "web3d") {
-                        type = intersectionType["WebOverlay"];
-                    } else if (triggerPressed) {
-                        type = intersectionType["Overlay"];
-                    }
-
-                    return type;
-                }
-            } else if (intersection.type === Picks.INTERSECTED_ENTITY) {
-                var entityProperties = Entities.getEntityProperties(objectID, ["type","locked"]);
-                var entityType = entityProperties.type;
-                var isLocked = entityProperties.locked;
-                if (entityType === "Web" && (!isLocked || triggerPressed)) {
-                    return intersectionType["WebEntity"];
-                }
+            var entityProperties = Entities.getEntityProperties(objectID, ["type","locked"]);
+            var entityType = entityProperties.type;
+            var isLocked = entityProperties.locked;
+            if (entityType === "Web" && (!isLocked || triggerPressed)) {
+                return intersectionType["WebEntity"];
             }
             return intersectionType["None"];
         };
@@ -193,10 +173,10 @@ Script.include("/~/system/libraries/controllers.js");
 
             var isTriggerPressed = controllerData.triggerValues[this.hand] > TRIGGER_OFF_VALUE &&
                                    controllerData.triggerValues[this.otherHand] <= TRIGGER_OFF_VALUE;
-            var type = this.getInteractableType(controllerData, isTriggerPressed, false);
+            var type = this.getInteractableType(controllerData, isTriggerPressed);
 
             if (type !== intersectionType["None"] && !this.grabModuleWantsNearbyOverlay(controllerData)) {
-                if (type === intersectionType["WebOverlay"] || type === intersectionType["WebEntity"] || type === intersectionType["HifiTablet"]) {
+                if (type === intersectionType["WebEntity"]) {
                     var otherModuleRunning = this.getOtherModule().running;
                     otherModuleRunning = otherModuleRunning && this.getDominantHand() !== this.hand; // Auto-swap to dominant hand.
                     var allowThisModule = !otherModuleRunning || isTriggerPressed;
@@ -245,7 +225,7 @@ Script.include("/~/system/libraries/controllers.js");
         this.run = function(controllerData, deltaTime) {
             this.addObjectToIgnoreList(controllerData);
             var isTriggerPressed = controllerData.triggerValues[this.hand] > TRIGGER_OFF_VALUE;
-            var type = this.getInteractableType(controllerData, isTriggerPressed, false);
+            var type = this.getInteractableType(controllerData, isTriggerPressed);
             var laserOn = isTriggerPressed || this.parameters.handLaser.alwaysOn;
             this.addObjectToIgnoreList(controllerData);
 

@@ -42,5 +42,14 @@ macro(PACKAGE_LIBRARIES_FOR_DEPLOYMENT)
                 -DLIB_PATHS="${CMAKE_BINARY_DIR}/conanlibs/$<CONFIGURATION>"
                 -P "${CMAKE_SOURCE_DIR}/cmake/FixupBundlePostBuild.cmake"
         )
+
+        # Remove Windows Audio Service QtMultimedia plugin, so we only use Windows Media Foundation (WASAPI).
+        # We do this to avoid having two audio plugins available and all audio devices duplicated.
+        add_custom_command(
+                TARGET ${TARGET_NAME}
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E remove "$<TARGET_FILE_DIR:${TARGET_NAME}>/audio/qtaudio_windowsd.dll"
+                COMMAND ${CMAKE_COMMAND} -E remove "$<TARGET_FILE_DIR:${TARGET_NAME}>/audio/qtaudio_windows.dll"
+        )
     endif ()
 endmacro()

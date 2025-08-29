@@ -90,26 +90,27 @@
             var controllerLocation = controllerData.controllerLocations[this.hand];
             var hudRayPick = controllerData.hudRayPicks[this.hand];
             var point2d = this.calculateNewReticlePosition(hudRayPick.intersection);
+            var triggerValue = controllerData.triggerValues[this.hand];
             this.triggerClicked = controllerData.triggerClicks[this.hand];
 
             if (
-                (controllerData.triggerValues[this.hand] < ControllerDispatcherUtils.TRIGGER_ON_VALUE || !controllerLocation.valid) ||
-                this.pointingAtTablet(controllerData) ||
-                (!Window.isPointOnDesktopWindow(point2d) && !this.triggerClicked)
+                (triggerValue > ControllerDispatcherUtils.TRIGGER_ON_VALUE && controllerLocation.valid) &&
+                Window.isPointOnDesktopWindow(point2d) &&
+                !this.pointingAtTablet(controllerData)
             ) {
-                if (this.scrollMappingEnabled) {
-                    this.scrollMapping.disable();
-                    this.scrollMappingEnabled = false;
-                }
-
-                return false;
-            } else {
                 if (!this.scrollMappingEnabled) {
                     this.scrollMapping.enable();
                     this.scrollMappingEnabled = true;
                 }
 
                 return true;
+            } else {
+                if (this.scrollMappingEnabled) {
+                    this.scrollMapping.disable();
+                    this.scrollMappingEnabled = false;
+                }
+
+                return false;
             }
         };
 

@@ -296,17 +296,6 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
 
     PROFILE_SET_THREAD_NAME("Main Thread");
 
-#if defined(Q_OS_WIN)
-    // Select appropriate audio DLL
-    QString audioDLLPath = QCoreApplication::applicationDirPath();
-    if (IsWindows8OrGreater()) {
-        audioDLLPath += "/audioWin8";
-    } else {
-        audioDLLPath += "/audioWin7";
-    }
-    QCoreApplication::addLibraryPath(audioDLLPath);
-#endif
-
     QString defaultScriptsOverrideOption = parser.value("defaultScriptsOverride");
 
     DependencyManager::registerInheritance<LimitedNodeList, NodeList>();
@@ -1364,7 +1353,11 @@ void Application::setupSignalsAndOperators() {
 
         // setup a timer for domain-server check ins
         QTimer* domainCheckInTimer = new QTimer(this);
-        connect(domainCheckInTimer, &QTimer::timeout, nodeList.data(), &NodeList::sendDomainServerCheckIn);
+        connect(domainCheckInTimer, &QTimer::timeout, [this, nodeList] {
+            if (!isServerlessMode()) {
+                nodeList->sendDomainServerCheckIn();
+            }
+        });
         domainCheckInTimer->start(DOMAIN_SERVER_CHECK_IN_MSECS);
         connect(this, &QCoreApplication::aboutToQuit, [domainCheckInTimer] {
             domainCheckInTimer->stop();

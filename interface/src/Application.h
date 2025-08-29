@@ -387,6 +387,7 @@ signals:
     void awayStateWhenFocusLostInVRChanged(bool enabled);
 
     void darkThemePreferenceChanged(bool useDarkTheme);
+    void menuBarVisibilityChanged(bool visible);
 
 public slots:
     void updateThreadPoolCount() const;
@@ -464,6 +465,9 @@ public slots:
 
     bool getDarkThemePreference() const { return _darkTheme.get(); }
     void setDarkThemePreference(bool value);
+
+    bool getMenuBarVisible() const { return _menuBarVisible.get(); }
+    void setMenuBarVisible(bool visible);
 
     /**
      * @brief Shows/hides VR keyboard input for Overlay windows
@@ -811,6 +815,7 @@ private:
     Setting::Handle<bool> _darkTheme;
     Setting::Handle<bool> _miniTabletEnabledSetting;
     Setting::Handle<bool> _keepLogWindowOnTop { "keepLogWindowOnTop", false };
+    Setting::Handle<bool> _menuBarVisible { "menuBarVisible", true };
 
     void updateThemeColors();
 

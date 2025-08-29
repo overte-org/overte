@@ -145,10 +145,10 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
         materials = _materials["0"];
     }
 
-    glm::vec4 backgroundColor = materials.getColor();
+    glm::vec4 backgroundColor = materials.getTopColor();
     backgroundColor = EntityRenderer::calculatePulseColor(backgroundColor, _pulseProperties, _created);
 
-    if (backgroundColor.a <= 0.0f) {
+    if (materials.isInvisible()) {
         return;
     }
 
@@ -175,6 +175,7 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
         transparent |= procedural->isFading();
         procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(transparent));
     } else if (pipelineType == Pipeline::MATERIAL) {
+        backgroundColor = glm::vec4(1.0f); // for model shaders, albedo comes from the material instead of vertex colors
         if (RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
             args->_details._materialSwitches++;
         }

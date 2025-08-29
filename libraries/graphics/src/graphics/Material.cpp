@@ -339,6 +339,39 @@ void MultiMaterial::calculateMaterialInfo() const {
     }
 }
 
+glm::vec4 MultiMaterial::getTopColor() const {
+    glm::vec3 albedo;
+    float opacity;
+    if (_isMToon) {
+        const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::MToonSchema>();
+        albedo = schema._albedo;
+        opacity = schema._opacity;
+    } else {
+        const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::Schema>();
+        albedo = schema._albedo;
+        opacity = schema._opacity;
+    }
+    return glm::vec4(ColorUtils::tosRGBVec3(albedo), opacity);
+}
+
+bool MultiMaterial::isInvisible() const {
+    for (uint8_t i = 0; i < _layers; i++) {
+        float opacity;
+        if (_isMToon) {
+            const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::MToonSchema>(i);
+            opacity = schema._opacity;
+        } else {
+            const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::Schema>(i);
+            opacity = schema._opacity;
+        }
+
+        if (opacity > 0.0f) {
+            return false;
+        }
+    }
+    return true;
+}
+
 void MultiMaterial::resetReferenceTexturesAndMaterials() {
     _referenceTextures.clear();
     _referenceMaterials.clear();

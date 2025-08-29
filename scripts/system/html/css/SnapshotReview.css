@@ -1,8 +1,9 @@
 /*
 //  SnapshotReview.css
 //
-//  Created by Howard Stearns for David Rowe 8/22/2016.
+//  Created by Howard Stearns for David Rowe on August 22nd, 2016.
 //  Copyright 2016 High Fidelity, Inc.
+//  Copyright 2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -267,9 +268,12 @@ input[type=button].naked:active {
     box-sizing: content-box;
     display: inline;
     outline:none;
+    color: #f5bdc7;
+    font-size: 11px;
 }
 #snap-button:disabled {
     background: gray;
+    color: #eee;
 }
 #snap-button:hover:enabled {
     background: #C62147;

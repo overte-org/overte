@@ -79,7 +79,10 @@ void ToneMapAndResample::run(const RenderContextPointer& renderContext, const In
         tonemapping = tonemappingStage->getElement(tonemappingFrame->_elements.front());
     }
 
-    if (_debug) {
+    if (args->_mirrorDepth > 0) {
+        setCurve(TonemappingCurve::SRGB);
+        setExposure(0.0f);
+    } else if (_debug) {
         setCurve(_debugCurve);
         setExposure(_debugExposure);
     } else if (tonemapping) {

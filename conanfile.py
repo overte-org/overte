@@ -25,8 +25,10 @@ class Overte(ConanFile):
         "qt*:shared": "True",
         "qt*:gui": "True",
         "qt*:qtdeclarative": "True",
+        "qt*:qtimageformats": "True",  # WebP texture support
         "qt*:qtlocation": "True",
         "qt*:qtmultimedia": "True",
+        "qt*:qtquickcontrols": "True",  # For QtQuick.Dialogs
         "qt*:qtquickcontrols2": "True",
         "qt*:qtscxml": "True",
         "qt*:qtsvg": "True",
@@ -35,6 +37,7 @@ class Overte(ConanFile):
         "qt*:qtwebsockets": "True",
         "qt*:qtwebview": "True",
         "qt*:qtxmlpatterns": "True",
+        "qt*:qttools": "True",  # windeployqt for Windows
         "glad*:spec": "gl",
         "glad*:gl_profile": "core",
         "glad*:gl_version": "4.6",
@@ -68,14 +71,14 @@ class Overte(ConanFile):
         self.requires("polyvox/0.2.1@overte/stable")
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
-        self.requires("sdl/2.30.3")
+        self.requires("sdl/2.32.8")
         self.requires("spirv-cross/1.3.268.0")
         self.requires("spirv-tools/1.3.268.0")
         self.requires("steamworks/158a@overte/prebuild")
         self.requires("v-hacd/4.1.0")
         self.requires("vulkan-memory-allocator/3.0.1")
         self.requires("webrtc-audio-processing/2.1@overte/stable")
-        self.requires("zlib/1.2.13")
+        self.requires("zlib/1.3.1")
         self.requires("glm/0.9.9.5", force=True)
         self.requires("jsoncpp/1.9.6", force=True)
         # Fixes build errors on GCC 15. Check if this is still required when upgrading from sdl/2.30.3.
@@ -90,9 +93,7 @@ class Overte(ConanFile):
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
-            self.requires("qt/5.15.16-2025.01.23@overte/stable", force=True)
-            # Upstream NSS is broken, so we use https://github.com/conan-io/conan-center-index/pull/19262/commits/735df499341924901089fd512a8ac56ac83d1e6a
-            self.requires("nss/3.107@overte/stable", force=True)
+            self.requires("qt/5.15.17-2025.06.07@overte/stable#550a40fc9cbe089ea59a727a3f038a31", force=True)
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")

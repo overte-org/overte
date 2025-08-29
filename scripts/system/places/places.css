@@ -655,21 +655,21 @@ div.placeDetail-event {
 }
 
 td.presenceOfLife-LIFE {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: #00FF00;
     text-align: right;
 }
 
 td.presenceOfLife-FULL {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: #ff0000;
     text-align: right;    
 }
 
 td.presenceOfLife-NOBODY {
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: #555555;
     text-align: right;    
@@ -709,16 +709,16 @@ td.domainTitle {
 font.domain-capacity {
     font-size: 10px;
     font-weight: 600;
-    color: #999999;    
+    color: #999999;
 }
 
 font.domain-nbrUser {
     font-size: 18px;
-    font-weight: 500;    
+    font-weight: 500;
 }
 
 font.NOBODY {
-    color: #555555;    
+    color: #555555;
 }
 
 font.LIFE {
@@ -859,7 +859,7 @@ font.domain-nbrUser_small {
 }
 
 #placeDetail-users {
-    font-size: 30px;
+    font-size: 18px;
     font-weight: 600;
 }
 
@@ -1218,4 +1218,27 @@ h1.popupTitle {
     font-size: 11px;
     color: #00b3ff;
     text-decoration: italic;
+}
+
+table.detailUserCount {
+    width: 90%;
+    border-collapse: collapse;
+}
+
+td.detailUserCount {
+    padding: 2px;
+    width: 50%;
+    border: 1px solid #999999;
+    text-align: center;
+}
+
+td.detailUserCountHeader {
+    padding: 2px;
+    width: 50%;
+    font-size: 10px;
+    font-weight: 600;
+    color: #000000;
+    border: 1px solid #999999;
+    background-color: #999999;
+    text-align: center;
 }
