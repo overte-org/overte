@@ -6,6 +6,13 @@
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 #
 macro(TARGET_OPENVR)
-    find_package(OpenVR REQUIRED)
-    target_link_libraries(${TARGET_NAME} openvr::openvr)
+    if(OVERTE_USE_SYSTEM_LIBS)
+        find_package(PkgConfig REQUIRED)
+        pkg_check_modules(OpenVR REQUIRED openvr)
+        target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${OpenVR_INCLUDE_DIRS})
+        target_link_libraries(${TARGET_NAME} ${OpenVR_LINK_LIBRARIES})
+    else()
+        find_package(OpenVR REQUIRED)
+        target_link_libraries(${TARGET_NAME} openvr::openvr)
+    endif()
 endmacro()

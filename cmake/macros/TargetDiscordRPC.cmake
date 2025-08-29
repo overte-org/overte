@@ -1,4 +1,11 @@
 macro(TARGET_DISCORD_RPC)
-    find_package(discord-rpc REQUIRED)
-    target_link_libraries(${TARGET_NAME} discord-rpc::discord-rpc)
+    if (OVERTE_USE_SYSTEM_LIBS)
+        find_path(DiscordRPC_INCLUDE_DIRS "discord_rpc.h")
+
+        target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${DiscordRPC_INCLUDE_DIRS})
+        target_link_libraries(${TARGET_NAME} libdiscord-rpc.so)
+    else()
+        find_package(discord-rpc REQUIRED)
+        target_link_libraries(${TARGET_NAME} discord-rpc::discord-rpc)
+    endif()
 endmacro()

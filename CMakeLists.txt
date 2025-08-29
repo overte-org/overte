@@ -100,6 +100,7 @@ set(OVERTE_TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256" CACHE STRING
 set(OVERTE_USE_OPTIMIZED_IK OFF CACHE BOOL "Use optimized IK.")
 set(OVERTE_DISABLE_KTX_CACHE OFF CACHE BOOL "Disable KTX Cache.")
 set(OVERTE_USE_KHR_ROBUSTNESS OFF CACHE BOOL "Use KHR_robustness.")
+set(OVERTE_USE_SYSTEM_LIBS OFF CACHE BOOL "Build with system dependencies.")
 
 set(OVERTE_BACKTRACE_URL "" CACHE STRING "URL to an endpoint for uploading crash-dumps. For example Sentry.")
 set(OVERTE_BACKTRACE_TOKEN "" CACHE STRING "Token used to identify this build, for use in uploading crash-dumps.")
@@ -284,6 +285,12 @@ if (OVERTE_BUILD_CLIENT)
 
   option(USE_SIXENSE "Build Interface with sixense library/plugin" OFF)
   option(USE_NEURON "Build Interface with Neuron library/plugin" OFF)
+  if (OVERTE_USE_SYSTEM_LIBS)
+      set(USE_STEAMCLIENT OFF)
+      message(STATUS "Not using STEAMCLIENT for system library build.")
+  else()
+      option(USE_STEAMCLIENT "Build Interface with steamworks-client library/plugin" ON)
+  endif()
 endif()
 
 if (OVERTE_BUILD_CLIENT OR OVERTE_BUILD_SERVER)
