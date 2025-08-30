@@ -1057,6 +1057,7 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         emulateStickFromTrackpad();
     }
 
+    // TODO: Fix up and finish the HTCX_vive_tracker_interaction support
     if (_context->_HTCX_viveTrackerInteractionSupported) {
         updateBodyFromViveTrackers(sensorToAvatar);
     } else if (_context->_MNDX_xdevSpaceSupported) {
