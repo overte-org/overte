@@ -13,6 +13,32 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
+//  ---
+//  https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
+//  Copyright (c) 2022 @64
+//
+//  https://github.com/64/64.github.io/blob/src/code/tonemapping/tonemap.cpp
+//  Copyright (c) 2016 MJP
+//  ---
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in all
+//  copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  SOFTWARE.
+//
 
 <@include render-utils/ShaderConstants.h@>
 
@@ -43,8 +69,6 @@ LAYOUT(binding=RENDER_UTILS_TEXTURE_TM_COLOR) uniform sampler2D colorMap;
 layout(location=0) in vec2 varTexCoord0;
 layout(location=0) out vec4 outFragColor;
 
-// https://64.github.io/tonemapping/
-// MIT License
 float luminance(vec3 v) {
     return dot(v, vec3(0.2126, 0.7152, 0.722));
 }
@@ -67,8 +91,6 @@ void main(void) {
     int toneCurve = getToneCurve();
     vec3 tonedColor = srcColor;
     if (toneCurve == ToneCurveFilmic) {
-        // https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
-        // MIT License
         const mat3 acesInput = mat3(
             0.59719, 0.07600, 0.02840,
             0.35458, 0.90834, 0.13383,
@@ -89,8 +111,6 @@ void main(void) {
         tonedColor = acesOutput * tonedColor;
         tonedColor = clamp(tonedColor, vec3(0.0), vec3(1.0));
     } else if (toneCurve == ToneCurveReinhard) {
-        // https://64.github.io/tonemapping/
-        // MIT License
         const float whitePoint = 2.0;
         float luminanceOld = luminance(srcColor);
         float numerator = luminanceOld * (1.0 + (luminanceOld / (whitePoint * whitePoint)));
@@ -103,10 +123,10 @@ void main(void) {
         // Since the conversion happens automatically, we don't need to do anything in this shader
     } else {
         // toneCurve == ToneCurveNone
-        // For debugging purposes, we may want to see what the colors look like before the automatic OpenGL 
+        // For debugging purposes, we may want to see what the colors look like before the automatic OpenGL
         // conversion mentioned above, so we undo it here
         tonedColor = pow(srcColor, vec3(GAMMA_22));
-    } 
+    }
 
     outFragColor = vec4(tonedColor, 1.0);
 }
