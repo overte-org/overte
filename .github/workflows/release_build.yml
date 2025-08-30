@@ -32,9 +32,10 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: windows-2022
+          - os: Windows 2022
             # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
             runner: depot-windows-2022-8
+            arch: x86_64
             build_type: full
             qt_source: source
       fail-fast: false
@@ -67,7 +68,7 @@ jobs:
         echo "SYMBOLS_ARCHIVE=$RELEASE_NUMBER-${{ github.sha }}-win-symbols.zip" >> $GITHUB_ENV
         # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
         # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
-        if [[ "${{ matrix.os }}" = "windows-2022" ]]; then
+        if [[ "${{ matrix.os }}" = "Windows 2022" ]]; then
           echo "CONAN_PROFILE='./tools/conan-profiles/vs-22-release'" >> $GITHUB_ENV
         else
           echo "Not sure which Conan profile to use. Exiting." && exit 1
