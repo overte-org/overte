@@ -137,6 +137,11 @@
 #define RENDER_UTILS_DEBUG_TEXTURE0 11
 #define RENDER_UTILS_BUFFER_DEBUG_DEFERRED_PARAMS 1
 
+// Bloom effect downsamples main framebuffer to a smaller one. This variable defines scale factor for it.
+#define RENDER_UTILS_BLOOM_FRAMEBUFFER_SCALE_FACTOR 4.0
+// Luminance in bloom effect needs to be clamped to avoid excessive sparkling.
+#define RENDER_UTILS_BLOOM_MAX_LUMINANCE 300.0
+
 // <!
 #include <gpu/ShaderConstants.h>
 
