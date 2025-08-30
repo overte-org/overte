@@ -3,13 +3,13 @@
     "channels": [
         { "from": "OpenXR.Head", "to" : "Standard.Head", "when" : [ "Application.InHMD"] },
 
-        { "from": "OpenXR.LT", "to": "Standard.LT", "filters": [{"type": "deadZone", "min": 0.05}] },
-        { "from": "OpenXR.RT", "to": "Standard.RT", "filters": [{"type": "deadZone", "min": 0.05}] },
+        { "from": "OpenXR.LT", "to": "Standard.LT" },
+        { "from": "OpenXR.RT", "to": "Standard.RT" },
         { "from": "OpenXR.LTClick", "to": "Standard.LTClick" },
         { "from": "OpenXR.RTClick", "to": "Standard.RTClick" },
 
-        { "from": "OpenXR.LeftGrip", "to": "Standard.LeftGrip", "filters": [{ "type": "deadZone", "min": 0.05 }] },
-        { "from": "OpenXR.RightGrip", "to": "Standard.RightGrip", "filters": [{ "type": "deadZone", "min": 0.05 }] },
+        { "from": "OpenXR.LeftGrip", "to": "Standard.LeftGrip" },
+        { "from": "OpenXR.RightGrip", "to": "Standard.RightGrip" },
 
         { "from": "OpenXR.LX", "to": "Standard.LX", "filters": [{ "type": "deadZone", "min": 0.05 }] },
         { "from": "OpenXR.LY", "to": "Standard.LY", "filters": [{ "type": "deadZone", "min": 0.05 }] },
@@ -19,8 +19,6 @@
 
         { "from": "OpenXR.LS", "to": "Standard.LS" },
         { "from": "OpenXR.RS", "to": "Standard.RS" },
-        { "from": "OpenXR.LSTouch", "to": "Standard.LSTouch" },
-        { "from": "OpenXR.RSTouch", "to": "Standard.RSTouch" },
 
         { "from": "OpenXR.LeftPrimaryThumb", "to": "Standard.LeftPrimaryThumb" },
         { "from": "OpenXR.RightPrimaryThumb", "to": "Standard.RightPrimaryThumb" },
@@ -69,6 +67,11 @@
         { "from": "OpenXR.RightHandPinky1", "to": "Standard.RightHandPinky1"},
         { "from": "OpenXR.RightHandPinky2", "to": "Standard.RightHandPinky2"},
         { "from": "OpenXR.RightHandPinky3", "to": "Standard.RightHandPinky3"},
-        { "from": "OpenXR.RightHandPinky4", "to": "Standard.RightHandPinky4"}
+        { "from": "OpenXR.RightHandPinky4", "to": "Standard.RightHandPinky4"},
+
+        { "from": "OpenXR.Hips", "to": "Standard.Hips" },
+        { "from": "OpenXR.Spine2", "to": "Standard.Spine2" },
+        { "from": "OpenXR.LeftFoot", "to": "Standard.LeftFoot" },
+        { "from": "OpenXR.RightFoot", "to": "Standard.RightFoot" }
     ]
 }

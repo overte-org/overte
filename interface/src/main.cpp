@@ -292,7 +292,15 @@ int main(int argc, const char* argv[]) {
     );
     QCommandLineOption xrNoHandTrackingOption(
         "xrNoHandTracking",
-        "Debug option. Disables OpenXR hand tracking, even if it's supported by the runtime."
+        "Debug option. Disables OpenXR hand tracking, even if it's supported."
+    );
+    QCommandLineOption xrNoBodyTrackingOption(
+        "xrNoBodyTracking",
+        "Debug option. Disables OpenXR body tracking, even if it's supported."
+    );
+    QCommandLineOption xrNoPalmPoseOption(
+        "xrNoPalmPose",
+        "Debug option. Disables use of the OpenXR palm pose, even if it's supported. Falls back to the controller's grip pose."
     );
 
     // "--qmljsdebugger", which appears in output from "--help-all".
@@ -345,6 +353,7 @@ int main(int argc, const char* argv[]) {
     parser.addOption(getProtocolVersionDataOption);
     parser.addOption(useExperimentalXROption);
     parser.addOption(xrNoHandTrackingOption);
+    parser.addOption(xrNoPalmPoseOption);
 
 
     QString applicationPath;
