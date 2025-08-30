@@ -195,6 +195,13 @@ jobs:
       run: conan cache clean "*" -sbd
       shell: bash
 
+    - name: Save Conan cache
+      if: always() && steps.conan-cache.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: ~/.conan2/
+
     - name: Configure CMake
       shell: bash
       run: |

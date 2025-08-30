@@ -85,6 +85,12 @@ jobs:
         submodules: false
         fetch-depth: 1
 
+    - name: Cache conan
+      uses: actions/cache@v4
+      with:
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: ~/.conan2/
+
     - name: Override Windows package versions
       shell: pwsh
       if: startsWith(matrix.os, 'windows')
@@ -122,6 +128,17 @@ jobs:
       run: |
         conan list --graph=build.json --graph-binaries=build --format=json > pkglist.json
         conan upload --list=pkglist.json -r=overte -c
+
+    - name: Cleanup Conan dependencies
+      run: conan cache clean "*" -sbd
+      shell: bash
+
+    - name: Save Conan cache
+      if: always() && steps.conan-cache.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: ~/.conan2/
 
     - name: Configure CMake
       shell: bash
