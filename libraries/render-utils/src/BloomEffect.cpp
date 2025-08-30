@@ -58,7 +58,8 @@ void BloomThreshold::run(const render::RenderContextPointer& renderContext, cons
     assert(inputFrameBuffer->hasColor());
 
     auto inputBuffer = inputFrameBuffer->getRenderBuffer(0);
-    auto bufferSize = gpu::Vec2u(inputBuffer->getDimensions());
+    auto bufferSize = gpu::Vec2u(inputBuffer->getDimensions().x / static_cast<int>(RENDER_UTILS_BLOOM_FRAMEBUFFER_SCALE_FACTOR),
+            inputBuffer->getDimensions().y / static_cast<int>(RENDER_UTILS_BLOOM_FRAMEBUFFER_SCALE_FACTOR));
 
     if (!_outputBuffer || _outputBuffer->getSize() != bufferSize) {
         auto colorTexture = gpu::TexturePointer(gpu::Texture::createRenderBuffer(inputBuffer->getTexelFormat(), bufferSize.x, bufferSize.y,
@@ -68,7 +69,8 @@ void BloomThreshold::run(const render::RenderContextPointer& renderContext, cons
         _outputBuffer->setRenderBuffer(0, colorTexture);
         _outputBuffer->setStencilBuffer(inputFrameBuffer->getDepthStencilBuffer(), inputFrameBuffer->getDepthStencilBufferFormat());
 
-        _parameters.edit()._deltaUV = { 1.0f / bufferSize.x, 1.0f / bufferSize.y };
+        _parameters.edit()._deltaUV = { 1.0f / bufferSize.x / static_cast<float>(RENDER_UTILS_BLOOM_FRAMEBUFFER_SCALE_FACTOR),
+            1.0f / bufferSize.y / static_cast<float>(RENDER_UTILS_BLOOM_FRAMEBUFFER_SCALE_FACTOR)};
     }
 
     if (!_pipeline) {
@@ -97,7 +99,7 @@ void BloomThreshold::run(const render::RenderContextPointer& renderContext, cons
     });
 
     outputs.edit0() = _outputBuffer;
-    outputs.edit1() = 0.5f + bloom->getBloomSize() * 3.5f;
+    outputs.edit1() = 0.5f + bloom->getBloomSize() * 3.5f / static_cast<float>(RENDER_UTILS_BLOOM_FRAMEBUFFER_SCALE_FACTOR);
     outputs.edit2() = bloom;
 }
 
@@ -302,7 +304,7 @@ void BloomEffect::configure(const Config& config) {
 
 void BloomEffect::build(JobModel& task, const render::Varying& inputs, render::Varying& outputs) {
     // Start by computing threshold of color buffer input at quarter resolution
-    const auto bloomOutputs = task.addJob<BloomThreshold>("BloomThreshold", inputs, 4U);
+    const auto bloomOutputs = task.addJob<BloomThreshold>("BloomThreshold", inputs, static_cast<unsigned int>(RENDER_UTILS_BLOOM_FRAMEBUFFER_SCALE_FACTOR));
 
     // Multi-scale blur, each new blur is half resolution of the previous pass
     const auto blurInputBuffer = bloomOutputs.getN<BloomThreshold::Outputs>(0);
