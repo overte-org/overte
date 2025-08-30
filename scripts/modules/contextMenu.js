@@ -87,6 +87,10 @@ Messages.messageReceived.connect(ContextMenu_messageReceived);
 Script.scriptEnding.connect(() => {
 	Messages.messageReceived.disconnect(ContextMenu_messageReceived);
 
+	for (const set of Object.keys(registeredActionSets)) {
+		Messages.sendLocalMessage(ACTIONS_CHANNEL, JSON.stringify({func: "unregister", name: set}));
+	}
+
 	if (disabled) {
 		Messages.sendLocalMessage(MAIN_CHANNEL, JSON.stringify({ func: "enable" }));
 	}
@@ -108,16 +112,25 @@ Script.scriptEnding.connect(() => {
  */
 
 /**
+ * A clickable context menu action.
  * @typedef {Object} Action
  * @property {string} text
  * @property {Color} [textColor=[255, 255, 255]]
  * @property {Color} [backgroundColor=[0, 0, 0]]
  * @property {number} [backgroundAlpha=0.8]
  * @property {string} [iconImage] - URL to an image that will be used as an icon, to the left of the action text.
- * @property {string} [remoteClickFunc] - A string that will be sent with @link{Messages.sendMessage} when clicked. See @link{ContextMenu.CLICK_FUNC_CHANNEL}.
- * @property {string} [localClickFunc] - A string that will be sent with @link{Messages.sendLocalMessage} when clicked. See @link{ContextMenu.CLICK_FUNC_CHANNEL}.
+ * @property {string} [remoteClickFunc] - A string that will be sent with @link{Messages.sendMessage} when clicked. See @link{ContextMenu.CLICK_FUNC_CHANNEL} and @link{ContextMenu.ClickFunc}.
+ * @property {string} [localClickFunc] - A string that will be sent with @link{Messages.sendLocalMessage} when clicked. See @link{ContextMenu.CLICK_FUNC_CHANNEL} and @link{ContextMenu.ClickFunc}.
  * @property {boolean} [keepMenuOpen=false] - If <code>true</code>, then the context menu will stay open when this action is clicked. Otherwise, the context menu will close when the action is clicked.
  */
+
+/**
+ * The JSON object passed through @link{ContextMenu.CLICK_FUNC_CHANNEL} when an action is clicked.
+ * @typedef {Object} ClickFunc
+ * @property {string} func - from localClickFunc or remoteClickFunc
+ * @property {Uuid} [targetID] - The targeted avatar or entity UUID
+ */
+
 module.exports = {
 	/**
 	 * The message channel that @link{ContextMenu.Action.remoteClickFunc} and @link{ContextMenu.Action.localClickFunc} use.
