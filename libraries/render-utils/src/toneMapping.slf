@@ -8,9 +8,36 @@
 //
 //  Created by Sam Gateau on 6/22/2015
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+//  ---
+//  https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl
+//  Copyright (c) 2022 @64
+//
+//  https://github.com/64/64.github.io/blob/src/code/tonemapping/tonemap.cpp
+//  Copyright (c) 2016 MJP
+//  ---
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in all
+//  copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  SOFTWARE.
 //
 
 <@include render-utils/ShaderConstants.h@>
@@ -42,6 +69,15 @@ LAYOUT(binding=RENDER_UTILS_TEXTURE_TM_COLOR) uniform sampler2D colorMap;
 layout(location=0) in vec2 varTexCoord0;
 layout(location=0) out vec4 outFragColor;
 
+float luminance(vec3 v) {
+    return dot(v, vec3(0.2126, 0.7152, 0.722));
+}
+
+vec3 changeLuminance(vec3 colorIn, float luminanceOut) {
+    float luminanceIn = luminance(colorIn);
+    return colorIn * (luminanceOut / luminanceIn);
+}
+
 void main(void) {
 <@if HIFI_USE_MIRRORED@>
     vec4 fragColorRaw = texture(colorMap, vec2(1.0 - varTexCoord0.x, varTexCoord0.y));
@@ -55,10 +91,31 @@ void main(void) {
     int toneCurve = getToneCurve();
     vec3 tonedColor = srcColor;
     if (toneCurve == ToneCurveFilmic) {
-        vec3 x = max(vec3(0.0), srcColor-0.004);
-        tonedColor = pow((x * (6.2 * x + 0.5)) / (x * (6.2 * x + 1.7) + 0.06), vec3(GAMMA_22));
+        const mat3 acesInput = mat3(
+            0.59719, 0.07600, 0.02840,
+            0.35458, 0.90834, 0.13383,
+            0.04823, 0.01566, 0.83777
+        );
+        const mat3 acesOutput = mat3(
+            1.60475, -0.10208, -0.00327,
+            -0.53108, 1.10813, -0.07276,
+            -0.07367, -0.00605, 1.07602
+        );
+
+        tonedColor = acesInput * tonedColor;
+
+        vec3 a = tonedColor * (tonedColor + 0.0245786) - 0.000090537;
+        vec3 b = tonedColor * (0.983729 * tonedColor + 0.4329510) + 0.238081;
+        tonedColor = a / b;
+
+        tonedColor = acesOutput * tonedColor;
+        tonedColor = clamp(tonedColor, vec3(0.0), vec3(1.0));
     } else if (toneCurve == ToneCurveReinhard) {
-        tonedColor = srcColor/(1.0 + srcColor);
+        const float whitePoint = 2.0;
+        float luminanceOld = luminance(srcColor);
+        float numerator = luminanceOld * (1.0 + (luminanceOld / (whitePoint * whitePoint)));
+        float luminanceNew = numerator / (1.0 + luminanceOld);
+        tonedColor = changeLuminance(srcColor, luminanceNew);
     } else if (toneCurve == ToneCurveGamma22) {
         // We use glEnable(GL_FRAMEBUFFER_SRGB), which automatically converts textures from RGB to SRGB
         // when writing from an RGB framebuffer to an SRGB framebuffer (note that it doesn't do anything
@@ -66,10 +123,10 @@ void main(void) {
         // Since the conversion happens automatically, we don't need to do anything in this shader
     } else {
         // toneCurve == ToneCurveNone
-        // For debugging purposes, we may want to see what the colors look like before the automatic OpenGL 
+        // For debugging purposes, we may want to see what the colors look like before the automatic OpenGL
         // conversion mentioned above, so we undo it here
         tonedColor = pow(srcColor, vec3(GAMMA_22));
-    } 
+    }
 
     outFragColor = vec4(tonedColor, 1.0);
 }
