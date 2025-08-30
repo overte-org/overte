@@ -89,6 +89,8 @@ endif()
 
 link_hifi_libraries(entities-renderer platform physics)
 
+target_quazip()
+
 # perform standard include and linking for found externals
 foreach(EXTERNAL ${OPTIONAL_EXTERNALS})
     if (${${EXTERNAL}_UPPERCASE}_REQUIRED)

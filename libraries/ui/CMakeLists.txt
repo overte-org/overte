@@ -7,6 +7,7 @@ setup_hifi_library(OpenGL Multimedia Network Qml Quick WebChannel WebSockets Xml
 link_hifi_libraries(shared networking qml gl audio audio-client plugins pointers script-engine)
 include_hifi_library_headers(controllers)
 
+target_webrtc()
 # Required for some low level GL interaction in the OffscreenQMLSurface
 set(OpenGL_GL_PREFERENCE "GLVND")
 target_opengl()
