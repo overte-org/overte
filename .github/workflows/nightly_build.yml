@@ -39,6 +39,7 @@ jobs:
           - os: Windows 2022
             # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
             runner: depot-windows-2022-8
+            arch: x86_64
             build_type: full
             qt_source: source
           #- os: macOS 10.15
@@ -193,6 +194,13 @@ jobs:
     - name: Cleanup Conan dependencies
       run: conan cache clean "*" -sbd
       shell: bash
+
+    - name: Save Conan cache
+      if: always() && steps.conan-cache.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: ~/.conan2/
 
     - name: Configure CMake
       shell: bash
