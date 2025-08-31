@@ -29,8 +29,8 @@ gpu::PipelinePointer DebugBloom::_pipeline;
 BloomThreshold::BloomThreshold(unsigned int downsamplingFactor) {
     assert(downsamplingFactor > 0);
     auto& params = _parameters.edit();
-    params._sampleCount = downsamplingFactor;
-    params._offset = (1.0f - downsamplingFactor) * 0.5f;
+    params._downsamplingFactor = downsamplingFactor;
+    params._offset = (1.0f - downsamplingFactor) * 0.5f / static_cast<float>(downsamplingFactor);
 }
 
 void BloomThreshold::configure(const Config& config) {}
@@ -57,8 +57,11 @@ void BloomThreshold::run(const render::RenderContextPointer& renderContext, cons
 
     assert(inputFrameBuffer->hasColor());
 
+    int downsamplingFactor = _parameters.get()._downsamplingFactor;
+
     auto inputBuffer = inputFrameBuffer->getRenderBuffer(0);
-    auto bufferSize = gpu::Vec2u(inputBuffer->getDimensions());
+    auto bufferSize = gpu::Vec2u(inputBuffer->getDimensions().x / downsamplingFactor,
+            inputBuffer->getDimensions().y / downsamplingFactor);
 
     if (!_outputBuffer || _outputBuffer->getSize() != bufferSize) {
         auto colorTexture = gpu::TexturePointer(gpu::Texture::createRenderBuffer(inputBuffer->getTexelFormat(), bufferSize.x, bufferSize.y,
@@ -68,7 +71,8 @@ void BloomThreshold::run(const render::RenderContextPointer& renderContext, cons
         _outputBuffer->setRenderBuffer(0, colorTexture);
         _outputBuffer->setStencilBuffer(inputFrameBuffer->getDepthStencilBuffer(), inputFrameBuffer->getDepthStencilBufferFormat());
 
-        _parameters.edit()._deltaUV = { 1.0f / bufferSize.x, 1.0f / bufferSize.y };
+        _parameters.edit()._deltaUV = { 1.0f / bufferSize.x / static_cast<float>(downsamplingFactor),
+            1.0f / bufferSize.y / static_cast<float>(downsamplingFactor)};
     }
 
     if (!_pipeline) {
@@ -97,7 +101,7 @@ void BloomThreshold::run(const render::RenderContextPointer& renderContext, cons
     });
 
     outputs.edit0() = _outputBuffer;
-    outputs.edit1() = 0.5f + bloom->getBloomSize() * 3.5f;
+    outputs.edit1() = 0.5f + bloom->getBloomSize() * 3.5f / static_cast<float>(downsamplingFactor);
     outputs.edit2() = bloom;
 }
 

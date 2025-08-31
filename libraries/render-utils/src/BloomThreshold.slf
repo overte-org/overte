@@ -13,6 +13,9 @@
 <@include BloomThreshold.shared.slh@>
 <@include render-utils/ShaderConstants.h@>
 
+// Luminance in bloom effect needs to be clamped to avoid excessive sparkling.
+#define BLOOM_MAX_LUMINANCE 300.0
+
 LAYOUT(binding=RENDER_UTILS_TEXTURE_BLOOM_COLOR) uniform sampler2D colorMap;
 LAYOUT_STD140(binding=RENDER_UTILS_BUFFER_BLOOM_PARAMS) uniform parametersBuffer {
     Parameters parameters;
@@ -21,15 +24,22 @@ LAYOUT_STD140(binding=RENDER_UTILS_BUFFER_BLOOM_PARAMS) uniform parametersBuffer
 layout(location=0) out vec4 outFragColor;
 
 void main(void) {
-    vec2 startUv = (vec2(gl_FragCoord.xy) + vec2(parameters._offset)) * parameters._deltaUV;
+    vec2 startUv = (vec2(gl_FragCoord.xy) + vec2(parameters._offset))
+        * parameters._deltaUV * float(parameters._downsamplingFactor);
     vec4 maskedColor = vec4(0,0,0,0);
 
-    for (int y=0 ; y<parameters._sampleCount ; y++) {
+    for (int y=0 ; y<parameters._downsamplingFactor ; y++) {
         vec2 uv = startUv;
 
-        for (int x=0 ; x<parameters._sampleCount ; x++) {
+        for (int x=0 ; x<parameters._downsamplingFactor ; x++) {
             vec4 color = texture(colorMap, uv);
             float luminance = (color.r+color.g+color.b) / 3.0;
+            // Luminance in bloom effect needs to be clamped to avoid excessive sparkling.
+            if (luminance > BLOOM_MAX_LUMINANCE) {
+                float clampedLuminance = clamp(luminance, 0.0, BLOOM_MAX_LUMINANCE);
+                color /= luminance / clampedLuminance;
+                luminance = clampedLuminance;
+            }
             float mask = clamp((luminance-parameters._threshold)*0.25, 0.0, 1.0);
 
             color *= mask;
@@ -39,6 +49,6 @@ void main(void) {
 
         startUv.y += parameters._deltaUV.y;
     }
-    maskedColor /= float(parameters._sampleCount * parameters._sampleCount);
+    maskedColor /= float(parameters._downsamplingFactor * parameters._downsamplingFactor);
     outFragColor = vec4(maskedColor.rgb, 1.0);
 }
