@@ -363,6 +363,17 @@ function brokenURLReport(entityIDs) {
                 };
                 brokenURLReportUrlList.push(brokenURLReportUrlEntry);
             }
+            if (properties.type === "Script" && properties.scriptURL.toLowerCase().startsWith("http")) {
+                brokenURLReportUrlEntry = {
+                    id: entityIDs[i],
+                    name: properties.name,
+                    type: properties.type,
+                    urlType: "scriptURL",
+                    url: scriptURL,
+                    validity: "NOT_TESTED"
+                };
+                brokenURLReportUrlList.push(brokenURLReportUrlEntry);
+            }
         }
         if (brokenURLReportUrlList.length === 0) {
             audioFeedback.confirmation();
