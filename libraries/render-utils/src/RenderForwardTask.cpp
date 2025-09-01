@@ -299,9 +299,11 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
         batch.setResourceTexture(ru::Texture::AmbientFresnel, lightingModel->getAmbientFresnelLUT());
         batch.setUniformBuffer(ru::Buffer::DeferredFrameTransform, deferredFrameTransform->getFrameTransformBuffer());
 
+        // Set the light
         deferredLightingEffect->setupKeyLightBatch(args, batch);
         deferredLightingEffect->setupLocalLightsBatch(batch, lightClusters);
 
+        // Setup haze if current zone has haze
         if (haze) {
             batch.setUniformBuffer(graphics::slot::buffer::Buffer::HazeParams, haze->getHazeParametersBuffer());
         }
@@ -328,5 +330,3 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
         deferredLightingEffect->unsetKeyLightBatch(batch);
     });
 }
-
-
