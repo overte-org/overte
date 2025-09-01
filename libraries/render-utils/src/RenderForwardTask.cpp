@@ -23,6 +23,7 @@
 
 #include <render/FilterTask.h>
 
+#include "DeferredLightingEffect.h"
 #include "RenderHifi.h"
 #include "render-utils/ShaderConstants.h"
 #include "StencilMaskPass.h"
@@ -124,6 +125,11 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     // Prepare deferred, generate the shared Deferred Frame Transform. Only valid with the scaled frame buffer
     const auto deferredFrameTransform = task.addJob<GenerateDeferredFrameTransform>("DeferredFrameTransform", mainViewTransformSlot);
 
+    // Light Clustering
+    // Create the cluster grid of lights, cpu job for now
+    const auto lightClusteringPassInputs = LightClusteringPass::Input(deferredFrameTransform, lightingModel, lightFrame, scaledPrimaryFramebuffer).asVarying();
+    const auto lightClusters = task.addJob<LightClusteringPass>("LightClustering", lightClusteringPassInputs);
+
     // Prepare Forward Framebuffer pass
     const auto prepareForwardInputs = PrepareForward::Inputs(scaledPrimaryFramebuffer, lightFrame).asVarying();
     task.addJob<PrepareForward>("PrepareForward", prepareForwardInputs);
@@ -137,7 +143,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     task.addJob<PrepareStencil>("PrepareStencil", scaledPrimaryFramebuffer);
 
     // Draw opaques forward
-    const auto opaqueInputs = DrawForward::Inputs(opaques, lightingModel, hazeFrame).asVarying();
+    const auto opaqueInputs = DrawForward::Inputs(opaques, lightingModel, hazeFrame, lightClusters, deferredFrameTransform).asVarying();
     task.addJob<DrawForward>("DrawOpaques", opaqueInputs, shapePlumber, true, mainViewTransformSlot);
 
 #ifndef Q_OS_ANDROID
@@ -154,7 +160,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     task.addJob<DrawBackgroundStage>("DrawBackgroundForward", backgroundInputs, backgroundViewTransformSlot);
 
     // Draw transparent objects forward
-    const auto transparentInputs = DrawForward::Inputs(transparents, lightingModel, hazeFrame).asVarying();
+    const auto transparentInputs = DrawForward::Inputs(transparents, lightingModel, hazeFrame, lightClusters, deferredFrameTransform).asVarying();
     task.addJob<DrawForward>("DrawTransparents", transparentInputs, shapePlumber, false, mainViewTransformSlot);
 
      // Layered
@@ -190,7 +196,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
 gpu::FramebufferPointer PreparePrimaryFramebufferMSAA::createFramebuffer(const char* name, const glm::uvec2& frameSize, int numSamples) {
     gpu::FramebufferPointer framebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create(name));
 
-    auto defaultSampler = Sampler(Sampler::FILTER_MIN_MAG_LINEAR);
+    auto defaultSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR);
 
     auto colorFormat = gpu::Element(gpu::SCALAR, gpu::FLOAT, gpu::R11G11B10);
     auto colorTexture =
@@ -275,6 +281,9 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
     const auto& inItems = inputs.get0();
     const auto& lightingModel = inputs.get1();
     const auto& hazeFrame = inputs.get2();
+    const auto& lightClusters = inputs.get3();
+    const auto& deferredFrameTransform = inputs.get4();
+    auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
 
     graphics::HazePointer haze;
     const auto& hazeStage = renderContext->args->_scene->getStage<HazeStage>();
@@ -292,6 +301,10 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
         // Setup lighting model for all items;
         batch.setUniformBuffer(ru::Buffer::LightModel, lightingModel->getParametersBuffer());
         batch.setResourceTexture(ru::Texture::AmbientFresnel, lightingModel->getAmbientFresnelLUT());
+        batch.setUniformBuffer(ru::Buffer::DeferredFrameTransform, deferredFrameTransform->getFrameTransformBuffer());
+
+        deferredLightingEffect->setupKeyLightBatch(args, batch);
+        deferredLightingEffect->setupLocalLightsBatch(batch, lightClusters);
 
         if (haze) {
             batch.setUniformBuffer(graphics::slot::buffer::Buffer::HazeParams, haze->getHazeParametersBuffer());
@@ -314,6 +327,9 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
 
         args->_batch = nullptr;
         args->_globalShapeKey = 0;
+
+        deferredLightingEffect->unsetLocalLightsBatch(batch);
+        deferredLightingEffect->unsetKeyLightBatch(batch);
     });
 }
 
