@@ -92,13 +92,9 @@
         <@include GlobalLight.slh@>
         <@if HIFI_USE_LIGHTMAP@>
             <$declareEvalLightmappedColor()$>
-        <@elif HIFI_USE_TRANSLUCENT@>
-            <@if not HIFI_USE_FORWARD@>
-                <@include LightLocal.slh@>
-            <@endif@>
-            <$declareEvalGlobalLightingAlphaBlended()$>
         <@else@>
-            <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, 1)$>
+            <@include LightLocal.slh@>
+            <$declareEvalGlobalLightingAlphaBlended()$>
         <@endif@>
         <@include gpu/Transform.slh@>
         <$declareStandardCameraTransform()$>
@@ -676,55 +672,45 @@ void main(void) {
     <@if HIFI_USE_FORWARD@>
         TransformCamera cam = getTransformCamera();
         vec3 fresnel = getFresnelF0(metallic, albedo);
-        <@if not HIFI_USE_TRANSLUCENT@>
-            <@if not HIFI_USE_LIGHTMAP@>
-                vec4 color = vec4(evalSkyboxGlobalColor(
-                    cam._viewInverse,
-                    1.0,
-                    occlusion,
-                    _positionES.xyz,
-                    fragNormalWS,
-                    albedo,
-                    fresnel,
-                    metallic,
-                    roughness),
-                    opacity);
-                color.rgb += emissive * isEmissiveEnabled();
-                _fragColor0 = color;
-            <@else@>
-                _fragColor0 = vec4(evalLightmappedColor(
-                    cam._viewInverse,
-                    1.0,
-                    DEFAULT_OCCLUSION,
-                    fragNormalWS,
-                    albedo,
-                    lightmap),
-                    opacity);
-            <@endif@>
-        <@else@>
-            <@if not HIFI_USE_LIGHTMAP@>
-                _fragColor0 =  vec4(evalGlobalLightingAlphaBlended(
-                    cam._viewInverse,
-                    1.0,
-                    occlusion,
-                    _positionES.xyz,
-                    fragNormalWS,
-                    albedo,
-                    fresnel,
-                    metallic,
-                    emissive,
-                    roughness, opacity),
-                    opacity);
-            <@else@>
-                _fragColor0 = vec4(evalLightmappedColor(
+        <@if not HIFI_USE_LIGHTMAP@>
+            vec3 fragPositionWS = _positionWS.xyz;
+            vec3 fragToEyeWS = cam._viewInverse[3].xyz - fragPositionWS;
+            vec3 fragToEyeDirWS = normalize(fragToEyeWS);
+            SurfaceData surfaceWS = initSurfaceData(roughness, fragNormalWS, fragToEyeDirWS);
+
+            vec4 localLighting = vec4(0.0);
+            <$fetchClusterInfo(_positionWS)$>
+            if (hasLocalLights(numLights, clusterPos, dims)) {
+                localLighting = evalLocalLighting(cluster, numLights, fragPositionWS, surfaceWS,
+                                                  metallic, fresnel, albedo, 0.0,
+                                                  vec4(0), vec4(0), opacity);
+            }
+
+            _fragColor0 = vec4(evalGlobalLightingAlphaBlended(
                 cam._viewInverse,
                 1.0,
-                DEFAULT_OCCLUSION,
+                occlusion,
+                _positionES.xyz,
                 fragNormalWS,
                 albedo,
-                lightmap),
-                opacity);
+                fresnel,
+                metallic,
+                emissive
+            <@if HIFI_USE_FADE@>
+                    + fadeEmissive
             <@endif@>
+                ,
+                surfaceWS, opacity, localLighting.rgb),
+                opacity);
+        <@else@>
+            _fragColor0 = vec4(evalLightmappedColor(
+            cam._viewInverse,
+            1.0,
+            DEFAULT_OCCLUSION,
+            fragNormalWS,
+            albedo,
+            lightmap),
+            opacity);
         <@endif@>
     <@else@>
         <@if not HIFI_USE_TRANSLUCENT@>
