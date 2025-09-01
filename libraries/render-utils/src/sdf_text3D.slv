@@ -29,6 +29,7 @@ OUTPUT(RENDER_UTILS_ATTR_POSITION_MS, vec2, _positionMS);
 <@endif@>
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     OUTPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
+    OUTPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
 <@endif@>
 <@if not HIFI_USE_FORWARD@>
     OUTPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
@@ -66,6 +67,10 @@ void main() {
     <$transformModelToEyeClipPosAndPrevClipPos(cam, obj, position, _positionES, gl_Position, _prevPositionCS)$>
 <@else@>
     <$transformModelToClipPosAndPrevClipPos(cam, obj, position, gl_Position, _prevPositionCS)$>
+<@endif@>
+
+<@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
+    <$transformModelToWorldPos(obj, inPosition, _positionWS)$>
 <@endif@>
 
     const vec3 normal = vec3(0, 0, 1);
