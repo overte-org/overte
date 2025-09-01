@@ -79,7 +79,7 @@ ScriptValue ScriptContextV8Wrapper::argument(int index) const {
         v8::HandleScope handleScope(isolate);
         v8::Context::Scope contextScope(_context.Get(isolate));
         v8::Local<v8::Value> result = (*_functionCallbackInfo)[index];
-        if (index < _functionCallbackInfo->kArgsLength) {
+        if (result->IsUndefined()) {
             return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
         } else {
             return _engine->undefinedValue();
