@@ -519,6 +519,15 @@ void PickScriptingInterface::setHandLaserDelay(float delay) {
     emit handLaserDelayChanged(delay);
 }
 
+bool PickScriptingInterface::getHandLaserPassive() const {
+    return _handLaserPassiveSetting.get();
+}
+
+void PickScriptingInterface::setHandLaserPassive(bool passive) {
+    _handLaserPassiveSetting.set(passive);
+    emit handLaserPassiveChanged(passive);
+}
+
 void PickScriptingInterface::setParentTransform(std::shared_ptr<PickQuery> pick, const QVariantMap& propMap) {
     QUuid parentUuid;
     int parentJointIndex = 0;
