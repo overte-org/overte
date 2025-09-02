@@ -52,9 +52,9 @@ Messages.messageReceived.connect((channel, msg, senderID, _localOnly) => {
 
 	const data = JSON.parse(msg);
 
-	if (!(data.funcName in actionFuncs)) { return; }
+	if (!(data.func in actionFuncs)) { return; }
 
-	actionFuncs[data.funcName]();
+	actionFuncs[data.func]();
 });
 
 Script.scriptEnding.connect(() => {

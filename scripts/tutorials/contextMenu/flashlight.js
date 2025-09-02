@@ -66,7 +66,7 @@ Messages.messageReceived.connect((channel, msg, senderID, _localOnly) => {
 
 	const data = JSON.parse(msg);
 
-	if (data.funcName === "flashlight.toggle") {
+	if (data.func === "flashlight.toggle") {
 		ToggleFlashlight();
 		actionSet[0].textColor = lightEntity ? [0, 0, 0] : [255, 200, 0];
 		actionSet[0].backgroundColor = lightEntity ? [255, 200, 0] : [0, 0, 0];

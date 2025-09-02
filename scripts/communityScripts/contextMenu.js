@@ -526,15 +526,15 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		} else if (action.remoteClickFunc) {
 			clickFunc = target => {
 				Messages.sendMessage(CLICK_FUNC_CHANNEL, JSON.stringify({
-					funcName: action.remoteClickFunc,
-					targetEntity: target,
+					func: action.remoteClickFunc,
+					targetID: target,
 				}));
 			};
 		} else if (action.localClickFunc) {
 			clickFunc = target => {
 				Messages.sendLocalMessage(CLICK_FUNC_CHANNEL, JSON.stringify({
-					funcName: action.localClickFunc,
-					targetEntity: target,
+					func: action.localClickFunc,
+					targetID: target,
 				}));
 			};
 		}
@@ -679,18 +679,16 @@ function ContextMenu_OpenRoot() {
 					const remoteFunc = data?.contextMenu?.actions?.remoteClickFunc;
 					if (remoteFunc) {
 						Messages.sendMessage(CLICK_FUNC_CHANNEL, JSON.stringify({
-							funcName: remoteFunc,
-							targetEntity: currentMenuTarget,
-							isTargetAvatar: false,
+							func: remoteFunc,
+							targetID: currentMenuTarget,
 						}));
 					}
 
 					const localFunc = data?.contextMenu?.actions?.localClickFunc;
 					if (localFunc) {
 						Messages.sendLocalMessage(CLICK_FUNC_CHANNEL, JSON.stringify({
-							funcName: localFunc,
-							targetEntity: currentMenuTarget,
-							isTargetAvatar: false,
+							func: localFunc,
+							targetID: currentMenuTarget,
 						}));
 
 						currentMenuTarget = undefined;
