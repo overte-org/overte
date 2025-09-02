@@ -60,7 +60,7 @@ class Overte(ConanFile):
         self.requires("gli/cci.20210515")
         self.requires("glslang/1.3.268.0")
         self.requires("liblo/0.30@overte/stable")
-        self.requires("libnode/18.20.8@overte/stable")
+        self.requires("libnode/22.17.1@overte/experimental#ca188c89aa6743669eee099fee52b0a0")
         self.requires("nlohmann_json/3.11.2")
         self.requires("nvidia-texture-tools/2023.01@overte/stable")
         self.requires("onetbb/2021.10.0")
