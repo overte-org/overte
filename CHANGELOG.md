@@ -11,6 +11,96 @@ like documentaion or CI pipeline.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2025.09.1] 2025.09.02
+
+### Fixes
+- Fixed issue with blur, resulting in better image quality when using effects such as bloom (PR1563)
+- Fixed "QML AnimatedImage: Error Reading Animated Image File" warning (PR1491)
+- Fixed PolyVox materials (voxel) not being accessible by scripts (PR1517)
+- Fixed simplifiedNametag being grabable (PR1590)
+- Fixed local entities not being grabable (PR1590,PR1647,PR1746)
+- Fixed OpenGL 4.5 not being used on Intel graphics (PR1609)
+- Fixed rendering issue causing the seagull in the tutorial to not animate properly (PR1626)
+- Fixed OpenXR breaking when switching between desktop and VR mode (PR1632)
+- Fixed anti-aliasing on transparent text entities (PR1595)
+- Fixed opening chat links in external web browser (PR1659,
+- Fixed URLs in chat not supporting commas (PR1659)
+- Fixed chat notification height in VR (PR1664)
+- Fixed error spam when trying to grab something in desktop mode (PR1645)
+- Fixed selecting text in chat using the mouse (PR1677,PR1670)
+- Fixed About.buildDate, which also fixes the build date on the About page (PR1736)
+- Fixed simplifiedNametag blocking lasers (PR1722)
+- Fixed anti-aliasing on simplifiedNametag (PR1722)
+- Fixed Q_ASSERTs being enabled on Windows release builds (PR1757)
+    This fixes a bunch of crashes on Windows.
+- Fixed trying to check-in to a Domain server while being in a serverless world (PR1758)
+- Fixed no default audio device being enabled in VR in most cases (PR1642)
+    We now just use the systems default audio device, since most (if not all) VR runtimes automatically switch that.
+- Massively improved bloom performance (PR1787)
+- Fixed tonemapping being applied twice for mirrors (PR1778)
+- Fixed zoom on first startup (PR1761)
+- Fixed tutorial spawn location, so users don't spawn in the air anymore (PR1761)
+- Fixed an issue causing high audio latency, especially on Windows (PR1743)
+- Removed obsolete "Show graphics icon on tablet and toolbar" setting (PR1660)
+- Added back missing LOD setting to the graphics settings (PR1686)
+- Fixed erasing chat messages requiring a restart (PR1670)
+- Fixed some regressions introduced by the automated entity property serialization (PR1242,PR1655)
+
+### Changes
+- Lowered maximum MTU (PR1604)
+    This fixes a whole bunch of connection issues, especially with Japanese internet providers.
+- Parented VR keyboard to avatar, so it follows the user (PR1631)
+- Various improvements to VR keyboard (PR1710)
+- Changed laser ends to be unlit (PR1630)
+- Chat messages no longer combine into each other (PR1659)
+- Changed microphone input to not be muted on first start (PR1644)
+- Default to high graphics settings on Linux (PR1740)
+- Swapped out Reinhard and Filmic tonemaps for nicer looking variants (PR1786)
+- Updated SDL2 to 2.32.8 (PR1770)
+- Small improvements to the Snap app (PR1768)
+- Greyed out anti-aliasing setting on forward renderer, since it always has MSAA enabled (PR1690)
+
+### Additions
+- Added dark (and light) theme to our JavaScript console (PR1538)
+- Added tags property to Create app (PR1618)
+- Added GPU driver blocklist (PR1413)
+    This opens a warning during startup if a known broken GPU driver is used.
+- Added in-world chat bubbles and typing indicator (PR1418,PR1722)
+    This supports clickable links and embeds pictures.
+- Added warning popup for OpenXR not working on Wayland yet (PR1661)
+- Added audio zones to Create app (PR1624)
+- Added thumbstick scrolling in VR (PR1564,PR1695)
+    Currently, this disables movement for the relevant thumbstick when pointing at a web surface.
+- Added loading screen for initial shader compilation, instead of just showing an empty skybox (PR1704)
+- Added setting to force disable Discord "Rich Presence" (PR1701)
+- Added initial support for launching sandbox server on platforms other than Windows (PR1456)
+- Added API to hide desktop menu bar (PR1692)
+- Added user count per Place to the Places app where available (PR1724)
+- Added in-world context menu (PR1749,PR1789,PR1768)
+    This context menu has an API. Check out the `scripts/tutorials/contextMenu/` folder for exampled. The API module is at `scripts/modules/contextMenu.js`.
+- Added OpenXR body tracking support (PR1583)
+- Added support for OpenXR palm poses (PR1583)
+- Added toggle for controller haptic in OpenXR (PR1583)
+- Added permission-protected LocationBookmarks API (PR1723)
+- Added location bookmarks to Places app (PR1744)
+- Added initial VRM support (PR1750)
+    While this allows loading VRM models, the vast majority of them will not work as an avatar yet.
+- Added taking pictures using thumbstick to the Snap app (PR1756)
+- Added material layering support enabling splat maps and triplanar materials (PR1531,PR1656,PR1591,PR1592,PR1716,PR1751,PR1776)
+
+### Build System
+- Replaced VCPKG with Conan (PR1534,PR1551,PR1552,PR1574,PR1543,PR1596,PR1613,PR1657)
+- Fixed OpenXR plugins building on GCC 11 (PR1544)
+- Fixed some build errors on GCC 15 (PR1541)
+- Fixed more GCC 15 issues and add instructions on how to work around the rest (PR1587)
+- Fixed GCC warnings (PR1611,1622)
+- CMake refactor (PR1584,PR1628,PR1696)
+    This changes many CMake variables among other things.
+- Moved to Visual Studio 2022 on Windows (PR1612)
+- Added KDE Qt patchset Conan Qt package and use it on Windows (PR1641)
+- Removed qtaudio_windows.dll QtMultimedia plugin (PR1748)
+- Use Depot.dev for Windows CI builds (PR1769)
+
 
 ## [2025.05.1] 2025.05.12
 
