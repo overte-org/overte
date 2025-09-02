@@ -142,8 +142,14 @@ jobs:
 
     - name: Configure CMake
       shell: bash
-           # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_NUMBER=${{ github.ref_name }} -DOVERTE_BUILD_TYPE=PRODUCTION -DJSDOC_ENABLED:BOOL=TRUE $CMAKE_EXTRA
+      run: |
+        if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
+          # This syntax requires CMake 3.23
+          cmake --preset conan-default -DOVERTE_RELEASE_NUMBER=${{ github.ref_name }} -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=PRODUCTION $CMAKE_EXTRA
+        else
+          # This syntax requires CMake 3.23
+          cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_NUMBER=${{ github.ref_name }} -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=PRODUCTION $CMAKE_EXTRA
+        fi
 
     - name: Build application
       shell: bash
