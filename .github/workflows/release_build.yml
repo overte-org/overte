@@ -210,7 +210,7 @@ jobs:
     - name: Output installer logs
       if: failure() && startsWith(matrix.os, 'windows')
       shell: bash
-      working-directory: ${{runner.workspace}}/build
+      working-directory: build
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
 
     - name: Upload artifact to S3
