@@ -478,7 +478,8 @@ void gl::loadShaderCache(ShaderCache& cache) {
                 Q_ASSERT(false);
                 return;
             }
-            QByteArray qbinary = QByteArray::fromBase64(QString::fromStdString(programObject[SHADER_JSON_DATA_KEY].get<std::string>()).toUtf8());
+            auto programBase64 = programObject[SHADER_JSON_DATA_KEY].get<std::string>();
+            QByteArray qbinary = QByteArray::fromBase64(QByteArray(programBase64.data(), programBase64.size()));
             std::string hash = item.key();
             auto& cachedShader = cache[hash];
             cachedShader.binary.resize(qbinary.size());
