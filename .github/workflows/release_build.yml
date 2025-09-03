@@ -145,7 +145,7 @@ jobs:
       run: |
         if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
           # This syntax requires CMake 3.23
-          cmake --preset conan-default -DOVERTE_RELEASE_NUMBER=${{ github.ref_name }} -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=PRODUCTION $CMAKE_EXTRA
+          cmake --preset conan-default -DOVERTE_RELEASE_NUMBER=${{ github.ref_name }} -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=PRODUCTION -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
         else
           # This syntax requires CMake 3.23
           cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_NUMBER=${{ github.ref_name }} -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=PRODUCTION $CMAKE_EXTRA
