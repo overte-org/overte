@@ -235,6 +235,7 @@ jobs:
       run: conan cache backup-upload || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
 
     - name: Cleanup Conan dependencies
+      if: always() && steps.conan-cache.cache-hit != 'true'
       run: conan cache clean "*" -sbd
       shell: bash
 

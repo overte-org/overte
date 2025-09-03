@@ -196,6 +196,7 @@ jobs:
       run: conan cache backup-upload
 
     - name: Cleanup Conan dependencies
+      if: always() && steps.conan-cache.cache-hit != 'true'
       run: conan cache clean "*" -sbd
       shell: bash
 

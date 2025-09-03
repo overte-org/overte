@@ -132,6 +132,7 @@ jobs:
         conan upload --list=pkglist.json -r=overte -c
 
     - name: Cleanup Conan dependencies
+      if: always() && steps.conan-cache.cache-hit != 'true'
       run: conan cache clean "*" -sbd
       shell: bash
 
