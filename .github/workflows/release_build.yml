@@ -226,6 +226,7 @@ jobs:
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
+        RELEASE_NUMBER: ${{ github.ref_name }}
       run: $PYTHON_EXEC $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
 
     - name: Archive symbols
