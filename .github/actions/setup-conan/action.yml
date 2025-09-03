@@ -3,13 +3,6 @@ description: "Configures Conan for building Overte. It also sets up a backup sou
 runs:
   using: "composite"
   steps:
-  - name: Cache conan
-    id: conan-cache
-    uses: actions/cache@v4
-    with:
-        path: ${{ env.CONAN_HOME }}
-        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-
   - name: "Set CONAN_HOME"
     shell: bash
     run: |
@@ -27,6 +20,13 @@ runs:
           # Try to avoid hitting Windows' PATH limit.
           echo "CONAN_HOME=C:\Conan" >> $GITHUB_ENV
         fi
+
+  - name: Cache conan
+    id: conan-cache
+    uses: actions/cache@v4
+    with:
+        path: ${{ env.CONAN_HOME }}
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
 
   - name: "Prepare Conan Build Environment"
     shell: bash
