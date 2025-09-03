@@ -13,7 +13,7 @@ runs:
 
         # Mac build variables
         if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
-          echo "CONAN_HOME=~/.conan2" >> $GITHUB_ENV
+          echo "CONAN_HOME=$HOME/.conan2" >> $GITHUB_ENV
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" = "Windows"* ]]; then
