@@ -234,17 +234,17 @@ jobs:
         CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN: ${{ secrets.CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN }}
       run: conan cache backup-upload || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
 
-    - name: Cleanup Conan dependencies
-      if: always() && steps.conan-cache.cache-hit != 'true'
-      run: conan cache clean "*" -sbd
-      shell: bash
+    #~ - name: Cleanup Conan dependencies
+      #~ if: always() && steps.conan-cache.cache-hit != 'true'
+      #~ run: conan cache clean "*" -sbd
+      #~ shell: bash
 
-    - name: Save Conan cache
-      if: always() && steps.conan-cache.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ${{ env.CONAN_HOME }}
+    #~ - name: Save Conan cache
+      #~ if: always() && steps.conan-cache.cache-hit != 'true'
+      #~ uses: actions/cache/save@v4
+      #~ with:
+        #~ key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        #~ path: ${{ env.CONAN_HOME }}
 
     - name: Configure CMake
       shell: bash
