@@ -651,10 +651,10 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             v8::TryCatch tryCatch(getIsolate());
             // Since V8 cannot use arbitrary object as global object, objects from main global need to be copied to closure's global object
             auto globalObjectContents = _globalObjectContents.Get(_v8Isolate);
-            auto globalMemberNames = globalObjectContents->GetPropertyNames(globalObjectContents->CreationContext()).ToLocalChecked();
+            auto globalMemberNames = globalObjectContents->GetPropertyNames(globalObjectContents->GetCreationContextChecked()).ToLocalChecked();
             for (uint32_t i = 0; i < globalMemberNames->Length(); i++) {
                 auto name = globalMemberNames->Get(closureContext, i).ToLocalChecked();
-                if(!closureContext->Global()->Set(closureContext, name, globalObjectContents->Get(globalObjectContents->CreationContext(), name).ToLocalChecked()).FromMaybe(false)) {
+                if(!closureContext->Global()->Set(closureContext, name, globalObjectContents->Get(globalObjectContents->GetCreationContextChecked(), name).ToLocalChecked()).FromMaybe(false)) {
                     Q_ASSERT(false);
                 }
             }
@@ -723,11 +723,11 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
                 v8::Local<v8::Object> newRequireObject = v8::Local<v8::Object>::Cast(newRequireObjectValue);
 
                 auto requireMemberNames =
-                    oldRequireObject->GetPropertyNames(oldRequireObject->CreationContext()).ToLocalChecked();
+                    oldRequireObject->GetPropertyNames(oldRequireObject->GetCreationContextChecked()).ToLocalChecked();
                 for (uint32_t i = 0; i < requireMemberNames->Length(); i++) {
                     auto name = requireMemberNames->Get(closureContext, i).ToLocalChecked();
                     v8::Local<v8::Value> oldObject;
-                    if (!oldRequireObject->Get(oldRequireObject->CreationContext(), name).ToLocal(&oldObject)) {
+                    if (!oldRequireObject->Get(oldRequireObject->GetCreationContextChecked(), name).ToLocal(&oldObject)) {
                         Q_ASSERT(false);  // This should never happen, the property has been reported as existing
                     }
                     if (!newRequireObject->Set(closureContext, name,oldObject).FromMaybe(false)) {
