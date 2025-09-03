@@ -1,7 +1,9 @@
-
 macro(TARGET_AFF)
-    find_package(artery-font-format)
-    target_link_libraries(${TARGET_NAME} artery-font-format::artery-font-format)
+    if(OVERTE_USE_SYSTEM_LIBS)
+        find_path(AFF_INCLUDE_DIRS "artery-font/artery-font.h")
+        target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${AFF_INCLUDE_DIRS})
+    else()
+        find_package(artery-font-format REQUIRED)
+        target_link_libraries(${TARGET_NAME} artery-font-format::artery-font-format)
+    endif()
 endmacro()
-
-
