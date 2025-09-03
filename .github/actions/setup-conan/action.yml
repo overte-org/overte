@@ -8,7 +8,7 @@ runs:
     run: |
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-          echo "CONAN_HOME=~/.conan2" >> $GITHUB_ENV
+          echo "CONAN_HOME=$HOME/.conan2" >> $GITHUB_ENV
         fi
 
         # Mac build variables
