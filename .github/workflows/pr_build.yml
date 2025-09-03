@@ -174,13 +174,6 @@ jobs:
         submodules: false
         fetch-depth: 1
 
-    - name: Cache conan
-      id: conan-cache
-      uses: actions/cache@v4
-      with:
-        path: ${{ env.CONAN_HOME }}
-        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-
     - name: Install dependencies
       shell: bash
       if: startsWith(matrix.os, 'Ubuntu') || contains(matrix.os, 'Debian') || startsWith(matrix.os, 'macOS')
