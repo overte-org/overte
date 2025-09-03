@@ -57,6 +57,8 @@ jobs:
 
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
+        # Try to avoid hitting Windows' PATH limit.
+        echo "CONAN_HOME=C:\Conan" >> $GITHUB_ENV
         echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
 
         echo "PYTHON_EXEC=python" >> $GITHUB_ENV
@@ -89,7 +91,7 @@ jobs:
       uses: actions/cache@v4
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ~/.conan2/
+        path: ${{ env.CONAN_HOME }}
 
     - name: Override Windows package versions
       shell: pwsh
@@ -138,7 +140,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ~/.conan2/
+        path: ${{ env.CONAN_HOME }}
 
     - name: Configure CMake
       shell: bash

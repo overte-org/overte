@@ -89,6 +89,7 @@ jobs:
 
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
+          echo "CONAN_HOME=~/.conan2" >> $GITHUB_ENV
           echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
@@ -115,6 +116,7 @@ jobs:
 
         # Mac build variables
         if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
+          echo "CONAN_HOME=~/.conan2" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=dmg" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
@@ -127,6 +129,8 @@ jobs:
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" = "Windows"* ]]; then
+          # Try to avoid hitting Windows' PATH limit.
+          echo "CONAN_HOME=C:\Conan" >> $GITHUB_ENV
           echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
@@ -174,8 +178,8 @@ jobs:
       id: conan-cache
       uses: actions/cache@v4
       with:
+        path: ${{ env.CONAN_HOME }}
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ~/.conan2/
 
     - name: Install dependencies
       shell: bash
@@ -246,7 +250,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ~/.conan2/
+        path: ${{ env.CONAN_HOME }}
 
     - name: Configure CMake
       shell: bash
