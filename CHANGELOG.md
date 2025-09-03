@@ -45,6 +45,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Added back missing LOD setting to the graphics settings (PR1686)
 - Fixed erasing chat messages requiring a restart (PR1670)
 - Fixed some regressions introduced by the automated entity property serialization (PR1242,PR1655)
+- Fixed crash when loading shader cache also improving startup times (PR1772)
 
 ### Changes
 - Lowered maximum MTU (PR1604)
