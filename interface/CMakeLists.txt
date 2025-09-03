@@ -247,6 +247,7 @@ target_breakpad()
 target_json()
 target_glm()
 target_discord_rpc()
+target_quazip()
 
 # perform standard include and linking for found externals
 foreach(EXTERNAL ${OPTIONAL_EXTERNALS})
