@@ -78,7 +78,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Added API to hide desktop menu bar (PR1692)
 - Added user count per Place to the Places app where available (PR1724)
 - Added in-world context menu (PR1749,PR1789,PR1768)
-    This context menu has an API. Check out the `scripts/tutorials/contextMenu/` folder for exampled. The API module is at `scripts/modules/contextMenu.js`.
+    This context menu has an API. Check out the `scripts/tutorials/contextMenu/` folder for examples. The API module is at `scripts/modules/contextMenu.js`.
 - Added OpenXR body tracking support (PR1583)
 - Added support for OpenXR palm poses (PR1583)
 - Added toggle for controller haptic in OpenXR (PR1583)
