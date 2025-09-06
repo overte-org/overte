@@ -190,7 +190,7 @@ void outputBits(unsigned char byte, QDebug* continuedDebug) {
     qts << qSetPadChar('0');
 
     if (isalnum(byte)) {
-        qts << " (" << QString(byte) << ")   : ";
+        qts << " (" << QString(QChar(byte)) << ")   : ";
     } else {
         qts << " (0x" << Qt::hex << qSetFieldWidth(2) << byte << qSetFieldWidth(0) << "): ";
     }
@@ -752,9 +752,9 @@ QString formatSecondsElapsed(float seconds) {
         } else {
             result += " day ";
         }
-        result += QDateTime::fromTime_t(rest).toUTC().toString("h 'hours' m 'minutes' s 'seconds'");
+        result += QDateTime::fromSecsSinceEpoch(rest).toUTC().toString("h 'hours' m 'minutes' s 'seconds'");
     } else {
-        result = QDateTime::fromTime_t(seconds).toUTC().toString("h 'hours' m 'minutes' s 'seconds'");
+        result = QDateTime::fromSecsSinceEpoch(seconds).toUTC().toString("h 'hours' m 'minutes' s 'seconds'");
     }
     return result;
 }

@@ -197,7 +197,7 @@ void DomainBaker::addTextureBaker(const QString& property, const QString& url, i
 
         // setup a texture baker for this URL, as long as we aren't baking a texture already
         if (!_textureBakers.contains(key)) {
-            auto baseTextureFileName = _textureFileNamer.createBaseTextureFileName(textureURL.fileName(), type);
+            auto baseTextureFileName = _textureFileNamer.createBaseTextureFileName(QFileInfo(textureURL.fileName()), type);
 
             // setup a baker for this texture
             QSharedPointer<TextureBaker> textureBaker {
