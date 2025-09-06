@@ -14,7 +14,6 @@
 
 #include "Application.h"
 
-#include <QDesktopWidget>
 #include <QDesktopServices>
 #include <QtGui/QClipboard>
 #include <QtNetwork/QLocalSocket>
@@ -217,7 +216,9 @@ Application::Application(
 ) :
     QApplication(argc, argv),
 #ifdef USE_GL
-    _window(new MainWindow(desktop())),
+    // QT6TODO: is this correct?
+    _window(new MainWindow()),
+    //_window(new MainWindow(desktop())),
 #else
     _vkWindow(new VKWindow()),
     _vkWindowWrapper(QWidget::createWindowContainer(_vkWindow)),
@@ -416,7 +417,7 @@ QString Application::getUserAgent() {
     if (QThread::currentThread() != thread()) {
         QString userAgent;
 
-        BLOCKING_INVOKE_METHOD(this, "getUserAgent", Q_RETURN_ARG(QString, userAgent));
+        BLOCKING_INVOKE_METHOD(this, "getUserAgent", Q_GENERIC_RETURN_ARG(QString, userAgent));
 
         return userAgent;
     }
@@ -614,7 +615,8 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject(sgp, "Menu", MenuScriptingInterface::getInstance());
     scriptEngine->registerGlobalObject(sgp, "DesktopPreviewProvider", DependencyManager::get<DesktopPreviewProvider>().data());
 #if !defined(DISABLE_QML)
-    scriptEngine->registerGlobalObject(sgp, "Stats", Stats::getInstance());
+    // QT6TODO: Stats instance is not created?
+    //scriptEngine->registerGlobalObject(sgp, "Stats", Stats::getInstance());
 #endif
     scriptEngine->registerGlobalObject(sgp, "Settings", SettingsScriptingInterface::getInstance());
     scriptEngine->registerGlobalObject(sgp, "Snapshot", DependencyManager::get<Snapshot>().data());
@@ -1010,7 +1012,7 @@ std::map<QString, QString> Application::prepareServerlessDomainContents(QUrl dom
 
 void Application::loadServerlessDomain(QUrl domainURL) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "loadServerlessDomain", Q_ARG(QUrl, domainURL));
+        QMetaObject::invokeMethod(this, "loadServerlessDomain", Q_GENERIC_ARG(QUrl, domainURL));
         return;
     }
 
@@ -1042,7 +1044,7 @@ void Application::loadServerlessDomain(QUrl domainURL) {
 
 void Application::loadErrorDomain(QUrl domainURL) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "loadErrorDomain", Q_ARG(QUrl, domainURL));
+        QMetaObject::invokeMethod(this, "loadErrorDomain", Q_GENERIC_ARG(QUrl, domainURL));
         return;
     }
 

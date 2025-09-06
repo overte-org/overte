@@ -9,9 +9,8 @@
 #include "StereoDisplayPlugin.h"
 
 #include <QtGui/QScreen>
-#include <QtWidgets/QAction>
+#include <QAction>
 #include <QtWidgets/QApplication>
-#include <QtWidgets/QDesktopWidget>
 
 #include <ViewFrustum.h>
 #include <MatrixStack.h>

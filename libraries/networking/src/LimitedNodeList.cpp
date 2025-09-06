@@ -281,7 +281,7 @@ bool LimitedNodeList::packetVersionMatch(const udt::Packet& packet) {
 
                 if (!hasBeenOutput) {
                     sourcedVersionDebugSuppressMap.insert(sourceID, headerType);
-                    senderString = uuidStringWithoutCurlyBraces(sourceID.toString());
+                    senderString = uuidStringWithoutCurlyBraces(sourceID);
                 }
             }
         }

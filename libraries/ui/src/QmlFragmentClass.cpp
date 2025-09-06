@@ -45,7 +45,7 @@ ScriptValue QmlFragmentClass::internal_constructor(ScriptContext* context, Scrip
     Q_ASSERT(retVal);
     if (QThread::currentThread() != qApp->thread()) {
         retVal->moveToThread(qApp->thread());
-        BLOCKING_INVOKE_METHOD(retVal, "initQml", Q_ARG(QVariantMap, properties));
+        BLOCKING_INVOKE_METHOD(retVal, "initQml", Q_GENERIC_ARG(QVariantMap, properties));
     } else {
         retVal->initQml(properties);
     }

@@ -24,6 +24,7 @@
 #include <QtCore/QDebug>
 #include <QtCore/QCoreApplication>
 #include <QUuid>
+#include <QVariant>
 
 #include "NumericalConstants.h"
 // When writing out avatarEntities to a QByteArray, if the parentID is the ID of MyAvatar, use this ID instead.  This allows

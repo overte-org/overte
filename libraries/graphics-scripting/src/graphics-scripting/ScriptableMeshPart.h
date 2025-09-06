@@ -339,5 +339,6 @@ namespace scriptable {
     };
 }
 
-Q_DECLARE_METATYPE(scriptable::ScriptableMeshPartPointer)
-Q_DECLARE_METATYPE(QVector<scriptable::ScriptableMeshPartPointer>)
+// QT6TODO:
+//Q_DECLARE_METATYPE(scriptable::ScriptableMeshPartPointer)
+//Q_DECLARE_METATYPE(QVector<scriptable::ScriptableMeshPartPointer>)

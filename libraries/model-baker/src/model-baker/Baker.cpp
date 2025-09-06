@@ -193,7 +193,7 @@ namespace baker {
         }
     };
 
-    Baker::Baker(const hfm::Model::Pointer& hfmModel, const hifi::VariantHash& mapping, const hifi::URL& materialMappingBaseURL) :
+    Baker::Baker(const hfm::Model::Pointer& hfmModel, const hifi::VariantMultiHash& mapping, const hifi::URL& materialMappingBaseURL) :
         _engine(std::make_shared<Engine>(BakerEngineBuilder::JobModel::create("Baker"), std::make_shared<BakeContext>())) {
         _engine->feedInput<BakerEngineBuilder::Input>(0, hfmModel);
         _engine->feedInput<BakerEngineBuilder::Input>(1, mapping);

@@ -227,8 +227,8 @@ ScriptableResource* ResourceCache::prefetch(const QUrl& url, void* extra, size_t
     if (QThread::currentThread() != thread()) {
         // Must be called in thread to ensure getResource returns a valid pointer
         BLOCKING_INVOKE_METHOD(this, "prefetchAndMoveToThread",
-            Q_RETURN_ARG(ScriptableResource*, result),
-            Q_ARG(QUrl, url), Q_ARG(void*, extra), Q_ARG(size_t, extraHash), Q_ARG(QThread*, QThread::currentThread()));
+            Q_GENERIC_RETURN_ARG(ScriptableResource*, result),
+            Q_GENERIC_ARG(QUrl, url), Q_GENERIC_ARG(void*, extra), Q_GENERIC_ARG(size_t, extraHash), Q_GENERIC_ARG(QThread*, QThread::currentThread()));
         return result;
     }
 
@@ -331,7 +331,7 @@ QVariantList ResourceCache::getResourceList() {
     if (QThread::currentThread() != thread()) {
         // NOTE: invokeMethod does not allow a const QObject*
         BLOCKING_INVOKE_METHOD(this, "getResourceList",
-            Q_RETURN_ARG(QVariantList, list));
+            Q_GENERIC_RETURN_ARG(QVariantList, list));
     } else {
         QList<QUrl> resources;
         {

@@ -20,6 +20,8 @@
 #include <mutex>
 #include <queue>
 
+#include <QAudioSource>
+#include <QAudioSink>
 #include <QFuture>
 #include <QtCore/QtGlobal>
 #include <QtCore/QByteArray>
@@ -168,15 +170,15 @@ public:
 
     bool outputLocalInjector(const AudioInjectorPointer& injector) override;
 
-    HifiAudioDeviceInfo getActiveAudioDevice(QAudio::Mode mode) const;
-    QList<HifiAudioDeviceInfo> getAudioDevices(QAudio::Mode mode) const;
+    HifiAudioDeviceInfo getActiveAudioDevice(QAudioDevice::Mode mode) const;
+    QList<HifiAudioDeviceInfo> getAudioDevices(QAudioDevice::Mode mode) const;
   
     void enablePeakValues(bool enable) { _enablePeakValues = enable; }
     bool peakValuesAvailable() const;
 
     static const float CALLBACK_ACCELERATOR_RATIO;
 
-    bool getNamedAudioDeviceForModeExists(QAudio::Mode mode, const QString& deviceName);
+    bool getNamedAudioDeviceForModeExists(QAudioDevice::Mode mode, const QString& deviceName);
 
     void setRecording(bool isRecording) { _isRecording = isRecording; };
     bool getRecording() { return _isRecording; };
@@ -254,9 +256,9 @@ public slots:
     bool shouldLoopbackInjectors() override { return _shouldEchoToServer; }
 
     // calling with a null QAudioDevice will use the system default
-    bool switchAudioDevice(QAudio::Mode mode, const HifiAudioDeviceInfo& deviceInfo = HifiAudioDeviceInfo());
-    bool switchAudioDevice(QAudio::Mode mode, const QString& deviceName, bool isHmd);
-    void setHmdAudioName(QAudio::Mode mode, const QString& name);
+    bool switchAudioDevice(QAudioDevice::Mode mode, const HifiAudioDeviceInfo& deviceInfo = HifiAudioDeviceInfo());
+    bool switchAudioDevice(QAudioDevice::Mode mode, const QString& deviceName, bool isHmd);
+    void setHmdAudioName(QAudioDevice::Mode mode, const QString& name);
     // Qt opensles plugin is not able to detect when the headset is plugged in
     void setHeadsetPluggedIn(bool pluggedIn);
 
@@ -293,8 +295,8 @@ signals:
 
     void changeDevice(const HifiAudioDeviceInfo& outputDeviceInfo);
 
-    void deviceChanged(QAudio::Mode mode, const HifiAudioDeviceInfo& device);
-    void devicesChanged(QAudio::Mode mode, const QList<HifiAudioDeviceInfo>& devices);
+    void deviceChanged(QAudioDevice::Mode mode, const HifiAudioDeviceInfo& device);
+    void devicesChanged(QAudioDevice::Mode mode, const QList<HifiAudioDeviceInfo>& devices);
     void peakValueListChanged(const QList<float> peakValueList);
 
     void receivedFirstPacket();
@@ -372,19 +374,19 @@ private:
     Gate _gate{ this };
 
     Mutex _injectorsMutex;
-    QAudioInput* _audioInput{ nullptr };
+    QAudioSource* _audioInput{ nullptr };
     QTimer* _dummyAudioInput{ nullptr };
     QAudioFormat _desiredInputFormat;
     QAudioFormat _inputFormat;
     QIODevice* _inputDevice{ nullptr };
     int _numInputCallbackBytes{ 0 };
-    QAudioOutput* _audioOutput{ nullptr };
+    QAudioSink* _audioOutput{ nullptr };
     std::atomic<bool> _audioOutputInitialized { false };
     QAudioFormat _desiredOutputFormat;
     QAudioFormat _outputFormat;
     int _outputFrameSize{ 0 };
     int _numOutputCallbackBytes{ 0 };
-    QAudioOutput* _loopbackAudioOutput{ nullptr };
+    QAudioSink* _loopbackAudioOutput{ nullptr };
     QIODevice* _loopbackOutputDevice{ nullptr };
     AudioRingBuffer _inputRingBuffer{ 0 };
     LocalInjectorsStream _localInjectorsStream{ 0 , 1 };

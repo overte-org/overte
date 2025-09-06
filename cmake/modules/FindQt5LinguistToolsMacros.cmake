@@ -30,7 +30,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-function(QT5_CREATE_TRANSLATION_CUSTOM _qm_files)
+function(QT6_CREATE_TRANSLATION_CUSTOM _qm_files)
     set(options)
     set(oneValueArgs)
     set(multiValueArgs OPTIONS)
@@ -76,7 +76,7 @@ function(QT5_CREATE_TRANSLATION_CUSTOM _qm_files)
         get_source_file_property(_qm_output_location ${_ts_file} OUTPUT_LOCATION)
         add_custom_command(
             OUTPUT ${_tmpts_file}
-            COMMAND ${Qt5_LUPDATE_EXECUTABLE}
+            COMMAND ${Qt6_LUPDATE_EXECUTABLE}
             ARGS ${_lupdate_options} "@${_ts_lst_file}" -ts ${_ts_file}
             COMMAND ${CMAKE_COMMAND} -E copy ${_ts_file} ${_tmpts_file}
             DEPENDS ${_my_sources} ${_ts_lst_file} VERBATIM)
@@ -84,12 +84,12 @@ function(QT5_CREATE_TRANSLATION_CUSTOM _qm_files)
  	    set_property(SOURCE ${_tmpts_file} PROPERTY OUTPUT_LOCATION ${_qm_output_location})
  	endif()
     endforeach()
-    qt5_add_translation(${_qm_files} ${_my_temptsfiles})
+    qt6_add_translation(${_qm_files} ${_my_temptsfiles})
     set(${_qm_files} ${${_qm_files}} PARENT_SCOPE)
 endfunction()
 
 
-function(QT5_ADD_TRANSLATION _qm_files)
+function(QT6_ADD_TRANSLATION _qm_files)
     foreach(_current_FILE ${ARGN})
         get_filename_component(_abs_FILE ${_current_FILE} ABSOLUTE)
         get_filename_component(qm ${_abs_FILE} NAME_WE)
@@ -102,7 +102,7 @@ function(QT5_ADD_TRANSLATION _qm_files)
         endif()
 
         add_custom_command(OUTPUT ${qm}
-            COMMAND ${Qt5_LRELEASE_EXECUTABLE}
+            COMMAND ${Qt6_LRELEASE_EXECUTABLE}
             ARGS ${_abs_FILE} -qm ${qm}
             DEPENDS ${_abs_FILE} VERBATIM
         )

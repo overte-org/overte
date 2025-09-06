@@ -129,7 +129,7 @@ JSConsole::JSConsole(QWidget* parent, const ScriptManagerPointer& scriptManager)
     QWidget(parent),
     _ui(new Ui::Console),
     _currentCommandInHistory(NO_CURRENT_HISTORY_COMMAND),
-    _savedHistoryFilename(QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/" + HISTORY_FILENAME),
+    _savedHistoryFilename(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + HISTORY_FILENAME),
     _commandHistory(_readLines(_savedHistoryFilename)),
     _completer(new QCompleter(this)),
     _monospaceFont(QFontDatabase::systemFont(QFontDatabase::FixedFont)),
@@ -512,9 +512,9 @@ bool JSConsole::eventFilter(QObject* sender, QEvent* event) {
             const int MODULE_INDEX = 3;
             const int PROPERTY_INDEX = 4;
             // TODO: disallow invalid characters on left of property
-            QRegExp regExp("((([A-Za-z0-9_\\.]+)\\.)|(?!\\.))([a-zA-Z0-9_]*)$");
-            regExp.indexIn(leftOfCursor);
-            auto rexExpCapturedTexts = regExp.capturedTexts();
+            QRegularExpression regExp("((([A-Za-z0-9_\\.]+)\\.)|(?!\\.))([a-zA-Z0-9_]*)$");
+            auto regExpMatch = regExp.match(leftOfCursor);
+            auto rexExpCapturedTexts = regExpMatch.capturedTexts();
             auto memberOf = rexExpCapturedTexts[MODULE_INDEX];
             completionPrefix = rexExpCapturedTexts[PROPERTY_INDEX];
             bool switchedModule = false;
@@ -591,7 +591,8 @@ void JSConsole::scrollToBottom() {
 void JSConsole::appendMessage(const QString& gutter, const QString& message, const QColor& fgColor, const QColor& bgColor) {
     QWidget* logLine = new QWidget(_ui->logArea);
     QHBoxLayout* layout = new QHBoxLayout(logLine);
-    layout->setMargin(0);
+    // QT6TODO:
+    //layout->setMargin(0);
     layout->setSpacing(4);
 
     QLabel* gutterLabel = new QLabel(logLine);

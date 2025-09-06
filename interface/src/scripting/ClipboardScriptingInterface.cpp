@@ -28,24 +28,24 @@ float ClipboardScriptingInterface::getClipboardContentsLargestDimension() {
 bool ClipboardScriptingInterface::exportEntities(const QString& filename, const QVector<QUuid>& entityIDs, const QVariantMap& options) {
     bool retVal;
     BLOCKING_INVOKE_METHOD(qApp, "exportEntities",
-                              Q_RETURN_ARG(bool, retVal),
-                              Q_ARG(const QString&, filename),
-                              Q_ARG(const QVector<QUuid>&, entityIDs),
-                              Q_ARG(const glm::vec3*, nullptr),
-                              Q_ARG(const QVariantMap&, options));
+                              Q_GENERIC_RETURN_ARG(bool, retVal),
+                              Q_GENERIC_ARG(const QString&, filename),
+                              Q_GENERIC_ARG(const QVector<QUuid>&, entityIDs),
+                              Q_GENERIC_ARG(const glm::vec3*, nullptr),
+                              Q_GENERIC_ARG(const QVariantMap&, options));
     return retVal;
 }
 
 bool ClipboardScriptingInterface::exportEntities(const QString& filename, float x, float y, float z, float scale, const QVariantMap& options) {
     bool retVal;
     BLOCKING_INVOKE_METHOD(qApp, "exportEntities",
-                              Q_RETURN_ARG(bool, retVal),
-                              Q_ARG(const QString&, filename),
-                              Q_ARG(float, x),
-                              Q_ARG(float, y),
-                              Q_ARG(float, z),
-                              Q_ARG(float, scale),
-                              Q_ARG(const QVariantMap&, options));
+                              Q_GENERIC_RETURN_ARG(bool, retVal),
+                              Q_GENERIC_ARG(const QString&, filename),
+                              Q_GENERIC_ARG(float, x),
+                              Q_GENERIC_ARG(float, y),
+                              Q_GENERIC_ARG(float, z),
+                              Q_GENERIC_ARG(float, scale),
+                              Q_GENERIC_ARG(const QVariantMap&, options));
     return retVal;
 }
 
@@ -56,20 +56,20 @@ bool ClipboardScriptingInterface::importEntities(
 ) {
     bool retVal;
     BLOCKING_INVOKE_METHOD(qApp, "importEntities",
-                              Q_RETURN_ARG(bool, retVal),
-                              Q_ARG(const QString&, filename),
-                              Q_ARG(const bool, isObservable),
-                              Q_ARG(const qint64, callerId));
+                              Q_GENERIC_RETURN_ARG(bool, retVal),
+                              Q_GENERIC_ARG(const QString&, filename),
+                              Q_GENERIC_ARG(const bool, isObservable),
+                              Q_GENERIC_ARG(const qint64, callerId));
     return retVal;
 }
 
 QVector<EntityItemID> ClipboardScriptingInterface::pasteEntities(glm::vec3 position, const QString& entityHostType) {
     QVector<EntityItemID> retVal;
     BLOCKING_INVOKE_METHOD(qApp, "pasteEntities",
-                              Q_RETURN_ARG(QVector<EntityItemID>, retVal),
-                              Q_ARG(const QString&, entityHostType),
-                              Q_ARG(float, position.x),
-                              Q_ARG(float, position.y),
-                              Q_ARG(float, position.z));
+                              Q_GENERIC_RETURN_ARG(QVector<EntityItemID>, retVal),
+                              Q_GENERIC_ARG(const QString&, entityHostType),
+                              Q_GENERIC_ARG(float, position.x),
+                              Q_GENERIC_ARG(float, position.y),
+                              Q_GENERIC_ARG(float, position.z));
     return retVal;
 }

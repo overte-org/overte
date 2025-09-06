@@ -30,7 +30,7 @@ T glmFromJson(const QJsonValue& json) {
     T result;
     if (json.isArray()) {
         QJsonArray array = json.toArray();
-        auto length = std::min(array.size(), result.length());
+        auto length = std::min(array.size(), static_cast<qsizetype>(result.length()));
         for (auto i = 0; i < length; ++i) {
             result[i] = (float)array[i].toDouble();
         }
@@ -136,7 +136,7 @@ void qObjectFromJsonValue(const QJsonValue& j, QObject& o) {
                 qObjectFromJsonValue(it.value(), *child);
             }
         } else {
-            o.setProperty(key.c_str(), it.value());
+            o.setProperty(key.c_str(), it.value().toVariant());
         }
     }
 }
