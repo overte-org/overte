@@ -336,7 +336,7 @@ void Application::windowMinimizedChanged(bool minimized) {
 
 void Application::keyPressEvent(QKeyEvent* event) {
     if (!event->isAutoRepeat()) {
-        _keysPressed.insert(event->key(), *event);
+        _keysPressed.insert(event->key(), KeyEventRecord(event->key(), event->text()));
     }
 
     _controllerScriptingInterface->emitKeyPressEvent(event); // send events to any registered scripts
@@ -607,10 +607,10 @@ void Application::synthesizeKeyReleasEvents() {
     // synthesize events for keys currently pressed, since we may not get their release events
     // Because our key event handlers may manipulate _keysPressed, lets swap the keys pressed into a local copy,
     // clearing the existing list.
-    QHash<int, QKeyEvent> keysPressed;
+    QHash<int, KeyEventRecord> keysPressed;
     std::swap(keysPressed, _keysPressed);
-    for (auto& ev : keysPressed) {
-        QKeyEvent synthesizedEvent { QKeyEvent::KeyRelease, ev.key(), Qt::NoModifier, ev.text() };
+    for (auto& eventRecord : keysPressed) {
+        QKeyEvent synthesizedEvent { QKeyEvent::KeyRelease, eventRecord.key, Qt::NoModifier, eventRecord.text };
         keyReleaseEvent(&synthesizedEvent);
     }
 }

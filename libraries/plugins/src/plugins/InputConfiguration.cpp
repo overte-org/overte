@@ -24,7 +24,7 @@ QStringList InputConfiguration::inputPlugins() {
     if (QThread::currentThread() != thread()) {
         QStringList result;
         BLOCKING_INVOKE_METHOD(this, "inputPlugins",
-                                  Q_RETURN_ARG(QStringList, result));
+                                  Q_GENERIC_RETURN_ARG(QStringList, result));
         return result;
     }
 
@@ -46,7 +46,7 @@ QStringList InputConfiguration::activeInputPlugins() {
     if (QThread::currentThread() != thread()) {
         QStringList result;
         BLOCKING_INVOKE_METHOD(this, "activeInputPlugins",
-                                   Q_RETURN_ARG(QStringList, result));
+                                   Q_GENERIC_RETURN_ARG(QStringList, result));
         return result;
     }
 
@@ -69,8 +69,8 @@ QString InputConfiguration::configurationLayout(QString pluginName) {
     if (QThread::currentThread() != thread()) {
         QString result;
         BLOCKING_INVOKE_METHOD(this, "configurationLayout",
-                                  Q_RETURN_ARG(QString, result),
-                                  Q_ARG(QString, pluginName));
+                                  Q_GENERIC_RETURN_ARG(QString, result),
+                                  Q_GENERIC_ARG(QString, pluginName));
         return result;
     }
 
@@ -86,8 +86,8 @@ QString InputConfiguration::configurationLayout(QString pluginName) {
 void InputConfiguration::setConfigurationSettings(QJsonObject configurationSettings, QString pluginName) {
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "setConfigurationSettings",
-                                  Q_ARG(QJsonObject, configurationSettings),
-                                  Q_ARG(QString, pluginName));
+                                  Q_GENERIC_ARG(QJsonObject, configurationSettings),
+                                  Q_GENERIC_ARG(QString, pluginName));
         return;
     }
 
@@ -102,8 +102,8 @@ QJsonObject InputConfiguration::configurationSettings(QString pluginName) {
     if (QThread::currentThread() != thread()) {
         QJsonObject result;
         BLOCKING_INVOKE_METHOD(this, "configurationSettings",
-                                  Q_RETURN_ARG(QJsonObject, result),
-                                  Q_ARG(QString, pluginName));
+                                  Q_GENERIC_RETURN_ARG(QJsonObject, result),
+                                  Q_GENERIC_ARG(QString, pluginName));
         return result;
     }
 
@@ -133,7 +133,7 @@ bool InputConfiguration::uncalibratePlugin(QString pluginName) {
     if (QThread::currentThread() != thread()) {
         bool result;
         BLOCKING_INVOKE_METHOD(this, "uncalibratePlugin",
-                                  Q_ARG(bool, result));
+                                  Q_GENERIC_ARG(bool, result));
         return result;
     }
 

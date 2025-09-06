@@ -49,7 +49,7 @@ unsigned int PointerScriptingInterface::createPointerInternal(const PickQuery::P
     // Interaction with managers should always happen on the main thread
     if (QThread::currentThread() != qApp->thread()) {
         unsigned int result;
-        BLOCKING_INVOKE_METHOD(this, "createPointerInternal", Q_RETURN_ARG(unsigned int, result), Q_ARG(PickQuery::PickType, type), Q_ARG(PointerProperties, properties));
+        BLOCKING_INVOKE_METHOD(this, "createPointerInternal", Q_GENERIC_RETURN_ARG(unsigned int, result), Q_GENERIC_ARG(PickQuery::PickType, type), Q_GENERIC_ARG(PointerProperties, properties));
         return result;
     }
 

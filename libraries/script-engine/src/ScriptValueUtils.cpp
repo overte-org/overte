@@ -1097,7 +1097,8 @@ QVector<EntityItemID> qVectorEntityItemIDFromScriptValue(const ScriptValue& arra
     newVector.reserve(length);
     for (int i = 0; i < length; i++) {
         QString uuidAsString = array.property(i).toString();
-        EntityItemID fromString(uuidAsString);
+        QUuid uuid(uuidAsString);
+        EntityItemID fromString(uuid);
         newVector << fromString;
     }
     return newVector;

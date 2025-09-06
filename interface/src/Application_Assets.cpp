@@ -17,6 +17,7 @@
 
 #include <QQuickItem>
 #include <QTemporaryDir>
+#include <QtCore5Compat/QRegExp>
 
 #include <AddressManager.h>
 #include <AssetUpload.h>
@@ -171,7 +172,7 @@ void Application::addAssetToWorld(QString path, QString zipFile, bool isZip) {
     QString mapping;
     QString filename = filenameFromPath(path);
     if (isZip) {
-        QString assetName = zipFile.section("/", -1).remove(QRegExp("[.]zip(.*)$"));
+        QString assetName = zipFile.section("/", -1).remove(QRegularExpression("[.]zip(.*)$"));
         QString assetFolder = path.section("model_repo/", -1);
         mapping = "/" + assetName + "/" + assetFolder;
     } else {

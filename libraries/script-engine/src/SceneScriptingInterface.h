@@ -17,6 +17,8 @@
 #ifndef hifi_SceneScriptingInterface_h
 #define hifi_SceneScriptingInterface_h
 
+#include <QObject>
+
 #include <DependencyManager.h>
 
 /*@jsdoc
