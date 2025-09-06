@@ -139,7 +139,7 @@ void AvatarBookmarks::addBookmark(const QString& bookmarkName) {
 
 void AvatarBookmarks::addBookmarkInternal(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "addBookmark", Q_ARG(QString, bookmarkName));
+        BLOCKING_INVOKE_METHOD(this, "addBookmark", Q_GENERIC_ARG(QString, bookmarkName));
         return;
     }
     QVariantMap bookmark = getAvatarDataToBookmark();
@@ -156,7 +156,7 @@ void AvatarBookmarks::saveBookmark(const QString& bookmarkName) {
 
 void AvatarBookmarks::saveBookmarkInternal(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "saveBookmark", Q_ARG(QString, bookmarkName));
+        BLOCKING_INVOKE_METHOD(this, "saveBookmark", Q_GENERIC_ARG(QString, bookmarkName));
         return;
     }
     if (contains(bookmarkName)) {
@@ -173,7 +173,7 @@ void AvatarBookmarks::removeBookmark(const QString& bookmarkName) {
 
 void AvatarBookmarks::removeBookmarkInternal(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "removeBookmark", Q_ARG(QString, bookmarkName));
+        BLOCKING_INVOKE_METHOD(this, "removeBookmark", Q_GENERIC_ARG(QString, bookmarkName));
         return;
     }
 
@@ -229,7 +229,7 @@ void AvatarBookmarks::loadBookmark(const QString& bookmarkName) {
 
 void AvatarBookmarks::loadBookmarkInternal(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "loadBookmark", Q_ARG(QString, bookmarkName));
+        BLOCKING_INVOKE_METHOD(this, "loadBookmark", Q_GENERIC_ARG(QString, bookmarkName));
         return;
     }
 
@@ -276,7 +276,7 @@ void AvatarBookmarks::loadBookmarkInternal(const QString& bookmarkName) {
 
 void AvatarBookmarks::readFromFile() {
     // migrate old avatarbookmarks.json, used to be in 'local' folder on windows
-    QString oldConfigPath = QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/" + AVATARBOOKMARKS_FILENAME;
+    QString oldConfigPath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + AVATARBOOKMARKS_FILENAME;
     QFile oldConfig(oldConfigPath);
 
     // I imagine that in a year from now, this code for migrating (as well as the two lines above)
@@ -306,7 +306,7 @@ QVariantMap AvatarBookmarks::getBookmarkInternal(const QString &bookmarkName)
 {
     if (QThread::currentThread() != thread()) {
         QVariantMap result;
-        BLOCKING_INVOKE_METHOD(this, "getBookmark", Q_RETURN_ARG(QVariantMap, result), Q_ARG(QString, bookmarkName));
+        BLOCKING_INVOKE_METHOD(this, "getBookmark", Q_GENERIC_RETURN_ARG(QVariantMap, result), Q_GENERIC_ARG(QString, bookmarkName));
         return result;
     }
 

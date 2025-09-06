@@ -1399,7 +1399,7 @@ QStringList Model::getJointNames() const {
     if (QThread::currentThread() != thread()) {
         QStringList result;
         BLOCKING_INVOKE_METHOD(const_cast<Model*>(this), "getJointNames",
-            Q_RETURN_ARG(QStringList, result));
+            Q_GENERIC_RETURN_ARG(QStringList, result));
         return result;
     }
     return isLoaded() ? getHFMModel().getJointNames() : QStringList();
