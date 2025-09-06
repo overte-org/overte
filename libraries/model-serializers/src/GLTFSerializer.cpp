@@ -44,6 +44,7 @@
 #include <procedural/ProceduralMaterialCache.h>
 
 #include "FBXSerializer.h"
+#include "shared/QtHelpers.h"
 
 float atof_locale_independent(char* str) {
     //TODO: Once we have C++17 we can use std::from_chars
@@ -188,7 +189,7 @@ bool findAttribute(const QString &name, const cgltf_attribute *attributes, size_
     return false;
 }
 
-bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& mapping, const hifi::URL& url) {
+bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantMultiHash& mapping, const hifi::URL& url) {
     hfmModel.originalURL = url.toString();
 
     int numNodes = (int)_data->nodes_count;
@@ -999,7 +1000,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
 
                     // Build list of blendshapes from FST and model.
                     typedef QPair<int, float> WeightedIndex;
-                    hifi::VariantMultiHash blendshapeMappings = mapping.value("bs").toHash();
+                    hifi::VariantMultiHash blendshapeMappings = qVariantToQMultiHash(mapping.value("bs"));
                     QMultiHash<QString, WeightedIndex> blendshapeIndices;
                     for (int i = 0;; ++i) {
                         auto blendshapeName = QString(BLENDSHAPE_NAMES[i]);
@@ -1173,7 +1174,7 @@ std::unique_ptr<hfm::Serializer::Factory> GLTFSerializer::getFactory() const {
     return std::make_unique<hfm::Serializer::SimpleFactory<GLTFSerializer>>();
 }
 
-HFMModel::Pointer GLTFSerializer::read(const hifi::ByteArray& data, const hifi::VariantHash& mapping, const hifi::URL& url) {
+HFMModel::Pointer GLTFSerializer::read(const hifi::ByteArray& data, const hifi::VariantMultiHash& mapping, const hifi::URL& url) {
 
     _url = url;
 

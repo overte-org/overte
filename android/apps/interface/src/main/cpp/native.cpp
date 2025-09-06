@@ -407,7 +407,7 @@ Java_io_highfidelity_hifiinterface_fragment_LoginFragment_retrieveAccessToken(JN
 
     QMetaObject::invokeMethod(accountManager.data(), "requestAccessTokenWithAuthCode",
                               Q_ARG(const QString&, authCode), Q_ARG(const QString&, clientId),
-                              Q_ARG(const QString&, clientSecret), Q_ARG(const QString&, redirectUri));
+                              Q_GENERIC_ARG(const QString&, clientSecret), Q_GENERIC_ARG(const QString&, redirectUri));
 
 }
 

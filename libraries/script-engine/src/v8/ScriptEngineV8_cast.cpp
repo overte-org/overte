@@ -564,7 +564,7 @@ bool ScriptEngineV8::convertJSArrayToVariant(v8::Local<v8::Array> array, QVarian
     for (int i = 0; i < length; i++) {
         v8::Local<v8::Value> v8Property;
         if (!array->Get(context, i).ToLocal(&v8Property)) {
-            qCDebug(scriptengine_v8) << "ScriptEngineV8::convertJSArrayToVariant could not get property: " + QString(i);
+            qCDebug(scriptengine_v8) << "ScriptEngineV8::convertJSArrayToVariant could not get property: " + QString::number(i);
             continue;
         }
         QVariant property;
@@ -572,7 +572,7 @@ bool ScriptEngineV8::convertJSArrayToVariant(v8::Local<v8::Array> array, QVarian
         if (castValueToVariant(V8ScriptValue(this, v8Property), property, QMetaType::UnknownType)) {
             properties.append(property);
         } else {
-            qCDebug(scriptengine_v8) << "ScriptEngineV8::convertJSArrayToVariant could cast property to variant: " + QString(i);
+            qCDebug(scriptengine_v8) << "ScriptEngineV8::convertJSArrayToVariant could cast property to variant: " + QString::number(i);
             ;
         }
     }

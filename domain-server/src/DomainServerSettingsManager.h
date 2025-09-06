@@ -95,25 +95,25 @@ public:
     bool containsKeyPath(const QString& keyPath) { return valueForKeyPath(keyPath).isValid(); }
 
     // these give access to anonymous/localhost/logged-in settings from the domain-server settings page
-    bool haveStandardPermissionsForName(const QString& name) const { return _standardAgentPermissions.contains(name, 0); }
+    bool haveStandardPermissionsForName(const QString& name) const { return _standardAgentPermissions.contains(name, QUuid::fromUInt128(0)); }
     NodePermissions getStandardPermissionsForName(const NodePermissionsKey& name) const;
 
     // these give access to permissions for specific user-names from the domain-server settings page
-    bool havePermissionsForName(const QString& name) const { return _agentPermissions.contains(name, 0); }
+    bool havePermissionsForName(const QString& name) const { return _agentPermissions.contains(name, QUuid::fromUInt128(0)); }
     NodePermissions getPermissionsForName(const QString& name) const;
     NodePermissions getPermissionsForName(const NodePermissionsKey& key) const { return getPermissionsForName(key.first); }
     QStringList getAllNames() const;
 
     // these give access to permissions for specific IPs from the domain-server settings page
-    bool hasPermissionsForIP(const QHostAddress& address) const { return _ipPermissions.contains(address.toString(), 0); }
+    bool hasPermissionsForIP(const QHostAddress& address) const { return _ipPermissions.contains(address.toString(), QUuid::fromUInt128(0)); }
     NodePermissions getPermissionsForIP(const QHostAddress& address) const;
 
     // these give access to permissions for specific MACs from the domain-server settings page
-    bool hasPermissionsForMAC(const QString& macAddress) const { return _macPermissions.contains(macAddress, 0); }
+    bool hasPermissionsForMAC(const QString& macAddress) const { return _macPermissions.contains(macAddress, QUuid::fromUInt128(0)); }
     NodePermissions getPermissionsForMAC(const QString& macAddress) const;
 
     // these give access to permissions for specific machine fingerprints from the domain-server settings page
-    bool hasPermissionsForMachineFingerprint(const QUuid& machineFingerprint) { return _machineFingerprintPermissions.contains(machineFingerprint.toString(), 0); }
+    bool hasPermissionsForMachineFingerprint(const QUuid& machineFingerprint) { return _machineFingerprintPermissions.contains(machineFingerprint.toString(), QUuid::fromUInt128(0)); }
     NodePermissions getPermissionsForMachineFingerprint(const QUuid& machineFingerprint) const;
 
     // these give access to permissions for specific groups from the domain-server settings page

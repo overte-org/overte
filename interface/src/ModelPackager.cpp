@@ -23,6 +23,7 @@
 #include "ModelSelector.h"
 #include "ModelPropertiesDialog.h"
 #include "InterfaceLogging.h"
+#include "shared/QtHelpers.h"
 
 static const int MAX_TEXTURE_SIZE = 8192;
 
@@ -109,7 +110,7 @@ bool ModelPackager::loadModel() {
         qCDebug(interfaceapp) << "Reading FBX file : " << _fbxInfo.filePath();
         QByteArray fbxContents = fbx.readAll();
 
-        _hfmModel = FBXSerializer().read(fbxContents, QVariantHash(), _fbxInfo.filePath());
+        _hfmModel = FBXSerializer().read(fbxContents, hifi::VariantMultiHash(), _fbxInfo.filePath());
 
         // make sure we have some basic mappings
         populateBasicMapping(_mapping, _fbxInfo.filePath(), *_hfmModel);
@@ -233,7 +234,7 @@ bool ModelPackager::zipModel() {
     return true;
 }
 
-void ModelPackager::populateBasicMapping(QVariantHash& mapping, QString filename, const hfm::Model& hfmModel) {
+void ModelPackager::populateBasicMapping(hifi::VariantMultiHash& mapping, QString filename, const hfm::Model& hfmModel) {
 
     // mixamo files - in the event that a mixamo file was edited by some other tool, it's likely the applicationName will
     // be rewritten, so we detect the existence of several different blendshapes which indicate we're likely a mixamo file
@@ -349,7 +350,7 @@ void ModelPackager::populateBasicMapping(QVariantHash& mapping, QString filename
         blendshapes.insert("Sneer", QVariantList() << "NoseScrunch_Right" << 0.75);
         blendshapes.insert("Sneer", QVariantList() << "Squint_Left" << 0.5);
         blendshapes.insert("Sneer", QVariantList() << "Squint_Right" << 0.5);
-        mapping.insert(BLENDSHAPE_FIELD, blendshapes);
+        mapping.insert(BLENDSHAPE_FIELD, qMultiHashToQVariant(blendshapes));
     }
 }
 

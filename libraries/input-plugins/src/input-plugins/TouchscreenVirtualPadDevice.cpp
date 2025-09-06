@@ -27,8 +27,8 @@
 const char* TouchscreenVirtualPadDevice::NAME = "TouchscreenVirtualPad";
 
 bool TouchscreenVirtualPadDevice::isSupported() const {
-    for (auto touchDevice : QTouchDevice::devices()) {
-        if (touchDevice->type() == QTouchDevice::TouchScreen) {
+    for (const auto &touchDevice : QInputDevice::devices()) {
+        if (touchDevice->type() == QInputDevice::DeviceType::TouchScreen) {
             return true;
         }
     }
@@ -218,7 +218,8 @@ void TouchscreenVirtualPadDevice::debugPoints(const QTouchEvent* event, QString 
         glm::vec2 thisPoint(tPoints[i].pos().x(), tPoints[i].pos().y());
         points << thisPoint;
     }
-    QScreen* eventScreen = event->window()->screen();
+    // QT6TODO: I have no idea how to do this part yet
+    /*QScreen* eventScreen = event->window()->screen();
     int midScreenX = eventScreen->availableSize().width()/2;
     int lefties = 0;
     int righties = 0;
@@ -230,7 +231,7 @@ void TouchscreenVirtualPadDevice::debugPoints(const QTouchEvent* event, QString 
         } else {
             righties++;
         }
-    }
+    }*/
 }
 
 void TouchscreenVirtualPadDevice::touchBeginEvent(const QTouchEvent* event) {

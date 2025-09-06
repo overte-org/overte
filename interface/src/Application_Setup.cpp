@@ -858,14 +858,17 @@ void Application::initialize(const QCommandLineParser &parser) {
             { "gl_renderer", glContextData.renderer.c_str() },
             { "ideal_thread_count", QThread::idealThreadCount() }
         };
+#ifdef Q_OS_MAC
         auto macVersion = QSysInfo::macVersion();
         if (macVersion != QSysInfo::MV_None) {
             properties["os_osx_version"] = QSysInfo::macVersion();
         }
+#elifdef Q_OS_WIN
         auto windowsVersion = QSysInfo::windowsVersion();
         if (windowsVersion != QSysInfo::WV_None) {
             properties["os_win_version"] = QSysInfo::windowsVersion();
         }
+#endif
 
         ProcessorInfo procInfo;
         if (getProcessorInfo(procInfo)) {
