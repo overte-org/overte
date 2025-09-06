@@ -1,7 +1,8 @@
 import QtQuick 2.5
 import QtQuick.Controls 2.3
-import QtQuick.Controls.Styles 1.4
+//import QtQuick.Controls.Styles
 
 TextField {
-    style:  TextFieldStyle { renderType: Text.QtRendering }
+    //QT6TODO
+    //style:  TextFieldStyle { renderType: Text.QtRendering }
 }

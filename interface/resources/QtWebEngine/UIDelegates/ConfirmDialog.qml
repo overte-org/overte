@@ -1,6 +1,6 @@
 import QtQuick 2.4
 
-import QtQuick.Dialogs 1.1 as OriginalDialogs
+import QtQuick.Dialogs as OriginalDialogs
 
 import "../../qml/dialogs"
 
