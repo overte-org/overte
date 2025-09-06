@@ -10,6 +10,8 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#include <GL/gl.h>
+
 #include <QtCore/QThread>
 #include <QtQml/QtQml>
 #include <QtQml/QQmlEngine>

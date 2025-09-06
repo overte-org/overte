@@ -12,6 +12,7 @@
 #include <QtQuick/QQuickWindow>
 #include <QtQuick/QQuickItem>
 #include <QtQml/QQmlContext>
+#include <QQuickRenderTarget>
 #include <QtQml/QQmlEngine>
 
 #include <QtGui/QOpenGLContext>
@@ -72,7 +73,9 @@ SharedObject::SharedObject() {
     _quickWindow = new QQuickWindow(_renderControl);
     _quickWindow->setFormat(getDefaultOpenGLSurfaceFormat());
     _quickWindow->setColor(Qt::transparent);
-    _quickWindow->setClearBeforeRendering(true);
+    // QT6TODO: setClearBeforeRendering was reoved, what to do about this?
+    // https://doc.qt.io/qt-6/quick-changes-qt6.html
+    //_quickWindow->setClearBeforeRendering(true);
 
 #endif
 
@@ -292,7 +295,8 @@ void SharedObject::initializeRenderControl(QOpenGLContext* context) {
 
 #ifndef DISABLE_QML
     if (!nsightActive()) {
-        _renderControl->initialize(context);
+        // QT6TODO: Qt6 does not accept context as parameter here. I'm not sure if it's a problem.
+        _renderControl->initialize();
     }
 #endif
 }
@@ -310,7 +314,7 @@ void SharedObject::releaseTextureAndFence() {
 
 void SharedObject::setRenderTarget(uint32_t fbo, const QSize& size) {
 #ifndef DISABLE_QML
-    _quickWindow->setRenderTarget(fbo, size);
+    _quickWindow->setRenderTarget(QQuickRenderTarget::fromOpenGLTexture(fbo, size));
 #endif
 }
 

@@ -22,7 +22,7 @@
 #include <QtCore/QXmlStreamReader>
 #include <QtGui/QDesktopServices>
 #include <QtNetwork/QNetworkAccessManager>
-#include <QtNetwork/QNetworkConfiguration>
+#include <QtNetwork/QNetworkInformation>
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkRequest>
 
