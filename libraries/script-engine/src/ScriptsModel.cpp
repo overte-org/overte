@@ -15,6 +15,7 @@
 #include <QUrlQuery>
 #include <QXmlStreamReader>
 #include <QDirIterator>
+#include <QtCore5Compat/QRegExp>
 
 #include <NetworkAccessManager.h>
 #include <NetworkingConstants.h>

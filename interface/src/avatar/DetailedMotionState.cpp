@@ -133,7 +133,7 @@ const QUuid DetailedMotionState::getObjectID() const {
 }
 
 QString DetailedMotionState::getName() const {
-    return _avatar->getName() + "_" + _jointIndex;
+    return _avatar->getName() + "_" + QString::number(_jointIndex);
 }
 
 // virtual

@@ -29,6 +29,9 @@
 #include <GLTFSerializer.h>
 #include <model-baker/Baker.h>
 
+#include "shared/HifiTypes.h"
+#include "shared/QtHelpers.h"
+
 Q_LOGGING_CATEGORY(trace_resource_parse_geometry, "trace.resource.parse.geometry")
 
 class GeometryExtra {
@@ -47,7 +50,7 @@ public:
         bb.reserve(1000);
         buff.open(QIODevice::WriteOnly);
     }
-    uint hash(const QVariant& v) {
+    uint hash(const hifi::VariantMultiHash& v) {
         buff.seek(0);
         ds << v;
         return qHashBits(bb.constData(), buff.pos());
@@ -59,8 +62,8 @@ private:
 };
 
 template <>
-struct std::hash<QVariantHash> {
-    size_t operator()(const QVariantHash& a) const {
+struct std::hash<hifi::VariantMultiHash> {
+    size_t operator()(const hifi::VariantMultiHash& a) const {
         QVariantHasher hasher;
         return hasher.hash(a);
     }
@@ -96,6 +99,7 @@ private:
     ModelLoader _modelLoader;
     QWeakPointer<Resource> _resource;
     QUrl _url;
+    // QT6TODO: I'm not sure if _mapping should be QHash or QMultiHash
     GeometryMappingPair _mapping;
     QByteArray _data;
     bool _combineParts;
@@ -136,9 +140,9 @@ void GeometryReader::run() {
         }
 
         HFMModel::Pointer hfmModel;
-        QMultiHash<QString, QVariant> serializerMapping = _mapping.second;
-        serializerMapping.replace("combineParts",_combineParts);
-        serializerMapping.replace("deduplicateIndices", true);
+        hifi::VariantMultiHash serializerMapping = _mapping.second;
+        serializerMapping["combineParts"] = _combineParts;
+        serializerMapping["deduplicateIndices"] = true;
 
         if (_url.path().toLower().endsWith(".gz")) {
             QByteArray uncompressedData;

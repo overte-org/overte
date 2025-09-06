@@ -12,7 +12,7 @@
 //
 
 import QtQuick 2.5
-import QtQuick.Controls 1.4
+import QtQuick.Controls 2.3
 import QtGraphicalEffects 1.0
 import Qt.labs.settings 1.0
 import stylesUit 1.0
