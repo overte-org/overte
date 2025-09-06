@@ -201,7 +201,7 @@ QUuid Overlays::addOverlay(const QString& type, const QVariant& properties) {
         if (QThread::currentThread() != thread()) {
             QUuid result;
             PROFILE_RANGE(script, __FUNCTION__);
-            BLOCKING_INVOKE_METHOD(this, "addOverlay", Q_RETURN_ARG(QUuid, result), Q_ARG(const QString&, type), Q_ARG(const QVariant&, properties));
+            BLOCKING_INVOKE_METHOD(this, "addOverlay", Q_GENERIC_RETURN_ARG(QUuid, result), Q_GENERIC_ARG(const QString&, type), Q_GENERIC_ARG(const QVariant&, properties));
             return result;
         }
 
@@ -250,7 +250,7 @@ QUuid Overlays::cloneOverlay(const QUuid& id) {
         if (QThread::currentThread() != thread()) {
             QUuid result;
             PROFILE_RANGE(script, __FUNCTION__);
-            BLOCKING_INVOKE_METHOD(this, "cloneOverlay", Q_RETURN_ARG(QUuid, result), Q_ARG(const QUuid&, id));
+            BLOCKING_INVOKE_METHOD(this, "cloneOverlay", Q_GENERIC_RETURN_ARG(QUuid, result), Q_GENERIC_ARG(const QUuid&, id));
             return result;
         }
         return add2DOverlay(Overlay::Pointer(overlay->createClone(), [](Overlay* ptr) { ptr->deleteLater(); }));
@@ -347,7 +347,7 @@ QString Overlays::getOverlayType(const QUuid& id) {
         if (QThread::currentThread() != thread()) {
             QString result;
             PROFILE_RANGE(script, __FUNCTION__);
-            BLOCKING_INVOKE_METHOD(this, "getOverlayType", Q_RETURN_ARG(QString, result), Q_ARG(const QUuid&, id));
+            BLOCKING_INVOKE_METHOD(this, "getOverlayType", Q_GENERIC_RETURN_ARG(QString, result), Q_GENERIC_ARG(const QUuid&, id));
             return result;
         }
         return overlay->getType();
@@ -362,7 +362,7 @@ QObject* Overlays::getOverlayObject(const QUuid& id) {
         if (QThread::currentThread() != thread()) {
             QObject* result;
             PROFILE_RANGE(script, __FUNCTION__);
-            BLOCKING_INVOKE_METHOD(this, "getOverlayObject", Q_RETURN_ARG(QObject*, result), Q_ARG(const QUuid&, id));
+            BLOCKING_INVOKE_METHOD(this, "getOverlayObject", Q_GENERIC_RETURN_ARG(QObject*, result), Q_GENERIC_ARG(const QUuid&, id));
             return result;
         }
         return qobject_cast<QObject*>(&(*overlay));
@@ -378,7 +378,7 @@ QUuid Overlays::getOverlayAtPoint(const glm::vec2& point) {
 
     if (QThread::currentThread() != thread()) {
         QUuid result;
-        BLOCKING_INVOKE_METHOD(this, "getOverlayAtPoint", Q_RETURN_ARG(QUuid, result), Q_ARG(const glm::vec2&, point));
+        BLOCKING_INVOKE_METHOD(this, "getOverlayAtPoint", Q_GENERIC_RETURN_ARG(QUuid, result), Q_GENERIC_ARG(const glm::vec2&, point));
         return result;
     }
 
@@ -520,7 +520,7 @@ QSizeF Overlays::textSize(const QUuid& id, const QString& text) {
         if (QThread::currentThread() != thread()) {
             QSizeF result;
             PROFILE_RANGE(script, __FUNCTION__);
-            BLOCKING_INVOKE_METHOD(this, "textSize", Q_RETURN_ARG(QSizeF, result), Q_ARG(const QUuid&, id), Q_ARG(QString, text));
+            BLOCKING_INVOKE_METHOD(this, "textSize", Q_GENERIC_RETURN_ARG(QSizeF, result), Q_GENERIC_ARG(const QUuid&, id), Q_GENERIC_ARG(QString, text));
             return result;
         }
         if (auto textOverlay = std::dynamic_pointer_cast<TextOverlay>(overlay)) {
@@ -569,7 +569,7 @@ float Overlays::width() {
     if (QThread::currentThread() != thread()) {
         float result;
         PROFILE_RANGE(script, __FUNCTION__);
-        BLOCKING_INVOKE_METHOD(this, "width", Q_RETURN_ARG(float, result));
+        BLOCKING_INVOKE_METHOD(this, "width", Q_GENERIC_RETURN_ARG(float, result));
         return result;
     }
 
@@ -581,7 +581,7 @@ float Overlays::height() {
     if (QThread::currentThread() != thread()) {
         float result;
         PROFILE_RANGE(script, __FUNCTION__);
-        BLOCKING_INVOKE_METHOD(this, "height", Q_RETURN_ARG(float, result));
+        BLOCKING_INVOKE_METHOD(this, "height", Q_GENERIC_RETURN_ARG(float, result));
         return result;
     }
 

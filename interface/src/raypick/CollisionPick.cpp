@@ -305,7 +305,7 @@ void CollisionPick::computeShapeInfo(const CollisionRegion& pick, ShapeInfo& sha
             points.reserve(sizeToReserve);
 
             // copy points
-            const glm::vec3* vertexItr = vertices.cbegin();
+            auto vertexItr = vertices.cbegin();
             while (vertexItr != vertices.cend()) {
                 glm::vec3 point = *vertexItr;
                 points.push_back(point);
@@ -322,7 +322,7 @@ void CollisionPick::computeShapeInfo(const CollisionRegion& pick, ShapeInfo& sha
                 triangleIndices.reserve((int)triangleIndicesCount);
 
                 for (const HFMMeshPart& meshPart : mesh.parts) {
-                    const int* indexItr = meshPart.triangleIndices.cbegin();
+                    auto indexItr = meshPart.triangleIndices.cbegin();
                     while (indexItr != meshPart.triangleIndices.cend()) {
                         triangleIndices.push_back(*indexItr);
                         ++indexItr;

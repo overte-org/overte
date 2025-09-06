@@ -973,7 +973,7 @@ bool Application::askToSetAvatarUrl(const QString& url) {
     }
 
     // Download the FST file, to attempt to determine its model type
-    QVariantHash fstMapping = FSTReader::downloadMapping(url);
+    hifi::VariantMultiHash fstMapping = FSTReader::downloadMapping(url);
 
     FSTReader::ModelType modelType = FSTReader::predictModelType(fstMapping);
 
@@ -1452,7 +1452,7 @@ void Application::addAssetToWorldError(QString modelName, QString errorText) {
 
 void Application::setMenuBarVisible(bool visible) {
     if (QThread::currentThread() != qApp->thread()) {
-        QMetaObject::invokeMethod(this, "setMenuBarVisible", Q_ARG(bool, visible));
+        QMetaObject::invokeMethod(this, "setMenuBarVisible", Q_GENERIC_ARG(bool, visible));
         return;
     }
 

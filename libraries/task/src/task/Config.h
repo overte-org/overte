@@ -50,9 +50,18 @@ public:
 
         _default = toJsonValue(*this).toObject().toVariantMap();
 
-        _presets.unite(list.toVariantMap());
+        auto listMap = list.toVariantMap();
+        // QT6TODO: I'm not sure about this.
+        //_presets.unite(listMap);
+        for (auto it = listMap.cbegin(); it != listMap.cend(); it++) {
+            if (_presets.contains(it.key())) {
+                _presets[it.key()] = it.value();
+            } else {
+                _presets.insert(it.key(), it.value());
+            }
+        }
         if (C::isEnabled()) {
-            _presets.insert(DEFAULT, _default);
+            _presets.insert(DEFAULT, toJsonValue(*this).toObject().toVariantMap());
         }
         _presets.insert(NONE, QVariantMap{{ "enabled", false }});
 
@@ -69,8 +78,9 @@ public:
         _preset.set(preset);
         if (_presets.contains(preset)) {
             // Always start back at default to remain deterministic
+            // QT6TODO: I'm not sure about maps and multimaps here. Shouldn't there be one entry per key?
             QVariantMap config = _default;
-            QVariantMap presetConfig = _presets[preset].toMap();
+            QVariantMap presetConfig = _presets.value(preset).toMap();
             for (auto it = presetConfig.cbegin(); it != presetConfig.cend(); it++) {
                 config.insert(it.key(), it.value());
             }
@@ -79,8 +89,8 @@ public:
     }
 
 protected:
-    QMultiMap<QString, QVariant> _default;
-    QMultiMap<QString, QVariant> _presets;
+    QVariantMap _default;
+    QVariantMap _presets;
     Setting::Handle<QString> _preset;
 };
 

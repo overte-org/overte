@@ -118,10 +118,10 @@ InteractiveWindowPointer DesktopScriptingInterface::createWindow(const QString& 
     if (QThread::currentThread() != thread()) {
         InteractiveWindowPointer interactiveWindow = nullptr;
         BLOCKING_INVOKE_METHOD(this, "createWindowOnThread",
-            Q_RETURN_ARG(InteractiveWindowPointer, interactiveWindow),
-            Q_ARG(QString, sourceUrl),
-            Q_ARG(QVariantMap, properties),
-            Q_ARG(QThread*, QThread::currentThread()));
+            Q_GENERIC_RETURN_ARG(InteractiveWindowPointer, interactiveWindow),
+            Q_GENERIC_ARG(QString, sourceUrl),
+            Q_GENERIC_ARG(QVariantMap, properties),
+            Q_GENERIC_ARG(QThread*, QThread::currentThread()));
         return interactiveWindow;
     }
 

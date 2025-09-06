@@ -32,10 +32,10 @@ size_t std::hash<NodePermissionsKey>::operator()(const NodePermissionsKey& key) 
 }
 
 
-NodePermissionsKey NodePermissions::standardNameLocalhost = NodePermissionsKey("localhost", 0);
-NodePermissionsKey NodePermissions::standardNameLoggedIn = NodePermissionsKey("logged-in", 0);
-NodePermissionsKey NodePermissions::standardNameAnonymous = NodePermissionsKey("anonymous", 0);
-NodePermissionsKey NodePermissions::standardNameFriends = NodePermissionsKey("friends", 0);
+NodePermissionsKey NodePermissions::standardNameLocalhost = NodePermissionsKey("localhost", QUuid::fromUInt128(0));
+NodePermissionsKey NodePermissions::standardNameLoggedIn = NodePermissionsKey("logged-in", QUuid::fromUInt128(0));
+NodePermissionsKey NodePermissions::standardNameAnonymous = NodePermissionsKey("anonymous", QUuid::fromUInt128(0));
+NodePermissionsKey NodePermissions::standardNameFriends = NodePermissionsKey("friends", QUuid::fromUInt128(0));
 
 QStringList NodePermissions::standardNames = QList<QString>()
     << NodePermissions::standardNameLocalhost.first

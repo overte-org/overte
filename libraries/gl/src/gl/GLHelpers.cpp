@@ -11,7 +11,7 @@
 
 #include <QtGui/QSurfaceFormat>
 #include <QtGui/QOpenGLContext>
-#include <QtGui/QOpenGLDebugLogger>
+#include <QOpenGLDebugLogger>
 
 #include "Context.h"
 

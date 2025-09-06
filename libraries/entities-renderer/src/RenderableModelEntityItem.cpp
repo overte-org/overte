@@ -465,7 +465,8 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& shapeInfo) {
                 pointCollection[i][j] = scaleToFit * (pointCollection[i][j] + offset) - registrationOffset;
             }
         }
-        shapeInfo.setParams(type, 0.5f * extents, getCompoundShapeURL() + model->getSnapModelToRegistrationPoint());
+        // QT6TODO: I have no idea what implicit conversion from bool to QString did in Qt5
+        shapeInfo.setParams(type, 0.5f * extents, getCompoundShapeURL() + QString::number(model->getSnapModelToRegistrationPoint()));
         adjustShapeInfoByRegistration(shapeInfo, model->getSnapModelToRegistrationPoint());
     } else if (type >= SHAPE_TYPE_SIMPLE_HULL && type <= SHAPE_TYPE_STATIC_MESH) {
         updateModelBounds();
@@ -698,7 +699,7 @@ void RenderableModelEntityItem::computeShapeInfo(ShapeInfo& shapeInfo) {
             }
         }
 
-        shapeInfo.setParams(type, 0.5f * extents.size(), getModelURL() + model->getSnapModelToRegistrationPoint());
+        shapeInfo.setParams(type, 0.5f * extents.size(), getModelURL() + QString::number(model->getSnapModelToRegistrationPoint()));
         adjustShapeInfoByRegistration(shapeInfo, model->getSnapModelToRegistrationPoint());
     } else {
         EntityItem::computeShapeInfo(shapeInfo);

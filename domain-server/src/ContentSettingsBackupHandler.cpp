@@ -20,6 +20,7 @@
 #include <quazip/quazip.h>
 #include <quazip/quazipfile.h>
 #include <quazip/quazipdir.h>
+#include <QtCore5Compat/QRegExp>
 
 #if !defined(__clang__) && defined(__GNUC__)
 #pragma GCC diagnostic pop
@@ -102,7 +103,7 @@ std::pair<bool, QString> ContentSettingsBackupHandler::recoverBackup(const QStri
     zipFile.close();
 
     if (zipFile.getZipError() != UNZ_OK) {
-        QString errorStr("Failed to unzip " + CONTENT_SETTINGS_BACKUP_FILENAME + ": " + zipFile.getZipError());
+        QString errorStr("Failed to unzip " + CONTENT_SETTINGS_BACKUP_FILENAME + ": " + QString::number(zipFile.getZipError()));
         qCritical() << errorStr;
         return { false, errorStr };
     }

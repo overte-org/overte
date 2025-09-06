@@ -17,7 +17,7 @@
 #include <QtCore/QFile>
 #include <QtCore/QDebug>
 #include <QtCore/QBuffer>
-#include <QtCore/QTextCodec>
+#include <QTextCodec>
 #include <QtCore/QIODevice>
 #include <QtCore/QUrl>
 #include <QtCore/QByteArray>

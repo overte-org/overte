@@ -18,6 +18,7 @@
 #include <memory>
 
 #include <QtQml/QQmlContext>
+#include <QActionGroup>
 
 #include <AudioScriptingInterface.h>
 #include <display-plugins/CompositorHelper.h>
@@ -77,6 +78,7 @@ void Application::initializeGL() {
         _isGLInitialized = true;
     }
 
+    _glWidget->windowHandle()->setSurfaceType(QSurface::OpenGLSurface);
     _glWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat());
 
     // When loading QtWebEngineWidgets, it creates a global share context on startup.
@@ -215,7 +217,7 @@ static void addDisplayPluginToMenu(const DisplayPluginPointer& displayPlugin, in
     }
     auto parent = menu->getMenu(MenuOption::OutputMenu);
     auto action = menu->addActionToQMenuAndActionHash(parent,
-        name, QKeySequence(Qt::CTRL + (Qt::Key_0 + index)), qApp,
+        name, QKeySequence(Qt::CTRL | static_cast<Qt::Key>(static_cast<int>(Qt::Key_0) + index)), qApp,
         SLOT(updateDisplayMode()),
         QAction::NoRole, Menu::UNSPECIFIED_POSITION, groupingMenu);
 
@@ -236,12 +238,12 @@ void Application::initializeUi() {
         auto newValidator = [=](const QUrl& url) -> bool {
             QString allowlistPrefix = "[ALLOWLIST ENTITY SCRIPTS]";
             QList<QString> safeURLS = { "" };
-            safeURLS += qEnvironmentVariable("EXTRA_ALLOWLIST").trimmed().split(QRegExp("\\s*,\\s*"), Qt::SkipEmptyParts);
+            safeURLS += qEnvironmentVariable("EXTRA_ALLOWLIST").trimmed().split(QRegularExpression("\\s*,\\s*"), Qt::SkipEmptyParts);
 
             // PULL SAFEURLS FROM INTERFACE.JSON Settings
 
             QVariant raw = Setting::Handle<QVariant>("private/settingsSafeURLS").get();
-            QStringList settingsSafeURLS = raw.toString().trimmed().split(QRegExp("\\s*[,\r\n]+\\s*"), Qt::SkipEmptyParts);
+            QStringList settingsSafeURLS = raw.toString().trimmed().split(QRegularExpression("\\s*[,\r\n]+\\s*"), Qt::SkipEmptyParts);
             safeURLS += settingsSafeURLS;
 
             // END PULL SAFEURLS FROM INTERFACE.JSON Settings

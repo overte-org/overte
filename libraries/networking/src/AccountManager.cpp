@@ -83,10 +83,8 @@ AccountManager::AccountManager(bool accountSettingsEnabled, UserAgentGetter user
     _accountSettingsEnabled(accountSettingsEnabled)
 {
     qRegisterMetaType<OAuthAccessToken>("OAuthAccessToken");
-    qRegisterMetaTypeStreamOperators<OAuthAccessToken>("OAuthAccessToken");
 
     qRegisterMetaType<DataServerAccountInfo>("DataServerAccountInfo");
-    qRegisterMetaTypeStreamOperators<DataServerAccountInfo>("DataServerAccountInfo");
 
     qRegisterMetaType<QNetworkAccessManager::Operation>("QNetworkAccessManager::Operation");
     qRegisterMetaType<JSONCallbackParameters>("JSONCallbackParameters");
@@ -347,7 +345,7 @@ void AccountManager::sendRequest(const QString& path,
             // double check if the finished network reply had a session ID in the header and make
             // sure that our session ID matches that value if so
             if (networkReply->hasRawHeader(METAVERSE_SESSION_ID_HEADER)) {
-                _sessionID = networkReply->rawHeader(METAVERSE_SESSION_ID_HEADER);
+                _sessionID = QUuid::fromBytes(networkReply->rawHeader(METAVERSE_SESSION_ID_HEADER));
             }
         });
 
