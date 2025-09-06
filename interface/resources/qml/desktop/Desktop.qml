@@ -57,7 +57,8 @@ FocusScope {
 
         property var exclusionGroups: ({});
         property Component exclusiveGroupMaker: Component {
-            ExclusiveGroup {
+            //ExclusiveGroup { //QT6TODO
+            ButtonGroup {
             }
         }
 
@@ -68,6 +69,7 @@ FocusScope {
                 exclusionGroups[exclusionGroupId] = exclusiveGroupMaker.createObject(rootMenuId);
             }
 
+            //QT6TODO:
             qmlAction.exclusiveGroup = exclusionGroups[exclusionGroupId]
         }
     }

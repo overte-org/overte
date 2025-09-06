@@ -13,7 +13,7 @@
 
 import QtQuick 2.5
 import QtQuick.Controls 2.3
-import QtGraphicalEffects 1.0
+import Qt5Compat.GraphicalEffects
 import Qt.labs.settings 1.0
 import stylesUit 1.0
 import controlsUit 1.0 as HifiControlsUit
