@@ -753,11 +753,11 @@ RayToAvatarIntersectionResult AvatarManager::findRayIntersectionVector(const Pic
     RayToAvatarIntersectionResult result;
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(const_cast<AvatarManager*>(this), "findRayIntersectionVector",
-                                  Q_RETURN_ARG(RayToAvatarIntersectionResult, result),
-                                  Q_ARG(const PickRay&, ray),
-                                  Q_ARG(const QVector<EntityItemID>&, avatarsToInclude),
-                                  Q_ARG(const QVector<EntityItemID>&, avatarsToDiscard),
-                                  Q_ARG(bool, pickAgainstMesh));
+                                  Q_GENERIC_RETURN_ARG(RayToAvatarIntersectionResult, result),
+                                  Q_GENERIC_ARG(const PickRay&, ray),
+                                  Q_GENERIC_ARG(const QVector<EntityItemID>&, avatarsToInclude),
+                                  Q_GENERIC_ARG(const QVector<EntityItemID>&, avatarsToDiscard),
+                                  Q_GENERIC_ARG(bool, pickAgainstMesh));
         return result;
     }
 
@@ -882,10 +882,10 @@ ParabolaToAvatarIntersectionResult AvatarManager::findParabolaIntersectionVector
     ParabolaToAvatarIntersectionResult result;
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(const_cast<AvatarManager*>(this), "findParabolaIntersectionVector",
-                               Q_RETURN_ARG(ParabolaToAvatarIntersectionResult, result),
-                               Q_ARG(const PickParabola&, pick),
-                               Q_ARG(const QVector<EntityItemID>&, avatarsToInclude),
-                               Q_ARG(const QVector<EntityItemID>&, avatarsToDiscard));
+                               Q_GENERIC_RETURN_ARG(ParabolaToAvatarIntersectionResult, result),
+                               Q_GENERIC_ARG(const PickParabola&, pick),
+                               Q_GENERIC_ARG(const QVector<EntityItemID>&, avatarsToInclude),
+                               Q_GENERIC_ARG(const QVector<EntityItemID>&, avatarsToDiscard));
         return result;
     }
 

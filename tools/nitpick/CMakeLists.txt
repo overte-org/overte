@@ -4,13 +4,13 @@ project(${TARGET_NAME})
 set(CUSTOM_NITPICK_QRC_PATHS "")
 
 find_npm()
-find_package(Qt5 COMPONENTS Widgets)
+find_package(Qt6 COMPONENTS Widgets)
 
 set(RESOURCES_QRC ${CMAKE_CURRENT_BINARY_DIR}/resources.qrc)
 set(RESOURCES_RCC ${CMAKE_CURRENT_BINARY_DIR}/resources.rcc)
 generate_qrc(OUTPUT ${RESOURCES_QRC} PATH ${CMAKE_CURRENT_SOURCE_DIR}/resources CUSTOM_PATHS ${CUSTOM_NITPICK_QRC_PATHS} GLOBS *)
 
-qt5_add_binary_resources(nitpick_resources "${RESOURCES_QRC}" DESTINATION "${RESOURCES_RCC}" OPTIONS -no-compress)
+qt6_add_binary_resources(nitpick_resources "${RESOURCES_QRC}" DESTINATION "${RESOURCES_RCC}" OPTIONS -no-compress)
 
 # grab the implementation and header files from src dirs
 file(GLOB_RECURSE NITPICK_SRCS "src/*.cpp" "src/*.h")
@@ -23,7 +23,7 @@ file (GLOB_RECURSE QT_UI_FILES ui/*.ui)
 source_group("UI Files" FILES ${QT_UI_FILES})
 
 # have qt5 wrap them and generate the appropriate header files
-qt5_wrap_ui(QT_UI_HEADERS "${QT_UI_FILES}")
+qt6_wrap_ui(QT_UI_HEADERS "${QT_UI_FILES}")
 
 setup_memory_debugger()
 setup_thread_debugger()

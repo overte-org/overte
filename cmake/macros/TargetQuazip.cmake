@@ -6,6 +6,6 @@
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 # 
 macro(TARGET_QUAZIP)
-  find_package(QuaZip-Qt5 REQUIRED)
+  find_package(QuaZip-Qt6 REQUIRED)
   target_link_libraries(${TARGET_NAME} QuaZip::QuaZip)
 endmacro()

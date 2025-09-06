@@ -122,8 +122,8 @@ private:
 
 protected:
     // disallow copying of InboundAudioStream objects
-    InboundAudioStream(const InboundAudioStream&);
-    InboundAudioStream& operator= (const InboundAudioStream&);
+    InboundAudioStream(const InboundAudioStream&) = delete;
+    InboundAudioStream& operator= (const InboundAudioStream&) = delete;
 
     /// parses the info between the seq num and the audio data in the network packet and calculates
     /// how many audio samples this packet contains (used when filling in samples for dropped packets).

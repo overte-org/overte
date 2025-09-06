@@ -440,7 +440,7 @@ bool EntityTree::updateEntity(EntityItemPointer entity, const EntityItemProperti
                 properties.setParentJointIndexChanged(false);
 
                 if (wantTerseEditLogging()) {
-                    qCDebug(entities) << (senderNode ? senderNode->getUUID() : "null") << "physical edits suppressed";
+                    qCDebug(entities) << (senderNode ? senderNode->getUUID().toString() : "null") << "physical edits suppressed";
                 }
             }
         }
@@ -615,7 +615,7 @@ void EntityTree::unhookChildAvatar(const EntityItemID entityID) {
         EntityItemPointer entity = findEntityByEntityItemID(entityID);
         entity->forEachDescendant([&](SpatiallyNestablePointer child) {
             if (child->getNestableType() == NestableType::Avatar) {
-                child->setParentID(nullptr);
+                child->setParentID(QUuid());
             }
         });
     }
@@ -764,7 +764,7 @@ void EntityTree::processRemovedEntities(const DeleteEntityOperator& theOperator)
         } else {
             theEntity->forEachDescendant([&](SpatiallyNestablePointer child) {
                 if (child->getNestableType() == NestableType::Avatar) {
-                    child->setParentID(nullptr);
+                    child->setParentID(QUuid());
                 }
             });
 
@@ -2400,7 +2400,7 @@ QVector<EntityItemID> EntityTree::sendEntities(EntityEditPacketSender* packetSen
 QJsonValue replaceEntityIDsInJSONHelper(const QJsonValue& jsonValue, std::function<EntityItemID(EntityItemID)> getMapped) {
     if (jsonValue.isString()) {
         QString stringValue = jsonValue.toString();
-        QUuid oldID = stringValue;
+        QUuid oldID(stringValue);
         if (!oldID.isNull()) {
             return QJsonValue(getMapped(oldID).toString());
         }
@@ -2525,11 +2525,11 @@ bool EntityTree::sendEntitiesOperation(const OctreeElementPointer& element, void
                 }
             }
 
-            QUuid oldID = uuidString;
+            QUuid oldID(uuidString);
             if (!oldID.isNull()) {
                 uuidString = getMapped(oldID).toString();
             }
-            QUuid oldMaterialName = materialName;
+            QUuid oldMaterialName(materialName);
             if (!oldMaterialName.isNull()) {
                 materialName = getMapped(oldMaterialName).toString();
             }
@@ -2543,7 +2543,7 @@ bool EntityTree::sendEntitiesOperation(const OctreeElementPointer& element, void
 
         QString imageURL = properties.getImageURL();
         if (imageURL.startsWith("{")) {
-            QUuid oldID = imageURL;
+            QUuid oldID(imageURL);
             if (!oldID.isNull()) {
                 properties.setImageURL(getMapped(oldID).toString());
             }

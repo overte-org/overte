@@ -16,6 +16,7 @@
 //  Use this to live reload: DependencyManager::get<OffscreenUi>()->clearCache();
 
 #include "Menu.h"
+#include <QActionGroup>
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QMenuBar>

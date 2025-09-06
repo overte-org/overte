@@ -139,7 +139,7 @@ void MaterialBaker::processMaterial() {
                     if (QImageReader::supportedImageFormats().contains(extension.toLatin1())) {
                         TextureKey textureKey(textureURL, type);
                         if (!_textureBakers.contains(textureKey)) {
-                            auto baseTextureFileName = _textureFileNamer.createBaseTextureFileName(textureURL.fileName(), type);
+                            auto baseTextureFileName = _textureFileNamer.createBaseTextureFileName(QFileInfo(textureURL.fileName()), type);
 
                             QSharedPointer<TextureBaker> textureBaker {
                                 new TextureBaker(textureURL, type, _textureOutputDir, baseTextureFileName, content),
