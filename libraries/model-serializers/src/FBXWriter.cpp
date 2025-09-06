@@ -12,6 +12,7 @@
 #include "FBXWriter.h"
 
 #include <QDebug>
+#include <QIODevice>
 
 #ifdef USE_FBX_2016_FORMAT
     using FBXEndOffset = int64_t;

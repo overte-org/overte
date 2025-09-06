@@ -71,7 +71,7 @@ AnimationDetails ScriptableAvatar::getAnimationDetails() {
     if (QThread::currentThread() != thread()) {
         AnimationDetails result;
         BLOCKING_INVOKE_METHOD(this, "getAnimationDetails", 
-                                  Q_RETURN_ARG(AnimationDetails, result));
+                                  Q_GENERIC_RETURN_ARG(AnimationDetails, result));
         return result;
     }
     return _animationDetails;

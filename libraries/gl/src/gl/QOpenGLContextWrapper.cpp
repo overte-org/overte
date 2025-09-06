@@ -24,11 +24,12 @@ QOpenGLContextWrapper::Pointer QOpenGLContextWrapper::currentContextWrapper() {
 
 QOpenGLContextWrapper::NativeContextPointer QOpenGLContextWrapper::getNativeContext() const {
     QOpenGLContextWrapper::NativeContextPointer result;
-    auto nativeHandle = _context->nativeHandle();
+    // QT6TODO:
+    /*auto nativeHandle = _context->nativeHandle();
     if (nativeHandle.canConvert<QGLNativeContext>()) {
         result = std::make_shared<QGLNativeContext>();
         *result = nativeHandle.value<QGLNativeContext>();
-    }
+    }*/
     return result;
 }
 

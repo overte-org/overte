@@ -12,6 +12,8 @@
 #include "Rig.h"
 #include "AnimSkeleton.h"
 
+#include <QStringRef>
+
 const std::map<QString, FlowPhysicsSettings> PRESET_FLOW_DATA = { { "hair", FlowPhysicsSettings() },
 { "skirt", FlowPhysicsSettings(true, 1.0f, DEFAULT_GRAVITY, 0.65f, 0.8f, 0.45f, 0.01f) },
 { "breast", FlowPhysicsSettings(true, 1.0f, DEFAULT_GRAVITY, 0.65f, 0.8f, 0.45f, 0.01f) } };

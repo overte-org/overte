@@ -22,6 +22,7 @@
 #include <QSettings>
 #include <QSize>
 #include <QStringList>
+#include <QIODevice>
 
 #include "SharedLogging.h"
 

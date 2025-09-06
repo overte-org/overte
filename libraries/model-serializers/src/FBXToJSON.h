@@ -15,9 +15,11 @@
 #include <sstream>
 #include <string>
 
+#include <QVector>
+
 // Forward declarations.
 class FBXNode;
-template<typename T> class QVector;
+//template<typename T> class QVector;
 
 class FBXToJSON : public std::ostringstream {
 public:

@@ -16,7 +16,7 @@
 #include <QCoreApplication>
 #include <QEventLoop>
 #include <QNetworkAccessManager>
-#include <QNetworkConfiguration>
+#include <QNetworkInformation>
 #include <QNetworkReply>
 #include <QObject>
 #include <QThread>

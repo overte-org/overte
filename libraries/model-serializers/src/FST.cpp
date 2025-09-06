@@ -15,6 +15,8 @@
 #include <QFileInfo>
 #include <hfm/HFM.h>
 
+#include "shared/QtHelpers.h"
+
 constexpr float DEFAULT_SCALE { 1.0f };
 
 FST::FST(QString fstPath, QMultiHash<QString, QVariant> data) : _fstPath(std::move(fstPath)) {
@@ -40,7 +42,7 @@ FST::FST(QString fstPath, QMultiHash<QString, QVariant> data) : _fstPath(std::mo
 }
 
 FST* FST::createFSTFromModel(const QString& fstPath, const QString& modelFilePath, const hfm::Model& hfmModel) {
-    QVariantHash mapping;
+    hifi::VariantMultiHash mapping;
 
     // mixamo files - in the event that a mixamo file was edited by some other tool, it's likely the applicationName will
     // be rewritten, so we detect the existence of several different blendshapes which indicate we're likely a mixamo file
@@ -136,7 +138,7 @@ FST* FST::createFSTFromModel(const QString& fstPath, const QString& modelFilePat
         blendshapes.insert("Sneer", QVariantList() << "NoseScrunch_Right" << 0.75);
         blendshapes.insert("Sneer", QVariantList() << "Squint_Left" << 0.5);
         blendshapes.insert("Sneer", QVariantList() << "Squint_Right" << 0.5);
-        mapping.insert(BLENDSHAPE_FIELD, blendshapes);
+        mapping.insert(BLENDSHAPE_FIELD, qMultiHashToQVariant(blendshapes));
     }
     return new FST(fstPath, mapping);
 }

@@ -18,6 +18,11 @@
 
 #include "../Profile.h"
 
+// Macros for these are missing from QT6
+// QT6TODO: replace QGenericArgument and QGenericReturnArgument with modern equivalents
+#define Q_GENERIC_ARG(type, data) QArgument<type >(#type, data)
+#define Q_GENERIC_RETURN_ARG(type, data) QReturnArgument<type >(#type, data)
+
 #if defined(Q_OS_WIN)
 // Enable event queue debugging
 //#define DEBUG_EVENT_QUEUE
@@ -112,5 +117,36 @@ blockingInvokeMethod(const char* callingFunction, QObject* context, Func functio
 
 #define BLOCKING_INVOKE_METHOD(obj, member, ...) \
     ::hifi::qt::blockingInvokeMethod(__FUNCTION__, obj, member, ##__VA_ARGS__)
+
+inline QMultiHash<QString, QVariant> qVariantToQMultiHash(const QVariant &variant) {
+    QMultiHash<QString, QVariant> multiHash;
+    // QT6TODO: check if variant can be converted to a list
+
+    for(QVariant item : variant.toList()) {
+        // QT6TODO: I'm not sure if this will work correctly
+        multiHash.insert(item.toList()[0].toString(), item.toList()[1]);
+    }
+    return multiHash;
+}
+
+inline QVariant qMultiHashToQVariant(QMultiHash<QString, QVariant> hash) {
+    QVariantList variant;
+    // QT6TODO: I'm not sure if this will work correctly
+    for(QString key : hash.keys()) {
+        QVariantList list;
+        list << key;
+        list << hash.values(key);
+        variant << QVariant(list);
+    }
+    return variant;
+}
+
+inline QMultiHash<QString, QVariant> qHashToQMultiHash(const QHash<QString, QVariant> &hash) {
+    QMultiHash<QString, QVariant> multiHash;
+    for(const QString &key : hash.keys()) {
+        multiHash.insert(key, hash.value(key));
+    }
+    return multiHash;
+}
 
 #endif

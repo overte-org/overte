@@ -40,7 +40,7 @@ ScriptValue QmlWebWindowClass::internal_constructor(ScriptContext* context, Scri
 QString QmlWebWindowClass::getURL() {
     if (QThread::currentThread() != thread()) {
         QString result;
-        BLOCKING_INVOKE_METHOD(this, "getURL", Q_RETURN_ARG(QString, result));
+        BLOCKING_INVOKE_METHOD(this, "getURL", Q_GENERIC_RETURN_ARG(QString, result));
         return result;
     }
 

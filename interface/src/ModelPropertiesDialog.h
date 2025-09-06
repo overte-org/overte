@@ -29,10 +29,10 @@ class ModelPropertiesDialog : public QDialog {
     Q_OBJECT
     
 public:
-    ModelPropertiesDialog(const QVariantHash& originalMapping,
+    ModelPropertiesDialog(const hifi::VariantMultiHash& originalMapping,
                           const QString& basePath, const HFMModel& hfmModel);
     
-    QVariantHash getMapping() const;
+    hifi::VariantMultiHash getMapping() const;
     
 private slots:
     void reset();
@@ -43,9 +43,9 @@ private slots:
 private:
     QComboBox* createJointBox(bool withNone = true) const;
     QDoubleSpinBox* createTranslationBox() const;
-    void insertJointMapping(QVariantHash& joints, const QString& joint, const QString& name) const;
+    void insertJointMapping(hifi::VariantMultiHash& joints, const QString& joint, const QString& name) const;
     
-    QVariantHash _originalMapping;
+    hifi::VariantMultiHash _originalMapping;
     QString _basePath;
     HFMModel _hfmModel;
     QLineEdit* _name = nullptr;

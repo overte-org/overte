@@ -3,7 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 set(TARGET_NAME ui)
-setup_hifi_library(OpenGL Multimedia Network Qml Quick WebChannel WebSockets XmlPatterns ${PLATFORM_QT_COMPONENTS})
+setup_hifi_library(OpenGL Multimedia Network Qml Quick WebChannel WebSockets Xml WebEngineQuick ${PLATFORM_QT_COMPONENTS})
 link_hifi_libraries(shared networking qml gl audio audio-client plugins pointers script-engine)
 include_hifi_library_headers(controllers)
 

@@ -20,7 +20,7 @@
 #include <QtPlatformHeaders/QWGLNativeContext>
 #endif
 
-#include <QtGui/QOpenGLDebugMessage>
+#include <QOpenGLDebugMessage>
 
 #include "GLHelpers.h"
 

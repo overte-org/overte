@@ -21,7 +21,7 @@
 #include <QtCore/QPointer>
 #include <QtGui/QOffscreenSurface>
 #include <QtGui/QOpenGLContext>
-#include <QtGui/QOpenGLDebugLogger>
+#include <QOpenGLDebugLogger>
 
 #include <DependencyManager.h>
 
