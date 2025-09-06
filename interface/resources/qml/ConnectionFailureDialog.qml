@@ -1,4 +1,4 @@
-import QtQuick.Dialogs 1.2 as OriginalDialogs
+import QtQuick.Dialogs as OriginalDialogs
 
 import "dialogs"
 
