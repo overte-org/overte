@@ -68,7 +68,7 @@ void AssetClient::initCaching() {
 #ifdef Q_OS_ANDROID
             QString cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
 #else
-            QString cachePath = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+            QString cachePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 #endif
             _cacheDir = !cachePath.isEmpty() ? cachePath : "interfaceCache";
         }
