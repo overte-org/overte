@@ -517,11 +517,11 @@ int WindowScriptingInterface::openMessageBox(QString title, QString text, int bu
     if (QThread::currentThread() != thread()) {
         int result;
         BLOCKING_INVOKE_METHOD(this, "openMessageBox",
-            Q_RETURN_ARG(int, result),
-            Q_ARG(QString, title),
-            Q_ARG(QString, text),
-            Q_ARG(int, buttons),
-            Q_ARG(int, defaultButton));
+            Q_GENERIC_RETURN_ARG(int, result),
+            Q_GENERIC_ARG(QString, title),
+            Q_GENERIC_ARG(QString, text),
+            Q_GENERIC_ARG(int, buttons),
+            Q_GENERIC_ARG(int, defaultButton));
         return result;
     }
 

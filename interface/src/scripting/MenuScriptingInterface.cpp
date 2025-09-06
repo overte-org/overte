@@ -68,8 +68,8 @@ bool MenuScriptingInterface::menuExists(const QString& menu) {
     bool result { false };
 
     BLOCKING_INVOKE_METHOD(menuInstance, "menuExists",
-                Q_RETURN_ARG(bool, result), 
-                Q_ARG(const QString&, menu));
+                Q_GENERIC_RETURN_ARG(bool, result),
+                Q_GENERIC_ARG(const QString&, menu));
 
     return result;
 }
@@ -131,8 +131,8 @@ void MenuScriptingInterface::removeMenuItem(const QString& menu, const QString& 
         return;
     }
     QMetaObject::invokeMethod(menuInstance, "removeMenuItem",
-                Q_ARG(const QString&, menu),
-                Q_ARG(const QString&, menuitem));
+                Q_GENERIC_ARG(const QString&, menu),
+                Q_GENERIC_ARG(const QString&, menuitem));
 };
 
 bool MenuScriptingInterface::menuItemExists(const QString& menu, const QString& menuitem) {
@@ -148,9 +148,9 @@ bool MenuScriptingInterface::menuItemExists(const QString& menu, const QString& 
     bool result { false };
 
     BLOCKING_INVOKE_METHOD(menuInstance, "menuItemExists",
-        Q_RETURN_ARG(bool, result),
-        Q_ARG(const QString&, menu),
-        Q_ARG(const QString&, menuitem));
+        Q_GENERIC_RETURN_ARG(bool, result),
+        Q_GENERIC_ARG(const QString&, menu),
+        Q_GENERIC_ARG(const QString&, menuitem));
 
     return result;
 }
@@ -168,8 +168,8 @@ bool MenuScriptingInterface::isOptionChecked(const QString& menuOption) {
     bool result { false };
 
     BLOCKING_INVOKE_METHOD(menuInstance, "isOptionChecked",
-                Q_RETURN_ARG(bool, result), 
-                Q_ARG(const QString&, menuOption));
+                Q_GENERIC_RETURN_ARG(bool, result),
+                Q_GENERIC_ARG(const QString&, menuOption));
     return result;
 }
 
@@ -180,8 +180,8 @@ void MenuScriptingInterface::setIsOptionChecked(const QString& menuOption, bool 
     }
 
     QMetaObject::invokeMethod(menuInstance, "setIsOptionChecked",
-                Q_ARG(const QString&, menuOption),
-                Q_ARG(bool, isChecked));
+                Q_GENERIC_ARG(const QString&, menuOption),
+                Q_GENERIC_ARG(bool, isChecked));
 }
 
 bool MenuScriptingInterface::isMenuEnabled(const QString& menuOption) {
@@ -197,8 +197,8 @@ bool MenuScriptingInterface::isMenuEnabled(const QString& menuOption) {
     bool result { false };
 
     BLOCKING_INVOKE_METHOD(menuInstance, "isMenuEnabled",
-        Q_RETURN_ARG(bool, result),
-        Q_ARG(const QString&, menuOption));
+        Q_GENERIC_RETURN_ARG(bool, result),
+        Q_GENERIC_ARG(const QString&, menuOption));
 
     return result;
 }
@@ -210,8 +210,8 @@ void MenuScriptingInterface::setMenuEnabled(const QString& menuOption, bool isCh
     }
 
     QMetaObject::invokeMethod(menuInstance, "setMenuEnabled",
-        Q_ARG(const QString&, menuOption),
-        Q_ARG(bool, isChecked));
+        Q_GENERIC_ARG(const QString&, menuOption),
+        Q_GENERIC_ARG(bool, isChecked));
 }
 
 void MenuScriptingInterface::triggerOption(const QString& menuOption) {
@@ -220,7 +220,7 @@ void MenuScriptingInterface::triggerOption(const QString& menuOption) {
         return;
     }
 
-    QMetaObject::invokeMethod(menuInstance, "triggerOption", Q_ARG(const QString&, menuOption));
+    QMetaObject::invokeMethod(menuInstance, "triggerOption", Q_GENERIC_ARG(const QString&, menuOption));
 }
 
 void MenuScriptingInterface::setVisible(bool visible) {

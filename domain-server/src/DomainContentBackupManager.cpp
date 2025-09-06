@@ -28,6 +28,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QJsonDocument>
+#include <QtCore5Compat/QRegExp>
 
 #include <quazip/quazip.h>
 
@@ -81,7 +82,7 @@ void DomainContentBackupManager::parseBackupRules(const QVariantList& backupRule
         int count = map["maxBackupVersions"].toInt();
         auto name = map["Name"].toString();
         auto format = name.toLower();
-        QRegExp matchDisallowedCharacters { "[^a-zA-Z0-9\\-_]+" };
+        QRegularExpression matchDisallowedCharacters { "[^a-zA-Z0-9\\-_]+" };
         format.replace(matchDisallowedCharacters, "_");
 
         qCDebug(domain_server) << "    Name:" << name;
@@ -313,8 +314,8 @@ void DomainContentBackupManager::recoverFromBackup(MiniPromise::Promise promise,
     };
 
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "recoverFromBackup", Q_ARG(MiniPromise::Promise, promise),
-                                  Q_ARG(const QString&, backupName), Q_ARG(const QString&, username));
+        QMetaObject::invokeMethod(this, "recoverFromBackup", Q_GENERIC_ARG(MiniPromise::Promise, promise),
+                                  Q_GENERIC_ARG(const QString&, backupName), Q_GENERIC_ARG(const QString&, username));
         return;
     }
 

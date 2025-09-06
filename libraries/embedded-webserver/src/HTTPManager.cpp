@@ -17,6 +17,7 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QMimeDatabase>
 #include <QtNetwork/QTcpSocket>
+#include <QtCore5Compat/QRegExp>
 
 #include "HTTPConnection.h"
 #include "EmbeddedWebserverLogging.h"

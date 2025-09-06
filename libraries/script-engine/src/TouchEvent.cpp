@@ -79,11 +79,11 @@ void TouchEvent::initWithQTouchEvent(const QTouchEvent& event) {
     touchPoints = tPoints.count();
     if (touchPoints > 1) {
         for (int i = 0; i < touchPoints; ++i) {
-            touchAvgX += (float)tPoints[i].pos().x();
-            touchAvgY += (float)tPoints[i].pos().y();
+            touchAvgX += (float)tPoints[i].position().x();
+            touchAvgY += (float)tPoints[i].position().y();
 
             // add it to our points vector
-            glm::vec2 thisPoint(tPoints[i].pos().x(), tPoints[i].pos().y());
+            glm::vec2 thisPoint(tPoints[i].position().x(), tPoints[i].position().y());
             points << thisPoint;
         }
         touchAvgX /= (float)(touchPoints);
@@ -91,8 +91,8 @@ void TouchEvent::initWithQTouchEvent(const QTouchEvent& event) {
     } else {
         // I'm not sure this should ever happen, why would Qt send us a touch event for only one point?
         // maybe this happens in the case of a multi-touch where all but the last finger is released?
-        touchAvgX = tPoints[0].pos().x();
-        touchAvgY = tPoints[0].pos().y();
+        touchAvgX = tPoints[0].position().x();
+        touchAvgY = tPoints[0].position().y();
     }
     x = touchAvgX;
     y = touchAvgY;
@@ -102,7 +102,7 @@ void TouchEvent::initWithQTouchEvent(const QTouchEvent& event) {
     float maxRadius = 0.0f;
     glm::vec2 center(x,y);
     for (int i = 0; i < touchPoints; ++i) {
-        glm::vec2 touchPoint(tPoints[i].pos().x(), tPoints[i].pos().y());
+        glm::vec2 touchPoint(tPoints[i].position().x(), tPoints[i].position().y());
         float thisRadius = glm::distance(center,touchPoint);
         if (thisRadius > maxRadius) {
             maxRadius = thisRadius;
@@ -121,10 +121,10 @@ void TouchEvent::initWithQTouchEvent(const QTouchEvent& event) {
     }
     angle = totalAngle/(float)touchPoints;
 
-    isPressed = event.touchPointStates().testFlag(Qt::TouchPointPressed);
-    isMoved = event.touchPointStates().testFlag(Qt::TouchPointMoved);
-    isStationary = event.touchPointStates().testFlag(Qt::TouchPointStationary);
-    isReleased = event.touchPointStates().testFlag(Qt::TouchPointReleased);
+    isPressed = event.touchPointStates().testFlag(QEventPoint::State::Pressed);
+    isMoved = event.touchPointStates().testFlag(QEventPoint::State::Updated);
+    isStationary = event.touchPointStates().testFlag(QEventPoint::State::Stationary);
+    isReleased = event.touchPointStates().testFlag(QEventPoint::State::Released);
 
     // keyboard modifiers
     isShifted = event.modifiers().testFlag(Qt::ShiftModifier);

@@ -26,7 +26,7 @@
 
 class MeshPart;
 
-using GeometryMappingPair = std::pair<QUrl, QVariantHash>;
+using GeometryMappingPair = std::pair<QUrl, hifi::VariantMultiHash>;
 Q_DECLARE_METATYPE(GeometryMappingPair)
 
 class Geometry {
@@ -59,7 +59,7 @@ public:
     virtual bool areTexturesLoaded() const;
     const QUrl& getAnimGraphOverrideUrl() const { return _animGraphOverrideUrl; }
     bool shouldWaitForWearables() const { return _waitForWearables; }
-    const QVariantHash& getMapping() const { return _mapping; }
+    const hifi::VariantMultiHash& getMapping() const { return _mapping; }
 
 protected:
     // Shared across all geometries, constant throughout lifetime
@@ -72,7 +72,7 @@ protected:
     NetworkMaterials _materials;
 
     QUrl _animGraphOverrideUrl;
-    QVariantHash _mapping;  // parsed contents of FST file.
+    hifi::VariantMultiHash _mapping;  // parsed contents of FST file.
     bool _waitForWearables { false };
 
 private:

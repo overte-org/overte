@@ -57,7 +57,7 @@ private:
 
     QStringList _scriptPaths{};
 
-    QVariantHash _other{};
+    hifi::VariantMultiHash _other{};
 };
 
 #endif  // hifi_FST_h

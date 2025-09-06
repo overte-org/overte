@@ -8,6 +8,8 @@
 
 #include "NetworkSocket.h"
 
+#include <QVariant>
+
 #include "../NetworkLogging.h"
 
 
