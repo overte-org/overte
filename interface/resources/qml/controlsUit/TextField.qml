@@ -10,7 +10,7 @@
 
 import QtQuick 2.5
 import QtQuick.Controls 2.3
-import QtQuick.Controls.Styles 1.4
+//import QtQuick.Controls.Styles
 
 import "../stylesUit"
 import "." as HifiControls
@@ -57,6 +57,8 @@ TextField {
         }
     }
 
+    // QT6TODO
+    /*
     style: TextFieldStyle {
         id: style;
         textColor: {
@@ -159,7 +161,7 @@ TextField {
         padding.left: hasRoundedBorder ? textField.height / 2 : ((isSearchField || textField.leftPermanentGlyph !== "") ? textField.height - 2 : 0) + hifi.dimensions.textPadding
         padding.right: (hasClearButton ? textField.height - 2 : 0) + hifi.dimensions.textPadding
         renderType: textField.styleRenderType
-    }
+    }*/
 
     HifiControls.Label {
         id: textFieldLabel
