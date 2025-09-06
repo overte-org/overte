@@ -147,7 +147,7 @@ void Font::read(QIODevice& in) {
         auto& g = arteryFont.variants[0].glyphs[i];
 
         Glyph glyph;
-        glyph.c = g.codepoint;
+        glyph.c = QChar(g.codepoint);
         glyph.texOffset = glm::vec2(g.imageBounds.l, g.imageBounds.b);
         glyph.texSize = glm::vec2(g.imageBounds.r, g.imageBounds.t) - glyph.texOffset;
         glyph.offset = glm::vec2(g.planeBounds.l, g.planeBounds.b);

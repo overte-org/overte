@@ -14,7 +14,7 @@
 #include <cassert>
 
 #include <QtCore/QDebug>
-#include <QtCore/QRegExp>
+#include <QtCore5Compat/QRegExp>
 #include <QtCore/QStringList>
 
 ApplicationVersion::ApplicationVersion(const QString& versionString) :

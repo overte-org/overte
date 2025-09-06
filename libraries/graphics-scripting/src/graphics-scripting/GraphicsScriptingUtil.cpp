@@ -27,7 +27,7 @@ QVariant toVariant(const glm::mat4& mat4) {
     floats.resize(16);
     memcpy(floats.data(), &mat4, sizeof(glm::mat4));
     QVariant v;
-    v.setValue<QVector<float>>(floats);
+    v.setValue<QVector<float>>(std::move(floats));
     return v;
 };
 

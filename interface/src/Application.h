@@ -854,7 +854,13 @@ private:
 
 
     // Events
-    QHash<int, QKeyEvent> _keysPressed;
+    class KeyEventRecord {
+    public:
+        KeyEventRecord(const int key, const QString &text) : key(key), text(text) {}
+        int key;
+        QString text;
+    };
+    QHash<int, KeyEventRecord> _keysPressed;
     TouchEvent _lastTouchEvent;
     quint64 _lastAcceptedKeyPress { 0 };
 
