@@ -15,6 +15,7 @@
 #include <gl/GLHelpers.h>
 
 #include <QtQuick/QQuickWindow>
+#include <QQuickOpenGLUtils>
 
 #include <shared/NsightHelpers.h>
 #include "Profiling.h"
@@ -166,7 +167,7 @@ void RenderEventHandler::qmlRender(bool sceneGraphSync) {
         // Fence will be used in another thread / context, so a flush is required
         glFlush();
         _shared->updateTextureAndFence({ texture, fence });
-        _shared->_quickWindow->resetOpenGLState();
+        QQuickOpenGLUtils::resetOpenGLState();
     }
     gl::globalRelease();
 }

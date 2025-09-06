@@ -21,6 +21,8 @@
 #include <NetworkingConstants.h>
 #include <SharedUtil.h>
 
+#include "shared/QtHelpers.h"
+
 
 const QStringList SINGLE_VALUE_PROPERTIES { NAME_FIELD, FILENAME_FIELD, TEXDIR_FIELD, SCRIPT_FIELD, WAIT_FOR_WEARABLES_FIELD, COMMENT_FIELD };
 
@@ -73,7 +75,7 @@ hifi::VariantMultiHash FSTReader::parseMapping(QIODevice* device) {
     return properties;
 }
 
-static void removeBlendshape(QVariantHash& bs, const QString& key) {
+static void removeBlendshape(hifi::VariantMultiHash& bs, const QString& key) {
     if (bs.contains(key)) {
         bs.remove(key);
     }
@@ -96,8 +98,9 @@ static void splitBlendshapes(hifi::VariantMultiHash& bs, const QString& key, con
 }
 
 // convert legacy blendshapes to arkit blendshapes
+// QT6TODO: I'm not sure if qVariantToQMultiHash will work correctly.
 static void fixUpLegacyBlendshapes(hifi::VariantMultiHash & properties) {
-    hifi::VariantMultiHash bs = properties.value("bs").toHash();
+    hifi::VariantMultiHash bs = qVariantToQMultiHash(properties.value("bs"));
 
     // These blendshapes have no ARKit equivalent, so we remove them.
     removeBlendshape(bs, "JawChew");
@@ -112,7 +115,8 @@ static void fixUpLegacyBlendshapes(hifi::VariantMultiHash & properties) {
     splitBlendshapes(bs, "Sneer", "NoseSneer_L", "NoseSneer_R");
 
     // re-insert new mutated bs hash into mapping properties.
-    properties.insert("bs", bs);
+    // QT6TODO: add VariantMultiHash to QVariant conversion
+    properties.insert("bs", qMultiHashToQVariant(bs));
 }
 
 hifi::VariantMultiHash FSTReader::readMapping(const QByteArray& data) {
@@ -123,7 +127,7 @@ hifi::VariantMultiHash FSTReader::readMapping(const QByteArray& data) {
     return mapping;
 }
 
-void FSTReader::writeVariant(QBuffer& buffer, QVariantHash::const_iterator& it) {
+void FSTReader::writeVariant(QBuffer& buffer, const hifi::VariantMultiHash::const_iterator& it) {
     QByteArray key = it.key().toUtf8() + " = ";
     QVariantHash hashValue = it.value().toHash();
     if (hashValue.isEmpty()) {

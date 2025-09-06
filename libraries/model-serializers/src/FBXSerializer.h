@@ -112,12 +112,12 @@ public:
     HFMModel* _hfmModel;
     /// Reads HFMModel from the supplied model and mapping data.
     /// \exception QString if an error occurs in parsing
-    HFMModel::Pointer read(const hifi::ByteArray& data, const hifi::VariantHash& mapping, const hifi::URL& url = hifi::URL()) override;
+    HFMModel::Pointer read(const hifi::ByteArray& data, const hifi::VariantMultiHash& mapping, const hifi::URL& url = hifi::URL()) override;
 
     FBXNode _rootNode;
     static FBXNode parseFBX(QIODevice* device);
 
-    HFMModel* extractHFMModel(const hifi::VariantHash& mapping, const QString& url);
+    HFMModel* extractHFMModel(const hifi::VariantMultiHash& mapping, const QString& url);
 
     static ExtractedMesh extractMesh(const FBXNode& object, unsigned int& meshIndex, bool deduplicate);
     QHash<QString, ExtractedMesh> meshes;

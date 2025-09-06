@@ -409,7 +409,7 @@ protected:
 
     ScriptManager::Context _context;
     QReadWriteLock _scriptManagersHashLock;
-    QMultiHash<QUrl, ScriptManagerPointer> _scriptManagersHash;
+    QHash<QUrl, ScriptManagerPointer> _scriptManagersHash;
     QSet<ScriptManagerPointer> _allKnownScriptManagers;
     QMutex _allScriptsMutex;
     ScriptsModel _scriptsModel;

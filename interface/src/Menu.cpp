@@ -19,6 +19,7 @@
 // QT6TODO: The Key Enums should be replaced by QKeyCombination in Qt6
 
 #include "Menu.h"
+#include <QActionGroup>
 #include <QDesktopServices>
 #include <QFileDialog>
 #include <QMenuBar>

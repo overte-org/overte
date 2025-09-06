@@ -12,6 +12,7 @@
 
 #include <QtCore/QJsonDocument>
 #include <QtCore/QUuid>
+#include <QtCore5Compat/QRegExp>
 
 #include <AccountManager.h>
 #include <AddressManager.h>

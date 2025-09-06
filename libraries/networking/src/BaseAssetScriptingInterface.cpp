@@ -13,6 +13,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMetaEnum>
 #include <QMimeDatabase>
 #include <QThread>
 
@@ -262,7 +263,7 @@ Promise BaseAssetScriptingInterface::downloadBytes(QString hash) {
                 { "data", data },
             };
         } else {
-            error = request->getError();
+            error = QMetaEnum::fromType<AssetRequest::Error>().valueToKey(request->getError());
             result = { { "error", request->getError() } };
         }
         // forward thread-safe copies back to our thread

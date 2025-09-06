@@ -24,8 +24,8 @@
 const char* TouchscreenDevice::NAME = "Touchscreen";
 
 bool TouchscreenDevice::isSupported() const {
-    for (auto touchDevice : QTouchDevice::devices()) {
-        if (touchDevice->type() == QTouchDevice::TouchScreen) {
+    for (auto touchDevice : QInputDevice::devices()) {
+        if (touchDevice->type() == QInputDevice::DeviceType::TouchScreen) {
             return true;
         }
     }
@@ -76,12 +76,14 @@ void TouchscreenDevice::touchBeginEvent(const QTouchEvent* event) {
     const QTouchEvent::TouchPoint& point = event->touchPoints().at(0);
     _firstTouchVec = glm::vec2(point.pos().x(), point.pos().y());
     KeyboardMouseDevice::enableTouch(false);
-    QScreen* eventScreen = event->window()->screen();
+    // QT6TODO: I'm not sure how to do this part yet
+    /*QScreen* eventScreen = event->window()->screen();
+    QScreen* eventScreen = event->tagret()window()->screen();
     if (_screenDPI != eventScreen->physicalDotsPerInch()) {
         _screenDPIScale.x = (float)eventScreen->physicalDotsPerInchX();
         _screenDPIScale.y = (float)eventScreen->physicalDotsPerInchY();
         _screenDPI = eventScreen->physicalDotsPerInch();
-    }
+    }*/
 }
 
 void TouchscreenDevice::touchEndEvent(const QTouchEvent* event) {

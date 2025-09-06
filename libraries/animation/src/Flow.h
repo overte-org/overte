@@ -18,6 +18,9 @@
 #include <vector>
 #include <map>
 #include <quuid.h>
+
+#include <QObject>
+
 #include "AnimPose.h"
 
 class Rig;

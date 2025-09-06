@@ -513,7 +513,7 @@ void Stats::updateStats(bool force) {
         }
 
         int linesDisplayed = 0;
-        QMapIterator<float, QString> j(sortedRecords);
+        QMultiMapIterator<float, QString> j(sortedRecords);
         j.toBack();
         QString perfLines;
         while (j.hasPrevious()) {

@@ -27,8 +27,8 @@
 const char* TouchscreenVirtualPadDevice::NAME = "TouchscreenVirtualPad";
 
 bool TouchscreenVirtualPadDevice::isSupported() const {
-    for (auto touchDevice : QTouchDevice::devices()) {
-        if (touchDevice->type() == QTouchDevice::TouchScreen) {
+    for (const auto &touchDevice : QInputDevice::devices()) {
+        if (touchDevice->type() == QInputDevice::DeviceType::TouchScreen) {
             return true;
         }
     }
