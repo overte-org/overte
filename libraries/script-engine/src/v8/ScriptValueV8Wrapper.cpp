@@ -448,7 +448,7 @@ void ScriptValueV8Wrapper::setProperty(quint32 arrayIndex, const ScriptValue& va
             qCDebug(scriptengine_v8) << "Failed to set property";
         }
     } else {
-        qCDebug(scriptengine_v8) << "Failed to set property: " + QString(arrayIndex) + " - parent is not an object";
+        qCDebug(scriptengine_v8) << "Failed to set property: " + QString::number(arrayIndex) + " - parent is not an object";
     }
     //V8TODO: what about flags?
     //_value.setProperty(arrayIndex, unwrapped, (V8ScriptValue::PropertyFlags)(int)flags);

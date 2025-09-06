@@ -141,7 +141,7 @@ if (ANDROID)
     add_definitions(-DANDROID_APP_INTERFACE)
   endif()
 else ()
-  set(PLATFORM_QT_COMPONENTS WebEngine Xml)
+  set(PLATFORM_QT_COMPONENTS WebEngineCore Xml)
 endif()
 
 
@@ -168,7 +168,7 @@ else()
 endif()
 
 foreach(PLATFORM_QT_COMPONENT ${PLATFORM_QT_COMPONENTS})
-  list(APPEND PLATFORM_QT_LIBRARIES "Qt5::${PLATFORM_QT_COMPONENT}")
+  list(APPEND PLATFORM_QT_LIBRARIES "Qt6::${PLATFORM_QT_COMPONENT}")
 endforeach()
 
 message(STATUS "Use optimized IK:      " ${OVERTE_USE_OPTIMIZED_IK})

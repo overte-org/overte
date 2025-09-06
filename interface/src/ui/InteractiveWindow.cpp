@@ -421,7 +421,7 @@ void InteractiveWindow::close() {
     if (_dockWidget) {
         auto window = qApp->getWindow();
         if (QThread::currentThread() != window->thread()) {
-            BLOCKING_INVOKE_METHOD(window, "removeDockWidget", Q_ARG(QDockWidget*, _dockWidget.get()));
+            BLOCKING_INVOKE_METHOD(window, "removeDockWidget", Q_GENERIC_ARG(QDockWidget*, _dockWidget.get()));
         } else {
             window->removeDockWidget(_dockWidget.get());
         }

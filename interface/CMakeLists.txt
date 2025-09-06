@@ -25,7 +25,7 @@ endfunction()
 set(CUSTOM_INTERFACE_QRC_PATHS "")
 
 find_package(
-  Qt5 COMPONENTS
+  Qt6 COMPONENTS
   Gui Widgets Multimedia Network Qml Quick Svg WebEngineCore WebEngineWidgets
   ${PLATFORM_QT_COMPONENTS}
   WebChannel WebSockets
@@ -43,9 +43,9 @@ generate_qrc(OUTPUT ${RESOURCES_QRC} PATH ${CMAKE_CURRENT_SOURCE_DIR}/resources 
 
 if (ANDROID)
   # on Android, don't compress the rcc binary
-  qt5_add_binary_resources(resources "${RESOURCES_QRC}" DESTINATION "${RESOURCES_RCC}" OPTIONS -no-compress)
+  qt6_add_binary_resources(resources "${RESOURCES_QRC}" DESTINATION "${RESOURCES_RCC}" OPTIONS -no-compress)
 else ()
-  qt5_add_binary_resources(resources "${RESOURCES_QRC}" DESTINATION "${RESOURCES_RCC}")
+  qt6_add_binary_resources(resources "${RESOURCES_QRC}" DESTINATION "${RESOURCES_RCC}")
 endif()
 
 if (OVERTE_BUILD_TOOLS AND JSDOC_ENABLED)
@@ -105,7 +105,7 @@ endif ()
 file (GLOB_RECURSE QT_UI_FILES ui/*.ui)
 source_group("UI Files" FILES ${QT_UI_FILES})
 # have qt5 wrap them and generate the appropriate header files
-qt5_wrap_ui(QT_UI_HEADERS "${QT_UI_FILES}")
+qt6_wrap_ui(QT_UI_HEADERS "${QT_UI_FILES}")
 
 # add them to the interface source files
 set(INTERFACE_SRCS ${INTERFACE_SRCS} "${QT_UI_HEADERS}" "${QT_RESOURCES}")
@@ -113,7 +113,7 @@ set(INTERFACE_SRCS ${INTERFACE_SRCS} "${QT_UI_HEADERS}" "${QT_RESOURCES}")
 # translation disabled until we strip out the line numbers
 # set(QM ${TARGET_NAME}_en.qm)
 # set(TS ${TARGET_NAME}_en.ts)
-# qt5_create_translation_custom(${QM} ${INTERFACE_SRCS} ${QT_UI_FILES} ${TS})
+# qt6_create_translation_custom(${QM} ${INTERFACE_SRCS} ${QT_UI_FILES} ${TS})
 
 # setup the android parameters that will help us produce an APK
 if (ANDROID)
@@ -297,9 +297,9 @@ endif ()
 
 target_link_libraries(
   ${TARGET_NAME}
-  Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::Widgets
-  Qt5::Qml Qt5::Quick Qt5::Svg
-  Qt5::WebChannel Qt5::WebEngineCore Qt5::WebEngineWidgets
+  Qt6::Gui Qt6::Network Qt6::Multimedia Qt6::Widgets
+  Qt6::Qml Qt6::Quick Qt6::Svg
+  Qt6::WebChannel Qt6::WebEngineCore Qt6::WebEngineWidgets
   ${PLATFORM_QT_LIBRARIES}
 )
 

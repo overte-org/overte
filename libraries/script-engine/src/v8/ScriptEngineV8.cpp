@@ -803,9 +803,9 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
             "sourceCode:" << sourceCode << " fileName:" << fileName;
 #endif
         BLOCKING_INVOKE_METHOD(this, "evaluate",
-                                  Q_RETURN_ARG(ScriptValue, result),
-                                  Q_ARG(const QString&, sourceCode),
-                                  Q_ARG(const QString&, fileName));
+                                  Q_GENERIC_RETURN_ARG(ScriptValue, result),
+                                  Q_GENERIC_ARG(const QString&, sourceCode),
+                                  Q_GENERIC_ARG(const QString&, fileName));
         return result;
     }*/
     // Compile and check syntax
@@ -1044,8 +1044,8 @@ Q_INVOKABLE ScriptValue ScriptEngineV8::evaluate(const ScriptProgramPointer& pro
             "sourceCode:" << sourceCode << " fileName:" << fileName;
 #endif
         BLOCKING_INVOKE_METHOD(this, "evaluate",
-                                  Q_RETURN_ARG(ScriptValue, result),
-                                  Q_ARG(const ScriptProgramPointer&, program));
+                                  Q_GENERIC_RETURN_ARG(ScriptValue, result),
+                                  Q_GENERIC_ARG(const ScriptProgramPointer&, program));
         return result;
     }
     _evaluatingCounter++;
@@ -1427,7 +1427,7 @@ ScriptValue ScriptEngineV8::create(int type, const void* ptr) {
     Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(getContext());
-    QVariant variant(type, ptr);
+    QVariant variant(QMetaType(type), ptr);
     V8ScriptValue scriptValue = castVariantToValue(variant);
     return ScriptValue(new ScriptValueV8Wrapper(this, std::move(scriptValue)));
 }

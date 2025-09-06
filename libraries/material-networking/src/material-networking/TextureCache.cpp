@@ -1403,7 +1403,7 @@ NetworkTexturePointer TextureCache::getTextureByUUID(const QString& uuid) {
         // We mark this as a resource texture because it's just a reference to another texture.  The source
         // texture will be marked properly
         NetworkTexturePointer toReturn = NetworkTexturePointer::create(uuid, true);
-        toReturn->setImageOperator(Texture::getTextureForUUIDOperator(uuid));
+        toReturn->setImageOperator(Texture::getTextureForUUIDOperator(QUuid(uuid)));
         return toReturn;
     }
     return NetworkTexturePointer();

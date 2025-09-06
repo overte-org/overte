@@ -15,6 +15,7 @@
 
 #include <QAction>
 #include <QStandardPaths>
+#include <QtCore5Compat/QRegExp>
 
 #include <AddressManager.h>
 #include <OffscreenUi.h>
@@ -25,7 +26,7 @@
 const QString LocationBookmarks::HOME_BOOKMARK = "Home";
 
 LocationBookmarks::LocationBookmarks() {
-    _bookmarksFilename = QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/" + LOCATIONBOOKMARKS_FILENAME;
+    _bookmarksFilename = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + LOCATIONBOOKMARKS_FILENAME;
     readFromFile();
 }
 
@@ -104,7 +105,7 @@ void LocationBookmarks::addBookmark() {
         disconnect(dlg, &ModalDialogListener::response, this, nullptr);
         auto bookmarkName = response.toString();
 
-        bookmarkName = bookmarkName.trimmed().replace(QRegExp("(\r\n|[\r\n\t\v ])+"), " ");
+        bookmarkName = bookmarkName.trimmed().replace(QRegularExpression("(\r\n|[\r\n\t\v ])+"), " ");
         if (bookmarkName.length() == 0) {
             return;
         }

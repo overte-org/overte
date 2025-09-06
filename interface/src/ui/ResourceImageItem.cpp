@@ -162,5 +162,6 @@ void ResourceImageItemRenderer::render() {
         _fboMutex.unlock();
     }
     glFlush();
-    _window->resetOpenGLState();
+    // QT6TODO: check if this can be omitted
+    //_window->resetOpenGLState();
 }
