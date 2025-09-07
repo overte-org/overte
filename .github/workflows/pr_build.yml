@@ -332,7 +332,6 @@ jobs:
 
     - name: Output system stats
       if: ${{ always() }}
-      working-directory: build
       shell: bash
       run: |
         echo "Disk usage:"
