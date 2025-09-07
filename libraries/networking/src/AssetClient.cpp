@@ -222,7 +222,7 @@ namespace {
         if (!dt.isValid()) {
             qDebug() << __FUNCTION__ << "unrecognized date format:" << dateString;
         }
-        dt.setTimeSpec(Qt::UTC);
+        dt.setTimeZone(QTimeZone::utc());
         return dt;
     }
     QDateTime getHttpDateValue(const QVariantMap& headers, const QString& keyName, const QDateTime& defaultValue) {
