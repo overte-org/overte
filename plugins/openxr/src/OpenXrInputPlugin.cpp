@@ -938,8 +938,9 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
                 posOffset *= glm::translate(Vectors::UNIT_Z * 0.06f);
                 posOffset *= glm::rotate(PI / 4.0f, Vectors::UNIT_X);
             } else {
-                // vive controllers have bugged poses that aren't in the grip or aim position,
-                // they're always at the top near the tracking ring
+                // Vive controllers have bugged poses that aren't in the grip or aim position,
+                // they're always at the top near the tracking ring. This is how all runtimes
+                // that currently support them behave, and it's probably here to stay.
                 if (_context->_stickEmulation) {
                     posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? 0.1f : -0.1f));
                     posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.16f);
@@ -990,18 +991,19 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     }
 
     // Vive and Index controllers have a physical trigger click, but most
-    // software only checks for /trigger/value == 1, even on those controllers.
+    // software only checks for /trigger/value ≈ 1, even on those controllers.
     // The virtual "trigger click" button is still required internally
     // for laser interactiom to work properly, so we emulate it here.
     {
         auto left_trigger = _actions.at("left_trigger_value")->getFloat();
         auto right_trigger = _actions.at("right_trigger_value")->getFloat();
 
-        if (left_trigger.isActive && left_trigger.currentState == 1.0f) {
+        // TODO: Customisable click threshold?
+        if (left_trigger.isActive && left_trigger.currentState >= 0.95f) {
             _buttonPressedMap.insert(controller::LT_CLICK);
         }
 
-        if (right_trigger.isActive && right_trigger.currentState == 1.0f) {
+        if (right_trigger.isActive && right_trigger.currentState >= 0.95f) {
             _buttonPressedMap.insert(controller::RT_CLICK);
         }
     }
@@ -1041,6 +1043,7 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     if (!_context->_stickEmulation) {
         auto left_click = _actions.at("left_thumbstick_click")->getBool();
         auto right_click = _actions.at("right_thumbstick_click")->getBool();
+
         auto left_primary = _actions.at("left_primary_click")->getBool();
         auto right_primary = _actions.at("right_primary_click")->getBool();
 
