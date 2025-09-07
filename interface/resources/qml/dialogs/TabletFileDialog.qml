@@ -12,7 +12,6 @@ import QtQuick 2.7
 import Qt.labs.folderlistmodel 2.2
 import Qt.labs.settings 1.0
 import QtQuick.Dialogs as OriginalDialogs
-import QtQuick.Controls 2.3 as QQC1
 import QtQuick.Controls 2.3
 
 import ".."
@@ -460,7 +459,7 @@ TabletModalWindow {
             }
         }
 
-        Table {
+        TableView {
             id: fileTableView
             colorScheme: hifi.colorSchemes.light
             anchors {
@@ -472,14 +471,14 @@ TabletModalWindow {
                 bottomMargin: hifi.dimensions.contentSpacing.y + currentSelection.controlHeight - currentSelection.height
             }
             headerVisible: !selectDirectory
-            onDoubleClicked: navigateToRow(row);
+            //onDoubleClicked: navigateToRow(row);
             focus: true
             Keys.onReturnPressed: navigateToCurrentRow();
             Keys.onEnterPressed: navigateToCurrentRow();
 
-            sortIndicatorColumn: 0
-            sortIndicatorOrder: Qt.AscendingOrder
-            sortIndicatorVisible: true
+            property int sortIndicatorColumn: 0
+            property var sortIndicatorOrder: Qt.AscendingOrder
+            property bool sortIndicatorVisible: true
 
             model: filesModel
 
@@ -493,7 +492,7 @@ TabletModalWindow {
 
             onSortIndicatorOrderChanged: { updateSort(); }
 
-            itemDelegate: Item {
+            delegate: Item {
                 clip: true
 
                 FiraSansSemiBold {
@@ -538,7 +537,7 @@ TabletModalWindow {
                 }
             }
 
-            QQC1.TableViewColumn {
+            /*QQC1.TableViewColumn {
                 id: fileNameColumn
                 role: "fileName"
                 title: "Name"
@@ -562,7 +561,7 @@ TabletModalWindow {
                 movable: false
                 resizable: true
                 visible: !selectDirectory
-            }
+            }*/
 
             function navigateToRow(row) {
                 currentRow = row;
