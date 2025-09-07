@@ -1306,9 +1306,7 @@ void Application::initialize(const QCommandLineParser &parser) {
 
     qCDebug(interfaceapp) << "Directory Service session ID is" << uuidStringWithoutCurlyBraces(accountManager->getSessionID());
 
-    // FIXME: This shouldn't be here anymore. It makes debugging harder, and
-    // messes with settings at startup. (possibly while they're still loading)
-    //pauseUntilLoginDetermined();
+    pauseUntilLoginDetermined();
 }
 
 void Application::init() {

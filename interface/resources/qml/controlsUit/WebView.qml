@@ -12,10 +12,11 @@ import QtQuick 2.5
 import "."
 
 BaseWebView {
-    onNewViewRequested: {
+    // Qt6 TODO
+    /*onNewViewRequested: {
         // Load dialog via OffscreenUi so that JavaScript EventBridge is available.
         var browser = OffscreenUi.load("Browser.qml");
         request.openIn(browser.webView);
         browser.webView.forceActiveFocus();
-    }
+    }*/
 }

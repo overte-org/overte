@@ -296,7 +296,7 @@ void SharedObject::initializeRenderControl(QOpenGLContext* context) {
 
 #ifndef DISABLE_QML
     if (!nsightActive()) {
-        _renderControl->window()->setGraphicsDevice(QQuickGraphicsDevice::fromOpenGLContext(context));
+        _quickWindow->setGraphicsDevice(QQuickGraphicsDevice::fromOpenGLContext(context));
         _renderControl->initialize();
     }
 #endif
