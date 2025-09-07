@@ -38,7 +38,7 @@ jobs:
         include:
           - os: Windows 2022
             # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
-            runner: depot-windows-2022-8
+            runner: depot-windows-2022-16
             arch: x86_64
             build_type: full
             qt_source: source
@@ -65,6 +65,7 @@ jobs:
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
         # Linux build variables
         if [[ "${{ matrix.os }}" =~ "Ubuntu" ]]; then
+          echo "CONAN_HOME=~/.conan2" >> $GITHUB_ENV
           echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=tgz" >> $GITHUB_ENV
@@ -74,6 +75,7 @@ jobs:
         fi
         # Mac build variables
         if [[ "${{ matrix.os }}" =~ "macOS" ]]; then
+          echo "CONAN_HOME=~/.conan2" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "ZIP_COMMAND=zip" >> $GITHUB_ENV
           echo "ZIP_ARGS=-r" >> $GITHUB_ENV
@@ -85,6 +87,8 @@ jobs:
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
+          # Try to avoid hitting Windows' PATH limit.
+          echo "CONAN_HOME=C:\Conan" >> $GITHUB_ENV
           echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
           echo "PYTHON_EXEC=python" >> $GITHUB_ENV
           echo "ZIP_COMMAND=7z" >> $GITHUB_ENV
@@ -120,13 +124,6 @@ jobs:
       with:
         submodules: false
         fetch-depth: 1
-
-    - name: Cache conan
-      uses: actions/cache@v4
-      with:
-        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ~/.conan2/
-
 
     - name: Install dependencies
       shell: bash
@@ -171,10 +168,16 @@ jobs:
     - name: Install Python modules
       if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
       shell: bash
-      run: $PYTHON_EXEC -m pip install boto3 PyGithub conan
+      run: $PYTHON_EXEC -m pip install boto3 PyGithub conan html5lib setuptools
 
     - name: Prepare Conan Build Environment
       uses: ./.github/actions/setup-conan
+
+    - name: Cache conan
+      uses: actions/cache@v4
+      with:
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: ${{ env.CONAN_HOME }}
 
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install
@@ -192,6 +195,7 @@ jobs:
       run: conan cache backup-upload
 
     - name: Cleanup Conan dependencies
+      if: always() && steps.conan-cache.cache-hit != 'true'
       run: conan cache clean "*" -sbd
       shell: bash
 
@@ -200,7 +204,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ~/.conan2/
+        path: ${{ env.CONAN_HOME }}
 
     - name: Configure CMake
       shell: bash

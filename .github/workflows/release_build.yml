@@ -57,6 +57,8 @@ jobs:
 
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
+        # Try to avoid hitting Windows' PATH limit.
+        echo "CONAN_HOME=C:\Conan" >> $GITHUB_ENV
         echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
 
         echo "PYTHON_EXEC=python" >> $GITHUB_ENV
@@ -85,12 +87,6 @@ jobs:
         submodules: false
         fetch-depth: 1
 
-    - name: Cache conan
-      uses: actions/cache@v4
-      with:
-        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ~/.conan2/
-
     - name: Override Windows package versions
       shell: pwsh
       if: startsWith(matrix.os, 'windows')
@@ -103,10 +99,16 @@ jobs:
     - name: Install Python modules
       if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
       shell: bash
-      run: $PYTHON_EXEC -m pip install boto3 PyGithub conan
+      run: $PYTHON_EXEC -m pip install boto3 PyGithub conan html5lib setuptools
 
     - name: Prepare Conan Build Environment
       uses: ./.github/actions/setup-conan
+
+    - name: Cache conan
+      uses: actions/cache@v4
+      with:
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: ${{ env.CONAN_HOME }}
 
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install
@@ -130,6 +132,7 @@ jobs:
         conan upload --list=pkglist.json -r=overte -c
 
     - name: Cleanup Conan dependencies
+      if: always() && steps.conan-cache.cache-hit != 'true'
       run: conan cache clean "*" -sbd
       shell: bash
 
@@ -138,7 +141,7 @@ jobs:
       uses: actions/cache/save@v4
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ~/.conan2/
+        path: ${{ env.CONAN_HOME }}
 
     - name: Configure CMake
       shell: bash
