@@ -86,6 +86,7 @@
 #include <ResourceScriptingInterface.h>
 #include <SceneScriptingInterface.h>
 #include <ScriptEngines.h>
+#include <ScriptEntityItem.h>
 #include <scripting/Audio.h>
 #include <scripting/AssetMappingsScriptingInterface.h>
 #include <scripting/ControllerScriptingInterface.h>
@@ -1667,6 +1668,16 @@ void Application::setupSignalsAndOperators() {
             }
 
             return nullptr;
+        });
+
+        ScriptEntityItem::setLoadOrReloadScriptOperator([](const EntityItemID& entityID, const QString& oldScriptURL, const QString& newScriptURL) -> bool {
+            return DependencyManager::get<EntityTreeRenderer>()->checkAndCallPreload(entityID, true, true, oldScriptURL, newScriptURL);
+        });
+        ScriptEntityItem::setUnloadScriptOperator([](const EntityItemID& entityID, const QString& scriptURL) -> void {
+            DependencyManager::get<EntityTreeRenderer>()->unloadEntityScript(entityID, scriptURL);
+        });
+        EntityItem::setUpdateScriptUserDataOperator([](const EntityItemID& entityID, const QString& scriptURL, const QString& userData) -> void {
+            return DependencyManager::get<EntityTreeRenderer>()->updateScriptUserData(entityID, scriptURL, userData);
         });
 
         Procedural::opaqueStencil = [](gpu::StatePointer state, bool useAA) {
