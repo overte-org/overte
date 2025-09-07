@@ -1,5 +1,5 @@
+import QtCore
 import QtQuick 2.7
-import Qt.labs.settings 1.0 as QtSettings
 
 import QtQuick.Controls 2.3
 
@@ -11,6 +11,9 @@ import controlsUit 1.0
 
 OriginalDesktop.Desktop {
     id: desktop
+
+    // Qt6 TODO: Nothing renders yet, and the desktop just eats all mouse inputs
+    visible: false
 
     property alias toolbarObjectName: sysToolbar.objectName
 
@@ -79,7 +82,7 @@ OriginalDesktop.Desktop {
     }
     signal toolbarVisibleChanged(bool isVisible, string toolbarName);
 
-    QtSettings.Settings {
+    Settings {
         id: settings;
         category: "toolbar";
         property bool constrainToolbarToCenterX: true;
