@@ -10,7 +10,6 @@
 
 import QtQuick 2.7
 import QtQuick.Controls 2.3
-import QtQuick.Controls 2.3 as QQC2
 
 import "../dialogs"
 import "../js/Utils.js" as Utils
@@ -519,27 +518,27 @@ FocusScope {
         ensureTitleBarVisible(targetWindow);
     }
 
-    Component { id: messageDialogBuilder; MessageDialog { } }
+    Component { id: messageDialogBuilder; Item {}}//MessageDialog { } }
     function messageBox(properties) {
         return messageDialogBuilder.createObject(desktop, properties);
     }
 
-    Component { id: inputDialogBuilder; QueryDialog { } }
+    Component { id: inputDialogBuilder; Item {}}//QueryDialog { } }
     function inputDialog(properties) {
         return inputDialogBuilder.createObject(desktop, properties);
     }
 
-    Component { id: customInputDialogBuilder; CustomQueryDialog { } }
+    Component { id: customInputDialogBuilder; Item {}}//CustomQueryDialog { } }
     function customInputDialog(properties) {
         return customInputDialogBuilder.createObject(desktop, properties);
     }
 
-    Component { id: fileDialogBuilder; FileDialog { } }
+    Component { id: fileDialogBuilder; Item {}}//FileDialog { } }
     function fileDialog(properties) {
         return fileDialogBuilder.createObject(desktop, properties);
     } 
 
-    Component { id: assetDialogBuilder; AssetDialog { } }
+    Component { id: assetDialogBuilder; Item {}}//AssetDialog { } }
     function assetDialog(properties) {
         return assetDialogBuilder.createObject(desktop, properties);
     }
@@ -584,7 +583,7 @@ FocusScope {
         ColorAnimation on color { from: "#7fffff00"; to: "#7f0000ff"; duration: 1000; loops: 9999 }
     }
 
-    QQC2.Action {
+    Action {
         text: "Toggle Focus Debugger"
         shortcut: "Ctrl+Shift+F"
         enabled: DebugQML

@@ -22,6 +22,7 @@
 #include <QDebug>
 #include <QHash>
 #include <QObject>
+#include <QStringRef>
 #include <QtCore/QJsonDocument>
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkRequest>
@@ -429,7 +430,7 @@ QString EntityItemProperties::getCollisionMaskAsString() const {
 }
 
 void EntityItemProperties::setCollisionMaskFromString(const QString& maskString) {
-    QVector<QStringRef> groups = maskString.splitRef(',');
+    auto groups = QStringRef(&maskString).split(',');
     uint16_t mask = 0x0000;
     for (auto groupName : groups) {
         mask |= getCollisionGroupAsBitMask(groupName);
@@ -956,7 +957,8 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
         int finalizedSize = packetData->getFinalizedSize();
 
         if (finalizedSize <= buffer.size()) {
-            buffer.replace(0, finalizedSize, finalizedData, finalizedSize);
+            // QByteArray::replace allows both qsizetype and char* here, so force it to int
+            buffer.replace(static_cast<int>(0), finalizedSize, finalizedData, finalizedSize);
             buffer.resize(finalizedSize);
         } else {
             qCDebug(entities) << "ERROR - encoded edit message doesn't fit in output buffer.";
