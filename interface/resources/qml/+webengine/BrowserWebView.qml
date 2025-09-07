@@ -10,23 +10,20 @@ WebView {
     profile: FileTypeProfile;
     property var parentRoot: null
 
-    // Create a global EventBridge object for raiseAndLowerKeyboard.
-    WebEngineScript {
-        id: createGlobalEventBridge
-        sourceCode: eventBridgeJavaScriptToInject
-        injectionPoint: WebEngineScript.Deferred
-        worldId: WebEngineScript.MainWorld
-    }
-
-    // Detect when may want to raise and lower keyboard.
-    WebEngineScript {
-        id: raiseAndLowerKeyboard
-        injectionPoint: WebEngineScript.Deferred
-        sourceUrl: resourceDirectoryUrl + "/html/raiseAndLowerKeyboard.js"
-        worldId: WebEngineScript.MainWorld
-    }
-
-    userScripts: [ createGlobalEventBridge, raiseAndLowerKeyboard ]
+    userScripts.collection: [
+        // Create a global EventBridge object for raiseAndLowerKeyboard.
+        {
+            sourceCode: eventBridgeJavaScriptToInject,
+            injectionPoint: WebEngineScript.Deferred,
+            worldId: WebEngineScript.MainWorld,
+        },
+        // Detect when may want to raise and lower keyboard.
+        {
+            injectionPoint: WebEngineScript.Deferred,
+            sourceUrl: resourceDirectoryUrl + "/html/raiseAndLowerKeyboard.js",
+            worldId: WebEngineScript.MainWorld,
+        }
+    ]
 
     onLoadingChanged: {
         if (loadRequest.status === WebEngineView.LoadSucceededStatus) {
