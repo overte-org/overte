@@ -130,6 +130,9 @@ void RenderEventHandler::qmlRender(bool sceneGraphSync) {
     PROFILE_RANGE(render_qml_gl, __FUNCTION__);
 
     gl::globalLock();
+
+    _shared->_renderControl->beginFrame();
+
     if (!_shared->preRender(sceneGraphSync)) {
         gl::globalRelease();
         return;
@@ -148,16 +151,9 @@ void RenderEventHandler::qmlRender(bool sceneGraphSync) {
         } else {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             _shared->setRenderTarget(_fbo, _currentSize);
-
-            // workaround for https://highfidelity.atlassian.net/browse/BUGZ-1119
-            {
-                // Serialize QML rendering because of a crash caused by Qt bug 
-                // https://bugreports.qt.io/browse/QTBUG-77469
-                static std::mutex qmlRenderMutex;
-                std::unique_lock<std::mutex> qmlRenderLock{ qmlRenderMutex };
-                _shared->_renderControl->render();
-            }
+            _shared->_renderControl->render();
         }
+        _shared->_renderControl->endFrame();
         _shared->_lastRenderTime = usecTimestampNow();
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         glBindTexture(GL_TEXTURE_2D, texture);
