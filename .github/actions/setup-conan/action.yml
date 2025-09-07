@@ -3,29 +3,54 @@ description: "Configures Conan for building Overte. It also sets up a backup sou
 runs:
   using: "composite"
   steps:
+  - name: "Set CONAN_HOME"
+    shell: bash
+    run: |
+        # Linux build variables
+        if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
+          echo "CONAN_HOME=$HOME/.conan2" >> $GITHUB_ENV
+        fi
+
+        # Mac build variables
+        if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
+          echo "CONAN_HOME=$HOME/.conan2" >> $GITHUB_ENV
+        fi
+        # Windows build variables
+        if [[ "${{ matrix.os }}" = "Windows"* ]]; then
+          # Try to avoid hitting Windows' PATH limit.
+          echo "CONAN_HOME=C:\Conan" >> $GITHUB_ENV
+        fi
+
+  - name: Cache conan
+    id: conan-cache
+    uses: actions/cache@v4
+    with:
+        path: ${{ env.CONAN_HOME }}
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+
   - name: "Prepare Conan Build Environment"
     shell: bash
     run: |
-      echo "Starting with a clean Conan profile…" && rm ~/.conan2/profiles/default || true  # Don't fail if missing.
+      echo "Starting with a clean Conan profile…" && rm ${CONAN_HOME}/profiles/default || true  # Don't fail if missing.
       conan profile detect -e
       # Allow Conan to install packages on the CI pipeline.
-      cat >> ~/.conan2/profiles/default <<EOF
+      cat >> ${CONAN_HOME}/profiles/default <<EOF
       [conf]
       tools.system.package_manager:mode=install
       EOF
-      echo "Printing Conan default profile…" && cat ~/.conan2/profiles/default
+      echo "Printing Conan default profile…" && cat ${CONAN_HOME}/profiles/default
 
       conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
       # Use our mirror of Conan Center to avoid rate limiting.
       conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center
 
-      echo "Starting with a clean Conan global.conf…" && rm ~/.conan2/global.conf
+      echo "Starting with a clean Conan global.conf…" && rm ${CONAN_HOME}/global.conf
       # Try downloading source files from conandata.yml first. Fall back to our backup if the upstream source is down.
-      echo "core.sources:download_urls=['origin', 'https://artifactory.overte.org/artifactory/build-dependencies-backup/']" >> ~/.conan2/global.conf
-      echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ~/.conan2/global.conf
+      echo "core.sources:download_urls=['origin', 'https://artifactory.overte.org/artifactory/build-dependencies-backup/']" >> ${CONAN_HOME}/global.conf
+      echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ${CONAN_HOME}/global.conf
       # Credentials for uploading backsups of dependency sources.
       # source-credentials.json is a jinja template, so os.getenv() happens at runtime.
-      cat > ~/.conan2/source_credentials.json <<EOF
+      cat > ${CONAN_HOME}/source_credentials.json <<EOF
       {% set TOKEN = os.getenv('CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN') %}
       {
         "credentials": [
@@ -36,14 +61,14 @@ runs:
         ]
       }
       EOF
-      echo "Printing Conan global.conf…" && cat ~/.conan2/global.conf
-      echo "Printing Conan remotes.json…" && cat ~/.conan2/remotes.json
-      echo "Printing Conan source_credentials.json…" && cat ~/.conan2/source_credentials.json
+      echo "Printing Conan global.conf…" && cat ${CONAN_HOME}/global.conf
+      echo "Printing Conan remotes.json…" && cat ${CONAN_HOME}/remotes.json
+      echo "Printing Conan source_credentials.json…" && cat ${CONAN_HOME}/source_credentials.json
 
       # We get CMake from Conan to avoid CMake 4.0 which some of our dependencies don't yet build with.
       # FIXME: Remove once all our dependencies have CMake 4.0 compatibility.
-      cat >> ~/.conan2/profiles/default <<EOF
+      cat >> ${CONAN_HOME}/profiles/default <<EOF
       [tool_requires]
       !cmake/*: cmake/[>=3 <4]
       EOF
-      echo "Printing Conan default profile…" && cat ~/.conan2/profiles/default
+      echo "Printing Conan default profile…" && cat ${CONAN_HOME}/profiles/default
