@@ -13,6 +13,7 @@
 
 #ifndef overte_SocketType_h
 #define overte_SocketType_h
+#include <QDebug>
 
 /// @addtogroup Networking
 /// @{
