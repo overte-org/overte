@@ -12,7 +12,6 @@ import QtQuick 2.7
 import Qt.labs.folderlistmodel 2.2
 import Qt.labs.settings 1.0
 import QtQuick.Dialogs as OriginalDialogs
-import QtQuick.Controls 2.3 as QQC1
 import QtQuick.Controls 2.3
 
 import ".."
@@ -496,7 +495,7 @@ ModalWindow {
             }
         }
 
-        Table {
+        TableView {
             id: fileTableView
             colorScheme: hifi.colorSchemes.light
             anchors {
@@ -508,13 +507,13 @@ ModalWindow {
                 bottomMargin: hifi.dimensions.contentSpacing.y + currentSelection.controlHeight - currentSelection.height
             }
             headerVisible: !selectDirectory
-            onDoubleClicked: navigateToRow(row);
+            //onDoubleClicked: navigateToRow(row);
             Keys.onReturnPressed: navigateToCurrentRow();
             Keys.onEnterPressed: navigateToCurrentRow();
 
-            sortIndicatorColumn: 0
-            sortIndicatorOrder: Qt.AscendingOrder
-            sortIndicatorVisible: true
+            property int sortIndicatorColumn: 0
+            property var sortIndicatorOrder: Qt.AscendingOrder
+            property bool sortIndicatorVisible: true
 
             model: filesModel
 
@@ -528,7 +527,7 @@ ModalWindow {
 
             onSortIndicatorOrderChanged: { updateSort(); }
 
-            itemDelegate: Item {
+            delegate: Item {
                 clip: true
 
                 FiraSansSemiBold {
@@ -573,31 +572,33 @@ ModalWindow {
                 }
             }
 
-            QQC1.TableViewColumn {
-                id: fileNameColumn
-                role: "fileName"
-                title: "Name"
-                width: (selectDirectory ? 1.0 : 0.5) * fileTableView.width
-                movable: false
-                resizable: true
-            }
-            QQC1.TableViewColumn {
-                id: fileModifiedColumn
-                role: "fileModified"
-                title: "Date"
-                width: 0.3 * fileTableView.width
-                movable: false
-                resizable: true
-                visible: !selectDirectory
-            }
-            QQC1.TableViewColumn {
-                role: "fileSize"
-                title: "Size"
-                width: fileTableView.width - fileNameColumn.width - fileModifiedColumn.width
-                movable: false
-                resizable: true
-                visible: !selectDirectory
-            }
+            /*model: TableModel {
+                TableModelColumn {
+                    id: fileNameColumn
+                    role: "fileName"
+                    title: "Name"
+                    width: (selectDirectory ? 1.0 : 0.5) * fileTableView.width
+                    movable: false
+                    resizable: true
+                }
+                TableModelColumn {
+                    id: fileModifiedColumn
+                    role: "fileModified"
+                    title: "Date"
+                    width: 0.3 * fileTableView.width
+                    movable: false
+                    resizable: true
+                    visible: !selectDirectory
+                }
+                TableModelColumn {
+                    role: "fileSize"
+                    title: "Size"
+                    width: fileTableView.width - fileNameColumn.width - fileModifiedColumn.width
+                    movable: false
+                    resizable: true
+                    visible: !selectDirectory
+                }
+            }*/
 
             function navigateToRow(row) {
                 currentRow = row;
