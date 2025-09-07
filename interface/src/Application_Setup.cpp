@@ -1342,10 +1342,6 @@ void Application::initialize(const QCommandLineParser &parser) {
     // FIXME: This shouldn't be here anymore. It makes debugging harder, and
     // messes with settings at startup. (possibly while they're still loading)
     //pauseUntilLoginDetermined();
-
-
-    connect(&_metricsUpdateTimer, &QTimer::timeout, this, &Application::updateMetrics);
-    _metricsUpdateTimer.start(5000);
 }
 
 void Application::init() {
