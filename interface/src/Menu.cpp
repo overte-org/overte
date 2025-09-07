@@ -98,6 +98,8 @@ Menu::Menu() {
                 dialogsManager.data(), &DialogsManager::toggleLoginDialog);
     }
 
+    // Qt6 TODO: This crashes when the domain changes, maybe a thread safety thing?
+#if 0
     auto domainLogin = addActionToQMenuAndActionHash(fileMenu, "Domain: Log In");
     domainLogin->setVisible(false);
     connect(domainLogin, &QAction::triggered, [] {
@@ -108,6 +110,7 @@ Menu::Menu() {
     connect(domainAccountManager.data(), &DomainAccountManager::hasLogInChanged, [domainLogin](bool hasLogIn) {
         domainLogin->setVisible(hasLogIn);
     });
+#endif
 
     // File > Quit
     addActionToQMenuAndActionHash(fileMenu, MenuOption::Quit, static_cast<int>(Qt::CTRL) | static_cast<int>(Qt::Key_Q), qApp, SLOT(quit()), QAction::QuitRole);

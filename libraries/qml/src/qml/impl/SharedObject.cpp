@@ -14,6 +14,7 @@
 #include <QtQml/QQmlContext>
 #include <QQuickRenderTarget>
 #include <QtQml/QQmlEngine>
+#include <QQuickGraphicsDevice>
 
 #include <QtGui/QOpenGLContext>
 #include <QPointer>
@@ -295,7 +296,7 @@ void SharedObject::initializeRenderControl(QOpenGLContext* context) {
 
 #ifndef DISABLE_QML
     if (!nsightActive()) {
-        // QT6TODO: Qt6 does not accept context as parameter here. I'm not sure if it's a problem.
+        _renderControl->window()->setGraphicsDevice(QQuickGraphicsDevice::fromOpenGLContext(context));
         _renderControl->initialize();
     }
 #endif
