@@ -163,7 +163,7 @@ ScrollingWindow {
                 anchors.leftMargin: 0
                 anchors.verticalCenter: parent.verticalCenter
                 focus: true
-                colorScheme: hifi.colorSchemes.dark
+                //colorScheme: hifi.colorSchemes.dark
                 placeholderText: "Enter URL"
                 inputMethodHints: Qt.ImhUrlCharactersOnly
                 Component.onCompleted: ScriptDiscoveryService.scriptsModelFilter.filterRegExp = new RegExp("^.*$", "i")
@@ -229,8 +229,8 @@ ScrollingWindow {
                 Button {
                     id:allow
                     text: "Allow"
-                    color: hifi.buttons.blue
-                    colorScheme: root.colorScheme
+                    //color: hifi.buttons.blue
+                    //colorScheme: root.colorScheme
                     width: 120
                     enabled: true
                     onClicked: root.allowPermissions(); 
@@ -240,8 +240,8 @@ ScrollingWindow {
                 Button {
                     id:block
                     text: "Block"
-                    color: hifi.buttons.red
-                    colorScheme: root.colorScheme
+                    //color: hifi.buttons.red
+                    //colorScheme: root.colorScheme
                     width: 120
                     enabled: true
                     onClicked: root.hidePermissionsBar();
