@@ -23,7 +23,9 @@ set(CMAKE_AUTORCC ON)
 # set our OS X deployment target
 if (APPLE)
     # Needs to be set before the first project() call.
-    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.11" CACHE STRING "Specifies the minimum version of the target platform (e.g. macOS or iOS) on which the target binaries are to be deployed.")
+    # 10.13 is the minimum properly supported by oneTBB.
+    # 11 is Big Sur which is supposedly the first macOS for M1. 13 is the latest supported according to Wikipedia: https://en.wikipedia.org/wiki/MacOS_version_history#Overview
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Specifies the minimum version of the target platform (e.g. macOS or iOS) on which the target binaries are to be deployed.")
 endif()
 
 
