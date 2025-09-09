@@ -143,6 +143,9 @@ QObject* VrMenu::findMenuObject(const QString& menuOption) {
 
 
 void VrMenu::addMenu(QMenu* menu) {
+    auto *ui = dynamic_cast<OffscreenUi*>(parent());
+    Q_ASSERT(ui);
+    QQmlEngine *engine = ui->getSurfaceContext()->engine();
     Q_ASSERT(!MenuUserData::hasData(menu->menuAction()));
     QObject* parent = menu->parent();
     QObject* qmlParent = nullptr;
@@ -159,20 +162,35 @@ void VrMenu::addMenu(QMenu* menu) {
         Q_ASSERT(false);
     }
     QVariant returnedValue;
-    bool invokeResult = QMetaObject::invokeMethod(qmlParent, "addMenu", Qt::DirectConnection,
-                                                  Q_RETURN_ARG(QVariant, returnedValue),
-                                                  Q_ARG(QVariant, QVariant::fromValue(menu->title())));
-    Q_ASSERT(invokeResult);
-    Q_UNUSED(invokeResult); // FIXME - apparently we haven't upgraded the Qt on our unix Jenkins environments to 5.5.x
-    QObject* result = returnedValue.value<QObject*>();
-    Q_ASSERT(result);
-    if (!result) {
-        qWarning() << "Unable to create QML menu for widget menu: " << menu->title();
+    // QT6TODO: move to constructor, we need to load the component only once
+    QQmlComponent menuComponent(engine);
+    //menuComponent.loadFromModule("QtQuick.Controls", "Menu");
+    menuComponent.loadUrl(PathUtils::qmlUrl("controls/WrappedMenu.qml"));
+    if (menuComponent.status() == QQmlComponent::Status::Error) {
+        qDebug() << "QML Menu component error: " << menuComponent.errorString();
         return;
     }
+    Q_ASSERT(menuComponent.isReady());
+    // QT6TODO: what deletes the item later?
+    QObject *menuObject = menuComponent.create(ui->getSurfaceContext());
+    menuObject->setObjectName(menu->title());
+    menuObject->setProperty("title", menu->title());
+    menuObject->setParent(qmlParent);
+    qDebug() << "menuObject: " << QString(menuObject->metaObject()->metaType().name());
+    bool invokeResult = QMetaObject::invokeMethod(qmlParent, "addMenuWrap", Qt::DirectConnection,
+                                                  Q_ARG(QVariant, QVariant::fromValue(menuObject)));
+    Q_ASSERT(invokeResult);
+    Q_UNUSED(invokeResult); // FIXME - apparently we haven't upgraded the Qt on our unix Jenkins environments to 5.5.x
+    //QObject* result = returnedValue.value<QObject*>();
+    //qDebug() << "menuObject: " << QString(returnedValue.metaType().name());
+    //Q_ASSERT(result);
+    //if (!result) {
+    //    qWarning() << "Unable to create QML menu for widget menu: " << menu->title();
+    //    return;
+    //}
 
     // Bind the QML and Widget together
-    new MenuUserData(menu->menuAction(), result, qmlParent);
+    new MenuUserData(menu->menuAction(), menuObject, qmlParent);
 }
 
 void bindActionToQmlAction(QObject* qmlAction, QAction* action, QObject* qmlParent) {
@@ -255,6 +273,7 @@ void VrMenu::insertAction(QAction* before, QAction* action) {
 
 class QQuickMenuBase;
 class QQuickMenu1;
+class QQuickMenu;
 
 void VrMenu::removeAction(QAction* action) {
     if (!action) {
