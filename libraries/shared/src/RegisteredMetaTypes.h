@@ -31,12 +31,13 @@
 class QColor;
 class QUrl;
 
+// QT6TODO:
 Q_DECLARE_METATYPE(uint16_t)
 Q_DECLARE_METATYPE(glm::vec2)
 Q_DECLARE_METATYPE(glm::u8vec3)
-Q_DECLARE_METATYPE(glm::vec3)
-Q_DECLARE_METATYPE(glm::vec4)
-Q_DECLARE_METATYPE(glm::quat)
+//Q_DECLARE_METATYPE(glm::vec3)
+//Q_DECLARE_METATYPE(glm::vec4)
+//Q_DECLARE_METATYPE(glm::quat)
 Q_DECLARE_METATYPE(glm::mat4)
 Q_DECLARE_METATYPE(QVector<float>)
 Q_DECLARE_METATYPE(unsigned int)
