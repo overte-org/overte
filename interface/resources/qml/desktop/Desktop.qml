@@ -61,6 +61,10 @@ FocusScope {
             }
         }
 
+        function addMenuWrap(menu) {
+            return addMenu(menu);
+        }
+
         function addExclusionGroup(qmlAction, exclusionGroup) {
 
             var exclusionGroupId = exclusionGroup.toString();
