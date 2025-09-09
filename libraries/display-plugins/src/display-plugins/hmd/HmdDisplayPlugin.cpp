@@ -219,9 +219,11 @@ void HmdDisplayPlugin::internalPresent() {
         newWidth *= SCALE_WIDTH;
         shiftLeftBy *= SCALE_OFFSET;
 
-        const unsigned int RATIO_Y = 9;
-        const unsigned int RATIO_X = 16;
-        glm::uvec2 originalClippedSize { newWidth, newWidth * RATIO_Y / RATIO_X };
+        auto window = _container->getPrimaryWidget();
+
+        auto ratioY = window->size().height();
+        auto ratioX = window->size().width();
+        glm::uvec2 originalClippedSize { newWidth, newWidth * ratioY / ratioX };
 
         glm::ivec4 viewport = getViewportForSourceSize(sourceSize);
         glm::ivec4 scissor = viewport;
@@ -231,7 +233,6 @@ void HmdDisplayPlugin::internalPresent() {
         render([&](gpu::Batch& batch) {
 
             if (_monoPreview) {
-                auto window = _container->getPrimaryWidget();
                 float devicePixelRatio = window->devicePixelRatio();
                 glm::vec2 windowSize = toGlm(window->size());
                 windowSize *= devicePixelRatio;
