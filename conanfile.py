@@ -53,7 +53,7 @@ class Overte(ConanFile):
         self.requires("cgltf/1.14@overte/stable")
         # self.requires("crashpad/cci.20220219" ) # Broken
         self.requires("discord-rpc/3.4.0@anotherfoxguy/stable")
-        self.requires("draco/1.3.5")
+        self.requires("draco/1.5.7")
         self.requires("etc2comp/cci.20170424")
         self.requires("gifcreator/2016.11@overte/stable")
         self.requires("glad/0.1.36")
