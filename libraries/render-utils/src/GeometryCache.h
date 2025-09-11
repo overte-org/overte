@@ -141,7 +141,7 @@ public:
         Octahedron,
         Dodecahedron,
         Icosahedron,
-        Torus, // not yet implemented
+        Torus,
         Cone, 
         Cylinder, 
         NUM_SHAPES,
@@ -260,6 +260,8 @@ public:
     void updateVertices(int id, const QVector<glm::vec3>& points, const QVector<glm::vec4>& colors);
     void updateVertices(int id, const QVector<glm::vec3>& points, const QVector<glm::vec2>& texCoords, const glm::vec4& color);
     void renderVertices(gpu::Batch& batch, gpu::Primitive primitiveType, int id);
+
+    void renderTorus(gpu::Batch& batch, float innerRadius, gpu::BufferPointer& colorBuffer, int id);
 
     /// Set a batch to the simple pipeline, returning the previous pipeline
     void useSimpleDrawPipeline(gpu::Batch& batch, bool noBlend = false);
@@ -381,6 +383,9 @@ private:
 
     QHash<int, Vec2FloatPairPair> _lastRegisteredGridBuffer;
     QHash<int, GridBuffer> _registeredGridBuffers;
+
+    QHash<int, float> _lastRegisteredTorusBuffer;
+    QHash<int, BatchItemDetails> _registeredTorusBuffers;
 
     // transparent, unlit, forward, fade
     static std::map<std::tuple<bool, bool, bool, bool>, gpu::ShaderPointer> _shapeShaders;
