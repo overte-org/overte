@@ -189,7 +189,7 @@ void OctreeEditPacketSender::queueOctreeEditMessage(PacketType type, QByteArray&
 
         // for edit messages, we will attempt to combine multiple edit commands where possible, we
         // don't do this for add because we send those reliably
-        if (type == PacketType::EntityAdd) {
+        if (type == PacketType::EntityAdd || type == PacketType::EntityEditLarge) {
             auto newPacket = NLPacketList::create(type, QByteArray(), true, true);
             auto nodeClockSkew = node->getClockSkewUsec();
 
