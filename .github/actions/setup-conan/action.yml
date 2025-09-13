@@ -72,3 +72,12 @@ runs:
       !cmake/*: cmake/[>=3 <4]
       EOF
       echo "Printing Conan default profile…" && cat ${CONAN_HOME}/profiles/default
+
+      # FIXME: Remove once we have full GCC 15 compatibility.
+      if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
+      cat >> ${CONAN_HOME}/profiles/default <<EOF
+      [conf]
+      tools.build:cxxflags=['-include', 'cstdint']
+      EOF
+      echo "Printing Conan default profile…" && cat ${CONAN_HOME}/profiles/default
+      fi

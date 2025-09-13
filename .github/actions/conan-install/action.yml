@@ -23,5 +23,5 @@ runs:
     run: |
       # Run twice to work around OpenSSL not being found. See: https://github.com/overte-org/overte-conan-recipes/issues/1
       for counter in {1..2}; do
-        conan install . -c tools.build:cxxflags="['-include', 'cstdint']" -s compiler.cppstd=${{ inputs.cppstd }} -s build_type=${{ inputs.build_type }} -o 'Overte/*:qt_source='${{ inputs.qt_source }} -b missing -pr=${{ inputs.conan_profile }} -of build --format=json > build.json
+        conan install . -s compiler.cppstd=${{ inputs.cppstd }} -s build_type=${{ inputs.build_type }} -o 'Overte/*:qt_source='${{ inputs.qt_source }} -b missing -pr=${{ inputs.conan_profile }} -of build --format=json > build.json
       done
