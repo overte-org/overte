@@ -1541,9 +1541,7 @@ Section "Uninstall"
   SetShellVarContext all
 
   ; Remove all Interface caches when uninstalling.
-  ${If} @CLIENT_COMPONENT_CONDITIONAL@
-    RMDir /r "$LOCALAPPDATA\@BUILD_ORGANIZATION@\Interface"
-  ${EndIf}
+  RMDir /r "$LOCALAPPDATA\@BUILD_ORGANIZATION@\Interface"
 
 @CPACK_NSIS_DELETE_ICONS@
 @CPACK_NSIS_DELETE_ICONS_EXTRA@
