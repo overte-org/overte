@@ -11,7 +11,7 @@ like documentaion or CI pipeline.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2025.09.1] 2025.09.02
+## [2025.09.1] 2025.09.13
 
 ### Fixes
 - Fixed issue with blur, resulting in better image quality when using effects such as bloom (PR1563)
@@ -46,6 +46,9 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Fixed erasing chat messages requiring a restart (PR1670)
 - Fixed some regressions introduced by the automated entity property serialization (PR1242,PR1655)
 - Fixed crash when loading shader cache also improving startup times (PR1772)
+- Fixed Create app's Sound Entity overlay icon that was rendering full black (PR1812)
+- Fixed VR preview always being 16:9 aspect ratio (PR1571)
+- 
 
 ### Changes
 - Lowered maximum MTU (PR1604)
@@ -60,6 +63,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Updated SDL2 to 2.32.8 (PR1770)
 - Small improvements to the Snap app (PR1768)
 - Greyed out anti-aliasing setting on forward renderer, since it always has MSAA enabled (PR1690)
+- Reduced the OpenXR plugin's trigger click threshold to 95% (PR1804)
 
 ### Additions
 - Added dark (and light) theme to our JavaScript console (PR1538)
@@ -77,7 +81,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Added initial support for launching sandbox server on platforms other than Windows (PR1456)
 - Added API to hide desktop menu bar (PR1692)
 - Added user count per Place to the Places app where available (PR1724)
-- Added in-world context menu (PR1749,PR1789,PR1768)
+- Added in-world context menu (PR1749,PR1789,PR1768,PR1815)
     This context menu has an API. Check out the `scripts/tutorials/contextMenu/` folder for examples. The API module is at `scripts/modules/contextMenu.js`.
 - Added OpenXR body tracking support (PR1583)
 - Added support for OpenXR palm poses (PR1583)
