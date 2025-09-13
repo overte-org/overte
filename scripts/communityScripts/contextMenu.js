@@ -29,7 +29,7 @@ const CLICK_FUNC_CHANNEL = "org.overte.context-menu.click";
 const ACTIONS_CHANNEL = "org.overte.context-menu.actions";
 const MAIN_CHANNEL = "org.overte.context-menu";
 
-const DEBOUNCE_THRESHOLD_MS = 50;
+const DEBOUNCE_THRESHOLD_MS = 250;
 
 const SENSOR_TO_WORLD_MATRIX_INDEX = 65534;
 const CAMERA_MATRIX_INDEX = 65529;
