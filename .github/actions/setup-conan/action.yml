@@ -6,19 +6,16 @@ runs:
   - name: "Set CONAN_HOME"
     shell: bash
     run: |
-        # Linux build variables
-        if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-          echo "CONAN_HOME=$HOME/.conan2" >> $GITHUB_ENV
-        fi
-
-        # Mac build variables
-        if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
-          echo "CONAN_HOME=$HOME/.conan2" >> $GITHUB_ENV
-        fi
         # Windows build variables
         if [[ "${{ matrix.os }}" = "Windows"* ]]; then
           # Try to avoid hitting Windows' PATH limit.
           echo "CONAN_HOME=C:\Conan" >> $GITHUB_ENV
+        # Mac build variables
+        elif [ "${{ matrix.os }}" = "macOS"* ]; then
+          echo "CONAN_HOME=$HOME/.conan2" >> $GITHUB_ENV
+        # Linux build variables
+        else
+          echo "CONAN_HOME=$HOME/.conan2" >> $GITHUB_ENV
         fi
 
   - name: Cache conan
