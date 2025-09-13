@@ -29,6 +29,8 @@ const CLICK_FUNC_CHANNEL = "org.overte.context-menu.click";
 const ACTIONS_CHANNEL = "org.overte.context-menu.actions";
 const MAIN_CHANNEL = "org.overte.context-menu";
 
+const DEBOUNCE_THRESHOLD_MS = 50;
+
 const SENSOR_TO_WORLD_MATRIX_INDEX = 65534;
 const CAMERA_MATRIX_INDEX = 65529;
 
@@ -178,6 +180,7 @@ let currentMenuInSubmenu = false;
 let currentMenuTargetLine = Uuid.NULL;
 let mouseWasCaptured = false;
 let disableCounter = 0;
+let prevClickTime = Date.now();
 
 function ContextMenu_DeleteMenu() {
 	currentMenuEntities.forEach((_, e) => Entities.deleteEntity(e));
@@ -194,7 +197,9 @@ function ContextMenu_DeleteMenu() {
 function ContextMenu_EntityClick(eid, event) {
 	if (!event.isPrimaryButton) { return; }
 	if (!currentMenuEntities.has(eid)) { return; }
+	if (Date.now() < prevClickTime + DEBOUNCE_THRESHOLD_MS) { return; }
 
+	prevClickTime = Date.now();
 	currentMenuInSubmenu = false;
 
 	try {
