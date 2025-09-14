@@ -7,4 +7,7 @@ Menu {
     function addMenuWrap(menu) {
         return addMenu(menu);
     }
+    function addItemWrap(item) {
+        addItem(item);
+    }
 }
