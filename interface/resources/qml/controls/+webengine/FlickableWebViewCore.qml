@@ -1,11 +1,11 @@
-import QtQuick 2.7
-import QtWebEngine 1.5
-import QtWebChannel 1.0
+import QtQuick
+import QtWebEngine
+import QtWebChannel
 
-import QtQuick.Controls 2.2
+import QtQuick.Controls
 
-import stylesUit 1.0 as StylesUIt
-import controlsUit 1.0 as ControlsUit
+import stylesUit as StylesUIt
+import controlsUit as ControlsUit
 
 Item {
     id: flick
@@ -112,7 +112,35 @@ Item {
         settings.touchIconsEnabled: true
         settings.allowRunningInsecureContent: true
 
-        userScripts.collection: [
+        // QT6TODO causes a crash
+        // Even empty collection causes a crash
+        // userScripts.collection: []
+        //userScripts.collection: [
+            // creates a global EventBridge object.
+            /*{
+                sourceCode: eventBridgeJavaScriptToInject,
+                injectionPoint: WebEngineScript.DocumentCreation,
+                worldId: WebEngineScript.MainWorld,
+            },
+
+            // detects when to raise and lower virtual keyboard
+            {
+                injectionPoint: WebEngineScript.Deferred,
+                sourceUrl: resourceDirectoryUrl + "/html/raiseAndLowerKeyboard.js",
+                worldId: WebEngineScript.MainWorld,
+            },
+
+            // User script.
+            {
+                sourceUrl: flick.userScriptUrl,
+                injectionPoint: WebEngineScript.DocumentReady,  // DOM ready but page load may not be finished.
+                worldId: WebEngineScript.MainWorld,
+            },*/
+        //]
+
+        Component.onCompleted: {
+            // QT6TODO: previous way of doing it crashes and this one doesn't? unless it crashes later
+            userScripts.collection = [
             // creates a global EventBridge object.
             {
                 sourceCode: eventBridgeJavaScriptToInject,
@@ -133,9 +161,7 @@ Item {
                 injectionPoint: WebEngineScript.DocumentReady,  // DOM ready but page load may not be finished.
                 worldId: WebEngineScript.MainWorld,
             },
-        ]
-
-        Component.onCompleted: {
+            ]
             webChannel.registerObject("eventBridge", eventBridge);
             webChannel.registerObject("eventBridgeWrapper", eventBridgeWrapper);
 
