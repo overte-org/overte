@@ -8,11 +8,12 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-import QtQuick 2.7
-import QtQuick.Controls 2.3
+import QtQuick
+import QtQuick.Controls
 
 import "../dialogs"
 import "../js/Utils.js" as Utils
+import "../controls" as OverteControls
 
 // This is our primary 'desktop' object to which all VR dialogs and windows are childed.
 FocusScope {
@@ -50,7 +51,7 @@ FocusScope {
     property bool desktopRoot: true
 
     // The VR version of the primary menu
-    property var rootMenu: Menu { 
+    property var rootMenu: OverteControls.WrappedMenu {
         id: rootMenuId
         objectName: "rootMenu" 
 
