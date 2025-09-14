@@ -147,8 +147,6 @@ namespace render {
         bool _enableBlendshape { true };
         bool _enableSkinning { true };
 
-        bool _enableFade { false };
-
         RenderDetails _details;
         render::ScenePointer _scene;
         int8_t _cameraMode { -1 };

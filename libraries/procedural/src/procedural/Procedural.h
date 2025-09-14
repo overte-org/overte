@@ -108,10 +108,6 @@ public:
                  const uint64_t& created, const ProceduralProgramKey key = ProceduralProgramKey());
 
     glm::vec4 getColor(const glm::vec4& entityColor) const;
-    uint64_t getFadeStartTime() const { return _fadeStartTime; }
-    bool isFading() const { return _doesFade && _isFading; }
-    void setIsFading(bool isFading) { _isFading = isFading; }
-    void setDoesFade(bool doesFade) { _doesFade = doesFade; }
 
     bool hasVertexShader() const;
     void setBoundOperator(const std::function<AABox(RenderArgs*)>& boundOperator) { _boundOperator = boundOperator; }
@@ -209,10 +205,6 @@ protected:
 private:
     void setupUniforms();
 
-    mutable uint64_t _fadeStartTime { 0 };
-    mutable bool _hasStartedFade { false };
-    mutable bool _isFading { false };
-    bool _doesFade { true };
     ProceduralProgramKey _prevKey;
 
     std::function<AABox(RenderArgs*)> _boundOperator { nullptr };
@@ -237,9 +229,6 @@ public:
         _procedural.setProceduralData(ProceduralData::parse(data));
     }
     virtual glm::vec4 getColor(const glm::vec4& color) const { return _procedural.getColor(color); }
-    virtual bool isFading() const { return _procedural.isFading(); }
-    void setIsFading(bool isFading) { _procedural.setIsFading(isFading); }
-    virtual uint64_t getFadeStartTime() const { return _procedural.getFadeStartTime(); }
     virtual bool hasVertexShader() const { return _procedural.hasVertexShader(); }
     virtual void prepare(gpu::Batch& batch, const glm::vec3& position, const glm::vec3& size, const glm::quat& orientation,
                  const uint64_t& created, const ProceduralProgramKey key = ProceduralProgramKey()) {

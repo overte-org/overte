@@ -182,20 +182,6 @@ glm::vec4 ReferenceMaterial::getColor(const glm::vec4& color) const {
     });
 }
 
-bool ReferenceMaterial::isFading() const {
-    return resultWithLock<bool>([&] {
-        auto material = getProceduralMaterial();
-        return material ? material->isFading() : false;
-    });
-}
-
-uint64_t ReferenceMaterial::getFadeStartTime() const {
-    return resultWithLock<uint64_t>([&] {
-        auto material = getProceduralMaterial();
-        return material ? material->getFadeStartTime() : 0;
-    });
-}
-
 bool ReferenceMaterial::hasVertexShader() const {
     return resultWithLock<bool>([&] {
         auto material = getProceduralMaterial();

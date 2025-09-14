@@ -15,6 +15,7 @@
 
 #include <ImageEntityItem.h>
 
+#include <GeometryCache.h>
 #include <procedural/Procedural.h>
 
 namespace render { namespace entities {
@@ -52,6 +53,8 @@ private:
     glm::vec3 _color { NAN };
     float _alpha { NAN };
     PulsePropertyGroup _pulseProperties;
+
+    FadeBuffers _fadeBuffers;
 
     int _geometryId { 0 };
 };

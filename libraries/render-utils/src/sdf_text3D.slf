@@ -32,12 +32,20 @@
     <@include DeferredBufferWrite.slh@>
 <@endif@>
 
+<@if HIFI_USE_FADE@>
+    <@include Fade.slh@>
+    <$declareFadeFragment()$>
+<@endif@>
+
 <@include render-utils/ShaderConstants.h@>
 
 <@include sdf_text3D.slh@>
 <$declareEvalSDFSuperSampled()$>
 
 layout(location=RENDER_UTILS_ATTR_POSITION_MS) in vec2 _positionMS;
+<@if HIFI_USE_FADE@>
+    layout(location=RENDER_UTILS_ATTR_POSITION_WS) in vec4 _positionWS;
+<@endif@>
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
 <@endif@>
@@ -71,6 +79,21 @@ void main() {
 <@if HIFI_USE_MIRROR@>
     color.rgb = texelFetch(mirrorMap, ivec2(gl_FragCoord.xy), 0).rgb;
     color.a = 1.0;
+<@endif@>
+
+<@if HIFI_USE_FADE@>
+    <@if not HIFI_USE_SHADOW@>
+        vec3 fadeEmissive;
+        FadeObjectParams fadeParams;
+        <$fetchFadeObjectParams(fadeParams)$>
+        applyFade(fadeParams, _positionWS.xyz, fadeEmissive);
+
+        color.rgb += fadeEmissive;
+    <@else@>
+        FadeObjectParams fadeParams;
+        <$fetchFadeObjectParams(fadeParams)$>
+        applyFadeClip(fadeParams, _positionWS.xyz);
+    <@endif@>
 <@endif@>
 
     vec3 normal = normalize(_normalWS);

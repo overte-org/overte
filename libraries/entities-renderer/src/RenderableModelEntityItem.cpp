@@ -1407,6 +1407,13 @@ void ModelEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
             makeStatusGetters(entity, statusGetters);
             using namespace std::placeholders;
             model->addToScene(scene, transaction, statusGetters, std::bind(&ModelEntityRenderer::metaBlendshapeOperator, _renderItemID, _1, _2, _3, _4));
+            auto renderer = DependencyManager::get<EntityTreeRenderer>();
+            if (renderer) {
+                if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED ||
+                    (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(TransitionType::ELEMENT_ENTER_DOMAIN))) {
+                    Parent::fade(transaction, TransitionType::ELEMENT_ENTER_DOMAIN);
+                }
+            }
             processMaterials();
         }
     }
@@ -1603,4 +1610,11 @@ void ModelEntityRenderer::metaBlendshapeOperator(render::ItemID renderItemID, in
         self.handleBlendedVertices(blendshapeNumber, blendshapeOffsets, blendedMeshSizes, subItemIDs);
     });
     AbstractViewStateInterface::instance()->getMain3DScene()->enqueueTransaction(transaction);
+}
+
+void ModelEntityRenderer::fade(render::Transaction& transaction, TransitionType type) {
+    // Fade in is handled when the model actually loads
+    if (type == TransitionType::ELEMENT_LEAVE_DOMAIN) {
+        Parent::fade(transaction, type);
+    }
 }

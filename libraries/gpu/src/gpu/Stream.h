@@ -43,6 +43,13 @@ public:
         TEXCOORD2 = 8,
         TEXCOORD3 = 9,
         TEXCOORD4 = 10,
+        FADE1 = 7,
+        FADE2 = 8,
+        FADE3 = 9,
+        FADE4 = 10,
+        FADE5 = 11,
+        FADE6 = 12,
+        FADE7 = 13,
 
         NUM_INPUT_SLOTS,
 
