@@ -1,9 +1,9 @@
-import QtQuick 2.5
-import QtWebEngine 1.1
-import QtWebChannel 1.0
+import QtQuick
+import QtWebEngine
+import QtWebChannel
 
-import controlsUit 1.0 as Controls
-import stylesUit 1.0
+import controlsUit as Controls
+import stylesUit
 Controls.WebView {
     id: webview
     url: "about:blank"
