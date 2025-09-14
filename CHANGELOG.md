@@ -48,7 +48,6 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Fixed crash when loading shader cache also improving startup times (PR1772)
 - Fixed Create app's Sound Entity overlay icon that was rendering full black (PR1812)
 - Fixed VR preview always being 16:9 aspect ratio (PR1571)
-- 
 
 ### Changes
 - Lowered maximum MTU (PR1604)
