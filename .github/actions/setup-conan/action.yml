@@ -72,8 +72,7 @@ runs:
 
       # FIXME: Remove once we have full GCC 15 compatibility.
       if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-      cat >> ${CONAN_HOME}/profiles/default <<EOF
-      [conf]
+      sed -i '/\[conf\]/r /dev/stdin' "${CONAN_HOME}/profiles/default" <<EOF
       tools.build:cxxflags=['-include', 'cstdint']
       EOF
       echo "Printing Conan default profile…" && cat ${CONAN_HOME}/profiles/default
