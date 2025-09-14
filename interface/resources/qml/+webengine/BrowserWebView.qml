@@ -1,8 +1,8 @@
-import QtQuick 2.5
-import QtWebChannel 1.0
-import QtWebEngine 1.5
+import QtQuick
+import QtWebChannel
+import QtWebEngine
 
-import controlsUit 1.0
+import controlsUit
 
 WebView {
     id: webview
