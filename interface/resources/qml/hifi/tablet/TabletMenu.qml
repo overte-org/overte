@@ -15,7 +15,7 @@ FocusScope {
     width: parent.width
     height: parent.height
 
-    property var rootMenu: Menu { objectName:"rootMenu" }
+    property var rootMenu: WrappedMenu { objectName:"rootMenu" }
     property var point: Qt.point(50, 50);
     TabletMenuStack { id: menuPopperUpper }
     property string subMenu: ""
