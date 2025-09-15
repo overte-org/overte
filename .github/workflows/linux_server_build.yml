@@ -102,12 +102,6 @@ jobs:
             qt_source: system
             runner: ubuntu-24.04-arm
 
-          - os: rockylinux-9
-            image: docker.io/overte/overte-server-build:0.1.7-rockylinux-9-amd64
-            arch: amd64
-            qt_source: source
-            runner: ubuntu-latest
-
       fail-fast: false
 
     runs-on: ${{matrix.runner}}
@@ -194,9 +188,7 @@ jobs:
             echo "ARTIFACT_PATTERN=overte-server_${DEBVERSION}-1_amd64.$INSTALLER_EXT" >> $GITHUB_ENV
           fi
         else  # RPM
-          if [ "${{ matrix.os }}" == "rockylinux-9" ]; then
-            echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.el9.$INSTALLER_EXT" >> $GITHUB_ENV
-          elif [ "${{ matrix.os }}" == "fedora-40" ]; then
+          if [ "${{ matrix.os }}" == "fedora-40" ]; then
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc40.$INSTALLER_EXT" >> $GITHUB_ENV
           elif [ "${{ matrix.os }}" == "fedora-41" ]; then
             echo "ARTIFACT_PATTERN=overte-server-$RPMVERSION-1.fc41.$INSTALLER_EXT" >> $GITHUB_ENV
