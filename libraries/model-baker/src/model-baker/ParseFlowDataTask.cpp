@@ -12,6 +12,7 @@ void ParseFlowDataTask::run(const baker::BakeContextPointer& context, const Inpu
     FlowData flowData;
     static const QString FLOW_PHYSICS_FIELD = "flowPhysicsData";
     static const QString FLOW_COLLISIONS_FIELD = "flowCollisionsData";
+    // QT6TODO: currently crashes on Qt6
     for (auto mappingIter = mapping.cbegin(); mappingIter != mapping.cend(); mappingIter++) {
         if (mappingIter.key() == FLOW_PHYSICS_FIELD || mappingIter.key() == FLOW_COLLISIONS_FIELD) {
             QByteArray data = mappingIter.value().toByteArray();
