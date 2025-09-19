@@ -296,7 +296,7 @@ endif ()
 
 target_link_libraries(
   ${TARGET_NAME}
-  Qt6::Gui Qt6::Network Qt6::Multimedia Qt6::Widgets
+  Qt6::Gui Qt6::GuiPrivate Qt6::Network Qt6::Multimedia Qt6::Widgets
   Qt6::Qml Qt6::Quick Qt6::Svg
   Qt6::WebChannel Qt6::WebEngineCore Qt6::WebEngineWidgets
   ${PLATFORM_QT_LIBRARIES}

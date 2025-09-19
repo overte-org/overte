@@ -70,11 +70,13 @@ SharedObject::SharedObject() {
     // NOTE: Must be created on the main thread so that OffscreenQmlSurface can send it events
     // NOTE: Must be created on the rendering thread or it will refuse to render,
     //       so we wait until after its ctor to move object/context to this thread.
-    QQuickWindow::setDefaultAlphaBuffer(true);
+    // QT6TODO: QRhi fails to initialize with setDefaultAlphaBuffer
+    //QQuickWindow::setDefaultAlphaBuffer(true);
     _quickWindow = new QQuickWindow(_renderControl);
+    _quickWindow->setSurfaceType(QQuickWindow::OpenGLSurface);
     _quickWindow->setFormat(getDefaultOpenGLSurfaceFormat());
     _quickWindow->setColor(QColor(255, 255, 255, 0));
-    // QT6TODO: setClearBeforeRendering was reoved, what to do about this?
+    // QT6TODO: setClearBeforeRendering was removed, what to do about this?
     // https://doc.qt.io/qt-6/quick-changes-qt6.html
     //_quickWindow->setClearBeforeRendering(true);
 
@@ -294,10 +296,15 @@ void SharedObject::initializeRenderControl(QOpenGLContext* context) {
         qFatal("QML rendering context has no share context");
     }
 
+    Q_ASSERT(context->isValid());
+
 #ifndef DISABLE_QML
     if (!nsightActive()) {
+        _quickWindow->setFormat(context->format());
         _quickWindow->setGraphicsDevice(QQuickGraphicsDevice::fromOpenGLContext(context));
-        _renderControl->initialize();
+        bool result = _renderControl->initialize();
+        Q_ASSERT(result);
+        Q_UNUSED(result);
     }
 #endif
 }
