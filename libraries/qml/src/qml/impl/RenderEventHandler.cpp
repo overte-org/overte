@@ -61,7 +61,11 @@ RenderEventHandler::RenderEventHandler(SharedObject* shared, QThread* targetThre
     moveToThread(targetThread);
 }
 
+// I'm not sure if several contexts can be initalized with the same shared context concurrently, so better safe than sorry.
+static std::mutex renderControlInitMutex;
+
 void RenderEventHandler::onInitalize() {
+    std::lock_guard<std::mutex> lock(renderControlInitMutex);
     if (_shared->isQuit()) {
         return;
     }
