@@ -55,6 +55,8 @@
 #include "Menu.h"
 #include "webbrowser/WebBrowserSuggestionsEngine.h"
 
+#include <QOpenGLContext>
+
 #if defined(Q_OS_ANDROID)
 #include "AndroidHelper.h"
 #endif
@@ -158,6 +160,7 @@ void Application::initializeGL() {
     {
         OffscreenGLCanvas* qmlShareContext = new OffscreenGLCanvas();
         qmlShareContext->setObjectName("QmlShareContext");
+        qmlShareContext->getContext()->setFormat(getDefaultOpenGLSurfaceFormat());
         qmlShareContext->create(globalShareContext);
         if (!qmlShareContext->makeCurrent()) {
             qCWarning(interfaceapp, "Unable to make QML shared context current");
