@@ -45,6 +45,11 @@ layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
 
 void main(void) {
     vec4 texel = texture(webTexture, _texCoord0);
+
+    // Weirdly, Qt gives us a texture with premultiplied alpha.
+    // We have to un-premultiply or there are black halos around transparent parts.
+    texel.rgb /= texel.a;
+
     texel = color_sRGBAToLinear(texel);
     texel *= _color;
 

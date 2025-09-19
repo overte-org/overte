@@ -71,7 +71,7 @@ SharedObject::SharedObject() {
     QQuickWindow::setDefaultAlphaBuffer(true);
     _quickWindow = new QQuickWindow(_renderControl);
     _quickWindow->setFormat(getDefaultOpenGLSurfaceFormat());
-    _quickWindow->setColor(QColor(255, 255, 255, 0));
+    _quickWindow->setColor(Qt::transparent);
     _quickWindow->setClearBeforeRendering(true);
 
 #endif
