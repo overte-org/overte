@@ -310,7 +310,7 @@ void VrMenu::insertAction(QAction* before, QAction* action) {
     menuItemObject->setParent(menu);
 
     qDebug() << "menuObject: " << QString(menuItemObject->metaObject()->metaType().name());
-    bool invokeResult = QMetaObject::invokeMethod(menu, "addItem", Qt::DirectConnection,
+    bool invokeResult = QMetaObject::invokeMethod(menu, "addItemWrap", Qt::DirectConnection,
                                                   Q_ARG(QVariant, QVariant::fromValue(menuItemObject)));
     // FIXME this needs to find the index of the beforeQml item and call insertItem(int, object)
     Q_ASSERT(invokeResult);
@@ -318,7 +318,7 @@ void VrMenu::insertAction(QAction* before, QAction* action) {
     if (menuItemObject) {
         bindActionToQmlAction(menuItemObject, action, _rootMenu);
     } else {
-        qWarning() << "Failed to find addItem() method in object " << menu << ". Not inserting action " << action;
+        qWarning() << "Failed to find addItemWrap() method in object " << menu << ". Not inserting action " << action;
     }
 }
 

@@ -63,7 +63,9 @@ void GLWidget::createContext(QOpenGLContext* shareContext) {
     _context = new gl::Context();
     _context->setWindow(windowHandle());
     _context->create(shareContext);
-    _context->makeCurrent();
+    bool isCurrent = _context->makeCurrent();
+    Q_ASSERT(isCurrent);
+    Q_UNUSED(isCurrent);
     _context->clear();
     _context->doneCurrent();
 }
