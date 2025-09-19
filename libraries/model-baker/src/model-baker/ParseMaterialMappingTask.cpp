@@ -71,6 +71,9 @@ void ParseMaterialMappingTask::run(const baker::BakeContextPointer& context, con
     const auto& url = input.get1();
     MaterialMapping materialMapping;
 
+    // QT6TODO: even listing keys causes crash
+    qDebug() << "ParseMaterialMappingTask::run " << mapping.keys();
+
     auto mappingIter = mapping.find("materialMap");
     if (mappingIter != mapping.end()) {
         QByteArray materialMapValue = mappingIter.value().toByteArray();
