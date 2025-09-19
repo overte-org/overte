@@ -85,7 +85,10 @@ void MenuUserData::updateQmlItemFromAction() {
     _qml->setProperty("text", text);
     _qml->setProperty("shortcut", _action->shortcut().toString());
     _qml->setProperty("checked", _action->isChecked());
-    _qml->setProperty("visible", _action->isVisible());
+
+    // Qt6 TODO: Inconsistent segfault inside Qt, possible thread race condition?
+    // How come it's only on "visible" and not the other properties?
+    //_qml->setProperty("visible", _action->isVisible());
 }
 
 void MenuUserData::clear() {

@@ -22,7 +22,7 @@
 
 class ParseMaterialMappingTask {
 public:
-    using Input = baker::VaryingSet2<hifi::VariantHash, hifi::URL>;
+    using Input = baker::VaryingSet2<hifi::VariantMultiHash, hifi::URL>;
     using Output = MaterialMapping;
     using JobModel = baker::Job::ModelIO<ParseMaterialMappingTask, Input, Output>;
 
