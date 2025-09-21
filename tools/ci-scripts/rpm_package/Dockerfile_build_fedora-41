@@ -1,23 +1,81 @@
+# syntax=docker/dockerfile:1.4
+
 # Copyright 2022-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte Server
-# Example build: docker build --no-cache -t overte/overte-server-build:0.1.7-fedora-41-amd64 -f Dockerfile_build_fedora-41 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-server-build:2025-09-15-fedora-41-amd64 -f Dockerfile_build_fedora-41 .
 FROM fedora:41
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
 
+#
+# Install build dependencies
+#
+RUN <<EOF
 # Install Overte domain-server and assignment-client build dependencies
-RUN dnf -y install curl ninja-build git cmake gcc gcc-c++ libstdc++-static openssl-devel qt5-qtwebsockets-devel qt5-qtmultimedia-devel unzip libXext-devel qt5-qtwebchannel-devel qt5-qtwebengine-devel qt5-qtxmlpatterns-devel systemd-devel python3 python3-packaging
-
-# Install additional build tools
-RUN dnf -y install zip unzip
-
+dnf -y install cmake curl ninja-build git gcc gcc-c++ libstdc++-static openssl-devel qt5-qtwebsockets-devel qt5-qtmultimedia-devel unzip libXext-devel systemd-devel python3 python3-packaging
+# Install Overte tools build dependencies
+dnf -y install qt5-qtwebchannel-devel qt5-qtwebengine-devel qt5-qtxmlpatterns-devel
 # Install tools for package creation
-RUN dnf -y install chrpath rpmdevtools
+dnf -y install chrpath rpmdevtools
 
 # Install tools needed for our Github Actions Workflow
-Run dnf -y install python3-boto3 python3-pygithub
+dnf -y install python3-boto3 python3-pygithub zip
 
 # Install Conan
-RUN dnf -y install conan
+dnf -y install conan
+EOF
+
+#
+# Setup Conan
+#
+# Set CONAN_HOME to its default, so we can read it in our GitHub Actions cache step.
+ENV CONAN_HOME=/root/.conan2
+RUN <<EOF
+conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte
+# Use our mirror of Conan Center to avoid rate limiting.
+conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center
+
+conan profile detect
+
+cat >> ${CONAN_HOME}/profiles/default <<EOFcat
+[conf]
+# Allow Conan to install system packages.
+tools.system.package_manager:mode=install
+EOFcat
+
+# We get CMake from Conan to avoid CMake 4.0 which some of our dependencies don't yet build with.
+# FIXME: Remove once all our dependencies have CMake 4.0 compatibility.
+cat >> ${CONAN_HOME}/profiles/default <<EOFcat
+[tool_requires]
+!cmake/*: cmake/[>=3 <4]
+EOFcat
+
+# Try downloading source files from conandata.yml first. Fall back to our backup if the upstream source is down.
+echo "core.sources:download_urls=['origin', 'https://artifactory.overte.org/artifactory/build-dependencies-backup/']" >> ${CONAN_HOME}/global.conf
+echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ${CONAN_HOME}/global.conf
+EOF
+
+# Credentials for uploading backups of dependency sources.
+# source-credentials.json is a jinja template, so os.getenv() happens at runtime.
+COPY <<EOF /root/.conan2/source_credentials.json
+{% set TOKEN = os.getenv('CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN') %}
+{
+  "credentials": [
+    {
+    "url": "https://artifactory.overte.org/artifactory/build-dependencies-backup/",
+    "token": "{{TOKEN}}"
+    }
+  ]
+}
+EOF
+
+#
+# Platform specific build variables
+#
+ENV XZ_OPT="-T0"
+
+ENV OVERTE_QT_SOURCE=system
+# Part of .rpm installer filename
+ENV RPM_SHORTHAND=fc41
