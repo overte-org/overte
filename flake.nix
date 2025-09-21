@@ -65,7 +65,7 @@
               ];
               inputsFrom = [ self'.packages.overte ];
 
-              buildInputs = [pkgs.libsForQt5.full];
+              buildInputs = [ pkgs.qt6.full ];
 
               inherit (self'.packages.overte)
                 NVTT_DIR
