@@ -252,13 +252,6 @@ jobs:
           ./make-rpm-server
         fi
 
-    - name: Output system stats
-      if: ${{ always() }}
-      shell: bash
-      run: |
-        echo "Disk usage:"
-        df -h
-
     - name: Upload artifact to GitHub
       uses: actions/upload-artifact@v4
       with:
@@ -273,3 +266,7 @@ jobs:
         AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
       run: python3 $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
+
+    - name: Output debug information
+      if: always()
+      uses: ./.github/actions/debug-info
