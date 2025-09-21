@@ -67,8 +67,10 @@
               ];
               inputsFrom = [ self'.packages.overte-full ];
 
-              buildInputs = [ pkgs.libsForQt5.full ];
+              buildInputs = [ (pkgs.qt6.env "overte-devenv" [ self'.packages.overte-full.buildInputs ]) ];
 
+              # TODO: remote set QT_QPA_PLATOFORM, when wayland works
+              QT_QPA_PLATFORM = "xcb";
               inherit (self'.packages.overte-full)
                 NVTT_DIR
                 CXXFLAGS
