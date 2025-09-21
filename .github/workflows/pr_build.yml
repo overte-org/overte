@@ -335,22 +335,13 @@ jobs:
         # Build!
         ./build_android.sh
 
-    - name: Output system stats
-      if: ${{ always() }}
-      shell: bash
-      run: |
-        echo "Disk usage:"
-        df -h
-
-    - name: Output Installer Logs
-      if: failure() && startsWith(matrix.os, 'Windows')
-      shell: bash
-      working-directory: build
-      run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
-
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_NAME }}
         path: ./build/Overte-*
         if-no-files-found: error
+
+    - name: Output debug information
+      if: always()
+      uses: ./.github/actions/debug-info
