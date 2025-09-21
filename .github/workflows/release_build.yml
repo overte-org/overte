@@ -65,7 +65,6 @@ jobs:
         echo "ZIP_COMMAND=7z" >> $GITHUB_ENV
         echo "ZIP_ARGS=a" >> $GITHUB_ENV
         echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
-        echo "CMAKE_EXTRA=-A x64" >> $GITHUB_ENV
         echo "SYMBOL_REGEX=\(exe\|dll\|pdb\)" >> $GITHUB_ENV
         echo "SYMBOLS_ARCHIVE=$RELEASE_NUMBER-${{ github.sha }}-win-symbols.zip" >> $GITHUB_ENV
         # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
