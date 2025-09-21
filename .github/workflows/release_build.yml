@@ -218,22 +218,6 @@ jobs:
         RELEASE_NUMBER: ${{ github.ref_name }}
       run: $PYTHON_EXEC $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
 
-    - name: Archive symbols
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
-      shell: bash
-      run: |
-        SYMBOLS_TEMP="symbols-temp"
-        mkdir $SYMBOLS_TEMP
-        find "./build" -regex ".*\.$SYMBOL_REGEX" -exec cp -r {} $SYMBOLS_TEMP \;
-        cd $SYMBOLS_TEMP
-        $ZIP_COMMAND $ZIP_ARGS ../$SYMBOLS_ARCHIVE .
-
-    - name: Upload debug symbols to GitHub
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.SYMBOLS_ARCHIVE }}
-        path: ${{ env.SYMBOLS_ARCHIVE }}
-        if-no-files-found: error
     - name: Output debug information
       if: always()
       uses: ./.github/actions/debug-info

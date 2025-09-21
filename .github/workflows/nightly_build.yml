@@ -272,34 +272,6 @@ jobs:
         path: build/Overte-*
         if-no-files-found: error
 
-    #- name: Archive symbols
-    #  if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
-    #  working-directory: ${{runner.workspace}}
-    #  shell: bash
-    #  run: |
-    #    SYMBOLS_TEMP="symbols-temp"
-    #    mkdir $SYMBOLS_TEMP
-    #    find "./build" \( -path '*/tools/gpu-frame-player/*' -or -path '*/interface/*' -or -path '*/plugins/*' \) -regex ".*\.$SYMBOL_REGEX" -exec cp -r {} $SYMBOLS_TEMP \;
-    #    cd $SYMBOLS_TEMP
-    #    $ZIP_COMMAND $ZIP_ARGS ../${{ steps.buildenv1.outputs.symbols_archive }} .
-    #- name: Upload symbols
-    #  if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
-    #  working-directory: ${{runner.workspace}}
-    #  shell: bash
-    #  run: |
-    #    curl --data-binary @${{ steps.buildenv1.outputs.symbols_archive }} "$CMAKE_BACKTRACE_URL/post?format=symbols&token=$CMAKE_BACKTRACE_SYMBOLS_TOKEN&upload_file=${{steps.buildenv1.outputs.symbols_archive}}&tag=$BUILD_NUMBER"
-    #- name: Debug list symbols
-    #  if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
-    #  working-directory: ${{runner.workspace}}
-    #  shell: bash
-    #  run: |
-    #    unzip -v "${{runner.workspace}}/${{ steps.buildenv1.outputs.symbols_archive }}"
-    #- name: Upload debug list symbols
-    #  if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
-    #  uses: actions/upload-artifact@v1
-    #  with:
-    #    name: symbols
-    #    path: ${{runner.workspace}}/${{ steps.buildenv1.outputs.symbols_archive }}
     - name: Output debug information
       if: always()
       uses: ./.github/actions/debug-info
