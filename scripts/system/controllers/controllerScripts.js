@@ -20,6 +20,7 @@ var CONTOLLER_SCRIPTS = [
     // TODO: These are not used currently. It can be reworked re-enabled when we have OpenXR support
     //"handTouch.js",
     "mouseLook.js",
+    "teleport.js",
     "controllerModules/nearParentGrabOverlay.js",
     "controllerModules/stylusInput.js",
     "controllerModules/equipEntity.js",
@@ -29,7 +30,6 @@ var CONTOLLER_SCRIPTS = [
     "controllerModules/inVREditMode.js",
     "controllerModules/disableOtherModule.js",
     "controllerModules/farTrigger.js",
-    "controllerModules/teleport.js",
     "controllerModules/hudOverlayPointer.js",
     "controllerModules/mouseHMD.js",
     "controllerModules/nearGrabHyperLinkEntity.js",
