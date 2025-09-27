@@ -10,6 +10,10 @@
 #ifndef hifi_DebugDraw_h
 #define hifi_DebugDraw_h
 
+#include <QObject>
+
+#include "RegisteredMetaTypes.h"
+
 #include <mutex>
 #include <unordered_map>
 #include <tuple>
@@ -18,7 +22,6 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
-#include <QObject>
 #include <QString>
 
 /*@jsdoc
