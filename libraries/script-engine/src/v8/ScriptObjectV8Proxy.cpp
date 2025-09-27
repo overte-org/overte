@@ -1023,6 +1023,19 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
 
     for (int i = 0; i < num_metas; i++) {
         const QMetaMethod& meta = _metas[i];
+
+        // This check is needed for catching issues caused by a bug in Qt6 that causes metamethod invocations to fail when typedefs are used in header files.
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+         for (int parameterIndex = 0; parameterIndex < meta.parameterCount(); parameterIndex++) {
+             if (std::string(meta.parameterTypeName(parameterIndex)) != std::string(meta.parameterMetaType(parameterIndex).name())) {
+                 qCritical() << "ScriptMethodV8Proxy::call: " << fullName() << " parameter " << parameterIndex
+                     << " has a broken type " << meta.parameterTypeName(parameterIndex)
+                     << " Correct type is " << meta.parameterMetaType(parameterIndex).name();
+                 Q_ASSERT(false);
+             }
+         }
+#endif
+
         int methodNumArgs = meta.parameterCount();
         if (methodNumArgs != numArgs) {
             continue;
