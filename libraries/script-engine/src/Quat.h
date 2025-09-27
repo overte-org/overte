@@ -21,6 +21,8 @@
 
 #include <glm/gtc/quaternion.hpp>
 
+#include <RegisteredMetaTypes.h>
+
 #include <QObject>
 #include <QString>
 
