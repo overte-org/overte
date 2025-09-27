@@ -44,7 +44,7 @@ public:
      *     }
      * }
      */
-    Q_INVOKABLE glm::vec3 getContentsDimensions();
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getContentsDimensions();
 
     /*@jsdoc
      * Gets the largest dimension of the extents of the entities held in the clipboard.
@@ -121,7 +121,7 @@ public:
      * @returns {Uuid[]} The IDs of the new entities that were created as a result of the paste operation. If entities couldn't 
      *     be created then an empty array is returned.
      */
-    Q_INVOKABLE QVector<EntityItemID> pasteEntities(glm::vec3 position, const QString& entityHostType = "domain");
+    Q_INVOKABLE QVector<EntityItemID> pasteEntities(glm::vec<3,float,glm::packed_highp> position, const QString& entityHostType = "domain");
 };
 
 #endif // hifi_ClipboardScriptingInterface_h

@@ -400,7 +400,7 @@ public slots:
      *     <code>".jpeg"</code>, <code>".png"</code>, or <code>".webp"</code> &mdash; or if not provided then in the format chosen in general settings, 
      *     Default is PNG. Animated images are saved in GIF format.</p>
      */
-    void takeSecondaryCamera360Snapshot(const glm::vec3& cameraPosition, const bool& cubemapOutputFormat = false, const bool& notify = true, const QString& filename = QString());
+    void takeSecondaryCamera360Snapshot(const glm::vec<3,float,glm::packed_highp>& cameraPosition, const bool& cubemapOutputFormat = false, const bool& notify = true, const QString& filename = QString());
 
     /*@jsdoc
      * Emits a {@link Window.connectionAdded|connectionAdded} or a {@link Window.connectionError|connectionError} signal that
