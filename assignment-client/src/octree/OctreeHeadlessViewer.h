@@ -50,7 +50,7 @@ public slots:
      * @function EntityViewer.setOrientation
      * @param {Quat} orientation - The orientation of the view frustum.
      */
-    void setOrientation(const glm::quat& orientation) { _hasViewFrustum = true; _viewFrustum.setOrientation(orientation); }
+    void setOrientation(const glm::qua<float,glm::packed_highp>& orientation) { _hasViewFrustum = true; _viewFrustum.setOrientation(orientation); }
 
     /*@jsdoc
      * Sets the radius of the center "keyhole" in the view frustum.
@@ -106,7 +106,7 @@ public slots:
      * @function EntityViewer.getOrientation
      * @returns {Quat} The orientation of the view frustum.
      */
-    const glm::quat& getOrientation() const { return _viewFrustum.getOrientation(); }
+    const glm::qua<float,glm::packed_highp>& getOrientation() const { return _viewFrustum.getOrientation(); }
 
 
     // getters for LOD and PPS
