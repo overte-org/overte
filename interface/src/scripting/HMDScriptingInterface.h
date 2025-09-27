@@ -91,7 +91,7 @@ class ScriptEngine;
 class HMDScriptingInterface : public AbstractHMDScriptingInterface, public Dependency {
     Q_OBJECT
     Q_PROPERTY(glm::vec3 position READ getPosition)
-    Q_PROPERTY(glm::quat orientation READ getOrientation)
+    Q_PROPERTY(glm::qua<float,glm::packed_highp> orientation READ getOrientation)
     Q_PROPERTY(bool showTablet READ getShouldShowTablet)
     Q_PROPERTY(bool tabletContextualMode READ getTabletContextualMode)
     Q_PROPERTY(QUuid tabletID READ getCurrentTabletFrameID WRITE setCurrentTabletFrameID)
@@ -506,7 +506,7 @@ private:
     bool _miniTabletEnabled { true };
 
     // Get the orientation of the HMD
-    glm::quat getOrientation() const;
+    glm::qua<float,glm::packed_highp> getOrientation() const;
 
     bool getHUDLookAtPosition3D(glm::vec3& result) const;
     glm::mat4 getWorldHMDMatrix() const;

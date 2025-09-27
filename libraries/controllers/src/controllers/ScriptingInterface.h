@@ -53,9 +53,9 @@ namespace controller {
     public slots:
         virtual bool isActive() const = 0;
         virtual glm::vec3 getAbsTranslation() const = 0;
-        virtual glm::quat getAbsRotation() const = 0;
+        virtual glm::qua<float,glm::packed_highp> getAbsRotation() const = 0;
         virtual glm::vec3 getLocTranslation() const = 0;
-        virtual glm::quat getLocRotation() const = 0;
+        virtual glm::qua<float,glm::packed_highp> getLocRotation() const = 0;
 
     signals:
         //void spatialEvent(const SpatialEvent& event);
