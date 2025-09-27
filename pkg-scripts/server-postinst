@@ -28,7 +28,10 @@ case "$1" in
         /opt/overte/new-server default 40100
         systemctl enable overte-server@default.target
         systemctl start overte-server@default.target
-    else
+    else # Default server was already created in the past.
+        # Starting default server in case we removed but didn't purge it.
+        systemctl enable overte-server@default.target
+        systemctl start overte-server@default.target
         # SystemD can have Units in "memory" which are not actually "loaded", for example because they do not exist anymore.
         systemctl list-units --state=loaded \
             | grep -P -o "(overte-assignment-client|overte-domain-server|overte-server)\S+" \
