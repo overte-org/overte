@@ -29,7 +29,8 @@ case "$1" in
         systemctl enable overte-server@default.target
         systemctl start overte-server@default.target
     else
-        systemctl list-units \
+        # SystemD can have Units in "memory" which are not actually "loaded", for example because they do not exist anymore.
+        systemctl list-units --state=loaded \
             | grep -P -o "(overte-assignment-client|overte-domain-server|overte-server)\S+" \
             | xargs systemctl restart
     fi
