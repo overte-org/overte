@@ -72,7 +72,7 @@ public slots:
      * //                 (0.739199, 0.280330, 0.612372, 0.000000),
      * //                 (10.000000, 11.000000, 12.000000, 1.000000))
      */
-    glm::mat4 createFromRotAndTrans(const glm::quat& rot, const glm::vec3& trans) const;
+    glm::mat4 createFromRotAndTrans(const glm::qua<float,glm::packed_highp>& rot, const glm::vec3& trans) const;
 
     /*@jsdoc
      * Creates a matrix that represents a scale, rotation, and translation.
@@ -92,7 +92,7 @@ public slots:
      * //                 (1.478398, 0.560660, 1.224745, 0.000000),
      * //                 (10.000000, 11.000000, 12.000000, 1.000000))
      */
-    glm::mat4 createFromScaleRotAndTrans(const glm::vec3& scale, const glm::quat& rot, const glm::vec3& trans) const;
+    glm::mat4 createFromScaleRotAndTrans(const glm::vec3& scale, const glm::qua<float,glm::packed_highp>& rot, const glm::vec3& trans) const;
 
     /*@jsdoc
      * Creates a matrix from columns of values.
@@ -170,7 +170,7 @@ public slots:
      * print("Rotation: " + JSON.stringify(Quat.safeEulerAngles(rot)));
      * // Rotation: {"x":29.999998092651367,"y":45.00000762939453,"z":60.000003814697266}
      */
-    glm::quat extractRotation(const glm::mat4& m) const;
+    glm::qua<float,glm::packed_highp> extractRotation(const glm::mat4& m) const;
 
     /*@jsdoc
      * Extracts the scale from a matrix.
