@@ -52,9 +52,9 @@ namespace controller {
 
     public slots:
         virtual bool isActive() const = 0;
-        virtual glm::vec3 getAbsTranslation() const = 0;
+        virtual glm::vec<3,float,glm::packed_highp> getAbsTranslation() const = 0;
         virtual glm::qua<float,glm::packed_highp> getAbsRotation() const = 0;
-        virtual glm::vec3 getLocTranslation() const = 0;
+        virtual glm::vec<3,float,glm::packed_highp> getLocTranslation() const = 0;
         virtual glm::qua<float,glm::packed_highp> getLocRotation() const = 0;
 
     signals:

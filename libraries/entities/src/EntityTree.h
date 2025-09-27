@@ -40,7 +40,7 @@ public:
 
 class SendEntitiesOperationArgs {
 public:
-    glm::vec3 root;
+    glm::vec<3,float,glm::packed_highp> root;
     QString entityHostType;
     EntityTree* ourTree;
     EntityTreePointer otherTree;
