@@ -29,8 +29,8 @@ class ScriptAvatarData : public QObject {
     Q_PROPERTY(float bodyPitch READ getBodyPitch)
     Q_PROPERTY(float bodyYaw READ getBodyYaw)
     Q_PROPERTY(float bodyRoll READ getBodyRoll)
-    Q_PROPERTY(glm::quat orientation READ getOrientation)
-    Q_PROPERTY(glm::quat headOrientation READ getHeadOrientation)
+    Q_PROPERTY(glm::qua<float,glm::packed_highp> orientation READ getOrientation)
+    Q_PROPERTY(glm::qua<float,glm::packed_highp> headOrientation READ getHeadOrientation)
     Q_PROPERTY(float headPitch READ getHeadPitch)
     Q_PROPERTY(float headYaw READ getHeadYaw)
     Q_PROPERTY(float headRoll READ getHeadRoll)
@@ -82,8 +82,8 @@ public:
     float getBodyPitch() const;
     float getBodyYaw() const;
     float getBodyRoll() const;
-    glm::quat getOrientation() const;
-    glm::quat getHeadOrientation() const;
+    glm::qua<float,glm::packed_highp> getOrientation() const;
+    glm::qua<float,glm::packed_highp> getHeadOrientation() const;
     float getHeadPitch() const;
     float getHeadYaw() const;
     float getHeadRoll() const;
@@ -123,7 +123,7 @@ public:
      * @returns {Quat} The rotation of the joint relative to its parent, or {@link Quat(0)|Quat.IDENTITY} if the avatar data
      *     aren't available.
      */
-    Q_INVOKABLE glm::quat getJointRotation(int index) const;
+    Q_INVOKABLE glm::qua<float,glm::packed_highp> getJointRotation(int index) const;
 
     /*@jsdoc
      * Gets the translation of a joint relative to its parent, in model coordinates.
@@ -145,7 +145,7 @@ public:
      * @returns {Quat} The rotation of the joint relative to its parent, or {@link Quat(0)|Quat.IDENTITY} if the avatar data
      *     aren't available.
      */
-    Q_INVOKABLE glm::quat getJointRotation(const QString& name) const;
+    Q_INVOKABLE glm::qua<float,glm::packed_highp> getJointRotation(const QString& name) const;
 
     /*@jsdoc
      * Gets the translation of a joint relative to its parent, in model coordinates.
@@ -165,7 +165,7 @@ public:
      * @returns {Quat[]} The rotations of all joints relative to each's parent, or <code>[]</code> if the avatar data aren't
      *     available. The values are in the same order as the array returned by {@link ScriptAvatar.getJointNames}.
      */
-    Q_INVOKABLE QVector<glm::quat> getJointRotations() const;
+    Q_INVOKABLE QVector<glm::qua<float,glm::packed_highp>> getJointRotations() const;
 
     /*@jsdoc
      * Gets the translations of all joints in the avatar. Each joint's translation is relative to its parent joint, in
@@ -262,7 +262,7 @@ public slots:
      * @returns {Quat} The rotation of the joint relative to the avatar, or {@link Quat(0)|Quat.IDENTITY} if the avatar data
      *     aren't available.
      */
-    glm::quat getAbsoluteJointRotationInObjectFrame(int index) const;
+    glm::qua<float,glm::packed_highp> getAbsoluteJointRotationInObjectFrame(int index) const;
 
     /*@jsdoc
      * Gets the translation of a joint relative to the avatar.

@@ -203,7 +203,7 @@ namespace scriptable {
          *     <p><strong>Warning:</strong> Currently doesn't work as expected.</p>
          * @returns {Graphics.MeshExtents} The resulting mesh extents, in model coordinates.
          */
-        QVariantMap rotate(const glm::quat& rotation, const glm::vec3& origin = glm::vec3(NAN));
+        QVariantMap rotate(const glm::qua<float,glm::packed_highp>& rotation, const glm::vec3& origin = glm::vec3(NAN));
 
         /*@jsdoc
          * Scales, rotates, and translates the mesh.

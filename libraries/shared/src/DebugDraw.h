@@ -87,7 +87,7 @@ public:
      * });
      */
     Q_INVOKABLE void drawRays(const std::vector<std::pair<glm::vec3, glm::vec3>>& lines, const glm::vec4& color,
-                              const glm::vec3& translation = glm::vec3(0.0f, 0.0f, 0.0f), const glm::quat& rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f));
+                              const glm::vec3& translation = glm::vec3(0.0f, 0.0f, 0.0f), const glm::qua<float,glm::packed_highp>& rotation = glm::qua<float,glm::packed_highp>(1.0f, 0.0f, 0.0f, 0.0f));
 
     /*@jsdoc
      * Adds or updates a debug marker in world coordinates. This marker is drawn every frame until it is removed using  
@@ -112,7 +112,7 @@ public:
      *     DebugDraw.removeMarker(MARKER_NAME);
      * }, 5000);
      */
-    Q_INVOKABLE void addMarker(const QString& key, const glm::quat& rotation, const glm::vec3& position,
+    Q_INVOKABLE void addMarker(const QString& key, const glm::qua<float,glm::packed_highp>& rotation, const glm::vec3& position,
                                const glm::vec4& color, float size = 1.0f);
 
     /*@jsdoc
@@ -145,7 +145,7 @@ public:
      *     DebugDraw.removeMyAvatarMarker(MARKER_NAME);
      * }, 5000);
      */
-    Q_INVOKABLE void addMyAvatarMarker(const QString& key, const glm::quat& rotation, const glm::vec3& position,
+    Q_INVOKABLE void addMyAvatarMarker(const QString& key, const glm::qua<float,glm::packed_highp>& rotation, const glm::vec3& position,
                                        const glm::vec4& color, float size = 1.0f);
 
     /*@jsdoc
@@ -155,7 +155,7 @@ public:
      */
     Q_INVOKABLE void removeMyAvatarMarker(const QString& key);
 
-    using MarkerInfo = std::tuple<glm::quat, glm::vec3, glm::vec4, float>;
+    using MarkerInfo = std::tuple<glm::qua<float,glm::packed_highp>, glm::vec3, glm::vec4, float>;
     using MarkerMap = std::map<QString, MarkerInfo>;
     using Ray = std::tuple<glm::vec3, glm::vec3, glm::vec4>;
     using Rays = std::vector<Ray>;
@@ -168,8 +168,8 @@ public:
     MarkerMap getMyAvatarMarkerMap() const;
     void updateMyAvatarPos(const glm::vec3& pos) { _myAvatarPos = pos; }
     const glm::vec3& getMyAvatarPos() const { return _myAvatarPos; }
-    void updateMyAvatarRot(const glm::quat& rot) { _myAvatarRot = rot; }
-    const glm::quat& getMyAvatarRot() const { return _myAvatarRot; }
+    void updateMyAvatarRot(const glm::qua<float,glm::packed_highp>& rot) { _myAvatarRot = rot; }
+    const glm::qua<float,glm::packed_highp>& getMyAvatarRot() const { return _myAvatarRot; }
     Rays getRays() const;
     void clearRays();
 

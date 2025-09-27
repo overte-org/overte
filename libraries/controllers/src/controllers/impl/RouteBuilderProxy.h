@@ -403,7 +403,7 @@ class RouteBuilderProxy : public QObject {
          * @returns {RouteObject} The <code>RouteObject</code> with the pre-rotation applied.
          */
         // No JSDoc example because filter not currently used.
-        Q_INVOKABLE QObject* rotate(glm::quat rotation);
+        Q_INVOKABLE QObject* rotate(glm::qua<float,glm::packed_highp> rotation);
 
         /*@jsdoc
          * Filters {@link Pose} route values to be smoothed by a low velocity filter. The filter's rotation and translation 

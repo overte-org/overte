@@ -559,8 +559,8 @@ class AvatarData : public QObject, public SpatiallyNestable {
     Q_PROPERTY(float bodyPitch READ getBodyPitch WRITE setBodyPitch)
     Q_PROPERTY(float bodyRoll READ getBodyRoll WRITE setBodyRoll)
 
-    Q_PROPERTY(glm::quat orientation READ getWorldOrientation WRITE setOrientationViaScript)
-    Q_PROPERTY(glm::quat headOrientation READ getHeadOrientation WRITE setHeadOrientation)
+    Q_PROPERTY(glm::qua<float,glm::packed_highp> orientation READ getWorldOrientation WRITE setOrientationViaScript)
+    Q_PROPERTY(glm::qua<float,glm::packed_highp> headOrientation READ getHeadOrientation WRITE setHeadOrientation)
     Q_PROPERTY(float headPitch READ getHeadPitch WRITE setHeadPitch)
     Q_PROPERTY(float headYaw READ getHeadYaw WRITE setHeadYaw)
     Q_PROPERTY(float headRoll READ getHeadRoll WRITE setHeadRoll)
@@ -805,7 +805,7 @@ public:
      *
      * // Note: If using from the Avatar API, replace all occurrences of "MyAvatar" with "Avatar".
      */
-    Q_INVOKABLE virtual void setJointData(int index, const glm::quat& rotation, const glm::vec3& translation);
+    Q_INVOKABLE virtual void setJointData(int index, const glm::qua<float,glm::packed_highp>& rotation, const glm::vec3& translation);
 
     /*@jsdoc
      * Sets a specific joint's rotation relative to its parent.
@@ -818,7 +818,7 @@ public:
      * @param {number} index - The index of the joint.
      * @param {Quat} rotation - The rotation of the joint relative to its parent.
      */
-    Q_INVOKABLE virtual void setJointRotation(int index, const glm::quat& rotation);
+    Q_INVOKABLE virtual void setJointRotation(int index, const glm::qua<float,glm::packed_highp>& rotation);
 
     /*@jsdoc
      * Sets a specific joint's translation relative to its parent, in model coordinates.
@@ -858,7 +858,7 @@ public:
      * @param {number} index - The index of the joint.
      * @returns {Quat} The rotation of the joint relative to its parent.
      */
-    Q_INVOKABLE virtual glm::quat getJointRotation(int index) const;
+    Q_INVOKABLE virtual glm::qua<float,glm::packed_highp> getJointRotation(int index) const;
 
     /*@jsdoc
      * Gets the translation of a joint relative to its parent, in model coordinates.
@@ -884,7 +884,7 @@ public:
      * @param {Quat} rotation - The rotation of the joint relative to its parent.
      * @param {Vec3} translation - The translation of the joint relative to its parent, in model coordinates.
      */
-    Q_INVOKABLE virtual void setJointData(const QString& name, const glm::quat& rotation, const glm::vec3& translation);
+    Q_INVOKABLE virtual void setJointData(const QString& name, const glm::qua<float,glm::packed_highp>& rotation, const glm::vec3& translation);
 
     /*@jsdoc
      * Sets a specific joint's rotation relative to its parent.
@@ -917,7 +917,7 @@ public:
      *
      * // Note: If using from the Avatar API, replace all occurrences of "MyAvatar" with "Avatar".
      */
-    Q_INVOKABLE virtual void setJointRotation(const QString& name, const glm::quat& rotation);
+    Q_INVOKABLE virtual void setJointRotation(const QString& name, const glm::qua<float,glm::packed_highp>& rotation);
 
     /*@jsdoc
      * Sets a specific joint's translation relative to its parent, in model coordinates.
@@ -983,7 +983,7 @@ public:
      *
      * // Note: If using from the Avatar API, replace "MyAvatar" with "Avatar".
      */
-    Q_INVOKABLE virtual glm::quat getJointRotation(const QString& name) const;
+    Q_INVOKABLE virtual glm::qua<float,glm::packed_highp> getJointRotation(const QString& name) const;
 
     /*@jsdoc
      * Gets the translation of a joint relative to its parent, in model coordinates.
@@ -1010,7 +1010,7 @@ public:
      *
      * // Note: If using from the Avatar API, replace all "MyAvatar" with "Avatar".
      */
-    Q_INVOKABLE virtual QVector<glm::quat> getJointRotations() const;
+    Q_INVOKABLE virtual QVector<glm::qua<float,glm::packed_highp>> getJointRotations() const;
 
     /*@jsdoc
      * Gets the translations of all joints in the current avatar. Each joint's translation is relative to its parent joint, in
@@ -1059,7 +1059,7 @@ public:
      *
      * // Note: If using from the Avatar API, replace all occurrences of "MyAvatar" with "Avatar".
      */
-    Q_INVOKABLE virtual void setJointRotations(const QVector<glm::quat>& jointRotations);
+    Q_INVOKABLE virtual void setJointRotations(const QVector<glm::qua<float,glm::packed_highp>>& jointRotations);
 
     /*@jsdoc
      * Sets the translations of all joints in the current avatar. Each joint's translation is relative to its parent joint, in
@@ -1496,7 +1496,7 @@ public slots:
      * @param {number} index - The index of the joint. <em>Not used.</em>
      * @returns {Quat} <code>Quat.IDENTITY</code>.
      */
-    virtual glm::quat getAbsoluteJointRotationInObjectFrame(int index) const override;
+    virtual glm::qua<float,glm::packed_highp> getAbsoluteJointRotationInObjectFrame(int index) const override;
 
     /*@jsdoc
      * Gets the translation of a joint relative to the avatar.
@@ -1515,7 +1515,7 @@ public slots:
      * @param {Quat} rotation - The rotation of the joint relative to the avatar. <em>Not used.</em>
      * @returns {boolean} <code>false</code>.
      */
-    virtual bool setAbsoluteJointRotationInObjectFrame(int index, const glm::quat& rotation) override { return false; }
+    virtual bool setAbsoluteJointRotationInObjectFrame(int index, const glm::qua<float,glm::packed_highp>& rotation) override { return false; }
 
     /*@jsdoc
      * Sets the translation of a joint relative to the avatar.
