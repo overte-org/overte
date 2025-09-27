@@ -367,7 +367,7 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(AudioListenerMode audioListenerModeCamera READ getAudioListenerModeCamera)
     Q_PROPERTY(AudioListenerMode audioListenerModeCustom READ getAudioListenerModeCustom)
     Q_PROPERTY(glm::vec3 customListenPosition READ getCustomListenPosition WRITE setCustomListenPosition)
-    Q_PROPERTY(glm::quat customListenOrientation READ getCustomListenOrientation WRITE setCustomListenOrientation)
+    Q_PROPERTY(glm::qua<float,glm::packed_highp> customListenOrientation READ getCustomListenOrientation WRITE setCustomListenOrientation)
     Q_PROPERTY(float rotationRecenterFilterLength READ getRotationRecenterFilterLength WRITE setRotationRecenterFilterLength)
     Q_PROPERTY(float rotationThreshold READ getRotationThreshold WRITE setRotationThreshold)
     Q_PROPERTY(bool enableStepResetRotation READ getEnableStepResetRotation WRITE setEnableStepResetRotation)
@@ -617,7 +617,7 @@ public:
 
     const glm::mat4& getHMDSensorMatrix() const { return _hmdSensorMatrix; }
     const glm::vec3& getHMDSensorPosition() const { return _hmdSensorPosition; }
-    const glm::quat& getHMDSensorOrientation() const { return _hmdSensorOrientation; }
+    const glm::qua<float,glm::packed_highp>& getHMDSensorOrientation() const { return _hmdSensorOrientation; }
 
     /*@jsdoc
      * Gets the avatar orientation. Suitable for use in QML.
@@ -634,7 +634,7 @@ public:
     Q_INVOKABLE QVariant getOrientationVar() const;
 
     // A method intended to be overriden by MyAvatar for polling orientation for network transmission.
-    glm::quat getOrientationOutbound() const override;
+    glm::qua<float,glm::packed_highp> getOrientationOutbound() const override;
 
     // Pass a recent sample of the HMD to the avatar.
     // This can also update the avatar's position to follow the HMD
@@ -1310,14 +1310,14 @@ public:
     void snapOtherAvatarLookAtTargetsToMe(const AvatarHash& hash);
     void clearLookAtTargetAvatar();
 
-    virtual void setJointRotations(const QVector<glm::quat>& jointRotations) override;
-    virtual void setJointData(int index, const glm::quat& rotation, const glm::vec3& translation) override;
-    virtual void setJointRotation(int index, const glm::quat& rotation) override;
+    virtual void setJointRotations(const QVector<glm::qua<float,glm::packed_highp>>& jointRotations) override;
+    virtual void setJointData(int index, const glm::qua<float,glm::packed_highp>& rotation, const glm::vec3& translation) override;
+    virtual void setJointRotation(int index, const glm::qua<float,glm::packed_highp>& rotation) override;
     virtual void setJointTranslation(int index, const glm::vec3& translation) override;
     virtual void clearJointData(int index) override;
 
-    virtual void setJointData(const QString& name, const glm::quat& rotation, const glm::vec3& translation)  override;
-    virtual void setJointRotation(const QString& name, const glm::quat& rotation)  override;
+    virtual void setJointData(const QString& name, const glm::qua<float,glm::packed_highp>& rotation, const glm::vec3& translation)  override;
+    virtual void setJointRotation(const QString& name, const glm::qua<float,glm::packed_highp>& rotation)  override;
     virtual void setJointTranslation(const QString& name, const glm::vec3& translation)  override;
     virtual void clearJointData(const QString& name) override;
     virtual void clearJointsData() override;
@@ -1331,7 +1331,7 @@ public:
      * @param {Quat} orientation - The orientation of the joint in world coordinates.
      * @returns {boolean} <code>true</code> if the joint was pinned, <code>false</code> if it wasn't.
      */
-    Q_INVOKABLE bool pinJoint(int index, const glm::vec3& position, const glm::quat& orientation);
+    Q_INVOKABLE bool pinJoint(int index, const glm::vec3& position, const glm::qua<float,glm::packed_highp>& orientation);
 
     bool isJointPinned(int index);
 
@@ -1384,7 +1384,7 @@ public:
 
     void updateMotors();
     void prepareForPhysicsSimulation();
-    void nextAttitude(glm::vec3 position, glm::quat orientation); // Can be safely called at any time.
+    void nextAttitude(glm::vec3 position, glm::qua<float,glm::packed_highp> orientation); // Can be safely called at any time.
     void harvestResultsFromPhysicsSimulation(float deltaTime);
 
     const QString& getCollisionSoundURL() { return _collisionSoundURL; }
@@ -1420,8 +1420,8 @@ public:
     void setAudioListenerMode(AudioListenerMode audioListenerMode);
     glm::vec3 getCustomListenPosition() { return _customListenPosition; }
     void setCustomListenPosition(glm::vec3 customListenPosition) { _customListenPosition = customListenPosition; }
-    glm::quat getCustomListenOrientation() { return _customListenOrientation; }
-    void setCustomListenOrientation(glm::quat customListenOrientation) { _customListenOrientation = customListenOrientation; }
+    glm::qua<float,glm::packed_highp> getCustomListenOrientation() { return _customListenOrientation; }
+    void setCustomListenOrientation(glm::qua<float,glm::packed_highp> customListenOrientation) { _customListenOrientation = customListenOrientation; }
 
     virtual void rebuildCollisionShape() override;
 
@@ -1433,8 +1433,8 @@ public:
     void setHeadControllerFacingMovingAverage(glm::vec2 currentHeadControllerFacing) { _headControllerFacingMovingAverage = currentHeadControllerFacing; }
     float getCurrentStandingHeight() const { return _currentStandingHeight; }
     void setCurrentStandingHeight(float newMode) { _currentStandingHeight = newMode; }
-    const glm::quat getAverageHeadRotation() const { return _averageHeadRotation; }
-    void setAverageHeadRotation(glm::quat rotation) { _averageHeadRotation = rotation; }
+    const glm::qua<float,glm::packed_highp> getAverageHeadRotation() const { return _averageHeadRotation; }
+    void setAverageHeadRotation(glm::qua<float,glm::packed_highp> rotation) { _averageHeadRotation = rotation; }
     bool getResetMode() const { return _resetMode; }
     void setResetMode(bool hasBeenReset) { _resetMode = hasBeenReset; }
 
@@ -1700,7 +1700,7 @@ public:
      * var headRotation = MyAvatar.getAbsoluteJointRotationInObjectFrame(headIndex);
      * print("Head rotation: " + JSON.stringify(Quat.safeEulerAngles(headRotation))); // Degrees
      */
-    virtual glm::quat getAbsoluteJointRotationInObjectFrame(int index) const override;
+    virtual glm::qua<float,glm::packed_highp> getAbsoluteJointRotationInObjectFrame(int index) const override;
 
     /*@jsdoc
      * Gets the translation of a joint relative to the avatar.
@@ -1809,7 +1809,7 @@ public:
     bool isReadyForPhysics() const;
 
     float computeStandingHeightMode(const controller::Pose& head);
-    glm::quat computeAverageHeadRotation(const controller::Pose& head);
+    glm::qua<float,glm::packed_highp> computeAverageHeadRotation(const controller::Pose& head);
 
     glm::vec3 getNextPosition() { return _goToPending ? _goToPosition : getWorldPosition(); }
     void prepareAvatarEntityDataForReload();
@@ -1868,7 +1868,7 @@ public:
      */
     Q_INVOKABLE bool setPointAt(const glm::vec3& pointAtTarget);
 
-    glm::quat getLookAtRotation() { return _lookAtYaw * _lookAtPitch; }
+    glm::qua<float,glm::packed_highp> getLookAtRotation() { return _lookAtYaw * _lookAtPitch; }
 
     /*@jsdoc
      * Creates a new grab that grabs an entity.
@@ -1898,7 +1898,7 @@ public:
      * }, 10000);
      */
     Q_INVOKABLE const QUuid grab(const QUuid& targetID, int parentJointIndex,
-                                 glm::vec3 positionalOffset, glm::quat rotationalOffset);
+                                 glm::vec3 positionalOffset, glm::qua<float,glm::packed_highp> rotationalOffset);
 
     /*@jsdoc
      * Releases (deletes) a grab to stop grabbing an entity.
@@ -1978,7 +1978,7 @@ public:
      * @param {Vec3} position - The position where the avatar should sit.
      * @param {Quat} rotation - The initial orientation of the seated avatar.
      */
-    Q_INVOKABLE void beginSit(const glm::vec3& position, const glm::quat& rotation);
+    Q_INVOKABLE void beginSit(const glm::vec3& position, const glm::qua<float,glm::packed_highp>& rotation);
 
     /*@jsdoc
      * Ends a sitting action for the avatar.
@@ -1986,7 +1986,7 @@ public:
      * @param {Vec3} position - The position of the avatar when standing up.
      * @param {Quat} rotation - The orientation of the avatar when standing up.
      */
-    Q_INVOKABLE void endSit(const glm::vec3& position, const glm::quat& rotation);
+    Q_INVOKABLE void endSit(const glm::vec3& position, const glm::qua<float,glm::packed_highp>& rotation);
 
     /*@jsdoc
      * Gets whether the avatar is in a seated pose. The seated pose is set by calling {@link MyAvatar.beginSit}.
@@ -2090,7 +2090,7 @@ public slots:
      *      the new position and orientate the avatar to face the position.
      */
     void goToFeetLocation(const glm::vec3& newPosition, bool hasOrientation = false,
-        const glm::quat& newOrientation = glm::quat(), bool shouldFaceLocation = false);
+        const glm::qua<float,glm::packed_highp>& newOrientation = glm::qua<float,glm::packed_highp>(), bool shouldFaceLocation = false);
 
     /*@jsdoc
      * Moves the avatar to a new position and/or orientation in the domain.
@@ -2103,7 +2103,7 @@ public slots:
      * @param {boolean} [withSafeLanding=true] - Set to <code>false</code> to disable safe landing when teleporting.
      */
     void goToLocation(const glm::vec3& newPosition,
-                      bool hasOrientation = false, const glm::quat& newOrientation = glm::quat(),
+                      bool hasOrientation = false, const glm::qua<float,glm::packed_highp>& newOrientation = glm::qua<float,glm::packed_highp>(),
                       bool shouldFaceLocation = false, bool withSafeLanding = true);
     /*@jsdoc
      * Moves the avatar to a new position and (optional) orientation in the domain, with safe landing.
@@ -2352,7 +2352,7 @@ public slots:
      * @function MyAvatar.getOrientationForAudio
      * @returns {Quat} The orientation of your listening position.
      */
-    glm::quat getOrientationForAudio();
+    glm::qua<float,glm::packed_highp> getOrientationForAudio();
 
     /*@jsdoc
      * @function MyAvatar.setModelScale
