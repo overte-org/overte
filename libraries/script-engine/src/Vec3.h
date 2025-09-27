@@ -188,7 +188,7 @@ public slots:
      * var result = Vec3.multiplyQbyV(q, v);
      * print(JSON.stringify(result));  // {"x":0,"y":1.000,"z":1.19e-7}
      */
-    glm::vec<3,float,glm::packed_highp> multiplyQbyV(const glm::quat& q, const glm::vec<3,float,glm::packed_highp>& v) { return q * v; }
+    glm::vec<3,float,glm::packed_highp> multiplyQbyV(const glm::qua<float,glm::packed_highp>& q, const glm::vec<3,float,glm::packed_highp>& v) { return q * v; }
     
     /*@jsdoc
      * Calculates the sum of two vectors.
