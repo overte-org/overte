@@ -43,7 +43,7 @@ public slots:
      * @function EntityViewer.setPosition
      * @param {Vec3} position - The position of the view frustum.
      */
-    void setPosition(const glm::vec3& position) { _hasViewFrustum = true; _viewFrustum.setPosition(position); }
+    void setPosition(const glm::vec<3,float,glm::packed_highp>& position) { _hasViewFrustum = true; _viewFrustum.setPosition(position); }
 
     /*@jsdoc
      * Sets the orientation of the view frustum.
@@ -99,7 +99,7 @@ public slots:
      * @function EntityViewer.getPosition
      * @returns {Vec3} The position of the view frustum.
      */
-    const glm::vec3& getPosition() const { return _viewFrustum.getPosition(); }
+    const glm::vec<3,float,glm::packed_highp>& getPosition() const { return _viewFrustum.getPosition(); }
 
     /*@jsdoc
      * Gets the orientation of the view frustum.

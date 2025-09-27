@@ -133,7 +133,7 @@ namespace scriptable {
          *    <code>origin</code> it is considered to be "nearby".
          * @returns {number[]} The indices of nearby vertices.
          */
-        QVector<glm::uint32> findNearbyVertexIndices(const glm::vec3& origin, float epsilon = 1e-6) const;
+        QVector<glm::uint32> findNearbyVertexIndices(const glm::vec<3,float,glm::packed_highp>& origin, float epsilon = 1e-6) const;
 
         /*@jsdoc
          * Adds an attribute for all vertices.

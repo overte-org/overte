@@ -90,7 +90,7 @@ class ScriptEngine;
  */
 class HMDScriptingInterface : public AbstractHMDScriptingInterface, public Dependency {
     Q_OBJECT
-    Q_PROPERTY(glm::vec3 position READ getPosition)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> position READ getPosition)
     Q_PROPERTY(glm::qua<float,glm::packed_highp> orientation READ getOrientation)
     Q_PROPERTY(bool showTablet READ getShouldShowTablet)
     Q_PROPERTY(bool tabletContextualMode READ getTabletContextualMode)
@@ -103,7 +103,7 @@ class HMDScriptingInterface : public AbstractHMDScriptingInterface, public Depen
     Q_PROPERTY(int miniTabletHand READ getCurrentMiniTabletHand WRITE setCurrentMiniTabletHand)
     Q_PROPERTY(bool miniTabletEnabled READ getMiniTabletEnabled WRITE setMiniTabletEnabled)
     Q_PROPERTY(QVariant playArea READ getPlayAreaRect);
-    Q_PROPERTY(QVector<glm::vec3> sensorPositions READ getSensorPositions);
+    Q_PROPERTY(QVector<glm::vec<3,float,glm::packed_highp>> sensorPositions READ getSensorPositions);
 
     Q_PROPERTY(float visionSqueezeRatioX READ getVisionSqueezeRatioX WRITE setVisionSqueezeRatioX);
     Q_PROPERTY(float visionSqueezeRatioY READ getVisionSqueezeRatioY WRITE setVisionSqueezeRatioY);
@@ -142,9 +142,9 @@ public:
      *     Overlays.deleteOverlay(square);
      * });
      */
-    Q_INVOKABLE glm::vec3 calculateRayUICollisionPoint(const glm::vec3& position, const glm::vec3& direction) const;
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> calculateRayUICollisionPoint(const glm::vec<3,float,glm::packed_highp>& position, const glm::vec<3,float,glm::packed_highp>& direction) const;
 
-    glm::vec3 calculateParabolaUICollisionPoint(const glm::vec3& position, const glm::vec3& velocity, const glm::vec3& acceleration, float& parabolicDistance) const;
+    glm::vec<3,float,glm::packed_highp> calculateParabolaUICollisionPoint(const glm::vec<3,float,glm::packed_highp>& position, const glm::vec<3,float,glm::packed_highp>& velocity, const glm::vec<3,float,glm::packed_highp>& acceleration, float& parabolicDistance) const;
 
     /*@jsdoc
      * Gets the 2D HUD overlay coordinates of a 3D point on the HUD overlay.
@@ -170,7 +170,7 @@ public:
      *     Overlays.deleteOverlay(square);
      * });
      */
-    Q_INVOKABLE glm::vec2 overlayFromWorldPoint(const glm::vec3& position) const;
+    Q_INVOKABLE glm::vec2 overlayFromWorldPoint(const glm::vec<3,float,glm::packed_highp>& position) const;
 
     /*@jsdoc
      * Gets the 3D world coordinates of a 2D point on the HUD overlay.
@@ -179,7 +179,7 @@ public:
      * @param {Vec2} coordinates - The point on the HUD overlay in HUD coordinates.
      * @returns {Vec3} The point on the HUD overlay in world coordinates.
      */
-    Q_INVOKABLE glm::vec3 worldPointFromOverlay(const glm::vec2& overlay) const;
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> worldPointFromOverlay(const glm::vec2& overlay) const;
 
     /*@jsdoc
      * Gets the 2D point on the HUD overlay represented by given spherical coordinates. 
@@ -488,9 +488,9 @@ public:
     bool getAwayStateWhenFocusLostInVREnabled();
 
     QVariant getPlayAreaRect();
-    QVector<glm::vec3> getSensorPositions();
+    QVector<glm::vec<3,float,glm::packed_highp>> getSensorPositions();
 
-    glm::vec3 getPosition() const;
+    glm::vec<3,float,glm::packed_highp> getPosition() const;
 
 private:
     bool _showTablet { false };

@@ -127,7 +127,7 @@ public slots:
      * Camera.mode = "independent";
      * Camera.orientation = Quat.lookAt(Camera.position, Vec3.ZERO, Vec3.UNIT_NEG_Y);
      */
-    glm::qua<float,glm::packed_highp> lookAt(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up);
+    glm::qua<float,glm::packed_highp> lookAt(const glm::vec<3,float,glm::packed_highp>& eye, const glm::vec<3,float,glm::packed_highp>& center, const glm::vec<3,float,glm::packed_highp>& up);
 
     /*@jsdoc
     * Calculates a camera orientation given an eye position and point of interest. The camera's negative z-axis is the forward 
@@ -143,7 +143,7 @@ public slots:
     * Camera.mode = "independent";
     * Camera.orientation = Quat.lookAtSimple(Camera.position, Vec3.ZERO);
     */
-    glm::qua<float,glm::packed_highp> lookAtSimple(const glm::vec3& eye, const glm::vec3& center);
+    glm::qua<float,glm::packed_highp> lookAtSimple(const glm::vec<3,float,glm::packed_highp>& eye, const glm::vec<3,float,glm::packed_highp>& center);
 
     /*@jsdoc
     * Calculates the shortest rotation from a first vector onto a second.
@@ -160,7 +160,7 @@ public slots:
     * Entities.editEntity(entityID, properties);
     * entityVelocity = newVelocity;
     */
-    glm::qua<float,glm::packed_highp> rotationBetween(const glm::vec3& v1, const glm::vec3& v2);
+    glm::qua<float,glm::packed_highp> rotationBetween(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2);
 
     /*@jsdoc
      * Generates a quaternion from a {@link Vec3} of Euler angles in degrees.
@@ -174,7 +174,7 @@ public slots:
      * eulerAngles.z = 0;
      * var newOrientation = Quat.fromVec3Degrees(eulerAngles);
      */
-    glm::qua<float,glm::packed_highp> fromVec3Degrees(const glm::vec3& vec3);
+    glm::qua<float,glm::packed_highp> fromVec3Degrees(const glm::vec<3,float,glm::packed_highp>& vec3);
 
     /*@jsdoc
      * Generates a quaternion from a {@link Vec3} of Euler angles in radians.
@@ -185,7 +185,7 @@ public slots:
      * @example <caption>Create a rotation of 180 degrees about the y axis.</caption>
      * var rotation = Quat.fromVec3Radians({ x: 0, y: Math.PI, z: 0 });
      */
-    glm::qua<float,glm::packed_highp> fromVec3Radians(const glm::vec3& vec3);
+    glm::qua<float,glm::packed_highp> fromVec3Radians(const glm::vec<3,float,glm::packed_highp>& vec3);
 
     /*@jsdoc
     * Generates a quaternion from pitch, yaw, and roll values in degrees.
@@ -235,7 +235,7 @@ public slots:
      * @param {Quat} orientation - A quaternion representing an orientation.
      * @returns {Vec3} The negative z-axis rotated by <code>orientation</code>.
      */
-    glm::vec3 getFront(const glm::qua<float,glm::packed_highp>& orientation) { return getForward(orientation); }
+    glm::vec<3,float,glm::packed_highp> getFront(const glm::qua<float,glm::packed_highp>& orientation) { return getForward(orientation); }
 
     /*@jsdoc
      * Gets the "forward" direction that the camera would face if its orientation was set to the quaternion value.
@@ -248,7 +248,7 @@ public slots:
      * var forward = Quat.getForward(Quat.IDENTITY);
      * print(JSON.stringify(forward)); // {"x":0,"y":0,"z":-1}
      */
-    glm::vec3 getForward(const glm::qua<float,glm::packed_highp>& orientation);
+    glm::vec<3,float,glm::packed_highp> getForward(const glm::qua<float,glm::packed_highp>& orientation);
 
     /*@jsdoc
      * Gets the "right" direction that the camera would have if its orientation was set to the quaternion value.
@@ -257,7 +257,7 @@ public slots:
      * @param {Quat} orientation - A quaternion representing an orientation.
      * @returns {Vec3} The x-axis rotated by <code>orientation</code>.
      */
-    glm::vec3 getRight(const glm::qua<float,glm::packed_highp>& orientation);
+    glm::vec<3,float,glm::packed_highp> getRight(const glm::qua<float,glm::packed_highp>& orientation);
 
     /*@jsdoc
      * Gets the "up" direction that the camera would have if its orientation was set to the quaternion value.
@@ -266,7 +266,7 @@ public slots:
      * @param {Quat} orientation - A quaternion representing an orientation.
      * @returns {Vec3} The y-axis rotated by <code>orientation</code>.
      */
-    glm::vec3 getUp(const glm::qua<float,glm::packed_highp>& orientation);
+    glm::vec<3,float,glm::packed_highp> getUp(const glm::qua<float,glm::packed_highp>& orientation);
 
     /*@jsdoc
      * Calculates the Euler angles for the quaternion, in degrees. (The "safe" in the name signifies that the angle results 
@@ -279,7 +279,7 @@ public slots:
      * var eulerAngles = Quat.safeEulerAngles(Camera.orientation);
      * print("Camera yaw: " + eulerAngles.y);
      */
-    glm::vec3 safeEulerAngles(const glm::qua<float,glm::packed_highp>& orientation);
+    glm::vec<3,float,glm::packed_highp> safeEulerAngles(const glm::qua<float,glm::packed_highp>& orientation);
 
     /*@jsdoc
      * Generates a quaternion given an angle to rotate through and an axis to rotate about.
@@ -292,7 +292,7 @@ public slots:
      * @example <caption>Calculate a rotation of 90 degrees about the direction your camera is looking.</caption>
      * var rotation = Quat.angleAxis(90, Quat.getForward(Camera.orientation));
      */
-    glm::qua<float,glm::packed_highp> angleAxis(float angle, const glm::vec3& v);
+    glm::qua<float,glm::packed_highp> angleAxis(float angle, const glm::vec<3,float,glm::packed_highp>& v);
 
     /*@jsdoc
      * Gets the rotation axis for a quaternion.
@@ -306,7 +306,7 @@ public slots:
      * print("Forward: " + JSON.stringify(forward));
      * print("Axis: " + JSON.stringify(axis)); // Same value as forward.
      */
-    glm::vec3 axis(const glm::qua<float,glm::packed_highp>& orientation);
+    glm::vec<3,float,glm::packed_highp> axis(const glm::qua<float,glm::packed_highp>& orientation);
 
     /*@jsdoc
      * Gets the rotation angle for a quaternion.

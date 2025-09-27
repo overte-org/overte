@@ -435,7 +435,7 @@ signals:
      *
      * location.locationChangeRequired.connect(onLocationChangeRequired);
      */
-    void locationChangeRequired(const glm::vec3& newPosition,
+    void locationChangeRequired(const glm::vec<3,float,glm::packed_highp>& newPosition,
                                 bool hasOrientationChange, const glm::quat& newOrientation,
                                 bool shouldFaceLocation);
 

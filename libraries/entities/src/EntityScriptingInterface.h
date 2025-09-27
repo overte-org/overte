@@ -366,7 +366,7 @@ public slots:
     /// Deliberately not adding jsdoc, only used internally.
     // FIXME: Deprecate and remove from the API.
     Q_INVOKABLE QUuid addModelEntity(const QString& name, const QString& modelUrl, const QString& textures, const QString& shapeType, bool dynamic,
-                                     bool collisionless, bool grabbable, const glm::vec3& position, const glm::vec3& gravity);
+                                     bool collisionless, bool grabbable, const glm::vec<3,float,glm::packed_highp>& position, const glm::vec<3,float,glm::packed_highp>& gravity);
 
     /*@jsdoc
      * Creates a clone of an entity. The clone has the same properties as the original except that: it has a modified
@@ -780,7 +780,7 @@ public slots:
      * print("Closest entity: " + entityID);
      */
     /// this function will not find any models in script engine contexts which don't have access to models
-    Q_INVOKABLE QUuid findClosestEntity(const glm::vec3& center, float radius, uint filter = ENTITY_PICK_FILTER) const;
+    Q_INVOKABLE QUuid findClosestEntity(const glm::vec<3,float,glm::packed_highp>& center, float radius, uint filter = ENTITY_PICK_FILTER) const;
 
     /*@jsdoc
      * Finds all entities that intersect a sphere, according to <code>filter</code>.
@@ -799,7 +799,7 @@ public slots:
      * print("Number of entities within 10m: " + entityIDs.length);
      */
     /// this function will not find any models in script engine contexts which don't have access to models
-    Q_INVOKABLE QVector<QUuid> findEntities(const glm::vec3& center,
+    Q_INVOKABLE QVector<QUuid> findEntities(const glm::vec<3,float,glm::packed_highp>& center,
                                             float radius, uint filter = ENTITY_PICK_FILTER) const;
 
     /*@jsdoc
@@ -816,7 +816,7 @@ public slots:
      *     could be found.
      */
     /// this function will not find any models in script engine contexts which don't have access to models
-    Q_INVOKABLE QVector<QUuid> findEntitiesInBox(const glm::vec3& corner,
+    Q_INVOKABLE QVector<QUuid> findEntitiesInBox(const glm::vec<3,float,glm::packed_highp>& corner,
                                                  const glm::vec3& dimensions,
                                                  uint filter = ENTITY_PICK_FILTER) const;
 
@@ -859,7 +859,7 @@ public slots:
      */
     /// this function will not find any entities in script engine contexts which don't have access to entities
     Q_INVOKABLE QVector<QUuid> findEntitiesByType(const QString entityType,
-                                                  const glm::vec3& center,
+                                                  const glm::vec<3,float,glm::packed_highp>& center,
                                                   float radius,
                                                   uint filter = ENTITY_PICK_FILTER) const;
 
@@ -882,7 +882,7 @@ public slots:
      * var entityIDs = Entities.findEntitiesByName("Light-Target", MyAvatar.position, 10, false);
      * print("Number of entities with the name Light-Target: " + entityIDs.length);
      */
-    Q_INVOKABLE QVector<QUuid> findEntitiesByName(const QString entityName, const glm::vec3& center, float radius,
+    Q_INVOKABLE QVector<QUuid> findEntitiesByName(const QString entityName, const glm::vec<3,float,glm::packed_highp>& center, float radius,
                                                   bool caseSensitiveSearch = false,
                                                   uint filter = ENTITY_PICK_FILTER) const;
 
@@ -905,7 +905,7 @@ public slots:
      * var entityIDs = Entities.findEntitiesByTags(["Light-Target"], MyAvatar.position, 10, false);
      * print("Number of entities with the tag Light-Target: " + entityIDs.length);
      */
-    Q_INVOKABLE QVector<QUuid> findEntitiesByTags(const QVector<QString> entityTags, const glm::vec3& center, float radius,
+    Q_INVOKABLE QVector<QUuid> findEntitiesByTags(const QVector<QString> entityTags, const glm::vec<3,float,glm::packed_highp>& center, float radius,
                                                   bool caseSensitiveSearch = false,
                                                   uint filter = ENTITY_PICK_FILTER) const;
 
@@ -1086,7 +1086,7 @@ public slots:
      * Entities.setVoxelSphere(polyVox, position, 0.9, 255);
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE bool setVoxelSphere(const QUuid& entityID, const glm::vec3& center, float radius, int value);
+    Q_INVOKABLE bool setVoxelSphere(const QUuid& entityID, const glm::vec<3,float,glm::packed_highp>& center, float radius, int value);
     
     /*@jsdoc
      * Sets the values of all voxels in a capsule-shaped portion of a {@link Entities.EntityProperties-PolyVox|PolyVox} entity.
@@ -1110,7 +1110,7 @@ public slots:
      * Entities.setVoxelCapsule(polyVox, startPosition, endPosition, 0.5, 255);
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE bool setVoxelCapsule(const QUuid& entityID, const glm::vec3& start, const glm::vec3& end, float radius, int value);
+    Q_INVOKABLE bool setVoxelCapsule(const QUuid& entityID, const glm::vec<3,float,glm::packed_highp>& start, const glm::vec<3,float,glm::packed_highp>& end, float radius, int value);
 
     /*@jsdoc
      * Sets the value of a particular voxel in a {@link Entities.EntityProperties-PolyVox|PolyVox} entity.
@@ -1132,7 +1132,7 @@ public slots:
      * Entities.setVoxel(entity, { x: 0, y: 0, z: 0 }, 0);
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE bool setVoxel(const QUuid& entityID, const glm::vec3& position, int value);
+    Q_INVOKABLE bool setVoxel(const QUuid& entityID, const glm::vec<3,float,glm::packed_highp>& position, int value);
 
     /*@jsdoc
      * Sets the values of all voxels in a {@link Entities.EntityProperties-PolyVox|PolyVox} entity.
@@ -1175,7 +1175,7 @@ public slots:
      * Entities.setVoxelsInCuboid(polyVox, cuboidPosition, cuboidSize, 0);
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE bool setVoxelsInCuboid(const QUuid& entityID, const glm::vec3& lowPosition, const glm::vec3& cuboidSize, int value);
+    Q_INVOKABLE bool setVoxelsInCuboid(const QUuid& entityID, const glm::vec<3,float,glm::packed_highp>& lowPosition, const glm::vec<3,float,glm::packed_highp>& cuboidSize, int value);
 
     /*@jsdoc
      * Converts voxel coordinates in a {@link Entities.EntityProperties-PolyVox|PolyVox} entity to world coordinates. Voxel 
@@ -1210,7 +1210,7 @@ public slots:
      * });
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE glm::vec3 voxelCoordsToWorldCoords(const QUuid& entityID, glm::vec3 voxelCoords);
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> voxelCoordsToWorldCoords(const QUuid& entityID, glm::vec<3,float,glm::packed_highp> voxelCoords);
 
     /*@jsdoc
      * Converts world coordinates to voxel coordinates in a {@link Entities.EntityProperties-PolyVox|PolyVox} entity. Voxel 
@@ -1224,7 +1224,7 @@ public slots:
      *     fractional and outside the entity's bounding box.
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE glm::vec3 worldCoordsToVoxelCoords(const QUuid& entityID, glm::vec3 worldCoords);
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> worldCoordsToVoxelCoords(const QUuid& entityID, glm::vec<3,float,glm::packed_highp> worldCoords);
 
     /*@jsdoc
      * Converts voxel coordinates in a {@link Entities.EntityProperties-PolyVox|PolyVox} entity to local coordinates. Local 
@@ -1248,7 +1248,7 @@ public slots:
      * print("Voxel dimensions: " + JSON.stringify(voxelDimensions));
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE glm::vec3 voxelCoordsToLocalCoords(const QUuid& entityID, glm::vec3 voxelCoords);
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> voxelCoordsToLocalCoords(const QUuid& entityID, glm::vec<3,float,glm::packed_highp> voxelCoords);
 
     /*@jsdoc
      * Converts local coordinates to voxel coordinates in a {@link Entities.EntityProperties-PolyVox|PolyVox} entity. Local 
@@ -1263,7 +1263,7 @@ public slots:
      *     fractional and outside the entity's bounding box.
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE glm::vec3 localCoordsToVoxelCoords(const QUuid& entityID, glm::vec3 localCoords);
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> localCoordsToVoxelCoords(const QUuid& entityID, glm::vec<3,float,glm::packed_highp> localCoords);
 
     /*@jsdoc
      * Sets all the points in a {@link Entities.EntityProperties-Line|Line} entity.
@@ -1299,7 +1299,7 @@ public slots:
      *     ]);
      * }, 2000);
      */
-    Q_INVOKABLE bool setAllPoints(const QUuid& entityID, const QVector<glm::vec3>& points);
+    Q_INVOKABLE bool setAllPoints(const QUuid& entityID, const QVector<glm::vec<3,float,glm::packed_highp>>& points);
     
     /*@jsdoc
      * Appends a point to a {@link Entities.EntityProperties-Line|Line} entity.
@@ -1331,7 +1331,7 @@ public slots:
      *     Entities.appendPoint(entity, { x: 1, y: 1, z: 0 });
      * }, 50); // Wait for the entity to be created.
      */
-    Q_INVOKABLE bool appendPoint(const QUuid& entityID, const glm::vec3& point);
+    Q_INVOKABLE bool appendPoint(const QUuid& entityID, const glm::vec<3,float,glm::packed_highp>& point);
 
     /*@jsdoc
      * Restart a {@link Entities.EntityProperties-Sound|Sound} entity, locally only.  It must also be <code>localOnly</code>.
@@ -1438,7 +1438,7 @@ public slots:
      *     <code>{@link Vec3(0)|Vec3.ZERO}</code>.
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE glm::vec3 getAbsoluteJointTranslationInObjectFrame(const QUuid& entityID, int jointIndex);
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getAbsoluteJointTranslationInObjectFrame(const QUuid& entityID, int jointIndex);
     
     /*@jsdoc
      * Gets the index of the parent joint of a joint in a {@link Entities.EntityProperties-Model|Model} entity.
@@ -1491,7 +1491,7 @@ public slots:
      *     <code>false</code>.
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE bool setAbsoluteJointTranslationInObjectFrame(const QUuid& entityID, int jointIndex, glm::vec3 translation);
+    Q_INVOKABLE bool setAbsoluteJointTranslationInObjectFrame(const QUuid& entityID, int jointIndex, glm::vec<3,float,glm::packed_highp> translation);
 
     /*@jsdoc
      * Sets the rotation of a joint in a {@link Entities.EntityProperties-Model|Model} entity relative to the entity's position 
@@ -1534,7 +1534,7 @@ public slots:
      *     entity, the entity is loaded, and the joint index is valid; otherwise <code>{@link Vec3(0)|Vec3.ZERO}</code>.
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE glm::vec3 getLocalJointTranslation(const QUuid& entityID, int jointIndex);
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getLocalJointTranslation(const QUuid& entityID, int jointIndex);
 
     /*@jsdoc
      * Gets the local rotation of a joint in a {@link Entities.EntityProperties-Model|Model} entity.
@@ -1573,7 +1573,7 @@ public slots:
      *     <code>false</code>.
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE bool setLocalJointTranslation(const QUuid& entityID, int jointIndex, glm::vec3 translation);
+    Q_INVOKABLE bool setLocalJointTranslation(const QUuid& entityID, int jointIndex, glm::vec<3,float,glm::packed_highp> translation);
 
     /*@jsdoc
      * Sets the local rotation of a joint in a {@link Entities.EntityProperties-Model|Model} entity.
@@ -1615,7 +1615,7 @@ public slots:
      *     translations; otherwise <code>false</code>.
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE bool setLocalJointTranslations(const QUuid& entityID, const QVector<glm::vec3>& translations);
+    Q_INVOKABLE bool setLocalJointTranslations(const QUuid& entityID, const QVector<glm::vec<3,float,glm::packed_highp>>& translations);
 
     /*@jsdoc
      * Sets the local rotations of joints in a {@link Entities.EntityProperties-Model|Model} entity.
@@ -1674,7 +1674,7 @@ public slots:
     // FIXME move to a renderable entity interface
     Q_INVOKABLE bool setLocalJointsData(const QUuid& entityID,
                                         const QVector<glm::qua<float,glm::packed_highp>>& rotations,
-                                        const QVector<glm::vec3>& translations);
+                                        const QVector<glm::vec<3,float,glm::packed_highp>>& translations);
 
 
     /*@jsdoc
@@ -2057,8 +2057,8 @@ public slots:
      * @param {number} radius - The radius of the capsule.
      * @returns {boolean} <code>true</code> if the AA box and capsule intersect, otherwise <code>false</code>.
      */
-    Q_INVOKABLE bool AABoxIntersectsCapsule(const glm::vec3& low, const glm::vec3& dimensions,
-                                            const glm::vec3& start, const glm::vec3& end, float radius);
+    Q_INVOKABLE bool AABoxIntersectsCapsule(const glm::vec<3,float,glm::packed_highp>& low, const glm::vec<3,float,glm::packed_highp>& dimensions,
+                                            const glm::vec<3,float,glm::packed_highp>& start, const glm::vec<3,float,glm::packed_highp>& end, float radius);
 
     /*@jsdoc
      * Gets the meshes in a {@link Entities.EntityProperties-Model|Model} or {@link Entities.EntityProperties-PolyVox|PolyVox} 
@@ -2180,7 +2180,7 @@ public slots:
      * localPosition = Entities.getEntityProperties(childEntity, "localPosition").localPosition;
      * print("Local position: " + JSON.stringify(localPosition));  // The same.
      */
-    Q_INVOKABLE glm::vec3 worldToLocalPosition(glm::vec3 worldPosition, const QUuid& parentID,
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> worldToLocalPosition(glm::vec<3,float,glm::packed_highp> worldPosition, const QUuid& parentID,
                                                int parentJointIndex = -1, bool scalesWithParent = false);
     /*@jsdoc
      * Converts a rotation or orientation in world coordinates to rotation in an avatar, entity, or joint's local coordinates.
@@ -2205,7 +2205,7 @@ public slots:
      *     <code>false</code> for the local velocity to be at world scale.
      * @returns {Vec3} The velocity converted to local coordinates if successful, otherwise {@link Vec3(0)|Vec3.ZERO}.
      */
-    Q_INVOKABLE glm::vec3 worldToLocalVelocity(glm::vec3 worldVelocity, const QUuid& parentID,
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> worldToLocalVelocity(glm::vec<3,float,glm::packed_highp> worldVelocity, const QUuid& parentID,
                                                int parentJointIndex = -1, bool scalesWithParent = false);
     /*@jsdoc
      * Converts a Euler angular velocity in world coordinates to an angular velocity in an avatar, entity, or joint's local 
@@ -2219,7 +2219,7 @@ public slots:
      * @param {boolean} [scalesWithParent=false] - <em>Not used in the calculation.</em>
      * @returns {Vec3} The angular velocity converted to local coordinates if successful, otherwise {@link Vec3(0)|Vec3.ZERO}.
      */
-    Q_INVOKABLE glm::vec3 worldToLocalAngularVelocity(glm::vec3 worldAngularVelocity, const QUuid& parentID,
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> worldToLocalAngularVelocity(glm::vec<3,float,glm::packed_highp> worldAngularVelocity, const QUuid& parentID,
                                                       int parentJointIndex = -1, bool scalesWithParent = false);
     /*@jsdoc
      * Converts dimensions in world coordinates to dimensions in an avatar or entity's local coordinates.
@@ -2231,7 +2231,7 @@ public slots:
      *     <code>false</code> for the local dimensions to be at world scale.
      * @returns {Vec3} The dimensions converted to local coordinates if successful, otherwise {@link Vec3(0)|Vec3.ZERO}.
      */
-    Q_INVOKABLE glm::vec3 worldToLocalDimensions(glm::vec3 worldDimensions, const QUuid& parentID,
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> worldToLocalDimensions(glm::vec<3,float,glm::packed_highp> worldDimensions, const QUuid& parentID,
                                                  int parentJointIndex = -1, bool scalesWithParent = false);
     /*@jsdoc
      * Converts a position in an avatar, entity, or joint's local coordinate to a position in world coordinates.
@@ -2244,7 +2244,7 @@ public slots:
      *     <code>false</code> if the local dimensions are at world scale.
      * @returns {Vec3} The position converted to world coordinates if successful, otherwise {@link Vec3(0)|Vec3.ZERO}.
      */
-    Q_INVOKABLE glm::vec3 localToWorldPosition(glm::vec3 localPosition, const QUuid& parentID,
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> localToWorldPosition(glm::vec<3,float,glm::packed_highp> localPosition, const QUuid& parentID,
                                                int parentJointIndex = -1, bool scalesWithParent = false);
     /*@jsdoc
      * Converts a rotation or orientation in an avatar, entity, or joint's local coordinate to a rotation in world coordinates.
@@ -2269,7 +2269,7 @@ public slots:
      *     <code>false</code> if the local velocity is at world scale.
      * @returns {Vec3} The velocity converted to world coordinates it successful, otherwise {@link Vec3(0)|Vec3.ZERO}.
      */
-    Q_INVOKABLE glm::vec3 localToWorldVelocity(glm::vec3 localVelocity, const QUuid& parentID,
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> localToWorldVelocity(glm::vec<3,float,glm::packed_highp> localVelocity, const QUuid& parentID,
                                                int parentJointIndex = -1, bool scalesWithParent = false);
     /*@jsdoc
      * Converts a Euler angular velocity in an avatar, entity, or joint's local coordinate to an angular velocity in world 
@@ -2283,7 +2283,7 @@ public slots:
      * @param {boolean} [scalesWithParent= false] - <em>Not used in the calculation.</em>
      * @returns {Vec3} The angular velocity converted to world coordinates if successful, otherwise {@link Vec3(0)|Vec3.ZERO}.
      */
-    Q_INVOKABLE glm::vec3 localToWorldAngularVelocity(glm::vec3 localAngularVelocity, const QUuid& parentID,
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> localToWorldAngularVelocity(glm::vec<3,float,glm::packed_highp> localAngularVelocity, const QUuid& parentID,
                                                       int parentJointIndex = -1, bool scalesWithParent = false);
     /*@jsdoc
      * Converts dimensions in an avatar or entity's local coordinates to dimensions in world coordinates.
@@ -2295,7 +2295,7 @@ public slots:
      *     scale, <code>false</code> if the local dimensions are at world scale.
      * @returns {Vec3} The dimensions converted to world coordinates if successful, otherwise {@link Vec3(0)|Vec3.ZERO}.
      */
-    Q_INVOKABLE glm::vec3 localToWorldDimensions(glm::vec3 localDimensions, const QUuid& parentID,
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> localToWorldDimensions(glm::vec<3,float,glm::packed_highp> localDimensions, const QUuid& parentID,
                                                  int parentJointIndex = -1, bool scalesWithParent = false);
 
 

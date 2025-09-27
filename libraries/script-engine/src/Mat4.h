@@ -72,7 +72,7 @@ public slots:
      * //                 (0.739199, 0.280330, 0.612372, 0.000000),
      * //                 (10.000000, 11.000000, 12.000000, 1.000000))
      */
-    glm::mat4 createFromRotAndTrans(const glm::qua<float,glm::packed_highp>& rot, const glm::vec3& trans) const;
+    glm::mat4 createFromRotAndTrans(const glm::qua<float,glm::packed_highp>& rot, const glm::vec<3,float,glm::packed_highp>& trans) const;
 
     /*@jsdoc
      * Creates a matrix that represents a scale, rotation, and translation.
@@ -92,7 +92,7 @@ public slots:
      * //                 (1.478398, 0.560660, 1.224745, 0.000000),
      * //                 (10.000000, 11.000000, 12.000000, 1.000000))
      */
-    glm::mat4 createFromScaleRotAndTrans(const glm::vec3& scale, const glm::qua<float,glm::packed_highp>& rot, const glm::vec3& trans) const;
+    glm::mat4 createFromScaleRotAndTrans(const glm::vec<3,float,glm::packed_highp>& scale, const glm::qua<float,glm::packed_highp>& rot, const glm::vec<3,float,glm::packed_highp>& trans) const;
 
     /*@jsdoc
      * Creates a matrix from columns of values.
@@ -153,7 +153,7 @@ public slots:
      * print("Translation: " + JSON.stringify(trans));
      * // Translation: {"x":10,"y":11,"z":12}
      */
-    glm::vec3 extractTranslation(const glm::mat4& m) const;
+    glm::vec<3,float,glm::packed_highp> extractTranslation(const glm::mat4& m) const;
 
     /*@jsdoc
      * Extracts the rotation from a matrix.
@@ -187,7 +187,7 @@ public slots:
      * print("Scale: " + JSON.stringify(scale));
      * // Scale: {"x":1.9999998807907104,"y":1.9999998807907104,"z":1.9999998807907104}
      */
-    glm::vec3 extractScale(const glm::mat4& m) const;
+    glm::vec<3,float,glm::packed_highp> extractScale(const glm::mat4& m) const;
 
 
     /*@jsdoc
@@ -207,7 +207,7 @@ public slots:
      * print("Transformed point: " + JSON.stringify(transformedPoint));
      * // Transformed point: { "x": 2.8284270763397217, "y": 12, "z": -2.384185791015625e-7 }
      */
-    glm::vec3 transformPoint(const glm::mat4& m, const glm::vec3& point) const;
+    glm::vec<3,float,glm::packed_highp> transformPoint(const glm::mat4& m, const glm::vec<3,float,glm::packed_highp>& point) const;
 
     /*@jsdoc
      * Transforms a vector into a new coordinate system: the vector is scaled and rotated.
@@ -226,7 +226,7 @@ public slots:
      * print("Transformed vector: " + JSON.stringify(transformedVector));
      * // Transformed vector: { "x": 2.8284270763397217, "y": 2, "z": -2.384185791015625e-7 }
      */
-    glm::vec3 transformVector(const glm::mat4& m, const glm::vec3& vector) const;
+    glm::vec<3,float,glm::packed_highp> transformVector(const glm::mat4& m, const glm::vec<3,float,glm::packed_highp>& vector) const;
 
 
     /*@jsdoc
@@ -259,7 +259,7 @@ public slots:
      * @returns {Vec3} The negative z-axis rotated by orientation.
      */
     // redundant, calls getForward which better describes the returned vector as a direction
-    glm::vec3 getFront(const glm::mat4& m) const { return getForward(m); }
+    glm::vec<3,float,glm::packed_highp> getFront(const glm::mat4& m) const { return getForward(m); }
 
     /*@jsdoc
      * Gets the "forward" direction that the camera would face if its orientation was set to the rotation contained in a
@@ -275,7 +275,7 @@ public slots:
      * print("Forward: " + JSON.stringify(forward));
      * // Forward: {"x":0,"y":0,"z":-1}
      */
-    glm::vec3 getForward(const glm::mat4& m) const;
+    glm::vec<3,float,glm::packed_highp> getForward(const glm::mat4& m) const;
 
     /*@jsdoc
      * Gets the "right" direction that the camera would have if its orientation was set to the rotation contained in a matrix. 
@@ -284,7 +284,7 @@ public slots:
      * @param {Mat4} m - The matrix.
      * @returns {Vec3} The x-axis rotated by the rotation in the matrix.
      */
-    glm::vec3 getRight(const glm::mat4& m) const;
+    glm::vec<3,float,glm::packed_highp> getRight(const glm::mat4& m) const;
 
     /*@jsdoc
      * Gets the "up" direction that the camera would have if its orientation was set to the rotation contained in a matrix. The 
@@ -293,7 +293,7 @@ public slots:
      * @param {Mat4} m - The matrix.
      * @returns {Vec3} The y-axis rotated by the rotation in the matrix.
      */
-    glm::vec3 getUp(const glm::mat4& m) const;
+    glm::vec<3,float,glm::packed_highp> getUp(const glm::mat4& m) const;
 
 
     /*@jsdoc

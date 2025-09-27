@@ -41,7 +41,7 @@ static int cameraModeId = qRegisterMetaType<CameraMode>();
 class Camera : public QObject {
     Q_OBJECT
 
-    Q_PROPERTY(glm::vec3 position READ getPosition WRITE setPosition)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> position READ getPosition WRITE setPosition)
     Q_PROPERTY(glm::qua<float,glm::packed_highp> orientation READ getOrientation WRITE setOrientation)
     Q_PROPERTY(QString mode READ getModeString WRITE setModeString NOTIFY modeUpdated)
     Q_PROPERTY(QVariantMap frustum READ getViewFrustum CONSTANT)
@@ -88,7 +88,7 @@ public slots:
      * @function Camera.getPosition
      * @returns {Vec3} The current camera position.
      */
-    glm::vec3 getPosition() const { return _position; }
+    glm::vec<3,float,glm::packed_highp> getPosition() const { return _position; }
 
     /*@jsdoc
      * Sets the camera position. You can also set the position using the {@link Camera|Camera.position} property. Only works if 
@@ -96,7 +96,7 @@ public slots:
      * @function Camera.setPosition
      * @param {Vec3} position - The position to set the camera at.
      */
-    void setPosition(const glm::vec3& position);
+    void setPosition(const glm::vec<3,float,glm::packed_highp>& position);
 
     /*@jsdoc
      * Gets the current camera orientation. You can also get the orientation using the {@link Camera|Camera.orientation} 
@@ -202,7 +202,7 @@ public slots:
      *
      * Controller.mousePressEvent.connect(onMousePressEvent);
      */
-    void lookAt(const glm::vec3& position);
+    void lookAt(const glm::vec<3,float,glm::packed_highp>& position);
 
     /*@jsdoc
      * Sets the camera to continue looking at the specified <code>position</code> even while the camera moves. Only works if 
@@ -210,7 +210,7 @@ public slots:
      * @function Camera.keepLookingAt
      * @param {Vec3} position - The position to keep looking at.
      */
-    void keepLookingAt(const glm::vec3& position);
+    void keepLookingAt(const glm::vec<3,float,glm::packed_highp>& position);
 
     /*@jsdoc
      * Stops the camera from continually looking at the position that was set with {@link Camera.keepLookingAt}.

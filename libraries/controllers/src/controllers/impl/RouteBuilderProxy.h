@@ -376,7 +376,7 @@ class RouteBuilderProxy : public QObject {
          * @returns {RouteObject} The <code>RouteObject</code> with the pre-translation applied.
          */
         // No JSDoc example because filter not currently used.
-        Q_INVOKABLE QObject* translate(glm::vec3 translate);
+        Q_INVOKABLE QObject* translate(glm::vec<3,float,glm::packed_highp> translate);
 
         /*@jsdoc
          * Filters {@link Pose} route values to have a pre-transform applied.

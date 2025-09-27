@@ -82,8 +82,8 @@ public:
      * @param {MeshFace[]} faces - The faces in the mesh.
      * @returns {MeshProxy} A new mesh.
      */
-    Q_INVOKABLE ScriptValue newMesh(const QVector<glm::vec3>& vertices,
-                                     const QVector<glm::vec3>& normals,
+    Q_INVOKABLE ScriptValue newMesh(const QVector<glm::vec<3,float,glm::packed_highp>>& vertices,
+                                     const QVector<glm::vec<3,float,glm::packed_highp>>& normals,
                                      const QVector<MeshFace>& faces);
 
     /*@jsdoc
