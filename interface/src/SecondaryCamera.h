@@ -21,7 +21,7 @@ class SecondaryCameraJobConfig : public render::Task::Config { // Exposes second
     Q_OBJECT
     Q_PROPERTY(QUuid attachedEntityId MEMBER attachedEntityId NOTIFY dirty)  // entity whose properties define camera position and orientation
     Q_PROPERTY(QUuid portalEntranceEntityId MEMBER portalEntranceEntityId NOTIFY dirty)  // entity whose properties define a portal's entrance position and orientation
-    Q_PROPERTY(glm::vec3 position READ getPosition WRITE setPosition)  // of viewpoint to render from
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> position READ getPosition WRITE setPosition)  // of viewpoint to render from
     Q_PROPERTY(glm::qua<float,glm::packed_highp> orientation READ getOrientation WRITE setOrientation)  // of viewpoint to render from
     Q_PROPERTY(float vFoV MEMBER vFoV NOTIFY dirty)  // Secondary camera's vertical field of view. In degrees.
     Q_PROPERTY(float nearClipPlaneDistance MEMBER nearClipPlaneDistance NOTIFY dirty)  // Secondary camera's near clip plane distance. In meters.
@@ -31,7 +31,7 @@ class SecondaryCameraJobConfig : public render::Task::Config { // Exposes second
 public:
     QUuid attachedEntityId;
     QUuid portalEntranceEntityId;
-    glm::vec3 position;
+    glm::vec<3,float,glm::packed_highp> position;
     glm::qua<float,glm::packed_highp> orientation;
     float vFoV { DEFAULT_FIELD_OF_VIEW_DEGREES };
     float nearClipPlaneDistance { DEFAULT_NEAR_CLIP };
@@ -45,8 +45,8 @@ public:
 signals:
     void dirty();
 public slots:
-    glm::vec3 getPosition() { return position; }
-    void setPosition(glm::vec3 pos);
+    glm::vec<3,float,glm::packed_highp> getPosition() { return position; }
+    void setPosition(glm::vec<3,float,glm::packed_highp> pos);
     glm::qua<float,glm::packed_highp> getOrientation() { return orientation; }
     void setOrientation(glm::qua<float,glm::packed_highp> orient);
     void enableSecondaryCameraRenderConfigs(bool enabled);

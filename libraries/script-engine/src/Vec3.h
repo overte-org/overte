@@ -113,7 +113,7 @@ public slots:
      * var reflected = Vec3.reflect(v, normal);
      * print(JSON.stringify(reflected));  // {"x":1,"y":-2,"z":3}
      */
-    glm::vec3 reflect(const glm::vec3& v1, const glm::vec3& v2) { return glm::reflect(v1, v2); }
+    glm::vec<3,float,glm::packed_highp> reflect(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2) { return glm::reflect(v1, v2); }
     
     /*@jsdoc
      * Calculates the cross product of two vectors.
@@ -127,7 +127,7 @@ public slots:
      * var crossProduct = Vec3.cross(v1, v2);
      * print(JSON.stringify(crossProduct)); // {"x":0,"y":0,"z":1}
      */
-    glm::vec3 cross(const glm::vec3& v1, const glm::vec3& v2) { return glm::cross(v1, v2); }
+    glm::vec<3,float,glm::packed_highp> cross(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2) { return glm::cross(v1, v2); }
     
     /*@jsdoc
      * Calculates the dot product of two vectors.
@@ -141,7 +141,7 @@ public slots:
      * var dotProduct = Vec3.dot(v1, v2);
      * print(dotProduct); // 0
      */
-    float dot(const glm::vec3& v1, const glm::vec3& v2) { return glm::dot(v1, v2); }
+    float dot(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2) { return glm::dot(v1, v2); }
     
     /*@jsdoc
      * Multiplies a vector by a scale factor.
@@ -150,7 +150,7 @@ public slots:
      * @param {number} scale - The scale factor.
      * @returns {Vec3} The vector with each ordinate value multiplied by the <code>scale</code>.
      */
-    glm::vec3 multiply(const glm::vec3& v1, float f) { return v1 * f; }
+    glm::vec<3,float,glm::packed_highp> multiply(const glm::vec<3,float,glm::packed_highp>& v1, float f) { return v1 * f; }
     
     /*@jsdoc
      * Multiplies a vector by a scale factor.
@@ -159,7 +159,7 @@ public slots:
      * @param {Vec3} v - The vector.
      * @returns {Vec3} The vector with each ordinate value multiplied by the <code>scale</code>.
      */
-    glm::vec3 multiply(float f, const glm::vec3& v1) { return v1 * f; }
+    glm::vec<3,float,glm::packed_highp> multiply(float f, const glm::vec<3,float,glm::packed_highp>& v1) { return v1 * f; }
     
     /*@jsdoc
      * Multiplies two vectors.
@@ -174,7 +174,7 @@ public slots:
      * var multiplied = Vec3.multiplyVbyV(v1, v2);
      * print(JSON.stringify(multiplied));  // {"x":1,"y":4,"z":9}
      */
-    glm::vec3 multiplyVbyV(const glm::vec3& v1, const glm::vec3& v2) { return v1 * v2; }
+    glm::vec<3,float,glm::packed_highp> multiplyVbyV(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2) { return v1 * v2; }
     
     /*@jsdoc
      * Rotates a vector.
@@ -188,7 +188,7 @@ public slots:
      * var result = Vec3.multiplyQbyV(q, v);
      * print(JSON.stringify(result));  // {"x":0,"y":1.000,"z":1.19e-7}
      */
-    glm::vec3 multiplyQbyV(const glm::quat& q, const glm::vec3& v) { return q * v; }
+    glm::vec<3,float,glm::packed_highp> multiplyQbyV(const glm::quat& q, const glm::vec<3,float,glm::packed_highp>& v) { return q * v; }
     
     /*@jsdoc
      * Calculates the sum of two vectors.
@@ -197,7 +197,7 @@ public slots:
      * @param {Vec3} v2 - The second vector.
      * @returns {Vec3} The sum of the two vectors.
      */
-    glm::vec3 sum(const glm::vec3& v1, const glm::vec3& v2) { return v1 + v2; }
+    glm::vec<3,float,glm::packed_highp> sum(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2) { return v1 + v2; }
     
     /*@jsdoc
      * Calculates one vector subtracted from another.
@@ -206,7 +206,7 @@ public slots:
      * @param {Vec3} v2 - The second vector.
      * @returns {Vec3} The second vector subtracted from the first.
      */
-    glm::vec3 subtract(const glm::vec3& v1, const glm::vec3& v2) { return v1 - v2; }
+    glm::vec<3,float,glm::packed_highp> subtract(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2) { return v1 - v2; }
     
     /*@jsdoc
      * Calculates the length of a vector
@@ -214,7 +214,7 @@ public slots:
      * @param {Vec3} v - The vector.
      * @returns {number} The length of the vector.
      */
-    float length(const glm::vec3& v) { return glm::length(v); }
+    float length(const glm::vec<3,float,glm::packed_highp>& v) { return glm::length(v); }
     
     /*@jsdoc
      * Calculates the distance between two points.
@@ -232,7 +232,7 @@ public slots:
      * distance = Vec3.distance(p1, p2);
      * print(distance); // 10
      */
-    float distance(const glm::vec3& v1, const glm::vec3& v2) { return glm::distance(v1, v2); }
+    float distance(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2) { return glm::distance(v1, v2); }
     
     /*@jsdoc
      * Calculates the angle of rotation from one vector onto another, with the sign depending on a reference vector.
@@ -254,7 +254,7 @@ public slots:
      * print(Vec3.orientedAngle(v1, v2, { x: 1, y: 2, z: -1 }));  // -45
      * print(Vec3.orientedAngle(v1, v2, { x: 1, y: -2, z: -1 }));  // 45
      */
-    float orientedAngle(const glm::vec3& v1, const glm::vec3& v2, const glm::vec3& v3);
+    float orientedAngle(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2, const glm::vec<3,float,glm::packed_highp>& v3);
     
     /*@jsdoc
      * Normalizes a vector so that its length is <code>1</code>.
@@ -267,7 +267,7 @@ public slots:
      * print(JSON.stringify(normalized));  // {"x":0.7071,"y":0.7071,"z":0}
      * print(Vec3.length(normalized));  // 1
      */
-    glm::vec3 normalize(const glm::vec3& v) { return glm::normalize(v); };
+    glm::vec<3,float,glm::packed_highp> normalize(const glm::vec<3,float,glm::packed_highp>& v) { return glm::normalize(v); };
     
     /*@jsdoc
      * Calculates a linear interpolation between two vectors.
@@ -282,7 +282,7 @@ public slots:
      * var interpolated = Vec3.mix(v1, v2, 0.75);  // 1/4 of v1 and 3/4 of v2.
      * print(JSON.stringify(interpolated));  // {"x":2.5,"y":7.5","z":0}
      */
-    glm::vec3 mix(const glm::vec3& v1, const glm::vec3& v2, float m) { return glm::mix(v1, v2, m); }
+    glm::vec<3,float,glm::packed_highp> mix(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2, float m) { return glm::mix(v1, v2, m); }
     
     /*@jsdoc
      * Prints the vector to the program log, as a text label followed by the vector value.
@@ -294,7 +294,7 @@ public slots:
      * Vec3.print("Vector: ", v);  // dvec3(1.000000, 2.000000, 3.000000)
      * print("Vector: " + JSON.stringify(v));  // {"x":1,"y":2,"z":3}
      */
-    void print(const QString& label, const glm::vec3& v);
+    void print(const QString& label, const glm::vec<3,float,glm::packed_highp>& v);
     
     /*@jsdoc
      * Tests whether two vectors are equal.
@@ -315,7 +315,7 @@ public slots:
      * equal = Vec3.equal(v1, v2);
      * print(equal);  // false
      */
-    bool equal(const glm::vec3& v1, const glm::vec3& v2) { return v1 == v2; }
+    bool equal(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2) { return v1 == v2; }
     
     /*@jsdoc
      * Tests whether two vectors are equal within a tolerance.
@@ -336,7 +336,7 @@ public slots:
      * equal = Vec3.withinEpsilon(v1, v2, 0.001);
      * print(equal);  // true
      */
-    bool withinEpsilon(const glm::vec3& v1, const glm::vec3& v2, float epsilon);
+    bool withinEpsilon(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2, float epsilon);
     
     /*@jsdoc
      * Calculates polar coordinates (elevation, azimuth, radius) that transform the unit z-axis vector onto a point.
@@ -352,7 +352,7 @@ public slots:
      * print("Radius: " + polar.z);  // 7.5
      */
     // FIXME misnamed, should be 'spherical' or 'euler' depending on the implementation
-    glm::vec3 toPolar(const glm::vec3& v);
+    glm::vec<3,float,glm::packed_highp> toPolar(const glm::vec<3,float,glm::packed_highp>& v);
     
     /*@jsdoc
      * Calculates the coordinates of a point from polar coordinate transformation of the unit z-axis vector.
@@ -366,7 +366,7 @@ public slots:
      * print(JSON.stringify(p));  // {"x":5,"y":2.5,"z":5}
      */
     // FIXME misnamed, should be 'spherical' or 'euler' depending on the implementation
-    glm::vec3 fromPolar(const glm::vec3& polar);
+    glm::vec<3,float,glm::packed_highp> fromPolar(const glm::vec<3,float,glm::packed_highp>& polar);
     
     /*@jsdoc
      * Calculates the unit vector corresponding to polar coordinates elevation and azimuth transformation of the unit z-axis 
@@ -384,7 +384,7 @@ public slots:
      * print(JSON.stringify(p));  // {"x":5,"y":2.5,"z":5}
      */
     // FIXME misnamed, should be 'spherical' or 'euler' depending on the implementation
-    glm::vec3 fromPolar(float elevation, float azimuth);
+    glm::vec<3,float,glm::packed_highp> fromPolar(float elevation, float azimuth);
     
     /*@jsdoc
      * Calculates the angle between two vectors.
@@ -398,28 +398,28 @@ public slots:
      * var angle = Vec3.getAngle(v1, v2);
      * print(angle * 180 / Math.PI);  // 90
      */
-    float getAngle(const glm::vec3& v1, const glm::vec3& v2);
+    float getAngle(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2);
 
 private:
-    const glm::vec3& UNIT_X() { return Vectors::UNIT_X; }
-    const glm::vec3& UNIT_Y() { return Vectors::UNIT_Y; }
-    const glm::vec3& UNIT_Z() { return Vectors::UNIT_Z; }
-    const glm::vec3& UNIT_NEG_X() { return Vectors::UNIT_NEG_X; }
-    const glm::vec3& UNIT_NEG_Y() { return Vectors::UNIT_NEG_Y; }
-    const glm::vec3& UNIT_NEG_Z() { return Vectors::UNIT_NEG_Z; }
-    const glm::vec3& UNIT_XY() { return Vectors::UNIT_XY; }
-    const glm::vec3& UNIT_XZ() { return Vectors::UNIT_XZ; }
-    const glm::vec3& UNIT_YZ() { return Vectors::UNIT_YZ; }
-    const glm::vec3& UNIT_XYZ() { return Vectors::UNIT_XYZ; }
-    const glm::vec3& FLOAT_MAX() { return Vectors::MAX; }
-    const glm::vec3& FLOAT_MIN() { return Vectors::MIN; }
-    const glm::vec3& ZERO() { return Vectors::ZERO; }
-    const glm::vec3& ONE() { return Vectors::ONE; }
-    const glm::vec3& TWO() { return Vectors::TWO; }
-    const glm::vec3& HALF() { return Vectors::HALF; }
-    const glm::vec3& RIGHT() { return Vectors::RIGHT; }
-    const glm::vec3& UP() { return Vectors::UP; }
-    const glm::vec3& FRONT() { return Vectors::FRONT; }
+    const glm::vec<3,float,glm::packed_highp>& UNIT_X() { return Vectors::UNIT_X; }
+    const glm::vec<3,float,glm::packed_highp>& UNIT_Y() { return Vectors::UNIT_Y; }
+    const glm::vec<3,float,glm::packed_highp>& UNIT_Z() { return Vectors::UNIT_Z; }
+    const glm::vec<3,float,glm::packed_highp>& UNIT_NEG_X() { return Vectors::UNIT_NEG_X; }
+    const glm::vec<3,float,glm::packed_highp>& UNIT_NEG_Y() { return Vectors::UNIT_NEG_Y; }
+    const glm::vec<3,float,glm::packed_highp>& UNIT_NEG_Z() { return Vectors::UNIT_NEG_Z; }
+    const glm::vec<3,float,glm::packed_highp>& UNIT_XY() { return Vectors::UNIT_XY; }
+    const glm::vec<3,float,glm::packed_highp>& UNIT_XZ() { return Vectors::UNIT_XZ; }
+    const glm::vec<3,float,glm::packed_highp>& UNIT_YZ() { return Vectors::UNIT_YZ; }
+    const glm::vec<3,float,glm::packed_highp>& UNIT_XYZ() { return Vectors::UNIT_XYZ; }
+    const glm::vec<3,float,glm::packed_highp>& FLOAT_MAX() { return Vectors::MAX; }
+    const glm::vec<3,float,glm::packed_highp>& FLOAT_MIN() { return Vectors::MIN; }
+    const glm::vec<3,float,glm::packed_highp>& ZERO() { return Vectors::ZERO; }
+    const glm::vec<3,float,glm::packed_highp>& ONE() { return Vectors::ONE; }
+    const glm::vec<3,float,glm::packed_highp>& TWO() { return Vectors::TWO; }
+    const glm::vec<3,float,glm::packed_highp>& HALF() { return Vectors::HALF; }
+    const glm::vec<3,float,glm::packed_highp>& RIGHT() { return Vectors::RIGHT; }
+    const glm::vec<3,float,glm::packed_highp>& UP() { return Vectors::UP; }
+    const glm::vec<3,float,glm::packed_highp>& FRONT() { return Vectors::FRONT; }
 
 public:
     virtual ~Vec3();
