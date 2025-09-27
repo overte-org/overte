@@ -1408,7 +1408,7 @@ public slots:
      * }, 2000);
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE glm::quat getAbsoluteJointRotationInObjectFrame(const QUuid& entityID, int jointIndex);
+    Q_INVOKABLE glm::qua<float,glm::packed_highp> getAbsoluteJointRotationInObjectFrame(const QUuid& entityID, int jointIndex);
 
     /*@jsdoc
      * Sets the translation of a joint in a {@link Entities.EntityProperties-Model|Model} entity relative to the entity's 
@@ -1453,7 +1453,7 @@ public slots:
      * }, 2000);
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE bool setAbsoluteJointRotationInObjectFrame(const QUuid& entityID, int jointIndex, glm::quat rotation);
+    Q_INVOKABLE bool setAbsoluteJointRotationInObjectFrame(const QUuid& entityID, int jointIndex, glm::qua<float,glm::packed_highp> rotation);
 
 
     /*@jsdoc
@@ -1491,7 +1491,7 @@ public slots:
      * }, 2000);
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE glm::quat getLocalJointRotation(const QUuid& entityID, int jointIndex);
+    Q_INVOKABLE glm::qua<float,glm::packed_highp> getLocalJointRotation(const QUuid& entityID, int jointIndex);
 
     /*@jsdoc
      * Sets the local translation of a joint in a {@link Entities.EntityProperties-Model|Model} entity.
@@ -1533,7 +1533,7 @@ public slots:
      * }, 2000);
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE bool setLocalJointRotation(const QUuid& entityID, int jointIndex, glm::quat rotation);
+    Q_INVOKABLE bool setLocalJointRotation(const QUuid& entityID, int jointIndex, glm::qua<float,glm::packed_highp> rotation);
 
 
     /*@jsdoc
@@ -1588,7 +1588,7 @@ public slots:
      * }, 2000);
      */
     // FIXME move to a renderable entity interface
-    Q_INVOKABLE bool setLocalJointRotations(const QUuid& entityID, const QVector<glm::quat>& rotations);
+    Q_INVOKABLE bool setLocalJointRotations(const QUuid& entityID, const QVector<glm::qua<float,glm::packed_highp>>& rotations);
 
     /*@jsdoc
      * Sets the local rotations and translations of joints in a {@link Entities.EntityProperties-Model|Model} entity. This is 
@@ -1604,7 +1604,7 @@ public slots:
      */
     // FIXME move to a renderable entity interface
     Q_INVOKABLE bool setLocalJointsData(const QUuid& entityID,
-                                        const QVector<glm::quat>& rotations,
+                                        const QVector<glm::qua<float,glm::packed_highp>>& rotations,
                                         const QVector<glm::vec3>& translations);
 
 
@@ -2078,7 +2078,7 @@ public slots:
      * @param {boolean} [scalesWithParent=false] - <em>Not used in the calculation.</em>
      * @returns {Quat} The rotation converted to local coordinates if successful, otherwise {@link Quat(0)|Quat.IDENTITY}.
      */
-    Q_INVOKABLE glm::quat worldToLocalRotation(glm::quat worldRotation, const QUuid& parentID,
+    Q_INVOKABLE glm::qua<float,glm::packed_highp> worldToLocalRotation(glm::qua<float,glm::packed_highp> worldRotation, const QUuid& parentID,
                                                int parentJointIndex = -1, bool scalesWithParent = false);
     /*@jsdoc
      * Converts a velocity in world coordinates to a velocity in an avatar, entity, or joint's local coordinates.
@@ -2142,7 +2142,7 @@ public slots:
      * @param {boolean} [scalesWithParent= false] - <em>Not used in the calculation.</em>
      * @returns {Quat} The rotation converted to local coordinates if successful, otherwise {@link Quat(0)|Quat.IDENTITY}.
      */
-    Q_INVOKABLE glm::quat localToWorldRotation(glm::quat localRotation, const QUuid& parentID,
+    Q_INVOKABLE glm::qua<float,glm::packed_highp> localToWorldRotation(glm::qua<float,glm::packed_highp> localRotation, const QUuid& parentID,
                                                int parentJointIndex = -1, bool scalesWithParent = false);
     /*@jsdoc
      * Converts a velocity in an avatar, entity, or joint's local coordinate to a velocity in world coordinates.
