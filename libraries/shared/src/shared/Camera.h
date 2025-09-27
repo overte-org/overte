@@ -42,7 +42,7 @@ class Camera : public QObject {
     Q_OBJECT
 
     Q_PROPERTY(glm::vec3 position READ getPosition WRITE setPosition)
-    Q_PROPERTY(glm::quat orientation READ getOrientation WRITE setOrientation)
+    Q_PROPERTY(glm::qua<float,glm::packed_highp> orientation READ getOrientation WRITE setOrientation)
     Q_PROPERTY(QString mode READ getModeString WRITE setModeString NOTIFY modeUpdated)
     Q_PROPERTY(QVariantMap frustum READ getViewFrustum CONSTANT)
     Q_PROPERTY(bool captureMouse READ getCaptureMouse WRITE setCaptureMouse NOTIFY captureMouseChanged)
@@ -104,7 +104,7 @@ public slots:
      * @function Camera.getOrientation
      * @returns {Quat} The current camera orientation.
      */
-    glm::quat getOrientation() const { return _orientation; }
+    glm::qua<float,glm::packed_highp> getOrientation() const { return _orientation; }
 
     /*@jsdoc
      * Sets the camera orientation. You can also set the orientation using the {@link Camera|Camera.orientation} property. Only
@@ -112,7 +112,7 @@ public slots:
      * @function Camera.setOrientation
      * @param {Quat} orientation - The orientation to set the camera to.
      */
-    void setOrientation(const glm::quat& orientation);
+    void setOrientation(const glm::qua<float,glm::packed_highp>& orientation);
 
     /*@jsdoc
      * Gets the current mouse capture state.
