@@ -19,53 +19,24 @@ set -e
 
 case "$1" in
     configure)
-	ldconfig -n /opt/overte/lib
-	adduser --system --quiet --gecos "Overte" --home /var/lib/overte --group --no-create-home overte
-	mkdir -p /var/lib/overte
-	chown overte:overte /var/lib/overte
-	chmod 775 /var/lib/overte
-	if [ ! -d "/var/lib/overte/default" ]; then
-		if [ -d "/var/lib/athena" ]; then
-			ATHENA_ACTIVE=`systemctl list-units \
-				| grep -P -o "(athena-assignment-client|athena-domain-server|athena-server)\S+" \
-				| paste -s -d'|' \
-				| head -c -1`
-			ATHENA_ENABLED=`systemctl list-units --state=loaded \
-				| grep -P -o "(athena-assignment-client|athena-domain-server|athena-server)\S+" \
-				| xargs -I {} sh -c 'if systemctl is-enabled {} >/dev/null ; then echo {} ; fi' \
-				| paste -s -d'|' \
-				| head -c -1`
-
-			# shutdown athena servers
-			echo -n $ATHENA_ACTIVE | xargs -d'|' systemctl stop
-
-			# copy the server files over
-			cp /etc/opt/athena/* /etc/opt/overte
-			cp -R /var/lib/athena/* /var/lib/overte
-			chown -R overte:overte /var/lib/overte/*
-			find /var/lib/overte -maxdepth 3 -path "*\.local/share" -execdir sh -c 'cd share; ln -s ../.. "Overte - dev"' ';'
-			find /var/lib/overte -maxdepth 3 -path "*\.local/share" -execdir sh -c 'cd share; ln -s ../.. Overte' ';'
-
-			OVERTE_ACTIVE=`echo -n $ATHENA_ACTIVE | sed 's/athena/overte/g'`
-			OVERTE_ENABLED=`echo -n $ATHENA_ENABLED | sed 's/athena/overte/g'`
-
-			echo -n $ATHENA_ENABLED | xargs -d'|' systemctl disable
-			echo -n $OVERTE_ENABLED | xargs -d'|' systemctl enable
-			echo -n $OVERTE_ACTIVE | xargs -d'|' systemctl start
-		else
-			/opt/overte/new-server default 40100
-			systemctl enable overte-server@default.target
-			systemctl start overte-server@default.target
-		fi
-	else
-		systemctl list-units \
-			| grep -P -o "(overte-assignment-client|overte-domain-server|overte-server)\S+" \
-			| xargs systemctl restart
-	fi
+    ldconfig -n /opt/overte/lib
+    adduser --system --quiet --gecos "Overte" --home /var/lib/overte --group --no-create-home overte
+    mkdir -p /var/lib/overte
+    chown overte:overte /var/lib/overte
+    chmod 775 /var/lib/overte
+    if [ ! -d "/var/lib/overte/default" ]; then
+        /opt/overte/new-server default 40100
+        systemctl enable overte-server@default.target
+        systemctl start overte-server@default.target
+    else
+        systemctl list-units \
+            | grep -P -o "(overte-assignment-client|overte-domain-server|overte-server)\S+" \
+            | xargs systemctl restart
+    fi
     ;;
 
     abort-remove|abort-deconfigure)
-	ldconfig -n /opt/overte/lib
+    ldconfig -n /opt/overte/lib
     ;;
 
     abort-upgrade)
