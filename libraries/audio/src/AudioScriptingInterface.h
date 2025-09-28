@@ -196,7 +196,7 @@ protected:
      *     sound.ready.connect(onSoundReady);
      * }
      */
-    Q_INVOKABLE ScriptAudioInjector* playSound(SharedSoundPointer sound, const AudioInjectorOptions& injectorOptions = AudioInjectorOptions());
+    Q_INVOKABLE ScriptAudioInjector* playSound(QSharedPointer<Sound> sound, const AudioInjectorOptions& injectorOptions = AudioInjectorOptions());
 
     /*@jsdoc
      * Starts playing the content of an audio file locally (isn't sent to the audio mixer). This is the same as calling
@@ -207,7 +207,7 @@ protected:
      * {@link SoundObject} for supported formats.
      * @returns {AudioInjector} The audio injector that plays the audio file.
      */
-    Q_INVOKABLE ScriptAudioInjector* playSystemSound(SharedSoundPointer sound);
+    Q_INVOKABLE ScriptAudioInjector* playSystemSound(QSharedPointer<Sound> sound);
 
     /*@jsdoc
      * Sets whether the audio input should be used in stereo. If the audio input doesn't support stereo then setting a value
