@@ -48,7 +48,7 @@ void main(void) {
 
     // Weirdly, Qt gives us a texture with premultiplied alpha.
     // We have to un-premultiply or there are black halos around transparent parts.
-    texel.rgb /= texel.a;
+    texel.rgb /= max(0.004 /* 1.0 / 255.0 */, texel.a);
 
     texel = color_sRGBAToLinear(texel);
     texel *= _color;
