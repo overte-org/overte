@@ -170,7 +170,7 @@ public:
      *     Overlays.deleteOverlay(square);
      * });
      */
-    Q_INVOKABLE glm::vec2 overlayFromWorldPoint(const glm::vec<3,float,glm::packed_highp>& position) const;
+    Q_INVOKABLE glm::vec<2,float,glm::packed_highp> overlayFromWorldPoint(const glm::vec<3,float,glm::packed_highp>& position) const;
 
     /*@jsdoc
      * Gets the 3D world coordinates of a 2D point on the HUD overlay.
@@ -179,7 +179,7 @@ public:
      * @param {Vec2} coordinates - The point on the HUD overlay in HUD coordinates.
      * @returns {Vec3} The point on the HUD overlay in world coordinates.
      */
-    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> worldPointFromOverlay(const glm::vec2& overlay) const;
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> worldPointFromOverlay(const glm::vec<2,float,glm::packed_highp>& overlay) const;
 
     /*@jsdoc
      * Gets the 2D point on the HUD overlay represented by given spherical coordinates. 
@@ -190,7 +190,7 @@ public:
      * @param {Vec2} sphericalPos - The point on the HUD overlay in spherical coordinates.
      * @returns {Vec2} The point on the HUD overlay in HUD coordinates.
      */
-    Q_INVOKABLE glm::vec2 sphericalToOverlay(const glm::vec2 & sphericalPos) const;
+    Q_INVOKABLE glm::vec<2,float,glm::packed_highp> sphericalToOverlay(const glm::vec<2,float,glm::packed_highp> & sphericalPos) const;
 
     /*@jsdoc
      * Gets the spherical coordinates of a 2D point on the HUD overlay.
@@ -201,7 +201,7 @@ public:
      * @param {Vec2} overlayPos - The point on the HUD overlay in HUD coordinates.
      * @returns {Vec2} The point on the HUD overlay in spherical coordinates.
      */
-    Q_INVOKABLE glm::vec2 overlayToSpherical(const glm::vec2 & overlayPos) const;
+    Q_INVOKABLE glm::vec<2,float,glm::packed_highp> overlayToSpherical(const glm::vec<2,float,glm::packed_highp> & overlayPos) const;
 
     /*@jsdoc
      * Recenters the HMD HUD to the current HMD position and orientation.
