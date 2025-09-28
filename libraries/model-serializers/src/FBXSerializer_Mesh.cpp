@@ -375,8 +375,12 @@ ExtractedMesh FBXSerializer::extractMesh(const FBXNode& object, unsigned int& me
             hifi::ByteArray dracoArray = child.properties.at(0).value<hifi::ByteArray>();
             decodedBuffer.Init(dracoArray.data(), dracoArray.size());
 
-            std::unique_ptr<draco::Mesh> dracoMesh(new draco::Mesh());
-            decoder.DecodeBufferToGeometry(&decodedBuffer, dracoMesh.get());
+            auto statusOr = decoder.DecodeMeshFromBuffer(&decodedBuffer);
+            if (!statusOr.ok()) {
+                qWarning(modelformat) << "Draco Error:" << statusOr.status().error_msg();
+                continue;
+            }
+            std::unique_ptr<draco::Mesh> dracoMesh = std::move(statusOr).value();
 
             // prepare attributes for this mesh
             auto positionAttribute = dracoMesh->GetNamedAttribute(draco::GeometryAttribute::POSITION);
