@@ -101,7 +101,7 @@ public slots:
      *     }, 1000);
      * }());
      */
-    void playAvatarSound(SharedSoundPointer avatarSound) const { _agent->playAvatarSound(avatarSound); }
+    void playAvatarSound(QSharedPointer<Sound> avatarSound) const { _agent->playAvatarSound(avatarSound); }
 
 private:
     Agent* _agent;
