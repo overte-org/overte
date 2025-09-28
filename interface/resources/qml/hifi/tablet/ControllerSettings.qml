@@ -2,6 +2,7 @@
 //  Created by Dante Ruiz on 6/1/17.
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -27,7 +28,6 @@ Item {
     width: parent.width
 
     property string title: "Controls"
-    property var openVRDevices: ["HTC Vive", "Valve Index", "Valve HMD", "Valve", "WindowsMR", "Oculus"]
 
     HifiConstants { id: hifi }
 
@@ -245,7 +245,7 @@ Item {
                     source: InputConfiguration.configurationLayout(box.textAt(box.currentIndex));
                     onLoaded: {
                         if (loader.item.hasOwnProperty("pluginName")) {
-                            if (openVRDevices.indexOf(box.textAt(box.currentIndex)) !== -1) {
+                            if (box.currentIndex.startsWith("OpenVR")) {
                                 loader.item.pluginName = "OpenVR";
                             } else if (box.currentIndex.startsWith("OpenXR")) {
                                 loader.item.pluginName = "OpenXR";
