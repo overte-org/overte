@@ -483,7 +483,7 @@ public slots:
      * @function Window.getDeviceSize
      * @returns {Vec2} The width and height of the Interface window or HMD rendering surface, in pixels.
      */
-    glm::vec2 getDeviceSize() const;
+    glm::vec<2,float,glm::packed_highp> getDeviceSize() const;
 
     /*@jsdoc
      * Gets the last domain connection error when a connection is refused.
