@@ -484,6 +484,8 @@ private:
     using InputKey = controller::InputController::Key;
 };
 
+Q_DECLARE_METATYPE(ControllerScriptingInterface);
+
 const int NUMBER_OF_SPATIALCONTROLS_PER_PALM = 2; // the hand and the tip
 const int NUMBER_OF_JOYSTICKS_PER_PALM = 1;
 const int NUMBER_OF_TRIGGERS_PER_PALM = 1;
