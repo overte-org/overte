@@ -138,6 +138,8 @@ int main(int argc, const char* argv[]) {
         qputenv("QSG_DISTANCEFIELD_ANTIALIASING", "gray");
     }
 
+    QSurfaceFormat::setDefaultFormat(getDefaultOpenGLSurfaceFormat());
+
     // Setup QCoreApplication settings, install log message handler
     setupHifiApplication(BuildInfo::INTERFACE_NAME);
 
