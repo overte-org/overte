@@ -205,7 +205,7 @@ namespace controller {
          * var RIGHT_HAND = 1;
          * Controller.triggerHapticPulse(HAPTIC_STRENGTH, HAPTIC_DURATION, RIGHT_HAND);
          */
-        Q_INVOKABLE bool triggerHapticPulse(float strength, float duration, uint16_t index = 2) const;
+        Q_INVOKABLE bool triggerHapticPulse(float strength, float duration, ushort index = 2) const;
 
         /*@jsdoc
          * Triggers a 250ms haptic pulse on connected and enabled devices that have the capability.
@@ -216,7 +216,7 @@ namespace controller {
          *     <code>index = 1</code> is the right hand, and <code>index = 2</code> is both hands.  For other devices,
          *     such as haptic vests, index will have a different meaning, defined by the input device.
          */
-        Q_INVOKABLE bool triggerShortHapticPulse(float strength, uint16_t index = 2) const;
+        Q_INVOKABLE bool triggerShortHapticPulse(float strength, ushort index = 2) const;
 
         /*@jsdoc
          * Triggers a haptic pulse on a particular device if connected and enabled and it has the capability.
@@ -236,7 +236,7 @@ namespace controller {
          * Controller.triggerHapticPulseOnDevice(deviceID, HAPTIC_STRENGTH, HAPTIC_DURATION, RIGHT_HAND);
          */
         Q_INVOKABLE bool triggerHapticPulseOnDevice(unsigned int device, float strength, float duration,
-            uint16_t index = 2) const;
+            ushort index = 2) const;
 
         /*@jsdoc
          * Triggers a 250ms haptic pulse on a particular device if connected and enabled and it has the capability.
@@ -248,7 +248,7 @@ namespace controller {
          *     <code>index = 1</code> is the right hand, and <code>index = 2</code> is both hands.  For other devices,
          *     such as haptic vests, index will have a different meaning, defined by the input device.
          */
-        Q_INVOKABLE bool triggerShortHapticPulseOnDevice(unsigned int device, float strength, uint16_t index = 2) const;
+        Q_INVOKABLE bool triggerShortHapticPulseOnDevice(unsigned int device, float strength, ushort index = 2) const;
 
         /*@jsdoc
          * Creates a new controller mapping. Routes can then be added to the mapping using {@link MappingObject} methods and 
