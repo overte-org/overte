@@ -769,7 +769,8 @@ void Application::initialize(const QCommandLineParser &parser) {
         << NodeType::EntityServer << NodeType::AssetServer << NodeType::MessagesMixer << NodeType::EntityScriptServer);
 
     // setDefaultFormat has no effect after the platform window has been created, so call it here.
-    QSurfaceFormat::setDefaultFormat(getDefaultOpenGLSurfaceFormat());
+    // QT6TODO: I was getting a warning when it was here, so I moved it to the beginning.
+    //QSurfaceFormat::setDefaultFormat(getDefaultOpenGLSurfaceFormat());
 
     _glWidget = new GLCanvas();
     getApplicationCompositor().setRenderingWidget(_glWidget);
