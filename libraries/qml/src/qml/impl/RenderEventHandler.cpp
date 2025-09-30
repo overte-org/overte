@@ -159,7 +159,7 @@ void RenderEventHandler::qmlRender(bool sceneGraphSync) {
             // Qt6 TODO: Qt says that it doesn't have a valid render target
             // on the deferred renderer, and on the forward one it just makes
             // the screen gray as if the size hasn't been set properly
-            //_shared->_renderControl->render();
+            _shared->_renderControl->render();
         }
         _shared->_renderControl->endFrame();
         _shared->_lastRenderTime = usecTimestampNow();
