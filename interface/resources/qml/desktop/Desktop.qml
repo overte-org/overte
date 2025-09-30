@@ -21,6 +21,16 @@ FocusScope {
     objectName: "desktop"
     anchors.fill: parent
 
+    /*Rectangle {
+        anchors.top: parent.top
+        anchors.left: parent.left
+        width: parent.width / 3
+        height: parent.height / 3
+
+        color: "red"
+        radius: 8
+    }*/
+
     readonly property int invalid_position: -9999;
     property rect recommendedRect: Qt.rect(0,0,0,0);
     property var expectedChildren;

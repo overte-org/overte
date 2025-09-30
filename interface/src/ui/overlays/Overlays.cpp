@@ -378,7 +378,8 @@ QUuid Overlays::getOverlayAtPoint(const glm::vec2& point) {
 
     if (QThread::currentThread() != thread()) {
         QUuid result;
-        BLOCKING_INVOKE_METHOD(this, "getOverlayAtPoint", Q_GENERIC_RETURN_ARG(QUuid, result), Q_GENERIC_ARG(const glm::vec2&, point));
+        BLOCKING_INVOKE_METHOD(this, "getOverlayAtPoint", Q_GENERIC_RETURN_ARG(QUuid, result),
+            QArgument<const glm::vec<2,float,glm::packed_highp>& >("const glm::vec<2,float,glm::packed_highp>&", point));
         return result;
     }
 
