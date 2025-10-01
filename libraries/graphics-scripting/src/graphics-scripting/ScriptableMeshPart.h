@@ -211,7 +211,7 @@ namespace scriptable {
          * @param {Mat4} transform - The scale, rotate, and translate transform to apply.
          * @returns {Graphics.MeshExtents} The resulting mesh extents, in model coordinates.
          */
-        QVariantMap transform(const glm::mat4& transform);
+        QVariantMap transform(const glm::mat<4,4,float,glm::packed_highp>& transform);
 
         // @borrows jsdoc from GraphicsMesh.
         glm::uint32 addAttribute(const QString& attributeName, const QVariant& defaultValue = QVariant());
