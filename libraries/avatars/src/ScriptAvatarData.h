@@ -64,9 +64,9 @@ class ScriptAvatarData : public QObject {
     //
     // MATRIX PROPERTIES
     //
-    Q_PROPERTY(glm::mat4 sensorToWorldMatrix READ getSensorToWorldMatrix)
-    Q_PROPERTY(glm::mat4 controllerLeftHandMatrix READ getControllerLeftHandMatrix)
-    Q_PROPERTY(glm::mat4 controllerRightHandMatrix READ getControllerRightHandMatrix)
+    Q_PROPERTY(glm::mat<4,4,float,glm::packed_highp> sensorToWorldMatrix READ getSensorToWorldMatrix)
+    Q_PROPERTY(glm::mat<4,4,float,glm::packed_highp> controllerLeftHandMatrix READ getControllerLeftHandMatrix)
+    Q_PROPERTY(glm::mat<4,4,float,glm::packed_highp> controllerRightHandMatrix READ getControllerRightHandMatrix)
 
     Q_PROPERTY(bool hasPriority READ getHasPriority)
 
@@ -216,9 +216,9 @@ public:
     //
     // MATRIX PROPERTIES
     //
-    glm::mat4 getSensorToWorldMatrix() const;
-    glm::mat4 getControllerLeftHandMatrix() const;
-    glm::mat4 getControllerRightHandMatrix() const;
+    glm::mat<4,4,float,glm::packed_highp> getSensorToWorldMatrix() const;
+    glm::mat<4,4,float,glm::packed_highp> getControllerLeftHandMatrix() const;
+    glm::mat<4,4,float,glm::packed_highp> getControllerRightHandMatrix() const;
 
     bool getHasPriority() const;
 

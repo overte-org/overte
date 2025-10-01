@@ -578,7 +578,7 @@ public:
     virtual void postUpdate(float deltaTime, const render::ScenePointer& scene) override;
     void preDisplaySide(const RenderArgs* renderArgs);
 
-    const glm::mat4& getHMDSensorMatrix() const { return _hmdSensorMatrix; }
+    const glm::mat<4,4,float,glm::packed_highp>& getHMDSensorMatrix() const { return _hmdSensorMatrix; }
     const glm::vec<3,float,glm::packed_highp>& getHMDSensorPosition() const { return _hmdSensorPosition; }
     const glm::qua<float,glm::packed_highp>& getHMDSensorOrientation() const { return _hmdSensorOrientation; }
 
@@ -602,13 +602,13 @@ public:
     // Pass a recent sample of the HMD to the avatar.
     // This can also update the avatar's position to follow the HMD
     // as it moves through the world.
-    void updateFromHMDSensorMatrix(const glm::mat4& hmdSensorMatrix);
+    void updateFromHMDSensorMatrix(const glm::mat<4,4,float,glm::packed_highp>& hmdSensorMatrix);
 
     // compute the hip to hand average azimuth.
     glm::vec<2,float,glm::packed_highp> computeHandAzimuth() const;
 
     // read the location of a hand controller and save the transform
-    void updateJointFromController(controller::Action poseKey, ThreadSafeValueCache<glm::mat4>& matrixCache);
+    void updateJointFromController(controller::Action poseKey, ThreadSafeValueCache<glm::mat<4,4,float,glm::packed_highp>>& matrixCache);
 
     // best called at end of main loop, just before rendering.
     // update sensor to world matrix from current body position and hmd sensor.
@@ -1591,16 +1591,16 @@ public:
     virtual glm::vec<3,float,glm::packed_highp> getAbsoluteJointTranslationInObjectFrame(int index) const override;
 
     // all calibration matrices are in absolute sensor space.
-    glm::mat4 getCenterEyeCalibrationMat() const;
-    glm::mat4 getHeadCalibrationMat() const;
-    glm::mat4 getSpine2CalibrationMat() const;
-    glm::mat4 getHipsCalibrationMat() const;
-    glm::mat4 getLeftFootCalibrationMat() const;
-    glm::mat4 getRightFootCalibrationMat() const;
-    glm::mat4 getRightArmCalibrationMat() const;
-    glm::mat4 getLeftArmCalibrationMat() const;
-    glm::mat4 getLeftHandCalibrationMat() const;
-    glm::mat4 getRightHandCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getCenterEyeCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getHeadCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getSpine2CalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getHipsCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getLeftFootCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getRightFootCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getRightArmCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getLeftArmCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getLeftHandCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getRightHandCalibrationMat() const;
 
     void addHoldAction(AvatarActionHold* holdAction);  // thread-safe
     void removeHoldAction(AvatarActionHold* holdAction);  // thread-safe
@@ -1609,16 +1609,16 @@ public:
 
     // derive avatar body position and orientation from the current HMD Sensor location.
     // results are in sensor frame (-z forward)
-    glm::mat4 deriveBodyFromHMDSensor(const bool forceFollowYPos = false) const;
+    glm::mat<4,4,float,glm::packed_highp> deriveBodyFromHMDSensor(const bool forceFollowYPos = false) const;
 
-    glm::mat4 getSpine2RotationRigSpace() const;
+    glm::mat<4,4,float,glm::packed_highp> getSpine2RotationRigSpace() const;
 
     glm::vec<3,float,glm::packed_highp> computeCounterBalance();
 
     // derive avatar body position and orientation from using the current HMD Sensor location in relation to the previous
     // location of the base of support of the avatar.
     // results are in sensor frame (-z foward)
-    glm::mat4 deriveBodyUsingCgModel();
+    glm::mat<4,4,float,glm::packed_highp> deriveBodyUsingCgModel();
 
     /*@jsdoc
      * Tests whether a vector is pointing in the general direction of the avatar's "up" direction (i.e., dot product of vectors

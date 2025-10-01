@@ -53,8 +53,8 @@ void registerMetaTypes(ScriptEngine* engine);
  * @property {number} r2c3 - Row 2, column 3 value.
  * @property {number} r3c3 - Row 3, column 3 value.
  */
-ScriptValue mat4toScriptValue(ScriptEngine* engine, const glm::mat4& mat4);
-bool mat4FromScriptValue(const ScriptValue& object, glm::mat4& mat4);
+ScriptValue mat4toScriptValue(ScriptEngine* engine, const glm::mat<4,4,float,glm::packed_highp>& mat4);
+bool mat4FromScriptValue(const ScriptValue& object, glm::mat<4,4,float,glm::packed_highp>& mat4);
 
 /*@jsdoc
 * A 2-dimensional vector.
