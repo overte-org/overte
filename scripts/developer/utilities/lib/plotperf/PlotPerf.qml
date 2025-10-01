@@ -264,7 +264,8 @@ Item {
             
             var ctx = getContext("2d");
             ctx.clearRect(0, 0, width, height);
-            ctx.font="12px Verdana";
+            // QT6TODO
+            //ctx.font="12px Verdana";
 
             displayBackground(ctx);
                 
