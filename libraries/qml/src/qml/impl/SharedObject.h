@@ -73,7 +73,9 @@ private:
     // Called by the render event handler, from the render thread
     void initializeRenderControl(QOpenGLContext* context);
     void releaseTextureAndFence();
-    void setRenderTarget(uint32_t fbo, const QSize& size);
+
+    // NOTE: On Qt5 this took an FBO handle, on Qt6 it takes a texture handle
+    void setRenderTarget(uint32_t texture, const QSize& size);
 
     QQmlEngine* acquireEngine(OffscreenSurface* surface);
     void releaseEngine(QQmlEngine* engine);
