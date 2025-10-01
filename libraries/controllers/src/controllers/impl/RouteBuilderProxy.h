@@ -385,7 +385,7 @@ class RouteBuilderProxy : public QObject {
          * @returns {RouteObject} The <code>RouteObject</code> with the pre-transform applied.
          */
         // No JSDoc example because filter not currently used.
-        Q_INVOKABLE QObject* transform(glm::mat4 transform);
+        Q_INVOKABLE QObject* transform(glm::mat<4,4,float,glm::packed_highp> transform);
 
         /*@jsdoc
          * Filters {@link Pose} route values to have a post-transform applied.
@@ -394,7 +394,7 @@ class RouteBuilderProxy : public QObject {
          * @returns {RouteObject} The <code>RouteObject</code> with the post-transform applied.
          */
         // No JSDoc example because filter not currently used.
-        Q_INVOKABLE QObject* postTransform(glm::mat4 transform);
+        Q_INVOKABLE QObject* postTransform(glm::mat<4,4,float,glm::packed_highp> transform);
 
         /*@jsdoc
          * Filters {@link Pose} route values to have a pre-rotation applied.

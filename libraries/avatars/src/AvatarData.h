@@ -582,9 +582,9 @@ class AvatarData : public QObject, public SpatiallyNestable {
 
     Q_PROPERTY(QUuid sessionUUID READ getSessionUUID NOTIFY sessionUUIDChanged)
 
-    Q_PROPERTY(glm::mat4 sensorToWorldMatrix READ getSensorToWorldMatrix)
-    Q_PROPERTY(glm::mat4 controllerLeftHandMatrix READ getControllerLeftHandMatrix)
-    Q_PROPERTY(glm::mat4 controllerRightHandMatrix READ getControllerRightHandMatrix)
+    Q_PROPERTY(glm::mat<4,4,float,glm::packed_highp> sensorToWorldMatrix READ getSensorToWorldMatrix)
+    Q_PROPERTY(glm::mat<4,4,float,glm::packed_highp> controllerLeftHandMatrix READ getControllerLeftHandMatrix)
+    Q_PROPERTY(glm::mat<4,4,float,glm::packed_highp> controllerRightHandMatrix READ getControllerRightHandMatrix)
 
     Q_PROPERTY(float sensorToWorldScale READ getSensorToWorldScale)
 
@@ -1293,7 +1293,7 @@ public:
      * // Note: If using from the Avatar API, replace "MyAvatar" with "Avatar".
      */
     // thread safe
-    Q_INVOKABLE glm::mat4 getSensorToWorldMatrix() const;
+    Q_INVOKABLE glm::mat<4,4,float,glm::packed_highp> getSensorToWorldMatrix() const;
 
     /*@jsdoc
      * Gets the scale that transforms dimensions in the user's real world to the avatar's size in the virtual world.
@@ -1318,7 +1318,7 @@ public:
      * // Note: If using from the Avatar API, replace "MyAvatar" with "Avatar".
      */
     // thread safe
-    Q_INVOKABLE glm::mat4 getControllerLeftHandMatrix() const;
+    Q_INVOKABLE glm::mat<4,4,float,glm::packed_highp> getControllerLeftHandMatrix() const;
 
     /*@jsdoc
      * Gets the rotation and translation of the right hand controller relative to the avatar.
@@ -1326,7 +1326,7 @@ public:
      * @returns {Mat4} The rotation and translation of the right hand controller relative to the avatar.
      */
     // thread safe
-    Q_INVOKABLE glm::mat4 getControllerRightHandMatrix() const;
+    Q_INVOKABLE glm::mat<4,4,float,glm::packed_highp> getControllerRightHandMatrix() const;
 
 
     /*@jsdoc

@@ -72,7 +72,7 @@ public:
      * @param {MeshProxy} mesh - The mesh to apply the transform to.
      * @returns {MeshProxy|boolean} The transformed mesh, if valid. <code>false</code> if an error.
      */
-    Q_INVOKABLE ScriptValue transformMesh(glm::mat4 transform, MeshProxy* meshProxy);
+    Q_INVOKABLE ScriptValue transformMesh(glm::mat<4,4,float,glm::packed_highp> transform, MeshProxy* meshProxy);
 
     /*@jsdoc
      * Creates a new mesh.
