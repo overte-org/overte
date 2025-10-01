@@ -320,9 +320,9 @@ void SharedObject::releaseTextureAndFence() {
 #endif
 }
 
-void SharedObject::setRenderTarget(uint32_t fbo, const QSize& size) {
+void SharedObject::setRenderTarget(uint32_t texture, const QSize& size) {
 #ifndef DISABLE_QML
-    _quickWindow->setRenderTarget(QQuickRenderTarget::fromOpenGLTexture(fbo, size));
+    _quickWindow->setRenderTarget(QQuickRenderTarget::fromOpenGLTexture(texture, size));
 #endif
 }
 
