@@ -155,10 +155,7 @@ void RenderEventHandler::qmlRender(bool sceneGraphSync) {
             glClear(GL_COLOR_BUFFER_BIT);
         } else {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            _shared->setRenderTarget(_fbo, _currentSize);
-            // Qt6 TODO: Qt says that it doesn't have a valid render target
-            // on the deferred renderer, and on the forward one it just makes
-            // the screen gray as if the size hasn't been set properly
+            _shared->setRenderTarget(texture, _currentSize);
             _shared->_renderControl->render();
         }
         _shared->_renderControl->endFrame();
