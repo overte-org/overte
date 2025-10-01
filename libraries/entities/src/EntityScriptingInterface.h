@@ -1993,7 +1993,7 @@ public slots:
      * print("Rotation: " + JSON.stringify(Mat4.extractRotation(transform)));  // Same as orientation.
      * print("Scale: " + JSON.stringify(Mat4.extractScale(transform)));  // { x: 1, y: 1, z: 1 }
      */
-    Q_INVOKABLE glm::mat4 getEntityTransform(const QUuid& entityID);
+    Q_INVOKABLE glm::mat<4,4,float,glm::packed_highp> getEntityTransform(const QUuid& entityID);
 
     /*@jsdoc
      * Gets the object to parent transform, excluding scale, of an entity.
@@ -2028,7 +2028,7 @@ public slots:
      * print("Translation: " + JSON.stringify(Mat4.extractTranslation(transform)));  // childTranslation
      * print("Rotation: " + JSON.stringify(Quat.safeEulerAngles(Mat4.extractRotation(transform))));  // childRotation
      * print("Scale: " + JSON.stringify(Mat4.extractScale(transform)));  // { x: 1, y: 1, z: 1 }     */
-    Q_INVOKABLE glm::mat4 getEntityLocalTransform(const QUuid& entityID);
+    Q_INVOKABLE glm::mat<4,4,float,glm::packed_highp> getEntityLocalTransform(const QUuid& entityID);
 
 
     /*@jsdoc
