@@ -28,7 +28,7 @@ Item {
     property string urlTag: "noDownload=false";
 
     signal newViewRequestedCallback(var request)
-    signal loadingChangedCallback(var loadRequest)
+    signal loadingChangedCallback(var loadingInfo)
 
 
     width: parent.width
@@ -210,15 +210,15 @@ Item {
         // when QT fixes this.
         property bool safeLoading: false
         property bool loadingLatched: false
-        property var loadingRequest: null
-        onLoadingChanged: {
-            webViewCore.loadingRequest = loadRequest;
+        property var loadInfo: null
+        function onLoadingChanged(loadingInfo) {
+            webViewCore.loadInfo = loadingInfo;
             webViewCore.safeLoading = webViewCore.loading && !loadingLatched;
             webViewCore.loadingLatched |= webViewCore.loading;
          }
         onSafeLoadingChanged: {
-            flick.onLoadingChanged(webViewCore.loadingRequest)
-            loadingChangedCallback(webViewCore.loadingRequest)
+            flick.onLoadingChanged(webViewCore.loadInfo)
+            loadingChangedCallback(webViewCore.loadInfo)
         }
     }
 
