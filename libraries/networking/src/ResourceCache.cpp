@@ -228,7 +228,7 @@ ScriptableResource* ResourceCache::prefetch(const QUrl& url, void* extra, size_t
         // Must be called in thread to ensure getResource returns a valid pointer
         BLOCKING_INVOKE_METHOD(this, "prefetchAndMoveToThread",
             Q_GENERIC_RETURN_ARG(ScriptableResource*, result),
-            Q_GENERIC_ARG(QUrl, url), Q_GENERIC_ARG(void*, extra), Q_GENERIC_ARG(size_t, extraHash), Q_GENERIC_ARG(QThread*, QThread::currentThread()));
+            Q_GENERIC_ARG(QUrl, url), Q_GENERIC_ARG(void*, extra), Q_GENERIC_ARG(ulong, extraHash), Q_GENERIC_ARG(QThread*, QThread::currentThread()));
         return result;
     }
 
