@@ -49,7 +49,7 @@ Rectangle {
         loader.sourceComponent = step5;
         break;
       default:
-        loader.setSource(undefined);
+        loader.setSource("");
     }
   }
 
