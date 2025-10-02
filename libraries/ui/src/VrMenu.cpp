@@ -219,8 +219,6 @@ void VrMenu::addAction(QMenu* menu, QAction* action) {
     }
     QObject* menuQml = findMenuObject(userData->uuid.toString());
     Q_ASSERT(menuQml);
-    qDebug() << "VrMenu::addAction menuQml " << menuQml->objectName();
-    qDebug() << "VrMenu::addAction menuQml type " << menuQml->metaObject()->className();
 
     QQmlComponent menuItemComponent(engine);
     menuItemComponent.loadFromModule("QtQuick.Controls", "MenuItem");
