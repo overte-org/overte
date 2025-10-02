@@ -83,7 +83,7 @@ Item {
             if (root.webViewLoaded) {
                 loader.item.url = "about:blank"
             }
-            loader.setSource(undefined);
+            loader.setSource("");
         }
 
         if (url.match(/\.qml$/)) {
