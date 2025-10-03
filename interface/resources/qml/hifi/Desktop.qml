@@ -12,8 +12,8 @@ import controlsUit 1.0
 OriginalDesktop.Desktop {
     id: desktop
 
-    // Qt6 TODO: Nothing renders yet, and the desktop just eats all mouse inputs
-    visible: false
+    // QT6TODO: Desktop just eats all mouse inputs
+    visible: true
 
     property alias toolbarObjectName: sysToolbar.objectName
 
