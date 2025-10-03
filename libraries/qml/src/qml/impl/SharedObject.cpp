@@ -12,7 +12,9 @@
 #include <QtQuick/QQuickWindow>
 #include <QtQuick/QQuickItem>
 #include <QtQml/QQmlContext>
+#include <QQuickRenderTarget>
 #include <QtQml/QQmlEngine>
+#include <QQuickGraphicsDevice>
 
 #include <QtGui/QOpenGLContext>
 #include <QPointer>
@@ -68,11 +70,15 @@ SharedObject::SharedObject() {
     // NOTE: Must be created on the main thread so that OffscreenQmlSurface can send it events
     // NOTE: Must be created on the rendering thread or it will refuse to render,
     //       so we wait until after its ctor to move object/context to this thread.
-    QQuickWindow::setDefaultAlphaBuffer(true);
+    // QT6TODO: QRhi fails to initialize with setDefaultAlphaBuffer
+    //QQuickWindow::setDefaultAlphaBuffer(true);
     _quickWindow = new QQuickWindow(_renderControl);
+    _quickWindow->setSurfaceType(QQuickWindow::OpenGLSurface);
     _quickWindow->setFormat(getDefaultOpenGLSurfaceFormat());
     _quickWindow->setColor(QColor(255, 255, 255, 0));
-    _quickWindow->setClearBeforeRendering(true);
+    // QT6TODO: setClearBeforeRendering was removed, what to do about this?
+    // https://doc.qt.io/qt-6/quick-changes-qt6.html
+    //_quickWindow->setClearBeforeRendering(true);
 
 #endif
 
@@ -290,9 +296,15 @@ void SharedObject::initializeRenderControl(QOpenGLContext* context) {
         qFatal("QML rendering context has no share context");
     }
 
+    Q_ASSERT(context->isValid());
+
 #ifndef DISABLE_QML
     if (!nsightActive()) {
-        _renderControl->initialize(context);
+        _quickWindow->setFormat(context->format());
+        _quickWindow->setGraphicsDevice(QQuickGraphicsDevice::fromOpenGLContext(context));
+        bool result = _renderControl->initialize();
+        Q_ASSERT(result);
+        Q_UNUSED(result);
     }
 #endif
 }
@@ -308,9 +320,9 @@ void SharedObject::releaseTextureAndFence() {
 #endif
 }
 
-void SharedObject::setRenderTarget(uint32_t fbo, const QSize& size) {
+void SharedObject::setRenderTarget(uint32_t texture, const QSize& size) {
 #ifndef DISABLE_QML
-    _quickWindow->setRenderTarget(fbo, size);
+    _quickWindow->setRenderTarget(QQuickRenderTarget::fromOpenGLTexture(texture, size));
 #endif
 }
 

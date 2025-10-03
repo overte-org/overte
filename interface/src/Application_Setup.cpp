@@ -769,7 +769,8 @@ void Application::initialize(const QCommandLineParser &parser) {
         << NodeType::EntityServer << NodeType::AssetServer << NodeType::MessagesMixer << NodeType::EntityScriptServer);
 
     // setDefaultFormat has no effect after the platform window has been created, so call it here.
-    QSurfaceFormat::setDefaultFormat(getDefaultOpenGLSurfaceFormat());
+    // QT6TODO: I was getting a warning when it was here, so I moved it to the beginning.
+    //QSurfaceFormat::setDefaultFormat(getDefaultOpenGLSurfaceFormat());
 
     _glWidget = new GLCanvas();
     getApplicationCompositor().setRenderingWidget(_glWidget);
@@ -868,14 +869,17 @@ void Application::initialize(const QCommandLineParser &parser) {
             { "gl_renderer", glContextData.renderer.c_str() },
             { "ideal_thread_count", QThread::idealThreadCount() }
         };
+#ifdef Q_OS_MAC
         auto macVersion = QSysInfo::macVersion();
         if (macVersion != QSysInfo::MV_None) {
             properties["os_osx_version"] = QSysInfo::macVersion();
         }
+#elifdef Q_OS_WIN
         auto windowsVersion = QSysInfo::windowsVersion();
         if (windowsVersion != QSysInfo::WV_None) {
             properties["os_win_version"] = QSysInfo::windowsVersion();
         }
+#endif
 
         ProcessorInfo procInfo;
         if (getProcessorInfo(procInfo)) {

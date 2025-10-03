@@ -70,6 +70,8 @@ int main(int argc, const char* argv[]) {
     }
 #endif
 
+    QSurfaceFormat::setDefaultFormat(getDefaultOpenGLSurfaceFormat());
+
     // Setup QCoreApplication settings, install log message handler
     setupHifiApplication(BuildInfo::INTERFACE_NAME);
 

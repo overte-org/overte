@@ -11,10 +11,9 @@
 //  TODO: FIXME: this is practically identical to TabletRoot.qml
 
 import "../../windows" as Windows
+import QtCore
 import QtQuick 2.0
 import Hifi 1.0
-
-import Qt.labs.settings 1.0
 
 Windows.ScrollingWindow {
     id: tabletRoot

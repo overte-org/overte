@@ -265,7 +265,7 @@ scriptable::ScriptableMeshPointer GraphicsScriptingInterface::newMesh(const QVar
     if (texCoords0.size()) {
         mesh->addAttribute(gpu::Stream::TEXCOORD0, buffer_helpers::newFromVector(texCoords0, gpu::Format::VEC2F_UV));
     }
-    QVector<graphics::Mesh::Part> parts = {{ 0, indices.size(), 0, topology }};
+    QVector<graphics::Mesh::Part> parts = {graphics::Mesh::Part(0, indices.size(), 0, topology)};
     mesh->setPartBuffer(buffer_helpers::newFromVector(parts, gpu::Element::PART_DRAWCALL));
     return scriptable::make_scriptowned<scriptable::ScriptableMesh>(mesh, nullptr);
 }

@@ -8,18 +8,28 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-import QtQuick 2.7
-import QtQuick.Controls 1.4
-import QtQuick.Controls 2.3 as QQC2
+import QtQuick
+import QtQuick.Controls
 
 import "../dialogs"
 import "../js/Utils.js" as Utils
+import "../controls" as OverteControls
 
 // This is our primary 'desktop' object to which all VR dialogs and windows are childed.
 FocusScope {
     id: desktop
     objectName: "desktop"
     anchors.fill: parent
+
+    /*Rectangle {
+        anchors.top: parent.top
+        anchors.left: parent.left
+        width: parent.width / 3
+        height: parent.height / 3
+
+        color: "red"
+        radius: 8
+    }*/
 
     readonly property int invalid_position: -9999;
     property rect recommendedRect: Qt.rect(0,0,0,0);
@@ -51,14 +61,19 @@ FocusScope {
     property bool desktopRoot: true
 
     // The VR version of the primary menu
-    property var rootMenu: Menu { 
+    property var rootMenu: OverteControls.WrappedMenu {
         id: rootMenuId
         objectName: "rootMenu" 
 
         property var exclusionGroups: ({});
         property Component exclusiveGroupMaker: Component {
-            ExclusiveGroup {
+            //ExclusiveGroup { //QT6TODO
+            ButtonGroup {
             }
+        }
+
+        function addMenuWrap(menu) {
+            return addMenu(menu);
         }
 
         function addExclusionGroup(qmlAction, exclusionGroup) {
@@ -68,6 +83,7 @@ FocusScope {
                 exclusionGroups[exclusionGroupId] = exclusiveGroupMaker.createObject(rootMenuId);
             }
 
+            //QT6TODO:
             qmlAction.exclusiveGroup = exclusionGroups[exclusionGroupId]
         }
     }
@@ -517,27 +533,27 @@ FocusScope {
         ensureTitleBarVisible(targetWindow);
     }
 
-    Component { id: messageDialogBuilder; MessageDialog { } }
+    Component { id: messageDialogBuilder; Item {}}//MessageDialog { } }
     function messageBox(properties) {
         return messageDialogBuilder.createObject(desktop, properties);
     }
 
-    Component { id: inputDialogBuilder; QueryDialog { } }
+    Component { id: inputDialogBuilder; Item {}}//QueryDialog { } }
     function inputDialog(properties) {
         return inputDialogBuilder.createObject(desktop, properties);
     }
 
-    Component { id: customInputDialogBuilder; CustomQueryDialog { } }
+    Component { id: customInputDialogBuilder; Item {}}//CustomQueryDialog { } }
     function customInputDialog(properties) {
         return customInputDialogBuilder.createObject(desktop, properties);
     }
 
-    Component { id: fileDialogBuilder; FileDialog { } }
+    Component { id: fileDialogBuilder; Item {}}//FileDialog { } }
     function fileDialog(properties) {
         return fileDialogBuilder.createObject(desktop, properties);
     } 
 
-    Component { id: assetDialogBuilder; AssetDialog { } }
+    Component { id: assetDialogBuilder; Item {}}//AssetDialog { } }
     function assetDialog(properties) {
         return assetDialogBuilder.createObject(desktop, properties);
     }
@@ -582,7 +598,7 @@ FocusScope {
         ColorAnimation on color { from: "#7fffff00"; to: "#7f0000ff"; duration: 1000; loops: 9999 }
     }
 
-    QQC2.Action {
+    Action {
         text: "Toggle Focus Debugger"
         shortcut: "Ctrl+Shift+F"
         enabled: DebugQML

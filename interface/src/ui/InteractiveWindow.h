@@ -186,10 +186,10 @@ class InteractiveWindow : public QObject {
     Q_OBJECT
 
     Q_PROPERTY(QString title READ getTitle WRITE setTitle)
-    Q_PROPERTY(glm::vec2 position READ getPosition WRITE setPosition)
+    Q_PROPERTY(glm::vec<2,float,glm::packed_highp> position READ getPosition WRITE setPosition)
     Q_PROPERTY(RelativePositionAnchor relativePositionAnchor READ getRelativePositionAnchor WRITE setRelativePositionAnchor)
-    Q_PROPERTY(glm::vec2 relativePosition READ getRelativePosition WRITE setRelativePosition)
-    Q_PROPERTY(glm::vec2 size READ getSize WRITE setSize)
+    Q_PROPERTY(glm::vec<2,float,glm::packed_highp> relativePosition READ getRelativePosition WRITE setRelativePosition)
+    Q_PROPERTY(glm::vec<2,float,glm::packed_highp> size READ getSize WRITE setSize)
     Q_PROPERTY(bool visible READ isVisible WRITE setVisible)
     Q_PROPERTY(int presentationMode READ getPresentationMode WRITE setPresentationMode)
 
@@ -202,8 +202,8 @@ private:
     Q_INVOKABLE QString getTitle() const;
     Q_INVOKABLE void setTitle(const QString& title);
 
-    Q_INVOKABLE glm::vec2 getPosition() const;
-    Q_INVOKABLE void setPosition(const glm::vec2& position);
+    Q_INVOKABLE glm::vec<2,float,glm::packed_highp> getPosition() const;
+    Q_INVOKABLE void setPosition(const glm::vec<2,float,glm::packed_highp>& position);
     
     RelativePositionAnchor _relativePositionAnchor{ RelativePositionAnchor::NO_ANCHOR };
     Q_INVOKABLE RelativePositionAnchor getRelativePositionAnchor() const;
@@ -212,16 +212,16 @@ private:
     // This "relative position" is relative to the "relative position anchor" and excludes the window frame.
     // This position will ALWAYS include the geometry of a docked widget, if one is present.
     glm::vec2 _relativePosition{ 0.0f, 0.0f };
-    Q_INVOKABLE glm::vec2 getRelativePosition() const;
-    Q_INVOKABLE void setRelativePosition(const glm::vec2& position);
+    Q_INVOKABLE glm::vec<2,float,glm::packed_highp> getRelativePosition() const;
+    Q_INVOKABLE void setRelativePosition(const glm::vec<2,float,glm::packed_highp>& position);
 
     Q_INVOKABLE void setPositionUsingRelativePositionAndAnchor(const QRect& mainWindowGeometry);
 
     bool _isFullScreenWindow{ false };
     Q_INVOKABLE void repositionAndResizeFullScreenWindow();
 
-    Q_INVOKABLE glm::vec2 getSize() const;
-    Q_INVOKABLE void setSize(const glm::vec2& size);
+    Q_INVOKABLE glm::vec<2,float,glm::packed_highp> getSize() const;
+    Q_INVOKABLE void setSize(const glm::vec<2,float,glm::packed_highp>& size);
 
     Q_INVOKABLE void setVisible(bool visible);
     Q_INVOKABLE bool isVisible() const;
@@ -263,7 +263,7 @@ public slots:
      * // QML file, "InteractiveWindow.qml".
      * 
      * import QtQuick 2.5
-     * import QtQuick.Controls 1.4
+     * import QtQuick.Controls 2.3
      * 
      * Rectangle {
      * 

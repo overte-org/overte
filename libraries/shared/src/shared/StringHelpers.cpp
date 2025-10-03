@@ -8,11 +8,12 @@
 
 #include "StringHelpers.h"
 
+#include <QRegularExpression>
 #include <QStringList>
 
 /// Note: this will not preserve line breaks in the original input.
 QString simpleWordWrap(const QString& input, int maxCharactersPerLine) {
-    QStringList words = input.split(QRegExp("\\s+"));
+    QStringList words = input.split(QRegularExpression("\\s+"));
     QString output;
     QString currentLine;
     foreach(const auto& word, words) {

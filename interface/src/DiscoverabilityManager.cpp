@@ -145,7 +145,7 @@ void DiscoverabilityManager::handleHeartbeatResponse(QNetworkReply* requestReply
 
         // give that session ID to the account manager
         auto accountManager = DependencyManager::get<AccountManager>();
-        accountManager->setSessionID(sessionID);
+        accountManager->setSessionID(QUuid(sessionID));
     }
 }
 

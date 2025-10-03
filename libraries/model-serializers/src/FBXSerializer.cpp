@@ -23,6 +23,8 @@
 
 #include <hfm/ModelFormatLogging.h>
 
+#include "shared/QtHelpers.h"
+
 // TOOL: Uncomment the following line to enable the filtering of all the unknown fields of a node so we can break point easily while loading a model with problems...
 //#define DEBUG_FBXSERIALIZER
 
@@ -34,7 +36,7 @@ glm::vec3 parseVec3(const QString& string) {
         return glm::vec3();
     }
     glm::vec3 value;
-    for (int i = 0; i < 3; i++) {
+    for (qsizetype i = 0; i < 3; i++) {
         // duplicate last value if there aren't three elements
         value[i] = elements.at(min(i, elements.size() - 1)).trimmed().toFloat();
     }
@@ -260,7 +262,7 @@ typedef QPair<int, float> WeightedIndex;
 
 void addBlendshapes(const ExtractedBlendshape& extracted, const QList<WeightedIndex>& indices, ExtractedMesh& extractedMesh) {
     foreach (const WeightedIndex& index, indices) {
-        extractedMesh.mesh.blendshapes.resize(max(extractedMesh.mesh.blendshapes.size(), index.first + 1));
+        extractedMesh.mesh.blendshapes.resize(max(extractedMesh.mesh.blendshapes.size(), static_cast<qsizetype>(index.first + 1)));
         extractedMesh.blendshapeIndexMaps.resize(extractedMesh.mesh.blendshapes.size());
         HFMBlendshape& blendshape = extractedMesh.mesh.blendshapes[index.first];
         QHash<int, int>& blendshapeIndexMap = extractedMesh.blendshapeIndexMaps[index.first];
@@ -394,7 +396,7 @@ hifi::ByteArray fileOnUrl(const hifi::ByteArray& filepath, const QString& url) {
     return filepath.mid(filepath.lastIndexOf('/') + 1);
 }
 
-HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const QString& url) {
+HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, const QString& url) {
     const FBXNode& node = _rootNode;
     bool deduplicateIndices = mapping["deduplicateIndices"].toBool();
 
@@ -419,7 +421,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
 
     std::map<QString, HFMLight> lights;
 
-    hifi::VariantMultiHash blendshapeMappings = mapping.value("bs").toHash();
+    hifi::VariantMultiHash blendshapeMappings = qVariantToQMultiHash(mapping.value("bs"));
 
     QMultiHash<hifi::ByteArray, WeightedIndex> blendshapeIndices;
     for (int i = 0;; i++) {
@@ -1394,7 +1396,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
     }
 
     // NOTE: shapeVertices are in joint-frame
-    hfmModel.shapeVertices.resize(std::max(1, hfmModel.joints.size()) );
+    hfmModel.shapeVertices.resize(std::max(qsizetype(1), hfmModel.joints.size()) );
 
     hfmModel.bindExtents.reset();
     hfmModel.meshExtents.reset();
@@ -1700,7 +1702,7 @@ std::unique_ptr<hfm::Serializer::Factory> FBXSerializer::getFactory() const {
     return std::make_unique<hfm::Serializer::SimpleFactory<FBXSerializer>>();
 }
 
-HFMModel::Pointer FBXSerializer::read(const hifi::ByteArray& data, const hifi::VariantHash& mapping, const hifi::URL& url) {
+HFMModel::Pointer FBXSerializer::read(const hifi::ByteArray& data, const hifi::VariantMultiHash& mapping, const hifi::URL& url) {
     QBuffer buffer(const_cast<hifi::ByteArray*>(&data));
     buffer.open(QIODevice::ReadOnly);
 

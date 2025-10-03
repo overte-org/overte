@@ -306,7 +306,7 @@ public slots:
      *     print("Clicked: " + overlay);
      * });
      */
-    QUuid getOverlayAtPoint(const glm::vec2& point);
+    QUuid getOverlayAtPoint(const glm::vec<2,float,glm::packed_highp>& point);
 
     /*@jsdoc
      * Finds the closest 3D overlay (or local entity) intersected by a {@link PickRay}.
@@ -371,7 +371,7 @@ public slots:
      * var overlaysFound = Overlays.findOverlays(MyAvatar.position, 5.0);
      * print("Overlays found: " + JSON.stringify(overlaysFound));
      */
-    QVector<QUuid> findOverlays(const glm::vec3& center, float radius);
+    QVector<QUuid> findOverlays(const glm::vec<3,float,glm::packed_highp>& center, float radius);
 
     /*@jsdoc
      * Checks whether an overlay's (or entity's) assets have been loaded. For example, for an
