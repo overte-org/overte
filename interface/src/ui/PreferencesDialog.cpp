@@ -468,8 +468,8 @@ void setupPreferences() {
         preferences->addPreference(preference);
     }
     {
-        auto getter = [myAvatar]()->float { return myAvatar->getAnalogPlusWalkSpeed(); };
-        auto setter = [myAvatar](float value) { myAvatar->setAnalogPlusWalkSpeed(value); };
+        auto getter = [myAvatar]()->float { return myAvatar->getVrWalkSpeed(); };
+        auto setter = [myAvatar](float value) { myAvatar->setVrWalkSpeed(value); };
         auto preference = new SpinnerSliderPreference(VR_MOVEMENT, "VR Walk Speed", getter, setter);
         preference->setMin(1.5f);
         preference->setMax(9.0f);
