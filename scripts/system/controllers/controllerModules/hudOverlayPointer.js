@@ -76,20 +76,41 @@
             return this.hand === RIGHT_HAND ? leftHudOverlayPointer : rightHudOverlayPointer;
         };
 
+        const SCROLL_MAPPING_NAME = `overte.thumbstick_scroll_${this.hand}.hud`;
+        this.scrollMappingEnabled = false;
+        this.scrollMapping = Controller.newMapping(SCROLL_MAPPING_NAME);
+        this.stickXMapping = this.scrollMapping.from(
+            this.hand == LEFT_HAND ? Controller.Standard.LX : Controller.Standard.RX
+        ).to(function(_value) { /* dummy to temporarily eat stick input */ });
+        this.stickYMapping = this.scrollMapping.from(
+            this.hand == LEFT_HAND ? Controller.Standard.LY : Controller.Standard.RY
+        ).to(function(_value) { /* dummy to temporarily eat stick input */ });
+
         this.processLaser = function(controllerData) {
             var controllerLocation = controllerData.controllerLocations[this.hand];
-            if ((controllerData.triggerValues[this.hand] < ControllerDispatcherUtils.TRIGGER_ON_VALUE || !controllerLocation.valid) ||
-                this.pointingAtTablet(controllerData)) {
-                return false;
-            }
             var hudRayPick = controllerData.hudRayPicks[this.hand];
             var point2d = this.calculateNewReticlePosition(hudRayPick.intersection);
-            if (!Window.isPointOnDesktopWindow(point2d) && !this.triggerClicked) {
-                return false;
-            }
-
             this.triggerClicked = controllerData.triggerClicks[this.hand];
-            return true;
+
+            if (
+                (controllerData.triggerValues[this.hand] < ControllerDispatcherUtils.TRIGGER_ON_VALUE || !controllerLocation.valid) ||
+                this.pointingAtTablet(controllerData) ||
+                (!Window.isPointOnDesktopWindow(point2d) && !this.triggerClicked)
+            ) {
+                if (this.scrollMappingEnabled) {
+                    this.scrollMapping.disable();
+                    this.scrollMappingEnabled = false;
+                }
+
+                return false;
+            } else {
+                if (!this.scrollMappingEnabled) {
+                    this.scrollMapping.enable();
+                    this.scrollMappingEnabled = true;
+                }
+
+                return true;
+            }
         };
 
         this.isReady = function (controllerData) {

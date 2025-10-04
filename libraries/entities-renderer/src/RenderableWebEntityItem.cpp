@@ -471,12 +471,21 @@ void WebEntityRenderer::handlePointerEventAsMouse(const PointerEvent& event) {
         case PointerEvent::Move:
             type = QEvent::MouseMove;
             break;
+        case PointerEvent::Scroll:
+            type = QEvent::Wheel;
+            break;
         default:
             return;
     }
 
-    QMouseEvent mouseEvent(type, windowPoint, windowPoint, windowPoint, button, buttons, event.getKeyboardModifiers());
-    QCoreApplication::sendEvent(_webSurface->getWindow(), &mouseEvent);
+    if (type == QEvent::Wheel) {
+        const auto& scroll = event.getScroll() * POINTEREVENT_SCROLL_SENSITIVITY;
+        QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false);
+        QCoreApplication::sendEvent(_webSurface->getWindow(), &wheelEvent);
+    } else {
+        QMouseEvent mouseEvent(type, windowPoint, windowPoint, windowPoint, button, buttons, event.getKeyboardModifiers());
+        QCoreApplication::sendEvent(_webSurface->getWindow(), &mouseEvent);
+    }
 }
 
 void WebEntityRenderer::setProxyWindow(QWindow* proxyWindow) {

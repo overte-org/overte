@@ -6,6 +6,9 @@
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+//  SPDX-License-Identifier: Apache-2.0
+//
 "use strict";
 
 const CHAT_CHANNEL = "chat";
@@ -13,13 +16,19 @@ const CHAT_CHANNEL = "chat";
 const TYPING_NOTIFICATION_CHANNEL = "Chat-Typing";
 const CONFIG_UPDATE_CHANNEL = "ChatBubbles-Config";
 
-const BUBBLE_LIFETIME_SECS = 10;
+const BUBBLE_MIN_LIFETIME_SECS = 10;
+const BUBBLE_MAX_LIFETIME_SECS = 60; // failsafe to prevent really long perma-messages
+const BUBBLE_LINE_LIFETIME_SECS = 3.5;
+const BUBBLE_IMAGE_LIFETIME_SECS = 10;
 const BUBBLE_FADE_TIME = 1;
 const BUBBLE_ANIM_FPS = 15;
 const BUBBLE_LINE_HEIGHT = 0.07;
 const BUBBLE_WIDTH = 1.3;
-const BUBBLE_WIDTH_MAX_CHARS = 24; // roughly 18 ems per meter
+const BUBBLE_WIDTH_MAX_CHARS = 36;
+const BUBBLE_BG_ALPHA = 0.6;
 const MAX_DISTANCE = 20;
+const TYPING_NOTIF_HEAD_OFFSET_HEIGHT = 0.48;
+const MSG_HEAD_OFFSET_HEIGHT = 0.6;
 const SELF_BUBBLES = false;
 
 const NOTIFY_SOUND = SoundCache.getSound(Script.resolvePath("./assets/notify.wav"));
@@ -98,7 +107,10 @@ function ChatBubbles_SpawnBubble(data, senderID) {
         currentBubbles[senderID] = {};
     }
 
-    const scale = AvatarList.getAvatar(senderID).scale;
+    const avatar = AvatarList.getAvatar(senderID);
+    const scale = avatar.scale;
+    const headIndex = avatar.getJointIndex("Head");
+    const headPos = avatar.getAbsoluteJointTranslationInObjectFrame(headIndex);
 
     let link;
     let linkIsImage = false;
@@ -109,8 +121,8 @@ function ChatBubbles_SpawnBubble(data, senderID) {
 
     if (
         (maybeURL.startsWith("https://") || maybeURL.startsWith("http://")) &&
-            !/\s+/g.test(maybeURL) &&
-            /[A-Za-z0-9-._~:/?#\[\]@!$&'()*+,;%=]+/g.test(maybeURL)
+        !/\s+/g.test(maybeURL) &&
+        /[A-Za-z0-9-._~:/?#\[\]@!$&'()*+,;%=]+/g.test(maybeURL)
     ) {
         link = maybeURL;
 
@@ -118,10 +130,10 @@ function ChatBubbles_SpawnBubble(data, senderID) {
 
         if (
             chunkBeforeQuery.endsWith(".jpg") ||
-                chunkBeforeQuery.endsWith(".png") ||
-                chunkBeforeQuery.endsWith(".gif") ||
-                chunkBeforeQuery.endsWith(".svg") ||
-                chunkBeforeQuery.endsWith(".webp")
+            chunkBeforeQuery.endsWith(".png") ||
+            chunkBeforeQuery.endsWith(".gif") ||
+            chunkBeforeQuery.endsWith(".svg") ||
+            chunkBeforeQuery.endsWith(".webp")
         ) {
             linkIsImage = true;
         }
@@ -131,8 +143,12 @@ function ChatBubbles_SpawnBubble(data, senderID) {
     let height = lineCount * BUBBLE_LINE_HEIGHT;
 
     let bubbleEntity;
+    let lifetime;
+
     if (link !== undefined && linkIsImage) {
         height = BUBBLE_WIDTH / 3;
+        height *= scale;
+        lifetime = BUBBLE_IMAGE_LIFETIME_SECS;
         bubbleEntity = Entities.addEntity({
             type: "Image",
             parentID: senderID,
@@ -140,23 +156,27 @@ function ChatBubbles_SpawnBubble(data, senderID) {
             emissive: true,
             keepAspectRatio: true,
             ignorePickIntersection: true,
-            dimensions: [BUBBLE_WIDTH, height, 0.01],
-            localPosition: [0, scale + (height / 2) + 0.1, 0],
+            dimensions: Vec3.multiply(scale, [BUBBLE_WIDTH, height, 0.01]),
+            localPosition: [0, MSG_HEAD_OFFSET_HEIGHT + headPos.y + (height / 2), 0],
             canCastShadow: false,
             billboardMode: "yaw",
             grab: {grabbable: false},
+            renderLayer: "front",
         }, "local");
     } else {
+        height *= scale;
+        lifetime = BUBBLE_LINE_LIFETIME_SECS * lineCount;
         bubbleEntity = Entities.addEntity({
             type: "Text",
             parentID: senderID,
+            visible: false,
             text: text,
             unlit: true,
             ignorePickIntersection: (link === undefined),
-            lineHeight: BUBBLE_LINE_HEIGHT,
-            dimensions: [BUBBLE_WIDTH, height + 0.04, 0.01],
-            localPosition: [0, scale + (height / 2) + 0.1, 0],
-            backgroundAlpha: 0.5,
+            lineHeight: BUBBLE_LINE_HEIGHT * scale,
+            dimensions: Vec3.multiply(scale, [BUBBLE_WIDTH, height + 0.04, 0.01]),
+            localPosition: [0, MSG_HEAD_OFFSET_HEIGHT + headPos.y + (height / 2), 0],
+            backgroundAlpha: BUBBLE_BG_ALPHA,
             textColor: (link === undefined) ? [255, 255, 255] : [128, 240, 255],
             textEffect: "outline fill",
             textEffectColor: "#000",
@@ -165,7 +185,9 @@ function ChatBubbles_SpawnBubble(data, senderID) {
             billboardMode: "yaw",
             alignment: "center",
             verticalAlignment: "center",
+            topMargin: -0.004 * scale, // center isn't exactly centered?
             grab: {grabbable: false},
+            renderLayer: "front",
             script: (link === undefined && !linkIsImage) ? undefined :
 `(function() {
     this.mousePressOnEntity = function(entity, event) {
@@ -176,11 +198,21 @@ function ChatBubbles_SpawnBubble(data, senderID) {
     };
 })`
         }, "local");
+
+        Script.setTimeout(() => {
+            const size = Entities.textSize(bubbleEntity, text);
+            Entities.editEntity(bubbleEntity, {
+                visible: true,
+                dimensions: [size.width + (0.06 * scale), size.height + (0.04 * scale), 0.01],
+            });
+        }, 100);
+        // this wait time is annoyingly inconsistent,
+        // so it needs a decent chunk of time to work properly on all messages
     }
 
     for (const bubble of Object.values(currentBubbles[senderID])) {
         let { localPosition } = Entities.getEntityProperties(bubble.entity, "localPosition");
-        localPosition = Vec3.sum(localPosition, [0, height + 0.05, 0]);
+        localPosition = Vec3.sum(localPosition, [0, height + (0.05 * scale), 0]);
         Entities.editEntity(bubble.entity, { localPosition: localPosition });
     }
 
@@ -195,7 +227,7 @@ function ChatBubbles_SpawnBubble(data, senderID) {
                 if (linkIsImage) {
                     Entities.editEntity(bubble.entity, { alpha: fade });
                 } else {
-                    Entities.editEntity(bubble.entity, { textAlpha: fade, backgroundAlpha: fade * 0.5 });
+                    Entities.editEntity(bubble.entity, { textAlpha: fade, backgroundAlpha: fade * BUBBLE_BG_ALPHA });
                 }
                 fade -= (1 / BUBBLE_ANIM_FPS) / BUBBLE_FADE_TIME;
             }, 1000 / BUBBLE_ANIM_FPS);
@@ -205,7 +237,7 @@ function ChatBubbles_SpawnBubble(data, senderID) {
                 Entities.deleteEntity(bubble.entity);
                 delete currentBubbles[senderID][bubbleIndex];
             }, BUBBLE_FADE_TIME * 1000);
-        }, BUBBLE_LIFETIME_SECS * 1000),
+        }, Math.min(BUBBLE_MAX_LIFETIME_SECS, Math.max(BUBBLE_MIN_LIFETIME_SECS, lifetime)) * 1000),
     };
 
     currentBubbles[senderID][bubbleIndex] = bubble;
@@ -233,17 +265,20 @@ function ChatBubbles_IndicatorTick(senderID) {
 function ChatBubbles_ShowTypingIndicator(senderID) {
     if (typingIndicators[senderID]) { return; }
 
-    const scale = AvatarList.getAvatar(senderID).scale;
+    const avatar = AvatarList.getAvatar(senderID);
+    const scale = avatar.scale;
+    const headIndex = avatar.getJointIndex("Head");
+    const headPos = avatar.getAbsoluteJointTranslationInObjectFrame(headIndex);
 
     const indicatorEntity = Entities.addEntity({
         type: "Text",
         parentID: senderID,
         text: "•••",
         unlit: true,
-        lineHeight: 0.15,
-        dimensions: [0.18, 0.08, 0.01],
-        localPosition: [0, scale, 0],
-        backgroundAlpha: 0.8,
+        lineHeight: 0.15 * scale,
+        localDimensions: Vec3.multiply(scale, [0.18, 0.08, 0.01]),
+        localPosition: [0, (TYPING_NOTIF_HEAD_OFFSET_HEIGHT * scale) + headPos.y, 0],
+        backgroundAlpha: BUBBLE_BG_ALPHA,
         canCastShadow: false,
         billboardMode: "full",
         alignment: "center",
@@ -251,8 +286,10 @@ function ChatBubbles_ShowTypingIndicator(senderID) {
         textEffect: "outline fill",
         textEffectColor: "#000",
         textEffectThickness: 0.3,
-        topMargin: -0.06,
+        topMargin: -0.06 * scale,
         grab: {grabbable: false},
+        ignorePickIntersection: true,
+        renderLayer: "front",
     }, "local");
 
     const indicatorInterval = Script.setInterval(() => ChatBubbles_IndicatorTick(senderID), 1000 / BUBBLE_ANIM_FPS);

@@ -399,7 +399,7 @@ void Batch::setResourceTextureTable(const TextureTablePointer& textureTable, uin
     _params.emplace_back(_textureTables.cache(textureTable));
     _params.emplace_back(slot);
     if (textureTable) {
-        TextureTable::Array textures = textureTable->getTextures();
+        TextureTable::Vector textures = textureTable->getTextures();
         for (auto& texture : textures) {
             _params.emplace_back(_samplers.cache(texture ? texture->getSampler() : Sampler()));
         }

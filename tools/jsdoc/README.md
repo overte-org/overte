@@ -11,7 +11,7 @@ If you would like the extra functionality for gravPrep:
 To generate HTML documentation for the Overte JavaScript API:
 
 * `cd tools/jsdoc`
-* `jsdoc root.js -r api-mainpage.md -c config.json`
+* `jsdoc root.js -r api-mainpage.md -c config.json -d out`
 
 The **out** folder should contain index.html.
 

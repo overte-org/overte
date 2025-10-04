@@ -365,8 +365,9 @@ Script.include("/~/system/libraries/controllers.js");
             if (!hudRayPick.intersects) return false;
             var point2d = this.calculateNewReticlePosition(hudRayPick.intersection);
 
-            if ((intersection.type === Picks.INTERSECTED_ENTITY && entityType === "Web") ||
-                intersection.type === Picks.INTERSECTED_OVERLAY || Window.isPointOnDesktopWindow(point2d)) {
+            if (intersection.objectID === HMD.tabletID ||
+                entityType === "Web" ||
+                Window.isPointOnDesktopWindow(point2d)) {
                 return true;
             }
             return false;
@@ -463,31 +464,33 @@ Script.include("/~/system/libraries/controllers.js");
                 }
 
                 var rayPickInfo = controllerData.rayPicks[this.hand];
-                if (rayPickInfo.type === Picks.INTERSECTED_ENTITY) {
-                    if (controllerData.triggerClicks[this.hand]) {
-                        var entityID = rayPickInfo.objectID;
-                        var targetProps = Entities.getEntityProperties(entityID, DISPATCHER_PROPERTIES);
-                        if (targetProps.href !== "") {
-                            AddressManager.handleLookupString(targetProps.href);
-                            return makeRunningValues(false, [], []);
-                        }
+                if (controllerData.triggerClicks[this.hand]) {
+                    var entityID = rayPickInfo.objectID;
+                    var targetProps = Entities.getEntityProperties(entityID, DISPATCHER_PROPERTIES);
+                    if (targetProps.href !== "") {
+                        AddressManager.handleLookupString(targetProps.href);
+                        return makeRunningValues(false, [], []);
+                    }
 
-                        this.targetObject = new TargetObject(entityID, targetProps);
-                        this.targetObject.parentProps = getEntityParents(targetProps);
+                    this.targetObject = new TargetObject(entityID, targetProps);
+                    this.targetObject.parentProps = getEntityParents(targetProps);
 
-                        Selection.removeFromSelectedItemsList("contextOverlayHighlightList", "entity", entityID);
+                    Selection.removeFromSelectedItemsList("contextOverlayHighlightList", "entity", entityID);
 
-                        var targetEntity = this.targetObject.getTargetEntity();
-                        entityID = targetEntity.id;
-                        targetProps = targetEntity.props;
+                    var targetEntity = this.targetObject.getTargetEntity();
+                    entityID = targetEntity.id;
+                    targetProps = targetEntity.props;
 
-                        if (entityIsGrabbable(targetProps) || entityIsGrabbable(this.targetObject.entityProps)) {
+                    if (
+                        entityID !== HMD.tabletID &&
+                        (entityIsGrabbable(targetProps) ||
+                        entityIsGrabbable(this.targetObject.entityProps))
+                    ) {
 
-                            this.targetEntityID = entityID;
-                            this.grabbedDistance = rayPickInfo.distance;
-                            this.distanceHolding = true;
-                            this.startFarGrabEntity(controllerData, targetProps);
-                        }
+                        this.targetEntityID = entityID;
+                        this.grabbedDistance = rayPickInfo.distance;
+                        this.distanceHolding = true;
+                        this.startFarGrabEntity(controllerData, targetProps);
                     }
                 }
             }

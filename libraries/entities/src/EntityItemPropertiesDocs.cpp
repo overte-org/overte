@@ -899,6 +899,9 @@
  * @property {Entities.ComponentMode} ambientOcclusionMode="inherit" - Configures the ambient occlusion in the zone.
  * @property {Entities.AmbientOcclusion} ambientOcclusion - The ambient occlusion properties of the zone.
  *
+ * @property {Entities.ComponentMode} normalMapAttenuationMode="inherit" - Configures the normal map attenuation in the zone.
+ * @property {Entities.NormalMapAttenuation} normalMapAttenuation - The normal map attenuation properties of the zone.
+ *
  * @property {boolean} flyingAllowed=true - <code>true</code> if visitors can fly in the zone; <code>false</code> if they
  *     cannot. Only works for domain entities.
  * @property {boolean} ghostingAllowed=true - <code>true</code> if visitors with avatar collisions turned off will not

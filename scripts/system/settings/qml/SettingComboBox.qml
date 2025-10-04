@@ -10,6 +10,7 @@ Item {
     property var _optionText: "";
     readonly property string optionText: _optionText;
 	property var options: [""];
+    property bool disabled: false;
 
 	signal valueChanged(int index);
 
@@ -92,7 +93,7 @@ Item {
 
 				background: Rectangle {
 					id: comboBoxBackground;
-					color: "#333";
+					color: disabled ? "gray" : "#333";
 					radius: 10;
 					width: parent.width;
 				}
@@ -152,15 +153,18 @@ Item {
             propagateComposedEvents: true;
 
             onPressed: {
-                mouse.accepted = false
+                if (disabled) return;
+                mouse.accepted = false;
             }
 
             onEntered: {
+                if (disabled) return;
                 backgroundElement.color = "#333";
 				comboBoxBackground.color = "#444";
             }
 
             onExited: {
+                if (disabled) return;
                 backgroundElement.color = "transparent";
 				comboBoxBackground.color = "#333";
             }
@@ -172,6 +176,11 @@ Item {
 				easing.type: Easing.InOutCubic
 			}
 		}
+    }
+
+    onDisabledChanged: {
+        if (disabled) comboBoxBackground.color = "gray";
+        else comboBoxBackground.color = "#333";
     }
 
 	// Updates the contents of a combobox.

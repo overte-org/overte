@@ -616,9 +616,9 @@ TextureTablePointer Deserializer::readTextureTable(const json& node) {
     if (node.is_null()) {
         return nullptr;
     }
-    TextureTablePointer result = std::make_shared<TextureTable>();
-    auto& table = *result;
     auto count = node.size();
+    TextureTablePointer result = std::make_shared<TextureTable>(count);
+    auto& table = *result;
     for (size_t i = 0; i < count; ++i) {
         uint32_t index = node[i];
         table.setTexture(i, textures[index]);

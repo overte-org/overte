@@ -112,7 +112,7 @@ var TEAR_AWAY_DISTANCE = 0.15; // ungrab an entity if its bounding-box moves thi
 var TEAR_AWAY_COUNT = 2; // multiply by TEAR_AWAY_CHECK_TIME to know how long the item must be away
 var TEAR_AWAY_CHECK_TIME = 0.15; // seconds, duration between checks
 
-var TELEPORT_DEADZONE = 0.15;
+var TELEPORT_DEADZONE = 0.65;
 
 var NEAR_GRAB_DISTANCE = 0.14; // Grab an entity if its bounding box is within this distance.
 // Smaller than TEAR_AWAY_DISTANCE for hysteresis.
@@ -256,6 +256,8 @@ var getGrabbableData = function (ggdProps) {
     } else {
         grabbableData = ggdProps.grab;
     }
+
+    if (!grabbableData) { return {}; }
 
     // extract grab-related properties, provide defaults if any are missing
     if (!grabbableData.hasOwnProperty("grabbable")) {

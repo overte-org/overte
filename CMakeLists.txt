@@ -10,7 +10,8 @@
 SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
 # 3.24 is the minimum version that supports CMAKE_COMPILE_WARNING_AS_ERROR
 cmake_minimum_required(VERSION 3.24)
-
+# Avoid CMP0177 policy warning introduced in CMake 3.31.
+cmake_policy(VERSION 3.24...3.31)
 include(SelectLibraryConfigurations)
 
 # Instruct CMake to run moc automatically when needed.
@@ -26,39 +27,19 @@ if (APPLE)
 endif()
 
 
-#
-# Default compiler flags
-#
-# Compiler flags need to be set before calling project().
+project(overte)
+include("cmake/init.cmake")
+include("cmake/compiler.cmake")
+
+# Guard against missing `-falign-functions`.
 if( NOT WIN32 )
-    # Function alignment is necessary for V8.
+    # Function alignment is necessary for V8 scripting engine! We will run into random crashes otherwise.
     # SetAlignedPointerInInternalField requires at least 2 byte alignment and -falign-functions will set alignment
     # to machine specific value which should be greater than 2.
-    if (CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
-        set(CMAKE_CXX_FLAGS "-falign-functions -fPIC -m64 -msse3" CACHE STRING "C++ compiler flags for all build types.")
-        set(CMAKE_C_FLAGS "-falign-functions -fPIC -m64 -msse3" CACHE STRING "C compiler flags for all build types.")
-    elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
-        # TODO: Find out which architecture optimizations to use on aarch64.
-        # We should probably target the 64bit version of the Raspberry Pi 2 as minimum.
-        set(CMAKE_CXX_FLAGS "-falign-functions -fPIC" CACHE STRING "C++ compiler flags for all build types.")
-        set(CMAKE_C_FLAGS "-falign-functions -fPIC" CACHE STRING "C++ compiler flags for all build types.")
-    endif()
-    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        message("Clang compiler detected, setting default flags.")
-        set(CMAKE_CXX_FLAGS_DEBUG "-Og -g" CACHE STRING "C++ compiler flags for Debug builds.")
-        set(CMAKE_C_FLAGS_DEBUG "-Og -g" CACHE STRING "C compiler flags for Debug builds.")
-        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -g" CACHE STRING "C++ compiler flags for RelWithDebInfo builds.")
-        set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -g" CACHE STRING "C compiler flags for RelWithDebInfo builds.")
-        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "C++ compiler flags for Release builds.")
-        set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "C compiler flags for Release builds.")
-    elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        message("GCC compiler detected, setting default flags")
-        set(CMAKE_CXX_FLAGS_DEBUG "-Og -ggdb3" CACHE STRING "C++ compiler flags for Debug builds.")
-        set(CMAKE_C_FLAGS_DEBUG "-Og -ggdb3" CACHE STRING "C compiler flags for Debug builds.")
-        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -ggdb2" CACHE STRING "C++ compiler flags for RelWithDebInfo builds.")
-        set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG -ggdb2" CACHE STRING "C compiler flags for RelWithDebInfo builds.")
-        set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "C++ compiler flags for Release builds.")
-        set(CMAKE_C_FLAGS_RELEASE "-O3 -DNDEBUG" CACHE STRING "C compiler flags for Release builds.")
+    string(FIND "${CMAKE_CXX_FLAGS}" "-falign-functions" falign-functions_INDEX)
+    if(${falign-functions_INDEX} EQUAL -1)
+        # Substring not found
+        message(FATAL_ERROR "CMAKE_CXX_FLAGS is missing -falign-functions. This is required to avoid crashes in relation to the V8 scripting engine and should have been set by Conan.")
     endif()
 endif()
 
@@ -93,35 +74,6 @@ if(OVERTE_WARNINGS_ALLOWLIST)
         message("We don't know yet how to allowlist warnings for ${CMAKE_CXX_COMPILER_ID}")
     endif()
 endif()
-
-# Enabling warnings-as-errors by default on our Linux target and on Windows.
-# Our current Linux development target is Ubuntu 22.04, which uses GCC 11.2.
-if ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION MATCHES "11"))
-    set(CMAKE_COMPILE_WARNING_AS_ERROR ON CACHE BOOL "")
-elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC") # Windows
-    set(CMAKE_COMPILE_WARNING_AS_ERROR ON CACHE BOOL "")
-else()
-    set(CMAKE_COMPILE_WARNING_AS_ERROR OFF CACHE BOOL "")
-endif()
-
-if (CMAKE_COMPILE_WARNING_AS_ERROR)
-    if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "" AND WIN32))
-        # Silence a warning in Qt about stdext::checked_array_iterator
-        add_compile_definitions(_SILENCE_STDEXT_ARR_ITERS_DEPRECATION_WARNING)
-    else()
-        # Silence multichar to work around an issue in crashpad
-        # Silence stringop-overflow to work around an issue in tbb
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-multichar -Wno-stringop-overflow")
-        set(CMAKE_CFLAGS "${CMAKE_CFLAGS} -Wno-multichar -Wno-stringop-overflow")
-    endif()
-endif()
-
-
-project(overte)
-include("cmake/init.cmake")
-include("cmake/compiler.cmake")
-
-
 
 #
 # Overte build variables

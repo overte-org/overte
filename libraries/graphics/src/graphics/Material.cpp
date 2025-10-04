@@ -312,7 +312,8 @@ MultiMaterial::MultiMaterial() {
     Schema schema;
     _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
     for (size_t i = 0; i < _textureTables.size(); i++) {
-        _textureTables[i] = std::make_shared<gpu::TextureTable>();
+        // At this point we don't know how many layers it will have yet, so it's not possible to estimate size yet.
+        _textureTables[i] = std::make_shared<gpu::TextureTable>(TEXTURE_TABLE_COUNT_1_LAYER_MATERIAL);
     }
 }
 
@@ -371,6 +372,26 @@ void MultiMaterial::setisMToonAndLayers(bool isMToon, uint8_t layers) {
     if (isMToon != _isMToon || layers != _layers) {
         _isMToon = isMToon;
         _layers = layers;
+
+        for (auto &textureTable : _textureTables) {
+            // For multilayered materials texture table size varies depending on number of layers.
+            switch (layers) {
+                case 1:
+                    textureTable->resize(TEXTURE_TABLE_COUNT_1_LAYER_MATERIAL);
+                    break;
+
+                case 2:
+                    textureTable->resize(TEXTURE_TABLE_COUNT_2_LAYER_MATERIAL);
+                    break;
+
+                case 3:
+                    textureTable->resize(TEXTURE_TABLE_COUNT_3_LAYER_MATERIAL);
+                    break;
+
+                default:
+                    Q_ASSERT(false);
+            }
+        }
 
         if (isMToon) {
             std::array<MToonSchema, 3> toonSchemas;
