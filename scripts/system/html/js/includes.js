@@ -25,5 +25,6 @@ const ENTITY_TYPE_ICON = {
     Text: "l",
     Web: "q",
     Zone: "o",
+    Empty: "n",
     Multiple: "&#xe000;",
 };

@@ -366,6 +366,7 @@ enum class EntityVersion : PacketVersion {
     RemoveScreenshare,
     TorusInnerRadius,
     NormalMapAttenuation,
+    EmptyEntity,
 
     // Add new versions above here
     NUM_PACKET_TYPE,

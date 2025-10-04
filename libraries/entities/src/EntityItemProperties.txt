@@ -313,3 +313,4 @@ enum:SOUND_PLAYING prop:playing type:bool default:true,
 enum:SOUND_LOOP prop:loop type:bool default:true,
 enum:SOUND_POSITIONAL prop:positional type:bool default:true,
 enum:SOUND_LOCAL_ONLY prop:localOnly type:bool default:false,
+Empty

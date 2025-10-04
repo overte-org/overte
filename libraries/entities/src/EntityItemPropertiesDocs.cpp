@@ -189,6 +189,7 @@
  *
  * @comment The different entity types have additional properties as follows:
  * @see {@link Entities.EntityProperties-Box|EntityProperties-Box}
+ * @see {@link Entities.EntityProperties-Empty|EntityProperties-Empty}
  * @see {@link Entities.EntityProperties-Gizmo|EntityProperties-Gizmo}
  * @see {@link Entities.EntityProperties-Grid|EntityProperties-Grid}
  * @see {@link Entities.EntityProperties-Image|EntityProperties-Image}
@@ -1008,4 +1009,13 @@
  * @property {Vec3} dimensions=0.1,0.001,0.1 - The dimensions of the entity.
  * @property {Entities.GizmoType} gizmoType="ring" - The gizmo type of the entity.
  * @property {Entities.RingGizmo} ring - The ring gizmo properties.
+ */
+
+
+/*@jsdoc
+ * The <code>"Empty"</code> {@link Entities.EntityType|EntityType}
+ * is an invisible, intangible entity with no special behavior.
+ * It has the common properties from {@link Entities.EntityProperties|EntityProperties}.
+ *
+ * @typedef {object} Entities.EntityProperties-Empty
  */
