@@ -3591,29 +3591,6 @@ void MyAvatar::updateOrientation(float deltaTime) {
     }
 }
 
-float MyAvatar::calculateGearedSpeed(const float driveKey) {
-    float absDriveKey = abs(driveKey);
-    float sign = (driveKey < 0.0f) ? -1.0f : 1.0f;
-    if (absDriveKey > getDriveGear5()) {
-        return sign * 1.0f;
-    }
-    else if (absDriveKey > getDriveGear4()) {
-        return sign * 0.8f;
-    }
-    else if (absDriveKey > getDriveGear3()) {
-        return sign * 0.6f;
-    }
-    else if (absDriveKey > getDriveGear2()) {
-        return sign * 0.4f;
-    }
-    else if (absDriveKey > getDriveGear1()) {
-        return sign * 0.2f;
-    }
-    else {
-        return sign * 0.0f;
-    }
-}
-
 glm::vec3 MyAvatar::scaleMotorSpeed(const glm::vec3 forward, const glm::vec3 right) {
     float stickFullOn = 0.85f;
     auto zSpeed = getDriveKey(TRANSLATE_Z);
@@ -3641,8 +3618,8 @@ glm::vec3 MyAvatar::scaleMotorSpeed(const glm::vec3 forward, const glm::vec3 rig
             case LocomotionControlsMode::CONTROLS_ANALOG:
             case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
                 if (zSpeed || xSpeed) {
-                    glm::vec3 scaledForward = calculateGearedSpeed(zSpeed) * _walkSpeedScalar * ((zSpeed >= stickFullOn) ? getSprintSpeed() : getWalkSpeed()) * forward;
-                    glm::vec3 scaledRight = calculateGearedSpeed(xSpeed) * _walkSpeedScalar * ((xSpeed > stickFullOn) ? getSprintSpeed() : getWalkSpeed()) * right;
+                    glm::vec3 scaledForward = zSpeed * _walkSpeedScalar * getWalkSpeed() * forward;
+                    glm::vec3 scaledRight = xSpeed * _walkSpeedScalar * getWalkSpeed() * right;
                     direction = scaledForward + scaledRight;
                     return direction;
                 } else {

@@ -468,6 +468,16 @@ void setupPreferences() {
         preferences->addPreference(preference);
     }
     {
+        auto getter = [myAvatar]()->float { return myAvatar->getAnalogPlusWalkSpeed(); };
+        auto setter = [myAvatar](float value) { myAvatar->setAnalogPlusWalkSpeed(value); };
+        auto preference = new SpinnerSliderPreference(VR_MOVEMENT, "VR Walk Speed", getter, setter);
+        preference->setMin(1.5f);
+        preference->setMax(9.0f);
+        preference->setStep(0.1f);
+        preference->setDecimals(1);
+        preferences->addPreference(preference);
+    }
+    {
         auto getter = []()->bool {
             return qApp->getVisionSqueeze().getVisionSqueezeEnabled();
         };
