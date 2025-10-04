@@ -82,6 +82,8 @@ enum EntityPropertyList : uint16_t {
     PROP_DERIVED_52,
     PROP_DERIVED_53,
     PROP_DERIVED_54,
+    PROP_DERIVED_55,
+    PROP_DERIVED_56,
 
     PROP_AFTER_LAST_ITEM,
 
