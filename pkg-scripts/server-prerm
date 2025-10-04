@@ -19,7 +19,7 @@ set -e
 
 case "$1" in
     remove)
-	systemctl list-units \
+	systemctl list-units --state=loaded \
 		| grep -P -o "(overte-assignment-client|overte-domain-server|overte-server)\S+" \
 		| xargs systemctl stop
 
