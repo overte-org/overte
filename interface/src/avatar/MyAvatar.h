@@ -1541,76 +1541,6 @@ public:
     */
     Q_INVOKABLE int getMovementReference();
 
-    /*@jsdoc
-     * Set the first 'shifting point' for acceleration step function.
-     * @function MyAvatar.setDriveGear1
-     * @param {number} shiftPoint - Set the first shift point for analog movement acceleration step function, between [0.0, 1.0]. Must be less than or equal to Gear 2.
-    */
-    Q_INVOKABLE void setDriveGear1(float shiftPoint);
-
-    /*@jsdoc
-     * Get the first 'shifting point' for acceleration step function.
-     * @function MyAvatar.getDriveGear1
-     * @returns {number} Value between [0.0, 1.0].
-    */
-    Q_INVOKABLE float getDriveGear1();
-
-    /*@jsdoc
-    * Set the second 'shifting point' for acceleration step function.
-    * @function MyAvatar.setDriveGear2
-    * @param {number} shiftPoint - Defines the second shift point for analog movement acceleration step function, between [0, 1]. Must be greater than or equal to Gear 1 and less than or equal to Gear 2.
-    */
-    Q_INVOKABLE void setDriveGear2(float shiftPoint);
-
-    /*@jsdoc
-    * Get the second 'shifting point' for acceleration step function.
-    * @function MyAvatar.getDriveGear2
-    * @returns {number} Value between [0.0, 1.0].
-    */
-    Q_INVOKABLE float getDriveGear2();
-
-    /*@jsdoc
-    * Set the third 'shifting point' for acceleration step function.
-    * @function MyAvatar.setDriveGear3
-    * @param {number} shiftPoint - Defines the third shift point for analog movement acceleration step function, between [0, 1]. Must be greater than or equal to Gear 2 and less than or equal to Gear 4.
-    */
-    Q_INVOKABLE void setDriveGear3(float shiftPoint);
-
-    /*@jsdoc
-    * Get the third 'shifting point' for acceleration step function.
-    * @function MyAvatar.getDriveGear3
-    * @returns {number} Value between [0.0, 1.0].
-    */
-    Q_INVOKABLE float getDriveGear3();
-
-    /*@jsdoc
-    * Set the fourth 'shifting point' for acceleration step function.
-    * @function MyAvatar.setDriveGear4
-    * @param {number} shiftPoint - Defines the fourth shift point for analog movement acceleration step function, between [0, 1]. Must be greater than Gear 3 and less than Gear 5.
-    */
-    Q_INVOKABLE void setDriveGear4(float shiftPoint);
-
-    /*@jsdoc
-    * Get the fourth 'shifting point' for acceleration step function.
-    * @function MyAvatar.getDriveGear4
-    * @returns {number} Value between [0.0, 1.0].
-    */
-    Q_INVOKABLE float getDriveGear4();
-
-    /*@jsdoc
-    * Set the fifth 'shifting point' for acceleration step function.
-    * @function MyAvatar.setDriveGear5
-    * @param {number} shiftPoint - Defines the fifth shift point for analog movement acceleration step function, between [0, 1]. Must be greater than or equal to Gear 4.
-    */
-    Q_INVOKABLE void setDriveGear5(float shiftPoint);
-
-    /*@jsdoc
-    * Get the fifth 'shifting point' for acceleration step function.
-    * @function MyAvatar.getDriveGear5
-    * @returns {number} Value between [0.0, 1.0].
-    */
-    Q_INVOKABLE float getDriveGear5();
-
     void setControlSchemeIndex(int index);
 
     int getControlSchemeIndex();
@@ -2725,11 +2655,6 @@ private:
     float _yawSpeed; // degrees/sec
     float _hmdYawSpeed; // degrees/sec
     float _pitchSpeed; // degrees/sec
-    float _driveGear1 { DEFAULT_GEAR_1 };
-    float _driveGear2 { DEFAULT_GEAR_2 };
-    float _driveGear3 { DEFAULT_GEAR_3 };
-    float _driveGear4 { DEFAULT_GEAR_4 };
-    float _driveGear5 { DEFAULT_GEAR_5 };
     int _controlSchemeIndex { CONTROLS_ANALOG_PLUS };
     int _movementReference{ 0 };
 
@@ -3023,11 +2948,6 @@ private:
     Setting::Handle<int> _movementReferenceSetting;
     Setting::Handle<int> _avatarEntityCountSetting;
     Setting::Handle<bool> _allowTeleportingSetting { "allowTeleporting", true };
-    Setting::Handle<float> _driveGear1Setting;
-    Setting::Handle<float> _driveGear2Setting;
-    Setting::Handle<float> _driveGear3Setting;
-    Setting::Handle<float> _driveGear4Setting;
-    Setting::Handle<float> _driveGear5Setting;
     Setting::Handle<float> _analogWalkSpeedSetting;
     Setting::Handle<float> _analogPlusWalkSpeedSetting;
     Setting::Handle<int> _controlSchemeIndexSetting;

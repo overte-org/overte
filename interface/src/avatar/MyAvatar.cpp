@@ -243,11 +243,6 @@ MyAvatar::MyAvatar(QThread* thread) :
     _flyingHMDSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "flyingHMD", _flyingPrefHMD),
     _movementReferenceSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "movementReference", _movementReference),
     _avatarEntityCountSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "avatarEntityData" << "size", 0),
-    _driveGear1Setting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "driveGear1", _driveGear1),
-    _driveGear2Setting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "driveGear2", _driveGear2),
-    _driveGear3Setting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "driveGear3", _driveGear3),
-    _driveGear4Setting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "driveGear4", _driveGear4),
-    _driveGear5Setting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "driveGear5", _driveGear5),
     _analogWalkSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "analogWalkSpeed", _analogWalkSpeed.get()),
     _analogPlusWalkSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "analogPlusWalkSpeed", _analogPlusWalkSpeed.get()),
     _controlSchemeIndexSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "controlSchemeIndex", _controlSchemeIndex),
@@ -1350,11 +1345,6 @@ void MyAvatar::saveData() {
     _userHeightSetting.set(getUserHeight());
     _flyingHMDSetting.set(getFlyingHMDPref());
     _movementReferenceSetting.set(getMovementReference());
-    _driveGear1Setting.set(getDriveGear1());
-    _driveGear2Setting.set(getDriveGear2());
-    _driveGear3Setting.set(getDriveGear3());
-    _driveGear4Setting.set(getDriveGear4());
-    _driveGear5Setting.set(getDriveGear5());
     _analogWalkSpeedSetting.set(getAnalogWalkSpeed());
     _analogPlusWalkSpeedSetting.set(getAnalogPlusWalkSpeed());
     _controlSchemeIndexSetting.set(getControlSchemeIndex());
@@ -2104,11 +2094,6 @@ void MyAvatar::loadData() {
     Setting::Handle<bool> firstRunVal { Settings::firstRun, true };
     setFlyingHMDPref(firstRunVal.get() ? true : _flyingHMDSetting.get());
     setMovementReference(firstRunVal.get() ? false : _movementReferenceSetting.get());
-    setDriveGear1(firstRunVal.get() ? DEFAULT_GEAR_1 : _driveGear1Setting.get());
-    setDriveGear2(firstRunVal.get() ? DEFAULT_GEAR_2 : _driveGear2Setting.get());
-    setDriveGear3(firstRunVal.get() ? DEFAULT_GEAR_3 : _driveGear3Setting.get());
-    setDriveGear4(firstRunVal.get() ? DEFAULT_GEAR_4 : _driveGear4Setting.get());
-    setDriveGear5(firstRunVal.get() ? DEFAULT_GEAR_5 : _driveGear5Setting.get());
     setControlSchemeIndex(firstRunVal.get() ? LocomotionControlsMode::CONTROLS_ANALOG : _controlSchemeIndexSetting.get());
     setAnalogWalkSpeed(firstRunVal.get() ? ANALOG_AVATAR_MAX_WALKING_SPEED : _analogWalkSpeedSetting.get());
     setAnalogPlusWalkSpeed(firstRunVal.get() ? ANALOG_PLUS_AVATAR_MAX_WALKING_SPEED : _analogPlusWalkSpeedSetting.get());
@@ -4362,111 +4347,6 @@ void MyAvatar::setControlSchemeIndex(int index){
 
 int MyAvatar::getControlSchemeIndex() {
     return _controlSchemeIndex;
-}
-
-void MyAvatar::setDriveGear1(float shiftPoint) {
-    if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "setDriveGear1", Q_ARG(float, shiftPoint));
-        return;
-    }
-    if (shiftPoint > 1.0f || shiftPoint < 0.0f) return;
-    _driveGear1 = (shiftPoint < _driveGear2) ? shiftPoint : _driveGear1;
-}
-
-float MyAvatar::getDriveGear1() {
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            return ANALOG_AVATAR_GEAR_1;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            return _driveGear1;
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-        default:
-            return 1.0f;
-    }
-}
-
-void MyAvatar::setDriveGear2(float shiftPoint) {
-    if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "setDriveGear2", Q_ARG(float, shiftPoint));
-        return;
-    }
-    if (shiftPoint > 1.0f || shiftPoint < 0.0f) return;
-    _driveGear2 = (shiftPoint < _driveGear3 && shiftPoint >= _driveGear1) ? shiftPoint : _driveGear2;
-}
-
-float MyAvatar::getDriveGear2() {
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            return ANALOG_AVATAR_GEAR_2;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            return _driveGear2;
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-        default:
-            return 1.0f;
-    }
-}
-
-void MyAvatar::setDriveGear3(float shiftPoint) {
-    if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "setDriveGear3", Q_ARG(float, shiftPoint));
-        return;
-    }
-    if (shiftPoint > 1.0f || shiftPoint < 0.0f) return;
-    _driveGear3 = (shiftPoint < _driveGear4 && shiftPoint >= _driveGear2) ? shiftPoint : _driveGear3;
-}
-
-float MyAvatar::getDriveGear3() {
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            return ANALOG_AVATAR_GEAR_3;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            return _driveGear3;
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-        default:
-            return 1.0f;
-    }
-}
-
-void MyAvatar::setDriveGear4(float shiftPoint) {
-    if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "setDriveGear4", Q_ARG(float, shiftPoint));
-        return;
-    }
-    if (shiftPoint > 1.0f || shiftPoint < 0.0f) return;
-    _driveGear4 = (shiftPoint < _driveGear5 && shiftPoint >= _driveGear3) ? shiftPoint : _driveGear4;
-}
-
-float MyAvatar::getDriveGear4() {
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            return ANALOG_AVATAR_GEAR_4;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            return _driveGear4;
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-        default:
-            return 1.0f;
-    }
-}
-
-void MyAvatar::setDriveGear5(float shiftPoint) {
-    if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "setDriveGear5", Q_ARG(float, shiftPoint));
-        return;
-    }
-    if (shiftPoint > 1.0f || shiftPoint < 0.0f) return;
-    _driveGear5 = (shiftPoint > _driveGear4) ? shiftPoint : _driveGear5;
-}
-
-float MyAvatar::getDriveGear5() {
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            return ANALOG_AVATAR_GEAR_5;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            return _driveGear5;
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-        default:
-            return 1.0f;
-    }
 }
 
 bool MyAvatar::getFlyingHMDPref() {
