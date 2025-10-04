@@ -1,8 +1,10 @@
+# syntax=docker/dockerfile:1.4
+
 # Copyright 2022-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte Server
-# Example build: docker build --no-cache -t overte/overte-server-build:0.1.7-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-server-build:2025-09-15-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
@@ -10,48 +12,107 @@ LABEL description="Development image for Overte Domain server and assignment cli
 # Don't use any frontend when installing packages during the creation of this container
 ARG DEBIAN_FRONTEND=noninteractive
 
-RUN echo UTC >/etc/timezone
+#
+# Install build dependencies
+#
+RUN <<EOF
+echo UTC >/etc/timezone
 # Installing via dependency causes interactive hang:
-RUN apt-get update && apt-get -y install tzdata
+apt-get update && apt-get -y install tzdata
 
 # Install CMake from Kitware
-RUN apt-get update
-RUN apt-get -y install ca-certificates gpg wget
-RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
-RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
-RUN apt-get update
-RUN rm /usr/share/keyrings/kitware-archive-keyring.gpg && apt-get -y install kitware-archive-keyring
-RUN apt-get -y install cmake
-
-# Install Conan
-RUN if [ $(uname -m) = "x86_64" ]; then \
-        wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.16.1/conan-2.16.1-amd64.deb ; \
-    elif [ $(uname -m) = "aarch64" ]; then \
-        wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.16.1/conan-2.16.1-arm64.deb ; \
-    else \
-        echo "Unsupported architecture: $(uname -m)"; \
-    fi
-RUN apt-get -y install ./conan.deb
+apt-get -y install ca-certificates gpg wget
+wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ jammy main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
+apt-get update
+rm /usr/share/keyrings/kitware-archive-keyring.gpg && apt-get -y install kitware-archive-keyring
+apt-get -y install cmake
 
 # Install Overte domain-server and assignment-client build dependencies
-RUN apt-get -y install curl ninja-build git cmake g++ libssl-dev libqt5websockets5-dev qtdeclarative5-dev qtmultimedia5-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev libsystemd-dev python3-packaging
+apt-get -y install cmake curl ninja-build git g++ libssl-dev libqt5websockets5-dev qtdeclarative5-dev qtmultimedia5-dev python3-distutils python3-distro mesa-common-dev libgl1-mesa-dev libsystemd-dev python3-packaging
 # Install Overte tools build dependencies
-RUN apt-get -y install libqt5webchannel5-dev qtwebengine5-dev libqt5xmlpatterns5-dev
-
+apt-get -y install libqt5webchannel5-dev qtwebengine5-dev libqt5xmlpatterns5-dev
 # Install tools for package creation
-RUN apt-get -y install sudo chrpath binutils dh-make
-
-# Install locales package
-RUN apt-get -y install locales
-# Uncomment en_US.UTF-8 for inclusion in generation
-RUN sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen
-# Generate locale
-RUN locale-gen
-
-# Export env vars
-RUN echo "export LC_ALL=en_US.UTF-8" >> ~/.bashrc
-RUN echo "export LANG=en_US.UTF-8" >> ~/.bashrc
-RUN echo "export LANGUAGE=en_US.UTF-8" >> ~/.bashrc
+apt-get -y install sudo chrpath binutils dh-make
 
 # Install tools needed for our Github Actions Workflow
-Run apt-get -y install python3-boto3 python3-github zip
+apt-get -y install python3-boto3 python3-github zip
+
+# Install Conan
+apt-get -y install wget
+if [ $(uname -m) = "x86_64" ]; then
+    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.20.1/conan-2.20.1-amd64.deb
+elif [ $(uname -m) = "aarch64" ]; then
+    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.20.1/conan-2.20.1-arm64.deb
+else
+    echo "Unsupported architecture: $(uname -m)"
+    exit 1
+fi
+apt-get -y install ./conan.deb
+rm conan.deb
+
+# Install locales package
+apt-get -y install locales
+# Uncomment en_US.UTF-8 for inclusion in generation
+sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen
+# Generate locale
+locale-gen
+EOF
+
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US.UTF-8
+
+
+#
+# Setup Conan
+#
+# Set CONAN_HOME to its default, so we can read it in our GitHub Actions cache step.
+ENV CONAN_HOME=/root/.conan2
+RUN <<EOF
+conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte
+# Use our mirror of Conan Center to avoid rate limiting.
+conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center
+
+conan profile detect
+
+cat >> ${CONAN_HOME}/profiles/default <<EOFcat
+[conf]
+# Allow Conan to install system packages.
+tools.system.package_manager:mode=install
+EOFcat
+
+# We get CMake from Conan to avoid CMake 4.0 which some of our dependencies don't yet build with.
+# FIXME: Remove once all our dependencies have CMake 4.0 compatibility.
+cat >> ${CONAN_HOME}/profiles/default <<EOFcat
+[tool_requires]
+!cmake/*: cmake/[>=3 <4]
+EOFcat
+
+# Try downloading source files from conandata.yml first. Fall back to our backup if the upstream source is down.
+echo "core.sources:download_urls=['origin', 'https://artifactory.overte.org/artifactory/build-dependencies-backup/']" >> ${CONAN_HOME}/global.conf
+echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ${CONAN_HOME}/global.conf
+EOF
+
+# Credentials for uploading backups of dependency sources.
+# source-credentials.json is a jinja template, so os.getenv() happens at runtime.
+COPY <<EOF /root/.conan2/source_credentials.json
+{% set TOKEN = os.getenv('CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN') %}
+{
+  "credentials": [
+    {
+    "url": "https://artifactory.overte.org/artifactory/build-dependencies-backup/",
+    "token": "{{TOKEN}}"
+    }
+  ]
+}
+EOF
+
+#
+# Platform specific build variables
+#
+ENV XZ_OPT="-T0"
+
+ENV OVERTE_QT_SOURCE=system
+ENV DEBEMAIL=julian.gro@overte.org
+ENV DEBFULLNAME="GitHub Actions CI"
