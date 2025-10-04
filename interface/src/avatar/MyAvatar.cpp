@@ -3592,7 +3592,6 @@ void MyAvatar::updateOrientation(float deltaTime) {
 }
 
 glm::vec3 MyAvatar::scaleMotorSpeed(const glm::vec3 forward, const glm::vec3 right) {
-    float stickFullOn = 0.85f;
     auto zSpeed = getDriveKey(TRANSLATE_Z);
     auto xSpeed = !_characterController.getSeated() ? getDriveKey(TRANSLATE_X) : 0.0f;
     glm::vec3 direction;
