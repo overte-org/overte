@@ -177,8 +177,18 @@ const GROUPS = [
                 options: { Cube: "Box", Sphere: "Sphere", Tetrahedron: "Tetrahedron", Octahedron: "Octahedron", 
                            Icosahedron: "Icosahedron", Dodecahedron: "Dodecahedron", Hexagon: "Hexagon", 
                            Triangle: "Triangle", Octagon: "Octagon", Cylinder: "Cylinder", Cone: "Cone", 
-                           Circle: "Circle", Quad: "Quad" },
+                           Circle: "Circle", Quad: "Quad", Torus: "Torus" },
                 propertyID: "shape",
+            },
+            {
+                label: "Inner Radius",
+                type: "number-draggable",
+                min: 0,
+                max: 0.25,
+                step: 0.01,
+                decimals: 2,
+                propertyID: "innerRadius",
+                showPropertyRule: { "shape": "Torus" },
             },
             {
                 label: "Color",
@@ -823,6 +833,38 @@ const GROUPS = [
                 type: "zonesCoefficient",
                 propertyID: "audio.listenerAttenuationCoefficients",
                 multipleZonesSelectionID: "audio.listenerZones",
+            }
+        ]
+    },
+    {
+        id: "zone_normal_map_attenuation",
+        label: "NORMAL MAP ATTENUATION",
+        properties: [
+            {
+                label: "Attenuation",
+                type: "dropdown",
+                options: { inherit: "Inherit", disabled: "Off", enabled: "On" },
+                propertyID: "normalMapAttenuationMode",
+            },
+            {
+                label: "Fade Min Distance",
+                type: "number-draggable",
+                min: 0,
+                max: 16000,
+                step: 1,
+                decimals: 2,
+                propertyID: "normalMapAttenuation.min",
+                showPropertyRule: { "normalMapAttenuationMode": "enabled" },
+            },
+            {
+                label: "Fade Max Distance",
+                type: "number-draggable",
+                min: 0,
+                max: 16000,
+                step: 1,
+                decimals: 2,
+                propertyID: "normalMapAttenuation.max",
+                showPropertyRule: { "normalMapAttenuationMode": "enabled" },
             }
         ]
     },
@@ -1720,6 +1762,11 @@ const GROUPS = [
         ]
     },
     {
+        id: "empty",
+        label: "EMPTY",
+        properties: []
+    },
+    {
         id: "spatial",
         label: "SPATIAL",
         properties: [
@@ -2202,7 +2249,7 @@ const GROUPS_PER_TYPE = {
   Text: [ 'base', 'text', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Zone: [ 'base', 'zone', 'zone_key_light', 'zone_skybox', 'zone_ambient_light', 'zone_haze',
             'zone_bloom', 'zone_tonemapping', 'zone_ambient_occlusion', 'zone_avatar_priority',
-            'zone_audio', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+            'zone_audio', 'zone_normal_map_attenuation', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Model: [ 'base', 'model', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Image: [ 'base', 'image', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Web: [ 'base', 'web', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
@@ -2215,6 +2262,7 @@ const GROUPS_PER_TYPE = {
   PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  Empty: [ 'base', 'spatial', 'scripts', 'children' ],
   Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
 };
 
@@ -5293,6 +5341,7 @@ function generateCreateChildEntityAssistant(entityHostType) {
         {"type": "Material", "name": "Material"},
         {"type": "Sound", "name": "Sound"},
         {"type": "PolyVox", "name": "Voxel"},
+        {"type": "Empty", "name": "Empty"},
     ];
     const TILES_PER_ROW = 4;
     let renderer = "<div id='typeSelectorCreateChildEntityAssistant' style = 'display: block;'>";
@@ -5421,6 +5470,12 @@ function createChildEntity(type, entityHostType) {
             };
             break;
         case "PolyVox":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Empty":
             properties = {
                 "type": type,
                 "parentID": parentID

@@ -60,8 +60,8 @@ set(OVERTE_WARNINGS_ALLOWLIST ON CACHE BOOL "Allowlist some warnings we can't cu
 
 if(OVERTE_WARNINGS_ALLOWLIST)
     if (NOT WIN32)
-      set(CMAKE_PLATFORM_INFO_DIR "${CMAKE_CURRENT_BINARY_DIR}")
-      include(CMakeDetermineCXXCompiler)
+        set(CMAKE_PLATFORM_INFO_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+        include(CMakeDetermineCXXCompiler)
     endif()
 
     if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")

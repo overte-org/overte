@@ -189,6 +189,7 @@
  *
  * @comment The different entity types have additional properties as follows:
  * @see {@link Entities.EntityProperties-Box|EntityProperties-Box}
+ * @see {@link Entities.EntityProperties-Empty|EntityProperties-Empty}
  * @see {@link Entities.EntityProperties-Gizmo|EntityProperties-Gizmo}
  * @see {@link Entities.EntityProperties-Grid|EntityProperties-Grid}
  * @see {@link Entities.EntityProperties-Image|EntityProperties-Image}
@@ -702,6 +703,7 @@
  * @property {number} alpha=1 - The opacity of the entity, range <code>0.0</code> &ndash; <code>1.0</code>.
  * @property {boolean} unlit=false - <code>true</code> if the entity is unaffected by lighting, <code>false</code> if it is lit
  *     by the key light and local lights.
+ * @property {number} innerRadius=0.25 - The inner radius of the shape, as a fraction of the total dimensions. Only used for Torus.
  * @property {Entities.Pulse} pulse - Color and alpha pulse.
  *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @example <caption>Create a cylinder.</caption>
@@ -897,6 +899,9 @@
  * @property {Entities.ComponentMode} ambientOcclusionMode="inherit" - Configures the ambient occlusion in the zone.
  * @property {Entities.AmbientOcclusion} ambientOcclusion - The ambient occlusion properties of the zone.
  *
+ * @property {Entities.ComponentMode} normalMapAttenuationMode="inherit" - Configures the normal map attenuation in the zone.
+ * @property {Entities.NormalMapAttenuation} normalMapAttenuation - The normal map attenuation properties of the zone.
+ *
  * @property {boolean} flyingAllowed=true - <code>true</code> if visitors can fly in the zone; <code>false</code> if they
  *     cannot. Only works for domain entities.
  * @property {boolean} ghostingAllowed=true - <code>true</code> if visitors with avatar collisions turned off will not
@@ -1004,4 +1009,13 @@
  * @property {Vec3} dimensions=0.1,0.001,0.1 - The dimensions of the entity.
  * @property {Entities.GizmoType} gizmoType="ring" - The gizmo type of the entity.
  * @property {Entities.RingGizmo} ring - The ring gizmo properties.
+ */
+
+
+/*@jsdoc
+ * The <code>"Empty"</code> {@link Entities.EntityType|EntityType}
+ * is an invisible, intangible entity with no special behavior.
+ * It has the common properties from {@link Entities.EntityProperties|EntityProperties}.
+ *
+ * @typedef {object} Entities.EntityProperties-Empty
  */

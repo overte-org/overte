@@ -92,6 +92,8 @@ public:
      *       <td>{@link Entities.EntityProperties-Material|EntityProperties-Material}</td></tr>
      *     <tr><td><code>"Sound"</code></td><td>Plays a sound.</td>
      *       <td>{@link Entities.EntityProperties-Sound|EntityProperties-Sound}</td></tr>
+     *     <tr><td><code>"Empty"</code></td><td>Invisible, intangible entity that has no special behavior.</td>
+     *       <td>{@link Entities.EntityProperties-Empty|EntityProperties-Empty}</td></tr>
      *   </tbody>
      * </table>
      * @typedef {string} Entities.EntityType
@@ -116,6 +118,7 @@ public:
         Zone,
         Material,
         Sound,
+        Empty,
         NUM_TYPES
     } EntityType;
 

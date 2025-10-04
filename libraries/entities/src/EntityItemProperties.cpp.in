@@ -266,6 +266,7 @@ QString EntityItemProperties::getHazeModeAsString() const { return getComponentM
 QString EntityItemProperties::getBloomModeAsString() const { return getComponentModeAsString(_bloomMode); }
 QString EntityItemProperties::getTonemappingModeAsString() const { return getComponentModeAsString(_tonemappingMode); }
 QString EntityItemProperties::getAmbientOcclusionModeAsString() const { return getComponentModeAsString(_ambientOcclusionMode); }
+QString EntityItemProperties::getNormalMapAttenuationModeAsString() const { return getComponentModeAsString(_normalMapAttenuationMode); }
 void EntityItemProperties::setSkyboxModeFromString(const QString& mode) {
     auto modeItr = stringToComponentMode.find(mode.toLower());
     if (modeItr != stringToComponentMode.end()) {
@@ -313,6 +314,13 @@ void EntityItemProperties::setAmbientOcclusionModeFromString(const QString& mode
     if (modeItr != stringToComponentMode.end()) {
         _ambientOcclusionMode = modeItr.value();
         _ambientOcclusionModeChanged = true;
+    }
+}
+void EntityItemProperties::setNormalMapAttenuationModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _normalMapAttenuationMode = modeItr.value();
+        _normalMapAttenuationModeChanged = true;
     }
 }
 
@@ -491,6 +499,7 @@ void EntityItemProperties::setTagsFromVector(const QVector<QString>& tags) {
     for (const QString& tag : tags) {
         _tags.insert(tag);
     }
+    _tagsChanged = true;
 }
 
 EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
@@ -1401,9 +1410,7 @@ void EntityItemProperties::convertToCloneProperties(const EntityItemID& entityID
 bool EntityItemProperties::blobToProperties(ScriptEngine& scriptEngine, const QByteArray& blob, EntityItemProperties& properties) {
     // DANGER: this method is NOT efficient.
     // begin recipe for converting unfortunately-formatted-binary-blob to EntityItemProperties
-    OVERTE_IGNORE_DEPRECATED_BEGIN
-    QJsonDocument jsonProperties = QJsonDocument::fromBinaryData(blob);
-    OVERTE_IGNORE_DEPRECATED_END
+    QJsonDocument jsonProperties = QJsonDocument(QCborValue::fromCbor(blob).toJsonValue().toObject());
     if (jsonProperties.isEmpty() || jsonProperties.isNull() || !jsonProperties.isObject() || jsonProperties.object().isEmpty()) {
         qCDebug(entities) << "bad avatarEntityData json" << QString(blob.toHex());
         return false;
@@ -1432,10 +1439,7 @@ void EntityItemProperties::propertiesToBlob(ScriptEngine& scriptEngine, const QU
             jsonObject["parentID"] = AVATAR_SELF_ID.toString();
         }
     }
-    jsonProperties = QJsonDocument(jsonObject);
-    OVERTE_IGNORE_DEPRECATED_BEGIN
-    blob = jsonProperties.toBinaryData();
-    OVERTE_IGNORE_DEPRECATED_END
+    blob = QCborValue::fromJsonValue(jsonObject).toCbor();
     // end recipe
 }
 

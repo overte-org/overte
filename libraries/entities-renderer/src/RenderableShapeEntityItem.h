@@ -11,6 +11,7 @@
 
 #include "RenderableEntityItem.h"
 
+#include <GeometryCache.h>
 #include <procedural/Procedural.h>
 #include <ShapeEntityItem.h>
 
@@ -29,6 +30,7 @@ protected:
     Item::Bound getBound(RenderArgs* args) override;
 
 private:
+    virtual void onRemoveFromSceneTyped(const TypedEntityPointer& entity) override;
     virtual bool needsRenderUpdate() const override;
     virtual void doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) override;
     virtual void doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) override;
@@ -37,6 +39,7 @@ private:
 
     QString _proceduralData;
     EntityShape _shape { EntityShape::Sphere };
+    float _innerRadius { 0.0f };
 
     PulsePropertyGroup _pulseProperties;
     std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };
@@ -45,6 +48,7 @@ private:
     bool _unlit { false };
 
     gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>() };
+    int _torusID { GeometryCache::UNKNOWN_ID };
 };
 
 } } 

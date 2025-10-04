@@ -96,6 +96,9 @@ enum:AMBIENT_OCCLUSION_AO_OBSCURANCE_LEVEL prop:aoObscuranceLevel type:float def
 enum:AMBIENT_OCCLUSION_AO_FALLOFF_ANGLE prop:aoFalloffAngle type:float default:0.25f min:0.0f max:1.0f,
 enum:AMBIENT_OCCLUSION_AO_SAMPLING_AMOUNT prop:aoSamplingAmount type:float default:0.5f min:0.0f max:1.0f,
 enum:AMBIENT_OCCLUSION_SSAO_NUM_SPIRAL_TURNS prop:ssaoNumSpiralTurns type:float default:7.0f min:0.0f max:10.0f,
+normalMapAttenuation
+enum:NORMAL_MAP_ATTENUATION_MIN prop:min type:float default:30.0f min:0.0f max:16000.0f,
+enum:NORMAL_MAP_ATTENUATION_MAX prop:max type:float default:100.0f min:0.0f max:16000.0f,
 ring type:RingGizmo
 enum:START_ANGLE prop:startAngle type:float default:0.0f min:RingGizmoPropertyGroup::MIN_ANGLE max:RingGizmoPropertyGroup::MAX_ANGLE,
 enum:END_ANGLE prop:endAngle type:float default:360.0f min:RingGizmoPropertyGroup::MIN_ANGLE max:RingGizmoPropertyGroup::MAX_ANGLE,
