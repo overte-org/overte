@@ -8,10 +8,9 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-import QtQuick 2.5
-import QtQuick.Controls 2.3
+import QtQuick
+import QtQuick.Controls
 //import QtQuick.Controls.Styles
-import QtQuick.Controls 2.3 as QQC2
 
 import "../stylesUit"
 
@@ -30,12 +29,14 @@ TableView {
     model: ListModel { }
 
     Component.onCompleted: {
-        if (flickableItem !== null && flickableItem !== undefined) {
+        // QT6TODO: ReferenceError: flickableItem is not defined
+        /*if (flickableItem !== null && flickableItem !== undefined) {
             tableView.flickableItem.QQC2.ScrollBar.vertical = scrollbar
-        }
+        }*/
     }
 
-    QQC2.ScrollBar {
+    // QT6TODO: this errors out with: QML ScrollBar: Cannot anchor to an item that isn't a parent or sibling.
+    ScrollBar {
         id: scrollbar
         parent: tableView.flickableItem
         policy: QQC2.ScrollBar.AsNeeded
@@ -68,8 +69,10 @@ TableView {
         }
     }
 
-    headerVisible: false
-    headerDelegate: Rectangle {
+    // QT6TODO: not available on Qt6
+    //headerVisible: false
+    // QT6TODO: I don't know how to port this
+    /*headerDelegate: Rectangle {
         height: hifi.dimensions.tableHeaderHeight
         color: isLightColorScheme ? hifi.colors.tableBackgroundLight : hifi.colors.tableBackgroundDark
 
@@ -130,10 +133,11 @@ TableView {
             }
             color: isLightColorScheme ? hifi.colors.lightGrayText : hifi.colors.baseGrayHighlight
         }
-    }
+    }*/
 
     // Use rectangle to draw border with rounded corners.
-    frameVisible: false
+    // QT6TODO: does not exist in Qt 6?
+    //frameVisible: false
     Rectangle {
         color: "#00000000"
         anchors { fill: parent; margins: -2 }
@@ -142,19 +146,28 @@ TableView {
     }
     anchors.margins: 2  // Shrink TableView to lie within border.
 
-    backgroundVisible: true
+    // QT6TODO: this doesn't exist in Qt 6?
+    //backgroundVisible: true
 
-    horizontalScrollBarPolicy: Qt.ScrollBarAlwaysOff
-    verticalScrollBarPolicy: Qt.ScrollBarAlwaysOff
+    // QT6TODO: these don't exist in Qt 6?
+    //horizontalScrollBarPolicy: Qt.ScrollBarAlwaysOff
+    //verticalScrollBarPolicy: Qt.ScrollBarAlwaysOff
 
-    style: TableViewStyle {
+    // QT6TODO: how to port this
+    /*style: TableViewStyle {
         // Needed in order for rows to keep displaying rows after end of table entries.
         backgroundColor: tableView.isLightColorScheme ? hifi.colors.tableBackgroundLight : hifi.colors.tableBackgroundDark
         alternateBackgroundColor: tableView.isLightColorScheme ? hifi.colors.tableRowLightOdd : hifi.colors.tableRowDarkOdd
         padding.top: headerVisible ? hifi.dimensions.tableHeaderHeight: 0
-    }
+    }*/
 
-    rowDelegate: Rectangle {
+    // QT6TODO: I'm not sure if this is correct
+    // was originally rowDelegate
+    delegate: Rectangle {
+        // QT6TODO: I added these, but I'm not sure if these are needed
+        required property bool current
+        required property bool selected
+
         height: (styleData.selected && expandSelectedRow ? 1.8 : 1) * hifi.dimensions.tableRowHeight
         color: styleData.selected
                ? hifi.colors.primaryHighlight
