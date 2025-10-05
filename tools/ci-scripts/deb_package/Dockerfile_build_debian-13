@@ -103,7 +103,5 @@ EOF
 #
 # Platform specific build variables
 #
-ENV XZ_OPT="-T0"
-
 ENV DEBEMAIL=julian.gro@overte.org
 ENV DEBFULLNAME="GitHub Actions CI"

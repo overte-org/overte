@@ -76,7 +76,5 @@ EOF
 #
 # Platform specific build variables
 #
-ENV XZ_OPT="-T0"
-
 # Part of .rpm installer filename
 ENV RPM_SHORTHAND=fc42

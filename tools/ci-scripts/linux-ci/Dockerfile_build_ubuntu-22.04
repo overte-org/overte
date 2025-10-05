@@ -125,7 +125,6 @@ EOF
 # Work around AppImages not executing in Docker. https://github.com/AppImage/AppImageKit/issues/912#issuecomment-528669441
 ENV APPIMAGE_EXTRACT_AND_RUN=1
 ENV CONAN_PROFILE=default
-ENV XZ_OPT="-T0"
 
 # On macOS the interface target is called "Overte" instead.
 ENV APP_TARGET_NAME=interface
