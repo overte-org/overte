@@ -534,10 +534,12 @@ Item {
         anchors.left: nameCardVUMeter.left;
         // Properties
         visible: (!isMyCard && (selected && pal.activeTab == "nearbyTab")) && isPresent;
-        minimumValue: -60.0
-        maximumValue: 20.0
+        // QT6TODO
+        //minimumValue: -60.0
+        //maximumValue: 20.0
         stepSize: 5
-        updateValueWhileDragging: true
+        // QT6TODO
+        //updateValueWhileDragging: true
         value: Users.getAvatarGain(uuid)
         onValueChanged: {
             updateGainFromQML(uuid, value, false);
@@ -565,7 +567,8 @@ Item {
                 mouse.accepted = false
             }
         }
-        style: SliderStyle {
+        // QT6TODO
+        /*style: SliderStyle {
             groove: Rectangle {
                 color: "#c5c5c5"
                 implicitWidth: gainSlider.width
@@ -579,7 +582,7 @@ Item {
                 implicitWidth: 10
                 implicitHeight: 16
             }
-        }
+        }*/
     }
 
     function updateGainFromQML(avatarUuid, sliderValue, isReleased) {
