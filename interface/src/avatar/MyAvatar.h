@@ -214,7 +214,6 @@ class MyAvatar : public Avatar {
      * @property {Pose} rightHandTipPose - The right hand's pose as determined by the hand controllers, relative to the avatar,
      *     with the position adjusted by 0.3m along the direction of the palm. <em>Read-only.</em>
      *
-     * @property {number} energy - <span class="important">Deprecated: This property will be removed.</span>
      * @property {boolean} isAway - <code>true</code> if your avatar is away (i.e., inactive), <code>false</code> if it is
      *     active.
      *
@@ -355,7 +354,6 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(controller::Pose leftHandTipPose READ getLeftHandTipPose)
     Q_PROPERTY(controller::Pose rightHandTipPose READ getRightHandTipPose)
 
-    Q_PROPERTY(float energy READ getEnergy WRITE setEnergy)
     Q_PROPERTY(bool isAway READ getIsAway WRITE setAway)
 
     Q_PROPERTY(bool centerOfGravityModelEnabled READ getCenterOfGravityModelEnabled WRITE setCenterOfGravityModelEnabled)
@@ -2360,14 +2358,6 @@ signals:
     void animGraphUrlChanged(const QUrl& url);
 
     /*@jsdoc
-     * @function MyAvatar.energyChanged
-     * @param {number} energy - Avatar energy.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-    void energyChanged(float newEnergy);
-
-    /*@jsdoc
      * Triggered when the avatar has been moved to a new position by one of the MyAvatar "goTo" functions.
      * @function MyAvatar.positionGoneTo
      * @returns {Signal}
@@ -2787,17 +2777,9 @@ private:
     std::mutex _holdActionsMutex;
     std::vector<AvatarActionHold*> _holdActions;
 
-    float AVATAR_MOVEMENT_ENERGY_CONSTANT { 0.001f };
-    float AUDIO_ENERGY_CONSTANT { 0.000001f };
     float MAX_AVATAR_MOVEMENT_PER_FRAME { 30.0f };
-    float currentEnergy { 0.0f };
-    float energyChargeRate { 0.003f };
     glm::vec3 priorVelocity;
     glm::vec3 lastPosition;
-    float getAudioEnergy();
-    float getAccelerationEnergy();
-    float getEnergy();
-    void setEnergy(float value);
     bool didTeleport();
     bool getIsAway() const { return _isAway; }
     void setAway(bool value);

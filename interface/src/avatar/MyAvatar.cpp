@@ -808,16 +808,6 @@ void MyAvatar::update(float deltaTime) {
 
     simulate(deltaTime, true);
 
-    currentEnergy += energyChargeRate;
-    currentEnergy -= getAccelerationEnergy();
-    currentEnergy -= getAudioEnergy();
-
-    if(didTeleport()) {
-        currentEnergy = 0.0f;
-    }
-    currentEnergy = max(0.0f, min(currentEnergy,1.0f));
-    emit energyChanged(currentEnergy);
-
     updateEyeContactTarget(deltaTime);
 }
 
@@ -5555,27 +5545,6 @@ bool MyAvatar::FollowHelper::getForceActivateHorizontal() const {
 
 void MyAvatar::FollowHelper::setForceActivateHorizontal(bool val) {
     _forceActivateHorizontal = val;
-}
-
-float MyAvatar::getAccelerationEnergy() {
-    glm::vec3 velocity = getWorldVelocity();
-    int changeInVelocity = abs(velocity.length() - priorVelocity.length());
-    float changeInEnergy = priorVelocity.length() * changeInVelocity * AVATAR_MOVEMENT_ENERGY_CONSTANT;
-    priorVelocity = velocity;
-
-    return changeInEnergy;
-}
-
-float MyAvatar::getEnergy() {
-    return currentEnergy;
-}
-
-void MyAvatar::setEnergy(float value) {
-    currentEnergy = value;
-}
-
-float MyAvatar::getAudioEnergy() {
-    return getAudioLoudness() * AUDIO_ENERGY_CONSTANT;
 }
 
 bool MyAvatar::didTeleport() {
