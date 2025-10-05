@@ -511,7 +511,7 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
     // - this was a release event and we aren't still hovering
     auto touchPoint = _activeTouchPoints.find(event.getID());
     bool removeTouchPoint =
-        release || (touchPoint != _activeTouchPoints.end() && !touchPoint->second.hovering && state == Qt::TouchPointReleased);
+        release || (touchPoint != _activeTouchPoints.end() && !touchPoint->second.hovering && state == QEventPoint::State::Released);
     QEvent::Type touchType = QEvent::TouchUpdate;
     if (_activeTouchPoints.empty()) {
         // If the first active touch point is being created, send a begin
@@ -529,9 +529,9 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
         //point.setPos(windowPoint);
         //point.setScreenPos(windowPoint);
         _activeTouchPoints[event.getID()].touchPoint = point;
-        if (state == Qt::TouchPointPressed) {
+        if (state == QEventPoint::State::Pressed) {
             _activeTouchPoints[event.getID()].pressed = true;
-        } else if (state == Qt::TouchPointReleased) {
+        } else if (state == QEventPoint::State::Released) {
             _activeTouchPoints[event.getID()].pressed = false;
         }
     }
@@ -616,8 +616,10 @@ void OffscreenQmlSurface::focusDestroyed(QObject* obj) {
 void OffscreenQmlSurface::onFocusObjectChanged(QObject* object) {
     clearFocusItem();
 
-    QQuickItem* item = static_cast<QQuickItem*>(object);
+    QQuickItem* item = qobject_cast<QQuickItem*>(object);
     if (!item) {
+        // QT6TODO: investigate when this happens and if it's a problem or not
+        qDebug() << "OffscreenQmlSurface::onFocusObjectChanged object is not QQuickItem";
         setFocusText(false);
         return;
     }
@@ -728,7 +730,7 @@ void OffscreenQmlSurface::setKeyboardRaised(QObject* object, bool raised, bool n
     if (!android || hmd) {
         // if HMD is being worn, allow keyboard to open.  allow it to close, HMD or not.
         if (!raised || hmd) {
-            QQuickItem* item = dynamic_cast<QQuickItem*>(object);
+            QQuickItem* item = qobject_cast<QQuickItem*>(object);
             if (!item) {
                 return;
             }
