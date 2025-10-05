@@ -127,7 +127,7 @@ Fadable {
         propagateComposedEvents: true
         acceptedButtons: Qt.AllButtons
         enabled: window.visible
-        onPressed: {
+        function onPressed(mouse) {
             window.raise();
             mouse.accepted = false;
         }
@@ -142,7 +142,7 @@ Fadable {
         propagateComposedEvents: true
         acceptedButtons: Qt.AllButtons
         enabled: window.visible
-        onPressed: {
+        function onPressed(mouse) {
             frame.forceActiveFocus();
             mouse.accepted = false;
         }
