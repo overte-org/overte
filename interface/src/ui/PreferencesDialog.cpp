@@ -468,23 +468,13 @@ void setupPreferences() {
         preferences->addPreference(preference);
     }
     {
-        auto getter = [myAvatar]()->int { return myAvatar->getControlScheme(); };
-        auto setter = [myAvatar](int index) { myAvatar->setControlScheme(index); };
-        auto preference = new RadioButtonsPreference(VR_MOVEMENT, "Control Scheme", getter, setter);
-        QStringList items;
-        items << "Default" << "Analog" << "Analog++";
-        preference->setHeading("Control Scheme Selection");
-        preference->setItems(items);
-        preferences->addPreference(preference);
-    }
-    {
-        auto getter = [myAvatar]()->float { return myAvatar->getAnalogPlusWalkSpeed(); };
-        auto setter = [myAvatar](float value) { myAvatar->setAnalogPlusWalkSpeed(value); };
-        auto preference = new SpinnerSliderPreference(VR_MOVEMENT, "Analog++ Walk Speed", getter, setter);
-        preference->setMin(6.0f);
-        preference->setMax(30.0f);
-        preference->setStep(1);
-        preference->setDecimals(0);
+        auto getter = [myAvatar]()->float { return myAvatar->getVrWalkSpeed(); };
+        auto setter = [myAvatar](float value) { myAvatar->setVrWalkSpeed(value); };
+        auto preference = new SpinnerSliderPreference(VR_MOVEMENT, "VR Walk Speed", getter, setter);
+        preference->setMin(1.5f);
+        preference->setMax(9.0f);
+        preference->setStep(0.1f);
+        preference->setDecimals(1);
         preferences->addPreference(preference);
     }
     {
