@@ -693,8 +693,8 @@ Rectangle {
                             padding.right: readOnly ? 0 : hifi.dimensions.textPadding
                         }*/
 
-                        validator: RegExpValidator {
-                            regExp: /[^/]+/
+                        validator: RegularExpressionValidator {
+                            regularExpression: /[^/]+/
                         }
 
                         Keys.onPressed: {
