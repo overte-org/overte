@@ -466,15 +466,17 @@ Rectangle {
                 bottom: currentSelection.top
                 bottomMargin: hifi.dimensions.contentSpacing.y + currentSelection.controlHeight - currentSelection.height
             }
-            headerVisible: !selectDirectory
-            onDoubleClicked: navigateToRow(row);
+            // QT6TODO: doesn't exist on Qt 6.
+            //headerVisible: !selectDirectory
+            //onDoubleClicked: navigateToRow(row);
             focus: true
             Keys.onReturnPressed: navigateToCurrentRow();
             Keys.onEnterPressed: navigateToCurrentRow();
 
-            sortIndicatorColumn: 0
-            sortIndicatorOrder: Qt.AscendingOrder
-            sortIndicatorVisible: true
+            // QT6TODO: doesn't exist on Qt 6.
+            //sortIndicatorColumn: 0
+            //sortIndicatorOrder: Qt.AscendingOrder
+            //sortIndicatorVisible: true
 
             model: filesModel
 
@@ -484,11 +486,14 @@ Rectangle {
                 fileTableModel.update();
             }
 
-            onSortIndicatorColumnChanged: { updateSort(); }
+            // QT6TODO: doesn't exist on Qt 6.
+            //onSortIndicatorColumnChanged: { updateSort(); }
 
-            onSortIndicatorOrderChanged: { updateSort(); }
+            // QT6TODO: doesn't exist on Qt 6.
+            //onSortIndicatorOrderChanged: { updateSort(); }
 
-            itemDelegate: Item {
+            // QT6TODO: How to port this?
+            /*itemDelegate: Item {
                 clip: true
 
                 FiraSansSemiBold {
@@ -531,9 +536,10 @@ Rectangle {
                         return size + " " + suffixes[suffixIndex];
                     }
                 }
-            }
+            }*/
 
-            QQC1.TableViewColumn {
+            // QT6TODO: I have no idea how to port this
+            /*QQC1.TableViewColumn {
                 id: fileNameColumn
                 role: "fileName"
                 title: "Name"
@@ -557,7 +563,7 @@ Rectangle {
                 movable: false
                 resizable: true
                 visible: !selectDirectory
-            }
+            }*/
 
             function navigateToRow(row) {
                 currentRow = row;
