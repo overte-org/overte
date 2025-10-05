@@ -43,7 +43,7 @@ Row {
         // then substitue the second into the \d+ of the first, yeilding this monstrocity.
         //    ^\[\s*(\d+\.?\d*)(\s*,\s*(\d+\.?\d*))*\]$|\[\s*\]
 
-        //validator: RegExpValidator { regExp: /^\[\s*(\d+\.?\d*)(\s*,\s*(\d+\.?\d*))*\]$|\[\s*\]/ }
+        //validator: RegularExpressionValidator { regularExpression: /^\[\s*(\d+\.?\d*)(\s*,\s*(\d+\.?\d*))*\]$|\[\s*\]/ }
 
         text: JSON.stringify(value)
         onEditingFinished: {
