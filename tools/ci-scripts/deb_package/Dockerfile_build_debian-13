@@ -42,18 +42,7 @@ else
 fi
 apt-get -y install ./conan.deb
 rm conan.deb
-
-# Install locales package
-apt-get -y install locales
-# Uncomment en_US.UTF-8 for inclusion in generation
-sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen
-# Generate locale
-locale-gen
 EOF
-
-ENV LC_ALL=en_US.UTF-8
-ENV LANG=en_US.UTF-8
-ENV LANGUAGE=en_US.UTF-8
 
 
 #
