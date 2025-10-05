@@ -35,6 +35,7 @@ jobs:
               runner: depot-windows-2022-16
               arch: x86_64
               build_type: full
+              qt_source: system
             #- os: macOS-10.15
             #  build_type: full
             #  qt_source: aqt
@@ -43,6 +44,7 @@ jobs:
               runner: ubuntu-latest
               arch: amd64
               build_type: full
+              qt_source: system
             # Android builds are currently failing
             #- os: ubuntu-18.04
             #  build_type: android
@@ -53,6 +55,7 @@ jobs:
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
+              qt_source: system
         fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
@@ -72,7 +75,6 @@ jobs:
       shell: bash
       run: |
         echo "CONAN_HOME=$CONAN_HOME" >> $GITHUB_ENV
-        echo "OVERTE_QT_SOURCE=$OVERTE_QT_SOURCE" >> $GITHUB_ENV
         echo "CONAN_PROFILE=$CONAN_PROFILE" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_TARGET_NAME" >> $GITHUB_ENV
 
@@ -157,7 +159,7 @@ jobs:
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install
       with:
-        qt_source: ${{env.OVERTE_QT_SOURCE}}
+        qt_source: ${{matrix.qt_source}}
         build_type: ${{env.BUILD_TYPE}}
         cppstd: ${{env.CONAN_CPPSTD}}
         conan_profile: ${{env.CONAN_PROFILE}}

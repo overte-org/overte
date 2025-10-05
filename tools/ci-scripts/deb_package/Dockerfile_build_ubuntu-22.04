@@ -113,6 +113,5 @@ EOF
 #
 ENV XZ_OPT="-T0"
 
-ENV OVERTE_QT_SOURCE=system
 ENV DEBEMAIL=julian.gro@overte.org
 ENV DEBFULLNAME="GitHub Actions CI"

@@ -35,11 +35,13 @@ jobs:
           - os: debian-12
             image: docker.io/overte/overte-server-build:2025-09-15-debian-12-amd64
             arch: amd64
+            qt_source: system
             runner: ubuntu-latest
 
           - os: debian-12
             image: docker.io/overte/overte-server-build:2025-09-15-debian-12-aarch64
             arch: aarch64
+            qt_source: system
             runner: ubuntu-24.04-arm
 
           - os: debian-13
@@ -118,7 +120,6 @@ jobs:
       if: ${{matrix.image}} != ""
       shell: bash
       run: |
-        echo "OVERTE_QT_SOURCE=$OVERTE_QT_SOURCE" >> $GITHUB_ENV
         echo "RPM_SHORTHAND=$RPM_SHORTHAND" >> $GITHUB_ENV
 
     - name: Configure Build Environment 1
@@ -205,7 +206,7 @@ jobs:
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install
       with:
-        qt_source: ${{env.OVERTE_QT_SOURCE}}
+        qt_source: ${{matrix.qt_source}}
         build_type: ${{env.BUILD_TYPE}}
         cppstd: ${{env.CONAN_CPPSTD}}
 

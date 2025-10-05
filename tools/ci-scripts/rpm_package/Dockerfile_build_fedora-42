@@ -78,6 +78,5 @@ EOF
 #
 ENV XZ_OPT="-T0"
 
-ENV OVERTE_QT_SOURCE=system
 # Part of .rpm installer filename
 ENV RPM_SHORTHAND=fc42

@@ -127,6 +127,5 @@ ENV APPIMAGE_EXTRACT_AND_RUN=1
 ENV CONAN_PROFILE=default
 ENV XZ_OPT="-T0"
 
-ENV OVERTE_QT_SOURCE=system
 # On macOS the interface target is called "Overte" instead.
 ENV APP_TARGET_NAME=interface

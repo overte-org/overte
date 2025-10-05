@@ -32,6 +32,7 @@ jobs:
             runner: depot-windows-2022-16
             arch: x86_64
             build_type: full
+            qt_source: source
       fail-fast: false
     runs-on: ${{matrix.runner}}
     steps:
@@ -90,7 +91,7 @@ jobs:
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install
       with:
-        qt_source: ${{env.OVERTE_QT_SOURCE}}
+        qt_source: ${{matrix.qt_source}}
         build_type: ${{env.BUILD_TYPE}}
         cppstd: ${{env.CONAN_CPPSTD}}
         conan_profile: ${{env.CONAN_PROFILE}}
