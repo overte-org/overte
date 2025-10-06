@@ -256,7 +256,7 @@ void FadeConfig::setEdgeOuterIntensity(float value) {
 }
 
 void FadeConfig::setTiming(int value) {
-    assert(value < TIMING_COUNT);
+    assert(value < static_cast<int>(FadeTiming::TIMING_COUNT));
     props.timing = (FadeTiming)value;
     emit dirty();
 }
@@ -332,7 +332,7 @@ bool FadeJob::update(RenderArgs* args,
     }
     auto& dimensions = aabb.getDimensions();
 
-    assert(timing < FadeConfig::TIMING_COUNT);
+    assert(timing < FadeTiming::TIMING_COUNT);
 
     transition.noiseOffset = aabb.calcCenter();
     transition.baseInvSize = fadeProperties.baseSizeInv;
