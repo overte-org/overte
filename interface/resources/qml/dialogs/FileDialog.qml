@@ -8,11 +8,12 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-import QtQuick 2.7
-import Qt.labs.folderlistmodel 2.2
-import Qt.labs.settings 1.0
+import QtQuick
+import Qt.labs.folderlistmodel
+import Qt.labs.settings
+import Qt.labs.qmlmodels
 import QtQuick.Dialogs as OriginalDialogs
-import QtQuick.Controls 2.3
+import QtQuick.Controls
 
 import ".."
 import controlsUit 1.0
@@ -497,7 +498,8 @@ ModalWindow {
 
         TableView {
             id: fileTableView
-            colorScheme: hifi.colorSchemes.light
+            // QT6TODO:
+            //colorScheme: hifi.colorSchemes.light
             anchors {
                 top: navControls.bottom
                 topMargin: hifi.dimensions.contentSpacing.y
@@ -506,7 +508,8 @@ ModalWindow {
                 bottom: currentSelection.top
                 bottomMargin: hifi.dimensions.contentSpacing.y + currentSelection.controlHeight - currentSelection.height
             }
-            headerVisible: !selectDirectory
+            // QT6TODO:
+            //headerVisible: !selectDirectory
             //onDoubleClicked: navigateToRow(row);
             Keys.onReturnPressed: navigateToCurrentRow();
             Keys.onEnterPressed: navigateToCurrentRow();

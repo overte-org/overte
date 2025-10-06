@@ -548,7 +548,7 @@ FocusScope {
         return customInputDialogBuilder.createObject(desktop, properties);
     }
 
-    Component { id: fileDialogBuilder; Item {}}//FileDialog { } }
+    Component { id: fileDialogBuilder; FileDialog { } }
     function fileDialog(properties) {
         return fileDialogBuilder.createObject(desktop, properties);
     } 
