@@ -1,0 +1,31 @@
+//
+//  Created by Ada <ada@thingvellir.net> on 2025-07-24
+//  Copyright Overte e.V. 2025
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#ifndef hifi_EmptyEntityItem_h
+#define hifi_EmptyEntityItem_h
+
+#include "EntityItem.h"
+
+class EmptyEntityItem : public EntityItem {
+    using Pointer = std::shared_ptr<EmptyEntityItem>;
+public:
+    static EntityItemPointer factory(const EntityItemID& entityID, const EntityItemProperties& properties);
+
+    EmptyEntityItem(const EntityItemID& entityItemID);
+
+    ALLOW_INSTANTIATION
+    ENTITY_PROPERTY_SUBCLASS_METHODS
+
+protected:
+
+@Empty_ENTITY_PROPS@
+
+};
+
+#endif // hifi_EmptyEntityItem_h

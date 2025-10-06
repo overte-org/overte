@@ -25,6 +25,7 @@
 #include "ZoneAudioPropertyGroup.h"
 #include "TonemappingPropertyGroup.h"
 #include "AmbientOcclusionPropertyGroup.h"
+#include "NormalMapAttenuationPropertyGroup.h"
 #include "AvatarFadeInPropertyGroup.h"
 #include "AvatarFadeOutPropertyGroup.h"
 
@@ -58,6 +59,7 @@ public:
     const ZoneAudioPropertyGroup& getAudioProperties() const { return _audioProperties; }
     const TonemappingPropertyGroup& getTonemappingProperties() const { return _tonemappingProperties; }
     const AmbientOcclusionPropertyGroup& getAmbientOcclusionProperties() const { return _ambientOcclusionProperties; }
+    const NormalMapAttenuationPropertyGroup& getNormalMapAttenuationProperties() const { return _normalMapAttenuationProperties; }  
     const AvatarFadeInPropertyGroup& getAvatarFadeInProperties() const { return _avatarFadeInProperties; }
     const AvatarFadeOutPropertyGroup& getAvatarFadeOutProperties() const { return _avatarFadeOutProperties; }
 
@@ -70,6 +72,7 @@ public:
     bool bloomPropertiesChanged() const { return _bloomPropertiesChanged; }
     bool tonemappingPropertiesChanged() const { return _tonemappingPropertiesChanged; }
     bool ambientOcclusionPropertiesChanged() const { return _ambientOcclusionPropertiesChanged; }
+    bool normalMapAttenuationPropertiesChanged() const { return _normalMapAttenuationPropertiesChanged; }
 
     void resetRenderingPropertiesChanged();
 
@@ -103,6 +106,7 @@ protected:
     bool _bloomPropertiesChanged { false };
     bool _tonemappingPropertiesChanged { false };
     bool _ambientOcclusionPropertiesChanged { false };
+    bool _normalMapAttenuationPropertiesChanged { false };
 
     static bool _drawZoneBoundaries;
     static bool _zonesArePickable;

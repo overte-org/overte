@@ -837,6 +837,38 @@ const GROUPS = [
         ]
     },
     {
+        id: "zone_normal_map_attenuation",
+        label: "NORMAL MAP ATTENUATION",
+        properties: [
+            {
+                label: "Attenuation",
+                type: "dropdown",
+                options: { inherit: "Inherit", disabled: "Off", enabled: "On" },
+                propertyID: "normalMapAttenuationMode",
+            },
+            {
+                label: "Fade Min Distance",
+                type: "number-draggable",
+                min: 0,
+                max: 16000,
+                step: 1,
+                decimals: 2,
+                propertyID: "normalMapAttenuation.min",
+                showPropertyRule: { "normalMapAttenuationMode": "enabled" },
+            },
+            {
+                label: "Fade Max Distance",
+                type: "number-draggable",
+                min: 0,
+                max: 16000,
+                step: 1,
+                decimals: 2,
+                propertyID: "normalMapAttenuation.max",
+                showPropertyRule: { "normalMapAttenuationMode": "enabled" },
+            }
+        ]
+    },
+    {
         id: "model",
         label: "MODEL",
         properties: [
@@ -1728,6 +1760,11 @@ const GROUPS = [
                 propertyID: "localOnly",
             }
         ]
+    },
+    {
+        id: "empty",
+        label: "EMPTY",
+        properties: []
     },
     {
         id: "spatial",
@@ -2978,7 +3015,8 @@ const GROUPS_PER_TYPE = {
   Text: [ 'base', 'text', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
   Zone: [ 'base', 'zone', 'zone_key_light', 'zone_skybox', 'zone_ambient_light', 'zone_haze',
             'zone_bloom', 'zone_tonemapping', 'zone_ambient_occlusion', 'zone_avatar_priority',
-            'zone_audio', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'zone_fading', 'children' ],
+            'zone_audio', 'zone_normal_map_attenuation', 'spatial', 'behavior', 'grabAndEquip',
+            'scripts', 'physics', 'zone_fading', 'children' ],
   Model: [ 'base', 'model', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
   Image: [ 'base', 'image', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
   Web: [ 'base', 'web', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
@@ -2991,6 +3029,7 @@ const GROUPS_PER_TYPE = {
   PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  Empty: [ 'base', 'spatial', 'scripts', 'children' ],
   Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
 };
 
@@ -6069,6 +6108,7 @@ function generateCreateChildEntityAssistant(entityHostType) {
         {"type": "Material", "name": "Material"},
         {"type": "Sound", "name": "Sound"},
         {"type": "PolyVox", "name": "Voxel"},
+        {"type": "Empty", "name": "Empty"},
     ];
     const TILES_PER_ROW = 4;
     let renderer = "<div id='typeSelectorCreateChildEntityAssistant' style = 'display: block;'>";
@@ -6197,6 +6237,12 @@ function createChildEntity(type, entityHostType) {
             };
             break;
         case "PolyVox":
+            properties = {
+                "type": type,
+                "parentID": parentID
+            };
+            break;
+        case "Empty":
             properties = {
                 "type": type,
                 "parentID": parentID

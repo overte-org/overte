@@ -270,6 +270,7 @@ QString EntityItemProperties::getHazeModeAsString() const { return getComponentM
 QString EntityItemProperties::getBloomModeAsString() const { return getComponentModeAsString(_bloomMode); }
 QString EntityItemProperties::getTonemappingModeAsString() const { return getComponentModeAsString(_tonemappingMode); }
 QString EntityItemProperties::getAmbientOcclusionModeAsString() const { return getComponentModeAsString(_ambientOcclusionMode); }
+QString EntityItemProperties::getNormalMapAttenuationModeAsString() const { return getComponentModeAsString(_normalMapAttenuationMode); }
 void EntityItemProperties::setFadeInModeFromString(const QString& mode) {
     auto modeItr = stringToComponentMode.find(mode.toLower());
     if (modeItr != stringToComponentMode.end()) {
@@ -345,6 +346,13 @@ void EntityItemProperties::setAmbientOcclusionModeFromString(const QString& mode
     if (modeItr != stringToComponentMode.end()) {
         _ambientOcclusionMode = modeItr.value();
         _ambientOcclusionModeChanged = true;
+    }
+}
+void EntityItemProperties::setNormalMapAttenuationModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _normalMapAttenuationMode = modeItr.value();
+        _normalMapAttenuationModeChanged = true;
     }
 }
 

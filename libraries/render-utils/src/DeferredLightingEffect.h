@@ -33,6 +33,7 @@
 #include "BackgroundStage.h"
 #include "HazeStage.h"
 #include "TonemappingStage.h"
+#include "NormalMapAttenuationStage.h"
 
 #include "SurfaceGeometryPass.h"
 #include "SubsurfaceScattering.h"
@@ -170,6 +171,8 @@ protected:
     HazeStage::Index _defaultHazeID { HazeStage::INVALID_INDEX };
     graphics::TonemappingPointer _defaultTonemapping { nullptr };
     TonemappingStage::Index _defaultTonemappingID { TonemappingStage::INVALID_INDEX };
+    graphics::NormalMapAttenuationPointer _defaultNormalMapAttenuation { nullptr };
+    NormalMapAttenuationStage::Index _defaultNormalMapAttenuationID { NormalMapAttenuationStage::INVALID_INDEX };
     graphics::SkyboxPointer _defaultSkybox { new ProceduralSkybox() };
     NetworkTexturePointer _defaultSkyboxNetworkTexture;
     NetworkTexturePointer _defaultAmbientNetworkTexture;
