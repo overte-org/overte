@@ -1077,7 +1077,8 @@ const GROUPS = [
             {
                 label: "Script URL",
                 type: "string",
-                propertyID: "scriptURL",
+                propertyID: "webScriptURL",
+                propertyName: "scriptURL", // actual entity property name
                 placeholder: "URL",
             },
             {
@@ -1765,6 +1766,23 @@ const GROUPS = [
         id: "empty",
         label: "EMPTY",
         properties: []
+    },
+    {
+        id: "script",
+        label: "SCRIPT",
+        properties: [
+            {
+                label: "Script",
+                type: "string",
+                propertyID: "scriptURL",
+                placeholder: "URL",
+            },
+            {
+                label: "Enabled",
+                type: "bool",
+                propertyID: "enabled",
+            },
+        ]
     },
     {
         id: "spatial",
@@ -3030,6 +3048,8 @@ const GROUPS_PER_TYPE = {
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Empty: [ 'base', 'spatial', 'scripts', 'children' ],
+  Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
+  Script: [ 'base', 'script', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
 };
 
@@ -6107,6 +6127,7 @@ function generateCreateChildEntityAssistant(entityHostType) {
         {"type": "Zone", "name": "Zone"},
         {"type": "Material", "name": "Material"},
         {"type": "Sound", "name": "Sound"},
+        {"type": "Script", "name": "Script"},
         {"type": "PolyVox", "name": "Voxel"},
         {"type": "Empty", "name": "Empty"},
     ];
@@ -6233,6 +6254,12 @@ function createChildEntity(type, entityHostType) {
             properties = {
                 "type": type,
                 "soundURL": url,
+                "parentID": parentID
+            };
+            break;
+        case "Script":
+            properties = {
+                "type": type,
                 "parentID": parentID
             };
             break;

@@ -149,6 +149,14 @@ public:
 
     bool layeredZonesHaveFade(const TransitionType type) const { return _layeredZones.hasFade(type); }
 
+    bool checkAndCallPreload(const EntityItemID& entityID,
+                             bool reload = false,
+                             bool unloadFirst = false,
+                             const QString& oldOverrideURL = "",
+                             const QString& newOverrideURL = "");
+    void unloadEntityScript(const EntityItemID& entityID, const QString& scriptURL);
+    void updateScriptUserData(const EntityItemID& entityID, const QString& scriptURL, const QString& userData);
+
 signals:
     void enterEntity(const EntityItemID& entityItemID);
     void leaveEntity(const EntityItemID& entityItemID);
@@ -191,8 +199,6 @@ private:
 
     bool applyLayeredZones();
     void stopDomainAndNonOwnedEntities();
-
-    void checkAndCallPreload(const EntityItemID& entityID, bool reload = false, bool unloadFirst = false);
 
     EntityItemID _currentHoverOverEntityID;
     EntityItemID _currentClickingOnEntityID;

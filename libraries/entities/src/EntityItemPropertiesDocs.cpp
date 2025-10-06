@@ -208,6 +208,7 @@
  * @see {@link Entities.EntityProperties-PolyLine|EntityProperties-PolyLine}
  * @see {@link Entities.EntityProperties-PolyVox|EntityProperties-PolyVox}
  * @see {@link Entities.EntityProperties-ProceduralParticleEffect|EntityProperties-ProceduralParticleEffect}
+ * @see {@link Entities.EntityProperties-Script|EntityProperties-Script}
  * @see {@link Entities.EntityProperties-Shape|EntityProperties-Shape}
  * @see {@link Entities.EntityProperties-Sound|EntityProperties-Sound}
  * @see {@link Entities.EntityProperties-Sphere|EntityProperties-Sphere}
@@ -695,6 +696,23 @@
  *             radius: 0.03
  *         }
  *     }),
+ *     lifetime: 300  // Delete after 5 minutes.
+ * });
+ */
+
+/*@jsdoc
+ * The <code>"Script"</code> {@link Entities.EntityType|EntityType} runs an entity script from a URL on its parent. It has properties
+ * in addition to the common {@link Entities.EntityProperties|EntityProperties}.
+ *
+ * @typedef {object} Entities.EntityProperties-Script
+ * @property {string} scriptURL="" - The URL of the entity script to run, as a js file.
+ * @property {boolean} enabled=true - Whether or not the script should run.
+ * @example <caption>Create a Script entity.</caption>
+ * var entity = Entities.addEntity({
+ *     type: "Script",
+ *     script: TODO,
+ *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.75, z: -4 })),
+ *     rotation: MyAvatar.orientation,
  *     lifetime: 300  // Delete after 5 minutes.
  * });
  */

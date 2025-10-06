@@ -367,6 +367,7 @@ enum class EntityVersion : PacketVersion {
     TorusInnerRadius,
     NormalMapAttenuation,
     EmptyEntity,
+    ScriptEntities,
     Fading,
 
     // Add new versions above here

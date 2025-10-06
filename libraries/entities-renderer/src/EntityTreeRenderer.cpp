@@ -300,7 +300,7 @@ void EntityTreeRenderer::stopDomainAndNonOwnedEntities() {
                 if (!(entityItem->isLocalEntity() || entityItem->isMyAvatarEntity())) {
                     auto scriptEnginePtr = _nonPersistentEntitiesScriptManager;
                     QMetaObject::invokeMethod(scriptEnginePtr.get(), [scriptEnginePtr, entityID]{
-                        scriptEnginePtr->unloadEntityScript(entityID, true);
+                        scriptEnginePtr->unloadAllEntityScriptsForEntity(entityID, true);
                     });
                 }
             }
@@ -1124,7 +1124,7 @@ void EntityTreeRenderer::deletingEntity(const EntityItemID& entityID) {
             scriptEngine->callEntityScriptMethod(entityID, "leaveEntity");
         }
         QMetaObject::invokeMethod(scriptEngine.get(), [scriptEngine, entityID]{
-            scriptEngine->unloadEntityScript(entityID, true);
+            scriptEngine->unloadAllEntityScriptsForEntity(entityID, true);
         });
     }
 
@@ -1164,31 +1164,77 @@ void EntityTreeRenderer::entityScriptChanging(const EntityItemID& entityID, bool
     forceRecheckEntities();
 }
 
-void EntityTreeRenderer::checkAndCallPreload(const EntityItemID& entityID, bool reload, bool unloadFirst) {
+bool EntityTreeRenderer::checkAndCallPreload(const EntityItemID& entityID, bool reload, bool unloadFirst,
+                                             const QString& oldOverrideURL, const QString& newOverrideURL) {
+    if (_tree && !_shuttingDown) {
+        EntityItemPointer entity = getTree()->findEntityByEntityItemID(entityID);
+        if (!entity) {
+            return false;
+        }
+        auto& scriptEngine = (entity->isLocalEntity() || entity->isMyAvatarEntity()) ? _persistentEntitiesScriptManager : _nonPersistentEntitiesScriptManager;
+        if (!scriptEngine) {
+            return false;
+        }
+
+        bool shouldLoad = !newOverrideURL.isEmpty() ? (newOverrideURL != oldOverrideURL) : entity->shouldPreloadScript();
+        QString scriptUrl = !oldOverrideURL.isEmpty() ? oldOverrideURL : entity->getScript();
+        if ((shouldLoad && unloadFirst) || scriptUrl.isEmpty()) {
+            QString loadedScript = !oldOverrideURL.isEmpty() ? oldOverrideURL : entity->getLoadedScript();
+            if (_currentEntitiesInside.contains(entityID)) {
+                scriptEngine->callEntityScriptMethodForScript(entityID, loadedScript, "leaveEntity");
+            }
+            QMetaObject::invokeMethod(scriptEngine.get(), [scriptEngine, entityID, loadedScript]{
+                scriptEngine->unloadEntityScript(entityID, loadedScript, true);
+            });
+            if (!oldOverrideURL.isEmpty()) {
+                entity->scriptHasUnloaded();
+            }
+        }
+        if (shouldLoad) {
+            if (!newOverrideURL.isEmpty()) {
+                entity->setScriptHasFinishedPreload(false);
+            }
+            scriptEngine->loadEntityScript(entityID, resolveScriptURL(!newOverrideURL.isEmpty() ? newOverrideURL : scriptUrl), reload);
+            if (!newOverrideURL.isEmpty()) {
+                entity->scriptHasPreloaded();
+            }
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+void EntityTreeRenderer::unloadEntityScript(const EntityItemID& entityID, const QString& scriptURL) {
     if (_tree && !_shuttingDown) {
         EntityItemPointer entity = getTree()->findEntityByEntityItemID(entityID);
         if (!entity) {
             return;
         }
         auto& scriptEngine = (entity->isLocalEntity() || entity->isMyAvatarEntity()) ? _persistentEntitiesScriptManager : _nonPersistentEntitiesScriptManager;
-        bool shouldLoad = entity->shouldPreloadScript() && scriptEngine;
-        QString scriptUrl = entity->getScript();
-        if ((shouldLoad && unloadFirst) || scriptUrl.isEmpty()) {
-            if (scriptEngine) {
-                if (_currentEntitiesInside.contains(entityID)) {
-                    scriptEngine->callEntityScriptMethod(entityID, "leaveEntity");
-                }
-                QMetaObject::invokeMethod(scriptEngine.get(), [scriptEngine, entityID]{
-                    scriptEngine->unloadEntityScript(entityID);
-                });
-            }
-            entity->scriptHasUnloaded();
+        if (!scriptEngine) {
+            return;
         }
-        if (shouldLoad) {
-            entity->setScriptHasFinishedPreload(false);
-            scriptEngine->loadEntityScript(entityID, resolveScriptURL(scriptUrl), reload);
-            entity->scriptHasPreloaded();
+
+        QMetaObject::invokeMethod(scriptEngine.get(), [scriptEngine, entityID, scriptURL] {
+            scriptEngine->unloadEntityScript(entityID, scriptURL, true);
+        });
+    }
+}
+
+void EntityTreeRenderer::updateScriptUserData(const EntityItemID& entityID, const QString& scriptURL, const QString& userData) {
+    if (_tree && !_shuttingDown) {
+        EntityItemPointer entity = getTree()->findEntityByEntityItemID(entityID);
+        if (!entity) {
+            return;
         }
+        auto& scriptEngine = (entity->isLocalEntity() || entity->isMyAvatarEntity()) ? _persistentEntitiesScriptManager : _nonPersistentEntitiesScriptManager;
+        if (!scriptEngine) {
+            return;
+        }
+
+        scriptEngine->callEntityScriptMethodForScript(entityID, scriptURL, "updateUserData", userData);
     }
 }
 

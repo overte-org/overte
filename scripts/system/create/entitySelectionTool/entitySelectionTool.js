@@ -2252,7 +2252,8 @@ SelectionDisplay = (function() {
                 SelectionManager.entityType === "ProceduralParticleEffect" ||
                 SelectionManager.entityType === "Light" ||
                 SelectionManager.entityType === "Sound" ||
-                SelectionManager.entityType === "Empty"
+                SelectionManager.entityType === "Empty" ||
+                SelectionManager.entityType === "Script"
             ) {
                 var iconSelectionBoxGeometry = {
                     position: position,

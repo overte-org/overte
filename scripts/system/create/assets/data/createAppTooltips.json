@@ -731,7 +731,7 @@
     "maxFPS": {
         "tooltip": "The FPS at which to render the web entity. Higher values will have a performance impact."
     },
-    "scriptURL": {
+    "webScriptURL": {
         "tooltip": "The URL of a script to inject into the web page."
     },
     "userAgent": {
@@ -845,6 +845,12 @@
     },
     "localOnly": {
         "tooltip": "Whether the sound should play locally for everyone separately, or globally via the audio mixer."
+    },
+    "scriptURL": {
+        "tooltip": "The URL of the script, as a js file."
+    },
+    "enabled": {
+        "tooltip": "Whether or not the script should run."
     },
     "fadeInMode": {
         "tooltip": "Configures the fade in."
