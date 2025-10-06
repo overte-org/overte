@@ -49,7 +49,6 @@ std::function<void(QSharedPointer<OffscreenQmlSurface>&, bool&, std::vector<QMet
 
 static int MAX_WINDOW_SIZE = 4096;
 const float METERS_TO_INCHES = 39.3701f;
-static float OPAQUE_ALPHA_THRESHOLD = 0.99f;
 
 // If a web-view hasn't been rendered for 30 seconds, de-allocate the framebuffer
 static uint64_t MAX_NO_RENDER_INTERVAL = 30 * USECS_PER_SECOND;
@@ -384,8 +383,6 @@ void WebEntityRenderer::doRender(RenderArgs* args) {
     if (color.a == 0.0f) {
         return;
     }
-
-    bool forward = _renderLayer != RenderLayer::WORLD || args->_renderMethod == render::Args::FORWARD;
 
     batch.setResourceTexture(0, _texture);
 
