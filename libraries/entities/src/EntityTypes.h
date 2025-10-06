@@ -94,6 +94,8 @@ public:
      *       <td>{@link Entities.EntityProperties-Sound|EntityProperties-Sound}</td></tr>
      *     <tr><td><code>"Empty"</code></td><td>Invisible, intangible entity that has no special behavior.</td>
      *       <td>{@link Entities.EntityProperties-Empty|EntityProperties-Empty}</td></tr>
+     *     <tr><td><code>"Script"</code></td><td>Starts an entity script on its parent.</td>
+     *       <td>{@link Entities.EntityProperties-Script|EntityProperties-Script}</td></tr>
      *   </tbody>
      * </table>
      * @typedef {string} Entities.EntityType
@@ -119,6 +121,7 @@ public:
         Material,
         Sound,
         Empty,
+        Script,
         NUM_TYPES
     } EntityType;
 

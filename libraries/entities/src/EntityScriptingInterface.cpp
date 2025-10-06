@@ -1578,8 +1578,9 @@ bool EntityPropertyMetadataRequest::script(EntityItemID entityID, const ScriptVa
     });
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
     entityScriptingInterface->withEntitiesScriptEngine([&](std::shared_ptr<EntitiesScriptEngineProvider> entitiesScriptEngine) {
-        if (entitiesScriptEngine) {
-            request->setFuture(entitiesScriptEngine->getLocalEntityScriptDetails(entityID));
+        EntityItemPointer entity = entityScriptingInterface->getEntityTree()->findEntityByEntityItemID(entityID);
+        if (entitiesScriptEngine && entity) {
+            request->setFuture(entitiesScriptEngine->getLocalEntityScriptDetails(entityID, entity->getScript()));
         }
     }, entityID);
     if (!request->isStarted()) {
