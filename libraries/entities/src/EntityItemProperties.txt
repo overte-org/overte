@@ -317,4 +317,4 @@ enum:SOUND_LOCAL_ONLY prop:localOnly type:bool default:false,
 Empty
 Script
 enum:SCRIPT_URL prop:scriptURL type:QString default:"" urlPermission common,
-enum:SOUND_ENABLED prop:enabled type:bool default:true,
+enum:SCRIPT_ENABLED prop:enabled type:bool default:true,
