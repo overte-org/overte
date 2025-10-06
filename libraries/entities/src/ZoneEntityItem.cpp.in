@@ -61,7 +61,7 @@ bool ZoneEntityItem::setSubClassProperties(const EntityItemProperties& propertie
 
     somethingChanged |= _keyLightPropertiesChanged || _ambientLightPropertiesChanged || _skyboxPropertiesChanged ||
                         _hazePropertiesChanged || _bloomPropertiesChanged || _tonemappingPropertiesChanged ||
-                        _ambientOcclusionPropertiesChanged;
+                        _ambientOcclusionPropertiesChanged || _normalMapAttenuationPropertiesChanged;
 
     return somethingChanged;
 }
@@ -236,6 +236,7 @@ void ZoneEntityItem::resetRenderingPropertiesChanged() {
         _bloomPropertiesChanged = false;
         _tonemappingPropertiesChanged = false;
         _ambientOcclusionPropertiesChanged = false;
+        _normalMapAttenuationPropertiesChanged = false;
     });
 }
 
@@ -314,6 +315,17 @@ void ZoneEntityItem::setAmbientOcclusionMode(const uint8_t value) {
 
 uint8_t ZoneEntityItem::getAmbientOcclusionMode() const {
     return _ambientOcclusionMode;
+}
+
+void ZoneEntityItem::setNormalMapAttenuationMode(const uint8_t value) {
+    if (value < COMPONENT_MODE_ITEM_COUNT && value != _normalMapAttenuationMode) {
+        _normalMapAttenuationMode = value;
+        _normalMapAttenuationPropertiesChanged = true;
+    }
+}
+
+uint8_t ZoneEntityItem::getNormalMapAttenuationMode() const {
+    return _normalMapAttenuationMode;
 }
 
 void ZoneEntityItem::setUserData(const QString& value) {

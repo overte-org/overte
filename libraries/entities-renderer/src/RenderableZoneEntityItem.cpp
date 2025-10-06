@@ -83,6 +83,13 @@ void ZoneEntityRenderer::onRemoveFromSceneTyped(const TypedEntityPointer& entity
             _ambientOcclusionIndex = INVALID_INDEX;
         }
     }
+
+    if (_normalMapAttenuationStage) {
+        if (!NormalMapAttenuationStage::isIndexInvalid(_normalMapAttenuationIndex)) {
+            _normalMapAttenuationStage->removeElement(_normalMapAttenuationIndex);
+            _normalMapAttenuationIndex = INVALID_INDEX;
+        }
+    }
 }
 
 void ZoneEntityRenderer::doRender(RenderArgs* args) {
@@ -119,6 +126,11 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
     if (!_ambientOcclusionStage) {
         _ambientOcclusionStage = args->_scene->getStage<AmbientOcclusionStage>();
         assert(_ambientOcclusionStage);
+    }
+
+    if (!_normalMapAttenuationStage) {
+        _normalMapAttenuationStage = args->_scene->getStage<NormalMapAttenuationStage>();
+        assert(_normalMapAttenuationStage);
     }
 
     { // Sun 
@@ -192,6 +204,15 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
         }
     }
 
+    {
+        if (_needNormalMapAttenuationUpdate) {
+            if (NormalMapAttenuationStage::isIndexInvalid(_normalMapAttenuationIndex)) {
+                _normalMapAttenuationIndex = _normalMapAttenuationStage->addElement(_normalMapAttenuation);
+            }
+            _needNormalMapAttenuationUpdate = false;
+        }
+    }
+
     if (_visible) {
         // Finally, push the lights visible in the frame
         //
@@ -239,6 +260,12 @@ void ZoneEntityRenderer::doRender(RenderArgs* args) {
         } else if (_ambientOcclusionMode == COMPONENT_MODE_ENABLED) {
             _ambientOcclusionStage->_currentFrame.pushElement(_ambientOcclusionIndex);
         }
+
+        if (_normalMapAttenuationMode == COMPONENT_MODE_DISABLED) {
+            _normalMapAttenuationStage->_currentFrame.pushElement(INVALID_INDEX);
+        } else if (_normalMapAttenuationMode == COMPONENT_MODE_ENABLED) {
+            _normalMapAttenuationStage->_currentFrame.pushElement(_normalMapAttenuationIndex);
+        }
     }
 
     CullTest::_containingZones.insert(_entityID);
@@ -273,6 +300,7 @@ void ZoneEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointe
     bool bloomChanged = entity->bloomPropertiesChanged();
     bool tonemappingChanged = entity->tonemappingPropertiesChanged();
     bool ambientOcclusionChanged = entity->ambientOcclusionPropertiesChanged();
+    bool normalMapAttenuationChanged = entity->normalMapAttenuationPropertiesChanged();
     entity->resetRenderingPropertiesChanged();
 
     if (transformChanged) {
@@ -322,6 +350,11 @@ void ZoneEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPointe
         updateAmbientOcclusionFromEntity(entity);
     }
 
+    if (normalMapAttenuationChanged) {
+        _normalMapAttenuationProperties = entity->getNormalMapAttenuationProperties();
+        updateNormalMapAttenuationFromEntity(entity);
+    }
+
     bool visuallyReady = true;
     uint32_t skyboxMode = entity->getSkyboxMode();
     if (skyboxMode == COMPONENT_MODE_ENABLED && !_skyboxTextureURL.isEmpty()) {
@@ -344,7 +377,8 @@ bool ZoneEntityRenderer::needsRenderUpdateFromTypedEntity(const TypedEntityPoint
         entity->bloomPropertiesChanged() ||
         entity->skyboxPropertiesChanged() ||
         entity->tonemappingPropertiesChanged() ||
-        entity->ambientOcclusionPropertiesChanged()) {
+        entity->ambientOcclusionPropertiesChanged() ||
+        entity->normalMapAttenuationPropertiesChanged()) {
 
         return true;
     }
@@ -453,6 +487,15 @@ void ZoneEntityRenderer::updateAmbientOcclusionFromEntity(const TypedEntityPoint
     ambientOcclusion->setAOFalloffAngle(_ambientOcclusionProperties.getAoFalloffAngle());
     ambientOcclusion->setAOSamplingAmount(_ambientOcclusionProperties.getAoSamplingAmount());
     ambientOcclusion->setSSAONumSpiralTurns(_ambientOcclusionProperties.getSsaoNumSpiralTurns());
+}
+
+void ZoneEntityRenderer::updateNormalMapAttenuationFromEntity(const TypedEntityPointer& entity) {
+    _normalMapAttenuationMode = (ComponentMode)entity->getNormalMapAttenuationMode();
+
+    const auto& normalMapAttenuation = editNormalMapAttenuation();
+
+    normalMapAttenuation->setMin(_normalMapAttenuationProperties.getMin());
+    normalMapAttenuation->setMax(_normalMapAttenuationProperties.getMax());
 }
 
 void ZoneEntityRenderer::updateKeyBackgroundFromEntity(const TypedEntityPointer& entity) {

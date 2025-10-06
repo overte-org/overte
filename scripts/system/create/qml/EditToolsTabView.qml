@@ -210,6 +210,18 @@ TabBar {
                         }
 
                         NewEntityButton {
+                            icon: "icons/empty.svg"
+                            text: "EMPTY"
+                            onClicked: {
+                                editRoot.sendToScript({
+                                    method: "newEntityButtonClicked",
+                                    params: { buttonName: "newEmptyButton" }
+                                });
+                                editTabView.currentIndex = tabIndex.properties
+                            }
+                        }
+
+                        NewEntityButton {
                             icon: "icons/script.svg"
                             text: "SCRIPT"
                             onClicked: {
