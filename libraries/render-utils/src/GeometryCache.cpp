@@ -101,16 +101,20 @@ static const gpu::Element NORMAL_ELEMENT { gpu::VEC3, gpu::FLOAT, gpu::XYZ };
 static const gpu::Element TEXCOORD0_ELEMENT { gpu::VEC2, gpu::FLOAT, gpu::UV };
 static const gpu::Element TANGENT_ELEMENT { gpu::VEC3, gpu::FLOAT, gpu::XYZ };
 static const gpu::Element COLOR_ELEMENT { gpu::VEC4, gpu::NUINT8, gpu::RGBA };
+static const gpu::Element FADE4_ELEMENT { gpu::VEC4, gpu::FLOAT, gpu::XYZW };
+static const gpu::Element FADE1_ELEMENT { gpu::SCALAR, gpu::FLOAT, gpu::RAW };
+
 
 static gpu::Stream::FormatPointer SOLID_STREAM_FORMAT;
 static gpu::Stream::FormatPointer WIRE_STREAM_FORMAT;
+static gpu::Stream::FormatPointer SOLID_STREAM_FADE_FORMAT;
+static gpu::Stream::FormatPointer WIRE_STREAM_FADE_FORMAT;
 
 static const uint SHAPE_VERTEX_STRIDE = sizeof(GeometryCache::ShapeVertex); // position, normal, texcoords, tangent
 static const uint SHAPE_NORMALS_OFFSET = offsetof(GeometryCache::ShapeVertex, normal);
 static const uint SHAPE_TEXCOORD0_OFFSET = offsetof(GeometryCache::ShapeVertex, uv);
 static const uint SHAPE_TANGENT_OFFSET = offsetof(GeometryCache::ShapeVertex, tangent);
 
-std::map<std::pair<bool, bool>, gpu::PipelinePointer> GeometryCache::_webPipelines;
 std::map<std::pair<bool, bool>, gpu::PipelinePointer> GeometryCache::_gridPipelines;
 
 void GeometryCache::computeSimpleHullPointListForShape(const int entityShape, const glm::vec3 &entityExtents, QVector<glm::vec3> &outPointList) {
@@ -650,8 +654,44 @@ gpu::Stream::FormatPointer& getWireStreamFormat() {
     return WIRE_STREAM_FORMAT;
 }
 
+gpu::Stream::FormatPointer& getSolidStreamFadeFormat() {
+    if (!SOLID_STREAM_FADE_FORMAT) {
+        SOLID_STREAM_FADE_FORMAT = std::make_shared<gpu::Stream::Format>();  // 1 for everyone
+        SOLID_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::POSITION, gpu::Stream::POSITION, POSITION_ELEMENT);
+        SOLID_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::NORMAL, gpu::Stream::NORMAL, NORMAL_ELEMENT);
+        SOLID_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::TEXCOORD0, gpu::Stream::TEXCOORD0, TEXCOORD0_ELEMENT);
+        SOLID_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::TANGENT, gpu::Stream::TANGENT, TANGENT_ELEMENT);
+        SOLID_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::COLOR, gpu::Stream::COLOR, COLOR_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        SOLID_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE1, gpu::Stream::FADE1, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        SOLID_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE2, gpu::Stream::FADE2, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        SOLID_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE3, gpu::Stream::FADE3, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        SOLID_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE4, gpu::Stream::FADE4, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        SOLID_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE5, gpu::Stream::FADE5, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        SOLID_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE6, gpu::Stream::FADE6, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        SOLID_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE7, gpu::Stream::FADE7, FADE1_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+    }
+    return SOLID_STREAM_FADE_FORMAT;
+}
+
+gpu::Stream::FormatPointer& getWireStreamFadeFormat() {
+    if (!WIRE_STREAM_FADE_FORMAT) {
+        WIRE_STREAM_FADE_FORMAT = std::make_shared<gpu::Stream::Format>();  // 1 for everyone
+        WIRE_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::POSITION, gpu::Stream::POSITION, POSITION_ELEMENT);
+        WIRE_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::NORMAL, gpu::Stream::NORMAL, NORMAL_ELEMENT);
+        WIRE_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::COLOR, gpu::Stream::COLOR, COLOR_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        WIRE_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE1, gpu::Stream::FADE1, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        WIRE_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE2, gpu::Stream::FADE2, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        WIRE_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE3, gpu::Stream::FADE3, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        WIRE_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE4, gpu::Stream::FADE4, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        WIRE_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE5, gpu::Stream::FADE5, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        WIRE_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE6, gpu::Stream::FADE6, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        WIRE_STREAM_FADE_FORMAT->setAttribute(gpu::Stream::FADE7, gpu::Stream::FADE7, FADE1_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+    }
+    return WIRE_STREAM_FADE_FORMAT;
+}
+
 std::map<std::tuple<bool, bool, bool, bool>, gpu::ShaderPointer> GeometryCache::_shapeShaders;
-std::map<std::tuple<bool, bool, bool, graphics::MaterialKey::CullFaceMode>, render::ShapePipelinePointer> GeometryCache::_shapePipelines;
+std::map<std::tuple<bool, bool, bool, bool, graphics::MaterialKey::CullFaceMode>, render::ShapePipelinePointer> GeometryCache::_shapePipelines;
 QHash<SimpleProgramKey, gpu::PipelinePointer> GeometryCache::_simplePrograms;
 
 GeometryCache::GeometryCache() :
@@ -671,14 +711,23 @@ GeometryCache::~GeometryCache() {
 }
 
 void GeometryCache::releaseID(int id) {
+    _lastRegisteredQuad3DTexture.remove(id);
     _registeredQuad3DTextures.remove(id);
+
     _lastRegisteredQuad2DTexture.remove(id);
     _registeredQuad2DTextures.remove(id);
+
+    _lastRegisteredQuad2DTextureFade.remove(id);
+    _registeredQuad2DTexturesFade.remove(id);
+
     _lastRegisteredQuad3D.remove(id);
     _registeredQuad3D.remove(id);
 
     _lastRegisteredQuad2D.remove(id);
     _registeredQuad2D.remove(id);
+
+    _lastRegisteredQuad2DFade.remove(id);
+    _registeredQuad2DFade.remove(id);
 
     _lastRegisteredBevelRects.remove(id);
     _registeredBevelRects.remove(id);
@@ -699,18 +748,24 @@ void GeometryCache::releaseID(int id) {
 
     _lastRegisteredTorusBuffer.remove(id);
     _registeredTorusBuffers.remove(id);
+
+    _lastRegisteredTorusBufferFade.remove(id);
+    _registeredTorusBuffersFade.remove(id);
 }
 
 void GeometryCache::initializeShapePipelines() {
     if (_shapePipelines.empty()) {
-        const int NUM_PIPELINES = 8;
+        const int NUM_PIPELINES = 16;
         for (int i = 0; i < NUM_PIPELINES; ++i) {
             bool transparent = i & 1;
             bool unlit = i & 2;
             bool forward = i & 4;
+            bool fading = i & 8;
             for (int cullFaceMode = graphics::MaterialKey::CullFaceMode::CULL_NONE; cullFaceMode < graphics::MaterialKey::CullFaceMode::NUM_CULL_FACE_MODES; cullFaceMode++) {
                 auto cullMode = (graphics::MaterialKey::CullFaceMode)cullFaceMode;
-                _shapePipelines[std::make_tuple(transparent, unlit, forward, cullMode)] = getShapePipeline(false, transparent, unlit, false, forward, cullMode);
+                _shapePipelines[std::make_tuple(transparent, unlit, forward, fading, cullMode)] =
+                    fading ? getFadingShapePipeline(false, transparent, unlit, false, forward, cullMode)
+                           : getShapePipeline(false, transparent, unlit, false, forward, cullMode);
             }
         }
     }
@@ -732,8 +787,9 @@ render::ShapePipelinePointer GeometryCache::getFadingShapePipeline(bool textured
     auto fadeBatchSetter = FadeEffect::getBatchSetter();
     auto fadeItemSetter = FadeEffect::getItemUniformSetter();
     return std::make_shared<render::ShapePipeline>(getSimplePipeline(textured, transparent, unlit, depthBias, true, true, forward, cullFaceMode), nullptr,
-        [fadeBatchSetter, fadeItemSetter](const render::ShapePipeline& shapePipeline, gpu::Batch& batch, render::Args* args) {
+        [fadeBatchSetter](const render::ShapePipeline& shapePipeline, gpu::Batch& batch, render::Args* args) {
             batch.setResourceTexture(gr::Texture::MaterialAlbedo, DependencyManager::get<TextureCache>()->getWhiteTexture());
+            DependencyManager::get<DeferredLightingEffect>()->setupKeyLightBatch(args, batch);
             fadeBatchSetter(shapePipeline, batch, args);
         },
         fadeItemSetter
@@ -766,6 +822,38 @@ void GeometryCache::renderShapeInstances(gpu::Batch& batch, Shape shape, size_t 
 void GeometryCache::renderWireShapeInstances(gpu::Batch& batch, Shape shape, size_t count, gpu::BufferPointer& colorBuffer) {
     batch.setInputFormat(getWireStreamFormat());
     setupColorInputBuffer(batch, colorBuffer);
+    _shapes[shape].drawWireInstances(batch, count);
+}
+
+void setupFadeInputBuffers(gpu::Batch& batch, const FadeBuffers& fadeBuffers) {
+    fadeBuffers.bind(batch);
+}
+
+void GeometryCache::renderShapeFade(gpu::Batch& batch, Shape shape, gpu::BufferPointer& colorBuffer, const FadeBuffers& fadeBuffers) {
+    batch.setInputFormat(getSolidStreamFadeFormat());
+    setupColorInputBuffer(batch, colorBuffer);
+    setupFadeInputBuffers(batch, fadeBuffers);
+    _shapes[shape].draw(batch);
+}
+
+void GeometryCache::renderWireShapeFade(gpu::Batch& batch, Shape shape, gpu::BufferPointer& colorBuffer, const FadeBuffers& fadeBuffers) {
+    batch.setInputFormat(getWireStreamFadeFormat());
+    setupColorInputBuffer(batch, colorBuffer);
+    setupFadeInputBuffers(batch, fadeBuffers);
+    _shapes[shape].drawWire(batch);
+}
+
+void GeometryCache::renderShapeFadeInstances(gpu::Batch& batch, Shape shape, size_t count, gpu::BufferPointer& colorBuffer, const FadeBuffers& fadeBuffers) {
+    batch.setInputFormat(getSolidStreamFadeFormat());
+    setupColorInputBuffer(batch, colorBuffer);
+    setupFadeInputBuffers(batch, fadeBuffers);
+    _shapes[shape].drawInstances(batch, count);
+}
+
+void GeometryCache::renderWireShapeFadeInstances(gpu::Batch& batch, Shape shape, size_t count, gpu::BufferPointer& colorBuffer, const FadeBuffers& fadeBuffers) {
+    batch.setInputFormat(getWireStreamFadeFormat());
+    setupColorInputBuffer(batch, colorBuffer);
+    setupFadeInputBuffers(batch, fadeBuffers);
     _shapes[shape].drawWireInstances(batch, count);
 }
 
@@ -1196,6 +1284,83 @@ void GeometryCache::renderQuad(gpu::Batch& batch, const glm::vec2& minCorner, co
     batch.draw(gpu::TRIANGLE_STRIP, 4, 0);
 }
 
+void GeometryCache::renderQuadFade(gpu::Batch& batch, const glm::vec2& minCorner, const glm::vec2& maxCorner, const glm::vec4& color, const FadeBuffers& fadeBuffers, int id) {
+    bool registered = (id != UNKNOWN_ID);
+    Vec4Pair key(glm::vec4(minCorner.x, minCorner.y, maxCorner.x, maxCorner.y), color);
+    BatchItemDetails& details = _registeredQuad2DFade[id];
+
+    // if this is a registered quad, and we have buffers, then check to see if the geometry changed and rebuild if needed
+    if (registered && details.isCreated) {
+        Vec4Pair& lastKey = _lastRegisteredQuad2DFade[id];
+        if (lastKey != key) {
+            details.clear();
+            _lastRegisteredQuad2DFade[id] = key;
+#ifdef WANT_DEBUG
+            qCDebug(renderutils) << "renderQuadFade() 2D ... RELEASING REGISTERED";
+#endif // def WANT_DEBUG
+        }
+#ifdef WANT_DEBUG
+        else {
+            qCDebug(renderutils) << "renderQuadFade() 2D ... REUSING PREVIOUSLY REGISTERED";
+        }
+#endif // def WANT_DEBUG
+    }
+
+    if (!details.isCreated) {
+        static const int FLOATS_PER_VERTEX = 2; // vertices
+        static const int VERTICES = 4; // 1 quad = 4 vertices
+
+        details.isCreated = true;
+        details.vertices = VERTICES;
+        details.vertexSize = FLOATS_PER_VERTEX;
+
+        auto verticesBuffer = std::make_shared<gpu::Buffer>();
+        auto normalBuffer = std::make_shared<gpu::Buffer>();
+        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto streamFormat = std::make_shared<gpu::Stream::Format>();
+        auto stream = std::make_shared<gpu::BufferStream>();
+
+        details.verticesBuffer = verticesBuffer;
+        details.normalBuffer = normalBuffer;
+        details.colorBuffer = colorBuffer;
+        details.streamFormat = streamFormat;
+        details.stream = stream;
+
+        details.streamFormat->setAttribute(gpu::Stream::POSITION, gpu::Stream::POSITION, gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::XYZ));
+        details.streamFormat->setAttribute(gpu::Stream::NORMAL, gpu::Stream::NORMAL, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::COLOR, gpu::Stream::COLOR, gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA), 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE1, gpu::Stream::FADE1, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE2, gpu::Stream::FADE2, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE3, gpu::Stream::FADE3, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE4, gpu::Stream::FADE4, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE5, gpu::Stream::FADE5, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE6, gpu::Stream::FADE6, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE7, gpu::Stream::FADE7, FADE1_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+
+        details.stream->addBuffer(details.verticesBuffer, 0, details.streamFormat->getChannels().at(gpu::Stream::POSITION)._stride);
+        details.stream->addBuffer(details.normalBuffer, 0, details.streamFormat->getChannels().at(gpu::Stream::NORMAL)._stride);
+        details.stream->addBuffer(details.colorBuffer, 0, details.streamFormat->getChannels().at(gpu::Stream::COLOR)._stride);
+
+        float vertexBuffer[VERTICES * FLOATS_PER_VERTEX] = {
+            minCorner.x, minCorner.y,
+            maxCorner.x, minCorner.y,
+            minCorner.x, maxCorner.y,
+            maxCorner.x, maxCorner.y,
+        };
+
+        details.verticesBuffer->append(sizeof(vertexBuffer), (gpu::Byte*) vertexBuffer);
+        const glm::vec3 NORMAL(0.0f, 0.0f, 1.0f);
+        details.normalBuffer->append(3 * sizeof(float), (gpu::Byte*) glm::value_ptr(NORMAL));
+        int compactColor = GeometryCache::toCompactColor(color);
+        details.colorBuffer->append(sizeof(compactColor), (gpu::Byte*) &compactColor);
+    }
+
+    batch.setInputFormat(details.streamFormat);
+    batch.setInputStream(0, *details.stream);
+    fadeBuffers.bind(batch);
+    batch.draw(gpu::TRIANGLE_STRIP, 4, 0);
+}
+
 void GeometryCache::renderUnitQuad(gpu::Batch& batch, const glm::vec4& color, int id) {
     static const glm::vec2 topLeft(-1, 1);
     static const glm::vec2 bottomRight(1, -1);
@@ -1277,6 +1442,90 @@ void GeometryCache::renderQuad(gpu::Batch& batch, const glm::vec2& minCorner, co
 
     batch.setInputFormat(details.streamFormat);
     batch.setInputStream(0, *details.stream);
+    batch.draw(gpu::TRIANGLE_STRIP, 4, 0);
+}
+
+void GeometryCache::renderQuadFade(gpu::Batch& batch, const glm::vec2& minCorner, const glm::vec2& maxCorner,
+    const glm::vec2& texCoordMinCorner, const glm::vec2& texCoordMaxCorner,
+    const glm::vec4& color, const FadeBuffers& fadeBuffers, int id) {
+
+    Vec4PairVec4 key(Vec4Pair(glm::vec4(minCorner.x, minCorner.y, maxCorner.x, maxCorner.y),
+        glm::vec4(texCoordMinCorner.x, texCoordMinCorner.y, texCoordMaxCorner.x, texCoordMaxCorner.y)),
+        color);
+    BatchItemDetails& details = _registeredQuad2DTexturesFade[id];
+
+    // if this is a registered quad, and we have buffers, then check to see if the geometry changed and rebuild if needed
+    if (details.isCreated) {
+        Vec4PairVec4& lastKey = _lastRegisteredQuad2DTextureFade[id];
+        if (lastKey != key) {
+            details.clear();
+            _lastRegisteredQuad2DTextureFade[id] = key;
+#ifdef WANT_DEBUG
+            qCDebug(renderutils) << "renderQuad() 2D+texture ... RELEASING REGISTERED";
+#endif // def WANT_DEBUG
+        }
+#ifdef WANT_DEBUG
+        else {
+            qCDebug(renderutils) << "renderQuad() 2D+texture ... REUSING PREVIOUSLY REGISTERED";
+        }
+#endif // def WANT_DEBUG
+    }
+
+    if (!details.isCreated) {
+        static const int FLOATS_PER_VERTEX = 2 + 2; // vertices + tex coords
+        static const int VERTICES = 4; // 1 quad = 4 vertices
+        static const int NUM_POS_COORDS = 2;
+        static const int VERTEX_TEXCOORD_OFFSET = NUM_POS_COORDS * sizeof(float);
+
+        details.isCreated = true;
+        details.vertices = VERTICES;
+        details.vertexSize = FLOATS_PER_VERTEX;
+
+        auto verticesBuffer = std::make_shared<gpu::Buffer>();
+        auto normalBuffer = std::make_shared<gpu::Buffer>();
+        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto streamFormat = std::make_shared<gpu::Stream::Format>();
+        auto stream = std::make_shared<gpu::BufferStream>();
+
+        details.verticesBuffer = verticesBuffer;
+        details.normalBuffer = normalBuffer;
+        details.colorBuffer = colorBuffer;
+        details.streamFormat = streamFormat;
+        details.stream = stream;
+
+        details.streamFormat->setAttribute(gpu::Stream::POSITION, 0, gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::XYZ));
+        details.streamFormat->setAttribute(gpu::Stream::TEXCOORD, 0, gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::UV), VERTEX_TEXCOORD_OFFSET);
+        details.streamFormat->setAttribute(gpu::Stream::NORMAL, 1, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::COLOR, 2, gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA), 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE1, gpu::Stream::FADE1, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE2, gpu::Stream::FADE2, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE3, gpu::Stream::FADE3, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE4, gpu::Stream::FADE4, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE5, gpu::Stream::FADE5, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE6, gpu::Stream::FADE6, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE7, gpu::Stream::FADE7, FADE1_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+
+        details.stream->addBuffer(details.verticesBuffer, 0, details.streamFormat->getChannels().at(0)._stride);
+        details.stream->addBuffer(details.normalBuffer, 0, details.streamFormat->getChannels().at(1)._stride);
+        details.stream->addBuffer(details.colorBuffer, 0, details.streamFormat->getChannels().at(2)._stride);
+
+        float vertexBuffer[VERTICES * FLOATS_PER_VERTEX] = {
+            minCorner.x, minCorner.y, texCoordMinCorner.x, texCoordMinCorner.y,
+            maxCorner.x, minCorner.y, texCoordMaxCorner.x, texCoordMinCorner.y,
+            minCorner.x, maxCorner.y, texCoordMinCorner.x, texCoordMaxCorner.y,
+            maxCorner.x, maxCorner.y, texCoordMaxCorner.x, texCoordMaxCorner.y,
+        };
+
+        details.verticesBuffer->append(sizeof(vertexBuffer), (gpu::Byte*) vertexBuffer);
+        const glm::vec3 NORMAL(0.0f, 0.0f, 1.0f);
+        details.normalBuffer->append(3 * sizeof(float), (gpu::Byte*) glm::value_ptr(NORMAL));
+        int compactColor = GeometryCache::toCompactColor(color);
+        details.colorBuffer->append(sizeof(compactColor), (gpu::Byte*) &compactColor);
+    }
+
+    batch.setInputFormat(details.streamFormat);
+    batch.setInputStream(0, *details.stream);
+    fadeBuffers.bind(batch);
     batch.draw(gpu::TRIANGLE_STRIP, 4, 0);
 }
 
@@ -1736,6 +1985,129 @@ void GeometryCache::renderTorus(gpu::Batch& batch, float innerRadius, gpu::Buffe
     batch.drawIndexed(gpu::TRIANGLES, details.vertices, 0);
 }
 
+void GeometryCache::renderTorusFade(gpu::Batch& batch, float innerRadius, gpu::BufferPointer& colorBuffer, const FadeBuffers& fadeBuffers, int id) {
+    bool registered = (id != UNKNOWN_ID);
+    BatchItemDetails& details = _registeredTorusBuffersFade[id];
+
+    // if this is a registered, and we have buffers, then check to see if the geometry changed and rebuild if needed
+    if (registered && details.isCreated) {
+        if (_lastRegisteredTorusBufferFade[id] != innerRadius) {
+            details.clear();
+            _lastRegisteredTorusBufferFade[id] = innerRadius;
+#ifdef WANT_DEBUG
+            qCDebug(renderutils) << "renderTorus()... RELEASING REGISTERED";
+#endif  // def WANT_DEBUG
+        }
+    }
+
+    if (!details.isCreated) {
+        const int NUM_DIVISIONS = 64;
+        const float ANGLE_STEP = 2.0f * ((float)M_PI) / NUM_DIVISIONS;
+        const int FLOATS_PER_VERTEX = 3 + 3 + 2 + 3;  // vertices + normals + tex coords + tangents
+        details.isCreated = true;
+        details.vertices = 6 * (NUM_DIVISIONS + 1) * (NUM_DIVISIONS + 1);
+        details.vertexSize = FLOATS_PER_VERTEX;
+
+        auto verticesBuffer = std::make_shared<gpu::Buffer>();
+        auto indicesBuffer = std::make_shared<gpu::Buffer>();
+        auto streamFormat = std::make_shared<gpu::Stream::Format>();
+        auto stream = std::make_shared<gpu::BufferStream>();
+
+        details.verticesBuffer = verticesBuffer;
+        details.uniformBuffer = indicesBuffer; // we use the uniformBuffer to store the incides
+        details.streamFormat = streamFormat;
+        details.stream = stream;
+
+        details.streamFormat->setAttribute(gpu::Stream::POSITION, 0, POSITION_ELEMENT);
+        details.streamFormat->setAttribute(gpu::Stream::NORMAL, 0, NORMAL_ELEMENT, 3 * sizeof(float));
+        details.streamFormat->setAttribute(gpu::Stream::TEXCOORD0, 0, TEXCOORD0_ELEMENT, 6 * sizeof(float));
+        details.streamFormat->setAttribute(gpu::Stream::TANGENT, 0, TANGENT_ELEMENT, 8 * sizeof(float));
+        details.streamFormat->setAttribute(gpu::Stream::COLOR, gpu::Stream::COLOR, COLOR_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE1, gpu::Stream::FADE1, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE2, gpu::Stream::FADE2, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE3, gpu::Stream::FADE3, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE4, gpu::Stream::FADE4, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE5, gpu::Stream::FADE5, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE6, gpu::Stream::FADE6, FADE4_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+        details.streamFormat->setAttribute(gpu::Stream::FADE7, gpu::Stream::FADE7, FADE1_ELEMENT, 0, gpu::Stream::PER_INSTANCE);
+
+        details.stream->addBuffer(details.verticesBuffer, 0, details.streamFormat->getChannels().at(0)._stride);
+
+        // Build our initial circle.  Keep track of the center point for normal calculations.
+        glm::vec3 center = glm::vec3(0.5f - innerRadius, 0.0f, 0.0f);
+        std::array<glm::vec3, NUM_DIVISIONS + 1> points;
+        for (int i = 0; i <= NUM_DIVISIONS; i++) {
+            // Inner radius only affects X.  Y still needs to be -0.5 -> 0.5.
+            points[i] = center + glm::vec3(innerRadius * glm::cos(i * ANGLE_STEP), 0.5f * glm::sin(i * ANGLE_STEP), 0.0f);
+        }
+        glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::scale(glm::vec3(1.0f, 0.5f / innerRadius, 1.0f))));
+
+        // Build all of our vertex data
+        float* vertexData = new float[details.vertices * FLOATS_PER_VERTEX];
+        float* vertex = vertexData;
+        for (int y = 0; y <= NUM_DIVISIONS; y++) {
+            const float ANGLE = y * ANGLE_STEP;
+            for (int i = 0; i <= NUM_DIVISIONS; i++) {
+                glm::vec3 currentCenter = fabs(center.x) * glm::vec3(glm::cos(ANGLE), 0.0f, glm::sin(ANGLE));
+                // Position
+                glm::vec3 currentPoint = glm::vec3(0.0f, points[i].y, 0.0f) + fabs(points[i].x) * glm::vec3(glm::cos(ANGLE), 0.0f, glm::sin(ANGLE));
+                *(vertex++) = currentPoint.x;
+                *(vertex++) = currentPoint.y;
+                *(vertex++) = currentPoint.z;
+                // Normal
+                glm::vec3 currentNormal = glm::normalize(normalMatrix * glm::normalize(currentPoint - currentCenter));
+                *(vertex++) = currentNormal.x;
+                *(vertex++) = currentNormal.y;
+                *(vertex++) = currentNormal.z;
+                // UV
+                glm::vec2 currentUV = glm::vec2((float)i / NUM_DIVISIONS, (float)y / NUM_DIVISIONS);
+                *(vertex++) = currentUV.x;
+                *(vertex++) = currentUV.y;
+                // Tangent
+                int nextIndex = (i + 1) % (NUM_DIVISIONS + 1) + (i / (NUM_DIVISIONS + 1));
+                glm::vec3 currentTangent = glm::normalize(glm::cross(currentNormal, points[nextIndex] - points[i]));
+                *(vertex++) = currentTangent.x;
+                *(vertex++) = currentTangent.y;
+                *(vertex++) = currentTangent.z;
+            }
+        }
+
+        details.verticesBuffer->append(sizeof(float) * FLOATS_PER_VERTEX * details.vertices, (gpu::Byte*)vertexData);
+        delete[] vertexData;
+
+        // Build our indices
+        for (int y = 0; y < NUM_DIVISIONS; y++) {
+            for (int i = 0; i < NUM_DIVISIONS; i++) {
+                const int baseIndex = i + (NUM_DIVISIONS + 1) * y;
+                details.uniformBuffer->append((uint16_t)baseIndex);
+                details.uniformBuffer->append((uint16_t)(baseIndex + 1));
+                details.uniformBuffer->append((uint16_t)(baseIndex + NUM_DIVISIONS + 1));
+                details.uniformBuffer->append((uint16_t)(baseIndex + 1));
+                details.uniformBuffer->append((uint16_t)(baseIndex + NUM_DIVISIONS + 2));
+                details.uniformBuffer->append((uint16_t)(baseIndex + NUM_DIVISIONS + 1));
+            }
+        }
+
+#ifdef WANT_DEBUG
+        if (registered) {
+            qCDebug(renderutils) << "new registered torus buffer made -- _registeredTorusBuffersFade:"
+                                 << _registeredTorusBuffersFade.size();
+        } else {
+            qCDebug(renderutils) << "new torus buffer made -- _registeredTorusBuffersFade:" << _registeredTorusBuffersFade.size();
+        }
+#endif
+    }
+
+    // TODO: instanced rendering
+    gpu::BufferView colorView(colorBuffer, COLOR_ELEMENT);
+    batch.setInputBuffer(gpu::Stream::COLOR, colorView);
+    batch.setInputStream(0, *details.stream);
+    batch.setInputFormat(details.streamFormat);
+    batch.setIndexBuffer(gpu::Type::UINT16, details.uniformBuffer, 0);  // indices are stored in uniformBuffer
+    fadeBuffers.bind(batch);
+    batch.drawIndexed(gpu::TRIANGLES, details.vertices, 0);
+}
+
 int GeometryCache::BatchItemDetails::population = 0;
 
 GeometryCache::BatchItemDetails::BatchItemDetails() :
@@ -1915,36 +2287,6 @@ inline bool operator==(const SimpleProgramKey& a, const SimpleProgramKey& b) {
     return a.getRaw() == b.getRaw();
 }
 
-void GeometryCache::bindWebBrowserProgram(gpu::Batch& batch, bool transparent, bool forward) {
-    batch.setPipeline(getWebBrowserProgram(transparent, forward));
-}
-
-gpu::PipelinePointer GeometryCache::getWebBrowserProgram(bool transparent, bool forward) {
-    if (_webPipelines.empty()) {
-        using namespace shader::render_utils::program;
-        const int NUM_WEB_PIPELINES = 4;
-        for (int i = 0; i < NUM_WEB_PIPELINES; ++i) {
-            bool transparent = i & 1;
-            bool forward = i & 2;
-
-            // For any non-opaque or non-deferred pipeline, we use web_browser_forward
-            auto pipeline = (transparent || forward) ? web_browser_forward : web_browser;
-
-            gpu::StatePointer state = std::make_shared<gpu::State>();
-            state->setDepthTest(true, !transparent, gpu::LESS_EQUAL);
-            PrepareStencil::testMaskDrawShapeNoAA(*state);
-            state->setBlendFunction(transparent,
-                gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
-                gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
-            state->setCullMode(gpu::State::CULL_NONE);
-
-            _webPipelines[{ transparent, forward }] = gpu::Pipeline::create(gpu::Shader::createProgram(pipeline), state);
-        }
-    }
-
-    return _webPipelines[{ transparent, forward }];
-}
-
 void GeometryCache::bindSimpleProgram(gpu::Batch& batch, bool textured, bool transparent, bool unlit, bool depthBiased, bool isAntiAliased,
         bool forward, graphics::MaterialKey::CullFaceMode cullFaceMode) {
     batch.setPipeline(getSimplePipeline(textured, transparent, unlit, depthBiased, false, isAntiAliased, forward, cullFaceMode));
@@ -2038,6 +2380,13 @@ uint32_t GeometryCache::toCompactColor(const glm::vec4& color) {
 }
 
 static const size_t INSTANCE_COLOR_BUFFER = 0;
+static const size_t INSTANCE_FADE1_BUFFER = 1;
+static const size_t INSTANCE_FADE2_BUFFER = 2;
+static const size_t INSTANCE_FADE3_BUFFER = 3;
+static const size_t INSTANCE_FADE4_BUFFER = 4;
+static const size_t INSTANCE_FADE5_BUFFER = 5;
+static const size_t INSTANCE_FADE6_BUFFER = 6;
+static const size_t INSTANCE_FADE7_BUFFER = 7;
 
 void renderInstances(RenderArgs* args, gpu::Batch& batch, const glm::vec4& color, bool isWire,
     const render::ShapePipelinePointer& pipeline, GeometryCache::Shape shape) {
@@ -2064,14 +2413,57 @@ void renderInstances(RenderArgs* args, gpu::Batch& batch, const glm::vec4& color
     });
 }
 
-void GeometryCache::renderSolidShapeInstance(RenderArgs* args, gpu::Batch& batch, GeometryCache::Shape shape, const glm::vec4& color, const render::ShapePipelinePointer& pipeline) {
-    assert(pipeline != nullptr);
-    renderInstances(args, batch, color, false, pipeline, shape);
+void renderFadeInstances(RenderArgs* args, gpu::Batch& batch, const glm::vec4& color, const FadeObjectParams& fadeParams, bool isWire,
+    const render::ShapePipelinePointer& pipeline, GeometryCache::Shape shape) {
+    // Add pipeline to name
+    std::string instanceName = (isWire ? "wire_fade_shapes_" : "solid_fade_shapes_") + std::to_string(shape) + "_" + std::to_string(std::hash<render::ShapePipelinePointer>()(pipeline));
+
+    // Add color to named buffer
+    {
+        gpu::BufferPointer instanceColorBuffer = batch.getNamedBuffer(instanceName, INSTANCE_COLOR_BUFFER);
+        const uint32_t compactColor = GeometryCache::toCompactColor(color);
+        instanceColorBuffer->append(compactColor);
+    }
+
+    // Add fade params to named buffers
+    {
+        FadeBuffers fadeBuffers = {
+            batch.getNamedBuffer(instanceName, INSTANCE_FADE1_BUFFER),
+            batch.getNamedBuffer(instanceName, INSTANCE_FADE2_BUFFER),
+            batch.getNamedBuffer(instanceName, INSTANCE_FADE3_BUFFER),
+            batch.getNamedBuffer(instanceName, INSTANCE_FADE4_BUFFER),
+            batch.getNamedBuffer(instanceName, INSTANCE_FADE5_BUFFER),
+            batch.getNamedBuffer(instanceName, INSTANCE_FADE6_BUFFER),
+            batch.getNamedBuffer(instanceName, INSTANCE_FADE7_BUFFER),
+        };
+        fadeBuffers.append(fadeParams);
+    }
+
+    // Add call to named buffer
+    batch.setupNamedCalls(instanceName, [args, isWire, pipeline, shape](gpu::Batch& batch, gpu::Batch::NamedBatchData& data) {
+        batch.setPipeline(pipeline->pipeline);
+        pipeline->prepare(batch, args);
+
+        FadeBuffers fadeBuffers = {
+            data.buffers[INSTANCE_FADE1_BUFFER],
+            data.buffers[INSTANCE_FADE2_BUFFER],
+            data.buffers[INSTANCE_FADE3_BUFFER],
+            data.buffers[INSTANCE_FADE4_BUFFER],
+            data.buffers[INSTANCE_FADE5_BUFFER],
+            data.buffers[INSTANCE_FADE6_BUFFER],
+            data.buffers[INSTANCE_FADE7_BUFFER],
+        };
+        if (isWire) {
+            DependencyManager::get<GeometryCache>()->renderWireShapeFadeInstances(batch, shape, data.count(), data.buffers[INSTANCE_COLOR_BUFFER], fadeBuffers);
+        } else {
+            DependencyManager::get<GeometryCache>()->renderShapeFadeInstances(batch, shape, data.count(), data.buffers[INSTANCE_COLOR_BUFFER], fadeBuffers);
+        }
+    });
 }
 
-void GeometryCache::renderWireShapeInstance(RenderArgs* args, gpu::Batch& batch, GeometryCache::Shape shape, const glm::vec4& color, const render::ShapePipelinePointer& pipeline) {
+void GeometryCache::renderShapeInstance(RenderArgs* args, gpu::Batch& batch, Shape shape, bool wire, const glm::vec4& color, const render::ShapePipelinePointer& pipeline) {
     assert(pipeline != nullptr);
-    renderInstances(args, batch, color, true, pipeline, shape);
+    renderInstances(args, batch, color, wire, pipeline, shape);
 }
 
 void GeometryCache::renderSolidSphereInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec4& color, const render::ShapePipelinePointer& pipeline) {
@@ -2080,9 +2472,14 @@ void GeometryCache::renderSolidSphereInstance(RenderArgs* args, gpu::Batch& batc
 }
 
 void GeometryCache::renderWireCubeInstance(RenderArgs* args, gpu::Batch& batch, const glm::vec4& color, const render::ShapePipelinePointer& pipeline) {
-    static const std::string INSTANCE_NAME = __FUNCTION__;
     assert(pipeline != nullptr);
     renderInstances(args, batch, color, true, pipeline, GeometryCache::Cube);
+}
+
+void GeometryCache::renderShapeFadeInstance(RenderArgs* args, gpu::Batch& batch, Shape shape, bool wire, const glm::vec4& color,
+        const FadeObjectParams& fadeParams, const render::ShapePipelinePointer& pipeline) {
+    assert(pipeline != nullptr);
+    renderFadeInstances(args, batch, color, fadeParams, wire, pipeline, shape);
 }
 
 graphics::MeshPointer GeometryCache::meshFromShape(Shape geometryShape, glm::vec3 color) {
@@ -2118,4 +2515,41 @@ graphics::MeshPointer GeometryCache::meshFromShape(Shape geometryShape, glm::vec
     mesh->displayName = QString("GeometryCache/shape::%1").arg(GeometryCache::stringFromShape(geometryShape)).toStdString();
 
     return mesh;
+}
+
+void FadeBuffers::append(const FadeObjectParams& fadeParams) {
+    _fade1Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.noiseOffsetAndInverted));
+    _fade2Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.baseOffsetAndThreshold));
+    _fade3Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.baseInvSizeAndLevel));
+    _fade4Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.noiseInvSizeAndLevel));
+    _fade5Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.innerEdgeColor));
+    _fade6Buffer->append(4 * sizeof(float), (gpu::Byte*)glm::value_ptr(fadeParams.outerEdgeColor));
+    _fade7Buffer->append(1 * sizeof(float), (gpu::Byte*)(&fadeParams.edgeWidthInv));
+}
+
+void FadeBuffers::clear() {
+    _fade1Buffer->resize(0);
+    _fade2Buffer->resize(0);
+    _fade3Buffer->resize(0);
+    _fade4Buffer->resize(0);
+    _fade5Buffer->resize(0);
+    _fade6Buffer->resize(0);
+    _fade7Buffer->resize(0);
+}
+
+void FadeBuffers::bind(gpu::Batch& batch) const {
+    gpu::BufferView fade1View(_fade1Buffer, FADE4_ELEMENT);
+    gpu::BufferView fade2View(_fade2Buffer, FADE4_ELEMENT);
+    gpu::BufferView fade3View(_fade3Buffer, FADE4_ELEMENT);
+    gpu::BufferView fade4View(_fade4Buffer, FADE4_ELEMENT);
+    gpu::BufferView fade5View(_fade5Buffer, FADE4_ELEMENT);
+    gpu::BufferView fade6View(_fade6Buffer, FADE4_ELEMENT);
+    gpu::BufferView fade7View(_fade7Buffer, FADE1_ELEMENT);
+    batch.setInputBuffer(gpu::Stream::FADE1, fade1View);
+    batch.setInputBuffer(gpu::Stream::FADE2, fade2View);
+    batch.setInputBuffer(gpu::Stream::FADE3, fade3View);
+    batch.setInputBuffer(gpu::Stream::FADE4, fade4View);
+    batch.setInputBuffer(gpu::Stream::FADE5, fade5View);
+    batch.setInputBuffer(gpu::Stream::FADE6, fade6View);
+    batch.setInputBuffer(gpu::Stream::FADE7, fade7View);
 }

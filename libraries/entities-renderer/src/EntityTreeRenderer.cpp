@@ -44,8 +44,6 @@
 #include <PointerManager.h>
 #include <QtConcurrent/QtConcurrentRun>
 
-std::function<bool()> EntityTreeRenderer::_entitiesShouldFadeFunction = []() { return true; };
-
 QString resolveScriptURL(const QString& scriptUrl) {
     auto normalizedScriptUrl = DependencyManager::get<ResourceManager>()->normalizeURL(scriptUrl);
     QUrl url { normalizedScriptUrl };
@@ -1244,6 +1242,12 @@ void EntityTreeRenderer::fadeOutRenderable(const EntityRendererPointer& renderab
     render::Transaction transaction;
     auto scene = _viewState->getMain3DScene();
 
+    auto fadeOutMode = renderable->getFadeOutMode();
+    if (fadeOutMode == ComponentMode::COMPONENT_MODE_ENABLED ||
+        (fadeOutMode == ComponentMode::COMPONENT_MODE_INHERIT && _layeredZones.hasFade(TransitionType::ELEMENT_LEAVE_DOMAIN))) {
+        renderable->fade(transaction, TransitionType::ELEMENT_LEAVE_DOMAIN);
+    }
+
     EntityRendererWeakPointer weakRenderable = renderable;
     transaction.setTransitionFinishedOperator(renderable->getRenderItemID(), [scene, weakRenderable]() {
         auto renderable = weakRenderable.lock();
@@ -1416,6 +1420,149 @@ std::pair<bool, bool> EntityTreeRenderer::LayeredZones::getZoneInteractionProper
         }
     }
     return { true, true };
+}
+
+FadeProperties EntityTreeRenderer::LayeredZones::getFadeProperties(const TransitionType type) const {
+    for (auto it = cbegin(); it != cend(); it++) {
+        auto zone = it->zone.lock();
+        if (zone) {
+            if (type == TransitionType::ELEMENT_ENTER_DOMAIN) {
+                auto mode = zone->getFadeInMode();
+                if (mode == ComponentMode::COMPONENT_MODE_ENABLED) {
+                    const auto& fadeProperties = zone->getFadeInProperties();
+                    return {
+                        fadeProperties.getDuration(),
+                        fadeProperties.getTiming(),
+                        fadeProperties.getNoiseSpeed(),
+                        1.0f / fadeProperties.getNoiseSize(),
+                        fadeProperties.getNoiseLevel(),
+                        1.0f / fadeProperties.getBaseSize(),
+                        fadeProperties.getBaseLevel(),
+                        vec4(vec3(fadeProperties.getEdgeInnerColor()) / 255.0f, fadeProperties.getEdgeInnerAlpha()),
+                        vec4(vec3(fadeProperties.getEdgeOuterColor()) / 255.0f, fadeProperties.getEdgeOuterAlpha()),
+                        fadeProperties.getEdgeWidth(),
+                        fadeProperties.getInverted()
+                    };
+                }
+            } else if (type == TransitionType::ELEMENT_LEAVE_DOMAIN) {
+                auto mode = zone->getFadeOutMode();
+                if (mode == ComponentMode::COMPONENT_MODE_ENABLED) {
+                    const auto& fadeProperties = zone->getFadeOutProperties();
+                    return {
+                        fadeProperties.getDuration(),
+                        fadeProperties.getTiming(),
+                        fadeProperties.getNoiseSpeed(),
+                        1.0f / fadeProperties.getNoiseSize(),
+                        fadeProperties.getNoiseLevel(),
+                        1.0f / fadeProperties.getBaseSize(),
+                        fadeProperties.getBaseLevel(),
+                        vec4(vec3(fadeProperties.getEdgeInnerColor()) / 255.0f, fadeProperties.getEdgeInnerAlpha()),
+                        vec4(vec3(fadeProperties.getEdgeOuterColor()) / 255.0f, fadeProperties.getEdgeOuterAlpha()),
+                        fadeProperties.getEdgeWidth(),
+                        fadeProperties.getInverted()
+                    };
+                }
+            } else if (type == TransitionType::USER_ENTER_DOMAIN) {
+                auto mode = zone->getAvatarFadeInMode();
+                if (mode == ComponentMode::COMPONENT_MODE_ENABLED) {
+                    const auto& fadeProperties = zone->getAvatarFadeInProperties();
+                    return {
+                        fadeProperties.getDuration(),
+                        fadeProperties.getTiming(),
+                        fadeProperties.getNoiseSpeed(),
+                        1.0f / fadeProperties.getNoiseSize(),
+                        fadeProperties.getNoiseLevel(),
+                        1.0f / fadeProperties.getBaseSize(),
+                        fadeProperties.getBaseLevel(),
+                        vec4(vec3(fadeProperties.getEdgeInnerColor()) / 255.0f, fadeProperties.getEdgeInnerAlpha()),
+                        vec4(vec3(fadeProperties.getEdgeOuterColor()) / 255.0f, fadeProperties.getEdgeOuterAlpha()),
+                        fadeProperties.getEdgeWidth(),
+                        fadeProperties.getInverted()
+                    };
+                }
+            } else if (type == TransitionType::USER_LEAVE_DOMAIN) {
+                auto mode = zone->getAvatarFadeOutMode();
+                if (mode == ComponentMode::COMPONENT_MODE_ENABLED) {
+                    const auto& fadeProperties = zone->getAvatarFadeOutProperties();
+                    return {
+                        fadeProperties.getDuration(),
+                        fadeProperties.getTiming(),
+                        fadeProperties.getNoiseSpeed(),
+                        1.0f / fadeProperties.getNoiseSize(),
+                        fadeProperties.getNoiseLevel(),
+                        1.0f / fadeProperties.getBaseSize(),
+                        fadeProperties.getBaseLevel(),
+                        vec4(vec3(fadeProperties.getEdgeInnerColor()) / 255.0f, fadeProperties.getEdgeInnerAlpha()),
+                        vec4(vec3(fadeProperties.getEdgeOuterColor()) / 255.0f, fadeProperties.getEdgeOuterAlpha()),
+                        fadeProperties.getEdgeWidth(),
+                        fadeProperties.getInverted()
+                    };
+                }
+            }
+        }
+    }
+
+    // Old default behavior
+    if (type == TransitionType::USER_ENTER_DOMAIN || type == TransitionType::USER_LEAVE_DOMAIN) {
+        return {
+            2.0f,
+            FadeTiming::LINEAR,
+            vec3(0.0f, -5.0f, 0.0f),
+            1.0f / vec3(10.f, 0.01f, 10.0f),
+            0.3f,
+            1.0f / vec3(10000.f, 1.0f, 10000.0f),
+            1.0f,
+            vec4(1.0f, 0.63f, 0.13f, 0.5f),
+            vec4(1.0f, 1.0f, 1.0f, 1.0f),
+            0.229f,
+            true
+        };
+    }
+
+    return FadeProperties();
+}
+
+bool EntityTreeRenderer::LayeredZones::hasFade(const TransitionType type) const {
+    if (type == TransitionType::BUBBLE_ISECT_OWNER || type == TransitionType::BUBBLE_ISECT_TRESPASSER ||
+        type == TransitionType::AVATAR_CHANGE) {
+        return true;
+    }
+
+    for (auto it = cbegin(); it != cend(); it++) {
+        auto zone = it->zone.lock();
+        if (zone) {
+            ComponentMode mode = ComponentMode::COMPONENT_MODE_DISABLED;
+            switch (type) {
+                case TransitionType::ELEMENT_ENTER_DOMAIN:
+                    mode = (ComponentMode)zone->getFadeInMode();
+                    break;
+                case TransitionType::ELEMENT_LEAVE_DOMAIN:
+                    mode = (ComponentMode)zone->getFadeOutMode();
+                    break;
+                case TransitionType::USER_ENTER_DOMAIN:
+                    mode = (ComponentMode)zone->getAvatarFadeInMode();
+                    break;
+                case TransitionType::USER_LEAVE_DOMAIN:
+                    mode = (ComponentMode)zone->getAvatarFadeOutMode();
+                    break;
+                default:
+                    break;
+            }
+
+            if (mode == ComponentMode::COMPONENT_MODE_DISABLED) {
+                return false;
+            } else if (mode == ComponentMode::COMPONENT_MODE_ENABLED) {
+                return true;
+            }
+        }
+    }
+
+    // Old default behavior
+    if (type == TransitionType::USER_ENTER_DOMAIN || type == TransitionType::USER_LEAVE_DOMAIN) {
+        return true;
+    }
+
+    return false;
 }
 
 bool EntityTreeRenderer::LayeredZones::update(std::shared_ptr<ZoneEntityItem> zone, const glm::vec3& position, EntityTreeRenderer* entityTreeRenderer) {

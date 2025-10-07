@@ -187,6 +187,13 @@
  * @property {Uuid} portalExitID=Uuid.NONE - The ID of the entity that should act as the portal exit if the <code>mirrorMode</code>
  *     is set to <code>portal</code>.
  *
+ * @property {Entities.Fade} fadeIn - The entity's fade in properties. For zones, this defines the default fade in properties for entities
+ *     while you are in this zone.
+ * @property {Entities.Fade} fadeOut - The entity's fade out properties. For zones, this defines the default fade out properties for entities
+ *     while you are in this zone.
+ * @property {Entities.ComponentMode} fadeInMode="inherit" - Configures the fade in for this entity.
+ * @property {Entities.ComponentMode} fadeOutMode="inherit" - Configures the fade out for this entity.
+ *
  * @comment The different entity types have additional properties as follows:
  * @see {@link Entities.EntityProperties-Box|EntityProperties-Box}
  * @see {@link Entities.EntityProperties-Empty|EntityProperties-Empty}
@@ -939,6 +946,11 @@
  *
  * @property {Entities.AvatarPriorityMode} avatarPriority="inherit" - Configures the priority of updates from avatars in the
  *     zone to other clients.
+ *
+ * @property {Entities.Fade} avatarFadeIn - The zone's fade in properties for avatars.
+ * @property {Entities.Fade} avatarFadeOut - The zone's fade out properties for avatars.
+ * @property {Entities.ComponentMode} avatarFadeInMode="inherit" - Configures the avatar fade in for this zone.
+ * @property {Entities.ComponentMode} avatarFadeOutMode="inherit" - Configures the avatar fade out for this zone.
  *
  * @example <caption>Create a zone that casts a red key light along the x-axis.</caption>
  * var zone = Entities.addEntity({

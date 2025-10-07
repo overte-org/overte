@@ -291,7 +291,7 @@ void RenderDeferredTaskDebug::build(JobModel& task, const render::Varying& input
     // Extract the Lighting Stages Current frame ( and zones)
     const auto lightingStageInputs = inputs.get2();
         // Fetch the current frame stacks from all the stages
-        const auto stageCurrentFrames = lightingStageInputs[0];
+        const auto stageCurrentFrames = lightingStageInputs.get0();
             const auto lightFrame = stageCurrentFrames[0];
             const auto backgroundFrame = stageCurrentFrames[1];
             const auto hazeFrame = stageCurrentFrames[2];

@@ -368,6 +368,7 @@ enum class EntityVersion : PacketVersion {
     NormalMapAttenuation,
     EmptyEntity,
     ScriptEntities,
+    Fading,
 
     // Add new versions above here
     NUM_PACKET_TYPE,

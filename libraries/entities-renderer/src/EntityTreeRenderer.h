@@ -30,6 +30,7 @@
 #include <OctreeProcessor.h>
 #include <render/Forward.h>
 #include <workload/Space.h>
+#include <FadeProperties.h>
 
 class AbstractScriptingServicesInterface;
 class AbstractViewStateInterface;
@@ -62,9 +63,6 @@ using CalculateEntityLoadingPriority = std::function<float(const EntityItem& ite
 class EntityTreeRenderer : public OctreeProcessor, public Dependency {
     Q_OBJECT
 public:
-    static void setEntitiesShouldFadeFunction(std::function<bool()> func) { _entitiesShouldFadeFunction = func; }
-    static std::function<bool()> getEntitiesShouldFadeFunction() { return _entitiesShouldFadeFunction; }
-
     EntityTreeRenderer(bool wantScripts, AbstractViewStateInterface* viewState,
                                 AbstractScriptingServicesInterface* scriptingServices);
     virtual ~EntityTreeRenderer();
@@ -105,6 +103,7 @@ public:
     void reloadEntityScripts();
 
     void fadeOutRenderable(const EntityRendererPointer& renderable);
+    FadeProperties getLayeredZoneFadeProperties(const TransitionType type) const { return _layeredZones.getFadeProperties(type); }
 
     // event handles which may generate entity related events
     QUuid mousePressEvent(QMouseEvent* event);
@@ -147,6 +146,8 @@ public:
 
     size_t getPrevNumEntityUpdates() const { return _prevNumEntityUpdates; }
     size_t getPrevTotalNeededEntityUpdates() const { return _prevTotalNeededEntityUpdates; }
+
+    bool layeredZonesHaveFade(const TransitionType type) const { return _layeredZones.hasFade(type); }
 
     bool checkAndCallPreload(const EntityItemID& entityID,
                              bool reload = false,
@@ -257,6 +258,8 @@ private:
 
         void appendRenderIDs(render::ItemIDs& list, EntityTreeRenderer* entityTreeRenderer) const;
         std::pair<bool, bool> getZoneInteractionProperties() const;
+        FadeProperties getFadeProperties(const TransitionType type) const;
+        bool hasFade(const TransitionType type) const;
     };
 
     LayeredZones _layeredZones;
@@ -280,7 +283,6 @@ private:
 
     static int _entitiesScriptEngineCount;
     static CalculateEntityLoadingPriority _calculateEntityLoadingPriorityFunc;
-    static std::function<bool()> _entitiesShouldFadeFunction;
 
     mutable std::mutex _spaceLock;
     workload::SpacePointer _space{ new workload::Space() };

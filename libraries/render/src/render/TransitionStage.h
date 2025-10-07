@@ -22,7 +22,7 @@ namespace render {
     class TransitionStage : public TypedStage<Transition> {
     public:
         bool isTransitionUsed(Index index) const { return _elements.checkIndex(index) && !_elements.isElementFreed(index); }
-        Index addTransition(ItemID itemId, Transition::Type type, ItemID boundId);
+        Index addTransition(ItemID itemId, TransitionType type, ItemID boundId);
     };
     using TransitionStagePointer = std::shared_ptr<TransitionStage>;
 

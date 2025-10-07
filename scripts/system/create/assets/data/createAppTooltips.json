@@ -851,5 +851,161 @@
     },
     "enabled": {
         "tooltip": "Whether or not the script should run."
+    },
+    "fadeInMode": {
+        "tooltip": "Configures the fade in."
+    },
+    "fadeIn.duration": {
+        "tooltip": "The time (seconds) for the fade to complete."
+    },
+    "fadeIn.noiseSize": {
+        "tooltip": "The scale of the noise."
+    },
+    "fadeIn.noiseLevel": {
+        "tooltip": "The noise multiplier."
+    },
+    "fadeIn.noiseSpeed": {
+        "tooltip": "The noise speed."
+    },
+    "fadeIn.baseSize": {
+        "tooltip": "The scale of the base."
+    },
+    "fadeIn.baseLevel": {
+        "tooltip": "The base multiplier."
+    },
+    "fadeIn.edgeWidth": {
+        "tooltip": "The width of the edge, as a fraction of the fade."
+    },
+    "fadeIn.edgeInnerColor": {
+        "tooltip": "The inner color of the edge."
+    },
+    "fadeIn.edgeInnerAlpha": {
+        "tooltip": "The inner alpha of the edge."
+    },
+    "fadeIn.edgeOuterColor": {
+        "tooltip": "The outer color of the edge."
+    },
+    "fadeIn.edgeOuterAlpha": {
+        "tooltip": "The outer alpha of the edge."
+    },
+    "fadeIn.timing": {
+        "tooltip": "The timing curve for the fade."
+    },
+    "fadeOutMode": {
+        "tooltip": "Configures the fade out."
+    },
+    "fadeOut.duration": {
+        "tooltip": "The time (seconds) for the fade to complete."
+    },
+    "fadeOut.noiseSize": {
+        "tooltip": "The scale of the noise."
+    },
+    "fadeOut.noiseLevel": {
+        "tooltip": "The noise multiplier."
+    },
+    "fadeOut.noiseSpeed": {
+        "tooltip": "The noise speed."
+    },
+    "fadeOut.baseSize": {
+        "tooltip": "The scale of the base."
+    },
+    "fadeOut.baseLevel": {
+        "tooltip": "The base multiplier."
+    },
+    "fadeOut.edgeWidth": {
+        "tooltip": "The width of the edge, as a fraction of the fade."
+    },
+    "fadeOut.edgeInnerColor": {
+        "tooltip": "The inner color of the edge."
+    },
+    "fadeOut.edgeInnerAlpha": {
+        "tooltip": "The inner alpha of the edge."
+    },
+    "fadeOut.edgeOuterColor": {
+        "tooltip": "The outer color of the edge."
+    },
+    "fadeOut.edgeOuterAlpha": {
+        "tooltip": "The outer alpha of the edge."
+    },
+    "fadeOut.timing": {
+        "tooltip": "The timing curve for the fade."
+    },
+    "avatarFadeInMode": {
+        "tooltip": "Configures the avatar fade in."
+    },
+    "avatarFadeIn.duration": {
+        "tooltip": "The time (seconds) for the fade to complete."
+    },
+    "avatarFadeIn.noiseSize": {
+        "tooltip": "The scale of the noise."
+    },
+    "avatarFadeIn.noiseLevel": {
+        "tooltip": "The noise multiplier."
+    },
+    "avatarFadeIn.noiseSpeed": {
+        "tooltip": "The noise speed."
+    },
+    "avatarFadeIn.baseSize": {
+        "tooltip": "The scale of the base."
+    },
+    "avatarFadeIn.baseLevel": {
+        "tooltip": "The base multiplier."
+    },
+    "avatarFadeIn.edgeWidth": {
+        "tooltip": "The width of the edge, as a fraction of the fade."
+    },
+    "avatarFadeIn.edgeInnerColor": {
+        "tooltip": "The inner color of the edge."
+    },
+    "avatarFadeIn.edgeInnerAlpha": {
+        "tooltip": "The inner alpha of the edge."
+    },
+    "avatarFadeIn.edgeOuterColor": {
+        "tooltip": "The outer color of the edge."
+    },
+    "avatarFadeIn.edgeOuterAlpha": {
+        "tooltip": "The outer alpha of the edge."
+    },
+    "avatarFadeIn.timing": {
+        "tooltip": "The timing curve for the fade."
+    },
+    "avatarFadeOutMode": {
+        "tooltip": "Configures the avatar fade out."
+    },
+    "avatarFadeOut.duration": {
+        "tooltip": "The time (seconds) for the fade to complete."
+    },
+    "avatarFadeOut.noiseSize": {
+        "tooltip": "The scale of the noise."
+    },
+    "avatarFadeOut.noiseLevel": {
+        "tooltip": "The noise multiplier."
+    },
+    "avatarFadeOut.noiseSpeed": {
+        "tooltip": "The noise speed."
+    },
+    "avatarFadeOut.baseSize": {
+        "tooltip": "The scale of the base."
+    },
+    "avatarFadeOut.baseLevel": {
+        "tooltip": "The base multiplier."
+    },
+    "avatarFadeOut.edgeWidth": {
+        "tooltip": "The width of the edge, as a fraction of the fade."
+    },
+    "avatarFadeOut.edgeInnerColor": {
+        "tooltip": "The inner color of the edge."
+    },
+    "avatarFadeOut.edgeInnerAlpha": {
+        "tooltip": "The inner alpha of the edge."
+    },
+    "avatarFadeOut.edgeOuterColor": {
+        "tooltip": "The outer color of the edge."
+    },
+    "avatarFadeOut.edgeOuterAlpha": {
+        "tooltip": "The outer alpha of the edge."
+    },
+    "avatarFadeOut.timing": {
+        "tooltip": "The timing curve for the fade."
     }
 }

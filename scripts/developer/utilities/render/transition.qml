@@ -30,24 +30,6 @@ Rectangle {
     property var config: Render.getConfig("RenderMainView.Fade");
     property var configEdit: Render.getConfig("RenderMainView.FadeEdit");
 
-    FileDialog {
-        id: fileDialog
-        title: "Please choose a file"
-        folder: shortcuts.documents
-        nameFilters: [ "JSON files (*.json)", "All files (*)" ]
-        onAccepted: {
-            root.sendToScript(title.split(" ")[0]+"*"+fileUrl.toString())
-            // This is a hack to be sure the widgets below properly reflect the change of category: delete the Component
-            // by setting the loader source to Null and then recreate it 500ms later
-            paramWidgetLoader.sourceComponent = undefined;
-            postpone.interval = 500
-            postpone.start()
-        }
-        onRejected: {
-        }
-        Component.onCompleted: visible = false
-    }
-
     ColumnLayout {
         spacing: 3
         anchors.left: parent.left
@@ -67,7 +49,15 @@ Rectangle {
                 anchors.left : parent.left
                 width: 300
                 id: categoryBox
-                model: ["Elements enter/leave domain", "Bubble isect. - Owner POV", "Bubble isect. - Trespasser POV", "Another user leaves/arrives", "Changing an avatar"]
+                model: [
+                    "Element enters domain",
+                    "Element leaves domain",
+                    "Bubble isect. - Owner POV",
+                    "Bubble isect. - Trespasser POV",
+                    "Another user arrives",
+                    "Another user leaves",
+                    "Changing an avatar"
+                ]
                 Timer {
                     id: postpone
                     interval: 100; running: false; repeat: false
@@ -80,14 +70,16 @@ Rectangle {
                 onCurrentIndexChanged: {
                     var descriptions = [
                         "Time based threshold, gradients centered on object",
+                        "Time based threshold, gradients centered on object, inverted",
                         "Fixed threshold, gradients centered on owner avatar",
                         "Position based threshold (increases when trespasser moves closer to avatar), gradients centered on trespasser avatar",
                         "Time based threshold, gradients centered on bottom of object",
+                        "Time based threshold, gradients centered on bottom of object, inverted",
                         "UNSUPPORTED"
                     ]
 
                     description.text = descriptions[currentIndex]
-                    root.config["editedCategory"] = currentIndex;
+                    root.configEdit["editedCategory"] = currentIndex;
                     // This is a hack to be sure the widgets below properly reflect the change of category: delete the Component
                     // by setting the loader source to Null and then recreate it 100ms later
                     paramWidgetLoader.sourceComponent = undefined;
@@ -140,25 +132,6 @@ Rectangle {
                 property: "manualThreshold"
                 max: 1.0
                 min: 0.0
-            }
-        }
-        
-        Action {
-            id: saveAction
-            text: "Save"
-            onTriggered: {
-                fileDialog.title = "Save configuration..."
-                fileDialog.selectExisting = false
-                fileDialog.open()
-            }
-        }
-        Action {
-            id: loadAction
-            text: "Load"
-            onTriggered: {
-                fileDialog.title = "Load configuration..."
-                fileDialog.selectExisting = true
-                fileDialog.open()
             }
         }
 

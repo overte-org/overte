@@ -270,10 +270,6 @@ bool Procedural::isReady() const {
         return false;
     }
 
-    if (!_hasStartedFade) {
-        _fadeStartTime = usecTimestampNow();
-    }
-
     // We need to have at least one shader, and whichever ones we have need to be loaded
     bool hasFragmentShader = !_fragmentShaderPath.isEmpty() || _networkFragmentShader;
     bool fragmentShaderLoaded = !_fragmentShaderPath.isEmpty() || (_networkFragmentShader && _networkFragmentShader->isLoaded());
@@ -288,11 +284,6 @@ bool Procedural::isReady() const {
         if (_channels[i] && !_channels[i]->isLoaded()) {
             return false;
         }
-    }
-
-    if (!_hasStartedFade) {
-        _hasStartedFade = true;
-        _isFading = true;
     }
 
     return true;
