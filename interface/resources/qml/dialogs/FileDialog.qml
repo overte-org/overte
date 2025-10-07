@@ -34,7 +34,7 @@ ModalWindow {
 
     HifiConstants { id: hifi }
 
-    property var filesModel: ListModel { }
+    property var filesModel: TableModel { }
 
     Settings {
         category: "FileDialog"
@@ -72,12 +72,14 @@ ModalWindow {
     signal canceled();
     signal selected(int button);
     function click(button) {
+        // QT6TODO
         clickedButton = button;
         selected(button);
         destroy();
     }
-	
-    property int clickedButton: OriginalDialogs.StandardButton.NoButton;
+
+    // QT6TODO
+    //property int clickedButton: OriginalDialogs.StandardButton.NoButton;
 	
     Component.onCompleted: {
         fileDialogItem.keyboardEnabled = HMD.active;
@@ -311,8 +313,9 @@ ModalWindow {
             }
 
             function clearSelection() {
-                fileTableView.selection.clear();
-                fileTableView.currentRow = -1;
+                // QT6TODO
+                //fileTableView.selection.clear();
+                //fileTableView.currentRow = -1;
                 update();
             }
         }
@@ -374,7 +377,25 @@ ModalWindow {
 
         Component {
             id: filesModelBuilder
-            ListModel { }
+            TableModel {
+                TableModelColumn {
+                    //id: fileNameColumn
+                    display: "fileName"
+                    //title: "Name"
+                    //width: (selectDirectory ? 1.0 : 0.5) * fileTableView.width
+                }
+                TableModelColumn {
+                    //id: fileModifiedColumn
+                    display: "fileModified"
+                    //title: "Date"
+                    //width: 0.3 * fileTableView.width
+                }
+                TableModelColumn {
+                    display: "fileSize"
+                    //title: "Size"
+                    //width: fileTableView.width - fileNameColumn.width - fileModifiedColumn.width
+                }
+            }
         }
 
         QtObject {
@@ -429,11 +450,11 @@ ModalWindow {
                 if (row === -1) {
                     return false;
                 }
-                return filesModel.get(row).fileIsDir;
+                return filesModel.getRow(row).fileIsDir;
             }
 
             function get(row) {
-                return filesModel.get(row)
+                return filesModel.getRow(row)
             }
 
             function update() {
@@ -473,7 +494,7 @@ ModalWindow {
                     while (lower < upper) {
                         middle = Math.floor((lower + upper) / 2);
                         var lessThan;
-                        if (comparisonFunction(sortValue, filesModel.get(middle)[sortField])) {
+                        if (comparisonFunction(sortValue, filesModel.getRow(middle)[sortField])) {
                             lessThan = true;
                             upper = middle;
                         } else {
@@ -482,7 +503,7 @@ ModalWindow {
                         }
                     }
 
-                    filesModel.insert(lower, {
+                    filesModel.insertRow(lower, {
                        fileName: fileName,
                        fileModified: (fileIsDir ? new Date(0) : model.getItem(i, "fileModified")),
                        fileSize: model.getItem(i, "fileSize"),
@@ -518,6 +539,7 @@ ModalWindow {
             property var sortIndicatorOrder: Qt.AscendingOrder
             property bool sortIndicatorVisible: true
 
+            // QT6TODO
             model: filesModel
 
             function updateSort() {
@@ -530,7 +552,20 @@ ModalWindow {
 
             onSortIndicatorOrderChanged: { updateSort(); }
 
-            delegate: Item {
+            delegate: TextInput {
+                text: model.display
+                padding: 12
+                selectByMouse: true
+
+                onAccepted: model.display = text
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: "#efefef"
+                    z: -1
+                }
+            }
+            /*delegate: Item {
                 clip: true
 
                 FiraSansSemiBold {
@@ -573,7 +608,7 @@ ModalWindow {
                         return size + " " + suffixes[suffixIndex];
                     }
                 }
-            }
+            }*/
 
             /*model: TableModel {
                 TableModelColumn {
