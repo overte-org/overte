@@ -57,24 +57,112 @@
 
               glm = pkgs.callPackage ./nix/glm.nix { };
             };
-            devShells.default = pkgs.mkShell {
-              packages = [
-                pkgs.conan
-                pkgs.ninja
-                pkgs.gdb
-              ];
-              inputsFrom = [ self'.packages.overte ];
+            devShells = {
+              default = pkgs.mkShell {
+                packages = [
+                  pkgs.conan
+                  pkgs.ninja
+                  pkgs.gdb
+                ];
+                inputsFrom = [ self'.packages.overte ];
 
-              buildInputs = [ pkgs.qt6.full ];
+                buildInputs = [ pkgs.qt6.full ];
 
-              inherit (self'.packages.overte)
-                NVTT_DIR
-                CXXFLAGS
-                GLSLANG_DIR
-                SCRIBE_DIR
-                SPIRV_CROSS_DIR
-                SPIRV_TOOLS_DIR
-                ;
+                inherit (self'.packages.overte)
+                  NVTT_DIR
+                  CXXFLAGS
+                  GLSLANG_DIR
+                  SCRIBE_DIR
+                  SPIRV_CROSS_DIR
+                  SPIRV_TOOLS_DIR
+                  ;
+              };
+              fhs =
+                (pkgs.buildFHSEnv {
+                  name = "overte-env";
+                  targetPkgs =
+                    pkgs:
+                    with pkgs;
+                    [
+                      pkg-config
+                      cmake
+                      gcc
+                      ninja
+                      conan
+                      gdb
+
+                      # aqt requirements
+                      python3
+                      bzip2
+
+                      libGL
+                      openssl
+
+                      xorg.libX11
+                      xorg.libXi
+                      xorg.libXmu
+                      xorg.libXext
+                      xorg.libXfixes
+                      xorg.libXcomposite
+                      xorg.libXtst
+                      xorg.libXrandr
+                      xorg.libXdmcp
+                      xorg.libXdamage
+                      xorg.libXcursor
+                      xorg.libxcb
+                      xorg.libXrender
+                      libxcb
+                      libxau
+                      libxkbcommon
+                      xorg.xcbproto
+                      xorg.xorgproto
+                      xorg.xrandr
+
+                      glib
+                      expat
+                      fontconfig
+                      dbus
+                      libgssglue
+                      krb5
+                      pulseaudio
+                      nss
+                      nspr
+                      freetype
+                      alsa-oss
+                      alsa-lib
+
+                      wayland
+                      libffi
+                      vulkan-loader
+                    ]
+                    # TODO: replace with qt6 and  when in main branch
+                    ++ (with qt6Packages; [
+                      qtbase
+                      qtmultimedia
+                      qtdeclarative
+                      qtwebsockets
+                      qtsvg
+                      quazip
+                      qtwebchannel
+                      qtwebengine
+                      qtpositioning
+                      qt5compat
+                    ]);
+
+                  extraOutputsToInstall = [ "dev" ];
+                  extraBuildCommands = ''
+                    mkdir -p $out/usr/mkspecs
+                    cp -rsHf ${pkgs.qt6Packages.qtbase}/mkspecs/* $out/usr/mkspecs/
+                  '';
+
+                  profile = ''
+                    export PKG_CONFIG_PATH="/usr/share/pkgconfig:''${PKG_CONFIG_PATH}"
+                    export X11_ROOT="/usr"
+                    export BZip2_ROOT="/usr"
+                    export NIXPKGS_CMAKE_PREFIX_PATH="/usr"
+                  '';
+                }).env;
+
             };
           };
       }
