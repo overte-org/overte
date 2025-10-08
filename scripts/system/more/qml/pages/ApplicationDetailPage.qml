@@ -31,6 +31,7 @@ Rectangle {
                 CustomButton {
                     id: detailsBackButton;
                     width: parent.width;
+                    height: 40;
                     buttonText: "Back";
                     onClickedFunc: () => { showAppListPage() }
                 }
@@ -40,25 +41,25 @@ Rectangle {
                 id: statusContainer;
                 anchors.right: parent.right;
                 spacing: 6;
-				height: 24;
+				height: 40;
                 
                 Text {
                     visible: focusedApp.isInstalled;
-                    text: focusedApp.isRunning ? "\u2B24 INSTALLED / RUNNING" : "\u2BC0 INSTALLED / NOT RUNNING";
+                    text: focusedApp.isRunning ? "\n\u2B24 INSTALLED / RUNNING" : "\n\u2BC0 INSTALLED / NOT RUNNING";
                     color: focusedApp.isRunning ? colors.greenIndicatorText : colors.redIndicatorText;
                     font.pixelSize: 14;
                 }
 
                 Text {
                     visible: !focusedApp.isInstalled && focusedApp.isRunning;
-                    text: "\u25B2 NOT INSTALLED / RUNNING";
+                    text: "\n\u25B2 NOT INSTALLED / RUNNING";
                     color: colors.yellowIndicatorText;
                     font.pixelSize: 14;
                 }
                 
                 Text {
                     visible: !focusedApp.isInstalled && !focusedApp.isRunning;
-                    text: "NOT INSTALLED / NOT RUNNING";
+                    text: "\nNOT INSTALLED / NOT RUNNING";
                     color: colors.lightText3;
                     font.pixelSize: 14;
                 }
@@ -107,7 +108,14 @@ Rectangle {
                 
                 Column {
                     width: parent.width;
-
+                    Text {
+                        id: author;
+                        text: focusedApp && focusedApp.appAuthor ? "Author: " + focusedApp.appAuthor || "Author: -" : "";
+                        color: colors.lightText2;
+                        font.pixelSize: 16;
+                        anchors.left: parent.left;
+                    }
+                    
                     Text {
                         id: category;
                         text: focusedApp && focusedApp.appCategory ? "Category: " + focusedApp.appCategory || "Category: -" : "";

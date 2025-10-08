@@ -27,7 +27,13 @@ ColumnLayout {
 
 			onClickedFunc: () => { showAppListPage() }
 		}
-
+        
+        Text {
+            text: "\nRepositories";
+            color: colors.lightText3;
+            font.pixelSize: 20;
+        }
+        
 		CustomListView {
 			Layout.fillHeight: true;
 			onAddEntryButtonClickedFunc: () => {toScript({type: "addNewRepositoryButtonClicked"})}; 
