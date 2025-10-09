@@ -602,8 +602,8 @@ bool OctreePacketData::appendValue(const QRect& value) {
 }
 
 bool OctreePacketData::appendValue(const Sampler& value) {
-    const unsigned char* data = (const unsigned char*)&value;
-    int length = sizeof(Sampler);
+    const unsigned char* data = (const unsigned char*)&value.getDesc();
+    int length = sizeof(Sampler::Desc);
     bool success = append(data, length);
     if (success) {
         _bytesOfValues += length;

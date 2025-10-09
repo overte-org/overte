@@ -90,7 +90,7 @@ static ShapePipelinePointer webPipelineFactory(const ShapePlumber& plumber, cons
         for (auto& key : keys) {
             auto state = std::make_shared<gpu::State>();
             state->setCullMode(gpu::State::CULL_NONE);
-            state->setDepthTest(true, !std::get<0>(key), gpu::LESS_EQUAL);
+            state->setDepthTest(true, !std::get<0>(key), ComparisonFunction::LESS_EQUAL);
             if (std::get<0>(key)) {
                 PrepareStencil::testMaskResetNoAA(*state);
             } else {

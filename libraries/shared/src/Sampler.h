@@ -96,6 +96,7 @@ public:
                 _maxMip == other._maxMip;
         }
     };
+    static_assert(sizeof(Desc) == 28, "Sampler::Desc size doesn't match.");
 
     Sampler() {}
     Sampler(const Filter filter, const WrapMode wrap = WRAP_REPEAT) : _desc(filter, wrap) {}
