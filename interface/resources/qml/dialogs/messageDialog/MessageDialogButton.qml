@@ -15,7 +15,7 @@ import controlsUit 1.0
 
 Button {
     property var dialog;
-    property int button: StandardButton.Ok;
+    property int button: MessageDialog.Ok;
 
     color: focus ? hifi.buttons.blue : hifi.buttons.white
     onClicked: dialog.click(button)
