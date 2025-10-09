@@ -16,6 +16,7 @@
 
 #include "RenderableEntityItem.h"
 
+#include <GeometryCache.h>
 #include <procedural/Procedural.h>
 
 class TextEntityItem;
@@ -79,10 +80,12 @@ private:
     glm::vec3 _effectColor { 0 };
     float _effectThickness { 0.0f };
 
+    FadeBuffers _fadeBuffers;
+
     int _geometryID { 0 };
 
     std::shared_ptr<TextPayload> _textPayload;
-    render::ItemID _textRenderID;
+    render::ItemID _textRenderID { render::Item::INVALID_ITEM_ID };
     void updateTextRenderItem() const;
 
     friend class render::entities::TextPayload;

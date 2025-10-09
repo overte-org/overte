@@ -1,0 +1,59 @@
+//
+//  FadeInPropertyGroup.h
+//  libraries/entities/src
+//
+//  Created by HifiExperiments on 6/15/25
+//  Copyright 2025 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#ifndef hifi_FadeInPropertyGroup_h
+#define hifi_FadeInPropertyGroup_h
+
+#include <stdint.h>
+#include <glm/glm.hpp>
+
+#include "PropertyGroup.h"
+#include "EntityItemPropertiesMacros.h"
+#include "EntityItemPropertiesDefaults.h"
+
+#include <FadeTiming.h>
+
+class EntityItemProperties;
+class EncodeBitstreamParams;
+class OctreePacketData;
+class EntityTreeElementExtraEncodeData;
+class ReadBitstreamToTreeParams;
+class ScriptEngine;
+class ScriptValue;
+
+/*@jsdoc
+ * Fading is defined by the following properties:
+ * @typedef {object} Entities.Fade
+ * @property {number} duration=4.0 - The time (seconds) for the fade to complete.
+ * @property {Vec3} noiseSize=0.75,0.75,0.75 - The scale of the noise.
+ * @property {number} noiseLevel=1.0 - The noise multiplier.
+ * @property {Vec3} noiseSpeed=0,0,0 - The noise speed.
+ * @property {Vec3} baseSize=1,1,1 - The scale of the base.
+ * @property {number} baseLevel=0.0 - The base multiplier.
+ * @property {number} edgeWidth=0.1 - The width of the edge, as a fraction of the fade.
+ * @property {Color} edgeInnerColor=78,215,255 - The inner color of the edge.
+ * @property {number} edgeInnerAlpha=0.0 - The inner alpha of the edge.
+ * @property {Color} edgeOuterColor=78,215,255 - The outer color of the edge.
+ * @property {number} edgeOuterAlpha=1.0 - The outer alpha of the edge.
+ * @property {FadeTiming} timing="linear" - The timing curve for the fade.
+ */
+class FadeInPropertyGroup : public PropertyGroup {
+public:
+    ENTITY_PROPERTY_GROUP_METHODS(FadeInPropertyGroup)
+
+protected:
+
+@FadeIn_GROUP_PROPS@
+
+};
+
+#endif // hifi_FadeInPropertyGroup_h

@@ -25,8 +25,6 @@ ProceduralSkybox::ProceduralSkybox(uint64_t created) : graphics::Skybox(), _crea
 
     _procedural._errorFallbackFragmentPath = ":" + QUrl("qrc:///shaders/errorSkyboxShader.frag").path();
 
-    _procedural.setDoesFade(false);
-
     // Adjust the pipeline state for background using the stencil test
     // Must match PrepareStencil::STENCIL_BACKGROUND
     const int8_t STENCIL_BACKGROUND = 0;

@@ -13,6 +13,7 @@
 #include "RenderableTextEntityItem.h"
 
 #include <TextEntityItem.h>
+#include <FadeEffect.h>
 #include <GeometryCache.h>
 #include <PerfStat.h>
 #include <Transform.h>
@@ -172,7 +173,6 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
     Pipeline pipelineType = getPipelineType(materials);
     if (pipelineType == Pipeline::PROCEDURAL) {
         auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials.top().material);
-        transparent |= procedural->isFading();
         procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(transparent));
     } else if (pipelineType == Pipeline::MATERIAL) {
         if (RenderPipelines::bindMaterials(materials, batch, args->_renderMode, args->_enableTexturing)) {
@@ -182,7 +182,15 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
 
     auto geometryCache = DependencyManager::get<GeometryCache>();
     if (pipelineType == Pipeline::SIMPLE || pipelineType == Pipeline::MIRROR) {
-        geometryCache->renderQuad(batch, glm::vec2(-0.5f), glm::vec2(0.5f), backgroundColor, _geometryID);
+        bool fading = ShapeKey(args->_itemShapeKey).isFaded();
+        if (!fading) {
+            geometryCache->renderQuad(batch, glm::vec2(-0.5f), glm::vec2(0.5f), backgroundColor, _geometryID);
+        } else {
+            FadeObjectParams fadeParams = getFadeParams(args->_scene);
+            _fadeBuffers.clear();
+            _fadeBuffers.append(fadeParams);
+            geometryCache->renderQuadFade(batch, glm::vec2(-0.5f), glm::vec2(0.5f), backgroundColor, _fadeBuffers, _geometryID);
+        }
     } else {
         geometryCache->renderQuad(batch, glm::vec2(-0.5f), glm::vec2(0.5f), glm::vec2(0.0f), glm::vec2(1.0f), backgroundColor, _geometryID);
     }
@@ -351,10 +359,7 @@ void entities::TextPayload::render(RenderArgs* args) {
     textRenderable->withReadLock([&] {
         transform = textRenderable->_renderTransform;
         dimensions = textRenderable->_dimensions;
-
-        float fadeRatio = textRenderable->_isFading ? Interpolate::calculateFadeRatio(textRenderable->_fadeStartTime) : 1.0f;
-        textColor = glm::vec4(textRenderable->_textColor, fadeRatio * textRenderable->_textAlpha);
-
+        textColor = glm::vec4(textRenderable->_textColor, textRenderable->_textAlpha);
         mirror = textRenderable->_mirrorMode == MirrorMode::MIRROR || (textRenderable->_mirrorMode == MirrorMode::PORTAL && !textRenderable->_portalExitID.isNull());
     });
 
@@ -383,9 +388,15 @@ void entities::TextPayload::render(RenderArgs* args) {
         _prevRenderTransform = transform;
     }
 
+    bool fading = !forward && ShapeKey(args->_itemShapeKey).isFaded();
+    if (fading) {
+        FadeEffect::getBatchSetter()(*args->_shapePipeline, *args->_batch, args);
+        FadeEffect::getItemUniformSetter()(*args->_shapePipeline, args, AbstractViewStateInterface::instance()->getMain3DScene()->getItem(textRenderable->_textRenderID));
+    }
+
     glm::vec2 bounds = glm::vec2(dimensions.x - (textRenderable->_leftMargin + textRenderable->_rightMargin), dimensions.y - (textRenderable->_topMargin + textRenderable->_bottomMargin));
     textRenderer->draw(batch, textRenderable->_font, { textRenderable->_text, textColor, effectColor, { textRenderable->_leftMargin / scale, -textRenderable->_topMargin / scale },
-        bounds / scale, scale, textRenderable->_effectThickness, textRenderable->_effect, textRenderable->_alignment, textRenderable->_verticalAlignment, textRenderable->_unlit, forward, mirror });
+        bounds / scale, scale, textRenderable->_effectThickness, textRenderable->_effect, textRenderable->_alignment, textRenderable->_verticalAlignment, textRenderable->_unlit, forward, mirror, fading });
 }
 
 namespace render {

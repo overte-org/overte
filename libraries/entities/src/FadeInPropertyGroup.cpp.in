@@ -1,0 +1,151 @@
+//
+//  FadeInPropertyGroup.cpp
+//  libraries/entities/src
+//
+//  Created by HifiExperiments on 6/15/25
+//  Copyright 2025 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "FadeInPropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+inline void addFadeTiming(QHash<QString, FadeTiming>& lookup, FadeTiming timing) { lookup[FadeTimingHelpers::getNameForFadeTiming(timing)] = timing; }
+const QHash<QString, FadeTiming> stringToFadeTimingLookup = [] {
+    QHash<QString, FadeTiming> toReturn;
+    addFadeTiming(toReturn, FadeTiming::LINEAR);
+    addFadeTiming(toReturn, FadeTiming::EASE_IN);
+    addFadeTiming(toReturn, FadeTiming::EASE_OUT);
+    addFadeTiming(toReturn, FadeTiming::EASE_IN_OUT);
+    return toReturn;
+}();
+QString FadeInPropertyGroup::getTimingAsString() const { return FadeTimingHelpers::getNameForFadeTiming(_timing); }
+void FadeInPropertyGroup::setTimingFromString(const QString& timing) {
+    auto timingItr = stringToFadeTimingLookup.find(timing.toLower());
+    if (timingItr != stringToFadeTimingLookup.end()) {
+        _timing = timingItr.value();
+        _timingChanged = true;
+    }
+}
+
+void FadeInPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+@FadeIn_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void FadeInPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@FadeIn_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void FadeInPropertyGroup::merge(const FadeInPropertyGroup& other) {
+
+@FadeIn_GROUP_MERGE@
+
+}
+
+void FadeInPropertyGroup::debugDump() const {
+
+@FadeIn_GROUP_DEBUG_DUMP@
+
+}
+
+void FadeInPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@FadeIn_GROUP_LIST_CHANGED@
+
+}
+
+bool FadeInPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                             EntityPropertyFlags& requestedProperties,
+                                             EntityPropertyFlags& propertyFlags,
+                                             EntityPropertyFlags& propertiesDidntFit,
+                                             int& propertyCount,
+                                             OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@FadeIn_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool FadeInPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@FadeIn_GROUP_READ@
+
+@FadeIn_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void FadeInPropertyGroup::markAllChanged() {
+
+@FadeIn_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags FadeInPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@FadeIn_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void FadeInPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@FadeIn_GROUP_COPY_TO@
+
+}
+
+bool FadeInPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@FadeIn_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags FadeInPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@FadeIn_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int FadeInPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                          ReadBitstreamToTreeParams& args,
+                                                          EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                          bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@FadeIn_GROUP_READ@
+
+    return bytesRead;
+}
+
+void FadeInPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                         QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@FadeIn_GROUP_ADD_TO_MAP@
+
+}

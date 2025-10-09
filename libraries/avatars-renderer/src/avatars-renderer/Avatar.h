@@ -43,6 +43,7 @@ namespace render {
     template <> const Item::Bound payloadGetBound(const AvatarSharedPointer& avatar, RenderArgs* args);
     template <> void payloadRender(const AvatarSharedPointer& avatar, RenderArgs* args);
     template <> uint32_t metaFetchMetaSubItems(const AvatarSharedPointer& avatar, ItemIDs& subItems);
+    template <> FadeProperties payloadGetFadeProperties(const AvatarSharedPointer& avatar, const TransitionType type);
 }
 
 static const float SCALING_RATIO = .05f;
@@ -518,7 +519,8 @@ public:
 
     void fadeIn(render::ScenePointer scene);
     void fadeOut(render::Transaction& transaction, KillAvatarReason reason);
-    render::Transition::Type getLastFadeRequested() const;
+    TransitionType getLastFadeRequested() const;
+    FadeProperties getFadeProperties(const TransitionType type) const;
 
     // JSDoc is in AvatarData.h.
     Q_INVOKABLE virtual float getEyeHeight() const override;
@@ -679,7 +681,7 @@ protected:
     bool applyGrabChanges();
     void relayJointDataToChildren();
 
-    void fade(render::Transaction& transaction, render::Transition::Type type);
+    void fade(render::Transaction& transaction, TransitionType type);
 
     glm::vec3 getBodyRightDirection() const { return getWorldOrientation() * IDENTITY_RIGHT; }
     glm::vec3 getBodyUpDirection() const { return getWorldOrientation() * IDENTITY_UP; }
@@ -699,7 +701,7 @@ protected:
     virtual void updatePalms();
 
     render::ItemID _renderItemID{ render::Item::INVALID_ITEM_ID };
-    render::Transition::Type _lastFadeRequested { render::Transition::Type::NONE }; // Used for sanity checking
+    TransitionType _lastFadeRequested { TransitionType::NONE }; // Used for sanity checking
 
     ThreadSafeValueCache<glm::vec3> _leftPalmPositionCache { glm::vec3() };
     ThreadSafeValueCache<glm::quat> _leftPalmRotationCache { glm::quat() };

@@ -34,6 +34,10 @@ void FetchCurrentFrames::run(const render::RenderContextPointer& renderContext, 
     auto ambientOcclusionStage = renderContext->_scene->getStage<AmbientOcclusionStage>();
     assert(ambientOcclusionStage);
     output.edit5() = std::make_shared<AmbientOcclusionStage::Frame>(ambientOcclusionStage->_currentFrame);
+
+    auto normalMapAttenuationStage = renderContext->_scene->getStage<NormalMapAttenuationStage>();
+    assert(normalMapAttenuationStage);
+    output.edit6() = std::make_shared<NormalMapAttenuationStage::Frame>(normalMapAttenuationStage->_currentFrame);
 }
 
 

@@ -131,18 +131,22 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
     const auto& lightingStageInputs = inputs.get2();
         // Fetch the current frame stacks from all the stages
         const auto currentStageFrames = lightingStageInputs.get0();
-            const auto lightFrame = currentStageFrames[0];
-            const auto backgroundFrame = currentStageFrames[1];
+            const auto& lightFrame = currentStageFrames[0];
+            const auto& backgroundFrame = currentStageFrames[1];
             const auto& hazeFrame = currentStageFrames[2];
             const auto& bloomFrame = currentStageFrames[3];
             const auto& tonemappingFrame = currentStageFrames[4];
             const auto& ambientOcclusionFrame = currentStageFrames[5];
+            const auto& normalMapAttenuationFrame = currentStageFrames[6];
 
     // Shadow Task Outputs
     const auto& shadowTaskOutputs = inputs.get3();
 
         // Shadow Stage Frame
         const auto shadowFrame = shadowTaskOutputs[1];
+
+    const auto setNormalMapAttenuationInputs = SetNormalMapAttenuation::Inputs(lightingModel, normalMapAttenuationFrame).asVarying();
+    task.addJob<SetNormalMapAttenuation>("SetNormalMapAttenuation", setNormalMapAttenuationInputs);
 
     const auto antialiasingMode = task.addJob<AntialiasingSetup>("AntialiasingSetup");
 
@@ -287,7 +291,7 @@ void RenderDeferredTaskDebug::build(JobModel& task, const render::Varying& input
     // Extract the Lighting Stages Current frame ( and zones)
     const auto lightingStageInputs = inputs.get2();
         // Fetch the current frame stacks from all the stages
-        const auto stageCurrentFrames = lightingStageInputs[0];
+        const auto stageCurrentFrames = lightingStageInputs.get0();
             const auto lightFrame = stageCurrentFrames[0];
             const auto backgroundFrame = stageCurrentFrames[1];
             const auto hazeFrame = stageCurrentFrames[2];

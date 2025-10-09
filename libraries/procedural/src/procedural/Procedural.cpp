@@ -270,10 +270,6 @@ bool Procedural::isReady() const {
         return false;
     }
 
-    if (!_hasStartedFade) {
-        _fadeStartTime = usecTimestampNow();
-    }
-
     // We need to have at least one shader, and whichever ones we have need to be loaded
     bool hasFragmentShader = !_fragmentShaderPath.isEmpty() || _networkFragmentShader;
     bool fragmentShaderLoaded = !_fragmentShaderPath.isEmpty() || (_networkFragmentShader && _networkFragmentShader->isLoaded());
@@ -288,11 +284,6 @@ bool Procedural::isReady() const {
         if (_channels[i] && !_channels[i]->isLoaded()) {
             return false;
         }
-    }
-
-    if (!_hasStartedFade) {
-        _hasStartedFade = true;
-        _isFading = true;
     }
 
     return true;
@@ -401,7 +392,7 @@ void Procedural::prepare(gpu::Batch& batch,
                             for (const QJsonValue& value : valueArray) {
                                 if (value.isArray()) {
                                     const QJsonArray innerValueArray = value.toArray();
-                                    if (static_cast<size_t>(innerValueArray.size()) == valueLength) {
+                                    if (innerValueArray.size() == valueLength) {
                                         if (valueLength == 3 || valueLength == 4 || valueLength == 9 || valueLength == 16) {
                                             count++;
                                             isArrayUniform = true;
@@ -533,7 +524,7 @@ void Procedural::setupUniforms() {
                     for (const QJsonValue& value : valueArray) {
                         if (value.isArray()) {
                             const QJsonArray innerValueArray = value.toArray();
-                            if (static_cast<size_t>(innerValueArray.size()) == valueLength) {
+                            if (innerValueArray.size() == valueLength) {
                                 if (valueLength == 3 || valueLength == 4 || valueLength == 9 || valueLength == 16) {
                                     for (int i = 0; i < valueLength; i++) {
                                         vs.push_back(innerValueArray[i].toDouble());

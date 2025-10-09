@@ -1,0 +1,242 @@
+//
+//  Created by HifiExperiments on 1/21/2025
+//  Copyright 2025 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+#include "ScriptEntityItem.h"
+
+#include <QtCore/QDebug>
+
+#include "EntitiesLogging.h"
+#include "EntityItemProperties.h"
+#include "EntityTree.h"
+#include "EntityTreeElement.h"
+
+std::function<bool(const EntityItemID&, const QString&, const QString&)> ScriptEntityItem::_loadOrReloadScriptOperator = nullptr;
+std::function<void(const EntityItemID&, const QString&)> ScriptEntityItem::_unloadScriptOperator = nullptr;
+
+EntityItemPointer ScriptEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    std::shared_ptr<ScriptEntityItem> entity(new ScriptEntityItem(entityID), [](ScriptEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+// our non-pure virtual subclass for now...
+ScriptEntityItem::ScriptEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
+    _type = EntityTypes::Script;
+}
+
+ScriptEntityItem::~ScriptEntityItem() {
+    QUuid runningParentID;
+    QString runningScriptURL;
+    withReadLock([&] {
+        runningParentID = _runningParentID;
+        runningScriptURL = _runningScriptURL;
+    });
+
+    if (!runningParentID.isNull() && !runningScriptURL.isEmpty()) {
+        unloadScript(runningParentID, runningScriptURL);
+    }
+}
+
+EntityItemProperties ScriptEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
+
+@Script_ENTITY_COPY_TO@
+
+    return properties;
+}
+
+bool ScriptEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Script_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags ScriptEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+@Script_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+void ScriptEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                         EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                         EntityPropertyFlags& requestedProperties,
+                                         EntityPropertyFlags& propertyFlags,
+                                         EntityPropertyFlags& propertiesDidntFit,
+                                         int& propertyCount,
+                                         OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Script_ENTITY_APPEND@
+
+}
+
+int ScriptEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                      ReadBitstreamToTreeParams& args,
+                                                      EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                      bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Script_ENTITY_READ@
+
+    return bytesRead;
+}
+
+void ScriptEntityItem::debugDump() const {
+    qCDebug(entities) << "ScriptEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+@Script_ENTITY_DEBUG@
+
+}
+
+AACube ScriptEntityItem::calculateInitialQueryAACube(bool& success) {
+    AACube aaCube = EntityItem::calculateInitialQueryAACube(success);
+    // A Script entity's queryAACube contains its parent's queryAACube
+    auto parent = getParentPointer(success);
+    if (success && parent) {
+        success = false;
+        AACube parentQueryAACube = parent->calculateInitialQueryAACube(success);
+        if (success) {
+            aaCube += parentQueryAACube.getMinimumPoint();
+            aaCube += parentQueryAACube.getMaximumPoint();
+        }
+    }
+    return aaCube;
+}
+
+void ScriptEntityItem::setUnscaledDimensions(const glm::vec3& value) {
+    EntityItem::setUnscaledDimensions(ENTITY_ITEM_DEFAULT_DIMENSIONS);
+}
+
+void ScriptEntityItem::update(const quint64& now) {
+    updateScript();
+}
+
+void ScriptEntityItem::setParentID(const QUuid& parentID) {
+    if (parentID != getParentID()) {
+        EntityItem::setParentID(parentID);
+        updateScript();
+    }
+}
+
+void ScriptEntityItem::setUserData(const QString& value) {
+    bool changed = false;
+    withWriteLock([&] {
+        changed = _userData != value;
+    });
+    if (changed) {
+        EntityItem::setUserData(value);
+        QUuid runningParentID;
+        QString runningScriptURL;
+        bool enabled;
+        withReadLock([&] {
+            runningParentID = _runningParentID;
+            runningScriptURL = _runningScriptURL;
+            enabled = _enabled;
+        });
+        if (enabled && !runningParentID.isNull() && !runningScriptURL.isEmpty()) {
+            EntityItem::updateScriptUserData(runningParentID, runningScriptURL, value);
+        }
+    }
+}
+
+void ScriptEntityItem::setScriptURL(const QString& value) {
+    bool changed = false;
+    withWriteLock([&] {
+        if (value != _scriptURL) {
+            _scriptURL = value;
+            changed = true;
+        }
+    });
+
+    if (changed) {
+        updateScript();
+    }
+}
+
+QString ScriptEntityItem::getScriptURL() const {
+    return resultWithReadLock<QString>([&] {
+        return _scriptURL;
+    });
+}
+
+void ScriptEntityItem::setEnabled(bool enabled) {
+    bool changed = false;
+    withWriteLock([&] {
+        if (enabled != _enabled) {
+            _enabled = enabled;
+            changed = true;
+        }
+    });
+
+    if (changed) {
+        updateScript();
+    }
+}
+
+bool ScriptEntityItem::getEnabled() const {
+    return resultWithReadLock<bool>([&] {
+        return _enabled;
+    });
+}
+
+void ScriptEntityItem::updateScript() {
+    const auto tree = getTree();
+    if (!tree) {
+        _updateNeeded = true;
+        return;
+    }
+
+    // We only support client-side Script entities for now
+    if (!tree->getIsClient()) {
+        _updateNeeded = false;
+        return;
+    }
+
+    QUuid parentID = getParentID();
+    QUuid runningParentID;
+    QString runningScriptURL;
+    QString newScriptURL;
+    bool enabled;
+    withReadLock([&] {
+        runningParentID = _runningParentID;
+        runningScriptURL = _runningScriptURL;
+        newScriptURL = _scriptURL;
+        enabled = _enabled;
+    });
+
+    if (enabled && !parentID.isNull() && !newScriptURL.isEmpty()) {
+        if (!loadOrReloadScript(parentID, runningScriptURL, newScriptURL)) {
+            _updateNeeded = true;
+            return;
+        } else {
+            withWriteLock([&] {
+                _runningParentID = parentID;
+                _runningScriptURL = newScriptURL;
+            });
+        }
+    } else if (!enabled && !runningParentID.isNull() && !runningScriptURL.isEmpty()) {
+        unloadScript(runningParentID, runningScriptURL);
+        withWriteLock([&] {
+            _runningParentID = QUuid();
+            _runningScriptURL = "";
+        });
+    }
+    _updateNeeded = false;
+}

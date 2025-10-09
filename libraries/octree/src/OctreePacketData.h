@@ -47,6 +47,7 @@
 #include "MirrorMode.h"
 #include "TonemappingCurve.h"
 #include "AmbientOcclusionTechnique.h"
+#include "FadeTiming.h"
 #include "Sampler.h"
 
 #include "OctreeConstants.h"
@@ -297,6 +298,7 @@ public:
     static int unpackDataFromBytes(const unsigned char* dataBytes, MirrorMode& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, TonemappingCurve& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, AmbientOcclusionTechnique& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
+    static int unpackDataFromBytes(const unsigned char* dataBytes, FadeTiming& result) { memcpy(&result, dataBytes, sizeof(result)); return sizeof(result); }
     static int unpackDataFromBytes(const unsigned char* dataBytes, glm::vec2& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, glm::vec3& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, glm::u8vec3& result);

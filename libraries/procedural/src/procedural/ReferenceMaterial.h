@@ -47,8 +47,6 @@ public:
     QString getProceduralString() const override;
 
     glm::vec4 getColor(const glm::vec4& color) const override;
-    bool isFading() const override;
-    uint64_t getFadeStartTime() const override;
     bool hasVertexShader() const override;
     void prepare(gpu::Batch& batch, const glm::vec3& position, const glm::vec3& size, const glm::quat& orientation,
                  const uint64_t& created, const ProceduralProgramKey key = ProceduralProgramKey()) override;

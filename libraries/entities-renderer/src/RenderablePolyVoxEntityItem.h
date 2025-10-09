@@ -207,15 +207,10 @@ protected:
     virtual Item::Bound getBound(RenderArgs* args) override;
     virtual bool needsRenderUpdate() const override;
     virtual bool needsRenderUpdateFromTypedEntity(const TypedEntityPointer& entity) const override;
-    virtual void doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) override;
     virtual void doRenderUpdateAsynchronousTyped(const TypedEntityPointer& entity) override;
     virtual void doRender(RenderArgs* args) override;
 
 private:
-#ifdef POLYVOX_ENTITY_USE_FADE_EFFECT
-    bool _hasTransitioned{ false };
-#endif
-
     graphics::MeshPointer _mesh;
     gpu::BufferPointer _params;
     std::array<NetworkTexturePointer, 3> _xyzTextures;
