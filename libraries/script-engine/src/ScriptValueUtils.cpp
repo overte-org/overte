@@ -1144,6 +1144,8 @@ ScriptValue samplerToScriptValue(ScriptEngine* engine, const Sampler& sampler) {
             obj.setProperty("minFilter", qStringToScriptValue(engine, "linearMipmapLinear"));
             obj.setProperty("magFilter", qStringToScriptValue(engine, "linear"));
             break;
+        default:
+            break;
     }
     obj.setProperty("wrapModeU", qStringToScriptValue(engine, wrapModeToString(sampler.getWrapModeU())));
     obj.setProperty("wrapModeV", qStringToScriptValue(engine, wrapModeToString(sampler.getWrapModeV())));
