@@ -36,26 +36,26 @@ ModalWindow {
         return OffscreenUi.waitForMessageBoxResult(root);
     }
 
-    Keys.onRightPressed: if (defaultButton === OriginalDialogs.StandardButton.Yes) {
+    Keys.onRightPressed: if (defaultButton === OriginalDialogs.MessageDialog.Yes) {
        yesButton.forceActiveFocus()
-    } else if (defaultButton === OriginalDialogs.StandardButton.Ok) {
+    } else if (defaultButton === OriginalDialogs.MessageDialog.Ok) {
        okButton.forceActiveFocus()
     }
-    Keys.onTabPressed: if (defaultButton === OriginalDialogs.StandardButton.Yes) {
+    Keys.onTabPressed: if (defaultButton === OriginalDialogs.MessageDialog.Yes) {
        yesButton.forceActiveFocus()
-    } else if (defaultButton === OriginalDialogs.StandardButton.Ok) {
+    } else if (defaultButton === OriginalDialogs.MessageDialog.Ok) {
        okButton.forceActiveFocus()
     }
     property alias detailedText: detailedText.text
     property alias text: mainTextContainer.text
     property alias informativeText: informativeTextContainer.text
-    property int buttons: OriginalDialogs.StandardButton.Ok
+    property int buttons: OriginalDialogs.MessageDialog.Ok
     property int icon: OriginalDialogs.StandardIcon.NoIcon
     property string iconText: ""
     property int iconSize: 50
     onIconChanged: updateIcon();
-    property int defaultButton: OriginalDialogs.StandardButton.NoButton;
-    property int clickedButton: OriginalDialogs.StandardButton.NoButton;
+    property int defaultButton: OriginalDialogs.MessageDialog.NoButton;
+    property int clickedButton: OriginalDialogs.MessageDialog.NoButton;
 
     property int titleWidth: 0
     onTitleWidthChanged: d.resize();
@@ -136,41 +136,41 @@ ModalWindow {
                 margins: 0
                 topMargin: 2 * hifi.dimensions.contentSpacing.y
             }
-            MessageDialogButton { dialog: root; text: qsTr("Close"); button: OriginalDialogs.StandardButton.Close; }
-            MessageDialogButton { dialog: root; text: qsTr("Abort"); button: OriginalDialogs.StandardButton.Abort; }
-            MessageDialogButton { dialog: root; text: qsTr("Cancel"); button: OriginalDialogs.StandardButton.Cancel; }
-            MessageDialogButton { dialog: root; text: qsTr("Restore Defaults"); button: OriginalDialogs.StandardButton.RestoreDefaults; }
-            MessageDialogButton { dialog: root; text: qsTr("Reset"); button: OriginalDialogs.StandardButton.Reset; }
-            MessageDialogButton { dialog: root; text: qsTr("Discard"); button: OriginalDialogs.StandardButton.Discard; }
-            MessageDialogButton { dialog: root; text: qsTr("No to All"); button: OriginalDialogs.StandardButton.NoToAll; }
+            MessageDialogButton { dialog: root; text: qsTr("Close"); button: OriginalDialogs.MessageDialog.Close; }
+            MessageDialogButton { dialog: root; text: qsTr("Abort"); button: OriginalDialogs.MessageDialog.Abort; }
+            MessageDialogButton { dialog: root; text: qsTr("Cancel"); button: OriginalDialogs.MessageDialog.Cancel; }
+            MessageDialogButton { dialog: root; text: qsTr("Restore Defaults"); button: OriginalDialogs.MessageDialog.RestoreDefaults; }
+            MessageDialogButton { dialog: root; text: qsTr("Reset"); button: OriginalDialogs.MessageDialog.Reset; }
+            MessageDialogButton { dialog: root; text: qsTr("Discard"); button: OriginalDialogs.MessageDialog.Discard; }
+            MessageDialogButton { dialog: root; text: qsTr("No to All"); button: OriginalDialogs.MessageDialog.NoToAll; }
             MessageDialogButton {
                 id: noButton
                 dialog: root
                 text: qsTr("No")
-                button: OriginalDialogs.StandardButton.No
+                button: OriginalDialogs.MessageDialog.No
                 KeyNavigation.left: yesButton
                 KeyNavigation.backtab: yesButton
             }
-            MessageDialogButton { dialog: root; text: qsTr("Yes to All"); button: OriginalDialogs.StandardButton.YesToAll; }
+            MessageDialogButton { dialog: root; text: qsTr("Yes to All"); button: OriginalDialogs.MessageDialog.YesToAll; }
             MessageDialogButton {
                 id: yesButton
                 dialog: root
                 text: qsTr("Yes") 
-                button: OriginalDialogs.StandardButton.Yes
+                button: OriginalDialogs.MessageDialog.Yes
                 KeyNavigation.right: noButton
                 KeyNavigation.tab: noButton
             }
-            MessageDialogButton { dialog: root; text: qsTr("Apply"); button: OriginalDialogs.StandardButton.Apply; }
-            MessageDialogButton { dialog: root; text: qsTr("Ignore"); button: OriginalDialogs.StandardButton.Ignore; }
-            MessageDialogButton { dialog: root; text: qsTr("Retry"); button: OriginalDialogs.StandardButton.Retry; }
-            MessageDialogButton { dialog: root; text: qsTr("Save All"); button: OriginalDialogs.StandardButton.SaveAll; }
-            MessageDialogButton { dialog: root; text: qsTr("Save"); button: OriginalDialogs.StandardButton.Save; }
-            MessageDialogButton { dialog: root; text: qsTr("Open"); button: OriginalDialogs.StandardButton.Open; }
+            MessageDialogButton { dialog: root; text: qsTr("Apply"); button: OriginalDialogs.MessageDialog.Apply; }
+            MessageDialogButton { dialog: root; text: qsTr("Ignore"); button: OriginalDialogs.MessageDialog.Ignore; }
+            MessageDialogButton { dialog: root; text: qsTr("Retry"); button: OriginalDialogs.MessageDialog.Retry; }
+            MessageDialogButton { dialog: root; text: qsTr("Save All"); button: OriginalDialogs.MessageDialog.SaveAll; }
+            MessageDialogButton { dialog: root; text: qsTr("Save"); button: OriginalDialogs.MessageDialog.Save; }
+            MessageDialogButton { dialog: root; text: qsTr("Open"); button: OriginalDialogs.MessageDialog.Open; }
             MessageDialogButton {
                 id: okButton
                 dialog: root 
                 text: qsTr("OK")
-                button: OriginalDialogs.StandardButton.Ok
+                button: OriginalDialogs.MessageDialog.Ok
             }
 
             Button {
@@ -180,7 +180,7 @@ ModalWindow {
                 onClicked: { content.state = (content.state === "" ? "expanded" : "") }
                 visible: detailedText && detailedText.length > 0
             }
-            MessageDialogButton { dialog: root; text: qsTr("Help"); button: OriginalDialogs.StandardButton.Help; }
+            MessageDialogButton { dialog: root; text: qsTr("Help"); button: OriginalDialogs.MessageDialog.Help; }
         }
 
         Item {
@@ -256,7 +256,7 @@ ModalWindow {
             case Qt.Key_Escape:
             case Qt.Key_Back:
                 event.accepted = true
-                root.click(OriginalDialogs.StandardButton.Cancel)
+                root.click(OriginalDialogs.MessageDialog.Cancel)
                 break
         }
     }

@@ -21,16 +21,6 @@ FocusScope {
     objectName: "desktop"
     anchors.fill: parent
 
-    /*Rectangle {
-        anchors.top: parent.top
-        anchors.left: parent.left
-        width: parent.width / 3
-        height: parent.height / 3
-
-        color: "red"
-        radius: 8
-    }*/
-
     readonly property int invalid_position: -9999;
     property rect recommendedRect: Qt.rect(0,0,0,0);
     property var expectedChildren;
@@ -533,17 +523,17 @@ FocusScope {
         ensureTitleBarVisible(targetWindow);
     }
 
-    Component { id: messageDialogBuilder; Item {}}//MessageDialog { } }
+    Component { id: messageDialogBuilder; MessageDialog { } }
     function messageBox(properties) {
         return messageDialogBuilder.createObject(desktop, properties);
     }
 
-    Component { id: inputDialogBuilder; Item {}}//QueryDialog { } }
+    Component { id: inputDialogBuilder; QueryDialog { } }
     function inputDialog(properties) {
         return inputDialogBuilder.createObject(desktop, properties);
     }
 
-    Component { id: customInputDialogBuilder; Item {}}//CustomQueryDialog { } }
+    Component { id: customInputDialogBuilder; CustomQueryDialog { } }
     function customInputDialog(properties) {
         return customInputDialogBuilder.createObject(desktop, properties);
     }

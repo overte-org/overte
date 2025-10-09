@@ -8,9 +8,9 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+import QtCore
 import QtQuick
 import Qt.labs.folderlistmodel
-import Qt.labs.settings
 import Qt.labs.qmlmodels
 import QtQuick.Dialogs as OriginalDialogs
 import QtQuick.Controls
@@ -72,14 +72,12 @@ ModalWindow {
     signal canceled();
     signal selected(int button);
     function click(button) {
-        // QT6TODO
         clickedButton = button;
         selected(button);
         destroy();
     }
 
-    // QT6TODO
-    //property int clickedButton: OriginalDialogs.StandardButton.NoButton;
+    property int clickedButton: OriginalDialogs.MessageDialog.NoButton;
 	
     Component.onCompleted: {
         fileDialogItem.keyboardEnabled = HMD.active;
@@ -263,7 +261,7 @@ ModalWindow {
         QtObject {
             id: d
             property var currentSelectionUrl;
-            readonly property string currentSelectionPath: helper.urlToPath(currentSelectionUrl);
+            readonly property string currentSelectionPath: currentSelectionUrl === undefined ? "" : helper.urlToPath(currentSelectionUrl);
             property bool currentSelectionIsFolder;
             property var backStack: []
             property var tableViewConnection: Connections { target: fileTableView; function onCurrentRowChanged() { d.update(); } }
@@ -690,7 +688,7 @@ ModalWindow {
                 onTriggered: fileTableView.prefix = "";
             }
 
-            Keys.onPressed: {
+            Keys.onPressed: event => {
                 switch (event.key) {
                 case Qt.Key_Backspace:
                 case Qt.Key_Tab:
@@ -859,7 +857,7 @@ ModalWindow {
         }
     }
 
-    Keys.onPressed: {
+    Keys.onPressed: event => {
         switch (event.key) {
         case Qt.Key_Backspace:
             event.accepted = d.navigateUp();
