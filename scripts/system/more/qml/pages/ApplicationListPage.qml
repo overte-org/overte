@@ -27,23 +27,45 @@ ColumnLayout {
 				placeholderText: "Search...";
 				color: "black";
 				anchors.fill: parent;
-
+                font.pixelSize: 12;
 				onTextChanged: {
-					onSearchChanged(searchArea.text);
+					onSearchChanged(searchArea.text, statusFilter.checked);
 				}
-
 				background: Rectangle { // Custom background for the TextField
 					color: "transparent" // Make it transparent
 				}
 			}
 		}
 
+        CheckBox {
+            id: statusFilter;
+            text: "";
+            checked: false;
+            onCheckedChanged: {
+                onSearchChanged(searchArea.text, checked);
+            }
+            
+            indicator: Rectangle {
+                implicitWidth: 20;
+                implicitHeight: 20;
+                radius: 10;
+                border.color: parent.checked ? "#0bde54" : "gray";
+                border.width: 0;
+                color: parent.checked ? "#0bde54" : "gray";
+                anchors.verticalCenter: parent.verticalCenter;
+                anchors.centerIn: parent;
+                
+                Behavior on color {
+                    ColorAnimation { duration: 150; }
+                }
+            }
+        }
+
 		CustomButton {
 			height: parent.height - 20;
 			implicitWidth: 55;
 			buttonText: "";
 			buttonIcon: "../../img/menu.svg";
-
 			onClickedFunc: () => { showSettingsPage() }
 		}
 	}
