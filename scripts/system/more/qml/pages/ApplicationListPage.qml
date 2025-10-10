@@ -34,6 +34,10 @@ ColumnLayout {
 				background: Rectangle { // Custom background for the TextField
 					color: "transparent" // Make it transparent
 				}
+                
+                onVisibleChanged: {
+                    onSearchChanged(searchArea.text, statusFilter.checked);
+                }
 			}
 		}
 

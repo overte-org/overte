@@ -213,37 +213,5 @@ let repos = {
 		}
 
 		return app;
-	}/*,
-	updateIfAppIsInstalled: () => {
-		// Parse through the existing applications array and just checks to see if an app is installed
-		const runningScripts = ScriptDiscoveryService.getRunning().map((item) => item.url);
-		//debugLog(runningScripts)
-
-        const installedApps = Settings.getValue(settingsAppListName, []);
-
-		for (let i = 0; repos.applications.length > i; i++) {
-			// For each application in the array...
-			let app = repos.applications[i];
-			debugLog(`Checking if ${app.appName} is installed...`);
-
-			app.installedUrl = null;
-			app.isInstalled = false;  // Assume the app is not installed.
-            app.isRunning = false;  // Assume the app is not running.
-
-			for (let k = 0; Object.keys(app.appScriptVersions).length > k; k++) {
-				// For each of the app versions...
-				const appVersionUrl = app.appScriptVersions[Object.keys(app.appScriptVersions)[k]];
-				if (runningScripts.indexOf(appVersionUrl) > -1) {
-					app.installedUrl = appVersionUrl;
-                    if(installedApps.indexOf(installedApps) > -1) {
-                        app.isInstalled = true;
-                    }
-                    app.isRunning = true;
-					app.installedVersion = String(Object.keys(app.appScriptVersions)[k]);
-				}
-			}
-		}
-
-		return true;
-	}*/
+	}
 }

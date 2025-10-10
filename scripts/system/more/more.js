@@ -19,7 +19,8 @@ Script.include("./lib/util.js");
 
 const settingsRepositoryListName = "overte.more.repositories";
 const settingsAppListName = "overte.more.app";
-const settingsIsFirstRun = "overte.more.isFirstRun";
+
+const DEFAULT_REPOSITORY_URL = "https://more.overte.org/applications/metadata.json";
 
 const DEBUG = false; //to switch on-off all the debug info
 
@@ -93,11 +94,9 @@ let ui = {
 
 repos.fetchAllAppsFromSavedRepositories();
 
-if (Settings.getValue(settingsIsFirstRun, true) === true) {
-	// First run. Install the overte repository.
-	// NOTE: The url provided is parsed and handled differently using the legacy.requestCommunityApps() function.
-	repos.installRepository(legacy.COMMUNITY_APPS_URL);
-	Settings.setValue(settingsIsFirstRun, false);
+//Load the default repository if not present.
+if (repos.repositories.indexOf(DEFAULT_REPOSITORY_URL) === -1) {
+    repos.installRepository(DEFAULT_REPOSITORY_URL);
 }
 
 // Retry Mechanism

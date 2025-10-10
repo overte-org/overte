@@ -39,7 +39,6 @@ ScriptDiscoveryService.scriptCountChanged.connect(() => {
 });
 
 function refreshData() {
-	//repos.updateIfAppIsInstalled();
     repos.fetchAllAppsFromSavedRepositories();
 	ui.sendAppListToQML();
 }
