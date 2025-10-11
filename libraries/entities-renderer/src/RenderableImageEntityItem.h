@@ -52,6 +52,7 @@ private:
     std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };
     glm::vec3 _color { NAN };
     float _alpha { NAN };
+    Sampler _sampler;
     PulsePropertyGroup _pulseProperties;
 
     FadeBuffers _fadeBuffers;

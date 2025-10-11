@@ -1735,7 +1735,7 @@ static ShapePipelinePointer polyvoxPipelineFactory(const ShapePlumber& plumber, 
 
                 auto state = std::make_shared<gpu::State>();
                 state->setCullMode(gpu::State::CULL_BACK);
-                state->setDepthTest(true, true, gpu::LESS_EQUAL);
+                state->setDepthTest(true, true, ComparisonFunction::LESS_EQUAL);
                 PrepareStencil::testMaskDrawShape(*state);
 
                 if (wireframe) {

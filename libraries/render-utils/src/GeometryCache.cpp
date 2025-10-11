@@ -2197,7 +2197,7 @@ void GeometryCache::useGridPipeline(gpu::Batch& batch, GridBuffer gridBuffer, bo
 
         for (auto& key : keys) {
             gpu::StatePointer state = std::make_shared<gpu::State>();
-            state->setDepthTest(true, !std::get<0>(key), gpu::LESS_EQUAL);
+            state->setDepthTest(true, !std::get<0>(key), ComparisonFunction::LESS_EQUAL);
             if (std::get<0>(key)) {
                 PrepareStencil::testMaskResetNoAA(*state);
             } else {
@@ -2350,7 +2350,7 @@ gpu::PipelinePointer GeometryCache::getSimplePipeline(bool textured, bool transp
     } else {
         state->setCullMode(gpu::State::CULL_BACK);
     }
-    state->setDepthTest(true, !config.isTransparent(), gpu::LESS_EQUAL);
+    state->setDepthTest(true, !config.isTransparent(), ComparisonFunction::LESS_EQUAL);
     if (config.hasDepthBias()) {
         state->setDepthBias(1.0f);
         state->setDepthBiasSlopeScale(1.0f);

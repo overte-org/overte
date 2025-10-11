@@ -120,14 +120,14 @@ std::function<void(gpu::StatePointer)> Procedural::transparentStencil = [](gpu::
 
 Procedural::Procedural(bool useAA) {
     _opaqueState->setCullMode(gpu::State::CULL_NONE);
-    _opaqueState->setDepthTest(true, true, gpu::LESS_EQUAL);
+    _opaqueState->setDepthTest(true, true, ComparisonFunction::LESS_EQUAL);
     _opaqueState->setBlendFunction(false,
         gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
         gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
     opaqueStencil(_opaqueState, useAA);
 
     _transparentState->setCullMode(gpu::State::CULL_NONE);
-    _transparentState->setDepthTest(true, false, gpu::LESS_EQUAL);
+    _transparentState->setDepthTest(true, false, ComparisonFunction::LESS_EQUAL);
     _transparentState->setBlendFunction(true,
         gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
         gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
@@ -161,10 +161,10 @@ void Procedural::setProceduralData(const ProceduralData& proceduralData) {
     if (proceduralData.channels != _data.channels) {
         _data.channels = proceduralData.channels;
 
-        static gpu::Sampler defaultSampler;
+        static Sampler defaultSampler;
         static std::once_flag once;
         std::call_once(once, [&] {
-            defaultSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR);
+            defaultSampler = Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR);
         });
 
         // Must happen on the main thread
@@ -187,7 +187,7 @@ void Procedural::setProceduralData(const ProceduralData& proceduralData) {
 
                         auto samplerItr = channelMap.constFind("sampler");
                         if (samplerItr != channelMap.constEnd() && samplerItr->isObject()) {
-                            _samplers[channel] = gpu::Sampler::parseSampler(samplerItr->toObject());
+                            _samplers[channel] = Sampler::parseSampler(samplerItr->toObject());
                         } else {
                             _samplers[channel] = defaultSampler;
                         }

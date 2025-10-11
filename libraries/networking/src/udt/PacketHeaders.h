@@ -369,6 +369,7 @@ enum class EntityVersion : PacketVersion {
     EmptyEntity,
     ScriptEntities,
     Fading,
+    Sampler,
 
     // Add new versions above here
     NUM_PACKET_TYPE,

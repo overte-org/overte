@@ -91,7 +91,7 @@ void Skybox::render(gpu::Batch& batch, const ViewFrustum& viewFrustum, const Sky
             auto state = std::make_shared<gpu::State>();
             // Must match PrepareStencil::STENCIL_BACKGROUND
             const int8_t STENCIL_BACKGROUND = 0;
-            state->setStencilTest(true, 0xFF, gpu::State::StencilTest(STENCIL_BACKGROUND, 0xFF, gpu::EQUAL,
+            state->setStencilTest(true, 0xFF, gpu::State::StencilTest(STENCIL_BACKGROUND, 0xFF, ComparisonFunction::EQUAL,
                 gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP, gpu::State::STENCIL_OP_KEEP));
 
             _pipelines[std::get<0>(key)] = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<1>(key)), state);

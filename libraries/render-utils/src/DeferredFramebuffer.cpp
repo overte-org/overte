@@ -60,7 +60,7 @@ void DeferredFramebuffer::allocate() {
     auto width = _frameSize.x;
     auto height = _frameSize.y;
 
-    auto defaultSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_POINT);
+    auto defaultSampler = Sampler(Sampler::FILTER_MIN_MAG_POINT);
 
     _deferredColorTexture = gpu::Texture::createRenderBuffer(colorFormat, width, height, gpu::Texture::SINGLE_MIP, defaultSampler);
     _deferredNormalTexture = gpu::Texture::createRenderBuffer(linearFormat, width, height, gpu::Texture::SINGLE_MIP, defaultSampler);
@@ -84,7 +84,7 @@ void DeferredFramebuffer::allocate() {
     _deferredFramebufferDepthColor->setDepthStencilBuffer(_primaryDepthTexture, depthFormat);
 
 
-    auto smoothSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT, gpu::Sampler::WRAP_CLAMP);
+    auto smoothSampler = Sampler(Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT, Sampler::WRAP_CLAMP);
 
     _lightingTexture = gpu::Texture::createRenderBuffer(gpu::Element(gpu::SCALAR, gpu::FLOAT, gpu::R11G11B10), width, height, gpu::Texture::SINGLE_MIP, smoothSampler);
     _lightingFramebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("lighting"));

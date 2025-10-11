@@ -44,7 +44,7 @@ void Basic2DWindowOpenGLDisplayPlugin::customizeContext() {
                     gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA),
                     image.width(), image.height(),
                     gpu::Texture::MAX_NUM_MIPS,
-                    gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+                    Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR));
             _virtualPadStickTexture->setSource("virtualPad stick");
             auto usage = gpu::Texture::Usage::Builder().withColor().withAlpha();
             _virtualPadStickTexture->setUsage(usage.build());
@@ -67,7 +67,7 @@ void Basic2DWindowOpenGLDisplayPlugin::customizeContext() {
                     gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA),
                     image.width(), image.height(),
                     gpu::Texture::MAX_NUM_MIPS,
-                    gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+                    Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR));
             _virtualPadStickBaseTexture->setSource("virtualPad base");
             auto usage = gpu::Texture::Usage::Builder().withColor().withAlpha();
             _virtualPadStickBaseTexture->setUsage(usage.build());
@@ -195,7 +195,7 @@ Basic2DWindowOpenGLDisplayPlugin::VirtualPadButton::VirtualPadButton(qreal pixel
                     gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA),
                     image.width(), image.height(),
                     gpu::Texture::MAX_NUM_MIPS,
-                    gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+                    Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR));
             _texture->setSource(iconPath.toStdString());
             auto usage = gpu::Texture::Usage::Builder().withColor().withAlpha();
             _texture->setUsage(usage.build());

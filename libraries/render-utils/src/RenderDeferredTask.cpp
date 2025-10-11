@@ -424,7 +424,7 @@ gpu::FramebufferPointer PreparePrimaryFramebuffer::createFramebuffer(const char*
     gpu::FramebufferPointer framebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create(name));
     auto colorFormat = gpu::Element::COLOR_SRGBA_32;
 
-    auto defaultSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR);
+    auto defaultSampler = Sampler(Sampler::FILTER_MIN_MAG_LINEAR);
     auto primaryColorTexture = gpu::Texture::createRenderBuffer(colorFormat, frameSize.x, frameSize.y, gpu::Texture::SINGLE_MIP, defaultSampler);
 
     framebuffer->setRenderBuffer(0, primaryColorTexture);

@@ -48,6 +48,7 @@
 #include "TonemappingCurve.h"
 #include "AmbientOcclusionTechnique.h"
 #include "FadeTiming.h"
+#include "Sampler.h"
 
 #include "OctreeConstants.h"
 #include "OctreeElement.h"
@@ -220,6 +221,9 @@ public:
     /// appends an QRect value to the end of the stream, may fail if new data stream is too long to fit in packet
     bool appendValue(const QRect& rect);
 
+    /// appends a Sampler value to the end of the stream, may fail if new data stream is too long to fit in packet
+    bool appendValue(const Sampler& sampler);
+
     /// appends a position to the end of the stream, may fail if new data stream is too long to fit in packet
     bool appendPosition(const glm::vec3& value);
 
@@ -309,6 +313,7 @@ public:
     static int unpackDataFromBytes(const unsigned char* dataBytes, QByteArray& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, AACube& result);
     static int unpackDataFromBytes(const unsigned char* dataBytes, QRect& result);
+    static int unpackDataFromBytes(const unsigned char* dataBytes, Sampler& result);
 
 private:
     /// appends raw bytes, might fail if byte would cause packet to be too large

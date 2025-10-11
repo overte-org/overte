@@ -184,7 +184,7 @@ protected:
     // Rendering objects
     UniformLambdas _uniforms;
     NetworkTexturePointer _channels[MAX_PROCEDURAL_TEXTURE_CHANNELS];
-    gpu::Sampler _samplers[MAX_PROCEDURAL_TEXTURE_CHANNELS];
+    Sampler _samplers[MAX_PROCEDURAL_TEXTURE_CHANNELS];
     std::unordered_map<std::string, std::string> _vertexReplacements;
     std::unordered_map<std::string, std::string> _fragmentReplacements;
     std::unordered_map<std::string, int> _slotMap;

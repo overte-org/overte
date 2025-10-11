@@ -57,6 +57,11 @@ void ImageEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
         _textureIsLoaded = false;
     }
 
+    auto sampler = entity->getSampler();
+    if (_sampler != sampler) {
+        _sampler = sampler;
+    }
+
     _keepAspectRatio = entity->getKeepAspectRatio();
     _subImage = entity->getSubImage();
     _pulseProperties = entity->getPulseProperties();
@@ -139,9 +144,11 @@ void ImageEntityRenderer::doRender(RenderArgs* args) {
     }
 
     Transform transform;
+    Sampler sampler;
     bool transparent;
     withReadLock([&] {
         transform = _renderTransform;
+        sampler = _sampler;
         transparent = isTransparent();
     });
 
@@ -200,6 +207,7 @@ void ImageEntityRenderer::doRender(RenderArgs* args) {
         auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials.top().material);
         procedural->prepare(*batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(transparent));
     } else if (pipelineType == Pipeline::SIMPLE) {
+        _texture->getGPUTexture()->setSampler(sampler);
         batch->setResourceTexture(0, _texture->getGPUTexture());
     } else if (pipelineType == Pipeline::MATERIAL) {
         if (RenderPipelines::bindMaterials(materials, *batch, args->_renderMode, args->_enableTexturing)) {

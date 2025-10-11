@@ -132,14 +132,14 @@ LightStage::Shadow::Shadow(graphics::LightPointer light, unsigned int cascadeCou
     // Create shadow cascade texture array
     auto depthFormat = gpu::Element(gpu::SCALAR, gpu::FLOAT, gpu::DEPTH);  // Depth32 texel format
     map = gpu::TexturePointer(gpu::Texture::createRenderBufferArray(depthFormat, MAP_SIZE, MAP_SIZE, cascadeCount));
-    gpu::Sampler::Desc samplerDesc;
+    Sampler::Desc samplerDesc;
     samplerDesc._borderColor = glm::vec4(1.0f);
-    samplerDesc._wrapModeU = gpu::Sampler::WRAP_BORDER;
-    samplerDesc._wrapModeV = gpu::Sampler::WRAP_BORDER;
-    samplerDesc._filter = gpu::Sampler::FILTER_MIN_MAG_LINEAR;
-    samplerDesc._comparisonFunc = gpu::LESS;
+    samplerDesc._wrapModeU = Sampler::WRAP_BORDER;
+    samplerDesc._wrapModeV = Sampler::WRAP_BORDER;
+    samplerDesc._filter = Sampler::FILTER_MIN_MAG_LINEAR;
+    samplerDesc._comparisonFunc = (uint8_t)ComparisonFunction::LESS;
 
-    map->setSampler(gpu::Sampler(samplerDesc));
+    map->setSampler(Sampler(samplerDesc));
 
     _cascades.resize(cascadeCount);
 

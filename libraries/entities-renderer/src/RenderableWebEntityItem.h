@@ -105,6 +105,7 @@ private:
     QString _userAgent;
     WebInputMode _inputMode { WebInputMode::TOUCH };
     bool _wantsKeyboardFocus { true };
+    // Sampler _sampler;
 
     glm::vec3 _contextPosition;
 

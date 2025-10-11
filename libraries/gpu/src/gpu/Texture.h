@@ -24,6 +24,7 @@
 #include "Forward.h"
 #include "Resource.h"
 #include "Metric.h"
+#include "Sampler.h"
 #include "SerDes.h"
 
 const int ABSOLUTE_MAX_TEXTURE_NUM_PIXELS = 8192 * 8192;
@@ -123,140 +124,6 @@ inline DataDeserializer &operator>>(DataDeserializer &des, SphericalHarmonics &h
     return des;
 }
 
-class Sampler {
-public:
-
-    enum Filter {
-        FILTER_MIN_MAG_POINT, // top mip only
-        FILTER_MIN_POINT_MAG_LINEAR, // top mip only
-        FILTER_MIN_LINEAR_MAG_POINT, // top mip only
-        FILTER_MIN_MAG_LINEAR, // top mip only
-
-        FILTER_MIN_MAG_MIP_POINT,
-        FILTER_MIN_MAG_POINT_MIP_LINEAR,
-        FILTER_MIN_POINT_MAG_LINEAR_MIP_POINT,
-        FILTER_MIN_POINT_MAG_MIP_LINEAR,
-        FILTER_MIN_LINEAR_MAG_MIP_POINT,
-        FILTER_MIN_LINEAR_MAG_POINT_MIP_LINEAR,
-        FILTER_MIN_MAG_LINEAR_MIP_POINT,
-        FILTER_MIN_MAG_MIP_LINEAR,
-        FILTER_ANISOTROPIC,
-
-        NUM_FILTERS,
-    };
-
-    enum WrapMode {
-        WRAP_REPEAT = 0,
-        WRAP_MIRROR,
-        WRAP_CLAMP,
-        WRAP_BORDER,
-        WRAP_MIRROR_ONCE,
-
-        NUM_WRAP_MODES
-    };
-
-    static const uint8 MAX_MIP_LEVEL = 0xFF;
-
-    class Desc {
-    public:
-        glm::vec4 _borderColor{ 1.0f };
-        uint32 _maxAnisotropy = 16;
-
-        uint8 _filter = FILTER_MIN_MAG_MIP_LINEAR;
-        uint8 _comparisonFunc = ALWAYS;
-
-        uint8 _wrapModeU = WRAP_REPEAT;
-        uint8 _wrapModeV = WRAP_REPEAT;
-        uint8 _wrapModeW = WRAP_REPEAT;
-
-        uint8 _mipOffset = 0;
-        uint8 _minMip = 0;
-        uint8 _maxMip = MAX_MIP_LEVEL;
-
-        Desc() {}
-        Desc(const Filter filter, const WrapMode wrap = WRAP_REPEAT) : _filter(filter), _wrapModeU(wrap), _wrapModeV(wrap), _wrapModeW(wrap) {}
-
-        bool operator==(const Desc& other) const {
-            return _borderColor == other._borderColor &&
-                _maxAnisotropy == other._maxAnisotropy &&
-                _filter == other._filter &&
-                _comparisonFunc == other._comparisonFunc &&
-                _wrapModeU == other._wrapModeU &&
-                _wrapModeV == other._wrapModeV &&
-                _wrapModeW == other._wrapModeW &&
-                _mipOffset == other._mipOffset &&
-                _minMip == other._minMip &&
-                _maxMip == other._maxMip;
-        }
-    };
-
-    Sampler() {}
-    Sampler(const Filter filter, const WrapMode wrap = WRAP_REPEAT) : _desc(filter, wrap) {}
-    Sampler(const Desc& desc) : _desc(desc) {}
-    ~Sampler() {}
-
-    const glm::vec4& getBorderColor() const { return _desc._borderColor; }
-
-    uint32 getMaxAnisotropy() const { return _desc._maxAnisotropy; }
-
-    WrapMode getWrapModeU() const { return WrapMode(_desc._wrapModeU); }
-    WrapMode getWrapModeV() const { return WrapMode(_desc._wrapModeV); }
-    WrapMode getWrapModeW() const { return WrapMode(_desc._wrapModeW); }
-
-    Filter getFilter() const { return Filter(_desc._filter); }
-    ComparisonFunction getComparisonFunction() const { return ComparisonFunction(_desc._comparisonFunc); }
-    bool doComparison() const { return getComparisonFunction() != ALWAYS; }
-
-    uint8 getMipOffset() const { return _desc._mipOffset; }
-    uint8 getMinMip() const { return _desc._minMip; }
-    uint8 getMaxMip() const { return _desc._maxMip; }
-
-    const Desc& getDesc() const { return _desc; }
-
-    bool operator==(const Sampler& other) const {
-        return _desc == other._desc;
-    }
-    bool operator!=(const Sampler& other) const {
-        return !(*this == other);
-    }
-
-    static Sampler parseSampler(const QJsonObject& object);
-
-protected:
-    Desc _desc;
-
-    friend class Deserializer;
-};
-
-inline DataSerializer &operator<<(DataSerializer &ser, const Sampler::Desc &d) {
-    DataSerializer::SizeTracker tracker(ser);
-    ser << d._borderColor;
-    ser << d._maxAnisotropy;
-    ser << d._filter;
-    ser << d._comparisonFunc;
-    ser << d._wrapModeU;
-    ser << d._wrapModeV;
-    ser << d._wrapModeW;
-    ser << d._mipOffset;
-    ser << d._minMip;
-    ser << d._maxMip;
-    return ser;
-}
-
-inline DataDeserializer &operator>>(DataDeserializer &dsr, Sampler::Desc &d) {
-    DataDeserializer::SizeTracker tracker(dsr);
-    dsr >> d._borderColor;
-    dsr >> d._maxAnisotropy;
-    dsr >> d._filter;
-    dsr >> d._comparisonFunc;
-    dsr >> d._wrapModeU;
-    dsr >> d._wrapModeV;
-    dsr >> d._wrapModeW;
-    dsr >> d._mipOffset;
-    dsr >> d._minMip;
-    dsr >> d._maxMip;
-    return dsr;
-}
 enum class TextureUsageType : uint8 {
     RENDERBUFFER,       // Used as attachments to a framebuffer
     RESOURCE,           // Resource textures, like materials... subject to memory manipulation
@@ -788,7 +655,7 @@ public:
     bool isDefined() const;
     std::function<gpu::TexturePointer()> getTextureOperator() const { return _gpuTextureOperator; }
 
-    void setSampler(const gpu::Sampler& sampler);
+    void setSampler(const Sampler& sampler);
 
 protected:
     gpu::TexturePointer _gpuTexture;
@@ -800,17 +667,6 @@ protected:
 typedef std::shared_ptr< TextureSource > TextureSourcePointer;
 
 };
-
-namespace std {
-    template<> struct hash<gpu::Sampler> {
-        size_t operator()(const gpu::Sampler& sampler) const noexcept {
-            size_t result = 0;
-            const auto& desc = sampler.getDesc();
-            hash_combine(result, desc._comparisonFunc, desc._filter, desc._maxAnisotropy, desc._maxMip, desc._minMip, desc._wrapModeU, desc._wrapModeV, desc._wrapModeW);
-            return result;
-        }
-    };
-}
 
 Q_DECLARE_METATYPE(gpu::TexturePointer)
 
