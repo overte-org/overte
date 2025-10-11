@@ -187,8 +187,16 @@
  * @property {Uuid} portalExitID=Uuid.NONE - The ID of the entity that should act as the portal exit if the <code>mirrorMode</code>
  *     is set to <code>portal</code>.
  *
+ * @property {Entities.Fade} fadeIn - The entity's fade in properties. For zones, this defines the default fade in properties for entities
+ *     while you are in this zone.
+ * @property {Entities.Fade} fadeOut - The entity's fade out properties. For zones, this defines the default fade out properties for entities
+ *     while you are in this zone.
+ * @property {Entities.ComponentMode} fadeInMode="inherit" - Configures the fade in for this entity.
+ * @property {Entities.ComponentMode} fadeOutMode="inherit" - Configures the fade out for this entity.
+ *
  * @comment The different entity types have additional properties as follows:
  * @see {@link Entities.EntityProperties-Box|EntityProperties-Box}
+ * @see {@link Entities.EntityProperties-Empty|EntityProperties-Empty}
  * @see {@link Entities.EntityProperties-Gizmo|EntityProperties-Gizmo}
  * @see {@link Entities.EntityProperties-Grid|EntityProperties-Grid}
  * @see {@link Entities.EntityProperties-Image|EntityProperties-Image}
@@ -200,6 +208,7 @@
  * @see {@link Entities.EntityProperties-PolyLine|EntityProperties-PolyLine}
  * @see {@link Entities.EntityProperties-PolyVox|EntityProperties-PolyVox}
  * @see {@link Entities.EntityProperties-ProceduralParticleEffect|EntityProperties-ProceduralParticleEffect}
+ * @see {@link Entities.EntityProperties-Script|EntityProperties-Script}
  * @see {@link Entities.EntityProperties-Shape|EntityProperties-Shape}
  * @see {@link Entities.EntityProperties-Sound|EntityProperties-Sound}
  * @see {@link Entities.EntityProperties-Sphere|EntityProperties-Sphere}
@@ -692,6 +701,23 @@
  */
 
 /*@jsdoc
+ * The <code>"Script"</code> {@link Entities.EntityType|EntityType} runs an entity script from a URL on its parent. It has properties
+ * in addition to the common {@link Entities.EntityProperties|EntityProperties}.
+ *
+ * @typedef {object} Entities.EntityProperties-Script
+ * @property {string} scriptURL="" - The URL of the entity script to run, as a js file.
+ * @property {boolean} enabled=true - Whether or not the script should run.
+ * @example <caption>Create a Script entity.</caption>
+ * var entity = Entities.addEntity({
+ *     type: "Script",
+ *     script: TODO,
+ *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0.75, z: -4 })),
+ *     rotation: MyAvatar.orientation,
+ *     lifetime: 300  // Delete after 5 minutes.
+ * });
+ */
+
+/*@jsdoc
  * The <code>"Shape"</code> {@link Entities.EntityType|EntityType} displays an entity of a specified <code>shape</code>.
  * It has properties in addition to the common {@link Entities.EntityProperties|EntityProperties}.
  *
@@ -702,6 +728,7 @@
  * @property {number} alpha=1 - The opacity of the entity, range <code>0.0</code> &ndash; <code>1.0</code>.
  * @property {boolean} unlit=false - <code>true</code> if the entity is unaffected by lighting, <code>false</code> if it is lit
  *     by the key light and local lights.
+ * @property {number} innerRadius=0.25 - The inner radius of the shape, as a fraction of the total dimensions. Only used for Torus.
  * @property {Entities.Pulse} pulse - Color and alpha pulse.
  *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
  * @example <caption>Create a cylinder.</caption>
@@ -897,6 +924,9 @@
  * @property {Entities.ComponentMode} ambientOcclusionMode="inherit" - Configures the ambient occlusion in the zone.
  * @property {Entities.AmbientOcclusion} ambientOcclusion - The ambient occlusion properties of the zone.
  *
+ * @property {Entities.ComponentMode} normalMapAttenuationMode="inherit" - Configures the normal map attenuation in the zone.
+ * @property {Entities.NormalMapAttenuation} normalMapAttenuation - The normal map attenuation properties of the zone.
+ *
  * @property {boolean} flyingAllowed=true - <code>true</code> if visitors can fly in the zone; <code>false</code> if they
  *     cannot. Only works for domain entities.
  * @property {boolean} ghostingAllowed=true - <code>true</code> if visitors with avatar collisions turned off will not
@@ -916,6 +946,11 @@
  *
  * @property {Entities.AvatarPriorityMode} avatarPriority="inherit" - Configures the priority of updates from avatars in the
  *     zone to other clients.
+ *
+ * @property {Entities.Fade} avatarFadeIn - The zone's fade in properties for avatars.
+ * @property {Entities.Fade} avatarFadeOut - The zone's fade out properties for avatars.
+ * @property {Entities.ComponentMode} avatarFadeInMode="inherit" - Configures the avatar fade in for this zone.
+ * @property {Entities.ComponentMode} avatarFadeOutMode="inherit" - Configures the avatar fade out for this zone.
  *
  * @example <caption>Create a zone that casts a red key light along the x-axis.</caption>
  * var zone = Entities.addEntity({
@@ -957,6 +992,7 @@
  *     <code>false</code> if it isn't. Setting this property to <code>false</code> sets the <code>billboardMode</code> to
  *     <code>"none"</code>.
  *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
+ * @property {Entities.Sampler} sampler - The texture sampler used to render the image.
  * @example <caption>Create an image entity.</caption>
  * var image = Entities.addEntity({
  *     type: "Image",
@@ -1004,4 +1040,13 @@
  * @property {Vec3} dimensions=0.1,0.001,0.1 - The dimensions of the entity.
  * @property {Entities.GizmoType} gizmoType="ring" - The gizmo type of the entity.
  * @property {Entities.RingGizmo} ring - The ring gizmo properties.
+ */
+
+
+/*@jsdoc
+ * The <code>"Empty"</code> {@link Entities.EntityType|EntityType}
+ * is an invisible, intangible entity with no special behavior.
+ * It has the common properties from {@link Entities.EntityProperties|EntityProperties}.
+ *
+ * @typedef {object} Entities.EntityProperties-Empty
  */

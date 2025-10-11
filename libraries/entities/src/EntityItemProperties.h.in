@@ -58,6 +58,7 @@
 #include "TextVerticalAlignment.h"
 #include "MirrorMode.h"
 #include "EntityShape.h"
+#include "Sampler.h"
 
 class ScriptEngine;
 

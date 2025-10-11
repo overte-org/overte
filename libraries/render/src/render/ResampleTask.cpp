@@ -37,7 +37,7 @@ gpu::FramebufferPointer HalfDownsample::getResampledFrameBuffer(const gpu::Frame
     if (!_destinationFrameBuffer || resampledFramebufferSize != _destinationFrameBuffer->getSize()) {
         _destinationFrameBuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("HalfOutput"));
 
-        auto sampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT);
+        auto sampler = Sampler(Sampler::FILTER_MIN_MAG_LINEAR_MIP_POINT);
         auto target = gpu::Texture::createRenderBuffer(sourceFramebuffer->getRenderBuffer(0)->getTexelFormat(), resampledFramebufferSize.x, resampledFramebufferSize.y, gpu::Texture::SINGLE_MIP, sampler);
         _destinationFrameBuffer->setRenderBuffer(0, target);
     }
@@ -93,7 +93,7 @@ gpu::FramebufferPointer Upsample::getResampledFrameBuffer(const gpu::Framebuffer
     if (!_destinationFrameBuffer || resampledFramebufferSize != _destinationFrameBuffer->getSize()) {
         _destinationFrameBuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("UpsampledOutput"));
 
-        auto sampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR);
+        auto sampler = Sampler(Sampler::FILTER_MIN_MAG_LINEAR);
         auto target = gpu::Texture::createRenderBuffer(sourceFramebuffer->getRenderBuffer(0)->getTexelFormat(), resampledFramebufferSize.x, resampledFramebufferSize.y, gpu::Texture::SINGLE_MIP, sampler);
         _destinationFrameBuffer->setRenderBuffer(0, target);
     }
@@ -167,7 +167,7 @@ void UpsampleToBlitFramebuffer::run(const RenderContextPointer& renderContext, c
             batch.setViewportTransform(viewport);
             batch.setProjectionTransform(glm::mat4());
             batch.resetViewTransform();
-            bool shouldMirror = args->_numMirrorFlips >= (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE);
+            bool shouldMirror = args->_numMirrorFlips >= (args->_renderMode != RenderArgs::MIRROR_RENDER_MODE ? 1 : 0);
             batch.setPipeline(shouldMirror ? _mirrorPipeline : _pipeline);
 
             batch.setModelTransform(gpu::Framebuffer::evalSubregionTexcoordTransform(bufferSize, viewport));

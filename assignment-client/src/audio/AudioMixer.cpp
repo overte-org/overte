@@ -894,7 +894,8 @@ void updateAudioZone(EntityItem* entity, std::unordered_map<QString, AudioMixer:
         audioZone.listeners.push_back(listener.toString());
     }
 
-    audioZone.coefficients = audioSettings.getListenerAttenuationCoefficients().toStdVector();
+    const auto& listenerAttenuationCoefficients = audioSettings.getListenerAttenuationCoefficients();
+    audioZone.coefficients = std::vector<float>(listenerAttenuationCoefficients.begin(), listenerAttenuationCoefficients.end());
 
     /*qCDebug(audio) << "Updated audio zone:" << entity->getID().toString() << "(position:" << t.getTranslation()
                    << ", dimensions:" << t.getScale() << ")";*/

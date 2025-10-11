@@ -346,7 +346,7 @@ class Material {
 public:
     typedef MaterialKey::MapChannel MapChannel;
     typedef std::unordered_map<MapChannel, TextureMapPointer> TextureMaps;
-    typedef std::unordered_map<MapChannel, gpu::Sampler> SamplerMap;
+    typedef std::unordered_map<MapChannel, Sampler> SamplerMap;
     typedef std::unordered_map<MapChannel, int> TexCoordSetMap;
 
     Material();
@@ -401,7 +401,7 @@ public:
     virtual TextureMaps getTextureMaps() const { return _textureMaps; } // FIXME - not thread safe...
     const TextureMapPointer getTextureMap(MapChannel channel) const;
 
-    void setSampler(MapChannel channel, const gpu::Sampler& sampler);
+    void setSampler(MapChannel channel, const Sampler& sampler);
     void applySampler(MapChannel channel);
 
     void setTexCoordSet(MapChannel channel, int texCoordSet);

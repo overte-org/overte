@@ -61,6 +61,7 @@ public:
     gpu::TexturePointer getTexture() override { return _texture; }
 
 protected:
+    virtual ShapeKey getShapeKey() override;
     virtual bool needsRenderUpdateFromTypedEntity(const TypedEntityPointer& entity) const override;
     virtual void doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) override;
     virtual void doRender(RenderArgs* args) override;
@@ -104,6 +105,7 @@ private:
     QString _userAgent;
     WebInputMode _inputMode { WebInputMode::TOUCH };
     bool _wantsKeyboardFocus { true };
+    // Sampler _sampler;
 
     glm::vec3 _contextPosition;
 

@@ -144,7 +144,7 @@ QByteArray DataServerAccountInfo::signPlaintext(const QByteArray& plaintext) {
         }
     }
     return QByteArray();
-    OVERTE_IGNORE_DEPRECATED_END
+    OVERTE_IGNORE_WARNING_END
 }
 
 QDataStream& operator<<(QDataStream &out, const DataServerAccountInfo& info) {

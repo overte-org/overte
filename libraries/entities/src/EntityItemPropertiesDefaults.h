@@ -18,6 +18,8 @@
 
 #include <NumericalConstants.h>
 
+#include "Sampler.h"
+
 // There is a minor performance gain when comparing/copying an existing glm::vec3 rather than
 // creating a new one on the stack so we declare the ZERO_VEC3 constant as an optimization.
 const glm::vec3 ENTITY_ITEM_ZERO_VEC3 = glm::vec3(0.0f);
@@ -99,5 +101,14 @@ const int ENTITY_ITEM_DEFAULT_CLONE_LIMIT = 0;
 const bool ENTITY_ITEM_DEFAULT_CLONE_DYNAMIC = false;
 const bool ENTITY_ITEM_DEFAULT_CLONE_AVATAR_ENTITY = false;
 const QUuid ENTITY_ITEM_DEFAULT_CLONE_ORIGIN_ID = QUuid();
+
+const glm::u8vec3 ENTITY_ITEM_DEFAULT_FADE_COLOR = glm::u8vec3(78, 215, 255);
+const glm::u8vec3 ENTITY_ITEM_DEFAULT_AVATAR_FADE_INNER_COLOR = glm::u8vec3(255, 161, 33);
+const glm::u8vec3 ENTITY_ITEM_DEFAULT_AVATAR_FADE_OUTER_COLOR = glm::u8vec3(255, 255, 255);
+const glm::vec3 ENTITY_ITEM_DEFAULT_AVATAR_NOISE_SIZE = glm::vec3(10.0f, 0.01f, 10.0f);
+const glm::vec3 ENTITY_ITEM_DEFAULT_AVATAR_NOISE_SPEED = glm::vec3(0.0f, -5.0f, 0.0f);
+const glm::vec3 ENTITY_ITEM_DEFAULT_AVATAR_BASE_SIZE = glm::vec3(10000.f, 1.0f, 10000.0f);
+
+const Sampler ENTITY_ITEM_DEFAULT_SAMPLER = Sampler();
 
 #endif // hifi_EntityItemPropertiesDefaults_h

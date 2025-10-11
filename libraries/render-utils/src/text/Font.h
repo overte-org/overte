@@ -68,17 +68,17 @@ public:
     struct DrawProps {
         DrawProps(const QString& str, const glm::vec4& color, const glm::vec3& effectColor, const glm::vec2& origin, const glm::vec2& bounds,
                   float scale, float effectThickness, TextEffect effect, TextAlignment alignment, TextVerticalAlignment verticalAlignment, bool unlit,
-                  bool forward, bool mirror) :
+                  bool forward, bool mirror, bool fading) :
             str(str), color(color), effectColor(effectColor), origin(origin), bounds(bounds), scale(scale), effectThickness(effectThickness),
-            effect(effect), alignment(alignment), verticalAlignment(verticalAlignment), unlit(unlit), forward(forward), mirror(mirror) {}
+            effect(effect), alignment(alignment), verticalAlignment(verticalAlignment), unlit(unlit), forward(forward), mirror(mirror), fading(fading) {}
         DrawProps(const QString& str, const glm::vec4& color, const glm::vec2& origin, const glm::vec2& bounds, TextAlignment alignment, bool forward) :
             str(str), color(color), origin(origin), bounds(bounds), alignment(alignment), forward(forward) {}
 
-        const QString& str;
-        const glm::vec4& color;
-        const glm::vec3& effectColor { glm::vec3(0.0f) };
-        const glm::vec2& origin;
-        const glm::vec2& bounds;
+        QString str;
+        glm::vec4 color;
+        glm::vec3 effectColor { glm::vec3(0.0f) };
+        glm::vec2 origin;
+        glm::vec2 bounds;
         float scale { 1.0f };
         float effectThickness { 0.0f };
         TextEffect effect { TextEffect::NO_EFFECT };
@@ -87,6 +87,7 @@ public:
         bool unlit = true;
         bool forward;
         bool mirror = false;
+        bool fading = false;
     };
 
     // Render string to batch
@@ -132,7 +133,7 @@ private:
     gpu::TexturePointer _texture;
     gpu::BufferStreamPointer _stream;
 
-    static std::map<std::tuple<bool, bool, bool, bool>, gpu::PipelinePointer> _pipelines;
+    static std::map<std::tuple<bool, bool, bool, bool, bool>, gpu::PipelinePointer> _pipelines;
     static gpu::Stream::FormatPointer _format;
 };
 

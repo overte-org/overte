@@ -57,6 +57,11 @@ void ImageEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
         _textureIsLoaded = false;
     }
 
+    auto sampler = entity->getSampler();
+    if (_sampler != sampler) {
+        _sampler = sampler;
+    }
+
     _keepAspectRatio = entity->getKeepAspectRatio();
     _subImage = entity->getSubImage();
     _pulseProperties = entity->getPulseProperties();
@@ -139,9 +144,11 @@ void ImageEntityRenderer::doRender(RenderArgs* args) {
     }
 
     Transform transform;
+    Sampler sampler;
     bool transparent;
     withReadLock([&] {
         transform = _renderTransform;
+        sampler = _sampler;
         transparent = isTransparent();
     });
 
@@ -198,9 +205,9 @@ void ImageEntityRenderer::doRender(RenderArgs* args) {
     Pipeline pipelineType = getPipelineType(materials);
     if (pipelineType == Pipeline::PROCEDURAL) {
         auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials.top().material);
-        transparent |= procedural->isFading();
         procedural->prepare(*batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(transparent));
     } else if (pipelineType == Pipeline::SIMPLE) {
+        _texture->getGPUTexture()->setSampler(sampler);
         batch->setResourceTexture(0, _texture->getGPUTexture());
     } else if (pipelineType == Pipeline::MATERIAL) {
         color = glm::vec4(1.0f);  // for model shaders, albedo comes from the material instead of vertex colors
@@ -209,10 +216,17 @@ void ImageEntityRenderer::doRender(RenderArgs* args) {
         }
     }
 
-    DependencyManager::get<GeometryCache>()->renderQuad(
-        *batch, glm::vec2(-0.5f), glm::vec2(0.5f), texCoordBottomLeft, texCoordTopRight,
-        color, _geometryId
-    );
+    bool fading = ShapeKey(args->_itemShapeKey).isFaded();
+    if (fading && pipelineType == Pipeline::SIMPLE) {
+        FadeObjectParams fadeParams = getFadeParams(args->_scene);
+        _fadeBuffers.clear();
+        _fadeBuffers.append(fadeParams);
+        DependencyManager::get<GeometryCache>()->renderQuadFade(*batch, glm::vec2(-0.5f), glm::vec2(0.5f), texCoordBottomLeft,
+                                                                texCoordTopRight, color, _fadeBuffers, _geometryId);
+    } else {
+        DependencyManager::get<GeometryCache>()->renderQuad(*batch, glm::vec2(-0.5f), glm::vec2(0.5f), texCoordBottomLeft,
+                                                            texCoordTopRight, color, _geometryId);
+    }
 
     if (pipelineType == Pipeline::SIMPLE) {
         // we have to reset this to white for other simple shapes

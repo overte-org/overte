@@ -41,11 +41,18 @@
 #define GPU_ATTR_TEXCOORD2 8
 #define GPU_ATTR_TEXCOORD3 9
 #define GPU_ATTR_TEXCOORD4 10
+#define GPU_ATTR_FADEDATA1 7 // fade data is only used for shapes, which don't have multiple tex coords
+#define GPU_ATTR_FADEDATA2 8
+#define GPU_ATTR_FADEDATA3 9
+#define GPU_ATTR_FADEDATA4 10
+#define GPU_ATTR_FADEDATA5 11
+#define GPU_ATTR_FADEDATA6 12
+#define GPU_ATTR_FADEDATA7 13
 #define GPU_ATTR_STEREO_SIDE 14
 #define GPU_ATTR_DRAW_CALL_INFO 15
 
-#define GPU_ATTR_V2F_STEREO_SIDE 14
-#define GPU_ATTR_V2F_DRAW_CALL_INFO 15
+#define GPU_ATTR_V2F_STEREO_SIDE 18
+#define GPU_ATTR_V2F_DRAW_CALL_INFO 19
 
 #define GPU_UNIFORM_EXTRA0 110
 #define GPU_UNIFORM_EXTRA1 111
@@ -96,6 +103,13 @@ enum Attribute {
     TexCoord2 = GPU_ATTR_TEXCOORD2,
     TexCoord3 = GPU_ATTR_TEXCOORD3,
     TexCoord4 = GPU_ATTR_TEXCOORD4,
+    FadeData1 = GPU_ATTR_FADEDATA1,
+    FadeData2 = GPU_ATTR_FADEDATA2,
+    FadeData3 = GPU_ATTR_FADEDATA3,
+    FadeData4 = GPU_ATTR_FADEDATA4,
+    FadeData5 = GPU_ATTR_FADEDATA5,
+    FadeData6 = GPU_ATTR_FADEDATA6,
+    FadeData7 = GPU_ATTR_FADEDATA7,
     StereoSide = GPU_ATTR_STEREO_SIDE,
     DrawCallInfo = GPU_ATTR_DRAW_CALL_INFO,
 };

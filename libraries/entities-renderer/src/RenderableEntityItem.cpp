@@ -15,6 +15,7 @@
 
 #include <glm/gtx/transform.hpp>
 #include <ObjectMotionState.h>
+#include <render/TransitionStage.h>
 
 #include "RenderableShapeEntityItem.h"
 #include "RenderableModelEntityItem.h"
@@ -134,7 +135,13 @@ std::shared_ptr<T> make_renderer(const EntityItemPointer& entity) {
     return std::shared_ptr<T>(new T(entity), [](T* ptr) { ptr->deleteLater(); });
 }
 
-EntityRenderer::EntityRenderer(const EntityItemPointer& entity) : _created(entity->getCreated()), _entity(entity), _entityID(entity->getID()) {}
+EntityRenderer::EntityRenderer(const EntityItemPointer& entity) :
+    _fadeInProperties(entity->getFadeInProperties()),
+    _fadeInMode((ComponentMode)entity->getFadeInMode()),
+    _created(entity->getCreated()),
+    _entity(entity),
+    _entityID(entity->getID()) {
+}
 
 EntityRenderer::~EntityRenderer() {}
 
@@ -345,6 +352,55 @@ HighlightStyle EntityRenderer::getOutlineStyle(const ViewFrustum& viewFrustum, c
     return HighlightStyle();
 }
 
+FadeProperties EntityRenderer::getFadeProperties(const TransitionType type) const {
+    FadeProperties fadeProperties;
+    switch (type) {
+        case TransitionType::ELEMENT_ENTER_DOMAIN: {
+            if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED) {
+                fadeProperties = {
+                    _fadeInProperties.getDuration(),
+                    _fadeInProperties.getTiming(),
+                    _fadeInProperties.getNoiseSpeed(),
+                    1.0f / _fadeInProperties.getNoiseSize(),
+                    _fadeInProperties.getNoiseLevel(),
+                    1.0f / _fadeInProperties.getBaseSize(),
+                    _fadeInProperties.getBaseLevel(),
+                    vec4(vec3(_fadeInProperties.getEdgeInnerColor()) / 255.0f, _fadeInProperties.getEdgeInnerAlpha()),
+                    vec4(vec3(_fadeInProperties.getEdgeOuterColor()) / 255.0f, _fadeInProperties.getEdgeOuterAlpha()),
+                    _fadeInProperties.getEdgeWidth(),
+                    _fadeInProperties.getInverted()
+                };
+            } else if (auto renderer = DependencyManager::get<EntityTreeRenderer>()) {
+                fadeProperties = renderer->getLayeredZoneFadeProperties(type);
+            }
+            break;
+        }
+        case TransitionType::ELEMENT_LEAVE_DOMAIN: {
+            if (_fadeOutMode == ComponentMode::COMPONENT_MODE_ENABLED) {
+                fadeProperties = {
+                    _fadeOutProperties.getDuration(),
+                    _fadeOutProperties.getTiming(),
+                    _fadeOutProperties.getNoiseSpeed(),
+                    1.0f / _fadeOutProperties.getNoiseSize(),
+                    _fadeOutProperties.getNoiseLevel(),
+                    1.0f / _fadeOutProperties.getBaseSize(),
+                    _fadeOutProperties.getBaseLevel(),
+                    vec4(vec3(_fadeOutProperties.getEdgeInnerColor()) / 255.0f, _fadeOutProperties.getEdgeInnerAlpha()),
+                    vec4(vec3(_fadeOutProperties.getEdgeOuterColor()) / 255.0f, _fadeOutProperties.getEdgeOuterAlpha()),
+                    _fadeOutProperties.getEdgeWidth(),
+                    _fadeOutProperties.getInverted()
+                };
+            } else if (auto renderer = DependencyManager::get<EntityTreeRenderer>()) {
+                fadeProperties = renderer->getLayeredZoneFadeProperties(type);
+            }
+            break;
+        }
+        default:
+            break;
+    }
+    return fadeProperties;
+}
+
 void EntityRenderer::render(RenderArgs* args) {
     if (!isValidRenderItem()) {
         return;
@@ -452,6 +508,13 @@ bool EntityRenderer::addToScene(const ScenePointer& scene, Transaction& transact
     makeStatusGetters(_entity, statusGetters);
     renderPayload->addStatusGetters(statusGetters);
     transaction.resetItem(_renderItemID, renderPayload);
+    auto renderer = DependencyManager::get<EntityTreeRenderer>();
+    if (renderer) {
+        if (_fadeInMode == ComponentMode::COMPONENT_MODE_ENABLED ||
+            (_fadeInMode == ComponentMode::COMPONENT_MODE_INHERIT && renderer->layeredZonesHaveFade(TransitionType::ELEMENT_ENTER_DOMAIN))) {
+            fade(transaction, TransitionType::ELEMENT_ENTER_DOMAIN);
+        }
+    }
     onAddToScene(_entity);
     updateInScene(scene, transaction);
     return true;
@@ -480,6 +543,10 @@ void EntityRenderer::updateInScene(const ScenePointer& scene, Transaction& trans
     });
 }
 
+void EntityRenderer::fade(render::Transaction& transaction, TransitionType type) {
+    transaction.resetTransitionOnItem(_renderItemID, type);
+}
+
 //
 // Internal methods
 //
@@ -487,10 +554,6 @@ void EntityRenderer::updateInScene(const ScenePointer& scene, Transaction& trans
 // Returns true if the item needs to have updateInscene called because of internal rendering 
 // changes (animation, fading, etc)
 bool EntityRenderer::needsRenderUpdate() const {
-    if (isFading()) {
-        return true;
-    }
-
     if (_prevIsTransparent != isTransparent()) {
         return true;
     }
@@ -554,12 +617,8 @@ void EntityRenderer::doRenderUpdateSynchronous(const ScenePointer& scene, Transa
     DETAILED_PROFILE_RANGE(simulation_physics, __FUNCTION__);
     withWriteLock([&] {
         auto transparent = isTransparent();
-        auto fading = isFading();
-        if (fading || _prevIsTransparent != transparent || !entity->isVisuallyReady()) {
+        if (_prevIsTransparent != transparent || !entity->isVisuallyReady()) {
             emit requestRenderUpdate();
-        }
-        if (fading) {
-            _isFading = Interpolate::calculateFadeRatio(_fadeStartTime) < 1.0f;
         }
 
         _prevIsTransparent = transparent;
@@ -586,6 +645,8 @@ void EntityRenderer::doRenderUpdateAsynchronous(const EntityItemPointer& entity)
         entity->resetNeedsZoneOcclusionUpdate();
         _renderWithZones = entity->getRenderWithZones();
     }
+    _fadeOutProperties = entity->getFadeOutProperties();
+    _fadeOutMode = (ComponentMode)entity->getFadeOutMode();
 }
 
 void EntityRenderer::onAddToScene(const EntityItemPointer& entity) {
@@ -670,13 +731,6 @@ bool EntityRenderer::needsRenderUpdateFromMaterials() const {
         return true;
     }
 
-    if (materials->second.size() > 0 && materials->second.top().material && materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
-        auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials->second.top().material);
-        if (procedural->isFading()) {
-            return true;
-        }
-    }
-
     return false;
 }
 
@@ -696,14 +750,6 @@ void EntityRenderer::updateMaterials(bool baseMaterialChanged) {
     }
 
     bool requestUpdate = false;
-    if (materials->second.size() > 0 && materials->second.top().material && materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
-        auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials->second.top().material);
-        if (procedural->isFading()) {
-            procedural->setIsFading(Interpolate::calculateFadeRatio(procedural->getFadeStartTime()) < 1.0f);
-            requestUpdate = true;
-        }
-    }
-
     if (materials->second.shouldUpdate()) {
         RenderPipelines::updateMultiMaterial(materials->second);
         requestUpdate = true;
@@ -726,13 +772,6 @@ bool EntityRenderer::materialsTransparent() const {
     }
 
     if (materials->second.size() > 0 && materials->second.top().material) {
-        if (materials->second.top().material->isProcedural() && materials->second.top().material->isReady()) {
-            auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials->second.top().material);
-            if (procedural->isFading()) {
-                return true;
-            }
-        }
-
         if (materials->second.getMaterialKey().isTranslucent()) {
             return true;
         }
@@ -891,4 +930,20 @@ glm::vec3 EntityRenderer::calculatePulseColor(const glm::vec3& color, const Puls
     }
 
     return result;
+}
+
+FadeObjectParams EntityRenderer::getFadeParams(const render::ScenePointer& scene) const {
+    FadeObjectParams fadeParams;
+    auto item = scene->getItemSafe(_renderItemID);
+    if (item.exist()) {
+        auto transitionStage = scene->getStage<render::TransitionStage>();
+        if (transitionStage && transitionStage->checkId(item.getTransitionId())) {
+            auto& transition = transitionStage->getElement(item.getTransitionId());
+            if (transition.paramsBuffer._size == sizeof(FadeObjectParams)) {
+                fadeParams = static_cast<gpu::StructBuffer<FadeObjectParams>&>(transition.paramsBuffer).get();
+            }
+        }
+    }
+
+    return fadeParams;
 }

@@ -33,7 +33,8 @@
 
 static std::mutex fontMutex;
 
-std::map<std::tuple<bool, bool, bool, bool>, gpu::PipelinePointer> Font::_pipelines;
+// transparent, unlit, forward, mirror, fade
+std::map<std::tuple<bool, bool, bool, bool, bool>, gpu::PipelinePointer> Font::_pipelines;
 gpu::Stream::FormatPointer Font::_format;
 
 struct TextureVertex {
@@ -232,7 +233,7 @@ void Font::read(QIODevice& in) {
     // and also calling textureLod.  Shouldn't this just use anisotropic filtering and auto-generate mips?
     // We should also use smoothstep for anti-aliasing, as explained here: https://github.com/libgdx/libgdx/wiki/Distance-field-fonts
     _texture = gpu::Texture::create2D(formatGPU, image.width(), image.height(), gpu::Texture::SINGLE_MIP,
-                                      gpu::Sampler(gpu::Sampler::FILTER_MIN_POINT_MAG_LINEAR));
+                                      Sampler(Sampler::FILTER_MIN_POINT_MAG_LINEAR));
     _texture->setStoredMipFormat(formatMip);
     _texture->assignStoredMip(0, image.sizeInBytes(), image.constBits());
     _texture->setImportant(true);
@@ -346,21 +347,44 @@ void Font::setupGPU() {
     if (_pipelines.empty()) {
         using namespace shader::render_utils::program;
 
-        // transparent, unlit, forward
-        static const std::vector<std::tuple<bool, bool, bool, uint32_t>> keys = {
-            std::make_tuple(false, false, false, sdf_text3D), std::make_tuple(true, false, false, sdf_text3D_translucent),
-            std::make_tuple(false, true, false, sdf_text3D_unlit), std::make_tuple(true, true, false, sdf_text3D_translucent_unlit),
-            std::make_tuple(false, false, true, sdf_text3D_forward), std::make_tuple(true, false, true, sdf_text3D_forward/*sdf_text3D_translucent_forward*/),
-            std::make_tuple(false, true, true, sdf_text3D_translucent_unlit/*sdf_text3D_unlit_forward*/), std::make_tuple(true, true, true, sdf_text3D_translucent_unlit/*sdf_text3D_translucent_unlit_forward*/)
+        // transparent, unlit, forward, mirror, fade
+        static const std::vector<std::tuple<bool, bool, bool, bool, bool, uint32_t>> keys = {
+            std::make_tuple(false, false, false, false, false, sdf_text3D),
+            std::make_tuple(true, false, false, false, false, sdf_text3D_translucent),
+            std::make_tuple(false, true, false, false, false, sdf_text3D_unlit),
+            std::make_tuple(true, true, false, false, false, sdf_text3D_translucent_unlit),
+            std::make_tuple(false, false, true, false, false, sdf_text3D_forward),
+            std::make_tuple(true, false, true, false, false, sdf_text3D_forward /*sdf_text3D_translucent_forward*/),
+            std::make_tuple(false, true, true, false, false, sdf_text3D_translucent_unlit /*sdf_text3D_unlit_forward*/),
+            std::make_tuple(true, true, true,  false, false, sdf_text3D_translucent_unlit/*sdf_text3D_translucent_unlit_forward*/),
+            std::make_tuple(false, false, false, true, false, sdf_text3D_mirror),
+            std::make_tuple(true, false, false, true, false, sdf_text3D_translucent_mirror),
+            std::make_tuple(false, true, false, true, false, sdf_text3D_unlit_mirror),
+            std::make_tuple(true, true, false, true, false, sdf_text3D_translucent_unlit_mirror),
+            std::make_tuple(false, false, true, true, false, sdf_text3D_forward_mirror),
+            std::make_tuple(true, false, true, true, false, sdf_text3D_forward_mirror /*sdf_text3D_translucent_forward_mirror*/),
+            std::make_tuple(false, true, true, true, false, sdf_text3D_translucent_unlit_mirror /*sdf_text3D_unlit_forward_mirror*/),
+            std::make_tuple(true, true, true,  true, false, sdf_text3D_translucent_unlit_mirror/*sdf_text3D_translucent_unlit_forward_mirror*/),
+            std::make_tuple(false, false, false, false, true, sdf_text3D_fade),
+            std::make_tuple(true, false, false, false, true, sdf_text3D_translucent_fade),
+            std::make_tuple(false, true, false, false, true, sdf_text3D_unlit_fade),
+            std::make_tuple(true, true, false, false, true, sdf_text3D_translucent_unlit_fade),
+            std::make_tuple(false, false, false, true, true, sdf_text3D_mirror_fade),
+            std::make_tuple(true, false, false, true, true, sdf_text3D_translucent_mirror_fade),
+            std::make_tuple(false, true, false, true, true, sdf_text3D_unlit_mirror_fade),
+            std::make_tuple(true, true, false, true, true, sdf_text3D_translucent_unlit_mirror_fade),
+            // no such thing as forward + fade
         };
         for (auto& key : keys) {
             bool transparent = std::get<0>(key);
             bool unlit = std::get<1>(key);
             bool forward = std::get<2>(key);
+            bool mirror = std::get<3>(key);
+            bool fade = std::get<4>(key);
 
             auto state = std::make_shared<gpu::State>();
             state->setCullMode(gpu::State::CULL_BACK);
-            state->setDepthTest(true, !transparent, gpu::LESS_EQUAL);
+            state->setDepthTest(true, !transparent, ComparisonFunction::LESS_EQUAL);
             state->setBlendFunction(transparent,
                 gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
                 gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
@@ -369,8 +393,7 @@ void Font::setupGPU() {
             } else {
                 PrepareStencil::testMaskDrawShape(*state);
             }
-            _pipelines[std::make_tuple(transparent, unlit, forward, false)] = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<3>(key)), state);
-            _pipelines[std::make_tuple(transparent, unlit, forward, true)] = gpu::Pipeline::create(gpu::Shader::createProgram(forward ? sdf_text3D_forward_mirror : sdf_text3D_mirror), state);
+            _pipelines[std::make_tuple(transparent, unlit, forward, mirror, fade)] = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<5>(key)), state);
         }
 
         // Sanity checks
@@ -386,7 +409,7 @@ void Font::setupGPU() {
         _format->setAttribute(gpu::Stream::POSITION, 0, gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::XYZ), 0);
         _format->setAttribute(gpu::Stream::TEXCOORD, 0, gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::UV), TEX_COORD_OFFSET);
         _format->setAttribute(gpu::Stream::TEXCOORD1, 0, gpu::Element(gpu::VEC4, gpu::FLOAT, gpu::XYZW), TEX_BOUNDS_OFFSET);
-        _format->setAttribute(gpu::Stream::TEXCOORD2, 0, gpu::Element(gpu::SCALAR, gpu::FLOAT, gpu::RED), TOFU_OFFSET);
+        _format->setAttribute(gpu::Stream::TANGENT, 0, gpu::Element(gpu::SCALAR, gpu::FLOAT, gpu::RED), TOFU_OFFSET);
     }
 }
 
@@ -610,7 +633,7 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const DrawPro
         _needsParamsUpdate = false;
     }
 
-    batch.setPipeline(_pipelines[std::make_tuple(props.color.a < 1.0f, props.unlit, props.forward, props.mirror)]);
+    batch.setPipeline(_pipelines[std::make_tuple(props.color.a < 1.0f, props.unlit, props.forward, props.mirror, props.fading)]);
     batch.setInputFormat(_format);
     batch.setInputBuffer(0, drawInfo.verticesBuffer, 0, _format->getChannels().at(0)._stride);
     batch.setResourceTexture(render_utils::slot::texture::TextFont, _texture);

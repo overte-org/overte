@@ -25,7 +25,7 @@
         _Pragma("GCC diagnostic push") \
         _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
 
-    #define OVERTE_IGNORE_DEPRECATED_END _Pragma("GCC diagnostic pop")
+    #define OVERTE_IGNORE_WARNING_END _Pragma("GCC diagnostic pop")
 
 #elif OVERTE_WARNINGS_ALLOWLIST_CLANG
 
@@ -33,7 +33,7 @@
         _Pragma("clang diagnostic push") \
         _Pragma("clang diagnostic ignored \"-Wdeprecated-declarations\"")
 
-    #define OVERTE_IGNORE_DEPRECATED_END _Pragma("clang diagnostic pop")
+    #define OVERTE_IGNORE_WARNING_END _Pragma("clang diagnostic pop")
 
 #elif OVERTE_WARNINGS_ALLOWLIST_MSVC
 
@@ -41,13 +41,13 @@
         _Pragma("warning(push)") \
         _Pragma("warning(disable : 4996)")
 
-    #define OVERTE_IGNORE_DEPRECATED_END _Pragma("warning(pop)")
+    #define OVERTE_IGNORE_WARNING_END _Pragma("warning(pop)")
 
 #else
 
 #warning "Don't know how to suppress warnings on this compiler. Please fix me."
 
 #define OVERTE_IGNORE_DEPRECATED_BEGIN
-#define OVERTE_IGNORE_DEPRECATED_END
+#define OVERTE_IGNORE_WARNING_END
 
 #endif

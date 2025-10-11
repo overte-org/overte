@@ -15,6 +15,7 @@
 
 #include <ImageEntityItem.h>
 
+#include <GeometryCache.h>
 #include <procedural/Procedural.h>
 
 namespace render { namespace entities {
@@ -51,7 +52,10 @@ private:
     std::shared_ptr<graphics::ProceduralMaterial> _material { std::make_shared<graphics::ProceduralMaterial>() };
     glm::vec3 _color { NAN };
     float _alpha { NAN };
+    Sampler _sampler;
     PulsePropertyGroup _pulseProperties;
+
+    FadeBuffers _fadeBuffers;
 
     int _geometryId { 0 };
 };

@@ -260,12 +260,45 @@ const QHash<QString, ComponentMode> stringToComponentMode = [] {
 }();
 QString EntityItemProperties::getComponentModeAsString(uint8_t mode) { return ComponentModeHelpers::getNameForComponentMode((ComponentMode)mode); }
 QString EntityItemProperties::getSkyboxModeAsString() const { return getComponentModeAsString(_skyboxMode); }
+QString EntityItemProperties::getFadeInModeAsString() const { return getComponentModeAsString(_fadeInMode); }
+QString EntityItemProperties::getFadeOutModeAsString() const { return getComponentModeAsString(_fadeOutMode); }
+QString EntityItemProperties::getAvatarFadeInModeAsString() const { return getComponentModeAsString(_avatarFadeInMode); }
+QString EntityItemProperties::getAvatarFadeOutModeAsString() const { return getComponentModeAsString(_avatarFadeOutMode); }
 QString EntityItemProperties::getKeyLightModeAsString() const { return getComponentModeAsString(_keyLightMode); }
 QString EntityItemProperties::getAmbientLightModeAsString() const { return getComponentModeAsString(_ambientLightMode); }
 QString EntityItemProperties::getHazeModeAsString() const { return getComponentModeAsString(_hazeMode); }
 QString EntityItemProperties::getBloomModeAsString() const { return getComponentModeAsString(_bloomMode); }
 QString EntityItemProperties::getTonemappingModeAsString() const { return getComponentModeAsString(_tonemappingMode); }
 QString EntityItemProperties::getAmbientOcclusionModeAsString() const { return getComponentModeAsString(_ambientOcclusionMode); }
+QString EntityItemProperties::getNormalMapAttenuationModeAsString() const { return getComponentModeAsString(_normalMapAttenuationMode); }
+void EntityItemProperties::setFadeInModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _fadeInMode = modeItr.value();
+        _fadeInModeChanged = true;
+    }
+}
+void EntityItemProperties::setFadeOutModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _fadeOutMode = modeItr.value();
+        _fadeOutModeChanged = true;
+    }
+}
+void EntityItemProperties::setAvatarFadeInModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _avatarFadeInMode = modeItr.value();
+        _avatarFadeInModeChanged = true;
+    }
+}
+void EntityItemProperties::setAvatarFadeOutModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _avatarFadeOutMode = modeItr.value();
+        _avatarFadeOutModeChanged = true;
+    }
+}
 void EntityItemProperties::setSkyboxModeFromString(const QString& mode) {
     auto modeItr = stringToComponentMode.find(mode.toLower());
     if (modeItr != stringToComponentMode.end()) {
@@ -313,6 +346,13 @@ void EntityItemProperties::setAmbientOcclusionModeFromString(const QString& mode
     if (modeItr != stringToComponentMode.end()) {
         _ambientOcclusionMode = modeItr.value();
         _ambientOcclusionModeChanged = true;
+    }
+}
+void EntityItemProperties::setNormalMapAttenuationModeFromString(const QString& mode) {
+    auto modeItr = stringToComponentMode.find(mode.toLower());
+    if (modeItr != stringToComponentMode.end()) {
+        _normalMapAttenuationMode = modeItr.value();
+        _normalMapAttenuationModeChanged = true;
     }
 }
 
@@ -491,6 +531,7 @@ void EntityItemProperties::setTagsFromVector(const QVector<QString>& tags) {
     for (const QString& tag : tags) {
         _tags.insert(tag);
     }
+    _tagsChanged = true;
 }
 
 EntityPropertyFlags EntityItemProperties::getChangedProperties() const {
@@ -1401,9 +1442,7 @@ void EntityItemProperties::convertToCloneProperties(const EntityItemID& entityID
 bool EntityItemProperties::blobToProperties(ScriptEngine& scriptEngine, const QByteArray& blob, EntityItemProperties& properties) {
     // DANGER: this method is NOT efficient.
     // begin recipe for converting unfortunately-formatted-binary-blob to EntityItemProperties
-    OVERTE_IGNORE_DEPRECATED_BEGIN
-    QJsonDocument jsonProperties = QJsonDocument::fromBinaryData(blob);
-    OVERTE_IGNORE_DEPRECATED_END
+    QJsonDocument jsonProperties = QJsonDocument(QCborValue::fromCbor(blob).toJsonValue().toObject());
     if (jsonProperties.isEmpty() || jsonProperties.isNull() || !jsonProperties.isObject() || jsonProperties.object().isEmpty()) {
         qCDebug(entities) << "bad avatarEntityData json" << QString(blob.toHex());
         return false;
@@ -1432,10 +1471,7 @@ void EntityItemProperties::propertiesToBlob(ScriptEngine& scriptEngine, const QU
             jsonObject["parentID"] = AVATAR_SELF_ID.toString();
         }
     }
-    jsonProperties = QJsonDocument(jsonObject);
-    OVERTE_IGNORE_DEPRECATED_BEGIN
-    blob = jsonProperties.toBinaryData();
-    OVERTE_IGNORE_DEPRECATED_END
+    blob = QCborValue::fromJsonValue(jsonObject).toCbor();
     // end recipe
 }
 

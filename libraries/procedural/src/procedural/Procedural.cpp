@@ -120,14 +120,14 @@ std::function<void(gpu::StatePointer)> Procedural::transparentStencil = [](gpu::
 
 Procedural::Procedural(bool useAA) {
     _opaqueState->setCullMode(gpu::State::CULL_NONE);
-    _opaqueState->setDepthTest(true, true, gpu::LESS_EQUAL);
+    _opaqueState->setDepthTest(true, true, ComparisonFunction::LESS_EQUAL);
     _opaqueState->setBlendFunction(false,
         gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
         gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
     opaqueStencil(_opaqueState, useAA);
 
     _transparentState->setCullMode(gpu::State::CULL_NONE);
-    _transparentState->setDepthTest(true, false, gpu::LESS_EQUAL);
+    _transparentState->setDepthTest(true, false, ComparisonFunction::LESS_EQUAL);
     _transparentState->setBlendFunction(true,
         gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
         gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
@@ -161,10 +161,10 @@ void Procedural::setProceduralData(const ProceduralData& proceduralData) {
     if (proceduralData.channels != _data.channels) {
         _data.channels = proceduralData.channels;
 
-        static gpu::Sampler defaultSampler;
+        static Sampler defaultSampler;
         static std::once_flag once;
         std::call_once(once, [&] {
-            defaultSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR);
+            defaultSampler = Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR);
         });
 
         // Must happen on the main thread
@@ -187,7 +187,7 @@ void Procedural::setProceduralData(const ProceduralData& proceduralData) {
 
                         auto samplerItr = channelMap.constFind("sampler");
                         if (samplerItr != channelMap.constEnd() && samplerItr->isObject()) {
-                            _samplers[channel] = gpu::Sampler::parseSampler(samplerItr->toObject());
+                            _samplers[channel] = Sampler::parseSampler(samplerItr->toObject());
                         } else {
                             _samplers[channel] = defaultSampler;
                         }
@@ -270,10 +270,6 @@ bool Procedural::isReady() const {
         return false;
     }
 
-    if (!_hasStartedFade) {
-        _fadeStartTime = usecTimestampNow();
-    }
-
     // We need to have at least one shader, and whichever ones we have need to be loaded
     bool hasFragmentShader = !_fragmentShaderPath.isEmpty() || _networkFragmentShader;
     bool fragmentShaderLoaded = !_fragmentShaderPath.isEmpty() || (_networkFragmentShader && _networkFragmentShader->isLoaded());
@@ -288,11 +284,6 @@ bool Procedural::isReady() const {
         if (_channels[i] && !_channels[i]->isLoaded()) {
             return false;
         }
-    }
-
-    if (!_hasStartedFade) {
-        _hasStartedFade = true;
-        _isFading = true;
     }
 
     return true;
@@ -384,11 +375,11 @@ void Procedural::prepare(gpu::Batch& batch,
                 }
             }
             // Then fill in every reflections the new custom bindings
-            size_t customSlot = procedural::slot::uniform::Custom;
+            int customSlot = procedural::slot::uniform::Custom;
             _slotMap.clear();
             for (const auto& key : _data.uniforms.keys()) {
                 bool isArrayUniform = false;
-                size_t numSlots = 0;
+                int numSlots = 0;
                 const QJsonValue& value = _data.uniforms[key];
                 if (value.isDouble()) {
                     numSlots = 1;
@@ -396,12 +387,12 @@ void Procedural::prepare(gpu::Batch& batch,
                     const QJsonArray valueArray = value.toArray();
                     if (valueArray.size() > 0) {
                         if (valueArray[0].isArray()) {
-                            const size_t valueLength = valueArray[0].toArray().size();
-                            size_t count = 0;
+                            const int valueLength = valueArray[0].toArray().size();
+                            int count = 0;
                             for (const QJsonValue& value : valueArray) {
                                 if (value.isArray()) {
                                     const QJsonArray innerValueArray = value.toArray();
-                                    if (static_cast<size_t>(innerValueArray.size()) == valueLength) {
+                                    if (innerValueArray.size() == valueLength) {
                                         if (valueLength == 3 || valueLength == 4 || valueLength == 9 || valueLength == 16) {
                                             count++;
                                             isArrayUniform = true;
@@ -517,7 +508,7 @@ void Procedural::setupUniforms() {
             continue;
         }
 
-        const size_t slot = slotItr->second;
+        const int slot = slotItr->second;
         const QJsonValue& value = _data.uniforms[key];
         if (value.isDouble()) {
             const float v = value.toDouble();
@@ -526,16 +517,16 @@ void Procedural::setupUniforms() {
             const QJsonArray valueArray = value.toArray();
             if (valueArray.size() > 0) {
                 if (valueArray[0].isArray()) {
-                    const size_t valueLength = valueArray[0].toArray().size();
+                    const int valueLength = valueArray[0].toArray().size();
                     std::vector<float> vs;
                     vs.reserve(valueLength * valueArray.size());
-                    size_t count = 0;
+                    int count = 0;
                     for (const QJsonValue& value : valueArray) {
                         if (value.isArray()) {
                             const QJsonArray innerValueArray = value.toArray();
-                            if (static_cast<size_t>(innerValueArray.size()) == valueLength) {
+                            if (innerValueArray.size() == valueLength) {
                                 if (valueLength == 3 || valueLength == 4 || valueLength == 9 || valueLength == 16) {
-                                    for (size_t i = 0; i < valueLength; i++) {
+                                    for (int i = 0; i < valueLength; i++) {
                                         vs.push_back(innerValueArray[i].toDouble());
                                     }
                                     count++;

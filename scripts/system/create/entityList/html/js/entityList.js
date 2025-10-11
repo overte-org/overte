@@ -181,6 +181,8 @@ const FILTER_TYPES = [
     "Text",
     "Grid",
     "Sound",
+    "Empty",
+    "Script",
 ];
 
 const DOUBLE_CLICK_TIMEOUT = 300; // ms

@@ -1,0 +1,151 @@
+//
+//  AvatarFadeOutPropertyGroup.cpp
+//  libraries/entities/src
+//
+//  Created by HifiExperiments on 6/15/25
+//  Copyright 2025 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "AvatarFadeOutPropertyGroup.h"
+
+#include <OctreePacketData.h>
+
+#include "EntityItemProperties.h"
+
+inline void addFadeTiming(QHash<QString, FadeTiming>& lookup, FadeTiming timing) { lookup[FadeTimingHelpers::getNameForFadeTiming(timing)] = timing; }
+const QHash<QString, FadeTiming> stringToFadeTimingLookup = [] {
+    QHash<QString, FadeTiming> toReturn;
+    addFadeTiming(toReturn, FadeTiming::LINEAR);
+    addFadeTiming(toReturn, FadeTiming::EASE_IN);
+    addFadeTiming(toReturn, FadeTiming::EASE_OUT);
+    addFadeTiming(toReturn, FadeTiming::EASE_IN_OUT);
+    return toReturn;
+}();
+QString AvatarFadeOutPropertyGroup::getTimingAsString() const { return FadeTimingHelpers::getNameForFadeTiming(_timing); }
+void AvatarFadeOutPropertyGroup::setTimingFromString(const QString& timing) {
+    auto timingItr = stringToFadeTimingLookup.find(timing.toLower());
+    if (timingItr != stringToFadeTimingLookup.end()) {
+        _timing = timingItr.value();
+        _timingChanged = true;
+    }
+}
+
+void AvatarFadeOutPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+
+@AvatarFadeOut_GROUP_COPY_TO_SCRIPT@
+
+}
+
+void AvatarFadeOutPropertyGroup::copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) {
+
+@AvatarFadeOut_GROUP_COPY_FROM_SCRIPT@
+
+}
+
+void AvatarFadeOutPropertyGroup::merge(const AvatarFadeOutPropertyGroup& other) {
+
+@AvatarFadeOut_GROUP_MERGE@
+
+}
+
+void AvatarFadeOutPropertyGroup::debugDump() const {
+
+@AvatarFadeOut_GROUP_DEBUG_DUMP@
+
+}
+
+void AvatarFadeOutPropertyGroup::listChangedProperties(QList<QString>& out) {
+
+@AvatarFadeOut_GROUP_LIST_CHANGED@
+
+}
+
+bool AvatarFadeOutPropertyGroup::appendToEditPacket(OctreePacketData* packetData,
+                                                    EntityPropertyFlags& requestedProperties,
+                                                    EntityPropertyFlags& propertyFlags,
+                                                    EntityPropertyFlags& propertiesDidntFit,
+                                                    int& propertyCount,
+                                                    OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@AvatarFadeOut_GROUP_APPEND@
+
+    return successPropertyFits;
+}
+
+bool AvatarFadeOutPropertyGroup::decodeFromEditPacket(EntityPropertyFlags& propertyFlags, const unsigned char*& dataAt , int& processedBytes) {
+
+    int bytesRead = 0;
+    bool overwriteLocalData = true;
+    bool somethingChanged = false;
+
+@AvatarFadeOut_GROUP_READ@
+
+@AvatarFadeOut_GROUP_DECODE_CHANGED@
+
+    processedBytes += bytesRead;
+
+    return somethingChanged;
+}
+
+void AvatarFadeOutPropertyGroup::markAllChanged() {
+
+@AvatarFadeOut_GROUP_MARK_CHANGED@
+
+}
+
+EntityPropertyFlags AvatarFadeOutPropertyGroup::getChangedProperties() const {
+    EntityPropertyFlags changedProperties;
+
+@AvatarFadeOut_GROUP_CHANGED_PROPERTIES@
+
+    return changedProperties;
+}
+
+void AvatarFadeOutPropertyGroup::getProperties(EntityItemProperties& properties) const {
+
+@AvatarFadeOut_GROUP_COPY_TO@
+
+}
+
+bool AvatarFadeOutPropertyGroup::setProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@AvatarFadeOut_GROUP_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityPropertyFlags AvatarFadeOutPropertyGroup::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties;
+
+@AvatarFadeOut_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+int AvatarFadeOutPropertyGroup::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                                 ReadBitstreamToTreeParams& args,
+                                                                 EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                                 bool& somethingChanged) {
+
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@AvatarFadeOut_GROUP_READ@
+
+    return bytesRead;
+}
+
+void AvatarFadeOutPropertyGroup::addPropertyMap(QHash<QString, EntityPropertyInfo>& _propertyInfos,
+                                                QHash<EntityPropertyList, QString>& _enumsToPropertyStrings) {
+
+@AvatarFadeOut_GROUP_ADD_TO_MAP@
+
+}

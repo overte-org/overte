@@ -773,7 +773,7 @@ float computeGain(float primaryAvatarGain,
     float attenuationPerDoublingInDistance = AudioMixer::getAttenuationPerDoublingInDistance();
 
     float bestZonesVolume = FLT_MAX;
-    float bestZonesCoefficient;
+    float bestZonesCoefficient = attenuationPerDoublingInDistance;
     for (const auto& sourceZone : audioZones) {
         if (sourceZone.second.listeners.size() > 0 && sourceZone.second.listeners.size() == sourceZone.second.coefficients.size()) {
             vec4 localSourcePosition = sourceZone.second.inverseTransform * vec4(streamToAdd.getPosition(), 1.0f);

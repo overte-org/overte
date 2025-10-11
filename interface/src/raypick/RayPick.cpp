@@ -102,7 +102,7 @@ void RayPick::setDelay(float delay) {
     withWriteLock([&] {
         // We want to be within 0.1% of the target in <delay> seconds
         // https://twitter.com/FreyaHolmer/status/1757836988495847568
-        _delayHalf = -std::max(delay, 0.0f) / log2(0.001);
+        _delayHalf = -std::max(delay, 0.0f) / log2(0.001f);
     });
 }
 

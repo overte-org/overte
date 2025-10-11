@@ -29,6 +29,7 @@
 #include <Transform.h>
 #include <SpatiallyNestable.h>
 #include <Interpolate.h>
+#include <ComponentMode.h>
 
 #include "EntityItemID.h"
 #include "EntityItemPropertiesDefaults.h"
@@ -37,6 +38,8 @@
 #include "SimulationOwner.h"
 #include "EntityDynamicInterface.h"
 #include "GrabPropertyGroup.h"
+#include "FadeInPropertyGroup.h"
+#include "FadeOutPropertyGroup.h"
 
 class EntitySimulation;
 using EntitySimulationPointer = std::shared_ptr<EntitySimulation>;
@@ -387,6 +390,7 @@ public:
     void scriptHasUnloaded();
     void setScriptHasFinishedPreload(bool value);
     bool isScriptPreloadFinished();
+    QString getLoadedScript() const { return _loadedScript; }
     virtual bool isWearable() const;
     bool isDomainEntity() const { return _entityHostType == entity::HostType::DOMAIN; }
     bool isAvatarEntity() const { return _entityHostType == entity::HostType::AVATAR; }
@@ -446,6 +450,18 @@ public:
 
     bool needsZoneOcclusionUpdate() const { return _needsZoneOcclusionUpdate; }
     void resetNeedsZoneOcclusionUpdate() { withWriteLock([&] { _needsZoneOcclusionUpdate = false; }); }
+
+    const FadeInPropertyGroup& getFadeInProperties() const { return _fadeInProperties; }
+    const FadeOutPropertyGroup& getFadeOutProperties() const { return _fadeOutProperties; }
+
+    static void setUpdateScriptUserDataOperator(std::function<void(const EntityItemID&, const QString&, const QString&)> updateScriptUserDataOperator) {
+        _updateScriptUserDataOperator = updateScriptUserDataOperator;
+    }
+    static void updateScriptUserData(const EntityItemID& entityID, const QString& scriptURL, const QString& userData) {
+        if (_updateScriptUserDataOperator) {
+            _updateScriptUserDataOperator(entityID, scriptURL, userData);
+        }
+    }
 
 signals:
     void spaceUpdate(std::pair<int32_t, glm::vec4> data);
@@ -588,6 +604,8 @@ protected:
     bool _cullWithParent { false };
 
     mutable bool _needsRenderUpdate { false };
+
+    static std::function<void(const EntityItemID&, const QString&, const QString&)> _updateScriptUserDataOperator;
 };
 
 #endif // hifi_EntityItem_h

@@ -374,7 +374,7 @@ void OpenGLDisplayPlugin::customizeContext() {
                     gpu::Element(gpu::VEC4, gpu::NUINT8, gpu::RGBA),
                     image.width(), image.height(),
                     gpu::Texture::MAX_NUM_MIPS,
-                    gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+                    Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR));
                 cursorData.texture->setSource("cursor texture");
                 auto usage = gpu::Texture::Usage::Builder().withColor().withAlpha();
                 cursorData.texture->setUsage(usage.build());

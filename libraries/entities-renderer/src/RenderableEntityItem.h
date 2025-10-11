@@ -23,6 +23,7 @@
 #include <graphics-scripting/Forward.h>
 #include <RenderHifi.h>
 #include "EntityTreeRenderer.h"
+#include "FadeObjectParams.shared.slh"
 
 class EntityTreeRenderer;
 
@@ -56,6 +57,8 @@ public:
     virtual bool addToScene(const ScenePointer& scene, Transaction& transaction) final;
     virtual void removeFromScene(const ScenePointer& scene, Transaction& transaction);
 
+    virtual void fade(render::Transaction& transaction, TransitionType type);
+
     const uint64_t& getUpdateTime() const { return _updateTime; }
 
     enum class Pipeline {
@@ -83,6 +86,9 @@ public:
                                             MirrorMode mirrorMode, const QUuid& portalExitID);
     virtual void renderSimulate(RenderArgs* args) override {}
     virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const override;
+
+    virtual FadeProperties getFadeProperties(const TransitionType type) const override;
+    ComponentMode getFadeOutMode() const { return _fadeOutMode; }
 
 protected:
     virtual bool needsRenderUpdateFromEntity() const final { return needsRenderUpdateFromEntity(_entity); }
@@ -117,9 +123,8 @@ protected:
     // Called by the `render` method after `needsRenderUpdate`
     virtual void doRender(RenderArgs* args) = 0;
 
-    virtual bool isFading() const { return _isFading; }
     virtual void updateModelTransformAndBound(const EntityItemPointer& entity);
-    virtual bool isTransparent() const { return _isFading ? Interpolate::calculateFadeRatio(_fadeStartTime) < 1.0f : false; }
+    virtual bool isTransparent() const { return false; }
     inline bool isValidRenderItem() const { return _renderItemID != Item::INVALID_ITEM_ID; }
 
     virtual void setIsVisibleInSecondaryCamera(bool value) { _isVisibleInSecondaryCamera = value; }
@@ -136,6 +141,8 @@ protected:
 
     Transform getTransformToCenterWithMaybeOnlyLocalRotation(const EntityItemPointer& entity, bool& success) const;
 
+    FadeObjectParams getFadeParams(const render::ScenePointer& scene) const;
+
     // Shared methods for entities that support materials
     using MaterialMap = std::unordered_map<std::string, graphics::MultiMaterial>;
     bool needsRenderUpdateFromMaterials() const;
@@ -149,9 +156,7 @@ protected:
     SharedSoundPointer _collisionSound;
     QUuid _changeHandlerId;
     ItemID _renderItemID{ Item::INVALID_ITEM_ID };
-    uint64_t _fadeStartTime{ usecTimestampNow() };
     uint64_t _updateTime{ usecTimestampNow() }; // used when sorting/throttling render updates
-    bool _isFading { EntityTreeRenderer::getEntitiesShouldFadeFunction()() };
     bool _prevIsTransparent { false };
     bool _visible { false };
     bool _isVisibleInSecondaryCamera { false };
@@ -167,6 +172,11 @@ protected:
     QUuid _portalExitID;
     Transform _renderTransform;
     Transform _prevRenderTransform; // each subclass is responsible for updating this after they render because they all handle transforms differently
+
+    FadeInPropertyGroup _fadeInProperties;
+    FadeOutPropertyGroup _fadeOutProperties;
+    ComponentMode _fadeInMode { COMPONENT_MODE_INHERIT };
+    ComponentMode _fadeOutMode { COMPONENT_MODE_INHERIT };
 
     MaterialMap _materials;
     mutable std::mutex _materialsLock;

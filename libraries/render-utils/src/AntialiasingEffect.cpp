@@ -253,7 +253,7 @@ void Antialiasing::run(const render::RenderContextPointer& renderContext, const 
         std::vector<gpu::FramebufferPointer> antiAliasingBuffers;
         // Link the antialiasing FBO to texture
         auto format = gpu::Element(gpu::VEC4, gpu::HALF, gpu::RGBA);
-        auto defaultSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR, gpu::Sampler::WRAP_CLAMP);
+        auto defaultSampler = Sampler(Sampler::FILTER_MIN_MAG_LINEAR, Sampler::WRAP_CLAMP);
         for (int i = 0; i < 2; i++) {
             antiAliasingBuffers.emplace_back(gpu::Framebuffer::create("antialiasing"));
             const auto& antiAliasingBuffer = antiAliasingBuffers.back();

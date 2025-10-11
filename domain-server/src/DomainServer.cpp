@@ -3806,8 +3806,9 @@ void DomainServer::handleOctreeFileReplacementRequest(QSharedPointer<ReceivedMes
 }
 
 void DomainServer::processAvatarZonePresencePacket(QSharedPointer<ReceivedMessage> message) {
+    // FIXME: this, and PacketType::AvatarZonePresence in general, appear to be unused/unimplemented
     QUuid avatarID = QUuid::fromRfc4122(message->readWithoutCopy(NUM_BYTES_RFC4122_UUID));
-    QUuid zoneID = QUuid::fromRfc4122(message->readWithoutCopy(NUM_BYTES_RFC4122_UUID));
+    //QUuid zoneID = QUuid::fromRfc4122(message->readWithoutCopy(NUM_BYTES_RFC4122_UUID));
 
     if (avatarID.isNull()) {
         qCWarning(domain_server) << "Ignoring null avatar presence";

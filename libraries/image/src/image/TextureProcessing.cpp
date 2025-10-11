@@ -934,9 +934,9 @@ gpu::TexturePointer TextureUsage::process2DTextureColorFromImage(Image&& srcImag
         }
 
         if (isStrict) {
-            theTexture = gpu::Texture::createStrict(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+            theTexture = gpu::Texture::createStrict(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR));
         } else {
-            theTexture = gpu::Texture::create2D(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+            theTexture = gpu::Texture::create2D(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR));
         }
         theTexture->setSource(srcImageName);
         auto usage = gpu::Texture::Usage::Builder().withColor();
@@ -993,9 +993,9 @@ gpu::TexturePointer TextureUsage::process2DHDRTextureColorFromImage(Image&& srcI
         }
 
         if (isStrict) {
-            theTexture = gpu::Texture::createStrict(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+            theTexture = gpu::Texture::createStrict(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR));
         } else {
-            theTexture = gpu::Texture::create2D(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+            theTexture = gpu::Texture::create2D(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR));
         }
         theTexture->setSource(srcImageName);
         auto usage = gpu::Texture::Usage::Builder().withColor();
@@ -1119,7 +1119,7 @@ gpu::TexturePointer TextureUsage::process2DTextureNormalMapFromImage(Image&& src
         }
         formatMip = formatGPU;
 
-        theTexture = gpu::Texture::create2D(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+        theTexture = gpu::Texture::create2D(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR));
         theTexture->setSource(srcImageName);
         theTexture->setStoredMipFormat(formatMip);
         theTexture->assignStoredMip(0, image.getByteCount(), image.getBits());
@@ -1159,7 +1159,7 @@ gpu::TexturePointer TextureUsage::process2DTextureGrayscaleFromImage(Image&& src
         }
         formatMip = formatGPU;
 
-        theTexture = gpu::Texture::create2D(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR));
+        theTexture = gpu::Texture::create2D(formatGPU, image.getWidth(), image.getHeight(), gpu::Texture::MAX_NUM_MIPS, Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR));
         theTexture->setSource(srcImageName);
         theTexture->setStoredMipFormat(formatMip);
         theTexture->assignStoredMip(0, image.getByteCount(), image.getBits());
@@ -1628,7 +1628,7 @@ gpu::TexturePointer TextureUsage::processCubeTextureColorFromImage(Image&& srcIm
 
     // If the 6 faces have been created go on and define the true Texture
     if (faces.size() == gpu::Texture::NUM_FACES_PER_TYPE[gpu::Texture::TEX_CUBE]) {
-        theTexture = gpu::Texture::createCube(formatGPU, faces[0].getWidth(), gpu::Texture::MAX_NUM_MIPS, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR, gpu::Sampler::WRAP_CLAMP));
+        theTexture = gpu::Texture::createCube(formatGPU, faces[0].getWidth(), gpu::Texture::MAX_NUM_MIPS, Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR, Sampler::WRAP_CLAMP));
         theTexture->setSource(srcImageName);
         theTexture->setStoredMipFormat(formatMip);
 
@@ -1643,7 +1643,7 @@ gpu::TexturePointer TextureUsage::processCubeTextureColorFromImage(Image&& srcIm
                 irradianceFormat = GPU_CUBEMAP_HDR_FORMAT;
             }
 
-            auto irradianceTexture = gpu::Texture::createCube(irradianceFormat, faces[0].getWidth(), gpu::Texture::MAX_NUM_MIPS, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_MIP_LINEAR, gpu::Sampler::WRAP_CLAMP));
+            auto irradianceTexture = gpu::Texture::createCube(irradianceFormat, faces[0].getWidth(), gpu::Texture::MAX_NUM_MIPS, Sampler(Sampler::FILTER_MIN_MAG_MIP_LINEAR, Sampler::WRAP_CLAMP));
             irradianceTexture->setSource(srcImageName);
             irradianceTexture->setStoredMipFormat(irradianceFormat);
             for (uint8 face = 0; face < faces.size(); ++face) {

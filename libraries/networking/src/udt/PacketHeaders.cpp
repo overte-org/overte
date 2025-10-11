@@ -35,7 +35,7 @@ PacketVersion versionForPacketType(PacketType packetType) {
         case PacketType::EntityPhysics:
             return static_cast<PacketVersion>(EntityVersion::LAST_PACKET_TYPE);
         case PacketType::EntityQuery:
-            return static_cast<PacketVersion>(EntityQueryPacketVersion::ConicalFrustums);
+            return static_cast<PacketVersion>(EntityQueryPacketVersion::CborData);
         case PacketType::AvatarIdentity:
         case PacketType::AvatarData:
             return static_cast<PacketVersion>(AvatarMixerPacketVersion::RemoveAttachments);
@@ -102,7 +102,7 @@ PacketVersion versionForPacketType(PacketType packetType) {
         case PacketType::BulkAvatarTraits:
             return static_cast<PacketVersion>(AvatarMixerPacketVersion::AvatarTraitsAck);
         default:
-            return 22;
+            return 23;
     }
 }
 

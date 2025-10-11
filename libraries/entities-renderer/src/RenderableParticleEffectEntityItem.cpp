@@ -25,7 +25,7 @@ static gpu::Stream::FormatPointer _vertexFormat;
 // forward, transparent, shadow, wireframe
 static std::map<std::tuple<bool, bool, bool, bool>, gpu::PipelinePointer> _pipelines;
 
-static ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, const ShapeKey& key, RenderArgs* args) {
+static ShapePipelinePointer particlePipelineFactory(const ShapePlumber& plumber, const ShapeKey& key, RenderArgs* args) {
     if (_pipelines.empty()) {
         using namespace shader::entities_renderer::program;
 
@@ -51,7 +51,7 @@ static ShapePipelinePointer shapePipelineFactory(const ShapePlumber& plumber, co
                     state->setFillMode(gpu::State::FILL_LINE);
                 }
 
-                state->setDepthTest(true, !transparent, gpu::LESS_EQUAL);
+                state->setDepthTest(true, !transparent, ComparisonFunction::LESS_EQUAL);
                 state->setBlendFunction(transparent, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE,
                     gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
                 transparent ? PrepareStencil::testMaskResetNoAA(*state) : PrepareStencil::testMaskDrawShapeNoAA(*state);
@@ -81,7 +81,7 @@ ParticleEffectEntityRenderer::ParticleEffectEntityRenderer(const EntityItemPoint
     static std::once_flag once;
     std::call_once(once, [] {
         // As we create the first ParticuleSystem entity, let s register its special shapePIpeline factory:
-        CUSTOM_PIPELINE_NUMBER = render::ShapePipeline::registerCustomShapePipelineFactory(shapePipelineFactory);
+        CUSTOM_PIPELINE_NUMBER = render::ShapePipeline::registerCustomShapePipelineFactory(particlePipelineFactory);
         _vertexFormat = std::make_shared<Format>();
         _vertexFormat->setAttribute(gpu::Stream::POSITION, 0, gpu::Element::VEC3F_XYZ,
             offsetof(GpuParticle, xyz), gpu::Stream::PER_INSTANCE);

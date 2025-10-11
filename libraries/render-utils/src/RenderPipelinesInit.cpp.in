@@ -131,7 +131,7 @@ void addPlumberPipeline(ShapePlumber& plumber,
             key.isTranslucent() ? PrepareStencil::testMaskResetNoAA(*state) : PrepareStencil::testMaskDrawShape(*state);
 
             // Depth test depends on transparency
-            state->setDepthTest(true, !key.isTranslucent(), LESS_EQUAL);
+            state->setDepthTest(true, !key.isTranslucent(), ComparisonFunction::LESS_EQUAL);
             state->setBlendFunction(key.isTranslucent(),
                     State::SRC_ALPHA, State::BLEND_OP_ADD, State::INV_SRC_ALPHA,
                     State::FACTOR_ALPHA, State::BLEND_OP_ADD, State::ONE);

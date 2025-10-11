@@ -21,14 +21,12 @@ ProceduralParticleEffectEntityRenderer::ProceduralParticleEffectEntityRenderer(c
     Parent(entity) {
     _updateProcedural._vertexSource = shader::Source::get(shader::gpu::vertex::DrawUnitQuadTexcoord);
     _updateProcedural._opaqueFragmentSource = shader::Source::get(shader::entities_renderer::fragment::proceduralParticleUpdate);
-    _updateProcedural.setDoesFade(false);
 
     _renderProcedural._vertexSource = shader::Source::get(shader::entities_renderer::vertex::proceduralParticle);
     _renderProcedural._opaqueFragmentSource = shader::Source::get(shader::entities_renderer::fragment::proceduralParticle);
     _renderProcedural._transparentFragmentSource = shader::Source::get(shader::entities_renderer::fragment::proceduralParticle_translucent);
     _renderProcedural._transparentState->setBlendFunction(true, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE,
                                                           gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
-    _renderProcedural.setDoesFade(false);
 }
 
 void ProceduralParticleEffectEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) {
@@ -160,7 +158,7 @@ void ProceduralParticleEffectEntityRenderer::recreateParticles() {
         buffer->removeRenderBuffers();
         for (size_t i = 0; i < _numUpdateProps; i++) {
             TexturePointer texture = TexturePointer(gpu::Texture::createRenderBuffer(gpu::Element(gpu::VEC4, gpu::FLOAT, gpu::RGBA),
-                (gpu::uint16)_particlePropTextureDim, (gpu::uint16)_particlePropTextureDim, gpu::Texture::SINGLE_MIP, gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_POINT)));
+                (gpu::uint16)_particlePropTextureDim, (gpu::uint16)_particlePropTextureDim, gpu::Texture::SINGLE_MIP, Sampler(Sampler::FILTER_MIN_MAG_POINT)));
             texture->setSource(("RenderableProceduralParticleEffectEntity " + _entityID.toString() + " " + (char)i).toStdString());
             buffer->setRenderBuffer((gpu::uint32)i, texture);
         }
