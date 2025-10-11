@@ -13,17 +13,11 @@
 (function() { // BEGIN LOCAL_SCOPE
 
 var logEnabled = false;
-var touchOverlayID;
 var touchEntityID;
 
 function printd(str) {
     if (logEnabled)
         print("[clickWeb.js] " + str);
-}
-
-function intersectsWebOverlay(intersection) {
-    return intersection && intersection.intersects && intersection.overlayID && 
-            Overlays.getOverlayType(intersection.overlayID) == "web3d";
 }
 
 function intersectsWebEntity(intersection) {
@@ -35,18 +29,11 @@ function intersectsWebEntity(intersection) {
 }
 
 function findRayIntersection(pickRay) {
-    // Check 3D overlays and entities. Argument is an object with origin and direction.
-    var overlayRayIntersection = Overlays.findRayIntersection(pickRay);
-    var entityRayIntersection = Entities.findRayIntersection(pickRay, true);
-    var isOverlayInters = intersectsWebOverlay(overlayRayIntersection);
+    // Check all entities. Argument is an object with origin and direction.
+    var entityRayIntersection = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_LOCAL_ENTITIES);
     var isEntityInters = intersectsWebEntity(entityRayIntersection);
-    if (isOverlayInters && 
-        (!isEntityInters || 
-          overlayRayIntersection.distance < entityRayIntersection.distance)) {
-        return { type: 'overlay', obj: overlayRayIntersection };
-    } else if (isEntityInters &&
-        (!isOverlayInters ||
-          entityRayIntersection.distance < overlayRayIntersection.distance)) {
+
+    if (isEntityInters) {
         return { type: 'entity', obj: entityRayIntersection };
     }
     return false;
@@ -54,32 +41,20 @@ function findRayIntersection(pickRay) {
 
 function touchBegin(event) {
     var intersection = findRayIntersection(Camera.computePickRay(event.x, event.y));
-    if (intersection && intersection.type == 'overlay') {
-        touchOverlayID = intersection.obj.overlayID;
-        touchEntityID = null;
-    } else if (intersection && intersection.type == 'entity') {
+    if (intersection) {
         touchEntityID = intersection.obj.entityID;
-        touchOverlayID = null;
     }
 }
 
 function touchEnd(event) {
     var intersection = findRayIntersection(Camera.computePickRay(event.x, event.y));
-    if (intersection && intersection.type == 'overlay' && touchOverlayID == intersection.obj.overlayID) {
-        var propertiesToGet = {};
-        propertiesToGet[overlayID] = ['url'];
-        var properties = Overlays.getOverlaysProperties(propertiesToGet);
-        if (properties[overlayID].url && !properties[overlayID].url.match(/\.qml$/)) {
-            Window.openUrl(properties[overlayID].url);
-        }
-    } else if (intersection && intersection.type == 'entity' && touchEntityID == intersection.obj.entityID) {
+    if (intersection && touchEntityID == intersection.obj.entityID) {
         var properties = Entities.getEntityProperties(touchEntityID, ["sourceUrl"]);
         if (properties.sourceUrl && !properties.sourceUrl.match(/\.qml$/)) {
             Window.openUrl(properties.sourceUrl);
         }
     }
 
-    touchOverlayID = null;
     touchEntityID = null;
 }
 
