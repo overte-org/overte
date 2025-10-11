@@ -48,16 +48,16 @@ class Overte(ConanFile):
         self.folders.generators = os.path.join(self.folders.build, "generators")
 
     def requirements(self):
-        self.requires("artery-font-format/1.0.1")
+        self.requires("artery-font-format/1.0.1") # FIXME: update to 1.1
         self.requires("bullet3/3.25")
         self.requires("cgltf/1.14@overte/stable")
         # self.requires("crashpad/cci.20220219" ) # Broken
         self.requires("discord-rpc/3.4.0@anotherfoxguy/stable")
-        self.requires("draco/1.3.5")
-        self.requires("etc2comp/cci.20170424")
+        self.requires("draco/1.3.5") # FIXME: update to newer version
+        self.requires("etc2comp/cci.20170424") # NOTE: archived upstream
         self.requires("gifcreator/2016.11@overte/stable")
-        self.requires("glad/0.1.36")
-        self.requires("gli/cci.20210515")
+        self.requires("glad/0.1.36") # NOTE: glad 2 is released
+        self.requires("gli/cci.20210515") # NOTE: not maintained for 4 years
         self.requires("glslang/1.3.268.0")
         self.requires("liblo/0.30@overte/stable")
         self.requires("libnode/18.20.8@overte/stable")
@@ -68,7 +68,7 @@ class Overte(ConanFile):
         self.requires("openvr/2.2.3@overte/stable")
         self.requires("openxr/1.1.46@overte/stable")
         self.requires("opus/1.4")
-        self.requires("polyvox/0.2.1@overte/stable")
+        self.requires("polyvox/0.2.1@overte/stable") # FIXME: update to overte-maintained version
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.8")
@@ -79,7 +79,7 @@ class Overte(ConanFile):
         self.requires("vulkan-memory-allocator/3.0.1")
         self.requires("webrtc-audio-processing/2.1@overte/stable")
         self.requires("zlib/1.3.1")
-        self.requires("glm/0.9.9.5", force=True)
+        self.requires("glm/0.9.9.5", force=True) # FIXME: update to version 1.0.1
         self.requires("jsoncpp/1.9.6", force=True)
         # Fixes build errors on GCC 15. Check if this is still required when upgrading from sdl/2.30.3.
         # https://github.com/conan-io/conan-center-index/issues/27265
