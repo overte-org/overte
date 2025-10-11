@@ -69,4 +69,5 @@ execute_process(
     --icon-file=${APPIMAGE_ICON_FILE}
     --plugin qt
     --output=appimage
+  COMMAND_ERROR_IS_FATAL ANY
 )
