@@ -66,7 +66,6 @@ GLTexture* GLESBackend::syncGPUObject(const TexturePointer& texturePointer) {
                 break;
 
             case TextureUsageType::STRICT_RESOURCE:
-                qCDebug(gpugllogging) << "Strict texture " << texture.source().c_str();
                 object = new GLESStrictResourceTexture(shared_from_this(), texture);
                 break;
 

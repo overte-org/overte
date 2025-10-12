@@ -37,6 +37,7 @@
 #include "ZoneEntityItem.h"
 #include "MaterialEntityItem.h"
 #include "SoundEntityItem.h"
+#include "CanvasEntityItem.h"
 #include "EmptyEntityItem.h"
 #include "ScriptEntityItem.h"
 
@@ -66,6 +67,7 @@ REGISTER_ENTITY_TYPE(Light)
 REGISTER_ENTITY_TYPE(Zone)
 REGISTER_ENTITY_TYPE(Material)
 REGISTER_ENTITY_TYPE(Sound)
+REGISTER_ENTITY_TYPE(Canvas)
 REGISTER_ENTITY_TYPE(Empty)
 REGISTER_ENTITY_TYPE(Script)
 

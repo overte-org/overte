@@ -196,6 +196,7 @@
  *
  * @comment The different entity types have additional properties as follows:
  * @see {@link Entities.EntityProperties-Box|EntityProperties-Box}
+ * @see {@link Entities.EntityProperties-Canvas|EntityProperties-Canvas}
  * @see {@link Entities.EntityProperties-Empty|EntityProperties-Empty}
  * @see {@link Entities.EntityProperties-Gizmo|EntityProperties-Gizmo}
  * @see {@link Entities.EntityProperties-Grid|EntityProperties-Grid}
@@ -1002,6 +1003,45 @@
  *     billboardMode: "yaw",
  *     lifetime: 300  // Delete after 5 minutes.
  * });
+ */
+
+/*@jsdoc
+ * The <code>"Canvas"</code> {@link Entities.EntityType|EntityType} is a scriptable image source.
+ * It has properties in addition to the common {@link Entities.EntityProperties|EntityProperties}.
+ * <p class="important">Canvas commands are only useful on client scripts. There currently isn't a way of drawing to a canvas from a server script.</p>
+ *
+ * @typedef {object} Entities.EntityProperties-Canvas
+ * @property {Vec3} dimensions=0.1,0.1,0.1 - The dimensions of the entity. The rendered quad is always in the center of the entity's bounding box.
+ * @property {number} width=128 - The width of the canvas's image in pixels.
+ * @property {number} height=128 - The height of the canvas's image in pixels.
+ * @property {boolean} unlit=false - <code>true</code> if the canvas should be emissive (unlit), <code>false</code> if it shouldn't.
+ * @property {boolean} transparent=false - <code>true</code> if the canvas should be transparent, <code>false</code> if it should be opaque.
+ * @example <caption>Create a canvas entity and draw "Hello, world!" into it as text.</caption>
+ * const CanvasCommand = Script.require("canvasCommand");
+ *
+ * const canvas = Entities.addEntity({
+ *     type: "Canvas",
+ *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -1 })),
+ *     dimensions: { x: 1, y: 0.5, z: 0.01 },
+ *     lifetime: 30,  // Delete after 30 seconds.
+ *     width: 256,
+ *     height: 128,
+ *     unlit: true,
+ *     transparent: true,
+ * }, "local");
+ *
+ * Entities.canvasPushCommands(canvas, [
+ *     CanvasCommand.color([255, 255, 255, 255]),
+ *     CanvasCommand.font("sans-serif", 20),
+ *     CanvasCommand.fillText(
+ *         "Hello, world!",
+ *         0, 0,
+ *         256, 128,
+ *         CanvasCommand.TEXT_ALIGN_HCENTER | CanvasCommand.TEXT_ALIGN_VCENTER
+ *     ),
+ * ]);
+ *
+ * Entities.canvasCommit(canvas);
  */
 
 /*@jsdoc

@@ -92,6 +92,8 @@ public:
      *       <td>{@link Entities.EntityProperties-Material|EntityProperties-Material}</td></tr>
      *     <tr><td><code>"Sound"</code></td><td>Plays a sound.</td>
      *       <td>{@link Entities.EntityProperties-Sound|EntityProperties-Sound}</td></tr>
+     *     <tr><td><code>"Canvas"</code></td><td>A runtime scriptable image.</td>
+     *       <td>{@link Entities.EntityProperties-Canvas|EntityProperties-Canvas}</td></tr>
      *     <tr><td><code>"Empty"</code></td><td>Invisible, intangible entity that has no special behavior.</td>
      *       <td>{@link Entities.EntityProperties-Empty|EntityProperties-Empty}</td></tr>
      *     <tr><td><code>"Script"</code></td><td>Starts an entity script on its parent.</td>
@@ -120,6 +122,7 @@ public:
         Zone,
         Material,
         Sound,
+        Canvas,
         Empty,
         Script,
         NUM_TYPES

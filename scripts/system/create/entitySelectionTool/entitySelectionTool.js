@@ -2252,6 +2252,7 @@ SelectionDisplay = (function() {
                 SelectionManager.entityType === "ProceduralParticleEffect" ||
                 SelectionManager.entityType === "Light" ||
                 SelectionManager.entityType === "Sound" ||
+                SelectionManager.entityType === "Canvas" ||
                 SelectionManager.entityType === "Empty" ||
                 SelectionManager.entityType === "Script"
             ) {
