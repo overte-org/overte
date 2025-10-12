@@ -154,7 +154,11 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         // FIXME, support instanced multi-shape rendering using multidraw indirect
         outColor.a *= _isFading ? Interpolate::calculateFadeRatio(_fadeStartTime) : 1.0f;
         bool forward = _renderLayer != RenderLayer::WORLD || args->_renderMethod == Args::RenderMethod::FORWARD;
-        if (outColor.a >= 1.0f) {
+
+        // TODO: The clustered lighting doesn't work on instanced shapes on the forward renderer.
+        // For now, skip instancing in that case.
+        // How common are opaque shapes without a material on them?
+        if (outColor.a >= 1.0f && !forward) {
             render::ShapePipelinePointer pipeline = geometryCache->getShapePipelinePointer(false, wireframe || materials.top().material->isUnlit(),
                 forward, materials.top().material->getCullFaceMode());
             if (wireframe) {
