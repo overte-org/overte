@@ -4623,10 +4623,6 @@ function createProperty(propertyData, propertyElementID, propertyName, propertyI
             property.elInput = createChildList(property, elProperty);
             break;
         }
-        case 'childList': {
-            property.elInput = createChildList(property, elProperty);
-            break;
-        }
         case 'icon': {
             property.elSpan = createIconProperty(property, elProperty);
             break;
