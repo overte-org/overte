@@ -96,7 +96,7 @@
     var ZONE_URL = Script.resolvePath("assets/images/icon-zone.svg");
     var MATERIAL_URL = Script.resolvePath("assets/images/icon-material.svg");
     var SOUND_URL = Script.resolvePath("assets/images/icon-sound.svg");
-    var CANVAS_URL = Script.resolvePath("assets/images/icon-sound.svg");
+    var CANVAS_URL = Script.resolvePath("assets/images/icon-canvas.svg");
     var EMPTY_URL = Script.resolvePath("assets/images/icon-empty.svg");
     var SCRIPT_URL = Script.resolvePath("assets/images/icon-script.svg");
 

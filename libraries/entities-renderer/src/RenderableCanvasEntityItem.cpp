@@ -49,9 +49,8 @@ void CanvasEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoin
         const auto& data = entity->getImageData();
         auto width = entity->getImageWidth();
         auto height = entity->getImageHeight();
-
-        // TODO: generic sampler properties
-        auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, width, height, 1);
+        auto sampler = entity->getSampler();
+        auto texture = gpu::Texture::createStrict(gpu::Element::COLOR_SRGBA_32, width, height, 1, sampler);
         texture->setSource("CanvasEntityRenderer");
         texture->assignStoredMip(0, data.length(), reinterpret_cast<const uint8_t*>(data.constData()));
         _texture = texture;
@@ -95,7 +94,7 @@ void CanvasEntityRenderer::doRender(RenderArgs* args) {
         materials = _materials["0"];
     }
 
-    glm::vec4 color = materials.getColor();
+    glm::vec4 color = materials.getTopColor();
     color = EntityRenderer::calculatePulseColor(color, _pulseProperties, _created);
 
     if (color.a == 0.0f) { return; }
@@ -122,7 +121,6 @@ void CanvasEntityRenderer::doRender(RenderArgs* args) {
     Pipeline pipelineType = getPipelineType(materials);
     if (pipelineType == Pipeline::PROCEDURAL) {
         auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials.top().material);
-        transparent |= procedural->isFading();
         procedural->prepare(batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(transparent));
     } else if (pipelineType == Pipeline::SIMPLE) {
         batch.setResourceTexture(0, _texture);
