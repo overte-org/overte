@@ -36,7 +36,10 @@ ColumnLayout {
         
 		CustomListView {
 			Layout.fillHeight: true;
-			onAddEntryButtonClickedFunc: () => {toScript({type: "addNewRepositoryButtonClicked"})}; 
+			onAddEntryButtonClickedFunc: () => {
+                KeyboardScriptingInterface.raised = true;
+                toScript({type: "addNewRepositoryButtonClicked"});
+            }; 
 			entries: entryList;
 		}
 	}

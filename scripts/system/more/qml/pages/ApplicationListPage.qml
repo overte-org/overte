@@ -22,23 +22,56 @@ ColumnLayout {
 			height: parent.height - 20;
 			radius: 10;
 
-			TextField {
-				id: searchArea;
-				placeholderText: "Search...";
-				color: "black";
-				anchors.fill: parent;
-                font.pixelSize: 12;
-				onTextChanged: {
-					onSearchChanged(searchArea.text, statusFilter.checked);
-				}
-				background: Rectangle { // Custom background for the TextField
-					color: "transparent" // Make it transparent
-				}
+            RowLayout {
+                anchors.fill: parent
+                anchors.margins: 5
+                spacing: 5
+                width: parent.width;
                 
-                onVisibleChanged: {
-                    onSearchChanged(searchArea.text, statusFilter.checked);
+                TextField {
+                    id: searchArea;
+                    placeholderText: "Search...";
+                    color: "black";
+                    Layout.fillWidth: true;
+                    font.pixelSize: 14;
+                    onTextChanged: {
+                        onSearchChanged(searchArea.text, statusFilter.checked);
+                    }
+                    background: Rectangle {
+                        color: "transparent";
+                    }
+                    
+                    onVisibleChanged: {
+                        onSearchChanged(searchArea.text, statusFilter.checked);
+                    }
+                    onFocusChanged: {
+                        if (focus) {
+                            KeyboardScriptingInterface.raised = true;
+                        } else {
+                            KeyboardScriptingInterface.raised = false;
+                        }
+                    }
                 }
-			}
+                
+                Button {
+                    id: clearButton;
+                    text: "\u292B";
+                    height: searchArea.height;
+                    width: searchArea.height;
+
+                    font.pixelSize: 16;
+                    
+                    background: Rectangle {
+                        anchors.fill: parent
+                        color: "#ffffff";
+                        border.color: "#ffffff";
+                        border.width: 0;
+                        radius: 4;
+                    }
+
+                    onClicked: { searchArea.text = ""; }
+                }
+            }
 		}
 
         CheckBox {

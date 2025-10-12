@@ -117,6 +117,9 @@ Rectangle {
 				break;
 			case "repositoryList":
 				repositoryList = message.repositoryList;
+                if (KeyboardScriptingInterface.raised) {
+                    KeyboardScriptingInterface.raised = false;
+                }
 				break;
 		}
 	}
