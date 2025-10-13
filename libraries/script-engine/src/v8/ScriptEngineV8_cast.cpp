@@ -655,6 +655,9 @@ QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
     return "undefined";
 }
 
+// QT6TODO: where does this belong?
+Q_DECLARE_METATYPE(Qt::TimerType);
+
 V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
     Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
@@ -738,6 +741,12 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
                 //V8TODO: what should be the ownership in this case?
                 return ScriptObjectV8Proxy::newQObject(this, obj);
             }
+
+            // enums need special treatment, Qt::TimerType fails without this
+            if (QMetaType(valTypeId).flags() & (QMetaType::IsEnumeration | QMetaType::IsUnsignedEnumeration)) {
+                return V8ScriptValue(this, v8::Integer::New(_v8Isolate, val.toInt()));
+            }
+
             // have we set a prototyped variant?
             {
                 _customTypeProtect.lockForRead();
