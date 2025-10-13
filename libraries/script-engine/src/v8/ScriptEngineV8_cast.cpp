@@ -657,6 +657,9 @@ QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
     return "undefined";
 }
 
+// QT6TODO: where does this belong?
+Q_DECLARE_METATYPE(Qt::TimerType);
+
 V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
     v8::Locker locker(_v8Isolate);
     v8::Isolate::Scope isolateScope(_v8Isolate);
@@ -735,12 +738,18 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
         default:
             // check to see if this is a pointer to a QObject-derived object
             // WeakPointerToQObject and SharedPointerToQObject were causing trouble here because some values are handled by custom prototypes instead
-            if (QMetaType::typeFlags(valTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
+            if (QMetaType(valTypeId).flags() & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
                 QObject* obj = val.value<QObject*>();
                 if (obj == nullptr) return V8ScriptValue(this, v8::Null(_v8Isolate));
                 //V8TODO: what should be the ownership in this case?
                 return ScriptObjectV8Proxy::newQObject(this, obj);
             }
+
+            // enums need special treatment, Qt::TimerType fails without this
+            if (QMetaType(valTypeId).flags() & (QMetaType::IsEnumeration | QMetaType::IsUnsignedEnumeration)) {
+                return V8ScriptValue(this, v8::Integer::New(_v8Isolate, val.toInt()));
+            }
+
             // have we set a prototyped variant?
             {
                 _customTypeProtect.lockForRead();

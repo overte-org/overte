@@ -188,7 +188,7 @@ Item {
             Repeater {
                 id: pageRepeater
                 model: tabletProxy != null ? Math.ceil(tabletProxy.buttons.rowCount() / TabletEnums.ButtonsOnPage) : 0
-                onItemAdded: {
+                onItemAdded: (index, item) => {
                     item.proxyModel.sourceModel = tabletProxy != null ? tabletProxy.buttons : null;
                     item.proxyModel.pageIndex = index;
                 }
@@ -272,7 +272,7 @@ Item {
 
                             Connections {
                                 target: modelData;
-                                onPropertiesChanged:  {
+                                function onPropertiesChanged() {
                                     updateProperties();
                                 }
                             }
