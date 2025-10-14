@@ -77,7 +77,7 @@ public:
 private:
     static std::function<graphics::MaterialPointer(QUuid)> _unboundMaterialForUUIDOperator;
     std::function<graphics::MaterialPointer()> _materialForUUIDOperator;
-    mutable bool _locked { false };
+    mutable std::atomic<bool> _locked { false };
 
     graphics::MaterialPointer getMaterial() const;
     std::shared_ptr<NetworkMaterial> getNetworkMaterial() const;

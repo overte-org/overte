@@ -1136,7 +1136,8 @@ bool NetworkMaterial::isMissingTexture() {
         }
         // Failed texture downloads need to be considered as 'loaded'
         // or the object will never fade in
-        bool finished = texture->isFailed() || (texture->isLoaded() && texture->getGPUTexture() && texture->getGPUTexture()->isDefined());
+        auto gpuTexture = texture->getGPUTexture();
+        bool finished = texture->isFailed() || (texture->isLoaded() && gpuTexture && gpuTexture->isDefined());
         if (!finished) {
             return true;
         }

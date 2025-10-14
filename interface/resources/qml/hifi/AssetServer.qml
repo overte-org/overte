@@ -8,11 +8,11 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-import QtQuick 2.5
-import QtQuick.Controls 2.3
+import QtQuick
+import QtQuick.Controls
 //import QtQuick.Controls.Styles
 import QtQuick.Dialogs as OriginalDialogs
-import Qt.labs.settings 1.0
+import Qt.labs.settings
 
 import stylesUit 1.0
 import controlsUit 1.0 as HifiControls
