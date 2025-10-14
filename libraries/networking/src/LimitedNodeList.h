@@ -143,7 +143,7 @@ public:
 #endif
 
 
-    PacketReceiver& getPacketReceiver() { return *_packetReceiver; }
+    PacketReceiver& getPacketReceiver();
 
     virtual bool isDomainServer() const { return true; }
     virtual QUuid getDomainUUID() const { assert(false); return QUuid(); }
