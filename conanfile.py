@@ -134,8 +134,8 @@ class Overte(ConanFile):
             if self.settings.compiler == "gcc":
                 self.output.status("GCC compiler detected, setting default flags.")
                 tc.cache_variables.update({
-                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-Og -ggdb3",
-                    "CMAKE_C_FLAGS_DEBUG_INIT": "-Og -ggdb3",
+                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-O0 -ggdb3",
+                    "CMAKE_C_FLAGS_DEBUG_INIT": "-O0 -ggdb3",
                     "CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -ggdb2",
                     "CMAKE_C_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -ggdb2",
                     "CMAKE_CXX_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
@@ -144,8 +144,8 @@ class Overte(ConanFile):
             elif self.settings.compiler == "clang":
                 self.output.status("Clang compiler detected, setting default flags.")
                 tc.cache_variables.update({
-                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-Og -g",
-                    "CMAKE_C_FLAGS_DEBUG_INIT": "-Og -g",
+                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-O0 -g",
+                    "CMAKE_C_FLAGS_DEBUG_INIT": "-O0 -g",
                     "CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -g",
                     "CMAKE_C_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -g",
                     "CMAKE_CXX_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
