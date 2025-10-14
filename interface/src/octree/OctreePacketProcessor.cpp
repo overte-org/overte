@@ -26,6 +26,7 @@ OctreePacketProcessor::OctreePacketProcessor():
 {
     setObjectName("Octree Packet Processor");
 
+    Q_ASSERT(DependencyManager::get<NodeList>());
     auto& packetReceiver = DependencyManager::get<NodeList>()->getPacketReceiver();
     const PacketReceiver::PacketTypeList octreePackets =
         { PacketType::OctreeStats, PacketType::EntityData, PacketType::EntityErase, PacketType::EntityQueryInitialResultsComplete };
