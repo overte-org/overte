@@ -246,22 +246,25 @@ bool Material::resetOpacityMap() const {
     _key.setOpacityMaskMap(false);
     _key.setTranslucentMap(false);
 
-    const auto& textureMap = getTextureMap(MaterialKey::ALBEDO_MAP);
-    if (textureMap &&
-        textureMap->useAlphaChannel() &&
-        textureMap->isDefined() &&
-        textureMap->getTextureView().isValid()) {
+    const auto textureMap = getTextureMap(MaterialKey::ALBEDO_MAP);
+    if (textureMap) {
+        auto textureView = textureMap->getTextureView();
+        if (textureView &&
+            textureMap->useAlphaChannel() &&
+            textureMap->isDefined() &&
+            textureView.isValid()) {
 
-        auto usage = textureMap->getTextureView()._texture->getUsage();
-        if (usage.isAlpha()) {
-            if (usage.isAlphaMask()) {
-                // Texture has alpha, but it is just a mask
-                _key.setOpacityMaskMap(true);
-                _key.setTranslucentMap(false);
-            } else {
-                // Texture has alpha, it is a true translucency channel
-                _key.setOpacityMaskMap(false);
-                _key.setTranslucentMap(true);
+            auto usage = textureView._texture->getUsage();
+            if (usage.isAlpha()) {
+                if (usage.isAlphaMask()) {
+                    // Texture has alpha, but it is just a mask
+                    _key.setOpacityMaskMap(true);
+                    _key.setTranslucentMap(false);
+                } else {
+                    // Texture has alpha, it is a true translucency channel
+                    _key.setOpacityMaskMap(false);
+                    _key.setTranslucentMap(true);
+                }
             }
         }
     }
