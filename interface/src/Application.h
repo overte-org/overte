@@ -94,6 +94,8 @@ public:
     );
     ~Application();
 
+    bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted);
+
     /**
      * @brief Initialize everything
      *
@@ -326,7 +328,8 @@ public:
     int getMaxOctreePacketsPerSecond() const { return _maxOctreePPS; }
     bool isMissingSequenceNumbers() { return _isMissingSequenceNumbers; }
 
-    NodeToOctreeSceneStats* getOcteeSceneStats() { return _octreeProcessor->getOctreeSceneStats(); }
+    // This function returns a value only when octree processor is available.
+    std::optional<NodeToOctreeSceneStats*> getOcteeSceneStats();
 
 
     // Assets

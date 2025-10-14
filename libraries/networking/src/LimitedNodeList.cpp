@@ -237,6 +237,12 @@ QUdpSocket& LimitedNodeList::getDTLSSocket() {
     return *_dtlsSocket;
 }
 
+PacketReceiver& LimitedNodeList::getPacketReceiver() {
+    Q_ASSERT(_packetReceiver);
+    return *_packetReceiver;
+}
+
+
 #if defined(WEBRTC_DATA_CHANNELS)
 const WebRTCSocket* LimitedNodeList::getWebRTCSocket() {
     return _nodeSocket.getWebRTCSocket();
