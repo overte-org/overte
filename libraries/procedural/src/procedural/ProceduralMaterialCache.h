@@ -51,6 +51,7 @@ public:
         }
     };
     using Textures = std::unordered_map<MapChannel, Texture, MapChannelHash>;
+    // TODO: investigate if this could pass reference instead
     Textures getTextures() { return _textures; }
 
 protected:

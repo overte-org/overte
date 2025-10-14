@@ -76,7 +76,7 @@ protected:
     bool _waitForWearables { false };
 
 private:
-    mutable bool _areTexturesLoaded { false };
+    mutable std::atomic<bool> _areTexturesLoaded { false };
 };
 
 /// A geometry loaded from the network.
