@@ -250,7 +250,7 @@ static const int WATCHDOG_TIMER_TIMEOUT = 100;
 static const QString TESTER_FILE = "/sdcard/_hifi_test_device.txt";
 #endif
 
-bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted) {
+bool Application::setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted) {
     const int listenPort = parser.isSet("listenPort") ? parser.value("listenPort").toInt() : INVALID_PORT;
 
     bool suppressPrompt = parser.isSet("suppress-settings-reset");
@@ -329,6 +329,8 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     DependencyManager::set<recording::Recorder>();
     DependencyManager::set<AddressManager>();
     DependencyManager::set<NodeList>(NodeType::Agent, listenPort);
+    // Octree processor requires NodeList.
+    _octreeProcessor = std::make_shared<OctreePacketProcessor>();
     DependencyManager::set<recording::ClipCache>();
     DependencyManager::set<GeometryCache>();
     DependencyManager::set<ModelFormatRegistry>(); // ModelFormatRegistry must be defined before ModelCache. See the ModelCache constructor.
@@ -414,7 +416,14 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
 
     DependencyManager::set<EntityScriptServerLogClient>();
 
-    DependencyManager::set<OctreeStatsProvider>(nullptr, qApp->getOcteeSceneStats());
+    {
+        auto octreeSceneStats = qApp->getOcteeSceneStats();
+        if (!octreeSceneStats) {
+            qCritical() << "setupEssentials: Octree stats provider not available yet. This should never happen";
+            std::abort();
+        }
+        DependencyManager::set<OctreeStatsProvider>(nullptr, octreeSceneStats.value());
+    }
     DependencyManager::set<AvatarBookmarks>();
     DependencyManager::set<LocationBookmarks>();
     DependencyManager::set<Snapshot>();
@@ -459,7 +468,6 @@ void Application::initialize(const QCommandLineParser &parser) {
     _entitySimulation = std::make_shared<PhysicalEntitySimulation>();
     _physicsEngine = std::make_shared<PhysicsEngine>(Vectors::ZERO);
     _entityClipboard = std::make_shared<EntityTree>();
-    _octreeProcessor = std::make_shared<OctreePacketProcessor>();
     _entityEditSender = std::make_shared<EntityEditPacketSender>();
     _graphicsEngine = std::make_shared<GraphicsEngine>();
     _applicationOverlay = std::make_shared<ApplicationOverlay>();
@@ -1198,10 +1206,12 @@ void Application::initialize(const QCommandLineParser &parser) {
         properties["deleted_entity_cnt"] = entityActivityTracking.deletedEntityCount;
         properties["edited_entity_cnt"] = entityActivityTracking.editedEntityCount;
 
-        NodeToOctreeSceneStats* octreeServerSceneStats = getOcteeSceneStats();
+        auto octreeServerSceneStats = getOcteeSceneStats();
         unsigned long totalServerOctreeElements = 0;
-        for (NodeToOctreeSceneStatsIterator i = octreeServerSceneStats->begin(); i != octreeServerSceneStats->end(); i++) {
-            totalServerOctreeElements += i->second.getTotalElements();
+        if (octreeServerSceneStats) {
+            for (NodeToOctreeSceneStatsIterator i = octreeServerSceneStats.value()->begin(); i != octreeServerSceneStats.value()->end(); i++) {
+                totalServerOctreeElements += i->second.getTotalElements();
+            }
         }
 
         properties["local_octree_elements"] = (qint64) OctreeElement::getInternalNodeCount();

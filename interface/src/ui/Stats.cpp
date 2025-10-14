@@ -339,35 +339,39 @@ void Stats::updateStats(bool force) {
     unsigned long totalLeaves = 0;
     std::stringstream sendingModeStream("");
     sendingModeStream << "[";
-    NodeToOctreeSceneStats* octreeServerSceneStats = qApp->getOcteeSceneStats();
-    for (NodeToOctreeSceneStatsIterator i = octreeServerSceneStats->begin(); i != octreeServerSceneStats->end(); i++) {
-        //const QUuid& uuid = i->first;
-        OctreeSceneStats& stats = i->second;
-        serverCount++;
-        if (_expanded) {
-            if (serverCount > 1) {
-                sendingModeStream << ",";
-            }
-            if (stats.isMoving()) {
-                sendingModeStream << "M";
-                movingServerCount++;
-            } else {
-                sendingModeStream << "S";
-            }
-            if (stats.isFullScene()) {
-                sendingModeStream << "F";
-            }
-            else {
-                sendingModeStream << "p";
-            }
-        }
+    auto octreeServerSceneStats = qApp->getOcteeSceneStats();
+    if (octreeServerSceneStats) {
+        octreeServerSceneStats.value()->withReadLock([&] {
+            for (NodeToOctreeSceneStatsIterator i = octreeServerSceneStats.value()->begin(); i != octreeServerSceneStats.value()->end(); i++) {
+                //const QUuid& uuid = i->first;
+                OctreeSceneStats& stats = i->second;
+                serverCount++;
+                if (_expanded) {
+                    if (serverCount > 1) {
+                        sendingModeStream << ",";
+                    }
+                    if (stats.isMoving()) {
+                        sendingModeStream << "M";
+                        movingServerCount++;
+                    } else {
+                        sendingModeStream << "S";
+                    }
+                    if (stats.isFullScene()) {
+                        sendingModeStream << "F";
+                    }
+                    else {
+                        sendingModeStream << "p";
+                    }
+                }
 
-        // calculate server node totals
-        totalNodes += stats.getTotalElements();
-        if (_expanded) {
-            totalInternal += stats.getTotalInternal();
-            totalLeaves += stats.getTotalLeaves();
-        }
+                // calculate server node totals
+                totalNodes += stats.getTotalElements();
+                if (_expanded) {
+                    totalInternal += stats.getTotalInternal();
+                    totalLeaves += stats.getTotalLeaves();
+                }
+            }
+        });
     }
     if (_expanded || force) {
         if (serverCount == 0) {

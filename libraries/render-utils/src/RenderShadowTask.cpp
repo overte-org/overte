@@ -59,7 +59,7 @@ void RenderShadowTask::build(JobModel& task, const render::Varying& input, rende
     const auto currentKeyLight = setupOutput.getN<RenderShadowSetup::Output>(4);
     // Fetch and cull the items from the scene
 
-    static const auto shadowCasterReceiverFilter = ItemFilter::Builder::visibleWorldItems().withOpaque().withoutLayered().withTagBits(tagBits, tagMask);
+    static const ItemFilter shadowCasterReceiverFilter = ItemFilter::Builder::visibleWorldItems().withOpaque().withoutLayered().withTagBits(tagBits, tagMask);
 
     const auto fetchInput = FetchSpatialTree::Inputs(shadowCasterReceiverFilter, queryResolution).asVarying();
     const auto shadowSelection = task.addJob<FetchSpatialTree>("FetchShadowTree", fetchInput);

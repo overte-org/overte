@@ -106,6 +106,13 @@ int readHelper(void* dst, int length, void* data) {
     if (_readOffset.localData() + length > _readMax.localData()) {
         return -1;
     }
+    // Sometimes artery_font::decode issues zero-length reads to nullptr, which causes issues with memory sanitizers.
+    if (length == 0) {
+        return 0;
+    }
+    // These were null sometimes, so it's best to check in debug builds.
+    Q_ASSERT(dst);
+    Q_ASSERT(data);
     memcpy(dst, (char *)data + _readOffset.localData(), length);
     _readOffset.setLocalData(_readOffset.localData() + length);
     return length;
