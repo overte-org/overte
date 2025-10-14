@@ -659,7 +659,7 @@ public:
 protected:
     gpu::TexturePointer _gpuTexture;
     std::function<gpu::TexturePointer()> _gpuTextureOperator { nullptr };
-    mutable bool _locked { false };
+    mutable std::atomic<bool> _locked { false };
     QUrl _imageUrl;
     int _type { 0 };
 };
