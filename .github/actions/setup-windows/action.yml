@@ -1,0 +1,36 @@
+name: "Prepare Windows environment"
+description: "Install tools and dependencies, set environment variables, et cetera."
+runs:
+    using: "composite"
+    steps:
+    - name: Set environment variables
+      shell: bash
+      run: |
+        if [[ "${{ matrix.os }}" = "Windows 2022" ]]; then
+            echo "CONAN_PROFILE='./tools/conan-profiles/vs-22-release'" >> $GITHUB_ENV
+        else
+            echo "Not sure which Conan profile to use. Exiting." && exit 1
+        fi
+
+        echo "PreferredToolArchitecture=X64" >> $GITHUB_ENV
+        echo "APP_NAME=interface" >> $GITHUB_ENV
+        # Try to avoid hitting Windows' PATH limit.
+        echo "CONAN_HOME=C:\Conan" >> $GITHUB_ENV
+        echo "XZ_OPT=-T0" >> $GITHUB_ENV
+
+        echo "OVERTE_QT_SOURCE=source" >> $GITHUB_ENV
+        # On macOS the interface target is called "Overte" instead.
+        echo "APP_TARGET_NAME=interface" >> $GITHUB_ENV
+
+    - name: Override Windows package versions
+      shell: pwsh
+      run: |
+        choco install nsis --allow-downgrade --version=3.06.1
+        choco install cmake --allow-downgrade --version=3.31.6  # Our dependencies don't support CMake 4.0 yet.
+        Invoke-WebRequest https://build-deps.overte.org/conan/nsis-overte-plugins/NSIS-hifi-plugins-1.0.zip -OutFile NSIS-hifi-plugins.zip
+        Expand-Archive -LiteralPath 'NSIS-hifi-plugins.zip' -DestinationPath 'C:/Program Files (x86)/'
+
+    - name: Install Python modules
+      shell: bash
+      run: |
+        python -m pip install boto3 PyGithub conan html5lib setuptools
