@@ -65,6 +65,9 @@ execute_process(
     ${LINUXDEPLOY_EXECUTABLE}
     --appdir=${CPACK_TEMPORARY_DIRECTORY}
     --executable=${CPACK_PACKAGE_DIRECTORY}/interface/interface
+    # We copied our plugins earlier; Here we tell LinuxDeploy to deploy their dependencies.
+    # For example libopenxr_loader.so for our OpenXR plugin.
+    --deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/bin/plugins
     --desktop-file=${APPIMAGE_DESKTOP_FILE}
     --icon-file=${APPIMAGE_ICON_FILE}
     --plugin qt
