@@ -16,7 +16,7 @@
 QMap<QString, QString> getJointNameMapping(const hifi::VariantMultiHash& mapping) {
     static const QString JOINT_NAME_MAPPING_FIELD = "jointMap";
     QMap<QString, QString> hfmToHifiJointNameMap;
-    if (!mapping.isEmpty() && mapping.contains(JOINT_NAME_MAPPING_FIELD) && mapping[JOINT_NAME_MAPPING_FIELD].type() == QVariant::Hash) {
+    if (!mapping.isEmpty() && mapping.contains(JOINT_NAME_MAPPING_FIELD) && mapping[JOINT_NAME_MAPPING_FIELD].typeId() == QMetaType::QVariantHash) {
         auto jointNames = mapping[JOINT_NAME_MAPPING_FIELD].toHash();
         for (auto itr = jointNames.begin(); itr != jointNames.end(); itr++) {
             hfmToHifiJointNameMap.insert(itr.key(), itr.value().toString());
@@ -30,7 +30,9 @@ QMap<QString, glm::quat> getJointRotationOffsets(const hifi::VariantMultiHash& m
     QMap<QString, glm::quat> jointRotationOffsets;
     static const QString JOINT_ROTATION_OFFSET_FIELD = "jointRotationOffset";
     static const QString JOINT_ROTATION_OFFSET2_FIELD = "jointRotationOffset2";
-    if (!mapping.isEmpty() && ((mapping.contains(JOINT_ROTATION_OFFSET_FIELD) && mapping[JOINT_ROTATION_OFFSET_FIELD].type() == QVariant::Hash) || (mapping.contains(JOINT_ROTATION_OFFSET2_FIELD) && mapping[JOINT_ROTATION_OFFSET2_FIELD].type() == QVariant::Hash))) {
+    if (!mapping.isEmpty() && ((mapping.contains(JOINT_ROTATION_OFFSET_FIELD) && mapping[JOINT_ROTATION_OFFSET_FIELD].typeId() == QMetaType::QVariantHash)
+        || (mapping.contains(JOINT_ROTATION_OFFSET2_FIELD) && mapping[JOINT_ROTATION_OFFSET2_FIELD].typeId() == QMetaType::QVariantHash))) {
+
         QHash<QString, QVariant> offsets;
         if (mapping.contains(JOINT_ROTATION_OFFSET_FIELD)) {
             offsets = mapping[JOINT_ROTATION_OFFSET_FIELD].toHash();

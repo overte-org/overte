@@ -228,7 +228,6 @@ int PathUtils::removeTemporaryApplicationDirs(QString appName) {
         auto match = re.match(dirName);
         if (match.hasMatch()) {
             auto pid = match.capturedView("pid").toLongLong();
-            auto timestamp = match.capturedView("timestamp");
             if (!processIsRunning(pid)) {
                 qDebug() << "  Removing old temporary directory: " << dir.absoluteFilePath();
                 absoluteDirPath.removeRecursively();
@@ -246,7 +245,7 @@ QString fileNameWithoutExtension(const QString& fileName, const QVector<QString>
     QString fileNameLowered = fileName.toLower();
     foreach (const QString possibleExtension, possibleExtensions) {
         if (fileNameLowered.endsWith(possibleExtension.toLower())) {
-            return fileName.left(fileName.count() - possibleExtension.count() - 1);
+            return fileName.left(fileName.size() - possibleExtension.size() - 1);
         }
     }
     return fileName;

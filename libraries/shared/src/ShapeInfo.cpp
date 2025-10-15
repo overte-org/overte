@@ -298,7 +298,7 @@ uint64_t ShapeInfo::getHash() const {
         QString url = _url.toString();
         if (!url.isEmpty()) {
             QByteArray baUrl = url.toLocal8Bit();
-            uint32_t urlHash = qChecksum(baUrl.data(), baUrl.size());
+            uint32_t urlHash = qChecksum(baUrl);
             hasher.hashUint64((uint64_t)urlHash);
         }
 

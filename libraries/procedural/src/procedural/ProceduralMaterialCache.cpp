@@ -1130,7 +1130,7 @@ void NetworkMaterial::setTextures(const QVariantMap& textureMap) {
 
 bool NetworkMaterial::isMissingTexture() {
     for (auto& networkTexture : _textures) {
-        auto& texture = networkTexture.second.texture;
+        auto texture = networkTexture.second.texture;
         if (!texture) {
             continue;
         }
