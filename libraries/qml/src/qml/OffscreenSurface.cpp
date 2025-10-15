@@ -190,8 +190,8 @@ bool OffscreenSurface::eventFilter(QObject* originalDestination, QEvent* event) 
         }
         case QEvent::MouseMove: {
             QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
-            QPointF transformedPos = mapToVirtualScreen(mouseEvent->localPos());
-            QMouseEvent mappedEvent(mouseEvent->type(), transformedPos, mouseEvent->screenPos(), mouseEvent->button(),
+            QPointF transformedPos = mapToVirtualScreen(mouseEvent->position());
+            QMouseEvent mappedEvent(mouseEvent->type(), transformedPos, mouseEvent->globalPosition(), mouseEvent->button(),
                                     mouseEvent->buttons(), mouseEvent->modifiers());
             mappedEvent.ignore();
             if (QCoreApplication::sendEvent(_sharedObject->getWindow(), &mappedEvent)) {

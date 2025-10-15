@@ -1002,7 +1002,7 @@ bool DomainServer::resetAccountManagerAccessToken() {
         if (accessToken.isEmpty()) {
             QVariant accessTokenVariant = _settingsManager.valueForKeyPath(ACCESS_TOKEN_KEY_PATH);
 
-            if (accessTokenVariant.canConvert(QMetaType::QString)) {
+            if (accessTokenVariant.canConvert(QMetaType(QMetaType::QString))) {
                 accessToken = accessTokenVariant.toString();
             } else {
                 qWarning() << "No access token is present. Some operations that use the directory services API will fail.";
@@ -1207,7 +1207,7 @@ void DomainServer::createStaticAssignmentsForType(Assignment::Type type, const Q
     int configCounter = 0;
 
     foreach(const QVariant& configVariant, configList) {
-        if (configVariant.canConvert(QMetaType::QVariantMap)) {
+        if (configVariant.canConvert(QMetaType(QMetaType::QVariantMap))) {
             QVariantMap configMap = configVariant.toMap();
 
             // check the config string for a pool

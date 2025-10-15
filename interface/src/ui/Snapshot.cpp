@@ -220,9 +220,9 @@ void Snapshot::takeNextSnapshot() {
 
         // Process six QImages
         if (_cubemapOutputFormat) {
-            QtConcurrent::run([this]() { convertToCubemap(); });
+            QThreadPool::globalInstance()->start([this]() { convertToCubemap(); });
         } else {
-            QtConcurrent::run([this]() { convertToEquirectangular(); });
+            QThreadPool::globalInstance()->start([this]() { convertToEquirectangular(); });
         }
     }
 }
