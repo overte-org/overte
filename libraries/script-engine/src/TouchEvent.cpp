@@ -73,7 +73,7 @@ float angleBetweenPoints(const glm::vec2& a, const glm::vec2& b ) {
 
 void TouchEvent::initWithQTouchEvent(const QTouchEvent& event) {
     // convert the touch points into an average
-    const QList<QTouchEvent::TouchPoint>& tPoints = event.touchPoints();
+    const QList<QTouchEvent::TouchPoint>& tPoints = event.points();
     float touchAvgX = 0.0f;
     float touchAvgY = 0.0f;
     touchPoints = tPoints.count();

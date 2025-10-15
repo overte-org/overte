@@ -652,7 +652,7 @@ void Application::mouseMoveEvent(QMouseEvent* event) {
 
     QMouseEvent mappedEvent(event->type(),
         transformedPos,
-        event->screenPos(), button,
+        event->globalPosition(), button,
         buttons, event->modifiers());
 
     if (compositor.getReticleVisible() || !isHMDMode() || !compositor.getReticleOverDesktop() ||
@@ -687,7 +687,7 @@ void Application::mousePressEvent(QMouseEvent* event) {
     QPointF transformedPos;
 #endif
 
-    QMouseEvent mappedEvent(event->type(), transformedPos, event->screenPos(), event->button(), event->buttons(), event->modifiers());
+    QMouseEvent mappedEvent(event->type(), transformedPos, event->globalPosition(), event->button(), event->buttons(), event->modifiers());
     QUuid result = getEntities()->mousePressEvent(&mappedEvent);
     setKeyboardFocusEntity(getEntities()->wantsKeyboardFocus(result) ? result : UNKNOWN_ENTITY_ID);
 
@@ -726,7 +726,7 @@ void Application::mouseDoublePressEvent(QMouseEvent* event) {
 #endif
     QMouseEvent mappedEvent(event->type(),
         transformedPos,
-        event->screenPos(), event->button(),
+        event->globalPosition(), event->button(),
         event->buttons(), event->modifiers());
     getEntities()->mouseDoublePressEvent(&mappedEvent);
 
@@ -748,7 +748,7 @@ void Application::mouseReleaseEvent(QMouseEvent* event) {
 #endif
     QMouseEvent mappedEvent(event->type(),
         transformedPos,
-        event->screenPos(), event->button(),
+        event->globalPosition(), event->button(),
         event->buttons(), event->modifiers());
 
     getEntities()->mouseReleaseEvent(&mappedEvent);

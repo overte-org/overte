@@ -1139,11 +1139,12 @@ bool OffscreenUi::eventFilter(QObject* originalDestination, QEvent* event) {
         case QEvent::MouseButtonPress:
         case QEvent::MouseButtonRelease:
         case QEvent::MouseMove: {
-            QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
-            QPointF transformedPos = mapToVirtualScreen(mouseEvent->localPos());
+            QMouseEvent* mouseEvent = dynamic_cast<QMouseEvent*>(event);
+            Q_ASSERT(mouseEvent);
+            QPointF transformedPos = mapToVirtualScreen(mouseEvent->position());
             // FIXME: touch events are always being accepted.  Use mouse events on the OffScreenUi for now, and investigate properly switching to touch events
             // (using handlePointerEvent) later
-            QMouseEvent mappedEvent(mouseEvent->type(), transformedPos, mouseEvent->screenPos(), mouseEvent->button(), mouseEvent->buttons(), mouseEvent->modifiers());
+            QMouseEvent mappedEvent(mouseEvent->type(), transformedPos, mouseEvent->globalPosition(), mouseEvent->button(), mouseEvent->buttons(), mouseEvent->modifiers());
             mappedEvent.ignore();
             if (QCoreApplication::sendEvent(getWindow(), &mappedEvent)) {
                 return mappedEvent.isAccepted();

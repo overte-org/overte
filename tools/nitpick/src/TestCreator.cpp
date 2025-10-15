@@ -1051,7 +1051,7 @@ void TestCreator::createTestsOutline() {
     stream << "Directories with an appended (*) have an automatic test\n\n";
 
     // We need to know our current depth, as this isn't given by QDirIterator
-    int rootDepth { _testsRootDirectory.count('/') };
+    qsizetype rootDepth { _testsRootDirectory.count('/') };
 
     // Each test is shown as the folder name linking to the matching GitHub URL, and the path to the associated test.md file
     QDirIterator it(_testsRootDirectory, QDirIterator::Subdirectories);
@@ -1231,7 +1231,7 @@ QString TestCreator::getExpectedImagePartialSourceDirectory(const QString& filen
 
     // Note that the bottom-most "tests" folder is assumed to be the root
     // This is required because the tests folder is named hifi_tests
-    int i { filenameParts.length() - 1 };
+    qsizetype i { filenameParts.length() - 1 };
     while (i >= 0 && filenameParts[i] != "tests") {
         --i;
     }

@@ -539,7 +539,7 @@ void NetworkTexture::makeRequest() {
 
     if (isLocalUrl(_activeUrl)) {
         auto self = _self;
-        QtConcurrent::run(QThreadPool::globalInstance(), [self] {
+        QThreadPool::globalInstance()->start([self] {
             auto resource = self.lock();
             if (!resource) {
                 return;
@@ -834,7 +834,7 @@ void NetworkTexture::ktxMipRequestFinished() {
             auto mipLevel = _ktxMipLevelRangeInFlight.first;
             auto texture = _textureSource->getGPUTexture();
             DependencyManager::get<StatTracker>()->incrementStat("PendingProcessing");
-            QtConcurrent::run(QThreadPool::globalInstance(), [self, data, mipLevel, url, texture] {
+            QThreadPool::globalInstance()->start([self, data, mipLevel, url, texture] {
                 PROFILE_RANGE_EX(resource_parse_image, "NetworkTexture - Processing Mip Data", 0xffff0000, 0, { { "url", url.toString() } });
                 DependencyManager::get<StatTracker>()->decrementStat("PendingProcessing");
                 CounterStat counter("Processing");
@@ -902,7 +902,7 @@ void NetworkTexture::handleFinishedInitialLoad() {
     auto self = _self;
     auto url = _url;
     DependencyManager::get<StatTracker>()->incrementStat("PendingProcessing");
-    QtConcurrent::run(QThreadPool::globalInstance(), [self, ktxHeaderData, ktxHighMipData, url] {
+    QThreadPool::globalInstance()->start([self, ktxHeaderData, ktxHighMipData, url] {
         PROFILE_RANGE_EX(resource_parse_image, "NetworkTexture - Processing Initial Data", 0xffff0000, 0, { { "url", url.toString() } });
         DependencyManager::get<StatTracker>()->decrementStat("PendingProcessing");
         CounterStat counter("Processing");
