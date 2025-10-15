@@ -466,7 +466,7 @@ QStringList ScriptEngines::getRunningScripts() {
 }
 
 void ScriptEngines::stopAllScripts(bool restart) {
-    QtConcurrent::run([this, restart] {
+    QThreadPool::globalInstance()->start([this, restart] {
         QHash<QUrl, ScriptManagerPointer> scriptManagersHashCopy;
 
         {
