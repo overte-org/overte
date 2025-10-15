@@ -23,7 +23,7 @@ NodeConnectionData NodeConnectionData::fromDataStream(QDataStream& dataStream, c
 
         // Read out the protocol version signature from the connect message
         char* rawBytes;
-        uint length;
+        qsizetype length;
 
         dataStream.readBytes(rawBytes, length);
         newHeader.protocolVersion = QByteArray(rawBytes, length);

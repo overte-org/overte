@@ -256,7 +256,7 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
             QVariant* allowedUsers = _configMap.valueForKeyPath(ALLOWED_USERS_SETTINGS_KEYPATH);
 
             if (allowedUsers
-                && allowedUsers->canConvert(QMetaType::QVariantList)
+                && allowedUsers->canConvert(QMetaType(QMetaType::QVariantList))
                 && reinterpret_cast<QVariantList*>(allowedUsers)->size() > 0) {
 
                 qDebug() << "Forcing security.restricted_access to TRUE since there was an"
@@ -277,7 +277,7 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
 
             // this was prior to change of poorly named entitiesFileName to entitiesFilePath
             QVariant* persistFileNameVariant = _configMap.valueForKeyPath(ENTITY_SERVER_SETTINGS_KEY + "." + ENTITY_FILE_NAME_KEY);
-            if (persistFileNameVariant && persistFileNameVariant->canConvert(QMetaType::QString)) {
+            if (persistFileNameVariant && persistFileNameVariant->canConvert(QMetaType(QMetaType::QString))) {
                 QString persistFileName = persistFileNameVariant->toString();
 
                 qDebug() << "Migrating persistFilename to persistFilePath for entity-server settings";
@@ -290,7 +290,7 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
 
                 // remove the old setting
                 QVariant* entityServerVariant = _configMap.valueForKeyPath(ENTITY_SERVER_SETTINGS_KEY);
-                if (entityServerVariant && entityServerVariant->canConvert(QMetaType::QVariantMap)) {
+                if (entityServerVariant && entityServerVariant->canConvert(QMetaType(QMetaType::QVariantMap))) {
                     QVariantMap entityServerMap = entityServerVariant->toMap();
                     entityServerMap.remove(ENTITY_FILE_NAME_KEY);
 
@@ -307,7 +307,7 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
 
             QVariant* passwordVariant = _configMap.valueForKeyPath(BASIC_AUTH_PASSWORD_KEY_PATH);
 
-            if (passwordVariant && passwordVariant->canConvert(QMetaType::QString)) {
+            if (passwordVariant && passwordVariant->canConvert(QMetaType(QMetaType::QString))) {
                 QString plaintextPassword = passwordVariant->toString();
 
                 qDebug() << "Migrating plaintext password to SHA256 hash in domain-server settings.";
@@ -613,13 +613,13 @@ void DomainServerSettingsManager::packPermissionsForMap(QString mapName,
 
     // find (or create) the "security" section of the settings map
     QVariant* security = _configMap.valueForKeyPath("security", true);
-    if (!security->canConvert(QMetaType::QVariantMap)) {
+    if (!security->canConvert(QMetaType(QMetaType::QVariantMap))) {
         (*security) = QVariantMap();
     }
 
     // find (or create) whichever subsection of "security" we are packing
     QVariant* permissions = _configMap.valueForKeyPath(keyPath, true);
-    if (!permissions->canConvert(QMetaType::QVariantList)) {
+    if (!permissions->canConvert(QMetaType(QMetaType::QVariantList))) {
         (*permissions) = QVariantList();
     }
 
@@ -707,7 +707,7 @@ bool DomainServerSettingsManager::unpackPermissionsForKeypath(const QString& key
         return false;
     }
 
-    if (!permissions.canConvert(QMetaType::QVariantList)) {
+    if (!permissions.canConvert(QMetaType(QMetaType::QVariantList))) {
         qDebug() << "Failed to extract permissions for key path" << keyPath << "from settings.";
     }
 
@@ -1672,7 +1672,7 @@ void DomainServerSettingsManager::updateSetting(const QString& key, const QJsonV
 
         QVariant& possibleMap = settingMap[key];
 
-        if (!possibleMap.canConvert(QMetaType::QVariantMap)) {
+        if (!possibleMap.canConvert(QMetaType(QMetaType::QVariantMap))) {
             // if this isn't a map then we need to make it one, otherwise we're about to crash
             qDebug() << "Value at" << key << "was not the expected QVariantMap while updating DS settings"
                 << "- removing existing value and making it a QVariantMap";
@@ -1890,8 +1890,8 @@ bool DomainServerSettingsManager::recurseJSONObjectAndOverwriteSettings(const QJ
 
 // Compare two members of a permissions list
 bool permissionVariantLessThan(const QVariant &v1, const QVariant &v2) {
-    if (!v1.canConvert(QMetaType::QVariantMap) ||
-        !v2.canConvert(QMetaType::QVariantMap)) {
+    if (!v1.canConvert(QMetaType(QMetaType::QVariantMap)) ||
+        !v2.canConvert(QMetaType(QMetaType::QVariantMap))) {
         return v1.toString() < v2.toString();
     }
     QVariantMap m1 = v1.toMap();
@@ -1916,22 +1916,22 @@ void DomainServerSettingsManager::sortPermissions() {
 
     // sort the permission-names
     QVariant* standardPermissions = _configMap.valueForKeyPath(AGENT_STANDARD_PERMISSIONS_KEYPATH);
-    if (standardPermissions && standardPermissions->canConvert(QMetaType::QVariantList)) {
+    if (standardPermissions && standardPermissions->canConvert(QMetaType(QMetaType::QVariantList))) {
         QList<QVariant>* standardPermissionsList = reinterpret_cast<QVariantList*>(standardPermissions);
         std::sort((*standardPermissionsList).begin(), (*standardPermissionsList).end(), permissionVariantLessThan);
     }
     QVariant* permissions = _configMap.valueForKeyPath(AGENT_PERMISSIONS_KEYPATH);
-    if (permissions && permissions->canConvert(QMetaType::QVariantList)) {
+    if (permissions && permissions->canConvert(QMetaType(QMetaType::QVariantList))) {
         QList<QVariant>* permissionsList = reinterpret_cast<QVariantList*>(permissions);
         std::sort((*permissionsList).begin(), (*permissionsList).end(), permissionVariantLessThan);
     }
     QVariant* groupPermissions = _configMap.valueForKeyPath(GROUP_PERMISSIONS_KEYPATH);
-    if (groupPermissions && groupPermissions->canConvert(QMetaType::QVariantList)) {
+    if (groupPermissions && groupPermissions->canConvert(QMetaType(QMetaType::QVariantList))) {
         QList<QVariant>* permissionsList = reinterpret_cast<QVariantList*>(groupPermissions);
         std::sort((*permissionsList).begin(), (*permissionsList).end(), permissionVariantLessThan);
     }
     QVariant* forbiddenPermissions = _configMap.valueForKeyPath(GROUP_FORBIDDENS_KEYPATH);
-    if (forbiddenPermissions && forbiddenPermissions->canConvert(QMetaType::QVariantList)) {
+    if (forbiddenPermissions && forbiddenPermissions->canConvert(QMetaType(QMetaType::QVariantList))) {
         QList<QVariant>* permissionsList = reinterpret_cast<QVariantList*>(forbiddenPermissions);
         std::sort((*permissionsList).begin(), (*permissionsList).end(), permissionVariantLessThan);
     }
