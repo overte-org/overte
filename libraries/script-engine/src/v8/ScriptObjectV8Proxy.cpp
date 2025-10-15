@@ -1070,7 +1070,7 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
                     // a lot of type conversion assistance thanks to https://stackoverflow.com/questions/28457819/qt-invoke-method-with-qvariant
                     // A const_cast is needed because calling data() would detach the QVariant.
                     qGenArgsVectors[i][arg] =
-                        QGenericArgument(QMetaType::typeName(converted.userType()), const_cast<void*>(converted.constData()));
+                        QGenericArgument(QMetaType(converted.userType()).name(), const_cast<void*>(converted.constData()));
                 }
             }
         }
