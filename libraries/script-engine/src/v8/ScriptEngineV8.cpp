@@ -1439,7 +1439,7 @@ ScriptValue ScriptEngineV8::create(int type, const void* ptr) {
     v8::Context::Scope contextScope(getContext());
     QVariant variant(QMetaType(type), ptr);
     V8ScriptValue scriptValue = castVariantToValue(variant);
-    return ScriptValue(new ScriptValueV8Wrapper(this, std::move(scriptValue)));
+    return {new ScriptValueV8Wrapper(this, std::move(scriptValue))};
 }
 
 QVariant ScriptEngineV8::convert(const ScriptValue& value, int typeId) {
@@ -1449,21 +1449,21 @@ QVariant ScriptEngineV8::convert(const ScriptValue& value, int typeId) {
     v8::Context::Scope contextScope(getContext());
     ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(value);
     if (unwrapped == nullptr) {
-        return QVariant();
+        return {};
     }
 
     QVariant var;
     if (!castValueToVariant(unwrapped->toV8Value(), var, typeId)) {
-        return QVariant();
+        return {};
     }
 
     int destType = var.userType();
     if (destType != typeId) {
-        var.convert(typeId);  // if conversion fails then var is set to QVariant()
+        var.convert(QMetaType(typeId));  // if conversion fails then var is set to QVariant()
     }
 
     return var;
-    return QVariant();
+    return {};
 }
 
 void ScriptEngineV8::compileTest() {

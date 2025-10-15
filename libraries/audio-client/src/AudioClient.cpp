@@ -368,7 +368,7 @@ AudioClient::AudioClient() {
     _checkDevicesTimer = new QTimer(this);
     const unsigned long DEVICE_CHECK_INTERVAL_MSECS = 2 * 1000;
     connect(_checkDevicesTimer, &QTimer::timeout, this, [=] {
-        QtConcurrent::run(QThreadPool::globalInstance(), [=] {
+        QThreadPool::globalInstance()->start([=] {
             checkDevices();
             // On some systems (Ubuntu) checking all the audio devices can take more than 2 seconds.  To
             // avoid consuming all of the thread pool, don't start the check interval until the previous
@@ -382,7 +382,7 @@ AudioClient::AudioClient() {
     // start a thread to detect peak value changes
     _checkPeakValuesTimer = new QTimer(this);
     connect(_checkPeakValuesTimer, &QTimer::timeout, this, [this] {
-        QtConcurrent::run(QThreadPool::globalInstance(), [this] { checkPeakValues(); });
+        QThreadPool::globalInstance()->start([this] { checkPeakValues(); });
     });
     const unsigned long PEAK_VALUES_CHECK_INTERVAL_MSECS = 50;
     _checkPeakValuesTimer->start(PEAK_VALUES_CHECK_INTERVAL_MSECS);

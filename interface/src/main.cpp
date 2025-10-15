@@ -831,8 +831,11 @@ int main(int argc, const char* argv[]) {
         }
 
         QTranslator translator;
-        translator.load("i18n/interface_en");
-        app.installTranslator(&translator);
+        if (translator.load("i18n/interface_en")) {
+            app.installTranslator(&translator);
+        } else {
+            qWarning() << " Failed to load QTranslator i18n/interface_en";
+        }
         qCDebug(interfaceapp, "Created QT Application.");
         if (parser.isSet("abortAfterInit")) {
             return 99;

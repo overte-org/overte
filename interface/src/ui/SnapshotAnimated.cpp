@@ -94,7 +94,7 @@ void SnapshotAnimated::captureFrames() {
         emit SnapshotAnimated::snapshotAnimatedDM->processingGifStarted(SnapshotAnimated::snapshotStillPath);
 
         // Kick off the thread that'll pack the frames into the GIF
-        QtConcurrent::run(processFrames);
+        QThreadPool::globalInstance()->start(processFrames);
         // Stop the snapshot QTimer. This action by itself DOES NOT GUARANTEE
         // that the slot will not be called again in the future.
         // See: http://lists.qt-project.org/pipermail/qt-interest-old/2009-October/013926.html
