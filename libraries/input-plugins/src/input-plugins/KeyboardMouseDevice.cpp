@@ -204,7 +204,7 @@ glm::vec2 evalAverageTouchPoints(const QList<QTouchEvent::TouchPoint>& points) {
     glm::vec2 averagePoint(0.0f);
     if (points.count() > 0) {
         for (auto& point : points) {
-            averagePoint += glm::vec2(point.pos().x(), point.pos().y()); 
+            averagePoint += glm::vec2(point.position().x(), point.position().y());
         }
         averagePoint /= (float)(points.count());
     }
@@ -245,7 +245,7 @@ void KeyboardMouseDevice::touchGestureEvent(const QGestureEvent* event) {
 void KeyboardMouseDevice::touchBeginEvent(const QTouchEvent* event) {
     if (_enableTouch) {
         _isTouching = event->touchPointStates().testFlag(QEventPoint::State::Pressed);
-        _lastTouch = evalAverageTouchPoints(event->touchPoints());
+        _lastTouch = evalAverageTouchPoints(event->points());
         _lastTouchTime = _clock.now();
     }
 }
@@ -253,14 +253,14 @@ void KeyboardMouseDevice::touchBeginEvent(const QTouchEvent* event) {
 void KeyboardMouseDevice::touchEndEvent(const QTouchEvent* event) {
     if (_enableTouch) {
         _isTouching = false;
-        _lastTouch = evalAverageTouchPoints(event->touchPoints());
+        _lastTouch = evalAverageTouchPoints(event->points());
         _lastTouchTime = _clock.now();
     }
 }
 
 void KeyboardMouseDevice::touchUpdateEvent(const QTouchEvent* event) {
     if (_enableTouch) {
-        auto currentPos = evalAverageTouchPoints(event->touchPoints());
+        auto currentPos = evalAverageTouchPoints(event->points());
         _lastTouchTime = _clock.now();
 
         if (!_isTouching) {

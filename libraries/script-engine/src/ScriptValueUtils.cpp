@@ -794,7 +794,7 @@ bool qColorFromScriptValue(const ScriptValue& object, QColor& color) {
         color.setRgb(object.toUInt32());
         return true;
     } else if (object.isString()) {
-        color.setNamedColor(object.toString());
+        color = QColor::fromString(object.toString());
         return true;
     } else if (object.isArray()) {
         auto length = object.property("length").toInt32();

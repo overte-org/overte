@@ -116,7 +116,7 @@ void HifiConfigVariantMap::addMissingValuesToExistingMap(QVariantMap& existingMa
         if (existingMap.contains(key)) {
             // if this is just a regular value, we're done - we don't ovveride
 
-            if (newMap[key].canConvert(QMetaType::QVariantMap) && existingMap[key].canConvert(QMetaType::QVariantMap)) {
+            if (newMap[key].canConvert(QMetaType(QMetaType::QVariantMap)) && existingMap[key].canConvert(QMetaType(QMetaType::QVariantMap))) {
                 // there's a variant map below and the existing map has one too, so we need to keep recursing
                 addMissingValuesToExistingMap(*static_cast<QVariantMap*>(existingMap[key].data()), newMap[key].toMap());
             }
@@ -135,7 +135,7 @@ QVariant* valueForKeyPath(QVariantMap& variantMap, const QString& keyPath, bool 
         if (dotIndex == -1) {
             return &variantMap[firstKey];
         }
-        if (!variantMap[firstKey].canConvert(QMetaType::QVariantMap)) {
+        if (!variantMap[firstKey].canConvert(QMetaType(QMetaType::QVariantMap))) {
             variantMap[firstKey] = QVariantMap();
         }
         return valueForKeyPath(*static_cast<QVariantMap*>(variantMap[firstKey].data()), keyPath.mid(dotIndex + 1),

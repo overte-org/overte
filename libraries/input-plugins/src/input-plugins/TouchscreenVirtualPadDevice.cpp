@@ -263,9 +263,9 @@ void TouchscreenVirtualPadDevice::touchUpdateEvent(const QTouchEvent* event) {
         viewTouchEnd();
         return;
     }
-    _touchPointCount = event->touchPoints().count();
+    _touchPointCount = static_cast<int>(event->points().count());
 
-    const QList<QTouchEvent::TouchPoint>& tPoints = event->touchPoints();
+    const QList<QTouchEvent::TouchPoint>& tPoints = event->points();
     bool moveTouchFound = false;
     bool viewTouchFound = false;
 
@@ -279,8 +279,8 @@ void TouchscreenVirtualPadDevice::touchUpdateEvent(const QTouchEvent* event) {
     std::map<int, TouchType> unusedTouchesInEvent;
 
     for (int i = 0; i < _touchPointCount; ++i) {
-        thisPoint.x = tPoints[i].pos().x();
-        thisPoint.y = tPoints[i].pos().y();
+        thisPoint.x = tPoints[i].position().x();
+        thisPoint.y = tPoints[i].position().y();
         thisPointId = tPoints[i].id();
 
         if (!moveTouchFound && _moveHasValidTouch && _moveCurrentTouchId == thisPointId) {
@@ -333,8 +333,8 @@ void TouchscreenVirtualPadDevice::touchUpdateEvent(const QTouchEvent* event) {
         if (idxMoveStartingPointCandidate != -1) {
             _moveCurrentTouchId = tPoints[idxMoveStartingPointCandidate].id();
             _unusedTouches.erase(_moveCurrentTouchId);
-            thisPoint.x = tPoints[idxMoveStartingPointCandidate].pos().x();
-            thisPoint.y = tPoints[idxMoveStartingPointCandidate].pos().y();
+            thisPoint.x = tPoints[idxMoveStartingPointCandidate].position().x();
+            thisPoint.y = tPoints[idxMoveStartingPointCandidate].position().y();
             moveTouchBegin(thisPoint);
         } else {
             moveTouchEnd();
@@ -344,8 +344,8 @@ void TouchscreenVirtualPadDevice::touchUpdateEvent(const QTouchEvent* event) {
         if (idxViewStartingPointCandidate != -1) {
             _viewCurrentTouchId = tPoints[idxViewStartingPointCandidate].id();
             _unusedTouches.erase(_viewCurrentTouchId);
-            thisPoint.x = tPoints[idxViewStartingPointCandidate].pos().x();
-            thisPoint.y = tPoints[idxViewStartingPointCandidate].pos().y();
+            thisPoint.x = tPoints[idxViewStartingPointCandidate].position().x();
+            thisPoint.y = tPoints[idxViewStartingPointCandidate].position().y();
             viewTouchBegin(thisPoint);
         } else {
             viewTouchEnd();
@@ -568,8 +568,8 @@ void TouchscreenVirtualPadDevice::TouchscreenButtonsManager::processBeginOrEnd(
             if (button._candidatePointIdx != -1) {
                 button.currentTouchId = tPoints[button._candidatePointIdx].id();
                 globalUnusedTouches.erase(button.currentTouchId);
-                thisPoint.x = tPoints[button._candidatePointIdx].pos().x();
-                thisPoint.y = tPoints[button._candidatePointIdx].pos().y();
+                thisPoint.x = tPoints[button._candidatePointIdx].position().x();
+                thisPoint.y = tPoints[button._candidatePointIdx].position().y();
                 button.touchBegin(thisPoint);
             } else {
                 if (button.hasValidTouch) {

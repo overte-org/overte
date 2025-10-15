@@ -206,7 +206,7 @@ FSTReader::ModelType FSTReader::predictModelType(const hifi::VariantMultiHash& m
 
     QVariantHash joints;
 
-    if (mapping.contains("joint") && mapping.value("joint").type() == QVariant::Hash) {
+    if (mapping.contains("joint") && mapping.value("joint").typeId() == QMetaType::QVariantHash) {
         joints = mapping.value("joint").toHash();
     }
 
