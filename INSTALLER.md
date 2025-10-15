@@ -168,7 +168,7 @@ Overte Interface AppImages are built using [linuxdeploy](https://github.com/linu
    ```bash
    export "QML_SOURCES_PATHS=interface/resources/qml/"
    export "LINUXDEPLOY_EXCLUDED_LIBRARIES=libnss3.so,libnssutil3.so"
-   ~/temp/linuxdeploy-x86_64.AppImage --appdir build/AppDir --executable build/interface/interface --output appimage --plugin qt --icon-file interface/icon/interface.svg --desktop-file interface/org.overte.interface.desktop
+   ~/temp/linuxdeploy-x86_64.AppImage --appdir build/AppDir --executable build/interface/interface --deploy-deps-only build/AppDir/usr/bin/plugins --output appimage --plugin qt --icon-file interface/icon/interface.svg --desktop-file interface/org.overte.interface.desktop
    ```
 
 
