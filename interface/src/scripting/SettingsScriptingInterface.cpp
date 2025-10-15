@@ -56,7 +56,7 @@ void SettingsScriptingInterface::setValue(const QString& setting, const QVariant
     }
     // Make a deep-copy of the string.
     // Dangling pointers can occur with QStrings that are implicitly shared from a ScriptEngine.
-    QString deepCopy = QString::fromUtf16(setting.utf16());
+    QString deepCopy = QString(setting.utf16());
     Setting::Handle<QVariant>(deepCopy).set(value);
     emit valueChanged(setting, value);
 }

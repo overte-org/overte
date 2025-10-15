@@ -595,7 +595,7 @@ QAction* MenuWrapper::addAction(const QString& menuName) {
 }
 
 QAction* MenuWrapper::addAction(const QString& menuName, const QObject* receiver, const char* member, const QKeySequence& shortcut) {
-    QAction* action = _realMenu->addAction(menuName, receiver, member, shortcut);
+    QAction* action = _realMenu->addAction(menuName, shortcut, receiver, member);
     auto offscreenUi = DependencyManager::get<OffscreenUi>();
     if (offscreenUi) {
         offscreenUi->addMenuInitializer([=, this](VrMenu* vrMenu) {

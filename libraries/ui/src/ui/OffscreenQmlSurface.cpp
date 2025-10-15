@@ -434,7 +434,7 @@ unsigned int OffscreenQmlSurface::deviceIdByTouchPoint(qreal x, qreal y) {
 
     auto mapped = getRootItem()->mapFromGlobal(QPoint(x, y));
     for (auto pair : _activeTouchPoints) {
-        if (mapped.x() == (int)pair.second.touchPoint.pos().x() && mapped.y() == (int)pair.second.touchPoint.pos().y()) {
+        if (mapped.x() == (int)pair.second.touchPoint.position().x() && mapped.y() == (int)pair.second.touchPoint.position().y()) {
             return pair.first;
         }
     }
@@ -501,7 +501,7 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
         state = QEventPoint::State::Pressed;
     } else if (event.getType() == PointerEvent::Release && event.getButton() == PointerEvent::PrimaryButton) {
         state = QEventPoint::State::Released;
-    } else if (_activeTouchPoints.count(event.getID()) && windowPoint != _activeTouchPoints[event.getID()].touchPoint.pos()) {
+    } else if (_activeTouchPoints.count(event.getID()) && windowPoint != _activeTouchPoints[event.getID()].touchPoint.position()) {
         state = QEventPoint::State::Updated;
         // QT6TODO: is Updated equivalent to TouchPointMoved?;
     }
@@ -784,7 +784,7 @@ void OffscreenQmlSurface::emitWebEvent(const QVariant& message) {
         const QString LOWER_KEYBOARD = "_LOWER_KEYBOARD";
         const QString RAISE_KEYBOARD_NUMERIC_PASSWORD = "_RAISE_KEYBOARD_NUMERIC_PASSWORD";
         const QString RAISE_KEYBOARD_PASSWORD = "_RAISE_KEYBOARD_PASSWORD";
-        QString messageString = message.type() == QVariant::String ? message.toString() : "";
+        QString messageString = message.typeId() == QMetaType::QString ? message.toString() : "";
         if (messageString.left(RAISE_KEYBOARD.length()) == RAISE_KEYBOARD) {
             bool numeric = (messageString == RAISE_KEYBOARD_NUMERIC || messageString == RAISE_KEYBOARD_NUMERIC_PASSWORD);
             bool passwordField = (messageString == RAISE_KEYBOARD_PASSWORD || messageString == RAISE_KEYBOARD_NUMERIC_PASSWORD);

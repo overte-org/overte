@@ -64,7 +64,7 @@ void _writeLines(const QString& filename, const QList<QString>& lines) {
     file.open(QFile::WriteOnly);
     auto root = QJsonObject();
     root["version"] = 1.0;
-    root["last-modified"] = QDateTime::currentDateTime().toTimeSpec(Qt::OffsetFromUTC).toString(Qt::ISODate);
+    root["last-modified"] = QDateTime::currentDateTime().toOffsetFromUtc(Qt::OffsetFromUTC).toString(Qt::ISODate);
     root[JSON_KEY] = QJsonArray::fromStringList(lines);
     auto json = QJsonDocument(root).toJson();
     QTextStream(&file) << json;
