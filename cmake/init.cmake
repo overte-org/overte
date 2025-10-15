@@ -58,3 +58,7 @@ if (UNIX)
 endif ()
 
 find_package(Python3 REQUIRED)
+
+# QT6TODO: See macros/TargetQuazip.cmake
+find_package(QuaZip-Qt6 REQUIRED)
+
