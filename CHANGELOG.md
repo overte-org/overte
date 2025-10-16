@@ -11,6 +11,18 @@ like documentaion or CI pipeline.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2025.10.1] 2025.10.16
+
+### Fixes
+- Fixed a regression where AppImages failed crashed on opening web views on Arch Linux and similar (PR1840)
+- Fixed OpenXR not working on NixOS due to missing OpenXR loader (PR1833)
+- Fixed Debian and Ubuntu server packages breaking when uninstalling and reinstalling without restart (PR1826)
+- Fixed Draco errors being ignored (PR1816)
+
+### Changes
+- Improved rendering of transparent web entities (PR1819,PR1828)
+
+
 ## [2025.09.1] 2025.09.13
 
 ### Fixes
