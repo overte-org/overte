@@ -1016,6 +1016,8 @@
  * @property {number} height=128 - The height of the canvas's image in pixels.
  * @property {boolean} unlit=false - <code>true</code> if the canvas should be emissive (unlit), <code>false</code> if it shouldn't.
  * @property {boolean} transparent=false - <code>true</code> if the canvas should be transparent, <code>false</code> if it should be opaque.
+ * @property {Entities.Sampler} sampler - The texture sampler used to render the image.
+ * @property {Entities.Pulse} pulse - Color and alpha pulse.
  * @example <caption>Create a canvas entity and draw "Hello, world!" into it as text.</caption>
  * const CanvasCommand = Script.require("canvasCommand");
  *
