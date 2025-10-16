@@ -37,7 +37,7 @@ Item {
 				CustomButton {
 					id: deleteEntryComponent;
 					width: 25;
-					buttonText: "x";
+					buttonText: "\u{1F5D9}";
 					visible: canDeleteEntries;
 
 					onClickedFunc: () => { onRemoveEntryButton(entryText) };

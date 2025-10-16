@@ -45,17 +45,19 @@ ColumnLayout {
                         onSearchChanged(searchArea.text, statusFilter.checked);
                     }
                     onFocusChanged: {
-                        if (focus) {
-                            KeyboardScriptingInterface.raised = true;
-                        } else {
-                            KeyboardScriptingInterface.raised = false;
+                        if (HMD.active) {
+                            if (focus) {
+                                KeyboardScriptingInterface.raised = true;
+                            } else {
+                                KeyboardScriptingInterface.raised = false;
+                            }
                         }
                     }
                 }
                 
                 Button {
                     id: clearButton;
-                    text: "\u292B";
+                    text: "\u{1F5D9}";
                     height: searchArea.height;
                     width: searchArea.height;
 

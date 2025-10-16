@@ -3,12 +3,6 @@ import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.11
 
 Rectangle {
-	readonly property var maturityColors: {
-		"STABLE": colors.lightText3,
-		"BETA": "lightblue",
-		"ALPHA": "yellow"
-	}
-
 	width: parent.width;
 	height: 80;
 

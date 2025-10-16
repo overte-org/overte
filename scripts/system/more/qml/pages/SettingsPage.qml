@@ -37,9 +37,11 @@ ColumnLayout {
 		CustomListView {
 			Layout.fillHeight: true;
 			onAddEntryButtonClickedFunc: () => {
-                KeyboardScriptingInterface.raised = true;
+                if (HMD.active) {
+                    KeyboardScriptingInterface.raised = true;
+                }
                 toScript({type: "addNewRepositoryButtonClicked"});
-            }; 
+            };
 			entries: entryList;
 		}
 	}

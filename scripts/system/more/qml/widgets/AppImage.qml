@@ -5,7 +5,7 @@ import QtQuick.Layouts 1.11
 
 Item {
 	property int imageSize: 65;
-	property string icon: "";
+    property url icon: "";
 	width: imageSize;
 	height: imageSize;
 
