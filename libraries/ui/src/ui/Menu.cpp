@@ -566,7 +566,7 @@ QAction* MenuWrapper::addSeparator() {
     QAction* action = _realMenu->addSeparator();
     auto offscreenUi = DependencyManager::get<OffscreenUi>();
     if (offscreenUi) {
-        offscreenUi->addMenuInitializer([=](VrMenu* vrMenu) {
+        offscreenUi->addMenuInitializer([=, this](VrMenu* vrMenu) {
             vrMenu->addSeparator(_realMenu);
         });
     }
@@ -577,7 +577,7 @@ void MenuWrapper::addAction(QAction* action) {
     _realMenu->addAction(action);
     auto offscreenUi = DependencyManager::get<OffscreenUi>();
     if (offscreenUi) {
-        offscreenUi->addMenuInitializer([=](VrMenu* vrMenu) {
+        offscreenUi->addMenuInitializer([=, this](VrMenu* vrMenu) {
             vrMenu->addAction(_realMenu, action);
         });
     }
@@ -587,7 +587,7 @@ QAction* MenuWrapper::addAction(const QString& menuName) {
     QAction* action = _realMenu->addAction(menuName);
     auto offscreenUi = DependencyManager::get<OffscreenUi>();
     if (offscreenUi) {
-        offscreenUi->addMenuInitializer([=](VrMenu* vrMenu) {
+        offscreenUi->addMenuInitializer([=, this](VrMenu* vrMenu) {
             vrMenu->addAction(_realMenu, action);
         });
     }
@@ -598,7 +598,7 @@ QAction* MenuWrapper::addAction(const QString& menuName, const QObject* receiver
     QAction* action = _realMenu->addAction(menuName, receiver, member, shortcut);
     auto offscreenUi = DependencyManager::get<OffscreenUi>();
     if (offscreenUi) {
-        offscreenUi->addMenuInitializer([=](VrMenu* vrMenu) {
+        offscreenUi->addMenuInitializer([=, this](VrMenu* vrMenu) {
             vrMenu->addAction(_realMenu, action);
         });
     }
@@ -619,7 +619,7 @@ void MenuWrapper::insertAction(QAction* before, QAction* action) {
     _realMenu->insertAction(before, action);
     auto offscreenUi = DependencyManager::get<OffscreenUi>();
     if (offscreenUi) {
-        offscreenUi->addMenuInitializer([=](VrMenu* vrMenu) {
+        offscreenUi->addMenuInitializer([=, this](VrMenu* vrMenu) {
             vrMenu->insertAction(before, action);
         });
     }

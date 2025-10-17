@@ -96,7 +96,7 @@ Promise BaseAssetScriptingInterface::loadFromCache(const QUrl& url, bool decompr
     downloaded->fail(fetched);
 
     if (decompress) {
-        downloaded->then([=](QVariantMap result) {
+        downloaded->then([=, this](QVariantMap result) {
             fetched->mixin(result);
             Promise decompressed = decompressBytes(result.value("data").toByteArray());
             decompressed->mixin(result);
@@ -107,7 +107,7 @@ Promise BaseAssetScriptingInterface::loadFromCache(const QUrl& url, bool decompr
     }
 
     fetched->fail(completed);
-    fetched->then([=](QVariantMap result) {
+    fetched->then([=, this](QVariantMap result) {
         Promise converted = convertBytes(result.value("data").toByteArray(), responseType);
         converted->mixin(result);
         converted->ready(completed);
@@ -140,7 +140,7 @@ Promise BaseAssetScriptingInterface::loadAsset(QString asset, bool decompress, Q
     downloaded->fail(fetched);
 
     if (decompress) {
-        downloaded->then([=](QVariantMap result) {
+        downloaded->then([=, this](QVariantMap result) {
             Q_ASSERT(thread() == QThread::currentThread());
             fetched->mixin(result);
             Promise decompressed = decompressBytes(result.value("data").toByteArray());
@@ -152,7 +152,7 @@ Promise BaseAssetScriptingInterface::loadAsset(QString asset, bool decompress, Q
     }
 
     fetched->fail(completed);
-    fetched->then([=](QVariantMap result) {
+    fetched->then([=, this](QVariantMap result) {
         Promise converted = convertBytes(result.value("data").toByteArray(), responseType);
         converted->mixin(result);
         converted->ready(completed);

@@ -663,13 +663,13 @@ class KeyboardFocusHack : public QObject {
 public:
     KeyboardFocusHack() {
         Q_ASSERT(_mainWindow);
-        QTimer::singleShot(200, [=] {
+        QTimer::singleShot(200, [=, this] {
             _window = new QWindow();
             _window->setFlags(Qt::FramelessWindowHint);
             _window->setGeometry(_mainWindow->x(), _mainWindow->y(), 10, 10);
             _window->show();
             _window->requestActivate();
-            QTimer::singleShot(200, [=] {
+            QTimer::singleShot(200, [=, this] {
                 _window->hide();
                 _window->deleteLater();
                 _window = nullptr;
@@ -694,7 +694,7 @@ void OffscreenUi::createDesktop(const QUrl& url) {
         return;
     }
 
-    load(url, [=](QQmlContext* context, QObject* newObject) {
+    load(url, [=, this](QQmlContext* context, QObject* newObject) {
         Q_UNUSED(context)
         _desktop = static_cast<QQuickItem*>(newObject);
         getSurfaceContext()->setContextProperty("desktop", _desktop);

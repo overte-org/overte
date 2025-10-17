@@ -368,7 +368,7 @@ void OffscreenSurface::loadInternal(const QUrl& qmlSource,
     }
     if (qmlComponent->isLoading()) {
         connect(qmlComponent, &QQmlComponent::statusChanged, this,
-                [=](QQmlComponent::Status) { finishQmlLoad(qmlComponent, targetContext, parent, callback); });
+                [=, this](QQmlComponent::Status) { finishQmlLoad(qmlComponent, targetContext, parent, callback); });
         return;
     }
 

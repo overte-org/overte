@@ -711,7 +711,7 @@ bool externalResourceBucketFromScriptValue(const ScriptValue& object, ExternalRe
 
 void ScriptManager::resetModuleCache(bool deleteScriptCache) {
     if (QThread::currentThread() != thread()) {
-        executeOnScriptThread([=]() { resetModuleCache(deleteScriptCache); });
+        executeOnScriptThread([=, this]() { resetModuleCache(deleteScriptCache); });
         return;
     }
     auto jsRequire = _engine->globalObject().property("Script").property("require");
@@ -1528,7 +1528,7 @@ QVariantMap ScriptManager::fetchModuleSource(const QString& modulePath, const bo
     QVariantMap req;
     qCDebug(scriptengine_module) << "require.fetchModuleSource: " << QUrl(modulePath).fileName() << QThread::currentThread();
 
-    auto onload = [=, &req](const UrlMap& data, const UrlMap& _status) {
+    auto onload = [=, this, &req](const UrlMap& data, const UrlMap& _status) {
         auto url = modulePath;
         auto status = _status[url];
         auto contents = data[url];
@@ -1780,7 +1780,7 @@ void ScriptManager::include(const QStringList& includeFiles, const ScriptValue& 
     EntityItemID capturedEntityIdentifier = currentEntityIdentifier;
     QUrl capturedSandboxURL = currentSandboxURL;
 
-    auto evaluateScripts = [=](const QMap<QUrl, QString>& data, const QMap<QUrl, QString>& status) {
+    auto evaluateScripts = [=, this](const QMap<QUrl, QString>& data, const QMap<QUrl, QString>& status) {
         auto parentURL = _parentURL;
         for (QUrl url : urls) {
             QString contents = data[url];
@@ -2081,7 +2081,7 @@ void ScriptManager::loadEntityScript(const EntityItemID& entityID, const QString
 #endif
                 return;
             }
-            executeOnScriptThread([=]{
+            executeOnScriptThread([=, this]{
 #ifdef DEBUG_ENTITY_STATES
                 qCDebug(scriptengine) << "loadEntityScript.contentAvailable" << status << entityID.toString();
 #endif
