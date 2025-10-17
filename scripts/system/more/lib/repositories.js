@@ -17,18 +17,8 @@ let repos = {
 
 	fetchAllAppsFromSavedRepositories: async () => {
 		debugLog(`Fetching all saved repositories.`);
-		let isLegacyInstalled = false;
 		repos.loadRepositoriesFromStorage();
 		repos.applications = [];
-
-		const indexOfLegacyRepository = repos.repositories.indexOf(legacy.COMMUNITY_APPS_URL)
-		if (indexOfLegacyRepository > -1) {
-			// We remove the legacy url here to prevent any further action being taken using this.
-			// This will be inserted back into the array just before we send the list of repositories to the UI
-			isLegacyInstalled = true;
-			await legacy.requestCommunityApps();
-			repos.repositories.splice(indexOfLegacyRepository, 1);
-		}
 
 		for (let i = 0; repos.repositories.length > i && 99999 > i; i++) {
 			// For each repository we have saved...
@@ -47,10 +37,6 @@ let repos = {
 			debugLog(`Finished formatting repository "${repositoryMetadata.title}".`);
 		}
 		debugLog(`Finished fetching all repositories.`);
-
-		if (isLegacyInstalled) {
-			repos.repositories.push(legacy.COMMUNITY_APPS_URL);
-		}
 
 		ui.sendAppListToQML();
 		ui.sendRepositoryListToQML();
@@ -74,7 +60,6 @@ let repos = {
 			return;
 		}
 		url = url.trim();
-		url = legacy.formatCommunityAppsUrl(url);
 
 		if (repos.doWeHaveThisRepositorySaved(url)) {
 			debugLog(`Repository is already saved.`);
@@ -82,16 +67,6 @@ let repos = {
 		}
 
 		debugLog(`Installing repository: ${url}`);
-
-		if (url === legacy.COMMUNITY_APPS_URL) {
-			// Trying to install the legacy metadata.js repository
-			repos.repositories.push(legacy.COMMUNITY_APPS_URL);
-			repos._saveRepositoriesToSettings();
-			ui.sendAppListToQML();
-			ui.sendRepositoryListToQML();
-			repos.fetchAllAppsFromSavedRepositories();
-			return;
-		}
 
 		url = util.extractUrlFromString(url);
 		if (url === null) {
