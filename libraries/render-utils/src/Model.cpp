@@ -1781,7 +1781,7 @@ void Model::applyMaterialMapping() {
         if (networkMaterialResource->isLoaded()) {
             materialLoaded();
         } else {
-            connect(networkMaterialResource.data(), &Resource::finished, materialLoaded);
+            connect(networkMaterialResource.get(), &Resource::finished, materialLoaded);
         }
     }
 }
