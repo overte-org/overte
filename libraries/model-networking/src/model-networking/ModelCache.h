@@ -83,10 +83,11 @@ private:
 class GeometryResource : public Resource, public Geometry {
     Q_OBJECT
 public:
-    using Pointer = QSharedPointer<GeometryResource>;
+    using Pointer = std::shared_ptr<GeometryResource>;
 
     GeometryResource(const QUrl& url, const ModelLoader& modelLoader) : Resource(url), _modelLoader(modelLoader) {}
     GeometryResource(const GeometryResource& other);
+    virtual ~GeometryResource() {}
 
     QString getType() const override { return "Geometry"; }
 
@@ -175,8 +176,8 @@ public:
 protected:
     friend class GeometryResource;
 
-    virtual QSharedPointer<Resource> createResource(const QUrl& url) override;
-    QSharedPointer<Resource> createResourceCopy(const QSharedPointer<Resource>& resource) override;
+    virtual  std::shared_ptr<Resource> createResource(const QUrl& url) override;
+     std::shared_ptr<Resource> createResourceCopy(const  std::shared_ptr<Resource>& resource) override;
 
 private:
     ModelCache();

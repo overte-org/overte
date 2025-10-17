@@ -119,7 +119,7 @@ void SoundEntityItem::update(const quint64& now) {
             if (_sound->isLoaded()) {
                 updateSound(true);
             } else {
-                connect(_sound.data(), &Resource::finished, this, [&] { updateSound(true); });
+                connect(_sound.get(), &Resource::finished, this, [&] { updateSound(true); });
             }
         }
     }
@@ -163,7 +163,7 @@ void SoundEntityItem::setSoundURL(const QString& value) {
             if (_sound->isLoaded()) {
                 updateSound(true);
             } else {
-                connect(_sound.data(), &Resource::finished, this, [&] { updateSound(true); });
+                connect(_sound.get(), &Resource::finished, this, [&] { updateSound(true); });
             }
         }
     }
@@ -334,7 +334,7 @@ void SoundEntityItem::setLocalOnly(bool value) {
             if (_sound->isLoaded()) {
                 updateSound(true);
             } else {
-                connect(_sound.data(), &Resource::finished, this, [&] { updateSound(true); });
+                connect(_sound.get(), &Resource::finished, this, [&] { updateSound(true); });
             }
         }
     }

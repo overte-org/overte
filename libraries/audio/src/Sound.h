@@ -67,6 +67,7 @@ class Sound : public Resource {
 public:
     Sound(const QUrl& url, bool isStereo = false, bool isAmbisonic = false);
     Sound(const Sound& other) : Resource(other), _audioData(other._audioData), _numChannels(other._numChannels) {}
+    virtual ~Sound() {}
 
     bool isReady() const { return (bool)_audioData; }
 
@@ -103,7 +104,7 @@ public:
         uint32_t sampleRate { 0 };
     };
 
-    SoundProcessor(QWeakPointer<Resource> sound, QByteArray data);
+    SoundProcessor(std::weak_ptr<Resource> sound, QByteArray data);
 
     virtual void run() override;
 
@@ -119,11 +120,11 @@ signals:
     void onError(int error, QString str);
 
 private:
-    const QWeakPointer<Resource> _sound;
+    const std::weak_ptr<Resource> _sound;
     const QByteArray _data;
 };
 
-typedef QSharedPointer<Sound> SharedSoundPointer;
+typedef std::shared_ptr<Sound> SharedSoundPointer;
 
 /*@jsdoc
  * An audio resource, created by {@link SoundCache.getSound}, to be played back using {@link Audio.playSound}.
