@@ -203,6 +203,7 @@ class NetworkMaterialResource : public Resource {
 public:
     NetworkMaterialResource() : Resource() {}
     NetworkMaterialResource(const QUrl& url);
+    virtual ~NetworkMaterialResource() {}
 
     QString getType() const override { return "NetworkMaterial"; }
 
@@ -228,7 +229,7 @@ public:
     static std::pair<std::string, std::shared_ptr<NetworkMaterial>> parseJSONMaterial(const QJsonValue& materialJSONValue, const QUrl& baseUrl = QUrl());
 };
 
-using NetworkMaterialResourcePointer = QSharedPointer<NetworkMaterialResource>;
+using NetworkMaterialResourcePointer = std::shared_ptr<NetworkMaterialResource>;
 using MaterialMapping = std::vector<std::pair<std::string, NetworkMaterialResourcePointer>>;
 Q_DECLARE_METATYPE(MaterialMapping)
 
@@ -240,8 +241,8 @@ public:
     NetworkMaterialResourcePointer getMaterial(const QUrl& url);
 
 protected:
-    virtual QSharedPointer<Resource> createResource(const QUrl& url) override;
-    QSharedPointer<Resource> createResourceCopy(const QSharedPointer<Resource>& resource) override;
+    virtual std::shared_ptr<Resource> createResource(const QUrl& url) override;
+    std::shared_ptr<Resource> createResourceCopy(const std::shared_ptr<Resource>& resource) override;
 };
 
 #endif

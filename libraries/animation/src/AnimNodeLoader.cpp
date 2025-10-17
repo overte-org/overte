@@ -1083,11 +1083,10 @@ bool processBlendDirectionalNode(AnimNode::Pointer node, const QJsonObject& json
 AnimNodeLoader::AnimNodeLoader(const QUrl& url) :
     _url(url)
 {
-    _resource = QSharedPointer<Resource>::create(url);
-    _resource->setSelf(_resource);
+    _resource = std::make_shared<Resource>(url);
     _resource->setLoadPriorityOperator(this, []() { return ANIM_GRAPH_LOAD_PRIORITY; });
-    connect(_resource.data(), &Resource::loaded, this, &AnimNodeLoader::onRequestDone);
-    connect(_resource.data(), &Resource::failed, this, &AnimNodeLoader::onRequestError);
+    connect(_resource.get(), &Resource::loaded, this, &AnimNodeLoader::onRequestDone);
+    connect(_resource.get(), &Resource::failed, this, &AnimNodeLoader::onRequestError);
     _resource->ensureLoading();
 }
 
