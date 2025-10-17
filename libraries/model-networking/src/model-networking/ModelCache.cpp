@@ -98,7 +98,7 @@ namespace std {
 
 class GeometryReader : public QRunnable {
 public:
-    GeometryReader(const ModelLoader& modelLoader, QWeakPointer<Resource>& resource, const QUrl& url, const GeometryMappingPair& mapping,
+    GeometryReader(const ModelLoader& modelLoader, std::weak_ptr<Resource> resource, const QUrl& url, const GeometryMappingPair& mapping,
                    const QByteArray& data, bool combineParts, const QString& webMediaType) :
         _modelLoader(modelLoader), _resource(resource), _url(url), _mapping(mapping), _data(data), _combineParts(combineParts), _webMediaType(webMediaType) {
 
@@ -109,7 +109,7 @@ public:
 
 private:
     ModelLoader _modelLoader;
-    QWeakPointer<Resource> _resource;
+    std::weak_ptr<Resource> _resource;
     QUrl _url;
     // QT6TODO: I'm not sure if _mapping should be QHash or QMultiHash
     GeometryMappingPair _mapping;
@@ -131,7 +131,8 @@ void GeometryReader::run() {
         QThread::currentThread()->setPriority(originalPriority);
     });
 
-    if (!_resource.toStrongRef().data()) {
+    if (!_resource.lock()) {
+        qCWarning(modelnetworking) << "Abandoning load of" << _url << "; could not get strong ref";
         return;
     }
 
@@ -141,7 +142,7 @@ void GeometryReader::run() {
         }
 
         // Ensure the resource has not been deleted
-        auto resource = _resource.toStrongRef();
+        auto resource = _resource.lock();
         if (!resource) {
             qCWarning(modelnetworking) << "Abandoning load of" << _url << "; could not get strong ref";
             return;
@@ -193,19 +194,19 @@ void GeometryReader::run() {
         auto processedHFMModel = modelBaker.getHFMModel();
         auto materialMapping = modelBaker.getMaterialMapping();
 
-        QMetaObject::invokeMethod(resource.data(), "setGeometryDefinition",
+        QMetaObject::invokeMethod(resource.get(), "setGeometryDefinition",
                 Q_ARG(HFMModel::Pointer, processedHFMModel), Q_ARG(MaterialMapping, materialMapping));
     } catch (const std::exception&) {
-        auto resource = _resource.toStrongRef();
+        auto resource = _resource.lock();
         if (resource) {
-            QMetaObject::invokeMethod(resource.data(), "finishedLoading",
+            QMetaObject::invokeMethod(resource.get(), "finishedLoading",
                 Q_ARG(bool, false));
         }
     } catch (QString& e) {
         qCWarning(modelnetworking) << "Exception while loading model --" << e;
-        auto resource = _resource.toStrongRef();
+        auto resource = _resource.lock();
         if (resource) {
-            QMetaObject::invokeMethod(resource.data(), "finishedLoading",
+            QMetaObject::invokeMethod(resource.get(), "finishedLoading",
                                       Q_ARG(bool, false));
         }
     }
@@ -281,7 +282,8 @@ void GeometryResource::downloadFinished(const QByteArray& data) {
             GeometryExtra extra { GeometryMappingPair(base, _mapping), _textureBaseURL, false };
 
             // Get the raw GeometryResource
-            _geometryResource = modelCache->getResource(url, QUrl(), &extra, std::hash<GeometryExtra>()(extra)).staticCast<GeometryResource>();
+            _geometryResource = std::dynamic_pointer_cast<GeometryResource>(modelCache->getResource(url, QUrl(), &extra, std::hash<GeometryExtra>()(extra)));
+            Q_ASSERT(_geometryResource);
             // Avoid caching nested resources - their references will be held by the parent
             _geometryResource->_isCacheable = false;
 
@@ -292,7 +294,7 @@ void GeometryResource::downloadFinished(const QByteArray& data) {
                     disconnect(_connection);
                 }
 
-                _connection = connect(_geometryResource.data(), &Resource::finished, this, &GeometryResource::onGeometryMappingLoaded);
+                _connection = connect(_geometryResource.get(), &Resource::finished, this, &GeometryResource::onGeometryMappingLoaded);
             }
         }
     } else {
@@ -300,7 +302,7 @@ void GeometryResource::downloadFinished(const QByteArray& data) {
             _url = _effectiveBaseURL;
             _textureBaseURL = _effectiveBaseURL;
         }
-        QThreadPool::globalInstance()->start(new GeometryReader(_modelLoader, _self, _effectiveBaseURL, _mappingPair, data, _combineParts, _request->getWebMediaType()));
+        QThreadPool::globalInstance()->start(new GeometryReader(_modelLoader, weak_from_this(), _effectiveBaseURL, _mappingPair, data, _combineParts, _request->getWebMediaType()));
     }
 }
 
@@ -401,18 +403,20 @@ ModelCache::ModelCache() {
     modelFormatRegistry->addFormat(GLTFSerializer());
 }
 
-QSharedPointer<Resource> ModelCache::createResource(const QUrl& url) {
-    return QSharedPointer<GeometryResource>(new GeometryResource(url, _modelLoader), &GeometryResource::deleter);
+std::shared_ptr<Resource> ModelCache::createResource(const QUrl& url) {
+    return std::shared_ptr<GeometryResource>(new GeometryResource(url, _modelLoader), GeometryResource::sharedPtrDeleter);
 }
 
-QSharedPointer<Resource> ModelCache::createResourceCopy(const QSharedPointer<Resource>& resource) {
-    return QSharedPointer<GeometryResource>(new GeometryResource(*resource.staticCast<GeometryResource>()), &GeometryResource::deleter);
+std::shared_ptr<Resource> ModelCache::createResourceCopy(const std::shared_ptr<Resource>& resource) {
+    auto geometryResource = std::dynamic_pointer_cast<GeometryResource>(resource);
+    Q_ASSERT(geometryResource);
+    return std::shared_ptr<GeometryResource>(new GeometryResource(*geometryResource), GeometryResource::sharedPtrDeleter);
 }
 
 GeometryResource::Pointer ModelCache::getGeometryResource(const QUrl& url, const GeometryMappingPair& mapping, const QUrl& textureBaseUrl) {
     bool combineParts = true;
     GeometryExtra geometryExtra = { mapping, textureBaseUrl, combineParts };
-    GeometryResource::Pointer resource = getResource(url, QUrl(), &geometryExtra, std::hash<GeometryExtra>()(geometryExtra)).staticCast<GeometryResource>();
+    GeometryResource::Pointer resource = std::dynamic_pointer_cast<GeometryResource>(getResource(url, QUrl(), &geometryExtra, std::hash<GeometryExtra>()(geometryExtra)));
     if (resource) {
         if (resource->isLoaded() && resource->shouldSetTextures()) {
             resource->setTextures();
@@ -426,7 +430,7 @@ GeometryResource::Pointer ModelCache::getCollisionGeometryResource(const QUrl& u
                                                                    const QUrl& textureBaseUrl) {
     bool combineParts = false;
     GeometryExtra geometryExtra = { mapping, textureBaseUrl, combineParts };
-    GeometryResource::Pointer resource = getResource(url, QUrl(), &geometryExtra, std::hash<GeometryExtra>()(geometryExtra)).staticCast<GeometryResource>();
+    GeometryResource::Pointer resource = std::dynamic_pointer_cast<GeometryResource>(getResource(url, QUrl(), &geometryExtra, std::hash<GeometryExtra>()(geometryExtra)));
     if (resource) {
         if (resource->isLoaded() && resource->shouldSetTextures()) {
             resource->setTextures();
@@ -545,16 +549,16 @@ const std::shared_ptr<NetworkMaterial> Geometry::getShapeMaterial(int partID) co
 }
 
 void GeometryResourceWatcher::startWatching() {
-    connect(_resource.data(), &Resource::finished, this, &GeometryResourceWatcher::resourceFinished);
-    connect(_resource.data(), &Resource::onRefresh, this, &GeometryResourceWatcher::resourceRefreshed);
+    connect(_resource.get(), &Resource::finished, this, &GeometryResourceWatcher::resourceFinished);
+    connect(_resource.get(), &Resource::onRefresh, this, &GeometryResourceWatcher::resourceRefreshed);
     if (_resource->isLoaded()) {
         resourceFinished(!_resource->getURL().isEmpty());
     }
 }
 
 void GeometryResourceWatcher::stopWatching() {
-    disconnect(_resource.data(), &Resource::finished, this, &GeometryResourceWatcher::resourceFinished);
-    disconnect(_resource.data(), &Resource::onRefresh, this, &GeometryResourceWatcher::resourceRefreshed);
+    disconnect(_resource.get(), &Resource::finished, this, &GeometryResourceWatcher::resourceFinished);
+    disconnect(_resource.get(), &Resource::onRefresh, this, &GeometryResourceWatcher::resourceRefreshed);
 }
 
 void GeometryResourceWatcher::setResource(GeometryResource::Pointer resource) {

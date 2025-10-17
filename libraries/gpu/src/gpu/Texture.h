@@ -140,6 +140,7 @@ class Texture : public Resource {
     static void updateTextureCPUMemoryUsage(Size prevObjectSize, Size newObjectSize);
 
 public:
+    std::atomic<bool> wasDeleted{false};
     static const uint32_t CUBE_FACE_COUNT { 6 };
     static uint32_t getTextureCPUCount();
     static Size getTextureCPUMemSize();
@@ -329,8 +330,8 @@ public:
     // After the texture has been created, it should be defined
     bool isDefined() const { return _defined; }
 
-    Texture(TextureUsageType usageType);
-    ~Texture();
+    explicit Texture(TextureUsageType usageType);
+    virtual ~Texture();
 
     Stamp getStamp() const { return _stamp; }
     Stamp getDataStamp() const { return _storage->getStamp(); }
