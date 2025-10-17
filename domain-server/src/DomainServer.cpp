@@ -2950,7 +2950,7 @@ std::pair<bool, QString>  DomainServer::isAuthenticatedRequest(HTTPConnection* c
 
                     QString settingsPassword = settingsPasswordVariant.isValid() ? settingsPasswordVariant.toString() : "";
                     QString hexHeaderPassword = headerPassword.isEmpty() ?
-                        "" : QCryptographicHash::hash(headerPassword.toUtf8(), QCryptographicHash::Sha256).toHex();
+                        "" : QString(QCryptographicHash::hash(headerPassword.toUtf8(), QCryptographicHash::Sha256).toHex());
 
                     if (settingsUsername == headerUsername && hexHeaderPassword == settingsPassword) {
                         qCInfo(domain_server_auth) << httpPeerAddress << "- Basic:" << headerUsername << "-"
