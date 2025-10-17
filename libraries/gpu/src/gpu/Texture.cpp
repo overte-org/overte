@@ -230,6 +230,9 @@ Texture::Texture(TextureUsageType usageType) :
 }
 
 Texture::~Texture() {
+    Q_ASSERT(!wasDeleted);
+    wasDeleted = true;
+
     _textureCPUCount.decrement();
     if (_usageType == TextureUsageType::EXTERNAL) {
         Texture::ExternalUpdates externalUpdates;
@@ -900,10 +903,16 @@ const gpu::TexturePointer TextureSource::getGPUTexture() const {
         _locked = false;
         return gpuTexture;
     }
+    if (_gpuTexture) {
+        Q_ASSERT(!_gpuTexture->wasDeleted);
+    }
     return _gpuTexture;
 }
 
 void TextureSource::resetTexture(const gpu::TexturePointer& texture) {
+    if (texture) {
+        Q_ASSERT(!texture->wasDeleted);
+    }
     _gpuTexture = texture;
     _gpuTextureOperator = nullptr;
 }

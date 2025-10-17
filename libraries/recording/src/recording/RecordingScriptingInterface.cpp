@@ -90,7 +90,7 @@ void RecordingScriptingInterface::loadRecording(const QString& url, const Script
     // hold a strong pointer to the loading clip so that it has a chance to load
     _clipLoaders.insert(clipLoader);
 
-    auto weakClipLoader = clipLoader.toWeakRef();
+    std::weak_ptr weakClipLoader = clipLoader;
 
     auto manager = callback.engine()->manager();
     if (!manager) {
@@ -99,10 +99,11 @@ void RecordingScriptingInterface::loadRecording(const QString& url, const Script
     }
 
     // when clip loaded, call the callback with the URL and success boolean
-    connect(clipLoader.data(), &recording::NetworkClipLoader::clipLoaded, manager,
+    connect(clipLoader.get(), &recording::NetworkClipLoader::clipLoaded, manager,
             [this, weakClipLoader, url, callback]() mutable {
 
-        if (auto clipLoader = weakClipLoader.toStrongRef()) {
+        if (auto clipLoader = weakClipLoader.lock()) {
+            Q_ASSERT(clipLoader);
             qCDebug(scriptengine) << "Loaded recording from" << url;
 
             playClip(clipLoader, url, callback);
@@ -113,7 +114,7 @@ void RecordingScriptingInterface::loadRecording(const QString& url, const Script
     });
 
     // when clip load fails, call the callback with the URL and failure boolean
-    connect(clipLoader.data(), &recording::NetworkClipLoader::failed, manager,
+    connect(clipLoader.get(), &recording::NetworkClipLoader::failed, manager,
             [this, weakClipLoader, url, callback](QNetworkReply::NetworkError error) mutable {
         qCDebug(scriptengine) << "Failed to load recording from\"" << url << '"';
 
@@ -123,7 +124,8 @@ void RecordingScriptingInterface::loadRecording(const QString& url, const Script
             callback.call(ScriptValue(), args);
         }
 
-        if (auto clipLoader = weakClipLoader.toStrongRef()) {
+        if (auto clipLoader = weakClipLoader.lock()) {
+            Q_ASSERT(clipLoader);
             // drop out strong pointer to this clip so it is cleaned up
             _clipLoaders.remove(clipLoader);
         }

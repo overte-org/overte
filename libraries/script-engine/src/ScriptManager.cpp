@@ -681,7 +681,7 @@ static ScriptValue scriptableResourceToScriptValue(ScriptEngine* engine,
     auto manager = engine->manager();
     if (data && manager && !resource->isInScript()) {
         resource->setInScript(true);
-        QObject::connect(data.data(), &Resource::updateSize, manager, &ScriptManager::updateMemoryCost);
+        QObject::connect(data.get(), &Resource::updateSize, manager, &ScriptManager::updateMemoryCost);
     }
 
     auto object = engine->newQObject(const_cast<ScriptableResourceRawPtr>(resource), ScriptEngine::ScriptOwnership);

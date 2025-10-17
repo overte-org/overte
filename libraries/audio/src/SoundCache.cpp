@@ -30,15 +30,19 @@ SoundCache::SoundCache(QObject* parent) :
 }
 
 SharedSoundPointer SoundCache::getSound(const QUrl& url) {
-    return getResource(url).staticCast<Sound>();
+    auto sound = std::dynamic_pointer_cast<Sound>(getResource(url));
+    Q_ASSERT(sound);
+    return sound;
 }
 
-QSharedPointer<Resource> SoundCache::createResource(const QUrl& url) {
-    auto resource = QSharedPointer<Sound>(new Sound(url), &Resource::deleter);
+std::shared_ptr<Resource> SoundCache::createResource(const QUrl& url) {
+    auto resource = std::shared_ptr<Sound>(new Sound(url), Resource::sharedPtrDeleter);
     resource->setLoadPriorityOperator(this, []() { return SOUNDS_LOADING_PRIORITY; });
     return resource;
 }
 
-QSharedPointer<Resource> SoundCache::createResourceCopy(const QSharedPointer<Resource>& resource) {
-    return QSharedPointer<Sound>(new Sound(*resource.staticCast<Sound>()), &Resource::deleter);
+std::shared_ptr<Resource> SoundCache::createResourceCopy(const std::shared_ptr<Resource>& resource) {
+    auto sound = std::dynamic_pointer_cast<Sound>(resource);
+    Q_ASSERT(sound);
+    return std::shared_ptr<Sound>(new Sound(*sound), Resource::sharedPtrDeleter);
 }
