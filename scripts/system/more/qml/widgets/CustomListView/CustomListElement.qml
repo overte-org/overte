@@ -1,0 +1,51 @@
+import QtQuick 2.15
+import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.11
+import "../."
+
+Item {
+    anchors.left: parent.left;
+    anchors.right: parent.right;
+    implicitHeight: 50;
+
+	property bool canAddEntries: true;
+	property bool canDeleteEntries: true;
+	property string entryText: "";
+
+	Rectangle {
+		color: colors.darkBackground3;
+		width: parent.width;
+		height: parent.height;
+
+		Item {
+			width: parent.width - 10;
+			height: parent.height;
+			anchors.centerIn: parent;
+
+			RowLayout {
+				width: parent.width;
+				height: parent.height;
+				spacing: 10;
+
+				Text {
+					text: entryText;
+					color: "white";
+					Layout.fillWidth: true;
+					id: entryTextComponent;
+					wrapMode: Text.Wrap;
+				}
+
+				CustomButton {
+					id: deleteEntryComponent;
+                    Layout.preferredWidth: 25;
+					buttonText: "\u{1F5D9}";
+					visible: canDeleteEntries;
+                    buttonColor: colors.darkBackground3;
+
+					onClickedFunc: () => { onRemoveEntryButton(entryText) };
+				}
+
+			}
+		}
+	}
+}
