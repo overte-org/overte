@@ -20,7 +20,7 @@ ColumnLayout {
 		Layout.alignment: Qt.AlignVCenter;
 
 		CustomButton {
-			height: 40;
+            Layout.preferredHeight: 40;
 			Layout.fillWidth: true;
 
 			buttonText: "Back";

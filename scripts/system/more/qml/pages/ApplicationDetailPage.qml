@@ -74,7 +74,7 @@ Rectangle {
                     width:100;
                     AppImage {
                         imageSize: 100;
-                        icon: focusedApp && focusedApp.appIcon || "";
+                        icon: focusedApp ? focusedApp.appIcon : "";
                     }
                 }
                 

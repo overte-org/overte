@@ -4,8 +4,9 @@ import QtQuick.Layouts 1.11
 import "../."
 
 Item {
-	width: parent.width;
-	height: 50;
+    anchors.left: parent.left;
+    anchors.right: parent.right;
+    implicitHeight: 50;
 
 	property bool canAddEntries: true;
 	property bool canDeleteEntries: true;
@@ -36,12 +37,14 @@ Item {
 
 				CustomButton {
 					id: deleteEntryComponent;
-					width: 25;
+                    Layout.preferredWidth: 25;
 					buttonText: "\u{1F5D9}";
 					visible: canDeleteEntries;
+                    buttonColor: colors.darkBackground3;
 
 					onClickedFunc: () => { onRemoveEntryButton(entryText) };
 				}
+
 			}
 		}
 	}

@@ -5,7 +5,7 @@ import "../."
 
 Item {
 	width: parent.width;
-
+    
 	property var entries: [];
 
 	property bool canAddEntries: true;
@@ -49,7 +49,7 @@ Item {
 		}
 
 		CustomButton {
-			height: 40;
+            Layout.preferredHeight: 40;
 			Layout.fillWidth: true;
 			buttonText: "Add Entry";
 
