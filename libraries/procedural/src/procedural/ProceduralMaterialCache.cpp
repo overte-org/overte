@@ -804,15 +804,19 @@ std::pair<std::string, std::shared_ptr<NetworkMaterial>> NetworkMaterialResource
 }
 
 NetworkMaterialResourcePointer MaterialCache::getMaterial(const QUrl& url) {
-    return ResourceCache::getResource(url).staticCast<NetworkMaterialResource>();
+    auto networkMaterialResource = std::dynamic_pointer_cast<NetworkMaterialResource>(getResource(url));
+    Q_ASSERT(networkMaterialResource);
+    return networkMaterialResource;
 }
 
-QSharedPointer<Resource> MaterialCache::createResource(const QUrl& url) {
-    return QSharedPointer<NetworkMaterialResource>(new NetworkMaterialResource(url), &Resource::deleter);
+std::shared_ptr<Resource> MaterialCache::createResource(const QUrl& url) {
+    return std::shared_ptr<NetworkMaterialResource>(new NetworkMaterialResource(url), Resource::sharedPtrDeleter);
 }
 
-QSharedPointer<Resource> MaterialCache::createResourceCopy(const QSharedPointer<Resource>& resource) {
-    return QSharedPointer<NetworkMaterialResource>(new NetworkMaterialResource(*resource.staticCast<NetworkMaterialResource>()), &Resource::deleter);
+std::shared_ptr<Resource> MaterialCache::createResourceCopy(const std::shared_ptr<Resource>& resource) {
+    auto networkMaterialResource = std::dynamic_pointer_cast<NetworkMaterialResource>(resource);
+    Q_ASSERT(networkMaterialResource);
+    return std::shared_ptr<NetworkMaterialResource>(new NetworkMaterialResource(*networkMaterialResource), Resource::sharedPtrDeleter);
 }
 
 NetworkMaterial::NetworkMaterial(const NetworkMaterial& m) :
@@ -1137,6 +1141,9 @@ bool NetworkMaterial::isMissingTexture() {
         // Failed texture downloads need to be considered as 'loaded'
         // or the object will never fade in
         auto gpuTexture = texture->getGPUTexture();
+        if (gpuTexture) {
+            Q_ASSERT(!gpuTexture->wasDeleted);
+        }
         bool finished = texture->isFailed() || (texture->isLoaded() && gpuTexture && gpuTexture->isDefined());
         if (!finished) {
             return true;
