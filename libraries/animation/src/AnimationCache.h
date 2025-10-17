@@ -23,7 +23,7 @@
 
 class Animation;
 
-using AnimationPointer = QSharedPointer<Animation>;
+using AnimationPointer = std::shared_ptr<Animation>;
 
 class AnimationCache : public ResourceCache, public Dependency  {
     Q_OBJECT
@@ -35,8 +35,8 @@ public:
     Q_INVOKABLE AnimationPointer getAnimation(const QUrl& url);
 
 protected:
-    virtual QSharedPointer<Resource> createResource(const QUrl& url) override;
-    QSharedPointer<Resource> createResourceCopy(const QSharedPointer<Resource>& resource) override;
+    virtual std::shared_ptr<Resource> createResource(const QUrl& url) override;
+    std::shared_ptr<Resource> createResourceCopy(const std::shared_ptr<Resource>& resource) override;
 
 private:
     explicit AnimationCache(QObject* parent = NULL);
@@ -54,6 +54,7 @@ public:
 
     Animation(const Animation& other) : Resource(other), _hfmModel(other._hfmModel) {}
     Animation(const QUrl& url) : Resource(url) {}
+    virtual ~Animation() {}
 
     QString getType() const override { return "Animation"; }
 

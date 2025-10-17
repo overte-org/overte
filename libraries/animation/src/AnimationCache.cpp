@@ -33,15 +33,19 @@ AnimationCache::AnimationCache(QObject* parent) :
 }
 
 AnimationPointer AnimationCache::getAnimation(const QUrl& url) {
-    return getResource(url).staticCast<Animation>();
+    auto animation = std::dynamic_pointer_cast<Animation>(getResource(url));
+    Q_ASSERT(animation);
+    return animation;
 }
 
-QSharedPointer<Resource> AnimationCache::createResource(const QUrl& url) {
-    return QSharedPointer<Animation>(new Animation(url), &Resource::deleter);
+std::shared_ptr<Resource> AnimationCache::createResource(const QUrl& url) {
+    return std::shared_ptr<Animation>(new Animation(url), Resource::sharedPtrDeleter);
 }
 
-QSharedPointer<Resource> AnimationCache::createResourceCopy(const QSharedPointer<Resource>& resource) {
-    return QSharedPointer<Animation>(new Animation(*resource.staticCast<Animation>()), &Resource::deleter);
+std::shared_ptr<Resource> AnimationCache::createResourceCopy(const std::shared_ptr<Resource>& resource) {
+    auto animation = std::dynamic_pointer_cast<Animation>(resource);
+    Q_ASSERT(animation);
+    return std::shared_ptr<Animation>(new Animation(*animation), Resource::sharedPtrDeleter);
 }
 
 AnimationReader::AnimationReader(const QUrl& url, const QByteArray& data) :
