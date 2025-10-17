@@ -37,7 +37,6 @@ let util = {
 	request: (url, method = "GET") => {
 		return new Promise((resolve) => {
 			debugLog(`Making "${method}" request to "${url}"`);
-			//if (util.isValidUrl(url) === false) return resolve(null);
 			if (util.isValidUrl(url) === false) return reject();
 			let req = new XMLHttpRequest();
 
