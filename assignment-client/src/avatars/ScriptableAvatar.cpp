@@ -64,7 +64,7 @@ void ScriptableAvatar::stopAnimation() {
         QMetaObject::invokeMethod(this, "stopAnimation");
         return;
     }
-    _animation.clear();
+    _animation.reset();
 }
 
 AnimationDetails ScriptableAvatar::getAnimationDetails() {
@@ -222,7 +222,7 @@ void ScriptableAvatar::update(float deltatime) {
                 }
 
             } else {
-                _animation.clear();
+                _animation.reset();
             }
         }
     }

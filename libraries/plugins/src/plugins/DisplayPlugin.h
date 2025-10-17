@@ -68,7 +68,7 @@ namespace gpu {
 }
 
 class NetworkTexture;
-using NetworkTexturePointer = QSharedPointer<NetworkTexture>;
+using NetworkTexturePointer = std::shared_ptr<NetworkTexture>;
 typedef struct __GLsync *GLsync;
 
 // Stereo display functionality
