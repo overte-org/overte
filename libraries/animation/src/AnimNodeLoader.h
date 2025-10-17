@@ -42,7 +42,7 @@ protected slots:
 
 protected:
     QUrl _url;
-    QSharedPointer<Resource> _resource;
+    std::shared_ptr<Resource> _resource;
 
 private:
     Q_DISABLE_COPY(AnimNodeLoader)
