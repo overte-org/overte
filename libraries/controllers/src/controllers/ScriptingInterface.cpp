@@ -75,7 +75,7 @@ controller::ScriptingInterface::ScriptingInterface() {
     connect(userInputMapper.data(), &UserInputMapper::inputEvent, this, &controller::ScriptingInterface::inputEvent);
 
     // FIXME make this thread safe
-    connect(userInputMapper.data(), &UserInputMapper::hardwareChanged, this, [=] {
+    connect(userInputMapper.data(), &UserInputMapper::hardwareChanged, this, [=, this] {
         updateMaps();
         emit hardwareChanged();
     });

@@ -1562,7 +1562,7 @@ bool EntityPropertyMetadataRequest::script(EntityItemID entityID, const ScriptVa
     using LocalScriptStatusRequest = QFutureWatcher<QVariant>;
 
     LocalScriptStatusRequest* request = new LocalScriptStatusRequest;
-    QObject::connect(request, &LocalScriptStatusRequest::finished, _scriptManager, [=]() mutable {
+    QObject::connect(request, &LocalScriptStatusRequest::finished, _scriptManager, [=, this]() mutable {
         auto details = request->result().toMap();
         ScriptValue err, result;
         if (details.contains("isError")) {
@@ -1598,7 +1598,7 @@ bool EntityPropertyMetadataRequest::serverScripts(EntityItemID entityID, const S
     auto client = DependencyManager::get<EntityScriptClient>();
     auto request = client->createScriptStatusRequest(entityID);
     QPointer<ScriptManager> manager = _scriptManager;
-    QObject::connect(request, &GetScriptStatusRequest::finished, _scriptManager, [=](GetScriptStatusRequest* request) mutable {
+    QObject::connect(request, &GetScriptStatusRequest::finished, _scriptManager, [=, this](GetScriptStatusRequest* request) mutable {
         auto manager = _scriptManager;
         if (!manager) {
             qCDebug(entities) << __FUNCTION__ << " -- engine destroyed while inflight" << entityID;

@@ -76,7 +76,7 @@ void AssetScriptingInterface::uploadData(QString data, const ScriptValue& callba
     Promise deferred = makePromise(__FUNCTION__);
     Q_ASSERT(engine());
     auto scriptEngine = engine();
-    deferred->ready([=](QString error, QVariantMap result) {
+    deferred->ready([=, this](QString error, QVariantMap result) {
         auto url = result.value("url").toString();
         auto hash = result.value("hash").toString();
         jsCallback(handler, scriptEngine->newValue(url), scriptEngine->newValue(hash));
@@ -100,7 +100,7 @@ void AssetScriptingInterface::setMapping(QString path, QString hash, const Scrip
     Promise deferred = makePromise(__FUNCTION__);
     Q_ASSERT(engine());
     auto scriptEngine = engine();
-    deferred->ready([=](QString error, QVariantMap result) {
+    deferred->ready([=, this](QString error, QVariantMap result) {
         jsCallback(handler, scriptEngine->newValue(error), result);
     });
 
@@ -138,7 +138,7 @@ void AssetScriptingInterface::downloadData(QString urlString, const ScriptValue&
     Promise deferred = makePromise(__FUNCTION__);
     Q_ASSERT(engine());
     auto scriptEngine = engine();
-    deferred->ready([=](QString error, QVariantMap result) {
+    deferred->ready([=, this](QString error, QVariantMap result) {
         // FIXME: to remain backwards-compatible the signature here is "callback(data, n/a)"
         jsCallback(handler, scriptEngine->newValue(result.value("data").toString()), { { "errorMessage", error } });
     });
@@ -202,7 +202,7 @@ void AssetScriptingInterface::getMapping(QString asset, const ScriptValue& callb
     Promise promise = getAssetInfo(path);
     Q_ASSERT(engine());
     auto scriptEngine = engine();
-    promise->ready([=](QString error, QVariantMap result) {
+    promise->ready([=, this](QString error, QVariantMap result) {
         jsCallback(handler, scriptEngine->newValue(error), scriptEngine->newValue(result.value("hash").toString()));
     });
 }
@@ -317,7 +317,7 @@ void AssetScriptingInterface::getAsset(const ScriptValue& options, const ScriptV
 
     Promise mapped = makePromise("mapped");
     mapped->fail(fetched);
-    mapped->then([=](QVariantMap result) {
+    mapped->then([=, this](QVariantMap result) {
         QString hash = result.value("hash").toString();
         QString url = result.value("url").toString();
         if (!AssetUtils::isValidHash(hash)) {
@@ -397,7 +397,7 @@ void AssetScriptingInterface::decompressData(const ScriptValue& options, const S
     if (responseType == "arraybuffer") {
         decompressed->ready(completed);
     } else {
-        decompressed->ready([=](QString error, QVariantMap result) {
+        decompressed->ready([=, this](QString error, QVariantMap result) {
             Promise converted = convertBytes(result.value("data").toByteArray(), responseType);
             converted->mixin(result);
             converted->ready(completed);
@@ -482,7 +482,7 @@ void AssetScriptingInterface::putAsset(const ScriptValue& options, const ScriptV
     }
 
     prepared->fail(completed);
-    prepared->then([=](QVariantMap result) {
+    prepared->then([=, this](QVariantMap result) {
         Promise upload = uploadBytes(result.value("data").toByteArray());
         upload->mixin(result);
         upload->ready(uploaded);
@@ -492,7 +492,7 @@ void AssetScriptingInterface::putAsset(const ScriptValue& options, const ScriptV
     if (path.isEmpty()) {
         uploaded->then(completed);
     } else {
-        uploaded->then([=](QVariantMap result) {
+        uploaded->then([=, this](QVariantMap result) {
             QString hash = result.value("hash").toString();
             if (!AssetUtils::isValidHash(hash)) {
                 completed->reject("path mapping requested, but did not receive valid hash", result);

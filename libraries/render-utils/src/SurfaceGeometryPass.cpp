@@ -177,7 +177,7 @@ void LinearDepthPass::run(const render::RenderContextPointer& renderContext, con
     outputs.edit2() = linearDepthTexture;
     outputs.edit3() = halfLinearDepthTexture;
     outputs.edit4() = halfNormalTexture;
-   
+
     auto linearDepthPipeline = getLinearDepthPipeline();
     auto downsamplePipeline = getDownsamplePipeline();
 
@@ -185,7 +185,7 @@ void LinearDepthPass::run(const render::RenderContextPointer& renderContext, con
     auto halfViewport = depthViewport >> 1;
     float clearLinearDepth = args->getViewFrustum().getFarClip() * 2.0f;
 
-    gpu::doInBatch("LinearDepthPass::run", args->_context, [=](gpu::Batch& batch) {
+    gpu::doInBatch("LinearDepthPass::run", args->_context, [=, this](gpu::Batch& batch) {
         PROFILE_RANGE_BATCH(batch, "LinearDepthPass");
         _gpuTimer->begin(batch);
 
@@ -399,7 +399,6 @@ void SurfaceGeometryPass::configure(const Config& config) {
     auto filterRadius = (getResolutionLevel() > 0 ? config.diffuseFilterScale / 2.0f : config.diffuseFilterScale);
     _diffusePass.getParameters()->setFilterRadiusScale(filterRadius);
     _diffusePass.getParameters()->setDepthThreshold(config.diffuseDepthThreshold);
-    
 }
 
 
@@ -444,7 +443,7 @@ void SurfaceGeometryPass::run(const render::RenderContextPointer& renderContext,
 
     auto lowCurvatureFramebuffer = _surfaceGeometryFramebuffer->getLowCurvatureFramebuffer();
     auto lowCurvatureTexture = _surfaceGeometryFramebuffer->getLowCurvatureTexture();
- 
+
     auto blurringFramebuffer = _surfaceGeometryFramebuffer->getBlurringFramebuffer();
     auto blurringTexture = _surfaceGeometryFramebuffer->getBlurringTexture();
 
@@ -463,8 +462,8 @@ void SurfaceGeometryPass::run(const render::RenderContextPointer& renderContext,
     _diffusePass.getParameters()->setDepthPerspective(args->getViewFrustum().getProjection()[1][1]);
     _diffusePass.getParameters()->setLinearDepthPosFar(args->getViewFrustum().getFarClip());
 
- 
-    gpu::doInBatch("SurfaceGeometryPass::run", args->_context, [=](gpu::Batch& batch) {
+
+    gpu::doInBatch("SurfaceGeometryPass::run", args->_context, [=, this](gpu::Batch& batch) {
         _gpuTimer->begin(batch);
         batch.enableStereo(false);
 
@@ -478,7 +477,7 @@ void SurfaceGeometryPass::run(const render::RenderContextPointer& renderContext,
         batch.setUniformBuffer(ru::Buffer::DeferredFrameTransform, frameTransform->getFrameTransformBuffer());
         batch.setUniformBuffer(ru::Buffer::SurfaceGeometryParams, _parametersBuffer);
         batch.setFramebuffer(curvatureFramebuffer);
-        // We can avoid the clear by drawing the same clear vallue from the makeCurvature shader. same performances or no worse     
+        // We can avoid the clear by drawing the same clear vallue from the makeCurvature shader. same performances or no worse
 #ifdef USE_STENCIL_TEST
         // Except if stenciling out
         batch.clearColorFramebuffer(gpu::Framebuffer::BUFFER_COLOR0, glm::vec4(0.0));
@@ -499,7 +498,7 @@ void SurfaceGeometryPass::run(const render::RenderContextPointer& renderContext,
 
         batch.setResourceTexture(ru::Texture::BlurDepth, linearDepthTexture);
 
-        batch.setFramebuffer(blurringFramebuffer);     
+        batch.setFramebuffer(blurringFramebuffer);
         batch.setPipeline(diffuseVPipeline);
         batch.setResourceTexture(ru::Texture::BlurSource, curvatureTexture);
         batch.draw(gpu::TRIANGLE_STRIP, 4);
@@ -509,7 +508,7 @@ void SurfaceGeometryPass::run(const render::RenderContextPointer& renderContext,
         batch.setResourceTexture(ru::Texture::BlurSource, blurringTexture);
         batch.draw(gpu::TRIANGLE_STRIP, 4);
 
-        batch.setFramebuffer(blurringFramebuffer);     
+        batch.setFramebuffer(blurringFramebuffer);
         batch.setPipeline(diffuseVPipeline);
         batch.setResourceTexture(ru::Texture::BlurSource, curvatureTexture);
         batch.draw(gpu::TRIANGLE_STRIP, 4);

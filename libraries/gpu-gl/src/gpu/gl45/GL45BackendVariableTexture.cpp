@@ -281,7 +281,7 @@ void GL45ResourceTexture::populateTransferQueue(TransferQueue& pendingTransfers)
         }
 
         // queue up the sampler and populated mip change for after the transfer has completed
-        pendingTransfers.emplace(new TransferJob(sourceMip, [=] {
+        pendingTransfers.emplace(new TransferJob(sourceMip, [=, this] {
             _populatedMip = sourceMip;
             incrementPopulatedSize(_gpuObject.evalMipSize(sourceMip));
             sanityCheck();

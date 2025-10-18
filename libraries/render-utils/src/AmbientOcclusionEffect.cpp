@@ -674,7 +674,7 @@ void AmbientOcclusionEffect::run(const render::RenderContextPointer& renderConte
         _frameId = (_frameId + 1) % (SSAO_RANDOM_SAMPLE_COUNT);
     }
 
-    gpu::doInBatch("AmbientOcclusionEffect::run", args->_context, [=](gpu::Batch& batch) {
+    gpu::doInBatch("AmbientOcclusionEffect::run", args->_context, [=, this](gpu::Batch& batch) {
 		PROFILE_RANGE_BATCH(batch, "SSAO");
 		batch.enableStereo(false);
 
@@ -880,7 +880,7 @@ void DebugAmbientOcclusion::run(const render::RenderContextPointer& renderContex
     const auto& frameTransform = inputs.get0();
     const auto& linearDepthFramebuffer = inputs.get2();
     const auto& ambientOcclusionUniforms = inputs.get3();
-    
+
     // Skip if AO is not started yet
     if (!ambientOcclusionUniforms._buffer) {
         return;
@@ -891,22 +891,22 @@ void DebugAmbientOcclusion::run(const render::RenderContextPointer& renderContex
     auto occlusionViewport = sourceViewport;
 
     auto resolutionLevel = ambientOcclusionUniforms->getResolutionLevel();
-    
+
     if (resolutionLevel > 0) {
         fullResDepthTexture = linearDepthFramebuffer->getHalfLinearDepthTexture();
         occlusionViewport = occlusionViewport >> ambientOcclusionUniforms->getResolutionLevel();
     }
 
     auto framebufferSize = glm::ivec2(fullResDepthTexture->getDimensions());
-    
+
     float sMin = occlusionViewport.x / (float)framebufferSize.x;
     float sWidth = occlusionViewport.z / (float)framebufferSize.x;
     float tMin = occlusionViewport.y / (float)framebufferSize.y;
     float tHeight = occlusionViewport.w / (float)framebufferSize.y;
-    
+
     auto debugPipeline = getDebugPipeline();
-    
-    gpu::doInBatch("DebugAmbientOcclusion::run", args->_context, [=](gpu::Batch& batch) {
+
+    gpu::doInBatch("DebugAmbientOcclusion::run", args->_context, [=, this](gpu::Batch& batch) {
         batch.enableStereo(false);
 
         batch.setViewportTransform(sourceViewport);
@@ -921,7 +921,7 @@ void DebugAmbientOcclusion::run(const render::RenderContextPointer& renderContex
         batch.setUniformBuffer(render_utils::slot::buffer::DeferredFrameTransform, frameTransform->getFrameTransformBuffer());
         batch.setUniformBuffer(render_utils::slot::buffer::SsaoParams, ambientOcclusionUniforms);
         batch.setUniformBuffer(render_utils::slot::buffer::SsaoDebugParams, _parametersBuffer);
-        
+
         batch.setPipeline(debugPipeline);
         batch.setResourceTexture(render_utils::slot::texture::SsaoDepth, fullResDepthTexture);
         batch.draw(gpu::TRIANGLE_STRIP, 4);

@@ -251,7 +251,7 @@ TransferJob::TransferJob(const Texture& texture,
     }
 
     // Buffering can invoke disk IO, so it should be off of the main and render threads
-    _bufferingLambda = [=](const TexturePointer& texture) {
+    _bufferingLambda = [=, this](const TexturePointer& texture) {
         auto mipStorage = texture->accessStoredMipFace(sourceMip, face);
         if (mipStorage) {
             _mipData = mipStorage->createView(_transferSize, _transferOffset);
@@ -261,7 +261,7 @@ TransferJob::TransferJob(const Texture& texture,
         }
     };
 
-    _transferLambda = [=](const TexturePointer& texture) {
+    _transferLambda = [=, this](const TexturePointer& texture) {
         if (_mipData) {
             auto gltexture = Backend::getGPUObject<GLTexture>(*texture);
             gltexture->copyMipFaceLinesFromTexture(targetMip, face, transferDimensions, lineOffset, internalFormat, format,

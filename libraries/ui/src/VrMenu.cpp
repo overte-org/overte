@@ -29,10 +29,10 @@ MenuUserData::MenuUserData(QAction* action, QObject* qmlObject, QObject* qmlPare
     qmlObject->setObjectName(uuid.toString());
     // Make sure we can find it again in the future
     updateQmlItemFromAction();
-    _changedConnection = QObject::connect(action, &QAction::changed, [=] {
+    _changedConnection = QObject::connect(action, &QAction::changed, [=, this] {
         updateQmlItemFromAction();
     });
-    _shutdownConnection = QObject::connect(qApp, &QCoreApplication::aboutToQuit, [=] {
+    _shutdownConnection = QObject::connect(qApp, &QCoreApplication::aboutToQuit, [=, this] {
         QObject::disconnect(_changedConnection);
     });
 

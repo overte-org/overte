@@ -279,7 +279,7 @@ void KeyboardMouseDevice::touchUpdateEvent(const QTouchEvent* event) {
 }
 
 controller::Input KeyboardMouseDevice::InputDevice::makeInput(Qt::Key code) const {
-    auto shortCode = (uint16_t)(code & KEYBOARD_MASK);
+    auto shortCode = static_cast<uint16_t>(code) & static_cast<uint16_t>(KEYBOARD_MASK);
     if (shortCode != code) {
        shortCode |= 0x0800; // add this bit instead of the way Qt::Key add a bit on the 3rd byte for some keys
     }

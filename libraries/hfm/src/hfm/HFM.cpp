@@ -125,7 +125,7 @@ bool HFMModel::convexHullContains(const glm::vec3& point) const {
         return false;
     }
 
-    auto checkEachPrimitive = [=](HFMMesh& mesh, QVector<int> indices, int primitiveSize) -> bool {
+    auto checkEachPrimitive = [=, this](HFMMesh& mesh, QVector<int> indices, int primitiveSize) -> bool {
         // Check whether the point is "behind" all the primitives.
         // But first must transform from model-frame into mesh-frame
         glm::vec3 transformedPoint = glm::vec3(glm::inverse(offset * mesh.modelTransform) * glm::vec4(point, 1.0f));

@@ -12,6 +12,7 @@
 #ifndef hifi_model_Material_h
 #define hifi_model_Material_h
 
+#include <cstddef>
 #include <mutex>
 #include <bitset>
 #include <unordered_map>
@@ -218,8 +219,8 @@ public:
     void setScatteringMap(bool value) { _flags.set(SCATTERING_MAP_BIT, value); }
     bool isScatteringMap() const { return _flags[SCATTERING_MAP_BIT]; }
 
-    void setMapChannel(MapChannel channel, bool value) { _flags.set(EMISSIVE_MAP_BIT + channel, value); }
-    bool isMapChannel(MapChannel channel) const { return _flags[EMISSIVE_MAP_BIT + channel]; }
+    void setMapChannel(MapChannel channel, bool value) { _flags.set(static_cast<size_t>(EMISSIVE_MAP_BIT) + static_cast<size_t>(channel), value); }
+    bool isMapChannel(MapChannel channel) const { return _flags[static_cast<size_t>(EMISSIVE_MAP_BIT) + static_cast<size_t>(channel)]; }
 
 
     // Translucency and Opacity Heuristics are combining several flags:

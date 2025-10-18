@@ -62,7 +62,7 @@ protected:
 
 class CubicHermiteSplineFunctorWithArcLength : public CubicHermiteSplineFunctor {
 public:
-    enum Constants { NUM_SUBDIVISIONS = 15 };
+    static const int NUM_SUBDIVISIONS = 15;
 
     CubicHermiteSplineFunctorWithArcLength() : CubicHermiteSplineFunctor() {
         memset(_values, 0, sizeof(float) * (NUM_SUBDIVISIONS + 1));
