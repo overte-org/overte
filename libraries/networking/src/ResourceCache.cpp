@@ -567,6 +567,7 @@ static int requestID = 0;
 
 Resource::Resource(const Resource& other) :
     QObject(),
+    std::enable_shared_from_this<Resource>(),
     _url(other._url),
     _effectiveBaseURL(other._effectiveBaseURL),
     _activeUrl(other._activeUrl),
@@ -724,8 +725,8 @@ void Resource::attemptRequest() {
     }
 
     auto self = shared_from_this();
-    if (shared_from_this()) {
-        ResourceCache::attemptRequest(shared_from_this());
+    if (self) {
+        ResourceCache::attemptRequest(self);
     }
 }
 
