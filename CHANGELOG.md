@@ -14,7 +14,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 ## [2025.10.1] 2025.10.16
 
 ### Fixes
-- Fixed a regression where AppImages failed crashed on opening web views on Arch Linux and similar (PR1840)
+- Fixed a regression where AppImages crashed on opening web views on Arch Linux and similar (PR1840)
 - Fixed OpenXR not working on NixOS due to missing OpenXR loader (PR1833)
 - Fixed Debian and Ubuntu server packages breaking when uninstalling and reinstalling without restart (PR1826)
 - Fixed Draco errors being ignored (PR1816)
