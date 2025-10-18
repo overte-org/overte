@@ -151,7 +151,7 @@ void RecordingScriptingInterface::setPlayerAudioOffset(float audioOffset) {
 
 void RecordingScriptingInterface::setPlayerTime(float time) {
     if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "setPlayerTime", Q_ARG(float, time));
+        BLOCKING_INVOKE_METHOD(this, "setPlayerTime", Q_GENERIC_ARG(float, time));
         return;
     }
 

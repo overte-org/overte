@@ -29,6 +29,8 @@
 #include <GLTFSerializer.h>
 #include <model-baker/Baker.h>
 
+#include "shared/QtHelpers.h"
+
 Q_LOGGING_CATEGORY(trace_resource_parse_geometry, "trace.resource.parse.geometry")
 
 class GeometryExtra {
@@ -68,6 +70,15 @@ namespace std {
     };
 
     template <>
+    struct hash<hifi::VariantMultiHash> {
+        size_t operator()(const hifi::VariantMultiHash& a) const {
+            QVariantHasher hasher;
+            // QT6TODO: check with profiler if this is not causing performance problems
+            return hasher.hash(qMultiHashToQVariant(a));
+        }
+    };
+
+    template <>
     struct hash<QUrl> {
         size_t operator()(const QUrl& a) const {
             return qHash(a);
@@ -100,6 +111,7 @@ private:
     ModelLoader _modelLoader;
     QWeakPointer<Resource> _resource;
     QUrl _url;
+    // QT6TODO: I'm not sure if _mapping should be QHash or QMultiHash
     GeometryMappingPair _mapping;
     QByteArray _data;
     bool _combineParts;
@@ -140,9 +152,9 @@ void GeometryReader::run() {
         }
 
         HFMModel::Pointer hfmModel;
-        QMultiHash<QString, QVariant> serializerMapping = _mapping.second;
-        serializerMapping.replace("combineParts",_combineParts);
-        serializerMapping.replace("deduplicateIndices", true);
+        hifi::VariantMultiHash serializerMapping = _mapping.second;
+        serializerMapping["combineParts"] = _combineParts;
+        serializerMapping["deduplicateIndices"] = true;
 
         if (_url.path().toLower().endsWith(".gz")) {
             QByteArray uncompressedData;

@@ -69,7 +69,8 @@ class Overte(ConanFile):
         self.requires("openxr/1.1.46@overte/stable")
         self.requires("opus/1.4")
         self.requires("polyvox/0.2.1@overte/stable") # FIXME: update to overte-maintained version
-        self.requires("quazip/1.4")
+        # QT6TODO
+        #self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.8")
         self.requires("spirv-cross/1.3.268.0")
@@ -133,8 +134,8 @@ class Overte(ConanFile):
             if self.settings.compiler == "gcc":
                 self.output.status("GCC compiler detected, setting default flags.")
                 tc.cache_variables.update({
-                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-Og -ggdb3",
-                    "CMAKE_C_FLAGS_DEBUG_INIT": "-Og -ggdb3",
+                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-O0 -ggdb3",
+                    "CMAKE_C_FLAGS_DEBUG_INIT": "-O0 -ggdb3",
                     "CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -ggdb2",
                     "CMAKE_C_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -ggdb2",
                     "CMAKE_CXX_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
@@ -143,8 +144,8 @@ class Overte(ConanFile):
             elif self.settings.compiler == "clang":
                 self.output.status("Clang compiler detected, setting default flags.")
                 tc.cache_variables.update({
-                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-Og -g",
-                    "CMAKE_C_FLAGS_DEBUG_INIT": "-Og -g",
+                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-O0 -g",
+                    "CMAKE_C_FLAGS_DEBUG_INIT": "-O0 -g",
                     "CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -g",
                     "CMAKE_C_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -g",
                     "CMAKE_CXX_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",

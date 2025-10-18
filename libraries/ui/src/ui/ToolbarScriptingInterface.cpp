@@ -83,7 +83,7 @@ ToolbarProxy::ToolbarProxy(QObject* qmlObject, QObject* parent) : QmlWrapper(qml
 ToolbarButtonProxy* ToolbarProxy::addButton(const QVariant& properties) {
     if (QThread::currentThread() != thread()) {
         ToolbarButtonProxy* result = nullptr;
-        BLOCKING_INVOKE_METHOD(this, "addButton", Q_RETURN_ARG(ToolbarButtonProxy*, result), Q_ARG(QVariant, properties));
+        BLOCKING_INVOKE_METHOD(this, "addButton", Q_GENERIC_RETURN_ARG(ToolbarButtonProxy*, result), Q_GENERIC_ARG(QVariant, properties));
         return result;
     }
 
@@ -114,7 +114,7 @@ void ToolbarProxy::removeButton(const QVariant& name) {
 ToolbarProxy* ToolbarScriptingInterface::getToolbar(const QString& toolbarId) {
     if (QThread::currentThread() != thread()) {
         ToolbarProxy* result = nullptr;
-        BLOCKING_INVOKE_METHOD(this, "getToolbar", Q_RETURN_ARG(ToolbarProxy*, result), Q_ARG(QString, toolbarId));
+        BLOCKING_INVOKE_METHOD(this, "getToolbar", Q_GENERIC_RETURN_ARG(ToolbarProxy*, result), Q_GENERIC_ARG(QString, toolbarId));
         return result;
     }
 

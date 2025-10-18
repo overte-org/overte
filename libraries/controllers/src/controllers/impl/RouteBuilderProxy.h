@@ -376,7 +376,7 @@ class RouteBuilderProxy : public QObject {
          * @returns {RouteObject} The <code>RouteObject</code> with the pre-translation applied.
          */
         // No JSDoc example because filter not currently used.
-        Q_INVOKABLE QObject* translate(glm::vec3 translate);
+        Q_INVOKABLE QObject* translate(glm::vec<3,float,glm::packed_highp> translate);
 
         /*@jsdoc
          * Filters {@link Pose} route values to have a pre-transform applied.
@@ -385,7 +385,7 @@ class RouteBuilderProxy : public QObject {
          * @returns {RouteObject} The <code>RouteObject</code> with the pre-transform applied.
          */
         // No JSDoc example because filter not currently used.
-        Q_INVOKABLE QObject* transform(glm::mat4 transform);
+        Q_INVOKABLE QObject* transform(glm::mat<4,4,float,glm::packed_highp> transform);
 
         /*@jsdoc
          * Filters {@link Pose} route values to have a post-transform applied.
@@ -394,7 +394,7 @@ class RouteBuilderProxy : public QObject {
          * @returns {RouteObject} The <code>RouteObject</code> with the post-transform applied.
          */
         // No JSDoc example because filter not currently used.
-        Q_INVOKABLE QObject* postTransform(glm::mat4 transform);
+        Q_INVOKABLE QObject* postTransform(glm::mat<4,4,float,glm::packed_highp> transform);
 
         /*@jsdoc
          * Filters {@link Pose} route values to have a pre-rotation applied.
@@ -403,7 +403,7 @@ class RouteBuilderProxy : public QObject {
          * @returns {RouteObject} The <code>RouteObject</code> with the pre-rotation applied.
          */
         // No JSDoc example because filter not currently used.
-        Q_INVOKABLE QObject* rotate(glm::quat rotation);
+        Q_INVOKABLE QObject* rotate(glm::qua<float,glm::packed_highp> rotation);
 
         /*@jsdoc
          * Filters {@link Pose} route values to be smoothed by a low velocity filter. The filter's rotation and translation 

@@ -91,6 +91,8 @@ public:
     );
     ~Application();
 
+    bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted);
+
     /**
      * @brief Initialize everything
      *
@@ -319,7 +321,8 @@ public:
     int getMaxOctreePacketsPerSecond() const { return _maxOctreePPS; }
     bool isMissingSequenceNumbers() { return _isMissingSequenceNumbers; }
 
-    NodeToOctreeSceneStats* getOcteeSceneStats() { return _octreeProcessor->getOctreeSceneStats(); }
+    // This function returns a value only when octree processor is available.
+    std::optional<NodeToOctreeSceneStats*> getOcteeSceneStats();
 
 
     // Assets
@@ -838,7 +841,13 @@ private:
 
 
     // Events
-    QHash<int, QKeyEvent> _keysPressed;
+    class KeyEventRecord {
+    public:
+        KeyEventRecord(const int key, const QString &text) : key(key), text(text) {}
+        int key;
+        QString text;
+    };
+    QHash<int, KeyEventRecord> _keysPressed;
     TouchEvent _lastTouchEvent;
     quint64 _lastAcceptedKeyPress { 0 };
 

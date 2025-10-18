@@ -9,7 +9,7 @@
 //
 
 import QtQuick 2.5
-import QtGraphicalEffects 1.0
+import Qt5Compat.GraphicalEffects
 
 import "."
 import stylesUit 1.0
@@ -127,6 +127,8 @@ Fadable {
         propagateComposedEvents: true
         acceptedButtons: Qt.AllButtons
         enabled: window.visible
+        // QT6TODO: old style is deprecated but changing it to new one breaks window inputs somehow?
+        //function onPressed(mouse) {
         onPressed: {
             window.raise();
             mouse.accepted = false;
@@ -142,6 +144,8 @@ Fadable {
         propagateComposedEvents: true
         acceptedButtons: Qt.AllButtons
         enabled: window.visible
+        // QT6TODO: old style is deprecated but changing it to new one breaks window inputs somehow?
+        //function onPressed(mouse) {
         onPressed: {
             frame.forceActiveFocus();
             mouse.accepted = false;

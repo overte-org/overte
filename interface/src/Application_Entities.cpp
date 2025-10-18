@@ -36,6 +36,15 @@ void Application::setMaxOctreePacketsPerSecond(int maxOctreePPS) {
     }
 }
 
+std::optional<NodeToOctreeSceneStats*> Application::getOcteeSceneStats() {
+    // On start this function is sometimes called before _octreeProcessor is available.
+    if (_octreeProcessor) {
+        return _octreeProcessor->getOctreeSceneStats();
+    } else {
+        return {};
+    }
+}
+
 QVector<EntityItemID> Application::pasteEntities(const QString& entityHostType, float x, float y, float z) {
     return _entityClipboard->sendEntities(_entityEditSender.get(), getEntities()->getTree(), entityHostType, x, y, z);
 }
@@ -229,9 +238,11 @@ void Application::clearDomainOctreeDetails(bool clearAll) {
     setIsInterstitialMode(true);
 
     auto octreeServerSceneStats = getOcteeSceneStats();
-    octreeServerSceneStats->withWriteLock([&] {
-        octreeServerSceneStats->clear();
-    });
+    if (octreeServerSceneStats) {
+        octreeServerSceneStats.value()->withWriteLock([&] {
+            octreeServerSceneStats.value()->clear();
+        });
+    }
 
     // reset the model renderer
     clearAll ? getEntities()->clear() : getEntities()->clearDomainAndNonOwnedEntities();
@@ -329,16 +340,18 @@ int Application::sendNackPackets() {
 
             QSet<OCTREE_PACKET_SEQUENCE> missingSequenceNumbers;
             auto octreeServerSceneStats = getOcteeSceneStats();
-            octreeServerSceneStats->withReadLock([&] {
-                // retrieve octree scene stats of this node
-                if (octreeServerSceneStats->find(nodeUUID) == octreeServerSceneStats->end()) {
-                    return;
-                }
-                // get sequence number stats of node, prune its missing set, and make a copy of the missing set
-                SequenceNumberStats& sequenceNumberStats = (*octreeServerSceneStats)[nodeUUID].getIncomingOctreeSequenceNumberStats();
-                sequenceNumberStats.pruneMissingSet();
-                missingSequenceNumbers = sequenceNumberStats.getMissingSet();
-            });
+            if (octreeServerSceneStats) {
+                octreeServerSceneStats.value()->withReadLock([&] {
+                    // retrieve octree scene stats of this node
+                    if (octreeServerSceneStats.value()->find(nodeUUID) == octreeServerSceneStats.value()->end()) {
+                        return;
+                    }
+                    // get sequence number stats of node, prune its missing set, and make a copy of the missing set
+                    SequenceNumberStats& sequenceNumberStats = (*octreeServerSceneStats.value())[nodeUUID].getIncomingOctreeSequenceNumberStats();
+                    sequenceNumberStats.pruneMissingSet();
+                    missingSequenceNumbers = sequenceNumberStats.getMissingSet();
+                });
+            }
 
             _isMissingSequenceNumbers = (missingSequenceNumbers.size() != 0);
 

@@ -146,7 +146,7 @@ class AntialiasingConfig : public render::Job::Config {
     Q_PROPERTY(bool fxaaOnOff READ debugFXAA WRITE setDebugFXAA NOTIFY dirty)
     Q_PROPERTY(float debugShowVelocityThreshold MEMBER debugShowVelocityThreshold NOTIFY dirty)
     Q_PROPERTY(bool showCursorPixel MEMBER showCursorPixel NOTIFY dirty)
-    Q_PROPERTY(glm::vec2 debugCursorTexcoord MEMBER debugCursorTexcoord NOTIFY dirty)
+    Q_PROPERTY(glm::vec<2,float,glm::packed_highp> debugCursorTexcoord MEMBER debugCursorTexcoord NOTIFY dirty)
     Q_PROPERTY(float debugOrbZoom MEMBER debugOrbZoom NOTIFY dirty)
 
     Q_PROPERTY(bool showClosestFragment MEMBER showClosestFragment NOTIFY dirty)

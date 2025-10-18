@@ -61,7 +61,7 @@ LogDialog::LogDialog(QWidget* parent, AbstractLoggerInterface* logger) : BaseLog
         _debugPrintBox->setCheckState(Qt::Checked);
     }
     _debugPrintBox->show();
-    connect(_debugPrintBox, &QCheckBox::stateChanged, this, &LogDialog::handleDebugPrintBox);
+    connect(_debugPrintBox, &QCheckBox::checkStateChanged, this, &LogDialog::handleDebugPrintBox);
 
     _leftPad += DEBUG_CHECKBOX_WIDTH + BUTTON_MARGIN;
     _infoPrintBox = new QCheckBox("INFO", this);
@@ -70,7 +70,7 @@ LogDialog::LogDialog(QWidget* parent, AbstractLoggerInterface* logger) : BaseLog
         _infoPrintBox->setCheckState(Qt::Checked);
     }
     _infoPrintBox->show();
-    connect(_infoPrintBox, &QCheckBox::stateChanged, this, &LogDialog::handleInfoPrintBox);
+    connect(_infoPrintBox, &QCheckBox::checkStateChanged, this, &LogDialog::handleInfoPrintBox);
 
     _leftPad += INFO_CHECKBOX_WIDTH + BUTTON_MARGIN;
     _criticalPrintBox = new QCheckBox("CRITICAL", this);
@@ -79,7 +79,7 @@ LogDialog::LogDialog(QWidget* parent, AbstractLoggerInterface* logger) : BaseLog
         _criticalPrintBox->setCheckState(Qt::Checked);
     }
     _criticalPrintBox->show();
-    connect(_criticalPrintBox, &QCheckBox::stateChanged, this, &LogDialog::handleCriticalPrintBox);
+    connect(_criticalPrintBox, &QCheckBox::checkStateChanged, this, &LogDialog::handleCriticalPrintBox);
 
     _leftPad += CRITICAL_CHECKBOX_WIDTH + BUTTON_MARGIN;
     _warningPrintBox = new QCheckBox("WARNING", this);
@@ -88,7 +88,7 @@ LogDialog::LogDialog(QWidget* parent, AbstractLoggerInterface* logger) : BaseLog
         _warningPrintBox->setCheckState(Qt::Checked);
     }
     _warningPrintBox->show();
-    connect(_warningPrintBox, &QCheckBox::stateChanged, this, &LogDialog::handleWarningPrintBox);
+    connect(_warningPrintBox, &QCheckBox::checkStateChanged, this, &LogDialog::handleWarningPrintBox);
 
     _leftPad += WARNING_CHECKBOX_WIDTH + BUTTON_MARGIN;
     _suppressPrintBox = new QCheckBox("SUPPRESS", this);
@@ -97,7 +97,7 @@ LogDialog::LogDialog(QWidget* parent, AbstractLoggerInterface* logger) : BaseLog
         _suppressPrintBox->setCheckState(Qt::Checked);
     }
     _suppressPrintBox->show();
-    connect(_suppressPrintBox, &QCheckBox::stateChanged, this, &LogDialog::handleSuppressPrintBox);
+    connect(_suppressPrintBox, &QCheckBox::checkStateChanged, this, &LogDialog::handleSuppressPrintBox);
 
     _leftPad += SUPPRESS_CHECKBOX_WIDTH + BUTTON_MARGIN;
     _fatalPrintBox = new QCheckBox("FATAL", this);
@@ -106,7 +106,7 @@ LogDialog::LogDialog(QWidget* parent, AbstractLoggerInterface* logger) : BaseLog
         _fatalPrintBox->setCheckState(Qt::Checked);
     }
     _fatalPrintBox->show();
-    connect(_fatalPrintBox, &QCheckBox::stateChanged, this, &LogDialog::handleFatalPrintBox);
+    connect(_fatalPrintBox, &QCheckBox::checkStateChanged, this, &LogDialog::handleFatalPrintBox);
 
     _leftPad += FATAL_CHECKBOX_WIDTH + BUTTON_MARGIN;
     _unknownPrintBox = new QCheckBox("UNKNOWN", this);
@@ -115,7 +115,7 @@ LogDialog::LogDialog(QWidget* parent, AbstractLoggerInterface* logger) : BaseLog
         _unknownPrintBox->setCheckState(Qt::Checked);
     }
     _unknownPrintBox->show();
-    connect(_unknownPrintBox, &QCheckBox::stateChanged, this, &LogDialog::handleUnknownPrintBox);
+    connect(_unknownPrintBox, &QCheckBox::checkStateChanged, this, &LogDialog::handleUnknownPrintBox);
 
     _leftPad = MARGIN_LEFT;
     _filterDropdown = new QComboBox(this);
@@ -156,7 +156,7 @@ LogDialog::LogDialog(QWidget* parent, AbstractLoggerInterface* logger) : BaseLog
 #ifdef Q_OS_WIN
     connect(_keepOnTopBox, &QCheckBox::stateChanged, qApp, &Application::recreateLogWindow);
 #else
-    connect(_keepOnTopBox, &QCheckBox::stateChanged, this, &LogDialog::handleKeepWindowOnTop);
+    connect(_keepOnTopBox, &QCheckBox::checkStateChanged, this, &LogDialog::handleKeepWindowOnTop);
 #endif
     _keepOnTopBox->show();
 
@@ -165,14 +165,14 @@ LogDialog::LogDialog(QWidget* parent, AbstractLoggerInterface* logger) : BaseLog
         _extraDebuggingBox->setCheckState(Qt::Checked);
     }
     _extraDebuggingBox->show();
-    connect(_extraDebuggingBox, &QCheckBox::stateChanged, this, &LogDialog::handleExtraDebuggingCheckbox);
+    connect(_extraDebuggingBox, &QCheckBox::checkStateChanged, this, &LogDialog::handleExtraDebuggingCheckbox);
     
     _showSourceDebuggingBox = new QCheckBox("Show script sources", this);
     if (_logger->showSourceDebugging()) {
         _showSourceDebuggingBox->setCheckState(Qt::Checked);
     }
     _showSourceDebuggingBox->show();
-    connect(_showSourceDebuggingBox, &QCheckBox::stateChanged, this, &LogDialog::handleShowSourceDebuggingCheckbox);
+    connect(_showSourceDebuggingBox, &QCheckBox::checkStateChanged, this, &LogDialog::handleShowSourceDebuggingCheckbox);
 
     _allLogsButton = new QPushButton("All Messages", this);
     // set object name for css styling

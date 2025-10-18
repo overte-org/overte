@@ -33,6 +33,7 @@
 #include "NetworkingConstants.h"
 #include "UserActivityLogger.h"
 #include "udt/PacketHeaders.h"
+#include <shared/QtHelpers.h>
 
 const QString REDIRECT_HIFI_ADDRESS = NetworkingConstants::REDIRECT_HIFI_ADDRESS;
 const QString ADDRESS_MANAGER_SETTINGS_GROUP = "AddressManager";
@@ -284,7 +285,7 @@ bool AddressManager::handleUrl(const QUrl& lookupUrlIn, LookupTrigger trigger, c
 
         if (lookupUrl.host().isEmpty()) {
             // this was in the form hifi:/somewhere or hifi:somewhere.  Fix it by making it hifi://somewhere
-            static const QRegExp HIFI_SCHEME_REGEX = QRegExp(URL_SCHEME_OVERTE + ":\\/{0,2}", Qt::CaseInsensitive);
+            static const QRegularExpression HIFI_SCHEME_REGEX = QRegularExpression(URL_SCHEME_OVERTE + ":\\/{0,2}", QRegularExpression::CaseInsensitiveOption);
             lookupUrl = QUrl(lookupUrl.toString().replace(HIFI_SCHEME_REGEX, URL_SCHEME_OVERTE + "://"));
         }
 

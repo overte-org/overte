@@ -20,6 +20,7 @@
 
 #include <QtCore/QDataStream>
 #include <QtCore/QMetaMethod>
+#include <QtCore5Compat/QRegExp>
 
 #include <AccountManager.h>
 #include <Assignment.h>
@@ -340,7 +341,7 @@ void DomainGatekeeper::updateNodePermissions() {
         // authentication and verifiedUsername is only set once they user's key has been confirmed.
         QString verifiedUsername = node->getPermissions().getVerifiedUserName();
         QString verifiedDomainUserName = node->getPermissions().getVerifiedDomainUserName();
-        NodePermissions userPerms(NodePermissionsKey(verifiedUsername, 0));
+        NodePermissions userPerms(NodePermissionsKey(verifiedUsername, QUuid::fromUInt128(0)));
 
         if (node->getPermissions().isAssignment) {
             // this node is an assignment-client
@@ -469,7 +470,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     auto limitedNodeList = DependencyManager::get<LimitedNodeList>();
 
     // start with empty permissions
-    NodePermissions userPerms(NodePermissionsKey(username, 0));
+    NodePermissions userPerms(NodePermissionsKey(username, QUuid::fromUInt128(0)));
     userPerms.setAll(false);
 
     // check if this user is on our local machine - if this is true set permissions to those for a "localhost" connection
@@ -1094,11 +1095,11 @@ void DomainGatekeeper::getIsGroupMemberJSONCallback(QNetworkReply* requestReply)
         QJsonObject groups = data["groups"].toObject();
         QString username = data["username"].toString();
         _server->_settingsManager.clearGroupMemberships(username);
-        foreach (auto groupID, groups.keys()) {
+        for (const auto &groupID: groups.keys()) {
             QJsonObject group = groups[groupID].toObject();
             QJsonObject rank = group["rank"].toObject();
             QUuid rankID = QUuid(rank["id"].toString());
-            _server->_settingsManager.recordGroupMembership(username, groupID, rankID);
+            _server->_settingsManager.recordGroupMembership(username, QUuid::fromString(groupID), rankID);
         }
     } else {
         qDebug() << "getIsGroupMember api call returned:" << QJsonDocument(jsonObject).toJson(QJsonDocument::Compact);
