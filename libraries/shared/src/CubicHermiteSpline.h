@@ -12,6 +12,8 @@
 
 #include "GLMHelpers.h"
 
+#include <cmath>
+
 class CubicHermiteSplineFunctor {
 public:
     CubicHermiteSplineFunctor() : _p0(), _m0(), _p1(), _m1() {}
@@ -95,7 +97,7 @@ public:
         int prevIndex = std::min(std::max(0, (int)glm::floor(index)), (int)NUM_SUBDIVISIONS);
         int nextIndex = std::min(std::max(0, (int)glm::ceil(index)), (int)NUM_SUBDIVISIONS);
         float alpha = glm::fract(index);
-        return lerp(_values[prevIndex], _values[nextIndex], alpha);
+        return std::lerp(_values[prevIndex], _values[nextIndex], alpha);
     }
 
     // given an arcLength compute the spline parameter (0..1) that cooresponds to that arcLength.
@@ -110,7 +112,7 @@ public:
         int prevIndex = std::min(std::max(0, nextIndex - 1), (int)NUM_SUBDIVISIONS);
         float alpha = glm::clamp((s - _values[prevIndex]) / (_values[nextIndex] - _values[prevIndex]), 0.0f, 1.0f);
         const float DELTA = 1.0f / NUM_SUBDIVISIONS;
-        return lerp(prevIndex * DELTA, nextIndex * DELTA, alpha);
+        return std::lerp(prevIndex * DELTA, nextIndex * DELTA, alpha);
     }
 protected:
     float _values[NUM_SUBDIVISIONS + 1];

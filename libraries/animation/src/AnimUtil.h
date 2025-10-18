@@ -13,6 +13,8 @@
 
 #include "AnimNode.h"
 
+#include <cmath>
+
 // this is where the magic happens
 void blend(size_t numPoses, const AnimPose* a, const AnimPose* b, float alpha, AnimPose* result);
 
@@ -113,7 +115,7 @@ public:
         const float poseY = pose.trans().y;
         AnimPose newPose = _prevPose;
         newPose.trans() = lerp(_prevPose.trans(), pose.trans(), horizontalTranslationAlpha);
-        newPose.trans().y = lerp(_prevPose.trans().y, poseY, verticalTranslationAlpha);
+        newPose.trans().y = std::lerp(_prevPose.trans().y, poseY, verticalTranslationAlpha);
         newPose.rot() = safeLerp(_prevPose.rot(), pose.rot(), rotationAlpha);
 
         _prevPose = newPose;
