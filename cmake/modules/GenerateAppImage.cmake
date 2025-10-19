@@ -61,7 +61,7 @@ execute_process(
       # https://github.com/overte-org/overte/issues/1835
       # https://github.com/probonopd/linuxdeployqt/issues/35
       # https://github.com/probonopd/linuxdeployqt/issues/35#issuecomment-382994446
-      LINUXDEPLOY_EXCLUDED_LIBRARIES=libnss3.so,libnssutil3.so
+      LINUXDEPLOY_EXCLUDED_LIBRARIES=libnss3.so\;libnssutil3.so
     ${LINUXDEPLOY_EXECUTABLE}
     --appdir=${CPACK_TEMPORARY_DIRECTORY}
     --executable=${CPACK_PACKAGE_DIRECTORY}/interface/interface
