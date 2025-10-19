@@ -11,6 +11,12 @@ like documentation or CI pipeline.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2025.10.1.1] 2025.10.19
+
+### Fixes
+- Actually fixed AppImages crashing on opening web views on Arch Linux and similar this time (PR1859)
+
+
 ## [2025.10.1] 2025.10.16
 
 ### Fixes
