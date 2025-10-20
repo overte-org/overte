@@ -516,6 +516,11 @@ protected:
     /// Return true if the resource will be retried
     virtual bool handleFailedRequest(ResourceRequest::Result result);
 
+    // Safeguard for debugging.
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+    std::atomic<bool> _wasDeleted{ false };
+#endif
+
     QUrl _url;
     QUrl _effectiveBaseURL { _url };
     QUrl _activeUrl;

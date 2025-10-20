@@ -591,6 +591,9 @@ Resource::Resource(const QUrl& url) :
 }
 
 Resource::~Resource() {
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+    _wasDeleted = true;
+#endif
     Q_ASSERT(QThread::currentThread() == thread());
     if (_request) {
         _request->disconnect(this);
@@ -667,6 +670,13 @@ void Resource::allReferencesCleared() {
             _cache->resetTotalResourceCounter();
         }
 
+        if (_request) {
+            _request->disconnect(this);
+            _request->deleteLater();
+            _request = nullptr;
+            ResourceCache::requestCompleted(weak_from_this());
+        }
+        disconnect();
         deleteLater();
     }
 }
@@ -718,8 +728,9 @@ void Resource::attemptRequest() {
             << "- retrying asset load - attempt" << _attempts << " of " << MAX_ATTEMPTS;
     }
 
-    auto self = shared_from_this();
+    auto self = weak_from_this().lock();
     if (self) {
+        Q_ASSERT(!_wasDeleted);
         ResourceCache::attemptRequest(self);
     }
 }
