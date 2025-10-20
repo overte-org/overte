@@ -74,9 +74,10 @@ AudioData::AudioData(uint32_t numSamples, uint32_t numChannels, const AudioSampl
 {}
 
 void Sound::downloadFinished(const QByteArray& data) {
-    auto sharedSoundPointer = shared_from_this();
+    auto sharedSoundPointer = weak_from_this().lock();
 
     if (!sharedSoundPointer) {
+        Q_ASSERT(!_wasDeleted);
         soundProcessError(301, "Sound object has gone out of scope");
         return;
     }
