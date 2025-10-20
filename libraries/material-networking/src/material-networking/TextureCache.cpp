@@ -292,9 +292,6 @@ std::pair<gpu::TexturePointer, glm::ivec2> TextureCache::getTextureByHash(const 
     {
         std::unique_lock<std::mutex> lock(_texturesByHashesMutex);
         weakPointer = _texturesByHashes[hash];
-        if (weakPointer.first.lock()) {
-            Q_ASSERT(!weakPointer.first.lock()->wasDeleted);
-        }
     }
     return { weakPointer.first.lock(), weakPointer.second };
 }
@@ -302,7 +299,6 @@ std::pair<gpu::TexturePointer, glm::ivec2> TextureCache::getTextureByHash(const 
 std::pair<gpu::TexturePointer, glm::ivec2> TextureCache::cacheTextureByHash(const std::string& hash, const std::pair<gpu::TexturePointer, glm::ivec2>& textureAndSize) {
     std::pair<gpu::TexturePointer, glm::ivec2> result;
     {
-        Q_ASSERT(!textureAndSize.first->wasDeleted);
         std::unique_lock<std::mutex> lock(_texturesByHashesMutex);
         auto& value = _texturesByHashes[hash];
         result = { value.first.lock(), value.second };
@@ -1117,8 +1113,9 @@ void NetworkTexture::loadMetaContent(const QByteArray& content) {
                 _currentlyLoadingResourceType = ResourceType::KTX;
                 _activeUrl = _activeUrl.resolved(url);
                 auto textureCache = DependencyManager::get<TextureCache>();
-                auto self = shared_from_this();
+                auto self = weak_from_this().lock();
                 if (!self) {
+                    Q_ASSERT(!_wasDeleted);
                     return;
                 }
                 QMetaObject::invokeMethod(this, "attemptRequest", Qt::QueuedConnection);
