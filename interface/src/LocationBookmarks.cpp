@@ -100,7 +100,7 @@ void LocationBookmarks::addBookmark() {
 
     ModalDialogListener* dlg = OffscreenUi::getTextAsync(OffscreenUi::ICON_PLACEMARK, "Bookmark Location", "Name", QString());
 
-    connect(dlg, &ModalDialogListener::response, this, [=] (QVariant response) {
+    connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant response) {
         disconnect(dlg, &ModalDialogListener::response, this, nullptr);
         auto bookmarkName = response.toString();
 

@@ -312,7 +312,7 @@ MyAvatar::MyAvatar(QThread* thread) :
 
     auto player = DependencyManager::get<Deck>();
     auto recorder = DependencyManager::get<Recorder>();
-    connect(player.data(), &Deck::playbackStateChanged, [=] {
+    connect(player.data(), &Deck::playbackStateChanged, [=, this] {
         bool isPlaying = player->isPlaying();
         if (isPlaying) {
             auto recordingInterface = DependencyManager::get<RecordingScriptingInterface>();
@@ -335,7 +335,7 @@ MyAvatar::MyAvatar(QThread* thread) :
         _skeletonModel->getRig().setEnableAnimations(!isPlaying);
     });
 
-    connect(recorder.data(), &Recorder::recordingStateChanged, [=] {
+    connect(recorder.data(), &Recorder::recordingStateChanged, [=, this] {
         if (recorder->isRecording()) {
             createRecordingIDs();
             setRecordingBasis();
@@ -345,7 +345,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     });
 
     static const recording::FrameType AVATAR_FRAME_TYPE = recording::Frame::registerFrameType(AvatarData::FRAME_NAME);
-    Frame::registerFrameHandler(AVATAR_FRAME_TYPE, [=](Frame::ConstPointer frame) {
+    Frame::registerFrameHandler(AVATAR_FRAME_TYPE, [=, this](Frame::ConstPointer frame) {
         static AvatarData dummyAvatar;
         AvatarData::fromFrame(frame->data, dummyAvatar);
         if (getRecordingBasis()) {

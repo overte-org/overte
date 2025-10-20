@@ -344,7 +344,7 @@ AudioClient::AudioClient() {
 
     connect(&_receivedAudioStream, &MixedProcessedAudioStream::processSamples,
 	    this, &AudioClient::processReceivedSamples, Qt::DirectConnection);
-    connect(this, &AudioClient::changeDevice, this, [=](const HifiAudioDeviceInfo& outputDeviceInfo) {
+    connect(this, &AudioClient::changeDevice, this, [=, this](const HifiAudioDeviceInfo& outputDeviceInfo) {
         qCDebug(audioclient)<< "got AudioClient::changeDevice signal, about to call switchOutputToAudioDevice() outputDeviceInfo: ["<< outputDeviceInfo.deviceName() << "]";
         switchOutputToAudioDevice(outputDeviceInfo);
     });
@@ -359,8 +359,8 @@ AudioClient::AudioClient() {
     // start a thread to detect any device changes
     _checkDevicesTimer = new QTimer(this);
     const unsigned long DEVICE_CHECK_INTERVAL_MSECS = 2 * 1000;
-    connect(_checkDevicesTimer, &QTimer::timeout, this, [=] {
-        QtConcurrent::run(QThreadPool::globalInstance(), [=] {
+    connect(_checkDevicesTimer, &QTimer::timeout, this, [=, this] {
+        QtConcurrent::run(QThreadPool::globalInstance(), [=, this] {
             checkDevices();
             // On some systems (Ubuntu) checking all the audio devices can take more than 2 seconds.  To
             // avoid consuming all of the thread pool, don't start the check interval until the previous

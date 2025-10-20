@@ -339,7 +339,7 @@ void Application::confirmConnectWithoutAvatarEntities() {
     _confirmConnectWithoutAvatarEntitiesDialog = OffscreenUi::asyncQuestion("Continue Without Wearables", continueMessage,
         QMessageBox::Yes | QMessageBox::No);
     if (_confirmConnectWithoutAvatarEntitiesDialog->getDialogItem()) {
-        QObject::connect(_confirmConnectWithoutAvatarEntitiesDialog, &ModalDialogListener::response, this, [=](QVariant answer) {
+        QObject::connect(_confirmConnectWithoutAvatarEntitiesDialog, &ModalDialogListener::response, this, [=, this](QVariant answer) {
             QObject::disconnect(_confirmConnectWithoutAvatarEntitiesDialog, &ModalDialogListener::response, this, nullptr);
             _confirmConnectWithoutAvatarEntitiesDialog = nullptr;
             bool shouldConnect = (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes);
@@ -490,7 +490,7 @@ void Application::loadDialog() {
     ModalDialogListener* dlg = OffscreenUi::getOpenFileNameAsync(_glWidget, tr("Open Script"),
                                                                  getPreviousScriptLocation(),
                                                                  tr("JavaScript Files (*.js)"));
-    connect(dlg, &ModalDialogListener::response, this, [=] (QVariant answer) {
+    connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant answer) {
         disconnect(dlg, &ModalDialogListener::response, this, nullptr);
         const QString& response = answer.toString();
         if (!response.isEmpty() && QFile(response).exists()) {
@@ -502,7 +502,7 @@ void Application::loadDialog() {
 
 void Application::loadScriptURLDialog() const {
     ModalDialogListener* dlg = OffscreenUi::getTextAsync(OffscreenUi::ICON_NONE, "Open and Run Script", "Script URL");
-    connect(dlg, &ModalDialogListener::response, this, [=] (QVariant response) {
+    connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant response) {
         disconnect(dlg, &ModalDialogListener::response, this, nullptr);
         const QString& newScript = response.toString();
         if (QUrl(newScript).scheme() == "atp") {
@@ -574,7 +574,7 @@ void Application::showAssetServerWidget(QString filePath) {
     }
     static const QUrl url { "hifi/AssetServer.qml" };
 
-    auto startUpload = [=](QQmlContext* context, QObject* newObject){
+    auto startUpload = [=, this](QQmlContext* context, QObject* newObject){
         if (!filePath.isEmpty()) {
             emit uploadRequest(filePath);
         }
@@ -982,11 +982,11 @@ bool Application::askToSetAvatarUrl(const QString& url) {
 
     bool agreeToLicense = true; // assume true
     //create set avatar callback
-    auto setAvatar = [=] (QString url, QString modelName) {
+    auto setAvatar = [=, this] (QString url, QString modelName) {
         ModalDialogListener* dlg = OffscreenUi::asyncQuestion("Set Avatar",
                                                               "Would you like to use '" + modelName + "' for your avatar?",
                                                               QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok);
-        QObject::connect(dlg, &ModalDialogListener::response, this, [=] (QVariant answer) {
+        QObject::connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant answer) {
             QObject::disconnect(dlg, &ModalDialogListener::response, this, nullptr);
 
             bool ok = (QMessageBox::Ok == static_cast<QMessageBox::StandardButton>(answer.toInt()));
@@ -1007,7 +1007,7 @@ bool Application::askToSetAvatarUrl(const QString& url) {
         ModalDialogListener* dlg = OffscreenUi::asyncQuestion("Avatar Usage License",
                                                               modelLicense + "\nDo you agree to these terms?",
                                                               QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-        QObject::connect(dlg, &ModalDialogListener::response, this, [=, &agreeToLicense] (QVariant answer) {
+        QObject::connect(dlg, &ModalDialogListener::response, this, [=, this, &agreeToLicense] (QVariant answer) {
             QObject::disconnect(dlg, &ModalDialogListener::response, this, nullptr);
 
             agreeToLicense = (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes);
@@ -1052,7 +1052,7 @@ bool Application::askToLoadScript(const QString& scriptFilenameOrURL) {
     ModalDialogListener* dlg = OffscreenUi::asyncQuestion(getWindow(), "Run Script", message,
                                                            QMessageBox::Yes | QMessageBox::No);
 
-    QObject::connect(dlg, &ModalDialogListener::response, this, [=] (QVariant answer) {
+    QObject::connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant answer) {
         const QString& fileName = scriptFilenameOrURL;
         if (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes) {
             qCDebug(interfaceapp) << "Chose to run the script: " << fileName;
@@ -1081,7 +1081,7 @@ bool Application::askToReplaceDomainContent(const QString& url) {
             ModalDialogListener* dig = OffscreenUi::asyncQuestion("Are you sure you want to replace this domain's content set?",
                                                                   infoText, QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
-            QObject::connect(dig, &ModalDialogListener::response, this, [=] (QVariant answer) {
+            QObject::connect(dig, &ModalDialogListener::response, this, [=, this] (QVariant answer) {
                 QString details;
                 if (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes) {
                     // Given confirmation, send request to domain server to replace content
