@@ -85,7 +85,7 @@ enum class FaceCap {
 
 // used to mirror left/right shapes from FaceCap.
 // i.e. right and left shapes are swapped.
-FaceCap faceMirrorMap[(int)FaceCap::BlendshapeCount] = {
+FaceCap faceMirrorMap[static_cast<int>(FaceCap::BlendshapeCount)] = {
     FaceCap::BrowsU_C,
     FaceCap::BrowsD_R,
     FaceCap::BrowsD_L,
@@ -140,7 +140,7 @@ FaceCap faceMirrorMap[(int)FaceCap::BlendshapeCount] = {
     FaceCap::TongueOut
 };
 
-static const char* STRINGS[FaceCap::BlendshapeCount] = {
+static const char* STRINGS[static_cast<int>(FaceCap::BlendshapeCount)] = {
     "BrowsU_C",
     "BrowsD_L",
     "BrowsD_R",
@@ -195,7 +195,7 @@ static const char* STRINGS[FaceCap::BlendshapeCount] = {
     "TongueOut"
 };
 
-static enum controller::StandardAxisChannel CHANNELS[FaceCap::BlendshapeCount] = {
+static enum controller::StandardAxisChannel CHANNELS[static_cast<int>(FaceCap::BlendshapeCount)] = {
     controller::BROWSU_C,
     controller::BROWSD_L,
     controller::BROWSD_R,
@@ -258,8 +258,8 @@ void OscPlugin::init() {
 
     {
         std::lock_guard<std::mutex> guard(_dataMutex);
-        _blendshapeValues.assign((int)FaceCap::BlendshapeCount, 0.0f);
-        _blendshapeValidFlags.assign((int)FaceCap::BlendshapeCount, false);
+        _blendshapeValues.assign(static_cast<int>(FaceCap::BlendshapeCount), 0.0f);
+        _blendshapeValidFlags.assign(static_cast<int>(FaceCap::BlendshapeCount), false);
         _headRot = glm::quat();
         _headRotValid = false;
         _headTransTarget = extractTranslation(_lastInputCalibrationData.defaultHeadMat);
@@ -342,7 +342,7 @@ static int genericHandlerFunc(const char* path, const char* types, lo_arg** argv
     // http://www.bannaflak.com/face-cap/livemode.html
     if (path[0] == '/' && path[1] == 'W' && argc == 2 && types[0] == 'i' && types[1] == 'f') {
         int index = argv[0]->i;
-        if (index >= 0 && index < (int)FaceCap::BlendshapeCount) {
+        if (index >= 0 && index < static_cast<int>(FaceCap::BlendshapeCount)) {
             int mirroredIndex = (int)faceMirrorMap[index];
             container->_blendshapeValues[mirroredIndex] = argv[1]->f;
             container->_blendshapeValidFlags[mirroredIndex] = true;
@@ -581,13 +581,13 @@ void OscPlugin::restartServer() {
 controller::Input::NamedVector OscPlugin::InputDevice::getAvailableInputs() const {
     static controller::Input::NamedVector availableInputs;
     if (availableInputs.size() == 0) {
-        for (int i = 0; i < (int)FaceCap::BlendshapeCount; i++) {
-            availableInputs.push_back(makePair(CHANNELS[i], STRINGS[i]));
+        for (int i = 0; i < static_cast<int>(FaceCap::BlendshapeCount); i++) {
+            availableInputs.push_back(makePair(CHANNELS[i], QString(STRINGS[i])));
         }
     }
-    availableInputs.push_back(makePair(controller::HEAD, "Head"));
-    availableInputs.push_back(makePair(controller::LEFT_EYE, "LeftEye"));
-    availableInputs.push_back(makePair(controller::RIGHT_EYE, "RightEye"));
+    availableInputs.push_back(makePair(controller::HEAD, QString("Head")));
+    availableInputs.push_back(makePair(controller::LEFT_EYE, QString("LeftEye")));
+    availableInputs.push_back(makePair(controller::RIGHT_EYE, QString("RightEye")));
     return availableInputs;
 }
 
@@ -599,7 +599,7 @@ QString OscPlugin::InputDevice::getDefaultMappingConfig() const {
 void OscPlugin::InputDevice::update(float deltaTime, const controller::InputCalibrationData& inputCalibrationData) {
     glm::mat4 sensorToAvatarMat = glm::inverse(inputCalibrationData.avatarMat) * inputCalibrationData.sensorToWorldMat;
     std::lock_guard<std::mutex> guard(_container->_dataMutex);
-    for (int i = 0; i < (int)FaceCap::BlendshapeCount; i++) {
+    for (int i = 0; i < static_cast<int>(FaceCap::BlendshapeCount); i++) {
         if (_container->_blendshapeValidFlags[i]) {
             _axisStateMap[CHANNELS[i]] = controller::AxisValue(_container->_blendshapeValues[i], 0, true);
         }
@@ -626,7 +626,7 @@ void OscPlugin::InputDevice::update(float deltaTime, const controller::InputCali
 
 void OscPlugin::InputDevice::clearState() {
     std::lock_guard<std::mutex> guard(_container->_dataMutex);
-    for (int i = 0; i < (int)FaceCap::BlendshapeCount; i++) {
+    for (int i = 0; i < static_cast<int>(FaceCap::BlendshapeCount); i++) {
         _axisStateMap[CHANNELS[i]] = controller::AxisValue(0.0f, 0, false);
     }
     _poseStateMap[controller::HEAD] = controller::Pose();
