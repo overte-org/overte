@@ -39,6 +39,8 @@ class Overte(ConanFile):
         "qt*:qtwebview": "True",
         "qt*:qtxmlpatterns": "True",
         "qt*:qttools": "True",  # windeployqt for Windows
+        "fontconfig*:shared": "True",  # For Qt on Linux. Building with static fontconfig and freetype fails: https://github.com/conan-io/conan-center-index/issues/17142
+        "freetype*:shared": "True",  # For Qt on Linux.
         "glad*:spec": "gl",
         "glad*:gl_profile": "core",
         "glad*:gl_version": "4.5",
