@@ -73,8 +73,7 @@ class Overte(ConanFile):
         self.requires("openvr/2.15.6@overte/stable")
         self.requires("openxr/1.1.46@overte/stable")
         self.requires("opus/1.5.2")
-        # QT6TODO
-        #self.requires("quazip/1.4")
+        self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.10")
         self.requires("spirv-cross/1.4.350.0")
