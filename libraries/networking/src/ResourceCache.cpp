@@ -796,6 +796,13 @@ void Resource::handleDownloadProgress(uint64_t bytesReceived, uint64_t bytesTota
 }
 
 void Resource::handleReplyFinished() {
+    // Make sure we keep the Resource alive here
+    auto self = weak_from_this().lock();
+    if (!self) {
+        // Make sure the resource wasn't deleted yet, and it's just scheduled for deletion or pointer has expired.
+        Q_ASSERT(!_wasDeleted);
+    }
+
     if (!_request || _request != sender()) {
         // This can happen in the edge case that a request is timed out, but a `finished` signal is emitted before it is deleted.
         qWarning(networking) << "Received signal Resource::handleReplyFinished from ResourceRequest that is not the current"
@@ -804,7 +811,10 @@ void Resource::handleReplyFinished() {
             { "from_cache", false },
             { "size_mb", _bytesTotal / 1000000.0 }
             });
-        ResourceCache::requestCompleted(weak_from_this());
+        // TODO: should we still emit requestCompleted if resource's shared_ptr has expired?
+        if (self) {
+            ResourceCache::requestCompleted(weak_from_this());
+        }
         return;
     }
 
@@ -813,10 +823,10 @@ void Resource::handleReplyFinished() {
         { "size_mb", _bytesTotal / 1000000.0 }
     });
 
-    // Make sure we keep the Resource alive here
-    auto self = shared_from_this();
-    Q_ASSERT(self);
-    ResourceCache::requestCompleted(weak_from_this());
+    // TODO: should we still emit requestCompleted if resource's shared_ptr has expired?
+    if (self) {
+        ResourceCache::requestCompleted(weak_from_this());
+    }
 
     auto result = _request->getResult();
     if (result == ResourceRequest::Success) {
@@ -835,10 +845,16 @@ void Resource::handleReplyFinished() {
         }
 
         setSize(_bytesTotal);
-        emit loaded(data);
-        downloadFinished(data);
+        // TODO: should we emit these after pointer has expired or delete_later() was called?
+        if (self) {
+            emit loaded(data);
+            downloadFinished(data);
+        }
     } else {
-        handleFailedRequest(result);
+        // TODO: should we emit these after pointer has expired or delete_later() was called?
+        if (self) {
+            handleFailedRequest(result);
+        }
     }
 
     _request->disconnect(this);
