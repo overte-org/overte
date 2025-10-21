@@ -59,7 +59,7 @@ jobs:
               runner: ubuntu-latest
               arch: amd64
               build_type: full
-              qt_source: system
+              qt_source: source
               apt-dependencies: qt5-image-formats-plugins # add missing dependencies to docker image when convenient
             # Android builds are currently failing
             #- os: ubuntu-18.04
@@ -71,7 +71,7 @@ jobs:
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
-              qt_source: system
+              qt_source: source
               apt-dependencies: qt5-image-formats-plugins # add missing dependencies to docker image when convenient
         fail-fast: false
     runs-on: ${{matrix.runner}}
