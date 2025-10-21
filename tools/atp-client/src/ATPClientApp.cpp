@@ -292,7 +292,7 @@ void ATPClientApp::uploadAsset() {
     }
 
     auto upload = DependencyManager::get<AssetClient>()->createUpload(_localUploadFile);
-    QObject::connect(upload, &AssetUpload::finished, this, [=](AssetUpload* upload, const QString& hash) mutable {
+    QObject::connect(upload, &AssetUpload::finished, this, [=, this](AssetUpload* upload, const QString& hash) mutable {
         if (upload->getError() != AssetUpload::NoError) {
             qDebug() << "upload failed: " << upload->getErrorString();
         } else {
@@ -310,7 +310,7 @@ void ATPClientApp::setMapping(QString hash) {
     auto assetClient = DependencyManager::get<AssetClient>();
     auto request = assetClient->createSetMappingRequest(path, hash);
 
-    connect(request, &SetMappingRequest::finished, this, [=](SetMappingRequest* request) mutable {
+    connect(request, &SetMappingRequest::finished, this, [=, this](SetMappingRequest* request) mutable {
         if (request->getError() != SetMappingRequest::NoError) {
             qDebug() << "upload succeeded, but couldn't set mapping: " << request->getErrorString();
         } else if (_verbose) {
@@ -325,7 +325,7 @@ void ATPClientApp::setMapping(QString hash) {
 
 void ATPClientApp::listAssets() {
     auto request = DependencyManager::get<AssetClient>()->createGetAllMappingsRequest();
-    QObject::connect(request, &GetAllMappingsRequest::finished, this, [=](GetAllMappingsRequest* request) mutable {
+    QObject::connect(request, &GetAllMappingsRequest::finished, this, [=, this](GetAllMappingsRequest* request) mutable {
         auto result = request->getError();
         if (result == GetAllMappingsRequest::NotFound) {
             qDebug() << "not found: " << request->getErrorString();
@@ -346,7 +346,7 @@ void ATPClientApp::listAssets() {
 void ATPClientApp::lookupAsset() {
     auto path = _url.path();
     auto request = DependencyManager::get<AssetClient>()->createGetMappingRequest(path);
-    QObject::connect(request, &GetMappingRequest::finished, this, [=](GetMappingRequest* request) mutable {
+    QObject::connect(request, &GetMappingRequest::finished, this, [=, this](GetMappingRequest* request) mutable {
         auto result = request->getError();
         if (result == GetMappingRequest::NotFound) {
             qDebug() << "not found: " << request->getErrorString();

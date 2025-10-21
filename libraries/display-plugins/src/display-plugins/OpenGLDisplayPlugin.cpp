@@ -98,7 +98,7 @@ public:
         Lock lock(_mutex);
         if (isRunning()) {
             _newPluginQueue.push(plugin);
-            _condition.wait(lock, [=]()->bool { return _newPluginQueue.empty(); });
+            _condition.wait(lock, [=, this]()->bool { return _newPluginQueue.empty(); });
         }
     }
 

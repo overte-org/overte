@@ -851,7 +851,7 @@ void Application::showUrlHandler(const QUrl& url) {
     }
 
     ModalDialogListener* dlg = OffscreenUi::asyncQuestion("Confirm openUrl", "Do you recognize this path or code and want to open or execute it: " + url.toDisplayString());
-    QObject::connect(dlg, &ModalDialogListener::response, this, [=](QVariant answer) {
+    QObject::connect(dlg, &ModalDialogListener::response, this, [=, this](QVariant answer) {
         QObject::disconnect(dlg, &ModalDialogListener::response, this, nullptr);
         if (QMessageBox::Yes == static_cast<QMessageBox::StandardButton>(answer.toInt())) {
             // Unset the handler, open the URL, and the reset the handler
@@ -1009,7 +1009,7 @@ void Application::loadServerlessDomain(QUrl domainURL) {
         return;
     }
 
-    connect(request, &ResourceRequest::finished, this, [=]() {
+    connect(request, &ResourceRequest::finished, this, [=, this]() {
         if (request->getResult() == ResourceRequest::Success) {
             auto namedPaths = prepareServerlessDomainContents(domainURL, request->getData());
             auto nodeList = DependencyManager::get<NodeList>();
@@ -2484,7 +2484,7 @@ void Application::userKickConfirmation(const QUuid& nodeID, unsigned int banFlag
 
     if (dlg->getDialogItem()) {
 
-        QObject::connect(dlg, &ModalDialogListener::response, this, [=] (QVariant answer) {
+        QObject::connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant answer) {
             QObject::disconnect(dlg, &ModalDialogListener::response, this, nullptr);
 
             bool yes = (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes);

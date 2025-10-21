@@ -62,7 +62,7 @@ void Bookmarks::addBookmarkToFile(const QString& bookmarkName, const QVariant& b
                                   "The bookmark name you entered already exists in your list.",
                                   QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
         dlg->setProperty("informativeText", "Would you like to overwrite it?");
-        QObject::connect(dlg, &ModalDialogListener::response, this, [=] (QVariant answer) {
+        QObject::connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant answer) {
             QObject::disconnect(dlg, &ModalDialogListener::response, this, nullptr);
 
             if (QMessageBox::Yes == static_cast<QMessageBox::StandardButton>(answer.toInt())) {

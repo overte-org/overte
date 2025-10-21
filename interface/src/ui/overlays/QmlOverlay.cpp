@@ -34,7 +34,7 @@ void QmlOverlay::buildQmlElement(const QUrl& url) {
         return;
     }
 
-    offscreenUI->load(url, [=](QQmlContext* context, QObject* object) {
+    offscreenUI->load(url, [=, this](QQmlContext* context, QObject* object) {
         _qmlElement = dynamic_cast<QQuickItem*>(object);
         connect(_qmlElement, &QObject::destroyed, this, &QmlOverlay::qmlElementDestroyed);
     });

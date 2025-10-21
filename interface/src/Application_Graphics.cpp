@@ -319,7 +319,7 @@ void Application::initializeUi() {
 
 #if !defined(DISABLE_QML)
     _glWidget->installEventFilter(offscreenUi.data());
-    offscreenUi->setMouseTranslator([=](const QPointF& pt) {
+    offscreenUi->setMouseTranslator([=, this](const QPointF& pt) {
         QPointF result = pt;
         auto displayPlugin = getActiveDisplayPlugin();
         if (displayPlugin->isHmd()) {
@@ -362,7 +362,7 @@ void Application::initializeUi() {
     }
 
     auto compositorHelper = DependencyManager::get<CompositorHelper>();
-    connect(compositorHelper.data(), &CompositorHelper::allowMouseCaptureChanged, this, [=] {
+    connect(compositorHelper.data(), &CompositorHelper::allowMouseCaptureChanged, this, [=, this] {
         if (isHMDMode()) {
             auto compositorHelper = DependencyManager::get<CompositorHelper>(); // don't capture outer smartpointer
             showCursor(compositorHelper->getAllowMouseCapture() ?

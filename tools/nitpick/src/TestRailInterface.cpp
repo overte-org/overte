@@ -353,10 +353,10 @@ void TestRailInterface::createAddTestCasesPythonScript(const QString& testDirect
         QProcess* process = new QProcess();
 
         _busyWindow.setWindowTitle("Updating TestRail");
-        connect(process, &QProcess::started, this, [=]() { _busyWindow.exec(); });
+        connect(process, &QProcess::started, this, [=, this]() { _busyWindow.exec(); });
         connect(process, SIGNAL(finished(int)), process, SLOT(deleteLater()));
         connect(process, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), this,
-                [=](int exitCode, QProcess::ExitStatus exitStatus) { _busyWindow.hide(); });
+                [=, this](int exitCode, QProcess::ExitStatus exitStatus) { _busyWindow.hide(); });
 
 #ifdef Q_OS_WIN
         QStringList parameters = QStringList() << _outputDirectory + "/addTestCases.py";
@@ -484,10 +484,10 @@ void TestRailInterface::addRun() {
     ) {
         QProcess* process = new QProcess();
         _busyWindow.setWindowTitle("Updating TestRail");
-        connect(process, &QProcess::started, this, [=]() { _busyWindow.exec(); });
+        connect(process, &QProcess::started, this, [=, this]() { _busyWindow.exec(); });
         connect(process, SIGNAL(finished(int)), process, SLOT(deleteLater()));
         connect(process, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), this,
-                [=](int exitCode, QProcess::ExitStatus exitStatus) { _busyWindow.hide(); });
+                [=, this](int exitCode, QProcess::ExitStatus exitStatus) { _busyWindow.hide(); });
 
 #ifdef Q_OS_WIN
         QStringList parameters = QStringList() << _outputDirectory + "/addRun.py";
@@ -594,10 +594,10 @@ void TestRailInterface::updateRunWithResults() {
     ) {
         QProcess* process = new QProcess();
         _busyWindow.setWindowTitle("Updating TestRail");
-        connect(process, &QProcess::started, this, [=]() { _busyWindow.exec(); });
+        connect(process, &QProcess::started, this, [=, this]() { _busyWindow.exec(); });
         connect(process, SIGNAL(finished(int)), process, SLOT(deleteLater()));
         connect(process, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), this,
-                [=](int exitCode, QProcess::ExitStatus exitStatus) { _busyWindow.hide(); });
+                [=, this](int exitCode, QProcess::ExitStatus exitStatus) { _busyWindow.hide(); });
 
 #ifdef Q_OS_WIN
         QStringList parameters = QStringList() << _outputDirectory + "/updateRunWithResults.py";
@@ -774,7 +774,7 @@ void TestRailInterface::getReleasesFromTestRail() {
 
     QProcess* process = new QProcess();
     connect(process, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), this,
-            [=](int exitCode, QProcess::ExitStatus exitStatus) { updateReleasesComboData(exitCode, exitStatus); });
+            [=, this](int exitCode, QProcess::ExitStatus exitStatus) { updateReleasesComboData(exitCode, exitStatus); });
     connect(process, SIGNAL(finished(int)), process, SLOT(deleteLater()));
 
 #ifdef Q_OS_WIN
@@ -1098,7 +1098,7 @@ void TestRailInterface::getTestSectionsFromTestRail() {
 
     QProcess* process = new QProcess();
     connect(process, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), this,
-            [=](int exitCode, QProcess::ExitStatus exitStatus) { updateSectionsComboData(exitCode, exitStatus); });
+            [=, this](int exitCode, QProcess::ExitStatus exitStatus) { updateSectionsComboData(exitCode, exitStatus); });
     connect(process, SIGNAL(finished(int)), process, SLOT(deleteLater()));
 
 #ifdef Q_OS_WIN
@@ -1142,7 +1142,7 @@ void TestRailInterface::getRunsFromTestRail() {
 
     QProcess* process = new QProcess();
     connect(process, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), this,
-            [=](int exitCode, QProcess::ExitStatus exitStatus) { updateRunsComboData(exitCode, exitStatus); });
+            [=, this](int exitCode, QProcess::ExitStatus exitStatus) { updateRunsComboData(exitCode, exitStatus); });
     connect(process, SIGNAL(finished(int)), process, SLOT(deleteLater()));
 
 #ifdef Q_OS_WIN

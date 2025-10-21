@@ -1856,7 +1856,7 @@ void Application::setupSignalsAndOperators() {
 
         connect(this, &Application::activeDisplayPluginChanged, this, &Application::updateThreadPoolCount);
         if (_useSystemCursor) {
-            connect(this, &Application::activeDisplayPluginChanged, this, [=](){
+            connect(this, &Application::activeDisplayPluginChanged, this, [=, this](){
                 qApp->setProperty(hifi::properties::HMD, qApp->isHMDMode());
                 auto displayPlugin = qApp->getActiveDisplayPlugin();
 

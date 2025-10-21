@@ -29,7 +29,7 @@ Q_LOGGING_CATEGORY(oculusLog, "hifi.plugins.display.oculus")
 
 using namespace hifi;
 
-static wchar_t* REQUIRED_OCULUS_DLL = L"LibOVRRT64_1.dll";
+const wchar_t REQUIRED_OCULUS_DLL[] = L"LibOVRRT64_1.dll";
 static wchar_t FOUND_PATH[MAX_PATH];
 
 bool ovr::available() {
