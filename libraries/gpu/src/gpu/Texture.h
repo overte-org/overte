@@ -607,8 +607,10 @@ public:
     TextureView(Texture* newTexture, const Element& element) :
         _texture(newTexture),
         _subresource(0),
-        _element(element)
-    {};
+        _element(element) {
+        // TODO: this can cause double delete when it's used with a pointer that is already assigned to another shared_ptr.
+        Q_ASSERT(false);
+    };
     TextureView(const TexturePointer& texture, uint16 subresource, const Element& element) :
         _texture(texture),
         _subresource(subresource),
