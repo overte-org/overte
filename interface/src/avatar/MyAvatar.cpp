@@ -86,7 +86,7 @@ const float YAW_SPEED_DEFAULT = 100.0f;   // degrees/sec
 const float HMD_YAW_SPEED_DEFAULT = 300.0f;   // degrees/sec
 const float PITCH_SPEED_DEFAULT = 75.0f; // degrees/sec
 
-const float MAX_BOOST_SPEED = 0.5f * DEFAULT_AVATAR_MAX_WALKING_SPEED; // action motor gets additive boost below this speed
+const float MAX_BOOST_SPEED = 0.5f * DESKTOP_AVATAR_DEFAULT_WALKING_SPEED; // action motor gets additive boost below this speed
 const float MIN_AVATAR_SPEED = 0.05f;
 
 float MIN_SCRIPTED_MOTOR_TIMESCALE = 0.005f;
@@ -243,14 +243,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     _flyingHMDSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "flyingHMD", _flyingPrefHMD),
     _movementReferenceSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "movementReference", _movementReference),
     _avatarEntityCountSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "avatarEntityData" << "size", 0),
-    _driveGear1Setting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "driveGear1", _driveGear1),
-    _driveGear2Setting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "driveGear2", _driveGear2),
-    _driveGear3Setting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "driveGear3", _driveGear3),
-    _driveGear4Setting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "driveGear4", _driveGear4),
-    _driveGear5Setting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "driveGear5", _driveGear5),
-    _analogWalkSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "analogWalkSpeed", _analogWalkSpeed.get()),
-    _analogPlusWalkSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "analogPlusWalkSpeed", _analogPlusWalkSpeed.get()),
-    _controlSchemeIndexSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "controlSchemeIndex", _controlSchemeIndex),
+    _vrWalkSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "vrWalkSpeed", _vrWalkSpeed.get()),
     _allowAvatarStandingPreferenceSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "allowAvatarStandingPreference",
                                           allowAvatarStandingPreferenceStrings[static_cast<uint>(
                                               AllowAvatarStandingPreference::Default)]),
@@ -815,16 +808,6 @@ void MyAvatar::update(float deltaTime) {
 
     simulate(deltaTime, true);
 
-    currentEnergy += energyChargeRate;
-    currentEnergy -= getAccelerationEnergy();
-    currentEnergy -= getAudioEnergy();
-
-    if(didTeleport()) {
-        currentEnergy = 0.0f;
-    }
-    currentEnergy = max(0.0f, min(currentEnergy,1.0f));
-    emit energyChanged(currentEnergy);
-
     updateEyeContactTarget(deltaTime);
 }
 
@@ -1350,14 +1333,7 @@ void MyAvatar::saveData() {
     _userHeightSetting.set(getUserHeight());
     _flyingHMDSetting.set(getFlyingHMDPref());
     _movementReferenceSetting.set(getMovementReference());
-    _driveGear1Setting.set(getDriveGear1());
-    _driveGear2Setting.set(getDriveGear2());
-    _driveGear3Setting.set(getDriveGear3());
-    _driveGear4Setting.set(getDriveGear4());
-    _driveGear5Setting.set(getDriveGear5());
-    _analogWalkSpeedSetting.set(getAnalogWalkSpeed());
-    _analogPlusWalkSpeedSetting.set(getAnalogPlusWalkSpeed());
-    _controlSchemeIndexSetting.set(getControlSchemeIndex());
+    _vrWalkSpeedSetting.set(getVrWalkSpeed());
     _allowAvatarStandingPreferenceSetting.set(
         allowAvatarStandingPreferenceStrings[static_cast<uint>(getAllowAvatarStandingPreference())]);
     _allowAvatarLeaningPreferenceSetting.set(
@@ -2101,14 +2077,7 @@ void MyAvatar::loadData() {
     Setting::Handle<bool> firstRunVal { Settings::firstRun, true };
     setFlyingHMDPref(firstRunVal.get() ? true : _flyingHMDSetting.get());
     setMovementReference(firstRunVal.get() ? false : _movementReferenceSetting.get());
-    setDriveGear1(firstRunVal.get() ? DEFAULT_GEAR_1 : _driveGear1Setting.get());
-    setDriveGear2(firstRunVal.get() ? DEFAULT_GEAR_2 : _driveGear2Setting.get());
-    setDriveGear3(firstRunVal.get() ? DEFAULT_GEAR_3 : _driveGear3Setting.get());
-    setDriveGear4(firstRunVal.get() ? DEFAULT_GEAR_4 : _driveGear4Setting.get());
-    setDriveGear5(firstRunVal.get() ? DEFAULT_GEAR_5 : _driveGear5Setting.get());
-    setControlSchemeIndex(firstRunVal.get() ? LocomotionControlsMode::CONTROLS_ANALOG : _controlSchemeIndexSetting.get());
-    setAnalogWalkSpeed(firstRunVal.get() ? ANALOG_AVATAR_MAX_WALKING_SPEED : _analogWalkSpeedSetting.get());
-    setAnalogPlusWalkSpeed(firstRunVal.get() ? ANALOG_PLUS_AVATAR_MAX_WALKING_SPEED : _analogPlusWalkSpeedSetting.get());
+    setVrWalkSpeed(firstRunVal.get() ? VR_AVATAR_DEFAULT_WALKING_SPEED : _vrWalkSpeedSetting.get());
     setFlyingEnabled(getFlyingEnabled());
 
     setDisplayName(_displayNameSetting.get());
@@ -3588,31 +3557,7 @@ void MyAvatar::updateOrientation(float deltaTime) {
     }
 }
 
-float MyAvatar::calculateGearedSpeed(const float driveKey) {
-    float absDriveKey = abs(driveKey);
-    float sign = (driveKey < 0.0f) ? -1.0f : 1.0f;
-    if (absDriveKey > getDriveGear5()) {
-        return sign * 1.0f;
-    }
-    else if (absDriveKey > getDriveGear4()) {
-        return sign * 0.8f;
-    }
-    else if (absDriveKey > getDriveGear3()) {
-        return sign * 0.6f;
-    }
-    else if (absDriveKey > getDriveGear2()) {
-        return sign * 0.4f;
-    }
-    else if (absDriveKey > getDriveGear1()) {
-        return sign * 0.2f;
-    }
-    else {
-        return sign * 0.0f;
-    }
-}
-
 glm::vec3 MyAvatar::scaleMotorSpeed(const glm::vec3 forward, const glm::vec3 right) {
-    float stickFullOn = 0.85f;
     auto zSpeed = getDriveKey(TRANSLATE_Z);
     auto xSpeed = !_characterController.getSeated() ? getDriveKey(TRANSLATE_X) : 0.0f;
     glm::vec3 direction;
@@ -3620,34 +3565,13 @@ glm::vec3 MyAvatar::scaleMotorSpeed(const glm::vec3 forward, const glm::vec3 rig
         // Walking disabled in settings.
         return Vectors::ZERO;
     } else if (qApp->isHMDMode()) {
-        // HMD advanced movement controls.
-        switch (_controlSchemeIndex) {
-            case LocomotionControlsMode::CONTROLS_DEFAULT:
-                // No acceleration curve for this one, constant speed.
-                if (zSpeed || xSpeed) {
-                    direction = (zSpeed * forward) + (xSpeed * right);
-                    // Normalize direction.
-                    auto length = glm::length(direction);
-                    if (length > EPSILON) {
-                        direction /= length;
-                    }
-                    return direction * getSprintSpeed() * _walkSpeedScalar;
-                } else {
-                    return Vectors::ZERO;
-                }
-            case LocomotionControlsMode::CONTROLS_ANALOG:
-            case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-                if (zSpeed || xSpeed) {
-                    glm::vec3 scaledForward = calculateGearedSpeed(zSpeed) * _walkSpeedScalar * ((zSpeed >= stickFullOn) ? getSprintSpeed() : getWalkSpeed()) * forward;
-                    glm::vec3 scaledRight = calculateGearedSpeed(xSpeed) * _walkSpeedScalar * ((xSpeed > stickFullOn) ? getSprintSpeed() : getWalkSpeed()) * right;
-                    direction = scaledForward + scaledRight;
-                    return direction;
-                } else {
-                    return Vectors::ZERO;
-                }
-            default:
-                qDebug() << "Invalid control scheme index.";
-                return Vectors::ZERO;
+        if (zSpeed || xSpeed) {
+            glm::vec3 scaledForward = zSpeed * _walkSpeedScalar * getWalkSpeed() * forward;
+            glm::vec3 scaledRight = xSpeed * _walkSpeedScalar * getWalkSpeed() * right;
+            direction = scaledForward + scaledRight;
+            return direction;
+        } else {
+            return Vectors::ZERO;
         }
     } else {
         // Desktop mode.
@@ -4372,124 +4296,6 @@ int MyAvatar::getMovementReference() {
     return _movementReference;
 }
 
-void MyAvatar::setControlSchemeIndex(int index){
-    if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "setControlSchemeIndex", Q_ARG(int, index));
-        return;
-    }
-    // Need to add checks for valid indices.
-    _controlSchemeIndex = index;
-}
-
-int MyAvatar::getControlSchemeIndex() {
-    return _controlSchemeIndex;
-}
-
-void MyAvatar::setDriveGear1(float shiftPoint) {
-    if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "setDriveGear1", Q_ARG(float, shiftPoint));
-        return;
-    }
-    if (shiftPoint > 1.0f || shiftPoint < 0.0f) return;
-    _driveGear1 = (shiftPoint < _driveGear2) ? shiftPoint : _driveGear1;
-}
-
-float MyAvatar::getDriveGear1() {
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            return ANALOG_AVATAR_GEAR_1;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            return _driveGear1;
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-        default:
-            return 1.0f;
-    }
-}
-
-void MyAvatar::setDriveGear2(float shiftPoint) {
-    if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "setDriveGear2", Q_ARG(float, shiftPoint));
-        return;
-    }
-    if (shiftPoint > 1.0f || shiftPoint < 0.0f) return;
-    _driveGear2 = (shiftPoint < _driveGear3 && shiftPoint >= _driveGear1) ? shiftPoint : _driveGear2;
-}
-
-float MyAvatar::getDriveGear2() {
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            return ANALOG_AVATAR_GEAR_2;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            return _driveGear2;
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-        default:
-            return 1.0f;
-    }
-}
-
-void MyAvatar::setDriveGear3(float shiftPoint) {
-    if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "setDriveGear3", Q_ARG(float, shiftPoint));
-        return;
-    }
-    if (shiftPoint > 1.0f || shiftPoint < 0.0f) return;
-    _driveGear3 = (shiftPoint < _driveGear4 && shiftPoint >= _driveGear2) ? shiftPoint : _driveGear3;
-}
-
-float MyAvatar::getDriveGear3() {
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            return ANALOG_AVATAR_GEAR_3;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            return _driveGear3;
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-        default:
-            return 1.0f;
-    }
-}
-
-void MyAvatar::setDriveGear4(float shiftPoint) {
-    if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "setDriveGear4", Q_ARG(float, shiftPoint));
-        return;
-    }
-    if (shiftPoint > 1.0f || shiftPoint < 0.0f) return;
-    _driveGear4 = (shiftPoint < _driveGear5 && shiftPoint >= _driveGear3) ? shiftPoint : _driveGear4;
-}
-
-float MyAvatar::getDriveGear4() {
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            return ANALOG_AVATAR_GEAR_4;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            return _driveGear4;
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-        default:
-            return 1.0f;
-    }
-}
-
-void MyAvatar::setDriveGear5(float shiftPoint) {
-    if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "setDriveGear5", Q_ARG(float, shiftPoint));
-        return;
-    }
-    if (shiftPoint > 1.0f || shiftPoint < 0.0f) return;
-    _driveGear5 = (shiftPoint > _driveGear4) ? shiftPoint : _driveGear5;
-}
-
-float MyAvatar::getDriveGear5() {
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            return ANALOG_AVATAR_GEAR_5;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            return _driveGear5;
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-        default:
-            return 1.0f;
-    }
-}
-
 bool MyAvatar::getFlyingHMDPref() {
     return _flyingPrefHMD;
 }
@@ -5153,34 +4959,9 @@ MyAvatar::AllowAvatarLeaningPreference MyAvatar::getAllowAvatarLeaningPreference
 
 float MyAvatar::getWalkSpeed() const {
     if (qApp->isHMDMode()) {
-        switch (_controlSchemeIndex) {
-            case LocomotionControlsMode::CONTROLS_ANALOG:
-                return _analogWalkSpeed.get();
-            case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-                return _analogPlusWalkSpeed.get();
-            case LocomotionControlsMode::CONTROLS_DEFAULT:
-            default:
-                return _defaultWalkSpeed.get();
-        }
+        return _vrWalkSpeed.get();
     } else {
         return _defaultWalkSpeed.get();
-    }
-
-}
-
-float MyAvatar::getWalkBackwardSpeed() const {
-    if (qApp->isHMDMode()) {
-        switch (_controlSchemeIndex) {
-            case LocomotionControlsMode::CONTROLS_ANALOG:
-                return _analogWalkBackwardSpeed.get();
-            case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-                return _analogPlusWalkBackwardSpeed.get();
-            case LocomotionControlsMode::CONTROLS_DEFAULT:
-            default:
-                return _defaultWalkBackwardSpeed.get();
-        }
-    } else {
-        return _defaultWalkBackwardSpeed.get();
     }
 
 }
@@ -5259,129 +5040,42 @@ void MyAvatar::setAllowAvatarLeaningPreference(const MyAvatar::AllowAvatarLeanin
 }
 
 void MyAvatar::setWalkSpeed(float value) {
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-            _defaultWalkSpeed.set(value);
-            break;
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            _analogWalkSpeed.set(value);
-            break;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            _analogPlusWalkSpeed.set(value);
-            break;
-        default:
-            break;
-    }
-}
-
-void MyAvatar::setWalkBackwardSpeed(float value) {
-    bool changed = true;
-    float prevVal;
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-            prevVal = _defaultWalkBackwardSpeed.get();
-            _defaultWalkBackwardSpeed.set(value);
-            break;
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            prevVal = _analogWalkBackwardSpeed.get();
-            _analogWalkBackwardSpeed.set(value);
-            break;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            prevVal = _analogPlusWalkBackwardSpeed.get();
-            _analogPlusWalkBackwardSpeed.set(value);
-            break;
-        default:
-            changed = false;
-            break;
-    }
-
-    if (changed && prevVal != value) {
-        emit walkBackwardSpeedChanged(value);
-    }
+    _vrWalkSpeed.set(value);
 }
 
 void MyAvatar::setSprintSpeed(float value) {
-    bool changed = true;
-    float prevVal;
-    switch (_controlSchemeIndex) {
-        case LocomotionControlsMode::CONTROLS_DEFAULT:
-            prevVal = _defaultSprintSpeed.get();
-            _defaultSprintSpeed.set(value);
-            break;
-        case LocomotionControlsMode::CONTROLS_ANALOG:
-            prevVal = _analogSprintSpeed.get();
-            _analogSprintSpeed.set(value);
-            break;
-        case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-            prevVal = _analogPlusSprintSpeed.get();
-            _analogPlusSprintSpeed.set(value);
-            break;
-        default:
-            changed = false;
-            break;
-    }
+    // there's no separate sprint speed in VR
+    if (!qApp->isHMDMode()) {
+        emit sprintSpeedChanged(value);
+        bool changed = true;
+        float prevVal = _defaultSprintSpeed.get();
+        _defaultSprintSpeed.set(value);
 
-    if (changed && prevVal != value) {
-        emit analogPlusSprintSpeedChanged(value);
+        if (changed && prevVal != value) {
+            emit sprintSpeedChanged(value);
+        }
+
+        return _defaultSprintSpeed.set(value);
     }
 }
 
 float MyAvatar::getSprintSpeed() const {
     if (qApp->isHMDMode()) {
-        switch (_controlSchemeIndex) {
-            case LocomotionControlsMode::CONTROLS_ANALOG:
-                return _analogSprintSpeed.get();
-            case LocomotionControlsMode::CONTROLS_ANALOG_PLUS:
-                return _analogPlusSprintSpeed.get();
-            case LocomotionControlsMode::CONTROLS_DEFAULT:
-            default:
-                return _defaultSprintSpeed.get();
-        }
+        return _vrWalkSpeed.get();
     } else {
         return _defaultSprintSpeed.get();
     }
 }
 
-void MyAvatar::setAnalogWalkSpeed(float value) {
-    _analogWalkSpeed.set(value);
-    // Sprint speed for Analog should be double walk speed.
-    _analogSprintSpeed.set(value * 2.0f);
-}
-
-float MyAvatar::getAnalogWalkSpeed() const {
-    return _analogWalkSpeed.get();
-}
-
-void MyAvatar::setAnalogSprintSpeed(float value) {
-    _analogSprintSpeed.set(value);
-}
-
-float MyAvatar::getAnalogSprintSpeed() const {
-    return _analogSprintSpeed.get();
-}
-
-void MyAvatar::setAnalogPlusWalkSpeed(float value) {
-    if (_analogPlusWalkSpeed.get() != value) {
-        _analogPlusWalkSpeed.set(value);
-        emit analogPlusWalkSpeedChanged(value);
-        // Sprint speed for Analog Plus should be double walk speed.
-        _analogPlusSprintSpeed.set(value * 2.0f);
+void MyAvatar::setVrWalkSpeed(float value) {
+    if (_vrWalkSpeed.get() != value) {
+        _vrWalkSpeed.set(value);
+        emit vrWalkSpeedChanged(value);
     }
 }
 
-float MyAvatar::getAnalogPlusWalkSpeed() const {
-    return _analogPlusWalkSpeed.get();
-}
-
-void MyAvatar::setAnalogPlusSprintSpeed(float value) {
-    if (_analogPlusSprintSpeed.get() != value) {
-        _analogPlusSprintSpeed.set(value);
-        emit analogPlusSprintSpeedChanged(value);
-    }
-}
-
-float MyAvatar::getAnalogPlusSprintSpeed() const {
-    return _analogPlusSprintSpeed.get();
+float MyAvatar::getVrWalkSpeed() const {
+    return _vrWalkSpeed.get();
 }
 
 // Indicate whether the user's real-world sit/stand state has changed or not.
@@ -5848,27 +5542,6 @@ bool MyAvatar::FollowHelper::getForceActivateHorizontal() const {
 
 void MyAvatar::FollowHelper::setForceActivateHorizontal(bool val) {
     _forceActivateHorizontal = val;
-}
-
-float MyAvatar::getAccelerationEnergy() {
-    glm::vec3 velocity = getWorldVelocity();
-    int changeInVelocity = abs(velocity.length() - priorVelocity.length());
-    float changeInEnergy = priorVelocity.length() * changeInVelocity * AVATAR_MOVEMENT_ENERGY_CONSTANT;
-    priorVelocity = velocity;
-
-    return changeInEnergy;
-}
-
-float MyAvatar::getEnergy() {
-    return currentEnergy;
-}
-
-void MyAvatar::setEnergy(float value) {
-    currentEnergy = value;
-}
-
-float MyAvatar::getAudioEnergy() {
-    return getAudioLoudness() * AUDIO_ENERGY_CONSTANT;
 }
 
 bool MyAvatar::didTeleport() {
