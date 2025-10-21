@@ -24,6 +24,7 @@ class Overte(ConanFile):
         "openssl*:shared": "True",
         "qt*:shared": "True",
         "qt*:gui": "True",
+        "qt*:qt5compat": "True",  # Required by Quazip 1.4 and probably us
         "qt*:qtdeclarative": "True",
         "qt*:qtimageformats": "True",  # WebP texture support
         "qt*:qtlocation": "True",
