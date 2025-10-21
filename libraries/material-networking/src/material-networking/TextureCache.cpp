@@ -498,7 +498,14 @@ void NetworkTexture::setImage(gpu::TexturePointer texture, int originalWidth,
         finishedLoading(false);
     }
 
-    auto thisTexture = std::dynamic_pointer_cast<NetworkTexture>(shared_from_this());
+    auto self = weak_from_this().lock();
+    if (!self) {
+        // We need to make sure that texture was just added to unused pool and wasn't deleted yet.
+        Q_ASSERT(!_wasDeleted);
+        return;
+        //TODO: what to do when texture pointer has expired?
+    }
+    auto thisTexture = std::dynamic_pointer_cast<NetworkTexture>(self);
     Q_ASSERT(thisTexture);
     emit networkTextureCreated(thisTexture);
 }
@@ -678,7 +685,9 @@ void NetworkTexture::makeLocalRequest() {
 
     if (!textureAndSize.first) {
         qCDebug(networking).noquote() << "Failed load local KTX from" << path;
-        QMetaObject::invokeMethod(this, "setImage",
+        auto self = weak_from_this().lock();
+        Q_ASSERT(self);
+        QMetaObject::invokeMethod(self.get(), "setImage",
             Q_ARG(gpu::TexturePointer, nullptr),
             Q_ARG(int, 0),
             Q_ARG(int, 0));
@@ -687,7 +696,9 @@ void NetworkTexture::makeLocalRequest() {
 
     _ktxResourceState = PENDING_MIP_REQUEST;
     _lowestKnownPopulatedMip = textureAndSize.first->minAvailableMipLevel();
-    QMetaObject::invokeMethod(this, "setImage",
+    auto self = weak_from_this().lock();
+    Q_ASSERT(self);
+    QMetaObject::invokeMethod(self.get(), "setImage",
         Q_ARG(gpu::TexturePointer, textureAndSize.first),
         Q_ARG(int, textureAndSize.second.x),
         Q_ARG(int, textureAndSize.second.y));
