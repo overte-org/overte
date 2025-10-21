@@ -69,8 +69,7 @@ class Overte(ConanFile):
         self.requires("openxr/1.1.46@overte/stable")
         self.requires("opus/1.4")
         self.requires("polyvox/0.2.1@overte/stable") # FIXME: update to overte-maintained version
-        # QT6TODO
-        #self.requires("quazip/1.4")
+        self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.8")
         self.requires("spirv-cross/1.3.268.0")
