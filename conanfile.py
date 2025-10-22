@@ -43,6 +43,7 @@ class Overte(ConanFile):
         "fontconfig*:shared": "True",  # For Qt on Linux. Building with static fontconfig and freetype fails: https://github.com/conan-io/conan-center-index/issues/17142
         "freetype*:shared": "True",  # For Qt on Linux.
         "nss*:shared": "True",  # Dependency of Qt. "NSS recipe cannot yet build static library."
+        "nspr*:shared": "True",  # NSS, which is a dependency of Qt, cannot link to statis NSPR.
         "glad*:spec": "gl",
         "glad*:gl_profile": "core",
         "glad*:gl_version": "4.5",
