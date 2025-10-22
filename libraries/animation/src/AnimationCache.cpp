@@ -73,7 +73,7 @@ void AnimationReader::run() {
             // Parse the FBX directly from the QNetworkReply
             HFMModel::Pointer hfmModel;
             if (_url.path().toLower().endsWith(".fbx")) {
-                hfmModel = FBXSerializer().read(_data, QVariantHash(), _url.path());
+                hfmModel = FBXSerializer().read(_data, hifi::VariantMultiHash(), _url.path());
             } else {
                 QString errorStr("usupported format");
                 emit onError(299, errorStr);
@@ -97,7 +97,7 @@ QStringList Animation::getJointNames() const {
     if (QThread::currentThread() != thread()) {
         QStringList result;
         BLOCKING_INVOKE_METHOD(const_cast<Animation*>(this), "getJointNames",
-            Q_RETURN_ARG(QStringList, result));
+            Q_GENERIC_RETURN_ARG(QStringList, result));
         return result;
     }
     QStringList names;
@@ -113,7 +113,7 @@ QVector<HFMAnimationFrame> Animation::getFrames() const {
     if (QThread::currentThread() != thread()) {
         QVector<HFMAnimationFrame> result;
         BLOCKING_INVOKE_METHOD(const_cast<Animation*>(this), "getFrames",
-            Q_RETURN_ARG(QVector<HFMAnimationFrame>, result));
+            Q_GENERIC_RETURN_ARG(QVector<HFMAnimationFrame>, result));
         return result;
     }
     if (_hfmModel) {

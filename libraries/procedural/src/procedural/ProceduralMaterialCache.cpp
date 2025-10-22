@@ -1130,13 +1130,14 @@ void NetworkMaterial::setTextures(const QVariantMap& textureMap) {
 
 bool NetworkMaterial::isMissingTexture() {
     for (auto& networkTexture : _textures) {
-        auto& texture = networkTexture.second.texture;
+        auto texture = networkTexture.second.texture;
         if (!texture) {
             continue;
         }
         // Failed texture downloads need to be considered as 'loaded'
         // or the object will never fade in
-        bool finished = texture->isFailed() || (texture->isLoaded() && texture->getGPUTexture() && texture->getGPUTexture()->isDefined());
+        auto gpuTexture = texture->getGPUTexture();
+        bool finished = texture->isFailed() || (texture->isLoaded() && gpuTexture && gpuTexture->isDefined());
         if (!finished) {
             return true;
         }

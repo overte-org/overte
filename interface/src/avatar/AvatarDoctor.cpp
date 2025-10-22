@@ -230,7 +230,7 @@ void AvatarDoctor::startDiagnosing() {
 
             auto mapping = resource->getMapping();
 
-            if (mapping.contains(JOINT_NAME_MAPPING_FIELD) && mapping[JOINT_NAME_MAPPING_FIELD].type() == QVariant::Hash) {
+            if (mapping.contains(JOINT_NAME_MAPPING_FIELD) && mapping[JOINT_NAME_MAPPING_FIELD].typeId() == QMetaType::QVariantHash) {
                 const auto& jointNameMappings = mapping[JOINT_NAME_MAPPING_FIELD].toHash();
                 QStringList jointValues;
                 for (const auto& jointVariant: jointNameMappings.values()) {

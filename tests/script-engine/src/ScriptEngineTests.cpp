@@ -326,7 +326,7 @@ void ScriptEngineTests::testQuat() {
     });
 
     connect(sm.get(), &ScriptManager::unhandledException, [](std::shared_ptr<ScriptException> exception){
-        QVERIFY(exception->errorMessage.contains("undefined to glm::quat"));
+        QVERIFY(exception->errorMessage.contains("undefined to glm::qua"));
     });
 
 

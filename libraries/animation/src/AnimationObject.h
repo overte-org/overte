@@ -76,7 +76,7 @@ public:
 /// Scriptable wrapper for animation frames.
 class AnimationFrameObject : public QObject, protected Scriptable {
     Q_OBJECT
-    Q_PROPERTY(QVector<glm::quat> rotations READ getRotations)
+    Q_PROPERTY(QVector<glm::qua<float,glm::packed_highp>> rotations READ getRotations)
 
 public:
     
@@ -85,7 +85,7 @@ public:
      * @function AnimationFrameObject.getRotations
      * @returns {Quat[]} The joint rotations in the animation frame.
      */
-    Q_INVOKABLE QVector<glm::quat> getRotations() const;
+    Q_INVOKABLE QVector<glm::qua<float,glm::packed_highp>> getRotations() const;
 };
 
 void registerAnimationTypes(ScriptEngine* engine);

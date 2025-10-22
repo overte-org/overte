@@ -20,6 +20,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 
+#include <QIODevice>
+
 #include "AACube.h"
 #include "ShapeInfo.h"
 #include "SharedUtil.h"

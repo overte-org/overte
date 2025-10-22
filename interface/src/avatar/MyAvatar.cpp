@@ -1245,7 +1245,7 @@ void MyAvatar::restoreHandAnimation(bool isLeft) {
 QStringList MyAvatar::getAnimationRoles() {
     if (QThread::currentThread() != thread()) {
         QStringList result;
-        BLOCKING_INVOKE_METHOD(this, "getAnimationRoles", Q_RETURN_ARG(QStringList, result));
+        BLOCKING_INVOKE_METHOD(this, "getAnimationRoles", Q_GENERIC_RETURN_ARG(QStringList, result));
         return result;
     }
     return _skeletonModel->getRig().getAnimationRoles();
@@ -2312,7 +2312,7 @@ const float SCRIPT_PRIORITY = 1.0f + 1.0f;
 const float RECORDER_PRIORITY = 1.0f + 1.0f;
 
 void MyAvatar::setJointRotations(const QVector<glm::quat>& jointRotations) {
-    int numStates = glm::min(_skeletonModel->getJointStateCount(), jointRotations.size());
+    int numStates = glm::min(static_cast<qsizetype>(_skeletonModel->getJointStateCount()), jointRotations.size());
     for (int i = 0; i < numStates; ++i) {
         // HACK: ATM only Recorder calls setJointRotations() so we hardcode its priority here
         _skeletonModel->setJointRotation(i, true, jointRotations[i], RECORDER_PRIORITY);
@@ -2623,8 +2623,8 @@ void MyAvatar::useFullAvatarURL(const QUrl& fullAvatarURL, const QString& modelN
 
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "useFullAvatarURL",
-                                  Q_ARG(const QUrl&, fullAvatarURL),
-                                  Q_ARG(const QString&, modelName));
+                                  Q_GENERIC_ARG(const QUrl&, fullAvatarURL),
+                                  Q_GENERIC_ARG(const QString&, modelName));
         return;
     }
 
@@ -4087,7 +4087,7 @@ bool MyAvatar::safeLanding(const glm::vec3& position) {
 
     if (QThread::currentThread() != thread()) {
         bool result;
-        BLOCKING_INVOKE_METHOD(this, "safeLanding", Q_RETURN_ARG(bool, result), Q_ARG(const glm::vec3&, position));
+        BLOCKING_INVOKE_METHOD(this, "safeLanding", Q_GENERIC_RETURN_ARG(bool, result), Q_GENERIC_ARG(const glm::vec3&, position));
         return result;
     }
     glm::vec3 better;
@@ -6159,7 +6159,7 @@ QVariantMap MyAvatar::getFlowData() {
     QVariantMap result;
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "getFlowData",
-            Q_RETURN_ARG(QVariantMap, result));
+            Q_GENERIC_RETURN_ARG(QVariantMap, result));
         return result;
     }
     if (_skeletonModel->isLoaded()) {
@@ -6227,7 +6227,7 @@ QVariantList MyAvatar::getCollidingFlowJoints() {
     QVariantList result;
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "getCollidingFlowJoints",
-            Q_RETURN_ARG(QVariantList, result));
+            Q_GENERIC_RETURN_ARG(QVariantList, result));
         return result;
     }
 
@@ -6546,7 +6546,7 @@ void MyAvatar::updateHeadLookAt(float deltaTime) {
 void MyAvatar::setHeadLookAt(const glm::vec3& lookAtTarget) {
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "setHeadLookAt",
-            Q_ARG(const glm::vec3&, lookAtTarget));
+            Q_GENERIC_ARG(const glm::vec3&, lookAtTarget));
         return;
     }
     _headLookAtActive = true;
@@ -6558,7 +6558,7 @@ void MyAvatar::setHeadLookAt(const glm::vec3& lookAtTarget) {
 void MyAvatar::setEyesLookAt(const glm::vec3& lookAtTarget) {
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "setEyesLookAt",
-            Q_ARG(const glm::vec3&, lookAtTarget));
+            Q_GENERIC_ARG(const glm::vec3&, lookAtTarget));
         return;
     }
     _eyesLookAtTarget.set(lookAtTarget);
@@ -6655,8 +6655,8 @@ bool MyAvatar::getHMDCrouchRecenterEnabled() const {
 bool MyAvatar::setPointAt(const glm::vec3& pointAtTarget) {
     if (QThread::currentThread() != thread()) {
         bool result = false;
-        BLOCKING_INVOKE_METHOD(this, "setPointAt", Q_RETURN_ARG(bool, result),
-            Q_ARG(const glm::vec3&, pointAtTarget));
+        BLOCKING_INVOKE_METHOD(this, "setPointAt", Q_GENERIC_RETURN_ARG(bool, result),
+            Q_GENERIC_ARG(const glm::vec3&, pointAtTarget));
         return result;
     }
     if (_skeletonModel->isLoaded() && _pointAtActive) {
