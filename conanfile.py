@@ -42,6 +42,7 @@ class Overte(ConanFile):
         "qt*:with_dbus": "True",  # Required for Qt on Linux. Can be disabled for Windows.
         "fontconfig*:shared": "True",  # For Qt on Linux. Building with static fontconfig and freetype fails: https://github.com/conan-io/conan-center-index/issues/17142
         "freetype*:shared": "True",  # For Qt on Linux.
+        "nss*:shared": "True",  # Dependency of Qt. "NSS recipe cannot yet build static library."
         "glad*:spec": "gl",
         "glad*:gl_profile": "core",
         "glad*:gl_version": "4.5",
