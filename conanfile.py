@@ -39,6 +39,7 @@ class Overte(ConanFile):
         "qt*:qtwebview": "True",
         "qt*:qtxmlpatterns": "True",
         "qt*:qttools": "True",  # windeployqt for Windows
+        "qt*:with_dbus": "True",  # Required for Qt on Linux. Can be disabled for Windows.
         "fontconfig*:shared": "True",  # For Qt on Linux. Building with static fontconfig and freetype fails: https://github.com/conan-io/conan-center-index/issues/17142
         "freetype*:shared": "True",  # For Qt on Linux.
         "glad*:spec": "gl",
