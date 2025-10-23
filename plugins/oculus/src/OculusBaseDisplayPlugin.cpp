@@ -85,7 +85,7 @@ glm::mat4 OculusBaseDisplayPlugin::getEyeProjection(Eye eye, const glm::mat4& ba
         float baseFarClip = baseFrustum.getFarClip();
         ovrEyeType ovrEye = (eye == Left) ? ovrEye_Left : ovrEye_Right;
         ovrFovPort fovPort = _hmdDesc.DefaultEyeFov[eye];
-        ovrEyeRenderDesc& erd = ovr_GetRenderDesc(_session, ovrEye, fovPort);
+        ovrEyeRenderDesc erd = ovr_GetRenderDesc(_session, ovrEye, fovPort);
         ovrMatrix4f ovrPerspectiveProjection = ovrMatrix4f_Projection(erd.Fov, baseNearClip, baseFarClip, ovrProjection_ClipRangeOpenGL);
         return ovr::toGlm(ovrPerspectiveProjection);
     } else {

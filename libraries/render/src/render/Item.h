@@ -172,7 +172,7 @@ public:
         Builder& withMirror() { _flags.set(MIRROR); return (*this); }
         Builder& withSimulate() { _flags.set(SIMULATE); return (*this); }
 
-        Builder& withTag(Tag tag) { _flags.set(FIRST_TAG_BIT + tag); return (*this); }
+        Builder& withTag(Tag tag) { _flags.set(static_cast<size_t>(FIRST_TAG_BIT) + static_cast<size_t>(tag)); return (*this); }
         // Set ALL the tags in one call using the Tag bits
         Builder& withTagBits(uint8_t tagBits) { _flags = evalTagBitsWithKeyBits(tagBits, _flags.to_ulong()); return (*this); }
 
@@ -223,7 +223,7 @@ public:
     bool isNotSimulate() const { return !_flags[SIMULATE]; }
     bool isSimulate() const { return _flags[SIMULATE]; }
 
-    bool isTag(Tag tag) const { return _flags[FIRST_TAG_BIT + tag]; }
+    bool isTag(Tag tag) const { return _flags[static_cast<size_t>(FIRST_TAG_BIT) + static_cast<size_t>(tag)]; }
     uint8_t getTagBits() const { return ((_flags.to_ulong() & KEY_TAG_BITS_MASK) >> FIRST_TAG_BIT); }
 
     uint8_t getLayer() const { return ((_flags.to_ulong() & KEY_LAYER_BITS_MASK) >> FIRST_LAYER_BIT); }
@@ -302,8 +302,8 @@ public:
         Builder& withoutSimulate()      { _value.reset(ItemKey::SIMULATE); _mask.set(ItemKey::SIMULATE); return (*this); }
         Builder& withSimulate()         { _value.set(ItemKey::SIMULATE); _mask.set(ItemKey::SIMULATE); return (*this); }
 
-        Builder& withoutTag(ItemKey::Tag tagIndex)    { _value.reset(ItemKey::FIRST_TAG_BIT + tagIndex);  _mask.set(ItemKey::FIRST_TAG_BIT + tagIndex); return (*this); }
-        Builder& withTag(ItemKey::Tag tagIndex)       { _value.set(ItemKey::FIRST_TAG_BIT + tagIndex);  _mask.set(ItemKey::FIRST_TAG_BIT + tagIndex); return (*this); }
+        Builder& withoutTag(ItemKey::Tag tagIndex)    { _value.reset(static_cast<size_t>(ItemKey::FIRST_TAG_BIT) + static_cast<size_t>(tagIndex));  _mask.set(static_cast<size_t>(ItemKey::FIRST_TAG_BIT) + static_cast<size_t>(tagIndex)); return (*this); }
+        Builder& withTag(ItemKey::Tag tagIndex)       { _value.set(static_cast<size_t>(ItemKey::FIRST_TAG_BIT) + static_cast<size_t>(tagIndex));  _mask.set(static_cast<size_t>(ItemKey::FIRST_TAG_BIT) + static_cast<size_t>(tagIndex)); return (*this); }
         // Set ALL the tags in one call using the Tag bits and the Tag bits touched
         Builder& withTagBits(uint8_t tagBits, uint8_t tagMask) { _value = ItemKey::evalTagBitsWithKeyBits(tagBits, _value.to_ulong()); _mask = ItemKey::evalTagBitsWithKeyBits(tagMask, _mask.to_ulong()); return (*this); }
 

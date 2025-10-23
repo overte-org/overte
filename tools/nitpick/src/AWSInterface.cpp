@@ -609,10 +609,10 @@ void AWSInterface::updateAWS() {
     QProcess* process = new QProcess();
 
     _busyWindow.setWindowTitle("Updating AWS");
-    connect(process, &QProcess::started, this, [=]() { _busyWindow.exec(); });
+    connect(process, &QProcess::started, this, [=, this]() { _busyWindow.exec(); });
     connect(process, SIGNAL(finished(int)), process, SLOT(deleteLater()));
     connect(process, static_cast<void (QProcess::*)(int, QProcess::ExitStatus)>(&QProcess::finished), this,
-        [=](int exitCode, QProcess::ExitStatus exitStatus) { _busyWindow.hide(); });
+        [=, this](int exitCode, QProcess::ExitStatus exitStatus) { _busyWindow.hide(); });
 
 #ifdef Q_OS_WIN
     QStringList parameters = QStringList() << filename;

@@ -76,7 +76,7 @@ void AudioMixerWorkerPool::processPackets(ConstIter begin, ConstIter end) {
 
 void AudioMixerWorkerPool::mix(ConstIter begin, ConstIter end, unsigned int frame, int numToRetain) {
     _function = &AudioMixerWorker::mix;
-    _configure = [=](AudioMixerWorker& worker) {
+    _configure = [=, this](AudioMixerWorker& worker) {
         worker.configureMix(_begin, _end, frame, numToRetain);
     };
 

@@ -200,7 +200,7 @@ void Application::addAssetToWorldUnzipFailure(QString filePath) {
 void Application::addAssetToWorldWithNewMapping(QString filePath, QString mapping, int copy, bool isZip) {
     auto request = DependencyManager::get<AssetClient>()->createGetMappingRequest(mapping);
 
-    QObject::connect(request, &GetMappingRequest::finished, this, [=](GetMappingRequest* request) mutable {
+    QObject::connect(request, &GetMappingRequest::finished, this, [=, this](GetMappingRequest* request) mutable {
         const int MAX_COPY_COUNT = 100;  // Limit number of duplicate assets; recursion guard.
         auto result = request->getError();
         if (result == GetMappingRequest::NotFound) {
@@ -232,7 +232,7 @@ void Application::addAssetToWorldWithNewMapping(QString filePath, QString mappin
 void Application::addAssetToWorldUpload(QString filePath, QString mapping, bool isZip) {
     qInfo(interfaceapp) << "Uploading" << filePath << "to Asset Server as" << mapping;
     auto upload = DependencyManager::get<AssetClient>()->createUpload(filePath);
-    QObject::connect(upload, &AssetUpload::finished, this, [=](AssetUpload* upload, const QString& hash) mutable {
+    QObject::connect(upload, &AssetUpload::finished, this, [=, this](AssetUpload* upload, const QString& hash) mutable {
         if (upload->getError() != AssetUpload::NoError) {
             QString errorInfo = "Could not upload model to the Asset Server.";
             qWarning(interfaceapp) << "Error downloading model: " + errorInfo;
@@ -257,7 +257,7 @@ void Application::addAssetToWorldUpload(QString filePath, QString mapping, bool 
 
 void Application::addAssetToWorldSetMapping(QString filePath, QString mapping, QString hash, bool isZip) {
     auto request = DependencyManager::get<AssetClient>()->createSetMappingRequest(mapping, hash);
-    connect(request, &SetMappingRequest::finished, this, [=](SetMappingRequest* request) mutable {
+    connect(request, &SetMappingRequest::finished, this, [=, this](SetMappingRequest* request) mutable {
         if (request->getError() != SetMappingRequest::NoError) {
             QString errorInfo = "Could not set asset mapping.";
             qWarning(interfaceapp) << "Error downloading model: " + errorInfo;

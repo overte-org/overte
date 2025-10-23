@@ -72,7 +72,7 @@ class Overte(ConanFile):
         self.requires("openvr/2.2.3@overte/stable")
         self.requires("openxr/1.1.46@overte/stable")
         self.requires("opus/1.4")
-        self.requires("polyvox/0.2.1@overte/stable") # FIXME: update to overte-maintained version
+        self.requires("polyvox/2025.09.19@overte/experimental#76ce908c1078988dceae5ad32ead2909")
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.8")

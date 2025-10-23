@@ -1018,7 +1018,7 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
         voxelData = _voxelData;
     });
 
-    QtConcurrent::run([=] {
+    QtConcurrent::run([=, this] {
         QDataStream reader(voxelData);
         quint16 voxelXSize, voxelYSize, voxelZSize;
         reader >> voxelXSize;
@@ -1033,7 +1033,7 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
             entity->setVoxelsFromData(QByteArray(1, 0), 1, 1, 1);
             return;
         }
-        
+
         int rawSize = voxelXSize * voxelYSize * voxelZSize;
 
         QByteArray compressedData;
@@ -1058,7 +1058,7 @@ void RenderablePolyVoxEntityItem::setVoxelsFromData(QByteArray uncompressedData,
     // this accepts the payload from uncompressVolumeData
     ivec3 low{ 0 };
     bool result = false;
-    
+
     withWriteLock([&] {
         if (isEdged()) {
             low += 1;
