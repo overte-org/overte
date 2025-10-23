@@ -1,4 +1,10 @@
 macro(TARGET_CGLTF)
-    find_package(cgltf REQUIRED)
-    target_link_libraries(${TARGET_NAME} cgltf::cgltf)
+    if (OVERTE_USE_SYSTEM_LIBS)
+        find_path(CGLTF_INCLUDE_DIRS "cgltf.h")
+
+        target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${CGLTF_INCLUDE_DIRS})
+    else()
+        find_package(cgltf REQUIRED)
+        target_link_libraries(${TARGET_NAME} cgltf::cgltf)
+    endif()
 endmacro()
