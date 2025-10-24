@@ -14,30 +14,28 @@ Controls.WebView {
     property string userScriptUrl: ""
 
     // Create a global EventBridge object for raiseAndLowerKeyboard.
-    WebEngineScript {
-        id: createGlobalEventBridge
-        sourceCode: eventBridgeJavaScriptToInject
-        injectionPoint: WebEngineScript.DocumentCreation
-        worldId: WebEngineScript.MainWorld
-    }
 
-    // Detect when may want to raise and lower keyboard.
-    WebEngineScript {
-        id: raiseAndLowerKeyboard
-        injectionPoint: WebEngineScript.Deferred
-        sourceUrl: resourceDirectoryUrl + "/html/raiseAndLowerKeyboard.js"
-        worldId: WebEngineScript.MainWorld
-    }
-
-    // User script.
-    WebEngineScript {
-        id: userScript
-        sourceUrl: webview.userScriptUrl
-        injectionPoint: WebEngineScript.DocumentReady  // DOM ready but page load may not be finished.
-        worldId: WebEngineScript.MainWorld
-    }
-
-    userScripts: [ createGlobalEventBridge, raiseAndLowerKeyboard, userScript ]
+    userScripts.collection: [ {
+            name: "createGlobalEventBridge",
+            id: createGlobalEventBridge,
+            sourceCode: eventBridgeJavaScriptToInject,
+            injectionPoint: WebEngineScript.DocumentCreation,
+            worldId: WebEngineScript.MainWorld
+        },
+        {
+            name: "raiseAndLowerKeyboardScript",
+            id: raiseAndLowerKeyboard,
+            injectionPoint: WebEngineScript.Deferred,
+            sourceUrl: resourceDirectoryUrl + "/html/raiseAndLowerKeyboard.js",
+            worldId: WebEngineScript.MainWorld
+        },
+        {
+            name: "userWebEngineScript",
+            id: userScript,
+            sourceUrl: webview.userScriptUrl,
+            injectionPoint: WebEngineScript.DocumentReady,  // DOM ready but page load may not be finished.
+            worldId: WebEngineScript.MainWorld
+    } ]
 
     function onWebEventReceived(event) {
         if (typeof event === "string" && event.slice(0, 17) === "CLARA.IO DOWNLOAD") {
