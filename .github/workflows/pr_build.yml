@@ -35,7 +35,7 @@ jobs:
               runner: depot-windows-2022-16  # Which GitHub Actions Runner to use. When using `image` this just needs to run the build container.
               arch: x86_64
               build_type: full
-              qt_source: system  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
+              qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
             #- os: macOS-10.15
             #  build_type: full
             #  qt_source: aqt
