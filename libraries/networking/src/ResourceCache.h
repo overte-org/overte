@@ -526,6 +526,8 @@ protected:
     std::atomic<bool> _wasDeleted{ false };
 #endif
 
+    std::atomic_bool _isScheduledForDeletion{ false };
+
     QUrl _url;
     QUrl _effectiveBaseURL { _url };
     QUrl _activeUrl;
