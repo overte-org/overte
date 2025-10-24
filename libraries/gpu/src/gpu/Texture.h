@@ -140,6 +140,7 @@ class Texture : public Resource {
     static void updateTextureCPUMemoryUsage(Size prevObjectSize, Size newObjectSize);
 
 public:
+    std::atomic<bool> wasDeleted{false};
     static const uint32_t CUBE_FACE_COUNT { 6 };
     static uint32_t getTextureCPUCount();
     static Size getTextureCPUMemSize();
@@ -329,8 +330,11 @@ public:
     // After the texture has been created, it should be defined
     bool isDefined() const { return _defined; }
 
-    Texture(TextureUsageType usageType);
-    ~Texture();
+    explicit Texture(TextureUsageType usageType);
+    // Textures can be only created through `create...` functions
+    Texture() = delete;
+    Texture(const Texture &texture) = delete;
+    virtual ~Texture();
 
     Stamp getStamp() const { return _stamp; }
     Stamp getDataStamp() const { return _storage->getStamp(); }
@@ -606,8 +610,10 @@ public:
     TextureView(Texture* newTexture, const Element& element) :
         _texture(newTexture),
         _subresource(0),
-        _element(element)
-    {};
+        _element(element) {
+        // TODO: this can cause double delete when it's used with a pointer that is already assigned to another shared_ptr.
+        Q_ASSERT(false);
+    };
     TextureView(const TexturePointer& texture, uint16 subresource, const Element& element) :
         _texture(texture),
         _subresource(subresource),

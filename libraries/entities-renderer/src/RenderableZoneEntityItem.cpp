@@ -536,7 +536,7 @@ void ZoneEntityRenderer::setAmbientURL(const QString& ambientUrl) {
 
     if (_ambientTextureURL.isEmpty()) {
         _pendingAmbientTexture = false;
-        _ambientTexture.clear();
+        _ambientTexture.reset();
 
         _ambientLight->setAmbientMap(nullptr);
         _ambientLight->setAmbientSpherePreset(gpu::SphericalHarmonics::BREEZEWAY);
@@ -575,7 +575,7 @@ void ZoneEntityRenderer::setSkyboxURL(const QString& skyboxUrl) {
 
     if (_skyboxTextureURL.isEmpty()) {
         _pendingSkyboxTexture = false;
-        _skyboxTexture.clear();
+        _skyboxTexture.reset();
 
         editSkybox()->setCubemap(nullptr);
     } else {

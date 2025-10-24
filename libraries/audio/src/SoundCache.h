@@ -26,8 +26,8 @@ public:
     Q_INVOKABLE SharedSoundPointer getSound(const QUrl& url);
 
 protected:
-    virtual QSharedPointer<Resource> createResource(const QUrl& url) override;
-    QSharedPointer<Resource> createResourceCopy(const QSharedPointer<Resource>& resource) override;
+    virtual std::shared_ptr<Resource> createResource(const QUrl& url) override;
+    std::shared_ptr<Resource> createResourceCopy(const std::shared_ptr<Resource>& resource) override;
 
 private:
     SoundCache(QObject* parent = NULL);

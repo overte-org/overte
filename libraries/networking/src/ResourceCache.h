@@ -22,9 +22,7 @@
 #include <QtCore/QList>
 #include <QtCore/QObject>
 #include <QtCore/QPointer>
-#include <QtCore/QSharedPointer>
 #include <QtCore/QUrl>
-#include <QtCore/QWeakPointer>
 #include <QtCore/QReadWriteLock>
 #include <QtCore/QQueue>
 
@@ -67,14 +65,14 @@ class ResourceCacheSharedItems : public Dependency  {
     using Lock = std::unique_lock<Mutex>;
 
 public:
-    bool appendRequest(QWeakPointer<Resource> newRequest, float priority);
-    void removeRequest(QWeakPointer<Resource> doneRequest);
+    bool appendRequest(std::weak_ptr<Resource> newRequest, float priority);
+    void removeRequest(std::weak_ptr<Resource> doneRequest);
     void setRequestLimit(uint32_t limit);
     uint32_t getRequestLimit() const;
-    QList<QSharedPointer<Resource>> getPendingRequests() const;
-    std::pair<QSharedPointer<Resource>, float> getHighestPendingRequest();
+    QList<std::shared_ptr<Resource>> getPendingRequests() const;
+    std::pair<std::shared_ptr<Resource>, float> getHighestPendingRequest();
     uint32_t getPendingRequestsCount() const;
-    QList<std::pair<QSharedPointer<Resource>, float>> getLoadingRequests() const;
+    QList<std::pair<std::shared_ptr<Resource>, float>> getLoadingRequests() const;
     uint32_t getLoadingRequestsCount() const;
     void clear();
 
@@ -82,8 +80,8 @@ private:
     ResourceCacheSharedItems() = default;
 
     mutable Mutex _mutex;
-    QList<QWeakPointer<Resource>> _pendingRequests;
-    QList<std::pair<QWeakPointer<Resource>, float>> _loadingRequests;
+    QList<std::weak_ptr<Resource>> _pendingRequests;
+    QList<std::pair<std::weak_ptr<Resource>, float>> _loadingRequests;
     const uint32_t DEFAULT_REQUEST_LIMIT = 10;
     uint32_t _requestLimit { DEFAULT_REQUEST_LIMIT };
 };
@@ -142,7 +140,7 @@ public:
 
     const QUrl& getURL() const { return _url; }
     int getState() const { return (int)_state; }
-    const QSharedPointer<Resource>& getResource() const { return _resource; }
+    const std::shared_ptr<Resource>& getResource() const { return _resource; }
 
     bool isInScript() const;
     void setInScript(bool isInScript);
@@ -180,7 +178,7 @@ private:
     friend class ResourceCache;
 
     // Holds a ref to the resource to keep it in scope
-    QSharedPointer<Resource> _resource;
+    std::shared_ptr<Resource> _resource;
 
     QMetaObject::Connection _progressConnection;
     QMetaObject::Connection _loadingConnection;
@@ -217,7 +215,7 @@ public:
     void setUnusedResourceCacheSize(qint64 unusedResourcesMaxSize);
     qint64 getUnusedResourceCacheSize() const { return _unusedResourcesMaxSize; }
 
-    static QList<std::pair<QSharedPointer<Resource>, float>> getLoadingRequests();
+    static QList<std::pair<std::shared_ptr<Resource>, float>> getLoadingRequests();
     static uint32_t getPendingRequestCount();
     static uint32_t getLoadingRequestCount();
 
@@ -246,8 +244,8 @@ protected slots:
     /// returns an empty smart pointer and loads its asynchronously.
     /// \param fallback a fallback URL to load if the desired one is unavailable
     // FIXME: std::numeric_limits<size_t>::max() could be a valid extraHash
-    QSharedPointer<Resource> getResource(const QUrl& url, const QUrl& fallback = QUrl()) { return getResource(url, fallback, nullptr, std::numeric_limits<size_t>::max()); }
-    QSharedPointer<Resource> getResource(const QUrl& url, const QUrl& fallback, void* extra, size_t extraHash);
+    std::shared_ptr<Resource> getResource(const QUrl& url, const QUrl& fallback = QUrl()) { return getResource(url, fallback, nullptr, std::numeric_limits<size_t>::max()); }
+    std::shared_ptr<Resource> getResource(const QUrl& url, const QUrl& fallback, void* extra, size_t extraHash);
 
 private slots:
     void clearATPAssets();
@@ -261,16 +259,16 @@ protected:
     Q_INVOKABLE ScriptableResource* prefetch(const QUrl& url) { return prefetch(url, nullptr, std::numeric_limits<size_t>::max()); }
 
     /// Creates a new resource.
-    virtual QSharedPointer<Resource> createResource(const QUrl& url) = 0;
-    virtual QSharedPointer<Resource> createResourceCopy(const QSharedPointer<Resource>& resource) = 0;
+    virtual std::shared_ptr<Resource> createResource(const QUrl& url) = 0;
+    virtual std::shared_ptr<Resource> createResourceCopy(const std::shared_ptr<Resource>& resource) = 0;
 
-    void addUnusedResource(const QSharedPointer<Resource>& resource);
-    void removeUnusedResource(const QSharedPointer<Resource>& resource);
+    void addUnusedResource(const std::shared_ptr<Resource>& resource);
+    void removeUnusedResource(const std::shared_ptr<Resource>& resource);
 
     /// Attempt to load a resource if requests are below the limit, otherwise queue the resource for loading
     /// \return true if the resource began loading, otherwise false if the resource is in the pending queue
-    static bool attemptRequest(QSharedPointer<Resource> resource, float priority = NAN);
-    static void requestCompleted(QWeakPointer<Resource> resource);
+    static bool attemptRequest(std::shared_ptr<Resource> resource, float priority = NAN);
+    static void requestCompleted(std::weak_ptr<Resource> resource);
     static bool attemptHighestPriorityRequest();
 
 private:
@@ -285,7 +283,7 @@ private:
     void resetResourceCounters();
 
     // Resources
-    QHash<QUrl, QMultiHash<size_t, QWeakPointer<Resource>>> _resources;
+    QHash<QUrl, QMultiHash<size_t, std::weak_ptr<Resource>>> _resources;
     QReadWriteLock _resourcesLock { QReadWriteLock::Recursive };
     int _lastLRUKey = 0;
 
@@ -293,7 +291,7 @@ private:
     std::atomic<qint64> _totalResourcesSize { 0 };
 
     // Cached resources
-    QMap<int, QSharedPointer<Resource>> _unusedResources;
+    QMap<int, std::shared_ptr<Resource>> _unusedResources;
     QReadWriteLock _unusedResourcesLock { QReadWriteLock::Recursive };
     qint64 _unusedResourcesMaxSize = DEFAULT_UNUSED_MAX_SIZE;
 
@@ -407,7 +405,7 @@ private:
 };
 
 /// Base class for resources.
-class Resource : public QObject {
+class Resource : public QObject, public std::enable_shared_from_this<Resource> {
     Q_OBJECT
 
 public:
@@ -451,10 +449,9 @@ public:
     /// Refreshes the resource.
     virtual void refresh();
 
-    void setSelf(const QWeakPointer<Resource>& self) { _self = self; }
-
     void setCache(ResourceCache* cache) { _cache = cache; }
 
+    static void sharedPtrDeleter(Resource *object) { object->deleter(); };
     virtual void deleter() { allReferencesCleared(); }
 
     const QUrl& getURL() const { return _url; }
@@ -519,6 +516,13 @@ protected:
     /// Return true if the resource will be retried
     virtual bool handleFailedRequest(ResourceRequest::Result result);
 
+    // Safeguard for debugging.
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+    std::atomic<bool> _wasDeleted{ false };
+#endif
+
+    std::atomic_bool _isScheduledForDeletion{ false };
+
     QUrl _url;
     QUrl _effectiveBaseURL { _url };
     QUrl _activeUrl;
@@ -533,7 +537,6 @@ protected:
     bool _loaded = false;
 
     QHash<QPointer<QObject>, std::function<float()>> _loadPriorityOperators;
-    QWeakPointer<Resource> _self;
     QPointer<ResourceCache> _cache;
 
     qint64 _bytesReceived { 0 };
