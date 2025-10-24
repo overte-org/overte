@@ -81,25 +81,25 @@ jobs:
             runner: ubuntu-24.04-arm
 
           - os: fedora-41
-            image: docker.io/overte/overte-server-build:2025-09-15-fedora-41-amd64
+            image: docker.io/overte/overte-server-build:2025-10-24-fedora-41-amd64
             arch: amd64
             qt_source: system
             runner: ubuntu-latest
 
           - os: fedora-41
-            image: docker.io/overte/overte-server-build:2025-09-15-fedora-41-aarch64
+            image: docker.io/overte/overte-server-build:2025-10-24-fedora-41-aarch64
             arch: aarch64
             qt_source: system
             runner: ubuntu-24.04-arm
 
           - os: fedora-42
-            image: docker.io/overte/overte-server-build:2025-09-15-fedora-42-amd64
+            image: docker.io/overte/overte-server-build:2025-10-24-fedora-42-amd64
             arch: amd64
             qt_source: system
             runner: ubuntu-latest
 
           - os: fedora-42
-            image: docker.io/overte/overte-server-build:2025-09-15-fedora-42-aarch64
+            image: docker.io/overte/overte-server-build:2025-10-24-fedora-42-aarch64
             arch: aarch64
             qt_source: system
             runner: ubuntu-24.04-arm

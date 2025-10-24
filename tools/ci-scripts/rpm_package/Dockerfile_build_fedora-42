@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte Server
-# Example build: docker build --no-cache --progress=plain -t overte/overte-server-build:2025-09-15-fedora-42-amd64 -f Dockerfile_build_fedora-42 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-server-build:2025-10-24-fedora-42-amd64 -f Dockerfile_build_fedora-42 .
 FROM fedora:42
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
@@ -13,18 +13,38 @@ LABEL description="Development image for Overte Domain server and assignment cli
 # Install build dependencies
 #
 RUN <<EOF
-# Install Overte domain-server and assignment-client build dependencies
-dnf -y install cmake curl ninja-build git gcc gcc-c++ libstdc++-static openssl-devel qt5-qtwebsockets-devel qt5-qtmultimedia-devel unzip libXext-devel systemd-devel python3 python3-packaging
-# Install Overte tools build dependencies
-dnf -y install qt5-qtwebchannel-devel qt5-qtwebengine-devel qt5-qtxmlpatterns-devel
-# Install tools for package creation
-dnf -y install chrpath rpmdevtools
+cat << PACKAGES > packages.txt
+# domain-server and assignment-client build dependencies
+conan
+cmake
+curl
+ninja-build
+git
+gcc
+gcc-c++
+libstdc++-static
+openssl-devel
+qt5-qtwebsockets-devel
+qt5-qtmultimedia-devel
+unzip
+libXext-devel
+systemd-devel
+python3
+python3-packaging
+# Needed for tools target
+qt5-qtwebchannel-devel
+qt5-qtwebengine-devel
+qt5-qtxmlpatterns-devel
+# Tools for package creation
+chrpath
+rpmdevtools
+# Tools needed for our Github Actions Workflow
+python3-boto3
+python3-pygithub
+zip
+PACKAGES
 
-# Install tools needed for our Github Actions Workflow
-dnf -y install python3-boto3 python3-pygithub zip
-
-# Install Conan
-dnf -y install conan
+dnf -y install $(grep -o '^[^#]*' packages.txt)  # Install packages while ignoring comments.
 EOF
 
 #
