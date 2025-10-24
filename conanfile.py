@@ -44,6 +44,7 @@ class Overte(ConanFile):
         "freetype*:shared": "True",  # For Qt on Linux.
         "nss*:shared": "True",  # Dependency of Qt. "NSS recipe cannot yet build static library."
         "nspr*:shared": "True",  # NSS, which is a dependency of Qt, cannot link to statis NSPR.
+        "sqlite*:shared": "True",  # Avoid `undefined symbol` errors when building NSS.
         "glad*:spec": "gl",
         "glad*:gl_profile": "core",
         "glad*:gl_version": "4.6",
