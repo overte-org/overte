@@ -33,10 +33,10 @@ jobs:
       matrix:
         include:
           - os: debian-12
-            image: docker.io/overte/overte-server-build:2025-10-24-debian-12-amd64
+            image: docker.io/overte/overte-server-build:2025-10-24-debian-12-amd64  # Container image used for building. Built from /tools/ci-script/deb_package/Dockerfile_x
             arch: amd64
-            qt_source: system
-            runner: ubuntu-latest
+            qt_source: system  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
+            runner: ubuntu-latest  # Which GitHub Actions Runner to use. When using `image` this just needs to run the build container.
 
           - os: debian-12
             image: docker.io/overte/overte-server-build:2025-10-24-debian-12-aarch64

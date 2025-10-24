@@ -32,15 +32,15 @@ jobs:
           include:
             - os: Windows 2022
               # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
-              runner: depot-windows-2022-16
+              runner: depot-windows-2022-16  # Which GitHub Actions Runner to use. When using `image` this just needs to run the build container.
               arch: x86_64
               build_type: full
-              qt_source: system
+              qt_source: system  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
             #- os: macOS-10.15
             #  build_type: full
             #  qt_source: aqt
             - os: Ubuntu 22.04
-              image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-amd64
+              image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
               runner: ubuntu-latest
               arch: amd64
               build_type: full
