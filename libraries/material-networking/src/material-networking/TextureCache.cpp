@@ -484,6 +484,8 @@ void NetworkTexture::setExtra(void* extra) {
 void NetworkTexture::setImage(gpu::TexturePointer texture, int originalWidth,
                               int originalHeight) {
 
+    auto self = weak_from_this().lock();
+
     // Passing ownership
     _textureSource->resetTexture(texture);
 
@@ -492,19 +494,24 @@ void NetworkTexture::setImage(gpu::TexturePointer texture, int originalWidth,
         _width = texture->getWidth();
         _height = texture->getHeight();
         setSize(texture->getStoredSize());
-        finishedLoading(true);
+        if (!_isScheduledForDeletion) {
+            finishedLoading(true);
+        }
     } else {
         _width = _height = 0;
-        finishedLoading(false);
+        if (!_isScheduledForDeletion) {
+            finishedLoading(false);
+        }
     }
 
-    auto self = weak_from_this().lock();
     if (!self) {
         // We need to make sure that texture was just added to unused pool and wasn't deleted yet.
         Q_ASSERT(!_wasDeleted);
+        Q_ASSERT(!_isScheduledForDeletion);
         return;
         //TODO: what to do when texture pointer has expired?
     }
+
     auto thisTexture = std::dynamic_pointer_cast<NetworkTexture>(self);
     Q_ASSERT(thisTexture);
     emit networkTextureCreated(thisTexture);
@@ -512,10 +519,12 @@ void NetworkTexture::setImage(gpu::TexturePointer texture, int originalWidth,
 
 void NetworkTexture::setImageOperator(std::function<gpu::TexturePointer()> textureOperator) {
     _textureSource->resetTextureOperator(textureOperator);
-    finishedLoading((bool)textureOperator);
-    auto thisTexture = std::dynamic_pointer_cast<NetworkTexture>(shared_from_this());
-    Q_ASSERT(thisTexture);
-    emit networkTextureCreated(thisTexture);
+    if (!_isScheduledForDeletion) {
+        finishedLoading((bool)textureOperator);
+        auto thisTexture = std::dynamic_pointer_cast<NetworkTexture>(shared_from_this());
+        Q_ASSERT(thisTexture);
+        emit networkTextureCreated(thisTexture);
+    }
 }
 
 gpu::TexturePointer NetworkTexture::getFallbackTexture() const {
@@ -559,6 +568,14 @@ NetworkTexture::~NetworkTexture() {
 
 const uint16_t NetworkTexture::NULL_MIP_LEVEL = std::numeric_limits<uint16_t>::max();
 void NetworkTexture::makeRequest() {
+    // Prevent the texture from being scheduled from deletion while the request is being made
+    auto selfLocked = weak_from_this().lock();
+    if (!selfLocked) {
+        qWarning() << "NetworkTexture::makeRequest: resource pointer has expired.";
+        Q_ASSERT(false);
+        return;
+    }
+
     if (_currentlyLoadingResourceType != ResourceType::KTX) {
         Resource::makeRequest();
         return;
