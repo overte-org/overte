@@ -331,6 +331,9 @@ public:
     bool isDefined() const { return _defined; }
 
     explicit Texture(TextureUsageType usageType);
+    // Textures can be only created through `create...` functions
+    Texture() = delete;
+    Texture(const Texture &texture) = delete;
     virtual ~Texture();
 
     Stamp getStamp() const { return _stamp; }
