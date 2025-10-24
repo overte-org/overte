@@ -372,6 +372,11 @@ void entities::TextPayload::render(RenderArgs* args) {
     if (textColor.a <= 0.0f) {
         return;
     }
+    // QT6TODO: temporary workaround, since I don't know this part of code and how fade works
+    bool fadingWorkaroundCheck = (!forward && ShapeKey(args->_itemShapeKey).isFaded()) && !args->_shapePipeline;
+    if (fadingWorkaroundCheck) {
+        return;
+    }
 
     bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), textRenderable->_billboardMode,
