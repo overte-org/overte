@@ -1064,7 +1064,7 @@ void RenderablePolyVoxEntityItem::setVoxelsFromData(QByteArray uncompressedData,
             low += 1;
         }
         loop3(ivec3(0), ivec3(voxelXSize, voxelYSize, voxelZSize), [&](const ivec3& v) {
-            int uncompressedIndex = (v.z * (voxelYSize) * (voxelXSize)) + (v.y * (voxelZSize)) + v.x;
+            int uncompressedIndex = (v.z * (voxelYSize) * (voxelXSize)) + (v.y * (voxelXSize)) + v.x;
             result |= setVoxelInternal(v, uncompressedData[uncompressedIndex]);
         });
 
