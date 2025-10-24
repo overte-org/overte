@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte Server
-# Example build: docker build --no-cache --progress=plain -t overte/overte-server-build:2025-09-15-debian-13-amd64 -f Dockerfile_build_debian-13 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-server-build:2025-10-24-debian-13-amd64 -f Dockerfile_build_debian-13 .
 FROM debian:trixie
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
@@ -21,14 +21,38 @@ echo UTC >/etc/timezone
 apt-get update && apt-get -y install tzdata
 
 # Install Overte domain-server and assignment-client build dependencies
-apt-get -y install cmake curl ninja-build git g++ libssl-dev libqt5websockets5-dev qtdeclarative5-dev qtmultimedia5-dev python3-setuptools python3-distro mesa-common-dev libgl1-mesa-dev libsystemd-dev python3-packaging
-# Install Overte tools build dependencies
-apt-get -y install libqt5webchannel5-dev qtwebengine5-dev libqt5xmlpatterns5-dev
-# Install tools for package creation
-apt-get -y install sudo chrpath binutils dh-make
+cat << PACKAGES > packages.txt
+cmake
+curl
+ninja-build
+git
+g++
+libssl-dev
+libqt5websockets5-dev
+qtdeclarative5-dev
+qtmultimedia5-dev
+python3-setuptools  # Replaces python3-distutils
+python3-distro
+mesa-common-dev
+libgl1-mesa-dev
+libsystemd-dev
+python3-packaging
+# Needed for tools target
+libqt5webchannel5-dev
+qtwebengine5-dev
+libqt5xmlpatterns5-dev
+# Tools for package creation
+sudo
+chrpath
+binutils
+dh-make
+# Tools needed for our Github Actions Workflow
+python3-boto3
+python3-github
+zip
+PACKAGES
 
-# Install tools needed for our Github Actions Workflow
-apt-get -y install python3-boto3 python3-github zip
+apt-get -y install $(grep -o '^[^#]*' packages.txt)  # Install packages while ignoring comments.
 
 # Install Conan
 apt-get -y install wget
