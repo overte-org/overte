@@ -641,13 +641,15 @@ void Resource::refresh() {
         _request->disconnect(this);
         _request->deleteLater();
         _request = nullptr;
-        ResourceCache::requestCompleted(shared_from_this());
+        ResourceCache::requestCompleted(weak_from_this());
     }
 
     _activeUrl = _url;
     init();
     ensureLoading();
-    emit onRefresh();
+    if (!_isScheduledForDeletion) {
+        emit onRefresh();
+    }
 }
 
 void Resource::allReferencesCleared() {
@@ -676,6 +678,7 @@ void Resource::allReferencesCleared() {
             _request = nullptr;
             ResourceCache::requestCompleted(weak_from_this());
         }
+        _isScheduledForDeletion = true;
         disconnect();
         deleteLater();
     }
@@ -742,7 +745,9 @@ void Resource::finishedLoading(bool success) {
     } else {
         _failedToLoad = true;
     }
-    emit finished(success);
+    if (!_isScheduledForDeletion) {
+        emit finished(success);
+    }
 }
 
 void Resource::setSize(const qint64& bytes) {
@@ -823,10 +828,7 @@ void Resource::handleReplyFinished() {
         { "size_mb", _bytesTotal / 1000000.0 }
     });
 
-    // TODO: should we still emit requestCompleted if resource's shared_ptr has expired?
-    if (self) {
-        ResourceCache::requestCompleted(weak_from_this());
-    }
+    ResourceCache::requestCompleted(weak_from_this());
 
     auto result = _request->getResult();
     if (result == ResourceRequest::Success) {
@@ -895,7 +897,9 @@ bool Resource::handleFailedRequest(ResourceRequest::Result result) {
             qCDebug(networking) << "Error loading:" << metaEnum.valueToKey(result) << "resource:" << _url.toString();
             auto error = (result == ResourceRequest::Timeout) ? QNetworkReply::TimeoutError
                                                               : QNetworkReply::UnknownNetworkError;
-            emit failed(error);
+            if (!_isScheduledForDeletion) {
+                emit failed(error);
+            }
             willRetry = false;
             finishedLoading(false);
             break;
