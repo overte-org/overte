@@ -97,7 +97,9 @@ StateImage {
         anchors.bottom: caption.top
         anchors.bottomMargin: 0
         anchors.horizontalCenter: parent.horizontalCenter
-        fillMode: Image.Stretch
+        fillMode: Image.PreserveAspectFit
+        sourceSize.width: width
+        sourceSize.height: height
         source: urlHelper(button.isActive ? (button.isEntered ? button.activeHoverIcon : button.activeIcon) : (button.isEntered ? button.hoverIcon : button.icon))
     }
 

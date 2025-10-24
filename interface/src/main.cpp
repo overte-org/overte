@@ -70,6 +70,18 @@ int main(int argc, const char* argv[]) {
     }
 #endif
 
+    // Force-disable subpixel antialiasing on QML distance-field text.
+    // An existing override for QSG_DISTANCEFIELD_ANTIALIASING will be respected, and this
+    // variable will change nothing if QML_DISABLE_DISTANCEFIELD is set.
+    // Qt doesn't seem to have any public API for changing this besides the environment variable.
+    // See qtdeclarative/src/quick/scenegraph/qsgdefaultcontext.cpp
+    if (
+        auto aa = qgetenv("QSG_DISTANCEFIELD_ANTIALIASING");
+        aa.isNull() || aa.isEmpty()
+    ) {
+        qputenv("QSG_DISTANCEFIELD_ANTIALIASING", "gray");
+    }
+
     // Setup QCoreApplication settings, install log message handler
     setupHifiApplication(BuildInfo::INTERFACE_NAME);
 
