@@ -21,6 +21,7 @@
 #include <glm/gtc/quaternion.hpp>
 
 #include <QIODevice>
+#include <QTimer>
 
 #include "AACube.h"
 #include "ShapeInfo.h"
@@ -46,6 +47,7 @@ Q_DECLARE_METATYPE(QVector<unsigned int>)
 Q_DECLARE_METATYPE(AACube)
 Q_DECLARE_METATYPE(std::function<void()>);
 Q_DECLARE_METATYPE(std::function<QVariant()>);
+Q_DECLARE_METATYPE(QTimer*);
 
 // Mat4
 /*@jsdoc
