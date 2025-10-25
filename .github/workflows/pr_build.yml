@@ -56,7 +56,7 @@ jobs:
             #  qt_source: aqt
             - os: Ubuntu 22.04
               image: docker.io/overte/overte-full-build:0.1.7-ubuntu-22.04-amd64
-              runner: ubuntu-latest
+              runner: depot-ubuntu-24.04-4  # Use depot.dev runner to avoid running out of disk space when building Qt from source.
               arch: amd64
               build_type: full
               qt_source: source
