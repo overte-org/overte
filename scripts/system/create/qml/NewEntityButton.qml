@@ -87,7 +87,9 @@ Item {
         anchors.bottom: text.top
         anchors.bottomMargin: 5
         anchors.horizontalCenter: parent.horizontalCenter
-        fillMode: Image.Stretch
+        fillMode: Image.PreserveAspectFit
+        sourceSize.width: width
+        sourceSize.height: height
         source: newEntityButton.icon
     }
 
