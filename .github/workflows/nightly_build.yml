@@ -47,7 +47,7 @@ jobs:
           #  build_type: full
           #  qt_source: source
           #- os: Ubuntu 22.04
-          #  runner: ubuntu-latest
+          #  runner: depot-ubuntu-24.04-4  # Use depot.dev runner to avoid running out of disk space when building Qt from source.
           #  build_type: full
           #  qt_source: source
           #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion3 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
