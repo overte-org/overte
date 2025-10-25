@@ -114,7 +114,7 @@ public slots:
      * //                (1.478398, 0.560660, 1.224745, 0.000000),
      * //                (10.000000, 11.000000, 12.000000, 1.000000))
      */
-    glm::mat<4,4,float,glm::packed_highp> createFromColumns(const glm::vec4& col0, const glm::vec4& col1, const glm::vec4& col2, const glm::vec4& col3) const;
+    glm::mat<4,4,float,glm::packed_highp> createFromColumns(const glm::vec<4,float,glm::packed_highp>& col0, const glm::vec<4,float,glm::packed_highp>& col1, const glm::vec<4,float,glm::packed_highp>& col2, const glm::vec<4,float,glm::packed_highp>& col3) const;
 
     /*@jsdoc
      * Creates a matrix from an array of values.

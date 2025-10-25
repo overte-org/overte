@@ -61,7 +61,7 @@ public:
      *     DebugDraw.drawRay(start, end, color);
      * });
      */
-    Q_INVOKABLE void drawRay(const glm::vec<3,float,glm::packed_highp>& start, const glm::vec<3,float,glm::packed_highp>& end, const glm::vec4& color);
+    Q_INVOKABLE void drawRay(const glm::vec<3,float,glm::packed_highp>& start, const glm::vec<3,float,glm::packed_highp>& end, const glm::vec<4,float,glm::packed_highp>& color);
     
     /*@jsdoc
      * Draws lines in world space, visible for a single frame. To make the lines visually persist, you need to repeatedly draw 
@@ -86,7 +86,7 @@ public:
      *     DebugDraw.drawRays(lines, color, translation, rotation);
      * });
      */
-    Q_INVOKABLE void drawRays(const std::vector<std::pair<glm::vec<3,float,glm::packed_highp>, glm::vec<3,float,glm::packed_highp>>>& lines, const glm::vec4& color,
+    Q_INVOKABLE void drawRays(const std::vector<std::pair<glm::vec<3,float,glm::packed_highp>, glm::vec<3,float,glm::packed_highp>>>& lines, const glm::vec<4,float,glm::packed_highp>& color,
                               const glm::vec<3,float,glm::packed_highp>& translation = glm::vec<3,float,glm::packed_highp>(0.0f, 0.0f, 0.0f), const glm::qua<float,glm::packed_highp>& rotation = glm::qua<float,glm::packed_highp>(1.0f, 0.0f, 0.0f, 0.0f));
 
     /*@jsdoc
@@ -113,7 +113,7 @@ public:
      * }, 5000);
      */
     Q_INVOKABLE void addMarker(const QString& key, const glm::qua<float,glm::packed_highp>& rotation, const glm::vec<3,float,glm::packed_highp>& position,
-                               const glm::vec4& color, float size = 1.0f);
+                               const glm::vec<4,float,glm::packed_highp>& color, float size = 1.0f);
 
     /*@jsdoc
      * Removes a debug marker that was added in world coordinates.
@@ -146,7 +146,7 @@ public:
      * }, 5000);
      */
     Q_INVOKABLE void addMyAvatarMarker(const QString& key, const glm::qua<float,glm::packed_highp>& rotation, const glm::vec<3,float,glm::packed_highp>& position,
-                                       const glm::vec4& color, float size = 1.0f);
+                                       const glm::vec<4,float,glm::packed_highp>& color, float size = 1.0f);
 
     /*@jsdoc
      * Removes a debug marker that was added in avatar coordinates.
