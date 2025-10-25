@@ -148,9 +148,9 @@ bool u8vec3FromScriptValue(const ScriptValue& object, glm::u8vec3& vec3);
  * @property {number} z - Z-coordinate of the vector.
  * @property {number} w - W-coordinate of the vector.
  */
-ScriptValue vec4toScriptValue(ScriptEngine* engine, const glm::vec4& vec4);
-ScriptValue vec4ColorToScriptValue(ScriptEngine* engine, const glm::vec4& vec4);
-bool vec4FromScriptValue(const ScriptValue& object, glm::vec4& vec4);
+ScriptValue vec4toScriptValue(ScriptEngine* engine, const glm::vec<4,float,glm::packed_highp>& vec4);
+ScriptValue vec4ColorToScriptValue(ScriptEngine* engine, const glm::vec<4,float,glm::packed_highp>& vec4);
+bool vec4FromScriptValue(const ScriptValue& object, glm::vec<4,float,glm::packed_highp>& vec4);
 
 // Quaternions
 ScriptValue quatToScriptValue(ScriptEngine* engine, const glm::quat& quat);
