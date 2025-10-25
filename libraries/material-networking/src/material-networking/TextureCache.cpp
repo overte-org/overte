@@ -504,10 +504,13 @@ void NetworkTexture::setImage(gpu::TexturePointer texture, int originalWidth,
         }
     }
 
+    if (_isScheduledForDeletion) {
+        return;
+    }
+
     if (!self) {
         // We need to make sure that texture was just added to unused pool and wasn't deleted yet.
         Q_ASSERT(!_wasDeleted);
-        Q_ASSERT(!_isScheduledForDeletion);
         return;
         //TODO: what to do when texture pointer has expired?
     }
