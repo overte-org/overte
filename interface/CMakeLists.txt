@@ -295,6 +295,8 @@ if (ANDROID)
   target_link_libraries(${TARGET_NAME} ${ANDROID_LOG_LIB})
 endif ()
 
+find_package(Qt6GuiPrivate)
+
 target_link_libraries(
   ${TARGET_NAME}
   Qt6::Gui Qt6::GuiPrivate Qt6::Network Qt6::Multimedia Qt6::Widgets
