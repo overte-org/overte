@@ -1,0 +1,3 @@
+module AvatarPicker
+AvatarPicker 1.0 AvatarPicker.qml
+AvatarItem 1.0 AvatarItem.qml
