@@ -22,17 +22,12 @@ var DEFAULT_SCRIPTS_COMBINED = [
     "system/menu.js",
     "system/bubble.js",
     "system/snapshot.js",
-    "system/pal.js", // "system/mod.js", // older UX, if you prefer
-    "system/avatarapp.js",
-    "system/settings/settings.js",
     "system/makeUserConnection.js",
     "system/notifications.js",
     "system/create/edit.js",
     "system/dialTone.js",
     "system/firstPersonHMD.js",
     "system/tablet-ui/tabletUI.js",
-    "system/emote.js",
-    "system/miniTablet.js",
     "system/audioMuteOverlay.js",
     "system/inspect.js",
     "system/keyboardShortcuts/keyboardShortcuts.js",
@@ -41,15 +36,15 @@ var DEFAULT_SCRIPTS_COMBINED = [
     //"developer/debugging/scriptMemoryReport.js"
 ];
 var DEFAULT_SCRIPTS_SEPARATE = [
+    "system/systemApps.js",
+    "system/chat.js",
     "system/controllers/controllerScripts.js",
     "system/controllers/squeezeHands.js",
     "communityScripts/notificationCore/notificationCore.js",
     "simplifiedUI/ui/simplifiedNametag/simplifiedNametag.js",
     {"stable": "system/more/app-more.js", "beta": "https://more.overte.org/more/app-more.js"},
-    //"communityScripts/armored-chat/armored_chat.js", // QT6TODO: causes a crash for now
     "communityScripts/chatBubbles/chatBubbles.js",
     "communityScripts/contextMenu.js",
-    //"system/chat.js"
 ];
 
 if (Window.interstitialModeEnabled) {
