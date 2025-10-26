@@ -31,7 +31,7 @@ Windows.ScrollingWindow {
         id: settings
         category: "WindowRoot.Windows"
         property real width: 480
-        property real height: 706
+        property real height: 720
     }
 
     onResizableChanged: {
@@ -40,7 +40,7 @@ Windows.ScrollingWindow {
             settings.width = tabletRoot.width
             settings.height = tabletRoot.height
             tabletRoot.width = 480
-            tabletRoot.height = 706
+            tabletRoot.height = 720
         } else {
             tabletRoot.width = settings.width
             tabletRoot.height = settings.height
@@ -204,7 +204,6 @@ Windows.ScrollingWindow {
         }
     }
 
-
     implicitWidth: 480
-    implicitHeight: 706
+    implicitHeight: 720
 }

@@ -1,5 +1,7 @@
 import QtQuick 2.5
 
+// TODO: figure out a way of hooking these up to
+// the theme constants without too much breakage
 StateImage {
     id: button
 
