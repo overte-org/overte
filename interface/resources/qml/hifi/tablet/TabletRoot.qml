@@ -287,7 +287,7 @@ Rectangle {
 	}
 
     width: 480
-    height: 706
+    height: 720
 
     function setShown(value) {
         if (value === true) {
