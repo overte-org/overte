@@ -67,7 +67,9 @@ Fadable {
     property bool destroyOnCloseButton: true
     // Should hiding the window destroy it or just hide it?
     property bool destroyOnHidden: false
-    property bool pinnable: true
+    // TODO: Remove the pinnable property entirely
+    // Nobody knows what the pin is supposed to do, disable it by default
+    property bool pinnable: false
     property bool pinned: false
     property bool resizable: false
     property bool gradientsSupported: desktop.gradientsSupported
@@ -291,7 +293,7 @@ Fadable {
                        window.height - frame.decoration.anchors.topMargin - frame.decoration.anchors.bottomMargin)
     }
 
-    Keys.onPressed: {
+    Keys.onPressed: event => {
         switch(event.key) {
             case Qt.Key_Control:
             case Qt.Key_Shift:

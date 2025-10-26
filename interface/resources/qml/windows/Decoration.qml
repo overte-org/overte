@@ -9,10 +9,12 @@
 //
 
 import QtQuick 2.5
-import Qt5Compat.GraphicalEffects
 
 import "."
 import stylesUit 1.0
+
+// TODO: look into whether we should outright replace the Hifi desktop system
+import "../overte" as Overte
 
 Rectangle {
     HifiConstants { id: hifi }
@@ -20,11 +22,11 @@ Rectangle {
     signal inflateDecorations();
     signal deflateDecorations();
 
-    property int frameMargin: 9
+    property int frameMargin: 4
     property int frameMarginLeft: frameMargin
     property int frameMarginRight: frameMargin
-    property int frameMarginTop: 2 * frameMargin + iconSize
-    property int frameMarginBottom: iconSize + 11
+    property int frameMarginTop: (2 * frameMargin) + iconSize
+    property int frameMarginBottom: (2 * frameMargin) + (window.resizable || DebugQML ? 18 : 0)
 
     anchors {
         topMargin: -frameMarginTop
@@ -33,12 +35,18 @@ Rectangle {
         bottomMargin: -frameMarginBottom
     }
     anchors.fill: parent
-    color: hifi.colors.baseGrayHighlight40
-    border {
-        width: hifi.dimensions.borderWidth
-        color: hifi.colors.faintGray50
+    color: Overte.Theme.paletteActive.base
+    border.width: Overte.Theme.borderWidth
+    border.color: {
+        if (Overte.Theme.highContrast) {
+            return Overte.Theme.paletteActive.text;
+        } else if (Overte.Theme.darkMode) {
+            return Qt.lighter(Overte.Theme.paletteActive.base);
+        } else {
+            return Qt.darker(Overte.Theme.paletteActive.base);
+        }
     }
-    radius: hifi.dimensions.borderRadius
+    radius: Overte.Theme.borderRadius
 
     // Enable dragging of the window,
     // detect mouseover of the window (including decoration)
@@ -90,4 +98,3 @@ Rectangle {
         }
     }
 }
-
