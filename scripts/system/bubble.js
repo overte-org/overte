@@ -190,7 +190,7 @@
         icon: "icons/tablet-icons/bubble-i.svg",
         activeIcon: "icons/tablet-icons/bubble-a.svg",
         text: buttonName,
-        sortOrder: 4
+        sortOrder: 2
     });
 
     onBubbleToggled(Users.getIgnoreRadiusEnabled(), true); // pass in true so we don't log this initial one in the UserActivity table
