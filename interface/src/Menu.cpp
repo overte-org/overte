@@ -150,8 +150,8 @@ Menu::Menu() {
     auto action = addActionToQMenuAndActionHash(editMenu, MenuOption::RunningScripts, Qt::CTRL | Qt::Key_J);
     connect(action, &QAction::triggered, [] {
         if (!qApp->getLoginDialogPoppedUp()) {
-            static const QUrl widgetUrl("hifi/dialogs/RunningScripts.qml");
-            static const QUrl tabletUrl("hifi/dialogs/TabletRunningScripts.qml");
+            static const QUrl widgetUrl("overte/workarounds/RunningScripts_Window.qml");
+            static const QUrl tabletUrl("overte/dialogs/RunningScriptsDialog.qml");
             static const QString name("RunningScripts");
             qApp->showDialog(widgetUrl, tabletUrl, name);
         }
@@ -255,40 +255,6 @@ Menu::Menu() {
 
     // Settings menu ----------------------------------
     MenuWrapper* settingsMenu = addMenu("Settings");
-
-    // Settings > General...
-    action = addActionToQMenuAndActionHash(settingsMenu, MenuOption::Preferences, Qt::CTRL | Qt::Key_G, nullptr, nullptr);
-    connect(action, &QAction::triggered, [] {
-        if (!qApp->getLoginDialogPoppedUp()) {
-            qApp->showDialog(QString("hifi/dialogs/GeneralPreferencesDialog.qml"),
-                QString("hifi/tablet/TabletGeneralPreferences.qml"), "GeneralPreferencesDialog");
-        }
-    });
-
-    // Settings > Controls...
-    action = addActionToQMenuAndActionHash(settingsMenu, "Controls...");
-    connect(action, &QAction::triggered, [] {
-            auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
-            auto hmd = DependencyManager::get<HMDScriptingInterface>();
-            tablet->pushOntoStack("hifi/tablet/ControllerSettings.qml");
-
-            if (!hmd->getShouldShowTablet()) {
-                hmd->toggleShouldShowTablet();
-            }
-    });
-
-    // Settings > Audio...
-    action = addActionToQMenuAndActionHash(settingsMenu, "Audio...");
-    connect(action, &QAction::triggered, [] {
-        static const QUrl tabletUrl("hifi/audio/Audio.qml");
-        auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
-        auto hmd = DependencyManager::get<HMDScriptingInterface>();
-        tablet->pushOntoStack(tabletUrl);
-
-        if (!hmd->getShouldShowTablet()) {
-            hmd->toggleShouldShowTablet();
-        }
-    });
 
     // Settings > Security...
     action = addActionToQMenuAndActionHash(settingsMenu, "Security...");
