@@ -24,6 +24,7 @@ class Overte(ConanFile):
         "openssl*:shared": "True",
         "qt*:shared": "True",
         "qt*:gui": "True",
+        "qt*:qt5compat": "True",  # Required by Quazip 1.4 and probably us
         "qt*:qtdeclarative": "True",
         "qt*:qtimageformats": "True",  # WebP texture support
         "qt*:qtlocation": "True",
@@ -38,6 +39,12 @@ class Overte(ConanFile):
         "qt*:qtwebview": "True",
         "qt*:qtxmlpatterns": "True",
         "qt*:qttools": "True",  # windeployqt for Windows
+        "qt*:with_dbus": "True",  # Required for Qt on Linux. Can be disabled for Windows.
+        "fontconfig*:shared": "True",  # For Qt on Linux. Building with static fontconfig and freetype fails: https://github.com/conan-io/conan-center-index/issues/17142
+        "freetype*:shared": "True",  # For Qt on Linux.
+        "nss*:shared": "True",  # Dependency of Qt. "NSS recipe cannot yet build static library."
+        "nspr*:shared": "True",  # NSS, which is a dependency of Qt, cannot link to statis NSPR.
+        "sqlite*:shared": "True",  # Avoid `undefined symbol` errors when building NSS.
         "glad*:spec": "gl",
         "glad*:gl_profile": "core",
         "glad*:gl_version": "4.6",
@@ -69,8 +76,7 @@ class Overte(ConanFile):
         self.requires("openxr/1.1.46@overte/stable")
         self.requires("opus/1.4")
         self.requires("polyvox/0.2.1@overte/stable") # FIXME: update to overte-maintained version
-        # QT6TODO
-        #self.requires("quazip/1.4")
+        self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.8")
         self.requires("spirv-cross/1.3.268.0")
@@ -94,7 +100,7 @@ class Overte(ConanFile):
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
-            self.requires("qt/5.15.17-2025.06.07@overte/stable#550a40fc9cbe089ea59a727a3f038a31", force=True)
+            self.requires("qt/6.8.3", force=True)
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")
