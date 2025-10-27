@@ -545,6 +545,7 @@ FocusScope {
         return fileDialogBuilder.createObject(desktop, properties);
     } 
 
+    // TODO: is this actually used?
     Component { id: assetDialogBuilder; Item {}}//AssetDialog { } }
     function assetDialog(properties) {
         return assetDialogBuilder.createObject(desktop, properties);
