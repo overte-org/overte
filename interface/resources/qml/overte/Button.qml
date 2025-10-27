@@ -17,6 +17,8 @@ Button {
 	opacity: enabled ? 1.0 : 0.5
 
 	background: Rectangle {
+		opacity: flat ? 0.0 : 1.0
+
 		id: buttonBg
 		radius: Theme.borderRadius
 		border.width: button.activeFocus ? Theme.borderWidthFocused : Theme.borderWidth
