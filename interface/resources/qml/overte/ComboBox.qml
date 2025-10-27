@@ -21,6 +21,7 @@ ComboBox {
         horizontalPadding: 2
         verticalPadding: 2
         focusPolicy: Qt.NoFocus
+        flat: control.flat
 
         icon.source: "./icons/triangle_down.svg"
         icon.width: 24
