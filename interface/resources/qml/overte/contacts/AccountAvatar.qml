@@ -32,6 +32,8 @@ Rectangle {
 
         id: avatarImage
         source: avatar.source
+        sourceSize.width: width
+        sourceSize.height: height
 
         layer.enabled: true
         layer.effect: MultiEffect {
