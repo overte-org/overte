@@ -1,0 +1,3 @@
+module Compat
+RunningScripts_Window 1.0 RunningScripts_Window.qml
+CompatFileDialog 1.0 CompatFileDialog.qml
