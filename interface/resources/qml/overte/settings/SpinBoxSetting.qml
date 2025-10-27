@@ -5,30 +5,30 @@ import QtQuick.Layouts
 import "../" as Overte
 
 RowLayout {
-	property alias text: labelItem.text
-	property alias value: spinboxItem.value
-	property alias from: spinboxItem.from
-	property alias to: spinboxItem.to
+    property alias text: labelItem.text
+    property alias value: spinboxItem.value
+    property alias from: spinboxItem.from
+    property alias to: spinboxItem.to
     property alias enabled: spinboxItem.enabled
 
-	id: item
-	anchors.left: parent.left
-	anchors.right: parent.right
-	anchors.margins: 16
-	spacing: 16
+    id: item
+    anchors.left: parent.left
+    anchors.right: parent.right
+    anchors.margins: 16
+    spacing: 16
 
-	Overte.Label {
-		// equally sized items
-		Layout.preferredWidth: 1
-		Layout.fillWidth: true
+    Overte.Label {
+        // equally sized items
+        Layout.preferredWidth: 1
+        Layout.fillWidth: true
 
-		id: labelItem
-		wrapMode: Text.Wrap
-	}
+        id: labelItem
+        wrapMode: Text.Wrap
+    }
 
-	Overte.SpinBox {
-		Layout.alignment: Qt.AlignRight
+    Overte.SpinBox {
+        Layout.alignment: Qt.AlignRight
 
-		id: spinboxItem
-	}
+        id: spinboxItem
+    }
 }
