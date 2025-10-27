@@ -557,6 +557,10 @@ Rectangle {
                 implicitWidth: 128
                 backgroundColor: Theme.paletteActive.buttonAdd
                 text: {
+                    if (fileMode === FileDialog.FileMode.OpenFolder) {
+                        return qsTr("Open Here");
+                    }
+
                     let text = fileMode === FileDialog.FileMode.SaveFile ? qsTr("Save") : qsTr("Open");
 
                     const currentRow = tableView.selectionModel.currentIndex.row;
@@ -571,11 +575,16 @@ Rectangle {
                     return text;
                 }
 
-                enabled: tableView.selectionModel.hasSelection
+                enabled: tableView.selectionModel.hasSelection || fileMode === FileDialog.FileMode.OpenFolder
                 onClicked: {
-                    const currentRow = tableView.selectionModel.currentIndex.row;
-                    const currentData = tableView.model.getRow(currentRow);
-                    directoryRowActivated(currentData);
+                    if (fileMode === FileDialog.FileMode.OpenFolder) {
+                        selectedFile = currentFolder;
+                        fileDialog.accepted();
+                    } else {
+                        const currentRow = tableView.selectionModel.currentIndex.row;
+                        const currentData = tableView.model.getRow(currentRow);
+                        directoryRowActivated(currentData);
+                    }
                 }
             }
         }
