@@ -83,6 +83,10 @@ Rectangle {
             }
 
             Overte.RoundButton {
+                // TODO
+                visible: false
+                enabled: false
+
                 backgroundColor: (
                     control.friend ?
                     Overte.Theme.paletteActive.buttonDestructive :
