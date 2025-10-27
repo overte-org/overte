@@ -30,6 +30,55 @@ function defaultOnScreenChanged(type, url) {
     }
 }
 
+// has absolutely nothing to do with HTTP cookies,
+// just here to keep track of what requests are being handled
+let waitingRequestCookies = new Set();
+
+function defaultFromQml(message) {
+    const data = JSON.parse(message);
+
+    switch (data.action) {
+        // QML's XMLHttpRequest doesn't have the authentication header that's
+        // needed for interacting with the directory server. This passes a
+        // request through the JS XMLHttpRequest so it can use the account auth.
+        case "system:auth_request": {
+            // sometimes requests get sent twice? don't let that happen
+            if (waitingRequestCookies.has(data.data.cookie)) {
+                return;
+            } else {
+                waitingRequestCookies.add(data.data.cookie);
+            }
+
+            let xhr = new XMLHttpRequest();
+
+            xhr.onreadystatechange = () => {
+                if (xhr.readyState === 4 /* DONE */) {
+                    SystemTablet.sendToQml(JSON.stringify({
+                        action: "system:auth_request",
+                        data: {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            responseText: xhr.responseText,
+                            responseURL: data.data.url,
+                            cookie: data.data.cookie,
+                        },
+                    }));
+
+                    waitingRequestCookies.delete(data.data.cookie);
+                }
+            };
+
+            xhr.open(data.data.method, data.data.url);
+
+            if (data.data.method === "POST") {
+                xhr.setRequestHeader("Content-Type", "application/json;charset=utf-8");
+            }
+
+            xhr.send(data.data.body);
+        } break;
+    }
+}
+
 const SYSTEM_APPS = {
     settings: {
         appButtonData: {
@@ -80,10 +129,12 @@ const SYSTEM_APPS = {
 for (let app of Object.values(SYSTEM_APPS)) {
     if (!app.onClicked) { app.onClicked = defaultOnClicked; }
     if (!app.onScreenChanged) { app.onScreenChanged = defaultOnScreenChanged; }
+    if (!app.fromQml) { app.fromQml = defaultFromQml; }
 
     let button = SystemTablet.addButton(app.appButtonData);
     button.clicked.connect(() => app.onClicked());
     SystemTablet.screenChanged.connect((type, url) => app.onScreenChanged(type, url));
+    SystemTablet.fromQml.connect(message => app.fromQml(message));
     app.appButton = button;
 }
 
