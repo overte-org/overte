@@ -15,6 +15,8 @@ import "../dialogs"
 import "../js/Utils.js" as Utils
 import "../controls" as OverteControls
 
+import "../overte/compat" as OverteCompat
+
 // This is our primary 'desktop' object to which all VR dialogs and windows are childed.
 FocusScope {
     id: desktop
@@ -538,7 +540,7 @@ FocusScope {
         return customInputDialogBuilder.createObject(desktop, properties);
     }
 
-    Component { id: fileDialogBuilder; FileDialog { } }
+    Component { id: fileDialogBuilder; OverteCompat.CompatFileDialog { } }
     function fileDialog(properties) {
         return fileDialogBuilder.createObject(desktop, properties);
     } 
