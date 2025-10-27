@@ -258,7 +258,14 @@ void Application::setupQmlSurface(QQmlContext* surfaceContext, bool setAdditiona
         surfaceContext->setContextProperty("Workload", qApp->getGameWorkload()._engine->getConfiguration().get());
         surfaceContext->setContextProperty("Controller", DependencyManager::get<controller::ScriptingInterface>().data());
         surfaceContext->setContextProperty("Pointers", DependencyManager::get<PointerScriptingInterface>().data());
+
+        // QT6TODO: replace all of the instances of "Window" in QML with WindowScriptingInterface
         surfaceContext->setContextProperty("Window", DependencyManager::get<WindowScriptingInterface>().data());
+
+        // There's a lot of stuff in our QML called "Window",
+        // so this needs to be WindowScriptingInterface
+        surfaceContext->setContextProperty("WindowScriptingInterface", DependencyManager::get<WindowScriptingInterface>().data());
+
         surfaceContext->setContextProperty("Reticle", qApp->getApplicationCompositor().getReticleInterface());
         surfaceContext->setContextProperty("About", AboutUtil::getInstance());
         surfaceContext->setContextProperty("HiFiAbout", AboutUtil::getInstance());  // Deprecated.
@@ -912,7 +919,14 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
 #endif
 
     surfaceContext->setContextProperty("Overlays", &_overlays);
+
+    // QT6TODO: replace all of the instances of "Window" in QML with WindowScriptingInterface
     surfaceContext->setContextProperty("Window", DependencyManager::get<WindowScriptingInterface>().data());
+
+    // There's a lot of stuff in our QML called "Window",
+    // so this needs to be WindowScriptingInterface
+    surfaceContext->setContextProperty("WindowScriptingInterface", DependencyManager::get<WindowScriptingInterface>().data());
+
     surfaceContext->setContextProperty("Desktop", DependencyManager::get<DesktopScriptingInterface>().data());
     surfaceContext->setContextProperty("MenuInterface", MenuScriptingInterface::getInstance());
     surfaceContext->setContextProperty("Settings", new QMLSettingsScriptingInterface(surfaceContext));
