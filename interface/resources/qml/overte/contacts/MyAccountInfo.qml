@@ -1,3 +1,4 @@
+import QtCore
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -23,8 +24,53 @@ Rectangle {
         Everyone
     }
 
-    property int status: MyAccountInfo.Status.Invisible
-    property string avatarImgSource: "file:///home/ada/art/doodles/bevy blep avi.png"
+    // cache the last avatar image url so there's not a few
+    // seconds of placeholder avatar while the profile loads
+    Settings {
+        id: settings
+        property url cachedAvatarUrl: "../icons/unset_avatar.svg"
+    }
+
+    Connections {
+        target: AccountServices
+
+        function loggedInChanged(loggedIn) {
+            updateStatus();
+        }
+    }
+
+    Component.onCompleted: updateStatus()
+
+    function updateStatus() {
+        if (status === MyAccountInfo.Status.LoggedOut && AccountServices.loggedIn) {
+        contactsList.authRequest({
+            url: `${AccountServices.metaverseServerURL}/api/v1/account/${AccountServices.username}/field/images_tiny`,
+            callback: response => {
+                const data = JSON.parse(response.responseText);
+                if (data.data) {
+                    root.avatarUrl = data.data;
+                }
+            },
+        });
+        }
+
+        if (!AccountServices.loggedIn) {
+            status = MyAccountInfo.Status.LoggedOut;
+        } else {
+            switch (AccountServices.findableBy) {
+                case "none": status = MyAccountInfo.Status.Invisible; break;
+                case "friends": status = MyAccountInfo.Status.FriendsOnly; break;
+                case "contacts": status = MyAccountInfo.Status.Contacts; break;
+                case "all": status = MyAccountInfo.Status.Everyone; break;
+            }
+        }
+    }
+
+    property int status: MyAccountInfo.Status.LoggedOut
+
+    property string avatarUrl: settings.cachedAvatarUrl
+
+    onAvatarUrlChanged: settings.cachedAvatarUrl = avatarUrl
 
     readonly property color currentStatusColor: {
         switch (status) {
@@ -71,7 +117,7 @@ Rectangle {
             id: avatarImg
             source: (
                 root.status !== MyAccountInfo.Status.LoggedOut ?
-                root.avatarImgSource :
+                root.avatarUrl :
                 "../icons/unset_avatar.svg"
             )
             status: root.status
@@ -79,6 +125,25 @@ Rectangle {
             Layout.preferredHeight: 64
             Layout.leftMargin: 8
             Layout.rightMargin: 8
+
+            Overte.Button {
+                anchors.fill: parent
+                anchors.margins: Overte.Theme.borderWidth
+
+                backgroundColor: Overte.Theme.paletteActive.buttonAdd
+                opacity: hovered ? (Overte.Theme.highContrast ? 1.0 : 0.7) : 0
+                enabled: AccountServices.loggedIn
+                visible: AccountServices.loggedIn
+
+                icon.source: "../icons/plus.svg"
+                icon.width: 24
+                icon.height: 24
+                icon.color: Overte.Theme.paletteActive.buttonText
+
+                onClicked: changeAvatarDialog.open()
+
+                Overte.ToolTip { text: qsTr("Change profile picture") }
+            }
         }
 
         ColumnLayout {
@@ -90,8 +155,10 @@ Rectangle {
                 verticalAlignment: Text.AlignVCenter
 
                 id: displayName
-                text: "ada.tv"
-                placeholderText: qsTr("Display Name")
+                text: MyAvatar.displayName
+                placeholderText: AccountServices.username
+
+                onEditingFinished: MyAvatar.displayName = text
             }
 
             RowLayout {
@@ -114,8 +181,16 @@ Rectangle {
 
                     onActivated: index => {
                         root.status = index;
+
+                        switch (index) {
+                            case 0: AccountServices.findableBy = "none"; break;
+                            case 1: AccountServices.findableBy = "friends"; break;
+                            case 2: AccountServices.findableBy = "connections"; break;
+                            case 3: AccountServices.findableBy = "all"; break;
+                        }
                     }
 
+                    currentIndex: root.status
                     model: [
                         { value: MyAccountInfo.Status.Invisible, text: qsTr("Invisible") },
                         { value: MyAccountInfo.Status.FriendsOnly, text: qsTr("Friends Only") },
