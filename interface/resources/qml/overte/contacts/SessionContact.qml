@@ -12,11 +12,21 @@ Rectangle {
 
     required property int index
 
-    // session UUID or directory username
-    required property string user
+    required property string uuid
     required property string name
     required property real volume
-    required property url badgeIconSource
+
+    readonly property string username: contactsList.adminData[uuid]?.username ?? ""
+    readonly property url badgeIconSource: contactsList.adminData[uuid]?.badge ?? ""
+
+    // TODO: does this work?
+    function dbToReal(x) {
+        return 1.0 - (x / 100);
+    }
+
+    function realToDb(x) {
+        return (1.0 - x) * 100;
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -46,13 +56,29 @@ Rectangle {
 
                 Overte.BodyText {
                     font.pixelSize: Overte.Theme.fontPixelSizeSmall
-                    visible: user !== ""
+                    visible: username !== ""
                     //elide: Text.ElideRight
-                    text: user
+                    text: username
                     palette.buttonText: Overte.Theme.paletteActive.link
                     opacity: Overte.Theme.highContrast ? 1.0 : 0.7
                 }
             }
+
+            Item { Layout.fillWidth: true }
+
+            // TODO: find a way of disabling this if the target is already in the account
+            // contacts, might be tricky with how usernames are hidden from non-admins
+            /*Overte.RoundButton {
+                icon.source: "../icons/add_friend.svg"
+                icon.width: 24
+                icon.height: 24
+
+                backgroundColor: hovered ? Overte.Theme.paletteActive.buttonAdd : Overte.Theme.paletteActive.button
+
+                Overte.ToolTip { text: qsTr("Send contact request") }
+
+                onClicked: console.warn("TODO")
+            }*/
         }
 
         RowLayout {
@@ -72,16 +98,16 @@ Rectangle {
                 to: 1.2
                 stepSize: 0.1
                 snapMode: Slider.SnapAlways
-                value: volume
+                value: dbToReal(volume)
 
-                onMoved: {
-                    // TODO
-                }
+                onMoved: Users.setAvatarGain(control.uuid, realToDb(value))
             }
 
             Overte.Label {
                 Layout.preferredWidth: Overte.Theme.fontPixelSize * 3
-                text: `${Math.round(volumeSlider.value * 100)}%`
+                //text: `${Math.round(volumeSlider.value * 100)}%`
+                // why did hifi have to use decibels for avatar volume??
+                text: `${Math.round(volumeSlider.value * 100)}%\n${volume} db`
             }
         }
     }
