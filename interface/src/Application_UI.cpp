@@ -587,7 +587,7 @@ void Application::showAssetServerWidget(QString filePath) {
     if (!DependencyManager::get<NodeList>()->getThisNodeCanWriteAssets() || getLoginDialogPoppedUp()) {
         return;
     }
-    static const QUrl url { "hifi/AssetServer.qml" };
+    static const QUrl url { "overte/compat/CompatAssetDialog.qml" };
 
     auto startUpload = [=, this](QQmlContext* context, QObject* newObject){
         if (!filePath.isEmpty()) {
@@ -603,7 +603,7 @@ void Application::showAssetServerWidget(QString filePath) {
         if (!hmd->getShouldShowTablet() && !isHMDMode()) {
             getOffscreenUI()->show(url, "AssetServer", startUpload);
         } else {
-            static const QUrl url("qrc:///qml/hifi/dialogs/TabletAssetServer.qml");
+            static const QUrl url("qrc:///qml/overte/dialogs/AssetDialog.qml");
             if (!tablet->isPathLoaded(url)) {
                 tablet->pushOntoStack(url);
             }
