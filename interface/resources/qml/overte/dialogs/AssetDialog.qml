@@ -5,16 +5,114 @@ import QtQuick.Layouts
 import Qt.labs.folderlistmodel
 import Qt.labs.qmlmodels
 
-import ".."
+import ".." as Overte
 
 Rectangle {
     id: dialog
-    color: Theme.paletteActive.base
+    color: Overte.Theme.paletteActive.base
 
     property url selectedFile: ""
     property string searchExpression: ".*"
 
-    readonly property var spawnableRegex: /\.(glb|fbx|fst|png|jpeg|jpg|webp)$/i
+    readonly property var spawnableRegex: /\.(gltf|glb|vrm|fbx|fst|obj|png|jpeg|jpg|webp)$/i
+
+    // TODO: how does this work?
+    readonly property var assetProxyModel: Assets.proxyModel
+
+    function getDirectoryModel(parentIndex = undefined) {
+        const DISPLAY_ROLE = 0x100;
+        const PATH_ROLE = 0x103;
+        const sourceModel = assetProxyModel;
+        const sourceModelRootLength = sourceModel.rowCount(parentIndex);
+        let tmp = [];
+
+        for (let i = 0; i < sourceModelRootLength; i++) {
+            const index = sourceModel.index(i, 0, parentIndex);
+
+            const name = sourceModel.data(index, DISPLAY_ROLE);
+            const path = sourceModel.data(index, PATH_ROLE);
+            const hasChildren = sourceModel.hasChildren(index);
+
+            if (hasChildren) {
+                tmp.push({
+                    name: name,
+                    path: path,
+                    rows: getDirectoryModel(index)
+                });
+            } else {
+                tmp.push({
+                    name: name,
+                    path: path,
+                });
+            }
+        }
+
+        tmp.sort((a, b) => ((b.rows ? 1 : 0) - (a.rows ? 1 : 0)) || a.name.localeCompare(b.name));
+
+        console.log(JSON.stringify(tmp));
+
+        return tmp;
+    }
+
+    component TreeDelegate: Rectangle {
+        required property TreeView treeView
+        required property int depth
+        required property int row
+        required property bool current
+        required property bool expanded
+        required property bool hasChildren
+
+        property string name: treeView.model.getRow(treeView.index(row, 0)).name
+
+        implicitWidth: treeView.contentWidth
+        implicitHeight: Overte.Theme.fontPixelSize * 2
+
+        color: {
+            if (current) {
+                return Overte.Theme.paletteActive.highlight;
+            } else if (row % 2 === 0) {
+                return Overte.Theme.paletteActive.base;
+            } else {
+                return Overte.Theme.paletteActive.alternateBase;
+            }
+        }
+
+        // IconImage and ColorImage are private in Qt 6.10,
+        // so hijack AbstractButton's icon
+        Overte.Button {
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.left: parent.left
+            anchors.leftMargin: Overte.Theme.fontPixelSize * depth
+            id: indicator
+
+            visible: hasChildren
+            width: parent.height
+            height: width
+
+            flat: true
+            horizontalPadding: 0
+            verticalPadding: 0
+
+            icon.source: expanded ? "../icons/triangle_down.svg" : "../icons/triangle_right.svg"
+            icon.width: Math.min(24, width)
+            icon.height: Math.min(24, width)
+            icon.color: current ? Overte.Theme.paletteActive.highlightedText : Overte.Theme.paletteActive.buttonText
+
+            onClicked: treeView.toggleExpanded(row)
+        }
+
+        Overte.Label {
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.right: parent.right
+            anchors.left: indicator.right
+            anchors.leftMargin: 4
+            verticalAlignment: Text.AlignVCenter
+            color: current ? Overte.Theme.paletteActive.highlightedText : Overte.Theme.paletteActive.buttonText
+            text: name
+        }
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -23,15 +121,15 @@ Rectangle {
             Layout.fillWidth: true
             Layout.margins: 4
 
-            Button {
-                backgroundColor: Theme.paletteActive.buttonAdd
+            Overte.Button {
+                backgroundColor: Overte.Theme.paletteActive.buttonAdd
                 text: qsTr("Upload File")
 
                 // TODO
                 onClicked: {}
             }
 
-            TextField {
+            Overte.TextField {
                 Layout.fillWidth: true
                 Layout.preferredHeight: parent.height
 
@@ -42,12 +140,12 @@ Rectangle {
                 Keys.onReturnPressed: searchButton.click()
             }
 
-            RoundButton {
+            Overte.RoundButton {
                 id: searchButton
                 icon.source: "../icons/search.svg"
                 icon.width: 24
                 icon.height: 24
-                icon.color: Theme.paletteActive.buttonText
+                icon.color: Overte.Theme.paletteActive.buttonText
 
                 onClicked: {
                     searchExpression = searchField.text === "" ? /.*/ : new RegExp(searchField.text);
@@ -55,117 +153,40 @@ Rectangle {
             }
         }
 
-        ScrollView {
+        TreeView {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
-            contentWidth: availableWidth
-            rightPadding: ScrollBar.vertical.width
+            id: tableView
+            clip: true
+            selectionBehavior: TableView.SelectRows
+            selectionMode: TableView.SingleSelection
+            pixelAligned: true
+            rowSpacing: 1
+            columnSpacing: 0
+            boundsBehavior: Flickable.StopAtBounds
 
-            background: Rectangle {
-                color: Qt.darker(Theme.paletteActive.base, 1.2)
-            }
+            // QT6TODO: remove this once mouse input is working properly again,
+            // this needs to be false until then or the expander arrows are entirely unusable
+            interactive: false
 
-            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-
-            ScrollBar.vertical: ScrollBar {
+            ScrollBar.vertical: Overte.ScrollBar {
                 policy: ScrollBar.AlwaysOn
                 interactive: true
                 anchors.right: parent.right
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
             }
+            contentWidth: width - ScrollBar.vertical.width
 
-            TableView {
-                id: tableView
-                clip: true
-                selectionBehavior: TableView.SelectRows
-                selectionMode: TableView.SingleSelection
-                pixelAligned: true
-                rowSpacing: 1
-                columnSpacing: 0
-                boundsBehavior: Flickable.StopAtBounds
+            model: TreeModel {
+                TableModelColumn { display: "name" }
 
-                model: TableModel {
-                    TableModelColumn {
-                        display: "fileName"
-                        textAlignment: () => Text.AlignLeft
-                    }
-                    TableModelColumn {
-                        display: "fileModified"
-                        textAlignment: () => Text.AlignRight
-                    }
-                    TableModelColumn {
-                        display: "fileSize"
-                        textAlignment: () => Text.AlignLeft
-                    }
-
-                    // TODO
-                    rows: [
-                        { fileName: "bevy2.glb", fileModified: (new Date()).toLocaleDateString(null, Locale.ShortFormat), fileSize: "2.1 MiB" },
-                        { fileName: "cheese.jpg", fileModified: (new Date()).toLocaleDateString(null, Locale.ShortFormat), fileSize: "12 KiB" },
-                        { fileName: "metal pipe.wav", fileModified: (new Date()).toLocaleDateString(null, Locale.ShortFormat), fileSize: "200 KiB" },
-                    ]
-                }
-
-                selectionModel: ItemSelectionModel {
-                    onCurrentChanged: (index, _) => {
-                        if (index.row === -1) { return; }
-
-                        const data = tableView.model.getRow(index.row);
-                        selectedFile = data.fileName;
-                    }
-                }
-
-                delegate: Rectangle {
-                    required property bool selected
-                    required property bool current
-                    required property int row
-
-                    readonly property bool rowCurrent: tableView.currentRow === row
-
-                    color: (
-                        rowCurrent ?
-                        Theme.paletteActive.highlight :
-                        (row % 2 === 0 ? Theme.paletteActive.base : Theme.paletteActive.alternateBase)
-                    )
-                    implicitHeight: Theme.fontPixelSize * 2
-                    implicitWidth: {
-                        let nameWidth = tableView.width;
-                        let mtimeWidth = tableView.width * (1 / 4);
-                        let sizeWidth = tableView.width * (1 / 4);
-
-                        // qt doesn't let us do stretchy columns so emulate it ourselves
-                        nameWidth -= sizeWidth;
-                        nameWidth -= mtimeWidth;
-
-                        // hide the mtime column if the window isn't big enough to fit it comfortably
-                        if (tableView.width < 720) {
-                            // can't be zero or qt complains
-                            nameWidth += mtimeWidth;
-                            mtimeWidth = 1;
-                        }
-
-                        switch (column) {
-                            case 0: return nameWidth;
-                            case 1: return mtimeWidth;
-                            case 2: return sizeWidth;
-                        }
-                    }
-
-                    Text {
-                        anchors.margins: 8
-                        anchors.fill: parent
-
-                        verticalAlignment: Text.AlignVCenter
-                        horizontalAlignment: column === 2 ? Text.AlignRight : Text.AlignLeft
-                        font.family: Theme.fontFamily
-                        font.pixelSize: Theme.fontPixelSize
-                        color: rowCurrent ? Theme.paletteActive.highlightedText : Theme.paletteActive.text
-                        text: display
-                    }
-                }
+                rows: getDirectoryModel()
             }
+
+            selectionModel: ItemSelectionModel {}
+            delegate: TreeDelegate {}
         }
 
         GridLayout {
@@ -174,35 +195,35 @@ Rectangle {
             Layout.fillWidth: true
             Layout.margins: 8
 
-            Button {
+            Overte.Button {
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
 
                 enabled: tableView.currentRow !== -1
                 text: qsTr("Delete")
-                backgroundColor: Theme.paletteActive.buttonDestructive
+                backgroundColor: Overte.Theme.paletteActive.buttonDestructive
 
                 // TODO
                 onClicked: {
-                    console.log("Delete", tableView.model.data(tableView.model.index(tableView.currentRow, 0)));
+                    console.log("Delete");
                 }
             }
 
-            Button {
+            Overte.Button {
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
 
                 enabled: tableView.currentRow !== -1
                 text: qsTr("Copy Link")
-                backgroundColor: Theme.paletteActive.buttonInfo
+                backgroundColor: Overte.Theme.paletteActive.buttonInfo
 
                 // TODO
                 onClicked: {
-                    console.log("Copy Link", tableView.model.data(tableView.model.index(tableView.currentRow, 0)));
+                    console.log("Copy Link");
                 }
             }
 
-            Button {
+            Overte.Button {
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
 
@@ -211,11 +232,11 @@ Rectangle {
 
                 // TODO
                 onClicked: {
-                    console.log("Rename", tableView.model.data(tableView.model.index(tableView.currentRow, 0)));
+                    console.log("Rename");
                 }
             }
 
-            Button {
+            Overte.Button {
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
 
@@ -227,17 +248,17 @@ Rectangle {
                     return !!data.match(spawnableRegex);
                 }
                 text: qsTr("Create Entity")
-                backgroundColor: Theme.paletteActive.buttonAdd
+                backgroundColor: Overte.Theme.paletteActive.buttonAdd
 
                 // TODO
                 onClicked: {
-                    console.log("Create Entity", tableView.model.data(tableView.model.index(tableView.currentRow, 0)));
+                    console.log("Create Entity");
                 }
             }
         }
     }
 
-    MessageDialog {
+    Overte.MessageDialog {
         id: replaceWarningDialog
         anchors.fill: parent
     }
