@@ -150,7 +150,7 @@ Menu::Menu() {
     auto action = addActionToQMenuAndActionHash(editMenu, MenuOption::RunningScripts, Qt::CTRL | Qt::Key_J);
     connect(action, &QAction::triggered, [] {
         if (!qApp->getLoginDialogPoppedUp()) {
-            static const QUrl widgetUrl("overte/workarounds/RunningScripts_Window.qml");
+            static const QUrl widgetUrl("overte/compat/RunningScripts_Window.qml");
             static const QUrl tabletUrl("overte/dialogs/RunningScriptsDialog.qml");
             static const QString name("RunningScripts");
             qApp->showDialog(widgetUrl, tabletUrl, name);

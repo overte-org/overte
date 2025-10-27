@@ -17,6 +17,8 @@ import "." as Windows
 import stylesUit 1.0
 import controlsUit 1.0 as HifiControlsUit
 
+import "../overte" as Overte
+
 // FIXME how do I set the initial position of a window without
 // overriding places where the a individual client of the window
 // might be setting the position with a Settings{} element?
