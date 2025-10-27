@@ -19,13 +19,14 @@ Rectangle {
 
 	id: fileDialog
 	color: Theme.paletteActive.base
+	visible: false
 
 	signal accepted
 	signal rejected
 
 	property url currentFolder: StandardPaths.writableLocation(StandardPaths.HomeLocation)
 	property list<string> nameFilters: ["*"]
-	property int fileMode: FileDialog.SaveFile
+	property int fileMode: FileDialog.OpenFile
 
 	property url selectedFile: ""
 	property list<url> selectedFiles: []
@@ -36,15 +37,16 @@ Rectangle {
 
 	property string searchExpression: ".*"
 
-	// DEBUG
 	onAccepted: {
-		console.info("ACCEPTED");
-		console.info(`selectedFile: ${selectedFile.toString()}`);
-		console.info(`selectedFiles: ${JSON.stringify(selectedFiles)}`);
+		visible = false;
 	}
 
 	onRejected: {
-		console.info("REJECTED");
+		visible = false;
+	}
+
+	function open() {
+		visible = true;
 	}
 
 	function urlToPathString(urlRaw) {
@@ -537,7 +539,7 @@ Rectangle {
 				Layout.rightMargin: 8
 				Layout.preferredHeight: parent.height
 
-				text: nameFilters.concat()
+				text: nameFilters.join(", ")
 				verticalAlignment: Text.AlignVCenter
 				elide: Text.ElideRight
 			}
