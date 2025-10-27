@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 import ".." as Overte
+import "." as OverteDialogs
 
 Rectangle {
     anchors.fill: parent
@@ -73,7 +74,16 @@ Rectangle {
                     font.pixelSize: Overte.Theme.fontPixelSizeSmall
                     opacity: Overte.Theme.highContrast ? 1.0 : 0.6
                     elide: Text.ElideRight
-                    text: url.startsWith("qrc:") ? `${qsTr("Built-in:")} ${url}` : url
+                    text: {
+                        if (
+                            url.startsWith("qrc:") ||
+                            url.startsWith("file://~/")
+                        ) {
+                            return `${qsTr("Built-in:")} ${url}`;
+                        } else {
+                            return url;
+                        }
+                    }
                 }
             }
 
@@ -82,8 +92,7 @@ Rectangle {
                 Layout.margins: 8
                 spacing: 2
 
-                // TODO: url copy button
-                /*Overte.RoundButton {
+                Overte.RoundButton {
                     backgroundColor: Overte.Theme.paletteActive.buttonInfo
 
                     icon.source: "../icons/copy.svg"
@@ -97,7 +106,9 @@ Rectangle {
                     verticalPadding: 0
 
                     onClicked: WindowScriptingInterface.copyToClipboard(url)
-                }*/
+
+                    Overte.ToolTip { text: qsTr("Copy URL to clipboard") }
+                }
 
                 Overte.RoundButton {
                     icon.source: "../icons/reload.svg"
@@ -112,6 +123,8 @@ Rectangle {
 
                     // restart the script
                     onClicked: ScriptDiscoveryService.stopScript(url, true)
+
+                    Overte.ToolTip { text: qsTr("Reload") }
                 }
 
                 Overte.RoundButton {
@@ -128,6 +141,8 @@ Rectangle {
                     verticalPadding: 0
 
                     onClicked: ScriptDiscoveryService.stopScript(url)
+
+                    Overte.ToolTip { text: qsTr("Stop and remove") }
                 }
             }
         }
@@ -174,9 +189,7 @@ Rectangle {
 
                 text: qsTr("File")
 
-                onClicked: {
-                    console.warn("TODO");
-                }
+                onClicked: fileDialog.open()
             }
 
             Overte.Button {
@@ -196,9 +209,7 @@ Rectangle {
 
                 text: qsTr("Built-in")
 
-                onClicked: {
-                    console.warn("TODO");
-                }
+                onClicked: builtinDialog.open()
             }
         }
     }
@@ -282,5 +293,21 @@ Rectangle {
                 }
             }
         }
+    }
+
+    OverteDialogs.BuiltinScriptsDialog {
+        anchors.fill: parent
+        id: builtinDialog
+
+        onAccepted: file => ScriptDiscoveryService.loadScript(file, true)
+    }
+
+    OverteDialogs.FileDialog {
+        anchors.fill: parent
+        id: fileDialog
+
+        nameFilters: ["*.js"]
+
+        onAccepted: ScriptDiscoveryService.loadScript(fileDialog.selectedFile, true)
     }
 }
