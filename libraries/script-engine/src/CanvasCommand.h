@@ -417,7 +417,8 @@ struct CanvasCommand {
     static CanvasCommand fillRect(const QRectF& rect) {
         CanvasCommand cmd;
         cmd.kind = FillRect;
-        return CanvasCommand { .kind = FillRect, ._rect = rect };
+        cmd._rect = rect;
+        return cmd;
     }
 
     static CanvasCommand fillEllipse(const QRectF& rect) {
