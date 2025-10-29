@@ -19,20 +19,30 @@ SettingsPage {
             qsTr("System"),
         ]
 
+        currentIndex: {
+            if (Overte.Theme.useSystemColorScheme) {
+                return 2;
+            } else if (Overte.Theme.darkMode) {
+                return 0;
+            } else {
+                return 1;
+            }
+        }
+
         onCurrentIndexChanged: {
             switch (currentIndex) {
                 case 0:
-                    Overte.useSystemColorScheme = false;
+                    Overte.Theme.useSystemColorScheme = false;
                     Overte.Theme.darkMode = true;
                     break;
 
                 case 1:
-                    Overte.useSystemColorScheme = false;
+                    Overte.Theme.useSystemColorScheme = false;
                     Overte.Theme.darkMode = false;
                     break;
 
                 case 2:
-                    Overte.useSystemColorScheme = true;
+                    Overte.Theme.useSystemColorScheme = true;
                     Overte.Theme.darkMode = true;
                     break;
             }
@@ -46,6 +56,16 @@ SettingsPage {
             qsTr("High"),
             qsTr("System"),
         ]
+
+        currentIndex: {
+            if (Overte.Theme.useSystemContrastMode) {
+                return 2;
+            } else if (Overte.Theme.highContrast) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
 
         onCurrentIndexChanged: {
             switch (currentIndex) {
