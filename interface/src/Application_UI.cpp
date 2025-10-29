@@ -84,6 +84,7 @@
 #include <UserActivityLogger.h>
 #include <UserActivityLoggerScriptingInterface.h>
 #include <UsersScriptingInterface.h>
+#include <raypick/PickScriptingInterface.h>
 
 #include "AboutUtil.h"
 #include "ArchiveDownloadInterface.h"
@@ -267,6 +268,7 @@ void Application::setupQmlSurface(QQmlContext* surfaceContext, bool setAdditiona
         surfaceContext->setContextProperty("WindowScriptingInterface", DependencyManager::get<WindowScriptingInterface>().data());
 
         surfaceContext->setContextProperty("Reticle", qApp->getApplicationCompositor().getReticleInterface());
+        surfaceContext->setContextProperty("PickScriptingInterface", DependencyManager::get<PickScriptingInterface>().data());
         surfaceContext->setContextProperty("About", AboutUtil::getInstance());
         surfaceContext->setContextProperty("HiFiAbout", AboutUtil::getInstance());  // Deprecated.
         surfaceContext->setContextProperty("ResourceRequestObserver", DependencyManager::get<ResourceRequestObserver>().data());
@@ -908,6 +910,9 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
     surfaceContext->setContextProperty("Assets", DependencyManager::get<AssetMappingsScriptingInterface>().data());
     surfaceContext->setContextProperty("Keyboard", DependencyManager::get<KeyboardScriptingInterface>().data());
 
+    // TODO: replace instances of Keyboard with KeyboardScriptingInterface
+    surfaceContext->setContextProperty("KeyboardScriptingInterface", DependencyManager::get<KeyboardScriptingInterface>().data());
+
     surfaceContext->setContextProperty("AvatarList", DependencyManager::get<AvatarManager>().data());
     surfaceContext->setContextProperty("Users", DependencyManager::get<UsersScriptingInterface>().data());
 
@@ -955,6 +960,7 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
     surfaceContext->setContextProperty("Render", RenderScriptingInterface::getInstance());
     surfaceContext->setContextProperty("PlatformInfo", PlatformInfoScriptingInterface::getInstance());
     surfaceContext->setContextProperty("Workload", _gameWorkload._engine->getConfiguration().get());
+    surfaceContext->setContextProperty("PickScriptingInterface", DependencyManager::get<PickScriptingInterface>().data());
     surfaceContext->setContextProperty("Reticle", getApplicationCompositor().getReticleInterface());
     surfaceContext->setContextProperty("Snapshot", DependencyManager::get<Snapshot>().data());
 
