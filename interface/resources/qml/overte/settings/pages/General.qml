@@ -2,6 +2,8 @@ import "../../" as Overte
 import "../"
 
 SettingsPage {
+    id: page
+
     Header {
         text: qsTr("UI")
 
@@ -78,11 +80,7 @@ SettingsPage {
     Header { text: qsTr("Screenshots") }
 
     FolderSetting {
-        // TODO
-        enabled: false
-
         text: qsTr("Folder")
-        // TODO
         value: Snapshot.getSnapshotsLocation()
         onValueChanged: Snapshot.setSnapshotsLocation(value)
     }
@@ -94,19 +92,27 @@ SettingsPage {
             "jpg",
             "webp",
         ]
+
+        currentIndex: {
+            let current = Snapshot.getSnapshotFormat();
+            for (let i in model) {
+                if (model[i] === current) { return i; }
+            }
+            return 0;
+        }
         onCurrentIndexChanged: Snapshot.setSnapshotFormat(model[currentIndex])
     }
 
     SpinBoxSetting {
-        // FIXME: setting isn't exposed to script api
+        // FIXME
         enabled: false
 
         text: qsTr("Animation Duration")
         from: 1
         to: 30
 
-        // TODO
-        value: 3
+        //value: Settings.getValue("snapshotAnimatedDuration", 3)
+        //onValueChanged: Settings.setValue("snapshotAnimatedDuration", value)
     }
 
     SettingNote {
@@ -116,13 +122,13 @@ SettingsPage {
     Header { text: qsTr("Privacy") }
 
     SwitchSetting {
-        // FIXME: setting isn't exposed to script api
-        enabled: false
-
         text: qsTr("Send Crash Reports")
-        // TODO
-        value: false
-        onValueChanged: () => {}
+
+        // FIXME: MenuScriptingInterface is super cursed, we shouldn't be relying on
+        // the *names* of the menu items to access them, especially once they're translated.
+        // Why are these even menu items in the first place?
+        value: MenuInterface.isOptionChecked("Enable Crash Reporting")
+        onValueChanged: MenuInterface.setIsOptionChecked("Enable Crash Reporting", value)
     }
 
     SettingNote {
@@ -130,13 +136,12 @@ SettingsPage {
     }
 
     SwitchSetting {
-        // FIXME: setting isn't exposed to script api
+        // FIXME
         enabled: false
 
         text: qsTr("Discord Rich Presence")
-        // TODO
-        value: false
-        onValueChanged: () => {}
+        //value: Settings.getValue("useDiscordPresence", true)
+        //onValueChanged: Settings.setValue("useDiscordPresence", value)
     }
 
     SettingNote {
