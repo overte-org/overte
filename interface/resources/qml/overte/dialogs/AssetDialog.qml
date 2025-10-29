@@ -14,57 +14,55 @@ Rectangle {
     property url selectedFile: ""
     property string searchExpression: ".*"
 
-    readonly property var spawnableRegex: /\.(gltf|glb|vrm|fbx|fst|obj|png|jpeg|jpg|webp)$/i
+    // FIXME: "Could not convert argument 0 from [object Object] to EntityItemProperties"
+    //readonly property var spawnableRegex: /\.(gltf|glb|vrm|fbx|fst|obj|png|jpeg|jpg|webp)$/i
+    readonly property var spawnableRegex: /\.(gltf|glb|vrm|fbx|fst|obj)$/i
 
-    // TODO: how does this work?
-    readonly property var assetProxyModel: Assets.proxyModel
+    property var assetMappingModel: ({})
 
-    function getDirectoryModel(parentIndex = undefined) {
-        const DISPLAY_ROLE = 0x100;
-        const PATH_ROLE = 0x103;
-        const sourceModel = assetProxyModel;
-        const sourceModelRootLength = sourceModel.rowCount(parentIndex);
+    Component.onCompleted: refreshModel()
+
+    function refreshModel() {
+        Assets.getAllMappings((error, maps) => {
+            if (error === "") {
+                assetMappingModel = maps;
+                tableModel.rows = getDirectoryModel();
+            } else {
+                console.error(error);
+            }
+        });
+    }
+
+    // this seems suboptimal but i can't figure out how else to use the Assets models
+    function getDirectoryModel() {
         let tmp = [];
 
-        for (let i = 0; i < sourceModelRootLength; i++) {
-            const index = sourceModel.index(i, 0, parentIndex);
-
-            const name = sourceModel.data(index, DISPLAY_ROLE);
-            const path = sourceModel.data(index, PATH_ROLE);
-            const hasChildren = sourceModel.hasChildren(index);
-
-            if (hasChildren) {
-                tmp.push({
-                    name: name,
-                    path: path,
-                    rows: getDirectoryModel(index)
-                });
-            } else {
-                tmp.push({
-                    name: name,
-                    path: path,
-                });
+        for (const [name, hash] of Object.entries(assetMappingModel)) {
+            if (!name.slice(1).match(new RegExp(searchExpression, "i"))) {
+                continue;
             }
+
+            tmp.push({
+                // trim off the leading slash
+                name: name.slice(1),
+                path: name,
+                hash: hash,
+            });
         }
 
-        tmp.sort((a, b) => ((b.rows ? 1 : 0) - (a.rows ? 1 : 0)) || a.name.localeCompare(b.name));
-
-        console.log(JSON.stringify(tmp));
+        tmp.sort((a, b) => a.name.localeCompare(b.name));
 
         return tmp;
     }
 
-    component TreeDelegate: Rectangle {
-        required property TreeView treeView
-        required property int depth
+    component TableDelegate: Rectangle {
+        required property TableView tableView
         required property int row
         required property bool current
-        required property bool expanded
-        required property bool hasChildren
 
-        property string name: treeView.model.getRow(treeView.index(row, 0)).name
+        property string name: tableModel.rows[row]?.name ?? "undefined"
 
-        implicitWidth: treeView.contentWidth
+        implicitWidth: Math.max(tableView.contentWidth, label.implicitWidth)
         implicitHeight: Overte.Theme.fontPixelSize * 2
 
         color: {
@@ -77,36 +75,12 @@ Rectangle {
             }
         }
 
-        // IconImage and ColorImage are private in Qt 6.10,
-        // so hijack AbstractButton's icon
-        Overte.Button {
-            anchors.top: parent.top
-            anchors.bottom: parent.bottom
-            anchors.left: parent.left
-            anchors.leftMargin: Overte.Theme.fontPixelSize * depth
-            id: indicator
-
-            visible: hasChildren
-            width: parent.height
-            height: width
-
-            flat: true
-            horizontalPadding: 0
-            verticalPadding: 0
-
-            icon.source: expanded ? "../icons/triangle_down.svg" : "../icons/triangle_right.svg"
-            icon.width: Math.min(24, width)
-            icon.height: Math.min(24, width)
-            icon.color: current ? Overte.Theme.paletteActive.highlightedText : Overte.Theme.paletteActive.buttonText
-
-            onClicked: treeView.toggleExpanded(row)
-        }
-
         Overte.Label {
+            id: label
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.right: parent.right
-            anchors.left: indicator.right
+            anchors.left: parent.left
             anchors.leftMargin: 4
             verticalAlignment: Text.AlignVCenter
             color: current ? Overte.Theme.paletteActive.highlightedText : Overte.Theme.paletteActive.buttonText
@@ -126,6 +100,7 @@ Rectangle {
                 text: qsTr("Upload File")
 
                 // TODO
+                enabled: false
                 onClicked: {}
             }
 
@@ -136,8 +111,15 @@ Rectangle {
                 id: searchField
                 placeholderText: qsTr("Search…")
 
-                Keys.onEnterPressed: searchButton.click()
-                Keys.onReturnPressed: searchButton.click()
+                Keys.onEnterPressed: {
+                    searchButton.click();
+                    searchField.forceActiveFocus();
+                }
+
+                Keys.onReturnPressed: {
+                    searchButton.click();
+                    searchField.forceActiveFocus();
+                }
             }
 
             Overte.RoundButton {
@@ -148,12 +130,15 @@ Rectangle {
                 icon.color: Overte.Theme.paletteActive.buttonText
 
                 onClicked: {
-                    searchExpression = searchField.text === "" ? /.*/ : new RegExp(searchField.text);
+                    searchExpression = searchField.text === "" ? ".*" : searchField.text;
+
+                    // refresh the listing model
+                    tableModel.rows = getDirectoryModel();
                 }
             }
         }
 
-        TreeView {
+        TableView {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
@@ -166,27 +151,28 @@ Rectangle {
             columnSpacing: 0
             boundsBehavior: Flickable.StopAtBounds
 
-            // QT6TODO: remove this once mouse input is working properly again,
-            // this needs to be false until then or the expander arrows are entirely unusable
-            interactive: false
-
             ScrollBar.vertical: Overte.ScrollBar {
                 policy: ScrollBar.AlwaysOn
                 interactive: true
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
             }
+
+            ScrollBar.horizontal: Overte.ScrollBar {
+                policy: ScrollBar.AsNeeded
+                interactive: true
+            }
+
             contentWidth: width - ScrollBar.vertical.width
 
-            model: TreeModel {
+            model: TableModel {
+                id: tableModel
+
                 TableModelColumn { display: "name" }
 
-                rows: getDirectoryModel()
+                rows: []
             }
 
             selectionModel: ItemSelectionModel {}
-            delegate: TreeDelegate {}
+            delegate: TableDelegate {}
         }
 
         GridLayout {
@@ -199,13 +185,16 @@ Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
 
-                enabled: tableView.currentRow !== -1
-                text: qsTr("Delete")
+                // TODO: might work, don't have a way of testing atm
+                //enabled: tableView.currentRow !== -1
+                enabled: false
                 backgroundColor: Overte.Theme.paletteActive.buttonDestructive
+                text: qsTr("Delete")
 
-                // TODO
                 onClicked: {
-                    console.log("Delete");
+                    const data = tableModel.rows[tableView.currentRow];
+                    deleteWarningDialog.entryToDelete = data.name;
+                    deleteWarningDialog.open();
                 }
             }
 
@@ -214,12 +203,12 @@ Rectangle {
                 Layout.preferredWidth: 1
 
                 enabled: tableView.currentRow !== -1
-                text: qsTr("Copy Link")
                 backgroundColor: Overte.Theme.paletteActive.buttonInfo
+                text: qsTr("Copy Link")
 
-                // TODO
                 onClicked: {
-                    console.log("Copy Link");
+                    const data = tableModel.rows[tableView.currentRow];
+                    WindowScriptingInterface.copyToClipboard(`atp:${data.path}`);
                 }
             }
 
@@ -227,12 +216,15 @@ Rectangle {
                 Layout.fillWidth: true
                 Layout.preferredWidth: 1
 
-                enabled: tableView.currentRow !== -1
+                // TODO: might work, don't have a way of testing atm
+                // enabled: tableView.currentRow !== -1
+                enabled: false
                 text: qsTr("Rename")
 
-                // TODO
                 onClicked: {
-                    console.log("Rename");
+                    const data = tableModel.rows[tableView.currentRow];
+                    renameDialog.entryToRename = data.name;
+                    renameDialog.open();
                 }
             }
 
@@ -242,24 +234,151 @@ Rectangle {
 
                 enabled: {
                     if (tableView.currentRow === -1) { return false; }
-
-                    const index = tableView.model.index(tableView.currentRow, 0);
-                    const data = tableView.model.data(index);
-                    return !!data.match(spawnableRegex);
+                    return tableModel.rows[tableView.currentRow].name.match(spawnableRegex);
                 }
-                text: qsTr("Create Entity")
                 backgroundColor: Overte.Theme.paletteActive.buttonAdd
+                text: qsTr("Create Entity")
 
-                // TODO
                 onClicked: {
-                    console.log("Create Entity");
+                    const data = tableModel.rows[tableView.currentRow];
+                    spawnEntity(data.path);
                 }
             }
         }
     }
 
     Overte.MessageDialog {
-        id: replaceWarningDialog
+        id: deleteWarningDialog
         anchors.fill: parent
+
+        property string entryToDelete: ""
+        text: qsTr("Are you sure you want to delete %1?").arg(entryToDelete)
+
+        onAccepted: {
+            // put the leading slash back on
+            Assets.deleteMapping(`/${entryToDelete}`);
+            entryToDelete = "";
+            close();
+        }
+
+        onRejected: {
+            entryToDelete = "";
+            close();
+        }
+    }
+
+    Overte.Dialog {
+        id: renameDialog
+        anchors.fill: parent
+
+        property string entryToRename: ""
+
+        signal accepted
+        signal rejected
+
+        onAccepted: {
+            // put the leading slash back on
+            Assets.renameMapping(`/${entryToRename}`, `/${assetRenameField.text}`, refreshModel);
+            assetRenameField.text = "";
+            entryToRename = "";
+            close();
+        }
+
+        onRejected: {
+            assetRenameField.text = "";
+            entryToRename = "";
+            close();
+        }
+
+        ColumnLayout {
+            anchors.fill: parent
+            anchors.margins: 8
+
+            Overte.Label {
+                Layout.fillWidth: true
+                horizontalAlignment: Text.AlignHCenter
+                opacity: Overte.Theme.highContrast ? 1.0 : 0.6
+                text: qsTr("Rename asset")
+            }
+            Overte.Ruler { Layout.fillWidth: true }
+
+            Overte.TextField {
+                Layout.preferredWidth: 720
+                Layout.fillWidth: true
+                placeholderText: qsTr("New asset name")
+                text: renameDialog.entryToRename
+                id: assetRenameField
+            }
+
+            RowLayout {
+                Overte.Button {
+                    Layout.minimumWidth: 128
+                    Layout.fillWidth: true
+                    text: qsTr("Cancel")
+
+                    onClicked: renameDialog.rejected()
+                }
+
+                Item { Layout.fillWidth: true }
+
+                Overte.Button {
+                    Layout.minimumWidth: 128
+                    Layout.fillWidth: true
+
+                    enabled: assetRenameField.text !== ""
+                    backgroundColor: Overte.Theme.paletteActive.buttonAdd
+                    text: qsTr("Rename")
+
+                    onClicked: renameDialog.accepted()
+                }
+            }
+        }
+    }
+
+    function spawnEntity(path) {
+        let isImage = path.match(/\.(png|jpeg|jpg|webp)$/i);
+        let isMesh = path.match(/\.(gltf|glb|vrm|fbx|fst|obj)$/i);
+
+        // FIXME: "Could not convert argument 0 from [object Object] to EntityItemProperties"
+        if (isImage) {
+            /*Entities.addEntity({
+                type: "Image",
+                imageURL: `atp:${path}`,
+                emissive: true,
+                keepAspectRatio: true,
+                rotation: MyAvatar.orientation,
+                position: Vec3.sum(
+                    MyAvatar.position,
+                    Vec3.multiply(2, Quat.getForward(MyAvatar.orientation))
+                ),
+            });*/
+        } else if (isMesh) {
+            /*Entities.addEntity({
+                type: "Model",
+                modelURL: `atp:${path}`,
+                shapeType: "simple-hull",
+                rotation: MyAvatar.orientation,
+                position: Vec3.sum(
+                    MyAvatar.position,
+                    Vec3.multiply(2, Quat.getForward(MyAvatar.orientation))
+                ),
+            });*/
+            Entities.addModelEntity(
+                /* name */          path,
+                /* modelUrl */      `atp:${path}`,
+                /* textures */      "",
+                /* shapeType */     "simple-hull",
+                /* dynamic */       false,
+                /* collisionless */ false,
+                /* grabbable */     true,
+                /* position */      Vec3.sum(
+                    MyAvatar.position,
+                    Vec3.multiply(2, Quat.getForward(MyAvatar.orientation))
+                ),
+                /* gravity */       Vec3.ZERO
+            );
+        } else {
+            console.error(`spawnEntity called with path that wasn't image or mesh! ${path}`);
+        }
     }
 }
