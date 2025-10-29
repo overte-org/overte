@@ -28,5 +28,6 @@ ColumnLayout {
         Layout.fillWidth: true
 
         id: comboItem
+        font.pixelSize: Overte.Theme.fontPixelSizeSmall
     }
 }
