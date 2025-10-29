@@ -29,7 +29,7 @@ const BUBBLE_BG_ALPHA = 0.6;
 const MAX_DISTANCE = 20;
 const TYPING_NOTIF_HEAD_OFFSET_HEIGHT = 0.48;
 const MSG_HEAD_OFFSET_HEIGHT = 0.6;
-const SELF_BUBBLES = true;
+const SELF_BUBBLES = false;
 
 const NOTIFY_SOUND = SoundCache.getSound(Script.resolvePath("./assets/notify.wav"));
 
