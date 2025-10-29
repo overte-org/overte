@@ -387,6 +387,8 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(bool allowTeleporting READ getAllowTeleporting)
     Q_PROPERTY(float cameraBoomLength MEMBER _boomLength)
 
+    Q_PROPERTY(MyAvatar::TabletInputMode tabletInputMode READ getTabletInputMode WRITE setTabletInputMode NOTIFY tabletInputModeChanged)
+
     const QString DOMINANT_LEFT_HAND = "left";
     const QString DOMINANT_RIGHT_HAND = "right";
     const QString DEFAULT_HMD_AVATAR_ALIGNMENT_TYPE = "head";
@@ -536,6 +538,13 @@ public:
 
     static const std::array<QString, (uint)AllowAvatarStandingPreference::Count> allowAvatarStandingPreferenceStrings;
     static const std::array<QString, (uint)AllowAvatarLeaningPreference::Count> allowAvatarLeaningPreferenceStrings;
+
+    enum class TabletInputMode : uint {
+        Lasers,
+        Styluses,
+        AvatarFingers,
+    };
+    Q_ENUM(TabletInputMode);
 
     explicit MyAvatar(QThread* thread);
     virtual ~MyAvatar();
@@ -993,6 +1002,9 @@ public:
 
     bool getAllowTeleporting() { return _allowTeleportingSetting.get(); }
     void setAllowTeleporting(bool allowTeleporting) { _allowTeleportingSetting.set(allowTeleporting); }
+
+    MyAvatar::TabletInputMode getTabletInputMode();
+    void setTabletInputMode(MyAvatar::TabletInputMode mode);
 
     bool getShowPlayArea() const { return _showPlayArea.get(); }
     void setShowPlayArea(bool showPlayArea) { _showPlayArea.set(showPlayArea); }
@@ -2464,6 +2476,14 @@ signals:
      * @returns {Signal}
      */
     void disableHandTouchForIDChanged(const QUuid& entityID, bool disable);
+
+    /*@jsdoc
+     * Triggered when {@link MyAvatar.tabletInputMode} is changed.
+     * @function MyAvatar.tabletInputModeChanged
+     * @param {MyAvatar.TabletInputMode}
+     * @returns {Signal}
+     */
+    void tabletInputModeChanged(MyAvatar::TabletInputMode mode);
 
 private slots:
     void leaveDomain();

@@ -6686,3 +6686,37 @@ float MyAvatar::getCameraSensitivity() const {
 void MyAvatar::setCameraSensitivity(float cameraSensitivity) {
     qApp->getCamera().setSensitivity(cameraSensitivity);
 }
+
+MyAvatar::TabletInputMode MyAvatar::getTabletInputMode() {
+    auto prefersStylus = qApp->getPreferStylusOverLaser();
+    auto prefersFinger = qApp->getPreferAvatarFingerOverStylus();
+
+    if (prefersFinger) {
+        return TabletInputMode::AvatarFingers;
+    } else if (prefersStylus) {
+        return TabletInputMode::Styluses;
+    } else {
+        return TabletInputMode::Lasers;
+    }
+}
+
+void MyAvatar::setTabletInputMode(MyAvatar::TabletInputMode mode) {
+    switch (mode) {
+        case TabletInputMode::Lasers:
+            qApp->setPreferStylusOverLaser(false);
+            qApp->setPreferAvatarFingerOverStylus(false);
+            break;
+
+        case TabletInputMode::Styluses:
+            qApp->setPreferStylusOverLaser(true);
+            qApp->setPreferAvatarFingerOverStylus(false);
+            break;
+
+        case TabletInputMode::AvatarFingers:
+            qApp->setPreferStylusOverLaser(true);
+            qApp->setPreferAvatarFingerOverStylus(true);
+            break;
+    }
+
+    emit tabletInputModeChanged(mode);
+}
