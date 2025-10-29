@@ -46,7 +46,7 @@ Rectangle {
 
     function fromScript(rawObj) {
         const obj = JSON.parse(rawObj);
-        const timestamp = (obj.timestamp ? new Date(obj.timestamp) : new Date()).toTimeString();
+        const timestamp = (obj.timestamp ? new Date(obj.timestamp) : new Date()).toLocaleTimeString(undefined, Locale.ShortFormat);
 
         switch (obj.event) {
             case "recv_message":
