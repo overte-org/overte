@@ -11,8 +11,8 @@ HifiWindows.Window {
     id: root
     resizable: true
     implicitWidth: 480
-    implicitHeight: 360
-    minSize: Qt.vector2d(360, 240)
+    implicitHeight: 480
+    minSize: Qt.vector2d(480, 360)
     destroyOnHidden: true
     objectName: "AssetServer"
     title: qsTr("Asset Browser")
@@ -28,7 +28,6 @@ HifiWindows.Window {
 
     OverteDialogs.AssetDialog {
         anchors.fill: parent
-
         id: assetDialog
     }
 }
