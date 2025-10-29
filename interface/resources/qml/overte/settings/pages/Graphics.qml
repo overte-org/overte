@@ -25,32 +25,34 @@ SettingsPage {
     }
 
     ComboSetting {
+        enabled: advRenderingEnabled.value
+
         text: qsTr("Anti-Aliasing")
-        textRole: "text"
-        valueRole: "mode"
 
         model: [
-            { text: qsTr("None"), mode: "none" },
-            { text: qsTr("4x MSAA"), mode: "msaa" },
-            { text: qsTr("TAA"), mode: "taa" },
-            { text: qsTr("FXAA"), mode: "fxaa" },
+            // TODO: separate none and MSAA?
+            // RenderMainView.PreparePrimaryBufferForward.numSamples is a massive hack
+            advRenderingEnabled.value ? qsTr("None") : qsTr("4x MSAA"),
+            qsTr("TAA"),
+            qsTr("FXAA"),
         ]
 
-        // TODO
+        currentIndex: advRenderingEnabled.value ? Render.getAntialiasingMode() : 0
+        onCurrentIndexChanged: Render.setAntialiasingMode(currentIndex)
     }
 
     ComboSetting {
-        text: qsTr("LOD Culling")
+        text: qsTr("Level-of-Detail")
         textRole: "text"
         valueRole: "mode"
 
         model: [
-            { text: qsTr("High Detail"), mode: 0 },
-            { text: qsTr("Medium Detail"), mode: 1 },
-            { text: qsTr("Low Detail"), mode: 2 },
+            { text: qsTr("High"), mode: 0 },
+            { text: qsTr("Medium"), mode: 1 },
+            { text: qsTr("Low"), mode: 2 },
         ]
 
-        currentIndex: { currentIndex = LODManager.worldDetailQuality }
+        currentIndex: LODManager.worldDetailQuality
         onCurrentIndexChanged: LODManager.worldDetailQuality = model[currentIndex].mode
     }
 

@@ -1,6 +1,9 @@
 import "../../" as Overte
 import "../"
 
+// NOTE: There's a lot of "x depends on non-bindable properties" warnings,
+// there's not much that can be done about them and I don't think there's
+// a way of explicitly telling QML to not try binding to stuff.
 SettingsPage {
     Header {
         text: qsTr("Desktop")
@@ -10,27 +13,28 @@ SettingsPage {
     }
 
     SwitchSetting {
-        // FIXME: setting isn't exposed to script api
-        enabled: false
-
+        id: invertMouseY
         text: qsTr("Invert Y")
 
-        // TODO
-        value: false
+        value: MyAvatar.pitchSpeed < 0
+        onValueChanged: {
+            MyAvatar.pitchSpeed = mouseSensitivity.value * (value ? -75 : 75);
+        }
     }
 
     SliderSetting {
-        // FIXME: setting isn't exposed to script api
-        enabled: false
-
+        id: mouseSensitivity
         text: qsTr("Mouse Sensitivity")
         stepSize: 0.1
         from: 0.1
         to: 5.0
-        valueToText: () => `${value.toFixed(1)}`;
+        valueToText: () => `${value.toLocaleString()}`;
 
-        // TODO
-        value: 1.0
+        value: MyAvatar.yawSpeed / 75
+        onValueChanged: {
+            MyAvatar.yawSpeed = value * 75;
+            MyAvatar.pitchSpeed = value * (invertMouseY.value ? -75 : 75);
+        }
     }
 
     Header { text: qsTr("VR User") }
@@ -43,7 +47,7 @@ SettingsPage {
         to: 2.5
 
         valueToText: () => {
-            let meters = value.toFixed(2);
+            let meters = value.toLocaleString();
             let totalInches = Math.round(value * 39.37008);
 
             let feet = Math.floor(totalInches / 12);
@@ -52,8 +56,7 @@ SettingsPage {
             return `${feet}'${inches}"    ${meters.toLocaleString()}m`;
         }
 
-        // FIXME: QML complains about userHeight not being bindable
-        value: { value = MyAvatar.userHeight }
+        value: MyAvatar.userHeight
         onValueChanged: MyAvatar.userHeight = value
     }
 
@@ -68,24 +71,28 @@ SettingsPage {
         onCurrentIndexChanged: MyAvatar.setDominantHand(currentIndex === 0 ? "left" : "right")
     }
 
+    SwitchSetting {
+        text: qsTr("Seated Mode")
+        value: MyAvatar.userRecenterModel === MyAvatar.ForceSit
+        onValueChanged: {
+            MyAvatar.userRecenterModel = value ? MyAvatar.ForceSit : MyAvatar.ForceStand;
+        }
+    }
+
     Header { text: qsTr("VR Movement") }
 
     SliderSetting {
-        // FIXME: setting isn't exposed to script api
-        enabled: false
-
         text: qsTr("Turning Speed")
         stepSize: 10
-        from: 0
+        from: 40
         to: 400
-        valueToText: () => value < 50 ? qsTr("Snap turning") : `${value.toFixed(1)}`;
+        valueToText: () => value < 50 ? qsTr("Snap turning") : `${value.toLocaleString()}`;
 
-        // FIXME: not exposed to scripts or QML
-        /*value: MyAvatar.HMDYawSpeed
+        value: MyAvatar.hmdYawSpeed
         onValueChanged: {
             MyAvatar.setSnapTurn(value < 50);
             MyAvatar.HMDYawSpeed = value;
-        }*/
+        }
     }
 
     SliderSetting {
@@ -94,16 +101,17 @@ SettingsPage {
         stepSize: 0.5
         from: 1.0
         to: 9
-        valueToText: () => value < 1.5 ? qsTr("Teleport Only") : `${value.toFixed(1)} m/s`;
+        valueToText: () => value < 1.5 ? qsTr("Teleport Only") : `${value.toLocaleString()} m/s`;
         //enabled: !useAvatarDefaultWalkingSpeed.value
 
-        value: MyAvatar.vrWalkSpeed
+        // QT6TODO: change to vrWalkSpeed when we rebase on master
+        value: MyAvatar.analogPlusWalkSpeed
         onValueChanged: {
             if (value === 0.0) {
                 MyAvatar.useAdvancedMovementControls = false;
             } else {
                 MyAvatar.useAdvancedMovementControls = true;
-                MyAvatar.vrWalkSpeed = value;
+                MyAvatar.analogPlusWalkSpeed = value;
             }
         }
     }
@@ -116,7 +124,8 @@ SettingsPage {
             qsTr("Hand"),
         ]
 
-        // TODO
+        currentIndex: MyAvatar.getMovementReference()
+        onCurrentIndexChanged: MyAvatar.setMovementReference(currentIndex)
     }
 
     /*SwitchSetting {
@@ -130,44 +139,41 @@ SettingsPage {
     Header { text: qsTr("VR UI") }
 
     ComboSetting {
-        // FIXME: setting isn't exposed to script api
-        enabled: false
-
         text: qsTr("Tablet Input")
+
+        // keep this in the same order as MyAvatar.TabletInputMode
         model: [
             qsTr("Laser"),
             qsTr("Stylus"),
             qsTr("Finger Touch"),
         ]
 
-        // TODO
+        currentIndex: MyAvatar.tabletInputMode
+        onCurrentIndexChanged: MyAvatar.tabletInputMode = currentIndex;
     }
 
     ComboSetting {
-        // FIXME: setting isn't exposed to script api
-        enabled: false
-
         text: qsTr("Virtual Keyboard Input")
         model: [
             qsTr("Lasers"),
             qsTr("Mallets"),
         ]
 
-        // TODO
+        currentIndex: KeyboardScriptingInterface.preferMalletsOverLasers ? 1 : 0
+        onCurrentIndexChanged: {
+            KeyboardScriptingInterface.preferMalletsOverLasers = currentIndex == 1;
+        }
     }
 
     SliderSetting {
-        // FIXME: setting isn't exposed to script api
-        enabled: false
-
         text: qsTr("Laser Smoothing Delay")
-        stepSize: 0.1
+        stepSize: 0.05
         from: 0.0
         to: 2.0
-        valueToText: () => `${value.toFixed(1)}s`;
+        valueToText: () => `${value.toLocaleString()}s`;
 
-        // TODO
-        value: 0.3
+        value: PickScriptingInterface.handLaserDelay
+        onValueChanged: PickScriptingInterface.handLaserDelay = value
     }
 
     // for later, once the gesture scripts are stable and merged
