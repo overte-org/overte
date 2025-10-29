@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 
 import "../" as Overte
+import "../dialogs" as OverteDialogs
 
 ColumnLayout {
     property alias text: labelItem.text
@@ -13,9 +14,6 @@ ColumnLayout {
     anchors.right: parent.right
     anchors.margins: 16
     spacing: 4
-
-    // prevent binding loops
-    Component.onCompleted: value = value
 
     Overte.Label {
         Layout.alignment: Qt.AlignBottom
@@ -40,7 +38,12 @@ ColumnLayout {
             icon.width: 24
             icon.height: 24
 
-            // TODO
+            onClicked: settingsRoot.openFolderPicker(
+                folder => {
+                    value = folder;
+                },
+                value
+            );
         }
     }
 }
