@@ -49,6 +49,10 @@ Rectangle {
         visible = true;
     }
 
+    function close() {
+        visible = false;
+    }
+
     function urlToPathString(urlRaw) {
         const url = new URL(urlRaw);
 
@@ -282,6 +286,10 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
             visible: folderModel.status !== FolderListModel.Null
+
+            // QT6TODO: Double-clicking on stuff flat out doesn't work yet,
+            // remove this once clicks on the overlay desktop work again
+            interactive: false
 
             ScrollBar.vertical: ScrollBar {
                 policy: ScrollBar.AlwaysOn

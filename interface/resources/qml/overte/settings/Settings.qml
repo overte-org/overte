@@ -2,12 +2,13 @@ import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 
-import "../" 1.0 as Overte
+import "../" as Overte
 import "." as OverteSettings
 import "./pages" as SettingsPages
+import "../dialogs" as OverteDialogs
 
 Rectangle {
-    id: root
+    id: settingsRoot
     width: 480
     height: 720
     visible: true
@@ -41,5 +42,30 @@ Rectangle {
         SettingsPages.Controls {}
 
         SettingsPages.Audio {}
+    }
+
+    OverteDialogs.FileDialog {
+        anchors.fill: settingsRoot
+        visible: false
+
+        id: folderDialog
+
+        property var acceptedCallback: folder => {}
+        fileMode: OverteDialogs.FileDialog.OpenFolder
+
+        onAccepted: {
+            acceptedCallback(new URL(folderDialog.selectedFile).pathname);
+            close();
+        }
+
+        onRejected: close()
+    }
+
+    function openFolderPicker(callback, root) {
+        folderDialog.acceptedCallback = callback;
+        if (root) {
+            folderDialog.currentFolder = `file://${root}`;
+        }
+        folderDialog.open();
     }
 }
