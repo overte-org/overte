@@ -24,7 +24,16 @@ SettingsPage {
 
     WideComboSetting {
         text: "Output Device"
-        model: AudioScriptingInterface.devices.output
+        model: {
+            let tmp = [];
+            const source = AudioScriptingInterface.devices.output;
+
+            for (let i = 0; i < source.rowCount(); i++) {
+                tmp.push(source.data(source.index(i, 0), /* DeviceNameRole */ 0x100));
+            }
+
+            return tmp;
+        }
 
         // TODO: how do these work???
         //currentIndex: 0
@@ -33,7 +42,16 @@ SettingsPage {
 
     WideComboSetting {
         text: "Input Device"
-        model: AudioScriptingInterface.devices.input
+        model: {
+            let tmp = [];
+            const source = AudioScriptingInterface.devices.input;
+
+            for (let i = 0; i < source.rowCount(); i++) {
+                tmp.push(source.data(source.index(i, 0), /* DeviceNameRole */ 0x100));
+            }
+
+            return tmp;
+        }
 
         // TODO: how do these work???
         //currentIndex: 0
