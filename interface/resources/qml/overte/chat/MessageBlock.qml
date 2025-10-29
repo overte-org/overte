@@ -57,8 +57,7 @@ ColumnLayout {
 
         visible: text.length > 0
 
-        // MD support is cool, but it'd only work properly in the QML chat app
-        // and not chat bubbles. (maybe would work with QML desktop notifications?)
+        // MD support is cool, but it'd only work properly in the QML chat app and not chat bubbles.
         //textFormat: TextEdit.MarkdownText
         textFormat: TextEdit.RichText
 

@@ -65,7 +65,7 @@ Rectangle {
                     Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                     Layout.fillWidth: true
                     elide: Text.ElideRight
-                    text: name.replace(/(.*).js/, "$1")
+                    text: name.replace(/(.*).js$/, "$1");
                 }
 
                 Overte.Label {
@@ -75,11 +75,10 @@ Rectangle {
                     opacity: Overte.Theme.highContrast ? 1.0 : 0.6
                     elide: Text.ElideRight
                     text: {
-                        if (
-                            url.startsWith("qrc:") ||
-                            url.startsWith("file://~/")
-                        ) {
-                            return `${qsTr("Built-in:")} ${url}`;
+                        if (url.startsWith("qrc:")) {
+                            return qsTr("Built-in: %1").arg(url.toString().replace(/qrc:\/+(.*)$/, "$1"));
+                        } else if (url.startsWith("file:///~/")) {
+                            return qsTr("Built-in: %1").arg(url.toString().replace(/file:\/+\~\/+(.*)$/, "$1"));
                         } else {
                             return url;
                         }
