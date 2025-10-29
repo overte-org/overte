@@ -21,6 +21,7 @@ private slots:
     void initTestCase();
     void loadGLTF_data();
     void loadGLTF();
+    //void loadFBX();
 
 };
 
