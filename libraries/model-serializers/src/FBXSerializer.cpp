@@ -105,10 +105,10 @@ QString getModelName(const QVariantList& properties) {
     QString name;
     if (properties.size() == 3) {
         name = properties.at(1).toString();
-        name = processID(name.left(name.indexOf(QChar('\0'))));
     } else {
-        name = processID(properties.at(0).toString());
+        name = properties.at(0).toString();
     }
+        name = processID(name.left(name.indexOf(QChar('\0'))));
     return name;
 }
 
@@ -116,10 +116,10 @@ QString getMaterialName(const QVariantList& properties) {
     QString name;
     if (properties.size() == 1 || properties.at(1).toString().isEmpty()) {
         name = properties.at(0).toString();
-        name = processID(name.left(name.indexOf(QChar('\0'))));
     } else {
-        name = processID(properties.at(1).toString());
+        name = properties.at(1).toString();
     }
+    name = processID(name.left(name.indexOf(QChar('\0'))));
     return name;
 }
 
@@ -492,7 +492,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
                             foreach (const FBXNode& subsubobject, subobject.children) {
                                 static const QVariant APPLICATION_NAME = QVariant(hifi::ByteArray("Original|ApplicationName"));
                                 if (subsubobject.name == "P" && subsubobject.properties.size() >= 5 &&
-                                        subsubobject.properties.at(0) == APPLICATION_NAME) {
+                                        subsubobject.properties.at(0).toByteArray() == APPLICATION_NAME) {
                                     hfmModel.applicationName = subsubobject.properties.at(4).toString();
                                 }
                             }
@@ -512,7 +512,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
                             static const QVariant UNIT_SCALE_FACTOR = hifi::ByteArray("UnitScaleFactor");
                             static const QVariant AMBIENT_COLOR = hifi::ByteArray("AmbientColor");
                             static const QVariant UP_AXIS = hifi::ByteArray("UpAxis");
-                            const auto& subpropName = subobject.properties.at(0);
+                            const auto& subpropName = subobject.properties.at(0).toByteArray();
                             if (subpropName == UNIT_SCALE_FACTOR) {
                                 unitScaleFactor = subobject.properties.at(index).toFloat();
                             } else if (subpropName == AMBIENT_COLOR) {
@@ -535,7 +535,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
         } else if (child.name == "Objects") {
             foreach (const FBXNode& object, child.children) {
                 if (object.name == "Geometry") {
-                    if (object.properties.at(2) == "Mesh") {
+                    if (object.properties.at(2).toByteArray() == "Mesh") {
                         meshes.insert(getID(object.properties), extractMesh(object, meshIndex, deduplicateIndices));
                     } else { // object.properties.at(2) == "Shape"
                         ExtractedBlendshape extracted = { getID(object.properties), extractBlendshape(object) };
@@ -569,7 +569,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
 
                     glm::vec3 rotationMin, rotationMax;
 
-                    bool isLimbNode = object.properties.size() >= 3 && object.properties.at(2) == "LimbNode";
+                    bool isLimbNode = object.properties.size() >= 3 && object.properties.at(2).toByteArray() == "LimbNode";
                     FBXModel fbxModel = { name, -1, glm::vec3(), glm::mat4(), glm::quat(), glm::quat(), glm::quat(),
                                           glm::mat4(), glm::vec3(), glm::vec3(),
                                           false, glm::vec3(), glm::quat(), glm::vec3(1.0f), isLimbNode };
@@ -612,7 +612,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
                             static const QVariant PRE_ROTATION = hifi::ByteArray("PreRotation");
                             static const QVariant POST_ROTATION = hifi::ByteArray("PostRotation");
                             foreach(const FBXNode& property, subobject.children) {
-                                const auto& childProperty = property.properties.at(0);
+                                const auto& childProperty = property.properties.at(0).toByteArray();
                                 if (property.name == propertyName) {
                                     if (childProperty == LCL_TRANSLATION) {
                                         translation = getVec3(property.properties, index);
@@ -793,18 +793,18 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
                                     static const QVariant SCALING = hifi::ByteArray("Scaling");
                                     if (property.name == propertyName) {
                                         QString v = property.properties.at(0).toString();
-                                        if (property.properties.at(0) == UV_SET) {
+                                        if (property.properties.at(0).toByteArray() == UV_SET) {
                                             std::string uvName = property.properties.at(index).toString().toStdString();
                                             tex.assign(tex.UVSet, property.properties.at(index).toString());
-                                        } else if (property.properties.at(0) == CURRENT_TEXTURE_BLEND_MODE) {
+                                        } else if (property.properties.at(0).toByteArray() == CURRENT_TEXTURE_BLEND_MODE) {
                                             tex.assign<uint8_t>(tex.currentTextureBlendMode, property.properties.at(index).value<int>());
-                                        } else if (property.properties.at(0) == USE_MATERIAL) {
+                                        } else if (property.properties.at(0).toByteArray() == USE_MATERIAL) {
                                             tex.assign<bool>(tex.useMaterial, property.properties.at(index).value<int>());
-                                        } else if (property.properties.at(0) == TRANSLATION) {
+                                        } else if (property.properties.at(0).toByteArray() == TRANSLATION) {
                                             tex.assign(tex.translation, tex.translation + getVec3(property.properties, index));
-                                        } else if (property.properties.at(0) == ROTATION) {
+                                        } else if (property.properties.at(0).toByteArray() == ROTATION) {
                                             tex.assign(tex.rotation, getVec3(property.properties, index));
-                                        } else if (property.properties.at(0) == SCALING) {
+                                        } else if (property.properties.at(0).toByteArray() == SCALING) {
                                             auto newScaling = getVec3(property.properties, index);
                                             if (newScaling.x == 0.0f) {
                                                 newScaling.x = 1.0f;
@@ -919,41 +919,41 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
 
                             foreach(const FBXNode& property, subobject.children) {
                                 if (property.name == propertyName) {
-                                    if (property.properties.at(0) == DIFFUSE_COLOR) {
+                                    if (property.properties.at(0).toByteArray() == DIFFUSE_COLOR) {
                                         material.diffuseColor = getVec3(property.properties, index);
-                                    } else if (property.properties.at(0) == DIFFUSE_FACTOR) {
+                                    } else if (property.properties.at(0).toByteArray() == DIFFUSE_FACTOR) {
                                         material.diffuseFactor = property.properties.at(index).value<double>();
-                                    } else if (property.properties.at(0) == DIFFUSE) {
+                                    } else if (property.properties.at(0).toByteArray() == DIFFUSE) {
                                         // NOTE: this is uneeded but keep it for now for debug
                                         //  material.diffuseColor = getVec3(property.properties, index);
                                         //  material.diffuseFactor = 1.0;
 
-                                    } else if (property.properties.at(0) == SPECULAR_COLOR) {
+                                    } else if (property.properties.at(0).toByteArray() == SPECULAR_COLOR) {
                                         material.specularColor = getVec3(property.properties, index);
-                                    } else if (property.properties.at(0) == SPECULAR_FACTOR) {
+                                    } else if (property.properties.at(0).toByteArray() == SPECULAR_FACTOR) {
                                         material.specularFactor = property.properties.at(index).value<double>();
-                                    } else if (property.properties.at(0) == SPECULAR) {
+                                    } else if (property.properties.at(0).toByteArray() == SPECULAR) {
                                         // NOTE: this is uneeded but keep it for now for debug
                                         //  material.specularColor = getVec3(property.properties, index);
                                         //  material.specularFactor = 1.0;
 
-                                    } else if (property.properties.at(0) == EMISSIVE_COLOR) {
+                                    } else if (property.properties.at(0).toByteArray() == EMISSIVE_COLOR) {
                                         material.emissiveColor = getVec3(property.properties, index);
-                                    } else if (property.properties.at(0) == EMISSIVE_FACTOR) {
+                                    } else if (property.properties.at(0).toByteArray() == EMISSIVE_FACTOR) {
                                         material.emissiveFactor = property.properties.at(index).value<double>();
-                                    } else if (property.properties.at(0) == EMISSIVE) {
+                                    } else if (property.properties.at(0).toByteArray() == EMISSIVE) {
                                         // NOTE: this is uneeded but keep it for now for debug
                                         //  material.emissiveColor = getVec3(property.properties, index);
                                         //  material.emissiveFactor = 1.0;
 
-                                    } else if (property.properties.at(0) == AMBIENT_FACTOR) {
+                                    } else if (property.properties.at(0).toByteArray() == AMBIENT_FACTOR) {
                                         material.ambientFactor = property.properties.at(index).value<double>();
                                         // Detected just for Blender AO vs lightmap
-                                    } else if (property.properties.at(0) == SHININESS) {
+                                    } else if (property.properties.at(0).toByteArray() == SHININESS) {
                                         material.shininess = property.properties.at(index).value<double>();
-                                    } else if (property.properties.at(0) == OPACITY) {
+                                    } else if (property.properties.at(0).toByteArray() == OPACITY) {
                                         material.opacity = property.properties.at(index).value<double>();
-                                    } else if (property.properties.at(0) == REFLECTION_FACTOR) {
+                                    } else if (property.properties.at(0).toByteArray() == REFLECTION_FACTOR) {
                                         // Blender 2.79 and below set REFLECTION_FACTOR, but there is no way to actually change that value in their UI,
                                         // so we are falling back to non-PBS material.
                                         if (isBlenderVersionLower280 == true) {
@@ -965,51 +965,51 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
                                     }
 
                                     // Sting Ray Material Properties!!!!
-                                    else if (property.properties.at(0) == MAYA_USE_NORMAL_MAP) {
+                                    else if (property.properties.at(0).toByteArray() == MAYA_USE_NORMAL_MAP) {
                                         material.isPBSMaterial = true;
                                         material.useNormalMap = (bool)property.properties.at(index).value<double>();
 
-                                    } else if (property.properties.at(0) == MAYA_BASE_COLOR) {
+                                    } else if (property.properties.at(0).toByteArray() == MAYA_BASE_COLOR) {
                                         material.isPBSMaterial = true;
                                         material.diffuseColor = getVec3(property.properties, index);
 
-                                    } else if (property.properties.at(0) == MAYA_USE_COLOR_MAP) {
+                                    } else if (property.properties.at(0).toByteArray() == MAYA_USE_COLOR_MAP) {
                                         material.isPBSMaterial = true;
                                         material.useAlbedoMap = (bool) property.properties.at(index).value<double>();
 
-                                    } else if (property.properties.at(0) == MAYA_ROUGHNESS) {
+                                    } else if (property.properties.at(0).toByteArray() == MAYA_ROUGHNESS) {
                                         material.isPBSMaterial = true;
                                         material.roughness = property.properties.at(index).value<double>();
 
-                                    } else if (property.properties.at(0) == MAYA_USE_ROUGHNESS_MAP) {
+                                    } else if (property.properties.at(0).toByteArray() == MAYA_USE_ROUGHNESS_MAP) {
                                         material.isPBSMaterial = true;
                                         material.useRoughnessMap = (bool)property.properties.at(index).value<double>();
 
-                                    } else if (property.properties.at(0) == MAYA_METALLIC) {
+                                    } else if (property.properties.at(0).toByteArray() == MAYA_METALLIC) {
                                         material.isPBSMaterial = true;
                                         material.metallic = property.properties.at(index).value<double>();
 
-                                    } else if (property.properties.at(0) == MAYA_USE_METALLIC_MAP) {
+                                    } else if (property.properties.at(0).toByteArray() == MAYA_USE_METALLIC_MAP) {
                                         material.isPBSMaterial = true;
                                         material.useMetallicMap = (bool)property.properties.at(index).value<double>();
 
-                                    } else if (property.properties.at(0) == MAYA_EMISSIVE) {
+                                    } else if (property.properties.at(0).toByteArray() == MAYA_EMISSIVE) {
                                         material.isPBSMaterial = true;
                                         material.emissiveColor = getVec3(property.properties, index);
 
-                                    } else if (property.properties.at(0) == MAYA_EMISSIVE_INTENSITY) {
+                                    } else if (property.properties.at(0).toByteArray() == MAYA_EMISSIVE_INTENSITY) {
                                         material.isPBSMaterial = true;
                                         material.emissiveIntensity = property.properties.at(index).value<double>();
 
-                                    } else if (property.properties.at(0) == MAYA_USE_EMISSIVE_MAP) {
+                                    } else if (property.properties.at(0).toByteArray() == MAYA_USE_EMISSIVE_MAP) {
                                         material.isPBSMaterial = true;
                                         material.useEmissiveMap = (bool)property.properties.at(index).value<double>();
 
-                                    } else if (property.properties.at(0) == MAYA_USE_AO_MAP) {
+                                    } else if (property.properties.at(0).toByteArray() == MAYA_USE_AO_MAP) {
                                         material.isPBSMaterial = true;
                                         material.useOcclusionMap = (bool)property.properties.at(index).value<double>();
 
-                                    } else if (property.properties.at(0) == MAYA_UV_SCALE) {
+                                    } else if (property.properties.at(0).toByteArray() == MAYA_UV_SCALE) {
                                         if (property.properties.size() == MAYA_UV_SCALE_PROPERTY_LENGTH) {
                                             // properties: { "Maya|uv_scale", "Vector2D", "Vector2", nothing, double, double }
                                             glm::vec3 scale = glm::vec3(property.properties.at(4).value<double>(), property.properties.at(5).value<double>(), 1.0);
@@ -1024,7 +1024,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
                                             }
                                             materialParam.scaling *= scale;
                                         }
-                                    } else if (property.properties.at(0) == MAYA_UV_OFFSET) {
+                                    } else if (property.properties.at(0).toByteArray() == MAYA_UV_OFFSET) {
                                         if (property.properties.size() == MAYA_UV_OFFSET_PROPERTY_LENGTH) {
                                             // properties: { "Maya|uv_offset", "Vector2D", "Vector2", nothing, double, double }
                                             glm::vec3 translation = glm::vec3(property.properties.at(4).value<double>(), property.properties.at(5).value<double>(), 1.0);
@@ -1078,7 +1078,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
                     }
 
                 } else if (object.name == "Deformer") {
-                    if (object.properties.last() == "Cluster") {
+                    if (object.properties.last().toByteArray() == "Cluster") {
                         Cluster cluster;
                         foreach (const FBXNode& subobject, object.children) {
                             if (subobject.name == "Indexes") {
@@ -1098,7 +1098,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
                             clusters.insert(getID(object.properties), cluster);
                         }
 
-                    } else if (object.properties.last() == "BlendShapeChannel") {
+                    } else if (object.properties.last().toByteArray() == "BlendShapeChannel") {
                         hifi::ByteArray name = object.properties.at(1).toByteArray();
 
                         name = name.left(name.indexOf('\0'));
@@ -1140,7 +1140,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
             static const QVariant OP = hifi::ByteArray("OP");
             foreach (const FBXNode& connection, child.children) {
                 if (connection.name == "C" || connection.name == "Connect") {
-                    if (connection.properties.at(0) == OO) {
+                    if (connection.properties.at(0).toByteArray() == OO) {
                         QString childID = getID(connection.properties, 1);
                         QString parentID = getID(connection.properties, 2);
                         ooChildToParent.insert(childID, parentID);
@@ -1154,7 +1154,7 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantMultiHash& mapping, 
                                 _lightmapOffset = glm::clamp((*lightIt).second.color.x, 0.f, 1.f);
                             }
                         }
-                    } else if (connection.properties.at(0) == OP) {
+                    } else if (connection.properties.at(0).toByteArray() == OP) {
                         int counter = 0;
                         hifi::ByteArray type = connection.properties.at(3).toByteArray().toLower();
                         if (type.contains("DiffuseFactor")) {
