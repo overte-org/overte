@@ -666,6 +666,14 @@ void Application::initialize(const QCommandLineParser &parser) {
     QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/FiraSans-SemiBold.ttf");
     QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/FiraSans-Regular.ttf");
     QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/FiraSans-Medium.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/Roboto-Regular.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/Roboto-Bold.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/Roboto-Italic.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/Roboto-BoldItalic.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/RobotoMono-Regular.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/RobotoMono-Bold.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/RobotoMono-Italic.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/RobotoMono-BoldItalic.ttf");
     _window->setWindowTitle("Overte");
 
     Model::setAbstractViewStateInterface(this); // The model class will sometimes need to know view state details from us

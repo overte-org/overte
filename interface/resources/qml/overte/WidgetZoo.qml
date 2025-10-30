@@ -75,6 +75,13 @@ Window {
             Layout.preferredHeight: 64
             placeholderText: "Text area"
         }
+        Overte.TextArea {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 80
+            placeholderText: "Code area"
+            font.family: Overte.Theme.monoFontFamily
+            text: "function doSomething() {\n  console.info(\"Hello, world\");\n}\n"
+        }
         Overte.Switch {
             text: "Switch"
         }
