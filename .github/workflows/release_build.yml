@@ -13,18 +13,13 @@ on:
       - "[0-9][0-9][0-9][0-9].[0-9][0-9].**"
 
 env:
-  APP_NAME: interface
-  BUILD_TYPE: Release
-  GIT_COMMIT: ${{ github.sha }}
-  UPLOAD_BUCKET: overte-public
-  UPLOAD_REGION: fra1
-  UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
-
-  # WIN-specific variables
-  PreferredToolArchitecture: X64
-
-  # Specify build preset, since on Windows, `cmake --build` appears to be unaware of of which build preset to use, using defaults instead.
-  CMAKE_BUILD_EXTRA: --preset conan-release
+    # Many environment variables are already set in our Docker images or in other Actions.
+    BUILD_TYPE: Release
+    GIT_COMMIT: ${{ github.sha }}
+    UPLOAD_BUCKET: overte-public
+    UPLOAD_REGION: fra1
+    UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
+    CMAKE_BUILD_EXTRA: --preset conan-release
 
 jobs:
   build:
@@ -34,13 +29,32 @@ jobs:
         include:
           - os: Windows 2022
             # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
-            runner: depot-windows-2022-16
+            runner: depot-windows-2022-16  # Which GitHub Actions Runner to use.
             arch: x86_64
             build_type: full
-            qt_source: source
+            qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
       fail-fast: false
     runs-on: ${{matrix.runner}}
     steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        fetch-depth: 1
+
+    - name: Prepare Windows environment
+      if: startsWith(matrix.os, 'Windows')
+      uses: ./.github/actions/setup-windows
+
+    - name: Read image environment variables
+      # Bring some environment variables out of the Runner (Docker) image's environment into the Job environment.
+      if: ${{matrix.image}} != ""
+      shell: bash
+      run: |
+        echo "CONAN_HOME=$CONAN_HOME" >> $GITHUB_ENV
+        echo "OVERTE_QT_SOURCE=$OVERTE_QT_SOURCE" >> $GITHUB_ENV
+        echo "CONAN_PROFILE=$CONAN_PROFILE" >> $GITHUB_ENV
+        echo "APP_TARGET_NAME=$APP_TARGET_NAME" >> $GITHUB_ENV
+
     - name: Configure build environment 1
       shell: bash
       id: buildenv1
@@ -56,53 +70,17 @@ jobs:
         fi
 
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
-        echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
-        # Try to avoid hitting Windows' PATH limit.
-        echo "CONAN_HOME=C:\Conan" >> $GITHUB_ENV
         echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
 
-        echo "PYTHON_EXEC=python" >> $GITHUB_ENV
-        echo "ZIP_COMMAND=7z" >> $GITHUB_ENV
-        echo "ZIP_ARGS=a" >> $GITHUB_ENV
         echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
-        echo "CMAKE_EXTRA=-A x64" >> $GITHUB_ENV
-        echo "SYMBOL_REGEX=\(exe\|dll\|pdb\)" >> $GITHUB_ENV
-        echo "SYMBOLS_ARCHIVE=$RELEASE_NUMBER-${{ github.sha }}-win-symbols.zip" >> $GITHUB_ENV
         # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
         # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
-        if [[ "${{ matrix.os }}" = "Windows 2022" ]]; then
-          echo "CONAN_PROFILE='./tools/conan-profiles/vs-22-release'" >> $GITHUB_ENV
-        else
-          echo "Not sure which Conan profile to use. Exiting." && exit 1
-        fi
 
     # Configuration is broken into two steps because you can't set an env var and also reference it in the same step
     - name: Configure build environment 2
       shell: bash
       run: |
         echo "ARTIFACT_PATTERN=Overte-${{ github.ref_name }}.$INSTALLER_EXT" >> $GITHUB_ENV
-
-    - uses: actions/checkout@v4
-      with:
-        submodules: false
-        fetch-depth: 1
-
-    - name: Override Windows package versions
-      shell: pwsh
-      if: startsWith(matrix.os, 'windows')
-      run: |
-        choco install nsis --allow-downgrade --version=3.06.1
-        choco install cmake --allow-downgrade --version=3.31.6  # Our dependencies don't support CMake 4.0 yet.
-        Invoke-WebRequest https://build-deps.overte.org/conan/nsis-overte-plugins/NSIS-hifi-plugins-1.0.zip -OutFile NSIS-hifi-plugins.zip
-        Expand-Archive -LiteralPath 'NSIS-hifi-plugins.zip' -DestinationPath 'C:/Program Files (x86)/'
-
-    - name: Install Python modules
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
-      shell: bash
-      run: $PYTHON_EXEC -m pip install boto3 PyGithub conan html5lib setuptools
-
-    - name: Prepare Conan Build Environment
-      uses: ./.github/actions/setup-conan
 
     - name: Cache conan
       uses: actions/cache@v4
@@ -202,20 +180,6 @@ jobs:
     #  working-directory: C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x64
     #  run: .\signtool.exe sign /fd sha256 /f ${{runner.workspace}}\build\codesign.pfx /p ${{secrets.pfx_key}} /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256 ${{runner.workspace}}\build\${env:ARTIFACT_PATTERN}
 
-    - name: Output system stats
-      if: ${{ always() }}
-      working-directory: build
-      shell: bash
-      run: |
-        echo "Disk usage:"
-        df -h
-
-    - name: Output installer logs
-      if: failure() && startsWith(matrix.os, 'windows')
-      shell: bash
-      working-directory: build
-      run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
-
     - name: Upload artifact to GitHub
       uses: actions/upload-artifact@v4
       with:
@@ -232,19 +196,6 @@ jobs:
         RELEASE_NUMBER: ${{ github.ref_name }}
       run: $PYTHON_EXEC $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
 
-    - name: Archive symbols
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
-      shell: bash
-      run: |
-        SYMBOLS_TEMP="symbols-temp"
-        mkdir $SYMBOLS_TEMP
-        find "./build" -regex ".*\.$SYMBOL_REGEX" -exec cp -r {} $SYMBOLS_TEMP \;
-        cd $SYMBOLS_TEMP
-        $ZIP_COMMAND $ZIP_ARGS ../$SYMBOLS_ARCHIVE .
-
-    - name: Upload debug symbols to GitHub
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.SYMBOLS_ARCHIVE }}
-        path: ${{ env.SYMBOLS_ARCHIVE }}
-        if-no-files-found: error
+    - name: Output debug information
+      if: always()
+      uses: ./.github/actions/debug-info
