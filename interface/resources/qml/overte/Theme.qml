@@ -19,13 +19,13 @@ QtObject {
     property bool reducedMotion: false
 
     // font face for UI elements
-    readonly property string fontFamily: "DejaVu Sans"
+    readonly property string fontFamily: "Roboto"
 
     // font face for document text
-    readonly property string bodyFontFamily: "DejaVu Sans"
+    readonly property string bodyFontFamily: "Roboto"
 
     // font face for code editors
-    readonly property string monoFontFamily: "DejaVu Sans Mono"
+    readonly property string monoFontFamily: "Roboto Mono"
 
     readonly property int fontPixelSize: 18
     readonly property int fontPixelSizeSmall: 14
