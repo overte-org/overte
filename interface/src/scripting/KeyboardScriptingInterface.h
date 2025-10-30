@@ -42,7 +42,7 @@ class KeyboardScriptingInterface : public QObject, public Dependency {
     Q_PROPERTY(bool raised READ isRaised WRITE setRaised)
     Q_PROPERTY(bool password READ isPassword WRITE setPassword)
     Q_PROPERTY(bool use3DKeyboard READ getUse3DKeyboard CONSTANT);
-    Q_PROPERTY(bool preferMalletsOverLasers READ getPreferMalletsOverLasers WROTE setPreferMalletsOverLasers)
+    Q_PROPERTY(bool preferMalletsOverLasers READ getPreferMalletsOverLasers WRITE setPreferMalletsOverLasers)
 
 public:
     KeyboardScriptingInterface() = default;
