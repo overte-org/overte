@@ -259,6 +259,43 @@ Menu::Menu() {
     // Settings menu ----------------------------------
     MenuWrapper* settingsMenu = addMenu("Settings");
 
+    // Legacy settings, some stuff isn't accessible from the new one yet
+    MenuWrapper *legacySettingsMenu = settingsMenu->addMenu("Legacy");
+
+    // Settings > General...
+    action = addActionToQMenuAndActionHash(legacySettingsMenu, MenuOption::Preferences, Qt::CTRL | Qt::Key_G, nullptr, nullptr);
+    connect(action, &QAction::triggered, [] {
+        if (!qApp->getLoginDialogPoppedUp()) {
+            qApp->showDialog(QString("hifi/dialogs/GeneralPreferencesDialog.qml"),
+                QString("hifi/tablet/TabletGeneralPreferences.qml"), "GeneralPreferencesDialog");
+        }
+    });
+
+    // Settings > Controls...
+    action = addActionToQMenuAndActionHash(legacySettingsMenu, "Controls...");
+    connect(action, &QAction::triggered, [] {
+            auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
+            auto hmd = DependencyManager::get<HMDScriptingInterface>();
+            tablet->pushOntoStack("hifi/tablet/ControllerSettings.qml");
+
+            if (!hmd->getShouldShowTablet()) {
+                hmd->toggleShouldShowTablet();
+            }
+    });
+
+    // Settings > Audio...
+    action = addActionToQMenuAndActionHash(legacySettingsMenu, "Audio...");
+    connect(action, &QAction::triggered, [] {
+        static const QUrl tabletUrl("hifi/audio/Audio.qml");
+        auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
+        auto hmd = DependencyManager::get<HMDScriptingInterface>();
+        tablet->pushOntoStack(tabletUrl);
+
+        if (!hmd->getShouldShowTablet()) {
+            hmd->toggleShouldShowTablet();
+        }
+    });
+
     // Settings > Security...
     action = addActionToQMenuAndActionHash(settingsMenu, "Security...");
     connect(action, &QAction::triggered, [] {
