@@ -150,8 +150,8 @@ Menu::Menu() {
     auto action = addActionToQMenuAndActionHash(editMenu, MenuOption::RunningScripts, Qt::CTRL | Qt::Key_J);
     connect(action, &QAction::triggered, [] {
         if (!qApp->getLoginDialogPoppedUp()) {
-            static const QUrl widgetUrl("hifi/dialogs/RunningScripts.qml");
-            static const QUrl tabletUrl("hifi/dialogs/TabletRunningScripts.qml");
+            static const QUrl widgetUrl("overte/compat/RunningScripts_Window.qml");
+            static const QUrl tabletUrl("overte/dialogs/RunningScriptsDialog.qml");
             static const QString name("RunningScripts");
             qApp->showDialog(widgetUrl, tabletUrl, name);
         }
@@ -256,8 +256,11 @@ Menu::Menu() {
     // Settings menu ----------------------------------
     MenuWrapper* settingsMenu = addMenu("Settings");
 
+    // Legacy settings, some stuff isn't accessible from the new one yet
+    MenuWrapper *legacySettingsMenu = settingsMenu->addMenu("Legacy");
+
     // Settings > General...
-    action = addActionToQMenuAndActionHash(settingsMenu, MenuOption::Preferences, Qt::CTRL | Qt::Key_G, nullptr, nullptr);
+    action = addActionToQMenuAndActionHash(legacySettingsMenu, MenuOption::Preferences, Qt::CTRL | Qt::Key_G, nullptr, nullptr);
     connect(action, &QAction::triggered, [] {
         if (!qApp->getLoginDialogPoppedUp()) {
             qApp->showDialog(QString("hifi/dialogs/GeneralPreferencesDialog.qml"),
@@ -266,7 +269,7 @@ Menu::Menu() {
     });
 
     // Settings > Controls...
-    action = addActionToQMenuAndActionHash(settingsMenu, "Controls...");
+    action = addActionToQMenuAndActionHash(legacySettingsMenu, "Controls...");
     connect(action, &QAction::triggered, [] {
             auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
             auto hmd = DependencyManager::get<HMDScriptingInterface>();
@@ -278,7 +281,7 @@ Menu::Menu() {
     });
 
     // Settings > Audio...
-    action = addActionToQMenuAndActionHash(settingsMenu, "Audio...");
+    action = addActionToQMenuAndActionHash(legacySettingsMenu, "Audio...");
     connect(action, &QAction::triggered, [] {
         static const QUrl tabletUrl("hifi/audio/Audio.qml");
         auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet("com.highfidelity.interface.tablet.system");
