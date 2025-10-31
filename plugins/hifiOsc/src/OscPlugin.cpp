@@ -85,7 +85,7 @@ enum class FaceCap {
 
 // used to mirror left/right shapes from FaceCap.
 // i.e. right and left shapes are swapped.
-FaceCap faceMirrorMap[static_cast<int>(FaceCap::BlendshapeCount)] = {
+FaceCap faceMirrorMap[static_cast<size_t>(FaceCap::BlendshapeCount)] = {
     FaceCap::BrowsU_C,
     FaceCap::BrowsD_R,
     FaceCap::BrowsD_L,
@@ -140,7 +140,7 @@ FaceCap faceMirrorMap[static_cast<int>(FaceCap::BlendshapeCount)] = {
     FaceCap::TongueOut
 };
 
-static const char* STRINGS[static_cast<int>(FaceCap::BlendshapeCount)] = {
+static const char* STRINGS[static_cast<size_t>(FaceCap::BlendshapeCount)] = {
     "BrowsU_C",
     "BrowsD_L",
     "BrowsD_R",
@@ -195,7 +195,7 @@ static const char* STRINGS[static_cast<int>(FaceCap::BlendshapeCount)] = {
     "TongueOut"
 };
 
-static enum controller::StandardAxisChannel CHANNELS[static_cast<int>(FaceCap::BlendshapeCount)] = {
+static enum controller::StandardAxisChannel CHANNELS[static_cast<size_t>(FaceCap::BlendshapeCount)] = {
     controller::BROWSU_C,
     controller::BROWSD_L,
     controller::BROWSD_R,
@@ -582,7 +582,7 @@ controller::Input::NamedVector OscPlugin::InputDevice::getAvailableInputs() cons
     static controller::Input::NamedVector availableInputs;
     if (availableInputs.size() == 0) {
         for (int i = 0; i < static_cast<int>(FaceCap::BlendshapeCount); i++) {
-            availableInputs.push_back(makePair(CHANNELS[i], QString(STRINGS[i])));
+            availableInputs.push_back(makePair(static_cast<controller::StandardPoseChannel>(CHANNELS[i]), QString(STRINGS[i])));
         }
     }
     availableInputs.push_back(makePair(controller::HEAD, QString("Head")));
