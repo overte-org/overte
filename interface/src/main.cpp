@@ -734,7 +734,7 @@ int main(int argc, const char* argv[]) {
         {
             wchar_t filename[MAX_PATH];
             GetModuleFileName(NULL, filename, MAX_PATH);
-            QFileInfo appInfo(filename);
+            QFileInfo appInfo(QString::fromWCharArray(filename));
             appPath = appInfo.absolutePath();
         }
         QString openvrDllPath = appPath + "/plugins/openvr.dll";
