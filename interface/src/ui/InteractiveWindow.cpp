@@ -34,7 +34,7 @@
 #include "MainWindow.h"
 
 #ifdef Q_OS_WIN
-#include <WinUser.h>
+#include <Windows.h>
 #endif
 
 STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
