@@ -288,7 +288,7 @@ typedef QVector<float> qVectorFloat;
 typedef QVector<QUuid> qVectorQUuid;
 typedef QVector<QString> qVectorQString;
 typedef QSet<QString> qSetQString;
-inline QDebug &operator<<(QDebug& debug, qSetQString& stringSet) { for (const auto item: stringSet) { debug << item; } }
+inline QDebug &operator<<(QDebug& debug, const qSetQString& stringSet) { for (const auto item: stringSet) { debug << item; } return debug; }
 inline float float_convertFromScriptValue(const ScriptValue& v, bool& isValid) { return v.toVariant().toFloat(&isValid); }
 inline quint64 quint64_convertFromScriptValue(const ScriptValue& v, bool& isValid) { return v.toVariant().toULongLong(&isValid); }
 inline quint32 quint32_convertFromScriptValue(const ScriptValue& v, bool& isValid) {
