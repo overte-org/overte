@@ -343,12 +343,12 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
 
             foreach (QString allowedUser, allowedUsers) {
                 // even if isRestrictedAccess is false, we have to add explicit rows for these users.
-                _agentPermissions[NodePermissionsKey(allowedUser, QUuid::fromUInt128(0))].reset(new NodePermissions(allowedUser));
-                _agentPermissions[NodePermissionsKey(allowedUser, QUuid::fromUInt128(0))]->set(NodePermissions::Permission::canConnectToDomain);
+                _agentPermissions[NodePermissionsKey(allowedUser, QUuid())].reset(new NodePermissions(allowedUser));
+                _agentPermissions[NodePermissionsKey(allowedUser, QUuid())]->set(NodePermissions::Permission::canConnectToDomain);
             }
 
             foreach (QString allowedEditor, allowedEditors) {
-                NodePermissionsKey editorKey(allowedEditor, QUuid::fromUInt128(0));
+                NodePermissionsKey editorKey(allowedEditor, QUuid());
                 if (!_agentPermissions.contains(editorKey)) {
                     _agentPermissions[editorKey].reset(new NodePermissions(allowedEditor));
                     if (isRestrictedAccess) {
@@ -969,7 +969,7 @@ void DomainServerSettingsManager::processNodeKickRequestPacket(QSharedPointer<Re
                             qWarning() << "attempt to kick node running on same machine as domain server (by fingerprint), ignoring KickRequest";
                             return;
                         }
-                        NodePermissionsKey machineFingerprintKey(nodeData->getMachineFingerprint().toString(), QUuid::fromUInt128(0));
+                        NodePermissionsKey machineFingerprintKey(nodeData->getMachineFingerprint().toString(), QUuid());
 
                         // check if there were already permissions for the fingerprint
                         bool hadFingerprintPermissions = hasPermissionsForMachineFingerprint(nodeData->getMachineFingerprint());
@@ -1115,7 +1115,7 @@ NodePermissions DomainServerSettingsManager::getStandardPermissionsForName(const
 }
 
 NodePermissions DomainServerSettingsManager::getPermissionsForName(const QString& name) const {
-    NodePermissionsKey nameKey = NodePermissionsKey(name, QUuid::fromUInt128(0));
+    NodePermissionsKey nameKey = NodePermissionsKey(name, QUuid());
     if (_agentPermissions.contains(nameKey)) {
         return *(_agentPermissions[nameKey].get());
     }
@@ -1125,7 +1125,7 @@ NodePermissions DomainServerSettingsManager::getPermissionsForName(const QString
 }
 
 NodePermissions DomainServerSettingsManager::getPermissionsForIP(const QHostAddress& address) const {
-    NodePermissionsKey ipKey = NodePermissionsKey(address.toString(), QUuid::fromUInt128(0));
+    NodePermissionsKey ipKey = NodePermissionsKey(address.toString(), QUuid());
     if (_ipPermissions.contains(ipKey)) {
         return *(_ipPermissions[ipKey].get());
     }
@@ -1135,7 +1135,7 @@ NodePermissions DomainServerSettingsManager::getPermissionsForIP(const QHostAddr
 }
 
 NodePermissions DomainServerSettingsManager::getPermissionsForMAC(const QString& macAddress) const {
-    NodePermissionsKey macKey = NodePermissionsKey(macAddress, QUuid::fromUInt128(0));
+    NodePermissionsKey macKey = NodePermissionsKey(macAddress, QUuid());
     if (_macPermissions.contains(macKey)) {
         return *(_macPermissions[macKey].get());
     }
@@ -1145,7 +1145,7 @@ NodePermissions DomainServerSettingsManager::getPermissionsForMAC(const QString&
 }
 
 NodePermissions DomainServerSettingsManager::getPermissionsForMachineFingerprint(const QUuid& machineFingerprint) const {
-    NodePermissionsKey fingerprintKey = NodePermissionsKey(machineFingerprint.toString(), QUuid::fromUInt128(0));
+    NodePermissionsKey fingerprintKey = NodePermissionsKey(machineFingerprint.toString(), QUuid());
     if (_machineFingerprintPermissions.contains(fingerprintKey)) {
         return *(_machineFingerprintPermissions[fingerprintKey].get());
     }
