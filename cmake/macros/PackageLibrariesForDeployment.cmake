@@ -23,7 +23,7 @@ macro(PACKAGE_LIBRARIES_FOR_DEPLOYMENT)
         endif ()
 
         # add a post-build command to call windeployqt to copy Qt plugins
-        set(CMD "${WINDEPLOYQT_COMMAND} ${EXTRA_DEPLOY_OPTIONS} --no-compiler-runtime --no-opengl-sw --no-angle -no-system-d3d-compiler")
+        set(CMD "${WINDEPLOYQT_COMMAND} ${EXTRA_DEPLOY_OPTIONS} --no-compiler-runtime --no-opengl-sw -no-system-d3d-compiler")
 
         file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/windeploy-${TARGET_NAME}.bat" "${CMD} %*")
         add_custom_command(
