@@ -341,7 +341,7 @@ void DomainGatekeeper::updateNodePermissions() {
         // authentication and verifiedUsername is only set once they user's key has been confirmed.
         QString verifiedUsername = node->getPermissions().getVerifiedUserName();
         QString verifiedDomainUserName = node->getPermissions().getVerifiedDomainUserName();
-        NodePermissions userPerms(NodePermissionsKey(verifiedUsername, QUuid::fromUInt128(0)));
+        NodePermissions userPerms(NodePermissionsKey(verifiedUsername, QUuid()));
 
         if (node->getPermissions().isAssignment) {
             // this node is an assignment-client
@@ -470,7 +470,7 @@ SharedNodePointer DomainGatekeeper::processAgentConnectRequest(const NodeConnect
     auto limitedNodeList = DependencyManager::get<LimitedNodeList>();
 
     // start with empty permissions
-    NodePermissions userPerms(NodePermissionsKey(username, QUuid::fromUInt128(0)));
+    NodePermissions userPerms(NodePermissionsKey(username, QUuid()));
     userPerms.setAll(false);
 
     // check if this user is on our local machine - if this is true set permissions to those for a "localhost" connection
