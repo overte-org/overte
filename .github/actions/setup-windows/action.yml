@@ -34,3 +34,35 @@ runs:
       shell: bash
       run: |
         python -m pip install boto3 PyGithub conan html5lib setuptools
+
+    - name: Setup Conan
+      shell: bash
+      run: |
+        echo "Starting with a clean Conan profile…" && rm ${CONAN_HOME}/profiles/default || true  # Don't fail if missing.
+        conan profile detect -e
+        echo "Printing Conan default profile…" && cat ${CONAN_HOME}/profiles/default
+
+        conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
+        # Use our mirror of Conan Center to avoid rate limiting.
+        conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center
+
+        echo "Starting with a clean Conan global.conf…" && rm ${CONAN_HOME}/global.conf
+        # Try downloading source files from conandata.yml first. Fall back to our backup if the upstream source is down.
+        echo "core.sources:download_urls=['origin', 'https://artifactory.overte.org/artifactory/build-dependencies-backup/']" >> ${CONAN_HOME}/global.conf
+        echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ${CONAN_HOME}/global.conf
+        # Credentials for uploading backups of dependency sources.
+        # source-credentials.json is a jinja template, so os.getenv() happens at runtime.
+        cat > ${CONAN_HOME}/source_credentials.json <<EOF
+        {% set TOKEN = os.getenv('CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN') %}
+        {
+          "credentials": [
+            {
+            "url": "https://artifactory.overte.org/artifactory/build-dependencies-backup/",
+            "token": "{{TOKEN}}"
+            }
+          ]
+        }
+        EOF
+        echo "Printing Conan global.conf…" && cat ${CONAN_HOME}/global.conf
+        echo "Printing Conan remotes.json…" && cat ${CONAN_HOME}/remotes.json
+        echo "Printing Conan source_credentials.json…" && cat ${CONAN_HOME}/source_credentials.json
