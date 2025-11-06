@@ -28,6 +28,7 @@ Rectangle {
     // seconds of placeholder avatar while the profile loads
     Settings {
         id: settings
+        category: "MyAccountInfo"
         property url cachedAvatarUrl: "../icons/unset_avatar.svg"
     }
 
@@ -121,6 +122,7 @@ Rectangle {
                 "../icons/unset_avatar.svg"
             )
             status: root.status
+            retainWhileLoading: true
             Layout.preferredWidth: 64
             Layout.preferredHeight: 64
             Layout.leftMargin: 8
