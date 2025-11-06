@@ -89,6 +89,16 @@ QtObject {
 
         readonly property color activeWindowTitleBg: Qt.darker("#403849", 1.2)
         readonly property color activeWindowTitleFg: text
+
+        readonly property color userCountEmpty: "#b0b0b0"
+        readonly property color userCountActive: "#22ef22"
+        readonly property color userCountFull: "#ef2f1f"
+
+        readonly property color appIconBackground: "#202020"
+        readonly property color appInstalledRunning: statusContacts
+        readonly property color appInstalledNotRunning: statusFriendsOnly
+        readonly property color appNotInstalledRunning: "red"
+        readonly property color appNotInstalled: statusOffline
     }
 
     readonly property var paletteLight: QtObject {
@@ -122,6 +132,16 @@ QtObject {
 
         readonly property color activeWindowTitleBg: "#000080"
         readonly property color activeWindowTitleFg: "white"
+
+        readonly property color userCountEmpty: "#303030"
+        readonly property color userCountActive: "#008000"
+        readonly property color userCountFull: "#800000"
+
+        readonly property color appIconBackground: "#202020"
+        readonly property color appInstalledRunning: "#00ff00"
+        readonly property color appInstalledNotRunning: "#ffaf00"
+        readonly property color appNotInstalledRunning: "red"
+        readonly property color appNotInstalled: statusOffline
     }
 
     readonly property var paletteDarkContrast: QtObject {
@@ -155,6 +175,16 @@ QtObject {
 
         readonly property color activeWindowTitleBg: base
         readonly property color activeWindowTitleFg: "white"
+
+        readonly property color userCountEmpty: text
+        readonly property color userCountActive: "#00ff00"
+        readonly property color userCountFull: "#ff00ff"
+
+        readonly property color appIconBackground: "black"
+        readonly property color appInstalledRunning: statusContacts
+        readonly property color appInstalledNotRunning: statusFriendsOnly
+        readonly property color appNotInstalledRunning: "red"
+        readonly property color appNotInstalled: statusOffline
     }
 
     readonly property var paletteLightContrast: QtObject {
@@ -188,5 +218,15 @@ QtObject {
 
         readonly property color activeWindowTitleBg: base
         readonly property color activeWindowTitleFg: "black"
+
+        readonly property color userCountEmpty: text
+        readonly property color userCountActive: "#006000"
+        readonly property color userCountFull: "#600060"
+
+        readonly property color appIconBackground: "black"
+        readonly property color appInstalledRunning: "#00ff00"
+        readonly property color appInstalledNotRunning: "#ffaf00"
+        readonly property color appNotInstalledRunning: "red"
+        readonly property color appNotInstalled: statusOffline
     }
 }
