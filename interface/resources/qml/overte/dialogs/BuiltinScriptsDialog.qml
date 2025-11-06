@@ -177,10 +177,10 @@ Rectangle {
                 Layout.preferredWidth: 128
 
                 enabled: {
-                    if (!treeView.selectionModel.currentIndex) { return false; }
+                    if (treeView.selectionModel.currentIndex === -1) { return false; }
 
                     const data = treeModel.getRow(treeView.selectionModel.currentIndex);
-                    return !data.rows;
+                    return !data?.rows;
                 }
                 text: qsTr("Load")
                 backgroundColor: Overte.Theme.paletteActive.buttonAdd

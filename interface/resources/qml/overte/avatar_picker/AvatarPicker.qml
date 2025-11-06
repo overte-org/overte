@@ -123,6 +123,9 @@ Rectangle {
             Layout.fillWidth: true
             Layout.fillHeight: true
 
+            // QT6TODO: remove this once mouse inputs work properly
+            interactive: false
+
             clip: true
             // scales the cells to never leave dead space, but looks bad when scaling window
             //cellWidth: (width - ScrollBar.vertical.width) / Math.floor(3 * (width / 480))
