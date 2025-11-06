@@ -32,7 +32,6 @@ var DEFAULT_SCRIPTS_COMBINED = [
     "system/inspect.js",
     "system/keyboardShortcuts/keyboardShortcuts.js",
     "system/onEscape.js",
-    "system/places/places.js"
     //"developer/debugging/scriptMemoryReport.js"
 ];
 var DEFAULT_SCRIPTS_SEPARATE = [
@@ -42,7 +41,6 @@ var DEFAULT_SCRIPTS_SEPARATE = [
     "system/controllers/squeezeHands.js",
     "communityScripts/notificationCore/notificationCore.js",
     "simplifiedUI/ui/simplifiedNametag/simplifiedNametag.js",
-    {"stable": "system/more/app-more.js", "beta": "https://more.overte.org/more/app-more.js"},
     "communityScripts/chatBubbles/chatBubbles.js",
     "communityScripts/contextMenu.js",
 ];
