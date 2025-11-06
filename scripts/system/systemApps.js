@@ -76,6 +76,16 @@ function defaultFromQml(message) {
 
             xhr.send(data.data.body);
         } break;
+
+        case "system:location_go_back": location.goBack(); break;
+        case "system:location_go_forward": location.goForward(); break;
+        case "system:location_go_to": {
+            location.handleLookupString(data.data.path);
+
+            // hide the tablet after travelling
+            SystemTablet.gotoHomeScreen();
+            SystemTablet.tabletShown = false;
+        } break;
     }
 }
 
@@ -122,6 +132,37 @@ const SYSTEM_APPS = {
         },
 
         qmlSource: "overte/contacts/ContactsList.qml",
+        appButton: null,
+    },
+
+    places: {
+        appButtonData: {
+            sortOrder: 6,
+            isActive: false,
+            // TODO: put these somewhere more global
+            icon: Script.resolvePath("./places/icons/appicon_i.png"),
+            activeIcon: Script.resolvePath("./places/icons/appicon_a.png"),
+
+            // TODO: translation support in JS
+            text: "PLACES",
+        },
+
+        qmlSource: "overte/place_picker/PlacePicker.qml",
+        appButton: null,
+    },
+
+    more: {
+        appButtonData: {
+            isActive: false,
+            // TODO: put these somewhere more global
+            icon: Script.resolvePath("./more/appicon_i.png"),
+            activeIcon: Script.resolvePath("./more/appicon_a.png"),
+
+            // TODO: translation support in JS
+            text: "MORE",
+        },
+
+        qmlSource: "overte/more_apps/MoreApps.qml",
         appButton: null,
     },
 };
