@@ -4,8 +4,9 @@ import QtQuick.Effects
 import ".." as Overte
 
 Rectangle {
-    required property url source
     required property int status
+    property alias source: avatarImage.source
+    property alias retainWhileLoading: avatarImage.retainWhileLoading
 
     color: "transparent"
 
@@ -31,7 +32,6 @@ Rectangle {
         fillMode: Image.PreserveAspectCrop
 
         id: avatarImage
-        source: avatar.source
         sourceSize.width: width
         sourceSize.height: height
 
