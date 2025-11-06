@@ -19,6 +19,24 @@ Rectangle {
 
     property var typingIndicatorNames: ({})
 
+    // When the window gets closed, the chat history is forgotten.
+    // Keep a log of events we've received so we can replay them
+    // when recreating the window.
+    property list<var> eventsLog: []
+
+    Component.onCompleted: {
+        const savedEvents = SettingsInterface.getValue("private/chat/eventsLog") ?? [];
+        for (let event of savedEvents) {
+            fromScript(event);
+        }
+    }
+
+    Component.onDestruction: {
+        SettingsInterface.setValue("private/chat/eventsLog", eventsLog);
+    }
+
+    onMessagesCleared: eventsLog = []
+
     signal messagePushed(name: string, body: string, time: string)
     signal notificationPushed(text: string, time: string)
     signal messagesCleared()
@@ -45,8 +63,20 @@ Rectangle {
     }
 
     function fromScript(rawObj) {
-        const obj = JSON.parse(rawObj);
+        let obj = (typeof(rawObj) === "string") ? JSON.parse(rawObj) : rawObj;
         const timestamp = (obj.timestamp ? new Date(obj.timestamp) : new Date()).toLocaleTimeString(undefined, Locale.ShortFormat);
+
+        // keep chat events in the log
+        if (
+            obj.event !== "start_typing" &&
+            obj.event !== "end_typing" &&
+            obj.event !== "change_setting"
+        ) {
+            if (!obj.timestamp) {
+                obj.timestamp = Date.now();
+            }
+            eventsLog.push(obj);
+        }
 
         switch (obj.event) {
             case "recv_message":
