@@ -124,15 +124,12 @@ SettingsPage {
     }
 
     SpinBoxSetting {
-        // FIXME
-        enabled: false
-
         text: qsTr("Animation Duration")
         from: 1
         to: 30
 
-        //value: Settings.getValue("snapshotAnimatedDuration", 3)
-        //onValueChanged: Settings.setValue("snapshotAnimatedDuration", value)
+        value: SettingsInterface.getValue("snapshotAnimatedDuration", 3)
+        onValueChanged: SettingsInterface.setValue("snapshotAnimatedDuration", value)
     }
 
     SettingNote {
@@ -156,12 +153,9 @@ SettingsPage {
     }
 
     SwitchSetting {
-        // FIXME
-        enabled: false
-
         text: qsTr("Discord Rich Presence")
-        //value: Settings.getValue("useDiscordPresence", true)
-        //onValueChanged: Settings.setValue("useDiscordPresence", value)
+        value: SettingsInterface.getValue("useDiscordPresence", true)
+        onValueChanged: SettingsInterface.setValue("useDiscordPresence", value)
     }
 
     SettingNote {
