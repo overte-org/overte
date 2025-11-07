@@ -70,6 +70,24 @@ Rectangle {
     property list<var> rawPlaces: []
     property real downloadProgress: 0.0
 
+    function delayedShuffleHash(x) {
+        const ONE_DAY_MS = 24 * 3600 * 1000;
+        const SHUFFLE_CYCLE_MS = 5 * ONE_DAY_MS;
+
+        const FNV_OFFSET = 0x811c9dc5;
+        const FNV_PRIME = 0x01000193;
+        const ALL_32BIT = 0xffffffff;
+
+        let hashAccum = (FNV_OFFSET + Math.floor(Date.now() / SHUFFLE_CYCLE_MS)) & ALL_32BIT;
+        for (let p of x) {
+            // not quite FNV-1a, because we're counting 32-bit codepoints rather than bytes
+            hashAccum ^= p;
+            hashAccum = (hashAccum * FNV_PRIME) & ALL_32BIT;
+        }
+
+        return hashAccum;
+    }
+
     function filterPlaces() {
         // TODO: federation support
         const hostname = (new URL(AccountServices.metaverseServerURL)).hostname;
@@ -102,8 +120,10 @@ Rectangle {
             ((b.compatibleProtocol ? 1 : 0) - (a.compatibleProtocol ? 1 : 0)) ||
             // sort favorited places up
             ((filters.favoritedPlaceIds.includes(b.placeId) ? 1 : 0) - (filters.favoritedPlaceIds.includes(a.placeId) ? 1 : 0)) ||
-            // sort by UUID, so the listing has a stable order that can't be cheated
-            a.placeId.localeCompare(b.placeId)
+            // prefer places with a thumbnail
+            ((b.thumbnail ? 1 : 0) - (a.thumbnail ? 1 : 0)) ||
+            // random shuffle that's stable for a few days to mix things up
+            delayedShuffleHash(b.placeId) - delayedShuffleHash(a.placeId)
         ));
 
         gridView.model = tmp;
