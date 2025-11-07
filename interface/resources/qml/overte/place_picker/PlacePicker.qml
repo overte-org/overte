@@ -20,7 +20,7 @@ Rectangle {
 
     QtCore.Settings {
         id: filters
-        category: "PlacePicker"
+        category: "placesApp"
         property string searchExpression: ".*"
         property bool includeIncompatible: false
         property list<string> maturity: [
@@ -201,7 +201,11 @@ Rectangle {
 
             Overte.RoundButton {
                 id: searchButton
-                icon.source: searchField.text.startsWith("hifi://") ? "../icons/send.svg" : "../icons/search.svg"
+                icon.source: (
+                    searchField.text.match(/(?:hifi|https?|file):\/\//) ?
+                    "../icons/send.svg" :
+                    "../icons/search.svg"
+                )
                 icon.width: 24
                 icon.height: 24
                 icon.color: Overte.Theme.paletteActive.buttonText
