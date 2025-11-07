@@ -78,6 +78,7 @@ QtObject {
         readonly property color buttonDestructive: "#823d3d"
         readonly property color buttonAdd:         "#3a753a"
         readonly property color buttonInfo:        "#1e6591"
+        readonly property color buttonFavorite:    "#b28c01"
 
         readonly property color statusOffline:   "#808080"
         readonly property color statusFriendsOnly: "orange"
@@ -121,6 +122,7 @@ QtObject {
         readonly property color buttonDestructive: "#fccccc"
         readonly property color buttonAdd:         "#bef4c5"
         readonly property color buttonInfo:        "#bfe5fc"
+        readonly property color buttonFavorite:    "#eddda6"
 
         readonly property color statusOffline:   "#808080"
         readonly property color statusFriendsOnly: "brown"
@@ -164,6 +166,7 @@ QtObject {
         readonly property color buttonDestructive: "#600000"
         readonly property color buttonAdd:         "#006000"
         readonly property color buttonInfo:        "#000080"
+        readonly property color buttonFavorite:    "#606000"
 
         readonly property color statusOffline:   "#808080"
         readonly property color statusFriendsOnly: "orange"
@@ -207,6 +210,7 @@ QtObject {
         readonly property color buttonDestructive: "#ffdddd"
         readonly property color buttonAdd:         "#ddffdd"
         readonly property color buttonInfo:        "#ddffff"
+        readonly property color buttonFavorite:    "#ffffdd"
 
         readonly property color statusOffline:   "#808080"
         readonly property color statusFriendsOnly: "brown"

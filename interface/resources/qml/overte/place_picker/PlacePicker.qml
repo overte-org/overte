@@ -22,7 +22,6 @@ Rectangle {
         id: filters
         category: "PlacePicker"
         property string searchExpression: ".*"
-        property int minUsers: 0
         property bool includeIncompatible: false
         property list<string> maturity: [
             "everyone",
@@ -31,6 +30,7 @@ Rectangle {
             "adult",
             "unrated",
         ]
+        property list<string> favoritedPlaceIds: []
     }
 
     function goBack() {
@@ -79,17 +79,17 @@ Rectangle {
 
         for (let place of rawPlaces) {
             const compatibleProtocol = place.domain.protocol_version === protocolSignature;
-            const recentHeartbeat = ((Date.now() - parseInt(place.domain.time_of_last_heartbeat_s)) / 1000) < ONE_DAY_SECS;
+            // ?status=active should filter out dead places already
+            //const recentHeartbeat = ((Date.now() - parseInt(place.domain.time_of_last_heartbeat_s)) / 1000) < ONE_DAY_SECS;
             const filterName = Boolean(place.name.match(searchExpression));
             const filterMaturity = filters.maturity.includes(place.maturity);
-            const filterMinUsers = place.current_attendance >= filters.minUsers;
+            const filterHasUsers = !onlyShowActiveButton.checked || place.current_attendance > 0;
 
             if (
                 (compatibleProtocol || filters.includeIncompatible) &&
-                recentHeartbeat &&
                 filterName &&
                 filterMaturity &&
-                filterMinUsers
+                filterHasUsers
             ) {
                 place.directoryHost = hostname;
                 place.compatibleProtocol = compatibleProtocol;
@@ -98,10 +98,12 @@ Rectangle {
         }
 
         tmp.sort((a, b) => (
-            // sort by compatibility, active users, then by name
+            // if "show incompatible servers" is on, sort compatible ones first
             ((b.compatibleProtocol ? 1 : 0) - (a.compatibleProtocol ? 1 : 0)) ||
-            b.current_attendance - a.current_attendance ||
-            a.name.localeCompare(b.name)
+            // sort favorited places up
+            ((filters.favoritedPlaceIds.includes(b.placeId) ? 1 : 0) - (filters.favoritedPlaceIds.includes(a.placeId) ? 1 : 0)) ||
+            // sort by UUID, so the listing has a stable order that can't be cheated
+            a.placeId.localeCompare(b.placeId)
         ));
 
         gridView.model = tmp;
@@ -177,6 +179,8 @@ Rectangle {
                 icon.color: Overte.Theme.paletteActive.buttonText
 
                 onClicked: placePicker.goToLocation(LocationBookmarks.getHomeLocationAddress())
+
+                Overte.ToolTip { text: qsTr("Go to Home bookmark") }
             }
 
             Overte.TextField {
@@ -214,6 +218,19 @@ Rectangle {
             }
 
             Overte.RoundButton {
+                id: onlyShowActiveButton
+                icon.source: "../icons/users.svg"
+                icon.width: 24
+                icon.height: 24
+                icon.color: Overte.Theme.paletteActive.buttonText
+                checkable: true
+
+                Overte.ToolTip { text: qsTr("Only show places with users") }
+
+                onClicked: filterPlaces()
+            }
+
+            Overte.RoundButton {
                 id: filterButton
                 icon.source: "../icons/filter.svg"
                 icon.width: 24
@@ -221,6 +238,8 @@ Rectangle {
                 icon.color: Overte.Theme.paletteActive.buttonText
 
                 onClicked: filterDialog.open()
+
+                Overte.ToolTip { text: qsTr("Search options") }
             }
         }
 
@@ -235,7 +254,7 @@ Rectangle {
         ColumnLayout {
             Layout.fillWidth: true
             Layout.fillHeight: true
-            visible: gridView.model.length === 0
+            visible: rawPlaces.length === 0
 
             Item { Layout.fillHeight: true }
 
@@ -281,7 +300,7 @@ Rectangle {
                 interactive: false
 
                 id: gridView
-                visible: model.length !== 0
+                visible: rawPlaces.length !== 0
                 // fit two cells onto the default tablet
                 cellWidth: (480 - Overte.Theme.scrollbarWidth) / 2
                 cellHeight: Math.floor(cellWidth * 0.6)
@@ -327,7 +346,6 @@ Rectangle {
         anchors.fill: placePicker
 
         function open() {
-            filterControlMinUsers.value = filters.minUsers;
             filterControlMaturityEveryone.checked = filters.maturity.includes("everyone");
             filterControlMaturityTeen.checked = filters.maturity.includes("teen");
             filterControlMaturityMature.checked = filters.maturity.includes("mature");
@@ -339,7 +357,6 @@ Rectangle {
         }
 
         function accept() {
-            filters.minUsers = filterControlMinUsers.value;
             let maturityList = [];
 
             if (filterControlMaturityEveryone.checked) {
@@ -419,17 +436,6 @@ Rectangle {
 
                 Overte.Label {
                     Layout.fillWidth: true
-                    text: qsTr("Minimum user count")
-                }
-
-                Overte.SpinBox { id: filterControlMinUsers }
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-
-                Overte.Label {
-                    Layout.fillWidth: true
                     text: qsTr("Show incompatible servers")
                 }
 
@@ -473,6 +479,7 @@ Rectangle {
         property list<string> managers: []
         property url placeUrl: ""
         property bool compatible: true
+        property string placeId: ""
 
         function open(index) {
             const data = gridView.model[index];
@@ -494,6 +501,7 @@ Rectangle {
             maxUsers = data.domain.capacity;
             managers = data.managers;
             placeUrl = data.finalPlaceUrl ?? `hifi://${placeName}${data.path}`;
+            placeId = data.placeId;
 
             visible = true;
             opacity = Overte.Theme.reducedMotion ? 1 : 0;
@@ -594,21 +602,56 @@ Rectangle {
             }
         }
 
-        Overte.RoundButton {
+        Row {
             anchors.top: parent.top
             anchors.right: parent.right
             anchors.margins: 8
-            implicitWidth: 28
-            implicitHeight: 28
+            spacing: 4
 
-            backgroundColor: Overte.Theme.paletteActive.buttonDestructive
+            Overte.RoundButton {
+                implicitWidth: 28
+                implicitHeight: 28
 
-            icon.source: "../icons/close.svg"
-            icon.width: 12
-            icon.height: 12
-            icon.color: Overte.Theme.paletteActive.buttonText
+                icon.source: "../icons/gold_star.svg"
+                icon.width: 20
+                icon.height: 20
+                icon.color: (
+                    checked ?
+                    Overte.Theme.paletteActive.buttonText :
+                    Overte.Theme.paletteActive.placeholderText
+                )
 
-            onClicked: infoDialog.close()
+                backgroundColor: checked ? Overte.Theme.paletteActive.buttonFavorite : Overte.Theme.paletteActive.button
+                checkable: true
+                checked: filters.favoritedPlaceIds.includes(infoDialog.placeId)
+
+                onToggled: {
+                    if (!checked) {
+                        const index = filters.favoritedPlaceIds.indexOf(infoDialog.placeId);
+                        filters.favoritedPlaceIds.splice(index);
+                    } else {
+                        filters.favoritedPlaceIds.push(infoDialog.placeId);
+                    }
+
+                    filterPlaces();
+                }
+
+                Overte.ToolTip { text: qsTr("Favorite\nSorts this place before unfavorited places.") }
+            }
+
+            Overte.RoundButton {
+                implicitWidth: 28
+                implicitHeight: 28
+
+                backgroundColor: Overte.Theme.paletteActive.buttonDestructive
+
+                icon.source: "../icons/close.svg"
+                icon.width: 18
+                icon.height: 18
+                icon.color: Overte.Theme.paletteActive.buttonText
+
+                onClicked: infoDialog.close()
+            }
         }
     }
 }
