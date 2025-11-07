@@ -102,7 +102,7 @@ void AudioClient::setHmdAudioName(QAudioDevice::Mode mode, const QString& name) 
 // thread-safe
 QList<HifiAudioDeviceInfo> getAvailableDevices(QAudioDevice::Mode mode, const QString& hmdName) {
     //get hmd device name prior to locking device mutex. in case of shutdown, this thread will be locked and audio client
-    //cannot properly shut down. 
+    //cannot properly shut down.
     QString defDeviceName = defaultAudioDeviceName(mode);
 
     // NOTE: availableDevices() clobbers the Qt internal device list
@@ -422,7 +422,6 @@ AudioClient::AudioClient() {
 }
 
 AudioClient::~AudioClient() {
-
     stop();
 
     if (_codec && _encoder) {
@@ -492,7 +491,7 @@ QString getWinDeviceName(IMMDevice* pEndpoint) {
     HRESULT hr = pPropertyStore->GetValue(PKEY_Device_FriendlyName, &pv);
     pPropertyStore->Release();
     pPropertyStore = nullptr;
-    deviceName = QString::fromWCharArray((wchar_t*)pv.pwszVal);
+    deviceName = QString::fromWCharArray(pv.pwszVal);
     if (!IsWindows8OrGreater()) {
         // Windows 7 provides only the 31 first characters of the device name.
         const DWORD QT_WIN7_MAX_AUDIO_DEVICENAME_LEN = 31;
@@ -528,8 +527,8 @@ QString AudioClient::getWinDeviceName(wchar_t* guid) {
 
 HifiAudioDeviceInfo defaultAudioDeviceForMode(QAudioDevice::Mode mode, const QString& hmdName) {
     QString deviceName = defaultAudioDeviceName(mode);
-#if defined (Q_OS_ANDROID)
-    if (mode == QAudio::AudioInput) {
+#if defined(Q_OS_ANDROID)
+    if (mode == QAudioDevice::Mode::Input) {
         Setting::Handle<bool> enableAEC(SETTING_AEC_KEY, DEFAULT_AEC_ENABLED);
         bool aecEnabled = enableAEC.get();
         auto audioClient = DependencyManager::get<AudioClient>();
@@ -550,7 +549,7 @@ QString defaultAudioDeviceName(QAudioDevice::Mode mode) {
 
 #ifdef __APPLE__
     QAudioDeviceInfo device;
-    if (mode == QAudio::AudioInput) {
+    if (mode == QAudioDevice::Mode::Input) {
         device = QAudioDeviceInfo::defaultInputDevice();
     } else {
         device = QAudioDeviceInfo::defaultOutputDevice();
@@ -569,7 +568,7 @@ QString defaultAudioDeviceName(QAudioDevice::Mode mode) {
             kAudioObjectPropertyElementMaster
         };
 
-        if (mode == QAudio::AudioOutput) {
+        if (mode == QAudioDevice::Mode::Output) {
             propertyAddress.mSelector = kAudioHardwarePropertyDefaultOutputDevice;
         }
 
@@ -596,8 +595,8 @@ QString defaultAudioDeviceName(QAudioDevice::Mode mode) {
 #endif
 #ifdef _WIN32
     //Check for Windows Vista or higher, IMMDeviceEnumerator doesn't work below that.
-    if (!IsWindowsVistaOrGreater()) { // lower then vista
-        if (mode == QAudio::AudioInput) {
+    if (!IsWindowsVistaOrGreater()) {  // lower then vista
+        if (mode == QAudioDevice::Mode::Input) {
             WAVEINCAPS wic;
             // first use WAVE_MAPPER to get the default devices manufacturer ID
             waveInGetDevCaps(WAVE_MAPPER, &wic, sizeof(wic));
@@ -606,7 +605,7 @@ QString defaultAudioDeviceName(QAudioDevice::Mode mode) {
 #if !defined(NDEBUG) 
             qCDebug(audioclient) << "input device:" << wic.szPname;
 #endif
-            deviceName = wic.szPname;
+            deviceName = QString::fromWCharArray(wic.szPname);
         } else {
             WAVEOUTCAPS woc;
             // first use WAVE_MAPPER to get the default devices manufacturer ID
@@ -616,7 +615,7 @@ QString defaultAudioDeviceName(QAudioDevice::Mode mode) {
 #if !defined(NDEBUG) 
             qCDebug(audioclient) << "output device:" << woc.szPname;
 #endif
-            deviceName = woc.szPname;
+            deviceName = QString::fromWCharArray(woc.szPname);
         }
     } else {
         HRESULT hr = S_OK;
@@ -624,7 +623,8 @@ QString defaultAudioDeviceName(QAudioDevice::Mode mode) {
         IMMDeviceEnumerator* pMMDeviceEnumerator = NULL;
         CoCreateInstance(__uuidof(MMDeviceEnumerator), NULL, CLSCTX_ALL, __uuidof(IMMDeviceEnumerator), (void**)&pMMDeviceEnumerator);
         IMMDevice* pEndpoint;
-        hr = pMMDeviceEnumerator->GetDefaultAudioEndpoint(mode == QAudio::AudioOutput ? eRender : eCapture, eMultimedia, &pEndpoint);
+        hr = pMMDeviceEnumerator->GetDefaultAudioEndpoint(mode == QAudioDevice::Mode::Output ? eRender : eCapture, eMultimedia,
+                                                          &pEndpoint);
         if (hr == E_NOTFOUND) {
             printf("Audio Error: device not found\n");
             deviceName = QString("NONE");
@@ -638,21 +638,21 @@ QString defaultAudioDeviceName(QAudioDevice::Mode mode) {
         CoUninitialize();
     }
 
-#if !defined(NDEBUG) 
-    qCDebug(audioclient) << "defaultAudioDeviceForMode mode: " << (mode == QAudio::AudioOutput ? "Output" : "Input") 
-	<< " [" << deviceName << "] [" << "]";
+#if !defined(NDEBUG)
+    qCDebug(audioclient) << "defaultAudioDeviceForMode mode: " << (mode == QAudioDevice::Mode::Output ? "Output" : "Input")
+                         << " [" << deviceName << "] [" << "]";
 #endif
 
 #endif
 
 #ifdef Q_OS_LINUX
-    if ( mode == QAudioDevice::Mode::Input ) {
+    if (mode == QAudioDevice::Mode::Input) {
         deviceName = QMediaDevices::defaultAudioInput().description();
     } else {
         deviceName = QMediaDevices::defaultAudioOutput().description();
     }
 #endif
-   return deviceName;
+    return deviceName;
 }
 
 bool AudioClient::getNamedAudioDeviceForModeExists(QAudioDevice::Mode mode, const QString& deviceName) {
