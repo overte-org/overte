@@ -230,6 +230,9 @@ Rectangle {
         editDialog.avatarName = avatarModel[index].name;
         editDialog.avatarUrl = avatarModel[index].avatarUrl;
         editDialog.avatarDescription = avatarModel[index].description;
+        avatarNameField.text = editDialog.avatarName;
+        avatarUrlField.text = editDialog.avatarUrl;
+        avatarDescriptionField.text = editDialog.avatarDescription;
         editDialog.open();
     }
 
