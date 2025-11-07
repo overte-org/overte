@@ -14,6 +14,7 @@ Rectangle {
     readonly property var modelData: gridView.model[index]
 
     required property string name
+    readonly property string domainName: modelData.domain.name
     readonly property url thumbnail: modelData.thumbnail ?? ""
     readonly property bool compatible: modelData.compatibleProtocol ?? true
     readonly property url placeUrl: `hifi://${name}${modelData.path}`
@@ -28,7 +29,7 @@ Rectangle {
         if (Overte.Theme.highContrast) {
             return Overte.Theme.darkMode ? "black" : "white"
         } else {
-            return Overte.Theme.darkMode ? "#a0000000" : "#e0ffffff"
+            return Overte.Theme.darkMode ? "#d0000000" : "#e0ffffff"
         }
     }
 
@@ -94,9 +95,9 @@ Rectangle {
             id: userCountText
             text: {
                 if (maxUsers === 9999) {
-                    return `${currentUsers}`;
+                    return `${domainName}: ${currentUsers}`;
                 } else {
-                    return `${currentUsers}/${maxUsers}`;
+                    return `${domainName}: ${currentUsers}/${maxUsers}`;
                 }
             }
             color: {
@@ -109,9 +110,10 @@ Rectangle {
                 }
             }
             font.bold: true
-            font.pixelSize: Overte.Theme.fontPixelSizeSmall
+            font.pixelSize: Overte.Theme.fontPixelSizeXSmall
             horizontalAlignment: Text.AlignLeft
             verticalAlignment: Text.AlignTop
+            elide: Text.ElideLeft
         }
     }
 
