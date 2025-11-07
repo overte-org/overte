@@ -368,3 +368,50 @@ QVariantMap AvatarBookmarks::getAvatarDataToBookmark() {
     bookmark.insert(ENTRY_AVATAR_ENTITIES, wearableEntities);
     return bookmark;
 }
+
+void AvatarBookmarks::setBookmarkData(const QString& bookmarkName, const QVariantMap& data) {
+    if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
+        return;
+    }
+
+    if (QThread::currentThread() != thread()) {
+        BLOCKING_INVOKE_METHOD(
+            this,
+            "setBookmarkData",
+            Q_GENERIC_ARG(QString, bookmarkName),
+            Q_GENERIC_ARG(QVariantMap, data)
+        );
+        return;
+    }
+
+    auto sanitizedData = data;
+
+    if (!sanitizedData.contains(ENTRY_VERSION)) {
+        sanitizedData.insert(ENTRY_VERSION, AVATAR_BOOKMARK_VERSION);
+    }
+
+    if (!sanitizedData.contains(ENTRY_AVATAR_URL)) {
+        qCritical() << "setBookmarkData called without \"avatarUrl\" field!";
+        return;
+    }
+
+    if (!sanitizedData.contains(ENTRY_AVATAR_ICON)) {
+        sanitizedData.insert(ENTRY_AVATAR_ICON, "");
+    }
+
+    if (!sanitizedData.contains(ENTRY_AVATAR_SCALE)) {
+        sanitizedData.insert(ENTRY_AVATAR_SCALE, 1.0);
+    }
+
+    if (!sanitizedData.contains(ENTRY_AVATAR_ENTITIES)) {
+        sanitizedData.insert(ENTRY_AVATAR_ENTITIES, QVariantList());
+    }
+
+    auto alreadyExists = contains(bookmarkName);
+
+    insert(bookmarkName, sanitizedData);
+
+    if (!alreadyExists) {
+        emit bookmarkAdded(bookmarkName);
+    }
+}
