@@ -6,7 +6,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-// Note, `gl::Context is split into two files because a single file cannot include both the GLAD headers 
+// Note, `gl::Context is split into two files because a single file cannot include both the GLAD headers
 // and the QOpenGLContext definition headers
 
 #include "Context.h"
@@ -15,10 +15,6 @@
 
 #include <QtGui/QWindow>
 #include "QOpenGLContextWrapper.h"
-
-#ifdef Q_OS_WIN
-#include <QtPlatformHeaders/QWGLNativeContext>
-#endif
 
 #include <QOpenGLDebugMessage>
 
