@@ -97,6 +97,28 @@ SettingsPage {
         text: qsTr("This setting will disable UI animations that slide or scale.")
     }
 
+    ComboSetting {
+        text: qsTr("Avatar Nametags")
+        textRole: "text"
+        valueRole: "value"
+        model: [
+            { text: qsTr("Never "), value: "off" },
+            { text: qsTr("When clicked"), value: "on" },
+            { text: qsTr("Always"), value: "alwaysOn" },
+        ]
+
+        currentIndex: {
+            const setting = SettingsInterface.getValue("simplifiedNametag/avatarNametagMode", "on");
+            switch (setting) {
+                case "off": return 0;
+                case "on": return 1;
+                case "alwaysOn": return 2;
+            }
+        }
+
+        onCurrentIndexChanged: SettingsInterface.setValue("simplifiedNametag/avatarNametagMode", model[currentIndex].value)
+    }
+
     Header { text: qsTr("Screenshots") }
 
     FolderSetting {
