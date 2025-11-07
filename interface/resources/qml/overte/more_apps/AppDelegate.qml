@@ -159,7 +159,7 @@ Rectangle {
                     if (running) {
                         ScriptDiscoveryService.stopScript(scriptUrl, false);
                     } else {
-                        ScriptDiscoveryService.loadScript(scriptUrl, true);
+                        ScriptDiscoveryService.loadScript(scriptUrl, false);
                     }
 
                     processing = true;
@@ -181,7 +181,7 @@ Rectangle {
 
                 onClicked: {
                     processing = true;
-                    ScriptDiscoveryService.loadScript(scriptUrl, true);
+                    ScriptDiscoveryService.loadScript(scriptUrl, false);
 
                     // only variable assignments are automatically tracked by Qt
                     moreApps.installedScripts.push(scriptUrl);

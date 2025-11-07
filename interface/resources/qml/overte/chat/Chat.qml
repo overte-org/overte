@@ -15,7 +15,7 @@ Rectangle {
     property bool settingJoinNotifications: true
     property bool settingBroadcast: false
     property bool settingChatBubbles: true
-    property bool settingDesktopWindow: true
+    property bool settingDesktopWindow: false
 
     property var typingIndicatorNames: ({})
 
