@@ -12,23 +12,23 @@ Rectangle {
     implicitHeight: 720
     color: Overte.Theme.paletteActive.base
 
-    property list<url> repoSources: {
-        // the default setting argument doesn't work in qml, so emulate it
-        let sourcesList = SettingsInterface.getValue("private/moreApp/repoSources");
-        if (!sourcesList || sourcesList.length < 1) {
-            sourcesList = [ "https://more.overte.org" ];
-        }
-
-        return sourcesList;
+    QtCore.Settings {
+        id: settings
+        category: "moreApp"
+        property list<var> installedScripts: []
+        property list<var> repoSources: [
+            "https://more.overte.org",
+        ]
     }
+
+    property alias installedScripts: settings.installedScripts
+    property alias repoSources: settings.repoSources
 
     property string searchExpression: ".*"
     property list<var> rawListModel: []
     property list<var> filteredModel: []
 
-    // can't be list<url> or equality tests fail
-    property list<string> installedScripts: SettingsInterface.getValue("private/moreApp/installedScripts") ?? []
-    property list<string> runningScripts: []
+    property list<var> runningScripts: []
 
     // the running scripts list doesn't immediately update, so give it a bit to update
     Timer {
@@ -136,12 +136,9 @@ Rectangle {
     }
 
     onRepoSourcesChanged: {
-        SettingsInterface.setValue("private/moreApp/repoSources", repoSources);
         refreshRunningScripts();
         fetchAllLists();
     }
-
-    onInstalledScriptsChanged: SettingsInterface.setValue("private/moreApp/installedScripts", installedScripts)
 
     ColumnLayout {
         anchors.fill: parent
