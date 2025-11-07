@@ -77,7 +77,9 @@ void Sound::downloadFinished(const QByteArray& data) {
     auto sharedSoundPointer = weak_from_this().lock();
 
     if (!sharedSoundPointer) {
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
         Q_ASSERT(!_wasDeleted);
+#endif
         soundProcessError(301, "Sound object has gone out of scope");
         return;
     }
