@@ -110,11 +110,11 @@ QString FingerprintUtils::getMachineFingerprintString() {
     bool success = false;
 
     // try and open the key that contains the machine GUID
-    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "SOFTWARE\\Microsoft\\Cryptography", 0, KEY_READ, &cryptoKey) == ERROR_SUCCESS) {
+    if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Microsoft\\Cryptography", 0, KEY_READ, &cryptoKey) == ERROR_SUCCESS) {
         DWORD type;
         DWORD guidSize;
 
-        const char* MACHINE_GUID_KEY = "MachineGuid";
+        const wchar_t MACHINE_GUID_KEY[] = L"MachineGuid";
 
         // try and retrieve the size of the GUID value
         if (RegQueryValueEx(cryptoKey, MACHINE_GUID_KEY, NULL, &type, NULL, &guidSize) == ERROR_SUCCESS) {
