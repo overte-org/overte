@@ -162,7 +162,7 @@ void ScriptableResourceCache::updateTotalSize(const qint64& deltaSize) {
     _resourceCache->updateTotalSize(deltaSize);
 }
 
-ScriptableResource* ScriptableResourceCache::prefetch(const QUrl& url, void* extra, size_t extraHash) {
+ScriptableResource* ScriptableResourceCache::prefetch(const QUrl& url, void* extra, ulong extraHash) {
     return _resourceCache->prefetch(url, extra, extraHash);
 }
 
@@ -221,10 +221,10 @@ ScriptableResource* ResourceCache::prefetchAndMoveToThread(const QUrl& url, void
     return result;
 }
 
-ScriptableResource* ResourceCache::prefetch(const QUrl& url, void* extra, size_t extraHash) {
+ScriptableResource* ResourceCache::prefetch(const QUrl& url, void* extra, ulong extraHash) {
     ScriptableResource* result = nullptr;
 
-    if (QThread::currentThread() != thread()) {
+    if (QThread::currentThread() != this->thread()) {
         // Must be called in thread to ensure getResource returns a valid pointer
         BLOCKING_INVOKE_METHOD(this, "prefetchAndMoveToThread",
             Q_GENERIC_RETURN_ARG(ScriptableResource*, result),
@@ -914,6 +914,6 @@ bool Resource::handleFailedRequest(ResourceRequest::Result result) {
     return willRetry;
 }
 
-uint qHash(const QPointer<QObject>& value, uint seed) {
+size_t qHash(const QPointer<QObject>& value, size_t seed) {
     return qHash(value.data(), seed);
 }
