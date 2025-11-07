@@ -739,7 +739,9 @@ void Resource::attemptRequest() {
 
     auto self = weak_from_this().lock();
     if (self) {
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
         Q_ASSERT(!_wasDeleted);
+#endif
         ResourceCache::attemptRequest(self);
     }
 }
@@ -811,7 +813,9 @@ void Resource::handleReplyFinished() {
     auto self = weak_from_this().lock();
     if (!self) {
         // Make sure the resource wasn't deleted yet, and it's just scheduled for deletion or pointer has expired.
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
         Q_ASSERT(!_wasDeleted);
+#endif
     }
 
     if (!_request || _request != sender()) {
