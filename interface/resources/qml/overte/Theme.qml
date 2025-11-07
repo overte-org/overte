@@ -29,6 +29,8 @@ QtObject {
 
     readonly property int fontPixelSize: 18
     readonly property int fontPixelSizeSmall: 14
+    readonly property int fontPixelSizeXSmall: 11
+
     readonly property real borderRadius: 4.0
     readonly property real borderWidth: 2.0
     readonly property real borderWidthFocused: highContrast ? borderWidth * 2 : borderWidth

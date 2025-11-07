@@ -100,12 +100,14 @@ Rectangle {
             // ?status=active should filter out dead places already
             //const recentHeartbeat = ((Date.now() - parseInt(place.domain.time_of_last_heartbeat_s)) / 1000) < ONE_DAY_SECS;
             const filterName = Boolean(place.name.match(searchExpression));
+            const filterDomain = Boolean(place.domain.name.match(searchExpression));
+            const filterDesc = Boolean(place.description.match(searchExpression));
             const filterMaturity = filters.maturity.includes(place.maturity);
             const filterHasUsers = !onlyShowActiveButton.checked || place.current_attendance > 0;
 
             if (
                 (compatibleProtocol || filters.includeIncompatible) &&
-                filterName &&
+                (filterName || filterDomain || filterDesc) &&
                 filterMaturity &&
                 filterHasUsers
             ) {
@@ -588,30 +590,19 @@ Rectangle {
                 }
 
                 Overte.Button {
-                    // TODO: separate place portal handler, the old one was
-                    // baked into places.js so we can't reuse it
-                    visible: false
-                    enabled: false
-
                     Layout.fillWidth: true
                     Layout.fillHeight: true
                     Layout.preferredWidth: 1
                     backgroundColor: Overte.Theme.paletteActive.buttonInfo
+                    enabled: infoDialog.compatible
                     text: qsTr("Portal")
-                    /*onClicked: {
-                        // FIXME: This is defined in the previous places.js,
-                        // we'll need a separate script for handling portal spawns
-                        Messages.sendMessage("com.overte.places.portalRezzer", JSON.stringify({
-                            action: "REZ_PORTAL",
-                            position: Vec3.sum(
-                                MyAvatar.position,
-                                Vec3.multiply(2, Quat.getForward(MyAvatar.orientation))
-                            ),
-                            url: infoDialog.placeUrl,
-                            name: infoDialog.placeName,
-                            placeID: infoDialog.placeName,
+                    onClicked: {
+                        infoDialog.close();
+                        Messages.sendMessage("org.overte.PlacePortal.Create", JSON.stringify({
+                            place_name: infoDialog.placeName,
+                            place_url: infoDialog.placeUrl,
                         }));
-                    }*/
+                    }
                 }
 
                 Overte.Button {
@@ -621,7 +612,10 @@ Rectangle {
                     backgroundColor: Overte.Theme.paletteActive.buttonAdd
                     enabled: infoDialog.compatible
                     text: infoDialog.compatible ? qsTr("Join") : qsTr("Incompatible")
-                    onClicked: placePicker.goToLocation(infoDialog.placeUrl)
+                    onClicked: {
+                        infoDialog.close();
+                        placePicker.goToLocation(infoDialog.placeUrl);
+                    }
                 }
             }
         }
