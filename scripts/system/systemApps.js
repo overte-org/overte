@@ -167,22 +167,48 @@ const SYSTEM_APPS = {
     },
 };
 
-for (let app of Object.values(SYSTEM_APPS)) {
-    if (!app.onClicked) { app.onClicked = defaultOnClicked; }
-    if (!app.onScreenChanged) { app.onScreenChanged = defaultOnScreenChanged; }
-    if (!app.fromQml) { app.fromQml = defaultFromQml; }
+function setupButtons() {
+    for (let app of Object.values(SYSTEM_APPS)) {
+        if (!app.onClicked) { app.onClicked = defaultOnClicked; }
+        if (!app.onScreenChanged) { app.onScreenChanged = defaultOnScreenChanged; }
+        if (!app.fromQml) { app.fromQml = defaultFromQml; }
 
-    let button = SystemTablet.addButton(app.appButtonData);
-    button.clicked.connect(() => app.onClicked());
-    SystemTablet.screenChanged.connect((type, url) => app.onScreenChanged(type, url));
-    SystemTablet.fromQml.connect(message => app.fromQml(message));
-    app.appButton = button;
+        let button = SystemTablet.addButton(app.appButtonData);
+        button.clicked.connect(() => app.onClicked());
+        SystemTablet.screenChanged.connect((type, url) => app.onScreenChanged(type, url));
+        SystemTablet.fromQml.connect(message => app.fromQml(message));
+        app.appButton = button;
+    }
+
+    Script.scriptEnding.connect(() => {
+        for (const app of Object.values(SYSTEM_APPS)) {
+            if (app.appButton) {
+                SystemTablet.removeButton(app.appButton);
+            }
+        }
+    });
 }
 
-Script.scriptEnding.connect(() => {
-    for (const app of Object.values(SYSTEM_APPS)) {
-        if (app.appButton) {
-            SystemTablet.removeButton(app.appButton);
-        }
+function loadInstalledMoreApps() {
+    const RETRY_DELAY_SECS = 5;
+    const installedScripts = Settings.getValue("moreApp/installedScripts", []);
+
+    for (const scriptUrl of installedScripts) {
+        ScriptDiscoveryService.loadScript(scriptUrl, false);
     }
-});
+
+    // Check that all of the installed scripts are running.
+    // If there's some that aren't, then give them one more try.
+    Script.setTimeout(() => {
+        const running = ScriptDiscoveryService.getRunning();
+
+        for (const scriptUrl of installedScripts) {
+            if (!running.includes(scriptUrl)) {
+                ScriptDiscoveryService.loadScript(scriptUrl, false);
+            }
+        }
+    }, RETRY_DELAY_SECS * 1000);
+}
+
+loadInstalledMoreApps();
+setupButtons();

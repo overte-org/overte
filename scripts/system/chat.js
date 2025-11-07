@@ -16,7 +16,7 @@ let settings = Settings.getValue("Chat", {
     joinNotifications: true,
     broadcastEnabled: false,
     chatBubbles: true,
-    desktopWindow: true,
+    desktopWindow: false,
 });
 
 function updateSetting(name, value) {
