@@ -37,6 +37,7 @@ var DEFAULT_SCRIPTS_COMBINED = [
 var DEFAULT_SCRIPTS_SEPARATE = [
     "system/systemApps.js",
     "system/chat.js",
+    "system/placePortals.js",
     "system/controllers/controllerScripts.js",
     "system/controllers/squeezeHands.js",
     "communityScripts/notificationCore/notificationCore.js",
