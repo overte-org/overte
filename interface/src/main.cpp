@@ -744,7 +744,7 @@ int main(int argc, const char* argv[]) {
     if (parser.isSet(checkMinSpecOption)) {
         QString appPath;
         {
-            char filename[MAX_PATH];
+            wchar_t filename[MAX_PATH];
             GetModuleFileName(NULL, filename, MAX_PATH);
             QFileInfo appInfo(filename);
             appPath = appInfo.absolutePath();
@@ -752,7 +752,7 @@ int main(int argc, const char* argv[]) {
         QString openvrDllPath = appPath + "/plugins/openvr.dll";
         HMODULE openvrDll;
         CHECKMINSPECPROC checkMinSpecPtr;
-        if ((openvrDll = LoadLibrary(openvrDllPath.toLocal8Bit().data())) &&
+        if ((openvrDll = LoadLibrary(qUtf16Printable(openvrDllPath.toLocal8Bit().data()))) &&
             (checkMinSpecPtr = (CHECKMINSPECPROC)GetProcAddress(openvrDll, "CheckMinSpec"))) {
             if (!checkMinSpecPtr()) {
                 return -1;
