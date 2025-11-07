@@ -189,8 +189,7 @@ QString formatSecondsElapsed(float seconds);
 bool similarStrings(const QString& stringA, const QString& stringB);
 
 template <typename T>
-uint qHash(const std::shared_ptr<T>& ptr, uint seed = 0)
-{
+size_t qHash(const std::shared_ptr<T>& ptr, size_t seed = 0) {
     return qHash(ptr.get(), seed);
 }
 
