@@ -10,6 +10,9 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#ifdef Q_OS_WIN
+#include <Windows.h>
+#endif  //Q_OS_WIN
 #include <GL/gl.h>
 
 #include <QtCore/QThread>
