@@ -108,8 +108,6 @@ Item {
         icon.height: 32
         icon.color: Overte.Theme.paletteActive.buttonText
 
-        onClicked: {
-            root.requestEdit(item.index);
-        }
+        onClicked: root.requestEdit(item.index)
     }
 }
