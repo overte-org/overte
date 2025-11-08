@@ -135,7 +135,8 @@ const SYSTEM_APPS = {
         appButton: null,
     },
 
-    places: {
+    // TODO: to be picked up again in a later PR
+    /*places: {
         appButtonData: {
             sortOrder: 6,
             isActive: false,
@@ -149,7 +150,7 @@ const SYSTEM_APPS = {
 
         qmlSource: "overte/place_picker/PlacePicker.qml",
         appButton: null,
-    },
+    },*/
 
     more: {
         appButtonData: {
