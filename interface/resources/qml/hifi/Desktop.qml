@@ -17,7 +17,8 @@ OriginalDesktop.Desktop {
 
     property alias toolbarObjectName: sysToolbar.objectName
 
-    MouseArea {
+    // QT6TODO: this breaks VR mouse cursor since
+    /*MouseArea {
         id: hoverWatch
         anchors.fill: parent
         hoverEnabled: true
@@ -26,7 +27,7 @@ OriginalDesktop.Desktop {
         onEntered: if (typeof ApplicationCompositor !== "undefined") ApplicationCompositor.reticleOverDesktop = true
         onExited: if (typeof ApplicationCompositor !== "undefined") ApplicationCompositor.reticleOverDesktop = false
         acceptedButtons: Qt.NoButton
-    }
+    }*/
 
     Action {
         text: "Open Browser"
