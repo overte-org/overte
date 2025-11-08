@@ -53,7 +53,7 @@ const TITLE_DEFAULT_PROPS = {
     type: "Text",
     grab: { grabbable: false },
     ignorePickIntersection: true,
-    dimensions: [1, 0.5, 0.1],
+    dimensions: [2, 0.5, 0.1],
     localPosition: [0, 1, 0],
     billboardMode: "yaw",
     backgroundAlpha: 0.0,
