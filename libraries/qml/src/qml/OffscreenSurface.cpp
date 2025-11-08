@@ -10,6 +10,9 @@
 #include <unordered_set>
 #include <unordered_map>
 
+#ifdef Q_OS_WIN
+#include <Windows.h>
+#endif  //Q_OS_WIN
 #include <GL/gl.h>
 
 #include <QtCore/QThread>
@@ -94,7 +97,7 @@ void OffscreenSurface::setSharedContext(QOpenGLContext* sharedContext) {
 
 std::function<void(uint32_t, void*)> OffscreenSurface::getDiscardLambda() {
     return [](uint32_t texture, void* fence) {
-        SharedObject::getTextureCache().releaseTexture({ texture, static_cast<GLsync>(fence) });
+        SharedObject::getTextureCache().releaseTexture(TextureCache::Value(texture, static_cast<void*>(fence)));
     };
 }
 

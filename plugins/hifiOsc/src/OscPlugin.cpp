@@ -140,7 +140,7 @@ FaceCap faceMirrorMap[(int)FaceCap::BlendshapeCount] = {
     FaceCap::TongueOut
 };
 
-static const char* STRINGS[FaceCap::BlendshapeCount] = {
+static const char* STRINGS[static_cast<size_t>(FaceCap::BlendshapeCount)] = {
     "BrowsU_C",
     "BrowsD_L",
     "BrowsD_R",
@@ -195,7 +195,7 @@ static const char* STRINGS[FaceCap::BlendshapeCount] = {
     "TongueOut"
 };
 
-static enum controller::StandardAxisChannel CHANNELS[FaceCap::BlendshapeCount] = {
+static enum controller::StandardAxisChannel CHANNELS[static_cast<size_t>(FaceCap::BlendshapeCount)] = {
     controller::BROWSU_C,
     controller::BROWSD_L,
     controller::BROWSD_R,
@@ -582,7 +582,7 @@ controller::Input::NamedVector OscPlugin::InputDevice::getAvailableInputs() cons
     static controller::Input::NamedVector availableInputs;
     if (availableInputs.size() == 0) {
         for (int i = 0; i < (int)FaceCap::BlendshapeCount; i++) {
-            availableInputs.push_back(makePair(CHANNELS[i], STRINGS[i]));
+            availableInputs.push_back(makePair(static_cast<controller::StandardPoseChannel>(CHANNELS[i]), STRINGS[i]));
         }
     }
     availableInputs.push_back(makePair(controller::HEAD, "Head"));

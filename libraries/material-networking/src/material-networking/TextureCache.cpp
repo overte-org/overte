@@ -510,7 +510,9 @@ void NetworkTexture::setImage(gpu::TexturePointer texture, int originalWidth,
 
     if (!self) {
         // We need to make sure that texture was just added to unused pool and wasn't deleted yet.
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
         Q_ASSERT(!_wasDeleted);
+#endif
         return;
         //TODO: what to do when texture pointer has expired?
     }
@@ -1146,7 +1148,9 @@ void NetworkTexture::loadMetaContent(const QByteArray& content) {
                 auto textureCache = DependencyManager::get<TextureCache>();
                 auto self = weak_from_this().lock();
                 if (!self) {
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
                     Q_ASSERT(!_wasDeleted);
+#endif
                     return;
                 }
                 QMetaObject::invokeMethod(this, "attemptRequest", Qt::QueuedConnection);

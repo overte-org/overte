@@ -24,10 +24,12 @@
 #include "Application.h"
 
 #ifdef Q_OS_WIN
-static const UINT UWM_IDENTIFY_INSTANCES =
-    RegisterWindowMessage("UWM_IDENTIFY_INSTANCES_{8AB82783-B74A-4258-955B-8188C22AA0D6}_" + qgetenv("USERNAME"));
-static const UINT UWM_SHOW_APPLICATION =
-    RegisterWindowMessage("UWM_SHOW_APPLICATION_{71123FD6-3DA8-4DC1-9C27-8A12A6250CBA}_" + qgetenv("USERNAME"));
+#include <Windows.h>
+
+static const UINT UWM_IDENTIFY_INSTANCES = RegisterWindowMessage(
+    qUtf16Printable("UWM_IDENTIFY_INSTANCES_{8AB82783-B74A-4258-955B-8188C22AA0D6}_" + qEnvironmentVariable("USERNAME")));
+static const UINT UWM_SHOW_APPLICATION = RegisterWindowMessage(
+    qUtf16Printable("UWM_SHOW_APPLICATION_{71123FD6-3DA8-4DC1-9C27-8A12A6250CBA}_" + qEnvironmentVariable("USERNAME")));
 
 class MyNativeEventFilter : public QAbstractNativeEventFilter {
 public:
@@ -36,7 +38,7 @@ public:
         return staticInstance;
     }
 
-    bool nativeEventFilter(const QByteArray &eventType, void* msg, long* result) Q_DECL_OVERRIDE {
+    bool nativeEventFilter(const QByteArray& eventType, void* msg, qintptr* result) Q_DECL_OVERRIDE {
         if (eventType == "windows_generic_MSG") {
             MSG* message = (MSG*)msg;
 
