@@ -1,0 +1,32 @@
+<@include gpu/Config.slh@>
+<$VERSION_HEADER$>
+//  Generated on <$_SCRIBE_DATE$>
+//
+//  DrawTextureSRGBToLinear.frag
+//
+//  Draw texture 0 fetched at texcoord.xy, and apply sRGB to Linear color space conversion
+//
+//  Created by Ada <ada@thingvellir.net> on 2025-11-09
+//  Copyright 2025 Overte e.V.
+//
+//  Distributed under the Apache License, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+//
+
+<@include gpu/Color.slh@>
+
+
+LAYOUT(binding=0) uniform sampler2D colorMap;
+
+layout(location=0) in vec2 varTexCoord0;
+layout(location=0) out vec4 outFragColor;
+
+void main(void) {
+    vec4 color = texture(colorMap, varTexCoord0);
+
+    // Weirdly, Qt gives us a texture with premultiplied alpha.
+    // We have to un-premultiply or there are black halos around transparent parts.
+    color.rgb /= max(0.004 /* 1.0 / 255.0 */, color.a);
+
+    outFragColor = color_sRGBAToLinear(color);
+}
