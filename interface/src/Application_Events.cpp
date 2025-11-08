@@ -657,6 +657,7 @@ void Application::mouseMoveEvent(QMouseEvent* event) {
 
     if (compositor.getReticleVisible() || !isHMDMode() || !compositor.getReticleOverDesktop() ||
         getOverlays().getOverlayAtPoint(glm::vec2(transformedPos.x(), transformedPos.y())) != UNKNOWN_ENTITY_ID) {
+        // QT6TODO: compositor.getReticleOverDesktop() does not work currently.
         getEntities()->mouseMoveEvent(&mappedEvent);
     }
 
