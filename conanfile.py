@@ -11,7 +11,7 @@ class Overte(ConanFile):
         "qt_source": ["system", "aqt", "source"],
     }
     default_options = {
-        "qt_source": "system",
+        "qt_source": "source",
         "sdl*:alsa": "False",
         "sdl*:pulse": "False",
         "sdl*:wayland": "False",
