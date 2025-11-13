@@ -59,6 +59,7 @@ static uint8_t YOUTUBE_MAX_FPS = 30;
 static std::atomic<uint32_t> _currentWebCount(0);
 static const uint32_t MAX_CONCURRENT_WEB_VIEWS = 20;
 
+// QT6TODO: Use one shared virtual pointing device, where do we put it though?
 static std::shared_ptr<QPointingDevice> _touchDevice;
 
 static uint8_t CUSTOM_PIPELINE_NUMBER;
@@ -139,12 +140,14 @@ WebEntityRenderer::WebEntityRenderer(const EntityItemPointer& entity) : Parent(e
     static std::once_flag once;
     std::call_once(once, [&]{
         CUSTOM_PIPELINE_NUMBER = render::ShapePipeline::registerCustomShapePipelineFactory(webPipelineFactory);
-        _touchDevice = std::make_shared<QPointingDevice>("OffscreenUiTouchDevice", 0,
-        QInputDevice::DeviceType::TouchScreen,
-        QPointingDevice::PointerType::Pen,
-        QInputDevice::Capability::Position,
-        4, //maxPoints
-        2 // buttonCount
+        _touchDevice = std::make_shared<QPointingDevice>(
+            "WebEntityPointingDevice",
+            1,
+            QInputDevice::DeviceType::AllDevices,
+            QPointingDevice::PointerType::AllPointerTypes,
+            QInputDevice::Capability::All,
+            4, //maxPoints
+            2 // buttonCount
         );
     });
     _geometryId = DependencyManager::get<GeometryCache>()->allocateID();
@@ -555,10 +558,10 @@ void WebEntityRenderer::handlePointerEventAsMouse(const PointerEvent& event) {
 
     if (type == QEvent::Wheel) {
         const auto& scroll = event.getScroll() * POINTEREVENT_SCROLL_SENSITIVITY;
-        QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false);
+        QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false, Qt::MouseEventSynthesizedByApplication, _touchDevice.get());
         QCoreApplication::sendEvent(_webSurface->getWindow(), &wheelEvent);
     } else {
-        QMouseEvent mouseEvent(type, windowPoint, windowPoint, windowPoint, button, buttons, event.getKeyboardModifiers());
+        QMouseEvent mouseEvent(type, windowPoint, windowPoint, windowPoint, button, buttons, event.getKeyboardModifiers(), _touchDevice.get());
         QCoreApplication::sendEvent(_webSurface->getWindow(), &mouseEvent);
     }
 }

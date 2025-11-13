@@ -173,6 +173,8 @@ public:
     const ApplicationOverlay& getApplicationOverlay() const { return *_applicationOverlay; }
     CompositorHelper& getApplicationCompositor() const;
 
+    std::shared_ptr<QPointingDevice> getVirtualPointingDevice() const;
+
     virtual PickRay computePickRay(float x, float y) const override;
 
     static void setupQmlSurface(QQmlContext* surfaceContext, bool setAdditionalContextProperties);
@@ -776,6 +778,8 @@ private:
     Qt::CursorShape _desiredCursor { Qt::BlankCursor };
     bool _cursorNeedsChanging { false };
     bool _useSystemCursor { false };
+
+    std::shared_ptr<QPointingDevice> _virtualPointingDevice;
 
     DialogsManagerScriptingInterface* _dialogsManagerScriptingInterface;
 
