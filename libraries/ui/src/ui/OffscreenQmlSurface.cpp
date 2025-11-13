@@ -34,6 +34,7 @@
 //#include <QtMultimedia/QAudioOutputSelectorControl>
 #include <QtMultimedia/QMediaPlayer>
 #include <QtGui/QInputMethodEvent>
+#include <QtGui/private/qeventpoint_p.h>
 #include <shared/NsightHelpers.h>
 #include <shared/GlobalAppProperties.h>
 #include <shared/QtHelpers.h>
@@ -503,7 +504,6 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
         state = QEventPoint::State::Released;
     } else if (_activeTouchPoints.count(event.getID()) && windowPoint != _activeTouchPoints[event.getID()].touchPoint.position()) {
         state = QEventPoint::State::Updated;
-        // QT6TODO: is Updated equivalent to TouchPointMoved?;
     }
 
     // Remove the touch point if:
@@ -522,12 +522,19 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
     }
 
     {
-        // QT6TODO: I'm not sure about positions
-        QTouchEvent::TouchPoint point(event.getID(), state, windowPoint, windowPoint);
-        //point.setId(event.getID());
-        //point.setState(state);
-        //point.setPos(windowPoint);
-        //point.setScreenPos(windowPoint);
+        // Synthetic touch events aren't documented anywhere,
+        // and I don't think Qt really expects you to create them.
+        //
+        // qtbase/tests/auto/widgets/util/qscroller/tst_qscroller.cpp
+        // tst_QScroller::kineticScroll
+        QTouchEvent::TouchPoint point(0);
+        QMutableEventPoint::setState(point, QEventPoint::State::Pressed);
+        QMutableEventPoint::setPosition(point, windowPoint);
+        QMutableEventPoint::setScenePosition(point, windowPoint);
+        QMutableEventPoint::setGlobalPosition(point, windowPoint);
+        QMutableEventPoint::setId(point, event.getID());
+        QMutableEventPoint::setState(point, state);
+
         _activeTouchPoints[event.getID()].touchPoint = point;
         if (state == QEventPoint::State::Pressed) {
             _activeTouchPoints[event.getID()].pressed = true;
@@ -536,20 +543,15 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
         }
     }
 
-        QList<QTouchEvent::TouchPoint> touchPoints;
-        //Qt::TouchPointStates touchPointStates;
-        for (const auto& entry : _activeTouchPoints) {
-            //touchPointStates |= entry.second.touchPoint.state();
-            touchPoints.push_back(entry.second.touchPoint);
-        }
+    QList<QTouchEvent::TouchPoint> touchPoints;
+    for (const auto& entry : _activeTouchPoints) {
+        touchPoints.push_back(entry.second.touchPoint);
+    }
 
-        QTouchEvent touchEvent(touchType, &device, event.getKeyboardModifiers(), touchPoints);
+    QTouchEvent touchEvent(touchType, &device, event.getKeyboardModifiers(), touchPoints);
 
-        // QT6TODO: I'm not sure about what to do about this, there doesn't seem to be a way to set window and target
-        //touchEvent.setWindow(getWindow());
-        //ouchEvent.setTarget(getRootItem());
-        touchEvent.setTimestamp((ulong)QDateTime::currentMSecsSinceEpoch());
-        touchEvent.ignore();
+    touchEvent.setTimestamp((ulong)QDateTime::currentMSecsSinceEpoch());
+    touchEvent.ignore();
 
     // Send mouse events to the surface so that HTML dialog elements work with mouse press and hover.
     //
@@ -569,7 +571,7 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
 
     if (event.getType() == PointerEvent::Move) {
         QMouseEvent mouseEvent(QEvent::MouseMove, windowPoint, windowPoint, windowPoint, button, buttons,
-                               event.getKeyboardModifiers());
+                               event.getKeyboardModifiers(), &device);
         // TODO - this line necessary for the QML Tooltop to work (which is not currently being used), but it causes interface to crash on launch on a fresh install
         // need to investigate into why this crash is happening.
         //_qmlContext->setContextProperty("lastMousePosition", windowPoint);
@@ -595,7 +597,7 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
 
     if (event.getType() == PointerEvent::Scroll) {
         auto scroll = event.getScroll() * POINTEREVENT_SCROLL_SENSITIVITY;
-        QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false);
+        QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false, Qt::MouseEventSynthesizedByApplication, &device);
         if (QCoreApplication::sendEvent(getWindow(), &wheelEvent)) {
             eventSent = true;
             eventsAccepted &= wheelEvent.isAccepted();
