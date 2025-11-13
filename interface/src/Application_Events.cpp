@@ -55,6 +55,10 @@ public:
     void call() const { _fun(); }
 };
 
+std::shared_ptr<QPointingDevice> Application::getVirtualPointingDevice() const {
+    return _virtualPointingDevice;
+}
+
 bool Application::notify(QObject* object, QEvent* event) {
     if (thread() == QThread::currentThread()) {
         PROFILE_RANGE_IF_LONGER(app, "notify", 2)
@@ -211,7 +215,8 @@ bool Application::eventFilter(QObject* object, QEvent* event) {
             QMouseEvent* newEvent = new QMouseEvent(
                     QEvent::MouseButtonPress, mouseEvent->localPos(), mouseEvent->windowPos(),
                     mouseEvent->screenPos(), Qt::RightButton, Qt::MouseButtons(Qt::RightButton),
-                    mouseEvent->modifiers());
+                    mouseEvent->modifiers(),
+                    getVirtualPointingDevice().get());
             QApplication::postEvent(object, newEvent);
             return true;
         }
@@ -653,7 +658,8 @@ void Application::mouseMoveEvent(QMouseEvent* event) {
     QMouseEvent mappedEvent(event->type(),
         transformedPos,
         event->globalPosition(), button,
-        buttons, event->modifiers());
+        buttons, event->modifiers(),
+        getVirtualPointingDevice().get());
 
     if (compositor.getReticleVisible() || !isHMDMode() || !compositor.getReticleOverDesktop() ||
         getOverlays().getOverlayAtPoint(glm::vec2(transformedPos.x(), transformedPos.y())) != UNKNOWN_ENTITY_ID) {
@@ -688,7 +694,12 @@ void Application::mousePressEvent(QMouseEvent* event) {
     QPointF transformedPos;
 #endif
 
-    QMouseEvent mappedEvent(event->type(), transformedPos, event->globalPosition(), event->button(), event->buttons(), event->modifiers());
+    QMouseEvent mappedEvent(event->type(),
+        transformedPos,
+        event->globalPosition(), event->button(),
+        event->buttons(), event->modifiers(),
+        getVirtualPointingDevice().get());
+
     QUuid result = getEntities()->mousePressEvent(&mappedEvent);
     setKeyboardFocusEntity(getEntities()->wantsKeyboardFocus(result) ? result : UNKNOWN_ENTITY_ID);
 
@@ -728,7 +739,8 @@ void Application::mouseDoublePressEvent(QMouseEvent* event) {
     QMouseEvent mappedEvent(event->type(),
         transformedPos,
         event->globalPosition(), event->button(),
-        event->buttons(), event->modifiers());
+        event->buttons(), event->modifiers(),
+        getVirtualPointingDevice().get());
     getEntities()->mouseDoublePressEvent(&mappedEvent);
 
     // if one of our scripts have asked to capture this event, then stop processing it
@@ -750,7 +762,8 @@ void Application::mouseReleaseEvent(QMouseEvent* event) {
     QMouseEvent mappedEvent(event->type(),
         transformedPos,
         event->globalPosition(), event->button(),
-        event->buttons(), event->modifiers());
+        event->buttons(), event->modifiers(),
+        getVirtualPointingDevice().get());
 
     getEntities()->mouseReleaseEvent(&mappedEvent);
 
