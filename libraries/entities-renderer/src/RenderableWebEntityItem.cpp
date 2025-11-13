@@ -140,9 +140,9 @@ WebEntityRenderer::WebEntityRenderer(const EntityItemPointer& entity) : Parent(e
     std::call_once(once, [&]{
         CUSTOM_PIPELINE_NUMBER = render::ShapePipeline::registerCustomShapePipelineFactory(webPipelineFactory);
         _touchDevice = std::make_shared<QPointingDevice>("OffscreenUiTouchDevice", 0,
-        QInputDevice::DeviceType::TouchScreen,
-        QPointingDevice::PointerType::Pen,
-        QInputDevice::Capability::Position,
+        QInputDevice::DeviceType::AllDevices,
+        QPointingDevice::PointerType::AllPointerTypes,
+        QInputDevice::Capability::All,
         4, //maxPoints
         2 // buttonCount
         );
@@ -555,10 +555,10 @@ void WebEntityRenderer::handlePointerEventAsMouse(const PointerEvent& event) {
 
     if (type == QEvent::Wheel) {
         const auto& scroll = event.getScroll() * POINTEREVENT_SCROLL_SENSITIVITY;
-        QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false);
+        QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false, Qt::MouseEventSynthesizedByApplication, _touchDevice.get());
         QCoreApplication::sendEvent(_webSurface->getWindow(), &wheelEvent);
     } else {
-        QMouseEvent mouseEvent(type, windowPoint, windowPoint, windowPoint, button, buttons, event.getKeyboardModifiers());
+        QMouseEvent mouseEvent(type, windowPoint, windowPoint, windowPoint, button, buttons, event.getKeyboardModifiers(), _touchDevice.get());
         QCoreApplication::sendEvent(_webSurface->getWindow(), &mouseEvent);
     }
 }
