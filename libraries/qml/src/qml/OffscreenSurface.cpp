@@ -40,6 +40,9 @@
 using namespace hifi::qml;
 using namespace hifi::qml::impl;
 
+// QT6TODO: Use one shared virtual pointing device, where do we put it though?
+static std::shared_ptr<QPointingDevice> _touchDevice;
+
 QmlUrlValidator OffscreenSurface::validator = [](const QUrl& url) -> bool {
     if (url.isRelative()) {
         return true;
@@ -103,6 +106,18 @@ std::function<void(uint32_t, void*)> OffscreenSurface::getDiscardLambda() {
 
 OffscreenSurface::OffscreenSurface()
     : _sharedObject(new impl::SharedObject()) {
+    static std::once_flag once;
+    std::call_once(once, [&] {
+        _touchDevice = std::make_shared<QPointingDevice>(
+            "OffscreenSurfacePointingDevice",
+            1,
+            QInputDevice::DeviceType::AllDevices,
+            QPointingDevice::PointerType::AllPointerTypes,
+            QInputDevice::Capability::All,
+            4, //maxPoints
+            2 // buttonCount
+        );
+    });
 }
 
 OffscreenSurface::~OffscreenSurface() {
@@ -183,7 +198,7 @@ bool OffscreenSurface::eventFilter(QObject* originalDestination, QEvent* event) 
 
             QWheelEvent mappedEvent(transformedPos, wheelEvent->globalPosition(), wheelEvent->pixelDelta(), wheelEvent->angleDelta(),
                 wheelEvent->buttons(), wheelEvent->modifiers(), wheelEvent->phase(),
-                wheelEvent->inverted(), wheelEvent->source());
+                wheelEvent->inverted(), wheelEvent->source(), _touchDevice.get());
 
             mappedEvent.ignore();
             if (QCoreApplication::sendEvent(_sharedObject->getWindow(), &mappedEvent)) {
@@ -195,7 +210,8 @@ bool OffscreenSurface::eventFilter(QObject* originalDestination, QEvent* event) 
             QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
             QPointF transformedPos = mapToVirtualScreen(mouseEvent->position());
             QMouseEvent mappedEvent(mouseEvent->type(), transformedPos, mouseEvent->globalPosition(), mouseEvent->button(),
-                                    mouseEvent->buttons(), mouseEvent->modifiers());
+                                    mouseEvent->buttons(), mouseEvent->modifiers(),
+                                    _touchDevice.get());
             mappedEvent.ignore();
             if (QCoreApplication::sendEvent(_sharedObject->getWindow(), &mappedEvent)) {
                 return mappedEvent.isAccepted();
@@ -228,7 +244,7 @@ bool OffscreenSurface::eventFilter(QObject* originalDestination, QEvent* event) 
                     Q_UNREACHABLE();
             }
             // Same case as OffscreenUi.cpp::eventFilter: touch events are always being accepted so we now use mouse events and consider one touch, touchPoints()[0].
-            QMouseEvent fakeMouseEvent(fakeMouseEventType, originalEvent->touchPoints()[0].pos(), fakeMouseButton, fakeMouseButtons, Qt::NoModifier);
+            QMouseEvent fakeMouseEvent(fakeMouseEventType, originalEvent->touchPoints()[0].pos(), fakeMouseButton, fakeMouseButtons, Qt::NoModifier, _touchDevice.get());
             fakeMouseEvent.ignore();
             if (QCoreApplication::sendEvent(_sharedObject->getWindow(), &fakeMouseEvent)) {
                 /*qInfo() << __FUNCTION__ << "sent fake touch event:" << fakeMouseEvent.type()
