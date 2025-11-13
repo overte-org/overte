@@ -2030,11 +2030,11 @@ void Application::setupSignalsAndOperators() {
                 auto reticlePos = getApplicationCompositor().getReticlePosition();
                 QPoint localPos(reticlePos.x, reticlePos.y); // both hmd and desktop already handle this in our coordinates.
                 if (state) {
-                    QMouseEvent mousePress(QEvent::MouseButtonPress, localPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+                    QMouseEvent mousePress(QEvent::MouseButtonPress, localPos, localPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier, getVirtualPointingDevice().get());
                     sendEvent(_primaryWidget, &mousePress);
                     _reticleClickPressed = true;
                 } else {
-                    QMouseEvent mouseRelease(QEvent::MouseButtonRelease, localPos, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+                    QMouseEvent mouseRelease(QEvent::MouseButtonRelease, localPos, localPos, Qt::LeftButton, Qt::NoButton, Qt::NoModifier, getVirtualPointingDevice().get());
                     sendEvent(_primaryWidget, &mouseRelease);
                     _reticleClickPressed = false;
                 }
