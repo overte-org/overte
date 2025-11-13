@@ -236,6 +236,15 @@ Application::Application(
     _previousScriptLocation("LastScriptLocation", DESKTOP_LOCATION),
     _previousPreferredDisplayMode("previousPreferredDisplayMode", 0),
     // UI
+    _virtualPointingDevice(std::make_shared<QPointingDevice>(
+        "OffscreenUiPointingDevice",
+        0,
+        QInputDevice::DeviceType::AllDevices,
+        QPointingDevice::PointerType::AllPointerTypes,
+        QInputDevice::Capability::All,
+        4, // maxPoints
+        2  // buttonCount
+    )),
     _hmdTabletScale("hmdTabletScale", DEFAULT_HMD_TABLET_SCALE_PERCENT),
     _desktopTabletScale("desktopTabletScale", DEFAULT_DESKTOP_TABLET_SCALE_PERCENT),
     _desktopTabletBecomesToolbarSetting("desktopTabletBecomesToolbar", DEFAULT_DESKTOP_TABLET_BECOMES_TOOLBAR),
