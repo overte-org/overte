@@ -21,7 +21,7 @@ Column {
 
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            text: qsTr("Chat Settings")
+            text: qsTr("Settings - Chat")
         }
 
         Overte.Button {
