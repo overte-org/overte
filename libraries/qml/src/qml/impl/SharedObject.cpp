@@ -119,6 +119,10 @@ SharedObject::~SharedObject() {
 
 #ifndef DISABLE_QML
     if (_quickWindow) {
+#ifdef ENABLE_SHARED_OBJECT_EVENT_DEBUG
+        // Remove event filter that was installed if event debugging is enabled.
+        _quickWindow->removeEventFilter(&_eventDebugFilter);
+#endif
         _quickWindow->destroy();
         delete _quickWindow;
         _quickWindow = nullptr;
@@ -451,6 +455,11 @@ void SharedObject::wake() {
 
 void SharedObject::onInitialize() {
 #ifndef DISABLE_QML
+#ifdef ENABLE_SHARED_OBJECT_EVENT_DEBUG
+    // Install event filter if event debugging is enabled.
+    _quickWindow->installEventFilter(&_eventDebugFilter);
+#endif
+
     // Associate root item with the window.
     _rootItem->setParentItem(_quickWindow->contentItem());
     _renderControl->prepareThread(_renderThread);
@@ -547,3 +556,20 @@ void SharedObject::resume() {
 bool SharedObject::isPaused() const {
     return _paused;
 }
+
+#ifdef ENABLE_SHARED_OBJECT_EVENT_DEBUG
+bool SharedObjectEventDebug::eventFilter(QObject *object, QEvent *event) {
+    QMouseEvent *mouseEvent = dynamic_cast<QMouseEvent*>(event);
+    if (mouseEvent) {
+        /*if (mouseEvent->device()->name() == "WebEntityPointingDevice") {
+            qDebug() << "SharedObjectEventDebug QMouseEevent: " << mouseEvent << mouseEvent->buttons();
+        }*/
+        qDebug() << "SharedObjectEventDebug QMouseEevent: " << mouseEvent << mouseEvent->buttons();
+    }
+    QTouchEvent *touchEvent = dynamic_cast<QTouchEvent*>(event);
+    if (touchEvent) {
+        qDebug() << "SharedObjectEventDebug QTouchEvent: " << touchEvent;
+    }
+    return false;
+};
+#endif

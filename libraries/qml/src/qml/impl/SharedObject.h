@@ -32,6 +32,27 @@ namespace impl {
 class RenderControl;
 class RenderEventHandler;
 
+// Uncomment to show events received by the shared object.
+//#define ENABLE_SHARED_OBJECT_EVENT_DEBUG
+
+/**
+ * @brief A class used for debugging input events being sent to shared object.
+ *
+ **/
+
+#ifdef ENABLE_SHARED_OBJECT_EVENT_DEBUG
+class SharedObjectEventDebug : public QObject {
+    Q_OBJECT
+public:
+    bool eventFilter(QObject *object, QEvent *event);
+};
+#endif
+
+/**
+ * @brief A class containing virtual Qt window for webentiies and in-game overlay.
+ *
+ **/
+
 class SharedObject : public QObject {
     Q_OBJECT
 
@@ -99,6 +120,10 @@ private:
     QQmlContext* _qmlContext { nullptr };
     mutable QMutex _mutex;
     QWaitCondition _cond;
+
+#ifdef ENABLE_SHARED_OBJECT_EVENT_DEBUG
+    SharedObjectEventDebug _eventDebugFilter;
+#endif
 
 #ifndef DISABLE_QML
     QWindow* _proxyWindow { nullptr };
