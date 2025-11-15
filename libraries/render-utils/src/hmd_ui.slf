@@ -32,6 +32,11 @@ layout(location=0) out vec4 fragColor0;
 
 void main() {
     vec4 color = texture(hudTexture, _texCoord0);
+
+    // Weirdly, Qt gives us a texture with premultiplied alpha.
+    // We have to un-premultiply or there are black halos around transparent parts.
+    color.rgb /= max(0.004 /* 1.0 / 255.0 */, color.a);
+
     color.a *= hud.alpha;
     if (color.a <= 0.0) {
         discard;
