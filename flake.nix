@@ -1,6 +1,7 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
+    #nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs";
     flake-parts.url = "github:hercules-ci/flake-parts";
   };
   outputs =
@@ -24,6 +25,7 @@
           }:
           {
             packages = {
+              cmake3 = pkgs.callPackage ./nix/cmake3 { };
               glad = pkgs.callPackage ./nix/glad.nix { };
               etc2comp = pkgs.callPackage ./nix/etc2comp.nix { };
 
@@ -85,7 +87,7 @@
                     with pkgs;
                     [
                       pkg-config
-                      cmake
+                      self'.packages.cmake3
                       gcc
                       ninja
                       conan
