@@ -6,16 +6,12 @@ import QtQuick.Controls
 import "." as Overte
 
 // debugging test case to view the themed widgets
-Item {
+Rectangle {
     id: root
     width: 480
     height: 720
     visible: true
-
-    Rectangle {
-        anchors.fill: parent
-        color: Overte.Theme.paletteActive.base
-    }
+    color: Overte.Theme.paletteActive.base
 
     Overte.TabBar {
         anchors.left: parent.left
