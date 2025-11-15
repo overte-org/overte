@@ -133,6 +133,13 @@ Rectangle {
                 anchors.rightMargin: Theme.scrollbarWidth
             }
 
+            Image {
+                anchors.fill: parent
+                source: "./icons/unset_avatar.svg"
+                fillMode: Image.Tile
+                opacity: 0.2
+            }
+
             Overte.Label {
                 text: "ScrollView and ScrollBar"
             }
