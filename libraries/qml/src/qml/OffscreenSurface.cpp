@@ -206,7 +206,8 @@ bool OffscreenSurface::eventFilter(QObject* originalDestination, QEvent* event) 
             }
             break;
         }
-        case QEvent::MouseMove: {
+        // QT6TODO: this may be not necessary, mouse move events were doubled with it and without it nothing seems to break.
+        /*case QEvent::MouseMove: {
             QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
             QPointF transformedPos = mapToVirtualScreen(mouseEvent->position());
             QMouseEvent mappedEvent(mouseEvent->type(), transformedPos, mouseEvent->globalPosition(), mouseEvent->button(),
@@ -217,9 +218,10 @@ bool OffscreenSurface::eventFilter(QObject* originalDestination, QEvent* event) 
                 return mappedEvent.isAccepted();
             }
             break;
-        }
+        }*/
 
 #if defined(Q_OS_ANDROID)
+        // QT6TODO: Cases above needed to be deleted for Qt6 due to doubled events, so maybe these are not needed too?
         case QEvent::TouchBegin:
         case QEvent::TouchUpdate:
         case QEvent::TouchEnd: {
