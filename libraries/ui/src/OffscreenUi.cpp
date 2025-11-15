@@ -30,6 +30,8 @@
 #include "ui/ToolbarScriptingInterface.h"
 
 #include <PointerManager.h>
+#include <private/qeventpoint_p.h>
+
 #include "MainWindow.h"
 
 /*@jsdoc
@@ -124,13 +126,15 @@ static std::shared_ptr<QPointingDevice> _touchDevice;
 OffscreenUi::OffscreenUi() {
     static std::once_flag once;
     std::call_once(once, [&] {
-        _touchDevice = std::make_shared<QPointingDevice>("OffscreenUiTouchDevice", 0,
-            QInputDevice::DeviceType::TouchScreen,
-            QPointingDevice::PointerType::Pen,
-            QInputDevice::Capability::Position,
+        _touchDevice = std::make_shared<QPointingDevice>(
+            "OffscreenUiTouchDevice",
+            1,
+            QInputDevice::DeviceType::AllDevices,
+            QPointingDevice::PointerType::AllPointerTypes,
+            QInputDevice::Capability::All,
             4, //maxPoints
             2 // buttonCount
-            );
+        );
     });
 
     auto pointerManager = DependencyManager::get<PointerManager>();
@@ -1146,7 +1150,17 @@ bool OffscreenUi::eventFilter(QObject* originalDestination, QEvent* event) {
             // (using handlePointerEvent) later
             QMouseEvent mappedEvent(mouseEvent->type(), transformedPos, mouseEvent->globalPosition(), mouseEvent->button(), mouseEvent->buttons(), mouseEvent->modifiers(), _touchDevice.get());
             mappedEvent.ignore();
+            mappedEvent.setTimestamp(mouseEvent->timestamp());
+            QMutableEventPoint::setPosition(mappedEvent.point(0), transformedPos);
+            QMutableEventPoint::setScenePosition(mappedEvent.point(0), transformedPos);
             if (QCoreApplication::sendEvent(getWindow(), &mappedEvent)) {
+
+                // QT6TODO: I added this as a fix for Qt6 but is it needed?
+                // Mouse release events are always accepted for some reason, so a workaround is needed.
+                //if (event->type() == QEvent::MouseButtonRelease) {
+                //    return false;
+                //}
+
                 return mappedEvent.isAccepted();
             }
             break;
