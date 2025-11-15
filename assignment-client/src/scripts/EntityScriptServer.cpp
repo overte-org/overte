@@ -78,7 +78,7 @@ EntityScriptServer::EntityScriptServer(ReceivedMessage& message) : ThreadedAssig
     DebugDraw::getInstance();
 
     auto& packetReceiver = DependencyManager::get<NodeList>()->getPacketReceiver();
-    packetReceiver.registerListenerForTypes({ PacketType::OctreeStats, PacketType::EntityData, PacketType::EntityErase },
+    packetReceiver.registerListenerForTypes({ PacketType::OctreeStats, PacketType::EntityData, PacketType::EntityDataLarge, PacketType::EntityErase },
                                             PacketReceiver::makeSourcedListenerReference<EntityScriptServer>(this, &EntityScriptServer::handleOctreePacket));
     packetReceiver.registerListener(PacketType::SelectedAudioFormat,
         PacketReceiver::makeUnsourcedListenerReference<EntityScriptServer>(this, &EntityScriptServer::handleSelectedAudioFormat));
@@ -684,7 +684,7 @@ void EntityScriptServer::handleOctreePacket(QSharedPointer<ReceivedMessage> mess
         packetType = message->getType();
     } // fall through to piggyback message
 
-    if (packetType == PacketType::EntityData) {
+    if (packetType == PacketType::EntityData || packetType == PacketType::EntityDataLarge) {
         _entityViewer.processDatagram(*message, senderNode);
     } else if (packetType == PacketType::EntityErase) {
         _entityViewer.processEraseMessage(*message, senderNode);

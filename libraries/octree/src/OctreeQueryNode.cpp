@@ -30,11 +30,21 @@ bool OctreeQueryNode::packetIsDuplicate() const {
     // since our packets now include header information, like sequence number, and createTime, we can't just do a memcmp
     // of the entire packet, we need to compare only the packet content...
 
-    if (_lastOctreePacketLength == _octreePacket->getPayloadSize()) {
-        if (memcmp(_lastOctreePayload.data() + OCTREE_PACKET_EXTRA_HEADERS_SIZE,
-                   _octreePacket->getPayload() + OCTREE_PACKET_EXTRA_HEADERS_SIZE,
-                   _octreePacket->getPayloadSize() - OCTREE_PACKET_EXTRA_HEADERS_SIZE) == 0) {
-            return true;
+    if (_lastOctreePacketWasList) {
+        if (_lastOctreePacketLength == _octreePacketList->getMessageSize()) {
+            if (memcmp(_lastOctreePayloadListData.data() + OCTREE_PACKET_EXTRA_HEADERS_SIZE,
+                       _octreePacketList->getMessage().data() + OCTREE_PACKET_EXTRA_HEADERS_SIZE,
+                       _octreePacketList->getMessageSize() - OCTREE_PACKET_EXTRA_HEADERS_SIZE) == 0) {
+                return true;
+            }
+        }
+    } else {
+        if (_lastOctreePacketLength == _octreePacket->getPayloadSize()) {
+            if (memcmp(_lastOctreePayload.data() + OCTREE_PACKET_EXTRA_HEADERS_SIZE,
+                       _octreePacket->getPayload() + OCTREE_PACKET_EXTRA_HEADERS_SIZE,
+                       _octreePacket->getPayloadSize() - OCTREE_PACKET_EXTRA_HEADERS_SIZE) == 0) {
+                return true;
+            }
         }
     }
     return false;
@@ -80,15 +90,15 @@ bool OctreeQueryNode::shouldSuppressDuplicatePacket() {
 }
 
 void OctreeQueryNode::init() {
-    _myPacketType = getMyPacketType();
-
     _octreePacket = NLPacket::create(getMyPacketType(), -1, true);
+    _octreePacketList = NLPacketList::create(PacketType::EntityDataLarge, QByteArray(), true, true);
 
-    resetOctreePacket(); // don't bump sequence
+    resetOctreePacket(true); // don't bump sequence
+    resetOctreePacket(false); // don't bump sequence
 }
 
 
-void OctreeQueryNode::resetOctreePacket() {
+void OctreeQueryNode::resetOctreePacket(bool list) {
     // if shutting down, return immediately
     if (_isShuttingDown) {
         return;
@@ -98,31 +108,48 @@ void OctreeQueryNode::resetOctreePacket() {
     // changed since we last reset it. Since we know that no two packets can ever be identical without being the same
     // scene information, (e.g. the root node packet of a static scene), we can use this as a strategy for reducing
     // packet send rate.
-    _lastOctreePacketLength = _octreePacket->getPayloadSize();
-    memcpy(_lastOctreePayload.data(), _octreePacket->getPayload(), _lastOctreePacketLength);
+    _lastOctreePacketLength = list ? (unsigned int)_octreePacketList->getMessageSize() : _octreePacket->getPayloadSize();
+    _lastOctreePacketWasList = list;
 
     // If we're moving, and the client asked for low res, then we force monochrome, otherwise, use
     // the clients requested color state.
     OCTREE_PACKET_FLAGS flags = 0;
     setAtBit(flags, PACKET_IS_COLOR_BIT); // always color
     setAtBit(flags, PACKET_IS_COMPRESSED_BIT); // always compressed
-
-    _octreePacket->reset();
-
-    // pack in flags
-    _octreePacket->writePrimitive(flags);
-
-    // pack in sequence number
-    _octreePacket->writePrimitive(_sequenceNumber);
-
-    // pack in timestamp
     OCTREE_PACKET_SENT_TIME now = usecTimestampNow();
-    _octreePacket->writePrimitive(now);
 
-    _octreePacketWaiting = false;
+    if (list) {
+        _lastOctreePayloadListData = _octreePacketList->getMessage();
+
+        _octreePacketList = NLPacketList::create(PacketType::EntityDataLarge, QByteArray(), true, true);
+
+        // pack in flags
+        _octreePacketList->writePrimitive(flags);
+
+        // pack in sequence number
+        _octreePacketList->writePrimitive(_sequenceNumber);
+
+        // pack in timestamp
+        _octreePacketList->writePrimitive(now);
+    } else {
+        memcpy(_lastOctreePayload.data(), _octreePacket->getPayload(), _lastOctreePacketLength);
+
+        _octreePacket->reset();
+
+        // pack in flags
+        _octreePacket->writePrimitive(flags);
+
+        // pack in sequence number
+        _octreePacket->writePrimitive(_sequenceNumber);
+
+        // pack in timestamp
+        _octreePacket->writePrimitive(now);
+
+        _octreePacketWaiting = false;
+    }
 }
 
-void OctreeQueryNode::writeToPacket(const unsigned char* buffer, unsigned int bytes) {
+void OctreeQueryNode::writeToPacket(const unsigned char* buffer, unsigned int bytes, bool list) {
     // if shutting down, return immediately
     if (_isShuttingDown) {
         return;
@@ -131,11 +158,18 @@ void OctreeQueryNode::writeToPacket(const unsigned char* buffer, unsigned int by
     // compressed packets include lead bytes which contain compressed size, this allows packing of
     // multiple compressed portions together
     OCTREE_PACKET_INTERNAL_SECTION_SIZE sectionSize = bytes;
-    _octreePacket->writePrimitive(sectionSize);
 
-    if (bytes <= _octreePacket->bytesAvailableForWrite()) {
-        _octreePacket->write(reinterpret_cast<const char*>(buffer), bytes);
-        _octreePacketWaiting = true;
+    if (list) {
+        _octreePacketList->writePrimitive(sectionSize);
+
+        _octreePacketList->write(reinterpret_cast<const char*>(buffer), bytes);
+    } else {
+        _octreePacket->writePrimitive(sectionSize);
+
+        if (bytes <= _octreePacket->bytesAvailableForWrite()) {
+            _octreePacket->write(reinterpret_cast<const char*>(buffer), bytes);
+            _octreePacketWaiting = true;
+        }
     }
 }
 
@@ -209,6 +243,11 @@ void OctreeQueryNode::packetSent(const NLPacket& packet) {
     _sequenceNumber++;
 }
 
+void OctreeQueryNode::packetListSent(const NLPacketList& packetList) {
+    _sentPacketHistory.packetListSent(_sequenceNumber, packetList);
+    _sequenceNumber++;
+}
+
 bool OctreeQueryNode::hasNextNackedPacket() const {
     return !_nackedSequenceNumbers.isEmpty();
 }
@@ -241,4 +280,8 @@ bool OctreeQueryNode::haveJSONParametersChanged() {
     }
 
     return parametersChanged;
+}
+
+void OctreeQueryNode::updatePacketSequenceNumber() const {
+    memcpy(_octreePacket->getPayload() + sizeof(OCTREE_PACKET_FLAGS), &_sequenceNumber, sizeof(OCTREE_PACKET_SEQUENCE));
 }

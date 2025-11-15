@@ -851,10 +851,6 @@ bool EntityPropertyInfoFromScriptValue(const ScriptValue& object, EntityProperty
     return true;
 }
 
-// TODO: Implement support for edit packets that can span an MTU sized buffer. We need to implement a mechanism for the
-//       encodeEntityEditPacket() method to communicate the the caller which properties couldn't fit in the buffer. Similar
-//       to how we handle this in the Octree streaming case.
-//
 // TODO: Right now, all possible properties for all subclasses are handled here. Ideally we'd prefer
 //       to handle this in a more generic way. Allowing subclasses of EntityItem to register their properties
 //
@@ -862,18 +858,19 @@ bool EntityPropertyInfoFromScriptValue(const ScriptValue& object, EntityProperty
 //       registration mechanism allowed us to collapse these repeated sections of code into a single implementation that
 //       utilized the registration table to shorten up and simplify this code.
 //
-// TODO: Implement support for paged properties, spanning MTU, and custom properties
+// TODO: Implement support for custom properties
 //
 // TODO: Implement support for script and visible properties.
 //
 OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketType command, EntityItemID id, const EntityItemProperties& properties,
-                QByteArray& buffer, EntityPropertyFlags requestedProperties, EntityPropertyFlags& didntFitProperties) {
+                QByteArray& buffer, EntityPropertyFlags requestedProperties, EntityPropertyFlags& didntFitProperties, EntityPropertyList& firstDidntFitProperty) {
 
     OctreePacketData ourDataPacket(false, buffer.size()); // create a packetData object to add out packet details too.
     OctreePacketData* packetData = &ourDataPacket; // we want a pointer to this so we can use our APPEND_ENTITY_PROPERTY macro
 
     bool success = true; // assume the best
     OctreeElement::AppendState appendState = OctreeElement::COMPLETED; // assume the best
+    bool firstProperty = true;
 
     // TODO: We need to review how jurisdictions should be handled for entities. (The old Models and Particles code
     // didn't do anything special for jurisdictions, so we're keeping that same behavior here.)
@@ -948,7 +945,6 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
             propertyFlags -= PROP_LAST_ITEM; // clear the last item for now, we may or may not set it as the actual item
 
             // These items would go here once supported....
-            //      PROP_PAGED_PROPERTY,
             //      PROP_CUSTOM_PROPERTIES_INCLUDED,
 
 @ENTITY_ITEM_PROPERTY_APPEND@
@@ -999,9 +995,7 @@ OctreeElement::AppendState EntityItemProperties::encodeEntityEditPacket(PacketTy
             buffer.replace(0, finalizedSize, finalizedData, finalizedSize);
             buffer.resize(finalizedSize);
         } else {
-            qCDebug(entities) << "ERROR - encoded edit message doesn't fit in output buffer.";
             appendState = OctreeElement::NONE; // if we got here, then we didn't include the item
-            // maybe we should assert!!!
         }
     } else {
         packetData->discardSubTree();
@@ -1060,7 +1054,7 @@ QByteArray EntityItemProperties::packStrokeColors(const QVector<vec3>& strokeCol
 //       registration mechanism allowed us to collapse these repeated sections of code into a single implementation that
 //       utilized the registration table to shorten up and simplify this code.
 //
-// TODO: Implement support for paged properties, spanning MTU, and custom properties
+// TODO: Implement support for custom properties
 //
 // TODO: Implement support for script and visible properties.
 //

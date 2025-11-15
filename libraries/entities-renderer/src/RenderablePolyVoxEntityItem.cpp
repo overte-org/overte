@@ -1106,17 +1106,6 @@ void RenderablePolyVoxEntityItem::compressVolumeDataAndSendEditPacket() {
         QByteArray compressedData = qCompress(uncompressedData, 9);
         writer << compressedData;
 
-        // make sure the compressed data can be sent over the wire-protocol
-        if (newVoxelData.size() > 1150) {
-            // HACK -- until we have a way to allow for properties larger than MTU, don't update.
-            // revert the active voxel-space to the last version that fit.
-            qCDebug(entitiesrenderer) << "compressed voxel data is too large" << entity->getName() << entity->getID();
-
-            const auto polyVoxEntity = std::static_pointer_cast<RenderablePolyVoxEntityItem>(entity);
-            polyVoxEntity->compressVolumeDataFinished(QByteArray());
-            return;
-        }
-
         std::static_pointer_cast<RenderablePolyVoxEntityItem>(entity)->compressVolumeDataFinished(newVoxelData);
     });
 }

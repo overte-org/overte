@@ -17,6 +17,7 @@
 #include <QtCore/QReadWriteLock>
 
 #include "NLPacket.h"
+#include "NLPacketList.h"
 #include "RingBufferHistory.h"
 #include "SequenceNumberStats.h"
 
@@ -30,6 +31,7 @@ public:
     void untrackedPacketSent(uint16_t sequenceNumber);
 
     void packetSent(uint16_t sequenceNumber, const NLPacket& packet);
+    void packetListSent(uint16_t sequenceNumber, const NLPacketList& packetList);
     const NLPacket* getPacket(uint16_t sequenceNumber) const;
 
 private:
