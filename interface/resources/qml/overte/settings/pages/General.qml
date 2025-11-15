@@ -119,6 +119,17 @@ SettingsPage {
         onCurrentIndexChanged: SettingsInterface.setValue("simplifiedNametag/avatarNametagMode", model[currentIndex].value)
     }
 
+    SliderSetting {
+        text: qsTr("VR Tablet Scale")
+        stepSize: 5
+        from: 50
+        to: 150
+        valueToText: () => `${value}%`
+
+        value: SettingsInterface.getValue("hmdTabletScale", 75)
+        onValueChanged: SettingsInterface.setValue("hmdTabletScale", value)
+    }
+
     Header { text: qsTr("Screenshots") }
 
     FolderSetting {
