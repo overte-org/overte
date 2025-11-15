@@ -569,7 +569,8 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
     bool eventSent = false;
     bool eventsAccepted = true;
 
-    if (event.getType() == PointerEvent::Move) {
+    // QT6TODO: I think this is not needed?
+    /*if (event.getType() == PointerEvent::Move) {
         QMouseEvent mouseEvent(QEvent::MouseMove, windowPoint, windowPoint, windowPoint, button, buttons,
                                event.getKeyboardModifiers(), &device);
         // TODO - this line necessary for the QML Tooltop to work (which is not currently being used), but it causes interface to crash on launch on a fresh install
@@ -580,7 +581,7 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
             eventSent = true;
             eventsAccepted &= mouseEvent.isAccepted();
         }
-    }
+    }*/
 
     if (touchType == QEvent::TouchBegin) {
         _touchBeginAccepted = QCoreApplication::sendEvent(getWindow(), &touchEvent);
