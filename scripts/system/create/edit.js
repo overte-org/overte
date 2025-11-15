@@ -1321,13 +1321,13 @@
         var pickRay = Camera.computePickRay(event.x, event.y);
         var tabletIDs = getMainTabletIDs();
         if (tabletIDs.length > 0) {
-            var overlayResult = Overlays.findRayIntersection(pickRay, true, tabletIDs);
-            if (overlayResult.intersects) {
+            var tabletResult = Entities.findRayIntersection(pickRay, Picks.PICK_LOCAL_ENTITIES, tabletIDs);
+            if (tabletResult.intersects) {
                 return null;
             }
         }
 
-        var entityResult = Entities.findRayIntersection(pickRay, true); // want precision picking
+        var entityResult = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES); // want precision picking
         var iconResult = entityIconOverlayManager.findRayIntersection(pickRay);
         iconResult.accurate = true;
 
