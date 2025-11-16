@@ -97,6 +97,39 @@ SettingsPage {
         text: qsTr("This setting will disable UI animations that slide or scale.")
     }
 
+    ComboSetting {
+        text: qsTr("Avatar Nametags")
+        textRole: "text"
+        valueRole: "value"
+        model: [
+            { text: qsTr("Never "), value: "off" },
+            { text: qsTr("When clicked"), value: "on" },
+            { text: qsTr("Always"), value: "alwaysOn" },
+        ]
+
+        currentIndex: {
+            const setting = SettingsInterface.getValue("simplifiedNametag/avatarNametagMode", "on");
+            switch (setting) {
+                case "off": return 0;
+                case "on": return 1;
+                case "alwaysOn": return 2;
+            }
+        }
+
+        onCurrentIndexChanged: SettingsInterface.setValue("simplifiedNametag/avatarNametagMode", model[currentIndex].value)
+    }
+
+    SliderSetting {
+        text: qsTr("VR Tablet Scale")
+        stepSize: 5
+        from: 50
+        to: 150
+        valueToText: () => `${value}%`
+
+        value: SettingsInterface.getValue("hmdTabletScale", 75)
+        onValueChanged: SettingsInterface.setValue("hmdTabletScale", value)
+    }
+
     Header { text: qsTr("Screenshots") }
 
     FolderSetting {
@@ -124,15 +157,12 @@ SettingsPage {
     }
 
     SpinBoxSetting {
-        // FIXME
-        enabled: false
-
         text: qsTr("Animation Duration")
         from: 1
         to: 30
 
-        //value: Settings.getValue("snapshotAnimatedDuration", 3)
-        //onValueChanged: Settings.setValue("snapshotAnimatedDuration", value)
+        value: SettingsInterface.getValue("snapshotAnimatedDuration", 3)
+        onValueChanged: SettingsInterface.setValue("snapshotAnimatedDuration", value)
     }
 
     SettingNote {
@@ -156,12 +186,9 @@ SettingsPage {
     }
 
     SwitchSetting {
-        // FIXME
-        enabled: false
-
         text: qsTr("Discord Rich Presence")
-        //value: Settings.getValue("useDiscordPresence", true)
-        //onValueChanged: Settings.setValue("useDiscordPresence", value)
+        value: SettingsInterface.getValue("useDiscordPresence", true)
+        onValueChanged: SettingsInterface.setValue("useDiscordPresence", value)
     }
 
     SettingNote {

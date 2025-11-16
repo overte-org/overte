@@ -40,18 +40,18 @@ Item {
             anchors.margins: 4
         }
 
-        Image {
-            source: "../icons/no_avatar_icon.svg"
-            sourceSize.width: width
-            sourceSize.height: height
-            fillMode: Image.PreserveAspectFit
-            visible: buttonIcon.status === Image.Error || buttonIcon.status === Image.Null
-
+        Overte.Label {
             anchors.top: parent.top
             anchors.left: parent.left
             anchors.right: parent.right
             anchors.bottom: buttonLabel.top
             anchors.margins: 4
+            visible: buttonIcon.status !== Image.Ready
+            opacity: Overte.Theme.highContrast ? 1.0 : 0.6
+            wrapMode: Text.Wrap
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            text: buttonIcon.status === Image.Loading ? qsTr("Loading…") : qsTr("No icon")
         }
 
         Overte.Label {
@@ -83,7 +83,7 @@ Item {
         implicitWidth: 44
         implicitHeight: 44
 
-        icon.source: "../icons/close.svg"
+        icon.source: "../icons/delete.svg"
         icon.width: 32
         icon.height: 32
         icon.color: Overte.Theme.paletteActive.buttonText
@@ -108,8 +108,6 @@ Item {
         icon.height: 32
         icon.color: Overte.Theme.paletteActive.buttonText
 
-        onClicked: {
-            root.requestEdit(item.index);
-        }
+        onClicked: root.requestEdit(item.index)
     }
 }
