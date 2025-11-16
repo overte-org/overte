@@ -46,19 +46,12 @@ bool Application::exportEntities(const QString& filename,
                                  const glm::vec3* givenOffset,
                                  const QVariantMap& options) {
     QVector<QString> propertiesToPrune = {
-        "queryAACube", "age", "created", "lastEdited", "lastEditedBy",
-        "faceCamera", "isFacingAvatar",
+        "queryAACube", "age", "created", "lastEdited", "lastEditedBy", "faceCamera",
+        "isFacingAvatar", "clientOnly", "avatarEntity", "localEntity",
     };
 
-    bool domainOnly = options.value("domainOnly", false).toBool();
     bool globalPositions = options.value("globalPositions", false).toBool();
     auto paths = options.value("paths", QVariantMap()).toMap();
-
-    if (domainOnly) {
-        propertiesToPrune.push_back("clientOnly");
-        propertiesToPrune.push_back("avatarEntity");
-        propertiesToPrune.push_back("localEntity");
-    }
 
     QHash<EntityItemID, EntityItemPointer> entities;
 
@@ -71,15 +64,13 @@ bool Application::exportEntities(const QString& filename,
     exportTree->createRootElement();
     glm::vec3 root(TREE_SCALE, TREE_SCALE, TREE_SCALE);
     bool success = true;
-    entityTree->withReadLock([entityIDs, entityTree, givenOffset, myAvatarID, &root, &entities, &success, &exportTree, domainOnly, globalPositions] {
+    entityTree->withReadLock([entityIDs, entityTree, givenOffset, myAvatarID, &root, &entities, &success, &exportTree, globalPositions] {
         for (auto entityID : entityIDs) { // Gather entities and properties.
             auto entityItem = entityTree->findEntityByEntityItemID(entityID);
             if (!entityItem) {
                 qCWarning(interfaceapp) << "Skipping export of" << entityID << "that is not in scene.";
                 continue;
             }
-
-            if (domainOnly && !entityItem->isDomainEntity()) { continue; }
 
             if (!givenOffset && !globalPositions) {
                 EntityItemID parentID = entityItem->getParentID();
