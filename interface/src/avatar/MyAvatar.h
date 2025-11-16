@@ -271,6 +271,7 @@ class MyAvatar : public Avatar {
      *     See also: <code>getUserRecenterModel</code> and <code>setUserRecenterModel</code>.</p>
      * @property {boolean} allowTeleporting - <code>true</code> if teleporting is enabled in the Interface settings,
      *     <code>false</code> if it isn't. <em>Read-only.</em>
+     * @property {number} cameraBoomLength - The third-person camera distance. Limited to between 0.5 and 25. Below 0.5 the camera will be put into first-person mode. Changing this property has no effect unless the camera is already in third-person mode. See {@link Camera.mode}.
      *
      * @borrows Avatar.getDomainMinScale as getDomainMinScale
      * @borrows Avatar.getDomainMaxScale as getDomainMaxScale
@@ -384,6 +385,7 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(MyAvatar::SitStandModelType userRecenterModel READ getUserRecenterModel WRITE setUserRecenterModel);  // Deprecated
     Q_PROPERTY(bool isSitStandStateLocked READ getIsSitStandStateLocked WRITE setIsSitStandStateLocked);      // Deprecated
     Q_PROPERTY(bool allowTeleporting READ getAllowTeleporting)
+    Q_PROPERTY(float cameraBoomLength MEMBER _boomLength)
 
     const QString DOMINANT_LEFT_HAND = "left";
     const QString DOMINANT_RIGHT_HAND = "right";
