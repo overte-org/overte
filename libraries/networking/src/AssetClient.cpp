@@ -132,7 +132,8 @@ MiniPromise::Promise AssetClient::cacheInfoRequestAsync(MiniPromise::Promise def
  * @property {object} [rawHeaders] - The raw headers that are set in the meta data. <em>Not used.</em>
  * @property {boolean} [saveToDisk] - <code>true</code> if the cache item is allowed to be store on disk,
  *     <code>false</code> if it isn't.
- * @property {string} [url|metaDataURL] - The ATP URL of the cached item.
+ * @property {string} [url] - The ATP URL of the cached item.
+ * @property {string} [metaDataURL] - The ATP URL of the cached item.
  */
 MiniPromise::Promise AssetClient::queryCacheMetaAsync(const QUrl& url, MiniPromise::Promise deferred) {
     if (QThread::currentThread() != thread()) {
@@ -235,7 +236,7 @@ namespace {
  * @typedef {object} Assets.SaveToCacheHeaders
  * @property {string} [expires] - The date and time the cache value expires, in the format:
  *     <code>"ddd, dd MMM yyyy HH:mm:ss"</code>. The default value is an invalid date, representing "never expires".
- * @property {string} [last-modified] - The date and time the cache value was last modified, in the format:
+ * @property {string} ["last-modified"] - The date and time the cache value was last modified, in the format:
  *     <code>"ddd, dd MMM yyyy HH:mm:ss"</code>. The default value is the current date and time.
  */
 /*@jsdoc
