@@ -1954,7 +1954,7 @@ void Blender::run() {
         memset(unpackedBlendshapeOffsets.data(), 0, numVertsInMesh * sizeof(BlendshapeOffsetUnpacked));
 
         // for each blendshape in this mesh, accumulate the offsets into unpackedBlendshapeOffsets.
-        const float NORMAL_COEFFICIENT_SCALE = 0.01f;
+        const float NORMAL_COEFFICIENT_SCALE = 1.0f;
         for (int i = 0, n = qMin(_blendshapeCoefficients.size(), meshIter->blendshapes.size()); i < n; i++) {
             float vertexCoefficient = _blendshapeCoefficients.at(i);
             const float EPSILON = 0.0001f;

@@ -176,10 +176,10 @@ template<typename T> bool findPointerInArray(const T *pointer, const T *array, s
 bool findAttribute(const QString &name, const cgltf_attribute *attributes, size_t numAttributes, size_t &index) {
     std::string nameString = name.toStdString();
     for (size_t i = 0; i < numAttributes; i++) {
-        if (attributes->name == nullptr) {
+        if (attributes[i].name == nullptr) {
             qDebug(modelformat) << "GLTFSerializer: attribute with a null pointer name string";
         } else {
-            if (strcmp(nameString.c_str(), attributes->name) == 0) {
+            if (strcmp(nameString.c_str(), attributes[i].name) == 0) {
                 index = i;
                 return true;
             }
@@ -1089,12 +1089,21 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                         auto target = primitive.targets[targetIndex];
 
                         QVector<glm::vec3> normals;
+                        QVector<glm::vec3> tangents;
                         QVector<glm::vec3> vertices;
 
                         size_t normalAttributeIndex = 0;
                         if (findAttribute("NORMAL", target.attributes, target.attributes_count, normalAttributeIndex)) {
                             if (!generateTargetData(target.attributes[normalAttributeIndex].data, weight, normals)) {
                                 qWarning(modelformat) << "Invalid NORMAL accessor on generateTargetData vertices for model " << _url;
+                                hfmModel.loadErrorCount++;
+                                return false;
+                            }
+                        }
+                        size_t tangentAttributeIndex = 0;
+                        if (findAttribute("TANGENT", target.attributes, target.attributes_count, tangentAttributeIndex)) {
+                            if (!generateTargetData(target.attributes[tangentAttributeIndex].data, weight, tangents)) {
+                                qWarning(modelformat) << "Invalid TANGENT accessor on generateTargetData vertices for model " << _url;
                                 hfmModel.loadErrorCount++;
                                 return false;
                             }
@@ -1112,14 +1121,17 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                             blendshape.indices.resize(prevMeshVerticesCount + vertices.size());
                             blendshape.vertices.resize(prevMeshVerticesCount + vertices.size());
                             blendshape.normals.resize(prevMeshVerticesCount + vertices.size());
+                            if (tangents.size() > 0) {
+                                blendshape.tangents.resize(prevMeshVerticesCount + vertices.size());
+                            }
                         }
                         //TODO: it looks like this can support sparse encoding, since there are indices?
                         for (int i = 0; i < vertices.size(); i++) {
                             blendshape.indices[prevMeshVerticesCount + i] = prevMeshVerticesCount + i;
-                            blendshape.vertices[prevMeshVerticesCount + i] += vertices.value(i);
+                            blendshape.vertices[prevMeshVerticesCount + i] = vertices.value(i);
                             // Prevent out-of-bounds access if blendshape normals are not available
                             if (i < normals.size()) {
-                                blendshape.normals[prevMeshVerticesCount + i] += normals.value(i);
+                                blendshape.normals[prevMeshVerticesCount + i] = normals.value(i);
                             } else {
                                 if (prevMeshVerticesCount + i < mesh.normals.size()) {
                                     blendshape.normals[prevMeshVerticesCount + i] = mesh.normals[prevMeshVerticesCount + i];
@@ -1127,6 +1139,19 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                                     qWarning(modelformat) << "Blendshape has more vertices than original mesh " << _url;
                                     hfmModel.loadErrorCount++;
                                     return false;
+                                }
+                            }
+                            if (tangents.size() > 0) {
+                                if (i < tangents.size()) {
+                                    blendshape.tangents[prevMeshVerticesCount + i] = tangents.value(i);
+                                } else {
+                                    if (prevMeshVerticesCount + i < mesh.tangents.size()) {
+                                        blendshape.tangents[prevMeshVerticesCount + i] = mesh.tangents[prevMeshVerticesCount + i];
+                                    } else {
+                                        qWarning(modelformat) << "Blendshape has more vertices than original mesh " << _url;
+                                        hfmModel.loadErrorCount++;
+                                        return false;
+                                    }
                                 }
                             }
                         }
