@@ -35,7 +35,8 @@ Item {
 		}
 
 		// Message body
-		TextEdit { 
+		TextEdit {
+			id: messageText;
 			text: delegateMessage;
 			color: "white";
 			font.pixelSize: 18;
@@ -54,6 +55,30 @@ Item {
 					return;
 				} else {
 					Qt.openUrlExternally(link);
+				}
+			}
+
+			Component.onCompleted: {
+				// Images do not appear when done loading until
+				// the component is redrawn, which it does not do
+				// automatically; so we need to create a hidden
+				// Image object and wait for that to load
+				// before we cause it to redraw by altering the content.
+				var re = /<img[^>]+src="([^"]+)"[^>]+>/gi
+				var m;
+				while ((m = re.exec(text)) !== null) {
+					var loader = Qt.createQmlObject('import QtQuick 2.0; Image {}', messageText);
+					loader.source = m[1];
+					loader.visible = false;
+					loader.onStatusChanged.connect(function () {
+						if (loader.status === Image.Ready) {
+							// Alter the content of messageText
+							// to prompt it to redraw
+							var originalText = messageText.text;
+							messageText.text = "";          // force a change
+							messageText.text = originalText;
+						}
+					});
 				}
 			}
 		}
