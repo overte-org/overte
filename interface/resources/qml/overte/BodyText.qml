@@ -17,7 +17,13 @@ TextEdit {
     selectedTextColor: Theme.paletteActive.highlightedText
     selectionColor: Theme.paletteActive.highlight
 
-    // TODO: handle embedded links
+    // TODO: should we continue supporting the in-game browser
+    // or should we transition to always using the system one?
     // Qt doesn't make it easy to theme rich text
     onLinkActivated: link => Qt.openUrlExternally(link)
+
+    HoverHandler {
+        enabled: parent.hoveredLink
+        cursorShape: Qt.PointingHandCursor
+    }
 }
