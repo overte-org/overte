@@ -4,8 +4,11 @@ import "."
 
 ToolTip {
     id: control
-    visible: parent.hovered
     delay: 500
+
+    // NOTE: this default is for Controls,
+    // if you're using something else then override this
+    visible: parent.hovered
 
     font.family: Theme.fontFamily
     font.pixelSize: Theme.fontPixelSizeSmall
