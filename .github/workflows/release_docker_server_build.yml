@@ -43,6 +43,7 @@ jobs:
 
     - name: Build server
       shell: bash
+      # Using the previously checked out Docker files.
       run: docker build --no-cache --build-arg "TAG=${{ github.ref_name }}" --build-arg "REPO=https://github.com/${{ github.repository }}.git" -t domain-server-builder -f ./Dockerfile.build .
 
     - name: Deploy server into runtime image
