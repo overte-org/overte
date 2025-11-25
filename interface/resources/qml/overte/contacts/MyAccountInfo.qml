@@ -1,4 +1,4 @@
-import QtCore
+import QtCore as QtCore
 import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
@@ -26,8 +26,9 @@ Rectangle {
 
     // cache the last avatar image url so there's not a few
     // seconds of placeholder avatar while the profile loads
-    Settings {
+    QtCore.Settings {
         id: settings
+        category: "MyAccountInfo"
         property url cachedAvatarUrl: "../icons/unset_avatar.svg"
     }
 
@@ -121,6 +122,7 @@ Rectangle {
                 "../icons/unset_avatar.svg"
             )
             status: root.status
+            retainWhileLoading: true
             Layout.preferredWidth: 64
             Layout.preferredHeight: 64
             Layout.leftMargin: 8
