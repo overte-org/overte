@@ -25,46 +25,36 @@ Rectangle {
     property list<var> eventsLog: []
 
     Component.onCompleted: {
-        const savedEvents = SettingsInterface.getValue("private/chat/eventsLog") ?? [];
+        // fullPrivate so it's never accessible from other scripts,
+        // we don't want entity client scripts that are able to scrape chat history
+        const savedEvents = SettingsInterface.getValue("fullPrivate/chat/eventsLog") ?? [];
         for (let event of savedEvents) {
             fromScript(event);
         }
     }
 
     Component.onDestruction: {
-        SettingsInterface.setValue("private/chat/eventsLog", eventsLog);
+        SettingsInterface.setValue("fullPrivate/chat/eventsLog", eventsLog);
     }
 
-    onMessagesCleared: eventsLog = []
+    onMessagesCleared: {
+        eventsLog = [];
+        SettingsInterface.setValue("fullPrivate/chat/eventsLog", eventsLog);
+    }
 
-    signal messagePushed(name: string, body: string, time: string)
-    signal notificationPushed(text: string, time: string)
+    // NOTE: "int" makes sense here as the timestamps are whole milliseconds,
+    // but it's 32 bits and overflows, so we need real's ~53 bits to work properly
+    signal messagePushed(name: string, body: string, timestamp: real)
+    signal notificationPushed(text: string, timestamp: real)
     signal messagesCleared()
 
     function toScript(obj) {
         sendToScript(JSON.stringify(obj));
-
-        // for debugging standalone with the qml tool
-        /*console.debug(JSON.stringify(obj));
-
-        switch (obj.event) {
-            case "send_message":
-                fromScript({event: "recv_message", name: "ada.tv", body: obj.body});
-                break;
-
-            case "start_typing":
-                fromScript({event: "start_typing", name: "ada.tv", uuid: "ba"});
-                break;
-
-            case "end_typing":
-                fromScript({event: "end_typing", name: "ada.tv", uuid: "ba"});
-                break;
-        }*/
     }
 
     function fromScript(rawObj) {
         let obj = (typeof(rawObj) === "string") ? JSON.parse(rawObj) : rawObj;
-        const timestamp = (obj.timestamp ? new Date(obj.timestamp) : new Date()).toLocaleTimeString(undefined, Locale.ShortFormat);
+        const timestamp = obj.timestamp ?? Date.now();
 
         // keep chat events in the log
         if (
@@ -76,11 +66,15 @@ Rectangle {
                 obj.timestamp = Date.now();
             }
             eventsLog.push(obj);
+
+            // TODO: is this a performance problem? i'm not sure how else we could handle this robustly
+            // FIXME: every time this is set it logs "SettingsScriptingInterface::setValue -- allowing restricted write"
+            SettingsInterface.setValue("fullPrivate/chat/eventsLog", eventsLog);
         }
 
         switch (obj.event) {
             case "recv_message":
-                messagePushed(obj.name ?? "<Unnamed>", obj.body, timestamp);
+                messagePushed(obj.name ? obj.name : "<Unnamed>", obj.body, timestamp);
                 break;
 
             case "user_joined": if (settingJoinNotifications) {
