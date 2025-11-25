@@ -12,14 +12,56 @@ ColumnLayout {
     RowLayout {
         Layout.fillWidth: true
 
-        Overte.Switch {
-            id: broadcastSwitch
-            text: qsTr("Broadcast")
+        // push everything to the right
+        Item { Layout.fillWidth: true }
 
-            Overte.ToolTip {
-                text: qsTr("Whether your messages will be broadcast across the whole domain, rather than limited to a local range.")
-            }
+        Overte.RoundButton {
+            Overte.ToolTip { text: qsTr("Clear chat history") }
 
+            backgroundColor: (
+                hovered ?
+                Overte.Theme.paletteActive.buttonDestructive :
+                Overte.Theme.paletteActive.button
+            )
+
+            implicitWidth: 36
+            implicitHeight: 36
+            horizontalPadding: 2
+            verticalPadding: 2
+
+            icon.source: "../icons/delete.svg"
+            icon.width: 24
+            icon.height: 24
+            icon.color: Overte.Theme.paletteActive.buttonText
+
+            onClicked: root.messagesCleared()
+        }
+
+        Overte.RoundButton {
+            Overte.ToolTip { text: qsTr("Broadcast messages to whole domain") }
+
+            backgroundColor: (
+                checked ?
+                Overte.Theme.paletteActive.highlight :
+                Overte.Theme.paletteActive.button
+            )
+            color: (
+                checked ?
+                Overte.Theme.paletteActive.highlightedText :
+                Overte.Theme.paletteActive.buttonText
+            )
+
+            implicitWidth: 36
+            implicitHeight: 36
+            horizontalPadding: 2
+            verticalPadding: 2
+
+            icon.source: "../icons/broadcast.svg"
+            icon.width: 24
+            icon.height: 24
+            icon.color: color
+
+            checkable: true
             checked: root.settingBroadcast
             onToggled: {
                 root.settingBroadcast = checked;
@@ -27,28 +69,26 @@ ColumnLayout {
             }
         }
 
-        Item { Layout.fillWidth: true }
-
         Overte.RoundButton {
-            Layout.alignment: Qt.AlignRight
+            Overte.ToolTip { text: qsTr("Settings") }
+
             implicitWidth: 36
             implicitHeight: 36
             horizontalPadding: 2
             verticalPadding: 2
+
             icon.source: "../icons/settings_cog.svg"
             icon.width: 24
             icon.height: 24
 
-            onClicked: {
-                stack.push("./SettingsPage.qml");
-            }
+            onClicked: stack.push("./SettingsPage.qml")
         }
     }
 
     Overte.Label {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        visible: chatLog.model.count === 0
+        visible: chatLog.model.length === 0
 
         id: noMessagesLabel
         text: qsTr("No messages")
@@ -68,51 +108,59 @@ ColumnLayout {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
         }
-        visible: chatLog.model.count > 0
+        visible: chatLog.model.length > 0
 
         ListView {
             id: chatLog
             clip: true
             spacing: 8
 
-            model: ListModel {}
+            model: []
             delegate: MessageBlock {}
 
             Connections {
                 target: root
 
                 function onMessagesCleared() {
-                    chatLog.model.clear();
+                    chatLog.model = [];
                 }
 
                 function onMessagePushed(name, body, timestamp) {
-                    chatLog.model.append({
+                    const imageUrlRegex = /(https?:\/\/\S+\.(?:png|jpg|jpeg|gif|webp|svg)\S*)/gmi;
+                    let detectedImageUrls = body.match(imageUrlRegex) ?? [];
+
+                    chatLog.model.push({
                         name: name,
                         body: (
                             body
-                            .replace(/\&/gi, "&amp;")
-                            .replace(/\[/gi, "&#91;")
-                            .replace(/\]/gi, "&#93;")
-                            .replace(/\</gi, "&lt;")
-                            .replace(/\>/gi, "&gt;")
-                            .replace(/\'/gi, "&apos;")
-                            .replace(/\"/gi, "&quot;")
-                            .replace(/\n/gi, "<br>")
+                            .replace(/\&/g, "&amp;")
+                            .replace(/\[/g, "&#91;")
+                            .replace(/\]/g, "&#93;")
+                            .replace(/\</g, "&lt;")
+                            .replace(/\>/g, "&gt;")
+                            .replace(/\'/g, "&apos;")
+                            .replace(/\"/g, "&quot;")
+                            .replace(/\n/g, "<br>")
+                            // strip any image links, as they're
+                            // embedded and clickable anyway
+                            .replace(imageUrlRegex, "")
                         ),
                         notification: "",
                         timestamp: timestamp,
+                        imageEmbeds: detectedImageUrls,
                     });
-                    chatLog.currentIndex = chatLog.model.count - 1;
+                    chatLog.currentIndex = chatLog.model.length - 1;
                 }
 
                 function onNotificationPushed(text, timestamp) {
-                    chatLog.model.append({
+                    chatLog.model.push({
                         name: "",
                         body: "",
                         notification: text,
                         timestamp: timestamp,
+                        imageEmbeds: [],
                     });
-                    chatLog.currentIndex = chatLog.model.count - 1;
+                    chatLog.currentIndex = chatLog.model.length - 1;
                 }
             }
         }
@@ -165,7 +213,7 @@ ColumnLayout {
             Overte.TextArea {
                 id: messageInput
                 placeholderText: (
-                    broadcastSwitch.checked ?
+                    root.settingBroadcast ?
                     qsTr("Broadcast chat message…") :
                     qsTr("Local chat message…")
                 )
