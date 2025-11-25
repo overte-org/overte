@@ -367,6 +367,17 @@ Rectangle {
                     checkable: true
                     onToggled: refreshFilteredModel()
 
+                    backgroundColor: (
+                        checked ?
+                        Overte.Theme.paletteActive.highlight :
+                        Overte.Theme.paletteActive.button
+                    )
+                    color: (
+                        checked ?
+                        Overte.Theme.paletteActive.highlightedText :
+                        Overte.Theme.paletteActive.buttonText
+                    )
+
                     Overte.ToolTip { text: qsTr("Only show installed and running apps") }
                 }
 
