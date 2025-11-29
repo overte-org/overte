@@ -33,6 +33,7 @@
 #include "EntitiesRendererLogging.h"
 #include <NetworkingConstants.h>
 #include <MetaverseAPI.h>
+#include <private/qeventpoint_p.h>
 
 using namespace render;
 using namespace render::entities;
@@ -61,6 +62,7 @@ static const uint32_t MAX_CONCURRENT_WEB_VIEWS = 20;
 
 // QT6TODO: Use one shared virtual pointing device, where do we put it though?
 static std::shared_ptr<QPointingDevice> _touchDevice;
+static std::shared_ptr<QPointingDevice> _mouseDevice;
 
 static uint8_t CUSTOM_PIPELINE_NUMBER;
 // transparent, forward, shadow, fade
@@ -141,12 +143,21 @@ WebEntityRenderer::WebEntityRenderer(const EntityItemPointer& entity) : Parent(e
     std::call_once(once, [&]{
         CUSTOM_PIPELINE_NUMBER = render::ShapePipeline::registerCustomShapePipelineFactory(webPipelineFactory);
         _touchDevice = std::make_shared<QPointingDevice>(
-            "WebEntityPointingDevice",
-            1,
-            QInputDevice::DeviceType::AllDevices,
+            "WebEntityTouchDevice",
+            1002,
+            QInputDevice::DeviceType::TouchScreen, // QT6TODO: test if touchscreen or stylus works better.
             QPointingDevice::PointerType::AllPointerTypes,
             QInputDevice::Capability::All,
-            4, //maxPoints
+            1, //maxPoints
+            2 // buttonCount
+        );
+        _mouseDevice = std::make_shared<QPointingDevice>(
+            "WebEntityMouseDevice",
+            1003,
+            QInputDevice::DeviceType::Mouse,
+            QPointingDevice::PointerType::Cursor,
+            QInputDevice::Capability::All,
+            1, //maxPoints
             2 // buttonCount
         );
     });
@@ -558,10 +569,17 @@ void WebEntityRenderer::handlePointerEventAsMouse(const PointerEvent& event) {
 
     if (type == QEvent::Wheel) {
         const auto& scroll = event.getScroll() * POINTEREVENT_SCROLL_SENSITIVITY;
-        QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false, Qt::MouseEventSynthesizedByApplication, _touchDevice.get());
+        QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false, Qt::MouseEventSynthesizedByApplication, _mouseDevice.get());
+        wheelEvent.setTimestamp((ulong)QDateTime::currentMSecsSinceEpoch());
+        QMutableEventPoint::setTimestamp(wheelEvent.point(0), wheelEvent.timestamp());
         QCoreApplication::sendEvent(_webSurface->getWindow(), &wheelEvent);
     } else {
-        QMouseEvent mouseEvent(type, windowPoint, windowPoint, windowPoint, button, buttons, event.getKeyboardModifiers(), _touchDevice.get());
+        QMouseEvent mouseEvent(type, windowPoint, windowPoint, windowPoint, button, buttons, event.getKeyboardModifiers(), _mouseDevice.get());
+        //QMouseEvent mouseEvent(type, QPointF(), QPointF(), QPointF(), button, buttons, event.getKeyboardModifiers(), _mouseDevice.get());
+        mouseEvent.setTimestamp((ulong)QDateTime::currentMSecsSinceEpoch());
+        QMutableEventPoint::setTimestamp(mouseEvent.point(0), mouseEvent.timestamp());
+        //QMutableEventPoint::setPosition(mouseEvent.point(0), windowPoint);
+        //QMutableEventPoint::setScenePosition(mouseEvent.point(0), windowPoint);
         QCoreApplication::sendEvent(_webSurface->getWindow(), &mouseEvent);
     }
 }

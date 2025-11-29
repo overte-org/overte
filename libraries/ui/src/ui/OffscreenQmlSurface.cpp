@@ -534,12 +534,17 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
         QMutableEventPoint::setGlobalPosition(point, windowPoint);
         QMutableEventPoint::setId(point, event.getID());
         QMutableEventPoint::setState(point, state);
+        QMutableEventPoint::setTimestamp(point, (ulong)QDateTime::currentMSecsSinceEpoch());
+        QMutableEventPoint::setGlobalLastPosition(point, touchPoint->second.touchPoint.globalPosition());
+        QMutableEventPoint::setGlobalPressPosition(point, touchPoint->second.touchPoint.globalPosition());
 
         _activeTouchPoints[event.getID()].touchPoint = point;
         if (state == QEventPoint::State::Pressed) {
             _activeTouchPoints[event.getID()].pressed = true;
+            QMutableEventPoint::setPressure(_activeTouchPoints[event.getID()].touchPoint, 1.0);
         } else if (state == QEventPoint::State::Released) {
             _activeTouchPoints[event.getID()].pressed = false;
+            QMutableEventPoint::setPressure(_activeTouchPoints[event.getID()].touchPoint, 0);
         }
     }
 
