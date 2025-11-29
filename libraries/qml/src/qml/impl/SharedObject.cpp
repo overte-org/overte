@@ -561,10 +561,10 @@ bool SharedObject::isPaused() const {
 bool SharedObjectEventDebug::eventFilter(QObject *object, QEvent *event) {
     QMouseEvent *mouseEvent = dynamic_cast<QMouseEvent*>(event);
     if (mouseEvent) {
-        /*if (mouseEvent->device()->name() == "WebEntityPointingDevice") {
+        if (mouseEvent->device()->name() == "WebEntityMouseDevice") {
             qDebug() << "SharedObjectEventDebug QMouseEevent: " << mouseEvent << mouseEvent->buttons();
-        }*/
-        qDebug() << "SharedObjectEventDebug QMouseEevent: " << mouseEvent << mouseEvent->buttons();
+        }
+        //qDebug() << "SharedObjectEventDebug QMouseEevent: " << mouseEvent << mouseEvent->buttons();
     }
     QTouchEvent *touchEvent = dynamic_cast<QTouchEvent*>(event);
     if (touchEvent) {
