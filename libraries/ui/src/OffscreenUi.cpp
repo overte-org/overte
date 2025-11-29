@@ -126,13 +126,23 @@ static std::shared_ptr<QPointingDevice> _touchDevice;
 OffscreenUi::OffscreenUi() {
     static std::once_flag once;
     std::call_once(once, [&] {
-        _touchDevice = std::make_shared<QPointingDevice>(
+        // QT6TODO: choose the best parameters for this:
+        /*_touchDevice = std::make_shared<QPointingDevice>(
             "OffscreenUiTouchDevice",
             1,
             QInputDevice::DeviceType::AllDevices,
             QPointingDevice::PointerType::AllPointerTypes,
             QInputDevice::Capability::All,
             4, //maxPoints
+            2 // buttonCount
+        );*/
+        _touchDevice = std::make_shared<QPointingDevice>(
+            "OffscreenUiTouchDevice",
+            1,
+            QInputDevice::DeviceType::Mouse,
+            QPointingDevice::PointerType::Cursor,
+            QInputDevice::Capability::None,
+            1, //maxPoints
             2 // buttonCount
         );
     });
@@ -1153,6 +1163,7 @@ bool OffscreenUi::eventFilter(QObject* originalDestination, QEvent* event) {
             mappedEvent.setTimestamp(mouseEvent->timestamp());
             QMutableEventPoint::setPosition(mappedEvent.point(0), transformedPos);
             QMutableEventPoint::setScenePosition(mappedEvent.point(0), transformedPos);
+            QMutableEventPoint::setTimestamp(mappedEvent.point(0), mouseEvent->timestamp());
             if (QCoreApplication::sendEvent(getWindow(), &mappedEvent)) {
 
                 // QT6TODO: I added this as a fix for Qt6 but is it needed?
