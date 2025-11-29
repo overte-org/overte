@@ -6,7 +6,7 @@ import QtQuick.Controls
 import "." as Overte
 
 // debugging test case to view the themed widgets
-Window {
+Item {
     id: root
     width: 480
     height: 720
