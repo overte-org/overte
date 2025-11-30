@@ -572,7 +572,7 @@ void GLESVariableAllocationTexture::populateTransferQueue(TransferJob::Queue& qu
         }
 
         // queue up the sampler and populated mip change for after the transfer has completed
-        queue.emplace(new TransferJob(sourceMip, [=] {
+        queue.emplace(new TransferJob(sourceMip, [=, this] {
             _populatedMip = sourceMip;
             incrementPopulatedSize(_gpuObject.evalMipSize(sourceMip));
             sanityCheck();

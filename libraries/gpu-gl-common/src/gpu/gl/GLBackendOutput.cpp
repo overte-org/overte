@@ -17,11 +17,6 @@
 using namespace gpu;
 using namespace gpu::gl;
 
-#if defined(USE_GLES)
-#define GL_FRAMEBUFFER_SRGB GL_FRAMEBUFFER_SRGB_EXT
-#define glClearDepth glClearDepthf
-#endif
-
 void GLBackend::syncOutputStateCache() {
     GLint currentFBO;
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &currentFBO);
