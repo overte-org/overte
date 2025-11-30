@@ -212,7 +212,7 @@ void GLESTexture::syncSampler(const Sampler& sampler) const {
 
     if (sampler.doComparison()) {
         glTexParameteri(_target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE); // GL_COMPARE_R_TO_TEXTURE
-        glTexParameteri(_target, GL_TEXTURE_COMPARE_FUNC, COMPARISON_TO_GL[(uint8_t))sampler.getComparisonFunction()]);
+        glTexParameteri(_target, GL_TEXTURE_COMPARE_FUNC, COMPARISON_TO_GL[(uint8_t)sampler.getComparisonFunction()]);
     } else {
         glTexParameteri(_target, GL_TEXTURE_COMPARE_MODE, GL_NONE);
     }

@@ -132,7 +132,8 @@ vec3 fetchSplatMap(int layer, mat2 uvs) {
         textureValue = vec3(texture(splatMap, uv, TAA_TEXTURE_LOD_BIAS).r, 0.0, 0.0);
     <@endif@>
     float sum = textureValue.x + textureValue.y + textureValue.z;
-    if (sum == 0) {
+    const float EPSILON = 0.00001;
+    if (sum < EPSILON) {
         return textureValue;
     }
     return textureValue /= sum;
