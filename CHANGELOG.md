@@ -11,6 +11,35 @@ like documentation or CI pipeline.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2025.12.1] not yet released
+
+### Fixes
+- Fixed icons being rendered at the wrong resolution (PR1867)
+- Fixed subtly wrong color rendering on transparent QML (PR1895)
+
+### Changes
+- Disabled QML subpixel antialiasing by default (PR1867)
+    This improves visual fidelity of QML surfaces in 3D and on displays with unusual subpixel layouts.
+- Simplified VR walkspeed (PR1800)
+
+### Additions
+- Implemented torus shape (PR1354)
+- Added normal map attenuation distance property to zone entities (PR1461)
+- Added empty entity type for scripts or userdata (PR1715)
+- Added script entity type. (PR1320)
+    Like material entities, script entities apply to their parents.
+- Added entity fading, configurable through zone properties (PR1766)
+    This adds the option to customize the avatar fading animation as well as applying it to entity additions and deletions.
+- Added texture sampler property to image entities (PR1764)
+- Added scriptable canvas entities (PR1326,PR1849)
+    This adds high level drawing commands and the ability to display directly from a buffer.
+
+### Build System
+- Enabled warnings as errors on certain configurations (PR938,PR1368,PR1447,PR1705,PR1765)
+- Switch to C++20 (PR1857,PR1855)
+- Added NPM lockfiles to Console and JSDoc to avoid NPM supply chain attacks (PR1924)
+
+
 ## [2025.10.1.1] 2025.10.19
 
 ### Fixes
@@ -41,7 +70,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Fixed rendering issue causing the seagull in the tutorial to not animate properly (PR1626)
 - Fixed OpenXR breaking when switching between desktop and VR mode (PR1632)
 - Fixed anti-aliasing on transparent text entities (PR1595)
-- Fixed opening chat links in external web browser (PR1659,
+- Fixed opening chat links in external web browser (PR1659)
 - Fixed URLs in chat not supporting commas (PR1659)
 - Fixed chat notification height in VR (PR1664)
 - Fixed error spam when trying to grab something in desktop mode (PR1645)
