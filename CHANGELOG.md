@@ -16,6 +16,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 ### Fixes
 - Fixed icons being rendered at the wrong resolution (PR1867)
 - Fixed subtly wrong color rendering on transparent QML (PR1895)
+- Fixed Fcitx (IME on Linux) not working due to missing Qt dependency (overte-conan-recipes repository)
 
 ### Changes
 - Disabled QML subpixel antialiasing by default (PR1867)
