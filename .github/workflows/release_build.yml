@@ -70,7 +70,7 @@ jobs:
         fi
 
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
-        echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
+        echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
 
         echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
         # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
