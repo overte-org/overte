@@ -132,6 +132,7 @@ void ScriptEntityItem::setParentID(const QUuid& parentID) {
     if (parentID != getParentID()) {
         EntityItem::setParentID(parentID);
         updateScript();
+        _queryAACubeSet = false; // Force queryAACube update
     }
 }
 
