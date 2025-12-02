@@ -6,16 +6,12 @@ import QtQuick.Controls
 import "." as Overte
 
 // debugging test case to view the themed widgets
-Item {
+Rectangle {
     id: root
     width: 480
     height: 720
     visible: true
-
-    Rectangle {
-        anchors.fill: parent
-        color: Overte.Theme.paletteActive.base
-    }
+    color: Overte.Theme.paletteActive.base
 
     Overte.TabBar {
         anchors.left: parent.left
@@ -135,6 +131,13 @@ Item {
                 anchors.left: scrollView.left
                 anchors.right: scrollView.right
                 anchors.rightMargin: Theme.scrollbarWidth
+            }
+
+            Image {
+                anchors.fill: parent
+                source: "./icons/unset_avatar.svg"
+                fillMode: Image.Tile
+                opacity: 0.2
             }
 
             Overte.Label {

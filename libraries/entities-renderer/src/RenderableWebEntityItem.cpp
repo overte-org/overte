@@ -54,8 +54,6 @@ const float METERS_TO_INCHES = 39.3701f;
 // If a web-view hasn't been rendered for 30 seconds, de-allocate the framebuffer
 static uint64_t MAX_NO_RENDER_INTERVAL = 30 * USECS_PER_SECOND;
 
-static uint8_t YOUTUBE_MAX_FPS = 30;
-
 // Don't allow more than 20 concurrent web views
 static std::atomic<uint32_t> _currentWebCount(0);
 static const uint32_t MAX_CONCURRENT_WEB_VIEWS = 20;
@@ -283,7 +281,7 @@ void WebEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene
 
         if (_webSurface) {
             if (_webSurface->getRootItem()) {
-                if (_contentType == ContentType::HtmlContent && _sourceURL != newSourceURL) {            
+                if (_sourceURL != newSourceURL) {
                     if (localSafeContext) {
                         ::hifi::scripting::setLocalAccessSafeThread(true);
                     }
@@ -292,10 +290,8 @@ void WebEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene
                     _webSurface->getRootItem()->setProperty(USE_BACKGROUND_PROPERTY, _useBackground);
                     _webSurface->getRootItem()->setProperty(USER_AGENT_PROPERTY, _userAgent);
                     _webSurface->getSurfaceContext()->setContextProperty(GLOBAL_POSITION_PROPERTY, vec3toVariant(_contextPosition));
-                    _webSurface->setMaxFps((QUrl(newSourceURL).host().endsWith("youtube.com", Qt::CaseInsensitive)) ? YOUTUBE_MAX_FPS : _maxFPS);
+                    _webSurface->setMaxFps(_maxFPS);
                     ::hifi::scripting::setLocalAccessSafeThread(false);
-                    _sourceURL = newSourceURL;
-                } else if (_contentType != ContentType::HtmlContent) {
                     _sourceURL = newSourceURL;
                 }
 
@@ -310,13 +306,7 @@ void WebEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene
                 {
                     auto maxFPS = entity->getMaxFPS();
                     if (_maxFPS != maxFPS) {
-                        // We special case YouTube URLs since we know they are videos that we should play with at least 30 FPS.
-                        // FIXME this doesn't handle redirects or shortened URLs, consider using a signaling method from the web entity
-                        if (QUrl(_sourceURL).host().endsWith("youtube.com", Qt::CaseInsensitive)) {
-                            _webSurface->setMaxFps(YOUTUBE_MAX_FPS);
-                        } else {
-                            _webSurface->setMaxFps(maxFPS);
-                        }
+                        _webSurface->setMaxFps(maxFPS);
                         _maxFPS = maxFPS;
                     }
                 }
