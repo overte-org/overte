@@ -43,7 +43,7 @@ void main(void) {
     float shadowAttenuation = 1.0;
 <@endif@>
 
-    if (frag.mode == FRAG_MODE_UNLIT || frag.mode == FRAG_MODE_LIGHTMAPPED) {
+    if (frag.mode == FRAG_MODE_UNLIT || frag.mode == FRAG_MODE_LIGHTMAPPED || frag.mode == FRAG_MODE_MTOON) {
         discard;
     } else {
         vec4 midNormalCurvature = vec4(0);

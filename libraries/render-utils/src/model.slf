@@ -292,8 +292,6 @@ void main(void) {
             _fragColor0 = vec4(albedo * isUnlitEnabled(), opacity);
     <@elif HIFI_USE_TRANSLUCENT@>
             packDeferredFragmentTranslucentUnlit(
-                _prevPositionCS,
-                evalFrontOrBackFaceNormal(normalWS),
                 opacity,
                 albedo * isUnlitEnabled());
     <@else@>
@@ -468,15 +466,13 @@ void main(void) {
         <@endif@>
             , color.a);
     <@elif HIFI_USE_TRANSLUCENT@>
-        packDeferredFragmentTranslucent(
-            _prevPositionCS,
-            fragNormalWS,
+        packDeferredFragmentTranslucentUnlit(
             color.a,
             color.rgb
             <@if HIFI_USE_FADE@>
                 + fadeEmissive
             <@endif@>
-            , DEFAULT_ROUGHNESS);
+            );
     <@else@>
         packDeferredFragmentUnlit(
             _prevPositionCS,
@@ -787,7 +783,7 @@ void main(void) {
                     ,
                     surfaceWS, opacity, localLighting.rgb),
                     opacity);
-                packDeferredFragmentTranslucent(_prevPositionCS, fragNormalWS, outColor.a, outColor.rgb, roughness);
+                packDeferredFragmentTranslucentUnlit(outColor.a, outColor.rgb);
             <@else@>
                 vec4 outColor = vec4(evalLightmappedColor(
                     cam._viewInverse,

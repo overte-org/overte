@@ -105,6 +105,13 @@ static const std::string DEFAULT_SCATTERING_SHADER{
     " }"
 };
 
+static const std::string DEFAULT_MTOON_SHADER{
+    "vec4 getFragmentColor() {"
+    "    DeferredFragment frag = unpackDeferredFragmentNoPosition(uv);"
+    "    return (frag.mode == FRAG_MODE_MTOON ? vec4(pow(frag.albedo, vec3(1.0 / 2.2)), 1.0) : vec4(vec3(0.0), 1.0));"
+    " }"
+};
+
 static const std::string DEFAULT_DEPTH_SHADER{
     "vec4 getFragmentColor() {"
     "    return vec4(vec3(texture(depthMap, uv).x), 1.0);"
@@ -301,6 +308,8 @@ std::string DebugDeferredBuffer::getShaderSourceCode(Mode mode, const std::strin
             return DEFAULT_LIGHTMAP_SHADER;
         case ScatteringMode:
             return DEFAULT_SCATTERING_SHADER;
+        case MToonMode:
+            return DEFAULT_MTOON_SHADER;
         case LightingMode:
             return DEFAULT_LIGHTING_SHADER;
         case ShadowCascade0Mode:
