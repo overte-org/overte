@@ -60,9 +60,9 @@ HFMTexture FBXSerializer::getTexture(const QString& textureID, const QString& ma
         }
         texture.transform.postScale(scaling);
 
-        if ((p.UVSet != "map1") && (p.UVSet != "UVSet0")) {
-            texture.texcoordSet = 1;
-        }
+        // FIXME: FBX files do not support multiple texcoordSets
+        // texture.texcoordSet = ??;
+
         texture.texcoordSetName = p.UVSet;
     }
     auto materialParamItr = _materialParams.find(materialID);
@@ -82,7 +82,6 @@ void FBXSerializer::consolidateHFMMaterials() {
         bool isMaterialLambert = (material.shadingModel.toLower() == "lambert");
 
         // the pure material associated with this part
-        bool detectDifferentUVs = false;
         HFMTexture diffuseTexture;
         HFMTexture diffuseFactorTexture;
         QString diffuseTextureID = diffuseTextures.value(material.materialID);
@@ -108,7 +107,6 @@ void FBXSerializer::consolidateHFMMaterials() {
             }
 
             material.albedoTexture = diffuseTexture;
-            detectDifferentUVs = (diffuseTexture.texcoordSet != 0) || (!diffuseTexture.transform.isIdentity());
         }
 
         HFMTexture transparentTexture;
@@ -120,7 +118,6 @@ void FBXSerializer::consolidateHFMMaterials() {
         if (!transparentTextureID.isNull()) {
             transparentTexture = getTexture(transparentTextureID, material.materialID);
             material.opacityTexture = transparentTexture;
-            detectDifferentUVs |= (transparentTexture.texcoordSet != 0) || (!transparentTexture.transform.isIdentity());
         }
 
         HFMTexture normalTexture;
@@ -131,20 +128,17 @@ void FBXSerializer::consolidateHFMMaterials() {
             normalTexture.isBumpmap = false;
 
             material.normalTexture = normalTexture;
-            detectDifferentUVs |= (normalTexture.texcoordSet != 0) || (!normalTexture.transform.isIdentity());
         } else if (!bumpTextureID.isNull()) {
             normalTexture = getTexture(bumpTextureID, material.materialID);
             normalTexture.isBumpmap = true;
 
             material.normalTexture = normalTexture;
-            detectDifferentUVs |= (normalTexture.texcoordSet != 0) || (!normalTexture.transform.isIdentity());
         }
 
         HFMTexture specularTexture;
         QString specularTextureID = specularTextures.value(material.materialID);
         if (!specularTextureID.isNull()) {
             specularTexture = getTexture(specularTextureID, material.materialID);
-            detectDifferentUVs |= (specularTexture.texcoordSet != 0) || (!specularTexture.transform.isIdentity());
             material.specularTexture = specularTexture;
         }
 
@@ -152,7 +146,6 @@ void FBXSerializer::consolidateHFMMaterials() {
         QString metallicTextureID = metallicTextures.value(material.materialID);
         if (!metallicTextureID.isNull()) {
             metallicTexture = getTexture(metallicTextureID, material.materialID);
-            detectDifferentUVs |= (metallicTexture.texcoordSet != 0) || (!metallicTexture.transform.isIdentity());
             material.metallicTexture = metallicTexture;
         }
 
@@ -161,7 +154,6 @@ void FBXSerializer::consolidateHFMMaterials() {
         if (!roughnessTextureID.isNull()) {
             roughnessTexture = getTexture(roughnessTextureID, material.materialID);
             material.roughnessTexture = roughnessTexture;
-            detectDifferentUVs |= (roughnessTexture.texcoordSet != 0) || (!roughnessTexture.transform.isIdentity());
         }
 
         HFMTexture shininessTexture;
@@ -169,14 +161,12 @@ void FBXSerializer::consolidateHFMMaterials() {
         if (!shininessTextureID.isNull()) {
             shininessTexture = getTexture(shininessTextureID, material.materialID);
             material.glossTexture = shininessTexture;
-            detectDifferentUVs |= (shininessTexture.texcoordSet != 0) || (!shininessTexture.transform.isIdentity());
         }
 
         HFMTexture emissiveTexture;
         QString emissiveTextureID = emissiveTextures.value(material.materialID);
         if (!emissiveTextureID.isNull()) {
             emissiveTexture = getTexture(emissiveTextureID, material.materialID);
-            detectDifferentUVs |= (emissiveTexture.texcoordSet != 0) || (!emissiveTexture.transform.isIdentity());
             material.emissiveTexture = emissiveTexture;
 
             if (isMaterialLambert) {
@@ -199,7 +189,6 @@ void FBXSerializer::consolidateHFMMaterials() {
 
         if (!occlusionTextureID.isNull()) {
             occlusionTexture = getTexture(occlusionTextureID, material.materialID);
-            detectDifferentUVs |= (occlusionTexture.texcoordSet != 0) || (!emissiveTexture.transform.isIdentity());
             material.occlusionTexture = occlusionTexture;
         }
 
@@ -219,7 +208,6 @@ void FBXSerializer::consolidateHFMMaterials() {
 
         if (_loadLightmaps && !ambientTextureID.isNull()) {
             ambientTexture = getTexture(ambientTextureID, material.materialID);
-            detectDifferentUVs |= (ambientTexture.texcoordSet != 0) || (!ambientTexture.transform.isIdentity());
             material.lightmapTexture = ambientTexture;
             material.lightmapParams = lightmapParams;
         }
