@@ -222,6 +222,8 @@ TabBar {
                                 editRoot.sendToScript({
                                     method: "newEntityButtonClicked",
                                     params: { buttonName: "newScriptButton" }
+                                });
+                                editTabView.currentIndex = 2
                             }
                         }
                     }
