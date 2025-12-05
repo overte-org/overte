@@ -1,11 +1,11 @@
 # https://clang.llvm.org/docs/ClangFormat.html
 #
 # Copyright 2013-2019, High Fidelity, Inc.
-# Copyright 2022 Overte e.V.
+# Copyright 2022-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 Language: Cpp
-Standard: Cpp11
+Standard: c++20
 BasedOnStyle: "Chromium"
 ColumnLimit: 128
 IndentWidth: 4
@@ -29,7 +29,6 @@ BraceWrapping:
 AccessModifierOffset: -4
 AllowShortFunctionsOnASingleLine: InlineOnly
 BreakConstructorInitializers: AfterColon
-BreakConstructorInitializersBeforeComma: false
 IndentCaseLabels: true
 ReflowComments: false
 Cpp11BracedListStyle: false
