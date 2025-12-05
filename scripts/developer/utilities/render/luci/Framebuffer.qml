@@ -43,6 +43,7 @@ Column {
             "Occlusion",
             "Lightmap",
             "Scattering",
+            "MToon",
             "Lighting",
             "Shadow Cascade 0",
             "Shadow Cascade 1",

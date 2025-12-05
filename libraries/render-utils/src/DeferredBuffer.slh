@@ -11,6 +11,7 @@
 <@if not DEFERRED_BUFFER_SLH@>
 <@def DEFERRED_BUFFER_SLH@>
 
+<@include DefaultMaterials.slh@>
 <@include gpu/PackedNormal.slh@>
 
 // Unpack the metallic-mode value
@@ -27,11 +28,13 @@ const float FRAG_PACK_SCATTERING_METALLIC = 0.5;
 const float FRAG_PACK_SCATTERING_RANGE_INV = 1.0 / (FRAG_PACK_SCATTERING_METALLIC - FRAG_PACK_SCATTERING_NON_METALLIC);
 
 const float FRAG_PACK_UNLIT = 0.6;
+const float FRAG_PACK_MTOON = 0.7;
 
 const int FRAG_MODE_UNLIT = 0;
 const int FRAG_MODE_SHADED = 1;
 const int FRAG_MODE_LIGHTMAPPED = 2;
 const int FRAG_MODE_SCATTERING = 3;
+const int FRAG_MODE_MTOON = 4;
 
 void unpackModeMetallic(float rawValue, out int mode, out float metallic) {
     if (rawValue <= FRAG_PACK_SHADED_METALLIC) {
@@ -43,9 +46,12 @@ void unpackModeMetallic(float rawValue, out int mode, out float metallic) {
     } else if (rawValue <= FRAG_PACK_SCATTERING_METALLIC) {
         mode = FRAG_MODE_SCATTERING;
         metallic = clamp((rawValue - FRAG_PACK_SCATTERING_NON_METALLIC) * FRAG_PACK_SCATTERING_RANGE_INV, 0.0, 1.0);
-    } else if (rawValue >= FRAG_PACK_UNLIT) {
+    } else if (rawValue <= FRAG_PACK_UNLIT) {
         mode = FRAG_MODE_UNLIT;
         metallic = 0.0;
+    } else if (rawValue >= FRAG_PACK_MTOON) {
+        mode = FRAG_MODE_MTOON;
+        metallic = DEFAULT_METALLIC; // TODO: mtoon currently assumes DEFAULT_METALLIC always because the spec doesn't define how metallic is used
     }
 }
 
@@ -62,7 +68,11 @@ float packScatteringMetallic(float metallic) {
 }
 
 float packUnlit() {
+<@if not HIFI_USE_MTOON@>
     return FRAG_PACK_UNLIT;
+<@else@>
+    return FRAG_PACK_MTOON;
+<@endif@>
 }
 
 <@endif@>
