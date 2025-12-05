@@ -35,11 +35,12 @@ public:
     void init(); // called after creation to set up some virtual items
     virtual PacketType getMyPacketType() const = 0;
 
-    void resetOctreePacket();  // resets octree packet to after "V" header
+    void resetOctreePacket(bool list);  // resets octree packet to after "V" header
 
-    void writeToPacket(const unsigned char* buffer, unsigned int bytes); // writes to end of packet
+    void writeToPacket(const unsigned char* buffer, unsigned int bytes, bool list); // writes to end of packet
 
     NLPacket& getPacket() const { return *_octreePacket; }
+    NLPacketList& getPacketList() const { return *_octreePacketList; }
     bool isPacketWaiting() const { return _octreePacketWaiting; }
 
     bool packetIsDuplicate() const;
@@ -66,13 +67,16 @@ public:
     OctreeSceneStats stats;
 
     unsigned int getlastOctreePacketLength() const { return _lastOctreePacketLength; }
+    bool getLastOctreePacketWasList() const { return _lastOctreePacketWasList; };
     int getDuplicatePacketCount() const { return _duplicatePacketCount; }
 
     void nodeKilled();
     bool isShuttingDown() const { return _isShuttingDown; }
 
     void octreePacketSent() { packetSent(*_octreePacket); }
+    void octreePacketListSent() { packetListSent(*_octreePacketList); }
     void packetSent(const NLPacket& packet);
+    void packetListSent(const NLPacketList& packetList);
 
     OCTREE_PACKET_SEQUENCE getSequenceNumber() const { return _sequenceNumber; }
 
@@ -86,12 +90,16 @@ public:
     bool shouldForceFullScene() const { return _shouldForceFullScene; }
     void setShouldForceFullScene(bool shouldForceFullScene) { _shouldForceFullScene = shouldForceFullScene; }
 
+    void updatePacketSequenceNumber() const;
+
 private:
     bool _viewSent { false };
     std::unique_ptr<NLPacket> _octreePacket;
+    std::unique_ptr<NLPacketList> _octreePacketList;
     bool _octreePacketWaiting;
 
     unsigned int _lastOctreePacketLength { 0 };
+    bool _lastOctreePacketWasList { false };
     int _duplicatePacketCount { 0 };
     quint64 _firstSuppressedPacket { usecTimestampNow() };
 
@@ -107,13 +115,13 @@ private:
 
     OCTREE_PACKET_SEQUENCE _sequenceNumber { 0 };
 
-    PacketType _myPacketType { PacketType::Unknown };
     bool _isShuttingDown { false };
 
     SentPacketHistory _sentPacketHistory;
     QQueue<OCTREE_PACKET_SEQUENCE> _nackedSequenceNumbers;
 
     std::array<char, udt::MAX_PACKET_SIZE> _lastOctreePayload;
+    QByteArray _lastOctreePayloadListData;
 
     QJsonObject _lastCheckJSONParameters;
 

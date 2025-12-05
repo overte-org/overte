@@ -61,7 +61,11 @@ EntityPropertyInfo makePropertyInfo(EntityPropertyList p, typename std::enable_i
             } else {                                                \
                 packetData->discardLevel(propertyLevel);            \
                 appendState = OctreeElement::PARTIAL;               \
+                if (firstProperty) {                                \
+                    firstDidntFitProperty = P;                      \
+                }                                                   \
             }                                                       \
+            firstProperty = false;                                  \
         } else {                                                    \
             propertiesDidntFit -= P;                                \
         }
@@ -512,7 +516,7 @@ inline Sampler Sampler_convertFromScriptValue(const ScriptValue& v, bool& isVali
         T& get##N() { return _##n; }             \
     private:                                     \
         T _##n;                                  \
-        static T _static##N; 
+        static T _static##N;
 
 
 #define ADD_PROPERTY_TO_MAP(P, n, T) \
@@ -684,6 +688,7 @@ inline Sampler Sampler_convertFromScriptValue(const ScriptValue& v, bool& isVali
                             EntityPropertyFlags& requestedProperties,                                   \
                             EntityPropertyFlags& propertyFlags,                                         \
                             EntityPropertyFlags& propertiesDidntFit,                                    \
+                            bool& firstProperty, EntityPropertyList& firstDidntFitProperty,             \
                             int& propertyCount,                                                         \
                             OctreeElement::AppendState& appendState) const override;                    \
     int readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,                \
@@ -707,6 +712,7 @@ inline Sampler Sampler_convertFromScriptValue(const ScriptValue& v, bool& isVali
                                     EntityPropertyFlags& requestedProperties,                               \
                                     EntityPropertyFlags& propertyFlags,                                     \
                                     EntityPropertyFlags& propertiesDidntFit,                                \
+                                    bool& firstProperty, EntityPropertyList& firstDidntFitProperty,         \
                                     int& propertyCount,                                                     \
                                     OctreeElement::AppendState& appendState) const override;                \
     virtual bool decodeFromEditPacket(EntityPropertyFlags& propertyFlags,                                   \

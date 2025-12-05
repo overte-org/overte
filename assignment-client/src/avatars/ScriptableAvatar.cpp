@@ -415,7 +415,8 @@ void ScriptableAvatar::setAvatarEntityData(const AvatarEntityMap& avatarEntityDa
                 OctreePacketData packetData(false, AvatarTraits::MAXIMUM_TRAIT_SIZE);
                 EncodeBitstreamParams params;
                 EntityTreeElementExtraEncodeDataPointer extra { nullptr };
-                OctreeElement::AppendState appendState = entity->appendEntityData(&packetData, params, extra);
+                EntityPropertyList firstDidntFitProperty;
+                OctreeElement::AppendState appendState = entity->appendEntityData(&packetData, params, extra, firstDidntFitProperty);
 
                 if (appendState == OctreeElement::COMPLETED) {
                     _entities[id] = entity;
@@ -474,7 +475,8 @@ void ScriptableAvatar::updateAvatarEntity(const QUuid& entityID, const QByteArra
             OctreePacketData packetData(false, AvatarTraits::MAXIMUM_TRAIT_SIZE);
             EncodeBitstreamParams params;
             EntityTreeElementExtraEncodeDataPointer extra { nullptr };
-            OctreeElement::AppendState appendState = entity->appendEntityData(&packetData, params, extra);
+            EntityPropertyList firstDidntFitProperty;
+            OctreeElement::AppendState appendState = entity->appendEntityData(&packetData, params, extra, firstDidntFitProperty);
 
             if (appendState == OctreeElement::COMPLETED) {
                 _entities[entityID] = entity;
@@ -490,7 +492,8 @@ void ScriptableAvatar::updateAvatarEntity(const QUuid& entityID, const QByteArra
             OctreePacketData packetData(false, AvatarTraits::MAXIMUM_TRAIT_SIZE);
             EncodeBitstreamParams params;
             EntityTreeElementExtraEncodeDataPointer extra { nullptr };
-            OctreeElement::AppendState appendState = entity->appendEntityData(&packetData, params, extra);
+            EntityPropertyList firstDidntFitProperty;
+            OctreeElement::AppendState appendState = entity->appendEntityData(&packetData, params, extra, firstDidntFitProperty);
 
             if (appendState == OctreeElement::COMPLETED) {
                 QByteArray tempArray((const char*)packetData.getUncompressedData(), packetData.getUncompressedSize());

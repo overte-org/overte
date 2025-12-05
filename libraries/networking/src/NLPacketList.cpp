@@ -22,12 +22,30 @@ std::unique_ptr<NLPacketList> NLPacketList::create(PacketType packetType, QByteA
     return nlPacketList;
 }
 
+std::unique_ptr<NLPacketList> NLPacketList::createCopy(const NLPacketList& other) {
+    return std::unique_ptr<NLPacketList>(new NLPacketList(other));
+}
+
 NLPacketList::NLPacketList(PacketType packetType, QByteArray extendedHeader, bool isReliable, bool isOrdered) :
     PacketList(packetType, extendedHeader, isReliable, isOrdered)
 {
 }
 
 NLPacketList::NLPacketList(PacketList&& other) : PacketList(std::move(other)) {
+    // Update _packets
+    for (auto& packet : _packets) {
+        packet = NLPacket::fromBase(std::move(packet));
+    }
+
+    if (_packets.size() > 0) {
+        auto nlPacket = static_cast<const NLPacket*>(_packets.front().get());
+        _sourceID = nlPacket->getSourceID();
+        _packetType = nlPacket->getType();
+        _packetVersion = nlPacket->getVersion();
+    }
+}
+
+NLPacketList::NLPacketList(const NLPacketList& other) : PacketList(other) {
     // Update _packets
     for (auto& packet : _packets) {
         packet = NLPacket::fromBase(std::move(packet));

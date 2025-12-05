@@ -115,6 +115,7 @@ void PolyVoxEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeB
                                            EntityPropertyFlags& requestedProperties,
                                            EntityPropertyFlags& propertyFlags,
                                            EntityPropertyFlags& propertiesDidntFit,
+                                           bool& firstProperty, EntityPropertyList& firstDidntFitProperty,
                                            int& propertyCount,
                                            OctreeElement::AppendState& appendState) const {
 

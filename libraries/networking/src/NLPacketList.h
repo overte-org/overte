@@ -21,17 +21,20 @@ class NLPacketList : public udt::PacketList {
 public:
     static std::unique_ptr<NLPacketList> create(PacketType packetType, QByteArray extendedHeader = QByteArray(),
                                                 bool isReliable = false, bool isOrdered = false);
-    
+
+    static std::unique_ptr<NLPacketList> createCopy(const NLPacketList& other);
+
     PacketVersion getVersion() const { return _packetVersion; }
     NLPacket::LocalID getSourceID() const { return _sourceID; }
 
     qint64 getMaxSegmentSize() const override { return NLPacket::maxPayloadSize(_packetType, _isOrdered); }
-    
+    const std::list<udt::PacketList::PacketPointer>& getPackets() const { return _packets; }
+
 private:
-    Q_DISABLE_COPY(NLPacketList)
     NLPacketList(PacketType packetType, QByteArray extendedHeader = QByteArray(), bool isReliable = false,
                  bool isOrdered = false);
     NLPacketList(udt::PacketList&& packetList);
+    NLPacketList(const NLPacketList& packetList);
 
     virtual std::unique_ptr<udt::Packet> createPacket() override;
 
