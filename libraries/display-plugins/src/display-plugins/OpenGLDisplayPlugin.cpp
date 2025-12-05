@@ -59,6 +59,7 @@ using namespace shader::gpu::program;
 extern QThread* RENDER_THREAD;
 
 Setting::Handle<bool> OpenGLDisplayPlugin::_extraLinearToSRGBConversionSetting("extraLinearToSRGBConversion", false);
+bool OpenGLDisplayPlugin::_hasSetSRGBConversion = false;
 
 class PresentThread : public QThread, public Dependency {
     using Mutex = std::mutex;
@@ -959,9 +960,10 @@ void OpenGLDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer ne
 
 gpu::PipelinePointer OpenGLDisplayPlugin::getRenderTexturePipeline() {
 #ifdef USE_GLES
-    if (!_extraLinearToSRGBConversionSetting.isSet()) {
+    if (!_hasSetSRGBConversion) {
         const gl::ContextInfo &contextInfo = gl::ContextInfo::get();
         _extraLinearToSRGBConversionSetting.set(std::find(contextInfo.extensions.cbegin(), contextInfo.extensions.cend(), "GL_EXT_framebuffer_sRGB") == contextInfo.extensions.cend());
+        _hasSetSRGBConversion = true;
     }
 #endif
 
