@@ -104,7 +104,7 @@ Item {
 
     function _onEnterPressed() {
         changeVisibility(false)
-        toScript({type: "send_message", message: textArea.text, channel: "local"})
+        toScript({type: "sendMessage", message: textArea.text, channel: "local"})
         textArea.text = "";
     }
 
@@ -117,7 +117,7 @@ Item {
     // Messages from script
     function fromScript(message) {
         switch (message.type){
-            case "change_visibility":
+            case "changeVisibility":
                 changeVisibility(message.value)
                 break;
         }
