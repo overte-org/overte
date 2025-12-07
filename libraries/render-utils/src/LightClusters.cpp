@@ -552,6 +552,26 @@ void LightClusteringPass::run(const render::RenderContextPointer& renderContext,
     auto lightFrame = inputs.get2();
     auto surfaceGeometryFramebuffer = inputs.get3();
 
+    // Only clear the light frame on forward where the sun and ambient lights
+    // are always set up properly, regardles of the light clustering. If we clear
+    // it on deferred too, then the key light and ambient light settings are reset
+    // to their defaults, while shadows follow the correct zone-specified key light settings.
+    if (
+        renderContext->args->_renderMethod == render::Args::FORWARD &&
+        !lightingModel->isLocalLightingEnabled()
+    ) {
+        // TODO: I think this should work. The clusters aren't updated
+        // if we enter here, and clearing lightFrame means we won't draw
+        // any lights in the areas covered by the now-unused light cluster
+        // data. The cluster data will be uninitialized if local lights are
+        // disabled at start, and will just have whatever was last set up
+        // before local lights were turned off otherwise. In both cases,
+        // the cluster data should be ignored because there's zero lights
+        // to handle. We should verify that this is actually the case.
+        lightFrame->clear();
+        return;
+    }
+
     // first update the Grid with the new frustum
     if (!_freeze) {
         _lightClusters->updateFrustum(args->getViewFrustum());
@@ -641,6 +661,10 @@ void DebugLightClusters::run(const render::RenderContextPointer& renderContext, 
     auto lightingModel = inputs.get1();
     auto linearDepthTarget = inputs.get2();
     auto lightClusters = inputs.get3();
+
+    if (!lightingModel->isLocalLightingEnabled()) {
+        return;
+    }
 
     auto args = renderContext->args;
 
