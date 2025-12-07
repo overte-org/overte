@@ -276,6 +276,15 @@ bool LightingModel::isAmbientOcclusionEnabled() const {
     return (bool)_parametersBuffer.get<Parameters>().enableAmbientOcclusion;
 }
 
+void LightingModel::setLocalLighting(bool enable) {
+    if (enable != isLocalLightingEnabled()) {
+        _parametersBuffer.edit<Parameters>().enableLocalLighting = (float)enable;
+    }
+}
+bool LightingModel::isLocalLightingEnabled() const {
+    return (bool)_parametersBuffer.get<Parameters>().enableLocalLighting;
+}
+
 void LightingModel::setShadow(bool enable) {
     if (enable != isShadowEnabled()) {
         _parametersBuffer.edit<Parameters>().enableShadow = (float)enable;
@@ -324,6 +333,7 @@ void MakeLightingModel::configure(const Config& config) {
     _lightingModel->setBlendshape(config.enableBlendshape);
 
     _lightingModel->setAmbientOcclusion(config.enableAmbientOcclusion);
+    _lightingModel->setLocalLighting(config.enableLocalLighting);
     _lightingModel->setShadow(config.enableShadow);
 }
 

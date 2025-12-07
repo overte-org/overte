@@ -244,6 +244,27 @@ void RenderScriptingInterface::forceAmbientOcclusionEnabled(bool enabled) {
     });
 }
 
+bool RenderScriptingInterface::getLocalLightingEnabled() const {
+    return _localLightingEnabled;
+}
+
+void RenderScriptingInterface::setLocalLightingEnabled(bool enabled) {
+    if (_localLightingEnabled != enabled) {
+        forceLocalLightingEnabled(enabled);
+        emit settingsChanged();
+    }
+}
+
+void RenderScriptingInterface::forceLocalLightingEnabled(bool enabled) {
+    _renderSettingLock.withWriteLock([&] {
+        _localLightingEnabled = (enabled);
+        _localLightingSetting.set(enabled);
+        Menu::getInstance()->setIsOptionChecked(MenuOption::LocalLights, enabled);
+
+        recursivelyUpdateLightingModel("", [enabled] (MakeLightingModelConfig *config) { config->setLocalLighting(enabled); });
+    });
+}
+
 bool RenderScriptingInterface::getProceduralMaterialsEnabled() const {
     return _proceduralMaterialsEnabled;
 }
