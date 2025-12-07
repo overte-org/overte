@@ -29,7 +29,11 @@ layout(location=RENDER_UTILS_ATTR_POSITION_MS) out vec2 _positionMS;
 <@endif@>
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     layout(location=RENDER_UTILS_ATTR_POSITION_ES) out vec4 _positionES;
-    layout(location=RENDER_UTILS_ATTR_POSITION_WS) out vec4 _positionWS;
+
+    // workaround for scribe only supporting (A or B) and not (A or B or C)
+    <@if not HIFI_USE_FADE@>
+        layout(location=RENDER_UTILS_ATTR_POSITION_WS) out vec4 _positionWS;
+    <@endif@>
 <@endif@>
 <@if not HIFI_USE_FORWARD@>
     layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) out vec4 _prevPositionCS;

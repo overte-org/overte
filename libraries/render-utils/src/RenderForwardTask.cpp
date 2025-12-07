@@ -196,7 +196,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
 gpu::FramebufferPointer PreparePrimaryFramebufferMSAA::createFramebuffer(const char* name, const glm::uvec2& frameSize, int numSamples) {
     gpu::FramebufferPointer framebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create(name));
 
-    auto defaultSampler = gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR);
+    auto defaultSampler = Sampler(Sampler::FILTER_MIN_MAG_LINEAR);
 
     auto colorFormat = gpu::Element(gpu::SCALAR, gpu::FLOAT, gpu::R11G11B10);
     auto colorTexture =
