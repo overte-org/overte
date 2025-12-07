@@ -87,6 +87,13 @@
 
         <@include gpu/Transform.slh@>
         <$declareStandardCameraTransform()$>
+
+        // Scribe workaround
+        <@if not HIFI_USE_LIGHTMAP@>
+        <@if HIFI_USE_FORWARD@>
+            <@include LightLocal.slh@>
+        <@endif@>
+        <@endif@>
     <@elif HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
         <@include DefaultMaterials.slh@>
         <@include GlobalLight.slh@>
@@ -462,6 +469,24 @@ void main(void) {
         parametricRimFresnelPower, parametricRimLift, rimTex, rimLightingMix, matKeys[0]), opacity);
 
     <@if HIFI_USE_FORWARD@>
+        // TODO: toony local lights, maybe move this to the technique used in #1934?
+        <@if not HIFI_USE_LIGHTMAP@>
+            vec3 fragPositionWS = _positionWS.xyz;
+            vec3 fragToEyeWS = cam._viewInverse[3].xyz - fragPositionWS;
+            vec3 fragToEyeDirWS = normalize(fragToEyeWS);
+            SurfaceData surfaceWS = initSurfaceData(DEFAULT_ROUGHNESS, fragNormalWS, fragToEyeDirWS);
+
+            vec4 localLighting = vec4(0.0);
+            <$fetchClusterInfo(_positionWS)$>
+            if (hasLocalLights(numLights, clusterPos, dims)) {
+                localLighting = evalLocalLighting(cluster, numLights, fragPositionWS, surfaceWS,
+                                                  metallic, fresnel, albedo, 0.0,
+                                                  vec4(0), vec4(0), opacity);
+            }
+
+            color.rgb += localLighting.rgb;
+        <@endif@>
+
         _fragColor0 = isUnlitEnabled() * vec4(color.rgb
         <@if HIFI_USE_FADE@>
                 + fadeEmissive
