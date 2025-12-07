@@ -305,7 +305,10 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
 
         // Set the light
         deferredLightingEffect->setupKeyLightBatch(args, batch);
-        deferredLightingEffect->setupLocalLightsBatch(batch, lightClusters);
+
+        if (lightingModel->isLocalLightingEnabled()) {
+            deferredLightingEffect->setupLocalLightsBatch(batch, lightClusters);
+        }
 
         // Setup haze if current zone has haze
         if (haze) {

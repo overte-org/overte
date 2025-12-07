@@ -31,8 +31,10 @@
  * @property {boolean} shadowsEnabled - <code>true</code> if shadows are enabled, <code>false</code> if they're disabled.
  * @property {boolean} hazeEnabled - <code>true</code> if haze (fog) is enabled, <code>false</code> if it's disabled.
  * @property {boolean} bloomEnabled - <code>true</code> if bloom is enabled, <code>false</code> if it's disabled.
- * @property {boolean} ambientOcclusionEnabled - <code>true</code> if ambient occlusion is enabled, <code>false</code> if it's
- *     disabled.
+ * @property {boolean} ambientOcclusionEnabled - <code>true</code> if ambient occlusion is enabled, <code>false</code> if it's disabled.
+ * @property {boolean} localLightingEnabled - <code>true</code> if local lights are enabled
+ * on the forward renderer, <code>false</code> if it's disabled. Local lights are always
+ * enabled on the deferred renderer.
  * @property {boolean} proceduralMaterialsEnabled - <code>true</code> if procedural shaders are enabled, <code>false</code> if
  *     they're disabled.
  * @property {integer} antialiasingMode - The active anti-aliasing mode.
@@ -46,6 +48,7 @@ class RenderScriptingInterface : public QObject {
     Q_PROPERTY(bool hazeEnabled READ getHazeEnabled WRITE setHazeEnabled NOTIFY settingsChanged)
     Q_PROPERTY(bool bloomEnabled READ getBloomEnabled WRITE setBloomEnabled NOTIFY settingsChanged)
     Q_PROPERTY(bool ambientOcclusionEnabled READ getAmbientOcclusionEnabled WRITE setAmbientOcclusionEnabled NOTIFY settingsChanged)
+    Q_PROPERTY(bool localLightingEnabled READ getLocalLightingEnabled WRITE setLocalLightingEnabled NOTIFY settingsChanged)
     Q_PROPERTY(AntialiasingSetupConfig::Mode antialiasingMode READ getAntialiasingMode WRITE setAntialiasingMode NOTIFY settingsChanged)
     Q_PROPERTY(bool proceduralMaterialsEnabled READ getProceduralMaterialsEnabled WRITE setProceduralMaterialsEnabled NOTIFY settingsChanged)
     Q_PROPERTY(float viewportResolutionScale READ getViewportResolutionScale WRITE setViewportResolutionScale NOTIFY settingsChanged)
@@ -186,6 +189,22 @@ public slots:
     void setAmbientOcclusionEnabled(bool enabled);
 
     /*@jsdoc
+     * Gets whether or not local lighting is enabled on the forward renderer.
+     * Local lights are always enabled on the deferred renderer.
+     * @function Render.getLocalLightingEnabled
+     * @returns {boolean} <code>true</code> if local lighting is enabled, <code>false</code> if it's disabled.
+     */
+    bool getLocalLightingEnabled() const;
+
+    /*@jsdoc
+     * Sets whether or not local lighting is enabled on the forward renderer.
+     * Has no effect when using the deferred renderer, where local lights are always enabled.
+     * @function Render.setLocalLightingEnabled
+     * @param {boolean} enabled - <code>true</code> to enable local lights, <code>false</code> to disable.
+     */
+    void setLocalLightingEnabled(bool enabled);
+
+    /*@jsdoc
      * Gets whether or not procedural materials are enabled.
      * @function Render.getProceduralMaterialsEnabled
      * @returns {boolean} <code>true</code> if procedural materials are enabled, <code>false</code> if they're disabled.
@@ -303,6 +322,7 @@ private:
     bool _hazeEnabled { true };
     bool _bloomEnabled { true };
     bool _ambientOcclusionEnabled { true };
+    bool _localLightingEnabled { true };
     bool _proceduralMaterialsEnabled { true };
     AntialiasingSetupConfig::Mode _antialiasingMode { AntialiasingSetupConfig::Mode::NONE };
     float _viewportResolutionScale { 1.0f };
@@ -314,6 +334,7 @@ private:
     Setting::Handle<bool> _hazeEnabledSetting { "hazeEnabled", true };
     Setting::Handle<bool> _bloomEnabledSetting { "bloomEnabled", true };
     Setting::Handle<bool> _ambientOcclusionEnabledSetting { "ambientOcclusionEnabled", true };
+    Setting::Handle<bool> _localLightingSetting { "localLightingEnabled", true };
     Setting::Handle<bool> _proceduralMaterialsEnabledSetting { "proceduralMaterialsEnabled", true };
     Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", (int)AntialiasingSetupConfig::Mode::NONE };
     Setting::Handle<float> _viewportResolutionScaleSetting { "viewportResolutionScale", 1.0f };
@@ -325,6 +346,7 @@ private:
     void forceHazeEnabled(bool enabled);
     void forceBloomEnabled(bool enabled);
     void forceAmbientOcclusionEnabled(bool enabled);
+    void forceLocalLightingEnabled(bool enabled);
     void forceProceduralMaterialsEnabled(bool enabled);
     void forceAntialiasingMode(AntialiasingSetupConfig::Mode mode);
     void forceViewportResolutionScale(float scale);
