@@ -88,11 +88,8 @@
         <@include gpu/Transform.slh@>
         <$declareStandardCameraTransform()$>
 
-        // Scribe workaround
-        <@if not HIFI_USE_LIGHTMAP@>
         <@if HIFI_USE_FORWARD@>
             <@include LightLocal.slh@>
-        <@endif@>
         <@endif@>
     <@elif HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
         <@include DefaultMaterials.slh@>
@@ -470,22 +467,20 @@ void main(void) {
 
     <@if HIFI_USE_FORWARD@>
         // TODO: toony local lights, maybe move this to the technique used in #1934?
-        <@if not HIFI_USE_LIGHTMAP@>
-            vec3 fragPositionWS = _positionWS.xyz;
-            vec3 fragToEyeWS = cam._viewInverse[3].xyz - fragPositionWS;
-            vec3 fragToEyeDirWS = normalize(fragToEyeWS);
-            SurfaceData surfaceWS = initSurfaceData(DEFAULT_ROUGHNESS, fragNormalWS, fragToEyeDirWS);
+        vec3 fragPositionWS = _positionWS.xyz;
+        vec3 fragToEyeWS = cam._viewInverse[3].xyz - fragPositionWS;
+        vec3 fragToEyeDirWS = normalize(fragToEyeWS);
+        SurfaceData surfaceWS = initSurfaceData(DEFAULT_ROUGHNESS, fragNormalWS, fragToEyeDirWS);
 
-            vec4 localLighting = vec4(0.0);
-            <$fetchClusterInfo(_positionWS)$>
-            if (hasLocalLights(numLights, clusterPos, dims)) {
-                localLighting = evalLocalLighting(cluster, numLights, fragPositionWS, surfaceWS,
-                                                  metallic, fresnel, albedo, 0.0,
-                                                  vec4(0), vec4(0), opacity);
-            }
+        vec4 localLighting = vec4(0.0);
+        <$fetchClusterInfo(_positionWS)$>
+        if (hasLocalLights(numLights, clusterPos, dims)) {
+            localLighting = evalLocalLighting(cluster, numLights, fragPositionWS, surfaceWS,
+                                              metallic, fresnel, albedo, 0.0,
+                                              vec4(0), vec4(0), opacity);
+        }
 
-            color.rgb += localLighting.rgb;
-        <@endif@>
+        color.rgb += localLighting.rgb;
 
         _fragColor0 = isUnlitEnabled() * vec4(color.rgb
         <@if HIFI_USE_FADE@>
