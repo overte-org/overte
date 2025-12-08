@@ -305,8 +305,7 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
 
         // Set the light
         deferredLightingEffect->setupKeyLightBatch(args, batch);
-
-        if (lightingModel->isLocalLightingEnabled()) {
+        if (lightClusters) {
             deferredLightingEffect->setupLocalLightsBatch(batch, lightClusters);
         }
 

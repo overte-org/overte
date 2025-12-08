@@ -32,9 +32,8 @@
  * @property {boolean} hazeEnabled - <code>true</code> if haze (fog) is enabled, <code>false</code> if it's disabled.
  * @property {boolean} bloomEnabled - <code>true</code> if bloom is enabled, <code>false</code> if it's disabled.
  * @property {boolean} ambientOcclusionEnabled - <code>true</code> if ambient occlusion is enabled, <code>false</code> if it's disabled.
- * @property {boolean} localLightingEnabled - <code>true</code> if local lights are enabled
- * on the forward renderer, <code>false</code> if it's disabled. Local lights are always
- * enabled on the deferred renderer.
+ * @property {boolean} localLightingEnabled - <code>true</code> if local lights are enabled,
+ * <code>false</code> if they're disabled.
  * @property {boolean} proceduralMaterialsEnabled - <code>true</code> if procedural shaders are enabled, <code>false</code> if
  *     they're disabled.
  * @property {integer} antialiasingMode - The active anti-aliasing mode.
@@ -189,16 +188,16 @@ public slots:
     void setAmbientOcclusionEnabled(bool enabled);
 
     /*@jsdoc
-     * Gets whether or not local lighting is enabled on the forward renderer.
-     * Local lights are always enabled on the deferred renderer.
+     * Gets whether or not local lighting is enabled.
+     * Ambient and key (sun) light is always enabled, regardless of this setting.
      * @function Render.getLocalLightingEnabled
      * @returns {boolean} <code>true</code> if local lighting is enabled, <code>false</code> if it's disabled.
      */
     bool getLocalLightingEnabled() const;
 
     /*@jsdoc
-     * Sets whether or not local lighting is enabled on the forward renderer.
-     * Has no effect when using the deferred renderer, where local lights are always enabled.
+     * Sets whether or not local lighting is enabled.
+     * Ambient and key (sun) light is always enabled, regardless of this setting.
      * @function Render.setLocalLightingEnabled
      * @param {boolean} enabled - <code>true</code> to enable local lights, <code>false</code> to disable.
      */

@@ -536,6 +536,8 @@ LightClusteringPass::LightClusteringPass() {
 
 
 void LightClusteringPass::configure(const Config& config) {
+    _localLightingEnabled = config.localLightingEnabled;
+
     if (_lightClusters) {
         _lightClusters->setRangeNearFar(config.rangeNear, config.rangeFar);
         _lightClusters->setDimensions(glm::uvec3(config.dimX, config.dimY, config.dimZ));
@@ -558,7 +560,7 @@ void LightClusteringPass::run(const render::RenderContextPointer& renderContext,
     // to their defaults, while shadows follow the correct zone-specified key light settings.
     if (
         renderContext->args->_renderMethod == render::Args::FORWARD &&
-        !lightingModel->isLocalLightingEnabled()
+        !_localLightingEnabled
     ) {
         // TODO: I think this should work. The clusters aren't updated
         // if we enter here, and clearing lightFrame means we won't draw
@@ -581,7 +583,11 @@ void LightClusteringPass::run(const render::RenderContextPointer& renderContext,
     auto lightStage = renderContext->_scene->getStage<LightStage>();
     assert(lightStage);
     _lightClusters->updateLightStage(lightStage);
-    _lightClusters->updateLightFrame(lightFrame, lightingModel->isPointLightEnabled(), lightingModel->isSpotLightEnabled());
+    _lightClusters->updateLightFrame(
+        lightFrame,
+        lightingModel->isPointLightEnabled() && _localLightingEnabled,
+        lightingModel->isSpotLightEnabled() && _localLightingEnabled
+    );
     
     auto clusteringStats = _lightClusters->updateClusters();
 
@@ -662,7 +668,7 @@ void DebugLightClusters::run(const render::RenderContextPointer& renderContext, 
     auto linearDepthTarget = inputs.get2();
     auto lightClusters = inputs.get3();
 
-    if (!lightingModel->isLocalLightingEnabled()) {
+    if (!lightClusters->_localLightingEnabled) {
         return;
     }
 
