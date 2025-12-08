@@ -91,8 +91,6 @@ Flickable {
         }
 
         SettingBoolean {
-            visible: Render.renderMethod === 1
-
             settingText: "Local Lights";
             settingEnabledCondition: () => { return Render.localLightingEnabled }
 

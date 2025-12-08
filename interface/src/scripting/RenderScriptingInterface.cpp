@@ -20,6 +20,7 @@
 #include "ScreenName.h"
 
 #include <procedural/Procedural.h>
+#include "LightClusters.h"
 
 STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
@@ -261,7 +262,12 @@ void RenderScriptingInterface::forceLocalLightingEnabled(bool enabled) {
         _localLightingSetting.set(enabled);
         Menu::getInstance()->setIsOptionChecked(MenuOption::LocalLights, enabled);
 
-        recursivelyUpdateLightingModel("", [enabled] (MakeLightingModelConfig *config) { config->setLocalLighting(enabled); });
+        auto renderConfig = qApp->getRenderEngine()->getConfiguration();
+        auto config = renderConfig->getConfig<LightClusteringPass>("LightClustering");
+
+        if (config) {
+            config->setLocalLightingEnabled(enabled);
+        }
     });
 }
 
