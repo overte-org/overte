@@ -26,6 +26,52 @@ var Pointer = function(hudLayer, pickType, pointerData) {
     }
     this.SEARCH_SPHERE_SIZE = 0.0132;
     this.dim = {x: this.SEARCH_SPHERE_SIZE, y: this.SEARCH_SPHERE_SIZE, z: this.SEARCH_SPHERE_SIZE};
+    this.passivePath = {
+        type: "PolyLine",
+        color: COLORS_GRAB_SEARCHING_PASSIVE,
+        visible: true,
+        alpha: 0.5,
+        solid: true,
+        glow: true,
+        faceCamera: true,
+        ignorePickIntersection: true, // always ignore this
+        renderLayer: this.renderLayer,
+        linePoints: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    };
+    this.passiveEnd = {
+        type: "Sphere",
+        dimensions: this.dim,
+        solid: true,
+        color: COLORS_GRAB_SEARCHING_PASSIVE,
+        alpha: 0.3,
+        unlit: true,
+        ignorePickIntersection: true,
+        renderLayer: this.renderLayer,
+        visible: true
+    };
+    this.passiveInteractivePath = {
+        type: "PolyLine",
+        color: COLORS_GRAB_SEARCHING_PASSIVE_INTERACTIVE,
+        visible: true,
+        alpha: 0.5,
+        solid: true,
+        glow: true,
+        faceCamera: true,
+        ignorePickIntersection: true, // always ignore this
+        renderLayer: this.renderLayer,
+        linePoints: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    };
+    this.passiveInteractiveEnd = {
+        type: "Sphere",
+        dimensions: this.dim,
+        solid: true,
+        color: COLORS_GRAB_SEARCHING_PASSIVE_INTERACTIVE,
+        alpha: 0.3,
+        unlit: true,
+        ignorePickIntersection: true,
+        renderLayer: this.renderLayer,
+        visible: true
+    };
     this.halfPath = {
         type: "PolyLine",
         color: COLORS_GRAB_SEARCHING_HALF_SQUEEZE,
@@ -86,12 +132,16 @@ var Pointer = function(hudLayer, pickType, pointerData) {
     };
 
     this.renderStates = [
+        {name: "passive", path: this.passivePath, end: this.passiveEnd},
+        {name: "passive_interactive", path: this.passiveInteractivePath, end: this.passiveInteractiveEnd},
         {name: "half", path: this.halfPath, end: this.halfEnd},
         {name: "full", path: this.fullPath, end: this.fullEnd},
         {name: "hold", path: this.holdPath}
     ];
 
     this.defaultRenderStates = [
+        {name: "passive", distance: DEFAULT_SEARCH_SPHERE_DISTANCE, path: this.passivePath},
+        {name: "passive_interactive", distance: DEFAULT_SEARCH_SPHERE_DISTANCE, path: this.passiveInteractivePath},
         {name: "half", distance: DEFAULT_SEARCH_SPHERE_DISTANCE, path: this.halfPath},
         {name: "full", distance: DEFAULT_SEARCH_SPHERE_DISTANCE, path: this.fullPath},
         {name: "hold", distance: DEFAULT_SEARCH_SPHERE_DISTANCE, path: this.holdPath}
@@ -103,6 +153,9 @@ var Pointer = function(hudLayer, pickType, pointerData) {
     this.locked = false;
     this.allwaysOn = false;
     this.hand = pointerData.hand;
+    this.allowPassive = pointerData.allowPassive ?? false;
+    this.passive = Picks.handLaserPassive;
+    this.passiveInteractive = false;
     delete pointerData.hand;
 
     function createPointer(pickType, pointerData) {
@@ -137,6 +190,15 @@ var Pointer = function(hudLayer, pickType, pointerData) {
         this.visible = false;
     };
 
+    this.setPassive = function(passive) {
+        this.passive = passive;
+    };
+
+    // TODO: Highlight passive laser over entities with href or grab.grabbable
+    this.setPassiveInteractive = function(interactive) {
+        this.passiveInteractive = interactive;
+    };
+
     this.lockEnd = function(lockData) {
         if (lockData !== undefined) {
             if (this.visible && !this.locked && lockData.targetID !== null) {
@@ -164,6 +226,12 @@ var Pointer = function(hudLayer, pickType, pointerData) {
                 mode = "full";
             } else if (triggerValues[this.hand] > TRIGGER_ON_VALUE || this.alwaysOn) {
                 mode = "half";
+            }
+        } else if (this.allowPassive && this.passive) {
+            if (this.passiveInteractive) {
+                mode = "passive_interactive";
+            } else {
+                mode = "passive";
             }
         }
 
@@ -217,5 +285,11 @@ var PointerManager = function() {
             this.pointers[index].removePointer();
         }
         this.pointers = [];
+    };
+
+    this.setPassive = function(passive) {
+        for (var index = 0; index < this.pointers.length; index++) {
+            this.pointers[index].setPassive(passive);
+        }
     };
 };

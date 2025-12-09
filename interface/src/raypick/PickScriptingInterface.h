@@ -74,6 +74,7 @@ class ScriptValue;
  *
  * @property {number} perFrameTimeBudget - The maximum time, in microseconds, to spend per frame updating pick results.
  * @property {number} handLaserDelay - The delay, in seconds, applied to the hand lasers to smooth their movement.
+ * @property {number} handLaserPassive - If <code>true</code>, the hand lasers will always show passively, without needing the trigger to be pulled.
  */
 
 class PickScriptingInterface : public QObject, public Dependency {
@@ -108,6 +109,7 @@ class PickScriptingInterface : public QObject, public Dependency {
     Q_PROPERTY(unsigned int INTERSECTED_HUD READ getIntersectedHud CONSTANT)
     Q_PROPERTY(unsigned int perFrameTimeBudget READ getPerFrameTimeBudget WRITE setPerFrameTimeBudget)
     Q_PROPERTY(float handLaserDelay READ getHandLaserDelay WRITE setHandLaserDelay)
+    Q_PROPERTY(bool handLaserPassive READ getHandLaserPassive WRITE setHandLaserPassive)
     SINGLETON_DEPENDENCY
 
 public:
@@ -310,6 +312,9 @@ public:
     float getHandLaserDelay() const;
     void setHandLaserDelay(float delay);
 
+    bool getHandLaserPassive() const;
+    void setHandLaserPassive(bool passive);
+
 public slots:
 
     static constexpr unsigned int getPickBypassIgnore() { return PickFilter::getBitMask(PickFilter::FlagBit::PICK_BYPASS_IGNORE); }
@@ -478,6 +483,7 @@ public slots:
 
 signals:
     void handLaserDelayChanged(float delay);
+    void handLaserPassiveChanged(bool passive);
 
 protected:
     static std::shared_ptr<PickQuery> buildRayPick(const QVariantMap& properties);
@@ -489,6 +495,7 @@ protected:
 
 private:
     Setting::Handle<float> _handLaserDelaySetting { "handLaserDelay", 0.35f };
+    Setting::Handle<bool> _handLaserPassiveSetting { "handLaserPassive", false };
 };
 
 #endif // hifi_PickScriptingInterface_h
