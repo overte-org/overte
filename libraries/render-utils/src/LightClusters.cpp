@@ -536,8 +536,6 @@ LightClusteringPass::LightClusteringPass() {
 
 
 void LightClusteringPass::configure(const Config& config) {
-    _localLightingEnabled = config.localLightingEnabled;
-
     if (_lightClusters) {
         _lightClusters->setRangeNearFar(config.rangeNear, config.rangeFar);
         _lightClusters->setDimensions(glm::uvec3(config.dimX, config.dimY, config.dimZ));
@@ -553,6 +551,7 @@ void LightClusteringPass::run(const render::RenderContextPointer& renderContext,
     auto lightingModel = inputs.get1();
     auto lightFrame = inputs.get2();
     auto surfaceGeometryFramebuffer = inputs.get3();
+    auto localLightingEnabled = lightingModel->isLocalLightingEnabled();
 
     // Only clear the light frame on forward where the sun and ambient lights
     // are always set up properly, regardles of the light clustering. If we clear
@@ -560,7 +559,7 @@ void LightClusteringPass::run(const render::RenderContextPointer& renderContext,
     // to their defaults, while shadows follow the correct zone-specified key light settings.
     if (
         renderContext->args->_renderMethod == render::Args::FORWARD &&
-        !_localLightingEnabled
+        !localLightingEnabled
     ) {
         // TODO: I think this should work. The clusters aren't updated
         // if we enter here, and clearing lightFrame means we won't draw
@@ -585,8 +584,8 @@ void LightClusteringPass::run(const render::RenderContextPointer& renderContext,
     _lightClusters->updateLightStage(lightStage);
     _lightClusters->updateLightFrame(
         lightFrame,
-        lightingModel->isPointLightEnabled() && _localLightingEnabled,
-        lightingModel->isSpotLightEnabled() && _localLightingEnabled
+        lightingModel->isPointLightEnabled() && localLightingEnabled,
+        lightingModel->isSpotLightEnabled() && localLightingEnabled
     );
     
     auto clusteringStats = _lightClusters->updateClusters();
@@ -668,7 +667,7 @@ void DebugLightClusters::run(const render::RenderContextPointer& renderContext, 
     auto linearDepthTarget = inputs.get2();
     auto lightClusters = inputs.get3();
 
-    if (!lightClusters->_localLightingEnabled) {
+    if (!lightingModel->isLocalLightingEnabled()) {
         return;
     }
 
