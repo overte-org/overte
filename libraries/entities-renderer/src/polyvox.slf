@@ -22,11 +22,11 @@
     <@include graphics/Material.slh@>
     <@include render-utils/ShaderConstants.h@>
     <@include entities-renderer/ShaderConstants.h@>
+    <@include CullFace.slh@>
 
     <@if not HIFI_USE_FORWARD@>
         <@include DeferredBufferWrite.slh@>
     <@else@>
-        <@include CullFace.slh@>
         <@include DefaultMaterials.slh@>
 
         <@include GlobalLight.slh@>
@@ -90,6 +90,7 @@ void main(void) {
     vec4 yzDiffuse = texture(zMap, vec2(inPositionZ, -inPositionY));
 
     vec3 normalMS = normalize(cross(dFdy(_positionMS.xyz), dFdx(_positionMS.xyz)));
+    vec3 fragNormalWS = evalFrontOrBackFaceNormal(normalize(_normalWS));
     vec3 xyDiffuseScaled = xyDiffuse.rgb * abs(normalMS.z);
     vec3 xzDiffuseScaled = xzDiffuse.rgb * abs(normalMS.y);
     vec3 yzDiffuseScaled = yzDiffuse.rgb * abs(normalMS.x);
@@ -98,7 +99,7 @@ void main(void) {
     <@if not HIFI_USE_FORWARD@>
         packDeferredFragment(
             _prevPositionCS,
-            normalize(_normalWS),
+            fragNormalWS,
             1.0,
             diffuse,
             DEFAULT_ROUGHNESS,
@@ -116,7 +117,6 @@ void main(void) {
 
         TransformCamera cam = getTransformCamera();
 
-        vec3 fragNormalWS = evalFrontOrBackFaceNormal(normalize(_normalWS));
         vec3 fragPositionWS = _positionWS.xyz;
         vec3 fragToEyeWS = cam._viewInverse[3].xyz - fragPositionWS;
         vec3 fragToEyeDirWS = normalize(fragToEyeWS);
