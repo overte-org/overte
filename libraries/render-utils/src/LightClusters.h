@@ -111,8 +111,6 @@ public:
 
     bool _clusterResourcesInvalid { true };
     void updateClusterResource();
-
-    bool _localLightingEnabled { true };
 };
 
 using LightClustersPointer = std::shared_ptr<LightClusters>;
@@ -129,7 +127,6 @@ class LightClusteringPassConfig : public render::Job::Config {
     Q_PROPERTY(int dimZ MEMBER dimZ NOTIFY dirty)
     
     Q_PROPERTY(bool freeze MEMBER freeze NOTIFY dirty)
-    Q_PROPERTY(bool localLightingEnabled MEMBER localLightingEnabled NOTIFY dirty)
 
     Q_PROPERTY(int numClusteredLightReferences MEMBER numClusteredLightReferences NOTIFY dirty)
     Q_PROPERTY(int numInputLights MEMBER numInputLights NOTIFY dirty)
@@ -150,7 +147,6 @@ public:
 
 
     bool freeze{ false };
-    bool localLightingEnabled { true };
 
     int numClusteredLightReferences { 0 };
     int numInputLights { 0 };
@@ -159,8 +155,6 @@ public:
     void setNumClusteredLightReferences(int numRefs) { numClusteredLightReferences = numRefs; }
     void setNumInputLights(int numLights) { numInputLights = numLights; }
     void setNumClusteredLights(int numLights) { numClusteredLights = numLights; }
-
-    void setLocalLightingEnabled(bool enabled) { localLightingEnabled = enabled; emit dirty(); }
 
     int numSceneLights { 0 };
     int numFreeSceneLights { 0 };
@@ -187,7 +181,6 @@ public:
 protected:
     LightClustersPointer _lightClusters;
     bool _freeze;
-    bool _localLightingEnabled;
 };
 
 

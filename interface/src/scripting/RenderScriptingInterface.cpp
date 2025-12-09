@@ -20,7 +20,6 @@
 #include "ScreenName.h"
 
 #include <procedural/Procedural.h>
-#include "LightClusters.h"
 
 STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
@@ -247,36 +246,6 @@ void RenderScriptingInterface::forceAmbientOcclusionEnabled(bool enabled) {
     });
 }
 
-static void recursivelyUpdateLocalLightingSetting(const QString& parentTaskName, bool enabled, int depth = -1) {
-    auto renderConfig = qApp->getRenderEngine()->getConfiguration();
-
-    if (depth == -1) {
-        auto secondaryLightPassConfig = renderConfig->getConfig<LightClusteringPass>("RenderSecondView.LightClustering");
-        if (secondaryLightPassConfig) {
-            secondaryLightPassConfig->setLocalLightingEnabled(enabled);
-        }
-
-        auto mainLightPassConfig = renderConfig->getConfig<LightClusteringPass>("RenderMainView.LightClustering");
-        if (mainLightPassConfig) {
-            mainLightPassConfig->setLocalLightingEnabled(enabled);
-            qDebug() << "RenderMainView.LightClustering" << mainLightPassConfig->localLightingEnabled;
-        }
-
-        recursivelyUpdateLocalLightingSetting("RenderMainView", enabled, depth + 1);
-    } else if (depth == RenderMirrorTask::MAX_MIRROR_DEPTH) {
-        return;
-    }
-
-    for (size_t mirrorIndex = 0; mirrorIndex < RenderMirrorTask::MAX_MIRRORS_PER_LEVEL; mirrorIndex++) {
-        std::string mirrorTaskString = parentTaskName.toStdString() + ".RenderMirrorView" + std::to_string(mirrorIndex) + "Depth" + std::to_string(depth);
-        auto lightPassConfig = renderConfig->getConfig<LightClusteringPass>(mirrorTaskString + ".LightClustering");
-        if (lightPassConfig) {
-            lightPassConfig->setLocalLightingEnabled(enabled);
-            recursivelyUpdateLocalLightingSetting(QString::fromStdString(mirrorTaskString), enabled, depth + 1);
-        }
-    }
-}
-
 bool RenderScriptingInterface::getLocalLightingEnabled() const {
     return _localLightingEnabled;
 }
@@ -294,7 +263,7 @@ void RenderScriptingInterface::forceLocalLightingEnabled(bool enabled) {
         _localLightingSetting.set(enabled);
         Menu::getInstance()->setIsOptionChecked(MenuOption::LocalLights, enabled);
 
-        recursivelyUpdateLocalLightingSetting("", enabled);
+        recursivelyUpdateLightingModel("", [enabled] (MakeLightingModelConfig *config) { config->setLocalLighting(enabled); });
     });
 }
 
