@@ -13,9 +13,11 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
+#include "AboutUtil.h"
 #include "Application.h"
 
 #include <QtCore/QCommandLineParser>
+#include <cstdlib>
 
 #include <input-plugins/InputPlugin.h>
 #include <display-plugins/DisplayPlugin.h>
@@ -74,17 +76,68 @@ void Application::initializePluginManager(const QCommandLineParser& parser) {
         PluginManager::getInstance()->disableInputs(disabledInputs);
     }
 
-    if (parser.isSet("useExperimentalXR")) {
-        auto pluginNames = QStringList();
-        pluginNames.push_back("OpenVR (Vive)");
-        PluginManager::getInstance()->disableDisplays(pluginNames);
-        PluginManager::getInstance()->disableInputs(pluginNames);
+    QStringList disabledPlugins = {};
+
+    if (parser.isSet("preferredDisplay")) {
+        auto value = parser.value("preferredDisplay");
+
+        if (QString::compare(value, "openxr", Qt::CaseInsensitive) == 0) {
+            disabledPlugins.push_back("OpenVR (Vive)");
+            _previousPreferredDisplayMode.set(1);
+        } else if (QString::compare(value, "openvr", Qt::CaseInsensitive) == 0) {
+            disabledPlugins.push_back("OpenXR");
+            _previousPreferredDisplayMode.set(2);
+        } else {
+            if (QString::compare(value, "desktop", Qt::CaseInsensitive) != 0) {
+                qWarning() << "preferredDisplay has unknown value" << value;
+            }
+
+            disabledPlugins.push_back("OpenVR (Vive)");
+            disabledPlugins.push_back("OpenXR");
+            _previousPreferredDisplayMode.set(0);
+        }
+    } else if (parser.isSet("useExperimentalXR")) {
+        disabledPlugins.push_back("OpenVR (Vive)");
     } else {
-        auto pluginNames = QStringList();
-        pluginNames.push_back("OpenXR");
-        PluginManager::getInstance()->disableDisplays(pluginNames);
-        PluginManager::getInstance()->disableInputs(pluginNames);
+        const QStringList choices = {
+            tr("Desktop"),
+            tr("OpenXR"),
+            tr("OpenVR (compatibility)"),
+        };
+
+        bool ok = true;
+        auto choice = QInputDialog::getItem(
+            nullptr,
+            tr("%1 - Display mode").arg(AboutUtil::getInstance()->getPlatformName()),
+            tr("Choose a display mode to start with:"),
+            choices,
+            _previousPreferredDisplayMode.get(0),
+            false,
+            &ok
+        );
+
+        if (!ok) {
+            qInfo() << "User canceled preferred display mode dialog, quitting game";
+            std::exit(EXIT_SUCCESS);
+        }
+
+        // We check against choices[i] instead of raw strings,
+        // since the dialog options can be translated.
+        if (choice == choices[0] /* Desktop */) {
+            disabledPlugins.push_back("OpenVR (Vive)");
+            disabledPlugins.push_back("OpenXR");
+            _previousPreferredDisplayMode.set(0);
+        } else if (choice == choices[1] /* OpenXR */) {
+            disabledPlugins.push_back("OpenVR (Vive)");
+            _previousPreferredDisplayMode.set(1);
+        } else if (choice == choices[2] /* OpenVR */) {
+            disabledPlugins.push_back("OpenXR");
+            _previousPreferredDisplayMode.set(2);
+        }
     }
+
+    PluginManager::getInstance()->disableDisplays(disabledPlugins);
+    PluginManager::getInstance()->disableInputs(disabledPlugins);
 }
 
 void Application::shutdownPlugins() {}
