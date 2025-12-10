@@ -224,6 +224,7 @@ Application::Application(
     _useDiscordPresence("useDiscordPresence", true),
     _firstRun(Settings::firstRun, true),
     _previousScriptLocation("LastScriptLocation", DESKTOP_LOCATION),
+    _previousPreferredDisplayMode("previousPreferredDisplayMode", 0),
     // UI
     _hmdTabletScale("hmdTabletScale", DEFAULT_HMD_TABLET_SCALE_PERCENT),
     _desktopTabletScale("desktopTabletScale", DEFAULT_DESKTOP_TABLET_SCALE_PERCENT),
