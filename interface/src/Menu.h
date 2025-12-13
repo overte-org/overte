@@ -207,6 +207,7 @@ namespace MenuOption {
     const QString ShowOtherLookAtVectors = "Show Other Eye Vectors";
     const QString ShowOtherLookAtTarget = "Show Other Look-At Target";
     const QString EnableLookAtSnapping = "Enable LookAt Snapping";
+    const QString HideHeadMesh = "Hide Head Mesh";
     const QString ShowRealtimeEntityStats = "Show Realtime Entity Stats";
     const QString SimulateEyeTracking = "Simulate";
     const QString SMIEyeTracking = "SMI Eye Tracking";
