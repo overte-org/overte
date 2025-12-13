@@ -101,7 +101,7 @@ void Application::initializePluginManager(const QCommandLineParser& parser) {
     } else {
         const QStringList choices = {
             tr("Desktop"),
-            tr("OpenXR"),
+            tr("OpenXR (experimental)"),
             tr("OpenVR (compatibility)"),
         };
 
