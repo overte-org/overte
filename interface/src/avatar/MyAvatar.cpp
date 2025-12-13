@@ -205,6 +205,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     _eyeContactTarget(LEFT_EYE),
     _realWorldFieldOfView("realWorldFieldOfView",
                           DEFAULT_REAL_WORLD_FIELD_OF_VIEW_DEGREES),
+    _headClipping("headClipping", true),
     _useAdvancedMovementControls("advancedMovementForHandControllersIsChecked", true),
     _showPlayArea("showPlayArea", true),
     _smoothOrientationTimer(std::numeric_limits<float>::max()),
