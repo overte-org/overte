@@ -39,7 +39,6 @@
 #include "../ScriptEngine.h"
 #include "../ScriptManager.h"
 #include "../ScriptException.h"
-//#include "V8Types.h"
 
 #include "ArrayBufferClass.h"
 
@@ -75,6 +74,16 @@ public:  // construction
     //        properly ensure they are only called on the correct thread
 
 public:  // ScriptEngine implementation
+    class ScriptEngineScopeGuardV8 final : public ScriptEngineScopeGuard {
+    public:
+        explicit ScriptEngineScopeGuardV8(v8::Isolate *isolate) : _locker(isolate), _isolateScope(isolate) {};
+        ~ScriptEngineScopeGuardV8() override = default;
+    private:
+        v8::Locker _locker;
+        v8::Isolate::Scope _isolateScope;
+    };
+
+    std::unique_ptr<ScriptEngineScopeGuard> getScopeGuard() override;
     virtual void abortEvaluation() override;
     virtual void clearExceptions() override;
     virtual ScriptContext* currentContext() const override;

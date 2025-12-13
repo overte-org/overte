@@ -1678,17 +1678,17 @@ protected:
     qint64 _lastUpdate;
 
     QString _fileNameString;
-    Quat _quatLibrary;
-    Vec3 _vec3Library;
-    Mat4 _mat4Library;
-    ScriptUUID _uuidLibrary;
-    ConsoleScriptingInterface _consoleScriptingInterface;
+    std::shared_ptr<Quat> _quatLibrary;
+    std::shared_ptr<Vec3> _vec3Library;
+    std::shared_ptr<Mat4> _mat4Library;
+    std::shared_ptr<ScriptUUID> _uuidLibrary;
+    std::shared_ptr<ConsoleScriptingInterface> _consoleScriptingInterface;
     std::atomic<bool> _isUserLoaded { false };
     bool _isReloading { false };
 
     std::atomic<bool> _quitWhenFinished;
 
-    AssetScriptingInterface* _assetScriptingInterface;
+    std::shared_ptr<AssetScriptingInterface> _assetScriptingInterface;
 
     std::function<bool()> _emitScriptUpdates{ []() { return true; }  };
 

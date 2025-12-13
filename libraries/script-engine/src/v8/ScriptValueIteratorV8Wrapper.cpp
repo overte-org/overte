@@ -17,8 +17,7 @@
 
 V8ScriptValueIterator::V8ScriptValueIterator(ScriptEngineV8* engine, v8::Local<v8::Value> object) : _engine(engine)  {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     _context.Reset(isolate, _engine->getContext());
     auto context = _context.Get(isolate);
@@ -33,8 +32,7 @@ V8ScriptValueIterator::V8ScriptValueIterator(ScriptEngineV8* engine, v8::Local<v
 
 V8ScriptValueIterator::~V8ScriptValueIterator() {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     _propertyNames.Reset();
     _object.Reset();
@@ -48,8 +46,7 @@ bool V8ScriptValueIterator::hasNext() const {
 QString V8ScriptValueIterator::name() const {
     Q_ASSERT(_currentIndex >= 0);
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = _context.Get(isolate);
     v8::Context::Scope contextScope(context);
@@ -69,8 +66,7 @@ void V8ScriptValueIterator::next() {
 V8ScriptValue V8ScriptValueIterator::value() {
     Q_ASSERT(_currentIndex >= 0);
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = _context.Get(isolate);
     v8::Context::Scope contextScope(context);

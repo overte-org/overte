@@ -470,49 +470,54 @@ void EntityScriptServer::resetEntitiesScriptEngine() {
     auto newManager = scriptManagerFactory(ScriptManager::ENTITY_SERVER_SCRIPT, NO_SCRIPT, engineName);
     auto newEngine = newManager->engine();
 
-    auto webSocketServerConstructorValue = newEngine->newFunction(WebSocketServerClass::constructor);
-    newEngine->globalObject().setProperty("WebSocketServer", webSocketServerConstructorValue);
+    {
+        auto guard = newEngine->getScopeGuard();
+        {
+            auto webSocketServerConstructorValue = newEngine->newFunction(WebSocketServerClass::constructor);
+            newEngine->globalObject().setProperty("WebSocketServer", webSocketServerConstructorValue);
+        }
 
-    newEngine->registerGlobalObject("SoundCache", DependencyManager::get<SoundCacheScriptingInterface>().data());
-    newEngine->registerGlobalObject("AvatarList", DependencyManager::get<AvatarHashMap>().data());
+        newEngine->registerGlobalObject("SoundCache", DependencyManager::get<SoundCacheScriptingInterface>().data());
+        newEngine->registerGlobalObject("AvatarList", DependencyManager::get<AvatarHashMap>().data());
 
-    // connect this script engines printedMessage signal to the global ScriptEngines these various messages
-    auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
-    connect(newManager.get(), &ScriptManager::printedMessage, scriptEngines, &ScriptEngines::onPrintedMessage);
-    connect(newManager.get(), &ScriptManager::errorMessage, scriptEngines, &ScriptEngines::onErrorMessage);
-    connect(newManager.get(), &ScriptManager::warningMessage, scriptEngines, &ScriptEngines::onWarningMessage);
-    connect(newManager.get(), &ScriptManager::infoMessage, scriptEngines, &ScriptEngines::onInfoMessage);
+        // connect this script engines printedMessage signal to the global ScriptEngines these various messages
+        auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
+        connect(newManager.get(), &ScriptManager::printedMessage, scriptEngines, &ScriptEngines::onPrintedMessage);
+        connect(newManager.get(), &ScriptManager::errorMessage, scriptEngines, &ScriptEngines::onErrorMessage);
+        connect(newManager.get(), &ScriptManager::warningMessage, scriptEngines, &ScriptEngines::onWarningMessage);
+        connect(newManager.get(), &ScriptManager::infoMessage, scriptEngines, &ScriptEngines::onInfoMessage);
 
-    // Make script engine messages available through ScriptDiscoveryService
-    connect(newManager.get(), &ScriptManager::infoEntityMessage, scriptEngines, &ScriptEngines::infoEntityMessage);
-    connect(newManager.get(), &ScriptManager::printedEntityMessage, scriptEngines, &ScriptEngines::printedEntityMessage);
-    connect(newManager.get(), &ScriptManager::errorEntityMessage, scriptEngines, &ScriptEngines::errorEntityMessage);
-    connect(newManager.get(), &ScriptManager::warningEntityMessage, scriptEngines, &ScriptEngines::warningEntityMessage);
+        // Make script engine messages available through ScriptDiscoveryService
+        connect(newManager.get(), &ScriptManager::infoEntityMessage, scriptEngines, &ScriptEngines::infoEntityMessage);
+        connect(newManager.get(), &ScriptManager::printedEntityMessage, scriptEngines, &ScriptEngines::printedEntityMessage);
+        connect(newManager.get(), &ScriptManager::errorEntityMessage, scriptEngines, &ScriptEngines::errorEntityMessage);
+        connect(newManager.get(), &ScriptManager::warningEntityMessage, scriptEngines, &ScriptEngines::warningEntityMessage);
 
-    connect(newManager.get(), &ScriptManager::infoEntityMessage,
-            [this](const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID) {
-                addLogEntry(message, fileName, lineNumber, entityID, ScriptMessage::Severity::SEVERITY_INFO);
-            });
-    connect(newManager.get(), &ScriptManager::printedEntityMessage,
-            [this](const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID) {
-                addLogEntry(message, fileName, lineNumber, entityID, ScriptMessage::Severity::SEVERITY_PRINT);
-            });
-    connect(newManager.get(), &ScriptManager::errorEntityMessage,
-            [this](const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID) {
-                addLogEntry(message, fileName, lineNumber, entityID, ScriptMessage::Severity::SEVERITY_ERROR);
-            });
-    connect(newManager.get(), &ScriptManager::warningEntityMessage,
-            [this](const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID) {
-                addLogEntry(message, fileName, lineNumber, entityID, ScriptMessage::Severity::SEVERITY_WARNING);
-            });
+        connect(newManager.get(), &ScriptManager::infoEntityMessage,
+                [this](const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID) {
+                    addLogEntry(message, fileName, lineNumber, entityID, ScriptMessage::Severity::SEVERITY_INFO);
+                });
+        connect(newManager.get(), &ScriptManager::printedEntityMessage,
+                [this](const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID) {
+                    addLogEntry(message, fileName, lineNumber, entityID, ScriptMessage::Severity::SEVERITY_PRINT);
+                });
+        connect(newManager.get(), &ScriptManager::errorEntityMessage,
+                [this](const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID) {
+                    addLogEntry(message, fileName, lineNumber, entityID, ScriptMessage::Severity::SEVERITY_ERROR);
+                });
+        connect(newManager.get(), &ScriptManager::warningEntityMessage,
+                [this](const QString& message, const QString& fileName, int lineNumber, const EntityItemID& entityID) {
+                    addLogEntry(message, fileName, lineNumber, entityID, ScriptMessage::Severity::SEVERITY_WARNING);
+                });
 
-    connect(newManager.get(), &ScriptManager::update, this, [this] {
-        _entityViewer.queryOctree();
-        _entityViewer.getTree()->preUpdate();
-        _entityViewer.getTree()->update();
-    });
+        connect(newManager.get(), &ScriptManager::update, this, [this] {
+            _entityViewer.queryOctree();
+            _entityViewer.getTree()->preUpdate();
+            _entityViewer.getTree()->update();
+        });
 
-    scriptEngines->runScriptInitializers(newManager);
+        scriptEngines->runScriptInitializers(newManager);
+    }
     newManager->runInThread();
     std::shared_ptr<EntitiesScriptEngineProvider> newEngineSP = newManager;
     // On the entity script server, these are the same

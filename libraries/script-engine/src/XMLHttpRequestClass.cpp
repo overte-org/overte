@@ -219,9 +219,10 @@ void XMLHttpRequestClass::requestFinished() {
 
     if (_errorCode == QNetworkReply::NoError) {
         _rawResponseData.append(_reply->readAll());
-
+        auto scopeGuard = _engine->getScopeGuard();
         if (_responseType == "json") {
             // V8TODO: V8 JSON parser needs to be used instead
+            // V8TODO: make sure this always happens on script engine thread on script engines that have a script manager
             _responseData = _engine->evaluate("(" + QString(_rawResponseData.data()) + ")");
             if (_responseData.isError()) {
                 _engine->clearExceptions();

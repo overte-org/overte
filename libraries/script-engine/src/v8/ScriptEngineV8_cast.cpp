@@ -190,8 +190,7 @@ void ScriptEngineV8::registerSystemTypes() {
 }
 
 int ScriptEngineV8::computeCastPenalty(const V8ScriptValue& v8Val, int destTypeId) {
-    v8::Locker locker(_v8Isolate);
-    v8::Isolate::Scope isolateScope(_v8Isolate);
+    Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     v8::Local<v8::Context> context = getContext();
     v8::Context::Scope contextScope(context);
@@ -289,8 +288,7 @@ int ScriptEngineV8::computeCastPenalty(const V8ScriptValue& v8Val, int destTypeI
 }
 
 bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& dest, int destTypeId) {
-    v8::Locker locker(_v8Isolate);
-    v8::Isolate::Scope isolateScope(_v8Isolate);
+    Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     v8::Local<v8::Context> context = getContext();
     v8::Context::Scope contextScope(context);
@@ -612,8 +610,7 @@ bool ScriptEngineV8::convertJSObjectToVariant(v8::Local<v8::Object> object, QVar
 }
 
 QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
-    v8::Locker locker(_v8Isolate);
-    v8::Isolate::Scope isolateScope(_v8Isolate);
+    Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     v8::Local<v8::Context> context = getContext();
     v8::Context::Scope contextScope(context);
@@ -658,8 +655,7 @@ QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
 }
 
 V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
-    v8::Locker locker(_v8Isolate);
-    v8::Isolate::Scope isolateScope(_v8Isolate);
+    Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     v8::Local<v8::Context> context = getContext();
     v8::Context::Scope contextScope(context);

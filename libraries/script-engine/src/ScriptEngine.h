@@ -187,6 +187,29 @@ public:
     Q_DECLARE_FLAGS(QObjectWrapOptions, QObjectWrapOption);
 
 public:
+
+    /**
+     * @brief Class used as a base for script engine-specific thread safety guards
+     *
+     */
+    class ScriptEngineScopeGuard {
+    protected:
+        ScriptEngineScopeGuard() = default;
+    public:
+        virtual ~ScriptEngineScopeGuard() = default;
+    };
+
+    /**
+     * @brief Creates a thread safety scope guard
+     *
+     * A scope guard needs to be created before any script engine access and destroyed afterwards.
+     * This function is thread safe, if a scope guard is being created while another thread is using the script engine,
+     * function will block until the scope guard on another thread is destroyed.
+     *
+     * @return Smart pointer to newly created scope guard
+     */
+    virtual std::unique_ptr<ScriptEngineScopeGuard> getScopeGuard() = 0;
+
     /**
      * @brief Stops the currently running script
      *
