@@ -356,11 +356,6 @@ std::string Cache::Pipeline::getStridesKey() const {
     return { key_buffer };
 }
 
-std::string gpu::State::getKey() const {
-    QByteArray data((const char*)&_values, sizeof(Data));
-    return data.toBase64().toStdString();
-}
-
 // VKTODO: use binary key if performance with text key is not good enough
 std::string Cache::Pipeline::getKey() const {
     const auto framebuffer = gpu::acquire(this->framebuffer);

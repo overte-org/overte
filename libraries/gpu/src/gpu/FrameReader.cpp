@@ -253,6 +253,7 @@ void Deserializer::readBuffers(const json& buffersNode) {
         if (offset + size > mappedSize) {
             throw std::runtime_error("read buffer error");
         }
+        // VKTODO: Buffer usage needs to be serialized too. Having it `gpu::Buffer::AllFlags`, will affect performance on GPU frame player and might yield incorrect GPU profiling results there.
         buffers.push_back(std::make_shared<Buffer>(gpu::Buffer::AllFlags, size, mapped + offset));
         bufferOffsets[buffers.back()] = offset;
         offset += size;

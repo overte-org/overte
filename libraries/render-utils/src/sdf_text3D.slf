@@ -58,7 +58,7 @@ INPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 #define _texCoord0 _texCoord01.xy
 #define _texCoord1 _texCoord01.zw
 // we're reusing the fade texcoord locations here:
-FLAT_INPUT(RENDER_UTILS_ATTR_FADE1, vec4, _glyphBounds); // we're reusing the fade texcoord locations here
+FLAT_INPUT(RENDER_UTILS_ATTR_FADE1, vec4, _glyphBounds);
 FLAT_INPUT(RENDER_UTILS_ATTR_FADE2, float, _isTofu);
 
 <@if HIFI_USE_MIRROR@>

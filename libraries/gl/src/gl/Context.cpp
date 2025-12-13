@@ -126,7 +126,7 @@ void Context::clear() {
     glClearColor(0, 0, 0, 1);
     QSize windowSize = _window->size() * _window->devicePixelRatio();
     glViewport(0, 0, windowSize.width(), windowSize.height());
-    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);// VKTODO
+    glClear(GL_COLOR_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     swapBuffers();
 }
 

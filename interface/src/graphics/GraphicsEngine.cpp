@@ -28,7 +28,9 @@
 #include <gpu/Batch.h>
 #include <gpu/Context.h>
 #include <gpu/gl/GLBackend.h>
+#ifndef USE_GL
 #include <gpu/vk/VKBackend.h>
+#endif
 #include <display-plugins/DisplayPlugin.h>
 
 #include <display-plugins/CompositorHelper.h>

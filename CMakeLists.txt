@@ -159,7 +159,8 @@ elseif (OVERTE_RENDERING_BACKEND STREQUAL "OpenGL")
     set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gl)
 elseif (OVERTE_RENDERING_BACKEND STREQUAL "Vulkan")
     add_definitions(-DGPU_POINTER_STORAGE_RAW)
-    set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gl)
+    # TODO: remove dependencies on gl libraries for Vulkan builds.
+    set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gl gpu-vk vk)
     # Vulkan is the default rendering backend, no need to set any flags.
 else()
     message(FATAL_ERROR "Invalid OVERTE_RENDERING_BACKEND set. Expected 'GLES', 'OpenGL', or 'Vulkan'. Got '${OVERTE_RENDERING_BACKEND}'")

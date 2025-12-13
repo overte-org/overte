@@ -31,13 +31,11 @@ class RenderThread : public GenericThread {
 public:
     QWindow* _window{ nullptr };
 
-    vks::Context& _vkcontext{ vks::Context::get() };
 
 #ifdef USE_GL
     gl::Context _context;
 #else
-
-    //VkSurfaceKHR _surface;
+    vks::Context& _vkcontext{ vks::Context::get() };
     VkRenderPass _renderPass{VK_NULL_HANDLE};
     VulkanSwapChain _swapchain;
     VkSemaphore acquireComplete, renderComplete;

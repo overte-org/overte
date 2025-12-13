@@ -33,8 +33,7 @@
 #include "VKShared.h"
 #include "VKTexture.h"
 #include "VKPipelineCache.h"
-// VKTODO: how to include this?
-#include "../../../../render-utils/src/render-utils/ShaderConstants.h"
+#include <render-utils/ShaderConstants.h>
 #include "shared/FileUtils.h"
 
 #define FORCE_STRICT_TEXTURE 1
@@ -284,6 +283,8 @@ void VKBackend::render(const Batch& batch) {
         continue;
     }*/
 
+    cmdBeginLabel(commandBuffer, "batch:" + batch.getName(), glm::vec4{ 1, 1, 0, 1 });
+
     {
         PROFILE_RANGE(gpu_vk_detail, "Transfer");
         renderPassTransfer(batch);
@@ -331,8 +332,6 @@ void VKBackend::render(const Batch& batch) {
     }
 
     cmdEndLabel(commandBuffer);
-    // Restore the saved stereo state for the next batch
-    // _stereo._enable = savedStereo;
 }
 
 void VKBackend::setDrawCommandBuffer(VkCommandBuffer commandBuffer) {
@@ -744,11 +743,9 @@ void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
             && (vertexReflection.validUniformBuffer(i) || fragmentReflection.validUniformBuffer(i))) {
             // VKTODO: move vulkan buffer creation to the transfer parts and aggregate several buffers together maybe?
             VkDescriptorBufferInfo bufferInfo{};
-            if (_uniform._buffers[i].buffer) {
-                VKBuffer * buffer = syncGPUObject(_uniform._buffers[i].buffer);
-                Q_ASSERT(buffer);
-                bufferInfo.buffer = buffer->buffer;
-            }
+            VKBuffer * buffer = syncGPUObject(_uniform._buffers[i].buffer);
+            Q_ASSERT(buffer);
+            bufferInfo.buffer = buffer->buffer;
             bufferInfo.offset = _uniform._buffers[i].offset;
             bufferInfo.range = _uniform._buffers[i].size;
             bufferInfos.push_back(bufferInfo);
@@ -777,8 +774,8 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
 
     std::vector<VkWriteDescriptorSet> sets;
     std::vector<VkDescriptorImageInfo> imageInfos;
-    sets.reserve(_uniform._buffers.size());
-    imageInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
+    sets.reserve(_resource._textures.size());
+    imageInfos.reserve(_resource._textures.size()); // This is to avoid vector reallocation and changing pointer adresses
     for (size_t i = 0; i < _resource._textures.size(); i++) {
         if (_resource._textures[i].texture && (vertexReflection.validTexture(i) || fragmentReflection.validTexture(i))) {
             // VKTODO: move vulkan texture creation to the transfer parts
@@ -852,8 +849,8 @@ void VKBackend::updateVkDescriptorWriteSetsStorage(VkDescriptorSet target) {
 
     std::vector<VkWriteDescriptorSet> sets;
     std::vector<VkDescriptorBufferInfo> bufferInfos;
-    sets.reserve(_uniform._buffers.size());
-    bufferInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
+    sets.reserve(_resource._buffers.size());
+    bufferInfos.reserve(_resource._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
     for (size_t i = 0; i < _resource._buffers.size(); i++) {
         if ((_resource._buffers[i].buffer)
             && (vertexReflection.validResourceBuffer(i) || fragmentReflection.validResourceBuffer(i))) {
@@ -1175,6 +1172,7 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
 
 void VKBackend::renderPassDraw(const Batch& batch) {
     _currentDraw = -1;
+    bool renderpassActive = false;
     _transform._camerasItr = _transform._cameraOffsets.begin();
     const size_t numCommands = batch.getCommands().size();
     const Batch::Commands::value_type* command = batch.getCommands().data();
@@ -1279,6 +1277,21 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             (this->*(call))(batch, *offset);
             break;
         }
+        case Batch::COMMAND_setFramebuffer: {
+            if (renderpassActive) {
+                ::vks::debugutils::cmdEndLabel(_currentCommandBuffer);
+            }
+            const auto& framebuffer = batch._framebuffers.get(batch._params[*offset]._uint);
+            if (framebuffer) {
+                ::vks::debugutils::cmdBeginLabel(_currentCommandBuffer, "framebuffer:" + framebuffer->getName(), vec4{ 1, 0, 1, 1 });
+            } else {
+                ::vks::debugutils::cmdBeginLabel(_currentCommandBuffer, "framebuffer: NULL", vec4{ 1, 0, 1, 1 });
+            }
+            renderpassActive = true;
+            CommandCall call = _commandCalls[(*command)];
+            (this->*(call))(batch, *offset);
+            break;
+        }
         default: {
             CommandCall call = _commandCalls[(*command)];
             (this->*(call))(batch, *offset);
@@ -1297,6 +1310,10 @@ void VKBackend::renderPassDraw(const Batch& batch) {
     _currentFramebuffer = nullptr;
     // VKTODO: which other stages should be reset here?
     resetInputStage();
+    if (renderpassActive) {
+        ::vks::debugutils::cmdEndLabel(_currentCommandBuffer);
+        renderpassActive = false;
+    }
 }
 
 void VKBackend::draw(VkPrimitiveTopology mode, uint32 numVertices, uint32 startVertex) {

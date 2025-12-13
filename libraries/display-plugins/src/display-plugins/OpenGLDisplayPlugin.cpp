@@ -28,6 +28,7 @@
 #include <GLMHelpers.h>
 
 #include <gl/QOpenGLContextWrapper.h>
+// VKTODO: Replace these with a header for a common class (for example GraphicsWidget) from which GLWidget and VKWidget would inherit.
 #ifdef USE_GL
 #include <gl/GLWidget.h>
 #else

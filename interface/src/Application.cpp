@@ -130,7 +130,9 @@
 #include "SpeechRecognizer.h"
 #endif
 #include "Util.h"
+#ifndef USE_GL
 #include "vk/VKWindow.h"
+#endif
 
 #if defined(Q_OS_WIN)
 #include "WindowsSystemInfo.h"
