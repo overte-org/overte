@@ -592,9 +592,9 @@ Menu::Menu() {
             avatar->setProperty("lookAtSnappingEnabled", isOptionChecked(MenuOption::EnableLookAtSnapping));
         });
 
-    action = addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::PreventHeadClipping, 0, true);
+    action = addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::HideHeadMesh, 0, true);
     connect(action, &QAction::triggered, [this, avatar] {
-        avatar->setProperty("preventHeadClipping", isOptionChecked(MenuOption::PreventHeadClipping));
+        avatar->setProperty("hideHeadMesh", isOptionChecked(MenuOption::HideHeadMesh));
     });
 
     addCheckableActionToQMenuAndActionHash(avatarDebugMenu, MenuOption::FixGaze, 0, false);

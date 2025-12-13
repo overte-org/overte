@@ -271,7 +271,7 @@ class MyAvatar : public Avatar {
      *     See also: <code>getUserRecenterModel</code> and <code>setUserRecenterModel</code>.</p>
      * @property {boolean} allowTeleporting - <code>true</code> if teleporting is enabled in the Interface settings,
      *     <code>false</code> if it isn't. <em>Read-only.</em>
-     * @property {boolean} preventHeadClipping - <code>true</code> will hide the avatar's head in first person; <code>false</code> will leave the head visible in first person, which may have visible near-Z clipping or obstruct the player's view.
+     * @property {boolean} hideHeadMesh - <code>true</code> will hide the avatar's head in first person; <code>false</code> will leave the head visible in first person, which may have visible near-Z clipping or obstruct the player's view.
      * @property {number} cameraBoomLength - The third-person camera distance. Limited to between 0.5 and 25. Below 0.5 the camera will be put into first-person mode. Changing this property has no effect unless the camera is already in third-person mode. See {@link Camera.mode}.
      *
      * @borrows Avatar.getDomainMinScale as getDomainMinScale
@@ -365,7 +365,7 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(bool characterControllerEnabled READ getCharacterControllerEnabled WRITE setCharacterControllerEnabled)
     Q_PROPERTY(bool useAdvancedMovementControls READ useAdvancedMovementControls WRITE setUseAdvancedMovementControls)
     Q_PROPERTY(bool showPlayArea READ getShowPlayArea WRITE setShowPlayArea)
-    Q_PROPERTY(bool preventHeadClipping MEMBER _preventHeadClipping)
+    Q_PROPERTY(bool hideHeadMesh READ getHideHeadMesh WRITE setHideHeadMesh)
 
     Q_PROPERTY(float yawSpeed MEMBER _yawSpeed)
     Q_PROPERTY(float hmdYawSpeed MEMBER _hmdYawSpeed)
@@ -621,10 +621,17 @@ public:
 
     /*@jsdoc
      * Sets whether the avatar's head should be hidden in first-person mode.
-     * @function MyAvatar.setHeadClippingEnabled
+     * @function MyAvatar.setHideHeadMesh
      * @param {boolean} enable - <code>true</code> will scale the avatar's head in first person to hide it; <code>false</code> will leave the head full and visible in first person, which may have visible near-Z clipping or obstruct the player's view.
      */
-    Q_INVOKABLE void setHeadClippingEnabled(bool enable) { _headClipping.set(enable); }
+    Q_INVOKABLE void setHideHeadMesh(bool enable) { _hideHeadMesh.set(enable); }
+
+    /*@jsdoc
+     * Gets whether the avatar's head mesh will be hidden in first person mode.
+     * @function MyAvatar.getHideHeadMesh
+     * @returns {boolean} <code>true</code> will scale the avatar's head in first person to hide it; <code>false</code> will leave the head full and visible in first person, which may have visible near-Z clipping or obstruct the player's view.
+     */
+    Q_INVOKABLE bool getHideHeadMesh() const { return _hideHeadMesh.get(); }
 
     /*@jsdoc
      * Gets the position in world coordinates of the point directly between your avatar's eyes assuming your avatar was in its
@@ -639,13 +646,6 @@ public:
     Q_INVOKABLE glm::vec3 getDefaultEyePosition() const;
 
     float getRealWorldFieldOfView() { return _realWorldFieldOfView.get(); }
-
-    /*@jsdoc
-     * Gets whether the avatar's head mesh will be hidden in first person mode.
-     * @function MyAvatar.getHeadClippingEnabled
-     * @returns {boolean} Whether head clipping is enabled.
-     */
-    Q_INVOKABLE bool getHeadClippingEnabled() const { return _headClipping.get(); }
 
     /*@jsdoc
      * Overrides the default avatar animations.
@@ -2625,10 +2625,9 @@ private:
     float _firstPersonSteadyHeadTimer { 0.0f };
     bool _pointAtActive { false };
     bool _isPointTargetValid { true };
-    bool _preventHeadClipping { true };
 
     Setting::Handle<float> _realWorldFieldOfView;
-    Setting::Handle<bool> _headClipping;
+    Setting::Handle<bool> _hideHeadMesh;
     Setting::Handle<bool> _useAdvancedMovementControls;
     Setting::Handle<bool> _showPlayArea;
 
