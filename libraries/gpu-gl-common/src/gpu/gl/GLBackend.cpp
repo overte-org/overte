@@ -155,7 +155,6 @@ void GLBackend::init() {
         GL_GET_INTEGER(UNIFORM_BUFFER_OFFSET_ALIGNMENT);
 
         GPUIdent* gpu = GPUIdent::getInstance(vendor, renderer);
-        unsigned int mem;
 
 // Do not try to get texture memory information on unsupported systems.
 #if defined(Q_OS_ANDROID) || defined(USE_GLES) || defined(Q_OS_DARWIN)
@@ -163,9 +162,8 @@ void GLBackend::init() {
         _videoCard = Unknown;
         _dedicatedMemory = (size_t)(gpu->getMemory()) * BYTES_PER_MIB;
         _totalMemory = _dedicatedMemory;
-#endif
-
-#if !defined(Q_OS_ANDROID) && !defined(USE_GLES) && !defined(Q_OS_DARWIN)
+#else
+        unsigned int mem;
         if (vendor.contains("NVIDIA") ) {
             qCDebug(gpugllogging) << "NVIDIA card detected";
 

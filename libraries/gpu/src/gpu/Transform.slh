@@ -138,7 +138,7 @@ TransformObject getTransformObject() {
 #ifdef GPU_VERTEX_SHADER
     _drawCallInfo = _inDrawCallInfo;
 #endif
-    int offset = 8 * _drawCallInfo.x;
+    int offset = 16 * _drawCallInfo.x;
     TransformObject object;
     object._model[0] = texelFetch(transformObjectBuffer, offset);
     object._model[1] = texelFetch(transformObjectBuffer, offset + 1);
@@ -149,6 +149,16 @@ TransformObject getTransformObject() {
     object._modelInverse[1] = texelFetch(transformObjectBuffer, offset + 5);
     object._modelInverse[2] = texelFetch(transformObjectBuffer, offset + 6);
     object._modelInverse[3] = texelFetch(transformObjectBuffer, offset + 7);
+
+    object._previousModel[0] = texelFetch(transformObjectBuffer, offset + 8);
+    object._previousModel[1] = texelFetch(transformObjectBuffer, offset + 9);
+    object._previousModel[2] = texelFetch(transformObjectBuffer, offset + 10);
+    object._previousModel[3] = texelFetch(transformObjectBuffer, offset + 11);
+
+    object._previousModelInverse[0] = texelFetch(transformObjectBuffer, offset + 12);
+    object._previousModelInverse[1] = texelFetch(transformObjectBuffer, offset + 13);
+    object._previousModelInverse[2] = texelFetch(transformObjectBuffer, offset + 14);
+    object._previousModelInverse[3] = texelFetch(transformObjectBuffer, offset + 15);
 
     return object;
 }

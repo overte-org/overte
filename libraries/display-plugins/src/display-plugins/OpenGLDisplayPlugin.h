@@ -88,7 +88,7 @@ public:
                                        GLsync* fenceSync) override;
 
     static void setExtraLinearToSRGBConversion(bool value) { _extraLinearToSRGBConversionSetting.set(value); }
-    static bool getExtraLinearToSRGBConversion() { return _extraLinearToSRGBConversionSetting.get(); };
+    static bool getExtraLinearToSRGBConversion() { return _extraLinearToSRGBConversionSetting.get(); }
 
 protected:
     friend class PresentThread;
@@ -207,4 +207,5 @@ protected:
 
 private:
     static Setting::Handle<bool> _extraLinearToSRGBConversionSetting;
+    static bool _hasSetSRGBConversion;
 };

@@ -17,11 +17,6 @@
 using namespace gpu;
 using namespace gpu::gl;
 
-#if defined(USE_GLES)
-#define GL_FRAMEBUFFER_SRGB GL_FRAMEBUFFER_SRGB_EXT
-#define glClearDepth glClearDepthf
-#endif
-
 void GLBackend::syncOutputStateCache() {
     GLint currentFBO;
     glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &currentFBO);
@@ -103,7 +98,7 @@ void GLBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
 
     bool restoreDepthMask = false;
     if (masks & Framebuffer::BUFFER_DEPTH) {
-        glClearDepth(depth);
+        glClearDepthf(depth);
         glmask |= GL_DEPTH_BUFFER_BIT;
         
         bool cacheDepthMask = _pipeline._stateCache.depthTest.getWriteMask();
