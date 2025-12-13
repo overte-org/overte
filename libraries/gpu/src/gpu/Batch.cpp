@@ -19,7 +19,9 @@
 
 #include "GPULogging.h"
 
-#define DEBUG_VALIDATE_BUFFER_USAGE
+// This can be enabled for checking if buffers have proper usage declared.
+// VKTODO: Add a CMake variable to enable this
+//#define DEBUG_VALIDATE_BUFFER_USAGE
 
 #if defined(NSIGHT_FOUND)
 #include "nvToolsExt.h"

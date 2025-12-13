@@ -31,7 +31,7 @@ OUTPUT(RENDER_UTILS_ATTR_POSITION_MS, vec2, _positionMS);
 OUTPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
 OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 // we're reusing the fade texcoord locations here:
-FLAT_OUTPUT(RENDER_UTILS_ATTR_FADE1, vec4, _glyphBounds); // we're reusing the fade texcoord locations here
+FLAT_OUTPUT(RENDER_UTILS_ATTR_FADE1, vec4, _glyphBounds);
 FLAT_OUTPUT(RENDER_UTILS_ATTR_FADE2, float, _isTofu);
 
 void main() {

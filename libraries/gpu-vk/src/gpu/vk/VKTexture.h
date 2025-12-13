@@ -16,9 +16,6 @@
 
 #include "VKShared.h"
 
-#include <gl/Config.h>
-#include <gl/GLHelpers.h>
-
 #include "VKBackend.h"
 
 

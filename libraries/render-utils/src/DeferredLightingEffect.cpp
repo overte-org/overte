@@ -255,7 +255,7 @@ graphics::MeshPointer DeferredLightingEffect::getSpotLightMesh() {
         parts.push_back(graphics::Mesh::Part(0, indices, 0, graphics::Mesh::LINE_STRIP)); // outline version
 
         
-        _spotLightMesh->setPartBuffer(gpu::BufferView(new gpu::Buffer(gpu::Buffer::VertexBuffer, parts.size() * sizeof(graphics::Mesh::Part), (gpu::Byte*) parts.data()), gpu::Element::PART_DRAWCALL));
+        _spotLightMesh->setPartBuffer(gpu::BufferView(new gpu::Buffer(gpu::Buffer::IndirectBuffer, parts.size() * sizeof(graphics::Mesh::Part), (gpu::Byte*) parts.data()), gpu::Element::PART_DRAWCALL));
     }
     return _spotLightMesh;
 }
