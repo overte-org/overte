@@ -54,8 +54,7 @@ public: // construction
     inline ScriptProgramV8Wrapper(ScriptEngineV8* engine, QString source, QString url) :
     _engine(engine), _source(source), _url(url), _value(_engine) {
         auto isolate = _engine->getIsolate();
-        v8::Locker locker(isolate);
-        v8::Isolate::Scope isolateScope(isolate);
+        Q_ASSERT(isolate->IsCurrent());
         v8::HandleScope handleScope(isolate);
         v8::Context::Scope contextScope(_engine->getContext());
         _value = V8ScriptProgram(engine, v8::Local<v8::Script>());

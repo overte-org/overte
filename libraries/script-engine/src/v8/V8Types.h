@@ -26,46 +26,46 @@ public:
     V8ScriptValueTemplate() = delete;
 
     V8ScriptValueTemplate(ScriptEngineV8 *engine, const v8::Local<T> value/*, V8ScriptValueTemplate::Ownership ownership*/) : _engine(engine) {
-        v8::Locker locker(_engine->getIsolate());
-        v8::Isolate::Scope isolateScope(_engine->getIsolate());
-        v8::HandleScope handleScope(_engine->getIsolate());
+        auto isolate = _engine->getIsolate();
+        Q_ASSERT(isolate->IsCurrent());
+        v8::HandleScope handleScope(isolate);
         v8::Context::Scope(_engine->getContext());
 #ifdef OVERTE_V8_MEMORY_DEBUG
         _engine->incrementScriptValueCounter();
 #endif
-        _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), value));
+        _value.reset(new v8::UniquePersistent<T>(isolate, value));
     };
 
     V8ScriptValueTemplate& operator= (const V8ScriptValueTemplate &source) {
-        v8::Locker locker(_engine->getIsolate());
-        v8::Isolate::Scope isolateScope(_engine->getIsolate());
-        v8::HandleScope handleScope(_engine->getIsolate());
+        auto isolate = _engine->getIsolate();
+        Q_ASSERT(isolate->IsCurrent());
+        v8::HandleScope handleScope(isolate);
         v8::Context::Scope(_engine->getContext());
         _engine = source.getEngine();
-        _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), source.constGet()));
+        _value.reset(new v8::UniquePersistent<T>(isolate, source.constGet()));
         return *this;
     };
 
     V8ScriptValueTemplate(ScriptEngineV8 *engine) : _engine(engine) {
-        v8::Locker locker(_engine->getIsolate());
-        v8::Isolate::Scope isolateScope(_engine->getIsolate());
-        v8::HandleScope handleScope(_engine->getIsolate());
+        auto isolate = _engine->getIsolate();
+        Q_ASSERT(isolate->IsCurrent());
+        v8::HandleScope handleScope(isolate);
         v8::Context::Scope(_engine->getContext());
 #ifdef OVERTE_V8_MEMORY_DEBUG
         _engine->incrementScriptValueCounter();
 #endif
-        _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), v8::Local<T>()));
+        _value.reset(new v8::UniquePersistent<T>(isolate, v8::Local<T>()));
     };
 
     V8ScriptValueTemplate(const V8ScriptValueTemplate &copied) : _engine(copied.getEngine()) {
-        v8::Locker locker(_engine->getIsolate());
-        v8::Isolate::Scope isolateScope(_engine->getIsolate());
-        v8::HandleScope handleScope(_engine->getIsolate());
+        auto isolate = _engine->getIsolate();
+        Q_ASSERT(isolate->IsCurrent());
+        v8::HandleScope handleScope(isolate);
         v8::Context::Scope(_engine->getContext());
 #ifdef OVERTE_V8_MEMORY_DEBUG
         _engine->incrementScriptValueCounter();
 #endif
-        _value.reset(new v8::UniquePersistent<T>(_engine->getIsolate(), copied.constGet()));
+        _value.reset(new v8::UniquePersistent<T>(isolate, copied.constGet()));
     }
 
     v8::Local<T> get() {
@@ -102,9 +102,9 @@ public:
     };
     // V8TODO: add thread safe destructors to all objects that have persistent handles
     ~V8ScriptValueTemplate() {
-        v8::Locker locker(_engine->getIsolate());
-        v8::Isolate::Scope isolateScope(_engine->getIsolate());
-        v8::HandleScope handleScope(_engine->getIsolate());
+        auto isolate = _engine->getIsolate();
+        Q_ASSERT(isolate->IsCurrent());
+        v8::HandleScope handleScope(isolate);
         //v8::Context::Scope(_engine->getContext());
 #ifdef OVERTE_V8_MEMORY_DEBUG
         _engine->decrementScriptValueCounter();
@@ -122,17 +122,17 @@ public:
     V8ScriptString() = delete;
     V8ScriptString(ScriptEngineV8 *engine, const v8::Local<v8::String> value) : V8ScriptValueTemplate<v8::String>(engine, value) {};
     const QString toQString() const {
-        v8::Locker locker(getEngine()->getIsolate());
-        v8::Isolate::Scope isolateScope(getEngine()->getIsolate());
-        v8::HandleScope handleScope(getEngine()->getIsolate());
+        auto isolate = getEngine()->getIsolate();
+        Q_ASSERT(isolate->IsCurrent());
+        v8::HandleScope handleScope(isolate);
         v8::Context::Scope contextScope(getEngine()->getContext());
         Q_ASSERT(constGet()->IsString());
         return QString(*v8::String::Utf8Value(const_cast<v8::Isolate*>(constGetIsolate()), constGet()));
     };
     bool operator==(const V8ScriptString& string) const {
-        v8::Locker locker(getEngine()->getIsolate());
-        v8::Isolate::Scope isolateScope(getEngine()->getIsolate());
-        v8::HandleScope handleScope(getEngine()->getIsolate());
+        auto isolate = getEngine()->getIsolate();
+        Q_ASSERT(isolate->IsCurrent());
+        v8::HandleScope handleScope(isolate);
         v8::Context::Scope contextScope(getEngine()->getContext());
         Q_ASSERT(constGet()->IsString());
         return constGet()->StringEquals(string.constGet());

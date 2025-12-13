@@ -168,8 +168,7 @@ V8ScriptValue ScriptObjectV8Proxy::newQObject(ScriptEngineV8* engine, QObject* o
 
 ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(const V8ScriptValue& val) {
     auto isolate = val.getEngine()->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Local<v8::Context> context = val.constGetContext();
     v8::Context::Scope contextScope(context);
@@ -194,8 +193,7 @@ ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(const V8ScriptValue& val) 
 }
 
 ScriptObjectV8Proxy* ScriptObjectV8Proxy::unwrapProxy(v8::Isolate* isolate, v8::Local<v8::Value> &value) {
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
 
     if (value->IsNullOrUndefined()) {
@@ -233,18 +231,18 @@ ScriptObjectV8Proxy::~ScriptObjectV8Proxy() {
         }
     }
     _wasDestroyed = true;
+    auto isolate = _engine->getIsolate();
+    std::unique_ptr<ScriptEngine::ScriptEngineScopeGuard> guard;
+    if(!isolate->IsCurrent()) {
+        guard = _engine->getScopeGuard();
+    }
+    Q_ASSERT(isolate->IsCurrent());
     if (_ownsObject) {
-        auto isolate = _engine->getIsolate();
-        v8::Locker locker(isolate);
-        v8::Isolate::Scope isolateScope(isolate);
         v8::HandleScope handleScope(isolate);
         _v8Object.Reset();
         QObject* qobject = _object;
         if(qobject) qobject->deleteLater();
     } else {
-        auto isolate = _engine->getIsolate();
-        v8::Locker locker(isolate);
-        v8::Isolate::Scope isolateScope(isolate);
         v8::HandleScope handleScope(isolate);
         if (_object)
             qCDebug(scriptengine_v8) << "Deleting object proxy: " << name();
@@ -264,8 +262,7 @@ void ScriptObjectV8Proxy::investigate() {
     if (!qobject) return;
 
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(_engine->getIsolate());
     auto context = _engine->getContext();
     v8::Context::Scope contextScope(context);
@@ -426,8 +423,7 @@ QString ScriptObjectV8Proxy::name() const {
 
 ScriptObjectV8Proxy::QueryFlags ScriptObjectV8Proxy::queryProperty(const V8ScriptValue& object, const V8ScriptString& name, QueryFlags flags, uint* id) {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Local<v8::Context> context = _engine->getContext();
     v8::Context::Scope contextScope(context);
@@ -588,8 +584,7 @@ void ScriptObjectV8Proxy::v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::
 
 v8::Local<v8::Array> ScriptObjectV8Proxy::getPropertyNames() {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::EscapableHandleScope handleScope(_engine->getIsolate());
     auto context = _engine->getContext();
     v8::Context::Scope contextScope(context);
@@ -621,8 +616,7 @@ v8::Local<v8::Array> ScriptObjectV8Proxy::getPropertyNames() {
 
 V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V8ScriptString& name, uint id) {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = _engine->getContext();
     v8::Context::Scope contextScope(context);
@@ -694,8 +688,7 @@ V8ScriptValue ScriptObjectV8Proxy::property(const V8ScriptValue& object, const V
 
 void ScriptObjectV8Proxy::setProperty(V8ScriptValue& object, const V8ScriptString& name, uint id, const V8ScriptValue& value) {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_engine->getContext());
     if (!(id & PROPERTY_TYPE)) return;
@@ -733,8 +726,7 @@ void ScriptObjectV8Proxy::setProperty(V8ScriptValue& object, const V8ScriptStrin
 ScriptVariantV8Proxy::ScriptVariantV8Proxy(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue scriptProto, ScriptObjectV8Proxy* proto) :
     _engine(engine), _variant(variant), _scriptProto(scriptProto), _proto(proto) {
     auto isolate = engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = engine->getContext();
     v8::Context::Scope contextScope(context);
@@ -749,8 +741,7 @@ ScriptVariantV8Proxy::ScriptVariantV8Proxy(ScriptEngineV8* engine, const QVarian
 
 ScriptVariantV8Proxy::~ScriptVariantV8Proxy() {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     // V8TODO: Add similar deletion handling as for object proxy
     _v8Object.Reset();
@@ -759,8 +750,7 @@ ScriptVariantV8Proxy::~ScriptVariantV8Proxy() {
 V8ScriptValue ScriptVariantV8Proxy::newVariant(ScriptEngineV8* engine, const QVariant& variant, V8ScriptValue proto) {
     qDebug() << "ScriptVariantV8Proxy::newVariant";
     auto isolate = engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = engine->getContext();
     v8::Context::Scope contextScope(context);
@@ -782,8 +772,7 @@ V8ScriptValue ScriptVariantV8Proxy::newVariant(ScriptEngineV8* engine, const QVa
 
 ScriptVariantV8Proxy* ScriptVariantV8Proxy::unwrapProxy(const V8ScriptValue& val) {
     auto isolate = val.getEngine()->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(val.getEngine()->getContext());
 
@@ -802,8 +791,7 @@ ScriptVariantV8Proxy* ScriptVariantV8Proxy::unwrapProxy(const V8ScriptValue& val
 }
 
 ScriptVariantV8Proxy* ScriptVariantV8Proxy::unwrapProxy(v8::Isolate* isolate, v8::Local<v8::Value> &value) {
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
 
     if (!value->IsObject()) {
@@ -820,8 +808,7 @@ ScriptVariantV8Proxy* ScriptVariantV8Proxy::unwrapProxy(v8::Isolate* isolate, v8
 }
 
 QVariant* ScriptVariantV8Proxy::unwrapQVariantPointer(v8::Isolate* isolate, const v8::Local<v8::Value> &value) {
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
 
     if (!value->IsObject()) {
@@ -924,8 +911,7 @@ ScriptMethodV8Proxy::ScriptMethodV8Proxy(ScriptEngineV8* engine, QObject* object
                                const QList<QMetaMethod>& metas, int numMaxParams) :
     _numMaxParams(numMaxParams), _engine(engine), _object(object), /*_objectLifetime(lifetime),*/ _metas(metas) {
     auto isolate = engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(engine->getContext());
     _objectLifetime.Reset(isolate, lifetime.get());
@@ -934,8 +920,7 @@ ScriptMethodV8Proxy::ScriptMethodV8Proxy(ScriptEngineV8* engine, QObject* object
 
 ScriptMethodV8Proxy::~ScriptMethodV8Proxy() {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     _objectLifetime.Reset();
 }
@@ -949,8 +934,7 @@ void ScriptMethodV8Proxy::weakHandleCallback(const v8::WeakCallbackInfo<ScriptMe
 V8ScriptValue ScriptMethodV8Proxy::newMethod(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime,
                                const QList<QMetaMethod>& metas, int numMaxParams) {
     auto isolate = engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = engine->getContext();
     v8::Context::Scope contextScope(context);
@@ -975,8 +959,7 @@ QString ScriptMethodV8Proxy::fullName() const {
 }
 
 void ScriptMethodV8Proxy::callback(const v8::FunctionCallbackInfo<v8::Value>& arguments) {
-    v8::Locker locker(arguments.GetIsolate());
-    v8::Isolate::Scope isolateScope(arguments.GetIsolate());
+    Q_ASSERT(arguments.GetIsolate()->IsCurrent());
     v8::HandleScope handleScope(arguments.GetIsolate());
     v8::Context::Scope contextScope(arguments.GetIsolate()->GetCurrentContext());
     if (!arguments.Data()->IsObject()) {
@@ -1001,8 +984,7 @@ void ScriptMethodV8Proxy::callback(const v8::FunctionCallbackInfo<v8::Value>& ar
 void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& arguments) {
     v8::Isolate *isolate = arguments.GetIsolate();
     Q_ASSERT(isolate == _engine->getIsolate());
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     ContextScopeV8 contextScopeV8(_engine);
     auto context = _engine->getContext();
@@ -1192,8 +1174,7 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
 ScriptSignalV8Proxy::ScriptSignalV8Proxy(ScriptEngineV8* engine, QObject* object, V8ScriptValue lifetime, const QMetaMethod& meta) :
     _engine(engine), _object(object), _meta(meta), _metaCallId(discoverMetaCallIdx()) {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = _engine->getContext();
     v8::Context::Scope contextScope(context);
@@ -1211,8 +1192,7 @@ ScriptSignalV8Proxy::~ScriptSignalV8Proxy() {
     }
 
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     _objectLifetime.Reset();
     _v8Context.Reset();
@@ -1260,8 +1240,7 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
 #endif
 
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
 
     QList<Connection> connections;
     withReadLock([&]{
@@ -1348,9 +1327,9 @@ int ScriptSignalV8Proxy::discoverMetaCallIdx() {
 
 ScriptSignalV8Proxy::ConnectionList::iterator ScriptSignalV8Proxy::findConnection(V8ScriptValue thisObject, V8ScriptValue callback) {
     auto iterOut = resultWithReadLock<ScriptSignalV8Proxy::ConnectionList::iterator>([&]{
-        v8::Locker locker(_engine->getIsolate());
-        v8::Isolate::Scope isolateScope(_engine->getIsolate());
-        v8::HandleScope handleScope(_engine->getIsolate());
+        auto isolate = _engine->getIsolate();
+        Q_ASSERT(isolate->IsCurrent());
+        v8::HandleScope handleScope(isolate);
         v8::Context::Scope contextScope(_engine->getContext());
         ConnectionList::iterator iter;
         for (iter = _connections.begin(); iter != _connections.end(); ++iter) {
@@ -1366,8 +1345,7 @@ ScriptSignalV8Proxy::ConnectionList::iterator ScriptSignalV8Proxy::findConnectio
 
 void ScriptSignalV8Proxy::connect(ScriptValue arg0, ScriptValue arg1) {
     v8::Isolate *isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = _engine->getContext();
     v8::Context::Scope contextScope(context);
@@ -1496,8 +1474,7 @@ void ScriptSignalV8Proxy::disconnect(ScriptValue arg0, ScriptValue arg1) {
             return;
         }
     }
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = _engine->getContext();
     v8::Context::Scope contextScope(context);

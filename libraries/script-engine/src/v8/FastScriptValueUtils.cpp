@@ -23,8 +23,7 @@ ScriptValue qBytearrayToScriptValue(ScriptEngine* engine, const QByteArray &qByt
     auto engineV8 = dynamic_cast<ScriptEngineV8*>(engine);
     Q_ASSERT(engineV8);
     auto isolate = engineV8->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = engineV8->getContext();
     v8::Context::Scope contextScope(context);
@@ -44,8 +43,7 @@ bool qBytearrayFromScriptValue(const ScriptValue& object, QByteArray &qByteArray
     auto engineV8 = proxy->getV8Engine();
 
     auto isolate = engineV8->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = engineV8->getContext();
     v8::Context::Scope contextScope(context);
@@ -69,8 +67,7 @@ ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) {
     auto engineV8 = proxy->getV8Engine();
 
     auto isolate = engineV8->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = engineV8->getContext();
     v8::Context::Scope contextScope(context);
@@ -147,8 +144,7 @@ bool vec3FromScriptValue(const ScriptValue& object, glm::vec3& vec3) {
     auto engineV8 = proxy->getV8Engine();
 
     auto isolate = engineV8->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = engineV8->getContext();
     v8::Context::Scope contextScope(context);
