@@ -74,8 +74,7 @@ public:
     QString _systemName;
     bool _isSessionRunning = false;
 
-    // hack for vive controllers
-    bool _stickEmulation = false;
+    std::array<bool, HAND_COUNT> _vivePoseHack = { false, false };
 
     // only supported by a few runtimes, but lets us
     // emulate OpenVR's headset proximity sensor system

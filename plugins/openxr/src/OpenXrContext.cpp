@@ -572,10 +572,7 @@ bool OpenXrContext::pollEvents() {
                     if (!xrCheck(_instance, res, "Failed to get interaction profile"))
                         continue;
 
-                    _stickEmulation = false;
-                    if (_viveControllerPath != XR_NULL_PATH && state.interactionProfile == _viveControllerPath) {
-                        _stickEmulation = true;
-                    }
+                    _vivePoseHack[i] = _viveControllerPath != XR_NULL_PATH && state.interactionProfile == _viveControllerPath;
 
                     uint32_t bufferCountOutput;
                     char profilePath[XR_MAX_PATH_LENGTH];
