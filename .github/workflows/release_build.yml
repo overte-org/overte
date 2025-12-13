@@ -83,10 +83,12 @@ jobs:
         echo "ARTIFACT_PATTERN=Overte-${{ github.ref_name }}.$INSTALLER_EXT" >> $GITHUB_ENV
 
     - name: Cache conan
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ${{ env.CONAN_HOME }}
+        path: |
+            ${{ env.CONAN_HOME }}/sources
+            ${{ env.CONAN_HOME }}/p
 
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install
@@ -116,10 +118,12 @@ jobs:
 
     - name: Save Conan cache
       if: always() && steps.conan-cache.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ${{ env.CONAN_HOME }}
+        path: |
+            ${{ env.CONAN_HOME }}/sources
+            ${{ env.CONAN_HOME }}/p
 
     - name: Configure CMake
       shell: bash
