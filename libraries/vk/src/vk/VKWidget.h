@@ -26,6 +26,7 @@ struct Context;
 
 class QOpenGLContext;
 
+// VKTODO: make this and GLWidget inherit from the same base class, for example called GraphicsWidget.
 /// customized canvas that simply forwards requests/events to the singleton application
 class VKWidget : public QWidget {
     Q_OBJECT

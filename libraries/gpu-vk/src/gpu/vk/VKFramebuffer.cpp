@@ -105,11 +105,18 @@ void gpu::vk::VKFramebuffer::update() {
                 attachmentCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
                 attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
                 addAttachment(attachmentCI, vkTexture);
-                //glNamedFramebufferTexture(_id, attachement, gltexture->_texture, 0);
-                // VKTODO
-            /*}
-            else if (vkTexture->_target == GL_TEXTURE_2D_MULTISAMPLE) {
+            /*} else if (vkTexture->_target == GL_TEXTURE_2D_MULTISAMPLE) {
                 glNamedFramebufferTexture(_id, attachement, gltexture->_texture, 0);*/
+            } else if (vkTexture->_target == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                auto subresource = _gpuObject.getDepthStencilBufferSubresource();
+                VKAttachmentCreateInfo attachmentCI {};
+                attachmentCI.width = vkTexture->_gpuObject.getWidth();
+                attachmentCI.height = vkTexture->_gpuObject.getHeight();
+                attachmentCI.layerCount = vkTexture->_gpuObject.getNumSlices();
+                attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat());
+                attachmentCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+                attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
+                addAttachment(attachmentCI, vkTexture);
             } else {
                 Q_ASSERT(false);
                 // VKTODO

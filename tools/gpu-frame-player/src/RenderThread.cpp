@@ -18,9 +18,15 @@
 
 #include <gpu/vk/VKFramebuffer.h>
 
+//#define FRAME_PLAYER_ENABLE_RENDERDOC_CAPTURE
+
+#ifdef FRAME_PLAYER_ENABLE_RENDERDOC_CAPTURE
+// VKTODO: this is Linux-specific
 #include <dlfcn.h>
-#include "/home/ksuprynowicz/programy/renderdoc_1.35/include/renderdoc_app.h"
+// VKTODO: get a proper way to add renderdoc include path
+#include "renderdoc_1.35/include/renderdoc_app.h"
 RENDERDOC_API_1_1_2 *rdoc_api = NULL;
+#endif
 
 void RenderThread::submitFrame(const gpu::FramePointer& frame) {
     std::unique_lock<std::mutex> lock(_frameLock);
@@ -38,12 +44,14 @@ void RenderThread::move(const glm::vec3& v) {
 }
 
 void RenderThread::initialize(QWindow* window) {
+#ifdef FRAME_PLAYER_ENABLE_RENDERDOC_CAPTURE
     if(void *mod = dlopen("/home/ksuprynowicz/programy/renderdoc_1.35/lib/librenderdoc.so", RTLD_NOW | RTLD_NOLOAD))
     {
         pRENDERDOC_GetAPI RENDERDOC_GetAPI = (pRENDERDOC_GetAPI)dlsym(mod, "RENDERDOC_GetAPI");
         int ret = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_1_2, (void **)&rdoc_api);
         assert(ret == 1);
     }
+#endif
 
     std::unique_lock<std::mutex> lock(_frameLock);
     setObjectName("RenderThread");
@@ -148,8 +156,10 @@ void RenderThread::shutdown() {
 
 void RenderThread::renderFrame(gpu::FramePointer& frame) {
     if (frame && !frame->batches.empty()) {
+#ifdef FRAME_PLAYER_ENABLE_RENDERDOC_CAPTURE
         if (rdoc_api)
             rdoc_api->StartFrameCapture(NULL, NULL);
+#endif
     }
 #ifdef USE_GL
     PROFILE_RANGE(render_gpu_gl, __FUNCTION__);
@@ -359,8 +369,10 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     vkBackend->waitForGPU();
     vkBackend->recyclePreviousFrame();
     if (frame && !frame->batches.empty()) {
+#ifdef FRAME_PLAYER_ENABLE_RENDERDOC_CAPTURE
         if (rdoc_api)
             rdoc_api->EndFrameCapture(NULL, NULL);
+#endif
     }
 
 #endif

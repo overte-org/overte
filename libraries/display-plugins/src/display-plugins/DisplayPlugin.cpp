@@ -37,6 +37,7 @@ DisplayPluginList getDisplayPlugins() {
 
 #if !defined(Q_OS_ANDROID)
         // Stereo modes
+        // VKTODO: Add stereo support for Vulkan.
 #if USE_GL
         // SBS left/right
         new SideBySideStereoDisplayPlugin(),

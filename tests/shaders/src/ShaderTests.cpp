@@ -615,8 +615,6 @@ void ShaderTests::testShaderLoad() {
             const auto& fragmentSource = shader::Source::get(fragmentId);
             verifyInterface(vertexSource, fragmentSource);
 
-            continue;
-
             auto program = gpu::Shader::createProgram(programId);
             auto glBackend = std::static_pointer_cast<gpu::gl::GLBackend>(_gpuContext->getBackend());
             auto glshader = gpu::gl::GLShader::sync(*glBackend, *program);

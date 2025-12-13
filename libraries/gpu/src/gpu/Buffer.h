@@ -31,6 +31,7 @@ class Buffer : public Resource {
 public:
     using Flag = PageManager::Flag;
 
+    // VKTODO: Make this independent of VkBufferUsageFlagBits.
     // Flags match VkBufferUsageFlagBits for convenience... do not modify
     enum Usage
     {

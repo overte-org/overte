@@ -46,7 +46,9 @@
 #include <ui/TabletScriptingInterface.h>
 #include <ui/types/ContextAwareProfile.h>
 #include <ui/UpdateDialog.h>
+#ifndef USE_GL
 #include <vk/VKWindow.h>
+#endif
 
 #include "DeadlockWatchdog.h"
 #include "GLCanvas.h"

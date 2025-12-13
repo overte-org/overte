@@ -2,11 +2,15 @@
 //  Created by dr Karol Suprynowicz on 2024/08/12
 //  Based on OpenGLDisplayPlugin.h, originally created by Bradley Austin Davis on 2015/05/29
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 #pragma once
+
+// TODO: find a way of doing this from CMake. I'm not familiar enough with build system to figure this out.
+#ifndef USE_GL
 
 #include "DisplayPlugin.h"
 
@@ -208,3 +212,5 @@ protected:
     VKWindow *_vkWindow{ 0 };
     int _renderedFrameCount{ 0 };
 };
+
+#endif

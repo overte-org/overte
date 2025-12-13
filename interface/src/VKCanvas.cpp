@@ -10,6 +10,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+// TODO: find a way of doing this from CMake. I'm not familiar enough with build system to figure this out.
+#ifndef USE_GL
 #include "VKCanvas.h"
 
 #include "Application.h"
@@ -20,3 +22,4 @@ bool VKCanvas::event(QEvent* event) {
     }
     return VKWidget::event(event);
 }
+#endif

@@ -284,6 +284,8 @@ void VKBackend::render(const Batch& batch) {
         continue;
     }*/
 
+    cmdBeginLabel(commandBuffer, "batch:" + batch.getName(), glm::vec4{ 1, 1, 0, 1 });
+
     {
         PROFILE_RANGE(gpu_vk_detail, "Transfer");
         renderPassTransfer(batch);
@@ -1175,6 +1177,7 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
 
 void VKBackend::renderPassDraw(const Batch& batch) {
     _currentDraw = -1;
+    bool renderpassActive = false;
     _transform._camerasItr = _transform._cameraOffsets.begin();
     const size_t numCommands = batch.getCommands().size();
     const Batch::Commands::value_type* command = batch.getCommands().data();
@@ -1279,6 +1282,21 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             (this->*(call))(batch, *offset);
             break;
         }
+        case Batch::COMMAND_setFramebuffer: {
+            if (renderpassActive) {
+                ::vks::debugutils::cmdEndLabel(_currentCommandBuffer);
+            }
+            const auto& framebuffer = batch._framebuffers.get(batch._params[*offset]._uint);
+            if (framebuffer) {
+                ::vks::debugutils::cmdBeginLabel(_currentCommandBuffer, "framebuffer:" + framebuffer->getName(), vec4{ 1, 0, 1, 1 });
+            } else {
+                ::vks::debugutils::cmdBeginLabel(_currentCommandBuffer, "framebuffer: NULL", vec4{ 1, 0, 1, 1 });
+            }
+            renderpassActive = true;
+            CommandCall call = _commandCalls[(*command)];
+            (this->*(call))(batch, *offset);
+            break;
+        }
         default: {
             CommandCall call = _commandCalls[(*command)];
             (this->*(call))(batch, *offset);
@@ -1297,6 +1315,10 @@ void VKBackend::renderPassDraw(const Batch& batch) {
     _currentFramebuffer = nullptr;
     // VKTODO: which other stages should be reset here?
     resetInputStage();
+    if (renderpassActive) {
+        ::vks::debugutils::cmdEndLabel(_currentCommandBuffer);
+        renderpassActive = false;
+    }
 }
 
 void VKBackend::draw(VkPrimitiveTopology mode, uint32 numVertices, uint32 startVertex) {

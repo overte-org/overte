@@ -18,6 +18,8 @@
 
 #include <gpu/FrameIO.h>
 
+//#define FRAME_PLAYER_TRACING
+
 PlayerWindow::PlayerWindow() {
     installEventFilter(this);
     setFlags(Qt::MSWindowsOwnDC | Qt::Window | Qt::Dialog | Qt::WindowMinMaxButtonsHint | Qt::WindowTitleHint);
@@ -122,12 +124,14 @@ static const QString DEFAULT_TRACING_RULES =
     "*.detail=false\n";
 
 void PlayerWindow::loadFrame(const QString& path) {
+#ifdef FRAME_PLAYER_TRACING
     DependencyManager::get<tracing::Tracer>()->startTracing();
     QLoggingCategory::setFilterRules(DEFAULT_TRACING_RULES);
     QTimer::singleShot(10 * 1000, [] {
         DependencyManager::get<tracing::Tracer>()->stopTracing();
         DependencyManager::get<tracing::Tracer>()->serialize("D:/frames/trace-{DATE}_{TIME}.json.gz");
     });
+#endif
 
     auto frame = gpu::readFrame(path.toStdString(), _renderThread._externalTexture);
     if (frame) {

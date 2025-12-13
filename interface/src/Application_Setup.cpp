@@ -137,7 +137,9 @@
 #include "LODManager.h"
 #include "Menu.h"
 #include "ResourceRequestObserver.h"
+#ifndef USE_GL
 #include "vk/VKWindow.h"
+#endif
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
 #include "SpeechRecognizer.h"
 #endif
