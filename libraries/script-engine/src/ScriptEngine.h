@@ -195,6 +195,12 @@ public:
     class ScriptEngineScopeGuard {
     protected:
         ScriptEngineScopeGuard() = default;
+
+        // prevent copy and move
+        ScriptEngineScopeGuard(const ScriptEngineScopeGuard&) = delete;
+        ScriptEngineScopeGuard(ScriptEngineScopeGuard&&) = delete;
+        ScriptEngineScopeGuard& operator=(const ScriptEngineScopeGuard&) = delete;
+        ScriptEngineScopeGuard& operator=(ScriptEngineScopeGuard&&) = delete;
     public:
         virtual ~ScriptEngineScopeGuard() = default;
     };
