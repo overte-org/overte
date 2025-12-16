@@ -22,9 +22,9 @@ if (OVERTE_RENDERING_BACKEND STREQUAL "OpenGL" OR OVERTE_RENDERING_BACKEND STREQ
     link_hifi_libraries(gl ${PLATFORM_GL_BACKEND})
     target_opengl()
 else()
+    link_hifi_libraries(vk ${PLATFORM_GL_BACKEND})
     target_vulkan()
 endif()
-link_hifi_libraries(vk gpu-vk)
 
 package_libraries_for_deployment()
 
