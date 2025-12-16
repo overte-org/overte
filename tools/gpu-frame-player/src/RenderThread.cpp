@@ -14,9 +14,9 @@
 #ifdef USE_GL
 #include <gl/OffscreenGLCanvas.h>
 #include <gl/QOpenGLContextWrapper.h>
-#endif
-
+#else
 #include <gpu/vk/VKFramebuffer.h>
+#endif
 
 //#define FRAME_PLAYER_ENABLE_RENDERDOC_CAPTURE
 
@@ -169,14 +169,17 @@ void RenderThread::renderFrame(gpu::FramePointer& frame) {
     ++_presentCount;
 #ifdef USE_GL
     _context.makeCurrent();
-#endif
+#else
     auto vkBackend = std::dynamic_pointer_cast<gpu::vk::VKBackend>(_gpuContext->getBackend());
+#endif
 
     {
        std::unique_lock<std::mutex> lock(_frameLock);
        if (_correction != glm::mat4()) {
            _backend->updatePresentFrame(_correction);
+#ifndef USE_GL
             vkBackend->enableContextViewCorrectionForFramePlayer();
+#endif
        }
     }
     _backend->recycle();

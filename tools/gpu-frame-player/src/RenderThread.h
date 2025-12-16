@@ -14,14 +14,13 @@
 #include <GenericThread.h>
 #include <shared/RateCounter.h>
 
-#include <vk/Config.h>
-#include <vk/Context.h>
-
 #ifdef USE_GL
 #include <gl/Config.h>
 #include <gl/Context.h>
 #include <gpu/gl/GLBackend.h>
 #else
+#include <vk/Config.h>
+#include <vk/Context.h>
 #include <gpu/vk/VKBackend.h>
 #include <vk/VulkanSwapChain.h>
 #endif
