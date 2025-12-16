@@ -19,6 +19,7 @@
 #define UNIFORM_BUFFER(SLOT, NAME) layout(std140, binding=SLOT) uniform NAME
 #define TEXTURE(SLOT, TYPE, NAME) layout(binding=SLOT) uniform TYPE NAME
 #define RESOURCE_BUFFER(SLOT, NAME) layout(binding=SLOT) uniform samplerBuffer NAME
+#define RESOURCE_BUFFER_STD140(SLOT, NAME) layout(std140, binding=SLOT) uniform samplerBuffer NAME
 #define INPUT(SLOT, TYPE, NAME) layout(location=SLOT) in TYPE NAME
 #define OUTPUT(SLOT, TYPE, NAME) layout(location=SLOT) out TYPE NAME
 #define FLAT_INPUT(SLOT, TYPE, NAME) layout(location=SLOT) flat in TYPE NAME

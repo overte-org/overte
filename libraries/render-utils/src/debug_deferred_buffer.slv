@@ -12,9 +12,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-<@include gpu/ShaderConstants.h@>
-INPUT(GPU_ATTR_POSITION, vec4, inPosition);
-
+<@include gpu/Inputs.slh@>
 
 OUTPUT(0, vec2, uv);
 

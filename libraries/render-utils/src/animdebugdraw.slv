@@ -8,9 +8,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-<@include gpu/ShaderConstants.h@>
-INPUT(GPU_ATTR_POSITION, vec4, inPosition);
-INPUT(GPU_ATTR_COLOR, vec4, inColor);
+<@include gpu/Inputs.slh@>
 
 <@include gpu/Color.slh@>
 <@include gpu/Transform.slh@>

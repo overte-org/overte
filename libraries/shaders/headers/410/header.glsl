@@ -7,10 +7,12 @@
     #define UNIFORM_BUFFER(SLOT, NAME) layout(std140, binding=SLOT) uniform NAME
     #define TEXTURE(SLOT, TYPE, NAME) layout(binding=SLOT) uniform TYPE NAME
     #define RESOURCE_BUFFER(SLOT, NAME) layout(binding=SLOT) uniform samplerBuffer NAME
+    #define RESOURCE_BUFFER_STD140(SLOT, NAME) layout(std140, binding=SLOT) uniform samplerBuffer NAME
 #else
     #define UNIFORM_BUFFER(SLOT, NAME) layout(std140) uniform NAME
     #define TEXTURE(SLOT, TYPE, NAME) uniform TYPE NAME
     #define RESOURCE_BUFFER(SLOT, NAME) uniform samplerBuffer NAME
+    #define RESOURCE_BUFFER_STD140(SLOT, NAME) layout(std140) uniform samplerBuffer NAME
 #endif
 
 #define INPUT(SLOT, TYPE, NAME) layout(location=SLOT) in TYPE NAME
