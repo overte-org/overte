@@ -11,7 +11,7 @@ like documentation or CI pipeline.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2025.12.1] not yet released
+## [2025.12.1] 2025.11.17
 
 ### Fixes
 - Fixed icons being rendered at the wrong resolution (PR1867)
@@ -23,6 +23,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Fixed Woody's default bookmark including preview icon (PR1928)
 - Fixed regression causing Create app to not render in VR (PR1930)
 - Fixed some regressions causing the OpenGL ES backend to not compile (PR1929)
+- Fixed initialization failure on Monado (PR1950)
 
 ### Changes
 - Disabled QML subpixel antialiasing by default (PR1867)
