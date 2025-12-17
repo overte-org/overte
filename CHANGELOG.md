@@ -17,11 +17,19 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Fixed icons being rendered at the wrong resolution (PR1867)
 - Fixed subtly wrong color rendering on transparent QML (PR1895)
 - Fixed Fcitx (IME on Linux) not working due to missing Qt dependency (overte-conan-recipes repository)
+- Fixed materials from material entities not rendering if the material entity is too far away (PR1932)
+- Fixed blendshape normals for FBX models being scaled to 1% (PR1921)
+- Fixed Woody's blendshape normals (PR1928)
+- Fixed Woody's default bookmark including preview icon (PR1928)
+- Fixed regression causing Create app to not render in VR (PR1930)
+- Fixed some regressions causing the OpenGL ES backend to not compile (PR1929)
 
 ### Changes
 - Disabled QML subpixel antialiasing by default (PR1867)
     This improves visual fidelity of QML surfaces in 3D and on displays with unusual subpixel layouts.
 - Simplified VR walkspeed (PR1800)
+- Disabled seemingly broken FBX UV coordinate set support (PR1847)
+    This fixes UV coordinate issues with some old FBX files.
 
 ### Additions
 - Implemented torus shape (PR1354)
@@ -34,6 +42,9 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Added texture sampler property to image entities (PR1764)
 - Added scriptable canvas entities (PR1326,PR1849)
     This adds high level drawing commands and the ability to display directly from a buffer.
+- Added support for blendshape normals for glTF (PR1921)
+- Added MyAvatar.cameraBoomLength (PR1920)
+    This allows scripts to set the third person camera distance.
 
 ### Build System
 - Enabled warnings as errors on certain configurations (PR938,PR1368,PR1447,PR1705,PR1765)
