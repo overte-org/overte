@@ -12,16 +12,6 @@ using namespace gpu;
 using namespace gpu::gl;
 
 #if defined(USE_GLES)
-// Missing GL formats
-#define GL_R16 GL_R16_EXT
-#define GL_R16_SNORM GL_R16_SNORM_EXT
-#define GL_RG16 GL_RG16_EXT
-#define GL_RG16_SNORM GL_RG16_SNORM_EXT
-#define GL_RGBA2 GL_RGBA8
-#define GL_RGBA16 GL_RGBA16_EXT
-#define GL_RGBA16_SNORM GL_RGBA16_SNORM_EXT
-#define GL_DEPTH_COMPONENT32 GL_DEPTH_COMPONENT32_OES
-#define GL_SLUMINANCE8_EXT GL_SLUMINANCE8_NV
 // Missing GL compressed formats
 #define GL_COMPRESSED_RED_RGTC1 0x8DBB
 #define GL_COMPRESSED_SIGNED_RED_RGTC1 0x8DBC
