@@ -60,7 +60,7 @@ void Application::initializePluginManager(const QCommandLineParser& parser) {
     // QApplication must exist, or it can't find the plugin path, as QCoreApplication:applicationDirPath
     // won't work yet.
 
-    auto anyPluginSpecified = false;
+    auto displayPluginSpecified = false;
     auto openxrPreferred = false;
     auto desktopPreferred = false;
 
@@ -68,7 +68,7 @@ void Application::initializePluginManager(const QCommandLineParser& parser) {
         auto preferredDisplays = parser.value("display").split(',', Qt::SkipEmptyParts);
         qInfo() << "Setting prefered display plugins:" << preferredDisplays;
         PluginManager::getInstance()->setPreferredDisplayPlugins(preferredDisplays);
-        anyPluginSpecified = true;
+        displayPluginSpecified = true;
 
         if (preferredDisplays.startsWith(DESKTOP_DISPLAY_PLUGIN_NAME)) {
             desktopPreferred = true;
@@ -81,14 +81,13 @@ void Application::initializePluginManager(const QCommandLineParser& parser) {
         auto disabledDisplays = parser.value("disableDisplayPlugins").split(',', Qt::SkipEmptyParts);
         qInfo() << "Disabling following display plugins:"  << disabledDisplays;
         PluginManager::getInstance()->disableDisplays(disabledDisplays);
-        anyPluginSpecified = true;
+        displayPluginSpecified = true;
     }
 
     if (parser.isSet("disableInputPlugins")) {
         auto disabledInputs = parser.value("disableInputPlugins").split(',', Qt::SkipEmptyParts);
         qInfo() << "Disabling following input plugins:" << disabledInputs;
         PluginManager::getInstance()->disableInputs(disabledInputs);
-        anyPluginSpecified = true;
     }
 
     QStringList disabledLaunchPlugins = {};
@@ -103,7 +102,7 @@ void Application::initializePluginManager(const QCommandLineParser& parser) {
         disabledLaunchPlugins.push_back(OPENVR_PLUGIN_NAME);
         disabledLaunchPlugins.push_back(OPENXR_PLUGIN_NAME);
         _previousPreferredDisplayMode.set(0);
-    } else if (!anyPluginSpecified) {
+    } else if (!displayPluginSpecified) {
         const QStringList choices = {
             tr("Desktop"),
             tr("OpenXR (experimental)"),
