@@ -89,7 +89,6 @@ jobs:
 
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-          #echo "CONAN_HOME=~/.conan2" >> $GITHUB_ENV
           echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
           echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
@@ -116,7 +115,6 @@ jobs:
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" = "Windows"* ]]; then
-          # Try to avoid hitting Windows' PATH limit.
           echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then

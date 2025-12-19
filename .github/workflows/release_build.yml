@@ -51,7 +51,6 @@ jobs:
       shell: bash
       run: |
         echo "CONAN_HOME=$CONAN_HOME" >> $GITHUB_ENV
-        echo "OVERTE_QT_SOURCE=$OVERTE_QT_SOURCE" >> $GITHUB_ENV
         echo "CONAN_PROFILE=$CONAN_PROFILE" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=$APP_TARGET_NAME" >> $GITHUB_ENV
 
