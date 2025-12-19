@@ -172,7 +172,8 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         bool forward = _renderLayer != RenderLayer::WORLD || args->_renderMethod == Args::RenderMethod::FORWARD;
         bool fading = ShapeKey(args->_itemShapeKey).isFaded();
         if (geometryShape != GeometryCache::Shape::Torus) {
-            if (outColor.a >= 1.0f) {
+            // FIXME: How can we set up the lighting buffers on the instanced draw calls?
+            if (outColor.a >= 1.0f && !forward) {
                 render::ShapePipelinePointer pipeline = geometryCache->getShapePipelinePointer(false, wireframe || materials.top().material->isUnlit(),
                     forward, fading, materials.top().material->getCullFaceMode());
                 if (!fading) {
