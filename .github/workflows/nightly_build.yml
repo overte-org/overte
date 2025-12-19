@@ -20,7 +20,7 @@ env:
 
 jobs:
   build:
-    name: "${{matrix.os}}"
+    name: "${{matrix.os}}, ${{matrix.arch}}"
     strategy:
       matrix:
         include:
@@ -34,13 +34,21 @@ jobs:
           #  runner: macOS-10.15
           #  build_type: full
           #  qt_source: source
-          #- os: Ubuntu 22.04
-          #  runner: ubuntu-latest
-          #  build_type: full
-          #  qt_source: source
-          #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion3 libpulse0 libsnappy1v5 libwebpdemux2 libwebpmux3 python3-github python3-distro
+          - os: Ubuntu 22.04
+            image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+            runner: ubuntu-latest
+            arch: amd64
+            build_type: full
+            qt_source: system
+          - os: Ubuntu 22.04
+            image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-aarch64
+            runner: ubuntu-24.04-arm
+            arch: aarch64
+            build_type: full
+            qt_source: system
       fail-fast: false
     runs-on: ${{matrix.runner}}
+    container: ${{matrix.image}}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -66,12 +74,13 @@ jobs:
       run: |
 
         echo "UPLOAD_PREFIX=build/overte/master" >> $GITHUB_ENV
-        echo "{github_sha_short}={`echo $GIT_COMMIT | cut -c1-7`}" >> $GITHUB_OUTPUT
+        # Setting short commit SHA for use as RELEASE_NAME in generated installers.
+        echo "GIT_COMMIT_SHORT=`echo $GIT_COMMIT | cut -c1-7`" >> $GITHUB_ENV
         echo "JOB_NAME=build (${{matrix.os}}, ${{matrix.build_type}})" >> $GITHUB_ENV
         # Linux build variables
         if [[ "${{ matrix.os }}" =~ "Ubuntu" ]]; then
           echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=tgz" >> $GITHUB_ENV
+          echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DBUILD_TOOLS:BOOLEAN=FALSE" >> $GITHUB_ENV
         fi
         # Mac build variables
@@ -91,10 +100,14 @@ jobs:
     - name: Configure build environment 2
       shell: bash
       run: |
+        if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
+          echo "ARTIFACT_NAME=Overte-Nightly-${GIT_COMMIT_SHORT}-$(uname -m).$INSTALLER_EXT" >> $GITHUB_ENV
+        else
+          echo "ARTIFACT_NAME=Overte-Nightly-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
+        fi
 
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
         echo "ARTIFACT_PATTERN=Overte-*.$INSTALLER_EXT" >> $GITHUB_ENV
-        echo "GIT_COMMIT_SHORT=${{ steps.buildenv1.outputs.github_sha_short }}" >> $GITHUB_ENV
         # Build type variables
         if [ "${{ matrix.build_type }}" = "full" ]; then
           echo "INSTALLER=Overte-${{ github.event.number }}_${{ github.sha }}-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
@@ -197,7 +210,7 @@ jobs:
     - name: Upload artifact to GitHub
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.INSTALLER }}
+        name: ${{ env.ARTIFACT_NAME }}
         path: build/Overte-*
         if-no-files-found: error
 

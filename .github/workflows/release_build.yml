@@ -3,7 +3,7 @@
 # Copyright 2021-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
-name: Windows Release Build
+name: Release Build
 
 on:
   push:
@@ -23,7 +23,7 @@ env:
 
 jobs:
   build:
-    name: "${{matrix.os}}"
+    name: "${{matrix.os}}, ${{matrix.arch}}"
     strategy:
       matrix:
         include:
@@ -33,8 +33,21 @@ jobs:
             arch: x86_64
             build_type: full
             qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
+          - os: Ubuntu 22.04
+            image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+            runner: ubuntu-latest
+            arch: amd64
+            build_type: full
+            qt_source: system
+          - os: Ubuntu 22.04
+            image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-aarch64
+            runner: ubuntu-24.04-arm
+            arch: aarch64
+            build_type: full
+            qt_source: system
       fail-fast: false
     runs-on: ${{matrix.runner}}
+    container: ${{matrix.image}}
     steps:
     - uses: actions/checkout@v4
       with:
@@ -69,17 +82,31 @@ jobs:
         fi
 
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
-        echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
 
-        echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
-        # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
-        # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
+        # Linux build variables
+        if [[ "${{ matrix.os }}" =~ "Ubuntu" ]]; then
+          echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
+          echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
+          echo "CMAKE_EXTRA=-DBUILD_TOOLS:BOOLEAN=FALSE" >> $GITHUB_ENV
+        fi
+        # Windows build variables
+        if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
+          echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
+          echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
+          echo "CMAKE_EXTRA=-DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
+          # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
+          # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
+        fi
 
     # Configuration is broken into two steps because you can't set an env var and also reference it in the same step
     - name: Configure build environment 2
       shell: bash
       run: |
-        echo "ARTIFACT_PATTERN=Overte-${{ github.ref_name }}.$INSTALLER_EXT" >> $GITHUB_ENV
+        if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
+          echo "ARTIFACT_NAME=Overte-${{ github.ref_name }}-$(uname -m).$INSTALLER_EXT" >> $GITHUB_ENV
+        else
+          echo "ARTIFACT_NAME=Overte-${{ github.ref_name }}.$INSTALLER_EXT" >> $GITHUB_ENV
+        fi
 
     - name: Cache conan
       uses: actions/cache@v4
@@ -182,7 +209,7 @@ jobs:
     - name: Upload artifact to GitHub
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.ARTIFACT_PATTERN }}
+        name: ${{ env.ARTIFACT_NAME }}
         path: build/Overte-*
         if-no-files-found: error
 
