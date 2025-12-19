@@ -94,6 +94,7 @@
 #include <scripting/SettingsScriptingInterface.h>
 #include <scripting/TestScriptingInterface.h>
 #include <scripting/WindowScriptingInterface.h>
+#include <scripting/OSCScriptingInterface.h>
 #ifndef Q_OS_ANDROID
 #include <shared/FileLogger.h>
 #endif
@@ -655,6 +656,8 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject("Workload", _gameWorkload._engine->getConfiguration().get());
 
     scriptEngine->registerGlobalObject("Graphics", DependencyManager::get<GraphicsScriptingInterface>().data());
+
+    scriptEngine->registerGlobalObject("OSCSocket", DependencyManager::get<OSCScriptingInterface>().data());
 
     scriptEngine->registerGlobalObject("ScriptDiscoveryService", DependencyManager::get<ScriptEngines>().data());
     scriptEngine->registerGlobalObject("Reticle", getApplicationCompositor().getReticleInterface());

@@ -15,15 +15,17 @@
 #include <QObject>
 #include <QUdpSocket>
 
+#include <DependencyManager.h>
+
 #include "SettingHandle.h"
 #include "ScriptManager.h"
 
-class OSCScriptingInterface : public QObject {
+class OSCScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
 
     void receivePacket();
 public:
-    OSCScriptingInterface(ScriptManager* parent);
+    OSCScriptingInterface(QObject* parent = nullptr);
     ~OSCScriptingInterface();
 
     /*@jsdoc
@@ -49,8 +51,6 @@ signals:
     void messageReceived(const QString& address, const QString& argumentTypes, const QVariantList& arguments);
 
 private:
-    ScriptManager* _scriptManager;
-
     Setting::Handle<int> _receivePort;
     Setting::Handle<QString> _receiveHost;
 

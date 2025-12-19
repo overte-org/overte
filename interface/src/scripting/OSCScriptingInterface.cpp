@@ -17,7 +17,7 @@
 #include "OSCScriptingInterface.h"
 
 
-Q_LOGGING_CATEGORY(osc, "overte.osc")
+Q_LOGGING_CATEGORY(osc, "osc")
 
 enum OSCTag: char {
     Int = 'i',
@@ -26,7 +26,7 @@ enum OSCTag: char {
     Blob = 'b',
 };
 
-static const QRegularExpression invalidCharacters = QRegularExpression("([ #*,/?\\[\\]{}])");
+static const QRegularExpression invalidCharacters = QRegularExpression("([ #*,?\\[\\]{}])");
 static const QMap<QChar, QVariant::Type> typeNameMap = {
     { OSCTag::Int, QVariant::Int },
     { OSCTag::Float, QVariant::Double },
@@ -35,8 +35,8 @@ static const QMap<QChar, QVariant::Type> typeNameMap = {
 };
 
 
-OSCScriptingInterface::OSCScriptingInterface(ScriptManager* parent) :
-    _scriptManager(parent),
+OSCScriptingInterface::OSCScriptingInterface(QObject* parent) :
+    QObject(parent),
     _receivePort("osc/receivePort", 9000),
     _receiveHost("osc/receiveHost", "127.0.0.1"),
     _sendPort("osc/sendPort", 9001),
@@ -63,7 +63,14 @@ void OSCScriptingInterface::receivePacket() {
 void OSCScriptingInterface::sendMessage(const QString& address, const QString &argumentTypes, const QVariantList& arguments) {
     Q_ASSERT(_socket);
 
-    auto scriptEngine = _scriptManager->engine();
+    // FIXME: how do you get the script engine???
+    struct HackRemoveThis {
+        void raiseException(QString msg) {
+            qCCritical(osc) << msg;
+        }
+    };
+
+    auto scriptEngine = std::make_unique<HackRemoveThis>(); //_scriptManager->engine();
 
     if (address.length() < 2 || address[0] != '/') {
         scriptEngine->raiseException("address must be at least two characters and start with '/'");
@@ -76,14 +83,19 @@ void OSCScriptingInterface::sendMessage(const QString& address, const QString &a
     }
 
     if (argumentTypes.length() != arguments.length()) {
-        scriptEngine->raiseException(QString("argumentTypes.length (%1) does not match arguments.length (%2)").arg(argumentTypes.length()).arg(argumentTypes.length()));
+        scriptEngine->raiseException(QString("argumentTypes.length (%1) does not match arguments.length (%2)").arg(argumentTypes.length()).arg(arguments.length()));
         return;
     }
+
+    auto pad4 = [](QByteArray& array) {
+        array.append((4 - array.length() % 4) % 4, 0);
+    };
 
     QByteArray bytes = address.toUtf8();
 
     // pad to 4-byte boundary with at least one zero for the address string
-    bytes.append((bytes.length() + 1) % 4, 0);
+    bytes.append('\x00');
+    pad4(bytes);
 
     // comma at the start of the argument list, even if empty
     bytes.append(',');
@@ -99,19 +111,23 @@ void OSCScriptingInterface::sendMessage(const QString& address, const QString &a
         }
 
         auto expectedType = typeNameMap[argumentTypes[i]];
-        if (expectedType != arg.type()) {
+        if (
+            expectedType != arg.type() &&
+            // JS doesn't have ints, so allow doubles to be interpreted as ints
+            arg.type() != QVariant::Double
+        ) {
             scriptEngine->raiseException(QString("Specified argument type '%1' does not match value of type '%2'").arg(QVariant::typeToName(expectedType)).arg(arg.typeName()));
             return;
         }
 
-        switch (arg.type()) {
+        switch (expectedType) {
             case QVariant::Int: {
                 bytes.append(OSCTag::Int);
 
                 auto* ptr = bodyBytes.data() + bodyBytes.length();
                 bodyBytes.append(4, 0);
 
-                qToBigEndian(static_cast<qint32>(arg.toInt()), ptr);
+                qToBigEndian(static_cast<qint32>(arg.toDouble()), ptr);
             } break;
 
             case QVariant::Double: {
@@ -121,7 +137,7 @@ void OSCScriptingInterface::sendMessage(const QString& address, const QString &a
                 bodyBytes.append(4, 0);
 
                 // FIXME: use std::bit_cast instead of this hack once c++20 is in
-                auto tmp = arg.toFloat();
+                auto tmp = static_cast<float>(arg.toDouble());
                 qToBigEndian(*reinterpret_cast<quint32*>(&tmp), ptr);
             } break;
 
@@ -136,8 +152,10 @@ void OSCScriptingInterface::sendMessage(const QString& address, const QString &a
                 }
 
                 bodyBytes.append(stringArg.toUtf8());
+
                 // pad to 4-byte boundary with at least one zero for the string
-                bodyBytes.append((bodyBytes.length() + 1) % 4, 0);
+                bodyBytes.append('\x00');
+                pad4(bodyBytes);
             } break;
 
             case QVariant::ByteArray: {
@@ -153,8 +171,8 @@ void OSCScriptingInterface::sendMessage(const QString& address, const QString &a
                 // write body
                 bodyBytes.append(bytesArg);
 
-                // pad to 4-byte boundary with at least one zero for the string
-                bodyBytes.append((bodyBytes.length() + 1) % 4, 0);
+                // pad to 4-byte boundary
+                pad4(bodyBytes);
             } break;
 
             // unreachable
@@ -164,11 +182,14 @@ void OSCScriptingInterface::sendMessage(const QString& address, const QString &a
         }
     }
 
-    // pad to 4-byte boundary with at least one zero for the argument list string
-    bytes.append((bytes.length() + 1) % 4, 0);
+    // pad argument type string to 4-byte boundary with at least one zero
+    bytes.append('\x00');
+    pad4(bytes);
 
     // pack the header + body data together for the datagram
     bytes.append(bodyBytes);
 
     _socket->writeDatagram(bytes, QHostAddress(_sendHost.get()), _sendPort.get());
+
+    qCDebug(osc) << QHostAddress(_sendHost.get()) << _sendPort.get() << ":" << bytes.toHex(' ');
 }
