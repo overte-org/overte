@@ -18,37 +18,33 @@
 #include <DependencyManager.h>
 
 #include "SettingHandle.h"
-#include "ScriptManager.h"
 
 class OSCScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
 
-    void receivePacket();
+    void readPacket();
 public:
     OSCScriptingInterface(QObject* parent = nullptr);
     ~OSCScriptingInterface();
 
     /*@jsdoc
-     * Sends an encoded OSC message. The target host address and port are visible as the <code>osc/sendHost</code> and <code>osc/sendPort</code> settings.
+     * Sends an encoded OSC message. The target host address and port are accessible as the <code>osc/sendHost</code> and <code>osc/sendPort</code> settings. Changes to these settings do not apply until a restart.
      * @function OSCSocket.sendMessage
      * @param {string} address - The OSC address, starting with <code>/</code>
-     * @param {string} argumentTypes - A string of the data types contained in <code>arguments</code>.
-     * Supports the <code>i</code> (32-bit integer), <code>f</code> (32-bit float),
-     * <code>s</code> (null-terminated string), <code>b</code> (ArrayBuffer), <code>T</code> (boolean true), and <code>F</code> (boolean false) tag types. The string should not be prefixed with a comma. May be left empty for no arguments.
-     * @param {Array.<*>} [arguments] - OSC arguments.
+     * @param {Array.<*>} [arguments] - OSC arguments. May be plain values, or in an object like <code>{ type: "i", value: 123 }</code>.
+     * Supported OSC types are <code>i</code> (32-bit int), <code>f</code> (32-bit float), <code>s</code> (UTF-8 string), <code>b</code> (<code>ArrayBuffer</code>), <code>F</code> (boolean false), <code>T</code> (boolean true), and <code>N</code> (<code>null</code>). OSC bundles are not supported.
      */
-    Q_INVOKABLE void sendMessage(const QString& address, const QString& argumentTypes = QString(), const QVariantList& arguments = QVariantList());
+    Q_INVOKABLE void sendPacket(const QString& address, const QVariantList& arguments = QVariantList());
 
 signals:
     /*@jsdoc
-     * Triggered when an OSC datagram is received. The receiving host address and port are visible as the <code>osc/receiveHost</code> and <code>osc/receivePort</code> settings.
+     * Triggered when an OSC packet is received. The receiving host address and port are accessible as the <code>osc/receiveHost</code> and <code>osc/receivePort</code> settings. Changes to these settings do not apply until a restart.
      * @function OSCSocket.messageReceived
      * @param {string} address - OSC address starting with <code>/</code>
-     * @param {string} argumentTypes - String of OSC data types contained by <code>arguments</code>
-     * @param {Array.<*>} arguments
+     * @param {Array.<Object.<string,*>>} arguments
      * @returns {Signal}
      */
-    void messageReceived(const QString& address, const QString& argumentTypes, const QVariantList& arguments);
+    void packetReceived(const QString& address, const QVariantList& arguments);
 
 private:
     Setting::Handle<int> _receivePort;
