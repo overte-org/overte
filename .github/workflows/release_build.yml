@@ -96,18 +96,16 @@ jobs:
         cppstd: ${{env.CONAN_CPPSTD}}
         conan_profile: ${{env.CONAN_PROFILE}}
 
-    - name: Upload Conan dependencies
+    - name: Upload Conan binaries
       # Conan isn't glibc aware, so we need to be really careful what we upload to the binary cache on Linux.
+      # Namely, we should never upload anything from a Linux system that is newer than our oldest Linux target.
       # See the upstream discussion: https://github.com/conan-io/conan/issues/7121
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
+      if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS') || startsWith(matrix.os, 'Ubuntu 22.04')
       continue-on-error: true
-      shell: bash
-      env:
+      uses: ./.github/actions/conan-upload-binaries
+      with:
         CONAN_LOGIN_USERNAME_OVERTE: ${{ secrets.conan_login_username_overte }}
         CONAN_PASSWORD_OVERTE: ${{ secrets.conan_password_overte }}
-      run: |
-        conan list --graph=build.json --graph-binaries=build --format=json > pkglist.json
-        conan upload --list=pkglist.json -r=overte -c
 
     - name: Cleanup Conan dependencies
       if: always() && steps.conan-cache.cache-hit != 'true'
