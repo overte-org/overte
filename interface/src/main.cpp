@@ -300,7 +300,7 @@ int main(int argc, const char* argv[]) {
     );
     QCommandLineOption useExperimentalXROption(
         "useExperimentalXR",
-        "Legacy alias of --preferredDisplay=openxr"
+        "Legacy alias of --display=OpenXR"
     );
     QCommandLineOption xrNoHandTrackingOption(
         "xrNoHandTracking",
@@ -313,12 +313,6 @@ int main(int argc, const char* argv[]) {
     QCommandLineOption xrNoPalmPoseOption(
         "xrNoPalmPose",
         "Debug option. Disables use of the OpenXR palm pose, even if it's supported. Falls back to the controller's grip pose."
-    );
-
-    QCommandLineOption preferredDisplay(
-        "preferredDisplay",
-        "If set, this will override the startup dialog asking for the preferred display mode. Can be \"desktop\", \"openvr\", or \"openxr\".",
-        "displayMode"
     );
 
     // "--qmljsdebugger", which appears in output from "--help-all".
@@ -372,7 +366,6 @@ int main(int argc, const char* argv[]) {
     parser.addOption(useExperimentalXROption);
     parser.addOption(xrNoHandTrackingOption);
     parser.addOption(xrNoPalmPoseOption);
-    parser.addOption(preferredDisplay);
 
 
     QString applicationPath;
