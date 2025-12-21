@@ -17,9 +17,7 @@
 <@include gpu/Transform.slh@>
 <$declareStandardTransform()$>
 
-OUTPUT(GPU_ATTR_POSITION, vec3, varPosition);
 OUTPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
-OUTPUT(GPU_ATTR_NORMAL, vec3, varNormal);
 OUTPUT(GPU_ATTR_TEXCOORD0, vec2, varTexCoord0);
 OUTPUT(GPU_ATTR_COLOR, vec4, varColor);
 
@@ -31,6 +29,4 @@ void main(void) {
     TransformCamera cam = getTransformCamera();
     TransformObject obj = getTransformObject();
     <$transformModelToClipPosAndPrevClipPos(cam, obj, inPosition, gl_Position, _prevPositionCS)$>
-    <$transformModelToWorldDir(obj, inNormal.xyz, varNormal)$>
-    varPosition = inPosition.xyz;
 }

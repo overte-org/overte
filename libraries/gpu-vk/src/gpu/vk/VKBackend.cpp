@@ -309,6 +309,7 @@ void VKBackend::render(const Batch& batch) {
     }
 #endif*/
 
+    // VKTODO: This is a workaround to get image on screen for now. Later we need to look on how it's done on OpenGL branch and do it in a similar way.
     if (batch.getName() == "Resample::run") {
         _outputTexture = syncGPUObject(_cache.pipelineState.framebuffer);
     }
@@ -355,7 +356,6 @@ void VKBackend::TransformStageState::preUpdate(size_t commandIndex, const Stereo
     if (_invalidView) {
         // Apply the correction
         if (_viewProjectionState._viewIsCamera && ((_viewCorrectionEnabled || _viewCorrectionEnabledForFramePlayer) && _presentFrame.correction != glm::mat4())) {
-            // FIXME should I switch to using the camera correction buffer in Transform.slf and leave this out?
             Transform::mult(_viewProjectionState._correctedView, _viewProjectionState._view, _presentFrame.correctionInverse);
         } else {
             _viewProjectionState._correctedView = _viewProjectionState._view;

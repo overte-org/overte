@@ -66,6 +66,7 @@ public:
     static uint32_t getBufferCPUCount();
     static Size getBufferCPUMemSize();
 
+    // VKTODO: experiment with making buffer usage inferred from other commands on the batch.
     Buffer(uint32_t usage, Size pageSize = PageManager::DEFAULT_PAGE_SIZE);
 
     template <typename T>
