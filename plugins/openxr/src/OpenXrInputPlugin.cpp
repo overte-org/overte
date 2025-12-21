@@ -27,16 +27,21 @@ enum ExtraButtonChannel {
     LEFT_HAS_TRACKPAD,
     LEFT_HAS_THUMBSTICK,
     LEFT_HAS_CAPACITIVE_TOUCH,
+    LEFT_HAS_TRIGGER_CLICK,
 
     RIGHT_HAS_PRIMARY,
     RIGHT_HAS_TRACKPAD,
     RIGHT_HAS_THUMBSTICK,
     RIGHT_HAS_CAPACITIVE_TOUCH,
+    RIGHT_HAS_TRIGGER_CLICK,
 
     LEFT_TRACKPAD_TOUCH,
     RIGHT_TRACKPAD_TOUCH,
+
     LT_TOUCH,
+    LT_VIRTUAL_CLICK,
     RT_TOUCH,
+    RT_VIRTUAL_CLICK,
 };
 
 enum ExtraAxisChannel {
@@ -572,6 +577,7 @@ controller::Input::NamedVector OpenXrInputPlugin::InputDevice::getAvailableInput
         makePair(LY, "LY"),
         makePair(LT, "LT"),
         makePair(LT_CLICK, "LTClick"),
+        makePair((StandardButtonChannel)LT_VIRTUAL_CLICK, "LTVirtualClick"),
         makePair((StandardButtonChannel)LT_TOUCH, "LTTouch"),
         makePair(LEFT_GRIP, "LeftGrip"),
         makePair(LEFT_PRIMARY_THUMB, "LeftPrimary"),
@@ -592,6 +598,7 @@ controller::Input::NamedVector OpenXrInputPlugin::InputDevice::getAvailableInput
         makePair(RY, "RY"),
         makePair(RT, "RT"),
         makePair(RT_CLICK, "RTClick"),
+        makePair((StandardButtonChannel)RT_VIRTUAL_CLICK, "RTVirtualClick"),
         makePair((StandardButtonChannel)RT_TOUCH, "RTTouch"),
         makePair(RIGHT_GRIP, "RightGrip"),
         makePair(RIGHT_PRIMARY_THUMB, "RightPrimary"),
@@ -687,6 +694,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
         {"left_secondary_touch",   {"Left Secondary Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
         {"left_squeeze_value",     {"Left Squeeze", XR_ACTION_TYPE_FLOAT_INPUT}},
         {"left_trigger_value",     {"Left Trigger", XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"left_trigger_click",     {"Left Trigger Click", XR_ACTION_TYPE_BOOLEAN_INPUT}},
         {"left_trigger_touch",     {"Left Trigger Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
         {"left_thumbstick",        {"Left Thumbstick", XR_ACTION_TYPE_VECTOR2F_INPUT}},
         {"left_thumbstick_click",  {"Left Thumbstick Click", XR_ACTION_TYPE_BOOLEAN_INPUT}},
@@ -704,6 +712,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
         {"right_secondary_touch",  {"Right Secondary Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
         {"right_squeeze_value",    {"Right Squeeze", XR_ACTION_TYPE_FLOAT_INPUT}},
         {"right_trigger_value",    {"Right Trigger", XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"right_trigger_click",    {"Right Trigger Click", XR_ACTION_TYPE_BOOLEAN_INPUT}},
         {"right_trigger_touch",    {"Right Trigger Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
         {"right_thumbstick",       {"Right Thumbstick", XR_ACTION_TYPE_VECTOR2F_INPUT}},
         {"right_thumbstick_click", {"Right Thumbstick Click", XR_ACTION_TYPE_BOOLEAN_INPUT}},
@@ -743,6 +752,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"left_secondary_click",   hand_left  + "/menu/click"},
             {"left_squeeze_value",     hand_left  + "/squeeze/click"},
             {"left_trigger_value",     hand_left  + "/trigger/value"},
+            {"left_trigger_click",     hand_left  + "/trigger/click"},
             {"left_trackpad",          hand_left  + "/trackpad"},
             {"left_trackpad_click",    hand_left  + "/trackpad/click"},
             {"left_trackpad_touch",    hand_left  + "/trackpad/touch"},
@@ -753,6 +763,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"right_secondary_click",  hand_right + "/menu/click"},
             {"right_squeeze_value",    hand_right + "/squeeze/click"},
             {"right_trigger_value",    hand_right + "/trigger/value"},
+            {"right_trigger_click",    hand_right + "/trigger/click"},
             {"right_trackpad",         hand_right + "/trackpad"},
             {"right_trackpad_click",   hand_right + "/trackpad/click"},
             {"right_trackpad_touch",   hand_right + "/trackpad/touch"},
@@ -846,6 +857,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"left_secondary_touch",   hand_left  + "/b/touch"},
             {"left_squeeze_value",     hand_left  + "/squeeze/force"},
             {"left_trigger_value",     hand_left  + "/trigger/value"},
+            {"left_trigger_click",     hand_left  + "/trigger/click"},
             {"left_trigger_touch",     hand_left  + "/trigger/touch"},
             {"left_thumbstick",        hand_left  + "/thumbstick"},
             {"left_thumbstick_click",  hand_left  + "/thumbstick/click"},
@@ -862,6 +874,7 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"right_secondary_click",  hand_right + "/b/click"},
             {"right_secondary_touch",  hand_right + "/b/touch"},
             {"right_squeeze_value",    hand_right + "/squeeze/force"},
+            {"right_trigger_click",    hand_right + "/trigger/click"},
             {"right_trigger_value",    hand_right + "/trigger/value"},
             {"right_trigger_touch",    hand_right + "/trigger/touch"},
             {"right_thumbstick",       hand_right + "/thumbstick"},
@@ -1117,11 +1130,11 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
 
         // TODO: Customisable click threshold?
         if (left_trigger.isActive && left_trigger.currentState >= 0.95f) {
-            _buttonPressedMap.insert(LT_CLICK);
+            _buttonPressedMap.insert(LT_VIRTUAL_CLICK);
         }
 
         if (right_trigger.isActive && right_trigger.currentState >= 0.95f) {
-            _buttonPressedMap.insert(RT_CLICK);
+            _buttonPressedMap.insert(RT_VIRTUAL_CLICK);
         }
     }
 
@@ -1141,6 +1154,7 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     }
 
     std::vector<std::pair<std::string, StandardButtonChannel>> buttonsToUpdate = {
+        {"left_trigger_click", LT_CLICK},
         {"left_primary_click", LEFT_PRIMARY_THUMB},
         {"left_primary_touch", LEFT_PRIMARY_THUMB_TOUCH},
         {"left_secondary_click", LEFT_SECONDARY_THUMB},
@@ -1150,6 +1164,7 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         {"left_trigger_touch", (StandardButtonChannel)LT_TOUCH},
         {"left_trackpad_touch", (StandardButtonChannel)LEFT_TRACKPAD_TOUCH},
 
+        {"right_trigger_click", RT_CLICK},
         {"right_primary_click", RIGHT_PRIMARY_THUMB},
         {"right_primary_touch", RIGHT_PRIMARY_THUMB_TOUCH},
         {"right_secondary_click", RIGHT_SECONDARY_THUMB},
@@ -1192,11 +1207,13 @@ void OpenXrInputPlugin::InputDevice::setupControllerFlags() {
     auto left_primary_touch = _actions.at("left_primary_touch")->getBool();
     auto left_thumbstick = _actions.at("left_thumbstick")->getVector2f();
     auto left_trackpad = _actions.at("left_trackpad")->getVector2f();
+    auto left_trigger_click = _actions.at("left_trigger_click")->getVector2f();
 
     auto right_primary = _actions.at("right_primary_click")->getBool();
     auto right_primary_touch = _actions.at("right_primary_touch")->getBool();
     auto right_thumbstick = _actions.at("right_thumbstick")->getVector2f();
     auto right_trackpad = _actions.at("right_trackpad")->getVector2f();
+    auto right_trigger_click = _actions.at("right_trigger_click")->getVector2f();
 
     if (left_primary.isActive) { _buttonPressedMap.insert(LEFT_HAS_PRIMARY); }
     if (left_trackpad.isActive) { _buttonPressedMap.insert(LEFT_HAS_TRACKPAD); }
@@ -1206,11 +1223,13 @@ void OpenXrInputPlugin::InputDevice::setupControllerFlags() {
     // /input/a/touch also has /input/trigger/touch,
     // so we can safely use that for hand pose simulation
     if (left_primary_touch.isActive) { _buttonPressedMap.insert(LEFT_HAS_CAPACITIVE_TOUCH); }
+    if (left_trigger_click.isActive) { _buttonPressedMap.insert(LEFT_HAS_TRIGGER_CLICK); }
 
     if (right_primary.isActive) { _buttonPressedMap.insert(RIGHT_HAS_PRIMARY); }
     if (right_trackpad.isActive) { _buttonPressedMap.insert(RIGHT_HAS_TRACKPAD); }
     if (right_thumbstick.isActive) { _buttonPressedMap.insert(RIGHT_HAS_THUMBSTICK); }
     if (right_primary_touch.isActive) { _buttonPressedMap.insert(RIGHT_HAS_CAPACITIVE_TOUCH); }
+    if (right_trigger_click.isActive) { _buttonPressedMap.insert(RIGHT_HAS_TRIGGER_CLICK); }
 }
 
 void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& sensorToAvatar) {
