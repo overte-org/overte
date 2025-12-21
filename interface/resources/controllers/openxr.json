@@ -5,8 +5,8 @@
 
         { "from": "OpenXR.LT", "to": "Standard.LT" },
         { "from": "OpenXR.RT", "to": "Standard.RT" },
-        { "from": "OpenXR.LTClick", "to": "Standard.LTClick" },
-        { "from": "OpenXR.RTClick", "to": "Standard.RTClick" },
+        { "from": "OpenXR.LTVirtualClick", "to": "Standard.LTClick" },
+        { "from": "OpenXR.RTVirtualClick", "to": "Standard.RTClick" },
 
         { "from": "OpenXR.LeftGrip", "to": "Standard.LeftGrip" },
         { "from": "OpenXR.RightGrip", "to": "Standard.RightGrip" },
