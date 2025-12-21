@@ -36,5 +36,5 @@
 #define VULKAN_USE_VMA 1
 
 #if VULKAN_USE_VMA
-#include <vk_mem_alloc.h>
+#include "vk_mem_alloc.h"
 #endif
