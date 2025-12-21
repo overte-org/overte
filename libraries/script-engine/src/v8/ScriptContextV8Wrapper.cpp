@@ -38,8 +38,7 @@ ScriptContextV8Wrapper::ScriptContextV8Wrapper(ScriptEngineV8* engine, const v8:
 ScriptContextV8Wrapper::~ScriptContextV8Wrapper() noexcept {
     //V8TODO: what if destructor happens during shutdown and V8 isolate is already disposed of?
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     _context.Reset();
 }
 
@@ -58,8 +57,7 @@ v8::Local<v8::Context> ScriptContextV8Wrapper::toV8Value() const {
 
 int ScriptContextV8Wrapper::argumentCount() const {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_context.Get(isolate));
     if (_functionCallbackInfo) {
@@ -74,12 +72,11 @@ int ScriptContextV8Wrapper::argumentCount() const {
 ScriptValue ScriptContextV8Wrapper::argument(int index) const {
     if (_functionCallbackInfo) {
         auto isolate = _engine->getIsolate();
-        v8::Locker locker(isolate);
-        v8::Isolate::Scope isolateScope(isolate);
+        Q_ASSERT(isolate->IsCurrent());
         v8::HandleScope handleScope(isolate);
         v8::Context::Scope contextScope(_context.Get(isolate));
         v8::Local<v8::Value> result = (*_functionCallbackInfo)[index];
-        if (index < _functionCallbackInfo->kArgsLength) {
+        if (result->IsUndefined()) {
             return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
         } else {
             return _engine->undefinedValue();
@@ -93,8 +90,7 @@ ScriptValue ScriptContextV8Wrapper::argument(int index) const {
 
 QStringList ScriptContextV8Wrapper::backtrace() const {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_context.Get(isolate));
     v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(isolate, 40);
@@ -113,8 +109,7 @@ QStringList ScriptContextV8Wrapper::backtrace() const {
 
 int ScriptContextV8Wrapper::currentLineNumber() const {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_context.Get(isolate));
     v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(isolate, 1);
@@ -128,8 +123,7 @@ int ScriptContextV8Wrapper::currentLineNumber() const {
 
 QString ScriptContextV8Wrapper::currentFileName() const {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_context.Get(isolate));
     v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(isolate, 1);
@@ -156,8 +150,7 @@ ScriptEnginePointer ScriptContextV8Wrapper::engine() const {
 
 ScriptFunctionContextPointer ScriptContextV8Wrapper::functionContext() const {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_context.Get(isolate));
     auto scriptFunctionContextPointer = std::make_shared<ScriptFunctionContextV8Wrapper>(_engine, _context.Get(_engine->getIsolate()));
@@ -171,16 +164,14 @@ ScriptContextPointer ScriptContextV8Wrapper::parentContext() const {
 ScriptValue ScriptContextV8Wrapper::thisObject() const {
     if (_functionCallbackInfo) {
         auto isolate = _engine->getIsolate();
-        v8::Locker locker(isolate);
-        v8::Isolate::Scope isolateScope(isolate);
+        Q_ASSERT(isolate->IsCurrent());
         v8::HandleScope handleScope(isolate);
         v8::Context::Scope contextScope(_context.Get(isolate));
         v8::Local<v8::Value> result = _functionCallbackInfo->This();
         return ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, result)));
     } else if (_propertyCallbackInfo) {
         auto isolate = _engine->getIsolate();
-        v8::Locker locker(isolate);
-        v8::Isolate::Scope isolateScope(isolate);
+        Q_ASSERT(isolate->IsCurrent());
         v8::HandleScope handleScope(isolate);
         v8::Context::Scope contextScope(_context.Get(isolate));
         v8::Local<v8::Value> result = _propertyCallbackInfo->This();
@@ -194,8 +185,7 @@ ScriptValue ScriptContextV8Wrapper::throwError(const QString& text) {
     auto isolate = _engine->getIsolate();
     // V8TODO: I have no idea how to do this yet when it happens on another thread
     if(isolate->IsCurrent()) {
-        v8::Locker locker(isolate);
-        v8::Isolate::Scope isolateScope(isolate);
+        Q_ASSERT(isolate->IsCurrent());
         v8::HandleScope handleScope(isolate);
         v8::Context::Scope contextScope(_context.Get(isolate));
         V8ScriptValue result(_engine,
@@ -210,8 +200,7 @@ ScriptValue ScriptContextV8Wrapper::throwError(const QString& text) {
 
 ScriptValue ScriptContextV8Wrapper::throwValue(const ScriptValue& value) {
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_context.Get(isolate));
     ScriptValueV8Wrapper* unwrapped = ScriptValueV8Wrapper::unwrap(value);
@@ -223,25 +212,23 @@ ScriptValue ScriptContextV8Wrapper::throwValue(const ScriptValue& value) {
 }
 
 ScriptFunctionContextV8Wrapper::ScriptFunctionContextV8Wrapper(ScriptEngineV8* engine, const v8::Local<v8::Context> context) : _engine(engine) {
-    v8::Locker locker(engine->getIsolate());
-    v8::Isolate::Scope isolateScope(engine->getIsolate());
-    v8::HandleScope handleScope(engine->getIsolate());
+    auto isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+    v8::HandleScope handleScope(isolate);
     _context.Reset(engine->getIsolate(), context);
 }
 
 ScriptFunctionContextV8Wrapper::~ScriptFunctionContextV8Wrapper() {
     //V8TODO: what if destructor happens during shutdown and V8 isolate is already disposed of?
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     _context.Reset();
 }
 
 QString ScriptFunctionContextV8Wrapper::fileName() const {
     // It's not exactly like in QtScript, because there's no such context object in V8, let's return the current one for now
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_context.Get(isolate));
     v8::Local<v8::String> name = v8::StackTrace::CurrentScriptNameOrSourceURL(_engine->getIsolate());
@@ -252,8 +239,7 @@ QString ScriptFunctionContextV8Wrapper::fileName() const {
 QString ScriptFunctionContextV8Wrapper::functionName() const {
     // It's not exactly like in QtScript, because there's no such context object in V8, let's return the current one for now
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_context.Get(isolate));
     v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(_engine->getIsolate(), 1);
@@ -272,8 +258,7 @@ ScriptFunctionContext::FunctionType ScriptFunctionContextV8Wrapper::functionType
 int ScriptFunctionContextV8Wrapper::lineNumber() const {
     // It's not exactly like in QtScript, because there's no such context object in V8, let's return the current one for now
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     v8::Context::Scope contextScope(_context.Get(isolate));
     v8::Local<v8::StackTrace> stackTrace = v8::StackTrace::CurrentStackTrace(_engine->getIsolate(), 1);

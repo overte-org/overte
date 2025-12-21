@@ -647,8 +647,10 @@ void ScriptEngines::quitWhenFinished() {
 }
 
 int ScriptEngines::runScriptInitializers(ScriptManagerPointer scriptManager) {
+    auto scopeGuard = scriptManager->engine().get()->getScopeGuard();
     auto nativeCount = DependencyManager::get<ScriptInitializers>()->runScriptInitializers(scriptManager->engine().get());
-    return nativeCount + ScriptInitializerMixin<ScriptManagerPointer>::runScriptInitializers(scriptManager);
+    nativeCount += ScriptInitializerMixin<ScriptManagerPointer>::runScriptInitializers(scriptManager);
+    return nativeCount;
 }
 
 void ScriptEngines::launchScriptEngine(ScriptManagerPointer scriptManager) {
