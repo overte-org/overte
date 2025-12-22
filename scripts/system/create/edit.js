@@ -2654,6 +2654,12 @@
                 if (entity.properties.localRotation !== undefined) {
                     entity.properties.localRotation = Quat.safeEulerAngles(entity.properties.localRotation);
                 }
+                if (entity.properties.grab.equippableLeftRotation !== undefined) {
+                    entity.properties.grab.equippableLeftRotation = Quat.safeEulerAngles(entity.properties.grab.equippableLeftRotation);
+                }
+                if (entity.properties.grab.equippableRightRotation !== undefined) {
+                    entity.properties.grab.equippableRightRotation = Quat.safeEulerAngles(entity.properties.grab.equippableRightRotation);
+                }
                 if (entity.properties.emitOrientation !== undefined) {
                     entity.properties.emitOrientation = Quat.safeEulerAngles(entity.properties.emitOrientation);
                 }
@@ -2706,6 +2712,12 @@
                         }
                         if (properties.localRotation !== undefined) {
                             properties.localRotation = Quat.fromVec3Degrees(properties.localRotation);
+                        }
+                        if (properties.grab.equippableLeftRotation !== undefined) {
+                            properties.grab.equippableLeftRotation = Quat.fromVec3Degrees(properties.grab.equippableLeftRotation);
+                        }
+                        if (properties.grab.equippableRightRotation !== undefined) {
+                            properties.grab.equippableRightRotation = Quat.fromVec3Degrees(properties.grab.equippableRightRotation);
                         }
                         if (properties.emitOrientation !== undefined) {
                             properties.emitOrientation = Quat.fromVec3Degrees(properties.emitOrientation);
