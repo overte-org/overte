@@ -362,9 +362,11 @@ bool EntityTreeSendThread::traverseTreeAndBuildNextPacketPayload(EncodeBitstream
     nodeData->stats.encodeStarted();
     auto entityNode = _node.toStrongRef();
     auto entityNodeData = static_cast<EntityNodeData*>(entityNode->getLinkedData());
+    EntityItemPointer lastEntity;
     while(!_sendQueue.empty()) {
         PrioritizedEntity queuedItem = _sendQueue.top();
         EntityItemPointer entity = queuedItem.getEntity();
+        lastEntity = entity;
         if (entity) {
             const QUuid& entityID = entity->getID();
             // Only send entities that match the jsonFilters, but keep track of everything we've tried to send so we don't try to send it again;
@@ -407,6 +409,16 @@ bool EntityTreeSendThread::traverseTreeAndBuildNextPacketPayload(EncodeBitstream
         _extraEncodeData->entities.clear();
     }
 
+    // This is a workaround for case where entity property is too big to be transmitted at all.
+    // The issue only happens when maximum packet size is lowered after the server was already created, since normally
+    // such properties will not be possible to be created in the first place.
+    // TODO: This can be safely removed once multi-packet entity properties get implemented.
+    if (_numEntities == 0 && params.stopReason == EncodeBitstreamParams::DIDNT_FIT) {
+        qDebug() << "EntityTreeSendThread::traverseTreeAndBuildNextPacketPayload: One of the entities has a property "
+            " that is too large to be transmitted. Entity UUID: "
+            << lastEntity->getID() << " type: " << lastEntity->getType() << " name: " << lastEntity->getName();
+        params.stopReason = EncodeBitstreamParams::FINISHED;
+    }
     if (_numEntities == 0) {
         _packetData.discardLevel(entitiesLevel);
         OctreeServer::trackEncodeTime((float)(usecTimestampNow() - encodeStart));
