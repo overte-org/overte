@@ -85,13 +85,13 @@ jobs:
 
         # Linux build variables
         if [[ "${{ matrix.os }}" =~ "Ubuntu" ]]; then
-          echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
+          echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
           echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DBUILD_TOOLS:BOOLEAN=FALSE" >> $GITHUB_ENV
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
-          echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
+          echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
           # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
