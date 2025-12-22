@@ -136,6 +136,17 @@ jobs:
         CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN: ${{ secrets.CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN }}
       run: conan cache backup-upload
 
+    - name: Upload Conan binary cache to Artifactory
+      # Conan isn't glibc aware, so we need to be really careful what we upload to the binary cache on Linux.
+      # Namely, we should never upload anything from a Linux system that is newer than our oldest Linux target.
+      # See the upstream discussion: https://github.com/conan-io/conan/issues/7121
+      if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS') || startsWith(matrix.os, 'Ubuntu 22.04')
+      continue-on-error: true
+      uses: ./.github/actions/conan-upload-binaries
+      with:
+        CONAN_LOGIN_USERNAME_OVERTE: ${{ secrets.conan_login_username_overte }}
+        CONAN_PASSWORD_OVERTE: ${{ secrets.conan_password_overte }}
+
     - name: Cleanup Conan dependencies
       if: always() && steps.conan-cache.cache-hit != 'true'
       run: conan cache clean "*" -sbd
