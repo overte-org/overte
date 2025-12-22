@@ -153,17 +153,17 @@ int main(int argc, const char* argv[]) {
     );
     QCommandLineOption displaysOption(
         "display",
-        "Preferred display plugin. Valid options include \"Desktop\", \"OpenXR\", and \"OpenVR (Vive)\"",
+        "Preferred display plugin. Valid options include \"Desktop\", \"OpenXR\", and \"OpenVR (Vive)\". If \"Desktop\" is specified, all VR plugins are disabled.",
         "displays"
     );
     QCommandLineOption disableDisplaysOption(
         "disableDisplayPlugins",
-        "Display plugins to disable, separated by commas. Valid options include \"OpenXR\" and \"OpenVR (Vive)\"",
+        "Display plugins to disable, separated by commas. Valid options include \"OpenXR\" and \"OpenVR (Vive)\".",
         "string"
     );
     QCommandLineOption disableInputsOption(
         "disableInputPlugins",
-        "Input plugins to disable, separated by commas. Valid options include \"SDL2\" (used only for gamepads), \"OpenXR\", and \"OpenVR (Vive)\"",
+        "Input plugins to disable, separated by commas. Valid options include \"SDL2\" (used only for gamepads), \"OpenXR\", and \"OpenVR (Vive)\".",
         "string"
     );
     QCommandLineOption suppressSettingsResetOption(
@@ -300,7 +300,7 @@ int main(int argc, const char* argv[]) {
     );
     QCommandLineOption useExperimentalXROption(
         "useExperimentalXR",
-        "Legacy alias of --display=OpenXR"
+        "Legacy alias of \"--display=OpenXR\"."
     );
     QCommandLineOption xrNoHandTrackingOption(
         "xrNoHandTracking",
