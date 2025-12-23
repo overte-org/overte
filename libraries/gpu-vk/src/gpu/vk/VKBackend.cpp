@@ -1856,7 +1856,7 @@ void VKBackend::initDefaultTexture() {
     }
 
     _defaultTexture = gpu::Texture::create2D(gpu::Element{ gpu::VEC4, gpu::NUINT8, gpu::RGBA }, width, height, 1U,
-                                                gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR, gpu::Sampler::WRAP_CLAMP));
+                                                Sampler(Sampler::FILTER_MIN_MAG_LINEAR, Sampler::WRAP_CLAMP));
     _defaultTexture->setSource("defaultVulkanTexture");
     _defaultTexture->setStoredMipFormat(_defaultTexture->getTexelFormat());
     _defaultTexture->assignStoredMip(0, width * height * sizeof(uint8_t) * 4, (const gpu::Byte*)buffer.data());
@@ -1866,7 +1866,7 @@ void VKBackend::initDefaultTexture() {
     // Skyboxes cannot use single layer texture on Vulkan so a separate one needs to be created
     Q_ASSERT(width == height);
     _defaultSkyboxTexture = gpu::Texture::createCube(gpu::Element{ gpu::VEC4, gpu::NUINT8, gpu::RGBA }, width, 1U,
-                                                        gpu::Sampler(gpu::Sampler::FILTER_MIN_MAG_LINEAR, gpu::Sampler::WRAP_CLAMP));
+                                                        Sampler(Sampler::FILTER_MIN_MAG_LINEAR, Sampler::WRAP_CLAMP));
     _defaultSkyboxTexture->setSource("defaultVulkanSkyboxTexture");
     _defaultSkyboxTexture->setStoredMipFormat(_defaultSkyboxTexture->getTexelFormat());
     for (int i = 0; i < 6; i++) {

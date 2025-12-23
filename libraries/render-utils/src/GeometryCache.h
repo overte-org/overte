@@ -132,13 +132,13 @@ struct FadeBuffers {
 
     void bind(gpu::Batch& batch) const;
 
-    gpu::BufferPointer _fade1Buffer { std::make_shared<gpu::Buffer>() };
-    gpu::BufferPointer _fade2Buffer { std::make_shared<gpu::Buffer>() };
-    gpu::BufferPointer _fade3Buffer { std::make_shared<gpu::Buffer>() };
-    gpu::BufferPointer _fade4Buffer { std::make_shared<gpu::Buffer>() };
-    gpu::BufferPointer _fade5Buffer { std::make_shared<gpu::Buffer>() };
-    gpu::BufferPointer _fade6Buffer { std::make_shared<gpu::Buffer>() };
-    gpu::BufferPointer _fade7Buffer { std::make_shared<gpu::Buffer>() };
+    gpu::BufferPointer _fade1Buffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
+    gpu::BufferPointer _fade2Buffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
+    gpu::BufferPointer _fade3Buffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
+    gpu::BufferPointer _fade4Buffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
+    gpu::BufferPointer _fade5Buffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
+    gpu::BufferPointer _fade6Buffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
+    gpu::BufferPointer _fade7Buffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
 };
 
 /// Stores cached geometry.

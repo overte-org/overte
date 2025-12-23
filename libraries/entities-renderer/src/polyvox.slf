@@ -40,7 +40,7 @@
     <@else@>
         INPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
     <@endif@>
-    INPUT(RENDER_UTILS_ATTR_POSITION_MS, vec4, _positionMS);
+    INPUT(RENDER_UTILS_ATTR_POSITION_MS, vec3, _positionMS);
     INPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
 
     TEXTURE(ENTITIES_TEXTURE_POLYVOX_XMAP, sampler2D, xMap);

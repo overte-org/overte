@@ -16,6 +16,7 @@
 #include <gpu/Format.h>
 #include <gpu/Context.h>
 #include "VKBackend.h"
+#include <Sampler.h>
 
 Q_DECLARE_LOGGING_CATEGORY(gpu_vk_logging)
 Q_DECLARE_LOGGING_CATEGORY(trace_gpu_vk)
@@ -62,7 +63,7 @@ static const VkBlendFactor BLEND_ARGS_TO_VK[State::NUM_BLEND_ARGS] = {
     VK_BLEND_FACTOR_ONE_MINUS_CONSTANT_ALPHA,
 };
 
-static const VkCompareOp COMPARISON_TO_VK[gpu::NUM_COMPARISON_FUNCS] = {
+static const VkCompareOp COMPARISON_TO_VK[static_cast<size_t>(ComparisonFunction::NUM_COMPARISON_FUNCS)] = {
     VK_COMPARE_OP_NEVER,
     VK_COMPARE_OP_LESS,
     VK_COMPARE_OP_EQUAL,

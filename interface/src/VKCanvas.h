@@ -21,6 +21,8 @@
 /// customized canvas that simply forwards requests/events to the singleton application
 class VKCanvas : public VKWidget {
     Q_OBJECT
+public:
+    ~VKCanvas() {};
 protected:
     virtual bool event(QEvent* event) override;
 };

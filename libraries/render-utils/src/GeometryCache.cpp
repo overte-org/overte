@@ -1315,9 +1315,9 @@ void GeometryCache::renderQuadFade(gpu::Batch& batch, const glm::vec2& minCorner
         details.vertices = VERTICES;
         details.vertexSize = FLOATS_PER_VERTEX;
 
-        auto verticesBuffer = std::make_shared<gpu::Buffer>();
-        auto normalBuffer = std::make_shared<gpu::Buffer>();
-        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto normalBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto colorBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
         auto streamFormat = std::make_shared<gpu::Stream::Format>();
         auto stream = std::make_shared<gpu::BufferStream>();
 
@@ -1482,9 +1482,9 @@ void GeometryCache::renderQuadFade(gpu::Batch& batch, const glm::vec2& minCorner
         details.vertices = VERTICES;
         details.vertexSize = FLOATS_PER_VERTEX;
 
-        auto verticesBuffer = std::make_shared<gpu::Buffer>();
-        auto normalBuffer = std::make_shared<gpu::Buffer>();
-        auto colorBuffer = std::make_shared<gpu::Buffer>();
+        auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto normalBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto colorBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
         auto streamFormat = std::make_shared<gpu::Stream::Format>();
         auto stream = std::make_shared<gpu::BufferStream>();
 
@@ -1894,8 +1894,8 @@ void GeometryCache::renderTorus(gpu::Batch& batch, float innerRadius, gpu::Buffe
         details.vertices = 6 * (NUM_DIVISIONS + 1) * (NUM_DIVISIONS + 1);
         details.vertexSize = FLOATS_PER_VERTEX;
 
-        auto verticesBuffer = std::make_shared<gpu::Buffer>();
-        auto indicesBuffer = std::make_shared<gpu::Buffer>();
+        auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto indicesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer);
         auto streamFormat = std::make_shared<gpu::Stream::Format>();
         auto stream = std::make_shared<gpu::BufferStream>();
 
@@ -2009,8 +2009,8 @@ void GeometryCache::renderTorusFade(gpu::Batch& batch, float innerRadius, gpu::B
         details.vertices = 6 * (NUM_DIVISIONS + 1) * (NUM_DIVISIONS + 1);
         details.vertexSize = FLOATS_PER_VERTEX;
 
-        auto verticesBuffer = std::make_shared<gpu::Buffer>();
-        auto indicesBuffer = std::make_shared<gpu::Buffer>();
+        auto verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+        auto indicesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer);
         auto streamFormat = std::make_shared<gpu::Stream::Format>();
         auto stream = std::make_shared<gpu::BufferStream>();
 
