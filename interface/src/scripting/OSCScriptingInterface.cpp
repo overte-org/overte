@@ -14,7 +14,9 @@
 #include <QtEndian>
 #include <QNetworkDatagram>
 
+#include "ScriptContext.h"
 #include "ScriptEngine.h"
+#include "ScriptValue.h"
 #include "OSCScriptingInterface.h"
 
 
@@ -179,26 +181,29 @@ void OSCScriptingInterface::readPacket() {
     emit packetReceived(addr, args);
 }
 
-void OSCScriptingInterface::sendPacket(const QString& address, const QVariantList& arguments) {
-    Q_ASSERT(_socket);
+ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngine* engine) {
+    auto instance = DependencyManager::get<OSCScriptingInterface>();
 
-    // FIXME: how do you get the script engine???
-    struct HackRemoveThis {
-        void raiseException(QString msg) {
-            qCCritical(osc_cat) << msg;
-        }
-    };
+    if (context->argumentCount() == 0) {
+        engine->raiseException("Address is required");
+        return engine->undefinedValue();
+    }
 
-    auto scriptEngine = std::make_unique<HackRemoveThis>(); //_scriptManager->engine();
+    auto address = context->argument(0).toString();
+    QVariantList arguments;
+
+    for (int i = 1; i < context->argumentCount(); i++) {
+        arguments.append(context->argument(i).toVariant());
+    }
 
     if (address.length() < 2 || !address.startsWith('/') || address.endsWith('/')) {
-        scriptEngine->raiseException("address must be at least two characters and start with '/'");
-        return;
+        engine->raiseException("Address must be at least two characters and start with '/'");
+        return engine->undefinedValue();
     }
 
     if (auto match = invalidCharacters.match(address); match.hasMatch()) {
-        scriptEngine->raiseException(QString("address contains invalid character '%1'").arg(match.captured()));
-        return;
+        engine->raiseException(QString("Address contains invalid character '%1'").arg(match.captured()));
+        return engine->undefinedValue();
     }
 
     auto pad4 = [](QByteArray& array) {
@@ -226,8 +231,8 @@ void OSCScriptingInterface::sendPacket(const QString& address, const QVariantLis
             auto map = arg.toMap();
             auto typeName = map.value("type").toString();
             if (!typeNameMap.contains(typeName[0])) {
-                scriptEngine->raiseException(QString("Unknown type '%c' on argument %d").arg(typeName).arg(i));
-                return;
+                engine->raiseException(QString("Unknown type '%c' on argument %d").arg(typeName).arg(i));
+                return engine->undefinedValue();
             }
             expectedType = typeNameMap[typeName[0]];
             value = map.value("value");
@@ -268,8 +273,8 @@ void OSCScriptingInterface::sendPacket(const QString& address, const QVariantLis
                 auto stringArg = value.toString();
 
                 if (stringArg.contains(QChar(0))) {
-                    scriptEngine->raiseException("String contains null (0x00) character");
-                    return;
+                    engine->raiseException("String contains null (0x00) character");
+                    return engine->undefinedValue();
                 }
 
                 bodyBytes.append(stringArg.toUtf8());
@@ -301,8 +306,8 @@ void OSCScriptingInterface::sendPacket(const QString& address, const QVariantLis
                 break;
 
             default:
-                scriptEngine->raiseException(QString("Unserializable type %1").arg(value.typeName()));
-                return;
+                engine->raiseException(QString("Unserializable type %1").arg(value.typeName()));
+                return engine->undefinedValue();
         }
     }
 
@@ -313,7 +318,9 @@ void OSCScriptingInterface::sendPacket(const QString& address, const QVariantLis
     // pack the header + body data together for the datagram
     bytes.append(bodyBytes);
 
-    _socket->writeDatagram(bytes, QHostAddress(_sendHost.get()), _sendPort.get());
+    instance->_socket->writeDatagram(bytes, QHostAddress(instance->_sendHost.get()), instance->_sendPort.get());
 
-    qCDebug(osc_cat) << QHostAddress(_sendHost.get()) << _sendPort.get() << ":" << bytes.toHex(' ');
+    qCDebug(osc_cat) << QHostAddress(instance->_sendHost.get()) << instance->_sendPort.get() << ":" << bytes.toHex(' ');
+
+    return engine->undefinedValue();
 }
