@@ -466,7 +466,6 @@ void main(void) {
         parametricRimFresnelPower, parametricRimLift, rimTex, rimLightingMix, matKeys[0]), opacity);
 
     <@if HIFI_USE_FORWARD@>
-        // TODO: toony local lights, maybe move this to the technique used in #1934?
         vec3 fragPositionWS = _positionWS.xyz;
         vec3 fragToEyeWS = cam._viewInverse[3].xyz - fragPositionWS;
         vec3 fragToEyeDirWS = normalize(fragToEyeWS);
