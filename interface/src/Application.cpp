@@ -660,6 +660,7 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject(sgp, "Graphics", DependencyManager::get<GraphicsScriptingInterface>().data());
 
     scriptEngine->registerGlobalObject(sgp, "OSCSocket", DependencyManager::get<OSCScriptingInterface>().data());
+    scriptEngine->registerFunction(sgp, "OSCSocket", "sendPacket", OSCScriptingInterface::sendPacket, 0);
 
     scriptEngine->registerGlobalObject(sgp, "ScriptDiscoveryService", DependencyManager::get<ScriptEngines>().data());
     scriptEngine->registerGlobalObject(sgp, "Reticle", getApplicationCompositor().getReticleInterface());
