@@ -19,10 +19,12 @@
 
 #include "SettingHandle.h"
 
+class ScriptValue;
+class ScriptEngine;
+class ScriptContext;
+
 class OSCScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
-
-    void readPacket();
 public:
     OSCScriptingInterface(QObject* parent = nullptr);
     ~OSCScriptingInterface();
@@ -31,10 +33,10 @@ public:
      * Sends an encoded OSC message. The target host address and port are accessible as the <code>osc/sendHost</code> and <code>osc/sendPort</code> settings. Changes to these settings do not apply until a restart.
      * @function OSCSocket.sendMessage
      * @param {string} address - The OSC address, starting with <code>/</code>
-     * @param {Array.<*>} [arguments] - OSC arguments. May be plain values, or in an object like <code>{ type: "i", value: 123 }</code>.
+     * @param {...*} [arguments] - OSC arguments. May be plain values, or in an object like <code>{ type: "i", value: 123 }</code>.
      * Supported OSC types are <code>i</code> (32-bit int), <code>f</code> (32-bit float), <code>s</code> (UTF-8 string), <code>b</code> (<code>ArrayBuffer</code>), <code>F</code> (boolean false), <code>T</code> (boolean true), and <code>N</code> (<code>null</code>). OSC bundles are not supported.
      */
-    Q_INVOKABLE void sendPacket(const QString& address, const QVariantList& arguments = QVariantList());
+    static ScriptValue sendPacket(ScriptContext* context, ScriptEngine* engine);
 
 signals:
     /*@jsdoc
@@ -47,6 +49,8 @@ signals:
     void packetReceived(const QString& address, const QVariantList& arguments);
 
 private:
+    void readPacket();
+
     Setting::Handle<int> _receivePort;
     Setting::Handle<QString> _receiveHost;
 
