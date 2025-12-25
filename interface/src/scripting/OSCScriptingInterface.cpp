@@ -11,7 +11,6 @@
 
 #include <QLoggingCategory>
 #include <QRegularExpression>
-#include <QtEndian>
 #include <QNetworkDatagram>
 
 #include "ScriptContext.h"
@@ -19,14 +18,144 @@
 #include "ScriptValue.h"
 #include "OSCScriptingInterface.h"
 
+#include <array>
+#include <bit>
+#include <optional>
+#include <QByteArray>
 
-Q_LOGGING_CATEGORY(osc_cat, "osc")
+// TODO: Split this out into libshared later
+// This might be handy to reuse in other modules too
+namespace DataHelpers {
+
+template<typename T, std::endian endianness = std::endian::big>
+    // don't try to write pointers, references, structs, etc
+    requires (std::is_arithmetic_v<T>)
+inline auto write(QByteArray& ba, T v) {
+    std::array<char, sizeof(v)> buffer;
+
+    std::copy_n(reinterpret_cast<char*>(&v), sizeof(v), buffer.begin());
+
+    if constexpr (std::endian::native != endianness) {
+        std::reverse(buffer.begin(), buffer.end());
+    }
+
+    return ba.append(buffer.data(), buffer.size());
+}
+
+template<typename T>
+inline auto writeUTF8NullTerminated(QByteArray& ba, const T& v);
+
+template<>
+inline auto writeUTF8NullTerminated(QByteArray& ba, const QString& v) {
+    ba.append(v.toUtf8());
+    return ba.append('\x00');
+}
+
+template<typename T, std::endian endianness = std::endian::big>
+    // don't try to read pointers, references, structs, etc
+    requires (std::is_arithmetic_v<T>)
+inline std::optional<T> read(QByteArray& ba, int& offset) {
+    if (offset < 0) { return std::nullopt; }
+
+    std::array<char, sizeof(T)> buffer;
+
+    // the byte array doesn't have enough
+    // data left to fulfill the read
+    if (offset + static_cast<int>(sizeof(T)) > ba.size()) {
+        return std::nullopt;
+    }
+
+    std::copy_n(ba.constData() + offset, sizeof(T), buffer.begin());
+
+    if constexpr (std::endian::native != endianness) {
+        std::reverse(buffer.begin(), buffer.end());
+    }
+
+    T value;
+    std::copy_n(buffer.data(), buffer.size(), reinterpret_cast<char*>(&value));
+
+    offset += sizeof(T);
+
+    return value;
+}
+
+template<typename T, int N>
+    requires (sizeof(T) == 1 && N > 0)
+inline std::optional<std::array<T, N>> read(QByteArray& ba, int& offset) {
+    if (offset < 0) { return std::nullopt; }
+
+    std::array<T, N> buffer;
+
+    // the byte array doesn't have enough
+    // data left to fulfill the read
+    if (offset + N > ba.size()) {
+        return std::nullopt;
+    }
+
+    std::copy_n(ba.constData() + offset, N, buffer.begin());
+
+    return buffer;
+}
+
+inline std::optional<QByteArray> read(QByteArray& ba, int offset, int length) {
+    if (offset < 0 || length < 1) { return std::nullopt; }
+
+    // the byte array doesn't have enough
+    // data left to fulfill the read
+    if (offset + length > ba.size()) {
+        return std::nullopt;
+    }
+
+    return QByteArray(ba.constData() + offset, length);
+}
+
+template<typename T>
+inline std::optional<T>
+readUTF8NullTerminated(QByteArray& ba, int& offset);
+
+template<>
+inline std::optional<QString>
+readUTF8NullTerminated(QByteArray& ba, int& offset) {
+    auto cursor = offset;
+
+    for (int i = 0; (i + cursor) < ba.size(); i++) {
+        if (ba[i + cursor] == '\x00') {
+            offset = offset + i;
+            return QString::fromUtf8(ba.constData() + cursor, i);
+        }
+    }
+
+    return std::nullopt;
+}
+
+template<>
+inline std::optional<QByteArray>
+readUTF8NullTerminated(QByteArray& ba, int& offset) {
+    auto cursor = offset;
+
+    for (int i = 0; (i + cursor) < ba.size(); i++) {
+        if (ba[i + cursor] == '\x00') {
+            offset = offset + i;
+            return QByteArray(ba.constData() + cursor, i);
+        }
+    }
+
+    return std::nullopt;
+}
+
+}
+
+
+Q_LOGGING_CATEGORY(osc_cat, "overte.osc")
 
 enum OSCTag: char {
+    // standard types
     Int = 'i',
     Float = 'f',
     String = 's',
     Blob = 'b',
+
+    // extension types
     False = 'F',
     True = 'T',
     Null = 'N',
@@ -78,77 +207,108 @@ void OSCScriptingInterface::readPacket() {
     QByteArray argTypes;
     QVariantList args;
 
-    // address
-    for (int i = 0; (i + cursor) < data.length(); i++) {
-        if (data[i + cursor] == '\x00') {
-            addr = QString::fromUtf8(data.constData(), i);
-            cursor = next4(cursor + i);
-            break;
-        }
+    if (
+        auto s = DataHelpers::readUTF8NullTerminated<QString>(data, cursor);
+        s.has_value() && !s->isEmpty()
+    ) {
+        addr = *s;
+    } else {
+        qCritical(osc_cat, "Early EOF in packet, OSC address missing");
+        return;
+    }
+    cursor = next4(cursor);
+
+    if (addr == "#bundle") {
+        qCritical(osc_cat, "Received OSC bundle, which isn't supported");
+        return;
     }
 
-    if (addr.isEmpty()) { return; }
+    if (
+        auto s = DataHelpers::readUTF8NullTerminated<QByteArray>(data, cursor);
+        s.has_value() && !s->isEmpty()
+    ) {
+        argTypes = *s;
+    } else {
+        qCritical(osc_cat, "Early EOF in packet, argument types string missing");
+        return;
+    }
+    cursor = next4(cursor);
 
-    // argument types
-    for (int i = 0; (i + cursor) < data.length(); i++) {
-        if (data[i + cursor] == '\x00') {
-            argTypes = QByteArray(data.constData() + cursor, i);
-            cursor = next4(cursor + i);
-            break;
-        }
+    if (argTypes[0] != ',') {
+        qCritical(osc_cat, "Argument type string does not start with ','");
+        return;
     }
 
     // +1 to exclude the comma
     for (int arg = 1; arg < argTypes.length(); arg++) {
         switch (argTypes[arg]) {
             case OSCTag::Int: {
-                const char* ptr = data.constData() + cursor;
-                qint32 tmp = qFromBigEndian<qint32>(ptr);
-                args.append(QVariantMap {
-                    {"type", QString(OSCTag::Int)},
-                    {"value", tmp},
-                });
-                cursor += 4;
-            } break;
+                auto value = DataHelpers::read<qint32>(data, cursor);
 
-            case OSCTag::Float: {
-                const char* ptr = data.constData() + cursor;
-                qint32 tmp = qFromBigEndian<qint32>(ptr);
-                args.append(QVariantMap {
-                    {"type", QString(OSCTag::Float)},
-                    {"value", *reinterpret_cast<float*>(&tmp)},
-                });
-                cursor += 4;
-            } break;
-
-            case OSCTag::String: {
-                QString tmp;
-
-                for (int i = 0; i + cursor < data.length(); i++) {
-                    if (data[i + cursor] == '\x00') {
-                        tmp = QString::fromUtf8(data.constData() + cursor, i);
-                        cursor = next4(cursor + i);
-                        break;
-                    }
+                if (!value.has_value()) {
+                    qCritical(osc_cat, "Early EOF in packet (%s), reading int at offset %d", qUtf8Printable(addr), cursor);
+                    return;
                 }
 
                 args.append(QVariantMap {
+                    {"type", QString(OSCTag::Int)},
+                    {"value", value.value()},
+                });
+            } break;
+
+            case OSCTag::Float: {
+                auto value = DataHelpers::read<float>(data, cursor);
+
+                if (!value.has_value()) {
+                    qCritical(osc_cat, "Early EOF in packet (%s), reading float at offset %d", qUtf8Printable(addr), cursor);
+                    return;
+                }
+
+                args.append(QVariantMap {
+                    {"type", QString(OSCTag::Float)},
+                    {"value", value.value()},
+                });
+            } break;
+
+            case OSCTag::String: {
+                int startCursor = cursor;
+                auto value = DataHelpers::readUTF8NullTerminated<QString>(data, cursor);
+
+                if (!value.has_value()) {
+                    qCritical(osc_cat, "Early EOF in packet (%s), string starting at offset %d", qUtf8Printable(addr), startCursor);
+                    return;
+                }
+
+                cursor = next4(cursor);
+
+                args.append(QVariantMap {
                     {"type", QString(OSCTag::String)},
-                    {"value", tmp},
+                    {"value", value.value()},
                 });
             } break;
 
             case OSCTag::Blob: {
-                const char* ptr = data.constData() + cursor;
-                auto len = qFromBigEndian<qint32>(ptr);
-                cursor += 4;
+                auto len = DataHelpers::read<qint32>(data, cursor);
+
+                if (!len.has_value()) {
+                    qCritical(osc_cat, "Early EOF in packet (%s), reading blob at offset %d (length prefix)", qUtf8Printable(addr), cursor);
+                    return;
+                }
+
+                auto startCursor = cursor;
+                auto bytes = DataHelpers::read(data, cursor, len.value());
+
+                if (!bytes.has_value()) {
+                    qCritical(osc_cat, "Early EOF in packet (%s), reading blob at offset %d (data)", qUtf8Printable(addr), startCursor);
+                    return;
+                }
 
                 args.append(QVariantMap {
                     {"type", QString(OSCTag::Blob)},
-                    {"value", QByteArray(data.constData() + cursor, len)},
+                    {"value", bytes.value()},
                 });
 
-                cursor = next4(cursor + len);
+                cursor = next4(cursor + len.value());
             } break;
 
             case OSCTag::False:
@@ -194,6 +354,12 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
 
     for (int i = 1; i < context->argumentCount(); i++) {
         arguments.append(context->argument(i).toVariant());
+    }
+
+
+    if (address == "#bundle") {
+        engine->raiseException("OSC bundles are not supported");
+        return engine->undefinedValue();
     }
 
     if (address.length() < 2 || !address.startsWith('/') || address.endsWith('/')) {
@@ -249,22 +415,12 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
         switch (expectedType) {
             case QVariant::Int: {
                 bytes.append(OSCTag::Int);
-
-                auto* ptr = bodyBytes.data() + bodyBytes.length();
-                bodyBytes.append(4, 0);
-
-                qToBigEndian(static_cast<qint32>(value.toDouble()), ptr);
+                DataHelpers::write(bodyBytes, static_cast<qint32>(value.toDouble()));
             } break;
 
             case QVariant::Double: {
                 bytes.append(OSCTag::Float);
-
-                auto* ptr = bodyBytes.data() + bodyBytes.length();
-                bodyBytes.append(4, 0);
-
-                // FIXME: use std::bit_cast instead of this hack once c++20 is in
-                auto tmp = static_cast<float>(value.toDouble());
-                qToBigEndian(*reinterpret_cast<quint32*>(&tmp), ptr);
+                DataHelpers::write(bodyBytes, static_cast<float>(value.toDouble()));
             } break;
 
             case QVariant::String: {
@@ -277,10 +433,7 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
                     return engine->undefinedValue();
                 }
 
-                bodyBytes.append(stringArg.toUtf8());
-
-                // pad to 4-byte boundary with at least one zero for the string
-                bodyBytes.append('\x00');
+                DataHelpers::writeUTF8NullTerminated(bodyBytes, stringArg);
                 pad4(bodyBytes);
             } break;
 
@@ -289,12 +442,7 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
 
                 auto bytesArg = value.toByteArray();
 
-                // write length prefix
-                auto* ptr = bodyBytes.data() + bodyBytes.length();
-                bodyBytes.append(4, 0);
-                qToBigEndian(bytesArg.length(), ptr);
-
-                // write body
+                DataHelpers::write(bodyBytes, bytesArg.length());
                 bodyBytes.append(bytesArg);
 
                 // pad to 4-byte boundary
