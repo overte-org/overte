@@ -185,12 +185,17 @@ OSCScriptingInterface::OSCScriptingInterface(QObject* parent) :
 
     connect(_socket.get(), &QUdpSocket::readyRead, this, &OSCScriptingInterface::readPacket);
 
-    qCInfo(osc_cat) << "Listening on" << _socket->localAddress();
+    qCInfo(osc_cat) << "Listening on" << _socket->localAddress() << ":" << _socket->localPort();
 }
 
 OSCScriptingInterface::~OSCScriptingInterface() {
     _socket->close();
     qCInfo(osc_cat) << "Closed listen socket";
+}
+
+void OSCScriptingInterface::rebindSocket() {
+    _socket->bind(QHostAddress(_sendHost.get()), _sendPort.get());
+    qCInfo(osc_cat) << "Listening on" << _socket->localAddress() << ":" << _socket->localPort();
 }
 
 void OSCScriptingInterface::readPacket() {
@@ -471,4 +476,42 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
     qCDebug(osc_cat) << QHostAddress(instance->_sendHost.get()) << instance->_sendPort.get() << ":" << bytes.toHex(' ');
 
     return engine->undefinedValue();
+}
+
+void OSCScriptingInterface::setReceiveHost(QString host) {
+    QHostAddress address;
+
+    // only save if it's a valid address
+    if (address.setAddress(host)) {
+        _receiveHost.set(host);
+        rebindSocket();
+    }
+}
+
+void OSCScriptingInterface::setSendHost(QString host) {
+    QHostAddress address;
+
+    // only save if it's a valid address
+    if (address.setAddress(host)) {
+        _sendHost.set(host);
+    }
+}
+
+void OSCScriptingInterface::setSendPort(int port) {
+    if (port < 1 || port > 65535) {
+        qCritical(osc_cat) << "setSendPort: invalid port" << port;
+        return;
+    }
+
+    _sendPort.set(port);
+}
+
+void OSCScriptingInterface::setReceivePort(int port) {
+    if (port < 1024 || port > 65535) {
+        qCritical(osc_cat) << "setReceivePort: invalid port" << port;
+        return;
+    }
+
+    _receivePort.set(port);
+    rebindSocket();
 }
