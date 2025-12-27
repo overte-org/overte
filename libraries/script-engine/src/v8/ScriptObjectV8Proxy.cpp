@@ -241,7 +241,7 @@ ScriptObjectV8Proxy::~ScriptObjectV8Proxy() {
         v8::HandleScope handleScope(isolate);
         _v8Object.Reset();
         QObject* qobject = _object;
-        if(qobject) qobject->deleteLater();
+        if(qobject) delete qobject;
     } else {
         v8::HandleScope handleScope(isolate);
         if (_object)
@@ -409,6 +409,7 @@ void ScriptObjectV8Proxy::investigate() {
 void ScriptObjectV8Proxy::weakHandleCallback(const v8::WeakCallbackInfo<ScriptObjectV8Proxy>& info) {
     auto proxy = info.GetParameter();
     proxy->_v8Object.Reset();
+    qDebug() << __FUNCTION__ << " deleteLater";
     info.GetParameter()->_object->deleteLater();
 }
 
@@ -928,6 +929,7 @@ ScriptMethodV8Proxy::~ScriptMethodV8Proxy() {
 void ScriptMethodV8Proxy::weakHandleCallback(const v8::WeakCallbackInfo<ScriptMethodV8Proxy>& info) {
     auto proxy = info.GetParameter();
     proxy->_objectLifetime.Reset();
+    qDebug() << __FUNCTION__ << " deleteLater";
     info.GetParameter()->deleteLater();
 }
 
@@ -1209,6 +1211,7 @@ ScriptSignalV8Proxy::~ScriptSignalV8Proxy() {
 void ScriptSignalV8Proxy::weakHandleCallback(const v8::WeakCallbackInfo<ScriptSignalV8Proxy>& info) {
     auto proxy = info.GetParameter();
     proxy->_objectLifetime.Reset();
+    qDebug() << __FUNCTION__ << " deleteLater";
     proxy->deleteLater();
 }
 
