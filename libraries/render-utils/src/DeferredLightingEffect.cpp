@@ -93,6 +93,26 @@ void DeferredLightingEffect::unsetKeyLightBatch(gpu::Batch& batch) {
 }
 
 void DeferredLightingEffect::setupLocalLightsBatch(gpu::Batch& batch, const LightClustersPointer& lightClusters) {
+    auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
+    deferredLightingEffect->_lightClusters = lightClusters;
+
+    // Bind the global list of lights and the visible lights this frame
+    batch.setUniformBuffer(gr::Buffer::Light, lightClusters->_lightStage->getLightArrayBuffer());
+
+    batch.setUniformBuffer(ru::Buffer::LightClusterFrustumGrid, lightClusters->_frustumGridBuffer);
+    batch.setUniformBuffer(ru::Buffer::LightClusterGrid, lightClusters->_clusterGridBuffer);
+    batch.setUniformBuffer(ru::Buffer::LightClusterContent, lightClusters->_clusterContentBuffer);
+}
+
+void DeferredLightingEffect::setupLocalLightsBatch(gpu::Batch& batch) {
+    auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
+    auto lightClusters = deferredLightingEffect->_lightClusters;
+
+    if (!lightClusters) {
+        unsetLocalLightsBatch(batch);
+        return;
+    }
+
     // Bind the global list of lights and the visible lights this frame
     batch.setUniformBuffer(gr::Buffer::Light, lightClusters->_lightStage->getLightArrayBuffer());
 
@@ -102,6 +122,9 @@ void DeferredLightingEffect::setupLocalLightsBatch(gpu::Batch& batch, const Ligh
 }
 
 void DeferredLightingEffect::unsetLocalLightsBatch(gpu::Batch& batch) {
+    auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
+    deferredLightingEffect->_lightClusters = nullptr;
+
     batch.setUniformBuffer(gr::Buffer::Light, nullptr);
     batch.setUniformBuffer(ru::Buffer::LightClusterGrid, nullptr);
     batch.setUniformBuffer(ru::Buffer::LightClusterContent, nullptr);
