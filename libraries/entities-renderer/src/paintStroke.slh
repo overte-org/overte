@@ -19,7 +19,7 @@
 // Hack comment to absorb the extra '//' scribe prepends
 
 #if !defined(GPU_SSBO_TRANSFORM_OBJECT)
-RESOURCE_BUFFER(GPU_RESOURCE_BUFFER_SLOT0_TEXTURE, polylineVerticesBuffer);
+LAYOUT(binding=GPU_RESOURCE_BUFFER_SLOT0_TEXTURE) uniform samplerBuffer polylineVerticesBuffer;
 PolylineVertex getPolylineVertex(int i) {
     int offset = 4 * i;
     PolylineVertex vertex;

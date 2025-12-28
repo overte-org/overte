@@ -513,10 +513,6 @@ static void verifyInterface(const gpu::Shader::Source& vertexSource, const gpu::
     }
 }
 
-#if RUNTIME_SHADER_COMPILE_TEST
-
-#endif
-
 void validateDialectVariantSource(const shader::DialectVariantSource& source) {
     if (source.scribe.empty()) {
         throw std::runtime_error("Missing scribe source");

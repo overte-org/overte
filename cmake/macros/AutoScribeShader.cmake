@@ -429,13 +429,13 @@ macro(AUTOSCRIBE_SHADER_LIBS)
         ${AUTOSCRIBE_HEADER_DIR}/stereo.glsl
         ${AUTOSCRIBE_HEADER_DIR}/450/header.glsl 
         ${AUTOSCRIBE_HEADER_DIR}/410/header.glsl 
-        ${AUTOSCRIBE_HEADER_DIR}/320es/header.glsl
+        ${AUTOSCRIBE_HEADER_DIR}/310es/header.glsl
     )
 
     source_group("Shader Headers" FILES ${AUTOSCRIBE_HEADER_DIR}/mono.glsl ${AUTOSCRIBE_HEADER_DIR}/stereo.glsl)
     source_group("Shader Headers\\450" FILES ${AUTOSCRIBE_HEADER_DIR}/450/header.glsl)
     source_group("Shader Headers\\410" FILES ${AUTOSCRIBE_HEADER_DIR}/410/header.glsl)
-    source_group("Shader Headers\\320es" FILES ${AUTOSCRIBE_HEADER_DIR}/320es/header.glsl)
+    source_group("Shader Headers\\310es" FILES ${AUTOSCRIBE_HEADER_DIR}/310es/header.glsl)
 
     list(APPEND AUTOSCRIBE_SHADER_LIB_SRC ${AUTOSCRIBE_SHADER_HEADERS})
     list(APPEND AUTOSCRIBE_SHADER_LIB_SRC ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.h ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.cpp)

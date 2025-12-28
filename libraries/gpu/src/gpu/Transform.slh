@@ -132,7 +132,7 @@ TransformObject getTransformObject() {
     return transformObject;
 }
 #else
-RESOURCE_BUFFER(GPU_TEXTURE_TRANSFORM_OBJECT, transformObjectBuffer);
+LAYOUT(binding=GPU_TEXTURE_TRANSFORM_OBJECT) uniform samplerBuffer transformObjectBuffer;
 
 TransformObject getTransformObject() {
 #ifdef GPU_VERTEX_SHADER

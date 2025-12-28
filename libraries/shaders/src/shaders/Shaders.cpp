@@ -32,10 +32,10 @@ namespace shader {
 
 #if defined(USE_GLES)
 
-const Dialect DEFAULT_DIALECT = Dialect::glsl320es;
+const Dialect DEFAULT_DIALECT = Dialect::glsl310es;
 
 const std::vector<Dialect>& allDialects() {
-    static const std::vector<Dialect> ALL_DIALECTS{ Dialect::glsl320es };
+    static const std::vector<Dialect> ALL_DIALECTS{ Dialect::glsl310es };
     return ALL_DIALECTS;
 }
     
@@ -69,7 +69,7 @@ const std::string& dialectPath(Dialect dialect) {
     static const std::string e450Path { "/450/" };
     switch (dialect) {
 #if defined(USE_GLES) 
-        case Dialect::glsl320es: return e320esPath;
+        case Dialect::glsl310es: return e310esPath;
 #elif defined(Q_OS_MAC)
         case Dialect::glsl410: return e410Path;
 #else

@@ -43,7 +43,6 @@ void main(void) {
     float shadowAttenuation = 1.0;
 <@endif@>
 
-    // Light mapped or not ?
     if (frag.mode == FRAG_MODE_UNLIT || frag.mode == FRAG_MODE_LIGHTMAPPED) {
         discard;
     } else {

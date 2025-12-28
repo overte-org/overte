@@ -40,7 +40,7 @@ public:
         resetStages();
     }
 
-    bool supportedTextureFormat(const gpu::Element& format) override;
+    bool supportedTextureFormat(const gpu::Element& format) const override;
 
     static const std::string GLES_VERSION;
     const std::string& getVersion() const override { return GLES_VERSION; }

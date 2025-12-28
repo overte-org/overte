@@ -19,7 +19,7 @@ using namespace gpu;
 using namespace gpu::gl;
 using namespace gpu::gles;
 
-bool GLESBackend::supportedTextureFormat(const gpu::Element& format) {
+bool GLESBackend::supportedTextureFormat(const gpu::Element& format) const {
     switch (format.getSemantic()) {
         case gpu::Semantic::COMPRESSED_ETC2_RGB:
         case gpu::Semantic::COMPRESSED_ETC2_SRGB:

@@ -22,7 +22,7 @@ struct ItemBound {
 };
 
 #if !defined(GPU_SSBO_TRANSFORM_OBJECT)
-RESOURCE_BUFFER(GPU_RESOURCE_BUFFER_SLOT0_TEXTURE, ssbo0Buffer);
+LAYOUT(binding=GPU_RESOURCE_BUFFER_SLOT0_TEXTURE) uniform samplerBuffer ssbo0Buffer;
 ItemBound getItemBound(int i) {
     int offset = 2 * i;
     ItemBound bound;
