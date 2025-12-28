@@ -390,7 +390,7 @@ void entities::TextPayload::render(RenderArgs* args) {
     }
 
     bool fading = !forward && ShapeKey(args->_itemShapeKey).isFaded();
-    if (fading) {
+    if (fading && args->_shapePipeline != nullptr && args->_batch != nullptr) {
         FadeEffect::getBatchSetter()(*args->_shapePipeline, *args->_batch, args);
         FadeEffect::getItemUniformSetter()(*args->_shapePipeline, args, AbstractViewStateInterface::instance()->getMain3DScene()->getItem(textRenderable->_textRenderID));
     }
