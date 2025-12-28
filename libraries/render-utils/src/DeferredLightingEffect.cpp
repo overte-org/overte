@@ -147,32 +147,18 @@ graphics::MeshPointer DeferredLightingEffect::getPointLightMesh() {
         // let's use a icosahedron
         auto solid = geometry::icosahedron();
         solid.fitDimension(1.05f); // scaled to 1.05 meters, it will be scaled by the shader accordingly to the light size
+        _pointLightMesh->setVertexBuffer(gpu::BufferView(gpu::Buffer::createBuffer(gpu::Buffer::VertexBuffer, solid.vertices), gpu::Element::VEC3F_XYZ));
 
-        int verticesSize = (int) (solid.vertices.size() * 3 * sizeof(float));
-        float* vertexData = (float*) solid.vertices.data();
+        auto indices = solid.getIndices<gpu::uint16>();
+        _pointLightMesh->setIndexBuffer(gpu::BufferView(gpu::Buffer::createBuffer(gpu::Buffer::IndexBuffer, indices), gpu::Element::INDEX_UINT16));
 
-        _pointLightMesh->setVertexBuffer(gpu::BufferView(new gpu::Buffer(verticesSize, (gpu::Byte*) vertexData), gpu::Element::VEC3F_XYZ));
-
-        int nbIndices = (int) solid.faces.size() * 3;
-
-        gpu::uint16* indexData = new gpu::uint16[nbIndices];
-        gpu::uint16* index = indexData;
-        for (auto face : solid.faces) {
-            *(index++) = face[0];
-            *(index++) = face[1];
-            *(index++) = face[2];
-        }
-
-        _pointLightMesh->setIndexBuffer(gpu::BufferView(new gpu::Buffer(sizeof(unsigned short) * nbIndices, (gpu::Byte*) indexData), gpu::Element::INDEX_UINT16));
-        delete[] indexData;
-
-
+        uint32_t nbIndices = (uint32_t)(indices.size());
         std::vector<graphics::Mesh::Part> parts;
         parts.push_back(graphics::Mesh::Part(0, nbIndices, 0, graphics::Mesh::TRIANGLES));
         parts.push_back(graphics::Mesh::Part(0, nbIndices, 0, graphics::Mesh::LINE_STRIP)); // outline version
 
 
-        _pointLightMesh->setPartBuffer(gpu::BufferView(new gpu::Buffer(parts.size() * sizeof(graphics::Mesh::Part), (gpu::Byte*) parts.data()), gpu::Element::PART_DRAWCALL));
+        _pointLightMesh->setPartBuffer(gpu::BufferView(gpu::Buffer::createBuffer(gpu::Buffer::IndirectBuffer, parts), gpu::Element::PART_DRAWCALL));
     }
     return _pointLightMesh;
 }
@@ -221,7 +207,7 @@ graphics::MeshPointer DeferredLightingEffect::getSpotLightMesh() {
         *(vertexRing2++) = 0.0f;
         *(vertexRing2++) = 1.0f;
         
-        _spotLightMesh->setVertexBuffer(gpu::BufferView(new gpu::Buffer(verticesSize, (gpu::Byte*) vertexData), gpu::Element::VEC3F_XYZ));
+        _spotLightMesh->setVertexBuffer(gpu::BufferView(new gpu::Buffer(gpu::Buffer::VertexBuffer, verticesSize, (gpu::Byte*) vertexData), gpu::Element::VEC3F_XYZ));
         delete[] vertexData;
 
         gpu::uint16* indexData = new gpu::uint16[indices];
@@ -260,7 +246,7 @@ graphics::MeshPointer DeferredLightingEffect::getSpotLightMesh() {
             *(index++) = capVertex;
         }
 
-        _spotLightMesh->setIndexBuffer(gpu::BufferView(new gpu::Buffer(sizeof(unsigned short) * indices, (gpu::Byte*) indexData), gpu::Element::INDEX_UINT16));
+        _spotLightMesh->setIndexBuffer(gpu::BufferView(new gpu::Buffer(gpu::Buffer::IndexBuffer, sizeof(unsigned short) * indices, (gpu::Byte*) indexData), gpu::Element::INDEX_UINT16));
         delete[] indexData;
 
         
@@ -269,7 +255,7 @@ graphics::MeshPointer DeferredLightingEffect::getSpotLightMesh() {
         parts.push_back(graphics::Mesh::Part(0, indices, 0, graphics::Mesh::LINE_STRIP)); // outline version
 
         
-        _spotLightMesh->setPartBuffer(gpu::BufferView(new gpu::Buffer(parts.size() * sizeof(graphics::Mesh::Part), (gpu::Byte*) parts.data()), gpu::Element::PART_DRAWCALL));
+        _spotLightMesh->setPartBuffer(gpu::BufferView(new gpu::Buffer(gpu::Buffer::IndirectBuffer, parts.size() * sizeof(graphics::Mesh::Part), (gpu::Byte*) parts.data()), gpu::Element::PART_DRAWCALL));
     }
     return _spotLightMesh;
 }
@@ -326,6 +312,7 @@ void RenderDeferredSetup::run(const render::RenderContextPointer& renderContext,
 
     auto args = renderContext->args;
     auto& batch = (*args->_batch);
+    batch.setName("RenderDeferredSetup::run");
     {
         // Framebuffer copy operations cannot function as multipass stereo operations.
         batch.enableStereo(false);
@@ -447,7 +434,7 @@ void RenderDeferredSetup::run(const render::RenderContextPointer& renderContext,
 }
 
 RenderDeferredLocals::RenderDeferredLocals() :
-    _localLightsBuffer(std::make_shared<gpu::Buffer>()) {
+    _localLightsBuffer(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer)) {
 
 }
 
@@ -586,6 +573,26 @@ void RenderDeferred::run(const RenderContextPointer& renderContext, const Inputs
 
 void DefaultLightingSetup::run(const RenderContextPointer& renderContext) {
 
+    if (!_defaultHaze) {
+        auto hazeStage = renderContext->_scene->getStage<HazeStage>();
+        if (hazeStage) {
+            auto haze = std::make_shared<graphics::Haze>();
+
+            _defaultHaze = haze;
+            _defaultHazeID = hazeStage->addElement(_defaultHaze);
+        }
+    }
+
+    if (!_defaultTonemapping) {
+        auto tonemappingStage = renderContext->_scene->getStage<TonemappingStage>();
+        if (tonemappingStage) {
+            auto tonemapping = std::make_shared<graphics::Tonemapping>();
+
+            _defaultTonemapping = tonemapping;
+            _defaultTonemappingID = tonemappingStage->addElement(_defaultTonemapping);
+        }
+    }
+
     if (!_defaultLight || !_defaultBackground) {
         auto defaultSkyboxURL = PathUtils::resourcesUrl() + "images/Default-Sky-9-cubemap/Default-Sky-9-cubemap.texmeta.json";
         auto defaultAmbientURL = PathUtils::resourcesUrl() + "images/Default-Sky-9-cubemap/Default-Sky-9-cubemap-ambient.texmeta.json";
@@ -654,26 +661,6 @@ void DefaultLightingSetup::run(const RenderContextPointer& renderContext) {
 
             // Add the global light to the light stage (for later shadow rendering)
             _defaultBackgroundID = backgroundStage->addElement(_defaultBackground);
-        }
-    }
-
-    if (!_defaultHaze) {
-        auto hazeStage = renderContext->_scene->getStage<HazeStage>();
-        if (hazeStage) {
-            auto haze = std::make_shared<graphics::Haze>();
-
-            _defaultHaze = haze;
-            _defaultHazeID = hazeStage->addElement(_defaultHaze);
-        }
-    }
-
-    if (!_defaultTonemapping) {
-        auto tonemappingStage = renderContext->_scene->getStage<TonemappingStage>();
-        if (tonemappingStage) {
-            auto tonemapping = std::make_shared<graphics::Tonemapping>();
-
-            _defaultTonemapping = tonemapping;
-            _defaultTonemappingID = tonemappingStage->addElement(_defaultTonemapping);
         }
     }
 

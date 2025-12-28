@@ -228,7 +228,7 @@ def processCommand(line):
         # Generate the optimized GLSL output
         spirvCrossDialect = dialect
         # 310es causes spirv-cross to inject "#extension GL_OES_texture_buffer : require" into the output
-        if (dialect == '310es'): spirvCrossDialect = '320es'
+        if (dialect == '310es'): spirvCrossDialect = '310es'
         spirvCrossArgs = [spirvCrossExec, '--output', glslFile, spirvFile, '--version', spirvCrossDialect]
         if (dialect == '410'): spirvCrossArgs.append('--no-420pack-extension')
         executeSubprocess(spirvCrossArgs)

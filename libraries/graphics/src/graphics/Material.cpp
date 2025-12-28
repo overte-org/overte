@@ -310,7 +310,7 @@ const glm::vec3 Material::DEFAULT_OUTLINE = glm::vec3(0.0f);
 
 MultiMaterial::MultiMaterial() {
     Schema schema;
-    _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
+    _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema, sizeof(Schema)));
     for (size_t i = 0; i < _textureTables.size(); i++) {
         // At this point we don't know how many layers it will have yet, so it's not possible to estimate size yet.
         _textureTables[i] = std::make_shared<gpu::TextureTable>(TEXTURE_TABLE_COUNT_1_LAYER_MATERIAL);
@@ -429,11 +429,11 @@ void MultiMaterial::setisMToonAndLayers(bool isMToon, uint8_t layers) {
         if (isMToon) {
             std::array<MToonSchema, 3> toonSchemas;
             size_t size = _layers * sizeof(MToonSchema);
-            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(size, (const gpu::Byte*)toonSchemas.data(), size));
+            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, size, (const gpu::Byte*)toonSchemas.data(), size));
         } else {
             std::array<Schema, 3> schemas;
             size_t size = _layers * sizeof(Schema);
-            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(size, (const gpu::Byte*)schemas.data(), size));
+            _schemaBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, size, (const gpu::Byte*)schemas.data(), size));
         }
     }
 }

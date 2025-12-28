@@ -37,6 +37,20 @@ namespace geometry {
         TexCoordVector texCoords;
         FaceVector<N> faces;
 
+        template <typename T>
+        std::vector<T> getIndices() const {
+            size_t count = faces.size() * N;
+
+            std::vector<T> indices;
+            indices.reserve(count);
+            for (const auto& face : faces) {
+                for (const auto& index : face) {
+                    indices.push_back((T)index);
+                }
+            }
+            return indices;
+        }
+
         Solid<N>& fitDimension(float newMaxDimension) {
             float maxDimension = 0;
             for (const auto& vertex : vertices) {

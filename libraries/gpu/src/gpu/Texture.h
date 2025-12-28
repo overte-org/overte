@@ -343,7 +343,6 @@ public:
     Type getType() const { return _type; }
     TextureUsageType getUsageType() const { return _usageType; }
 
-    bool isColorRenderTarget() const;
     bool isDepthStencilRenderTarget() const;
 
     Element getTexelFormat() const { return _texelFormat; }

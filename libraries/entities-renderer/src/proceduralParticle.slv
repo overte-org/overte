@@ -17,8 +17,8 @@
 <@include procedural/ProceduralParticleCommon.slh@>
 <$declareProceduralParticleRender()$>
 
-layout(location=0) flat out int particleID;
-layout(location=1) out vec4 _positionES;
+FLAT_OUTPUT(0, int, particleID);
+OUTPUT(1, vec4, _positionES);
 
 #line 1001
 //PROCEDURAL_BLOCK_BEGIN

@@ -114,7 +114,11 @@ void Context::executeBatch(const char* name, std::function<void(Batch&)> lambda)
 void Context::executeBatch(Batch& batch) const {
     PROFILE_RANGE(render_gpu, __FUNCTION__);
     batch.flush();
+#ifdef USE_GL
     _backend->render(batch);
+#else
+    //_backend->render(batch); // VKTODO: why is this commented out?
+#endif
 }
 
 void Context::recycle() const {
@@ -142,10 +146,9 @@ void Context::executeFrame(const FramePointer& frame) const {
         batch.pushProfileRange("Frame");
         _frameRangeTimer->begin(batch);
     });
-    // Execute the frame rendering commands
-    for (auto& batch : frame->batches) {
-        _backend->render(*batch);
-    }
+
+    _backend->executeFrame(frame);
+
     executeBatch("Context::executeFrame::end", [&](Batch& batch){
         batch.popProfileRange();
         _frameRangeTimer->end(batch);

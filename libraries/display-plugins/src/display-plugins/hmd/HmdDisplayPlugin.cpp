@@ -21,7 +21,11 @@
 #include <GLMHelpers.h>
 #include <ui-plugins/PluginContainer.h>
 #include <CursorManager.h>
+#ifdef USE_GL
 #include <gl/GLWidget.h>
+#else
+#include <vk/VKWidget.h>
+#endif
 #include <shared/NsightHelpers.h>
 #include <gpu/Context.h>
 #include <gpu/gl/GLBackend.h>
@@ -126,7 +130,7 @@ void HmdDisplayPlugin::customizeContext() {
 
     VisionSqueezeParameters parameters;
     _visionSqueezeParametersBuffer =
-        gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(VisionSqueezeParameters), (const gpu::Byte*) &parameters));
+        gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(VisionSqueezeParameters), (const gpu::Byte*) &parameters));
 
     Parent::customizeContext();
     _hudRenderer.build();
@@ -362,8 +366,8 @@ glm::mat4 HmdDisplayPlugin::getViewCorrection() {
 }
 
 void HmdDisplayPlugin::HUDRenderer::build() {
-    vertices = std::make_shared<gpu::Buffer>();
-    indices = std::make_shared<gpu::Buffer>();
+    vertices = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
+    indices = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer);
 
     //UV mapping source: http://www.mvps.org/directx/articles/spheremap.htm
 
@@ -417,7 +421,7 @@ void HmdDisplayPlugin::HUDRenderer::build() {
     format = std::make_shared<gpu::Stream::Format>(); // 1 for everyone
     format->setAttribute(gpu::Stream::POSITION, gpu::Stream::POSITION, gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ), 0);
     format->setAttribute(gpu::Stream::TEXCOORD, gpu::Stream::TEXCOORD, gpu::Element(gpu::VEC2, gpu::FLOAT, gpu::UV));
-    uniformsBuffer = std::make_shared<gpu::Buffer>(sizeof(Uniforms), nullptr);
+    uniformsBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Uniforms), nullptr);
 
     auto program = gpu::Shader::createProgram(shader::render_utils::program::hmd_ui);
     gpu::StatePointer state = std::make_shared<gpu::State>();
