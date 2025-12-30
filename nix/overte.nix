@@ -163,13 +163,6 @@ stdenv.mkDerivation {
     runHook postInstall
   '';
 
-  /*
-    preFixup = ''
-      patchelf --read-rpath $out/interface/plugins/libopenvr.so
-      ldd $out/interface/plugins/*.so
-    '';
-  */
-
   meta = {
     mainProgram = if buildClient then "overte-client" else "domain-server";
   };
