@@ -1,10 +1,12 @@
 {
+  # build tools
   lib,
   stdenv,
   cmake,
   pkg-config,
   autoPatchelfHook,
 
+  # dependencies
   glad,
   gif_creator,
   polyvox,
@@ -30,12 +32,14 @@
   libsForQt5,
   libv8,
 
+  # tools for shader compilation
   scribe,
   glslang,
   spirv-tools,
   spirv-cross,
   python3,
 
+  # build options
   buildClient ? true,
   buildServer ? true,
   buildTools ? false,
