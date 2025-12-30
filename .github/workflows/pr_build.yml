@@ -36,26 +36,43 @@ jobs:
               arch: x86_64
               build_type: full
               qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
+              rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
             #- os: macOS-10.15
             #  build_type: full
             #  qt_source: aqt
-            - os: Ubuntu 22.04
+            - os: Ubuntu 22.04 OpenGL
               image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
               runner: ubuntu-latest
               arch: amd64
               build_type: full
               qt_source: system
+              rendering_backend: OpenGL
+            - os: Ubuntu 22.04 Vulkan
+              image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+              runner: ubuntu-latest
+              arch: amd64
+              build_type: full
+              qt_source: system
+              rendering_backend: Vulkan
             # Android builds are currently failing
             #- os: ubuntu-18.04
             #  build_type: android
             #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
-            - os: Ubuntu 22.04
+            - os: Ubuntu 22.04 OpenGL ES
               image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-aarch64
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
               qt_source: system
+              rendering_backend: GLES
+            - os: Ubuntu 22.04 Vulkan
+              image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-aarch64
+              runner: ubuntu-24.04-arm
+              arch: aarch64
+              build_type: full
+              qt_source: system
+              rendering_backend: Vulkan
         fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
@@ -136,10 +153,11 @@ jobs:
     - name: Configure Build Environment 2
       shell: bash
       run: |
+        echo "CMAKE_EXTRA=${CMAKE_EXTRA} -DOVERTE_RENDERING_BACKEND=${{ matrix.rendering_backend }}" >> $GITHUB_ENV
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
         if [ "${{ matrix.build_type }}" = "full" ]; then
           if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-            echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}-$(uname -m).$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}-$(uname -m)-${{ matrix.rendering_backend }}.$INSTALLER_EXT" >> $GITHUB_ENV
           else
             echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
           fi
