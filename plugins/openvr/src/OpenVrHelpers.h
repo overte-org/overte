@@ -17,9 +17,6 @@
 #include <plugins/Forward.h>
 #include <string>
 
-bool oculusViaOpenVR(); // is the user using Oculus via OpenVR
-bool openVrSupported();
-
 vr::IVRSystem* acquireOpenVrSystem();
 void releaseOpenVrSystem();
 void handleOpenVrEvents();

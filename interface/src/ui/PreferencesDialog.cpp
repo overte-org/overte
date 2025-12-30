@@ -667,12 +667,4 @@ void setupPreferences() {
             preferences->addPreference(preference);
         }
     }
-
-    static const QString PLUGIN_CATEGORY{ "Plugins" };
-    auto pluginManager = PluginManager::getInstance();
-    {
-        auto getter = [pluginManager]()->bool { return pluginManager->getEnableOculusPluginSetting(); };
-        auto setter = [pluginManager](bool value) { pluginManager->setEnableOculusPluginSetting(value); };
-        preferences->addPreference(new CheckPreference(PLUGIN_CATEGORY, "Enable Oculus Platform Plugin", getter, setter));
-    }
 }
