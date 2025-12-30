@@ -108,7 +108,6 @@ void gpu::vk::VKFramebuffer::update() {
             /*} else if (vkTexture->_target == GL_TEXTURE_2D_MULTISAMPLE) {
                 glNamedFramebufferTexture(_id, attachement, gltexture->_texture, 0);*/
             } else if (vkTexture->_target == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
-                auto subresource = _gpuObject.getDepthStencilBufferSubresource();
                 VKAttachmentCreateInfo attachmentCI {};
                 attachmentCI.width = vkTexture->_gpuObject.getWidth();
                 attachmentCI.height = vkTexture->_gpuObject.getHeight();
