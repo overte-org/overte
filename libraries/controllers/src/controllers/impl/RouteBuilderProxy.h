@@ -71,7 +71,7 @@ class RouteBuilderProxy : public QObject {
          * routes using the same input are processed.
          * <p>This is a QML-specific version of {@link MappingObject#when|when}: use this version in QML files.</p>
          * @function RouteObject#whenQml
-         * @param {condition|condition[]} expression - <p>A <code>condition</code> may be a:</p>
+         * @param { boolean | boolean[] | number | number[] } expression - <p>A <code>condition</code> may be a:</p>
          *     <ul>
          *         <li>A boolean or numeric {@link Controller.Hardware} property, which is evaluated as a boolean.</li>
          *         <li><code>!</code> followed by a {@link Controller.Hardware} property, indicating the logical NOT should be
@@ -165,7 +165,7 @@ class RouteBuilderProxy : public QObject {
          * the input is read only if the condition is <code>true</code>. Thus, if the condition is not met then subsequent 
          * routes using the same input are processed.
          * @function RouteObject#when
-         * @param {condition|condition[]} expression - <p>A <code>condition</code> may be a:</p>
+         * @param { boolean | boolean[] | number | number[] } expression - <p>A <code>condition</code> may be a:</p>
          *     <ul>
          *         <li>A numeric {@link Controller.Hardware} property, which is evaluated as a boolean.</li>
          *         <li><code>!</code> followed by a {@link Controller.Hardware} property to use the logical NOT of the property 
