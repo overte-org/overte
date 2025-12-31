@@ -13,7 +13,7 @@ stdenv.mkDerivation rec {
     rev = version;
     hash = "sha256-/p/hQbCGX6lunuO7ECjvrKHBi3jV6cSPdrU9MIxAVhk=";
   };
-  patches = [ ./draco.diff ];
+  patches = [ ./draco_fix_building_on_GCC15.diff ];
   enableParallelBuilding = true;
   nativeBuildInputs = [ cmake ];
   cmakeFlags = [
