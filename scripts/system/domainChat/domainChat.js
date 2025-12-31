@@ -1,8 +1,8 @@
 //
-//  armored_chat.js
+//  domainChat.js
 //
 //  Created by Armored Dragon, May 17th, 2024.
-//  Copyright 2024 Overte e.V.
+//  Copyright 2024-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -12,10 +12,10 @@
 
     var appIsVisible = false;
     var settings = {
-        external_window: false,
-        maximum_messages: 200,
-        join_notification: true,
-        use_chat_bubbles: true,
+        externalWindow: false,
+        maximumMessages: 200,
+        joinNotification: true,
+        useChatBubbles: true,
     };
 
     // Global vars
@@ -23,8 +23,8 @@
     var chatOverlayWindow;
     var appButton;
     var quickMessage;
-    const channels = ["domain", "local"];
-    var messageHistory = Settings.getValue("ArmoredChat-Messages", []) || [];
+    const CHANNELS = ["domain", "local"];
+    var messageHistory = Settings.getValue("DomainChat-Messages", []) || [];
     var maxLocalDistance = 20; // Maximum range for the local chat
     var palData = AvatarManager.getPalData().data;
     var isTyping = false;
@@ -64,7 +64,7 @@
         appButton.clicked.connect(toggleMainChatWindow);
 
         quickMessage = new OverlayWindow({
-            source: Script.resolvePath("./armored_chat_quick_message.qml"),
+            source: Script.resolvePath("./domainChatQuick.qml"),
         });
 
         _openWindow();
@@ -81,7 +81,7 @@
     }
     function _openWindow() {
         chatOverlayWindow = new Desktop.createWindow(
-            Script.resolvePath("./armored_chat.qml"),
+            Script.resolvePath("./domainChat.qml"),
             {
                 title: "Chat",
                 size: { x: 550, y: 400 },
@@ -101,7 +101,7 @@
         if (channel !== "chat") return;
         message = JSON.parse(message);
 
-        if (message.action !== "send_chat_message") return;
+        if (message.action !== "sendChatMessage") return;
 
         // Get the message data
         const currentTimestamp = _getTimestamp();
@@ -115,7 +115,7 @@
         message.channel = message.channel.toLowerCase();
 
         // Check the channel. If the channel is not one we have, do nothing.
-        if (!channels.includes(message.channel)) return;
+        if (!CHANNELS.includes(message.channel)) return;
 
         // If message is local, and if player is too far away from location, do nothing.
         if (message.channel == "local" && isTooFar(message.position)) return;
@@ -125,10 +125,10 @@
         message.dateString = timeArray[1];
 
         // Update qml view of to new message
-        _emitEvent({ type: "show_message", ...message });
+        _emitEvent({ type: "showMessage", ...message });
 
         // Show new message on screen
-        if (message.channel !== "local" || !settings.use_chat_bubbles) {
+        if (message.channel !== "local" || !settings.useChatBubbles) {
             Messages.sendLocalMessage(
                 "Floof-Notif",
                 JSON.stringify({
@@ -150,10 +150,10 @@
         savedMessage.timestamp = currentTimestamp;
 
         messageHistory.push(savedMessage);
-        while (messageHistory.length > settings.maximum_messages) {
+        while (messageHistory.length > settings.maximumMessages) {
             messageHistory.shift();
         }
-        Settings.setValue("ArmoredChat-Messages", messageHistory);
+        Settings.setValue("DomainChat-Messages", messageHistory);
 
         // Check to see if the message is close enough to the user
         function isTooFar(messagePosition) {
@@ -162,10 +162,10 @@
     }
     function fromQML(event) {
         switch (event.type) {
-            case "send_message":
+            case "sendMessage":
                 _sendMessage(event.message, event.channel);
                 break;
-            case "setting_change":
+            case "settingChange":
 
                 // Set the setting value, and save the config
                 settings[event.setting] = event.value; // Update local settings
@@ -173,12 +173,12 @@
 
                 // Extra actions to preform. 
                 switch (event.setting) {
-                    case "external_window":
+                    case "externalWindow":
                         chatOverlayWindow.presentationMode = event.value
                             ? Desktop.PresentationMode.NATIVE
                             : Desktop.PresentationMode.VIRTUAL;
                         break;
-                    case "use_chat_bubbles":
+                    case "useChatBubbles":
                         Messages.sendLocalMessage(
                             "ChatBubbles-Config",
                             JSON.stringify({
@@ -191,11 +191,11 @@
                 break;
             case "action":
                 switch (event.action) {
-                    case "erase_history":
-                        Settings.setValue("ArmoredChat-Messages", null);
+                    case "eraseHistory":
+                        Settings.setValue("DomainChat-Messages", null);
                         messageHistory = [];
                         _emitEvent({
-                            type: "clear_messages",
+                            type: "clearMessages",
                         });
                         break;
                     case "start_typing":
@@ -236,7 +236,7 @@
                 if (HMD.active) return; // Don't allow in VR
 
                 quickMessage.sendToQml({
-                    type: "change_visibility",
+                    type: "changeVisibility",
                     value: true,
                 });
         }
@@ -251,7 +251,7 @@
                 message: message,
                 displayName: MyAvatar.sessionDisplayName,
                 channel: channel,
-                action: "send_chat_message",
+                action: "sendChatMessage",
             })
         );
 
@@ -282,7 +282,7 @@
             message.message = `${displayName} ${type}`;
 
             // Show new message on screen
-            if (settings.join_notification) {
+            if (settings.joinNotification) {
                 Messages.sendLocalMessage(
                     "Floof-Notif",
                     JSON.stringify({
@@ -296,7 +296,7 @@
         }, 1500);
     }
     function _loadSettings() {
-        settings = Settings.getValue("ArmoredChat-Config", settings);
+        settings = Settings.getValue("DomainChat-Config", settings);
 
         if (messageHistory) {
             // Load message history
@@ -304,16 +304,16 @@
                 const timeArray = _formatTimestamp(_getTimestamp());
                 message.timeString = timeArray[0];
                 message.dateString = timeArray[1];
-                _emitEvent({ type: "show_message", ...message });
+                _emitEvent({ type: "showMessage", ...message });
             });
         }
 
         // Send current settings to the app
-        _emitEvent({ type: "initial_settings", settings: settings });
+        _emitEvent({ type: "initialSettings", settings: settings });
     }
     function _saveSettings() {
         console.log("Saving config");
-        Settings.setValue("ArmoredChat-Config", settings);
+        Settings.setValue("DomainChat-Config", settings);
     }
     function _getTimestamp() {
         return Date.now();
@@ -337,7 +337,7 @@
     /**
      * Emit a packet to the HTML front end. Easy communication!
      * @param {Object} packet - The Object packet to emit to the HTML
-     * @param {("show_message"|"clear_messages"|"notification"|"initial_settings")} packet.type - The type of packet it is
+     * @param {("showMessage"|"clearMessages"|"notification"|"initialSettings")} packet.type - The type of packet it is
      */
     function _emitEvent(packet = { type: "" }) {
         chatOverlayWindow.sendToQml(packet);
