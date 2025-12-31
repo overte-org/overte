@@ -1495,7 +1495,8 @@ void Application::setupSignalsAndOperators() {
 
             connect(scriptEngines, &ScriptEngines::scriptLoadError,
                 this, [](const QString& filename, const QString& error) {
-                OffscreenUi::asyncWarning(nullptr, "Error Loading Script", filename + " failed to load.");
+                auto windowInterface = DependencyManager::get<WindowScriptingInterface>();
+                windowInterface->displayAnnouncement(QString("Failed to load script\n%1").arg(filename));
             }, Qt::QueuedConnection);
 
             auto entityScriptServerLog = DependencyManager::get<EntityScriptServerLogClient>();
