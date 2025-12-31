@@ -110,7 +110,7 @@ stdenv.mkDerivation {
   ++ lib.optional (!buildTools && !buildServer) "-DOVERTE_BUILD_TOOLS=OFF";
   env = {
     NVTT_DIR = "${nvidia-texture-tools}";
-    CXXFLAGS = "-falign-functions";
+    CXXFLAGS = "-falign-functions=32";
     GLSLANG_DIR = "${glslang}/bin";
     SCRIBE_DIR = "${scribe}/tools";
     SPIRV_CROSS_DIR = "${spirv-cross}/bin";
