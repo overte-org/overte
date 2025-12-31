@@ -623,6 +623,18 @@ QObject* ScriptValueV8Wrapper::toQObject() const {
     }
 }
 
+std::shared_ptr<ScriptBufferView> ScriptValueV8Wrapper::toArrayBufferView() const {
+    auto value = _value.constGet();
+    if (value->IsArrayBufferView()) {
+        v8::Isolate* isolate = _engine->getIsolate();
+        auto view = v8::ArrayBufferView::Cast(*value);
+        auto persistent = std::make_shared<v8::UniquePersistent<v8::ArrayBuffer>>(isolate, view->Buffer());
+        return std::make_shared<ScriptBufferViewV8Wrapper>(isolate, persistent, view->ByteOffset(), view->ByteLength());
+    } else {
+        return nullptr;
+    }
+}
+
 bool ScriptValueV8Wrapper::equals(const ScriptValue& other) const {
     auto isolate = _engine->getIsolate();
     Q_ASSERT(isolate->IsCurrent());
@@ -746,4 +758,13 @@ bool ScriptValueV8Wrapper::isVariant() const {
     Q_ASSERT(false);
     return false;
     //return _value.isVariant();
+}
+
+bool ScriptValueV8Wrapper::isArrayBufferView() const {
+    auto isolate = _engine->getIsolate();
+    v8::Locker locker(isolate);
+    v8::Isolate::Scope isolateScope(isolate);
+    v8::HandleScope handleScope(isolate);
+    v8::Context::Scope contextScope(_engine->getContext());
+    return _value.constGet()->IsArrayBufferView();
 }
