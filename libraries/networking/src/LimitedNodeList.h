@@ -415,7 +415,7 @@ protected:
         QUuid connectionSecretUUID;
     };
 
-    LimitedNodeList(int socketListenPort = INVALID_PORT, int dtlsListenPort = INVALID_PORT);
+    LimitedNodeList(int socketListenPort = INVALID_PORT, int dtlsListenPort = INVALID_PORT, int publicListenPort = INVALID_PORT);
     LimitedNodeList(LimitedNodeList const&) = delete; // Don't implement, needed to avoid copies of singleton
     void operator=(LimitedNodeList const&) = delete; // Don't implement, needed to avoid copies of singleton
 
@@ -446,6 +446,10 @@ protected:
     udt::Socket _nodeSocket;
     QUdpSocket* _dtlsSocket { nullptr };
     SockAddr _localSockAddr;
+
+    // When local port is forwarded to the public one we don't want to use UDP hole punching on this side and instead use the port directly.
+    int _publicPortOverride { INVALID_PORT };
+
     SockAddr _publicSockAddr;
     SockAddr _stunSockAddr { SocketType::UDP, STUN_SERVER_HOSTNAME, STUN_SERVER_PORT };
     bool _hasTCPCheckedLocalSocket { false };

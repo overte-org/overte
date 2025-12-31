@@ -68,6 +68,10 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
                                         "UDP port for this assignment client (or monitor)", "port");
     parser.addOption(portOption);
 
+    const QCommandLineOption publicPortOption(ASSIGNMENT_CLIENT_LISTEN_PUBLIC_PORT_OPTION,
+                                        "Public UDP port for this assignment client (or monitor), optional", "port");
+    parser.addOption(publicPortOption);
+
     const QCommandLineOption minChildListenPort(ASSIGNMENT_MONITOR_MIN_CHILDREN_LISTEN_PORT_OPTION,
                                                 "Minimum UDP listen port", "port");
     parser.addOption(minChildListenPort);
@@ -233,6 +237,11 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
         listenPort = parser.value(portOption).toUInt();
     }
 
+    int publicListenPort = INVALID_PORT;
+    if (parser.isSet(publicPortOption)) {
+        publicListenPort = parser.value(publicPortOption).toInt();
+    }
+
     if (parser.isSet(numChildsOption)) {
         if (minForks && minForks > numForks) {
             qCritical() << "--min can't be more than -n";
@@ -277,7 +286,8 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
         monitor->setParent(this);
         connect(this, &QCoreApplication::aboutToQuit, monitor, &AssignmentClientMonitor::aboutToQuit);
     } else {
-        AssignmentClient* client = new AssignmentClient(requestAssignmentType, assignmentPool, listenPort,
+        AssignmentClient* client = new AssignmentClient(requestAssignmentType, assignmentPool,
+                                                        listenPort, publicListenPort,
                                                         assignmentServerHostname,
                                                         assignmentServerPort, monitorPort,
                                                         disableDomainPortAutoDiscovery);
