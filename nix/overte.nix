@@ -107,7 +107,7 @@ stdenv.mkDerivation {
   ]
   ++ lib.optional (!buildClient) "-DOVERTE_BUILD_CLIENT=OFF"
   ++ lib.optional (!buildServer) "-DOVERTE_BUILD_SERVER=OFF"
-  ++ lib.optional (!buildTools) "-DOVERTE_BUILD_TOOLS=OFF";
+  ++ lib.optional (!buildTools && !buildServer) "-DOVERTE_BUILD_TOOLS=OFF";
   env = {
     NVTT_DIR = "${nvidia-texture-tools}";
     CXXFLAGS = "-falign-functions";
@@ -155,6 +155,10 @@ stdenv.mkDerivation {
 
       cp assignment-client/assignment-client "$D"/assignment-client
       makeWrapper "$D"/assignment-client $out/bin/assignment-client \
+        "''${qtWrapperArgs[@]}"
+
+      cp tools/oven/oven "$D"/oven
+      makeWrapper "$D"/oven $out/bin/oven \
         "''${qtWrapperArgs[@]}"
     ''
   )
