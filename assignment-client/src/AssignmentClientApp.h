@@ -29,6 +29,7 @@ const QString ASSIGNMENT_CLIENT_MONITOR_PORT_OPTION = "monitor-port";
 const QString ASSIGNMENT_HTTP_STATUS_PORT = "http-status-port";
 const QString ASSIGNMENT_LOG_DIRECTORY = "log-directory";
 const QString ASSIGNMENT_DISABLE_DOMAIN_AUTO_PORT_DISCOVERY = "disable-domain-port-auto-discovery";
+const QString ASSIGNMENT_LOG_OPTIONS = "logOptions";
 
 class AssignmentClientApp : public QCoreApplication {
     Q_OBJECT
