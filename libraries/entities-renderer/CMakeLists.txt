@@ -21,7 +21,7 @@ include_hifi_library_headers(graphics-scripting) # for Forward.h
 include_hifi_library_headers(entities)
 
 target_bullet()
-target_polyvox()
+#target_polyvox()
 
 if (WIN32)
   add_compile_definitions(_USE_MATH_DEFINES)
