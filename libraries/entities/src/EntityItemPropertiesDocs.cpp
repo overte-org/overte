@@ -997,9 +997,9 @@
  * @example <caption>Create an image entity.</caption>
  * var image = Entities.addEntity({
  *     type: "Image",
- *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -5 })),
- *     dimensions: { x: 0.6, y: 0.3, z: 0.01 },
- *     imageURL: "https://images.pexels.com/photos/1020315/pexels-photo-1020315.jpeg",
+ *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -2 })),
+ *     dimensions: { x: 1.0, y: 0.26, z: 0.01 },
+ *     imageURL: "https://apidocs.overte.org/images/brand-logo-512.png",
  *     billboardMode: "yaw",
  *     lifetime: 300  // Delete after 5 minutes.
  * });
