@@ -241,7 +241,7 @@ ScriptObjectV8Proxy::~ScriptObjectV8Proxy() {
         v8::HandleScope handleScope(isolate);
         _v8Object.Reset();
         QObject* qobject = _object;
-        if(qobject) qobject->deleteLater();
+        if(qobject) delete qobject;
     } else {
         v8::HandleScope handleScope(isolate);
         if (_object)
