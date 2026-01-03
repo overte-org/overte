@@ -1,12 +1,12 @@
 {
     "name": "OpenXR to Standard",
     "channels": [
-        { "from": "OpenXR.Head", "to" : "Standard.Head", "when" : [ "Application.InHMD"] },
+        { "from": "OpenXR.Head", "to" : "Standard.Head", "when" : ["Application.InHMD"] },
 
         { "from": "OpenXR.LT", "to": "Standard.LT" },
         { "from": "OpenXR.RT", "to": "Standard.RT" },
-        { "from": "OpenXR.LTClick", "to": "Standard.LTClick" },
-        { "from": "OpenXR.RTClick", "to": "Standard.RTClick" },
+        { "from": "OpenXR.LTVirtualClick", "to": "Standard.LTClick" },
+        { "from": "OpenXR.RTVirtualClick", "to": "Standard.RTClick" },
 
         { "from": "OpenXR.LeftGrip", "to": "Standard.LeftGrip" },
         { "from": "OpenXR.RightGrip", "to": "Standard.RightGrip" },
@@ -20,10 +20,29 @@
         { "from": "OpenXR.LS", "to": "Standard.LS" },
         { "from": "OpenXR.RS", "to": "Standard.RS" },
 
-        { "from": "OpenXR.LeftPrimaryThumb", "to": "Standard.LeftPrimaryThumb" },
-        { "from": "OpenXR.RightPrimaryThumb", "to": "Standard.RightPrimaryThumb" },
-        { "from": "OpenXR.LeftSecondaryThumb", "to": "Standard.LeftSecondaryThumb" },
-        { "from": "OpenXR.RightSecondaryThumb", "to": "Standard.RightSecondaryThumb" },
+        { "when" : ["!OpenXR.LeftHasThumbstick", "OpenXR.LeftTrackpadClick"], "from": "OpenXR.LeftTrackpadX", "to" : "Standard.LX", "peek": true },
+        { "when" : ["!OpenXR.LeftHasThumbstick", "OpenXR.LeftTrackpadClick"], "from": "OpenXR.LeftTrackpadY", "to" : "Standard.LY", "peek": true },
+        { "when" : ["OpenXR.LeftHasThumbstick", "!OpenXR.LeftHasPrimary"], "from": "OpenXR.LeftTrackpadClick", "to" : "Standard.LeftPrimaryThumb", "peek": true },
+
+        { "when" : ["!OpenXR.RightHasThumbstick", "OpenXR.RightTrackpadClick"], "from": "OpenXR.RightTrackpadX", "to" : "Standard.RX", "peek": true },
+        { "when" : ["!OpenXR.RightHasThumbstick", "OpenXR.RightTrackpadClick"], "from": "OpenXR.RightTrackpadY", "to" : "Standard.RY", "peek": true },
+        { "when" : ["OpenXR.RightHasThumbstick", "!OpenXR.RightHasPrimary"], "from": "OpenXR.RightTrackpadClick", "to" : "Standard.RightPrimaryThumb", "peek": true },
+
+        { "from": "OpenXR.LeftPrimary", "to": "Standard.LeftPrimaryThumb" },
+        { "from": "OpenXR.LeftPrimaryTouch", "to": "Standard.LeftPrimaryThumbTouch" },
+        { "from": "OpenXR.LeftSecondary", "to": "Standard.LeftSecondaryThumb" },
+        { "from": "OpenXR.LeftSecondaryTouch", "to": "Standard.LeftSecondaryThumbTouch" },
+
+        { "from": "OpenXR.RightPrimary", "to": "Standard.RightPrimaryThumb" },
+        { "from": "OpenXR.RightPrimaryTouch", "to": "Standard.RightPrimaryThumbTouch" },
+        { "from": "OpenXR.RightSecondary", "to": "Standard.RightSecondaryThumb" },
+        { "from": "OpenXR.RightSecondaryTouch", "to": "Standard.RightSecondaryThumbTouch" },
+
+        { "from": "OpenXR.LeftIndexPoint", "to" : "Standard.LeftIndexPoint" },
+        { "from": "OpenXR.LeftThumbUp", "to" : "Standard.LeftThumbUp" },
+
+        { "from": "OpenXR.RightIndexPoint", "to" : "Standard.RightIndexPoint" },
+        { "from": "OpenXR.RightThumbUp", "to" : "Standard.RightThumbUp" },
 
         { "from": "OpenXR.LeftHand", "to": "Standard.LeftHand" },
         { "from": "OpenXR.LeftHandThumb1", "to": "Standard.LeftHandThumb1"},
