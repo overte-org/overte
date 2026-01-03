@@ -41,7 +41,7 @@ if (OVERTE_BUILD_CLIENT AND NOT ANDROID)
   set(DIR "hifiKinect")
   add_subdirectory(${DIR})
 
-  if (NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+  if (USE_STEAMWORKS AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
     set(DIR "steamClient")
     add_subdirectory(${DIR})
   endif()
