@@ -21,6 +21,7 @@
 #include <recording/ClipCache.h>
 #include <RenderableEntityItem.h>
 #include <SoundCache.h>
+#include <QSaveFile>
 
 #include "InterfaceLogging.h"
 #include "LODManager.h"
@@ -42,7 +43,16 @@ QVector<EntityItemID> Application::pasteEntities(const QString& entityHostType, 
 
 bool Application::exportEntities(const QString& filename,
                                  const QVector<QUuid>& entityIDs,
-                                 const glm::vec3* givenOffset) {
+                                 const glm::vec3* givenOffset,
+                                 const QVariantMap& options) {
+    QVector<QString> propertiesToPrune = {
+        "queryAACube", "age", "created", "lastEdited", "lastEditedBy", "faceCamera",
+        "isFacingAvatar", "clientOnly", "avatarEntity", "localEntity",
+    };
+
+    bool globalPositions = options.value("globalPositions", false).toBool();
+    auto paths = options.value("paths", QVariantMap()).toMap();
+
     QHash<EntityItemID, EntityItemPointer> entities;
 
     auto nodeList = DependencyManager::get<NodeList>();
@@ -54,7 +64,7 @@ bool Application::exportEntities(const QString& filename,
     exportTree->createRootElement();
     glm::vec3 root(TREE_SCALE, TREE_SCALE, TREE_SCALE);
     bool success = true;
-    entityTree->withReadLock([entityIDs, entityTree, givenOffset, myAvatarID, &root, &entities, &success, &exportTree] {
+    entityTree->withReadLock([entityIDs, entityTree, givenOffset, myAvatarID, &root, &entities, &success, &exportTree, globalPositions] {
         for (auto entityID : entityIDs) { // Gather entities and properties.
             auto entityItem = entityTree->findEntityByEntityItemID(entityID);
             if (!entityItem) {
@@ -62,7 +72,7 @@ bool Application::exportEntities(const QString& filename,
                 continue;
             }
 
-            if (!givenOffset) {
+            if (!givenOffset && !globalPositions) {
                 EntityItemID parentID = entityItem->getParentID();
                 bool parentIsAvatar = (parentID == AVATAR_SELF_ID || parentID == myAvatarID);
                 if (!parentIsAvatar && (parentID.isInvalidID() ||
@@ -75,6 +85,7 @@ bool Application::exportEntities(const QString& filename,
                     root.z = glm::min(root.z, position.z);
                 }
             }
+
             entities[entityID] = entityItem;
         }
 
@@ -83,9 +94,12 @@ bool Application::exportEntities(const QString& filename,
             return;
         }
 
-        if (givenOffset) {
+        if (globalPositions) {
+            root = {0.0f, 0.0f, 0.0f};
+        } else if (givenOffset) {
             root = *givenOffset;
         }
+
         for (EntityItemPointer& entityDatum : entities) {
             auto properties = entityDatum->getProperties();
             EntityItemID parentID = properties.getParentID();
@@ -102,18 +116,82 @@ bool Application::exportEntities(const QString& filename,
             exportTree->addEntity(entityDatum->getEntityItemID(), properties);
         }
     });
+
     if (success) {
-        success = exportTree->writeToJSONFile(filename.toLocal8Bit().constData());
+        QJsonDocument jsonDocument;
+        bool success = exportTree->toJSONDocument(&jsonDocument);
+
+        if (!success) { return false; }
+
+        auto object = jsonDocument.object();
+
+        if (propertiesToPrune.size() != 0) {
+            auto entityList = object["Entities"].toArray();
+
+            for (int i = 0; i < entityList.size(); i++) {
+                auto entity = entityList[i].toObject();
+
+                for (auto property : propertiesToPrune) {
+                    entity.remove(property);
+                }
+
+                entityList[i] = entity;
+            }
+
+            // these have to be re-assigned rather than modified by reference
+            // because it looks like Qt only gives us copies
+            object["Entities"] = entityList;
+        }
+
+        if (!paths.isEmpty()) {
+            QJsonObject pathsObject;
+
+            foreach (const QString& key, paths.keys()) {
+                auto object = paths.value(key).toMap();
+                auto position = object.value("position").toMap();
+                auto orientation = object.value("orientation").toMap();
+
+                pathsObject[key] = QString("/%1,%2,%3/%4,%5,%6,%7")
+                    .arg(position["x"].toDouble())
+                    .arg(position["y"].toDouble())
+                    .arg(position["z"].toDouble())
+                    .arg(orientation["x"].toDouble())
+                    .arg(orientation["y"].toDouble())
+                    .arg(orientation["z"].toDouble())
+                    .arg(orientation["w"].toDouble());
+            }
+
+            object["Paths"] = pathsObject;
+        }
+
+        // weirdly QJsonDocument::object returns a copy and not a reference
+        jsonDocument.setObject(object);
+
+        // Octree::writeToJSONFile
+        QSaveFile persistFile(filename);
+        if (persistFile.open(QIODevice::WriteOnly)) {
+            if (persistFile.write(jsonDocument.toJson()) != -1) {
+                success = persistFile.commit();
+                if (!success) {
+                    qCritical() << "Failed to commit to JSON save file:" << persistFile.errorString();
+                }
+            } else {
+                qCritical("Failed to write to JSON file.");
+            }
+        } else {
+            qCritical("Failed to open JSON file for writing.");
+        }
 
         // restore the main window's active state
 #ifdef USE_GL
         _window->activateWindow(); //VKTODO
 #endif
     }
+
     return success;
 }
 
-bool Application::exportEntities(const QString& filename, float x, float y, float z, float scale) {
+bool Application::exportEntities(const QString& filename, float x, float y, float z, float scale, const QVariantMap& options) {
     glm::vec3 center(x, y, z);
     glm::vec3 minCorner = center - vec3(scale);
     float cubeSize = scale * 2;
@@ -123,7 +201,7 @@ bool Application::exportEntities(const QString& filename, float x, float y, floa
     entityTree->withReadLock([&] {
         entityTree->evalEntitiesInCube(boundingCube, PickFilter(), entities);
     });
-    return exportEntities(filename, entities, &center);
+    return exportEntities(filename, entities, &center, options);
 }
 
 bool Application::importEntities(const QString& urlOrFilename, const bool isObservable, const qint64 callerId) {
