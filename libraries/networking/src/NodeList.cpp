@@ -50,8 +50,8 @@ using namespace std::chrono;
 const int KEEPALIVE_PING_INTERVAL_MS = 1000;
 const int MAX_SYSTEM_INFO_SIZE = 1000;
 
-NodeList::NodeList(char newOwnerType, int socketListenPort, int dtlsListenPort) :
-    LimitedNodeList(socketListenPort, dtlsListenPort),
+NodeList::NodeList(char newOwnerType, int socketListenPort, int dtlsListenPort, int publicListenPort) :
+    LimitedNodeList(socketListenPort, dtlsListenPort, publicListenPort),
     _ownerType(newOwnerType),
     _nodeTypesOfInterest(),
     _domainHandler(this),
