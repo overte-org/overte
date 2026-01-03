@@ -156,8 +156,8 @@ bool Application::hasFocus() const {
 void Application::setFocus() {
     // Note: Windows doesn't allow a user focus to be taken away from another application. Instead, it changes the color of and
     // flashes the taskbar icon.
-    auto window = qApp->getWindow();
 #ifdef USE_GL
+    auto window = qApp->getWindow();
     window->activateWindow(); //VKTODO
 #endif
 }

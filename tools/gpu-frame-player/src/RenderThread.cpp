@@ -10,7 +10,9 @@
 #include "RenderThread.h"
 #include <QtGui/QWindow>
 #include <QtCore/QThreadPool>
+#ifdef Q_OS_LINUX
 #include <QtX11Extras/QX11Info>
+#endif
 #ifdef USE_GL
 #include <gl/OffscreenGLCanvas.h>
 #include <gl/QOpenGLContextWrapper.h>

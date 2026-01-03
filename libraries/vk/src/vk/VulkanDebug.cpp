@@ -104,7 +104,7 @@ namespace vks
 
             VkDebugUtilsMessengerCreateInfoEXT debugUtilsMessengerCI{};
             setupDebugingMessengerCreateInfo(debugUtilsMessengerCI);
-            VkResult result = vkCreateDebugUtilsMessengerEXT(instance, &debugUtilsMessengerCI, nullptr, &debugUtilsMessenger);
+            [[maybe_unused]] VkResult result = vkCreateDebugUtilsMessengerEXT(instance, &debugUtilsMessengerCI, nullptr, &debugUtilsMessenger);
             assert(result == VK_SUCCESS);
         }
 
