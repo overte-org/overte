@@ -29,7 +29,10 @@ OUTPUT(RENDER_UTILS_ATTR_POSITION_MS, vec2, _positionMS);
 <@endif@>
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     OUTPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
-    OUTPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
+    <@if not HIFI_USE_FADE@>
+        // workaround for scribe only supporting (A or B) and not (A or B or C)
+        OUTPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
+    <@endif@>
 <@endif@>
 <@if not HIFI_USE_FORWARD@>
     OUTPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
