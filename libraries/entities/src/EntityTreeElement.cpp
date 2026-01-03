@@ -197,6 +197,13 @@ EntityItemID EntityTreeElement::evalDetailedRayIntersection(const glm::vec3& ori
     // only called if we do intersect our bounding cube, but find if we actually intersect with entities...
     EntityItemID entityID;
     forEachEntity([&](EntityItemPointer entity) {
+        EntityTypes::EntityType type = entity->getType();
+        if (type == EntityTypes::ParticleEffect || type == EntityTypes::ProceduralParticleEffect || type == EntityTypes::Line ||
+            type == EntityTypes::PolyLine || type == EntityTypes::Sound || type == EntityTypes::Script || type == EntityTypes::Empty ||
+            (type == EntityTypes::Material && !entity->getParentID().isNull())) {
+            return;
+        }
+
         if (entity->getIgnorePickIntersection() && !searchFilter.bypassIgnore()) {
             return;
         }
@@ -257,9 +264,7 @@ EntityItemID EntityTreeElement::evalDetailedRayIntersection(const glm::vec3& ori
                     }
                 } else {
                     // if the entity type doesn't support a detailed intersection, then just return the non-AABox results
-                    // Never intersect with particle or sound entities
-                    if (localDistance < distance && (entity->getType() != EntityTypes::ParticleEffect && entity->getType() != EntityTypes::ProceduralParticleEffect &&
-                         entity->getType() != EntityTypes::Sound && entity->getType() != EntityTypes::Script)) {
+                    if (localDistance < distance) {
                         distance = localDistance;
                         face = localFace;
                         surfaceNormal = glm::vec3(rotation * glm::vec4(localSurfaceNormal, 0.0f));
@@ -344,6 +349,13 @@ EntityItemID EntityTreeElement::evalDetailedParabolaIntersection(const glm::vec3
     // only called if we do intersect our bounding cube, but find if we actually intersect with entities...
     EntityItemID entityID;
     forEachEntity([&](EntityItemPointer entity) {
+        EntityTypes::EntityType type = entity->getType();
+        if (type == EntityTypes::ParticleEffect || type == EntityTypes::ProceduralParticleEffect || type == EntityTypes::Line ||
+            type == EntityTypes::PolyLine || type == EntityTypes::Sound || type == EntityTypes::Script ||
+            type == EntityTypes::Empty || (type == EntityTypes::Material && !entity->getParentID().isNull())) {
+            return;
+        }
+
         if (entity->getIgnorePickIntersection() && !searchFilter.bypassIgnore()) {
             return;
         }
@@ -410,9 +422,7 @@ EntityItemID EntityTreeElement::evalDetailedParabolaIntersection(const glm::vec3
                     }
                 } else {
                     // if the entity type doesn't support a detailed intersection, then just return the non-AABox results
-                    // Never intersect with particle or sound entities
-                    if (localDistance < parabolicDistance && (entity->getType() != EntityTypes::ParticleEffect && entity->getType() != EntityTypes::ProceduralParticleEffect &&
-                         entity->getType() != EntityTypes::Sound && entity->getType() != EntityTypes::Script)) {
+                    if (localDistance < parabolicDistance) {
                         parabolicDistance = localDistance;
                         face = localFace;
                         surfaceNormal = glm::vec3(rotation * glm::vec4(localSurfaceNormal, 0.0f));
