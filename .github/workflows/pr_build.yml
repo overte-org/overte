@@ -41,7 +41,7 @@ jobs:
             #  build_type: full
             #  qt_source: aqt
             - os: Ubuntu 22.04 OpenGL
-              image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+              image: docker.io/overte/overte-full-build:2026-01-01-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
               runner: ubuntu-latest
               arch: amd64
               build_type: full
@@ -60,14 +60,14 @@ jobs:
             #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
             - os: Ubuntu 22.04 OpenGL ES
-              image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-aarch64
+              image: docker.io/overte/overte-full-build:2026-01-01-ubuntu-22.04-aarch64
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
               qt_source: system
               rendering_backend: GLES
             - os: Ubuntu 22.04 Vulkan
-              image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-aarch64
+              image: docker.io/overte/overte-full-build:2026-01-01-ubuntu-22.04-aarch64
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full

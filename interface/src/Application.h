@@ -771,6 +771,7 @@ private:
 
     Setting::Handle<bool> _firstRun;
     Setting::Handle<QString> _previousScriptLocation;
+    Setting::Handle<int> _previousPreferredDisplayMode;
 
 
     // UI
