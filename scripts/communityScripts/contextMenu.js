@@ -584,6 +584,8 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		a.canCastShadow = false;
 		a.isVisibleInSecondaryCamera = false;
 		a.renderLayer = "front";
+		a.fadeInMode = "disabled";
+		a.fadeOutMode = "disabled";
 
 		if (sensorScaleHack) {
 			a.dimensions[0] /= MyAvatar.sensorToWorldScale;

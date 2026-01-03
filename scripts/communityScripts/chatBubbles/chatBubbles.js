@@ -162,6 +162,8 @@ function ChatBubbles_SpawnBubble(data, senderID) {
             billboardMode: "yaw",
             grab: {grabbable: false},
             renderLayer: "front",
+            fadeInMode: "disabled",
+            fadeOutMode: "disabled",
         }, "local");
     } else {
         height *= scale;
@@ -188,6 +190,8 @@ function ChatBubbles_SpawnBubble(data, senderID) {
             topMargin: -0.004 * scale, // center isn't exactly centered?
             grab: {grabbable: false},
             renderLayer: "front",
+            fadeInMode: "disabled",
+            fadeOutMode: "disabled",
             script: (link === undefined && !linkIsImage) ? undefined :
 `(function() {
     this.mousePressOnEntity = function(entity, event) {
@@ -290,6 +294,8 @@ function ChatBubbles_ShowTypingIndicator(senderID) {
         grab: {grabbable: false},
         ignorePickIntersection: true,
         renderLayer: "front",
+        fadeInMode: "disabled",
+        fadeOutMode: "disabled",
     }, "local");
 
     const indicatorInterval = Script.setInterval(() => ChatBubbles_IndicatorTick(senderID), 1000 / BUBBLE_ANIM_FPS);

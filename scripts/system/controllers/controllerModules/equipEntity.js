@@ -91,7 +91,8 @@ EquipHotspotBuddy.prototype.updateHotspot = function(hotspot, timestamp) {
                 "w": 1
             },
             "dimensions": dimensions,
-            "ignorePickIntersection": true
+            "ignorePickIntersection": true,
+            "grab": { "grabbable": false },
         }, "local"));
         overlayInfoSet.type = "model";
         this.map[hotspot.key] = overlayInfoSet;
