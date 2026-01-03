@@ -409,7 +409,6 @@ void ScriptObjectV8Proxy::investigate() {
 void ScriptObjectV8Proxy::weakHandleCallback(const v8::WeakCallbackInfo<ScriptObjectV8Proxy>& info) {
     auto proxy = info.GetParameter();
     proxy->_v8Object.Reset();
-    qDebug() << __FUNCTION__ << " deleteLater";
     info.GetParameter()->_object->deleteLater();
 }
 
@@ -929,7 +928,6 @@ ScriptMethodV8Proxy::~ScriptMethodV8Proxy() {
 void ScriptMethodV8Proxy::weakHandleCallback(const v8::WeakCallbackInfo<ScriptMethodV8Proxy>& info) {
     auto proxy = info.GetParameter();
     proxy->_objectLifetime.Reset();
-    qDebug() << __FUNCTION__ << " deleteLater";
     info.GetParameter()->deleteLater();
 }
 
@@ -1211,7 +1209,6 @@ ScriptSignalV8Proxy::~ScriptSignalV8Proxy() {
 void ScriptSignalV8Proxy::weakHandleCallback(const v8::WeakCallbackInfo<ScriptSignalV8Proxy>& info) {
     auto proxy = info.GetParameter();
     proxy->_objectLifetime.Reset();
-    qDebug() << __FUNCTION__ << " deleteLater";
     proxy->deleteLater();
 }
 
