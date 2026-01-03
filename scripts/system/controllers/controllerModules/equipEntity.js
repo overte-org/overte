@@ -788,7 +788,7 @@ EquipHotspotBuddy.prototype.update = function(deltaTime, timestamp, controllerDa
             return;
         }
         var pickRay = Camera.computePickRay(event.x, event.y);
-        var intersection = Entities.findRayIntersection(pickRay, true);
+        var intersection = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES);
         if (intersection.intersects) {
             var entityID = intersection.entityID;
             var entityProperties = Entities.getEntityProperties(entityID, DISPATCHER_PROPERTIES);
