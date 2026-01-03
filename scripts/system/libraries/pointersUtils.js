@@ -3,7 +3,7 @@
 //  pointerUtils.js
 //
 //  Copyright 2017-2018 High Fidelity, Inc.
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -20,75 +20,105 @@
 
 Script.include("/~/system/libraries/controllerDispatcherUtils.js");
 var Pointer = function(hudLayer, pickType, pointerData) {
-    this.renderLayer = "front";
-    if (hudLayer) {
-        this.renderLayer = "hud";
-    }
-    this.SEARCH_SPHERE_SIZE = 0.0132;
-    this.dim = {x: this.SEARCH_SPHERE_SIZE, y: this.SEARCH_SPHERE_SIZE, z: this.SEARCH_SPHERE_SIZE};
+    const SEARCH_SPHERE_SIZE = 0.03;
+    const SEARCH_LINE_POINTS = 32;
+    const SEARCH_LINE_THICKNESS = 0.003;
+    const CLICK_LINE_THICKNESS = 0.01;
+    const CURSOR_IMAGE_URL = `${Script.resourcesPath()}images/laser_cursor_default.png`;
+    const BEAM_IMAGE_URL = `${Script.resourcesPath()}images/laser_beam_default.png`;
+
+    const CURSOR_SIZE = { x: SEARCH_SPHERE_SIZE, y: SEARCH_SPHERE_SIZE, z: SEARCH_SPHERE_SIZE };
+
+    // Disable mipmapping on the cursor so the
+    // contrast outline doesn't get blurred away
+    const CURSOR_SAMPLER = { filter: "linear" };
+
+    // The line defaults to "world" so it doesn't look weird
+    // going behind avatars, the cursor defaults to "front"
+    // so it doesn't get partially clipped by whatever it's hitting
+    const lineRenderLayer = hudLayer ? "hud" : "world";
+    const cursorRenderLayer = hudLayer ? "hud" : "front";
+
+    // TODO: Use Controller.Hardware.OpenXR.{LT,RT}Touch
+    // to show the hover laser once #1948 is merged
     this.halfPath = {
         type: "PolyLine",
         color: COLORS_GRAB_SEARCHING_HALF_SQUEEZE,
         visible: true,
-        alpha: 1,
-        solid: true,
-        glow: true,
         faceCamera: true,
-        ignorePickIntersection: true, // always ignore this
-        renderLayer: this.renderLayer,
-        linePoints: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ignorePickIntersection: true,
+        renderLayer: lineRenderLayer,
+        linePoints: Array(SEARCH_LINE_POINTS).fill(0),
+        strokeWidths: Array(SEARCH_LINE_POINTS).fill(SEARCH_LINE_THICKNESS),
+        textures: BEAM_IMAGE_URL,
     };
     this.halfEnd = {
-        type: "Sphere",
-        dimensions: this.dim,
-        solid: true,
+        type: "Image",
+        imageURL: CURSOR_IMAGE_URL,
+        emissive: true,
+        billboardMode: "full",
+        dimensions: CURSOR_SIZE,
         color: COLORS_GRAB_SEARCHING_HALF_SQUEEZE,
-        alpha: 0.9,
-        unlit: true,
         ignorePickIntersection: true,
-        renderLayer: this.renderLayer,
+        renderLayer: cursorRenderLayer,
+        sampler: CURSOR_SAMPLER,
         visible: true
     };
+
     this.fullPath = {
         type: "PolyLine",
         color: COLORS_GRAB_SEARCHING_FULL_SQUEEZE,
         visible: true,
-        alpha: 1,
-        solid: true,
-        glow: true,
         faceCamera: true,
-        ignorePickIntersection: true, // always ignore this
-        renderLayer: this.renderLayer,
-        linePoints: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ignorePickIntersection: true,
+        renderLayer: lineRenderLayer,
+        linePoints: Array(SEARCH_LINE_POINTS).fill(0),
+        strokeWidths: Array(SEARCH_LINE_POINTS).fill(CLICK_LINE_THICKNESS),
+        textures: BEAM_IMAGE_URL,
     };
     this.fullEnd = {
-        type: "Sphere",
-        dimensions: this.dim,
+        type: "Image",
+        imageURL: CURSOR_IMAGE_URL,
+        emissive: true,
+        billboardMode: "full",
+        dimensions: CURSOR_SIZE,
         solid: true,
         color: COLORS_GRAB_SEARCHING_FULL_SQUEEZE,
-        alpha: 0.9,
-        unlit: true,
         ignorePickIntersection: true,
-        renderLayer: this.renderLayer,
+        renderLayer: cursorRenderLayer,
+        sampler: CURSOR_SAMPLER,
         visible: true
     };
+
     this.holdPath = {
         type: "PolyLine",
         color: COLORS_GRAB_DISTANCE_HOLD,
         visible: true,
-        alpha: 1,
-        solid: true,
-        glow: true,
         faceCamera: true,
-        ignorePickIntersection: true, // always ignore this
-        renderLayer: this.renderLayer,
-        linePoints: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ignorePickIntersection: true,
+        renderLayer: lineRenderLayer,
+        linePoints: Array(SEARCH_LINE_POINTS).fill(0),
+        strokeWidths: Array(SEARCH_LINE_POINTS).fill(CLICK_LINE_THICKNESS),
+        textures: BEAM_IMAGE_URL,
+    };
+    this.holdEnd = {
+        type: "Image",
+        imageURL: CURSOR_IMAGE_URL,
+        emissive: true,
+        billboardMode: "full",
+        dimensions: CURSOR_SIZE,
+        solid: true,
+        color: COLORS_GRAB_DISTANCE_HOLD,
+        ignorePickIntersection: true,
+        renderLayer: cursorRenderLayer,
+        sampler: CURSOR_SAMPLER,
+        visible: true
     };
 
     this.renderStates = [
         {name: "half", path: this.halfPath, end: this.halfEnd},
         {name: "full", path: this.fullPath, end: this.fullEnd},
-        {name: "hold", path: this.holdPath}
+        {name: "hold", path: this.holdPath, end: this.holdEnd}
     ];
 
     this.defaultRenderStates = [
@@ -106,14 +136,13 @@ var Pointer = function(hudLayer, pickType, pointerData) {
     delete pointerData.hand;
 
     function createPointer(pickType, pointerData) {
-        //V8TODO
         if (pickType == PickType.Ray) {
             var pointerID = Pointers.createRayPointer(pointerData);
             Pointers.setRenderState(pointerID, "");
             Pointers.enablePointer(pointerID);
             return pointerID;
         } else {
-            print("pointerUtils.js createPointer: ray type not supported yet on V8 branch");
+            print(`pointerUtils.js createPointer: ray type ${pickType} not supported`);
         }
     }
 
@@ -169,6 +198,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
 
         Pointers.setRenderState(this.pointerID, mode);
     };
+
     pointerData.renderStates = this.renderStates;
     pointerData.defaultRenderStates = this.defaultRenderStates;
     this.pointerID = createPointer(pickType, pointerData);
