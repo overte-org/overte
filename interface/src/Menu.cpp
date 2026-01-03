@@ -424,6 +424,9 @@ Menu::Menu() {
     addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::AmbientOcclusion, 0, RenderScriptingInterface::getInstance()->getAmbientOcclusionEnabled(),
         RenderScriptingInterface::getInstance(), SLOT(setAmbientOcclusionEnabled(bool)));
 
+    addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::LocalLights, 0, RenderScriptingInterface::getInstance()->getLocalLightingEnabled(),
+        RenderScriptingInterface::getInstance(), SLOT(setLocalLightingEnabled(bool)));
+
     addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::WorldAxes);
     addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::DefaultSkybox, 0, true);
 

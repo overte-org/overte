@@ -16,14 +16,13 @@
     <@include DefaultMaterials.slh@>
 
     <@include GlobalLight.slh@>
-    <@if HIFI_USE_TRANSLUCENT@>
-        <$declareEvalGlobalLightingAlphaBlended()$>
-    <@else@>
-        <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, 1)$>
-    <@endif@>
+    <@include LightLocal.slh@>
+    <$declareEvalGlobalLightingAlphaBlended()$>
 
     <@include gpu/Transform.slh@>
     <$declareStandardCameraTransform()$>
+
+    <@include CullFace.slh@>
 <@endif@>
 
 <@if HIFI_USE_FORWARD@>
@@ -48,6 +47,10 @@ INPUT(RENDER_UTILS_ATTR_POSITION_MS, vec2, _positionMS);
 <@endif@>
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
     INPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
+    <@if not HIFI_USE_FADE@>
+        // workaround for scribe only supporting (A or B) and not (A or B or C)
+        INPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
+    <@endif@>
 <@endif@>
 <@if not HIFI_USE_FORWARD@>
     INPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
@@ -115,36 +118,38 @@ void main() {
     <@endif@>
 <@else@>
     <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
+        float metallic = DEFAULT_METALLIC;
+        vec3 fresnel = getFresnelF0(metallic, color.rgb);
+
         TransformCamera cam = getTransformCamera();
         vec3 fragPosition = _positionES.xyz;
 
-        vec4 outColor;
-        <@if HIFI_USE_TRANSLUCENT@>
-            outColor = vec4(evalGlobalLightingAlphaBlended(
-                cam._viewInverse,
-                1.0,
-                DEFAULT_OCCLUSION,
-                fragPosition,
-                normal,
-                color.rgb,
-                DEFAULT_FRESNEL,
-                DEFAULT_METALLIC,
-                DEFAULT_EMISSIVE,
-                DEFAULT_ROUGHNESS, color.a),
-                color.a);
-        <@else@>
-            outColor = vec4(evalSkyboxGlobalColor(
-                cam._viewInverse,
-                1.0,
-                DEFAULT_OCCLUSION,
-                fragPosition,
-                normal,
-                color.rgb,
-                DEFAULT_FRESNEL,
-                DEFAULT_METALLIC,
-                DEFAULT_ROUGHNESS),
-                color.a);
-        <@endif@>
+        vec3 fragNormalWS = evalFrontOrBackFaceNormal(normalize(_normalWS));
+        vec3 fragPositionWS = _positionWS.xyz;
+        vec3 fragToEyeWS = cam._viewInverse[3].xyz - fragPositionWS;
+        vec3 fragToEyeDirWS = normalize(fragToEyeWS);
+        SurfaceData surfaceWS = initSurfaceData(DEFAULT_ROUGHNESS, fragNormalWS, fragToEyeDirWS);
+
+        vec4 localLighting = vec4(0.0);
+        <$fetchClusterInfo(_positionWS)$>
+        if (hasLocalLights(numLights, clusterPos, dims)) {
+            localLighting = evalLocalLighting(cluster, numLights, fragPositionWS, surfaceWS,
+                                              metallic, fresnel, color.rgb, 0.0,
+                                              vec4(0), vec4(0), color.a);
+        }
+
+        vec4 outColor = vec4(evalGlobalLightingAlphaBlended(
+            cam._viewInverse,
+            1.0,
+            DEFAULT_OCCLUSION,
+            _positionES.xyz,
+            fragNormalWS,
+            color.rgb,
+            fresnel,
+            metallic,
+            DEFAULT_EMISSIVE,
+            surfaceWS, color.a, localLighting.rgb),
+            color.a);
 
         <@if HIFI_USE_FORWARD@>
             _fragColor0 = outColor;

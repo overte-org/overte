@@ -78,6 +78,8 @@ public:
 
     void setAmbientOcclusion(bool enable);
     bool isAmbientOcclusionEnabled() const;
+    void setLocalLightingEnabled(bool enable);
+    bool isLocalLightingEnabled() const;
     void setShadow(bool enable);
     bool isShadowEnabled() const;
 
@@ -87,6 +89,8 @@ public:
     gpu::TexturePointer getAmbientFresnelLUT() const { return _ambientFresnelLUT; }
 
 protected:
+    bool _enableLocalLighting { true };
+
     // Class describing the uniform buffer with the transform info common to the AO shaders
     // It s changing every frame
     class Parameters {
@@ -161,6 +165,7 @@ class MakeLightingModelConfig : public render::Job::Config {
     Q_PROPERTY(bool enableBlendshape MEMBER enableBlendshape NOTIFY dirty)
 
     Q_PROPERTY(bool enableAmbientOcclusion READ isAmbientOcclusionEnabled WRITE setAmbientOcclusion NOTIFY dirty)
+    Q_PROPERTY(bool enableLocalLighting READ isLocalLightingEnabled WRITE setLocalLighting NOTIFY dirty)
     Q_PROPERTY(bool enableShadow READ isShadowEnabled WRITE setShadow NOTIFY dirty)
 
 public:
@@ -193,10 +198,13 @@ public:
     bool enableBlendshape { true };
 
     bool enableAmbientOcclusion { true };
+    bool enableLocalLighting { true };
     bool enableShadow { true };
 
     void setAmbientOcclusion(bool enable) { enableAmbientOcclusion = enable; emit dirty();}
     bool isAmbientOcclusionEnabled() const { return enableAmbientOcclusion; }
+    void setLocalLighting(bool enable) { enableLocalLighting = enable; emit dirty();}
+    bool isLocalLightingEnabled() const { return enableLocalLighting; }
     void setShadow(bool enable) { enableShadow = enable; emit dirty(); }
     bool isShadowEnabled() const { return enableShadow; }
     void setHaze(bool enable) { enableHaze = enable; emit dirty(); }

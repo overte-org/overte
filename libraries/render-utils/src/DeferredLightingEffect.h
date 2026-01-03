@@ -51,6 +51,7 @@ public:
     static void unsetKeyLightBatch(gpu::Batch& batch);
 
     static void setupLocalLightsBatch(gpu::Batch& batch, const LightClustersPointer& lightClusters);
+    static void setupLocalLightsBatch(gpu::Batch& batch);
     static void unsetLocalLightsBatch(gpu::Batch& batch);
 
 private:
@@ -69,6 +70,8 @@ private:
 
     gpu::PipelinePointer _localLight;
     gpu::PipelinePointer _localLightOutline;
+
+    LightClustersPointer _lightClusters;
 
     friend class LightClusteringPass;
     friend class RenderDeferredSetup;
