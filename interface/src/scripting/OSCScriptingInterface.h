@@ -44,9 +44,11 @@ class ScriptContext;
 /*@jsdoc
  * The <code>OSCSocket</code> API lets you send and receive Open Sound Control packets.
  * Despite the name, OSC is commonly used with VR applications too. It is used by some
- * tracking and haptic devices that aren't exposed through OpenVR or OpenXR.
+ * tracking and haptic systems that aren't exposed through OpenVR or OpenXR.
  *
  * <p>Overte doesn't have any built-in OSC functionality; OSC is only useful with scripts.</p>
+ *
+ * {@link https://opensoundcontrol.stanford.edu/spec-1_0.html}
  *
  * @namespace OSCSocket
  *

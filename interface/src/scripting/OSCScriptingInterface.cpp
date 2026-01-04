@@ -181,11 +181,14 @@ OSCScriptingInterface::OSCScriptingInterface(QObject* parent) :
     _sendHost("osc/sendHost", "127.0.0.1"),
     _socket(std::make_shared<QUdpSocket>(this))
 {
-    _socket->bind(QHostAddress(_receiveHost.get()), _receivePort.get());
+    connect(_socket.get(), &QUdpSocket::readyRead, this, [this] {
+        // multiple datagrams might arrive at once
+        while (_socket->hasPendingDatagrams()) {
+            readPacket();
+        }
+    });
 
-    connect(_socket.get(), &QUdpSocket::readyRead, this, &OSCScriptingInterface::readPacket);
-
-    qCInfo(osc_cat) << "Listening on" << _socket->localAddress() << ":" << _socket->localPort();
+    rebindSocket();
 }
 
 OSCScriptingInterface::~OSCScriptingInterface() {
@@ -361,7 +364,6 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
         arguments.append(context->argument(i).toVariant());
     }
 
-
     if (address == "#bundle") {
         engine->raiseException("OSC bundles are not supported");
         return engine->undefinedValue();
@@ -472,8 +474,6 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
     bytes.append(bodyBytes);
 
     instance->_socket->writeDatagram(bytes, QHostAddress(instance->_sendHost.get()), instance->_sendPort.get());
-
-    qCDebug(osc_cat) << QHostAddress(instance->_sendHost.get()) << instance->_sendPort.get() << ":" << bytes.toHex(' ');
 
     return engine->undefinedValue();
 }
