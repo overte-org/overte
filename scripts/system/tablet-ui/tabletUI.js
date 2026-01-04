@@ -262,6 +262,8 @@
                                                "visible": true,
                                                "ignorePickIntersection": true,
                                                "renderLayer": "world",
+                                               "fadeInMode": "disabled",
+                                               "fadeOutMode": "disabled",
                                                "lifetime": 3
                                        }, "local");
                     Script.setTimeout(function() {
