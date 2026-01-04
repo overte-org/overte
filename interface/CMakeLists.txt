@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2019-2021 Vircadia contributors
-# Copyright 2021-2023 Overte e.V.
+# Copyright 2021-2026 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 if (APPLE)
@@ -296,11 +296,10 @@ if (ANDROID)
 endif ()
 
 target_link_libraries(
-  ${TARGET_NAME}
-  Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::Widgets
-  Qt5::Qml Qt5::Quick Qt5::Svg
-  Qt5::WebChannel Qt5::WebEngineCore Qt5::WebEngineWidgets
-  ${PLATFORM_QT_LIBRARIES}
+    ${TARGET_NAME}
+    Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::Widgets
+    Qt5::Qml Qt5::Quick Qt5::Svg
+    ${PLATFORM_QT_LIBRARIES}
 )
 
 if (UNIX AND NOT ANDROID AND NOT OVERTE_THREAD_DEBUGGING)
