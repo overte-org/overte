@@ -42,6 +42,7 @@ set(RESOURCES_RCC ${CMAKE_CURRENT_BINARY_DIR}/resources.rcc)
 generate_qrc(OUTPUT ${RESOURCES_QRC} PATH ${CMAKE_CURRENT_SOURCE_DIR}/resources CUSTOM_PATHS ${CUSTOM_INTERFACE_QRC_PATHS} GLOBS *)
 
 if (ANDROID)
+  # ANDROID TODO: Is this still needed?
   # on Android, don't compress the rcc binary
   qt5_add_binary_resources(resources "${RESOURCES_QRC}" DESTINATION "${RESOURCES_RCC}" OPTIONS -no-compress)
 else ()
@@ -117,6 +118,7 @@ set(INTERFACE_SRCS ${INTERFACE_SRCS} "${QT_UI_HEADERS}" "${QT_RESOURCES}")
 
 # setup the android parameters that will help us produce an APK
 if (ANDROID)
+  # ANDROID TODO: Get from a Conan Setting named `android_sdk` like Qt does.
   set(ANDROID_SDK_ROOT $ENV{ANDROID_HOME})
   set(BUILD_SHARED_LIBS ON)
 endif ()
