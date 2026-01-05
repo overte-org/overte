@@ -84,7 +84,7 @@ void Application::initializeGL() {
     }
 
 #ifdef USE_GL
-    _glWidget->windowHandle()->setSurfaceType(QSurface::OpenGLSurface);
+    _primaryWidget->windowHandle()->setSurfaceType(QSurface::OpenGLSurface);
     _primaryWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat());
 #else
     //_primaryWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat()); // VKTODO
