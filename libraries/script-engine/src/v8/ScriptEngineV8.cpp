@@ -280,7 +280,7 @@ ScriptEngineV8::~ScriptEngineV8() {
         _qobjectWrapperMap.clear();
         _qobjectWrapperMapV8.clear();
     }
-    // Events need to be processed one more time:
+    // Events need to be processed one more time for processing any remaining deleteLater calls:
     {
         QEventLoop loop;
         loop.processEvents();

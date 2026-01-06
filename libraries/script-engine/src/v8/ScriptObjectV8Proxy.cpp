@@ -78,6 +78,9 @@ private:  // storage
 
 ScriptObjectV8Proxy::ScriptObjectV8Proxy(ScriptEngineV8* engine, QObject* object, bool ownsObject, const ScriptEngine::QObjectWrapOptions& options) :
     _engine(engine), _wrapOptions(options), _ownsObject(ownsObject), _object(object) {
+    if (_ownsObject) {
+        Q_ASSERT(_engine->thread() == object->thread());
+    }
     Q_ASSERT(_engine != nullptr);
     investigate();
 }
@@ -241,7 +244,10 @@ ScriptObjectV8Proxy::~ScriptObjectV8Proxy() {
         v8::HandleScope handleScope(isolate);
         _v8Object.Reset();
         QObject* qobject = _object;
-        if(qobject) delete qobject;
+        if(qobject) {
+            Q_ASSERT(qobject->thread() == QThread::currentThread());
+            delete qobject;
+        }
     } else {
         v8::HandleScope handleScope(isolate);
         if (_object)
