@@ -1795,9 +1795,16 @@ void VKBackend::FrameData::createDescriptorPool() {
 }
 
 void VKBackend::FrameData::addGlUniform(size_t size, const void* data, size_t commandIndex) {
-    _glUniformData.resize(_glUniformBufferPosition + size);
+    size_t alignment = _backend->_context.device->properties.limits.minUniformBufferOffsetAlignment;
+    size_t newSizeUnaligned = _glUniformBufferPosition + size;
+    size_t newSizeAligned = newSizeUnaligned - (newSizeUnaligned % alignment);
+    if (newSizeAligned < newSizeUnaligned) {
+        newSizeAligned += alignment;
+    }
+    _glUniformData.resize(newSizeAligned);
     memcpy(_glUniformData.data()+_glUniformBufferPosition, data, size);
-    _glUniformBufferPosition += size;
+    _glUniformOffsetMap.insert({commandIndex, _glUniformBufferPosition});
+    _glUniformBufferPosition = newSizeAligned;
 }
 
 VKBackend::FrameData::FrameData(VKBackend *backend) : _backend(backend) {
