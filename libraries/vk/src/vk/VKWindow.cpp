@@ -104,8 +104,21 @@ void VKWindow::vulkanCleanup() {
         _previousFrameFence = VK_NULL_HANDLE;
     }
 
-    _context.recycler.trashVkSemaphore(_acquireCompleteSemaphore);
-    _context.recycler.trashVkSemaphore(_renderCompleteSemaphore);
+    if (_acquireCompleteSemaphore) {
+        _context.recycler.trashVkSemaphore(_acquireCompleteSemaphore);
+    }
+
+    if (_renderCompleteSemaphore) {
+        _context.recycler.trashVkSemaphore(_renderCompleteSemaphore);
+    }
+
+    if (_previousAcquireCompleteSemaphore) {
+        _context.recycler.trashVkSemaphore(_previousAcquireCompleteSemaphore);
+    }
+
+    if (_previousRenderCompleteSemaphore) {
+        _context.recycler.trashVkSemaphore(_previousRenderCompleteSemaphore);
+    }
 
     if (_renderPass) {
         _context.recycler.trashVkRenderPass(_renderPass);
