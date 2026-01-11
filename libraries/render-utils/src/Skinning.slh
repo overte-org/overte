@@ -55,7 +55,7 @@ mat4 dualQuatToMat4(vec4 real, vec4 dual) {
 }
 
 // dual quaternion linear blending
-void evalSkinning(ivec4 skinClusterIndex, vec4 skinClusterWeight, vec4 inPosition, out vec4 skinnedPosition
+void evalSkinning(uvec4 skinClusterIndex, vec4 skinClusterWeight, vec4 inPosition, out vec4 skinnedPosition
 <@if USE_NORMAL@>
     , vec3 inNormal, out vec3 skinnedNormal
 <@endif@>
@@ -118,7 +118,7 @@ void evalSkinning(ivec4 skinClusterIndex, vec4 skinClusterWeight, vec4 inPositio
 <@else@>  // NOT USE_DUAL_QUATERNION_SKINNING
 
 // LiNEAR BLENDING
-void evalSkinning(ivec4 skinClusterIndex, vec4 skinClusterWeight, vec4 inPosition, out vec4 skinnedPosition
+void evalSkinning(uvec4 skinClusterIndex, vec4 skinClusterWeight, vec4 inPosition, out vec4 skinnedPosition
 <@if USE_NORMAL@>
     , vec3 inNormal, out vec3 skinnedNormal
 <@endif@>
