@@ -44,6 +44,13 @@ XMLHttpRequestClass::XMLHttpRequestClass(ScriptEngine* engine) :
 
 XMLHttpRequestClass::~XMLHttpRequestClass() {
     if (_reply) { _reply->deleteLater(); }
+    Q_ASSERT(_engine);
+    {
+        auto guard = _engine->getScopeGuard();
+        _responseData = ScriptValue();
+        _onTimeout = ScriptValue();
+        _onReadyStateChange = ScriptValue();
+    }
 }
 
 ScriptValue XMLHttpRequestClass::constructor(ScriptContext* context, ScriptEngine* engine) {

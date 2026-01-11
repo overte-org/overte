@@ -215,14 +215,20 @@ void ScriptableResource::disconnectHelper() {
     }
 }
 
+ScriptableResource* ResourceCache::prefetchAndMoveToThread(const QUrl& url, void* extra, size_t extraHash, QThread *scriptThread) {
+    auto result = prefetch(url, extra, extraHash);
+    result->moveToThread(scriptThread);
+    return result;
+}
+
 ScriptableResource* ResourceCache::prefetch(const QUrl& url, void* extra, size_t extraHash) {
     ScriptableResource* result = nullptr;
 
     if (QThread::currentThread() != thread()) {
         // Must be called in thread to ensure getResource returns a valid pointer
-        BLOCKING_INVOKE_METHOD(this, "prefetch",
+        BLOCKING_INVOKE_METHOD(this, "prefetchAndMoveToThread",
             Q_RETURN_ARG(ScriptableResource*, result),
-            Q_ARG(QUrl, url), Q_ARG(void*, extra), Q_ARG(size_t, extraHash));
+            Q_ARG(QUrl, url), Q_ARG(void*, extra), Q_ARG(size_t, extraHash), Q_ARG(QThread*, QThread::currentThread()));
         return result;
     }
 
