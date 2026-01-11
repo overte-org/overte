@@ -69,7 +69,8 @@ class Overte(ConanFile):
         self.requires("nvidia-texture-tools/2023.01@overte/stable")
         self.requires("onetbb/2021.10.0")
         self.requires("openexr/3.1.9")
-        self.requires("openvr/2.2.3@overte/stable")
+        if self.settings.os != "Android":
+            self.requires("openvr/2.2.3@overte/stable")
         self.requires("openxr/1.1.46@overte/stable")
         self.requires("opus/1.4")
         self.requires("polyvox/2025.09.19@overte/experimental#76ce908c1078988dceae5ad32ead2909")
