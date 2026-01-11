@@ -95,7 +95,7 @@ private:
         void focusOutEvent() override;
         bool triggerHapticPulse(float strength, float duration, uint16_t index) override;
 
-        void emulateStickFromTrackpad();
+        void setupControllerFlags();
         void getHandTrackingInputs(int index, const mat4& sensorToAvatar);
 
         void updateBodyFromViveTrackers(const mat4& sensorToAvatar);
