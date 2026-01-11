@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeSharedSettings">
+    <configurations>
+      <configuration PROFILE_NAME="__Default_Profiles__" ENABLED="false" />
+      <configuration PROFILE_NAME="Release" ENABLED="true" GENERATION_DIR="build" CONFIG_NAME="Release" GENERATION_OPTIONS="--preset &quot;conan-default&quot;" BUILD_OPTIONS="--preset &quot;conan-release&quot;" NO_GENERATOR="true" />
+      <configuration PROFILE_NAME="Debug" ENABLED="true" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="Debug" GENERATION_OPTIONS="--preset &quot;conan-default&quot;" BUILD_OPTIONS="--preset &quot;conan-debug&quot;" NO_GENERATOR="true" />
+      <configuration PROFILE_NAME="RelWithDebInfo" ENABLED="true" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="RelWithDebInfo" GENERATION_OPTIONS="--preset &quot;conan-default&quot;" BUILD_OPTIONS="--preset &quot;conan-release&quot;" NO_GENERATOR="true" />
+      <configuration PROFILE_NAME="__OpenGL_Profiles__" ENABLED="false" />
+      <configuration PROFILE_NAME="Release (OpenGL)" ENABLED="false" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="Release" GENERATION_OPTIONS="--preset &quot;conan-default&quot; -DOVERTE_RENDERING_BACKEND:STRING=OpenGL" BUILD_OPTIONS="--preset &quot;conan-release&quot;" NO_GENERATOR="true" />
+      <configuration PROFILE_NAME="Debug (OpenGL)" ENABLED="false" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="Debug" GENERATION_OPTIONS="--preset &quot;conan-default&quot; -DOVERTE_RENDERING_BACKEND:STRING=OpenGL" BUILD_OPTIONS="--preset &quot;conan-debug&quot;" NO_GENERATOR="true" />
+      <configuration PROFILE_NAME="RelWithDebInfo (OpenGL)" ENABLED="false" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="RelWithDebInfo" GENERATION_OPTIONS="--preset &quot;conan-default&quot; -DOVERTE_RENDERING_BACKEND:STRING=OpenGL" BUILD_OPTIONS="--preset &quot;conan-release&quot;" NO_GENERATOR="true" />
+      <configuration PROFILE_NAME="__OpenGL_ES_Profiles__" ENABLED="false" />
+      <configuration PROFILE_NAME="Release (OpenGL ES)" ENABLED="false" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="Release" GENERATION_OPTIONS="--preset &quot;conan-default&quot; -DOVERTE_RENDERING_BACKEND:STRING=GLES" BUILD_OPTIONS="--preset &quot;conan-release&quot;" NO_GENERATOR="true" />
+      <configuration PROFILE_NAME="Debug (OpenGL ES)" ENABLED="false" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="Debug" GENERATION_OPTIONS="--preset &quot;conan-default&quot; -DOVERTE_RENDERING_BACKEND:STRING=GLES" BUILD_OPTIONS="--preset &quot;conan-debug&quot;" NO_GENERATOR="true" />
+      <configuration PROFILE_NAME="RelWithDebInfo (OpenGL ES)" ENABLED="false" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="RelWithDebInfo" GENERATION_OPTIONS="--preset &quot;conan-default&quot; -DOVERTE_RENDERING_BACKEND:STRING=GLES" BUILD_OPTIONS="--preset &quot;conan-release&quot;" NO_GENERATOR="true" />
+      <configuration PROFILE_NAME="__Vulkan_Profiles__" ENABLED="false" />
+      <configuration PROFILE_NAME="Release (Vulkan)" ENABLED="false" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="Release" GENERATION_OPTIONS="--preset &quot;conan-default&quot; -DOVERTE_RENDERING_BACKEND:STRING=Vulkan" BUILD_OPTIONS="--preset &quot;conan-release&quot;" NO_GENERATOR="true" />
+      <configuration PROFILE_NAME="Debug (Vulkan)" ENABLED="false" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="Debug" GENERATION_OPTIONS="--preset &quot;conan-default&quot; -DOVERTE_RENDERING_BACKEND:STRING=Vulkan" BUILD_OPTIONS="--preset &quot;conan-debug&quot;" NO_GENERATOR="true" />
+      <configuration PROFILE_NAME="RelWithDebInfo (Vulkan)" ENABLED="false" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="RelWithDebInfo" GENERATION_OPTIONS="--preset &quot;conan-default&quot; -DOVERTE_RENDERING_BACKEND:STRING=Vulkan" BUILD_OPTIONS="--preset &quot;conan-release&quot;" NO_GENERATOR="true" />
+      <configuration PROFILE_NAME="__Debugging_Profiles__" ENABLED="false" />
+      <configuration PROFILE_NAME="Memory Debugging" ENABLED="false" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="Debug" GENERATION_OPTIONS="--preset &quot;conan-default&quot;" BUILD_OPTIONS="--preset &quot;conan-debug&quot;" NO_GENERATOR="true">
+        <ADDITIONAL_GENERATION_ENVIRONMENT>
+          <envs>
+            <env name="OVERTE_MEMORY_DEBUGGING" value="1" />
+          </envs>
+        </ADDITIONAL_GENERATION_ENVIRONMENT>
+      </configuration>
+      <configuration PROFILE_NAME="Thread Debugging (Unix)" ENABLED="false" GENERATION_DIR="$PROJECT_DIR$/build" CONFIG_NAME="Debug" GENERATION_OPTIONS="--preset &quot;conan-default&quot;" BUILD_OPTIONS="--preset &quot;conan-debug&quot;" NO_GENERATOR="true">
+        <ADDITIONAL_GENERATION_ENVIRONMENT>
+          <envs>
+            <env name="OVERTE_THREAD_DEBUGGING" value="1" />
+          </envs>
+        </ADDITIONAL_GENERATION_ENVIRONMENT>
+      </configuration>
+    </configurations>
+  </component>
+</project>
