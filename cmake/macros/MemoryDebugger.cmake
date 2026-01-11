@@ -2,7 +2,7 @@
 #  MemoryDebugger.cmake
 #
 #  Copyright 2015 High Fidelity, Inc.
-#  Copyright 2023-2025 Overte e.V.
+#  Copyright 2023-2026 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -21,16 +21,9 @@ if ("$ENV{OVERTE_MEMORY_DEBUGGING}")
 
 
   SET( OVERTE_MEMORY_DEBUGGING true )
-  SET ( DISABLE_WEBRTC true )
 endif ()
 
-if ( OVERTE_MEMORY_DEBUGGING)
-  # WebRTC doesn't work with memory debugging enabled, it fails to link:
-  # /usr/bin/ld: ../../libraries/networking/libnetworking.so: undefined reference to `typeinfo for rtc::Thread'
-  # /usr/bin/ld: ../../libraries/networking/libnetworking.so: undefined reference to `typeinfo for webrtc::SessionDescriptionInterface'
-  # /usr/bin/ld: ../../libraries/networking/libnetworking.so: undefined reference to `typeinfo for webrtc::IceCandidateInterface'
-  add_compile_definitions(DISABLE_WEBRTC)
-
+if (OVERTE_MEMORY_DEBUGGING)
   if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=undefined -fsanitize=address -fsanitize-recover=address")
     SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined -fsanitize=address -fsanitize-recover=address")
