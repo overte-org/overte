@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Build Linux
 
-*Last Updated on 2025-05-21*
+*Last Updated on 2026-01-11*
 
 Please read the [general build guide](BUILD.md) for information on dependencies required for all platforms. Only Linux specific instructions are found in this file.
 
@@ -49,33 +49,7 @@ Verify OpenGL:
   - First install mesa-utils with the command `sudo apt install mesa-utils -y`.
   - Then run `glxinfo | grep "OpenGL version"`.
 
-
-- QT 5:
-```bash
-sudo apt-get install -y qtbase5-dev \
-                        qtbase5-private-dev \
-                        qtwebengine5-dev \
-                        qtwebengine5-dev-tools \
-                        qtmultimedia5-dev \
-                        libqt5opengl5-dev \
-                        libqt5webchannel5-dev \
-                        libqt5websockets5-dev \
-                        qtxmlpatterns5-dev-tools \
-                        qttools5-dev \
-                        libqt5xmlpatterns5-dev \
-                        libqt5svg5-dev \
-                        qml-module-qtwebchannel \
-                        qml-module-qtquick-controls \
-                        qml-module-qtquick-controls2 \
-                        qml-module-qt-labs-settings \
-                        qml-module-qtquick-dialogs \
-                        qml-module-qtwebengine
-```
-
-
 ## Extra dependencies to compile Interface on a server
-
-
 - Install the following:
 ```bash
 sudo apt install libpulse0 libnss3 libnspr4 libfontconfig1 libxcursor1 libxcomposite1 libxtst6 libxslt1.1
@@ -128,11 +102,12 @@ Next, add the overte remote to conan
 conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
 ```
 
-Optionally you can let conan automatically install the required system packages
+Let conan automatically install the required system packages
 ```bash
 echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
 echo "tools.system.package_manager:sudo = True" >> ~/.conan2/global.conf
 ```
+If you don't do this, Conan will still complain if it notices system packages being missing, so you can manually install them.
 
 ## Compiling
 
