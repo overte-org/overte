@@ -589,7 +589,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             scaleWithParent: true,
             distanceScaleEnd: true,
             hand: LEFT_HAND,
-            delay: Picks.handLaserDelay
+            delay: Picks.handLaserDelay,
+            allowPassive: true,
         });
         Keyboard.setLeftHandLaser(this.leftPointer);
         this.rightPointer = this.pointerManager.createPointer(false, PickType.Ray, {
@@ -605,7 +606,8 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             scaleWithParent: true,
             distanceScaleEnd: true,
             hand: RIGHT_HAND,
-            delay: Picks.handLaserDelay
+            delay: Picks.handLaserDelay,
+            allowPassive: true,
         });
         Keyboard.setRightHandLaser(this.rightPointer);
         this.leftHudPointer = this.pointerManager.createPointer(true, PickType.Ray, {
@@ -696,6 +698,10 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
             Pointers.setDelay(_this.rightHudPointer, delay);
         };
 
+        this.handLaserPassiveChanged = function (passive) {
+            _this.pointerManager.setPassive(passive);
+        };
+
         this.cleanup = function () {
             Controller.disableMapping(MAPPING_NAME);
             _this.pointerManager.removePointers();
@@ -759,6 +765,7 @@ Script.include("/~/system/libraries/controllerDispatcherUtils.js");
     Messages.messageReceived.connect(controllerDispatcher.handleMessage);
 
     Picks.handLaserDelayChanged.connect(controllerDispatcher.handLaserDelayChanged);
+    Picks.handLaserPassiveChanged.connect(controllerDispatcher.handLaserPassiveChanged);
 
     Script.scriptEnding.connect(function () {
         controllerDispatcher.cleanup();
