@@ -352,7 +352,7 @@ function ChatBubbles_RecvMsg(channel, msg, senderID, localOnly) {
         } else if (data.action === "typing_stop") {
             ChatBubbles_HideTypingIndicator(senderID);
         }
-    } else if (data.action === "send_chat_message" && settings.enabled) {
+    } else if ((data.action === "send_chat_message" || data.action === "sendChatMessage") && settings.enabled) {
         // don't spawn a bubble if they're too far away
         if (data.channel !== "local") { return; }
         if (Vec3.distance(MyAvatar.position, data.position) > MAX_DISTANCE) { return; }

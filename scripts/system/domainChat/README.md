@@ -1,15 +1,15 @@
-# Armored Chat
+# Domain Chat
 
-1. What is Armored Chat
+1. What is Domain Chat
 2. User manual
     - Installation
     - Settings
     - Usability tips
 3. Development
 
-## What is Armored Chat
+## What is Domain Chat
 
-Armored Chat is a chat application strictly made to communicate between players in the same domain. It is made using QML and to be as light weight as reasonably possible.
+Domain Chat is a chat application strictly made to communicate between players in the same domain. It is made using QML and to be as light weight as reasonably possible.
 
 ### Dependencies
 
@@ -21,19 +21,19 @@ For notifications, AC uses [notificationCore.js](https://github.com/overte-org/o
 
 ### Installation
 
-Armored Chat is preinstalled courtesy of [defaultScripts.js](https://github.com/overte-org/overte/blob/8661e8a858663b48e8485c2cd7120dc3e2d7b87e/scripts/defaultScripts.js).
+Domain Chat is preinstalled courtesy of [defaultScripts.js](https://github.com/overte-org/overte/blob/8661e8a858663b48e8485c2cd7120dc3e2d7b87e/scripts/defaultScripts.js).
 
 If AC is not preinstalled, or for some other reason it can not be automatically installed, you can install it manually by following [these instructions](https://github.com/overte-org/overte/blob/8661e8a858663b48e8485c2cd7120dc3e2d7b87e/scripts/defaultScripts.js) to open your script management application, and loading the script url:
 
 ```
-https://raw.githubusercontent.com/overte-org/overte/master/scripts/communityScripts/armored-chat/armored_chat.js
+https://raw.githubusercontent.com/overte-org/overte/master/scripts/system/domainChat/domainChat.js
 ```
 
 ---
 
 ### Settings
 
-Armored Chat comes with basic settings for managing itself.
+Domain Chat comes with basic settings for managing itself.
 
 #### External window
 
@@ -99,10 +99,10 @@ When you call the `_emitEvent()` function be sure to include the following signa
 Example:
 
 ```json
-{ type: "show_message", displayName: "username", ...}
+{ type: "showMessage", displayName: "username", ...}
 ```
 
-#### "show_message"
+#### "showMessage"
 
 This signal tells the QML to add a new message to the ListView element list.
 
@@ -117,7 +117,7 @@ Supply a `JSON` object.
 }
 ```
 
-#### "clear_messages"
+#### "clearMessages"
 
 Clear all messages displayed in the ListView elements. Note this does not clear the history and this is only a visual erasure.
 
@@ -136,7 +136,7 @@ Supply a `JSON` object.
 }
 ```
 
-#### "initial_settings"
+#### "initialSettings"
 
 Visually set the settings in the QML interface based on the supplied object.
 
@@ -146,8 +146,8 @@ Supply a `JSON` object.
 {
     "settings": {
         // JSON object of current AC settings
-        "external_window": false,
-        "maximum_messages": 200
+        "externalWindow": false,
+        "maximumMessages": 200
     }
 }
 ```
@@ -159,7 +159,7 @@ This means that what ever action you want to preform must go though the JavaScri
 
 This is formatted the same was as the communication packets to the QML interface. Supply the following entries as "type"s in your packet.
 
-#### "send_message"
+#### "sendMessage"
 
 Tell AC to broadcast a message to the domain.
 
@@ -172,7 +172,7 @@ Supply a `JSON` object.
 }
 ```
 
-#### "setting_change"
+#### "settingChange"
 
 Tell AC to change a setting. Exercise caution when using this as you can add new settings unintentionally if you are not careful.
 
@@ -180,7 +180,7 @@ Supply a `JSON` object
 
 ```json
 {
-    "setting": "external_window", // The name of the setting to change
+    "setting": "externalWindow", // The name of the setting to change
     "value": true // The value to change the setting to
 }
 ```
@@ -193,7 +193,7 @@ Supply a `JSON` object
 
 ```json
 {
-    "action": "erase_history" // The action to preform
+    "action": "eraseHistory" // The action to preform
 }
 ```
 
