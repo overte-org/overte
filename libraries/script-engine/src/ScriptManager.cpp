@@ -594,6 +594,11 @@ void ScriptManager::loadURL(const QUrl& scriptURL, bool reload) {
         if (!success) {
             scriptErrorMessage("ERROR Loading file (" + status + "):" + url, url, -1);
             emit errorLoadingScript(_fileNameString);
+
+            // emitting scriptLoaded will keep Interface from discarding
+            // scripts that might only be temporarily unavailable
+            emit scriptLoaded(url);
+
             return;
         }
 
