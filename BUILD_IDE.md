@@ -55,8 +55,8 @@ You may want to use [Jetbrain's Toolbox app](https://www.jetbrains.com/toolbox-a
 
    ![KDevelop Launch Configuration](docs/KDevelop_Launch.png)
 
-   > [!WARNING]  
-   > ***Any time you change your `CMAKE_BUILD_TYPE` you also need to change your launch configuration using "Run" → "Current Launch Configuration", otherwise you will run the wrong binary!***
+> [!WARNING]
+> ***Any time you change your `CMAKE_BUILD_TYPE` you also need to change your launch configuration using "Run" → "Current Launch Configuration", otherwise you will run the wrong binary!***
 
 ## Tips
 - Keep in mind that KDevelop may show incorrect warnings while it is still parsing code in the background.
