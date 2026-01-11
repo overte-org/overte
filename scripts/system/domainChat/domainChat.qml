@@ -169,6 +169,19 @@ Rectangle {
                 }
             }
 
+            Item {
+                width: parent.width;
+                height: parent.height - 40;
+                visible: doesChannelHaveMessages(pageVal) === false;
+
+                Text {
+                    text: "No messages to display";
+                    font.pixelSize: 20;
+                    color: "white";
+                    anchors.centerIn: parent;
+                }
+            }
+
             ListModel {
                 id: localMessages;
             }
@@ -198,7 +211,7 @@ Rectangle {
                         Keys.onPressed: {
                             if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && !(event.modifiers & Qt.ShiftModifier)) {
                                 event.accepted = true;
-                                toScript({type: "send_message", message: text, channel: pageVal});
+                                toScript({type: "sendMessage", message: text, channel: pageVal});
                                 text = ""
                             }
                         }
@@ -227,12 +240,12 @@ Rectangle {
                         }
 
                         onClicked: {
-                            toScript({type: "send_message", message: parent.children[0].text, channel: pageVal});
+                            toScript({type: "sendMessage", message: parent.children[0].text, channel: pageVal});
                             parent.children[0].text = ""
                         }
                         Keys.onPressed: {
                             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
-                                toScript({type: "send_message", message: parent.children[0].text, channel: pageVal});
+                                toScript({type: "sendMessage", message: parent.children[0].text, channel: pageVal});
                                 parent.children[0].text = ""
                             }
                         }
@@ -267,12 +280,12 @@ Rectangle {
                     }
 
                     CheckBox{
-                        id: s_external_window
+                        id: s_externalWindow
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'external_window', value: checked})
+                            toScript({type: 'settingChange', setting: 'externalWindow', value: checked})
                         }
                     }
                 }
@@ -292,7 +305,7 @@ Rectangle {
 
                     
                     HifiControlsUit.SpinBox {
-                        id: s_maximum_messages
+                        id: s_maximumMessages
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
                         decimals: 0
@@ -303,7 +316,7 @@ Rectangle {
                         backgroundColor: "#cccccc"
 
                         onValueChanged: {
-                            toScript({type: 'setting_change', setting: 'maximum_messages', value: value})
+                            toScript({type: 'settingChange', setting: 'maximumMessages', value: value})
                         }
                     }
                 }
@@ -328,7 +341,7 @@ Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
 
                         onClicked: {
-                            toScript({type: "action", action: "erase_history"})
+                            toScript({type: "action", action: "eraseHistory"})
                         }
                     }
                 }
@@ -348,12 +361,12 @@ Rectangle {
                     }
 
                     CheckBox{
-                        id: s_join_notification
+                        id: s_joinNotification
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'join_notification', value: checked})
+                            toScript({type: 'settingChange', setting: 'joinNotification', value: checked})
                         }
                     }
                 }
@@ -372,12 +385,12 @@ Rectangle {
                     }
 
                     CheckBox{
-                        id: s_chat_bubbles
+                        id: s_useChatBubbles
                         anchors.right: parent.right
                         anchors.verticalCenter: parent.verticalCenter
 
                         onCheckedChanged: {
-                            toScript({type: 'setting_change', setting: 'use_chat_bubbles', value: checked})
+                            toScript({type: 'settingChange', setting: 'useChatBubbles', value: checked})
                         }
                     }
                 }
@@ -438,25 +451,35 @@ Rectangle {
         return new_message;
     }
 
+    function doesChannelHaveMessages(targetChannel) {
+        if (targetChannel === "local") {
+            return localMessages.count > 0;
+        }
+        if (targetChannel === "domain") {
+            return domainMessages.count > 0;
+        }
+        return false;
+    }
+
     // Messages from script
     function fromScript(message) {
 
         switch (message.type){
-            case "show_message":
+            case "showMessage":
                 addMessage(message.displayName, message.message, `[ ${message.timeString} - ${message.dateString} ]`, message.channel, "chat");
                 break;
             case "notification":
                 addMessage("SYSTEM", message.message, `[ ${message.timeString} - ${message.dateString} ]`, "domain", "notification");
                 break;
-            case "clear_messages":
+            case "clearMessages":
                 localMessages.clear();
                 domainMessages.clear();
                 break;
-            case "initial_settings":
-                if (message.settings.external_window) s_external_window.checked = true;
-                if (message.settings.maximum_messages) s_maximum_messages.value = message.settings.maximum_messages;
-                if (message.settings.join_notification) s_join_notification.checked = true;
-                if (message.settings.use_chat_bubbles) s_chat_bubbles.checked = true;
+            case "initialSettings":
+                if (message.settings.externalWindow) s_externalWindow.checked = true;
+                if (message.settings.maximumMessages) s_maximumMessages.value = message.settings.maximumMessages;
+                if (message.settings.joinNotification) s_joinNotification.checked = true;
+                if (message.settings.useChatBubbles) s_useChatBubbles.checked = true;
                 break;
         }
     }
