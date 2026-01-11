@@ -1,4 +1,4 @@
-import QtQuick 2.15
+import QtQuick
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.3
 import "../"
@@ -74,7 +74,7 @@ Flickable {
             optionIndex: Performance.getPerformancePreset() - 1;
             options: ["Low Power", "Low", "Medium", "High", "Custom"];
 
-            onValueChanged: {
+            function onValueChanged(index) {
                 Performance.setPerformancePreset(index + 1);
                 if (index !== 4) switchToAGraphicsPreset();
             }
@@ -163,7 +163,7 @@ Flickable {
             options: ["Economical", "Interactive", "Real-Time", "Custom"];
             optionIndex: Performance.getRefreshRateProfile();
 
-            onValueChanged: {
+            function onValueChanged(index) {
                 Performance.setRefreshRateProfile(index);
                 fpsAdvancedOptions.isEnabled = index == 3;
             }
@@ -181,7 +181,7 @@ Flickable {
                 suffixText: "fps";
                 settingValue: Performance.getCustomRefreshRate(0)
 
-                onValueChanged: {
+                function onValueChanged(value) {
                     Performance.setCustomRefreshRate(0, value);
                 }
             }
@@ -193,7 +193,7 @@ Flickable {
                 suffixText: "fps";
                 settingValue: Performance.getCustomRefreshRate(1)
 
-                onValueChanged: {
+                function onValueChanged(value) {
                     Performance.setCustomRefreshRate(1, value);
                 }
             }
@@ -205,7 +205,7 @@ Flickable {
                 suffixText: "fps";
                 settingValue: Performance.getCustomRefreshRate(2)
 
-                onValueChanged: {
+                function onValueChanged(value) {
                     Performance.setCustomRefreshRate(2, value);
                 }
             }
@@ -217,7 +217,7 @@ Flickable {
                 suffixText: "fps";
                 settingValue: Performance.getCustomRefreshRate(3)
 
-                onValueChanged: {
+                function onValueChanged(value) {
                     Performance.setCustomRefreshRate(3, value);
                 }
             }
@@ -229,7 +229,7 @@ Flickable {
                 suffixText: "fps";
                 settingValue: Performance.getCustomRefreshRate(4)
 
-                onValueChanged: {
+                function onValueChanged(value) {
                     Performance.setCustomRefreshRate(4, value);
                 }
             }
@@ -241,7 +241,7 @@ Flickable {
                 suffixText: "fps";
                 settingValue: Performance.getCustomRefreshRate(5)
 
-                onValueChanged: {
+                function onValueChanged(value) {
                     Performance.setCustomRefreshRate(5, value);
                 }
             }
@@ -255,7 +255,7 @@ Flickable {
             maxValue: 2;
             settingValue: Render.viewportResolutionScale.toFixed(1)
 
-            onSliderValueChanged: {
+            function onSliderValueChanged(value) {
                 Render.viewportResolutionScale = value.toFixed(1)
             }
         }
@@ -265,7 +265,7 @@ Flickable {
             options: ["Low Detail", "Medium Detail",  "High Detail" ];
             optionIndex: LODManager.worldDetailQuality;
 
-            onValueChanged: {
+            function onValueChanged(index) {
                 LODManager.worldDetailQuality = index;
             }
 
@@ -305,7 +305,7 @@ Flickable {
             settingValue: Render.verticalFieldOfView.toFixed(1);
             roundDisplay: 0;
 
-            onSliderValueChanged: {
+            function onSliderValueChanged(value) {
                 Render.verticalFieldOfView = value.toFixed(1);
             }
         }
@@ -327,7 +327,7 @@ Flickable {
             options: ["None", "TAA", "FXAA"];
             disabled: Render.renderMethod;
 
-            onValueChanged: {
+            function onValueChanged(index) {
                 Render.antialiasingMode = index;
             }
 

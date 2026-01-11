@@ -37,7 +37,7 @@ public:
     virtual MediaType getMediaType() const = 0;
     virtual std::unique_ptr<Factory> getFactory() const = 0;
 
-    virtual Model::Pointer read(const hifi::ByteArray& data, const hifi::VariantHash& mapping, const hifi::URL& url = hifi::URL()) = 0;
+    virtual Model::Pointer read(const hifi::ByteArray& data, const hifi::VariantMultiHash& mapping, const hifi::URL& url = hifi::URL()) = 0;
 };
 
 };

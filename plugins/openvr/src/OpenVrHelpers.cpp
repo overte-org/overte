@@ -28,6 +28,10 @@
 #include <ui/Menu.h>
 #include "../../interface/src/Menu.h"
 
+#ifdef Q_OS_WIN
+#include <Windows.h>
+#endif
+
 Q_DECLARE_LOGGING_CATEGORY(displayplugins)
 Q_LOGGING_CATEGORY(displayplugins, "hifi.plugins.display")
 

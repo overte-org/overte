@@ -82,6 +82,8 @@ int main(int argc, const char* argv[]) {
         qputenv("QSG_DISTANCEFIELD_ANTIALIASING", "gray");
     }
 
+    QSurfaceFormat::setDefaultFormat(getDefaultOpenGLSurfaceFormat());
+
     // Setup QCoreApplication settings, install log message handler
     setupHifiApplication(BuildInfo::INTERFACE_NAME);
 
@@ -742,15 +744,15 @@ int main(int argc, const char* argv[]) {
     if (parser.isSet(checkMinSpecOption)) {
         QString appPath;
         {
-            char filename[MAX_PATH];
+            wchar_t filename[MAX_PATH];
             GetModuleFileName(NULL, filename, MAX_PATH);
-            QFileInfo appInfo(filename);
+            QFileInfo appInfo(QString::fromWCharArray(filename));
             appPath = appInfo.absolutePath();
         }
         QString openvrDllPath = appPath + "/plugins/openvr.dll";
         HMODULE openvrDll;
         CHECKMINSPECPROC checkMinSpecPtr;
-        if ((openvrDll = LoadLibrary(openvrDllPath.toLocal8Bit().data())) &&
+        if ((openvrDll = LoadLibrary(qUtf16Printable(openvrDllPath.toLocal8Bit().data()))) &&
             (checkMinSpecPtr = (CHECKMINSPECPROC)GetProcAddress(openvrDll, "CheckMinSpec"))) {
             if (!checkMinSpecPtr()) {
                 return -1;
@@ -841,8 +843,11 @@ int main(int argc, const char* argv[]) {
         }
 
         QTranslator translator;
-        translator.load("i18n/interface_en");
-        app.installTranslator(&translator);
+        if (translator.load("i18n/interface_en")) {
+            app.installTranslator(&translator);
+        } else {
+            qWarning() << " Failed to load QTranslator i18n/interface_en";
+        }
         qCDebug(interfaceapp, "Created QT Application.");
         if (parser.isSet("abortAfterInit")) {
             return 99;

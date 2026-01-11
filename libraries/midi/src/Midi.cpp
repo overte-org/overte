@@ -198,15 +198,14 @@ void Midi::MidiSetup() {
     MIDIINCAPS incaps;
     for (unsigned int i = 0; i < midiInGetNumDevs(); i++) {
         if (MMSYSERR_NOERROR == midiInGetDevCaps(i, &incaps, sizeof(MIDIINCAPS))) {
-
             bool found = false;
             for (int j = 0; j < midiInExclude.size(); j++) {
-                if (midiInExclude[j].toStdString().compare(incaps.szPname) == 0) {
+                if (midiInExclude[j].toStdWString().compare(incaps.szPname) == 0) {
                     found = true;
                     break;
                 }
             }
-            if (!found) {        // EXCLUDE AN INPUT BY NAME
+            if (!found) {  // EXCLUDE AN INPUT BY NAME
                 HMIDIIN tmphin;
                 if (MMSYSERR_NOERROR == midiInOpen(&tmphin, i, (DWORD_PTR)MidiInProc, NULL, CALLBACK_FUNCTION)) {
                     if (MMSYSERR_NOERROR == midiInStart(tmphin)) {
@@ -220,15 +219,14 @@ void Midi::MidiSetup() {
     MIDIOUTCAPS outcaps;
     for (unsigned int i = 0; i < midiOutGetNumDevs(); i++) {
         if (MMSYSERR_NOERROR == midiOutGetDevCaps(i, &outcaps, sizeof(MIDIOUTCAPS))) {
-
             bool found = false;
             for (int j = 0; j < midiOutExclude.size(); j++) {
-                if (midiOutExclude[j].toStdString().compare(outcaps.szPname) == 0) {
+                if (midiOutExclude[j].toStdWString().compare(outcaps.szPname) == 0) {
                     found = true;
                     break;
                 }
             }
-            if (!found) {        // EXCLUDE AN OUTPUT BY NAME
+            if (!found) {  // EXCLUDE AN OUTPUT BY NAME
                 HMIDIOUT tmphout;
                 if (MMSYSERR_NOERROR == midiOutOpen(&tmphout, i, (DWORD_PTR)MidiOutProc, NULL, CALLBACK_FUNCTION)) {
                     midihout.push_back(tmphout);
@@ -395,13 +393,13 @@ QStringList Midi::listMidiDevices(bool output) {
         MIDIOUTCAPS outcaps;
         for (unsigned int i = 0; i < midiOutGetNumDevs(); i++) {
             midiOutGetDevCaps(i, &outcaps, sizeof(MIDIINCAPS));
-            rv.append(outcaps.szPname);
+            rv.append(QString::fromWCharArray(outcaps.szPname));
         }
     } else {
         MIDIINCAPS incaps;
         for (unsigned int i = 0; i < midiInGetNumDevs(); i++) {
             midiInGetDevCaps(i, &incaps, sizeof(MIDIINCAPS));
-            rv.append(incaps.szPname);
+            rv.append(QString::fromWCharArray(incaps.szPname));
         }
     }
 #endif

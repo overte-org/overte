@@ -8,7 +8,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-import QtQuick 2.5
+import QtQuick
 
 import controlsUit 1.0
 import "../../hifi/tablet/tabletWindows/preferences"
@@ -63,8 +63,8 @@ Preference {
             placeholderText: root.placeholderText
             text: preference.value
             colorScheme: dataTextField.acceptableInput ? hifi.colorSchemes.dark : hifi.colorSchemes.light
-            validator: RegExpValidator {
-                regExp: /.*\.(?:fst).*\?*/ig
+            validator: RegularExpressionValidator {
+                regularExpression: /.*\.(?:fst).*\?*/ig
             }
             anchors {
                 left: parent.left

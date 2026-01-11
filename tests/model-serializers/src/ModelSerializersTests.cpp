@@ -159,3 +159,63 @@ void ModelSerializersTests::loadGLTF() {
     QVERIFY(expectWarnings == (model->loadWarningCount>0));
     QVERIFY(expectErrors == (model->loadErrorCount>0));
 }
+
+/*void ModelSerializersTests::loadFBX() {
+    // QTTODO: fix path, but how?
+    QString filename("/home/ksuprynowicz/overte/overte/interface/resources/serverless/Models/dome.fbx");
+    QFile fbx_file(filename);
+    QVERIFY(fbx_file.open(QIODevice::ReadOnly));
+
+    QByteArray data = fbx_file.readAll();
+    QByteArray uncompressedData;
+    QUrl url("https://example.com");
+
+    qInfo() << "URL: " << url;
+
+    if (filename.toLower().endsWith(".gz")) {
+        url.setPath("/" + filename.chopped(3));
+
+        if (gunzip(data, uncompressedData)) {
+            qInfo() << "Uncompressed into" << uncompressedData.length();
+        } else {
+            qCritical() << "Failed to uncompress";
+        }
+    } else {
+        url.setPath("/" + filename);
+        uncompressedData = data;
+    }
+
+
+    ModelLoader loader;
+    QMultiHash<QString, QVariant> serializerMapping;
+    std::string webMediaType;
+
+    serializerMapping.insert("combineParts", true);
+    serializerMapping.insert("deduplicateIndices", true);
+
+    qInfo() << "Loading model from" << uncompressedData.length() << "bytes data, url" << url;
+
+    // Check that we can find a serializer for this
+    auto serializer = DependencyManager::get<ModelFormatRegistry>()->getSerializerForMediaType(uncompressedData, url, webMediaType);
+    QVERIFY(serializer);
+
+
+
+    hfm::Model::Pointer model = loader.load(uncompressedData, serializerMapping, url, webMediaType);
+    QVERIFY(model);
+
+    if (!model) {
+        // We expected this parse to fail, so nothing more to do here.
+        return;
+    }
+
+    QVERIFY(!model->meshes.empty());
+    QVERIFY(!model->joints.empty());
+
+    qInfo() << "Model was loaded with" << model->meshes.count() << "meshes and" << model->joints.count() << "joints. Found" << model->loadWarningCount << "warnings and" << model->loadErrorCount << "errors";
+
+    // Some models we test are expected to be broken. We're testing that we can load the model without blowing up,
+    // so loading it with errors is still a successful test.
+    QVERIFY(model->loadWarningCount == 0);
+    QVERIFY(model->loadErrorCount == 0);
+}*/

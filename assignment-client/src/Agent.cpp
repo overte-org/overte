@@ -748,7 +748,7 @@ void Agent::processAgentAvatarAudio() {
             if (_numAvatarSoundSentBytes == (int)audioData->getNumBytes()) {
                 // we're done with this sound object - so set our pointer back to NULL
                 // and our sent bytes back to zero
-                _avatarSound.clear();
+                _avatarSound.reset();
                 _numAvatarSoundSentBytes = 0;
                 _flushEncoder = true;
 

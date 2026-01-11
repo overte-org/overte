@@ -94,6 +94,8 @@ public:
     );
     ~Application();
 
+    bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted);
+
     /**
      * @brief Initialize everything
      *
@@ -177,6 +179,8 @@ public:
     ApplicationOverlay& getApplicationOverlay() { return *_applicationOverlay; }
     const ApplicationOverlay& getApplicationOverlay() const { return *_applicationOverlay; }
     CompositorHelper& getApplicationCompositor() const;
+
+    std::shared_ptr<QPointingDevice> getVirtualPointingDevice() const;
 
     virtual PickRay computePickRay(float x, float y) const override;
 
@@ -326,7 +330,8 @@ public:
     int getMaxOctreePacketsPerSecond() const { return _maxOctreePPS; }
     bool isMissingSequenceNumbers() { return _isMissingSequenceNumbers; }
 
-    NodeToOctreeSceneStats* getOcteeSceneStats() { return _octreeProcessor->getOctreeSceneStats(); }
+    // This function returns a value only when octree processor is available.
+    std::optional<NodeToOctreeSceneStats*> getOcteeSceneStats();
 
 
     // Assets
@@ -790,6 +795,8 @@ private:
     bool _cursorNeedsChanging { false };
     bool _useSystemCursor { false };
 
+    std::shared_ptr<QPointingDevice> _virtualPointingDevice;
+
     DialogsManagerScriptingInterface* _dialogsManagerScriptingInterface;
 
     QPointer<LogDialog> _logDialog;
@@ -854,7 +861,13 @@ private:
 
 
     // Events
-    QHash<int, QKeyEvent> _keysPressed;
+    class KeyEventRecord {
+    public:
+        KeyEventRecord(const int key, const QString &text) : key(key), text(text) {}
+        int key;
+        QString text;
+    };
+    QHash<int, KeyEventRecord> _keysPressed;
     TouchEvent _lastTouchEvent;
     quint64 _lastAcceptedKeyPress { 0 };
 

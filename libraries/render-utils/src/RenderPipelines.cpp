@@ -164,10 +164,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
                                     material->resetOpacityMap();
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialAlbedo, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialAlbedo, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::ALBEDO_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -188,10 +190,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::METALLIC_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialMetallic, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialMetallic, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::METALLIC_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -210,10 +214,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::ROUGHNESS_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialRoughness, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialRoughness, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::ROUGHNESS_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -232,10 +238,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::NORMAL_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialNormal, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialNormal, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::NORMAL_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -254,10 +262,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::OCCLUSION_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialOcclusion, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialOcclusion, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::OCCLUSION_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -276,10 +286,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::SCATTERING_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialScattering, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialScattering, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::SCATTERING_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -299,10 +311,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::EMISSIVE_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialEmissiveLightmap, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialEmissiveLightmap, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::EMISSIVE_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -324,10 +338,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::LIGHT_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialEmissiveLightmap, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialEmissiveLightmap, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::LIGHT_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -345,10 +361,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                         auto itr = textureMaps.find(graphics::MaterialKey::SPLAT_MAP);
                         if (itr != textureMaps.end()) {
                             if (itr->second->isDefined()) {
-                                multiMaterial.setSplatMap(itr->second->getTextureView()._texture);
+                                auto textureView = itr->second->getTextureView();
+                                Q_ASSERT(textureView);
+                                multiMaterial.setSplatMap(textureView._texture);
                                 multiMaterial.addSamplerFunc([=]() { material->applySampler(graphics::MaterialKey::SPLAT_MAP); });
-                                if (itr->second->getTextureView().isReference()) {
-                                    multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                if (textureView.isReference()) {
+                                    multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                 }
                                 wasSet = true;
                             } else {
@@ -430,10 +448,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
                                     material->resetOpacityMap();
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialAlbedo, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialAlbedo, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::ALBEDO_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -454,10 +474,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::NORMAL_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialNormal, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialNormal, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::NORMAL_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -477,10 +499,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find(graphics::MaterialKey::EMISSIVE_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialEmissiveLightmap, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialEmissiveLightmap, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler(graphics::MaterialKey::EMISSIVE_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -501,10 +525,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                         auto itr = textureMaps.find(graphics::MaterialKey::SPLAT_MAP);
                         if (itr != textureMaps.end()) {
                             if (itr->second->isDefined()) {
-                                multiMaterial.setSplatMap(itr->second->getTextureView()._texture);
+                                auto textureView = itr->second->getTextureView();
+                                Q_ASSERT(textureView);
+                                multiMaterial.setSplatMap(textureView._texture);
                                 multiMaterial.addSamplerFunc([=]() { material->applySampler(graphics::MaterialKey::SPLAT_MAP); });
-                                if (itr->second->getTextureView().isReference()) {
-                                    multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                if (textureView.isReference()) {
+                                    multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                 }
                                 wasSet = true;
                             } else {
@@ -576,10 +602,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find((graphics::Material::MapChannel) NetworkMToonMaterial::SHADE_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialShade, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialShade, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler((graphics::Material::MapChannel) NetworkMToonMaterial::SHADE_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -598,10 +626,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find((graphics::Material::MapChannel) NetworkMToonMaterial::SHADING_SHIFT_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialShadingShift, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialShadingShift, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler((graphics::Material::MapChannel) NetworkMToonMaterial::SHADING_SHIFT_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -620,10 +650,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find((graphics::Material::MapChannel) NetworkMToonMaterial::MATCAP_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialMatcap, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialMatcap, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler((graphics::Material::MapChannel) NetworkMToonMaterial::MATCAP_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -642,10 +674,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find((graphics::Material::MapChannel) NetworkMToonMaterial::RIM_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialRim, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialRim, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler((graphics::Material::MapChannel) NetworkMToonMaterial::RIM_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {
@@ -664,10 +698,12 @@ void RenderPipelines::updateMultiMaterial(graphics::MultiMaterial& multiMaterial
                             auto itr = textureMaps.find((graphics::Material::MapChannel) NetworkMToonMaterial::UV_ANIMATION_MASK_MAP);
                             if (itr != textureMaps.end()) {
                                 if (itr->second->isDefined()) {
-                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialUVAnimationMask, itr->second->getTextureView());
+                                    auto textureView = itr->second->getTextureView();
+                                    Q_ASSERT(textureView);
+                                    drawMaterialTextures[layerIndex]->setTexture(gr::Texture::MaterialUVAnimationMask, textureView);
                                     multiMaterial.addSamplerFunc([=] () { material->applySampler((graphics::Material::MapChannel) NetworkMToonMaterial::UV_ANIMATION_MASK_MAP); });
-                                    if (itr->second->getTextureView().isReference()) {
-                                        multiMaterial.addReferenceTexture(itr->second->getTextureView().getTextureOperator());
+                                    if (textureView.isReference()) {
+                                        multiMaterial.addReferenceTexture(textureView.getTextureOperator());
                                     }
                                     wasSet = true;
                                 } else {

@@ -807,7 +807,13 @@ int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, QVecto
     memcpy(&length, dataBytes, sizeof(uint16_t));
     dataBytes += sizeof(length);
     result.resize(length);
-    memcpy(result.data(), dataBytes, length * sizeof(float));
+    // It does a lot of zero-length writes to nullptr for some reason.
+    if (length != 0) {
+        // These were null sometimes, so it's best to check in debug builds.
+        Q_ASSERT(result.data());
+        Q_ASSERT(dataBytes);
+        memcpy(result.data(), dataBytes, length * sizeof(float));
+    }
     return sizeof(uint16_t) + length * sizeof(float);
 }
 
@@ -834,7 +840,13 @@ int OctreePacketData::unpackDataFromBytes(const unsigned char* dataBytes, QVecto
     memcpy(&length, dataBytes, sizeof(uint16_t));
     dataBytes += sizeof(length);
     result.resize(length);
-    memcpy(result.data(), dataBytes, length * sizeof(QUuid));
+    // It does a lot of zero-length writes to nullptr for some reason.
+    if (length != 0) {
+        // These were null sometimes, so it's best to check in debug builds.
+        Q_ASSERT(result.data());
+        Q_ASSERT(dataBytes);
+        memcpy(result.data(), dataBytes, length * sizeof(QUuid));
+    }
     return sizeof(uint16_t) + length * sizeof(QUuid);
 }
 

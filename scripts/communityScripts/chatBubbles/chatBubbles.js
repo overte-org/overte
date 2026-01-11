@@ -14,7 +14,7 @@
 const CHAT_CHANNEL = "chat";
 
 const TYPING_NOTIFICATION_CHANNEL = "Chat-Typing";
-const CONFIG_UPDATE_CHANNEL = "ChatBubbles-Config";
+const CONFIG_UPDATE_CHANNEL = "ChatBubbles-Enabled";
 
 const BUBBLE_MIN_LIFETIME_SECS = 10;
 const BUBBLE_MAX_LIFETIME_SECS = 60; // failsafe to prevent really long perma-messages
@@ -33,9 +33,8 @@ const SELF_BUBBLES = false;
 
 const NOTIFY_SOUND = SoundCache.getSound(Script.resolvePath("./assets/notify.wav"));
 
-let settings = {
-    enabled: true,
-};
+// NOTE: we don't call Settings.setValue here because chat.js does that for us
+let settings = Settings.getValue("Chat", { chatBubbles: true });
 
 let currentBubbles = {};
 let typingIndicators = {};
@@ -312,21 +311,9 @@ function ChatBubbles_HideTypingIndicator(senderID) {
 }
 
 function ChatBubbles_RecvMsg(channel, msg, senderID, localOnly) {
-    // IPC between ArmoredChat's config window and this script
+    // IPC between the chat config and this script
     if (channel === CONFIG_UPDATE_CHANNEL && localOnly) {
-        let data;
-        try {
-            data = JSON.parse(msg);
-        } catch (e) {
-            console.error(e);
-            return;
-        }
-
-        for (const [key, value] of Object.entries(data)) {
-            settings[key] = value;
-        }
-
-        Settings.setValue("ChatBubbles-Config", settings);
+        settings.chatBubbles = msg === "true";
         return;
     }
 
@@ -345,14 +332,14 @@ function ChatBubbles_RecvMsg(channel, msg, senderID, localOnly) {
     }
 
     if (channel === TYPING_NOTIFICATION_CHANNEL) {
-        if (data.action === "typing_start") {
+        if (data.action === "typing_start" && settings.chatBubbles) {
             // don't spawn a bubble if they're too far away
             if (Vec3.distance(MyAvatar.position, data.position) > MAX_DISTANCE) { return; }
             ChatBubbles_ShowTypingIndicator(senderID);
         } else if (data.action === "typing_stop") {
             ChatBubbles_HideTypingIndicator(senderID);
         }
-    } else if (data.action === "send_chat_message" && settings.enabled) {
+    } else if (data.action === "send_chat_message" && settings.chatBubbles) {
         // don't spawn a bubble if they're too far away
         if (data.channel !== "local") { return; }
         if (Vec3.distance(MyAvatar.position, data.position) > MAX_DISTANCE) { return; }
@@ -405,12 +392,10 @@ Window.domainConnectionRefused.connect((_msg, _code, _info) => ChatBubbles_Delet
 AvatarList.avatarRemovedEvent.connect(sessionID => ChatBubbles_Delete(sessionID));
 AvatarList.avatarSessionChangedEvent.connect((_, oldSessionID) => ChatBubbles_Delete(oldSessionID));
 
-settings = Settings.getValue("ChatBubbles-Config", settings);
 Messages.messageReceived.connect(ChatBubbles_RecvMsg);
 Messages.subscribe(TYPING_NOTIFICATION_CHANNEL);
 
 Script.scriptEnding.connect(() => {
-    Settings.setValue("ChatBubbles-Config", settings);
     Messages.messageReceived.disconnect(ChatBubbles_RecvMsg);
     Messages.unsubscribe(TYPING_NOTIFICATION_CHANNEL);
     ChatBubbles_DeleteAll();

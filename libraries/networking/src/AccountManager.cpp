@@ -83,10 +83,8 @@ AccountManager::AccountManager(bool accountSettingsEnabled, UserAgentGetter user
     _accountSettingsEnabled(accountSettingsEnabled)
 {
     qRegisterMetaType<OAuthAccessToken>("OAuthAccessToken");
-    qRegisterMetaTypeStreamOperators<OAuthAccessToken>("OAuthAccessToken");
 
     qRegisterMetaType<DataServerAccountInfo>("DataServerAccountInfo");
-    qRegisterMetaTypeStreamOperators<DataServerAccountInfo>("DataServerAccountInfo");
 
     qRegisterMetaType<QNetworkAccessManager::Operation>("QNetworkAccessManager::Operation");
     qRegisterMetaType<JSONCallbackParameters>("JSONCallbackParameters");
@@ -347,7 +345,7 @@ void AccountManager::sendRequest(const QString& path,
             // double check if the finished network reply had a session ID in the header and make
             // sure that our session ID matches that value if so
             if (networkReply->hasRawHeader(METAVERSE_SESSION_ID_HEADER)) {
-                _sessionID = networkReply->rawHeader(METAVERSE_SESSION_ID_HEADER);
+                _sessionID = QUuid::fromBytes(networkReply->rawHeader(METAVERSE_SESSION_ID_HEADER));
             }
         });
 
@@ -626,7 +624,7 @@ void AccountManager::requestAccessTokenWithSteam(QByteArray authSessionTicket) {
 
     QNetworkReply* requestReply = networkAccessManager.post(request, postData);
     connect(requestReply, &QNetworkReply::finished, this, &AccountManager::requestAccessTokenFinished);
-    connect(requestReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestAccessTokenError(QNetworkReply::NetworkError)));
+    connect(requestReply, SIGNAL(errorOccurred(QNetworkReply::NetworkError)), this, SLOT(requestAccessTokenError(QNetworkReply::NetworkError)));
 }
 
 void AccountManager::requestAccessTokenWithOculus(const QString& nonce, const QString &oculusID) {
@@ -649,7 +647,7 @@ void AccountManager::requestAccessTokenWithOculus(const QString& nonce, const QS
 
     QNetworkReply* requestReply = networkAccessManager.post(request, postData);
     connect(requestReply, &QNetworkReply::finished, this, &AccountManager::requestAccessTokenFinished);
-    connect(requestReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestAccessTokenError(QNetworkReply::NetworkError)));
+    connect(requestReply, SIGNAL(errorOccurred(QNetworkReply::NetworkError)), this, SLOT(requestAccessTokenError(QNetworkReply::NetworkError)));
 }
 
 void AccountManager::refreshAccessToken() {
@@ -679,7 +677,7 @@ void AccountManager::refreshAccessToken() {
 
         QNetworkReply* requestReply = networkAccessManager.post(request, postData);
         connect(requestReply, &QNetworkReply::finished, this, &AccountManager::refreshAccessTokenFinished);
-        connect(requestReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(refreshAccessTokenError(QNetworkReply::NetworkError)));
+        connect(requestReply, SIGNAL(errorOccurred(QNetworkReply::NetworkError)), this, SLOT(refreshAccessTokenError(QNetworkReply::NetworkError)));
     } else {
         qCWarning(networking) << "Cannot refresh access token without refresh token."
             << "Access token will need to be manually refreshed.";
@@ -807,7 +805,7 @@ void AccountManager::requestProfile() {
 
     QNetworkReply* profileReply = networkAccessManager.get(profileRequest);
     connect(profileReply, &QNetworkReply::finished, this, &AccountManager::requestProfileFinished);
-    connect(profileReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestProfileError(QNetworkReply::NetworkError)));
+    connect(profileReply, SIGNAL(errorOccurred(QNetworkReply::NetworkError)), this, SLOT(requestProfileError(QNetworkReply::NetworkError)));
 }
 
 void AccountManager::requestProfileFinished() {
@@ -857,7 +855,7 @@ void AccountManager::requestAccountSettings() {
 
     QNetworkReply* lockerReply = networkAccessManager.get(lockerRequest);
     connect(lockerReply, &QNetworkReply::finished, this, &AccountManager::requestAccountSettingsFinished);
-    connect(lockerReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(requestAccountSettingsError(QNetworkReply::NetworkError)));
+    connect(lockerReply, SIGNAL(errorOccurred(QNetworkReply::NetworkError)), this, SLOT(requestAccountSettingsError(QNetworkReply::NetworkError)));
 
     _settings.startedLoading();
 }
@@ -935,7 +933,7 @@ void AccountManager::postAccountSettings() {
 
     QNetworkReply* lockerReply = networkAccessManager.put(lockerRequest, postData);
     connect(lockerReply, &QNetworkReply::finished, this, &AccountManager::postAccountSettingsFinished);
-    connect(lockerReply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(postAccountSettingsError(QNetworkReply::NetworkError)));
+    connect(lockerReply, SIGNAL(errorOccurred(QNetworkReply::NetworkError)), this, SLOT(postAccountSettingsError(QNetworkReply::NetworkError)));
 }
 
 void AccountManager::postAccountSettingsFinished() {

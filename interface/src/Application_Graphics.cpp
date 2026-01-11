@@ -18,6 +18,7 @@
 #include <memory>
 
 #include <QtQml/QQmlContext>
+#include <QActionGroup>
 
 #include <AudioScriptingInterface.h>
 #include <display-plugins/CompositorHelper.h>
@@ -57,6 +58,8 @@
 #include "Menu.h"
 #include "webbrowser/WebBrowserSuggestionsEngine.h"
 
+#include <QOpenGLContext>
+
 #if defined(Q_OS_ANDROID)
 #include "AndroidHelper.h"
 #endif
@@ -81,6 +84,7 @@ void Application::initializeGL() {
     }
 
 #ifdef USE_GL
+    _primaryWidget->windowHandle()->setSurfaceType(QSurface::OpenGLSurface);
     _primaryWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat());
 #else
     //_primaryWidget->windowHandle()->setFormat(getDefaultOpenGLSurfaceFormat()); // VKTODO
@@ -163,6 +167,7 @@ void Application::initializeGL() {
     {
         OffscreenGLCanvas* qmlShareContext = new OffscreenGLCanvas();
         qmlShareContext->setObjectName("QmlShareContext");
+        qmlShareContext->getContext()->setFormat(getDefaultOpenGLSurfaceFormat());
         qmlShareContext->create(globalShareContext);
         if (!qmlShareContext->makeCurrent()) {
             qCWarning(interfaceapp, "Unable to make QML shared context current");
@@ -222,7 +227,7 @@ static void addDisplayPluginToMenu(const DisplayPluginPointer& displayPlugin, in
     }
     auto parent = menu->getMenu(MenuOption::OutputMenu);
     auto action = menu->addActionToQMenuAndActionHash(parent,
-        name, QKeySequence(Qt::CTRL + (Qt::Key_0 + index)), qApp,
+        name, QKeySequence(Qt::CTRL | static_cast<Qt::Key>(static_cast<int>(Qt::Key_0) + index)), qApp,
         SLOT(updateDisplayMode()),
         QAction::NoRole, Menu::UNSPECIFIED_POSITION, groupingMenu);
 
@@ -243,12 +248,12 @@ void Application::initializeUi() {
         auto newValidator = [=](const QUrl& url) -> bool {
             QString allowlistPrefix = "[ALLOWLIST ENTITY SCRIPTS]";
             QList<QString> safeURLS = { "" };
-            safeURLS += qEnvironmentVariable("EXTRA_ALLOWLIST").trimmed().split(QRegExp("\\s*,\\s*"), Qt::SkipEmptyParts);
+            safeURLS += qEnvironmentVariable("EXTRA_ALLOWLIST").trimmed().split(QRegularExpression("\\s*,\\s*"), Qt::SkipEmptyParts);
 
             // PULL SAFEURLS FROM INTERFACE.JSON Settings
 
             QVariant raw = Setting::Handle<QVariant>("private/settingsSafeURLS").get();
-            QStringList settingsSafeURLS = raw.toString().trimmed().split(QRegExp("\\s*[,\r\n]+\\s*"), Qt::SkipEmptyParts);
+            QStringList settingsSafeURLS = raw.toString().trimmed().split(QRegularExpression("\\s*[,\r\n]+\\s*"), Qt::SkipEmptyParts);
             safeURLS += settingsSafeURLS;
 
             // END PULL SAFEURLS FROM INTERFACE.JSON Settings

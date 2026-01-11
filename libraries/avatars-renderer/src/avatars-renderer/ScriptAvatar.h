@@ -76,7 +76,7 @@
 class ScriptAvatar : public ScriptAvatarData {
     Q_OBJECT
 
-    Q_PROPERTY(glm::vec3 skeletonOffset READ getSkeletonOffset)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> skeletonOffset READ getSkeletonOffset)
 
 public:
     ScriptAvatar(AvatarSharedPointer avatarData);
@@ -92,7 +92,7 @@ public slots:
      * @returns {Quat} The default rotation of the joint if avatar data are available and the joint index is valid, otherwise
      *     {@link Quat(0)|Quat.IDENTITY}.
      */
-    glm::quat getDefaultJointRotation(int index) const;
+    glm::qua<float,glm::packed_highp> getDefaultJointRotation(int index) const;
 
     /*@jsdoc
      * Gets the default translation of a joint in the avatar relative to its parent, in model coordinates.
@@ -104,7 +104,7 @@ public slots:
      * @returns {Vec3} The default translation of the joint (in model coordinates) if avatar data are available and the joint
      *     index is valid, otherwise {@link Vec3(0)|Vec3.ZERO}.
      */
-    glm::vec3 getDefaultJointTranslation(int index) const;
+    glm::vec<3,float,glm::packed_highp> getDefaultJointTranslation(int index) const;
 
 
     /*@jsdoc
@@ -112,7 +112,7 @@ public slots:
      * @function ScriptAvatar.getSkeletonOffset
      * @returns {Vec3} The skeleton offset if avatar data are available, otherwise {@link Vec3(0)|Vec3.ZERO}.
      */
-    glm::vec3 getSkeletonOffset() const;
+    glm::vec<3,float,glm::packed_highp> getSkeletonOffset() const;
 
 
     /*@jsdoc
@@ -122,7 +122,7 @@ public slots:
      * @returns {Vec3} The position of the joint in world coordinates, or {@link Vec3(0)|Vec3.ZERO} if avatar data aren't
      *     available.
      */
-    glm::vec3 getJointPosition(int index) const;
+    glm::vec<3,float,glm::packed_highp> getJointPosition(int index) const;
 
     /*@jsdoc
      * Gets the position of a joint in the current avatar.
@@ -131,7 +131,7 @@ public slots:
      * @returns {Vec3} The position of the joint in world coordinates, or {@link Vec3(0)|Vec3.ZERO} if avatar data aren't
      *     available.
      */
-    glm::vec3 getJointPosition(const QString& name) const;
+    glm::vec<3,float,glm::packed_highp> getJointPosition(const QString& name) const;
 
     /*@jsdoc
      * Gets the position of the current avatar's neck in world coordinates.
@@ -139,7 +139,7 @@ public slots:
      * @returns {Vec3} The position of the neck in world coordinates, or {@link Vec3(0)|Vec3.ZERO} if avatar data aren't
      *     available.
      */
-    glm::vec3 getNeckPosition() const;
+    glm::vec<3,float,glm::packed_highp> getNeckPosition() const;
 
 
     /*@jsdoc
@@ -147,7 +147,7 @@ public slots:
      * @function ScriptAvatar.getAcceleration
      * @returns {Vec3} The current acceleration of the avatar, or {@link Vec3(0)|Vec3.ZERO} if avatar data aren't available..
      */
-    glm::vec3 getAcceleration() const;
+    glm::vec<3,float,glm::packed_highp> getAcceleration() const;
 
 
     /*@jsdoc
@@ -191,7 +191,7 @@ public slots:
      * @returns {Vec3} The position of the left palm in world coordinates, or {@link Vec3(0)|Vec3.ZERO} if avatar data aren't
      *     available.
      */
-    glm::vec3 getLeftPalmPosition() const;
+    glm::vec<3,float,glm::packed_highp> getLeftPalmPosition() const;
 
     /*@jsdoc
      * Gets the rotation of the left palm in world coordinates.
@@ -199,7 +199,7 @@ public slots:
      * @returns {Quat} The rotation of the left palm in world coordinates, or {@link Quat(0)|Quat.IDENTITY} if the avatar data
      *     aren't available.
      */
-    glm::quat getLeftPalmRotation() const;
+    glm::qua<float,glm::packed_highp> getLeftPalmRotation() const;
 
     /*@jsdoc
      * Gets the position of the right palm in world coordinates.
@@ -207,7 +207,7 @@ public slots:
      * @returns {Vec3} The position of the right palm in world coordinates, or {@link Vec3(0)|Vec3.ZERO} if avatar data aren't
      *     available.
      */
-    glm::vec3 getRightPalmPosition() const;
+    glm::vec<3,float,glm::packed_highp> getRightPalmPosition() const;
 
     /*@jsdoc
      * Gets the rotation of the right palm in world coordinates.
@@ -215,7 +215,7 @@ public slots:
      * @returns {Quat} The rotation of the right palm in world coordinates, or {@link Quat(0)|Quat.IDENTITY} if the avatar data
      *     aren't available.
      */
-    glm::quat getRightPalmRotation() const;
+    glm::qua<float,glm::packed_highp> getRightPalmRotation() const;
 
 private:
     std::shared_ptr<Avatar> lockAvatar() const;
