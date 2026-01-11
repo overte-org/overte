@@ -43,7 +43,7 @@ AssignmentClientMonitor::AssignmentClientMonitor(const unsigned int numAssignmen
                                                  Assignment::Type requestAssignmentType, QString assignmentPool,
                                                  quint16 listenPort, quint16 childMinListenPort, QString assignmentServerHostname,
                                                  quint16 assignmentServerPort, quint16 httpStatusServerPort, QString logDirectory,
-                                                 bool disableDomainPortAutoDiscovery) :
+                                                 bool disableDomainPortAutoDiscovery, QString logOptions) :
     _httpManager(QHostAddress::LocalHost, httpStatusServerPort, "", this),
     _numAssignmentClientForks(numAssignmentClientForks),
     _minAssignmentClientForks(minAssignmentClientForks),
@@ -53,7 +53,8 @@ AssignmentClientMonitor::AssignmentClientMonitor(const unsigned int numAssignmen
     _assignmentServerHostname(assignmentServerHostname),
     _assignmentServerPort(assignmentServerPort),
     _childMinListenPort(childMinListenPort),
-    _disableDomainPortAutoDiscovery(disableDomainPortAutoDiscovery)
+    _disableDomainPortAutoDiscovery(disableDomainPortAutoDiscovery),
+    _logOptions(logOptions)
 {
     qDebug() << "_requestAssignmentType =" << _requestAssignmentType;
 
@@ -212,6 +213,12 @@ void AssignmentClientMonitor::spawnChildClient() {
 
     _childArguments.append("--" + PARENT_PID_OPTION);
     _childArguments.append(QString::number(QCoreApplication::applicationPid()));
+
+    // Children need to have same log options as the parent.
+    if (_logOptions != "") {
+        _childArguments.append("--" + ASSIGNMENT_LOG_OPTIONS);
+        _childArguments.append(_logOptions);
+    }
 
     QString nowString, stdoutFilenameTemp, stderrFilenameTemp, stdoutPathTemp, stderrPathTemp;
 
