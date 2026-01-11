@@ -11,16 +11,16 @@
 
 macro(SETUP_MEMORY_DEBUGGER)
 if ("$ENV{OVERTE_MEMORY_DEBUGGING}")
-  if (OVERTE_THREAD_DEBUGGING)
-    message(FATAL_ERROR "Thread debugging and memory debugging can't be enabled at the same time." )
-  endif()
+    message(STATUS "Enabling memory debugging.")
+    if (OVERTE_THREAD_DEBUGGING)
+        message(FATAL_ERROR "Thread debugging and memory debugging can't be enabled at the same time.")
+    endif()
 
-  if (NOT CMAKE_BUILD_TYPE MATCHES "Debug")
-    message(WARNING "You should consider building with debugging enabled by passing -DCMAKE_BUILD_TYPE=Debug to CMake. Current type is ${CMAKE_BUILD_TYPE}")
-  endif()
+    if (NOT CMAKE_BUILD_TYPE MATCHES "Debug" AND NOT CMAKE_BUILD_TYPE MATCHES "")  # Multi-config generators don't set CMAKE_BUILD_TYPE.
+        message(WARNING "You should consider building with debugging enabled by passing -DCMAKE_BUILD_TYPE=Debug to CMake. Current type is ${CMAKE_BUILD_TYPE}")
+    endif()
 
-
-  SET( OVERTE_MEMORY_DEBUGGING true )
+    SET( OVERTE_MEMORY_DEBUGGING true )
 endif ()
 
 if (OVERTE_MEMORY_DEBUGGING)
@@ -41,9 +41,8 @@ if (OVERTE_MEMORY_DEBUGGING)
     # usr/bin/ld: ../../libraries/audio/libaudio.so: undefined reference to `FIR_1x4_AVX512(float*, float*, float*, float*, float*, float (*) [64], int)'
     # The '-DSTACK_PROTECTOR' argument below disables the usage of this function in the code. This should be fine as it only works on the latest Intel hardware,
     # and is an optimization that should make no functional difference.
-
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined -fsanitize=address -fsanitize=leak -U_FORTIFY_SOURCE -DSTACK_PROTECTOR -fstack-protector-strong -fno-omit-frame-pointer")
-    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined -fsanitize=address -fsanitize=leak ")
+    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined -fsanitize=address -fsanitize=leak")
     SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined -fsanitize=address -fsanitize=leak")
   elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
     # https://docs.microsoft.com/en-us/cpp/sanitizers/asan?view=msvc-160
