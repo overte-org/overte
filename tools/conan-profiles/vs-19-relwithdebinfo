@@ -4,7 +4,8 @@ os_build=Windows
 arch=x86_64
 arch_build=x86_64
 compiler=Visual Studio
-compiler.cppstd=20  # Both libnode and webrtc-audio-processing require C++20
+# Both libnode and webrtc-audio-processing require C++20
+compiler.cppstd=20
 compiler.version=16
 build_type=Release
 # libnode's build system seems to only support Release and Debug on Windows. RelWithDebInfo is not a valid option.
