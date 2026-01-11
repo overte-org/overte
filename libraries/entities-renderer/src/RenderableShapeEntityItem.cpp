@@ -13,10 +13,10 @@
 
 #include <gpu/Batch.h>
 #include <DependencyManager.h>
+#include <GeometryCache.h>
 #include <PerfStat.h>
 
 #include "RenderPipelines.h"
-
 
 using namespace render;
 using namespace render::entities;

@@ -90,6 +90,15 @@ Flickable {
             }
         }
 
+        SettingBoolean {
+            settingText: "Local Lights";
+            settingEnabledCondition: () => { return Render.localLightingEnabled }
+
+            onSettingEnabledChanged: {
+                Render.localLightingEnabled = settingEnabled;
+            }
+        }
+
         // Rendering Effects sub options
         AdvancedOptions {
             id: renderingEffectsAdvancedOptions;
@@ -103,21 +112,6 @@ Flickable {
                     Render.shadowsEnabled = settingEnabled;
                 }
             } 
-
-            SettingBoolean {
-                settingText: "Local Lights";
-                settingEnabledCondition: () => { return Render.renderMethod === 0 }
-            }
-
-            // NOTE: Once local lights have a proper toggle, the SettingBoolean above can be replaced with this one below.
-            // SettingBoolean {
-            //     settingText: "Local Lights";
-            //     settingEnabledCondition: () => { return Render.localLightsEnabled }
-
-            //     onSettingEnabledChanged: {
-            //         Render.localLightsEnabled = settingEnabled;
-            //     }
-            // }
 
             SettingBoolean {
                 settingText: "Ambient Occlusion";

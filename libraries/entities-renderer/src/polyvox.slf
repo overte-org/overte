@@ -22,6 +22,7 @@
     <@include graphics/Material.slh@>
     <@include render-utils/ShaderConstants.h@>
     <@include entities-renderer/ShaderConstants.h@>
+    <@include CullFace.slh@>
 
     <@if not HIFI_USE_FORWARD@>
         <@include DeferredBufferWrite.slh@>
@@ -29,7 +30,8 @@
         <@include DefaultMaterials.slh@>
 
         <@include GlobalLight.slh@>
-        <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, 1)$>
+        <@include LightLocal.slh@>
+        <$declareEvalGlobalLightingAlphaBlended()$>
 
         <@include gpu/Transform.slh@>
         <$declareStandardCameraTransform()$>
@@ -37,6 +39,10 @@
 
     <@if HIFI_USE_FORWARD@>
         INPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
+        // workaround for scribe only supporting (A or B) and not (A or B or C)
+        <@if not HIFI_USE_FADE@>
+            INPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
+        <@endif@>
     <@else@>
         INPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
     <@endif@>
@@ -84,6 +90,7 @@ void main(void) {
     vec4 yzDiffuse = texture(zMap, vec2(inPositionZ, -inPositionY));
 
     vec3 normalMS = normalize(cross(dFdy(_positionMS.xyz), dFdx(_positionMS.xyz)));
+    vec3 fragNormalWS = evalFrontOrBackFaceNormal(normalize(_normalWS));
     vec3 xyDiffuseScaled = xyDiffuse.rgb * abs(normalMS.z);
     vec3 xzDiffuseScaled = xzDiffuse.rgb * abs(normalMS.y);
     vec3 yzDiffuseScaled = yzDiffuse.rgb * abs(normalMS.x);
@@ -92,7 +99,7 @@ void main(void) {
     <@if not HIFI_USE_FORWARD@>
         packDeferredFragment(
             _prevPositionCS,
-            normalize(_normalWS),
+            fragNormalWS,
             1.0,
             diffuse,
             DEFAULT_ROUGHNESS,
@@ -105,18 +112,42 @@ void main(void) {
             DEFAULT_OCCLUSION,
             DEFAULT_SCATTERING);
     <@else@>
+        float metallic = DEFAULT_METALLIC;
+        vec3 fresnel = getFresnelF0(metallic, diffuse);
+
         TransformCamera cam = getTransformCamera();
-        _fragColor0 = vec4(evalSkyboxGlobalColor(
+
+        vec3 fragPositionWS = _positionWS.xyz;
+        vec3 fragToEyeWS = cam._viewInverse[3].xyz - fragPositionWS;
+        vec3 fragToEyeDirWS = normalize(fragToEyeWS);
+        SurfaceData surfaceWS = initSurfaceData(DEFAULT_ROUGHNESS, fragNormalWS, fragToEyeDirWS);
+
+        vec4 localLighting = vec4(0.0);
+        <$fetchClusterInfo(_positionWS)$>
+        if (hasLocalLights(numLights, clusterPos, dims)) {
+            localLighting = evalLocalLighting(cluster, numLights, fragPositionWS, surfaceWS,
+                                              metallic, fresnel, diffuse, 0.0,
+                                              vec4(0), vec4(0), 1.0);
+        }
+
+        vec4 color = vec4(evalGlobalLightingAlphaBlended(
             cam._viewInverse,
             1.0,
             DEFAULT_OCCLUSION,
             _positionES.xyz,
-            normalize(_normalWS),
+            fragNormalWS,
             diffuse,
-            DEFAULT_FRESNEL,
-            DEFAULT_METALLIC,
-            DEFAULT_ROUGHNESS),
+            fresnel,
+            metallic,
+            DEFAULT_EMISSIVE
+        <@if HIFI_USE_FADE@>
+                + fadeEmissive
+        <@endif@>
+            ,
+            surfaceWS, 1.0, localLighting.rgb),
             1.0);
+
+        _fragColor0 = color;
     <@endif@>
 <@else@>
     _fragColor0 = vec4(1.0);
