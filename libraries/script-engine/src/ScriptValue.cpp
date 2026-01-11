@@ -40,6 +40,7 @@ public:
     virtual bool isUndefined() const override;
     virtual bool isValid() const override;
     virtual bool isVariant() const override;
+    virtual bool isArrayBufferView() const override;
     virtual ScriptValueIteratorPointer newIterator() const override;
     virtual ScriptValue property(const QString& name,
                                  const ScriptValue::ResolveFlags& mode = ScriptValue::ResolvePrototype) const override;
@@ -67,6 +68,7 @@ public:
     virtual quint32 toUInt32() const override;
     virtual QVariant toVariant() const override;
     virtual QObject* toQObject() const override;
+    virtual std::shared_ptr<ScriptBufferView> toArrayBufferView() const override;
 };
 
 static ScriptValueProxyNull SCRIPT_VALUE_NULL;
@@ -164,6 +166,10 @@ bool ScriptValueProxyNull::isVariant() const {
     return false;
 }
 
+bool ScriptValueProxyNull::isArrayBufferView() const {
+    return false;
+}
+
 ScriptValueIteratorPointer ScriptValueProxyNull::newIterator() const {
     Q_ASSERT(false);
     qCWarning(scriptengine_script, "ScriptValue::newIterator called on empty value");
@@ -252,5 +258,9 @@ QVariant ScriptValueProxyNull::toVariant() const {
 }
 
 QObject* ScriptValueProxyNull::toQObject() const {
+    return nullptr;
+}
+
+std::shared_ptr<ScriptBufferView> ScriptValueProxyNull::toArrayBufferView() const {
     return nullptr;
 }

@@ -636,6 +636,8 @@ public:
      */
      Q_INVOKABLE QString btoa(const QByteArray &binary);
 
+     Q_INVOKABLE void test__ArrayBufferView(const ScriptValue& value);
+
  signals:
 
     /*@jsdoc
