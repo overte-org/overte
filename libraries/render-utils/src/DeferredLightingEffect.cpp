@@ -122,9 +122,6 @@ void DeferredLightingEffect::setupLocalLightsBatch(gpu::Batch& batch) {
 }
 
 void DeferredLightingEffect::unsetLocalLightsBatch(gpu::Batch& batch) {
-    auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
-    deferredLightingEffect->_lightClusters = nullptr;
-
     batch.setUniformBuffer(gr::Buffer::Light, nullptr);
     batch.setUniformBuffer(ru::Buffer::LightClusterGrid, nullptr);
     batch.setUniformBuffer(ru::Buffer::LightClusterContent, nullptr);
