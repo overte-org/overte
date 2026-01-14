@@ -600,7 +600,7 @@ public:
     graphics::MeshPointer createMesh() override {
         vecVertices.clear();
 
-        loop3(ivec3{ 0 }, vol->getSize(), [&](const ivec3& index) {
+        loop3(ivec3{ 0 }, vol->getSize() - glm::ivec3(-1), [&](const ivec3& index) {
             float regX = static_cast<float>(index.x);
             float regY = static_cast<float>(index.y);
             float regZ = static_cast<float>(index.z);
@@ -610,7 +610,9 @@ public:
             MaterialType material = 0;
             uint32_t v0, v1, v2, v3;
 
-            if (isQuadNeeded(vol->getVoxelAt(index + glm::ivec3(1, 0, 0)), this_el, material)) {
+            glm::ivec3 other_index = index + glm::ivec3(1, 0, 0);
+            auto other_el = vol->getVoxelAt(other_index);
+            if (vol->isInside(other_index) && isQuadNeeded(other_el, this_el, material)) {
                 const glm::vec3 posX = glm::vec3(1.0f, 0.0f, 0.0f);
                 v0 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ - 0.5f), posX, material);
                 v1 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ + 0.5f), posX, material);
@@ -620,7 +622,7 @@ public:
                 addTriangleCubic(v0, v2, v1);
                 addTriangleCubic(v1, v2, v3);
             }
-            if (isQuadNeeded(this_el, vol->getVoxelAt(index + glm::ivec3(1, 0, 0)), material)) {
+            if (isQuadNeeded(this_el, other_el, material)) {
                 const glm::ivec3 negX = glm::vec3(-1.0f, 0.0f, 0.0f);
                 v0 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ - 0.5f), negX, material);
                 v1 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ + 0.5f), negX, material);
@@ -631,7 +633,9 @@ public:
                 addTriangleCubic(v1, v3, v2);
             }
 
-            if (isQuadNeeded(vol->getVoxelAt(index + glm::ivec3(0, 1, 0)), this_el, material)) {
+            other_index = index + glm::ivec3(0, 1, 0);
+            other_el = vol->getVoxelAt(other_index);
+            if (vol->isInside(other_index) && isQuadNeeded(vol->getVoxelAt(other_index), this_el, material)) {
                 const glm::ivec3 posY = glm::vec3(0.0f, 1.0f, 0.0f);
                 v0 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ - 0.5f), posY, material);
                 v1 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ + 0.5f), posY, material);
@@ -641,7 +645,7 @@ public:
                 addTriangleCubic(v0, v1, v2);
                 addTriangleCubic(v1, v3, v2);
             }
-            if (isQuadNeeded(this_el, vol->getVoxelAt(index + glm::ivec3(0, 1, 0)), material)) {
+            if (isQuadNeeded(this_el, vol->getVoxelAt(other_index), material)) {
                 const glm::ivec3 negY = glm::vec3(0.0f, -1.0f, 0.0f);
                 v0 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ - 0.5f), negY, material);
                 v1 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ + 0.5f), negY, material);
@@ -652,7 +656,9 @@ public:
                 addTriangleCubic(v1, v2, v3);
             }
 
-            if (isQuadNeeded(vol->getVoxelAt(index + glm::ivec3(0, 0, 1)), this_el, material)) {
+            other_index = index + glm::ivec3(0, 0, 1);
+            other_el = vol->getVoxelAt(other_index);
+            if (vol->isInside(other_index) && isQuadNeeded(other_el, this_el, material)) {
                 const glm::ivec3 posZ = glm::vec3(0.0f, 0.0f, 1.0f);
                 v0 = addVertex(glm::vec3(regX - 0.5f, regY - 0.5f, regZ + 0.5f), posZ, material);
                 v1 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ + 0.5f), posZ, material);
@@ -662,7 +668,7 @@ public:
                 addTriangleCubic(v0, v2, v1);
                 addTriangleCubic(v1, v2, v3);
             }
-            if (isQuadNeeded(this_el, vol->getVoxelAt(index + glm::ivec3(0, 0, 1)), material)) {
+            if (isQuadNeeded(this_el, other_el, material)) {
                 const glm::ivec3 negZ = glm::vec3(0.0f, 0.0f, -1.0f);
                 v0 = addVertex(glm::vec3(regX - 0.5f, regY - 0.5f, regZ + 0.5f), negZ, material);
                 v1 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ + 0.5f), negZ, material);
