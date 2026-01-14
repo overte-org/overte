@@ -9,7 +9,6 @@
   # dependencies
   glad,
   gif_creator,
-  polyvox,
   artery-font-format,
   cgltf,
   etc2comp,
@@ -80,7 +79,6 @@ stdenv.mkDerivation {
       glad
       etc2comp
       cgltf
-      polyvox
       gif_creator
       artery-font-format
       openssl
