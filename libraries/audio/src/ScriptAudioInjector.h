@@ -90,8 +90,26 @@ public slots:
 
     /*@jsdoc
      * Configures how the injector plays the audio.
+     * This will replace all current AudioInjectorOptions.
      * @function AudioInjector.setOptions
      * @param {AudioInjector.AudioInjectorOptions} options - Configuration of how the injector plays the audio.
+     * @example <caption>Reduce the volume of the sound without changing other existing options.</caption>
+     * const sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
+     * let injector;
+     * const injectorOptions = {
+     *     position: MyAvatar.position,
+     *     volume: 1.0,
+     * };
+     *
+     * Script.setTimeout(function () { // Give the sound time to load.
+     *     injector = Audio.playSound(sound, injectorOptions);
+     * }, 1000);
+     *
+     * Script.setTimeout(function () {
+     *     const options = injector.getOptions();
+     *     options.volume = 0.2 // Reduce volume
+     *     injector.setOptions(options); // replace existing options
+     * }, 5000);
      */
     void setOptions(const AudioInjectorOptions& options) { DependencyManager::get<AudioInjectorManager>()->setOptions(_injector, options); }
 
