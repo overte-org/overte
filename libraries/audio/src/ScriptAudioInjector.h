@@ -85,6 +85,25 @@ public slots:
      * Gets the current configuration of the audio injector.
      * @function AudioInjector.getOptions
      * @returns {AudioInjector.AudioInjectorOptions} Configuration of how the injector plays the audio.
+     * @example <caption>Prints injector options to log</caption>
+     * let sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
+     *     let injector;
+     *     let injectorOptions = {
+     *     position: MyAvatar.position,
+     *     volume: 0.8,
+     * };
+
+     * Script.setTimeout(function () { // Give the sound time to load.
+     *     injector = Audio.playSound(sound, injectorOptions);
+     * }, 1000);
+     *
+     * Script.setTimeout(function () {
+     *     const options = injector.getOptions();
+     *
+     *     print("Current AudioInjectorOptions: ",JSON.stringify(options)); // Print all options to log
+     *
+     *     print("Volume is set to ", options.volume);
+     * }, 2000);
      */
     AudioInjectorOptions getOptions() const { return DependencyManager::get<AudioInjectorManager>()->getOptions(_injector); }
 
