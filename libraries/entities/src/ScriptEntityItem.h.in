@@ -23,8 +23,6 @@ public:
 
     bool shouldBePhysical() const override { return false; }
 
-    virtual bool supportsDetailedIntersection() const override { return false; }
-
     AACube calculateInitialQueryAACube(bool& success) override;
 
     virtual void update(const quint64& now) override;

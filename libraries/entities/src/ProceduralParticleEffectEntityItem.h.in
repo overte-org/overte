@@ -36,8 +36,6 @@ public:
 
     bool shouldBePhysical() const override { return false; }
 
-    virtual bool supportsDetailedIntersection() const override { return false; }
-
 protected:
 
 @ProceduralParticleEffect_ENTITY_PROPS@
