@@ -738,13 +738,6 @@ private:
     std::vector<uint32_t> vecIndices;
 };
 
-#if 0
-QDebug& operator<<(QDebug& s, const glm::ivec3& v) {
-    s << '(' << v.x << ' ' << v.y << ' ' << v.z << ')';
-    return s;
-}
-#endif
-
 class MarchingCubesSurfaceExtractor : public SurfaceExtractor {
 public:
     inline MarchingCubesSurfaceExtractor(std::shared_ptr<VoxelVolume> vol) : SurfaceExtractor(vol) {}
@@ -790,13 +783,6 @@ public:
                 cubeindex |= 0b01000000;
             if (v7 != 0)
                 cubeindex |= 0b10000000;
-
-#if 0
-            if (cubeindex > 0 && cubeindex < (uint8_t)-1) {
-                qDebug() << "MARCHING index" << i0 << i1 << i2 << i3 << i4 << i5 << i6 << i7;
-                qDebug() << "MARCHING vals" << v0 << v1 << v2 << v3 << v4 << v5 << v6 << v7;
-            }
-#endif
 
             auto edgemask = edgeTable[cubeindex];
             glm::vec3 vertlist[12];
