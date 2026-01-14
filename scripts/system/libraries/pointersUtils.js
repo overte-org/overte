@@ -24,7 +24,8 @@ var Pointer = function(hudLayer, pickType, pointerData) {
     const SEARCH_LINE_POINTS = 32;
     const SEARCH_LINE_THICKNESS = 0.003;
     const CLICK_LINE_THICKNESS = 0.01;
-    const CURSOR_IMAGE_URL = `${Script.resourcesPath()}images/laser_cursor_default.png`;
+    const CURSOR_DEFAULT_URL = `${Script.resourcesPath()}images/laser_cursor_default.png`;
+    const CURSOR_GRABBING_URL = `${Script.resourcesPath()}images/laser_cursor_grabbing.png`;
     const BEAM_IMAGE_URL = `${Script.resourcesPath()}images/laser_beam_default.png`;
 
     const CURSOR_SIZE = { x: SEARCH_SPHERE_SIZE, y: SEARCH_SPHERE_SIZE, z: SEARCH_SPHERE_SIZE };
@@ -54,7 +55,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
     };
     this.halfEnd = {
         type: "Image",
-        imageURL: CURSOR_IMAGE_URL,
+        imageURL: CURSOR_DEFAULT_URL,
         emissive: true,
         billboardMode: "full",
         dimensions: CURSOR_SIZE,
@@ -78,7 +79,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
     };
     this.fullEnd = {
         type: "Image",
-        imageURL: CURSOR_IMAGE_URL,
+        imageURL: CURSOR_DEFAULT_URL,
         emissive: true,
         billboardMode: "full",
         dimensions: CURSOR_SIZE,
@@ -103,12 +104,13 @@ var Pointer = function(hudLayer, pickType, pointerData) {
     };
     this.holdEnd = {
         type: "Image",
-        imageURL: CURSOR_IMAGE_URL,
+        imageURL: CURSOR_GRABBING_URL,
         emissive: true,
         billboardMode: "full",
         dimensions: CURSOR_SIZE,
         solid: true,
         color: COLORS_GRAB_DISTANCE_HOLD,
+        alpha: 0.5,
         ignorePickIntersection: true,
         renderLayer: cursorRenderLayer,
         sampler: CURSOR_SAMPLER,
