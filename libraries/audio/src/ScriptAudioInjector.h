@@ -65,9 +65,9 @@ public slots:
      * Stops audio playback.
      * @function AudioInjector.stop
      * @example <caption>Stop playing a sound before it finishes.</caption>
-     * var sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
-     * var injector;
-     * var injectorOptions = {
+     * const sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
+     * let injector;
+     * const injectorOptions = {
      *     position: MyAvatar.position
      * };
      * 
@@ -125,9 +125,9 @@ public slots:
      * @function AudioInjector.isPlaying
      * @returns {boolean} <code>true</code> if the audio is currently playing, otherwise <code>false</code>.
      * @example <caption>See if a sound is playing.</caption>
-     * var sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
-     * var injector;
-     * var injectorOptions = {
+     * const sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
+     * let injector;
+     * const injectorOptions = {
      *     position: MyAvatar.position
      * };
      *
@@ -148,9 +148,9 @@ signals:
      * @function AudioInjector.finished
      * @returns {Signal}
      * @example <caption>Report when a sound has finished playing.</caption>
-     * var sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
-     * var injector;
-     * var injectorOptions = {
+     * const sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
+     * let injector;
+     * const injectorOptions = {
      *     position: MyAvatar.position
      * };
      * 
