@@ -144,7 +144,8 @@ EntityShape.prototype = {
             priority: 1,
             materialMappingMode: PROJECTED_MATERIALS ? "projected" : "uv",
             materialURL: Script.resolvePath("../../assets/images/materials/GridPattern.json"),
-            ignorePickIntersection: true
+            ignorePickIntersection: true,
+            grab: { grabbable: false },
         }, "local");
     },
     update: function() {
