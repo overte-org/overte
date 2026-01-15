@@ -158,7 +158,8 @@ void VKWindow::setupDepthStencil() {
         _depthStencil.isAllocated = false;
     }
 
-    const VkFormat depthFormat = VK_FORMAT_D24_UNORM_S8_UINT;
+    // VKTODO: Use VK_FORMAT_D24_UNORM_S8_UINT when supported.
+    const VkFormat depthFormat = VK_FORMAT_D32_SFLOAT_S8_UINT;
     VkImageCreateInfo imageCI{};
     imageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageCI.imageType = VK_IMAGE_TYPE_2D;
@@ -259,7 +260,8 @@ void VKWindow::setupRenderPass() {
     // VKTODO: not needed currently
     // Depth attachment
     attachments[1].samples = VK_SAMPLE_COUNT_1_BIT;
-    attachments[1].format = VK_FORMAT_D24_UNORM_S8_UINT;
+    // VKTODO: Use VK_FORMAT_D24_UNORM_S8_UINT when supported.
+    attachments[1].format = VK_FORMAT_D32_SFLOAT_S8_UINT;
     attachments[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     attachments[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     attachments[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;

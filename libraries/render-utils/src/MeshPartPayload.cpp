@@ -258,7 +258,15 @@ void ModelMeshPartPayload::setShapeKey(bool invalidateShapeKey, PrimitiveMode pr
         builder.withTranslucent();
     }
 
+    // VKTODO: this is probably broken on GL too, but I'm not sure if my workaround doesn't break something else.
+#ifdef USE_GL
     if (_isSkinned || (_isBlendShaped && _meshBlendshapeBuffer)) {
+#else
+    // There's no shader that supports blendshapes but doesn't require skinning.
+    // For this reason if a mesh with blendshapes but no skinning is rendered,
+    // validation layers will report an error about missing cluster indices and weights.
+    if (_isSkinned || (_isBlendShaped && _meshBlendshapeBuffer && _isSkinned)) {
+#endif
         builder.withDeformed();
         if (useDualQuaternionSkinning) {
             builder.withDualQuatSkinned();
@@ -422,7 +430,15 @@ void ModelMeshPartPayload::setBlendshapeBuffer(const std::unordered_map<int, gpu
         auto blendshapeBuffer = blendshapeBuffers.find(_meshIndex);
         if (blendshapeBuffer != blendshapeBuffers.end()) {
             _meshBlendshapeBuffer = blendshapeBuffer->second;
+            // VKTODO: this is probably broken on GL too, but I'm not sure if my workaround doesn't break something else.
+#ifdef USE_GL
             if (_isSkinned || (_isBlendShaped && _meshBlendshapeBuffer)) {
+#else
+            // There's no shader that supports blendshapes but doesn't require skinning.
+                // For this reason if a mesh with blendshapes but no skinning is rendered,
+                // validation layers will report an error about missing cluster indices and weights.
+                if (_isSkinned || (_isBlendShaped && _meshBlendshapeBuffer && _isSkinned)) {
+#endif
                 ShapeKey::Builder builder(_shapeKey);
                 builder.withDeformed();
                 if (_prevUseDualQuaternionSkinning) {

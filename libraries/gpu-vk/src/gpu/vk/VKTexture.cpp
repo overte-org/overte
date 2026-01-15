@@ -579,7 +579,10 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
     imageCI.arrayLayers = _gpuObject.isArray() ? _gpuObject.getNumSlices() : 1;
     imageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+    //imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+    // VKTODO: this lowers performance, so we should blit it into image with VK_IMAGE_TILING_OPTIMAL while generating mipmaps in the future.
+    // VK_IMAGE_TILING_LINEAR is required on AMD GPUs on Linux.
+    imageCI.tiling = VK_IMAGE_TILING_LINEAR;
     imageCI.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     if (_gpuObject.getType() == Texture::TEX_CUBE) {
         imageCI.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
@@ -671,10 +674,22 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
 
     VK_CHECK_RESULT(vkCreateImage(device->logicalDevice, &imageCI, nullptr, &_vkImage));
 
-    VkMemoryRequirements memoryRequirements;
-    vkGetImageMemoryRequirements(device->logicalDevice, _vkImage, &memoryRequirements);
+    VkImageMemoryRequirementsInfo2 vkImageMemoryRequirementsInfo2 { };
+    vkImageMemoryRequirementsInfo2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2;
+    vkImageMemoryRequirementsInfo2.image = _vkImage;
+    vkImageMemoryRequirementsInfo2.pNext = nullptr;
 
-    _sharedMemorySize = memoryRequirements.size;
+    VkMemoryRequirements2 memoryRequirements2{ };
+    memoryRequirements2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+    vkGetImageMemoryRequirements2(device->logicalDevice, &vkImageMemoryRequirementsInfo2, &memoryRequirements2);
+
+    _sharedMemorySize = memoryRequirements2.memoryRequirements.size;
+
+    VkMemoryDedicatedAllocateInfo vkMemoryDedicatedAllocateInfo{ };
+    vkMemoryDedicatedAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+    vkMemoryDedicatedAllocateInfo.image = _vkImage;
+    vkMemoryDedicatedAllocateInfo.buffer = VK_NULL_HANDLE;
+    vkMemoryDedicatedAllocateInfo.pNext = nullptr;
 
     VkExportMemoryAllocateInfo exportMemoryAllocateInfo {};
     exportMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
@@ -683,10 +698,13 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
 #else
     exportMemoryAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 #endif
+
+    exportMemoryAllocateInfo.pNext = &vkMemoryDedicatedAllocateInfo;
+
     VkMemoryAllocateInfo memoryAllocateInfo {};
     memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memoryAllocateInfo.allocationSize = memoryRequirements.size;
-    memoryAllocateInfo.memoryTypeIndex = device->getMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    memoryAllocateInfo.allocationSize = memoryRequirements2.memoryRequirements.size;
+    memoryAllocateInfo.memoryTypeIndex = device->getMemoryType(memoryRequirements2.memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     memoryAllocateInfo.pNext = &exportMemoryAllocateInfo;
 
     VK_CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memoryAllocateInfo, nullptr, &_sharedMemory));

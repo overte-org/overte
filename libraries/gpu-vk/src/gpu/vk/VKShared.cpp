@@ -124,7 +124,8 @@ VkFormat gpu::vk::evalTexelFormatInternal(const gpu::Element& dstFormat) {
 
                 case gpu::DEPTH_STENCIL:
                     // The only possible depth stencil format
-                    result = VK_FORMAT_D24_UNORM_S8_UINT;
+                    // VKTODO: use VK_FORMAT_D24_UNORM_S8_UINT when it's allowed.
+                    result = VK_FORMAT_D32_SFLOAT_S8_UINT;
                     break;
 
                 default:
