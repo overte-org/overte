@@ -317,7 +317,6 @@ VkFormat gpu::vk::evalTexelFormatInternal(const gpu::Element& dstFormat) {
                             break;
                         case gpu::NINT2_10_10_10:
                             result = VK_FORMAT_A2B10G10R10_SNORM_PACK32;
-                            //result = VK_FORMAT_A2R10G10B10_SNORM_PACK32;
                             break;
 
                         case gpu::NUINT32:

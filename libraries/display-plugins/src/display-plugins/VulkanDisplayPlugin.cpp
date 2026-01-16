@@ -433,7 +433,7 @@ void VulkanDisplayPlugin::customizeContext() {
 
         _SRGBToLinearPipeline = gpu::Pipeline::create(gpu::Shader::createProgram(DrawTextureSRGBToLinear), scissorState);
 
-        _hudPipeline = gpu::Pipeline::create(gpu::Shader::createProgram(DrawTextureSRGBToLinear), blendState);
+        _hudPipeline = gpu::Pipeline::create(gpu::Shader::createProgram(DrawTexturePremultipliedSRGBToLinear), blendState);
 
         _cursorPipeline = gpu::Pipeline::create(gpu::Shader::createProgram(DrawTransformedTexture), blendState);
     }

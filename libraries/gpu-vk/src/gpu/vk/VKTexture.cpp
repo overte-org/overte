@@ -579,10 +579,14 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
     imageCI.arrayLayers = _gpuObject.isArray() ? _gpuObject.getNumSlices() : 1;
     imageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
-    //imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
-    // VKTODO: this lowers performance, so we should blit it into image with VK_IMAGE_TILING_OPTIMAL while generating mipmaps in the future.
-    // VK_IMAGE_TILING_LINEAR is required on AMD GPUs on Linux.
-    imageCI.tiling = VK_IMAGE_TILING_LINEAR;
+    if (device->properties.vendorID == VULKAN_VENDOR_ID_AMD) {
+        // VKTODO: this lowers performance, so we should blit it into image with VK_IMAGE_TILING_OPTIMAL while generating mipmaps in the future.
+        // VK_IMAGE_TILING_LINEAR is required on AMD GPUs on Linux.
+        imageCI.tiling = VK_IMAGE_TILING_LINEAR;
+    } else {
+        // VK_IMAGE_TILING_OPTIMAL is required on non-AMD GPUs.
+        imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+    }
     imageCI.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     if (_gpuObject.getType() == Texture::TEX_CUBE) {
         imageCI.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
@@ -699,7 +703,10 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
     exportMemoryAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 #endif
 
-    exportMemoryAllocateInfo.pNext = &vkMemoryDedicatedAllocateInfo;
+    // This is required on AMD GPUs, but breaks UI on other GPUs.
+    if (device->properties.vendorID == VULKAN_VENDOR_ID_AMD) {
+        exportMemoryAllocateInfo.pNext = &vkMemoryDedicatedAllocateInfo;
+    }
 
     VkMemoryAllocateInfo memoryAllocateInfo {};
     memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
