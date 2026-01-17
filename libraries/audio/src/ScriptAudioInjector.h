@@ -92,7 +92,7 @@ public slots:
      *     position: MyAvatar.position,
      *     volume: 0.8,
      * };
-
+     *
      * Script.setTimeout(function () { // Give the sound time to load.
      *     injector = Audio.playSound(sound, injectorOptions);
      * }, 1000);
