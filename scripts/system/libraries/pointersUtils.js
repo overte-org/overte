@@ -34,10 +34,7 @@ var Pointer = function(hudLayer, pickType, pointerData) {
     // contrast outline doesn't get blurred away
     const CURSOR_SAMPLER = { filter: "linear" };
 
-    // The line defaults to "world" so it doesn't look weird
-    // going behind avatars, the cursor defaults to "front"
-    // so it doesn't get partially clipped by whatever it's hitting
-    const lineRenderLayer = hudLayer ? "hud" : "world";
+    const lineRenderLayer = hudLayer ? "hud" : "front";
     const cursorRenderLayer = hudLayer ? "hud" : "front";
 
     // TODO: Use Controller.Hardware.OpenXR.{LT,RT}Touch
