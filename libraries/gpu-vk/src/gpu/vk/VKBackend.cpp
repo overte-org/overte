@@ -1486,8 +1486,8 @@ VKTexture* VKBackend::syncGPUObject(const Texture *texture) {
                         qDebug() << " mismatch, stored: " << storedFormat.getType() << " texel: " << texelFormat.getType();
                         return nullptr;
                     }
-                    auto storedVkFormat = evalTexelFormatInternal(texture->getStoredMipFormat());
-                    auto texelVkFormat = evalTexelFormatInternal(texture->getTexelFormat());
+                    auto storedVkFormat = evalTexelFormatInternal(texture->getStoredMipFormat(), _context);
+                    auto texelVkFormat = evalTexelFormatInternal(texture->getTexelFormat(), _context);
                     if (storedVkFormat != texelVkFormat) {
                         if (!(storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_UNORM) // Adding alpha channel needed
                             && !(storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_SRGB) // Adding alpha channel needed and maybe SRGB conversion?
@@ -2623,7 +2623,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
     auto gpuFramebuffer = syncGPUObject(framebuffer);
     auto &renderBuffers = framebuffer->getRenderBuffers();
 
-    Cache::Pipeline::RenderpassKey key = _cache.pipelineState.getRenderPassKey(framebuffer);
+    Cache::Pipeline::RenderpassKey key = _cache.pipelineState.getRenderPassKey(framebuffer, _context);
     std::vector<VkAttachmentDescription> attachments;
     std::vector<VkClearValue> clearValues;
     attachments.reserve(key.size());
@@ -2803,7 +2803,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
 
         VkImageSubresourceRange mipSubRange = {};
         mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (formatHasStencil(evalTexelFormatInternal(texture->getTexelFormat()))) {
+        if (formatHasStencil(evalTexelFormatInternal(texture->getTexelFormat(), _context))) {
             mipSubRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
         }
         mipSubRange.baseMipLevel = 0;

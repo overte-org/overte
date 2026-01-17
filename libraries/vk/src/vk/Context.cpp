@@ -221,6 +221,9 @@ void Context::createDevice() {
     // Get the graphics queue
     vkGetDeviceQueue(device->logicalDevice, device->queueFamilyIndices.graphics, 0, &graphicsQueue);
     vkGetDeviceQueue(device->logicalDevice, device->queueFamilyIndices.transfer, 0, &transferQueue);
+
+    // Find the best depth stencil format.
+    _bestDepthStencilFormat = initBestDepthStencilFormat();
 }
 
 void Context::pickDevice() {
@@ -271,6 +274,32 @@ VkCommandBuffer Context::createCommandBuffer(VkCommandPool commandPool, VkComman
 }
 
 // End of VKS code
+
+VkFormat Context::initBestDepthStencilFormat() const {
+    // VKTODO: we should check performance impact of the
+    std::vector<VkFormat> formats {
+        VK_FORMAT_D24_UNORM_S8_UINT,
+        VK_FORMAT_D32_SFLOAT_S8_UINT,
+        VK_FORMAT_D16_UNORM_S8_UINT
+    };
+    for (const auto &format : formats) {
+        VkImageFormatProperties imageFormatProperties{ };
+        auto result = vkGetPhysicalDeviceImageFormatProperties(
+            physicalDevice, format,
+            VK_IMAGE_TYPE_2D,
+            VK_IMAGE_TILING_OPTIMAL,
+            VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+            0,
+            &imageFormatProperties);
+        if (result == VK_SUCCESS) {
+            qDebug() << "Context::initBestDepthStencilFormat: using format " << format;
+            return format;
+        }
+    }
+    Q_ASSERT(false);
+    qCritical() << "No suitable depth stencil format found.";
+    return VK_FORMAT_UNDEFINED;
+}
 
 void Context::registerWindow(VKWindow* window) {
     std::lock_guard<std::recursive_mutex> lock(vulkanWindowsMutex);

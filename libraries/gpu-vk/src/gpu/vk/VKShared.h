@@ -30,7 +30,7 @@ State::StencilOp stencilOpFromGL(VkStencilOp stencilOp);
 State::BlendOp blendOpFromGL(VkBlendOp blendOp);
 State::BlendArg blendArgFromGL(VkBlendFactor blendArg);
 
-VkFormat evalTexelFormatInternal(const Element& dstFormat);
+VkFormat evalTexelFormatInternal(const Element& dstFormat, const vks::Context &context);
 
 //bool isDepthStencilFormat(VkFormat format);
 bool formatHasStencil(VkFormat format);

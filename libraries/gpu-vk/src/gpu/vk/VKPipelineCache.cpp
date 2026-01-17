@@ -158,7 +158,7 @@ Cache::PipelineLayout Cache::Pipeline::getPipelineAndDescriptorLayout(const vks:
     return layout;
 }
 
-Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffer* framebuffer) const {
+Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffer* framebuffer, const vks::Context &context) const {
     RenderpassKey result;
     if (!framebuffer) {
         result.emplace_back(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED); // VKTODO: this is definitely wrong, why is it that way?
@@ -176,7 +176,7 @@ Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffe
                         layout = attachmentTexture->getVkImageLayout();
                     }
                 }
-                result.emplace_back(evalTexelFormatInternal(attachment._texture->getTexelFormat()), layout);
+                result.emplace_back(evalTexelFormatInternal(attachment._texture->getTexelFormat(), context), layout);
             }
         }
         if (framebuffer->hasDepthStencil()) {
@@ -190,7 +190,7 @@ Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffe
                     }
                 }
             }
-            result.emplace_back(evalTexelFormatInternal(framebuffer->getDepthStencilBufferFormat()), layout);
+            result.emplace_back(evalTexelFormatInternal(framebuffer->getDepthStencilBufferFormat(), context), layout);
         }
     }
     return result;
@@ -199,7 +199,7 @@ Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffe
 VkRenderPass Cache::Pipeline::getRenderPass(const vks::Context& context) {
     const auto framebuffer = gpu::acquire(this->framebuffer);
 
-    RenderpassKey key = getRenderPassKey(framebuffer);
+    RenderpassKey key = getRenderPassKey(framebuffer, context);
     auto itr = _renderPassMap.find(key);
     if (itr == _renderPassMap.end()) {
         auto &renderBuffers = framebuffer->getRenderBuffers();
@@ -357,9 +357,9 @@ std::string Cache::Pipeline::getStridesKey() const {
 }
 
 // VKTODO: use binary key if performance with text key is not good enough
-std::string Cache::Pipeline::getKey() const {
+std::string Cache::Pipeline::getKey(const vks::Context& context) const {
     const auto framebuffer = gpu::acquire(this->framebuffer);
-    RenderpassKey renderpassKey = getRenderPassKey(framebuffer);
+    RenderpassKey renderpassKey = getRenderPassKey(framebuffer, context);
     const gpu::Pipeline& pipeline = *gpu::acquire(this->pipeline);
     const gpu::State& state = *pipeline.getState();
     const auto& vertexShader = pipeline.getProgram()->getShaders()[0]->getSource();
@@ -406,7 +406,7 @@ VkShaderModule Cache::getShaderModule(const vks::Context& context, const shader:
 }
 
 Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
-    auto key = pipelineState.getKey();
+    auto key = pipelineState.getKey(context);
     auto pipelineIterator = pipelineMap.find(key);
     if (pipelineIterator != pipelineMap.end()) {
         return pipelineIterator->second;
@@ -541,7 +541,7 @@ Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
             isAttributeSlotOccupied[slot] = true;
 
             attributeDescriptions.push_back(
-                { slot, attribute._channel, evalTexelFormatInternal(attribute._element), (uint32_t)attribute._offset });
+                { slot, attribute._channel, evalTexelFormatInternal(attribute._element, context), (uint32_t)attribute._offset });
         }
 
         if (!colorFound && vertexReflection.validInput(Stream::COLOR)) {

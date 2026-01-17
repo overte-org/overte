@@ -55,7 +55,7 @@ void gpu::vk::VKFramebuffer::update() {
                         attachmentCI.width = vkTexture->_gpuObject.getWidth();
                         attachmentCI.height = vkTexture->_gpuObject.getHeight();
                         attachmentCI.layerCount = 1;
-                        attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat());
+                        attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat(), backend->getContext());
                         attachmentCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
                         attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
                         addAttachment(attachmentCI, vkTexture);
@@ -101,7 +101,7 @@ void gpu::vk::VKFramebuffer::update() {
                 attachmentCI.width = vkTexture->_gpuObject.getWidth();
                 attachmentCI.height = vkTexture->_gpuObject.getHeight();
                 attachmentCI.layerCount = 1;
-                attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat());
+                attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat(), backend->getContext());
                 attachmentCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
                 attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
                 addAttachment(attachmentCI, vkTexture);
@@ -112,7 +112,7 @@ void gpu::vk::VKFramebuffer::update() {
                 attachmentCI.width = vkTexture->_gpuObject.getWidth();
                 attachmentCI.height = vkTexture->_gpuObject.getHeight();
                 attachmentCI.layerCount = vkTexture->_gpuObject.getNumSlices();
-                attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat());
+                attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat(), backend->getContext());
                 attachmentCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
                 attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
                 addAttachment(attachmentCI, vkTexture);
