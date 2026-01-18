@@ -115,12 +115,12 @@ struct Cache {
         // Returns structure containing pipeline layout and descriptor set layouts
         PipelineLayout getPipelineAndDescriptorLayout(const vks::Context& context);
 
-        RenderpassKey getRenderPassKey(gpu::Framebuffer* framebuffer) const;
+        RenderpassKey getRenderPassKey(gpu::Framebuffer* framebuffer, const vks::Context &context) const;
 
         VkRenderPass getRenderPass(const vks::Context& context);
         static std::string getRenderpassKeyString(const RenderpassKey& renderpassKey);
         std::string getStridesKey() const;
-        std::string getKey() const;
+        std::string getKey(const vks::Context& context) const;
     } pipelineState;
 
     static VkStencilOpState getStencilOp(const gpu::State::StencilTest& stencil);

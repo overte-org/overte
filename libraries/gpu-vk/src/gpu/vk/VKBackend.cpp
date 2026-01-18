@@ -1486,8 +1486,8 @@ VKTexture* VKBackend::syncGPUObject(const Texture *texture) {
                         qDebug() << " mismatch, stored: " << storedFormat.getType() << " texel: " << texelFormat.getType();
                         return nullptr;
                     }
-                    auto storedVkFormat = evalTexelFormatInternal(texture->getStoredMipFormat());
-                    auto texelVkFormat = evalTexelFormatInternal(texture->getTexelFormat());
+                    auto storedVkFormat = evalTexelFormatInternal(texture->getStoredMipFormat(), _context);
+                    auto texelVkFormat = evalTexelFormatInternal(texture->getTexelFormat(), _context);
                     if (storedVkFormat != texelVkFormat) {
                         if (!(storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_UNORM) // Adding alpha channel needed
                             && !(storedVkFormat == VK_FORMAT_R8G8B8_UNORM && texelVkFormat == VK_FORMAT_R8G8B8A8_SRGB) // Adding alpha channel needed and maybe SRGB conversion?
@@ -1795,9 +1795,16 @@ void VKBackend::FrameData::createDescriptorPool() {
 }
 
 void VKBackend::FrameData::addGlUniform(size_t size, const void* data, size_t commandIndex) {
-    _glUniformData.resize(_glUniformBufferPosition + size);
+    size_t alignment = _backend->_context.device->properties.limits.minUniformBufferOffsetAlignment;
+    size_t newSizeUnaligned = _glUniformBufferPosition + size;
+    size_t newSizeAligned = newSizeUnaligned - (newSizeUnaligned % alignment);
+    if (newSizeAligned < newSizeUnaligned) {
+        newSizeAligned += alignment;
+    }
+    _glUniformData.resize(newSizeAligned);
     memcpy(_glUniformData.data()+_glUniformBufferPosition, data, size);
-    _glUniformBufferPosition += size;
+    _glUniformOffsetMap.insert({commandIndex, _glUniformBufferPosition});
+    _glUniformBufferPosition = newSizeAligned;
 }
 
 VKBackend::FrameData::FrameData(VKBackend *backend) : _backend(backend) {
@@ -2616,7 +2623,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
     auto gpuFramebuffer = syncGPUObject(framebuffer);
     auto &renderBuffers = framebuffer->getRenderBuffers();
 
-    Cache::Pipeline::RenderpassKey key = _cache.pipelineState.getRenderPassKey(framebuffer);
+    Cache::Pipeline::RenderpassKey key = _cache.pipelineState.getRenderPassKey(framebuffer, _context);
     std::vector<VkAttachmentDescription> attachments;
     std::vector<VkClearValue> clearValues;
     attachments.reserve(key.size());
@@ -2796,7 +2803,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
 
         VkImageSubresourceRange mipSubRange = {};
         mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-        if (formatHasStencil(evalTexelFormatInternal(texture->getTexelFormat()))) {
+        if (formatHasStencil(evalTexelFormatInternal(texture->getTexelFormat(), _context))) {
             mipSubRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
         }
         mipSubRange.baseMipLevel = 0;

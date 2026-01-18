@@ -122,8 +122,12 @@ private:
 
     // End of VKS code
 
+    VkFormat initBestDepthStencilFormat() const;
+
 public:
 
+    // Not all GPUs support D24 S8 format, so we need to check what formats are supported.
+    VkFormat getBestDepthStencilFormat() const { return _bestDepthStencilFormat; };
 
     void registerWindow(VKWindow *window); // Every Vulkan window registers itself here.
 
@@ -191,7 +195,7 @@ public:
 private:
     std::recursive_mutex vulkanWindowsMutex;
     std::list<VKWindow*> vulkanWindows;
-
+    VkFormat _bestDepthStencilFormat{ VK_FORMAT_UNDEFINED };
 };
 
 }  // namespace vks

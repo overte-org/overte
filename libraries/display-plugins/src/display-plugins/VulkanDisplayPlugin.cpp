@@ -433,7 +433,7 @@ void VulkanDisplayPlugin::customizeContext() {
 
         _SRGBToLinearPipeline = gpu::Pipeline::create(gpu::Shader::createProgram(DrawTextureSRGBToLinear), scissorState);
 
-        _hudPipeline = gpu::Pipeline::create(gpu::Shader::createProgram(DrawTextureSRGBToLinear), blendState);
+        _hudPipeline = gpu::Pipeline::create(gpu::Shader::createProgram(DrawTexturePremultipliedSRGBToLinear), blendState);
 
         _cursorPipeline = gpu::Pipeline::create(gpu::Shader::createProgram(DrawTransformedTexture), blendState);
     }
@@ -750,6 +750,11 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
 
         uint32_t currentImageIndex = UINT32_MAX;
         //VK_CHECK_RESULT(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex));
+        if (!_vkWindow->_acquireCompleteSemaphore) {
+            VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::semaphoreCreateInfo();
+            VK_CHECK_RESULT(vkCreateSemaphore(_vkWindow->_context.device->logicalDevice, &semaphoreCreateInfo, nullptr, &_vkWindow->_acquireCompleteSemaphore));
+        }
+
         if(_vkWindow->_swapchain.acquireNextImage(_vkWindow->_acquireCompleteSemaphore, &currentImageIndex) != VK_SUCCESS) {
             qDebug() << "_vkWindow->_swapchain.acquireNextImage fail";
             _vkWindow->resizeFramebuffer(); //VKTODO: workaround
@@ -898,6 +903,11 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
             cmdEndLabel(commandBuffer);
             VK_CHECK_RESULT(vkEndCommandBuffer(commandBuffer));
 
+            if (!_vkWindow->_renderCompleteSemaphore) {
+                VkSemaphoreCreateInfo semaphoreCreateInfo = vks::initializers::semaphoreCreateInfo();
+                VK_CHECK_RESULT(vkCreateSemaphore(_vkWindow->_context.device->logicalDevice, &semaphoreCreateInfo, nullptr, &_vkWindow->_renderCompleteSemaphore));
+            }
+
             static const VkPipelineStageFlags waitFlags{ VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT };
             VkSubmitInfo submitInfo = vks::initializers::submitInfo();
             submitInfo.waitSemaphoreCount = 1;
@@ -925,8 +935,18 @@ void VulkanDisplayPlugin::present(const std::shared_ptr<RefreshRateController>& 
 
             _vkWindow->_previousFrameFence = frameFence;
             _vkWindow->_previousCommandBuffer = commandBuffer;
+            if (_vkWindow->_previousAcquireCompleteSemaphore) {
+                _vkWindow->_context.recycler.trashVkSemaphore(_vkWindow->_previousAcquireCompleteSemaphore);
+            }
+            if (_vkWindow->_previousRenderCompleteSemaphore) {
+                _vkWindow->_context.recycler.trashVkSemaphore(_vkWindow->_previousRenderCompleteSemaphore);
+            }
         }
         _vkWindow->_swapchain.queuePresent(_vkWindow->_context.graphicsQueue, currentImageIndex, _vkWindow->_renderCompleteSemaphore);
+        _vkWindow->_previousAcquireCompleteSemaphore = _vkWindow->_acquireCompleteSemaphore;
+        _vkWindow->_previousRenderCompleteSemaphore = _vkWindow->_renderCompleteSemaphore;
+        _vkWindow->_acquireCompleteSemaphore = VK_NULL_HANDLE;
+        _vkWindow->_renderCompleteSemaphore = VK_NULL_HANDLE;
 
         // VKTODO
         gpu::Backend::freeGPUMemSize.set(gpu::gl::getFreeDedicatedMemory());

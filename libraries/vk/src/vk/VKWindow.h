@@ -69,4 +69,6 @@ public:
     std::atomic<bool> _needsResizing{ true };
     VkFence _previousFrameFence{ VK_NULL_HANDLE };
     VkCommandBuffer _previousCommandBuffer{ VK_NULL_HANDLE };
+    VkSemaphore _previousAcquireCompleteSemaphore{ VK_NULL_HANDLE };
+    VkSemaphore _previousRenderCompleteSemaphore{ VK_NULL_HANDLE };
 };

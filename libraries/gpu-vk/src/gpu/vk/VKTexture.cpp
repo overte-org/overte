@@ -147,7 +147,7 @@ VKTexture::VKTexture(const std::weak_ptr<VKBackend>& backend, const Texture& tex
     _target(getVKTextureType(texture)),
     _transferable(isTransferable),
     _downsampleSource(backend),
-    _vkTexelFormat(evalTexelFormatInternal(texture.getTexelFormat()))
+    _vkTexelFormat(evalTexelFormatInternal(texture.getTexelFormat(), backend.lock()->getContext()))
 {
     Backend::setGPUObject(texture, this);
 }
@@ -197,7 +197,7 @@ VkImageViewType VKTexture::getVKTextureType(const Texture& texture) {
 void VKAttachmentTexture::createTexture(VKBackend &backend) {
     VkImageCreateInfo imageCI = vks::initializers::imageCreateInfo();
     imageCI.imageType = VK_IMAGE_TYPE_2D;
-    imageCI.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+    imageCI.format = evalTexelFormatInternal(_gpuObject.getTexelFormat(), backend.getContext());
     imageCI.extent.width = _gpuObject.getWidth();
     imageCI.extent.height = _gpuObject.getHeight();
     imageCI.extent.depth = 1;
@@ -258,7 +258,7 @@ VkDescriptorImageInfo VKAttachmentTexture::getDescriptorImageInfo() {
         viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewCreateInfo.pNext = nullptr;
         viewCreateInfo.viewType = getVKTextureType(_gpuObject);
-        viewCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+        viewCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat(), backend->getContext());
         if (viewCreateInfo.format == VK_FORMAT_D24_UNORM_S8_UINT) {
             //viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 };
             // VKTODO: both VK_IMAGE_ASPECT_DEPTH_BIT and VK_IMAGE_ASPECT_STENCIL_BIT cannot be set at the same time, but I'm not sure which one to set.
@@ -282,7 +282,7 @@ VkDescriptorImageInfo VKAttachmentTexture::getDescriptorImageInfo() {
 void VKStrictResourceTexture::createTexture(VKBackend &backend) {
     VkImageCreateInfo imageCI = vks::initializers::imageCreateInfo();
     imageCI.imageType = VK_IMAGE_TYPE_2D;
-    imageCI.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+    imageCI.format = evalTexelFormatInternal(_gpuObject.getTexelFormat(), backend.getContext());
     imageCI.extent.width = _gpuObject.getWidth();
     imageCI.extent.height = _gpuObject.getHeight();
     imageCI.extent.depth = 1;
@@ -326,8 +326,8 @@ void VKStrictResourceTexture::createTexture(VKBackend &backend) {
             !(texelFormat.getSemantic() == gpu::BGRA || texelFormat.getSemantic() == gpu::SBGRA)) {
             needsBGRToRGB = true;
         }
-        auto storedVkFormat = evalTexelFormatInternal(_gpuObject.getStoredMipFormat());
-        auto texelVkFormat = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+        auto storedVkFormat = evalTexelFormatInternal(_gpuObject.getStoredMipFormat(), backend.getContext());
+        auto texelVkFormat = evalTexelFormatInternal(_gpuObject.getTexelFormat(), backend.getContext());
         if (storedFormat.getDimension() != texelFormat.getDimension()) {
             if (storedFormat.getDimension() == gpu::VEC3 && texelFormat.getDimension() == gpu::VEC4) {
                 // It's best to make sure that this is not happening in unexpected cases and causing bugs
@@ -461,7 +461,7 @@ void VKStrictResourceTexture::transfer(VKBackend &backend) {
     // Create optimal tiled target image
     VkImageCreateInfo imageCreateInfo = vks::initializers::imageCreateInfo();
     imageCreateInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+    imageCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat(), backend.getContext());
     imageCreateInfo.mipLevels = _transferData.mips.size();
     imageCreateInfo.arrayLayers = 1;
     imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -544,7 +544,7 @@ void VKStrictResourceTexture::postTransfer(VKBackend &backend) {
     viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewCreateInfo.pNext = nullptr;
     viewCreateInfo.viewType = getVKTextureType(_gpuObject);
-    viewCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+    viewCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat(), backend.getContext());
     viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     viewCreateInfo.subresourceRange.levelCount = _transferData.mips.size();
     if (_gpuObject.getType() == Texture::TEX_CUBE) {
@@ -572,14 +572,21 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
 
     VkImageCreateInfo imageCI = vks::initializers::imageCreateInfo();
     imageCI.imageType = VK_IMAGE_TYPE_2D;
-    imageCI.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+    imageCI.format = evalTexelFormatInternal(_gpuObject.getTexelFormat(), backend.getContext());
     imageCI.extent.width = _gpuObject.getWidth();
     imageCI.extent.height = _gpuObject.getHeight();
     imageCI.extent.depth = 1;
     imageCI.arrayLayers = _gpuObject.isArray() ? _gpuObject.getNumSlices() : 1;
     imageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageCI.samples = VK_SAMPLE_COUNT_1_BIT;
-    imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+    if (device->properties.vendorID == VULKAN_VENDOR_ID_AMD) {
+        // VKTODO: this lowers performance, so we should blit it into image with VK_IMAGE_TILING_OPTIMAL while generating mipmaps in the future.
+        // VK_IMAGE_TILING_LINEAR is required on AMD GPUs on Linux.
+        imageCI.tiling = VK_IMAGE_TILING_LINEAR;
+    } else {
+        // VK_IMAGE_TILING_OPTIMAL is required on non-AMD GPUs.
+        imageCI.tiling = VK_IMAGE_TILING_OPTIMAL;
+    }
     imageCI.usage = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     if (_gpuObject.getType() == Texture::TEX_CUBE) {
         imageCI.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
@@ -671,10 +678,22 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
 
     VK_CHECK_RESULT(vkCreateImage(device->logicalDevice, &imageCI, nullptr, &_vkImage));
 
-    VkMemoryRequirements memoryRequirements;
-    vkGetImageMemoryRequirements(device->logicalDevice, _vkImage, &memoryRequirements);
+    VkImageMemoryRequirementsInfo2 vkImageMemoryRequirementsInfo2 { };
+    vkImageMemoryRequirementsInfo2.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_REQUIREMENTS_INFO_2;
+    vkImageMemoryRequirementsInfo2.image = _vkImage;
+    vkImageMemoryRequirementsInfo2.pNext = nullptr;
 
-    _sharedMemorySize = memoryRequirements.size;
+    VkMemoryRequirements2 memoryRequirements2{ };
+    memoryRequirements2.sType = VK_STRUCTURE_TYPE_MEMORY_REQUIREMENTS_2;
+    vkGetImageMemoryRequirements2(device->logicalDevice, &vkImageMemoryRequirementsInfo2, &memoryRequirements2);
+
+    _sharedMemorySize = memoryRequirements2.memoryRequirements.size;
+
+    VkMemoryDedicatedAllocateInfo vkMemoryDedicatedAllocateInfo{ };
+    vkMemoryDedicatedAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
+    vkMemoryDedicatedAllocateInfo.image = _vkImage;
+    vkMemoryDedicatedAllocateInfo.buffer = VK_NULL_HANDLE;
+    vkMemoryDedicatedAllocateInfo.pNext = nullptr;
 
     VkExportMemoryAllocateInfo exportMemoryAllocateInfo {};
     exportMemoryAllocateInfo.sType = VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO;
@@ -683,10 +702,16 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
 #else
     exportMemoryAllocateInfo.handleTypes = VK_EXTERNAL_MEMORY_HANDLE_TYPE_OPAQUE_FD_BIT;
 #endif
+
+    // This is required on AMD GPUs, but breaks UI on other GPUs.
+    if (device->properties.vendorID == VULKAN_VENDOR_ID_AMD) {
+        exportMemoryAllocateInfo.pNext = &vkMemoryDedicatedAllocateInfo;
+    }
+
     VkMemoryAllocateInfo memoryAllocateInfo {};
     memoryAllocateInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    memoryAllocateInfo.allocationSize = memoryRequirements.size;
-    memoryAllocateInfo.memoryTypeIndex = device->getMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    memoryAllocateInfo.allocationSize = memoryRequirements2.memoryRequirements.size;
+    memoryAllocateInfo.memoryTypeIndex = device->getMemoryType(memoryRequirements2.memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     memoryAllocateInfo.pNext = &exportMemoryAllocateInfo;
 
     VK_CHECK_RESULT(vkAllocateMemory(device->logicalDevice, &memoryAllocateInfo, nullptr, &_sharedMemory));
@@ -754,7 +779,7 @@ void VKExternalTexture::initGL(gpu::vk::VKBackend& backend) {
 
     glCreateTextures(GL_TEXTURE_2D, 1, &_openGLId);
     ::gl::checkGLError("GL to VK");
-    Q_ASSERT(evalTexelFormatInternal(_gpuObject.getTexelFormat()) == VK_FORMAT_R8G8B8A8_UNORM);
+    Q_ASSERT(evalTexelFormatInternal(_gpuObject.getTexelFormat(), backend.getContext()) == VK_FORMAT_R8G8B8A8_UNORM);
     glTextureStorageMem2DEXT(_openGLId, 1, GL_RGBA8, _gpuObject.getWidth(), _gpuObject.getHeight(), _openGLMemoryObject, 0);
     ::gl::checkGLError("GL to VK");
     // Can be enabled for testing
@@ -797,7 +822,7 @@ void VKExternalTexture::postTransfer(VKBackend &backend) {
     viewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     viewCreateInfo.pNext = nullptr;
     viewCreateInfo.viewType = getVKTextureType(_gpuObject);
-    viewCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat());
+    viewCreateInfo.format = evalTexelFormatInternal(_gpuObject.getTexelFormat(), backend.getContext());
     viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
     viewCreateInfo.subresourceRange.levelCount = 1;
     if (_gpuObject.getType() == Texture::TEX_CUBE) {

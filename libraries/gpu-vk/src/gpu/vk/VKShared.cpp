@@ -14,13 +14,14 @@ Q_LOGGING_CATEGORY(gpu_vk_logging, "hifi.gpu.vk")
 Q_LOGGING_CATEGORY(trace_gpu_vk, "trace.gpu.vk")
 Q_LOGGING_CATEGORY(trace_gpu_vk_detail, "trace.gpu.vk.detail")
 
-VkFormat gpu::vk::evalTexelFormatInternal(const gpu::Element& dstFormat) {
+VkFormat gpu::vk::evalTexelFormatInternal(const gpu::Element& dstFormat, const vks::Context &context) {
     // VKTODO: add BGRA and SBGRA
     VkFormat result = VK_FORMAT_R8G8B8_UNORM;
     switch (dstFormat.getDimension()) {
         case gpu::SCALAR:
         {
             switch (dstFormat.getSemantic()) {
+                case gpu::RAW:
                 case gpu::RED:
                 case gpu::RGB:
                 case gpu::RGBA:
@@ -123,7 +124,7 @@ VkFormat gpu::vk::evalTexelFormatInternal(const gpu::Element& dstFormat) {
 
                 case gpu::DEPTH_STENCIL:
                     // The only possible depth stencil format
-                    result = VK_FORMAT_D24_UNORM_S8_UINT;
+                    result = context.getBestDepthStencilFormat();
                     break;
 
                 default:

@@ -17,6 +17,8 @@
 #include <assert.h>
 #include <exception>
 
+constexpr int VULKAN_VENDOR_ID_AMD = 0x1002;
+
 namespace vks
 {
 struct VulkanDevice

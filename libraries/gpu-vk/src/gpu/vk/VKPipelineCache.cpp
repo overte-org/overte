@@ -158,7 +158,7 @@ Cache::PipelineLayout Cache::Pipeline::getPipelineAndDescriptorLayout(const vks:
     return layout;
 }
 
-Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffer* framebuffer) const {
+Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffer* framebuffer, const vks::Context &context) const {
     RenderpassKey result;
     if (!framebuffer) {
         result.emplace_back(VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED); // VKTODO: this is definitely wrong, why is it that way?
@@ -176,7 +176,7 @@ Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffe
                         layout = attachmentTexture->getVkImageLayout();
                     }
                 }
-                result.emplace_back(evalTexelFormatInternal(attachment._texture->getTexelFormat()), layout);
+                result.emplace_back(evalTexelFormatInternal(attachment._texture->getTexelFormat(), context), layout);
             }
         }
         if (framebuffer->hasDepthStencil()) {
@@ -190,7 +190,7 @@ Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffe
                     }
                 }
             }
-            result.emplace_back(evalTexelFormatInternal(framebuffer->getDepthStencilBufferFormat()), layout);
+            result.emplace_back(evalTexelFormatInternal(framebuffer->getDepthStencilBufferFormat(), context), layout);
         }
     }
     return result;
@@ -199,7 +199,7 @@ Cache::Pipeline::RenderpassKey Cache::Pipeline::getRenderPassKey(gpu::Framebuffe
 VkRenderPass Cache::Pipeline::getRenderPass(const vks::Context& context) {
     const auto framebuffer = gpu::acquire(this->framebuffer);
 
-    RenderpassKey key = getRenderPassKey(framebuffer);
+    RenderpassKey key = getRenderPassKey(framebuffer, context);
     auto itr = _renderPassMap.find(key);
     if (itr == _renderPassMap.end()) {
         auto &renderBuffers = framebuffer->getRenderBuffers();
@@ -357,9 +357,9 @@ std::string Cache::Pipeline::getStridesKey() const {
 }
 
 // VKTODO: use binary key if performance with text key is not good enough
-std::string Cache::Pipeline::getKey() const {
+std::string Cache::Pipeline::getKey(const vks::Context& context) const {
     const auto framebuffer = gpu::acquire(this->framebuffer);
-    RenderpassKey renderpassKey = getRenderPassKey(framebuffer);
+    RenderpassKey renderpassKey = getRenderPassKey(framebuffer, context);
     const gpu::Pipeline& pipeline = *gpu::acquire(this->pipeline);
     const gpu::State& state = *pipeline.getState();
     const auto& vertexShader = pipeline.getProgram()->getShaders()[0]->getSource();
@@ -406,7 +406,7 @@ VkShaderModule Cache::getShaderModule(const vks::Context& context, const shader:
 }
 
 Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
-    auto key = pipelineState.getKey();
+    auto key = pipelineState.getKey(context);
     auto pipelineIterator = pipelineMap.find(key);
     if (pipelineIterator != pipelineMap.end()) {
         return pipelineIterator->second;
@@ -541,12 +541,30 @@ Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
             isAttributeSlotOccupied[slot] = true;
 
             attributeDescriptions.push_back(
-                { slot, attribute._channel, evalTexelFormatInternal(attribute._element), (uint32_t)attribute._offset });
+                { slot, attribute._channel, evalTexelFormatInternal(attribute._element, context), (uint32_t)attribute._offset });
         }
 
         if (!colorFound && vertexReflection.validInput(Stream::COLOR)) {
             attributeDescriptions.push_back({ Stream::COLOR, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
         }
+
+        if (!isAttributeSlotOccupied[Stream::TANGENT] && vertexReflection.validInput(Stream::TANGENT)) {
+            attributeDescriptions.push_back({ Stream::TANGENT, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
+        }
+
+        // VKTODO: is it safe to provide empty skin cluster data?
+        // It would be used for meshes with blendshapes but no skinning.
+        // Since blendshapes and skinning use the same shader, currently I added
+        // a workaround that disables blendshapes on meshes with blendshapes but no skinning.
+        /*if (!isAttributeSlotOccupied[Stream::SKIN_CLUSTER_INDEX] && vertexReflection.validInput(Stream::SKIN_CLUSTER_INDEX)) {
+            // VKTODO: provide valid format here.
+            attributeDescriptions.push_back({ Stream::SKIN_CLUSTER_INDEX, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
+        }
+
+        if (!isAttributeSlotOccupied[Stream::SKIN_CLUSTER_WEIGHT] && vertexReflection.validInput(Stream::SKIN_CLUSTER_WEIGHT)) {
+            // VKTODO: provide valid format here.
+            attributeDescriptions.push_back({ Stream::SKIN_CLUSTER_WEIGHT, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
+        }*/
 
         if (!isAttributeSlotOccupied[Stream::TEXCOORD0] && vertexReflection.validInput(Stream::TEXCOORD0)) {
             attributeDescriptions.push_back({ Stream::TEXCOORD0, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
@@ -554,6 +572,35 @@ Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
 
         if (!isAttributeSlotOccupied[Stream::TEXCOORD1] && vertexReflection.validInput(Stream::TEXCOORD1)) {
             attributeDescriptions.push_back({ Stream::TEXCOORD1, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
+        }
+
+        if (!isAttributeSlotOccupied[Stream::TEXCOORD2] && vertexReflection.validInput(Stream::TEXCOORD2)) {
+            attributeDescriptions.push_back({ Stream::TEXCOORD2, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
+        }
+
+        if (!isAttributeSlotOccupied[Stream::TEXCOORD3] && vertexReflection.validInput(Stream::TEXCOORD3)) {
+            attributeDescriptions.push_back({ Stream::TEXCOORD3, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
+        }
+
+        if (!isAttributeSlotOccupied[Stream::TEXCOORD4] && vertexReflection.validInput(Stream::TEXCOORD4)) {
+            attributeDescriptions.push_back({ Stream::TEXCOORD4, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
+        }
+
+        // VKTODO: Fade inputs are not set for shapes drawn with drawIndexed.
+        // I currently don't know how to fix it, so I added a workaround.
+        if (!isAttributeSlotOccupied[GPU_ATTR_FADEDATA5] && vertexReflection.validInput(GPU_ATTR_FADEDATA5)) {
+            // VKTODO: provide valid format here.
+            attributeDescriptions.push_back({ GPU_ATTR_FADEDATA5, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
+        }
+
+        if (!isAttributeSlotOccupied[GPU_ATTR_FADEDATA6] && vertexReflection.validInput(GPU_ATTR_FADEDATA6)) {
+            // VKTODO: provide valid format here.
+            attributeDescriptions.push_back({ GPU_ATTR_FADEDATA6, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
+        }
+
+        if (!isAttributeSlotOccupied[GPU_ATTR_FADEDATA7] && vertexReflection.validInput(GPU_ATTR_FADEDATA7)) {
+            // VKTODO: provide valid format here.
+            attributeDescriptions.push_back({ GPU_ATTR_FADEDATA7, 0, VK_FORMAT_R8G8B8A8_UNORM, 0 });
         }
 
         // Explicitly add the draw call info slot if required
