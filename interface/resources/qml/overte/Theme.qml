@@ -29,6 +29,8 @@ QtObject {
 
     readonly property int fontPixelSize: 18
     readonly property int fontPixelSizeSmall: 14
+    readonly property int fontPixelSizeXSmall: 11
+
     readonly property real borderRadius: 4.0
     readonly property real borderWidth: 2.0
     readonly property real borderWidthFocused: highContrast ? borderWidth * 2 : borderWidth
@@ -78,6 +80,7 @@ QtObject {
         readonly property color buttonDestructive: "#823d3d"
         readonly property color buttonAdd:         "#3a753a"
         readonly property color buttonInfo:        "#1e6591"
+        readonly property color buttonFavorite:    "#b28c01"
 
         readonly property color statusOffline:   "#808080"
         readonly property color statusFriendsOnly: "orange"
@@ -89,6 +92,16 @@ QtObject {
 
         readonly property color activeWindowTitleBg: Qt.darker("#403849", 1.2)
         readonly property color activeWindowTitleFg: text
+
+        readonly property color userCountEmpty: "#b0b0b0"
+        readonly property color userCountActive: "#22ef22"
+        readonly property color userCountFull: "#ef2f1f"
+
+        readonly property color appIconBackground: "#202020"
+        readonly property color appInstalledRunning: statusContacts
+        readonly property color appInstalledNotRunning: statusFriendsOnly
+        readonly property color appNotInstalledRunning: "red"
+        readonly property color appNotInstalled: statusOffline
     }
 
     readonly property var paletteLight: QtObject {
@@ -111,6 +124,7 @@ QtObject {
         readonly property color buttonDestructive: "#fccccc"
         readonly property color buttonAdd:         "#bef4c5"
         readonly property color buttonInfo:        "#bfe5fc"
+        readonly property color buttonFavorite:    "#eddda6"
 
         readonly property color statusOffline:   "#808080"
         readonly property color statusFriendsOnly: "brown"
@@ -122,6 +136,16 @@ QtObject {
 
         readonly property color activeWindowTitleBg: "#000080"
         readonly property color activeWindowTitleFg: "white"
+
+        readonly property color userCountEmpty: "#303030"
+        readonly property color userCountActive: "#008000"
+        readonly property color userCountFull: "#800000"
+
+        readonly property color appIconBackground: "#202020"
+        readonly property color appInstalledRunning: "#00ff00"
+        readonly property color appInstalledNotRunning: "#ffaf00"
+        readonly property color appNotInstalledRunning: "red"
+        readonly property color appNotInstalled: statusOffline
     }
 
     readonly property var paletteDarkContrast: QtObject {
@@ -144,6 +168,7 @@ QtObject {
         readonly property color buttonDestructive: "#600000"
         readonly property color buttonAdd:         "#006000"
         readonly property color buttonInfo:        "#000080"
+        readonly property color buttonFavorite:    "#606000"
 
         readonly property color statusOffline:   "#808080"
         readonly property color statusFriendsOnly: "orange"
@@ -155,6 +180,16 @@ QtObject {
 
         readonly property color activeWindowTitleBg: base
         readonly property color activeWindowTitleFg: "white"
+
+        readonly property color userCountEmpty: text
+        readonly property color userCountActive: "#00ff00"
+        readonly property color userCountFull: "#ff00ff"
+
+        readonly property color appIconBackground: "black"
+        readonly property color appInstalledRunning: statusContacts
+        readonly property color appInstalledNotRunning: statusFriendsOnly
+        readonly property color appNotInstalledRunning: "red"
+        readonly property color appNotInstalled: statusOffline
     }
 
     readonly property var paletteLightContrast: QtObject {
@@ -177,6 +212,7 @@ QtObject {
         readonly property color buttonDestructive: "#ffdddd"
         readonly property color buttonAdd:         "#ddffdd"
         readonly property color buttonInfo:        "#ddffff"
+        readonly property color buttonFavorite:    "#ffffdd"
 
         readonly property color statusOffline:   "#808080"
         readonly property color statusFriendsOnly: "brown"
@@ -188,5 +224,15 @@ QtObject {
 
         readonly property color activeWindowTitleBg: base
         readonly property color activeWindowTitleFg: "black"
+
+        readonly property color userCountEmpty: text
+        readonly property color userCountActive: "#006000"
+        readonly property color userCountFull: "#600060"
+
+        readonly property color appIconBackground: "black"
+        readonly property color appInstalledRunning: "#00ff00"
+        readonly property color appInstalledNotRunning: "#ffaf00"
+        readonly property color appNotInstalledRunning: "red"
+        readonly property color appNotInstalled: statusOffline
     }
 }

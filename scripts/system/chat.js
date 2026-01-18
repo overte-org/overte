@@ -16,7 +16,7 @@ let settings = Settings.getValue("Chat", {
     joinNotifications: true,
     broadcastEnabled: false,
     chatBubbles: true,
-    desktopWindow: true,
+    desktopWindow: false,
 });
 
 function updateSetting(name, value) {
@@ -134,7 +134,6 @@ const appButton = {
         text: "CHAT",
     },
 
-    qmlSource: "overte/settings/Settings.qml",
     button: null,
 
     onClicked() {
@@ -148,7 +147,11 @@ const appButton = {
 };
 
 let appWindow;
-recreateAppWindow();
+
+// postpone the window creation until there's a chat event,
+// if it's opened too quickly then it can spawn visible
+// rather than hidden
+//recreateAppWindow();
 
 appButton.button = SystemTablet.addButton(appButton.buttonData);
 appButton.button.clicked.connect(() => appButton.onClicked());
@@ -186,6 +189,7 @@ AvatarManager.avatarAddedEvent.connect(uuid => {
     appWindow.sendToQml(JSON.stringify({
         event: "user_joined",
         name: AvatarManager.getAvatar(uuid).sessionDisplayName,
+        timestamp: Date.now(),
     }));
 });
 
@@ -195,6 +199,7 @@ AvatarManager.avatarRemovedEvent.connect(uuid => {
     appWindow.sendToQml(JSON.stringify({
         event: "user_left",
         name: AvatarManager.getAvatar(uuid).sessionDisplayName,
+        timestamp: Date.now(),
     }));
 });
 

@@ -23,15 +23,20 @@ Rectangle {
         let tmp = [];
 
         for (const [name, avatar] of Object.entries(data)) {
-            // TODO: replace this kinda hacky thing we currently do
-            // with real URLs stored either in the FST or bookmark entry
-            let iconUrl = new URL(avatar.avatarUrl); 
-            iconUrl.pathname = iconUrl.pathname.replace(/[.](?:fst|glb|fbx|vrm)$/i, ".jpg");
+            let iconUrl;
+
+            if (avatar.avatarIcon !== "") {
+                iconUrl = avatar.avatarIcon;
+            } else {
+                iconUrl = new URL(avatar.avatarUrl);
+                iconUrl.pathname = iconUrl.pathname.replace(/[.](?:fst|glb|fbx|vrm)$/i, ".jpg");
+                iconUrl = iconUrl.toString();
+            }
 
             tmp.push({
                 name: name,
                 avatarUrl: avatar.avatarUrl,
-                iconUrl: iconUrl.toString(),
+                iconUrl: iconUrl,
                 description: "",
             });
         }
@@ -122,6 +127,9 @@ Rectangle {
         GridView {
             Layout.fillWidth: true
             Layout.fillHeight: true
+
+            // QT6TODO: remove this once mouse inputs work properly
+            interactive: false
 
             clip: true
             // scales the cells to never leave dead space, but looks bad when scaling window
@@ -222,6 +230,9 @@ Rectangle {
         editDialog.avatarName = avatarModel[index].name;
         editDialog.avatarUrl = avatarModel[index].avatarUrl;
         editDialog.avatarDescription = avatarModel[index].description;
+        avatarNameField.text = editDialog.avatarName;
+        avatarUrlField.text = editDialog.avatarUrl;
+        avatarDescriptionField.text = editDialog.avatarDescription;
         editDialog.open();
     }
 
@@ -250,11 +261,20 @@ Rectangle {
         signal rejected
 
         onAccepted: {
-            if (editExisting) {
+            const prevData = AvatarBookmarks.getBookmark(editDialog.avatarName);
+
+            if (editDialog.avatarName !== avatarNameField.text) {
                 AvatarBookmarks.removeBookmark(editDialog.avatarName);
             }
 
-            AvatarBookmarks.addBookmark(avatarNameField.text, editDialog.avatarUrl);
+            // Qt's V4 doesn't support { ...spread } syntax :(
+            let newData = prevData;
+
+            if (avatarUrlField.text !== "") {
+                newData.avatarUrl = avatarUrlField.text;
+            }
+
+            AvatarBookmarks.setBookmarkData(avatarNameField.text, newData);
             close();
         }
 
@@ -337,6 +357,7 @@ Rectangle {
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1
 
+                    backgroundColor: Overte.Theme.paletteActive.buttonAdd
                     enabled: avatarNameField.text !== ""
                     text: qsTr("Add Current")
 

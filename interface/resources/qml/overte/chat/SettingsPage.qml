@@ -21,7 +21,7 @@ Column {
 
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            text: qsTr("Chat Settings")
+            text: qsTr("Settings - Chat")
         }
 
         Overte.Button {
@@ -66,19 +66,6 @@ Column {
         onValueChanged: {
             root.settingDesktopWindow = value;
             root.sendSettingsUpdate();
-        }
-    }
-
-    RowLayout {
-        anchors.left: parent.left
-        anchors.right: parent.right
-
-        Overte.Button {
-            Layout.alignment: Qt.AlignHCenter
-            text: qsTr("Clear History")
-            backgroundColor: Overte.Theme.paletteActive.buttonDestructive
-
-            onClicked: { root.messagesCleared(); }
         }
     }
 }
