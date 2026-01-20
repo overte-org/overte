@@ -41,6 +41,8 @@ TextEntityItem::TextEntityItem(const EntityItemID& entityItemID) : EntityItem(en
     _type = EntityTypes::Text;
 }
 
+// FIXME: The text renderer supports using dimensions.z as the text depth offset,
+// but this forces it to always be 1cm
 void TextEntityItem::setUnscaledDimensions(const glm::vec3& value) {
     const float TEXT_ENTITY_ITEM_FIXED_DEPTH = 0.01f;
     // NOTE: Text Entities always have a "depth" of 1cm.
