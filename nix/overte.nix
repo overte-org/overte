@@ -29,7 +29,7 @@
   openxr-loader,
   SDL2,
   libopus,
-  libsForQt5,
+  qt6Packages,
   libv8,
 
   # tools for shader compilation
@@ -52,7 +52,7 @@ stdenv.mkDerivation {
     cmake
     pkg-config
     python3
-    libsForQt5.wrapQtAppsHook
+    qt6Packages.wrapQtAppsHook
     nodejs
     autoPatchelfHook
   ];
@@ -60,20 +60,16 @@ stdenv.mkDerivation {
   # TODO: make dependencies minimal for !buildClient
   buildInputs =
     builtins.attrValues {
-      inherit (libsForQt5)
+      inherit (qt6Packages)
         qtbase
         qtmultimedia
         qtdeclarative
         qtwebsockets
         qtsvg
         quazip
-        ;
-      inherit (libsForQt5.qt5)
         qtwebchannel
         qtwebengine
-        qtxmlpatterns
-        qtquickcontrols2
-        qtgraphicaleffects
+        qt5compat
         ;
     }
     ++ [
@@ -120,6 +116,7 @@ stdenv.mkDerivation {
   dontWrapQtApps = true;
 
   # TODO: remove set QT_PLUGIN_PATH after qt6 update
+  # TODO: remote set QT_QPA_PLATOFORM, when wayland works
   installPhase = ''
     runHook preInstall
 
@@ -140,6 +137,7 @@ stdenv.mkDerivation {
       ln -s "$I"/interface $out/bin/overte-client
       makeWrapper "$I"/interface $out/bin/overte-client \
         --set QT_PLUGIN_PATH ''' \
+        --set QT_QPA_PLATFORM 'xcb' \
         "''${qtWrapperArgs[@]}"
     ''
   )

@@ -24,14 +24,15 @@
           }:
           {
             packages = {
-              glad = pkgs.callPackage ./nix/glad.nix { };
-              etc2comp = pkgs.callPackage ./nix/etc2comp.nix { };
+              cmake3 = pkgs.callPackage ./nix/cmake3 { };
+              glad = pkgs.callPackage ./nix/glad.nix { cmake = self'.packages.cmake3; };
+              etc2comp = pkgs.callPackage ./nix/etc2comp.nix { cmake = self'.packages.cmake3; };
 
               cgltf = pkgs.callPackage ./nix/cgltf.nix { };
 
               artery-font-format = pkgs.callPackage ./nix/artery-font-format.nix { };
 
-              polyvox = pkgs.callPackage ./nix/polyvox.nix { };
+              polyvox = pkgs.callPackage ./nix/polyvox.nix { cmake = self'.packages.cmake3; };
 
               gif_creator = pkgs.callPackage ./nix/gif_creator.nix { };
 
@@ -55,7 +56,7 @@
               # TODO: update/remove when overte updates to more modern version
               draco = pkgs.callPackage ./nix/draco.nix { };
 
-              glm = pkgs.callPackage ./nix/glm.nix { };
+              glm = pkgs.callPackage ./nix/glm.nix { cmake = self'.packages.cmake3; };
 
               default = self'.packages.overte-full;
             };
@@ -67,8 +68,10 @@
               ];
               inputsFrom = [ self'.packages.overte-full ];
 
-              buildInputs = [ pkgs.libsForQt5.full ];
+              buildInputs = [ (pkgs.qt6.env "overte-devenv" [ self'.packages.overte-full.buildInputs ]) ];
 
+              # TODO: remote set QT_QPA_PLATOFORM, when wayland works
+              QT_QPA_PLATFORM = "xcb";
               inherit (self'.packages.overte-full)
                 NVTT_DIR
                 CXXFLAGS
