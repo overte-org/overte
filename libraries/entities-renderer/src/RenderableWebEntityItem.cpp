@@ -451,7 +451,7 @@ void WebEntityRenderer::destroyWebSurface() {
 }
 
 glm::vec2 WebEntityRenderer::getWindowSize(const TypedEntityPointer& entity) const {
-    glm::vec2 dims = glm::vec2(entity->getScaledDimensions());
+    glm::vec2 dims = glm::vec2(entity->getUnscaledDimensions());
     dims *= METERS_TO_INCHES * _dpi;
 
     // ensure no side is never larger then MAX_WINDOW_SIZE
