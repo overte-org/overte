@@ -47,7 +47,29 @@
 stdenv.mkDerivation {
   pname = "overte";
   version = "unstable";
-  src = ./..;
+  src =
+    let
+      fs = lib.fileset;
+    in
+    fs.toSource {
+      root = ./..;
+      fileset = fs.intersection (fs.gitTracked ./..) (
+        fs.unions [
+          ./../interface
+          ./../plugins
+          ./../tools
+          ./../domain-server
+          ./../assignment-client
+          ./../server-console
+          ./../ice-server
+          ./../cmake
+          ./../libraries
+          ./../scripts
+          ./../CMakeLists.txt
+          ./../LICENSE
+        ]
+      );
+    };
   nativeBuildInputs = [
     cmake
     pkg-config
