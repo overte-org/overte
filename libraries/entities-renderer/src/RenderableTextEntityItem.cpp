@@ -389,10 +389,10 @@ void entities::TextPayload::render(RenderArgs* args) {
         _prevRenderTransform = transform;
     }
 
-    bool fading = !forward && ShapeKey(args->_itemShapeKey).isFaded() && args->_shapePipeline != nullptr && args->_batch != nullptr;
+    bool fading = !forward && ShapeKey(args->_itemShapeKey).isFaded() && args->_batch != nullptr;
     if (fading) {
-        FadeEffect::getBatchSetter()(*args->_shapePipeline, *args->_batch, args);
-        FadeEffect::getItemUniformSetter()(*args->_shapePipeline, args, AbstractViewStateInterface::instance()->getMain3DScene()->getItem(textRenderable->_textRenderID));
+        FadeEffect::getBatchSetter()(nullptr, *args->_batch, args);
+        FadeEffect::getItemUniformSetter()(nullptr, args, AbstractViewStateInterface::instance()->getMain3DScene()->getItem(textRenderable->_textRenderID));
     }
 
     glm::vec2 bounds = glm::vec2(dimensions.x - (textRenderable->_leftMargin + textRenderable->_rightMargin), dimensions.y - (textRenderable->_topMargin + textRenderable->_bottomMargin));
