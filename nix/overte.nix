@@ -96,6 +96,7 @@ stdenv.mkDerivation {
         qtxmlpatterns
         qtquickcontrols2
         qtgraphicaleffects
+        qtx11extras
         ;
     }
     ++ [
