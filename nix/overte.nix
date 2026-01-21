@@ -47,7 +47,29 @@
 stdenv.mkDerivation {
   pname = "overte";
   version = "unstable";
-  src = ./..;
+  src =
+    let
+      fs = lib.fileset;
+    in
+    fs.toSource {
+      root = ./..;
+      fileset = fs.intersection (fs.gitTracked ./..) (
+        fs.unions [
+          ./../interface
+          ./../plugins
+          ./../tools
+          ./../domain-server
+          ./../assignment-client
+          ./../server-console
+          ./../ice-server
+          ./../cmake
+          ./../libraries
+          ./../scripts
+          ./../CMakeLists.txt
+          ./../LICENSE
+        ]
+      );
+    };
   nativeBuildInputs = [
     cmake
     pkg-config
@@ -74,6 +96,7 @@ stdenv.mkDerivation {
         qtxmlpatterns
         qtquickcontrols2
         qtgraphicaleffects
+        qtx11extras
         ;
     }
     ++ [
@@ -119,7 +142,7 @@ stdenv.mkDerivation {
 
   dontWrapQtApps = true;
 
-  # TODO: remove set QT_PLUGIN_PATH after qt6 update
+  # TODO: remove unset QT_PLUGIN_PATH after qt6 update
   installPhase = ''
     runHook preInstall
 
@@ -139,7 +162,7 @@ stdenv.mkDerivation {
       cp interface/interface "$I"/
       ln -s "$I"/interface $out/bin/overte-client
       makeWrapper "$I"/interface $out/bin/overte-client \
-        --set QT_PLUGIN_PATH ''' \
+        --unset QT_PLUGIN_PATH \
         "''${qtWrapperArgs[@]}"
     ''
   )
