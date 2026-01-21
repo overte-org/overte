@@ -240,6 +240,12 @@ void setupPreferences() {
         preferences->addPreference(delaySlider);
     }
 
+    {
+        auto getter = []() -> float { return DependencyManager::get<PickScriptingInterface>()->getHandLaserPassive(); };
+        auto setter = [](bool value) { DependencyManager::get<PickScriptingInterface>()->setHandLaserPassive(value); };
+        preferences->addPreference(new CheckPreference(UI_CATEGORY, "Always Show Lasers", getter, setter));
+    }
+
     static const QString VIEW_CATEGORY { "View" };
     {
         auto getter = [myAvatar]()->float { return myAvatar->getRealWorldFieldOfView(); };

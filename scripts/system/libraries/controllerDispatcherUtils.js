@@ -102,6 +102,8 @@ var PICK_MAX_DISTANCE = 500; // max length of pick-ray
 var DEFAULT_SEARCH_SPHERE_DISTANCE = 1000; // how far from camera to search intersection?
 var NEAR_GRAB_PICK_RADIUS = 0.25; // radius used for search ray vs object for near grabbing.
 
+var COLORS_GRAB_SEARCHING_PASSIVE = { red: 144, green: 144, blue: 144 };
+var COLORS_GRAB_SEARCHING_PASSIVE_INTERACTIVE = { red: 144, green: 255, blue: 144 };
 var COLORS_GRAB_SEARCHING_HALF_SQUEEZE = { red: 10, green: 10, blue: 255 };
 var COLORS_GRAB_SEARCHING_FULL_SQUEEZE = { red: 250, green: 10, blue: 10 };
 var COLORS_GRAB_DISTANCE_HOLD = { red: 238, green: 75, blue: 214 };
