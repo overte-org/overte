@@ -41,9 +41,21 @@ Item {
         }
 
         HifiAudio.MicBarApplication {
+            id: muteBar
+
             anchors {
                 left: parent.left
                 leftMargin: 30
+                verticalCenter: parent.verticalCenter
+            }
+        }
+
+        SitStandToggle {
+            visible: HMD.active
+
+            anchors {
+                left: muteBar.right
+                leftMargin: 10
                 verticalCenter: parent.verticalCenter
             }
         }
