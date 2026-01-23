@@ -512,24 +512,6 @@ void setupPreferences() {
     }
     {
         IntPreference::Getter getter = [myAvatar]() -> int {
-            return static_cast<int>(myAvatar->getAllowAvatarStandingPreference());
-        };
-
-        IntPreference::Setter setter = [myAvatar](const int& value) {
-            myAvatar->setAllowAvatarStandingPreference(static_cast<MyAvatar::AllowAvatarStandingPreference>(value));
-        };
-
-        auto preference = new RadioButtonsPreference(VR_MOVEMENT, "Allow my avatar to stand", getter, setter);
-        QStringList items;
-        items << "When I'm standing"
-              << "Always";  // Must match the order in MyAvatar::AllowAvatarStandingPreference.
-        assert(items.size() == static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count));
-        preference->setHeading("Allow my avatar to stand:");
-        preference->setItems(items);
-        preferences->addPreference(preference);
-    }
-    {
-        IntPreference::Getter getter = [myAvatar]() -> int {
             return static_cast<int>(myAvatar->getAllowAvatarLeaningPreference());
         };
 

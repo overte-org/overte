@@ -35,6 +35,8 @@
 #include "RenderCommonTask.h"
 #include "RenderHUDLayerTask.h"
 
+#include "BloomEffect.h"
+
 #include "RenderViewTask.h"
 
 namespace ru {
@@ -111,6 +113,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
             const auto& lightFrame = currentStageFrames[0];
             const auto& backgroundFrame = currentStageFrames[1];
             const auto& hazeFrame = currentStageFrames[2];
+            const auto& bloomFrame = currentStageFrames[3];
             const auto& tonemappingFrame = currentStageFrames[4];
             const auto& normalMapAttenuationFrame = currentStageFrames[6];
  
@@ -183,6 +186,10 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
 
     const auto resolveInputs = ResolveFramebuffer::Inputs(scaledPrimaryFramebuffer, newResolvedFramebuffer).asVarying();
     const auto resolvedFramebuffer = task.addJob<ResolveFramebuffer>("Resolve", resolveInputs);
+
+    // Add bloom
+    const auto bloomInputs = BloomEffect::Inputs(deferredFrameTransform, resolvedFramebuffer, bloomFrame, lightingModel).asVarying();
+    task.addJob<BloomEffect>("Bloom", bloomInputs);
 
     const auto destFramebuffer = static_cast<gpu::FramebufferPointer>(nullptr);
 

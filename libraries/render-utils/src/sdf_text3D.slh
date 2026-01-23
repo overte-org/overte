@@ -36,7 +36,7 @@ UNIFORM_BUFFER(0, textParamsBuffer) {
 
 <@func declareEvalSDFSuperSampled()@>
 
-#define TAA_TEXTURE_LOD_BIAS    -3.0
+#define TAA_TEXTURE_LOD_BIAS    0.0
 
 const float interiorCutoff = 0.5;
 const float smoothStrength = 4.0;
