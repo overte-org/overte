@@ -777,7 +777,9 @@ render::ShapePipelinePointer GeometryCache::getShapePipeline(bool textured, bool
     return std::make_shared<render::ShapePipeline>(getSimplePipeline(textured, transparent, unlit, depthBias, false, true, forward, cullFaceMode), nullptr,
         [](const render::ShapePipeline& pipeline, gpu::Batch& batch, render::Args* args) {
             batch.setResourceTexture(gr::Texture::MaterialAlbedo, DependencyManager::get<TextureCache>()->getWhiteTexture());
-            DependencyManager::get<DeferredLightingEffect>()->setupKeyLightBatch(args, batch);
+            auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
+            deferredLightingEffect->setupKeyLightBatch(args, batch);
+            deferredLightingEffect->setupLocalLightsBatch(batch);
         }
     );
 }
@@ -789,7 +791,9 @@ render::ShapePipelinePointer GeometryCache::getFadingShapePipeline(bool textured
     return std::make_shared<render::ShapePipeline>(getSimplePipeline(textured, transparent, unlit, depthBias, true, true, forward, cullFaceMode), nullptr,
         [fadeBatchSetter](const render::ShapePipeline& shapePipeline, gpu::Batch& batch, render::Args* args) {
             batch.setResourceTexture(gr::Texture::MaterialAlbedo, DependencyManager::get<TextureCache>()->getWhiteTexture());
-            DependencyManager::get<DeferredLightingEffect>()->setupKeyLightBatch(args, batch);
+            auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
+            deferredLightingEffect->setupKeyLightBatch(args, batch);
+            deferredLightingEffect->setupLocalLightsBatch(batch);
             fadeBatchSetter(shapePipeline, batch, args);
         },
         fadeItemSetter
