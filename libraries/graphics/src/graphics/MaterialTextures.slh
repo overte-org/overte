@@ -15,7 +15,7 @@
 <@include graphics/ShaderConstants.h@>
 <@include graphics/Material.slh@>
 
-#define TAA_TEXTURE_LOD_BIAS    -1.0
+#define TAA_TEXTURE_LOD_BIAS    0.0
 
 <@if not HIFI_USE_TRIPLANAR@>
 
