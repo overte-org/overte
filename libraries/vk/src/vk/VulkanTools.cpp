@@ -174,6 +174,8 @@ namespace vks
             VkImageLayout oldImageLayout,
             VkImageLayout newImageLayout,
             VkImageSubresourceRange subresourceRange,
+            uint32_t srcQueueFamilyIndex,
+            uint32_t dstQueueFamilyIndex,
             VkPipelineStageFlags srcStageMask,
             VkPipelineStageFlags dstStageMask)
         {
@@ -183,6 +185,8 @@ namespace vks
             imageMemoryBarrier.newLayout = newImageLayout;
             imageMemoryBarrier.image = image;
             imageMemoryBarrier.subresourceRange = subresourceRange;
+            imageMemoryBarrier.srcQueueFamilyIndex = srcQueueFamilyIndex;
+            imageMemoryBarrier.dstQueueFamilyIndex = dstQueueFamilyIndex;
 
             // Source layouts (old)
             // Source access mask controls actions that have to be finished on the old layout
