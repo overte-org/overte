@@ -184,6 +184,6 @@ void main(void) {
             roughness, alpha),
             alpha);
     }
-    packDeferredFragmentTranslucent(_prevPositionCS, normal, color.a, color.rgb, roughness);
+    packDeferredFragmentTranslucentUnlit(color.a, color.rgb);
 <@endif@>
 }
