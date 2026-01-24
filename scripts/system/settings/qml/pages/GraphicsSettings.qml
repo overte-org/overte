@@ -82,12 +82,55 @@ Flickable {
 
         // Rendering Effects
         SettingBoolean {
-            settingText: "Rendering effects";
+            settingText: "Local Lights";
+            settingEnabledCondition: () => { return Render.localLightingEnabled }
+
+            onSettingEnabledChanged: {
+                Render.localLightingEnabled = settingEnabled;
+            }
+        }
+
+        SettingBoolean {
+            settingText: "Bloom";
+            settingEnabledCondition: () => { return Render.bloomEnabled }
+
+            onSettingEnabledChanged: {
+                Render.bloomEnabled = settingEnabled;
+            }
+        }
+
+        SettingBoolean {
+            settingText: "Custom Shaders";
+            settingEnabledCondition: () => { return Render.proceduralMaterialsEnabled}
+
+            onSettingEnabledChanged: {
+                Render.proceduralMaterialsEnabled = settingEnabled;
+            }
+        }
+
+        Text {
+            width: parent.width
+            wrapMode: Text.Wrap
+            font.pixelSize: 16
+            color: "white"
+            text: "Custom shaders are currently always unlit when deferred rendering is disabled."
+        }
+
+        SettingBoolean {
+            settingText: "Deferred Rendering";
             settingEnabledCondition: function () { return Render.renderMethod === 0; }
 
             onSettingEnabledChanged: {
                 Render.renderMethod = settingEnabled ? 0 : 1;
             }
+        }
+
+        Text {
+            width: parent.width
+            wrapMode: Text.Wrap
+            font.pixelSize: 16
+            color: "white"
+            text: "May affect performance, especially on mobile devices. Not compatible with MSAA. Haze is always enabled when not using deferred rendering."
         }
 
         // Rendering Effects sub options
@@ -103,21 +146,6 @@ Flickable {
                     Render.shadowsEnabled = settingEnabled;
                 }
             } 
-
-            SettingBoolean {
-                settingText: "Local Lights";
-                settingEnabledCondition: () => { return Render.renderMethod === 0 }
-            }
-
-            // NOTE: Once local lights have a proper toggle, the SettingBoolean above can be replaced with this one below.
-            // SettingBoolean {
-            //     settingText: "Local Lights";
-            //     settingEnabledCondition: () => { return Render.localLightsEnabled }
-
-            //     onSettingEnabledChanged: {
-            //         Render.localLightsEnabled = settingEnabled;
-            //     }
-            // }
 
             SettingBoolean {
                 settingText: "Ambient Occlusion";
@@ -136,28 +164,67 @@ Flickable {
                     Render.hazeEnabled = settingEnabled;
                 }
             }
+        }
 
-            SettingBoolean {
-                settingText: "Bloom";
-                settingEnabledCondition: () => { return Render.bloomEnabled }
+        SettingSlider {
+            settingText: "Field of View";
+            sliderStepSize: 1;
+            minValue: 20;
+            maxValue: 130;
+            settingValue: Render.verticalFieldOfView.toFixed(1);
+            roundDisplay: 0;
 
-                onSettingEnabledChanged: {
-                    Render.bloomEnabled = settingEnabled;
+            onSliderValueChanged: {
+                Render.verticalFieldOfView = value.toFixed(1);
+            }
+        }
+
+        SettingSlider {
+            settingText: "Resolution scale";
+            sliderStepSize: 0.1;
+            minValue: 0.1;
+            maxValue: 2;
+            settingValue: Render.viewportResolutionScale.toFixed(1)
+
+            onSliderValueChanged: {
+                Render.viewportResolutionScale = value.toFixed(1)
+            }
+        }
+
+        SettingComboBox {
+            settingText: "Anti-aliasing";
+            optionIndex: Render.antialiasingMode;
+            options: ["None", "TAA", "FXAA"];
+            disabled: Render.renderMethod;
+
+            onValueChanged: {
+                Render.antialiasingMode = index;
+            }
+
+            onDisabledChanged: {
+                if (disabled) {
+                    options = ["MSAA"];
+                }
+                else {
+                    options = ["None", "TAA", "FXAA"];
                 }
             }
         }
 
-        // Procedural Materials
-        SettingBoolean {
-            settingText: "Procedural Materials";
-            settingEnabledCondition: () => { return Render.proceduralMaterialsEnabled}
+        SettingComboBox {
+            settingText: "LOD Settings";
+            options: ["Low Detail", "Medium Detail",  "High Detail" ];
+            optionIndex: LODManager.worldDetailQuality;
 
-            onSettingEnabledChanged: {
-                Render.proceduralMaterialsEnabled = settingEnabled;
+            onValueChanged: {
+                LODManager.worldDetailQuality = index;
+            }
+
+            Component.onCompleted: {
+                optionIndex = LODManager.worldDetailQuality;
             }
         }
 
-        // FPS
         SettingComboBox {
             settingText: "Refresh rate";
             options: ["Economical", "Interactive", "Real-Time", "Custom"];
@@ -169,7 +236,6 @@ Flickable {
             }
         }
 
-        // Custom FPS
         AdvancedOptions {
             id: fpsAdvancedOptions;
             isEnabled: Performance.getRefreshRateProfile() === 3;
@@ -247,33 +313,6 @@ Flickable {
             }
         }
 
-        // Resolution Scale
-        SettingSlider {
-            settingText: "Resolution scale";
-            sliderStepSize: 0.1;
-            minValue: 0.1;
-            maxValue: 2;
-            settingValue: Render.viewportResolutionScale.toFixed(1)
-
-            onSliderValueChanged: {
-                Render.viewportResolutionScale = value.toFixed(1)
-            }
-        }
-
-        SettingComboBox {
-            settingText: "LOD Settings";
-            options: ["Low Detail", "Medium Detail",  "High Detail" ];
-            optionIndex: LODManager.worldDetailQuality;
-
-            onValueChanged: {
-                LODManager.worldDetailQuality = index;
-            }
-
-            Component.onCompleted: {
-                optionIndex = LODManager.worldDetailQuality;
-            }
-        }
-
         // Fullscreen Display
         SettingComboBox {
             settingText: "Fullscreen Display";
@@ -296,20 +335,6 @@ Flickable {
             }
         }
 
-        // FOV
-        SettingSlider {
-            settingText: "Field of View";
-            sliderStepSize: 1;
-            minValue: 20;
-            maxValue: 130;
-            settingValue: Render.verticalFieldOfView.toFixed(1);
-            roundDisplay: 0;
-
-            onSliderValueChanged: {
-                Render.verticalFieldOfView = value.toFixed(1);
-            }
-        }
-
         // Camera clipping
         SettingBoolean {
             settingText: "Allow camera clipping";
@@ -317,27 +342,6 @@ Flickable {
 
             onSettingEnabledChanged: {
                 Render.cameraClippingEnabled = settingEnabled ? 0 : 1;
-            }
-        }
-
-        // Anti Aliasing
-        SettingComboBox {
-            settingText: "Anti-aliasing";
-            optionIndex: Render.antialiasingMode;
-            options: ["None", "TAA", "FXAA"];
-            disabled: Render.renderMethod;
-
-            onValueChanged: {
-                Render.antialiasingMode = index;
-            }
-
-            onDisabledChanged: {
-                if (disabled) {
-                    options = ["MSAA"];
-                }
-                else {
-                    options = ["None", "TAA", "FXAA"];
-                }
             }
         }
     }

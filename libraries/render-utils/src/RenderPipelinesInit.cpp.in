@@ -202,7 +202,9 @@ void lightBatchSetter(const ShapePipeline* pipeline, Batch& batch, RenderArgs* a
 
     // Set the light
     if (pipeline && pipeline->locations->keyLightBufferUnit) {
-        DependencyManager::get<DeferredLightingEffect>()->setupKeyLightBatch(args, batch);
+        auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
+        deferredLightingEffect->setupKeyLightBatch(args, batch);
+        deferredLightingEffect->setupLocalLightsBatch(batch);
     }
 }
 

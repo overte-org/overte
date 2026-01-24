@@ -23,6 +23,8 @@
     <$declareFadeVertexInstanced()$>
 
     OUTPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
+<@elif HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
+    OUTPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
 <@endif@>
 
 <@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
@@ -57,6 +59,8 @@ void main(void) {
 <@if HIFI_USE_FADE@>
     <$transformModelToWorldPos(obj, inPosition, _positionWS)$>
     <$passThroughFadeObjectParams()$>
+<@elif HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
+    <$transformModelToWorldPos(obj, inPosition, _positionWS)$>
 <@endif@>
     <$transformModelToWorldDir(obj, inNormal.xyz, _normalWS)$>
 }

@@ -139,8 +139,9 @@ STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
 
 const std::array<QString, static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count)>
     MyAvatar::allowAvatarStandingPreferenceStrings = {
-    QStringLiteral("WhenUserIsStanding"),
-    QStringLiteral("Always")
+    QStringLiteral("Standing"),
+    QStringLiteral("Seated"),
+    QStringLiteral("ForcedHeight")
 };
 
 const std::array<QString, static_cast<uint>(MyAvatar::AllowAvatarLeaningPreference::Count)>
@@ -4943,7 +4944,7 @@ bool MyAvatar::getIsSitStandStateLocked() const {
 
     // In the old code, the record of the user's sit/stand state was locked except when using
     // SitStandModelType::Auto or SitStandModelType::DisableHMDLean.
-    return (_allowAvatarStandingPreference.get() != AllowAvatarStandingPreference::WhenUserIsStanding) &&
+    return (_allowAvatarStandingPreference.get() != AllowAvatarStandingPreference::Standing) &&
            (_allowAvatarLeaningPreference.get() != AllowAvatarLeaningPreference::AlwaysNoRecenter);
 }
 
@@ -5000,20 +5001,20 @@ void MyAvatar::setUserRecenterModel(MyAvatar::SitStandModelType modelName) {
 
     switch (modelName) {
         case SitStandModelType::ForceSit:
-            setAllowAvatarStandingPreference(AllowAvatarStandingPreference::Always);
+            setAllowAvatarStandingPreference(AllowAvatarStandingPreference::ForcedHeight);
             setAllowAvatarLeaningPreference(AllowAvatarLeaningPreference::Never);
             break;
         case SitStandModelType::ForceStand:
-            setAllowAvatarStandingPreference(AllowAvatarStandingPreference::Always);
+            setAllowAvatarStandingPreference(AllowAvatarStandingPreference::ForcedHeight);
             setAllowAvatarLeaningPreference(AllowAvatarLeaningPreference::Always);
             break;
         case SitStandModelType::Auto:
         default:
-            setAllowAvatarStandingPreference(AllowAvatarStandingPreference::Always);
+            setAllowAvatarStandingPreference(AllowAvatarStandingPreference::ForcedHeight);
             setAllowAvatarLeaningPreference(AllowAvatarLeaningPreference::WhenUserIsStanding);
             break;
         case SitStandModelType::DisableHMDLean:
-            setAllowAvatarStandingPreference(AllowAvatarStandingPreference::WhenUserIsStanding);
+            setAllowAvatarStandingPreference(AllowAvatarStandingPreference::Standing);
             setAllowAvatarLeaningPreference(AllowAvatarLeaningPreference::AlwaysNoRecenter);
             break;
     }
@@ -5026,6 +5027,8 @@ void MyAvatar::setAllowAvatarStandingPreference(const MyAvatar::AllowAvatarStand
     // Set the correct vertical position for the avatar body relative to the HMD,
     // according to the newly-selected avatar standing preference.
     centerBodyInternal(false);
+
+    emit standingModeChanged(preference);
 }
 
 // Deprecated, will be removed.
@@ -6649,7 +6652,7 @@ bool MyAvatar::isAllowedToLean() const {
 // Determine if crouch recentering is enabled (making the avatar stand when the user is sitting in the real world).
 bool MyAvatar::getHMDCrouchRecenterEnabled() const {
     return (!_characterController.getSeated() &&
-            (_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always) && !_isBodyPartTracked._feet);
+            (_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::ForcedHeight) && !_isBodyPartTracked._feet);
 }
 
 bool MyAvatar::setPointAt(const glm::vec3& pointAtTarget) {
