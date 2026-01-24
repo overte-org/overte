@@ -33,13 +33,13 @@ void FadeEffect::build(JobModel& task, const render::Varying& inputs, render::Va
 }
 
 render::ShapePipeline::BatchSetter FadeEffect::getBatchSetter() {
-    return [](const render::ShapePipeline& shapePipeline, gpu::Batch& batch, render::Args*) {
+    return [](const render::ShapePipeline*, gpu::Batch& batch, render::Args*) {
         batch.setResourceTexture(render_utils::slot::texture::FadeMask, _maskMap);
     };
 }
 
 render::ShapePipeline::ItemSetter FadeEffect::getItemUniformSetter() {
-    return [](const render::ShapePipeline& shapePipeline, render::Args* args, const render::Item& item) {
+    return [](const render::ShapePipeline*, render::Args* args, const render::Item& item) {
         if (!render::TransitionStage::isIndexInvalid(item.getTransitionId())) {
             const auto& scene = args->_scene;
             const auto& batch = args->_batch;

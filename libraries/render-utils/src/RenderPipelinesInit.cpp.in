@@ -46,8 +46,8 @@ void addPlumberPipeline(ShapePlumber& plumber,
         const ShapeKey& key, int programId, StatePointer& baseState,
         const ShapePipeline::BatchSetter& batchSetter, const ShapePipeline::ItemSetter& itemSetter);
 
-void batchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* args);
-void lightBatchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* args);
+void batchSetter(const ShapePipeline* pipeline, Batch& batch, RenderArgs* args);
+void lightBatchSetter(const ShapePipeline* pipeline, Batch& batch, RenderArgs* args);
 static bool forceLightBatchSetter { false };
 
 // builder, deferred pipeline, shadow pipeline, forward pipeline (or 0 if unsupported)
@@ -152,7 +152,7 @@ void addPlumberPipeline(ShapePlumber& plumber,
             auto baseBatchSetter = (forceLightBatchSetter || key.isTranslucent() || key.isMToon()) ? &lightBatchSetter : &batchSetter;
             ShapePipeline::BatchSetter finalBatchSetter;
             if (extraBatchSetter) {
-                finalBatchSetter = [baseBatchSetter, extraBatchSetter](const ShapePipeline& pipeline, Batch& batch, Args* args) {
+                finalBatchSetter = [baseBatchSetter, extraBatchSetter](const ShapePipeline* pipeline, Batch& batch, Args* args) {
                     baseBatchSetter(pipeline, batch, args);
                     extraBatchSetter(pipeline, batch, args);
                 };
@@ -164,12 +164,12 @@ void addPlumberPipeline(ShapePlumber& plumber,
     }
 }
 
-void batchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* args) {
+void batchSetter(const ShapePipeline* pipeline, Batch& batch, RenderArgs* args) {
     // Set a default albedo map
     batch.setResourceTexture(gr::Texture::MaterialAlbedo, DependencyManager::get<TextureCache>()->getWhiteTexture());
 
     // Set a default material
-    if (pipeline.locations->materialBufferUnit) {
+    if (pipeline && pipeline->locations->materialBufferUnit) {
         // Create a default schema
         static BufferView schemaBuffer;
         static std::once_flag once;
@@ -196,12 +196,12 @@ void batchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* args) 
     }
 }
 
-void lightBatchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* args) {
+void lightBatchSetter(const ShapePipeline* pipeline, Batch& batch, RenderArgs* args) {
     // Set the batch
     batchSetter(pipeline, batch, args);
 
     // Set the light
-    if (pipeline.locations->keyLightBufferUnit) {
+    if (pipeline && pipeline->locations->keyLightBufferUnit) {
         auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
         deferredLightingEffect->setupKeyLightBatch(args, batch);
         deferredLightingEffect->setupLocalLightsBatch(batch);

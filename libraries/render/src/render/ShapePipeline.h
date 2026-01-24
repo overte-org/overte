@@ -356,9 +356,8 @@ public:
     };
     using LocationsPointer = std::shared_ptr<Locations>;
 
-    using BatchSetter = std::function<void(const ShapePipeline&, gpu::Batch&, render::Args*)>;
-
-    using ItemSetter = std::function<void(const ShapePipeline&, render::Args*, const render::Item&)>;
+    using BatchSetter = std::function<void(const ShapePipeline*, gpu::Batch&, render::Args*)>;
+    using ItemSetter = std::function<void(const ShapePipeline*, render::Args*, const render::Item&)>;
 
     ShapePipeline(const gpu::PipelinePointer& pipeline, const LocationsPointer& locations, const BatchSetter& batchSetter = nullptr, const ItemSetter& itemSetter = nullptr) :
         pipeline(pipeline),
