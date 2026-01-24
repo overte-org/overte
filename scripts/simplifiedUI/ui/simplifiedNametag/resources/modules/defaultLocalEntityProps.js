@@ -21,7 +21,9 @@ var localEntityProps = {
     billboardMode: "full",
     lifetime: 3,
     canCastShadow: true,
-    unlit: true
+    unlit: true,
+    fadeInMode: "disabled",
+    fadeOutMode: "disabled",
 };
 
 module.exports = localEntityProps;

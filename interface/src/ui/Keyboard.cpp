@@ -876,6 +876,8 @@ void Keyboard::loadKeyboardFile(const QString& keyboardFile) {
             properties.setParentID(myAvatar->getSelfID());
             properties.setParentJointIndex(SENSOR_TO_WORLD_MATRIX_INDEX);
             properties.setUnlit(true);
+            properties.setFadeInMode(COMPONENT_MODE_DISABLED);
+            properties.setFadeOutMode(COMPONENT_MODE_DISABLED);
 
             Anchor anchor;
             anchor.entityID = entityScriptingInterface->addEntityInternal(properties, entity::HostType::LOCAL);

@@ -85,6 +85,9 @@ void OtherAvatar::createOrb() {
         properties.getPulse().setMax(1.0f);
         properties.getPulse().setColorMode(PulseMode::IN_PHASE);
         properties.setIgnorePickIntersection(true);
+        properties.getGrab().setGrabbable(false);
+        properties.setFadeInMode(COMPONENT_MODE_DISABLED);
+        properties.setFadeOutMode(COMPONENT_MODE_DISABLED);
 
         properties.setPosition(getHead()->getPosition());
         properties.setRotation(glm::quat(0.0f, 0.0f, 0.0f, 1.0));

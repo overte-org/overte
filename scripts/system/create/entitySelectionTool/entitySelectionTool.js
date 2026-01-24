@@ -981,6 +981,7 @@ SelectionDisplay = (function() {
         primitiveMode: "solid",
         visible: false,
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         renderLayer: "front",
         unlit: true
     };
@@ -991,6 +992,7 @@ SelectionDisplay = (function() {
         primitiveMode: "solid",
         visible: false,
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         renderLayer: "front",
         unlit: true
     };
@@ -1024,6 +1026,7 @@ SelectionDisplay = (function() {
         primitiveMode: "solid",
         visible: false,
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         renderLayer: "front"
     };
 
@@ -1082,6 +1085,7 @@ SelectionDisplay = (function() {
         primitiveMode: "solid",
         visible: false,
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         renderLayer: "front"
     }, "local");
     toolEntityMaterial.push(addUnlitMaterialOnToolEntity(handleRotateCurrentRing));
@@ -1097,6 +1101,7 @@ SelectionDisplay = (function() {
         billboardMode: "full",
         renderLayer: "front",
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         dimensions: { x: 0, y: 0, z: 0.01 },
         lineHeight: 0.0,
         topMargin: 0,
@@ -1112,6 +1117,7 @@ SelectionDisplay = (function() {
         primitiveMode: "solid",
         visible: false,
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         renderLayer: "front",
         unlit: true
     };
@@ -1130,6 +1136,7 @@ SelectionDisplay = (function() {
         alpha: 0.5,
         visible: false,
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         renderLayer: "front",
         unlit: true
     };
@@ -1148,6 +1155,7 @@ SelectionDisplay = (function() {
         color: COLOR_SCALE_CUBE,
         visible: false,
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         renderLayer: "front",
         unlit: true
     }, "local");
@@ -1160,6 +1168,7 @@ SelectionDisplay = (function() {
         color: COLOR_BOUNDING_EDGE,
         visible: false,
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         renderLayer: "front",
         unlit: true
     }, "local");
@@ -1173,6 +1182,7 @@ SelectionDisplay = (function() {
         color: COLOR_DUPLICATOR,
         visible: false,
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         renderLayer: "front",
         unlit: true
     }, "local");
@@ -1188,6 +1198,7 @@ SelectionDisplay = (function() {
         alpha: 0,
         visible: false,
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         unlit: true
     }, "local");
 
@@ -1202,6 +1213,7 @@ SelectionDisplay = (function() {
         alpha: 0,
         visible: false,
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         unlit: true
     }, "local");
 
@@ -1214,7 +1226,8 @@ SelectionDisplay = (function() {
             green: 0,
             blue: 0
         },
-        ignorePickIntersection: true // always ignore this
+        ignorePickIntersection: true, // always ignore this
+        grab: { grabbable: false },
     }, "local");
     var yRailToolEntity = Entities.addEntity({
         type: "PolyLine",        
@@ -1225,7 +1238,8 @@ SelectionDisplay = (function() {
             green: 255,
             blue: 0
         },
-        ignorePickIntersection: true // always ignore this
+        ignorePickIntersection: true, // always ignore this
+        grab: { grabbable: false },
     }, "local");
     var zRailToolEntity = Entities.addEntity({
         type: "PolyLine",        
@@ -1236,7 +1250,8 @@ SelectionDisplay = (function() {
             green: 0,
             blue: 255
         },
-        ignorePickIntersection: true // always ignore this
+        ignorePickIntersection: true, // always ignore this
+        grab: { grabbable: false },
     }, "local");
 
     var allToolEntities = [
@@ -1314,6 +1329,7 @@ SelectionDisplay = (function() {
         primitiveMode: "solid",
         visible: false,
         ignorePickIntersection: true,
+        grab: { grabbable: false },
         renderLayer: "front"
     }, "local");
     var debugPickPlaneHits = [];
@@ -2446,6 +2462,7 @@ SelectionDisplay = (function() {
             primitiveMode: "solid",
             visible: true,
             ignorePickIntersection: true,
+            grab: { grabbable: false },
             renderLayer: "front",
             color: COLOR_DEBUG_PICK_PLANE_HIT,
             position: pickHitPosition,
