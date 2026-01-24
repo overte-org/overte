@@ -53,6 +53,7 @@ public:
     void endSession() override final;
     bool eventFilter(QObject* receiver, QEvent* event) override;
     bool isDisplayVisible() const override { return true; }
+    bool isSupported() const override;
     void captureFrame(const std::string& outputName) const override;
     void submitFrame(const gpu::FramePointer& newFrame) override;
 
@@ -88,10 +89,10 @@ public:
                                        GLsync* fenceSync) override;
 
     static void setExtraLinearToSRGBConversion(bool value) { _extraLinearToSRGBConversionSetting.set(value); }
-    static bool getExtraLinearToSRGBConversion() { return _extraLinearToSRGBConversionSetting.get(); };
+    static bool getExtraLinearToSRGBConversion() { return _extraLinearToSRGBConversionSetting.get(); }
 
 protected:
-    friend class PresentThread;
+    friend class OpenGLPresentThread;
 
     glm::uvec2 getSurfaceSize() const;
     glm::uvec2 getSurfacePixels() const;
@@ -195,7 +196,7 @@ protected:
         f();
     }
 
-    gpu::gl::GLBackend* getGLBackend();
+    const gpu::BackendPointer& getBackend() const;
 
     // Any resource shared by the main thread and the presentation thread must
     // be serialized through this mutex
@@ -207,4 +208,5 @@ protected:
 
 private:
     static Setting::Handle<bool> _extraLinearToSRGBConversionSetting;
+    static bool _hasSetSRGBConversion;
 };

@@ -260,6 +260,11 @@ protected:
     // JSDoc is provided on more general function signature.
     Q_INVOKABLE ScriptableResource* prefetch(const QUrl& url) { return prefetch(url, nullptr, std::numeric_limits<size_t>::max()); }
 
+    // Helper function used to move ScriptResource to the script engine thread to avoid causing issues with deleting it
+    // when corresponding script value gets deleted by script engine.
+    // It's automatically called by `prefetch`.
+    ScriptableResource* prefetchAndMoveToThread(const QUrl& url, void* extra, size_t extraHash, QThread *scriptThread);
+
     /// Creates a new resource.
     virtual QSharedPointer<Resource> createResource(const QUrl& url) = 0;
     virtual QSharedPointer<Resource> createResourceCopy(const QSharedPointer<Resource>& resource) = 0;

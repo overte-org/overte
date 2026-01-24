@@ -271,6 +271,7 @@ class MyAvatar : public Avatar {
      *     See also: <code>getUserRecenterModel</code> and <code>setUserRecenterModel</code>.</p>
      * @property {boolean} allowTeleporting - <code>true</code> if teleporting is enabled in the Interface settings,
      *     <code>false</code> if it isn't. <em>Read-only.</em>
+     * @property {number} cameraBoomLength - The third-person camera distance. Limited to between 0.5 and 25. Below 0.5 the camera will be put into first-person mode. Changing this property has no effect unless the camera is already in third-person mode. See {@link Camera.mode}.
      *
      * @borrows Avatar.getDomainMinScale as getDomainMinScale
      * @borrows Avatar.getDomainMaxScale as getDomainMaxScale
@@ -383,7 +384,9 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(bool isInSittingState READ getIsInSittingState WRITE setIsInSittingState);
     Q_PROPERTY(MyAvatar::SitStandModelType userRecenterModel READ getUserRecenterModel WRITE setUserRecenterModel);  // Deprecated
     Q_PROPERTY(bool isSitStandStateLocked READ getIsSitStandStateLocked WRITE setIsSitStandStateLocked);      // Deprecated
+    Q_PROPERTY(MyAvatar::AllowAvatarStandingPreference standingMode READ getAllowAvatarStandingPreference WRITE setAllowAvatarStandingPreference NOTIFY standingModeChanged);
     Q_PROPERTY(bool allowTeleporting READ getAllowTeleporting)
+    Q_PROPERTY(float cameraBoomLength MEMBER _boomLength)
 
     const QString DOMINANT_LEFT_HAND = "left";
     const QString DOMINANT_RIGHT_HAND = "right";
@@ -512,12 +515,37 @@ public:
     };
     Q_ENUM(SitStandModelType)
 
-    // Note: The option strings in setupPreferences (PreferencesDialog.cpp) must match this order.
+    /*@jsdoc
+     * <table>
+     *   <thead>
+     *     <tr><th>Value</th><th>Name</th><th>Description</th></tr>
+     *   </thead>
+     *   <tbody>
+     *     <tr>
+     *      <td><code>0</code></td>
+     *      <td>Standing</td>
+     *      <td>The player's view has no special offset and can crouch unimpeded.</td>
+     *     </tr>
+     *     <tr>
+     *      <td><code>1</code></td>
+     *      <td>Seated</td>
+     *      <td>The player's view is offset up to a standing position but allows them to lean down. <b>Note: Not implemented yet.</b></td>
+     *     </tr>
+     *     <tr>
+     *      <td><code>2</code></td>
+     *      <td>ForcedHeight</td>
+     *      <td>The player's view is always kept in a standing position relative to the avatar.</td>
+     *     </tr>
+     *   </tbody>
+     * </table>
+     * @typedef {number} MyAvatar.AllowAvatarStandingPreference
+     */
     enum class AllowAvatarStandingPreference : uint {
-        WhenUserIsStanding,
-        Always,
+        Standing,
+        Seated,
+        ForcedHeight,
         Count,
-        Default = Always
+        Default = Standing
     };
     Q_ENUM(AllowAvatarStandingPreference)
 
@@ -528,7 +556,7 @@ public:
         Never,
         AlwaysNoRecenter,  // experimental
         Count,
-        Default = WhenUserIsStanding
+        Default = Always
     };
     Q_ENUM(AllowAvatarLeaningPreference)
 
@@ -2300,6 +2328,14 @@ signals:
      * @returns {Signal}
      */
     void sprintSpeedChanged(float value);
+
+    /*@jsdoc
+     * Triggered when {@link MyAvatar.standingMode} is changed.
+     * @function MyAvatar.standingMode
+     * @param {MyAvatar.StandingMode} mode
+     * @returns {Signal}
+     */
+    void standingModeChanged(MyAvatar::AllowAvatarStandingPreference mode);
 
     /*@jsdoc
      * @function MyAvatar.transformChanged

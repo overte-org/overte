@@ -15,6 +15,7 @@
 
 <@include gpu/Transform.slh@>
 <@include gpu/Inputs.slh@>
+
 <@include graphics/Light.slh@>
 <@include render-utils/ShaderConstants.h@>
 
@@ -22,11 +23,11 @@
 
 <$declareLightBuffer(256)$>
 
-LAYOUT(binding=RENDER_UTILS_BUFFER_LIGHT_INDEX) uniform lightIndexBuffer {
+UNIFORM_BUFFER(RENDER_UTILS_BUFFER_LIGHT_INDEX, lightIndexBuffer) {
     int lightIndex[256];
 };
 
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord0;
+OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord0);
 
 void main(void) {
 

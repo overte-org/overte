@@ -414,7 +414,7 @@ Rectangle {
             }
             Text {
                 id: textVolumeSizeZ
-                text: qsTr("X")
+                text: qsTr("Z")
                 color: "#ffffff"
                 font.pixelSize: 12
                 anchors.left: volumeSizeY.right

@@ -17,6 +17,7 @@
 #include <algorithm>
 
 #include <QtCore/QJsonDocument>
+#include <QtConcurrent/QtConcurrent>
 
 #include <GLMHelpers.h>
 
@@ -380,45 +381,137 @@ void rebuildSource(shader::Dialect dialect, shader::Variant variant, const shade
             throw std::runtime_error("Wrong");
         }
 
-    // Output the SPIR-V code from the shader program
-    std::vector<uint32_t> spirv;
-    glslang::GlslangToSpv(*program.getIntermediate(stage), spirv);
+        // Output the SPIR-V code from the shader program
+        std::vector<uint32_t> spirv;
+        glslang::GlslangToSpv(*program.getIntermediate(stage), spirv);
 
-    spvtools::SpirvTools core(SPV_ENV_VULKAN_1_1);
-    spvtools::Optimizer opt(SPV_ENV_VULKAN_1_1);
+        spvtools::SpirvTools core(SPV_ENV_VULKAN_1_1);
+        spvtools::Optimizer opt(SPV_ENV_VULKAN_1_1);
 
-    auto outputLambda = [](spv_message_level_t, const char*, const spv_position_t&, const char* m) { qWarning() << m; };
-    core.SetMessageConsumer(outputLambda);
-    opt.SetMessageConsumer(outputLambda);
+        auto outputLambda = [](spv_message_level_t, const char*, const spv_position_t&, const char* m) { qWarning() << m; };
+        core.SetMessageConsumer(outputLambda);
+        opt.SetMessageConsumer(outputLambda);
 
-    if (!core.Validate(spirv)) {
-        throw std::runtime_error("invalid spirv");
-    }
-    writeSpirv(baseOutName + ".spv", spirv);
+        if (!core.Validate(spirv)) {
+            throw std::runtime_error("invalid spirv");
+        }
+        writeSpirv(baseOutName + ".spv", spirv);
 
-    opt.RegisterPass(spvtools::CreateFreezeSpecConstantValuePass())
-        .RegisterPass(spvtools::CreateStrengthReductionPass())
-        .RegisterPass(spvtools::CreateEliminateDeadConstantPass())
-        .RegisterPass(spvtools::CreateEliminateDeadFunctionsPass())
-        .RegisterPass(spvtools::CreateUnifyConstantPass());
+        opt.RegisterPass(spvtools::CreateFreezeSpecConstantValuePass())
+            .RegisterPass(spvtools::CreateStrengthReductionPass())
+            .RegisterPass(spvtools::CreateEliminateDeadConstantPass())
+            .RegisterPass(spvtools::CreateEliminateDeadFunctionsPass())
+            .RegisterPass(spvtools::CreateUnifyConstantPass());
 
-    std::vector<uint32_t> optspirv;
-    if (!opt.Run(spirv.data(), spirv.size(), &optspirv)) {
-        throw std::runtime_error("bad optimize run");
-    }
-    writeSpirv(baseOutName + ".opt.spv", optspirv);
+        std::vector<uint32_t> optspirv;
+        if (!opt.Run(spirv.data(), spirv.size(), &optspirv)) {
+            throw std::runtime_error("bad optimize run");
+        }
+        writeSpirv(baseOutName + ".opt.spv", optspirv);
 
-    std::string disassembly;
-    if (!core.Disassemble(optspirv, &disassembly)) {
-        throw std::runtime_error("bad disassembly");
-    }
+        std::string disassembly;
+        if (!core.Disassemble(optspirv, &disassembly)) {
+            throw std::runtime_error("bad disassembly");
+        }
 
         write(baseOutName + ".spv.txt", disassembly);
     } catch (const std::runtime_error& error) {
         qWarning() << error.what();
     }
 }
+
 #endif
+
+template <typename K, typename V>
+std::unordered_map<V, K> invertMap(const std::unordered_map<K, V>& map) {
+    std::unordered_map<V, K> result;
+    for (const auto& entry : map) {
+        result[entry.second] = entry.first;
+    }
+    if (result.size() != map.size()) {
+        throw std::runtime_error("Map inversion failure, result size does not match input size");
+    }
+    return result;
+}
+
+uint32_t makeProgramId(uint32_t vertexId, uint32_t fragmentId) {
+    return (vertexId << 16) | fragmentId;
+}
+
+std::unordered_map<uint32_t, std::list<uint32_t>> shaderToProgramMap;
+std::unordered_map<uint32_t, std::unordered_set<uint32_t>> problemShaderIds;
+
+
+static void verifyInterface(const gpu::Shader::Source& vertexSource,
+                            const gpu::Shader::Source& fragmentSource,
+                            shader::Dialect dialect,
+                            shader::Variant variant) {
+
+    auto programId = makeProgramId(vertexSource.id, fragmentSource.id);
+    shaderToProgramMap[vertexSource.id].push_back(programId);
+    shaderToProgramMap[fragmentSource.id].push_back(programId);
+
+    const auto& fragmentReflection = fragmentSource.getReflection(dialect, variant);
+    const auto& fragmentInputs = fragmentReflection.inputs;
+    const auto& vertexReflection = vertexSource.getReflection(dialect, variant);
+    const auto& vertexOutputs = vertexReflection.outputs;
+    bool named = false;
+    for (const auto& input : fragmentInputs) {
+        const auto& slot = input.second;
+        if (!vertexReflection.validOutput(slot)) {
+            problemShaderIds[fragmentSource.id].insert(vertexSource.id);
+            if (!named) {
+                named = true;
+                qWarning() << vertexSource.name.c_str() << " " << fragmentSource.name.c_str();
+            }
+            qWarning() << "Fragment shader reads slot " << slot << " not written by vertex shader";
+        }
+    }
+
+    for (const auto& output : vertexOutputs) {
+        const auto& slot = output.second;
+        if (!fragmentReflection.validInput(slot)) {
+            problemShaderIds[vertexSource.id].insert(fragmentSource.id);
+            if (!named) {
+                named = true;
+                qWarning() << vertexSource.name.c_str() << " " << fragmentSource.name.c_str();
+            }
+            qWarning() << "Vertex shader writes slot " << slot << " not read by fragment shader";
+        }
+    }
+
+    //if (fragmentInputs.empty()) {
+    //    return;
+    //}
+
+    //const auto& fragIn = fragmentReflection.inputs;
+    //if (vertexReflection.outputs.empty()) {
+    //    throw std::runtime_error("No vertex outputs for fragment inputs");
+    //}
+
+    //const auto& vout = vertexReflection.outputs;
+    //auto vrev = invertMap(vout);
+    //for (const auto entry : fragIn) {
+    //    const auto& name = entry.first;
+    //    if (0 == vout.count(name)) {
+    //        throw std::runtime_error("Vertex outputs missing");
+    //    }
+    //    const auto& inLocation = entry.second;
+    //    const auto& outLocation = vout.at(name);
+    //    if (inLocation != outLocation) {
+    //        throw std::runtime_error("Mismatch in vertex / fragment interface");
+    //    }
+    //}
+}
+
+static void verifyInterface(const gpu::Shader::Source& vertexSource, const gpu::Shader::Source& fragmentSource) {
+    for (const auto& dialect : shader::allDialects()) {
+        verifyInterface(vertexSource, fragmentSource, dialect, shader::Variant::Mono);
+        //for (const auto& variant : shader::allVariants()) {
+        //    verifyInterface(vertexSource, fragmentSource, dialect, variant);
+        //}
+    }
+}
 
 void validateDialectVariantSource(const shader::DialectVariantSource& source) {
     if (source.scribe.empty()) {
@@ -490,7 +583,25 @@ void ShaderTests::testShaderLoad() {
                 const auto& shader = shader::Source::get(shaderId);
                 qDebug() << "Unused shader found" << shader.name.c_str();
             }
+
+#if RUNTIME_SHADER_COMPILE_TEST
+            auto threadPool = QThreadPool::globalInstance();
+            threadPool->setMaxThreadCount(24);
+            glslang::InitializeProcess();
+            static TBuiltInResource glslCompilerResources;
+            configureGLSLCompilerResources(&glslCompilerResources);
+            for (const auto& shaderId : programUsedShaders) {
+                const auto& shaderSource = shader::Source::get(shaderId);
+                for (const auto& dialect : shader::allDialects()) {
+                    for (const auto& variant : shader::allVariants()) {
+                        rebuildSource(dialect, variant, shaderSource);
+                    }
+                }
+            }
+            glslang::FinalizeProcess();
+#endif
         }
+
 
         // Traverse all programs again to do program level tests
         for (const auto& programId : programIds) {
@@ -508,6 +619,22 @@ void ShaderTests::testShaderLoad() {
                 qWarning() << "Failed to compile or link vertex " << vertexSource.name.c_str() << " fragment "
                            << fragmentSource.name.c_str();
                 QFAIL("Program link error");
+            }
+        }
+
+        for (const auto& entry : problemShaderIds) {
+            const auto& shaderId = entry.first;
+            const auto& otherShadersSet = entry.second;
+            auto name = shader::Source::get(shaderId).name;
+            for (const auto& programId : shaderToProgramMap[shaderId]) {
+                auto vertexId = (programId >> 16) & 0xFFFF;
+                auto fragmentId = programId & 0xFFFF;
+                auto otherShaderId = shaderId == vertexId ? fragmentId : vertexId;
+                if (otherShadersSet.count(otherShaderId) != 0) {
+                    continue;
+                }
+                auto otherName = shader::Source::get(otherShaderId).name;
+                qWarning() << "Shader id " << name.c_str() << " used with shader " << otherName.c_str();
             }
         }
     } catch (const std::runtime_error& error) {

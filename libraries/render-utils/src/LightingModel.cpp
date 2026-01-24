@@ -21,7 +21,7 @@ gpu::TexturePointer LightingModel::_ambientFresnelLUT;
 
 LightingModel::LightingModel() {
     Parameters parameters;
-    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Parameters), (const gpu::Byte*) &parameters, sizeof(Parameters)));
+    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Parameters), (const gpu::Byte*) &parameters, sizeof(Parameters)));
 
 #if RENDER_UTILS_ENABLE_AMBIENT_FRESNEL_LUT
     if (!_ambientFresnelLUT) {
@@ -89,6 +89,7 @@ LightingModel::LightingModel() {
             }
         });
 
+        _ambientFresnelLUT->setStoredMipFormat(_ambientFresnelLUT->getTexelFormat());
         _ambientFresnelLUT->assignStoredMip(0, N_roughness * N_NdotV * sizeof(LUTVector::value_type), (const gpu::Byte*)lut.data());
     }
 #endif
@@ -275,6 +276,13 @@ bool LightingModel::isAmbientOcclusionEnabled() const {
     return (bool)_parametersBuffer.get<Parameters>().enableAmbientOcclusion;
 }
 
+void LightingModel::setLocalLightingEnabled(bool enable) {
+    _enableLocalLighting = enable;
+}
+bool LightingModel::isLocalLightingEnabled() const {
+    return _enableLocalLighting;
+}
+
 void LightingModel::setShadow(bool enable) {
     if (enable != isShadowEnabled()) {
         _parametersBuffer.edit<Parameters>().enableShadow = (float)enable;
@@ -323,6 +331,7 @@ void MakeLightingModel::configure(const Config& config) {
     _lightingModel->setBlendshape(config.enableBlendshape);
 
     _lightingModel->setAmbientOcclusion(config.enableAmbientOcclusion);
+    _lightingModel->setLocalLightingEnabled(config.enableLocalLighting);
     _lightingModel->setShadow(config.enableShadow);
 }
 

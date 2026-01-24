@@ -389,9 +389,20 @@ bool OpenXrContext::initSession() {
     // blah blah...
     // info.next = &wlBinding;
     // } else
+
+    auto* xDisplay = XOpenDisplay(nullptr);
+    int fbConfigCount = 0;
+    auto* fbConfigs = glXGetFBConfigs(xDisplay, 0, &fbConfigCount);
+
     XrGraphicsBindingOpenGLXlibKHR xlibBinding = {
         .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR,
-        .xDisplay = XOpenDisplay(nullptr),
+        .xDisplay = xDisplay,
+
+        // not actually used anywhere but monado now
+        // requires these to be non-null (in-line with the spec)
+        .visualid = 1,
+        .glxFBConfig = fbConfigs[0],
+
         .glxDrawable = glXGetCurrentDrawable(),
         .glxContext = glXGetCurrentContext(),
     };

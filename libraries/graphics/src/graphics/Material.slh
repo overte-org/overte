@@ -86,7 +86,7 @@ struct MaterialBuffer {
 #define NUM_LAYERS 1
 <@endif@>
 
-LAYOUT_STD140(binding=GRAPHICS_BUFFER_MATERIAL) uniform MaterialBinding {
+UNIFORM_BUFFER(GRAPHICS_BUFFER_MATERIAL, MaterialBinding) {
     MaterialBuffer materialBuffers[NUM_LAYERS];
 };
 

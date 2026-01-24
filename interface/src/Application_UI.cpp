@@ -118,16 +118,22 @@ void Application::showDisplayPluginsTools(bool show) {
     DependencyManager::get<DialogsManager>()->hmdTools(show);
 }
 
+#ifdef USE_GL
 GLWidget* Application::getPrimaryWidget() {
-    return _glWidget;
+    return _primaryWidget;
 }
+#else
+VKWidget* Application::getPrimaryWidget() {
+    return _primaryWidget;
+}
+#endif
 
 MainWindow* Application::getPrimaryWindow() {
     return getWindow();
 }
 
 QOpenGLContext* Application::getPrimaryContext() {
-    return _glWidget->qglContext();
+    return _primaryWidget->qglContext();
 }
 
 bool Application::isForeground() const {
@@ -150,8 +156,10 @@ bool Application::hasFocus() const {
 void Application::setFocus() {
     // Note: Windows doesn't allow a user focus to be taken away from another application. Instead, it changes the color of and
     // flashes the taskbar icon.
+#ifdef USE_GL
     auto window = qApp->getWindow();
-    window->activateWindow();
+    window->activateWindow(); //VKTODO
+#endif
 }
 
 void Application::raise() {
@@ -487,7 +495,7 @@ void Application::showDialog(const QUrl& widgetUrl, const QUrl& tabletUrl, const
 }
 
 void Application::loadDialog() {
-    ModalDialogListener* dlg = OffscreenUi::getOpenFileNameAsync(_glWidget, tr("Open Script"),
+    ModalDialogListener* dlg = OffscreenUi::getOpenFileNameAsync(_primaryWidget, tr("Open Script"),
                                                                  getPreviousScriptLocation(),
                                                                  tr("JavaScript Files (*.js)"));
     connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant answer) {
@@ -697,10 +705,10 @@ void Application::updateSystemTabletMode() {
 void Application::captureMouseChanged(bool captureMouse) {
     _captureMouse = captureMouse;
     if (_captureMouse) {
-        _glWidget->setCursor(QCursor(Qt::BlankCursor));
+        _primaryWidget->setCursor(QCursor(Qt::BlankCursor));
     } else {
         _mouseCaptureTarget = QPointF(NAN, NAN);
-        _glWidget->unsetCursor();
+        _primaryWidget->unsetCursor();
     }
 }
 
@@ -1327,7 +1335,9 @@ void Application::toggleTabletUI(bool shouldOpen) const {
 
         if (!HMD->getShouldShowTablet()) {
             DependencyManager::get<Keyboard>()->setRaised(false);
-            _window->activateWindow();
+#ifdef USE_GL
+            _window->activateWindow(); //VKTODO
+#endif
             auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet(SYSTEM_TABLET);
             tablet->unfocus();
         }
@@ -1335,7 +1345,7 @@ void Application::toggleTabletUI(bool shouldOpen) const {
 }
 
 bool Application::shouldCaptureMouse() const {
-    return _captureMouse && _glWidget->isActiveWindow() && !ui::Menu::isSomeSubmenuShown();
+    return _captureMouse && _primaryWidget->isActiveWindow() && !ui::Menu::isSomeSubmenuShown();
 }
 
 void Application::checkChangeCursor() {
@@ -1346,7 +1356,7 @@ void Application::checkChangeCursor() {
 #else
         // On windows and linux, hiding the top level cursor also means it's invisible when hovering over the
         // window menu, which is a pain, so only hide it for the GL surface
-        auto cursorTarget = _glWidget;
+        auto cursorTarget = _primaryWidget;
 #endif
         cursorTarget->setCursor(_desiredCursor);
 

@@ -189,7 +189,7 @@ void batchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* args) 
             schema._key = (uint32_t)schemaKey._flags.to_ulong();
 
             auto schemaSize = sizeof(graphics::MultiMaterial::Schema);
-            schemaBuffer = BufferView(std::make_shared<Buffer>(schemaSize, (const Byte*) &schema, schemaSize));
+            schemaBuffer = BufferView(std::make_shared<Buffer>(gpu::Buffer::UniformBuffer, schemaSize, (const Byte*) &schema, schemaSize));
         });
 
         batch.setUniformBuffer(gr::Buffer::Material, schemaBuffer);
@@ -202,7 +202,9 @@ void lightBatchSetter(const ShapePipeline& pipeline, Batch& batch, RenderArgs* a
 
     // Set the light
     if (pipeline.locations->keyLightBufferUnit) {
-        DependencyManager::get<DeferredLightingEffect>()->setupKeyLightBatch(args, batch);
+        auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
+        deferredLightingEffect->setupKeyLightBatch(args, batch);
+        deferredLightingEffect->setupLocalLightsBatch(batch);
     }
 }
 

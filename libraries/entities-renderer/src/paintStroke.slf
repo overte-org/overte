@@ -14,25 +14,25 @@
 <@if not HIFI_USE_FORWARD@>
     <@include DeferredBufferWrite.slh@>
 <@else@>
-    layout(location=0) out vec4 _fragColor0;
+    OUTPUT(0, vec4, _fragColor0);
 <@endif@>
 
 <@include paintStroke.slh@>
 <$declarePolyLineBuffers()$>
 
 <@include CullFace.slh@>
-
-LAYOUT(binding=0) uniform sampler2D _texture;
+// the albedo texture
+TEXTURE(0, sampler2D, _texture);
 
 <@include render-utils/ShaderConstants.h@>
 
 <@if not HIFI_USE_FORWARD@>
-    layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
-    layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) in vec4 _prevPositionCS;
+    INPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
+    INPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
 <@endif@>
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec2 _texCoord;
-layout(location=RENDER_UTILS_ATTR_COLOR) in vec4 _color;
-layout(location=2) in float _distanceFromCenter;
+INPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec2, _texCoord);
+INPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
+INPUT(2, float, _distanceFromCenter);
 
 void main(void) {
     vec4 texel = texture(_texture, _texCoord);

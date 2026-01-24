@@ -11,7 +11,11 @@
 #define hifi_GraphicsEngine_h
 
 #include <gl/OffscreenGLCanvas.h>
+#ifdef USE_GL
 #include <gl/GLWidget.h>
+#else
+#include <vk/VKWidget.h>
+#endif
 #include <qmutex.h>
 
 #include <render/Engine.h>
@@ -43,7 +47,11 @@ public:
     GraphicsEngine();
     ~GraphicsEngine();
 
+#ifdef USE_GL
     void initializeGPU(GLWidget*);
+#else
+    void initializeGPU(VKWidget*);
+#endif
     void initializeRender();
     void startup();
     void shutdown();

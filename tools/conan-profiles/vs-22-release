@@ -2,12 +2,11 @@
 os=Windows
 arch=x86_64
 compiler=msvc
-compiler.cppstd=17
+# Both libnode and webrtc-audio-processing require C++20
+compiler.cppstd=20
 compiler.version=194
 compiler.runtime=dynamic
 compiler.runtime_type=Release
 build_type=Release
-# Build fails on Windows with C++17
-webrtc-audio-processing*:compiler.cppstd=20
 [options]
 Overte/*:qt_source=source

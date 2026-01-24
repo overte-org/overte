@@ -25,7 +25,7 @@ enum BlurShaderMapSlots {
 
 BlurParams::BlurParams() {
     Params params;
-    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Params), (const gpu::Byte*) &params));
+    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Params), (const gpu::Byte*) &params));
     setFilterGaussianTaps(3);
 }
 

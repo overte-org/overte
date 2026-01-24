@@ -19,6 +19,10 @@
 
 #include "GPULogging.h"
 
+// This can be enabled for checking if buffers have proper usage declared.
+// VKTODO: Add a CMake variable to enable this
+//#define DEBUG_VALIDATE_BUFFER_USAGE
+
 #if defined(NSIGHT_FOUND)
 #include "nvToolsExt.h"
 
@@ -31,7 +35,9 @@ ProfileRangeBatch::~ProfileRangeBatch() {
 }
 #endif
 
-#define ADD_COMMAND(call) _commands.emplace_back(COMMAND_##call); _commandOffsets.emplace_back(_params.size());
+#define ADD_COMMAND(call)                   \
+    _commands.emplace_back(COMMAND_##call); \
+    _commandOffsets.emplace_back(_params.size());
 
 using namespace gpu;
 
@@ -78,6 +84,9 @@ void Batch::clear() {
     _dataMax = std::max(_data.size(), _dataMax);
     _objectsMax = std::max(_objects.size(), _objectsMax);
     _drawCallInfosMax = std::max(_drawCallInfos.size(), _drawCallInfosMax);
+
+    _currentStreamFormat.reset();
+    _currentPipeline.reset();
 
     _commands.clear();
     _commandOffsets.clear();
@@ -127,7 +136,37 @@ void Batch::setDrawcallUniformReset(uint16_t uniformReset) {
     _drawcallUniformReset = uniformReset;
 }
 
+//#pragma optimize("", off)
+
+void Batch::validateDrawState() const {
+    // VKTODO: this seems to produce warnings where Vulkan validation layers don't?
+    return;
+    if (!_currentPipeline) {
+        qCWarning(gpulogging) << "Missing pipeline during draw call";
+    }
+    const auto& vertexShader = _currentPipeline->getProgram()->getShaders()[0];
+    const auto variant = _enableStereo ? shader::Variant::Stereo : shader::Variant::Mono;
+    const auto dialect = shader::allDialects()[0];
+    const auto& vertexSource = vertexShader->getSource();
+    const auto& vertexReflection = vertexSource.getReflection(dialect, variant);
+    const auto& vertexInputs = vertexReflection.inputs;
+
+    for (const auto& entry : vertexInputs) {
+        auto slot = entry.second;
+        if (slot == gpu::slot::attr::DrawCallInfo) {
+            continue;
+        }
+        if (slot == gpu::slot::attr::Color) {
+            continue;
+        }
+        if (!_currentStreamFormat || (0 == _currentStreamFormat->getAttributes().count(slot))) {
+            qCWarning(gpulogging) << "Vertex shader expects slot " << slot << " which is not provided";
+        }
+    }
+}
+
 void Batch::draw(Primitive primitiveType, uint32 numVertices, uint32 startVertex) {
+    validateDrawState();
     ADD_COMMAND(draw);
 
     _params.emplace_back(startVertex);
@@ -138,6 +177,7 @@ void Batch::draw(Primitive primitiveType, uint32 numVertices, uint32 startVertex
 }
 
 void Batch::drawIndexed(Primitive primitiveType, uint32 numIndices, uint32 startIndex) {
+    validateDrawState();
     ADD_COMMAND(drawIndexed);
 
     _params.emplace_back(startIndex);
@@ -147,7 +187,12 @@ void Batch::drawIndexed(Primitive primitiveType, uint32 numIndices, uint32 start
     captureDrawCallInfo();
 }
 
-void Batch::drawInstanced(uint32 numInstances, Primitive primitiveType, uint32 numVertices, uint32 startVertex, uint32 startInstance) {
+void Batch::drawInstanced(uint32 numInstances,
+                          Primitive primitiveType,
+                          uint32 numVertices,
+                          uint32 startVertex,
+                          uint32 startInstance) {
+    validateDrawState();
     ADD_COMMAND(drawInstanced);
 
     _params.emplace_back(startInstance);
@@ -159,7 +204,12 @@ void Batch::drawInstanced(uint32 numInstances, Primitive primitiveType, uint32 n
     captureDrawCallInfo();
 }
 
-void Batch::drawIndexedInstanced(uint32 numInstances, Primitive primitiveType, uint32 numIndices, uint32 startIndex, uint32 startInstance) {
+void Batch::drawIndexedInstanced(uint32 numInstances,
+                                 Primitive primitiveType,
+                                 uint32 numIndices,
+                                 uint32 startIndex,
+                                 uint32 startInstance) {
+    validateDrawState();
     ADD_COMMAND(drawIndexedInstanced);
 
     _params.emplace_back(startInstance);
@@ -172,6 +222,7 @@ void Batch::drawIndexedInstanced(uint32 numInstances, Primitive primitiveType, u
 }
 
 void Batch::multiDrawIndirect(uint32 numCommands, Primitive primitiveType) {
+    validateDrawState();
     ADD_COMMAND(multiDrawIndirect);
     _params.emplace_back(numCommands);
     _params.emplace_back(primitiveType);
@@ -180,6 +231,7 @@ void Batch::multiDrawIndirect(uint32 numCommands, Primitive primitiveType) {
 }
 
 void Batch::multiDrawIndexedIndirect(uint32 nbCommands, Primitive primitiveType) {
+    validateDrawState();
     ADD_COMMAND(multiDrawIndexedIndirect);
     _params.emplace_back(nbCommands);
     _params.emplace_back(primitiveType);
@@ -188,12 +240,15 @@ void Batch::multiDrawIndexedIndirect(uint32 nbCommands, Primitive primitiveType)
 }
 
 void Batch::setInputFormat(const Stream::FormatPointer& format) {
+    _currentStreamFormat = format;
     ADD_COMMAND(setInputFormat);
-
     _params.emplace_back(_streamFormats.cache(format));
 }
 
 void Batch::setInputBuffer(Slot channel, const BufferPointer& buffer, Offset offset, Offset stride) {
+#ifdef DEBUG_VALIDATE_BUFFER_USAGE
+    Q_ASSERT(buffer->getUsage() & gpu::Buffer::VertexBuffer);
+#endif
     ADD_COMMAND(setInputBuffer);
 
     _params.emplace_back(stride);
@@ -203,6 +258,9 @@ void Batch::setInputBuffer(Slot channel, const BufferPointer& buffer, Offset off
 }
 
 void Batch::setInputBuffer(Slot channel, const BufferView& view) {
+#ifdef DEBUG_VALIDATE_BUFFER_USAGE
+    Q_ASSERT(view._buffer->getUsage() & gpu::Buffer::VertexBuffer);
+#endif
     setInputBuffer(channel, view._buffer, view._offset, Offset(view._stride));
 }
 
@@ -218,6 +276,9 @@ void Batch::setInputStream(Slot startChannel, const BufferStream& stream) {
 }
 
 void Batch::setIndexBuffer(Type type, const BufferPointer& buffer, Offset offset) {
+#ifdef DEBUG_VALIDATE_BUFFER_USAGE
+    Q_ASSERT(buffer->getUsage() & gpu::Buffer::IndexBuffer);
+#endif
     ADD_COMMAND(setIndexBuffer);
 
     _params.emplace_back(offset);
@@ -226,6 +287,9 @@ void Batch::setIndexBuffer(Type type, const BufferPointer& buffer, Offset offset
 }
 
 void Batch::setIndexBuffer(const BufferView& buffer) {
+#ifdef DEBUG_VALIDATE_BUFFER_USAGE
+    Q_ASSERT(buffer._buffer->getUsage() & gpu::Buffer::IndexBuffer);
+#endif
     setIndexBuffer(buffer._element.getType(), buffer._buffer, buffer._offset);
 }
 
@@ -333,8 +397,8 @@ void Batch::copySavedViewProjectionTransformToBuffer(uint saveSlot, const Buffer
 }
 
 void Batch::setPipeline(const PipelinePointer& pipeline) {
+    _currentPipeline = pipeline;
     ADD_COMMAND(setPipeline);
-
     _params.emplace_back(_pipelines.cache(pipeline));
 }
 
@@ -406,7 +470,10 @@ void Batch::setResourceTextureTable(const TextureTablePointer& textureTable, uin
     }
 }
 
-void Batch::setResourceFramebufferSwapChainTexture(uint32 slot, const FramebufferSwapChainPointer& framebuffer, unsigned int swapChainIndex, unsigned int renderBufferSlot) {
+void Batch::setResourceFramebufferSwapChainTexture(uint32 slot,
+                                                   const FramebufferSwapChainPointer& framebuffer,
+                                                   unsigned int swapChainIndex,
+                                                   unsigned int renderBufferSlot) {
     ADD_COMMAND(setResourceFramebufferSwapChainTexture);
 
     _params.emplace_back(_swapChains.cache(framebuffer));
@@ -470,8 +537,10 @@ void Batch::clearDepthStencilFramebuffer(float depth, int stencil, bool enableSc
     clearFramebuffer(Framebuffer::BUFFER_DEPTHSTENCIL, Vec4(0.0f), depth, stencil, enableScissor);
 }
 
-void Batch::blit(const FramebufferPointer& src, const Vec4i& srcViewport,
-    const FramebufferPointer& dst, const Vec4i& dstViewport) {
+void Batch::blit(const FramebufferPointer& src,
+                 const Vec4i& srcViewport,
+                 const FramebufferPointer& dst,
+                 const Vec4i& dstViewport) {
     ADD_COMMAND(blit);
 
     _params.emplace_back(_framebuffers.cache(src));
@@ -592,7 +661,7 @@ const BufferPointer& Batch::getNamedBuffer(const std::string& instanceName, uint
         instance.buffers.resize(index + 1);
     }
     if (!instance.buffers[index]) {
-        instance.buffers[index] = std::make_shared<Buffer>();
+        instance.buffers[index] = std::make_shared<Buffer>(Buffer::VertexBuffer);
     }
     return instance.buffers[index];
 }
@@ -760,6 +829,7 @@ void Batch::_glUniformMatrix4fv(int32 location, int count, uint8 transpose, cons
     _params.emplace_back(count);
     _params.emplace_back(location);
 }
+
 
 void Batch::finishFrame(BufferUpdates& updates) {
     PROFILE_RANGE(render_gpu, __FUNCTION__);

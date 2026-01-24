@@ -13,13 +13,6 @@ list(REMOVE_ITEM PLUGIN_SUBDIRS "CMakeFiles")
 
 # client-side plugins
 if (OVERTE_BUILD_CLIENT AND NOT ANDROID)
-  if (WIN32 AND (NOT OVERTE_RENDERING_BACKEND STREQUAL "GLES"))
-      set(DIR "oculus")
-      add_subdirectory(${DIR})
-      set(DIR "oculusLegacy")
-      add_subdirectory(${DIR})
-  endif()
-
   if (NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
     # Note: OpenVR is a Steam thing, which is different from OVR, which is an Oculus SDK component.
     set(DIR "openvr")
@@ -48,7 +41,7 @@ if (OVERTE_BUILD_CLIENT AND NOT ANDROID)
   set(DIR "hifiKinect")
   add_subdirectory(${DIR})
 
-  if (NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+  if (USE_STEAMWORKS AND NOT CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
     set(DIR "steamClient")
     add_subdirectory(${DIR})
   endif()

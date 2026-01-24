@@ -64,7 +64,7 @@ class Overte(ConanFile):
         self.requires("gli/cci.20210515") # NOTE: not maintained for 4 years
         self.requires("glslang/1.3.268.0")
         self.requires("liblo/0.30@overte/stable")
-        self.requires("libnode/18.20.8@overte/stable")
+        self.requires("libnode/22.22.0@overte/stable#1f75a2b0272c5e3ad9d4ddb432a467f8")
         self.requires("nlohmann_json/3.11.2")
         self.requires("nvidia-texture-tools/2023.01@overte/stable")
         self.requires("onetbb/2021.10.0")
@@ -97,7 +97,7 @@ class Overte(ConanFile):
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
-            self.requires("qt/5.15.17-2025.06.07@overte/stable#550a40fc9cbe089ea59a727a3f038a31", force=True)
+            self.requires("qt/5.15.18-2026.01.04@overte/stable#30ca36fa18268c7c2de55c3d11102ab7", force=True)
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")
@@ -109,7 +109,7 @@ class Overte(ConanFile):
     def generate(self):
         tc = CMakeToolchain(self)
 
-        # Settings a whole bunch of defaults for CMake.
+        # Setting a whole bunch of defaults for CMake.
         # These are only defaults and can be changed at any point using the CMake GUI (or your preferred IDE).
         if self.settings.compiler != "msvc":
             if self.settings.arch == "x86_64":

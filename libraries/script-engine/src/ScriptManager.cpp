@@ -265,6 +265,11 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
     _scriptContents(scriptContents),
     _timerFunctionMap(),
     _fileNameString(fileNameString),
+    _quatLibrary(new Quat()),
+    _vec3Library(new Vec3()),
+    _mat4Library(new Mat4()),
+    _uuidLibrary(new ScriptUUID()),
+    _consoleScriptingInterface(new ConsoleScriptingInterface()),
     _assetScriptingInterface(new AssetScriptingInterface(this))
 {
 
@@ -377,10 +382,20 @@ bool ScriptManager::isDebugMode() const {
 }
 
 ScriptManager::~ScriptManager() {
+    auto scopeGuard = engine()->getScopeGuard();
     qDebug() << "ScriptManager::~ScriptManager() : Script manager deleted, type: " << _type << " name: " << _fileNameString;
     if (_type == ScriptManager::Type::ENTITY_CLIENT) {
         printf("ScriptManager::~ScriptManager");
     }
+    // We need to make sure that these get deleted before the script engine.
+    _scriptingInterface.reset();
+    _quatLibrary.reset();
+    _vec3Library.reset();
+    _mat4Library.reset();
+    _uuidLibrary.reset();
+    _consoleScriptingInterface.reset();
+    _assetScriptingInterface.reset();
+    _returnValue = ScriptValue();
     _isDeleted = true;
 }
 
@@ -579,6 +594,11 @@ void ScriptManager::loadURL(const QUrl& scriptURL, bool reload) {
         if (!success) {
             scriptErrorMessage("ERROR Loading file (" + status + "):" + url, url, -1);
             emit errorLoadingScript(_fileNameString);
+
+            // emitting scriptLoaded will keep Interface from discarding
+            // scripts that might only be temporarily unavailable
+            emit scriptLoaded(url);
+
             return;
         }
 
@@ -804,17 +824,17 @@ void ScriptManager::init() {
 
     scriptEngine->registerEnum("Script.ExternalPaths", QMetaEnum::fromType<ExternalResource::Bucket>());
 
-    scriptEngine->registerGlobalObject("Quat", &_quatLibrary);
-    scriptEngine->registerGlobalObject("Vec3", &_vec3Library);
-    scriptEngine->registerGlobalObject("Mat4", &_mat4Library);
-    scriptEngine->registerGlobalObject("Uuid", &_uuidLibrary);
+    scriptEngine->registerGlobalObject("Quat", _quatLibrary.get());
+    scriptEngine->registerGlobalObject("Vec3", _vec3Library.get());
+    scriptEngine->registerGlobalObject("Mat4", _mat4Library.get());
+    scriptEngine->registerGlobalObject("Uuid", _uuidLibrary.get());
 
     if (_context != NETWORKLESS_TEST_SCRIPT) {
         // This requires networking, we want to avoid the need for it in test scripts
         scriptEngine->registerGlobalObject("Messages", DependencyManager::get<MessagesClient>().data());
     }
 
-    scriptEngine->registerGlobalObject("console", &_consoleScriptingInterface);
+    scriptEngine->registerGlobalObject("console", _consoleScriptingInterface.get());
     scriptEngine->registerFunction("console", "info", ConsoleScriptingInterface::info, scriptEngine->currentContext()->argumentCount());
     scriptEngine->registerFunction("console", "log", ConsoleScriptingInterface::log, scriptEngine->currentContext()->argumentCount());
     scriptEngine->registerFunction("console", "debug", ConsoleScriptingInterface::debug, scriptEngine->currentContext()->argumentCount());
@@ -835,7 +855,7 @@ void ScriptManager::init() {
         scriptEngine->globalObject().setProperty("Resource", resourcePrototype);
         scriptEngine->setDefaultPrototype(qMetaTypeId<ScriptableResource*>(), resourcePrototype);
 
-        scriptEngine->registerGlobalObject("Assets", _assetScriptingInterface);
+        scriptEngine->registerGlobalObject("Assets", _assetScriptingInterface.get());
         scriptEngine->registerGlobalObject("Resources", DependencyManager::get<ResourceScriptingInterface>().data());
 
         scriptEngine->registerGlobalObject("DebugDraw", &DebugDraw::getInstance());
@@ -941,6 +961,7 @@ bool ScriptManager::isStopped() const {
 }
 
 void ScriptManager::run() {
+    auto scopeGuard = _engine->getScopeGuard();
     if (QThread::currentThread() != qApp->thread() && _context == Context::CLIENT_SCRIPT) {
         // Flag that we're allowed to access local HTML files on UI created from C++ calls on this thread
         // (because we're a client script)

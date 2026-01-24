@@ -15,7 +15,7 @@
 <@if not SDF_TEXT3D_SLH@>
 <@def SDF_TEXT3D_SLH@>
 
-LAYOUT(binding=0) uniform sampler2D fontTexture;
+TEXTURE(0, sampler2D, fontTexture);
 
 struct TextParams {
     vec4 bounds;
@@ -30,13 +30,13 @@ struct TextParams {
     float spare;
 };
 
-LAYOUT(binding=0) uniform textParamsBuffer {
+UNIFORM_BUFFER(0, textParamsBuffer) {
     TextParams params;
 };
 
 <@func declareEvalSDFSuperSampled()@>
 
-#define TAA_TEXTURE_LOD_BIAS    -3.0
+#define TAA_TEXTURE_LOD_BIAS    0.0
 
 const float interiorCutoff = 0.5;
 const float smoothStrength = 4.0;

@@ -30,7 +30,8 @@ PolylineVertex getPolylineVertex(int i) {
     return vertex;
 }
 #else
-LAYOUT_STD140(binding=GPU_RESOURCE_BUFFER_SLOT0_STORAGE) buffer polylineVerticesBuffer {
+
+RESOURCE_BUFFER_STD140(GPU_RESOURCE_BUFFER_SLOT0_STORAGE, polylineVerticesBuffer) {
     PolylineVertex _vertices[];
 };
 PolylineVertex getPolylineVertex(int i) {
@@ -39,7 +40,7 @@ PolylineVertex getPolylineVertex(int i) {
 }
 #endif
 
-LAYOUT_STD140(binding=0) uniform polylineDataBuffer {
+UNIFORM_BUFFER(0, polylineDataBuffer) {
     PolylineData _polylineData;
 };
 

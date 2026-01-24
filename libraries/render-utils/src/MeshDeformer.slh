@@ -30,7 +30,7 @@ void evalMeshDeformer(vec4 inPosition, out vec4 outPosition
         , vec3 inTangent, out vec3 outTangent
     <@endif@>
     <@if USE_SKINNING@>
-        , bool isSkinningEnabled, ivec4 skinClusterIndex, vec4 skinClusterWeight
+        , bool isSkinningEnabled, uvec4 skinClusterIndex, vec4 skinClusterWeight
     <@endif@>
     <@if USE_BLENDSHAPE@>
         , bool isBlendshapeEnabled, int vertexIndex

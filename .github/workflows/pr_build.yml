@@ -36,26 +36,43 @@ jobs:
               arch: x86_64
               build_type: full
               qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
+              rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
             #- os: macOS-10.15
             #  build_type: full
             #  qt_source: aqt
-            - os: Ubuntu 22.04
+            - os: Ubuntu 22.04 OpenGL
+              image: docker.io/overte/overte-full-build:2026-01-01-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+              runner: ubuntu-latest
+              arch: amd64
+              build_type: full
+              qt_source: system
+              rendering_backend: OpenGL
+            - os: Ubuntu 22.04 Vulkan
               image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
               runner: ubuntu-latest
               arch: amd64
               build_type: full
               qt_source: system
+              rendering_backend: Vulkan
             # Android builds are currently failing
             #- os: ubuntu-18.04
             #  build_type: android
             #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
-            - os: Ubuntu 22.04
-              image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-aarch64
+            - os: Ubuntu 22.04 OpenGL ES
+              image: docker.io/overte/overte-full-build:2026-01-01-ubuntu-22.04-aarch64
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
               qt_source: system
+              rendering_backend: GLES
+            - os: Ubuntu 22.04 Vulkan
+              image: docker.io/overte/overte-full-build:2026-01-01-ubuntu-22.04-aarch64
+              runner: ubuntu-24.04-arm
+              arch: aarch64
+              build_type: full
+              qt_source: system
+              rendering_backend: Vulkan
         fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
@@ -89,8 +106,7 @@ jobs:
 
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-          #echo "CONAN_HOME=~/.conan2" >> $GITHUB_ENV
-          echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
+          echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
           echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
             if [ "${{ matrix.build_type }}" = "full" ]; then
@@ -116,8 +132,7 @@ jobs:
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" = "Windows"* ]]; then
-          # Try to avoid hitting Windows' PATH limit.
-          echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
+          echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
             echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
@@ -138,10 +153,11 @@ jobs:
     - name: Configure Build Environment 2
       shell: bash
       run: |
+        echo "CMAKE_EXTRA=${CMAKE_EXTRA} -DOVERTE_RENDERING_BACKEND=${{ matrix.rendering_backend }}" >> $GITHUB_ENV
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
         if [ "${{ matrix.build_type }}" = "full" ]; then
           if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-            echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}-$(uname -m).$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}-$(uname -m)-${{ matrix.rendering_backend }}.$INSTALLER_EXT" >> $GITHUB_ENV
           else
             echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
           fi
@@ -151,10 +167,12 @@ jobs:
 
     - name: Cache conan
       id: conan-cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ${{ env.CONAN_HOME }}
+        path: |
+            ${{ env.CONAN_HOME }}/sources
+            ${{ env.CONAN_HOME }}/p
 
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install
@@ -178,10 +196,12 @@ jobs:
 
     - name: Save Conan cache
       if: always() && steps.conan-cache.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ${{ env.CONAN_HOME }}
+        path: |
+            ${{ env.CONAN_HOME }}/sources
+            ${{ env.CONAN_HOME }}/p
 
     - name: Configure CMake
       shell: bash

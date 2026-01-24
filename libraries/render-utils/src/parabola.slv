@@ -23,13 +23,13 @@ struct ParabolaData {
     ivec3 spare;
 };
 
-LAYOUT_STD140(binding=0) uniform parabolaData {
+UNIFORM_BUFFER(0, parabolaData) {
     ParabolaData _parabolaData;
 };
 
-layout(location=0) out vec4 _color;
+OUTPUT(0, vec4, _color);
 <@if not HIFI_USE_FORWARD@>
-    layout(location=1) out vec4 _prevPositionCS;
+    OUTPUT(1, vec4, _prevPositionCS);
 <@endif@>
 
 void main(void) {
