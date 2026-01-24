@@ -1228,6 +1228,7 @@ void OpenXrInputPlugin::InputDevice::setupControllerFlags() {
     if (right_primary.isActive) { _buttonPressedMap.insert(RIGHT_HAS_PRIMARY); }
     if (right_trackpad.isActive) { _buttonPressedMap.insert(RIGHT_HAS_TRACKPAD); }
     if (right_thumbstick.isActive) { _buttonPressedMap.insert(RIGHT_HAS_THUMBSTICK); }
+
     if (right_primary_touch.isActive) { _buttonPressedMap.insert(RIGHT_HAS_CAPACITIVE_TOUCH); }
     if (right_trigger_click.isActive) { _buttonPressedMap.insert(RIGHT_HAS_TRIGGER_CLICK); }
 }
@@ -1238,8 +1239,11 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
     // simple index/thumb/rest tracking from button inputs
     if (_buttonPressedMap.contains(LEFT_HAS_CAPACITIVE_TOUCH) || _buttonPressedMap.contains(LEFT_HAS_TRACKPAD)) {
         auto left_trigger_touch = _actions.at("left_trigger_touch")->getBool().currentState;
+        auto left_trigger = _actions.at("left_trigger_value")->getFloat().currentState;
 
-        if (!left_trigger_touch) { _buttonPressedMap.insert(LEFT_INDEX_POINT); }
+        if (!(left_trigger_touch || left_trigger > 0.2f)) {
+            _buttonPressedMap.insert(LEFT_INDEX_POINT);
+        }
 
         auto left_primary_touch = _actions.at("left_primary_touch")->getBool().currentState;
         auto left_secondary_touch = _actions.at("left_secondary_touch")->getBool().currentState;
@@ -1258,8 +1262,11 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
 
     if (_buttonPressedMap.contains(RIGHT_HAS_CAPACITIVE_TOUCH) || _buttonPressedMap.contains(RIGHT_HAS_TRACKPAD)) {
         auto right_trigger_touch = _actions.at("right_trigger_touch")->getBool().currentState;
+        auto right_trigger = _actions.at("right_trigger_value")->getFloat().currentState;
 
-        if (!right_trigger_touch) { _buttonPressedMap.insert(RIGHT_INDEX_POINT); }
+        if (!(right_trigger_touch || right_trigger > 0.2f)) {
+            _buttonPressedMap.insert(RIGHT_INDEX_POINT);
+        }
 
         auto right_primary_touch = _actions.at("right_primary_touch")->getBool().currentState;
         auto right_secondary_touch = _actions.at("right_secondary_touch")->getBool().currentState;
