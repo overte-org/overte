@@ -688,46 +688,46 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
         return false;
 
     std::map<std::string, std::pair<std::string, XrActionType>> actionTypes = {
-        {"left_primary_click",     {"Left Primary", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_primary_touch",     {"Left Primary Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_secondary_click",   {"Left Secondary", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_secondary_touch",   {"Left Secondary Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_squeeze_value",     {"Left Squeeze", XR_ACTION_TYPE_FLOAT_INPUT}},
-        {"left_trigger_value",     {"Left Trigger", XR_ACTION_TYPE_FLOAT_INPUT}},
-        {"left_trigger_click",     {"Left Trigger Click", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_trigger_touch",     {"Left Trigger Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_thumbstick",        {"Left Thumbstick", XR_ACTION_TYPE_VECTOR2F_INPUT}},
-        {"left_thumbstick_click",  {"Left Thumbstick Click", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_thumbstick_touch",  {"Left Thumbstick Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_trackpad",          {"Left Trackpad", XR_ACTION_TYPE_VECTOR2F_INPUT}},
-        {"left_trackpad_touch",    {"Left Trackpad Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_trackpad_click",    {"Left Trackpad Click", XR_ACTION_TYPE_FLOAT_INPUT}},
-        {"left_grip_pose",         {"Left Grip Pose", XR_ACTION_TYPE_POSE_INPUT}},
-        {"left_palm_pose",         {"Left Palm Pose", XR_ACTION_TYPE_POSE_INPUT}},
-        {"left_haptic",            {"Left Hand Haptic", XR_ACTION_TYPE_VIBRATION_OUTPUT}},
+        {"left_primary_click",     {"Left Primary",           XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_primary_touch",     {"Left Primary Touch",     XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_secondary_click",   {"Left Secondary",         XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_secondary_touch",   {"Left Secondary Touch",   XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_squeeze_value",     {"Left Squeeze",           XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"left_trigger_value",     {"Left Trigger",           XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"left_trigger_click",     {"Left Trigger Click",     XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_trigger_touch",     {"Left Trigger Touch",     XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_thumbstick",        {"Left Thumbstick",        XR_ACTION_TYPE_VECTOR2F_INPUT}},
+        {"left_thumbstick_click",  {"Left Thumbstick Click",  XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_thumbstick_touch",  {"Left Thumbstick Touch",  XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_trackpad",          {"Left Trackpad",          XR_ACTION_TYPE_VECTOR2F_INPUT}},
+        {"left_trackpad_touch",    {"Left Trackpad Touch",    XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_trackpad_click",    {"Left Trackpad Click",    XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"left_grip_pose",         {"Left Grip Pose",         XR_ACTION_TYPE_POSE_INPUT}},
+        {"left_palm_pose",         {"Left Palm Pose",         XR_ACTION_TYPE_POSE_INPUT}},
+        {"left_haptic",            {"Left Hand Haptic",       XR_ACTION_TYPE_VIBRATION_OUTPUT}},
 
-        {"right_primary_click",    {"Right Primary", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"right_primary_touch",    {"Right Primary Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"right_secondary_click",  {"Right Secondary", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"right_secondary_touch",  {"Right Secondary Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"right_squeeze_value",    {"Right Squeeze", XR_ACTION_TYPE_FLOAT_INPUT}},
-        {"right_trigger_value",    {"Right Trigger", XR_ACTION_TYPE_FLOAT_INPUT}},
-        {"right_trigger_click",    {"Right Trigger Click", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"right_trigger_touch",    {"Right Trigger Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"right_thumbstick",       {"Right Thumbstick", XR_ACTION_TYPE_VECTOR2F_INPUT}},
+        {"right_primary_click",    {"Right Primary",          XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_primary_touch",    {"Right Primary Touch",    XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_secondary_click",  {"Right Secondary",        XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_secondary_touch",  {"Right Secondary Touch",  XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_squeeze_value",    {"Right Squeeze",          XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"right_trigger_value",    {"Right Trigger",          XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"right_trigger_click",    {"Right Trigger Click",    XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_trigger_touch",    {"Right Trigger Touch",    XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_thumbstick",       {"Right Thumbstick",       XR_ACTION_TYPE_VECTOR2F_INPUT}},
         {"right_thumbstick_click", {"Right Thumbstick Click", XR_ACTION_TYPE_BOOLEAN_INPUT}},
         {"right_thumbstick_touch", {"Right Thumbstick Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"right_trackpad",         {"Right Trackpad", XR_ACTION_TYPE_VECTOR2F_INPUT}},
-        {"right_trackpad_touch",   {"Right Trackpad Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"right_trackpad_click",   {"Right Trackpad Click", XR_ACTION_TYPE_FLOAT_INPUT}},
-        {"right_grip_pose",        {"Right Grip Pose", XR_ACTION_TYPE_POSE_INPUT}},
-        {"right_palm_pose",        {"Right Palm Pose", XR_ACTION_TYPE_POSE_INPUT}},
-        {"right_haptic",           {"Right Hand Haptic", XR_ACTION_TYPE_VIBRATION_OUTPUT}},
+        {"right_trackpad",         {"Right Trackpad",         XR_ACTION_TYPE_VECTOR2F_INPUT}},
+        {"right_trackpad_touch",   {"Right Trackpad Touch",   XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_trackpad_click",   {"Right Trackpad Click",   XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"right_grip_pose",        {"Right Grip Pose",        XR_ACTION_TYPE_POSE_INPUT}},
+        {"right_palm_pose",        {"Right Palm Pose",        XR_ACTION_TYPE_POSE_INPUT}},
+        {"right_haptic",           {"Right Hand Haptic",      XR_ACTION_TYPE_VIBRATION_OUTPUT}},
 
-        {"hips_pose",              {"Hips Pose", XR_ACTION_TYPE_POSE_INPUT}},
-        {"chest_pose",             {"Chest Pose", XR_ACTION_TYPE_POSE_INPUT}},
-        {"left_foot_pose",         {"Left Foot Pose", XR_ACTION_TYPE_POSE_INPUT}},
-        {"right_foot_pose",        {"Right Foot Pose", XR_ACTION_TYPE_POSE_INPUT}},
+        {"hips_pose",              {"Hips Pose",              XR_ACTION_TYPE_POSE_INPUT}},
+        {"chest_pose",             {"Chest Pose",             XR_ACTION_TYPE_POSE_INPUT}},
+        {"left_foot_pose",         {"Left Foot Pose",         XR_ACTION_TYPE_POSE_INPUT}},
+        {"right_foot_pose",        {"Right Foot Pose",        XR_ACTION_TYPE_POSE_INPUT}},
     };
 
     std::string hand_left = "/user/hand/left/input";
@@ -1207,13 +1207,13 @@ void OpenXrInputPlugin::InputDevice::setupControllerFlags() {
     auto left_primary_touch = _actions.at("left_primary_touch")->getBool();
     auto left_thumbstick = _actions.at("left_thumbstick")->getVector2f();
     auto left_trackpad = _actions.at("left_trackpad")->getVector2f();
-    auto left_trigger_click = _actions.at("left_trigger_click")->getVector2f();
+    auto left_trigger_click = _actions.at("left_trigger_click")->getBool();
 
     auto right_primary = _actions.at("right_primary_click")->getBool();
     auto right_primary_touch = _actions.at("right_primary_touch")->getBool();
     auto right_thumbstick = _actions.at("right_thumbstick")->getVector2f();
     auto right_trackpad = _actions.at("right_trackpad")->getVector2f();
-    auto right_trigger_click = _actions.at("right_trigger_click")->getVector2f();
+    auto right_trigger_click = _actions.at("right_trigger_click")->getBool();
 
     if (left_primary.isActive) { _buttonPressedMap.insert(LEFT_HAS_PRIMARY); }
     if (left_trackpad.isActive) { _buttonPressedMap.insert(LEFT_HAS_TRACKPAD); }
@@ -1236,7 +1236,7 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
     using namespace controller;
 
     // simple index/thumb/rest tracking from button inputs
-    if (_buttonPressedMap.contains(LEFT_HAS_CAPACITIVE_TOUCH)) {
+    if (_buttonPressedMap.contains(LEFT_HAS_CAPACITIVE_TOUCH) || _buttonPressedMap.contains(LEFT_HAS_TRACKPAD)) {
         auto left_trigger_touch = _actions.at("left_trigger_touch")->getBool().currentState;
 
         if (!left_trigger_touch) { _buttonPressedMap.insert(LEFT_INDEX_POINT); }
@@ -1256,7 +1256,7 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
         }
     }
 
-    if (_buttonPressedMap.contains(RIGHT_HAS_CAPACITIVE_TOUCH)) {
+    if (_buttonPressedMap.contains(RIGHT_HAS_CAPACITIVE_TOUCH) || _buttonPressedMap.contains(RIGHT_HAS_TRACKPAD)) {
         auto right_trigger_touch = _actions.at("right_trigger_touch")->getBool().currentState;
 
         if (!right_trigger_touch) { _buttonPressedMap.insert(RIGHT_INDEX_POINT); }
@@ -1278,7 +1278,7 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
 
     // if real hand tracking isn't available,
     // don't do any more than the capacitive touch tracking
-    if (_context->_handTrackingSupported) {
+    if (!_context->_handTrackingSupported) {
         return;
     }
 
