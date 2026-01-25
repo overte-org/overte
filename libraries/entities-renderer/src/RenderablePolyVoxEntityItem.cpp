@@ -1013,7 +1013,11 @@ bool RenderablePolyVoxEntityItem::setCuboid(const glm::vec3& lowPosition, const 
     ivec3 low = glm::max(glm::min(iLowPosition, iVoxelVolumeSize - 1), ivec3(0));
     ivec3 high = glm::max(glm::min(low + iCuboidSize, iVoxelVolumeSize), low);
 
-    withWriteLock([&] { loop3(low, high, [&](const ivec3& v) { result |= setVoxelInternal(v, toValue); }); });
+    withWriteLock([&] {
+        loop3(low, high, [&](const ivec3& v) {
+            result |= setVoxelInternal(v, toValue);
+        });
+    });
     if (result) {
         startUpdates();
     }
@@ -1083,7 +1087,9 @@ bool RenderablePolyVoxEntityItem::setSphere(const vec3& centerWorldCoords, float
     glm::ivec3 lowI = glm::clamp(low, glm::vec3(0.0f), _voxelVolumeSize);
     glm::ivec3 highI = glm::clamp(high, glm::vec3(0.0f), _voxelVolumeSize);
 
-    glm::vec3 radials(radiusWorldCoords / voxelSize.x, radiusWorldCoords / voxelSize.y, radiusWorldCoords / voxelSize.z);
+    glm::vec3 radials(radiusWorldCoords / voxelSize.x,
+                      radiusWorldCoords / voxelSize.y,
+                      radiusWorldCoords / voxelSize.z);
 
     // This three-level for loop iterates over every voxel in the volume that might be in the sphere
     withWriteLock([&] {
@@ -1624,11 +1630,11 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
         reader >> voxelYSize;
         reader >> voxelZSize;
 
-        if (voxelXSize == 0 || voxelXSize > PolyVoxEntityItem::MAX_VOXEL_DIMENSION || voxelYSize == 0 ||
-            voxelYSize > PolyVoxEntityItem::MAX_VOXEL_DIMENSION || voxelZSize == 0 ||
-            voxelZSize > PolyVoxEntityItem::MAX_VOXEL_DIMENSION) {
-            qCDebug(entitiesrenderer) << "voxelSize is not reasonable, skipping uncompressions." << voxelXSize << voxelYSize
-                                      << voxelZSize << getName() << getID();
+        if (voxelXSize == 0 || voxelXSize > PolyVoxEntityItem::MAX_VOXEL_DIMENSION ||
+            voxelYSize == 0 || voxelYSize > PolyVoxEntityItem::MAX_VOXEL_DIMENSION ||
+            voxelZSize == 0 || voxelZSize > PolyVoxEntityItem::MAX_VOXEL_DIMENSION) {
+            qCDebug(entitiesrenderer) << "voxelSize is not reasonable, skipping uncompressions."
+                                      << voxelXSize << voxelYSize << voxelZSize << getName() << getID();
             entity->setVoxelsFromData(QByteArray(1, 0), 1, 1, 1);
             return;
         }
@@ -2098,8 +2104,10 @@ void RenderablePolyVoxEntityItem::setCollisionPoints(ShapeInfo::PointCollection 
     // include the registrationPoint in the shape key, because the offset is already
     // included in the points and the shapeManager wont know that the shape has changed.
     withWriteLock([&] {
-        QString shapeKey = QString(_voxelData.toBase64()) + "," + QString::number(_registrationPoint.x) + "," +
-                           QString::number(_registrationPoint.y) + "," + QString::number(_registrationPoint.z);
+        QString shapeKey = QString(_voxelData.toBase64()) + "," +
+                           QString::number(_registrationPoint.x) + "," +
+                           QString::number(_registrationPoint.y) + "," +
+                           QString::number(_registrationPoint.z);
         _shapeInfo.setParams(SHAPE_TYPE_COMPOUND, collisionModelDimensions, shapeKey);
         _shapeInfo.setPointCollection(pointCollection);
         _shapeReady = true;
