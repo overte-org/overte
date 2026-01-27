@@ -494,7 +494,7 @@ public slots:
      * @function Entities.getEntityObject
      * @param {Uuid} id - The ID of the entity to get the script object for.
      * @returns {object} The script object for the entity if found.
-     * @example <caption>Exchange messages with a Web entity.</caption>
+     * @example <caption>Exchange messages with a Web entity with an HTML source.</caption>
      * // HTML file, name: "webEntity.html".
      * <!DOCTYPE html>
      * <html>
@@ -547,6 +547,51 @@ public slots:
      * Script.scriptEnding.connect(function () {
      *     Entities.deleteEntity(webEntity);
      * });
+     * @example <caption>Exchange messages with a Web entity with a QML source.</caption>
+     * // QML file (Example.qml)
+     * import QtQuick 2.15
+     * import QtQuick.Controls 2.15
+     *
+     * Button {
+     *   id: item
+     *   text: "Button"
+     *   onClicked: eventBridge.emitWebEvent("Button clicked!")
+     *   anchors.fill: parent
+     *
+     *   function fromScript(message) {
+     *     item.text = message;
+     *   }
+     *
+     *   Component.onCompleted: {
+     *     eventBridge.scriptEventReceived.connect(fromScript);
+     *   }
+     * }
+     *
+     * // Interface script (example.js)
+     * const webEntity = Entities.addEntity({
+     *   type: "Web",
+     *   position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, [0, 0.5, -2])),
+     *   rotation: MyAvatar.orientation,
+     *   dimensions: [1, 1, 0],
+     *   grab: { grabbable: false },
+     *   sourceUrl: Script.resolvePath("Example.qml"),
+     *   dpi: 5,
+     * }, "local");
+     *
+     * Entities.webEventReceived.connect((entity, message) => {
+     *   if (entity === webEntity) {
+     *     console.log(entity, message);
+     *   }
+     * });
+     *
+     * let counter = 0;
+     *
+     * Script.setInterval(() => {
+     *   Entities.emitScriptEvent(webEntity, `Button ${counter}`);
+     *   counter++;
+     * }, 1000);
+     *
+     * Script.scriptEnding.connect(() => Entities.deleteEntity(webEntity));
      */
     Q_INVOKABLE QObject* getEntityObject(const QUuid& id);
 
@@ -1884,7 +1929,7 @@ public slots:
      * @function Entities.emitScriptEvent
      * @param {Uuid} entityID - The ID of the Web entity to send the message to.
      * @param {string} message - The message to send.
-     * @example <caption>Exchange messages with a Web entity.</caption>
+     * @example <caption>Exchange messages with a Web entity with an HTML source.</caption>
      * // HTML file, name: "webEntity.html".
      * <!DOCTYPE html>
      * <html>
@@ -1930,6 +1975,51 @@ public slots:
      * }
      * 
      * Entities.webEventReceived.connect(onWebEventReceived);
+     * @example <caption>Exchange messages with a Web entity with a QML source.</caption>
+     * // QML file (Example.qml)
+     * import QtQuick 2.15
+     * import QtQuick.Controls 2.15
+     *
+     * Button {
+     *   id: item
+     *   text: "Button"
+     *   onClicked: eventBridge.emitWebEvent("Button clicked!")
+     *   anchors.fill: parent
+     *
+     *   function fromScript(message) {
+     *     item.text = message;
+     *   }
+     *
+     *   Component.onCompleted: {
+     *     eventBridge.scriptEventReceived.connect(fromScript);
+     *   }
+     * }
+     *
+     * // Interface script (example.js)
+     * const webEntity = Entities.addEntity({
+     *   type: "Web",
+     *   position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, [0, 0.5, -2])),
+     *   rotation: MyAvatar.orientation,
+     *   dimensions: [1, 1, 0],
+     *   grab: { grabbable: false },
+     *   sourceUrl: Script.resolvePath("Example.qml"),
+     *   dpi: 5,
+     * }, "local");
+     *
+     * Entities.webEventReceived.connect((entity, message) => {
+     *   if (entity === webEntity) {
+     *     console.log(entity, message);
+     *   }
+     * });
+     *
+     * let counter = 0;
+     *
+     * Script.setInterval(() => {
+     *   Entities.emitScriptEvent(webEntity, `Button ${counter}`);
+     *   counter++;
+     * }, 1000);
+     *
+     * Script.scriptEnding.connect(() => Entities.deleteEntity(webEntity));
      */
     Q_INVOKABLE void emitScriptEvent(const EntityItemID& entityID, const QVariant& message);
 
