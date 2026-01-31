@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Build Linux
 
-*Last Updated on 2025-05-21*
+*Last Updated on 2026-01-11*
 
 Please read the [general build guide](BUILD.md) for information on dependencies required for all platforms. Only Linux specific instructions are found in this file.
 
@@ -49,33 +49,7 @@ Verify OpenGL:
   - First install mesa-utils with the command `sudo apt install mesa-utils -y`.
   - Then run `glxinfo | grep "OpenGL version"`.
 
-
-- QT 5:
-```bash
-sudo apt-get install -y qtbase5-dev \
-                        qtbase5-private-dev \
-                        qtwebengine5-dev \
-                        qtwebengine5-dev-tools \
-                        qtmultimedia5-dev \
-                        libqt5opengl5-dev \
-                        libqt5webchannel5-dev \
-                        libqt5websockets5-dev \
-                        qtxmlpatterns5-dev-tools \
-                        qttools5-dev \
-                        libqt5xmlpatterns5-dev \
-                        libqt5svg5-dev \
-                        qml-module-qtwebchannel \
-                        qml-module-qtquick-controls \
-                        qml-module-qtquick-controls2 \
-                        qml-module-qt-labs-settings \
-                        qml-module-qtquick-dialogs \
-                        qml-module-qtwebengine
-```
-
-
 ## Extra dependencies to compile Interface on a server
-
-
 - Install the following:
 ```bash
 sudo apt install libpulse0 libnss3 libnspr4 libfontconfig1 libxcursor1 libxcomposite1 libxtst6 libxslt1.1
@@ -128,36 +102,42 @@ Next, add the overte remote to conan
 conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
 ```
 
-Optionally you can let conan automatically install the required system packages
+Let conan automatically install the required system packages
 ```bash
 echo "tools.system.package_manager:mode = install" >> ~/.conan2/global.conf
 echo "tools.system.package_manager:sudo = True" >> ~/.conan2/global.conf
 ```
+If you don't do this, Conan will still complain if it notices system packages being missing, so you can manually install them.
 
 ## Compiling
 
 Install the dependencies with conan
 ```bash
 cd overte
-conan install . -s build_type=Release -b missing -pr:b=default -of build
+conan install . -s build_type=Release -b missing -pr:b=default -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"
 ```
 
 On systems with GCC 15 additional parameter is needed:
 ```bash
 cd overte
-conan install . -s build_type=Release -b missing -pr:b=default -of build -c tools.build:cxxflags="['-include', 'cstdint']"
+conan install . -s build_type=Release -b missing -pr:b=default -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config" -c tools.build:cxxflags="['-include', 'cstdint']"
 ```
 
-Prepare makefiles:
+If you want to build Debug or RelWithDebInfo versions, change the `build_type` to `Debug` or `RelWithDebInfo` and run the command again. E.g.:
 ```bash
-cmake --preset conan-release
+conan install . -s build_type=Debug -b missing -pr:b=default -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"
+```
+
+Prepare ninja files:
+```bash
+cmake --preset conan-default
 ```
 
 ### Server
 
 To compile the Domain server:
 ```bash
-make domain-server assignment-client
+cmake --build --preset conan-release domain-server assignment-client
 ```
 
 *Note: For a server, it is not necessary to compile the Interface.*
@@ -166,12 +146,7 @@ make domain-server assignment-client
 
 To compile the Interface client:
 ```bash
-make interface
-```
-
-The commands above will compile with a single thread. If you have enough memory, you can decrease your build time using the `-j` flag. Since most x64 CPUs support two threads per core, this works out to CPU_COUNT*2. As an example, if you have a 2 core machine, you could use:
-```bash
-make -j4 interface
+cmake --build --preset conan-release interface
 ```
 
 ## Running the software
@@ -198,4 +173,3 @@ Running Interface:
 ```
 
 Go to "localhost" in the running Interface to visit your newly launched Domain server.
-
