@@ -48,36 +48,6 @@ bool openVrQuitRequested() {
     return _openVrQuitRequested;
 }
 
-static const uint32_t RELEASE_OPENVR_HMD_DELAY_MS = 5000;
-
-bool isOculusPresent() {
-    bool result = false;
-#ifdef Q_OS_WIN
-    // Only check for Oculus presence if Oculus plugin is enabled
-    if (PluginManager::getInstance()->getEnableOculusPluginSetting()) {
-        qDebug() << "isOculusPresent: Oculus plugin enabled by a setting";
-        HANDLE oculusServiceEvent = ::OpenEventW(SYNCHRONIZE, FALSE, L"OculusHMDConnected");
-        // The existence of the service indicates a running Oculus runtime
-        if (oculusServiceEvent) {
-            // A signaled event indicates a connected HMD
-            if (WAIT_OBJECT_0 == ::WaitForSingleObject(oculusServiceEvent, 0)) {
-                result = true;
-            }
-            ::CloseHandle(oculusServiceEvent);
-        }
-    } else {
-        qDebug() << "isOculusPresent: Oculus plugin disabled by a setting";
-    }
-#endif
-    return result;
-}
-
-bool oculusViaOpenVR() {
-    static const QString DEBUG_FLAG("HIFI_DEBUG_OPENVR");
-    static bool enableDebugOpenVR = QProcessEnvironment::systemEnvironment().contains(DEBUG_FLAG);
-    return enableDebugOpenVR && isOculusPresent() && vr::VR_IsHmdPresent();
-}
-
 std::string getOpenVrDeviceName() {
     auto system = acquireOpenVrSystem();
     std::string trackingSystemName = "";
@@ -92,12 +62,6 @@ std::string getOpenVrDeviceName() {
         }
     }
     return trackingSystemName;
-}
-
-bool openVrSupported() {
-    static const QString DEBUG_FLAG("HIFI_DEBUG_OPENVR");
-    static bool enableDebugOpenVR = QProcessEnvironment::systemEnvironment().contains(DEBUG_FLAG);
-    return (enableDebugOpenVR || !isOculusPresent()) && vr::VR_IsHmdPresent();
 }
 
 QString getVrSettingString(const char* section, const char* setting) {
@@ -507,8 +471,8 @@ void showMinSpecWarning() {
 
 
 bool checkMinSpecImpl() {
-    // If OpenVR isn't supported, we have no min spec, so pass
-    if (!openVrSupported()) {
+    // If there is no VR headset, we have no min spec, so we pass.
+    if (!vr::VR_IsHmdPresent()) {
         return true;
     }
 
