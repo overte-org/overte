@@ -146,12 +146,12 @@ function pickRayTypeHandler(pickRay){
             handleUUID(avatarIntersection.avatarID);
             break;
         case 'local':
-            var overlayIntersection = Overlays.findRayIntersection(pickRay, [], []);
+            var overlayIntersection = Entities.findRayIntersection(pickRay, Picks.PICK_LOCAL_ENTITIES);
             _this.intersection = overlayIntersection;
             handleUUID(overlayIntersection.overlayID);
             break;
         case 'entity':
-            var entityIntersection = Entities.findRayIntersection(pickRay, [], []);
+            var entityIntersection = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES);
             _this.intersection = entityIntersection;
             handleUUID(entityIntersection.avatarID);
             break;
