@@ -41,7 +41,7 @@ public:
                             const unsigned int maxAssignmentClientForks, Assignment::Type requestAssignmentType,
                             QString assignmentPool, quint16 listenPort, quint16 childMinListenPort,
                             QString assignmentServerHostname, quint16 assignmentServerPort, quint16 httpStatusServerPort,
-                            QString logDirectory, bool disableDomainPortAutoDiscovery);
+                            QString logDirectory, bool disableDomainPortAutoDiscovery, QString logOptions);
     ~AssignmentClientMonitor();
 
     void stopChildProcesses();
@@ -82,6 +82,8 @@ private:
 
     bool _wantsChildFileLogging { false };
     bool _disableDomainPortAutoDiscovery { false };
+
+    QString _logOptions;
 };
 
 #endif // hifi_AssignmentClientMonitor_h
