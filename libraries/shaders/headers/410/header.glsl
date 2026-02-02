@@ -1,5 +1,5 @@
 #define BITFIELD int
-
+#define LAYOUT(X) layout(X)
 #if defined(VULKAN)
     #define gl_InstanceID  gl_InstanceIndex
     #define gl_VertexID  gl_VertexIndex

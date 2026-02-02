@@ -12,7 +12,12 @@
 # FIXME use the built tools
 
 macro(AUTOSCRIBE_APPEND_QRC)
-    string(CONCAT SHADER_QRC "${SHADER_QRC}" "<file alias=\"${ARGV0}\">${ARGV1}</file>\n")
+    set(_qrc_var_name "SHADER_QRC_${SHADER_QRC_COUNT}")
+    if (DEFINED ${_qrc_var_name})
+        set(${_qrc_var_name} "${${_qrc_var_name}}<file alias=\"${ARGV0}\">${ARGV1}</file>\n")
+    else()
+        set(${_qrc_var_name} "<file alias=\"${ARGV0}\">${ARGV1}</file>\n")
+    endif()
 endmacro()
 
 macro(AUTOSCRIBE_PLATFORM_SHADER)
@@ -49,9 +54,7 @@ macro(AUTOSCRIBE_PLATFORM_SHADER)
     list(APPEND SPIRV_SHADERS ${AUTOSCRIBE_SPIRV_OPT_FILE})
 
     set(AUTOSCRIBE_SPIRV_GLSL_FILE "${AUTOSCRIBE_OUTPUT_FILE}.glsl")
-    # TODO: our qrc file is getting too big to compile.  We need to either split it across multiple files
-    # or look into qt_add_big_resources.  But for now, we can skip including the glsl files
-    #AUTOSCRIBE_APPEND_QRC("${SHADER_COUNT}/${AUTOSCRIBE_PLATFORM_PATH}/glsl" "${AUTOSCRIBE_SPIRV_GLSL_FILE}")
+    AUTOSCRIBE_APPEND_QRC("${SHADER_COUNT}/${AUTOSCRIBE_PLATFORM_PATH}/glsl" "${AUTOSCRIBE_SPIRV_GLSL_FILE}")
     source_group(${SOURCE_GROUP_PATH} FILES ${AUTOSCRIBE_SPIRV_GLSL_FILE})
     set_property(SOURCE ${AUTOSCRIBE_SPIRV_GLSL_FILE} PROPERTY SKIP_AUTOMOC ON)
     list(APPEND SPIRV_SHADERS ${AUTOSCRIBE_SPIRV_GLSL_FILE})
@@ -134,11 +137,11 @@ macro(AUTOSCRIBE_SHADER)
         set(SPIRV_CROSS_ARGS --version 310es)
         AUTOSCRIBE_PLATFORM_SHADER("310es")
         AUTOSCRIBE_PLATFORM_SHADER("310es/stereo")
-    elseif(APPLE)
+    else()
         set(SPIRV_CROSS_ARGS --version 410 --no-420pack-extension)
         AUTOSCRIBE_PLATFORM_SHADER("410")
         AUTOSCRIBE_PLATFORM_SHADER("410/stereo")
-    else()
+
         set(SPIRV_CROSS_ARGS --version 450)
         AUTOSCRIBE_PLATFORM_SHADER("450")
         AUTOSCRIBE_PLATFORM_SHADER("450/stereo")
@@ -147,6 +150,13 @@ macro(AUTOSCRIBE_SHADER)
     string(CONCAT SHADER_LIST "${SHADER_LIST}" "${SHADER_NAME} = ${SHADER_COUNT},\n")
     string(CONCAT SHADER_SHADERS_ARRAY  "${SHADER_SHADERS_ARRAY}" "${SHADER_COUNT},\n")
     MATH(EXPR SHADER_COUNT "${SHADER_COUNT}+1")
+
+    # Increment the shader QRC file counter every 50 shaders so each QRC stays under a reasonable size
+    MATH(EXPR _SHADER_MODULO "${SHADER_COUNT} % 50")
+    if (_SHADER_MODULO EQUAL 0)
+        MATH(EXPR SHADER_QRC_COUNT "${SHADER_QRC_COUNT}+1")
+    endif()
+
 endmacro()
 
 # This function takes in the list of defines, which would look like:
@@ -411,6 +421,8 @@ macro(AUTOSCRIBE_SHADER_LIBS)
     file(MAKE_DIRECTORY ${SHADERS_DIR})
     set(SHADER_ENUMS "")
     set(SHADER_COUNT 1)
+    set(SHADER_QRC_COUNT 1)
+    set(SHADER_QRC_INITS "")
 
     #
     # Scribe generation & program defintiion
@@ -428,8 +440,20 @@ macro(AUTOSCRIBE_SHADER_LIBS)
         ShaderEnums.h.in
         ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.h)
 
-    configure_file(shaders.qrc.in ${CMAKE_CURRENT_BINARY_DIR}/shaders.qrc)
-    list(APPEND QT_RESOURCES_FILE ${CMAKE_CURRENT_BINARY_DIR}/shaders.qrc)
+    # Loop over the generated shader QRC chunks and create qrc files for each
+    foreach(QRC_INDEX RANGE 1 ${SHADER_QRC_COUNT})
+        set(_qrc_var_name "SHADER_QRC_${QRC_INDEX}")
+        set(SHADER_QRC "${${_qrc_var_name}}")
+
+        configure_file(shaders.qrc.in ${CMAKE_CURRENT_BINARY_DIR}/shaders${QRC_INDEX}.qrc)
+        list(APPEND QT_RESOURCES_FILE ${CMAKE_CURRENT_BINARY_DIR}/shaders${QRC_INDEX}.qrc)
+
+        string(CONCAT SHADER_QRC_INITS "${SHADER_QRC_INITS}" "Q_INIT_RESOURCE(shaders${QRC_INDEX});\n")
+    endforeach()
+
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/shaders/Shaders.cpp.in
+        ${CMAKE_CURRENT_BINARY_DIR}/src/shaders/Shaders.cpp)
 
     list(APPEND AUTOSCRIBE_SHADER_HEADERS 
         ${AUTOSCRIBE_HEADER_DIR}/mono.glsl 
@@ -446,6 +470,7 @@ macro(AUTOSCRIBE_SHADER_LIBS)
 
     list(APPEND AUTOSCRIBE_SHADER_LIB_SRC ${AUTOSCRIBE_SHADER_HEADERS})
     list(APPEND AUTOSCRIBE_SHADER_LIB_SRC ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.h ${CMAKE_CURRENT_BINARY_DIR}/ShaderEnums.cpp)
+    list(APPEND AUTOSCRIBE_SHADER_LIB_SRC ${CMAKE_CURRENT_BINARY_DIR}/src/shaders/Shaders.cpp)
 
     # Write the shadergen command list
     set(AUTOSCRIBE_SHADERGEN_COMMANDS_FILE ${CMAKE_CURRENT_BINARY_DIR}/shadergen.txt)
@@ -461,13 +486,13 @@ macro(AUTOSCRIBE_SHADER_LIBS)
         endif()
     endif()
 
-    
+
     # A custom python script which will generate all our shader artifacts
     add_custom_command(
         OUTPUT ${SCRIBED_SHADERS} ${SPIRV_SHADERS} ${REFLECTED_SHADERS}
         COMMENT "Generating/updating shaders"
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/shadergen.py 
-            --commands ${AUTOSCRIBE_SHADERGEN_COMMANDS_FILE} 
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/shadergen.py
+            --commands ${AUTOSCRIBE_SHADERGEN_COMMANDS_FILE}
             --glslang "${GLSLANG_DIR}/glslangValidator"
             --scribe "${SCRIBE_DIR}/scribe"
             --spirv-cross "${SPIRV_CROSS_DIR}/spirv-cross"
