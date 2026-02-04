@@ -36,7 +36,7 @@
  * @hifi-server-entity
  * @hifi-assignment-client
  *
- * @property {Uuid} NULL - The null UUID, <code>"{00000000-0000-0000-0000-000000000000}"</code>.
+ * @property {Uuid} NONE - The null UUID, <code>"{00000000-0000-0000-0000-000000000000}"</code>.
  */
 /// Provides the <code><a href="https://apidocs.overte.org/Uuid.html">Uuid</a></code> scripting interface
 class ScriptUUID : public QObject, protected Scriptable {

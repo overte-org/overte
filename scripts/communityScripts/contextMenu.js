@@ -174,10 +174,10 @@ const targetingPick = [
 let currentMenuOpen = false;
 let currentMenuEntities = new Set();
 let currentMenuActionFuncs = [];
-let currentMenuTarget = Uuid.NULL;
+let currentMenuTarget = Uuid.NONE;
 let currentMenuTargetIsAvatar = false;
 let currentMenuInSubmenu = false;
-let currentMenuTargetLine = Uuid.NULL;
+let currentMenuTargetLine = Uuid.NONE;
 let mouseWasCaptured = false;
 let disableCounter = 0;
 let prevClickTime = Date.now();
@@ -189,8 +189,8 @@ function ContextMenu_DeleteMenu() {
 	currentMenuOpen = false;
 	currentMenuInSubmenu = false;
 	currentMenuTargetIsAvatar = false;
-	currentMenuTarget = Uuid.NULL;
-	currentMenuTargetLine = Uuid.NULL;
+	currentMenuTarget = Uuid.NONE;
+	currentMenuTargetLine = Uuid.NONE;
 	Camera.captureMouse = mouseWasCaptured;
 }
 
@@ -234,7 +234,7 @@ function ContextMenu_FindTarget(hand = 1) {
 
 	const ray = Picks.getPrevPickResult(targetingPick[hand]);
 	if (!ray.intersects) {
-		currentMenuTarget = Uuid.NULL;
+		currentMenuTarget = Uuid.NONE;
 		return;
 	}
 
@@ -248,7 +248,7 @@ function ContextMenu_FindTarget(hand = 1) {
 
 function ContextMenu_OpenActions(actionSetName, page = 0) {
 	currentMenuEntities.forEach((_, e) => Entities.deleteEntity(e));
-	currentMenuTargetLine = Uuid.NULL;
+	currentMenuTargetLine = Uuid.NONE;
 	currentMenuActionFuncs = [];
 
 	currentMenuInSubmenu = true;
