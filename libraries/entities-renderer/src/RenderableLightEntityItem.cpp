@@ -38,8 +38,8 @@ void LightEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoint
 
     light->setColor(toGlm(entity->getColor()));
 
-    float intensity = entity->getIntensity();//* entity->getFadingRatio();
-    light->setIntensity(intensity);
+    _intensity = entity->getIntensity();
+    light->setIntensity(_intensity);
 
     light->setFalloffRadius(entity->getFalloffRadius());
 
@@ -65,6 +65,11 @@ Item::Bound LightEntityRenderer::getBound(RenderArgs* args) {
 }
 
 void LightEntityRenderer::doRender(RenderArgs* args) {
+    bool fading = ShapeKey(args->_itemShapeKey).isFaded();
+    if (fading) {
+        float fadeRatio = 1.0f - std::clamp(getFadeParams(args->_scene).baseOffsetAndThreshold.w, 0.0f, 1.0f);
+        auto light = _lightPayload->editLight();
+        light->setIntensity(_intensity * fadeRatio);
+    }
     _lightPayload->render(args);
 }
-

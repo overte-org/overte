@@ -3065,7 +3065,7 @@ const GROUPS_PER_TYPE = {
   Model: [ 'base', 'model', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
   Image: [ 'base', 'image', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
   Web: [ 'base', 'web', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
-  Light: [ 'base', 'light', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
+  Light: ['base', 'light', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
   Material: [ 'base', 'material', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   ParticleEffect: [ 'base', 'particles', 'particles_emit', 'particles_size', 'particles_color', 
                     'particles_behavior', 'particles_constraints', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],

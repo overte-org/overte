@@ -34,6 +34,7 @@ protected:
 
 private:
     const LightPayload::Pointer _lightPayload{ std::make_shared<LightPayload>() };
+    float _intensity { 1.0f };
 };
 
 } } // namespace 
