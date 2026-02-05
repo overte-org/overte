@@ -36,8 +36,11 @@ void render::renderItems(const RenderContextPointer& renderContext, const ItemBo
     }
     for (auto i = 0; i < numItemsToDraw; ++i) {
         auto& item = scene->getItem(inItems[i].id);
+        auto key = item.getShapeKey();
+        args->_itemShapeKey = key._flags.to_ulong();
         item.render(args);
     }
+    args->_itemShapeKey = 0;
 }
 
 namespace {
