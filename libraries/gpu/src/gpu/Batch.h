@@ -51,15 +51,29 @@ public:
         MAX_TRANSFORM_SAVE_SLOT_COUNT = 160
     };
 
+    /**
+     * A structure passed to shaders. Contains index of an object in transform objects buffer for this draw call.
+     */
     class DrawCallInfo {
     public:
         using Index = uint16_t;
 
+        /**
+         * @brief Create DrawCallInfo object with no user data.
+         * @param idx Index of the transform object for the given draw call.
+         */
         DrawCallInfo(Index idx) : index(idx) {}
-        DrawCallInfo(Index idx, Index user) : index(idx), unused(user) {}
+
+        /**
+         * @brief Create DrawCallInfo object with user data.
+         * It's used when drawing meshes. First bit of user data enables blendshapes and secodn on enables skinning.
+         * @param idx Index of the transform object for the given draw call.
+         * @param user User data. Currently used only for meshes.
+         */
+        DrawCallInfo(Index idx, Index user) : index(idx), user(user) {}
 
         Index index { 0 };
-        uint16_t unused { 0 }; // Reserved space for later
+        uint16_t user { 0 };
 
     };
     // Make sure DrawCallInfo has no extra padding
@@ -67,16 +81,38 @@ public:
 
     using DrawCallInfoBuffer = std::vector<DrawCallInfo>;
 
+    /**
+     * Used for instancing, currently for basic shapes with simple single color shading.
+     */
     struct NamedBatchData {
         using BufferPointers = std::vector<BufferPointer>;
         using Function = std::function<void(gpu::Batch&, NamedBatchData&)>;
 
+        /**
+         * Contain buffers needed for a given instanced draw call.
+         * Currently, it can contain color data on INSTANCE_COLOR_BUFFER index, and fade data on INSTANCE_FADE1_BUFFER...INSTANCE_FADE7_BUFFER.
+         * These also have per-instance stride.
+         */
         BufferPointers buffers;
+
+        /**
+         * Function that adds batch commands necessary to draw instanced objects from this NamedBatchData.
+         * It's called after all the objects are collected.
+         */
         Function function;
+
+        /**
+         * The whole named batch is drawn as a single drawInstanced call.
+         * drawCallInfos buffer is bound with per instance stride, providing indexes of transformations for each drawn object.
+         */
         DrawCallInfoBuffer drawCallInfos;
 
         size_t count() const { return drawCallInfos.size(); }
 
+        /**
+         * @brief Adds commands for drawInstanced call for this set of instanced objects.
+         * @param batch Batch to which commands will be added to.
+         */
         void process(Batch& batch) {
             if (function) {
                 function(batch, *this);
@@ -86,9 +122,13 @@ public:
 
     using NamedBatchDataMap = std::map<std::string, NamedBatchData>;
 
+    // Contains DrawCallInfo structures for non-instanced draw calls.
     DrawCallInfoBuffer _drawCallInfos;
+
+    // Used for reserving proper size for the _drawCallInfos based on previous frames.
     static size_t _drawCallInfosMax;
 
+    // DOCTODO
     mutable std::string _currentNamedCall;
 
     const DrawCallInfoBuffer& getDrawCallInfoBuffer() const;
@@ -98,7 +138,7 @@ public:
     void captureNamedDrawCallInfo(std::string name);
 
     Batch(const std::string& name = "");
-    // Disallow copy construction and assignement of batches
+    // Disallow copy construction and assignment of batches
     Batch(const Batch& batch) = delete;
     Batch& operator=(const Batch& batch) = delete;
     ~Batch();
@@ -226,7 +266,7 @@ public:
     void advance(const SwapChainPointer& swapChain);
 
     // Clear framebuffer layers
-    // Targets can be any of the render buffers contained in the currnetly bound Framebuffer
+    // Targets can be any of the render buffers contained in the currently bound Framebuffer
     // Optionally the scissor test can be enabled locally for this command and to restrict the clearing command to the pixels contained in the scissor rectangle
     void clearFramebuffer(Framebuffer::Masks targets, const Vec4& color, float depth, int stencil, bool enableScissor = false);
     void clearColorFramebuffer(Framebuffer::Masks targets, const Vec4& color, bool enableScissor = false); // not a command, just a shortcut for clearFramebuffer, mask out targets to make sure it touches only color targets
@@ -263,7 +303,7 @@ public:
     void pushProfileRange(const char* name);
     void popProfileRange();
 
-    // TODO: As long as we have gl calls explicitely issued from interface
+    // TODO: As long as we have gl calls explicitly issued from interface
     // code, we need to be able to record and batch these calls. THe long
     // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
     // For now, instead of calling the raw gl Call, use the equivalent call on the batch so the call is beeing recorded
