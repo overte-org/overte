@@ -155,22 +155,20 @@ void main(void) {
     vec3 eyeToParticle = normalize(anchorPoint.xyz - vec3(0.0));
     vec3 particleRight = cross(eyeToParticle, upEye);
     vec3 particleUp = cross(particleRight, eyeToParticle);     // don't need to normalize
-    // This ordering ensures that un-rotated particles render upright in the viewer.
-    vec3 UNIT_QUAD[NUM_VERTICES_PER_PARTICLE] = vec3[NUM_VERTICES_PER_PARTICLE](
-        normalize(-particleRight + particleUp),
-        normalize(-particleRight - particleUp),
-        normalize(particleRight + particleUp),
-        normalize(particleRight - particleUp)
-    );
+    // Rotate the particle basis around the eyeToParticle axis by 'spin' so the quad
+    // rotates correctly about the view direction of the particle. Use Rodrigues' formula.
     float c = cos(spin);
     float s = sin(spin);
-    mat4 rotation = mat4(
-        c, -s, 0, 0,
-        s, c, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
+    vec3 rotatedRight = particleRight * c + cross(eyeToParticle, particleRight) * s + eyeToParticle * dot(eyeToParticle, particleRight) * (1.0 - c);
+    vec3 rotatedUp = particleUp * c + cross(eyeToParticle, particleUp) * s + eyeToParticle * dot(eyeToParticle, particleUp) * (1.0 - c);
+    // This ordering ensures that un-rotated particles render upright in the viewer.
+    vec3 ROTATED_UNIT_QUAD[NUM_VERTICES_PER_PARTICLE] = vec3[NUM_VERTICES_PER_PARTICLE](
+        normalize(-rotatedRight + rotatedUp),
+        normalize(-rotatedRight - rotatedUp),
+        normalize(rotatedRight + rotatedUp),
+        normalize(rotatedRight - rotatedUp)
     );
-    vec4 quadPos = radius * vec4(UNIT_QUAD[twoTriID], 0.0);
-    vec4 eyePos = anchorPoint + rotation * quadPos;
+    vec4 quadPos = radius * vec4(ROTATED_UNIT_QUAD[twoTriID], 0.0);
+    vec4 eyePos = anchorPoint + quadPos;
     <$transformEyeToClipPos(cam, eyePos, gl_Position)$>
 }
