@@ -24,6 +24,8 @@ public:
     GridEntityRenderer(const EntityItemPointer& entity);
     ~GridEntityRenderer();
 
+    ComponentMode getFadeOutMode() const override { return ComponentMode::COMPONENT_MODE_DISABLED; }
+
 protected:
     Item::Bound getBound(RenderArgs* args) override;
     ShapeKey getShapeKey() override;

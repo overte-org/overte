@@ -27,6 +27,8 @@ public:
 
     gpu::TexturePointer getTexture() override { return _texture; }
 
+    ComponentMode getFadeOutMode() const override { return ComponentMode::COMPONENT_MODE_DISABLED; }
+
 protected:
     virtual void doRender(RenderArgs* args) override;
     virtual bool isTransparent() const override;

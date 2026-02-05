@@ -89,7 +89,7 @@ public:
 
     virtual FadeProperties getFadeProperties(const TransitionType type) const override;
     // Non-world layer entities do not currently support fading
-    ComponentMode getFadeOutMode() const { return _renderLayer == RenderLayer::WORLD ? _fadeOutMode : ComponentMode::COMPONENT_MODE_DISABLED; }
+    virtual ComponentMode getFadeOutMode() const { return _renderLayer == RenderLayer::WORLD ? _fadeOutMode : ComponentMode::COMPONENT_MODE_DISABLED; }
 
 protected:
     virtual bool needsRenderUpdateFromEntity() const final { return needsRenderUpdateFromEntity(_entity); }
