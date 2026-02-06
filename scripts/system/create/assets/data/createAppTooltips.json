@@ -832,7 +832,7 @@
         "tooltip": "The volume of the sound."
     },
     "pitch": {
-        "tooltip": "Alter the pitch of the sound, within +/- 2 octaves. The value is the relative sample rate at which to resample the sound."
+        "tooltip": "Relative sample rate for the sound, between 0.0625 (-4 octaves) and 16 (+4 octaves). For example, a pitch of 2 means double sample rate, which is 1 octave higher."
     },
     "timeOffset": {
         "tooltip": "Starts playback from a specified time (seconds) within the sound file."
