@@ -68,9 +68,20 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
                                         "UDP port for this assignment client (or monitor)", "port");
     parser.addOption(portOption);
 
+    const QCommandLineOption publicPortOption(ASSIGNMENT_CLIENT_LISTEN_PUBLIC_PORT_OPTION,
+                                        "Public UDP port for this assignment client (or monitor), optional", "port");
+    parser.addOption(publicPortOption);
+
     const QCommandLineOption minChildListenPort(ASSIGNMENT_MONITOR_MIN_CHILDREN_LISTEN_PORT_OPTION,
                                                 "Minimum UDP listen port", "port");
     parser.addOption(minChildListenPort);
+
+    const QCommandLineOption useSamePublicPortsOption(ASSIGNMENT_MONITOR_USE_SAME_PUBLIC_PORTS_OPTION,
+                                            "Normally public ports are discovered using STUN server. "
+                                            "Sometimes this doesn't work and gives wrong port names. "
+                                            "In such case this option can be used together with port forwarding on the router. "
+                                            "Needs to be used together with --min-listen-port.");
+    parser.addOption(useSamePublicPortsOption);
 
     const QCommandLineOption assignmentServerHostnameOption(CUSTOM_ASSIGNMENT_SERVER_HOSTNAME_OPTION,
                                                             "set assignment-server hostname", "hostname");
@@ -208,7 +219,7 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
         assignmentServerHostname = parser.value(assignmentServerHostnameOption);
     }
 
-    // check for an overriden assignment server port
+    // check for an overridden assignment server port
     quint16 assignmentServerPort = DEFAULT_DOMAIN_SERVER_PORT;
     if (argumentVariantMap.contains(CUSTOM_ASSIGNMENT_SERVER_PORT_OPTION)) {
         assignmentServerPort = argumentVariantMap.value(CUSTOM_ASSIGNMENT_SERVER_PORT_OPTION).toUInt();
@@ -223,7 +234,12 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
         childMinListenPort = argumentVariantMap.value(ASSIGNMENT_MONITOR_MIN_CHILDREN_LISTEN_PORT_OPTION).toUInt();
     }
 
-    // check for an overidden listen port
+    bool useSamePublicPorts = false;
+    if (parser.isSet(useSamePublicPortsOption)) {
+        useSamePublicPorts = true;
+    }
+
+    // check for an overridden listen port
     quint16 listenPort = 0;
     if (argumentVariantMap.contains(ASSIGNMENT_CLIENT_LISTEN_PORT_OPTION)) {
         listenPort = argumentVariantMap.value(ASSIGNMENT_CLIENT_LISTEN_PORT_OPTION).toUInt();
@@ -231,6 +247,11 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
 
     if (parser.isSet(portOption)) {
         listenPort = parser.value(portOption).toUInt();
+    }
+
+    int publicListenPort = INVALID_PORT;
+    if (parser.isSet(publicPortOption)) {
+        publicListenPort = parser.value(publicPortOption).toInt();
     }
 
     if (parser.isSet(numChildsOption)) {
@@ -271,13 +292,14 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
     if (numForks || minForks || maxForks) {
         AssignmentClientMonitor* monitor =  new AssignmentClientMonitor(numForks, minForks, maxForks,
                                                                         requestAssignmentType, assignmentPool, listenPort,
-                                                                        childMinListenPort, assignmentServerHostname,
+                                                                        childMinListenPort, useSamePublicPorts, assignmentServerHostname,
                                                                         assignmentServerPort, httpStatusPort, logDirectory,
                                                                         disableDomainPortAutoDiscovery);
         monitor->setParent(this);
         connect(this, &QCoreApplication::aboutToQuit, monitor, &AssignmentClientMonitor::aboutToQuit);
     } else {
-        AssignmentClient* client = new AssignmentClient(requestAssignmentType, assignmentPool, listenPort,
+        AssignmentClient* client = new AssignmentClient(requestAssignmentType, assignmentPool,
+                                                        listenPort, publicListenPort,
                                                         assignmentServerHostname,
                                                         assignmentServerPort, monitorPort,
                                                         disableDomainPortAutoDiscovery);

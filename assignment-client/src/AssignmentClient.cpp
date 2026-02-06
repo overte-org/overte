@@ -45,7 +45,7 @@ const QString ASSIGNMENT_CLIENT_TARGET_NAME = "assignment-client";
 const long long ASSIGNMENT_REQUEST_INTERVAL_MSECS = 1 * 1000;
 
 AssignmentClient::AssignmentClient(Assignment::Type requestAssignmentType, QString assignmentPool,
-                                   quint16 listenPort, QString assignmentServerHostname,
+                                   quint16 listenPort, int publicListenPort, QString assignmentServerHostname,
                                    quint16 assignmentServerPort, quint16 assignmentMonitorPort,
                                    bool disableDomainPortAutoDiscovery) :
     _assignmentServerHostname(DEFAULT_ASSIGNMENT_SERVER_HOSTNAME)
@@ -60,7 +60,8 @@ AssignmentClient::AssignmentClient(Assignment::Type requestAssignmentType, QStri
     auto addressManager = DependencyManager::set<AddressManager>();
 
     // create a NodeList as an unassigned client, must be after addressManager
-    auto nodeList = DependencyManager::set<NodeList>(NodeType::Unassigned, listenPort);
+    auto nodeList = DependencyManager::set<NodeList>(NodeType::Unassigned,
+        listenPort, INVALID_PORT, publicListenPort);
 
     nodeList->startThread();
     // set the logging target to the the CHILD_TARGET_NAME
