@@ -28,6 +28,8 @@ public:
 
     virtual bool isTransparent() const override;
 
+    ComponentMode getFadeOutMode() const override { return ComponentMode::COMPONENT_MODE_DISABLED; }
+
 protected:
     virtual bool needsRenderUpdateFromTypedEntity(const TypedEntityPointer& entity) const override;
     virtual void doRenderUpdateSynchronousTyped(const ScenePointer& scene, Transaction& transaction, const TypedEntityPointer& entity) override;

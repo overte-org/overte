@@ -24,7 +24,9 @@ class LineEntityRenderer : public TypedEntityRenderer<LineEntityItem> {
     friend class EntityRenderer;
 
 public:
-    LineEntityRenderer(const EntityItemPointer& entity) : Parent(entity) { }
+    LineEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {}
+
+    ComponentMode getFadeOutMode() const override { return ComponentMode::COMPONENT_MODE_DISABLED; }
 
 protected:
     virtual void onRemoveFromSceneTyped(const TypedEntityPointer& entity) override;

@@ -88,7 +88,8 @@ public:
     virtual HighlightStyle getOutlineStyle(const ViewFrustum& viewFrustum, const size_t height) const override;
 
     virtual FadeProperties getFadeProperties(const TransitionType type) const override;
-    ComponentMode getFadeOutMode() const { return _fadeOutMode; }
+    // Non-world layer entities do not currently support fading
+    virtual ComponentMode getFadeOutMode() const { return _renderLayer == RenderLayer::WORLD ? _fadeOutMode : ComponentMode::COMPONENT_MODE_DISABLED; }
 
 protected:
     virtual bool needsRenderUpdateFromEntity() const final { return needsRenderUpdateFromEntity(_entity); }
