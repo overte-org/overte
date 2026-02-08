@@ -45,6 +45,8 @@ protected:
     QVector<glm::vec3> _normals;
     QVector<glm::vec3> _colors;
     glm::vec3 _color;
+    QVector<float> _alphas;
+    float _alpha;
     QVector<float> _widths;
 
     NetworkTexturePointer _texture;
@@ -54,6 +56,7 @@ protected:
     bool _isUVModeStretch { false };
     bool _faceCamera { false };
     bool _glow { false };
+    Sampler _sampler;
 
     size_t _numVertices { 0 };
     gpu::BufferPointer _polylineDataBuffer;
