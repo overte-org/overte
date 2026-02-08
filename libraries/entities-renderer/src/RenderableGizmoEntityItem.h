@@ -24,6 +24,8 @@ public:
     GizmoEntityRenderer(const EntityItemPointer& entity);
     ~GizmoEntityRenderer();
 
+    ComponentMode getFadeOutMode() const override { return ComponentMode::COMPONENT_MODE_DISABLED; }
+
 protected:
     Item::Bound getBound(RenderArgs* args) override;
     ShapeKey getShapeKey() override;
