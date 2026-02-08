@@ -181,6 +181,7 @@ const FILTER_TYPES = [
     "Text",
     "Grid",
     "Sound",
+    "Canvas",
     "Empty",
     "Script",
 ];

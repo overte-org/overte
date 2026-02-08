@@ -38,8 +38,7 @@ bool ScriptProgramV8Wrapper::compile() {
         return true;
     }
     auto isolate = _engine->getIsolate();
-    v8::Locker locker(isolate);
-    v8::Isolate::Scope isolateScope(isolate);
+    Q_ASSERT(isolate->IsCurrent());
     v8::HandleScope handleScope(isolate);
     auto context = _engine->getContext();
     v8::Context::Scope contextScope(context);

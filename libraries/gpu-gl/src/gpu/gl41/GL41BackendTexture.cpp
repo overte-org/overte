@@ -19,7 +19,7 @@ using namespace gpu;
 using namespace gpu::gl;
 using namespace gpu::gl41;
 
-bool GL41Backend::supportedTextureFormat(const gpu::Element& format) {
+bool GL41Backend::supportedTextureFormat(const gpu::Element& format) const {
     switch (format.getSemantic()) {
         case gpu::Semantic::COMPRESSED_ETC2_RGB:
         case gpu::Semantic::COMPRESSED_ETC2_SRGB:
@@ -69,7 +69,6 @@ GLTexture* GL41Backend::syncGPUObject(const TexturePointer& texturePointer) {
                 break;
 
             case TextureUsageType::STRICT_RESOURCE:
-                qCDebug(gpugllogging) << "Strict texture";
                 object = new GL41StrictResourceTexture(shared_from_this(), texture);
                 break;
 
@@ -617,7 +616,7 @@ void GL41VariableAllocationTexture::populateTransferQueue(TransferQueue& pending
         }
 
         // queue up the sampler and populated mip change for after the transfer has completed
-        pendingTransfers.emplace(new TransferJob(sourceMip, [=] {
+        pendingTransfers.emplace(new TransferJob(sourceMip, [=, this] {
             _populatedMip = sourceMip;
             incrementPopulatedSize(_gpuObject.evalMipSize(sourceMip));
             sanityCheck();

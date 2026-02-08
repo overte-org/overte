@@ -40,6 +40,11 @@
     font-style: italic;
 }
 
+@font-face {
+    font-family: HiFi-Glyphs;
+    src: url('fonts/hifi-glyphs.ttf');
+}
+
 /* Roboto-Regular.ttf       400 */
 /* Roboto-Bold.ttf          700 */
 /* Roboto-Italic.ttf        400 */

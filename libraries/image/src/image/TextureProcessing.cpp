@@ -33,11 +33,13 @@
 
 using namespace gpu;
 
+#if defined(NVTT_API)
 #include <nvtt/nvtt.h>
 
 #undef _CRT_SECURE_NO_WARNINGS
 #include <Etc.h>
 #include <EtcFilter.h>
+#endif
 
 static const glm::uvec2 SPARSE_PAGE_SIZE(128);
 static const glm::uvec2 MAX_TEXTURE_SIZE_GLES(2048);
@@ -353,7 +355,7 @@ std::pair<gpu::TexturePointer, glm::ivec2> processImage(std::shared_ptr<QIODevic
     // Validate that the image loaded
     if (imageWidth == 0 || imageHeight == 0 || image.getFormat() == Image::Format_Invalid) {
         QString reason(image.getFormat() == Image::Format_Invalid ? "(Invalid Format)" : "(Size is invalid)");
-        qCWarning(imagelogging) << "Failed to load"  << QString::fromStdString(filename) << ":" << qPrintable(reason);
+        qCWarning(imagelogging) << "Failed to load" << QString::fromStdString(filename) << ":" << qPrintable(reason);
         return { nullptr, { imageWidth, imageHeight } };
     }
 
@@ -500,11 +502,9 @@ struct MyErrorHandler : public nvtt::ErrorHandler {
     }
 };
 
-#if defined(NVTT_API)
 class SequentialTaskDispatcher : public nvtt::TaskDispatcher {
 public:
-    SequentialTaskDispatcher(const std::atomic<bool>& abortProcessing = false) : _abortProcessing(abortProcessing) {
-    }
+    SequentialTaskDispatcher(const std::atomic<bool>& abortProcessing = false) : _abortProcessing(abortProcessing) {}
 
     const std::atomic<bool>& _abortProcessing;
 
@@ -518,7 +518,6 @@ public:
         }
     }
 };
-#endif
 
 void convertToFloatFromPacked(const unsigned char* source, int width, int height, size_t srcLineByteStride, gpu::Element sourceFormat,
                               glm::vec4* output, size_t outputLinePixelStride) {
@@ -771,12 +770,12 @@ void convertImageToLDRTexture(gpu::Texture* texture, Image&& image, BackendTarge
         }
     } else {
         int numMips = 1;
-    
+
         if (buildMips) {
             numMips += (int)log2(std::max(width, height)) - baseMipLevel;
         }
         assert(numMips > 0);
-        Etc::RawImage *mipMaps = new Etc::RawImage[numMips];
+        Etc::RawImage* mipMaps = new Etc::RawImage[numMips];
         Etc::Image::Format etcFormat = Etc::Image::Format::DEFAULT;
 
         if (mipFormat == gpu::Element::COLOR_COMPRESSED_ETC2_RGB) {

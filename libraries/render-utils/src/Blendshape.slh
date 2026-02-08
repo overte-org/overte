@@ -16,7 +16,7 @@ uvec4 getPackedBlendshapeOffset(int i) {
     return floatBitsToUint(texelFetch(blendshapeOffsetsBuffer, i));
 }
 #else
-LAYOUT_STD140(binding=GPU_RESOURCE_BUFFER_SLOT0_STORAGE) buffer blendshapeOffsetsBuffer {
+RESOURCE_BUFFER(GPU_RESOURCE_BUFFER_SLOT0_STORAGE, blendshapeOffsetsBuffer) {
     uvec4 _packedBlendshapeOffsets[];
 };
 uvec4 getPackedBlendshapeOffset(int i) {

@@ -314,10 +314,6 @@ Texture::Size Texture::resize(Type type, const Element& texelFormat, uint16 widt
     return _size;
 }
 
-bool Texture::isColorRenderTarget() const {
-    return (_texelFormat.getSemantic() == gpu::RGBA);
-}
-
 bool Texture::isDepthStencilRenderTarget() const {
     return (_texelFormat.getSemantic() == gpu::DEPTH) || (_texelFormat.getSemantic() == gpu::DEPTH_STENCIL);
 }

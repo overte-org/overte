@@ -65,9 +65,9 @@ public slots:
      * Stops audio playback.
      * @function AudioInjector.stop
      * @example <caption>Stop playing a sound before it finishes.</caption>
-     * var sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
-     * var injector;
-     * var injectorOptions = {
+     * const sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
+     * let injector;
+     * const injectorOptions = {
      *     position: MyAvatar.position
      * };
      * 
@@ -85,13 +85,50 @@ public slots:
      * Gets the current configuration of the audio injector.
      * @function AudioInjector.getOptions
      * @returns {AudioInjector.AudioInjectorOptions} Configuration of how the injector plays the audio.
+     * @example <caption>Prints injector options to log</caption>
+     * let sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
+     *     let injector;
+     *     let injectorOptions = {
+     *     position: MyAvatar.position,
+     *     volume: 0.8,
+     * };
+     *
+     * Script.setTimeout(function () { // Give the sound time to load.
+     *     injector = Audio.playSound(sound, injectorOptions);
+     * }, 1000);
+     *
+     * Script.setTimeout(function () {
+     *     const options = injector.getOptions();
+     *
+     *     print("Current AudioInjectorOptions: ",JSON.stringify(options)); // Print all options to log
+     *
+     *     print("Volume is set to ", options.volume);
+     * }, 2000);
      */
     AudioInjectorOptions getOptions() const { return DependencyManager::get<AudioInjectorManager>()->getOptions(_injector); }
 
     /*@jsdoc
      * Configures how the injector plays the audio.
+     * This will replace all current AudioInjectorOptions.
      * @function AudioInjector.setOptions
      * @param {AudioInjector.AudioInjectorOptions} options - Configuration of how the injector plays the audio.
+     * @example <caption>Reduce the volume of the sound without changing other existing options.</caption>
+     * const sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
+     * let injector;
+     * const injectorOptions = {
+     *     position: MyAvatar.position,
+     *     volume: 1.0,
+     * };
+     *
+     * Script.setTimeout(function () { // Give the sound time to load.
+     *     injector = Audio.playSound(sound, injectorOptions);
+     * }, 1000);
+     *
+     * Script.setTimeout(function () {
+     *     const options = injector.getOptions();
+     *     options.volume = 0.2 // Reduce volume
+     *     injector.setOptions(options); // replace existing options
+     * }, 5000);
      */
     void setOptions(const AudioInjectorOptions& options) { DependencyManager::get<AudioInjectorManager>()->setOptions(_injector, options); }
 
@@ -107,9 +144,9 @@ public slots:
      * @function AudioInjector.isPlaying
      * @returns {boolean} <code>true</code> if the audio is currently playing, otherwise <code>false</code>.
      * @example <caption>See if a sound is playing.</caption>
-     * var sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
-     * var injector;
-     * var injectorOptions = {
+     * const sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
+     * let injector;
+     * const injectorOptions = {
      *     position: MyAvatar.position
      * };
      *
@@ -130,9 +167,9 @@ signals:
      * @function AudioInjector.finished
      * @returns {Signal}
      * @example <caption>Report when a sound has finished playing.</caption>
-     * var sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
-     * var injector;
-     * var injectorOptions = {
+     * const sound = SoundCache.getSound(Script.resourcesPath() + "sounds/sample.wav");
+     * let injector;
+     * const injectorOptions = {
      *     position: MyAvatar.position
      * };
      * 

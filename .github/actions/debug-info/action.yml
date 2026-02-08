@@ -1,0 +1,17 @@
+name: "Gather debug information"
+runs:
+    using: "composite"
+    steps:
+    - name: Output disk usage
+      if: ${{ always() }}
+      shell: bash
+      continue-on-error: true
+      run: df -h
+
+    - name: Output Windows installer logs
+      if: failure() && startsWith(matrix.os, 'Windows')
+      shell: bash
+      continue-on-error: true
+      working-directory: build
+      run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
+

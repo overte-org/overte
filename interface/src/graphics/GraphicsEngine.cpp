@@ -28,6 +28,9 @@
 #include <gpu/Batch.h>
 #include <gpu/Context.h>
 #include <gpu/gl/GLBackend.h>
+#ifndef USE_GL
+#include <gpu/vk/VKBackend.h>
+#endif
 #include <display-plugins/DisplayPlugin.h>
 
 #include <display-plugins/CompositorHelper.h>
@@ -45,7 +48,11 @@ GraphicsEngine::GraphicsEngine() {
 GraphicsEngine::~GraphicsEngine() {
 }
 
-void GraphicsEngine::initializeGPU(GLWidget* glwidget) {
+#ifdef USE_GL
+void GraphicsEngine::initializeGPU(GLWidget* primaryWidget) {
+#else
+void GraphicsEngine::initializeGPU(VKWidget* primaryWidget) {
+#endif
 
     _renderEventHandler = new RenderEventHandler(
         [this]() { return this->shouldPaint(); },
@@ -55,9 +62,13 @@ void GraphicsEngine::initializeGPU(GLWidget* glwidget) {
     // Requires the window context, because that's what's used in the actual rendering
     // and the GPU backend will make things like the VAO which cannot be shared across
     // contexts
-    glwidget->makeCurrent();
+    primaryWidget->makeCurrent();
+#ifdef USE_GL
     gpu::Context::init<gpu::gl::GLBackend>();
-    glwidget->makeCurrent();
+#else
+    gpu::Context::init<gpu::vk::VKBackend>();
+#endif
+    primaryWidget->makeCurrent();
     _gpuContext = std::make_shared<gpu::Context>();
 
 #ifndef Q_OS_ANDROID

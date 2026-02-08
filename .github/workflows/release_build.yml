@@ -3,7 +3,7 @@
 # Copyright 2021-2025 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
-name: Windows Release Build
+name: Release Build
 
 on:
   push:
@@ -13,31 +13,60 @@ on:
       - "[0-9][0-9][0-9][0-9].[0-9][0-9].**"
 
 env:
-  APP_NAME: interface
-  BUILD_TYPE: Release
-  GIT_COMMIT: ${{ github.sha }}
-  UPLOAD_BUCKET: overte-public
-  UPLOAD_REGION: fra1
-  UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
-
-  # WIN-specific variables
-  PreferredToolArchitecture: X64
-
-  # Specify build preset, since on Windows, `cmake --build` appears to be unaware of of which build preset to use, using defaults instead.
-  CMAKE_BUILD_EXTRA: --preset conan-release
+    # Many environment variables are already set in our Docker images or in other Actions.
+    BUILD_TYPE: Release
+    GIT_COMMIT: ${{ github.sha }}
+    UPLOAD_BUCKET: overte-public
+    UPLOAD_REGION: fra1
+    UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
+    CMAKE_BUILD_EXTRA: --preset conan-release
 
 jobs:
   build:
-    name: "${{matrix.os}}"
+    name: "${{matrix.os}}, ${{matrix.arch}}"
     strategy:
       matrix:
         include:
-          - os: windows-2022
+          - os: Windows 2022
+            # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
+            runner: depot-windows-2022-16  # Which GitHub Actions Runner to use.
+            arch: x86_64
             build_type: full
-            qt_source: source
+            qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
+          - os: Ubuntu 22.04
+            image: docker.io/overte/overte-full-build:2026-01-01-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+            runner: ubuntu-latest
+            arch: amd64
+            build_type: full
+            qt_source: system
+          - os: Ubuntu 22.04
+            image: docker.io/overte/overte-full-build:2026-01-01-ubuntu-22.04-aarch64
+            runner: ubuntu-24.04-arm
+            arch: aarch64
+            build_type: full
+            qt_source: system
       fail-fast: false
-    runs-on: ${{matrix.os}}
+    runs-on: ${{matrix.runner}}
+    container: ${{matrix.image}}
     steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        fetch-depth: 1
+
+    - name: Prepare Windows environment
+      if: startsWith(matrix.os, 'Windows')
+      uses: ./.github/actions/setup-windows
+
+    - name: Read image environment variables
+      # Bring some environment variables out of the Runner (Docker) image's environment into the Job environment.
+      if: ${{matrix.image}} != ""
+      shell: bash
+      run: |
+        echo "CONAN_HOME=$CONAN_HOME" >> $GITHUB_ENV
+        echo "CONAN_PROFILE=$CONAN_PROFILE" >> $GITHUB_ENV
+        echo "APP_TARGET_NAME=$APP_TARGET_NAME" >> $GITHUB_ENV
+
     - name: Configure build environment 1
       shell: bash
       id: buildenv1
@@ -53,51 +82,39 @@ jobs:
         fi
 
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
-        echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
-        echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
 
-        echo "PYTHON_EXEC=python" >> $GITHUB_ENV
-        echo "ZIP_COMMAND=7z" >> $GITHUB_ENV
-        echo "ZIP_ARGS=a" >> $GITHUB_ENV
-        echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
-        echo "CMAKE_EXTRA=-A x64" >> $GITHUB_ENV
-        echo "SYMBOL_REGEX=\(exe\|dll\|pdb\)" >> $GITHUB_ENV
-        echo "SYMBOLS_ARCHIVE=$RELEASE_NUMBER-${{ github.sha }}-win-symbols.zip" >> $GITHUB_ENV
-        # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
-        # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
-        if [[ "${{ matrix.os }}" = "windows-2022" ]]; then
-          echo "CONAN_PROFILE='./tools/conan-profiles/vs-22-release'" >> $GITHUB_ENV
-        else
-          echo "Not sure which Conan profile to use. Exiting." && exit 1
+        # Linux build variables
+        if [[ "${{ matrix.os }}" =~ "Ubuntu" ]]; then
+          echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
+          echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
+          echo "CMAKE_EXTRA=-DBUILD_TOOLS:BOOLEAN=FALSE" >> $GITHUB_ENV
+        fi
+        # Windows build variables
+        if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
+          echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
+          echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
+          echo "CMAKE_EXTRA=-DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
+          # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
+          # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
         fi
 
     # Configuration is broken into two steps because you can't set an env var and also reference it in the same step
     - name: Configure build environment 2
       shell: bash
       run: |
-        echo "ARTIFACT_PATTERN=Overte-${{ github.ref_name }}.$INSTALLER_EXT" >> $GITHUB_ENV
+        if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
+          echo "ARTIFACT_NAME=Overte-${{ github.ref_name }}-$(uname -m).$INSTALLER_EXT" >> $GITHUB_ENV
+        else
+          echo "ARTIFACT_NAME=Overte-${{ github.ref_name }}.$INSTALLER_EXT" >> $GITHUB_ENV
+        fi
 
-    - uses: actions/checkout@v4
+    - name: Cache conan
+      uses: actions/cache@v5
       with:
-        submodules: false
-        fetch-depth: 1
-
-    - name: Override Windows package versions
-      shell: pwsh
-      if: startsWith(matrix.os, 'windows')
-      run: |
-        choco install nsis --allow-downgrade --version=3.06.1
-        choco install cmake --allow-downgrade --version=3.31.6  # Our dependencies don't support CMake 4.0 yet.
-        Invoke-WebRequest https://build-deps.overte.org/conan/nsis-overte-plugins/NSIS-hifi-plugins-1.0.zip -OutFile NSIS-hifi-plugins.zip
-        Expand-Archive -LiteralPath 'NSIS-hifi-plugins.zip' -DestinationPath 'C:/Program Files (x86)/'
-
-    - name: Install Python modules
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
-      shell: bash
-      run: $PYTHON_EXEC -m pip install boto3 PyGithub conan
-
-    - name: Prepare Conan Build Environment
-      uses: ./.github/actions/setup-conan
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: |
+            ${{ env.CONAN_HOME }}/sources
+            ${{ env.CONAN_HOME }}/p
 
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install
@@ -107,23 +124,41 @@ jobs:
         cppstd: ${{env.CONAN_CPPSTD}}
         conan_profile: ${{env.CONAN_PROFILE}}
 
-    - name: Upload Conan dependencies
+    - name: Upload Conan binary cache to Artifactory
       # Conan isn't glibc aware, so we need to be really careful what we upload to the binary cache on Linux.
+      # Namely, we should never upload anything from a Linux system that is newer than our oldest Linux target.
       # See the upstream discussion: https://github.com/conan-io/conan/issues/7121
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
+      if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS') || startsWith(matrix.os, 'Ubuntu 22.04')
       continue-on-error: true
-      shell: bash
-      env:
+      uses: ./.github/actions/conan-upload-binaries
+      with:
         CONAN_LOGIN_USERNAME_OVERTE: ${{ secrets.conan_login_username_overte }}
         CONAN_PASSWORD_OVERTE: ${{ secrets.conan_password_overte }}
-      run: |
-        conan list --graph=build.json --graph-binaries=build --format=json > pkglist.json
-        conan upload --list=pkglist.json -r=overte -c
+
+    - name: Cleanup Conan dependencies
+      if: always() && steps.conan-cache.cache-hit != 'true'
+      run: conan cache clean "*" -sbd
+      shell: bash
+
+    - name: Save Conan cache
+      if: always() && steps.conan-cache.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      with:
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: |
+            ${{ env.CONAN_HOME }}/sources
+            ${{ env.CONAN_HOME }}/p
 
     - name: Configure CMake
       shell: bash
-           # This syntax requires CMake 3.23
-      run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_NUMBER=${{ github.ref_name }} -DOVERTE_BUILD_TYPE=PRODUCTION -DJSDOC_ENABLED:BOOL=TRUE $CMAKE_EXTRA
+      run: |
+        if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
+          # This syntax requires CMake 3.23
+          cmake --preset conan-default -DOVERTE_RELEASE_NUMBER=${{ github.ref_name }} -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=PRODUCTION -DBYPASS_SIGNING:BOOLEAN=TRUE $CMAKE_EXTRA
+        else
+          # This syntax requires CMake 3.23
+          cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_NUMBER=${{ github.ref_name }} -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=PRODUCTION $CMAKE_EXTRA
+        fi
 
     - name: Build application
       shell: bash
@@ -173,48 +208,22 @@ jobs:
     #  working-directory: C:\Program Files (x86)\Windows Kits\10\bin\10.0.18362.0\x64
     #  run: .\signtool.exe sign /fd sha256 /f ${{runner.workspace}}\build\codesign.pfx /p ${{secrets.pfx_key}} /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256 ${{runner.workspace}}\build\${env:ARTIFACT_PATTERN}
 
-    - name: Output system stats
-      if: ${{ always() }}
-      working-directory: ${{runner.workspace}}/build
-      shell: bash
-      run: |
-        echo "Disk usage:"
-        df -h
-
-    - name: Output installer logs
-      if: failure() && startsWith(matrix.os, 'windows')
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
-
-    - name: Upload artifact to S3
-      shell: bash
-      working-directory: ${{runner.workspace}}/build
-      env:
-        AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
-        AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
-      run: $PYTHON_EXEC $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
-
     - name: Upload artifact to GitHub
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.ARTIFACT_PATTERN }}
+        name: ${{ env.ARTIFACT_NAME }}
         path: build/Overte-*
         if-no-files-found: error
 
-    - name: Archive symbols
-      if: startsWith(matrix.os, 'windows') || startsWith(matrix.os, 'macOS')
+    - name: Upload artifact to S3
       shell: bash
-      run: |
-        SYMBOLS_TEMP="symbols-temp"
-        mkdir $SYMBOLS_TEMP
-        find "./build" -regex ".*\.$SYMBOL_REGEX" -exec cp -r {} $SYMBOLS_TEMP \;
-        cd $SYMBOLS_TEMP
-        $ZIP_COMMAND $ZIP_ARGS ../$SYMBOLS_ARCHIVE .
+      working-directory: build
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
+        RELEASE_NUMBER: ${{ github.ref_name }}
+      run: $PYTHON_EXEC $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
 
-    - name: Upload debug symbols to GitHub
-      uses: actions/upload-artifact@v4
-      with:
-        name: ${{ env.SYMBOLS_ARCHIVE }}
-        path: ${{ env.SYMBOLS_ARCHIVE }}
-        if-no-files-found: error
+    - name: Output debug information
+      if: always()
+      uses: ./.github/actions/debug-info

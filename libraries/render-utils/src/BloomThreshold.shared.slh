@@ -10,7 +10,13 @@ struct Parameters
     BT_VEC2 _deltaUV;
     float _offset;
     float _threshold;
-    int _sampleCount;
+
+    // Bloom effect is calculated on a smaller framebuffer than main framebuffer.
+    // This value controls how much it is downsampled. For example _downsamplingFactor == 4 means that
+    // bloom framebuffer will be 4 times smaller and that for each pixel of the bloom framebuffer 16 pixels (4x4) of main
+    // framebuffer will be sampled.
+    int _downsamplingFactor;
+
     float _padding[3];
 };
 

@@ -78,7 +78,7 @@ const glm::uvec4 LightClusters::MAX_GRID_DIMENSIONS { 32, 32, 31, 16384 };
 
 
 LightClusters::LightClusters() :
-    _lightIndicesBuffer(std::make_shared<gpu::Buffer>()),
+    _lightIndicesBuffer(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer)),
     _clusterGridBuffer(/*std::make_shared<gpu::Buffer>(), */gpu::Element::INDEX_INT32),
     _clusterContentBuffer(/*std::make_shared<gpu::Buffer>(), */gpu::Element::INDEX_INT32) {
 }
@@ -127,7 +127,7 @@ uint32_t LightClusters::getNumClusters() const {
         _clusterGrid.clear();
         _clusterGrid.resize(numClusters, EMPTY_CLUSTER);
         _clusterGridBuffer._size = (numClusters * sizeof(uint32_t));
-        _clusterGridBuffer._buffer = std::make_shared<gpu::Buffer>(_clusterGridBuffer._size, (gpu::Byte*) _clusterGrid.data(), _clusterGridBuffer._size);
+        _clusterGridBuffer._buffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, _clusterGridBuffer._size, (gpu::Byte*) _clusterGrid.data(), _clusterGridBuffer._size);
     }
 
     // Since LightIndex is 2bytes, we can fit 2 in a uint32
@@ -140,7 +140,7 @@ uint32_t LightClusters::getNumClusters() const {
         _clusterContent.clear();
         _clusterContent.resize(configListBudget, INVALID_LIGHT);
         _clusterContentBuffer._size = (configListBudget * sizeof(LightIndex));
-        _clusterContentBuffer._buffer = std::make_shared<gpu::Buffer>(_clusterContentBuffer._size, (gpu::Byte*) _clusterContent.data(), _clusterContentBuffer._size);
+        _clusterContentBuffer._buffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, _clusterContentBuffer._size, (gpu::Byte*) _clusterContent.data(), _clusterContentBuffer._size);
     }
 }
 
@@ -551,6 +551,7 @@ void LightClusteringPass::run(const render::RenderContextPointer& renderContext,
     auto lightingModel = inputs.get1();
     auto lightFrame = inputs.get2();
     auto surfaceGeometryFramebuffer = inputs.get3();
+    auto localLightingEnabled = lightingModel->isLocalLightingEnabled();
 
     // first update the Grid with the new frustum
     if (!_freeze) {
@@ -561,7 +562,11 @@ void LightClusteringPass::run(const render::RenderContextPointer& renderContext,
     auto lightStage = renderContext->_scene->getStage<LightStage>();
     assert(lightStage);
     _lightClusters->updateLightStage(lightStage);
-    _lightClusters->updateLightFrame(lightFrame, lightingModel->isPointLightEnabled(), lightingModel->isSpotLightEnabled());
+    _lightClusters->updateLightFrame(
+        lightFrame,
+        lightingModel->isPointLightEnabled() && localLightingEnabled,
+        lightingModel->isSpotLightEnabled() && localLightingEnabled
+    );
     
     auto clusteringStats = _lightClusters->updateClusters();
 
@@ -641,6 +646,10 @@ void DebugLightClusters::run(const render::RenderContextPointer& renderContext, 
     auto lightingModel = inputs.get1();
     auto linearDepthTarget = inputs.get2();
     auto lightClusters = inputs.get3();
+
+    if (!lightingModel->isLocalLightingEnabled()) {
+        return;
+    }
 
     auto args = renderContext->args;
 

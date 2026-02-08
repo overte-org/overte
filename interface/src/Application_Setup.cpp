@@ -138,6 +138,9 @@
 #include "LODManager.h"
 #include "Menu.h"
 #include "ResourceRequestObserver.h"
+#ifndef USE_GL
+#include "vk/VKWindow.h"
+#endif
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
 #include "SpeechRecognizer.h"
 #endif
@@ -296,17 +299,6 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     }
 
     PROFILE_SET_THREAD_NAME("Main Thread");
-
-#if defined(Q_OS_WIN)
-    // Select appropriate audio DLL
-    QString audioDLLPath = QCoreApplication::applicationDirPath();
-    if (IsWindows8OrGreater()) {
-        audioDLLPath += "/audioWin8";
-    } else {
-        audioDLLPath += "/audioWin7";
-    }
-    QCoreApplication::addLibraryPath(audioDLLPath);
-#endif
 
     QString defaultScriptsOverrideOption = parser.value("defaultScriptsOverride");
 
@@ -772,20 +764,35 @@ void Application::initialize(const QCommandLineParser &parser) {
     // setDefaultFormat has no effect after the platform window has been created, so call it here.
     QSurfaceFormat::setDefaultFormat(getDefaultOpenGLSurfaceFormat());
 
-    _glWidget = new GLCanvas();
-    getApplicationCompositor().setRenderingWidget(_glWidget);
-    _window->setCentralWidget(_glWidget);
+#ifdef USE_GL
+    _primaryWidget = new GLCanvas();
+    getApplicationCompositor().setRenderingWidget(_primaryWidget);
+    _window->setCentralWidget(_primaryWidget);
+#else
+    _primaryWidget = new VKCanvas();
+    _vkWindowWrapper = QWidget::createWindowContainer(_vkWindow);
+    _vkWindowWrapper->setFocusProxy(_primaryWidget);
+    _vkWindowWrapper->setFocusPolicy(Qt::StrongFocus);
+    getApplicationCompositor().setRenderingWidget(_primaryWidget);
+    _primaryWidget->setParent(_vkWindowWrapper);
+    _vkWindow->_primaryWidget = _primaryWidget;
+    _window->setCentralWidget(_vkWindowWrapper);
+#endif
 
     _window->restoreGeometry();
     _window->setVisible(true);
 
-    _glWidget->setFocusPolicy(Qt::StrongFocus);
-    _glWidget->setFocus();
+    _primaryWidget->setFocusPolicy(Qt::StrongFocus);
+    _primaryWidget->setFocus();
+
+#ifndef USE_GL
+    _primaryWidget->_mainWindow = _vkWindow;
+#endif
 
     showCursor(Cursor::Manager::lookupIcon(_preferredCursor.get()));
 
     // enable mouse tracking; otherwise, we only get drag events
-    _glWidget->setMouseTracking(true);
+    _primaryWidget->setMouseTracking(true);
     // Make sure the window is set to the correct size by processing the pending events
     QCoreApplication::processEvents();
 
@@ -1365,7 +1372,11 @@ void Application::setupSignalsAndOperators() {
 
         // setup a timer for domain-server check ins
         QTimer* domainCheckInTimer = new QTimer(this);
-        connect(domainCheckInTimer, &QTimer::timeout, nodeList.data(), &NodeList::sendDomainServerCheckIn);
+        connect(domainCheckInTimer, &QTimer::timeout, [this, nodeList] {
+            if (!isServerlessMode()) {
+                nodeList->sendDomainServerCheckIn();
+            }
+        });
         domainCheckInTimer->start(DOMAIN_SERVER_CHECK_IN_MSECS);
         connect(this, &QCoreApplication::aboutToQuit, [domainCheckInTimer] {
             domainCheckInTimer->stop();
@@ -1484,7 +1495,8 @@ void Application::setupSignalsAndOperators() {
 
             connect(scriptEngines, &ScriptEngines::scriptLoadError,
                 this, [](const QString& filename, const QString& error) {
-                OffscreenUi::asyncWarning(nullptr, "Error Loading Script", filename + " failed to load.");
+                auto windowInterface = DependencyManager::get<WindowScriptingInterface>();
+                windowInterface->displayAnnouncement(QString("Failed to load script\n%1").arg(filename));
             }, Qt::QueuedConnection);
 
             auto entityScriptServerLog = DependencyManager::get<EntityScriptServerLogClient>();
@@ -1863,7 +1875,7 @@ void Application::setupSignalsAndOperators() {
 
         connect(this, &Application::activeDisplayPluginChanged, this, &Application::updateThreadPoolCount);
         if (_useSystemCursor) {
-            connect(this, &Application::activeDisplayPluginChanged, this, [=](){
+            connect(this, &Application::activeDisplayPluginChanged, this, [=, this](){
                 qApp->setProperty(hifi::properties::HMD, qApp->isHMDMode());
                 auto displayPlugin = qApp->getActiveDisplayPlugin();
 
@@ -1997,11 +2009,11 @@ void Application::setupSignalsAndOperators() {
                 QPoint localPos(reticlePos.x, reticlePos.y); // both hmd and desktop already handle this in our coordinates.
                 if (state) {
                     QMouseEvent mousePress(QEvent::MouseButtonPress, localPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
-                    sendEvent(_glWidget, &mousePress);
+                    sendEvent(_primaryWidget, &mousePress);
                     _reticleClickPressed = true;
                 } else {
                     QMouseEvent mouseRelease(QEvent::MouseButtonRelease, localPos, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
-                    sendEvent(_glWidget, &mouseRelease);
+                    sendEvent(_primaryWidget, &mouseRelease);
                     _reticleClickPressed = false;
                 }
                 return; // nothing else to do

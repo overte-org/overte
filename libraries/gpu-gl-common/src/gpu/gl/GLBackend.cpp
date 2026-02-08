@@ -155,7 +155,6 @@ void GLBackend::init() {
         GL_GET_INTEGER(UNIFORM_BUFFER_OFFSET_ALIGNMENT);
 
         GPUIdent* gpu = GPUIdent::getInstance(vendor, renderer);
-        unsigned int mem;
 
 // Do not try to get texture memory information on unsupported systems.
 #if defined(Q_OS_ANDROID) || defined(USE_GLES) || defined(Q_OS_DARWIN)
@@ -163,9 +162,8 @@ void GLBackend::init() {
         _videoCard = Unknown;
         _dedicatedMemory = (size_t)(gpu->getMemory()) * BYTES_PER_MIB;
         _totalMemory = _dedicatedMemory;
-#endif
-
-#if !defined(Q_OS_ANDROID) && !defined(USE_GLES) && !defined(Q_OS_DARWIN)
+#else
+        unsigned int mem;
         if (vendor.contains("NVIDIA") ) {
             qCDebug(gpugllogging) << "NVIDIA card detected";
 
@@ -589,6 +587,14 @@ void GLBackend::render(const Batch& batch) {
     }
 }
 
+void GLBackend::executeFrame(const FramePointer& frame) {
+    // Execute the frame rendering commands
+    for (auto& batch : frame->batches) {
+        render(*batch);
+    }
+}
+
+
 
 void GLBackend::syncCache() {
     PROFILE_RANGE(render_gpu_gl_detail, __FUNCTION__);
@@ -675,7 +681,7 @@ void GLBackend::resetStages() {
 
 void GLBackend::do_pushProfileRange(const Batch& batch, size_t paramOffset) {
     if (trace_render_gpu_gl_detail().isDebugEnabled()) {
-        auto name = batch._profileRanges.get(batch._params[paramOffset]._uint);
+        const auto& name = batch._profileRanges.get(batch._params[paramOffset]._uint);
         profileRanges.push_back(name);
 #if defined(NSIGHT_FOUND)
         nvtxRangePush(name.c_str());
@@ -692,9 +698,8 @@ void GLBackend::do_popProfileRange(const Batch& batch, size_t paramOffset) {
     }
 }
 
-
 // TODO: As long as we have gl calls explicitely issued from interface
-// code, we need to be able to record and batch these calls. THe long 
+// code, we need to be able to record and batch these calls. THe long
 // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
 
 void GLBackend::do_glUniform1i(const Batch& batch, size_t paramOffset) {

@@ -313,7 +313,7 @@ function addImage(image_data, isLoggedIn, canShare, isGifLoading, isShowingPrevi
         if (isGif) {
             imageContainer.innerHTML += '<span class="gifLabel">GIF</span>';
         }
-        if (!isGifLoading) {
+        /*if (!isGifLoading) {
             appendShareBar(id, isLoggedIn, canShare, isGif, blastButtonDisabled, hifiButtonDisabled, canBlast);
         }
         if ((!isShowingPreviousImages && ((isGif && !isGifLoading) || !isGif)) || (isShowingPreviousImages && !image_data.story_id)) {
@@ -324,7 +324,7 @@ function addImage(image_data, isLoggedIn, canShare, isGifLoading, isShowingPrevi
         }
         if (isShowingPreviousImages) {
             requestPrintButtonUpdate();  
-        } 
+        }*/
     };
     img.onerror = function () {
         img.onload = null;
@@ -675,8 +675,8 @@ window.onload = function () {
                             p1img.src = gifPath;
 
                             paths[1] = gifPath;
-                            shareForUrl("p1");
-                            appendShareBar("p1", messageOptions.isLoggedIn, messageOptions.canShare, true, false, false, messageOptions.canBlast);
+                            //shareForUrl("p1");
+                            //appendShareBar("p1", messageOptions.isLoggedIn, messageOptions.canShare, true, false, false, messageOptions.canBlast);
                             document.getElementById("p1").classList.remove("processingGif");
                             document.getElementById("snap-button").disabled = false;
                         }

@@ -13,6 +13,7 @@
 //
 
 <@include gpu/Inputs.slh@>
+
 <@include gpu/Transform.slh@>
 <@include render-utils/ShaderConstants.h@>
 
@@ -22,11 +23,11 @@ struct HUDData {
     float alpha;
 };
 
-LAYOUT_STD140(binding=0) uniform hudBuffer {
+UNIFORM_BUFFER(0, hudBuffer) {
     HUDData hud;
 };
 
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
+OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 
 void main() {
   _texCoord01 = vec4(inTexCoord0.st, 0.0, 0.0);

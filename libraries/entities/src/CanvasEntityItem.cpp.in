@@ -1,0 +1,304 @@
+//
+//  Created by Ada <ada@thingvellir.net> on 2025-02-04
+//  Copyright 2025 Overte e.V.
+//
+//  Distributed under the Apache license, Version 2.0.
+//  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+
+#include "CanvasEntityItem.h"
+
+#include <QtCore/QDebug>
+#include <QImage>
+#include <QPainter>
+
+#include "EntitiesLogging.h"
+#include "EntityItemProperties.h"
+#include "EntityTreeElement.h"
+
+EntityItemPointer CanvasEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
+    std::shared_ptr<CanvasEntityItem> entity(new CanvasEntityItem(entityID), [](CanvasEntityItem* ptr) { ptr->deleteLater(); });
+    entity->setProperties(properties);
+    return entity;
+}
+
+CanvasEntityItem::CanvasEntityItem(const EntityItemID& entityItemID) : EntityItem(entityItemID) {
+    _type = EntityTypes::Canvas;
+}
+
+CanvasEntityItem::~CanvasEntityItem() {}
+
+void CanvasEntityItem::debugDump() const {
+    qCDebug(entities) << "CanvasEntityItem id:" << getEntityItemID() << "---------------------------------------------";
+    qCDebug(entities) << "    name:" << _name;
+    qCDebug(entities) << "    position:" << debugTreeVector(getWorldPosition());
+    qCDebug(entities) << "    dimensions:" << debugTreeVector(getScaledDimensions());
+    qCDebug(entities) << "    editedAgo:" << debugTime(getLastEdited(), usecTimestampNow());
+    qCDebug(entities) << "    pointer:" << this;
+
+@Canvas_ENTITY_DEBUG@
+
+}
+
+void CanvasEntityItem::appendSubclassData(OctreePacketData* packetData, EncodeBitstreamParams& params,
+                                          EntityTreeElementExtraEncodeDataPointer entityTreeElementExtraEncodeData,
+                                          EntityPropertyFlags& requestedProperties,
+                                          EntityPropertyFlags& propertyFlags,
+                                          EntityPropertyFlags& propertiesDidntFit,
+                                          int& propertyCount,
+                                          OctreeElement::AppendState& appendState) const {
+
+    bool successPropertyFits = true;
+
+@Canvas_ENTITY_APPEND@
+
+}
+
+int CanvasEntityItem::readEntitySubclassDataFromBuffer(const unsigned char* data, int bytesLeftToRead,
+                                                       ReadBitstreamToTreeParams& args,
+                                                       EntityPropertyFlags& propertyFlags, bool overwriteLocalData,
+                                                       bool& somethingChanged) {
+    int bytesRead = 0;
+    const unsigned char* dataAt = data;
+
+@Canvas_ENTITY_READ@
+
+    return bytesRead;
+}
+
+EntityPropertyFlags CanvasEntityItem::getEntityProperties(EncodeBitstreamParams& params) const {
+    EntityPropertyFlags requestedProperties = EntityItem::getEntityProperties(params);
+
+@Canvas_REQUESTED_PROPS@
+
+    return requestedProperties;
+}
+
+bool CanvasEntityItem::setSubClassProperties(const EntityItemProperties& properties) {
+    bool somethingChanged = false;
+
+@Canvas_ENTITY_SET_FROM@
+
+    return somethingChanged;
+}
+
+EntityItemProperties CanvasEntityItem::getProperties(const EntityPropertyFlags& desiredProperties, bool allowEmptyDesiredProperties) const {
+    EntityItemProperties properties = EntityItem::getProperties(desiredProperties, allowEmptyDesiredProperties); // get the properties from our base class
+
+@Canvas_ENTITY_COPY_TO@
+
+    return properties;
+}
+
+int CanvasEntityItem::expectedSize() const {
+    return (4 * getWidth() * getHeight());
+}
+
+void CanvasEntityItem::updateBufferSize() {
+    const std::lock_guard<std::recursive_mutex> dataLock(_imageDataMutex);
+
+    auto size = expectedSize();
+
+    // size is correct, don't need to resize
+    if (_imageData.length() == size) { return; }
+
+    _imageData.resize(size);
+
+    // initialize the whole canvas to black, old pixels don't make sense anymore
+    std::memset(_imageData.data(), 0, size);
+    _imageDataWidth = getWidth();
+    _imageDataHeight = getHeight();
+}
+
+void CanvasEntityItem::setImageData(const CanvasImage& image) {
+    const std::lock_guard<std::recursive_mutex> dataLock(_imageDataMutex);
+
+    updateBufferSize();
+
+    if (
+        image.buffer.length() != _imageData.length() ||
+        _imageDataWidth != image.width ||
+        _imageDataHeight != image.height
+    ) {
+        return;
+    }
+
+    std::memcpy(_imageData.data(), image.buffer.constData(), _imageData.length());
+}
+
+void CanvasEntityItem::paintCommands(const QVector<CanvasCommand>& queue) {
+    using Variant = CanvasCommand::Variant;
+    using RenderHint = CanvasCommand::RenderHint;
+
+    const std::lock_guard<std::recursive_mutex> dataLock(_imageDataMutex);
+    const std::lock_guard<std::recursive_mutex> commandQueueLock(_commandQueueMutex);
+
+    if (_commandQueue.length() == 0) { return; }
+
+    updateBufferSize();
+
+    // NOTE: The Qt docs say that ARGB32_Premultiplied performs better,
+    // but we can't use it as a texture without shader magic to un-premultiply
+    // the alpha ourselves.
+    auto destImage = QImage(reinterpret_cast<uint8_t *>(_imageData.data()), _imageDataWidth, _imageDataHeight, QImage::Format_RGBA8888);
+    QPen pen(Qt::black, 1.0, Qt::SolidLine, Qt::SquareCap, Qt::MiterJoin);
+    QBrush brush(Qt::black);
+    QPainter p;
+    p.begin(&destImage);
+    p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+    p.setRenderHint(QPainter::Antialiasing, true);
+    p.setRenderHint(QPainter::TextAntialiasing, true);
+    p.setRenderHint(QPainter::SmoothPixmapTransform, true);
+
+    for (int i = 0; i < queue.length(); i++) {
+        auto cmd = queue[i];
+
+        switch (cmd.kind) {
+            case Variant::SetStrokeWidth: {
+                pen.setWidthF(cmd._float[0]);
+                p.setPen(pen);
+                break;
+            }
+
+            case Variant::SetColor: {
+                auto color = cmd._color;
+                pen.setColor(color);
+                brush.setColor(color);
+                p.setPen(pen);
+                p.setBrush(brush);
+                break;
+            }
+
+            case Variant::SetHints: {
+                p.setRenderHint(QPainter::Antialiasing, (cmd._int[0] & RenderHint::NoPrimitiveAntialiasing) == 0);
+                p.setRenderHint(QPainter::TextAntialiasing, (cmd._int[0] & RenderHint::NoTextAntialiasing) == 0);
+                p.setRenderHint(QPainter::SmoothPixmapTransform, (cmd._int[0] & RenderHint::NearestImageScaling) == 0);
+                break;
+            }
+
+            case Variant::SetBlendMode: {
+                p.setCompositionMode(static_cast<QPainter::CompositionMode>(cmd._int[0]));
+                break;
+            }
+
+            case Variant::SetFont: {
+                // QT6TODO: Qt6 uses normal 1-1000 OpenType weight units,
+                // this hack won't be necessary there.
+
+                // Sigh… why did you have to do your own thing, Qt?
+                // Basically everything else uses 1-1000, Qt uses 0-99.
+                // CSS normal and bold are 400 and 700, they're 50 and 75 in Qt.
+                // For now, divide by 10 and add 10, which isn't perfect, but close enough
+                int weight = (cmd._int[1] / 10) + 10;
+                p.setFont(QFont(cmd._text, cmd._int[0], weight, cmd._int[2]));
+                break;
+            }
+
+            case Variant::ClearRect: {
+                // FIXME: why is eraseRect not working??
+                #if 0
+                auto currentBlendMode = p.compositionMode();
+                p.setCompositionMode(QPainter::CompositionMode_Clear);
+                p.eraseRect(cmd._rect);
+                p.setCompositionMode(currentBlendMode);
+                #else
+                _imageData.fill(0);
+                #endif
+                break;
+            }
+
+            case Variant::FillPath: {
+                p.fillPath(cmd._paintPath, brush);
+                break;
+            }
+
+            case Variant::FillRect: {
+                p.fillRect(cmd._rect, brush);
+                break;
+            }
+
+            case Variant::FillEllipse: {
+                auto pathHack = QPainterPath();
+                pathHack.addEllipse(cmd._rect);
+                p.fillPath(pathHack, brush);
+                break;
+            }
+
+            case Variant::FillText: {
+                // unbounded text
+                if (cmd._rect.width() == 0.0 && cmd._rect.height() == 0.0) {
+                    p.drawText(QPointF(cmd._rect.x(), cmd._rect.y()), cmd._text);
+                } else {
+                    p.drawText(cmd._rect, cmd._int[0], cmd._text);
+                }
+                break;
+            }
+
+            case Variant::StrokePath: {
+                auto prevFill = p.brush();
+                p.setBrush(Qt::transparent);
+                p.strokePath(cmd._paintPath, pen);
+                p.setBrush(prevFill);
+                break;
+            }
+
+            case Variant::StrokeRect: {
+                auto prevFill = p.brush();
+                p.setBrush(Qt::transparent);
+                p.drawRect(cmd._rect);
+                p.setBrush(prevFill);
+                break;
+            }
+
+            case Variant::StrokeArc: {
+                auto prevFill = p.brush();
+                p.setBrush(Qt::transparent);
+                p.drawArc(cmd._rect, cmd._float[0] * 16, cmd._float[1] * 16);
+                p.setBrush(prevFill);
+                break;
+            }
+
+            case Variant::StrokeEllipse: {
+                auto prevFill = p.brush();
+                p.setBrush(Qt::transparent);
+                p.drawEllipse(cmd._rect);
+                p.setBrush(prevFill);
+                break;
+            }
+
+            case Variant::Point: {
+                p.drawPoint(cmd._point);
+                break;
+            }
+
+            case Variant::Line: {
+                p.drawLine(cmd._line);
+                break;
+            }
+
+            case Variant::ImageCopy: {
+                if (cmd._image.buffer.length() != static_cast<int>(4 * cmd._image.width * cmd._image.height)) {
+                    qCCritical(entities) << "CanvasEntityItem::paintCommands: Source CanvasImage buffer has incorrect size, expected " << (4 * cmd._image.width * cmd._image.height) << ", got " << cmd._image.buffer.length();
+                    break;
+                }
+                auto img = QImage(reinterpret_cast<const uint8_t*>(cmd._image.buffer.constData()), cmd._image.width, cmd._image.height, QImage::Format_RGBA8888);
+                p.drawImage(cmd._rect2, img, cmd._rect);
+                break;
+            }
+
+            default:
+                qCCritical(entities) << "CanvasEntityItem::paintCommands: Invalid command at index " << i;
+                break;
+
+        }
+    }
+
+    p.end();
+    _commandQueue.clear();
+}
+
+void CanvasEntityItem::commit() {
+    paintCommands(_commandQueue);
+    _imageDataDirty.store(true);
+    setNeedsRenderUpdate(true);
+    somethingChangedNotification();
+}

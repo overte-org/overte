@@ -2,11 +2,10 @@
 
 #include "GLLogging.h"
 
-#include <QtCore/QJsonDocument>
-#include <QtCore/QJsonValue>
-#include <QtCore/QJsonObject>
+#include <fstream>
 #include <QtCore/QFileInfo>
 #include <QtCore/QCryptographicHash>
+#include <nlohmann/json.hpp>
 
 #include <shared/FileUtils.h>
 
@@ -442,44 +441,75 @@ void gl::loadShaderCache(ShaderCache& cache) {
     QString shaderCacheFile = getShaderCacheFile();
     if (QFileInfo(shaderCacheFile).exists()) {
         QString json = FileUtils::readFile(shaderCacheFile);
-        auto root = QJsonDocument::fromJson(json.toUtf8()).object();
-        for (const auto& qhash : root.keys()) {
-            auto programObject = root[qhash].toObject();
-            QByteArray qbinary = QByteArray::fromBase64(programObject[SHADER_JSON_DATA_KEY].toString().toUtf8());
-            std::string hash = qhash.toStdString();
+        nlohmann::json root;
+        try {
+            std::ifstream i(shaderCacheFile.toStdString());
+            i >> root;
+        } catch (nlohmann::json::parse_error& exception) {
+            qCWarning(glLogging) << "Error parsing shader cache file " << shaderCacheFile << "at byte: " << exception.byte;
+            // In debug builds we want to stop if this issue ever happens.
+            Q_ASSERT(false);
+            return;
+        }
+        for (const auto& item : root.items()) {
+            auto programObject = item.value();
+            if (!programObject.is_object()) {
+                qCWarning(glLogging) << "Error parsing shader cache file " << shaderCacheFile
+                    << " program entry is not an object: " << QString::fromStdString(item.key());
+                // In debug builds we want to stop if this issue ever happens.
+                Q_ASSERT(false);
+                return;
+            }
+            if (!(programObject.contains(SHADER_JSON_DATA_KEY)
+                && programObject.contains(SHADER_JSON_TYPE_KEY)
+                && programObject.contains(SHADER_JSON_SOURCE_KEY))) {
+                qCWarning(glLogging) << "Error parsing shader cache file " << shaderCacheFile
+                    << " program entry is missing one of the entries: " << QString::fromStdString(item.key());
+                // In debug builds we want to stop if this issue ever happens.
+                Q_ASSERT(false);
+                return;
+            }
+            if (!(programObject[SHADER_JSON_DATA_KEY].is_string()
+                && programObject[SHADER_JSON_TYPE_KEY].is_number_integer()
+                && programObject[SHADER_JSON_SOURCE_KEY].is_string())) {
+                qCWarning(glLogging) << "Error parsing shader cache file " << shaderCacheFile
+                    << " one of the entries has wrong type in program entry: " << QString::fromStdString(item.key());
+                // In debug builds we want to stop if this issue ever happens.
+                Q_ASSERT(false);
+                return;
+            }
+            auto programBase64 = programObject[SHADER_JSON_DATA_KEY].get<std::string>();
+            QByteArray qbinary = QByteArray::fromBase64(QByteArray(programBase64.data(), programBase64.size()));
+            std::string hash = item.key();
             auto& cachedShader = cache[hash];
             cachedShader.binary.resize(qbinary.size());
             memcpy(cachedShader.binary.data(), qbinary.data(), qbinary.size());
-            cachedShader.format = (GLenum)programObject[SHADER_JSON_TYPE_KEY].toInt();
-            cachedShader.source = programObject[SHADER_JSON_SOURCE_KEY].toString().toStdString();
+            cachedShader.format = (GLenum)programObject[SHADER_JSON_TYPE_KEY].get<int>();
+            cachedShader.source = programObject[SHADER_JSON_SOURCE_KEY].get<std::string>();
         }
     }
 #endif
 }
 
 void gl::saveShaderCache(const ShaderCache& cache) {
-    QByteArray json;
+    nlohmann::json json;
     {
-        QVariantMap variantMap;
         for (const auto& entry : cache) {
             const auto& key = entry.first;
             const auto& type = entry.second.format;
             const auto& binary = entry.second.binary;
-            QVariantMap qentry;
-            qentry[SHADER_JSON_TYPE_KEY] = QVariant(type);
-            qentry[SHADER_JSON_SOURCE_KEY] = QString(entry.second.source.c_str());
-            qentry[SHADER_JSON_DATA_KEY] = QByteArray{ binary.data(), (int)binary.size() }.toBase64();
-            variantMap[key.c_str()] = qentry;
+            nlohmann::json jsonEntry;
+            jsonEntry[SHADER_JSON_TYPE_KEY] = type;
+            jsonEntry[SHADER_JSON_SOURCE_KEY] = entry.second.source;
+            jsonEntry[SHADER_JSON_DATA_KEY] = QByteArray{ binary.data(), (int)binary.size() }.toBase64().toStdString();
+            json[key] = jsonEntry;
         }
-        json = QJsonDocument::fromVariant(variantMap).toJson(QJsonDocument::Indented);
     }
 
-    if (!json.isEmpty()) {
+    if (json.size() > 0) {
         QString shaderCacheFile = getShaderCacheFile();
-        QFile saveFile(shaderCacheFile);
-        saveFile.open(QFile::WriteOnly | QFile::Text | QFile::Truncate);
-        saveFile.write(json);
-        saveFile.close();
+        std::ofstream output(shaderCacheFile.toStdString());
+        output << json;
     }
 }
 

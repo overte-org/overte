@@ -44,13 +44,13 @@ ShapePipeline::CustomKey ShapePipeline::registerCustomShapePipelineFactory(Custo
 
 void ShapePipeline::prepare(gpu::Batch& batch, RenderArgs* args) {
     if (_batchSetter) {
-        _batchSetter(*this, batch, args);
+        _batchSetter(this, batch, args);
     }
 }
 
 void ShapePipeline::prepareShapeItem(RenderArgs* args, const ShapeKey& key, const Item& shape) {
     if (_itemSetter) {
-        _itemSetter(*this, args, shape);
+        _itemSetter(this, args, shape);
     }
 }
 
@@ -167,7 +167,7 @@ const ShapePipelinePointer ShapePlumber::pickPipeline(RenderArgs* args, const Ke
 
     // Run the pipeline's BatchSetter on the passed in batch
     if (shapePipeline->_batchSetter) {
-        shapePipeline->_batchSetter(*shapePipeline, *(args->_batch), args);
+        shapePipeline->_batchSetter(shapePipeline.get(), *(args->_batch), args);
     }
 
     return shapePipeline;

@@ -1763,6 +1763,33 @@ const GROUPS = [
         ]
     },
     {
+        id: "canvas",
+        label: "CANVAS",
+        properties: [
+            {
+                label: "Width",
+                type: "number-draggable",
+                propertyID: "width",
+            },
+            {
+                label: "Height",
+                type: "number-draggable",
+                propertyID: "height",
+            },
+            {
+                label: "Unlit",
+                type: "bool",
+                propertyID: "unlit",
+            },
+            {
+                label: "Transparent",
+                type: "bool",
+                propertyID: "transparent",
+            }
+
+        ]
+    },
+    {
         id: "empty",
         label: "EMPTY",
         properties: []
@@ -3047,6 +3074,7 @@ const GROUPS_PER_TYPE = {
   PolyVox: [ 'base', 'polyvox', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],
   Grid: [ 'base', 'grid', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Sound: [ 'base', 'sound', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
+  Canvas: [ 'base', 'canvas', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'children' ],
   Empty: [ 'base', 'spatial', 'scripts', 'children' ],
   Script: [ 'base', 'script', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'physics', 'children' ],
   Multiple: [ 'base', 'spatial', 'behavior', 'grabAndEquip', 'scripts', 'collision', 'physics', 'fading', 'children' ],

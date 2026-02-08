@@ -26,8 +26,6 @@ public:
 
     bool shouldBePhysical() const override { return false; }
 
-    virtual bool supportsDetailedIntersection() const override { return false; }
-
     virtual void update(const quint64& now) override;
     bool needsToCallUpdate() const override { return _updateNeeded; }
 

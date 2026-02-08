@@ -32,6 +32,7 @@
 #include "RenderableLightEntityItem.h"
 #include "RenderableZoneEntityItem.h"
 #include "RenderableMaterialEntityItem.h"
+#include "RenderableCanvasEntityItem.h"
 
 #include "RenderPipelines.h"
 
@@ -489,6 +490,10 @@ EntityRenderer::Pointer EntityRenderer::addToScene(EntityTreeRenderer& renderer,
             result = make_renderer<MaterialEntityRenderer>(entity);
             break;
 
+        case Type::Canvas:
+            result = make_renderer<CanvasEntityRenderer>(entity);
+            break;
+
         default:
             break;
     }
@@ -703,7 +708,7 @@ EntityRenderer::Pipeline EntityRenderer::getPipelineType(const graphics::MultiMa
     }
 
     graphics::MaterialKey drawMaterialKey = materials.getMaterialKey();
-    if (materials.isMToon() || drawMaterialKey.isEmissive() || drawMaterialKey.isMetallic() || drawMaterialKey.isScattering()) {
+    if (materials.isMToon() || materials.getLayers() > 1 || drawMaterialKey.isEmissive() || drawMaterialKey.isMetallic() || drawMaterialKey.isScattering()) {
         return Pipeline::MATERIAL;
     }
 

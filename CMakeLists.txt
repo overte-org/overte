@@ -43,6 +43,9 @@ if( NOT WIN32 )
     endif()
 endif()
 
+# QT_NO_DEBUG isn't being defined on Windows, so we do that here.
+add_compile_definitions($<$<CONFIG:Release>:QT_NO_DEBUG>)
+add_compile_definitions($<$<CONFIG:RelWithDebInfo>:QT_NO_DEBUG>)
 
 #
 # OVERTE_WARNINGS
@@ -62,16 +65,16 @@ if(OVERTE_WARNINGS_ALLOWLIST)
     endif()
 
     if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-        message("GCC compiler detected, suppressing some unsolvable warnings.")
+        message(STATUS "GCC compiler detected, suppressing some unsolvable warnings.")
         add_compile_definitions(OVERTE_WARNINGS_ALLOWLIST_GCC)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        message("Clang compiler detected, suppressing some unsolvable warnings.")
+        message(STATUS "Clang compiler detected, suppressing some unsolvable warnings.")
         add_compile_definitions(OVERTE_WARNINGS_ALLOWLIST_CLANG)
     elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC" OR (CMAKE_CXX_COMPILER_ID MATCHES "" AND WIN32))
-        message("Microsoft Visual Studio compiler detected, suppressing some unsolvable warnings.")
+        message(STATUS "Microsoft Visual Studio compiler detected, suppressing some unsolvable warnings.")
         add_compile_definitions(OVERTE_WARNINGS_ALLOWLIST_MSVC)
     else()
-        message("We don't know yet how to allowlist warnings for ${CMAKE_CXX_COMPILER_ID}")
+        message(NOTICE "We don't know yet how to allowlist warnings for ${CMAKE_CXX_COMPILER_ID}")
     endif()
 endif()
 
@@ -88,9 +91,7 @@ set(OVERTE_DISABLE_QML OFF CACHE BOOL "Build without QML. (For graphics debuggin
 set(OVERTE_DOWNLOAD_SERVERLESS_CONTENT OFF CACHE BOOL "Download and setup default serverless content beside Interface.")
 # use OpenGL ES on Linux aarch64 and Android.
 if ((CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") OR ANDROID)
-    # TODO: Change to GLES on aarch64 once GLES builds again.
-    #set(OVERTE_RENDERING_BACKEND "GLES" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL', 'GLES', and 'Vulkan'.")
-    set(OVERTE_RENDERING_BACKEND "OpenGL" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL', 'GLES', and 'Vulkan'.")
+    set(OVERTE_RENDERING_BACKEND "GLES" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL', 'GLES', and 'Vulkan'.")
 else()
     set(OVERTE_RENDERING_BACKEND "OpenGL" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL', 'GLES', and 'Vulkan'.")
 endif()
@@ -99,6 +100,7 @@ set(OVERTE_TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256" CACHE STRING
 set(OVERTE_USE_OPTIMIZED_IK OFF CACHE BOOL "Use optimized IK.")
 set(OVERTE_DISABLE_KTX_CACHE OFF CACHE BOOL "Disable KTX Cache.")
 set(OVERTE_USE_KHR_ROBUSTNESS OFF CACHE BOOL "Use KHR_robustness.")
+set(OVERTE_USE_SYSTEM_LIBS OFF CACHE BOOL "Build with system dependencies.")
 
 set(OVERTE_BACKTRACE_URL "" CACHE STRING "URL to an endpoint for uploading crash-dumps. For example Sentry.")
 set(OVERTE_BACKTRACE_TOKEN "" CACHE STRING "Token used to identify this build, for use in uploading crash-dumps.")
@@ -149,14 +151,18 @@ endif()
 
 if (OVERTE_RENDERING_BACKEND STREQUAL "GLES")
     add_definitions(-DUSE_GLES)
+    add_definitions(-DUSE_GL)
     add_definitions(-DGPU_POINTER_STORAGE_SHARED)
     set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gles)
 elseif (OVERTE_RENDERING_BACKEND STREQUAL "OpenGL")
     add_definitions(-DGPU_POINTER_STORAGE_RAW)
+    add_definitions(-DUSE_GL)
     set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gl)
 elseif (OVERTE_RENDERING_BACKEND STREQUAL "Vulkan")
-    # TODO
-    message(FATAL_ERROR "Vulkan backend selected, but not implemented yet.")
+    add_definitions(-DGPU_POINTER_STORAGE_RAW)
+    # TODO: remove dependencies on gl libraries for Vulkan builds.
+    set(PLATFORM_GL_BACKEND gpu-gl-common gpu-gl gpu-vk vk)
+    # Vulkan is the default rendering backend, no need to set any flags.
 else()
     message(FATAL_ERROR "Invalid OVERTE_RENDERING_BACKEND set. Expected 'GLES', 'OpenGL', or 'Vulkan'. Got '${OVERTE_RENDERING_BACKEND}'")
 endif()
@@ -283,6 +289,12 @@ if (OVERTE_BUILD_CLIENT)
 
   option(USE_SIXENSE "Build Interface with sixense library/plugin" OFF)
   option(USE_NEURON "Build Interface with Neuron library/plugin" OFF)
+  if (OVERTE_USE_SYSTEM_LIBS)
+      set(USE_STEAMWORKS OFF)
+      message(STATUS "Not using STEAMWORKS for system library build.")
+  else()
+      option(USE_STEAMWORKS "Build Interface with steamworks-client library/plugin" ON)
+  endif()
 endif()
 
 if (OVERTE_BUILD_CLIENT OR OVERTE_BUILD_SERVER)

@@ -127,7 +127,7 @@ void AssetMappingsScriptingInterface::uploadFile(QString path, QString mapping, 
     });
 
     auto upload = DependencyManager::get<AssetClient>()->createUpload(path);
-    QObject::connect(upload, &AssetUpload::finished, this, [=](AssetUpload* upload, const QString& hash) mutable {
+    QObject::connect(upload, &AssetUpload::finished, this, [=, this](AssetUpload* upload, const QString& hash) mutable {
         if (upload->getError() != AssetUpload::NoError) {
             if (completedCallback.isCallable()) {
                 QJSValueList args { upload->getErrorString() };

@@ -36,7 +36,7 @@ using namespace gpu::gl45;
 #define FORCE_STRICT_TEXTURE 0
 #define ENABLE_SPARSE_TEXTURE 0
 
-bool GL45Backend::supportedTextureFormat(const gpu::Element& format) {
+bool GL45Backend::supportedTextureFormat(const gpu::Element& format) const {
     switch (format.getSemantic()) {
         // ETC textures are actually required by the OpenGL spec as of 4.3, but aren't always supported by hardware
         // They'll be recompressed by OpenGL, which will be slow or have poor quality, so disable them for now
@@ -83,7 +83,6 @@ GLTexture* GL45Backend::syncGPUObject(const TexturePointer& texturePointer) {
             case TextureUsageType::RESOURCE:
 #endif
             case TextureUsageType::STRICT_RESOURCE:
-                qCDebug(gpugllogging) << "Strict texture " << texture.source().c_str();
                 object = new GL45StrictResourceTexture(shared_from_this(), texture);
                 break;
 

@@ -18,9 +18,9 @@
 <$declareAmbientOcclusion()$>
 
 // the source occlusion texture
-LAYOUT(binding=RENDER_UTILS_TEXTURE_SSAO_OCCLUSION) uniform sampler2DArray occlusionMaps;
+TEXTURE(RENDER_UTILS_TEXTURE_SSAO_OCCLUSION, sampler2DArray, occlusionMaps);
 
-layout(location=0) out vec4 outFragColor;
+OUTPUT(0, vec4, outFragColor);
 
 void main(void) {
     // Gather the four splits of the occlusion result back into an interleaved full size

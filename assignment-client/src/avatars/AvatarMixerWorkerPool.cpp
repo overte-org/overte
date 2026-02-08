@@ -65,17 +65,17 @@ bool AvatarMixerWorkerThread::try_pop(SharedNodePointer& node) {
 
 void AvatarMixerWorkerPool::processIncomingPackets(ConstIter begin, ConstIter end) {
     _function = &AvatarMixerWorker::processIncomingPackets;
-    _configure = [=](AvatarMixerWorker& worker) { 
+    _configure = [=](AvatarMixerWorker& worker) {
         worker.configure(begin, end);
     };
     run(begin, end);
 }
 
-void AvatarMixerWorkerPool::broadcastAvatarData(ConstIter begin, ConstIter end, 
+void AvatarMixerWorkerPool::broadcastAvatarData(ConstIter begin, ConstIter end,
                                                p_high_resolution_clock::time_point lastFrameTimestamp,
                                                float maxKbpsPerNode, float throttlingRatio) {
     _function = &AvatarMixerWorker::broadcastAvatarData;
-    _configure = [=](AvatarMixerWorker& worker) { 
+    _configure = [=, this](AvatarMixerWorker& worker) {
         worker.configureBroadcast(begin, end, lastFrameTimestamp, maxKbpsPerNode, throttlingRatio,
             _priorityReservedFraction);
    };

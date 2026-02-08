@@ -87,6 +87,10 @@ State::State(const Data& values) :
     _signature = evalSignature(_values);
 }
 
+std::string State::getKey() const {
+    QByteArray data((const char*)&_values, sizeof(Data));
+    return data.toBase64().toStdString();
+}
 
 template <typename T>
 static std::string hex(T t) {

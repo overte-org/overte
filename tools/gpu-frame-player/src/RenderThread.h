@@ -9,6 +9,7 @@
 #pragma once
 
 #include <QtCore/QElapsedTimer>
+#include <QtGui/QWindow>
 
 #include <GenericThread.h>
 #include <shared/RateCounter.h>
@@ -18,8 +19,10 @@
 #include <gl/Context.h>
 #include <gpu/gl/GLBackend.h>
 #else
-#include <vk/VKWindow.h>
+#include <vk/Config.h>
+#include <vk/Context.h>
 #include <gpu/vk/VKBackend.h>
+#include <vk/VulkanSwapChain.h>
 #endif
 
 class RenderThread : public GenericThread {
@@ -27,18 +30,16 @@ class RenderThread : public GenericThread {
 public:
     QWindow* _window{ nullptr };
 
+
 #ifdef USE_GL
     gl::Context _context;
 #else
-    vks::Context& _context{ vks::Context::get() };
-    const vk::Device& _device{ _context.device };
-
-    vk::SurfaceKHR _surface;
-    vk::RenderPass _renderPass;
-    vks::Swapchain _swapchain;
-    vk::Semaphore acquireComplete, renderComplete;
-    std::vector<vk::Framebuffer> _framebuffers;
-    vk::Extent2D _extent;
+    vks::Context& _vkcontext{ vks::Context::get() };
+    VkRenderPass _renderPass{VK_NULL_HANDLE};
+    VulkanSwapChain _swapchain;
+    VkSemaphore acquireComplete, renderComplete;
+    std::vector<VkFramebuffer> _framebuffers;
+    VkExtent2D _extent;
 
     void setupFramebuffers();
     void setupRenderPass();
@@ -58,12 +59,17 @@ public:
     void move(const glm::vec3& v);
     glm::mat4 _correction;
     gpu::PipelinePointer _presentPipeline;
+    int _renderedFrameCount{ 0 };
 
     void resize(const QSize& newSize);
     void setup() override;
     bool process() override;
     void shutdown() override;
-
+#ifdef USE_GL
+    void testGlTransfer();
+#else
+    //void testVkTransfer();
+#endif
     void submitFrame(const gpu::FramePointer& frame);
     void initialize(QWindow* window);
     void renderFrame(gpu::FramePointer& frame);

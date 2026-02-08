@@ -28,7 +28,7 @@ gpu::PipelinePointer ToneMapAndResample::_mirrorPipeline;
 
 ToneMapAndResample::ToneMapAndResample() {
     Parameters parameters;
-    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(sizeof(Parameters), (const gpu::Byte*) &parameters));
+    _parametersBuffer = gpu::BufferView(std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Parameters), (const gpu::Byte*) &parameters));
 }
 
 void ToneMapAndResample::init() {
@@ -78,7 +78,10 @@ void ToneMapAndResample::run(const RenderContextPointer& renderContext, const In
         tonemapping = tonemappingStage->getElement(tonemappingFrame->_elements.front());
     }
 
-    if (_debug) {
+    if (args->_mirrorDepth > 0) {
+        setCurve(TonemappingCurve::SRGB);
+        setExposure(0.0f);
+    } else if (_debug) {
         setCurve(_debugCurve);
         setExposure(_debugExposure);
     } else if (tonemapping) {

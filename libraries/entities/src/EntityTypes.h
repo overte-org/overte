@@ -60,7 +60,7 @@ public:
      *       <code>"Sphere"</code>. If an entity of type <code>Box</code> or <code>Shape</code> has its <code>shape</code> set
      *       to <code>"Sphere"</code> then its <code>type</code> will be reported as <code>"Sphere"</code>.</td>
      *       <td>{@link Entities.EntityProperties-Sphere|EntityProperties-Sphere}</td></tr>
-     *     <tr><td><code>"Model"</code></td><td>A mesh model from a glTF, FBX, or OBJ file.</td>
+     *     <tr><td><code>"Model"</code></td><td>A mesh model from a glTF, VRM, FBX, or OBJ file.</td>
      *       <td>{@link Entities.EntityProperties-Model|EntityProperties-Model}</td></tr>
      *     <tr><td><code>"Text"</code></td><td>A pane of text oriented in space.</td>
      *       <td>{@link Entities.EntityProperties-Text|EntityProperties-Text}</td></tr>
@@ -92,6 +92,8 @@ public:
      *       <td>{@link Entities.EntityProperties-Material|EntityProperties-Material}</td></tr>
      *     <tr><td><code>"Sound"</code></td><td>Plays a sound.</td>
      *       <td>{@link Entities.EntityProperties-Sound|EntityProperties-Sound}</td></tr>
+     *     <tr><td><code>"Canvas"</code></td><td>A runtime scriptable image.</td>
+     *       <td>{@link Entities.EntityProperties-Canvas|EntityProperties-Canvas}</td></tr>
      *     <tr><td><code>"Empty"</code></td><td>Invisible, intangible entity that has no special behavior.</td>
      *       <td>{@link Entities.EntityProperties-Empty|EntityProperties-Empty}</td></tr>
      *     <tr><td><code>"Script"</code></td><td>Starts an entity script on its parent.</td>
@@ -120,6 +122,7 @@ public:
         Zone,
         Material,
         Sound,
+        Canvas,
         Empty,
         Script,
         NUM_TYPES

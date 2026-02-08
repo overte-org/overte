@@ -16,6 +16,8 @@
 #include <gpu/Pipeline.h>
 #include <render/RenderFetchCullSortTask.h>
 #include "AssembleLightingStageTask.h"
+#include "DeferredFrameTransform.h"
+#include "LightClusters.h"
 #include "LightingModel.h"
 
 class RenderForwardTaskConfig : public render::Task::Config {
@@ -91,7 +93,7 @@ private:
 
 class DrawForward{
 public:
-    using Inputs = render::VaryingSet3<render::ItemBounds, LightingModelPointer, HazeStage::FramePointer>;
+    using Inputs = render::VaryingSet5<render::ItemBounds, LightingModelPointer, HazeStage::FramePointer, LightClustersPointer, DeferredFrameTransformPointer>;
     using JobModel = render::Job::ModelI<DrawForward, Inputs>;
 
     DrawForward(const render::ShapePlumberPointer& shapePlumber, bool opaquePass, uint transformSlot) :

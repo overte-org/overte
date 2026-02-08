@@ -130,6 +130,9 @@
 #include "SpeechRecognizer.h"
 #endif
 #include "Util.h"
+#ifndef USE_GL
+#include "vk/VKWindow.h"
+#endif
 
 #if defined(Q_OS_WIN)
 #include "WindowsSystemInfo.h"
@@ -212,7 +215,13 @@ Application::Application(
     QElapsedTimer& startupTimer
 ) :
     QApplication(argc, argv),
+#ifdef USE_GL
     _window(new MainWindow(desktop())),
+#else
+    _vkWindow(new VKWindow()),
+    _vkWindowWrapper(QWidget::createWindowContainer(_vkWindow)),
+    _window(new MainWindow(_vkWindowWrapper)),
+#endif
     // Menu needs to be initialized before other initializers. Otherwise deadlock happens on qApp->getWindow()->menuBar().
     _isMenuInitialized(initMenu()),
 #ifndef Q_OS_ANDROID
@@ -224,6 +233,7 @@ Application::Application(
     _useDiscordPresence("useDiscordPresence", true),
     _firstRun(Settings::firstRun, true),
     _previousScriptLocation("LastScriptLocation", DESKTOP_LOCATION),
+    _previousPreferredDisplayMode("previousPreferredDisplayMode", 0),
     // UI
     _hmdTabletScale("hmdTabletScale", DEFAULT_HMD_TABLET_SCALE_PERCENT),
     _desktopTabletScale("desktopTabletScale", DEFAULT_DESKTOP_TABLET_SCALE_PERCENT),
@@ -244,6 +254,7 @@ Application::Application(
     _fieldOfView("fieldOfView", DEFAULT_FIELD_OF_VIEW_DEGREES),
     _cameraClippingEnabled("cameraClippingEnabled", false)
 {
+
     setProperty(hifi::properties::CRASHED, _previousSessionCrashed);
 
     LogHandler::getInstance().moveToThread(thread());
@@ -826,7 +837,9 @@ void Application::handleLocalServerConnection() const {
     connect(socket, &QLocalSocket::readyRead, this, &Application::readArgumentsFromLocalSocket);
 
     qApp->getWindow()->raise();
-    qApp->getWindow()->activateWindow();
+#ifdef USE_GL
+    qApp->getWindow()->activateWindow(); //VKTODO
+#endif
 }
 
 void Application::readArgumentsFromLocalSocket() const {
@@ -851,7 +864,7 @@ void Application::showUrlHandler(const QUrl& url) {
     }
 
     ModalDialogListener* dlg = OffscreenUi::asyncQuestion("Confirm openUrl", "Do you recognize this path or code and want to open or execute it: " + url.toDisplayString());
-    QObject::connect(dlg, &ModalDialogListener::response, this, [=](QVariant answer) {
+    QObject::connect(dlg, &ModalDialogListener::response, this, [=, this](QVariant answer) {
         QObject::disconnect(dlg, &ModalDialogListener::response, this, nullptr);
         if (QMessageBox::Yes == static_cast<QMessageBox::StandardButton>(answer.toInt())) {
             // Unset the handler, open the URL, and the reset the handler
@@ -1009,7 +1022,7 @@ void Application::loadServerlessDomain(QUrl domainURL) {
         return;
     }
 
-    connect(request, &ResourceRequest::finished, this, [=]() {
+    connect(request, &ResourceRequest::finished, this, [=, this]() {
         if (request->getResult() == ResourceRequest::Success) {
             auto namedPaths = prepareServerlessDomainContents(domainURL, request->getData());
             auto nodeList = DependencyManager::get<NodeList>();
@@ -1241,6 +1254,10 @@ void Application::loadSettings(const QCommandLineParser& parser) {
     _myCamera.setMode((isFirstPerson) ? CAMERA_MODE_FIRST_PERSON_LOOK_AT : CAMERA_MODE_LOOK_AT);
     cameraMenuChanged();
 
+    if (!isFirstPerson) {
+        // When camera changes from first person to third person, boom distance may be set to ZOOM_MIN so it needs to be reset to default.
+        getMyAvatar()->setBoomLength(MyAvatar::ZOOM_DEFAULT);
+    }
     const auto& inputs = pluginManager->getInputPlugins();
     for (const auto& plugin : inputs) {
         if (!plugin->isActive()) {
@@ -1958,7 +1975,7 @@ void Application::update(float deltaTime) {
     }
 
      if (shouldCaptureMouse()) {
-        QPoint point = _glWidget->mapToGlobal(_glWidget->geometry().center());
+        QPoint point = _primaryWidget->mapToGlobal(_primaryWidget->geometry().center());
         if (QCursor::pos() != point) {
             _mouseCaptureTarget = point;
             _ignoreMouseMove = true;
@@ -2480,7 +2497,7 @@ void Application::userKickConfirmation(const QUuid& nodeID, unsigned int banFlag
 
     if (dlg->getDialogItem()) {
 
-        QObject::connect(dlg, &ModalDialogListener::response, this, [=] (QVariant answer) {
+        QObject::connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant answer) {
             QObject::disconnect(dlg, &ModalDialogListener::response, this, nullptr);
 
             bool yes = (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes);

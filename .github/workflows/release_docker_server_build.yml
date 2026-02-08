@@ -1,0 +1,81 @@
+# Copyright 2025 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+# Created 2025-11-23 by Julian Groß.
+
+name: Docker server release build
+# This workflow runs https://github.com/overte-org/overte-domain-server-docker on every tagged release.
+# The latest tag is not automatically updated.
+
+on:
+  push:
+    tags:
+      # Release tags. E.g. 2024.06.1
+      # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+      - "[0-9][0-9][0-9][0-9].[0-9][0-9].**"
+
+jobs:
+  build:
+    name: "${{matrix.os}} Docker"
+    strategy:
+      matrix:
+        include:
+          - os: Ubuntu amd64
+            runner: ubuntu-latest  # Which GitHub Actions Runner to use.
+            arch: amd64  # Used for naming Docker images.
+          - os: Ubuntu aarch64
+            runner: ubuntu-24.04-arm
+            arch: aarch64
+      fail-fast: false
+    runs-on: ${{matrix.runner}}
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: false
+        fetch-depth: 1
+        # We only check out the Dockerfiles. The main source gets pulled by the Dockerfiles themselves.
+        repository: "overte-org/overte-domain-server-docker"
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_HUB_ACCOUNT }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+    - name: Build server
+      shell: bash
+      # Using the previously checked out Docker files.
+      run: docker build --no-cache --build-arg "TAG=${{ github.ref_name }}" --build-arg "REPO=https://github.com/${{ github.repository }}.git" -t domain-server-builder -f ./Dockerfile.build .
+
+    - name: Deploy server into runtime image
+      shell: bash
+      run: docker build --no-cache -t overte/overte-server:${{ github.ref_name }}-${{ matrix.arch }} -f ./Dockerfile.runtime .
+
+    - name: Push image
+      shell: bash
+      run: docker push overte/overte-server:${{ github.ref_name }}-${{ matrix.arch }}
+
+  # This Job runs after the matrix is finished.
+  manifest:
+    name: Create and push manifests
+    needs: [build]  # Depend on the build job finishing first.
+    runs-on: ubuntu-latest
+    steps:
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_HUB_ACCOUNT }}
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+
+    - name: Create and push manifests
+      shell: bash
+      run: |
+        docker manifest create overte/overte-server:${{ github.ref_name }} overte/overte-server:${{ github.ref_name }}-amd64 overte/overte-server:${{ github.ref_name }}-aarch64
+        docker manifest push overte/overte-server:${{ github.ref_name }}
+
+    # We don't update the latest tag automatically, since this could be an experimental build.
+    - name: Don't forget to update the latest tag!
+      shell: bash
+      run: |
+        echo "docker manifest rm overte/overte-server:latest"
+        echo "docker manifest create overte/overte-server:latest overte/overte-server:${{ github.ref_name }}-amd64 overte/overte-server:${{ github.ref_name }}-aarch64"
+        echo "docker manifest push overte/overte-server:latest"

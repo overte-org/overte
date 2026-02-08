@@ -15,6 +15,9 @@
 //  This forces QML files to be pulled from the source as you edit it: set environment variable HIFI_USE_SOURCE_TREE_RESOURCES=1
 //  Use this to live reload: DependencyManager::get<OffscreenUi>()->clearCache();
 
+
+// QT6TODO: The Key Enums should be replaced by QKeyCombination in Qt6
+
 #include "Menu.h"
 #include <QDesktopServices>
 #include <QFileDialog>
@@ -106,7 +109,7 @@ Menu::Menu() {
     });
 
     // File > Quit
-    addActionToQMenuAndActionHash(fileMenu, MenuOption::Quit, Qt::CTRL | Qt::Key_Q, qApp, SLOT(quit()), QAction::QuitRole);
+    addActionToQMenuAndActionHash(fileMenu, MenuOption::Quit, static_cast<int>(Qt::CTRL) | static_cast<int>(Qt::Key_Q), qApp, SLOT(quit()), QAction::QuitRole);
 
 
     // Edit menu ----------------------------------
@@ -143,7 +146,7 @@ Menu::Menu() {
     editMenu->addSeparator();
 
     // Edit > Running Scripts
-    auto action = addActionToQMenuAndActionHash(editMenu, MenuOption::RunningScripts, Qt::CTRL | Qt::Key_J);
+    auto action = addActionToQMenuAndActionHash(editMenu, MenuOption::RunningScripts, static_cast<int>(Qt::CTRL) | static_cast<int>(Qt::Key_J));
     connect(action, &QAction::triggered, [] {
         if (!qApp->getLoginDialogPoppedUp()) {
             static const QUrl widgetUrl("hifi/dialogs/RunningScripts.qml");
@@ -157,7 +160,7 @@ Menu::Menu() {
 
     // Edit > Asset Browser
     auto assetServerAction = addActionToQMenuAndActionHash(editMenu, MenuOption::AssetServer,
-                                                           Qt::CTRL | Qt::SHIFT | Qt::Key_A,
+                                                           static_cast<int>(Qt::CTRL | Qt::SHIFT) | static_cast<int>(Qt::Key_A),
                                                            qApp, SLOT(showAssetServerWidget()));
     {
         auto nodeList = DependencyManager::get<NodeList>();
@@ -253,7 +256,7 @@ Menu::Menu() {
     MenuWrapper* settingsMenu = addMenu("Settings");
 
     // Settings > General...
-    action = addActionToQMenuAndActionHash(settingsMenu, MenuOption::Preferences, Qt::CTRL | Qt::Key_G, nullptr, nullptr);
+    action = addActionToQMenuAndActionHash(settingsMenu, MenuOption::Preferences, static_cast<int>(Qt::CTRL) | static_cast<int>(Qt::Key_G), nullptr, nullptr);
     connect(action, &QAction::triggered, [] {
         if (!qApp->getLoginDialogPoppedUp()) {
             qApp->showDialog(QString("hifi/dialogs/GeneralPreferencesDialog.qml"),
@@ -337,7 +340,7 @@ Menu::Menu() {
     MenuWrapper* scriptingOptionsMenu = developerMenu->addMenu("Scripting");
 
     // Developer > Scripting > Console...
-    addActionToQMenuAndActionHash(scriptingOptionsMenu, MenuOption::Console, Qt::CTRL | Qt::ALT | Qt::Key_J,
+    addActionToQMenuAndActionHash(scriptingOptionsMenu, MenuOption::Console, static_cast<int>(Qt::CTRL | Qt::ALT) | static_cast<int>(Qt::Key_J),
                                   DependencyManager::get<StandAloneJSConsole>().data(),
                                   SLOT(toggleConsole()),
                                   QAction::NoRole,
@@ -379,7 +382,7 @@ Menu::Menu() {
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
     auto speechRecognizer = DependencyManager::get<SpeechRecognizer>();
     QAction* speechRecognizerAction = addCheckableActionToQMenuAndActionHash(scriptingOptionsMenu, MenuOption::ControlWithSpeech,
-        Qt::CTRL | Qt::SHIFT | Qt::Key_C,
+        static_cast<int>(Qt::CTRL | Qt::SHIFT) | static_cast<int>(Qt::Key_C),
         speechRecognizer->getEnabled(),
         speechRecognizer.data(),
         SLOT(setEnabled(bool)),
@@ -420,6 +423,9 @@ Menu::Menu() {
 
     addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::AmbientOcclusion, 0, RenderScriptingInterface::getInstance()->getAmbientOcclusionEnabled(),
         RenderScriptingInterface::getInstance(), SLOT(setAmbientOcclusionEnabled(bool)));
+
+    addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::LocalLights, 0, RenderScriptingInterface::getInstance()->getLocalLightingEnabled(),
+        RenderScriptingInterface::getInstance(), SLOT(setLocalLightingEnabled(bool)));
 
     addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::WorldAxes);
     addCheckableActionToQMenuAndActionHash(renderOptionsMenu, MenuOption::DefaultSkybox, 0, true);
@@ -815,7 +821,7 @@ Menu::Menu() {
     addCheckableActionToQMenuAndActionHash(developerMenu, MenuOption::AnimStats);
 
     // Developer > Log
-    addActionToQMenuAndActionHash(developerMenu, MenuOption::Log, Qt::CTRL | Qt::SHIFT | Qt::Key_L,
+    addActionToQMenuAndActionHash(developerMenu, MenuOption::Log, static_cast<int>(Qt::CTRL | Qt::SHIFT) | static_cast<int>(Qt::Key_L),
                                   qApp, SLOT(toggleLogDialog()));
 
 #if 0 ///  -------------- REMOVED FOR NOW --------------
@@ -834,7 +840,7 @@ Menu::Menu() {
     MenuWrapper* toolsMenu = addMenu("Tools");
     addActionToQMenuAndActionHash(toolsMenu,
                                   MenuOption::ToolWindow,
-                                  Qt::CTRL | Qt::ALT | Qt::Key_T,
+                                  static_cast<int>(Qt::CTRL | Qt::ALT) | static_cast<int>(Qt::Key_T),
                                   dialogsManager.data(),
                                   SLOT(toggleToolWindow()),
                                   QAction::NoRole, UNSPECIFIED_POSITION, "Advanced");

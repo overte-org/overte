@@ -511,7 +511,9 @@ EditVoxels = function() {
             alpha: 0.5,
             dimensions: sphereDimensions,
             collisionless: true,
-        },"world");
+            ignorePickIntersection: true,
+            grab: { grabbable: false },
+        }, "domain");
     }
 
     function stopSphereResizing() {

@@ -11,7 +11,8 @@ on:
     types: [opened, synchronize, reopened]
 
 env:
-  APP_NAME: interface
+  # Many environment variables are already set in our Docker images or in other Actions.
+
   BUILD_TYPE: Release
   GIT_COMMIT: ${{ github.event.pull_request.head.sha }}
   # Android
@@ -21,23 +22,7 @@ env:
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
 
-  # OSX specific variables
-  DEVELOPER_DIR: /Applications/Xcode_11.2.app/Contents/Developer
-  # We are using macOS SDK 10.12 to work around a lot of OpenGL issues in newer SDKs.
-  # There are crashes on startup, crashes on window resize, etc. on newer macOS SDKs.
-  MACOSX_DEPLOYMENT_TARGET: '10.12'
-
-  # WIN32 specific variables
-  PreferredToolArchitecture: X64
-
-  # Ensure XZ always runs with muticore support
-  XZ_OPT: -T0
-
-  # Specify build preset, since on Windows, `cmake --build` appears to be unaware of of which build preset to use, using defaults instead.
   CMAKE_BUILD_EXTRA: --preset conan-release
-
-  # Work around AppImages not executing in Docker. https://github.com/AppImage/AppImageKit/issues/912#issuecomment-528669441
-  APPIMAGE_EXTRACT_AND_RUN: 1
 
 jobs:
   build_pr:
@@ -46,36 +31,70 @@ jobs:
         matrix:
           include:
             - os: Windows 2022
-              runner: windows-2022
+              # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
+              runner: depot-windows-2022-16  # Which GitHub Actions Runner to use. When using `image` this just needs to run the build container.
               arch: x86_64
               build_type: full
-              qt_source: source
+              qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
+              rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
             #- os: macOS-10.15
             #  build_type: full
             #  qt_source: aqt
-            - os: Ubuntu 22.04
-              image: docker.io/overte/overte-full-build:0.1.7-ubuntu-22.04-amd64
+            - os: Ubuntu 22.04 OpenGL
+              image: docker.io/overte/overte-full-build:2026-01-01-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
               runner: ubuntu-latest
               arch: amd64
               build_type: full
               qt_source: system
-              apt-dependencies: qt5-image-formats-plugins # add missing dependencies to docker image when convenient
+              rendering_backend: OpenGL
+            - os: Ubuntu 22.04 Vulkan
+              image: docker.io/overte/overte-full-build:2025-10-24-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+              runner: ubuntu-latest
+              arch: amd64
+              build_type: full
+              qt_source: system
+              rendering_backend: Vulkan
             # Android builds are currently failing
             #- os: ubuntu-18.04
             #  build_type: android
             #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
-            - os: Ubuntu 22.04
-              image: docker.io/overte/overte-full-build:0.1.7-ubuntu-22.04-aarch64
+            - os: Ubuntu 22.04 OpenGL ES
+              image: docker.io/overte/overte-full-build:2026-01-01-ubuntu-22.04-aarch64
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
               qt_source: system
-              apt-dependencies: qt5-image-formats-plugins # add missing dependencies to docker image when convenient
+              rendering_backend: GLES
+            - os: Ubuntu 22.04 Vulkan
+              image: docker.io/overte/overte-full-build:2026-01-01-ubuntu-22.04-aarch64
+              runner: ubuntu-24.04-arm
+              arch: aarch64
+              build_type: full
+              qt_source: system
+              rendering_backend: Vulkan
         fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
     steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: false
+        fetch-depth: 1
+
+    - name: Prepare Windows environment
+      if: startsWith(matrix.os, 'Windows')
+      uses: ./.github/actions/setup-windows
+
+    - name: Read image environment variables
+      # Bring some environment variables out of the Runner (Docker) image's environment into the Job environment.
+      if: ${{matrix.image}} != ""
+      shell: bash
+      run: |
+        echo "CONAN_HOME=$CONAN_HOME" >> $GITHUB_ENV
+        echo "CONAN_PROFILE=$CONAN_PROFILE" >> $GITHUB_ENV
+        echo "APP_TARGET_NAME=$APP_TARGET_NAME" >> $GITHUB_ENV
+
     - name: Configure Build Environment 1
       shell: bash
       id: buildenv1
@@ -84,61 +103,43 @@ jobs:
         # Setting short commit SHA for use as RELEASE_NAME in generated installers.
         echo "GIT_COMMIT_SHORT=`echo $GIT_COMMIT | cut -c1-7`" >> $GITHUB_ENV
         echo "JOB_NAME=${{matrix.os}}, ${{matrix.build_type}}" >> $GITHUB_ENV
-        echo "APP_TARGET_NAME=$APP_NAME" >> $GITHUB_ENV
 
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-          echo "CONAN_CPPSTD=gnu17" >> $GITHUB_ENV
-          echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
+          echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
           echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
-          echo "CMAKE_BUILD_EXTRA=$CMAKE_BUILD_EXTRA -- -j$(nproc)" >> $GITHUB_ENV
-
           if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
             if [ "${{ matrix.build_type }}" = "full" ]; then
-              echo "CMAKE_EXTRA=-DOVERTE_BUILD_TOOLS=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DOVERTE_BUILD_TOOLS=FALSE" >> $GITHUB_ENV
             else
-              echo "CMAKE_EXTRA=-DOVERTE_BUILD_SERVER=FALSE -DOVERTE_BUILD_TOOLS=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+              echo "CMAKE_EXTRA=-DOVERTE_BUILD_SERVER=FALSE -DOVERTE_BUILD_TOOLS=FALSE" >> $GITHUB_ENV
             fi
-
           fi
-
           if [[ "${{ matrix.arch }}" = "amd64" ]]; then
-            if [ "${{ matrix.build_type }}" = "full" ]; then
-              echo "CMAKE_EXTRA=-DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
-            else
-              echo "CMAKE_EXTRA=-DOVERTE_BUILD_SERVER=FALSE -DOVERTE_BUILD_TOOLS=FALSE -DHIFI_PYTHON_EXEC:FILEPATH=$(which python3)" >> $GITHUB_ENV
+            if [ "${{ matrix.build_type }}" != "full" ]; then
+              echo "CMAKE_EXTRA=-DOVERTE_BUILD_SERVER=FALSE -DOVERTE_BUILD_TOOLS=FALSE" >> $GITHUB_ENV
             fi
           fi
         fi
-        echo "CONAN_PROFILE=default" >> $GITHUB_ENV
-
         # Mac build variables
         if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
-          echo "PYTHON_EXEC=python3" >> $GITHUB_ENV
           echo "INSTALLER_EXT=dmg" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
             echo "CMAKE_EXTRA=-DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           else
             echo "CMAKE_EXTRA=-DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCLIENT_ONLY=1 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           fi
-          echo "APP_TARGET_NAME=Overte" >> $GITHUB_ENV
-          echo "CONAN_PROFILE=default" >> $GITHUB_ENV
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" = "Windows"* ]]; then
-          echo "CONAN_CPPSTD=17" >> $GITHUB_ENV
-          echo "PYTHON_EXEC=python" >> $GITHUB_ENV
+          echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
           echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
             echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
           else
             echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE -DCLIENT_ONLY=1" >> $GITHUB_ENV
           fi
-          if [[ "${{ matrix.runner }}" = "windows-2022" ]]; then
-            echo "CONAN_PROFILE='./tools/conan-profiles/vs-22-release'" >> $GITHUB_ENV
-          else
-            echo "Not sure which Conan profile to use. Exiting." && exit 1
-          fi
+
         fi
         # Android + Quest build variables
         if [[ "${{ matrix.build_type }}" == "android" ]]; then
@@ -152,11 +153,11 @@ jobs:
     - name: Configure Build Environment 2
       shell: bash
       run: |
-
+        echo "CMAKE_EXTRA=${CMAKE_EXTRA} -DOVERTE_RENDERING_BACKEND=${{ matrix.rendering_backend }}" >> $GITHUB_ENV
         echo "${{ steps.buildenv1.outputs.symbols_archive }}"
         if [ "${{ matrix.build_type }}" = "full" ]; then
           if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-            echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}-$(uname -m).$INSTALLER_EXT" >> $GITHUB_ENV
+            echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}-$(uname -m)-${{ matrix.rendering_backend }}.$INSTALLER_EXT" >> $GITHUB_ENV
           else
             echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
           fi
@@ -164,62 +165,14 @@ jobs:
           echo "ARTIFACT_NAME=Overte-Interface-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
 
-    - uses: actions/checkout@v4
-      with:
-        submodules: false
-        fetch-depth: 1
-
     - name: Cache conan
       id: conan-cache
-      uses: actions/cache@v4
+      uses: actions/cache@v5
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ~/.conan2/
-
-    - name: Install dependencies
-      shell: bash
-      if: startsWith(matrix.os, 'Ubuntu') || contains(matrix.os, 'Debian') || startsWith(matrix.os, 'macOS')
-      run: |
-        if [[ "${{ matrix.os }}" =~ "Ubuntu" || "${{ matrix.os }}" =~ "Debian" ]]; then
-
-          echo "Updating apt repository index"
-          sudo apt update || exit 1
-
-          echo "Installing apt packages"
-          sudo apt install -y ${{ matrix.apt-dependencies }} || exit 1
-
-        else # macOS
-          echo "Downloading MacOSX10.12 SDK.."
-          curl --progress-bar -L -o macOS_SDK10.12.4.tar.xz "https://data.moto9000.moe/overte_packages/macOS_SDK10.12.4.tar.xz" || exit 1
-          echo "  done\n"
-          echo "Checking MacOSX10.12 SDK.."
-          echo "c00e03cb64bed8d0d75d7a01c93de094b6ffaa3bc3318e7b29a9bdc354f0e29e363c454b7db89db8a3b78e9702668d1c661f1af279807de8db11accecb0ca498  macOS_SDK10.12.4.tar.xz" >> macOS_SDK10.12.4.tar.xz.checksum
-          shasum -a 512 -w -c macOS_SDK10.12.4.tar.xz.checksum
-          echo "Extracting MacOSX10.12 SDK.."
-          tar -xf macOS_SDK10.12.4.tar.xz || exit 1
-          echo "  done\n"
-          echo "Installing MacOSX10.12 SDK.."
-          # cp always sets an error code while copying the SDK so we return 0 when that happens.
-          sudo cp -rp MacOSX10.12.sdk /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/ || exit 0
-          echo "  done"
-        fi
-
-    - name: Override Windows package versions
-      shell: pwsh
-      if: startsWith(matrix.os, 'Windows')
-      run: |
-        choco install nsis --allow-downgrade --version=3.06.1
-        choco install cmake --allow-downgrade --version=3.31.6  # Our dependencies don't support CMake 4.0 yet.
-        Invoke-WebRequest https://build-deps.overte.org/conan/nsis-overte-plugins/NSIS-hifi-plugins-1.0.zip -OutFile NSIS-hifi-plugins.zip
-        Expand-Archive -LiteralPath 'NSIS-hifi-plugins.zip' -DestinationPath 'C:/Program Files (x86)/'
-
-    - name: Install Python modules
-      if: startsWith(matrix.os, 'Windows') || startsWith(matrix.os, 'macOS')
-      shell: bash
-      run: $PYTHON_EXEC -m pip install boto3 PyGithub conan
-
-    - name: Prepare Conan Build Environment
-      uses: ./.github/actions/setup-conan
+        path: |
+            ${{ env.CONAN_HOME }}/sources
+            ${{ env.CONAN_HOME }}/p
 
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install
@@ -237,15 +190,18 @@ jobs:
       run: conan cache backup-upload || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
 
     - name: Cleanup Conan dependencies
+      if: always() && steps.conan-cache.cache-hit != 'true'
       run: conan cache clean "*" -sbd
       shell: bash
 
     - name: Save Conan cache
       if: always() && steps.conan-cache.cache-hit != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
-        path: ~/.conan2/
+        path: |
+            ${{ env.CONAN_HOME }}/sources
+            ${{ env.CONAN_HOME }}/p
 
     - name: Configure CMake
       shell: bash
@@ -329,23 +285,13 @@ jobs:
         # Build!
         ./build_android.sh
 
-    - name: Output system stats
-      if: ${{ always() }}
-      working-directory: build
-      shell: bash
-      run: |
-        echo "Disk usage:"
-        df -h
-
-    - name: Output Installer Logs
-      if: failure() && startsWith(matrix.os, 'Windows')
-      shell: bash
-      working-directory: build
-      run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
-
     - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ARTIFACT_NAME }}
         path: ./build/Overte-*
         if-no-files-found: error
+
+    - name: Output debug information
+      if: always()
+      uses: ./.github/actions/debug-info

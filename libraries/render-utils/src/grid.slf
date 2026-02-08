@@ -16,9 +16,9 @@
 
 <@if not HIFI_USE_FORWARD@>
     <@include DeferredBufferWrite.slh@>
-    layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) in vec4 _prevPositionCS;
+    INPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
 <@else@>
-    layout(location=0) out vec4 _fragColor0;
+    OUTPUT(0, vec4, _fragColor0);
 <@endif@>
 
 struct Grid {
@@ -27,12 +27,13 @@ struct Grid {
     vec4 edge;
 };
 
-LAYOUT(binding=0) uniform gridBuffer {
-  Grid grid;
+UNIFORM_BUFFER(0, gridBuffer) {
+  Grid grid; 
 };
 
-layout(location=GPU_ATTR_TEXCOORD0) in vec2 varTexCoord0;
-layout(location=GPU_ATTR_COLOR) in vec4 varColor;
+INPUT(GPU_ATTR_TEXCOORD0, vec2, varTexCoord0);
+INPUT(GPU_ATTR_COLOR, vec4, varColor);
+
 
 void main(void) {
     float gridLine = mix(paintGridMajorMinor(varTexCoord0, grid.offset, grid.period, grid.edge),
@@ -43,11 +44,11 @@ void main(void) {
     }
 
 <@if not HIFI_USE_FORWARD@>
-    vec3 NORMAL = vec3(1.0, 0.0, 0.0);
     <@if not HIFI_USE_TRANSLUCENT@>
+        vec3 NORMAL = vec3(1.0, 0.0, 0.0);
         packDeferredFragmentUnlit(_prevPositionCS, NORMAL, 1.0, varColor.rgb);
     <@else@>
-        packDeferredFragmentTranslucent(_prevPositionCS, NORMAL, varColor.a, varColor.rgb, DEFAULT_ROUGHNESS);
+        packDeferredFragmentTranslucentUnlit(varColor.a, varColor.rgb);
     <@endif@>
 <@else@>
     _fragColor0 = varColor;

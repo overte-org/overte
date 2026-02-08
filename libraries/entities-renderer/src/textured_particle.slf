@@ -11,13 +11,13 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-LAYOUT(binding=0) uniform sampler2D colorMap;
+TEXTURE(0, sampler2D, colorMap);
 
-layout(location=0) in vec4 varColor;
-layout(location=1) in vec2 varTexcoord;
+INPUT(0, vec4, varColor);
+INPUT(1, vec2, varTexcoord);
 
 <@if HIFI_USE_FORWARD or HIFI_USE_SHADOW@>
-    layout(location=0) out vec4 _fragColor0;
+    OUTPUT(0, vec4, _fragColor0);
 <@else@>
     <@include DeferredBufferWrite.slh@>
 <@endif@>
@@ -39,13 +39,13 @@ void main(void) {
     _fragColor0 = vec4(1.0);
 <@endif@>
 <@else@>
-    // Particles have AA disabled so this doesn't matter
-    vec4 PREV_POSITION_CS = vec4(0.0, 0.0, 0.0, 1.0);
-    vec3 NORMAL = vec3(1.0, 0.0, 0.0);
     <@if not HIFI_USE_TRANSLUCENT@>
+        // Particles have AA disabled so this doesn't matter
+        vec4 PREV_POSITION_CS = vec4(0.0, 0.0, 0.0, 1.0);
+        vec3 NORMAL = vec3(1.0, 0.0, 0.0);
         packDeferredFragmentUnlit(PREV_POSITION_CS, NORMAL, albedo.a, albedo.rgb);
     <@else@>
-        packDeferredFragmentTranslucent(PREV_POSITION_CS, NORMAL, albedo.a, albedo.rgb, DEFAULT_ROUGHNESS);
+        packDeferredFragmentTranslucentUnlit(albedo.a, albedo.rgb);
     <@endif@>
 <@endif@>
 }

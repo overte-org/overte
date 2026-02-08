@@ -164,8 +164,8 @@ bool Source::doReplacement(String& source) const {
     for (const auto& entry : replacements) {
         const auto& key = entry.first;
         // First try search for a block to replace
-        // Blocks are required because oftentimes we need a stub function 
-        // in the original source code to allow it to compile.  As such we 
+        // Blocks are required because oftentimes we need a stub function
+        // in the original source code to allow it to compile.  As such we
         // need to replace the stub with our own code rather than just inject
         // some code.
         const auto beginMarker = key + "_BEGIN";
@@ -303,7 +303,7 @@ void Reflection::parse(const std::string& jsonString) {
             if (!resourceBuffers.empty()) {
                 throw std::runtime_error("Input shader has both SSBOs and texture buffers defined");
             }
-            for (const auto& bufferTexture : bufferTextures){
+            for (const auto& bufferTexture : bufferTextures) {
                 resourceBuffers[bufferTexture] = textures[bufferTexture];
                 textures.erase(bufferTexture);
             }

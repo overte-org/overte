@@ -21,19 +21,31 @@
 static const bool PERMISSIONS_DEBUG_ENABLED = false;
 
 extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission::SCRIPT_PERMISSIONS_SIZE)> scriptPermissionNames {
-    "Permission to get user's avatar URL" //SCRIPT_PERMISSION_GET_AVATAR_URL
+    // SCRIPT_PERMISSION_GET_AVATAR_URL
+    "Permission to get user's avatar URL",
+    // SCRIPT_PERMISSION_BOOKMARKS
+    "Permission to view user's bookmarked locations",
 };
 
 extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission::SCRIPT_PERMISSIONS_SIZE)> scriptPermissionSettingKeyNames {
-    "private/scriptPermissionGetAvatarURLSafeURLs" //SCRIPT_PERMISSION_GET_AVATAR_URL
+    // SCRIPT_PERMISSION_GET_AVATAR_URL
+    "private/scriptPermissionGetAvatarURLSafeURLs",
+    // SCRIPT_PERMISSION_BOOKMARKS
+    "private/scriptPermissionBookmarksSafeURLs",
 };
 
 extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission::SCRIPT_PERMISSIONS_SIZE)> scriptPermissionSettingEnableKeyNames {
-    "private/scriptPermissionGetAvatarURLEnable" //SCRIPT_PERMISSION_GET_AVATAR_URL
+    // SCRIPT_PERMISSION_GET_AVATAR_URL
+    "private/scriptPermissionGetAvatarURLEnable",
+    // SCRIPT_PERMISSION_BOOKMARKS
+    "private/scriptPermissionBookmarksEnable",
 };
 
 extern const std::array<bool, static_cast<int>(ScriptPermissions::Permission::SCRIPT_PERMISSIONS_SIZE)> scriptPermissionSettingEnableDefaultValues {
-    true //SCRIPT_PERMISSION_GET_AVATAR_URL
+    // SCRIPT_PERMISSION_GET_AVATAR_URL
+    true,
+    // SCRIPT_PERMISSION_BOOKMARKS
+    true,
 };
 
 bool ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission permission) {

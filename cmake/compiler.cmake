@@ -1,6 +1,6 @@
 set(CMAKE_CXX_FLAGS_DEBUG  "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
-# Building with webrtc-audio-processing fails on cppstd 14.
-set(CMAKE_CXX_STANDARD 17)
+# "designated initializers" in libraries/script-engine/src/CanvasCommand.cpp require C++20 (or GNU extensions).
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (NOT "${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
@@ -42,7 +42,7 @@ if (WIN32)
 else ()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -fno-strict-aliasing -Wno-unused-parameter")
   if (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Woverloaded-virtual -Wdouble-promotion -Wsuggest-override")
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ggdb -Woverloaded-virtual -Wdouble-promotion -Wsuggest-override -falign-functions")
   endif ()
 endif()
 

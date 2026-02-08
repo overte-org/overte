@@ -136,10 +136,10 @@ void ImageEntityRenderer::doRender(RenderArgs* args) {
         materials = _materials["0"];
     }
 
-    glm::vec4 color = materials.getColor();
+    glm::vec4 color = materials.getTopColor();
     color = EntityRenderer::calculatePulseColor(color, _pulseProperties, _created);
 
-    if (!_texture || !_texture->isLoaded() || color.a == 0.0f) {
+    if (!_texture || !_texture->isLoaded()|| materials.isInvisible()) {
         return;
     }
 
@@ -210,6 +210,7 @@ void ImageEntityRenderer::doRender(RenderArgs* args) {
         _texture->getGPUTexture()->setSampler(sampler);
         batch->setResourceTexture(0, _texture->getGPUTexture());
     } else if (pipelineType == Pipeline::MATERIAL) {
+        color = glm::vec4(1.0f);  // for model shaders, albedo comes from the material instead of vertex colors
         if (RenderPipelines::bindMaterials(materials, *batch, args->_renderMode, args->_enableTexturing)) {
             args->_details._materialSwitches++;
         }

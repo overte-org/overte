@@ -26,18 +26,15 @@
 <@endif@>
 
 <@if HIFI_USE_FORWARD@>
-    layout(location=0) out vec4 _fragColor0;
+    OUTPUT(0, vec4, _fragColor0);
 <@else@>
     <@include DeferredBufferWrite.slh@>
 <@endif@>
 
 <@if not HIFI_USE_UNLIT@>
     <@include GlobalLight.slh@>
-    <@if HIFI_USE_TRANSLUCENT@>
-        <$declareEvalGlobalLightingAlphaBlended()$>
-    <@elif HIFI_USE_FORWARD@>
-        <$declareEvalSkyboxGlobalColor(_SCRIBE_NULL, 1)$>
-    <@endif@>
+    <@include LightLocal.slh@>
+    <$declareEvalGlobalLightingAlphaBlended()$>
 <@endif@>
 
 <@if HIFI_USE_FADE@>
@@ -47,22 +44,27 @@
 
 <@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
     <@if not HIFI_USE_UNLIT@>
-        layout(location=RENDER_UTILS_ATTR_POSITION_ES) in vec4 _positionES;
+        INPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
+    <@endif@>
+
+    // workaround for scribe only supporting (A or B) and not (A or B or C)
+    <@if not HIFI_USE_FADE@>
+        layout(location=RENDER_UTILS_ATTR_POSITION_WS) in vec4 _positionWS;
     <@endif@>
 <@endif@>
 <@if not HIFI_USE_FORWARD@>
-    layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) in vec4 _prevPositionCS;
+    INPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
 <@endif@>
 <@if HIFI_USE_FADE@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_WS) in vec4 _positionWS;
+    INPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
 <@endif@>
-layout(location=RENDER_UTILS_ATTR_NORMAL_WS) in vec3 _normalWS;
-layout(location=RENDER_UTILS_ATTR_COLOR) in vec4 _color;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) in vec4 _texCoord01;
+INPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
+INPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
+INPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 #define _texCoord0 _texCoord01.xy
 #define _texCoord1 _texCoord01.zw
 
-LAYOUT(binding=0) uniform sampler2D simpleTexture;
+TEXTURE(0, sampler2D, simpleTexture);
 
 void main(void) {
     vec4 texel = texture(simpleTexture, _texCoord0);
@@ -78,24 +80,32 @@ void main(void) {
 <@endif@>
 
 <@if not HIFI_USE_UNLIT@>
-    <@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
+    <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
         float metallic = DEFAULT_METALLIC;
         vec3 fresnel = getFresnelF0(metallic, texel.rgb);
 
         TransformCamera cam = getTransformCamera();
-        vec3 fragPosition = _positionES.xyz;
-    <@endif@>
-<@endif@>
 
-<@if not HIFI_USE_UNLIT@>
-    <@if HIFI_USE_TRANSLUCENT@>
-        vec3 normal = evalFrontOrBackFaceNormal(normalize(_normalWS));
+        vec3 fragNormalWS = evalFrontOrBackFaceNormal(normalize(_normalWS));
+        vec3 fragPositionWS = _positionWS.xyz;
+        vec3 fragToEyeWS = cam._viewInverse[3].xyz - fragPositionWS;
+        vec3 fragToEyeDirWS = normalize(fragToEyeWS);
+        SurfaceData surfaceWS = initSurfaceData(DEFAULT_ROUGHNESS, fragNormalWS, fragToEyeDirWS);
+
+        vec4 localLighting = vec4(0.0);
+        <$fetchClusterInfo(_positionWS)$>
+        if (hasLocalLights(numLights, clusterPos, dims)) {
+            localLighting = evalLocalLighting(cluster, numLights, fragPositionWS, surfaceWS,
+                                              metallic, fresnel, texel.rgb, 0.0,
+                                              vec4(0), vec4(0), texel.a);
+        }
+
         vec4 color = vec4(evalGlobalLightingAlphaBlended(
             cam._viewInverse,
             1.0,
             DEFAULT_OCCLUSION,
-            fragPosition,
-            normal,
+            _positionES.xyz,
+            fragNormalWS,
             texel.rgb,
             fresnel,
             metallic,
@@ -104,26 +114,14 @@ void main(void) {
                 + fadeEmissive
         <@endif@>
             ,
-            DEFAULT_ROUGHNESS, texel.a),
+            surfaceWS, texel.a, localLighting.rgb),
             texel.a);
 
         <@if HIFI_USE_FORWARD@>
             _fragColor0 = color;
         <@else@>
-            packDeferredFragmentTranslucent(_prevPositionCS, normal, color.a, color.rgb, DEFAULT_ROUGHNESS);
+            packDeferredFragmentTranslucentUnlit(color.a, color.rgb);
         <@endif@>
-    <@elif HIFI_USE_FORWARD@>
-        _fragColor0 = vec4(evalSkyboxGlobalColor(
-            cam._viewInverse,
-            1.0,
-            DEFAULT_OCCLUSION,
-            fragPosition,
-            evalFrontOrBackFaceNormal(normalize(_normalWS)),
-            texel.rgb,
-            fresnel,
-            metallic,
-            DEFAULT_ROUGHNESS),
-            texel.a);
     <@else@>
         packDeferredFragment(
             _prevPositionCS,
@@ -150,8 +148,6 @@ void main(void) {
         _fragColor0 = vec4(color, texel.a);
     <@elif HIFI_USE_TRANSLUCENT@>
         packDeferredFragmentTranslucentUnlit(
-            _prevPositionCS,
-            evalFrontOrBackFaceNormal(normalize(_normalWS)),
             texel.a,
             color);
     <@else@>

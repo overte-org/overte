@@ -181,7 +181,7 @@ glm::uint32 scriptable::ScriptableMesh::addAttribute(const QString& attributeNam
     if (!getAttributeNames().contains(attributeName)) {
         QVector<QVariant> values;
         values.fill(defaultValue, numVertices);
-        mesh->addAttribute(slot, buffer_helpers::newFromVector(values, gpu::Stream::getDefaultElements()[slot]));
+        mesh->addAttribute(slot, buffer_helpers::newFromVector(gpu::Buffer::VertexBuffer, values, gpu::Stream::getDefaultElements()[slot]));
         return values.size();
     } else {
         auto bufferView = buffer_helpers::mesh::getBufferView(mesh, slot);
@@ -209,7 +209,7 @@ glm::uint32 scriptable::ScriptableMesh::fillAttribute(const QString& attributeNa
     auto numVertices = getNumVertices();
     QVector<QVariant> values;
     values.fill(value, numVertices);
-    mesh->addAttribute(slot, buffer_helpers::newFromVector(values, gpu::Stream::getDefaultElements()[slot]));
+    mesh->addAttribute(slot, buffer_helpers::newFromVector(gpu::Buffer::VertexBuffer, values, gpu::Stream::getDefaultElements()[slot]));
     return true;
 }
 

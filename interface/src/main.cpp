@@ -70,6 +70,18 @@ int main(int argc, const char* argv[]) {
     }
 #endif
 
+    // Force-disable subpixel antialiasing on QML distance-field text.
+    // An existing override for QSG_DISTANCEFIELD_ANTIALIASING will be respected, and this
+    // variable will change nothing if QML_DISABLE_DISTANCEFIELD is set.
+    // Qt doesn't seem to have any public API for changing this besides the environment variable.
+    // See qtdeclarative/src/quick/scenegraph/qsgdefaultcontext.cpp
+    if (
+        auto aa = qgetenv("QSG_DISTANCEFIELD_ANTIALIASING");
+        aa.isNull() || aa.isEmpty()
+    ) {
+        qputenv("QSG_DISTANCEFIELD_ANTIALIASING", "gray");
+    }
+
     // Setup QCoreApplication settings, install log message handler
     setupHifiApplication(BuildInfo::INTERFACE_NAME);
 
@@ -141,17 +153,17 @@ int main(int argc, const char* argv[]) {
     );
     QCommandLineOption displaysOption(
         "display",
-        "Preferred display.",
+        "Preferred display plugin. Valid options include \"Desktop\", \"OpenXR\", and \"OpenVR (Vive)\". If \"Desktop\" is specified, all VR plugins are disabled.",
         "displays"
     );
     QCommandLineOption disableDisplaysOption(
         "disableDisplayPlugins",
-        "Displays to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
+        "Display plugins to disable, separated by commas. Valid options include \"OpenXR\" and \"OpenVR (Vive)\".",
         "string"
     );
     QCommandLineOption disableInputsOption(
         "disableInputPlugins",
-        "Inputs to disable. Valid options include \"OpenVR (Vive)\" and \"Oculus Rift\"",
+        "Input plugins to disable, separated by commas. Valid options include \"SDL2\" (used only for gamepads), \"OpenXR\", and \"OpenVR (Vive)\".",
         "string"
     );
     QCommandLineOption suppressSettingsResetOption(
@@ -288,11 +300,19 @@ int main(int argc, const char* argv[]) {
     );
     QCommandLineOption useExperimentalXROption(
         "useExperimentalXR",
-        "Enables the experimental OpenXR plugin and disables the OpenVR plugin. Some features available in OpenVR aren't yet available in OpenXR."
+        "Legacy alias of \"--display=OpenXR\"."
     );
     QCommandLineOption xrNoHandTrackingOption(
         "xrNoHandTracking",
-        "Debug option. Disables OpenXR hand tracking, even if it's supported by the runtime."
+        "Debug option. Disables OpenXR hand tracking, even if it's supported."
+    );
+    QCommandLineOption xrNoBodyTrackingOption(
+        "xrNoBodyTracking",
+        "Debug option. Disables OpenXR body tracking, even if it's supported."
+    );
+    QCommandLineOption xrNoPalmPoseOption(
+        "xrNoPalmPose",
+        "Debug option. Disables use of the OpenXR palm pose, even if it's supported. Falls back to the controller's grip pose."
     );
 
     // "--qmljsdebugger", which appears in output from "--help-all".
@@ -345,6 +365,7 @@ int main(int argc, const char* argv[]) {
     parser.addOption(getProtocolVersionDataOption);
     parser.addOption(useExperimentalXROption);
     parser.addOption(xrNoHandTrackingOption);
+    parser.addOption(xrNoPalmPoseOption);
 
 
     QString applicationPath;
@@ -372,6 +393,11 @@ int main(int argc, const char* argv[]) {
     // to handle events. Needs splitting into two parts: enough initialization
     // for Application to work, and then thread start afterwards.
     Setting::init();
+#ifdef NDEBUG
+    // Fail if asserts are enabled on release build.
+    Q_ASSERT_X(false, "Interface", "This is not a debug build, but somehow Q_ASSERTs are enabled. \
+               This is known to happen on Windows if QT_NO_DEBUG isn't set by us.");
+#endif
     Application app(argcExtended, const_cast<char**>(argvExtended.data()), parser, startupTime);
 
     if (parser.isSet("abortAfterStartup")) {

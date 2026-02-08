@@ -19,7 +19,7 @@ using namespace gpu;
 using namespace gpu::gl;
 using namespace gpu::gles;
 
-bool GLESBackend::supportedTextureFormat(const gpu::Element& format) {
+bool GLESBackend::supportedTextureFormat(const gpu::Element& format) const {
     switch (format.getSemantic()) {
         case gpu::Semantic::COMPRESSED_ETC2_RGB:
         case gpu::Semantic::COMPRESSED_ETC2_SRGB:
@@ -66,7 +66,6 @@ GLTexture* GLESBackend::syncGPUObject(const TexturePointer& texturePointer) {
                 break;
 
             case TextureUsageType::STRICT_RESOURCE:
-                qCDebug(gpugllogging) << "Strict texture " << texture.source().c_str();
                 object = new GLESStrictResourceTexture(shared_from_this(), texture);
                 break;
 
@@ -213,7 +212,7 @@ void GLESTexture::syncSampler(const Sampler& sampler) const {
 
     if (sampler.doComparison()) {
         glTexParameteri(_target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE); // GL_COMPARE_R_TO_TEXTURE
-        glTexParameteri(_target, GL_TEXTURE_COMPARE_FUNC, COMPARISON_TO_GL[(uint8_t))sampler.getComparisonFunction()]);
+        glTexParameteri(_target, GL_TEXTURE_COMPARE_FUNC, COMPARISON_TO_GL[(uint8_t)sampler.getComparisonFunction()]);
     } else {
         glTexParameteri(_target, GL_TEXTURE_COMPARE_MODE, GL_NONE);
     }
@@ -573,7 +572,7 @@ void GLESVariableAllocationTexture::populateTransferQueue(TransferJob::Queue& qu
         }
 
         // queue up the sampler and populated mip change for after the transfer has completed
-        queue.emplace(new TransferJob(sourceMip, [=] {
+        queue.emplace(new TransferJob(sourceMip, [=, this] {
             _populatedMip = sourceMip;
             incrementPopulatedSize(_gpuObject.evalMipSize(sourceMip));
             sanityCheck();

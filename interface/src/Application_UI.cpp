@@ -118,16 +118,22 @@ void Application::showDisplayPluginsTools(bool show) {
     DependencyManager::get<DialogsManager>()->hmdTools(show);
 }
 
+#ifdef USE_GL
 GLWidget* Application::getPrimaryWidget() {
-    return _glWidget;
+    return _primaryWidget;
 }
+#else
+VKWidget* Application::getPrimaryWidget() {
+    return _primaryWidget;
+}
+#endif
 
 MainWindow* Application::getPrimaryWindow() {
     return getWindow();
 }
 
 QOpenGLContext* Application::getPrimaryContext() {
-    return _glWidget->qglContext();
+    return _primaryWidget->qglContext();
 }
 
 bool Application::isForeground() const {
@@ -150,8 +156,10 @@ bool Application::hasFocus() const {
 void Application::setFocus() {
     // Note: Windows doesn't allow a user focus to be taken away from another application. Instead, it changes the color of and
     // flashes the taskbar icon.
+#ifdef USE_GL
     auto window = qApp->getWindow();
-    window->activateWindow();
+    window->activateWindow(); //VKTODO
+#endif
 }
 
 void Application::raise() {
@@ -339,7 +347,7 @@ void Application::confirmConnectWithoutAvatarEntities() {
     _confirmConnectWithoutAvatarEntitiesDialog = OffscreenUi::asyncQuestion("Continue Without Wearables", continueMessage,
         QMessageBox::Yes | QMessageBox::No);
     if (_confirmConnectWithoutAvatarEntitiesDialog->getDialogItem()) {
-        QObject::connect(_confirmConnectWithoutAvatarEntitiesDialog, &ModalDialogListener::response, this, [=](QVariant answer) {
+        QObject::connect(_confirmConnectWithoutAvatarEntitiesDialog, &ModalDialogListener::response, this, [=, this](QVariant answer) {
             QObject::disconnect(_confirmConnectWithoutAvatarEntitiesDialog, &ModalDialogListener::response, this, nullptr);
             _confirmConnectWithoutAvatarEntitiesDialog = nullptr;
             bool shouldConnect = (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes);
@@ -487,10 +495,10 @@ void Application::showDialog(const QUrl& widgetUrl, const QUrl& tabletUrl, const
 }
 
 void Application::loadDialog() {
-    ModalDialogListener* dlg = OffscreenUi::getOpenFileNameAsync(_glWidget, tr("Open Script"),
+    ModalDialogListener* dlg = OffscreenUi::getOpenFileNameAsync(_primaryWidget, tr("Open Script"),
                                                                  getPreviousScriptLocation(),
                                                                  tr("JavaScript Files (*.js)"));
-    connect(dlg, &ModalDialogListener::response, this, [=] (QVariant answer) {
+    connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant answer) {
         disconnect(dlg, &ModalDialogListener::response, this, nullptr);
         const QString& response = answer.toString();
         if (!response.isEmpty() && QFile(response).exists()) {
@@ -502,7 +510,7 @@ void Application::loadDialog() {
 
 void Application::loadScriptURLDialog() const {
     ModalDialogListener* dlg = OffscreenUi::getTextAsync(OffscreenUi::ICON_NONE, "Open and Run Script", "Script URL");
-    connect(dlg, &ModalDialogListener::response, this, [=] (QVariant response) {
+    connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant response) {
         disconnect(dlg, &ModalDialogListener::response, this, nullptr);
         const QString& newScript = response.toString();
         if (QUrl(newScript).scheme() == "atp") {
@@ -574,7 +582,7 @@ void Application::showAssetServerWidget(QString filePath) {
     }
     static const QUrl url { "hifi/AssetServer.qml" };
 
-    auto startUpload = [=](QQmlContext* context, QObject* newObject){
+    auto startUpload = [=, this](QQmlContext* context, QObject* newObject){
         if (!filePath.isEmpty()) {
             emit uploadRequest(filePath);
         }
@@ -697,10 +705,10 @@ void Application::updateSystemTabletMode() {
 void Application::captureMouseChanged(bool captureMouse) {
     _captureMouse = captureMouse;
     if (_captureMouse) {
-        _glWidget->setCursor(QCursor(Qt::BlankCursor));
+        _primaryWidget->setCursor(QCursor(Qt::BlankCursor));
     } else {
         _mouseCaptureTarget = QPointF(NAN, NAN);
-        _glWidget->unsetCursor();
+        _primaryWidget->unsetCursor();
     }
 }
 
@@ -982,11 +990,11 @@ bool Application::askToSetAvatarUrl(const QString& url) {
 
     bool agreeToLicense = true; // assume true
     //create set avatar callback
-    auto setAvatar = [=] (QString url, QString modelName) {
+    auto setAvatar = [=, this] (QString url, QString modelName) {
         ModalDialogListener* dlg = OffscreenUi::asyncQuestion("Set Avatar",
                                                               "Would you like to use '" + modelName + "' for your avatar?",
                                                               QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Ok);
-        QObject::connect(dlg, &ModalDialogListener::response, this, [=] (QVariant answer) {
+        QObject::connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant answer) {
             QObject::disconnect(dlg, &ModalDialogListener::response, this, nullptr);
 
             bool ok = (QMessageBox::Ok == static_cast<QMessageBox::StandardButton>(answer.toInt()));
@@ -1007,7 +1015,7 @@ bool Application::askToSetAvatarUrl(const QString& url) {
         ModalDialogListener* dlg = OffscreenUi::asyncQuestion("Avatar Usage License",
                                                               modelLicense + "\nDo you agree to these terms?",
                                                               QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
-        QObject::connect(dlg, &ModalDialogListener::response, this, [=, &agreeToLicense] (QVariant answer) {
+        QObject::connect(dlg, &ModalDialogListener::response, this, [=, this, &agreeToLicense] (QVariant answer) {
             QObject::disconnect(dlg, &ModalDialogListener::response, this, nullptr);
 
             agreeToLicense = (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes);
@@ -1052,7 +1060,7 @@ bool Application::askToLoadScript(const QString& scriptFilenameOrURL) {
     ModalDialogListener* dlg = OffscreenUi::asyncQuestion(getWindow(), "Run Script", message,
                                                            QMessageBox::Yes | QMessageBox::No);
 
-    QObject::connect(dlg, &ModalDialogListener::response, this, [=] (QVariant answer) {
+    QObject::connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant answer) {
         const QString& fileName = scriptFilenameOrURL;
         if (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes) {
             qCDebug(interfaceapp) << "Chose to run the script: " << fileName;
@@ -1081,7 +1089,7 @@ bool Application::askToReplaceDomainContent(const QString& url) {
             ModalDialogListener* dig = OffscreenUi::asyncQuestion("Are you sure you want to replace this domain's content set?",
                                                                   infoText, QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
 
-            QObject::connect(dig, &ModalDialogListener::response, this, [=] (QVariant answer) {
+            QObject::connect(dig, &ModalDialogListener::response, this, [=, this] (QVariant answer) {
                 QString details;
                 if (static_cast<QMessageBox::StandardButton>(answer.toInt()) == QMessageBox::Yes) {
                     // Given confirmation, send request to domain server to replace content
@@ -1327,7 +1335,9 @@ void Application::toggleTabletUI(bool shouldOpen) const {
 
         if (!HMD->getShouldShowTablet()) {
             DependencyManager::get<Keyboard>()->setRaised(false);
-            _window->activateWindow();
+#ifdef USE_GL
+            _window->activateWindow(); //VKTODO
+#endif
             auto tablet = DependencyManager::get<TabletScriptingInterface>()->getTablet(SYSTEM_TABLET);
             tablet->unfocus();
         }
@@ -1335,7 +1345,7 @@ void Application::toggleTabletUI(bool shouldOpen) const {
 }
 
 bool Application::shouldCaptureMouse() const {
-    return _captureMouse && _glWidget->isActiveWindow() && !ui::Menu::isSomeSubmenuShown();
+    return _captureMouse && _primaryWidget->isActiveWindow() && !ui::Menu::isSomeSubmenuShown();
 }
 
 void Application::checkChangeCursor() {
@@ -1346,7 +1356,7 @@ void Application::checkChangeCursor() {
 #else
         // On windows and linux, hiding the top level cursor also means it's invisible when hovering over the
         // window menu, which is a pain, so only hide it for the GL surface
-        auto cursorTarget = _glWidget;
+        auto cursorTarget = _primaryWidget;
 #endif
         cursorTarget->setCursor(_desiredCursor);
 

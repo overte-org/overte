@@ -57,11 +57,20 @@ execute_process(
       OUTPUT=${CPACK_PACKAGE_FILE_NAME}-${CMAKE_SYSTEM_PROCESSOR}.AppImage
       VERSION=${CPACK_PACKAGE_VERSION}
       QML_SOURCES_PATHS=${CPACK_CMAKE_SOURCE_DIR}/interface/resources/qml/
+      # Including libnss3 causes issues:
+      # https://github.com/overte-org/overte/issues/1835
+      # https://github.com/probonopd/linuxdeployqt/issues/35
+      # https://github.com/probonopd/linuxdeployqt/issues/35#issuecomment-382994446
+      LINUXDEPLOY_EXCLUDED_LIBRARIES=libnss3.so\;libnssutil3.so
     ${LINUXDEPLOY_EXECUTABLE}
     --appdir=${CPACK_TEMPORARY_DIRECTORY}
     --executable=${CPACK_PACKAGE_DIRECTORY}/interface/interface
+    # We copied our plugins earlier; Here we tell LinuxDeploy to deploy their dependencies.
+    # For example libopenxr_loader.so for our OpenXR plugin.
+    --deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/bin/plugins
     --desktop-file=${APPIMAGE_DESKTOP_FILE}
     --icon-file=${APPIMAGE_ICON_FILE}
     --plugin qt
     --output=appimage
+  COMMAND_ERROR_IS_FATAL ANY
 )

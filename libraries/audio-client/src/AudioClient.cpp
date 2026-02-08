@@ -111,7 +111,7 @@ QList<HifiAudioDeviceInfo> getAvailableDevices(QAudio::Mode mode, const QString&
     for (auto& device : devices) {
         newDevices.push_back(HifiAudioDeviceInfo(device, false, mode));
         if (device.deviceName() == defDeviceName.trimmed()) {
-            defaultDesktopDevice = HifiAudioDeviceInfo(device, true, mode, HifiAudioDeviceInfo::desktop);
+            defaultDesktopDevice = HifiAudioDeviceInfo(device, true, mode, HifiAudioDeviceInfo::both);
         }
     }
 
@@ -119,7 +119,7 @@ QList<HifiAudioDeviceInfo> getAvailableDevices(QAudio::Mode mode, const QString&
         if (devices.size() > 0) {
             qCDebug(audioclient) << __FUNCTION__ << "Default device not found in list:" << defDeviceName
                 << "Setting Default to: " << devices.first().deviceName();
-            newDevices.push_front(HifiAudioDeviceInfo(devices.first(), true, mode, HifiAudioDeviceInfo::desktop));
+            newDevices.push_front(HifiAudioDeviceInfo(devices.first(), true, mode, HifiAudioDeviceInfo::both));
         } else {
             //current audio list is empty for some reason.
             qCWarning(audioclient) << __FUNCTION__ << "Default device not found in list and no alternative selection available";
@@ -344,7 +344,7 @@ AudioClient::AudioClient() {
 
     connect(&_receivedAudioStream, &MixedProcessedAudioStream::processSamples,
 	    this, &AudioClient::processReceivedSamples, Qt::DirectConnection);
-    connect(this, &AudioClient::changeDevice, this, [=](const HifiAudioDeviceInfo& outputDeviceInfo) {
+    connect(this, &AudioClient::changeDevice, this, [=, this](const HifiAudioDeviceInfo& outputDeviceInfo) {
         qCDebug(audioclient)<< "got AudioClient::changeDevice signal, about to call switchOutputToAudioDevice() outputDeviceInfo: ["<< outputDeviceInfo.deviceName() << "]";
         switchOutputToAudioDevice(outputDeviceInfo);
     });
@@ -359,8 +359,8 @@ AudioClient::AudioClient() {
     // start a thread to detect any device changes
     _checkDevicesTimer = new QTimer(this);
     const unsigned long DEVICE_CHECK_INTERVAL_MSECS = 2 * 1000;
-    connect(_checkDevicesTimer, &QTimer::timeout, this, [=] {
-        QtConcurrent::run(QThreadPool::globalInstance(), [=] {
+    connect(_checkDevicesTimer, &QTimer::timeout, this, [=, this] {
+        QtConcurrent::run(QThreadPool::globalInstance(), [=, this] {
             checkDevices();
             // On some systems (Ubuntu) checking all the audio devices can take more than 2 seconds.  To
             // avoid consuming all of the thread pool, don't start the check interval until the previous
@@ -2214,7 +2214,13 @@ bool AudioClient::switchOutputToAudioDevice(const HifiAudioDeviceInfo outputDevi
             int deviceChannelCount = _outputFormat.channelCount();
             int frameSize = (AudioConstants::NETWORK_FRAME_SAMPLES_PER_CHANNEL * deviceChannelCount * _outputFormat.sampleRate()) / _desiredOutputFormat.sampleRate();
             int requestedSize = _sessionOutputBufferSizeFrames * frameSize * AudioConstants::SAMPLE_SIZE;
-            _audioOutput->setBufferSize(requestedSize * 16);
+
+            // Workaround for a bug in Windows Qt audio plugin causing very high latency.
+#ifdef Q_OS_WINDOWS
+            _audioOutput->setBufferSize(requestedSize);
+#else
+            _audioOutput->setBufferSize(requestedSize * 8);
+#endif
 
             connect(_audioOutput, &QAudioOutput::notify, this, &AudioClient::outputNotify);
 

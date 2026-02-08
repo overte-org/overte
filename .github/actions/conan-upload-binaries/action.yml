@@ -1,0 +1,34 @@
+name: "Upload Conan binary cache to Artifactory"
+description: |
+            Runs `conan upload` to upload a list of packages to our Artifactory for the purpose of binary caching.
+            Conan isn't glibc aware, so we need to be really careful what we upload to the binary cache on Linux.
+            See the upstream discussion: https://github.com/conan-io/conan/issues/7121
+inputs:
+    CONAN_LOGIN_USERNAME_OVERTE:
+      required: true
+      description: "Username used for the `Overte` remote."
+    CONAN_PASSWORD_OVERTE:
+      required: true
+      description: "Password used for the `Overte` remote."
+runs:
+  using: "composite"
+  steps:
+  - name: Upload Conan binary cache to Artifactory
+    shell: bash
+    env:
+      CONAN_LOGIN_USERNAME_OVERTE: ${{ inputs.conan_login_username_overte }}
+      CONAN_PASSWORD_OVERTE: ${{ inputs.conan_password_overte }}
+    run: |
+      # We assume build.json was created by our `conan install` Action.
+      conan list --graph=build.json --graph-binaries=build --format=json > pkglist.json
+      # Do not try to binary cache system packages.
+      # Search for and delete specific packages from the JSON file.
+      # jq wizardy taken from StackOverflow: https://stackoverflow.com/a/61860077
+      # Our regex is `.*\/system.*` which intends to match keys such as:
+      # - `qt/5.15.Z@overte/system`
+      # - `opengl/system`
+      # - `openssl/system@anotherfoxguy/stable`
+      jq 'walk(if type=="object" then with_entries(select(.key | test(".*\/system.*") | not)) else . end)' pkglist.json > pkglist.tmp && mv pkglist.tmp pkglist.json
+      # `-cc core.sources:upload_url=""` overrides the source backup upload URL, so conan doesn't try to upload those.
+      conan upload -cc core.sources:upload_url="" --list=pkglist.json -r=overte -c
+

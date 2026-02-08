@@ -336,9 +336,11 @@ void StartEndRenderState::update(const glm::vec3& origin, const glm::vec3& end, 
         EntityItemProperties properties;
         EntityPropertyFlags desiredProperties;
         desiredProperties += PROP_DIMENSIONS;
+
         glm::vec3 dim;
         if (distanceScaleEnd) {
-            dim = getEndDim() * glm::distance(origin, end);
+            glm::vec3 camPos = qApp->getCamera().getPosition();
+            dim = getEndDim() * std::powf(glm::distance(camPos, end), 0.75f);
         } else {
             dim = getEndDim() * parentScale;
         }

@@ -12,6 +12,7 @@
 #include <optional>
 
 #include <openxr/openxr.h>
+#include "vendored_headers/XR_MNDX_xdev_space.h"
 
 #include "gpu/gl/GLBackend.h"
 
@@ -73,8 +74,7 @@ public:
     QString _systemName;
     bool _isSessionRunning = false;
 
-    // hack for vive controllers
-    bool _stickEmulation = false;
+    std::array<bool, HAND_COUNT> _vivePoseHack = { false, false };
 
     // only supported by a few runtimes, but lets us
     // emulate OpenVR's headset proximity sensor system
@@ -84,10 +84,22 @@ public:
     bool _hmdMounted = true;
 
     bool _handTrackingSupported = false;
-
     PFN_xrCreateHandTrackerEXT xrCreateHandTrackerEXT = nullptr;
     PFN_xrLocateHandJointsEXT xrLocateHandJointsEXT = nullptr;
     PFN_xrDestroyHandTrackerEXT xrDestroyHandTrackerEXT = nullptr;
+
+    bool _palmPoseSupported = false;
+
+    bool _MNDX_xdevSpaceSupported = false;
+    PFN_xrCreateXDevListMNDX xrCreateXDevListMNDX = nullptr;
+    PFN_xrGetXDevListGenerationNumberMNDX xrGetXDevListGenerationNumberMNDX = nullptr;
+    PFN_xrEnumerateXDevsMNDX xrEnumerateXDevsMNDX = nullptr;
+    PFN_xrGetXDevPropertiesMNDX xrGetXDevPropertiesMNDX = nullptr;
+    PFN_xrDestroyXDevListMNDX xrDestroyXDevListMNDX = nullptr;
+    PFN_xrCreateXDevSpaceMNDX xrCreateXDevSpaceMNDX = nullptr;
+
+    bool _HTCX_viveTrackerInteractionSupported = false;
+    PFN_xrEnumerateViveTrackerPathsHTCX xrEnumerateViveTrackerPathsHTCX = nullptr;
 
 private:
     XrSessionState _lastSessionState = XR_SESSION_STATE_UNKNOWN;

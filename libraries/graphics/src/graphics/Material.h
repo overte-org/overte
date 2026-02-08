@@ -12,6 +12,7 @@
 #ifndef hifi_model_Material_h
 #define hifi_model_Material_h
 
+#include <cstddef>
 #include <mutex>
 #include <bitset>
 #include <unordered_map>
@@ -218,8 +219,8 @@ public:
     void setScatteringMap(bool value) { _flags.set(SCATTERING_MAP_BIT, value); }
     bool isScatteringMap() const { return _flags[SCATTERING_MAP_BIT]; }
 
-    void setMapChannel(MapChannel channel, bool value) { _flags.set(EMISSIVE_MAP_BIT + channel, value); }
-    bool isMapChannel(MapChannel channel) const { return _flags[EMISSIVE_MAP_BIT + channel]; }
+    void setMapChannel(MapChannel channel, bool value) { _flags.set(static_cast<size_t>(EMISSIVE_MAP_BIT) + static_cast<size_t>(channel), value); }
+    bool isMapChannel(MapChannel channel) const { return _flags[static_cast<size_t>(EMISSIVE_MAP_BIT) + static_cast<size_t>(channel)]; }
 
 
     // Translucency and Opacity Heuristics are combining several flags:
@@ -656,20 +657,8 @@ public:
     void setMaterialKey(const graphics::MaterialKey& materialKey) { _materialKey = materialKey; }
     graphics::MaterialKey getMaterialKey() const { return _materialKey; }
     gpu::BufferView& getSchemaBuffer() { return _schemaBuffer; }
-    glm::vec4 getColor() const {
-        glm::vec3 albedo;
-        float opacity;
-        if (_isMToon) {
-            const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::MToonSchema>();
-            albedo = schema._albedo;
-            opacity = schema._opacity;
-        } else {
-            const auto& schema = _schemaBuffer.get<graphics::MultiMaterial::Schema>();
-            albedo = schema._albedo;
-            opacity = schema._opacity;
-        }
-        return glm::vec4(ColorUtils::tosRGBVec3(albedo), opacity);
-    }
+    glm::vec4 getTopColor() const;
+    bool isInvisible() const;
     const std::array<gpu::TextureTablePointer, 3>& getTextureTables() const { return _textureTables; }
 
     void setCullFaceMode(graphics::MaterialKey::CullFaceMode cullFaceMode) { _cullFaceMode = cullFaceMode; }

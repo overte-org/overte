@@ -47,29 +47,6 @@ class DetailedMotionState;
 class ScriptEngine;
 using ScriptEnginePointer = std::shared_ptr<ScriptEngine>;
 
-/*@jsdoc
- * <p>Locomotion control types.</p>
- * <table>
- *   <thead>
- *     <tr><th>Value</th><th>Name</th><th>Description</th></tr>
- *   </thead>
- *   <tbody>
- *     <tr><td><code>0</code></td><td>Default</td><td>Your walking speed is constant; it doesn't change depending on how far
- *       forward you push your controller's joystick. Fully pushing your joystick forward makes your avatar run.</td></tr>
- *     <tr><td><code>1</code></td><td>Analog</td><td>Your walking speed changes in steps based on how far forward you push your
- *       controller's joystick. Fully pushing your joystick forward makes your avatar run.</td></tr>
- *     <tr><td><code>2</code></td><td>AnalogPlus</td><td>Your walking speed changes proportionally to how far forward you push
- *       your controller's joystick. Fully pushing your joystick forward makes your avatar run.</td></tr>
- *   </tbody>
- * </table>
- * @typedef {number} MyAvatar.LocomotionControlsMode
- */
-enum LocomotionControlsMode {
-    CONTROLS_DEFAULT = 0,
-    CONTROLS_ANALOG,
-    CONTROLS_ANALOG_PLUS
-};
-
 enum LocomotionRelativeMovementMode {
     MOVEMENT_HMD_RELATIVE = 0,
     MOVEMENT_HAND_RELATIVE,
@@ -237,7 +214,6 @@ class MyAvatar : public Avatar {
      * @property {Pose} rightHandTipPose - The right hand's pose as determined by the hand controllers, relative to the avatar,
      *     with the position adjusted by 0.3m along the direction of the palm. <em>Read-only.</em>
      *
-     * @property {number} energy - <span class="important">Deprecated: This property will be removed.</span>
      * @property {boolean} isAway - <code>true</code> if your avatar is away (i.e., inactive), <code>false</code> if it is
      *     active.
      *
@@ -278,16 +254,10 @@ class MyAvatar : public Avatar {
      *     where MyAvatar.sessionUUID is not available (e.g., if not connected to a domain). Note: Likely to be deprecated.
      *     <em>Read-only.</em>
      *
-     * @property {number} walkSpeed - The walk speed of your avatar for the current control scheme (see
-     *     {@link MyAvatar.getControlScheme|getControlScheme}).
-     * @property {number} walkBackwardSpeed - The walk backward speed of your avatar for the current control scheme (see
-     *     {@link MyAvatar.getControlScheme|getControlScheme}).
-     * @property {number} sprintSpeed - The sprint (run) speed of your avatar for the current control scheme (see
-     *     {@link MyAvatar.getControlScheme|getControlScheme}).
-     * @property {number} analogPlusWalkSpeed - The walk speed of your avatar for the "AnalogPlus" control scheme.
-     *     <p><strong>Warning:</strong> Setting this value also sets the value of <code>analogPlusSprintSpeed</code> to twice
+     * @property {number} walkSpeed - The walk speed of your avatar on desktop.
+     * @property {number} sprintSpeed - The sprint (run) speed of your avatar on desktop. VR doesn't have sprinting.
+     * @property {number} vrWalkSpeed - The walk speed of your avatar in VR.
      *     the value.</p>
-     * @property {number} analogPlusSprintSpeed - The sprint (run) speed of your avatar for the "AnalogPlus" control scheme.
      * @property {MyAvatar.SitStandModelType} userRecenterModel - Controls avatar leaning and recentering behavior.
      *     <p class="important">Deprecated: This property is deprecated and will be removed.</p>
      * @property {boolean} isInSittingState - <code>true</code> if the user wearing the HMD is determined to be sitting;
@@ -301,6 +271,7 @@ class MyAvatar : public Avatar {
      *     See also: <code>getUserRecenterModel</code> and <code>setUserRecenterModel</code>.</p>
      * @property {boolean} allowTeleporting - <code>true</code> if teleporting is enabled in the Interface settings,
      *     <code>false</code> if it isn't. <em>Read-only.</em>
+     * @property {number} cameraBoomLength - The third-person camera distance. Limited to between 0.5 and 25. Below 0.5 the camera will be put into first-person mode. Changing this property has no effect unless the camera is already in third-person mode. See {@link Camera.mode}.
      *
      * @borrows Avatar.getDomainMinScale as getDomainMinScale
      * @borrows Avatar.getDomainMaxScale as getDomainMaxScale
@@ -384,7 +355,6 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(controller::Pose leftHandTipPose READ getLeftHandTipPose)
     Q_PROPERTY(controller::Pose rightHandTipPose READ getRightHandTipPose)
 
-    Q_PROPERTY(float energy READ getEnergy WRITE setEnergy)
     Q_PROPERTY(bool isAway READ getIsAway WRITE setAway)
 
     Q_PROPERTY(bool centerOfGravityModelEnabled READ getCenterOfGravityModelEnabled WRITE setCenterOfGravityModelEnabled)
@@ -409,14 +379,14 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(QUuid SELF_ID READ getSelfID CONSTANT)
 
     Q_PROPERTY(float walkSpeed READ getWalkSpeed WRITE setWalkSpeed);
-    Q_PROPERTY(float analogPlusWalkSpeed READ getAnalogPlusWalkSpeed WRITE setAnalogPlusWalkSpeed NOTIFY analogPlusWalkSpeedChanged);
-    Q_PROPERTY(float analogPlusSprintSpeed READ getAnalogPlusSprintSpeed WRITE setAnalogPlusSprintSpeed NOTIFY analogPlusSprintSpeedChanged);
-    Q_PROPERTY(float walkBackwardSpeed READ getWalkBackwardSpeed WRITE setWalkBackwardSpeed NOTIFY walkBackwardSpeedChanged);
     Q_PROPERTY(float sprintSpeed READ getSprintSpeed WRITE setSprintSpeed NOTIFY sprintSpeedChanged);
+    Q_PROPERTY(float vrWalkSpeed READ getVrWalkSpeed WRITE setVrWalkSpeed NOTIFY vrWalkSpeedChanged);
     Q_PROPERTY(bool isInSittingState READ getIsInSittingState WRITE setIsInSittingState);
     Q_PROPERTY(MyAvatar::SitStandModelType userRecenterModel READ getUserRecenterModel WRITE setUserRecenterModel);  // Deprecated
     Q_PROPERTY(bool isSitStandStateLocked READ getIsSitStandStateLocked WRITE setIsSitStandStateLocked);      // Deprecated
+    Q_PROPERTY(MyAvatar::AllowAvatarStandingPreference standingMode READ getAllowAvatarStandingPreference WRITE setAllowAvatarStandingPreference NOTIFY standingModeChanged);
     Q_PROPERTY(bool allowTeleporting READ getAllowTeleporting)
+    Q_PROPERTY(float cameraBoomLength MEMBER _boomLength)
 
     const QString DOMINANT_LEFT_HAND = "left";
     const QString DOMINANT_RIGHT_HAND = "right";
@@ -424,12 +394,6 @@ class MyAvatar : public Avatar {
 
     using Clock = std::chrono::system_clock;
     using TimePoint = Clock::time_point;
-
-    const float DEFAULT_GEAR_1 = 0.2f;
-    const float DEFAULT_GEAR_2 = 0.4f;
-    const float DEFAULT_GEAR_3 = 0.8f;
-    const float DEFAULT_GEAR_4 = 0.9f;
-    const float DEFAULT_GEAR_5 = 1.0f;
 
     const bool DEFAULT_STRAFE_ENABLED = true;
 public:
@@ -551,12 +515,37 @@ public:
     };
     Q_ENUM(SitStandModelType)
 
-    // Note: The option strings in setupPreferences (PreferencesDialog.cpp) must match this order.
+    /*@jsdoc
+     * <table>
+     *   <thead>
+     *     <tr><th>Value</th><th>Name</th><th>Description</th></tr>
+     *   </thead>
+     *   <tbody>
+     *     <tr>
+     *      <td><code>0</code></td>
+     *      <td>Standing</td>
+     *      <td>The player's view has no special offset and can crouch unimpeded.</td>
+     *     </tr>
+     *     <tr>
+     *      <td><code>1</code></td>
+     *      <td>Seated</td>
+     *      <td>The player's view is offset up to a standing position but allows them to lean down. <b>Note: Not implemented yet.</b></td>
+     *     </tr>
+     *     <tr>
+     *      <td><code>2</code></td>
+     *      <td>ForcedHeight</td>
+     *      <td>The player's view is always kept in a standing position relative to the avatar.</td>
+     *     </tr>
+     *   </tbody>
+     * </table>
+     * @typedef {number} MyAvatar.AllowAvatarStandingPreference
+     */
     enum class AllowAvatarStandingPreference : uint {
-        WhenUserIsStanding,
-        Always,
+        Standing,
+        Seated,
+        ForcedHeight,
         Count,
-        Default = Always
+        Default = Standing
     };
     Q_ENUM(AllowAvatarStandingPreference)
 
@@ -567,7 +556,7 @@ public:
         Never,
         AlwaysNoRecenter,  // experimental
         Count,
-        Default = WhenUserIsStanding
+        Default = Always
     };
     Q_ENUM(AllowAvatarLeaningPreference)
 
@@ -891,20 +880,6 @@ public:
      * @param {boolean} on - <code>true</code> to do snap turns in HMD mode; <code>false</code> to do smooth turns in HMD mode.
      */
     Q_INVOKABLE void setSnapTurn(bool on) { _useSnapTurn = on; }
-
-    /*@jsdoc
-     * Gets the control scheme that is in use.
-     * @function MyAvatar.getControlScheme
-     * @returns {MyAvatar.LocomotionControlsMode} The control scheme that is in use.
-     */
-    Q_INVOKABLE int getControlScheme() const { return _controlSchemeIndex; }
-
-    /*@jsdoc
-     * Sets the control scheme to use.
-     * @function MyAvatar.setControlScheme
-     * @param {MyAvatar.LocomotionControlsMode} controlScheme - The control scheme to use.
-     */
-    Q_INVOKABLE void setControlScheme(int index) { _controlSchemeIndex = (index >= 0 && index <= 2) ? index : 0; }
 
     /*@jsdoc
      * Gets whether your avatar hovers when its feet are not on the ground.
@@ -1542,80 +1517,6 @@ public:
     Q_INVOKABLE int getMovementReference();
 
     /*@jsdoc
-     * Set the first 'shifting point' for acceleration step function.
-     * @function MyAvatar.setDriveGear1
-     * @param {number} shiftPoint - Set the first shift point for analog movement acceleration step function, between [0.0, 1.0]. Must be less than or equal to Gear 2.
-    */
-    Q_INVOKABLE void setDriveGear1(float shiftPoint);
-
-    /*@jsdoc
-     * Get the first 'shifting point' for acceleration step function.
-     * @function MyAvatar.getDriveGear1
-     * @returns {number} Value between [0.0, 1.0].
-    */
-    Q_INVOKABLE float getDriveGear1();
-
-    /*@jsdoc
-    * Set the second 'shifting point' for acceleration step function.
-    * @function MyAvatar.setDriveGear2
-    * @param {number} shiftPoint - Defines the second shift point for analog movement acceleration step function, between [0, 1]. Must be greater than or equal to Gear 1 and less than or equal to Gear 2.
-    */
-    Q_INVOKABLE void setDriveGear2(float shiftPoint);
-
-    /*@jsdoc
-    * Get the second 'shifting point' for acceleration step function.
-    * @function MyAvatar.getDriveGear2
-    * @returns {number} Value between [0.0, 1.0].
-    */
-    Q_INVOKABLE float getDriveGear2();
-
-    /*@jsdoc
-    * Set the third 'shifting point' for acceleration step function.
-    * @function MyAvatar.setDriveGear3
-    * @param {number} shiftPoint - Defines the third shift point for analog movement acceleration step function, between [0, 1]. Must be greater than or equal to Gear 2 and less than or equal to Gear 4.
-    */
-    Q_INVOKABLE void setDriveGear3(float shiftPoint);
-
-    /*@jsdoc
-    * Get the third 'shifting point' for acceleration step function.
-    * @function MyAvatar.getDriveGear3
-    * @returns {number} Value between [0.0, 1.0].
-    */
-    Q_INVOKABLE float getDriveGear3();
-
-    /*@jsdoc
-    * Set the fourth 'shifting point' for acceleration step function.
-    * @function MyAvatar.setDriveGear4
-    * @param {number} shiftPoint - Defines the fourth shift point for analog movement acceleration step function, between [0, 1]. Must be greater than Gear 3 and less than Gear 5.
-    */
-    Q_INVOKABLE void setDriveGear4(float shiftPoint);
-
-    /*@jsdoc
-    * Get the fourth 'shifting point' for acceleration step function.
-    * @function MyAvatar.getDriveGear4
-    * @returns {number} Value between [0.0, 1.0].
-    */
-    Q_INVOKABLE float getDriveGear4();
-
-    /*@jsdoc
-    * Set the fifth 'shifting point' for acceleration step function.
-    * @function MyAvatar.setDriveGear5
-    * @param {number} shiftPoint - Defines the fifth shift point for analog movement acceleration step function, between [0, 1]. Must be greater than or equal to Gear 4.
-    */
-    Q_INVOKABLE void setDriveGear5(float shiftPoint);
-
-    /*@jsdoc
-    * Get the fifth 'shifting point' for acceleration step function.
-    * @function MyAvatar.getDriveGear5
-    * @returns {number} Value between [0.0, 1.0].
-    */
-    Q_INVOKABLE float getDriveGear5();
-
-    void setControlSchemeIndex(int index);
-
-    int getControlSchemeIndex();
-
-    /*@jsdoc
      * Gets the target scale of the avatar. The target scale is the desired scale of the avatar without any restrictions on
      * permissible scale values imposed by the domain.
      * @function MyAvatar.getAvatarScale
@@ -1788,18 +1689,10 @@ public:
     AllowAvatarLeaningPreference getAllowAvatarLeaningPreference() const;
     void setWalkSpeed(float value);
     float getWalkSpeed() const;
-    void setWalkBackwardSpeed(float value);
-    float getWalkBackwardSpeed() const;
     void setSprintSpeed(float value);
     float getSprintSpeed() const;
-    void setAnalogWalkSpeed(float value);
-    float getAnalogWalkSpeed() const;
-    void setAnalogSprintSpeed(float value);
-    float getAnalogSprintSpeed() const;
-    void setAnalogPlusWalkSpeed(float value);
-    float getAnalogPlusWalkSpeed() const;
-    void setAnalogPlusSprintSpeed(float value);
-    float getAnalogPlusSprintSpeed() const;
+    void setVrWalkSpeed(float value);
+    float getVrWalkSpeed() const;
     void setSitStandStateChange(bool stateChanged);
     bool getSitStandStateChange() const;
     void updateSitStandState(float newHeightReading, float dt);
@@ -2422,23 +2315,14 @@ signals:
 
     /*@jsdoc
      * Triggered when the walk speed set for the "AnalogPlus" control scheme changes.
-     * @function MyAvatar.analogPlusWalkSpeedChanged
+     * @function MyAvatar.vrWalkSpeedChanged
      * @param {number} speed - The new walk speed set for the "AnalogPlus" control scheme.
      * @returns {Signal}
      */
-    void analogPlusWalkSpeedChanged(float value);
+    void vrWalkSpeedChanged(float value);
 
     /*@jsdoc
-     * Triggered when the sprint (run) speed set for the "AnalogPlus" control scheme changes.
-     * @function MyAvatar.analogPlusSprintSpeedChanged
-     * @param {number} speed - The new sprint speed set for the "AnalogPlus" control scheme.
-     * @returns {Signal}
-     */
-    void analogPlusSprintSpeedChanged(float value);
-
-    /*@jsdoc
-     * Triggered when the sprint (run) speed set for the current control scheme (see
-     * {@link MyAvatar.getControlScheme|getControlScheme}) changes.
+     * Triggered when the desktop sprint (run) speed changes.
      * @function MyAvatar.sprintSpeedChanged
      * @param {number} speed -The new sprint speed set for the current control scheme.
      * @returns {Signal}
@@ -2446,13 +2330,12 @@ signals:
     void sprintSpeedChanged(float value);
 
     /*@jsdoc
-     * Triggered when the walk backward speed set for the current control scheme (see
-     * {@link MyAvatar.getControlScheme|getControlScheme}) changes.
-     * @function MyAvatar.walkBackwardSpeedChanged
-     * @param {number} speed - The new walk backward speed set for the current control scheme.
+     * Triggered when {@link MyAvatar.standingMode} is changed.
+     * @function MyAvatar.standingMode
+     * @param {MyAvatar.StandingMode} mode
      * @returns {Signal}
      */
-    void walkBackwardSpeedChanged(float value);
+    void standingModeChanged(MyAvatar::AllowAvatarStandingPreference mode);
 
     /*@jsdoc
      * @function MyAvatar.transformChanged
@@ -2509,14 +2392,6 @@ signals:
      *     print("Avatar animation JSON changed to: " + url);
      * });     */
     void animGraphUrlChanged(const QUrl& url);
-
-    /*@jsdoc
-     * @function MyAvatar.energyChanged
-     * @param {number} energy - Avatar energy.
-     * @returns {Signal}
-     * @deprecated This signal is deprecated and will be removed.
-     */
-    void energyChanged(float newEnergy);
 
     /*@jsdoc
      * Triggered when the avatar has been moved to a new position by one of the MyAvatar "goTo" functions.
@@ -2725,12 +2600,6 @@ private:
     float _yawSpeed; // degrees/sec
     float _hmdYawSpeed; // degrees/sec
     float _pitchSpeed; // degrees/sec
-    float _driveGear1 { DEFAULT_GEAR_1 };
-    float _driveGear2 { DEFAULT_GEAR_2 };
-    float _driveGear3 { DEFAULT_GEAR_3 };
-    float _driveGear4 { DEFAULT_GEAR_4 };
-    float _driveGear5 { DEFAULT_GEAR_5 };
-    int _controlSchemeIndex { CONTROLS_ANALOG };
     int _movementReference{ 0 };
 
     glm::vec3 _thrust { 0.0f };  // impulse accumulator for outside sources
@@ -2790,7 +2659,6 @@ private:
     // private methods
     void updateOrientation(float deltaTime);
     glm::vec3 calculateScaledDirection();
-    float calculateGearedSpeed(const float driveKey);
     glm::vec3 scaleMotorSpeed(const glm::vec3 forward, const glm::vec3 right);
     void updateActionMotor(float deltaTime);
     void updatePosition(float deltaTime);
@@ -2945,17 +2813,9 @@ private:
     std::mutex _holdActionsMutex;
     std::vector<AvatarActionHold*> _holdActions;
 
-    float AVATAR_MOVEMENT_ENERGY_CONSTANT { 0.001f };
-    float AUDIO_ENERGY_CONSTANT { 0.000001f };
     float MAX_AVATAR_MOVEMENT_PER_FRAME { 30.0f };
-    float currentEnergy { 0.0f };
-    float energyChargeRate { 0.003f };
     glm::vec3 priorVelocity;
     glm::vec3 lastPosition;
-    float getAudioEnergy();
-    float getAccelerationEnergy();
-    float getEnergy();
-    void setEnergy(float value);
     bool didTeleport();
     bool getIsAway() const { return _isAway; }
     void setAway(bool value);
@@ -2972,15 +2832,9 @@ private:
     bool _sitStandStateChange { false };
 
     // max unscaled forward movement speed
-    ThreadSafeValueCache<float> _defaultWalkSpeed { DEFAULT_AVATAR_MAX_WALKING_SPEED };
-    ThreadSafeValueCache<float> _defaultWalkBackwardSpeed { DEFAULT_AVATAR_MAX_WALKING_BACKWARD_SPEED };
-    ThreadSafeValueCache<float> _defaultSprintSpeed { DEFAULT_AVATAR_MAX_SPRINT_SPEED };
-    ThreadSafeValueCache<float> _analogWalkSpeed { ANALOG_AVATAR_MAX_WALKING_SPEED };
-    ThreadSafeValueCache<float> _analogWalkBackwardSpeed { ANALOG_AVATAR_MAX_WALKING_BACKWARD_SPEED };
-    ThreadSafeValueCache<float> _analogSprintSpeed { ANALOG_AVATAR_MAX_SPRINT_SPEED };
-    ThreadSafeValueCache<float> _analogPlusWalkSpeed { ANALOG_PLUS_AVATAR_MAX_WALKING_SPEED };
-    ThreadSafeValueCache<float> _analogPlusWalkBackwardSpeed { ANALOG_PLUS_AVATAR_MAX_WALKING_BACKWARD_SPEED };
-    ThreadSafeValueCache<float> _analogPlusSprintSpeed { ANALOG_PLUS_AVATAR_MAX_SPRINT_SPEED };
+    ThreadSafeValueCache<float> _defaultWalkSpeed { DESKTOP_AVATAR_DEFAULT_WALKING_SPEED };
+    ThreadSafeValueCache<float> _defaultSprintSpeed { DESKTOP_AVATAR_DEFAULT_SPRINT_SPEED };
+    ThreadSafeValueCache<float> _vrWalkSpeed { VR_AVATAR_DEFAULT_WALKING_SPEED };
 
     float _walkSpeedScalar { AVATAR_WALK_SPEED_SCALAR };
     bool _isInWalkingState { false };
@@ -3024,14 +2878,7 @@ private:
     Setting::Handle<int> _movementReferenceSetting;
     Setting::Handle<int> _avatarEntityCountSetting;
     Setting::Handle<bool> _allowTeleportingSetting { "allowTeleporting", true };
-    Setting::Handle<float> _driveGear1Setting;
-    Setting::Handle<float> _driveGear2Setting;
-    Setting::Handle<float> _driveGear3Setting;
-    Setting::Handle<float> _driveGear4Setting;
-    Setting::Handle<float> _driveGear5Setting;
-    Setting::Handle<float> _analogWalkSpeedSetting;
-    Setting::Handle<float> _analogPlusWalkSpeedSetting;
-    Setting::Handle<int> _controlSchemeIndexSetting;
+    Setting::Handle<float> _vrWalkSpeedSetting;
     std::vector<Setting::Handle<QUuid>> _avatarEntityIDSettings;
     std::vector<Setting::Handle<QByteArray>> _avatarEntityDataSettings;
     Setting::Handle<QString> _allowAvatarStandingPreferenceSetting;

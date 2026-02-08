@@ -23,21 +23,25 @@
 
 <@include sdf_text3D.slh@>
 
-layout(location=RENDER_UTILS_ATTR_POSITION_MS) out vec2 _positionMS;
+OUTPUT(RENDER_UTILS_ATTR_POSITION_MS, vec2, _positionMS);
 <@if HIFI_USE_FADE@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_WS) out vec4 _positionWS;
+    OUTPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
 <@endif@>
 <@if HIFI_USE_TRANSLUCENT or HIFI_USE_FORWARD@>
-    layout(location=RENDER_UTILS_ATTR_POSITION_ES) out vec4 _positionES;
+    OUTPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
+    <@if not HIFI_USE_FADE@>
+        // workaround for scribe only supporting (A or B) and not (A or B or C)
+        OUTPUT(RENDER_UTILS_ATTR_POSITION_WS, vec4, _positionWS);
+    <@endif@>
 <@endif@>
 <@if not HIFI_USE_FORWARD@>
-    layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) out vec4 _prevPositionCS;
+    OUTPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
 <@endif@>
-layout(location=RENDER_UTILS_ATTR_NORMAL_WS) out vec3 _normalWS;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
+OUTPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
+OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 // we're reusing the fade texcoord locations here:
-layout(location=RENDER_UTILS_ATTR_FADE1) flat out vec4 _glyphBounds;
-layout(location=RENDER_UTILS_ATTR_FADE2) flat out float _isTofu;
+FLAT_OUTPUT(RENDER_UTILS_ATTR_FADE1, vec4, _glyphBounds);
+FLAT_OUTPUT(RENDER_UTILS_ATTR_FADE2, float, _isTofu);
 
 void main() {
     _positionMS = inPosition.xy;
@@ -66,6 +70,10 @@ void main() {
     <$transformModelToEyeClipPosAndPrevClipPos(cam, obj, position, _positionES, gl_Position, _prevPositionCS)$>
 <@else@>
     <$transformModelToClipPosAndPrevClipPos(cam, obj, position, gl_Position, _prevPositionCS)$>
+<@endif@>
+
+<@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
+    <$transformModelToWorldPos(obj, inPosition, _positionWS)$>
 <@endif@>
 
     const vec3 normal = vec3(0, 0, 1);

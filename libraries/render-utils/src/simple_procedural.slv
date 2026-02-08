@@ -30,13 +30,13 @@
     <$declareMeshDeformerActivation(1, 1)$>
 <@endif@>
 
-layout(location=RENDER_UTILS_ATTR_POSITION_MS) out vec4 _positionMS;
-layout(location=RENDER_UTILS_ATTR_POSITION_ES) out vec4 _positionES;
-layout(location=RENDER_UTILS_ATTR_PREV_POSITION_CS) out vec4 _prevPositionCS;
-layout(location=RENDER_UTILS_ATTR_NORMAL_MS) out vec3 _normalMS;
-layout(location=RENDER_UTILS_ATTR_NORMAL_WS) out vec3 _normalWS;
-layout(location=RENDER_UTILS_ATTR_COLOR) out vec4 _color;
-layout(location=RENDER_UTILS_ATTR_TEXCOORD01) out vec4 _texCoord01;
+OUTPUT(RENDER_UTILS_ATTR_POSITION_MS, vec4, _positionMS);
+OUTPUT(RENDER_UTILS_ATTR_POSITION_ES, vec4, _positionES);
+OUTPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
+OUTPUT(RENDER_UTILS_ATTR_NORMAL_MS, vec3, _normalMS);
+OUTPUT(RENDER_UTILS_ATTR_NORMAL_WS, vec3, _normalWS);
+OUTPUT(RENDER_UTILS_ATTR_COLOR, vec4, _color);
+OUTPUT(RENDER_UTILS_ATTR_TEXCOORD01, vec4, _texCoord01);
 
 <@include procedural/ProceduralCommon.slh@>
 

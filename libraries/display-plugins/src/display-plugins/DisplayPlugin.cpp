@@ -14,6 +14,7 @@
 #include "stereo/InterleavedStereoDisplayPlugin.h"
 #include "hmd/DebugHmdDisplayPlugin.h"
 #include "Basic2DWindowOpenGLDisplayPlugin.h"
+#include "VulkanDisplayPlugin.h"
 
 const QString& DisplayPlugin::MENU_PATH() {
     static const QString value = "Display";
@@ -24,7 +25,11 @@ const QString& DisplayPlugin::MENU_PATH() {
 // TODO migrate to a DLL model where plugins are discovered and loaded at runtime by the PluginManager class
 DisplayPluginList getDisplayPlugins() {
     DisplayPlugin* PLUGIN_POOL[] = {
+#ifdef USE_GL
         new Basic2DWindowOpenGLDisplayPlugin(),
+#else
+        new VulkanDisplayPlugin(),
+#endif
         new DebugHmdDisplayPlugin(),
 #ifdef DEBUG
         new NullDisplayPlugin(),
@@ -32,10 +37,13 @@ DisplayPluginList getDisplayPlugins() {
 
 #if !defined(Q_OS_ANDROID)
         // Stereo modes
+        // VKTODO: Add stereo support for Vulkan.
+#if USE_GL
         // SBS left/right
         new SideBySideStereoDisplayPlugin(),
         // Interleaved left/right
         new InterleavedStereoDisplayPlugin(),
+#endif
 #endif        
         nullptr
     };

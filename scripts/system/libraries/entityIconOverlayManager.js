@@ -90,8 +90,11 @@ EntityIconOverlayManager = function(entityTypes, getOverlayPropertiesFunc) {
         if (unusedOverlays.length === 0) {
             overlay = Entities.addEntity({
                 type: "Image", 
+                emissive: true,
                 billboardMode: "full", 
-                emissive: true
+                fadeInMode: "disabled",
+                fadeOutMode: "disabled",
+                grab: { grabbable: false },
             }, "local");
             allOverlays.push(overlay);
         } else {
@@ -119,9 +122,12 @@ EntityIconOverlayManager = function(entityTypes, getOverlayPropertiesFunc) {
                 rotation: Quat.fromPitchYawRollDegrees(0, 0, 270),
                 visible: visible,
                 ignorePickIntersection: !visible,
+                grab: { grabbable: false },
                 alpha: 0.9,
                 dimensions: { x: 0.5, y: 0.5, z: 0.01 },
                 renderLayer: "front",
+                fadeInMode: "disabled",
+                fadeOutMode: "disabled",
                 color: {
                     red: 255,
                     green: 255,

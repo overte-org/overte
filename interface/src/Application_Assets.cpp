@@ -36,6 +36,7 @@ static const QString FBX_EXTENSION = ".fbx";
 static const QString OBJ_EXTENSION = ".obj";
 static const QString GLTF_EXTENSION = ".gltf";
 static const QString GLB_EXTENSION = ".glb";
+static const QString VRM_EXTENSION = ".vrm";
 static const QString JSON_GZ_EXTENSION = ".json.gz";
 static const QString CONTENT_ZIP_EXTENSION = ".content.zip";
 static const QString ZIP_EXTENSION = ".zip";
@@ -199,7 +200,7 @@ void Application::addAssetToWorldUnzipFailure(QString filePath) {
 void Application::addAssetToWorldWithNewMapping(QString filePath, QString mapping, int copy, bool isZip) {
     auto request = DependencyManager::get<AssetClient>()->createGetMappingRequest(mapping);
 
-    QObject::connect(request, &GetMappingRequest::finished, this, [=](GetMappingRequest* request) mutable {
+    QObject::connect(request, &GetMappingRequest::finished, this, [=, this](GetMappingRequest* request) mutable {
         const int MAX_COPY_COUNT = 100;  // Limit number of duplicate assets; recursion guard.
         auto result = request->getError();
         if (result == GetMappingRequest::NotFound) {
@@ -231,7 +232,7 @@ void Application::addAssetToWorldWithNewMapping(QString filePath, QString mappin
 void Application::addAssetToWorldUpload(QString filePath, QString mapping, bool isZip) {
     qInfo(interfaceapp) << "Uploading" << filePath << "to Asset Server as" << mapping;
     auto upload = DependencyManager::get<AssetClient>()->createUpload(filePath);
-    QObject::connect(upload, &AssetUpload::finished, this, [=](AssetUpload* upload, const QString& hash) mutable {
+    QObject::connect(upload, &AssetUpload::finished, this, [=, this](AssetUpload* upload, const QString& hash) mutable {
         if (upload->getError() != AssetUpload::NoError) {
             QString errorInfo = "Could not upload model to the Asset Server.";
             qWarning(interfaceapp) << "Error downloading model: " + errorInfo;
@@ -256,7 +257,7 @@ void Application::addAssetToWorldUpload(QString filePath, QString mapping, bool 
 
 void Application::addAssetToWorldSetMapping(QString filePath, QString mapping, QString hash, bool isZip) {
     auto request = DependencyManager::get<AssetClient>()->createSetMappingRequest(mapping, hash);
-    connect(request, &SetMappingRequest::finished, this, [=](SetMappingRequest* request) mutable {
+    connect(request, &SetMappingRequest::finished, this, [=, this](SetMappingRequest* request) mutable {
         if (request->getError() != SetMappingRequest::NoError) {
             QString errorInfo = "Could not set asset mapping.";
             qWarning(interfaceapp) << "Error downloading model: " + errorInfo;
@@ -264,9 +265,9 @@ void Application::addAssetToWorldSetMapping(QString filePath, QString mapping, Q
         } else {
             // to prevent files that aren't models or texture files from being loaded into world automatically
             if ((filePath.toLower().endsWith(OBJ_EXTENSION) || filePath.toLower().endsWith(FBX_EXTENSION) ||
-                 filePath.toLower().endsWith(GLTF_EXTENSION) || filePath.toLower().endsWith(GLB_EXTENSION)) ||
-                ((filePath.toLower().endsWith(JPG_EXTENSION) || filePath.toLower().endsWith(PNG_EXTENSION)) &&
-                !isZip)) {
+                 filePath.toLower().endsWith(GLTF_EXTENSION) || filePath.toLower().endsWith(GLB_EXTENSION) ||
+                 filePath.toLower().endsWith(VRM_EXTENSION)) || ((filePath.toLower().endsWith(JPG_EXTENSION) ||
+                 filePath.toLower().endsWith(PNG_EXTENSION)) && !isZip)) {
                 addAssetToWorldAddEntity(filePath, mapping);
             } else {
                 qCDebug(interfaceapp) << "Zipped contents are not supported entity files";

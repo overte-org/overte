@@ -40,8 +40,8 @@ public:
         resetStages();
     }
 
-    bool supportedTextureFormat(const gpu::Element& format) override;
-    
+    bool supportedTextureFormat(const gpu::Element& format) const override;
+
     static const std::string GLES_VERSION;
     const std::string& getVersion() const override { return GLES_VERSION; }
 
@@ -54,7 +54,7 @@ public:
         GLESTexture(const std::weak_ptr<GLBackend>& backend, const Texture& buffer);
         void generateMips() const override;
         Size copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face, const uvec3& size, uint32_t yOffset, GLenum internalFormat, GLenum format, GLenum type, Size sourceSize, const void* sourcePointer) const override;
-        void syncSampler() const override;
+        void syncSampler(const Sampler& sampler) const override;
 
         void withPreservedTexture(std::function<void()> f) const;
     };
@@ -74,7 +74,7 @@ public:
     protected:
         Size size() const override { return _size; }
         void allocateStorage() const;
-        void syncSampler() const override;
+        void syncSampler(const Sampler& sampler) const override;
         const Size _size { 0 };
     };
 
@@ -105,7 +105,7 @@ public:
         ~GLESVariableAllocationTexture();
 
         void allocateStorage(uint16 allocatedMip);
-        void syncSampler() const override;
+        void syncSampler(const Sampler& sampler) const override;
         size_t promote() override;
         size_t demote() override;
         void populateTransferQueue(TransferJob::Queue& queue) override;
@@ -168,7 +168,7 @@ protected:
 
     // Output stage
     void do_blit(const Batch& batch, size_t paramOffset) override;
-    
+
     shader::Dialect getShaderDialect() const override { return shader::Dialect::glsl310es; }
 };
 

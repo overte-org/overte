@@ -34,6 +34,7 @@
 #include <PickFilter.h>
 #include <ScriptManager.h>
 #include <ScriptValue.h>
+#include <CanvasCommand.h>
 
 #include "PolyVoxEntityItem.h"
 #include "LineEntityItem.h"
@@ -493,7 +494,7 @@ public slots:
      * @function Entities.getEntityObject
      * @param {Uuid} id - The ID of the entity to get the script object for.
      * @returns {object} The script object for the entity if found.
-     * @example <caption>Exchange messages with a Web entity.</caption>
+     * @example <caption>Exchange messages with a Web entity with an HTML source.</caption>
      * // HTML file, name: "webEntity.html".
      * <!DOCTYPE html>
      * <html>
@@ -546,6 +547,51 @@ public slots:
      * Script.scriptEnding.connect(function () {
      *     Entities.deleteEntity(webEntity);
      * });
+     * @example <caption>Exchange messages with a Web entity with a QML source.</caption>
+     * // QML file (Example.qml)
+     * import QtQuick 2.15
+     * import QtQuick.Controls 2.15
+     *
+     * Button {
+     *   id: item
+     *   text: "Button"
+     *   onClicked: eventBridge.emitWebEvent("Button clicked!")
+     *   anchors.fill: parent
+     *
+     *   function fromScript(message) {
+     *     item.text = message;
+     *   }
+     *
+     *   Component.onCompleted: {
+     *     eventBridge.scriptEventReceived.connect(fromScript);
+     *   }
+     * }
+     *
+     * // Interface script (example.js)
+     * const webEntity = Entities.addEntity({
+     *   type: "Web",
+     *   position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, [0, 0.5, -2])),
+     *   rotation: MyAvatar.orientation,
+     *   dimensions: [1, 1, 0],
+     *   grab: { grabbable: false },
+     *   sourceUrl: Script.resolvePath("Example.qml"),
+     *   dpi: 5,
+     * }, "local");
+     *
+     * Entities.webEventReceived.connect((entity, message) => {
+     *   if (entity === webEntity) {
+     *     console.log(entity, message);
+     *   }
+     * });
+     *
+     * let counter = 0;
+     *
+     * Script.setInterval(() => {
+     *   Entities.emitScriptEvent(webEntity, `Button ${counter}`);
+     *   counter++;
+     * }, 1000);
+     *
+     * Script.scriptEnding.connect(() => Entities.deleteEntity(webEntity));
      */
     Q_INVOKABLE QObject* getEntityObject(const QUuid& id);
 
@@ -1883,7 +1929,7 @@ public slots:
      * @function Entities.emitScriptEvent
      * @param {Uuid} entityID - The ID of the Web entity to send the message to.
      * @param {string} message - The message to send.
-     * @example <caption>Exchange messages with a Web entity.</caption>
+     * @example <caption>Exchange messages with a Web entity with an HTML source.</caption>
      * // HTML file, name: "webEntity.html".
      * <!DOCTYPE html>
      * <html>
@@ -1929,6 +1975,51 @@ public slots:
      * }
      * 
      * Entities.webEventReceived.connect(onWebEventReceived);
+     * @example <caption>Exchange messages with a Web entity with a QML source.</caption>
+     * // QML file (Example.qml)
+     * import QtQuick 2.15
+     * import QtQuick.Controls 2.15
+     *
+     * Button {
+     *   id: item
+     *   text: "Button"
+     *   onClicked: eventBridge.emitWebEvent("Button clicked!")
+     *   anchors.fill: parent
+     *
+     *   function fromScript(message) {
+     *     item.text = message;
+     *   }
+     *
+     *   Component.onCompleted: {
+     *     eventBridge.scriptEventReceived.connect(fromScript);
+     *   }
+     * }
+     *
+     * // Interface script (example.js)
+     * const webEntity = Entities.addEntity({
+     *   type: "Web",
+     *   position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, [0, 0.5, -2])),
+     *   rotation: MyAvatar.orientation,
+     *   dimensions: [1, 1, 0],
+     *   grab: { grabbable: false },
+     *   sourceUrl: Script.resolvePath("Example.qml"),
+     *   dpi: 5,
+     * }, "local");
+     *
+     * Entities.webEventReceived.connect((entity, message) => {
+     *   if (entity === webEntity) {
+     *     console.log(entity, message);
+     *   }
+     * });
+     *
+     * let counter = 0;
+     *
+     * Script.setInterval(() => {
+     *   Entities.emitScriptEvent(webEntity, `Button ${counter}`);
+     *   counter++;
+     * }, 1000);
+     *
+     * Script.scriptEnding.connect(() => Entities.deleteEntity(webEntity));
      */
     Q_INVOKABLE void emitScriptEvent(const EntityItemID& entityID, const QVariant& message);
 
@@ -2194,6 +2285,48 @@ public slots:
      * print("script: " + JSON.stringify(Entities.getPropertyInfo("script")));
      */
     Q_INVOKABLE const EntityPropertyInfo getPropertyInfo(const QString& propertyName) const;
+
+    /*@jsdoc
+     * Replaces the contents of a canvas entity's pixel buffer.
+     * @function Entities.canvasPushImage
+     * @param {Uuid} entityID - The Canvas entity that this image will be submitted to.
+     * @param {CanvasImage} image - The image to submit. Must have the same dimensions as the target Canvas entity.
+     */
+    Q_INVOKABLE void canvasPushPixels(const QUuid& entityID, const CanvasImage& image);
+
+    /*@jsdoc
+     * Retrieves a copy of the current sRGBA8 pixel buffer of a canvas.
+     * The contents are determined by the last call to Entities.canvasCommit.
+     * @function Entities.canvasGetImage
+     * @param {Uuid} entityID - The canvas entity to retrieve the buffer from.
+     * @returns {CanvasImage}
+     */
+    Q_INVOKABLE CanvasImage canvasGetPixels(const QUuid& entityID);
+
+    /*@jsdoc
+     * Pushes a list of high-level drawing commands into a Canvas entity's internal queue.
+     * See {@link CanvasCommand}
+     * @function Entities.canvasPushCommands
+     * @param {Uuid} entityID - The canvas entity to push commands to.
+     * @param {Object[]} commands - The drawing commands to push. See CanvasCommand for more info.
+     */
+    Q_INVOKABLE void canvasPushCommands(const QUuid& entityID, const QVector<CanvasCommand>& commands);
+
+    /*@jsdoc
+     * Completes any pending drawing commands and updates the texture of a Canvas entity.
+     * The Canvas entity's internal command queue is cleared after this function is called.
+     * @function Entities.canvasCommit
+     * @param {Uuid} entityID - The canvas entity to update the texture of.
+     */
+    Q_INVOKABLE void canvasCommit(const QUuid& entityID);
+
+    /*@jsdoc
+     * Creates a PNG image binary that can be saved to disk or the asset server.
+     * @function Entities.canvasToImageData
+     * @param {Uuid} entityID - The canvas entity to make an image from.
+     * @returns {ArrayBuffer}
+     */
+    Q_INVOKABLE QByteArray canvasToImageData(const QUuid& entityID);
 
 signals:
     /*@jsdoc

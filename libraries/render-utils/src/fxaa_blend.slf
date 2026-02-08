@@ -14,16 +14,16 @@
 
 <@include gpu/ShaderConstants.h@>
 
-layout(location=0) in vec2 varTexCoord0;
-layout(location=0) out vec4 outFragColor;
+INPUT(0, vec2, varTexCoord0);
+OUTPUT(0, vec4, outFragColor);
 
-LAYOUT(binding=0) uniform sampler2D colorTexture;
+TEXTURE(0, sampler2D, colorTexture);
 
 struct FxaaBlendParams {
     vec4 sharpenIntensity;
 };
 
-LAYOUT(binding=0) uniform fxaaBlendParamsBuffer {
+UNIFORM_BUFFER(0, fxaaBlendParamsBuffer) {
     FxaaBlendParams params;
 };
 

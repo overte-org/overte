@@ -22,6 +22,7 @@
 #include <QJsonDocument>
 #include <QJsonArray>
 #include <QtWidgets/QApplication>
+#include <QBuffer>
 
 #include <shared/QtHelpers.h>
 #include <VariantMapToScriptValue.h>
@@ -1561,7 +1562,7 @@ bool EntityPropertyMetadataRequest::script(EntityItemID entityID, const ScriptVa
     using LocalScriptStatusRequest = QFutureWatcher<QVariant>;
 
     LocalScriptStatusRequest* request = new LocalScriptStatusRequest;
-    QObject::connect(request, &LocalScriptStatusRequest::finished, _scriptManager, [=]() mutable {
+    QObject::connect(request, &LocalScriptStatusRequest::finished, _scriptManager, [=, this]() mutable {
         auto details = request->result().toMap();
         ScriptValue err, result;
         if (details.contains("isError")) {
@@ -1597,7 +1598,7 @@ bool EntityPropertyMetadataRequest::serverScripts(EntityItemID entityID, const S
     auto client = DependencyManager::get<EntityScriptClient>();
     auto request = client->createScriptStatusRequest(entityID);
     QPointer<ScriptManager> manager = _scriptManager;
-    QObject::connect(request, &GetScriptStatusRequest::finished, _scriptManager, [=](GetScriptStatusRequest* request) mutable {
+    QObject::connect(request, &GetScriptStatusRequest::finished, _scriptManager, [=, this](GetScriptStatusRequest* request) mutable {
         auto manager = _scriptManager;
         if (!manager) {
             qCDebug(entities) << __FUNCTION__ << " -- engine destroyed while inflight" << entityID;
@@ -2693,5 +2694,97 @@ glm::vec3 EntityScriptingInterface::localToWorldDimensions(glm::vec3 localDimens
         return worldDimensions;
     } else {
         return glm::vec3(0.0f);
+    }
+}
+
+void EntityScriptingInterface::canvasPushPixels(const QUuid& entityID, const CanvasImage& image) {
+    EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
+    if (!entity) {
+        return;
+    }
+
+    if (entity->getType() == EntityTypes::Canvas) {
+        auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+
+        if (image.buffer.length() != (int)(4 * image.width * image.height)) {
+            qCCritical(entities) << "canvasPushPixels: \"image\" has invalid buffer size, expected " << (4 * image.width * image.height) << ", got " << image.buffer.length();
+            return;
+        }
+
+        if (image.width != canvas->getWidth() || image.height != canvas->getHeight()) {
+            qCCritical(entities) << "canvasPushPixels: \"image\" dimensions don't match canvas, expected " << canvas->getWidth() << "x" << canvas->getHeight() << ", got " << image.width << "x" << image.height;
+            return;
+        }
+
+        canvas->setImageData(image);
+    } else {
+        qCWarning(entities) << "canvasPushPixels called on a non-canvas entity " << entityID;
+    }
+}
+
+void EntityScriptingInterface::canvasPushCommands(const QUuid& entityID, const QVector<CanvasCommand>& commands) {
+    EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
+    if (!entity) {
+        return;
+    }
+
+    if (entity->getType() == EntityTypes::Canvas) {
+        auto canvas = std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+        canvas->pushCommands(commands);
+    } else {
+        qCWarning(entities) << "canvasPushCommands called on a non-canvas entity " << entityID;
+    }
+}
+
+CanvasImage EntityScriptingInterface::canvasGetPixels(const QUuid& entityID) {
+    EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
+    if (!entity) {
+        return CanvasImage();
+    }
+
+    if (entity->getType() == EntityTypes::Canvas) {
+        const auto& canvas = *std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+        const std::lock_guard<std::recursive_mutex> dataLock(canvas._imageDataMutex);
+        return CanvasImage { canvas.getImageData(), canvas.getImageWidth(), canvas.getImageHeight() };
+    } else {
+        qCWarning(entities) << "canvasGetPixels called on a non-canvas entity " << entityID;
+        return CanvasImage();
+    }
+}
+
+void EntityScriptingInterface::canvasCommit(const QUuid& entityID) {
+    EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
+    if (!entity) {
+        return;
+    }
+
+    if (entity->getType() == EntityTypes::Canvas) {
+        auto& canvas = *std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+        canvas.commit();
+    } else {
+        qCWarning(entities) << "canvasCommit called on a non-canvas entity " << entityID;
+    }
+}
+
+QByteArray EntityScriptingInterface::canvasToImageData(const QUuid& entityID) {
+    EntityItemPointer entity = _entityTree->findEntityByEntityItemID(EntityItemID(entityID));
+    if (!entity) {
+        return QByteArray();
+    }
+
+    if (entity->getType() == EntityTypes::Canvas) {
+        auto& canvas = *std::dynamic_pointer_cast<CanvasEntityItem>(entity);
+        const std::lock_guard<std::recursive_mutex> dataLock(canvas._imageDataMutex);
+        auto image = QImage(reinterpret_cast<const uchar*>(canvas.getImageData().constData()), canvas.getImageWidth(), canvas.getImageHeight(), QImage::Format_RGBA8888);
+
+        QByteArray bytes;
+        QBuffer buffer(&bytes);
+        buffer.open(QIODevice::WriteOnly);
+        image.save(&buffer, "PNG");
+        buffer.close();
+        return bytes;
+    } else {
+        qCWarning(entities) << "canvasToImageData called on a non-canvas entity " << entityID;
+        return QByteArray();
     }
 }

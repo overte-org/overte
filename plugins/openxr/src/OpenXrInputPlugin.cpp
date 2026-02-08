@@ -8,31 +8,183 @@
 //
 
 #include <glm/ext.hpp>
+#include <QJsonArray>
+#include <tuple>
 
 #include "OpenXrInputPlugin.h"
 
 #include "AvatarConstants.h"
 #include "PathUtils.h"
 
+#include "SettingHandle.h"
 #include "controllers/UserInputMapper.h"
 
 Q_DECLARE_LOGGING_CATEGORY(xr_input_cat)
 Q_LOGGING_CATEGORY(xr_input_cat, "openxr.input")
+
+enum ExtraButtonChannel {
+    LEFT_HAS_PRIMARY = controller::StandardButtonChannel::NUM_STANDARD_BUTTONS,
+    LEFT_HAS_TRACKPAD,
+    LEFT_HAS_THUMBSTICK,
+    LEFT_HAS_CAPACITIVE_TOUCH,
+    LEFT_HAS_TRIGGER_CLICK,
+
+    RIGHT_HAS_PRIMARY,
+    RIGHT_HAS_TRACKPAD,
+    RIGHT_HAS_THUMBSTICK,
+    RIGHT_HAS_CAPACITIVE_TOUCH,
+    RIGHT_HAS_TRIGGER_CLICK,
+
+    LEFT_TRACKPAD_TOUCH,
+    RIGHT_TRACKPAD_TOUCH,
+
+    LT_TOUCH,
+    LT_VIRTUAL_CLICK,
+    RT_TOUCH,
+    RT_VIRTUAL_CLICK,
+};
+
+enum ExtraAxisChannel {
+    LEFT_TRACKPAD_X = controller::StandardAxisChannel::NUM_STANDARD_AXES,
+    LEFT_TRACKPAD_Y,
+    LEFT_TRACKPAD_PRESS,
+    RIGHT_TRACKPAD_X,
+    RIGHT_TRACKPAD_Y,
+    RIGHT_TRACKPAD_PRESS,
+};
+
+static const std::unordered_map<controller::StandardPoseChannel, QString> poseChannelToString = {
+    {controller::HIPS, "Hips"},
+    {controller::LEFT_LEG, "LeftLeg"},
+    {controller::LEFT_FOOT, "LeftFoot"},
+    {controller::RIGHT_LEG, "RightLeg"},
+    {controller::RIGHT_FOOT, "RightFoot"},
+    {controller::SPINE2, "Spine2"},
+    {controller::HEAD, "Head"},
+    {controller::RIGHT_ARM, "RightArm"},
+    {controller::RIGHT_HAND, "RightHand"},
+    {controller::LEFT_ARM, "LeftArm"},
+    {controller::LEFT_HAND, "LeftHand"},
+};
+
+static const std::unordered_map<QString, controller::StandardPoseChannel> stringToPoseChannel = {
+    {"Hips", controller::HIPS},
+    {"LeftLeg", controller::LEFT_LEG},
+    {"LeftFoot", controller::LEFT_FOOT},
+    {"RightLeg", controller::RIGHT_LEG},
+    {"RightFoot", controller::RIGHT_FOOT},
+    {"Spine2", controller::SPINE2},
+    {"Head", controller::HEAD},
+    {"RightArm", controller::RIGHT_ARM},
+    {"RightHand", controller::RIGHT_HAND},
+    {"LeftArm", controller::LEFT_ARM},
+    {"LeftHand", controller::LEFT_HAND},
+};
 
 OpenXrInputPlugin::OpenXrInputPlugin(std::shared_ptr<OpenXrContext> c) {
     _context = c;
     _inputDevice = std::make_shared<InputDevice>(_context);
 }
 
-// TODO: Config options
-static const QString XR_CONFIGURATION_LAYOUT = QString("");
+static const QString XR_CONFIGURATION_LAYOUT = QString("OpenXrConfiguration.qml");
 
-// TODO: full-body-tracking
-void OpenXrInputPlugin::calibrate() {
+static glm::mat4 defaultPoseOffset(const controller::InputCalibrationData& data, controller::StandardPoseChannel channel) {
+    switch (channel) {
+        case controller::SPINE2:
+            return data.defaultSpine2;
+
+        case controller::HIPS:
+            return data.defaultHips;
+
+        case controller::LEFT_FOOT:
+            return data.defaultLeftFoot;
+
+        case controller::RIGHT_FOOT:
+            return data.defaultRightFoot;
+
+        default:
+            return glm::mat4();
+    }
 }
 
-// TODO: full-body-tracking
+void OpenXrInputPlugin::guessXDevRoles(std::unordered_map<XrXDevIdMNDX, XDevTracker>& tracker_map) {
+    std::vector<std::tuple<XrXDevIdMNDX, glm::vec3, controller::Pose>> tracker_list;
+
+    for (auto [id, tracker] : tracker_map) {
+        XrResult result = XR_SUCCESS;
+        XrSpaceLocation stageSpace = { XR_TYPE_SPACE_LOCATION };
+        XrSpaceLocation localSpace = { XR_TYPE_SPACE_LOCATION };
+        XrSpaceLocation headSpace = { XR_TYPE_SPACE_LOCATION };
+        result = xrLocateSpace(tracker.space, _context->_stageSpace, _context->_lastPredictedDisplayTime.value(), &stageSpace);
+        xrCheck(_context->_instance, result, "guessXDevRoles: tracker stage space fail");
+        result = xrLocateSpace(tracker.space, _context->_viewSpace, _context->_lastPredictedDisplayTime.value(), &localSpace);
+        xrCheck(_context->_instance, result, "guessXDevRoles: tracker local space fail");
+        result = xrLocateSpace(_context->_viewSpace, _context->_stageSpace, _context->_lastPredictedDisplayTime.value(), &headSpace);
+        xrCheck(_context->_instance, result, "guessXDevRoles: head space fail");
+
+        // the tracker's position, relative horizontally to the headset
+        // and vertically to the floor, normalized by the headset height
+        // so we can check relative height rather than absolute meters
+        auto position = xrVecToGlm(localSpace.pose.position);
+        position.y = stageSpace.pose.position.y / headSpace.pose.position.y;
+        tracker_list.push_back({
+            id,
+            position,
+            controller::Pose(xrVecToGlm(stageSpace.pose.position), xrQuatToGlm(stageSpace.pose.orientation)),
+        });
+    }
+
+    for (auto& tracker : tracker_list) {
+        using namespace controller;
+
+        auto position = std::get<1>(tracker);
+        auto id = std::get<0>(tracker);
+        auto& state = tracker_map[id];
+
+        // TODO: our input system only really expects 7-point tracking,
+        // (i.e. head, hands, chest, hips, and feet), but we can expand
+        // it later to support more joints if there's demand for it
+
+        if (position.y < 0.2f) {
+            state.pose_channel = position.x < 0.0f ? LEFT_FOOT : RIGHT_FOOT;
+        }
+
+        if (position.y > 0.4f && position.y < 0.65f) {
+            state.pose_channel = HIPS;
+        }
+
+        if (position.y > 0.65f && position.y < 0.9f) {
+            state.pose_channel = SPINE2;
+        }
+
+        qCDebug(xr_input_cat) <<
+            id <<
+            ":" <<
+            position.y <<
+            (state.pose_channel.has_value() ? poseChannelToString.at(state.pose_channel.value()) : "None");
+    }
+}
+
+void OpenXrInputPlugin::calibrate() {
+    qCDebug(xr_input_cat) << "OpenXrInputPlugin::calibrate";
+
+    if (_context->_MNDX_xdevSpaceSupported) {
+        guessXDevRoles(_inputDevice->_xdev);
+    }
+    _inputDevice->_trackerCalibrations.clear();
+    _inputDevice->_wantsCalibrate = true;
+}
+
 bool OpenXrInputPlugin::uncalibrate() {
+    qCDebug(xr_input_cat) << "OpenXrInputPlugin::uncalibrate";
+
+    for (auto [_, tracker] : _inputDevice->_xdev) {
+        tracker.pose_channel = {};
+    }
+
+    _inputDevice->_trackerCalibrations.clear();
+    _inputDevice->_wantsCalibrate = false;
+
     return true;
 }
 
@@ -40,13 +192,49 @@ bool OpenXrInputPlugin::isSupported() const {
     return _context->_isValid && _context->_isSupported;
 }
 
-// TODO: Config options
 void OpenXrInputPlugin::setConfigurationSettings(const QJsonObject configurationSettings) {
+    const auto& calibration = configurationSettings["tracker_calibration"].toObject();
+    _inputDevice->_hapticsEnabled = configurationSettings["enable_haptics"].toBool(true);
+
+    // grr qt5 doesnt support destructured iterating like std::map
+    foreach (const auto& key, calibration.keys()) {
+        const auto& value = calibration.value(key).toObject();
+
+        // some kind of invalid channel name, don't read it
+        if (!stringToPoseChannel.contains(key)) { continue; }
+
+        // broken setting, don't read it
+        if (!value.contains("translation") || !value.contains("rotation")) { continue; }
+
+        auto translationArray = value.value("translation").toArray();
+        auto rotationArray = value.value("rotation").toArray();
+
+        auto channel = stringToPoseChannel.at(key);
+        auto translation = vec3(translationArray[0].toDouble(), translationArray[1].toDouble(), translationArray[2].toDouble());
+        auto rotation = quat(rotationArray[0].toDouble(), rotationArray[1].toDouble(), rotationArray[2].toDouble(), rotationArray[3].toDouble());
+
+        _inputDevice->_trackerCalibrations[channel] = controller::Pose(translation, rotation);
+    }
 }
 
-// TODO: Config options
 QJsonObject OpenXrInputPlugin::configurationSettings() {
-    return QJsonObject();
+    QJsonObject calibration;
+
+    for (const auto& [channel, pose] : _inputDevice->_trackerCalibrations) {
+        const auto& translation = pose.getTranslation();
+        const auto& rotation = pose.getRotation();
+        auto object = QJsonObject {
+            {"translation", QJsonArray { translation.x, translation.y, translation.z }},
+            {"rotation", QJsonArray { rotation.x, rotation.y, rotation.z, rotation.w }},
+        };
+
+        calibration[poseChannelToString.at(channel)] = object;
+    }
+
+    QJsonObject configurationSettings;
+    configurationSettings["tracker_calibration"] = calibration;
+    configurationSettings["enable_haptics"] = _inputDevice->_hapticsEnabled;
+    return configurationSettings;
 }
 
 QString OpenXrInputPlugin::configurationLayout() {
@@ -115,12 +303,18 @@ void OpenXrInputPlugin::pluginUpdate(float deltaTime, const controller::InputCal
     }
 }
 
-// TODO: Config options
 void OpenXrInputPlugin::loadSettings() {
+    Settings settings;
+    settings.beginGroup(getName());
+
+    settings.endGroup();
 }
 
-// TODO: Config options
 void OpenXrInputPlugin::saveSettings() const {
+    Settings settings;
+    settings.beginGroup(getName());
+
+    settings.endGroup();
 }
 
 OpenXrInputPlugin::InputDevice::InputDevice(std::shared_ptr<OpenXrContext> c) : controller::InputDevice("OpenXR") {
@@ -135,18 +329,14 @@ void OpenXrInputPlugin::InputDevice::focusOutEvent() {
 };
 
 bool OpenXrInputPlugin::InputDevice::triggerHapticPulse(float strength, float duration, uint16_t index) {
-    if (index > 2) {
+    if (index > 2 || !_hapticsEnabled) {
         return false;
     }
 
     std::unique_lock<std::recursive_mutex> locker(_lock);
 
-    // TODO: Haptic values in overte are always strengh 1.0 and duration only 13.0 or 16.0. So it's not really used.
-    // The duration does not seem to map to a time unit. 16ms seems quite short for a haptic vibration.
-    // Let's assume the duration is in 10 milliseconds.
-    // Let's also assume strength 1.0 is the middle value, which is 0.5 in OpenXR.
     using namespace std::chrono;
-    nanoseconds durationNs = duration_cast<nanoseconds>(milliseconds(static_cast<int>(duration * 10.0f)));
+    nanoseconds durationNs = duration_cast<nanoseconds>(milliseconds(static_cast<int>(duration)));
     XrDuration xrDuration = durationNs.count();
 
     auto path = (index == 0) ? "left_haptic" : "right_haptic";
@@ -154,8 +344,7 @@ bool OpenXrInputPlugin::InputDevice::triggerHapticPulse(float strength, float du
     // FIXME: sometimes something bugs out and hammers this,
     // and the controller vibrates really loudly until another
     // haptic pulse is triggered
-    // The OpenVR plugin has a lock protecting these
-    if (!_actions.at(path)->applyHaptic(xrDuration, XR_FREQUENCY_UNSPECIFIED, 0.5f * strength)) {
+    if (!_actions.at(path)->applyHaptic(xrDuration, 50, 0.5f * strength)) {
         qCCritical(xr_input_cat) << "Failed to apply haptic feedback!";
     }
 
@@ -273,6 +462,21 @@ XrSpaceLocation OpenXrInputPlugin::Action::getPose() {
     return location;
 }
 
+bool OpenXrInputPlugin::Action::isPoseActive() {
+    XrActionStatePose state = {
+        .type = XR_TYPE_ACTION_STATE_POSE,
+    };
+    XrActionStateGetInfo info = {
+        .type = XR_TYPE_ACTION_STATE_GET_INFO,
+        .action = _action,
+    };
+
+    XrResult result = xrGetActionStatePose(_context->_session, &info, &state);
+    xrCheck(_context->_instance, result, "failed to get pose value!");
+
+    return state.isActive;
+}
+
 bool OpenXrInputPlugin::Action::applyHaptic(XrDuration duration, float frequency, float amplitude) {
     XrHapticVibration vibration = {
         .type = XR_TYPE_HAPTIC_VIBRATION,
@@ -315,6 +519,19 @@ bool OpenXrInputPlugin::InputDevice::initBindings(const std::string& profileName
 
     std::vector<XrActionSuggestedBinding> suggestions;
     for (const auto& [actionName, inputPathRaw] : actionsToBind) {
+        // don't set up the palm poses if they're not supported
+        if (
+            (actionName == "left_palm_pose" || actionName == "right_palm_pose") &&
+            !_context->_palmPoseSupported
+        ) {
+            continue;
+        }
+
+        if (!_actions.contains(actionName)) {
+            qCCritical(xr_input_cat) << "Unknown action name" << actionName.c_str();
+            return false;
+        }
+
         XrActionSuggestedBinding bind = {
             .action = _actions[actionName]->_action,
         };
@@ -337,7 +554,20 @@ bool OpenXrInputPlugin::InputDevice::initBindings(const std::string& profileName
 controller::Input::NamedVector OpenXrInputPlugin::InputDevice::getAvailableInputs() const {
     using namespace controller;
 
-    QVector<Input::NamedPair> availableInputs{
+    QVector<Input::NamedPair> availableInputs = {
+        // Controller metainfo
+        // TODO: Is there an existing "meta" system or are things like
+        // Application.InHMD just virtual buttons too?
+        makePair((StandardButtonChannel)LEFT_HAS_PRIMARY, "LeftHasPrimary"),
+        makePair((StandardButtonChannel)LEFT_HAS_TRACKPAD, "LeftHasTrackpad"),
+        makePair((StandardButtonChannel)LEFT_HAS_THUMBSTICK, "LeftHasThumbstick"),
+        makePair((StandardButtonChannel)LEFT_HAS_CAPACITIVE_TOUCH, "LeftHasCapacitiveTouch"),
+
+        makePair((StandardButtonChannel)RIGHT_HAS_PRIMARY, "RightHasPrimary"),
+        makePair((StandardButtonChannel)RIGHT_HAS_TRACKPAD, "RightHasTrackpad"),
+        makePair((StandardButtonChannel)RIGHT_HAS_THUMBSTICK, "RightHasThumbstick"),
+        makePair((StandardButtonChannel)RIGHT_HAS_CAPACITIVE_TOUCH, "RightHasCapacitiveTouch"),
+
         makePair(HEAD, "Head"),
 
         makePair(LEFT_HAND, "LeftHand"),
@@ -347,9 +577,19 @@ controller::Input::NamedVector OpenXrInputPlugin::InputDevice::getAvailableInput
         makePair(LY, "LY"),
         makePair(LT, "LT"),
         makePair(LT_CLICK, "LTClick"),
+        makePair((StandardButtonChannel)LT_VIRTUAL_CLICK, "LTVirtualClick"),
+        makePair((StandardButtonChannel)LT_TOUCH, "LTTouch"),
         makePair(LEFT_GRIP, "LeftGrip"),
-        makePair(LEFT_PRIMARY_THUMB, "LeftPrimaryThumb"),
-        makePair(LEFT_SECONDARY_THUMB, "LeftSecondaryThumb"),
+        makePair(LEFT_PRIMARY_THUMB, "LeftPrimary"),
+        makePair(LEFT_SECONDARY_THUMB, "LeftSecondary"),
+        makePair(LEFT_PRIMARY_THUMB_TOUCH, "LeftPrimaryTouch"),
+        makePair(LEFT_SECONDARY_THUMB_TOUCH, "LeftSecondaryTouch"),
+        makePair((StandardButtonChannel)LEFT_TRACKPAD_TOUCH, "LeftTrackpadTouch"),
+        makePair((StandardAxisChannel)LEFT_TRACKPAD_PRESS, "LeftTrackpadClick"),
+        makePair((StandardAxisChannel)LEFT_TRACKPAD_X, "LeftTrackpadX"),
+        makePair((StandardAxisChannel)LEFT_TRACKPAD_Y, "LeftTrackpadY"),
+        makePair(LEFT_INDEX_POINT, "LeftIndexPoint"),
+        makePair(LEFT_THUMB_UP, "LeftThumbUp"),
 
         makePair(RIGHT_HAND, "RightHand"),
         makePair(RS, "RS"),
@@ -358,12 +598,21 @@ controller::Input::NamedVector OpenXrInputPlugin::InputDevice::getAvailableInput
         makePair(RY, "RY"),
         makePair(RT, "RT"),
         makePair(RT_CLICK, "RTClick"),
+        makePair((StandardButtonChannel)RT_VIRTUAL_CLICK, "RTVirtualClick"),
+        makePair((StandardButtonChannel)RT_TOUCH, "RTTouch"),
         makePair(RIGHT_GRIP, "RightGrip"),
-        makePair(RIGHT_PRIMARY_THUMB, "RightPrimaryThumb"),
-        makePair(RIGHT_SECONDARY_THUMB, "RightSecondaryThumb"),
+        makePair(RIGHT_PRIMARY_THUMB, "RightPrimary"),
+        makePair(RIGHT_SECONDARY_THUMB, "RightSecondary"),
+        makePair(RIGHT_PRIMARY_THUMB_TOUCH, "RightPrimaryTouch"),
+        makePair(RIGHT_SECONDARY_THUMB_TOUCH, "RightSecondaryTouch"),
+        makePair((StandardButtonChannel)RIGHT_TRACKPAD_TOUCH, "RightTrackpadTouch"),
+        makePair((StandardAxisChannel)RIGHT_TRACKPAD_PRESS, "RightTrackpadClick"),
+        makePair((StandardAxisChannel)RIGHT_TRACKPAD_X, "RightTrackpadX"),
+        makePair((StandardAxisChannel)RIGHT_TRACKPAD_Y, "RightTrackpadY"),
+        makePair(RIGHT_INDEX_POINT, "RightIndexPoint"),
+        makePair(RIGHT_THUMB_UP, "RightThumbUp"),
 
         // hand tracking
-
         makePair(LEFT_HAND_THUMB1, "LeftHandThumb1"),
         makePair(LEFT_HAND_THUMB2, "LeftHandThumb2"),
         makePair(LEFT_HAND_THUMB3, "LeftHandThumb3"),
@@ -405,6 +654,12 @@ controller::Input::NamedVector OpenXrInputPlugin::InputDevice::getAvailableInput
         makePair(RIGHT_HAND_PINKY2, "RightHandPinky2"),
         makePair(RIGHT_HAND_PINKY3, "RightHandPinky3"),
         makePair(RIGHT_HAND_PINKY4, "RightHandPinky4"),
+
+        // body tracking
+        makePair(LEFT_FOOT, "LeftFoot"),
+        makePair(RIGHT_FOOT, "RightFoot"),
+        makePair(HIPS, "Hips"),
+        makePair(SPINE2, "Spine2"),
     };
 
     return availableInputs;
@@ -424,39 +679,55 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
 
     XrActionSetCreateInfo actionSetInfo = {
         .type = XR_TYPE_ACTION_SET_CREATE_INFO,
-        .actionSetName = "overte",
-        .localizedActionSetName = "Overte",
+        .actionSetName = "overte_virtual_controller",
+        .localizedActionSetName = "Overte Virtual Controller",
         .priority = 0,
     };
     XrResult result = xrCreateActionSet(instance, &actionSetInfo, &_actionSet);
     if (!xrCheck(instance, result, "Failed to create action set."))
         return false;
 
-    // NOTE: The "squeeze" actions have quite a high deadzone in the controller config.
-    // A lot of our controller scripts currently only check for (squeeze > 0),
-    // which means controllers like the Index ones will be way too sensitive.
     std::map<std::string, std::pair<std::string, XrActionType>> actionTypes = {
-        {"left_primary_click",     {"Left Primary", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_secondary_click",   {"Left Secondary (Tablet)", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_squeeze_value",     {"Left Squeeze", XR_ACTION_TYPE_FLOAT_INPUT}},
-        {"left_trigger_value",     {"Left Trigger", XR_ACTION_TYPE_FLOAT_INPUT}},
-        {"left_trigger_click",     {"Left Trigger Click", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_thumbstick",        {"Left Thumbstick", XR_ACTION_TYPE_VECTOR2F_INPUT}},
-        {"left_thumbstick_click",  {"Left Thumbstick Click", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_thumbstick_touch",  {"Left Thumbstick Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"left_pose",              {"Left Hand Pose", XR_ACTION_TYPE_POSE_INPUT}},
-        {"left_haptic",            {"Left Hand Haptic", XR_ACTION_TYPE_VIBRATION_OUTPUT}},
+        {"left_primary_click",     {"Left Primary",           XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_primary_touch",     {"Left Primary Touch",     XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_secondary_click",   {"Left Secondary",         XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_secondary_touch",   {"Left Secondary Touch",   XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_squeeze_value",     {"Left Squeeze",           XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"left_trigger_value",     {"Left Trigger",           XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"left_trigger_click",     {"Left Trigger Click",     XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_trigger_touch",     {"Left Trigger Touch",     XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_thumbstick",        {"Left Thumbstick",        XR_ACTION_TYPE_VECTOR2F_INPUT}},
+        {"left_thumbstick_click",  {"Left Thumbstick Click",  XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_thumbstick_touch",  {"Left Thumbstick Touch",  XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_trackpad",          {"Left Trackpad",          XR_ACTION_TYPE_VECTOR2F_INPUT}},
+        {"left_trackpad_touch",    {"Left Trackpad Touch",    XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"left_trackpad_click",    {"Left Trackpad Click",    XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"left_grip_pose",         {"Left Grip Pose",         XR_ACTION_TYPE_POSE_INPUT}},
+        {"left_palm_pose",         {"Left Palm Pose",         XR_ACTION_TYPE_POSE_INPUT}},
+        {"left_haptic",            {"Left Hand Haptic",       XR_ACTION_TYPE_VIBRATION_OUTPUT}},
 
-        {"right_primary_click",    {"Right Primary", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"right_secondary_click",  {"Right Secondary (Jump)", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"right_squeeze_value",    {"Right Squeeze", XR_ACTION_TYPE_FLOAT_INPUT}},
-        {"right_trigger_value",    {"Right Trigger", XR_ACTION_TYPE_FLOAT_INPUT}},
-        {"right_trigger_click",    {"Right Trigger Click", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"right_thumbstick",       {"Right Thumbstick", XR_ACTION_TYPE_VECTOR2F_INPUT}},
+        {"right_primary_click",    {"Right Primary",          XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_primary_touch",    {"Right Primary Touch",    XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_secondary_click",  {"Right Secondary",        XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_secondary_touch",  {"Right Secondary Touch",  XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_squeeze_value",    {"Right Squeeze",          XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"right_trigger_value",    {"Right Trigger",          XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"right_trigger_click",    {"Right Trigger Click",    XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_trigger_touch",    {"Right Trigger Touch",    XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_thumbstick",       {"Right Thumbstick",       XR_ACTION_TYPE_VECTOR2F_INPUT}},
         {"right_thumbstick_click", {"Right Thumbstick Click", XR_ACTION_TYPE_BOOLEAN_INPUT}},
         {"right_thumbstick_touch", {"Right Thumbstick Touch", XR_ACTION_TYPE_BOOLEAN_INPUT}},
-        {"right_pose",             {"Right Hand Pose", XR_ACTION_TYPE_POSE_INPUT}},
-        {"right_haptic",           {"Right Hand Haptic", XR_ACTION_TYPE_VIBRATION_OUTPUT}},
+        {"right_trackpad",         {"Right Trackpad",         XR_ACTION_TYPE_VECTOR2F_INPUT}},
+        {"right_trackpad_touch",   {"Right Trackpad Touch",   XR_ACTION_TYPE_BOOLEAN_INPUT}},
+        {"right_trackpad_click",   {"Right Trackpad Click",   XR_ACTION_TYPE_FLOAT_INPUT}},
+        {"right_grip_pose",        {"Right Grip Pose",        XR_ACTION_TYPE_POSE_INPUT}},
+        {"right_palm_pose",        {"Right Palm Pose",        XR_ACTION_TYPE_POSE_INPUT}},
+        {"right_haptic",           {"Right Hand Haptic",      XR_ACTION_TYPE_VIBRATION_OUTPUT}},
+
+        {"hips_pose",              {"Hips Pose",              XR_ACTION_TYPE_POSE_INPUT}},
+        {"chest_pose",             {"Chest Pose",             XR_ACTION_TYPE_POSE_INPUT}},
+        {"left_foot_pose",         {"Left Foot Pose",         XR_ACTION_TYPE_POSE_INPUT}},
+        {"right_foot_pose",        {"Right Foot Pose",        XR_ACTION_TYPE_POSE_INPUT}},
     };
 
     std::string hand_left = "/user/hand/left/input";
@@ -467,12 +738,14 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
         {"/interaction_profiles/khr/simple_controller", {
             {"left_secondary_click",   hand_left  + "/menu/click"},
             {"left_trigger_value",     hand_left  + "/select/click"},
-            {"left_pose",              hand_left  + "/grip/pose"},
+            {"left_grip_pose",         hand_left  + "/grip/pose"},
+            {"left_palm_pose",         hand_left  + "/palm_ext/pose"},
             {"left_haptic",            "/user/hand/left/output/haptic"},
 
             {"right_secondary_click",  hand_right + "/menu/click"},
             {"right_trigger_value",    hand_right + "/select/click"},
-            {"right_pose",             hand_right + "/grip/pose"},
+            {"right_grip_pose",        hand_right + "/grip/pose"},
+            {"right_palm_pose",        hand_right + "/palm_ext/pose"},
             {"right_haptic",           "/user/hand/right/output/haptic"},
         }},
         {"/interaction_profiles/htc/vive_controller", {
@@ -480,41 +753,51 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"left_squeeze_value",     hand_left  + "/squeeze/click"},
             {"left_trigger_value",     hand_left  + "/trigger/value"},
             {"left_trigger_click",     hand_left  + "/trigger/click"},
-            {"left_thumbstick",        hand_left  + "/trackpad"},
-            {"left_thumbstick_click",  hand_left  + "/trackpad/click"},
-            {"left_thumbstick_touch",  hand_left  + "/trackpad/touch"},
-            {"left_pose",              hand_left  + "/grip/pose"},
+            {"left_trackpad",          hand_left  + "/trackpad"},
+            {"left_trackpad_click",    hand_left  + "/trackpad/click"},
+            {"left_trackpad_touch",    hand_left  + "/trackpad/touch"},
+            {"left_grip_pose",         hand_left  + "/grip/pose"},
+            {"left_palm_pose",         hand_left  + "/palm_ext/pose"},
             {"left_haptic",            "/user/hand/left/output/haptic"},
 
             {"right_secondary_click",  hand_right + "/menu/click"},
             {"right_squeeze_value",    hand_right + "/squeeze/click"},
             {"right_trigger_value",    hand_right + "/trigger/value"},
             {"right_trigger_click",    hand_right + "/trigger/click"},
-            {"right_thumbstick",       hand_right + "/trackpad"},
-            {"right_thumbstick_click", hand_right + "/trackpad/click"},
-            {"right_thumbstick_touch", hand_right + "/trackpad/touch"},
-            {"right_pose",             hand_right + "/grip/pose"},
+            {"right_trackpad",         hand_right + "/trackpad"},
+            {"right_trackpad_click",   hand_right + "/trackpad/click"},
+            {"right_trackpad_touch",   hand_right + "/trackpad/touch"},
+            {"right_grip_pose",        hand_right + "/grip/pose"},
+            {"right_palm_pose",        hand_right + "/palm_ext/pose"},
             {"right_haptic",           "/user/hand/right/output/haptic"},
         }},
         {"/interaction_profiles/oculus/touch_controller", {
             {"left_primary_click",     hand_left  + "/x/click"},
+            {"left_primary_touch",     hand_left  + "/x/touch"},
             {"left_secondary_click",   hand_left  + "/y/click"},
+            {"left_secondary_touch",   hand_left  + "/y/touch"},
             {"left_squeeze_value",     hand_left  + "/squeeze/value"},
             {"left_trigger_value",     hand_left  + "/trigger/value"},
+            {"left_trigger_touch",     hand_left  + "/trigger/touch"},
             {"left_thumbstick",        hand_left  + "/thumbstick"},
             {"left_thumbstick_click",  hand_left  + "/thumbstick/click"},
             {"left_thumbstick_touch",  hand_left  + "/thumbstick/touch"},
-            {"left_pose",              hand_left  + "/grip/pose"},
+            {"left_grip_pose",         hand_left  + "/grip/pose"},
+            {"left_palm_pose",         hand_left  + "/palm_ext/pose"},
             {"left_haptic",            "/user/hand/left/output/haptic"},
 
-            {"right_primary_click",    hand_right  + "/a/click"},
-            {"right_secondary_click",  hand_right  + "/b/click"},
-            {"right_squeeze_value",    hand_right  + "/squeeze/value"},
-            {"right_trigger_value",    hand_right  + "/trigger/value"},
-            {"right_thumbstick",       hand_right  + "/thumbstick"},
-            {"right_thumbstick_click", hand_right  + "/thumbstick/click"},
-            {"right_thumbstick_touch", hand_right  + "/thumbstick/touch"},
-            {"right_pose",             hand_right  + "/grip/pose"},
+            {"right_primary_click",    hand_right + "/a/click"},
+            {"right_primary_touch",    hand_right + "/a/touch"},
+            {"right_secondary_click",  hand_right + "/b/click"},
+            {"right_secondary_touch",  hand_right + "/b/touch"},
+            {"right_squeeze_value",    hand_right + "/squeeze/value"},
+            {"right_trigger_value",    hand_right + "/trigger/value"},
+            {"right_trigger_touch",    hand_right + "/trigger/touch"},
+            {"right_thumbstick",       hand_right + "/thumbstick"},
+            {"right_thumbstick_click", hand_right + "/thumbstick/click"},
+            {"right_thumbstick_touch", hand_right + "/thumbstick/touch"},
+            {"right_grip_pose",        hand_right + "/grip/pose"},
+            {"right_palm_pose",        hand_right + "/palm_ext/pose"},
             {"right_haptic",           "/user/hand/right/output/haptic"},
         }},
         {"/interaction_profiles/microsoft/motion_controller", {
@@ -523,18 +806,24 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"left_trigger_value",     hand_left  + "/trigger/value"},
             {"left_thumbstick",        hand_left  + "/thumbstick"},
             {"left_thumbstick_click",  hand_left  + "/trackpad/click"},
-            {"left_thumbstick_touch",  hand_left  + "/trackpad/touch"},
-            {"left_pose",              hand_left  + "/grip/pose"},
+            {"left_trackpad",          hand_left  + "/trackpad"},
+            {"left_trackpad_click",    hand_left  + "/trackpad/click"},
+            {"left_trackpad_touch",    hand_left  + "/trackpad/touch"},
+            {"left_grip_pose",         hand_left  + "/grip/pose"},
+            {"left_palm_pose",         hand_left  + "/palm_ext/pose"},
             {"left_haptic",            "/user/hand/left/output/haptic"},
 
-            {"right_secondary_click",   hand_right  + "/menu/click"},
-            {"right_squeeze_value",     hand_right  + "/squeeze/click"},
-            {"right_trigger_value",     hand_right  + "/trigger/value"},
-            {"right_thumbstick",        hand_right  + "/thumbstick"},
-            {"right_thumbstick_click",  hand_right  + "/trackpad/click"},
-            {"right_thumbstick_touch",  hand_right  + "/trackpad/touch"},
-            {"right_pose",              hand_right  + "/grip/pose"},
-            {"right_haptic",            "/user/hand/right/output/haptic"},
+            {"right_secondary_click",  hand_right + "/menu/click"},
+            {"right_squeeze_value",    hand_right + "/squeeze/click"},
+            {"right_trigger_value",    hand_right + "/trigger/value"},
+            {"right_thumbstick",       hand_right + "/thumbstick"},
+            {"right_thumbstick_click", hand_right + "/trackpad/click"},
+            {"right_trackpad",         hand_right + "/trackpad"},
+            {"right_trackpad_click",   hand_right + "/trackpad/click"},
+            {"right_trackpad_touch",   hand_right + "/trackpad/touch"},
+            {"right_grip_pose",        hand_right + "/grip/pose"},
+            {"right_palm_pose",        hand_right + "/palm_ext/pose"},
+            {"right_haptic",           "/user/hand/right/output/haptic"},
         }},
         {"/interaction_profiles/samsung/odyssey_controller", {
             {"left_secondary_click",   hand_left  + "/menu/click"},
@@ -542,43 +831,74 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
             {"left_trigger_value",     hand_left  + "/trigger/value"},
             {"left_thumbstick",        hand_left  + "/thumbstick"},
             {"left_thumbstick_click",  hand_left  + "/trackpad/click"},
-            {"left_thumbstick_touch",  hand_left  + "/trackpad/touch"},
-            {"left_pose",              hand_left  + "/grip/pose"},
+            {"left_trackpad",          hand_left  + "/trackpad"},
+            {"left_trackpad_click",    hand_left  + "/trackpad/click"},
+            {"left_trackpad_touch",    hand_left  + "/trackpad/touch"},
+            {"left_grip_pose",         hand_left  + "/grip/pose"},
+            {"left_palm_pose",         hand_left  + "/palm_ext/pose"},
             {"left_haptic",            "/user/hand/left/output/haptic"},
 
-            {"right_secondary_click",   hand_right  + "/menu/click"},
-            {"right_squeeze_value",     hand_right  + "/squeeze/click"},
-            {"right_trigger_value",     hand_right  + "/trigger/value"},
-            {"right_thumbstick",        hand_right  + "/thumbstick"},
-            {"right_thumbstick_click",  hand_right  + "/trackpad/click"},
-            {"right_thumbstick_touch",  hand_right  + "/trackpad/touch"},
-            {"right_pose",              hand_right  + "/grip/pose"},
-            {"right_haptic",            "/user/hand/right/output/haptic"},
+            {"right_secondary_click",  hand_right + "/menu/click"},
+            {"right_squeeze_value",    hand_right + "/squeeze/click"},
+            {"right_trigger_value",    hand_right + "/trigger/value"},
+            {"right_thumbstick",       hand_right + "/thumbstick"},
+            {"right_thumbstick_click", hand_right + "/trackpad/click"},
+            {"right_trackpad",         hand_right + "/trackpad"},
+            {"right_trackpad_click",   hand_right + "/trackpad/click"},
+            {"right_trackpad_touch",   hand_right + "/trackpad/touch"},
+            {"right_grip_pose",        hand_right + "/grip/pose"},
+            {"right_palm_pose",        hand_right + "/palm_ext/pose"},
+            {"right_haptic",           "/user/hand/right/output/haptic"},
         }},
         {"/interaction_profiles/valve/index_controller", {
             {"left_primary_click",     hand_left  + "/a/click"},
+            {"left_primary_touch",     hand_left  + "/a/touch"},
             {"left_secondary_click",   hand_left  + "/b/click"},
+            {"left_secondary_touch",   hand_left  + "/b/touch"},
             {"left_squeeze_value",     hand_left  + "/squeeze/force"},
             {"left_trigger_value",     hand_left  + "/trigger/value"},
             {"left_trigger_click",     hand_left  + "/trigger/click"},
+            {"left_trigger_touch",     hand_left  + "/trigger/touch"},
             {"left_thumbstick",        hand_left  + "/thumbstick"},
             {"left_thumbstick_click",  hand_left  + "/thumbstick/click"},
             {"left_thumbstick_touch",  hand_left  + "/thumbstick/touch"},
-            {"left_pose",              hand_left  + "/grip/pose"},
+            {"left_trackpad",          hand_left  + "/trackpad"},
+            {"left_trackpad_click",    hand_left  + "/trackpad/force"},
+            {"left_trackpad_touch",    hand_left  + "/trackpad/touch"},
+            {"left_grip_pose",         hand_left  + "/grip/pose"},
+            {"left_palm_pose",         hand_left  + "/palm_ext/pose"},
             {"left_haptic",            "/user/hand/left/output/haptic"},
 
-            {"right_primary_click",    hand_right  + "/a/click"},
-            {"right_secondary_click",  hand_right  + "/b/click"},
-            {"right_squeeze_value",    hand_right  + "/squeeze/force"},
-            {"right_trigger_value",    hand_right  + "/trigger/value"},
-            {"right_trigger_click",    hand_right  + "/trigger/click"},
-            {"right_thumbstick",       hand_right  + "/thumbstick"},
-            {"right_thumbstick_click", hand_right  + "/thumbstick/click"},
-            {"right_thumbstick_touch", hand_right  + "/thumbstick/touch"},
-            {"right_pose",             hand_right  + "/grip/pose"},
+            {"right_primary_click",    hand_right + "/a/click"},
+            {"right_primary_touch",    hand_right + "/a/touch"},
+            {"right_secondary_click",  hand_right + "/b/click"},
+            {"right_secondary_touch",  hand_right + "/b/touch"},
+            {"right_squeeze_value",    hand_right + "/squeeze/force"},
+            {"right_trigger_click",    hand_right + "/trigger/click"},
+            {"right_trigger_value",    hand_right + "/trigger/value"},
+            {"right_trigger_touch",    hand_right + "/trigger/touch"},
+            {"right_thumbstick",       hand_right + "/thumbstick"},
+            {"right_thumbstick_click", hand_right + "/thumbstick/click"},
+            {"right_thumbstick_touch", hand_right + "/thumbstick/touch"},
+            {"right_trackpad",         hand_right + "/trackpad"},
+            {"right_trackpad_click",   hand_right + "/trackpad/force"},
+            {"right_trackpad_touch",   hand_right + "/trackpad/touch"},
+            {"right_grip_pose",        hand_right + "/grip/pose"},
+            {"right_palm_pose",        hand_right + "/palm_ext/pose"},
             {"right_haptic",           "/user/hand/right/output/haptic"},
         }},
     };
+
+    if (_context->_HTCX_viveTrackerInteractionSupported) {
+        actionSuggestions.insert(
+            {"/interaction_profiles/htc/vive_tracker_htcx", {
+                {"hips_pose",       "/usr/vive_tracker_htcx/role/waist/input/grip/pose"},
+                {"chest_pose",      "/usr/vive_tracker_htcx/role/chest/input/grip/pose"},
+                {"left_foot_pose",  "/usr/vive_tracker_htcx/role/left_foot/input/grip/pose"},
+                {"right_foot_pose", "/usr/vive_tracker_htcx/role/right_foot/input/grip/pose"},
+            }}
+        );
+    }
 
     for (const auto& [id, args] : actionTypes) {
         auto friendlyName = args.first;
@@ -620,12 +940,62 @@ bool OpenXrInputPlugin::InputDevice::initActions() {
         xrCheck(_context->_instance, _context->xrCreateHandTrackerEXT(_context->_session, &createInfo, &_handTracker[1]), "Failed to create right hand tracker");
     }
 
+    if (_context->_MNDX_xdevSpaceSupported) {
+        _xdev.clear();
+
+        XrXDevListMNDX xdevList;
+        std::vector<XrXDevIdMNDX> xdevIDs(MAX_TRACKER_COUNT);
+        uint32_t xdevIDsCount = 0;
+
+        XrCreateXDevListInfoMNDX createInfo = {.type = XR_TYPE_CREATE_XDEV_LIST_INFO_MNDX};
+
+        _context->xrCreateXDevListMNDX(_context->_session, &createInfo, &xdevList);
+        _context->xrEnumerateXDevsMNDX(xdevList, MAX_TRACKER_COUNT, &xdevIDsCount, xdevIDs.data());
+
+        // shrink the list to the number of xdevs we actually received
+        xdevIDs.resize(xdevIDsCount);
+
+        for (const auto id : xdevIDs) {
+            XrGetXDevInfoMNDX info = {.type = XR_TYPE_GET_XDEV_INFO_MNDX};
+            XrXDevPropertiesMNDX properties = {.type = XR_TYPE_XDEV_PROPERTIES_MNDX};
+
+            info.id = id;
+            _context->xrGetXDevPropertiesMNDX(xdevList, &info, &properties);
+
+            qCDebug(xr_input_cat, "XDev %lx \"%s\"", id, properties.name);
+
+            if (std::string(properties.name).find("Tracker") == std::string::npos) {
+                // it's probably a headset or a controller, discard
+                continue;
+            }
+
+            XDevTracker tracker;
+            tracker.properties = properties;
+
+            tracker.pose_channel = {};
+
+            XrCreateXDevSpaceInfoMNDX createSpaceInfo = {
+                .type = XR_TYPE_CREATE_XDEV_SPACE_INFO_MNDX,
+                .next = nullptr,
+                .xdevList = xdevList,
+                .id = id,
+                .offset = { {0, 0, 0, 1}, {} },
+            };
+
+            _context->xrCreateXDevSpaceMNDX(_context->_session, &createSpaceInfo, &tracker.space);
+
+            _xdev.insert({id, tracker});
+        }
+    }
+
     _actionsInitialized = true;
 
     return true;
 }
 
 void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::InputCalibrationData& inputCalibrationData) {
+    using namespace controller;
+
     _poseStateMap.clear();
     _buttonPressedMap.clear();
     _trackedControllers = 2;
@@ -669,37 +1039,56 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     static const glm::quat rightRotationOffset = glm::inverse(rightQuarterZ * eighthX) * touchToHand;
 
     for (int i = 0; i < HAND_COUNT; i++) {
-        auto hand_path = (i == 0) ? "left_pose" : "right_pose";
-        XrSpaceLocation handLocation = _actions.at(hand_path)->getPose();
+        auto palm_path = (i == 0) ? "left_palm_pose" : "right_palm_pose";
+        auto grip_path = (i == 0) ? "left_grip_pose" : "right_grip_pose";
+
+        bool usingPalm = false;
+        XrSpaceLocation handLocation;
+
+        // use the palm pose if it's supported
+        if (_context->_palmPoseSupported && _actions.at(palm_path)->isPoseActive()) {
+            handLocation = _actions.at(palm_path)->getPose();
+            usingPalm = true;
+        } else {
+            handLocation = _actions.at(grip_path)->getPose();
+        }
+
         bool locationValid = (handLocation.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
         if (locationValid) {
             vec3 translation = xrVecToGlm(handLocation.pose.position);
             quat rotation = xrQuatToGlm(handLocation.pose.orientation);
-            auto pose = controller::Pose(translation, rotation);
+            auto pose = Pose(translation, rotation);
             glm::mat4 handOffset = i == 0 ? glm::toMat4(leftRotationOffset) : glm::toMat4(rightRotationOffset);
 
             glm::mat4 posOffset(1.0f);
 
-            // vive controllers have bugged poses that aren't in the grip or aim position,
-            // they're always at the top near the tracking ring
-            if (_context->_stickEmulation) {
-                posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? 0.1f : -0.1f));
-                posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.16f);
-                posOffset *= glm::translate(glm::vec3(handOffset[2]) * -0.02f);
+            if (usingPalm) {
+                posOffset *= glm::translate(Vectors::UNIT_Z * 0.06f);
+                posOffset *= glm::rotate(PI / 4.0f, Vectors::UNIT_X);
             } else {
-                posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? -0.07f : 0.07f));
-                posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.10f);
-                posOffset *= glm::translate(glm::vec3(handOffset[2]) * -0.01f);
+                // Vive controllers have bugged poses that aren't in the grip or aim position,
+                // they're always at the top near the tracking ring. This is how all runtimes
+                // that currently support them behave, and it's probably here to stay.
+                if (_context->_vivePoseHack[i]) {
+                    posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? 0.1f : -0.1f));
+                    posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.16f);
+                    posOffset *= glm::translate(glm::vec3(handOffset[2]) * -0.02f);
+                } else {
+                    posOffset *= glm::translate(glm::vec3(handOffset[0]) * (i == 0 ? -0.08f : 0.08f));
+                    posOffset *= glm::translate(glm::vec3(handOffset[1]) * -0.10f);
+                    posOffset *= glm::translate(glm::vec3(handOffset[2]) * -0.01f);
+                    posOffset *= glm::rotate(PI / -8.0f, Vectors::UNIT_X);
+                }
             }
 
-            _poseStateMap[i == 0 ? controller::LEFT_HAND : controller::RIGHT_HAND] =
+            _poseStateMap[i == 0 ? LEFT_HAND : RIGHT_HAND] =
                 pose.postTransform(posOffset).postTransform(handOffset).transform(sensorToAvatar);
         }
     }
 
     glm::mat4 defaultHeadOffset;
     float eyeZOffset = 0.16f;
-    if (inputCalibrationData.hmdAvatarAlignmentType == controller::HmdAvatarAlignmentType::Eyes) {
+    if (inputCalibrationData.hmdAvatarAlignmentType == HmdAvatarAlignmentType::Eyes) {
         // align the eyes of the user with the eyes of the avatar
         defaultHeadOffset = Matrices::Y_180 * (glm::inverse(inputCalibrationData.defaultCenterEyeMat) * inputCalibrationData.defaultHeadMat);
 
@@ -712,14 +1101,16 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     // try to account for weirdness with HMD view being inside the root of the head bone
     auto headCorrectionA = glm::translate(glm::vec3(0.0f, 0.16f, eyeZOffset));
     auto headCorrectionB = glm::translate(glm::vec3(0.0f, -0.2f, 0.0f));
-    _poseStateMap[controller::HEAD] = _context->_lastHeadPose.postTransform(headCorrectionA).postTransform(defaultHeadOffset).postTransform(headCorrectionB).transform(sensorToAvatar);
+    _poseStateMap[HEAD] = _context->_lastHeadPose.postTransform(headCorrectionA).postTransform(defaultHeadOffset).postTransform(headCorrectionB).transform(sensorToAvatar);
 
-    std::vector<std::pair<std::string, controller::StandardAxisChannel>> floatsToUpdate = {
-        {"left_trigger_value", controller::LT},
-        {"left_squeeze_value", controller::LEFT_GRIP},
+    std::vector<std::pair<std::string, StandardAxisChannel>> floatsToUpdate = {
+        {"left_trigger_value", LT},
+        {"left_squeeze_value", LEFT_GRIP},
+        {"left_trackpad_click", (StandardAxisChannel)LEFT_TRACKPAD_PRESS},
 
-        {"right_trigger_value", controller::RT},
-        {"right_squeeze_value", controller::RIGHT_GRIP},
+        {"right_trigger_value", RT},
+        {"right_squeeze_value", RIGHT_GRIP},
+        {"right_trackpad_click", (StandardAxisChannel)RIGHT_TRACKPAD_PRESS},
     };
 
     for (const auto& [name, channel] : floatsToUpdate) {
@@ -729,26 +1120,29 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         }
     }
 
-    // emulate stick clicks for controllers that don't have them
+    // Vive and Index controllers have a physical trigger click, but most
+    // software only checks for /trigger/value ≈ 1, even on those controllers.
+    // The virtual "trigger click" button is still required internally
+    // for laser interactiom to work properly, so we emulate it here.
     {
-        const auto& left_trigger = _actions.at("left_trigger_value")->getFloat();
-        const auto& left_click = _actions.at("left_trigger_click")->getBool();
+        auto left_trigger = _actions.at("left_trigger_value")->getFloat();
+        auto right_trigger = _actions.at("right_trigger_value")->getFloat();
 
-        const auto& right_trigger = _actions.at("right_trigger_value")->getFloat();
-        const auto& right_click = _actions.at("right_trigger_click")->getBool();
-
-        if (!left_click.isActive && (left_trigger.isActive && left_trigger.currentState > 0.9f)) {
-            _buttonPressedMap.insert(controller::LT_CLICK);
+        // TODO: Customisable click threshold?
+        if (left_trigger.isActive && left_trigger.currentState >= 0.95f) {
+            _buttonPressedMap.insert(LT_VIRTUAL_CLICK);
         }
 
-        if (!right_click.isActive && (right_trigger.isActive && right_trigger.currentState > 0.9f)) {
-            _buttonPressedMap.insert(controller::RT_CLICK);
+        if (right_trigger.isActive && right_trigger.currentState >= 0.95f) {
+            _buttonPressedMap.insert(RT_VIRTUAL_CLICK);
         }
     }
 
-    std::vector<std::tuple<std::string, controller::StandardAxisChannel, controller::StandardAxisChannel>> axesToUpdate = {
-        {"left_thumbstick", controller::LX, controller::LY},
-        {"right_thumbstick", controller::RX, controller::RY},
+    std::vector<std::tuple<std::string, StandardAxisChannel, StandardAxisChannel>> axesToUpdate = {
+        {"left_thumbstick", LX, LY},
+        {"left_trackpad", (StandardAxisChannel)LEFT_TRACKPAD_X, (StandardAxisChannel)LEFT_TRACKPAD_Y},
+        {"right_thumbstick", RX, RY},
+        {"right_trackpad", (StandardAxisChannel)RIGHT_TRACKPAD_X, (StandardAxisChannel)RIGHT_TRACKPAD_Y},
     };
 
     for (const auto& [name, x_channel, y_channel] : axesToUpdate) {
@@ -759,18 +1153,26 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         }
     }
 
-    std::vector<std::pair<std::string, controller::StandardButtonChannel>> buttonsToUpdate = {
-        {"left_primary_click", controller::LEFT_PRIMARY_THUMB},
-        {"left_secondary_click", controller::LEFT_SECONDARY_THUMB},
-        {"left_trigger_click", controller::LT_CLICK},
-        {"left_thumbstick_click", controller::LS},
-        {"left_thumbstick_touch", controller::LS_TOUCH},
+    std::vector<std::pair<std::string, StandardButtonChannel>> buttonsToUpdate = {
+        {"left_trigger_click", LT_CLICK},
+        {"left_primary_click", LEFT_PRIMARY_THUMB},
+        {"left_primary_touch", LEFT_PRIMARY_THUMB_TOUCH},
+        {"left_secondary_click", LEFT_SECONDARY_THUMB},
+        {"left_secondary_touch", LEFT_SECONDARY_THUMB_TOUCH},
+        {"left_thumbstick_click", LS},
+        {"left_thumbstick_touch", LS_TOUCH},
+        {"left_trigger_touch", (StandardButtonChannel)LT_TOUCH},
+        {"left_trackpad_touch", (StandardButtonChannel)LEFT_TRACKPAD_TOUCH},
 
-        {"right_primary_click", controller::RIGHT_PRIMARY_THUMB},
-        {"right_secondary_click", controller::RIGHT_SECONDARY_THUMB},
-        {"right_trigger_click", controller::RT_CLICK},
-        {"right_thumbstick_click", controller::RS},
-        {"right_thumbstick_touch", controller::RS_TOUCH},
+        {"right_trigger_click", RT_CLICK},
+        {"right_primary_click", RIGHT_PRIMARY_THUMB},
+        {"right_primary_touch", RIGHT_PRIMARY_THUMB_TOUCH},
+        {"right_secondary_click", RIGHT_SECONDARY_THUMB},
+        {"right_secondary_touch", RIGHT_SECONDARY_THUMB_TOUCH},
+        {"right_thumbstick_click", RS},
+        {"right_thumbstick_touch", RS_TOUCH},
+        {"right_trigger_touch", (StandardButtonChannel)RT_TOUCH},
+        {"right_trackpad_touch", (StandardButtonChannel)RIGHT_TRACKPAD_TOUCH},
     };
 
     for (const auto& [name, channel] : buttonsToUpdate) {
@@ -780,74 +1182,113 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         }
     }
 
-    // emulate primary button for controllers with only one physical button,
-    // but not on vive controllers because we have special behavior there already
-    if (!_context->_stickEmulation) {
-        const auto& left_click = _actions.at("left_thumbstick_click")->getBool();
-        const auto& right_click = _actions.at("right_thumbstick_click")->getBool();
-        const auto& left_primary = _actions.at("left_primary_click")->getBool();
-        const auto& right_primary = _actions.at("right_primary_click")->getBool();
+    setupControllerFlags();
 
-        if (!left_primary.isActive && left_click.currentState) {
-            _buttonPressedMap.insert(controller::LEFT_PRIMARY_THUMB);
-        }
-
-        if (!right_primary.isActive && right_click.currentState) {
-            _buttonPressedMap.insert(controller::RIGHT_PRIMARY_THUMB);
-        }
+    // TODO: Fix up and finish the HTCX_vive_tracker_interaction support
+    if (_context->_HTCX_viveTrackerInteractionSupported) {
+        updateBodyFromViveTrackers(sensorToAvatar);
+    } else if (_context->_MNDX_xdevSpaceSupported) {
+        updateBodyFromXDevSpaces(sensorToAvatar);
     }
 
-    if (_context->_stickEmulation) {
-        emulateStickFromTrackpad();
+    if (_wantsCalibrate) {
+        calibratePucks(inputCalibrationData);
     }
 
-    if (_context->_handTrackingSupported) {
-        for (int i = 0; i < HAND_COUNT; i++) {
-            getHandTrackingInputs(i, sensorToAvatar);
-        }
+    for (int i = 0; i < HAND_COUNT; i++) {
+        getHandTrackingInputs(i, sensorToAvatar);
     }
 }
 
-void OpenXrInputPlugin::InputDevice::emulateStickFromTrackpad() {
-    auto left_stick = _actions.at("left_thumbstick")->getVector2f().currentState;
-    auto right_stick = _actions.at("right_thumbstick")->getVector2f().currentState;
-    auto left_click = _actions.at("left_thumbstick_click")->getBool().currentState;
-    auto right_click = _actions.at("right_thumbstick_click")->getBool().currentState;
+void OpenXrInputPlugin::InputDevice::setupControllerFlags() {
+    using namespace controller;
 
-    // set the axes to zero if the trackpad isn't clicked in
-    if (!right_click) {
-        _axisStateMap[controller::RX].value = 0.0f;
-        _axisStateMap[controller::RY].value = 0.0f;
-    }
+    auto left_primary = _actions.at("left_primary_click")->getBool();
+    auto left_primary_touch = _actions.at("left_primary_touch")->getBool();
+    auto left_thumbstick = _actions.at("left_thumbstick")->getVector2f();
+    auto left_trackpad = _actions.at("left_trackpad")->getVector2f();
+    auto left_trigger_click = _actions.at("left_trigger_click")->getBool();
 
-    if (!left_click) {
-        _axisStateMap[controller::LX].value = 0.0f;
-        _axisStateMap[controller::LY].value = 0.0f;
-    }
+    auto right_primary = _actions.at("right_primary_click")->getBool();
+    auto right_primary_touch = _actions.at("right_primary_touch")->getBool();
+    auto right_thumbstick = _actions.at("right_thumbstick")->getVector2f();
+    auto right_trackpad = _actions.at("right_trackpad")->getVector2f();
+    auto right_trigger_click = _actions.at("right_trigger_click")->getBool();
 
-    // "primary" button on trackpad center
-    if (
-        left_click &&
-        left_stick.x > -0.4f &&
-        left_stick.x < 0.4f &&
-        left_stick.y > -0.4f &&
-        left_stick.y < 0.4f
-    ) {
-        _buttonPressedMap.insert(controller::LEFT_PRIMARY_THUMB);
-    }
+    if (left_primary.isActive) { _buttonPressedMap.insert(LEFT_HAS_PRIMARY); }
+    if (left_trackpad.isActive) { _buttonPressedMap.insert(LEFT_HAS_TRACKPAD); }
+    if (left_thumbstick.isActive) { _buttonPressedMap.insert(LEFT_HAS_THUMBSTICK); }
 
-    if (
-        right_click &&
-        right_stick.x > -0.4f &&
-        right_stick.x < 0.4f &&
-        right_stick.y > -0.4f &&
-        right_stick.y < 0.4f
-    ) {
-        _buttonPressedMap.insert(controller::RIGHT_PRIMARY_THUMB);
-    }
+    // Every controller in the OpenXR spec that has
+    // /input/a/touch also has /input/trigger/touch,
+    // so we can safely use that for hand pose simulation
+    if (left_primary_touch.isActive) { _buttonPressedMap.insert(LEFT_HAS_CAPACITIVE_TOUCH); }
+    if (left_trigger_click.isActive) { _buttonPressedMap.insert(LEFT_HAS_TRIGGER_CLICK); }
+
+    if (right_primary.isActive) { _buttonPressedMap.insert(RIGHT_HAS_PRIMARY); }
+    if (right_trackpad.isActive) { _buttonPressedMap.insert(RIGHT_HAS_TRACKPAD); }
+    if (right_thumbstick.isActive) { _buttonPressedMap.insert(RIGHT_HAS_THUMBSTICK); }
+
+    if (right_primary_touch.isActive) { _buttonPressedMap.insert(RIGHT_HAS_CAPACITIVE_TOUCH); }
+    if (right_trigger_click.isActive) { _buttonPressedMap.insert(RIGHT_HAS_TRIGGER_CLICK); }
 }
 
 void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& sensorToAvatar) {
+    using namespace controller;
+
+    // simple index/thumb/rest tracking from button inputs
+    if (_buttonPressedMap.contains(LEFT_HAS_CAPACITIVE_TOUCH) || _buttonPressedMap.contains(LEFT_HAS_TRACKPAD)) {
+        auto left_trigger_touch = _actions.at("left_trigger_touch")->getBool().currentState;
+        auto left_trigger = _actions.at("left_trigger_value")->getFloat().currentState;
+
+        if (!(left_trigger_touch || left_trigger > 0.2f)) {
+            _buttonPressedMap.insert(LEFT_INDEX_POINT);
+        }
+
+        auto left_primary_touch = _actions.at("left_primary_touch")->getBool().currentState;
+        auto left_secondary_touch = _actions.at("left_secondary_touch")->getBool().currentState;
+        auto left_thumbstick_touch = _actions.at("left_thumbstick_touch")->getBool().currentState;
+        auto left_trackpad_touch = _actions.at("left_trackpad_touch")->getBool().currentState;
+
+        if (
+            !left_primary_touch &&
+            !left_secondary_touch &&
+            !left_thumbstick_touch &&
+            !left_trackpad_touch
+        ) {
+            _buttonPressedMap.insert(LEFT_THUMB_UP);
+        }
+    }
+
+    if (_buttonPressedMap.contains(RIGHT_HAS_CAPACITIVE_TOUCH) || _buttonPressedMap.contains(RIGHT_HAS_TRACKPAD)) {
+        auto right_trigger_touch = _actions.at("right_trigger_touch")->getBool().currentState;
+        auto right_trigger = _actions.at("right_trigger_value")->getFloat().currentState;
+
+        if (!(right_trigger_touch || right_trigger > 0.2f)) {
+            _buttonPressedMap.insert(RIGHT_INDEX_POINT);
+        }
+
+        auto right_primary_touch = _actions.at("right_primary_touch")->getBool().currentState;
+        auto right_secondary_touch = _actions.at("right_secondary_touch")->getBool().currentState;
+        auto right_thumbstick_touch = _actions.at("right_thumbstick_touch")->getBool().currentState;
+        auto right_trackpad_touch = _actions.at("right_trackpad_touch")->getBool().currentState;
+
+        if (
+            !right_primary_touch &&
+            !right_secondary_touch &&
+            !right_thumbstick_touch &&
+            !right_trackpad_touch
+        ) {
+            _buttonPressedMap.insert(RIGHT_THUMB_UP);
+        }
+    }
+
+    // if real hand tracking isn't available,
+    // don't do any more than the capacitive touch tracking
+    if (!_context->_handTrackingSupported) {
+        return;
+    }
+
     if (_handTracker[i] == XR_NULL_HANDLE) { return; }
     if (!_context->_lastPredictedDisplayTime.has_value()) { return; }
 
@@ -884,7 +1325,7 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
     // * Finger bone chain ends at the knuckles, except for the thumb, which has a metacarpal
     // * Thumb tip has an extra bone
     //
-    auto xrJointToGlm = [&](int joint) -> controller::Pose {
+    auto xrJointToGlm = [&](int joint) -> Pose {
         auto position = xrVecToGlm(joints[joint].pose.position);
         auto rotation = xrQuatToGlm(joints[joint].pose.orientation);
 
@@ -898,28 +1339,119 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
         rotation = glm::rotate(rotation, glm::radians(90.0f), Vectors::UNIT_X);
         rotation = glm::rotate(rotation, glm::radians(180.0f), Vectors::UNIT_Z);
 
-        return controller::Pose(position, rotation).transform(sensorToAvatar);
+        return Pose(position, rotation).transform(sensorToAvatar);
     };
 
-    _poseStateMap[i == 0 ? controller::LEFT_HAND : controller::RIGHT_HAND] = xrJointToGlm(XR_HAND_JOINT_WRIST_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND : RIGHT_HAND] = xrJointToGlm(XR_HAND_JOINT_WRIST_EXT);
 
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_THUMB1 : controller::RIGHT_HAND_THUMB1] = xrJointToGlm(XR_HAND_JOINT_THUMB_METACARPAL_EXT);
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_THUMB2 : controller::RIGHT_HAND_THUMB2] = xrJointToGlm(XR_HAND_JOINT_THUMB_PROXIMAL_EXT);
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_THUMB3 : controller::RIGHT_HAND_THUMB3] = xrJointToGlm(XR_HAND_JOINT_THUMB_DISTAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_THUMB1 : RIGHT_HAND_THUMB1] = xrJointToGlm(XR_HAND_JOINT_THUMB_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_THUMB2 : RIGHT_HAND_THUMB2] = xrJointToGlm(XR_HAND_JOINT_THUMB_PROXIMAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_THUMB3 : RIGHT_HAND_THUMB3] = xrJointToGlm(XR_HAND_JOINT_THUMB_DISTAL_EXT);
 
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_INDEX1 : controller::RIGHT_HAND_INDEX1] = xrJointToGlm(XR_HAND_JOINT_INDEX_PROXIMAL_EXT);
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_INDEX2 : controller::RIGHT_HAND_INDEX2] = xrJointToGlm(XR_HAND_JOINT_INDEX_INTERMEDIATE_EXT);
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_INDEX3 : controller::RIGHT_HAND_INDEX3] = xrJointToGlm(XR_HAND_JOINT_INDEX_DISTAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_INDEX1 : RIGHT_HAND_INDEX1] = xrJointToGlm(XR_HAND_JOINT_INDEX_PROXIMAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_INDEX2 : RIGHT_HAND_INDEX2] = xrJointToGlm(XR_HAND_JOINT_INDEX_INTERMEDIATE_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_INDEX3 : RIGHT_HAND_INDEX3] = xrJointToGlm(XR_HAND_JOINT_INDEX_DISTAL_EXT);
 
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_MIDDLE1 : controller::RIGHT_HAND_MIDDLE1] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_PROXIMAL_EXT);
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_MIDDLE2 : controller::RIGHT_HAND_MIDDLE2] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_INTERMEDIATE_EXT);
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_MIDDLE3 : controller::RIGHT_HAND_MIDDLE3] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_DISTAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_MIDDLE1 : RIGHT_HAND_MIDDLE1] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_PROXIMAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_MIDDLE2 : RIGHT_HAND_MIDDLE2] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_INTERMEDIATE_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_MIDDLE3 : RIGHT_HAND_MIDDLE3] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_DISTAL_EXT);
 
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_RING1 : controller::RIGHT_HAND_RING1] = xrJointToGlm(XR_HAND_JOINT_RING_PROXIMAL_EXT);
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_RING2 : controller::RIGHT_HAND_RING2] = xrJointToGlm(XR_HAND_JOINT_RING_INTERMEDIATE_EXT);
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_RING3 : controller::RIGHT_HAND_RING3] = xrJointToGlm(XR_HAND_JOINT_RING_DISTAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_RING1 : RIGHT_HAND_RING1] = xrJointToGlm(XR_HAND_JOINT_RING_PROXIMAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_RING2 : RIGHT_HAND_RING2] = xrJointToGlm(XR_HAND_JOINT_RING_INTERMEDIATE_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_RING3 : RIGHT_HAND_RING3] = xrJointToGlm(XR_HAND_JOINT_RING_DISTAL_EXT);
 
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_PINKY1 : controller::RIGHT_HAND_PINKY1] = xrJointToGlm(XR_HAND_JOINT_LITTLE_PROXIMAL_EXT);
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_PINKY2 : controller::RIGHT_HAND_PINKY2] = xrJointToGlm(XR_HAND_JOINT_LITTLE_INTERMEDIATE_EXT);
-    _poseStateMap[i == 0 ? controller::LEFT_HAND_PINKY3 : controller::RIGHT_HAND_PINKY3] = xrJointToGlm(XR_HAND_JOINT_LITTLE_DISTAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_PINKY1 : RIGHT_HAND_PINKY1] = xrJointToGlm(XR_HAND_JOINT_LITTLE_PROXIMAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_PINKY2 : RIGHT_HAND_PINKY2] = xrJointToGlm(XR_HAND_JOINT_LITTLE_INTERMEDIATE_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_PINKY3 : RIGHT_HAND_PINKY3] = xrJointToGlm(XR_HAND_JOINT_LITTLE_DISTAL_EXT);
+}
+
+void OpenXrInputPlugin::InputDevice::calibratePucks(const controller::InputCalibrationData& data) {
+    using namespace controller;
+
+    static const std::array posesToCalibrate = {
+        LEFT_FOOT, RIGHT_FOOT, HIPS, SPINE2,
+    };
+
+    for (auto channel : posesToCalibrate) {
+        // not connected, don't calibrate
+        if (!_poseStateMap[channel].isValid()) { continue; }
+
+        // get the heading of the headset for the forward direction
+        auto heading = glm::eulerAngles(_context->_lastHeadPose.getRotation()).y;
+        auto headAngle = glm::inverse(quat(vec3(0.0f, heading, 0.0f)));
+
+        //auto position = headAngle * _poseStateMap[channel].getTranslation();
+        auto rotation = headAngle * _poseStateMap[channel].getRotation();
+        auto offset = defaultPoseOffset(data, channel);
+
+        _trackerCalibrations[channel] = Pose(
+            glm::inverse(rotation) * vec3(0.0f, 0.0f, channel == HIPS || channel == SPINE2 ? 0.2f : 0.1f),
+            glm::inverse(rotation) * quat(offset)
+        );
+    }
+
+    _wantsCalibrate = false;
+}
+
+void OpenXrInputPlugin::InputDevice::updateBodyFromViveTrackers(const mat4& sensorToAvatar) {
+    using namespace controller;
+
+    auto handlePose = [&](std::string action, StandardPoseChannel channel) {
+        XrSpaceLocation location = _actions.at(action)->getPose();
+        bool locationValid = (location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
+        if (locationValid) {
+            vec3 translation = xrVecToGlm(location.pose.position);
+            quat rotation = xrQuatToGlm(location.pose.orientation);
+            auto pose = controller::Pose(translation, rotation);
+
+            if (_wantsCalibrate) {
+                // use the raw sensor pose for calibration
+                _poseStateMap[channel] = pose;
+            } else {
+                if (_trackerCalibrations.contains(channel)) {
+                    _poseStateMap[channel] = pose.postTransform(_trackerCalibrations[channel].getMatrix()).transform(sensorToAvatar);
+                } else {
+                    _poseStateMap[channel] = pose.transform(sensorToAvatar);
+                }
+            }
+        }
+    };
+
+    handlePose("hips_pose", HIPS);
+    handlePose("chest_pose", SPINE2);
+    handlePose("left_foot_pose", LEFT_FOOT);
+    handlePose("right_foot_pose", RIGHT_FOOT);
+}
+
+void OpenXrInputPlugin::InputDevice::updateBodyFromXDevSpaces(const mat4& sensorToAvatar) {
+    using namespace controller;
+
+    for (const auto& [id, xdev] : _xdev) {
+        XrSpaceLocation location = {.type = XR_TYPE_SPACE_LOCATION};
+        if (_context->_lastPredictedDisplayTime.has_value()) {
+            XrResult result = xrLocateSpace(xdev.space, _context->_stageSpace, _context->_lastPredictedDisplayTime.value(), &location);
+            xrCheck(_context->_instance, result, "Failed to locate xdev space!");
+        }
+
+        bool locationValid = (location.locationFlags & XR_SPACE_LOCATION_ORIENTATION_VALID_BIT) != 0;
+
+        if (locationValid && xdev.pose_channel.has_value()) {
+            vec3 translation = xrVecToGlm(location.pose.position);
+            quat rotation = xrQuatToGlm(location.pose.orientation);
+            auto pose = controller::Pose(translation, rotation);
+
+            auto channel = xdev.pose_channel.value();
+
+            if (_wantsCalibrate) {
+                // use the raw sensor pose for calibration
+                _poseStateMap[channel] = pose;
+            } else {
+                if (_trackerCalibrations.contains(channel)) {
+                    _poseStateMap[channel] = pose.postTransform(_trackerCalibrations[channel].getMatrix()).transform(sensorToAvatar);
+                } else {
+                    _poseStateMap[channel] = pose.transform(sensorToAvatar);
+                }
+            }
+        }
+    }
 }

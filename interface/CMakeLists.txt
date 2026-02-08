@@ -247,6 +247,7 @@ target_breakpad()
 target_json()
 target_glm()
 target_discord_rpc()
+target_quazip()
 
 # perform standard include and linking for found externals
 foreach(EXTERNAL ${OPTIONAL_EXTERNALS})
@@ -455,8 +456,13 @@ set(TARGET_INSTALL_COMPONENT ${CLIENT_COMPONENT})
 manually_install_openssl_for_qt()
 package_libraries_for_deployment()
 
-find_package(GifCreator REQUIRED)
-target_link_libraries(${TARGET_NAME} GifCreator::GifCreator)
+if(OVERTE_USE_SYSTEM_LIBS)
+    find_path(GIFCREATOR_INCLUDE_DIRS "GifCreator/GifCreator.h")
+    target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${GIFCREATOR_INCLUDE_DIRS} "${GIFCREATOR_INCLUDE_DIRS}/GifCreator")
+else()
+    find_package(GifCreator REQUIRED)
+    target_link_libraries(${TARGET_NAME} GifCreator::GifCreator)
+endif()
 
 # tell CMake to exclude ui_console.h for policy CMP0071
 set_property(SOURCE ui_console.h PROPERTY SKIP_AUTOMOC ON)

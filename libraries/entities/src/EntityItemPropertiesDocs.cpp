@@ -196,6 +196,7 @@
  *
  * @comment The different entity types have additional properties as follows:
  * @see {@link Entities.EntityProperties-Box|EntityProperties-Box}
+ * @see {@link Entities.EntityProperties-Canvas|EntityProperties-Canvas}
  * @see {@link Entities.EntityProperties-Empty|EntityProperties-Empty}
  * @see {@link Entities.EntityProperties-Gizmo|EntityProperties-Gizmo}
  * @see {@link Entities.EntityProperties-Grid|EntityProperties-Grid}
@@ -355,7 +356,7 @@
  */
 
 /*@jsdoc
- * The <code>"Model"</code> {@link Entities.EntityType|EntityType} displays a glTF, FBX, or OBJ model. When adding an entity,
+ * The <code>"Model"</code> {@link Entities.EntityType|EntityType} displays a glTF, VRM, FBX, or OBJ model. When adding an entity,
  * if no <code>dimensions</code> value is specified then the model is automatically sized to its
  * <code>{@link Entities.EntityProperties|naturalDimensions}</code>. It has properties in addition to the common
  * {@link Entities.EntityProperties|EntityProperties}.
@@ -364,7 +365,7 @@
  * @property {Vec3} dimensions=0.1,0.1,0.1 - The dimensions of the entity. When adding an entity, if no <code>dimensions</code>
  *     value is specified then the model is automatically sized to its
  *     <code>{@link Entities.EntityProperties|naturalDimensions}</code>.
- * @property {string} modelURL="" - The URL of the glTF, FBX, or OBJ model. glTF models may be in JSON or binary format
+ * @property {string} modelURL="" - The URL of the glTF, VRM, FBX, or OBJ model. glTF models may be in JSON or binary format
  *     (".gltf" or ".glb" URLs respectively). Baked models' URLs have ".baked" before the file type. Model files may also be
  *     compressed in GZ format, in which case the URL ends in ".gz".
  * @property {Vec3} modelScale - The scale factor applied to the model's dimensions.
@@ -996,12 +997,53 @@
  * @example <caption>Create an image entity.</caption>
  * var image = Entities.addEntity({
  *     type: "Image",
- *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -5 })),
- *     dimensions: { x: 0.6, y: 0.3, z: 0.01 },
- *     imageURL: "https://images.pexels.com/photos/1020315/pexels-photo-1020315.jpeg",
+ *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -2 })),
+ *     dimensions: { x: 1.0, y: 0.5, z: 0.01 },
+ *     imageURL: "https://content.overte.org/Bazaar/Assets/Textures/Defaults/Interface/default_image.jpg",
  *     billboardMode: "yaw",
  *     lifetime: 300  // Delete after 5 minutes.
  * });
+ */
+
+/*@jsdoc
+ * The <code>"Canvas"</code> {@link Entities.EntityType|EntityType} is a scriptable image source.
+ * It has properties in addition to the common {@link Entities.EntityProperties|EntityProperties}.
+ * <p class="important">Canvas commands are only useful on client scripts. There currently isn't a way of drawing to a canvas from a server script.</p>
+ *
+ * @typedef {object} Entities.EntityProperties-Canvas
+ * @property {Vec3} dimensions=0.1,0.1,0.1 - The dimensions of the entity. The rendered quad is always in the center of the entity's bounding box.
+ * @property {number} width=128 - The width of the canvas's image in pixels.
+ * @property {number} height=128 - The height of the canvas's image in pixels.
+ * @property {boolean} unlit=false - <code>true</code> if the canvas should be emissive (unlit), <code>false</code> if it shouldn't.
+ * @property {boolean} transparent=false - <code>true</code> if the canvas should be transparent, <code>false</code> if it should be opaque.
+ * @property {Entities.Sampler} sampler - The texture sampler used to render the image.
+ * @property {Entities.Pulse} pulse - Color and alpha pulse.
+ * @example <caption>Create a canvas entity and draw "Hello, world!" into it as text.</caption>
+ * const CanvasCommand = Script.require("canvasCommand");
+ *
+ * const canvas = Entities.addEntity({
+ *     type: "Canvas",
+ *     position: Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: -1 })),
+ *     dimensions: { x: 1, y: 0.5, z: 0.01 },
+ *     lifetime: 30,  // Delete after 30 seconds.
+ *     width: 256,
+ *     height: 128,
+ *     unlit: true,
+ *     transparent: true,
+ * }, "local");
+ *
+ * Entities.canvasPushCommands(canvas, [
+ *     CanvasCommand.color([255, 255, 255, 255]),
+ *     CanvasCommand.font("sans-serif", 20),
+ *     CanvasCommand.fillText(
+ *         "Hello, world!",
+ *         0, 0,
+ *         256, 128,
+ *         CanvasCommand.TEXT_ALIGN_HCENTER | CanvasCommand.TEXT_ALIGN_VCENTER
+ *     ),
+ * ]);
+ *
+ * Entities.canvasCommit(canvas);
  */
 
 /*@jsdoc
