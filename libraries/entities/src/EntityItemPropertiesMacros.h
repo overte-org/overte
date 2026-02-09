@@ -252,7 +252,10 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const Sampler& v) { retur
 #define COPY_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(p, P)                                                             \
     if (((!returnNothingOnEmptyPropertyFlags && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
         (!skipDefaults || defaultEntityProperties._##P != _##P)) {                                                        \
-        if (isMyOwnAvatarEntity || nodeList->getThisNodeCanViewAssetURLs()) {                                             \
+        if (                                                                                                              \
+            isMyOwnAvatarEntity ||                                                                                        \
+            (nodeList->getThisNodeCanViewAssetURLs() && getEntityHostType() != entity::HostType::AVATAR)                  \
+        ) {                                                                                                               \
             ScriptValue V = convertScriptValue(engine, _##P);                                                             \
             properties.setProperty(#P, V);                                                                                \
         } else {                                                                                                          \
@@ -265,7 +268,10 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const Sampler& v) { retur
 #define COPY_GROUP_PROPERTY_TO_QSCRIPTVALUE_IF_URL_PERMISSION(X, G, g, P, p)                                            \
     if (((!returnNothingOnEmptyPropertyFlags && desiredProperties.isEmpty()) || desiredProperties.getHasProperty(X)) && \
         (!skipDefaults || defaultEntityProperties.get##G().get##P() != get##P())) {                                     \
-        if (isMyOwnAvatarEntity || nodeList->getThisNodeCanViewAssetURLs()) {                                           \
+        if (                                                                                                            \
+            isMyOwnAvatarEntity ||                   /* TODO: how do we get entityHostType from a prop group? */        \
+            (nodeList->getThisNodeCanViewAssetURLs() /*&& getEntityHostType() != entity::HostType::AVATAR*/)            \
+        ) {                                                                                                             \
             ScriptValue groupProperties = properties.property(#g);                                                      \
             if (!groupProperties.isValid()) {                                                                           \
                 groupProperties = engine->newObject();                                                                  \
