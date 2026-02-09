@@ -39,6 +39,13 @@ struct EntityPropertyInfo {
     QVariant maximum;
 };
 
+// For keeping track of who owns an avatar entity so private URLs can't be ripped
+enum class AvatarEntityOwnership {
+    Nobody,
+    MyAvatar,
+    OtherAvatar,
+};
+
 template <typename T>
 EntityPropertyInfo makePropertyInfo(EntityPropertyList p, typename std::enable_if<!std::is_integral<T>::value>::type* = 0) {
     return EntityPropertyInfo(p);
@@ -253,8 +260,8 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const Sampler& v) { retur
     if (((!returnNothingOnEmptyPropertyFlags && _desiredProperties.isEmpty()) || _desiredProperties.getHasProperty(p)) && \
         (!skipDefaults || defaultEntityProperties._##P != _##P)) {                                                        \
         if (                                                                                                              \
-            isMyOwnAvatarEntity ||                                                                                        \
-            (nodeList->getThisNodeCanViewAssetURLs() && getEntityHostType() != entity::HostType::AVATAR)                  \
+            ownership == AvatarEntityOwnership::MyAvatar ||                                                               \
+            (nodeList->getThisNodeCanViewAssetURLs() && ownership != AvatarEntityOwnership::OtherAvatar)                  \
         ) {                                                                                                               \
             ScriptValue V = convertScriptValue(engine, _##P);                                                             \
             properties.setProperty(#P, V);                                                                                \
@@ -269,8 +276,8 @@ inline ScriptValue convertScriptValue(ScriptEngine* e, const Sampler& v) { retur
     if (((!returnNothingOnEmptyPropertyFlags && desiredProperties.isEmpty()) || desiredProperties.getHasProperty(X)) && \
         (!skipDefaults || defaultEntityProperties.get##G().get##P() != get##P())) {                                     \
         if (                                                                                                            \
-            isMyOwnAvatarEntity ||                   /* TODO: how do we get entityHostType from a prop group? */        \
-            (nodeList->getThisNodeCanViewAssetURLs() /*&& getEntityHostType() != entity::HostType::AVATAR*/)            \
+            ownership == AvatarEntityOwnership::MyAvatar ||                                                             \
+            (nodeList->getThisNodeCanViewAssetURLs() && ownership != AvatarEntityOwnership::OtherAvatar)                \
         ) {                                                                                                             \
             ScriptValue groupProperties = properties.property(#g);                                                      \
             if (!groupProperties.isValid()) {                                                                           \
@@ -703,7 +710,7 @@ inline Sampler Sampler_convertFromScriptValue(const ScriptValue& v, bool& isVali
                                    ScriptEngine* engine, bool skipDefaults,                                 \
                                    EntityItemProperties& defaultEntityProperties,                           \
                                    bool returnNothingOnEmptyPropertyFlags,                                  \
-                                   bool isMyOwnAvatarEntity) const override;                                \
+                                   AvatarEntityOwnership ownership) const override;                          \
     virtual void copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet,              \
                                      bool& _defaultSettings) override;                                      \
     void merge(const P& other);                                                                             \

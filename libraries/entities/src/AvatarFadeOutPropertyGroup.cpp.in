@@ -35,7 +35,7 @@ void AvatarFadeOutPropertyGroup::setTimingFromString(const QString& timing) {
 }
 
 void AvatarFadeOutPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
-        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, AvatarEntityOwnership ownership) const {
 
 @AvatarFadeOut_GROUP_COPY_TO_SCRIPT@
 
