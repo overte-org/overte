@@ -506,13 +506,18 @@ void VKStrictResourceTexture::transfer(VKBackend &backend) {
     );
 
     // Change texture image layout to shader read after all mip levels have been copied
-    _vkImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    // The barrier command needs to be run on both transfer and graphics queues. Only then image layout changes.
+    _vkImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     vks::tools::setImageLayout(
         copyCmd,
         _vkImage,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        _vkImageLayout,
-        subresourceRange);
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        subresourceRange,
+        device->queueFamilyIndices.transfer,
+        device->queueFamilyIndices.graphics,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
     device->flushCommandBuffer(copyCmd, backend.getContext().transferQueue, device->transferCommandPool);
 
@@ -523,6 +528,33 @@ void VKStrictResourceTexture::transfer(VKBackend &backend) {
 
 void VKStrictResourceTexture::postTransfer(VKBackend &backend) {
     auto device = backend.getContext().device;
+    // VKTODO: in the future this needs to be streamlined as a part of frame command buffer.
+    VkCommandBuffer graphicsCmd = device->createCommandBuffer(device->graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+
+    VkImageSubresourceRange subresourceRange = {};
+    subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    subresourceRange.baseMipLevel = 0;
+    subresourceRange.levelCount = _transferData.mips.size();
+    if (_gpuObject.getType() == Texture::TEX_CUBE) {
+        subresourceRange.layerCount = 6;
+    }else{
+        subresourceRange.layerCount = 1;
+    }
+    vks::tools::setImageLayout(
+        graphicsCmd,
+        _vkImage,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        subresourceRange,
+        device->queueFamilyIndices.transfer,
+        device->queueFamilyIndices.graphics,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+
+    device->flushCommandBuffer(graphicsCmd, backend.getContext().graphicsQueue, device->graphicsCommandPool);
+    // Image is ready to use now.
+    _vkImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
     // Create sampler
     VkSamplerCreateInfo samplerCreateInfo = {};
     samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
