@@ -1,7 +1,7 @@
 #
 #  MemoryDebugger.cmake
 #
-#  Copyright 2021 Vircadia Contributors
+#  Copyright 2021-2026 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -9,11 +9,12 @@
 
 macro(SETUP_THREAD_DEBUGGER)
 if ("$ENV{OVERTE_THREAD_DEBUGGING}")
-  if (OVERTE_MEMORY_DEBUGGING )
-    message(FATAL_ERROR "Thread debugging and memory debugging can't be enabled at the same time." )
-  endif ()
+    message(STATUS "Enabling thread debugging.")
+    if (OVERTE_MEMORY_DEBUGGING)
+        message(FATAL_ERROR "Thread debugging and memory debugging can't be enabled at the same time.")
+    endif ()
 
-  SET(OVERTE_THREAD_DEBUGGING true)
+    SET(OVERTE_THREAD_DEBUGGING true)
 endif ()
 
 if (OVERTE_THREAD_DEBUGGING)

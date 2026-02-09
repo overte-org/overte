@@ -190,10 +190,6 @@ if (OVERTE_DISABLE_KTX_CACHE)
     add_definitions(-DDISABLE_KTX_CACHE)
 endif()
 
-if (UNIX AND DEFINED ENV{HIFI_MEMORY_DEBUGGING})
-  MESSAGE(STATUS "Memory debugging is enabled")
-endif()
-
 # Set SERVER_ONLY and CLIENT_ONLY for later packaging.
 if ((NOT OVERTE_BUILD_CLIENT) AND OVERTE_BUILD_SERVER)
     set(SERVER_ONLY ON CACHE BOOL INTERNAL "")
