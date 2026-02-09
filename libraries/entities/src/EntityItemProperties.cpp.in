@@ -586,6 +586,14 @@ ScriptValue EntityItemProperties::copyToScriptValue(ScriptEngine* engine, bool s
         COPY_PROPERTY_TO_QSCRIPTVALUE(PROP_POSITION, naturalPosition);
     }
 
+    AvatarEntityOwnership ownership = AvatarEntityOwnership::Nobody;
+
+    if (isMyOwnAvatarEntity) {
+        ownership = AvatarEntityOwnership::MyAvatar;
+    } else if (_entityHostType == entity::HostType::AVATAR) {
+        ownership = AvatarEntityOwnership::OtherAvatar;
+    }
+
     // FIXME: Shouldn't provide a shapeType property for Box and Sphere entities.
 @ENTITY_ITEM_PROPERTY_COPY_TO_SCRIPT@
 
