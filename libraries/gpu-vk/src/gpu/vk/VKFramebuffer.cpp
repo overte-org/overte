@@ -63,6 +63,15 @@ void gpu::vk::VKFramebuffer::update() {
                         // VKTODO: how to do this?
                     /*} else if (vkTexture->_target == GL_TEXTURE_2D_MULTISAMPLE) {
                         glNamedFramebufferTexture(_id, colorAttachments[unit], gltexture->_texture, 0);*/
+                    } else if (vkTexture->_target == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                        VKAttachmentCreateInfo attachmentCI {};
+                        attachmentCI.width = vkTexture->_gpuObject.getWidth();
+                        attachmentCI.height = vkTexture->_gpuObject.getHeight();
+                        attachmentCI.layerCount = vkTexture->_gpuObject.getNumSlices();
+                        attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat(), backend->getContext());
+                        attachmentCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+                        attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
+                        addAttachment(attachmentCI, vkTexture);
                     } else {
                         // VKTODO: what is subresource?
                         Q_ASSERT(false);
