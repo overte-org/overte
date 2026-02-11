@@ -378,6 +378,7 @@ void Keyboard::updateTextDisplay() {
 
 void Keyboard::raiseKeyboardAnchor(bool raise) const {
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
+    auto myAvatar = DependencyManager::get<AvatarManager>()->getMyAvatar();
 
     EntityItemProperties properties;
     properties.setVisible(raise);
@@ -386,6 +387,9 @@ void Keyboard::raiseKeyboardAnchor(bool raise) const {
 
     properties.setIgnorePickIntersection(!raise);
     entityScriptingInterface->editEntity(_backPlate.entityID, properties);
+
+    properties.setParentID(raise ? myAvatar->getSelfID() : QUuid());
+    properties.setParentJointIndex(raise ? SENSOR_TO_WORLD_MATRIX_INDEX : 0);
 
     if (_resetKeyboardPositionOnRaise) {
         std::pair<glm::vec3, glm::quat> keyboardLocation = calculateKeyboardPositionAndOrientation();
@@ -873,8 +877,6 @@ void Keyboard::loadKeyboardFile(const QString& keyboardFile) {
             properties.setDimensions(dimensions);
             properties.setPosition(vec3FromVariant(anchorObject["position"].toVariant()));
             properties.setRotation(quatFromVariant(anchorObject["rotation"].toVariant()));
-            properties.setParentID(myAvatar->getSelfID());
-            properties.setParentJointIndex(SENSOR_TO_WORLD_MATRIX_INDEX);
             properties.setUnlit(true);
             properties.setFadeInMode(COMPONENT_MODE_DISABLED);
             properties.setFadeOutMode(COMPONENT_MODE_DISABLED);
