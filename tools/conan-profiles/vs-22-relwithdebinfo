@@ -12,3 +12,5 @@ build_type=RelWithDebInfo
 libnode/*:build_type=Release
 [options]
 Overte/*:qt_source=source
+# Required for building oneTBB.
+hwloc/*:shared=True
