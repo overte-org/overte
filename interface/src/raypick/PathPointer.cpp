@@ -340,7 +340,7 @@ void StartEndRenderState::update(const glm::vec3& origin, const glm::vec3& end, 
         glm::vec3 dim;
         if (distanceScaleEnd) {
             glm::vec3 camPos = qApp->getCamera().getPosition();
-            dim = getEndDim() * std::powf(glm::distance(camPos, end), 0.75f);
+            dim = getEndDim() * std::pow(glm::distance(camPos, end), 0.75f);
         } else {
             dim = getEndDim() * parentScale;
         }
