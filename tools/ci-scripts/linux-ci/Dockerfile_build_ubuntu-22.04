@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-01-01-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
@@ -80,9 +80,9 @@ apt-get -y install $(grep -o '^[^#]*' packages.txt)  # Install packages while ig
 # Install Conan
 apt-get -y install wget
 if [ $(uname -m) = "x86_64" ]; then
-    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.21.0/conan-2.21.0-amd64.deb
+    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.25.2/conan-2.25.2-amd64.deb
 elif [ $(uname -m) = "aarch64" ]; then
-    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.21.0/conan-2.21.0-arm64.deb
+    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.25.2/conan-2.25.2-arm64.deb
 else
     echo "Unsupported architecture: $(uname -m)"
     exit 1
@@ -108,15 +108,6 @@ cat >> ${CONAN_HOME}/profiles/default <<EOFcat
 [conf]
 # Allow Conan to install system packages.
 tools.system.package_manager:mode=install
-# FIXME: Remove once we have full GCC 15 compatibility.
-tools.build:cxxflags=['-include', 'cstdint']
-EOFcat
-
-# We get CMake from Conan to avoid CMake 4.0 which some of our dependencies don't yet build with.
-# FIXME: Remove once all our dependencies have CMake 4.0 compatibility.
-cat >> ${CONAN_HOME}/profiles/default <<EOFcat
-[tool_requires]
-!cmake/*: cmake/[>=3 <4]
 EOFcat
 
 # Try downloading source files from conandata.yml first. Fall back to our backup if the upstream source is down.
@@ -143,7 +134,7 @@ EOF
 #
 # Work around AppImages not executing in Docker. https://github.com/AppImage/AppImageKit/issues/912#issuecomment-528669441
 ENV APPIMAGE_EXTRACT_AND_RUN=1
-ENV CONAN_PROFILE=default
+ENV CONAN_PROFILE="./tools/conan-profiles/linux"
 
 # On macOS the interface target is called "Overte" instead.
 ENV APP_TARGET_NAME=interface
