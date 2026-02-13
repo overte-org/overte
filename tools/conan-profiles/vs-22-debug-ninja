@@ -12,3 +12,5 @@ build_type=Debug
 tools.cmake.cmaketoolchain:generator=Ninja
 [options]
 Overte/*:qt_source=source
+# Required for building oneTBB.
+hwloc/*:shared=True

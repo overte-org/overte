@@ -1,0 +1,16 @@
+include(default)
+
+[settings]
+compiler.cppstd=gnu20
+
+[conf]
+# Avoid dependencies failing to build on GCC 15 and newer.
+tools.build:cxxflags=['-include', 'cstdint']
+
+[tool_requires]
+# Many of our dependencies don't support CMake 4 yet.
+!cmake/*: cmake/[>=3 <4]
+
+[options]
+# Required for building oneTBB.
+hwloc/*:shared=True

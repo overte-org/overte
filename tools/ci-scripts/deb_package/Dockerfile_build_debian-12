@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1.4
 
-# Copyright 2022-2025 Overte e.V.
+# Copyright 2022-2026 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte Server
-# Example build: docker build --no-cache --progress=plain -t overte/overte-server-build:2025-10-24-debian-12-amd64 -f Dockerfile_build_debian-12 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-server-build:2026-02-09-debian-12-amd64 -f Dockerfile_build_debian-12 .
 FROM debian:bookworm
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
@@ -56,9 +56,9 @@ apt-get -y install $(grep -o '^[^#]*' packages.txt)  # Install packages while ig
 # Install Conan
 apt-get -y install wget
 if [ $(uname -m) = "x86_64" ]; then
-    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.21.0/conan-2.21.0-amd64.deb
+    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.25.2/conan-2.25.2-amd64.deb
 elif [ $(uname -m) = "aarch64" ]; then
-    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.21.0/conan-2.21.0-arm64.deb
+    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.25.2/conan-2.25.2-arm64.deb
 else
     echo "Unsupported architecture: $(uname -m)"
     exit 1
@@ -85,13 +85,6 @@ cat >> ${CONAN_HOME}/profiles/default <<EOFcat
 tools.system.package_manager:mode=install
 EOFcat
 
-# We get CMake from Conan to avoid CMake 4.0 which some of our dependencies don't yet build with.
-# FIXME: Remove once all our dependencies have CMake 4.0 compatibility.
-cat >> ${CONAN_HOME}/profiles/default <<EOFcat
-[tool_requires]
-!cmake/*: cmake/[>=3 <4]
-EOFcat
-
 # Try downloading source files from conandata.yml first. Fall back to our backup if the upstream source is down.
 echo "core.sources:download_urls=['origin', 'https://artifactory.overte.org/artifactory/build-dependencies-backup/']" >> ${CONAN_HOME}/global.conf
 echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ${CONAN_HOME}/global.conf
@@ -116,3 +109,4 @@ EOF
 #
 ENV DEBEMAIL=julian.gro@overte.org
 ENV DEBFULLNAME="GitHub Actions CI"
+ENV CONAN_PROFILE="./tools/conan-profiles/linux"

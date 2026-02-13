@@ -4,7 +4,7 @@ is used by multiple team members, and runs on Linux, Windows, macOS. It is prett
 so it supports development for every Overte target platform.
 You may want to use [Jetbrain's Toolbox app](https://www.jetbrains.com/toolbox-app/) to get automatic updates for CLion.
 
-1. Generate the relevant CMake files for the platform you are on. E.g.: `conan install . -s build_type=Release -b missing -pr:b=default -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"`
+1. Generate the relevant CMake files for the platform you are on. E.g.: `conan install . -s build_type=Release -b missing -pr:b=tools/conan-profiles/linux -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"`
    See the relevant BUILD_*.md for more details.
 
 2. To work with different build types, run the `conan install` command again, replacing the `-s build_type=Release` with the relevant build type.
@@ -37,7 +37,7 @@ You may want to use [Jetbrain's Toolbox app](https://www.jetbrains.com/toolbox-a
 # KDevelop
 [KDevelop](https://kdevelop.org/) is a very powerful C++ IDE. While it suffers from some bugs, it is still one of the better IDEs for Overte development on Linux. It also has good QML support.
 
-1. Generate the relevant CMake files for the platform you are on. E.g.: `conan install . -s build_type=Release -b missing -pr:b=default -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"`
+1. Generate the relevant CMake files for the platform you are on. E.g.: `conan install . -s build_type=Release -b missing -pr:b=tools/conan-profiles/linux -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"`
    See the relevant BUILD_*.md for more details.
 2. To work different build types, run the `conan install` command again, replacing the `-s build_type=Release` with the relevant build type.
    E.g. `-s build_type=Debug`. Valid build types are `Release`, `Debug`, and `RelWithDebInfo`.

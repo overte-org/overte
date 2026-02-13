@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1.4
 
-# Copyright 2022-2025 Overte e.V.
+# Copyright 2022-2026 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte Server
-# Example build: docker build --no-cache --progress=plain -t overte/overte-server-build:2025-10-24-fedora-42-amd64 -f Dockerfile_build_fedora-42 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-server-build:2026-02-09-fedora-42-amd64 -f Dockerfile_build_fedora-42 .
 FROM fedora:42
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for Overte Domain server and assignment clients."
@@ -63,15 +63,6 @@ cat >> ${CONAN_HOME}/profiles/default <<EOFcat
 [conf]
 # Allow Conan to install system packages.
 tools.system.package_manager:mode=install
-# FIXME: Remove once we have full GCC 15 compatibility.
-tools.build:cxxflags=['-include', 'cstdint']
-EOFcat
-
-# We get CMake from Conan to avoid CMake 4.0 which some of our dependencies don't yet build with.
-# FIXME: Remove once all our dependencies have CMake 4.0 compatibility.
-cat >> ${CONAN_HOME}/profiles/default <<EOFcat
-[tool_requires]
-!cmake/*: cmake/[>=3 <4]
 EOFcat
 
 # Try downloading source files from conandata.yml first. Fall back to our backup if the upstream source is down.
@@ -98,3 +89,4 @@ EOF
 #
 # Part of .rpm installer filename
 ENV RPM_SHORTHAND=fc42
+ENV CONAN_PROFILE="./tools/conan-profiles/linux"
