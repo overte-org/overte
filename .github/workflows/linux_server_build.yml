@@ -211,19 +211,16 @@ jobs:
       run: cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_TYPE=$OVERTE_RELEASE_TYPE -DOVERTE_RELEASE_NUMBER=$RELEASE_NUMBER -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT $CMAKE_EXTRA
 
     - name: Build Domain Server
-      working-directory: build
       shell: bash
-      run: cmake --build . --target domain-server $CMAKE_BUILD_EXTRA
+      run: cmake --build --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build Assignment Client
-      working-directory: build
       shell: bash
-      run: cmake --build . --target assignment-client $CMAKE_BUILD_EXTRA
+      run: cmake --build --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build Oven
-      working-directory: build
       shell: bash
-      run: cmake --build . --target oven $CMAKE_BUILD_EXTRA
+      run: cmake --build --target oven $CMAKE_BUILD_EXTRA
 
     - name: Package
       working-directory: pkg-scripts
