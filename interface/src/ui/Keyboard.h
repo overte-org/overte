@@ -26,6 +26,7 @@
 #include <SettingHandle.h>
 
 class PointerEvent;
+class KeyEvent;
 
 
 class Key {
@@ -124,6 +125,8 @@ public:
     void loadKeyboardFile(const QString& keyboardFile);
     QSet<QUuid> getKeyIDs();
     QUuid getAnchorID();
+
+    void emitKeyEvent(const KeyEvent& event, bool pressed) const;
 
 public slots:
     void handleTriggerBegin(const QUuid& id, const PointerEvent& event);

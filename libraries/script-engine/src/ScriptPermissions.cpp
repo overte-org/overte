@@ -25,6 +25,8 @@ extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission:
     "Permission to get user's avatar URL",
     // SCRIPT_PERMISSION_BOOKMARKS
     "Permission to view user's bookmarked locations",
+    // SCRIPT_PERMISSION_KEYBOARD_EVENTS
+    "Permission to emit virtual keyboard events",
 };
 
 extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission::SCRIPT_PERMISSIONS_SIZE)> scriptPermissionSettingKeyNames {
@@ -32,6 +34,8 @@ extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission:
     "private/scriptPermissionGetAvatarURLSafeURLs",
     // SCRIPT_PERMISSION_BOOKMARKS
     "private/scriptPermissionBookmarksSafeURLs",
+    // SCRIPT_PERMISSION_KEYBOARD_EVENTS
+    "private/scriptPermissionKeyboardEventsSafeURLs",
 };
 
 extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission::SCRIPT_PERMISSIONS_SIZE)> scriptPermissionSettingEnableKeyNames {
@@ -39,12 +43,16 @@ extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission:
     "private/scriptPermissionGetAvatarURLEnable",
     // SCRIPT_PERMISSION_BOOKMARKS
     "private/scriptPermissionBookmarksEnable",
+    // SCRIPT_PERMISSION_KEYBOARD_EVENTS
+    "private/scriptPermissionKeyboardEventsEnable",
 };
 
 extern const std::array<bool, static_cast<int>(ScriptPermissions::Permission::SCRIPT_PERMISSIONS_SIZE)> scriptPermissionSettingEnableDefaultValues {
     // SCRIPT_PERMISSION_GET_AVATAR_URL
     true,
     // SCRIPT_PERMISSION_BOOKMARKS
+    true,
+    // SCRIPT_PERMISSION_KEYBOARD_EVENTS
     true,
 };
 

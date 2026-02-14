@@ -16,6 +16,7 @@
 #include <QtCore/QUuid>
 
 #include "DependencyManager.h"
+#include "KeyEvent.h"
 
 /*@jsdoc
  * The <code>Keyboard</code> API provides facilities to use an in-world, virtual keyboard. When enabled, this keyboard is 
@@ -101,6 +102,14 @@ public:
      * @returns {boolean} <code>true</code> if the entity is part of the virtual keyboard, <code>false</code> if it isn't.
      */
     Q_INVOKABLE bool containsID(const QUuid& overlayID) const;
+
+    /*@jsdoc
+     * Emits a virtual key event. Protected by the "keyboard events" script permission.
+     * @function Keyboard.emitKeyEvent
+     * @param {KeyEvent} event
+     * @param {boolean} pressed
+     */
+    Q_INVOKABLE void emitKeyEvent(const KeyEvent& event, bool pressed) const;
 
 private:
     bool getPreferMalletsOverLasers() const;

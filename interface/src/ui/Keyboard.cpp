@@ -46,6 +46,7 @@
 #include "raypick/StylusPointer.h"
 #include "GLMHelpers.h"
 #include "Application.h"
+#include "KeyEvent.h"
 
 static const int LEFT_HAND_CONTROLLER_INDEX = 0;
 static const int RIGHT_HAND_CONTROLLER_INDEX = 1;
@@ -1094,4 +1095,42 @@ bool Keyboard::containsID(const QUuid& id) const {
     return resultWithReadLock<bool>([&] {
         return _itemsToIgnore.contains(id) || _backPlate.entityID == id;
     });
+}
+
+void Keyboard::emitKeyEvent(const KeyEvent& event, bool pressed) const {
+    Qt::KeyboardModifiers modifiers {};
+
+    if (event.isShifted) {
+        modifiers |= Qt::KeyboardModifier::ShiftModifier;
+    }
+
+    if (event.isControl) {
+        modifiers |= Qt::KeyboardModifier::ControlModifier;
+    }
+
+    if (event.isMeta) {
+        modifiers |= Qt::KeyboardModifier::MetaModifier;
+    }
+
+    if (event.isAlt) {
+        modifiers |= Qt::KeyboardModifier::AltModifier;
+    }
+
+    if (event.isKeypad) {
+        modifiers |= Qt::KeyboardModifier::KeypadModifier;
+    }
+
+    QKeyEvent* qEvent = new QKeyEvent(
+        pressed ? QEvent::KeyPress : QEvent::KeyRelease,
+        event.key,
+        modifiers,
+        event.text,
+        event.isAutoRepeat
+    );
+
+    if (_inputToHudUI) {
+        QCoreApplication::postEvent(qApp->getPrimaryWidget(), qEvent);
+    } else {
+        QCoreApplication::postEvent(QCoreApplication::instance(), qEvent);
+    }
 }
