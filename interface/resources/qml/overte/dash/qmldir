@@ -1,0 +1,4 @@
+module Dash
+DashWindow 1.0 DashWindow.qml
+DashBar 1.0 DashBar.qml
+DashBarButton 1.0 DashBarButton.qml
