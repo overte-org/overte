@@ -224,6 +224,7 @@ static const QString STATE_CAPTURE_MOUSE = "CaptureMouse";
 
 static const QUrl AVATAR_INPUTS_BAR_QML = PathUtils::qmlUrl("AvatarInputsBar.qml");
 static const QUrl BUBBLE_ICON_QML = PathUtils::qmlUrl("BubbleIcon.qml");
+static const QString DASHBOARD_QML_DIR = PathUtils::qmlBaseUrl() + "overte/dash/";
 
 static const int ENTITY_SERVER_ADDED_TIMEOUT = 5000;
 
@@ -1814,7 +1815,11 @@ void Application::setupSignalsAndOperators() {
         });
 
         render::entities::WebEntityRenderer::setAcquireWebSurfaceOperator([=](const QString& url, bool htmlContent, QSharedPointer<OffscreenQmlSurface>& webSurface, bool& cachedWebSurface) {
-            bool isTablet = url == TabletScriptingInterface::QML;
+            bool isSystemUI = (
+                url == TabletScriptingInterface::QML ||
+                url.startsWith(DASHBOARD_QML_DIR)
+            );
+
             if (htmlContent) {
                 webSurface = DependencyManager::get<OffscreenQmlSurfaceCache>()->acquire(render::entities::WebEntityRenderer::QML);
                 cachedWebSurface = true;
@@ -1837,8 +1842,8 @@ void Application::setupSignalsAndOperators() {
                         delete webSurface;
                     });
                 });
-                auto rootItemLoadedFunctor = [webSurface, url, isTablet] {
-                    Application::setupQmlSurface(webSurface->getSurfaceContext(), isTablet || url == LOGIN_DIALOG.toString() || url == AVATAR_INPUTS_BAR_QML.toString() ||
+                auto rootItemLoadedFunctor = [webSurface, url, isSystemUI] {
+                    Application::setupQmlSurface(webSurface->getSurfaceContext(), isSystemUI || url == LOGIN_DIALOG.toString() || url == AVATAR_INPUTS_BAR_QML.toString() ||
                        url == BUBBLE_ICON_QML.toString());
                 };
                 if (webSurface->getRootItem()) {
@@ -1851,7 +1856,7 @@ void Application::setupSignalsAndOperators() {
             }
             const uint8_t DEFAULT_MAX_FPS = 10;
             const uint8_t TABLET_FPS = 90;
-            webSurface->setMaxFps(isTablet ? TABLET_FPS : DEFAULT_MAX_FPS);
+            webSurface->setMaxFps(isSystemUI ? TABLET_FPS : DEFAULT_MAX_FPS);
         });
         render::entities::WebEntityRenderer::setReleaseWebSurfaceOperator([=](QSharedPointer<OffscreenQmlSurface>& webSurface, bool& cachedWebSurface, std::vector<QMetaObject::Connection>& connections) {
             QQuickItem* rootItem = webSurface->getRootItem();
