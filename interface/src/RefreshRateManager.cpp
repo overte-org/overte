@@ -28,10 +28,12 @@ STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
+    auto scopeGuard = scriptEngine->getScopeGuard();
+    auto* sgp = scopeGuard.get();
 
-    scriptEngine->registerEnum("RefreshRateRegime",QMetaEnum::fromType<RefreshRateManager::RefreshRateRegime>());
+    scriptEngine->registerEnum(sgp, "RefreshRateRegime",QMetaEnum::fromType<RefreshRateManager::RefreshRateRegime>());
     
-    scriptEngine->registerEnum("UXMode",QMetaEnum::fromType<RefreshRateManager::UXMode>());
+    scriptEngine->registerEnum(sgp, "UXMode",QMetaEnum::fromType<RefreshRateManager::UXMode>());
 });
 
 static const int VR_TARGET_RATE = 90;

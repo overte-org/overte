@@ -31,8 +31,9 @@ STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
+    auto scopeGuard = scriptEngine->getScopeGuard();
 
-    scriptEngine->registerGlobalObject("Audio", DependencyManager::get<AudioScriptingInterface>().data());
+    scriptEngine->registerGlobalObject(scopeGuard.get(), "Audio", DependencyManager::get<AudioScriptingInterface>().data());
 });
 
 void registerAudioMetaTypes(ScriptEngine* engine) {

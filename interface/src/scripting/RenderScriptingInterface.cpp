@@ -30,9 +30,12 @@ STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
+    auto scopeGuard = scriptEngine->getScopeGuard();
+    auto* sgp = scopeGuard.get();
 
-    scriptEngine->registerEnum("Render.RenderMethod",QMetaEnum::fromType<RenderScriptingInterface::RenderMethod>());
-    scriptEngine->registerEnum("AntialiasingMode",QMetaEnum::fromType<AntialiasingSetupConfig::Mode>());
+
+    scriptEngine->registerEnum(sgp, "Render.RenderMethod",QMetaEnum::fromType<RenderScriptingInterface::RenderMethod>());
+    scriptEngine->registerEnum(sgp, "AntialiasingMode",QMetaEnum::fromType<AntialiasingSetupConfig::Mode>());
 });
 
 RenderScriptingInterface* RenderScriptingInterface::getInstance() {

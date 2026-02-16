@@ -313,7 +313,10 @@ void ScriptEngineV8::deleteUnusedValueWrappers() {
     }
 }
 
-void ScriptEngineV8::registerEnum(const QString& enumName, QMetaEnum newEnum) {
+void ScriptEngineV8::registerEnum(ScriptEngineScopeGuard* scopeGuard, const QString& enumName, QMetaEnum newEnum) {
+    Q_ASSERT(scopeGuard);
+    auto* scopeGuardV8 = dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard);
+    Q_ASSERT(scopeGuardV8);
     if (!newEnum.isValid()) {
         qCCritical(scriptengine_v8) << "registerEnum called on invalid enum with name " << enumName;
         return;
@@ -325,11 +328,12 @@ void ScriptEngineV8::registerEnum(const QString& enumName, QMetaEnum newEnum) {
     for (int i = 0; i < newEnum.keyCount(); i++) {
         const char* keyName = newEnum.key(i);
         QString fullName = enumName + "." + keyName;
-        registerValue(fullName, V8ScriptValue(this, v8::Integer::New(_v8Isolate, newEnum.keyToValue(keyName))));
+        registerValue(scopeGuardV8, fullName, V8ScriptValue(this, v8::Integer::New(_v8Isolate, newEnum.keyToValue(keyName))));
     }
 }
 
-void ScriptEngineV8::registerValue(const QString& valueName, V8ScriptValue value) {
+void ScriptEngineV8::registerValue(ScriptEngineScopeGuardV8* scopeGuard, const QString& valueName, V8ScriptValue value) {
+    Q_ASSERT(scopeGuard);
     if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerValue() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]";
@@ -386,7 +390,8 @@ void ScriptEngineV8::registerValue(const QString& valueName, V8ScriptValue value
     }
 }
 
-void ScriptEngineV8::registerGlobalObject(const QString& name, QObject* object, ScriptEngine::ValueOwnership) {
+void ScriptEngineV8::registerGlobalObject(ScriptEngineScopeGuard* scopeGuard, const QString& name, QObject* object, ScriptEngine::ValueOwnership) {
+    Q_ASSERT(scopeGuard && dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard));
     if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerGlobalObject() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]  name:" << name;
@@ -421,7 +426,8 @@ void ScriptEngineV8::registerGlobalObject(const QString& name, QObject* object, 
     }
 }
 
-void ScriptEngineV8::registerFunction(const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
+void ScriptEngineV8::registerFunction(ScriptEngineScopeGuard* scopeGuard, const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
+    Q_ASSERT(scopeGuard && dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard));
     if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerFunction() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] name:" << name;
@@ -444,7 +450,8 @@ void ScriptEngineV8::registerFunction(const QString& name, ScriptEngine::Functio
     globalObject().setProperty(name, scriptFun);
 }
 
-void ScriptEngineV8::registerFunction(const QString& parent, const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
+void ScriptEngineV8::registerFunction(ScriptEngineScopeGuard* scopeGuard, const QString& parent, const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
+    Q_ASSERT(scopeGuard && dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard));
     if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerFunction() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] parent:" << parent << "name:" << name;
@@ -469,8 +476,9 @@ void ScriptEngineV8::registerFunction(const QString& parent, const QString& name
     }
 }
 
-void ScriptEngineV8::registerGetterSetter(const QString& name, ScriptEngine::FunctionSignature getter,
+void ScriptEngineV8::registerGetterSetter(ScriptEngineScopeGuard* scopeGuard, const QString& name, ScriptEngine::FunctionSignature getter,
                                         ScriptEngine::FunctionSignature setter, const QString& parent) {
+    Q_ASSERT(scopeGuard && dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard));
     if (QThread::currentThread() != thread()) {
 #ifdef THREAD_DEBUGGING
         qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerGetterSetter() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] "
@@ -681,7 +689,10 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
                 }
             }
             // "Script" API is context-dependent, so it needs to be recreated for each new context
-            registerGlobalObject("Script", new ScriptManagerScriptingInterface(_manager), ScriptEngine::ScriptOwnership);
+            {
+                auto scopeGuard = getScopeGuard();
+                registerGlobalObject(scopeGuard.get(), "Script", new ScriptManagerScriptingInterface(_manager), ScriptEngine::ScriptOwnership);
+            }
             auto Script = globalObject().property("Script");
             auto require = Script.property("require");
             auto resolve = Script.property("_requireResolve");

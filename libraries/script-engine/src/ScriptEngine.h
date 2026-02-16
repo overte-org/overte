@@ -189,7 +189,9 @@ public:
 public:
 
     /**
-     * @brief Class used as a base for script engine-specific thread safety guards
+     * @brief Class used as a base for script engine-specific thread safety guards.
+     *
+     * Constructing the guard while holding the guard in the same thread must be possible.
      *
      */
     class ScriptEngineScopeGuard {
@@ -211,6 +213,8 @@ public:
      * A scope guard needs to be created before any script engine access and destroyed afterwards.
      * This function is thread safe, if a scope guard is being created while another thread is using the script engine,
      * function will block until the scope guard on another thread is destroyed.
+     *
+     * Constructing the guard while holding the guard in the same thread is possible.
      *
      * @return Smart pointer to newly created scope guard
      */
@@ -375,11 +379,11 @@ public:
     virtual bool raiseException(const QString& error, const QString &reason = QString()) = 0;
 
 
-    virtual void registerEnum(const QString& enumName, QMetaEnum newEnum) = 0;
-    virtual void registerFunction(const QString& name, FunctionSignature fun, int numArguments = -1) = 0;
-    virtual void registerFunction(const QString& parent, const QString& name, FunctionSignature fun, int numArguments = -1) = 0;
-    virtual void registerGetterSetter(const QString& name, FunctionSignature getter, FunctionSignature setter, const QString& parent = QString("")) = 0;
-    virtual void registerGlobalObject(const QString& name, QObject* object, ScriptEngine::ValueOwnership = ScriptEngine::QtOwnership) = 0;
+    virtual void registerEnum(ScriptEngineScopeGuard* scopeGuard, const QString& enumName, QMetaEnum newEnum) = 0;
+    virtual void registerFunction(ScriptEngineScopeGuard* scopeGuard, const QString& name, FunctionSignature fun, int numArguments = -1) = 0;
+    virtual void registerFunction(ScriptEngineScopeGuard* scopeGuard, const QString& parent, const QString& name, FunctionSignature fun, int numArguments = -1) = 0;
+    virtual void registerGetterSetter(ScriptEngineScopeGuard* scopeGuard, const QString& name, FunctionSignature getter, FunctionSignature setter, const QString& parent = QString("")) = 0;
+    virtual void registerGlobalObject(ScriptEngineScopeGuard* scopeGuard, const QString& name, QObject* object, ScriptEngine::ValueOwnership = ScriptEngine::QtOwnership) = 0;
     virtual void setDefaultPrototype(int metaTypeId, const ScriptValue& prototype) = 0;
     virtual void setObjectName(const QString& name) = 0;
     virtual bool setProperty(const char* name, const QVariant& value) = 0;

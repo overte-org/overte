@@ -30,8 +30,9 @@ STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
+    auto scopeGuard = scriptEngine->getScopeGuard();
 
-    scriptEngine->registerEnum("PlatformInfo.PlatformTier",QMetaEnum::fromType<PlatformInfoScriptingInterface::PlatformTier>());
+    scriptEngine->registerEnum(scopeGuard.get(), "PlatformInfo.PlatformTier",QMetaEnum::fromType<PlatformInfoScriptingInterface::PlatformTier>());
 });
 
 PlatformInfoScriptingInterface* PlatformInfoScriptingInterface::getInstance() {
