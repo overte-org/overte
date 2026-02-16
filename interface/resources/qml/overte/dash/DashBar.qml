@@ -38,6 +38,20 @@ Item {
             onClicked: WindowScriptingInterface.quit()
         }
 
+        DashBarButton {
+            text: qsTr("Settings")
+            icon.source: "../icons/settings_cog.svg"
+            icon.color: Overte.Theme.paletteActive.buttonText
+
+            onClicked: {
+                dashBar.toScript({
+                    event: "spawn_window",
+                    title: qsTr("Settings"),
+                    qmlSource: "qrc:///qml/overte/settings/Settings.qml",
+                });
+            }
+        }
+
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: (Overte.Theme.borderWidth * 2) + 8 + 96 + Overte.Theme.scrollbarWidth
@@ -57,9 +71,8 @@ Item {
                  model: [
                      { name: "Places", windowTitle: "Places", windowSource: "qrc://scripts/system/places/places.html" },
                      { name: "Contacts", windowTitle: "Contacts", windowSource: "qrc:///qml/overte/contacts/ContactsList.qml" },
-                     { name: "Settings", windowTitle: "Settings", windowSource: "qrc:///qml/overte/settings/Settings.qml" },
                      { name: "Avatar", windowTitle: "Avatar", windowSource: "qrc:///qml/overte/avatar_picker/AvatarPicker.qml" },
-                     "Banana",
+                     { name: "Widget Zoo", windowTitle: "Widget Zoo", windowSource: "qrc:///qml/overte/WidgetZoo.qml" },
                  ]
 
                  delegate: Overte.Button {
