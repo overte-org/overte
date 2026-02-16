@@ -390,8 +390,10 @@ void Agent::executeScript() {
         // since it is referenced below by computeLoudness and getAudioLoudness
         scriptedAvatar->getHeadOrientation();
 
-        // give this AvatarData object to the script engine
         auto scriptEngine = _scriptManager->engine();
+        auto scopeGuard = scriptEngine->getScopeGuard();
+
+        // give this AvatarData object to the script engine
         scriptEngine->registerGlobalObject("Avatar", scriptedAvatar.data());
 
         // give scripts access to the Users object
