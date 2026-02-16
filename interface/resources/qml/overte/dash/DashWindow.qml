@@ -14,6 +14,8 @@ Item {
     property bool dragging: false
     property bool focused: false
 
+    property real depthGradient: Overte.Theme.highContrast ? 1 : 1.1
+
     function fromScript(rawMsg) {
         const msg = JSON.parse(rawMsg);
         console.debug(rawMsg);
@@ -121,12 +123,24 @@ Item {
             Qt.darker(color, Overte.Theme.borderDarker)
         )
 
+        gradient: Gradient {
+            GradientStop {
+                position: 0;
+                color: Qt.lighter(bodyPanel.color, root.depthGradient)
+            }
+            GradientStop {
+                position: 1;
+                color: Qt.darker(bodyPanel.color, root.depthGradient)
+            }
+        }
+
         Loader {
             anchors.fill: parent
             anchors.margins: Math.max(parent.radius, parent.border.width)
 
             id: loader
             source: root.source
+            clip: true
         }
 
         Overte.Label {
@@ -148,10 +162,25 @@ Item {
         anchors.bottom: root.bottom
         implicitHeight: 48
 
-        color: Overte.Theme.paletteActive.base
+        color: (
+            loader.status === Loader.Error ?
+            Overte.Theme.paletteActive.buttonDestructive :
+            Overte.Theme.paletteActive.base
+        )
         radius: Overte.Theme.borderRadius
         border.width: Overte.Theme.borderWidth
         border.color: Qt.darker(color, Overte.Theme.borderDarker)
+
+        gradient: Gradient {
+            GradientStop {
+                position: 0;
+                color: Qt.lighter(titlebar.color, root.depthGradient)
+            }
+            GradientStop {
+                position: 1;
+                color: Qt.darker(titlebar.color, root.depthGradient)
+            }
+        }
 
         Overte.RoundButton {
             id: closeButton
@@ -205,25 +234,29 @@ Item {
                 model: 3
 
                 Rectangle {
-                    radius: 2
-                    height: 32
-                    width: 4
+                    height: 24
+                    width: 2
                     y: (dragThumb.height - height) / 2
 
                     property color thumbColor: (
                         Overte.Theme.highContrast ?
                         Overte.Theme.paletteActive.text :
-                        Overte.Theme.paletteActive.base
+                        titlebar.color
+                    )
+                    property real depthGradient: (
+                        Overte.Theme.highContrast ?
+                        1.0 :
+                        1.5
                     )
 
                     gradient: Gradient {
                         GradientStop {
                             position: 0;
-                            color: Qt.darker(thumbColor, Overte.Theme.depthDarker)
+                            color: Qt.darker(thumbColor, depthGradient)
                         }
                         GradientStop {
                             position: 1;
-                            color: Qt.lighter(thumbColor, Overte.Theme.depthLighter)
+                            color: Qt.lighter(thumbColor, depthGradient)
                         }
                     }
                 }

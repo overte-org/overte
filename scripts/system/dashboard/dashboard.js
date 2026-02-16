@@ -35,17 +35,20 @@ const PANEL_DEFAULT_PROPS = {
     wantsKeyboardFocus: false,
     showKeyboardFocusHighlight: false,
     useBackground: false,
+    // FIXME: "touch" is still glitchy and doesn't
+    // work properly, use that when it works again
     inputMode: "mouse",
 };
 
 const appbar = Entities.addEntity({
     type: "Web",
+    name: "App Bar",
     localDimensions: [0.5, 0.1, 0],
     localPosition: [0, 0, -0.5],
     localRotation: Quat.fromPitchYawRollDegrees(-30, 0, 0),
     ...PANEL_DEFAULT_PROPS,
     sourceUrl: QML_APPBAR,
-    dpi: scaleHackI(35),
+    dpi: scaleHackI(38),
 }, "local");
 
 let railPoints = [];
@@ -58,6 +61,7 @@ for (let i = 0; i < 32; i++) {
 
 const railVisual = Entities.addEntity({
     type: "PolyLine",
+    name: "Rail Visual",
     ...DEFAULT_PROPS,
     localPosition: [0, 0, -0.4],
     color: [240, 140, 255],
@@ -96,6 +100,7 @@ Entities.webEventReceived.connect((entity, rawMsg) => {
         case "spawn_window": {
             const entity = Entities.addEntity({
                 type: "Web",
+                name: `DashWindow: ${msg.title}`,
                 localDimensions: [0.5, 0.7, 0],
                 localPosition: [0, 0.4, -0.7],
                 localRotation: Quat.fromPitchYawRollDegrees(0, 0, 0),
@@ -140,7 +145,7 @@ Entities.webEventReceived.connect((entity, rawMsg) => {
 
 // FIXME: Entity scaling is *very* broken in the engine
 MyAvatar.sensorToWorldScaleChanged.connect(() => {
-    Entities.editEntity(appbar, { dpi: scaleHackI(35) });
+    Entities.editEntity(appbar, { dpi: scaleHackI(38) });
     Entities.editEntity(railVisual, { strokeWidths: Array(32).fill(scaleHack(0.1)) });
 
     for (const window of testWindows) {
