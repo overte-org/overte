@@ -334,15 +334,7 @@ void ScriptEngineV8::registerEnum(ScriptEngineScopeGuard* scopeGuard, const QStr
 
 void ScriptEngineV8::registerValue(ScriptEngineScopeGuardV8* scopeGuard, const QString& valueName, V8ScriptValue value) {
     Q_ASSERT(scopeGuard);
-    if (QThread::currentThread() != thread()) {
-#ifdef THREAD_DEBUGGING
-        qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerValue() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]";
-#endif
-        QMetaObject::invokeMethod(this, "registerValue",
-                                  Q_ARG(const QString&, valueName),
-                                  Q_ARG(V8ScriptValue, value));
-        return;
-    }
+    Q_ASSERT(QThread::currentThread() == thread());
     Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     v8::Local<v8::Context> context = getContext();
@@ -392,18 +384,7 @@ void ScriptEngineV8::registerValue(ScriptEngineScopeGuardV8* scopeGuard, const Q
 
 void ScriptEngineV8::registerGlobalObject(ScriptEngineScopeGuard* scopeGuard, const QString& name, QObject* object, ScriptEngine::ValueOwnership) {
     Q_ASSERT(scopeGuard && dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard));
-    if (QThread::currentThread() != thread()) {
-#ifdef THREAD_DEBUGGING
-        qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerGlobalObject() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]  name:" << name;
-#endif
-        QMetaObject::invokeMethod(this, "registerGlobalObject",
-                                  Q_ARG(const QString&, name),
-                                  Q_ARG(QObject*, object));
-        return;
-    }
-#ifdef THREAD_DEBUGGING
-    qCDebug(scriptengine_v8) << "ScriptEngineV8::registerGlobalObject() called on thread [" << QThread::currentThread() << "] name:" << name;
-#endif
+    Q_ASSERT(QThread::currentThread() == thread());
     Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     Q_ASSERT(_v8Isolate->IsCurrent());
@@ -428,20 +409,7 @@ void ScriptEngineV8::registerGlobalObject(ScriptEngineScopeGuard* scopeGuard, co
 
 void ScriptEngineV8::registerFunction(ScriptEngineScopeGuard* scopeGuard, const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
     Q_ASSERT(scopeGuard && dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard));
-    if (QThread::currentThread() != thread()) {
-#ifdef THREAD_DEBUGGING
-        qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerFunction() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] name:" << name;
-#endif
-        QMetaObject::invokeMethod(this, "registerFunction",
-                                  Q_ARG(const QString&, name),
-                                  Q_ARG(ScriptEngine::FunctionSignature, functionSignature),
-                                  Q_ARG(int, numArguments));
-        return;
-    }
-#ifdef THREAD_DEBUGGING
-    qCDebug(scriptengine_v8) << "ScriptEngineV8::registerFunction() called on thread [" << QThread::currentThread() << "] name:" << name;
-#endif
-
+    Q_ASSERT(QThread::currentThread() == thread());
     Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(getContext());
@@ -452,20 +420,7 @@ void ScriptEngineV8::registerFunction(ScriptEngineScopeGuard* scopeGuard, const 
 
 void ScriptEngineV8::registerFunction(ScriptEngineScopeGuard* scopeGuard, const QString& parent, const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
     Q_ASSERT(scopeGuard && dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard));
-    if (QThread::currentThread() != thread()) {
-#ifdef THREAD_DEBUGGING
-        qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerFunction() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] parent:" << parent << "name:" << name;
-#endif
-        QMetaObject::invokeMethod(this, "registerFunction",
-                                  Q_ARG(const QString&, name),
-                                  Q_ARG(ScriptEngine::FunctionSignature, functionSignature),
-                                  Q_ARG(int, numArguments));
-        return;
-    }
-#ifdef THREAD_DEBUGGING
-    qCDebug(scriptengine_v8) << "ScriptEngineV8::registerFunction() called on thread [" << QThread::currentThread() << "] parent:" << parent << "name:" << name;
-#endif
-
+    Q_ASSERT(QThread::currentThread() == thread());
     Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(getContext());
@@ -479,21 +434,7 @@ void ScriptEngineV8::registerFunction(ScriptEngineScopeGuard* scopeGuard, const 
 void ScriptEngineV8::registerGetterSetter(ScriptEngineScopeGuard* scopeGuard, const QString& name, ScriptEngine::FunctionSignature getter,
                                         ScriptEngine::FunctionSignature setter, const QString& parent) {
     Q_ASSERT(scopeGuard && dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard));
-    if (QThread::currentThread() != thread()) {
-#ifdef THREAD_DEBUGGING
-        qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerGetterSetter() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] "
-            " name:" << name << "parent:" << parent;
-#endif
-        QMetaObject::invokeMethod(this, "registerGetterSetter",
-                                  Q_ARG(const QString&, name),
-                                  Q_ARG(ScriptEngine::FunctionSignature, getter),
-                                  Q_ARG(ScriptEngine::FunctionSignature, setter),
-                                  Q_ARG(const QString&, parent));
-        return;
-    }
-#ifdef THREAD_DEBUGGING
-    qCDebug(scriptengine_v8) << "ScriptEngineV8::registerGetterSetter() called on thread [" << QThread::currentThread() << "] name:" << name << "parent:" << parent;
-#endif
+    Q_ASSERT(QThread::currentThread() == thread());
 
         Q_ASSERT(_v8Isolate->IsCurrent());
         v8::HandleScope handleScope(_v8Isolate);
