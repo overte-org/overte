@@ -1587,6 +1587,8 @@ void Application::setupSignalsAndOperators() {
             }
         }, Qt::QueuedConnection);
 
+        connect(this, &Application::keyboardFocusEntityChanged, entityScriptingInterface.data(), &EntityScriptingInterface::keyboardFocusEntityChanged, Qt::QueuedConnection);
+
         EntityTree::setEntityClicksCapturedOperator([this] { return _controllerScriptingInterface->areEntityClicksCaptured(); });
 
         // If the user clicks on an object, we will check that it's a web surface, and if so, set the focus to it

@@ -171,7 +171,7 @@ public:
 /// handles scripting of Entity commands from JS passed to assigned clients
 class EntityScriptingInterface : public OctreeScriptingInterface, public Dependency  {
     Q_OBJECT
-    Q_PROPERTY(QUuid keyboardFocusEntity READ getKeyboardFocusEntity WRITE setKeyboardFocusEntity)
+    Q_PROPERTY(QUuid keyboardFocusEntity READ getKeyboardFocusEntity WRITE setKeyboardFocusEntity NOTIFY keyboardFocusEntityChanged)
 
     friend EntityPropertyMetadataRequest;
 public:
@@ -2696,6 +2696,13 @@ signals:
      * @returns {Signal}
      */
     void webEventReceived(const EntityItemID& entityItemID, const QVariant& message);
+
+    /*@jsdoc
+     * Triggered when {@link Entities.keyboardFocusEntity} is changed.
+     * @param {Uuid} entityID - The entity that has taken keyboard focus
+     * @returns {Signal}
+     */
+    void keyboardFocusEntityChanged(const QUuid& uuid);
 
 protected:
     void withEntitiesScriptEngine(std::function<void(std::shared_ptr<EntitiesScriptEngineProvider>)> function, const EntityItemID& id) {
