@@ -35,7 +35,7 @@ Item {
                 Overte.Theme.paletteActive.button
             )
 
-            onClicked: toScript("TODO: quit")
+            onClicked: WindowScriptingInterface.quit()
         }
 
         Rectangle {

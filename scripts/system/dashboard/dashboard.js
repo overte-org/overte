@@ -72,7 +72,7 @@ const testWindows = new Set();
 const windowData = new Map();
 let focusedWindow = null;
 
-Entities.mousePressOnEntity.connect((entity, event) => {
+Entities.keyboardFocusEntityChanged.connect(entity => {
     if (entity !== focusedWindow) {
         Entities.emitScriptEvent(focusedWindow, JSON.stringify({
             event: "unfocus",
