@@ -751,7 +751,11 @@
  *     Note: ambisonic sounds can only play as <code>localOnly</code>.
  * @property {boolean} playing=true - Whether or not the sound should play.
  * @property {number} volume=1.0 - The volume of the sound, from <code>0</code> to <code>1</code>.
- * @property {number} pitch=1.0 - The relative sample rate at which to resample the sound, within +/- 2 octaves.
+ * @property {number} pitch=1.0 - Alter the pitch of the sound, within +/- 4 octaves. The value is the relative sample rate to
+ *     resample the sound at, range <code>0.0625</code> &ndash; <code>16.0</code>.<br />
+ *     A value of <code>0.0625</code> lowers the pitch by 4 octaves.<br />
+ *     A value of <code>1.0</code> means there is no change in pitch.<br />
+ *     A value of <code>16.0</code> raises the pitch by 4 octaves.
  * @property {number} timeOffset=0.0 - The time (in seconds) at which to start playback within the sound file.  If looping,
  *     this only affects the first loop.
  * @property {boolean} loop=true - Whether or not to loop the sound.
