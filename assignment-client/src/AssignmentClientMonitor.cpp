@@ -41,7 +41,8 @@ AssignmentClientMonitor::AssignmentClientMonitor(const unsigned int numAssignmen
                                                  const unsigned int minAssignmentClientForks,
                                                  const unsigned int maxAssignmentClientForks,
                                                  Assignment::Type requestAssignmentType, QString assignmentPool,
-                                                 quint16 listenPort, quint16 childMinListenPort, QString assignmentServerHostname,
+                                                 quint16 listenPort, quint16 childMinListenPort, bool useSamePublicPorts,
+                                                 QString assignmentServerHostname,
                                                  quint16 assignmentServerPort, quint16 httpStatusServerPort, QString logDirectory,
                                                  bool disableDomainPortAutoDiscovery) :
     _httpManager(QHostAddress::LocalHost, httpStatusServerPort, "", this),
@@ -53,6 +54,7 @@ AssignmentClientMonitor::AssignmentClientMonitor(const unsigned int numAssignmen
     _assignmentServerHostname(assignmentServerHostname),
     _assignmentServerPort(assignmentServerPort),
     _childMinListenPort(childMinListenPort),
+    _useSamePublicPorts(useSamePublicPorts),
     _disableDomainPortAutoDiscovery(disableDomainPortAutoDiscovery)
 {
     qDebug() << "_requestAssignmentType =" << _requestAssignmentType;
@@ -202,6 +204,11 @@ void AssignmentClientMonitor::spawnChildClient() {
 
     if (listenPort) {
         _childArguments.append("-" + ASSIGNMENT_CLIENT_LISTEN_PORT_OPTION);
+        _childArguments.append(QString::number(listenPort));
+    }
+
+    if (_useSamePublicPorts && listenPort) {
+        _childArguments.append("--" + ASSIGNMENT_CLIENT_LISTEN_PUBLIC_PORT_OPTION);
         _childArguments.append(QString::number(listenPort));
     }
 

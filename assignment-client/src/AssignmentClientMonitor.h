@@ -39,7 +39,7 @@ class AssignmentClientMonitor : public QObject, public HTTPRequestHandler {
 public:
     AssignmentClientMonitor(const unsigned int numAssignmentClientForks, const unsigned int minAssignmentClientForks,
                             const unsigned int maxAssignmentClientForks, Assignment::Type requestAssignmentType,
-                            QString assignmentPool, quint16 listenPort, quint16 childMinListenPort,
+                            QString assignmentPool, quint16 listenPort, quint16 childMinListenPort, bool useSamePublicPorts,
                             QString assignmentServerHostname, quint16 assignmentServerPort, quint16 httpStatusServerPort,
                             QString logDirectory, bool disableDomainPortAutoDiscovery);
     ~AssignmentClientMonitor();
@@ -79,6 +79,8 @@ private:
 
     quint16 _childMinListenPort;
     QSet<quint16> _childListenPorts;
+
+    bool _useSamePublicPorts { false };
 
     bool _wantsChildFileLogging { false };
     bool _disableDomainPortAutoDiscovery { false };
