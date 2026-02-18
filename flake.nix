@@ -81,6 +81,13 @@
                 SPIRV_CROSS_DIR
                 SPIRV_TOOLS_DIR
                 ;
+
+              shellHook = ''
+                # helper for configuring
+                configure() {
+                    cmake -DOVERTE_USE_SYSTEM_LIBS=ON -B build -S .
+                }
+              '';
             };
           };
       }
