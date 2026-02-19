@@ -23,7 +23,8 @@ var DEFAULT_SCRIPTS_COMBINED = [
     "system/bubble.js",
     "system/snapshot.js",
     "system/makeUserConnection.js",
-    "system/notifications.js",
+    // legacy notifications, now handled by the dash
+    //"system/notifications.js",
     "system/create/edit.js",
     "system/dialTone.js",
     "system/firstPersonHMD.js",
@@ -31,7 +32,8 @@ var DEFAULT_SCRIPTS_COMBINED = [
     "system/audioMuteOverlay.js",
     "system/inspect.js",
     "system/keyboardShortcuts/keyboardShortcuts.js",
-    "system/onEscape.js",
+    // dashboard uses escape key, which conflicts with this
+    //"system/onEscape.js",
     //"developer/debugging/scriptMemoryReport.js"
 ];
 var DEFAULT_SCRIPTS_SEPARATE = [

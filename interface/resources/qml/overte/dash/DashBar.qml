@@ -7,7 +7,18 @@ import "."
 
 Item {
     function fromScript(rawMsg) {
-        console.log(`QML: ${rawMsg}`);
+        let msg;
+        try {
+            msg = JSON.parse(rawMsg);
+        } catch (_) {
+            return;
+        }
+
+        if (msg?.dash_window?.event === "hide") {
+            dashBar.state = "HIDDEN";
+        } else if (msg?.dash_window?.event === "unhide") {
+            dashBar.state = "OPEN";
+        }
     }
 
     function toScript(msg) {
@@ -20,6 +31,47 @@ Item {
 
     id: dashBar
     anchors.centerIn: parent
+    state: "HIDDEN"
+
+    states: [
+        State {
+            name: "HIDDEN"
+            PropertyChanges { target: dashBar; opacity: 0 }
+        },
+        State {
+            name: "OPEN"
+            PropertyChanges { target: dashBar; opacity: 1 }
+        },
+    ]
+
+    transitions: [
+        Transition {
+            from: "OPEN"
+            to: "HIDDEN"
+
+            PropertyAnimation {
+                target: dashBar
+                property: "opacity"
+                duration: 250
+            }
+
+            onRunningChanged: {
+                if (!running) {
+                    dashBar.toScript({ dash_window: { event: "finished_hiding" } });
+                }
+            }
+        },
+        Transition {
+            from: "HIDDEN"
+            to: "OPEN"
+
+            PropertyAnimation {
+                target: dashBar
+                property: "opacity"
+                duration: 250
+            }
+        },
+    ]
 
     RowLayout {
         id: row
@@ -45,9 +97,11 @@ Item {
 
             onClicked: {
                 dashBar.toScript({
-                    event: "spawn_window",
-                    title: qsTr("Settings"),
-                    qmlSource: "qrc:///qml/overte/settings/Settings.qml",
+                    dash_window: {
+                        event: "spawn_window",
+                        title: qsTr("Settings"),
+                        source_url: "qrc:///qml/overte/settings/Settings.qml",
+                    },
                 });
             }
         }
@@ -87,9 +141,11 @@ Item {
 
                      onClicked: {
                          dashBar.toScript({
-                             event: "spawn_window",
-                             title: windowTitle,
-                             qmlSource: windowSource,
+                             dash_window: {
+                                 event: "spawn_window",
+                                 title: windowTitle,
+                                 source_url: windowSource,
+                             },
                          });
                      }
                  }

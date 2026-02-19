@@ -10,37 +10,44 @@ Item {
 
     property string source: ""
     property string title: "Window title"
+
     property bool closed: false
-    property bool dragging: false
+    property bool hidden: false
     property bool focused: false
+
+    property bool dragging: false
+
+    property bool pinnable: false
+    property bool pinned: false
 
     property real depthGradient: Overte.Theme.highContrast ? 1 : 1.1
 
+    function readEvent(event) {
+        switch (event.event) {
+            case "set_props": {
+                if (event.title !== undefined) { root.title = event.title; }
+                if (event.source_url !== undefined) { root.source = event.source_url; }
+                if (event.pinnable !== undefined) { root.pinnable = event.pinnable; }
+            } break;
+
+            case "close": { root.closed = true; } break;
+            case "focus": { root.focused = true; } break;
+            case "unfocus": { root.focused = false; } break;
+            case "pin": { root.pinned = true; } break;
+            case "unpin": { root.pinned = false; } break;
+            case "hide": { root.hidden = true; } break;
+            case "unhide": { root.hidden = false; } break;
+        }
+    }
+
     function fromScript(rawMsg) {
-        const msg = JSON.parse(rawMsg);
-        console.debug(rawMsg);
+        let msg;
+        try { msg = JSON.parse(rawMsg); } catch (_) {}
 
-        switch (msg.event) {
-            case "open": {
-                root.title = msg.title ?? "";
-                root.source = msg.qmlSource;
-            } break;
-
-            case "set_title": {
-                root.title = msg.title;
-            } break;
-
-            case "close": {
-                root.closed = true;
-            } break;
-
-            case "focus": {
-                root.focused = true;
-            } break;
-
-            case "unfocus": {
-                root.focused = false;
-            } break;
+        if (msg?.dash_window?.event) {
+            readEvent(msg.dash_window);
+        } else {
+            loader.item?.fromScript(rawMsg);
         }
     }
 
@@ -48,12 +55,24 @@ Item {
         eventBridge.emitWebEvent(JSON.stringify(msg));
     }
 
-    Component.onCompleted: {
-        eventBridge.scriptEventReceived.connect(fromScript);
-        toScript({ event: "window_spawned" });
+    function pushWindowEvent(event) {
+        root.toScript({ dash_window: event });
     }
 
-    state: (closed || source === "") ? "CLOSED" : "OPEN"
+    Component.onCompleted: {
+        eventBridge.scriptEventReceived.connect(fromScript);
+        root.pushWindowEvent({ event: "window_spawned" });
+    }
+
+    state: {
+        if (root.closed || root.source === "") {
+            return "CLOSED";
+        } else if (root.hidden) {
+            return "HIDDEN";
+        } else {
+            return "OPEN";
+        }
+    }
 
     states: [
         State {
@@ -65,10 +84,18 @@ Item {
             }
         },
         State {
+            name: "HIDDEN"
+            PropertyChanges { target: root; opacity: 0 }
+            PropertyChanges {
+                target: bodyPanel
+                y: Overte.Theme.reducedMotion ? 0 : bodyPanel.height
+            }
+        },
+        State {
             name: "OPEN"
             PropertyChanges { target: root; opacity: 1 }
             PropertyChanges { target: bodyPanel; y: 0 }
-        }
+        },
     ]
 
     transitions: [
@@ -99,8 +126,41 @@ Item {
             }
 
             onRunningChanged: {
-                if (!running) {
-                    root.toScript({ event: "finished_closing" });
+                if (!running && root.state === "CLOSED") {
+                    root.pushWindowEvent({ event: "finished_closing" });
+                }
+            }
+        },
+
+        Transition {
+            from: "HIDDEN"
+            to: "OPEN"
+            PropertyAnimation { target: root; property: "opacity"; duration: 250 }
+            PropertyAnimation {
+                target: bodyPanel
+                property: "y"
+                duration: 500
+                easing.type: Easing.OutExpo
+            }
+        },
+        Transition {
+            from: "OPEN"
+            to: "HIDDEN"
+            PropertyAnimation {
+                target: root
+                property: "opacity"
+                duration: 150
+            }
+            PropertyAnimation {
+                target: bodyPanel
+                property: "y"
+                duration: 250
+                easing.type: Easing.OutExpo
+            }
+
+            onRunningChanged: {
+                if (!running && root.state === "HIDDEN") {
+                    root.pushWindowEvent({ event: "finished_hiding" });
                 }
             }
         },
@@ -182,26 +242,65 @@ Item {
             }
         }
 
-        Overte.RoundButton {
-            id: closeButton
+        Row {
             anchors.left: parent.left
-            anchors.bottom: parent.bottom
             anchors.top: parent.top
+            anchors.bottom: parent.bottom
             anchors.margins: 6
-            implicitWidth: height
-            focusPolicy: Qt.NoFocus
 
-            icon.source: "../icons/close.svg"
-            icon.width: 24
-            icon.height: 24
-            icon.color: Overte.Theme.paletteActive.buttonText
-            backgroundColor: (
-                hovered ?
-                Overte.Theme.paletteActive.buttonDestructive :
-                Overte.Theme.paletteActive.button
-            );
+            id: titleButtons
+            spacing: 2
 
-            onClicked: root.closed = true
+            Overte.RoundButton {
+                id: closeButton
+                anchors.bottom: parent.bottom
+                anchors.top: parent.top
+                implicitWidth: height
+                focusPolicy: Qt.NoFocus
+
+                icon.source: "../icons/close.svg"
+                icon.width: 24
+                icon.height: 24
+                icon.color: Overte.Theme.paletteActive.buttonText
+                backgroundColor: (
+                    hovered ?
+                    Overte.Theme.paletteActive.buttonDestructive :
+                    Overte.Theme.paletteActive.button
+                );
+
+                onClicked: root.closed = true
+            }
+
+            Overte.RoundButton {
+                visible: root.pinnable
+
+                id: pinButton
+                anchors.bottom: parent.bottom
+                anchors.top: parent.top
+                implicitWidth: height
+                focusPolicy: Qt.NoFocus
+
+                checked: root.pinned
+
+                icon.source: (
+                    root.pinned ?
+                    "../icons/triangle_down.svg" :
+                    "../icons/triangle_up.svg"
+                )
+                icon.width: 24
+                icon.height: 24
+                icon.color: Overte.Theme.paletteActive.buttonText
+                backgroundColor: (
+                    checked ?
+                    Overte.Theme.paletteActive.buttonFavorite :
+                    Overte.Theme.paletteActive.button
+                );
+
+                onClicked: {
+                    root.pinned = !root.pinned;
+                    root.pushWindowEvent({ event: root.pinned ? "pin" : "unpin" });
+                }
+            }
         }
 
         Overte.Label {
@@ -209,7 +308,7 @@ Item {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
             anchors.right: dragThumb.left
-            anchors.left: closeButton.right
+            anchors.left: titleButtons.right
             anchors.leftMargin: 8
             anchors.rightMargin: 8
 
@@ -265,7 +364,7 @@ Item {
 
         MouseArea {
             id: dragArea
-            anchors.left: closeButton.right
+            anchors.left: titleButtons.right
             anchors.right: parent.right
             anchors.bottom: parent.bottom
             anchors.top: parent.top
@@ -275,12 +374,12 @@ Item {
 
             onPressed: {
                 root.dragging = true;
-                root.toScript({ event: "begin_drag" });
+                root.pushWindowEvent({ event: "begin_drag" });
             }
 
             onReleased: {
                 root.dragging = false;
-                root.toScript({ event: "finish_drag" });
+                root.pushWindowEvent({ event: "finish_drag" });
             }
         }
     }
