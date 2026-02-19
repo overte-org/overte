@@ -108,6 +108,34 @@ public:
      * @function Keyboard.emitKeyEvent
      * @param {KeyEvent} event
      * @param {boolean} pressed
+     * @example
+     * // Presses and holds W for two seconds, then releases it.
+     * const KeyCodes = require("keycodes");
+     *
+     * const keyEvent = { key: KeyCodes.w };
+     *
+     * Keyboard.emitKeyEvent(keyEvent, true);
+     *
+     * Script.setTimeout(() => Keyboard.emitKeyEvent(keyEvent, false), 2000);
+     * @example
+     * // Binds the left VR controller primary button to Ctrl+Z
+     * const KeyCodes = require("keycodes");
+     *
+     * let wasPressed = false;
+     * const undoKey = { key: KeyCodes.z, isControl: true };
+     *
+     * let mapping = Controller.newMapping();
+     * mapping.from(Controller.Actions.LeftPrimaryThumb).to(value => {
+     *     const pressed = value > 0.5;
+     *
+     *     if (pressed === wasPressed) { return; }
+     *
+     *     Keyboard.emitKeyEvent(undoKey, pressed);
+     *
+     *     wasPressed = pressed;
+     * });
+     *
+     * Script.scriptEnding.connect(() => mapping.disable());
      */
     Q_INVOKABLE void emitKeyEvent(const KeyEvent& event, bool pressed) const;
 
