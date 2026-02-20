@@ -16,6 +16,7 @@
 #include <QtCore/QUuid>
 
 #include "DependencyManager.h"
+#include "KeyEvent.h"
 
 /*@jsdoc
  * The <code>Keyboard</code> API provides facilities to use an in-world, virtual keyboard. When enabled, this keyboard is 
@@ -101,6 +102,42 @@ public:
      * @returns {boolean} <code>true</code> if the entity is part of the virtual keyboard, <code>false</code> if it isn't.
      */
     Q_INVOKABLE bool containsID(const QUuid& overlayID) const;
+
+    /*@jsdoc
+     * Emits a virtual key event. Protected by the "keyboard events" script permission.
+     * @function Keyboard.emitKeyEvent
+     * @param {KeyEvent} event
+     * @param {boolean} pressed
+     * @example
+     * // Presses and holds W for two seconds, then releases it.
+     * const KeyCodes = require("keycodes");
+     *
+     * const keyEvent = { key: KeyCodes.w };
+     *
+     * Keyboard.emitKeyEvent(keyEvent, true);
+     *
+     * Script.setTimeout(() => Keyboard.emitKeyEvent(keyEvent, false), 2000);
+     * @example
+     * // Binds the left VR controller primary button to Ctrl+Z
+     * const KeyCodes = require("keycodes");
+     *
+     * let wasPressed = false;
+     * const undoKey = { key: KeyCodes.z, isControl: true };
+     *
+     * let mapping = Controller.newMapping();
+     * mapping.from(Controller.Actions.LeftPrimaryThumb).to(value => {
+     *     const pressed = value > 0.5;
+     *
+     *     if (pressed === wasPressed) { return; }
+     *
+     *     Keyboard.emitKeyEvent(undoKey, pressed);
+     *
+     *     wasPressed = pressed;
+     * });
+     *
+     * Script.scriptEnding.connect(() => mapping.disable());
+     */
+    Q_INVOKABLE void emitKeyEvent(const KeyEvent& event, bool pressed) const;
 
 private:
     bool getPreferMalletsOverLasers() const;

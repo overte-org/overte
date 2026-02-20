@@ -21,6 +21,7 @@ public:
     enum class Permission {
         SCRIPT_PERMISSION_GET_AVATAR_URL,
         SCRIPT_PERMISSION_BOOKMARKS,
+        SCRIPT_PERMISSION_KEYBOARD_EVENTS,
         SCRIPT_PERMISSIONS_SIZE
     };
 

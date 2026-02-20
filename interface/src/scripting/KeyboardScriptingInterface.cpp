@@ -9,6 +9,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+#include "ScriptPermissions.h"
 #include "KeyboardScriptingInterface.h"
 #include "ui/Keyboard.h"
 
@@ -66,4 +67,12 @@ bool KeyboardScriptingInterface::getPreferMalletsOverLasers() const {
 
 bool KeyboardScriptingInterface::containsID(const QUuid& id) const {
     return DependencyManager::get<Keyboard>()->containsID(id);
+}
+
+void KeyboardScriptingInterface::emitKeyEvent(const KeyEvent& event, bool pressed) const {
+    if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_KEYBOARD_EVENTS)) {
+        return;
+    }
+
+    DependencyManager::get<Keyboard>()->emitKeyEvent(event, pressed);
 }
