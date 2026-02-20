@@ -842,9 +842,7 @@ QImage OpenGLDisplayPlugin::getScreenshot(float aspectRatio) {
         corner.y = round((size.y - bestSize.y) / 2.0f);
     }
     QImage screenshot(bestSize.x, bestSize.y, QImage::Format_ARGB32);
-    withOtherThreadContext([&] {
-        getBackend()->downloadFramebuffer(_compositeFramebuffer, ivec4(corner, bestSize), screenshot);
-    });
+    getBackend()->downloadFramebuffer(_compositeFramebuffer, ivec4(corner, bestSize), screenshot);
     return screenshot.mirrored(false, true);
 }
 
@@ -854,9 +852,7 @@ QImage OpenGLDisplayPlugin::getSecondaryCameraScreenshot() {
     gpu::Vec4i region(0, 0, secondaryCameraFramebuffer->getWidth(), secondaryCameraFramebuffer->getHeight());
 
     QImage screenshot(region.z, region.w, QImage::Format_ARGB32);
-    withOtherThreadContext([&] {
-        getBackend()->downloadFramebuffer(secondaryCameraFramebuffer, region, screenshot);
-    });
+    getBackend()->downloadFramebuffer(secondaryCameraFramebuffer, region, screenshot);
     return screenshot.mirrored(false, true);
 }
 
