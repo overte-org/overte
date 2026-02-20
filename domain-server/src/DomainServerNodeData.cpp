@@ -28,7 +28,13 @@ DomainServerNodeData::DomainServerNodeData() {
 }
 
 void DomainServerNodeData::updateJSONStats(const QByteArray& statsByteArray) {
-    _statsJSONObject = overrideValuesIfNeeded(QCborValue::fromCbor(statsByteArray).toJsonValue().toObject());
+    QCborParserError cborError;
+    auto cbor = QCborValue::fromCbor(statsByteArray, &cborError);
+    if (cborError.error != QCborError::NoError) {
+        qWarning() << "DomainServerNodeData::updateJSONStats: corrupted cbor: " << QString(statsByteArray.toHex());
+        return;
+    }
+    _statsJSONObject = overrideValuesIfNeeded(cbor.toJsonValue().toObject());
 }
 
 QJsonObject DomainServerNodeData::overrideValuesIfNeeded(const QJsonObject& newStats) {
