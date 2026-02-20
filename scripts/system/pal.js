@@ -850,11 +850,12 @@ function notificationPollCallback(connectionsArray) {
         newOnlineUsers++;
         storedOnlineUsers[user.username] = user;
 
-        if (!ui.isOpen && ui.notificationInitialCallbackMade[0]) {
+        // This always prints "(your username) is available in undefined"
+        /*if (!ui.isOpen && ui.notificationInitialCallbackMade[0]) {
             message = user.username + " is available in " +
                 user.location.root.name + ". Open PEOPLE to join them.";
             ui.notificationDisplayBanner(message);
-        }
+        }*/
     });
     var key;
     for (key in storedOnlineUsers) {
@@ -867,7 +868,8 @@ function notificationPollCallback(connectionsArray) {
     // END logic for handling online/offline user changes
     //
 
-    if (!ui.isOpen) {
+    // This always prints "(your username) is available in undefined"
+    /*if (!ui.isOpen) {
         ui.messagesWaiting(shouldShowDot);
         ui.sendMessage({
             method: 'changeConnectionsDotStatus',
@@ -879,7 +881,7 @@ function notificationPollCallback(connectionsArray) {
                 (newOnlineUsers === 1 ? "is" : "are") + " available online. Open PEOPLE to join them.";
             ui.notificationDisplayBanner(message);
         }
-    }
+    }*/
 }
 
 function isReturnedDataEmpty(data) {
