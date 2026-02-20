@@ -255,7 +255,7 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     ch.setEnabled(_settingsManager.valueOrDefaultValueForKeyPath(CRASH_REPORTER).toBool());
 
     qRegisterMetaType<DomainServerWebSessionData>("DomainServerWebSessionData");
-    qRegisterMetaTypeStreamOperators<DomainServerWebSessionData>("DomainServerWebSessionData");
+    //qRegisterMetaTypeStreamOperators<DomainServerWebSessionData>("DomainServerWebSessionData");
 
     // make sure we hear about newly connected nodes from our gatekeeper
     connect(&_gatekeeper, &DomainGatekeeper::connectedNode, this, &DomainServer::handleConnectedNode);
@@ -699,7 +699,7 @@ void DomainServer::handleTempDomainSuccess(QNetworkReply* requestReply) {
 
         // store the new token to the account info
         auto accountManager = DependencyManager::get<AccountManager>();
-        accountManager->setTemporaryDomain(id, key);
+        accountManager->setTemporaryDomain(QUuid::fromString(id), key);
 
         // change our domain ID immediately
         DependencyManager::get<LimitedNodeList>()->setSessionUUID(QUuid { id });
@@ -831,7 +831,7 @@ void DomainServer::setupNodeListAndAssignments() {
     } else {
         QVariant idValueVariant = _settingsManager.valueForKeyPath(METAVERSE_DOMAIN_ID_KEY_PATH);
         if (idValueVariant.isValid()) {
-            nodeList->setSessionUUID(idValueVariant.toString());
+            nodeList->setSessionUUID(QUuid::fromString(idValueVariant.toString()));
             isMetaverseDomain = true; // if we have an ID, we'll assume we're a metaverse domain
         } else {
             nodeList->setSessionUUID(QUuid::createUuid()); // Use random UUID
@@ -1002,7 +1002,7 @@ bool DomainServer::resetAccountManagerAccessToken() {
         if (accessToken.isEmpty()) {
             QVariant accessTokenVariant = _settingsManager.valueForKeyPath(ACCESS_TOKEN_KEY_PATH);
 
-            if (accessTokenVariant.canConvert(QMetaType::QString)) {
+            if (accessTokenVariant.canConvert(QMetaType(QMetaType::QString))) {
                 accessToken = accessTokenVariant.toString();
             } else {
                 qWarning() << "No access token is present. Some operations that use the directory services API will fail.";
@@ -1207,7 +1207,7 @@ void DomainServer::createStaticAssignmentsForType(Assignment::Type type, const Q
     int configCounter = 0;
 
     foreach(const QVariant& configVariant, configList) {
-        if (configVariant.canConvert(QMetaType::QVariantMap)) {
+        if (configVariant.canConvert(QMetaType(QMetaType::QVariantMap))) {
             QVariantMap configMap = configVariant.toMap();
 
             // check the config string for a pool
@@ -2849,11 +2849,12 @@ std::pair<bool, QString>  DomainServer::isAuthenticatedRequest(HTTPConnection* c
     if (_oauthEnable) {
         QString cookieString = connection->requestHeader(HTTP_COOKIE_HEADER_KEY);
 
-        QRegExp cookieUUIDRegex(COOKIE_UUID_REGEX_STRING);
+        QRegularExpression cookieUUIDRegex(COOKIE_UUID_REGEX_STRING);
 
         QUuid cookieUUID;
-        if (cookieString.indexOf(cookieUUIDRegex) != -1) {
-            cookieUUID = cookieUUIDRegex.cap(1);
+        auto matches = cookieUUIDRegex.match(cookieString);
+        if (matches.hasMatch()) {
+            cookieUUID = QUuid::fromString(matches.captured(1));
         }
 
         if (_settingsManager.valueForKeyPath(BASIC_AUTH_USERNAME_KEY_PATH).isValid()) {
@@ -2950,7 +2951,7 @@ std::pair<bool, QString>  DomainServer::isAuthenticatedRequest(HTTPConnection* c
 
                     QString settingsPassword = settingsPasswordVariant.isValid() ? settingsPasswordVariant.toString() : "";
                     QString hexHeaderPassword = headerPassword.isEmpty() ?
-                        "" : QString(QCryptographicHash::hash(headerPassword.toUtf8(), QCryptographicHash::Sha256).toHex());
+                        QByteArray("") : QCryptographicHash::hash(headerPassword.toUtf8(), QCryptographicHash::Sha256).toHex();
 
                     if (settingsUsername == headerUsername && hexHeaderPassword == settingsPassword) {
                         qCInfo(domain_server_auth) << httpPeerAddress << "- Basic:" << headerUsername << "-"
@@ -3025,7 +3026,7 @@ Headers DomainServer::setupCookieHeadersFromProfileReply(QNetworkReply* profileR
     // setup expiry for cookie to 1 month from today
     QDateTime cookieExpiry = QDateTime::currentDateTimeUtc().addMonths(1);
 
-    QString cookieString = HIFI_SESSION_COOKIE_KEY + "=" + uuidStringWithoutCurlyBraces(cookieUUID.toString());
+    QString cookieString = HIFI_SESSION_COOKIE_KEY + "=" + uuidStringWithoutCurlyBraces(cookieUUID);
     cookieString += "; expires=" + cookieExpiry.toString("ddd, dd MMM yyyy HH:mm:ss") + " GMT";
     cookieString += "; domain=" + _hostname + "; path=/";
 

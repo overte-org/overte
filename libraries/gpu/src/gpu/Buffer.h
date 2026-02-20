@@ -77,7 +77,7 @@ public:
     Buffer(uint32_t usage, Size size, const Byte* bytes, Size pageSize = PageManager::DEFAULT_PAGE_SIZE);
     Buffer(const Buffer& buf);             // deep copy of the sysmem buffer
     Buffer& operator=(const Buffer& buf);  // deep copy of the sysmem buffer
-    ~Buffer();
+    virtual ~Buffer();
 
     // The size in bytes of data stored in the buffer
     Size getSize() const override;

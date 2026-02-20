@@ -115,35 +115,37 @@ void OctreeStatsProvider::updateOctreeStatsData() {
     unsigned long totalLeaves = 0;
 
     m_sendingMode.clear();
-    NodeToOctreeSceneStats* sceneStats = qApp->getOcteeSceneStats();
-    sceneStats->withReadLock([&] {
-        for (NodeToOctreeSceneStatsIterator i = sceneStats->begin(); i != sceneStats->end(); i++) {
-            //const QUuid& uuid = i->first;
-            OctreeSceneStats& stats = i->second;
-            serverCount++;
+    auto sceneStats = qApp->getOcteeSceneStats();
+    if (sceneStats) {
+        sceneStats.value()->withReadLock([&] {
+            for (NodeToOctreeSceneStatsIterator i = sceneStats.value()->begin(); i != sceneStats.value()->end(); i++) {
+                //const QUuid& uuid = i->first;
+                OctreeSceneStats& stats = i->second;
+                serverCount++;
 
-            // calculate server node totals
-            totalNodes += stats.getTotalElements();
-            totalInternal += stats.getTotalInternal();
-            totalLeaves += stats.getTotalLeaves();
+                // calculate server node totals
+                totalNodes += stats.getTotalElements();
+                totalInternal += stats.getTotalInternal();
+                totalLeaves += stats.getTotalLeaves();
 
-            // Sending mode
-            if (serverCount > 1) {
-                m_sendingMode += ",";
+                // Sending mode
+                if (serverCount > 1) {
+                    m_sendingMode += ",";
+                }
+                if (stats.isMoving()) {
+                    m_sendingMode += "M";
+                    movingServerCount++;
+                } else {
+                    m_sendingMode += "S";
+                }
+                if (stats.isFullScene()) {
+                    m_sendingMode += "F";
+                } else {
+                    m_sendingMode += "p";
+                }
             }
-            if (stats.isMoving()) {
-                m_sendingMode += "M";
-                movingServerCount++;
-            } else {
-                m_sendingMode += "S";
-            }
-            if (stats.isFullScene()) {
-                m_sendingMode += "F";
-            } else {
-                m_sendingMode += "p";
-            }
-        }
-    });
+        });
+    }
     m_sendingMode += QString(" - %1 servers").arg(serverCount);
     if (movingServerCount > 0) {
         m_sendingMode += " <SCENE NOT STABLE> ";
@@ -262,72 +264,74 @@ void OctreeStatsProvider::showOctreeServersOfType(NodeType_t serverType) {
         QUuid nodeUUID = node->getUUID();
 
         // now lookup stats details for this server...
-        NodeToOctreeSceneStats* sceneStats = qApp->getOcteeSceneStats();
-        sceneStats->withReadLock([&] {
-            if (sceneStats->find(nodeUUID) != sceneStats->end()) {
-                OctreeSceneStats& stats = sceneStats->at(nodeUUID);
+        auto sceneStats = qApp->getOcteeSceneStats();
+        if (sceneStats) {
+            sceneStats.value()->withReadLock([&] {
+                if (sceneStats.value()->find(nodeUUID) != sceneStats.value()->end()) {
+                    OctreeSceneStats& stats = sceneStats.value()->at(nodeUUID);
 
-                float lastFullEncode = stats.getLastFullTotalEncodeTime() / USECS_PER_MSEC;
-                float lastFullSend = stats.getLastFullElapsedTime() / USECS_PER_MSEC;
-                float lastFullSendInSeconds = stats.getLastFullElapsedTime() / USECS_PER_SECOND;
-                float lastFullPackets = stats.getLastFullTotalPackets();
-                float lastFullPPS = lastFullPackets;
-                if (lastFullSendInSeconds > 0) {
-                    lastFullPPS = lastFullPackets / lastFullSendInSeconds;
+                    float lastFullEncode = stats.getLastFullTotalEncodeTime() / USECS_PER_MSEC;
+                    float lastFullSend = stats.getLastFullElapsedTime() / USECS_PER_MSEC;
+                    float lastFullSendInSeconds = stats.getLastFullElapsedTime() / USECS_PER_SECOND;
+                    float lastFullPackets = stats.getLastFullTotalPackets();
+                    float lastFullPPS = lastFullPackets;
+                    if (lastFullSendInSeconds > 0) {
+                        lastFullPPS = lastFullPackets / lastFullSendInSeconds;
+                    }
+
+                    mostDetails += QString("<br/><br/>Last Full Scene... Encode: %1 ms Send: %2 ms Packets: %3 Bytes: %4 Rate: %5 PPS")
+                            .arg(lastFullEncode)
+                            .arg(lastFullSend)
+                            .arg(lastFullPackets)
+                            .arg(stats.getLastFullTotalBytes())
+                            .arg(lastFullPPS);
+
+                    for (int i = 0; i < OctreeSceneStats::ITEM_COUNT; i++) {
+                        OctreeSceneStats::Item item = (OctreeSceneStats::Item)(i);
+                        OctreeSceneStats::ItemInfo& itemInfo = stats.getItemInfo(item);
+                        mostDetails += QString("<br/> %1 %2")
+                                .arg(itemInfo.caption).arg(stats.getItemValue(item));
+                    }
+
+                    moreDetails += "<br/>Node UUID: " +nodeUUID.toString() + " ";
+
+                    moreDetails += QString("<br/>Elements: %1 total %2 internal %3 leaves ")
+                            .arg(stats.getTotalElements())
+                            .arg(stats.getTotalInternal())
+                            .arg(stats.getTotalLeaves());
+
+                    const SequenceNumberStats& seqStats = stats.getIncomingOctreeSequenceNumberStats();
+                    qint64 clockSkewInUsecs = node->getClockSkewUsec();
+                    qint64 clockSkewInMS = clockSkewInUsecs / (qint64)USECS_PER_MSEC;
+
+                    moreDetails += QString("<br/>Incoming Packets: %1/ Lost: %2/ Recovered: %3")
+                            .arg(stats.getIncomingPackets())
+                            .arg(seqStats.getLost())
+                            .arg(seqStats.getRecovered());
+
+                    moreDetails += QString("<br/> Out of Order: %1/ Early: %2/ Late: %3/ Unreasonable: %4")
+                            .arg(seqStats.getOutOfOrder())
+                            .arg(seqStats.getEarly())
+                            .arg(seqStats.getLate())
+                            .arg(seqStats.getUnreasonable());
+
+                    moreDetails += QString("<br/> Average Flight Time: %1 msecs")
+                            .arg(stats.getIncomingFlightTimeAverage());
+
+                    moreDetails += QString("<br/> Average Ping Time: %1 msecs")
+                            .arg(node->getPingMs());
+
+                    moreDetails += QString("<br/> Average Clock Skew: %1 msecs [%2]")
+                            .arg(clockSkewInMS)
+                            .arg(formatUsecTime(clockSkewInUsecs));
+
+
+                    moreDetails += QString("<br/>Incoming Bytes: %1 Wasted Bytes: %2")
+                            .arg(stats.getIncomingBytes())
+                            .arg(stats.getIncomingWastedBytes());
                 }
-
-                mostDetails += QString("<br/><br/>Last Full Scene... Encode: %1 ms Send: %2 ms Packets: %3 Bytes: %4 Rate: %5 PPS")
-                        .arg(lastFullEncode)
-                        .arg(lastFullSend)
-                        .arg(lastFullPackets)
-                        .arg(stats.getLastFullTotalBytes())
-                        .arg(lastFullPPS);
-
-                for (int i = 0; i < OctreeSceneStats::ITEM_COUNT; i++) {
-                    OctreeSceneStats::Item item = (OctreeSceneStats::Item)(i);
-                    OctreeSceneStats::ItemInfo& itemInfo = stats.getItemInfo(item);
-                    mostDetails += QString("<br/> %1 %2")
-                            .arg(itemInfo.caption).arg(stats.getItemValue(item));
-                }
-
-                moreDetails += "<br/>Node UUID: " +nodeUUID.toString() + " ";
-
-                moreDetails += QString("<br/>Elements: %1 total %2 internal %3 leaves ")
-                        .arg(stats.getTotalElements())
-                        .arg(stats.getTotalInternal())
-                        .arg(stats.getTotalLeaves());
-
-                const SequenceNumberStats& seqStats = stats.getIncomingOctreeSequenceNumberStats();
-                qint64 clockSkewInUsecs = node->getClockSkewUsec();
-                qint64 clockSkewInMS = clockSkewInUsecs / (qint64)USECS_PER_MSEC;
-
-                moreDetails += QString("<br/>Incoming Packets: %1/ Lost: %2/ Recovered: %3")
-                        .arg(stats.getIncomingPackets())
-                        .arg(seqStats.getLost())
-                        .arg(seqStats.getRecovered());
-
-                moreDetails += QString("<br/> Out of Order: %1/ Early: %2/ Late: %3/ Unreasonable: %4")
-                        .arg(seqStats.getOutOfOrder())
-                        .arg(seqStats.getEarly())
-                        .arg(seqStats.getLate())
-                        .arg(seqStats.getUnreasonable());
-
-                moreDetails += QString("<br/> Average Flight Time: %1 msecs")
-                        .arg(stats.getIncomingFlightTimeAverage());
-
-                moreDetails += QString("<br/> Average Ping Time: %1 msecs")
-                        .arg(node->getPingMs());
-
-                moreDetails += QString("<br/> Average Clock Skew: %1 msecs [%2]")
-                        .arg(clockSkewInMS)
-                        .arg(formatUsecTime(clockSkewInUsecs));
-
-
-                moreDetails += QString("<br/>Incoming Bytes: %1 Wasted Bytes: %2")
-                        .arg(stats.getIncomingBytes())
-                        .arg(stats.getIncomingWastedBytes());
-            }
-        });
+            });
+        }
         m_servers.append(lesserDetails);
         m_servers.append(moreDetails);
         m_servers.append(mostDetails);

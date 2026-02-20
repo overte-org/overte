@@ -11,7 +11,7 @@
 
 #include <QtGui/QSurfaceFormat>
 #include <QtGui/QOpenGLContext>
-#include <QtGui/QOpenGLDebugLogger>
+#include <QOpenGLDebugLogger>
 
 #include "Context.h"
 
@@ -113,7 +113,7 @@ GLAPI PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
 GLAPI PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
 
 static bool setupPixelFormatSimple(HDC hdc) {
-    // FIXME build the PFD based on the 
+    // FIXME build the PFD based on the
     static const PIXELFORMATDESCRIPTOR pfd =    // pfd Tells Windows How We Want Things To Be
     {
         sizeof(PIXELFORMATDESCRIPTOR),         // Size Of This Pixel Format Descriptor
@@ -128,7 +128,7 @@ static bool setupPixelFormatSimple(HDC hdc) {
         0,                                      // Shift Bit Ignored
         0,                                      // No Accumulation Buffer
         0, 0, 0, 0,                             // Accumulation Bits Ignored
-        24,                                     // 24 Bit Z-Buffer (Depth Buffer)  
+        24,                                     // 24 Bit Z-Buffer (Depth Buffer)
         8,                                      // 8 Bit Stencil Buffer
         0,                                      // No Auxiliary Buffer
         PFD_MAIN_PLANE,                         // Main Drawing Layer
@@ -188,9 +188,9 @@ uint16_t gl::getAvailableVersion() {
         major = 4;
         minor = 1;
 #elif defined(Q_OS_WIN)
-        // 
+        //
         HINSTANCE hInstance = GetModuleHandle(nullptr);
-        const auto windowClassName = "OpenGLVersionCheck";
+        const wchar_t windowClassName[] = L"OpenGLVersionCheck";
         WNDCLASS wc = { };
         wc.lpfnWndProc   = DefWindowProc;
         wc.hInstance     = hInstance;
@@ -199,7 +199,7 @@ uint16_t gl::getAvailableVersion() {
 
         using Handle = std::shared_ptr<void>;
         HWND rawHwnd = CreateWindowEx(
-            WS_EX_APPWINDOW, // extended style 
+            WS_EX_APPWINDOW, // extended style
             windowClassName, // class name
             windowClassName, // title
             WS_CLIPSIBLINGS | WS_CLIPCHILDREN | CS_OWNDC | WS_POPUP, // style
@@ -242,7 +242,7 @@ uint16_t gl::getAvailableVersion() {
             return;
         }
 
-        // The only two versions we care about on Windows 
+        // The only two versions we care about on Windows
         // are 4.5 and 4.1
         if (GLAD_GL_VERSION_4_5) {
             major = 4;
@@ -321,7 +321,7 @@ namespace gl {
         GLenum error = glGetError();
         if (!error) {
             return false;
-        } 
+        }
         switch (error) {
             case GL_INVALID_ENUM:
                 qCWarning(glLogging) << "GLBackend" << name << ": An unacceptable value is specified for an enumerated argument.The offending command is ignored and has no other side effect than to set the error flag.";
@@ -352,8 +352,8 @@ namespace gl {
 
 
     bool checkGLErrorDebug(const char* name) {
-        // Disabling error checking macro on Android debug builds for now, 
-        // as it throws off performance testing, which must be done on 
+        // Disabling error checking macro on Android debug builds for now,
+        // as it throws off performance testing, which must be done on
         // Debug builds
 #if defined(DEBUG) && !defined(Q_OS_ANDROID)
         return checkGLError(name);

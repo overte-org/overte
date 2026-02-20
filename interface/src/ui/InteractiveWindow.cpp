@@ -34,7 +34,7 @@
 #include "MainWindow.h"
 
 #ifdef Q_OS_WIN
-#include <WinUser.h>
+#include <Windows.h>
 #endif
 
 STATIC_SCRIPT_TYPES_INITIALIZER(+[](ScriptManager* manager){
@@ -421,7 +421,7 @@ void InteractiveWindow::close() {
     if (_dockWidget) {
         auto window = qApp->getWindow();
         if (QThread::currentThread() != window->thread()) {
-            BLOCKING_INVOKE_METHOD(window, "removeDockWidget", Q_ARG(QDockWidget*, _dockWidget.get()));
+            BLOCKING_INVOKE_METHOD(window, "removeDockWidget", Q_GENERIC_ARG(QDockWidget*, _dockWidget.get()));
         } else {
             window->removeDockWidget(_dockWidget.get());
         }

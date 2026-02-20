@@ -215,7 +215,7 @@ class ReticleInterface : public QObject {
     Q_PROPERTY(bool visible READ getVisible WRITE setVisible)
     Q_PROPERTY(float depth READ getDepth WRITE setDepth)
     Q_PROPERTY(float scale READ getScale WRITE setScale)
-    Q_PROPERTY(glm::vec2 maximumPosition READ getMaximumPosition)
+    Q_PROPERTY(glm::vec<2,float,glm::packed_highp> maximumPosition READ getMaximumPosition)
     Q_PROPERTY(bool mouseCaptured READ isMouseCaptured)
     Q_PROPERTY(bool allowMouseCapture READ getAllowMouseCapture WRITE setAllowMouseCapture)
     Q_PROPERTY(bool pointingAtSystemOverlay READ isPointingAtSystemOverlay)
@@ -258,6 +258,7 @@ public:
      * @returns {boolean} <code>true</code> if the mouse cursor is pointing at UI in the Interface window in desktop mode or on 
      *     the HUD surface in HMD mode, <code>false</code> if it isn't.
      */
+    // QT6TODO: Reticle.isPointingAtSystemOverlay does not work currently
     Q_INVOKABLE bool isPointingAtSystemOverlay() { return !_compositor->getReticleOverDesktop(); }
 
     /*@jsdoc
@@ -332,7 +333,7 @@ public:
      * @function Reticle.getMaximumPosition
      * @returns {Vec2} The maximum reticle coordinates on the display device in desktop mode or the HUD surface in HMD mode.
      */
-    Q_INVOKABLE glm::vec2 getMaximumPosition() { return _compositor->getReticleMaximumPosition(); }
+    Q_INVOKABLE glm::vec<2,float,glm::packed_highp> getMaximumPosition() { return _compositor->getReticleMaximumPosition(); }
 
 private:
     CompositorHelper* _compositor;

@@ -50,8 +50,8 @@ class ScriptEngine;
 // FIXME refactor this class to be a QQuickItem derived type and eliminate the needless wrapping 
 class QmlWindowClass : public QObject {
     Q_OBJECT
-    Q_PROPERTY(glm::vec2 position READ getPosition WRITE setPosition NOTIFY positionChanged)
-    Q_PROPERTY(glm::vec2 size READ getSize WRITE setSize NOTIFY sizeChanged)
+    Q_PROPERTY(glm::vec<2,float,glm::packed_highp> position READ getPosition WRITE setPosition NOTIFY positionChanged)
+    Q_PROPERTY(glm::vec<2,float,glm::packed_highp> size READ getSize WRITE setSize NOTIFY sizeChanged)
     Q_PROPERTY(bool visible READ isVisible WRITE setVisible NOTIFY visibleChanged)
 
 private:
@@ -102,14 +102,14 @@ public slots:
      * @function OverlayWindow.getPosition
      * @returns {Vec2} The position of the window, in pixels.
      */
-    glm::vec2 getPosition();
+    glm::vec<2,float,glm::packed_highp> getPosition();
 
     /*@jsdoc
      * Sets the position of the window, from a {@link Vec2}.
      * @function OverlayWindow.setPosition
      * @param {Vec2} position - The position of the window, in pixels.
      */
-    void setPosition(const glm::vec2& position);
+    void setPosition(const glm::vec<2,float,glm::packed_highp>& position);
 
     /*@jsdoc
      * Sets the position of the window, from a pair of numbers.
@@ -125,14 +125,14 @@ public slots:
      * @function OverlayWindow.getSize
      * @returns {Vec2} The size of the window interior, in pixels.
      */
-    glm::vec2 getSize();
+    glm::vec<2,float,glm::packed_highp> getSize();
 
     /*@jsdoc
      * Sets the size of the window interior, from a {@link Vec2}.
      * @function OverlayWindow.setSize
      * @param {Vec2} size - The size of the window interior, in pixels.
      */
-    void setSize(const glm::vec2& size);
+    void setSize(const glm::vec<2,float,glm::packed_highp>& size);
 
     /*@jsdoc
      * Sets the size of the window interior, from a pair of numbers.
@@ -200,7 +200,7 @@ public slots:
      * // QML file, "OverlayWindow.qml".
      *
      * import QtQuick 2.5
-     * import QtQuick.Controls 1.4
+     * import QtQuick.Controls 2.3
      * 
      * Rectangle {
      *     width: parent.width
@@ -275,7 +275,7 @@ signals:
      * @param {Vec2} position - The position of the window, in pixels.
      * @returns {Signal}
      */
-    void moved(glm::vec2 position);
+    void moved(glm::vec<2,float,glm::packed_highp> position);
 
     /*@jsdoc
      * Triggered when the window changes size.

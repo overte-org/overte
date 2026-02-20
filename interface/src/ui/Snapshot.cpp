@@ -24,6 +24,7 @@
 #include <QtNetwork/QHttpMultiPart>
 #include <QPainter>
 #include <QtConcurrent/QtConcurrentRun>
+#include <QtCore5Compat/QRegExp>
 
 #include <AccountManager.h>
 #include <AddressManager.h>
@@ -219,9 +220,9 @@ void Snapshot::takeNextSnapshot() {
 
         // Process six QImages
         if (_cubemapOutputFormat) {
-            QtConcurrent::run([this]() { convertToCubemap(); });
+            QThreadPool::globalInstance()->start([this]() { convertToCubemap(); });
         } else {
-            QtConcurrent::run([this]() { convertToEquirectangular(); });
+            QThreadPool::globalInstance()->start([this]() { convertToEquirectangular(); });
         }
     }
 }
@@ -361,7 +362,7 @@ QFile* Snapshot::savedFileForSnapshot(QImage& shot,
 
     QString username = DependencyManager::get<AccountManager>()->getAccountInfo().getUsername();
     // normalize username, replace all non alphanumeric with '-'
-    username.replace(QRegExp("[^A-Za-z0-9_]"), "-");
+    username.replace(QRegularExpression("[^A-Za-z0-9_]"), "-");
 
     QDateTime now = QDateTime::currentDateTime();
 

@@ -69,9 +69,9 @@ private:  // implementation
     using MethodDefMap = QHash<uint, MethodDef>;
     using SignalDefMap = QHash<uint, SignalDef>;
     using InstanceMap = QHash<uint, QPointer<ScriptSignalV8Proxy> >;
-    using PropertyNameMap = QHash<QString, PropertyDef*>;
-    using MethodNameMap = QHash<QString, MethodDef*>;
-    using SignalNameMap = QHash<QString, SignalDef*>;
+    using PropertyNameMap = QHash<QString, PropertyDef>;
+    using MethodNameMap = QHash<QString, MethodDef>;
+    using SignalNameMap = QHash<QString, SignalDef>;
 
     static constexpr uint PROPERTY_TYPE = 0x1000;
     static constexpr uint METHOD_TYPE = 0x2000;

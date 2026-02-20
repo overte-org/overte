@@ -35,7 +35,7 @@ void ResourceTests::initTestCase() {
     const qint64 MAXIMUM_CACHE_SIZE = 1024 * 1024 * 1024; // 1GB
 
     // set up the file cache
-    //QString cachePath = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+    //QString cachePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     QString cachePath = "./resourceTestCache";
     QNetworkAccessManager& networkAccessManager = NetworkAccessManager::getInstance();
     QNetworkDiskCache* cache = new QNetworkDiskCache();

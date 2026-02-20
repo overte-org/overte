@@ -23,22 +23,22 @@ class ScriptAvatarData : public QObject {
     //
     // PHYSICAL PROPERTIES: POSITION AND ORIENTATION
     //
-    Q_PROPERTY(glm::vec3 position READ getPosition)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> position READ getPosition)
     Q_PROPERTY(float scale READ getTargetScale)
-    Q_PROPERTY(glm::vec3 handPosition READ getHandPosition)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> handPosition READ getHandPosition)
     Q_PROPERTY(float bodyPitch READ getBodyPitch)
     Q_PROPERTY(float bodyYaw READ getBodyYaw)
     Q_PROPERTY(float bodyRoll READ getBodyRoll)
-    Q_PROPERTY(glm::quat orientation READ getOrientation)
-    Q_PROPERTY(glm::quat headOrientation READ getHeadOrientation)
+    Q_PROPERTY(glm::qua<float,glm::packed_highp> orientation READ getOrientation)
+    Q_PROPERTY(glm::qua<float,glm::packed_highp> headOrientation READ getHeadOrientation)
     Q_PROPERTY(float headPitch READ getHeadPitch)
     Q_PROPERTY(float headYaw READ getHeadYaw)
     Q_PROPERTY(float headRoll READ getHeadRoll)
     //
     // PHYSICAL PROPERTIES: VELOCITY
     //
-    Q_PROPERTY(glm::vec3 velocity READ getVelocity)
-    Q_PROPERTY(glm::vec3 angularVelocity READ getAngularVelocity)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> velocity READ getVelocity)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> angularVelocity READ getAngularVelocity)
 
     //
     // IDENTIFIER PROPERTIES
@@ -64,9 +64,9 @@ class ScriptAvatarData : public QObject {
     //
     // MATRIX PROPERTIES
     //
-    Q_PROPERTY(glm::mat4 sensorToWorldMatrix READ getSensorToWorldMatrix)
-    Q_PROPERTY(glm::mat4 controllerLeftHandMatrix READ getControllerLeftHandMatrix)
-    Q_PROPERTY(glm::mat4 controllerRightHandMatrix READ getControllerRightHandMatrix)
+    Q_PROPERTY(glm::mat<4,4,float,glm::packed_highp> sensorToWorldMatrix READ getSensorToWorldMatrix)
+    Q_PROPERTY(glm::mat<4,4,float,glm::packed_highp> controllerLeftHandMatrix READ getControllerLeftHandMatrix)
+    Q_PROPERTY(glm::mat<4,4,float,glm::packed_highp> controllerRightHandMatrix READ getControllerRightHandMatrix)
 
     Q_PROPERTY(bool hasPriority READ getHasPriority)
 
@@ -82,8 +82,8 @@ public:
     float getBodyPitch() const;
     float getBodyYaw() const;
     float getBodyRoll() const;
-    glm::quat getOrientation() const;
-    glm::quat getHeadOrientation() const;
+    glm::qua<float,glm::packed_highp> getOrientation() const;
+    glm::qua<float,glm::packed_highp> getHeadOrientation() const;
     float getHeadPitch() const;
     float getHeadYaw() const;
     float getHeadRoll() const;
@@ -123,7 +123,7 @@ public:
      * @returns {Quat} The rotation of the joint relative to its parent, or {@link Quat(0)|Quat.IDENTITY} if the avatar data
      *     aren't available.
      */
-    Q_INVOKABLE glm::quat getJointRotation(int index) const;
+    Q_INVOKABLE glm::qua<float,glm::packed_highp> getJointRotation(int index) const;
 
     /*@jsdoc
      * Gets the translation of a joint relative to its parent, in model coordinates.
@@ -135,7 +135,7 @@ public:
      * @returns {Vec3} The translation of the joint relative to its parent, in model coordinates, or {@link Vec3(0)|Vec3.ZERO}
      *     if the avatar data aren't available.
      */
-    Q_INVOKABLE glm::vec3 getJointTranslation(int index) const;
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getJointTranslation(int index) const;
 
     /*@jsdoc
      * Gets the rotation of a joint relative to its parent. For information on the joint hierarchy used, see
@@ -145,7 +145,7 @@ public:
      * @returns {Quat} The rotation of the joint relative to its parent, or {@link Quat(0)|Quat.IDENTITY} if the avatar data
      *     aren't available.
      */
-    Q_INVOKABLE glm::quat getJointRotation(const QString& name) const;
+    Q_INVOKABLE glm::qua<float,glm::packed_highp> getJointRotation(const QString& name) const;
 
     /*@jsdoc
      * Gets the translation of a joint relative to its parent, in model coordinates.
@@ -157,7 +157,7 @@ public:
      * @returns {Vec3} The translation of the joint relative to its parent, in model coordinates, or {@link Vec3(0)|Vec3.ZERO}
      *     if the avatar data aren't available.
      */
-    Q_INVOKABLE glm::vec3 getJointTranslation(const QString& name) const;
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getJointTranslation(const QString& name) const;
 
     /*@jsdoc
      * Gets the rotations of all joints in the avatar. Each joint's rotation is relative to its parent joint.
@@ -165,7 +165,7 @@ public:
      * @returns {Quat[]} The rotations of all joints relative to each's parent, or <code>[]</code> if the avatar data aren't
      *     available. The values are in the same order as the array returned by {@link ScriptAvatar.getJointNames}.
      */
-    Q_INVOKABLE QVector<glm::quat> getJointRotations() const;
+    Q_INVOKABLE QVector<glm::qua<float,glm::packed_highp>> getJointRotations() const;
 
     /*@jsdoc
      * Gets the translations of all joints in the avatar. Each joint's translation is relative to its parent joint, in
@@ -176,7 +176,7 @@ public:
      *     the avatar data aren't available. The values are in the same order as the array returned by
      *     {@link ScriptAvatar.getJointNames}.
      */
-    Q_INVOKABLE QVector<glm::vec3> getJointTranslations() const;
+    Q_INVOKABLE QVector<glm::vec<3,float,glm::packed_highp>> getJointTranslations() const;
 
     /*@jsdoc
      * Checks that the data for a joint are valid.
@@ -216,9 +216,9 @@ public:
     //
     // MATRIX PROPERTIES
     //
-    glm::mat4 getSensorToWorldMatrix() const;
-    glm::mat4 getControllerLeftHandMatrix() const;
-    glm::mat4 getControllerRightHandMatrix() const;
+    glm::mat<4,4,float,glm::packed_highp> getSensorToWorldMatrix() const;
+    glm::mat<4,4,float,glm::packed_highp> getControllerLeftHandMatrix() const;
+    glm::mat<4,4,float,glm::packed_highp> getControllerRightHandMatrix() const;
 
     bool getHasPriority() const;
 
@@ -262,7 +262,7 @@ public slots:
      * @returns {Quat} The rotation of the joint relative to the avatar, or {@link Quat(0)|Quat.IDENTITY} if the avatar data
      *     aren't available.
      */
-    glm::quat getAbsoluteJointRotationInObjectFrame(int index) const;
+    glm::qua<float,glm::packed_highp> getAbsoluteJointRotationInObjectFrame(int index) const;
 
     /*@jsdoc
      * Gets the translation of a joint relative to the avatar.
@@ -271,7 +271,7 @@ public slots:
      * @returns {Vec3} The translation of the joint relative to the avatar, or {@link Vec3(0)|Vec3.ZERO} if the avatar data
      *     aren't available.
      */
-    glm::vec3 getAbsoluteJointTranslationInObjectFrame(int index) const;
+    glm::vec<3,float,glm::packed_highp> getAbsoluteJointTranslationInObjectFrame(int index) const;
 
 protected:
     std::weak_ptr<AvatarData> _avatarData;

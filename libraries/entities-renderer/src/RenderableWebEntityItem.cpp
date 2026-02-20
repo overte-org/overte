@@ -13,7 +13,7 @@
 
 #include <QtCore/QTimer>
 #include <QtGui/QOpenGLContext>
-#include <QtGui/QTouchDevice>
+#include <QPointingDevice>
 #include <QtQuick/QQuickItem>
 #include <QtQuick/QQuickWindow>
 #include <QtQml/QQmlContext>
@@ -33,6 +33,7 @@
 #include "EntitiesRendererLogging.h"
 #include <NetworkingConstants.h>
 #include <MetaverseAPI.h>
+#include <private/qeventpoint_p.h>
 
 using namespace render;
 using namespace render::entities;
@@ -53,13 +54,13 @@ const float METERS_TO_INCHES = 39.3701f;
 // If a web-view hasn't been rendered for 30 seconds, de-allocate the framebuffer
 static uint64_t MAX_NO_RENDER_INTERVAL = 30 * USECS_PER_SECOND;
 
-static uint8_t YOUTUBE_MAX_FPS = 30;
-
 // Don't allow more than 20 concurrent web views
 static std::atomic<uint32_t> _currentWebCount(0);
 static const uint32_t MAX_CONCURRENT_WEB_VIEWS = 20;
 
-static QTouchDevice _touchDevice;
+// QT6TODO: Use one shared virtual pointing device, where do we put it though?
+static std::shared_ptr<QPointingDevice> _touchDevice;
+static std::shared_ptr<QPointingDevice> _mouseDevice;
 
 static uint8_t CUSTOM_PIPELINE_NUMBER;
 // transparent, forward, shadow, fade
@@ -139,10 +140,24 @@ WebEntityRenderer::WebEntityRenderer(const EntityItemPointer& entity) : Parent(e
     static std::once_flag once;
     std::call_once(once, [&]{
         CUSTOM_PIPELINE_NUMBER = render::ShapePipeline::registerCustomShapePipelineFactory(webPipelineFactory);
-        _touchDevice.setCapabilities(QTouchDevice::Position);
-        _touchDevice.setType(QTouchDevice::TouchScreen);
-        _touchDevice.setName("WebEntityRendererTouchDevice");
-        _touchDevice.setMaximumTouchPoints(4);
+        _touchDevice = std::make_shared<QPointingDevice>(
+            "WebEntityTouchDevice",
+            1002,
+            QInputDevice::DeviceType::TouchScreen, // QT6TODO: test if touchscreen or stylus works better.
+            QPointingDevice::PointerType::AllPointerTypes,
+            QInputDevice::Capability::All,
+            1, //maxPoints
+            2 // buttonCount
+        );
+        _mouseDevice = std::make_shared<QPointingDevice>(
+            "WebEntityMouseDevice",
+            1003,
+            QInputDevice::DeviceType::Mouse,
+            QPointingDevice::PointerType::Cursor,
+            QInputDevice::Capability::All,
+            1, //maxPoints
+            2 // buttonCount
+        );
     });
     _geometryId = DependencyManager::get<GeometryCache>()->allocateID();
 
@@ -266,7 +281,7 @@ void WebEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene
 
         if (_webSurface) {
             if (_webSurface->getRootItem()) {
-                if (_contentType == ContentType::HtmlContent && _sourceURL != newSourceURL) {            
+                if (_sourceURL != newSourceURL) {
                     if (localSafeContext) {
                         ::hifi::scripting::setLocalAccessSafeThread(true);
                     }
@@ -275,10 +290,8 @@ void WebEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene
                     _webSurface->getRootItem()->setProperty(USE_BACKGROUND_PROPERTY, _useBackground);
                     _webSurface->getRootItem()->setProperty(USER_AGENT_PROPERTY, _userAgent);
                     _webSurface->getSurfaceContext()->setContextProperty(GLOBAL_POSITION_PROPERTY, vec3toVariant(_contextPosition));
-                    _webSurface->setMaxFps((QUrl(newSourceURL).host().endsWith("youtube.com", Qt::CaseInsensitive)) ? YOUTUBE_MAX_FPS : _maxFPS);
+                    _webSurface->setMaxFps(_maxFPS);
                     ::hifi::scripting::setLocalAccessSafeThread(false);
-                    _sourceURL = newSourceURL;
-                } else if (_contentType != ContentType::HtmlContent) {
                     _sourceURL = newSourceURL;
                 }
 
@@ -293,13 +306,7 @@ void WebEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scene
                 {
                     auto maxFPS = entity->getMaxFPS();
                     if (_maxFPS != maxFPS) {
-                        // We special case YouTube URLs since we know they are videos that we should play with at least 30 FPS.
-                        // FIXME this doesn't handle redirects or shortened URLs, consider using a signaling method from the web entity
-                        if (QUrl(_sourceURL).host().endsWith("youtube.com", Qt::CaseInsensitive)) {
-                            _webSurface->setMaxFps(YOUTUBE_MAX_FPS);
-                        } else {
-                            _webSurface->setMaxFps(maxFPS);
-                        }
+                        _webSurface->setMaxFps(maxFPS);
                         _maxFPS = maxFPS;
                     }
                 }
@@ -473,7 +480,7 @@ void WebEntityRenderer::hoverEnterEntity(const PointerEvent& event) {
         if (_webSurface) {
             PointerEvent webEvent = event;
             webEvent.setPos2D(event.getPos2D() * (METERS_TO_INCHES * _dpi));
-            _webSurface->hoverBeginEvent(webEvent, _touchDevice);
+            _webSurface->hoverBeginEvent(webEvent, *_touchDevice);
         }
     });
 }
@@ -493,7 +500,7 @@ void WebEntityRenderer::hoverLeaveEntity(const PointerEvent& event) {
         if (_webSurface) {
             PointerEvent webEvent = event;
             webEvent.setPos2D(event.getPos2D() * (METERS_TO_INCHES * _dpi));
-            _webSurface->hoverEndEvent(webEvent, _touchDevice);
+            _webSurface->hoverEndEvent(webEvent, *_touchDevice);
         }
     });
 }
@@ -515,7 +522,7 @@ void WebEntityRenderer::handlePointerEvent(const PointerEvent& event) {
 void WebEntityRenderer::handlePointerEventAsTouch(const PointerEvent& event) {
     PointerEvent webEvent = event;
     webEvent.setPos2D(event.getPos2D() * (METERS_TO_INCHES * _dpi));
-    _webSurface->handlePointerEvent(webEvent, _touchDevice);
+    _webSurface->handlePointerEvent(webEvent, *_touchDevice);
 }
 
 void WebEntityRenderer::handlePointerEventAsMouse(const PointerEvent& event) {
@@ -552,10 +559,17 @@ void WebEntityRenderer::handlePointerEventAsMouse(const PointerEvent& event) {
 
     if (type == QEvent::Wheel) {
         const auto& scroll = event.getScroll() * POINTEREVENT_SCROLL_SENSITIVITY;
-        QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false);
+        QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false, Qt::MouseEventSynthesizedByApplication, _mouseDevice.get());
+        wheelEvent.setTimestamp(QDateTime::currentMSecsSinceEpoch());
+        QMutableEventPoint::setTimestamp(wheelEvent.point(0), wheelEvent.timestamp());
         QCoreApplication::sendEvent(_webSurface->getWindow(), &wheelEvent);
     } else {
-        QMouseEvent mouseEvent(type, windowPoint, windowPoint, windowPoint, button, buttons, event.getKeyboardModifiers());
+        QMouseEvent mouseEvent(type, windowPoint, windowPoint, windowPoint, button, buttons, event.getKeyboardModifiers(), _mouseDevice.get());
+        //QMouseEvent mouseEvent(type, QPointF(), QPointF(), QPointF(), button, buttons, event.getKeyboardModifiers(), _mouseDevice.get());
+        mouseEvent.setTimestamp(QDateTime::currentMSecsSinceEpoch());
+        QMutableEventPoint::setTimestamp(mouseEvent.point(0), mouseEvent.timestamp());
+        //QMutableEventPoint::setPosition(mouseEvent.point(0), windowPoint);
+        //QMutableEventPoint::setScenePosition(mouseEvent.point(0), windowPoint);
         QCoreApplication::sendEvent(_webSurface->getWindow(), &mouseEvent);
     }
 }

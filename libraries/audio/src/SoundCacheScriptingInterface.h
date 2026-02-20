@@ -60,7 +60,7 @@ public:
      *     formats.
      * @returns {SoundObject} The sound ready for playback.
      */
-    Q_INVOKABLE SharedSoundPointer getSound(const QUrl& url);
+    Q_INVOKABLE std::shared_ptr<Sound> getSound(const QUrl& url);
 };
 
 #endif // hifi_SoundCacheScriptingInterface_h

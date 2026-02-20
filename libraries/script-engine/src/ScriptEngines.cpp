@@ -466,7 +466,7 @@ QStringList ScriptEngines::getRunningScripts() {
 }
 
 void ScriptEngines::stopAllScripts(bool restart) {
-    QtConcurrent::run([this, restart] {
+    QThreadPool::globalInstance()->start([this, restart] {
         QHash<QUrl, ScriptManagerPointer> scriptManagersHashCopy;
 
         {
@@ -557,13 +557,13 @@ ScriptManagerPointer ScriptEngines::loadScript(const QUrl& scriptFilename, bool 
                                               bool activateMainWindow, bool reload, bool quitWhenFinished) {
     if (thread() != QThread::currentThread()) {
         ScriptManagerPointer result { nullptr };
-        BLOCKING_INVOKE_METHOD(this, "loadScript", Q_RETURN_ARG(ScriptManagerPointer, result),
-            Q_ARG(QUrl, scriptFilename),
-            Q_ARG(bool, isUserLoaded),
-            Q_ARG(bool, loadScriptFromEditor),
-            Q_ARG(bool, activateMainWindow),
-            Q_ARG(bool, reload),
-            Q_ARG(bool, quitWhenFinished));
+        BLOCKING_INVOKE_METHOD(this, "loadScript", Q_GENERIC_RETURN_ARG(ScriptManagerPointer, result),
+            Q_GENERIC_ARG(QUrl, scriptFilename),
+            Q_GENERIC_ARG(bool, isUserLoaded),
+            Q_GENERIC_ARG(bool, loadScriptFromEditor),
+            Q_GENERIC_ARG(bool, activateMainWindow),
+            Q_GENERIC_ARG(bool, reload),
+            Q_GENERIC_ARG(bool, quitWhenFinished));
         return result;
     }
     QUrl scriptUrl;

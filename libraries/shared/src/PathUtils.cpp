@@ -192,7 +192,7 @@ bool PathUtils::deleteMyTemporaryDir(QString dirName) {
     QRegularExpression re { "^" + QRegularExpression::escape(appName) + "\\-(?<pid>\\d+)\\-(?<timestamp>\\d+)$" };
 
     auto match = re.match(dirName);
-    auto pid = match.capturedRef("pid").toLongLong();
+    auto pid = match.capturedView("pid").toLongLong();
 
     if (match.hasMatch() && rootTempDir.exists(dirName) && pid == qApp->applicationPid()) {
         auto absoluteDirPath = QDir(rootTempDir.absoluteFilePath(dirName));
@@ -227,8 +227,7 @@ int PathUtils::removeTemporaryApplicationDirs(QString appName) {
 
         auto match = re.match(dirName);
         if (match.hasMatch()) {
-            auto pid = match.capturedRef("pid").toLongLong();
-            auto timestamp = match.capturedRef("timestamp");
+            auto pid = match.capturedView("pid").toLongLong();
             if (!processIsRunning(pid)) {
                 qDebug() << "  Removing old temporary directory: " << dir.absoluteFilePath();
                 absoluteDirPath.removeRecursively();
@@ -246,7 +245,7 @@ QString fileNameWithoutExtension(const QString& fileName, const QVector<QString>
     QString fileNameLowered = fileName.toLower();
     foreach (const QString possibleExtension, possibleExtensions) {
         if (fileNameLowered.endsWith(possibleExtension.toLower())) {
-            return fileName.left(fileName.count() - possibleExtension.count() - 1);
+            return fileName.left(fileName.size() - possibleExtension.size() - 1);
         }
     }
     return fileName;

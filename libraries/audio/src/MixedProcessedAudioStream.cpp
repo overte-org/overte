@@ -56,7 +56,7 @@ int MixedProcessedAudioStream::lostAudioData(int numPackets) {
         emit processSamples(decodedBuffer, outputBuffer);
 
         _ringBuffer.writeData(outputBuffer.data(), outputBuffer.size());
-        qCDebug(audiostream, "Wrote %d samples to buffer (%d available)", outputBuffer.size() / (int)sizeof(int16_t), getSamplesAvailable());
+        qCDebug(audiostream, "Wrote %d samples to buffer (%d available)", (int)outputBuffer.size() / (int)sizeof(int16_t), getSamplesAvailable());
     }
     return 0;
 }
@@ -81,7 +81,7 @@ int MixedProcessedAudioStream::parseAudioData(const QByteArray& packetAfterStrea
     emit processSamples(decodedBuffer, outputBuffer);
 
     _ringBuffer.writeData(outputBuffer.data(), outputBuffer.size());
-    qCDebug(audiostream, "Wrote %d samples to buffer (%d available)", outputBuffer.size() / (int)sizeof(int16_t), getSamplesAvailable());
+    qCDebug(audiostream, "Wrote %d samples to buffer (%d available)", (int)outputBuffer.size() / (int)sizeof(int16_t), getSamplesAvailable());
 
     return packetAfterStreamProperties.size();
 }

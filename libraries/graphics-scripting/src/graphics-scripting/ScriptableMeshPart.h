@@ -112,7 +112,7 @@ namespace scriptable {
          *    <code>origin</code> it is considered to be "nearby".
          * @returns {number[]} The indices of nearby vertices.
          */
-        QVector<glm::uint32> findNearbyPartVertexIndices(const glm::vec3& origin, float epsilon = 1e-6) const;
+        QVector<glm::uint32> findNearbyPartVertexIndices(const glm::vec<3,float,glm::packed_highp>& origin, float epsilon = 1e-6) const;
 
         /*@jsdoc
          * Gets the value of an attribute for all vertices in the <em>whole</em> mesh (i.e., parent and mesh parts).
@@ -174,7 +174,7 @@ namespace scriptable {
          * @param {Vec3} translation - The translation to apply, in model coordinates.
          * @returns {Graphics.MeshExtents} The rseulting mesh extents, in model coordinates.
          */
-        QVariantMap translate(const glm::vec3& translation);
+        QVariantMap translate(const glm::vec<3,float,glm::packed_highp>& translation);
 
         /*@jsdoc
          * Scales the mesh part.
@@ -183,7 +183,7 @@ namespace scriptable {
          * @param {Vec3} [origin] - The origin to scale about. If not specified, the center of the mesh part is used.
          * @returns {Graphics.MeshExtents} The resulting mesh extents, in model coordinates.
          */
-        QVariantMap scale(const glm::vec3& scale, const glm::vec3& origin = glm::vec3(NAN));
+        QVariantMap scale(const glm::vec<3,float,glm::packed_highp>& scale, const glm::vec<3,float,glm::packed_highp>& origin = glm::vec<3,float,glm::packed_highp>(NAN));
 
         /*@jsdoc
          * Rotates the mesh part, using Euler angles.
@@ -193,7 +193,7 @@ namespace scriptable {
          *     <p><strong>Warning:</strong> Currently doesn't work as expected.</p>
          * @returns {Graphics.MeshExtents} The resulting mesh extents, in model coordinates.
          */
-        QVariantMap rotateDegrees(const glm::vec3& eulerAngles, const glm::vec3& origin = glm::vec3(NAN));
+        QVariantMap rotateDegrees(const glm::vec<3,float,glm::packed_highp>& eulerAngles, const glm::vec<3,float,glm::packed_highp>& origin = glm::vec<3,float,glm::packed_highp>(NAN));
 
         /*@jsdoc
          * Rotates the mesh part, using a quaternion.
@@ -203,7 +203,7 @@ namespace scriptable {
          *     <p><strong>Warning:</strong> Currently doesn't work as expected.</p>
          * @returns {Graphics.MeshExtents} The resulting mesh extents, in model coordinates.
          */
-        QVariantMap rotate(const glm::quat& rotation, const glm::vec3& origin = glm::vec3(NAN));
+        QVariantMap rotate(const glm::qua<float,glm::packed_highp>& rotation, const glm::vec<3,float,glm::packed_highp>& origin = glm::vec<3,float,glm::packed_highp>(NAN));
 
         /*@jsdoc
          * Scales, rotates, and translates the mesh.
@@ -211,7 +211,7 @@ namespace scriptable {
          * @param {Mat4} transform - The scale, rotate, and translate transform to apply.
          * @returns {Graphics.MeshExtents} The resulting mesh extents, in model coordinates.
          */
-        QVariantMap transform(const glm::mat4& transform);
+        QVariantMap transform(const glm::mat<4,4,float,glm::packed_highp>& transform);
 
         // @borrows jsdoc from GraphicsMesh.
         glm::uint32 addAttribute(const QString& attributeName, const QVariant& defaultValue = QVariant());
@@ -339,5 +339,6 @@ namespace scriptable {
     };
 }
 
-Q_DECLARE_METATYPE(scriptable::ScriptableMeshPartPointer)
-Q_DECLARE_METATYPE(QVector<scriptable::ScriptableMeshPartPointer>)
+// QT6TODO:
+//Q_DECLARE_METATYPE(scriptable::ScriptableMeshPartPointer)
+//Q_DECLARE_METATYPE(QVector<scriptable::ScriptableMeshPartPointer>)
