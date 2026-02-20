@@ -510,8 +510,10 @@ void Agent::executeScript() {
         scriptEngine->registerGlobalObject(sgp, "AnimationCache", DependencyManager::get<AnimationCacheScriptingInterface>().data());
         scriptEngine->registerGlobalObject(sgp, "SoundCache", DependencyManager::get<SoundCacheScriptingInterface>().data());
 
-        ScriptValue webSocketServerConstructorValue = scriptEngine->newFunction(WebSocketServerClass::constructor);
-        scriptEngine->globalObject().setProperty("WebSocketServer", webSocketServerConstructorValue);
+        {
+            ScriptValue webSocketServerConstructorValue = scriptEngine->newFunction(WebSocketServerClass::constructor);
+            scriptEngine->globalObject().setProperty("WebSocketServer", webSocketServerConstructorValue);
+        }
 
         auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
 
