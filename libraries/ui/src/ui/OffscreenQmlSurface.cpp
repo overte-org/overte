@@ -534,7 +534,7 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
         QMutableEventPoint::setGlobalPosition(point, windowPoint);
         QMutableEventPoint::setId(point, event.getID());
         QMutableEventPoint::setState(point, state);
-        QMutableEventPoint::setTimestamp(point, (ulong)QDateTime::currentMSecsSinceEpoch());
+        QMutableEventPoint::setTimestamp(point, QDateTime::currentMSecsSinceEpoch());
         QMutableEventPoint::setGlobalLastPosition(point, touchPoint->second.touchPoint.globalPosition());
         QMutableEventPoint::setGlobalPressPosition(point, touchPoint->second.touchPoint.globalPosition());
 
@@ -555,7 +555,7 @@ bool OffscreenQmlSurface::handlePointerEvent(const PointerEvent& event, class QP
 
     QTouchEvent touchEvent(touchType, &device, event.getKeyboardModifiers(), touchPoints);
 
-    touchEvent.setTimestamp((ulong)QDateTime::currentMSecsSinceEpoch());
+    touchEvent.setTimestamp(QDateTime::currentMSecsSinceEpoch());
     touchEvent.ignore();
 
     // Send mouse events to the surface so that HTML dialog elements work with mouse press and hover.
