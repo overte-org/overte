@@ -105,7 +105,7 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
     const QCommandLineOption parentPIDOption(PARENT_PID_OPTION, "PID of the parent process", "parent-pid");
     parser.addOption(parentPIDOption);
 
-    const QCommandLineOption logOption("logOptions", "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald", "options");
+    const QCommandLineOption logOption(ASSIGNMENT_LOG_OPTIONS, "Logging options, comma separated: color,nocolor,process_id,thread_id,milliseconds,keep_repeats,journald,nojournald", "options");
     parser.addOption(logOption);
 
     const QCommandLineOption forceCrashReportingOption("forceCrashReporting", "Force crash reporting to initialize.");
@@ -127,9 +127,12 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
         Q_UNREACHABLE();
     }
 
+    QString logOptions;
     // We want to configure the logging system as early as possible
     auto &logHandler = LogHandler::getInstance();
     if (parser.isSet(logOption)) {
+        // These also need to be stored to be passed to child processes
+        logOptions = parser.value(logOption);
         if (!logHandler.parseOptions(parser.value(logOption).toUtf8(), logOption.names().first())) {
             QCoreApplication mockApp(argc, const_cast<char**>(argv)); // required for call to showHelp()
             parser.showHelp();
@@ -273,7 +276,7 @@ AssignmentClientApp::AssignmentClientApp(int argc, char* argv[]) :
                                                                         requestAssignmentType, assignmentPool, listenPort,
                                                                         childMinListenPort, assignmentServerHostname,
                                                                         assignmentServerPort, httpStatusPort, logDirectory,
-                                                                        disableDomainPortAutoDiscovery);
+                                                                        disableDomainPortAutoDiscovery, logOptions);
         monitor->setParent(this);
         connect(this, &QCoreApplication::aboutToQuit, monitor, &AssignmentClientMonitor::aboutToQuit);
     } else {
