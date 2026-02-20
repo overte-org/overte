@@ -164,8 +164,8 @@ public:
 
     /**
      * @brief Adds a new TransformObject to batch if needed and stores DrawCallInfo with its index for the draw call.
-     * Used when addign commands for drawing instances of shapes.
-     * @param name
+     * Used when adding commands for drawing instances of shapes.
+     * @param name Name of a particular instance group.
      */
     void captureNamedDrawCallInfo(std::string name);
 
@@ -191,7 +191,7 @@ public:
     /**
      * @brief Clears all the data from this batch.
      * After batches are rendered, they are not deleted, but they are cleared and reused instead.
-     * This allows storing maximum nubrers of commands and various objects from previous frames for this kind of batch
+     * This allows storing maximum numbers of commands and various objects from previous frames for this kind of batch
      * and reserving aproppriate amount of memory for them to avoid performance loss due to reallocation.
      */
     void clear();
@@ -231,13 +231,21 @@ public:
     /**
      * @brief Sets Drawcall Uniform value.
      * One 16bit word uniform value is available during the drawcall.
-     * Its value must be set before each drawcall.
+     * Its value must be set before each drawcall, because it is reset to the reset value between each drawcall.
      * Drawcall uniform is used to tell shader if skinning and/or blendshapes are enabled.
      * @param uniform Value to ser Drawcall Unform to.
      */
     void setDrawcallUniform(uint16 uniform);
-    // It is reset to the reset value between each drawcalls
-    // The reset value is 0 by default and can be changed as a batch state with this call
+
+
+    /**
+     * @brief Sets the default value of the Drawcall Uniform.
+     *
+     * The reset value is 0 by default and can be changed as a batch state with this call.
+     * Drawcall uniform is used to tell shader if skinning and/or blendshapes are enabled.
+     *
+     * @param resetUniform Default Drawcall Uniform value.
+     */
     void setDrawcallUniformReset(uint16 resetUniform);
 
     // Drawcalls
@@ -333,46 +341,53 @@ public:
      *
      * @param channel Input slot. For possible values check `gpu::Stream::InputSlot`.
      * @param buffer Pointer to the buffer.
-     * @param offset
-     * @param stride
+     * @param offset Offset in bytes from the start of the buffer object.
+     * @param stride Stride (increment between consecutive entries) in bytes.
      */
     void setInputBuffer(Slot channel, const BufferPointer& buffer, Offset offset, Offset stride);
 
     /**
+     * @brief Adds a command to set input buffer for the following draw calls.
      *
-     * @param channel
-     * @param buffer
+     * @param channel Input slot. For possible values check `gpu::Stream::InputSlot`.
+     * @param buffer `BufferView` which points to a buffer and contains information about offset, stride and element type.
      */
     void setInputBuffer(Slot channel, const BufferView& buffer); // not a command, just a shortcut from a BufferView
 
     /**
+     * @brief Adds commands to set several input buffers for the following draw calls.
      *
-     * @param startChannel
-     * @param stream
+     * @param startChannel BufferStream will be applied starting from this slot.
+     * @param stream Reference to a `BufferStream` object, containing a set of buffers with corresponding offsets and strides.
      */
     void setInputStream(Slot startChannel, const BufferStream& stream); // not a command, just unroll into a loop of setInputBuffer
 
     /**
+     * @brief Adds a command to set index buffer for the following draw calls.
      *
-     * @param type
-     * @param buffer
-     * @param offset
+     * @param type Element type for the index buffer.
+     * @param buffer Buffer that will be set as index buffer.
+     * @param offset Offset at which index data starts.
      */
     void setIndexBuffer(Type type, const BufferPointer& buffer, Offset offset);
 
     /**
+     * @brief Adds a command to set index buffer for the following draw calls.
      *
-     * @param buffer
+     * @param buffer `BufferView` object containing  stride, offset and shared pointer to the buffer.
      */
     void setIndexBuffer(const BufferView& buffer); // not a command, just a shortcut from a BufferView
 
-    // Indirect buffer is used by the multiDrawXXXIndirect calls
-    // The indirect buffer contains the command descriptions to execute multiple drawcalls in a single call
     /**
+     * @brief Adds a command to set the indirect buffer.
      *
-     * @param buffer
-     * @param offset
-     * @param stride
+     * Indirect buffer is used by the multiDrawXXXIndirect calls.
+     * The indirect buffer contains the command descriptions to execute multiple drawcalls in a single call.
+     * Currently not used.
+     *
+     * @param buffer Shared pointer of the indirect buffer to set.
+     * @param offset Offset at which indirect buffer data starts.
+     * @param stride Stride for indirect data.
      */
     void setIndirectBuffer(const BufferPointer& buffer, Offset offset = 0, Offset stride = 0);
 
@@ -402,327 +417,428 @@ public:
     // WARNING: ViewTransform transform from eye space to world space, its inverse is composed
     // with the ModelTransform to create the equivalent of the gl ModelViewMatrix
     /**
-     *
-     * @param model
+     * @brief Adds a command to set model transform for the following draw calls.
+     * @param model Model transform.
      */
     void setModelTransform(const Transform& model);
 
     /**
-     *
-     * @param model
-     * @param previousModel
+     * @brief Adds a command to set model transform for the following draw calls.
+     * @param model Current model transform.
+     * @param previousModel Model transform in the previous frame, used for velocity buffer.
      */
     void setModelTransform(const Transform& model, const Transform& previousModel);
 
     /**
-     *
+     * @brief Adds a command to set current transform to identity transform.
      */
     void resetViewTransform() { setViewTransform(Transform(), false); }
 
     /**
+     * @brief Adds a command to set the view transform.
      *
-     * @param view
-     * @param camera
+     * When `camera` is set to `false` view correction is not applied, even if it's enabled.
+     *
+     * @param view View transform to set.
+     * @param camera Set to `false` for rendering shadows.
      */
     void setViewTransform(const Transform& view, bool camera = true);
 
     /**
+     * @brief Adds a command to set projection transform.
      *
-     * @param proj
+     * Projection transform is set to identity matrix for screen space effects such as bloom.
+     *
+     * @param proj Projection matrix.
      */
     void setProjectionTransform(const Mat4& proj);
 
     /**
+     * @brief Adds a command to enable od disable projection jitter.
+     *
+     * Jitter is used for TAA.
      *
      * @param isProjectionEnabled
      */
     void setProjectionJitterEnabled(bool isProjectionEnabled);
 
     /**
+     * @brief Adds a command to set the jitter sequence used for TAA.
      *
-     * @param sequence
-     * @param count
+     * @param sequence Jitter sequence array with values scaled in pixels.
+     * @param count Number of steps in jitter sequence.
      */
     void setProjectionJitterSequence(const Vec2* sequence, size_t count);
 
     /**
+     * @brief Adds a command to set the jitter scale.
      *
      * @param scale
      */
     void setProjectionJitterScale(float scale);
 
-    // Very simple 1 level stack management of jitter.
     /**
+     * @brief Adds a command to store previous value of projection enabled state and change the current state to a new value.
      *
-     * @param isProjectionEnabled
+     * Very simple 1 level stack management of jitter.
+     *
+     * @param isProjectionEnabled New value to set.
      */
     void pushProjectionJitterEnabled(bool isProjectionEnabled);
 
     /**
+     * @brief Adds a command to restore previous value of projection being enabled or disabled.
      *
+     * Very simple 1 level stack management of jitter.
      */
     void popProjectionJitterEnabled();
 
-    // Viewport is xy = low left corner in framebuffer, zw = width height of the viewport, expressed in pixels
     /**
+     * @brief Adds a command to set the viewport in pixels.
      *
-     * @param viewport
+     * Viewport is xy = low left corner in framebuffer, zw = width height of the viewport, expressed in pixels.
+     *
+     * @param viewport Viewport position and size.
      */
     void setViewportTransform(const Vec4i& viewport);
 
     /**
+     * @brief Sets depth range.
      *
-     * @param nearDepth
-     * @param farDepth
+     * Currently not used.
+     * On OpenGL backend it uses `glDepthRangef`.
+     *
+     * @param nearDepth Near depth.
+     * @param farDepth Far Depth.
      */
     void setDepthRangeTransform(float nearDepth, float farDepth);
 
     /**
+     * @brief Adds a command to save the current view and projection transform into one of the storage slots.
      *
-     * @param saveSlot
+     * Transform is saved together with the view correction and transform from the previous frame.
+     * Look into comment next to `gpu::Batch::MAX_TRANSFORM_SAVE_SLOT_COUNT` to see how number of storage slots is calculated.
+     *
+     * @param saveSlot Slot to save the transform to. Must be lower than `gpu::Batch::MAX_TRANSFORM_SAVE_SLOT_COUNT`.
      */
 
     void saveViewProjectionTransform(uint saveSlot);
 
     /**
+     * @brief Adds a command to restore transform from the particular save slot.
      *
-     * @param saveSlot
+     * @param saveSlot Slot to restore the transform from. Must be lower than `gpu::Batch::MAX_TRANSFORM_SAVE_SLOT_COUNT`.
      */
     void setSavedViewProjectionTransform(uint saveSlot);
 
     /**
+     * @brief Adds a command to write the saved view and projection transform from a given slot to a buffer.
      *
-     * @param saveSlot
-     * @param buffer
-     * @param offset
+     * Used for saving view and projection transform to deferred frame transform buffer.
+     *
+     * @param saveSlot Slot to restore the transform from. Must be lower than `gpu::Batch::MAX_TRANSFORM_SAVE_SLOT_COUNT`.
+     * @param buffer Buffer to which transform should be saved to.
+     * @param offset Offset Byte offset from which to start writing.
      */
     void copySavedViewProjectionTransformToBuffer(uint saveSlot, const BufferPointer& buffer, Offset offset);
 
     // Pipeline Stage
     /**
+     * @brief Adds a command to set a pipeline for the following draw calls.
      *
-     * @param pipeline
+     * @param pipeline Pipeline to set.
      */
     void setPipeline(const PipelinePointer& pipeline);
 
     /**
+     * @brief Adds a command to set blend color.
      *
-     * @param factor
+     * Currently not used.
+     * Uses `glBlendColor` internally on the OpenGL backend. Not implemented on the Vulkan backend.
+     *
+     * @param factor Color (RGBA) to set.
      */
     void setStateBlendFactor(const Vec4& factor);
 
-    // Set the Scissor rect
-    // the rect coordinates are xy for the low left corner of the rect and zw for the width and height of the rect, expressed in pixels
     /**
+     * @brief Adds a command to set the scissor rectangle.
      *
-     * @param rect
+     * The rectangle coordinates are xy for the low left corner of the rectangle and zw for the width and height
+     * of the rectangle, expressed in pixels.
+     *
+     * @param rect Rectangle coordinates.
      */
     void setStateScissorRect(const Vec4i& rect);
 
     /**
+     * @brief Adds a command to set a uniform buffer on a given slot.
      *
-     * @param slot
-     * @param buffer
-     * @param offset
-     * @param size
+     * A `nullptr` can be passed to unset the buffer.
+     *
+     * @param slot Slot index.
+     * @param buffer Buffer that contains uniform data.
+     * @param offset Offset from which data start in the buffer.
+     * @param size Size ofg the uniform data.
      */
     void setUniformBuffer(uint32 slot, const BufferPointer& buffer, Offset offset, Offset size);
 
     /**
+     * @brief Adds a command to set a uniform buffer on a given slot.
      *
-     * @param slot
-     * @param view
+     * @param slot Slot index.
+     * @param view `BufferView` object containing size, offset and a shared pointer to the buffer.
      */
     void setUniformBuffer(uint32 slot, const BufferView& view); // not a command, just a shortcut from a BufferView
 
     /**
+     * @brief Adds a command to set a resource buffer on a given slot.
      *
-     * @param slot
-     * @param buffer
+     * Used for providing data such as mesh blendshapes or polyline geometry to the shader.
+     * A `nullptr` can be passed to unset the buffer.
+     *
+     * @param slot Slot index.
+     * @param buffer Resource buffer.
      */
     void setResourceBuffer(uint32 slot, const BufferPointer& buffer);
 
     /**
+     * @brief Adds a command to set a texture on a given slot.
      *
-     * @param slot
-     * @param texture
+     * A `nullptr` can be passed to unset the buffer.
+     *
+     * @param slot Slot index.
+     * @param texture Texture object.
      */
     void setResourceTexture(uint32 slot, const TexturePointer& texture);
 
     /**
+     * @brief Adds a command to set a texture on a given slot using a `TextureView`.
      *
-     * @param slot
-     * @param view
+     * @param slot Slot index.
+     * @param view `TextureView` object containing subresource index and shared pointer to the texture.
      */
     void setResourceTexture(uint32 slot, const TextureView& view); // not a command, just a shortcut from a TextureView
 
     /**
+     * @brief Adds a command to set several textures at once.
      *
-     * @param table
-     * @param slot
+     * @param table Shared pointer to a `TextureTable` object.
+     * @param slot First slot to set. It works as an offset for indices in `textureTable`.
      */
     void setResourceTextureTable(const TextureTablePointer& table, uint32 slot = 0);
 
     /**
+     * @brief Adds a command to set a texture with a given index from the framebuffer swap chain.
      *
-     * @param slot
-     * @param framebuffer
-     * @param swapChainIndex
-     * @param renderBufferSlot
+     * Used for TAA.
+     *
+     * @param slot Slot index.
+     * @param framebuffer Shared pointer to the `FramebufferSwapChain` object.
+     * @param swapChainIndex Index of the texture in the swap chain. After the swap chain advances it changes to which framebuffer texture it points.
+     * @param renderBufferSlot Index of the render buffer inside framebuffer object that will be used as a texture.
      */
     void setResourceFramebufferSwapChainTexture(uint32 slot, const FramebufferSwapChainPointer& framebuffer, unsigned int swapChainIndex, unsigned int renderBufferSlot = 0U); // not a command, just a shortcut from a TextureView
 
     // Ouput Stage
     /**
+     * @brief Adds a command to set a framebuffer to which following commands will render to.
      *
-     * @param framebuffer
+     * @param framebuffer Shared pointer to the framebuffer object. Can be passed a `nullptr` to unset the framebuffer.
      */
     void setFramebuffer(const FramebufferPointer& framebuffer);
 
     /**
+     * @brief Adds a command to set current framebuffer from a swap chain.
      *
-     * @param framebuffer
-     * @param swapChainIndex
+     * Used for TAA.
+     *
+     * @param framebuffer Shared pointer to a `FramebufferSwapChain` object.
+     * @param swapChainIndex Index of the framebuffer in the `FramebufferSwapChain` object. After the swap chain advances it changes to which framebuffer texture it points.
      */
     void setFramebufferSwapChain(const FramebufferSwapChainPointer& framebuffer, unsigned int swapChainIndex);
 
     /**
+     * @brief Adds a command to advance the swap chain.
      *
-     * @param swapChain
+     * When swap chain advances, framebuffer with index 1 moves to 0, 2 moves to 1 and so on.
+     *
+     * @param swapChain Shared pointer to the swap chain object.
      */
     void advance(const SwapChainPointer& swapChain);
 
-    // Clear framebuffer layers
-    // Targets can be any of the render buffers contained in the currently bound Framebuffer
-    // Optionally the scissor test can be enabled locally for this command and to restrict the clearing command to the pixels contained in the scissor rectangle
     /**
+     * @brief Adds a command to clear framebuffer layers.
      *
-     * @param targets
-     * @param color
-     * @param depth
-     * @param stencil
-     * @param enableScissor
+     * Targets can be any of the render buffers contained in the currently bound Framebuffer.
+     * Optionally the scissor test can be enabled locally for this command and to restrict the clearing command to the pixels contained in the scissor rectangle.
+     *
+     * @param targets A bitmask composed of `Framebuffer::BufferMask` enums indicating which targets to clear.
+     * @param color Color value to clear color targets with.
+     * @param depth Depth value to clear depth targets with.
+     * @param stencil Stencil value to clear stencil targets with.
+     * @param enableScissor If enabled, only pixels inside scissor rectangle will be cleared.
      */
     void clearFramebuffer(Framebuffer::Masks targets, const Vec4& color, float depth, int stencil, bool enableScissor = false);
 
     /**
+     * @brief Adds a command to clear framebuffer layers. Clears only color targets.
      *
-     * @param targets
-     * @param color
-     * @param enableScissor
+     * Not a command, just a shortcut for clearFramebuffer, masks out targets to make sure it touches only color targets.
+     *
+     * @param targets A bitmask composed of `Framebuffer::BufferMask` enums indicating which targets to clear.
+     * @param color Color value to clear color targets with.
+     * @param enableScissor If enabled, only pixels inside scissor rectangle will be cleared.
      */
-    void clearColorFramebuffer(Framebuffer::Masks targets, const Vec4& color, bool enableScissor = false); // not a command, just a shortcut for clearFramebuffer, mask out targets to make sure it touches only color targets
+    void clearColorFramebuffer(Framebuffer::Masks targets, const Vec4& color, bool enableScissor = false);
 
     /**
+     * @brief Adds a command to clear framebuffer layers. Clears only depth targets.
      *
-     * @param depth
-     * @param enableScissor
+     * Not a command, just a shortcut for clearFramebuffer, masks out targets to make sure it touches only depth targets.
+     *
+     * @param depth Depth value to clear depth targets with.
+     * @param enableScissor If enabled, only pixels inside scissor rectangle will be cleared.
      */
-    void clearDepthFramebuffer(float depth, bool enableScissor = false); // not a command, just a shortcut for clearFramebuffer, it touches only depth target
+    void clearDepthFramebuffer(float depth, bool enableScissor = false);
 
     /**
+     * @brief Adds a command to clear framebuffer layers. Clears only stencil targets.
      *
-     * @param stencil
-     * @param enableScissor
+     * Not a command, just a shortcut for clearFramebuffer, masks out targets to make sure it touches only stencil targets.
+     *
+     * @param stencil Stencil value to clear stencil targets with.
+     * @param enableScissor If enabled, only pixels inside scissor rectangle will be cleared.
      */
-    void clearStencilFramebuffer(int stencil, bool enableScissor = false); // not a command, just a shortcut for clearFramebuffer, it touches only stencil target
+    void clearStencilFramebuffer(int stencil, bool enableScissor = false);
 
     /**
+     * @brief Adds a command to clear framebuffer layers. Clears only depth and stencil targets.
      *
-     * @param depth
-     * @param stencil
-     * @param enableScissor
+     * Not a command, just a shortcut for clearFramebuffer, masks out targets to make sure it touches only stencil targets.
+     *
+     * @param depth Depth value to clear depth targets with.
+     * @param stencil Stencil value to clear stencil targets with.
+     * @param enableScissor If enabled, only pixels inside scissor rectangle will be cleared.
      */
     void clearDepthStencilFramebuffer(float depth, int stencil, bool enableScissor = false); // not a command, just a shortcut for clearFramebuffer, it touches depth and stencil target
 
-    // Blit src framebuffer to destination
-    // the srcRect and dstRect are the rect region in source and destination framebuffers expressed in pixel space
-    // with xy and zw the bounding corners of the rect region.
     /**
+     * @brief Adds a command to blit one framebuffer to another.
      *
-     * @param src
-     * @param srcRect
-     * @param dst
-     * @param dstRect
+     * The srcRect and dstRect are the rect region in source and destination framebuffers expressed in pixel space,
+     * with xy and zw the bounding corners of the rect region.
+     *
+     * @param src Source framebuffer.
+     * @param srcRect Coordinates of the rectangle to blit in the source framebuffer.
+     * @param dst Destination framebuffer.
+     * @param dstRect Coordinates of the rectangle to blit in the destination framebuffer.
      */
     void blit(const FramebufferPointer& src, const Vec4i& srcRect, const FramebufferPointer& dst, const Vec4i& dstRect);
 
-    // Generate the mips for a texture
     /**
+     * @brief Adds a command to generates mipmaps.
      *
-     * @param texture
+     * Used by the ambient occlusion effect when SSAO technique is enabled.
+     *
+     * @param texture Texture for which mipmaps should be generated.
      */
     void generateTextureMips(const TexturePointer& texture);
 
-    // Generate the mips for a texture using the current pipeline
     /**
+     * @brief Adds a command to generates mipmaps using a custom pipeline.
      *
-     * @param destTexture
-     * @param numMips
+     * Generate the mips for a texture using the current pipeline.
+     * Used by the ambient occlusion effect when HBAO technique is enabled.
+     *
+     * @param destTexture Destination texture.
+     * @param numMips Number of mipmaps to generate. Use -1 to generate all mipmap levels.
      */
     void generateTextureMipsWithPipeline(const TexturePointer& destTexture, int numMips = -1);
 
     // Query Section
 
     /**
+     * @brief Adds a command to start a timestamp query.
      *
-     * @param query
+     * Queries are used for performance monitoring.
+     *
+     * @param query Shared pointer to the query object.
      */
     void beginQuery(const QueryPointer& query);
 
     /**
+     * @brief Adds a command to finish a timestamp query.
      *
-     * @param query
+     * @param query Shared pointer to the query object.
      */
     void endQuery(const QueryPointer& query);
 
     /**
+     * @brief Adds a command to get the result of a timestamp query.
      *
-     * @param query
+     * @param query Shared pointer to the query object.
      */
     void getQuery(const QueryPointer& query);
 
-    // Reset the stage caches and states
     /**
+     * @brief Adds a command to reset the renderer backend stage caches and states.
      *
      */
     void resetStages();
 
     /**
+     * @brief Adds a command to disable view correction.
      *
+     * Used for secondary camera.
      */
     void disableContextViewCorrection();
 
     /**
+     * @brief Adds a command to restore view correction.
      *
+     * Used on the end of secondary camera rendering.
      */
     void restoreContextViewCorrection();
 
     /**
+     * @brief Adds a command to set up view correction for a mirror.
      *
-     * @param shouldMirror
+     * View correction is used in VR mode to update eye position just before rendering.
+     * Camera positions for mirrors also need to be updated. For the first reflection camera correction needs to be mirrored.
+     * Since the renderer supports multiple reflections, for the even reflections view correction gets mirrored twice
+     * so it cancels out. `shouldMirror` is true for odd reflections and false for even reflections.
+     *
+     * @param shouldMirror True if view correction is mirrored for this mirror view.
      */
     void setContextMirrorViewCorrection(bool shouldMirror);
 
     /**
+     * @brief Adds a command to disable stereo rendering.
      *
+     * Used for secondary camera.
      */
     void disableContextStereo();
 
     /**
+     * @brief Adds a command to restore previous state of the stereo rendering setting.
      *
+     * Used after rendering secondary camera view.
      */
     void restoreContextStereo();
 
     // Debugging
     /**
+     * @brief Adds a command to start a profile range with a given label.
      *
-     * @param name
+     * Used for labelling steps of the rendering process.
+     * The labels show up in RenderDoc and other GPU profiling/debugging tools.
+     *
+     * @param name Label text.
      */
     void pushProfileRange(const char* name);
 
     /**
-     *
+     * @brief Adds a command to end previously started profile range.
      */
     void popProfileRange();
 
@@ -731,158 +847,179 @@ public:
     // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
     // For now, instead of calling the raw gl Call, use the equivalent call on the batch so the call is being recorded
     // The implementation of these functions is in GLBackend.cpp
+    // VKTODO: do we still need to remove these? They are implemented on Vulkan in a very efficient way.
 
     /**
+     * @brief Add a command to pass a uniform variable with a single integer to the shader in following drawcalls.
      *
-     * @param location
-     * @param v0
+     * @param location Slot at which uniform variable will be available.
+     * @param v0 Integer value.
      */
     void _glUniform1i(int location, int v0);
 
     /**
+     * @brief Add a command to pass a uniform variable with a single floating point number to the shader in following drawcalls.
      *
-     * @param location
-     * @param v0
+     * @param location Slot at which uniform variable will be available.
+     * @param v0 Floating point value.
      */
     void _glUniform1f(int location, float v0);
 
     /**
+     * @brief Add a command to pass a uniform variable with 2-dimensional floating point vector to the shader in following drawcalls.
      *
-     * @param location
-     * @param v0
-     * @param v1
+     * @param location Slot at which uniform variable will be available.
+     * @param v0 First floating point value.
+     * @param v1 Second floating point value.
      */
     void _glUniform2f(int location, float v0, float v1);
 
     /**
+     * @brief Add a command to pass a uniform variable with 3-dimensional floating point vector to the shader in following drawcalls.
      *
-     * @param location
-     * @param v0
-     * @param v1
-     * @param v2
+     * @param location Slot at which uniform variable will be available.
+     * @param v0 First floating point value.
+     * @param v1 Second floating point value.
+     * @param v2 Third floating point value.
      */
     void _glUniform3f(int location, float v0, float v1, float v2);
 
     /**
+     * @brief Add a command to pass a uniform variable with 4-dimensional floating point vector to the shader in following drawcalls.
      *
-     * @param location
-     * @param v0
-     * @param v1
-     * @param v2
-     * @param v3
+     * @param location Slot at which uniform variable will be available.
+     * @param v0 First floating point value.
+     * @param v1 Second floating point value.
+     * @param v2 Third floating point value.
+     * @param v3 Fourth floating point value.
      */
     void _glUniform4f(int location, float v0, float v1, float v2, float v3);
 
     /**
+     * @brief Add a command to pass a uniform variable with an array of 3-dimensional floating point vectors to the shader in following drawcalls.
      *
-     * @param location
-     * @param count
-     * @param value
+     * @param location Slot at which uniform variable will be available.
+     * @param count Number of 3-dimensional vectors in the array.
+     * @param value Array of floating point numbers with 3*count length.
      */
     void _glUniform3fv(int location, int count, const float* value);
 
     /**
+     * @brief Add a command to pass a uniform variable with an array of 4-dimensional floating point vectors to the shader in following drawcalls.
      *
-     * @param location
-     * @param count
-     * @param value
+     * @param location Slot at which uniform variable will be available.
+     * @param count Number of 4-dimensional vectors in the array.
+     * @param value Array of floating point numbers with 4*count length.
      */
     void _glUniform4fv(int location, int count, const float* value);
 
     /**
+     * @brief Add a command to pass a uniform variable with an array of 4-dimensional integer vectors to the shader in following drawcalls.
      *
-     * @param location
-     * @param count
-     * @param value
+     * @param location Slot at which uniform variable will be available.
+     * @param count Number of 4-dimensional vectors in the array.
+     * @param value Array of integers with 4*count length.
      */
     void _glUniform4iv(int location, int count, const int* value);
 
     /**
+     * @brief Add a command to pass a uniform variable with an array of 3x3 floating point matrices to the shader in following drawcalls.
      *
-     * @param location
-     * @param count
-     * @param transpose
-     * @param value
+     * @param location Slot at which uniform variable will be available.
+     * @param count Number of 4-dimensional vectors in the array.
+     * @param transpose Should the matrices be transposed.
+     * @param value Array of floating point numbers with 9*count length.
      */
     void _glUniformMatrix3fv(int location, int count, unsigned char transpose, const float* value);
 
     /**
+     * @brief Add a command to pass a uniform variable with an array of 4x4 floating point matrices to the shader in following drawcalls.
      *
-     * @param location
-     * @param count
-     * @param transpose
-     * @param value
+     * @param location Slot at which uniform variable will be available.
+     * @param count Number of 4-dimensional matrices in the array.
+     * @param transpose Should the matrices be transposed.
+     * @param value Array of floating point numbers with 16*count length.
      */
     void _glUniformMatrix4fv(int location, int count, unsigned char transpose, const float* value);
 
     /**
+     * @brief Add a command to pass a uniform variable with a single integer to the shader in following drawcalls.
      *
-     * @param location
-     * @param v0
+     * @param location Slot at which uniform variable will be available.
+     * @param v0 Integer value.
      */
     void _glUniform(int location, int v0) {
         _glUniform1i(location, v0);
     }
 
     /**
+     * @brief Add a command to pass a uniform variable with a single floating point number to the shader in following drawcalls.
      *
-     * @param location
-     * @param v0
+     * @param location Slot at which uniform variable will be available.
+     * @param v0 Floating point value.
      */
     void _glUniform(int location, float v0) {
         _glUniform1f(location, v0);
     }
 
     /**
+     * @brief Add a command to pass a uniform variable with 2-dimensional floating point vector to the shader in following drawcalls.
      *
-     * @param location
-     * @param v
+     * @param location Slot at which uniform variable will be available.
+     * @param v 2-dimensional floating point vector.
      */
     void _glUniform(int location, const glm::vec2& v) {
         _glUniform2f(location, v.x, v.y);
     }
 
     /**
+     * @brief Add a command to pass a uniform variable with 3-dimensional floating point vector to the shader in following drawcalls.
      *
-     * @param location
-     * @param v
+     * @param location Slot at which uniform variable will be available.
+     * @param v 3-dimensional floating point vector.
      */
     void _glUniform(int location, const glm::vec3& v) {
         _glUniform3f(location, v.x, v.y, v.z);
     }
 
     /**
+     * @brief Add a command to pass a uniform variable with an array of 4-dimensional floating point vectors to the shader in following drawcalls.
      *
-     * @param location
-     * @param v
+     * @param location Slot at which uniform variable will be available.
+     * @param v 4-dimensional floating point vector.
      */
     void _glUniform(int location, const glm::vec4& v) {
         _glUniform4f(location, v.x, v.y, v.z, v.w);
     }
 
     /**
+     * @brief Add a command to pass a uniform variable with an array of 3x3 floating point matrices to the shader in following drawcalls.
      *
-     * @param location
-     * @param v
+     * @param location Slot at which uniform variable will be available.
+     * @param v 3x3 floating point matrix.
      */
     void _glUniform(int location, const glm::mat3& v) {
         _glUniformMatrix3fv(location, 1, false, glm::value_ptr(v));
     }
 
     /**
+     * @brief Add a command to pass a uniform variable with an array of 4-dimensional floating point vectors to the shader in following drawcalls.
      *
-     * @param location
-     * @param v
+     * @param location Slot at which uniform variable will be available.
+     * @param v 4x4 floating point matrix.
      */
     void _glUniform(int location, const glm::mat4& v) {
         _glUniformMatrix4fv(location, 1, false, glm::value_ptr(v));
     }
 
-    // Maybe useful but shoudln't be public. Please convince me otherwise
-    // Well porting to gles i need it...
+    // Maybe useful but shouldn't be public. Please convince me otherwise
+    // Well porting to GLES i need it...
     /**
+     * @brief Runs a lambda function during batch execution.
      *
-     * @param f
+     * Currently not used.
+     *
+     * @param f Function to run.
      */
     void runLambda(std::function<void()> f);
 
@@ -952,6 +1089,7 @@ public:
         // TODO: As long as we have gl calls explicitely issued from interface
         // code, we need to be able to record and batch these calls. THe long
         // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
+        // Since these are implemented on Vulkan in a very efficient way, maybe we can keep them instead?
         COMMAND_glUniform1i,
         COMMAND_glUniform1f,
         COMMAND_glUniform2f,
@@ -972,19 +1110,23 @@ public:
     typedef std::vector<size_t> CommandOffsets;
 
     /**
+     * @brief Get the command vector.
      *
-     * @return
+     * @return Reference to the vector of renderer commands.
      */
     const Commands& getCommands() const { return _commands; }
 
     /**
+     * @brief Get the vector of offsets for renderer commands parameters.
      *
-     * @return
+     * Parameters are stored in a `Params` vector. Offset is the index of the first parameter for a given command.
+     *
+     * @return Vector of offsets for renderer commands parameters.
      */
-const CommandOffsets& getCommandOffsets() const { return _commandOffsets; }
+    const CommandOffsets& getCommandOffsets() const { return _commandOffsets; }
 
     /**
-     *
+     * @brief A variant-like class representing single renderer command parameter.
      */
     class Param {
     public:
@@ -1007,17 +1149,20 @@ const CommandOffsets& getCommandOffsets() const { return _commandOffsets; }
     typedef std::vector<Param> Params;
 
     /**
+     * @brief Gets the renderer commands parameters vector.
      *
-     * @return
+     * When commands are added to the batch, their parameters are stored in this vector.
+     *
+     * @return Vector containing parameters for the renderer commands for this batch.
      */
     const Params& getParams() const { return _params; }
 
-    // The template cache mechanism for the gpu::Object passed to the gpu::Batch
-    // this allow us to have one cache container for each different types and eventually
-    // be smarter how we manage them
     /**
+     * @brief The template cache mechanism for the gpu::Object passed to the gpu::Batch.
      *
-     * @tparam T
+     * This allows us to have one cache container for each different types and eventually be smarter how we manage them.
+     *
+     * @tparam T Type of the object inheriting from gpu::Object to store.
      */
     template <typename T>
     class Cache {
@@ -1028,7 +1173,7 @@ const CommandOffsets& getCommandOffsets() const { return _commandOffsets; }
         static size_t _max;
 
         /**
-         *
+         * @brief Templated container for objects inheriting from gpu::Object.
          */
         class Vector {
         public:
@@ -1043,15 +1188,16 @@ const CommandOffsets& getCommandOffsets() const { return _commandOffsets; }
             }
 
             /**
-             *
-             * @return
+             * @brief Get the current size of the container.
+             * @return Current size of the container.
              */
             size_t size() const { return _items.size(); }
 
             /**
+             * @brief Adds a new object to the container.
              *
-             * @param data
-             * @return
+             * @param data Object to add.
+             * @return Index of the added object in the container.
              */
             size_t cache(const Data& data) {
                 size_t offset = _items.size();
@@ -1060,9 +1206,10 @@ const CommandOffsets& getCommandOffsets() const { return _commandOffsets; }
             }
 
             /**
+             * @brief Retrieve object with given index.
              *
-             * @param offset
-             * @return
+             * @param offset Index of the object to be retrieved.
+             * @return Reference to the object with a given index.
              */
             const Data& get(uint32 offset) const {
                 assert((offset < _items.size()));
@@ -1070,7 +1217,7 @@ const CommandOffsets& getCommandOffsets() const { return _commandOffsets; }
             }
 
             /**
-             *
+             * @brief Clear contents of this container.
              */
             void clear() {
                 _items.clear();
@@ -1081,8 +1228,11 @@ const CommandOffsets& getCommandOffsets() const { return _commandOffsets; }
     using CommandHandler = std::function<void(Command, const Param*)>;
 
     /**
+     * @brief Iterates though each command in the batch and runs a provided function on it.
      *
-     * @param handler
+     * Used by frame writer.
+     *
+     * @param handler Function to run on every command.
      */
     void forEachCommand(const CommandHandler& handler) const {
         size_t count = _commands.size();
@@ -1111,18 +1261,25 @@ const CommandOffsets& getCommandOffsets() const { return _commandOffsets; }
     // FOr example Mat4s are going there
     typedef unsigned char Byte;
     typedef std::vector<Byte> Bytes;
+
     /**
+     * @brief Store data for a parameter that doesn't fit inside `Param` object.
      *
-     * @param size
-     * @param data
-     * @return
+     * Parameters such as matrices or vectors are stored here, and then `Param` object stores index at which given parameter starts in the cache.
+     *
+     * @param size Size of a given parameter.
+     * @param data Pointer to the parameter data.
+     * @return Byte offset in the cache buffer at which stored parameter starts.
      */
     size_t cacheData(size_t size, const void* data);
 
     /**
+     * @brief Get a pointer to the parameter cache data at given offset.
      *
-     * @param offset
-     * @return
+     * Data at the returned address can be edited.
+     *
+     * @param offset Offset at which data to be edited is stored.
+     * @return Pointer to the requested data in the parameter cache or 0 if the offset out of bounds of the cache.
      */
     Byte* editData(size_t offset) {
         if (offset >= _data.size()) {
@@ -1132,9 +1289,10 @@ const CommandOffsets& getCommandOffsets() const { return _commandOffsets; }
     }
 
     /**
+     * @brief Get a constant pointer to the parameter cache data at given offset.
      *
-     * @param offset
-     * @return
+     * @param offset Offset at which data to be read is stored.
+     * @return Constant pointer to the requested data in the parameter cache or 0 if the offset out of bounds of the cache.
      */
     const Byte* readData(size_t offset) const {
         if (offset >= _data.size()) {
@@ -1160,185 +1318,157 @@ const CommandOffsets& getCommandOffsets() const { return _commandOffsets; }
     using TransformObjects = std::vector<TransformObject>;
 
     /**
-     *
+     * `true` means that current model transform is not stored yet. It gets stored by `captureDrawCallInfo` on next drawcall,
+     * and then it gets reused by following drawcalls if it didn't change.
      */
     bool _invalidModel { true };
 
     /**
-     *
+     * @brief Current model transform.
      */
     Transform _currentModel;
 
     /**
+     * @brief Model transform from the previos frame.
      *
+     * Used to calculate velocity buffer for TAA.
      */
     Transform _previousModel;
 
     /**
+     * @brief Overwrite previous model transforms with the current ones.
      *
+     * Batch can be executed multiple times when there's no new batch ready.
+     * In such case using transforms from the previous batch would mean incorrect results in velocity buffers.
      */
     mutable bool _mustUpdatePreviousModels;
 
     /**
-     *
+     * @brief Model transforms are stored here.
      */
     mutable TransformObjects _objects;
-    static size_t _objectsMax; //
+    static size_t _objectsMax; // Needed for reserving vector size and avoiding reallocation.
 
-    /**
-     *
-     */
-    Stream::FormatPointer _currentStreamFormat;
+    Stream::FormatPointer _currentStreamFormat; // Only used for currently disabled `validateDrawState`.
+    PipelinePointer _currentPipeline; // Only used for currently disabled `validateDrawState`.
 
-    /**
-     *
-     */
-    PipelinePointer _currentPipeline;
+    // Shared pointers to objects needed for the batch are stored here.
 
-    /**
-     *
-     */
     BufferCaches _buffers;
-
-    /**
-     *
-     */
     TextureCaches _textures;
-
-    /**
-     *
-     */
     TextureTableCaches _textureTables;
-
-    /**
-     *
-     */
     SamplerCaches _samplers;
-    /**
-     *
-     */
     StreamFormatCaches _streamFormats;
-
-    /**
-     *
-     */
     TransformCaches _transforms;
-
-    /**
-     *
-     */
     PipelineCaches _pipelines;
-
-    /**
-     *
-     */
     FramebufferCaches _framebuffers;
-
-    /**
-     *
-     */
     SwapChainCaches _swapChains;
-
-    /**
-     *
-     */
     QueryCaches _queries;
-
-    /**
-     *
-     */
     LambdaCache _lambdas;
-
-    /**
-     *
-     */
     StringCaches _profileRanges;
 
     /**
-     *
+     * @brief Stores names of the named calls (used for instancing).
      */
     StringCaches _names;
 
-
     /**
-     *
+     * @brief `NamedBatchData` objects mapped by name strings. Used for instancing.
      */
     NamedBatchDataMap _namedData;
 
-
     /**
-     *
+     * @brief Stores the current state of TAA jitter setting.
      */
     bool _isJitterOnProjectionEnabled { false };
 
 
     /**
+     * @brief Current value of drawcall uniform variable, that is passed to a shader as a part of draw call info.
      *
+     * Currently used for enabling/disabling skinning and blendshapes.
      */
     uint16_t _drawcallUniform { 0 };
 
     /**
+     * @brief Default value of the Drawcall Uniform.
      *
+     * Drawcall Uniform is reset to this value after each drawcall.
+     * Can be set with `setDrawcallUniformReset` function.
      */
     uint16_t _drawcallUniformReset { 0 };
 
 
     /**
-     *
+     * `true` if stereo rendering enabled for this batch.
      */
     bool _enableStereo { true };
 
     /**
-     *
+     * `true` if this batch renders in skybox mode. Affects how transforms are handled by the backend.
      */
     bool _enableSkybox { false };
 
 protected:
-    std::string _name; //
+    std::string _name; // Name of this batch.
 
     friend class Context;
     friend class Frame;
 
-    // Apply all the named calls to the end of the batch
-    // and prepare updates for the render shadow copies of the buffers
     /**
+     * @brief Finalize the frame after all the draw call commands have been collected.
+     *
+     * Apply all the named calls to the end of the batch (for instancing) and prepare updates for the render shadow copies of the buffers.
      *
      * @param updates
      */
     void finishFrame(BufferUpdates& updates);
 
-    // Directly copy from the main data to the render thread shadow copy
-    // MUST only be called on the render thread
-    // MUST only be called on batches created on the render thread
     /**
+     * @brief Directly copy from the main data to the render thread shadow copy.
      *
+     *  Calls `flush` on buffers used for this batch.
+     *
+     * MUST only be called on the render thread.
+     * MUST only be called on batches created on the render thread.
      */
     void flush();
 
     /**
+     * @brief Performs various checks before draw call is issued.
      *
+     * Checks if current inputs and shader inputs match.
+     * Currently commented out.
      */
     void validateDrawState() const;
 
     /**
+     * @brief Adds a command to start a named call.
      *
-     * @param name
+     * Used for instancing. When this command is run on backend side, it sets the name of the current call.
+     *
+     * @param name Name of the named drawcall (instancing group)
      */
     void startNamedCall(const std::string& name);
 
     /**
+     * @brief Adds a command to end a named call.
      *
+     * Used for instancing. When this command is run on backend side, it clears the name of the current call.
      */
     void stopNamedCall();
 
     /**
+     * @brief Internal implementation of captureDrawCallInfo.
      *
+     * For details see `captureDrawCallInfo`
      */
     void captureDrawCallInfoImpl();
 };
 
 /**
- *
+ * GPU object cashes in Batch structures keep track of how much memory needs to be preallocated.
+ * Since it's a static member, it's defined here.
  */
 template <typename T>
 size_t Batch::Cache<T>::_max = BATCH_PREALLOCATE_MIN;
@@ -1348,16 +1478,21 @@ size_t Batch::Cache<T>::_max = BATCH_PREALLOCATE_MIN;
 #if defined(NSIGHT_FOUND)
 
 /**
- *
+ * Adds `pushProfileRange` command when it's created and `popProfileRange` when it's destroyed.
+ * Used by rendering debugging tools.
  */
 class ProfileRangeBatch {
 public:
     /**
-     *
-     * @param batch
-     * @param name
+     * @brief Adds `pushProfileRange` command.
+     * @param batch Batch to which it will be applied.
+     * @param name Name of the profile range.
      */
     ProfileRangeBatch(gpu::Batch& batch, const char *name);
+
+    /**
+     * @brief Adds `popProfileRange` command.
+     */
     ~ProfileRangeBatch();
 
 private:
