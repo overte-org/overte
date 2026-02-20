@@ -560,13 +560,13 @@ void WebEntityRenderer::handlePointerEventAsMouse(const PointerEvent& event) {
     if (type == QEvent::Wheel) {
         const auto& scroll = event.getScroll() * POINTEREVENT_SCROLL_SENSITIVITY;
         QWheelEvent wheelEvent(windowPoint, windowPoint, QPoint(), QPoint(scroll.x, scroll.y), buttons, event.getKeyboardModifiers(), Qt::ScrollPhase::NoScrollPhase, false, Qt::MouseEventSynthesizedByApplication, _mouseDevice.get());
-        wheelEvent.setTimestamp((ulong)QDateTime::currentMSecsSinceEpoch());
+        wheelEvent.setTimestamp(QDateTime::currentMSecsSinceEpoch());
         QMutableEventPoint::setTimestamp(wheelEvent.point(0), wheelEvent.timestamp());
         QCoreApplication::sendEvent(_webSurface->getWindow(), &wheelEvent);
     } else {
         QMouseEvent mouseEvent(type, windowPoint, windowPoint, windowPoint, button, buttons, event.getKeyboardModifiers(), _mouseDevice.get());
         //QMouseEvent mouseEvent(type, QPointF(), QPointF(), QPointF(), button, buttons, event.getKeyboardModifiers(), _mouseDevice.get());
-        mouseEvent.setTimestamp((ulong)QDateTime::currentMSecsSinceEpoch());
+        mouseEvent.setTimestamp(QDateTime::currentMSecsSinceEpoch());
         QMutableEventPoint::setTimestamp(mouseEvent.point(0), mouseEvent.timestamp());
         //QMutableEventPoint::setPosition(mouseEvent.point(0), windowPoint);
         //QMutableEventPoint::setScenePosition(mouseEvent.point(0), windowPoint);

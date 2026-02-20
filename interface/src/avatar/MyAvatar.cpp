@@ -2016,7 +2016,13 @@ void MyAvatar::updateAvatarEntity(const QUuid& entityID, const QByteArray& entit
 
     bool changed = false;
     _avatarEntitiesLock.withWriteLock([&] {
-        auto data = QJsonDocument(QCborValue::fromCbor(entityData).toJsonValue().toObject());
+        QCborParserError cborError;
+        auto cbor = QCborValue::fromCbor(entityData, &cborError);
+        if (cborError.error != QCborError::NoError) {
+            qWarning() << "MyAvatar::updateAvatarEntity: corrupted cbor" << QString(entityData.toHex());
+            return;
+        }
+        auto data = QJsonDocument(cbor.toJsonValue().toObject());
         if (data.isEmpty() || data.isNull() || !data.isObject() || data.object().isEmpty()) {
             qDebug() << "ERROR!  Trying to update with invalid avatar entity data.  Skipping." << data;
         } else {
