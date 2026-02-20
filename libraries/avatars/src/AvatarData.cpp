@@ -2654,7 +2654,14 @@ QByteArray AvatarData::toFrame(const AvatarData& avatar) {
 
 
 void AvatarData::fromFrame(const QByteArray& frameData, AvatarData& result, bool useFrameSkeleton) {
-    QJsonDocument doc = QJsonDocument(QCborValue::fromCbor(frameData).toJsonValue().toObject());
+    QCborParserError cborError;
+    auto cbor = QCborValue::fromCbor(frameData, &cborError);
+    if (cborError.error != QCborError::NoError) {
+        // TODO: what to do if this happens?
+        qCWarning(avatars) << "AvatarData::fromFrame corrupted avatar data cbor: " << QString(frameData.toHex());
+        return;
+    }
+    QJsonDocument doc = QJsonDocument(cbor.toJsonValue().toObject());
 
 #ifdef WANT_JSON_DEBUG
     {
