@@ -236,7 +236,7 @@ protected slots:
     // Prefetches a resource to be held by the ScriptEngine.
     // Left as a protected member so subclasses can overload prefetch
     // and delegate to it (see TextureCache::prefetch(const QUrl&, int).
-    ScriptableResource* prefetch(const QUrl& url, void* extra, ulong extraHash);
+    ScriptableResource* prefetch(const QUrl& url, void* extra, size_t extraHash);
 
     // FIXME: The return type is not recognized by JavaScript.
     /// Loads a resource from the specified URL and returns it.
@@ -386,6 +386,7 @@ public:
     Q_INVOKABLE ScriptableResource* prefetch(const QUrl& url) { return prefetch(url, nullptr, std::numeric_limits<size_t>::max()); }
 
     // FIXME: This function variation shouldn't be in the API.
+    // QT6TODO: ulong is correct only on Linux. We should use size_t here, but then QT MOC will fail to process the function correctly.
     Q_INVOKABLE ScriptableResource* prefetch(const QUrl& url, void* extra, ulong extraHash);
 
 signals:

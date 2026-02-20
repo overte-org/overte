@@ -162,7 +162,8 @@ void ScriptableResourceCache::updateTotalSize(const qint64& deltaSize) {
     _resourceCache->updateTotalSize(deltaSize);
 }
 
-ScriptableResource* ScriptableResourceCache::prefetch(const QUrl& url, void* extra, ulong extraHash) {
+ScriptableResource* ScriptableResourceCache::prefetch(const QUrl& url, void* extra, size_t extraHash) {
+    static_assert(sizeof(size_t) == sizeof(ulong));
     return _resourceCache->prefetch(url, extra, extraHash);
 }
 
@@ -221,14 +222,13 @@ ScriptableResource* ResourceCache::prefetchAndMoveToThread(const QUrl& url, void
     return result;
 }
 
-ScriptableResource* ResourceCache::prefetch(const QUrl& url, void* extra, ulong extraHash) {
+ScriptableResource* ResourceCache::prefetch(const QUrl& url, void* extra, size_t extraHash) {
     ScriptableResource* result = nullptr;
 
     if (QThread::currentThread() != this->thread()) {
         // Must be called in thread to ensure getResource returns a valid pointer
-        BLOCKING_INVOKE_METHOD(this, "prefetchAndMoveToThread",
-            Q_GENERIC_RETURN_ARG(ScriptableResource*, result),
-            Q_GENERIC_ARG(QUrl, url), Q_GENERIC_ARG(void*, extra), Q_GENERIC_ARG(ulong, extraHash), Q_GENERIC_ARG(QThread*, QThread::currentThread()));
+        QMetaObject::invokeMethod(this, &ResourceCache::prefetchAndMoveToThread,
+            qReturnArg(result), url, extra, extraHash, QThread::currentThread());
         return result;
     }
 
