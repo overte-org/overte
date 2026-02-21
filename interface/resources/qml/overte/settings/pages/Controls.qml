@@ -73,9 +73,13 @@ SettingsPage {
 
     SwitchSetting {
         text: qsTr("Seated Mode")
-        value: MyAvatar.userRecenterModel === MyAvatar.ForceSit
+        value: MyAvatar.standingMode !== 0
         onValueChanged: {
-            MyAvatar.userRecenterModel = value ? MyAvatar.ForceSit : MyAvatar.ForceStand;
+            MyAvatar.standingMode = (
+                value ?
+                2 : // ForcedHeight
+                0   // Standing
+            );
         }
     }
 
@@ -104,14 +108,13 @@ SettingsPage {
         valueToText: () => value < 1.5 ? qsTr("Teleport Only") : `${value.toLocaleString()} m/s`;
         //enabled: !useAvatarDefaultWalkingSpeed.value
 
-        // QT6TODO: change to vrWalkSpeed when we rebase on master
-        value: MyAvatar.analogPlusWalkSpeed
+        value: MyAvatar.vrWalkSpeed
         onValueChanged: {
             if (value === 0.0) {
                 MyAvatar.useAdvancedMovementControls = false;
             } else {
                 MyAvatar.useAdvancedMovementControls = true;
-                MyAvatar.analogPlusWalkSpeed = value;
+                MyAvatar.vrWalkSpeed = value;
             }
         }
     }
@@ -137,20 +140,6 @@ SettingsPage {
     }*/
 
     Header { text: qsTr("VR UI") }
-
-    ComboSetting {
-        text: qsTr("Tablet Input")
-
-        // keep this in the same order as MyAvatar.TabletInputMode
-        model: [
-            qsTr("Laser"),
-            qsTr("Stylus"),
-            qsTr("Finger Touch"),
-        ]
-
-        currentIndex: MyAvatar.tabletInputMode
-        onCurrentIndexChanged: MyAvatar.tabletInputMode = currentIndex;
-    }
 
     ComboSetting {
         text: qsTr("Virtual Keyboard Input")
