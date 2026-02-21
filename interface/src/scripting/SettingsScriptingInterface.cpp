@@ -50,8 +50,6 @@ void SettingsScriptingInterface::setValue(const QString& setting, const QVariant
         if (_restrictPrivateValues) {
             qWarning() << "SettingsScriptingInterface::setValue -- restricted write: " << setting << value;
             return;
-        } else {
-            qInfo() << "SettingsScriptingInterface::setValue -- allowing restricted write: " << setting << value;
         }
     }
     // Make a deep-copy of the string.

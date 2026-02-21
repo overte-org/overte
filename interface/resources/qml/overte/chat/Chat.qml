@@ -68,7 +68,6 @@ Rectangle {
             eventsLog.push(obj);
 
             // TODO: is this a performance problem? i'm not sure how else we could handle this robustly
-            // FIXME: every time this is set it logs "SettingsScriptingInterface::setValue -- allowing restricted write"
             SettingsInterface.setValue("fullPrivate/chat/eventsLog", eventsLog);
         }
 
