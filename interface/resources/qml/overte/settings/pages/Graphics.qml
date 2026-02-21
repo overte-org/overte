@@ -25,19 +25,19 @@ SettingsPage {
     }
 
     ComboSetting {
-        enabled: advRenderingEnabled.value
+        enabled: deferredRendering.value
 
         text: qsTr("Anti-Aliasing")
 
         model: [
             // TODO: separate none and MSAA?
             // RenderMainView.PreparePrimaryBufferForward.numSamples is a massive hack
-            advRenderingEnabled.value ? qsTr("None") : qsTr("4x MSAA"),
+            deferredRendering.value ? qsTr("None") : qsTr("4x MSAA"),
             qsTr("TAA"),
             qsTr("FXAA"),
         ]
 
-        currentIndex: advRenderingEnabled.value ? Render.getAntialiasingMode() : 0
+        currentIndex: deferredRendering.value ? Render.getAntialiasingMode() : 0
         onCurrentIndexChanged: Render.setAntialiasingMode(currentIndex)
     }
 
@@ -56,44 +56,37 @@ SettingsPage {
         onCurrentIndexChanged: LODManager.worldDetailQuality = model[currentIndex].mode
     }
 
-    SwitchSetting {
-        text: qsTr("Custom Shaders")
-
-        value: Render.proceduralMaterialsEnabled
-        onValueChanged: Render.proceduralMaterialsEnabled = value
-    }
-
-    SwitchSetting {
-        text: qsTr("Allow third-person camera to pass through walls")
-
-        value: !Render.getCameraClippingEnabled()
-        onValueChanged: !Render.setCameraClippingEnabled(value)
-    }
-
     Header { text: qsTr("Advanced") }
 
-    SettingNote {
-        text: qsTr("These settings are incompatible with MSAA and may reduce performance.")
-    }
-
     SwitchSetting {
-        id: advRenderingEnabled
-        text: qsTr("Rendering Effects")
+        id: deferredRendering
+        text: qsTr("Deferred Rendering")
 
         value: Render.renderMethod === 0
         onValueChanged: Render.renderMethod = value ? 0 : 1
     }
 
+    SettingNote {
+        text: qsTr("May affect performance, especially on mobile devices. Not compatible with MSAA.")
+    }
+
     SwitchSetting {
-        enabled: advRenderingEnabled.value
+        enabled: deferredRendering.value
         text: qsTr("Shadows")
 
-        value: Render.shadowsEnabled
+        value: Render.shadowsEnabled && deferredRendering.value
         onValueChanged: Render.shadowsEnabled = value
     }
 
     SwitchSetting {
-        enabled: advRenderingEnabled.value
+        enabled: deferredRendering.value
+        text: qsTr("Ambient Occlusion")
+
+        value: Render.ambientOcclusionEnabled && deferredRendering.value
+        onValueChanged: Render.ambientOcclusionEnabled = value
+    }
+
+    SwitchSetting {
         text: qsTr("Bloom")
 
         value: Render.bloomEnabled
@@ -101,11 +94,21 @@ SettingsPage {
     }
 
     SwitchSetting {
-        enabled: advRenderingEnabled.value
-        text: qsTr("Ambient Occlusion")
+        text: qsTr("Custom Shaders")
 
-        value: Render.ambientOcclusionEnabled
-        onValueChanged: Render.ambientOcclusionEnabled = value
+        value: Render.proceduralMaterialsEnabled
+        onValueChanged: Render.proceduralMaterialsEnabled = value
+    }
+
+    SettingNote {
+        text: qsTr("Custom shaders are currently always unlit when deferred rendering is disabled.")
+    }
+
+    SwitchSetting {
+        text: qsTr("Allow third-person camera to pass through walls")
+
+        value: !Render.getCameraClippingEnabled()
+        onValueChanged: !Render.setCameraClippingEnabled(value)
     }
 
     Header { text: qsTr("Desktop Window") }
