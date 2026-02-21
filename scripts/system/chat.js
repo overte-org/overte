@@ -183,22 +183,37 @@ Messages.messageReceived.connect((channel, rawMsg, senderID, _localOnly) => {
     }
 });
 
+let palData = [];
+
 AvatarManager.avatarAddedEvent.connect(uuid => {
     if (!appWindow) { recreateAppWindow(); }
 
-    appWindow.sendToQml(JSON.stringify({
-        event: "user_joined",
-        name: AvatarManager.getAvatar(uuid).sessionDisplayName,
-        timestamp: Date.now(),
-    }));
+    // pal data isn't immediately available when an avatar joins,
+    // so we need a bit of a delay to wait for it to come through
+    Script.setTimeout(() => {
+        palData = AvatarManager.getPalData().data;
+
+        const name = palData.find(e => e.sessionUUID === uuid)?.sessionDisplayName;
+
+        // still couldn't get anything to show, don't bother
+        if (!name) { return; }
+
+        appWindow.sendToQml(JSON.stringify({
+            event: "user_joined",
+            name: name,
+            timestamp: Date.now(),
+        }));
+    }, 1500);
 });
 
 AvatarManager.avatarRemovedEvent.connect(uuid => {
     if (!appWindow) { recreateAppWindow(); }
 
+    const name = palData.find(e => e.sessionUUID === uuid)?.sessionDisplayName;
+
     appWindow.sendToQml(JSON.stringify({
         event: "user_left",
-        name: AvatarManager.getAvatar(uuid).sessionDisplayName,
+        name: name,
         timestamp: Date.now(),
     }));
 });
