@@ -179,8 +179,15 @@ Item {
                 Overte.Theme.paletteActive.highlight :
                 Overte.Theme.paletteActive.button
             )
+            checked: MyAvatar.standingMode !== 0
 
-            onToggled: console.error(`TODO: sitting mode ${checked}`)
+            onToggled: {
+                MyAvatar.standingMode = (
+                    checked ?
+                    2 : // ForcedHeight
+                    0   // Standing
+                );
+            }
         }
     }
 }
