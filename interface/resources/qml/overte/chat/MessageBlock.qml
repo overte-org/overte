@@ -9,7 +9,7 @@ ColumnLayout {
     required property string body
     required property string notification
     required property real timestamp
-    required property list<string> imageEmbeds
+    required property var imageEmbeds
 
     id: messageBlock
 
