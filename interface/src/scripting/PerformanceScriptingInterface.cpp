@@ -26,9 +26,11 @@ STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager){
     auto scriptEngine = manager->engine().get();
+    auto scopeGuard = scriptEngine->getScopeGuard();
+    auto* sgp = scopeGuard.get();
 
-    scriptEngine->registerEnum("Performance.PerformancePreset",QMetaEnum::fromType<PerformanceScriptingInterface::PerformancePreset>());
-    scriptEngine->registerEnum("Performance.RefreshRateProfile",QMetaEnum::fromType<PerformanceScriptingInterface::RefreshRateProfile>());
+    scriptEngine->registerEnum(sgp, "Performance.PerformancePreset",QMetaEnum::fromType<PerformanceScriptingInterface::PerformancePreset>());
+    scriptEngine->registerEnum(sgp, "Performance.RefreshRateProfile",QMetaEnum::fromType<PerformanceScriptingInterface::RefreshRateProfile>());
 });
 
 std::once_flag PerformanceScriptingInterface::registry_flag;

@@ -313,7 +313,10 @@ void ScriptEngineV8::deleteUnusedValueWrappers() {
     }
 }
 
-void ScriptEngineV8::registerEnum(const QString& enumName, QMetaEnum newEnum) {
+void ScriptEngineV8::registerEnum(ScriptEngineScopeGuard* scopeGuard, const QString& enumName, QMetaEnum newEnum) {
+    Q_ASSERT(scopeGuard);
+    auto* scopeGuardV8 = dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard);
+    Q_ASSERT(scopeGuardV8);
     if (!newEnum.isValid()) {
         qCCritical(scriptengine_v8) << "registerEnum called on invalid enum with name " << enumName;
         return;
@@ -325,20 +328,13 @@ void ScriptEngineV8::registerEnum(const QString& enumName, QMetaEnum newEnum) {
     for (int i = 0; i < newEnum.keyCount(); i++) {
         const char* keyName = newEnum.key(i);
         QString fullName = enumName + "." + keyName;
-        registerValue(fullName, V8ScriptValue(this, v8::Integer::New(_v8Isolate, newEnum.keyToValue(keyName))));
+        registerValue(scopeGuardV8, fullName, V8ScriptValue(this, v8::Integer::New(_v8Isolate, newEnum.keyToValue(keyName))));
     }
 }
 
-void ScriptEngineV8::registerValue(const QString& valueName, V8ScriptValue value) {
-    if (QThread::currentThread() != thread()) {
-#ifdef THREAD_DEBUGGING
-        qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerValue() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]";
-#endif
-        QMetaObject::invokeMethod(this, "registerValue",
-                                  Q_ARG(const QString&, valueName),
-                                  Q_ARG(V8ScriptValue, value));
-        return;
-    }
+void ScriptEngineV8::registerValue(ScriptEngineScopeGuardV8* scopeGuard, const QString& valueName, V8ScriptValue value) {
+    Q_ASSERT(scopeGuard);
+    Q_ASSERT(QThread::currentThread() == thread());
     Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     v8::Local<v8::Context> context = getContext();
@@ -386,19 +382,9 @@ void ScriptEngineV8::registerValue(const QString& valueName, V8ScriptValue value
     }
 }
 
-void ScriptEngineV8::registerGlobalObject(const QString& name, QObject* object, ScriptEngine::ValueOwnership) {
-    if (QThread::currentThread() != thread()) {
-#ifdef THREAD_DEBUGGING
-        qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerGlobalObject() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "]  name:" << name;
-#endif
-        QMetaObject::invokeMethod(this, "registerGlobalObject",
-                                  Q_ARG(const QString&, name),
-                                  Q_ARG(QObject*, object));
-        return;
-    }
-#ifdef THREAD_DEBUGGING
-    qCDebug(scriptengine_v8) << "ScriptEngineV8::registerGlobalObject() called on thread [" << QThread::currentThread() << "] name:" << name;
-#endif
+void ScriptEngineV8::registerGlobalObject(ScriptEngineScopeGuard* scopeGuard, const QString& name, QObject* object, ScriptEngine::ValueOwnership) {
+    Q_ASSERT(scopeGuard && dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard));
+    Q_ASSERT(QThread::currentThread() == thread());
     Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     Q_ASSERT(_v8Isolate->IsCurrent());
@@ -421,21 +407,9 @@ void ScriptEngineV8::registerGlobalObject(const QString& name, QObject* object, 
     }
 }
 
-void ScriptEngineV8::registerFunction(const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
-    if (QThread::currentThread() != thread()) {
-#ifdef THREAD_DEBUGGING
-        qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerFunction() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] name:" << name;
-#endif
-        QMetaObject::invokeMethod(this, "registerFunction",
-                                  Q_ARG(const QString&, name),
-                                  Q_ARG(ScriptEngine::FunctionSignature, functionSignature),
-                                  Q_ARG(int, numArguments));
-        return;
-    }
-#ifdef THREAD_DEBUGGING
-    qCDebug(scriptengine_v8) << "ScriptEngineV8::registerFunction() called on thread [" << QThread::currentThread() << "] name:" << name;
-#endif
-
+void ScriptEngineV8::registerFunction(ScriptEngineScopeGuard* scopeGuard, const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
+    Q_ASSERT(scopeGuard && dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard));
+    Q_ASSERT(QThread::currentThread() == thread());
     Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(getContext());
@@ -444,21 +418,9 @@ void ScriptEngineV8::registerFunction(const QString& name, ScriptEngine::Functio
     globalObject().setProperty(name, scriptFun);
 }
 
-void ScriptEngineV8::registerFunction(const QString& parent, const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
-    if (QThread::currentThread() != thread()) {
-#ifdef THREAD_DEBUGGING
-        qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerFunction() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] parent:" << parent << "name:" << name;
-#endif
-        QMetaObject::invokeMethod(this, "registerFunction",
-                                  Q_ARG(const QString&, name),
-                                  Q_ARG(ScriptEngine::FunctionSignature, functionSignature),
-                                  Q_ARG(int, numArguments));
-        return;
-    }
-#ifdef THREAD_DEBUGGING
-    qCDebug(scriptengine_v8) << "ScriptEngineV8::registerFunction() called on thread [" << QThread::currentThread() << "] parent:" << parent << "name:" << name;
-#endif
-
+void ScriptEngineV8::registerFunction(ScriptEngineScopeGuard* scopeGuard, const QString& parent, const QString& name, ScriptEngine::FunctionSignature functionSignature, int numArguments) {
+    Q_ASSERT(scopeGuard && dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard));
+    Q_ASSERT(QThread::currentThread() == thread());
     Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
     v8::Context::Scope contextScope(getContext());
@@ -469,66 +431,53 @@ void ScriptEngineV8::registerFunction(const QString& parent, const QString& name
     }
 }
 
-void ScriptEngineV8::registerGetterSetter(const QString& name, ScriptEngine::FunctionSignature getter,
+void ScriptEngineV8::registerGetterSetter(ScriptEngineScopeGuard* scopeGuard, const QString& name, ScriptEngine::FunctionSignature getter,
                                         ScriptEngine::FunctionSignature setter, const QString& parent) {
-    if (QThread::currentThread() != thread()) {
-#ifdef THREAD_DEBUGGING
-        qCDebug(scriptengine_v8) << "*** WARNING *** ScriptEngineV8::registerGetterSetter() called on wrong thread [" << QThread::currentThread() << "], invoking on correct thread [" << thread() << "] "
-            " name:" << name << "parent:" << parent;
-#endif
-        QMetaObject::invokeMethod(this, "registerGetterSetter",
-                                  Q_ARG(const QString&, name),
-                                  Q_ARG(ScriptEngine::FunctionSignature, getter),
-                                  Q_ARG(ScriptEngine::FunctionSignature, setter),
-                                  Q_ARG(const QString&, parent));
-        return;
-    }
-#ifdef THREAD_DEBUGGING
-    qCDebug(scriptengine_v8) << "ScriptEngineV8::registerGetterSetter() called on thread [" << QThread::currentThread() << "] name:" << name << "parent:" << parent;
-#endif
+    Q_ASSERT(scopeGuard && dynamic_cast<ScriptEngineScopeGuardV8*>(scopeGuard));
+    Q_ASSERT(QThread::currentThread() == thread());
 
-        Q_ASSERT(_v8Isolate->IsCurrent());
-        v8::HandleScope handleScope(_v8Isolate);
-        auto context = getContext();
-        v8::Context::Scope contextScope(context);
+    Q_ASSERT(_v8Isolate->IsCurrent());
+    v8::HandleScope handleScope(_v8Isolate);
+    auto context = getContext();
+    v8::Context::Scope contextScope(context);
 
-        ScriptValue setterFunction = newFunction(setter, 1);
-        ScriptValue getterFunction = newFunction(getter);
-        V8ScriptValue unwrappedGetter = ScriptValueV8Wrapper::fullUnwrap(this, getterFunction);
-        V8ScriptValue unwrappedSetter = ScriptValueV8Wrapper::fullUnwrap(this, setterFunction);
-        v8::PropertyDescriptor propertyDescriptor(unwrappedGetter.get(), unwrappedSetter.get());
+    ScriptValue setterFunction = newFunction(setter, 1);
+    ScriptValue getterFunction = newFunction(getter);
+    V8ScriptValue unwrappedGetter = ScriptValueV8Wrapper::fullUnwrap(this, getterFunction);
+    V8ScriptValue unwrappedSetter = ScriptValueV8Wrapper::fullUnwrap(this, setterFunction);
+    v8::PropertyDescriptor propertyDescriptor(unwrappedGetter.get(), unwrappedSetter.get());
 
-        if (!parent.isNull() && !parent.isEmpty()) {
-            ScriptValue object = globalObject().property(parent);
-            if (object.isValid()) {
-                V8ScriptValue v8parent = ScriptValueV8Wrapper::fullUnwrap(this, object);
-                Q_ASSERT(v8parent.get()->IsObject());
-                v8::Local<v8::Object> v8ParentObject = v8::Local<v8::Object>::Cast(v8parent.get());
-                v8::Local<v8::String> v8propertyName =
-                    v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
-                v8::Local<v8::Object> v8ObjectToSetProperty;
-                ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(V8ScriptValue(this, v8ParentObject));
-                // If object is ScriptObjectV8Proxy, then setting property needs to be handled differently
-                if (proxy) {
-                    v8ObjectToSetProperty = v8ParentObject->GetInternalField(2).As<v8::Object>();
-                } else {
-                    v8ObjectToSetProperty = v8ParentObject;
-                }
-                    if (!v8ObjectToSetProperty->DefineProperty(context, v8propertyName, propertyDescriptor).FromMaybe(false)) {
-                    qCDebug(scriptengine_v8) << "DefineProperty failed for registerGetterSetter \"" << name << "\" for parent: \""
-                                          << parent << "\"";
-                }
-            } else {
-                qCDebug(scriptengine_v8) << "Parent object \"" << parent << "\" for registerGetterSetter \"" << name
-                                      << "\" is not valid: ";
-            }
-        } else {
+    if (!parent.isNull() && !parent.isEmpty()) {
+        ScriptValue object = globalObject().property(parent);
+        if (object.isValid()) {
+            V8ScriptValue v8parent = ScriptValueV8Wrapper::fullUnwrap(this, object);
+            Q_ASSERT(v8parent.get()->IsObject());
+            v8::Local<v8::Object> v8ParentObject = v8::Local<v8::Object>::Cast(v8parent.get());
             v8::Local<v8::String> v8propertyName =
                 v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
-            if (!context->Global()->DefineProperty(context, v8propertyName, propertyDescriptor).FromMaybe(false)) {
-                qCDebug(scriptengine_v8) << "DefineProperty failed for registerGetterSetter \"" << name << "\" for global object";
+            v8::Local<v8::Object> v8ObjectToSetProperty;
+            ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(V8ScriptValue(this, v8ParentObject));
+            // If object is ScriptObjectV8Proxy, then setting property needs to be handled differently
+            if (proxy) {
+                v8ObjectToSetProperty = v8ParentObject->GetInternalField(2).As<v8::Object>();
+            } else {
+                v8ObjectToSetProperty = v8ParentObject;
             }
+                if (!v8ObjectToSetProperty->DefineProperty(context, v8propertyName, propertyDescriptor).FromMaybe(false)) {
+                qCDebug(scriptengine_v8) << "DefineProperty failed for registerGetterSetter \"" << name << "\" for parent: \""
+                                      << parent << "\"";
+            }
+        } else {
+            qCDebug(scriptengine_v8) << "Parent object \"" << parent << "\" for registerGetterSetter \"" << name
+                                  << "\" is not valid: ";
         }
+    } else {
+        v8::Local<v8::String> v8propertyName =
+            v8::String::NewFromUtf8(_v8Isolate, name.toStdString().c_str()).ToLocalChecked();
+        if (!context->Global()->DefineProperty(context, v8propertyName, propertyDescriptor).FromMaybe(false)) {
+            qCDebug(scriptengine_v8) << "DefineProperty failed for registerGetterSetter \"" << name << "\" for global object";
+        }
+    }
 }
 
 v8::Local<v8::Context> ScriptEngineV8::getContext() {
@@ -681,7 +630,10 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
                 }
             }
             // "Script" API is context-dependent, so it needs to be recreated for each new context
-            registerGlobalObject("Script", new ScriptManagerScriptingInterface(_manager), ScriptEngine::ScriptOwnership);
+            {
+                auto scopeGuard = getScopeGuard();
+                registerGlobalObject(scopeGuard.get(), "Script", new ScriptManagerScriptingInterface(_manager), ScriptEngine::ScriptOwnership);
+            }
             auto Script = globalObject().property("Script");
             auto require = Script.property("require");
             auto resolve = Script.property("_requireResolve");

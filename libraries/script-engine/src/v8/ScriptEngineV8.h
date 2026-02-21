@@ -118,19 +118,20 @@ public:  // ScriptEngine implementation
 
     virtual bool raiseException(const QString& exception, const QString &reason = QString()) override;
     virtual bool raiseException(const ScriptValue& exception, const QString &reason = QString()) override;
-    Q_INVOKABLE virtual void registerEnum(const QString& enumName, QMetaEnum newEnum) override;
-    Q_INVOKABLE virtual void registerFunction(const QString& name,
+    Q_INVOKABLE virtual void registerEnum(ScriptEngineScopeGuard* scopeGuard, const QString& enumName, QMetaEnum newEnum) override;
+    Q_INVOKABLE virtual void registerFunction(ScriptEngineScopeGuard* scopeGuard, const QString& name,
                                               ScriptEngine::FunctionSignature fun,
                                               int numArguments = -1) override;
-    Q_INVOKABLE virtual void registerFunction(const QString& parent,
+    Q_INVOKABLE virtual void registerFunction(ScriptEngineScopeGuard* scopeGuard, const QString& parent,
                                               const QString& name,
                                               ScriptEngine::FunctionSignature fun,
                                               int numArguments = -1) override;
-    Q_INVOKABLE virtual void registerGetterSetter(const QString& name,
+    Q_INVOKABLE virtual void registerGetterSetter(ScriptEngineScopeGuard* scopeGuard, const QString& name,
                                                   ScriptEngine::FunctionSignature getter,
                                                   ScriptEngine::FunctionSignature setter,
                                                   const QString& parent = QString("")) override;
-    Q_INVOKABLE virtual void registerGlobalObject(const QString& name, QObject* object, ScriptEngine::ValueOwnership = ScriptEngine::QtOwnership) override;
+    Q_INVOKABLE virtual void registerGlobalObject(ScriptEngineScopeGuard* scopeGuard, const QString& name,
+                                                  QObject* object, ScriptEngine::ValueOwnership = ScriptEngine::QtOwnership) override;
     virtual void setDefaultPrototype(int metaTypeId, const ScriptValue& prototype) override;
     virtual void setObjectName(const QString& name) override;
     virtual bool setProperty(const char* name, const QVariant& value) override;
@@ -173,7 +174,7 @@ protected: // brought over from BaseScriptEngine
 public: // public non-interface methods for other QtScript-specific classes to use
 
     /// registers a global object by name
-    Q_INVOKABLE void registerValue(const QString& valueName, V8ScriptValue value);
+    Q_INVOKABLE void registerValue(ScriptEngineScopeGuardV8* scopeGuard, const QString& valueName, V8ScriptValue value);
 
     // NOTE - this is used by the TypedArray implementation. we need to review this for thread safety
     // V8TODO

@@ -772,6 +772,8 @@ void ScriptManager::initMetaTypes() {
 }
 
 void ScriptManager::init() {
+    auto scopeGuard = engine()->getScopeGuard();
+    auto* sgp = scopeGuard.get();
     if (_isInitialized) {
         return; // only initialize once
     }
@@ -809,7 +811,7 @@ void ScriptManager::init() {
     // NOTE: You do not want to end up creating new instances of singletons here. They will be on the ScriptManager thread
     // and are likely to be unusable if we "reset" the ScriptManager by creating a new one (on a whole new thread).
 
-    scriptEngine->registerGlobalObject("Script", _scriptingInterface.get());
+    scriptEngine->registerGlobalObject(sgp, "Script", _scriptingInterface.get());
 
     {
         // set up Script.require.resolve and Script.require.cache
@@ -822,29 +824,29 @@ void ScriptManager::init() {
         resetModuleCache();
     }
 
-    scriptEngine->registerEnum("Script.ExternalPaths", QMetaEnum::fromType<ExternalResource::Bucket>());
+    scriptEngine->registerEnum(sgp, "Script.ExternalPaths", QMetaEnum::fromType<ExternalResource::Bucket>());
 
-    scriptEngine->registerGlobalObject("Quat", _quatLibrary.get());
-    scriptEngine->registerGlobalObject("Vec3", _vec3Library.get());
-    scriptEngine->registerGlobalObject("Mat4", _mat4Library.get());
-    scriptEngine->registerGlobalObject("Uuid", _uuidLibrary.get());
+    scriptEngine->registerGlobalObject(sgp, "Quat", _quatLibrary.get());
+    scriptEngine->registerGlobalObject(sgp, "Vec3", _vec3Library.get());
+    scriptEngine->registerGlobalObject(sgp, "Mat4", _mat4Library.get());
+    scriptEngine->registerGlobalObject(sgp, "Uuid", _uuidLibrary.get());
 
     if (_context != NETWORKLESS_TEST_SCRIPT) {
         // This requires networking, we want to avoid the need for it in test scripts
-        scriptEngine->registerGlobalObject("Messages", DependencyManager::get<MessagesClient>().data());
+        scriptEngine->registerGlobalObject(sgp, "Messages", DependencyManager::get<MessagesClient>().data());
     }
 
-    scriptEngine->registerGlobalObject("console", _consoleScriptingInterface.get());
-    scriptEngine->registerFunction("console", "info", ConsoleScriptingInterface::info, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction("console", "log", ConsoleScriptingInterface::log, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction("console", "debug", ConsoleScriptingInterface::debug, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction("console", "warn", ConsoleScriptingInterface::warn, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction("console", "error", ConsoleScriptingInterface::error, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction("console", "exception", ConsoleScriptingInterface::exception, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction("console", "assert", ConsoleScriptingInterface::assertion, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction("console", "group", ConsoleScriptingInterface::group, 1);
-    scriptEngine->registerFunction("console", "groupCollapsed", ConsoleScriptingInterface::groupCollapsed, 1);
-    scriptEngine->registerFunction("console", "groupEnd", ConsoleScriptingInterface::groupEnd, 0);
+    scriptEngine->registerGlobalObject(sgp, "console", _consoleScriptingInterface.get());
+    scriptEngine->registerFunction(sgp, "console", "info", ConsoleScriptingInterface::info, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(sgp, "console", "log", ConsoleScriptingInterface::log, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(sgp, "console", "debug", ConsoleScriptingInterface::debug, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(sgp, "console", "warn", ConsoleScriptingInterface::warn, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(sgp, "console", "error", ConsoleScriptingInterface::error, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(sgp, "console", "exception", ConsoleScriptingInterface::exception, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(sgp, "console", "assert", ConsoleScriptingInterface::assertion, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(sgp, "console", "group", ConsoleScriptingInterface::group, 1);
+    scriptEngine->registerFunction(sgp, "console", "groupCollapsed", ConsoleScriptingInterface::groupCollapsed, 1);
+    scriptEngine->registerFunction(sgp, "console", "groupEnd", ConsoleScriptingInterface::groupEnd, 0);
 
     // constants
     scriptEngine->globalObject().setProperty("TREE_SCALE", scriptEngine->newValue(TREE_SCALE));
@@ -855,16 +857,16 @@ void ScriptManager::init() {
         scriptEngine->globalObject().setProperty("Resource", resourcePrototype);
         scriptEngine->setDefaultPrototype(qMetaTypeId<ScriptableResource*>(), resourcePrototype);
 
-        scriptEngine->registerGlobalObject("Assets", _assetScriptingInterface.get());
-        scriptEngine->registerGlobalObject("Resources", DependencyManager::get<ResourceScriptingInterface>().data());
+        scriptEngine->registerGlobalObject(sgp, "Assets", _assetScriptingInterface.get());
+        scriptEngine->registerGlobalObject(sgp, "Resources", DependencyManager::get<ResourceScriptingInterface>().data());
 
-        scriptEngine->registerGlobalObject("DebugDraw", &DebugDraw::getInstance());
+        scriptEngine->registerGlobalObject(sgp, "DebugDraw", &DebugDraw::getInstance());
 
-        scriptEngine->registerGlobalObject("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
+        scriptEngine->registerGlobalObject(sgp, "UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
     }
 
 #if DEV_BUILD || PR_BUILD
-    scriptEngine->registerGlobalObject("StackTest", new StackTestScriptingInterface(this));
+    scriptEngine->registerGlobalObject(sgp, "StackTest", new StackTestScriptingInterface(this));
 #endif
 
     qCDebug(scriptengine) << "Engine initialized";

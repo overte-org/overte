@@ -30,8 +30,9 @@ STATIC_SCRIPT_TYPES_INITIALIZER((+[](ScriptManager* manager){
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine();
+    auto scopeGuard = scriptEngine->getScopeGuard();
 
-    scriptEngine->registerGlobalObject("Model", new ModelScriptingInterface(manager));
+    scriptEngine->registerGlobalObject(scopeGuard.get(), "Model", new ModelScriptingInterface(manager));
 });
 
 ModelScriptingInterface::ModelScriptingInterface(QObject* parent) : QObject(parent) {

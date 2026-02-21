@@ -71,9 +71,11 @@ void staticEntityScriptInitializer(ScriptManager* manager) {
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
     entityScriptingInterface->init();
     auto interfacePtr = entityScriptingInterface.data();  // using this when we don't want to leak a reference
+    auto scopeGuard = scriptEngine->getScopeGuard();
+    auto* sgp = scopeGuard.get();
 
-    scriptEngine->registerGlobalObject("Entities", entityScriptingInterface.data());
-    scriptEngine->registerFunction("Entities", "getMultipleEntityProperties", EntityScriptingInterface::getMultipleEntityProperties);
+    scriptEngine->registerGlobalObject(sgp, "Entities", entityScriptingInterface.data());
+    scriptEngine->registerFunction(sgp, "Entities", "getMultipleEntityProperties", EntityScriptingInterface::getMultipleEntityProperties);
 
     // "The return value of QObject::sender() is not valid when the slot is called via a Qt::DirectConnection from a thread
     // different from this object's thread. Do not use this function in this type of scenario."

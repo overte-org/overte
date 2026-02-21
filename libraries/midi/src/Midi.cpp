@@ -137,8 +137,9 @@ void CALLBACK MidiInProc(HMIDIIN hMidiIn, UINT wMsg, DWORD_PTR dwInstance, DWORD
 
 STATIC_SCRIPT_INITIALIZER(+[](ScriptManager* manager) {
     auto scriptEngine = manager->engine();
+    auto scopeGuard = scriptEngine->getScopeGuard();
 
-    scriptEngine->registerGlobalObject("Midi", DependencyManager::get<Midi>().data());
+    scriptEngine->registerGlobalObject(scopeGuard.get(), "Midi", DependencyManager::get<Midi>().data());
 });
 
 void CALLBACK MidiOutProc(HMIDIOUT hmo, UINT wMsg, DWORD_PTR dwInstance, DWORD_PTR dwParam1, DWORD_PTR dwParam2) {

@@ -187,7 +187,8 @@ void ScriptEngineTests::testRegisterClass() {
         printed.append(message);
     });
 
-    sm->engine()->registerGlobalObject("testClass", new TestClass());
+    auto scopeGuard = sm->engine()->getScopeGuard();
+    sm->engine()->registerGlobalObject(scopeGuard.get(), "testClass", new TestClass());
 
     sm->run();
 
@@ -200,7 +201,8 @@ void ScriptEngineTests::testRegisterClass() {
 
 void ScriptEngineTests::testInvokeNonInvokable() {
     auto sm = makeManager("print(testClass.nonInvokableFunc(4)); Script.stop(true);", "testClass.js");
-    sm->engine()->registerGlobalObject("testClass", new TestClass());
+    auto scopeGuard = sm->engine()->getScopeGuard();
+    sm->engine()->registerGlobalObject(scopeGuard.get(), "testClass", new TestClass());
 
     sm->run();
     auto ex = sm->getUncaughtException();
@@ -211,7 +213,8 @@ void ScriptEngineTests::testInvokeNonInvokable() {
 
 void ScriptEngineTests::testRaiseException() {
     auto sm = makeManager("testClass.doRaiseTest(); Script.stop(true);", "testRaise.js");
-    sm->engine()->registerGlobalObject("testClass", new TestClass(sm->engine()));
+    auto scopeGuard = sm->engine()->getScopeGuard();
+    sm->engine()->registerGlobalObject(scopeGuard.get(), "testClass", new TestClass(sm->engine()));
 
     sm->run();
     auto ex = sm->getUncaughtException();

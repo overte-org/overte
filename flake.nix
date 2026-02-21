@@ -69,6 +69,10 @@
 
               buildInputs = [ pkgs.libsForQt5.full ];
 
+              CMAKE_GENERATOR = "Ninja";
+              CMAKE_BUILD_TYPE = "Debug";
+              CMAKE_EXPORT_COMPILE_COMMANDS = "ON";
+
               inherit (self'.packages.overte-full)
                 NVTT_DIR
                 CXXFLAGS
@@ -77,6 +81,13 @@
                 SPIRV_CROSS_DIR
                 SPIRV_TOOLS_DIR
                 ;
+
+              shellHook = ''
+                # helper for configuring
+                configure() {
+                    cmake -DOVERTE_USE_SYSTEM_LIBS=ON -B build -S .
+                }
+              '';
             };
           };
       }

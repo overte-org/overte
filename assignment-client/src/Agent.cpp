@@ -390,12 +390,15 @@ void Agent::executeScript() {
         // since it is referenced below by computeLoudness and getAudioLoudness
         scriptedAvatar->getHeadOrientation();
 
-        // give this AvatarData object to the script engine
         auto scriptEngine = _scriptManager->engine();
-        scriptEngine->registerGlobalObject("Avatar", scriptedAvatar.data());
+        auto scopeGuard = scriptEngine->getScopeGuard();
+        auto* sgp = scopeGuard.get();
+
+        // give this AvatarData object to the script engine
+        scriptEngine->registerGlobalObject(sgp, "Avatar", scriptedAvatar.data());
 
         // give scripts access to the Users object
-        scriptEngine->registerGlobalObject("Users", DependencyManager::get<UsersScriptingInterface>().data());
+        scriptEngine->registerGlobalObject(sgp, "Users", DependencyManager::get<UsersScriptingInterface>().data());
 
         auto player = DependencyManager::get<recording::Deck>();
         connect(player.data(), &recording::Deck::playbackStateChanged, [&player, &scriptedAvatar] {
@@ -499,26 +502,28 @@ void Agent::executeScript() {
         });
 
         auto avatarHashMap = DependencyManager::set<AvatarHashMap>();
-        scriptEngine->registerGlobalObject("AvatarList", avatarHashMap.data());
+        scriptEngine->registerGlobalObject(sgp, "AvatarList", avatarHashMap.data());
 
         // register ourselves to the script engine
-        scriptEngine->registerGlobalObject("Agent", new AgentScriptingInterface(this));
+        scriptEngine->registerGlobalObject(sgp, "Agent", new AgentScriptingInterface(this));
 
-        scriptEngine->registerGlobalObject("AnimationCache", DependencyManager::get<AnimationCacheScriptingInterface>().data());
-        scriptEngine->registerGlobalObject("SoundCache", DependencyManager::get<SoundCacheScriptingInterface>().data());
+        scriptEngine->registerGlobalObject(sgp, "AnimationCache", DependencyManager::get<AnimationCacheScriptingInterface>().data());
+        scriptEngine->registerGlobalObject(sgp, "SoundCache", DependencyManager::get<SoundCacheScriptingInterface>().data());
 
-        ScriptValue webSocketServerConstructorValue = scriptEngine->newFunction(WebSocketServerClass::constructor);
-        scriptEngine->globalObject().setProperty("WebSocketServer", webSocketServerConstructorValue);
+        {
+            ScriptValue webSocketServerConstructorValue = scriptEngine->newFunction(WebSocketServerClass::constructor);
+            scriptEngine->globalObject().setProperty("WebSocketServer", webSocketServerConstructorValue);
+        }
 
         auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
 
-        scriptEngine->registerGlobalObject("EntityViewer", &_entityViewer);
+        scriptEngine->registerGlobalObject(sgp, "EntityViewer", &_entityViewer);
 
-        scriptEngine->registerGetterSetter("location", LocationScriptingInterface::locationGetter,
+        scriptEngine->registerGetterSetter(sgp, "location", LocationScriptingInterface::locationGetter,
                                             LocationScriptingInterface::locationSetter);
 
         auto recordingInterface = DependencyManager::get<RecordingScriptingInterface>();
-        scriptEngine->registerGlobalObject("Recording", recordingInterface.data());
+        scriptEngine->registerGlobalObject(sgp, "Recording", recordingInterface.data());
 
         entityScriptingInterface->init();
 
