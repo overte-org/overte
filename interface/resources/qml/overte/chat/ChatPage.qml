@@ -88,7 +88,7 @@ ColumnLayout {
     Overte.Label {
         Layout.fillWidth: true
         Layout.fillHeight: true
-        visible: chatLog.model.length === 0
+        visible: chatLog.model.count === 0
 
         id: noMessagesLabel
         text: qsTr("No messages")
@@ -108,28 +108,31 @@ ColumnLayout {
             anchors.top: parent.top
             anchors.bottom: parent.bottom
         }
-        visible: chatLog.model.length > 0
+        visible: chatLog.model.count > 0
 
         ListView {
             id: chatLog
             clip: true
             spacing: 8
 
-            model: []
+            model: ListModel {}
             delegate: MessageBlock {}
+
+            highlightMoveDuration: Overte.Theme.reducedMotion ? 1 : 500
+            highlightResizeDuration: Overte.Theme.reducedMotion ? 1 : 500
 
             Connections {
                 target: root
 
                 function onMessagesCleared() {
-                    chatLog.model = [];
+                    chatLog.model.clear();
                 }
 
                 function onMessagePushed(name, body, timestamp) {
                     const imageUrlRegex = /(https?:\/\/\S+\.(?:png|jpg|jpeg|gif|webp|svg)\S*)/gmi;
                     let detectedImageUrls = body.match(imageUrlRegex) ?? [];
 
-                    chatLog.model.push({
+                    chatLog.model.append({
                         name: name,
                         body: (
                             body
@@ -147,20 +150,20 @@ ColumnLayout {
                         ),
                         notification: "",
                         timestamp: timestamp,
-                        imageEmbeds: detectedImageUrls,
+                        imageEmbeds: detectedImageUrls.map(e => ({ modelData: e })),
                     });
-                    chatLog.currentIndex = chatLog.model.length - 1;
+                    chatLog.currentIndex = chatLog.model.count - 1;
                 }
 
                 function onNotificationPushed(text, timestamp) {
-                    chatLog.model.push({
+                    chatLog.model.append({
                         name: "",
                         body: "",
                         notification: text,
                         timestamp: timestamp,
                         imageEmbeds: [],
                     });
-                    chatLog.currentIndex = chatLog.model.length - 1;
+                    chatLog.currentIndex = chatLog.model.count - 1;
                 }
             }
         }
