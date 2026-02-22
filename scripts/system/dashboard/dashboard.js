@@ -80,7 +80,7 @@ class Dashboard {
 
         this.#scaleCallback = () => {
             Entities.editEntity(this.#notifPanelID, { dpi: Defs.scaleHackInv(Defs.notifPanelDPI) });
-            Entities.editEntity(this.#appbarPanelID, { dpi: Defs.scaleHackInv(Defs.appBarDPI) });
+            Entities.editEntity(this.#appbarPanelID, { dpi: Defs.scaleHackInv(Defs.dashBarDPI) });
         };
         MyAvatar.sensorToWorldScaleChanged.connect(this.#scaleCallback);
 
@@ -189,16 +189,16 @@ class Dashboard {
 
         this.#appbarPanelID = Entities.addEntity({
             type: "Web",
-            name: "App Bar",
+            name: "Dash Bar",
             parentID: this.rootID,
             grab: { grabbable: false },
             localRotation: euler(-20, 0, 0),
-            localPosition: vec3(0, -0.15, -(Defs.windowRailDistance + Defs.windowRailCurvature) + 0.05),
+            localPosition: vec3(0, -0.15, -(Defs.windowRailDistance + Defs.windowRailCurvature) + 0.1),
             // FIXME: localDimensions aren't actually local,
             // for some reason they're actually post-SNScale
             localDimensions: vec3(1, 0.3, 0).multiply(MyAvatar.sensorToWorldScale),
-            dpi: Defs.scaleHackInv(Defs.appBarDPI),
-            sourceUrl: Defs.appBarQmlURL,
+            dpi: Defs.scaleHackInv(Defs.dashBarDPI),
+            sourceUrl: Defs.dashBarQmlURL,
             maxFPS: 90,
             wantsKeyboardFocus: false,
             showKeyboardHighlight: false,

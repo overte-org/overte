@@ -1,3 +1,4 @@
+import QtCore
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
@@ -73,121 +74,286 @@ Item {
         },
     ]
 
-    RowLayout {
-        id: row
-        anchors.fill: parent
+    Settings {
+        category: "Dashboard"
+        property alias appsBarOpen: appsBarToggle.checked
+    }
 
-        DashBarButton {
-            text: qsTr("Quit")
-            icon.source: "../icons/close.svg"
-            icon.color: Overte.Theme.paletteActive.buttonText
-            backgroundColor: (
-                hovered ?
-                Overte.Theme.paletteActive.buttonDestructive :
-                Overte.Theme.paletteActive.button
-            )
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.top: parent.top
+        implicitHeight: childrenRect.height + border.width + 8
 
-            onClicked: WindowScriptingInterface.quit()
+        id: systemBar
+
+        color: {
+            const c = Overte.Theme.paletteActive.base;
+            return Qt.rgba(
+                c.r,
+                c.g,
+                c.b,
+                c.a * (Overte.Theme.highContrast ? 1 : 0.9)
+            );
+        }
+        border.color: (
+            Overte.Theme.highContrast ?
+            Overte.Theme.paletteActive.text :
+            Qt.darker(color, Overte.Theme.borderDarker)
+        )
+        border.width: Overte.Theme.borderWidth
+        radius: Overte.Theme.borderRadius
+
+        Row {
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.margins: 4
+
+            DashBarButton {
+                text: qsTr("Quit")
+                icon.source: "../icons/close.svg"
+                icon.color: Overte.Theme.paletteActive.buttonText
+                backgroundColor: (
+                    hovered ?
+                    Overte.Theme.paletteActive.buttonDestructive :
+                    Overte.Theme.paletteActive.button
+                )
+
+                onClicked: WindowScriptingInterface.quit()
+            }
+
+            DashBarButton {
+                text: qsTr("Settings")
+                icon.source: "../icons/settings_cog.svg"
+                icon.color: Overte.Theme.paletteActive.buttonText
+
+                onClicked: {
+                    dashBar.toScript({
+                        dash_window: {
+                            event: "spawn_window",
+                            title: qsTr("Settings"),
+                            source_url: "qrc:///qml/overte/settings/Settings.qml",
+                        },
+                    });
+                }
+            }
+
+            DashBarButton {
+                text: qsTr("Tablet")
+                icon.source: "../icons/reload.svg"
+                icon.color: Overte.Theme.paletteActive.buttonText
+                checkable: true
+                checked: HMD.showTablet
+
+                onToggled: {
+                    if (checked) {
+                        HMD.openTablet();
+                    } else {
+                        HMD.closeTablet();
+                    }
+                }
+            }
         }
 
-        DashBarButton {
-            text: qsTr("Settings")
-            icon.source: "../icons/settings_cog.svg"
-            icon.color: Overte.Theme.paletteActive.buttonText
+        Row {
+            anchors.top: parent.top
+            anchors.horizontalCenter: parent.horizontalCenter
+            anchors.margins: 4
 
-            onClicked: {
-                dashBar.toScript({
-                    dash_window: {
-                        event: "spawn_window",
-                        title: qsTr("Settings"),
-                        source_url: "qrc:///qml/overte/settings/Settings.qml",
+            Repeater {
+                model: [
+                    {
+                        buttonName: qsTr("Places"),
+                        buttonIcon: "../icons/home.svg",
+                        windowName: qsTr("Places"),
+                        windowSource: "qrc:///qml/overte/place_picker/PlacePicker.qml",
+                        windowTag: "system places"
                     },
-                });
+                    {
+                        buttonName: qsTr("Contacts"),
+                        buttonIcon: "../icons/users.svg",
+                        windowName: qsTr("Contacts"),
+                        windowSource: "qrc:///qml/overte/contacts/ContactsList.qml",
+                        windowTag: "system contacts"
+                    },
+                    {
+                        buttonName: qsTr("Avatar"),
+                        buttonIcon: "../icons/add_friend.svg",
+                        windowName: qsTr("Avatar"),
+                        windowSource: "qrc:///qml/overte/avatar_picker/AvatarPicker.qml",
+                        windowTag: "system avatars"
+                    },
+                ]
+
+                DashBarButton {
+                    required property string buttonName
+                    required property string buttonIcon
+                    required property string windowName
+                    required property string windowSource
+                    required property string windowTag
+
+                    text: buttonName
+                    icon.source: buttonIcon
+                    icon.color: Overte.Theme.paletteActive.buttonText
+
+                    onClicked: {
+                        dashBar.toScript({
+                            dash_window: {
+                                event: "spawn_window",
+                                title: windowName,
+                                source_url: windowSource,
+                                tag: windowTag,
+                            },
+                        });
+                    }
+                }
             }
         }
 
-        Rectangle {
-            Layout.fillWidth: true
-            Layout.preferredHeight: (Overte.Theme.borderWidth * 2) + 8 + 96 + Overte.Theme.scrollbarWidth
+        Row {
+            anchors.top: parent.top
+            anchors.right: parent.right
+            anchors.margins: 4
 
-            border.width: Overte.Theme.borderWidth
-            border.color: Qt.darker(color, Overte.Theme.borderDarker)
-            radius: Overte.Theme.borderRadius
-            color: Overte.Theme.paletteActive.base
-
-            ListView {
-                anchors.fill: parent
-                anchors.margins: Overte.Theme.borderWidth * 2
-                orientation: ListView.Horizontal
-                spacing: 4
-                clip: true
-
-                 model: [
-                     { name: "Places", windowTitle: "Places", windowSource: "qrc://scripts/system/places/places.html" },
-                     { name: "Contacts", windowTitle: "Contacts", windowSource: "qrc:///qml/overte/contacts/ContactsList.qml" },
-                     { name: "Avatar", windowTitle: "Avatar", windowSource: "qrc:///qml/overte/avatar_picker/AvatarPicker.qml" },
-                     { name: "Widget Zoo", windowTitle: "Widget Zoo", windowSource: "qrc:///qml/overte/WidgetZoo.qml" },
-                 ]
-
-                 delegate: Overte.Button {
-                     required property string name
-                     required property string windowTitle
-                     required property string windowSource
-
-                     text: name
-                     implicitWidth: 96
-                     implicitHeight: 96
-                     font.pixelSize: Overte.Theme.fontPixelSizeSmall
-
-                     onClicked: {
-                         dashBar.toScript({
-                             dash_window: {
-                                 event: "spawn_window",
-                                 title: windowTitle,
-                                 source_url: windowSource,
-                             },
-                         });
-                     }
-                 }
-
-                 ScrollBar.horizontal: Overte.ScrollBar {
-                     policy: ScrollBar.AlwaysOn
-                 }
-             }
-         }
-
-        DashBarButton {
-            checkable: true
-            text: checked ? qsTr("Unmute") : qsTr("Mute")
-            icon.source: checked ? "../icons/speaker_muted.svg" : "../icons/speaker_active.svg"
-            backgroundColor: (
-                checked ?
-                Overte.Theme.paletteActive.buttonDestructive :
-                Overte.Theme.paletteActive.button
-            )
-            checked: AudioScriptingInterface.muted
-
-            onToggled: AudioScriptingInterface.muted = checked
-        }
-
-        DashBarButton {
-            checkable: true
-            text: checked ? qsTr("Seated") : qsTr("Standing")
-            icon.source: checked ? "../icons/triangle_down.svg" : "../icons/triangle_up.svg"
-            backgroundColor: (
-                checked ?
-                Overte.Theme.paletteActive.highlight :
-                Overte.Theme.paletteActive.button
-            )
-            checked: MyAvatar.standingMode !== 0
-
-            onToggled: {
-                MyAvatar.standingMode = (
+            DashBarButton {
+                checkable: true
+                text: checked ? qsTr("Unmute") : qsTr("Mute")
+                icon.source: checked ? "../icons/speaker_muted.svg" : "../icons/speaker_active.svg"
+                backgroundColor: (
                     checked ?
-                    2 : // ForcedHeight
-                    0   // Standing
-                );
+                    Overte.Theme.paletteActive.buttonDestructive :
+                    Overte.Theme.paletteActive.button
+                )
+                checked: AudioScriptingInterface.muted
+
+                onToggled: AudioScriptingInterface.muted = checked
+            }
+
+            DashBarButton {
+                checkable: true
+                text: checked ? qsTr("Seated") : qsTr("Standing")
+                icon.source: checked ? "../icons/triangle_down.svg" : "../icons/triangle_up.svg"
+                backgroundColor: (
+                    checked ?
+                    Overte.Theme.paletteActive.highlight :
+                    Overte.Theme.paletteActive.button
+                )
+                checked: MyAvatar.standingMode !== 0
+
+                onToggled: {
+                    MyAvatar.standingMode = (
+                        checked ?
+                        2 : // ForcedHeight
+                        0   // Standing
+                    );
+                }
             }
         }
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        y: -(height - systemBar.height)
+        z: -1
+        opacity: 0
+        implicitHeight: 96 + border.width + 8
+
+        id: appsBar
+
+        states: State {
+            name: "open"
+            when: appsBarToggle.checked
+            PropertyChanges {
+                target: appsBar
+                y: systemBar.height + 4
+                opacity: 1
+            }
+        }
+
+        transitions: Transition {
+            NumberAnimation {
+                properties: Overte.Theme.reducedMotion ? "" : "opacity,y"
+                easing.type: Easing.OutExpo
+                duration: Overte.Theme.reducedMotion ? 1 : 300
+            }
+        }
+
+        color: {
+            const c = Overte.Theme.paletteActive.base;
+            return Qt.rgba(
+                c.r,
+                c.g,
+                c.b,
+                c.a * (Overte.Theme.highContrast ? 1 : 0.9)
+            );
+        }
+        border.color: (
+            Overte.Theme.highContrast ?
+            Overte.Theme.paletteActive.text :
+            Qt.darker(color, Overte.Theme.borderDarker)
+        )
+        border.width: Overte.Theme.borderWidth
+        radius: Overte.Theme.borderRadius
+
+        ListView {
+            anchors.fill: parent
+            anchors.margins: 4
+
+            model: [
+                {
+                    buttonName: qsTr("More…"),
+                    buttonIcon: "../icons/plus.svg",
+                    windowName: qsTr("More Apps"),
+                    windowSource: "qrc:///qml/overte/more_apps/MoreApps.qml",
+                    windowTag: "system more apps"
+                },
+            ]
+
+            delegate: Overte.Button {
+                required property string buttonName
+                required property string buttonIcon
+                required property string windowName
+                required property string windowSource
+                required property string windowTag
+
+                implicitWidth: 96
+                implicitHeight: 96
+
+                text: buttonName
+                font.pixelSize: Overte.Theme.fontPixelSizeSmall
+                icon.source: buttonIcon
+                icon.width: 64
+                icon.height: 64
+                icon.color: Overte.Theme.paletteActive.buttonText
+
+                display: Button.TextUnderIcon
+                focusPolicy: Qt.NoFocus
+
+                onClicked: {
+                    dashBar.toScript({
+                        dash_window: {
+                            event: "spawn_window",
+                            title: windowName,
+                            source_url: windowSource,
+                            tag: windowTag,
+                        },
+                    });
+                }
+            }
+        }
+    }
+
+    Overte.RoundButton {
+        anchors.top: appsBar.bottom
+        anchors.horizontalCenter: appsBar.horizontalCenter
+        anchors.topMargin: 4
+
+        id: appsBarToggle
+        focusPolicy: Qt.NoFocus
+        icon.source: checked ? "../icons/triangle_up.svg" : "../icons/triangle_down.svg"
+        icon.width: 20
+        icon.height: 20
+        checkable: true
     }
 }

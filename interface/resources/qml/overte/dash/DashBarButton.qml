@@ -13,9 +13,7 @@ Item {
 
     id: barButton
     implicitWidth: 72
-    Layout.maximumWidth: implicitWidth
-    Layout.fillWidth: false
-    Layout.fillHeight: true
+    implicitHeight: 72
 
     signal clicked()
     signal toggled()
@@ -36,6 +34,7 @@ Item {
                 Overte.Theme.paletteActive.button
             )
 
+            focusPolicy: Qt.NoFocus
             checkable: false
             checked: false
 
@@ -58,25 +57,6 @@ Item {
 
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignHCenter
-
-            Rectangle {
-                z: -1
-
-                // FIXME: weird magic constants
-                x: -4
-                y: -4
-                width: parent.width + 8
-                height: parent.height + 8
-                radius: Overte.Theme.borderRadius
-
-                color: {
-                    if (Overte.Theme.highContrast) {
-                        return Overte.Theme.darkMode ? "black" : "white";
-                    } else {
-                        return Overte.Theme.darkMode ? "#d0000000" : "#e0ffffff"
-                    }
-                }
-            }
         }
     }
 }

@@ -61,14 +61,14 @@ module.exports = {
      * @readonly
      * @type {number}
      */
-    appBarDPI: 20,
+    dashBarDPI: 20,
 
     /**
      * A URL to DashBar.qml.
      * @readonly
      * @type {string}
      */
-    appBarQmlURL: `${OVERTE_QML}/dash/DashBar.qml`,
+    dashBarQmlURL: `${OVERTE_QML}/dash/DashBar.qml`,
 
     /**
      * The `dpi` the notifications panel will have.
