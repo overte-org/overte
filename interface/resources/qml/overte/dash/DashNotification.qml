@@ -8,9 +8,13 @@ Rectangle {
     opacity: Overte.Theme.highContrast ? 1.0 : 0.95
 
     color: {
-        let c = Overte.Theme.paletteActive.tooltip;
-        if (!Overte.Theme.highContrast) { c.a = 128; }
-        return c;
+        const c = Overte.Theme.paletteActive.tooltip;
+        return Qt.rgba(
+            c.r,
+            c.g,
+            c.b,
+            c.a * (Overte.Theme.highContrast ? 1 : 0.9)
+        );
     }
 
     radius: Overte.Theme.borderRadius
