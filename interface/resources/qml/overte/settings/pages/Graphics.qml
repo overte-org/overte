@@ -87,6 +87,13 @@ SettingsPage {
     }
 
     SwitchSetting {
+        text: qsTr("Local Lights")
+
+        value: Render.localLightingEnabled
+        onValueChanged: Render.localLightingEnabled = value
+    }
+
+    SwitchSetting {
         text: qsTr("Bloom")
 
         value: Render.bloomEnabled

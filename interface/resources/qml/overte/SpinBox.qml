@@ -52,7 +52,7 @@ SpinBox {
 
         readOnly: !control.editable
         validator: control.validator
-        inputMethodHints: Qt.ImhFormattedNumbersOnly
+        inputMethodHints: control.inputMethodHints
     }
 
     down.indicator: Rectangle{

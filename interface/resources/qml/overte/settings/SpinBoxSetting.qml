@@ -30,5 +30,6 @@ RowLayout {
         Layout.alignment: Qt.AlignRight
 
         id: spinboxItem
+        editable: true
     }
 }
