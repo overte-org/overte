@@ -91,16 +91,14 @@ Column {
             }
 
             entityEditor.model.push({
-                properties: {
-                    id: Uuid.generate(),
-                    type: "Model",
-                    name: addEntityName.text,
-                    parentID: MyAvatar.SELF_ID,
-                    parentJointIndex: joint,
-                    modelURL: addEntityURL.text,
-                    relayParentJoints: addEntitySkinned.checked,
-                    useOriginalPivot: true,
-                },
+                id: Uuid.generate(),
+                type: "Model",
+                name: addEntityName.text,
+                parentID: MyAvatar.SELF_ID,
+                parentJointIndex: joint,
+                modelURL: addEntityURL.text,
+                relayParentJoints: addEntitySkinned.checked,
+                useOriginalPivot: true,
             });
 
             // force an update on the repeater, since
