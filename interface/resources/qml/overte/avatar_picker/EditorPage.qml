@@ -222,6 +222,14 @@ ColumnLayout {
 
             onClicked: {
                 if (bookmarkToReplace !== "") {
+                    // AvatarBookmarks has its own separate format,
+                    // { properties: { id } }
+                    let entityData = [];
+
+                    for (let item of entityEditor.model) {
+                        entityData.push({ properties: item });
+                    }
+
                     // editing an existing bookmark
                     AvatarBookmarks.setBookmarkData(bookmarkToReplace, {
                         version: 3,
@@ -229,7 +237,7 @@ ColumnLayout {
                         avatarIcon: settingIconURL.text,
                         avatarScale: settingScale.value,
                         // FIXME: yes, it's "avatarEntites", not "avatarEntities"
-                        avatarEntites: entityEditor.model,
+                        avatarEntites: entityData,
                     });
                 } else {
                     // editing the current unsaved avatar state
@@ -246,7 +254,7 @@ ColumnLayout {
 
                     for (let item of entityEditor.model) {
                         let props = {};
-                        Object.assign(props, item.properties);
+                        Object.assign(props, item);
                         delete props.id;
 
                         entityData.push({
@@ -254,8 +262,6 @@ ColumnLayout {
                             properties: props,
                         });
                     }
-
-                    console.info(JSON.stringify(entityData));
 
                     AvatarBookmarks.updateAvatarEntities(entityData);
                 }
