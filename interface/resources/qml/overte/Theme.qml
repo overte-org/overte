@@ -1,22 +1,20 @@
+pragma Singleton
+import QtCore
+import QtQml
 import QtQuick
 
-pragma Singleton
 QtObject {
-    property bool useSystemColorScheme: true
-    property bool useSystemContrastMode: true
+    property bool darkMode: _settings.darkMode // WindowScriptingInterface.darkMode
+    property bool highContrast: _settings.highContrast // WindowScriptingInterface.highContrast
+    property bool reducedMotion: _settings.reducedMotion // WindowScriptingInterface.reducedMotion
 
-    // https://github.com/overte-org/overte/issues/1733
-    property bool darkMode: (
-        useSystemColorScheme ?
-        Qt.application.styleHints.colorScheme !== Qt.ColorScheme.Light :
-        true
-    )
-    property bool highContrast: (
-        useSystemContrastMode ?
-        Qt.application.styleHints.accessibility.contrastPreference === Qt.ContrastPreference.HighContrast :
-        false
-    )
-    property bool reducedMotion: false
+    // FIXME: singletons can't access context properties?
+    readonly property Settings _settings: Settings {
+        category: "Theme"
+        property bool darkMode: true
+        property bool highContrast: false
+        property bool reducedMotion: false
+    }
 
     // font face for UI elements
     readonly property string fontFamily: "Roboto"
