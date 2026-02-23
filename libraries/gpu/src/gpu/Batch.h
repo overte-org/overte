@@ -1420,7 +1420,7 @@ protected:
      *
      * Apply all the named calls to the end of the batch (for instancing) and prepare updates for the render shadow copies of the buffers.
      *
-     * @param updates
+     * @param updates DOCTODO
      */
     void finishFrame(BufferUpdates& updates);
 
