@@ -820,7 +820,7 @@ void Application::updateThemeColors() {
 
     QPalette palette = style->standardPalette();
 
-    if (_darkTheme.get()) {
+    if (_themePrefs->getDarkMode()) {
         palette.setColor(QPalette::Window,          QColor(48, 48, 48));
         palette.setColor(QPalette::WindowText,      QColor(224, 224, 224));
 
@@ -848,16 +848,6 @@ void Application::updateThemeColors() {
     qApp->setStyle(style);
     qApp->setPalette(palette);
     qApp->getPrimaryMenu()->setPalette(palette); // weird Qt bug workaround
-}
-
-void Application::setDarkThemePreference(bool value) {
-    bool previousValue = _darkTheme.get();
-
-    if (value == previousValue) { return; }
-
-    _darkTheme.set(value);
-    updateThemeColors();
-    emit darkThemePreferenceChanged(value);
 }
 
 void Application::showVRKeyboardForHudUI(bool show) {

@@ -20,9 +20,9 @@ SettingsPage {
         ]
 
         currentIndex: {
-            if (Overte.Theme.useSystemColorScheme) {
+            if (WindowScriptingInterface.useSystemColorScheme) {
                 return 2;
-            } else if (Overte.Theme.darkMode) {
+            } else if (WindowScriptingInterface.darkMode) {
                 return 0;
             } else {
                 return 1;
@@ -32,17 +32,23 @@ SettingsPage {
         onCurrentIndexChanged: {
             switch (currentIndex) {
                 case 0:
-                    Overte.Theme.useSystemColorScheme = false;
+                    WindowScriptingInterface.useSystemColorScheme = false;
+                    WindowScriptingInterface.darkMode = true;
+                    // FIXME: singletons can't access context properties?
                     Overte.Theme.darkMode = true;
                     break;
 
                 case 1:
-                    Overte.Theme.useSystemColorScheme = false;
+                    WindowScriptingInterface.useSystemColorScheme = false;
+                    WindowScriptingInterface.darkMode = false;
+                    // FIXME: singletons can't access context properties?
                     Overte.Theme.darkMode = false;
                     break;
 
                 case 2:
-                    Overte.Theme.useSystemColorScheme = true;
+                    WindowScriptingInterface.useSystemColorScheme = true;
+                    WindowScriptingInterface.darkMode = true;
+                    // FIXME: singletons can't access context properties?
                     Overte.Theme.darkMode = true;
                     break;
             }
@@ -58,9 +64,9 @@ SettingsPage {
         ]
 
         currentIndex: {
-            if (Overte.Theme.useSystemContrastMode) {
+            if (WindowScriptingInterface.useSystemContrast) {
                 return 2;
-            } else if (Overte.Theme.highContrast) {
+            } else if (WindowScriptingInterface.highContrast) {
                 return 1;
             } else {
                 return 0;
@@ -70,17 +76,23 @@ SettingsPage {
         onCurrentIndexChanged: {
             switch (currentIndex) {
                 case 0:
-                    Overte.useSystemContrastMode = false;
+                    WindowScriptingInterface.useSystemContrast = false;
+                    WindowScriptingInterface.highContrast = false;
+                    // FIXME: singletons can't access context properties?
                     Overte.Theme.highContrast = false;
                     break;
 
                 case 1:
-                    Overte.useSystemContrastMode = false;
+                    WindowScriptingInterface.useSystemContrast = false;
+                    WindowScriptingInterface.highContrast = true;
+                    // FIXME: singletons can't access context properties?
                     Overte.Theme.highContrast = true;
                     break;
 
                 case 2:
-                    Overte.useSystemContrastMode = true;
+                    WindowScriptingInterface.useSystemContrast = true;
+                    WindowScriptingInterface.highContrast = false;
+                    // FIXME: singletons can't access context properties?
                     Overte.Theme.highContrast = false;
                     break;
             }
@@ -90,9 +102,13 @@ SettingsPage {
     SwitchSetting {
         text: qsTr("Reduced Motion")
 
-        // TODO: use a system property instead of the theme
-        value: Overte.Theme.reducedMotion
-        onValueChanged: Overte.Theme.reducedMotion = value
+        value: WindowScriptingInterface.reducedMotion
+        onValueChanged: {
+            WindowScriptingInterface.reducedMotion = value;
+
+            // FIXME: singletons can't access context properties?
+            Overte.Theme.reducedMotion = value;
+        }
     }
 
     SettingNote {
