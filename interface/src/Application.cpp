@@ -255,8 +255,8 @@ Application::Application(
     _constrainToolbarPosition("toolbar/constrainToolbarToCenterX", true),
     _awayStateWhenFocusLostInVREnabled("awayStateWhenFocusLostInVREnabled", DEFAULT_AWAY_STATE_WHEN_FOCUS_LOST_IN_VR_ENABLED),
     _preferredCursor("preferredCursor", DEFAULT_CURSOR_NAME),
-    _darkTheme("darkTheme", true),
     _miniTabletEnabledSetting("miniTabletEnabled", DEFAULT_MINI_TABLET_ENABLED),
+    _themePrefs(new ThemePrefs(this)),
     // Entities
     _maxOctreePacketsPerSecond("maxOctreePPS", DEFAULT_MAX_OCTREE_PPS),
     _maxOctreePPS(_maxOctreePacketsPerSecond.get()),
@@ -1295,7 +1295,13 @@ void Application::loadSettings(const QCommandLineParser& parser) {
         externalResource->setBase(bucket, url.get());
     }
 
-    // the setter function isn't called, so update the theme colors now
+    connect(_themePrefs, &ThemePrefs::themeChanged, [this]() {
+        if (QThread::currentThread() != thread()) {
+            QMetaObject::invokeMethod(qApp, "updateThemeColors");
+        } else {
+            updateThemeColors();
+        }
+    });
     updateThemeColors();
 
     _settingsLoaded = true;

@@ -20,9 +20,9 @@ SettingsPage {
         ]
 
         currentIndex: {
-            if (Overte.Theme.useSystemColorScheme) {
+            if (WindowScriptingInterface.useSystemColorScheme) {
                 return 2;
-            } else if (Overte.Theme.darkMode) {
+            } else if (WindowScriptingInterface.darkMode) {
                 return 0;
             } else {
                 return 1;
@@ -32,17 +32,23 @@ SettingsPage {
         onCurrentIndexChanged: {
             switch (currentIndex) {
                 case 0:
-                    Overte.Theme.useSystemColorScheme = false;
+                    WindowScriptingInterface.useSystemColorScheme = false;
+                    WindowScriptingInterface.darkMode = true;
+                    // FIXME: singletons can't access context properties?
                     Overte.Theme.darkMode = true;
                     break;
 
                 case 1:
-                    Overte.Theme.useSystemColorScheme = false;
+                    WindowScriptingInterface.useSystemColorScheme = false;
+                    WindowScriptingInterface.darkMode = false;
+                    // FIXME: singletons can't access context properties?
                     Overte.Theme.darkMode = false;
                     break;
 
                 case 2:
-                    Overte.Theme.useSystemColorScheme = true;
+                    WindowScriptingInterface.useSystemColorScheme = true;
+                    WindowScriptingInterface.darkMode = true;
+                    // FIXME: singletons can't access context properties?
                     Overte.Theme.darkMode = true;
                     break;
             }
@@ -58,9 +64,9 @@ SettingsPage {
         ]
 
         currentIndex: {
-            if (Overte.Theme.useSystemContrastMode) {
+            if (WindowScriptingInterface.useSystemContrast) {
                 return 2;
-            } else if (Overte.Theme.highContrast) {
+            } else if (WindowScriptingInterface.highContrast) {
                 return 1;
             } else {
                 return 0;
@@ -70,17 +76,23 @@ SettingsPage {
         onCurrentIndexChanged: {
             switch (currentIndex) {
                 case 0:
-                    Overte.useSystemContrastMode = false;
+                    WindowScriptingInterface.useSystemContrast = false;
+                    WindowScriptingInterface.highContrast = false;
+                    // FIXME: singletons can't access context properties?
                     Overte.Theme.highContrast = false;
                     break;
 
                 case 1:
-                    Overte.useSystemContrastMode = false;
+                    WindowScriptingInterface.useSystemContrast = false;
+                    WindowScriptingInterface.highContrast = true;
+                    // FIXME: singletons can't access context properties?
                     Overte.Theme.highContrast = true;
                     break;
 
                 case 2:
-                    Overte.useSystemContrastMode = true;
+                    WindowScriptingInterface.useSystemContrast = true;
+                    WindowScriptingInterface.highContrast = false;
+                    // FIXME: singletons can't access context properties?
                     Overte.Theme.highContrast = false;
                     break;
             }
@@ -89,8 +101,14 @@ SettingsPage {
 
     SwitchSetting {
         text: qsTr("Reduced Motion")
-        value: Overte.Theme.reducedMotion
-        onValueChanged: () => Overte.Theme.reducedMotion = value
+
+        value: WindowScriptingInterface.reducedMotion
+        onValueChanged: {
+            WindowScriptingInterface.reducedMotion = value;
+
+            // FIXME: singletons can't access context properties?
+            Overte.Theme.reducedMotion = value;
+        }
     }
 
     SettingNote {
@@ -117,17 +135,6 @@ SettingsPage {
         }
 
         onCurrentIndexChanged: SettingsInterface.setValue("simplifiedNametag/avatarNametagMode", model[currentIndex].value)
-    }
-
-    SliderSetting {
-        text: qsTr("VR Tablet Scale")
-        stepSize: 5
-        from: 50
-        to: 150
-        valueToText: () => `${value}%`
-
-        value: SettingsInterface.getValue("hmdTabletScale", 75)
-        onValueChanged: SettingsInterface.setValue("hmdTabletScale", value)
     }
 
     Header { text: qsTr("Screenshots") }
@@ -193,5 +200,36 @@ SettingsPage {
 
     SettingNote {
         text: qsTr("If this setting is enabled, your current world will be shown on your Discord profile.")
+    }
+
+    Header { text: qsTr("Legacy Features") }
+
+    SettingNote {
+        text: qsTr("These settings are for legacy functionality that may be removed in a later release.")
+    }
+
+    SliderSetting {
+        text: qsTr("VR Tablet Scale")
+        stepSize: 5
+        from: 50
+        to: 150
+        valueToText: () => `${value}%`
+
+        value: SettingsInterface.getValue("hmdTabletScale", 75)
+        onValueChanged: SettingsInterface.setValue("hmdTabletScale", value)
+    }
+
+    ComboSetting {
+        text: qsTr("VR Tablet Input")
+
+        // keep this in the same order as MyAvatar.TabletInputMode
+        model: [
+            qsTr("Laser"),
+            qsTr("Stylus"),
+            qsTr("Finger Touch"),
+        ]
+
+        currentIndex: MyAvatar.tabletInputMode
+        onCurrentIndexChanged: MyAvatar.tabletInputMode = currentIndex;
     }
 }
