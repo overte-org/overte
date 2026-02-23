@@ -11,7 +11,6 @@ Item {
     required property url avatarUrl
     required property url iconUrl
     required property list<string> tags
-    required property string description
 
     implicitWidth: GridView.view.cellWidth
     implicitHeight: GridView.view.cellHeight
@@ -21,12 +20,6 @@ Item {
         anchors.margins: 4
 
         id: avatarButton
-
-        Overte.ToolTip {
-            visible: description !== "" && parent.hovered
-            text: description
-            delay: 500
-        }
 
         Image {
             id: buttonIcon
@@ -38,6 +31,19 @@ Item {
             anchors.right: parent.right
             anchors.bottom: buttonLabel.top
             anchors.margins: 4
+
+            // placeholder icon
+            Image {
+                anchors.centerIn: parent
+                width: 64
+                height: 64
+
+                fillMode: Image.PreserveAspectFit
+                source: "../icons/avatars.png"
+                sourceSize.width: width
+                sourceSize.height: height
+                visible: buttonIcon.status === Image.Error || buttonIcon.status === Image.Null
+            }
         }
 
         Overte.Label {
@@ -46,12 +52,12 @@ Item {
             anchors.right: parent.right
             anchors.bottom: buttonLabel.top
             anchors.margins: 4
-            visible: buttonIcon.status !== Image.Ready
+            visible: buttonIcon.status === Image.Loading
             opacity: Overte.Theme.highContrast ? 1.0 : 0.6
             wrapMode: Text.Wrap
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            text: buttonIcon.status === Image.Loading ? qsTr("Loading…") : qsTr("No icon")
+            text: qsTr("Loading…")
         }
 
         Overte.Label {
@@ -68,7 +74,7 @@ Item {
             id: buttonLabel
         }
 
-        onClicked: AvatarBookmarks.loadBookmark(item.name)
+        onClicked: root.loadBookmark(item.name)
     }
 
     Overte.RoundButton {
@@ -87,6 +93,8 @@ Item {
         icon.width: 32
         icon.height: 32
         icon.color: Overte.Theme.paletteActive.buttonText
+
+        Overte.ToolTip { text: qsTr("Delete") }
 
         onClicked: root.requestDelete(item.index, item.name)
     }
@@ -107,6 +115,8 @@ Item {
         icon.width: 32
         icon.height: 32
         icon.color: Overte.Theme.paletteActive.buttonText
+    
+        Overte.ToolTip { text: qsTr("Edit") }
 
         onClicked: root.requestEdit(item.index)
     }
