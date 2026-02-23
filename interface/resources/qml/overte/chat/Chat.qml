@@ -25,21 +25,15 @@ Rectangle {
     property list<var> eventsLog: []
 
     Component.onCompleted: {
-        // fullPrivate so it's never accessible from other scripts,
-        // we don't want entity client scripts that are able to scrape chat history
-        const savedEvents = SettingsInterface.getValue("fullPrivate/chat/eventsLog") ?? [];
+        const savedEvents = SettingsInterface.getValue("chat/eventsLog") ?? [];
         for (let event of savedEvents) {
             fromScript(event);
         }
     }
 
-    Component.onDestruction: {
-        SettingsInterface.setValue("fullPrivate/chat/eventsLog", eventsLog);
-    }
-
     onMessagesCleared: {
         eventsLog = [];
-        SettingsInterface.setValue("fullPrivate/chat/eventsLog", eventsLog);
+        toScript({event: "clear_history"});
     }
 
     // NOTE: "int" makes sense here as the timestamps are whole milliseconds,
@@ -55,21 +49,6 @@ Rectangle {
     function fromScript(rawObj) {
         let obj = (typeof(rawObj) === "string") ? JSON.parse(rawObj) : rawObj;
         const timestamp = obj.timestamp ?? Date.now();
-
-        // keep chat events in the log
-        if (
-            obj.event !== "start_typing" &&
-            obj.event !== "end_typing" &&
-            obj.event !== "change_setting"
-        ) {
-            if (!obj.timestamp) {
-                obj.timestamp = Date.now();
-            }
-            eventsLog.push(obj);
-
-            // TODO: is this a performance problem? i'm not sure how else we could handle this robustly
-            SettingsInterface.setValue("fullPrivate/chat/eventsLog", eventsLog);
-        }
 
         switch (obj.event) {
             case "recv_message":
