@@ -10,6 +10,18 @@
 //  SPDX-License-Identifier: Apache-2.0
 "use strict";
 
+const EVENT_LOG_SETTING = "chat/eventsLog";
+let eventLog = Settings.getValue(EVENT_LOG_SETTING, []);
+
+function sendLoggedEventToQml(data) {
+    // only send it the event if the window exists
+    if (appWindow) {
+        appWindow.sendToQml(JSON.stringify(data));
+    }
+    eventLog.push(data);
+    Settings.setValue(EVENT_LOG_SETTING, eventLog);
+}
+
 const SystemTablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
 let settings = Settings.getValue("Chat", {
@@ -67,6 +79,11 @@ function appWindowFromQml(rawMsg) {
             updateSetting(msg.setting, msg.value);
             break;
 
+        case "clear_history":
+            eventLog = [];
+            Settings.setValue(EVENT_LOG_SETTING, eventLog);
+            break;
+
         case "send_message":
             Messages.sendMessage("chat", JSON.stringify({
                 action: "send_chat_message",
@@ -100,16 +117,12 @@ function recreateAppWindow() {
             // TODO: translation support in JS
             title: "Chat",
             size: { x: 550, y: 400 },
-            visible: appButton.buttonData.isActive,
             presentationMode: settings.desktopWindow ?
                 Desktop.PresentationMode.NATIVE :
                 Desktop.PresentationMode.VIRTUAL,
-            additionalFlags: Desktop.ALWAYS_ON_TOP | Desktop.CLOSE_BUTTON_HIDES,
+            additionalFlags: Desktop.ALWAYS_ON_TOP,
         }
     );
-
-    // https://github.com/overte-org/overte/issues/824
-    appWindow.visible = appButton.buttonData.isActive;
 
     // FIXME: CLOSE_BUTTON_HIDES doesn't work with desktop windows
     appWindow.closed.connect(() => {
@@ -148,11 +161,6 @@ const appButton = {
 
 let appWindow;
 
-// postpone the window creation until there's a chat event,
-// if it's opened too quickly then it can spawn visible
-// rather than hidden
-//recreateAppWindow();
-
 appButton.button = SystemTablet.addButton(appButton.buttonData);
 appButton.button.clicked.connect(() => appButton.onClicked());
 
@@ -161,33 +169,29 @@ Messages.subscribe("Chat-Typing");
 
 Messages.messageReceived.connect((channel, rawMsg, senderID, _localOnly) => {
     if (channel === "chat") {
-        if (!appWindow) { recreateAppWindow(); }
-
         const msg = JSON.parse(rawMsg);
-        appWindow.sendToQml(JSON.stringify({
+        sendLoggedEventToQml({
             event: "recv_message",
             name: msg.displayName,
             body: msg.message,
             timestamp: msg.timestamp,
-        }));
+        });
     } else if (channel === "Chat-Typing") {
-        if (!appWindow) { recreateAppWindow(); }
-
         const avatar = AvatarManager.getAvatar(senderID);
         const msg = JSON.parse(rawMsg);
-        appWindow.sendToQml(JSON.stringify({
-            event: msg.action === "typing_start" ? "start_typing" : "end_typing",
-            name: avatar.sessionDisplayName ? avatar.sessionDisplayName : avatar.displayName,
-            uuid: senderID,
-        }));
+        if (appWindow) {
+            appWindow.sendToQml(JSON.stringify({
+                event: msg.action === "typing_start" ? "start_typing" : "end_typing",
+                name: avatar.sessionDisplayName ? avatar.sessionDisplayName : avatar.displayName,
+                uuid: senderID,
+            }));
+        }
     }
 });
 
 let palData = [];
 
 AvatarManager.avatarAddedEvent.connect(uuid => {
-    if (!appWindow) { recreateAppWindow(); }
-
     // pal data isn't immediately available when an avatar joins,
     // so we need a bit of a delay to wait for it to come through
     Script.setTimeout(() => {
@@ -198,24 +202,22 @@ AvatarManager.avatarAddedEvent.connect(uuid => {
         // still couldn't get anything to show, don't bother
         if (!name) { return; }
 
-        appWindow.sendToQml(JSON.stringify({
+        sendLoggedEventToQml({
             event: "user_joined",
             name: name,
             timestamp: Date.now(),
-        }));
+        });
     }, 1500);
 });
 
 AvatarManager.avatarRemovedEvent.connect(uuid => {
-    if (!appWindow) { recreateAppWindow(); }
-
     const name = palData.find(e => e.sessionUUID === uuid)?.sessionDisplayName;
 
-    appWindow.sendToQml(JSON.stringify({
+    sendLoggedEventToQml({
         event: "user_left",
         name: name,
         timestamp: Date.now(),
-    }));
+    });
 });
 
 Script.scriptEnding.connect(() => {
