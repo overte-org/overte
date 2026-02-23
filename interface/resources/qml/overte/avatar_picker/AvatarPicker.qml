@@ -37,7 +37,6 @@ Rectangle {
                 name: name,
                 avatarUrl: avatar.avatarUrl,
                 iconUrl: iconUrl,
-                description: "",
             });
         }
 
@@ -55,168 +54,19 @@ Rectangle {
         function onBookmarkDeleted() { updateBookmarkModel(); }
     }
 
-    ColumnLayout {
+    function loadBookmark(name) {
+        AvatarBookmarks.loadBookmark(name);
+        currentName.text = name;
+    }
+
+    Overte.StackView {
+        id: stack
         anchors.fill: parent
 
-        RowLayout {
-            Layout.margins: 4
-
-            Overte.TextField {
-                Layout.fillWidth: true
-
-                id: searchField
-                placeholderText: qsTr("Search…")
-
-                Keys.onEnterPressed: {
-                    searchButton.click();
-                    forceActiveFocus();
-                }
-                Keys.onReturnPressed: {
-                    searchButton.click();
-                    forceActiveFocus();
-                }
-            }
-
-            Overte.RoundButton {
-                id: searchButton
-                icon.source: "../icons/search.svg"
-                icon.width: 24
-                icon.height: 24
-                icon.color: Overte.Theme.paletteActive.buttonText
-
-                onClicked: {
-                    searchExpression = searchField.text === "" ? ".*" : searchField.text;
-                }
-            }
-        }
-
-        RowLayout {
-            Layout.fillWidth: true
-            Layout.leftMargin: 8
-            Layout.rightMargin: 8
-            visible: root.availableTags.length !== 0
-
-            Overte.Label {
-                Layout.alignment: Qt.AlignLeft | Qt.AlignVCenter
-                text: qsTr("Tags")
-            }
-
-            ListView {
-                Layout.alignment: Qt.AlignRight | Qt.AlignVCenter
-                Layout.fillWidth: true
-                implicitHeight: Overte.Theme.fontPixelSize * 2
-                orientation: Qt.Horizontal
-                spacing: 2
-                clip: true
-
-                model: root.availableTags
-                delegate: Overte.Button {
-                    required property int index
-
-                    implicitHeight: Overte.Theme.fontPixelSize * 2
-                    text: qsTr(ListView.view.model[index])
-                    checkable: true
-                    checked: true
-
-                    palette.buttonText: checked ? Overte.Theme.paletteActive.highlightedText : Overte.Theme.paletteActive.button
-                    backgroundColor: checked ? Overte.Theme.paletteActive.highlight : Overte.Theme.paletteActive.button
-                }
-            }
-        }
-
-        GridView {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-
-            // QT6TODO: remove this once mouse inputs work properly
-            interactive: false
-
-            clip: true
-            // scales the cells to never leave dead space, but looks bad when scaling window
-            //cellWidth: (width - ScrollBar.vertical.width) / Math.floor(3 * (width / 480))
-            cellWidth: Math.floor((480 - ScrollBar.vertical.width) / 3)
-            cellHeight: cellWidth + Overte.Theme.fontPixelSize + 6
-
-            ScrollBar.vertical: Overte.ScrollBar {
-                policy: ScrollBar.AsNeeded
-                interactive: true
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.bottom: parent.bottom
-            }
-
-            delegate: AvatarItem {}
-
-            model: {
-                const searchRegex = new RegExp(searchExpression, "i");
-                let tmp = [];
-
-                for (const item of root.avatarModel) {
-                    if (item.name.match(searchRegex)) {
-                        let modelItem = item;
-
-                        if (!modelItem.iconUrl) {
-                            modelItem.iconUrl = "../icons/no_avatar_icon.svg";
-                        }
-
-                        if (!modelItem.tags) { modelItem.tags = []; }
-                        if (!modelItem.description) { modelItem.description = ""; }
-
-                        tmp.push(modelItem);
-                    }
-                }
-
-                return tmp;
-            }
-        }
-
-        RowLayout {
-            Layout.margins: 4
-            spacing: 8
-
-            Overte.Label {
-                Layout.fillWidth: true
-                horizontalAlignment: Text.AlignLeft
-                verticalAlignment: Text.AlignVCenter
-                text: qsTr("%1 avatar(s)").arg(avatarModel.length)
-            }
-
-            Overte.Label {
-                Layout.fillWidth: true
-                visible: editable
-                horizontalAlignment: Text.AlignRight
-                verticalAlignment: Text.AlignVCenter
-                text: qsTr("Add new avatar")
-            }
-
-            Overte.RoundButton {
-                icon.source: "../icons/plus.svg"
-                icon.width: 24
-                icon.height: 24
-                icon.color: Overte.Theme.paletteActive.buttonText
-                backgroundColor: Overte.Theme.paletteActive.buttonAdd
-                implicitWidth: 48
-                implicitHeight: 48
-                visible: editable
-
-                onClicked: {
-                    editDialog.editExisting = false;
-                    editDialog.avatarName = "";
-                    editDialog.avatarUrl = "";
-                    editDialog.avatarDescription = "";
-
-                    avatarNameField.text = "";
-                    avatarUrlField.text = "";
-                    avatarDescriptionField.text = "";
-
-                    editDialog.open();
-                }
-            }
-        }
+        initialItem: MainPage {}
     }
 
     property int requestedDeleteIndex: -1
-    property int requestedEditIndex: -1
 
     function requestDelete(index, name) {
         requestedDeleteIndex = index;
@@ -225,15 +75,48 @@ Rectangle {
     }
 
     function requestEdit(index) {
-        requestedEditIndex = index;
-        editDialog.editExisting = true;
-        editDialog.avatarName = avatarModel[index].name;
-        editDialog.avatarUrl = avatarModel[index].avatarUrl;
-        editDialog.avatarDescription = avatarModel[index].description;
-        avatarNameField.text = editDialog.avatarName;
-        avatarUrlField.text = editDialog.avatarUrl;
-        avatarDescriptionField.text = editDialog.avatarDescription;
-        editDialog.open();
+        if (index === -1) {
+            // getAvatarEntitiesVariant has its own separate format,
+            // { id, properties: {} }
+            let entityDataRaw = MyAvatar.getAvatarEntitiesVariant();
+            let entityData = [];
+
+            for (let entry of entityDataRaw) {
+                let data = entry.properties;
+                data.id = entry.id;
+                entityData.push(data);
+            }
+
+            stack.push("./EditorPage.qml", {
+                bookmarkToReplace: "",
+                avatarName: MyAvatar.getFullAvatarModelName(),
+                avatarURL: MyAvatar.skeletonModelURL,
+                avatarScale: MyAvatar.scale,
+                iconURL: "",
+                entityData: entityData,
+            });
+        } else {
+            // AvatarBookmarks has its own separate format,
+            // { properties: { id } }
+            const name = avatarModel[index].name;
+            const data = AvatarBookmarks.getBookmark(name);
+
+            const modelURL = data?.avatarUrl ?? "";
+            const iconURL = data?.avatarIcon ?? "";
+            const scale = data?.avatarScale ?? 1.0;
+
+            // FIXME: yes, it's "avatarEntites", not "avatarEntities"
+            let entityData = (data?.avatarEntites ?? []).map(e => e.properties);
+
+            stack.push("./EditorPage.qml", {
+                bookmarkToReplace: name,
+                avatarName: name,
+                avatarURL: modelURL,
+                avatarScale: scale,
+                iconURL: iconURL,
+                entityData: entityData,
+            });
+        }
     }
 
     Overte.MessageDialog {
@@ -248,23 +131,21 @@ Rectangle {
     }
 
     Overte.Dialog {
-        id: editDialog
+        id: addNewDialog
         anchors.fill: parent
         maxWidth: -1
 
-        property bool editExisting: false
         property string avatarName: ""
         property string avatarUrl: ""
-        property string avatarDescription: ""
 
         signal accepted
         signal rejected
 
         onAccepted: {
-            const prevData = AvatarBookmarks.getBookmark(editDialog.avatarName);
+            const prevData = AvatarBookmarks.getBookmark(addNewDialog.avatarName);
 
-            if (editDialog.avatarName !== avatarNameField.text) {
-                AvatarBookmarks.removeBookmark(editDialog.avatarName);
+            if (addNewDialog.avatarName !== avatarNameField.text) {
+                AvatarBookmarks.removeBookmark(addNewDialog.avatarName);
             }
 
             // Qt's V4 doesn't support { ...spread } syntax :(
@@ -275,10 +156,21 @@ Rectangle {
             }
 
             AvatarBookmarks.setBookmarkData(avatarNameField.text, newData);
+
+            avatarName = "";
+            avatarUrl = "";
+            avatarNameField.text = "";
+            avatarUrlField.text = "";
             close();
         }
 
-        onRejected: close()
+        onRejected: {
+            avatarName = "";
+            avatarUrl = "";
+            avatarNameField.text = "";
+            avatarUrlField.text = "";
+            close();
+        }
 
         ColumnLayout {
             anchors.fill: parent
@@ -288,47 +180,22 @@ Rectangle {
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
                 opacity: Overte.Theme.highContrast ? 1.0 : 0.6
-                text: editDialog.editExisting ? qsTr("Edit avatar") : qsTr("Add new avatar")
+                text: qsTr("Add new avatar")
             }
             Overte.Ruler { Layout.fillWidth: true }
 
             Overte.TextField {
                 Layout.fillWidth: true
                 placeholderText: qsTr("Avatar name")
-                text: editDialog.avatarName
+                text: addNewDialog.avatarName
                 id: avatarNameField
             }
 
             Overte.TextField {
                 Layout.fillWidth: true
                 placeholderText: qsTr("Avatar URL (.fst, .glb, .vrm, .fbx)")
-                text: editDialog.avatarUrl
+                text: addNewDialog.avatarUrl
                 id: avatarUrlField
-            }
-
-            ScrollView {
-                // TODO: support avatar descriptions
-                visible: false
-
-                Layout.preferredHeight: Overte.Theme.fontPixelSize * 8
-                Layout.fillWidth: true
-
-                ScrollBar.vertical: Overte.ScrollBar {
-                    interactive: false
-                    anchors.right: parent.right
-                    anchors.top: parent.top
-                    anchors.bottom: parent.bottom
-                }
-
-                contentWidth: availableWidth
-
-                Overte.TextArea {
-                    id: avatarDescriptionField
-                    placeholderText: qsTr("Description (optional)")
-                    text: editDialog.avatarDescription
-                    wrapMode: Text.Wrap
-                    font.pixelSize: Overte.Theme.fontPixelSizeSmall
-                }
             }
 
             RowLayout {
@@ -340,31 +207,20 @@ Rectangle {
                     Layout.preferredWidth: 1
                     text: qsTr("Cancel")
 
-                    onClicked: {
-                        editDialog.rejected();
-                        requestedEditIndex = -1;
-                    }
-                }
-
-                Item {
-                    visible: editDialog.editExisting
-                    Layout.preferredWidth: 1
-                    Layout.fillWidth: true
+                    onClicked: addNewDialog.rejected()
                 }
 
                 Overte.Button {
-                    visible: !editDialog.editExisting
                     Layout.fillWidth: true
                     Layout.preferredWidth: 1
 
                     backgroundColor: Overte.Theme.paletteActive.buttonAdd
-                    enabled: avatarNameField.text !== ""
+                    enabled: avatarUrlField.text.trim() === "" || avatarNameField.text.trim() === ""
                     text: qsTr("Add Current")
 
                     onClicked: {
                         avatarUrlField.text = MyAvatar.skeletonModelURL;
-                        editDialog.accepted();
-                        requestedEditIndex = -1;
+                        addNewDialog.accepted();
                     }
                 }
 
@@ -373,13 +229,10 @@ Rectangle {
                     Layout.preferredWidth: 1
 
                     backgroundColor: Overte.Theme.paletteActive.buttonAdd
-                    text: editDialog.editExisting ? qsTr("Apply") : qsTr("Add")
+                    text: qsTr("Add")
                     enabled: avatarNameField.text !== "" && avatarUrlField.text !== ""
 
-                    onClicked: {
-                        editDialog.accepted();
-                        requestedEditIndex = -1;
-                    }
+                    onClicked: addNewDialog.accepted()
                 }
             }
         }

@@ -15,6 +15,8 @@ TextField {
     selectionColor: Theme.paletteActive.highlight
     selectedTextColor: Theme.paletteActive.highlightedText
 
+    opacity: enabled ? 1.0 : 0.5
+
     leftPadding: 6
     rightPadding: 6
     topPadding: 8
