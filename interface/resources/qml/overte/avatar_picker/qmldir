@@ -1,3 +1,6 @@
 module AvatarPicker
 AvatarPicker 1.0 AvatarPicker.qml
 AvatarItem 1.0 AvatarItem.qml
+MainPage 1.0 MainPage.qml
+EditorPage 1.0 EditorPage.qml
+EntityEditor 1.0 EntityEditor.qml
