@@ -44,6 +44,7 @@
 #include "ui/overlays/Overlays.h"
 #include "VisionSqueeze.h"
 #include "workload/GameWorkload.h"
+#include "ThemePrefs.h"
 #ifndef USE_GL
 #include "VKCanvas.h"
 #endif
@@ -398,7 +399,6 @@ signals:
     void miniTabletEnabledChanged(bool enabled);
     void awayStateWhenFocusLostInVRChanged(bool enabled);
 
-    void darkThemePreferenceChanged(bool useDarkTheme);
     void menuBarVisibilityChanged(bool visible);
 
 public slots:
@@ -475,8 +475,7 @@ public slots:
     const QString getPreferredCursor() const { return _preferredCursor.get(); }
     void setPreferredCursor(const QString& cursor);
 
-    bool getDarkThemePreference() const { return _darkTheme.get(); }
-    void setDarkThemePreference(bool value);
+    ThemePrefs* themePrefs() { return _themePrefs; }
 
     bool getMenuBarVisible() const { return _menuBarVisible.get(); }
     void setMenuBarVisible(bool visible);
@@ -834,13 +833,12 @@ private:
     Setting::Handle<bool> _constrainToolbarPosition;
     Setting::Handle<bool> _awayStateWhenFocusLostInVREnabled;
     Setting::Handle<QString> _preferredCursor;
-    // TODO Qt6: Qt5 doesn't have anything for system theme preferences, Qt6.5+ does
-    Setting::Handle<bool> _darkTheme;
     Setting::Handle<bool> _miniTabletEnabledSetting;
     Setting::Handle<bool> _keepLogWindowOnTop { "keepLogWindowOnTop", false };
     Setting::Handle<bool> _menuBarVisible { "menuBarVisible", true };
 
-    void updateThemeColors();
+    ThemePrefs *_themePrefs;
+    Q_INVOKABLE void updateThemeColors();
 
 
     // Plugins
