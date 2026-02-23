@@ -135,7 +135,7 @@ JSConsole::JSConsole(QWidget* parent, const ScriptManagerPointer& scriptManager)
     _monospaceFont(QFontDatabase::systemFont(QFontDatabase::FixedFont)),
     // unfortunately we'll just have to use the first theme we get,
     // because of the custom colored widgets that can't easily be recolored later
-    _lightTheme(!qApp->getDarkThemePreference()) {
+    _lightTheme(!qApp->themePrefs()->getDarkMode()) {
 
     readAPI();
 
