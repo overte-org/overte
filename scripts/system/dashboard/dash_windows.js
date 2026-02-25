@@ -51,7 +51,7 @@ class DashWindow {
 
             // FIXME: localDimensions aren't actually local,
             // for some reason they're actually post-SNScale
-            localDimensions: vec3(0.5, 0.8, 0).multiply(MyAvatar.sensorToWorldScale),
+            localDimensions: vec3(Defs.windowDimensions).multiply(MyAvatar.sensorToWorldScale),
 
             sourceUrl: Defs.windowRootQmlURL,
             // FIXME: use a constant when dpi scales properly
@@ -218,7 +218,6 @@ class WindowManager {
     #focusCallback;
     #eventCallback;
     #scaleCallback;
-    #updateCallback;
 
     /** @type {boolean} */
     #hidden = true;
@@ -264,20 +263,6 @@ class WindowManager {
         };
 
         MyAvatar.sensorToWorldScaleChanged.connect(this.#scaleCallback);
-
-        // FIXME: Script.update only ticks when out of safe landing mode,
-        // which makes it unusable for a system UI
-        // https://github.com/overte-org/overte/issues/1532
-        const UPDATE_FPS = 60;
-        this.#updateCallback = Script.setInterval(
-            () => this.update(1 / UPDATE_FPS),
-            1000 / UPDATE_FPS
-        );
-
-        /*
-        this.#updateCallback = deltaTime => this.update(deltaTime);
-        Script.update.connect(this.#updateCallback);
-        */
     }
 
     #setupRail() {
@@ -424,15 +409,14 @@ class WindowManager {
         });
     }
 
+    /**
+     * @param {number} deltaTime
+     */
     update(deltaTime) {
         this.#updateRail(deltaTime);
     }
 
     dispose() {
-        // FIXME: https://github.com/overte-org/overte/issues/1532
-        //Script.update.connect(this.#updateCallback);
-        Script.clearInterval(this.#updateCallback);
-
         Entities.keyboardFocusEntityChanged.disconnect(this.#focusCallback);
         Entities.webEventReceived.disconnect(this.#eventCallback);
         MyAvatar.sensorToWorldScaleChanged.disconnect(this.#scaleCallback);
