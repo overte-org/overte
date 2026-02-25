@@ -87,7 +87,7 @@ class NotifyPanel {
         }
 
         // the web entity is directly attached
-        // to the camera, so don't touch it
+        // to the camera on desktop, so don't touch it
         if (!this.#floating) { return; }
 
         const cameraPos = vec3(Entities.worldToLocalPosition(
@@ -105,18 +105,19 @@ class NotifyPanel {
 
         const targetPos = (
             cameraRot
-            .multiply(vec3(0, HMD.active ? 0 : -0.3, -0.7))
+            .multiply(vec3(0, -0.32, -0.85))
             .add(cameraPos)
         );
 
-        const targetRot = cameraRot;
+        // TODO: cancel roll or use look-at instead
+        let targetRot = euler(-20, 0, 0).multiply(cameraRot);
 
         // keep the panel still within a threshold
         // TODO: tune this to make it feel good
         // if (targetPos.distance(this.#position) < 0.1) { return; }
 
         this.#position = this.#position.lerpTo(targetPos, dt * Defs.notifyPanelFloatSpeed);
-        this.#rotation = this.#rotation.lerpTo(targetRot, dt * Defs.notifyPanelFloatSpeed);
+        this.#rotation = this.#rotation.lerpTo(targetRot, dt * Defs.notifyPanelFloatSpeed).normalized();
 
         Entities.editEntity(this.entityID, {
             // FIXME: setting the position and rotation of a web entity

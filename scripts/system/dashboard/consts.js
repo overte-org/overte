@@ -56,7 +56,7 @@ module.exports = {
      * @readonly
      * @type {number}
      */
-    windowRailDistance: 0.7,
+    windowRailDistance: 0.75,
 
     /**
      * The `dpi` the app bar will have.
@@ -93,7 +93,7 @@ module.exports = {
      * @readonly
      * @type {number}
      */
-    notifyPanelFloatSpeed: 3,
+    notifyPanelFloatSpeed: 4,
 
     /**
      * `n * MyAvatar.sensorToWorldScale`
