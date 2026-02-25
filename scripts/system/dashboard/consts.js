@@ -5,6 +5,8 @@
 const OVERTE_QML = `${Script.resourcesPath()}qml/overte`;
 
 module.exports = {
+    ipcChannel: "System Dashboard IPC",
+
     /**
      * The `dpi` app windows will have.
      * @readonly
@@ -17,7 +19,7 @@ module.exports = {
      * @readonly
      * @type {Vector3}
      */
-    windowDimensions: { x: 0.5, y: 0.7, z: 0 },
+    windowDimensions: { x: 0.53, y: 0.8, z: 0 },
 
     /**
      * A URL to DashWindow.qml.
@@ -75,14 +77,23 @@ module.exports = {
      * @readonly
      * @type {number}
      */
-    notifPanelDPI: 30,
+    notifyPanelDPI: 30,
 
     /**
      * A URL to DashNotifyPanel.qml.
      * @readonly
      * @type {string}
      */
-    notifPanelQmlURL: `${OVERTE_QML}/dash/DashNotifyPanel.qml`,
+    notifyPanelQmlURL: `${OVERTE_QML}/dash/DashNotifyPanel.qml`,
+
+    /**
+     * How quickly the notify panel floats to follow
+     * the player's view in VR. This is unused on desktop,
+     * where the notify panel is directly attached to the camera.
+     * @readonly
+     * @type {number}
+     */
+    notifyPanelFloatSpeed: 3,
 
     /**
      * `n * MyAvatar.sensorToWorldScale`

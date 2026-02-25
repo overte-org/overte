@@ -8,10 +8,9 @@ const { Vector3, Quaternion, vec3, quat, euler } = require("./utilMath.js");
 
 const Defs = require("./consts.js");
 const { WindowManager } = require("./dash_windows.js");
+const { NotifyPanel } = require("./notify_panel.js");
 
 class Dashboard {
-    static instance = new Dashboard();
-
     /** @type {boolean} */
     #visible = false;
 
@@ -44,15 +43,11 @@ class Dashboard {
     /** @type {WindowManager} */
     windowManager;
 
-    /** @type {Uuid} */
-    #appbarPanelID;
+    /** @type {NotifyPanel} */
+    notifyPanel;
 
     /** @type {Uuid} */
-    #notifPanelID;
-    /** @type {Vector3} */
-    #notifPos;
-    /** @type {Quaternion} */
-    #notifRot;
+    #appbarPanelID;
 
     #updateCallback;
     #scaleCallback;
@@ -62,6 +57,13 @@ class Dashboard {
     #snapshotAnimDoneCallback;
     #eventCallback;
     #keyPressCallback;
+    #themeChangeCallback;
+    #hmdActiveCallback;
+    #messageCallback;
+
+    sendIPCMessage(data) {
+        Messages.sendLocalMessage(Defs.ipcChannel, JSON.stringify(data));
+    }
 
     #setupCallbacks() {
         // FIXME: Script.update only ticks when out of safe landing mode,
@@ -79,7 +81,6 @@ class Dashboard {
         */
 
         this.#scaleCallback = () => {
-            Entities.editEntity(this.#notifPanelID, { dpi: Defs.scaleHackInv(Defs.notifPanelDPI) });
             Entities.editEntity(this.#appbarPanelID, { dpi: Defs.scaleHackInv(Defs.dashBarDPI) });
         };
         MyAvatar.sensorToWorldScaleChanged.connect(this.#scaleCallback);
@@ -155,6 +156,16 @@ class Dashboard {
             }
         };
         Controller.keyPressEvent.connect(this.#keyPressCallback);
+
+        /* FIXME: waiting on #2092
+        this.#themeChangeCallback = () => sendIPCMessage({ dashboard: { event: "theme_change" } });
+        Window.themeChanged.connect(this.#themeChangeCallback);*/
+
+        this.#hmdActiveCallback = hmdActive => {};
+        HMD.displayModeChanged.connect(this.#hmdActiveCallback);
+
+        this.#messageCallback = (channel, rawMsg, senderID, localOnly) => {};
+        Messages.messageReceived.connect(this.#messageCallback);
     }
 
     constructor() {
@@ -166,25 +177,6 @@ class Dashboard {
             localPosition: vec3(0, MyAvatar.userHeight * 0.75, 0),
             ignorePickIntersection: true,
             grab: { grabbable: false },
-        }, "local");
-
-        this.#notifPanelID = Entities.addEntity({
-            type: "Web",
-            name: "Notification Panel",
-            // not attached to the dash root,
-            // floats to follow view
-            parentID: MyAvatar.SELF_ID,
-            parentJointIndex: Defs.sensorToWorldJoint,
-            ignorePickIntersection: true,
-            grab: { grabbable: false },
-            localDimensions: vec3(0.3, 0.4, 0),
-            dpi: Defs.scaleHackInv(Defs.notifPanelDPI),
-            sourceUrl: Defs.notifPanelQmlURL,
-            maxFPS: 90,
-            wantsKeyboardFocus: false,
-            showKeyboardHighlight: false,
-            useBackground: false,
-            renderLayer: "front",
         }, "local");
 
         this.#appbarPanelID = Entities.addEntity({
@@ -213,61 +205,28 @@ class Dashboard {
         }, "local");
 
         this.windowManager = new WindowManager(this.rootID);
-
-        this.#notifPos = Vector3.ZERO;
-        this.#notifRot = Quaternion.IDENTITY;
+        this.notifyPanel = new NotifyPanel();
 
         this.#setupCallbacks();
     }
 
-    #updateNotifPanel(dt) {
-        const cameraPos = vec3(Camera.position);
-        const cameraRot = quat(Camera.orientation);
-
-        const targetPos = (
-            cameraRot
-            .multiply(vec3(0, HMD.active ? 0 : -0.3, -0.7))
-            .add(cameraPos)
-        );
-
-        const targetRot = cameraRot;
-
-        this.#notifPos = this.#notifPos.lerpTo(targetPos, dt * 5);
-        this.#notifRot = this.#notifRot.lerpTo(targetRot, dt * 5);
-
-        Entities.editEntity(this.#notifPanelID, {
-            // NOTE: we can't directly set position or rotation,
-            // because for whatever reason the dimensions get
-            // slightly touched and it triggers an offscreen UI
-            // resize
-            localPosition: Entities.worldToLocalPosition(
-                this.#notifPos,
-                MyAvatar.SELF_ID,
-                Defs.sensorToWorldJoint,
-                true
-            ),
-            localRotation: Entities.worldToLocalRotation(
-                this.#notifRot,
-                MyAvatar.SELF_ID,
-                Defs.sensorToWorldJoint,
-                true
-            ),
-        });
-    }
-
+    /**
+     * @param {object} args
+     * @param {string} args.text - Notification text
+     * @param {string} [args.icon] - URL to notification icon image
+     * @param {string} [args.image] - URL to notification body image
+     * @param {number} [args.lifetime=5]
+     */
     postNotification({ text, icon, image, lifetime = 5 }) {
-        Entities.emitScriptEvent(this.#notifPanelID, JSON.stringify({
-            notify: {
-                text,
-                icon,
-                image,
-                lifetime,
-            }
-        }));
+        this.notifyPanel.postNotification({ text, icon, image, lifetime });
     }
 
+    /**
+     * @param {number} deltaTime
+     */
     update(deltaTime) {
-        this.#updateNotifPanel(deltaTime);
+        this.windowManager.update(deltaTime);
+        this.notifyPanel.update(deltaTime);
     }
 
     dispose() {
@@ -279,17 +238,20 @@ class Dashboard {
         Window.processingGifCompleted.disconnect(this.#snapshotAnimDoneCallback);
         Entities.webEventReceived.disconnect(this.#eventCallback);
         Controller.keyPressEvent.disconnect(this.#keyPressCallback);
+        //Window.themeChanged.disconnect(this.#themeChangeCallback);
+        HMD.displayModeChanged.disconnect(this.#hmdActiveCallback);
+        Messages.messageReceived.disconnect(this.#messageCallback);
 
         // FIXME: https://github.com/overte-org/overte/issues/1532
         //Script.update.connect(this.#updateCallback);
         Script.clearInterval(this.#updateCallback);
 
-        Entities.deleteEntity(this.#notifPanelID);
         Entities.deleteEntity(this.#appbarPanelID);
+        this.notifyPanel.dispose();
         this.windowManager.dispose();
     }
 }
 
-Script.scriptEnding.connect(() => {
-    Dashboard.instance.dispose();
-});
+const instance = new Dashboard();
+
+Script.scriptEnding.connect(() => instance.dispose());
