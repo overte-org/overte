@@ -64,6 +64,7 @@
                 pkgs.conan
                 pkgs.ninja
                 pkgs.gdb
+                pkgs.clang-tools
               ];
               inputsFrom = [ self'.packages.overte-full ];
 
