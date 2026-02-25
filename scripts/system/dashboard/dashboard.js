@@ -69,7 +69,7 @@ class Dashboard {
         // FIXME: Script.update only ticks when out of safe landing mode,
         // which makes it unusable for a system UI
         // https://github.com/overte-org/overte/issues/1532
-        const UPDATE_FPS = 60;
+        const UPDATE_FPS = 90;
         this.#updateCallback = Script.setInterval(
             () => this.update(1 / UPDATE_FPS),
             1000 / UPDATE_FPS
@@ -154,6 +154,14 @@ class Dashboard {
             if (event.key === 0x01000000 /* Qt::Key_Escape */) {
                 this.visible = !this.visible;
             }
+
+            if (event.key === 0x4f /* Qt::Key_O */) {
+                this.postNotification({
+                    text: "Test notification",
+                    icon: `${Script.resourcesPath()}qml/overte/icons/gold_star.svg`,
+                    image: `${Script.resourcesPath()}qml/overte/icons/home.svg`,
+                });
+            }
         };
         Controller.keyPressEvent.connect(this.#keyPressCallback);
 
@@ -174,7 +182,7 @@ class Dashboard {
             name: "Dashboard",
             parentID: MyAvatar.SELF_ID,
             parentJointIndex: Defs.sensorToWorldJoint,
-            localPosition: vec3(0, MyAvatar.userHeight * 0.75, 0),
+            localPosition: vec3(0, MyAvatar.userHeight * 0.62, 0),
             ignorePickIntersection: true,
             grab: { grabbable: false },
         }, "local");
