@@ -7,6 +7,15 @@
 const { Vector3, Quaternion, vec3, quat, euler } = require("./utilMath.js");
 const Defs = require("./consts.js");
 
+/**
+ * Debug setting. Makes the notify panel float
+ * even in desktop mode, rather than attaching
+ * to the camera joint.
+ * @readonly
+ * @type {boolean}
+ */
+const DBG_FLOAT_ON_DESKTOP = false;
+
 class NotifyPanel {
     #scaleCallback;
 
@@ -33,7 +42,7 @@ class NotifyPanel {
     #rotation = Quaternion.IDENTITY;
 
     constructor() {
-        this.#floating = HMD.active;
+        this.#floating = HMD.active || DBG_FLOAT_ON_DESKTOP;
         this.#setupCallbacks();
 
         this.entityID = Entities.addEntity({
@@ -81,7 +90,7 @@ class NotifyPanel {
     update(dt) {
         // display mode has changed, so reconfigure
         // and reparent the web entity
-        if (HMD.active !== this.#floating) {
+        if ((HMD.active || DBG_FLOAT_ON_DESKTOP) !== this.#floating) {
             this.#floating = HMD.active;
             this.#reparent();
         }
@@ -109,15 +118,14 @@ class NotifyPanel {
             .add(cameraPos)
         );
 
-        // TODO: cancel roll or use look-at instead
-        let targetRot = euler(-20, 0, 0).multiply(cameraRot);
-
-        // keep the panel still within a threshold
-        // TODO: tune this to make it feel good
-        // if (targetPos.distance(this.#position) < 0.1) { return; }
+        // FIXME: utilMath needs its own Quaternion.lookAt function
+        const targetRot = quat(Quat.lookAt(cameraPos, targetPos, Vector3.UP));
 
         this.#position = this.#position.lerpTo(targetPos, dt * Defs.notifyPanelFloatSpeed);
-        this.#rotation = this.#rotation.lerpTo(targetRot, dt * Defs.notifyPanelFloatSpeed).normalized();
+
+        // FIXME: the current Quaternion.slerpTo is subtly wrong somewhere
+        // and it does spinnies wee at a certain angle
+        this.#rotation = this.#rotation.slerpTo(targetRot, dt * Defs.notifyPanelFloatSpeed).normalized();
 
         Entities.editEntity(this.entityID, {
             // FIXME: setting the position and rotation of a web entity
