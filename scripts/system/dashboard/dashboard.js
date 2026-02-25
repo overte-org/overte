@@ -7,7 +7,7 @@
 const { Vector3, Quaternion, vec3, quat, euler } = require("./utilMath.js");
 
 const Defs = require("./consts.js");
-const { WindowManager } = require("./dash_windows.js");
+const { WindowManager } = require("./windows.js");
 const { NotifyPanel } = require("./notify_panel.js");
 
 class Dashboard {
@@ -177,12 +177,26 @@ class Dashboard {
     }
 
     constructor() {
+        const rootPos = (
+            HMD.active ?
+            // 0.62 is *roughly* at the height where
+            // you can interact with the app bar without
+            // raising your arm, while letting you poke
+            // the top of app windows with your finger
+            vec3(0, MyAvatar.userHeight * 0.62, 0) :
+            // 0.7 on desktop places the app bar *just*
+            // above the bottom of the screen at 75° FOV
+            // TODO: find something that works on desktop
+            // that works well with all FOV settings
+            vec3(0, MyAvatar.userHeight * 0.7, 0)
+        );
+
         this.rootID = Entities.addEntity({
             type: "Empty",
             name: "Dashboard",
             parentID: MyAvatar.SELF_ID,
             parentJointIndex: Defs.sensorToWorldJoint,
-            localPosition: vec3(0, MyAvatar.userHeight * 0.62, 0),
+            localPosition: rootPos,
             ignorePickIntersection: true,
             grab: { grabbable: false },
         }, "local");
