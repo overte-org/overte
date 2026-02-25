@@ -19,6 +19,11 @@
 #include "../ScriptEngineLogging.h"
 #include "ScriptEngineLoggingV8.h"
 
+
+void ScriptValueV8Wrapper::enqueueRelease() {
+    _engine->scheduleValueWrapperForDeletion(this);
+}
+
 void ScriptValueV8Wrapper::release() {
     // Check if ScriptValueV8Wrapper::release was called from inside ScriptValueV8Wrapper functions, and if so, delete it later
     // This prevents access-after-delete crashes when ScriptValueV8Wrapper::release is called from inside JS executed in
