@@ -17,15 +17,6 @@ const Defs = require("./consts.js");
 const DBG_FLOAT_ON_DESKTOP = false;
 
 class NotifyPanel {
-    #scaleCallback;
-
-    #setupCallbacks() {
-        this.#scaleCallback = () => Entities.editEntity(this.entityID, {
-            dpi: Defs.scaleHackInv(Defs.notifyPanelDPI),
-        });
-        MyAvatar.sensorToWorldScaleChanged.connect(this.#scaleCallback);
-    }
-
     /** @type {Uuid} */
     entityID;
 
@@ -43,7 +34,8 @@ class NotifyPanel {
 
     constructor() {
         this.#floating = HMD.active || DBG_FLOAT_ON_DESKTOP;
-        this.#setupCallbacks();
+
+        MyAvatar.sensorToWorldScaleChanged.connect(this.#scaleCallback);
 
         this.entityID = Entities.addEntity({
             type: "Web",
@@ -157,6 +149,10 @@ class NotifyPanel {
         MyAvatar.sensorToWorldScaleChanged.disconnect(this.#scaleCallback);
         Entities.deleteEntity(this.entityID);
     }
+
+    #scaleCallback = () => Entities.editEntity(this.entityID, {
+        dpi: Defs.scaleHackInv(Defs.notifyPanelDPI),
+    });
 }
 
 module.exports = { NotifyPanel };
