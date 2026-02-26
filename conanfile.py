@@ -36,6 +36,7 @@ class Overte(ConanFile):
         "qt*:qtwebengine": "True",
         "qt*:qtwebsockets": "True",
         "qt*:qtwebview": "True",
+        "qt*:qtx11extras": "True",  # Required by gpu-frame-player on Linux
         "qt*:qtxmlpatterns": "True",
         "qt*:qttools": "True",  # windeployqt for Windows
         "glad*:spec": "gl",

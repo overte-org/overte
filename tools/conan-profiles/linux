@@ -14,3 +14,25 @@ tools.build:cxxflags=['-include', 'cstdint']
 [options]
 # Required for building oneTBB.
 hwloc/*:shared=True
+
+# Options required for building Qt
+# Some Qt options are here rather than Overte's conanfile.py to allow for easier usage during Qt package development.
+# Version conflict and not needed.
+qt*:with_mysql=False
+# PulseAudio is used for audio output on Linux.
+qt*:with_pulseaudio=True
+# Required by qt:with_pulseaudio
+pulseaudio*:with_glib=True
+# Required for PulseAudio support in Qt.
+qt*:with_glib=True
+# libpq build error and not needed (PostgreSQL).
+qt*:with_pq=False
+# Open Database Connectivity
+# Avoid additional dependency on iconv.
+qt*:with_odbc=False
+# Build as shared, to avoid: `Invalid: NSS recipe cannot yet build static library. Contributions are welcome.`
+# Required by Qt WebEngine
+nss*:shared=True
+nspr*:shared=True
+# Work around `undefined reference` errors when building NSS.
+sqlite3*:shared=True
