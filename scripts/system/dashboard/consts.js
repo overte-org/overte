@@ -34,7 +34,7 @@ module.exports = {
      * @readonly
      * @type {number}
      */
-    windowRailCurvature: 0.1,
+    windowRailCurvature: 0.2,
 
     /**
      * How long the window rail should be,
@@ -56,7 +56,7 @@ module.exports = {
      * @readonly
      * @type {number}
      */
-    windowRailDistance: 0.75,
+    windowRailDistance: 0.65,
 
     /**
      * The `dpi` the app bar will have.

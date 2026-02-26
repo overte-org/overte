@@ -14,8 +14,7 @@ Item {
     property bool closed: false
     property bool hidden: false
     property bool focused: false
-
-    property bool dragging: false
+    property bool grabbed: false
 
     property bool pinnable: false
     property bool pinned: false
@@ -28,6 +27,7 @@ Item {
                 if (event.title !== undefined) { root.title = event.title; }
                 if (event.source_url !== undefined) { root.source = event.source_url; }
                 if (event.pinnable !== undefined) { root.pinnable = event.pinnable; }
+                if (event.grabbed !== undefined) { root.grabbed = event.grabbed; }
             } break;
 
             case "close": { root.closed = true; } break;
@@ -69,6 +69,8 @@ Item {
             return "CLOSED";
         } else if (root.hidden) {
             return "HIDDEN";
+        } else if (root.grabbed) {
+            return "GRABBED";
         } else {
             return "OPEN";
         }
@@ -95,6 +97,13 @@ Item {
             name: "OPEN"
             PropertyChanges { target: root; opacity: 1 }
             PropertyChanges { target: bodyPanel; y: 0 }
+        },
+        State {
+            name: "GRABBED"
+            PropertyChanges {
+                target: bodyPanel
+                opacity: 0.3
+            }
         },
     ]
 
@@ -163,6 +172,17 @@ Item {
                     root.pushWindowEvent({ event: "finished_hiding" });
                 }
             }
+        },
+
+        Transition {
+            from: "GRABBED"
+            to: "OPEN"
+            PropertyAnimation { target: bodyPanel; property: "opacity"; duration: 250 }
+        },
+        Transition {
+            from: "OPEN"
+            to: "GRABBED"
+            PropertyAnimation { target: bodyPanel; property: "opacity"; duration: 250 }
         },
     ]
 
@@ -259,8 +279,8 @@ Item {
                 focusPolicy: Qt.NoFocus
 
                 icon.source: "../icons/close.svg"
-                icon.width: 24
-                icon.height: 24
+                icon.width: 16
+                icon.height: 16
                 icon.color: Overte.Theme.paletteActive.buttonText
                 backgroundColor: (
                     hovered ?
@@ -282,14 +302,10 @@ Item {
 
                 checked: root.pinned
 
-                icon.source: (
-                    root.pinned ?
-                    "../icons/triangle_down.svg" :
-                    "../icons/triangle_up.svg"
-                )
+                icon.source: "../icons/pin.png"
                 icon.width: 24
                 icon.height: 24
-                icon.color: Overte.Theme.paletteActive.buttonText
+                icon.color: Overte.Theme.highContrast ? Overte.Theme.paletteActive.buttonText : undefined
                 backgroundColor: (
                     checked ?
                     Overte.Theme.paletteActive.buttonFavorite :
@@ -370,16 +386,23 @@ Item {
             anchors.top: parent.top
             anchors.margins: 4
             implicitWidth: height
-            acceptedButtons: Qt.LeftButton
 
-            onPressed: {
-                root.dragging = true;
-                root.pushWindowEvent({ event: "begin_drag" });
+            cursorShape: Qt.SizeAllCursor
+            acceptedButtons: Qt.LeftButton
+            hoverEnabled: true
+
+            onEntered: root.pushWindowEvent({ event: "set_grabbable", grabbable: true })
+
+            onExited: {
+                if (!pressed) {
+                    root.pushWindowEvent({ event: "set_grabbable", grabbable: false });
+                }
             }
 
+            onPressed: root.pushWindowEvent({ event: "set_grabbable", grabbable: true })
+
             onReleased: {
-                root.dragging = false;
-                root.pushWindowEvent({ event: "finish_drag" });
+                root.pushWindowEvent({ event: "set_grabbable", grabbable: false });
             }
         }
     }

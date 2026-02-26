@@ -94,7 +94,7 @@ class Dashboard {
             parentID: this.rootID,
             grab: { grabbable: false },
             localRotation: euler(-20, 0, 0),
-            localPosition: vec3(0, -0.15, -(Defs.windowRailDistance + Defs.windowRailCurvature) + 0.1),
+            localPosition: vec3(0, -0.15, -(Defs.windowRailDistance + Defs.windowRailCurvature) + 0.12),
             // FIXME: localDimensions aren't actually local,
             // for some reason they're actually post-SNScale
             localDimensions: vec3(1, 0.3, 0).multiply(MyAvatar.sensorToWorldScale),
