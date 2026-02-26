@@ -215,55 +215,9 @@ class WindowManager {
 
     #rootID;
     #railID;
-    #focusCallback;
-    #eventCallback;
-    #scaleCallback;
 
     /** @type {boolean} */
     #hidden = true;
-
-    #setupCallbacks() {
-        this.#focusCallback = entity => {
-            this.focusedWindow?.unfocus();
-
-            if (this.children.has(entity)) {
-                this.focusedWindow = this.children.get(entity);
-                this.focusedWindow.focus();
-            } else {
-                this.focusedWindow = null;
-            }
-        };
-
-        Entities.keyboardFocusEntityChanged.connect(this.#focusCallback);
-
-        this.#eventCallback = (entity, rawMsg) => {
-            if (!this.children.has(entity)) { return; }
-
-            let msg;
-            try {
-                msg = JSON.parse(rawMsg);
-            } catch (_) {
-                return;
-            }
-
-            if (msg?.dash_window?.event === undefined) {
-                return;
-            }
-
-            const window = this.children.get(entity);
-            this.windowEvent(window, msg.dash_window);
-        };
-
-        Entities.webEventReceived.connect(this.#eventCallback);
-
-        this.#scaleCallback = () => {
-            for (const [_, window] of this.children) {
-                Entities.editEntity(window.entityID, { dpi: Defs.scaleHackInv(Defs.windowDPI) });
-            }
-        };
-
-        MyAvatar.sensorToWorldScaleChanged.connect(this.#scaleCallback);
-    }
 
     #setupRail() {
         const vertCount = Defs.windowRailResolution;
@@ -301,8 +255,11 @@ class WindowManager {
 
     constructor(rootID) {
         this.#rootID = rootID;
-        this.#setupCallbacks();
         this.#setupRail();
+
+        Entities.keyboardFocusEntityChanged.connect(this.#focusCallback);
+        Entities.webEventReceived.connect(this.#eventCallback);
+        MyAvatar.sensorToWorldScaleChanged.connect(this.#scaleCallback);
     }
 
     windowEvent(window, event) {
@@ -427,6 +384,41 @@ class WindowManager {
             window.dispose();
         }
     }
+
+    #focusCallback = entity => {
+        this.focusedWindow?.unfocus();
+
+        if (this.children.has(entity)) {
+            this.focusedWindow = this.children.get(entity);
+            this.focusedWindow.focus();
+        } else {
+            this.focusedWindow = null;
+        }
+    };
+
+    #eventCallback = (entity, rawMsg) => {
+        if (!this.children.has(entity)) { return; }
+
+        let msg;
+        try {
+            msg = JSON.parse(rawMsg);
+        } catch (_) {
+            return;
+        }
+
+        if (msg?.dash_window?.event === undefined) {
+            return;
+        }
+
+        const window = this.children.get(entity);
+        this.windowEvent(window, msg.dash_window);
+    };
+
+    #scaleCallback = () => {
+        for (const [_, window] of this.children) {
+            Entities.editEntity(window.entityID, { dpi: Defs.scaleHackInv(Defs.windowDPI) });
+        }
+    };
 }
 
 module.exports = {
