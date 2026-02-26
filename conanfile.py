@@ -36,6 +36,7 @@ class Overte(ConanFile):
         "qt*:qtwebengine": "True",
         "qt*:qtwebsockets": "True",
         "qt*:qtwebview": "True",
+        "qt*:qtx11extras": "True",  # Required by gpu-frame-player on Linux
         "qt*:qtxmlpatterns": "True",
         "qt*:qttools": "True",  # windeployqt for Windows
         "glad*:spec": "gl",
@@ -71,11 +72,11 @@ class Overte(ConanFile):
         self.requires("openexr/3.1.9")
         self.requires("openvr/2.2.3@overte/stable")
         self.requires("openxr/1.1.46@overte/stable")
-        self.requires("opus/1.4")
+        self.requires("opus/1.5.2")
         self.requires("polyvox/2025.09.19@overte/experimental#76ce908c1078988dceae5ad32ead2909")
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
-        self.requires("sdl/2.32.8")
+        self.requires("sdl/2.32.10")
         self.requires("spirv-cross/1.3.268.0")
         self.requires("spirv-tools/1.3.268.0")
         self.requires("steamworks/158a@overte/prebuild")
@@ -85,9 +86,6 @@ class Overte(ConanFile):
         self.requires("zlib/1.3.1")
         self.requires("glm/0.9.9.5", force=True) # FIXME: update to version 1.0.1
         self.requires("jsoncpp/1.9.6", force=True)
-        # Fixes build errors on GCC 15. Check if this is still required when upgrading from sdl/2.30.3.
-        # https://github.com/conan-io/conan-center-index/issues/27265
-        self.requires("libiconv/1.18", force=True)
         openssl = "openssl/1.1.1q"
 
         if self.options.qt_source == "system":
@@ -97,7 +95,7 @@ class Overte(ConanFile):
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
-            self.requires("qt/5.15.18-2026.01.04@overte/stable#30ca36fa18268c7c2de55c3d11102ab7", force=True)
+            self.requires("qt/5.15.18-2026.01.04@overte/experimental#4fc772a2dbcd84731eb6ff9904e6e358", force=True)
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")
