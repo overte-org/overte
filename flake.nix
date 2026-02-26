@@ -23,7 +23,7 @@
             ...
           }:
           {
-            packages = {
+            packages = rec {
               glad = pkgs.callPackage ./nix/glad.nix { };
               etc2comp = pkgs.callPackage ./nix/etc2comp.nix { };
 
@@ -51,6 +51,8 @@
                   ;
                 libv8 = pkgs.nodejs_22.libv8;
               };
+
+              overte-full-vulkan = overte-full.override { renderingBackend = "Vulkan"; };
 
               # TODO: update/remove when overte updates to more modern version
               draco = pkgs.callPackage ./nix/draco.nix { };
