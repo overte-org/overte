@@ -5,7 +5,7 @@
 #  This gets called by cmake/macros/GenerateInstaller.cmake and is intended to package Interface AppImages only.
 #
 #  Created by Julian Groß on 2025-04-12.
-#  Copyright 2025 Overte e.V.
+#  Copyright 2025-2026 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -62,6 +62,8 @@ execute_process(
       # https://github.com/probonopd/linuxdeployqt/issues/35
       # https://github.com/probonopd/linuxdeployqt/issues/35#issuecomment-382994446
       LINUXDEPLOY_EXCLUDED_LIBRARIES=libnss3.so\;libnssutil3.so
+      # QMake tells linuxdeploy-plugin-qt where to find Qt.
+      QMAKE=${CPACK_QMAKE_EXECUTABLE}
     ${LINUXDEPLOY_EXECUTABLE}
     --appdir=${CPACK_TEMPORARY_DIRECTORY}
     --executable=${CPACK_PACKAGE_DIRECTORY}/interface/interface
