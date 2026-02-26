@@ -4,7 +4,15 @@
 "use strict";
 
 // TODO: use the system utilMath once it's been merged
-const { Vector3, Quaternion, vec3, color } = require("./utilMath.js");
+const {
+    Vector3,
+    Quaternion,
+    vec3,
+    quat,
+    euler,
+    color,
+    clamp,
+} = require("./utilMath.js");
 
 const Defs = require("./consts.js");
 
@@ -15,16 +23,10 @@ class DashWindow {
     #initialized = false;
 
     #pinnable = false;
+    #pinned = false;
     #hidden = false;
     #hiddenOverride = false;
-
-    /**
-     * This window's horizontal position along the window rail.
-     * Origin in the middle of the rail, and the registration
-     * point at the bottom-center of the window.
-     * @type {number}
-     */
-    x = 0;
+    #grabbed = false;
 
     /**
      * Whether this window is pinned. Pinned windows aren't
@@ -32,12 +34,52 @@ class DashWindow {
      * dash is closed.
      * @type {boolean}
      */
-    pinned = false;
+    get pinned() { return this.#pinned; }
 
-    constructor({ sourceURL, title, entityProperties = {}, pinnable = false }) {
+    set pinned(pinned) {
+        const old = this.#pinned;
+
+        if (!this.#pinnable) {
+            this.#pinned = false;
+        } else {
+            this.#pinned = pinned;
+        }
+
+        if (!pinned && pinned != old) {
+            // hide the window again if it's been unpinned while the dash is hidden
+            this.#hideImpl();
+            this.#setReleaseState();
+        }
+    }
+
+    /** @type {Vector3} */
+    desiredPosition;
+    /** @type {Quaternion} */
+    desiredRotation;
+
+    /** @type {number} */
+    grabReleaseTime = Date.now();
+    /** @type {Vector3} */
+    grabReleasePosition;
+    /** @type {Quaternion} */
+    grabReleaseRotation;
+
+    constructor({
+        sourceURL,
+        title,
+        position,
+        rotation,
+        entityProperties = {},
+        pinnable = false,
+    }) {
         this.#sourceURL = sourceURL;
         this.#title = title;
         this.#pinnable = pinnable;
+
+        this.desiredPosition = position;
+        this.desiredRotation = rotation;
+        this.grabReleasePosition = position;
+        this.grabReleaseRotation = rotation;
 
         this.#entityID = Entities.addEntity({
             type: "Web",
@@ -48,6 +90,9 @@ class DashWindow {
             collisionless: true,
             fadeInMode: "disabled",
             fadeOutMode: "disabled",
+
+            localPosition: position,
+            localRotation: rotation,
 
             // FIXME: localDimensions aren't actually local,
             // for some reason they're actually post-SNScale
@@ -158,6 +203,39 @@ class DashWindow {
         this.pushWindowEvent({ event: "set_props", pinnable: this.#pinnable });
     }
 
+    /** @type {boolean} */
+    get grabbed() { return this.#grabbed; }
+
+    set grabbed(grabbed) {
+        this.#grabbed = grabbed;
+
+        if (!grabbed) { this.#setReleaseState(); }
+
+        // grabbing entities fiddles with its dimensions,
+        // so reset them back to how they're supposed to be
+        Entities.editEntity(this.entityID, {
+            // FIXME: localDimensions aren't actually local,
+            // for some reason they're actually post-SNScale
+            localDimensions: vec3(Defs.windowDimensions).multiply(MyAvatar.sensorToWorldScale),
+            // FIXME: use a constant when dpi scales properly
+            dpi: Defs.scaleHackInv(Defs.windowDPI),
+        });
+
+        this.pushWindowEvent({ event: "set_props", grabbed: grabbed });
+    }
+
+    #setReleaseState() {
+        this.grabReleaseTime = Date.now();
+
+        const {
+            localPosition,
+            localRotation,
+        } = Entities.getEntityProperties(this.entityID, ["localPosition", "localRotation"]);
+
+        this.grabReleasePosition = vec3(localPosition);
+        this.grabReleaseRotation = quat(localRotation);
+    }
+
     focus() {
         this.pushWindowEvent({ event: "focus" });
     }
@@ -173,7 +251,7 @@ class DashWindow {
     }
 
     #hideImpl() {
-        let hidden = this.#hidden || (this.#hiddenOverride && !this.pinned);
+        let hidden = this.#hidden || (this.#hiddenOverride && !this.#pinned);
 
         if (hidden) {
             // the window manager handles the 'visible' property
@@ -209,9 +287,6 @@ class WindowManager {
 
     /** @type {?DashWindow} */
     focusedWindow = null;
-
-    /** @type {?DashWindow} */
-    draggedWindow = null;
 
     #rootID;
     #railID;
@@ -260,6 +335,7 @@ class WindowManager {
         Entities.keyboardFocusEntityChanged.connect(this.#focusCallback);
         Entities.webEventReceived.connect(this.#eventCallback);
         MyAvatar.sensorToWorldScaleChanged.connect(this.#scaleCallback);
+        Messages.messageReceived.connect(this.#messageCallback);
     }
 
     windowEvent(window, event) {
@@ -274,14 +350,19 @@ class WindowManager {
             } break;
 
             case "spawn_window": {
+                const pos = vec3(
+                    0,
+                    (Defs.windowDimensions.y / 2) + 0.01,
+                    -(Defs.windowRailCurvature + Defs.windowRailDistance)
+                );
+                const rot = euler(0, 0, 0);
                 let newWindow = new DashWindow({
                     sourceURL: event.source_url,
                     title: event.title,
                     pinnable: event.pinnable ?? true,
-                    entityProperties: {
-                        parentID: this.#rootID,
-                        localPosition: vec3(0, 0.41, -(Defs.windowRailCurvature + Defs.windowRailDistance)),
-                    },
+                    position: pos,
+                    rotation: rot,
+                    entityProperties: { parentID: this.#rootID },
                 });
                 this.children.set(newWindow.entityID, newWindow);
             } break;
@@ -295,12 +376,8 @@ class WindowManager {
                 Entities.editEntity(window.entityID, { visible: false });
             } break;
 
-            case "begin_drag": {
-                this.draggedWindow = window;
-            } break;
-
-            case "finish_drag": {
-                this.draggedWindow = null;
+            case "set_grabbable": {
+                Entities.editEntity(window.entityID, { grab: { grabbable: event.grabbable } });
             } break;
 
             case "pin": { window.pinned = true; } break;
@@ -366,17 +443,59 @@ class WindowManager {
         });
     }
 
+    #updateWindows(_dt) {
+        for (const [id, window] of this.children) {
+            // the window is pinned, so don't do anything to it
+            if (window.pinned) { continue; }
+
+            if (window.grabbed) {
+                let { localPosition: pos } = Entities.getEntityProperties(id, "localPosition");
+                pos = vec3(pos);
+
+                // sit on top of the rail
+                pos.y = (Defs.windowDimensions.y / 2) + 0.01;
+                pos.x = clamp(pos.x / Defs.windowRailWidth, -1, 1);
+                pos.z = (Math.cos(pos.x * (Math.PI / 2)) * -Defs.windowRailCurvature) - Defs.windowRailDistance;
+
+                let yaw = -Math.sin(pos.x * (Math.PI / 2)) * (Math.PI / 2) * Defs.windowRailCurvature;
+
+                let rot = Quaternion.fromPitchYawRollRadians(0, yaw, 0);
+
+                window.desiredPosition = pos;
+                window.desiredRotation = rot;
+            } else {
+                // animate to snapping onto the rail
+                const lerpMs = 300;
+
+                let alpha = Math.min(1, (Date.now() - window.grabReleaseTime) / lerpMs);
+
+                // exponential ease out
+                alpha = 1.0 - Math.pow(1.0 - alpha, 2);
+
+                let pos = window.grabReleasePosition.lerpTo(window.desiredPosition, alpha);
+                let rot = Quat.slerp(window.grabReleaseRotation, window.desiredRotation, alpha);
+
+                Entities.editEntity(id, {
+                    localPosition: pos,
+                    localRotation: quat(rot).normalized(),
+                });
+            }
+        }
+    }
+
     /**
      * @param {number} deltaTime
      */
     update(deltaTime) {
         this.#updateRail(deltaTime);
+        this.#updateWindows(deltaTime);
     }
 
     dispose() {
         Entities.keyboardFocusEntityChanged.disconnect(this.#focusCallback);
         Entities.webEventReceived.disconnect(this.#eventCallback);
         MyAvatar.sensorToWorldScaleChanged.disconnect(this.#scaleCallback);
+        Messages.messageReceived.disconnect(this.#messageCallback);
 
         Entities.deleteEntity(this.#railID);
 
@@ -417,6 +536,35 @@ class WindowManager {
     #scaleCallback = () => {
         for (const [_, window] of this.children) {
             Entities.editEntity(window.entityID, { dpi: Defs.scaleHackInv(Defs.windowDPI) });
+        }
+    };
+
+    #messageCallback = (channel, rawMsg, _senderID, localOnly) => {
+        if (channel !== "Hifi-Object-Manipulation" && channel !== Defs.ipcChannel) {
+            return
+        }
+
+        let msg;
+        try {
+            msg = JSON.parse(rawMsg);
+        } catch (e) {
+            return;
+        }
+
+        // this channel and three undocumented entity
+        // methods called by the grab scripts are the
+        // only way of getting grab/release events
+        if (channel === "Hifi-Object-Manipulation") {
+            const window = this.children.get(msg.grabbedEntity);
+
+            // not one of our child windows, not interested
+            if (!window) { return; }
+
+            if (msg.action === "grab") {
+                window.grabbed = true;
+            } else if (msg.action === "release") {
+                window.grabbed = false;
+            }
         }
     };
 }
