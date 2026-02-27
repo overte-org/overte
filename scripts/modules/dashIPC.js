@@ -149,14 +149,10 @@ class DashWindow {
      * @returns {void}
      */
     #dispose() {
-        if (this.#disposed) {
-            throw new Error(`${this} has already been disposed`);
-        }
+        if (this.#disposed) { return; }
 
         this.#sendIPC({ event: "dispose" });
-
         this.#disposed = true;
-
         Messages.messageReceived.disconnect(this.#messageCallback);
     }
 
