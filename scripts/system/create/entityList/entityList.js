@@ -208,6 +208,17 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
                 } else {
                     domainAndAvatarIds = Entities.findEntities(MyAvatar.position, searchRadius);
                 }
+
+                const avatarFilterProps = Entities.getMultipleEntityProperties(domainAndAvatarIds, ['entityHostType', 'owningAvatarID']);
+
+                // Exclude any avatar entities that we don't own
+                domainAndAvatarIds = domainAndAvatarIds.filter((_id, index) => {
+                    const { entityHostType, owningAvatarID } = avatarFilterProps[index];
+                    return entityHostType !== "avatar" ||
+                           owningAvatarID === MyAvatar.SELF_ID ||
+                           owningAvatarID === MyAvatar.sessionUUID;
+                });
+
                 var localIds = [];
                 if (localEntityFilter) {
                     localIds = Overlays.findOverlays(MyAvatar.position, searchRadius);
@@ -232,6 +243,7 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
                         }
                     }
                 }
+
                 ids = domainAndAvatarIds.concat(localIds);
             });
 
