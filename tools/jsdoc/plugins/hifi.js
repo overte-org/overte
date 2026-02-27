@@ -66,7 +66,6 @@ exports.handlers = {
             '../../libraries/task/src/task',
             '../../libraries/ui/src',
             '../../libraries/ui/src/ui',
-            '../../plugins/oculus/src',
             '../../plugins/openvr/src'
         ];
 

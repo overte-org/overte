@@ -101,8 +101,6 @@ class Overte(ConanFile):
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")
-            self.requires("ovr-skd/1.35.0@overte/prebuild")
-            self.requires("ovr-platform-skd/1.10.0@overte/prebuild")
 
         self.requires(openssl, force=True)
 

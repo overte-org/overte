@@ -259,9 +259,6 @@ public:
      */
     Q_INVOKABLE DisplayPluginList getAllDisplayPlugins();
 
-    bool getEnableOculusPluginSetting() { return _enableOculusPluginSetting.get(); }
-    void setEnableOculusPluginSetting(bool value);
-
     /**
      * @brief Returns information about known plugins
      *

@@ -252,7 +252,7 @@ bool ViveControllerManager::uncalibrate() {
 }
 
 bool ViveControllerManager::isSupported() const {
-    return openVrSupported();
+    return vr::VR_IsHmdPresent();
 }
 
 void ViveControllerManager::setConfigurationSettings(const QJsonObject configurationSettings) {
@@ -878,9 +878,6 @@ void ViveControllerManager::InputDevice::update(float deltaTime, const controlle
         _headsetName = getOpenVrDeviceName();
         if (_headsetName == "HTC") {
             _headsetName += " Vive";
-        }
-        if (oculusViaOpenVR()) {
-            _headsetName = "OpenVR";  // Enables calibration dialog to function when debugging using Oculus.
         }
     }
     // While the keyboard is open, we defer strictly to the keyboard values
