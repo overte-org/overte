@@ -37,6 +37,10 @@ Item {
             case "unpin": { root.pinned = false; } break;
             case "hide": { root.hidden = true; } break;
             case "unhide": { root.hidden = false; } break;
+
+            case "body_event": {
+                loader.item?.fromScript(event.body_event);
+            } break;
         }
     }
 
@@ -46,17 +50,21 @@ Item {
 
         if (msg?.dash_window?.event) {
             readEvent(msg.dash_window);
-        } else {
-            loader.item?.fromScript(rawMsg);
         }
     }
 
-    function toScript(msg) {
-        eventBridge.emitWebEvent(JSON.stringify(msg));
+    function pushWindowEvent(event) {
+        eventBridge.emitWebEvent(JSON.stringify({ dash_window: event }));
     }
 
-    function pushWindowEvent(event) {
-        root.toScript({ dash_window: event });
+    // for use by child components
+    function toScript(msg) {
+        eventBridge.emitWebEvent(JSON.stringify({
+            dash_window: {
+                event: "body_event",
+                body_event: JSON.stringify(msg),
+            }
+        }));
     }
 
     Component.onCompleted: {
@@ -231,7 +239,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
             wrapMode: Text.Wrap
 
-            text: qsTr("Error loading %1").arg(root.source)
+            text: qsTr("Error loading %1\n\nCheck the logs for more info").arg(root.source)
         }
     }
 

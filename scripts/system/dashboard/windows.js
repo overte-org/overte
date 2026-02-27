@@ -250,6 +250,16 @@ class DashWindow {
         }));
     }
 
+    sendScriptEvent(obj) {
+        Entities.emitScriptEvent(this.#entityID, JSON.stringify({
+            dash_window: {
+                event: "body_event",
+                // sent as a string for compatibility
+                body_event: typeof(obj) === "string" ? obj : JSON.stringify(obj),
+            },
+        }));
+    }
+
     #hideImpl() {
         let hidden = this.#hidden || (this.#hiddenOverride && !this.#pinned);
 
@@ -281,12 +291,39 @@ class DashWindow {
     }
 }
 
+class IPCWindow {
+    /** @type {Uuid} */
+    ipcID;
+    /** @type {?string} */
+    appID;
+    /** @type {DashWindow} */
+    window;
+
+    constructor({ ipcID, appID, window }) {
+        this.ipcID = ipcID;
+        this.appID = appID;
+        this.window = window;
+    }
+
+    sendIPC(msg) {
+        Messages.sendLocalMessage(Defs.ipcChannel, JSON.stringify({
+            ipc_id: this.ipcID,
+            app_id: this.appID,
+            ipc_source: "window_manager",
+            ...msg
+        }));
+    }
+}
+
 class WindowManager {
     /** @type {Map<Uuid, DashWindow>} */
     children = new Map();
 
     /** @type {?DashWindow} */
     focusedWindow = null;
+
+    /** @type {Map<Uuid, IPCWindow>} */
+    ipcWindows = new Map();
 
     #rootID;
     #railID;
@@ -350,24 +387,20 @@ class WindowManager {
             } break;
 
             case "spawn_window": {
-                const pos = vec3(
-                    0,
-                    (Defs.windowDimensions.y / 2) + 0.01,
-                    -(Defs.windowRailCurvature + Defs.windowRailDistance)
-                );
-                const rot = euler(0, 0, 0);
-                let newWindow = new DashWindow({
+                this.#addWindow({
                     sourceURL: event.source_url,
                     title: event.title,
-                    pinnable: event.pinnable ?? true,
-                    position: pos,
-                    rotation: rot,
-                    entityProperties: { parentID: this.#rootID },
+                    pinnable: event.pinnable,
                 });
-                this.children.set(newWindow.entityID, newWindow);
             } break;
 
             case "finished_closing": {
+                for (const [_id, ipc] of this.ipcWindows) {
+                    if (window.entityID === ipc.window.entityID) {
+                        ipc.sendIPC({ event: "closed" });
+                        break;
+                    }
+                }
                 this.children.delete(window.entityID);
                 window.dispose();
             } break;
@@ -382,6 +415,18 @@ class WindowManager {
 
             case "pin": { window.pinned = true; } break;
             case "unpin": { window.pinned = false; } break;
+
+            case "body_event": {
+                for (const [_id, ipc] of this.ipcWindows) {
+                    if (window.entityID === ipc.window.entityID) {
+                        ipc.sendIPC({
+                            event: "body_event",
+                            body_event: event.body_event,
+                        });
+                        break;
+                    }
+                }
+            } break;
 
             default: {
                 console.error(`Unknown dash_window event "${event.event}"! Ignoring.`);
@@ -504,6 +549,25 @@ class WindowManager {
         }
     }
 
+    #addWindow({ sourceURL, title, pinnable }) {
+        const pos = vec3(
+            0,
+            (Defs.windowDimensions.y / 2) + 0.01,
+            -(Defs.windowRailCurvature + Defs.windowRailDistance)
+        );
+        const rot = euler(0, 0, 0);
+        let newWindow = new DashWindow({
+            sourceURL: sourceURL,
+            title: title,
+            pinnable: pinnable ?? true,
+            position: pos,
+            rotation: rot,
+            entityProperties: { parentID: this.#rootID },
+        });
+        this.children.set(newWindow.entityID, newWindow);
+        return newWindow;
+    }
+
     #focusCallback = entity => {
         this.focusedWindow?.unfocus();
 
@@ -564,6 +628,39 @@ class WindowManager {
                 window.grabbed = true;
             } else if (msg.action === "release") {
                 window.grabbed = false;
+            }
+        } else if (channel === Defs.ipcChannel) {
+            if (msg.event === "create_window") {
+                let window = this.#addWindow({
+                    sourceURL: msg.properties.source_url,
+                    title: msg.properties.title,
+                    pinnable: msg.properties.pinnable,
+                });
+
+                let ipcWindow = new IPCWindow({
+                    ipcID: msg.ipc_id,
+                    appID: msg.app_id,
+                    window: window
+                });
+
+                ipcWindow.sendIPC({
+                    event: "window_created",
+                    window_id: window.entityID,
+                });
+
+                this.ipcWindows.set(msg.ipc_id, ipcWindow);
+            } else if (msg.event === "body_event" && msg.ipc_source === "window") {
+                this.ipcWindows.get(msg.ipc_id)?.window?.sendScriptEvent(msg.body_event);
+            } else if (msg.event === "set_window_property") {
+                let window = this.ipcWindows.get(msg.ipc_id)?.window;
+                
+                if (!window) { return; }
+
+                if (msg.title !== undefined) { window.title = msg.title; }
+                // TODO: swap DashWindow.hidden to visible
+                if (msg.visible !== undefined) { window.hidden = !msg.visible; }
+                //if (msg.app_id !== undefined) { window.appID = !msg.visible; }
+                if (msg.source_url !== undefined) { window.sourceURL = msg.source_url; }
             }
         }
     };
