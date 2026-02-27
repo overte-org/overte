@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2019-2021 Vircadia contributors
-# Copyright 2021-2023 Overte e.V.
+# Copyright 2021-2026 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 if (APPLE)
@@ -42,6 +42,7 @@ set(RESOURCES_RCC ${CMAKE_CURRENT_BINARY_DIR}/resources.rcc)
 generate_qrc(OUTPUT ${RESOURCES_QRC} PATH ${CMAKE_CURRENT_SOURCE_DIR}/resources CUSTOM_PATHS ${CUSTOM_INTERFACE_QRC_PATHS} GLOBS *)
 
 if (ANDROID)
+  # ANDROID TODO: Is this still needed?
   # on Android, don't compress the rcc binary
   qt5_add_binary_resources(resources "${RESOURCES_QRC}" DESTINATION "${RESOURCES_RCC}" OPTIONS -no-compress)
 else ()
@@ -117,6 +118,7 @@ set(INTERFACE_SRCS ${INTERFACE_SRCS} "${QT_UI_HEADERS}" "${QT_RESOURCES}")
 
 # setup the android parameters that will help us produce an APK
 if (ANDROID)
+  # ANDROID TODO: Get from a Conan Setting named `android_sdk` like Qt does.
   set(ANDROID_SDK_ROOT $ENV{ANDROID_HOME})
   set(BUILD_SHARED_LIBS ON)
 endif ()
@@ -296,11 +298,10 @@ if (ANDROID)
 endif ()
 
 target_link_libraries(
-  ${TARGET_NAME}
-  Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::Widgets
-  Qt5::Qml Qt5::Quick Qt5::Svg
-  Qt5::WebChannel Qt5::WebEngineCore Qt5::WebEngineWidgets
-  ${PLATFORM_QT_LIBRARIES}
+    ${TARGET_NAME}
+    Qt5::Gui Qt5::Network Qt5::Multimedia Qt5::Widgets
+    Qt5::Qml Qt5::Quick Qt5::Svg
+    ${PLATFORM_QT_LIBRARIES}
 )
 
 if (UNIX AND NOT ANDROID AND NOT OVERTE_THREAD_DEBUGGING)
