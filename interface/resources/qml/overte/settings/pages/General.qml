@@ -121,6 +121,23 @@ SettingsPage {
         onCurrentIndexChanged: SettingsInterface.setValue("simplifiedNametag/avatarNametagMode", model[currentIndex].value)
     }
 
+    SwitchSetting {
+        text: qsTr("Use 3D dashboard UI on desktop")
+        // TODO
+        enabled: false
+        value: true
+    }
+
+    SettingNote {
+        text: qsTr("Currently always enabled. A 2D mode will be available in the future.")
+    }
+
+    SwitchSetting {
+        text: qsTr("Show developer tools")
+        value: SettingsInterface.getValue("Settings/Developer Menu", false)
+        onValueChanged: SettingsInterface.setValue("Settings/Developer Menu", value)
+    }
+
     Header { text: qsTr("Screenshots") }
 
     FolderSetting {

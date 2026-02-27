@@ -26,6 +26,10 @@ Item {
         eventBridge.emitWebEvent(JSON.stringify(msg));
     }
 
+    function resourceURL(url) {
+        return `${resourceDirectoryUrl}${url}`;
+    }
+
     Component.onCompleted: {
         eventBridge.scriptEventReceived.connect(fromScript);
     }
@@ -111,7 +115,7 @@ Item {
 
             DashBarButton {
                 text: qsTr("Quit")
-                icon.source: "../icons/close.svg"
+                icon.source: "../icons/shutdown.svg"
                 icon.color: Overte.Theme.paletteActive.buttonText
                 backgroundColor: (
                     hovered ?
@@ -132,25 +136,26 @@ Item {
                         dash_window: {
                             event: "spawn_window",
                             title: qsTr("Settings"),
-                            source_url: "qrc:///qml/overte/settings/Settings.qml",
+                            source_url: resourceURL("qml/overte/settings/Settings.qml"),
                         },
                     });
                 }
             }
 
             DashBarButton {
-                text: qsTr("Tablet")
-                icon.source: "../icons/reload.svg"
-                icon.color: Overte.Theme.paletteActive.buttonText
-                checkable: true
-                checked: HMD.showTablet
+                visible: SettingsInterface.getValue("Settings/Developer Menu", false)
+                text: qsTr("Dev Tools")
+                icon.source: "../icons/dev_tools.png"
+                icon.color: undefined
 
-                onToggled: {
-                    if (checked) {
-                        HMD.openTablet();
-                    } else {
-                        HMD.closeTablet();
-                    }
+                onClicked: {
+                    dashBar.toScript({
+                        dash_window: {
+                            event: "spawn_window",
+                            title: qsTr("Developer Tools"),
+                            source_url: resourceURL("qml/overte/dash/DevTools.qml"),
+                        },
+                    });
                 }
             }
         }
@@ -166,21 +171,21 @@ Item {
                         buttonName: qsTr("Places"),
                         buttonIcon: "../icons/home.svg",
                         windowName: qsTr("Places"),
-                        windowSource: "qrc:///qml/overte/place_picker/PlacePicker.qml",
+                        windowSource: resourceURL("qml/overte/place_picker/PlacePicker.qml"),
                         windowTag: "system places"
                     },
                     {
                         buttonName: qsTr("Contacts"),
                         buttonIcon: "../icons/users.svg",
                         windowName: qsTr("Contacts"),
-                        windowSource: "qrc:///qml/overte/contacts/ContactsList.qml",
+                        windowSource: resourceURL("qml/overte/contacts/ContactsList.qml"),
                         windowTag: "system contacts"
                     },
                     {
                         buttonName: qsTr("Avatar"),
                         buttonIcon: "../icons/add_friend.svg",
                         windowName: qsTr("Avatar"),
-                        windowSource: "qrc:///qml/overte/avatar_picker/AvatarPicker.qml",
+                        windowSource: resourceURL("qml/overte/avatar_picker/AvatarPicker.qml"),
                         windowTag: "system avatars"
                     },
                 ]
@@ -231,6 +236,7 @@ Item {
 
             DashBarButton {
                 checkable: true
+                visible: HMD.active
                 text: checked ? qsTr("Seated") : qsTr("Standing")
                 icon.source: checked ? "../icons/triangle_down.svg" : "../icons/triangle_up.svg"
                 backgroundColor: (
@@ -305,7 +311,7 @@ Item {
                     buttonName: qsTr("More…"),
                     buttonIcon: "../icons/plus.svg",
                     windowName: qsTr("More Apps"),
-                    windowSource: "qrc:///qml/overte/more_apps/MoreApps.qml",
+                    windowSource: resourceURL("qml/overte/more_apps/MoreApps.qml"),
                     windowTag: "system more apps"
                 },
             ]
