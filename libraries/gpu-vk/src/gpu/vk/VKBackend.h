@@ -354,6 +354,7 @@ public:
     vks::Context& getContext() { return _context; }
     void syncProgram(const gpu::ShaderPointer& program) override {}
     void syncCache() override {}
+    // VKTODO: since Vulkan backed does per-frame cleanup too, it's worth investigating if this can be used for it.
     void recycle() const override {}
     void updatePresentFrame(const Mat4& correction = Mat4(), bool primary = true) override;
     void executeFrame(const FramePointer& frame) final;

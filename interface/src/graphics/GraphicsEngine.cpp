@@ -168,6 +168,7 @@ bool GraphicsEngine::shouldPaint() const {
 
     // Throttle if requested
     //if (displayPlugin->isThrottled() && (_graphicsEngine._renderEventHandler->_lastTimeRendered.elapsed() < THROTTLED_SIM_FRAME_PERIOD_MS)) {
+    //TODO: this may be obsolete? Isn't framerate managed in a different way now?
     if (displayPlugin->isThrottled() &&
             (static_cast<RenderEventHandler*>(_renderEventHandler)->_lastTimeRendered.elapsed() < THROTTLED_SIM_FRAME_PERIOD_MS)) {
         return false;
