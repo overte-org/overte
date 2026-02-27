@@ -116,8 +116,8 @@ class NotifyPanel {
         this.#position = this.#position.lerpTo(targetPos, dt * Defs.notifyPanelFloatSpeed);
 
         // FIXME: the current Quaternion.slerpTo is subtly wrong somewhere
-        // and it does spinnies wee at a certain angle
-        this.#rotation = this.#rotation.slerpTo(targetRot, dt * Defs.notifyPanelFloatSpeed).normalized();
+        // and it goes kinda crooked at some angles and at some point flips around
+        this.#rotation = quat(Quat.slerp(this.#rotation, targetRot, dt * Defs.notifyPanelFloatSpeed)).normalized();
 
         Entities.editEntity(this.entityID, {
             // FIXME: setting the position and rotation of a web entity
