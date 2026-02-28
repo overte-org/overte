@@ -69,7 +69,8 @@ enum SettingsType {
  *
  * The canonical list of assignment types is in the Assignment::Type enum.
  *
- *
+ * To change settings from C++ side, pass them as QJsonObject to recurseJSONObjectAndOverwriteSettings.
+ * For more information refer to how QJsonObject domainSettingsToSet is used in domain-server/src/main.cpp.
  *
  */
 class DomainServerSettingsManager : public QObject {
