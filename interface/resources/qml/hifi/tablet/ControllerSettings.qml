@@ -2,6 +2,7 @@
 //  Created by Dante Ruiz on 6/1/17.
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -27,7 +28,6 @@ Item {
     width: parent.width
 
     property string title: "Controls"
-    property var openVRDevices: ["HTC Vive", "Valve Index", "Valve HMD", "Valve", "WindowsMR", "Oculus"]
 
     HifiConstants { id: hifi }
 
@@ -166,7 +166,7 @@ Item {
                     anchors.leftMargin: 40
                     spacing: 10
                     HifiControls.ComboBox {
-                        id: box
+                        id: comboBox
                         width: 160
                         z: 999
                         editable: true
@@ -185,7 +185,7 @@ Item {
                         text: "Show all input devices"
 
                         onClicked: {
-                            box.model = inputPlugins();
+                            comboBox.model = inputPlugins();
                             changeSource();
                         }
                     }
@@ -242,18 +242,8 @@ Item {
                     id: loader
                     asynchronous: false
                     anchors.fill: parent
-                    source: InputConfiguration.configurationLayout(box.textAt(box.currentIndex));
+                    source: InputConfiguration.configurationLayout(comboBox.textAt(comboBox.currentIndex));
                     onLoaded: {
-                        if (loader.item.hasOwnProperty("pluginName")) {
-                            if (openVRDevices.indexOf(box.textAt(box.currentIndex)) !== -1) {
-                                loader.item.pluginName = "OpenVR";
-                            } else if (box.currentIndex.startsWith("OpenXR")) {
-                                loader.item.pluginName = "OpenXR";
-                            } else {
-                                loader.item.pluginName = box.textAt(box.currentIndex);
-                            }
-                        }
-
                         if (loader.item.hasOwnProperty("displayInformation")) {
                             loader.item.displayConfiguration();
                         }
@@ -299,9 +289,9 @@ Item {
 
             function changeSource() {
                 loader.source = "";
-                var selectedDevice = box.textAt(box.currentIndex);
+                var selectedDevice = comboBox.textAt(comboBox.currentIndex);
                 var source = "";
-                if (openVRDevices.indexOf(selectedDevice) !== -1) {
+                if (selectedDevice.startsWith("OpenVR")) {
                     source = InputConfiguration.configurationLayout("OpenVR");
                 } else if (selectedDevice.startsWith("OpenXR")) {
                     source = InputConfiguration.configurationLayout("OpenXR");
@@ -311,9 +301,9 @@ Item {
 
                 loader.source = source;
                 if (source === "") {
-                    box.label = "(not configurable)";
+                    comboBox.label = "(not configurable)";
                 } else {
-                    box.label = "";
+                    comboBox.label = "";
                 }
 
                 stack.selectedPlugin = selectedDevice;
