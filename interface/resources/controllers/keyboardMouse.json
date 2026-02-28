@@ -1,14 +1,10 @@
 {
     "name": "Keyboard/Mouse to Actions",
     "channels": [
-        { "from": "Keyboard.A", "when": ["Keyboard.RightMouseButton", "Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeRight" },
-        { "from": "Keyboard.A", "when": ["Keyboard.RightMouseButton", "!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeLeft" },
-        { "from": "Keyboard.D", "when": ["Keyboard.RightMouseButton", "!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeRight" },
-        { "from": "Keyboard.D", "when": ["Keyboard.RightMouseButton", "Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeLeft" },
-        { "from": "Keyboard.Q", "when": ["!Application.CameraSelfie", "!Keyboard.Control", "!Application.CaptureMouse"], "to": "Actions.LATERAL_LEFT" },
-        { "from": "Keyboard.Q", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.LATERAL_RIGHT" },
-        { "from": "Keyboard.E", "when": ["!Application.CameraSelfie", "!Keyboard.Control", "!Application.CaptureMouse"], "to": "Actions.LATERAL_RIGHT" },
-        { "from": "Keyboard.E", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.LATERAL_LEFT" },
+        { "from": "Keyboard.A", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeRight" },
+        { "from": "Keyboard.A", "when": ["!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeLeft" },
+        { "from": "Keyboard.D", "when": ["!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeRight" },
+        { "from": "Keyboard.D", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeLeft" },
         { "from": "Keyboard.T", "when": "!Keyboard.Control", "to": "Actions.TogglePushToTalk" },
 
         { "comment" : "Mouse turn need to be small continuous increments",
@@ -88,15 +84,6 @@
         { "from": "Keyboard.Right",
           "when": ["!Application.CameraFSM", "!Application.CameraIndependent", "!Application.CameraEntity", "Application.CaptureMouse", "!Keyboard.Shift"],
           "to": "Actions.LATERAL_RIGHT"
-        },
-
-        { "from": { "makeAxis" : [
-                ["Keyboard.A"],
-                ["Keyboard.D"]
-            ]
-          },
-          "when": ["!Application.CameraFSM", "!Application.CameraIndependent", "!Application.CameraEntity", "!Application.CaptureMouse", "!Keyboard.Control"],
-          "to": "Actions.Yaw"
         },
 
         { "from": "Keyboard.A",
