@@ -26,6 +26,10 @@ namespace udt {
 class Packet : public BasePacket {
     Q_OBJECT
 public:
+    // The packet is made of up to 3 x 32 bit little endian encoded values.
+    // to decode the network data, first handle each part as a 32-bit LE value,
+    // then take that apart.
+    //
     //                         Packet Header Format
     //
     //     0                   1                   2                   3
