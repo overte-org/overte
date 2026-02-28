@@ -337,8 +337,7 @@ EditVoxels = function() {
         continuousStartTimer = 0;
 
         var pickRay = generalComputePickRay(event.x, event.y);
-        var intersection = Entities.findRayIntersection(pickRay, true); // accurate picking
-        var overlaysIntersection = Overlays.findRayIntersection(pickRay, true); // accurate picking
+        var intersection = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES | Picks.PICK_LOCAL_ENTITIES); // accurate picking
 
         if (wantDebug) {
             print("Pick ray: " + JSON.stringify(pickRay));
@@ -346,17 +345,6 @@ EditVoxels = function() {
         }
 
         if (intersection.intersects) {
-            if (overlaysIntersection.intersects) {
-                var overlaysIntersectionDistance = Vec3.distance(overlaysIntersection.intersection, pickRay.origin);
-                var intersectionDistance = Vec3.distance(intersection.intersection, pickRay.origin);
-                if (wantDebug) {
-                    print("overlaysIntersectionDistance: " + overlaysIntersectionDistance);
-                    print("intersectionDistance: " + intersectionDistance);
-                }
-                if (overlaysIntersectionDistance < intersectionDistance) {
-                    return;
-                }
-            }
             if (attemptVoxelChangeForEntity(intersection.entityID, pickRay.direction, intersection.intersection)) {
                 Script.update.connect(onUpdateHandler);
                 isOnUpdateConnected = true;

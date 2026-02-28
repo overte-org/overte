@@ -48,7 +48,6 @@
    controllerDispatcherPluginsNeedSort:true,
    projectOntoXYPlane:true,
    projectOntoEntityXYPlane:true,
-   projectOntoOverlayXYPlane:true,
    makeLaserLockInfo:true,
    entityHasActions:true,
    ensureDynamic:true,
@@ -437,15 +436,6 @@ var projectOntoEntityXYPlane = function (entityID, worldPos, popProps) {
                               popProps.dimensions, popProps.registrationPoint);
 };
 
-var projectOntoOverlayXYPlane = function projectOntoOverlayXYPlane(overlayID, worldPos) {
-    var position = Entities.getEntityProperties(overlayID, ["position"]).position;
-    var rotation = Entities.getEntityProperties(overlayID, ["rotation"]).rotation;
-    var dimensions = Entities.getEntityProperties(overlayID, ["dimensions"]).dimensions;
-    dimensions.z = 0.01; // we are projecting onto the XY plane of the overlay, so ignore the z dimension
-
-    return projectOntoXYPlane(worldPos, position, rotation, dimensions, DEFAULT_REGISTRATION_POINT);
-};
-
 var entityHasActions = function (entityID) {
     return Entities.getActionIDs(entityID).length > 0;
 };
@@ -639,7 +629,6 @@ if (typeof module !== 'undefined') {
         entityIsEquippable: entityIsEquippable,
         entityIsGrabbable: entityIsGrabbable,
         NEAR_GRAB_RADIUS: NEAR_GRAB_RADIUS,
-        projectOntoOverlayXYPlane: projectOntoOverlayXYPlane,
         projectOntoEntityXYPlane: projectOntoEntityXYPlane,
         TRIGGER_OFF_VALUE: TRIGGER_OFF_VALUE,
         TRIGGER_ON_VALUE: TRIGGER_ON_VALUE,

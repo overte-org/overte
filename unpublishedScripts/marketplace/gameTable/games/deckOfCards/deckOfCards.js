@@ -248,7 +248,7 @@
 
             var location = Vec3.sum(rightPickRay.origin, Vec3.multiply(rightPickRay.direction, 50));
 
-            var rightIntersection = Entities.findRayIntersection(rightPickRay, true, [], [this.targetEntity]);
+            var rightIntersection = Entities.findRayIntersection(rightPickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES, [], [this.targetEntity]);
 
             if (rightIntersection.intersects) {
                 this.rightLineOn(rightPickRay.origin, rightIntersection.intersection, COLORS_CAN_PLACE);
@@ -281,7 +281,7 @@
 
             var location = Vec3.sum(MyAvatar.position, Vec3.multiply(leftPickRay.direction, 50));
 
-            var leftIntersection = Entities.findRayIntersection(leftPickRay, true, [], [this.targetEntity]);
+            var leftIntersection = Entities.findRayIntersection(leftPickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES, [], [this.targetEntity]);
 
             if (leftIntersection.intersects) {
                 this.leftLineOn(leftPickRay.origin, leftIntersection.intersection, COLORS_CAN_PLACE);
