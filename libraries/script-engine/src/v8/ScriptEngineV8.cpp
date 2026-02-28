@@ -633,6 +633,7 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             {
                 auto scopeGuard = getScopeGuard();
                 registerGlobalObject(scopeGuard.get(), "Script", new ScriptManagerScriptingInterface(_manager), ScriptEngine::ScriptOwnership);
+                _manager->registerConsoleScriptingInterface(scopeGuard.get(), this);
             }
             auto Script = globalObject().property("Script");
             auto require = Script.property("require");
