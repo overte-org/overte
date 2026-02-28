@@ -451,6 +451,8 @@ void WebEntityRenderer::destroyWebSurface() {
 }
 
 glm::vec2 WebEntityRenderer::getWindowSize(const TypedEntityPointer& entity) const {
+    // TODO: Properly support SNScale (getUnscaledDimensions),
+    // will need modifications to the rayhit-to-2D position code
     glm::vec2 dims = glm::vec2(entity->getScaledDimensions());
     dims *= METERS_TO_INCHES * _dpi;
 

@@ -53,9 +53,8 @@ void TextEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& scen
     void* key = (void*)this;
     AbstractViewStateInterface::instance()->pushPostUpdateLambda(key, [this, entity] {
         withWriteLock([&] {
-            _dimensions = entity->getScaledDimensions();
+            _dimensions = entity->getUnscaledDimensions();
             _renderTransform = getModelTransform();
-            _renderTransform.postScale(_dimensions);
         });
     });
 }
@@ -157,12 +156,15 @@ void TextEntityRenderer::doRender(RenderArgs* args) {
 
     bool transparent;
     Transform transform;
+    vec3 dimensions;
     withReadLock([&] {
         transparent = isTransparent();
         transform = _renderTransform;
+        dimensions = _dimensions;
     });
 
     bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
+    transform.setScale(transform.getScale() * dimensions);
     transform.setRotation(BillboardModeHelpers::getBillboardRotation(transform.getTranslation(), transform.getRotation(), _billboardMode,
         usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
     batch.setModelTransform(transform, _prevRenderTransform);
@@ -382,8 +384,8 @@ void entities::TextPayload::render(RenderArgs* args) {
     if (fontHeight > 0.0f) {
         scale = textRenderable->_lineHeight / fontHeight;
     }
-    transform.postTranslate(glm::vec3(-0.5, 0.5, 1.0f + EPSILON / dimensions.z));
-    transform.setScale(scale);
+    transform.postTranslate(glm::vec3(-dimensions.x / 2.0f, dimensions.y / 2.0f, dimensions.z / 2.0f));
+    transform.setScale(transform.getScale() * scale);
     batch.setModelTransform(transform, _prevRenderTransform);
     if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
         _prevRenderTransform = transform;

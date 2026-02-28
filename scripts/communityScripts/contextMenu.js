@@ -256,11 +256,10 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 	mouseWasCaptured = Camera.captureMouse;
 	Camera.captureMouse = false;
 
-	const scale = MyAvatar.sensorToWorldScale;
+	const scale = 1;
+	// FIXME: lineHeight and margin properties sets don't take SNScale into account
+	const lineScale = scale / MyAvatar.sensorToWorldScale;
 	const myAvatar = MyAvatar.sessionUUID;
-
-	// https://github.com/overte-org/overte/issues/1668
-	const sensorScaleHack = HMD.active;
 
 	const baseActions = registeredActionSets[actionSetName];
 
@@ -388,20 +387,20 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 			type: "Text",
 			position: Vec3.sum(origin, Vec3.multiplyQbyV(angle, [0, yPos, 0])),
 			rotation: angle,
-			dimensions: [0.3 * scale, 0.2 * scale, 0.01 * scale],
+			localDimensions: [0.3 * scale, 0.2 * scale, 0.01 * scale],
 			text: descriptionText,
 			textColor: [255, 255, 255],
 			backgroundColor: [0, 0, 0],
 			backgroundAlpha: 0.9,
 			unlit: true,
-			lineHeight: 0.016 * scale,
+			lineHeight: 0.016 * lineScale,
 			verticalAlignment: "bottom",
 			alignment: "center",
 			triggerable: false,
-			topMargin: 0.005 * scale,
-			bottomMargin: 0.005 * scale,
-			leftMargin: 0.005 * scale,
-			rightMargin: 0.005 * scale,
+			topMargin: 0.005 * lineScale,
+			bottomMargin: 0.005 * lineScale,
+			leftMargin: 0.005 * lineScale,
+			rightMargin: 0.005 * lineScale,
 			textEffect: "outline fill",
 			textEffectColor: [0, 0, 0],
 			textEffectThickness: 0.3,
@@ -416,13 +415,13 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		type: "Text",
 		position: Vec3.sum(origin, Vec3.multiplyQbyV(angle, [0, yPos, 0])),
 		rotation: angle,
-		dimensions: [0.215 * scale, 0.04 * scale, 0.01 * scale],
+		localDimensions: [0.215 * scale, 0.04 * scale, 0.01 * scale],
 		text: titleText,
 		textColor: [230, 230, 230],
 		backgroundColor: [0, 0, 0],
 		backgroundAlpha: 0.9,
 		unlit: true,
-		lineHeight: 0.018 * scale,
+		lineHeight: 0.018 * lineScale,
 		verticalAlignment: "center",
 		alignment: "center",
 		triggerable: false,
@@ -436,18 +435,18 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		type: "Text",
 		position: Vec3.sum(origin, Vec3.multiplyQbyV(angle, [-0.13 * scale, yPos, 0])),
 		rotation: angle,
-		dimensions: [0.04 * scale, 0.04 * scale, 0.01 * scale],
+		localDimensions: [0.04 * scale, 0.04 * scale, 0.01 * scale],
 		text: hasPages && page > 0 ? "<" : "",
 		textColor: [230, 230, 230],
 		backgroundColor: [0, 0, 0],
 		backgroundAlpha: 0.9,
 		unlit: true,
-		lineHeight: 0.05 * scale,
+		lineHeight: 0.05 * lineScale,
 		verticalAlignment: "top",
 		alignment: "center",
 		triggerable: false,
-		leftMargin: 0.003 * scale,
-		topMargin: -0.008 * scale,
+		leftMargin: 0.003 * lineScale,
+		topMargin: -0.008 * lineScale,
 		userData: hasPages && page > 0 ? JSON.stringify({nextPage: page - 1, actionSetName: actionSetName}) : undefined,
 		textEffect: "outline fill",
 		textEffectColor: [0, 0, 0],
@@ -459,18 +458,18 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		type: "Text",
 		position: Vec3.sum(origin, Vec3.multiplyQbyV(angle, [0.13 * scale, yPos, 0])),
 		rotation: angle,
-		dimensions: [0.04 * scale, 0.04 * scale, 0.01 * scale],
+		localDimensions: [0.04 * scale, 0.04 * scale, 0.01 * scale],
 		text: hasPages && page < maxPages ? ">" : "",
 		textColor: [230, 230, 230],
 		backgroundColor: [0, 0, 0],
 		backgroundAlpha: 0.9,
 		unlit: true,
-		lineHeight: 0.05 * scale,
+		lineHeight: 0.05 * lineScale,
 		verticalAlignment: "top",
 		alignment: "center",
 		triggerable: false,
-		leftMargin: -0.002 * scale,
-		topMargin: -0.008 * scale,
+		leftMargin: -0.002 * lineScale,
+		topMargin: -0.008 * lineScale,
 		userData: hasPages && page < maxPages ? JSON.stringify({nextPage: page + 1, actionSetName: actionSetName}) : undefined,
 		textEffect: "outline fill",
 		textEffectColor: [0, 0, 0],
@@ -489,18 +488,18 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 			type: "Text",
 			position: pos,
 			rotation: angle,
-			dimensions: [0.3 * scale, 0.05 * scale, 0.0001 * scale],
+			localDimensions: [0.3 * scale, 0.05 * scale, 0.01 * scale],
 			text: action.text,
 			textColor: action.textColor ?? [255, 255, 255],
 			backgroundColor: action.backgroundColor ?? [0, 0, 0],
 			backgroundAlpha: action.backgroundAlpha ?? 0.8,
 			unlit: true,
-			lineHeight: 0.025 * scale,
+			lineHeight: 0.025 * lineScale,
 			verticalAlignment: "center",
 			alignment: "left",
 			triggerable: true,
-			leftMargin: 0.05 * scale,
-			rightMargin: 0.05 * scale,
+			leftMargin: 0.05 * lineScale,
+			rightMargin: 0.05 * lineScale,
 			userData: JSON.stringify({actionFunc: i}),
 			textEffect: "outline fill",
 			textEffectColor: action.backgroundColor ?? [0, 0, 0],
@@ -513,7 +512,7 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 				type: "Image",
 				position: pos,
 				rotation: angle,
-				dimensions: [0.03 * scale, 0.03 * scale, 0.01 * scale],
+				localDimensions: [0.03 * scale, 0.03 * scale, 0.01 * scale],
 				imageURL: action.iconImage,
 				emissive: true,
 				userData: JSON.stringify({actionFunc: i}),
@@ -555,18 +554,18 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 			type: "Text",
 			position: pos,
 			rotation: angle,
-			dimensions: [0.3 * scale, 0.05 * scale, 0.0001 * scale],
+			localDimensions: [0.3 * scale, 0.05 * scale, 0.01 * scale],
 			text: "(No actions)",
 			textColor: [230, 230, 230],
 			backgroundColor: [64, 64, 64],
 			backgroundAlpha: 0.8,
 			unlit: true,
-			lineHeight: 0.025 * scale,
+			lineHeight: 0.025 * lineScale,
 			verticalAlignment: "center",
 			alignment: "left",
 			triggerable: true,
-			leftMargin: 0.05 * scale,
-			rightMargin: 0.05 * scale,
+			leftMargin: 0.05 * lineScale,
+			rightMargin: 0.05 * lineScale,
 			textEffect: "outline fill",
 			textEffectColor: [0, 0, 0],
 			textEffectThickness: 0.3,
@@ -583,19 +582,8 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		a.font = CONTEXT_MENU_FONT;
 		a.canCastShadow = false;
 		a.isVisibleInSecondaryCamera = false;
-		a.renderLayer = "front";
 		a.fadeInMode = "disabled";
 		a.fadeOutMode = "disabled";
-
-		if (sensorScaleHack) {
-			a.dimensions[0] /= MyAvatar.sensorToWorldScale;
-			a.dimensions[1] /= MyAvatar.sensorToWorldScale;
-
-			if (a.rightMargin === undefined) { a.rightMargin = 0; }
-			if (a.bottomMargin === undefined) { a.bottomMargin = 0; }
-			a.rightMargin += a.dimensions[0] * -(MyAvatar.sensorToWorldScale - 1);
-			a.bottomMargin += a.dimensions[1] * -(MyAvatar.sensorToWorldScale - 1);
-		}
 
 		const e = Entities.addEntity(a, (CONTEXT_MENU_SETTINGS.public ?? false) ? "avatar" : "local");
 		currentMenuEntities.add(e);
