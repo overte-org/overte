@@ -9,30 +9,14 @@ import QtQuick.Controls.impl
 import ".." as Overte
 
 Rectangle {
+    id: scriptLog
     anchors.fill: parent
     color: Overte.Theme.paletteActive.base
 
     property ListModel model: ListModel {}
-    property ListModel filteredModel: ListModel {}
-
-    function refreshFilteredModel() {
-        filteredModel.clear();
-
-        for (let i = 0; i < model.count; i++) {
-            const datum = model.get(i);
-
-            if (datum.priority === 0 && !filterDebug.checked) { continue; }
-            if (datum.priority === 1 && !filterInfo.checked) { continue; }
-            if (datum.priority === 2 && !filterWarn.checked) { continue; }
-            if (datum.priority === 3 && !filterError.checked) { continue; }
-
-            filteredModel.append(datum);
-        }
-    }
 
     function fromScript(rawMsg) {
-        model.append(JSON.parse(rawMsg));
-        refreshFilteredModel();
+        scriptLog.model.append(JSON.parse(rawMsg));
     }
 
     function transparent(c, a = 0.1) {
@@ -61,15 +45,6 @@ Rectangle {
         width: listView.contentWidth
         height: label.implicitHeight + 8
 
-        visible: {
-            switch (priority) {
-                case 0: return filterDebug.checked;
-                case 1: return filterInfo.checked;
-                case 2: return filterWarn.checked;
-                case 3: return filterError.checked;
-            }
-        }
-
         color: transparent(priorityColors[priority])
         border.color: priorityColors[priority]
         border.width: 1
@@ -78,7 +53,7 @@ Rectangle {
         IconImage {
             id: icon
 
-            anchors.top: parent.top
+            anchors.verticalCenter: parent.verticalCenter
             anchors.left: parent.left
             anchors.margins: 4
             anchors.leftMargin: 6
@@ -104,7 +79,7 @@ Rectangle {
             readOnly: true
             selectionColor: Overte.Theme.paletteActive.highlight
             selectedTextColor: Overte.Theme.paletteActive.highlightedText
-            font.family: "monospace"
+            font.family: Overte.Theme.monoFontFamily
             font.pixelSize: Overte.Theme.fontPixelSizeSmall
             color: Overte.Theme.paletteActive.text
             wrapMode: Text.Wrap
@@ -112,48 +87,35 @@ Rectangle {
         }
     }
 
-    RowLayout {
-        id: toolbar
-        anchors.top: parent.top
-        anchors.left: parent.left
-        anchors.right: parent.right
+    Overte.RoundButton {
+        id: clearButton
+
         anchors.margins: 2
-        height: childrenRect.height
+        anchors.top: parent.top
+        anchors.right: parent.right
 
-        Overte.TextField {
-            Layout.fillWidth: true
-            placeholderText: qsTr("Search log")
-        }
+        icon.source: "../icons/delete.svg"
+        icon.width: 24
+        icon.height: 24
+        icon.color: Overte.Theme.paletteActive.buttonText
+        backgroundColor: (
+            hovered ?
+            Overte.Theme.paletteActive.buttonDestructive :
+            Overte.Theme.paletteActive.button
+        )
 
-        Overte.RoundButton {
-            icon.source: "../icons/search.svg"
-            icon.width: 24
-            icon.height: 24
-        }
+        Overte.ToolTip { text: qsTr("Clear log") }
 
-        Overte.RoundButton {
-            icon.source: "../icons/delete.svg"
-            icon.width: 24
-            icon.height: 24
-            icon.color: Overte.Theme.paletteActive.buttonText
-            backgroundColor: (
-                hovered ?
-                Overte.Theme.paletteActive.buttonDestructive :
-                Overte.Theme.paletteActive.button
-            )
-
-            Overte.ToolTip { text: qsTr("Clear log") }
-
-            onClicked: toScript("clear log button clicked?")
-        }
+        onClicked: scriptLog.model.clear()
     }
 
     ListView {
         id: listView
+
         anchors.left: parent.left
         anchors.right: parent.right
-        anchors.bottom: filters.top
-        anchors.top: toolbar.bottom
+        anchors.bottom: parent.bottom
+        anchors.top: clearButton.bottom
         anchors.topMargin: 4
 
         ScrollBar.vertical: Overte.ScrollBar {
@@ -166,81 +128,6 @@ Rectangle {
         contentWidth: width - ScrollBar.vertical.width
 
         delegate: LogLine {}
-        model: filteredModel
-    }
-
-    RowLayout {
-        id: filters
-        anchors.bottom: parent.bottom
-        anchors.left: parent.left
-        anchors.right: parent.right
-        anchors.margins: 2
-        height: childrenRect.height
-
-        Overte.RoundButton {
-            id: filterError
-            checkable: true
-            checked: true
-
-            icon.source: "../icons/log_error.svg"
-            icon.width: 24
-            icon.height: 24
-            icon.color: Overte.Theme.paletteActive.buttonText
-
-            backgroundColor: checked ? transparent(priorityColors[3], 0.5) : Overte.Theme.paletteActive.button
-            onToggled: refreshFilteredModel()
-
-            Overte.ToolTip { text: qsTr("Show error messages") }
-        }
-
-        Overte.RoundButton {
-            id: filterWarn
-            checkable: true
-            checked: true
-
-            icon.source: "../icons/log_warn.svg"
-            icon.width: 24
-            icon.height: 24
-            icon.color: Overte.Theme.paletteActive.buttonText
-
-            backgroundColor: checked ? transparent(priorityColors[2], 0.5) : Overte.Theme.paletteActive.button
-            onToggled: refreshFilteredModel()
-
-            Overte.ToolTip { text: qsTr("Show warning messages") }
-        }
-
-        Overte.RoundButton {
-            id: filterInfo
-            checkable: true
-            checked: true
-
-            icon.source: "../icons/log_info.svg"
-            icon.width: 24
-            icon.height: 24
-            icon.color: Overte.Theme.paletteActive.buttonText
-
-            backgroundColor: checked ? transparent(priorityColors[1], 0.5) : Overte.Theme.paletteActive.button
-            onToggled: refreshFilteredModel()
-
-            Overte.ToolTip { text: qsTr("Show info messages") }
-        }
-
-        Overte.RoundButton {
-            id: filterDebug
-            checkable: true
-            checked: true
-
-            icon.source: "../icons/pencil.svg"
-            icon.width: 24
-            icon.height: 24
-            icon.color: Overte.Theme.paletteActive.buttonText
-
-            backgroundColor: checked ? transparent(priorityColors[0], 0.5) : Overte.Theme.paletteActive.button
-            onToggled: refreshFilteredModel()
-
-            Overte.ToolTip { text: qsTr("Show plain messages") }
-        }
-
-        Item { Layout.fillWidth: true }
+        model: scriptLog.model
     }
 }
