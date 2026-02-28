@@ -7,6 +7,8 @@ import ".." as Overte
 import "."
 
 Item {
+    property var appButtons: ({})
+
     function fromScript(rawMsg) {
         let msg;
         try {
@@ -19,7 +21,20 @@ Item {
             dashBar.state = "HIDDEN";
         } else if (msg?.dash_window?.event === "unhide") {
             dashBar.state = "OPEN";
+        } else if (msg?.dash_bar?.event === "set_app_button") {
+            console.info(`set_app_button ${msg.dash_bar.data.text} ${msg.dash_bar.data.active}`);
+            appButtons[msg.dash_bar.ipc_id] = msg.dash_bar.data;
+            // qml doesn't automatically acknowledge property changes
+            appButtonsChanged();
+        } else if (msg?.dash_bar?.event === "delete_app_button") {
+            delete appButtons[msg.dash_bar.ipc_id];
+            // qml doesn't automatically acknowledge property changes
+            appButtonsChanged();
         }
+    }
+
+    onAppButtonsChanged: {
+        console.log(JSON.stringify(appButtons));
     }
 
     function toScript(msg) {
@@ -306,46 +321,38 @@ Item {
             anchors.fill: parent
             anchors.margins: 4
 
-            model: [
-                {
-                    buttonName: qsTr("More…"),
-                    buttonIcon: "../icons/plus.svg",
-                    windowName: qsTr("More Apps"),
-                    windowSource: resourceURL("qml/overte/more_apps/MoreApps.qml"),
-                    windowTag: "system more apps"
-                },
-            ]
+            model: Object.values(dashBar.appButtons)
 
             delegate: Overte.Button {
-                required property string buttonName
-                required property string buttonIcon
-                required property string windowName
-                required property string windowSource
-                required property string windowTag
+                required property var modelData
+
+                text: modelData.text
+                checked: modelData.active
 
                 implicitWidth: 96
                 implicitHeight: 96
 
-                text: buttonName
+                backgroundColor: (
+                    checked ?
+                    Overte.Theme.paletteActive.highlight :
+                    Overte.Theme.paletteActive.button
+                )
+
                 font.pixelSize: Overte.Theme.fontPixelSizeSmall
-                icon.source: buttonIcon
+                icon.source: "../icons/dev_tools.png"
                 icon.width: 64
                 icon.height: 64
-                icon.color: Overte.Theme.paletteActive.buttonText
+                icon.color: undefined //Overte.Theme.paletteActive.buttonText
 
                 display: Button.TextUnderIcon
                 focusPolicy: Qt.NoFocus
 
-                onClicked: {
-                    dashBar.toScript({
-                        dash_window: {
-                            event: "spawn_window",
-                            title: windowName,
-                            source_url: windowSource,
-                            tag: windowTag,
-                        },
-                    });
-                }
+                onClicked: dashBar.toScript({
+                    app_button: {
+                        event: "clicked",
+                        ipc_id: modelData.ipcID,
+                    },
+                });
             }
         }
     }

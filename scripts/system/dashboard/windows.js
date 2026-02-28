@@ -395,12 +395,19 @@ class WindowManager {
             } break;
 
             case "finished_closing": {
-                for (const [_id, ipc] of this.ipcWindows) {
+                // FIXME: why does the ipcWindows.delete call have to be delayed?
+                let deletedIpc = null;
+
+                ipcLoop: for (const [id, ipc] of this.ipcWindows) {
                     if (window.entityID === ipc.window.entityID) {
-                        ipc.sendIPC({ event: "closed" });
-                        break;
+                        ipc.sendIPC({ event: "window_closed" });
+                        deletedIpc = id;
+                        break ipcLoop;
                     }
                 }
+
+                if (deletedIpc) { this.ipcWindows.delete(deletedIpc); }
+
                 this.children.delete(window.entityID);
                 window.dispose();
             } break;
@@ -417,20 +424,19 @@ class WindowManager {
             case "unpin": { window.pinned = false; } break;
 
             case "body_event": {
-                for (const [_id, ipc] of this.ipcWindows) {
+                ipcLoop: for (const [_id, ipc] of this.ipcWindows) {
                     if (window.entityID === ipc.window.entityID) {
                         ipc.sendIPC({
                             event: "body_event",
                             body_event: event.body_event,
                         });
-                        break;
+                        break ipcLoop;
                     }
                 }
             } break;
 
-            default: {
-                console.error(`Unknown dash_window event "${event.event}"! Ignoring.`);
-            } break;
+            default:
+                throw new Error(`Unknown dash_window event "${event.event}"! Ignoring.`);
         }
     }
 
@@ -604,8 +610,10 @@ class WindowManager {
     };
 
     #messageCallback = (channel, rawMsg, _senderID, localOnly) => {
+        if (!localOnly) { return; }
+
         if (channel !== "Hifi-Object-Manipulation" && channel !== Defs.ipcChannel) {
-            return
+            return;
         }
 
         let msg;
@@ -659,8 +667,11 @@ class WindowManager {
                 if (msg.title !== undefined) { window.title = msg.title; }
                 // TODO: swap DashWindow.hidden to visible
                 if (msg.visible !== undefined) { window.hidden = !msg.visible; }
-                //if (msg.app_id !== undefined) { window.appID = !msg.visible; }
+                if (msg.app_id !== undefined) { window.appID = !msg.visible; }
                 if (msg.source_url !== undefined) { window.sourceURL = msg.source_url; }
+            } else if (msg.event === "dispose" && msg.ipc_source === "window") {
+                let window = this.ipcWindows.get(msg.ipc_id)?.window;
+                window?.pushWindowEvent({ event: "close" });
             }
         }
     };
