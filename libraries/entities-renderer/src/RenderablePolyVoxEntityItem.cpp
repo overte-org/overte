@@ -11,10 +11,12 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-
 #include "RenderablePolyVoxEntityItem.h"
 
 #include <math.h>
+#include <numeric>
+#include <cstdint>
+#include <optional>
 
 #include <glm/gtx/transform.hpp>
 
@@ -37,6 +39,7 @@
 
 #include "EntityTreeRenderer.h"
 #include "RenderPipelines.h"
+#include "gpu/Forward.h"
 
 #include <FadeEffect.h>
 
@@ -55,19 +58,6 @@
 #include <Model.h>
 #include <PerfStat.h>
 #include <render/Scene.h>
-
-#ifdef _WIN32
-#pragma warning(push)
-#pragma warning( disable : 4267 )
-#endif
-#include <PolyVoxCore/CubicSurfaceExtractorWithNormals.h>
-#include <PolyVoxCore/MarchingCubesSurfaceExtractor.h>
-#include <PolyVoxCore/SurfaceMesh.h>
-#include <PolyVoxCore/SimpleVolume.h>
-#include <PolyVoxCore/Material.h>
-#ifdef _WIN32
-#pragma warning(pop)
-#endif
 
 #include "graphics/Geometry.h"
 
@@ -153,7 +143,7 @@ const float MARCHING_CUBE_COLLISION_HULL_OFFSET = 0.5;
 
  */
 
- // FIXME move to GLM helpers
+// FIXME: move to GLM helpers
 template <typename T, typename F>
 void loop3(const T& start, const T& end, F f) {
     T current;
@@ -165,6 +155,732 @@ void loop3(const T& start, const T& end, F f) {
         }
     }
 }
+
+template <typename T, typename F>
+void loop2(const T& start, const T& end, F f) {
+    T current;
+    for (current.y = start.y; current.y < end.y; ++current.y) {
+        for (current.x = start.x; current.x < end.x; ++current.x) {
+            f(current);
+        }
+    }
+}
+namespace {
+
+typedef uint8_t VoxelType;
+typedef VoxelType MaterialType;
+}  // namespace
+
+class VoxelVolume {
+public:
+    inline VoxelVolume(const glm::ivec3& size) :
+        allocated_size(size), valid_size(size), raw_data(size.x * size.y * size.z, 0) {}
+
+    bool isInside(const glm::ivec3& index) {
+        return glm::all(glm::lessThanEqual(glm::ivec3(0), index)) && glm::all(glm::lessThan(index, valid_size));
+    }
+    inline bool isInside(const int32_t x, const int32_t y, const int32_t z) { return isInside(glm::ivec3(x, y, z)); }
+
+    void setVoxelAt(const glm::ivec3& index, VoxelType data) {
+        Q_ASSERT(isInside(index));
+        ensureAllocation(index);
+        raw_data[getRawIndexFor(index)] = data;
+    }
+    inline void setVoxelAt(int32_t x, int32_t y, int32_t z, uint8_t data) { return setVoxelAt(glm::ivec3(x, y, z), data); }
+
+    VoxelType getVoxelAt(const glm::ivec3& index) {
+        Q_ASSERT(isInside(index));
+        if (glm::any(glm::greaterThanEqual(index, allocated_size)))
+            return 0;
+        return raw_data[getRawIndexFor(index)];
+    }
+
+    void resize(const glm::ivec3& new_size) { valid_size = new_size; }
+
+    const glm::ivec3& getSize() { return valid_size; }
+
+    std::optional<glm::ivec3> raycast(glm::vec4 originInVoxel, glm::vec4 farInVoxel) {
+        float x1 = originInVoxel.x + 0.5f;
+        float y1 = originInVoxel.y + 0.5f;
+        float z1 = originInVoxel.z + 0.5f;
+        float x2 = farInVoxel.x + 0.5f;
+        float y2 = farInVoxel.y + 0.5f;
+        float z2 = farInVoxel.z + 0.5f;
+
+        int i = (int)floorf(x1);
+        int j = (int)floorf(y1);
+        int k = (int)floorf(z1);
+
+        int iend = (int)floorf(x2);
+        int jend = (int)floorf(y2);
+        int kend = (int)floorf(z2);
+
+        int di = ((x1 < x2) ? 1 : ((x1 > x2) ? -1 : 0));
+        int dj = ((y1 < y2) ? 1 : ((y1 > y2) ? -1 : 0));
+        int dk = ((z1 < z2) ? 1 : ((z1 > z2) ? -1 : 0));
+
+        float deltatx = 1.0f / std::abs(x2 - x1);
+        float deltaty = 1.0f / std::abs(y2 - y1);
+        float deltatz = 1.0f / std::abs(z2 - z1);
+
+        float minx = floorf(x1), maxx = minx + 1.0f;
+        float tx = ((x1 > x2) ? (x1 - minx) : (maxx - x1)) * deltatx;
+        float miny = floorf(y1), maxy = miny + 1.0f;
+        float ty = ((y1 > y2) ? (y1 - miny) : (maxy - y1)) * deltaty;
+        float minz = floorf(z1), maxz = minz + 1.0f;
+        float tz = ((z1 > z2) ? (z1 - minz) : (maxz - z1)) * deltatz;
+
+        glm::ivec3 index{ i, j, k };
+
+        for (;;) {
+            if (isInside(index) && getVoxelAt(index) != 0) {
+                return index;
+            }
+
+            if (tx <= ty && tx <= tz) {
+                if (i == iend)
+                    break;
+                tx += deltatx;
+                i += di;
+
+                if (di == 1)
+                    index.x++;
+                if (di == -1)
+                    index.x--;
+            } else if (ty <= tz) {
+                if (j == jend)
+                    break;
+                ty += deltaty;
+                j += dj;
+
+                if (dj == 1)
+                    index.y++;
+                if (dj == -1)
+                    index.y--;
+            } else {
+                if (k == kend)
+                    break;
+                tz += deltatz;
+                k += dk;
+
+                if (dk == 1)
+                    index.z++;
+                if (dk == -1)
+                    index.z--;
+            }
+        }
+
+        return std::nullopt;
+    }
+
+private:
+    inline size_t getRawIndexFor(const glm::ivec3& index) {
+        return allocated_size.x * allocated_size.y * index.z + allocated_size.x * index.y + index.x;
+    }
+
+    void ensureAllocation(const glm::ivec3& index) {
+        if (glm::any(glm::greaterThanEqual(index, allocated_size))) {
+            std::vector<VoxelType> new_(valid_size.x * valid_size.y * valid_size.z, 0);
+
+            loop3(glm::ivec3{ 0 }, allocated_size, [&](const glm::ivec3& index) {
+                new_[valid_size.x * valid_size.y * index.z + valid_size.x * index.y + index.x] =
+                    raw_data[getRawIndexFor(index)];
+            });
+
+            raw_data = std::move(new_);
+            allocated_size = valid_size;
+        }
+    }
+
+private:
+    glm::ivec3 allocated_size;
+    glm::ivec3 valid_size;
+    std::vector<VoxelType> raw_data;
+};
+namespace {
+
+int edgeTable[256] = { 0x0,   0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09,
+                       0xf00, 0x190, 0x99,  0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c, 0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93,
+                       0xf99, 0xe90, 0x230, 0x339, 0x33,  0x13a, 0x636, 0x73f, 0x435, 0x53c, 0xa3c, 0xb35, 0x83f, 0x936, 0xe3a,
+                       0xf33, 0xc39, 0xd30, 0x3a0, 0x2a9, 0x1a3, 0xaa,  0x7a6, 0x6af, 0x5a5, 0x4ac, 0xbac, 0xaa5, 0x9af, 0x8a6,
+                       0xfaa, 0xea3, 0xda9, 0xca0, 0x460, 0x569, 0x663, 0x76a, 0x66,  0x16f, 0x265, 0x36c, 0xc6c, 0xd65, 0xe6f,
+                       0xf66, 0x86a, 0x963, 0xa69, 0xb60, 0x5f0, 0x4f9, 0x7f3, 0x6fa, 0x1f6, 0xff,  0x3f5, 0x2fc, 0xdfc, 0xcf5,
+                       0xfff, 0xef6, 0x9fa, 0x8f3, 0xbf9, 0xaf0, 0x650, 0x759, 0x453, 0x55a, 0x256, 0x35f, 0x55,  0x15c, 0xe5c,
+                       0xf55, 0xc5f, 0xd56, 0xa5a, 0xb53, 0x859, 0x950, 0x7c0, 0x6c9, 0x5c3, 0x4ca, 0x3c6, 0x2cf, 0x1c5, 0xcc,
+                       0xfcc, 0xec5, 0xdcf, 0xcc6, 0xbca, 0xac3, 0x9c9, 0x8c0, 0x8c0, 0x9c9, 0xac3, 0xbca, 0xcc6, 0xdcf, 0xec5,
+                       0xfcc, 0xcc,  0x1c5, 0x2cf, 0x3c6, 0x4ca, 0x5c3, 0x6c9, 0x7c0, 0x950, 0x859, 0xb53, 0xa5a, 0xd56, 0xc5f,
+                       0xf55, 0xe5c, 0x15c, 0x55,  0x35f, 0x256, 0x55a, 0x453, 0x759, 0x650, 0xaf0, 0xbf9, 0x8f3, 0x9fa, 0xef6,
+                       0xfff, 0xcf5, 0xdfc, 0x2fc, 0x3f5, 0xff,  0x1f6, 0x6fa, 0x7f3, 0x4f9, 0x5f0, 0xb60, 0xa69, 0x963, 0x86a,
+                       0xf66, 0xe6f, 0xd65, 0xc6c, 0x36c, 0x265, 0x16f, 0x66,  0x76a, 0x663, 0x569, 0x460, 0xca0, 0xda9, 0xea3,
+                       0xfaa, 0x8a6, 0x9af, 0xaa5, 0xbac, 0x4ac, 0x5a5, 0x6af, 0x7a6, 0xaa,  0x1a3, 0x2a9, 0x3a0, 0xd30, 0xc39,
+                       0xf33, 0xe3a, 0x936, 0x83f, 0xb35, 0xa3c, 0x53c, 0x435, 0x73f, 0x636, 0x13a, 0x33,  0x339, 0x230, 0xe90,
+                       0xf99, 0xc93, 0xd9a, 0xa96, 0xb9f, 0x895, 0x99c, 0x69c, 0x795, 0x49f, 0x596, 0x29a, 0x393, 0x99,  0x190,
+                       0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c, 0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109,
+                       0x0 };
+
+int triTable[256][16] = { { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 8, 3, 9, 8, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 8, 3, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 2, 10, 0, 2, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 2, 8, 3, 2, 10, 8, 10, 9, 8, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 11, 2, 8, 11, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 9, 0, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 11, 2, 1, 9, 11, 9, 8, 11, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 10, 1, 11, 10, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 10, 1, 0, 8, 10, 8, 11, 10, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 9, 0, 3, 11, 9, 11, 10, 9, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 3, 0, 7, 3, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 1, 9, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 1, 9, 4, 7, 1, 7, 3, 1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 2, 10, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 4, 7, 3, 0, 4, 1, 2, 10, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 2, 10, 9, 0, 2, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1 },
+                          { 2, 10, 9, 2, 9, 7, 2, 7, 3, 7, 9, 4, -1, -1, -1, -1 },
+                          { 8, 4, 7, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 11, 4, 7, 11, 2, 4, 2, 0, 4, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 0, 1, 8, 4, 7, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 7, 11, 9, 4, 11, 9, 11, 2, 9, 2, 1, -1, -1, -1, -1 },
+                          { 3, 10, 1, 3, 11, 10, 7, 8, 4, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 11, 10, 1, 4, 11, 1, 0, 4, 7, 11, 4, -1, -1, -1, -1 },
+                          { 4, 7, 8, 9, 0, 11, 9, 11, 10, 11, 0, 3, -1, -1, -1, -1 },
+                          { 4, 7, 11, 4, 11, 9, 9, 11, 10, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 5, 4, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 5, 4, 1, 5, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 8, 5, 4, 8, 3, 5, 3, 1, 5, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 2, 10, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 0, 8, 1, 2, 10, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1 },
+                          { 5, 2, 10, 5, 4, 2, 4, 0, 2, -1, -1, -1, -1, -1, -1, -1 },
+                          { 2, 10, 5, 3, 2, 5, 3, 5, 4, 3, 4, 8, -1, -1, -1, -1 },
+                          { 9, 5, 4, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 11, 2, 0, 8, 11, 4, 9, 5, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 5, 4, 0, 1, 5, 2, 3, 11, -1, -1, -1, -1, -1, -1, -1 },
+                          { 2, 1, 5, 2, 5, 8, 2, 8, 11, 4, 8, 5, -1, -1, -1, -1 },
+                          { 10, 3, 11, 10, 1, 3, 9, 5, 4, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 9, 5, 0, 8, 1, 8, 10, 1, 8, 11, 10, -1, -1, -1, -1 },
+                          { 5, 4, 0, 5, 0, 11, 5, 11, 10, 11, 0, 3, -1, -1, -1, -1 },
+                          { 5, 4, 8, 5, 8, 10, 10, 8, 11, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 7, 8, 5, 7, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 3, 0, 9, 5, 3, 5, 7, 3, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 7, 8, 0, 1, 7, 1, 5, 7, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 7, 8, 9, 5, 7, 10, 1, 2, -1, -1, -1, -1, -1, -1, -1 },
+                          { 10, 1, 2, 9, 5, 0, 5, 3, 0, 5, 7, 3, -1, -1, -1, -1 },
+                          { 8, 0, 2, 8, 2, 5, 8, 5, 7, 10, 5, 2, -1, -1, -1, -1 },
+                          { 2, 10, 5, 2, 5, 3, 3, 5, 7, -1, -1, -1, -1, -1, -1, -1 },
+                          { 7, 9, 5, 7, 8, 9, 3, 11, 2, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 5, 7, 9, 7, 2, 9, 2, 0, 2, 7, 11, -1, -1, -1, -1 },
+                          { 2, 3, 11, 0, 1, 8, 1, 7, 8, 1, 5, 7, -1, -1, -1, -1 },
+                          { 11, 2, 1, 11, 1, 7, 7, 1, 5, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 5, 8, 8, 5, 7, 10, 1, 3, 10, 3, 11, -1, -1, -1, -1 },
+                          { 5, 7, 0, 5, 0, 9, 7, 11, 0, 1, 0, 10, 11, 10, 0, -1 },
+                          { 11, 10, 0, 11, 0, 3, 10, 5, 0, 8, 0, 7, 5, 7, 0, -1 },
+                          { 11, 10, 5, 7, 11, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 8, 3, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 0, 1, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 8, 3, 1, 9, 8, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 6, 5, 2, 6, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 6, 5, 1, 2, 6, 3, 0, 8, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 6, 5, 9, 0, 6, 0, 2, 6, -1, -1, -1, -1, -1, -1, -1 },
+                          { 5, 9, 8, 5, 8, 2, 5, 2, 6, 3, 2, 8, -1, -1, -1, -1 },
+                          { 2, 3, 11, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 11, 0, 8, 11, 2, 0, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 1, 9, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1, -1, -1, -1 },
+                          { 5, 10, 6, 1, 9, 2, 9, 11, 2, 9, 8, 11, -1, -1, -1, -1 },
+                          { 6, 3, 11, 6, 5, 3, 5, 1, 3, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 8, 11, 0, 11, 5, 0, 5, 1, 5, 11, 6, -1, -1, -1, -1 },
+                          { 3, 11, 6, 0, 3, 6, 0, 6, 5, 0, 5, 9, -1, -1, -1, -1 },
+                          { 6, 5, 9, 6, 9, 11, 11, 9, 8, -1, -1, -1, -1, -1, -1, -1 },
+                          { 5, 10, 6, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 3, 0, 4, 7, 3, 6, 5, 10, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 9, 0, 5, 10, 6, 8, 4, 7, -1, -1, -1, -1, -1, -1, -1 },
+                          { 10, 6, 5, 1, 9, 7, 1, 7, 3, 7, 9, 4, -1, -1, -1, -1 },
+                          { 6, 1, 2, 6, 5, 1, 4, 7, 8, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 2, 5, 5, 2, 6, 3, 0, 4, 3, 4, 7, -1, -1, -1, -1 },
+                          { 8, 4, 7, 9, 0, 5, 0, 6, 5, 0, 2, 6, -1, -1, -1, -1 },
+                          { 7, 3, 9, 7, 9, 4, 3, 2, 9, 5, 9, 6, 2, 6, 9, -1 },
+                          { 3, 11, 2, 7, 8, 4, 10, 6, 5, -1, -1, -1, -1, -1, -1, -1 },
+                          { 5, 10, 6, 4, 7, 2, 4, 2, 0, 2, 7, 11, -1, -1, -1, -1 },
+                          { 0, 1, 9, 4, 7, 8, 2, 3, 11, 5, 10, 6, -1, -1, -1, -1 },
+                          { 9, 2, 1, 9, 11, 2, 9, 4, 11, 7, 11, 4, 5, 10, 6, -1 },
+                          { 8, 4, 7, 3, 11, 5, 3, 5, 1, 5, 11, 6, -1, -1, -1, -1 },
+                          { 5, 1, 11, 5, 11, 6, 1, 0, 11, 7, 11, 4, 0, 4, 11, -1 },
+                          { 0, 5, 9, 0, 6, 5, 0, 3, 6, 11, 6, 3, 8, 4, 7, -1 },
+                          { 6, 5, 9, 6, 9, 11, 4, 7, 9, 7, 11, 9, -1, -1, -1, -1 },
+                          { 10, 4, 9, 6, 4, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 10, 6, 4, 9, 10, 0, 8, 3, -1, -1, -1, -1, -1, -1, -1 },
+                          { 10, 0, 1, 10, 6, 0, 6, 4, 0, -1, -1, -1, -1, -1, -1, -1 },
+                          { 8, 3, 1, 8, 1, 6, 8, 6, 4, 6, 1, 10, -1, -1, -1, -1 },
+                          { 1, 4, 9, 1, 2, 4, 2, 6, 4, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 0, 8, 1, 2, 9, 2, 4, 9, 2, 6, 4, -1, -1, -1, -1 },
+                          { 0, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 8, 3, 2, 8, 2, 4, 4, 2, 6, -1, -1, -1, -1, -1, -1, -1 },
+                          { 10, 4, 9, 10, 6, 4, 11, 2, 3, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 8, 2, 2, 8, 11, 4, 9, 10, 4, 10, 6, -1, -1, -1, -1 },
+                          { 3, 11, 2, 0, 1, 6, 0, 6, 4, 6, 1, 10, -1, -1, -1, -1 },
+                          { 6, 4, 1, 6, 1, 10, 4, 8, 1, 2, 1, 11, 8, 11, 1, -1 },
+                          { 9, 6, 4, 9, 3, 6, 9, 1, 3, 11, 6, 3, -1, -1, -1, -1 },
+                          { 8, 11, 1, 8, 1, 0, 11, 6, 1, 9, 1, 4, 6, 4, 1, -1 },
+                          { 3, 11, 6, 3, 6, 0, 0, 6, 4, -1, -1, -1, -1, -1, -1, -1 },
+                          { 6, 4, 8, 11, 6, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 7, 10, 6, 7, 8, 10, 8, 9, 10, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 7, 3, 0, 10, 7, 0, 9, 10, 6, 7, 10, -1, -1, -1, -1 },
+                          { 10, 6, 7, 1, 10, 7, 1, 7, 8, 1, 8, 0, -1, -1, -1, -1 },
+                          { 10, 6, 7, 10, 7, 1, 1, 7, 3, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 2, 6, 1, 6, 8, 1, 8, 9, 8, 6, 7, -1, -1, -1, -1 },
+                          { 2, 6, 9, 2, 9, 1, 6, 7, 9, 0, 9, 3, 7, 3, 9, -1 },
+                          { 7, 8, 0, 7, 0, 6, 6, 0, 2, -1, -1, -1, -1, -1, -1, -1 },
+                          { 7, 3, 2, 6, 7, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 2, 3, 11, 10, 6, 8, 10, 8, 9, 8, 6, 7, -1, -1, -1, -1 },
+                          { 2, 0, 7, 2, 7, 11, 0, 9, 7, 6, 7, 10, 9, 10, 7, -1 },
+                          { 1, 8, 0, 1, 7, 8, 1, 10, 7, 6, 7, 10, 2, 3, 11, -1 },
+                          { 11, 2, 1, 11, 1, 7, 10, 6, 1, 6, 7, 1, -1, -1, -1, -1 },
+                          { 8, 9, 6, 8, 6, 7, 9, 1, 6, 11, 6, 3, 1, 3, 6, -1 },
+                          { 0, 9, 1, 11, 6, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 7, 8, 0, 7, 0, 6, 3, 11, 0, 11, 6, 0, -1, -1, -1, -1 },
+                          { 7, 11, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 0, 8, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 1, 9, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 8, 1, 9, 8, 3, 1, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1 },
+                          { 10, 1, 2, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 2, 10, 3, 0, 8, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1 },
+                          { 2, 9, 0, 2, 10, 9, 6, 11, 7, -1, -1, -1, -1, -1, -1, -1 },
+                          { 6, 11, 7, 2, 10, 3, 10, 8, 3, 10, 9, 8, -1, -1, -1, -1 },
+                          { 7, 2, 3, 6, 2, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 7, 0, 8, 7, 6, 0, 6, 2, 0, -1, -1, -1, -1, -1, -1, -1 },
+                          { 2, 7, 6, 2, 3, 7, 0, 1, 9, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 6, 2, 1, 8, 6, 1, 9, 8, 8, 7, 6, -1, -1, -1, -1 },
+                          { 10, 7, 6, 10, 1, 7, 1, 3, 7, -1, -1, -1, -1, -1, -1, -1 },
+                          { 10, 7, 6, 1, 7, 10, 1, 8, 7, 1, 0, 8, -1, -1, -1, -1 },
+                          { 0, 3, 7, 0, 7, 10, 0, 10, 9, 6, 10, 7, -1, -1, -1, -1 },
+                          { 7, 6, 10, 7, 10, 8, 8, 10, 9, -1, -1, -1, -1, -1, -1, -1 },
+                          { 6, 8, 4, 11, 8, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 6, 11, 3, 0, 6, 0, 4, 6, -1, -1, -1, -1, -1, -1, -1 },
+                          { 8, 6, 11, 8, 4, 6, 9, 0, 1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 4, 6, 9, 6, 3, 9, 3, 1, 11, 3, 6, -1, -1, -1, -1 },
+                          { 6, 8, 4, 6, 11, 8, 2, 10, 1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 2, 10, 3, 0, 11, 0, 6, 11, 0, 4, 6, -1, -1, -1, -1 },
+                          { 4, 11, 8, 4, 6, 11, 0, 2, 9, 2, 10, 9, -1, -1, -1, -1 },
+                          { 10, 9, 3, 10, 3, 2, 9, 4, 3, 11, 3, 6, 4, 6, 3, -1 },
+                          { 8, 2, 3, 8, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 4, 2, 4, 6, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 9, 0, 2, 3, 4, 2, 4, 6, 4, 3, 8, -1, -1, -1, -1 },
+                          { 1, 9, 4, 1, 4, 2, 2, 4, 6, -1, -1, -1, -1, -1, -1, -1 },
+                          { 8, 1, 3, 8, 6, 1, 8, 4, 6, 6, 10, 1, -1, -1, -1, -1 },
+                          { 10, 1, 0, 10, 0, 6, 6, 0, 4, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 6, 3, 4, 3, 8, 6, 10, 3, 0, 3, 9, 10, 9, 3, -1 },
+                          { 10, 9, 4, 6, 10, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 9, 5, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 8, 3, 4, 9, 5, 11, 7, 6, -1, -1, -1, -1, -1, -1, -1 },
+                          { 5, 0, 1, 5, 4, 0, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1 },
+                          { 11, 7, 6, 8, 3, 4, 3, 5, 4, 3, 1, 5, -1, -1, -1, -1 },
+                          { 9, 5, 4, 10, 1, 2, 7, 6, 11, -1, -1, -1, -1, -1, -1, -1 },
+                          { 6, 11, 7, 1, 2, 10, 0, 8, 3, 4, 9, 5, -1, -1, -1, -1 },
+                          { 7, 6, 11, 5, 4, 10, 4, 2, 10, 4, 0, 2, -1, -1, -1, -1 },
+                          { 3, 4, 8, 3, 5, 4, 3, 2, 5, 10, 5, 2, 11, 7, 6, -1 },
+                          { 7, 2, 3, 7, 6, 2, 5, 4, 9, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 5, 4, 0, 8, 6, 0, 6, 2, 6, 8, 7, -1, -1, -1, -1 },
+                          { 3, 6, 2, 3, 7, 6, 1, 5, 0, 5, 4, 0, -1, -1, -1, -1 },
+                          { 6, 2, 8, 6, 8, 7, 2, 1, 8, 4, 8, 5, 1, 5, 8, -1 },
+                          { 9, 5, 4, 10, 1, 6, 1, 7, 6, 1, 3, 7, -1, -1, -1, -1 },
+                          { 1, 6, 10, 1, 7, 6, 1, 0, 7, 8, 7, 0, 9, 5, 4, -1 },
+                          { 4, 0, 10, 4, 10, 5, 0, 3, 10, 6, 10, 7, 3, 7, 10, -1 },
+                          { 7, 6, 10, 7, 10, 8, 5, 4, 10, 4, 8, 10, -1, -1, -1, -1 },
+                          { 6, 9, 5, 6, 11, 9, 11, 8, 9, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 6, 11, 0, 6, 3, 0, 5, 6, 0, 9, 5, -1, -1, -1, -1 },
+                          { 0, 11, 8, 0, 5, 11, 0, 1, 5, 5, 6, 11, -1, -1, -1, -1 },
+                          { 6, 11, 3, 6, 3, 5, 5, 3, 1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 2, 10, 9, 5, 11, 9, 11, 8, 11, 5, 6, -1, -1, -1, -1 },
+                          { 0, 11, 3, 0, 6, 11, 0, 9, 6, 5, 6, 9, 1, 2, 10, -1 },
+                          { 11, 8, 5, 11, 5, 6, 8, 0, 5, 10, 5, 2, 0, 2, 5, -1 },
+                          { 6, 11, 3, 6, 3, 5, 2, 10, 3, 10, 5, 3, -1, -1, -1, -1 },
+                          { 5, 8, 9, 5, 2, 8, 5, 6, 2, 3, 8, 2, -1, -1, -1, -1 },
+                          { 9, 5, 6, 9, 6, 0, 0, 6, 2, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 5, 8, 1, 8, 0, 5, 6, 8, 3, 8, 2, 6, 2, 8, -1 },
+                          { 1, 5, 6, 2, 1, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 3, 6, 1, 6, 10, 3, 8, 6, 5, 6, 9, 8, 9, 6, -1 },
+                          { 10, 1, 0, 10, 0, 6, 9, 5, 0, 5, 6, 0, -1, -1, -1, -1 },
+                          { 0, 3, 8, 5, 6, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 10, 5, 6, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 11, 5, 10, 7, 5, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 11, 5, 10, 11, 7, 5, 8, 3, 0, -1, -1, -1, -1, -1, -1, -1 },
+                          { 5, 11, 7, 5, 10, 11, 1, 9, 0, -1, -1, -1, -1, -1, -1, -1 },
+                          { 10, 7, 5, 10, 11, 7, 9, 8, 1, 8, 3, 1, -1, -1, -1, -1 },
+                          { 11, 1, 2, 11, 7, 1, 7, 5, 1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 8, 3, 1, 2, 7, 1, 7, 5, 7, 2, 11, -1, -1, -1, -1 },
+                          { 9, 7, 5, 9, 2, 7, 9, 0, 2, 2, 11, 7, -1, -1, -1, -1 },
+                          { 7, 5, 2, 7, 2, 11, 5, 9, 2, 3, 2, 8, 9, 8, 2, -1 },
+                          { 2, 5, 10, 2, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1 },
+                          { 8, 2, 0, 8, 5, 2, 8, 7, 5, 10, 2, 5, -1, -1, -1, -1 },
+                          { 9, 0, 1, 5, 10, 3, 5, 3, 7, 3, 10, 2, -1, -1, -1, -1 },
+                          { 9, 8, 2, 9, 2, 1, 8, 7, 2, 10, 2, 5, 7, 5, 2, -1 },
+                          { 1, 3, 5, 3, 7, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 8, 7, 0, 7, 1, 1, 7, 5, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 0, 3, 9, 3, 5, 5, 3, 7, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 8, 7, 5, 9, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 5, 8, 4, 5, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1 },
+                          { 5, 0, 4, 5, 11, 0, 5, 10, 11, 11, 3, 0, -1, -1, -1, -1 },
+                          { 0, 1, 9, 8, 4, 10, 8, 10, 11, 10, 4, 5, -1, -1, -1, -1 },
+                          { 10, 11, 4, 10, 4, 5, 11, 3, 4, 9, 4, 1, 3, 1, 4, -1 },
+                          { 2, 5, 1, 2, 8, 5, 2, 11, 8, 4, 5, 8, -1, -1, -1, -1 },
+                          { 0, 4, 11, 0, 11, 3, 4, 5, 11, 2, 11, 1, 5, 1, 11, -1 },
+                          { 0, 2, 5, 0, 5, 9, 2, 11, 5, 4, 5, 8, 11, 8, 5, -1 },
+                          { 9, 4, 5, 2, 11, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 2, 5, 10, 3, 5, 2, 3, 4, 5, 3, 8, 4, -1, -1, -1, -1 },
+                          { 5, 10, 2, 5, 2, 4, 4, 2, 0, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 10, 2, 3, 5, 10, 3, 8, 5, 4, 5, 8, 0, 1, 9, -1 },
+                          { 5, 10, 2, 5, 2, 4, 1, 9, 2, 9, 4, 2, -1, -1, -1, -1 },
+                          { 8, 4, 5, 8, 5, 3, 3, 5, 1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 4, 5, 1, 0, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 8, 4, 5, 8, 5, 3, 9, 0, 5, 0, 3, 5, -1, -1, -1, -1 },
+                          { 9, 4, 5, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 11, 7, 4, 9, 11, 9, 10, 11, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 8, 3, 4, 9, 7, 9, 11, 7, 9, 10, 11, -1, -1, -1, -1 },
+                          { 1, 10, 11, 1, 11, 4, 1, 4, 0, 7, 4, 11, -1, -1, -1, -1 },
+                          { 3, 1, 4, 3, 4, 8, 1, 10, 4, 7, 4, 11, 10, 11, 4, -1 },
+                          { 4, 11, 7, 9, 11, 4, 9, 2, 11, 9, 1, 2, -1, -1, -1, -1 },
+                          { 9, 7, 4, 9, 11, 7, 9, 1, 11, 2, 11, 1, 0, 8, 3, -1 },
+                          { 11, 7, 4, 11, 4, 2, 2, 4, 0, -1, -1, -1, -1, -1, -1, -1 },
+                          { 11, 7, 4, 11, 4, 2, 8, 3, 4, 3, 2, 4, -1, -1, -1, -1 },
+                          { 2, 9, 10, 2, 7, 9, 2, 3, 7, 7, 4, 9, -1, -1, -1, -1 },
+                          { 9, 10, 7, 9, 7, 4, 10, 2, 7, 8, 7, 0, 2, 0, 7, -1 },
+                          { 3, 7, 10, 3, 10, 2, 7, 4, 10, 1, 10, 0, 4, 0, 10, -1 },
+                          { 1, 10, 2, 8, 7, 4, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 9, 1, 4, 1, 7, 7, 1, 3, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 9, 1, 4, 1, 7, 0, 8, 1, 8, 7, 1, -1, -1, -1, -1 },
+                          { 4, 0, 3, 7, 4, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 4, 8, 7, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 10, 8, 10, 11, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 0, 9, 3, 9, 11, 11, 9, 10, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 1, 10, 0, 10, 8, 8, 10, 11, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 1, 10, 11, 3, 10, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 2, 11, 1, 11, 9, 9, 11, 8, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 0, 9, 3, 9, 11, 1, 2, 9, 2, 11, 9, -1, -1, -1, -1 },
+                          { 0, 2, 11, 8, 0, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 3, 2, 11, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 2, 3, 8, 2, 8, 10, 10, 8, 9, -1, -1, -1, -1, -1, -1, -1 },
+                          { 9, 10, 2, 0, 9, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 2, 3, 8, 2, 8, 10, 0, 1, 8, 1, 10, 8, -1, -1, -1, -1 },
+                          { 1, 10, 2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 1, 3, 8, 9, 1, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 9, 1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { 0, 3, 8, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
+                          { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 } };
+
+// TODO: explore if having seperate buffers is better:tm:, as this was just copied from polyvox
+struct PositionNormalMaterial {
+    glm::vec3 position;
+    glm::vec3 normal;
+    float material;
+};
+
+class SurfaceExtractor {
+public:
+    virtual graphics::MeshPointer createMesh() = 0;
+
+protected:
+    SurfaceExtractor(std::shared_ptr<VoxelVolume> vol) : vol(vol) {}
+
+protected:
+    std::shared_ptr<VoxelVolume> vol;
+};
+
+class CubicSurfaceExtractorWithNormals : public SurfaceExtractor {
+public:
+    inline CubicSurfaceExtractorWithNormals(std::shared_ptr<VoxelVolume> vol) : SurfaceExtractor(vol) {}
+
+    graphics::MeshPointer createMesh() override {
+        vecVertices.clear();
+
+        loop3(ivec3{ 0 }, vol->getSize(), [&](const ivec3& index) {
+            float regX = static_cast<float>(index.x);
+            float regY = static_cast<float>(index.y);
+            float regZ = static_cast<float>(index.z);
+
+            VoxelType this_el = vol->getVoxelAt(index);
+
+            MaterialType material = 0;
+            uint32_t v0, v1, v2, v3;
+
+            glm::ivec3 other_index = index + glm::ivec3(1, 0, 0);
+            if (vol->isInside(other_index)) {
+                auto other_el = vol->getVoxelAt(other_index);
+                if (isQuadNeeded(other_el, this_el, material)) {
+                    const glm::vec3 posX = glm::vec3(1.0f, 0.0f, 0.0f);
+                    v0 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ - 0.5f), posX, material);
+                    v1 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ + 0.5f), posX, material);
+                    v2 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ - 0.5f), posX, material);
+                    v3 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ + 0.5f), posX, material);
+
+                    addTriangleCubic(v0, v2, v1);
+                    addTriangleCubic(v1, v2, v3);
+                }
+                if (isQuadNeeded(this_el, other_el, material)) {
+                    const glm::ivec3 negX = glm::vec3(-1.0f, 0.0f, 0.0f);
+                    v0 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ - 0.5f), negX, material);
+                    v1 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ + 0.5f), negX, material);
+                    v2 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ - 0.5f), negX, material);
+                    v3 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ + 0.5f), negX, material);
+
+                    addTriangleCubic(v0, v1, v2);
+                    addTriangleCubic(v1, v3, v2);
+                }
+            }
+
+            other_index = index + glm::ivec3(0, 1, 0);
+            if (vol->isInside(other_index)) {
+                auto other_el = vol->getVoxelAt(other_index);
+                if (isQuadNeeded(other_el, this_el, material)) {
+                    const glm::ivec3 posY = glm::vec3(0.0f, 1.0f, 0.0f);
+                    v0 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ - 0.5f), posY, material);
+                    v1 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ + 0.5f), posY, material);
+                    v2 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ - 0.5f), posY, material);
+                    v3 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ + 0.5f), posY, material);
+
+                    addTriangleCubic(v0, v1, v2);
+                    addTriangleCubic(v1, v3, v2);
+                }
+                if (isQuadNeeded(this_el, other_el, material)) {
+                    const glm::ivec3 negY = glm::vec3(0.0f, -1.0f, 0.0f);
+                    v0 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ - 0.5f), negY, material);
+                    v1 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ + 0.5f), negY, material);
+                    v2 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ - 0.5f), negY, material);
+                    v3 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ + 0.5f), negY, material);
+
+                    addTriangleCubic(v0, v2, v1);
+                    addTriangleCubic(v1, v2, v3);
+                }
+            }
+
+            other_index = index + glm::ivec3(0, 0, 1);
+            if (vol->isInside(other_index)) {
+                auto other_el = vol->getVoxelAt(other_index);
+                if (isQuadNeeded(other_el, this_el, material)) {
+                    const glm::ivec3 posZ = glm::vec3(0.0f, 0.0f, 1.0f);
+                    v0 = addVertex(glm::vec3(regX - 0.5f, regY - 0.5f, regZ + 0.5f), posZ, material);
+                    v1 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ + 0.5f), posZ, material);
+                    v2 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ + 0.5f), posZ, material);
+                    v3 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ + 0.5f), posZ, material);
+
+                    addTriangleCubic(v0, v2, v1);
+                    addTriangleCubic(v1, v2, v3);
+                }
+                if (isQuadNeeded(this_el, other_el, material)) {
+                    const glm::ivec3 negZ = glm::vec3(0.0f, 0.0f, -1.0f);
+                    v0 = addVertex(glm::vec3(regX - 0.5f, regY - 0.5f, regZ + 0.5f), negZ, material);
+                    v1 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ + 0.5f), negZ, material);
+                    v2 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ + 0.5f), negZ, material);
+                    v3 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ + 0.5f), negZ, material);
+
+                    addTriangleCubic(v0, v1, v2);
+                    addTriangleCubic(v1, v3, v2);
+                }
+            }
+        });
+
+        graphics::MeshPointer mesh(std::make_shared<graphics::Mesh>());
+
+        // convert PolyVox mesh to a Sam mesh
+        gpu::BufferPointer indexBuffer(gpu::Buffer::createBuffer(gpu::Buffer::IndexBuffer, vecIndices));
+        auto indexBufferPtr = gpu::BufferPointer(indexBuffer);
+        gpu::BufferView indexBufferView(indexBufferPtr, gpu::Element(gpu::SCALAR, gpu::UINT32, gpu::INDEX));
+        mesh->setIndexBuffer(indexBufferView);
+
+        gpu::BufferPointer vertexBuffer(gpu::Buffer::createBuffer(gpu::Buffer::VertexBuffer, vecVertices));
+        auto vertexBufferPtr = gpu::BufferPointer(vertexBuffer);
+
+        mesh->setVertexBuffer(gpu::BufferView(vertexBufferPtr, offsetof(PositionNormalMaterial, position),
+                                              vertexBufferPtr->getSize(), sizeof(PositionNormalMaterial),
+                                              gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ)));
+
+        // TODO -- use 3-byte normals rather than 3-float normals
+        mesh->addAttribute(gpu::Stream::NORMAL, gpu::BufferView(vertexBufferPtr, offsetof(PositionNormalMaterial, normal),
+                                                                vertexBufferPtr->getSize(), sizeof(PositionNormalMaterial),
+                                                                gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ)));
+
+        std::vector<graphics::Mesh::Part> parts;
+        parts.emplace_back(graphics::Mesh::Part((graphics::Index)0,                  // startIndex
+                                                (graphics::Index)vecIndices.size(),  // numIndices
+                                                (graphics::Index)0,                  // baseVertex
+                                                graphics::Mesh::TRIANGLES));         // topology
+        mesh->setPartBuffer(
+            gpu::BufferView(new gpu::Buffer(gpu::Buffer::IndirectBuffer, parts.size() * sizeof(graphics::Mesh::Part),
+                                            (gpu::Byte*)parts.data()),
+                            gpu::Element::PART_DRAWCALL));
+
+        return mesh;
+    }
+
+private:
+    bool isQuadNeeded(VoxelType front, VoxelType back, MaterialType& materialToUse) {
+        if ((back > 0) && (front == 0)) {
+            materialToUse = back;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    uint32_t addVertex(glm::vec3&& pos, glm::vec3 norm, MaterialType mat) {
+        vecVertices.emplace_back(pos, norm, static_cast<float>(mat));
+
+        return vecVertices.size() - 1;
+    }
+    void addTriangleCubic(uint32_t v1, uint32_t v2, uint32_t v3) {
+        vecIndices.push_back(v1);
+        vecIndices.push_back(v2);
+        vecIndices.push_back(v3);
+    }
+
+    std::vector<PositionNormalMaterial> vecVertices;
+    std::vector<uint32_t> vecIndices;
+};
+
+class MarchingCubesSurfaceExtractor : public SurfaceExtractor {
+public:
+    inline MarchingCubesSurfaceExtractor(std::shared_ptr<VoxelVolume> vol) : SurfaceExtractor(vol) {}
+
+    graphics::MeshPointer createMesh() override {
+        vecIndices.clear();
+        vecVertices.clear();
+
+        auto valid_size = vol->getSize();
+        loop3(glm::ivec3(0), valid_size - glm::ivec3(-1), [this, valid_size](glm::ivec3 index) {
+            const auto i0 = index;
+            const auto i1 = index + glm::ivec3(1, 0, 0);
+            const auto i2 = index + glm::ivec3(1, 0, 1);
+            const auto i3 = index + glm::ivec3(0, 0, 1);
+            const auto i4 = index + glm::ivec3(0, 1, 0);
+            const auto i5 = index + glm::ivec3(1, 1, 0);
+            const auto i6 = index + glm::ivec3(1, 1, 1);
+            const auto i7 = index + glm::ivec3(0, 1, 1);
+
+            const auto v0 = vol->getVoxelAt(i0);
+            const auto v1 = vol->getVoxelAt(i1);
+            const auto v2 = vol->getVoxelAt(i2);
+            const auto v3 = vol->getVoxelAt(i3);
+            const auto v4 = vol->getVoxelAt(i4);
+            const auto v5 = vol->getVoxelAt(i5);
+            const auto v6 = vol->getVoxelAt(i6);
+            const auto v7 = vol->getVoxelAt(i7);
+
+            uint8_t cubeindex = 0;
+            if (v0 != 0)
+                cubeindex |= 0b00000001;
+            if (v1 != 0)
+                cubeindex |= 0b00000010;
+            if (v2 != 0)
+                cubeindex |= 0b00000100;
+            if (v3 != 0)
+                cubeindex |= 0b00001000;
+            if (v4 != 0)
+                cubeindex |= 0b00010000;
+            if (v5 != 0)
+                cubeindex |= 0b00100000;
+            if (v6 != 0)
+                cubeindex |= 0b01000000;
+            if (v7 != 0)
+                cubeindex |= 0b10000000;
+
+            auto edgemask = edgeTable[cubeindex];
+            glm::vec3 vertlist[12];
+
+            if (edgemask & 1)
+                vertlist[0] = glm::vec3(i0 + i1) / glm::vec3(2.f);
+            if (edgemask & 2)
+                vertlist[1] = glm::vec3(i1 + i2) / glm::vec3(2.f);
+            if (edgemask & 4)
+                vertlist[2] = glm::vec3(i2 + i3) / glm::vec3(2.f);
+            if (edgemask & 8)
+                vertlist[3] = glm::vec3(i3 + i0) / glm::vec3(2.f);
+            if (edgemask & 16)
+                vertlist[4] = glm::vec3(i4 + i5) / glm::vec3(2.f);
+            if (edgemask & 32)
+                vertlist[5] = glm::vec3(i5 + i6) / glm::vec3(2.f);
+            if (edgemask & 64)
+                vertlist[6] = glm::vec3(i6 + i7) / glm::vec3(2.f);
+            if (edgemask & 128)
+                vertlist[7] = glm::vec3(i7 + i4) / glm::vec3(2.f);
+            if (edgemask & 256)
+                vertlist[8] = glm::vec3(i0 + i4) / glm::vec3(2.f);
+            if (edgemask & 512)
+                vertlist[9] = glm::vec3(i1 + i5) / glm::vec3(2.f);
+            if (edgemask & 1024)
+                vertlist[10] = glm::vec3(i2 + i6) / glm::vec3(2.f);
+            if (edgemask & 2048)
+                vertlist[11] = glm::vec3(i3 + i7) / glm::vec3(2.f);
+
+            auto& tris = triTable[cubeindex];
+            for (size_t i = 0; tris[i] != -1; i += 3) {
+                auto v1 = vertlist[tris[i]];
+                auto v2 = vertlist[tris[i + 1]];
+                auto v3 = vertlist[tris[i + 2]];
+                glm::vec3 norm = glm::cross(v3 - v2, v1 - v2);
+
+                auto id1 = addVertex(v1, norm, 1);
+                auto id2 = addVertex(v2, norm, 1);
+                auto id3 = addVertex(v3, norm, 1);
+                addTriangleCubic(id1, id2, id3);
+            }
+        });
+        graphics::MeshPointer mesh(std::make_shared<graphics::Mesh>());
+
+        // convert PolyVox mesh to a Sam mesh
+        gpu::BufferPointer indexBuffer(gpu::Buffer::createBuffer(gpu::Buffer::IndexBuffer, vecIndices));
+        auto indexBufferPtr = gpu::BufferPointer(indexBuffer);
+        gpu::BufferView indexBufferView(indexBufferPtr, gpu::Element(gpu::SCALAR, gpu::UINT32, gpu::INDEX));
+        mesh->setIndexBuffer(indexBufferView);
+
+        gpu::BufferPointer vertexBuffer(gpu::Buffer::createBuffer(gpu::Buffer::VertexBuffer, vecVertices));
+        auto vertexBufferPtr = gpu::BufferPointer(vertexBuffer);
+
+        mesh->setVertexBuffer(gpu::BufferView(vertexBufferPtr, offsetof(PositionNormalMaterial, position),
+                                              vertexBufferPtr->getSize(), sizeof(PositionNormalMaterial),
+                                              gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ)));
+
+        // TODO -- use 3-byte normals rather than 3-float normals
+        mesh->addAttribute(gpu::Stream::NORMAL, gpu::BufferView(vertexBufferPtr, offsetof(PositionNormalMaterial, normal),
+                                                                vertexBufferPtr->getSize(), sizeof(PositionNormalMaterial),
+                                                                gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ)));
+
+        std::vector<graphics::Mesh::Part> parts;
+        parts.emplace_back(graphics::Mesh::Part((graphics::Index)0,                  // startIndex
+                                                (graphics::Index)vecIndices.size(),  // numIndices
+                                                (graphics::Index)0,                  // baseVertex
+                                                graphics::Mesh::TRIANGLES));         // topology
+        mesh->setPartBuffer(
+            gpu::BufferView(new gpu::Buffer(gpu::Buffer::IndirectBuffer, parts.size() * sizeof(graphics::Mesh::Part),
+                                            (gpu::Byte*)parts.data()),
+                            gpu::Element::PART_DRAWCALL));
+
+        return mesh;
+    }
+
+private:
+    uint32_t addVertex(const glm::vec3& pos, glm::vec3& norm, uint32_t mat) {
+        vecVertices.emplace_back(pos, norm, static_cast<float>(mat));
+
+        return vecVertices.size() - 1;
+    }
+    void addTriangleCubic(uint32_t v1, uint32_t v2, uint32_t v3) {
+        vecIndices.push_back(v1);
+        vecIndices.push_back(v2);
+        vecIndices.push_back(v3);
+    }
+
+    std::vector<PositionNormalMaterial> vecVertices;
+    std::vector<uint32_t> vecIndices;
+};
+
+}  // namespace
 
 EntityItemPointer RenderablePolyVoxEntityItem::factory(const EntityItemID& entityID, const EntityItemProperties& properties) {
     std::shared_ptr<RenderablePolyVoxEntityItem> entity(new RenderablePolyVoxEntityItem(entityID),
@@ -178,9 +894,7 @@ RenderablePolyVoxEntityItem::RenderablePolyVoxEntityItem(const EntityItemID& ent
 }
 
 RenderablePolyVoxEntityItem::~RenderablePolyVoxEntityItem() {
-    withWriteLock([&] {
-        _volData.reset();
-    });
+    withWriteLock([&] { _volData.reset(); });
 }
 
 void RenderablePolyVoxEntityItem::initializePolyVox() {
@@ -241,9 +955,7 @@ bool RenderablePolyVoxEntityItem::setVoxel(const ivec3& v, uint8_t toValue) {
     }
 
     bool result = false;
-    withWriteLock([&] {
-        result = setVoxelInternal(v, toValue);
-    });
+    withWriteLock([&] { result = setVoxelInternal(v, toValue); });
     if (result) {
         startUpdates();
     }
@@ -251,7 +963,8 @@ bool RenderablePolyVoxEntityItem::setVoxel(const ivec3& v, uint8_t toValue) {
     return result;
 }
 
-void RenderablePolyVoxEntityItem::forEachVoxelValue(const ivec3& voxelSize, std::function<void(const ivec3& v, uint8_t)> thunk) {
+void RenderablePolyVoxEntityItem::forEachVoxelValue(const ivec3& voxelSize,
+                                                    std::function<void(const ivec3& v, uint8_t)> thunk) {
     // a thread-safe way for code outside this class to iterate over a range of voxels
     withReadLock([&] {
         loop3(ivec3(0), voxelSize, [&](const ivec3& v) {
@@ -273,9 +986,7 @@ QByteArray RenderablePolyVoxEntityItem::volDataToArray(quint16 voxelXSize, quint
             low += 1;
         }
 
-        loop3(ivec3(0), voxelSize, [&](const ivec3& v){
-            result[index++] = _volData->getVoxelAt(v.x + low.x, v.y + low.y, v.z + low.z);
-        });
+        loop3(ivec3(0), voxelSize, [&](const ivec3& v) { result[index++] = _volData->getVoxelAt(v + low); });
     });
 
     return result;
@@ -287,11 +998,8 @@ bool RenderablePolyVoxEntityItem::setAll(uint8_t toValue) {
         return result;
     }
 
-    withWriteLock([&] {
-        loop3(ivec3(0), ivec3(_voxelVolumeSize), [&](const ivec3& v) {
-            result |= setVoxelInternal(v, toValue);
-        });
-    });
+    withWriteLock(
+        [&] { loop3(ivec3(0), ivec3(_voxelVolumeSize), [&](const ivec3& v) { result |= setVoxelInternal(v, toValue); }); });
     if (result) {
         startUpdates();
     }
@@ -312,7 +1020,7 @@ bool RenderablePolyVoxEntityItem::setCuboid(const glm::vec3& lowPosition, const 
     ivec3 high = glm::max(glm::min(low + iCuboidSize, iVoxelVolumeSize), low);
 
     withWriteLock([&] {
-        loop3(low, high, [&] (const ivec3& v){
+        loop3(low, high, [&](const ivec3& v) {
             result |= setVoxelInternal(v, toValue);
         });
     });
@@ -342,7 +1050,7 @@ bool RenderablePolyVoxEntityItem::setSphereInVolume(const vec3& center, float ra
     withWriteLock([&] {
         loop3(ivec3(0), ivec3(_voxelVolumeSize), [&](const ivec3& v) {
             // Store our current position as a vector...
-            glm::vec3 pos = vec3(v) + 0.5f; // consider voxels cenetered on their coordinates
+            glm::vec3 pos = vec3(v) + 0.5f;  // consider voxels cenetered on their coordinates
             // And compute how far the current position is from the center of the volume
             float fDistToCenterSquared = glm::distance2(pos, center);
             // If the current voxel is less than 'radius' units from the center then we set its value
@@ -418,8 +1126,10 @@ bool RenderablePolyVoxEntityItem::setSphere(const vec3& centerWorldCoords, float
     return result;
 }
 
-bool RenderablePolyVoxEntityItem::setCapsule(const vec3& startWorldCoords, const vec3& endWorldCoords,
-                                             float radiusWorldCoords, uint8_t toValue) {
+bool RenderablePolyVoxEntityItem::setCapsule(const vec3& startWorldCoords,
+                                             const vec3& endWorldCoords,
+                                             float radiusWorldCoords,
+                                             uint8_t toValue) {
     bool result = false;
     if (_locked) {
         return result;
@@ -441,8 +1151,8 @@ bool RenderablePolyVoxEntityItem::setCapsule(const vec3& startWorldCoords, const
 
     glm::vec3 low = glm::min(glm::floor(startInVoxelCoords - maxRadiusInVoxelCoords),
                              glm::floor(endInVoxelCoords - maxRadiusInVoxelCoords));
-    glm::vec3 high = glm::max(glm::ceil(startInVoxelCoords + maxRadiusInVoxelCoords),
-                              glm::ceil(endInVoxelCoords + maxRadiusInVoxelCoords));
+    glm::vec3 high =
+        glm::max(glm::ceil(startInVoxelCoords + maxRadiusInVoxelCoords), glm::ceil(endInVoxelCoords + maxRadiusInVoxelCoords));
 
     glm::ivec3 lowI = glm::clamp(low, glm::vec3(0.0f), _voxelVolumeSize);
     glm::ivec3 highI = glm::clamp(high, glm::vec3(0.0f), _voxelVolumeSize);
@@ -451,7 +1161,7 @@ bool RenderablePolyVoxEntityItem::setCapsule(const vec3& startWorldCoords, const
     withWriteLock([&] {
         loop3(lowI, highI, [&](const ivec3& v) {
             // Store our current position as a vector...
-            glm::vec4 pos{ vec3(v) + 0.5f, 1.0 }; // consider voxels cenetered on their coordinates
+            glm::vec4 pos{ vec3(v) + 0.5f, 1.0 };  // consider voxels cenetered on their coordinates
             // convert to world coordinates
             glm::vec3 worldPos = glm::vec3(vtwMatrix * pos);
             if (pointInCapsule(worldPos, startWorldCoords, endWorldCoords, radiusWorldCoords)) {
@@ -466,80 +1176,15 @@ bool RenderablePolyVoxEntityItem::setCapsule(const vec3& startWorldCoords, const
     return result;
 }
 
-class RaycastFunctor {
-public:
-    RaycastFunctor(const std::shared_ptr<PolyVox::SimpleVolume<uint8_t>>& vol) :
-        _result(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)),
-        _vol(vol) {
-    }
-
-    static bool inBounds(const std::shared_ptr<PolyVox::SimpleVolume<uint8_t>>& vol, const ivec3& v) {
-        // x, y, z are in polyvox volume coords
-        ivec3 volSize{ vol->getWidth(), vol->getHeight(), vol->getDepth() };
-        return glm::all(glm::greaterThanEqual(v, ivec3(0))) && glm::all(glm::lessThan(v, volSize));
-    }
-
-    bool operator()(PolyVox::SimpleVolume<unsigned char>::Sampler& sampler) {
-        PolyVox::Vector3DInt32 positionIndex = sampler.getPosition();
-        ivec3 v{ positionIndex.getX(), positionIndex.getY(), positionIndex.getZ() };
-
-        if (!inBounds(_vol, v)) {
-            return true;
-        }
-
-        if (sampler.getVoxel() == 0) {
-            return true; // keep raycasting
-        }
-
-        _result = glm::vec4(v, 1.0f);
-        return false;
-    }
-    glm::vec4 _result;
-    const std::shared_ptr<PolyVox::SimpleVolume<uint8_t>> _vol;
-};
-
-#if 0
-class RaycastFunctor
-{
-public:
-    RaycastFunctor(PolyVox::SimpleVolume<uint8_t>* vol) :
-        _result(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f)),
-        _vol(vol) {
-    }
-
-    static bool inBounds(const PolyVox::SimpleVolume<uint8_t>* vol, int x, int y, int z) {
-        // x, y, z are in polyvox volume coords
-        return !(x < 0 || y < 0 || z < 0 || x >= vol->getWidth() || y >= vol->getHeight() || z >= vol->getDepth());
-    }
-
-
-    bool operator()(PolyVox::SimpleVolume<unsigned char>::Sampler& sampler)
-    {
-        PolyVox::Vector3DInt32 positionIndex = sampler.getPosition();
-        int x = positionIndex.getX();
-        int y = positionIndex.getY();
-        int z = positionIndex.getZ();
-
-        if (!inBounds(_vol, x, y, z)) {
-            return true;
-        }
-
-        if (sampler.getVoxel() == 0) {
-            return true; // keep raycasting
-        }
-
-        _result = glm::vec4((float)x, (float)y, (float)z, 1.0f);
-        return false;
-    }
-    glm::vec4 _result;
-    const PolyVox::SimpleVolume<uint8_t>* _vol = nullptr;
-};
-#endif
-
-bool RenderablePolyVoxEntityItem::findDetailedRayIntersection(const glm::vec3& origin, const glm::vec3& direction,
-                                                              const glm::vec3& viewFrustumPos, OctreeElementPointer& element,
-                                                              float& distance, BoxFace& face, glm::vec3& surfaceNormal,
-                                                              QVariantMap& extraInfo, bool precisionPicking) const {
+bool RenderablePolyVoxEntityItem::findDetailedRayIntersection(const glm::vec3& origin,
+                                                              const glm::vec3& direction,
+                                                              const glm::vec3& viewFrustumPos,
+                                                              OctreeElementPointer& element,
+                                                              float& distance,
+                                                              BoxFace& face,
+                                                              glm::vec3& surfaceNormal,
+                                                              QVariantMap& extraInfo,
+                                                              bool precisionPicking) const {
     // TODO -- correctly pick against marching-cube generated meshes
     if (!precisionPicking) {
         // just intersect with bounding box
@@ -559,28 +1204,34 @@ bool RenderablePolyVoxEntityItem::findDetailedRayIntersection(const glm::vec3& o
     glm::vec4 originInVoxel = wtvMatrix * glm::vec4(origin, 1.0f);
     glm::vec4 farInVoxel = wtvMatrix * glm::vec4(farPoint, 1.0f);
 
-    glm::vec4 result = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
-    PolyVox::RaycastResult raycastResult = doRayCast(originInVoxel, farInVoxel, result);
-    if (raycastResult == PolyVox::RaycastResults::Completed) {
+    std::optional<glm::ivec3> resultor;
+    withReadLock([&] { resultor = _volData->raycast(originInVoxel, farInVoxel); });
+    if (!resultor.has_value()) {
         // the ray completed its path -- nothing was hit.
         return false;
     }
 
-    glm::vec3 result3 = glm::vec3(result);
+    glm::vec3 result3 = glm::vec3(std::move(resultor).value());
 
     AABox voxelBox;
     voxelBox += result3 - Vectors::HALF;
     voxelBox += result3 + Vectors::HALF;
 
     glm::vec3 directionInVoxel = vec3(wtvMatrix * glm::vec4(direction, 0.0f));
-    return voxelBox.findRayIntersection(glm::vec3(originInVoxel), directionInVoxel, 1.0f / directionInVoxel,
-                                        distance, face, surfaceNormal);
+    return voxelBox.findRayIntersection(glm::vec3(originInVoxel), directionInVoxel, 1.0f / directionInVoxel, distance, face,
+                                        surfaceNormal);
 }
 
-bool RenderablePolyVoxEntityItem::findDetailedParabolaIntersection(const glm::vec3& origin, const glm::vec3& velocity,
-                                                                   const glm::vec3& acceleration, const glm::vec3& viewFrustumPos, OctreeElementPointer& element,
-                                                                   float& parabolicDistance, BoxFace& face, glm::vec3& surfaceNormal,
-                                                                   QVariantMap& extraInfo, bool precisionPicking) const {
+bool RenderablePolyVoxEntityItem::findDetailedParabolaIntersection(const glm::vec3& origin,
+                                                                   const glm::vec3& velocity,
+                                                                   const glm::vec3& acceleration,
+                                                                   const glm::vec3& viewFrustumPos,
+                                                                   OctreeElementPointer& element,
+                                                                   float& parabolicDistance,
+                                                                   BoxFace& face,
+                                                                   glm::vec3& surfaceNormal,
+                                                                   QVariantMap& extraInfo,
+                                                                   bool precisionPicking) const {
     // TODO -- correctly pick against marching-cube generated meshes
     if (!precisionPicking) {
         // just intersect with bounding box
@@ -608,8 +1259,8 @@ bool RenderablePolyVoxEntityItem::findDetailedParabolaIntersection(const glm::ve
     } else {
         BoxFace face1;
         glm::vec3 surfaceNormal1;
-        hit1 = voxelBox1.findParabolaIntersection(glm::vec3(originInVoxel), glm::vec3(velocityInVoxel), glm::vec3(accelerationInVoxel),
-                                                  parabolicDistance1, face1, surfaceNormal1);
+        hit1 = voxelBox1.findParabolaIntersection(glm::vec3(originInVoxel), glm::vec3(velocityInVoxel),
+                                                  glm::vec3(accelerationInVoxel), parabolicDistance1, face1, surfaceNormal1);
     }
 
     if (hit1) {
@@ -617,66 +1268,47 @@ bool RenderablePolyVoxEntityItem::findDetailedParabolaIntersection(const glm::ve
         const float SECOND_BOX_HALF_SCALE = 0.52f;
         AABox voxelBox2(wtvMatrix * vec4(center - SECOND_BOX_HALF_SCALE * dimensions, 1.0f),
                         wtvMatrix * vec4(2.0f * SECOND_BOX_HALF_SCALE * dimensions, 0.0f));
-        glm::vec4 originInVoxel2 = originInVoxel + velocityInVoxel * parabolicDistance1 + 0.5f * accelerationInVoxel * parabolicDistance1 * parabolicDistance1;
+        glm::vec4 originInVoxel2 = originInVoxel + velocityInVoxel * parabolicDistance1 +
+                                   0.5f * accelerationInVoxel * parabolicDistance1 * parabolicDistance1;
         glm::vec4 velocityInVoxel2 = velocityInVoxel + accelerationInVoxel * parabolicDistance1;
         glm::vec4 accelerationInVoxel2 = accelerationInVoxel;
         float parabolicDistance2;
         BoxFace face2;
         glm::vec3 surfaceNormal2;
         // this should always be true
-        if (voxelBox2.findParabolaIntersection(glm::vec3(originInVoxel2), glm::vec3(velocityInVoxel2), glm::vec3(accelerationInVoxel2),
-                                               parabolicDistance2, face2, surfaceNormal2)) {
+        if (voxelBox2.findParabolaIntersection(glm::vec3(originInVoxel2), glm::vec3(velocityInVoxel2),
+                                               glm::vec3(accelerationInVoxel2), parabolicDistance2, face2, surfaceNormal2)) {
             const int MAX_SECTIONS = 15;
-            PolyVox::RaycastResult raycastResult = PolyVox::RaycastResults::Completed;
-            glm::vec4 result = glm::vec4(0.0f, 0.0f, 0.0f, 0.0f);
+            std::optional<glm::ivec3> resultor;
             glm::vec4 segmentStartVoxel = originInVoxel2;
             for (int i = 0; i < MAX_SECTIONS; i++) {
                 float t = parabolicDistance2 * ((float)(i + 1)) / ((float)MAX_SECTIONS);
                 glm::vec4 segmentEndVoxel = originInVoxel2 + velocityInVoxel2 * t + 0.5f * accelerationInVoxel2 * t * t;
-                raycastResult = doRayCast(segmentStartVoxel, segmentEndVoxel, result);
-                if (raycastResult != PolyVox::RaycastResults::Completed) {
+                withReadLock([&] { resultor = _volData->raycast(segmentStartVoxel, segmentEndVoxel); });
+                if (!resultor.has_value()) {
                     // We hit something!
                     break;
                 }
                 segmentStartVoxel = segmentEndVoxel;
             }
 
-            if (raycastResult == PolyVox::RaycastResults::Completed) {
+            if (!resultor.has_value()) {
                 // the parabola completed its path -- nothing was hit.
                 return false;
             }
 
-            glm::vec3 result3 = glm::vec3(result);
+            glm::vec3 result3 = glm::vec3(std::move(resultor).value());
 
             AABox voxelBox;
             voxelBox += result3 - Vectors::HALF;
             voxelBox += result3 + Vectors::HALF;
 
-            return voxelBox.findParabolaIntersection(glm::vec3(originInVoxel), glm::vec3(velocityInVoxel), glm::vec3(accelerationInVoxel),
-                                                     parabolicDistance, face, surfaceNormal);
+            return voxelBox.findParabolaIntersection(glm::vec3(originInVoxel), glm::vec3(velocityInVoxel),
+                                                     glm::vec3(accelerationInVoxel), parabolicDistance, face, surfaceNormal);
         }
     }
     return false;
 }
-
-PolyVox::RaycastResult RenderablePolyVoxEntityItem::doRayCast(glm::vec4 originInVoxel,
-                                                              glm::vec4 farInVoxel,
-                                                              glm::vec4& result) const {
-    PolyVox::Vector3DFloat startPoint(originInVoxel.x, originInVoxel.y, originInVoxel.z);
-    PolyVox::Vector3DFloat endPoint(farInVoxel.x, farInVoxel.y, farInVoxel.z);
-
-    PolyVox::RaycastResult raycastResult;
-    withReadLock([&] {
-        RaycastFunctor callback(_volData);
-        raycastResult = PolyVox::raycastWithEndpoints(_volData.get(), startPoint, endPoint, callback);
-
-        // result is in voxel-space coordinates.
-        result = callback._result;
-    });
-
-    return raycastResult;
-}
-
 
 // virtual
 ShapeType RenderablePolyVoxEntityItem::getShapeType() const {
@@ -688,9 +1320,7 @@ ShapeType RenderablePolyVoxEntityItem::getShapeType() const {
 
 void RenderablePolyVoxEntityItem::setRegistrationPoint(const glm::vec3& value) {
     if (value != getRegistrationPoint()) {
-        withWriteLock([&] {
-            _shapeReady = false;
-        });
+        withWriteLock([&] { _shapeReady = false; });
         EntityItem::setRegistrationPoint(value);
         startUpdates();
     }
@@ -703,9 +1333,7 @@ bool RenderablePolyVoxEntityItem::isReadyToComputeShape() const {
     }
 
     bool result;
-    withReadLock([&] {
-        result = _shapeReady;
-    });
+    withReadLock([&] { result = _shapeReady; });
     return result;
 }
 
@@ -716,9 +1344,7 @@ void RenderablePolyVoxEntityItem::computeShapeInfo(ShapeInfo& info) {
         return;
     }
 
-    withReadLock([&] {
-        info = _shapeInfo;
-    });
+    withReadLock([&] { info = _shapeInfo; });
 }
 
 void RenderablePolyVoxEntityItem::changeUpdates(bool value) {
@@ -744,16 +1370,15 @@ void RenderablePolyVoxEntityItem::stopUpdates() {
 }
 
 void RenderablePolyVoxEntityItem::update(const quint64& now) {
-    bool doRecomputeMesh { false };
-    bool doUncompress { false };
-    bool doCompress { false };
-    bool doRecomputeShape { false };
+    bool doRecomputeMesh{ false };
+    bool doUncompress{ false };
+    bool doCompress{ false };
+    bool doRecomputeShape{ false };
 
     withWriteLock([&] {
         tellNeighborsToRecopyEdges(false);
 
         switch (_state) {
-
             case PolyVoxState::Ready: {
                 if (_volDataDirty) {
                     _volDataDirty = _voxelDataDirty = false;
@@ -774,7 +1399,7 @@ void RenderablePolyVoxEntityItem::update(const quint64& now) {
             }
 
             case PolyVoxState::Uncompressing: {
-                break; // wait
+                break;  // wait
             }
             case PolyVoxState::UncompressingFinished: {
                 if (_volDataDirty) {
@@ -793,7 +1418,7 @@ void RenderablePolyVoxEntityItem::update(const quint64& now) {
             }
 
             case PolyVoxState::BakingMesh: {
-                break; // wait
+                break;  // wait
             }
             case PolyVoxState::BakingMeshFinished: {
                 if (_volDataDirty) {
@@ -814,7 +1439,7 @@ void RenderablePolyVoxEntityItem::update(const quint64& now) {
             }
 
             case PolyVoxState::BakingMeshNoCompress: {
-                break; // wait
+                break;  // wait
             }
             case PolyVoxState::BakingMeshNoCompressFinished: {
                 if (_volDataDirty) {
@@ -835,7 +1460,7 @@ void RenderablePolyVoxEntityItem::update(const quint64& now) {
             }
 
             case PolyVoxState::Compressing: {
-                break; // wait
+                break;  // wait
             }
             case PolyVoxState::CompressingFinished: {
                 _state = PolyVoxState::BakingShape;
@@ -844,7 +1469,7 @@ void RenderablePolyVoxEntityItem::update(const quint64& now) {
             }
 
             case PolyVoxState::BakingShape: {
-                break; // wait
+                break;  // wait
             }
             case PolyVoxState::BakingShapeFinished: {
                 _state = PolyVoxState::Ready;
@@ -884,41 +1509,34 @@ void RenderablePolyVoxEntityItem::setVoxelVolumeSize(const glm::vec3& voxelVolum
         _updateFromNeighborXEdge = _updateFromNeighborYEdge = _updateFromNeighborZEdge = true;
         startUpdates();
 
-        static const PolyVox::Vector3DInt32 lowCorner(0, 0, 0);
-        PolyVox::Vector3DInt32 highCorner;
+        glm::ivec3 size;
 
         if (isEdged()) {
             // with _EDGED_ we maintain an extra box of voxels around those that the user asked for.  This
             // changes how the surface extractor acts -- it becomes impossible to have holes in the
             // generated mesh.  The non _EDGED_ modes will leave holes in the mesh at the edges of the
             // voxel space.
-            highCorner = PolyVox::Vector3DInt32(_voxelVolumeSize.x + 1, // corners are inclusive
-                                                _voxelVolumeSize.y + 1,
-                                                _voxelVolumeSize.z + 1);
+            size = glm::ivec3(_voxelVolumeSize) + glm::ivec3(1);  // corners are inclusive
         } else {
             // these should each have -1 after them, but if we leave layers on the upper-axis faces,
             // they act more like I expect.
-            highCorner = PolyVox::Vector3DInt32(_voxelVolumeSize.x,
-                                                _voxelVolumeSize.y,
-                                                _voxelVolumeSize.z);
+            size = glm::ivec3(_voxelVolumeSize);
         }
 
-        _volData.reset(new PolyVox::SimpleVolume<uint8_t>(PolyVox::Region(lowCorner, highCorner)));
+        _volData.reset(new VoxelVolume(size));
         // having the "outside of voxel-space" value be 255 has helped me notice some problems.
-        _volData->setBorderValue(255);
+        //_volData->setBorderValue(255);
     });
 
     tellNeighborsToRecopyEdges(true);
 }
 
-bool inUserBounds(const std::shared_ptr<PolyVox::SimpleVolume<uint8_t>> vol,
-                  PolyVoxEntityItem::PolyVoxSurfaceStyle surfaceStyle,
-                  const ivec3& v) {
+bool inUserBounds(const std::shared_ptr<VoxelVolume> vol, PolyVoxEntityItem::PolyVoxSurfaceStyle surfaceStyle, const ivec3& v) {
     if (glm::any(glm::lessThan(v, ivec3(0)))) {
         return false;
     }
 
-    ivec3 volume { vol->getWidth(), vol->getHeight(), vol->getDepth() };
+    glm::ivec3 volume = vol->getSize();
     // x, y, z are in user voxel-coords, not adjusted-for-edge voxel-coords.
     if (PolyVoxEntityItem::isEdged(surfaceStyle)) {
         volume -= 2;
@@ -931,15 +1549,11 @@ bool inUserBounds(const std::shared_ptr<PolyVox::SimpleVolume<uint8_t>> vol,
     return true;
 }
 
-
 uint8_t RenderablePolyVoxEntityItem::getVoxel(const ivec3& v) const {
     uint8_t result;
-    withReadLock([&] {
-        result = getVoxelInternal(v);
-    });
+    withReadLock([&] { result = getVoxelInternal(v); });
     return result;
 }
-
 
 uint8_t RenderablePolyVoxEntityItem::getVoxelInternal(const ivec3& v) const {
     if (!inUserBounds(_volData, (PolyVoxSurfaceStyle)_voxelSurfaceStyle, v)) {
@@ -950,11 +1564,10 @@ uint8_t RenderablePolyVoxEntityItem::getVoxelInternal(const ivec3& v) const {
     // voxels all around the requested voxel space.  Having the empty voxels around
     // the edges changes how the surface extractor behaves.
     if (isEdged()) {
-        return _volData->getVoxelAt(v.x + 1, v.y + 1, v.z + 1);
+        return _volData->getVoxelAt(v + glm::ivec3(1));
     }
-    return _volData->getVoxelAt(v.x, v.y, v.z);
+    return _volData->getVoxelAt(v);
 }
-
 
 void RenderablePolyVoxEntityItem::setVoxelMarkNeighbors(int x, int y, int z, uint8_t toValue) {
     _volData->setVoxelAt(x, y, z, toValue);
@@ -1014,9 +1627,7 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
     QByteArray voxelData;
     auto entity = std::static_pointer_cast<RenderablePolyVoxEntityItem>(getThisPointer());
 
-    withReadLock([&] {
-        voxelData = _voxelData;
-    });
+    withReadLock([&] { voxelData = _voxelData; });
 
     QtConcurrent::run([=, this] {
         QDataStream reader(voxelData);
@@ -1043,8 +1654,8 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
 
         if (uncompressedData.size() != rawSize) {
             qCDebug(entitiesrenderer) << "PolyVox uncompress -- size is (" << voxelXSize << voxelYSize << voxelZSize << ")"
-                     << "so expected uncompressed length of" << rawSize << "but length is" << uncompressedData.size()
-                                      << getName() << getID();
+                                      << "so expected uncompressed length of" << rawSize << "but length is"
+                                      << uncompressedData.size() << getName() << getID();
             entity->setVoxelsFromData(QByteArray(1, 0), 1, 1, 1);
             return;
         }
@@ -1054,7 +1665,9 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
 }
 
 void RenderablePolyVoxEntityItem::setVoxelsFromData(QByteArray uncompressedData,
-                                                    quint16 voxelXSize, quint16 voxelYSize, quint16 voxelZSize) {
+                                                    quint16 voxelXSize,
+                                                    quint16 voxelYSize,
+                                                    quint16 voxelZSize) {
     // this accepts the payload from uncompressVolumeData
     ivec3 low{ 0 };
     bool result = false;
@@ -1155,7 +1768,6 @@ void RenderablePolyVoxEntityItem::compressVolumeDataFinished(const QByteArray& v
     }
 }
 
-
 EntityItemPointer lookUpNeighbor(EntityTreePointer tree, EntityItemID neighborID, EntityItemWeakPointer& currentWP) {
     EntityItemPointer current = currentWP.lock();
 
@@ -1210,22 +1822,23 @@ void RenderablePolyVoxEntityItem::copyUpperEdgesFromNeighbors() {
 
     cacheNeighbors();
 
+    auto size = _volData->getSize();
+
     if (_updateFromNeighborXEdge) {
         _updateFromNeighborXEdge = false;
         auto currentXPNeighbor = getXPNeighbor();
         if (currentXPNeighbor && currentXPNeighbor->getVoxelVolumeSize() == _voxelVolumeSize) {
             withWriteLock([&] {
-                int x = _volData->getWidth() - 1;
-                for (int y = 0; y < _volData->getHeight(); y++) {
-                    for (int z = 0; z < _volData->getDepth(); z++) {
-                        uint8_t neighborValue = currentXPNeighbor->getVoxel({ 0, y, z });
-                        uint8_t prevValue = _volData->getVoxelAt(x, y, z);
-                        if (prevValue != neighborValue) {
-                            _volData->setVoxelAt(x, y, z, neighborValue);
-                            _volDataDirty = true;
-                        }
+                int x = size.x - 1;
+                loop2(glm::ivec2(0), glm::ivec2(size.y, size.z), [&](glm::ivec2 index_) {
+                    const auto index = glm::ivec3(x, index_.x, index_.y);
+                    uint8_t neighborValue = currentXPNeighbor->getVoxel({ 0, index_.x, index_.y });
+                    uint8_t prevValue = _volData->getVoxelAt(index);
+                    if (prevValue != neighborValue) {
+                        _volData->setVoxelAt(index, neighborValue);
+                        _volDataDirty = true;
                     }
-                }
+                });
             });
         }
     }
@@ -1235,17 +1848,16 @@ void RenderablePolyVoxEntityItem::copyUpperEdgesFromNeighbors() {
         auto currentYPNeighbor = getYPNeighbor();
         if (currentYPNeighbor && currentYPNeighbor->getVoxelVolumeSize() == _voxelVolumeSize) {
             withWriteLock([&] {
-                int y = _volData->getHeight() - 1;
-                for (int x = 0; x < _volData->getWidth(); x++) {
-                    for (int z = 0; z < _volData->getDepth(); z++) {
-                        uint8_t neighborValue = currentYPNeighbor->getVoxel({ x, 0, z });
-                        uint8_t prevValue = _volData->getVoxelAt(x, y, z);
-                        if (prevValue != neighborValue) {
-                            _volData->setVoxelAt(x, y, z, neighborValue);
-                            _volDataDirty = true;
-                        }
+                int y = size.y - 1;
+                loop2(glm::ivec2(0), glm::ivec2(size.x, size.z), [&](glm::ivec2 index_) {
+                    const auto index = glm::ivec3(index_.x, y, index_.y);
+                    uint8_t neighborValue = currentYPNeighbor->getVoxel({ index_.x, 0, index_.y });
+                    uint8_t prevValue = _volData->getVoxelAt(index);
+                    if (prevValue != neighborValue) {
+                        _volData->setVoxelAt(index, neighborValue);
+                        _volDataDirty = true;
                     }
-                }
+                });
             });
         }
     }
@@ -1255,17 +1867,16 @@ void RenderablePolyVoxEntityItem::copyUpperEdgesFromNeighbors() {
         auto currentZPNeighbor = getZPNeighbor();
         if (currentZPNeighbor && currentZPNeighbor->getVoxelVolumeSize() == _voxelVolumeSize) {
             withWriteLock([&] {
-                int z = _volData->getDepth() - 1;
-                for (int x = 0; x < _volData->getWidth(); x++) {
-                    for (int y = 0; y < _volData->getHeight(); y++) {
-                        uint8_t neighborValue = currentZPNeighbor->getVoxel({ x, y, 0 });
-                        uint8_t prevValue = _volData->getVoxelAt(x, y, z);
-                        if (prevValue != neighborValue) {
-                            _volData->setVoxelAt(x, y, z, neighborValue);
-                            _volDataDirty = true;
-                        }
+                int z = size.z - 1;
+                loop2(glm::ivec2(0), glm::ivec2(size.x, size.y), [&](glm::ivec2 index_) {
+                    const auto index = glm::ivec3(index_.x, index_.y, z);
+                    uint8_t neighborValue = currentZPNeighbor->getVoxel({ index_.x, index_.y, 0 });
+                    uint8_t prevValue = _volData->getVoxelAt(index);
+                    if (prevValue != neighborValue) {
+                        _volData->setVoxelAt(index, neighborValue);
+                        _volDataDirty = true;
                     }
-                }
+                });
             });
         }
     }
@@ -1300,75 +1911,34 @@ void RenderablePolyVoxEntityItem::tellNeighborsToRecopyEdges(bool force) {
     }
 }
 
-
 void RenderablePolyVoxEntityItem::recomputeMesh() {
     // use _volData to make a renderable mesh
     PolyVoxSurfaceStyle voxelSurfaceStyle;
-    withReadLock([&] {
-        voxelSurfaceStyle = (PolyVoxSurfaceStyle)_voxelSurfaceStyle;
-    });
+    withReadLock([&] { voxelSurfaceStyle = (PolyVoxSurfaceStyle)_voxelSurfaceStyle; });
 
     auto entity = std::static_pointer_cast<RenderablePolyVoxEntityItem>(getThisPointer());
 
     QtConcurrent::run([entity, voxelSurfaceStyle] {
-        graphics::MeshPointer mesh(std::make_shared<graphics::Mesh>());
-
-        // A mesh object to hold the result of surface extraction
-        PolyVox::SurfaceMesh<PolyVox::PositionMaterialNormal> polyVoxMesh;
+        graphics::MeshPointer mesh;
 
         entity->withReadLock([&] {
-            PolyVox::SimpleVolume<uint8_t>* volData = entity->getVolData();
+            std::shared_ptr<VoxelVolume> volData = entity->_volData;
+            std::unique_ptr<SurfaceExtractor> extractor;
             switch (voxelSurfaceStyle) {
                 case PolyVoxEntityItem::SURFACE_EDGED_MARCHING_CUBES:
                 case PolyVoxEntityItem::SURFACE_MARCHING_CUBES: {
-                    PolyVox::MarchingCubesSurfaceExtractor<PolyVox::SimpleVolume<uint8_t>> surfaceExtractor
-                        (volData, volData->getEnclosingRegion(), &polyVoxMesh);
-                    surfaceExtractor.execute();
+                    extractor.reset(new MarchingCubesSurfaceExtractor(volData));
                     break;
                 }
                 case PolyVoxEntityItem::SURFACE_EDGED_CUBIC:
                 case PolyVoxEntityItem::SURFACE_CUBIC: {
-                    PolyVox::CubicSurfaceExtractorWithNormals<PolyVox::SimpleVolume<uint8_t>> surfaceExtractor
-                        (volData, volData->getEnclosingRegion(), &polyVoxMesh);
-                    surfaceExtractor.execute();
+                    extractor.reset(new CubicSurfaceExtractorWithNormals(volData));
                     break;
                 }
             }
+            mesh = extractor->createMesh();
         });
 
-        // convert PolyVox mesh to a Sam mesh
-        const std::vector<uint32_t>& vecIndices = polyVoxMesh.getIndices();
-        auto indexBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer, vecIndices.size() * sizeof(uint32_t),
-                                                         (gpu::Byte*)vecIndices.data());
-        auto indexBufferPtr = gpu::BufferPointer(indexBuffer);
-        gpu::BufferView indexBufferView(indexBufferPtr, gpu::Element(gpu::SCALAR, gpu::UINT32, gpu::INDEX));
-        mesh->setIndexBuffer(indexBufferView);
-
-        const std::vector<PolyVox::PositionMaterialNormal>& vecVertices = polyVoxMesh.getRawVertexData();
-        auto vertexBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer, vecVertices.size() * sizeof(PolyVox::PositionMaterialNormal),
-                                                          (gpu::Byte*)vecVertices.data());
-        auto vertexBufferPtr = gpu::BufferPointer(vertexBuffer);
-        gpu::BufferView vertexBufferView(vertexBufferPtr, 0,
-                                         vertexBufferPtr->getSize(),
-                                         sizeof(PolyVox::PositionMaterialNormal),
-                                         gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ));
-        mesh->setVertexBuffer(vertexBufferView);
-
-        // TODO -- use 3-byte normals rather than 3-float normals
-        mesh->addAttribute(gpu::Stream::NORMAL,
-                           gpu::BufferView(vertexBufferPtr,
-                                           sizeof(float) * 3, // polyvox mesh is packed: position, normal, material
-                                           vertexBufferPtr->getSize(),
-                                           sizeof(PolyVox::PositionMaterialNormal),
-                                           gpu::Element(gpu::VEC3, gpu::FLOAT, gpu::XYZ)));
-
-        std::vector<graphics::Mesh::Part> parts;
-        parts.emplace_back(graphics::Mesh::Part((graphics::Index)0, // startIndex
-                                             (graphics::Index)vecIndices.size(), // numIndices
-                                             (graphics::Index)0, // baseVertex
-                                             graphics::Mesh::TRIANGLES)); // topology
-        mesh->setPartBuffer(gpu::BufferView(new gpu::Buffer(gpu::Buffer::IndirectBuffer, parts.size() * sizeof(graphics::Mesh::Part),
-                                                            (gpu::Byte*) parts.data()), gpu::Element::PART_DRAWCALL));
         entity->setMesh(mesh);
     });
 }
@@ -1433,7 +2003,7 @@ void RenderablePolyVoxEntityItem::computeShapeInfoWorker() {
                 const glm::vec3& p1 = vertexBufferView.get<const glm::vec3>(p1Index);
                 const glm::vec3& p2 = vertexBufferView.get<const glm::vec3>(p2Index);
 
-                glm::vec3 av = (p0 + p1 + p2) / 3.0f; // center of the triangular face
+                glm::vec3 av = (p0 + p1 + p2) / 3.0f;  // center of the triangular face
                 glm::vec3 normal = glm::normalize(glm::cross(p1 - p0, p2 - p0));
                 glm::vec3 p3 = av - normal * MARCHING_CUBE_COLLISION_HULL_OFFSET;
 
@@ -1465,8 +2035,7 @@ void RenderablePolyVoxEntityItem::computeShapeInfoWorker() {
                     const auto& x = v.x;
                     const auto& y = v.y;
                     const auto& z = v.z;
-                    if (glm::all(glm::greaterThan(v, ivec3(0))) &&
-                        glm::all(glm::lessThan(v, ivec3(voxelVolumeSize) - 1)) &&
+                    if (glm::all(glm::greaterThan(v, ivec3(0))) && glm::all(glm::lessThan(v, ivec3(voxelVolumeSize) - 1)) &&
                         (polyVoxEntity->getVoxelInternal({ x - 1, y, z }) > 0) &&
                         (polyVoxEntity->getVoxelInternal({ x, y - 1, z }) > 0) &&
                         (polyVoxEntity->getVoxelInternal({ x, y, z - 1 }) > 0) &&
@@ -1542,9 +2111,9 @@ void RenderablePolyVoxEntityItem::setCollisionPoints(ShapeInfo::PointCollection 
     // included in the points and the shapeManager wont know that the shape has changed.
     withWriteLock([&] {
         QString shapeKey = QString(_voxelData.toBase64()) + "," +
-            QString::number(_registrationPoint.x) + "," +
-            QString::number(_registrationPoint.y) + "," +
-            QString::number(_registrationPoint.z);
+                           QString::number(_registrationPoint.x) + "," +
+                           QString::number(_registrationPoint.y) + "," +
+                           QString::number(_registrationPoint.z);
         _shapeInfo.setParams(SHAPE_TYPE_COMPOUND, collisionModelDimensions, shapeKey);
         _shapeInfo.setPointCollection(pointCollection);
         _shapeReady = true;
@@ -1553,7 +2122,7 @@ void RenderablePolyVoxEntityItem::setCollisionPoints(ShapeInfo::PointCollection 
 }
 
 void RenderablePolyVoxEntityItem::setXNNeighborID(const EntityItemID& xNNeighborID) {
-    if (xNNeighborID == _id) { // TODO loops are still possible
+    if (xNNeighborID == _id) {  // TODO loops are still possible
         return;
     }
 
@@ -1565,7 +2134,7 @@ void RenderablePolyVoxEntityItem::setXNNeighborID(const EntityItemID& xNNeighbor
 }
 
 void RenderablePolyVoxEntityItem::setYNNeighborID(const EntityItemID& yNNeighborID) {
-    if (yNNeighborID == _id) { // TODO loops are still possible
+    if (yNNeighborID == _id) {  // TODO loops are still possible
         return;
     }
 
@@ -1577,7 +2146,7 @@ void RenderablePolyVoxEntityItem::setYNNeighborID(const EntityItemID& yNNeighbor
 }
 
 void RenderablePolyVoxEntityItem::setZNNeighborID(const EntityItemID& zNNeighborID) {
-    if (zNNeighborID == _id) { // TODO loops are still possible
+    if (zNNeighborID == _id) {  // TODO loops are still possible
         return;
     }
 
@@ -1589,7 +2158,7 @@ void RenderablePolyVoxEntityItem::setZNNeighborID(const EntityItemID& zNNeighbor
 }
 
 void RenderablePolyVoxEntityItem::setXPNeighborID(const EntityItemID& xPNeighborID) {
-    if (xPNeighborID == _id) { // TODO loops are still possible
+    if (xPNeighborID == _id) {  // TODO loops are still possible
         return;
     }
     if (xPNeighborID != _xPNeighborID) {
@@ -1600,7 +2169,7 @@ void RenderablePolyVoxEntityItem::setXPNeighborID(const EntityItemID& xPNeighbor
 }
 
 void RenderablePolyVoxEntityItem::setYPNeighborID(const EntityItemID& yPNeighborID) {
-    if (yPNeighborID == _id) { // TODO loops are still possible
+    if (yPNeighborID == _id) {  // TODO loops are still possible
         return;
     }
     if (yPNeighborID != _yPNeighborID) {
@@ -1611,7 +2180,7 @@ void RenderablePolyVoxEntityItem::setYPNeighborID(const EntityItemID& yPNeighbor
 }
 
 void RenderablePolyVoxEntityItem::setZPNeighborID(const EntityItemID& zPNeighborID) {
-    if (zPNeighborID == _id) { // TODO loops are still possible
+    if (zPNeighborID == _id) {  // TODO loops are still possible
         return;
     }
     if (zPNeighborID != _zPNeighborID) {
@@ -1626,7 +2195,7 @@ std::shared_ptr<RenderablePolyVoxEntityItem> RenderablePolyVoxEntityItem::getXNN
 }
 
 std::shared_ptr<RenderablePolyVoxEntityItem> RenderablePolyVoxEntityItem::getYNNeighbor() {
-        return std::dynamic_pointer_cast<RenderablePolyVoxEntityItem>(_yNNeighbor.lock());
+    return std::dynamic_pointer_cast<RenderablePolyVoxEntityItem>(_yNNeighbor.lock());
 }
 
 std::shared_ptr<RenderablePolyVoxEntityItem> RenderablePolyVoxEntityItem::getZNNeighbor() {
@@ -1664,9 +2233,9 @@ bool RenderablePolyVoxEntityItem::getMeshes(MeshProxyList& result) {
                 // the mesh will be in voxel-space.  transform it into object-space
                 meshProxy = new SimpleMeshProxy(
                     _mesh->map([=](glm::vec3 position) { return glm::vec3(transform * glm::vec4(position, 1.0f)); },
-                    [=](glm::vec3 color) { return color; },
-                    [=](glm::vec3 normal) { return glm::normalize(glm::vec3(transform * glm::vec4(normal, 0.0f))); },
-                    [&](uint32_t index) { return index; }));
+                               [=](glm::vec3 color) { return color; },
+                               [=](glm::vec3 normal) { return glm::normalize(glm::vec3(transform * glm::vec4(normal, 0.0f))); },
+                               [&](uint32_t index) { return index; }));
                 result << meshProxy;
             }
         });
@@ -1694,12 +2263,11 @@ scriptable::ScriptableModelBase RenderablePolyVoxEntityItem::getScriptableModel(
         } else {
             success = true;
             // the mesh will be in voxel-space.  transform it into object-space
-            result.append(_mesh->map(
-                [=](glm::vec3 position){ return glm::vec3(transform * glm::vec4(position, 1.0f)); },
-                [=](glm::vec3 color){ return color; },
-                [=](glm::vec3 normal){ return glm::normalize(glm::vec3(transform * glm::vec4(normal, 0.0f))); },
-                [&](uint32_t index){ return index; }
-            ));
+            result.append(
+                _mesh->map([=](glm::vec3 position) { return glm::vec3(transform * glm::vec4(position, 1.0f)); },
+                           [=](glm::vec3 color) { return color; },
+                           [=](glm::vec3 normal) { return glm::normalize(glm::vec3(transform * glm::vec4(normal, 0.0f))); },
+                           [&](uint32_t index) { return index; }));
         }
     });
     return result;
@@ -1709,7 +2277,7 @@ using namespace render;
 using namespace render::entities;
 
 static uint8_t CUSTOM_PIPELINE_NUMBER;
-static const gpu::Element COLOR_ELEMENT { gpu::VEC4, gpu::NUINT8, gpu::RGBA };
+static const gpu::Element COLOR_ELEMENT{ gpu::VEC4, gpu::NUINT8, gpu::RGBA };
 // forward, shadow, fade, wireframe
 static std::map<std::tuple<bool, bool, bool, bool>, ShapePipelinePointer> _pipelines;
 static gpu::Stream::FormatPointer _vertexFormat;
@@ -1744,17 +2312,20 @@ static ShapePipelinePointer polyvoxPipelineFactory(const ShapePlumber& plumber, 
 
                 auto pipeline = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<3>(key)), state);
                 if (!std::get<2>(key)) {
-                    _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), std::get<2>(key), wireframe)] = std::make_shared<render::ShapePipeline>(pipeline, nullptr, nullptr, nullptr);
+                    _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), std::get<2>(key), wireframe)] =
+                        std::make_shared<render::ShapePipeline>(pipeline, nullptr, nullptr, nullptr);
                 } else {
-                    _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), std::get<2>(key), wireframe)] = std::make_shared<render::ShapePipeline>(pipeline, nullptr,
-                        FadeEffect::getBatchSetter(), FadeEffect::getItemUniformSetter());
+                    _pipelines[std::make_tuple(std::get<0>(key), std::get<1>(key), std::get<2>(key), wireframe)] =
+                        std::make_shared<render::ShapePipeline>(pipeline, nullptr, FadeEffect::getBatchSetter(),
+                                                                FadeEffect::getItemUniformSetter());
                 }
             }
         }
     }
 
     bool isFaded = key.isFaded() && args->_renderMethod != Args::RenderMethod::FORWARD;
-    return _pipelines[std::make_tuple(args->_renderMethod == Args::RenderMethod::FORWARD, args->_renderMode == Args::RenderMode::SHADOW_RENDER_MODE, isFaded, key.isWireframe())];
+    return _pipelines[std::make_tuple(args->_renderMethod == Args::RenderMethod::FORWARD,
+                                      args->_renderMode == Args::RenderMode::SHADOW_RENDER_MODE, isFaded, key.isWireframe())];
 }
 
 PolyVoxEntityRenderer::PolyVoxEntityRenderer(const EntityItemPointer& entity) : Parent(entity) {
@@ -1806,16 +2377,16 @@ bool PolyVoxEntityRenderer::needsRenderUpdate() const {
 
 bool PolyVoxEntityRenderer::needsRenderUpdateFromTypedEntity(const TypedEntityPointer& entity) const {
     if (resultWithReadLock<bool>([&] {
-        if (entity->voxelToLocalMatrix() != _lastVoxelToLocalMatrix) {
-            return true;
-        }
+            if (entity->voxelToLocalMatrix() != _lastVoxelToLocalMatrix) {
+                return true;
+            }
 
-        if (entity->_mesh != _mesh) {
-            return true;
-        }
+            if (entity->_mesh != _mesh) {
+                return true;
+            }
 
-        return false;
-    })) {
+            return false;
+        })) {
         return true;
     }
 
@@ -1826,23 +2397,18 @@ void PolyVoxEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoi
     _lastVoxelToLocalMatrix = entity->voxelToLocalMatrix();
     bool success;
     _position = entity->getCenterPosition(success);
-    _orientation = entity->getBillboardMode() == BillboardMode::NONE ? entity->getWorldOrientation() : entity->getLocalOrientation();
+    _orientation =
+        entity->getBillboardMode() == BillboardMode::NONE ? entity->getWorldOrientation() : entity->getLocalOrientation();
     _lastVoxelVolumeSize = entity->getVoxelVolumeSize();
     _params->setSubData(0, vec4(_lastVoxelVolumeSize, 0.0));
     graphics::MeshPointer newMesh;
-    entity->withReadLock([&] {
-        newMesh = entity->_mesh;
-    });
+    entity->withReadLock([&] { newMesh = entity->_mesh; });
 
     if (newMesh && newMesh->getIndexBuffer()._buffer) {
         _mesh = newMesh;
     }
 
-    std::array<QString, 3> xyzTextureURLs{ {
-        entity->getXTextureURL(),
-        entity->getYTextureURL(),
-        entity->getZTextureURL()
-    } };
+    std::array<QString, 3> xyzTextureURLs{ { entity->getXTextureURL(), entity->getYTextureURL(), entity->getZTextureURL() } };
     for (size_t i = 0; i < xyzTextureURLs.size(); ++i) {
         auto& texture = _xyzTextures[i];
         const auto& textureURL = xyzTextureURLs[i];
@@ -1858,7 +2424,7 @@ void PolyVoxEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPoi
 
 bool PolyVoxEntityRenderer::isTransparent() const {
     // TODO: We don't currently support transparent PolyVox (unless they are using the material path)
-    return /*Parent::isTransparent() || */materialsTransparent();
+    return /*Parent::isTransparent() || */ materialsTransparent();
 }
 
 Item::Bound PolyVoxEntityRenderer::getBound(RenderArgs* args) {
@@ -1874,15 +2440,18 @@ void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
     gpu::Batch& batch = *args->_batch;
 
     bool usePrimaryFrustum = args->_renderMode == RenderArgs::RenderMode::SHADOW_RENDER_MODE || args->_mirrorDepth > 0;
-    glm::mat4 rotation = glm::mat4_cast(BillboardModeHelpers::getBillboardRotation(_position, _orientation, _billboardMode,
-        usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition() : args->getViewFrustum().getPosition()));
+    glm::mat4 rotation = glm::mat4_cast(
+        BillboardModeHelpers::getBillboardRotation(_position, _orientation, _billboardMode,
+                                                   usePrimaryFrustum ? BillboardModeHelpers::getPrimaryViewFrustumPosition()
+                                                                     : args->getViewFrustum().getPosition()));
     Transform transform(glm::translate(_position) * rotation * _lastVoxelToLocalMatrix);
     batch.setModelTransform(transform, _prevRenderTransform);
-    if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
+    if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE ||
+        args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
         _prevRenderTransform = transform;
     }
 
-    batch.setInputBuffer(gpu::Stream::POSITION, _mesh->getVertexBuffer()._buffer, 0, sizeof(PolyVox::PositionMaterialNormal));
+    batch.setInputBuffer(gpu::Stream::POSITION, _mesh->getVertexBuffer()._buffer, 0, sizeof(PositionNormalMaterial));
     batch.setIndexBuffer(gpu::UINT32, _mesh->getIndexBuffer()._buffer, 0);
 
     bool hasMaterials = false;
@@ -1911,7 +2480,7 @@ void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
             return;
         }
 
-        glm::vec4 outColor = glm::vec4(1.0f); // albedo comes from the material instead of vertex colors
+        glm::vec4 outColor = glm::vec4(1.0f);  // albedo comes from the material instead of vertex colors
 
         Pipeline pipelineType = getPipelineType(materials);
         if (pipelineType == Pipeline::PROCEDURAL) {
