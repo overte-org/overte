@@ -19,6 +19,38 @@ const { NotifyPanel } = require("./notify_panel.js");
 // animations at the right framerate
 const UPDATE_FPS = 90;
 
+class AppButtonIPC {
+    /** @type {string} */
+    ipcID;
+    /** @type {?string} */
+    appID;
+    /** @type {string} */
+    text;
+    /** @type {boolean} */
+    active;
+
+    constructor({
+        ipcID,
+        appID = null,
+        text,
+        active = false,
+    }) {
+        this.ipcID = ipcID;
+        this.appID = appID;
+        this.text = text;
+        this.active = active;
+    }
+
+    sendIPC(msg) {
+        Messages.sendLocalMessage(Defs.ipcChannel, JSON.stringify({
+            ipc_id: this.ipcID,
+            app_id: this.appID,
+            ipc_source: "dashboard",
+            ...msg
+        }));
+    }
+}
+
 class Dashboard {
     /** @type {boolean} */
     #visible = false;
@@ -58,6 +90,9 @@ class Dashboard {
 
     /** @type {Uuid} */
     #appbarPanelID;
+
+    /** @type {Map<Uuid,AppButtonIPC>} */
+    #appButtons = new Map();
 
     sendIPCMessage(data) {
         Messages.sendLocalMessage(Defs.ipcChannel, JSON.stringify(data));
@@ -226,12 +261,19 @@ class Dashboard {
             return;
         }
 
-        if (msg?.dash_window?.event === "spawn_window") {
+        if (msg.dash_window?.event === "spawn_window") {
             this.windowManager.windowEvent(null, msg.dash_window);
-        } else if (msg?.dash_window?.event === "finished_hiding") {
+        } else if (msg.dash_window?.event === "finished_hiding") {
             Entities.editEntity(this.#appbarPanelID, {
                 visible: false,
                 ignorePickIntersection: true,
+            });
+        } else if (msg.app_button?.event === "clicked") {
+            console.log(`Clicked button ${msg.app_button.ipc_id}`);
+            this.#appButtons.get(msg.app_button.ipc_id)?.sendIPC({
+                ipc_source: "dashboard",
+                ipc_id: msg.app_button.ipc_id,
+                event: "button_clicked",
             });
         }
     };
@@ -265,7 +307,61 @@ class Dashboard {
 
     #hmdActiveCallback = hmdActive => {};
 
-    #messageCallback = (channel, rawMsg, senderID, localOnly) => {};
+    #messageCallback = (channel, rawMsg, _senderID, localOnly) => {
+        if (channel !== Defs.ipcChannel || !localOnly) { return; }
+
+        let msg;
+        try {
+            msg = JSON.parse(rawMsg);
+        } catch (_e) {
+            return;
+        }
+
+        if (msg.event === "create_dash_button") {
+            let button = new AppButtonIPC({
+                ipcID: msg.ipc_id,
+                appID: msg.app_id,
+                text: msg.text,
+            });
+
+            this.#appButtons.set(button.ipcID, button);
+
+            button.sendIPC({
+                ipc_source: "dashboard",
+                ipc_id: button.ipcID,
+                event: "button_created",
+            });
+
+            Entities.emitScriptEvent(this.#appbarPanelID, JSON.stringify({
+                dash_bar: {
+                    event: "set_app_button",
+                    ipc_id: button.ipcID,
+                    data: button,
+                },
+            }));
+        } else if (msg.event === "set_button_property" && msg.ipc_source === "dash_button") {
+            let button = this.#appButtons.get(msg.ipc_id);
+
+            if (msg.active !== undefined) { button.active = msg.active; }
+            if (msg.text !== undefined) { button.text = msg.active; }
+
+            Entities.emitScriptEvent(this.#appbarPanelID, JSON.stringify({
+                dash_bar: {
+                    event: "set_app_button",
+                    ipc_id: button.ipcID,
+                    data: button,
+                },
+            }));
+        } else if (msg.event === "dispose" && msg.ipc_source === "dash_button") {
+            this.#appButtons.delete(msg.ipc_id);
+            Entities.emitScriptEvent(this.#appbarPanelID, JSON.stringify({
+                dash_bar: {
+                    event: "delete_app_button",
+                    ipc_id: button.ipcID,
+                },
+            }));
+        }
+    };
 }
 
 const instance = new Dashboard();
