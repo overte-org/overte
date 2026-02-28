@@ -89,8 +89,10 @@ SettingsPage {
 
     SwitchSetting {
         text: qsTr("Reduced Motion")
+
+        // TODO: use a system property instead of the theme
         value: Overte.Theme.reducedMotion
-        onValueChanged: () => Overte.Theme.reducedMotion = value
+        onValueChanged: Overte.Theme.reducedMotion = value
     }
 
     SettingNote {
@@ -119,15 +121,21 @@ SettingsPage {
         onCurrentIndexChanged: SettingsInterface.setValue("simplifiedNametag/avatarNametagMode", model[currentIndex].value)
     }
 
-    SliderSetting {
-        text: qsTr("VR Tablet Scale")
-        stepSize: 5
-        from: 50
-        to: 150
-        valueToText: () => `${value}%`
+    SwitchSetting {
+        text: qsTr("Use 3D dashboard UI on desktop")
+        // TODO
+        enabled: false
+        value: true
+    }
 
-        value: SettingsInterface.getValue("hmdTabletScale", 75)
-        onValueChanged: SettingsInterface.setValue("hmdTabletScale", value)
+    SettingNote {
+        text: qsTr("Currently always enabled. A 2D mode will be available in the future.")
+    }
+
+    SwitchSetting {
+        text: qsTr("Show developer tools")
+        value: SettingsInterface.getValue("Settings/Developer Menu", false)
+        onValueChanged: SettingsInterface.setValue("Settings/Developer Menu", value)
     }
 
     Header { text: qsTr("Screenshots") }
@@ -193,5 +201,36 @@ SettingsPage {
 
     SettingNote {
         text: qsTr("If this setting is enabled, your current world will be shown on your Discord profile.")
+    }
+
+    Header { text: qsTr("Legacy Features") }
+
+    SettingNote {
+        text: qsTr("These settings are for legacy functionality that may be removed in a later release.")
+    }
+
+    SliderSetting {
+        text: qsTr("VR Tablet Scale")
+        stepSize: 5
+        from: 50
+        to: 150
+        valueToText: () => `${value}%`
+
+        value: SettingsInterface.getValue("hmdTabletScale", 75)
+        onValueChanged: SettingsInterface.setValue("hmdTabletScale", value)
+    }
+
+    ComboSetting {
+        text: qsTr("VR Tablet Input")
+
+        // keep this in the same order as MyAvatar.TabletInputMode
+        model: [
+            qsTr("Laser"),
+            qsTr("Stylus"),
+            qsTr("Finger Touch"),
+        ]
+
+        currentIndex: MyAvatar.tabletInputMode
+        onCurrentIndexChanged: MyAvatar.tabletInputMode = currentIndex;
     }
 }

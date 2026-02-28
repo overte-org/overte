@@ -100,6 +100,12 @@ void WindowScriptingInterface::raise() {
     });
 }
 
+void WindowScriptingInterface::quit() {
+    // QCoreApplication::quit is thread-safe, as long
+    // as the application isn't already quitting
+    qApp->quit();
+}
+
 /// Display an alert box
 /// \param const QString& message message to display
 /// \return ScriptValue::UndefinedValue

@@ -48,6 +48,22 @@ extern "C" {
 }
 #endif
 
+
+// QT HACK DO NOT MERGE
+QByteArray QByteArray::fromStdString(const std::string &s) {
+    return QByteArray(s.c_str(), s.size());
+}
+
+std::string QByteArray::toStdString() const {
+    return std::string(constData(), size());
+}
+
+std::string QString::toStdString() const {
+    return toUtf8().toStdString();
+}
+// QT HACK DO NOT MERGE
+
+
 int main(int argc, const char* argv[]) {
 #ifdef Q_OS_MAC
     auto format = getDefaultOpenGLSurfaceFormat();

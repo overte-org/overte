@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="16"
+   height="16"
+   viewBox="0 0 16 16"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.3 (0d15f75042, 2025-12-25)"
+   sodipodi:docname="log_error.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="true"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="px"
+     showgrid="true"
+     inkscape:zoom="32"
+     inkscape:cx="9.0625"
+     inkscape:cy="8.59375"
+     inkscape:window-width="1692"
+     inkscape:window-height="1167"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="1"
+       spacingy="1"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="4"
+       enabled="true"
+       visible="true" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <inkscape:path-effect
+       effect="powerclip"
+       message=""
+       id="path-effect18"
+       is_visible="true"
+       lpeversion="1"
+       inverse="true"
+       flatten="false"
+       hide_clip="false" />
+    <inkscape:path-effect
+       effect="powerclip"
+       message=""
+       id="path-effect8"
+       is_visible="true"
+       lpeversion="1"
+       inverse="true"
+       flatten="false"
+       hide_clip="false" />
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath7">
+      <path
+         id="lpe_path-effect8"
+         class="powerclip"
+         d="M -3.9999382,-3.9998764 H 19.999938 V 20 H -3.9999382 Z M 7,11 v 2 H 9 V 11 Z M 7,5 v 5 H 9 V 5 Z" />
+    </clipPath>
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="path8"
+       clip-path="none"
+       style="fill:#ffffff;fill-opacity:1;stroke:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       d="M 5 1 L 1 5 L 1 11 L 5 15 L 11 15 L 15 11 L 15 5 L 11 1 L 5 1 z M 5 4.5 C 5.1326006 4.50002 5.2597629 4.5527116 5.3535156 4.6464844 L 8 7.2929688 L 10.646484 4.6464844 C 10.841738 4.4512721 11.158262 4.4512721 11.353516 4.6464844 C 11.548728 4.8417379 11.548728 5.1582621 11.353516 5.3535156 L 8.7070312 8 L 11.353516 10.646484 C 11.548728 10.841738 11.548728 11.158262 11.353516 11.353516 C 11.158262 11.548728 10.841738 11.548728 10.646484 11.353516 L 8 8.7070312 L 5.3535156 11.353516 C 5.1582621 11.548728 4.8417379 11.548728 4.6464844 11.353516 C 4.4512721 11.158262 4.4512721 10.841738 4.6464844 10.646484 L 7.2929688 8 L 4.6464844 5.3535156 C 4.4512726 5.1582621 4.4512726 4.8417379 4.6464844 4.6464844 C 4.7402371 4.552712 4.8673994 4.50002 5 4.5 z " />
+  </g>
+</svg>

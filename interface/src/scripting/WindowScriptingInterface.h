@@ -89,6 +89,12 @@ public slots:
     void raise();
 
     /*@jsdoc
+     * Shuts down Interface.
+     * @function Window.quit
+     */
+    void quit();
+
+    /*@jsdoc
      * Displays a dialog with the specified message and an "OK" button. The dialog is non-modal; the script continues without
      * waiting for a user response.
      * @function Window.alert
