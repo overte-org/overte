@@ -570,6 +570,33 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
             packPermissions();
         }
 
+        if (oldVersion < 2.8) {
+            // Turn HTTP authentication into the new array format that allows multiple accounts.
+            // https://github.com/overte-org/overte/pull/1350
+            const QString HTTP_USERNAME = "security.http_username";
+            const QString HTTP_PASSWORD = "security.http_password";
+            const QString HTTP_AUTHENTICATION = "security.http_authentication";
+
+            QVariant* httpUsernameValue = _configMap.valueForKeyPath(HTTP_USERNAME);
+            QVariant* httpPasswordValue = _configMap.valueForKeyPath(HTTP_PASSWORD); 
+            QVariant* httpAuthentication = _configMap.valueForKeyPath(HTTP_AUTHENTICATION, true); 
+
+            if (httpUsernameValue && httpUsernameValue->canConvert(QMetaType::QString)) {
+                qDebug() << "Migrating domain account to multi account friendly system.";
+                QJsonArray accountList;
+                QJsonObject accountListObject;
+
+                accountListObject.insert("http_username", httpUsernameValue->toString());
+                accountListObject.insert("http_password", httpPasswordValue->toString());
+
+                // Append the existing account to the account list object
+                accountList.append(accountListObject);
+
+                // Set the array as the new value for http_authentication
+                *httpAuthentication = accountList;
+            }
+        }
+
         // write the current description version to our settings
         *versionVariant = _descriptionVersion;
 
