@@ -56,7 +56,7 @@ public:
      * Logs an "INFO" message to the program log and triggers {@link Script.infoMessage}. 
      * The message logged is "INFO -" followed by the message values separated by spaces.
      * @function console.info
-     * @param {...*} [message] - The message values to log.
+     * @param {*} [message] - The message values to log.
      */
     static ScriptValue info(ScriptContext* context, ScriptEngine* engine);
 
@@ -65,7 +65,7 @@ public:
      * The message logged is the message values separated by spaces.
      * <p>If a {@link console.group} is in effect, the message is indented by an amount proportional to the group level.</p>
      * @function console.log
-     * @param {...*} [message] - The message values to log.
+     * @param {*} [message] - The message values to log.
      * @example <caption>Log some values.</caption>
      * Script.printedMessage.connect(function (message, scriptName) {
      *     console.info("Console.log message:", "\"" + message + "\"", "in", "[" + scriptName + "]");
@@ -82,7 +82,7 @@ public:
      * Logs a message to the program log and triggers {@link Script.printedMessage}.
      * The message logged is the message values separated by spaces.
      * @function console.debug
-     * @param {...*} [message] - The message values to log.
+     * @param {*} [message] - The message values to log.
      */
     static ScriptValue debug(ScriptContext* context, ScriptEngine* engine);
 
@@ -90,7 +90,7 @@ public:
      * Logs a "WARNING" message to the program log and triggers {@link Script.warningMessage}.
      * The message logged is "WARNING - " followed by the message values separated by spaces.
      * @function console.warn
-     * @param {...*} [message] - The message values to log.
+     * @param {*} [message] - The message values to log.
      */
     static ScriptValue warn(ScriptContext* context, ScriptEngine* engine);
 
@@ -98,7 +98,7 @@ public:
      * Logs an "ERROR" message to the program log and triggers {@link Script.errorMessage}.
      * The message logged is "ERROR - " followed by the message values separated by spaces.
      * @function console.error
-     * @param {...*} [message] - The message values to log.
+     * @param {*} [message] - The message values to log.
      */
     static ScriptValue error(ScriptContext* context, ScriptEngine* engine);
 
@@ -107,7 +107,7 @@ public:
      * Logs an "ERROR" message to the program log and triggers {@link Script.errorMessage}.
      * The message logged is "ERROR - " followed by the message values separated by spaces.
      * @function console.exception
-     * @param {...*} [message] - The message values to log.
+     * @param {*} [message] - The message values to log.
      */
     static ScriptValue exception(ScriptContext* context, ScriptEngine* engine);
 
@@ -117,7 +117,7 @@ public:
      * <p>Note: Script execution continues whether or not the test condition fails.</p>
      * @function console.assert
      * @param {boolean} assertion - The test condition value.
-     * @param {...*} [message] - The message values to log if the assertion evaluates to <code>false</code>.
+     * @param {*} [message] - The message values to log if the assertion evaluates to <code>false</code>.
      * @example <caption>Demonstrate assertion behavior.</caption>
      * Script.errorMessage.connect(function (message, scriptName) {
      *     console.info("Error message logged:", "\"" + message + "\"", "in", "[" + scriptName + "]");

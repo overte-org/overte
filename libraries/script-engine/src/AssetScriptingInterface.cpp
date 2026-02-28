@@ -455,6 +455,33 @@ void AssetScriptingInterface::compressData(const ScriptValue& options, const Scr
  * @property {string} [url] - The <code>atp:</code> URL of the content: using the path if specified, otherwise the hash.
  * @property {string} [path] - The uploaded content's mapped path, if specified.
  */
+ /*@jsdoc
+ * Content and delete options for {@link Assets.deleteAsset}.
+ * 
+ * **Note:** This is just scaffolding and has not been properly implemented yet.
+ * 
+ * @typedef {Object} Assets.DeleteOptions
+ * @property {string | ArrayBuffer} data - The content to upload.
+ * @property {string} [path] - A user-friendly path for the file in the asset server. May have a leading `"atp:"`.
+ * 
+ * If not specified, no path-to-hash mapping is set.
+ * 
+ * **Warning:** The asset server destroys any unmapped SHA256-named file at server restart. Either set the mapping path
+ * with this property or use {@link Assets.setMapping} to set a path-to-hash mapping for the uploaded file.
+ */
+
+/*@jsdoc
+ * Result value returned by {@link Assets.putAsset}.
+ * 
+ * **Note:** This is just scaffolding and has not been properly implemented yet.
+ * 
+ * @typedef {Object} Assets.DeleteResult
+ * @property {number} [byteLength] - The number of bytes in the hash file stored on the asset server.
+ * @property {string} [contentType] - `"application/gzip"` if the content stored is gzip compressed.
+ * @property {string} [url] - The `atp:` URL of the content: using the path if specified, otherwise the hash.
+ * @property {string} [path] - The uploaded content's mapped path, if specified.
+ */
+
 void AssetScriptingInterface::putAsset(const ScriptValue& options, const ScriptValue& scope, const ScriptValue& callback) {
     auto compress = options.property("compress").toBool() || options.property("compressed").toBool();
     auto data = options.isObject() ? options.property("data") : options;

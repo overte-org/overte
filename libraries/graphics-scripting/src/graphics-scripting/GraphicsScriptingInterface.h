@@ -48,7 +48,7 @@ public slots:
      * Gets a handle to the model data used for displaying an avatar, 3D entity, or 3D overlay.
      * <p>Note: The model data may be used for more than one instance of the item displayed in the scene.</p>
      * @function Graphics.getModel
-     * @param {UUID} id - The ID of the avatar, 3D entity, or 3D overlay.
+     * @param {Uuid} id - The ID of the avatar, 3D entity, or 3D overlay.
      * @returns {GraphicsModel} The model data for the avatar, entity, or overlay, as displayed. This includes the results of
      *     applying any {@link Entities.EntityProperties-Material|Material} entities to the item.
      * @example <caption>Report some details of your avatar's model.</caption>
