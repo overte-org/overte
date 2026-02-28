@@ -133,3 +133,35 @@ QString ScriptManagerScriptingInterface::btoa(const QByteArray &binary) {
 QByteArray ScriptManagerScriptingInterface::atob(const QString &base64) {
     return QByteArray::fromBase64(base64.toUtf8());
 }
+
+void ScriptManagerScriptingInterface::test__ArrayBufferView(const ScriptValue& value) {
+    if (!value.isArrayBufferView()) {
+        qInfo() << "value is not an ArrayBufferView";
+        return;
+    }
+
+    auto view = value.toArrayBufferView();
+
+    QString str;
+    QTextStream stream(&str);
+
+    const char* data = reinterpret_cast<const char*>(view->buffer());
+    auto offset = view->byteOffset();
+    auto length = view->byteLength();
+
+    stream << "ArrayBufferView(" << offset << ", " << length << ") [ ";
+
+    if (data) {
+        for (size_t i = 0; i < length; i++) {
+            stream << (uint8_t)data[offset + i];
+
+            if (i < length - 1) { stream << ", "; }
+        }
+    } else {
+        stream << "(no buffer)";
+    }
+
+    stream << " ]";
+
+    qInfo() << str;
+}
