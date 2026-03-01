@@ -256,7 +256,7 @@ public:
     /**
      * @brief Evaluates a pre-compiled program
      *
-     * @param program Program to evaluaate
+     * @param program Program to evaluate
      * @return ScriptValue
      */
     virtual ScriptValue evaluate(const ScriptProgramPointer &program) = 0;

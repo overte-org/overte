@@ -238,6 +238,20 @@ std::shared_ptr<ScriptException> ScriptManager::getUncaughtException() const {
     return _engine->uncaughtException();
 }
 
+void ScriptManager::registerConsoleScriptingInterface(ScriptEngine::ScriptEngineScopeGuard* scopeGuard, ScriptEngine* scriptEngine) {
+    scriptEngine->registerGlobalObject(scopeGuard, "console", _consoleScriptingInterface.get());
+    scriptEngine->registerFunction(scopeGuard, "console", "info", ConsoleScriptingInterface::info, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(scopeGuard, "console", "log", ConsoleScriptingInterface::log, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(scopeGuard, "console", "debug", ConsoleScriptingInterface::debug, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(scopeGuard, "console", "warn", ConsoleScriptingInterface::warn, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(scopeGuard, "console", "error", ConsoleScriptingInterface::error, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(scopeGuard, "console", "exception", ConsoleScriptingInterface::exception, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(scopeGuard, "console", "assert", ConsoleScriptingInterface::assertion, scriptEngine->currentContext()->argumentCount());
+    scriptEngine->registerFunction(scopeGuard, "console", "group", ConsoleScriptingInterface::group, 1);
+    scriptEngine->registerFunction(scopeGuard, "console", "groupCollapsed", ConsoleScriptingInterface::groupCollapsed, 1);
+    scriptEngine->registerFunction(scopeGuard, "console", "groupEnd", ConsoleScriptingInterface::groupEnd, 0);
+}
+
 ScriptManagerPointer scriptManagerFactory(ScriptManager::Context context,
                                                  const QString& scriptContents,
                                                  const QString& fileNameString) {
@@ -836,17 +850,7 @@ void ScriptManager::init() {
         scriptEngine->registerGlobalObject(sgp, "Messages", DependencyManager::get<MessagesClient>().data());
     }
 
-    scriptEngine->registerGlobalObject(sgp, "console", _consoleScriptingInterface.get());
-    scriptEngine->registerFunction(sgp, "console", "info", ConsoleScriptingInterface::info, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction(sgp, "console", "log", ConsoleScriptingInterface::log, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction(sgp, "console", "debug", ConsoleScriptingInterface::debug, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction(sgp, "console", "warn", ConsoleScriptingInterface::warn, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction(sgp, "console", "error", ConsoleScriptingInterface::error, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction(sgp, "console", "exception", ConsoleScriptingInterface::exception, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction(sgp, "console", "assert", ConsoleScriptingInterface::assertion, scriptEngine->currentContext()->argumentCount());
-    scriptEngine->registerFunction(sgp, "console", "group", ConsoleScriptingInterface::group, 1);
-    scriptEngine->registerFunction(sgp, "console", "groupCollapsed", ConsoleScriptingInterface::groupCollapsed, 1);
-    scriptEngine->registerFunction(sgp, "console", "groupEnd", ConsoleScriptingInterface::groupEnd, 0);
+    registerConsoleScriptingInterface(sgp, scriptEngine);
 
     // constants
     scriptEngine->globalObject().setProperty("TREE_SCALE", scriptEngine->newValue(TREE_SCALE));

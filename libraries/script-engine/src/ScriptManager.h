@@ -48,6 +48,7 @@
 #include "ScriptValue.h"
 #include "ScriptException.h"
 #include "Vec3.h"
+#include "ScriptEngine.h"
 
 static const QString NO_SCRIPT("");
 
@@ -1283,6 +1284,16 @@ public:
      * @return false If the script has not finished running yet
      */
     bool isDoneRunning() { return _isDoneRunning; };
+
+    /**
+     * @brief Adds `console` namespace with functions such as `console.log`.
+     *
+     * Called during script manager registration and in `ScriptEngineV8::evaluateInClosure`, which happens during
+     * `Script.require` call.
+     * @param scopeGuard Pointer to a script engine scope guard.
+     * @param scriptEngine Pointer to the script engine to which `console` namespace will be added.
+     */
+    void registerConsoleScriptingInterface(ScriptEngine::ScriptEngineScopeGuard* scopeGuard, ScriptEngine* scriptEngine);
 
 public slots:
 
