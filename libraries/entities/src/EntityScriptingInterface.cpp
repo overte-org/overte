@@ -171,6 +171,7 @@ void EntityScriptingInterface::attachDefaultEventHandlers(ScriptManager* manager
         return [manager, eventName](const EntityItemID& entityItemID, const PointerEvent& event) {
             if (!EntityTree::areEntityClicksCaptured()) {
                 ScriptEngine* engine = manager->engine().get();
+                auto scopeGuard = engine->getScopeGuard();
                 manager->forwardHandlerCall(entityItemID, eventName,
                                             { EntityItemIDtoScriptValue(engine, entityItemID), event.toScriptValue(engine) });
             }

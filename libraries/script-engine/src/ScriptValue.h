@@ -127,6 +127,7 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(ScriptValue::PropertyFlags);
 /// [ScriptInterface] Provides an engine-independent interface for QScriptValue
 class ScriptValueProxy {
 public:
+    virtual void enqueueRelease() = 0;
     virtual void release() = 0;
     virtual ScriptValueProxy* copy() const = 0;
 
@@ -200,12 +201,12 @@ ScriptValue::ScriptValue(const ScriptValue& src) : _proxy(src.ptr()->copy()) {
 
 ScriptValue::~ScriptValue() {
     Q_ASSERT(_proxy != nullptr);
-    _proxy->release();
+    _proxy->enqueueRelease();
 }
 
 ScriptValue& ScriptValue::operator=(const ScriptValue& other) {
     Q_ASSERT(_proxy != nullptr);
-    _proxy->release();
+    _proxy->enqueueRelease();
     _proxy = other.ptr()->copy();
     return *this;
 }

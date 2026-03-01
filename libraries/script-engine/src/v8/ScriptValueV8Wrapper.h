@@ -51,6 +51,7 @@ public: // construction
     ScriptEngineV8* getV8Engine() {return _engine;}
 
 public:
+    virtual void enqueueRelease() override;
     virtual void release() override;
     virtual ScriptValueProxy* copy() const override;
 

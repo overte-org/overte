@@ -18,6 +18,7 @@
 //V8TODO name is misleading, it's actually undefined
 class ScriptValueProxyNull final : public ScriptValueProxy {
 public:
+    virtual void enqueueRelease() override;
     virtual void release() override;
     virtual ScriptValueProxy* copy() const override;
 
@@ -73,6 +74,9 @@ static ScriptValueProxyNull SCRIPT_VALUE_NULL;
 
 ScriptValue::ScriptValue() : _proxy(&SCRIPT_VALUE_NULL) {}
 
+void ScriptValueProxyNull::enqueueRelease() {
+    // do nothing, we're a singlet
+}
 void ScriptValueProxyNull::release() {
     // do nothing, we're a singlet
 }
