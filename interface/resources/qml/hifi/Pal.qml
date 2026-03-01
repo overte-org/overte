@@ -12,8 +12,8 @@
 //
 
 import QtQuick 2.5
-import QtQuick.Controls 1.4
-import QtGraphicalEffects 1.0
+import QtQuick.Controls 2.3
+import Qt5Compat.GraphicalEffects
 import Qt.labs.settings 1.0
 import stylesUit 1.0
 import controlsUit 1.0 as HifiControlsUit
@@ -118,6 +118,7 @@ Rectangle {
         comboDialog.populateComboListViewModel();
         comboDialog.visible = true;
     }
+    // QT6TODO: this is deprecated
     Settings {
         id: settings;
         category: "pal";
@@ -427,16 +428,18 @@ Rectangle {
         // This TableView refers to the Nearby Table (on the "Nearby" tab below the current user's NameCard)
         HifiControlsUit.Table {
             id: nearbyTable;
-            flickableItem.interactive: true;
+            // QT6TODO
+            //flickableItem.interactive: true;
             // Anchors
             anchors.fill: parent;
             // Properties
             centerHeaderText: true;
-            sortIndicatorVisible: true;
-            headerVisible: true;
-            sortIndicatorColumn: settings.nearbySortIndicatorColumn;
-            sortIndicatorOrder: settings.nearbySortIndicatorOrder;
-            onSortIndicatorColumnChanged: {
+            // QT6TODO
+            //sortIndicatorVisible: true;
+            //headerVisible: true;
+            //sortIndicatorColumn: settings.nearbySortIndicatorColumn;
+            //sortIndicatorOrder: settings.nearbySortIndicatorOrder;
+            /*onSortIndicatorColumnChanged: {
                 if (sortIndicatorColumn > 2) {
                     // these are not sortable, switch back to last column
                     sortIndicatorColumn = settings.nearbySortIndicatorColumn;
@@ -444,13 +447,15 @@ Rectangle {
                     settings.nearbySortIndicatorColumn = sortIndicatorColumn;
                     sortModel();
                 }
-            }
-            onSortIndicatorOrderChanged: {
+            }*/
+            // Qt6TODO
+            /*onSortIndicatorOrderChanged: {
                 settings.nearbySortIndicatorOrder = sortIndicatorOrder;
                 sortModel();
-            }
+            }*/
 
-            TableViewColumn {
+            // QT6TODO: how to port these?
+            /*TableViewColumn {
                 role: "avgAudioLevel";
                 title: "LOUD";
                 width: actionButtonWidth;
@@ -489,20 +494,22 @@ Rectangle {
                 width: actionButtonWidth;
                 movable: false;
                 resizable: false;
-            }
+            }*/
             model: ListModel {
                 id: nearbyUserModel;
             }
 
             // This Rectangle refers to each Row in the nearbyTable.
-            rowDelegate: Rectangle { // The only way I know to specify a row height.
+            // QT6TODO
+            /*rowDelegate: Rectangle { // The only way I know to specify a row height.
                 // Size
                 height: rowHeight + (styleData.selected ? 15 : 0);
                 color: nearbyRowColor(styleData.selected, styleData.alternate);
-            }
+            }*/
 
             // This Item refers to the contents of each Cell
-            itemDelegate: Item {
+            // QT6TODO
+            /*itemDelegate: Item {
                 id: itemCell;
                 property bool isCheckBox: styleData.role === "personalMute" || styleData.role === "ignore";
                 property bool isButton: styleData.role === "mute" || styleData.role === "kick";
@@ -664,7 +671,7 @@ Rectangle {
                             : hifi.buttons.disabledTextColor[actionButton.colorScheme];
                     }
                 }
-            }
+            }*/
         }
 
         // Separator between user and admin functions
@@ -824,24 +831,27 @@ Rectangle {
         // This TableView refers to the Connections Table (on the "Connections" tab below the current user's NameCard)
         HifiControlsUit.Table {
             id: connectionsTable;
-            flickableItem.interactive: true;
+            // QT6TODO
+            //flickableItem.interactive: true;
             visible: !connectionsLoading.visible;
             // Anchors
             anchors.fill: parent;
             // Properties
             centerHeaderText: true;
-            sortIndicatorVisible: true;
-            headerVisible: true;
-            sortIndicatorColumn: settings.connectionsSortIndicatorColumn;
+            // QT6TODO
+            //sortIndicatorVisible: true;
+            //headerVisible: true;
+            /*sortIndicatorColumn: settings.connectionsSortIndicatorColumn;
             sortIndicatorOrder: settings.connectionsSortIndicatorOrder;
             onSortIndicatorColumnChanged: {
                 settings.connectionsSortIndicatorColumn = sortIndicatorColumn;
             }
             onSortIndicatorOrderChanged: {
                 settings.connectionsSortIndicatorOrder = sortIndicatorOrder;
-            }
+            }*/
 
-            TableViewColumn {
+            // QT6TODO: how to port these?
+            /*TableViewColumn {
                 id: connectionsUserNameHeader;
                 role: "userName";
                 title: connectionsUserModel.totalEntries + (connectionsUserModel.totalEntries === 1 ? " NAME" : " NAMES");
@@ -862,19 +872,21 @@ Rectangle {
                 width: actionButtonWidth;
                 movable: false;
                 resizable: false;
-            }
+            }*/
 
             model: connectionsUserModel;
 
             // This Rectangle refers to each Row in the connectionsTable.
-            rowDelegate: Rectangle {
+            // QT6TODO
+            /*rowDelegate: Rectangle {
                 // Size
                 height: rowHeight + (styleData.selected ? 15 : 0);
                 color: connectionsRowColor(styleData.selected, styleData.alternate);
-            }
+            }*/
 
             // This Item refers to the contents of each Cell
-            itemDelegate: Item {
+            // QT6TODO
+            /*itemDelegate: Item {
                 id: connectionsItemCell;
 
                 // This NameCard refers to the cell that contains a connection's UserName
@@ -947,7 +959,7 @@ Rectangle {
                         UserActivityLogger["palAction"](checked ? styleData.role : "un-" + styleData.role, model.sessionId);
                     }
                 }
-            }
+            }*/
         }
 
         // "Make a Connection" instructions

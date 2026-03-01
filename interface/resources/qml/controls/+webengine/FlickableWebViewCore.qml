@@ -1,11 +1,11 @@
-import QtQuick 2.7
-import QtWebEngine 1.5
-import QtWebChannel 1.0
+import QtQuick
+import QtWebEngine
+import QtWebChannel
 
-import QtQuick.Controls 2.2
+import QtQuick.Controls
 
-import stylesUit 1.0 as StylesUIt
-import controlsUit 1.0 as ControlsUit
+import stylesUit as StylesUIt
+import controlsUit as ControlsUit
 
 Item {
     id: flick
@@ -24,7 +24,7 @@ Item {
     property string urlTag: "noDownload=false";
 
     signal newViewRequestedCallback(var request)
-    signal loadingChangedCallback(var loadRequest)
+    signal loadingChangedCallback(var loadingInfo)
 
 
     width: parent.width
@@ -112,33 +112,56 @@ Item {
         settings.touchIconsEnabled: true
         settings.allowRunningInsecureContent: true
 
-        // creates a global EventBridge object.
-        WebEngineScript {
-            id: createGlobalEventBridge
-            sourceCode: eventBridgeJavaScriptToInject
-            injectionPoint: WebEngineScript.DocumentCreation
-            worldId: WebEngineScript.MainWorld
-        }
+        // QT6TODO causes a crash
+        // Even empty collection causes a crash
+        // userScripts.collection: []
+        //userScripts.collection: [
+            // creates a global EventBridge object.
+            /*{
+                sourceCode: eventBridgeJavaScriptToInject,
+                injectionPoint: WebEngineScript.DocumentCreation,
+                worldId: WebEngineScript.MainWorld,
+            },
 
-        // detects when to raise and lower virtual keyboard
-        WebEngineScript {
-            id: raiseAndLowerKeyboard
-            injectionPoint: WebEngineScript.Deferred
-            sourceUrl: resourceDirectoryUrl + "/html/raiseAndLowerKeyboard.js"
-            worldId: WebEngineScript.MainWorld
-        }
+            // detects when to raise and lower virtual keyboard
+            {
+                injectionPoint: WebEngineScript.Deferred,
+                sourceUrl: resourceDirectoryUrl + "/html/raiseAndLowerKeyboard.js",
+                worldId: WebEngineScript.MainWorld,
+            },
 
-        // User script.
-        WebEngineScript {
-            id: userScript
-            sourceUrl: flick.userScriptUrl
-            injectionPoint: WebEngineScript.DocumentReady  // DOM ready but page load may not be finished.
-            worldId: WebEngineScript.MainWorld
-        }
-
-        userScripts: [ createGlobalEventBridge, raiseAndLowerKeyboard, userScript ]
+            // User script.
+            {
+                sourceUrl: flick.userScriptUrl,
+                injectionPoint: WebEngineScript.DocumentReady,  // DOM ready but page load may not be finished.
+                worldId: WebEngineScript.MainWorld,
+            },*/
+        //]
 
         Component.onCompleted: {
+            // QT6TODO: previous way of doing it crashes and this one doesn't? unless it crashes later
+            userScripts.collection = [
+            // creates a global EventBridge object.
+            {
+                sourceCode: eventBridgeJavaScriptToInject,
+                injectionPoint: WebEngineScript.DocumentCreation,
+                worldId: WebEngineScript.MainWorld,
+            },
+
+            // detects when to raise and lower virtual keyboard
+            {
+                injectionPoint: WebEngineScript.Deferred,
+                sourceUrl: resourceDirectoryUrl + "/html/raiseAndLowerKeyboard.js",
+                worldId: WebEngineScript.MainWorld,
+            },
+
+            // User script.
+            {
+                sourceUrl: flick.userScriptUrl,
+                injectionPoint: WebEngineScript.DocumentReady,  // DOM ready but page load may not be finished.
+                worldId: WebEngineScript.MainWorld,
+            },
+            ]
             webChannel.registerObject("eventBridge", eventBridge);
             webChannel.registerObject("eventBridgeWrapper", eventBridgeWrapper);
 
@@ -172,9 +195,10 @@ Item {
             request.accepted = true;
         }
 
-        onNewViewRequested: {
+        // Qt6 TODO
+        /*onNewViewRequested: {
             newViewRequestedCallback(request)
-        }
+        }*/
 
         // Prior to 5.10, the WebEngineView loading property is true during initial page loading and then stays false
         // as in-page javascript adds more html content. However, in 5.10 there is a bug such that adding html turns
@@ -182,15 +206,18 @@ Item {
         // when QT fixes this.
         property bool safeLoading: false
         property bool loadingLatched: false
-        property var loadingRequest: null
-        onLoadingChanged: {
-            webViewCore.loadingRequest = loadRequest;
+        property var loadInfo: null
+        // QT6TODO: useBackground was missing here in Qt5, but I cannot find it anywhere in Qt documentation, so I just defined it here.
+        property bool useBackground: true
+
+        function onLoadingChanged(loadingInfo) {
+            webViewCore.loadInfo = loadingInfo;
             webViewCore.safeLoading = webViewCore.loading && !loadingLatched;
             webViewCore.loadingLatched |= webViewCore.loading;
          }
         onSafeLoadingChanged: {
-            flick.onLoadingChanged(webViewCore.loadingRequest)
-            loadingChangedCallback(webViewCore.loadingRequest)
+            flick.onLoadingChanged(webViewCore.loadInfo)
+            loadingChangedCallback(webViewCore.loadInfo)
         }
     }
 

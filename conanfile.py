@@ -24,6 +24,7 @@ class Overte(ConanFile):
         "openssl*:shared": "True",
         "qt*:shared": "True",
         "qt*:gui": "True",
+        "qt*:qt5compat": "True",  # Required by Quazip 1.4 and probably us
         "qt*:qtdeclarative": "True",
         "qt*:qtimageformats": "True",  # WebP texture support
         "qt*:qtlocation": "True",
@@ -38,6 +39,12 @@ class Overte(ConanFile):
         "qt*:qtwebview": "True",
         "qt*:qtxmlpatterns": "True",
         "qt*:qttools": "True",  # windeployqt for Windows
+        "qt*:with_dbus": "True",  # Required for Qt on Linux. Can be disabled for Windows.
+        "fontconfig*:shared": "True",  # For Qt on Linux. Building with static fontconfig and freetype fails: https://github.com/conan-io/conan-center-index/issues/17142
+        "freetype*:shared": "True",  # For Qt on Linux.
+        "nss*:shared": "True",  # Dependency of Qt. "NSS recipe cannot yet build static library."
+        "nspr*:shared": "True",  # NSS, which is a dependency of Qt, cannot link to statis NSPR.
+        "sqlite*:shared": "True",  # Avoid `undefined symbol` errors when building NSS.
         "glad*:spec": "gl",
         "glad*:gl_profile": "core",
         "glad*:gl_version": "4.5",
@@ -97,7 +104,7 @@ class Overte(ConanFile):
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
-            self.requires("qt/5.15.18-2026.01.04@overte/stable#30ca36fa18268c7c2de55c3d11102ab7", force=True)
+            self.requires("qt/6.8.3", force=True)
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")
@@ -137,8 +144,8 @@ class Overte(ConanFile):
             if self.settings.compiler == "gcc":
                 self.output.status("GCC compiler detected, setting default flags.")
                 tc.cache_variables.update({
-                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-Og -ggdb3",
-                    "CMAKE_C_FLAGS_DEBUG_INIT": "-Og -ggdb3",
+                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-O0 -ggdb3",
+                    "CMAKE_C_FLAGS_DEBUG_INIT": "-O0 -ggdb3",
                     "CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -ggdb2",
                     "CMAKE_C_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -ggdb2",
                     "CMAKE_CXX_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
@@ -147,8 +154,8 @@ class Overte(ConanFile):
             elif self.settings.compiler == "clang":
                 self.output.status("Clang compiler detected, setting default flags.")
                 tc.cache_variables.update({
-                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-Og -g",
-                    "CMAKE_C_FLAGS_DEBUG_INIT": "-Og -g",
+                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-O0 -g",
+                    "CMAKE_C_FLAGS_DEBUG_INIT": "-O0 -g",
                     "CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -g",
                     "CMAKE_C_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -g",
                     "CMAKE_CXX_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",

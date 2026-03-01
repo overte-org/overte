@@ -1,0 +1,3 @@
+module Keyboard
+Keyboard 1.0 Keyboard.qml
+KeyboardKey 1.0 KeyboardKey.qml

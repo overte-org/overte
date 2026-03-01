@@ -55,6 +55,10 @@ public:
     void call() const { _fun(); }
 };
 
+std::shared_ptr<QPointingDevice> Application::getVirtualPointingDevice() const {
+    return _virtualPointingDevice;
+}
+
 bool Application::notify(QObject* object, QEvent* event) {
     if (thread() == QThread::currentThread()) {
         PROFILE_RANGE_IF_LONGER(app, "notify", 2)
@@ -211,7 +215,8 @@ bool Application::eventFilter(QObject* object, QEvent* event) {
             QMouseEvent* newEvent = new QMouseEvent(
                     QEvent::MouseButtonPress, mouseEvent->localPos(), mouseEvent->windowPos(),
                     mouseEvent->screenPos(), Qt::RightButton, Qt::MouseButtons(Qt::RightButton),
-                    mouseEvent->modifiers());
+                    mouseEvent->modifiers(),
+                    getVirtualPointingDevice().get());
             QApplication::postEvent(object, newEvent);
             return true;
         }
@@ -336,7 +341,7 @@ void Application::windowMinimizedChanged(bool minimized) {
 
 void Application::keyPressEvent(QKeyEvent* event) {
     if (!event->isAutoRepeat()) {
-        _keysPressed.insert(event->key(), *event);
+        _keysPressed.insert(event->key(), KeyEventRecord(event->key(), event->text()));
     }
 
     _controllerScriptingInterface->emitKeyPressEvent(event); // send events to any registered scripts
@@ -607,10 +612,10 @@ void Application::synthesizeKeyReleasEvents() {
     // synthesize events for keys currently pressed, since we may not get their release events
     // Because our key event handlers may manipulate _keysPressed, lets swap the keys pressed into a local copy,
     // clearing the existing list.
-    QHash<int, QKeyEvent> keysPressed;
+    QHash<int, KeyEventRecord> keysPressed;
     std::swap(keysPressed, _keysPressed);
-    for (auto& ev : keysPressed) {
-        QKeyEvent synthesizedEvent { QKeyEvent::KeyRelease, ev.key(), Qt::NoModifier, ev.text() };
+    for (auto& eventRecord : keysPressed) {
+        QKeyEvent synthesizedEvent { QKeyEvent::KeyRelease, eventRecord.key, Qt::NoModifier, eventRecord.text };
         keyReleaseEvent(&synthesizedEvent);
     }
 }
@@ -652,11 +657,13 @@ void Application::mouseMoveEvent(QMouseEvent* event) {
 
     QMouseEvent mappedEvent(event->type(),
         transformedPos,
-        event->screenPos(), button,
-        buttons, event->modifiers());
+        event->globalPosition(), button,
+        buttons, event->modifiers(),
+        getVirtualPointingDevice().get());
 
     if (compositor.getReticleVisible() || !isHMDMode() || !compositor.getReticleOverDesktop() ||
         getOverlays().getOverlayAtPoint(glm::vec2(transformedPos.x(), transformedPos.y())) != UNKNOWN_ENTITY_ID) {
+        // QT6TODO: compositor.getReticleOverDesktop() does not work currently.
         getEntities()->mouseMoveEvent(&mappedEvent);
     }
 
@@ -687,7 +694,12 @@ void Application::mousePressEvent(QMouseEvent* event) {
     QPointF transformedPos;
 #endif
 
-    QMouseEvent mappedEvent(event->type(), transformedPos, event->screenPos(), event->button(), event->buttons(), event->modifiers());
+    QMouseEvent mappedEvent(event->type(),
+        transformedPos,
+        event->globalPosition(), event->button(),
+        event->buttons(), event->modifiers(),
+        getVirtualPointingDevice().get());
+
     QUuid result = getEntities()->mousePressEvent(&mappedEvent);
     setKeyboardFocusEntity(getEntities()->wantsKeyboardFocus(result) ? result : UNKNOWN_ENTITY_ID);
 
@@ -726,8 +738,9 @@ void Application::mouseDoublePressEvent(QMouseEvent* event) {
 #endif
     QMouseEvent mappedEvent(event->type(),
         transformedPos,
-        event->screenPos(), event->button(),
-        event->buttons(), event->modifiers());
+        event->globalPosition(), event->button(),
+        event->buttons(), event->modifiers(),
+        getVirtualPointingDevice().get());
     getEntities()->mouseDoublePressEvent(&mappedEvent);
 
     // if one of our scripts have asked to capture this event, then stop processing it
@@ -748,8 +761,9 @@ void Application::mouseReleaseEvent(QMouseEvent* event) {
 #endif
     QMouseEvent mappedEvent(event->type(),
         transformedPos,
-        event->screenPos(), event->button(),
-        event->buttons(), event->modifiers());
+        event->globalPosition(), event->button(),
+        event->buttons(), event->modifiers(),
+        getVirtualPointingDevice().get());
 
     getEntities()->mouseReleaseEvent(&mappedEvent);
 

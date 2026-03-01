@@ -14,7 +14,6 @@
 
 #include "Application.h"
 
-#include <QDesktopWidget>
 #include <QDesktopServices>
 #include <QtGui/QClipboard>
 #include <QtNetwork/QLocalSocket>
@@ -216,7 +215,9 @@ Application::Application(
 ) :
     QApplication(argc, argv),
 #ifdef USE_GL
-    _window(new MainWindow(desktop())),
+    // QT6TODO: is this correct?
+    _window(new MainWindow()),
+    //_window(new MainWindow(desktop())),
 #else
     _vkWindow(new VKWindow()),
     _vkWindowWrapper(QWidget::createWindowContainer(_vkWindow)),
@@ -235,6 +236,15 @@ Application::Application(
     _previousScriptLocation("LastScriptLocation", DESKTOP_LOCATION),
     _previousPreferredDisplayMode("previousPreferredDisplayMode", 0),
     // UI
+    _virtualPointingDevice(std::make_shared<QPointingDevice>(
+        "OffscreenUiPointingDevice",
+        0,
+        QInputDevice::DeviceType::AllDevices,
+        QPointingDevice::PointerType::AllPointerTypes,
+        QInputDevice::Capability::All,
+        4, // maxPoints
+        2  // buttonCount
+    )),
     _hmdTabletScale("hmdTabletScale", DEFAULT_HMD_TABLET_SCALE_PERCENT),
     _desktopTabletScale("desktopTabletScale", DEFAULT_DESKTOP_TABLET_SCALE_PERCENT),
     _desktopTabletBecomesToolbarSetting("desktopTabletBecomesToolbar", DEFAULT_DESKTOP_TABLET_BECOMES_TOOLBAR),
@@ -245,8 +255,8 @@ Application::Application(
     _constrainToolbarPosition("toolbar/constrainToolbarToCenterX", true),
     _awayStateWhenFocusLostInVREnabled("awayStateWhenFocusLostInVREnabled", DEFAULT_AWAY_STATE_WHEN_FOCUS_LOST_IN_VR_ENABLED),
     _preferredCursor("preferredCursor", DEFAULT_CURSOR_NAME),
-    _darkTheme("darkTheme", true),
     _miniTabletEnabledSetting("miniTabletEnabled", DEFAULT_MINI_TABLET_ENABLED),
+    _themePrefs(new ThemePrefs(this)),
     // Entities
     _maxOctreePacketsPerSecond("maxOctreePPS", DEFAULT_MAX_OCTREE_PPS),
     _maxOctreePPS(_maxOctreePacketsPerSecond.get()),
@@ -415,7 +425,7 @@ QString Application::getUserAgent() {
     if (QThread::currentThread() != thread()) {
         QString userAgent;
 
-        BLOCKING_INVOKE_METHOD(this, "getUserAgent", Q_RETURN_ARG(QString, userAgent));
+        BLOCKING_INVOKE_METHOD(this, "getUserAgent", Q_GENERIC_RETURN_ARG(QString, userAgent));
 
         return userAgent;
     }
@@ -613,7 +623,8 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject(sgp, "Menu", MenuScriptingInterface::getInstance());
     scriptEngine->registerGlobalObject(sgp, "DesktopPreviewProvider", DependencyManager::get<DesktopPreviewProvider>().data());
 #if !defined(DISABLE_QML)
-    scriptEngine->registerGlobalObject(sgp, "Stats", Stats::getInstance());
+    // QT6TODO: Stats instance is not created?
+    //scriptEngine->registerGlobalObject(sgp, "Stats", Stats::getInstance());
 #endif
     scriptEngine->registerGlobalObject(sgp, "Settings", SettingsScriptingInterface::getInstance());
     scriptEngine->registerGlobalObject(sgp, "Snapshot", DependencyManager::get<Snapshot>().data());
@@ -1006,7 +1017,7 @@ std::map<QString, QString> Application::prepareServerlessDomainContents(QUrl dom
 
 void Application::loadServerlessDomain(QUrl domainURL) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "loadServerlessDomain", Q_ARG(QUrl, domainURL));
+        QMetaObject::invokeMethod(this, "loadServerlessDomain", Q_GENERIC_ARG(QUrl, domainURL));
         return;
     }
 
@@ -1038,7 +1049,7 @@ void Application::loadServerlessDomain(QUrl domainURL) {
 
 void Application::loadErrorDomain(QUrl domainURL) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "loadErrorDomain", Q_ARG(QUrl, domainURL));
+        QMetaObject::invokeMethod(this, "loadErrorDomain", Q_GENERIC_ARG(QUrl, domainURL));
         return;
     }
 
@@ -1286,7 +1297,13 @@ void Application::loadSettings(const QCommandLineParser& parser) {
         externalResource->setBase(bucket, url.get());
     }
 
-    // the setter function isn't called, so update the theme colors now
+    connect(_themePrefs, &ThemePrefs::themeChanged, [this]() {
+        if (QThread::currentThread() != thread()) {
+            QMetaObject::invokeMethod(qApp, "updateThemeColors");
+        } else {
+            updateThemeColors();
+        }
+    });
     updateThemeColors();
 
     _settingsLoaded = true;

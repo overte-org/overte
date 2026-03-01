@@ -1,5 +1,5 @@
+import QtCore
 import QtQuick 2.7
-import Qt.labs.settings 1.0 as QtSettings
 
 import QtQuick.Controls 2.3
 
@@ -12,9 +12,13 @@ import controlsUit 1.0
 OriginalDesktop.Desktop {
     id: desktop
 
+    // QT6TODO: Desktop just eats all mouse inputs
+    visible: true
+
     property alias toolbarObjectName: sysToolbar.objectName
 
-    MouseArea {
+    // QT6TODO: this breaks VR mouse cursor since
+    /*MouseArea {
         id: hoverWatch
         anchors.fill: parent
         hoverEnabled: true
@@ -23,7 +27,7 @@ OriginalDesktop.Desktop {
         onEntered: if (typeof ApplicationCompositor !== "undefined") ApplicationCompositor.reticleOverDesktop = true
         onExited: if (typeof ApplicationCompositor !== "undefined") ApplicationCompositor.reticleOverDesktop = false
         acceptedButtons: Qt.NoButton
-    }
+    }*/
 
     Action {
         text: "Open Browser"
@@ -79,7 +83,7 @@ OriginalDesktop.Desktop {
     }
     signal toolbarVisibleChanged(bool isVisible, string toolbarName);
 
-    QtSettings.Settings {
+    Settings {
         id: settings;
         category: "toolbar";
         property bool constrainToolbarToCenterX: true;

@@ -18,6 +18,8 @@
 #ifndef hifi_UsersScriptingInterface_h
 #define hifi_UsersScriptingInterface_h
 
+#include <QObject>
+
 #include <DependencyManager.h>
 #include <shared/ReadWriteLockable.h>
 #include <ModerationFlags.h>

@@ -26,6 +26,7 @@
 #include <QtCore/QJsonObject>
 #include <QtNetwork/QNetworkReply>
 #include <QtNetwork/QNetworkRequest>
+#include <QStringRef>
 
 #include <shared/QtHelpers.h>
 #include <QVariantGLM.h>
@@ -1899,7 +1900,7 @@ QVector<glm::quat> AvatarData::getJointRotations() const {
     if (QThread::currentThread() != thread()) {
         QVector<glm::quat> result;
         BLOCKING_INVOKE_METHOD(const_cast<AvatarData*>(this), "getJointRotations",
-                                  Q_RETURN_ARG(QVector<glm::quat>, result));
+                                  Q_GENERIC_RETURN_ARG(QVector<glm::quat>, result));
         return result;
     }
     QReadLocker readLock(&_jointDataLock);
@@ -2653,7 +2654,14 @@ QByteArray AvatarData::toFrame(const AvatarData& avatar) {
 
 
 void AvatarData::fromFrame(const QByteArray& frameData, AvatarData& result, bool useFrameSkeleton) {
-    QJsonDocument doc = QJsonDocument(QCborValue::fromCbor(frameData).toJsonValue().toObject());
+    QCborParserError cborError;
+    auto cbor = QCborValue::fromCbor(frameData, &cborError);
+    if (cborError.error != QCborError::NoError) {
+        // TODO: what to do if this happens?
+        qCWarning(avatars) << "AvatarData::fromFrame corrupted avatar data cbor: " << QString(frameData.toHex());
+        return;
+    }
+    QJsonDocument doc = QJsonDocument(cbor.toJsonValue().toObject());
 
 #ifdef WANT_JSON_DEBUG
     {

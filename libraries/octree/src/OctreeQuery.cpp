@@ -155,10 +155,16 @@ int OctreeQuery::parseData(ReceivedMessage& message) {
         sourceBuffer += binaryParametersBytes;
 
         // grab the parameter object from the packed binary representation of JSON
-        auto newJsonDocument = QJsonDocument(QCborValue::fromCbor(binaryJSONParameters).toJsonValue().toObject());
+        QCborParserError cborError;
+        auto cbor = QCborValue::fromCbor(binaryJSONParameters, &cborError);
+        if (cborError.error == QCborError::NoError) {
+            auto newJsonDocument = QJsonDocument(cbor.toJsonValue().toObject());
 
-        QWriteLocker jsonParameterLocker { &_jsonParametersLock };
-        _jsonParameters = newJsonDocument.object();
+            QWriteLocker jsonParameterLocker { &_jsonParametersLock };
+            _jsonParameters = newJsonDocument.object();
+        } else {
+            qWarning() << "OctreeQuery::parseData: corrupted cbor " << QString(binaryJSONParameters.toHex());
+        }
     }
 
     OctreeQueryFlags queryFlags;

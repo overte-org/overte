@@ -250,7 +250,7 @@ static const int WATCHDOG_TIMER_TIMEOUT = 100;
 static const QString TESTER_FILE = "/sdcard/_hifi_test_device.txt";
 #endif
 
-bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted) {
+bool Application::setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted) {
     const int listenPort = parser.isSet("listenPort") ? parser.value("listenPort").toInt() : INVALID_PORT;
 
     bool suppressPrompt = parser.isSet("suppress-settings-reset");
@@ -329,6 +329,8 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     DependencyManager::set<recording::Recorder>();
     DependencyManager::set<AddressManager>();
     DependencyManager::set<NodeList>(NodeType::Agent, listenPort);
+    // Octree processor requires NodeList.
+    _octreeProcessor = std::make_shared<OctreePacketProcessor>();
     DependencyManager::set<recording::ClipCache>();
     DependencyManager::set<GeometryCache>();
     DependencyManager::set<ModelFormatRegistry>(); // ModelFormatRegistry must be defined before ModelCache. See the ModelCache constructor.
@@ -414,7 +416,14 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
 
     DependencyManager::set<EntityScriptServerLogClient>();
 
-    DependencyManager::set<OctreeStatsProvider>(nullptr, qApp->getOcteeSceneStats());
+    {
+        auto octreeSceneStats = qApp->getOcteeSceneStats();
+        if (!octreeSceneStats) {
+            qCritical() << "setupEssentials: Octree stats provider not available yet. This should never happen";
+            std::abort();
+        }
+        DependencyManager::set<OctreeStatsProvider>(nullptr, octreeSceneStats.value());
+    }
     DependencyManager::set<AvatarBookmarks>();
     DependencyManager::set<LocationBookmarks>();
     DependencyManager::set<Snapshot>();
@@ -459,7 +468,6 @@ void Application::initialize(const QCommandLineParser &parser) {
     _entitySimulation = std::make_shared<PhysicalEntitySimulation>();
     _physicsEngine = std::make_shared<PhysicsEngine>(Vectors::ZERO);
     _entityClipboard = std::make_shared<EntityTree>();
-    _octreeProcessor = std::make_shared<OctreePacketProcessor>();
     _entityEditSender = std::make_shared<EntityEditPacketSender>();
     _graphicsEngine = std::make_shared<GraphicsEngine>();
     _applicationOverlay = std::make_shared<ApplicationOverlay>();
@@ -658,6 +666,14 @@ void Application::initialize(const QCommandLineParser &parser) {
     QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/FiraSans-SemiBold.ttf");
     QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/FiraSans-Regular.ttf");
     QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/FiraSans-Medium.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/Roboto-Regular.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/Roboto-Bold.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/Roboto-Italic.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/Roboto-BoldItalic.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/RobotoMono-Regular.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/RobotoMono-Bold.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/RobotoMono-Italic.ttf");
+    QFontDatabase::addApplicationFont(PathUtils::resourcesPath() + "fonts/RobotoMono-BoldItalic.ttf");
     _window->setWindowTitle("Overte");
 
     Model::setAbstractViewStateInterface(this); // The model class will sometimes need to know view state details from us
@@ -762,7 +778,8 @@ void Application::initialize(const QCommandLineParser &parser) {
         << NodeType::EntityServer << NodeType::AssetServer << NodeType::MessagesMixer << NodeType::EntityScriptServer);
 
     // setDefaultFormat has no effect after the platform window has been created, so call it here.
-    QSurfaceFormat::setDefaultFormat(getDefaultOpenGLSurfaceFormat());
+    // QT6TODO: I was getting a warning when it was here, so I moved it to the beginning.
+    //QSurfaceFormat::setDefaultFormat(getDefaultOpenGLSurfaceFormat());
 
 #ifdef USE_GL
     _primaryWidget = new GLCanvas();
@@ -876,14 +893,17 @@ void Application::initialize(const QCommandLineParser &parser) {
             { "gl_renderer", glContextData.renderer.c_str() },
             { "ideal_thread_count", QThread::idealThreadCount() }
         };
+#ifdef Q_OS_MAC
         auto macVersion = QSysInfo::macVersion();
         if (macVersion != QSysInfo::MV_None) {
             properties["os_osx_version"] = QSysInfo::macVersion();
         }
+#elifdef Q_OS_WIN
         auto windowsVersion = QSysInfo::windowsVersion();
         if (windowsVersion != QSysInfo::WV_None) {
             properties["os_win_version"] = QSysInfo::windowsVersion();
         }
+#endif
 
         ProcessorInfo procInfo;
         if (getProcessorInfo(procInfo)) {
@@ -1194,10 +1214,12 @@ void Application::initialize(const QCommandLineParser &parser) {
         properties["deleted_entity_cnt"] = entityActivityTracking.deletedEntityCount;
         properties["edited_entity_cnt"] = entityActivityTracking.editedEntityCount;
 
-        NodeToOctreeSceneStats* octreeServerSceneStats = getOcteeSceneStats();
+        auto octreeServerSceneStats = getOcteeSceneStats();
         unsigned long totalServerOctreeElements = 0;
-        for (NodeToOctreeSceneStatsIterator i = octreeServerSceneStats->begin(); i != octreeServerSceneStats->end(); i++) {
-            totalServerOctreeElements += i->second.getTotalElements();
+        if (octreeServerSceneStats) {
+            for (NodeToOctreeSceneStatsIterator i = octreeServerSceneStats.value()->begin(); i != octreeServerSceneStats.value()->end(); i++) {
+                totalServerOctreeElements += i->second.getTotalElements();
+            }
         }
 
         properties["local_octree_elements"] = (qint64) OctreeElement::getInternalNodeCount();
@@ -2008,11 +2030,11 @@ void Application::setupSignalsAndOperators() {
                 auto reticlePos = getApplicationCompositor().getReticlePosition();
                 QPoint localPos(reticlePos.x, reticlePos.y); // both hmd and desktop already handle this in our coordinates.
                 if (state) {
-                    QMouseEvent mousePress(QEvent::MouseButtonPress, localPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+                    QMouseEvent mousePress(QEvent::MouseButtonPress, localPos, localPos, Qt::LeftButton, Qt::LeftButton, Qt::NoModifier, getVirtualPointingDevice().get());
                     sendEvent(_primaryWidget, &mousePress);
                     _reticleClickPressed = true;
                 } else {
-                    QMouseEvent mouseRelease(QEvent::MouseButtonRelease, localPos, Qt::LeftButton, Qt::NoButton, Qt::NoModifier);
+                    QMouseEvent mouseRelease(QEvent::MouseButtonRelease, localPos, localPos, Qt::LeftButton, Qt::NoButton, Qt::NoModifier, getVirtualPointingDevice().get());
                     sendEvent(_primaryWidget, &mouseRelease);
                     _reticleClickPressed = false;
                 }

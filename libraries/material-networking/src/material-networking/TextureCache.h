@@ -74,7 +74,7 @@ public:
     void setExtra(void* extra) override;
 
 signals:
-    void networkTextureCreated(const QWeakPointer<NetworkTexture>& self);
+    void networkTextureCreated(const std::weak_ptr<NetworkTexture>& self);
 
 public slots:
     void ktxInitialDataRequestFinished();
@@ -152,9 +152,9 @@ private:
     friend class TextureCache;
 };
 
-using NetworkTexturePointer = QSharedPointer<NetworkTexture>;
+using NetworkTexturePointer = std::shared_ptr<NetworkTexture>;
 
-Q_DECLARE_METATYPE(QWeakPointer<NetworkTexture>)
+Q_DECLARE_METATYPE(std::weak_ptr<NetworkTexture>)
 
 
 /// Stores cached textures, including render-to-texture targets.
@@ -214,8 +214,8 @@ protected:
     // Overload ResourceCache::prefetch to allow specifying texture type for loads
     Q_INVOKABLE ScriptableResource* prefetch(const QUrl& url, int type, int maxNumPixels = ABSOLUTE_MAX_TEXTURE_NUM_PIXELS, image::ColorChannel sourceChannel = image::ColorChannel::NONE);
 
-    virtual QSharedPointer<Resource> createResource(const QUrl& url) override;
-    QSharedPointer<Resource> createResourceCopy(const QSharedPointer<Resource>& resource) override;
+    virtual std::shared_ptr<Resource> createResource(const QUrl& url) override;
+    std::shared_ptr<Resource> createResourceCopy(const std::shared_ptr<Resource>& resource) override;
 
 private:
     friend class ImageReader;

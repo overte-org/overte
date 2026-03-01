@@ -11,7 +11,10 @@
 
 #include "UpdateDialog.h"
 
+#include <QtCore5Compat/QRegExp>
+
 #include <AutoUpdater.h>
+#include <QRegularExpression>
 
 #include "DependencyManager.h"
 
@@ -38,7 +41,7 @@ UpdateDialog::UpdateDialog(QQuickItem* parent) :
                 // grab the release notes for this later version
                 QString releaseNotes = it.value()["releaseNotes"];
                 releaseNotes.remove("<br />");
-                releaseNotes.remove(QRegExp("^\n+"));
+                releaseNotes.remove(QRegularExpression("^\n+"));
                 _releaseNotes += "\n" + it.key().versionString + "\n" + releaseNotes + "\n";
             } else {
                 break;
