@@ -49,6 +49,7 @@ var DEFAULT_SCRIPTS_SEPARATE = [
     "communityScripts/armored-chat/armored_chat.js",
     "communityScripts/chatBubbles/chatBubbles.js",
     "communityScripts/contextMenu.js",
+    "system/flyCam.js",
     //"system/chat.js"
 ];
 
