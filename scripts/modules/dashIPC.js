@@ -96,7 +96,12 @@ class DashWindow {
     /** @returns {string} */
     toString() { return `DashWindow(${this.id})`; }
 
-    constructor({ title = "Unnamed", appID = null, sourceURL = "No source URL provided!" }) {
+    constructor({
+        title = "Unnamed",
+        appID = null,
+        sourceURL = "No source URL provided!",
+        dimensions = { x: 0.53, y: 0.8, z: 0 },
+    }) {
         this.#title = title;
         this.#appID = appID;
         this.#sourceURL = sourceURL;
@@ -107,6 +112,7 @@ class DashWindow {
                 title: title,
                 app_id: appID,
                 source_url: sourceURL,
+                dimensions,
             },
         });
 

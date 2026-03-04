@@ -27,6 +27,7 @@ class DashWindow {
     #hidden = false;
     #hiddenOverride = false;
     #grabbed = false;
+    #dimensions = vec3(Defs.windowDimensions);
 
     /**
      * Whether this window is pinned. Pinned windows aren't
@@ -70,11 +71,13 @@ class DashWindow {
         position,
         rotation,
         entityProperties = {},
+        dimensions = Defs.windowDimensions,
         pinnable = false,
     }) {
         this.#sourceURL = sourceURL;
         this.#title = title;
         this.#pinnable = pinnable;
+        this.#dimensions = vec3(dimensions);
 
         this.desiredPosition = position;
         this.desiredRotation = rotation;
@@ -96,7 +99,7 @@ class DashWindow {
 
             // FIXME: localDimensions aren't actually local,
             // for some reason they're actually post-SNScale
-            localDimensions: vec3(Defs.windowDimensions).multiply(MyAvatar.sensorToWorldScale),
+            localDimensions: this.#dimensions.multiply(MyAvatar.sensorToWorldScale),
 
             sourceUrl: Defs.windowRootQmlURL,
             // FIXME: use a constant when dpi scales properly
@@ -125,6 +128,13 @@ class DashWindow {
             this.markInitialized();
         }, 100);
     }
+
+    /**
+     * The size of the window.
+     * @readonly
+     * @type {Vector3}
+     */
+    get dimensions() { return this.#dimensions; }
 
     /**
      * The backing Web entity ID.
@@ -216,7 +226,7 @@ class DashWindow {
         Entities.editEntity(this.entityID, {
             // FIXME: localDimensions aren't actually local,
             // for some reason they're actually post-SNScale
-            localDimensions: vec3(Defs.windowDimensions).multiply(MyAvatar.sensorToWorldScale),
+            localDimensions: this.#dimensions.multiply(MyAvatar.sensorToWorldScale),
             // FIXME: use a constant when dpi scales properly
             dpi: Defs.scaleHackInv(Defs.windowDPI),
         });
@@ -391,6 +401,7 @@ class WindowManager {
                     sourceURL: event.source_url,
                     title: event.title,
                     pinnable: event.pinnable,
+                    dimensions: event.dimensions,
                 });
             } break;
 
@@ -504,7 +515,7 @@ class WindowManager {
                 pos = vec3(pos);
 
                 // sit on top of the rail
-                pos.y = (Defs.windowDimensions.y / 2) + 0.01;
+                pos.y = (window.dimensions.y / 2) + 0.01;
                 pos.x = clamp(pos.x / Defs.windowRailWidth, -1, 1);
                 pos.z = (Math.cos(pos.x * (Math.PI / 2)) * -Defs.windowRailCurvature) - Defs.windowRailDistance;
 
@@ -555,10 +566,10 @@ class WindowManager {
         }
     }
 
-    #addWindow({ sourceURL, title, pinnable }) {
+    #addWindow({ sourceURL, title, pinnable, dimensions = Defs.windowDimensions }) {
         const pos = vec3(
             0,
-            (Defs.windowDimensions.y / 2) + 0.01,
+            (dimensions.y / 2) + 0.01,
             -(Defs.windowRailCurvature + Defs.windowRailDistance)
         );
         const rot = euler(0, 0, 0);
@@ -569,6 +580,7 @@ class WindowManager {
             position: pos,
             rotation: rot,
             entityProperties: { parentID: this.#rootID },
+            dimensions,
         });
         this.children.set(newWindow.entityID, newWindow);
         return newWindow;
@@ -643,6 +655,7 @@ class WindowManager {
                     sourceURL: msg.properties.source_url,
                     title: msg.properties.title,
                     pinnable: msg.properties.pinnable,
+                    dimensions: msg.properties.dimensions,
                 });
 
                 let ipcWindow = new IPCWindow({
