@@ -132,7 +132,7 @@ class Dashboard {
             localPosition: vec3(0, -0.15, -(Defs.windowRailDistance + Defs.windowRailCurvature) + 0.12),
             // FIXME: localDimensions aren't actually local,
             // for some reason they're actually post-SNScale
-            localDimensions: vec3(1, 0.3, 0).multiply(MyAvatar.sensorToWorldScale),
+            localDimensions: vec3(Defs.dashBarDimensions).multiply(MyAvatar.sensorToWorldScale),
             dpi: Defs.scaleHackInv(Defs.dashBarDPI),
             sourceUrl: Defs.dashBarQmlURL,
             maxFPS: 90,
@@ -164,10 +164,7 @@ class Dashboard {
         Window.processingGifCompleted.connect(this.#snapshotAnimDoneCallback);
         Entities.webEventReceived.connect(this.#eventCallback);
         Controller.keyPressEvent.connect(this.#keyPressCallback);
-
-        /// FIXME: waiting on #2092
-        // Window.themeChanged.connect(this.#themeChangeCallback);
-
+        Window.themeChanged.connect(this.#themeChangeCallback);
         HMD.displayModeChanged.connect(this.#hmdActiveCallback);
         Messages.messageReceived.connect(this.#messageCallback);
     }
@@ -187,8 +184,10 @@ class Dashboard {
      * @param {number} deltaTime
      */
     update(deltaTime) {
-        this.windowManager.update(deltaTime);
-        this.notifyPanel.update(deltaTime);
+        // optional chain so if they fail to start
+        // they won't spam the log
+        this.windowManager?.update(deltaTime);
+        this.notifyPanel?.update(deltaTime);
     }
 
     dispose() {
@@ -200,7 +199,7 @@ class Dashboard {
         Window.processingGifCompleted.disconnect(this.#snapshotAnimDoneCallback);
         Entities.webEventReceived.disconnect(this.#eventCallback);
         Controller.keyPressEvent.disconnect(this.#keyPressCallback);
-        //Window.themeChanged.disconnect(this.#themeChangeCallback);
+        Window.themeChanged.disconnect(this.#themeChangeCallback);
         HMD.displayModeChanged.disconnect(this.#hmdActiveCallback);
         Messages.messageReceived.disconnect(this.#messageCallback);
 
@@ -303,7 +302,17 @@ class Dashboard {
         }
     };
 
-    #themeChangeCallback = () => sendIPCMessage({ dashboard: { event: "theme_change" } });
+    #themeChangeCallback = () => {
+        this.sendIPCMessage({ dashboard: { event: "theme_change" } });
+
+        const event = JSON.stringify({ dashboard: { event: "theme_change" } });
+
+        Entities.emitScriptEvent(this.#appbarPanelID, event);
+
+        for (const [id, _window] of this.windowManager.children) {
+            Entities.emitScriptEvent(id, event);
+        }
+    };
 
     #hmdActiveCallback = hmdActive => {};
 

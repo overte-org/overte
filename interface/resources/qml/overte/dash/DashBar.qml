@@ -9,6 +9,12 @@ import "."
 Item {
     property var appButtons: ({})
 
+    function reloadThemeSettings() {
+        Overte.Theme.darkMode = SettingsInterface.getValue("Theme/darkMode", true);
+        Overte.Theme.highContrast = SettingsInterface.getValue("Theme/highContrast", false);
+        Overte.Theme.reducedMotion = SettingsInterface.getValue("Theme/reducedMotion", false);
+    }
+
     function fromScript(rawMsg) {
         let msg;
         try {
@@ -17,7 +23,9 @@ Item {
             return;
         }
 
-        if (msg?.dash_window?.event === "hide") {
+        if (msg?.dashboard?.event === "theme_change") {
+            reloadThemeSettings();
+        } else if (msg?.dash_window?.event === "hide") {
             dashBar.state = "HIDDEN";
         } else if (msg?.dash_window?.event === "unhide") {
             dashBar.state = "OPEN";
@@ -98,11 +106,59 @@ Item {
         property alias appsBarOpen: appsBarToggle.checked
     }
 
-    Rectangle {
+    ColumnLayout {
+        anchors.top: systemBar.top
+        anchors.bottom: systemBar.bottom
         anchors.left: parent.left
-        anchors.right: parent.right
+
+        id: systemLeft
+        spacing: 8
+
+        Overte.RoundButton {
+            icon.source: "../icons/settings_cog.svg"
+            icon.color: undefined
+            icon.width: 24
+            icon.height: 24
+
+            onClicked: {
+                dashBar.toScript({
+                    dash_window: {
+                        event: "spawn_window",
+                        title: qsTr("Settings"),
+                        source_url: resourceURL("qml/overte/settings/Settings.qml"),
+                    },
+                });
+            }
+
+            Overte.ToolTip { text: qsTr("Settings") }
+        }
+
+        Overte.RoundButton {
+            icon.source: "../icons/shutdown.svg"
+            icon.color: Overte.Theme.paletteActive.buttonText
+            icon.width: 24
+            icon.height: 24
+
+            backgroundColor: (
+                hovered ?
+                Overte.Theme.paletteActive.buttonDestructive :
+                Overte.Theme.paletteActive.button
+            )
+
+            onClicked: WindowScriptingInterface.quit()
+
+            Overte.ToolTip { text: qsTr("Quit") }
+        }
+    }
+
+    Rectangle {
+        anchors.left: systemLeft.right
+        anchors.right: systemRight.left
         anchors.top: parent.top
-        implicitHeight: childrenRect.height + border.width + 8
+        anchors.leftMargin: 8
+        anchors.rightMargin: 8
+
+        implicitHeight: 80 + border.width + 8
 
         id: systemBar
 
@@ -123,72 +179,12 @@ Item {
         border.width: Overte.Theme.borderWidth
         radius: Overte.Theme.borderRadius
 
-        Row {
-            anchors.top: parent.top
-            anchors.left: parent.left
-            anchors.margins: 4
-
-            DashBarButton {
-                text: qsTr("Quit")
-                icon.source: "../icons/shutdown.svg"
-                icon.color: Overte.Theme.paletteActive.buttonText
-                backgroundColor: (
-                    hovered ?
-                    Overte.Theme.paletteActive.buttonDestructive :
-                    Overte.Theme.paletteActive.button
-                )
-
-                onClicked: WindowScriptingInterface.quit()
-            }
-
-            DashBarButton {
-                text: qsTr("Settings")
-                icon.source: "../icons/settings_cog.svg"
-                icon.color: Overte.Theme.paletteActive.buttonText
-
-                onClicked: {
-                    dashBar.toScript({
-                        dash_window: {
-                            event: "spawn_window",
-                            title: qsTr("Settings"),
-                            source_url: resourceURL("qml/overte/settings/Settings.qml"),
-                        },
-                    });
-                }
-            }
-
-            DashBarButton {
-                visible: SettingsInterface.getValue("Settings/Developer Menu", false)
-                text: qsTr("Dev Tools")
-                icon.source: "../icons/dev_tools.png"
-                icon.color: undefined
-
-                onClicked: {
-                    dashBar.toScript({
-                        dash_window: {
-                            event: "spawn_window",
-                            title: qsTr("Developer Tools"),
-                            source_url: resourceURL("qml/overte/dash/DevTools.qml"),
-                        },
-                    });
-                }
-            }
-        }
-
-        Row {
-            anchors.top: parent.top
-            anchors.horizontalCenter: parent.horizontalCenter
+        RowLayout {
+            anchors.fill: parent
             anchors.margins: 4
 
             Repeater {
                 model: [
-                    {
-                        buttonName: qsTr("Places"),
-                        buttonIcon: "../icons/home.svg",
-                        windowName: qsTr("Places"),
-                        windowSource: resourceURL("qml/overte/place_picker/PlacePicker.qml"),
-                        windowTag: "system places"
-                    },
                     {
                         buttonName: qsTr("Contacts"),
                         buttonIcon: "../icons/users.svg",
@@ -198,10 +194,17 @@ Item {
                     },
                     {
                         buttonName: qsTr("Avatar"),
-                        buttonIcon: "../icons/add_friend.svg",
+                        buttonIcon: "../icons/avatars.png",
                         windowName: qsTr("Avatar"),
                         windowSource: resourceURL("qml/overte/avatar_picker/AvatarPicker.qml"),
                         windowTag: "system avatars"
+                    },
+                    {
+                        buttonName: qsTr("Places"),
+                        buttonIcon: "../icons/home.svg",
+                        windowName: qsTr("Places"),
+                        windowSource: resourceURL("qml/overte/place_picker/PlacePicker.qml"),
+                        windowTag: "system places"
                     },
                 ]
 
@@ -212,9 +215,11 @@ Item {
                     required property string windowSource
                     required property string windowTag
 
+                    Layout.fillWidth: true
+
                     text: buttonName
                     icon.source: buttonIcon
-                    icon.color: Overte.Theme.paletteActive.buttonText
+                    icon.color: undefined
 
                     onClicked: {
                         dashBar.toScript({
@@ -229,52 +234,61 @@ Item {
                 }
             }
         }
+    }
 
-        Row {
-            anchors.top: parent.top
-            anchors.right: parent.right
-            anchors.margins: 4
+    ColumnLayout {
+        anchors.top: systemBar.top
+        anchors.bottom: systemBar.bottom
+        anchors.right: parent.right
 
-            DashBarButton {
-                checkable: true
-                text: checked ? qsTr("Unmute") : qsTr("Mute")
-                icon.source: checked ? "../icons/speaker_muted.svg" : "../icons/speaker_active.svg"
-                backgroundColor: (
+        id: systemRight
+
+        Overte.RoundButton {
+            checkable: true
+            icon.source: checked ? "../icons/speaker_muted.svg" : "../icons/speaker_active.svg"
+            icon.width: 24
+            icon.height: 24
+            icon.color: Overte.Theme.paletteActive.buttonText
+            backgroundColor: (
+                checked ?
+                Overte.Theme.paletteActive.buttonDestructive :
+                Overte.Theme.paletteActive.button
+            )
+            checked: AudioScriptingInterface.muted
+
+            onToggled: AudioScriptingInterface.muted = checked
+
+            Overte.ToolTip { text: parent.checked ? qsTr("Unmute") : qsTr("Mute") }
+        }
+
+        Overte.RoundButton {
+            checkable: true
+            visible: HMD.active
+            icon.source: checked ? "../icons/triangle_down.svg" : "../icons/triangle_up.svg"
+            icon.width: 24
+            icon.height: 24
+            backgroundColor: (
+                checked ?
+                Overte.Theme.paletteActive.highlight :
+                Overte.Theme.paletteActive.button
+            )
+            checked: MyAvatar.standingMode !== 0
+
+            onToggled: {
+                MyAvatar.standingMode = (
                     checked ?
-                    Overte.Theme.paletteActive.buttonDestructive :
-                    Overte.Theme.paletteActive.button
-                )
-                checked: AudioScriptingInterface.muted
-
-                onToggled: AudioScriptingInterface.muted = checked
+                    2 : // ForcedHeight
+                    0   // Standing
+                );
             }
 
-            DashBarButton {
-                checkable: true
-                visible: HMD.active
-                text: checked ? qsTr("Seated") : qsTr("Standing")
-                icon.source: checked ? "../icons/triangle_down.svg" : "../icons/triangle_up.svg"
-                backgroundColor: (
-                    checked ?
-                    Overte.Theme.paletteActive.highlight :
-                    Overte.Theme.paletteActive.button
-                )
-                checked: MyAvatar.standingMode !== 0
-
-                onToggled: {
-                    MyAvatar.standingMode = (
-                        checked ?
-                        2 : // ForcedHeight
-                        0   // Standing
-                    );
-                }
-            }
+            Overte.ToolTip { text: parent.checked ? qsTr("Seated") : qsTr("Standing") }
         }
     }
 
     Rectangle {
-        anchors.left: parent.left
-        anchors.right: parent.right
+        anchors.left: systemBar.left
+        anchors.right: systemBar.right
         y: -(height - systemBar.height)
         z: -1
         opacity: 0

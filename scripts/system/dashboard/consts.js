@@ -66,6 +66,13 @@ module.exports = {
     dashBarDPI: 20,
 
     /**
+     * The dimensions of the dash bar panel.
+     * @readonly
+     * @type {Vector3}
+     */
+    dashBarDimensions: { x: 0.7, y: 0.35, z: 0.0 },
+
+    /**
      * A URL to DashBar.qml.
      * @readonly
      * @type {string}

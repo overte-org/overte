@@ -8,6 +8,12 @@ Item {
     id: root
     anchors.fill: parent
 
+    function reloadThemeSettings() {
+        Overte.Theme.darkMode = SettingsInterface.getValue("Theme/darkMode", true);
+        Overte.Theme.highContrast = SettingsInterface.getValue("Theme/highContrast", false);
+        Overte.Theme.reducedMotion = SettingsInterface.getValue("Theme/reducedMotion", false);
+    }
+
     property string source: ""
     property string title: "Window title"
 
@@ -48,7 +54,9 @@ Item {
         let msg;
         try { msg = JSON.parse(rawMsg); } catch (_) {}
 
-        if (msg?.dash_window?.event) {
+        if (msg?.dashboard?.event === "theme_change") {
+            reloadThemeSettings();
+        } else if (msg?.dash_window?.event) {
             readEvent(msg.dash_window);
         }
     }

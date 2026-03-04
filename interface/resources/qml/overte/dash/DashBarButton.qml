@@ -12,8 +12,8 @@ Item {
     property alias backgroundColor: button.backgroundColor
 
     id: barButton
-    implicitWidth: 72
-    implicitHeight: 72
+    implicitWidth: 80
+    implicitHeight: 80
 
     signal clicked()
     signal toggled()
@@ -26,8 +26,8 @@ Item {
 
             id: button
 
-            implicitWidth: 48
-            implicitHeight: 48
+            implicitWidth: 56
+            implicitHeight: 56
             backgroundColor: (
                 checked ?
                 Overte.Theme.paletteActive.highlight :
@@ -39,8 +39,8 @@ Item {
             checked: false
 
             icon.source: "../icons/delete.svg"
-            icon.width: 24
-            icon.height: 24
+            icon.width: 40
+            icon.height: 40
 
             onClicked: barButton.clicked()
             onToggled: barButton.toggled()
@@ -50,7 +50,7 @@ Item {
             Layout.fillWidth: true
 
             id: label
-            text: "NO LABEL!"
+            visible: text !== ""
 
             font.pixelSize: Overte.Theme.fontPixelSizeSmall
             wrapMode: Text.Wrap
