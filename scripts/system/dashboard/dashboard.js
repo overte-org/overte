@@ -68,6 +68,8 @@ class Dashboard {
         // setting it to invisible happens later after the animation is done,
         // it can be made non-interactive immediately no problem though
         if (visible) {
+            this.#setDesiredPosition();
+
             Entities.editEntity(this.#appbarPanelID, {
                 visible: true,
                 ignorePickIntersection: false,
@@ -94,31 +96,39 @@ class Dashboard {
     /** @type {Map<Uuid,AppButtonIPC>} */
     #appButtons = new Map();
 
+    /** @type {Vector3} */
+    #desiredPosition;
+    /** @type {Quaternion} */
+    #desiredRotation;
+
     sendIPCMessage(data) {
         Messages.sendLocalMessage(Defs.ipcChannel, JSON.stringify(data));
     }
 
+    #setDesiredPosition() {
+        const heightOffset = HMD.active ? -0.38 : -0.3;
+        const pos = Vec3.sum(Entities.worldToLocalPosition(Camera.position, MyAvatar.SELF_ID, Defs.sensorToWorldJoint), [0, heightOffset, 0]);
+        const rot = Quat.cancelOutRollAndPitch(Entities.worldToLocalRotation(Camera.orientation, MyAvatar.SELF_ID, Defs.sensorToWorldJoint));
+
+        this.#desiredPosition = vec3(pos);
+        this.#desiredRotation = quat(rot);
+
+        Entities.editEntity(this.rootID, {
+            localPosition: this.#desiredPosition,
+            localRotation: this.#desiredRotation,
+        });
+    }
+
     constructor() {
-        const rootPos = (
-            HMD.active ?
-            // 0.62 is *roughly* at the height where
-            // you can interact with the app bar without
-            // raising your arm, while letting you poke
-            // the top of app windows with your finger
-            vec3(0, MyAvatar.userHeight * 0.62, 0) :
-            // 0.7 on desktop places the app bar *just*
-            // above the bottom of the screen at 75° FOV
-            // TODO: find something that works on desktop
-            // that works well with all FOV settings
-            vec3(0, MyAvatar.userHeight * 0.7, 0)
-        );
+        this.#setDesiredPosition();
 
         this.rootID = Entities.addEntity({
             type: "Empty",
             name: "Dashboard",
             parentID: MyAvatar.SELF_ID,
             parentJointIndex: Defs.sensorToWorldJoint,
-            localPosition: rootPos,
+            localPosition: this.#desiredPosition,
+            localRotation: this.#desiredRotation,
             ignorePickIntersection: true,
             grab: { grabbable: false },
         }, "local");
