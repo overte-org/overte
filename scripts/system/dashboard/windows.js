@@ -341,6 +341,19 @@ class WindowManager {
     /** @type {boolean} */
     #hidden = true;
 
+    /** @type {boolean} */
+    #reducedMotion = Settings.getValue("Theme/reducedMotion", false);
+
+    reloadThemeSettings() {
+        this.#reducedMotion = Settings.getValue("Theme/reducedMotion", false);
+
+        const event = JSON.stringify({ dashboard: { event: "theme_change" } });
+
+        for (const [id, _window] of this.children) {
+            Entities.emitScriptEvent(id, event);
+        }
+    }
+
     #setupRail() {
         const vertCount = Defs.windowRailResolution;
 
@@ -474,7 +487,13 @@ class WindowManager {
     #updateRail(dt) {
         if (this.#railAnimTime >= 1.0) { return; }
 
-        this.#railAnimTime += dt * 2;
+        if (this.#reducedMotion) {
+            // skip the animation and just appear/disappear
+            // TODO: fade alpha with the next protocol merge, see #2070
+            this.#railAnimTime = 1.0;
+        } else {
+            this.#railAnimTime += dt * 2;
+        }
 
         const vertCount = Defs.windowRailResolution;
 
@@ -525,6 +544,12 @@ class WindowManager {
 
                 window.desiredPosition = pos;
                 window.desiredRotation = rot;
+            } else if (this.#reducedMotion) {
+                // snap the window directly onto the rail in reduced motion mode
+                Entities.editEntity(id, {
+                    localPosition: window.desiredPosition,
+                    localRotation: window.desiredRotation,
+                });
             } else {
                 // animate to snapping onto the rail
                 const lerpMs = 300;
@@ -674,7 +699,7 @@ class WindowManager {
                 this.ipcWindows.get(msg.ipc_id)?.window?.sendScriptEvent(msg.body_event);
             } else if (msg.event === "set_window_property") {
                 let window = this.ipcWindows.get(msg.ipc_id)?.window;
-                
+
                 if (!window) { return; }
 
                 if (msg.title !== undefined) { window.title = msg.title; }

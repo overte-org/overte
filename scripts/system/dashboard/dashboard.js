@@ -304,14 +304,11 @@ class Dashboard {
 
     #themeChangeCallback = () => {
         this.sendIPCMessage({ dashboard: { event: "theme_change" } });
+        this.windowManager.reloadThemeSettings();
 
-        const event = JSON.stringify({ dashboard: { event: "theme_change" } });
-
-        Entities.emitScriptEvent(this.#appbarPanelID, event);
-
-        for (const [id, _window] of this.windowManager.children) {
-            Entities.emitScriptEvent(id, event);
-        }
+        Entities.emitScriptEvent(this.#appbarPanelID, JSON.stringify({
+            dashboard: { event: "theme_change" }
+        }));
     };
 
     #hmdActiveCallback = hmdActive => {};
