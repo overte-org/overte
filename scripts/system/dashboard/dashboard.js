@@ -28,16 +28,20 @@ class AppButtonIPC {
     text;
     /** @type {boolean} */
     active;
+    /** @type {object} */
+    icons;
 
     constructor({
         ipcID,
         appID = null,
         text,
+        icons,
         active = false,
     }) {
         this.ipcID = ipcID;
         this.appID = appID;
         this.text = text;
+        this.icons = icons;
         this.active = active;
     }
 
@@ -139,7 +143,7 @@ class Dashboard {
             parentID: this.rootID,
             grab: { grabbable: false },
             localRotation: euler(-20, 0, 0),
-            localPosition: vec3(0, -0.15, -(Defs.windowRailDistance + Defs.windowRailCurvature) + 0.12),
+            localPosition: vec3(0, -0.16, -(Defs.windowRailDistance + Defs.windowRailCurvature) + 0.12),
             // FIXME: localDimensions aren't actually local,
             // for some reason they're actually post-SNScale
             localDimensions: vec3(Defs.dashBarDimensions).multiply(MyAvatar.sensorToWorldScale),
@@ -338,6 +342,7 @@ class Dashboard {
                 ipcID: msg.ipc_id,
                 appID: msg.app_id,
                 text: msg.text,
+                icons: msg.icons,
             });
 
             this.#appButtons.set(button.ipcID, button);

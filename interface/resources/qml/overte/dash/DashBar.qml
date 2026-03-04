@@ -342,6 +342,7 @@ Item {
 
                 text: modelData.text
                 checked: modelData.active
+                enabled: appsBarToggle.checked
 
                 implicitWidth: 96
                 implicitHeight: 96
@@ -351,9 +352,24 @@ Item {
                     Overte.Theme.paletteActive.highlight :
                     Overte.Theme.paletteActive.button
                 )
+                color: (
+                    checked ?
+                    Overte.Theme.paletteActive.highlightedText :
+                    Overte.Theme.paletteActive.buttonText
+                )
 
                 font.pixelSize: Overte.Theme.fontPixelSizeSmall
-                icon.source: "../icons/dev_tools.png"
+                icon.source: {
+                    let icon = modelData.icons;
+
+                    if (Overte.Theme.darkTheme) {
+                        icon = Overte.Theme.highContrast ? icon?.darkContrast : icon?.dark;
+                    } else {
+                        icon = Overte.Theme.highContrast ? icon?.lightContrast : icon?.light;
+                    }
+
+                    return checked ? icon?.active : icon?.idle;
+                }
                 icon.width: 64
                 icon.height: 64
                 icon.color: undefined //Overte.Theme.paletteActive.buttonText
