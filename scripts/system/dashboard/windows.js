@@ -418,19 +418,22 @@ class WindowManager {
                 });
             } break;
 
-            case "finished_closing": {
-                // FIXME: why does the ipcWindows.delete call have to be delayed?
-                let deletedIpc = null;
-
-                ipcLoop: for (const [id, ipc] of this.ipcWindows) {
+            case "closed": {
+                ipcLoop: for (const [_id, ipc] of this.ipcWindows) {
                     if (window.entityID === ipc.window.entityID) {
                         ipc.sendIPC({ event: "window_closed" });
-                        deletedIpc = id;
                         break ipcLoop;
                     }
                 }
+            } break;
 
-                if (deletedIpc) { this.ipcWindows.delete(deletedIpc); }
+            case "finished_closing": {
+                ipcLoop: for (const [id, ipc] of this.ipcWindows) {
+                    if (window.entityID === ipc.window.entityID) {
+                        this.ipcWindows.delete(id);
+                        break ipcLoop;
+                    }
+                }
 
                 this.children.delete(window.entityID);
                 window.dispose();

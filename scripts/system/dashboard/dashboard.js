@@ -20,6 +20,8 @@ const { NotifyPanel } = require("./notify_panel.js");
 const UPDATE_FPS = 90;
 
 class AppButtonIPC {
+    /** @type {boolean} */
+    system;
     /** @type {string} */
     ipcID;
     /** @type {?string} */
@@ -32,12 +34,14 @@ class AppButtonIPC {
     icons;
 
     constructor({
+        system = false,
         ipcID,
         appID = null,
         text,
         icons,
         active = false,
     }) {
+        this.system = system;
         this.ipcID = ipcID;
         this.appID = appID;
         this.text = text;
@@ -56,6 +60,8 @@ class AppButtonIPC {
 }
 
 class Dashboard {
+    #pingInterval;
+
     /** @type {boolean} */
     #visible = false;
 
@@ -181,6 +187,20 @@ class Dashboard {
         Window.themeChanged.connect(this.#themeChangeCallback);
         HMD.displayModeChanged.connect(this.#hmdActiveCallback);
         Messages.messageReceived.connect(this.#messageCallback);
+
+        // FIXME: entities don't have any "i'm done creating" callback,
+        // and entity add/edit/delete calls are tied to the framerate,
+        // so if the window is minimized at startup then messages to
+        // the app bar will be dropped
+        Script.setTimeout(() => {
+            // FIXME: is there a better solution to this problem?
+            // HACK: apps using the IPC might be loaded either before or after dashboard.js,
+            // pinging ensures dashIPC can know it's safe to send messages. there might be
+            // a delay until a script using dashIPC knows the dash is ready, but won't have
+            // any delay after sending their own IPC messages
+            this.sendIPCMessage({ event: "ping" });
+            this.#pingInterval = Script.setInterval(() => this.sendIPCMessage({ event: "ping" }), 300);
+        }, 1000);
     }
 
     /**
@@ -220,6 +240,7 @@ class Dashboard {
         // https://github.com/overte-org/overte/issues/1532
         //Script.update.connect(this.#updateCallback);
         Script.clearInterval(this.#updateCallback);
+        Script.clearInterval(this.#pingInterval);
 
         Entities.deleteEntity(this.#appbarPanelID);
         this.notifyPanel.dispose();
@@ -343,7 +364,11 @@ class Dashboard {
                 appID: msg.app_id,
                 text: msg.text,
                 icons: msg.icons,
+                system: msg.system,
+                order: msg.order,
             });
+
+            console.debug(`Received DashButton(${msg.text}, ${msg.ipc_id})`);
 
             this.#appButtons.set(button.ipcID, button);
 

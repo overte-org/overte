@@ -8,6 +8,19 @@ import "."
 
 Item {
     property var appButtons: ({})
+    property var systemButtons: ({})
+
+    readonly property list<var> appButtonsModel: {
+        // sort by order number, alphabetical breaks ties
+        return Object.values(appButtons).sort((a, b) =>
+            (a.order - b.order) + a.text.localeCompare(b.text));
+    }
+
+    readonly property list<var> systemButtonsModel: {
+        // sort by order number, alphabetical breaks ties
+        return Object.values(systemButtons).sort((a, b) =>
+            (a.order - b.order) + a.text.localeCompare(b.text));
+    }
 
     function reloadThemeSettings() {
         Overte.Theme.darkMode = SettingsInterface.getValue("Theme/darkMode", true);
@@ -30,19 +43,26 @@ Item {
         } else if (msg?.dash_window?.event === "unhide") {
             dashBar.state = "OPEN";
         } else if (msg?.dash_bar?.event === "set_app_button") {
-            console.info(`set_app_button ${msg.dash_bar.data.text} ${msg.dash_bar.data.active}`);
-            appButtons[msg.dash_bar.ipc_id] = msg.dash_bar.data;
-            // qml doesn't automatically acknowledge property changes
-            appButtonsChanged();
+            if (msg.dash_bar.data.system) {
+                systemButtons[msg.dash_bar.ipc_id] = msg.dash_bar.data;
+                // qml doesn't automatically acknowledge property changes
+                systemButtonsChanged();
+            } else {
+                appButtons[msg.dash_bar.ipc_id] = msg.dash_bar.data;
+                // qml doesn't automatically acknowledge property changes
+                appButtonsChanged();
+            }
         } else if (msg?.dash_bar?.event === "delete_app_button") {
-            delete appButtons[msg.dash_bar.ipc_id];
-            // qml doesn't automatically acknowledge property changes
-            appButtonsChanged();
+            if (appButtons[msg.dash_bar.ipc_id]) {
+                delete appButtons[msg.dash_bar.ipc_id];
+                // qml doesn't automatically acknowledge property changes
+                appButtonsChanged();
+            } else if (systemButtons[msg.dash_bar.ipc_id]) {
+                delete systemButtons[msg.dash_bar.ipc_id];
+                // qml doesn't automatically acknowledge property changes
+                systemButtonsChanged();
+            }
         }
-    }
-
-    onAppButtonsChanged: {
-        console.log(JSON.stringify(appButtons));
     }
 
     function toScript(msg) {
@@ -184,53 +204,35 @@ Item {
             anchors.margins: 4
 
             Repeater {
-                model: [
-                    {
-                        buttonName: qsTr("Contacts"),
-                        buttonIcon: "../icons/users.svg",
-                        windowName: qsTr("Contacts"),
-                        windowSource: resourceURL("qml/overte/contacts/ContactsList.qml"),
-                        windowTag: "system contacts"
-                    },
-                    {
-                        buttonName: qsTr("Avatar"),
-                        buttonIcon: "../icons/avatars.png",
-                        windowName: qsTr("Avatar"),
-                        windowSource: resourceURL("qml/overte/avatar_picker/AvatarPicker.qml"),
-                        windowTag: "system avatars"
-                    },
-                    {
-                        buttonName: qsTr("Places"),
-                        buttonIcon: "../icons/home.svg",
-                        windowName: qsTr("Places"),
-                        windowSource: resourceURL("qml/overte/place_picker/PlacePicker.qml"),
-                        windowTag: "system places"
-                    },
-                ]
+                model: systemButtonsModel
 
                 DashBarButton {
-                    required property string buttonName
-                    required property string buttonIcon
-                    required property string windowName
-                    required property string windowSource
-                    required property string windowTag
+                    required property var modelData
 
                     Layout.fillWidth: true
 
-                    text: buttonName
-                    icon.source: buttonIcon
-                    icon.color: undefined
+                    checked: modelData.active
+                    text: modelData.text
 
-                    onClicked: {
-                        dashBar.toScript({
-                            dash_window: {
-                                event: "spawn_window",
-                                title: windowName,
-                                source_url: windowSource,
-                                tag: windowTag,
-                            },
-                        });
+                    icon.color: undefined
+                    icon.source: {
+                        let icon = modelData.icons;
+
+                        if (Overte.Theme.darkTheme) {
+                            icon = Overte.Theme.highContrast ? icon?.darkContrast : icon?.dark;
+                        } else {
+                            icon = Overte.Theme.highContrast ? icon?.lightContrast : icon?.light;
+                        }
+
+                        return checked ? icon?.active : icon?.idle;
                     }
+
+                    onClicked: dashBar.toScript({
+                        app_button: {
+                            event: "clicked",
+                            ipc_id: modelData.ipcID,
+                        },
+                    });
                 }
             }
         }
@@ -335,7 +337,8 @@ Item {
             anchors.fill: parent
             anchors.margins: 4
 
-            model: Object.values(dashBar.appButtons)
+            model: appButtonsModel
+            orientation: ListView.Horizontal
 
             delegate: Overte.Button {
                 required property var modelData

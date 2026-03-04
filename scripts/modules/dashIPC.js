@@ -8,7 +8,18 @@ const { UserSignal } = require("userSignal");
 
 const IPC_CHANNEL = "System Dashboard IPC";
 
+let _DASH_READY = false;
+
 class DashWindow {
+    /** @type {boolean} */
+    DASH_READY = _DASH_READY;
+
+    /**
+     * A temporary buffer for IPC events while we wait for dashboard.js to start.
+     * @type {Array<object>}
+     */
+    #ipcBuffer = [];
+
     /**
      * IPC identifier
      * @readonly
@@ -116,6 +127,8 @@ class DashWindow {
             },
         });
 
+        console.debug(`Sent DashWindow(${title}, ${this.id})`);
+
         Messages.messageReceived.connect(this.#messageCallback);
     }
 
@@ -159,12 +172,18 @@ class DashWindow {
     #sendIPC(data) {
         if (this.#disposed) { return; }
 
-        Messages.sendLocalMessage(IPC_CHANNEL, JSON.stringify({
+        const event = {
             ipc_id: this.id,
             app_id: this.#appID,
             ipc_source: "window",
             ...data
-        }));
+        };
+
+        if (this.DASH_READY) {
+            Messages.sendLocalMessage(IPC_CHANNEL, JSON.stringify(event));
+        } else {
+            this.#ipcBuffer.push(event);
+        }
     }
 
     #messageCallback = (channel, rawMsg, _senderID, localOnly) => {
@@ -178,6 +197,15 @@ class DashWindow {
             msg = JSON.parse(rawMsg);
         } catch (e) {
             return;
+        }
+
+        // the dash has started talking, we're good to send ipc messages
+        if (!this.DASH_READY) {
+            _DASH_READY = true;
+            this.DASH_READY = true;
+
+            for (const msg of this.#ipcBuffer) { this.#sendIPC(msg); }
+            this.#ipcBuffer = [];
         }
 
         // not targeted at us, ignore
@@ -240,6 +268,15 @@ class DashWindow {
  */
 
 class DashButton {
+    /** @type {boolean} */
+    DASH_READY = _DASH_READY;
+
+    /**
+     * A temporary buffer for IPC events while we wait for dashboard.js to start.
+     * @type {Array<object>}
+     */
+    #ipcBuffer = [];
+
     /**
      * IPC identifier
      * @readonly
@@ -249,6 +286,10 @@ class DashButton {
 
     /** @type {boolean} */
     #disposed = false;
+    /** @type {boolean} */
+    #system = false;
+    /** @type {number} */
+    #order = 0;
     /** @type {string} */
     #text;
     /** @type {?string} */
@@ -343,14 +384,20 @@ class DashButton {
      * @param {string} arg.text - The button label text
      * @param {?string} arg.appID - The app ID this button is associated with
      * @param {ButtonIconSet|Icon|string} arg.icons - The button icon set or icon image URL
+     * @param {number} [arg.order=0] - The sorting order for this app button
+     * @param {boolean} [arg.system=false] - Whether this button is for a system app, which will be in the top part of the dash bar. When false, the button will be in the dash bar's apps drawer. There's limited space on the system app bar, so if there's too many buttons they'll break.
      */
     constructor({
         text,
         appID = null,
         icons,
+        order = 0,
+        system = false,
     }) {
         this.#text = text;
         this.#appID = appID;
+        this.#order = order;
+        this.#system = system;
 
         let iconSet;
 
@@ -390,7 +437,11 @@ class DashButton {
             text: this.#text,
             app_id: this.#appID,
             icons: this.#icons,
+            system: this.#system,
+            order: this.#order,
         });
+
+        console.debug(`Sent DashButton(${this.#text}, ${this.id})`);
 
         Messages.messageReceived.connect(this.#messageCallback);
     }
@@ -412,12 +463,18 @@ class DashButton {
     #sendIPC(data) {
         if (this.#disposed) { return; }
 
-        Messages.sendLocalMessage(IPC_CHANNEL, JSON.stringify({
+        const event = {
             ipc_id: this.id,
             app_id: this.#appID,
             ipc_source: "dash_button",
             ...data
-        }));
+        };
+
+        if (this.DASH_READY) {
+            Messages.sendLocalMessage(IPC_CHANNEL, JSON.stringify(event));
+        } else {
+            this.#ipcBuffer.push(event);
+        }
     }
 
     #messageCallback = (channel, rawMsg, _senderID, localOnly) => {
@@ -431,6 +488,15 @@ class DashButton {
             msg = JSON.parse(rawMsg);
         } catch (e) {
             return;
+        }
+
+        // the dash has started talking, we're good to send ipc messages
+        if (!this.DASH_READY) {
+            _DASH_READY = true;
+            this.DASH_READY = true;
+
+            for (const msg of this.#ipcBuffer) { this.#sendIPC(msg); }
+            this.#ipcBuffer = [];
         }
 
         // not targeted at us, ignore

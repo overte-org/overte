@@ -10,23 +10,17 @@
 //  SPDX-License-Identifier: Apache-2.0
 "use strict";
 
-const SystemTablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+const { DashButton, DashWindow } = require("dashIPC");
 
 function defaultOnClicked() {
-    this.appButtonData.isActive = !this.appButtonData.isActive;
-    this.appButton.editProperties({ isActive: this.appButtonData.isActive });
+    this.button.active = !this.button.active;
 
-    if (this.appButtonData.isActive) {
-        SystemTablet.loadQMLSource(this.qmlSource, false);
+    if (this.button.active) {
+        this.window = new DashWindow(this.windowProps);
+        this.window.eventReceived.connect(this.fromQml);
+        this.window.closed.connect(() => { this.button.active = false; });
     } else {
-        SystemTablet.gotoHomeScreen();
-    }
-}
-
-function defaultOnScreenChanged(type, url) {
-    if (type != "QML" || url != this.qmlSource) {
-        this.appButtonData.isActive = false;
-        this.appButton.editProperties({ isActive: this.appButtonData.isActive });
+        this.window.close();
     }
 }
 
@@ -45,15 +39,15 @@ function defaultFromQml(message) {
             // sometimes requests get sent twice? don't let that happen
             if (waitingRequestCookies.has(data.data.cookie)) {
                 return;
-            } else {
-                waitingRequestCookies.add(data.data.cookie);
             }
+
+            waitingRequestCookies.add(data.data.cookie);
 
             let xhr = new XMLHttpRequest();
 
             xhr.onreadystatechange = () => {
                 if (xhr.readyState === 4 /* DONE */) {
-                    SystemTablet.sendToQml(JSON.stringify({
+                    this.window.sendEvent(JSON.stringify({
                         action: "system:auth_request",
                         data: {
                             status: xhr.status,
@@ -81,111 +75,91 @@ function defaultFromQml(message) {
         case "system:location_go_forward": location.goForward(); break;
         case "system:location_go_to": {
             location.handleLookupString(data.data.path);
-
-            // hide the tablet after travelling
-            SystemTablet.gotoHomeScreen();
-            SystemTablet.tabletShown = false;
         } break;
     }
 }
 
 const SYSTEM_APPS = {
-    settings: {
-        appButtonData: {
-            sortOrder: 3,
-            isActive: false,
-            icon: Script.resolvePath("./settings/img/icon_white.png"),
-            activeIcon: Script.resolvePath("./settings/img/icon_black.png"),
-
-            // TODO: translation support in JS
-            text: "SETTINGS",
-        },
-
-        qmlSource: "overte/settings/Settings.qml",
-        appButton: null,
-    },
-
     avatar: {
-        appButtonData: {
-            sortOrder: 4,
-            isActive: false,
-            icon: "icons/tablet-icons/avatar-i.svg",
-            activeIcon: "icons/tablet-icons/avatar-a.svg",
-
+        button: new DashButton({
             // TODO: translation support in JS
-            text: "AVATAR",
-        },
+            text: "Avatar",
+            system: true,
+            icons: `${Script.resourcesPath()}qml/overte/icons/avatars.png`,
+            order: -3,
+        }),
 
-        qmlSource: "overte/avatar_picker/AvatarPicker.qml",
-        appButton: null,
+        window: null,
+        windowProps: {
+            title: "Avatar",
+            sourceURL: `${Script.resourcesPath()}qml/overte/avatar_picker/AvatarPicker.qml`,
+        },
     },
 
     contacts: {
-        appButtonData: {
-            sortOrder: 5,
-            isActive: false,
-            icon: "icons/tablet-icons/people-i.svg",
-            activeIcon: "icons/tablet-icons/people-a.svg",
-
+        button: new DashButton({
             // TODO: translation support in JS
-            text: "CONTACTS",
-        },
+            text: "Contacts",
+            system: true,
+            // TODO: better icon
+            icons: `${Script.resourcesPath()}qml/overte/icons/users.svg`,
+            order: -2,
+        }),
 
-        qmlSource: "overte/contacts/ContactsList.qml",
-        appButton: null,
+        window: null,
+        windowProps: {
+            title: "Contacts",
+            sourceURL: `${Script.resourcesPath()}qml/overte/contacts/ContactsList.qml`,
+        },
     },
 
-    // TODO: to be picked up again in a later PR
-    /*places: {
-        appButtonData: {
-            sortOrder: 6,
-            isActive: false,
-            // TODO: put these somewhere more global
-            icon: Script.resolvePath("./places/icons/appicon_i.png"),
-            activeIcon: Script.resolvePath("./places/icons/appicon_a.png"),
-
+    places: {
+        button: new DashButton({
             // TODO: translation support in JS
-            text: "PLACES",
-        },
+            text: "Places",
+            system: true,
+            // TODO: better icon
+            icons: `${Script.resourcesPath()}qml/overte/icons/home.svg`,
+            order: -1,
+        }),
 
-        qmlSource: "overte/place_picker/PlacePicker.qml",
-        appButton: null,
-    },*/
+        window: null,
+        windowProps: {
+            title: "Places",
+            sourceURL: `${Script.resourcesPath()}qml/overte/place_picker/PlacePicker.qml`,
+        },
+    },
 
     more: {
-        appButtonData: {
-            isActive: false,
-            // TODO: put these somewhere more global
-            icon: Script.resolvePath("./more/appicon_i.png"),
-            activeIcon: Script.resolvePath("./more/appicon_a.png"),
-
+        button: new DashButton({
             // TODO: translation support in JS
-            text: "MORE",
-        },
+            text: "More Apps",
+            // the more app lives in the user app drawer
+            system: false,
+            // TODO: better icon
+            icons: `${Script.resourcesPath()}qml/overte/icons/delete.svg`,
+            order: 1000,
+        }),
 
-        qmlSource: "overte/more_apps/MoreApps.qml",
-        appButton: null,
+        window: null,
+        windowProps: {
+            title: "More Apps",
+            sourceURL: `${Script.resourcesPath()}qml/overte/more_apps/MoreApps.qml`,
+        },
     },
 };
 
 function setupButtons() {
     for (let app of Object.values(SYSTEM_APPS)) {
         if (!app.onClicked) { app.onClicked = defaultOnClicked; }
-        if (!app.onScreenChanged) { app.onScreenChanged = defaultOnScreenChanged; }
         if (!app.fromQml) { app.fromQml = defaultFromQml; }
-
-        let button = SystemTablet.addButton(app.appButtonData);
-        button.clicked.connect(() => app.onClicked());
-        SystemTablet.screenChanged.connect((type, url) => app.onScreenChanged(type, url));
-        SystemTablet.fromQml.connect(message => app.fromQml(message));
-        app.appButton = button;
+        app.button.clicked.connect(() => app.onClicked());
     }
 
     Script.scriptEnding.connect(() => {
         for (const app of Object.values(SYSTEM_APPS)) {
-            if (app.appButton) {
-                SystemTablet.removeButton(app.appButton);
-            }
+            app.window?.close();
+            app.button.dispose();
         }
     });
 }

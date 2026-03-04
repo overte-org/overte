@@ -27,6 +27,12 @@ Item {
 
     property real depthGradient: Overte.Theme.highContrast ? 1 : 1.1
 
+    onClosedChanged: {
+        if (closed === true) {
+            root.pushWindowEvent({ event: "closed" });
+        }
+    }
+
     function readEvent(event) {
         switch (event.event) {
             case "set_props": {
@@ -73,6 +79,11 @@ Item {
                 body_event: JSON.stringify(msg),
             }
         }));
+    }
+
+    // compatibility alias
+    function sendToScript(msg) {
+        toScript(msg);
     }
 
     Component.onCompleted: {
