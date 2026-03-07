@@ -52,36 +52,6 @@ Framebuffer* Framebuffer::create(const std::string& name, const Format& colorBuf
     return framebuffer;
 }
 
-Framebuffer* Framebuffer::createShadowmap(uint16 width) {
-    auto framebuffer = Framebuffer::create("Shadowmap");
-
-    auto depthFormat = Element(gpu::SCALAR, gpu::FLOAT, gpu::DEPTH); // Depth32 texel format
-    auto depthTexture = TexturePointer(Texture::createRenderBuffer(depthFormat, width, width));
-    Sampler::Desc samplerDesc;
-    samplerDesc._borderColor = glm::vec4(1.0f);
-    samplerDesc._wrapModeU = Sampler::WRAP_BORDER;
-    samplerDesc._wrapModeV = Sampler::WRAP_BORDER;
-    samplerDesc._filter = Sampler::FILTER_MIN_MAG_LINEAR;
-    samplerDesc._comparisonFunc = (uint8_t)ComparisonFunction::LESS;
-
-    depthTexture->setSampler(Sampler(samplerDesc));
-    framebuffer->setDepthStencilBuffer(depthTexture, depthFormat);
-
-    return framebuffer;
-}
-
-bool Framebuffer::isSwapchain() const {
-    return _swapchain != 0;
-}
-
-uint32 Framebuffer::getFrameCount() const {
-    if (_swapchain) {
-        return _swapchain->getFrameCount();
-    } else {
-        return _frameCount;
-    }
-}
-
 bool Framebuffer::validateTargetCompatibility(const Texture& texture, uint32 subresource) const {
     if (texture.getType() == Texture::TEX_1D) {
         return false;
@@ -115,35 +85,19 @@ void Framebuffer::updateSize(const TexturePointer& texture) {
 }
 
 uint16 Framebuffer::getWidth() const {
-    if (isSwapchain()) {
-        return getSwapchain()->getWidth();
-    } else {
-        return _width;
-    }
+    return _width;
 }
 
 uint16 Framebuffer::getHeight() const {
-    if (isSwapchain()) {
-        return getSwapchain()->getHeight();
-    } else {
-        return _height;
-    }
+    return _height;
 }
 
 uint16 Framebuffer::getNumSamples() const {
-    if (isSwapchain()) {
-        return getSwapchain()->getNumSamples();
-    } else {
-        return _numSamples;
-    }
+    return _numSamples;
 }
 
 // Render buffers
 int Framebuffer::setRenderBuffer(uint32 slot, const TexturePointer& texture, uint32 subresource) {
-    if (isSwapchain()) {
-        return -1;
-    }
-
     Q_ASSERT(!texture || TextureUsageType::RENDERBUFFER == texture->getUsageType());
 
     // Check for the slot
@@ -181,10 +135,6 @@ int Framebuffer::setRenderBuffer(uint32 slot, const TexturePointer& texture, uin
 
 void Framebuffer::removeRenderBuffers() {
 
-    if (isSwapchain()) {
-        return;
-    }
-
     _bufferMask = _bufferMask & BUFFER_DEPTHSTENCIL;
 
     for (auto renderBuffer : _renderBuffers) {
@@ -205,7 +155,7 @@ uint32 Framebuffer::getNumRenderBuffers() const {
 
 const TexturePointer& Framebuffer::getRenderBuffer(uint32 slot) const {
     static const TexturePointer EMPTY;
-    if (!isSwapchain() && (slot < getMaxNumRenderBuffers())) {
+    if (slot < getMaxNumRenderBuffers()) {
         return _renderBuffers[slot]._texture;
     } else {
         return EMPTY;
@@ -214,7 +164,7 @@ const TexturePointer& Framebuffer::getRenderBuffer(uint32 slot) const {
 }
 
 uint32 Framebuffer::getRenderBufferSubresource(uint32 slot) const {
-    if (!isSwapchain() && (slot < getMaxNumRenderBuffers())) {
+    if (slot < getMaxNumRenderBuffers()) {
         return _renderBuffers[slot]._subresource;
     } else {
         return 0;
@@ -222,9 +172,6 @@ uint32 Framebuffer::getRenderBufferSubresource(uint32 slot) const {
 }
 
 bool Framebuffer::assignDepthStencilBuffer(const TexturePointer& texture, const Format& format, uint32 subresource) {
-    if (isSwapchain()) {
-        return false;
-    }
 
     Q_ASSERT(!texture || TextureUsageType::RENDERBUFFER == texture->getUsageType());
 
@@ -299,29 +246,15 @@ bool Framebuffer::setDepthStencilBuffer(const TexturePointer& texture, const For
 }
 
 const TexturePointer& Framebuffer::getDepthStencilBuffer() const {
-    static const TexturePointer EMPTY;
-    if (isSwapchain()) {
-        return EMPTY;
-    } else {
-        return _depthStencilBuffer._texture;
-    }
+    return _depthStencilBuffer._texture;
 }
 
 uint32 Framebuffer::getDepthStencilBufferSubresource() const {
-    if (isSwapchain()) {
-        return 0;
-    } else {
-        return _depthStencilBuffer._subresource;
-    }
+    return _depthStencilBuffer._subresource;
 }
 
 Format Framebuffer::getDepthStencilBufferFormat() const {
-    if (isSwapchain()) {
-      //  return getSwapchain()->getDepthStencilBufferFormat();
-        return _depthStencilBuffer._element;
-    } else {
-        return _depthStencilBuffer._element;
-    }
+    return _depthStencilBuffer._element;
 }
 glm::vec4 Framebuffer::evalSubregionTexcoordTransformCoefficients(const glm::ivec2& sourceSurface, const glm::ivec2& destRegionSize, const glm::ivec2& destRegionOffset) {
     float sMin = destRegionOffset.x / (float)sourceSurface.x;
