@@ -628,6 +628,121 @@ QObject* ScriptValueV8Wrapper::toQObject() const {
     }
 }
 
+static QString reprImpl(
+    v8::Isolate* isolate,
+    v8::Local<v8::Context> context,
+    v8::Local<v8::Value> value,
+    int indent = 0,
+    bool prependIndent = true
+) {
+    constexpr int INDENT_WIDTH = 4;
+
+    QString str;
+
+    if (prependIndent) { str = QString(INDENT_WIDTH * indent, ' '); }
+
+    if (value->IsUndefined()) {
+        str += "undefined";
+    } else if (value->IsNull()) {
+        str += "null";
+    } else if (value->IsFunction()) {
+        if (auto funcString = value->ToString(context); !funcString.IsEmpty()) {
+            // source available
+            str += QString(*v8::String::Utf8Value(isolate, funcString.ToLocalChecked()));
+        } else {
+            v8::Local<v8::Function> func = v8::Local<v8::Function>::Cast(value);
+            v8::Local<v8::Value> debugName = func->GetDebugName();
+
+            str += "function ";
+            str += QString(*v8::String::Utf8Value(isolate, debugName->ToString(context).ToLocalChecked()));
+            str += "() { [native code] }";
+        }
+    } else if (value->IsArray()) {
+        v8::Handle<v8::Array> array = v8::Handle<v8::Array>::Cast(value);
+        auto length = array->Length();
+
+        str += "Array(";
+        str += QString::number(length);
+        str += ") [\n";
+
+        for (uint32_t i = 0; i < length; i++) {
+            str += QString(INDENT_WIDTH * (indent + 1), ' ');
+            str += QString::number(i);
+            str += ": ";
+
+            // arrays in javascript can have unoccupied elements
+            if (array->Has(context, i).ToChecked()) {
+                str += reprImpl(
+                    isolate,
+                    context,
+                    array->Get(context, i).ToLocalChecked(),
+                    indent + 1,
+                    false
+                );
+            } else {
+                str += "<empty slot>";
+            }
+
+            str += ",\n";
+        }
+
+        str += QString(INDENT_WIDTH * indent, ' ');
+        str += ']';
+    } else if (value->IsObject()) {
+        v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(value);
+        v8::Local<v8::String> constructorName = object->GetConstructorName();
+
+        str += QString(*v8::String::Utf8Value(isolate, constructorName->ToString(context).ToLocalChecked()));;
+
+        v8::Local<v8::Array> properties = object->GetPropertyNames(context).ToLocalChecked();
+
+        if (properties->Length() != 0) {
+            str += " {\n";
+
+            for (uint32_t i = 0; i < properties->Length(); i++) {
+                auto name = properties->Get(context, i).ToLocalChecked();
+                auto elem = object->Get(context, name).ToLocalChecked();
+
+                str += QString(INDENT_WIDTH * (indent + 1), ' ');
+                str += QString(*v8::String::Utf8Value(isolate, name->ToString(context).ToLocalChecked()));;
+                str += ": ";
+                str += reprImpl(
+                    isolate,
+                    context,
+                    elem,
+                    indent + 1,
+                    false
+                );
+                str += "\n";
+            }
+
+            str += QString(INDENT_WIDTH * indent, ' ');
+            str += "}";
+        } else {
+            str += " {}";
+        }
+    } else {
+        // Number, String, Boolean
+        return QString(*v8::String::Utf8Value(isolate, value->ToString(context).ToLocalChecked()));
+    }
+
+    return str;
+}
+
+QString ScriptValueV8Wrapper::repr() const {
+    auto* isolate = _engine->getIsolate();
+    Q_ASSERT(isolate->IsCurrent());
+
+    v8::HandleScope handleScope(isolate);
+
+    auto context = _engine->getContext();
+    v8::Context::Scope contextScope(context);
+
+    auto value = toV8Value().constGet();
+
+    return reprImpl(isolate, context, value);
+}
+
 bool ScriptValueV8Wrapper::equals(const ScriptValue& other) const {
     auto isolate = _engine->getIsolate();
     Q_ASSERT(isolate->IsCurrent());

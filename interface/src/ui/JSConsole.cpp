@@ -350,12 +350,12 @@ void JSConsole::executeCommand(const QString& command) {
 
     std::weak_ptr<ScriptManager> weakScriptManager = _scriptManager;
     auto consoleFileName = _consoleFileName;
-    QFuture<QVariant> future = QtConcurrent::run([weakScriptManager, consoleFileName, command]() -> QVariant {
-        QVariant result;
+    QFuture<QString> future = QtConcurrent::run([weakScriptManager, consoleFileName, command]() -> QString {
+        QString result;
         auto scriptManager = weakScriptManager.lock();
         if (scriptManager) {
             BLOCKING_INVOKE_METHOD(scriptManager.get(), [&scriptManager, &consoleFileName, &command, &result]() -> void {
-                result = scriptManager->evaluate(command, consoleFileName).toVariant();
+                result = scriptManager->evaluate(command, consoleFileName).repr();
             });
         }
         return result;
@@ -364,7 +364,7 @@ void JSConsole::executeCommand(const QString& command) {
 }
 
 void JSConsole::commandFinished() {
-    QVariant result = _executeWatcher.result();
+    auto result = _executeWatcher.result();
 
     _ui->promptTextEdit->setDisabled(false);
 
@@ -378,7 +378,7 @@ void JSConsole::commandFinished() {
 
     QColor color = _lightTheme ? QColorConstants::Svg::gray : QColorConstants::Svg::darkgray;
 
-    appendMessage("<", result.toString(), color);
+    appendMessage("<", result, color);
 
     resetCurrentCommandHistory();
 }

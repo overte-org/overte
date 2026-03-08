@@ -105,6 +105,8 @@ public:  // ScriptValue implementation
     virtual QVariant toVariant() const override;
     virtual QObject* toQObject() const override;
 
+    virtual QString repr() const override;
+
 #ifdef OVERTE_V8_SCRIPT_VALUE_WRAPPER_DELETE_GUARD
     // These can be used for debugging crashes caused access after delete
     // If delete guard is enabled, deleting wrapper will cause a crash and thus trigger debugger and reveal location where object was deleted.
