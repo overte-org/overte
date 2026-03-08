@@ -645,18 +645,6 @@ static QString reprImpl(
         str += "undefined";
     } else if (value->IsNull()) {
         str += "null";
-    } else if (value->IsFunction()) {
-        if (auto funcString = value->ToString(context); !funcString.IsEmpty()) {
-            // source available
-            str += QString(*v8::String::Utf8Value(isolate, funcString.ToLocalChecked()));
-        } else {
-            v8::Local<v8::Function> func = v8::Local<v8::Function>::Cast(value);
-            v8::Local<v8::Value> debugName = func->GetDebugName();
-
-            str += "function ";
-            str += QString(*v8::String::Utf8Value(isolate, debugName->ToString(context).ToLocalChecked()));
-            str += "() { [native code] }";
-        }
     } else if (value->IsArray()) {
         v8::Handle<v8::Array> array = v8::Handle<v8::Array>::Cast(value);
         auto length = array->Length();
@@ -688,7 +676,9 @@ static QString reprImpl(
 
         str += QString(INDENT_WIDTH * indent, ' ');
         str += ']';
-    } else if (value->IsObject()) {
+    } else if (value->IsObject() && !value->IsFunction()) {
+        // don't use this path for functions, they're objects but not
+        // relevant for property dumps, so just use the primitive path instead
         v8::Local<v8::Object> object = v8::Local<v8::Object>::Cast(value);
         v8::Local<v8::String> constructorName = object->GetConstructorName();
 
@@ -701,10 +691,12 @@ static QString reprImpl(
 
             for (uint32_t i = 0; i < properties->Length(); i++) {
                 auto name = properties->Get(context, i).ToLocalChecked();
+                qDebug() << reprImpl(isolate, context, name);
+
                 auto elem = object->Get(context, name).ToLocalChecked();
 
                 str += QString(INDENT_WIDTH * (indent + 1), ' ');
-                str += QString(*v8::String::Utf8Value(isolate, name->ToString(context).ToLocalChecked()));;
+                str += reprImpl(isolate, context, name);
                 str += ": ";
                 str += reprImpl(
                     isolate,
@@ -721,9 +713,18 @@ static QString reprImpl(
         } else {
             str += " {}";
         }
+    } else if (value->IsSymbol()) {
+        v8::Local<v8::Symbol> symbol = v8::Local<v8::Symbol>::Cast(value);
+        str += "Symbol(";
+        str += QString(*v8::String::Utf8Value(isolate, symbol->Description(isolate)));
+        str += ')';
     } else {
-        // Number, String, Boolean
-        return QString(*v8::String::Utf8Value(isolate, value->ToString(context).ToLocalChecked()));
+        // Number, String, Boolean, Function
+        if (auto valueString = value->ToString(context); !valueString.IsEmpty()) {
+            str += QString(*v8::String::Utf8Value(isolate, valueString.ToLocalChecked()));
+        } else {
+            str += "[...]";
+        }
     }
 
     return str;
