@@ -691,8 +691,6 @@ static QString reprImpl(
 
             for (uint32_t i = 0; i < properties->Length(); i++) {
                 auto name = properties->Get(context, i).ToLocalChecked();
-                qDebug() << reprImpl(isolate, context, name);
-
                 auto elem = object->Get(context, name).ToLocalChecked();
 
                 str += QString(INDENT_WIDTH * (indent + 1), ' ');
