@@ -1166,32 +1166,37 @@ void ScriptManager::run() {
 // NOTE: This is private because it must be called on the same thread that created the timers, which is why
 // we want to only call it in our own run "shutdown" processing.
 void ScriptManager::stopAllTimers() {
-    QMutableHashIterator<QTimer*, CallbackData> i(_timerFunctionMap);
-    int j {0};
-    while (i.hasNext()) {
-        i.next();
-        QTimer* timer = i.key();
-        qCDebug(scriptengine) << getFilename() << "stopAllTimers[" << j++ << "]";
-        stopTimer(timer);
+    for (const auto& [handle, value] : _timerFunctionMap) {
+        QTimer* timer = std::get<0>(value);
+
+        timer->stop();
+        delete timer;
     }
+
+    _timerFunctionMap.clear();
+    _timerHandleCounter = 1;
 }
 
 void ScriptManager::stopAllTimersForEntityScript(const EntityItemID& entityID) {
-     // We could maintain a separate map of entityID => QTimer, but someone will have to prove to me that it's worth the complexity. -HRS
-    QVector<QTimer*> toDelete;
-    QMutableHashIterator<QTimer*, CallbackData> i(_timerFunctionMap);
-    while (i.hasNext()) {
-        i.next();
-        if (i.value().definingEntityIdentifier != entityID) {
-            continue;
-        }
-        QTimer* timer = i.key();
-        toDelete << timer; // don't delete while we're iterating. save it.
-    }
-    for (auto timer:toDelete) { // now reap 'em
-        stopTimer(timer);
+    std::vector<int> toDelete;
+
+    for (const auto& [handle, value] : _timerFunctionMap) {
+        const auto& [timer, callbackData] = value;
+
+        if (callbackData.definingEntityIdentifier != entityID) { continue; }
+
+        timer->stop();
+        delete timer;
+
+        toDelete.push_back(handle);
     }
 
+    for (auto handle : toDelete) {
+        _timerFunctionMap.erase(handle);
+    }
+
+    // the timer map is potentially shared across multiple entity scripts,
+    // so don't clear it or reset the handle counter
 }
 
 void ScriptManager::stop(bool marshal) {
@@ -1215,7 +1220,7 @@ void ScriptManager::updateMemoryCost(const qint64& deltaSize) {
     _engine->updateMemoryCost(deltaSize);
 }
 
-void ScriptManager::timerFired() {
+void ScriptManager::timerFired(int handle) {
     if (isStopped()) {
         scriptWarningMessage("Script.timerFired() while shutting down is ignored... parent script:" + getFilename(), getFilename(), -1);
         return; // bail early
@@ -1232,25 +1237,29 @@ void ScriptManager::timerFired() {
     callTimer.start();
 #endif
 
-    QTimer* callingTimer = reinterpret_cast<QTimer*>(sender());
-    CallbackData timerData = _timerFunctionMap.value(callingTimer);
+    if (!_timerFunctionMap.contains(handle)) {
+        qCWarning(scriptengine) << "timerFired -- not in _timerFunctionMap" << handle;
+        return;
+    }
 
-    if (!callingTimer->isActive()) {
+    auto [timer, data] = _timerFunctionMap.at(handle);
+
+    if (!timer->isActive()) {
         // this timer is done, we can kill it
-        _timerFunctionMap.remove(callingTimer);
-        delete callingTimer;
+        _timerFunctionMap.erase(handle);
+        delete timer;
     }
 
     // call the associated JS function, if it exists
-    if (timerData.function.isValid()) {
+    if (data.function.isValid()) {
         PROFILE_RANGE(script, __FUNCTION__);
         auto preTimer = p_high_resolution_clock::now();
-        callWithEnvironment(timerData.definingEntityIdentifier, timerData.definingSandboxURL, timerData.function, timerData.function, ScriptValueList());
+        callWithEnvironment(data.definingEntityIdentifier, data.definingSandboxURL, data.function, data.function, ScriptValueList());
         auto postTimer = p_high_resolution_clock::now();
         auto elapsed = (postTimer - preTimer);
         _totalTimerExecution += std::chrono::duration_cast<std::chrono::microseconds>(elapsed);
     } else {
-        qCWarning(scriptengine) << "timerFired -- invalid function" << timerData.function.toVariant().toString();
+        qCWarning(scriptengine) << "timerFired -- invalid function" << data.function.toVariant().toString();
     }
 
 #ifdef SCRIPT_TIMER_PERFORMANCE_STATISTICS
@@ -1258,7 +1267,10 @@ void ScriptManager::timerFired() {
 #endif
 }
 
-QTimer* ScriptManager::setupTimerWithInterval(const ScriptValue& function, int intervalMS, bool isSingleShot) {
+int ScriptManager::setupTimerWithInterval(const ScriptValue& function, int intervalMS, bool isSingleShot) {
+    int handle = _timerHandleCounter;
+    _timerHandleCounter += 1;
+
     // create the timer, add it to the map, and start it
     QTimer* newTimer = new QTimer(this);
     newTimer->setSingleShot(isSingleShot);
@@ -1269,20 +1281,19 @@ QTimer* ScriptManager::setupTimerWithInterval(const ScriptValue& function, int i
         newTimer->setTimerType(Qt::PreciseTimer);
     }
 
-    connect(newTimer, &QTimer::timeout, this, &ScriptManager::timerFired);
+    connect(newTimer, &QTimer::timeout, [this, handle]() { timerFired(handle); });
 
     // make sure the timer stops when the script does
     connect(this, &ScriptManager::scriptEnding, newTimer, &QTimer::stop);
 
-
     CallbackData timerData = { function, currentEntityIdentifier, currentSandboxURL };
-    _timerFunctionMap.insert(newTimer, timerData);
+    _timerFunctionMap.insert({ handle, { newTimer, timerData } });
 
     newTimer->start(intervalMS);
-    return newTimer;
+    return handle;
 }
 
-QTimer* ScriptManager::setInterval(const ScriptValue& function, int intervalMS) {
+int ScriptManager::setInterval(const ScriptValue& function, int intervalMS) {
     if (isStopped()) {
         int lineNumber = -1;
         QString fileName = getFilename();
@@ -1292,13 +1303,13 @@ QTimer* ScriptManager::setInterval(const ScriptValue& function, int intervalMS) 
             fileName = context->currentFileName();
         }
         scriptWarningMessage("Script.setInterval() while shutting down is ignored... parent script:" + getFilename(), fileName, lineNumber);
-        return NULL; // bail early
+        return 0; // bail early
     }
 
     return setupTimerWithInterval(function, intervalMS, false);
 }
 
-QTimer* ScriptManager::setTimeout(const ScriptValue& function, int timeoutMS) {
+int ScriptManager::setTimeout(const ScriptValue& function, int timeoutMS) {
     if (isStopped()) {
         int lineNumber = -1;
         QString fileName = getFilename();
@@ -1308,19 +1319,20 @@ QTimer* ScriptManager::setTimeout(const ScriptValue& function, int timeoutMS) {
             fileName = context->currentFileName();
         }
         scriptWarningMessage("Script.setTimeout() while shutting down is ignored... parent script:" + getFilename(), fileName, lineNumber);
-        return NULL; // bail early
+        return 0; // bail early
     }
 
     return setupTimerWithInterval(function, timeoutMS, true);
 }
 
-void ScriptManager::stopTimer(QTimer *timer) {
-    if (_timerFunctionMap.contains(timer)) {
+void ScriptManager::stopTimer(int handle) {
+    if (_timerFunctionMap.contains(handle)) {
+        auto [timer, callbackData] = _timerFunctionMap.at(handle);
         timer->stop();
-        _timerFunctionMap.remove(timer);
+        _timerFunctionMap.erase(handle);
         delete timer;
     } else {
-        qCDebug(scriptengine) << "stopTimer -- not in _timerFunctionMap" << timer;
+        qCDebug(scriptengine) << "stopTimer -- not in _timerFunctionMap" << handle;
     }
 }
 
