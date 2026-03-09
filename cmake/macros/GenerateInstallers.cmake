@@ -5,7 +5,7 @@
 #  Created by Leonardo Murillo on 12/16/2015.
 #  Copyright 2015 High Fidelity, Inc.
 #  Copyright 2021 Vircadia contributors.
-#  Copyright 2022-2025 Overte e.V.
+#  Copyright 2022-2026 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -127,6 +127,17 @@ macro(GENERATE_INSTALLERS)
           "The resulting AppImage will not be able to run on most machines. "
           "Set APPIMAGE_IGNORE_OPTIMIZATION to continue anyway.")
     endif()
+
+    # Find and pass QMake to GenerateAppImage.cmake, since QMake tells linuxdeploy-plugin-qt where to find Qt.
+    find_package(Qt5 COMPONENTS Core REQUIRED)
+    get_target_property(Qt_Core_Location Qt5::Core LOCATION)
+    get_filename_component(QT_BIN_DIR ${Qt_Core_Location} DIRECTORY)
+    find_program(QMAKE_EXECUTABLE qmake PATHS ${QT_BIN_DIR} PATH_SUFFIXES qt5/bin NO_DEFAULT_PATH)
+    # Every variable starting with CPACK_* is automatically available inside CPack scripts.
+    set(CPACK_QMAKE_EXECUTABLE ${QMAKE_EXECUTABLE})
+    if (NOT CPACK_QMAKE_EXECUTABLE)
+        message(FATAL_ERROR "Could not find QMake at ${QT_BIN_DIR}. QMake is required by linuxdeploy-plugin-qt for finding Qt.")
+    endif ()
   endif ()
 
   # configure a cpack properties file for custom variables in template
