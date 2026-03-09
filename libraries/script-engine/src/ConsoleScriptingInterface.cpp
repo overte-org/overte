@@ -173,11 +173,12 @@ ScriptValue ConsoleScriptingInterface::groupEnd(ScriptContext* context, ScriptEn
 
 QString ConsoleScriptingInterface::appendArguments(ScriptContext* context) {
     QString message;
+
     for (int i = 0; i < context->argumentCount(); i++) {
         if (i > 0) {
             message += SPACE_SEPARATOR;
         }
-        message += context->argument(i).toString();
+        message += context->argument(i).repr();
     }
     return message;
 }

@@ -68,6 +68,8 @@ public:
     virtual quint32 toUInt32() const override;
     virtual QVariant toVariant() const override;
     virtual QObject* toQObject() const override;
+
+    virtual QString repr() const override;
 };
 
 static ScriptValueProxyNull SCRIPT_VALUE_NULL;
@@ -257,4 +259,8 @@ QVariant ScriptValueProxyNull::toVariant() const {
 
 QObject* ScriptValueProxyNull::toQObject() const {
     return nullptr;
+}
+
+QString ScriptValueProxyNull::repr() const {
+    return QString();
 }

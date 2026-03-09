@@ -119,6 +119,10 @@ public:
     inline QVariant toVariant() const;
     inline QObject* toQObject() const;
 
+    // Human-readable string representation of a value,
+    // string objects are returned literally
+    inline QString repr() const;
+
 protected:
     ScriptValueProxy* _proxy;
 };
@@ -178,6 +182,8 @@ public:
     virtual quint32 toUInt32() const = 0;
     virtual QVariant toVariant() const = 0;
     virtual QObject* toQObject() const = 0;
+
+    virtual QString repr() const = 0;
 
 protected:
     virtual ~ScriptValueProxy() {}  // prevent explicit deletion of base class
@@ -405,6 +411,11 @@ QVariant ScriptValue::toVariant() const {
 QObject* ScriptValue::toQObject() const {
     Q_ASSERT(_proxy != nullptr);
     return _proxy->toQObject();
+}
+
+QString ScriptValue::repr() const {
+    Q_ASSERT(_proxy != nullptr);
+    return _proxy->repr();
 }
 
 #endif // hifi_ScriptValue_h
