@@ -45,14 +45,14 @@ jobs:
               runner: ubuntu-latest
               arch: amd64
               build_type: full
-              qt_source: system
+              qt_source: source
               rendering_backend: OpenGL
             - os: Ubuntu 22.04 Vulkan
               image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64
               runner: ubuntu-latest
               arch: amd64
               build_type: full
-              qt_source: system
+              qt_source: source
               rendering_backend: Vulkan
             # Android builds are currently failing
             #- os: ubuntu-18.04
@@ -64,14 +64,14 @@ jobs:
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
-              qt_source: system
+              qt_source: source
               rendering_backend: GLES
             - os: Ubuntu 22.04 Vulkan
               image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-aarch64
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
-              qt_source: system
+              qt_source: source
               rendering_backend: Vulkan
         fail-fast: false
     runs-on: ${{matrix.runner}}

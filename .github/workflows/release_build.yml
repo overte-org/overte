@@ -38,13 +38,13 @@ jobs:
             runner: ubuntu-latest
             arch: amd64
             build_type: full
-            qt_source: system
+            qt_source: source
           - os: Ubuntu 22.04
             image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-aarch64
             runner: ubuntu-24.04-arm
             arch: aarch64
             build_type: full
-            qt_source: system
+            qt_source: source
       fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
