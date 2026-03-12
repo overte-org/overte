@@ -82,7 +82,6 @@ function updateSetting(name, value) {
                 }
                 settings.desktopWindow = value;
                 recreateWindow();
-                appButton.active = true;
             }
             break;
     }
@@ -152,8 +151,13 @@ function appWindowFromQml(rawMsg) {
     }
 }
 
+const deactivateOnClosed = () => { appButton.active = false; };
+
 function recreateWindow() {
     if (settings.desktopWindow) {
+        dashWindow?.closed?.disconnect(deactivateOnClosed);
+        dashWindow?.close();
+
         desktopWindow = Desktop.createWindow(
             CHAT_QML_URL,
             {
@@ -165,19 +169,24 @@ function recreateWindow() {
             }
         );
         desktopWindow.fromQml.connect(appWindowFromQml);
-        desktopWindow.closed.connect(() => { appButton.active = false; });
+        desktopWindow.closed.connect(deactivateOnClosed);
         sendInitialSettings();
     } else {
+        desktopWindow?.closed?.disconnect(deactivateOnClosed);
+        desktopWindow?.close();
+
         dashWindow = new DashWindow({
             title: "Chat",
             sourceURL: CHAT_QML_URL,
-            dimensions: { x: 0.45, y: 0.45, z: 0 },
+            dimensions: { x: 0.5, y: 0.45, z: 0 },
         });
 
         dashWindow.eventReceived.connect(appWindowFromQml);
-        dashWindow.closed.connect(() => { appButton.active = false; });
+        dashWindow.closed.connect(deactivateOnClosed);
         sendInitialSettings();
     }
+
+    appButton.active = true;
 }
 
 Messages.subscribe("chat");
