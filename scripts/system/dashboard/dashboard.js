@@ -32,6 +32,8 @@ class AppButtonIPC {
     active;
     /** @type {object} */
     icons;
+    /** @type {number} */
+    order;
 
     constructor({
         system = false,
@@ -40,6 +42,7 @@ class AppButtonIPC {
         text,
         icons,
         active = false,
+        order = 0,
     }) {
         this.system = system;
         this.ipcID = ipcID;
@@ -47,6 +50,7 @@ class AppButtonIPC {
         this.text = text;
         this.icons = icons;
         this.active = active;
+        this.order = order;
     }
 
     sendIPC(msg) {
@@ -68,8 +72,6 @@ class Dashboard {
     get visible() { return this.#visible; }
 
     set visible(visible) {
-        console.warn(`Dashboard.visible: ${visible}`);
-
         this.#visible = visible;
         this.windowManager.hidden = !visible;
 
@@ -313,7 +315,6 @@ class Dashboard {
                 ignorePickIntersection: true,
             });
         } else if (msg.app_button?.event === "clicked") {
-            console.log(`Clicked button ${msg.app_button.ipc_id}`);
             this.#appButtons.get(msg.app_button.ipc_id)?.sendIPC({
                 ipc_source: "dashboard",
                 ipc_id: msg.app_button.ipc_id,
@@ -415,7 +416,6 @@ class Dashboard {
                 },
             }));
         } else if (msg.event === "set_dash_property" && msg.ipc_source === "dashboard_ipc") {
-            console.error(`set_dash_property`);
             if (msg.visible !== undefined) { this.visible = msg.visible; }
         }
     };

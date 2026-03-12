@@ -13,13 +13,13 @@ Item {
     readonly property list<var> appButtonsModel: {
         // sort by order number, alphabetical breaks ties
         return Object.values(appButtons).sort((a, b) =>
-            (a.order - b.order) + a.text.localeCompare(b.text));
+            (a.order - b.order) || a.text.localeCompare(b.text));
     }
 
     readonly property list<var> systemButtonsModel: {
         // sort by order number, alphabetical breaks ties
         return Object.values(systemButtons).sort((a, b) =>
-            (a.order - b.order) + a.text.localeCompare(b.text));
+            (a.order - b.order) || a.text.localeCompare(b.text));
     }
 
     function reloadThemeSettings() {
@@ -218,10 +218,18 @@ Item {
                     icon.source: {
                         let icon = modelData.icons;
 
-                        if (Overte.Theme.darkTheme) {
-                            icon = Overte.Theme.highContrast ? icon?.darkContrast : icon?.dark;
+                        if (Overte.Theme.darkMode) {
+                            icon = (
+                                Overte.Theme.highContrast && icon?.darkContrast !== undefined ?
+                                icon?.darkContrast :
+                                icon?.dark
+                            );
                         } else {
-                            icon = Overte.Theme.highContrast ? icon?.lightContrast : icon?.light;
+                            icon = (
+                                Overte.Theme.highContrast && icon?.lightContrast !== undefined ?
+                                icon?.lightContrast :
+                                icon?.light
+                            );
                         }
 
                         return checked ? icon?.active : icon?.idle;
@@ -294,7 +302,7 @@ Item {
         y: -(height - systemBar.height)
         z: -1
         opacity: 0
-        implicitHeight: 96 + border.width + 8
+        implicitHeight: 96 + border.width + 8 + (appsBarScrollbar.size < 1.0 ? appsBarScrollbar.height : 0)
 
         id: appsBar
 
@@ -337,8 +345,14 @@ Item {
             anchors.fill: parent
             anchors.margins: 4
 
+            clip: true
             model: appButtonsModel
             orientation: ListView.Horizontal
+
+            ScrollBar.horizontal: Overte.ScrollBar {
+                id: appsBarScrollbar
+                policy: ScrollBar.AsNeeded
+            }
 
             delegate: Overte.Button {
                 required property var modelData
@@ -365,10 +379,18 @@ Item {
                 icon.source: {
                     let icon = modelData.icons;
 
-                    if (Overte.Theme.darkTheme) {
-                        icon = Overte.Theme.highContrast ? icon?.darkContrast : icon?.dark;
+                    if (Overte.Theme.darkMode) {
+                        icon = (
+                            Overte.Theme.highContrast && icon?.darkContrast !== undefined ?
+                            icon?.darkContrast :
+                            icon?.dark
+                        );
                     } else {
-                        icon = Overte.Theme.highContrast ? icon?.lightContrast : icon?.light;
+                        icon = (
+                            Overte.Theme.highContrast && icon?.lightContrast !== undefined ?
+                            icon?.lightContrast :
+                            icon?.light
+                        );
                     }
 
                     return checked ? icon?.active : icon?.idle;

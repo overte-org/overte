@@ -17,7 +17,7 @@ function defaultOnClicked() {
 
     if (this.button.active) {
         this.window = new DashWindow(this.windowProps);
-        this.window.eventReceived.connect(this.fromQml);
+        this.window.eventReceived.connect(msg => this.fromQml(msg));
         this.window.closed.connect(() => { this.button.active = false; });
     } else {
         this.window.close();
@@ -45,14 +45,14 @@ function defaultFromQml(rawMsg) {
 
             xhr.onreadystatechange = () => {
                 if (xhr.readyState === 4 /* DONE */) {
-                    this.window.sendEvent(JSON.stringify({
+                    this.window?.sendEvent(JSON.stringify({
                         action: "system:auth_request",
                         data: {
                             status: xhr.status,
                             statusText: xhr.statusText,
                             responseText: xhr.responseText,
-                            responseURL: data.data.url,
-                            cookie: data.data.cookie,
+                            responseURL: data.url,
+                            cookie: data.cookie,
                         },
                     }));
 
@@ -136,8 +136,17 @@ const SYSTEM_APPS = {
             text: "More Apps",
             // the more app lives in the user app drawer
             system: false,
-            // TODO: better icon
-            icons: `${Script.resourcesPath()}qml/overte/icons/delete.svg`,
+            // TODO: new icon
+            icons: {
+                dark: {
+                    idle: Script.resolvePath("./more/appicon_i.png"),
+                    active: Script.resolvePath("./more/appicon_i.png"),
+                },
+                light: {
+                    idle: Script.resolvePath("./more/appicon_a.png"),
+                    active: Script.resolvePath("./more/appicon_i.png"),
+                },
+            },
             order: 1000,
         }),
 
