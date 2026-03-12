@@ -51,7 +51,7 @@ Rectangle {
         }));
     }
 
-    function goToLocation(path) {
+    function goToLocation(path, name) {
         let cookie = Date.now() + Math.floor(Math.random() * (1000 - -1000) + -1000);
 
         sendToScript(JSON.stringify({
@@ -59,6 +59,7 @@ Rectangle {
             data: {
                 cookie: cookie,
                 path: path,
+                name: name,
             },
         }));
     }
@@ -200,7 +201,7 @@ Rectangle {
                 icon.height: 24
                 icon.color: Overte.Theme.paletteActive.buttonText
 
-                onClicked: placePicker.goToLocation(LocationBookmarks.getHomeLocationAddress())
+                onClicked: placePicker.goToLocation(LocationBookmarks.getHomeLocationAddress(), qsTr("Home"))
 
                 Overte.ToolTip { text: qsTr("Go to Home bookmark") }
             }
@@ -234,7 +235,8 @@ Rectangle {
 
                 onClicked: {
                     if (searchField.text.startsWith("hifi://")) {
-                        placePicker.goToLocation(infoDialog.placeUrl);
+                        let name = searchField.text.replace(/hifi:\/\/([^\/]+)\//, "$1");
+                        placePicker.goToLocation(infoDialog.placeUrl, name);
                         searchField.text = "";
                     } else {
                         filters.searchExpression = searchField.text === "" ? ".*" : searchField.text;
@@ -614,7 +616,9 @@ Rectangle {
                     text: infoDialog.compatible ? qsTr("Join") : qsTr("Incompatible")
                     onClicked: {
                         infoDialog.close();
-                        placePicker.goToLocation(infoDialog.placeUrl);
+
+                        let name = infoDialog.placeName.replace(/hifi:\/\/([^\/]+)\//, "$1");
+                        placePicker.goToLocation(infoDialog.placeUrl, name);
                     }
                 }
             }

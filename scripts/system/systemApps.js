@@ -75,6 +75,7 @@ function defaultFromQml(rawMsg) {
             SYSTEM_APPS.places.window?.close();
             Dashboard.visible = false;
             location.handleLookupString(data.path);
+            Window.displayAnnouncement(`Going to ${data.name}`);
         } break;
     }
 }
