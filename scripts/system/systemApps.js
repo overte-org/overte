@@ -101,8 +101,7 @@ const SYSTEM_APPS = {
             // TODO: translation support in JS
             text: "Contacts",
             system: true,
-            // TODO: better icon
-            icons: `${Script.resourcesPath()}qml/overte/icons/users.svg`,
+            icons: `${Script.resourcesPath()}qml/overte/icons/contacts.png`,
             order: -2,
         }),
 
@@ -118,8 +117,7 @@ const SYSTEM_APPS = {
             // TODO: translation support in JS
             text: "Places",
             system: true,
-            // TODO: better icon
-            icons: `${Script.resourcesPath()}qml/overte/icons/home.svg`,
+            icons: `${Script.resourcesPath()}qml/overte/icons/places.png`,
             order: -1,
         }),
 
