@@ -76,7 +76,7 @@ Item {
         eventBridge.emitWebEvent(JSON.stringify({
             dash_window: {
                 event: "body_event",
-                body_event: JSON.stringify(msg),
+                body_event: msg,
             }
         }));
     }

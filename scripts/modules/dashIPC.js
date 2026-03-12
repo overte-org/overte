@@ -10,9 +10,83 @@ const IPC_CHANNEL = "System Dashboard IPC";
 
 let _DASH_READY = false;
 
+class Dashboard {
+    static #DASH_READY = _DASH_READY;
+    static #ipcID = Uuid.generate();
+    static #ipcBuffer = [];
+    static #visible = false;
+
+    static #sendIPC(data) {
+        const event = {
+            ipc_id: this.#ipcID,
+            ipc_source: "dashboard_ipc",
+            ...data
+        };
+
+        if (this.#DASH_READY) {
+            Messages.sendLocalMessage(IPC_CHANNEL, JSON.stringify(event));
+        } else {
+            this.#ipcBuffer.push(event);
+        }
+    }
+
+    static #messageCallback = (channel, rawMsg, _senderID, localOnly) => {
+        if (channel !== IPC_CHANNEL || !localOnly) { return; }
+
+        let msg;
+        try {
+            msg = JSON.parse(rawMsg);
+        } catch (e) {
+            return;
+        }
+
+        // the dash has started talking, we're good to send ipc messages
+        if (!this.#DASH_READY) {
+            _DASH_READY = true;
+            this.#DASH_READY = true;
+
+            for (const msg of this.#ipcBuffer) { this.#sendIPC(msg); }
+            this.#ipcBuffer = [];
+        }
+
+        // don't respond to our own messages
+        if (msg.ipc_id === this.#ipcID && msg.ipc_source === "dashboard_ipc") {
+            return;
+        }
+
+        if (msg.ipc_source === "dashboard" && msg.event === "set_dash_property") {
+            if (msg.visible !== undefined) {
+                this.#visible = msg.visible;
+                this.visibleChanged.emit();
+            }
+        }
+    };
+
+    /**
+     * Triggered when the dashboard UI is opened or closed.
+     * @type {UserSignal}
+     */
+    static visibleChanged = new UserSignal();
+
+    /**
+     * Whether the dashboard UI is open.
+     * @type {boolean}
+     */
+    static get visible() { return this.#visible; }
+
+    static set visible(visible) {
+        this.#visible = visible;
+        this.#sendIPC({ event: "set_dash_property", visible: visible });
+    }
+
+    static {
+        Messages.messageReceived.connect(this.#messageCallback);
+    }
+}
+
 class DashWindow {
     /** @type {boolean} */
-    DASH_READY = _DASH_READY;
+    #DASH_READY = _DASH_READY;
 
     /**
      * A temporary buffer for IPC events while we wait for dashboard.js to start.
@@ -127,8 +201,6 @@ class DashWindow {
             },
         });
 
-        console.debug(`Sent DashWindow(${title}, ${this.id})`);
-
         Messages.messageReceived.connect(this.#messageCallback);
     }
 
@@ -179,7 +251,7 @@ class DashWindow {
             ...data
         };
 
-        if (this.DASH_READY) {
+        if (this.#DASH_READY) {
             Messages.sendLocalMessage(IPC_CHANNEL, JSON.stringify(event));
         } else {
             this.#ipcBuffer.push(event);
@@ -200,9 +272,9 @@ class DashWindow {
         }
 
         // the dash has started talking, we're good to send ipc messages
-        if (!this.DASH_READY) {
+        if (!this.#DASH_READY) {
             _DASH_READY = true;
-            this.DASH_READY = true;
+            this.#DASH_READY = true;
 
             for (const msg of this.#ipcBuffer) { this.#sendIPC(msg); }
             this.#ipcBuffer = [];
@@ -269,7 +341,7 @@ class DashWindow {
 
 class DashButton {
     /** @type {boolean} */
-    DASH_READY = _DASH_READY;
+    #DASH_READY = _DASH_READY;
 
     /**
      * A temporary buffer for IPC events while we wait for dashboard.js to start.
@@ -441,8 +513,6 @@ class DashButton {
             order: this.#order,
         });
 
-        console.debug(`Sent DashButton(${this.#text}, ${this.id})`);
-
         Messages.messageReceived.connect(this.#messageCallback);
     }
 
@@ -470,7 +540,7 @@ class DashButton {
             ...data
         };
 
-        if (this.DASH_READY) {
+        if (this.#DASH_READY) {
             Messages.sendLocalMessage(IPC_CHANNEL, JSON.stringify(event));
         } else {
             this.#ipcBuffer.push(event);
@@ -491,9 +561,9 @@ class DashButton {
         }
 
         // the dash has started talking, we're good to send ipc messages
-        if (!this.DASH_READY) {
+        if (!this.#DASH_READY) {
             _DASH_READY = true;
-            this.DASH_READY = true;
+            this.#DASH_READY = true;
 
             for (const msg of this.#ipcBuffer) { this.#sendIPC(msg); }
             this.#ipcBuffer = [];
@@ -536,6 +606,7 @@ class DashButton {
 }
 
 module.exports = {
+    Dashboard,
     DashWindow,
     DashButton,
 };

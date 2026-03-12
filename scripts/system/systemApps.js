@@ -10,7 +10,7 @@
 //  SPDX-License-Identifier: Apache-2.0
 "use strict";
 
-const { DashButton, DashWindow } = require("dashIPC");
+const { Dashboard, DashButton, DashWindow } = require("dashIPC");
 
 function defaultOnClicked() {
     this.button.active = !this.button.active;
@@ -28,20 +28,18 @@ function defaultOnClicked() {
 // just here to keep track of what requests are being handled
 let waitingRequestCookies = new Set();
 
-function defaultFromQml(message) {
-    const data = JSON.parse(message);
+function defaultFromQml(rawMsg) {
+    const { action, data } = JSON.parse(rawMsg);
 
-    switch (data.action) {
+    switch (action) {
         // QML's XMLHttpRequest doesn't have the authentication header that's
         // needed for interacting with the directory server. This passes a
         // request through the JS XMLHttpRequest so it can use the account auth.
         case "system:auth_request": {
             // sometimes requests get sent twice? don't let that happen
-            if (waitingRequestCookies.has(data.data.cookie)) {
-                return;
-            }
+            if (waitingRequestCookies.has(data.cookie)) { return; }
 
-            waitingRequestCookies.add(data.data.cookie);
+            waitingRequestCookies.add(data.cookie);
 
             let xhr = new XMLHttpRequest();
 
@@ -58,23 +56,25 @@ function defaultFromQml(message) {
                         },
                     }));
 
-                    waitingRequestCookies.delete(data.data.cookie);
+                    waitingRequestCookies.delete(data.cookie);
                 }
             };
 
-            xhr.open(data.data.method, data.data.url);
+            xhr.open(data.method, data.url);
 
-            if (data.data.method === "POST") {
+            if (data.method === "POST") {
                 xhr.setRequestHeader("Content-Type", "application/json;charset=utf-8");
             }
 
-            xhr.send(data.data.body);
+            xhr.send(data.body);
         } break;
 
         case "system:location_go_back": location.goBack(); break;
         case "system:location_go_forward": location.goForward(); break;
         case "system:location_go_to": {
-            location.handleLookupString(data.data.path);
+            SYSTEM_APPS.places.window?.close();
+            Dashboard.visible = false;
+            location.handleLookupString(data.path);
         } break;
     }
 }

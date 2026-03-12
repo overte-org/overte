@@ -68,12 +68,19 @@ class Dashboard {
     get visible() { return this.#visible; }
 
     set visible(visible) {
+        console.warn(`Dashboard.visible: ${visible}`);
+
         this.#visible = visible;
         this.windowManager.hidden = !visible;
 
         Entities.emitScriptEvent(this.#appbarPanelID, JSON.stringify({
             dash_window: { event: visible ? "unhide" : "hide" }
         }));
+
+        this.sendIPC({
+            event: "set_dash_property",
+            visible: visible,
+        });
 
         // setting it to invisible happens later after the animation is done,
         // it can be made non-interactive immediately no problem though
@@ -111,8 +118,11 @@ class Dashboard {
     /** @type {Quaternion} */
     #desiredRotation;
 
-    sendIPCMessage(data) {
-        Messages.sendLocalMessage(Defs.ipcChannel, JSON.stringify(data));
+    sendIPC(data) {
+        Messages.sendLocalMessage(Defs.ipcChannel, JSON.stringify({
+            ipc_source: "dashboard",
+            ...data
+        }));
     }
 
     #setDesiredPosition() {
@@ -198,8 +208,8 @@ class Dashboard {
             // pinging ensures dashIPC can know it's safe to send messages. there might be
             // a delay until a script using dashIPC knows the dash is ready, but won't have
             // any delay after sending their own IPC messages
-            this.sendIPCMessage({ event: "ping" });
-            this.#pingInterval = Script.setInterval(() => this.sendIPCMessage({ event: "ping" }), 300);
+            this.sendIPC({ event: "ping" });
+            this.#pingInterval = Script.setInterval(() => this.sendIPC({ event: "ping" }), 300);
         }, 1000);
     }
 
@@ -338,7 +348,7 @@ class Dashboard {
     };
 
     #themeChangeCallback = () => {
-        this.sendIPCMessage({ dashboard: { event: "theme_change" } });
+        this.sendIPC({ dashboard: { event: "theme_change" } });
         this.windowManager.reloadThemeSettings();
 
         Entities.emitScriptEvent(this.#appbarPanelID, JSON.stringify({
@@ -367,8 +377,6 @@ class Dashboard {
                 system: msg.system,
                 order: msg.order,
             });
-
-            console.debug(`Received DashButton(${msg.text}, ${msg.ipc_id})`);
 
             this.#appButtons.set(button.ipcID, button);
 
@@ -406,6 +414,9 @@ class Dashboard {
                     ipc_id: button.ipcID,
                 },
             }));
+        } else if (msg.event === "set_dash_property" && msg.ipc_source === "dashboard_ipc") {
+            console.error(`set_dash_property`);
+            if (msg.visible !== undefined) { this.visible = msg.visible; }
         }
     };
 }
