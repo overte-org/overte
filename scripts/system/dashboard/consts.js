@@ -87,6 +87,14 @@ module.exports = {
     dashBarQmlURL: `${OVERTE_QML}/dash/DashBar.qml`,
 
     /**
+     * How long the dash open button needs to be pressed
+     * to open the legacy tablet instead.
+     * @readonly
+     * @type {number}
+     */
+    dashTabletDelay: 300,
+
+    /**
      * The `dpi` the notifications panel will have.
      * @readonly
      * @type {number}

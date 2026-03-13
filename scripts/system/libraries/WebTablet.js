@@ -168,7 +168,10 @@ WebTablet = function (url, width, dpi, hand, location, visible) {
         "grab": {
             "grabbable": false
         },
-        "visible": visible
+        "visible": visible,
+        // QT6TODO: "touch" input doesn't work properly yet,
+        // "mouse" is broken in VR too but slightly less so
+        inputMode: "mouse",
     }, "local");
 
     var homeButtonDim = 4.0 * tabletScaleFactor / 1.5;

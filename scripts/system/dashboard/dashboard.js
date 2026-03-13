@@ -64,7 +64,36 @@ class AppButtonIPC {
 }
 
 class Dashboard {
-    #pingInterval;
+    #pingInterval = null;
+
+    #controllerMapping;
+    #openButtonPressedTime;
+    #openButtonReleasedTime;
+    #openButtonReleaseHandled = false;
+
+    #desktopToolbar = Toolbars.getToolbar("com.highfidelity.interface.toolbar.system");
+    #desktopToolbarVisible = false;
+
+    #openButtonReleased() {
+        if (this.#openButtonReleaseHandled) { return; }
+
+        if ((this.#openButtonReleasedTime - this.#openButtonPressedTime) > Defs.dashTabletDelay) {
+            if (HMD.active) {
+                if (HMD.showTablet) {
+                    HMD.closeTablet();
+                } else {
+                    HMD.openTablet();
+                }
+            } else {
+                this.#desktopToolbarVisible = !this.#desktopToolbarVisible;
+                this.#desktopToolbar.writeProperty("visible", this.#desktopToolbarVisible);
+            }
+        } else {
+            this.visible = !this.visible;
+        }
+
+        this.#openButtonReleaseHandled = true;
+    }
 
     /** @type {boolean} */
     #visible = false;
@@ -72,6 +101,9 @@ class Dashboard {
     get visible() { return this.#visible; }
 
     set visible(visible) {
+        // not initialized yet, wait for a bit before ack'ing
+        if (this.#pingInterval === null) { return; }
+
         this.#visible = visible;
         this.windowManager.hidden = !visible;
 
@@ -183,10 +215,9 @@ class Dashboard {
         this.windowManager = new WindowManager(this.rootID);
         this.notifyPanel = new NotifyPanel();
 
-        /*
-        this.#updateCallback = deltaTime => this.update(deltaTime);
-        Script.update.connect(this.#updateCallback);
-        */
+        // https://github.com/overte-org/overte/issues/1532
+        /*this.#updateCallback = deltaTime => this.update(deltaTime);
+        Script.update.connect(this.#updateCallback);*/
 
         MyAvatar.sensorToWorldScaleChanged.connect(this.#scaleCallback);
         Window.announcement.connect(this.#announcementCallback);
@@ -196,9 +227,34 @@ class Dashboard {
         Window.processingGifCompleted.connect(this.#snapshotAnimDoneCallback);
         Entities.webEventReceived.connect(this.#eventCallback);
         Controller.keyPressEvent.connect(this.#keyPressCallback);
+        Controller.keyReleaseEvent.connect(this.#keyReleaseCallback);
         Window.themeChanged.connect(this.#themeChangeCallback);
-        HMD.displayModeChanged.connect(this.#hmdActiveCallback);
         Messages.messageReceived.connect(this.#messageCallback);
+        this.#desktopToolbar.writeProperty("visible", this.#desktopToolbarVisible);
+
+        {
+            const app = Controller.Hardware.Application;
+            const std = Controller.Standard;
+
+            const map = Controller.newMapping("Dashboard");
+
+            const clickHandler = clicked => {
+                if (clicked) {
+                    this.#openButtonPressedTime = Date.now();
+                    this.#openButtonReleaseHandled = false;
+                } else {
+                    this.#openButtonReleasedTime = Date.now();
+                    this.#openButtonReleased();
+                }
+            };
+
+            map.from(std.LeftSecondaryThumb).peek().when(app.RightHandDominant).to(clickHandler);
+            map.from(std.RightSecondaryThumb).peek().when(app.LeftHandDominant).to(clickHandler);
+            map.from(std.Start).peek().to(clickHandler);
+
+            map.enable();
+            this.#controllerMapping = map;
+        }
 
         // FIXME: entities don't have any "i'm done creating" callback,
         // and entity add/edit/delete calls are tied to the framerate,
@@ -234,6 +290,15 @@ class Dashboard {
         // they won't spam the log
         this.windowManager?.update(deltaTime);
         this.notifyPanel?.update(deltaTime);
+
+        const now = Date.now();
+        if (
+            now > (this.#openButtonPressedTime + Defs.dashTabletDelay) &&
+            !this.#openButtonReleaseHandled
+        ) {
+            this.#openButtonReleasedTime = now;
+            this.#openButtonReleased();
+        }
     }
 
     dispose() {
@@ -246,8 +311,8 @@ class Dashboard {
         Entities.webEventReceived.disconnect(this.#eventCallback);
         Controller.keyPressEvent.disconnect(this.#keyPressCallback);
         Window.themeChanged.disconnect(this.#themeChangeCallback);
-        HMD.displayModeChanged.disconnect(this.#hmdActiveCallback);
         Messages.messageReceived.disconnect(this.#messageCallback);
+        this.#controllerMapping.disable();
 
         // https://github.com/overte-org/overte/issues/1532
         //Script.update.connect(this.#updateCallback);
@@ -336,7 +401,8 @@ class Dashboard {
         }
 
         if (event.key === 0x01000000 /* Qt::Key_Escape */) {
-            this.visible = !this.visible;
+            this.#openButtonPressedTime = Date.now();
+            this.#openButtonReleaseHandled = false;
         }
 
         if (event.key === 0x4f /* Qt::Key_O */) {
@@ -345,6 +411,24 @@ class Dashboard {
                 icon: `${Script.resourcesPath()}qml/overte/icons/gold_star.svg`,
                 image: `${Script.resourcesPath()}qml/overte/icons/home.svg`,
             });
+        }
+    };
+
+    #keyReleaseCallback = event => {
+        if (
+            event.isShifted ||
+            event.isMeta ||
+            event.isControl ||
+            event.isAlt ||
+            event.isKeypad ||
+            event.isAutoRepeat
+        ) {
+            return;
+        }
+
+        if (event.key === 0x01000000 /* Qt::Key_Escape */) {
+            this.#openButtonReleasedTime = Date.now();
+            this.#openButtonReleased();
         }
     };
 
@@ -357,8 +441,6 @@ class Dashboard {
             dashboard: { event: "theme_change" }
         }));
     };
-
-    #hmdActiveCallback = hmdActive => {};
 
     #messageCallback = (channel, rawMsg, _senderID, localOnly) => {
         if (channel !== Defs.ipcChannel || !localOnly) { return; }

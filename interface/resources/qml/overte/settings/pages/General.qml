@@ -225,6 +225,10 @@ SettingsPage {
         text: qsTr("These settings are for legacy functionality that may be removed in a later release.")
     }
 
+    SettingNote {
+        text: qsTr("Open the legacy tablet by long-pressing the Escape key on desktop or the B/Y button on the VR controller in your non-dominant hand.")
+    }
+
     SliderSetting {
         text: qsTr("VR Tablet Scale")
         stepSize: 5
