@@ -351,6 +351,7 @@ class Dashboard {
     #themeChangeCallback = () => {
         this.sendIPC({ dashboard: { event: "theme_change" } });
         this.windowManager.reloadThemeSettings();
+        this.notifyPanel.reloadThemeSettings();
 
         Entities.emitScriptEvent(this.#appbarPanelID, JSON.stringify({
             dashboard: { event: "theme_change" }

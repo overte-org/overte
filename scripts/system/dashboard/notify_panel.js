@@ -32,8 +32,19 @@ class NotifyPanel {
     /** @type {Quaternion} */
     #rotation = Quaternion.IDENTITY;
 
+    /** @type {boolean} */
+    #reducedMotion = Settings.getValue("Theme/reducedMotion", false);
+
+    reloadThemeSettings() {
+        this.#reducedMotion = Settings.getValue("Theme/reducedMotion", false);
+
+        Entities.emitScriptEvent(this.entityID, JSON.stringify({
+            dashboard: { event: "theme_change" },
+        }));
+    }
+
     constructor() {
-        this.#floating = HMD.active || DBG_FLOAT_ON_DESKTOP;
+        this.#floating = (HMD.active || DBG_FLOAT_ON_DESKTOP) && !this.#reducedMotion;
 
         MyAvatar.sensorToWorldScaleChanged.connect(this.#scaleCallback);
 
@@ -82,8 +93,9 @@ class NotifyPanel {
     update(dt) {
         // display mode has changed, so reconfigure
         // and reparent the web entity
-        if ((HMD.active || DBG_FLOAT_ON_DESKTOP) !== this.#floating) {
-            this.#floating = HMD.active;
+        const floating = (HMD.active || DBG_FLOAT_ON_DESKTOP) && !this.#reducedMotion;
+        if (floating !== this.#floating) {
+            this.#floating = floating;
             this.#reparent();
         }
 

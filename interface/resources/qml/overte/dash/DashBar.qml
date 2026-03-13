@@ -420,6 +420,7 @@ Item {
         id: appsBarToggle
         focusPolicy: Qt.NoFocus
         icon.source: checked ? "../icons/triangle_up.svg" : "../icons/triangle_down.svg"
+        icon.color: color
         icon.width: 20
         icon.height: 20
         checkable: true

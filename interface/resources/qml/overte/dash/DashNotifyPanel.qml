@@ -9,8 +9,19 @@ Item {
 
     property var maxBubbles: 3
 
+    function reloadThemeSettings() {
+        Overte.Theme.darkMode = SettingsInterface.getValue("Theme/darkMode", true);
+        Overte.Theme.highContrast = SettingsInterface.getValue("Theme/highContrast", false);
+        Overte.Theme.reducedMotion = SettingsInterface.getValue("Theme/reducedMotion", false);
+    }
+
     function fromScript(rawMsg) {
         const msg = JSON.parse(rawMsg);
+
+        if (msg?.dashboard?.event === "theme_change") {
+            reloadThemeSettings();
+            return;
+        }
 
         if (msg?.notify === undefined) { return; }
 
@@ -46,7 +57,7 @@ Item {
                 easing.type: Easing.OutExpo
             }
             NumberAnimation {
-                property: "y"
+                property: Overte.Theme.reducedMotion ? "dummy" : "y"
                 duration: 500
                 easing.type: Easing.OutExpo
             }
@@ -54,7 +65,7 @@ Item {
 
         displaced: Transition {
             NumberAnimation {
-                property: "y"
+                property: Overte.Theme.reducedMotion ? "dummy" : "y"
                 duration: 500
                 easing.type: Easing.OutExpo
             }
@@ -73,6 +84,8 @@ Item {
         delegate: DashNotification {
             anchors.left: parent?.left
             anchors.right: parent?.right
+
+            property real dummy: 0
 
             onExpired: listView.model.remove(index, 1)
         }
