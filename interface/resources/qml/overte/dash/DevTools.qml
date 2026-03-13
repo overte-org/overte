@@ -59,17 +59,32 @@ Rectangle {
             ButtonRow {
                 text: qsTr("Script Log")
                 description: qsTr("Lets you view messages logged by scripts, in a dash window. You can also check Developer > Log in the desktop menubar for a separate native window version.")
-                buttonText: qsTr("Open script log window")
+                buttonText: qsTr("Open")
                 onClicked: {
                     ScriptDiscoveryService.loadScript("/~//system/dashboard/scriptLog.js", false);
                 }
             }
 
             ButtonRow {
-                text: qsTr("Legacy Tablet")
-                description: qsTr("Older content may not work with the dashboard UI. This lets you open the old tablet to interact with that older content. Content relying on the tablet may stop working entirely some day.")
-                buttonText: qsTr("Open tablet")
-                onClicked: HMD.openTablet()
+                text: qsTr("Running Scripts")
+                description: qsTr("Opens a window that shows the currently running scripts, as well as ways of starting new ones.")
+                buttonText: qsTr("Open")
+                onClicked: {
+                    Messages.sendLocalMessage("Dash DevTools", JSON.stringify({
+                        open_window: "running scripts",
+                    }));
+                }
+            }
+
+            ButtonRow {
+                text: qsTr("Server Assets")
+                description: qsTr("Domain servers can host assets themselves, without the need for a web server. This lets you explore, upload, and get URLs for assets stored on the domain server.")
+                buttonText: qsTr("Open")
+                onClicked: {
+                    Messages.sendLocalMessage("Dash DevTools", JSON.stringify({
+                        open_window: "asset server",
+                    }));
+                }
             }
         }
     }

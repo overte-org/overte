@@ -495,7 +495,7 @@ class Dashboard {
             Entities.emitScriptEvent(this.#appbarPanelID, JSON.stringify({
                 dash_bar: {
                     event: "delete_app_button",
-                    ipc_id: button.ipcID,
+                    ipc_id: msg.ipc_id,
                 },
             }));
         } else if (msg.event === "set_dash_property" && msg.ipc_source === "dashboard_ipc") {

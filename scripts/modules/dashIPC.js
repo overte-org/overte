@@ -521,6 +521,8 @@ class DashButton {
      * @returns {void}
      */
     dispose() {
+        if (this.#disposed) { return; }
+
         this.#sendIPC({ event: "dispose" });
         this.#disposed = true;
         Messages.messageReceived.disconnect(this.#messageCallback);

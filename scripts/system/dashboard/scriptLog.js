@@ -28,11 +28,4 @@ ScriptDiscoveryService.infoMessage.connect((msg, script) => sendLog(PRIORITY_INF
 ScriptDiscoveryService.warningMessage.connect((msg, script) => sendLog(PRIORITY_WARN, msg, script));
 ScriptDiscoveryService.errorMessage.connect((msg, script) => sendLog(PRIORITY_ERROR, msg, script));
 
-Script.setTimeout(() => {
-    console.debug("Debug message");
-    console.info("Info message");
-    console.warn("Warning message");
-    console.error("Error message");
-}, 1000);
-
 Script.scriptEnding.connect(() => window.close());

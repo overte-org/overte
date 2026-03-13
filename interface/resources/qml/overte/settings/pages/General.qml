@@ -151,7 +151,14 @@ SettingsPage {
     SwitchSetting {
         text: qsTr("Show developer tools")
         value: SettingsInterface.getValue("Settings/Developer Menu", false)
-        onValueChanged: SettingsInterface.setValue("Settings/Developer Menu", value)
+
+        onValueChanged: {
+            SettingsInterface.setValue("Settings/Developer Menu", value);
+
+            Messages.sendLocalMessage("Dash DevTools", JSON.stringify({
+                button_visible: value,
+            }));
+        }
     }
 
     Header { text: qsTr("Screenshots") }

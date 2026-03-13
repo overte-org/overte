@@ -80,7 +80,28 @@ function defaultFromQml(rawMsg) {
     }
 }
 
+const DEVTOOLS_BUTTON_PROPS = {
+    text: "Dev Tools",
+    system: true,
+    icons: `${Script.resourcesPath()}qml/overte/icons/dev_tools.png`,
+    order: -4,
+};
+
+const DEVTOOLS_VISIBLE = Settings.getValue("Settings/Developer Menu", false);
+
 const SYSTEM_APPS = {
+    dev_tools: {
+        // might be set up later if the user changes the setting
+        button: DEVTOOLS_VISIBLE ? new DashButton(DEVTOOLS_BUTTON_PROPS) : null,
+        visible: DEVTOOLS_VISIBLE,
+
+        window: null,
+        windowProps: {
+            title: "Developer Tools",
+            sourceURL: `${Script.resourcesPath()}qml/overte/dash/DevTools.qml`,
+        },
+    },
+
     avatar: {
         button: new DashButton({
             // TODO: translation support in JS
@@ -157,17 +178,23 @@ const SYSTEM_APPS = {
     },
 };
 
+let tmpWindows = new Set();
+
 function setupButtons() {
     for (let app of Object.values(SYSTEM_APPS)) {
         if (!app.onClicked) { app.onClicked = defaultOnClicked; }
         if (!app.fromQml) { app.fromQml = defaultFromQml; }
-        app.button.clicked.connect(() => app.onClicked());
+        app.button?.clicked.connect(() => app.onClicked());
     }
 
     Script.scriptEnding.connect(() => {
         for (const app of Object.values(SYSTEM_APPS)) {
             app.window?.close();
-            app.button.dispose();
+            app.button?.dispose();
+        }
+
+        for (const window of tmpWindows.values()) {
+            window.close();
         }
     });
 }
@@ -192,6 +219,47 @@ function loadInstalledMoreApps() {
         }
     }, RETRY_DELAY_SECS * 1000);
 }
+
+Messages.messageReceived.connect((channel, rawMsg, _senderID, localOnly) => {
+    if (channel !== "Dash DevTools" || !localOnly) { return; }
+
+    const msg = JSON.parse(rawMsg);
+
+    if (msg.button_visible !== undefined) {
+        const show = msg.button_visible;
+
+        if (show && !SYSTEM_APPS.dev_tools.visible) {
+            let button = new DashButton(DEVTOOLS_BUTTON_PROPS);
+            button.clicked.connect(() => SYSTEM_APPS.dev_tools.onClicked());
+
+            SYSTEM_APPS.dev_tools.button = button;
+            SYSTEM_APPS.dev_tools.visible = true;
+        } else if (!show && SYSTEM_APPS.dev_tools.visible) {
+            SYSTEM_APPS.dev_tools.button?.dispose();
+            SYSTEM_APPS.dev_tools.visible = false;
+        }
+    }
+
+    switch (msg.open_window) {
+        case "running scripts": {
+            let window = new DashWindow({
+                title: "Running Scripts",
+                sourceURL: `${Script.resourcesPath()}qml/overte/dialogs/RunningScriptsDialog.qml`,
+            });
+            window.closed.connect(() => tmpWindows.delete(window));
+            tmpWindows.add(window);
+        } break;
+
+        case "asset server": {
+            let window = new DashWindow({
+                title: "Server Assets",
+                sourceURL: `${Script.resourcesPath()}qml/overte/dialogs/AssetDialog.qml`,
+            });
+            window.closed.connect(() => tmpWindows.delete(window));
+            tmpWindows.add(window);
+        } break;
+    }
+});
 
 loadInstalledMoreApps();
 setupButtons();
