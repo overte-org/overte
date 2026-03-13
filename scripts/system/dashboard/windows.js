@@ -555,7 +555,8 @@ class WindowManager {
             if (window.pinned) { continue; }
 
             if (window.grabbed || window.positionDirty) {
-                let { localPosition: pos } = Entities.getEntityProperties(id, "localPosition");
+                // localPosition goes very weird when near-grabbed in VR
+                let pos = Entities.worldToLocalPosition(Entities.getEntityProperties(id, "position").position, this.#rootID);
                 pos = vec3(pos);
 
                 // sit on top of the rail

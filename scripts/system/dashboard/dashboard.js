@@ -160,7 +160,7 @@ class Dashboard {
     }
 
     #setDesiredPosition() {
-        const heightOffset = HMD.active ? -0.38 : -0.3;
+        const heightOffset = HMD.active ? -0.6 : -0.3;
         const pos = Vec3.sum(Entities.worldToLocalPosition(Camera.position, MyAvatar.SELF_ID, Defs.sensorToWorldJoint), [0, heightOffset, 0]);
         const rot = Quat.cancelOutRollAndPitch(Entities.worldToLocalRotation(Camera.orientation, MyAvatar.SELF_ID, Defs.sensorToWorldJoint));
 
