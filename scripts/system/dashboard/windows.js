@@ -30,6 +30,22 @@ class DashWindow {
     #dimensions = vec3(Defs.windowDimensions);
 
     /**
+     * This window's horizontal position on the window rail.
+     * Might not be correct if the window is pinned.
+     * @type {number}
+     */
+    x = 0;
+
+    /** @type {Number} */
+    z = 0;
+
+    /** @type {Date} */
+    focusTime = Date.now();
+
+    /** @type {boolean} */
+    positionDirty = true;
+
+    /**
      * Whether this window is pinned. Pinned windows aren't
      * attached to the window rail, and don't hide when the
      * dash is closed.
@@ -48,6 +64,7 @@ class DashWindow {
 
         if (!pinned && pinned != old) {
             // hide the window again if it's been unpinned while the dash is hidden
+            this.positionDirty = true;
             this.#hideImpl();
             this.#setReleaseState();
         }
@@ -73,6 +90,7 @@ class DashWindow {
         entityProperties = {},
         dimensions = Defs.windowDimensions,
         pinnable = false,
+        autoFocus = true,
     }) {
         this.#sourceURL = sourceURL;
         this.#title = title;
@@ -126,6 +144,10 @@ class DashWindow {
                 pinnable: this.#pinnable,
             });
             this.markInitialized();
+
+            if (autoFocus) {
+                Entities.keyboardFocusEntity = this.entityID;
+            }
         }, 100);
     }
 
@@ -532,21 +554,25 @@ class WindowManager {
             // the window is pinned, so don't do anything to it
             if (window.pinned) { continue; }
 
-            if (window.grabbed) {
+            if (window.grabbed || window.positionDirty) {
                 let { localPosition: pos } = Entities.getEntityProperties(id, "localPosition");
                 pos = vec3(pos);
 
                 // sit on top of the rail
+                window.x = clamp(pos.x / Defs.windowRailWidth, -1, 1);
+
                 pos.y = (window.dimensions.y / 2) + 0.01;
-                pos.x = clamp(pos.x / Defs.windowRailWidth, -1, 1);
-                pos.z = (Math.cos(pos.x * (Math.PI / 2)) * -Defs.windowRailCurvature) - Defs.windowRailDistance;
+                pos.x = window.x;
+                pos.z = (Math.cos(window.x * (Math.PI / 2)) * -Defs.windowRailCurvature) - Defs.windowRailDistance;
 
-                let yaw = -Math.sin(pos.x * (Math.PI / 2)) * (Math.PI / 2) * Defs.windowRailCurvature;
+                let yaw = -Math.sin(window.x * (Math.PI / 2)) * (Math.PI / 2) * Defs.windowRailCurvature;
+                let rot = quat(Quaternion.fromPitchYawRollRadians(0, yaw, 0));
 
-                let rot = Quaternion.fromPitchYawRollRadians(0, yaw, 0);
+                pos = pos.add(rot.multiply(vec3(0, 0, window.z)));
 
                 window.desiredPosition = pos;
                 window.desiredRotation = rot;
+                window.positionDirty = false;
             } else if (this.#reducedMotion) {
                 // snap the window directly onto the rail in reduced motion mode
                 Entities.editEntity(id, {
@@ -594,6 +620,18 @@ class WindowManager {
         }
     }
 
+    #reorderDepth() {
+        const windows = [...this.children.values()].sort((a, b) => b.focusTime - a.focusTime);
+
+        let z = 0;
+
+        for (const window of windows) {
+            window.z = z * -Defs.windowFocusDepthOffset;
+            window.positionDirty = true;
+            z += 1;
+        }
+    }
+
     #addWindow({ sourceURL, title, pinnable, dimensions = Defs.windowDimensions }) {
         const pos = vec3(
             0,
@@ -619,10 +657,13 @@ class WindowManager {
 
         if (this.children.has(entity)) {
             this.focusedWindow = this.children.get(entity);
+            this.focusedWindow.focusTime = Date.now();
             this.focusedWindow.focus();
         } else {
             this.focusedWindow = null;
         }
+
+        this.#reorderDepth();
     };
 
     #eventCallback = (entity, rawMsg) => {

@@ -22,6 +22,13 @@ module.exports = {
     windowDimensions: { x: 0.53, y: 0.8, z: 0 },
 
     /**
+     * How far a window will be pushed away when unfocused
+     * @readonly
+     * @type {number}
+     */
+    windowFocusDepthOffset: 0.02,
+
+    /**
      * A URL to DashWindow.qml.
      * @readonly
      * @type {string}
