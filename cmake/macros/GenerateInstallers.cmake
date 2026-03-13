@@ -111,7 +111,7 @@ macro(GENERATE_INSTALLERS)
       # hide the special Icon? file
       install(CODE "execute_process(COMMAND SetFile -a V \${CMAKE_INSTALL_PREFIX}/${ESCAPED_DMG_SUBFOLDER_NAME}/Icon\\r)")
     endif ()
-  elseif (LINUX)
+  elseif (LINUX AND NOT OVERTE_USE_SYSTEM_LIBS)
     # Produce Interface AppImage using our own scripts.
     set(CPACK_GENERATOR "External")
 
