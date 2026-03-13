@@ -100,6 +100,11 @@ QtObject {
         readonly property color appInstalledNotRunning: statusFriendsOnly
         readonly property color appNotInstalledRunning: "red"
         readonly property color appNotInstalled: statusOffline
+
+        readonly property color logPriorityDebug: "#808080"
+        readonly property color logPriorityInfo: "#8dbffc"
+        readonly property color logPriorityWarn: "#fcd63c"
+        readonly property color logPriorityError: "#fc3c3f"
     }
 
     readonly property var paletteLight: QtObject {
@@ -144,6 +149,11 @@ QtObject {
         readonly property color appInstalledNotRunning: "#ffaf00"
         readonly property color appNotInstalledRunning: "red"
         readonly property color appNotInstalled: statusOffline
+
+        readonly property color logPriorityDebug: "#808080"
+        readonly property color logPriorityInfo: "#8dbffc"
+        readonly property color logPriorityWarn: "#fcd63c"
+        readonly property color logPriorityError: "#fc3c3f"
     }
 
     readonly property var paletteDarkContrast: QtObject {
@@ -188,6 +198,11 @@ QtObject {
         readonly property color appInstalledNotRunning: statusFriendsOnly
         readonly property color appNotInstalledRunning: "red"
         readonly property color appNotInstalled: statusOffline
+
+        readonly property color logPriorityDebug: "#808080"
+        readonly property color logPriorityInfo: "#8dbffc"
+        readonly property color logPriorityWarn: "#fcd63c"
+        readonly property color logPriorityError: "#fc3c3f"
     }
 
     readonly property var paletteLightContrast: QtObject {
@@ -232,5 +247,10 @@ QtObject {
         readonly property color appInstalledNotRunning: "#ffaf00"
         readonly property color appNotInstalledRunning: "red"
         readonly property color appNotInstalled: statusOffline
+
+        readonly property color logPriorityDebug: "#808080"
+        readonly property color logPriorityInfo: "#8dbffc"
+        readonly property color logPriorityWarn: "#fcd63c"
+        readonly property color logPriorityError: "#fc3c3f"
     }
 }

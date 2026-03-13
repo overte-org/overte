@@ -23,7 +23,6 @@ var DEFAULT_SCRIPTS_COMBINED = [
     "system/bubble.js",
     "system/snapshot.js",
     "system/makeUserConnection.js",
-    "system/notifications.js",
     "system/create/edit.js",
     "system/dialTone.js",
     "system/firstPersonHMD.js",
@@ -31,25 +30,18 @@ var DEFAULT_SCRIPTS_COMBINED = [
     "system/audioMuteOverlay.js",
     "system/inspect.js",
     "system/keyboardShortcuts/keyboardShortcuts.js",
-    "system/onEscape.js",
     //"developer/debugging/scriptMemoryReport.js"
 ];
 var DEFAULT_SCRIPTS_SEPARATE = [
     "system/systemApps.js",
     "system/chat.js",
-    "system/places/places.js",
+    "system/placePortals.js",
     "system/controllers/controllerScripts.js",
     "system/controllers/squeezeHands.js",
-    "communityScripts/notificationCore/notificationCore.js",
     "simplifiedUI/ui/simplifiedNametag/simplifiedNametag.js",
     "communityScripts/chatBubbles/chatBubbles.js",
     "communityScripts/contextMenu.js",
 ];
-
-if (Window.interstitialModeEnabled) {
-    // Insert interstitial scripts at front so that they're started first.
-    DEFAULT_SCRIPTS_COMBINED.splice(0, 0, "system/interstitialPage.js", "system/redirectOverlays.js");
-}
 
 // add a menu item for debugging
 var MENU_CATEGORY = "Developer > Scripting";

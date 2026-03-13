@@ -211,57 +211,61 @@ PickRay Application::computePickRay(float x, float y) const {
 }
 
 void Application::setupQmlSurface(QQmlContext* surfaceContext, bool setAdditionalContextProperties) {
-    surfaceContext->setContextProperty("Users", DependencyManager::get<UsersScriptingInterface>().data());
-    surfaceContext->setContextProperty("HMD", DependencyManager::get<HMDScriptingInterface>().data());
-    surfaceContext->setContextProperty("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
-    surfaceContext->setContextProperty("Preferences", DependencyManager::get<Preferences>().data());
-    surfaceContext->setContextProperty("Vec3", new Vec3());
-    surfaceContext->setContextProperty("Quat", new Quat());
-    surfaceContext->setContextProperty("MyAvatar", DependencyManager::get<AvatarManager>()->getMyAvatar().get());
-    surfaceContext->setContextProperty("Entities", DependencyManager::get<EntityScriptingInterface>().data());
-    surfaceContext->setContextProperty("Snapshot", DependencyManager::get<Snapshot>().data());
-    surfaceContext->setContextProperty("KeyboardScriptingInterface", DependencyManager::get<KeyboardScriptingInterface>().data());
-
-    if (setAdditionalContextProperties) {
-        qDebug() << "setting additional context properties!";
-        auto tabletScriptingInterface = DependencyManager::get<TabletScriptingInterface>();
-        auto flags = tabletScriptingInterface->getFlags();
-
-        surfaceContext->setContextProperty("offscreenFlags", flags);
-        surfaceContext->setContextProperty("AddressManager", DependencyManager::get<AddressManager>().data());
-
-        // TODO: Replace Settings (conflicts with QtCore.Settings) with SettingsInterface
-        surfaceContext->setContextProperty("Settings", new QMLSettingsScriptingInterface(surfaceContext));
-        surfaceContext->setContextProperty("SettingsInterface", new QMLSettingsScriptingInterface(surfaceContext));
-
-        surfaceContext->setContextProperty("MenuInterface", MenuScriptingInterface::getInstance());
-        surfaceContext->setContextProperty("Performance", new PerformanceScriptingInterface());
-
-        surfaceContext->setContextProperty("Account", AccountServicesScriptingInterface::getInstance()); // DEPRECATED - TO BE REMOVED
-        surfaceContext->setContextProperty("GlobalServices", AccountServicesScriptingInterface::getInstance()); // DEPRECATED - TO BE REMOVED
-        surfaceContext->setContextProperty("AccountServices", AccountServicesScriptingInterface::getInstance());
-
+    if (!setAdditionalContextProperties) {
+        surfaceContext->setContextProperty("Users", DependencyManager::get<UsersScriptingInterface>().data());
+        surfaceContext->setContextProperty("HMD", DependencyManager::get<HMDScriptingInterface>().data());
+        surfaceContext->setContextProperty("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
+        surfaceContext->setContextProperty("Preferences", DependencyManager::get<Preferences>().data());
+        surfaceContext->setContextProperty("Vec3", new Vec3());
+        surfaceContext->setContextProperty("Quat", new Quat());
+        surfaceContext->setContextProperty("MyAvatar", DependencyManager::get<AvatarManager>()->getMyAvatar().get());
+        surfaceContext->setContextProperty("Messages", DependencyManager::get<MessagesClient>().data());
+        surfaceContext->setContextProperty("Entities", DependencyManager::get<EntityScriptingInterface>().data());
+        surfaceContext->setContextProperty("Snapshot", DependencyManager::get<Snapshot>().data());
+        surfaceContext->setContextProperty("KeyboardScriptingInterface", DependencyManager::get<KeyboardScriptingInterface>().data());
+    } else {
+        auto engine = surfaceContext->engine();
         // in Qt 5.10.0 there is already an "Audio" object in the QML context
         // though I failed to find it (from QtMultimedia??). So..  let it be "AudioScriptingInterface"
         surfaceContext->setContextProperty("AudioScriptingInterface", DependencyManager::get<AudioScriptingInterface>().data());
 
         surfaceContext->setContextProperty("AudioStats", DependencyManager::get<AudioClient>()->getStats().data());
-        surfaceContext->setContextProperty("fileDialogHelper", new FileDialogHelper());
-        surfaceContext->setContextProperty("ScriptDiscoveryService", DependencyManager::get<ScriptEngines>().data());
-        surfaceContext->setContextProperty("Assets", DependencyManager::get<AssetMappingsScriptingInterface>().data());
-        surfaceContext->setContextProperty("LODManager", DependencyManager::get<LODManager>().data());
-        surfaceContext->setContextProperty("OctreeStats", DependencyManager::get<OctreeStatsProvider>().data());
-        surfaceContext->setContextProperty("DCModel", DependencyManager::get<DomainConnectionModel>().data());
-        surfaceContext->setContextProperty("AvatarInputs", AvatarInputs::getInstance());
-        surfaceContext->setContextProperty("AvatarList", DependencyManager::get<AvatarManager>().data());
-        surfaceContext->setContextProperty("DialogsManager", DialogsManagerScriptingInterface::getInstance());
-        surfaceContext->setContextProperty("InputConfiguration", DependencyManager::get<InputConfiguration>().data());
-        surfaceContext->setContextProperty("SoundCache", DependencyManager::get<SoundCacheScriptingInterface>().data());
-        surfaceContext->setContextProperty("AvatarBookmarks", DependencyManager::get<AvatarBookmarks>().data());
-        surfaceContext->setContextProperty("Render", RenderScriptingInterface::getInstance());
-        surfaceContext->setContextProperty("Workload", qApp->getGameWorkload()._engine->getConfiguration().get());
+        surfaceContext->setContextProperty("AudioScope", DependencyManager::get<AudioScope>().data());
+
         surfaceContext->setContextProperty("Controller", DependencyManager::get<controller::ScriptingInterface>().data());
-        surfaceContext->setContextProperty("Pointers", DependencyManager::get<PointerScriptingInterface>().data());
+        surfaceContext->setContextProperty("Entities", DependencyManager::get<EntityScriptingInterface>().data());
+        surfaceContext->setContextProperty("Performance", new PerformanceScriptingInterface());
+        surfaceContext->setContextProperty("File", qApp->_fileDownload);
+        surfaceContext->setContextProperty("MyAvatar", qApp->getMyAvatar().get());
+        surfaceContext->setContextProperty("Messages", DependencyManager::get<MessagesClient>().data());
+        surfaceContext->setContextProperty("Recording", DependencyManager::get<RecordingScriptingInterface>().data());
+        surfaceContext->setContextProperty("Preferences", DependencyManager::get<Preferences>().data());
+        surfaceContext->setContextProperty("AddressManager", DependencyManager::get<AddressManager>().data());
+        surfaceContext->setContextProperty("FrameTimings", &qApp->_graphicsEngine->_frameTimingsScriptingInterface);
+        //surfaceContext->setContextProperty("Rates", new RatesScriptingInterface(this));
+
+        surfaceContext->setContextProperty("TREE_SCALE", TREE_SCALE);
+        // FIXME Quat and Vec3 won't work with QJSEngine used by QML
+        surfaceContext->setContextProperty("Quat", new Quat());
+        surfaceContext->setContextProperty("Vec3", new Vec3());
+        surfaceContext->setContextProperty("Uuid", new ScriptUUID());
+        surfaceContext->setContextProperty("Assets", DependencyManager::get<AssetMappingsScriptingInterface>().data());
+        surfaceContext->setContextProperty("Keyboard", DependencyManager::get<KeyboardScriptingInterface>().data());
+
+        // TODO: replace instances of Keyboard with KeyboardScriptingInterface
+        surfaceContext->setContextProperty("KeyboardScriptingInterface", DependencyManager::get<KeyboardScriptingInterface>().data());
+
+        surfaceContext->setContextProperty("AvatarList", DependencyManager::get<AvatarManager>().data());
+        surfaceContext->setContextProperty("Users", DependencyManager::get<UsersScriptingInterface>().data());
+
+        surfaceContext->setContextProperty("UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
+        surfaceContext->setContextProperty("Camera", &qApp->_myCamera);
+
+#if defined(Q_OS_MAC) || defined(Q_OS_WIN)
+        surfaceContext->setContextProperty("SpeechRecognizer", DependencyManager::get<SpeechRecognizer>().data());
+#endif
+
+        surfaceContext->setContextProperty("Overlays", &qApp->_overlays);
 
         // QT6TODO: replace all of the instances of "Window" in QML with WindowScriptingInterface
         surfaceContext->setContextProperty("Window", DependencyManager::get<WindowScriptingInterface>().data());
@@ -270,13 +274,54 @@ void Application::setupQmlSurface(QQmlContext* surfaceContext, bool setAdditiona
         // so this needs to be WindowScriptingInterface
         surfaceContext->setContextProperty("WindowScriptingInterface", DependencyManager::get<WindowScriptingInterface>().data());
 
-        surfaceContext->setContextProperty("Reticle", qApp->getApplicationCompositor().getReticleInterface());
-        surfaceContext->setContextProperty("PickScriptingInterface", DependencyManager::get<PickScriptingInterface>().data());
-        surfaceContext->setContextProperty("About", AboutUtil::getInstance());
-        surfaceContext->setContextProperty("HiFiAbout", AboutUtil::getInstance());  // Deprecated.
-        surfaceContext->setContextProperty("ResourceRequestObserver", DependencyManager::get<ResourceRequestObserver>().data());
+        surfaceContext->setContextProperty("Desktop", DependencyManager::get<DesktopScriptingInterface>().data());
+        surfaceContext->setContextProperty("MenuInterface", MenuScriptingInterface::getInstance());
+
+        // TODO: Replace Settings (conflicts with QtCore.Settings) with SettingsInterface
+        surfaceContext->setContextProperty("Settings", new QMLSettingsScriptingInterface(surfaceContext));
+        surfaceContext->setContextProperty("SettingsInterface", new QMLSettingsScriptingInterface(surfaceContext));
+
+        surfaceContext->setContextProperty("ScriptDiscoveryService", DependencyManager::get<ScriptEngines>().data());
+        surfaceContext->setContextProperty("AvatarBookmarks", DependencyManager::get<AvatarBookmarks>().data());
+        surfaceContext->setContextProperty("LocationBookmarks", DependencyManager::get<LocationBookmarks>().data());
+
+        // Caches
+        surfaceContext->setContextProperty("AnimationCache", DependencyManager::get<AnimationCacheScriptingInterface>().data());
+        surfaceContext->setContextProperty("TextureCache", DependencyManager::get<TextureCacheScriptingInterface>().data());
+        surfaceContext->setContextProperty("MaterialCache", DependencyManager::get<MaterialCacheScriptingInterface>().data());
+        surfaceContext->setContextProperty("ModelCache", DependencyManager::get<ModelCacheScriptingInterface>().data());
+        surfaceContext->setContextProperty("SoundCache", DependencyManager::get<SoundCacheScriptingInterface>().data());
+
+        surfaceContext->setContextProperty("InputConfiguration", DependencyManager::get<InputConfiguration>().data());
+
+        surfaceContext->setContextProperty("Account", AccountServicesScriptingInterface::getInstance()); // DEPRECATED - TO BE REMOVED
+        surfaceContext->setContextProperty("GlobalServices", AccountServicesScriptingInterface::getInstance()); // DEPRECATED - TO BE REMOVED
+        surfaceContext->setContextProperty("AccountServices", AccountServicesScriptingInterface::getInstance());
+
+        surfaceContext->setContextProperty("DialogsManager", qApp->_dialogsManagerScriptingInterface);
+        surfaceContext->setContextProperty("AvatarManager", DependencyManager::get<AvatarManager>().data());
+        surfaceContext->setContextProperty("LODManager", DependencyManager::get<LODManager>().data());
+        surfaceContext->setContextProperty("HMD", DependencyManager::get<HMDScriptingInterface>().data());
+        surfaceContext->setContextProperty("Scene", DependencyManager::get<SceneScriptingInterface>().data());
+        surfaceContext->setContextProperty("Render", RenderScriptingInterface::getInstance());
         surfaceContext->setContextProperty("PlatformInfo", PlatformInfoScriptingInterface::getInstance());
+        surfaceContext->setContextProperty("Workload", qApp->_gameWorkload._engine->getConfiguration().get());
+        surfaceContext->setContextProperty("PickScriptingInterface", DependencyManager::get<PickScriptingInterface>().data());
+        surfaceContext->setContextProperty("Reticle", qApp->getApplicationCompositor().getReticleInterface());
+        surfaceContext->setContextProperty("Snapshot", DependencyManager::get<Snapshot>().data());
+
+        surfaceContext->setContextProperty("ApplicationCompositor", &qApp->getApplicationCompositor());
+
+        surfaceContext->setContextProperty("AvatarInputs", AvatarInputs::getInstance());
+        surfaceContext->setContextProperty("Selection", DependencyManager::get<SelectionScriptingInterface>().data());
+        surfaceContext->setContextProperty("About", AboutUtil::getInstance());
+        surfaceContext->setContextProperty("HiFiAbout", AboutUtil::getInstance());  // Deprecated
+        surfaceContext->setContextProperty("ResourceRequestObserver", DependencyManager::get<ResourceRequestObserver>().data());
         surfaceContext->setContextProperty("ExternalResource", ExternalResource::getInstance());
+
+        if (auto steamClient = PluginManager::getInstance()->getSteamClientPlugin()) {
+            surfaceContext->setContextProperty("Steam", new SteamScriptingInterface(engine, steamClient.get()));
+        }
 
         // This `module` context property is blank for the QML scripting interface so that we don't get log errors when importing
         // certain JS files from both scripts (in the JS context) and QML (in the QML context).

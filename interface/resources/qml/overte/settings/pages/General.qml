@@ -137,6 +137,30 @@ SettingsPage {
         onCurrentIndexChanged: SettingsInterface.setValue("simplifiedNametag/avatarNametagMode", model[currentIndex].value)
     }
 
+    SwitchSetting {
+        text: qsTr("Use 3D dashboard UI on desktop")
+        // TODO
+        enabled: false
+        value: true
+    }
+
+    SettingNote {
+        text: qsTr("Currently always enabled. A 2D mode will be available in the future.")
+    }
+
+    SwitchSetting {
+        text: qsTr("Show developer tools")
+        value: SettingsInterface.getValue("Settings/Developer Menu", false)
+
+        onValueChanged: {
+            SettingsInterface.setValue("Settings/Developer Menu", value);
+
+            Messages.sendLocalMessage("Dash DevTools", JSON.stringify({
+                button_visible: value,
+            }));
+        }
+    }
+
     Header { text: qsTr("Screenshots") }
 
     FolderSetting {
@@ -206,6 +230,10 @@ SettingsPage {
 
     SettingNote {
         text: qsTr("These settings are for legacy functionality that may be removed in a later release.")
+    }
+
+    SettingNote {
+        text: qsTr("Open the legacy tablet by long-pressing the Escape key on desktop or the B/Y button on the VR controller in your non-dominant hand.")
     }
 
     SliderSetting {
