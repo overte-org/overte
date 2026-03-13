@@ -37,9 +37,11 @@ jobs:
               build_type: full
               qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
               rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
-            #- os: macOS-10.15
-            #  build_type: full
-            #  qt_source: aqt
+            - os: macOS 15 (Sequoia)
+              runner: macos-15
+              arch: arm64
+              build_type: full
+              qt_source: system
             - os: Ubuntu 22.04 OpenGL
               image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
               runner: ubuntu-latest
@@ -86,6 +88,10 @@ jobs:
       if: startsWith(matrix.os, 'Windows')
       uses: ./.github/actions/setup-windows
 
+    - name: Prepare macOS environment
+      if: startsWith(matrix.os, 'macOS')
+      uses: ./.github/actions/setup-macos
+
     - name: Read image environment variables
       # Bring some environment variables out of the Runner (Docker) image's environment into the Job environment.
       if: ${{matrix.image}} != ""
@@ -122,12 +128,13 @@ jobs:
           fi
         fi
         # Mac build variables
-        if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
+        if [[ "${{ matrix.os }}" = "macOS"* ]]; then
+          echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
           echo "INSTALLER_EXT=dmg" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
-            echo "CMAKE_EXTRA=-DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
+            echo "CMAKE_EXTRA= -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -G Xcode" >> $GITHUB_ENV
           else
-            echo "CMAKE_EXTRA=-DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCLIENT_ONLY=1 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
+            echo "CMAKE_EXTRA= -DCLIENT_ONLY=1 -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -G Xcode" >> $GITHUB_ENV
           fi
         fi
         # Windows build variables
