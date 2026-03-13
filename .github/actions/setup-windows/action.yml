@@ -54,16 +54,16 @@ runs:
         # source-credentials.json is a jinja template, so os.getenv() happens at runtime.
         cat > ${CONAN_HOME}/source_credentials.json <<EOF
         {% set TOKEN = os.getenv('CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN') %}
+        {% if TOKEN % }
         {
           "credentials": [
-            {% if TOKEN % }
             {
             "url": "https://artifactory.overte.org/artifactory/build-dependencies-backup/",
             "token": "{{TOKEN}}"
             }
-            {% endif %}
           ]
         }
+        {% endif %}
         EOF
         echo "Printing Conan global.conf…" && cat ${CONAN_HOME}/global.conf
         echo "Printing Conan remotes.json…" && cat ${CONAN_HOME}/remotes.json
