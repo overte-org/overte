@@ -76,10 +76,12 @@ COPY <<EOF /root/.conan2/source_credentials.json
 {% set TOKEN = os.getenv('CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN') %}
 {
   "credentials": [
+    {% if TOKEN % }
     {
     "url": "https://artifactory.overte.org/artifactory/build-dependencies-backup/",
     "token": "{{TOKEN}}"
     }
+    {% endif %}
   ]
 }
 EOF
