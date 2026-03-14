@@ -42,17 +42,17 @@ jobs:
             #  qt_source: aqt
             - os: Ubuntu 22.04 OpenGL
               image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
-              runner: ubuntu-latest
+              runner: depot-ubuntu-24.04-16
               arch: amd64
               build_type: full
-              qt_source: system
+              qt_source: source
               rendering_backend: OpenGL
             - os: Ubuntu 22.04 Vulkan
               image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64
-              runner: ubuntu-latest
+              runner: depot-ubuntu-24.04-16
               arch: amd64
               build_type: full
-              qt_source: system
+              qt_source: source
               rendering_backend: Vulkan
             # Android builds are currently failing
             #- os: ubuntu-18.04
@@ -61,17 +61,17 @@ jobs:
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
             - os: Ubuntu 22.04 OpenGL ES
               image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-aarch64
-              runner: ubuntu-24.04-arm
+              runner: depot-ubuntu-24.04-arm-16
               arch: aarch64
               build_type: full
-              qt_source: system
+              qt_source: source
               rendering_backend: GLES
             - os: Ubuntu 22.04 Vulkan
               image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-aarch64
-              runner: ubuntu-24.04-arm
+              runner: depot-ubuntu-24.04-arm-16
               arch: aarch64
               build_type: full
-              qt_source: system
+              qt_source: source
               rendering_backend: Vulkan
         fail-fast: false
     runs-on: ${{matrix.runner}}
