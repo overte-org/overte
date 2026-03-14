@@ -135,7 +135,7 @@ typedef std::vector<Transaction> TransactionQueue;
 class Scene {
 public:
 
-    Scene(glm::vec3 origin, float size);
+    Scene(const glm::vec3 &origin, float size);
     ~Scene();
 
     // This call is thread safe, can be called from anywhere to allocate a new ID

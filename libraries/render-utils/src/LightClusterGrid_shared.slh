@@ -1,5 +1,5 @@
 // glsl / C++ compatible source as interface for FrustrumGrid
-#if defined(Q_OS_LINUX)
+#if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
 #define float_exp2 exp2f
 #else
 #define float_exp2 exp2

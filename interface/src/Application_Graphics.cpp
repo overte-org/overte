@@ -430,7 +430,7 @@ void Application::initializeUi() {
 
     setIsInterstitialMode(true);
 
-#if defined(DISABLE_QML) && defined(Q_OS_LINUX)
+#if defined(DISABLE_QML) && (defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD))
     resumeAfterLoginDialogActionTaken();
 #endif
 }
