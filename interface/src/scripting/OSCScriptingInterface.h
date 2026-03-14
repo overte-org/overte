@@ -64,7 +64,7 @@ class ScriptContext;
  * @property {string} sendHost - IP address to send OSC packets to.
  *      <code>127.0.0.1</code> by default, and shouldn't be changed unless
  *      you know what you're doing and need to use something different.
- * @property {number} receivePort - IP port to send OSC packets to.
+ * @property {number} sendPort - IP port to send OSC packets to.
  *      <code>9001</code> by default.
  */
 class OSCScriptingInterface : public QObject, public Dependency {

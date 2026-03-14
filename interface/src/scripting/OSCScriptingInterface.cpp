@@ -197,7 +197,7 @@ OSCScriptingInterface::~OSCScriptingInterface() {
 }
 
 void OSCScriptingInterface::rebindSocket() {
-    _socket->bind(QHostAddress(_sendHost.get()), _sendPort.get());
+    _socket->bind(QHostAddress(_receiveHost.get()), _receivePort.get());
     qCInfo(osc_cat) << "Listening on" << _socket->localAddress() << ":" << _socket->localPort();
 }
 
