@@ -586,7 +586,7 @@ int main(int argc, const char* argv[]) {
 
     PROFILE_SYNC_BEGIN(startup, "main startup", "");
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
     QApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);
 #endif
 
@@ -779,7 +779,7 @@ int main(int argc, const char* argv[]) {
         app.initialize(parser);
         PROFILE_SYNC_END(startup, "app full ctor", "");
 
-#if defined(Q_OS_LINUX)
+#if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
         app.setWindowIcon(QIcon(PathUtils::resourcesPath() + "images/brand-logo.svg"));
 #endif
         ch.startMonitor(&app);
@@ -859,7 +859,7 @@ int main(int argc, const char* argv[]) {
     Application::shutdownPlugins();
 
     qCDebug(interfaceapp, "Normal exit.");
-#if !defined(DEBUG) && !defined(Q_OS_LINUX)
+#if !defined(DEBUG) && !defined(Q_OS_LINUX) && !defined(Q_OS_FREEBSD)
     // HACK: exit immediately (don't handle shutdown callbacks) for Release build
     _exit(exitCode);
 #endif

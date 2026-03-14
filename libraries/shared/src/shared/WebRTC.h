@@ -36,7 +36,7 @@
 #  endif
 #elif defined(Q_OS_ANDROID)
 #  define WEBRTC_AUDIO 1
-#elif defined(Q_OS_LINUX)
+#elif defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
 #  ifndef DISABLE_WEBRTC
 #    define WEBRTC_AUDIO 1
 // #  define WEBRTC_DATA_CHANNELS 1

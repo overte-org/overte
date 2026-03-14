@@ -235,6 +235,7 @@ namespace platform { namespace keys {
         const char*  OS_MACOS = "MACOS";
         const char*  OS_LINUX = "LINUX";
         const char*  OS_ANDROID = "ANDROID";
+        const char*  OS_FREEBSD = "FREEBSD";
 
         const char*  OSVersion = "OSVersion";
 
@@ -265,6 +266,8 @@ namespace platform { namespace keys {
 #include "AndroidPlatform.h"
 #elif defined(Q_OS_LINUX)
 #include "LinuxPlatform.h"
+#elif defined(Q_OS_FREEBSD)
+#include "FreeBSDPlatform.h"
 #endif
 
 using namespace platform;
@@ -280,6 +283,8 @@ void platform::create() {
     _instance= new AndroidInstance();
 #elif defined(Q_OS_LINUX)
     _instance= new LinuxInstance();
+#elif defined(Q_OS_FREEBSD)
+    _instance= new FreeBSDInstance();
 #endif
 }
 

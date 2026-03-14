@@ -307,6 +307,10 @@ if (UNIX AND NOT ANDROID AND NOT OVERTE_THREAD_DEBUGGING)
     if (CMAKE_SYSTEM_NAME MATCHES "Linux")
         # Linux
         target_link_libraries(${TARGET_NAME} pthread atomic)
+    elseif (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+        # FreeBSD
+        find_package(Threads REQUIRED)
+        target_link_libraries(${TARGET_NAME} Threads::Threads)
     else ()
         # OSX
         target_link_libraries(${TARGET_NAME} pthread)
