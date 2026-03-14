@@ -87,8 +87,8 @@ cat >> ${CONAN_HOME}/profiles/default <<EOFcat
 tools.system.package_manager:mode=install
 EOFcat
 
-# Try downloading source files from conandata.yml first. Fall back to our backup if the upstream source is down.
-echo "core.sources:download_urls=['origin', 'https://artifactory.overte.org/artifactory/build-dependencies-backup/']" >> ${CONAN_HOME}/global.conf
+# Try downloading source files from our source backup server, to avoid hammering third party servers. Fall back to downloading source files from conandata.yml.
+echo "core.sources:download_urls=['https://artifactory.overte.org/artifactory/build-dependencies-backup/', 'origin']" >> ${CONAN_HOME}/global.conf
 echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ${CONAN_HOME}/global.conf
 EOF
 
@@ -98,10 +98,12 @@ COPY <<EOF /root/.conan2/source_credentials.json
 {% set TOKEN = os.getenv('CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN') %}
 {
   "credentials": [
+    {% if TOKEN % }
     {
     "url": "https://artifactory.overte.org/artifactory/build-dependencies-backup/",
     "token": "{{TOKEN}}"
     }
+    {% endif %}
   ]
 }
 EOF
