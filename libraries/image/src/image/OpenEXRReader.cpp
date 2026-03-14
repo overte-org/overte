@@ -17,7 +17,7 @@
 #include <QIODevice>
 #include <QDebug>
 
-#if !defined(Q_OS_ANDROID)
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_FREEBSD)
 
 #include <OpenEXR/ImfIO.h>
 #include <OpenEXR/ImfRgbaFile.h>
@@ -60,7 +60,7 @@ private:
 #endif
 
 image::Image image::readOpenEXR(QIODevice& content, const std::string& filename) {
-#if !defined(Q_OS_ANDROID)
+#if !defined(Q_OS_ANDROID) && !defined(Q_OS_FREEBSD)
     QIODeviceImfStream device(content, filename);
 
     if (Imf::isOpenExrFile(device)) {
