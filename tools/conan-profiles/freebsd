@@ -1,0 +1,32 @@
+include(backup)
+
+# Build with: conan install . -s build_type=Debug -b missing -pr:b=tools/conan-profiles/freebsd -of build
+
+[settings]
+# Default build settings will not work under FreeBSD, so force the use of GCC
+compiler=gcc
+compiler.cppstd=gnu20
+compiler.libcxx=libstdc++
+compiler.version=15.2
+
+[conf]
+# Avoid dependencies failing to build on GCC 15 and newer.
+tools.build:cxxflags+=['-include', 'cstdint']
+
+# Workaround for Linux-isms in dependencies
+tools.gnu:make_program=gmake
+tools.build:sharedlinkflags+=['-Wl,-rpath=/usr/local/lib/gcc15']
+tools.build:exelinkflags+=['-Wl,-rpath=/usr/local/lib/gcc15']
+
+[platform_tool_requires]
+# Conan CMake is broken on FreeBSD, so use system
+cmake/3.31.11
+
+[options]
+# Required for building oneTBB.
+hwloc/*:shared=True
+
+[buildenv]
+# Make sure we actually use the right GCC
+CC=/usr/local/bin/gcc15
+CXX=/usr/local/bin/g++15

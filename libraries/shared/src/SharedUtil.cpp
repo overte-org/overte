@@ -22,6 +22,12 @@
 #include <unordered_map>
 #include <chrono>
 
+#ifdef __FreeBSD__
+extern "C" {
+#include <signal.h>
+}
+#endif
+
 #include <QtCore/QOperatingSystemVersion>
 #include <glm/glm.hpp>
 
@@ -1120,7 +1126,7 @@ void watchParentProcess(int parentPID) {
     HANDLE newHandle;
     RegisterWaitForSingleObject(&newHandle, procHandle, parentDiedCallback, NULL, INFINITE, WT_EXECUTEONLYONCE);
 }
-#elif defined(Q_OS_MAC) || defined(Q_OS_LINUX)
+#elif defined(Q_OS_MAC) || defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
 void watchParentProcess(int parentPID) {
     auto timer = new QTimer(qApp);
     timer->setInterval(MSECS_PER_SECOND);

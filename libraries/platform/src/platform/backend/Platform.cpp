@@ -9,6 +9,7 @@
 
 #include "../Platform.h"
 #include "../PlatformKeys.h"
+#include "PlatformInstance.h"
 
 /*@jsdoc
  * Information on the computer platform as a whole.
