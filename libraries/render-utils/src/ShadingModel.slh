@@ -99,7 +99,9 @@ float specularDistribution(SurfaceData surface) {
     float smithInvG1NdotL = evalSmithInvG1(surface.roughness4, surface.ndotl);
     denom *= surface.smithInvG1NdotV * smithInvG1NdotL;
     // Don't divide by PI as this is part of the light normalization factor
-    float power = surface.roughness4 / denom;
+    // NOTE: Epsilon limit has to be here or infinities and unreasonably-bright
+    // pixels can sneak in and break the bloom pass rendering
+    float power = surface.roughness4 / max(0.001, denom);
     return power;
 }
 
