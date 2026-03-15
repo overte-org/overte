@@ -180,9 +180,11 @@ void GLBackend::TransformStageState::preUpdate(size_t commandIndex, const Stereo
             _viewProjectionState._correctedView = _viewProjectionState._view;
         }
 
-        if (_skybox) {
+        // FIXME: zeroing this out breaks skybox haze on the
+        // forward renderer, will the skybox quad break if this is removed?
+        /*if (_skybox) {
             _viewProjectionState._correctedView.setTranslation(vec3());
-        }
+        }*/
         // This is when the _view matrix gets assigned
         _viewProjectionState._correctedView.getInverseMatrix(_camera._view);
     }

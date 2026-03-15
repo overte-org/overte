@@ -26,14 +26,16 @@
     <$declarePackDeferredFragmentSky()$>
 <@endif@>
 
-INPUT(0, vec3, _normal);
+INPUT(0, vec3, _skyUV);
+INPUT(1, vec3, _normalWS);
 <@if not HIFI_USE_FORWARD@>
-    INPUT(1, vec4, _prevPositionCS);
+    INPUT(2, vec4, _prevPositionCS);
 <@endif@>
 
 void main(void) {
-    vec3 normal = normalize(_normal);
-    vec3 skyboxTexel = texture(cubeMap, normal).rgb;
+    vec3 skyUV = normalize(_skyUV);
+    vec3 normalWS = normalize(_normalWS);
+    vec3 skyboxTexel = texture(cubeMap, skyUV).rgb;
     vec3 skyboxColor = skybox.color.rgb;
     vec3 color = applySkyboxColorMix(skyboxTexel, skyboxColor, skybox.color.a);
 
@@ -45,7 +47,7 @@ void main(void) {
         vec4 eyePositionWS = cam._viewInverse[3];
         // We choose an arbitrary large number > BLEND_DISTANCE in Haze.slh
         const float SKYBOX_DISTANCE = 32000.0;
-        vec4 fragPositionWS = eyePositionWS + SKYBOX_DISTANCE * vec4(normal, 0.0);
+        vec4 fragPositionWS = eyePositionWS + SKYBOX_DISTANCE * vec4(normalWS, 0.0);
         vec4 fragPositionES = cam._view * fragPositionWS;
 
         Light light = getKeyLight();
