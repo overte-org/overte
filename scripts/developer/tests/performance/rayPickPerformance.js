@@ -63,7 +63,7 @@ function rayCastTest() {
                             direction: direction
                         };
 
-                        var pickResults = Entities.findRayIntersection(pickRay, true);
+                        var pickResults = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES);
 
                         var color;
                         var visible;
