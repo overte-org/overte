@@ -14,7 +14,7 @@ This will include the necessary environment variables to customize your build. O
 
 ## Prerequisites
 
-### CMake, OpenSSL, NPM and Conan
+### CMake, NPM and Conan
 
 [Homebrew](https://brew.sh/) is an excellent package manager for macOS. It makes the installation of some Overte dependencies very simple.
 
@@ -25,31 +25,30 @@ brew install cmake npm conan
 **Note:** You can also download alternative CMake versions from [Github](https://github.com/Kitware/CMake/releases) if needed.
 
 ### Qt5
-
+#### system
 While Conan can build Qt from source, we use the Homebrew package instead:
 ```bash
 brew install qt@5
 ```
 
+#### source
+If you have Conan build Qt from source, the following extra dependencies are required:
+```bash
+pip3 install --user --break-system-packages html5lib
+```
+<!-- Qt Conan source package: Check for Python html5lib before attempting to build.
+https://github.com/conan-io/conan-center-index/issues/27285
+https://github.com/conan-io/conan-center-index/pull/29181 -->
+
+**XCode** needs to be installed from the AppStore, which requires an Apple account.
+
 ### Prepare conan
 
-The next step is setting up conan
+The next step is setting up Conan.
 
-First, create a conan profile
-```bash
-conan profile detect --force
-```
-
-Next, add the overte remote to conan
+Add the Overte remote to Conan
 ```bash
 conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
-```
-
-Add CMake 4.0 is currently too new for us, so we tell Conan to get and use an older version.
-Add the following to the default Conan profile (which is usually found in `~/.conan2/profiles/default`):
-```text
-[tool_requires]
-!cmake/*: cmake/[>=3 <4]
 ```
 
 ## Compiling
