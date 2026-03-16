@@ -1,13 +1,13 @@
 <!--
 Copyright 2013-2019 High Fidelity, Inc.
 Copyright 2020-2021 Vircadia contributors
-Copyright 2020-2025 Overte e.V.
+Copyright 2020-2026 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
 # Build macOS
 
-*Last Updated on August 12, 2025*
+*Last Updated on 2026-03-16*
 
 Please read the [general build guide](BUILD.md) for information on dependencies required for all platforms.
 This will include the necessary environment variables to customize your build. Only macOS specific instructions are found in this document.
@@ -66,7 +66,7 @@ echo 'export PATH="/opt/homebrew/opt/qt@5/bin:$PATH"' >> ~/.zshrc
 Install the dependencies with conan
 ```bash
 cd overte
-conan install . -s build_type=Release -b missing -pr:b=default -of build
+conan install . -s build_type=Release -b missing -pr:a="tools/conan-profiles/macos"
 ```
 
 ## Generate and Build
