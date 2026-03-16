@@ -42,6 +42,7 @@ jobs:
               arch: arm64
               build_type: full
               qt_source: system
+              rendering_backend: Vulkan
             - os: Ubuntu 22.04 OpenGL
               image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
               runner: ubuntu-latest
