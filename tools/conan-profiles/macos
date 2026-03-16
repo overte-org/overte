@@ -1,0 +1,33 @@
+include(default)
+
+[settings]
+compiler.cppstd=20
+# This changes the minimum macOS SDK deployment target and therefore the minimum supported macOS version. Equivalent to `CMAKE_OSX_DEPLOYMENT_TARGET`.
+# To check which macOS versions are apparently still supported by Apple: https://en.wikipedia.org/wiki/MacOS_version_history#Overview
+os.version=10.15
+
+[tool_requires]
+# Many of our dependencies don't support CMake 4 yet.
+!cmake/*: cmake/[>=3 <4]
+
+[options]
+# Required for building oneTBB.
+hwloc/*:shared=True
+
+# Options required for building Qt
+# Some Qt options are here rather than Overte's conanfile.py to allow for easier usage during Qt package development.
+# Version conflict and not needed.
+qt*:with_mysql=False
+# libpq build error and not needed (PostgreSQL).
+qt*:with_pq=False
+# Open Database Connectivity
+# Avoid additional dependency on iconv.
+qt*:with_odbc=False
+# Required by Qt WebEngine
+# Build as shared, to avoid: `Invalid: NSS recipe cannot yet build static library. Contributions are welcome.`
+nss*:shared=True
+nspr*:shared=True
+# Work around `undefined reference` errors when building NSS.
+sqlite3*:shared=True
+# Vulkan/MoltenVK rendering support.
+qt*:with_vulkan=True
