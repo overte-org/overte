@@ -36,7 +36,6 @@ bool OpenXrDisplayPlugin::isSupported() const {
     return _context->_isValid && _context->_isSupported;
 }
 
-// Slightly differs from glm::ortho
 inline static glm::mat4 fovToProjection(const XrFovf fov, const float near, const float far) {
     const float left = tanf(fov.angleLeft);
     const float right = tanf(fov.angleRight);
@@ -78,7 +77,23 @@ glm::mat4 OpenXrDisplayPlugin::getEyeProjection(Eye eye, const glm::mat4& basePr
 
 // TODO: interface/src/Application_Graphics.cpp:535
 glm::mat4 OpenXrDisplayPlugin::getCullingProjection(const glm::mat4& baseProjection) const {
-    return getEyeProjection(Left, baseProjection);
+    if (!_views.has_value()) {
+        return baseProjection;
+    }
+
+    ViewFrustum frustum;
+    frustum.setProjection(baseProjection);
+
+    std::array<XrFovf, 2> fovs = { _views.value()[0].fov, _views.value()[1].fov };
+
+    // behavior copied from OculusMobileDisplayPlugin
+    XrFovf fovMax;
+    fovMax.angleDown = std::min(fovs[0].angleDown, fovs[1].angleDown) * 1.5f;
+    fovMax.angleLeft = std::min(fovs[0].angleLeft, fovs[1].angleLeft) * 1.5f;
+    fovMax.angleRight = std::max(fovs[0].angleRight, fovs[1].angleRight) * 1.5f;
+    fovMax.angleUp = std::max(fovs[0].angleUp, fovs[1].angleUp) * 1.5f;
+
+    return fovToProjection(fovMax, frustum.getNearClip(), frustum.getFarClip());
 }
 
 float OpenXrDisplayPlugin::getTargetFrameRate() const {
