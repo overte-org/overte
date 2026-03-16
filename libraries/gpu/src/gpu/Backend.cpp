@@ -91,11 +91,6 @@ Backend::TransformCamera Backend::TransformCamera::getMonoCamera(bool isSkybox,
                                                                  Vec2 normalizedJitter) const {
     TransformCamera result = *this;
 
-    // FIXME: zeroing this out might break skybox haze on the
-    // forward renderer, will the skybox quad break if this is removed?
-    /*if (isSkybox) {
-        previousView.setTranslation(vec3());
-    }*/
     result._projection[2][0] += normalizedJitter.x;
     result._projection[2][1] += normalizedJitter.y;
 
