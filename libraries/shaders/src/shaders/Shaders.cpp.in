@@ -227,10 +227,11 @@ String Source::getSource(Dialect dialect, Variant variant) const {
     // which breaks android rendering
     return variantSource.scribe;
 #else
-    if (variantSource.glsl.empty()) {
+    // The SPIRV output is also broken on non-Android platforms now for deferred rendering.
+    //if (variantSource.glsl.empty()) {
         return variantSource.scribe;
-    }
-    return variantSource.glsl;
+    //}
+    //return variantSource.glsl;
 #endif
 }
 
