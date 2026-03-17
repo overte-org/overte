@@ -34,13 +34,13 @@ jobs:
             build_type: full
             qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
           - os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+            image: docker.io/overte/overte-full-build:2026-03-17-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
             runner: depot-ubuntu-24.04-16
             arch: amd64
             build_type: full
             qt_source: source
           - os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-aarch64
+            image: docker.io/overte/overte-full-build:2026-03-17-ubuntu-22.04-aarch64
             runner: depot-ubuntu-24.04-arm-16
             arch: aarch64
             build_type: full
