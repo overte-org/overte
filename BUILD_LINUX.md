@@ -1,13 +1,13 @@
 <!--
 Copyright 2013-2019 High Fidelity, Inc.
 Copyright 2019-2022 Vircadia contributors
-Copyright 2021-2025 Overte e.V.
+Copyright 2021-2026 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
 # Build Linux
 
-*Last Updated on 2026-03-10*
+*Last Updated on 2026-03-17*
 
 Please read the [general build guide](BUILD.md) for information on dependencies required for all platforms. Only Linux specific instructions are found in this file.
 
@@ -48,6 +48,11 @@ sudo apt-get install libgl1-mesa-dev -y
 Verify OpenGL:
   - First install mesa-utils with the command `sudo apt install mesa-utils -y`.
   - Then run `glxinfo | grep "OpenGL version"`.
+
+- Qt5 source package:
+```bash
+sudo apt install libpulse-dev libasound2-dev python3-html5lib
+```
 
 ## Extra dependencies to compile Interface on a server
 - Install the following:
