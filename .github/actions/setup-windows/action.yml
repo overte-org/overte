@@ -47,8 +47,8 @@ runs:
         conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center
 
         echo "Starting with a clean Conan global.conf…" && rm ${CONAN_HOME}/global.conf
-        # Try downloading source files from conandata.yml first. Fall back to our backup if the upstream source is down.
-        echo "core.sources:download_urls=['origin', 'https://artifactory.overte.org/artifactory/build-dependencies-backup/']" >> ${CONAN_HOME}/global.conf
+        # Try downloading source files from our source backup server, to avoid hammering third party servers. Fall back to downloading source files from conandata.yml.
+        echo "core.sources:download_urls=['https://artifactory.overte.org/artifactory/build-dependencies-backup/', 'origin']" >> ${CONAN_HOME}/global.conf
         echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ${CONAN_HOME}/global.conf
         # Credentials for uploading backups of dependency sources.
         # source-credentials.json is a jinja template, so os.getenv() happens at runtime.
@@ -56,10 +56,12 @@ runs:
         {% set TOKEN = os.getenv('CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN') %}
         {
           "credentials": [
+            {% if TOKEN %}
             {
             "url": "https://artifactory.overte.org/artifactory/build-dependencies-backup/",
             "token": "{{TOKEN}}"
             }
+            {% endif %}
           ]
         }
         EOF
