@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-03-17-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
@@ -63,6 +63,9 @@ libxcb-glx0-dev
 libqt5multimedia5-plugins
 qt5-image-formats-plugins  # Runtime dependency required for WebP texture support.
 npm  # For Interface's JavaScript console completion and building server-console.
+libpulse-dev  # Qt5 source Conan package cannot find it's own Pulseaudio
+libasound2-dev  # Qt5 source Conan package cannot find it's own ALSA
+python3-html5lib  # Qt5 source Conan package cannot install html5lib itself yet. (Required by Qt WebEngine.)
 # Tools for package creation
 sudo
 chrpath
