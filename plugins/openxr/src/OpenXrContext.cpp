@@ -129,8 +129,10 @@ bool OpenXrContext::initInstance() {
             HTCX_viveTrackerInteractionSupported = true;
         } else if (strcmp(XR_EXT_PALM_POSE_EXTENSION_NAME, properties[i].extensionName) == 0) {
             palmPoseSupported = true;
+#if defined(XR_USE_PLATFORM_EGL)
         } else if (strcmp(XR_MNDX_EGL_ENABLE_EXTENSION_NAME, properties[i].extensionName) == 0) {
             MNDX_eglEnableSupported = true;
+#endif
         }
     }
 
