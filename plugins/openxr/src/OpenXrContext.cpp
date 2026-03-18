@@ -12,7 +12,7 @@
 #include <QString>
 #include <QGuiApplication>
 
-#if defined(Q_OS_LINUX)
+#if defined(HAVE_VULKAN)
 #include <QMessageBox>
 #endif
 
@@ -53,10 +53,16 @@ static bool loadXrFunction(XrInstance instance, const char* name, PFN_xrVoidFunc
 }
 
 OpenXrContext::OpenXrContext() {
+#if defined(HAVE_VULKAN)
+    _isSupported = false;
+    qCCritical(xr_context_cat, "OpenXR is not supported on the Vulkan backend yet.");
+    QMessageBox::critical(nullptr, "OpenXR", "OpenXR is not supported on the Vulkan backend yet.");
+#else
     _isSupported = initPreGraphics();
     if (!_isSupported) {
         qCWarning(xr_context_cat, "OpenXR is not supported.");
     }
+#endif
 }
 
 OpenXrContext::~OpenXrContext() {
@@ -71,14 +77,10 @@ OpenXrContext::~OpenXrContext() {
 }
 
 bool OpenXrContext::initInstance() {
-#if defined(Q_OS_LINUX)
-    if (qApp->platformName() == "wayland") {
-        qCCritical(xr_context_cat) << "The OpenXR plugin can't run on Wayland yet. This will hopefully be resolved with Qt 6.";
-        QMessageBox::warning(nullptr, "Warning", "Overte cannot use OpenXR on Wayland yet. Use the QT_QPA_PLATFORM=xcb environment variable to launch Overte through XWayland.");
-        return false;
-    }
-#endif
-
+#if defined(HAVE_VULKAN)
+    // VKTODO
+    return false;
+#else
     uint32_t count = 0;
     XrResult result = xrEnumerateInstanceExtensionProperties(nullptr, 0, &count, nullptr);
 
@@ -108,6 +110,7 @@ bool OpenXrContext::initInstance() {
     bool palmPoseSupported = false;
     bool MNDX_xdevSpaceSupported = false;
     bool HTCX_viveTrackerInteractionSupported = false;
+    bool MNDX_eglEnableSupported = false;
 
     qCInfo(xr_context_cat, "Runtime supports %d extensions:", count);
     for (uint32_t i = 0; i < count; i++) {
@@ -126,6 +129,8 @@ bool OpenXrContext::initInstance() {
             HTCX_viveTrackerInteractionSupported = true;
         } else if (strcmp(XR_EXT_PALM_POSE_EXTENSION_NAME, properties[i].extensionName) == 0) {
             palmPoseSupported = true;
+        } else if (strcmp(XR_MNDX_EGL_ENABLE_EXTENSION_NAME, properties[i].extensionName) == 0) {
+            MNDX_eglEnableSupported = true;
         }
     }
 
@@ -163,6 +168,13 @@ bool OpenXrContext::initInstance() {
         enabled.push_back(XR_EXT_PALM_POSE_EXTENSION_NAME);
         _palmPoseSupported = true;
     }
+
+#if defined(XR_USE_PLATFORM_EGL)
+    if (MNDX_eglEnableSupported) {
+        enabled.push_back(XR_MNDX_EGL_ENABLE_EXTENSION_NAME);
+        _MNDX_eglEnableSupported = true;
+    }
+#endif
 
     XrInstanceCreateInfo info = {
         .type = XR_TYPE_INSTANCE_CREATE_INFO,
@@ -207,6 +219,7 @@ bool OpenXrContext::initInstance() {
     }
 
     return true;
+#endif
 }
 
 bool OpenXrContext::initSystem() {
@@ -363,9 +376,14 @@ bool OpenXrContext::initSystem() {
 }
 
 bool OpenXrContext::initGraphics() {
+#if defined(HAVE_VULKAN)
+    // VKTODO
+    return false;
+#else
     XrGraphicsRequirementsOpenGLKHR requirements = { .type = XR_TYPE_GRAPHICS_REQUIREMENTS_OPENGL_KHR };
     XrResult result = pfnGetOpenGLGraphicsRequirementsKHR(_instance, _systemId, &requirements);
     return xrCheck(_instance, result, "Failed to get OpenGL graphics requirements!");
+#endif
 }
 
 bool OpenXrContext::requestExitSession() {
@@ -376,6 +394,10 @@ bool OpenXrContext::requestExitSession() {
 }
 
 bool OpenXrContext::initSession() {
+#if defined(HAVE_VULKAN)
+    // VKTODO
+    return false;
+#else
     if (_session != XR_NULL_HANDLE) { return true; }
 
     XrSessionCreateInfo info = {
@@ -384,44 +406,133 @@ bool OpenXrContext::initSession() {
         .systemId = _systemId,
     };
 
-#if defined(Q_OS_LINUX)
-    // if (wayland) {
-    // blah blah...
-    // info.next = &wlBinding;
-    // } else
+    bool eglBindingAvailable = false;
 
-    auto* xDisplay = XOpenDisplay(nullptr);
-    int fbConfigCount = 0;
-    auto* fbConfigs = glXGetFBConfigs(xDisplay, 0, &fbConfigCount);
-
-    XrGraphicsBindingOpenGLXlibKHR xlibBinding = {
-        .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR,
-        .xDisplay = xDisplay,
-
-        // not actually used anywhere but monado now
-        // requires these to be non-null (in-line with the spec)
-        .visualid = 1,
-        .glxFBConfig = fbConfigs[0],
-
-        .glxDrawable = glXGetCurrentDrawable(),
-        .glxContext = glXGetCurrentContext(),
+#if defined(XR_USE_PLATFORM_EGL)
+    XrGraphicsBindingEGLMNDX eglBinding = {
+        .type = XR_TYPE_GRAPHICS_BINDING_EGL_MNDX,
+        .next = nullptr,
     };
 
-    info.next = &xlibBinding;
-#elif defined(Q_OS_WIN)
-    XrGraphicsBindingOpenGLWin32KHR binding = {
-        .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR,
-        .hDC = wglGetCurrentDC(),
-        .hGLRC = wglGetCurrentContext(),
-    };
+    // try egl first since it should work on any platform
+    // do-while so we can break out early
+    do {
+        if (!_MNDX_eglEnableSupported) { break; }
 
-    info.next = &binding;
+        auto eglContext = eglGetCurrentContext();
+        auto eglDisplay = eglGetCurrentDisplay();
+
+        if (!eglContext || !eglDisplay) { break; }
+
+        auto attribs = std::to_array<EGLint>({
+            EGL_RED_SIZE, 8,
+            EGL_GREEN_SIZE, 8,
+            EGL_RED_SIZE, 8,
+            EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+#if defined(Q_OS_ANDROID)
+            EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
 #else
-  #error "Unsupported platform"
+            EGL_RENDERABLE_TYPE, EGL_OPENGL_BIT | EGL_OPENGL_ES3_BIT,
+#endif
+            EGL_NONE // terminator
+        });
+
+        EGLConfig eglConfig;
+        EGLint configCount = 0;
+        if (
+            !eglChooseConfig(eglDisplay, attribs.data(), &eglConfig, 1, &configCount) ||
+            configCount != 1 ||
+            !eglConfig
+        ) {
+            qCWarning(xr_context_cat, "Failed to get EGL config");
+            break;
+        }
+
+        eglBinding.getProcAddress = eglGetProcAddress;
+        eglBinding.display = eglDisplay;
+        eglBinding.config = eglConfig;
+        eglBinding.context = eglContext;
+        info.next = &eglBinding;
+
+        eglBindingAvailable = true;
+    } while(0);
+#endif
+
+#if defined(Q_OS_ANDROID)
+    // ANDROID TODO: This is untested and will need changes in
+    // OpenXrDisplayPlugin to use the OpenGLES structs instead
+    if (!eglBindingAvailable) {
+        auto eglContext = eglGetCurrentContext();
+        auto eglDisplay = eglGetCurrentDisplay();
+
+        auto attribs = std::to_array<EGLint>({
+            EGL_RED_SIZE, 8,
+            EGL_GREEN_SIZE, 8,
+            EGL_RED_SIZE, 8,
+            EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+            EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT,
+            EGL_NONE // terminator
+        });
+
+        EGLConfig eglConfig;
+        EGLint configCount = 0;
+        if (
+            !eglChooseConfig(eglDisplay, attribs.data(), &eglConfig, 1, &configCount) ||
+            configCount != 1 ||
+            !eglConfig
+        ) {
+            qCWarning(xr_context_cat, "Failed to get EGL config");
+            return false;
+        }
+
+        XrGraphicsBindingOpenGLESAndroidKHR androidBinding = {
+            .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_ES_ANDROID_KHR,
+            .next = nullptr,
+            .display = eglDisplay,
+            .config = eglConfig,
+            .context = eglContext,
+        };
+
+        info.next = &androidBinding;
+    }
+#elif defined(Q_OS_LINUX)
+    if (!eglBindingAvailable) {
+        auto* xDisplay = XOpenDisplay(nullptr);
+        int fbConfigCount = 0;
+        auto* fbConfigs = glXGetFBConfigs(xDisplay, 0, &fbConfigCount);
+
+        XrGraphicsBindingOpenGLXlibKHR xlibBinding = {
+            .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_XLIB_KHR,
+            .xDisplay = xDisplay,
+
+            // not actually used anywhere but monado now
+            // requires these to be non-null (in-line with the spec)
+            .visualid = 1,
+            .glxFBConfig = fbConfigs[0],
+
+            .glxDrawable = glXGetCurrentDrawable(),
+            .glxContext = glXGetCurrentContext(),
+        };
+
+        info.next = &xlibBinding;
+    }
+#elif defined(Q_OS_WIN)
+    if (!eglBindingAvailable) {
+        XrGraphicsBindingOpenGLWin32KHR binding = {
+            .type = XR_TYPE_GRAPHICS_BINDING_OPENGL_WIN32_KHR,
+            .hDC = wglGetCurrentDC(),
+            .hGLRC = wglGetCurrentContext(),
+        };
+
+        info.next = &binding;
+    }
+#else
+    #error "Unsupported platform"
 #endif
 
     XrResult result = xrCreateSession(_instance, &info, &_session);
     return xrCheck(_instance, result, "Failed to create session");
+#endif
 }
 
 bool OpenXrContext::initSpaces() {

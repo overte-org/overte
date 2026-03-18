@@ -18,6 +18,7 @@
 #include <QtCore/QProcessEnvironment>
 #include <QtGui/QInputMethodEvent>
 #include <QtQuick/QQuickWindow>
+#include <QGuiApplication>
 
 #include <OffscreenUi.h>
 #include <controllers/Pose.h>
@@ -95,9 +96,19 @@ std::string getOpenVrDeviceName() {
 }
 
 bool openVrSupported() {
-    static const QString DEBUG_FLAG("HIFI_DEBUG_OPENVR");
-    static bool enableDebugOpenVR = QProcessEnvironment::systemEnvironment().contains(DEBUG_FLAG);
-    return (enableDebugOpenVR || !isOculusPresent()) && vr::VR_IsHmdPresent();
+#if defined(HAVE_VULKAN)
+    qCDebug(displayplugins) << "OpenVR is not supported on the Vulkan backend.";
+    return false;
+#else
+    if (qApp->platformName().startsWith("wayland")) {
+        qCDebug(displayplugins) << "OpenVR is not supported on Wayland. Use QT_QPA_PLATFORM=xcb to run Overte through XWayland.";
+        return false;
+    } else {
+        static const QString DEBUG_FLAG("HIFI_DEBUG_OPENVR");
+        static bool enableDebugOpenVR = QProcessEnvironment::systemEnvironment().contains(DEBUG_FLAG);
+        return (enableDebugOpenVR || !isOculusPresent()) && vr::VR_IsHmdPresent();
+    }
+#endif
 }
 
 QString getVrSettingString(const char* section, const char* setting) {

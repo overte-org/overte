@@ -21,7 +21,8 @@
 #include <OpenGL/CGLTypes.h>
 #include <OpenGL/CGLCurrent.h>
 #include <dlfcn.h>
-#else
+#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
+#include <EGL/egl.h>
 #include <GL/glx.h>
 #include <dlfcn.h>
 #endif
@@ -73,8 +74,7 @@ static void* getGlProcessAddress(const char *namez) {
     return dlsym(GL_LIB, namez);
 }
 
-#else
-
+#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDORID)
 
 typedef Bool (*PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC) (int attribute, unsigned int *value);
 typedef int (*PFNGLXSWAPINTERVALMESAPROC)(unsigned int interval);
@@ -94,9 +94,13 @@ PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC QueryCurrentRendererIntegerMESA;
 PFNGLXSWAPINTERVALMESAPROC SwapIntervalMESA;
 PFNGLXGETSWAPINTERVALMESAPROC GetSwapIntervalMESA;
 
-static void* getGlProcessAddress(const char *namez) {
-    return (void*)glXGetProcAddressARB((const GLubyte*)namez);
-}
+// EGL has its own swap interval functions, so the MESA ones aren't needed there
+static bool contextIsEGL = false;
+static int previousSwapInterval = 1;
+
+// the real GetProcAddress functions return a placeholder function
+// pointer type (void (*)(void)), but glad expects one returning void*
+static void* (*getGlProcessAddress)(const char *namez) = nullptr;
 
 #endif
 
@@ -105,6 +109,16 @@ static void* getGlProcessAddress(const char *namez) {
 void gl::initModuleGl() {
     static std::once_flag once;
     std::call_once(once, [] {
+#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
+    contextIsEGL = eglGetCurrentContext() != nullptr;
+
+    if (contextIsEGL) {
+        getGlProcessAddress = reinterpret_cast<decltype(getGlProcessAddress)>(eglGetProcAddress);
+    } else {
+        getGlProcessAddress = reinterpret_cast<decltype(getGlProcessAddress)>(glXGetProcAddressARB);
+    }
+#endif
+
 #if defined(Q_OS_WIN)
         wglSwapIntervalEXT = (PFNWGLSWAPINTERVALEXTPROC)getGlProcessAddress("wglSwapIntervalEXT");
         wglGetSwapIntervalEXT = (PFNWGLGETSWAPINTERVALEXTPROC)getGlProcessAddress("wglGetSwapIntervalEXT");
@@ -113,9 +127,11 @@ void gl::initModuleGl() {
 #endif
 
 #if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
-        QueryCurrentRendererIntegerMESA = (PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC)getGlProcessAddress("glXQueryCurrentRendererIntegerMESA");
-        SwapIntervalMESA = (PFNGLXSWAPINTERVALMESAPROC)getGlProcessAddress("glXSwapIntervalMESA");
-        GetSwapIntervalMESA = (PFNGLXGETSWAPINTERVALMESAPROC)getGlProcessAddress("glXGetSwapIntervalMESA");
+        if (!contextIsEGL) {
+            QueryCurrentRendererIntegerMESA = (PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC)getGlProcessAddress("glXQueryCurrentRendererIntegerMESA");
+            SwapIntervalMESA = (PFNGLXSWAPINTERVALMESAPROC)getGlProcessAddress("glXSwapIntervalMESA");
+            GetSwapIntervalMESA = (PFNGLXGETSWAPINTERVALMESAPROC)getGlProcessAddress("glXGetSwapIntervalMESA");
+        }
 #endif
 
 #if defined(USE_GLES)
@@ -134,7 +150,11 @@ int gl::getSwapInterval() {
     CGLGetParameter(CGLGetCurrentContext(), kCGLCPSwapInterval, &interval);
     return interval;
 #elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
-    if (GetSwapIntervalMESA) {
+    // EGL doesn't have a function for getting the current swap interval,
+    // so just use whatever we previously set in setSwapInterval below
+    if (contextIsEGL) {
+        return previousSwapInterval;
+    } else if (GetSwapIntervalMESA) {
         return GetSwapIntervalMESA();
     } else {
         return 1;
@@ -151,8 +171,13 @@ void gl::setSwapInterval(int interval) {
     CGLSetParameter(CGLGetCurrentContext(), kCGLCPSwapInterval, &interval);
 #elif defined(Q_OS_ANDROID)
     eglSwapInterval(eglGetCurrentDisplay(), interval);
-#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
-    if (SwapIntervalMESA) {
+#elif defined(Q_OS_LINUX)
+    if (contextIsEGL) {
+        // FIXME: This doesn't seem to work on OpenXR+Wayland?
+        // The VR view is still capped to 1FPS if the desktop window is obscured
+        eglSwapInterval(eglGetCurrentDisplay(), interval);
+        previousSwapInterval = interval;
+    } else if (SwapIntervalMESA) {
         SwapIntervalMESA(interval);
     }
 #else
@@ -161,11 +186,11 @@ void gl::setSwapInterval(int interval) {
 }
 
 bool gl::queryCurrentRendererIntegerMESA(int attr, unsigned int *value) {
-    #if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
-    if (QueryCurrentRendererIntegerMESA) {
+#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
+    if (!contextIsEGL && QueryCurrentRendererIntegerMESA) {
         return QueryCurrentRendererIntegerMESA(attr, value);
     }
-    #endif
+#endif
 
     *value = 0;
     return false;

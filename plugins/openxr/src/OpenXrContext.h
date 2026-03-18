@@ -16,25 +16,44 @@
 
 #include "gpu/gl/GLBackend.h"
 
-#if defined(Q_OS_LINUX)
-    #define XR_USE_PLATFORM_XLIB
-    #include <GL/glx.h>
-    // Unsorted from glx.h conflicts with qdir.h
-    #undef Unsorted
-    // MappingPointer from X11 conflicts with one from controllers/Forward.h
-    #undef MappingPointer
-    // CursorShape conflicts with QCursor
-    #undef CursorShape
-#elif defined(Q_OS_WIN)
-    #define XR_USE_PLATFORM_WIN32
-    #include <Unknwn.h>
-    #include <Windows.h>
+#if defined(HAVE_VULKAN)
+    #warning "OpenXR plugin doesn't support Vulkan yet and will always fail on startup"
+    #define XR_USE_GRAPHICS_API_VULKAN
 #else
-    #error "Unimplemented platform"
+    #if defined(Q_OS_ANDROID)
+        #define XR_USE_GRAPHICS_API_OPENGL_ES
+        #define XR_USE_PLATFORM_ANDROID
+        #define XR_USE_PLATFORM_EGL
+    #elif defined(Q_OS_LINUX)
+        #define XR_USE_GRAPHICS_API_OPENGL
+        // Wayland uses XR_USE_PLATFORM_EGL, XR_USE_PLATFORM_WAYLAND
+        // is deprecated and never worked anyway
+        #define XR_USE_PLATFORM_EGL
+        #define XR_USE_PLATFORM_XLIB
+        #include <GL/glx.h>
+        // Unsorted from glx.h conflicts with qdir.h
+        #undef Unsorted
+        // MappingPointer from X11 conflicts with one from controllers/Forward.h
+        #undef MappingPointer
+        // CursorShape conflicts with QCursor
+        #undef CursorShape
+    #elif defined(Q_OS_WIN)
+        // TODO: We can't support EGL on Windows yet, because we create
+        // the OpenGL contexts ourselves using WGL on Windows.
+        #define XR_USE_GRAPHICS_API_OPENGL
+        #define XR_USE_PLATFORM_WIN32
+        #include <Unknwn.h>
+        #include <Windows.h>
+    #else
+        #error "Unsupported platform"
+    #endif
+
+    #if defined(XR_USE_PLATFORM_EGL)
+        #include <EGL/egl.h>
+    #endif
 #endif
 
 
-#define XR_USE_GRAPHICS_API_OPENGL
 #include <openxr/openxr_platform.h>
 
 #include <glm/glm.hpp>
@@ -100,6 +119,8 @@ public:
 
     bool _HTCX_viveTrackerInteractionSupported = false;
     PFN_xrEnumerateViveTrackerPathsHTCX xrEnumerateViveTrackerPathsHTCX = nullptr;
+
+    bool _MNDX_eglEnableSupported = false;
 
 private:
     XrSessionState _lastSessionState = XR_SESSION_STATE_UNKNOWN;
