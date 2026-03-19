@@ -6,10 +6,10 @@
   "conan": {
     "enabled": true
   },
+  "lockFileMaintenance": { "enabled": true },
   "includePaths": [
     "conanfile.py"
   ],
-
   "packageRules": [
     {
       "matchDatasources": [ "conan" ],
@@ -18,7 +18,6 @@
         "https://center.conan.io"
       ],
       "maxMajorIncrement": 0,
-      "lockFileMaintenance": { "enabled": true },
       "ignoreDeps": [
         "io",
         "com",
