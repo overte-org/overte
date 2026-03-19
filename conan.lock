@@ -34,7 +34,7 @@
         "scribe/2019.02@overte/stable#0c2eaba1220f4c3091a2d60773ee476a%1734724934.967",
         "rapidjson/cci.20230929#8dc0392af2b3aaea7312095f0ba53467%1705070242.903",
         "quazip/1.4#b5b53ba941dd1da8e788f0c47b9ba8f5%1766115319.971",
-        "qt/5.15.18-2026.01.04@overte/stable#30ca36fa18268c7c2de55c3d11102ab7%1768173163.658",
+        "qt/5.15.18-2026.01.04@overte/stable#4fc772a2dbcd84731eb6ff9904e6e358",
         "qt/5.15.18-2026.01.04@overte/experimental#1616d91472447a955e7f894345093708%1773420051.860749",
         "qt/5.15.18-2026.01.04@overte/experimental#4fc772a2dbcd84731eb6ff9904e6e358%1772141123.031099",
         "qt/5.15.2@overte/system",
@@ -189,7 +189,7 @@
         "qt/[~5.15]": [
             "qt/5.15.18-2026.01.04@overte/experimental#1616d91472447a955e7f894345093708",
             "qt/5.15.18-2026.01.04@overte/experimental#4fc772a2dbcd84731eb6ff9904e6e358",
-            "qt/5.15.18-2026.01.04@overte/stable#30ca36fa18268c7c2de55c3d11102ab7"
+            "qt/5.15.18-2026.01.04@overte/stable#4fc772a2dbcd84731eb6ff9904e6e358"
         ],
         "openssl/[>=1.1 <4]": [
             "openssl/1.1.1q"
