@@ -6,6 +6,9 @@
   "conan": {
     "enabled": true
   },
+  "lockFileMaintenance": {
+    "enabled": true
+  },
   "includePaths": [
     "conanfile.py"
   ],
