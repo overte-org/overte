@@ -84,7 +84,7 @@ void GL45Backend::updateTransform(const Batch& batch) {
             glDisableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is disabled
             _transform._enabledDrawcallInfoBuffer = false;
         }
-        glVertexAttribI2i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.unused);
+        glVertexAttribI2i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.user);
     } else {
         if (!_transform._enabledDrawcallInfoBuffer) {
             glEnableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is enabled
