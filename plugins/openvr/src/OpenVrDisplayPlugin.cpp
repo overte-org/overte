@@ -374,12 +374,12 @@ inline static glm::mat4 fovToCullingProjection(const std::array<float, 4> fov, c
     const float m11 = 2 / width;
     const float m22 = 2 / height;
     
-    const float m33 = -(far + near) / (far- near);
+    const float m33 = far / near;
     //const float m33 = ( -far - near ) / (far - near);
 
     const float m31 = (right + left) / width;
     const float m32 = (up + down) / height;
-    const float m43 = -(far * (near + near)) / (far - near);
+    const float m43 = far / near;
     //const float m43 = (-far * (near + near )) / (far - near);
 
     // clang-format off
