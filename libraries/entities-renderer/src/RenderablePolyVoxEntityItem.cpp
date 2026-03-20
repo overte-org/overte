@@ -299,8 +299,10 @@ private:
 };
 namespace {
 
-// Tables taken and Marching Cubes code rewritten from Paul Bourke's article: "Polygonising a scalar field"
+// This table was taken from Paul Bourke's article: "Polygonising a scalar field", which is
+// based on Cory Bloyd's example program released into the public domain.
 // source: http://www.paulbourke.net/geometry/polygonise/
+// code example: http://www.paulbourke.net/geometry/polygonise/marchingsource.cpp
 
 int edgeTable[256] = { 0x0,   0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09,
                        0xf00, 0x190, 0x99,  0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c, 0x99c, 0x895, 0xb9f, 0xa96, 0xd9a, 0xc93,
@@ -596,9 +598,30 @@ protected:
     std::shared_ptr<VoxelVolume> vol;
 };
 
-// Code has been rewritten from polyvox's CubicSurfaceExtractor.
-
+// This class was taken from PolyVox v0.2.1 and modified.
 class CubicSurfaceExtractorWithNormals : public SurfaceExtractor {
+/*******************************************************************************
+Copyright (c) 2005-2012 David Williams and Matthew Williams
+
+This software is provided 'as-is', without any express or implied
+warranty. In no event will the authors be held liable for any damages
+arising from the use of this software.
+
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it
+freely, subject to the following restrictions:
+
+    1. The origin of this software must not be misrepresented; you must not
+    claim that you wrote the original software. If you use this software
+    in a product, an acknowledgment in the product documentation would be
+    appreciated but is not required.
+
+    2. Altered source versions must be plainly marked as such, and must not be
+    misrepresented as being the original software.
+
+    3. This notice may not be removed or altered from any source
+    distribution.
+*******************************************************************************/
 public:
     inline CubicSurfaceExtractorWithNormals(std::shared_ptr<VoxelVolume> vol) : SurfaceExtractor(vol) {}
 
@@ -749,6 +772,11 @@ private:
     std::vector<uint32_t> vecIndices;
 };
 
+
+// This code was rewritten from Paul Bourke's article: "Polygonising a scalar field", which was
+// based on Cory Bloyd's example program released into the public domain.
+// source: http://www.paulbourke.net/geometry/polygonise/
+// code example: http://www.paulbourke.net/geometry/polygonise/marchingsource.cpp
 class MarchingCubesSurfaceExtractor : public SurfaceExtractor {
 public:
     inline MarchingCubesSurfaceExtractor(std::shared_ptr<VoxelVolume> vol) : SurfaceExtractor(vol) {}
