@@ -86,7 +86,7 @@ conan install . -s build_type=Debug -b missing -pr:a=tools/conan-profiles/freebs
 
 Prepare makefiles:
 ```sh
-cmake --preset conan-default
+cmake --preset conan-release
 ```
 
 ### Server
