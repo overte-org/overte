@@ -362,7 +362,7 @@ glm::mat4 OpenVrDisplayPlugin::getEyeProjection(Eye eye, const glm::mat4& basePr
     }
 }
 
-inline static glm::mat4 fovToCullingProjection(const std::array<float, 4> fov, const float _near, const float _far) {
+inline static glm::mat4 fovToCullingProjection(const std::array<float, 4> fov, const float notnear, const float notfar) {
     const float left = fov[0];
     const float right = fov[1];
     const float down = fov[2];
@@ -373,11 +373,11 @@ inline static glm::mat4 fovToCullingProjection(const std::array<float, 4> fov, c
     
     const float m11 = 2 / width;
     const float m22 = 2 / height;
-    const float m33 = -(_far + _near) / (_far - _near);
+    const float m33 = -(notfar + notnear) / (notfar - notnear);
 
     const float m31 = (right + left) / width;
     const float m32 = (up + down) / height;
-    const float m43 = -(_far * (_near + _near)) / (_far - _near);
+    const float m43 = -(notfar * (notnear + notnear)) / (notfar - notnear);
 
     // clang-format off
     const float mat[16] = {
