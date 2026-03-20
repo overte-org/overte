@@ -107,6 +107,12 @@ class Overte(ConanFile):
     def generate(self):
         tc = CMakeToolchain(self)
 
+        if self.settings.compiler == "msvc":
+            tc.cache_variables.update({
+                "CMAKE_CXX_FLAGS_INIT": "/Zc:preprocessor",
+                "CMAKE_C_FLAGS_INIT": "/Zc:preprocessor",
+            })
+        
         # Setting a whole bunch of defaults for CMake.
         # These are only defaults and can be changed at any point using the CMake GUI (or your preferred IDE).
         if self.settings.compiler != "msvc":
