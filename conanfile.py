@@ -95,7 +95,7 @@ class Overte(ConanFile):
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
-            self.requires("qt/5.15.18-2026.01.04@overte/experimental#42988562cdf97056b01d01c5f2c4df39", force=True)
+            self.requires("qt/5.15.18@overte/experimental#3a9079f3023351a7319be352cc6f4665", force=True)
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")
