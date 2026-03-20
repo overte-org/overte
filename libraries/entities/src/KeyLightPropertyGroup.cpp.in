@@ -27,7 +27,7 @@ const float KeyLightPropertyGroup::DEFAULT_KEYLIGHT_SHADOW_BIAS { 0.5f };
 const float KeyLightPropertyGroup::DEFAULT_KEYLIGHT_SHADOW_MAX_DISTANCE { 40.0f };
 
 void KeyLightPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
-        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, AvatarEntityOwnership ownership) const {
 
 @KeyLight_GROUP_COPY_TO_SCRIPT@
 
