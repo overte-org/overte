@@ -65,13 +65,14 @@ class Overte(ConanFile):
         self.requires("gli/cci.20210515") # NOTE: not maintained for 4 years
         self.requires("glslang/1.3.268.0")
         self.requires("liblo/0.30@overte/stable")
-        self.requires("libnode/22.22.0@overte/stable#1f75a2b0272c5e3ad9d4ddb432a467f8")
+        self.requires("libnode/22.22.0@overte/stable#593f688551e3a5a7a115bca8074a43fc")
         self.requires("nlohmann_json/3.11.2")
         self.requires("nvidia-texture-tools/2023.01@overte/stable#f4eff53a38bd2c26eb6fa1206ffd22f6")
         self.requires("onetbb/2021.10.0")
         self.requires("openexr/3.1.9")
-        self.requires("openvr/2.2.3@overte/stable")
-        self.requires("openxr/1.1.46@overte/stable")
+        if self.settings.os != "FreeBSD":
+            self.requires("openvr/2.2.3@overte/stable")
+            self.requires("openxr/1.1.46@overte/stable")
         self.requires("opus/1.5.2")
         self.requires("polyvox/2025.09.19@overte/experimental#76ce908c1078988dceae5ad32ead2909")
         self.requires("quazip/1.4")
@@ -79,7 +80,8 @@ class Overte(ConanFile):
         self.requires("sdl/2.32.10")
         self.requires("spirv-cross/1.3.268.0")
         self.requires("spirv-tools/1.3.268.0")
-        self.requires("steamworks/158a@overte/prebuild")
+        if self.settings.os != "FreeBSD":
+            self.requires("steamworks/158a@overte/prebuild")
         self.requires("v-hacd/4.1.0")
         self.requires("vulkan-memory-allocator/3.0.1")
         self.requires("webrtc-audio-processing/2.1@overte/stable")
@@ -90,7 +92,7 @@ class Overte(ConanFile):
 
         if self.options.qt_source == "system":
             self.requires("qt/5.15.2@overte/system", force=True)
-            if self.settings.os == "Linux":
+            if self.settings.os in ["Linux", "FreeBSD"]:
                 openssl = "openssl/system@anotherfoxguy/stable"
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
@@ -168,6 +170,12 @@ class Overte(ConanFile):
         else:
             tc.cache_variables.update({
                 "CMAKE_COMPILE_WARNING_AS_ERROR": "OFF",
+            })
+
+        if self.settings.os == "FreeBSD":
+            # Steam is not a thing on FreeBSD (yet)
+            tc.cache_variables.update({
+                "USE_STEAMWORKS": "OFF",
             })
 
         tc.generate()

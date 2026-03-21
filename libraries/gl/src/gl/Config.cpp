@@ -112,7 +112,7 @@ void gl::initModuleGl() {
         wglCreateContextAttribsARB = (PFNWGLCREATECONTEXTATTRIBSARBPROC)getGlProcessAddress("wglCreateContextAttribsARB");
 #endif
 
-#if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
+#if (defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)) && !defined(Q_OS_ANDROID)
         QueryCurrentRendererIntegerMESA = (PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC)getGlProcessAddress("glXQueryCurrentRendererIntegerMESA");
         SwapIntervalMESA = (PFNGLXSWAPINTERVALMESAPROC)getGlProcessAddress("glXSwapIntervalMESA");
         GetSwapIntervalMESA = (PFNGLXGETSWAPINTERVALMESAPROC)getGlProcessAddress("glXGetSwapIntervalMESA");
@@ -133,7 +133,7 @@ int gl::getSwapInterval() {
     GLint interval;
     CGLGetParameter(CGLGetCurrentContext(), kCGLCPSwapInterval, &interval);
     return interval;
-#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
+#elif (defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)) && !defined(Q_OS_ANDROID)
     if (GetSwapIntervalMESA) {
         return GetSwapIntervalMESA();
     } else {
@@ -151,7 +151,7 @@ void gl::setSwapInterval(int interval) {
     CGLSetParameter(CGLGetCurrentContext(), kCGLCPSwapInterval, &interval);
 #elif defined(Q_OS_ANDROID)
     eglSwapInterval(eglGetCurrentDisplay(), interval);
-#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
+#elif (defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)) && !defined(Q_OS_ANDROID)
     if (SwapIntervalMESA) {
         SwapIntervalMESA(interval);
     }
@@ -161,7 +161,7 @@ void gl::setSwapInterval(int interval) {
 }
 
 bool gl::queryCurrentRendererIntegerMESA(int attr, unsigned int *value) {
-    #if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
+    #if (defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)) && !defined(Q_OS_ANDROID)
     if (QueryCurrentRendererIntegerMESA) {
         return QueryCurrentRendererIntegerMESA(attr, value);
     }

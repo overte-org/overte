@@ -32,6 +32,10 @@
 #include <IOKit/storage/IOMedia.h>
 #endif //Q_OS_MAC
 
+#ifdef Q_OS_FREEBSD
+#include <sys/sysctl.h>
+#endif
+
 // Number of iterations to apply to the hash, for stretching.
 // The number is arbitrary and has the only purpose of slowing down brute-force
 // attempts. The number here should be low enough not to cause any trouble for
@@ -96,6 +100,23 @@ QString FingerprintUtils::getMachineFingerprintString() {
     }
 
 #endif //Q_OS_LINUX
+
+#ifdef Q_OS_FREEBSD
+    size_t uuidlen = 37;
+    char *uuid = new char[uuidlen];
+
+    int mib[4];
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_HOSTUUID;
+    mib[2] = -1;
+    mib[3] = -1;
+    if (sysctl(mib, 4, uuid, &uuidlen, NULL, 0) == -1) {
+        qCWarning(networking) << "sysctl call to KERN_HOSTUUID failed: " << strerror(errno);
+    } else {
+        hash.addData(uuid, uuidlen);
+    }
+    delete[] uuid;
+#endif // Q_OS_FREEBSD
 
 #ifdef Q_OS_MAC
     io_registry_entry_t ioRegistryRoot = IORegistryEntryFromPath(kIOMasterPortDefault, "IOService:/");

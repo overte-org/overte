@@ -1,0 +1,19 @@
+include(default)
+
+[conf]
+# Avoid dependencies failing to build on GCC 15 and newer.
+tools.build:cxxflags+=['-include', 'cstdint']
+
+# Needed for OneTBB to link properly
+tools.build:sharedlinkflags+=['-Wl,--undefined-version']
+
+# Workaround for Linux-isms in dependencies
+tools.gnu:make_program=gmake
+
+[platform_tool_requires]
+# Conan CMake is broken on FreeBSD, so use system
+cmake/3.31.11
+
+[options]
+# Required for building oneTBB.
+hwloc/*:shared=True

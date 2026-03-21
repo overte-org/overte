@@ -12,6 +12,10 @@ if (UNIX AND NOT APPLE)
   target_link_libraries(image Threads::Threads)
 endif()
 
+if (CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
+  target_link_libraries(image execinfo)
+endif()
+
 if (WIN32)
   add_compile_definitions(_USE_MATH_DEFINES)
 endif()

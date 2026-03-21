@@ -30,6 +30,8 @@ AutoUpdater::AutoUpdater() :
     _operatingSystem = "mac";
 #elif defined Q_OS_LINUX
     _operatingSystem = "ubuntu";
+#elif defined Q_OS_FREEBSD
+    _operatingSystem = "freebsd";
 #endif
     
     connect(this, SIGNAL(latestVersionDataParsed()), this, SLOT(checkVersionAndNotify()));
