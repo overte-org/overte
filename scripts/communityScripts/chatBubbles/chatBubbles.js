@@ -101,6 +101,32 @@ function ChatBubbles_WrapText(text, maxChars = BUBBLE_WIDTH_MAX_CHARS) {
     return [linesAccum.join("\n"), linesAccum.length];
 }
 
+function ChatBubbles_ResizeBubble(bubbleEntity, text, scale, height) {
+    const size = Entities.textSize(bubbleEntity, text);
+
+    if (size.width === 0 || size.height === 0) {
+        // Text size cannot be calculated immediately after entity creation;
+        // We'll keep trying until textSize does not report 0.
+        Script.setTimeout(() => {ChatBubbles_ResizeBubble(bubbleEntity, text, scale, height)}, 100);
+        return;
+    } else if (size.height <= height*0.999
+            || size.height >= height*1.001
+            || size.height == null
+            || Number.isNaN(size.height)) {
+        // Text size returns unexpected values during entity
+        // creation. When entity sizes are too large, too small
+        // or invalid we ignore them.
+        // See https://github.com/overte-org/overte/issues/1897.
+        Script.setTimeout(() => {ChatBubbles_ResizeBubble(bubbleEntity, text, scale, height)}, 100);
+        return;
+    }
+
+    Entities.editEntity(bubbleEntity, {
+        visible: true,
+        dimensions: [size.width + (0.06 * scale), size.height + (0.04 * scale), 0.01],
+    });
+}
+
 function ChatBubbles_SpawnBubble(data, senderID) {
     // this user doesn't have a bubble stack, so add one
     if (!currentBubbles[senderID]) {
@@ -204,11 +230,7 @@ function ChatBubbles_SpawnBubble(data, senderID) {
         }, "local");
 
         Script.setTimeout(() => {
-            const size = Entities.textSize(bubbleEntity, text);
-            Entities.editEntity(bubbleEntity, {
-                visible: true,
-                dimensions: [size.width + (0.06 * scale), size.height + (0.04 * scale), 0.01],
-            });
+            ChatBubbles_ResizeBubble(bubbleEntity, text, scale, height);
         }, 100);
         // this wait time is annoyingly inconsistent,
         // so it needs a decent chunk of time to work properly on all messages
