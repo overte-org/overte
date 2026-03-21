@@ -199,7 +199,11 @@ bool Application::exportEntities(const QString& filename, float x, float y, floa
     QVector<QUuid> entities;
     auto entityTree = getEntities()->getTree();
     entityTree->withReadLock([&] {
-        entityTree->evalEntitiesInCube(boundingCube, PickFilter(), entities);
+        entityTree->evalEntitiesInCube(
+            boundingCube,
+            PickFilter(PickFilter::getBitMask(PickFilter::DOMAIN_ENTITIES)),
+            entities
+        );
     });
     return exportEntities(filename, entities, &center, options);
 }
