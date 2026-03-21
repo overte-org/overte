@@ -263,7 +263,7 @@ protected:
     // Helper function used to move ScriptResource to the script engine thread to avoid causing issues with deleting it
     // when corresponding script value gets deleted by script engine.
     // It's automatically called by `prefetch`.
-    ScriptableResource* prefetchAndMoveToThread(const QUrl& url, void* extra, size_t extraHash, QThread *scriptThread);
+    Q_INVOKABLE ScriptableResource* prefetchAndMoveToThread(const QUrl& url, void* extra, size_t extraHash, QThread *scriptThread);
 
     /// Creates a new resource.
     virtual QSharedPointer<Resource> createResource(const QUrl& url) = 0;
