@@ -4,6 +4,7 @@ MessageBox {
     id: popup
 
     function showSpecifyAvatarUrl(url, callback, linkCallback) {
+        popup.dialogButtons.yesButton.visible = true;
         popup.onButton2Clicked = callback;
         popup.titleText = 'Specify Avatar URL'
         popup.bodyText = 'This will not overwrite your existing favorite if you are wearing one.<br>' +
@@ -36,6 +37,7 @@ MessageBox {
     }
 
     function showSpecifyWearableUrl(callback) {
+        popup.dialogButtons.yesButton.visible = true;
         popup.button2text = 'CONFIRM'
         popup.button1text = 'CANCEL'
         popup.titleText = 'Specify Wearable URL'
@@ -57,6 +59,7 @@ MessageBox {
     }
 
     function showDeleteFavorite(favoriteName, callback) {
+        popup.dialogButtons.yesButton.visible = true;
         popup.titleText = 'Delete Favorite: {AvatarName}'.replace('{AvatarName}', favoriteName)
         popup.bodyText = 'This will delete your favorite. You will retain access to the wearables and avatar that made up the favorite from Inventory.'
         popup.imageSource = null;
@@ -74,6 +77,7 @@ MessageBox {
     }
 
     function showLoadFavorite(favoriteName, callback) {
+        popup.dialogButtons.yesButton.visible = true;
         popup.button2text = 'CONFIRM'
         popup.button1text = 'CANCEL'
         popup.titleText = 'Load Favorite: {AvatarName}'.replace('{AvatarName}', favoriteName)
