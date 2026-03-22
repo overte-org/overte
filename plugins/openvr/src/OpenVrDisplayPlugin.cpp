@@ -411,7 +411,7 @@ glm::mat4 OpenVrDisplayPlugin::getCullingProjection(const glm::mat4& baseProject
     // FIXME: OpenVR gives us tan(angle), how can we clamp
     // this to within ~170° when multiplied by margin?
     // const float maxAngle = 0.9f * PI;
-    const float margin = 1.1f;
+    const float margin = 1.0f;
 
     std::array<float, 4> fovMax = {
         std::min(fovs[0][0], fovs[1][0]) * margin, // left

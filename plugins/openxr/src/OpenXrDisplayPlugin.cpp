@@ -86,7 +86,7 @@ glm::mat4 OpenXrDisplayPlugin::getCullingProjection(const glm::mat4& baseProject
 
     std::array<XrFovf, 2> fovs = { _views.value()[0].fov, _views.value()[1].fov };
 
-    const float maxAngle = 0.9f * PI;
+    const float maxAngle = 0.9f * PI / 2;
     const float margin = 1.1f;
 
     XrFovf fovMax;
