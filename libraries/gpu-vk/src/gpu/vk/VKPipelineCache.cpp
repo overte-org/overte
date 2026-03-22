@@ -457,11 +457,14 @@ Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
     {
         auto& rasterizationState = builder.rasterizationState;
         rasterizationState.cullMode = (VkCullModeFlagBits)stateData.cullMode;
-        //Bool32 ra.depthBiasEnable;
-        //float ra.depthBiasConstantFactor;
-        //float ra.depthBiasClamp;
-        //float ra.depthBiasSlopeFactor;
-        //ra.depthClampEnable = VK_TRUE;
+        rasterizationState.depthBiasEnable = (stateData.depthBias != 0.0f && stateData.depthBiasSlopeScale != 0.0f);
+        // VKTODO: How come the depth bias values behave differently on OpenGL vs Vulkan?
+        // Facing a Text entity face-on that's directly touching another wall will sometimes
+        // clip into the wall, though in most cases it works perfectly fine. Weirdly,
+        // this doesn't seem to affect Image entities in the same situation.
+        rasterizationState.depthBiasConstantFactor = stateData.depthBias;
+        rasterizationState.depthBiasSlopeFactor = stateData.depthBiasSlopeScale;
+        rasterizationState.depthBiasClamp = 0.0f;
         rasterizationState.depthClampEnable = stateData.flags.depthClampEnable ? VK_TRUE : VK_FALSE;  // VKTODO
         rasterizationState.frontFace =
             stateData.flags.frontFaceClockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
