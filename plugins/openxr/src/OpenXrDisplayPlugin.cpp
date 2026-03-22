@@ -86,12 +86,14 @@ glm::mat4 OpenXrDisplayPlugin::getCullingProjection(const glm::mat4& baseProject
 
     std::array<XrFovf, 2> fovs = { _views.value()[0].fov, _views.value()[1].fov };
 
-    // behavior copied from OculusMobileDisplayPlugin
+    const float maxAngle = 0.9f * PI;
+    const float margin = 1.1f;
+
     XrFovf fovMax;
-    fovMax.angleDown = std::min(fovs[0].angleDown, fovs[1].angleDown) * 1.5f;
-    fovMax.angleLeft = std::min(fovs[0].angleLeft, fovs[1].angleLeft) * 1.5f;
-    fovMax.angleRight = std::max(fovs[0].angleRight, fovs[1].angleRight) * 1.5f;
-    fovMax.angleUp = std::max(fovs[0].angleUp, fovs[1].angleUp) * 1.5f;
+    fovMax.angleDown = std::clamp(std::min(fovs[0].angleDown, fovs[1].angleDown) * margin, -maxAngle, maxAngle);
+    fovMax.angleLeft = std::clamp(std::min(fovs[0].angleLeft, fovs[1].angleLeft) * margin, -maxAngle, maxAngle);
+    fovMax.angleRight = std::clamp(std::max(fovs[0].angleRight, fovs[1].angleRight) * margin, -maxAngle, maxAngle);
+    fovMax.angleUp = std::clamp(std::max(fovs[0].angleUp, fovs[1].angleUp) * margin, -maxAngle, maxAngle);
 
     return fovToProjection(fovMax, frustum.getNearClip(), frustum.getFarClip());
 }

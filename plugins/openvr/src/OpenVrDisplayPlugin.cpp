@@ -408,12 +408,16 @@ glm::mat4 OpenVrDisplayPlugin::getCullingProjection(const glm::mat4& baseProject
         );
     }
 
-    // behavior copied from OculusMobileDisplayPlugin
+    // FIXME: OpenVR gives us tan(angle), how can we clamp
+    // this to within ~170° when multiplied by margin?
+    // const float maxAngle = 0.9f * PI;
+    const float margin = 1.1f;
+
     std::array<float, 4> fovMax = {
-        std::min(fovs[0][0], fovs[1][0]) * 1.5f, // left
-        std::max(fovs[0][1], fovs[1][1]) * 1.5f, // right
-        std::min(fovs[0][2], fovs[1][2]) * 1.5f, // bottom (flipped)
-        std::max(fovs[0][3], fovs[1][3]) * 1.5f, // top (flipped)
+        std::min(fovs[0][0], fovs[1][0]) * margin, // left
+        std::max(fovs[0][1], fovs[1][1]) * margin, // right
+        std::min(fovs[0][2], fovs[1][2]) * margin, // bottom (flipped)
+        std::max(fovs[0][3], fovs[1][3]) * margin, // top (flipped)
     };
 
     ViewFrustum frustum;
