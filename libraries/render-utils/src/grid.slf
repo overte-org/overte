@@ -32,25 +32,34 @@ UNIFORM_BUFFER(0, gridBuffer) {
 };
 
 INPUT(GPU_ATTR_TEXCOORD0, vec2, varTexCoord0);
+INPUT(GPU_ATTR_TEXCOORD1, vec2, varTexCoord1);
 INPUT(GPU_ATTR_COLOR, vec4, varColor);
 
 
 void main(void) {
+    const float SQRT_2 = 1.4142135623730951;
+
     float gridLine = mix(paintGridMajorMinor(varTexCoord0, grid.offset, grid.period, grid.edge),
                       paintGrid(varTexCoord0, grid.offset.xy, grid.period.xy, grid.edge.xy),
                       float(grid.edge.z == 0.0));
-    if (gridLine <= 0.0) {
-        discard;
-    }
+
+    // multiply by sqrt(2) to hide the chunk pop-in on the corners
+    float fade = clamp(1.0 - (length(varTexCoord1) * SQRT_2), 0.0, 1.0);
+    float gridWeight = gridLine * fade;
+
+    if (gridWeight <= 0.0) { discard; }
+
+    vec4 color = varColor;
+    color.a *= gridWeight;
 
 <@if not HIFI_USE_FORWARD@>
     <@if not HIFI_USE_TRANSLUCENT@>
         vec3 NORMAL = vec3(1.0, 0.0, 0.0);
-        packDeferredFragmentUnlit(_prevPositionCS, NORMAL, 1.0, varColor.rgb);
+        packDeferredFragmentUnlit(_prevPositionCS, NORMAL, 1.0, color.rgb);
     <@else@>
-        packDeferredFragmentTranslucentUnlit(varColor.a, varColor.rgb);
+        packDeferredFragmentTranslucentUnlit(color.a, color.rgb);
     <@endif@>
 <@else@>
-    _fragColor0 = varColor;
+    _fragColor0 = color;
 <@endif@>
 }
