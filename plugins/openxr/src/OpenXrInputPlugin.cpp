@@ -1346,7 +1346,8 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
         return Pose(position, rotation).transform(sensorToAvatar);
     };
 
-    constexpr bool metacarpalCorrectiom = false;
+    // OpenXR finger bone positions on SteamVR need extra correction:
+    constexpr bool metacarpalCorrection = true;
 
     _poseStateMap[i == 0 ? LEFT_HAND : RIGHT_HAND] = xrJointToGlm(XR_HAND_JOINT_WRIST_EXT);
 
@@ -1354,21 +1355,21 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
     _poseStateMap[i == 0 ? LEFT_HAND_THUMB2 : RIGHT_HAND_THUMB2] = xrJointToGlm(XR_HAND_JOINT_THUMB_PROXIMAL_EXT);
     _poseStateMap[i == 0 ? LEFT_HAND_THUMB3 : RIGHT_HAND_THUMB3] = xrJointToGlm(XR_HAND_JOINT_THUMB_DISTAL_EXT);
 
-    _poseStateMap[i == 0 ? LEFT_HAND_INDEX1 : RIGHT_HAND_INDEX1] = xrJointToGlm(XR_HAND_JOINT_INDEX_PROXIMAL_EXT, metacarpalCorrectiom, XR_HAND_JOINT_INDEX_METACARPAL_EXT);
-    _poseStateMap[i == 0 ? LEFT_HAND_INDEX2 : RIGHT_HAND_INDEX2] = xrJointToGlm(XR_HAND_JOINT_INDEX_INTERMEDIATE_EXT, metacarpalCorrectiom, XR_HAND_JOINT_INDEX_METACARPAL_EXT);
-    _poseStateMap[i == 0 ? LEFT_HAND_INDEX3 : RIGHT_HAND_INDEX3] = xrJointToGlm(XR_HAND_JOINT_INDEX_DISTAL_EXT, metacarpalCorrectiom, XR_HAND_JOINT_INDEX_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_INDEX1 : RIGHT_HAND_INDEX1] = xrJointToGlm(XR_HAND_JOINT_INDEX_PROXIMAL_EXT, metacarpalCorrection, XR_HAND_JOINT_INDEX_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_INDEX2 : RIGHT_HAND_INDEX2] = xrJointToGlm(XR_HAND_JOINT_INDEX_INTERMEDIATE_EXT, metacarpalCorrection, XR_HAND_JOINT_INDEX_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_INDEX3 : RIGHT_HAND_INDEX3] = xrJointToGlm(XR_HAND_JOINT_INDEX_DISTAL_EXT, metacarpalCorrection, XR_HAND_JOINT_INDEX_METACARPAL_EXT);
 
-    _poseStateMap[i == 0 ? LEFT_HAND_MIDDLE1 : RIGHT_HAND_MIDDLE1] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_PROXIMAL_EXT, metacarpalCorrectiom, XR_HAND_JOINT_MIDDLE_METACARPAL_EXT);
-    _poseStateMap[i == 0 ? LEFT_HAND_MIDDLE2 : RIGHT_HAND_MIDDLE2] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_INTERMEDIATE_EXT, metacarpalCorrectiom, XR_HAND_JOINT_MIDDLE_METACARPAL_EXT);
-    _poseStateMap[i == 0 ? LEFT_HAND_MIDDLE3 : RIGHT_HAND_MIDDLE3] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_DISTAL_EXT, metacarpalCorrectiom, XR_HAND_JOINT_MIDDLE_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_MIDDLE1 : RIGHT_HAND_MIDDLE1] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_PROXIMAL_EXT, metacarpalCorrection, XR_HAND_JOINT_MIDDLE_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_MIDDLE2 : RIGHT_HAND_MIDDLE2] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_INTERMEDIATE_EXT, metacarpalCorrection, XR_HAND_JOINT_MIDDLE_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_MIDDLE3 : RIGHT_HAND_MIDDLE3] = xrJointToGlm(XR_HAND_JOINT_MIDDLE_DISTAL_EXT, metacarpalCorrection, XR_HAND_JOINT_MIDDLE_METACARPAL_EXT);
 
-    _poseStateMap[i == 0 ? LEFT_HAND_RING1 : RIGHT_HAND_RING1] = xrJointToGlm(XR_HAND_JOINT_RING_PROXIMAL_EXT, metacarpalCorrectiom, XR_HAND_JOINT_RING_METACARPAL_EXT);
-    _poseStateMap[i == 0 ? LEFT_HAND_RING2 : RIGHT_HAND_RING2] = xrJointToGlm(XR_HAND_JOINT_RING_INTERMEDIATE_EXT, metacarpalCorrectiom, XR_HAND_JOINT_RING_METACARPAL_EXT);
-    _poseStateMap[i == 0 ? LEFT_HAND_RING3 : RIGHT_HAND_RING3] = xrJointToGlm(XR_HAND_JOINT_RING_DISTAL_EXT, metacarpalCorrectiom, XR_HAND_JOINT_RING_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_RING1 : RIGHT_HAND_RING1] = xrJointToGlm(XR_HAND_JOINT_RING_PROXIMAL_EXT, metacarpalCorrection, XR_HAND_JOINT_RING_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_RING2 : RIGHT_HAND_RING2] = xrJointToGlm(XR_HAND_JOINT_RING_INTERMEDIATE_EXT, metacarpalCorrection, XR_HAND_JOINT_RING_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_RING3 : RIGHT_HAND_RING3] = xrJointToGlm(XR_HAND_JOINT_RING_DISTAL_EXT, metacarpalCorrection, XR_HAND_JOINT_RING_METACARPAL_EXT);
 
-    _poseStateMap[i == 0 ? LEFT_HAND_PINKY1 : RIGHT_HAND_PINKY1] = xrJointToGlm(XR_HAND_JOINT_LITTLE_PROXIMAL_EXT, metacarpalCorrectiom, XR_HAND_JOINT_LITTLE_METACARPAL_EXT);
-    _poseStateMap[i == 0 ? LEFT_HAND_PINKY2 : RIGHT_HAND_PINKY2] = xrJointToGlm(XR_HAND_JOINT_LITTLE_INTERMEDIATE_EXT, metacarpalCorrectiom, XR_HAND_JOINT_LITTLE_METACARPAL_EXT);
-    _poseStateMap[i == 0 ? LEFT_HAND_PINKY3 : RIGHT_HAND_PINKY3] = xrJointToGlm(XR_HAND_JOINT_LITTLE_DISTAL_EXT, metacarpalCorrectiom, XR_HAND_JOINT_LITTLE_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_PINKY1 : RIGHT_HAND_PINKY1] = xrJointToGlm(XR_HAND_JOINT_LITTLE_PROXIMAL_EXT, metacarpalCorrection, XR_HAND_JOINT_LITTLE_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_PINKY2 : RIGHT_HAND_PINKY2] = xrJointToGlm(XR_HAND_JOINT_LITTLE_INTERMEDIATE_EXT, metacarpalCorrection, XR_HAND_JOINT_LITTLE_METACARPAL_EXT);
+    _poseStateMap[i == 0 ? LEFT_HAND_PINKY3 : RIGHT_HAND_PINKY3] = xrJointToGlm(XR_HAND_JOINT_LITTLE_DISTAL_EXT, metacarpalCorrection, XR_HAND_JOINT_LITTLE_METACARPAL_EXT);
 }
 
 void OpenXrInputPlugin::InputDevice::calibratePucks(const controller::InputCalibrationData& data) {
