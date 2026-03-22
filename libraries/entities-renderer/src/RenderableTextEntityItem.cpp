@@ -122,9 +122,10 @@ ItemKey TextEntityRenderer::getKey() {
 }
 
 ShapeKey TextEntityRenderer::getShapeKey() {
-    // FIXME: ShapeKey::Builder has no way of setting a specific
+    // TODO: ShapeKey::Builder has no way of setting a specific
     // depth offset like we'd need to offset both the background
-    // and payload in order
+    // and payload in order, so the text payload is hardcoded
+    // to have a higher depth bias (-2) than the background (-1)
     auto builder = render::ShapeKey::Builder().withDepthBias();
     updateShapeKeyBuilderFromMaterials(builder);
     return builder.build();
@@ -297,9 +298,10 @@ ShapeKey entities::TextPayload::getShapeKey() const {
         if (renderable) {
             auto textRenderable = std::static_pointer_cast<TextEntityRenderer>(renderable);
 
-            // FIXME: ShapeKey::Builder has no way of setting a specific
+            // TODO: ShapeKey::Builder has no way of setting a specific
             // depth offset like we'd need to offset both the background
-            // and payload in order
+            // and payload in order, so the text payload is hardcoded
+            // to have a higher depth bias (-2) than the background (-1)
             auto builder = render::ShapeKey::Builder().withOwnPipeline().withDepthBias();
             if (textRenderable->isTextTransparent()) {
                 builder.withTranslucent();

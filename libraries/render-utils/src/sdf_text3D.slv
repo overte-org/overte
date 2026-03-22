@@ -78,9 +78,4 @@ void main() {
 
     const vec3 normal = vec3(0, 0, 1);
     <$transformModelToWorldDir(obj, normal, _normalWS)$>
-
-    // TODO: We don't support setting depth biases to anything other than "off" or "on",
-    // so manually offset the text a little bit further from the background
-    // FIXME: withDepthBias isn't working on TextPayload::getShapeKey?
-    gl_Position.z -= 1.0 / 256.0;
 }
