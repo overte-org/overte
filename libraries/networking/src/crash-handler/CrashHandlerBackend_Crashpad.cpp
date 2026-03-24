@@ -354,6 +354,25 @@ static QString findBinaryDir() {
 
 #endif
 
+#ifdef Q_OS_FREEBSD
+    size_t pathlen = PATH_MAX;
+    char *path = new char[pathlen];
+
+    int mib[4];
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_PROC;
+    mib[2] = KERN_PROC_PATHNAME;
+    mib[3] = -1;
+    if (sysctl(mib, 4, path, &pathlen, NULL, 0) == -1) {
+        delete[] path;
+        qCWarning(crash_handler) << "sysctl call to KERN_PROC_PATHNAME failed: " << strerror(errno);
+    } else {
+        QString exePath = QString(path);
+        delete[] path;
+        return exePath;
+    }
+#endif // Q_OS_FREEBSD
+
     return QString();
 }
 

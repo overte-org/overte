@@ -182,7 +182,7 @@ void Transaction::clear() {
 }
 
 
-Scene::Scene(glm::vec3 origin, float size) :
+Scene::Scene(const glm::vec3& origin, float size) :
     _primarySpatialTree(origin, size)
 {
     _items.push_back(Item()); // add the itemID #0 to nothing

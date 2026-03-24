@@ -637,7 +637,7 @@ QString defaultAudioDeviceName(QAudio::Mode mode) {
 
 #endif
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
     if ( mode == QAudio::AudioInput ) {
         deviceName = QAudioDeviceInfo::defaultInputDevice().deviceName();
     } else {
@@ -2308,7 +2308,7 @@ const float AudioClient::CALLBACK_ACCELERATOR_RATIO = 2.0f;
 
 #ifdef Q_OS_ANDROID
 const float AudioClient::CALLBACK_ACCELERATOR_RATIO = 0.5f;
-#elif defined(Q_OS_LINUX)
+#elif defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)
 const float AudioClient::CALLBACK_ACCELERATOR_RATIO = 2.0f;
 #endif
 
