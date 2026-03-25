@@ -628,7 +628,8 @@ public:
     graphics::MeshPointer createMesh() override {
         vecVertices.clear();
 
-        loop3(ivec3{ 0 }, vol->getSize(), [&](const ivec3& index) {
+        auto size = vol->getSize();
+        loop3(ivec3{ 0 }, size, [&](const ivec3& index) {
             float regX = static_cast<float>(index.x);
             float regY = static_cast<float>(index.y);
             float regZ = static_cast<float>(index.z);
@@ -638,18 +639,14 @@ public:
             MaterialType material = 0;
             uint32_t v0, v1, v2, v3;
 
+            // TODO: this should be much nicer and cleaner, when "edged" voxels are gone.
+            // Right now it is replicating polyvox/old overte behavior.
+            bool shouldRenderOuter = false;
             glm::ivec3 other_index = index + glm::ivec3(1, 0, 0);
             if (vol->isInside(other_index)) {
                 auto other_el = vol->getVoxelAt(other_index);
                 if (isQuadNeeded(other_el, this_el, material)) {
-                    const glm::vec3 posX = glm::vec3(1.0f, 0.0f, 0.0f);
-                    v0 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ - 0.5f), posX, material);
-                    v1 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ + 0.5f), posX, material);
-                    v2 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ - 0.5f), posX, material);
-                    v3 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ + 0.5f), posX, material);
-
-                    addTriangleCubic(v0, v2, v1);
-                    addTriangleCubic(v1, v2, v3);
+                    shouldRenderOuter = true;
                 }
                 if (isQuadNeeded(this_el, other_el, material)) {
                     const glm::ivec3 negX = glm::vec3(-1.0f, 0.0f, 0.0f);
@@ -662,19 +659,23 @@ public:
                     addTriangleCubic(v1, v3, v2);
                 }
             }
+            if (shouldRenderOuter || (other_index.x == size.x && this_el > 0)) {
+                const glm::vec3 posX = glm::vec3(1.0f, 0.0f, 0.0f);
+                v0 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ - 0.5f), posX, material);
+                v1 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ + 0.5f), posX, material);
+                v2 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ - 0.5f), posX, material);
+                v3 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ + 0.5f), posX, material);
+
+                addTriangleCubic(v0, v2, v1);
+                addTriangleCubic(v1, v2, v3);
+            }
+            shouldRenderOuter = false;
 
             other_index = index + glm::ivec3(0, 1, 0);
             if (vol->isInside(other_index)) {
                 auto other_el = vol->getVoxelAt(other_index);
                 if (isQuadNeeded(other_el, this_el, material)) {
-                    const glm::ivec3 posY = glm::vec3(0.0f, 1.0f, 0.0f);
-                    v0 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ - 0.5f), posY, material);
-                    v1 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ + 0.5f), posY, material);
-                    v2 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ - 0.5f), posY, material);
-                    v3 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ + 0.5f), posY, material);
-
-                    addTriangleCubic(v0, v1, v2);
-                    addTriangleCubic(v1, v3, v2);
+                    shouldRenderOuter = true;
                 }
                 if (isQuadNeeded(this_el, other_el, material)) {
                     const glm::ivec3 negY = glm::vec3(0.0f, -1.0f, 0.0f);
@@ -687,19 +688,23 @@ public:
                     addTriangleCubic(v1, v2, v3);
                 }
             }
+            if (shouldRenderOuter || (other_index.y == size.y && this_el > 0)) {
+                const glm::ivec3 posY = glm::vec3(0.0f, 1.0f, 0.0f);
+                v0 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ - 0.5f), posY, material);
+                v1 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ + 0.5f), posY, material);
+                v2 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ - 0.5f), posY, material);
+                v3 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ + 0.5f), posY, material);
+
+                addTriangleCubic(v0, v1, v2);
+                addTriangleCubic(v1, v3, v2);
+            }
+            shouldRenderOuter = false;
 
             other_index = index + glm::ivec3(0, 0, 1);
             if (vol->isInside(other_index)) {
                 auto other_el = vol->getVoxelAt(other_index);
                 if (isQuadNeeded(other_el, this_el, material)) {
-                    const glm::ivec3 posZ = glm::vec3(0.0f, 0.0f, 1.0f);
-                    v0 = addVertex(glm::vec3(regX - 0.5f, regY - 0.5f, regZ + 0.5f), posZ, material);
-                    v1 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ + 0.5f), posZ, material);
-                    v2 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ + 0.5f), posZ, material);
-                    v3 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ + 0.5f), posZ, material);
-
-                    addTriangleCubic(v0, v2, v1);
-                    addTriangleCubic(v1, v2, v3);
+                    shouldRenderOuter = true;
                 }
                 if (isQuadNeeded(this_el, other_el, material)) {
                     const glm::ivec3 negZ = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -711,6 +716,16 @@ public:
                     addTriangleCubic(v0, v1, v2);
                     addTriangleCubic(v1, v3, v2);
                 }
+            }
+            if (shouldRenderOuter || (other_index.z == size.z && this_el > 0)) {
+                const glm::ivec3 posZ = glm::vec3(0.0f, 0.0f, 1.0f);
+                v0 = addVertex(glm::vec3(regX - 0.5f, regY - 0.5f, regZ + 0.5f), posZ, material);
+                v1 = addVertex(glm::vec3(regX - 0.5f, regY + 0.5f, regZ + 0.5f), posZ, material);
+                v2 = addVertex(glm::vec3(regX + 0.5f, regY - 0.5f, regZ + 0.5f), posZ, material);
+                v3 = addVertex(glm::vec3(regX + 0.5f, regY + 0.5f, regZ + 0.5f), posZ, material);
+
+                addTriangleCubic(v0, v2, v1);
+                addTriangleCubic(v1, v2, v3);
             }
         });
 
@@ -771,7 +786,6 @@ private:
     std::vector<PositionNormalMaterial> vecVertices;
     std::vector<uint32_t> vecIndices;
 };
-
 
 // This code was rewritten from Paul Bourke's article: "Polygonising a scalar field", which was
 // based on Cory Bloyd's example program released into the public domain.
