@@ -1,0 +1,45 @@
+include(default)
+
+[settings]
+os=Android
+# I would like to support API level 29, which is the latest available on the Oculus Quest 1.
+# API level 33 is the minimum supported by NVTT currently, because it uses `backtrace_symbols` and similar functionality in nvcore/Debug.cpp.
+# For a list of standard library functions: https://android.googlesource.com/platform/bionic/+/HEAD/docs/status.md
+os.api_level=33
+arch=armv8
+compiler=clang
+# Get the clang version by running something like:
+# `/usr/lib/android-sdk/ndk/27.3.13750724/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android29-clang --version`
+compiler.version=18
+compiler.libcxx=c++_shared
+compiler.cppstd=20
+
+[conf]
+# We should probably use whatever NDK Qt tells us to: https://doc.qt.io/qt-6/android.html
+# This is the default when installing google-android-ndk-r27d-installer on Debian
+tools.android:ndk_path=/usr/lib/android-sdk/ndk/27.3.13750724/
+
+[options]
+# This is the default when installing Android SDKs through Android Studio
+# Make sure you have the Android Platform SDK for the os.api_level in here.
+qt*:android_sdk={{ os.path.expanduser("~") }}/Android/Sdk
+
+Overte/*:qt_source=source
+qt*:opengl=es2
+# Used by Overte Interface.
+qt*:qtandroidextras=True
+# QtWebengine is not supported on Android.
+qt*:qtwebengine=False
+# Avoid build errors in qt5/qtlocation/src/3rdparty/mapbox-gl-native/deps/boost/1.65.1/include/boost/
+# We don't need this anyway, since we are building without QtWebengine
+qt*:qtlocation=False
+
+# Fails on trying to build Open Sound System support.
+qt*:with_openal=False
+# No Android cross compilation
+qt*:with_mysql=False
+# PostgreSQL
+qt*:with_pq=False
+# Open Database Connectivity
+# Dependency,`m4`, fails to build.
+qt*:with_odbc=False
