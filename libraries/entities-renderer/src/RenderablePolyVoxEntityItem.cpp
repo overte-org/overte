@@ -282,7 +282,7 @@ private:
      * This function reallocates the backing structure, when the supplied index is not inside the `allocated_size`.
      *
      * When the `valid_size` is changed, the backing structure is not reallocated automatically and
-     * is only reallocated, when the index to edit is outside the `allocated_size` range.
+     * is only reallocated to the `valid_size`, when the index to edit is outside the `allocated_size` range.
      *
      * @param index the index to test against if reallocation is needed.
      */
