@@ -171,23 +171,71 @@ typedef uint8_t VoxelType;
 typedef VoxelType MaterialType;
 }  // namespace
 
+/**
+ * A data structure storing voxel data.
+ *
+ * The structure uses a vector as it's backing structure which holds `allocated_size` of voxels.
+ *
+ * The backing structure is only resizes, when a user tries to edit a voxel (inside the `valid_size`,
+ * but outside `allocated_size`, i.e. editing a VoxelVolume with `valid_size`=5x5x5,`allocated_size`=3x3x3
+ * at `index`=4,4,4 should resize the backing data structure to fit 5x5x5).
+ *
+ */
 class VoxelVolume {
 public:
     inline VoxelVolume(const glm::ivec3& size) :
         allocated_size(size), valid_size(size), raw_data(size.x * size.y * size.z, 0) {}
 
+    /**
+     * Tests if the specified `index` is inside the size of the data structure.
+     *
+     * @param index index to test.
+     */
     bool isInside(const glm::ivec3& index) {
         return glm::all(glm::lessThanEqual(glm::ivec3(0), index)) && glm::all(glm::lessThan(index, valid_size));
     }
+    /**
+     * Tests if the specified index-parts are inside the size of the data structure.
+     *
+     * @param x x-index to test.
+     * @param y y-index to test.
+     * @param z z-index to test.
+     */
     inline bool isInside(const int32_t x, const int32_t y, const int32_t z) { return isInside(glm::ivec3(x, y, z)); }
 
+    /**
+     * Edits the voxel at the specified index.
+     *
+     * Assumes `isInside(index)` to be true.
+     *
+     * @param index index of the voxel to edit.
+     * @param data  data to set the voxel to.
+     */
     void setVoxelAt(const glm::ivec3& index, VoxelType data) {
         Q_ASSERT(isInside(index));
         ensureAllocation(index);
         raw_data[getRawIndexFor(index)] = data;
     }
+    /**
+     * Edits the voxel at the specified index.
+     *
+     * Assumes `isInside(ivec3(x,y,z))` to be true.
+     *
+     * @param x    x-index of the voxel to edit.
+     * @param y    y-index of the voxel to edit.
+     * @param z    z-index of the voxel to edit.
+     * @param data data to set the voxel to.
+     */
     inline void setVoxelAt(int32_t x, int32_t y, int32_t z, uint8_t data) { return setVoxelAt(glm::ivec3(x, y, z), data); }
 
+    /**
+     * Gets the voxel at the specified index.
+     *
+     * Assumes `isInside(index)` to be true.
+     *
+     * @param index index of the voxel to edit.
+     * @return data of the voxel.
+     */
     VoxelType getVoxelAt(const glm::ivec3& index) {
         Q_ASSERT(isInside(index));
         if (glm::any(glm::greaterThanEqual(index, allocated_size)))
@@ -195,10 +243,28 @@ public:
         return raw_data[getRawIndexFor(index)];
     }
 
+    /**
+     * Resizes the volume to the `new_size`
+     *
+     * Note: actual reallocation of the backing structure should happen at the
+     * first edit outside of `allocated_size`.
+     *
+     * @param new_size the new size to set the volume to.
+     */
     void resize(const glm::ivec3& new_size) { valid_size = new_size; }
 
+    /**
+     * Gets the current valid size.
+     *
+     * @return the current valid size.
+     */
     const glm::ivec3& getSize() { return valid_size; }
 
+    /**
+     * Does a raycast into the voxel structure.
+     *
+     * @return `std::nullopt` on no hit, else index of hit voxel.
+     */
     std::optional<glm::ivec3> raycast(glm::vec4 originInVoxel, glm::vec4 farInVoxel) {
         float x1 = originInVoxel.x + 0.5f;
         float y1 = originInVoxel.y + 0.5f;
@@ -274,6 +340,12 @@ public:
     }
 
 private:
+    /**
+     * Translates the index into the raw index in the backing structure.
+     *
+     * @param index the index to translate.
+     * @return the translated index.
+     */
     inline size_t getRawIndexFor(const glm::ivec3& index) {
         return allocated_size.x * allocated_size.y * index.z + allocated_size.x * index.y + index.x;
     }
