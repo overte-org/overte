@@ -20,7 +20,7 @@
 const glm::u8vec3 SkyboxPropertyGroup::DEFAULT_COLOR = { 0, 0, 0 };
 
 void SkyboxPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
-        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, AvatarEntityOwnership ownership) const {
 
     auto nodeList = DependencyManager::get<NodeList>();
 
