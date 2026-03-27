@@ -1651,8 +1651,6 @@ void RenderablePolyVoxEntityItem::setVoxelVolumeSize(const glm::vec3& voxelVolum
         }
 
         _volData.reset(new VoxelVolume(size));
-        // having the "outside of voxel-space" value be 255 has helped me notice some problems.
-        //_volData->setBorderValue(255);
     });
 
     tellNeighborsToRecopyEdges(true);
