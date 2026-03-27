@@ -396,11 +396,6 @@ void LODManager::loadSettings() {
     auto desktopQuality = static_cast<WorldDetailQuality>(desktopWorldDetailQuality.get());
     auto hmdQuality = static_cast<WorldDetailQuality>(hmdWorldDetailQuality.get());
 
-    Setting::Handle<bool> firstRun{ Settings::firstRun, true };
-    if (qApp->property(hifi::properties::OCULUS_STORE).toBool() && firstRun.get()) {
-        hmdQuality = WORLD_DETAIL_HIGH;
-    }
-
     _automaticLODAdjust = automaticLODAdjust.get();
     _lodHalfAngle = lodHalfAngle.get();
 
