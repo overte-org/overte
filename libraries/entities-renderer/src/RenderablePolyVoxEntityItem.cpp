@@ -278,6 +278,14 @@ private:
         return allocated_size.x * allocated_size.y * index.z + allocated_size.x * index.y + index.x;
     }
 
+    /**
+     * This function reallocates the backing structure, when the supplied index is not inside the `allocated_size`.
+     *
+     * When the `valid_size` is changed, the backing structure is not reallocated automatically and
+     * is only reallocated, when the index to edit is outside the `allocated_size` range.
+     *
+     * @param index the index to test against if reallocation is needed.
+     */
     void ensureAllocation(const glm::ivec3& index) {
         if (glm::any(glm::greaterThanEqual(index, allocated_size))) {
             std::vector<VoxelType> new_(valid_size.x * valid_size.y * valid_size.z, 0);
