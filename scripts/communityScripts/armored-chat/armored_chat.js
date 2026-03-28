@@ -33,11 +33,23 @@
     Messages.subscribe("Chat"); // Floofchat
     Messages.subscribe("chat");
     Messages.messageReceived.connect(receivedMessage);
+
+    // We have Users.avatarDisconnected which only emits when
+    // a client really leaves the server, but there's no signal
+    // for when a client really joins the server. Keep track of
+    // what avatar IDs we've seen so if one gets hidden and then
+    // unhidden, we don't do the "user connected" notification again.
+    let connectedAvatars = new Set();
+
     AvatarManager.avatarAddedEvent.connect((sessionId) => {
-        _avatarAction("connected", sessionId);
+        if (!connectedAvatars.has(sessionId)) {
+            connectedAvatars.add(sessionId);
+            _avatarAction("connected", sessionId);
+        }
     });
-    AvatarManager.avatarRemovedEvent.connect((sessionId) => {
+    Users.avatarDisconnected.connect((sessionId) => {
         _avatarAction("left", sessionId);
+        connectedAvatars.delete(sessionId);
     });
 
     startup();
