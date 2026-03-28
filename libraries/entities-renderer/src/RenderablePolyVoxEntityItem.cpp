@@ -880,7 +880,7 @@ public:
         vecVertices.clear();
 
         auto valid_size = vol->getSize();
-        loop3(glm::ivec3(0), valid_size - glm::ivec3(-1), [this, valid_size](glm::ivec3 index) {
+        loop3(glm::ivec3(0), valid_size - glm::ivec3(-2), [this, valid_size](glm::ivec3 index) {
             const auto i0 = index;
             const auto i1 = index + glm::ivec3(1, 0, 0);
             const auto i2 = index + glm::ivec3(1, 0, 1);
