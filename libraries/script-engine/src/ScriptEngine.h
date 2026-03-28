@@ -407,6 +407,12 @@ public:
     virtual void requestCollectGarbage() = 0;
 
     /**
+     * @brief Tells the script engine to process any events it may have queued internally.
+     * Used by V8 for async functions and WebAssembly compilation.
+     */
+    virtual void processEvents() = 0;
+
+    /**
      * @brief Test the underlying scripting engine
      *
      * This compiles, executes and verifies the execution of a trivial test program
