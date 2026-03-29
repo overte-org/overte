@@ -19,6 +19,7 @@
 
 OUTPUT(RENDER_UTILS_ATTR_PREV_POSITION_CS, vec4, _prevPositionCS);
 OUTPUT(GPU_ATTR_TEXCOORD0, vec2, varTexCoord0);
+OUTPUT(GPU_ATTR_TEXCOORD1, vec2, varTexCoord1);
 OUTPUT(GPU_ATTR_COLOR, vec4, varColor);
 
 void main(void) {
@@ -29,4 +30,17 @@ void main(void) {
     TransformCamera cam = getTransformCamera();
     TransformObject obj = getTransformObject();
     <$transformModelToClipPosAndPrevClipPos(cam, obj, inPosition, gl_Position, _prevPositionCS)$>
+
+    // varTexCoord1 is the UV offset transformed so it's at a constant
+    // position relative to the camera. This allows us to do a distance-fade
+    // effect to hide the square edges of the grid popping in and out.
+
+    // transform the camera position into model-space
+    vec4 localCamPos = obj._modelInverse * vec4(getEyeWorldPos(), 1.0);
+    varTexCoord1 = varTexCoord0;
+    varTexCoord1.x -= localCamPos.x;
+    varTexCoord1.y -= localCamPos.y;
+
+    varTexCoord1.x = 2.0 * (varTexCoord1.x - 0.5);
+    varTexCoord1.y = 2.0 * (varTexCoord1.y - 0.5);
 }
