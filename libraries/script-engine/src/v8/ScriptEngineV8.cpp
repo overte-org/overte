@@ -1408,6 +1408,12 @@ QVariant ScriptEngineV8::convert(const ScriptValue& value, int typeId) {
     return QVariant();
 }
 
+void ScriptEngineV8::processEvents() {
+    Q_ASSERT(_v8Isolate->IsCurrent());
+
+    v8::platform::PumpMessageLoop(getV8Platform(), _v8Isolate);
+}
+
 void ScriptEngineV8::compileTest() {
     Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);

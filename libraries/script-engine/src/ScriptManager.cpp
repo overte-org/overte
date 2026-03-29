@@ -550,6 +550,7 @@ void ScriptManager::waitTillDoneRunning(bool shutdown) {
                 //       if they access Settings or Menu in any of their shutdown code. So:
                 // Process events for this thread, allowing invokeMethod calls to pass between threads.
                 QCoreApplication::processEvents();
+                _engine->processEvents();
             }
 
             // Avoid a pure busy wait
@@ -1068,6 +1069,7 @@ void ScriptManager::run() {
             } else {
                 QCoreApplication::processEvents();
             }
+            _engine->processEvents();
             processedEvents = true;
             _engine->perManagerLoopIterationCleanup();
         }
@@ -1103,6 +1105,7 @@ void ScriptManager::run() {
         if (!processedEvents) {
             PROFILE_RANGE(script, "processEvents");
             QCoreApplication::processEvents();
+            _engine->processEvents();
         }
 
         if (_isFinished) {
