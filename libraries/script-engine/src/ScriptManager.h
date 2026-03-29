@@ -763,9 +763,9 @@ public:
     *
     * @param function Function to call
     * @param intervalMS Interval at which to call the function, in ms
-    * @return QTimer* A pointer to the timer
+    * @return int A handle for the timer
     */
-    Q_INVOKABLE QTimer* setInterval(const ScriptValue& function, int intervalMS);
+    Q_INVOKABLE int setInterval(const ScriptValue& function, int intervalMS);
 
 
     /**
@@ -775,41 +775,23 @@ public:
      *
      * @param function Function to call
      * @param timeoutMS How long to wait before calling the function, in ms
-     * @return QTimer* A pointer to the timer
+     * @return int A handle for the timer
      */
-    Q_INVOKABLE QTimer* setTimeout(const ScriptValue& function, int timeoutMS);
+    Q_INVOKABLE int setTimeout(const ScriptValue& function, int timeoutMS);
 
     /**
      * @brief Stops an interval timer
      *
      * @param timer Timer to stop
      */
-    Q_INVOKABLE void clearInterval(QTimer* timer) { stopTimer(timer); }
-
-    /**
-     * @brief Stops an interval timer
-     *
-     * Overloaded version is needed in case the timer has expired
-     *
-     * @param timer Timer to stop
-     */
-    Q_INVOKABLE void clearInterval(QVariantMap timer) { ; }
+    Q_INVOKABLE void clearInterval(int timer) { stopTimer(timer); }
 
     /**
      * @brief Stops a timeout timer
      *
      * @param timer Timer to stop
      */
-    Q_INVOKABLE void clearTimeout(QTimer* timer) { stopTimer(timer); }
-
-    /**
-     * @brief Stops a timeout timer
-     * Overloaded version is needed in case the timer has expired
-     *
-     * @param timer Timer to stop
-     */
-
-    Q_INVOKABLE void clearTimeout(QVariantMap timer) { ; }
+    Q_INVOKABLE void clearTimeout(int timer) { stopTimer(timer); }
 
 
     /**
@@ -1562,7 +1544,7 @@ protected:
      * @return QString Exception formatted as a string
      */
     QString logException(const ScriptValue& exception);
-    void timerFired();
+    void timerFired(int timer);
     void stopAllTimers();
     void stopAllTimersForEntityScript(const EntityItemID& entityID);
     void refreshFileScript(const EntityItemID& entityID, const QString& scriptURL);
@@ -1604,16 +1586,16 @@ protected:
      * @param function Function to call when the interval elapses
      * @param intervalMS Interval in milliseconds
      * @param isSingleShot Whether the timer happens continuously or a single time
-     * @return QTimer*
+     * @return int
      */
-    QTimer* setupTimerWithInterval(const ScriptValue& function, int intervalMS, bool isSingleShot);
+    int setupTimerWithInterval(const ScriptValue& function, int intervalMS, bool isSingleShot);
 
     /**
      * @brief Stops a timer
      *
-     * @param timer Timer to stop
+     * @param int Timer to stop
      */
-    void stopTimer(QTimer* timer);
+    void stopTimer(int timer);
 
     QHash<EntityItemID, RegisteredEventHandlers> _registeredHandlers;
 
@@ -1678,7 +1660,8 @@ protected:
     std::atomic<bool> _isDoneRunning { false };
     bool _areMetaTypesInitialized { false };
     bool _isInitialized { false };
-    QHash<QTimer*, CallbackData> _timerFunctionMap;
+    std::unordered_map<int, std::tuple<QTimer*, CallbackData>> _timerFunctionMap;
+    int _timerHandleCounter { 1 };
     QSet<QUrl> _includedURLs;
     mutable QReadWriteLock _entityScriptsLock { QReadWriteLock::Recursive };
     QHash<EntityItemID, QHash<QString, EntityScriptDetails>> _entityScripts;
