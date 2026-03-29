@@ -9,16 +9,45 @@ runs:
         echo "CONAN_HOME=$HOME/.conan2" >> $GITHUB_ENV
         echo "XZ_OPT=-T0" >> $GITHUB_ENV
 
-        echo "CONAN_PROFILE=default" >> $GITHUB_ENV
-        echo "OVERTE_QT_SOURCE=system" >> $GITHUB_ENV
+        echo "CONAN_PROFILE='./tools/conan-profiles/macos'" >> $GITHUB_ENV
         echo "APP_TARGET_NAME=Overte" >> $GITHUB_ENV
-        
-        echo "DEVELOPER_DIR=/Applications/Xcode_11.2.app/Contents/Developer" >> $GITHUB_ENV
-        # We are using macOS SDK 10.12 to work around a lot of OpenGL issues in newer SDKs.
-        # There are crashes on startup, crashes on window resize, etc. on newer macOS SDKs.
-        echo "MACOSX_DEPLOYMENT_TARGET=10.12" >> $GITHUB_ENV
 
     - name: Install Python modules
       shell: bash
       run: |
-        python3 -m pip install boto3 PyGithub conan html5lib setuptools
+        brew install conan python-setuptools
+        python3 -m pip install boto3 PyGithub html5lib --break-system-packages
+
+    - name: Setup Conan
+      shell: bash
+      run: |
+        echo "Starting with a clean Conan profile…" && rm ${CONAN_HOME}/profiles/default || true  # Don't fail if missing.
+        conan profile detect -e
+        echo "Printing Conan default profile…" && cat ${CONAN_HOME}/profiles/default
+
+        conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte -f
+        # Use our mirror of Conan Center to avoid rate limiting.
+        conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center
+
+        echo "Starting with a clean Conan global.conf…" && rm ${CONAN_HOME}/global.conf
+        # Try downloading source files from conandata.yml first. Fall back to our backup if the upstream source is down.
+        echo "core.sources:download_urls=['https://artifactory.overte.org/artifactory/build-dependencies-backup/', 'origin']" >> ${CONAN_HOME}/global.conf
+        echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ${CONAN_HOME}/global.conf
+        # Credentials for uploading backups of dependency sources.
+        # source-credentials.json is a jinja template, so os.getenv() happens at runtime.
+        cat > ${CONAN_HOME}/source_credentials.json <<EOF
+        {% set TOKEN = os.getenv('CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN') %}
+        {
+          "credentials": [
+            {% if TOKEN %}
+            {
+            "url": "https://artifactory.overte.org/artifactory/build-dependencies-backup/",
+            "token": "{{TOKEN}}"
+            }
+            {% endif %}
+          ]
+        }
+        EOF
+        echo "Printing Conan global.conf…" && cat ${CONAN_HOME}/global.conf
+        echo "Printing Conan remotes.json…" && cat ${CONAN_HOME}/remotes.json
+        echo "Printing Conan source_credentials.json…" && cat ${CONAN_HOME}/source_credentials.json

@@ -1,7 +1,7 @@
 //
 //  Created by Bradley Austin Davis on 2016/05/26
 //  Copyright 2013-2018 High Fidelity, Inc.
-//  Copyright 2022-2025 Overte e.V.
+//  Copyright 2022-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -17,7 +17,9 @@
 #include <QtCore/QDebug>
 #include <QtPlatformHeaders/QXcbWindowFunctions>
 #include <qpa/qplatformnativeinterface.h>
-#include <QtX11Extras/QX11Info>
+#ifdef Q_OS_LINUX
+    #include <QtX11Extras/QX11Info>
+#endif
 #include <QWidget>
 
 #include "VKWindow.h"

@@ -1,7 +1,7 @@
 #
 #  Created by Bradley Austin Davis on 2018/10/29
 #  Copyright 2018 High Fidelity, Inc.
-#  Copyright 2024 Overte e.V.
+#  Copyright 2024-2026 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -12,7 +12,7 @@ set(TARGET_NAME vk)
 setup_hifi_library(Gui)
 GroupSources(src)
 link_hifi_libraries(shared shaders gl)
-find_package(Qt5Gui)
-include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
+find_package(Qt5 COMPONENTS Core Gui REQUIRED)
+target_link_libraries(${TARGET_NAME} Qt5::GuiPrivate)
 
 target_vulkan()
