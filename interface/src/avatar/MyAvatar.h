@@ -2331,7 +2331,7 @@ signals:
 
     /*@jsdoc
      * Triggered when {@link MyAvatar.standingMode} is changed.
-     * @function MyAvatar.standingMode
+     * @function MyAvatar.standingModeChanged
      * @param {MyAvatar.StandingMode} mode
      * @returns {Signal}
      */
