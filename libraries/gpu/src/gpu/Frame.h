@@ -30,17 +30,18 @@ namespace gpu {
 
         StereoState stereoState;
         uint32_t frameIndex{ 0 };
-        /// The view matrix used for rendering the frame, only applicable for HMDs
+        // TODO: view doesn't seem to be used anywhere?
+        /// The view matrix used for rendering the frame, only applicable for HMDs.
         Mat4 view;
-        /// The sensor pose used for rendering the frame, only applicable for HMDs
+        /// The sensor pose used for rendering the frame, only applicable for HMDs.
         Mat4 pose;
-        /// The collection of batches which make up the frame
+        /// The collection of batches which make up the frame.
         Batches batches;
         /// The main thread updates to buffers that are applicable for this frame.
         BufferUpdates bufferUpdates;
-        /// The destination framebuffer in which the results will be placed
+        /// The destination framebuffer in which the results will be placed.
         FramebufferPointer framebuffer;
-        /// How to process the framebuffer when the frame dies.  MUST BE THREAD SAFE
+        /// How to process the framebuffer when the frame dies.  MUST BE THREAD SAFE.
         FramebufferRecycler framebufferRecycler;
 
         std::queue<std::tuple<std::function<void(const QImage&)>, float, bool>> snapshotOperators;
@@ -48,8 +49,18 @@ namespace gpu {
     protected:
         friend class Deserializer;
 
-        // Should be called once per frame, on the recording thred
+        /**
+         * @brief Finalize the frame after all the draw call commands have been collected.
+         *
+         * Should be called once per frame, on the recording thread.
+         * Applies all the named calls to the end of the batch (for instancing) and prepares updates for the render shadow copies of the buffers.
+         */
         void finish();
+
+        /**
+         * @brief Applies buffer updates for this frame.
+         * Called by `Context::consumeFrameUpdates` on the Present thread (which does the rendering).
+         */
         void preRender();
     };
 
