@@ -237,10 +237,7 @@ public:
      * @return data of the voxel.
      */
     VoxelType getVoxelAt(const glm::ivec3& index) {
-        if (isInside(index)) {
-            qCritical() << "index not inside of valid_size (" << valid_size << ") allocated_size (" << allocated_size << ")";
-            Q_ASSERT(false);
-        }
+        Q_ASSERT(isInside(index));
         if (glm::any(glm::greaterThanEqual(index, allocated_size)))
             return 0;
         return raw_data[getRawIndexFor(index)];
@@ -883,7 +880,7 @@ public:
         vecVertices.clear();
 
         auto valid_size = vol->getSize();
-        loop3(glm::ivec3(0), valid_size - glm::ivec3(-2), [this, valid_size](glm::ivec3 index) {
+        loop3(glm::ivec3(0), valid_size - glm::ivec3(1), [this, valid_size](glm::ivec3 index) {
             const auto i0 = index;
             const auto i1 = index + glm::ivec3(1, 0, 0);
             const auto i2 = index + glm::ivec3(1, 0, 1);
