@@ -145,8 +145,8 @@ void addPlumberPipeline(ShapePlumber& plumber,
             }
             if (isBiased) {
                 builder.withDepthBias();
-                state->setDepthBias(1.0f);
-                state->setDepthBiasSlopeScale(1.0f);
+                state->setDepthBias(-1.0f);
+                state->setDepthBiasSlopeScale(-1.0f);
             }
 
             auto baseBatchSetter = (forceLightBatchSetter || key.isTranslucent() || key.isMToon()) ? &lightBatchSetter : &batchSetter;
