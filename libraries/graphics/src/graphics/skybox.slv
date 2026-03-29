@@ -14,9 +14,10 @@
 <@include gpu/Transform.slh@>
 <$declareStandardTransform()$>
 
-OUTPUT(0, vec3, _normal);
+OUTPUT(0, vec3, _skyUV);
+OUTPUT(1, vec3, _normalWS);
 <@if not HIFI_USE_FORWARD@>
-    OUTPUT(1, vec4, _prevPositionCS);
+    OUTPUT(2, vec4, _prevPositionCS);
 <@endif@>
 
 void main(void) {
@@ -39,10 +40,13 @@ void main(void) {
 
     // standard transform
     TransformCamera cam = getTransformCamera();
+    TransformObject obj = getTransformObject();
     vec3 clipDir = UNIT_QUAD[gl_VertexID].xyz;
     vec3 eyeDir;
     <$transformClipToEyeDir(cam, clipDir, eyeDir)$>
-    <$transformEyeToWorldDir(cam, eyeDir, _normal)$>
+    <$transformEyeToWorldDir(cam, eyeDir, _normalWS)$>
+
+    _skyUV = mat3(obj._model) * _normalWS;
 
 <@if not HIFI_USE_FORWARD@>
     // FIXME: this is probably wrong
