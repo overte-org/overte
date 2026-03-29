@@ -237,7 +237,10 @@ public:
      * @return data of the voxel.
      */
     VoxelType getVoxelAt(const glm::ivec3& index) {
-        Q_ASSERT(isInside(index));
+        if (isInside(index)) {
+            qCritical() << "index not inside of valid_size (" << valid_size << ") allocated_size (" << allocated_size << ")";
+            Q_ASSERT(false);
+        }
         if (glm::any(glm::greaterThanEqual(index, allocated_size)))
             return 0;
         return raw_data[getRawIndexFor(index)];
