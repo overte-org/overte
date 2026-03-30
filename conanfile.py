@@ -86,6 +86,8 @@ class Overte(ConanFile):
         self.requires("zlib/1.3.1")
         self.requires("glm/0.9.9.5", force=True) # FIXME: update to version 1.0.1
         self.requires("jsoncpp/1.9.6", force=True)
+        self.requires("libiconv/1.18", force=True)
+
         openssl = "openssl/1.1.1q"
 
         if self.options.qt_source == "system":
