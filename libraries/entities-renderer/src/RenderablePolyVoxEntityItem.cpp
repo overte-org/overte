@@ -981,9 +981,9 @@ public:
 
                 for (size_t j = i + 1; j < vertSize; j++) {
                     auto& vert2 = vecVertices[j];
-                    Q_ASSERT(!already_seen[j]);
                     if (glm::distance(vert2.position, vert.position) < 0.001f) {
                         same_position.insert(j);
+                        Q_ASSERT(!already_seen[j]);
                         already_seen[j] = true;
                         normal_sum += vert2.normal;
                         num_sums++;
