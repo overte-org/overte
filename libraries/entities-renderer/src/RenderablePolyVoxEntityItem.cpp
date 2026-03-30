@@ -14,6 +14,7 @@
 #include "RenderablePolyVoxEntityItem.h"
 
 #include <math.h>
+#include <algorithm>
 #include <numeric>
 #include <cstdint>
 #include <optional>
@@ -958,6 +959,55 @@ public:
                 addTriangleCubic(id1, id2, id3);
             }
         });
+
+        // deduplicate vertices and enable smooth shading by getting the mean of the normals
+        {
+            std::vector<PositionNormalMaterial> new_vertices{};
+            std::vector<bool> already_seen(vecVertices.size(), false);
+
+            std::unordered_set<uint32_t> same_position{};
+
+            auto vertSize = vecVertices.size();
+            for (size_t i = 0; i < vertSize; i++) {
+                if (already_seen[i])
+                    continue;
+
+                auto& vert = vecVertices[i];
+                same_position.clear();
+                same_position.insert(i);
+
+                auto normal_sum = glm::vec3(0);
+                uint32_t num_sums = 0;
+
+                for (size_t j = i + 1; j < vertSize; j++) {
+                    auto& vert2 = vecVertices[j];
+                    Q_ASSERT(!already_seen[j]);
+                    if (glm::distance(vert2.position, vert.position) < 0.001f) {
+                        same_position.insert(j);
+                        already_seen[j] = true;
+                        normal_sum += vert2.normal;
+                        num_sums++;
+                    }
+                }
+
+                normal_sum /= glm::vec3(num_sums);
+
+                new_vertices.emplace_back(vert.position, normal_sum, vert.material);
+                uint32_t new_ind = new_vertices.size() - 1;
+
+                std::for_each(vecIndices.begin(), vecIndices.end(), [&](auto& ind) {
+                    if (same_position.contains(ind))
+                        ind = new_ind;
+                });
+            }
+
+            vertSize = new_vertices.size();
+            Q_ASSERT(vertSize <= vecVertices.size());
+            Q_ASSERT(std::ranges::all_of(vecIndices, [&](auto ind) { return ind < vertSize; }));
+
+            vecVertices.swap(new_vertices);
+        }
+
         graphics::MeshPointer mesh(std::make_shared<graphics::Mesh>());
 
         // convert PolyVox mesh to a Sam mesh
