@@ -22,7 +22,7 @@ const float RingGizmoPropertyGroup::MIN_RADIUS = 0.0f;
 const float RingGizmoPropertyGroup::MAX_RADIUS = 0.5f;
 
 void RingGizmoPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
-        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, AvatarEntityOwnership ownership) const {
 
 @Ring_GROUP_COPY_TO_SCRIPT@
 

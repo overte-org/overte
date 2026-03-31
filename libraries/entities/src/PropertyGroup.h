@@ -17,6 +17,7 @@
 #include <OctreeElement.h>
 
 #include "EntityPropertyFlags.h"
+#include "EntityItemPropertiesMacros.h"
 
 
 class EntityItemProperties;
@@ -35,7 +36,7 @@ public:
 
     // EntityItemProperty related helpers
     virtual void copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine, bool skipDefaults,
-        EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const = 0;
+        EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, AvatarEntityOwnership ownership) const = 0;
     virtual void copyFromScriptValue(const ScriptValue& object, const QSet<QString> &namesSet, bool& _defaultSettings) = 0;
     virtual void debugDump() const { }
     virtual void listChangedProperties(QList<QString>& out) { }
