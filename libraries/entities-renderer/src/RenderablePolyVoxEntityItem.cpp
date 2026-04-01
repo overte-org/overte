@@ -874,14 +874,15 @@ private:
 // code example: http://www.paulbourke.net/geometry/polygonise/marchingsource.cpp
 class MarchingCubesSurfaceExtractor : public SurfaceExtractor {
 public:
-    inline MarchingCubesSurfaceExtractor(std::shared_ptr<VoxelVolume> vol) : SurfaceExtractor(vol) {}
+    inline MarchingCubesSurfaceExtractor(std::shared_ptr<VoxelVolume> vol, glm::bvec3 upper_edge_connect) :
+        SurfaceExtractor(vol), upperEdgeConnect(upper_edge_connect) {}
 
     graphics::MeshPointer createMesh() override {
         vecIndices.clear();
         vecVertices.clear();
 
         auto valid_size = vol->getSize();
-        loop3(glm::ivec3(0), valid_size - glm::ivec3(1), [this, valid_size](glm::ivec3 index) {
+        loop3(glm::ivec3(0), valid_size - glm::ivec3(1) + glm::ivec3(upperEdgeConnect), [this, valid_size](glm::ivec3 index) {
             const auto i0 = index;
             const auto i1 = index + glm::ivec3(1, 0, 0);
             const auto i2 = index + glm::ivec3(1, 0, 1);
@@ -891,14 +892,21 @@ public:
             const auto i6 = index + glm::ivec3(1, 1, 1);
             const auto i7 = index + glm::ivec3(0, 1, 1);
 
+            auto getVox = [&](const glm::ivec3& ind, VoxelType fallbackX, VoxelType fallbackY, VoxelType fallbackZ) {
+                auto outside = glm::greaterThanEqual(ind, valid_size);
+                if (!glm::any(outside))
+                    return vol->getVoxelAt(ind);
+                return outside.x ? fallbackX : outside.y ? fallbackY : fallbackZ;
+            };
+
             const auto v0 = vol->getVoxelAt(i0);
-            const auto v1 = vol->getVoxelAt(i1);
-            const auto v2 = vol->getVoxelAt(i2);
-            const auto v3 = vol->getVoxelAt(i3);
-            const auto v4 = vol->getVoxelAt(i4);
-            const auto v5 = vol->getVoxelAt(i5);
-            const auto v6 = vol->getVoxelAt(i6);
-            const auto v7 = vol->getVoxelAt(i7);
+            const auto v1 = getVox(i1, v0, v0, v0);
+            const auto v3 = getVox(i3, v0, v0, v0);
+            const auto v4 = getVox(i4, v0, v0, v0);
+            const auto v2 = getVox(i2, v3, v0, v1);
+            const auto v5 = getVox(i5, v4, v1, v0);
+            const auto v7 = getVox(i7, v0, v3, v4);
+            const auto v6 = getVox(i6, v7, v2, v5);
 
             uint8_t cubeindex = 0;
             if (v0 != 0)
@@ -1055,6 +1063,7 @@ private:
 
     std::vector<PositionNormalMaterial> vecVertices;
     std::vector<uint32_t> vecIndices;
+    glm::bvec3 upperEdgeConnect;
 };
 
 }  // namespace
@@ -2093,7 +2102,7 @@ void RenderablePolyVoxEntityItem::recomputeMesh() {
 
     auto entity = std::static_pointer_cast<RenderablePolyVoxEntityItem>(getThisPointer());
 
-    QtConcurrent::run([entity, voxelSurfaceStyle] {
+    QtConcurrent::run([this, entity, voxelSurfaceStyle] {
         graphics::MeshPointer mesh;
 
         entity->withReadLock([&] {
@@ -2102,7 +2111,9 @@ void RenderablePolyVoxEntityItem::recomputeMesh() {
             switch (voxelSurfaceStyle) {
                 case PolyVoxEntityItem::SURFACE_EDGED_MARCHING_CUBES:
                 case PolyVoxEntityItem::SURFACE_MARCHING_CUBES: {
-                    extractor.reset(new MarchingCubesSurfaceExtractor(volData));
+                    extractor.reset(new MarchingCubesSurfaceExtractor(volData, glm::bvec3(!_xPNeighborID.isInvalidID(),
+                                                                                          !_yPNeighborID.isInvalidID(),
+                                                                                          !_zPNeighborID.isInvalidID())));
                     break;
                 }
                 case PolyVoxEntityItem::SURFACE_EDGED_CUBIC:
