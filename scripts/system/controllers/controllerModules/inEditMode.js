@@ -1,4 +1,4 @@
-"no use strict";
+"use strict";
 
 //  inEditMode.js
 //
