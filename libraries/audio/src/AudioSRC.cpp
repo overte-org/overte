@@ -17,6 +17,8 @@
 
 #include "AudioSRCData.h"
 
+#define AUDIO_PAN_LEVEL 6.0f
+
 #ifndef MAX
 #define MAX(a,b)  (((a) > (b)) ? (a) : (b))
 #endif
@@ -963,6 +965,8 @@ void AudioSRC::convertOutput(float** inputs, int16_t* output, int numFrames) {
 
     } else if (_numChannels == 2) {
 
+        __m128 d10 = _mm_set1_ps(AUDIO_PAN_LEVEL);
+        __m128 m9 = _mm_set1_ps((AUDIO_PAN_LEVEL-1) / AUDIO_PAN_LEVEL);
         int i = 0;
         for (; i < numFrames - 3; i += 4) {
             __m128 f0 = _mm_mul_ps(_mm_loadu_ps(&inputs[0][i]), scale);
@@ -971,6 +975,12 @@ void AudioSRC::convertOutput(float** inputs, int16_t* output, int numFrames) {
             __m128 d0 = dither4();
             f0 = _mm_add_ps(f0, d0);
             f1 = _mm_add_ps(f1, d0);
+
+            // pan left and right slightly to make headphones less painful to use
+            __m128 t0 = f0;
+            __m128 t1 = f1;
+            f0 = _mm_add_ps(_mm_mul_ps(t0, m9), _mm_div_ps(t1, d10));
+            f1 = _mm_add_ps(_mm_mul_ps(t1, m9), _mm_div_ps(t0, d10));
 
             // round and saturate
             __m128i a0 = _mm_cvtps_epi32(f0);
@@ -1242,6 +1252,12 @@ void AudioSRC::convertOutput(float** inputs, int16_t* output, int numFrames) {
             float d = dither();
             f0 += d;
             f1 += d;
+
+            // pan left and right slightly to make headphones less painful to use
+            __m128 t0 = f0;
+            __m128 t1 = f1;
+            f0 = t0 * ((AUDIO_PAN_LEVEL-1) / AUDIO_PAN_LEVEL) + t1 / AUDIO_PAN_LEVEL;
+            f1 = t1 * ((AUDIO_PAN_LEVEL-1) / AUDIO_PAN_LEVEL) + t0 / AUDIO_PAN_LEVEL;
 
             // round and saturate
             f0 += (f0 < 0.0f ? -0.5f : +0.5f);
