@@ -63,22 +63,6 @@ void Socket::bind(SocketType socketType, const QHostAddress& address, quint16 po
 
     if (_shouldChangeSocketOptions) {
         setSystemBufferSizes(socketType);
-        if (socketType == SocketType::WebRTC) {
-            return;
-        }
-
-#if defined(Q_OS_LINUX)
-        auto sd = _networkSocket.socketDescriptor(socketType);
-        int val = IP_PMTUDISC_DONT;
-        setsockopt(sd, IPPROTO_IP, IP_MTU_DISCOVER, &val, sizeof(val));
-#elif defined(Q_OS_WIN)
-        auto sd = _networkSocket.socketDescriptor(socketType);
-        int val = 0; // false
-        if (setsockopt(sd, IPPROTO_IP, IP_DONTFRAGMENT, (const char *)&val, sizeof(val))) {
-            auto wsaErr = WSAGetLastError();
-            qCWarning(networking) << "Socket::bind Cannot setsockopt IP_DONTFRAGMENT" << wsaErr;
-        }
-#endif
     }
 }
 
