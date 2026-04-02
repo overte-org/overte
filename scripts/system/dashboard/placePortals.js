@@ -27,17 +27,19 @@ const ROOT_DEFAULT_PROPS = {
 
 const VISUAL_DEFAULT_PROPS = {
     type: "ParticleEffect",
+    grab: { grabbable: false },
+    ignorePickIntersection: true,
     // FIXME: why is this oriented weird?
     emitDimensions: [0.5, 0.5, 1.5],
-    textures: Script.resolvePath("./places/icons/portalFX.png"),
+    textures: Script.resolvePath("../places/icons/portalFX.png"),
     emitRate: 100,
     lifespan: 3,
     maxParticles: 500,
     polarStart: 0,
     polarFinish: Math.PI,
     emitAcceleration: [0, 0, 0],
-    radiusStart: 1.0,
-    particleRadius: 0.5,
+    radiusStart: 0.5,
+    particleRadius: 0.4,
     radiusFinish: 0.3,
     alphaStart: 0.1,
     alpha: 0.1,
@@ -47,6 +49,7 @@ const VISUAL_DEFAULT_PROPS = {
     colorStart: [255, 0, 0],
     color: [255, 0, 0],
     colorFinish: [255, 255, 255],
+    spinSpread: Math.PI * 2,
 };
 
 const TITLE_DEFAULT_PROPS = {
@@ -66,15 +69,18 @@ const TITLE_DEFAULT_PROPS = {
     alignment: "center",
 };
 
-// key is the UUID of the collider,
-// value is {
-//   titleEntity: UUID,
-//   visualEntity: UUID,
-//   placeUrl: string,
-//   onTick: function,
-//   lifetime: int,
-//   tickInterval: setInterval,
-// }
+/**
+ * @typedef {object} PortalInfo
+ * @property {Uuid} titleEntity
+ * @property {Uuid} visualEntity
+ * @property {string} placeUrl
+ * @property {function} onTick
+ * @property {number} lifetime
+ * @property {*} tickInterval
+ */
+/**
+ * @type {Map<Uuid, PortalInfo>}
+ */
 let portalInfo = new Map();
 
 function deleteAllPortals() {
@@ -154,8 +160,16 @@ function createPortal(placeName, placeUrl, position) {
                 Script.clearInterval(this.tickInterval);
 
                 Entities.deleteEntity(this.titleEntity);
-                Entities.deleteEntity(this.visualEntity);
-                Entities.deleteEntity(this.rootEntity);
+
+                // let the particles fade out on their own
+                Entities.editEntity(this.visualEntity, { isEmitting: false });
+                Entities.editEntity(this.rootEntity, { script: "" });
+
+                const rootEntity = this.rootEntity;
+                Script.setTimeout(
+                    () => Entities.deleteEntity(rootEntity),
+                    1000 * VISUAL_DEFAULT_PROPS.lifespan
+                );
             }
         },
     };

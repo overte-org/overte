@@ -401,6 +401,8 @@ signals:
 
     void menuBarVisibilityChanged(bool visible);
 
+    void keyboardFocusEntityChanged(const QUuid& uuid);
+
 public slots:
     void updateThreadPoolCount() const;
 

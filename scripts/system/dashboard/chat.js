@@ -10,25 +10,52 @@
 //  SPDX-License-Identifier: Apache-2.0
 "use strict";
 
-const EVENT_LOG_SETTING = "chat/eventsLog";
-let eventLog = Settings.getValue(EVENT_LOG_SETTING, []);
+const { DashWindow, DashButton } = require("dashIPC");
 
-function sendLoggedEventToQml(data) {
-    // only send it the event if the window exists
-    if (appWindow) {
-        appWindow.sendToQml(JSON.stringify(data));
-    }
-    eventLog.push(data);
-    Settings.setValue(EVENT_LOG_SETTING, eventLog);
-}
-
-const SystemTablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+const CHAT_QML_URL = `${Script.resourcesPath()}qml/overte/chat/Chat.qml`;
 
 let settings = Settings.getValue("Chat", {
     joinNotifications: true,
     broadcastEnabled: false,
     chatBubbles: true,
     desktopWindow: false,
+});
+
+const EVENT_LOG_SETTING = "chat/eventsLog";
+let eventLog = Settings.getValue(EVENT_LOG_SETTING, []);
+
+function sendLoggedEventToQml(data) {
+    // only send it the event if the window exists
+    if (settings.desktopWindow) {
+        desktopWindow?.sendToQml(JSON.stringify(data));
+    } else {
+        dashWindow?.sendEvent(JSON.stringify(data));
+    }
+
+    eventLog.push(data);
+    Settings.setValue(EVENT_LOG_SETTING, eventLog);
+}
+
+const appButton = new DashButton({
+    // TODO: translation support in JS
+    text: "Chat",
+    system: true,
+    icons: `${Script.resourcesPath()}qml/overte/icons/chat.png`,
+    order: 0,
+});
+
+let dashWindow = null;
+let desktopWindow = null;
+
+appButton.clicked.connect(() => {
+    if (appButton.active) {
+        dashWindow?.close();
+        desktopWindow?.close();
+        appButton.active = false;
+    } else {
+        recreateWindow();
+        appButton.active = true;
+    }
 });
 
 function updateSetting(name, value) {
@@ -47,11 +74,15 @@ function updateSetting(name, value) {
             break;
 
         case "desktop_window":
-            settings.desktopWindow = value;
-            // FIXME: this sometimes leaves an empty ghost window on the overlay?
-            appWindow.presentationMode = value ?
-                Desktop.PresentationMode.NATIVE :
-                Desktop.PresentationMode.VIRTUAL;
+            if (settings.desktopWindow != value) {
+                if (settings.desktopWindow) {
+                    desktopWindow?.close();
+                } else {
+                    dashWindow?.close();
+                }
+                settings.desktopWindow = value;
+                recreateWindow();
+            }
             break;
     }
 
@@ -59,11 +90,21 @@ function updateSetting(name, value) {
 }
 
 function sendInitialSettings() {
-    const send = (name, value) => appWindow.sendToQml(JSON.stringify({
-        event: "change_setting",
-        name: name,
-        value: value,
-    }));
+    let send;
+
+    if (settings.desktopWindow) {
+        send = (name, value) => desktopWindow.sendToQml(JSON.stringify({
+            event: "change_setting",
+            name: name,
+            value: value,
+        }));
+    } else {
+        send = (name, value) => dashWindow.sendEvent(JSON.stringify({
+            event: "change_setting",
+            name: name,
+            value: value,
+        }));
+    }
 
     send("join_notify", settings.joinNotifications);
     send("broadcast", settings.broadcastEnabled);
@@ -110,59 +151,43 @@ function appWindowFromQml(rawMsg) {
     }
 }
 
-function recreateAppWindow() {
-    appWindow = Desktop.createWindow(
-        `${Script.resourcesPath()}qml/overte/chat/Chat.qml`,
-        {
-            // TODO: translation support in JS
+const deactivateOnClosed = () => { appButton.active = false; };
+
+function recreateWindow() {
+    if (settings.desktopWindow) {
+        dashWindow?.closed?.disconnect(deactivateOnClosed);
+        dashWindow?.close();
+
+        desktopWindow = Desktop.createWindow(
+            CHAT_QML_URL,
+            {
+                // TODO: translation support in JS
+                title: "Chat",
+                size: { x: 550, y: 400 },
+                presentationMode: Desktop.PresentationMode.NATIVE,
+                additionalFlags: Desktop.ALWAYS_ON_TOP,
+            }
+        );
+        desktopWindow.fromQml.connect(appWindowFromQml);
+        desktopWindow.closed.connect(deactivateOnClosed);
+        sendInitialSettings();
+    } else {
+        desktopWindow?.closed?.disconnect(deactivateOnClosed);
+        desktopWindow?.close();
+
+        dashWindow = new DashWindow({
             title: "Chat",
-            size: { x: 550, y: 400 },
-            presentationMode: settings.desktopWindow ?
-                Desktop.PresentationMode.NATIVE :
-                Desktop.PresentationMode.VIRTUAL,
-            additionalFlags: Desktop.ALWAYS_ON_TOP,
-        }
-    );
+            sourceURL: CHAT_QML_URL,
+            dimensions: { x: 0.5, y: 0.45, z: 0 },
+        });
 
-    // FIXME: CLOSE_BUTTON_HIDES doesn't work with desktop windows
-    appWindow.closed.connect(() => {
-        appButton.buttonData.isActive = false;
-        appButton.button.editProperties({ isActive: false });
-        appWindow = undefined;
-    });
+        dashWindow.eventReceived.connect(appWindowFromQml);
+        dashWindow.closed.connect(deactivateOnClosed);
+        sendInitialSettings();
+    }
 
-    appWindow.fromQml.connect(appWindowFromQml);
-
-    sendInitialSettings();
+    appButton.active = true;
 }
-
-const appButton = {
-    buttonData: {
-        isActive: false,
-        sortOrder: 6,
-        icon: "icons/tablet-icons/chat-i.svg",
-        activeIcon: "icons/tablet-icons/chat-a.svg",
-
-        // TODO: translation support in JS
-        text: "CHAT",
-    },
-
-    button: null,
-
-    onClicked() {
-        this.buttonData.isActive = !this.buttonData.isActive;
-        this.button.editProperties({ isActive: this.buttonData.isActive });
-
-        if (!appWindow) { recreateAppWindow(); }
-
-        appWindow.visible = this.buttonData.isActive;
-    },
-};
-
-let appWindow;
-
-appButton.button = SystemTablet.addButton(appButton.buttonData);
-appButton.button.clicked.connect(() => appButton.onClicked());
 
 Messages.subscribe("chat");
 Messages.subscribe("Chat-Typing");
@@ -179,12 +204,16 @@ Messages.messageReceived.connect((channel, rawMsg, senderID, _localOnly) => {
     } else if (channel === "Chat-Typing") {
         const avatar = AvatarManager.getAvatar(senderID);
         const msg = JSON.parse(rawMsg);
-        if (appWindow) {
-            appWindow.sendToQml(JSON.stringify({
-                event: msg.action === "typing_start" ? "start_typing" : "end_typing",
-                name: avatar.sessionDisplayName ? avatar.sessionDisplayName : avatar.displayName,
-                uuid: senderID,
-            }));
+        const event = {
+            event: msg.action === "typing_start" ? "start_typing" : "end_typing",
+            name: avatar.sessionDisplayName ? avatar.sessionDisplayName : avatar.displayName,
+            uuid: senderID,
+        };
+
+        if (settings.desktopWindow) {
+            desktopWindow?.sendToQml(JSON.stringify(event));
+        } else {
+            dashWindow?.sendEvent(JSON.stringify(event));
         }
     }
 });
@@ -221,5 +250,5 @@ AvatarManager.avatarRemovedEvent.connect(uuid => {
 });
 
 Script.scriptEnding.connect(() => {
-    SystemTablet.removeButton(appButton.button);
+    appButton.dispose();
 });
