@@ -33,6 +33,21 @@ Item {
         }
     }
 
+    onSourceChanged: {
+        let path = (new URL(root.source)).pathname;
+
+        if (path.endsWith(".qml")) {
+            loader.source = root.source;
+        } else {
+            loader.setSource(
+                "../../controls/FlickableWebViewCore.qml",
+                {
+                    url: root.source,
+                }
+            );
+        }
+    }
+
     function readEvent(event) {
         switch (event.event) {
             case "set_props": {
@@ -246,7 +261,6 @@ Item {
             anchors.margins: Math.max(parent.radius, parent.border.width)
 
             id: loader
-            source: root.source
             clip: true
         }
 
