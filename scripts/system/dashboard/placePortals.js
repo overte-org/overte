@@ -31,7 +31,7 @@ const VISUAL_DEFAULT_PROPS = {
     ignorePickIntersection: true,
     // FIXME: why is this oriented weird?
     emitDimensions: [0.5, 0.5, 1.5],
-    textures: Script.resolvePath("./places/icons/portalFX.png"),
+    textures: Script.resolvePath("../places/icons/portalFX.png"),
     emitRate: 100,
     lifespan: 3,
     maxParticles: 500,

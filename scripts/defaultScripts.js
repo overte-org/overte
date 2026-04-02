@@ -33,9 +33,10 @@ var DEFAULT_SCRIPTS_COMBINED = [
     //"developer/debugging/scriptMemoryReport.js"
 ];
 var DEFAULT_SCRIPTS_SEPARATE = [
-    "system/systemApps.js",
-    "system/chat.js",
-    "system/placePortals.js",
+    "system/dashboard/dashboard.js",
+    "system/dashboard/systemApps.js",
+    "system/dashboard/placePortals.js",
+    "system/dashboard/chat.js",
     "system/controllers/controllerScripts.js",
     "system/controllers/squeezeHands.js",
     "simplifiedUI/ui/simplifiedNametag/simplifiedNametag.js",

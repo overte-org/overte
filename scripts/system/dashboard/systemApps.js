@@ -159,12 +159,12 @@ const SYSTEM_APPS = {
             // TODO: new icon
             icons: {
                 dark: {
-                    idle: Script.resolvePath("./more/appicon_i.png"),
-                    active: Script.resolvePath("./more/appicon_i.png"),
+                    idle: Script.resolvePath("../more/appicon_i.png"),
+                    active: Script.resolvePath("../more/appicon_i.png"),
                 },
                 light: {
-                    idle: Script.resolvePath("./more/appicon_a.png"),
-                    active: Script.resolvePath("./more/appicon_i.png"),
+                    idle: Script.resolvePath("../more/appicon_a.png"),
+                    active: Script.resolvePath("../more/appicon_i.png"),
                 },
             },
             order: 1000,
