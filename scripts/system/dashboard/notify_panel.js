@@ -56,7 +56,7 @@ class NotifyPanel {
             parentID: MyAvatar.SELF_ID,
             ignorePickIntersection: true,
             grab: { grabbable: false },
-            localDimensions: vec3(0.3, 0.4, 0),
+            localDimensions: Defs.notifyPanelDimensions,
             dpi: Defs.scaleHackInv(Defs.notifyPanelDPI),
             sourceUrl: Defs.notifyPanelQmlURL,
             maxFPS: 90,
@@ -74,15 +74,17 @@ class NotifyPanel {
             // vr mode
             Entities.editEntity(this.entityID, {
                 parentJointIndex: Defs.sensorToWorldJoint,
+                localDimensions: Defs.notifyPanelDimensions,
             });
         } else {
             // desktop mode
             this.#position = vec3(0.0, -0.2, -0.6);
             this.#rotation = Quaternion.IDENTITY;
             Entities.editEntity(this.entityID, {
-                localPosition: this.#position,
+                localPosition: this.#position.multiply(MyAvatar.sensorToWorldScale),
                 localRotation: this.#rotation,
                 parentJointIndex: Defs.cameraJoint,
+                localDimensions: vec3(Defs.notifyPanelDimensions).multiply(MyAvatar.sensorToWorldScale),
             });
         }
     }
@@ -162,9 +164,22 @@ class NotifyPanel {
         Entities.deleteEntity(this.entityID);
     }
 
-    #scaleCallback = () => Entities.editEntity(this.entityID, {
-        dpi: Defs.scaleHackInv(Defs.notifyPanelDPI),
-    });
+    #scaleCallback = () => {
+        let props = {
+            dpi: Defs.scaleHackInv(Defs.notifyPanelDPI),
+        };
+
+        if (this.#floating) {
+            props.localPosition = this.#position;
+            props.localDimensions = Defs.notifyPanelDimensions;
+        } else {
+            // FIXME: The camera joint doesn't have 1x scale like the sensor-to-world joint does
+            props.localPosition = this.#position.multiply(MyAvatar.sensorToWorldScale);
+            props.localDimensions = vec3(Defs.notifyPanelDimensions).multiply(MyAvatar.sensorToWorldScale);
+        }
+
+        Entities.editEntity(this.entityID, props);
+    };
 }
 
 module.exports = { NotifyPanel };

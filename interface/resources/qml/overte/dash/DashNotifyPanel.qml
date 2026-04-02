@@ -87,7 +87,11 @@ Item {
 
             property real dummy: 0
 
-            onExpired: listView.model.remove(index, 1)
+            onExpired: {
+                if (index !== -1) {
+                    listView.model.remove(index, 1);
+                }
+            }
         }
     }
 }

@@ -25,7 +25,7 @@ Rectangle {
         Qt.darker(Overte.Theme.paletteActive.tooltip, Overte.Theme.borderDarker)
     );
 
-    implicitHeight: imageSource === "" ? 64 : 320
+    implicitHeight: imageSource === "" ? 64 : 220
     implicitWidth: 480
 
     required property int index

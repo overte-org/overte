@@ -102,6 +102,13 @@ module.exports = {
     notifyPanelDPI: 30,
 
     /**
+     * The dimensions the notification panel will have.
+     * @readonly
+     * @type {Vector3}
+     */
+    notifyPanelDimensions: { x: 0.3, y: 0.4, z: 0.0 },
+
+    /**
      * A URL to DashNotifyPanel.qml.
      * @readonly
      * @type {string}
