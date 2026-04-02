@@ -332,7 +332,7 @@ Item {
                 icon.source: "../icons/pin.png"
                 icon.width: 24
                 icon.height: 24
-                icon.color: Overte.Theme.highContrast ? Overte.Theme.paletteActive.buttonText : undefined
+                icon.color: Overte.Theme.highContrast ? Overte.Theme.paletteActive.buttonText : "transparent"
                 backgroundColor: (
                     checked ?
                     Overte.Theme.paletteActive.buttonFavorite :

@@ -39,6 +39,7 @@ Item {
             checked: false
 
             icon.source: "../icons/delete.svg"
+            icon.color: "transparent"
             icon.width: 40
             icon.height: 40
 

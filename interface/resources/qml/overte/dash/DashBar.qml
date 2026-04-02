@@ -136,7 +136,7 @@ Item {
 
         Overte.RoundButton {
             icon.source: "../icons/settings_cog.svg"
-            icon.color: undefined
+            icon.color: "transparent"
             icon.width: 24
             icon.height: 24
 
@@ -214,7 +214,6 @@ Item {
                     checked: modelData.active
                     text: modelData.text
 
-                    icon.color: undefined
                     icon.source: {
                         let icon = modelData.icons;
 
@@ -397,7 +396,7 @@ Item {
                 }
                 icon.width: 64
                 icon.height: 64
-                icon.color: undefined //Overte.Theme.paletteActive.buttonText
+                icon.color: "transparent"
 
                 display: Button.TextUnderIcon
                 focusPolicy: Qt.NoFocus
