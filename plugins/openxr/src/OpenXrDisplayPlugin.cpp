@@ -489,6 +489,8 @@ void OpenXrDisplayPlugin::updatePresentPose() {
         return;
     }
 
+    if (!_context->_isSessionRunning) { return; }
+
     if (_lastFrameState.predictedDisplayTime == 0) { return; }
 
     _context->_lastPredictedDisplayTime = _lastFrameState.predictedDisplayTime;
