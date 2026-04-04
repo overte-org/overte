@@ -2111,9 +2111,9 @@ void RenderablePolyVoxEntityItem::recomputeMesh() {
             switch (voxelSurfaceStyle) {
                 case PolyVoxEntityItem::SURFACE_EDGED_MARCHING_CUBES:
                 case PolyVoxEntityItem::SURFACE_MARCHING_CUBES: {
-                    extractor.reset(new MarchingCubesSurfaceExtractor(volData, glm::bvec3(!_xPNeighborID.isInvalidID(),
-                                                                                          !_yPNeighborID.isInvalidID(),
-                                                                                          !_zPNeighborID.isInvalidID())));
+                    extractor.reset(
+                        new MarchingCubesSurfaceExtractor(volData, glm::bvec3(!_xPNeighbor.expired(), !_yPNeighbor.expired(),
+                                                                              !_zPNeighbor.expired())));
                     break;
                 }
                 case PolyVoxEntityItem::SURFACE_EDGED_CUBIC:
