@@ -27,6 +27,13 @@
     var messageHistory = Settings.getValue("ArmoredChat-Messages", []) || [];
     var maxLocalDistance = 20; // Maximum range for the local chat
     var palData = AvatarManager.getPalData().data;
+    var notificationOverlay = null;
+    var notificationSound = SoundCache.getSound(Script.resolvePath("sound/click.wav"));
+    var soundInjectorOptions = {
+        localOnly: true,
+        position: MyAvatar.position,
+        volume: 0.04
+    };
     var isTyping = false;
 
     Controller.keyPressEvent.connect(keyPressEvent);
@@ -56,6 +63,11 @@
 
     function startup() {
         tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+
+        // Add the notification area
+        notificationOverlay = new OverlayWindow({
+            source: Script.resolvePath("./Notifications.qml"),
+        });
 
         appButton = tablet.addButton({
             icon: Script.resolvePath("./img/icon_white.png"),
@@ -141,13 +153,7 @@
 
         // Show new message on screen
         if (message.channel !== "local" || !settings.use_chat_bubbles) {
-            Messages.sendLocalMessage(
-                "Floof-Notif",
-                JSON.stringify({
-                    sender: message.displayName,
-                    text: message.message,
-                })
-            );
+            showChatMessageOnOverlay(message.displayName, message.message);
         }
 
         // Save message to history
@@ -295,13 +301,7 @@
 
             // Show new message on screen
             if (settings.join_notification) {
-                Messages.sendLocalMessage(
-                    "Floof-Notif",
-                    JSON.stringify({
-                        sender: displayName,
-                        text: type,
-                    })
-                );
+                showChatMessageOnOverlay(displayName, type);
             }
 
             _emitEvent({ type: "notification", ...message });
@@ -344,6 +344,11 @@
         }));
 
         return timeArray;
+    }
+    function showChatMessageOnOverlay(author, message) {
+        if (!author) author = "anonymous";
+        Audio.playSystemSound(notificationSound);
+        notificationOverlay.sendToQml({ type: "message", author, message });
     }
 
     /**

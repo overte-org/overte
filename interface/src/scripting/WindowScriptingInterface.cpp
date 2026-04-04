@@ -505,8 +505,8 @@ void WindowScriptingInterface::makeConnection(bool success, const QString& userN
     }
 }
 
-void WindowScriptingInterface::displayAnnouncement(const QString& message) {
-    emit announcement(message);
+void WindowScriptingInterface::displayAnnouncement(const QString& message, const QString& details) {
+    emit announcement(message, details);
 }
 
 bool WindowScriptingInterface::isPhysicsEnabled() {
