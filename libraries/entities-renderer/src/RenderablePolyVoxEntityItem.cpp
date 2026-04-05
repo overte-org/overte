@@ -1702,7 +1702,7 @@ void RenderablePolyVoxEntityItem::setVoxelVolumeSize(const glm::vec3& voxelVolum
             // changes how the surface extractor acts -- it becomes impossible to have holes in the
             // generated mesh.  The non _EDGED_ modes will leave holes in the mesh at the edges of the
             // voxel space.
-            size = glm::ivec3(_voxelVolumeSize) + glm::ivec3(1);  // corners are inclusive
+            size = glm::ivec3(_voxelVolumeSize) + glm::ivec3(2);  // corners are inclusive
         } else {
             // these should each have -1 after them, but if we leave layers on the upper-axis faces,
             // they act more like I expect.
