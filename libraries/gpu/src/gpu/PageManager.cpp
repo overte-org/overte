@@ -19,9 +19,6 @@ PageManager& PageManager::operator=(const PageManager& other) {
     return *this;
 }
 
-PageManager::operator bool() const {
-    return (*this)(DIRTY);
-}
 
 bool PageManager::operator()(uint8 desiredFlags) const {
     return (desiredFlags == (_flags & desiredFlags));

@@ -44,7 +44,7 @@ GLShader* GLBackend::compileBackendShader(const Shader& shader, const Shader::Co
     GLShader::ShaderObjects shaderObjects;
     const auto& variants = shader::allVariants();
     Shader::CompilationLogs compilationLogs(variants.size());
-    shader.incrementCompilationAttempt();
+    //shader.incrementCompilationAttempt();
     for (const auto& variant : variants) {
         auto index = static_cast<uint32_t>(variant);
         auto shaderSource = getShaderSource(shader, variant);
@@ -94,7 +94,7 @@ GLShader* GLBackend::compileBackendProgram(const Shader& program, const Shader::
     }
 
     GLShader::ShaderObjects programObjects;
-    program.incrementCompilationAttempt();
+    //program.incrementCompilationAttempt();
     const auto& variants = shader::allVariants();
     Shader::CompilationLogs compilationLogs(variants.size());
 

@@ -72,10 +72,19 @@ struct Descriptor {
     StoragePointer getChunk(uint32_t chunk) const;
 };
 
+/**
+ * @brief Internal function to write serialized frame to file.
+ *
+ * Called by `Serializer::writeFrame`.
+ * @param filename Name of the file to save the frame to.
+ * @param json JSON generated in `Serializer::writeFrame`.
+ * @param binaryBuffer Buffer with binary data for the frame.
+ * @param ktxBuilders Vector of helper objects used to write KTX textures to file.
+ */
 void writeFrame(const std::string& filename,
                 const std::string& json,
                 const Buffer& binaryBuffer,
-                const StorageBuilders& pngBuffers);
+                const StorageBuilders& ktxBuilders);
 
 }  // namespace hfb
 

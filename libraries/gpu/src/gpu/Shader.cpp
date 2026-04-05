@@ -151,10 +151,6 @@ void Shader::setCompilationLogs(const CompilationLogs& logs) const {
     }
 }
 
-void Shader::incrementCompilationAttempt() const {
-    _numCompilationAttempts++;
-}
-
 Shader::Pointer Shader::createVertex(const Source& source) {
     return Pointer(new Shader(VERTEX, source, true));
 }
@@ -182,10 +178,10 @@ Shader::Pointer Shader::createProgram(const Pointer& vertexShader, const Pointer
     return Pointer(new Shader(PROGRAM, vertexShader, nullptr, pixelShader));
 }
 
-// Dynamic program, bypass caching
+/*// Dynamic program, bypass caching
 Shader::Pointer Shader::createProgram(const Pointer& vertexShader, const Pointer& geometryShader, const Pointer& pixelShader) {
     return Pointer(new Shader(PROGRAM, vertexShader, geometryShader, pixelShader));
-}
+}*/
 
 const Shader::Source& Shader::getShaderSource(uint32_t id) {
     return shader::Source::get(id);

@@ -15,12 +15,15 @@
 
 namespace gpu {
 
+/// Buffer and Texture inherits from this class.
 class Resource {
 public:
     using Size = gpu::Size;
     static const Size NOT_ALLOCATED = INVALID_SIZE;
 
-    // The size in bytes of data stored in the resource
+    /**
+     * @return The size in bytes of data stored in the resource.
+     */
     virtual Size getSize() const = 0;
 
     enum Type {
