@@ -16,9 +16,6 @@
 
 #include <QSemaphore>
 
-#include <PolyVoxCore/SimpleVolume.h>
-#include <PolyVoxCore/Raycast.h>
-
 #include <gpu/Forward.h>
 #include <gpu/Context.h>
 #include <graphics/Forward.h>
@@ -30,10 +27,12 @@
 
 namespace render { namespace entities {
 class PolyVoxEntityRenderer;
-} }
+}}  // namespace render::entities
 
+class VoxelVolume;
 
-enum class PolyVoxState {
+enum class PolyVoxState
+{
     Ready,
     Uncompressing,
     UncompressingFinished,
@@ -48,7 +47,6 @@ enum class PolyVoxState {
 };
 
 QDebug operator<<(QDebug debug, PolyVoxState state);
-
 
 class RenderablePolyVoxEntityItem : public PolyVoxEntityItem, public scriptable::ModelProvider {
     friend class render::entities::PolyVoxEntityRenderer;
@@ -70,14 +68,25 @@ public:
     int getOnCount() const override { return _onCount; }
 
     virtual bool supportsDetailedIntersection() const override { return true; }
-    virtual bool findDetailedRayIntersection(const glm::vec3& origin, const glm::vec3& direction,
-                                             const glm::vec3& viewFrustumPos, OctreeElementPointer& element, float& distance,
-                                             BoxFace& face, glm::vec3& surfaceNormal,
-                                             QVariantMap& extraInfo, bool precisionPicking) const override;
-    virtual bool findDetailedParabolaIntersection(const glm::vec3& origin, const glm::vec3& velocity, const vec3& accleration,
-                                                  const glm::vec3& viewFrustumPos, OctreeElementPointer& element,
-                                                  float& parabolicDistance, BoxFace& face, glm::vec3& surfaceNormal,
-                                                  QVariantMap& extraInfo, bool precisionPicking) const override;
+    virtual bool findDetailedRayIntersection(const glm::vec3& origin,
+                                             const glm::vec3& direction,
+                                             const glm::vec3& viewFrustumPos,
+                                             OctreeElementPointer& element,
+                                             float& distance,
+                                             BoxFace& face,
+                                             glm::vec3& surfaceNormal,
+                                             QVariantMap& extraInfo,
+                                             bool precisionPicking) const override;
+    virtual bool findDetailedParabolaIntersection(const glm::vec3& origin,
+                                                  const glm::vec3& velocity,
+                                                  const vec3& accleration,
+                                                  const glm::vec3& viewFrustumPos,
+                                                  OctreeElementPointer& element,
+                                                  float& parabolicDistance,
+                                                  BoxFace& face,
+                                                  glm::vec3& surfaceNormal,
+                                                  QVariantMap& extraInfo,
+                                                  bool precisionPicking) const override;
 
     virtual void setVoxelData(const QByteArray& voxelData) override;
     virtual void setVoxelVolumeSize(const glm::vec3& voxelVolumeSize) override;
@@ -93,8 +102,10 @@ public:
 
     // coords are in world-space
     virtual bool setSphere(const vec3& center, float radius, uint8_t toValue) override;
-    virtual bool setCapsule(const vec3& startWorldCoords, const vec3& endWorldCoords,
-                            float radiusWorldCoords, uint8_t toValue) override;
+    virtual bool setCapsule(const vec3& startWorldCoords,
+                            const vec3& endWorldCoords,
+                            float radiusWorldCoords,
+                            uint8_t toValue) override;
     virtual bool setAll(uint8_t toValue) override;
     virtual bool setCuboid(const vec3& lowPosition, const vec3& cuboidSize, int toValue) override;
 
@@ -121,18 +132,26 @@ public:
 
     void setMesh(graphics::MeshPointer mesh);
     void setCollisionPoints(ShapeInfo::PointCollection points, AABox box);
-    PolyVox::SimpleVolume<uint8_t>* getVolData() { return _volData.get(); }
 
     uint8_t getVoxelInternal(const ivec3& v) const;
     bool setVoxelInternal(const ivec3& v, uint8_t toValue);
     void setVoxelMarkNeighbors(int x, int y, int z, uint8_t toValue);
 
     void compressVolumeDataFinished(const QByteArray& voxelData);
-    void neighborXEdgeChanged() { withWriteLock([&] { _updateFromNeighborXEdge = true; }); startUpdates(); }
-    void neighborYEdgeChanged() { withWriteLock([&] { _updateFromNeighborYEdge = true; }); startUpdates(); }
-    void neighborZEdgeChanged() { withWriteLock([&] { _updateFromNeighborZEdge = true; }); startUpdates(); }
+    void neighborXEdgeChanged() {
+        withWriteLock([&] { _updateFromNeighborXEdge = true; });
+        startUpdates();
+    }
+    void neighborYEdgeChanged() {
+        withWriteLock([&] { _updateFromNeighborYEdge = true; });
+        startUpdates();
+    }
+    void neighborZEdgeChanged() {
+        withWriteLock([&] { _updateFromNeighborZEdge = true; });
+        startUpdates();
+    }
 
-    bool getMeshes(MeshProxyList& result) override; // deprecated
+    bool getMeshes(MeshProxyList& result) override;  // deprecated
     virtual scriptable::ScriptableModelBase getScriptableModel() override;
 
     virtual void update(const quint64& now) override;
@@ -140,7 +159,6 @@ public:
 
 private:
     bool updateOnCount(const ivec3& v, uint8_t toValue);
-    PolyVox::RaycastResult doRayCast(glm::vec4 originInVoxel, glm::vec4 farInVoxel, glm::vec4& result) const;
 
     void changeUpdates(bool value);
     void startUpdates();
@@ -159,33 +177,33 @@ private:
 
     // The PolyVoxEntityItem class has _voxelData which contains dimensions and compressed voxel data.  The dimensions
     // may not match _voxelVolumeSize.
-    bool _meshReady { false }; // do we have something to give scripts that ask for the mesh?
-    bool _voxelDataDirty { false }; // do we need to uncompress data and expand it into _volData?
-    bool _volDataDirty { false }; // does recomputeMesh need to be called?
-    bool _shapeReady { false }; // are we ready to tell bullet our shape?
-    PolyVoxState _state { PolyVoxState::Ready };
-    bool _updateNeeded { true };
+    bool _meshReady{ false };       // do we have something to give scripts that ask for the mesh?
+    bool _voxelDataDirty{ false };  // do we need to uncompress data and expand it into _volData?
+    bool _volDataDirty{ false };    // does recomputeMesh need to be called?
+    bool _shapeReady{ false };      // are we ready to tell bullet our shape?
+    PolyVoxState _state{ PolyVoxState::Ready };
+    bool _updateNeeded{ true };
 
     graphics::MeshPointer _mesh;
 
     ShapeInfo _shapeInfo;
 
-    std::shared_ptr<PolyVox::SimpleVolume<uint8_t>> _volData;
-    int _onCount; // how many non-zero voxels are in _volData
+    std::shared_ptr<VoxelVolume> _volData;
+    int _onCount;  // how many non-zero voxels are in _volData
 
-    bool _neighborXNeedsUpdate { false };
-    bool _neighborYNeedsUpdate { false };
-    bool _neighborZNeedsUpdate { false };
+    bool _neighborXNeedsUpdate{ false };
+    bool _neighborYNeedsUpdate{ false };
+    bool _neighborZNeedsUpdate{ false };
 
-    bool _updateFromNeighborXEdge { false };
-    bool _updateFromNeighborYEdge { false };
-    bool _updateFromNeighborZEdge { false };
+    bool _updateFromNeighborXEdge{ false };
+    bool _updateFromNeighborYEdge{ false };
+    bool _updateFromNeighborZEdge{ false };
 
     // these are cached lookups of _xNNeighborID, _yNNeighborID, _zNNeighborID, _xPNeighborID, _yPNeighborID, _zPNeighborID
-    EntityItemWeakPointer _xNNeighbor; // neighbor found by going along negative X axis
+    EntityItemWeakPointer _xNNeighbor;  // neighbor found by going along negative X axis
     EntityItemWeakPointer _yNNeighbor;
     EntityItemWeakPointer _zNNeighbor;
-    EntityItemWeakPointer _xPNeighbor; // neighbor found by going along positive X axis
+    EntityItemWeakPointer _xPNeighbor;  // neighbor found by going along positive X axis
     EntityItemWeakPointer _yPNeighbor;
     EntityItemWeakPointer _zPNeighbor;
 };
@@ -218,13 +236,12 @@ private:
     glm::mat4 _lastVoxelToLocalMatrix;
     glm::vec3 _position;
     glm::quat _orientation;
-    PolyVoxEntityItem::PolyVoxSurfaceStyle _lastSurfaceStyle { PolyVoxEntityItem::SURFACE_MARCHING_CUBES };
+    PolyVoxEntityItem::PolyVoxSurfaceStyle _lastSurfaceStyle{ PolyVoxEntityItem::SURFACE_MARCHING_CUBES };
     std::array<QString, 3> _xyzTextureUrls;
 
-    gpu::BufferPointer _colorBuffer { std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
+    gpu::BufferPointer _colorBuffer{ std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer) };
 };
 
-} }
+}}  // namespace render::entities
 
-
-#endif // hifi_RenderablePolyVoxEntityItem_h
+#endif  // hifi_RenderablePolyVoxEntityItem_h
