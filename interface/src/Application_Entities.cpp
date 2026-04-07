@@ -190,6 +190,7 @@ void Application::setKeyboardFocusEntity(const QUuid& id) {
         }
 
         _keyboardFocusedEntity.set(id);
+        emit keyboardFocusEntityChanged(id);
 
         auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
         if (id != UNKNOWN_ENTITY_ID) {

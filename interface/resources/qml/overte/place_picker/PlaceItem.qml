@@ -179,6 +179,6 @@ Rectangle {
         icon.height: 24
         icon.color: Overte.Theme.paletteActive.buttonText
 
-        onClicked: placePicker.goToLocation(placeUrl)
+        onClicked: placePicker.goToLocation(placeUrl, item.name)
     }
 }

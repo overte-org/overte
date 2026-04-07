@@ -1,0 +1,9 @@
+module Dash
+DashWindow 1.0 DashWindow.qml
+DashBar 1.0 DashBar.qml
+DashBarButton 1.0 DashBarButton.qml
+DashNotifyPanel 1.0 DashNotifyPanel.qml
+DashNotification 1.0 DashNotification.qml
+
+DevTools 1.0 DevTools.qml
+ScriptLog 1.0 ScriptLog.qml

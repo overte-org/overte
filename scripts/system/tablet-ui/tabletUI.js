@@ -293,7 +293,7 @@
     Messages.subscribe("home");
     Messages.messageReceived.connect(handleMessage);
 
-    var clickMapping = Controller.newMapping('tabletToggle-click');
+    /*var clickMapping = Controller.newMapping('tabletToggle-click');
     var wantsMenu = 0;
     clickMapping.from(function () { return wantsMenu; }).to(Controller.Actions.ContextMenu);
     clickMapping.from(controllerStandard.RightSecondaryThumb).peek().when(Controller.Hardware.Application.LeftHandDominant).to(function (clicked) {
@@ -321,7 +321,7 @@
 
         wantsMenu = clicked;
     });
-    clickMapping.enable();
+    clickMapping.enable();*/
 
     Script.setInterval(updateShowTablet, 100);
 
