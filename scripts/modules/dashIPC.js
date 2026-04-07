@@ -4,12 +4,19 @@
 // SPDX-License-Identifier: Apache-2.0
 "use strict";
 
+if (Script.context !== "client") {
+    throw new Error("dashIPC only works on interface scripts");
+}
+
 const { UserSignal } = require("userSignal");
 
 const IPC_CHANNEL = "System Dashboard IPC";
 
 let _DASH_READY = false;
 
+/**
+ * Allows you to interact with the dashboard UI state.
+ */
 class Dashboard {
     static #DASH_READY = _DASH_READY;
     static #ipcID = Uuid.generate();
@@ -57,14 +64,14 @@ class Dashboard {
         if (msg.ipc_source === "dashboard" && msg.event === "set_dash_property") {
             if (msg.visible !== undefined) {
                 this.#visible = msg.visible;
-                this.visibleChanged.emit();
+                this.visibleChanged.emit(this.#visible);
             }
         }
     };
 
     /**
      * Triggered when the dashboard UI is opened or closed.
-     * @type {UserSignal}
+     * @type {UserSignal<(visible: boolean) => void>}
      */
     static visibleChanged = new UserSignal();
 
@@ -84,6 +91,15 @@ class Dashboard {
     }
 }
 
+/**
+ * An interactive UI window with QML or HTML body content.
+ *
+ * *Note: DashWindows are currently limited to the 3D dashboard.
+ * Access to native desktop windows may be added in a future version.*
+ *
+ * *Note: HTML body content is currently read-only and cannot be interacted with
+ * through {@link DashWindow#eventReceived} or {@link DashWindow#sendEvent}.*
+ */
 class DashWindow {
     /** @type {boolean} */
     #DASH_READY = _DASH_READY;
@@ -104,21 +120,21 @@ class DashWindow {
     /**
      * Emitted when the window content pushes a script event,
      * typically as a JSON string.
-     * @type {UserSignal}
+     * @type {UserSignal<(event: string) => void>}
      */
     eventReceived = new UserSignal();
 
     /**
      * Emitted when the window is set up and ready to use.
      * @readonly
-     * @type {UserSignal}
+     * @type {UserSignal<() => void>}
      */
     ready = new UserSignal();
 
     /**
      * Emitted when the window has been closed.
      * @readonly
-     * @type {UserSignal}
+     * @type {UserSignal<() => void>}
      */
     closed = new UserSignal();
 
@@ -131,16 +147,13 @@ class DashWindow {
      */
     get disposed() { return this.#disposed; }
 
-    /** @type {string} */
+    /** @type {?string} */
     #appID;
 
     /**
-     * The app ID this window belongs to. If a {@link DashButton}
-     * has a matching app ID to this window, it will automatically
-     * switch to an active state, and will switch to being inactive
-     * if there's no matching windows.
+     * The app ID this window belongs to. Currently unused.
      * @readonly
-     * @type {string}
+     * @type {?string}
      */
     get appID() { return this.#appID; }
 
@@ -148,7 +161,7 @@ class DashWindow {
     #title;
 
     /**
-     * The title text shown at the bottom of the window.
+     * The window's title text.
      * @type {string}
      */
     get title() { return this.#title; }
@@ -161,6 +174,11 @@ class DashWindow {
     /** @type {boolean} */
     #visible = true;
 
+    /**
+     * Whether the window is visible. This allows
+     * you to hide a window without closing it.
+     * @type {boolean}
+     */
     get visible() { return this.#visible; }
 
     set visible(visible) {
@@ -171,6 +189,10 @@ class DashWindow {
     /** @type {string} */
     #sourceURL;
 
+    /**
+     * A URL pointing to the QML or HTML body source.
+     * @type {string}
+     */
     get sourceURL() { return this.#sourceURL; }
 
     set sourceURL(url) {
@@ -181,12 +203,23 @@ class DashWindow {
     /** @returns {string} */
     toString() { return `DashWindow(${this.id})`; }
 
+    /**
+     * @param {Object} args
+     * @param {string} args.title - The window's titlebar text.
+     * @param {string?} [args.appID=null] - The window's associated app ID.
+     * @param {string} args.sourceURL - A URL pointing to the QML or HTML window body source.
+     * @param {Vector3} [args.dimensions={ x: 0.53, y: 0.8, z: 0 }] - The window dimensions. The z coordinate is unused.
+     */
     constructor({
         title = "Unnamed",
         appID = null,
-        sourceURL = "No source URL provided!",
+        sourceURL,
         dimensions = { x: 0.53, y: 0.8, z: 0 },
     }) {
+        if (!sourceURL) {
+            throw new Error("sourceURL cannot be null");
+        }
+
         this.#title = title;
         this.#appID = appID;
         this.#sourceURL = sourceURL;
@@ -202,11 +235,12 @@ class DashWindow {
         });
 
         Messages.messageReceived.connect(this.#messageCallback);
+        Script.scriptEnding.connect(this.#scriptEnding);
     }
 
     /**
-     * Sends an event to the window.
-     * @param {*} data
+     * Sends data to the window's body content.
+     * @param {string|object} data
      * @returns {void}
      */
     sendEvent(data) {
@@ -218,6 +252,10 @@ class DashWindow {
         });
     }
 
+    /**
+     * Closes the window. Once a window is closed, it cannot be reused.
+     * @returns {void}
+     */
     close() {
         if (this.#disposed) { return; }
 
@@ -235,6 +273,7 @@ class DashWindow {
 
         this.#disposed = true;
         Messages.messageReceived.disconnect(this.#messageCallback);
+        Script.scriptEnding.disconnect(this.#scriptEnding);
     }
 
     /**
@@ -257,6 +296,8 @@ class DashWindow {
             this.#ipcBuffer.push(event);
         }
     }
+
+    #scriptEnding = () => this.#dispose();
 
     #messageCallback = (channel, rawMsg, _senderID, localOnly) => {
         // dash windows only exist on the local client,
@@ -327,18 +368,21 @@ class DashWindow {
 }
 
 /**
- * @typedef {object} ButtonIcon
+ * @typedef {object} DashButton.Icon
  * @property {string} idle - An 'inactive' icon image URL
  * @property {string} [active=idle] - An 'active' icon image URL
  */
 /**
- * @typedef {object} ButtonIconSet
- * @property {ButtonIcon|string} dark - An icon that works with a dark background.
- * @property {ButtonIcon|string} [light=dark] - An icon that works with a light background.
- * @property {ButtonIcon|string} [darkContrast=dark] - A high contrast icon that works with a dark background.
- * @property {ButtonIcon|string} [lightContrast=light] - A high contrast icon that works with a light background.
+ * @typedef {object} DashButton.IconSet
+ * @property {DashButton.Icon|string} dark - An icon that works with a dark background.
+ * @property {DashButton.Icon|string} [light=dark] - An icon that works with a light background.
+ * @property {DashButton.Icon|string} [darkContrast=dark] - A high contrast icon that works with a dark background.
+ * @property {DashButton.Icon|string} [lightContrast=light] - A high contrast icon that works with a light background.
  */
 
+/**
+ * A script-driven button on the dashboard.
+ */
 class DashButton {
     /** @type {boolean} */
     #DASH_READY = _DASH_READY;
@@ -374,7 +418,7 @@ class DashButton {
     /**
      * Emitted when the dash button is set up and ready to use.
      * @readonly
-     * @type {UserSignal}
+     * @type {UserSignal<() => void>}
      */
     ready = new UserSignal();
 
@@ -382,7 +426,7 @@ class DashButton {
      * Emitted when the dash button is clicked
      * with the mouse cursor or VR laser.
      * @readonly
-     * @type {UserSignal}
+     * @type {UserSignal<() => void>}
      */
     clicked = new UserSignal();
 
@@ -390,28 +434,34 @@ class DashButton {
      * Emitted when the active state of the
      * dash button changes.
      * @readonly
-     * @type {UserSignal}
+     * @type {UserSignal<(active: boolean) => void>}
      */
     activeChanged = new UserSignal();
 
     /**
      * Emitted when the label text changes.
      * @readonly
-     * @type {UserSignal}
+     * @type {UserSignal<(text: string) => void>}
      */
     textChanged = new UserSignal();
 
-    /** @type {boolean} */
+    /**
+     * Whether this DashButton has been disposed.
+     * Disposed DashButtons cannot be reused.
+     * @type {boolean}
+     */
     get disposed() { return this.#disposed; }
 
     /**
+     * This DashButton's associated app ID.
+     * Currently unused.
      * @readonly
      * @type {string}
      */
     get appID() { return this.#appID; }
 
     /**
-     * The text shown on the dash button.
+     * The DashButton's label.
      * @type {string}
      */
     get text() { return this.#text; }
@@ -420,12 +470,12 @@ class DashButton {
         if (text !== this.#text) {
             this.#text = text;
             this.#sendIPC({ event: "set_button_property", text: text });
-            this.textChanged.emit();
+            this.textChanged.emit(this.#text);
         }
     }
 
     /**
-     * The "active" state of the button.
+     * The "active" or "toggled" state of the DashButton.
      * @type {boolean}
      */
     get active() { return this.#active; }
@@ -434,7 +484,7 @@ class DashButton {
         if (active !== this.#active) {
             this.#active = active;
             this.#sendIPC({ event: "set_button_property", active: active });
-            this.activeChanged.emit();
+            this.activeChanged.emit(this.#active);
         }
     }
 
@@ -452,12 +502,12 @@ class DashButton {
     }
 
     /**
-     * @param {Object} arg
-     * @param {string} arg.text - The button label text
-     * @param {?string} arg.appID - The app ID this button is associated with
-     * @param {ButtonIconSet|Icon|string} arg.icons - The button icon set or icon image URL
-     * @param {number} [arg.order=0] - The sorting order for this app button
-     * @param {boolean} [arg.system=false] - Whether this button is for a system app, which will be in the top part of the dash bar. When false, the button will be in the dash bar's apps drawer. There's limited space on the system app bar, so if there's too many buttons they'll break.
+     * @param {Object} args
+     * @param {string} args.text - The button label text.
+     * @param {?string} args.appID - The button's associated app ID.
+     * @param {DashButton.IconSet|DashButton.Icon|string} arg.icons - The button icon set or icon image URL.
+     * @param {number} [arg.order=0] - The sorting order for this app button.
+     * @param {boolean} [arg.system=false] - Whether this button is for a system app, which will be in the top part of the dash bar. When false, the button will be in the dash bar's apps drawer. There's limited space on the system app bar, so if there's too many buttons there the dashboard might break.
      */
     constructor({
         text,
@@ -514,10 +564,13 @@ class DashButton {
         });
 
         Messages.messageReceived.connect(this.#messageCallback);
+        Script.scriptEnding.connect(this.#scriptEnding);
     }
 
     /**
-     * Cleans up state when a button is no longer needed.
+     * Removes the button from the dashboard.
+     * Once a DashButton has been disposed,
+     * it cannot be reused.
      * @returns {void}
      */
     dispose() {
@@ -526,6 +579,7 @@ class DashButton {
         this.#sendIPC({ event: "dispose" });
         this.#disposed = true;
         Messages.messageReceived.disconnect(this.#messageCallback);
+        Script.scriptEnding.disconnect(this.#scriptEnding);
     }
 
     /**
@@ -548,6 +602,8 @@ class DashButton {
             this.#ipcBuffer.push(event);
         }
     }
+
+    #scriptEnding = () => this.dispose();
 
     #messageCallback = (channel, rawMsg, _senderID, localOnly) => {
         // dash buttons only exist on the local client,

@@ -10,21 +10,17 @@
  *
  * An analogue to the {@link Signal} type exposed
  * by the C++ parts of the engine.
+ *
+ * @template T
  */
 class UserSignal {
-    /**
-     * @callback signalCallback
-     * @param {...*} args
-     * @returns {void}
-     */
-
-    /** @type {Array<signalCallback>} */
+    /** @type {Array<T>} */
     #connections = [];
 
     /**
      * Adds a callback to run when this signal is emitted.
-     * @param {signalCallback} func - Callback function
-     * @returns {signalCallback} Returns the `func` parameter,
+     * @param {T} func - Callback function
+     * @returns {T} Returns the `func` parameter,
      * which can be passed later to {@link UserSignal.disconnect}.
      */
     connect(func) {
@@ -34,7 +30,7 @@ class UserSignal {
 
     /**
      * Removes a callback so it won't be run when this signal is emitted.
-     * @param {signalCallback} func - The callback function to disconnect
+     * @param {T} func - The callback function to disconnect
      * @returns {void}
      */
     disconnect(func) {
