@@ -47,6 +47,7 @@
 #include "ScriptContext.h"
 #include "XMLHttpRequestClass.h"
 #include "WebSocketClass.h"
+#include "URLClass.h"
 #include "ScriptEngine.h"
 #include "ScriptEngineCast.h"
 #include "ScriptEngineLogging.h"
@@ -869,6 +870,11 @@ void ScriptManager::init() {
 
         scriptEngine->registerGlobalObject(sgp, "UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
     }
+
+    ScriptValue urlValue = scriptEngine->newFunction(URLClass::constructor);
+    urlValue.setProperty("parse", scriptEngine->newFunction(URLClass::parse));
+    urlValue.setProperty("canParse", scriptEngine->newFunction(URLClass::canParse));
+    scriptEngine->globalObject().setProperty("URL", urlValue);
 
 #if DEV_BUILD || PR_BUILD
     scriptEngine->registerGlobalObject(sgp, "StackTest", new StackTestScriptingInterface(this));
