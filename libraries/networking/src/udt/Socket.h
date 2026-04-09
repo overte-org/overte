@@ -52,6 +52,8 @@ class Socket : public QObject {
 
     using Mutex = std::mutex;
     using Lock = std::unique_lock<Mutex>;
+    using Guard = std::lock_guard<Mutex>;
+
 
 public:
     using StatsVector = std::vector<std::pair<SockAddr, ConnectionStats::Stats>>;
@@ -123,6 +125,7 @@ private:
     std::vector<SockAddr> getConnectionSockAddrs();
     void connectToSendSignal(const SockAddr& destinationAddr, QObject* receiver, const char* slot);
     
+    bool hasPending(int &packetSizeWithHeader);
     Q_INVOKABLE void writeReliablePacket(Packet* packet, const SockAddr& sockAddr);
     Q_INVOKABLE void writeReliablePacketList(PacketList* packetList, const SockAddr& sockAddr);
     
@@ -135,6 +138,8 @@ private:
 
     Mutex _unreliableSequenceNumbersMutex;
     Mutex _connectionsHashMutex;
+    Mutex _socketMutex;
+
 
     std::unordered_map<SockAddr, BasePacketHandler> _unfilteredHandlers;
     std::unordered_map<SockAddr, SequenceNumber> _unreliableSequenceNumbers;
