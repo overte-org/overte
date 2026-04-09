@@ -808,8 +808,13 @@ void ScriptManager::init() {
         // For test scripts we want to minimize the amount of functionality available, for the least
         // amount of dependencies and faster test system startup.
 
-        ScriptValue xmlHttpRequestConstructorValue = scriptEngine->newFunction(XMLHttpRequestClass::constructor);
-        scriptEngine->globalObject().setProperty("XMLHttpRequest", xmlHttpRequestConstructorValue);
+        ScriptValue xhrValue = scriptEngine->newFunction(XMLHttpRequestClass::constructor);
+        xhrValue.setProperty("UNSENT", XMLHttpRequestClass::UNSENT);
+        xhrValue.setProperty("OPENED", XMLHttpRequestClass::OPENED);
+        xhrValue.setProperty("HEADERS_RECEIVED", XMLHttpRequestClass::HEADERS_RECEIVED);
+        xhrValue.setProperty("LOADING", XMLHttpRequestClass::LOADING);
+        xhrValue.setProperty("DONE", XMLHttpRequestClass::DONE);
+        scriptEngine->globalObject().setProperty("XMLHttpRequest", xhrValue);
 
         ScriptValue webSocketConstructorValue = scriptEngine->newFunction(WebSocketClass::constructor);
         scriptEngine->globalObject().setProperty("WebSocket", webSocketConstructorValue);
