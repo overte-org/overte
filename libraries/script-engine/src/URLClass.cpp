@@ -185,6 +185,21 @@ void URLClass::setHash(const QString& value) {
 void URLClass::setHost(const QString& value) {
     if (value.contains(':')) {
         auto parts = value.split(':');
+
+        _url.setHost(parts[0]);
+
+        if (parts.size() > 1) {
+            bool ok = false;
+            auto port = parts[1].toInt(&ok);
+
+            if (ok && port > 0 && port < 65536) {
+                _url.setPort(port);
+            } else {
+                _url.setPort(-1);
+            }
+        } else {
+            _url.setPort(-1);
+        }
     } else {
         _url.setHost(value);
         _url.setPort(-1);
