@@ -98,6 +98,7 @@ protected:
     std::array<quint64, 2> _jointDataUpdateTime { 0, 0 };
     QVector<JointData> _jointDataTarget;
     QVector<JointData> _jointDataPrev;
+    std::optional<glm::vec3> _lerpServerPosition {};
 
 private:
     // When determining _hasCheckedForAvatarEntities for OtherAvatars, we can set it to true in

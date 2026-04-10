@@ -269,9 +269,16 @@ void OtherAvatar::interpolateJoints() {
 void OtherAvatar::simulate(float deltaTime, bool inView) {
     PROFILE_RANGE(simulation, "simulate");
 
-    // TODO: avatar position and rotation updates should be interpolated too,
-    // there's noticable jitter when an avatar is walking or turns
-    _globalPosition = _transit.isActive() ? _transit.getCurrentPosition() : _serverPosition;
+    if (!_lerpServerPosition) { _lerpServerPosition = _serverPosition; }
+
+    // TODO: This is wrong (exponential ease-out rather than linear),
+    // but looks nicer than low-FPS jittering. The correct solution
+    // would be to have a "position changed" field and use a similar
+    // snapshot-interpolation mechanism to what joint interpolations use.
+    // Rotation isn't interpolated at all yet.
+    _lerpServerPosition = glm::mix(*_lerpServerPosition, _serverPosition, std::min(deltaTime * 10.0f, 1.0f));
+
+    _globalPosition = *_lerpServerPosition;
     if (!hasParent()) {
         setLocalPosition(_globalPosition);
     }
@@ -290,7 +297,7 @@ void OtherAvatar::simulate(float deltaTime, bool inView) {
                 _jointDataUpdateTime[0] = _jointDataUpdateTime[1];
                 _jointDataUpdateTime[1] = usecTimestampNow();
 
-                if (_jointDataTarget.size() != 0) {
+                if (_jointDataTarget.size() != 0 || _jointDataPrev.size() != _jointData.size()) {
                     _jointDataPrev = _jointDataTarget;
                 } else {
                     _jointDataPrev = _jointData;
