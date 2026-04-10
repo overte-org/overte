@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <vector>
+#include <optional>
 
 #include <avatars-renderer/Avatar.h>
 #include <workload/Space.h>
