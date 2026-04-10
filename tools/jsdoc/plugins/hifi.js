@@ -67,11 +67,13 @@ exports.handlers = {
             '../../libraries/ui/src',
             '../../libraries/ui/src/ui',
             '../../plugins/oculus/src',
-            '../../plugins/openvr/src'
+            '../../plugins/openvr/src',
+            '../../scripts/modules',
+            '../../scripts/system/libraries'
         ];
 
         // only files with this extension will be searched for jsdoc comments.
-        var exts = ['.h', '.h.in', '.cpp', '.cpp.in'];
+        var exts = ['.h', '.h.in', '.cpp', '.cpp.in', '.js'];
 
         var fs = require('fs');
         dirList.forEach(function (dir) {

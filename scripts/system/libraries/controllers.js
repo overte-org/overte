@@ -45,7 +45,42 @@ const getGrabPointSphereOffset = function(handController, ignoreSensorToWorldSca
     }
 };
 
-// controllerWorldLocation is where the controller would be, in-world, with an added offset
+/*@jsdoc
+ *
+ * This is a javascript library and is not included by default. To use the method(s) below, you must first include the library.
+ *
+ * @example <caption>Include this library in your script.</caption>
+ * Script.include("/~/system/libraries/controllers.js");
+ * @namespace Controllers
+ */
+
+/*@jsdoc
+ * @typedef {Object} Controllers.controllerWorldLocation
+ * @property {Vec3} position - The position of the controller, relative to the world
+ * @property {Vec3} translation - Deprecated: Use position instead.
+ * @property {Quat} orientation - The orientation of the controller, relative to the world
+ * @property {Quat} rotation - Deprecated: Use orientation instead.
+ * @property {boolean} valid
+ */
+
+/*@jsdoc
+ * controllerWorldLocation is where the controller would be, in-world, with an added offset
+ *
+ * @example <caption>Get the controllerWorldPosition and print it to log.</caption>
+ *
+ * Script.include("/~/system/libraries/controllers.js");
+ *
+ * const controllerWorldLocation = getControllerWorldLocation(Controller.Standard.LeftHand, true);
+ *
+ * print(controllerWorldLocation);
+ *
+ *
+ * @name Controllers.getControllerWorldLocation
+ * @function
+ * @param {Controller.Standard} handController - Which hand controller? LeftHand or RightHand.
+ * @param {boolean} doOffset - true if returned position should be offset, so the grab position is in front of hand
+ * @returns {Controllers.controllerWorldLocation}
+ */
 const getControllerWorldLocation = function (handController, doOffset) {
     var orientation;
     var position;
