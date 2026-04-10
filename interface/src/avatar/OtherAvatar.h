@@ -96,9 +96,8 @@ protected:
     BodyLOD _bodyLOD { BodyLOD::Sphere };
     bool _needsDetailedRebuild { false };
 
-    std::array<quint64, 2> _jointDataUpdateTime { 0, 0 };
-    QVector<JointData> _jointDataTarget;
-    QVector<JointData> _jointDataPrev;
+    /// Contains received joint transforms and their timestamps in microseconds.
+    std::vector<std::vector<std::pair<quint64, JointData>>> _jointHistory;
     std::optional<glm::vec3> _lerpServerPosition {};
 
 private:
