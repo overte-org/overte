@@ -64,6 +64,7 @@ public:
     void setCollisionWithOtherAvatarsFlags() override;
 
     void simulate(float deltaTime, bool inView) override;
+    void interpolateJoints();
     void debugJointData() const;
     friend AvatarManager;
 
@@ -93,6 +94,10 @@ protected:
     uint8_t _workloadRegion { workload::Region::INVALID };
     BodyLOD _bodyLOD { BodyLOD::Sphere };
     bool _needsDetailedRebuild { false };
+
+    std::array<quint64, 2> _jointDataUpdateTime { 0, 0 };
+    QVector<JointData> _jointDataTarget;
+    QVector<JointData> _jointDataPrev;
 
 private:
     // When determining _hasCheckedForAvatarEntities for OtherAvatars, we can set it to true in

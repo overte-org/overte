@@ -251,9 +251,26 @@ void OtherAvatar::setCollisionWithOtherAvatarsFlags() {
     }
 }
 
+void OtherAvatar::interpolateJoints() {
+    auto now = usecTimestampNow();
+    auto theta = std::min(1.0f, (now - _jointDataUpdateTime[1]) /
+        (float)(_jointDataUpdateTime[1] - _jointDataUpdateTime[0]));
+
+    for (int i = 0; i < _jointData.size(); i++) {
+        _jointData[i].rotation = glm::slerp(_jointDataPrev[i].rotation, _jointDataTarget[i].rotation, theta);
+        _jointData[i].translation = glm::mix(_jointDataPrev[i].translation, _jointDataTarget[i].translation, theta);
+    }
+
+    glm::mat4 rootTransform = glm::scale(_skeletonModel->getScale()) * glm::translate(_skeletonModel->getOffset());
+    _skeletonModel->getRig().copyJointsFromJointData(_jointData);
+    _skeletonModel->getRig().computeExternalPoses(rootTransform);
+}
+
 void OtherAvatar::simulate(float deltaTime, bool inView) {
     PROFILE_RANGE(simulation, "simulate");
 
+    // TODO: avatar position and rotation updates should be interpolated too,
+    // there's noticable jitter when an avatar is walking or turns
     _globalPosition = _transit.isActive() ? _transit.getCurrentPosition() : _serverPosition;
     if (!hasParent()) {
         setLocalPosition(_globalPosition);
@@ -269,10 +286,17 @@ void OtherAvatar::simulate(float deltaTime, bool inView) {
         PROFILE_RANGE(simulation, "updateJoints");
         if (inView) {
             Head* head = getHead();
-            if (_hasNewJointData || _transit.isActive()) {
-                _skeletonModel->getRig().copyJointsFromJointData(_jointData);
-                glm::mat4 rootTransform = glm::scale(_skeletonModel->getScale()) * glm::translate(_skeletonModel->getOffset());
-                _skeletonModel->getRig().computeExternalPoses(rootTransform);
+            if (_hasNewJointData) {
+                _jointDataUpdateTime[0] = _jointDataUpdateTime[1];
+                _jointDataUpdateTime[1] = usecTimestampNow();
+
+                if (_jointDataTarget.size() != 0) {
+                    _jointDataPrev = _jointDataTarget;
+                } else {
+                    _jointDataPrev = _jointData;
+                }
+
+                _jointDataTarget = _jointData;
                 _jointDataSimulationRate.increment();
 
                 head->simulate(deltaTime);
@@ -298,6 +322,8 @@ void OtherAvatar::simulate(float deltaTime, bool inView) {
         }
         _skeletonModelSimulationRate.increment();
     }
+
+    interpolateJoints();
 
     // update animation for display name fade in/out
     if ( _displayNameTargetAlpha != _displayNameAlpha) {
