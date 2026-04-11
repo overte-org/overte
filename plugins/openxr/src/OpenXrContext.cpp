@@ -12,6 +12,11 @@
 #include <QString>
 #include <QGuiApplication>
 
+#if defined(Q_OS_LINUX)
+#include <QOpenGLContext>
+#include <QtPlatformHeaders/QGLXNativeContext>
+#endif
+
 #if defined(HAVE_VULKAN)
 #include <QMessageBox>
 #endif
@@ -515,6 +520,15 @@ bool OpenXrContext::initSession() {
             .glxDrawable = glXGetCurrentDrawable(),
             .glxContext = glXGetCurrentContext(),
         };
+
+        // HACK: Is this a compiler bug? How come adding this check fixes
+        // the XR_ERROR_GRAPHICS_DEVICE_INVALID (glxContext is null) error??
+        // Putting glxContext into a separate variable and checking that *doesn't*
+        // work, but checking it after xlibBinding has been initialised with it *does*?
+        if (!xlibBinding.glxContext) {
+            qCCritical(xr_context_cat, "glXContext is null");
+            return false;
+        }
 
         info.next = &xlibBinding;
     }
