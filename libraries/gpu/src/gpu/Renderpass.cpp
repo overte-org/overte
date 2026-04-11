@@ -12,6 +12,10 @@
 
 using namespace gpu;
 
+Renderpass::Renderpass() = default;
+
+Renderpass::~Renderpass() = default;
+
 Attachment::Attachment() {
 }
 
