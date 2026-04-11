@@ -274,6 +274,15 @@ void OtherAvatar::setCollisionWithOtherAvatarsFlags() {
 }
 
 void OtherAvatar::interpolateJoints() {
+    // there's no history to interpolate from,
+    // just set the rig poses to whatever we have
+    if ((size_t)_jointData.size() != _jointHistory.size()) {
+        glm::mat4 rootTransform = glm::scale(_skeletonModel->getScale()) * glm::translate(_skeletonModel->getOffset());
+        _skeletonModel->getRig().copyJointsFromJointData(_jointData);
+        _skeletonModel->getRig().computeExternalPoses(rootTransform);
+        return;
+    }
+
     auto now = usecTimestampNow();
 
     for (int i = 0; i < _jointData.size(); i++) {
