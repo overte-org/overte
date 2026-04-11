@@ -332,8 +332,8 @@ namespace Setting {
             _isDeprecated = true;
         }
 
-        T _value;
-        const T _defaultValue;
+        T _value{};
+        const T _defaultValue{};
         bool _isDeprecated{ false };
     };
 
