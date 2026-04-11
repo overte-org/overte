@@ -38,7 +38,7 @@ class OctreeStatsProvider : public QObject, public Dependency {
     Q_PROPERTY(QStringList servers READ servers NOTIFY serversChanged)
 
 public:
-    OctreeStatsProvider(QObject* parent, NodeToOctreeSceneStats* model);
+    OctreeStatsProvider(QObject* parent);
     ~OctreeStatsProvider();
 
     int serversNum() const;
@@ -120,9 +120,8 @@ protected:
     void showOctreeServersOfType(NodeType_t serverType);
 
 private:
-    NodeToOctreeSceneStats* _model;
     int _statCount;
-    
+
     const int SAMPLES_PER_SECOND = 10;
     SimpleMovingAverage _averageUpdatesPerSecond;
     quint64 _lastWindowAt = usecTimestampNow();

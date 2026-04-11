@@ -416,7 +416,7 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
 
     DependencyManager::set<EntityScriptServerLogClient>();
 
-    DependencyManager::set<OctreeStatsProvider>(nullptr, qApp->getOcteeSceneStats());
+    DependencyManager::set<OctreeStatsProvider>(nullptr);
     DependencyManager::set<AvatarBookmarks>();
     DependencyManager::set<LocationBookmarks>();
     DependencyManager::set<Snapshot>();
