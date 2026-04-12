@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2019-2021 Vircadia contributors.
-# Copyright 2020-2025 Overte e.V.
+# Copyright 2020-2026 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 # As the official CMake documentation is pretty bad for non-experts, Craig Scott's "Professional CMake: A Practical Guide" is a worthwhile investment,
@@ -141,7 +141,7 @@ if (ANDROID)
     add_definitions(-DANDROID_APP_INTERFACE)
   endif()
 else ()
-  set(PLATFORM_QT_COMPONENTS WebEngine Xml)
+  set(PLATFORM_QT_COMPONENTS WebEngine WebChannel WebEngineCore WebEngineWidgets Xml)
 endif()
 
 
