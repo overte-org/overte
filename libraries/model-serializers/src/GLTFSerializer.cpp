@@ -271,7 +271,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
 
 
     // Build joints
-    HFMJoint joint;
+    HFMJoint joint{};
     joint.distanceToParent = 0;
     hfmModel.jointIndices["x"] = numNodes;
     QVector<glm::mat4> globalTransforms;
