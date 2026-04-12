@@ -157,7 +157,7 @@ class Overte(ConanFile):
 
         # Enabling warnings-as-errors by default on our Linux target and on Windows.
         # Our current Linux development target is Ubuntu 22.04, which uses GCC 11.2.
-        if self.settings.compiler == "gcc" and self.settings.compiler.version == "11":
+        if self.settings.compiler == "gcc":
             tc.cache_variables.update({
                 "CMAKE_COMPILE_WARNING_AS_ERROR": "ON",
             })
