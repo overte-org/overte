@@ -1093,8 +1093,8 @@ int AvatarData::parseDataFromBuffer(const QByteArray& buffer) {
         glm::quat currentOrientation = getLocalOrientation();
 
         if (currentOrientation != newOrientation) {
-            _hasNewJointData = true;
-            setLocalOrientation(newOrientation);
+            _orientationHistory[0] = _orientationHistory[1];
+            _orientationHistory[1] = { usecTimestampNow(), newOrientation };
         }
         int numBytesRead = sourceBuffer - startSection;
         _avatarOrientationRate.increment(numBytesRead);

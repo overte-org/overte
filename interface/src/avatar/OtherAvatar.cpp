@@ -274,6 +274,21 @@ void OtherAvatar::setCollisionWithOtherAvatarsFlags() {
 }
 
 void OtherAvatar::interpolateJoints() {
+    auto now = usecTimestampNow();
+
+    if (true /* TODO */) {
+        auto [aTime, aQuat] = _orientationHistory[0];
+        auto [bTime, bQuat] = _orientationHistory[1];
+
+        float alpha = std::min(
+            1.0f,
+            // FIXME: should be now - aTime but im bad at the math that makes it work
+            static_cast<float>(now - bTime) / static_cast<float>(std::max(1ULL, bTime - aTime))
+        );
+
+        setLocalOrientation(glm::slerp(aQuat, bQuat, alpha));
+    }
+
     // there's no history to interpolate from,
     // just set the rig poses to whatever we have
     if ((size_t)_jointData.size() != _jointHistory.size()) {
@@ -282,8 +297,6 @@ void OtherAvatar::interpolateJoints() {
         _skeletonModel->getRig().computeExternalPoses(rootTransform);
         return;
     }
-
-    auto now = usecTimestampNow();
 
     for (int i = 0; i < _jointData.size(); i++) {
         const auto &history{_jointHistory[i]};
@@ -336,10 +349,10 @@ void OtherAvatar::interpolateJoints() {
 
         quint64 timeDiff = timePoint >= oldKeyframe.first ? timePoint - oldKeyframe.first : 0;
         // We need to avoid division by zero:
-        const float theta = std::min(1.0f, static_cast<float>(timeDiff) /
+        const float alpha = std::min(1.0f, static_cast<float>(timeDiff) /
             static_cast<float>(std::max(newKeyframe.first - oldKeyframe.first, 1ULL)));
-        _jointData[i].rotation = glm::slerp(oldKeyframe.second.rotation, newKeyframe.second.rotation, theta);
-        _jointData[i].translation = glm::mix(oldKeyframe.second.translation, newKeyframe.second.translation, theta);
+        _jointData[i].rotation = glm::slerp(oldKeyframe.second.rotation, newKeyframe.second.rotation, alpha);
+        _jointData[i].translation = glm::mix(oldKeyframe.second.translation, newKeyframe.second.translation, alpha);
     }
 
     glm::mat4 rootTransform = glm::scale(_skeletonModel->getScale()) * glm::translate(_skeletonModel->getOffset());
