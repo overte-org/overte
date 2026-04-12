@@ -292,10 +292,7 @@ void OtherAvatar::interpolateJoints() {
     // there's no history to interpolate from,
     // just set the rig poses to whatever we have
     if ((size_t)_jointData.size() != _jointHistory.size()) {
-        glm::mat4 rootTransform = glm::scale(_skeletonModel->getScale()) * glm::translate(_skeletonModel->getOffset());
-        _skeletonModel->getRig().copyJointsFromJointData(_jointData);
-        _skeletonModel->getRig().computeExternalPoses(rootTransform);
-        return;
+        goto finishRigSetup;
     }
 
     for (int i = 0; i < _jointData.size(); i++) {
@@ -355,9 +352,12 @@ void OtherAvatar::interpolateJoints() {
         _jointData[i].translation = glm::mix(oldKeyframe.second.translation, newKeyframe.second.translation, alpha);
     }
 
+finishRigSetup:
     glm::mat4 rootTransform = glm::scale(_skeletonModel->getScale()) * glm::translate(_skeletonModel->getOffset());
     _skeletonModel->getRig().copyJointsFromJointData(_jointData);
     _skeletonModel->getRig().computeExternalPoses(rootTransform);
+    locationChanged(); // joints changed, so if there are any children, update them.
+    relayJointDataToChildren();
 }
 
 void OtherAvatar::simulate(float deltaTime, bool inView) {
@@ -369,7 +369,6 @@ void OtherAvatar::simulate(float deltaTime, bool inView) {
     // but looks nicer than low-FPS jittering. The correct solution
     // would be to have a "position changed" field and use a similar
     // snapshot-interpolation mechanism to what joint interpolations use.
-    // Rotation isn't interpolated at all yet.
     _lerpServerPosition = glm::mix(*_lerpServerPosition, _serverPosition, std::min(deltaTime * 10.0f, 1.0f));
 
     _globalPosition = *_lerpServerPosition;
@@ -417,24 +416,17 @@ void OtherAvatar::simulate(float deltaTime, bool inView) {
                 }
 
                 _jointDataSimulationRate.increment();
-
-                head->simulate(deltaTime);
-                _skeletonModel->simulate(deltaTime, true);
-
-                locationChanged(); // joints changed, so if there are any children, update them.
                 _hasNewJointData = false;
-
-                glm::vec3 headPosition = getWorldPosition();
-                if (!_skeletonModel->getHeadPosition(headPosition)) {
-                    headPosition = getWorldPosition();
-                }
-                head->setPosition(headPosition);
-            } else {
-                head->simulate(deltaTime);
-                _skeletonModel->simulate(deltaTime, false);
             }
+
+            glm::vec3 headPosition = getWorldPosition();
+            if (!_skeletonModel->getHeadPosition(headPosition)) {
+                headPosition = getWorldPosition();
+            }
+            head->setPosition(headPosition);
             head->setScale(getModelScale());
-            relayJointDataToChildren();
+            head->simulate(deltaTime);
+            _skeletonModel->simulate(deltaTime, true);
         } else {
             // a non-full update is still required so that the position, rotation, scale and bounds of the skeletonModel are updated.
             _skeletonModel->simulate(deltaTime, false);
