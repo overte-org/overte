@@ -15,7 +15,7 @@ from threading import Lock
     # # Target dependant Custom rule on the SHADER_FILE
     # if (ANDROID)
     #     set(GLPROFILE LINUX_GL)
-    # else() 
+    # else()
     #     if (APPLE)
     #         set(GLPROFILE MAC_GL)
     #     elseif(UNIX)
@@ -39,7 +39,7 @@ def getTypeForScribeFile(scribefilename):
     return switcher.get(extension)
 
 def getCommonScribeArgs(scribefile, includeLibs):
-    scribeArgs = [args.scribe] # args.scribe is the executable 
+    scribeArgs = [args.scribe] # args.scribe is the executable
     # FIXME use the sys.platform to set the correct value
     scribeArgs.extend(['-D', 'GLPROFILE', 'PC_GL'])
     scribeArgs.extend(['-T', getTypeForScribeFile(scribefile)])
@@ -157,7 +157,7 @@ def executeSubprocess(processArgs):
     if (0 != processResult.returncode):
         raise RuntimeError('Call to "{}" failed.\n\narguments:\n{}\n\nstdout:\n{}\n\nstderr:\n{}'.format(
             processArgs[0],
-            ' '.join(processArgs[1:]), 
+            ' '.join(processArgs[1:]),
             processResult.stdout.decode('utf-8'),
             processResult.stderr.decode('utf-8')))
 
@@ -188,12 +188,12 @@ def processCommand(line):
 
     scribeOutputDir = os.path.abspath(os.path.join(unoptGlslFile, os.pardir))
 
-    # Serialize checking and creation of the output directory to avoid occasional 
+    # Serialize checking and creation of the output directory to avoid occasional
     # crashes
     global folderMutex
     folderMutex.acquire()
     if not os.path.exists(scribeOutputDir):
-        os.makedirs(scribeOutputDir) 
+        os.makedirs(scribeOutputDir)
     folderMutex.release()
 
     scribeDeps = scribeDepCache.getOrGen(scribeFile, libs, dialect, variant, defines)
@@ -201,7 +201,9 @@ def processCommand(line):
     # if the scribe sources (slv, slf, slh, etc), or the dialect/ variant headers are out of date
     # regenerate the scribe GLSL output
     if args.force or outOfDate(scribeDeps, outputFiles):
-        print('Processing file {} dialect {} variant {} defines {}'.format(scribeFile, dialect, variant, defines))
+        if args.verbose:
+            print('Processing file {} dialect {} variant {} defines {}'.format(scribeFile, dialect, variant, defines))
+
         if args.dry_run:
             return True
 
@@ -233,7 +235,7 @@ def processCommand(line):
         if (dialect == '410'): spirvCrossArgs.append('--no-420pack-extension')
         executeSubprocess(spirvCrossArgs)
     else:
-        # This logic is necessary because cmake will agressively keep re-executing the shadergen 
+        # This logic is necessary because cmake will agressively keep re-executing the shadergen
         # code otherwise
         Path(unoptGlslFile).touch()
         Path(upoptSpirvFile).touch()
@@ -270,9 +272,15 @@ parser.add_argument('--source-dir', type=str, help='The root directory of the gi
 parser.add_argument('--debug', action='store_true')
 parser.add_argument('--force', action='store_true', help='Ignore timestamps and force regeneration of all files')
 parser.add_argument('--dry-run', action='store_true', help='Report the files that would be process, but do not output')
+parser.add_argument('--verbose', action='store_true', help="Report what's being done")
 
 args = None
 args = parser.parse_args()
+
+if os.getenv("VERBOSE"):
+    # make VERBOSE=1 gets passed through the environment, auto-set verbose mode in
+    # that case for convenience.
+    args.verbose = True
 
 scribeDepCache = ScribeDependenciesCache(args.build_dir + '/shaderDeps.json')
 scribeDepCache.load()
