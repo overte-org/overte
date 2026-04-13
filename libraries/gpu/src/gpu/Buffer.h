@@ -438,7 +438,7 @@ class StructBuffer : public gpu::BufferView {
 public:
     template <class U>
     static BufferPointer makeBuffer(uint32_t usage = gpu::Buffer::UniformBuffer) {
-        U t;
+        U t{};
         return std::make_shared<gpu::Buffer>(usage, sizeof(U), (const gpu::Byte*)&t, sizeof(U));
     }
     ~StructBuffer(){};
