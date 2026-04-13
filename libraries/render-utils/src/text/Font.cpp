@@ -103,6 +103,11 @@ void Font::handleFontNetworkReply() {
 QThreadStorage<size_t> _readOffset;
 QThreadStorage<size_t> _readMax;
 int readHelper(void* dst, int length, void* data) {
+    if (!dst) {
+        qWarning() << "readHelper called with NULL pointer as first argument: dst = " << dst << "; length = " << length << "; data =" << data;
+        return 0;
+    }
+
     if (_readOffset.localData() + length > _readMax.localData()) {
         return -1;
     }
