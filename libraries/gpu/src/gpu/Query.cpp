@@ -67,7 +67,6 @@ void RangeTimer::end(gpu::Batch& batch) {
     if (_tailIndex < 0) {
         _tailIndex = _headIndex;
     }
-    qDebug() << "_tailIndex " << _tailIndex << " _headIndex " << _headIndex;
     // Pull the previous tail query hopping to see it return
     if (_tailIndex != _headIndex) {
         batch.getQuery(_timerQueries[rangeIndex(_tailIndex)]);
