@@ -333,7 +333,7 @@
     function _formatTimestamp(timestamp) {
         let timeArray = [];
 
-        timeArray.push(new Date().toLocaleTimeString(undefined, {
+        timeArray.push(new Date(timestamp).toLocaleTimeString(undefined, {
             hour12: false,
         }));
 
