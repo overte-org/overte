@@ -62,7 +62,7 @@ public:
 
 public:
     using PacketTypeList = std::vector<PacketType>;
-    
+
     PacketReceiver(QObject* parent = 0);
     PacketReceiver(const PacketReceiver&) = delete;
 
@@ -76,11 +76,11 @@ public:
     bool registerListener(PacketType type, const ListenerReferencePointer& listener, bool deliverPending = false);
     bool registerListenerForTypes(PacketTypeList types, const ListenerReferencePointer& listener);
     void unregisterListener(QObject* listener);
-    
+
     void handleVerifiedPacket(std::unique_ptr<udt::Packet> packet);
     void handleVerifiedMessagePacket(std::unique_ptr<udt::Packet> message);
     void handleMessageFailure(SockAddr from, udt::Packet::MessageNumber messageNumber);
-    
+
 private:
     template <class T>
     class UnsourcedListenerReference : public ListenerReference {
@@ -131,19 +131,21 @@ private:
     QSet<QObject*> _directlyConnectedObjects;
 
     std::unordered_map<std::pair<SockAddr, udt::Packet::MessageNumber>, QSharedPointer<ReceivedMessage>> _pendingMessages;
-    
+
     friend class EntityEditPacketSender;
     friend class OctreePacketProcessor;
 };
 
 template <class T>
 PacketReceiver::ListenerReferencePointer PacketReceiver::makeUnsourcedListenerReference(T* target, void (T::* slot)(QSharedPointer<ReceivedMessage>)) {
-    return QSharedPointer<UnsourcedListenerReference<T>>::create(target, slot);
+    auto ptr = QSharedPointer<UnsourcedListenerReference<T>>::create(target, slot);
+    return ptr;
 }
 
 template <class T>
 PacketReceiver::ListenerReferencePointer PacketReceiver::makeSourcedListenerReference(T* target, void (T::* slot)(QSharedPointer<ReceivedMessage>, QSharedPointer<Node>)) {
-    return QSharedPointer<SourcedListenerReference<T>>::create(target, slot);
+    auto ptr = QSharedPointer<SourcedListenerReference<T>>::create(target, slot);
+    return ptr;
 }
 
 template <class T>
