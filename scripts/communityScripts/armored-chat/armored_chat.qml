@@ -141,7 +141,7 @@ Rectangle {
             ListView {
                 id: listview;
                 width: parent.width;
-                height: parent.height - 40;
+                height: parent.height - chatRectangle.height;
                 clip: true;
                 model: pageVal == "local" ? localMessages : domainMessages;
                 orientation: ListView.Vertical;
@@ -178,8 +178,9 @@ Rectangle {
 
             // Chat Entry
             Rectangle {
+                id: chatRectangle
                 width: parent.width
-                height: 40
+                height: Math.max(40, textArea.contentHeight + 10)
                 color: Qt.rgba(0.9,0.9,0.9,1)
                 anchors.bottom: parent.bottom
 
@@ -187,13 +188,20 @@ Rectangle {
                     width: parent.width
                     height: parent.height
 
-                    TextField {
+                    TextArea {
+                        id: textArea
                         width: parent.width - 60;
                         height: parent.height;
+                        wrapMode: Text.Wrap
                         placeholderText: pageVal.charAt(0).toUpperCase() + pageVal.slice(1) + " chat message...";
                         clip: false;
                         font.italic: text == "";
                         selectByMouse: true;
+                        topPadding: 5
+                        bottomPadding: 5
+                        leftPadding: 5
+                        rightPadding: 5
+                        font.pixelSize: 18
 
                         Keys.onPressed: {
                             if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && !(event.modifiers & Qt.ShiftModifier)) {
