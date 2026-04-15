@@ -1601,6 +1601,11 @@ protected:
 
     bool _hasNewJointData { true }; // set in AvatarData, cleared in Avatar
 
+    /// Per-joint variable signalizing availability of the new transforms.
+    /// Set in AvatarData, cleared in OtherAvatar.
+    std::vector<bool> _hasNewJointDataVec;
+    std::array<std::pair<quint64, glm::quat>, 2> _orientationHistory;
+
     mutable HeadData* _headData { nullptr };
 
     QUrl _skeletonModelURL;

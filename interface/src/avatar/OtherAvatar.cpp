@@ -21,6 +21,28 @@
 const float DISPLAYNAME_FADE_TIME = 0.5f;
 const float DISPLAYNAME_FADE_FACTOR = pow(0.01f, 1.0f / DISPLAYNAME_FADE_TIME);
 
+/// Maximum length of joint history storage before it gets reallocated.
+/// Only small number of past entries in history are used, but larger number is stored to avoid frequent reallocations.
+constexpr size_t OTHER_AVATAR_JOINT_HISTORY_SIZE = 2000;
+
+/// Number of previous samples used to determine latency.
+/// Must be less than OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK.
+constexpr size_t OTHER_AVATAR_JOINT_LATENCY_WINDOW = 20;
+
+/// How many entries backwards in history are searched before interpolation.
+constexpr size_t OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK = 45;
+
+static_assert(OTHER_AVATAR_JOINT_LATENCY_WINDOW < OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK);
+
+/// Maximum allowed latency for the avatar motion interpolation in microseconds.
+/// Joint positions are only transmitted when the joint moves, so the latency needs to be determined from previous data.
+constexpr quint64 OTHER_AVATAR_JOINT_HISTORY_MAX_LATENCY = 600000;
+
+/// For smooth motion assumed latency needs to be slightly higher than estimated one.
+/// Estimated latency will be multiplied by this coefficient.
+constexpr double OTHER_AVATAR_JOINT_LATENCY_COEFFICIENT = 1.3;
+
+
 static glm::u8vec3 getLoadingOrbColor(Avatar::LoadingStatus loadingStatus) {
 
     const glm::u8vec3 NO_MODEL_COLOR(0xe3, 0xe3, 0xe3);
@@ -251,10 +273,105 @@ void OtherAvatar::setCollisionWithOtherAvatarsFlags() {
     }
 }
 
+void OtherAvatar::interpolateJoints() {
+    auto now = usecTimestampNow();
+
+    if (true /* TODO */) {
+        auto [aTime, aQuat] = _orientationHistory[0];
+        auto [bTime, bQuat] = _orientationHistory[1];
+
+        float alpha = std::min(
+            1.0f,
+            // FIXME: should be now - aTime but im bad at the math that makes it work
+            static_cast<float>(now - bTime) / static_cast<float>(std::max(1ULL, bTime - aTime))
+        );
+
+        setLocalOrientation(glm::slerp(aQuat, bQuat, alpha));
+    }
+
+    // there's no history to interpolate from,
+    // just set the rig poses to whatever we have
+    if ((size_t)_jointData.size() != _jointHistory.size()) {
+        goto finishRigSetup;
+    }
+
+    for (int i = 0; i < _jointData.size(); i++) {
+        const auto &history{_jointHistory[i]};
+        // We don't process very old samples for performance reasons, but we remove them only sporadically to avoid excessive reallocations.
+        const size_t historyStart = history.size() > OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK ? history.size() - OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK : 0;
+        // Calculate latency in microseconds and new time point.
+        quint64 latency = 0;
+        // We cannot calculate latency from just one sample.
+        if (history.size() >= 2) {
+            size_t latencySamples = 0;
+            for (size_t historyIndex = historyStart; historyIndex < history.size() - 1; historyIndex++) {
+                latency += std::min(history[historyIndex + 1].first - history[historyIndex].first, OTHER_AVATAR_JOINT_HISTORY_MAX_LATENCY);
+                latencySamples++;
+            }
+            latency /= latencySamples;
+            // Real latency may differ from estimated one, so we need some safety margin.
+            latency *= OTHER_AVATAR_JOINT_LATENCY_COEFFICIENT;
+        } else {
+            // Latency cannot be determined yet since we have only one entry.
+            latency = 0;
+        }
+        // Limit latency to a defined value.
+        latency = std::min(OTHER_AVATAR_JOINT_HISTORY_MAX_LATENCY, latency);
+        // We don't know the future, so avatar motions need to be delayed to be interpolated.
+        auto timePoint = now - latency;
+        // Retrieve previous and current joint data.
+        Q_ASSERT(history.size() > 0);
+        if (history.size() == 0) continue;
+        size_t oldKeyframeIndex = history.size() - 1;
+        size_t newKeyframeIndex = history.size() - 1;
+        // Find the first keyframe that's in the "future".
+        // Searching backwards is more efficient here.
+        for (size_t historyIndex = history.size() - 1; historyIndex >= historyStart; historyIndex--) {
+            if (timePoint > history[historyIndex].first) {
+                if (historyIndex < history.size() - 1) {
+                    oldKeyframeIndex = historyIndex;
+                    newKeyframeIndex = historyIndex + 1;
+                    break;
+                } else {
+                    // There are no past entries yet.
+                    oldKeyframeIndex = historyIndex;
+                    newKeyframeIndex = historyIndex;
+                    break;
+                }
+            }
+        }
+
+        const std::pair<quint64, JointData> &oldKeyframe{ history[oldKeyframeIndex] };
+        const std::pair<quint64, JointData> &newKeyframe{ history[newKeyframeIndex] };
+
+        quint64 timeDiff = timePoint >= oldKeyframe.first ? timePoint - oldKeyframe.first : 0;
+        // We need to avoid division by zero:
+        const float alpha = std::min(1.0f, static_cast<float>(timeDiff) /
+            static_cast<float>(std::max(newKeyframe.first - oldKeyframe.first, 1ULL)));
+        _jointData[i].rotation = glm::slerp(oldKeyframe.second.rotation, newKeyframe.second.rotation, alpha);
+        _jointData[i].translation = glm::mix(oldKeyframe.second.translation, newKeyframe.second.translation, alpha);
+    }
+
+finishRigSetup:
+    glm::mat4 rootTransform = glm::scale(_skeletonModel->getScale()) * glm::translate(_skeletonModel->getOffset());
+    _skeletonModel->getRig().copyJointsFromJointData(_jointData);
+    _skeletonModel->getRig().computeExternalPoses(rootTransform);
+    locationChanged(); // joints changed, so if there are any children, update them.
+    relayJointDataToChildren();
+}
+
 void OtherAvatar::simulate(float deltaTime, bool inView) {
     PROFILE_RANGE(simulation, "simulate");
 
-    _globalPosition = _transit.isActive() ? _transit.getCurrentPosition() : _serverPosition;
+    if (!_lerpServerPosition) { _lerpServerPosition = _serverPosition; }
+
+    // TODO: This is wrong (exponential ease-out rather than linear),
+    // but looks nicer than low-FPS jittering. The correct solution
+    // would be to have a "position changed" field and use a similar
+    // snapshot-interpolation mechanism to what joint interpolations use.
+    _lerpServerPosition = glm::mix(*_lerpServerPosition, _serverPosition, std::min(deltaTime * 10.0f, 1.0f));
+
+    _globalPosition = *_lerpServerPosition;
     if (!hasParent()) {
         setLocalPosition(_globalPosition);
     }
@@ -269,35 +386,55 @@ void OtherAvatar::simulate(float deltaTime, bool inView) {
         PROFILE_RANGE(simulation, "updateJoints");
         if (inView) {
             Head* head = getHead();
-            if (_hasNewJointData || _transit.isActive()) {
-                _skeletonModel->getRig().copyJointsFromJointData(_jointData);
-                glm::mat4 rootTransform = glm::scale(_skeletonModel->getScale()) * glm::translate(_skeletonModel->getOffset());
-                _skeletonModel->getRig().computeExternalPoses(rootTransform);
-                _jointDataSimulationRate.increment();
+            if (_hasNewJointData) {
+                quint64 currentTime = usecTimestampNow();
 
-                head->simulate(deltaTime);
-                _skeletonModel->simulate(deltaTime, true);
-
-                locationChanged(); // joints changed, so if there are any children, update them.
-                _hasNewJointData = false;
-
-                glm::vec3 headPosition = getWorldPosition();
-                if (!_skeletonModel->getHeadPosition(headPosition)) {
-                    headPosition = getWorldPosition();
+                Q_ASSERT(_hasNewJointDataVec.size() == static_cast<size_t>(_jointData.size()));
+                // Reset joint history if joint count changed.
+                if (_jointHistory.size() != static_cast<size_t>(_jointData.size())) {
+                    _jointHistory.clear();
+                    _jointHistory.resize(_jointData.size());
+                    for (size_t i = 0; i < _jointHistory.size(); i++) {
+                        _jointHistory[i].push_back({currentTime, _jointData[i]});
+                    }
+                    qDebug() << "clearing joint history";
                 }
-                head->setPosition(headPosition);
-            } else {
-                head->simulate(deltaTime);
-                _skeletonModel->simulate(deltaTime, false);
+
+                for (size_t i = 0; i < _hasNewJointDataVec.size(); i++) {
+                    if (_hasNewJointDataVec[i]) {
+                        _hasNewJointDataVec[i] = false;
+                        _jointHistory[i].push_back({currentTime, _jointData[i]});
+                        // Cleanup old data and shorten the vector.
+                        if (_jointHistory[i].size() > OTHER_AVATAR_JOINT_HISTORY_SIZE) {
+                            for (size_t historyIndex = 0; historyIndex < OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK; historyIndex++) {
+                                _jointHistory[i][historyIndex] = _jointHistory[i][static_cast<qsizetype>(historyIndex + _jointHistory[i].size() - OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK)];
+                            }
+                            _jointHistory[i].resize(OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK);
+                            qDebug() << "joint history cleanup";
+                        }
+                    }
+                }
+
+                _jointDataSimulationRate.increment();
+                _hasNewJointData = false;
             }
+
+            glm::vec3 headPosition = getWorldPosition();
+            if (!_skeletonModel->getHeadPosition(headPosition)) {
+                headPosition = getWorldPosition();
+            }
+            head->setPosition(headPosition);
             head->setScale(getModelScale());
-            relayJointDataToChildren();
+            head->simulate(deltaTime);
+            _skeletonModel->simulate(deltaTime, true);
         } else {
             // a non-full update is still required so that the position, rotation, scale and bounds of the skeletonModel are updated.
             _skeletonModel->simulate(deltaTime, false);
         }
         _skeletonModelSimulationRate.increment();
     }
+
+    interpolateJoints();
 
     // update animation for display name fade in/out
     if ( _displayNameTargetAlpha != _displayNameAlpha) {

@@ -968,11 +968,8 @@ bool EntityItem::stepKinematicMotion(float timeElapsed) {
         return true;
     }
 
-    const float MAX_TIME_ELAPSED = 1.0f; // seconds
-    if (timeElapsed > MAX_TIME_ELAPSED) {
-        qCDebug(entities) << "kinematic timestep = " << timeElapsed << " truncated to " << MAX_TIME_ELAPSED;
-    }
-    timeElapsed = glm::min(timeElapsed, MAX_TIME_ELAPSED);
+    // limit the timestep to 1 so the simulation doesn't blow up
+    timeElapsed = glm::min(timeElapsed, 1.0f);
 
     if (isSpinning) {
         float angularDamping = getAngularDamping();
