@@ -1,5 +1,6 @@
 import QtQuick 2.7
 import QtQuick.Controls 2.15
+import "./qml"
 
 Item {
     id: root
@@ -32,7 +33,7 @@ Item {
             x: 5
             width: parent.width - button.width
             height: parent.height
-            text: ""
+            text: SharedData.inputText
             color: "#000"
             clip: false
             font.pointSize: 18
@@ -50,6 +51,7 @@ Item {
                 } else {
                     toScript({type: "action", action: "start_typing"});
                 }
+                SharedData.inputText = text;
             }
 
             function moveLeft(){
@@ -106,7 +108,7 @@ Item {
     function _onEnterPressed() {
         changeVisibility(false)
         toScript({type: "send_message", message: textArea.text, channel: "local"})
-        textArea.text = "";
+        SharedData.inputText = "";
     }
 
     function changeVisibility(state){

@@ -220,12 +220,13 @@ Rectangle {
                         leftPadding: 5
                         rightPadding: 5
                         font.pixelSize: 18
+                        text: SharedData.inputText
 
                         Keys.onPressed: {
                             if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && !(event.modifiers & Qt.ShiftModifier)) {
                                 event.accepted = true;
                                 toScript({type: "send_message", message: text, channel: pageVal});
-                                text = ""
+                                SharedData.inputText = ""
                             }
                         }
                         onTextChanged: {
@@ -234,6 +235,7 @@ Rectangle {
                             } else {
                                 toScript({type: "action", action: "start_typing"});
                             }
+                            SharedData.inputText = text;
                         }
                         onFocusChanged: {
                             if (!HMD.active) return;
@@ -254,12 +256,12 @@ Rectangle {
 
                         onClicked: {
                             toScript({type: "send_message", message: parent.children[0].text, channel: pageVal});
-                            parent.children[0].text = ""
+                            SharedData.inputText = ""
                         }
                         Keys.onPressed: {
                             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                                 toScript({type: "send_message", message: parent.children[0].text, channel: pageVal});
-                                parent.children[0].text = ""
+                                SharedData.inputText = ""
                             }
                         }
                     }
