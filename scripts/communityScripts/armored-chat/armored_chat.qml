@@ -164,9 +164,27 @@ Rectangle {
                     }
                 }
 
+                property bool scrolledUp: false
+
                 Component.onCompleted: {
                     listview.positionViewAtEnd();
                 }
+
+                onMovementStarted: {
+                    scrolledUp = true
+                }
+
+                onMovementEnded: {
+                    if (atYEnd) scrolledUp = false;
+                }
+
+                onHeightChanged: {
+                    if (!atYEnd && !scrolledUp) {
+                        listview.positionViewAtEnd();
+                    }
+                }
+
+
             }
 
             ListModel {
