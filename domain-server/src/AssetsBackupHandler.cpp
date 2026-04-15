@@ -64,8 +64,8 @@ void AssetsBackupHandler::setupRefreshTimer() {
     QObject::connect(nodeList.data(), &LimitedNodeList::nodeActivated, this, [this](SharedNodePointer node) {
         if (node->getType() == NodeType::AssetServer) {
             assert(_assetServerEnabled);
-            // run immediately for the first time.
-            _mappingsRefreshTimer.start(0);
+            // run almost immediately for the first time.
+            _mappingsRefreshTimer.start(2);
         }
     });
     QObject::connect(nodeList.data(), &LimitedNodeList::nodeKilled, this, [this](SharedNodePointer node) {
