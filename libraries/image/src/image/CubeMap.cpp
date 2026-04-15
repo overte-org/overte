@@ -185,7 +185,16 @@ private:
         } else if (value >= dim) {
             src = dim;
             dst = dim + 1;
+        } else {
+            // TODO:
+            // This branch should never happen.
+            // If it does, we're unsure of the correct return values.
+            //
+            // If the assert is hit, this code should be revisited to work out what should
+            // be the proper result in this case.
+            assert(0);
         }
+
         return std::make_pair(src, dst);
     }
 
