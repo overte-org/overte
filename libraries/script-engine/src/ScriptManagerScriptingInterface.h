@@ -638,7 +638,7 @@ public:
 
     /*@jsdoc
      * Clears the script cache.
-     * This causes scripts to be downloaded again. Useful for script development.
+     * This causes scripts which had been stored in the cache to be downloaded again the next time they are loaded. Useful for script development.
      * @function ScriptDiscoveryService.clearCache
      */
     Q_INVOKABLE void clearCache();
