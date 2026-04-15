@@ -563,7 +563,7 @@ public:
 
     /*@jsdoc
      * Create test object for garbage collector debugging.
-     * @function Script.createGarbageCollectorDebuggingObject()
+     * @function Script.createGarbageCollectorDebuggingObject
      * @Returns Test object.
      */
      Q_INVOKABLE ScriptValue createGarbageCollectorDebuggingObject();
@@ -635,6 +635,13 @@ public:
      * @returns {String} String with Base64-encoded binary data.
      */
      Q_INVOKABLE QString btoa(const QByteArray &binary);
+
+    /*@jsdoc
+     * Clears the script cache.
+     * This causes scripts to be downloaded again. Useful for script development.
+     * @function ScriptDiscoveryService.clearCache
+     */
+    Q_INVOKABLE void clearCache();
 
  signals:
 
