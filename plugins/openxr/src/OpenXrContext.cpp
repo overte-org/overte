@@ -43,6 +43,28 @@ bool xrCheck(XrInstance instance, XrResult result, const char* message) {
     return false;
 }
 
+XRAPI_CALL static XrBool32 XRAPI_CALL debugMessageCallback(
+    XrDebugUtilsMessageSeverityFlagsEXT severity,
+    XrDebugUtilsMessageTypeFlagsEXT type,
+    const XrDebugUtilsMessengerCallbackDataEXT* data,
+    void*
+) {
+    // bitflags, so can't use a switch
+    // TODO: does any runtime actually set multiple of these bits at once?
+    if (severity <= XR_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+        qCDebug(xr_context_cat, "%s: %s", data->functionName, data->message);
+    } else if (severity <= XR_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+        qCInfo(xr_context_cat, "%s: %s", data->functionName, data->message);
+    } else if (severity <= XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        qCWarning(xr_context_cat, "%s: %s", data->functionName, data->message);
+    } else {
+        // XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT
+        qCCritical(xr_context_cat, "%s: %s", data->functionName, data->message);
+    }
+
+    return XR_FALSE;
+}
+
 // Extension functions must be loaded with xrGetInstanceProcAddr
 static PFN_xrGetOpenGLGraphicsRequirementsKHR pfnGetOpenGLGraphicsRequirementsKHR = nullptr;
 
@@ -116,6 +138,7 @@ bool OpenXrContext::initInstance() {
     bool MNDX_xdevSpaceSupported = false;
     bool HTCX_viveTrackerInteractionSupported = false;
     bool MNDX_eglEnableSupported = false;
+    bool EXT_debugUtilsSupported = false;
 
     qCInfo(xr_context_cat, "Runtime supports %d extensions:", count);
     for (uint32_t i = 0; i < count; i++) {
@@ -138,6 +161,8 @@ bool OpenXrContext::initInstance() {
         } else if (strcmp(XR_MNDX_EGL_ENABLE_EXTENSION_NAME, properties[i].extensionName) == 0) {
             MNDX_eglEnableSupported = true;
 #endif
+        } else if (strcmp(XR_EXT_DEBUG_UTILS_EXTENSION_NAME, properties[i].extensionName) == 0) {
+            EXT_debugUtilsSupported = true;
         }
     }
 
@@ -150,6 +175,7 @@ bool OpenXrContext::initInstance() {
 
     if (userPresenceSupported) {
         enabled.push_back(XR_EXT_USER_PRESENCE_EXTENSION_NAME);
+        _userPresenceAvailable = true;
     }
 
     if (odysseyControllerSupported) {
@@ -183,6 +209,11 @@ bool OpenXrContext::initInstance() {
     }
 #endif
 
+    if (EXT_debugUtilsSupported) {
+        enabled.push_back(XR_EXT_DEBUG_UTILS_EXTENSION_NAME);
+        _EXT_debugUtilsSupported = true;
+    }
+
     XrInstanceCreateInfo info = {
         .type = XR_TYPE_INSTANCE_CREATE_INFO,
         .applicationInfo = {
@@ -215,15 +246,6 @@ bool OpenXrContext::initInstance() {
     xrStringToPath(_instance, "/user/hand/right", &_handPaths[1]);
 
     xrStringToPath(_instance, "/interaction_profiles/htc/vive_controller", &_viveControllerPath);
-
-    if (userPresenceSupported) {
-        XrSystemUserPresencePropertiesEXT presenceProps = {XR_TYPE_SYSTEM_USER_PRESENCE_PROPERTIES_EXT};
-        XrSystemProperties sysProps = {XR_TYPE_SYSTEM_PROPERTIES, &presenceProps};
-        result = xrGetSystemProperties(_instance, _systemId, &sysProps);
-        if (xrCheck(XR_NULL_HANDLE, result, "Couldn't get system properties")) {
-            _userPresenceAvailable = presenceProps.supportsUserPresence;
-        }
-    }
 
     return true;
 #endif
@@ -274,6 +296,29 @@ bool OpenXrContext::initSystem() {
            props.graphicsProperties.maxSwapchainImageWidth);
     qCInfo(xr_context_cat, "Orientation Tracking: %d", props.trackingProperties.orientationTracking);
     qCInfo(xr_context_cat, "Position Tracking   : %d", props.trackingProperties.positionTracking);
+
+    if (_EXT_debugUtilsSupported) {
+        xrGetInstanceProcAddr(
+            _instance,
+            "xrCreateDebugUtilsMessengerEXT",
+            reinterpret_cast<PFN_xrVoidFunction*>(&xrCreateDebugUtilsMessengerEXT)
+        );
+
+        XrDebugUtilsMessengerCreateInfoEXT createInfo = {
+            .type = XR_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
+            .next = nullptr,
+            .messageSeverities = XR_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | XR_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT,
+            .messageTypes = XR_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT,
+            .userCallback = debugMessageCallback,
+            .userData = nullptr,
+        };
+
+        xrCreateDebugUtilsMessengerEXT(
+            _instance,
+            &createInfo,
+            &_debugMessenger
+        );
+    }
 
     auto next = reinterpret_cast<const XrExtensionProperties*>(props.next);
     while (next) {
@@ -377,6 +422,15 @@ bool OpenXrContext::initSystem() {
             "xrEnumerateViveTrackerPathsHTCX",
             reinterpret_cast<PFN_xrVoidFunction*>(&xrEnumerateViveTrackerPathsHTCX)
         );
+    }
+
+    if (_userPresenceAvailable) {
+        XrSystemUserPresencePropertiesEXT presenceProps = {XR_TYPE_SYSTEM_USER_PRESENCE_PROPERTIES_EXT};
+        XrSystemProperties sysProps = {XR_TYPE_SYSTEM_PROPERTIES, &presenceProps};
+        result = xrGetSystemProperties(_instance, _systemId, &sysProps);
+        if (xrCheck(XR_NULL_HANDLE, result, "Couldn't get system properties")) {
+            _userPresenceAvailable = presenceProps.supportsUserPresence;
+        }
     }
 
     return true;
@@ -526,7 +580,7 @@ bool OpenXrContext::initSession() {
         // Putting glxContext into a separate variable and checking that *doesn't*
         // work, but checking it after xlibBinding has been initialised with it *does*?
         if (!xlibBinding.glxContext) {
-            qCCritical(xr_context_cat, "glXContext is null");
+            qCCritical(xr_context_cat, "OpenGL context is null");
             return false;
         }
 
@@ -539,6 +593,12 @@ bool OpenXrContext::initSession() {
             .hDC = wglGetCurrentDC(),
             .hGLRC = wglGetCurrentContext(),
         };
+
+        // FIXME: is this the same thing as the GLX context bug?
+        if (!binding.hDC || !binding.hGLRC) {
+            qCCritical(xr_context_cat, "OpenGL context is null");
+            return false;
+        }
 
         info.next = &binding;
     }
