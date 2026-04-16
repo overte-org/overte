@@ -43,7 +43,7 @@ bool xrCheck(XrInstance instance, XrResult result, const char* message) {
     return false;
 }
 
-XRAPI_CALL static XrBool32 XRAPI_CALL debugMessageCallback(
+XRAPI_ATTR static XrBool32 XRAPI_CALL debugMessageCallback(
     XrDebugUtilsMessageSeverityFlagsEXT severity,
     XrDebugUtilsMessageTypeFlagsEXT type,
     const XrDebugUtilsMessengerCallbackDataEXT* data,
