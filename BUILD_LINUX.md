@@ -1,13 +1,13 @@
 <!--
 Copyright 2013-2019 High Fidelity, Inc.
 Copyright 2019-2022 Vircadia contributors
-Copyright 2021-2025 Overte e.V.
+Copyright 2021-2026 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
 # Build Linux
 
-*Last Updated on 2026-02-13*
+*Last Updated on 2026-04-16*
 
 Please read the [general build guide](BUILD.md) for information on dependencies required for all platforms. Only Linux specific instructions are found in this file.
 
@@ -131,7 +131,7 @@ cmake --preset conan-default
 
 To compile the Domain server:
 ```bash
-cmake --build --preset conan-release domain-server assignment-client
+cmake --build --preset conan-release --target domain-server assignment-client
 ```
 
 *Note: For a server, it is not necessary to compile the Interface.*
@@ -140,7 +140,7 @@ cmake --build --preset conan-release domain-server assignment-client
 
 To compile the Interface client:
 ```bash
-cmake --build --preset conan-release interface
+cmake --build --preset conan-release --target interface
 ```
 
 ## Running the software
