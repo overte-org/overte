@@ -471,10 +471,10 @@ Rectangle {
 
         switch (message.type){
             case "show_message":
-                addMessage(message.displayName, message.message, `[ ${message.timeString} - ${message.dateString} ]`, message.channel, "chat");
+                addMessage(message.displayName, message.message, `${message.timeString} - ${message.dateString}`, message.channel, "chat");
                 break;
             case "notification":
-                addMessage("SYSTEM", message.message, `[ ${message.timeString} - ${message.dateString} ]`, "domain", "notification");
+                addMessage("SYSTEM", message.message, `${message.timeString} - ${message.dateString}`, "domain", "notification");
                 break;
             case "clear_messages":
                 localMessages.clear();
