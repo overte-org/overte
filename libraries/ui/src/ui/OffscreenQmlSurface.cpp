@@ -248,7 +248,7 @@ void OffscreenQmlSurface::initializeEngine(QQmlEngine* engine) {
     fileSelector->setExtraSelectors(FileUtils::getFileSelectors());
 
     static std::once_flag once;
-    std::call_once(once, [] { 
+    std::call_once(once, [] {
         qRegisterMetaType<TabletProxy*>();
         qRegisterMetaType<TabletButtonProxy*>();
         qmlRegisterType<SoundEffect>("Hifi", 1, 0, "SoundEffect");
@@ -408,7 +408,7 @@ bool OffscreenQmlSurface::eventFilter(QObject* originalDestination, QEvent* even
 
     if (event->type() == QEvent::Resize) {
         QResizeEvent* resizeEvent = static_cast<QResizeEvent*>(event);
-        QWidget* widget = static_cast<QWidget*>(originalDestination);
+        QWidget* widget = dynamic_cast<QWidget*>(originalDestination);
         if (widget) {
             this->resize(resizeEvent->size());
         }
@@ -832,7 +832,7 @@ void OffscreenQmlSurface::loadFromQml(const QUrl& qmlSource, QQuickItem* parent,
     };
 
     if (hifi::scripting::isLocalAccessSafeThread()) {
-        // If this is a 
+        // If this is a
         auto contextCallback = [callback](QQmlContext* context) {
             ContextAwareProfile::restrictContext(context, false);
 #if !defined(Q_OS_ANDROID)
