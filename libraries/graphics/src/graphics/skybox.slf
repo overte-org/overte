@@ -27,10 +27,10 @@
 <@endif@>
 
 INPUT(0, vec3, _skyUV);
-INPUT(1, vec3, _normalWS);
 <@if not HIFI_USE_FORWARD@>
-    INPUT(2, vec4, _prevPositionCS);
+    INPUT(1, vec4, _prevPositionCS);
 <@endif@>
+INPUT(2, vec3, _normalWS);
 
 void main(void) {
     vec3 skyUV = normalize(_skyUV);
