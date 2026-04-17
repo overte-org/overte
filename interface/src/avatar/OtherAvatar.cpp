@@ -410,7 +410,6 @@ void OtherAvatar::simulate(float deltaTime, bool inView) {
                                 _jointHistory[i][historyIndex] = _jointHistory[i][static_cast<qsizetype>(historyIndex + _jointHistory[i].size() - OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK)];
                             }
                             _jointHistory[i].resize(OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK);
-                            qDebug() << "joint history cleanup";
                         }
                     }
                 }
