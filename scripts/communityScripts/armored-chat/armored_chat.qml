@@ -213,7 +213,7 @@ Rectangle {
                         wrapMode: Text.Wrap
                         placeholderText: pageVal.charAt(0).toUpperCase() + pageVal.slice(1) + " chat message...";
                         clip: false;
-                        font.italic: text == "";
+                        font.italic: SharedData.inputText == "";
                         selectByMouse: true;
                         topPadding: 5
                         bottomPadding: 5
@@ -225,17 +225,16 @@ Rectangle {
                         Keys.onPressed: {
                             if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && !(event.modifiers & Qt.ShiftModifier)) {
                                 event.accepted = true;
-                                toScript({type: "send_message", message: text, channel: pageVal});
+                                toScript({type: "send_message", message: SharedData.inputText, channel: pageVal});
                                 SharedData.inputText = ""
                             }
                         }
                         onTextChanged: {
-                            if (text === "") {
+                            if (SharedData.inputText === "") {
                                 toScript({type: "action", action: "end_typing"});
                             } else {
                                 toScript({type: "action", action: "start_typing"});
                             }
-                            SharedData.inputText = text;
                         }
                         onFocusChanged: {
                             if (!HMD.active) return;

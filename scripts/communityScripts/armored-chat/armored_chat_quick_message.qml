@@ -46,12 +46,11 @@ Item {
             Keys.onRightPressed: { moveRight(); }
 
             onTextChanged: {
-                if (text === "") {
+                if (SharedData.inputText === "") {
                     toScript({type: "action", action: "end_typing"});
                 } else {
                     toScript({type: "action", action: "start_typing"});
                 }
-                SharedData.inputText = text;
             }
 
             function moveLeft(){
@@ -60,7 +59,7 @@ Item {
                 }
             }
             function moveRight(){
-                if (cursorPosition < text.length){
+                if (cursorPosition < SharedData.inputText.length){
                     cursorPosition++
                 }
             }
@@ -73,7 +72,7 @@ Item {
             x: 5
             width: parent.width
             anchors.verticalCenter: parent.verticalCenter
-            visible: textArea.text == ""
+            visible: SharedData.inputText == ""
             font.italic: true
         }
 
@@ -107,7 +106,7 @@ Item {
 
     function _onEnterPressed() {
         changeVisibility(false)
-        toScript({type: "send_message", message: textArea.text, channel: "local"})
+        toScript({type: "send_message", message: SharedData.inputText, channel: "local"})
         SharedData.inputText = "";
     }
 
