@@ -436,18 +436,18 @@ static const char* SHADER_JSON_TYPE_KEY = "type";
 static const char* SHADER_JSON_SOURCE_KEY = "source";
 static const char* SHADER_JSON_DATA_KEY = "data";
 
+// Currently shader cache size limit is 1 GB.
+constexpr qsizetype MAX_SHADER_CACHE_SIZE = INT32_MAX / 2 - 1;
+
 void gl::loadShaderCache(ShaderCache& cache) {
 #if !defined(DISABLE_QML)
     QString shaderCacheFile = getShaderCacheFile();
-    // QT6TODO: check if QT6 strings handle larger sizes correctly, if so we can remove this limit once Overte is running on Qt6.
-    // Qt cannot handle strings bigger than 2 GB.
-    // In such case it's best to delete file so that new shader cache can be written.
     auto shaderFileInfo = QFileInfo(shaderCacheFile);
     if (!shaderFileInfo.exists()) {
         return;
     }
-    if (shaderFileInfo.size() <= INT32_MAX / 2 - 1) {
-        QString json = FileUtils::readFile(shaderCacheFile);
+    // Shader cache will slowly get bigger, so we need to keep it to some reasonable size.
+    if (shaderFileInfo.size() <= MAX_SHADER_CACHE_SIZE) {
         nlohmann::json root;
         try {
             std::ifstream i(shaderCacheFile.toStdString());
