@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Creating an Installer
 
-*Last Updated on April 12, 2025*
+*Last Updated on April 17, 2026*
 
 Follow the [build guide](BUILD.md) to figure out how to build Overte for your platform.
 
@@ -82,7 +82,6 @@ For code signing to work, you will need to set the `HF_PFX_FILE` and `HF_PFX_PAS
 1.  Perform a clean cmake from a new terminal.
 1.  Open the `overte.sln` solution with elevated (administrator) permissions on Visual Studio and select the **Release** configuration.
 1.  Build the solution.
-1.  Build `packaged-server-console-npm-install` (found under **hidden/Server Console**)
 1.  Build `packaged-server-console` (found under **Server Console**)
     This will add 2 folders to `build\server-console\` -
     `server-console-win32-x64` and `x64`
