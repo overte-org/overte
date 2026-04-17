@@ -313,7 +313,7 @@
         if (messageHistory) {
             // Load message history
             messageHistory.forEach((message) => {
-                const timeArray = _formatTimestamp(_getTimestamp());
+                const timeArray = _formatTimestamp(message.timestamp);
                 message.timeString = timeArray[0];
                 message.dateString = timeArray[1];
                 _emitEvent({ type: "show_message", ...message });
@@ -331,17 +331,18 @@
         return Date.now();
     }
     function _formatTimestamp(timestamp) {
-        let timeArray = [];
+        // We cannot use Date.toLocaleTimeString and Date.toLocaleDateString due to a bug,
+        // see https://github.com/overte-org/overte/issues/2197
+        const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+        const timeArray = [];
+        const date = new Date(timestamp);
+        const day = date.getDate();
+        const dayString = String(day).padStart(2, '0')
+        console.log(dayString[0], dayString[1]);
+        // const suffix = (dayString[0] != '1' && dayString[1] === '1') ? 'st' : (dayString[0] != '1' && dayString[1] === '2') ? 'nd' : (dayString[0] != '1' && dayString[1]) === '3' ? 'rd' : 'th';
 
-        timeArray.push(new Date().toLocaleTimeString(undefined, {
-            hour12: false,
-        }));
-
-        timeArray.push(new Date(timestamp).toLocaleDateString(undefined, {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-        }));
+        timeArray.push(`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`);
+        timeArray.push(`${day} ${monthNames[date.getMonth()]} ${date.getFullYear()}`);
 
         return timeArray;
     }
