@@ -122,6 +122,10 @@ public:
 
     bool _MNDX_eglEnableSupported = false;
 
+    bool _EXT_debugUtilsSupported = false;
+    XrDebugUtilsMessengerEXT _debugMessenger = {};
+    PFN_xrCreateDebugUtilsMessengerEXT xrCreateDebugUtilsMessengerEXT = nullptr;
+
 private:
     XrSessionState _lastSessionState = XR_SESSION_STATE_UNKNOWN;
 
