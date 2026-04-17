@@ -213,24 +213,24 @@ Rectangle {
                         wrapMode: Text.Wrap
                         placeholderText: pageVal.charAt(0).toUpperCase() + pageVal.slice(1) + " chat message...";
                         clip: false;
-                        font.italic: SharedData.inputText == "";
+                        font.italic: text == "";
                         selectByMouse: true;
                         topPadding: 5
                         bottomPadding: 5
                         leftPadding: 5
                         rightPadding: 5
                         font.pixelSize: 18
-                        text: SharedData.inputText
+                        text: text
 
                         Keys.onPressed: {
                             if ((event.key === Qt.Key_Return || event.key === Qt.Key_Enter) && !(event.modifiers & Qt.ShiftModifier)) {
                                 event.accepted = true;
-                                toScript({type: "send_message", message: SharedData.inputText, channel: pageVal});
-                                SharedData.inputText = ""
+                                toScript({type: "send_message", message: text, channel: pageVal});
+                                text = ""
                             }
                         }
                         onTextChanged: {
-                            if (SharedData.inputText === "") {
+                            if (text === "") {
                                 toScript({type: "action", action: "end_typing"});
                             } else {
                                 toScript({type: "action", action: "start_typing"});
@@ -255,12 +255,12 @@ Rectangle {
 
                         onClicked: {
                             toScript({type: "send_message", message: parent.children[0].text, channel: pageVal});
-                            SharedData.inputText = ""
+                            textArea.text = ""
                         }
                         Keys.onPressed: {
                             if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
                                 toScript({type: "send_message", message: parent.children[0].text, channel: pageVal});
-                                SharedData.inputText = ""
+                                textArea.text = ""
                             }
                         }
                     }

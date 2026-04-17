@@ -33,7 +33,7 @@ Item {
             x: 5
             width: parent.width - button.width
             height: parent.height
-            text: SharedData.inputText
+            text: ''
             color: "#000"
             clip: false
             font.pointSize: 18
@@ -46,7 +46,7 @@ Item {
             Keys.onRightPressed: { moveRight(); }
 
             onTextChanged: {
-                if (SharedData.inputText === "") {
+                if (text === "") {
                     toScript({type: "action", action: "end_typing"});
                 } else {
                     toScript({type: "action", action: "start_typing"});
@@ -59,7 +59,7 @@ Item {
                 }
             }
             function moveRight(){
-                if (cursorPosition < SharedData.inputText.length){
+                if (cursorPosition < text.length){
                     cursorPosition++
                 }
             }
@@ -72,7 +72,7 @@ Item {
             x: 5
             width: parent.width
             anchors.verticalCenter: parent.verticalCenter
-            visible: SharedData.inputText == ""
+            visible: textArea.text == ""
             font.italic: true
         }
 
@@ -106,8 +106,8 @@ Item {
 
     function _onEnterPressed() {
         changeVisibility(false)
-        toScript({type: "send_message", message: SharedData.inputText, channel: "local"})
-        SharedData.inputText = "";
+        toScript({type: "send_message", message: textArea.text, channel: "local"})
+        textArea.text = "";
     }
 
     function changeVisibility(state){
