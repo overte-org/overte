@@ -116,9 +116,9 @@ class UserInputMapper;
  * A filter in a {@link Controller.MappingJSONRoute}.
  * @typedef {object} Controller.MappingJSONFilter
  * @property {string} type - The name of the filter, being the name of the one of the {@link RouteObject}'s filter methods.
- * @property {string} [?] - If the filter method has a first parameter, the property name is the name of that parameter and the 
+ * @property {string} [_1] - If the filter method has a first parameter, the property name is the name of that parameter and the 
  *     property value is the value to use.
- * @property {string} [?] - If the filter method has a second parameter, the property name  is the name of that parameter and 
+ * @property {string} [_2] - If the filter method has a second parameter, the property name  is the name of that parameter and 
  *     the property value is the value to use.
  * @example <caption>A hysteresis filter.</caption>
  * { 

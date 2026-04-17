@@ -261,7 +261,7 @@ bool scriptable::ScriptableMesh::setVertexProperty(glm::uint32 vertexIndex, cons
 
 /*@jsdoc
  * Called for each vertex when {@link GraphicsMesh.updateVertexAttributes} is called.
- * @callback GraphicsMesh~forEachVertextCallback
+ * @callback GraphicsMesh~forEachVertexCallback
  * @param {Object<Graphics.BufferTypeName, Graphics.BufferType>} attributes - The attributes  of the vertex.
  * @param {number} index - The vertex index.
  * @param {object} properties - The properties of the mesh, per {@link GraphicsMesh}.
