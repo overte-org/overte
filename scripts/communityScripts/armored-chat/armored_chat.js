@@ -155,8 +155,8 @@
 
         // Remove unnecessary data.
         delete savedMessage.position;
-        //delete savedMessage.timeString;
-        //delete savedMessage.dateString;
+        delete savedMessage.timeString;
+        delete savedMessage.dateString;
         delete savedMessage.action;
 
         savedMessage.timestamp = currentTimestamp;
@@ -313,9 +313,9 @@
         if (messageHistory) {
             // Load message history
             messageHistory.forEach((message) => {
-                // const timeArray = _formatTimestamp(_getTimestamp());
-                // message.timeString = timeArray[0];
-                // message.dateString = timeArray[1];
+                const timeArray = _formatTimestamp(message.timestamp);
+                message.timeString = timeArray[0];
+                message.dateString = timeArray[1];
                 _emitEvent({ type: "show_message", ...message });
             });
         }
