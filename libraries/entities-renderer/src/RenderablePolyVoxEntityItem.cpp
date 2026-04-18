@@ -404,6 +404,8 @@ int edgeTable[256] = { 0x0,   0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c, 0
                        0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c, 0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109,
                        0x0 };
 
+// NOTE: this is a PolyVox compatible table, not the original Marching Cubes one, because
+// it creates many holes and to keep curent models working :3
 int triTable[256][16] = { { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
                           { 0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
                           { 1, 9, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 },
@@ -872,6 +874,21 @@ private:
 // based on Cory Bloyd's example program released into the public domain.
 // source: http://www.paulbourke.net/geometry/polygonise/
 // code example: http://www.paulbourke.net/geometry/polygonise/marchingsource.cpp
+//
+// the indeces follow the following structure:
+//
+//     v5 ---5--v6
+//     /|       /|
+//   e4 e9    e6 e10
+//   /  |     /  |
+// v4 ---e7-v7   |
+//  |  v1 -e1|--v2
+// e8  /    e11 /
+//  |e0      | e2
+//  |/       |/
+// v0 --3---v3
+//
+// TODO: support custom tables
 class MarchingCubesSurfaceExtractor : public SurfaceExtractor {
 public:
     inline MarchingCubesSurfaceExtractor(std::shared_ptr<VoxelVolume> vol, glm::bvec3 upper_edge_connect) :
@@ -961,6 +978,7 @@ public:
                 auto v3 = vertlist[tris[i + 2]];
                 glm::vec3 norm = glm::cross(v3 - v2, v1 - v2);
 
+                // FIXME: this material passing seems totaly wrong
                 auto id1 = addVertex(v1, norm, 1);
                 auto id2 = addVertex(v2, norm, 1);
                 auto id3 = addVertex(v3, norm, 1);
