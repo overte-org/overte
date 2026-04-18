@@ -31,8 +31,6 @@
 
               artery-font-format = pkgs.callPackage ./nix/artery-font-format.nix { };
 
-              polyvox = pkgs.callPackage ./nix/polyvox.nix { };
-
               gif_creator = pkgs.callPackage ./nix/gif_creator.nix { };
 
               scribe = pkgs.callPackage ./nix/scribe.nix { };
@@ -42,7 +40,6 @@
                   glad
                   scribe
                   gif_creator
-                  polyvox
                   artery-font-format
                   cgltf
                   etc2comp
