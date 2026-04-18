@@ -985,7 +985,6 @@ public:
                 same_position.insert(i);
 
                 auto normal_sum = glm::vec3(0);
-                uint32_t num_sums = 0;
 
                 for (size_t j = i + 1; j < vertSize; j++) {
                     auto& vert2 = vecVertices[j];
@@ -994,13 +993,10 @@ public:
                         Q_ASSERT(!already_seen[j]);
                         already_seen[j] = true;
                         normal_sum += vert2.normal;
-                        num_sums++;
                     }
                 }
 
-                normal_sum /= glm::vec3(num_sums);
-
-                new_vertices.emplace_back(vert.position, normal_sum, vert.material);
+                new_vertices.emplace_back(vert.position, glm::normalize(normal_sum), vert.material);
                 uint32_t new_ind = new_vertices.size() - 1;
 
                 std::for_each(vecIndices.begin(), vecIndices.end(), [&](auto& ind) {
