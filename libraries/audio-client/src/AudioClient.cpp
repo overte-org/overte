@@ -545,7 +545,7 @@ int AudioClient::getEncoderBitrate() {
 
 void AudioClient::setEncoderBitrate(int bitrate) {
     if (_encoder) {
-        _encoder->setBitrate(bitrate);
+        _encoder->setBitrate(std::clamp(bitrate, 0, std::numeric_limits<int>::max()));
     }
 }
 
@@ -559,7 +559,7 @@ int AudioClient::getEncoderComplexity() {
 
 void AudioClient::setEncoderComplexity(int complexity) {
     if (_encoder) {
-        _encoder->setComplexity(complexity);
+        _encoder->setComplexity(std::clamp(complexity, 0, 100));
     }
 }
 
@@ -587,7 +587,7 @@ int AudioClient::getEncoderPacketLossPercent() {
 
 void AudioClient::setEncoderPacketLossPercent(int percent) {
     if (_encoder) {
-        _encoder->setPacketLossPercent(percent);
+        _encoder->setPacketLossPercent(std::clamp(percent, 0, 100));
     }
 }
 
