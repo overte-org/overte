@@ -63,7 +63,15 @@ QString FileUtils::readFile(const QString& filename) {
     QFile file(filename);
     file.open(QFile::Text | QFile::ReadOnly);
     QString result;
-    result.append(QTextStream(&file).readAll());
+    // QT6TODO: check if QT6 strings handle larger sizes correctly, if so we can remove this limit once Overte is running on Qt6.
+    // Qt cannot handle strings bigger than 2 GB.
+    // Since QString is UTF-16, this means that reading a file bigger than 1 GB will cause a crash.
+    if (file.size() <= INT32_MAX / 2 - 1) {
+        result.append(QTextStream(&file).readAll());
+    } else {
+        qWarning() << "File is too large and cannot be read to a string";
+        Q_ASSERT(false);
+    }
     return result;
 }
 
