@@ -782,7 +782,7 @@ bool similarStrings(const QString& stringA, const QString& stringB) {
 void disableQtBearerPoll() {
     // To disable the Qt constant wireless scanning, set the env for polling interval to -1
     // The constant polling causes ping spikes on windows every 10 seconds or so that affect the audio
-    const QByteArray DISABLE_BEARER_POLL_TIMEOUT = QString::number(-1).toLocal8Bit();
+    const QByteArray DISABLE_BEARER_POLL_TIMEOUT = QString::number(std::numeric_limits<int>::max()).toLocal8Bit();
     qputenv("QT_BEARER_POLL_TIMEOUT", DISABLE_BEARER_POLL_TIMEOUT);
 }
 

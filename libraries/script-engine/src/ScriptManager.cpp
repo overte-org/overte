@@ -1281,7 +1281,20 @@ QTimer* ScriptManager::setupTimerWithInterval(const ScriptValue& function, int i
     CallbackData timerData = { function, currentEntityIdentifier, currentSandboxURL };
     _timerFunctionMap.insert(newTimer, timerData);
 
-    newTimer->start(intervalMS);
+    if (intervalMS < 0) {
+        int lineNumber = -1;
+        QString fileName = getFilename();
+        auto context = _engine->currentContext();
+        if (context) {
+            lineNumber = context->currentLineNumber();
+            fileName = context->currentFileName();
+        }
+
+        scriptWarningMessage("Script.setInterval() was passed negative value " + QString::number(intervalMS) + ". Ignored, timer not started. Parent script:" + getFilename(), fileName, lineNumber);
+    } else {
+        newTimer->start(intervalMS);
+    }
+
     return newTimer;
 }
 
