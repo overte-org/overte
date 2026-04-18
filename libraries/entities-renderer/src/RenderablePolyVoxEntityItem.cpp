@@ -177,7 +177,7 @@ typedef VoxelType MaterialType;
  *
  * The structure uses a vector as it's backing structure which holds `allocated_size` of voxels.
  *
- * The backing structure is only resizes, when a user tries to edit a voxel (inside the `valid_size`,
+ * The backing structure only resizes, when a user tries to edit a voxel (inside the `valid_size`,
  * but outside `allocated_size`, i.e. editing a VoxelVolume with `valid_size`=5x5x5,`allocated_size`=3x3x3
  * at `index`=4,4,4 should resize the backing data structure to fit 5x5x5).
  *
