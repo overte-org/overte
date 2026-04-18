@@ -886,7 +886,7 @@ private:
 // e8  /    e11 /
 //  |e0      | e2
 //  |/       |/
-// v0 --3---v3
+// v0 --e3--v3
 //
 // TODO: support custom tables
 class MarchingCubesSurfaceExtractor : public SurfaceExtractor {
