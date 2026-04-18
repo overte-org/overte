@@ -11,8 +11,8 @@
 #else
     #define UNIFORM_BUFFER(SLOT, NAME) layout(std140, binding=SLOT) uniform NAME
     #define TEXTURE(SLOT, TYPE, NAME) layout(binding=SLOT) uniform TYPE NAME
-    #define RESOURCE_BUFFER(SLOT, NAME) layout(binding=SLOT) buffer NAME
-    #define RESOURCE_BUFFER_STD140(SLOT, NAME) layout(std140, binding=SLOT) buffer NAME
+    #define RESOURCE_BUFFER(SLOT, NAME) layout(binding=SLOT) uniform samplerBuffer NAME
+    #define RESOURCE_BUFFER_STD140(SLOT, NAME) layout(std140, binding=SLOT) uniform samplerBuffer NAME
 #endif
 #extension GL_EXT_texture_buffer : enable
 #if defined(HAVE_EXT_clip_cull_distance) && !defined(VULKAN)
