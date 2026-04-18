@@ -140,7 +140,7 @@ public:
      * Sets whether your microphone audio is echoed back to you by the client. When enabled, microphone audio is echoed
      * even if you're muted or not using push-to-talk.
      * @function Audio.setLocalEcho
-     * @parm {boolean} localEcho - <code>true</code> to enable echoing microphone audio back to you from the client,
+     * @param {boolean} localEcho - <code>true</code> to enable echoing microphone audio back to you from the client,
      *     <code>false</code> to disable.
      * @example <caption>Echo local audio for a few seconds.</caption>
      * Audio.setLocalEcho(true);
@@ -173,7 +173,7 @@ public:
      * Sets the list of codecs the client will try to negotiate with the domain.
      * This is a sub-set of the list returned by getCodecs.
      * If this list is empty, all system codecs are accepted.
-     * @parm {String[]} list of codecs to accept
+     * @param {String[]} list of codecs to accept
      * @function Audio.setAllowedCodecs
      */
     Q_INVOKABLE void setAllowedCodecs(const QStringList &codecs);
@@ -196,7 +196,7 @@ public:
     /*@jsdoc
      * Sets the bitrate of the current encoder.
      *
-     * @parm {int} Bit rate, in bps (eg, 128000 for 128kbps)
+     * @param {int} Bit rate, in bps (eg, 128000 for 128kbps)
      * @function Audio.setEncoderBitrate
      */
     Q_INVOKABLE void setEncoderBitrate(int bitrate);
@@ -212,7 +212,7 @@ public:
      *
      * When VBR is enabled, the encoder will use less bandwidth during times of silence and low
      * audio signal complexity.
-     * @parm {bool} Whether VBR is abled
+     * @param {bool} Whether VBR is abled
      * @function Audio.setEncoderVBR
      */
 
@@ -232,7 +232,7 @@ public:
      * The complexity is a number from 0 to 100 indicating how hard the codec tries to compress the data.
      * This is expected to have an effect on the amount of CPU time needed to compress the audio.
      * Higher levels are more CPU intensive but produce better quality or lower bandwidth usage.
-     * @parm {int} Complexity, from 0 to 100.
+     * @param {int} Complexity, from 0 to 100.
      * @function Audio.setEncoderComplexity
      */
 
@@ -250,7 +250,7 @@ public:
      * in better audio quality with bad network connections.
      *
      * Enabling this may cost additional bandwidth, or reduce encoding quality to make room for the redundancy.
-     * @parm {bool} Whether FEC is enabled
+     * @param {bool} Whether FEC is enabled
      * @function Audio.setEncoderFEC
      */
     Q_INVOKABLE void setEncoderFEC(bool enabled);
@@ -267,7 +267,7 @@ public:
      * in better audio quality with bad network connections.
      *
      * Enabling this may cost additional bandwidth, or reduce encoding quality to make room for the redundancy.
-     * @parm {int} Expected packet loss, in percent
+     * @param {int} Expected packet loss, in percent
      * @function Audio.setEncoderPacketLossPercent
      */
     Q_INVOKABLE void setEncoderPacketLossPercent(int percent);
