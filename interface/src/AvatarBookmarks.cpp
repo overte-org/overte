@@ -63,6 +63,7 @@ void addAvatarEntities(const QVariantList& avatarEntities) {
     EntityEditPacketSender* entityPacketSender = physicalEntitySimulation->getPacketSender();
     // V8TODO: Creating new script engine each time is very inefficient
     ScriptEnginePointer scriptEngine = newScriptEngine();
+    auto guard = scriptEngine->getScopeGuard();
     for (int index = 0; index < avatarEntities.count(); index++) {
         const QVariantMap& avatarEntityProperties = avatarEntities.at(index).toMap();
         QVariant variantProperties = avatarEntityProperties["properties"];
