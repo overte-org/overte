@@ -165,7 +165,7 @@ public:
      *
      * WARNING: this assumes that this transaction is empty at the time of `reserve()` call.
      * If the transaction is not empty, existing content will not be taken into account, so relying on this will
-     * cause performance issues sue to vector reallocation.
+     * cause performance issues due to vector reallocation.
      * @param transactionContainer Vector containing transactions for which space needs to be reserved.
      */
     void reserve(const std::vector<Transaction>& transactionContainer);

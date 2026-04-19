@@ -130,7 +130,7 @@ public:
     bool setDepthBuffer(const TexturePointer& texture, const Format& format, uint32 subresource = 0);
 
     /**
-     * @brief Sets depth render buffer.
+     * @brief Sets stencil render buffer.
      *
      * @param texture Texture to be set as render buffer.
      * @param format Stencil format for the render buffer.

@@ -176,7 +176,7 @@ public:
     void setStereoProjections(const mat4 eyeProjections[2]);
 
     /**
-     * @brief Sets projection matrices for each eye.
+     * @brief Sets view matrices for each eye.
      *
      * DOCTODO: What coordinate system does this use?
      * Used in `render_performFrame` before recording the frame rendering commands,

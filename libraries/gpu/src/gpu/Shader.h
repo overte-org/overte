@@ -99,7 +99,7 @@ public:
     static Pointer createVertex(const Source& source);
 
     /**
-    * @brief Creates a vertex shader from given source object.
+    * @brief Creates a fragment shader from given source object.
      *
      * Used for procedural shaders.
      * @param source Object containing shader's source and other data. Look in `Procedural::prepare()` for details.
@@ -135,10 +135,10 @@ public:
     static Pointer createProgram(uint32_t programId);
 
     /**
-     * @brief Creates a shader from given vertex and fragment shader objects.
+     * @brief Creates a program from given vertex and fragment shader objects.
      *
      * @param vertexShader Vertex shader created by `createVertex`.
-     * @param pixelShader Fragment shader created by `createFragment`.
+     * @param pixelShader Fragment shader created by `createPixel`.
      * @return Shared pointer to the resulting shader.
      */
     static Pointer createProgram(const Pointer& vertexShader, const Pointer& pixelShader);
