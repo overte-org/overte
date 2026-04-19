@@ -180,10 +180,10 @@ The tests are still not built by default, the test target has to be built with:
 
     make all-tests
 
-The tests will be generated under the `tests/` directory, grouped by category. To run all of them, use the `tests/test` target. This produces a test summary of
+The tests will be generated under the `tests/` directory, grouped by category. To run all of them, use the `test` target. This produces a test summary of
 pass/fail results.
 
-    make tests/test
+    make test
 
 To run just one, go into the corresponding directory and run the binary. This will produce a more detailed output, which can be useful for debugging.
 
