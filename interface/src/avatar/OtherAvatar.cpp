@@ -289,70 +289,67 @@ void OtherAvatar::interpolateJoints() {
         setLocalOrientation(glm::slerp(aQuat, bQuat, alpha));
     }
 
-    // there's no history to interpolate from,
-    // just set the rig poses to whatever we have
-    if ((size_t)_jointData.size() != _jointHistory.size()) {
-        goto finishRigSetup;
-    }
-
-    for (int i = 0; i < _jointData.size(); i++) {
-        const auto &history{_jointHistory[i]};
-        // We don't process very old samples for performance reasons, but we remove them only sporadically to avoid excessive reallocations.
-        const size_t historyStart = history.size() > OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK ? history.size() - OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK : 0;
-        // Calculate latency in microseconds and new time point.
-        quint64 latency = 0;
-        // We cannot calculate latency from just one sample.
-        if (history.size() >= 2) {
-            size_t latencySamples = 0;
-            for (size_t historyIndex = historyStart; historyIndex < history.size() - 1; historyIndex++) {
-                latency += std::min(history[historyIndex + 1].first - history[historyIndex].first, OTHER_AVATAR_JOINT_HISTORY_MAX_LATENCY);
-                latencySamples++;
+    // only interpolate if there is a history to interpolate from
+    // otherwise, just set the rig poses to whatever we have
+    if ((size_t)_jointData.size() == _jointHistory.size()) {
+        for (int i = 0; i < _jointData.size(); i++) {
+            const auto &history{_jointHistory[i]};
+            // We don't process very old samples for performance reasons, but we remove them only sporadically to avoid excessive reallocations.
+            const size_t historyStart = history.size() > OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK ? history.size() - OTHER_AVATAR_JOINT_HISTORY_LOOK_BACK : 0;
+            // Calculate latency in microseconds and new time point.
+            quint64 latency = 0;
+            // We cannot calculate latency from just one sample.
+            if (history.size() >= 2) {
+                size_t latencySamples = 0;
+                for (size_t historyIndex = historyStart; historyIndex < history.size() - 1; historyIndex++) {
+                    latency += std::min(history[historyIndex + 1].first - history[historyIndex].first, OTHER_AVATAR_JOINT_HISTORY_MAX_LATENCY);
+                    latencySamples++;
+                }
+                latency /= latencySamples;
+                // Real latency may differ from estimated one, so we need some safety margin.
+                latency *= OTHER_AVATAR_JOINT_LATENCY_COEFFICIENT;
+            } else {
+                // Latency cannot be determined yet since we have only one entry.
+                latency = 0;
             }
-            latency /= latencySamples;
-            // Real latency may differ from estimated one, so we need some safety margin.
-            latency *= OTHER_AVATAR_JOINT_LATENCY_COEFFICIENT;
-        } else {
-            // Latency cannot be determined yet since we have only one entry.
-            latency = 0;
-        }
-        // Limit latency to a defined value.
-        latency = std::min(OTHER_AVATAR_JOINT_HISTORY_MAX_LATENCY, latency);
-        // We don't know the future, so avatar motions need to be delayed to be interpolated.
-        auto timePoint = now - latency;
-        // Retrieve previous and current joint data.
-        Q_ASSERT(history.size() > 0);
-        if (history.size() == 0) continue;
-        size_t oldKeyframeIndex = history.size() - 1;
-        size_t newKeyframeIndex = history.size() - 1;
-        // Find the first keyframe that's in the "future".
-        // Searching backwards is more efficient here.
-        for (size_t historyIndex = history.size() - 1; historyIndex >= historyStart; historyIndex--) {
-            if (timePoint > history[historyIndex].first) {
-                if (historyIndex < history.size() - 1) {
-                    oldKeyframeIndex = historyIndex;
-                    newKeyframeIndex = historyIndex + 1;
-                    break;
-                } else {
-                    // There are no past entries yet.
-                    oldKeyframeIndex = historyIndex;
-                    newKeyframeIndex = historyIndex;
-                    break;
+            // Limit latency to a defined value.
+            latency = std::min(OTHER_AVATAR_JOINT_HISTORY_MAX_LATENCY, latency);
+            // We don't know the future, so avatar motions need to be delayed to be interpolated.
+            auto timePoint = now - latency;
+            // Retrieve previous and current joint data.
+            Q_ASSERT(history.size() > 0);
+            if (history.size() == 0) continue;
+            size_t oldKeyframeIndex = history.size() - 1;
+            size_t newKeyframeIndex = history.size() - 1;
+            // Find the first keyframe that's in the "future".
+            // Searching backwards is more efficient here.
+            for (size_t historyIndex = history.size() - 1; historyIndex >= historyStart; historyIndex--) {
+                if (timePoint > history[historyIndex].first) {
+                    if (historyIndex < history.size() - 1) {
+                        oldKeyframeIndex = historyIndex;
+                        newKeyframeIndex = historyIndex + 1;
+                        break;
+                    } else {
+                        // There are no past entries yet.
+                        oldKeyframeIndex = historyIndex;
+                        newKeyframeIndex = historyIndex;
+                        break;
+                    }
                 }
             }
+
+            const std::pair<quint64, JointData> &oldKeyframe{ history[oldKeyframeIndex] };
+            const std::pair<quint64, JointData> &newKeyframe{ history[newKeyframeIndex] };
+
+            quint64 timeDiff = timePoint >= oldKeyframe.first ? timePoint - oldKeyframe.first : 0;
+            // We need to avoid division by zero:
+            const float alpha = std::min(1.0f, static_cast<float>(timeDiff) /
+                static_cast<float>(std::max(newKeyframe.first - oldKeyframe.first, 1ULL)));
+            _jointData[i].rotation = glm::slerp(oldKeyframe.second.rotation, newKeyframe.second.rotation, alpha);
+            _jointData[i].translation = glm::mix(oldKeyframe.second.translation, newKeyframe.second.translation, alpha);
         }
-
-        const std::pair<quint64, JointData> &oldKeyframe{ history[oldKeyframeIndex] };
-        const std::pair<quint64, JointData> &newKeyframe{ history[newKeyframeIndex] };
-
-        quint64 timeDiff = timePoint >= oldKeyframe.first ? timePoint - oldKeyframe.first : 0;
-        // We need to avoid division by zero:
-        const float alpha = std::min(1.0f, static_cast<float>(timeDiff) /
-            static_cast<float>(std::max(newKeyframe.first - oldKeyframe.first, 1ULL)));
-        _jointData[i].rotation = glm::slerp(oldKeyframe.second.rotation, newKeyframe.second.rotation, alpha);
-        _jointData[i].translation = glm::mix(oldKeyframe.second.translation, newKeyframe.second.translation, alpha);
     }
 
-finishRigSetup:
     glm::mat4 rootTransform = glm::scale(_skeletonModel->getScale()) * glm::translate(_skeletonModel->getOffset());
     _skeletonModel->getRig().copyJointsFromJointData(_jointData);
     _skeletonModel->getRig().computeExternalPoses(rootTransform);
