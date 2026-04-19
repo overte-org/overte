@@ -389,6 +389,7 @@ void OtherAvatar::simulate(float deltaTime, bool inView) {
             if (_hasNewJointData) {
                 quint64 currentTime = usecTimestampNow();
 
+                QReadLocker readLock(&_jointDataLock);
                 Q_ASSERT(_hasNewJointDataVec.size() == static_cast<size_t>(_jointData.size()));
                 // Reset joint history if joint count changed.
                 if (_jointHistory.size() != static_cast<size_t>(_jointData.size())) {
