@@ -138,12 +138,11 @@ namespace render {
              int boundaryLevelAdjust = 0,
              float lodFarAngleHalfTan = 0.1f,
              float lodNearAngleHalfTan = 0.01f,
-             //float lodAngleHalfTan = 0.1f,
              float lodFarDist = 200.0f,
              float lodNearDist = 4.0f,
              RenderMode renderMode = DEFAULT_RENDER_MODE,
              DisplayMode displayMode = MONO,
-             RenderMethod renderMethod = DEFERRED,
+             RenderMethod renderMethod = DEFERRED, // TODO: Application_Grapics.cpp always passes DEFERRED here, even when forward renderer is used. Maybe it's better to not have a parameter in the constructor at all?
              gpu::Batch* batch = nullptr) :
             _context(context),
             _sizeScale(sizeScale),
@@ -272,7 +271,6 @@ namespace render {
         /// Current render method.
         /// Sometimes it's overridden locally and then restored, for example in `DrawLayered3D::run`.
         /// It's also set by SetRenderMethod job, for example in `RenderForwardTask` and `RenderShadowsAndDeferredTask`.
-        /// DOCTODO: this is confusing. why is this always set to `RenderArgs::DEFERRED` in `Application::updateRenderArgs`?
         RenderMethod _renderMethod { DEFERRED };
 
         /// Current batch to which the commands will be written.

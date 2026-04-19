@@ -1089,7 +1089,6 @@ public:
         // TODO: As long as we have gl calls explicitely issued from interface
         // code, we need to be able to record and batch these calls. THe long
         // term strategy is to get rid of any GL calls in favor of the HIFI GPU API
-        // Since these are implemented on Vulkan in a very efficient way, maybe we can keep them instead?
         COMMAND_glUniform1i,
         COMMAND_glUniform1f,
         COMMAND_glUniform2f,

@@ -386,7 +386,7 @@ protected:
      *
      * @param context Not used.
      */
-    Context(const Context& context);
+    Context(const Context& context) = delete;
 
     /**
      * Instance of Backend class specific to currently selected graphics APT, for example Vulkan or OpenGL.

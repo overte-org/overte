@@ -117,20 +117,21 @@ public:
     static Pointer createVertex(uint32_t shaderId);
 
     /**
-    * @brief Creates or reuses vertex shader with a given index.
+    * @brief Creates or reuses fragment shader with a given index.
      *
      * If shader was already created, then a pointer to the existing one will be returned.
-     * @param shaderId One of either `shader::render_utils::vertex` or `shader::gpu::vertex` enums.
-     * @return Shared pointer to the vertex shader.
+     * @param shaderId One of either `shader::render_utils::fragment` or `shader::gpu::fragment` enums.
+     * @return Shared pointer to the fragment shader.
      */
     static Pointer createPixel(uint32_t shaderId);
 
     /**
-    * @brief Creates or reuses vertex shader with a given index.
+    * @brief Creates or reuses a program with a given index.
      *
+     * Program contains both a vertex shader and a fragment shader.
      * If shader was already created, then a pointer to the existing one will be returned.
      * @param programId One of either `shader::render_utils::program` or `shader::gpu::program` enums.
-     * @return
+     * @return Shared pointer to the program.
      */
     static Pointer createProgram(uint32_t programId);
 
