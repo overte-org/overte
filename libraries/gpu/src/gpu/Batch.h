@@ -454,7 +454,7 @@ public:
     void setProjectionTransform(const Mat4& proj);
 
     /**
-     * @brief Adds a command to enable od disable projection jitter.
+     * @brief Adds a command to enable or disable projection jitter.
      *
      * Jitter is used for TAA.
      *

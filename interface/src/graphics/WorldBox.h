@@ -28,11 +28,6 @@ public:
     typedef Payload::DataPointer Pointer;
 
     /**
-     * DOCTODO: doesn't seem to be used?
-     */
-    //int _val = 0;
-
-    /**
      * Unique id.
      */
     static render::ItemID _item; // unique WorldBoxRenderData
@@ -47,9 +42,8 @@ public:
 
 namespace render {
     /**
-     * DOCTODO how do payloads work?
      * @param stuff Not used.
-     * @return
+     * @return A bitset of flags describing various payload properties.
      */
     template <> const ItemKey payloadGetKey(const WorldBoxRenderData::Pointer& stuff);
 
