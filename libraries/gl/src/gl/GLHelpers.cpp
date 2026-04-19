@@ -13,6 +13,8 @@
 #include <QtGui/QOpenGLContext>
 #include <QtGui/QOpenGLDebugLogger>
 
+#include <shared/GlobalAppProperties.h>
+
 #include "Context.h"
 
 size_t evalGLFormatSwapchainPixelSize(const QSurfaceFormat& format) {
@@ -24,22 +26,6 @@ size_t evalGLFormatSwapchainPixelSize(const QSurfaceFormat& format) {
     // }
     pixelSize += format.stencilBufferSize() + format.depthBufferSize();
     return pixelSize;
-}
-
-static bool FORCE_DISABLE_OPENGL_45 = false;
-
-void gl::setDisableGl45(bool disable) {
-    FORCE_DISABLE_OPENGL_45 = disable;
-}
-
-bool gl::disableGl45() {
-#if defined(USE_GLES)
-    return false;
-#else
-    static const QString DEBUG_FLAG("HIFI_DISABLE_OPENGL_45");
-    static bool disableOpenGL45 = QProcessEnvironment::systemEnvironment().contains(DEBUG_FLAG);
-    return FORCE_DISABLE_OPENGL_45 || disableOpenGL45;
-#endif
 }
 
 #ifdef Q_OS_MAC
@@ -80,28 +66,38 @@ void gl::globalRelease(bool finish) {}
 uint16_t gl::getTargetVersion() {
     uint8_t major = 0, minor = 0;
 
-#if defined(USE_GLES)
-    major = 3;
-    minor = 2;
-#elif defined(Q_OS_MAC)
-    major = 4;
-    minor = 1;
-#else
-    major = 4;
-    minor = disableGl45() ? 1 : 5;
-#endif
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    switch (backendApi) {
+        case hifi::properties::GraphicsAPI::GLES32: {
+            major = 3;
+            minor = 2;
+        }
+        case hifi::properties::GraphicsAPI::GL41: {
+            major = 4;
+            minor = 1;
+        }
+        case hifi::properties::GraphicsAPI::GL45:
+        default: {
+            major = 4;
+            minor = 5;
+        }
+    }
+
     return GL_MAKE_VERSION(major, minor);
 }
 
 uint16_t gl::getRequiredVersion() {
     uint8_t major = 0, minor = 0;
-#if defined(USE_GLES)
-    major = 3;
-    minor = 2;
-#else 
-    major = 4;
-    minor = 1;
-#endif
+
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
+        major = 3;
+        minor = 2;
+    } else {
+        major = 4;
+        minor = 1;
+    }
+
     return GL_MAKE_VERSION(major, minor);
 }
 
@@ -179,16 +175,8 @@ uint16_t gl::getAvailableVersion() {
     static uint8_t major = 0, minor = 0;
     static std::once_flag once;
     std::call_once(once, [&] {
-#if defined(USE_GLES)
-        // FIXME do runtime detection of the available GL version
-        major = 3;
-        minor = 2;
-#elif defined(Q_OS_MAC)
-        // Damn it Apple.
-        major = 4;
-        minor = 1;
-#elif defined(Q_OS_WIN)
-        // 
+        auto backendApi = hifi::properties::getGraphicsAPI();
+#if defined(Q_OS_WIN)
         HINSTANCE hInstance = GetModuleHandle(nullptr);
         const auto windowClassName = "OpenGLVersionCheck";
         WNDCLASS wc = { };
@@ -242,19 +230,33 @@ uint16_t gl::getAvailableVersion() {
             return;
         }
 
-        // The only two versions we care about on Windows 
-        // are 4.5 and 4.1
-        if (GLAD_GL_VERSION_4_5) {
+        if (GLAD_GL_VERSION_4_5 && backendApi == hifi::properties::GraphicsAPI::GL45) {
             major = 4;
-            minor = disableGl45() ? 1 : 5;
-        } else if (GLAD_GL_VERSION_4_1) {
+            minor = 5;
+        } else if (GLAD_GL_VERSION_4_1 && backendApi == hifi::properties::GraphicsAPI::GL41) {
             major = 4;
             minor = 1;
+        } else {
+            major = 3;
+            minor = 2;
         }
 #else
-        // FIXME do runtime detection of GL version on non-Mac/Windows/Mobile platforms
-        major = 4;
-        minor = disableGl45() ? 1 : 5;
+        // FIXME do runtime detection of GL version on other platforms
+        switch (backendApi) {
+            case hifi::properties::GraphicsAPI::GLES32: {
+                major = 3;
+                minor = 2;
+            }
+            case hifi::properties::GraphicsAPI::GL41: {
+                major = 4;
+                minor = 1;
+            }
+            case hifi::properties::GraphicsAPI::GL45:
+            default: {
+                major = 4;
+                minor = 5;
+            }
+        }
 #endif
     });
     return GL_MAKE_VERSION(major, minor);
@@ -264,15 +266,17 @@ const QSurfaceFormat& getDefaultOpenGLSurfaceFormat() {
     static QSurfaceFormat format;
     static std::once_flag once;
     std::call_once(once, [] {
-#if defined(USE_GLES)
-        format.setRenderableType(QSurfaceFormat::OpenGLES);
-        format.setRedBufferSize(8);
-        format.setGreenBufferSize(8);
-        format.setBlueBufferSize(8);
-        format.setAlphaBufferSize(8);
-#else
-        format.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
-#endif
+        auto backendApi = hifi::properties::getGraphicsAPI();
+        if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
+            format.setRenderableType(QSurfaceFormat::OpenGLES);
+            format.setRedBufferSize(8);
+            format.setGreenBufferSize(8);
+            format.setBlueBufferSize(8);
+            format.setAlphaBufferSize(8);
+        } else {
+            format.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
+        }
+
         if (gl::Context::enableDebugLogger()) {
             format.setOption(QSurfaceFormat::DebugContext);
         }
@@ -301,10 +305,6 @@ QThread* RENDER_THREAD = nullptr;
 bool isRenderThread() {
     return QThread::currentThread() == RENDER_THREAD;
 }
-
-#if defined(Q_OS_ANDROID)
-#define USE_GLES 1
-#endif
 
 namespace gl {
     void withSavedContext(const std::function<void()>& f) {
@@ -338,14 +338,12 @@ namespace gl {
             case GL_OUT_OF_MEMORY:
                 qCWarning(glLogging) << "GLBackend" << name << ": There is not enough memory left to execute the command.The state of the GL is undefined, except for the state of the error flags, after this error is recorded.";
                 break;
-#if !defined(USE_GLES)
             case GL_STACK_UNDERFLOW:
                 qCWarning(glLogging) << "GLBackend" << name << ": An attempt has been made to perform an operation that would cause an internal stack to underflow.";
                 break;
             case GL_STACK_OVERFLOW:
                 qCWarning(glLogging) << "GLBackend" << name << ": An attempt has been made to perform an operation that would cause an internal stack to overflow.";
                 break;
-#endif
         }
         return true;
     }
@@ -387,7 +385,7 @@ namespace gl {
 #if defined(Q_OS_MAC)
         // OSX does not support GL_KHR_debug or GL_ARB_debug_output
         static bool enableDebugLogger = false;
-#elif defined(DEBUG) || defined(USE_GLES)
+#elif defined(DEBUG)
         //static bool enableDebugLogger = true;
         static bool enableDebugLogger = false;
 #else

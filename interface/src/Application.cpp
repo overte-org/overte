@@ -212,7 +212,6 @@ void messageHandler(QtMsgType type, const QMessageLogContext& context, const QSt
 
 Application::Application(
     int& argc, char** argv,
-    const QCommandLineParser& parser,
     QElapsedTimer& startupTimer
 ) :
     QApplication(argc, argv),

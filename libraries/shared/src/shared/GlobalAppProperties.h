@@ -24,13 +24,22 @@ namespace hifi { namespace properties {
 
     namespace gl {
         extern const char* BACKEND;
-        extern const char* MAKE_PROGRAM_CALLBACK;
         extern const char* PRIMARY_CONTEXT;
     }
 
     namespace vk {
         extern const char* CONTEXT;
     }
+
+    enum class GraphicsAPI {
+        GL45,
+        GL41,
+        GLES32,
+        Vulkan
+    };
+
+    void setGraphicsAPI(GraphicsAPI api);
+    GraphicsAPI getGraphicsAPI();
 
 } }
 

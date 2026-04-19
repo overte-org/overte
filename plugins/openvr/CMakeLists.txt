@@ -9,7 +9,7 @@
 #  SPDX-License-Identifier: Apache-2.0
 #
 
-if ((WIN32 OR UNIX AND NOT APPLE) AND (NOT OVERTE_RENDERING_BACKEND STREQUAL "GLES"))
+if ((WIN32 OR UNIX AND NOT APPLE))
     set(TARGET_NAME openvr)
     setup_hifi_plugin(Gui Qml Multimedia)
     link_hifi_libraries(shared task gl qml networking controllers ui

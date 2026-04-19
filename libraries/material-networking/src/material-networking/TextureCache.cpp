@@ -39,6 +39,7 @@
 #include <NumericalConstants.h>
 #include <shared/NsightHelpers.h>
 #include <shared/FileUtils.h>
+#include <shared/GlobalAppProperties.h>
 #include <PathUtils.h>
 #include <Finally.h>
 #include <Profile.h>
@@ -58,11 +59,6 @@ Q_LOGGING_CATEGORY(trace_resource_parse_image, "trace.resource.parse.image")
 Q_LOGGING_CATEGORY(trace_resource_parse_image_raw, "trace.resource.parse.image.raw")
 Q_LOGGING_CATEGORY(trace_resource_parse_image_ktx, "trace.resource.parse.image.ktx")
 
-#if defined(USE_GLES)
-const std::string TextureCache::KTX_DIRNAME { "ktx_cache_gles" };
-#else
-const std::string TextureCache::KTX_DIRNAME{ "ktx_cache" };
-#endif
 const std::string TextureCache::KTX_EXT { "ktx" };
 
 /*@jsdoc
@@ -101,6 +97,13 @@ static const float HIGH_MIPS_LOAD_PRIORITY { 9.0f }; // Make sure high mips load
 std::function<gpu::TexturePointer(const QUuid&)> Texture::_unboundTextureForUUIDOperator { nullptr };
 
 TextureCache::TextureCache() {
+    std::string KTX_DIRNAME = "ktx_cache";
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
+        KTX_DIRNAME = "ktx_cache_gles";
+    }
+
+    _ktxCache = std::make_shared<KTXCache>(KTX_DIRNAME, KTX_EXT);
     _ktxCache->initialize();
 #if defined(DISABLE_KTX_CACHE)
     _ktxCache->wipe();
@@ -345,17 +348,16 @@ gpu::TexturePointer getFallbackTextureForType(image::TextureUsage::Type type) {
 }
 
 gpu::BackendTarget getBackendTarget() {
-#if defined(USE_GLES)
-    gpu::BackendTarget target = gpu::BackendTarget::GLES32;
-#elif defined(Q_OS_MAC)
-    gpu::BackendTarget target = gpu::BackendTarget::GL41;
-#else
-    gpu::BackendTarget target = gpu::BackendTarget::GL45;
-    if (gl::disableGl45()) {
-        target = gpu::BackendTarget::GL41;
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    switch (backendApi) {
+        case hifi::properties::GraphicsAPI::GLES32:
+            return gpu::BackendTarget::GLES32;
+        case hifi::properties::GraphicsAPI::GL41:
+            return gpu::BackendTarget::GL41;
+        case hifi::properties::GraphicsAPI::GL45:
+        default:
+            return gpu::BackendTarget::GL45;
     }
-#endif
-    return target;
 }
 
 /// Returns a texture version of an image file
@@ -367,11 +369,8 @@ gpu::TexturePointer TextureCache::getImageTexture(const QString& path, image::Te
     }
     auto loader = image::TextureUsage::getTextureLoaderForType(type);
 
-#ifdef USE_GLES
-    constexpr bool shouldCompress = true;
-#else
-    constexpr bool shouldCompress = false;
-#endif
+    const bool shouldCompress = hifi::properties::getGraphicsAPI() ==
+                                    hifi::properties::GraphicsAPI::GLES32;
     auto target = getBackendTarget();
 
     return gpu::TexturePointer(loader(std::move(image), path.toStdString(), shouldCompress, target, false));
@@ -1285,11 +1284,8 @@ void ImageReader::read() {
         // IMPORTANT: _content is empty past this point
         auto buffer = std::shared_ptr<QIODevice>((QIODevice*)new OwningBuffer(std::move(_content)));
 
-#ifdef USE_GLES
-        constexpr bool shouldCompress = true;
-#else
-        constexpr bool shouldCompress = false;
-#endif
+        const bool shouldCompress = hifi::properties::getGraphicsAPI() ==
+                                        hifi::properties::GraphicsAPI::GLES32;
         auto target = getBackendTarget();
         textureAndSize = image::processImage(std::move(buffer), _url.toString().toStdString(), _sourceChannel, _maxNumPixels, networkTexture->getTextureType(), shouldCompress, target);
 

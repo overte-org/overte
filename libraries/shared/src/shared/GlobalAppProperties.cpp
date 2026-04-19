@@ -29,4 +29,14 @@ namespace hifi { namespace properties {
         const char* CONTEXT = "com.highfidelity.vk.context";
     }
 
+    static GraphicsAPI GRAPHICS_API { GraphicsAPI::GL45 };
+
+    void setGraphicsAPI(GraphicsAPI api) {
+        GRAPHICS_API = api;
+    }
+
+    GraphicsAPI getGraphicsAPI() {
+        return GRAPHICS_API;
+    }
+
 } }

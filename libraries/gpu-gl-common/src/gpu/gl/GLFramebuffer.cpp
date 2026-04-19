@@ -36,14 +36,12 @@ bool GLFramebuffer::checkStatus() const {
     case GL_FRAMEBUFFER_UNSUPPORTED:
         qCWarning(gpugllogging) << "GLFramebuffer::syncGPUObject : Framebuffer not valid, GL_FRAMEBUFFER_UNSUPPORTED.";
         break;
-#if !defined(USE_GLES)
     case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
         qCWarning(gpugllogging) << "GLFramebuffer::syncGPUObject : Framebuffer not valid, GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER.";
         break;
     case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
         qCWarning(gpugllogging) << "GLFramebuffer::syncGPUObject : Framebuffer not valid, GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER.";
         break;
-#endif
     default:
         break;
     }

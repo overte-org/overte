@@ -28,12 +28,10 @@ void Uniform::load(GLuint glprogram, int index) {
 
 bool isTextureType(GLenum type) {
     switch (type) {
-#ifndef USE_GLES
         case GL_SAMPLER_1D:
         case GL_SAMPLER_1D_ARRAY:
         case GL_SAMPLER_1D_SHADOW:
         case GL_SAMPLER_1D_ARRAY_SHADOW:
-#endif
         case GL_SAMPLER_2D:
         case GL_SAMPLER_3D:
         case GL_SAMPLER_CUBE:

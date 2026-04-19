@@ -8,10 +8,12 @@
 
 #include "GLTexelFormat.h"
 
+#include <shared/GlobalAppProperties.h>
+
 using namespace gpu;
 using namespace gpu::gl;
 
-#if defined(USE_GLES)
+#if !defined(GL_COMPRESSED_RED_RGTC1)
 // Missing GL compressed formats
 #define GL_COMPRESSED_RED_RGTC1 0x8DBB
 #define GL_COMPRESSED_SIGNED_RED_RGTC1 0x8DBC
@@ -43,8 +45,8 @@ bool GLTexelFormat::isCompressed(GLenum format) {
         case GL_COMPRESSED_RG_RGTC2:
         case GL_COMPRESSED_SRGB_ALPHA_BPTC_UNORM:
         case GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT:
+            return true;
 
-#if defined(USE_GLES)
         case GL_COMPRESSED_RGBA_ASTC_4x4:
         case GL_COMPRESSED_RGBA_ASTC_5x4:
         case GL_COMPRESSED_RGBA_ASTC_5x5:
@@ -73,10 +75,8 @@ bool GLTexelFormat::isCompressed(GLenum format) {
         case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10:
         case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10:
         case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12:
-#endif
+            return hifi::properties::getGraphicsAPI() != hifi::properties::GraphicsAPI::GLES32;
 
-
-            return true;
         default:
             return false;
     }
@@ -410,6 +410,7 @@ GLenum GLTexelFormat::evalGLTexelFormatInternal(const gpu::Element& dstFormat) {
 }
 
 GLTexelFormat GLTexelFormat::evalGLTexelFormat(const Element& dstFormat, const Element& srcFormat) {
+    auto backendApi = hifi::properties::getGraphicsAPI();
     if (dstFormat != srcFormat) {
         GLTexelFormat texel = { GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE };
 
@@ -481,13 +482,13 @@ GLTexelFormat GLTexelFormat::evalGLTexelFormat(const Element& dstFormat, const E
 
             switch (srcFormat.getSemantic()) {
             case gpu::BGRA:
-            case gpu::SBGRA:
-#if defined(USE_GLES)
-                texel.format = GL_RGBA;
-#else
-                texel.format = GL_BGRA;
-#endif
-                break;
+            case gpu::SBGRA: {
+                if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+                    texel.format = GL_BGRA;
+                    break;
+                }
+                [[fallthrough]];
+            }
             case gpu::RGB:
             case gpu::RGBA:
             case gpu::SRGB:
@@ -522,11 +523,13 @@ GLTexelFormat GLTexelFormat::evalGLTexelFormat(const Element& dstFormat, const E
 
             switch (srcFormat.getSemantic()) {
             case gpu::BGRA:
-            case gpu::SBGRA:
-#if !defined(USE_GLES)
-                texel.format = GL_BGRA;
-                break;
-#endif
+            case gpu::SBGRA: {
+                if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+                    texel.format = GL_BGRA;
+                    break;
+                }
+                [[fallthrough]];
+            }
             case gpu::RGB:
             case gpu::RGBA:
             case gpu::SRGB:
@@ -919,11 +922,13 @@ GLTexelFormat GLTexelFormat::evalGLTexelFormat(const Element& dstFormat, const E
 
             switch (srcFormat.getSemantic()) {
             case gpu::BGRA:
-            case gpu::SBGRA:
-#if !defined(USE_GLES)
-                texel.format = GL_BGRA;
-                break;
-#endif
+            case gpu::SBGRA: {
+                if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+                    texel.format = GL_BGRA;
+                    break;
+                }
+                [[fallthrough]];
+            }
             case gpu::RGB:
             case gpu::RGBA:
             case gpu::SRGB:

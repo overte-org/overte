@@ -127,15 +127,11 @@ QUrl AddressManager::lastAddress() const {
 }
 
 void AddressManager::loadSettings(const QString& lookupString) {
-#if defined(USE_GLES) && defined(Q_OS_WIN)
-    handleUrl(QUrl("hifi://127.0.0.0"), LookupTrigger::StartupFromSettings);
-#else
     if (lookupString.isEmpty()) {
         handleUrl(currentAddressHandle.get(), LookupTrigger::StartupFromSettings);
     } else {
         handleUrl(lookupString, LookupTrigger::StartupFromSettings);
     }
-#endif
 }
 
 void AddressManager::goBack() {

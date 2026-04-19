@@ -21,13 +21,13 @@
 #include <OpenGL/CGLTypes.h>
 #include <OpenGL/CGLCurrent.h>
 #include <dlfcn.h>
-#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
+#elif defined(Q_OS_LINUX)
 #include <EGL/egl.h>
 #include <GL/glx.h>
 #include <dlfcn.h>
 #endif
 
-
+#include <shared/GlobalAppProperties.h>
 
 #if defined(Q_OS_WIN)
 
@@ -134,11 +134,12 @@ void gl::initModuleGl() {
         }
 #endif
 
-#if defined(USE_GLES)
-        gladLoadGLES2Loader(getGlProcessAddress);
-#else
-        gladLoadGLLoader(getGlProcessAddress);
-#endif
+        auto backendApi = hifi::properties::getGraphicsAPI();
+        if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
+            gladLoadGLES2Loader(getGlProcessAddress);
+        } else {
+            gladLoadGLLoader(getGlProcessAddress);
+        }
     });
 }
 

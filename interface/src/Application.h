@@ -89,7 +89,6 @@ class Application : public QApplication,
 public:
     Application(
         int& argc, char** argv,
-        const QCommandLineParser& parser,
         QElapsedTimer& startup_time
     );
     ~Application();
