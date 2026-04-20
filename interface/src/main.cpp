@@ -94,6 +94,7 @@ int main(int argc, const char* argv[]) {
 #endif
     }
 
+#ifdef Q_OS_WIN
     // Check the minimum GL version as early as possible
     {
         uint16_t available = gl::getAvailableVersion();
@@ -123,6 +124,7 @@ int main(int argc, const char* argv[]) {
             return -1;
         }
     }
+#endif
 
     // Force-disable subpixel antialiasing on QML distance-field text.
     // An existing override for QSG_DISTANCEFIELD_ANTIALIASING will be respected, and this
