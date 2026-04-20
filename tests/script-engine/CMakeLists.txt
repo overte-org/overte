@@ -21,8 +21,7 @@ macro (setup_testcase_dependencies)
 #    )
   endif()
 
-  target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/libraries/entities/src")
-  target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_SOURCE_DIR}/libraries/entities/src")
+  include_hifi_library_headers(entities)
 endmacro ()
 
 setup_hifi_testcase(Network)
