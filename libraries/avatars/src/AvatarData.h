@@ -1599,7 +1599,7 @@ protected:
     // key state
     KeyState _keyState;
 
-    bool _hasNewJointData { true }; // set in AvatarData, cleared in Avatar
+    std::atomic<bool> _hasNewJointData { true }; // set in AvatarData, cleared in Avatar
 
     /// Per-joint variable signalizing availability of the new transforms.
     /// Set in AvatarData, cleared in OtherAvatar.
