@@ -17,20 +17,12 @@
 #include <image/Image.h>
 #include <image/TextureProcessing.h>
 #include "SerDes.h"
+#include <QDebug>
+
 
 
 QTEST_GUILESS_MAIN(KtxTests)
 
-QString getRootPath() {
-    static std::once_flag once;
-    static QString result;
-    std::call_once(once, [&] {
-        QFileInfo file(__FILE__);
-        QDir parent = file.absolutePath();
-        result = QDir::cleanPath(parent.currentPath() + "/../../..");
-    });
-    return result;
-}
 
 #if 0
 ktx::Byte* serializeSPH(ktx::Byte* data, const gpu::IrradianceKTXPayload &payload) const {
@@ -89,7 +81,7 @@ void KtxTests::testKtxEvalFunctions() {
 }
 
 void KtxTests::testKtxSerialization() {
-    const QString TEST_IMAGE = getRootPath() + "/scripts/developer/tests/cube_texture.png";
+    const QString TEST_IMAGE = QCoreApplication::applicationDirPath() + "/cube_texture.png";
     QImage image(TEST_IMAGE);
     std::atomic<bool> abortSignal;
     gpu::TexturePointer testTexture =
