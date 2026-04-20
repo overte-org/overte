@@ -71,15 +71,18 @@ uint16_t gl::getTargetVersion() {
         case hifi::properties::GraphicsAPI::GLES32: {
             major = 3;
             minor = 2;
+            break;
         }
         case hifi::properties::GraphicsAPI::GL41: {
             major = 4;
             minor = 1;
+            break;
         }
         case hifi::properties::GraphicsAPI::GL45:
         default: {
             major = 4;
             minor = 5;
+            break;
         }
     }
 
@@ -246,15 +249,18 @@ uint16_t gl::getAvailableVersion() {
             case hifi::properties::GraphicsAPI::GLES32: {
                 major = 3;
                 minor = 2;
+                break;
             }
             case hifi::properties::GraphicsAPI::GL41: {
                 major = 4;
                 minor = 1;
+                break;
             }
             case hifi::properties::GraphicsAPI::GL45:
             default: {
                 major = 4;
                 minor = 5;
+                break;
             }
         }
 #endif
