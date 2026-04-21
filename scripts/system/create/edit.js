@@ -545,6 +545,22 @@
             exponent: 1.0,
             cutoff: 75.0,
         },
+        Grid: {
+            dimensions: [
+                0.1,
+                0.1,
+                0.01
+            ],
+            color: {
+                red: 255,
+                green: 255,
+                blue: 255
+            },
+            alpha: 1,
+            followCamera: true,
+            majorGridEvery: 5,
+            minorGridEvery: 1,
+        },
         Sound: {
             volume: 1.0,
             playing: true,
@@ -1179,6 +1195,12 @@
             addButton("newMaterialButton", createNewEntityDialogButtonCallback("Material"));
 
             addButton("newPolyVoxButton", createNewEntityDialogButtonCallback("PolyVox"));
+
+            addButton("newGridButton", function () {
+                createNewEntity({
+                    type: "Grid",
+                });
+            });
 
             addButton("newSoundButton", createNewEntityDialogButtonCallback("Sound"));
 
