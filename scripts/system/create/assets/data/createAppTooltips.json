@@ -501,6 +501,10 @@
     "materialRepeat": {
         "tooltip": "If enabled, the material will repeat, otherwise it will clamp."
     },
+    "gridAlpha": {
+        "tooltip": "The opacity of the grid between 0.0 fully transparent and 1.0 completely opaque.",
+        "jsPropertyName": "alpha"
+    },
     "followCamera": {
         "tooltip": "If enabled, the grid is always visible even as the camera moves to another position."
     },
