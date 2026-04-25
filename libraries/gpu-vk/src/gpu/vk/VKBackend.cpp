@@ -1197,10 +1197,11 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             // updates for draw calls
             ++_currentDraw;
 
-            /*if (_cache.pipelineState.pipeline->getProgram()->getShaders()[0]->getSource().name == "simple_procedural.vert") {
+            // VKTODO: procedural shaders are not supported yet.
+            if (_cache.pipelineState.pipeline->getProgram()->getShaders()[0]->getSource().name == "simple_procedural.vert") {
                 printf("simple_procedural.vert");
                 break;
-            }*/ // VKTODO: currently crashes on procedural shaders. I tried this as a workaround,but it didn't work.
+            }
             _cache.pipelineState.primitiveTopology = getPrimitiveTopologyFromCommand(*command, batch, *offset);
             updateInput();
             updateTransform(batch);
@@ -3014,8 +3015,12 @@ void VKBackend::do_setViewTransform(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_setProjectionTransform(const Batch& batch, size_t paramOffset) {
-    memcpy(glm::value_ptr(_transform._viewProjectionState._projection), batch.readData(batch._params[paramOffset]._uint), sizeof(Mat4));
-    _transform._viewProjectionState._projection = glm::scale(_transform._viewProjectionState._projection, glm::vec3(1.0f, -1.0f, 1.0f));
+    auto &projection = _transform._viewProjectionState._projection;
+    memcpy(glm::value_ptr(projection), batch.readData(batch._params[paramOffset]._uint), sizeof(Mat4));
+    //VKTODO: ortho views for shadow maps break when inverted here, I'm not sure why. They also seem to shift linearly.
+    if (batch.getName() != "RenderShadowMap::run") {
+        projection = glm::scale(projection, glm::vec3(1.0f, -1.0f, 1.0f));
+    }
     _transform._invalidProj = true;
     // The current view / proj doesn't correspond to a saved camera slot
     _transform._currentSavedTransformSlot = INVALID_SAVED_CAMERA_SLOT;
