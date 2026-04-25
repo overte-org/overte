@@ -242,7 +242,8 @@ void ScriptEngineTests::testRaiseExceptionAndCatch() {
     });
 
 
-    sm->engine()->registerGlobalObject("testClass", new TestClass(sm->engine()));
+    auto scopeGuard = sm->engine()->getScopeGuard();
+    sm->engine()->registerGlobalObject(scopeGuard.get(), "testClass", new TestClass(sm->engine()));
 
     sm->run();
     auto ex = sm->getUncaughtException();

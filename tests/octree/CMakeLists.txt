@@ -6,6 +6,7 @@
 macro (setup_testcase_dependencies)
   # link in the shared libraries
   link_hifi_libraries(shared test-utils octree gpu graphics networking entities avatars audio animation script-engine physics)
+  include_hifi_library_headers(entities)
 
   package_libraries_for_deployment()
 endmacro ()

@@ -167,3 +167,27 @@ Running Interface:
 ```
 
 Go to "localhost" in the running Interface to visit your newly launched Domain server.
+
+### Unit Testing
+
+Overte contains some unit tests based on the Qt Test API. Using them for developing changes and improvements is highly encouraged. They're also useful when testing thread safety and memory safety is needed, as the `interface` binary is far too big to run under Valgrind.
+
+To build the tests, first run CMake with the `-DOVERTE_BUILD_TESTS=ON` argument, eg:
+
+    cmake --preset conan-debug -DOVERTE_BUILD_TESTS=ON
+
+The tests are still not built by default, the test target has to be built with:
+
+    make all-tests
+
+The tests will be generated under the `tests/` directory, grouped by category. To run all of them, use the `test` target. This produces a test summary of
+pass/fail results.
+
+    make test
+
+To run just one, go into the corresponding directory and run the binary. This will produce a more detailed output, which can be useful for debugging.
+
+    cd tests/audio
+    ./audio-CodecTests
+
+For developing new tests, see the [Qt Test documentation](https://doc.qt.io/archives/qt-5.15/qttest-index.html). Tests need to be in `tests/$category/${name}Tests.h` and `tests/$category/${name}Tests.cpp` (the `Tests.cpp` naming is important).
