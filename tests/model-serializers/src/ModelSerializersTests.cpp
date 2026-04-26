@@ -74,7 +74,7 @@ void ModelSerializersTests::loadGLTF_data() {
     QTest::newRow("ready-player-me-good3")   << "models/src/Franny.glb.gz"                     << false << false << false;
     QTest::newRow("ready-player-me-good4")   << "models/src/womanInTShirt.glb.gz"              << false << false << false;
     QTest::newRow("ready-player-me-good5")   << "models/src/female-avatar-with-swords.glb.gz"  << false << false << false;
-    QTest::newRow("ready-player-me-broken1") << "models/src/broken-2022-11-27.glb.gz" << false << false << false;
+    QTest::newRow("ready-player-me-broken1") << "models/src/broken-2022-11-27.glb.gz"          << false << false << false;
 
 
     // We can't parse GLTF 1.0 at present, and probably not ever. We're expecting all these to fail.
