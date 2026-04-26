@@ -106,6 +106,7 @@ void ScriptEngineBenchmarkTests::benchmarkSetProperty() {
     auto sm = makeManager("print(\"script works!\"); Script.stop(true);", "testTrivial.js");
 
     auto engine = sm->engine();
+    auto scopeGuard = engine->getScopeGuard();
     auto obj = engine->newObject();
 
     QBENCHMARK {
@@ -119,6 +120,8 @@ void ScriptEngineBenchmarkTests::benchmarkSetProperty1K() {
     auto sm = makeManager("print(\"script works!\"); Script.stop(true);", "testTrivial.js");
 
     auto engine = sm->engine();
+    auto scopeGuard = engine->getScopeGuard();
+
     auto obj = engine->newObject();
 
     int i = 0;
@@ -138,6 +141,8 @@ void ScriptEngineBenchmarkTests::benchmarkSetProperty16K() {
     auto sm = makeManager("print(\"script works!\"); Script.stop(true);", "testTrivial.js");
 
     auto engine = sm->engine();
+    auto scopeGuard = engine->getScopeGuard();
+
     auto obj = engine->newObject();
 
     int i = 0;
@@ -158,6 +163,8 @@ void ScriptEngineBenchmarkTests::benchmarkQueryProperty() {
     auto sm = makeManager("print(\"script works!\"); Script.stop(true);", "testTrivial.js");
 
     auto engine = sm->engine();
+    auto scopeGuard = engine->getScopeGuard();
+
     auto obj = engine->newObject();
 
 
