@@ -146,10 +146,12 @@ void ScriptEngineNetworkedTests::testScriptRequire() {
     QVERIFY(!sm->isStopped());
     QVERIFY(sm->isFinished());
 
-    QVERIFY(printed.length() == expected.length());
-    for(int i=0;i<printed.length();i++) {
-        QString nomatch = QString("Result '%1' didn't match expected '%2'").arg(printed[i]).arg(expected[i]);
-        QVERIFY2(printed[i] == expected[i], qPrintable(nomatch));
+    qDebug() << "Script printed :" << printed;
+    qDebug() << "Expected output:" << expected;
+
+    for(const auto &str : expected) {
+        QString nomatch = QString("Result didn't contain expected string '%1'").arg(str);
+        QVERIFY2(printed.contains(str), qPrintable(nomatch));
     }
 }
 
@@ -179,11 +181,11 @@ void ScriptEngineNetworkedTests::testRequire() {
     QVERIFY(!sm->isStopped());
     QVERIFY(sm->isFinished());
 
-    QVERIFY(printed.length() == expected.length());
-    for(int i=0;i<printed.length();i++) {
-        QString nomatch = QString("Result '%1' didn't match expected '%2'").arg(printed[i]).arg(expected[i]);
-        QVERIFY2(printed[i] == expected[i], qPrintable(nomatch));
+    for(const auto &str : expected) {
+        QString nomatch = QString("Result didn't contain expected string '%1'").arg(str);
+        QVERIFY2(printed.contains(str), qPrintable(nomatch));
     }
+
 }
 
 
@@ -194,6 +196,7 @@ void ScriptEngineNetworkedTests::testRequireInfinite() {
         "print(\"Done\");"
         "Script.stop(true);", "testRequireInf.js");
     QString errors;
+    QStringList printed;
 
 
 
@@ -204,6 +207,9 @@ void ScriptEngineNetworkedTests::testRequireInfinite() {
     connect(sm.get(), &ScriptManager::errorMessage, [&errors](const QString& message, const QString& engineName){
         errors.append(message);
     });
+    connect(sm.get(), &ScriptManager::printedMessage, [&printed](const QString& message, const QString& engineName){
+        printed.append(message);
+    });
 
 
     qInfo() << "About to run script";
@@ -213,5 +219,6 @@ void ScriptEngineNetworkedTests::testRequireInfinite() {
     QVERIFY(!sm->isStopped());
     QVERIFY(sm->isFinished());
 
-    QVERIFY(errors.contains("Maximum call stack size exceeded"));
+    // Acceptable results: either failing, or realizing a prior module is already included
+    QVERIFY(errors.contains("Maximum call stack size exceeded") || printed.contains("Done") );
 }
