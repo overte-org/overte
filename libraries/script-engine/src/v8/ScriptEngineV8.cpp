@@ -592,9 +592,10 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
     {
         v8::Context::Scope contextScope(closureContext);
         //const V8ScriptValue& closure = unwrappedClosure->toV8Value();
-        if (!unwrappedProgram->compile()) {
-            qCDebug(scriptengine_v8) << "Can't compile script for evaluating in closure";
-            Q_ASSERT(false);
+        auto compileResult = unwrappedProgram->checkSyntax();
+        if (compileResult->state() != ScriptSyntaxCheckResult::Valid) {
+            qCCritical(scriptengine_v8) << "Can't compile script for evaluating in closure. Error message: " << compileResult->errorMessage()
+                << " line: " << compileResult->errorLineNumber() << " column: " << compileResult->errorColumnNumber();
             popContext();
             return nullValue();
         }
