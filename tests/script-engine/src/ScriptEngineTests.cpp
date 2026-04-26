@@ -229,7 +229,7 @@ void ScriptEngineTests::testRaiseExceptionAndCatch() {
         "try {"
         "    testClass.doRaiseTest();"
         "} catch (err) {"
-        "    if (err === \"Exception test!\") {"
+        "    if (err.message.includes(\"Exception test!\")) {"
         "        print(\"Caught!\");"
         "    }"
         "}"
