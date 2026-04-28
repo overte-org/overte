@@ -94,6 +94,13 @@ void ModelSerializersTests::loadGLTF_data() {
         QTest::newRow(testname.toUtf8().data()) << filename << false << false << false;
     }
 
+    QDirIterator it3("models/src/kenney_building_kit/Models/GLB format", QStringList() << "*.glb", QDir::Files, QDirIterator::Subdirectories);
+    while(it3.hasNext()) {
+        QString filename = it3.next();
+        QFileInfo fi(filename);
+        QString testname = "kenney-" + fi.fileName();
+        QTest::newRow(testname.toUtf8().data()) << filename << false << false << false;
+    }
 }
 
 void ModelSerializersTests::loadGLTF() {
