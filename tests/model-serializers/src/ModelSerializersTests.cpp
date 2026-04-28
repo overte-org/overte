@@ -30,6 +30,8 @@
 #include "AssetClient.h"
 #include "LimitedNodeList.h"
 #include "NodeList.h"
+#include "ResourceRequestObserver.h"
+#include "StatTracker.h"
 
 #include <QUrl>
 #include <QNetworkAccessManager>
@@ -50,6 +52,9 @@ void ModelSerializersTests::initTestCase() {
     DependencyManager::set<ModelFormatRegistry>(); // ModelFormatRegistry must be defined before ModelCache. See the ModelCache constructor.
     DependencyManager::set<ResourceManager>();
     DependencyManager::set<AssetClient>();
+    DependencyManager::set<ResourceRequestObserver>();
+    DependencyManager::set<StatTracker>();
+
 
 
 
@@ -115,12 +120,12 @@ void ModelSerializersTests::loadGLTF() {
 
     QByteArray data = gltf_file.readAll();
     QByteArray uncompressedData;
-    QUrl url("https://example.com");
+    QUrl url("file:" + QCoreApplication::applicationDirPath());
 
     qInfo() << "URL: " << url;
 
     if (filename.toLower().endsWith(".gz")) {
-        url.setPath("/" + filename.chopped(3));
+        url.setPath(QCoreApplication::applicationDirPath() + "/" + filename.chopped(3));
 
         if (gunzip(data, uncompressedData)) {
             qInfo() << "Uncompressed into" << uncompressedData.length();
@@ -128,7 +133,7 @@ void ModelSerializersTests::loadGLTF() {
             qCritical() << "Failed to uncompress";
         }
     } else {
-        url.setPath("/" + filename);
+        url.setPath(QCoreApplication::applicationDirPath() + "/" + filename);
         uncompressedData = data;
     }
 
