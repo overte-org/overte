@@ -88,13 +88,5 @@ State::State(const Data& values) :
 }
 
 std::string State::getKey() const {
-    QByteArray data((const char*)&_values, sizeof(Data));
-    return data.toBase64().toStdString();
-}
-
-template <typename T>
-static std::string hex(T t) {
-    std::stringstream stream;
-    stream << std::hex << t;
-    return stream.str();
+    return bytesToAscii(_values);
 }

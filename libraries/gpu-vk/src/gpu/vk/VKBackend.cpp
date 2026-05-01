@@ -1199,7 +1199,6 @@ void VKBackend::renderPassDraw(const Batch& batch) {
 
             // VKTODO: procedural shaders are not supported yet.
             if (_cache.pipelineState.pipeline->getProgram()->getShaders()[0]->getSource().name == "simple_procedural.vert") {
-                printf("simple_procedural.vert");
                 break;
             }
             _cache.pipelineState.primitiveTopology = getPrimitiveTopologyFromCommand(*command, batch, *offset);
