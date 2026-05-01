@@ -19,13 +19,6 @@
 using namespace gpu;
 using namespace gpu::vk;
 
-template <typename T>
-static std::string hex(T t) {
-    std::stringstream sStream;
-    sStream << std::setw(sizeof(T)) << std::setfill('0') << std::hex << t;
-    return sStream.str();
-}
-
 void Cache::Pipeline::setPipeline(const gpu::PipelinePointer& pipeline) {
     if (!gpu::compare(this->pipeline, pipeline)) {
         gpu::assign(this->pipeline, pipeline);
@@ -364,14 +357,13 @@ std::string Cache::Pipeline::getKey(const vks::Context& context) const {
     const gpu::State& state = *pipeline.getState();
     const auto& vertexShader = pipeline.getProgram()->getShaders()[0]->getSource();
     const auto& fragmentShader = pipeline.getProgram()->getShaders()[1]->getSource();
-    std::string key;
-    // FIXME account for customized shaders (preferably by forcing shaders to have a new unique ID at runtime when they're using replacement strings)
-    key = hex(shader::makeProgramId(vertexShader.id, fragmentShader.id));
-    key += "_" + getRenderpassKeyString(renderpassKey);
-    key += "_" + state.getKey();
-    key += "_" + format->getKey();
-    key += "_" + hex(primitiveTopology);
-    key += "_" + getStridesKey();
+    // VKTODO account for customized shaders (preferably by forcing shaders to have a new unique ID at runtime when they're using replacement strings)
+    std::string key = bytesToAscii(shader::makeProgramId(vertexShader.id, fragmentShader.id)) +
+          + "_" + getRenderpassKeyString(renderpassKey)
+          + "_" + state.getKey()
+          + "_" + format->getKey()
+          + "_" + bytesToAscii(primitiveTopology)
+          + "_" + getStridesKey();
     return key;
 }
 
