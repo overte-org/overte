@@ -109,9 +109,15 @@ void EntityScriptServer::handleReloadEntityServerScriptPacket(QSharedPointer<Rec
     if (senderNode->getCanRez() || senderNode->getCanRezTmp()) {
         auto entityID = QUuid::fromRfc4122(message->read(NUM_BYTES_RFC4122_UUID));
 
-        if (_entityViewer.getTree() && !_shuttingDown) {
+        if (!_entityViewer.getTree() || _shuttingDown) { return; }
+
+        EntityItemPointer entity = _entityViewer.getTree()->findEntityByEntityItemID(entityID);
+
+        if (entity) {
             qCDebug(entity_script_server) << "Reloading: " << entityID;
-            checkAndCallPreload(entityID, true);
+
+            auto script = entity->getServerScripts();
+            checkAndCallPreload(entityID, script, script);
         }
     }
 }
