@@ -181,8 +181,8 @@ public:
 
     void entityChanged(EntityItemPointer entity);
 
-    void emitEntityScriptChanging(const EntityItemID& entityItemID, bool reload);
-    void emitEntityServerScriptChanging(const EntityItemID& entityItemID, bool reload);
+    void emitEntityScriptChanging(const EntityItemID& entityItemID, const QString& oldScriptURL, const QString& newScriptURL);
+    void emitEntityServerScriptChanging(const EntityItemID& entityItemID, const QString& oldScriptURL, const QString& newScriptURL);
 
     void setSimulation(EntitySimulationPointer simulation);
     EntitySimulationPointer getSimulation() const { return _simulation; }
@@ -287,8 +287,8 @@ signals:
     void addingEntity(const EntityItemID& entityID);
     void addingEntityPointer(EntityItem* entityID);
     void editingEntityPointer(const EntityItemPointer& entityID);
-    void entityScriptChanging(const EntityItemID& entityItemID, const bool reload);
-    void entityServerScriptChanging(const EntityItemID& entityItemID, const bool reload);
+    void entityScriptChanging(const EntityItemID& entityItemID, const QString& oldScriptURL, const QString& newScriptURL);
+    void entityServerScriptChanging(const EntityItemID& entityItemID, const QString& oldScriptURL, const QString& newScriptURL);
     void newCollisionSoundURL(const QUrl& url, const EntityItemID& entityID);
     void clearingEntities();
     void killChallengeOwnershipTimeoutTimer(const EntityItemID& certID);

@@ -1696,6 +1696,7 @@ protected:
     std::shared_ptr<ConsoleScriptingInterface> _consoleScriptingInterface;
     std::atomic<bool> _isUserLoaded { false };
     bool _isReloading { false };
+    bool _refreshRecurseGuard { false };
 
     std::atomic<bool> _quitWhenFinished;
 

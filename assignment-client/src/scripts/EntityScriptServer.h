@@ -96,8 +96,8 @@ private:
 
     void addingEntity(const EntityItemID& entityID);
     void deletingEntity(const EntityItemID& entityID);
-    void entityServerScriptChanging(const EntityItemID& entityID, bool reload);
-    void checkAndCallPreload(const EntityItemID& entityID, bool forceRedownload = false);
+    void entityServerScriptChanging(const EntityItemID& entityID, const QString& oldScriptURL, const QString& newScriptURL);
+    void checkAndCallPreload(const EntityItemID& entityID, const QString& oldScriptURL, const QString& newScriptURL);
 
     void cleanupOldKilledListeners();
 
