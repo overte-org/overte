@@ -1393,24 +1393,37 @@ HFMTexture GLTFSerializer::getHFMTexture(const cgltf_texture *texture, cgltf_int
         hfmTex.filename = textureUrl.toEncoded();
 
         if (_url.path().endsWith("glb") || _url.path().endsWith("vrm")) {
-            cgltf_buffer_view *bufferView = image->buffer_view;
+            if (!image->buffer_view) {
+                // We don't have the texture data, fetch it first
+                bool success;
+                hifi::ByteArray outdata;
+                std::tie<bool, hifi::ByteArray>(success, outdata) = requestData(textureUrl);
+                if ( success ) {
+                    hfmTex.content = std::move(outdata);
+                } else {
+                    qCWarning(modelformat) << "Failed to retrieve texture from" << textureUrl << ". Relative texture URI was" << url << "; our URL is" << _url;
+                }
 
-            size_t offset = bufferView->offset;
-            int length = (int)bufferView->size;
+            } else {
+                cgltf_buffer_view *bufferView = image->buffer_view;
 
-            size_t imageIndex = 0;
-            if (!findPointerInArray(image, _data->images, _data->images_count, imageIndex)) {
-                // This should never happen. It would mean a bug in cgltf library.
-                qDebug(modelformat) << "GLTFSerializer::getHFMTexture: can't find texture in the array";
-                return hfmTex;
+                size_t offset = bufferView->offset;
+                int length = (int)bufferView->size;
+
+                size_t imageIndex = 0;
+                if (!findPointerInArray(image, _data->images, _data->images_count, imageIndex)) {
+                    // This should never happen. It would mean a bug in cgltf library.
+                    qDebug(modelformat) << "GLTFSerializer::getHFMTexture: can't find texture in the array";
+                    return hfmTex;
+                }
+
+                if (offset + length > bufferView->buffer->size) {
+                    qDebug(modelformat) << "GLTFSerializer::getHFMTexture: texture data to short";
+                    return hfmTex;
+                }
+                hfmTex.content = QByteArray(static_cast<const char *>(bufferView->buffer->data) + offset, length);
+                hfmTex.filename = textureUrl.toEncoded().append(QString::number(imageIndex).toUtf8());
             }
-
-            if (offset + length > bufferView->buffer->size) {
-                qDebug(modelformat) << "GLTFSerializer::getHFMTexture: texture data to short";
-                return hfmTex;
-            }
-            hfmTex.content = QByteArray(static_cast<const char *>(bufferView->buffer->data) + offset, length);
-            hfmTex.filename = textureUrl.toEncoded().append(QString::number(imageIndex).toUtf8());
         }
 
         if (url.startsWith("data:image/jpeg;base64,") || url.startsWith("data:image/png;base64,") || url.startsWith("data:image/webp;base64,")) {
