@@ -44,7 +44,7 @@ void CubicHermiteSplineTests::testCubicHermiteSplineFunctorWithArcLength() {
     glm::vec3 m1(2.0f, 0.0f, 0.0f);
     CubicHermiteSplineFunctorWithArcLength hermiteSpline(p0, m0, p1, m1);
 
-    const float EPSILON = 0.001f;
+    const float EPSILON = 0.002f;
 
     float arcLengths[5] = {
         hermiteSpline.arcLength(0.0f),

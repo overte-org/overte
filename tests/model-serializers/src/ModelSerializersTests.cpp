@@ -30,6 +30,8 @@
 #include "AssetClient.h"
 #include "LimitedNodeList.h"
 #include "NodeList.h"
+#include "ResourceRequestObserver.h"
+#include "StatTracker.h"
 
 #include <QUrl>
 #include <QNetworkAccessManager>
@@ -50,6 +52,9 @@ void ModelSerializersTests::initTestCase() {
     DependencyManager::set<ModelFormatRegistry>(); // ModelFormatRegistry must be defined before ModelCache. See the ModelCache constructor.
     DependencyManager::set<ResourceManager>();
     DependencyManager::set<AssetClient>();
+    DependencyManager::set<ResourceRequestObserver>();
+    DependencyManager::set<StatTracker>();
+
 
 
 
@@ -74,7 +79,7 @@ void ModelSerializersTests::loadGLTF_data() {
     QTest::newRow("ready-player-me-good3")   << "models/src/Franny.glb.gz"                     << false << false << false;
     QTest::newRow("ready-player-me-good4")   << "models/src/womanInTShirt.glb.gz"              << false << false << false;
     QTest::newRow("ready-player-me-good5")   << "models/src/female-avatar-with-swords.glb.gz"  << false << false << false;
-    QTest::newRow("ready-player-me-broken1") << "models/src/broken-2022-11-27.glb.gz" << false << false << false;
+    QTest::newRow("ready-player-me-broken1") << "models/src/broken-2022-11-27.glb.gz"          << false << false << false;
 
 
     // We can't parse GLTF 1.0 at present, and probably not ever. We're expecting all these to fail.
@@ -94,6 +99,13 @@ void ModelSerializersTests::loadGLTF_data() {
         QTest::newRow(testname.toUtf8().data()) << filename << false << false << false;
     }
 
+    QDirIterator it3("models/src/kenney_building_kit/Models/GLB format", QStringList() << "*.glb", QDir::Files, QDirIterator::Subdirectories);
+    while(it3.hasNext()) {
+        QString filename = it3.next();
+        QFileInfo fi(filename);
+        QString testname = "kenney-" + fi.fileName();
+        QTest::newRow(testname.toUtf8().data()) << filename << false << false << false;
+    }
 }
 
 void ModelSerializersTests::loadGLTF() {
@@ -108,12 +120,12 @@ void ModelSerializersTests::loadGLTF() {
 
     QByteArray data = gltf_file.readAll();
     QByteArray uncompressedData;
-    QUrl url("https://example.com");
+    QUrl url("file:" + QCoreApplication::applicationDirPath());
 
     qInfo() << "URL: " << url;
 
     if (filename.toLower().endsWith(".gz")) {
-        url.setPath("/" + filename.chopped(3));
+        url.setPath(QCoreApplication::applicationDirPath() + "/" + filename.chopped(3));
 
         if (gunzip(data, uncompressedData)) {
             qInfo() << "Uncompressed into" << uncompressedData.length();
@@ -121,7 +133,7 @@ void ModelSerializersTests::loadGLTF() {
             qCritical() << "Failed to uncompress";
         }
     } else {
-        url.setPath("/" + filename);
+        url.setPath(QCoreApplication::applicationDirPath() + "/" + filename);
         uncompressedData = data;
     }
 

@@ -30,11 +30,6 @@
 
 QTEST_MAIN(ScriptEngineTests)
 
-
-
-
-
-
 void ScriptEngineTests::initTestCase() {
     // AudioClient starts networking, but for the purposes of the tests here we don't care,
     // so just got to use some port.
@@ -102,6 +97,8 @@ ScriptManagerPointer ScriptEngineTests::makeManager(const QString &scriptSource,
 
 void ScriptEngineTests::testTrivial() {
     auto sm = makeManager("print(\"script works!\"); Script.stop(true);", "testTrivial.js");
+    auto scopeGuard = sm->engine()->getScopeGuard();
+
     QString printed;
 
     QVERIFY(!sm->isRunning());
@@ -125,6 +122,8 @@ void ScriptEngineTests::testTrivial() {
 
 void ScriptEngineTests::testSyntaxError() {
     auto sm = makeManager("this is not good syntax", "testSyntaxError.js");
+    auto scopeGuard = sm->engine()->getScopeGuard();
+
     bool exceptionHappened = false;
 
     connect(sm.get(), &ScriptManager::unhandledException, [&exceptionHappened](std::shared_ptr<ScriptException> exception){
@@ -146,6 +145,7 @@ void ScriptEngineTests::testSyntaxError() {
 
 void ScriptEngineTests::testRuntimeError() {
     auto sm = makeManager("nonexisting();", "testRuntimeError.js");
+    auto scopeGuard = sm->engine()->getScopeGuard();
     bool exceptionHappened = false;
 
     connect(sm.get(), &ScriptManager::unhandledException, [&exceptionHappened](std::shared_ptr<ScriptException> exception){
@@ -167,6 +167,7 @@ void ScriptEngineTests::testRuntimeError() {
 
 void ScriptEngineTests::testJSThrow() {
     auto sm = makeManager("throw(42);", "testThrow.js");
+    auto scopeGuard = sm->engine()->getScopeGuard();
     sm->run();
 
     std::shared_ptr<ScriptException> ex = sm->getUncaughtException();
@@ -228,7 +229,7 @@ void ScriptEngineTests::testRaiseExceptionAndCatch() {
         "try {"
         "    testClass.doRaiseTest();"
         "} catch (err) {"
-        "    if (err === \"Exception test!\") {"
+        "    if (err.message.includes(\"Exception test!\")) {"
         "        print(\"Caught!\");"
         "    }"
         "}"
@@ -266,6 +267,7 @@ void ScriptEngineTests::testSignal() {
 
     QStringList printed;
     auto sm = makeManager(script, "testSignal.js");
+    auto scopeGuard = sm->engine()->getScopeGuard();
 
     connect(sm.get(), &ScriptManager::printedMessage, [&printed](const QString& message, const QString& engineName){
         printed.append(message);
@@ -291,6 +293,7 @@ void ScriptEngineTests::testSignalWithException() {
     int exceptionCount = 0;
 
     auto sm = makeManager(script, "testSignalWithException.js");
+    auto scopeGuard = sm->engine()->getScopeGuard();
 
     connect(sm.get(), &ScriptManager::printedMessage, [&printed](const QString& message, const QString& engineName){
         printed.append(message);
@@ -324,6 +327,7 @@ void ScriptEngineTests::testQuat() {
     };
 
     auto sm = makeManager(script, "testQuat.js");
+    auto scopeGuard = sm->engine()->getScopeGuard();
 
     connect(sm.get(), &ScriptManager::printedMessage, [&printCount, answers](const QString& message, const QString& engineName){
         QCOMPARE(message, answers[printCount++]);
