@@ -1685,7 +1685,7 @@ void Application::setupSignalsAndOperators() {
         });
 
         ScriptEntityItem::setLoadOrReloadScriptOperator([](const EntityItemID& entityID, const QString& oldScriptURL, const QString& newScriptURL) -> bool {
-            return DependencyManager::get<EntityTreeRenderer>()->checkAndCallPreload(entityID, true, true, oldScriptURL, newScriptURL);
+            return DependencyManager::get<EntityTreeRenderer>()->checkAndCallPreload(entityID, oldScriptURL, newScriptURL);
         });
         ScriptEntityItem::setUnloadScriptOperator([](const EntityItemID& entityID, const QString& scriptURL) -> void {
             DependencyManager::get<EntityTreeRenderer>()->unloadEntityScript(entityID, scriptURL);
