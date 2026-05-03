@@ -1127,6 +1127,17 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
                     _stereo._contextDisable = false;
                     break;
 
+                // Buffers need to be uploaded during transfer pass for performance reasons.
+                case Batch::COMMAND_setInputBuffer:
+                case Batch::COMMAND_setIndexBuffer:
+                case Batch::COMMAND_setIndirectBuffer:
+                case Batch::COMMAND_setUniformBuffer:
+                case Batch::COMMAND_setResourceBuffer: {
+                    CommandCall call = _commandCalls[(*command)];
+                    (this->*(call))(batch, *offset);
+                    break;
+                }
+
                 case Batch::COMMAND_setViewportTransform:
                 case Batch::COMMAND_setViewTransform:
                 case Batch::COMMAND_setProjectionTransform:
@@ -1162,6 +1173,20 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
         PROFILE_RANGE(gpu_vk_detail, "syncGPUTransform");
         transferGlUniforms();
         transferTransformState(batch);
+
+        // Insert barriers for the buffers from this transfer pass and clear barrier list.
+        vkCmdPipelineBarrier(
+            _currentCommandBuffer,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            VK_FLAGS_NONE,
+            0, nullptr,
+            _currentFrame->bufferBarriers.size(), _currentFrame->bufferBarriers.data(),
+            0, nullptr);
+
+        size_t bufferBarriersCount = _currentFrame->bufferBarriers.size();
+        _currentFrame->bufferBarriers.resize(0);
+        _currentFrame->bufferBarriers.reserve(bufferBarriersCount);
     }
 
     _inRenderTransferPass = false;
@@ -1791,6 +1816,10 @@ void VKBackend::FrameData::createDescriptorPool() {
     VK_CHECK_RESULT(vkCreateDescriptorPool(_backend->_context.device->logicalDevice, &descriptorPoolCI, nullptr, &_descriptorPool));
 }
 
+void VKBackend::FrameData::addBufferBarrier(const VkBufferMemoryBarrier &barrier) {
+    bufferBarriers.push_back(barrier);
+}
+
 void VKBackend::FrameData::addGlUniform(size_t size, const void* data, size_t commandIndex) {
     size_t alignment = _backend->_context.device->properties.limits.minUniformBufferOffsetAlignment;
     size_t newSizeUnaligned = _glUniformBufferPosition + size;
@@ -1833,6 +1862,11 @@ void VKBackend::FrameData::cleanup() {
     _glUniformBufferPosition = 0;
     _glUniformOffsetMap.clear();
     _glUniformData.clear();
+
+    size_t bufferBarrierCapacity = bufferBarriers.size();
+    bufferBarriers.clear();
+    bufferBarriers.resize(0);
+    bufferBarriers.reserve(bufferBarrierCapacity);
 
     size_t vectorCapacity = _buffers.capacity();
     _buffers.clear();
@@ -2377,8 +2411,6 @@ void VKBackend::transferGlUniforms() {
 }
 
 void VKBackend::transferTransformState(const Batch& batch) {
-    // VKTODO
-    // FIXME not thread safe
     static std::vector<uint8_t> bufferData;
     if (!_transform._cameras.empty()) {
         bufferData.resize(_transform._cameraUboSize * _transform._cameras.size());
@@ -2898,6 +2930,11 @@ void VKBackend::do_setInputBuffer(const Batch& batch, size_t paramOffset) {
     BufferPointer buffer = batch._buffers.get(batch._params[paramOffset + 2]._uint);
     uint32 channel = batch._params[paramOffset + 3]._uint;
 
+    if (_inRenderTransferPass && buffer) {
+        syncGPUObject(buffer.get());
+        return;
+    }
+
     if (channel < getNumInputBuffers()) {
         bool isModified = false;
         if (_input._buffers[channel] != buffer.get()) {
@@ -2935,8 +2972,13 @@ void VKBackend::do_setInputBuffer(const Batch& batch, size_t paramOffset) {
 void VKBackend::do_setIndexBuffer(const Batch& batch, size_t paramOffset) {
     _input._indexBufferType = (Type)batch._params[paramOffset + 2]._uint;
     gpu::Offset newOffset = batch._params[paramOffset + 0]._uint;
-
     BufferPointer indexBuffer = batch._buffers.get(batch._params[paramOffset + 1]._uint);
+
+    if (_inRenderTransferPass && indexBuffer) {
+        syncGPUObject(indexBuffer.get());
+        return;
+    }
+
     if (indexBuffer.get() != _input._indexBuffer || newOffset != _input._indexBufferOffset) {
         _input._indexBuffer = indexBuffer.get();
         _input._indexBufferOffset = batch._params[paramOffset + 0]._uint;
@@ -3110,10 +3152,11 @@ void VKBackend::do_copySavedViewProjectionTransformToBuffer(const Batch& batch, 
     // Sync BufferObject
     auto* object = syncGPUObject(buffer.get());
     // Copy camera data to the buffer.
-    object->map();
-    object->copy(size, (uint8_t *)(_transform._cameras.data()) + savedTransform._cameraOffset, dstOffset);
-    object->flush(VK_WHOLE_SIZE);
-    object->unmap();
+    object->stagingAllocation.map();
+    object->stagingAllocation.copy(size, (uint8_t *)(_transform._cameras.data()) + savedTransform._cameraOffset, dstOffset);
+    object->stagingAllocation.flush(VK_WHOLE_SIZE);
+    object->stagingAllocation.unmap();
+    object->transferWithBarrier(_currentCommandBuffer);
 }
 
 void VKBackend::do_setStateScissorRect(const Batch& batch, size_t paramOffset) {
@@ -3164,6 +3207,11 @@ void VKBackend::do_setUniformBuffer(const Batch& batch, size_t paramOffset) {
     uint32_t rangeStart = batch._params[paramOffset + 1]._uint;
     uint32_t rangeSize = batch._params[paramOffset + 0]._uint;
 
+    if (_inRenderTransferPass && uniformBuffer) {
+        syncGPUObject(uniformBuffer.get());
+        return;
+    }
+
     // Create descriptor
 
     if (!uniformBuffer) {
@@ -3197,6 +3245,11 @@ void VKBackend::do_setResourceBuffer(const Batch& batch, size_t paramOffset) {
     }
 
     const auto& resourceBuffer = batch._buffers.get(batch._params[paramOffset + 0]._uint);
+
+    if (_inRenderTransferPass && resourceBuffer) {
+        syncGPUObject(resourceBuffer.get());
+        return;
+    }
 
     if (!resourceBuffer) {
         releaseResourceBuffer(slot);

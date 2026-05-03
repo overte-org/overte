@@ -302,6 +302,8 @@ protected:
     // Contains objects that are created per frame and need to be deleted after the frame is rendered
     class FrameData {
     public:
+        std::vector<VkBufferMemoryBarrier> bufferBarriers;
+
         std::vector<VkDescriptorSet> uniformDescriptorSets;
         std::vector<VkDescriptorSet> textureDescriptorSets;
         std::vector<VkDescriptorSet> storageDescriptorSets;
@@ -317,6 +319,9 @@ protected:
         std::vector<uint8_t> _glUniformData;
         std::unordered_map<int, size_t> _glUniformOffsetMap;
         size_t _glUniformBufferPosition {0}; // Position where data from next glUniform... call is placed
+
+        /// Buffer barriers are added during transfer pass, and then waited on before render pass.
+        void addBufferBarrier(const VkBufferMemoryBarrier &barrier);
 
         void addGlUniform(size_t size, const void *data, size_t commandIndex);
 
