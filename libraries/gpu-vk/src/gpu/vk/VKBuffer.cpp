@@ -26,15 +26,23 @@ VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer) {
     VKBuffer* object = gpu::Backend::getGPUObject<VKBuffer>(buffer);
     // Has the storage size changed? VKTODO: is something missing here?
 
-    if (!object || object->_stamp != buffer._renderSysmem.getStamp()) {
+    bool newBuffer = false;
+    if (!object || object->stagingAllocation.size < buffer._renderSysmem.getSize() /*object->_stamp != buffer._renderSysmem.getStamp()*/) {
         // VKTODO: Should previous gpuobject be replaced?
         object = new VKBuffer(backend, buffer);
+        newBuffer = true;
     }
     // VKTODO: delete the old buffer after rendering the frame
-    if (0 != (buffer._renderPages._flags & PageManager::DIRTY)) {
-        object->transfer();
+    if (0 != (buffer._renderPages._flags & PageManager::DIRTY) || newBuffer) {
+        object->transferToStaging(backend);
+        if (backend._inRenderTransferPass) {
+            // All barriers will be added in one command at the end of transfer pass.
+            object->transferWithDelayedBarrier(backend, backend._currentCommandBuffer);
+        } else {
+            object->transferWithBarrier(backend._currentCommandBuffer);
+        }
     }
-    Q_ASSERT(object->size == buffer._renderSysmem.getSize());
+    Q_ASSERT(object->allocation.size == buffer._renderSysmem.getSize());
 
     return object;
 }
@@ -47,7 +55,8 @@ VkBuffer VKBuffer::getBuffer(VKBackend& backend, const gpu::Buffer& buffer) {
         return nullptr;
     }
 }
-void VKBuffer::transfer() {
+
+void VKBuffer::transferToStaging(VKBackend &backend) {
     Size offset;
     Size blockSize;
     Size currentPage { 0 };
@@ -59,11 +68,136 @@ void VKBuffer::transfer() {
         }
         memcpy(_localData.data()+offset, data+offset, blockSize);
     }
-    map();
-    copy(size, _localData.data());
-    flush(VK_WHOLE_SIZE);
-    unmap();
+    stagingAllocation.map();
+    stagingAllocation.copy(stagingAllocation.size, _localData.data());
+    stagingAllocation.flush(VK_WHOLE_SIZE);
+    stagingAllocation.unmap();
     _gpuObject._renderPages._flags &= ~PageManager::DIRTY;
+}
+
+void VKBuffer::transferOnly(VKBackend &backend) {
+    // Only for development and testing, should never be called otherwise.
+    Q_ASSERT(false);
+    auto device = backend.getContext().device;
+    VkCommandBuffer copyCmd = device->createCommandBuffer(device->graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
+    VkBufferCopy copyRegion = {};
+
+    copyRegion.size = _localData.size();
+    vkCmdCopyBuffer(
+        copyCmd,
+        stagingBuffer,
+        buffer,
+        1,
+        &copyRegion);
+
+    // VKTODO: is a memory barrier needed here?
+    // VKTODO: all transfers should be done as a part of the transfer pass.
+
+    device->flushCommandBuffer(copyCmd, backend.getContext().graphicsQueue, device->graphicsCommandPool, true);
+}
+
+void VKBuffer::transferWithBarrier(VkCommandBuffer commandBuffer) {
+    VkBufferCopy copyRegion = {};
+
+    copyRegion.size = _localData.size();
+    vkCmdCopyBuffer(
+        commandBuffer,
+        stagingBuffer,
+        buffer,
+        1,
+        &copyRegion);
+
+    VkBufferMemoryBarrier bufferMemoryBarrier{
+        .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .buffer = buffer,
+        .offset = 0,
+        .size = VK_WHOLE_SIZE
+    };
+
+    vkCmdPipelineBarrier(
+        commandBuffer,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_FLAGS_NONE,
+        0, nullptr,
+        1, &bufferMemoryBarrier,
+        0, nullptr);
+
+    // VKTODO: is a memory barrier needed here or just buffer barrier is ok?
+    // VKTODO: all transfers should be done as a part of the transfer pass.
+}
+
+void VKBuffer::transferWithDelayedBarrier(VKBackend &backend, VkCommandBuffer commandBuffer) {
+    VkBufferCopy copyRegion = {};
+
+    copyRegion.size = _localData.size();
+    vkCmdCopyBuffer(
+        commandBuffer,
+        stagingBuffer,
+        buffer,
+        1,
+        &copyRegion);
+
+    VkBufferMemoryBarrier bufferMemoryBarrier{
+        .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT,
+        .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
+        .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+        .buffer = buffer,
+        .offset = 0,
+        .size = VK_WHOLE_SIZE
+    };
+
+    backend._currentFrame->addBufferBarrier(bufferMemoryBarrier);
+
+    // VKTODO: is a memory barrier needed here or just buffer barrier is ok?
+}
+
+void VKBuffer::incrementCount(VKBackend& backend) {
+    static int uniformCountTransfer = 0;
+    static int uniformCountRender = 0;
+    static int vertexCountTransfer = 0;
+    static int vertexCountRender = 0;
+    static int indexCountTransfer = 0;
+    static int indexCountRender = 0;
+    static int resourceCountTransfer = 0;
+    static int resourceCountRender = 0;
+
+    if(_gpuObject.getUsage() & gpu::Buffer::UniformBuffer) {
+        if (backend._inRenderTransferPass) {
+            uniformCountTransfer++;
+        } else {
+            uniformCountRender++;
+        }
+    }
+    if(_gpuObject.getUsage() & gpu::Buffer::VertexBuffer) {
+        if (backend._inRenderTransferPass) {
+            vertexCountTransfer++;
+        } else {
+            vertexCountRender++;
+        }
+    }
+    if(_gpuObject.getUsage() & gpu::Buffer::IndexBuffer) {
+        if (backend._inRenderTransferPass) {
+            indexCountTransfer++;
+        } else {
+            indexCountRender++;
+        }
+    }
+    if(_gpuObject.getUsage() & gpu::Buffer::ResourceBuffer) {
+        if (backend._inRenderTransferPass) {
+            resourceCountTransfer++;
+        } else {
+            resourceCountRender++;
+        }
+    }
 }
 
 VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& gpuBuffer) : VKObject(backend, gpuBuffer),
@@ -77,41 +211,58 @@ VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& gpuBuffer) : VKObject(
     _localData.resize(dataSize);
     memcpy(_localData.data(), data, dataSize);
 
-    this->size = gpuBuffer._renderSysmem.getSize();
+    this->stagingAllocation.size = gpuBuffer._renderSysmem.getSize();
+    this->allocation.size = this->stagingAllocation.size;
+
+    VkBufferCreateInfo transferVkBufferCI{};
+    transferVkBufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    transferVkBufferCI.pNext = nullptr;
+    transferVkBufferCI.flags = 0;
+    transferVkBufferCI.size = stagingAllocation.size == 0 ? 256 : stagingAllocation.size;
+    transferVkBufferCI.usage = usageFlags;
+    transferVkBufferCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    transferVkBufferCI.queueFamilyIndexCount = 0;
+    transferVkBufferCI.pQueueFamilyIndices = nullptr;
+
+    VmaAllocationCreateInfo transferAllocationCI = {};
+    transferAllocationCI.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; // VKTODO: sometime in the future we should free staging buffers for large buffers that are not updated.
+    transferAllocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+
+    VK_CHECK_RESULT(vmaCreateBuffer(stagingAllocation.getAllocator(), &transferVkBufferCI, &transferAllocationCI,
+                                    &stagingBuffer, &stagingAllocation.allocation, nullptr));
+
     VkBufferCreateInfo vkBufferCI{};
     vkBufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCI.pNext = nullptr;
     vkBufferCI.flags = 0;
-    vkBufferCI.size = size == 0 ? 256 : size;
+    vkBufferCI.size = allocation.size == 0 ? 256 : allocation.size;
     vkBufferCI.usage = usageFlags;
     vkBufferCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkBufferCI.queueFamilyIndexCount = 0;
     vkBufferCI.pQueueFamilyIndices = nullptr;
 
     VmaAllocationCreateInfo allocationCI = {};
-    allocationCI.usage = VMA_MEMORY_USAGE_CPU_TO_GPU; // VKTODO: different kind will be required later for device-local memory
-    allocationCI.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
-    auto pCreateInfo = &vkBufferCI;
-    VK_CHECK_RESULT(vmaCreateBuffer(Allocation::getAllocator(), pCreateInfo, &allocationCI,
-                                    &buffer, &allocation, nullptr));
+    allocationCI.usage = VMA_MEMORY_USAGE_GPU_ONLY;
+    allocationCI.flags = 0;
+    VK_CHECK_RESULT(vmaCreateBuffer(allocation.getAllocator(), &vkBufferCI, &allocationCI,
+                                    &buffer, &allocation.allocation, nullptr));
 
-    map();
-    copy(size, _localData.data());
-    flush(VK_WHOLE_SIZE);
-    unmap();
+    incrementCount(backend);
 
     Backend::bufferCount.increment();
-    Backend::bufferGPUMemSize.update(0, size);
+    Backend::bufferGPUMemSize.update(0, stagingAllocation.size);
 }
 
 VKBuffer::~VKBuffer() {
-    Backend::bufferGPUMemSize.update(size, 0);
+    Backend::bufferGPUMemSize.update(allocation.size, 0);
     Backend::bufferCount.decrement();
     auto backend = _backend.lock();
     if (backend) {
         auto &recycler = backend->getContext().recycler;
+        recycler.trashVkBuffer(stagingBuffer);
+        recycler.trashVmaAllocation(stagingAllocation.allocation);
         recycler.trashVkBuffer(buffer);
-        recycler.trashVmaAllocation(allocation);
+        recycler.trashVmaAllocation(allocation.allocation);
         recycler.bufferDeleted(this);
     }
 }
