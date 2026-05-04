@@ -21,6 +21,7 @@
 #include <QtNetwork/QLocalServer>
 #include <QtQuick/QQuickWindow>
 #include <QWidget>
+#include <QtConcurrent/QtConcurrentRun>
 
 #include <AccountManager.h>
 #include <AddressManager.h>
@@ -726,7 +727,7 @@ bool Application::takeSnapshotOperators(std::queue<SnapshotOperator>& snapshotOp
 
 void Application::takeSnapshot(bool notify, bool includeAnimated, float aspectRatio, const QString& filename) {
     addSnapshotOperator(std::make_tuple([notify, includeAnimated, aspectRatio, filename](const QImage& snapshot) {
-        qApp->postLambdaEvent([snapshot, notify, includeAnimated, aspectRatio, filename] {
+        QtConcurrent::run([snapshot, notify, includeAnimated, aspectRatio, filename] {
             QString path = DependencyManager::get<Snapshot>()->saveSnapshot(snapshot, filename, TestScriptingInterface::getInstance()->getTestResultsLocation());
 
             // If we're not doing an animated snapshot as well...
@@ -745,7 +746,7 @@ void Application::takeSnapshot(bool notify, bool includeAnimated, float aspectRa
 
 void Application::takeSecondaryCameraSnapshot(const bool& notify, const QString& filename) {
     addSnapshotOperator(std::make_tuple([notify, filename](const QImage& snapshot) {
-        qApp->postLambdaEvent([snapshot, notify, filename] {
+        QtConcurrent::run([snapshot, notify, filename] {
             QString snapshotPath = DependencyManager::get<Snapshot>()->saveSnapshot(snapshot, filename, TestScriptingInterface::getInstance()->getTestResultsLocation());
 
             emit DependencyManager::get<WindowScriptingInterface>()->stillSnapshotTaken(snapshotPath, notify);
@@ -754,7 +755,7 @@ void Application::takeSecondaryCameraSnapshot(const bool& notify, const QString&
 }
 
 void Application::takeSecondaryCamera360Snapshot(const glm::vec3& cameraPosition, const bool& cubemapOutputFormat, const bool& notify, const QString& filename) {
-    postLambdaEvent([notify, filename, cubemapOutputFormat, cameraPosition] {
+    QtConcurrent::run([notify, filename, cubemapOutputFormat, cameraPosition] {
         DependencyManager::get<Snapshot>()->save360Snapshot(cameraPosition, cubemapOutputFormat, notify, filename);
     });
 }
