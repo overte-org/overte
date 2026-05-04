@@ -347,6 +347,7 @@ private:
 
     vk::VKFramebuffer* syncGPUObject(const Framebuffer *framebuffer);
     VKBuffer* syncGPUObject(const Buffer *buffer);
+    VKBuffer* syncGPUObjectNoTransfer(const Buffer *buffer);
     VKTexture* syncGPUObject(const Texture *texture);
     VKQuery* syncGPUObject(const Query *query);
 

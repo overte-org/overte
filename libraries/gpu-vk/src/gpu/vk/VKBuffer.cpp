@@ -13,7 +13,7 @@
 
 using namespace gpu::vk;
 
-VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer) {
+VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer, bool transfer) {
     if (buffer.getSysmem().getSize() != 0) {
         if (buffer._getUpdateCount == 0) {
             qWarning() << "Unsynced buffer";
@@ -35,11 +35,13 @@ VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer) {
     // VKTODO: delete the old buffer after rendering the frame
     if (0 != (buffer._renderPages._flags & PageManager::DIRTY) || newBuffer) {
         object->transferToStaging(backend);
-        if (backend._inRenderTransferPass) {
-            // All barriers will be added in one command at the end of transfer pass.
-            object->transferWithDelayedBarrier(backend, backend._currentCommandBuffer);
-        } else {
-            object->transferWithBarrier(backend._currentCommandBuffer);
+        if (transfer) {
+            if (backend._inRenderTransferPass) {
+                // All barriers will be added in one command at the end of transfer pass.
+                object->transferWithDelayedBarrier(backend, backend._currentCommandBuffer);
+            } else {
+                object->transferWithBarrier(backend._currentCommandBuffer);
+            }
         }
     }
     Q_ASSERT(object->allocation.size == buffer._renderSysmem.getSize());
