@@ -18,7 +18,7 @@ namespace gpu { namespace vk {
 
 class VKBuffer : public VKObject<gpu::Buffer> {
 public:
-    static VKBuffer* sync(VKBackend& backend, const gpu::Buffer& buffer);
+    static VKBuffer* sync(VKBackend& backend, const gpu::Buffer& buffer, bool transfer = true);
     static VkBuffer getBuffer(VKBackend& backend, const gpu::Buffer& buffer);
 
     /// Transfers buffer to GPU using separate command buffer.

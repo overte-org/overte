@@ -1407,6 +1407,18 @@ VKBuffer* VKBackend::syncGPUObject(const Buffer *buffer) {
     return object;
 }
 
+VKBuffer* VKBackend::syncGPUObjectNoTransfer(const Buffer *buffer) {
+    if (!buffer) {
+        return nullptr;
+    }
+    auto object = vk::VKBuffer::sync(*this, *buffer, false);
+    if (!_buffers.count(object)) {
+        _buffers.insert(object);
+    }
+    return object;
+}
+
+
 VKTexture* VKBackend::syncGPUObject(const Texture *texture) {
     if (!texture) {
         return nullptr;
@@ -2457,6 +2469,7 @@ void VKBackend::transferTransformState(const Batch& batch) {
                                                                            bufferData.data());
         _currentFrame->_drawCallInfoBuffer->flush();
         _currentFrame->_buffers.push_back(_currentFrame->_drawCallInfoBuffer);
+        syncGPUObject(_currentFrame->_drawCallInfoBuffer.get());
     }else{
         _currentFrame->_drawCallInfoBuffer.reset();
     }
@@ -3150,7 +3163,7 @@ void VKBackend::do_copySavedViewProjectionTransformToBuffer(const Batch& batch, 
     }
 
     // Sync BufferObject
-    auto* object = syncGPUObject(buffer.get());
+    auto* object = syncGPUObjectNoTransfer(buffer.get());
     // Copy camera data to the buffer.
     object->stagingAllocation.map();
     object->stagingAllocation.copy(size, (uint8_t *)(_transform._cameras.data()) + savedTransform._cameraOffset, dstOffset);
