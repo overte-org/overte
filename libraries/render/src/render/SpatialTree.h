@@ -375,14 +375,14 @@ namespace render {
         float _invSize { 1.0f / _size };
         glm::vec3 _origin { -16384.0f };
 
-        void init(glm::vec3 origin, float size) {
+        void init(const glm::vec3 &origin, float size) {
             _size = size;
             _invSize = 1.0f / _size;
             _origin = origin;
         }
     public:
         // THe overall size and origin of the tree are defined at creation
-        ItemSpatialTree(glm::vec3 origin, float size) { init(origin, size); }
+        ItemSpatialTree(const glm::vec3 &origin, float size) { init(origin, size); }
 
         float getSize() const { return _size; }
         const glm::vec3& getOrigin() const { return _origin; }

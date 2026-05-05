@@ -101,6 +101,7 @@ namespace platform { namespace keys{
         extern const char*  OS_MACOS;
         extern const char*  OS_LINUX;
         extern const char*  OS_ANDROID;
+        extern const char*  OS_FREEBSD;
 
         extern const char*  OSVersion;
 
