@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-05-05-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
@@ -95,8 +95,10 @@ EOF
 #
 # Setup Conan
 #
-# Set CONAN_HOME to its default, so we can read it in our GitHub Actions cache step.
-ENV CONAN_HOME=/root/.conan2
+# Set CONAN_HOME, so we can read it in our GitHub Actions cache step.
+# This needs to be set to a location that is unlikely to exist on the end-user's system to work around permission issues
+# with OpenXR-loader. See https://github.com/overte-org/overte/issues/2117
+ENV CONAN_HOME=/zgofepbi/.conan2
 RUN <<EOF
 conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte
 # Use our mirror of Conan Center to avoid rate limiting.
