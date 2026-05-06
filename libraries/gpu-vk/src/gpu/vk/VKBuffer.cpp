@@ -28,6 +28,11 @@ VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer, bool tra
 
     bool newBuffer = false;
     if (!object || object->stagingAllocation.size < buffer._renderSysmem.getSize() /*object->_stamp != buffer._renderSysmem.getStamp()*/) {
+        if (object) {
+            backend._currentFrame->_bufferResizeCounter++;
+        } else {
+            backend._currentFrame->_bufferCreationCounter++;
+        }
         // VKTODO: Should previous gpuobject be replaced?
         object = new VKBuffer(backend, buffer);
         newBuffer = true;
@@ -40,7 +45,7 @@ VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer, bool tra
                 // All barriers will be added in one command at the end of transfer pass.
                 object->transferWithDelayedBarrier(backend, backend._currentCommandBuffer);
             } else {
-                object->transferWithBarrier(backend._currentCommandBuffer);
+                object->transferWithBarrier(backend, backend._currentCommandBuffer);
             }
         }
     }
@@ -98,7 +103,7 @@ void VKBuffer::transferOnly(VKBackend &backend) {
     device->flushCommandBuffer(copyCmd, backend.getContext().graphicsQueue, device->graphicsCommandPool, true);
 }
 
-void VKBuffer::transferWithBarrier(VkCommandBuffer commandBuffer) {
+void VKBuffer::transferWithBarrier(VKBackend &backend, VkCommandBuffer commandBuffer) {
     VkBufferCopy copyRegion = {};
 
     copyRegion.size = _localData.size();
@@ -130,6 +135,8 @@ void VKBuffer::transferWithBarrier(VkCommandBuffer commandBuffer) {
         1, &bufferMemoryBarrier,
         0, nullptr);
 
+    backend._currentFrame->_bufferTransferCounterRenderPass++;
+    incrementTransferCount(backend, copyRegion.size);
     // VKTODO: is a memory barrier needed here or just buffer barrier is ok?
     // VKTODO: all transfers should be done as a part of the transfer pass.
 }
@@ -159,7 +166,26 @@ void VKBuffer::transferWithDelayedBarrier(VKBackend &backend, VkCommandBuffer co
 
     backend._currentFrame->addBufferBarrier(bufferMemoryBarrier);
 
+    backend._currentFrame->_bufferTransferCounterTransferPass++;
+    incrementTransferCount(backend, copyRegion.size);
     // VKTODO: is a memory barrier needed here or just buffer barrier is ok?
+}
+
+void VKBuffer::incrementTransferCount(VKBackend& backend, size_t transferSize) {
+    backend._currentFrame->_bufferTransferredBytes += transferSize;
+
+    if(_gpuObject.getUsage() & gpu::Buffer::UniformBuffer) {
+        backend._currentFrame->_uniformBufferTransferCounter++;
+    }
+    if(_gpuObject.getUsage() & gpu::Buffer::VertexBuffer) {
+        backend._currentFrame->_vertexBufferTransferCounter++;
+    }
+    if(_gpuObject.getUsage() & gpu::Buffer::IndexBuffer) {
+        backend._currentFrame->_indexBufferTransferCounter++;
+    }
+    if(_gpuObject.getUsage() & gpu::Buffer::ResourceBuffer) {
+        backend._currentFrame->_resourceBufferTransferCounter++;
+    }
 }
 
 void VKBuffer::incrementCount(VKBackend& backend) {

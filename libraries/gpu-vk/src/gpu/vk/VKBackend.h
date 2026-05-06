@@ -320,6 +320,17 @@ protected:
         std::unordered_map<int, size_t> _glUniformOffsetMap;
         size_t _glUniformBufferPosition {0}; // Position where data from next glUniform... call is placed
 
+        size_t _bufferTransferCounterTransferPass {0};
+        size_t _bufferTransferCounterRenderPass {0};
+        size_t _uniformBufferTransferCounter {0};
+        size_t _vertexBufferTransferCounter {0};
+        size_t _indexBufferTransferCounter {0};
+        size_t _resourceBufferTransferCounter {0};
+        size_t _bufferTransferredBytes{0};
+
+        size_t _bufferCreationCounter {0};
+        size_t _bufferResizeCounter {0};
+
         /// Buffer barriers are added during transfer pass, and then waited on before render pass.
         void addBufferBarrier(const VkBufferMemoryBarrier &barrier);
 
@@ -329,7 +340,7 @@ protected:
         FrameData() = delete;
         ~FrameData();
         // Executed after the frame was rendered so that it can be reused
-        void cleanup(); // VKTODO
+        void cleanup();
     private:
         // Creates descriptor pool for current frame
         void createDescriptorPool();

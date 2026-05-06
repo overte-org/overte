@@ -2697,7 +2697,9 @@ void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
         }
 
         const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
-        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*)&compactColor);
+        if (_colorBuffer->getSize() < sizeof(compactColor) || *reinterpret_cast<const uint32_t*>(_colorBuffer->getData()) != compactColor) {
+            _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*)&compactColor);
+        }
         gpu::BufferView colorView(_colorBuffer, COLOR_ELEMENT);
         batch.setInputBuffer(gpu::Stream::COLOR, colorView);
         batch.setInputFormat(_vertexColorFormat);
