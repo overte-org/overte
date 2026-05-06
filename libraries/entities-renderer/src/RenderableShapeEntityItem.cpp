@@ -157,7 +157,9 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
         });
 
         const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
-        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        if (_colorBuffer->getSize() < sizeof(compactColor) || *reinterpret_cast<const uint32_t*>(_colorBuffer->getData()) != compactColor) {
+            _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        }
         if (geometryShape != GeometryCache::Shape::Torus) {
             if (wireframe) {
                 geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
@@ -183,7 +185,9 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
                 }
             } else {
                 const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
-                _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+                if (_colorBuffer->getSize() < sizeof(compactColor) || *reinterpret_cast<const uint32_t*>(_colorBuffer->getData()) != compactColor) {
+                    _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+                }
                 if (!fading) {
                     if (wireframe) {
                         geometryCache->renderWireShape(batch, geometryShape, _colorBuffer);
@@ -203,7 +207,9 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
             }
         } else {
             const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
-            _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*)&compactColor);
+            if (_colorBuffer->getSize() < sizeof(compactColor) || *reinterpret_cast<const uint32_t*>(_colorBuffer->getData()) != compactColor) {
+                _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*)&compactColor);
+            }
             if (!fading) {
                 geometryCache->renderTorus(batch, _innerRadius, _colorBuffer, _torusID);
             } else {
@@ -222,7 +228,9 @@ void ShapeEntityRenderer::doRender(RenderArgs* args) {
 		}
 
         const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
-        _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        if (_colorBuffer->getSize() < sizeof(compactColor) || *reinterpret_cast<const uint32_t*>(_colorBuffer->getData()) != compactColor) {
+            _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        }
         if (geometryShape != GeometryCache::Shape::Torus) {
             geometryCache->renderShape(batch, geometryShape, _colorBuffer);
         } else {

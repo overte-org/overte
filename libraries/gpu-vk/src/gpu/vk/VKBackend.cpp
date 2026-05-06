@@ -251,6 +251,19 @@ void VKBackend::executeFrame(const FramePointer& frame) {
     // Move pointer to current frame to property that will store it while it's being rendered and before it's recycled.
     _previouslyRenderedFrame = _currentlyRenderedFrame;
     _currentlyRenderedFrame = _currentFrame;
+    bool reportBufferUpdates = false;
+    if (_frameCounter % 20 == 0 && reportBufferUpdates) {
+    qDebug() << "Buffer transfers: transfer pass: " << _currentFrame->_bufferTransferCounterTransferPass
+             << " render pass: " << _currentFrame->_bufferTransferCounterRenderPass
+             << " Batches " << frame->batches.size();
+        qDebug() << "Buffer transfers: uniform: " << _currentFrame->_uniformBufferTransferCounter
+                 << " vertex: " << _currentFrame->_vertexBufferTransferCounter
+                 << " index: " << _currentFrame->_indexBufferTransferCounter
+                 << " resource: " << _currentFrame->_resourceBufferTransferCounter
+                 << " created: " << _currentFrame->_bufferCreationCounter
+                 << " resized: " << _currentFrame->_bufferResizeCounter
+                 << " bytes: " << _currentFrame->_bufferTransferredBytes;
+    }
     releaseFrameData();
     _frameCounter++;
     // VKTODO: add a good way of toggling this
@@ -1889,6 +1902,17 @@ void VKBackend::FrameData::cleanup() {
     storageDescriptorSets.resize(0);
     // Should descriptor pool be cleared every frame?
     vkResetDescriptorPool(_backend->_context.device->logicalDevice, _descriptorPool, 0);
+
+    _bufferTransferCounterTransferPass = 0;
+    _bufferTransferCounterRenderPass = 0;
+    _uniformBufferTransferCounter = 0;
+    _vertexBufferTransferCounter = 0;
+    _indexBufferTransferCounter = 0;
+    _resourceBufferTransferCounter = 0;
+    _bufferTransferredBytes = 0;
+
+    _bufferCreationCounter = 0;
+    _bufferResizeCounter = 0;
 }
 
 void VKBackend::initDefaultTexture() {
@@ -2419,6 +2443,7 @@ void VKBackend::transferGlUniforms() {
                                                                         _currentFrame->_glUniformData.data());
         _currentFrame->_glUniformBuffer->flush();
         _currentFrame->_buffers.push_back(_currentFrame->_glUniformBuffer);
+        syncGPUObject(_currentFrame->_glUniformBuffer.get());
     }
 }
 
@@ -3169,7 +3194,7 @@ void VKBackend::do_copySavedViewProjectionTransformToBuffer(const Batch& batch, 
     object->stagingAllocation.copy(size, (uint8_t *)(_transform._cameras.data()) + savedTransform._cameraOffset, dstOffset);
     object->stagingAllocation.flush(VK_WHOLE_SIZE);
     object->stagingAllocation.unmap();
-    object->transferWithBarrier(_currentCommandBuffer);
+    object->transferWithBarrier(*this, _currentCommandBuffer);
 }
 
 void VKBackend::do_setStateScissorRect(const Batch& batch, size_t paramOffset) {

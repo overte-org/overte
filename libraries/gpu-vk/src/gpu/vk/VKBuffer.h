@@ -30,7 +30,7 @@ public:
 
     /// Adds command to transfer data from the staging buffer to GPU-only buffer.
     /// Adds a barrier immediately after transfer command.
-    void transferWithBarrier(VkCommandBuffer commandBuffer);
+    void transferWithBarrier(VKBackend &backend, VkCommandBuffer commandBuffer);
 
     /// Adds command to transfer data from the staging buffer to GPU-only buffer.
     /// Adds a barrier that will be waited on at the end of transfer pass.
@@ -51,6 +51,8 @@ protected:
     /// Used for debugging.
     /// Uploading buffers during render pass causes significant performance loss.
     void incrementCount(VKBackend& backend);
+
+    void incrementTransferCount(VKBackend& backend, size_t transferSize);
 
     // Local copy of buffer data. Updates are copied into it before transfer.
     std::vector<uint8_t> _localData;
