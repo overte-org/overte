@@ -29,12 +29,12 @@ double Query::getGPUElapsedTime() const {
     return ((double)_queryResult) / 1000000.0;
 }
 double Query::getBatchElapsedTime() const {
-    return ((double)_usecBatchElapsedTime) / 1000000.0;
+    return ((double)_nsecBatchElapsedTime) / 1000000.0;
 }
 
 void Query::triggerReturnHandler(uint64_t queryResult, uint64_t batchElapsedTime) {
     _queryResult = queryResult;
-    _usecBatchElapsedTime = batchElapsedTime;
+    _nsecBatchElapsedTime = batchElapsedTime;
 
     if (_returnHandler) {
         _returnHandler(*this);
@@ -67,7 +67,6 @@ void RangeTimer::end(gpu::Batch& batch) {
     if (_tailIndex < 0) {
         _tailIndex = _headIndex;
     }
-    
     // Pull the previous tail query hopping to see it return
     if (_tailIndex != _headIndex) {
         batch.getQuery(_timerQueries[rangeIndex(_tailIndex)]);

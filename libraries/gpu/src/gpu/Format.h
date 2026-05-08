@@ -20,7 +20,7 @@ namespace gpu {
 
 class Backend;
 
-// Description of a scalar type
+/// Description of a scalar type
 enum Type : uint8_t {
 
     FLOAT = 0,
@@ -48,7 +48,7 @@ enum Type : uint8_t {
     BOOL = UINT8,
     NORMALIZED_START = NINT32,
 };
-// Array providing the size in bytes for a given scalar type
+/// Array providing the size in bytes for a given scalar type
 static const int TYPE_SIZE[NUM_TYPES] = {
     4, // FLOAT
     4, // INT32
@@ -72,7 +72,7 @@ static const int TYPE_SIZE[NUM_TYPES] = {
     1, // COMPRESSED
 };
 
-// Array answering the question Does this type is integer or not 
+/// Array answering the question Does this type is integer or not
 static const bool TYPE_IS_INTEGER[NUM_TYPES] = {
     false, // FLOAT
     true, // INT32
@@ -96,7 +96,7 @@ static const bool TYPE_IS_INTEGER[NUM_TYPES] = {
     false, // COMPRESSED
 };
 
-// Dimension of an Element
+/// Dimension of an Element
 enum Dimension : uint8_t {
     SCALAR = 0,
     VEC2,
@@ -109,7 +109,7 @@ enum Dimension : uint8_t {
     NUM_DIMENSIONS,
 };
 
-// Count (of scalars) in an Element for a given Dimension
+/// Count (of scalars) in an Element for a given Dimension
 static const int DIMENSION_LOCATION_COUNT[NUM_DIMENSIONS] = {
     1,
     1,
@@ -121,7 +121,7 @@ static const int DIMENSION_LOCATION_COUNT[NUM_DIMENSIONS] = {
     1,
 };
 
-// Count (of scalars) in an Element for a given Dimension's location
+/// Count (of scalars) in an Element for a given Dimension's location
 static const int DIMENSION_SCALAR_COUNT_PER_LOCATION[NUM_DIMENSIONS] = {
     1,
     2,
@@ -133,7 +133,7 @@ static const int DIMENSION_SCALAR_COUNT_PER_LOCATION[NUM_DIMENSIONS] = {
     1,
 };
 
-// Count (of scalars) in an Element for a given Dimension
+/// Count (of scalars) in an Element for a given Dimension
 static const int DIMENSION_SCALAR_COUNT[NUM_DIMENSIONS] = {
     1,
     2,
@@ -145,7 +145,7 @@ static const int DIMENSION_SCALAR_COUNT[NUM_DIMENSIONS] = {
     1,
 };
 
-// Tile dimension described by the ELement for "Tilexxx" DIMENSIONs
+/// Tile dimension described by the ELement for "Tilexxx" DIMENSIONs
 static const glm::ivec2 DIMENSION_TILE_DIM[NUM_DIMENSIONS] = {
     { 1, 1 },
     { 1, 1 },
@@ -157,8 +157,8 @@ static const glm::ivec2 DIMENSION_TILE_DIM[NUM_DIMENSIONS] = {
     { 4, 4 },
 };
 
-// Semantic of an Element
-// Provide information on how to use the element
+/// Semantic of an Element
+/// Provide information on how to use the element
 enum Semantic : uint8_t {
     RAW = 0, // used as RAW memory
 
@@ -184,7 +184,7 @@ enum Semantic : uint8_t {
     SRGBA,
     SBGRA,
 
-    // These are generic compression format smeantic for images
+    // These are generic compression format semantic for images
     // THey must be used with Dim = BLOB and Type = Compressed
     // THe size of a compressed element is defined from the semantic
     _FIRST_COMPRESSED,
@@ -224,7 +224,7 @@ enum Semantic : uint8_t {
     NUM_SEMANTICS, // total Number of semantics (not a valid Semantic)!
 };
 
-// Array providing the scaling factor to size in bytes depending on a given semantic
+/// Array providing the scaling factor to size in bytes depending on a given semantic
 static const int SEMANTIC_SIZE_FACTOR[NUM_SEMANTICS] = {
     1, //RAW = 0, // used as RAW memory
 
@@ -287,10 +287,11 @@ static const int SEMANTIC_SIZE_FACTOR[NUM_SEMANTICS] = {
     1, //SAMPLER_SHADOW,
 };
 
-
-// Element is a simple 16bit value that contains everything we need to know about an element
-// of a buffer, a pixel of a texture, a varying input/output or uniform from a shader pipeline.
-// Type and dimension of the element, and semantic
+/**
+ * Element is a simple 16bit value that contains everything we need to know about an element
+ * of a buffer, a pixel of a texture, a varying input/output or uniform from a shader pipeline.
+ * Type and dimension of the element, and semantic
+ */
 class Element {
 public:
     Element(Dimension dim, Type type, Semantic sem) :
@@ -303,23 +304,70 @@ public:
         _dimension(SCALAR),
         _type(INT8)
     {}
- 
+
+    /**
+     * @return Semantic of this element, which represents its usage.
+     */
     Semantic getSemantic() const { return (Semantic)_semantic; }
 
+    /**
+     * @return Enum representing number of dimensions given element has.
+     */
     Dimension getDimension() const { return (Dimension)_dimension; }
-    
+
+    /**
+     * @return `true` if it's a compressed texture format.
+     */
     bool isCompressed() const { return uint8(getSemantic() - _FIRST_COMPRESSED) <= uint8(_LAST_COMPRESSED - _FIRST_COMPRESSED); }
 
+    /**
+     * @return Element type, for example `Type::INT32`.
+     */
     Type getType() const { return (Type)_type; }
+
+    /**
+     * For normalized types full range of the integer value is mapped to 0...1 floating point for unsigned integers
+     * and -1...1 for signed integer types.
+     *
+     * @return `true` for normalized integer types.
+     */
     bool isNormalized() const { return (getType() >= NORMALIZED_START); }
+
+    /**
+     * @return `true` for integer types. `false` for other types, including normalized integers.
+     */
     bool isInteger() const { return TYPE_IS_INTEGER[getType()]; }
 
+    /**
+     * @return Number of scalar values in a single element.
+     */
     uint8 getScalarCount() const { return DIMENSION_SCALAR_COUNT[(Dimension)_dimension]; }
+
+    /**
+     * @return Size of a single element in bytes.
+     */
     uint32 getSize() const { return (DIMENSION_SCALAR_COUNT[_dimension] * TYPE_SIZE[_type] * SEMANTIC_SIZE_FACTOR[_semantic]); }
+
+    /**
+     * For 3x3 and 4x4 matrices it also returns (1, 1).
+     *
+     * @return returns (1,1), except for tiled elements, for which it returns number of scalars in each direction.
+     */
     const glm::ivec2& getTile() const { return (DIMENSION_TILE_DIM[_dimension]); }
 
+    /**
+     * @return Number of locations in the element. Location can contain one or more scalars.
+     */
     uint8 getLocationCount() const { return  DIMENSION_LOCATION_COUNT[(Dimension)_dimension]; }
+
+    /**
+     * @return Number of scalars per location in the element.
+     */
     uint8 getLocationScalarCount() const { return DIMENSION_SCALAR_COUNT_PER_LOCATION[(Dimension)_dimension]; }
+
+    /**
+     * @return Size in bytes of a location. Element can contain one or more locations.
+     */
     uint32 getLocationSize() const { return DIMENSION_SCALAR_COUNT_PER_LOCATION[_dimension] * TYPE_SIZE[_type]; }
 
     uint16 getRaw() const { return *((const uint16*) (this)); }

@@ -21,19 +21,65 @@ namespace gpu {
 class TextureTable {
 public:
     using Vector = std::vector<TexturePointer>;
+
+    /**
+     * @param tableSize Number of textures in this table.
+     */
     TextureTable(size_t tableSize);
+
+    /**
+     * @param textures Initializer list with shared pointers to textures.
+     * @param tableSize Number of textures in this table.
+     */
     TextureTable(const std::initializer_list<TexturePointer>& textures, size_t tableSize);
+
+    /**
+     * @param textures Vector with shared pointers to textures.
+     * @param tableSize Number of textures in this table.
+     */
     TextureTable(const Vector& textures, size_t tableSize);
 
     // Only for gpu::Context
     const GPUObjectPointer gpuObject{};
 
+    /**
+     * @brief Sets a texture on a given texture table index.
+     *
+     * Thread-safe.
+     * Stamp is incremented if texture changes.
+     * @param index Index of the texture to set. Must fit inside the texture table.
+     * @param texturePointer Shared pointer of a texture.
+     */
     void setTexture(size_t index, const TexturePointer& texturePointer);
+
+    /**
+     * @brief Sets a texture on a given texture table index.
+     *
+     * Thread-safe.
+     * Stamp is incremented if the texture is changed.
+     * @param index Index of the texture to set. Must fit inside the texture table.
+     * @param texturePointer Reference to a texture view.
+     */
     void setTexture(size_t index, const TextureView& texturePointer);
 
+    /**
+     * Thread-safe.
+     * @return Vector of texture pointers.
+     */
     Vector getTextures() const;
+
+    /**
+     * Stamp is incremented when one of the textures changes.
+     * @return Current stamp.
+     */
     Stamp getStamp() const { return _stamp; }
 
+    /**
+     * @brief Resizes the texture table.
+     *
+     * Stamp is not incremented.
+     * @param tableSize New size of the texture table.
+     */
     void resize(size_t tableSize) { _textures.resize(tableSize); };
 
 private:

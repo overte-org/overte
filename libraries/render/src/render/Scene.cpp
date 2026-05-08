@@ -108,20 +108,20 @@ void Transaction::reserve(const std::vector<Transaction>& transactionContainer) 
     _highlightQueries.reserve(highlightQueriesCount);
 }
 
-void Transaction::merge(const std::vector<Transaction>& transactionContainer) {
+void Transaction::mergeByCopying(const std::vector<Transaction>& transactionContainer) {
     reserve(transactionContainer);
     for (const auto& transaction : transactionContainer) {
-        merge(transaction);
+        mergeByCopying(transaction);
     }
 }
 
 
-void Transaction::merge(std::vector<Transaction>&& transactionContainer) {
+void Transaction::mergeByMoving(std::vector<Transaction>&& transactionContainer) {
     reserve(transactionContainer);
     auto begin = std::make_move_iterator(transactionContainer.begin());
     auto end = std::make_move_iterator(transactionContainer.end());
     for (auto itr = begin; itr != end; ++itr) {
-        merge(*itr);
+        mergeByMoving(*itr);
     }
     transactionContainer.clear();
 }
@@ -139,7 +139,7 @@ void copyElements(T& target, const T& source) {
 }
 
 
-void Transaction::merge(Transaction&& transaction) {
+void Transaction::mergeByMoving(Transaction&& transaction) {
     moveElements(_resetItems, transaction._resetItems);
     moveElements(_removedItems, transaction._removedItems);
     moveElements(_updatedItems, transaction._updatedItems);
@@ -153,7 +153,7 @@ void Transaction::merge(Transaction&& transaction) {
     moveElements(_highlightQueries, transaction._highlightQueries);
 }
 
-void Transaction::merge(const Transaction& transaction) {
+void Transaction::mergeByCopying(const Transaction& transaction) {
     copyElements(_resetItems, transaction._resetItems);
     copyElements(_removedItems, transaction._removedItems);
     copyElements(_updatedItems, transaction._updatedItems);
@@ -207,7 +207,7 @@ void Scene::enqueueTransaction(const Transaction& transaction) {
     _transactionQueue.emplace_back(transaction);
 }
 
-void Scene::enqueueTransaction(Transaction&& transaction) {
+void Scene::enqueueTransactionMove(Transaction&& transaction) {
     std::unique_lock<std::mutex> lock(_transactionQueueMutex);
     _transactionQueue.emplace_back(std::move(transaction));
 }
@@ -221,7 +221,7 @@ uint32_t Scene::enqueueFrame() {
     }
 
     Transaction consolidatedTransaction;
-    consolidatedTransaction.merge(std::move(localTransactionQueue));
+    consolidatedTransaction.mergeByMoving(std::move(localTransactionQueue));
     {
         std::unique_lock<std::mutex> lock(_transactionFramesMutex);
         _transactionFrames.push_back(consolidatedTransaction);

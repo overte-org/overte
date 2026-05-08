@@ -99,6 +99,9 @@ namespace gpu {
         class VKBuffer;
     }
 
+    /**
+     * Used for tracking stereo state, both during frame recording and on the backend side.
+     */
     struct StereoState {
         StereoState() {}
         bool isStereo() const {
@@ -116,18 +119,39 @@ namespace gpu {
     class Serializer;
     class Deserializer;
 
+    /**
+     * API-independent renderer objects, such as textures, buffers and so on, have API-specific counterparts which are
+     * created by the rendering backend. These counterparts inherit from `GPUObject` class.
+     */
     class GPUObject {
     public:
         virtual ~GPUObject() = default;
     };
 
+    /**
+     * A wrapper class containing unique pointer to a `GPUObject` instance.
+     */
     class GPUObjectPointer {
     private:
         using GPUObjectUniquePointer = std::unique_ptr<GPUObject>;
 
-        // This shouldn't be used by anything else than the Backend class with the proper casting.
+        /**
+         * Unique pointer to the `GPUObject` instance.
+         * This shouldn't be used by anything else than the Backend class with the proper casting.
+         */
         mutable GPUObjectUniquePointer _gpuObject;
+
+        /**
+         * @brief Set the new GPUObject pointer, deleting the previous one if already set.
+         *
+         * Called by the API-specific rendering backends.
+         * @param gpuObject Pointer to the new GPUObject. `nullptr` can also be passed to delete current one without setting new one.
+         */
         void setGPUObject(GPUObject* gpuObject) const { _gpuObject.reset(gpuObject); }
+
+        /**
+         * @return Pointer to the GPUObject, or `nullptr` if empty.
+         */
         GPUObject* getGPUObject() const { return _gpuObject.get(); }
 
         friend class Backend;
