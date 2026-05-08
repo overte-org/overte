@@ -34,13 +34,13 @@ jobs:
             build_type: full
             qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
           - os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+            image: docker.io/overte/overte-full-build:2026-05-05-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
             runner: ubuntu-latest
             arch: amd64
             build_type: full
             qt_source: system
           - os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-aarch64
+            image: docker.io/overte/overte-full-build:2026-05-05-ubuntu-22.04-aarch64
             runner: ubuntu-24.04-arm
             arch: aarch64
             build_type: full
@@ -60,7 +60,7 @@ jobs:
 
     - name: Read image environment variables
       # Bring some environment variables out of the Runner (Docker) image's environment into the Job environment.
-      if: ${{matrix.image}} != ""
+      if: ${{matrix.image}}
       shell: bash
       run: |
         echo "CONAN_HOME=$CONAN_HOME" >> $GITHUB_ENV
@@ -162,19 +162,19 @@ jobs:
 
     - name: Build application
       shell: bash
-      run: cmake --build . --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
+      run: cmake --build --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
 
     - name: Build domain server
       shell: bash
-      run: cmake --build . --target domain-server $CMAKE_BUILD_EXTRA
+      run: cmake --build --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build assignment client
       shell: bash
-      run: cmake --build . --target assignment-client $CMAKE_BUILD_EXTRA
+      run: cmake --build --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build console
       shell: bash
-      run: cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
+      run: cmake --build --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build installer
       shell: bash
@@ -200,7 +200,7 @@ jobs:
             }
           done
         }
-        retry cmake --build . --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
+        retry cmake --build --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
 
     #- name: Sign installer (Windows)
     #  if: startsWith(matrix.os, 'windows')

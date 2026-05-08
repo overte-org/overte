@@ -41,14 +41,14 @@ jobs:
             #  build_type: full
             #  qt_source: aqt
             - os: Ubuntu 22.04 OpenGL
-              image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+              image: docker.io/overte/overte-full-build:2026-05-05-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
               runner: ubuntu-latest
               arch: amd64
               build_type: full
               qt_source: system
               rendering_backend: OpenGL
             - os: Ubuntu 22.04 Vulkan
-              image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64
+              image: docker.io/overte/overte-full-build:2026-05-05-ubuntu-22.04-amd64
               runner: ubuntu-latest
               arch: amd64
               build_type: full
@@ -60,14 +60,14 @@ jobs:
             #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
             - os: Ubuntu 22.04 OpenGL ES
-              image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-aarch64
+              image: docker.io/overte/overte-full-build:2026-05-05-ubuntu-22.04-aarch64
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
               qt_source: system
               rendering_backend: GLES
             - os: Ubuntu 22.04 Vulkan
-              image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-aarch64
+              image: docker.io/overte/overte-full-build:2026-05-05-ubuntu-22.04-aarch64
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
@@ -88,7 +88,7 @@ jobs:
 
     - name: Read image environment variables
       # Bring some environment variables out of the Runner (Docker) image's environment into the Job environment.
-      if: ${{matrix.image}} != ""
+      if: ${{matrix.image}}
       shell: bash
       run: |
         echo "CONAN_HOME=$CONAN_HOME" >> $GITHUB_ENV
@@ -217,23 +217,23 @@ jobs:
     - name: Build Application
       if: matrix.build_type == 'full' || matrix.build_type == 'client'
       shell: bash
-      run: cmake --build . --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
+      run: cmake --build --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
 
     - name: Build Domain Server
       if: matrix.build_type == 'full'
       shell: bash
-      run: cmake --build . --target domain-server $CMAKE_BUILD_EXTRA
+      run: cmake --build --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build Assignment Client
       if: matrix.build_type == 'full'
       shell: bash
-      run: cmake --build . --target assignment-client $CMAKE_BUILD_EXTRA
+      run: cmake --build --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build Console
       if: matrix.build_type == 'full' && matrix.arch != 'aarch64' || startsWith(matrix.os, 'windows')
       shell: bash
       run: |
-        cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
+        cmake --build --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build Installer
       if: matrix.build_type != 'android'
@@ -261,7 +261,7 @@ jobs:
             }
           done
         }
-        retry cmake --build . --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
+        retry cmake --build --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
     # As of 05/17/21 GitHub Virtual Environments changed their "Ubuntu 18.04.5 LTS" image to include two versions of CMake for Android
     # https://github.com/actions/virtual-environments/blob/ubuntu18/20210517.1/images/linux/Ubuntu1804-README.md
     # Removing 3.18.1 version of CMake as its not compatible with our Android build.
