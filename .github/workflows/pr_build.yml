@@ -217,29 +217,29 @@ jobs:
     - name: Build Application
       if: matrix.build_type == 'full' || matrix.build_type == 'client'
       shell: bash
-      run: cmake --build . --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
+      run: cmake --build --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
 
     - name: Build Domain Server
       if: matrix.build_type == 'full'
       shell: bash
-      run: cmake --build . --target domain-server $CMAKE_BUILD_EXTRA
+      run: cmake --build --target domain-server $CMAKE_BUILD_EXTRA
 
     - name: Build Assignment Client
       if: matrix.build_type == 'full'
       shell: bash
-      run: cmake --build . --target assignment-client $CMAKE_BUILD_EXTRA
+      run: cmake --build --target assignment-client $CMAKE_BUILD_EXTRA
 
     - name: Build Console
       if: matrix.build_type == 'full' && matrix.arch != 'aarch64' || startsWith(matrix.os, 'windows')
       shell: bash
       run: |
-        cmake --build . --target packaged-server-console $CMAKE_BUILD_EXTRA
+        cmake --build --target packaged-server-console $CMAKE_BUILD_EXTRA
 
     - name: Build Installer
       if: matrix.build_type != 'android'
       shell: bash
       run: |
-        cmake --build . --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
+        cmake --build --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
         rm build/Overte-*.json || true  # Remove JSON created by CPack External Generator to avoid it landing in the CI Artifacts.
 
     # As of 05/17/21 GitHub Virtual Environments changed their "Ubuntu 18.04.5 LTS" image to include two versions of CMake for Android
