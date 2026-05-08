@@ -105,7 +105,7 @@ jobs:
 
     - name: Read image environment variables
       # Bring some environment variables out of the Runner (Docker) image's environment into the Job environment.
-      if: ${{matrix.image}} != ""
+      if: ${{matrix.image}}
       shell: bash
       run: |
         echo "RPM_SHORTHAND=$RPM_SHORTHAND" >> $GITHUB_ENV
