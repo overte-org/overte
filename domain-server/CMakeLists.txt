@@ -36,6 +36,7 @@ target_zlib()
 target_quazip()
 target_openssl()
 
+add_tracy()
 add_crashpad()
 target_breakpad()
 
