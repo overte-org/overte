@@ -45,6 +45,7 @@
 #include <UserActivityLoggerScriptingInterface.h>
 #include <UsersScriptingInterface.h>
 #include <UUID.h>
+#include <BlobClass.h>
 
 #include <recording/ClipCache.h>
 #include <recording/Deck.h>
@@ -108,6 +109,8 @@ Agent::Agent(ReceivedMessage& message) :
 
     DependencyManager::set<ModelFormatRegistry>();
     DependencyManager::set<ModelCache>();
+
+    DependencyManager::set<BlobRegistry>();
 
     // Needed to ensure the creation of the DebugDraw instance on the main thread
     DebugDraw::getInstance();
