@@ -122,6 +122,7 @@
 #include <UserActivityLoggerScriptingInterface.h>
 #include <UsersScriptingInterface.h>
 #include <VirtualPadManager.h>
+#include <BlobClass.h>
 
 #include "ApplicationEventHandler.h"
 #include "ApplicationMeshProvider.h"
@@ -430,6 +431,9 @@ bool setupEssentials(const QCommandLineParser& parser, bool runningMarkerExisted
     DependencyManager::set<KeyboardScriptingInterface>();
     DependencyManager::set<GrabManager>();
     DependencyManager::set<AvatarPackager>();
+
+    DependencyManager::set<BlobRegistry>();
+
     PlatformHelper::setup();
 
     QObject::connect(PlatformHelper::instance(), &PlatformHelper::systemWillWake, [] {
