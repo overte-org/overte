@@ -94,8 +94,9 @@ class Overte(ConanFile):
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
-            # Use system OpenSSL to work around OpenSSL being missing from libnode's rpath and this cascading down to Interface.
-            openssl = "openssl/system@overte/stable#24c4df65c52791c4955f7d47d9faef0d"
+            if self.settings.os == "Linux":
+                # Use system OpenSSL to work around OpenSSL being missing from libnode's rpath and this cascading down to Interface.
+                openssl = "openssl/system@overte/stable#24c4df65c52791c4955f7d47d9faef0d"
             self.requires("qt/5.15.18@overte/experimental#3a9079f3023351a7319be352cc6f4665", force=True)
 
         if self.settings.os == "Windows":
