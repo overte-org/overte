@@ -281,7 +281,7 @@ namespace khronos {
                         return 16;
                     case InternalFormat::RG16:
                     case InternalFormat::RG16_SNORM:
-                        return 16;
+                        return 32;
                     case InternalFormat::R3_G3_B2:
                         return 8;
                     case InternalFormat::RGB4:
