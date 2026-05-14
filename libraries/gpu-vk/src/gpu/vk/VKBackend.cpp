@@ -1208,6 +1208,7 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
 void VKBackend::renderPassDraw(const Batch& batch) {
     _currentDraw = -1;
     bool renderpassActive = false;
+    VkPipeline currentPipeline = VK_NULL_HANDLE;
     _transform._camerasItr = _transform._cameraOffsets.begin();
     const size_t numCommands = batch.getCommands().size();
     const Batch::Commands::value_type* command = batch.getCommands().data();
@@ -1246,7 +1247,10 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             updateRenderPass();
             // VKTODO: this is inefficient
             auto layout = _cache.getPipeline(_context);
-            vkCmdBindPipeline(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipeline);
+            if (layout.pipeline != currentPipeline) {
+                vkCmdBindPipeline(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipeline);
+                currentPipeline = layout.pipeline;
+            }
             // VKTODO: this will create too many set viewport commands, but should work
             VkViewport viewport;
             viewport.x = (float)_transform._viewport.x;
