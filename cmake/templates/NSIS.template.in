@@ -178,7 +178,7 @@
     RequestExecutionLevel user
 
     OutFile "$%TEMP%\tempinstaller.exe"       ; not really important where this is
-    SetCompress off                           ; for speed
+    ; SetCompress off                           ; for speed
   !else
     !echo "Outer invocation"
 
