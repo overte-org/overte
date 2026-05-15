@@ -11,8 +11,25 @@
 set(TARGET_NAME vk)
 setup_hifi_library(Gui)
 GroupSources(src)
-link_hifi_libraries(shared shaders gl)
+link_hifi_libraries(shared shaders gl vk-mac)
 find_package(Qt5 COMPONENTS Core Gui REQUIRED)
-target_link_libraries(${TARGET_NAME} Qt5::GuiPrivate)
+target_link_libraries(${TARGET_NAME} Qt5::GuiPrivate Qt5::CorePrivate)
+
+#if(APPLE)
+#    # separate library created just to build the Objective-C++ code
+#    add_library(vulkan_mac
+#            layerForWindow.h
+#            layerForWindow.mm
+#    )
+#
+##    target_include_directories(vulkan_mac
+##            PUBLIC
+##    )
+#endif()
+
+#if(APPLE)
+#    # when building on macOS, also link the Objective-C++ lib.
+#    target_link_libraries(${TARGET_NAME} vk-mac)
+#endif()
 
 target_vulkan()

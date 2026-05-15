@@ -21,7 +21,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
 
-project(overte)
+project(overte LANGUAGES CXX OBJCXX)
 include("cmake/init.cmake")
 include("cmake/compiler.cmake")
 
@@ -138,6 +138,7 @@ else ()
   set(PLATFORM_QT_COMPONENTS WebEngine Xml)
 endif()
 
+add_definitions(-DDISABLE_QML)
 
 if (OVERTE_USE_KHR_ROBUSTNESS)
   add_definitions(-DUSE_KHR_ROBUSTNESS)

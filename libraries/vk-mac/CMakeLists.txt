@@ -1,0 +1,5 @@
+set(TARGET_NAME vk-mac)
+setup_hifi_library()
+#link_hifi_libraries(shared task)
+find_package(Qt5 COMPONENTS Core Gui REQUIRED)
+target_link_libraries(${TARGET_NAME} Qt5::GuiPrivate Qt5::CorePrivate)

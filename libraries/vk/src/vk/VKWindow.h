@@ -1,7 +1,7 @@
 //
 //  Created by Bradley Austin Davis on 2016/03/19
 //  Copyright 2016-2018 High Fidelity, Inc.
-//  Copyright 2022-2025 Overte e.V.
+//  Copyright 2022-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -19,6 +19,10 @@
 #include "Config.h"
 #include "Context.h"
 #include "VulkanSwapChain.h"
+
+#ifdef __APPLE__
+    #include <QuartzCore/CAMetalLayer.h>
+#endif
 
 class VKWindow : public QWindow {
     Q_OBJECT
@@ -71,4 +75,6 @@ public:
     VkCommandBuffer _previousCommandBuffer{ VK_NULL_HANDLE };
     VkSemaphore _previousAcquireCompleteSemaphore{ VK_NULL_HANDLE };
     VkSemaphore _previousRenderCompleteSemaphore{ VK_NULL_HANDLE };
+
+private:
 };

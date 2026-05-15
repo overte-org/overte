@@ -27,6 +27,7 @@
 #include "Config.h"
 #include "VulkanSwapChain.h"
 #include "Context.h"
+#include "layerForWindow.h"
 
 VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
     vks::Context::get().registerWindow(this);
@@ -54,7 +55,19 @@ void VKWindow::createSurface() {
 #ifdef WIN32
     // TODO
     _surface = _context.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)winId() });
-#else
+#elif __APPLE__
+    setSurfaceType(QSurface::MetalSurface);
+    //CAMetalLayer *metalLayer = (CAMetalLayer*)QCoreApplication::self.layer;
+
+#include <QWindow>
+#include <QuartzCore/CAMetalLayer.h>
+    //QWidget:: *nsView = (NSView *)QWindow->winId();
+
+
+    Q_ASSERT(winId());
+    qDebug() << "VKWindow::createSurface winId:" << winId();
+    _swapchain.initSurface(layerForWindow(this)); // pointer to the CAMetalLayer to render to.
+#else  // Linux
     setSurfaceType(QSurface::VulkanSurface);
     //VkXcbSurfaceCreateInfoKHR surfaceCreateInfo{};
     //dynamic_cast<QGuiApplication*>(QGuiApplication::instance())->platformNativeInterface()->connection();
@@ -397,3 +410,16 @@ VKWindow::~VKWindow() {
 void VKWindow::emitClosing() {
     emit aboutToClose();
 }
+
+// Get the CAMetalLayer to create a MoltenVk surface on inside a given QWindow.
+/*CAMetalLayer* layerForWindow(QWindow *window)
+{
+    Q_ASSERT(window);
+#ifdef Q_OS_MACOS
+    NSView *view = reinterpret_cast<NSView *>(window->winId());
+#else
+    UIView *view = reinterpret_cast<UIView *>(window->winId());
+#endif
+    Q_ASSERT(view);
+    return static_cast<CAMetalLayer *>(view.layer);
+}*/

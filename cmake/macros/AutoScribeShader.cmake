@@ -3,7 +3,7 @@
 #
 #  Created by Sam Gateau on 12/17/14.
 #  Copyright 2014 High Fidelity, Inc.
-#  Copyright 2024 Overte e.V.
+#  Copyright 2024-2026 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -134,10 +134,10 @@ macro(AUTOSCRIBE_SHADER)
         set(SPIRV_CROSS_ARGS --version 310es)
         AUTOSCRIBE_PLATFORM_SHADER("310es")
         AUTOSCRIBE_PLATFORM_SHADER("310es/stereo")
-    elseif(APPLE)
-        set(SPIRV_CROSS_ARGS --version 410 --no-420pack-extension)
-        AUTOSCRIBE_PLATFORM_SHADER("410")
-        AUTOSCRIBE_PLATFORM_SHADER("410/stereo")
+    #elseif(APPLE)
+    #    set(SPIRV_CROSS_ARGS --version 410 --no-420pack-extension)
+    #    AUTOSCRIBE_PLATFORM_SHADER("410")
+    #    AUTOSCRIBE_PLATFORM_SHADER("410/stereo")
     else()
         set(SPIRV_CROSS_ARGS --version 450)
         AUTOSCRIBE_PLATFORM_SHADER("450")

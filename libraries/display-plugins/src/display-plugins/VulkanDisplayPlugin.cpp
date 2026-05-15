@@ -197,7 +197,7 @@ public:
             }
 
 #if defined(Q_OS_MAC)
-            _context->makeCurrent();
+            // _context->makeCurrent();
 #endif
             // Execute the frame and present it to the display device.
             {
@@ -208,7 +208,7 @@ public:
                 //CHECK_GL_ERROR();
             }
 #if defined(Q_OS_MAC)
-            _context->doneCurrent();
+            // _context->doneCurrent();
 #endif
 
             _refreshRateController->sleepThreadIfNeeded(this, currentPlugin->isHmd());
