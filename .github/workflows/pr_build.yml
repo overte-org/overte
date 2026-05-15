@@ -129,7 +129,7 @@ jobs:
           fi
         fi
 
-        if [[ "${{ matrix.os }}" =~ "CodeChecker "]]
+        if [[ "${{ matrix.os }}" =~ "CodeChecker" ]]; then
             # Override CMake BUILD_TYPE
             echo "BUILD_TYPE=Debug" >> $GITHUB_ENV
         fi
