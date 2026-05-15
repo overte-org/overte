@@ -89,6 +89,7 @@ set(OVERTE_BUILD_TOOLS ON CACHE BOOL "Build tools. Includes Oven, which is used 
 set(OVERTE_BUILD_INSTALLER ON CACHE BOOL "Build installer.")
 set(OVERTE_DISABLE_QML OFF CACHE BOOL "Build without QML. (For graphics debugging.)")
 set(OVERTE_DOWNLOAD_SERVERLESS_CONTENT OFF CACHE BOOL "Download and setup default serverless content beside Interface.")
+set(OVERTE_USE_TRACY OFF CACHE BOOL "Build with support for the Tracy CPU/GPU/memory profiler.")
 # use OpenGL ES on Linux aarch64 and Android.
 if ((CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64") OR ANDROID)
     set(OVERTE_RENDERING_BACKEND "GLES" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL', 'GLES', and 'Vulkan'.")
