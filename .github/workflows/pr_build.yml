@@ -75,7 +75,7 @@ jobs:
             #   rendering_backend: Vulkan
             - os: Ubuntu 22.04 CodeChecker
               image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64
-              runner: ubuntu-latest
+              runner: depot-ubuntu-24.04-16
               arch: amd64
               build_type: CodeChecker
               qt_source: system
