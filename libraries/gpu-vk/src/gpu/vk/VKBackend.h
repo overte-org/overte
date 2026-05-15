@@ -31,6 +31,7 @@
 #include <glad/glad.h>
 
 #include "VKForward.h"
+#include "VKPipelineCache.h"
 #include "../../../../vk/src/vk/Context.h"
 
 //#define GPU_STEREO_TECHNIQUE_DOUBLED_SMARTER
@@ -245,7 +246,10 @@ protected:
         std::array<BufferState, MIN_REQUIRED_UNIFORM_BUFFER_BINDINGS> _buffers;
     } _uniform;
 
-    void updateVkDescriptorWriteSetsUniform(VkDescriptorSet target);
+    void updateVkDescriptorWriteSetsUniform(const Cache::PipelineLayout &layout,
+                                            std::vector<VkWriteDescriptorSet> &oldSets,
+                                            std::vector<VkDescriptorBufferInfo> &oldBufferInfos,
+                                            bool hasPipelineChanged);
     void releaseUniformBuffer(uint32_t slot);
     void resetUniformStage();
 
@@ -268,12 +272,19 @@ protected:
         std::array<TextureState, MAX_NUM_RESOURCE_TEXTURES> _textures{};
     } _resource;
 
-    void updateVkDescriptorWriteSetsTexture(VkDescriptorSet target);
+    void updateVkDescriptorWriteSetsTexture(const Cache::PipelineLayout &layout,
+                                            std::vector<VkWriteDescriptorSet> &oldSets,
+                                            std::vector<VkDescriptorImageInfo> &oldImageInfos,
+                                            bool hasPipelineChanged);
+
     void bindResourceTexture(uint32_t slot, const TexturePointer& texture);
     void releaseResourceTexture(uint32_t slot);
     void resetTextureStage();
 
-    void updateVkDescriptorWriteSetsStorage(VkDescriptorSet target);
+    void updateVkDescriptorWriteSetsStorage(const Cache::PipelineLayout &layout,
+                                            std::vector<VkWriteDescriptorSet> &oldSets,
+                                            std::vector<VkDescriptorBufferInfo> &oldBufferInfos,
+                                            bool hasPipelineChanged);
     void releaseResourceBuffer(uint32_t slot);
     void resetResourceStage();
 
