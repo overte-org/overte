@@ -227,7 +227,7 @@ jobs:
           cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_NUMBER=${{ github.event.number }} -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=PR $CMAKE_EXTRA
         fi
 
-    - uses: whisperity/codechecker-analysis-action@v1
+    - uses: whisperity/codechecker-analysis-action@v1.0.4
       if: matrix.build_type == 'CodeChecker'
       id: codechecker
       with:
