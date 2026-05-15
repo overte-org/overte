@@ -178,7 +178,10 @@
     RequestExecutionLevel user
 
     OutFile "$%TEMP%\tempinstaller.exe"       ; not really important where this is
-    SetCompress off                           ; for speed
+
+    ; FIXME: We need to enable compression for our first run to stay under NSIS' 2GB limit. We should save space instead and disable compression here again.
+    SetCompressor zlib
+    ; SetCompress off                           ; for speed
   !else
     !echo "Outer invocation"
 

@@ -9,7 +9,7 @@ runs:
       run: df -h
 
     - name: Output Windows installer logs
-      if: failure() && startsWith(matrix.os, 'Windows')
+      if: startsWith(matrix.os, 'Windows')
       shell: bash
       continue-on-error: true
       working-directory: build
