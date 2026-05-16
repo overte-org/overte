@@ -172,7 +172,7 @@ const targetingPick = [
 ];
 
 let currentMenuOpen = false;
-let currentMenuEntities = new Set();
+let currentMenuEntities = new Map();
 let currentMenuActionFuncs = [];
 let currentMenuTarget = Uuid.NONE;
 let currentMenuTargetIsAvatar = false;
@@ -183,7 +183,9 @@ let disableCounter = 0;
 let prevClickTime = Date.now();
 
 function ContextMenu_DeleteMenu() {
-	currentMenuEntities.forEach((_, e) => Entities.deleteEntity(e));
+    for (const [e, _] of currentMenuEntities) {
+        Entities.deleteEntity(e);
+    }
 	currentMenuEntities.clear();
 	currentMenuActionFuncs = [];
 	currentMenuOpen = false;
@@ -218,8 +220,10 @@ function ContextMenu_EntityClick(eid, event) {
 	if (!(CONTEXT_MENU_SETTINGS.noSfx ?? false)) { Audio.playSystemSound(SOUND_CLICK); }
 }
 
-function ContextMenu_EntityHover(eid, _event) {
-	if (!currentMenuEntities.has(eid)) { return; }
+function ContextMenu_EntityHoverEnter(eid, _event) {
+    const entityAction = currentMenuEntities.get(eid);
+
+	if (!entityAction) { return; }
 
 	try {
 		const data = JSON.parse(Entities.getEntityProperties(eid, "userData").userData);
@@ -227,6 +231,24 @@ function ContextMenu_EntityHover(eid, _event) {
 			if (!(CONTEXT_MENU_SETTINGS.noSfx ?? false)) { Audio.playSystemSound(SOUND_HOVER); }
 		}
 	} catch (e) {}
+
+    Entities.editEntity(eid, {
+        textColor: entityAction.backgroundColor ?? [0, 0, 0],
+        backgroundColor: entityAction.textColor ?? [255, 255, 255],
+        textEffectColor: entityAction.textColor ?? [255, 255, 255],
+    });
+}
+
+function ContextMenu_EntityHoverLeave(eid, _event) {
+    const entityAction = currentMenuEntities.get(eid);
+
+	if (!entityAction) { return; }
+
+    Entities.editEntity(eid, {
+        backgroundColor: entityAction.backgroundColor ?? [0, 0, 0],
+        textEffectColor: entityAction.backgroundColor ?? [0, 0, 0],
+        textColor: entityAction.textColor ?? [255, 255, 255],
+    });
 }
 
 function ContextMenu_FindTarget(hand = 1) {
@@ -432,6 +454,7 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 	});
 
 	actionEnts.push({
+        action: hasPages && page > 0 ? {} : undefined,
 		grab: {grabbable: false},
 		type: "Text",
 		position: Vec3.sum(origin, Vec3.multiplyQbyV(angle, [-0.13 * scale, yPos, 0])),
@@ -455,6 +478,7 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 	});
 
 	actionEnts.push({
+        action: hasPages && page < maxPages ? {} : undefined,
 		grab: {grabbable: false},
 		type: "Text",
 		position: Vec3.sum(origin, Vec3.multiplyQbyV(angle, [0.13 * scale, yPos, 0])),
@@ -485,6 +509,7 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 
 		let pos = Vec3.sum(origin, Vec3.multiplyQbyV(angle, [0, yPos, 0]));
 		actionEnts.push({
+            action,
 			grab: {grabbable: false},
 			type: "Text",
 			position: pos,
@@ -598,7 +623,7 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		}
 
 		const e = Entities.addEntity(a, (CONTEXT_MENU_SETTINGS.public ?? false) ? "avatar" : "local");
-		currentMenuEntities.add(e);
+        currentMenuEntities.set(e, a.action ?? null);
 	}
 
 	currentMenuOpen = true;
@@ -816,7 +841,8 @@ Controller.inputEvent.connect(ContextMenu_ActionEvent);
 Controller.mousePressEvent.connect(ContextMenu_MousePressEvent);
 Controller.mouseReleaseEvent.connect(ContextMenu_MouseReleaseEvent);
 Entities.mousePressOnEntity.connect(ContextMenu_EntityClick);
-Entities.hoverEnterEntity.connect(ContextMenu_EntityHover);
+Entities.hoverEnterEntity.connect(ContextMenu_EntityHoverEnter);
+Entities.hoverLeaveEntity.connect(ContextMenu_EntityHoverLeave);
 //Script.update.connect(ContextMenu_Update);
 
 for (const pick of targetingPick) {
@@ -838,7 +864,8 @@ Script.scriptEnding.connect(() => {
 	Controller.mousePressEvent.disconnect(ContextMenu_MousePressEvent);
 	Controller.mouseReleaseEvent.disconnect(ContextMenu_MouseReleaseEvent);
 	Entities.mousePressOnEntity.disconnect(ContextMenu_EntityClick);
-	Entities.hoverEnterEntity.disconnect(ContextMenu_EntityHover);
+	Entities.hoverEnterEntity.disconnect(ContextMenu_EntityHoverEnter);
+    Entities.hoverLeaveEntity.disconnect(ContextMenu_EntityHoverLeave);
 	//Script.update.disconnect(ContextMenu_Update);
 	Picks.removePick(targetingPick[0]);
 	Picks.removePick(targetingPick[1]);
