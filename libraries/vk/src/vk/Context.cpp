@@ -2,7 +2,7 @@
 //  Created by Bradley Austin Davis on 2018/10/29
 //  Adapted for Vulkan in 2022-2025 by dr Karol Suprynowicz.
 //  Copyright 2018 High Fidelity, Inc.
-//  Copyright 2023-2025 Overte e.V.
+//  Copyright 2023-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -107,11 +107,16 @@ void Context::createInstance() {
                         VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME,
                         VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME,
 #else
+#ifndef Q_OS_MAC
                         VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME,
                         VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME,
 #endif
+#endif
+#ifndef Q_OS_MAC
                         VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME,
-                        VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME});
+                        VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME
+#endif
+                        });
 
     if (isExtensionPresent(VK_EXT_DEBUG_UTILS_EXTENSION_NAME)) {
         requireExtensions({ VK_EXT_DEBUG_UTILS_EXTENSION_NAME });
@@ -126,8 +131,11 @@ void Context::createInstance() {
     appInfo.apiVersion = VK_API_VERSION_1_1;
 
     std::set<std::string> instanceExtensions = { VK_KHR_SURFACE_EXTENSION_NAME,
+#ifndef Q_OS_MAC
                                                  VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME,
-                                                 VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME };
+                                                 VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME
+#endif
+                                                };
 
 // Enable surface extensions depending on OS
 #if defined(_WIN32)

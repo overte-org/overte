@@ -9,6 +9,8 @@
 //  Contains parts of Vulkan Samples, Copyright (c) 2018, Sascha Willems, distributed on MIT License.
 //
 
+#include "gl/Context.h"
+
 #include <QtCore/QCoreApplication>
 #include <QGuiApplication>
 #include <QtGui/QWindow>
@@ -21,12 +23,15 @@
     #include <QtX11Extras/QX11Info>
 #endif
 #include <QWidget>
+#include <QWindow>
+#include <QOpenGLContext>
 
 #include "VKWindow.h"
 #include "VKWidget.h"
 #include "Config.h"
 #include "VulkanSwapChain.h"
 #include "Context.h"
+#include "layerForWindow.h"
 
 VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
     vks::Context::get().registerWindow(this);
@@ -54,7 +59,13 @@ void VKWindow::createSurface() {
 #ifdef WIN32
     // TODO
     _surface = _context.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)winId() });
-#else
+#elif __APPLE__
+    setSurfaceType(QSurface::MetalSurface);
+
+    Q_ASSERT(winId());
+    qDebug() << "VKWindow::createSurface winId:" << winId();
+    _swapchain.initSurface(layerForWindow(this)); // pointer to the CAMetalLayer to render to.
+#else  // Linux
     setSurfaceType(QSurface::VulkanSurface);
     //VkXcbSurfaceCreateInfoKHR surfaceCreateInfo{};
     //dynamic_cast<QGuiApplication*>(QGuiApplication::instance())->platformNativeInterface()->connection();

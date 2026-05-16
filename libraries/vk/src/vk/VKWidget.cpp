@@ -84,7 +84,9 @@ void VKWidget::createContext(QOpenGLContext* shareContext) {
 }
 
 void VKWidget::swapBuffers() {
+#ifndef Q_OS_MAC
     _context->swapBuffers();
+#endif
 }
 
 bool VKWidget::makeCurrent() {

@@ -37,7 +37,7 @@ class VulkanSwapChain
 {
 private:
     vks::Context *_context {nullptr};
-    VkSurfaceKHR surface;
+    VkSurfaceKHR surface{VK_NULL_HANDLE};
 public:
     VkExtent2D extent{0, 0};
     VkFormat colorFormat;
