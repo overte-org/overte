@@ -49,6 +49,11 @@ Verify OpenGL:
   - First install mesa-utils with the command `sudo apt install mesa-utils -y`.
   - Then run `glxinfo | grep "OpenGL version"`.
 
+- Qt5 source package:
+```bash
+sudo apt install libpulse-dev libasound2-dev python3-html5lib
+```
+
 ## Extra dependencies to compile Interface on a server
 - Install the following:
 ```bash
@@ -114,12 +119,12 @@ If you don't do this, Conan will still complain if it notices system packages be
 Install the dependencies with conan
 ```bash
 cd overte
-conan install . -s build_type=Release -b missing -pr:b=tools/conan-profiles/linux -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"
+conan install . -s build_type=Release -b missing -pr:a=tools/conan-profiles/linux -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"
 ```
 
 If you want to build Debug or RelWithDebInfo versions, change the `build_type` to `Debug` or `RelWithDebInfo` and run the command again. E.g.:
 ```bash
-conan install . -s build_type=Debug -b missing -pr:b=tools/conan-profiles/linux -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"
+conan install . -s build_type=Debug -b missing -pr:a=tools/conan-profiles/linux -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"
 ```
 
 Prepare ninja files:
