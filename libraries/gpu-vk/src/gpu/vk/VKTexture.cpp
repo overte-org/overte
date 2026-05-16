@@ -262,11 +262,11 @@ VkDescriptorImageInfo VKAttachmentTexture::getDescriptorImageInfo() {
         if (viewCreateInfo.format == VK_FORMAT_D24_UNORM_S8_UINT) {
             //viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT, 0, 1, 0, 1 };
             // VKTODO: both VK_IMAGE_ASPECT_DEPTH_BIT and VK_IMAGE_ASPECT_STENCIL_BIT cannot be set at the same time, but I'm not sure which one to set.
-            viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 };
+            viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, _gpuObject.getNumSlices() };
         } else {
-            viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+            viewCreateInfo.subresourceRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, _gpuObject.getNumSlices() };
         }
-        viewCreateInfo.subresourceRange.levelCount = 1;
+        viewCreateInfo.subresourceRange.levelCount = _gpuObject.getNumSlices();
         viewCreateInfo.image = _vkImage;
         VK_CHECK_RESULT(vkCreateImageView(device->logicalDevice, &viewCreateInfo, nullptr, &_vkImageView));
     }

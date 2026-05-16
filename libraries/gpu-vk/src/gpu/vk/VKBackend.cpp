@@ -251,6 +251,19 @@ void VKBackend::executeFrame(const FramePointer& frame) {
     // Move pointer to current frame to property that will store it while it's being rendered and before it's recycled.
     _previouslyRenderedFrame = _currentlyRenderedFrame;
     _currentlyRenderedFrame = _currentFrame;
+    bool reportBufferUpdates = false;
+    if (_frameCounter % 20 == 0 && reportBufferUpdates) {
+    qDebug() << "Buffer transfers: transfer pass: " << _currentFrame->_bufferTransferCounterTransferPass
+             << " render pass: " << _currentFrame->_bufferTransferCounterRenderPass
+             << " Batches " << frame->batches.size();
+        qDebug() << "Buffer transfers: uniform: " << _currentFrame->_uniformBufferTransferCounter
+                 << " vertex: " << _currentFrame->_vertexBufferTransferCounter
+                 << " index: " << _currentFrame->_indexBufferTransferCounter
+                 << " resource: " << _currentFrame->_resourceBufferTransferCounter
+                 << " created: " << _currentFrame->_bufferCreationCounter
+                 << " resized: " << _currentFrame->_bufferResizeCounter
+                 << " bytes: " << _currentFrame->_bufferTransferredBytes;
+    }
     releaseFrameData();
     _frameCounter++;
     // VKTODO: add a good way of toggling this
@@ -723,7 +736,43 @@ void VKBackend::InputStageState::reset() {
     _indirectBufferStride = 0;
 }
 
-void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
+bool haveBufferDescriptorSetsChanged(const std::vector<VkWriteDescriptorSet> &sets,
+                                     const std::vector<VkDescriptorBufferInfo> &bufferInfos,
+                                     const std::vector<VkWriteDescriptorSet> &oldSets,
+                                     const std::vector<VkDescriptorBufferInfo> &oldBufferInfos) {
+
+    if (sets.size() == oldSets.size() && bufferInfos.size() == oldBufferInfos.size()) {
+        bool hasChanged = false;
+        for (size_t i = 0; i < sets.size(); i++) {
+            const auto &s1 = sets[i];
+            const auto &s2 = oldSets[i];
+            if (s1.dstBinding != s2.dstBinding
+                || s1.dstArrayElement != s2.dstArrayElement
+                || s1.descriptorType != s2.descriptorType
+                || s1.descriptorCount != s2.descriptorCount) {
+                hasChanged = true;
+                }
+        }
+        for (size_t i = 0; i < bufferInfos.size(); i++) {
+            const auto &b1 = bufferInfos[i];
+            const auto &b2 = oldBufferInfos[i];
+            if (b1.buffer != b2.buffer
+                || b1.offset != b2.offset
+                || b1.range != b2.range) {
+                hasChanged = true;
+                }
+        }
+        if (!hasChanged) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void VKBackend::updateVkDescriptorWriteSetsUniform(const Cache::PipelineLayout &layout,
+                                                   std::vector<VkWriteDescriptorSet> &oldSets,
+                                                   std::vector<VkDescriptorBufferInfo> &oldBufferInfos,
+                                                   bool hasPipelineChanged) {
     // VKTODO: can be used for "verification mode" later
     // VKTODO: it looks like renderer tends to bind buffers that should not be bound at given point? Or maybe I'm missing reset somewhere
     const auto& vertexReflection = _cache.pipelineState.vertexReflection;
@@ -748,7 +797,7 @@ void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
             bufferInfos.push_back(bufferInfo);
             VkWriteDescriptorSet descriptorWriteSet{};
             descriptorWriteSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWriteSet.dstSet = target;
+            descriptorWriteSet.dstSet = VK_NULL_HANDLE;
             descriptorWriteSet.dstBinding = i;
             descriptorWriteSet.dstArrayElement = 0;
             descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -757,10 +806,65 @@ void VKBackend::updateVkDescriptorWriteSetsUniform(VkDescriptorSet target) {
             sets.push_back(descriptorWriteSet);
         }
     }
+
+    if (!hasPipelineChanged && !haveBufferDescriptorSetsChanged(sets, bufferInfos, oldSets,  oldBufferInfos)) {
+        return;
+    }
+
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = _currentFrame->_descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &layout.uniformLayout;
+    VkDescriptorSet descriptorSet;
+    VK_CHECK_RESULT(vkAllocateDescriptorSets(_context.device->logicalDevice, &allocInfo, &descriptorSet));
+    for (auto &descriptorWriteSet : sets) {
+        descriptorWriteSet.dstSet = descriptorSet;
+    }
     vkUpdateDescriptorSets(_context.device->logicalDevice, sets.size(), sets.data(), 0, nullptr);
+    vkCmdBindDescriptorSets(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipelineLayout, 0, 1,
+                            &descriptorSet, 0, nullptr);
+    oldSets.swap(sets);
+    oldBufferInfos.swap(bufferInfos);
 }
 
-void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
+bool haveTextureDescriptorSetsChanged(const std::vector<VkWriteDescriptorSet> &sets,
+                                     const std::vector<VkDescriptorImageInfo> &imageInfos,
+                                     const std::vector<VkWriteDescriptorSet> &oldSets,
+                                     const std::vector<VkDescriptorImageInfo> &oldImageInfos) {
+
+    if (sets.size() == oldSets.size() && imageInfos.size() == oldImageInfos.size()) {
+        bool hasChanged = false;
+        for (size_t i = 0; i < sets.size(); i++) {
+            const auto &s1 = sets[i];
+            const auto &s2 = oldSets[i];
+            if (s1.dstBinding != s2.dstBinding
+                || s1.dstArrayElement != s2.dstArrayElement
+                || s1.descriptorType != s2.descriptorType
+                || s1.descriptorCount != s2.descriptorCount) {
+                hasChanged = true;
+                }
+        }
+        for (size_t i = 0; i < imageInfos.size(); i++) {
+            const auto &b1 = imageInfos[i];
+            const auto &b2 = oldImageInfos[i];
+            if (b1.imageLayout != b2.imageLayout
+                || b1.imageView != b2.imageView
+                || b1.sampler != b2.sampler) {
+                hasChanged = true;
+                }
+        }
+        if (!hasChanged) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void VKBackend::updateVkDescriptorWriteSetsTexture(const Cache::PipelineLayout &layout,
+                                                   std::vector<VkWriteDescriptorSet> &oldSets,
+                                                   std::vector<VkDescriptorImageInfo> &oldImageInfos,
+                                                   bool hasPipelineChanged) {
     // VKTODO: renderer leaves unbound texture slots, and that's not allowed on Vulkan
     // VKTODO: can be used for "verification mode" later
     // VKTODO: it looks like renderer tends to bind buffers that should not be bound at given point? Or maybe I'm missing reset somewhere
@@ -805,7 +909,7 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
 
             VkWriteDescriptorSet descriptorWriteSet{};
             descriptorWriteSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWriteSet.dstSet = target;
+            descriptorWriteSet.dstSet = VK_NULL_HANDLE;
             descriptorWriteSet.dstBinding = i;
             descriptorWriteSet.dstArrayElement = 0;
             descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -818,7 +922,7 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
                 // VKTODO: fill unbound but needed slots with default texture
                 VkWriteDescriptorSet descriptorWriteSet{};
                 descriptorWriteSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-                descriptorWriteSet.dstSet = target;
+                descriptorWriteSet.dstSet = VK_NULL_HANDLE;
                 descriptorWriteSet.dstBinding = i;
                 descriptorWriteSet.dstArrayElement = 0;
                 descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -833,10 +937,35 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(VkDescriptorSet target) {
             }
         }
     }
+
+    if (!hasPipelineChanged && !haveTextureDescriptorSetsChanged(sets, imageInfos, oldSets,  oldImageInfos)) {
+        return;
+    }
+
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = _currentFrame->_descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &layout.textureLayout;
+    VkDescriptorSet descriptorSet;
+    VK_CHECK_RESULT(vkAllocateDescriptorSets(_context.device->logicalDevice, &allocInfo, &descriptorSet));
+
+    for (auto &descriptorWriteSet : sets) {
+        descriptorWriteSet.dstSet = descriptorSet;
+    }
+
     vkUpdateDescriptorSets(_context.device->logicalDevice, sets.size(), sets.data(), 0, nullptr);
+
+    vkCmdBindDescriptorSets(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipelineLayout, 1, 1,
+                            &descriptorSet, 0, nullptr);
+    oldSets.swap(sets);
+    oldImageInfos.swap(imageInfos);
 }
 
-void VKBackend::updateVkDescriptorWriteSetsStorage(VkDescriptorSet target) {
+void VKBackend::updateVkDescriptorWriteSetsStorage(const Cache::PipelineLayout &layout,
+                                                   std::vector<VkWriteDescriptorSet> &oldSets,
+                                                   std::vector<VkDescriptorBufferInfo> &oldBufferInfos,
+                                                   bool hasPipelineChanged) {
     // VKTODO: can be used for "verification mode" later
     // VKTODO: it looks like renderer tends to bind buffers that should not be bound at given point? Or maybe I'm missing reset somewhere
     const auto& vertexReflection = _cache.pipelineState.vertexReflection;
@@ -863,7 +992,7 @@ void VKBackend::updateVkDescriptorWriteSetsStorage(VkDescriptorSet target) {
 
             VkWriteDescriptorSet descriptorWriteSet{};
             descriptorWriteSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            descriptorWriteSet.dstSet = target;
+            descriptorWriteSet.dstSet = VK_NULL_HANDLE;
             descriptorWriteSet.dstBinding = i;
             descriptorWriteSet.dstArrayElement = 0;
             descriptorWriteSet.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
@@ -872,7 +1001,29 @@ void VKBackend::updateVkDescriptorWriteSetsStorage(VkDescriptorSet target) {
             sets.push_back(descriptorWriteSet);
         }
     }
+
+    if (!hasPipelineChanged && !haveBufferDescriptorSetsChanged(sets, bufferInfos, oldSets,  oldBufferInfos)) {
+        return;
+    }
+
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = _currentFrame->_descriptorPool;
+    allocInfo.descriptorSetCount = 1;
+    allocInfo.pSetLayouts = &layout.storageLayout;
+    VkDescriptorSet descriptorSet;
+    VK_CHECK_RESULT(vkAllocateDescriptorSets(_context.device->logicalDevice, &allocInfo, &descriptorSet));
+
+    for (auto &descriptorWriteSet : sets) {
+        descriptorWriteSet.dstSet = descriptorSet;
+    }
+
     vkUpdateDescriptorSets(_context.device->logicalDevice, sets.size(), sets.data(), 0, nullptr);
+
+    vkCmdBindDescriptorSets(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipelineLayout, 2, 1,
+                            &descriptorSet, 0, nullptr);
+    oldSets.swap(sets);
+    oldBufferInfos.swap(bufferInfos);
 }
 
 
@@ -1127,6 +1278,17 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
                     _stereo._contextDisable = false;
                     break;
 
+                // Buffers need to be uploaded during transfer pass for performance reasons.
+                case Batch::COMMAND_setInputBuffer:
+                case Batch::COMMAND_setIndexBuffer:
+                case Batch::COMMAND_setIndirectBuffer:
+                case Batch::COMMAND_setUniformBuffer:
+                case Batch::COMMAND_setResourceBuffer: {
+                    CommandCall call = _commandCalls[(*command)];
+                    (this->*(call))(batch, *offset);
+                    break;
+                }
+
                 case Batch::COMMAND_setViewportTransform:
                 case Batch::COMMAND_setViewTransform:
                 case Batch::COMMAND_setProjectionTransform:
@@ -1162,6 +1324,20 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
         PROFILE_RANGE(gpu_vk_detail, "syncGPUTransform");
         transferGlUniforms();
         transferTransformState(batch);
+
+        // Insert barriers for the buffers from this transfer pass and clear barrier list.
+        vkCmdPipelineBarrier(
+            _currentCommandBuffer,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            VK_FLAGS_NONE,
+            0, nullptr,
+            _currentFrame->bufferBarriers.size(), _currentFrame->bufferBarriers.data(),
+            0, nullptr);
+
+        size_t bufferBarriersCount = _currentFrame->bufferBarriers.size();
+        _currentFrame->bufferBarriers.resize(0);
+        _currentFrame->bufferBarriers.reserve(bufferBarriersCount);
     }
 
     _inRenderTransferPass = false;
@@ -1170,6 +1346,16 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
 void VKBackend::renderPassDraw(const Batch& batch) {
     _currentDraw = -1;
     bool renderpassActive = false;
+
+    VkPipeline currentPipeline = VK_NULL_HANDLE;
+
+    std::vector<VkWriteDescriptorSet> currentUniformSets;
+    std::vector<VkDescriptorBufferInfo> currentUniformBufferInfos;
+    std::vector<VkWriteDescriptorSet> currentTextureSets;
+    std::vector<VkDescriptorImageInfo> currentTextureImageInfos;
+    std::vector<VkWriteDescriptorSet> currentStorageSets;
+    std::vector<VkDescriptorBufferInfo> currentStorageBufferInfos;
+
     _transform._camerasItr = _transform._cameraOffsets.begin();
     const size_t numCommands = batch.getCommands().size();
     const Batch::Commands::value_type* command = batch.getCommands().data();
@@ -1197,18 +1383,23 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             // updates for draw calls
             ++_currentDraw;
 
-            /*if (_cache.pipelineState.pipeline->getProgram()->getShaders()[0]->getSource().name == "simple_procedural.vert") {
-                printf("simple_procedural.vert");
+            // VKTODO: procedural shaders are not supported yet.
+            if (_cache.pipelineState.pipeline->getProgram()->getShaders()[0]->getSource().name == "simple_procedural.vert") {
                 break;
-            }*/ // VKTODO: currently crashes on procedural shaders. I tried this as a workaround,but it didn't work.
+            }
             _cache.pipelineState.primitiveTopology = getPrimitiveTopologyFromCommand(*command, batch, *offset);
             updateInput();
             updateTransform(batch);
             updatePipeline();
             updateRenderPass();
-            // VKTODO: this is inefficient
+
+            bool hasPipelineChanged{ false };
             auto layout = _cache.getPipeline(_context);
-            vkCmdBindPipeline(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipeline);
+            if (layout.pipeline != currentPipeline) {
+                vkCmdBindPipeline(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipeline);
+                currentPipeline = layout.pipeline;
+                hasPipelineChanged = true;
+            }
             // VKTODO: this will create too many set viewport commands, but should work
             VkViewport viewport;
             viewport.x = (float)_transform._viewport.x;
@@ -1227,48 +1418,17 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             vkCmdSetScissor(_currentCommandBuffer, 0, 1, &scissor);
 
             // VKTODO: Descriptor sets and associated buffers should be set up during pre-pass
-            // VKTODO: move this to a function
             if (layout.uniformLayout) {
                 // TODO: allocate 3 at once?
-                VkDescriptorSetAllocateInfo allocInfo{};
-                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = _currentFrame->_descriptorPool;
-                allocInfo.descriptorSetCount = 1;
-                allocInfo.pSetLayouts = &layout.uniformLayout;
-                VkDescriptorSet descriptorSet;
-                VK_CHECK_RESULT(vkAllocateDescriptorSets(_context.device->logicalDevice, &allocInfo, &descriptorSet));
-
-                updateVkDescriptorWriteSetsUniform(descriptorSet);
-                vkCmdBindDescriptorSets(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipelineLayout, 0, 1,
-                                        &descriptorSet, 0, nullptr);
+                updateVkDescriptorWriteSetsUniform(layout, currentUniformSets, currentUniformBufferInfos, hasPipelineChanged);
             }
             if (layout.textureLayout) {
                 // TODO: allocate 3 at once?
-                VkDescriptorSetAllocateInfo allocInfo{};
-                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = _currentFrame->_descriptorPool;
-                allocInfo.descriptorSetCount = 1;
-                allocInfo.pSetLayouts = &layout.textureLayout;
-                VkDescriptorSet descriptorSet;
-                VK_CHECK_RESULT(vkAllocateDescriptorSets(_context.device->logicalDevice, &allocInfo, &descriptorSet));
-
-                updateVkDescriptorWriteSetsTexture(descriptorSet);
-                vkCmdBindDescriptorSets(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipelineLayout, 1, 1,
-                                        &descriptorSet, 0, nullptr);
+                updateVkDescriptorWriteSetsTexture(layout, currentTextureSets, currentTextureImageInfos, hasPipelineChanged);
             }
             if (layout.storageLayout) {
                 // TODO: allocate 3 at once?
-                VkDescriptorSetAllocateInfo allocInfo{};
-                allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-                allocInfo.descriptorPool = _currentFrame->_descriptorPool;
-                allocInfo.descriptorSetCount = 1;
-                allocInfo.pSetLayouts = &layout.storageLayout;
-                VkDescriptorSet descriptorSet;
-                VK_CHECK_RESULT(vkAllocateDescriptorSets(_context.device->logicalDevice, &allocInfo, &descriptorSet));
-
-                updateVkDescriptorWriteSetsStorage(descriptorSet);
-                vkCmdBindDescriptorSets(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipelineLayout, 2, 1,
-                                        &descriptorSet, 0, nullptr);
+                updateVkDescriptorWriteSetsStorage(layout, currentStorageSets, currentStorageBufferInfos, hasPipelineChanged);
             }
             CommandCall call = _commandCalls[(*command)];
             (this->*(call))(batch, *offset);
@@ -1381,6 +1541,18 @@ VKBuffer* VKBackend::syncGPUObject(const Buffer *buffer) {
     }
     return object;
 }
+
+VKBuffer* VKBackend::syncGPUObjectNoTransfer(const Buffer *buffer) {
+    if (!buffer) {
+        return nullptr;
+    }
+    auto object = vk::VKBuffer::sync(*this, *buffer, false);
+    if (!_buffers.count(object)) {
+        _buffers.insert(object);
+    }
+    return object;
+}
+
 
 VKTexture* VKBackend::syncGPUObject(const Texture *texture) {
     if (!texture) {
@@ -1791,6 +1963,10 @@ void VKBackend::FrameData::createDescriptorPool() {
     VK_CHECK_RESULT(vkCreateDescriptorPool(_backend->_context.device->logicalDevice, &descriptorPoolCI, nullptr, &_descriptorPool));
 }
 
+void VKBackend::FrameData::addBufferBarrier(const VkBufferMemoryBarrier &barrier) {
+    bufferBarriers.push_back(barrier);
+}
+
 void VKBackend::FrameData::addGlUniform(size_t size, const void* data, size_t commandIndex) {
     size_t alignment = _backend->_context.device->properties.limits.minUniformBufferOffsetAlignment;
     size_t newSizeUnaligned = _glUniformBufferPosition + size;
@@ -1834,6 +2010,11 @@ void VKBackend::FrameData::cleanup() {
     _glUniformOffsetMap.clear();
     _glUniformData.clear();
 
+    size_t bufferBarrierCapacity = bufferBarriers.size();
+    bufferBarriers.clear();
+    bufferBarriers.resize(0);
+    bufferBarriers.reserve(bufferBarrierCapacity);
+
     size_t vectorCapacity = _buffers.capacity();
     _buffers.clear();
     _buffers.reserve(vectorCapacity);
@@ -1843,6 +2024,17 @@ void VKBackend::FrameData::cleanup() {
     storageDescriptorSets.resize(0);
     // Should descriptor pool be cleared every frame?
     vkResetDescriptorPool(_backend->_context.device->logicalDevice, _descriptorPool, 0);
+
+    _bufferTransferCounterTransferPass = 0;
+    _bufferTransferCounterRenderPass = 0;
+    _uniformBufferTransferCounter = 0;
+    _vertexBufferTransferCounter = 0;
+    _indexBufferTransferCounter = 0;
+    _resourceBufferTransferCounter = 0;
+    _bufferTransferredBytes = 0;
+
+    _bufferCreationCounter = 0;
+    _bufferResizeCounter = 0;
 }
 
 void VKBackend::initDefaultTexture() {
@@ -2373,12 +2565,11 @@ void VKBackend::transferGlUniforms() {
                                                                         _currentFrame->_glUniformData.data());
         _currentFrame->_glUniformBuffer->flush();
         _currentFrame->_buffers.push_back(_currentFrame->_glUniformBuffer);
+        syncGPUObject(_currentFrame->_glUniformBuffer.get());
     }
 }
 
 void VKBackend::transferTransformState(const Batch& batch) {
-    // VKTODO
-    // FIXME not thread safe
     static std::vector<uint8_t> bufferData;
     if (!_transform._cameras.empty()) {
         bufferData.resize(_transform._cameraUboSize * _transform._cameras.size());
@@ -2425,6 +2616,7 @@ void VKBackend::transferTransformState(const Batch& batch) {
                                                                            bufferData.data());
         _currentFrame->_drawCallInfoBuffer->flush();
         _currentFrame->_buffers.push_back(_currentFrame->_drawCallInfoBuffer);
+        syncGPUObject(_currentFrame->_drawCallInfoBuffer.get());
     }else{
         _currentFrame->_drawCallInfoBuffer.reset();
     }
@@ -2898,6 +3090,11 @@ void VKBackend::do_setInputBuffer(const Batch& batch, size_t paramOffset) {
     BufferPointer buffer = batch._buffers.get(batch._params[paramOffset + 2]._uint);
     uint32 channel = batch._params[paramOffset + 3]._uint;
 
+    if (_inRenderTransferPass && buffer) {
+        syncGPUObject(buffer.get());
+        return;
+    }
+
     if (channel < getNumInputBuffers()) {
         bool isModified = false;
         if (_input._buffers[channel] != buffer.get()) {
@@ -2935,8 +3132,13 @@ void VKBackend::do_setInputBuffer(const Batch& batch, size_t paramOffset) {
 void VKBackend::do_setIndexBuffer(const Batch& batch, size_t paramOffset) {
     _input._indexBufferType = (Type)batch._params[paramOffset + 2]._uint;
     gpu::Offset newOffset = batch._params[paramOffset + 0]._uint;
-
     BufferPointer indexBuffer = batch._buffers.get(batch._params[paramOffset + 1]._uint);
+
+    if (_inRenderTransferPass && indexBuffer) {
+        syncGPUObject(indexBuffer.get());
+        return;
+    }
+
     if (indexBuffer.get() != _input._indexBuffer || newOffset != _input._indexBufferOffset) {
         _input._indexBuffer = indexBuffer.get();
         _input._indexBufferOffset = batch._params[paramOffset + 0]._uint;
@@ -3014,8 +3216,12 @@ void VKBackend::do_setViewTransform(const Batch& batch, size_t paramOffset) {
 }
 
 void VKBackend::do_setProjectionTransform(const Batch& batch, size_t paramOffset) {
-    memcpy(glm::value_ptr(_transform._viewProjectionState._projection), batch.readData(batch._params[paramOffset]._uint), sizeof(Mat4));
-    _transform._viewProjectionState._projection = glm::scale(_transform._viewProjectionState._projection, glm::vec3(1.0f, -1.0f, 1.0f));
+    auto &projection = _transform._viewProjectionState._projection;
+    memcpy(glm::value_ptr(projection), batch.readData(batch._params[paramOffset]._uint), sizeof(Mat4));
+    //VKTODO: ortho views for shadow maps break when inverted here, I'm not sure why. They also seem to shift linearly.
+    if (batch.getName() != "RenderShadowMap::run") {
+        projection = glm::scale(projection, glm::vec3(1.0f, -1.0f, 1.0f));
+    }
     _transform._invalidProj = true;
     // The current view / proj doesn't correspond to a saved camera slot
     _transform._currentSavedTransformSlot = INVALID_SAVED_CAMERA_SLOT;
@@ -3104,12 +3310,13 @@ void VKBackend::do_copySavedViewProjectionTransformToBuffer(const Batch& batch, 
     }
 
     // Sync BufferObject
-    auto* object = syncGPUObject(buffer.get());
+    auto* object = syncGPUObjectNoTransfer(buffer.get());
     // Copy camera data to the buffer.
-    object->map();
-    object->copy(size, (uint8_t *)(_transform._cameras.data()) + savedTransform._cameraOffset, dstOffset);
-    object->flush(VK_WHOLE_SIZE);
-    object->unmap();
+    object->stagingAllocation.map();
+    object->stagingAllocation.copy(size, (uint8_t *)(_transform._cameras.data()) + savedTransform._cameraOffset, dstOffset);
+    object->stagingAllocation.flush(VK_WHOLE_SIZE);
+    object->stagingAllocation.unmap();
+    object->transferWithBarrier(*this, _currentCommandBuffer);
 }
 
 void VKBackend::do_setStateScissorRect(const Batch& batch, size_t paramOffset) {
@@ -3160,6 +3367,11 @@ void VKBackend::do_setUniformBuffer(const Batch& batch, size_t paramOffset) {
     uint32_t rangeStart = batch._params[paramOffset + 1]._uint;
     uint32_t rangeSize = batch._params[paramOffset + 0]._uint;
 
+    if (_inRenderTransferPass && uniformBuffer) {
+        syncGPUObject(uniformBuffer.get());
+        return;
+    }
+
     // Create descriptor
 
     if (!uniformBuffer) {
@@ -3193,6 +3405,11 @@ void VKBackend::do_setResourceBuffer(const Batch& batch, size_t paramOffset) {
     }
 
     const auto& resourceBuffer = batch._buffers.get(batch._params[paramOffset + 0]._uint);
+
+    if (_inRenderTransferPass && resourceBuffer) {
+        syncGPUObject(resourceBuffer.get());
+        return;
+    }
 
     if (!resourceBuffer) {
         releaseResourceBuffer(slot);

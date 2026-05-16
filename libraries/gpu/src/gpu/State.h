@@ -22,6 +22,20 @@
 
 #include "Sampler.h"
 
+template <typename T>
+static std::string bytesToAscii(T t) {
+    std::string hexString;
+    const auto bytes = reinterpret_cast<uint8_t*>(&t);
+    hexString.resize(sizeof(T) * 2);
+    auto stringData = hexString.data();
+    constexpr int8_t charOffset = 'A';
+    for (size_t i = 0; i < sizeof(t); i++) {
+        stringData[i * 2] = static_cast<int8_t>(charOffset + (bytes[i] >> 4));
+        stringData[i * 2 + 1] = static_cast<int8_t>(charOffset + (bytes[i] & 0x0F));
+    }
+    return hexString;
+}
+
 // Why a macro and not a fancy template you will ask me ?
 // Because some of the fields are bool packed tightly in the State::Cache class
 // and it s just not good anymore for template T& variable manipulation...

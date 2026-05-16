@@ -334,6 +334,9 @@ public:
     Update getUpdate() const;
 
 protected:
+    /// Counter used for debugging excessive creation of buffers.
+    void incrementCreatedBufferCount();
+
     /**
      * @brief Instantly applies current changes to a buffer without creating an Update object.
      *

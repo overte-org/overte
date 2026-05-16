@@ -89,7 +89,12 @@ void AmbientOcclusionFramebuffer::allocate() {
 #if SSAO_BILATERAL_BLUR_USE_NORMAL    
     auto occlusionformat = gpu::Element{ gpu::VEC4, gpu::HALF, gpu::RGBA };
 #else
+    // Format used on OpenGL is typically not supported on Vulkan and framebuffer creation will fail.
+#ifdef USE_GL
     auto occlusionformat = gpu::Element{ gpu::VEC3, gpu::NUINT8, gpu::RGB };
+#else
+    auto occlusionformat = gpu::Element{ gpu::VEC4, gpu::NUINT8, gpu::RGBA };
+#endif
 #endif
 
     //  Full frame
@@ -119,8 +124,13 @@ void AmbientOcclusionFramebuffer::allocate() {
         }
         auto width = sideSize.x;
         auto height = sideSize.y;
+    // Format used on OpenGL is typically not supported on Vulkan and framebuffer creation will fail.
+#ifdef USE_GL
         auto format = gpu::Element{ gpu::VEC4, gpu::NINT2_10_10_10, gpu::RGBA };
-        _normalTexture = gpu::Texture::createRenderBuffer(format, width, height, gpu::Texture::SINGLE_MIP, 
+#else
+        auto format = gpu::Element{ gpu::VEC4, gpu::NINT8, gpu::RGBA };
+#endif
+        _normalTexture = gpu::Texture::createRenderBuffer(format, width, height, gpu::Texture::SINGLE_MIP,
                                                           Sampler(Sampler::FILTER_MIN_MAG_POINT, Sampler::WRAP_CLAMP));
         _normalFramebuffer = gpu::FramebufferPointer(gpu::Framebuffer::create("ssaoNormals"));
         _normalFramebuffer->setRenderBuffer(0, _normalTexture);
