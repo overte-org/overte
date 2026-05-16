@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 "use strict";
 const CONTEXT_MENU_SETTINGS = Settings.getValue("Context Menu", {
-    actionsPerPage: 6,
-    font: "Roboto",
-    noSfx: false,
-    parented: true,
-    public: false,
+	actionsPerPage: 6,
+	font: "Roboto",
+	noSfx: false,
+	parented: true,
+	public: false,
 });
 
 const ACTIONS_PER_PAGE = CONTEXT_MENU_SETTINGS["actionsPerPage"] ?? 6;
@@ -184,9 +184,9 @@ let prevClickTime = Date.now();
 let actionSetHistory = [];
 
 function ContextMenu_DeleteMenu() {
-    for (const [e, _] of currentMenuEntities) {
-        Entities.deleteEntity(e);
-    }
+	for (const [e, _] of currentMenuEntities) {
+		Entities.deleteEntity(e);
+	}
 	currentMenuEntities.clear();
 	currentMenuActionFuncs = [];
 	currentMenuOpen = false;
@@ -194,7 +194,7 @@ function ContextMenu_DeleteMenu() {
 	currentMenuTargetIsAvatar = false;
 	currentMenuTarget = Uuid.NONE;
 	currentMenuTargetLine = Uuid.NONE;
-    actionSetHistory = [];
+	actionSetHistory = [];
 	Camera.captureMouse = mouseWasCaptured;
 }
 
@@ -209,12 +209,12 @@ function ContextMenu_EntityClick(eid, event) {
 	try {
 		const data = JSON.parse(Entities.getEntityProperties(eid, "userData").userData);
 		if (data.nextPage !== undefined && data.actionSetName !== undefined) {
-            if (data.type === "historyBack") {
-                const history = actionSetHistory.pop();
-			    ContextMenu_OpenActions(history[0], history[1]);
-            } else {
-			    ContextMenu_OpenActions(data.actionSetName, data.nextPage);
-            }
+			if (data.type === "historyBack") {
+				const history = actionSetHistory.pop();
+				ContextMenu_OpenActions(history[0], history[1]);
+			} else {
+				ContextMenu_OpenActions(data.actionSetName, data.nextPage);
+			}
 		} else {
 			const func = data.actionFunc;
 			currentMenuActionFuncs[func][0](currentMenuTarget, eid);
@@ -228,7 +228,7 @@ function ContextMenu_EntityClick(eid, event) {
 }
 
 function ContextMenu_EntityHoverEnter(eid, _event) {
-    const entityAction = currentMenuEntities.get(eid);
+	const entityAction = currentMenuEntities.get(eid);
 
 	if (!entityAction) { return; }
 
@@ -239,23 +239,23 @@ function ContextMenu_EntityHoverEnter(eid, _event) {
 		}
 	} catch (e) {}
 
-    Entities.editEntity(eid, {
-        textColor: entityAction.backgroundColor ?? [0, 0, 0],
-        backgroundColor: entityAction.textColor ?? [255, 255, 255],
-        textEffectColor: entityAction.textColor ?? [255, 255, 255],
-    });
+	Entities.editEntity(eid, {
+		textColor: entityAction.backgroundColor ?? [0, 0, 0],
+		backgroundColor: entityAction.textColor ?? [255, 255, 255],
+		textEffectColor: entityAction.textColor ?? [255, 255, 255],
+	});
 }
 
 function ContextMenu_EntityHoverLeave(eid, _event) {
-    const entityAction = currentMenuEntities.get(eid);
+	const entityAction = currentMenuEntities.get(eid);
 
 	if (!entityAction) { return; }
 
-    Entities.editEntity(eid, {
-        backgroundColor: entityAction.backgroundColor ?? [0, 0, 0],
-        textEffectColor: entityAction.backgroundColor ?? [0, 0, 0],
-        textColor: entityAction.textColor ?? [255, 255, 255],
-    });
+	Entities.editEntity(eid, {
+		backgroundColor: entityAction.backgroundColor ?? [0, 0, 0],
+		textEffectColor: entityAction.backgroundColor ?? [0, 0, 0],
+		textColor: entityAction.textColor ?? [255, 255, 255],
+	});
 }
 
 function ContextMenu_FindTarget(hand = 1) {
@@ -460,22 +460,22 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		textEffectThickness: 0.3,
 	});
 
-    let backHasPages = hasPages && page > 0;
-    let backHasHistory = !backHasPages && actionSetHistory.length > 0;
-    let backUserData;
-    let backText = "";
+	let backHasPages = hasPages && page > 0;
+	let backHasHistory = !backHasPages && actionSetHistory.length > 0;
+	let backUserData;
+	let backText = "";
 
-    if (backHasHistory) {
-        const history = actionSetHistory[actionSetHistory.length - 1];
-        backUserData = { actionSetName: history[0], nextPage: history[1], type: "historyBack" };
-        backText = "^";
-    } else if (backHasPages) {
-        backUserData = { nextPage: page - 1, actionSetName: actionSetName };
-        backText = "<";
-    }
+	if (backHasHistory) {
+		const history = actionSetHistory[actionSetHistory.length - 1];
+		backUserData = { actionSetName: history[0], nextPage: history[1], type: "historyBack" };
+		backText = "^";
+	} else if (backHasPages) {
+		backUserData = { nextPage: page - 1, actionSetName: actionSetName };
+		backText = "<";
+	}
 
 	actionEnts.push({
-        action: (backHasPages || backHasHistory) ? {} : undefined,
+		action: (backHasPages || backHasHistory) ? {} : undefined,
 		grab: {grabbable: false},
 		type: "Text",
 		position: Vec3.sum(origin, Vec3.multiplyQbyV(angle, [-0.13 * scale, yPos, 0])),
@@ -499,7 +499,7 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 	});
 
 	actionEnts.push({
-        action: hasPages && page < maxPages ? {} : undefined,
+		action: hasPages && page < maxPages ? {} : undefined,
 		grab: {grabbable: false},
 		type: "Text",
 		position: Vec3.sum(origin, Vec3.multiplyQbyV(angle, [0.13 * scale, yPos, 0])),
@@ -530,7 +530,7 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 
 		let pos = Vec3.sum(origin, Vec3.multiplyQbyV(angle, [0, yPos, 0]));
 		actionEnts.push({
-            action,
+			action,
 			grab: {grabbable: false},
 			type: "Text",
 			position: pos,
@@ -569,9 +569,9 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		if (action.submenu) {
 			if (registeredActionSets[action.submenu]) {
 				clickFunc = _target => {
-                    actionSetHistory.push([actionSetName, page]);
-                    ContextMenu_OpenActions(action.submenu);
-                };
+					actionSetHistory.push([actionSetName, page]);
+					ContextMenu_OpenActions(action.submenu);
+				};
 			} else {
 				console.error(`Action "${action.text}" referencing unregistered submenu action set "${action.submenu}"`);
 			}
@@ -647,7 +647,7 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		}
 
 		const e = Entities.addEntity(a, (CONTEXT_MENU_SETTINGS.public ?? false) ? "avatar" : "local");
-        currentMenuEntities.set(e, a.action ?? null);
+		currentMenuEntities.set(e, a.action ?? null);
 	}
 
 	currentMenuOpen = true;
@@ -889,7 +889,7 @@ Script.scriptEnding.connect(() => {
 	Controller.mouseReleaseEvent.disconnect(ContextMenu_MouseReleaseEvent);
 	Entities.mousePressOnEntity.disconnect(ContextMenu_EntityClick);
 	Entities.hoverEnterEntity.disconnect(ContextMenu_EntityHoverEnter);
-    Entities.hoverLeaveEntity.disconnect(ContextMenu_EntityHoverLeave);
+	Entities.hoverLeaveEntity.disconnect(ContextMenu_EntityHoverLeave);
 	//Script.update.disconnect(ContextMenu_Update);
 	Picks.removePick(targetingPick[0]);
 	Picks.removePick(targetingPick[1]);
