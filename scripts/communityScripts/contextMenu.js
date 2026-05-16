@@ -181,6 +181,7 @@ let currentMenuTargetLine = Uuid.NONE;
 let mouseWasCaptured = false;
 let disableCounter = 0;
 let prevClickTime = Date.now();
+let actionSetHistory = [];
 
 function ContextMenu_DeleteMenu() {
     for (const [e, _] of currentMenuEntities) {
@@ -193,6 +194,7 @@ function ContextMenu_DeleteMenu() {
 	currentMenuTargetIsAvatar = false;
 	currentMenuTarget = Uuid.NONE;
 	currentMenuTargetLine = Uuid.NONE;
+    actionSetHistory = [];
 	Camera.captureMouse = mouseWasCaptured;
 }
 
@@ -207,7 +209,12 @@ function ContextMenu_EntityClick(eid, event) {
 	try {
 		const data = JSON.parse(Entities.getEntityProperties(eid, "userData").userData);
 		if (data.nextPage !== undefined && data.actionSetName !== undefined) {
-			ContextMenu_OpenActions(data.actionSetName, data.nextPage);
+            if (data.type === "historyBack") {
+                const history = actionSetHistory.pop();
+			    ContextMenu_OpenActions(history[0], history[1]);
+            } else {
+			    ContextMenu_OpenActions(data.actionSetName, data.nextPage);
+            }
 		} else {
 			const func = data.actionFunc;
 			currentMenuActionFuncs[func][0](currentMenuTarget, eid);
@@ -452,14 +459,28 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		textEffectThickness: 0.3,
 	});
 
+    let backHasPages = hasPages && page > 0;
+    let backHasHistory = !backHasPages && actionSetHistory.length > 0;
+    let backUserData;
+    let backText = "";
+
+    if (backHasHistory) {
+        const history = actionSetHistory[actionSetHistory.length - 1];
+        backUserData = { actionSetName: history[0], nextPage: history[1], type: "historyBack" };
+        backText = "^";
+    } else if (backHasPages) {
+        backUserData = { nextPage: page - 1, actionSetName: actionSetName };
+        backText = "<";
+    }
+
 	actionEnts.push({
-        action: hasPages && page > 0 ? {} : undefined,
+        action: (backHasPages || backHasHistory) ? {} : undefined,
 		grab: {grabbable: false},
 		type: "Text",
 		position: Vec3.sum(origin, Vec3.multiplyQbyV(angle, [-0.13 * scale, yPos, 0])),
 		rotation: angle,
 		localDimensions: [0.04 * scale, 0.04 * scale, 0.01 * scale],
-		text: hasPages && page > 0 ? "<" : "",
+		text: backText,
 		textColor: [230, 230, 230],
 		backgroundColor: [0, 0, 0],
 		backgroundAlpha: 0.9,
@@ -470,7 +491,7 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		triggerable: false,
 		leftMargin: 0.003 * lineScale,
 		topMargin: -0.008 * lineScale,
-		userData: hasPages && page > 0 ? JSON.stringify({nextPage: page - 1, actionSetName: actionSetName}) : undefined,
+		userData: backUserData ? JSON.stringify(backUserData) : undefined,
 		textEffect: "outline fill",
 		textEffectColor: [0, 0, 0],
 		textEffectThickness: 0.3,
@@ -546,7 +567,10 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		let clickFunc = EMPTY_FUNCTION;
 		if (action.submenu) {
 			if (registeredActionSets[action.submenu]) {
-				clickFunc = _target => ContextMenu_OpenActions(action.submenu);
+				clickFunc = _target => {
+                    actionSetHistory.push([actionSetName, page]);
+                    ContextMenu_OpenActions(action.submenu);
+                };
 			} else {
 				console.error(`Action "${action.text}" referencing unregistered submenu action set "${action.submenu}"`);
 			}
