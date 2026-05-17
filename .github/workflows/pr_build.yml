@@ -59,13 +59,6 @@ jobs:
             #  build_type: android
             #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
-            - os: Ubuntu 22.04 OpenGL ES
-              image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-aarch64
-              runner: ubuntu-24.04-arm
-              arch: aarch64
-              build_type: full
-              qt_source: system
-              rendering_backend: GLES
             - os: Ubuntu 22.04 Vulkan
               image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-aarch64
               runner: ubuntu-24.04-arm
@@ -238,30 +231,8 @@ jobs:
     - name: Build Installer
       if: matrix.build_type != 'android'
       shell: bash
-      run: |
-        echo "Retry code from https://unix.stackexchange.com/a/137639"
-        function fail {
-          echo $1 >&2
-          exit 1
-        }
+      run: cmake --build . --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
 
-        function retry {
-          local n=1
-          local max=5
-          local delay=15
-          while true; do
-            "$@" && break || {
-              if [[ $n -lt $max ]]; then
-                ((n++))
-                echo "Command failed. Attempt $n/$max:"
-                sleep $delay;
-              else
-                fail "The command has failed after $n attempts."
-              fi
-            }
-          done
-        }
-        retry cmake --build . --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
     # As of 05/17/21 GitHub Virtual Environments changed their "Ubuntu 18.04.5 LTS" image to include two versions of CMake for Android
     # https://github.com/actions/virtual-environments/blob/ubuntu18/20210517.1/images/linux/Ubuntu1804-README.md
     # Removing 3.18.1 version of CMake as its not compatible with our Android build.

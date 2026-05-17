@@ -27,14 +27,14 @@
 #include "GLHelpers.h"
 #include "QOpenGLContextWrapper.h"
 
-#if defined(GL_CUSTOM_CONTEXT)
+#ifdef Q_OS_WIN
 #include <QtPlatformHeaders/QWGLNativeContext>
 #endif
 
 using namespace gl;
 
-#if defined(GL_CUSTOM_CONTEXT)
-bool Context::USE_CUSTOM_CONTEXT { true };
+#ifdef Q_OS_WIN
+bool Context::USE_CUSTOM_CONTEXT { false };
 #endif
 
 bool Context::enableDebugLogger() {
@@ -63,7 +63,6 @@ void Context::updateSwapchainMemoryUsage(size_t prevSize, size_t newSize) {
     }
 }
 
-
 Context::Context() {}
 
 Context::Context(QWindow* window) {
@@ -77,17 +76,19 @@ void Context::release() {
         _qglContext = nullptr;
     }
 
-#ifdef GL_CUSTOM_CONTEXT
-    if (_hglrc) {
-        wglDeleteContext(_hglrc);
-        _hglrc = 0;
-    }
+#ifdef Q_OS_WIN
+    if (USE_CUSTOM_CONTEXT) {
+        if (_hglrc) {
+            wglDeleteContext(_hglrc);
+            _hglrc = 0;
+        }
 
-    if (_hdc) {
-        ReleaseDC(_hwnd, _hdc);
-        _hdc = 0;
+        if (_hdc) {
+            ReleaseDC(_hwnd, _hdc);
+            _hdc = 0;
+        }
+        _hwnd = 0;
     }
-    _hwnd = 0;
 #endif
 
     _window = nullptr;
@@ -115,7 +116,7 @@ void Context::setWindow(QWindow* window) {
     release();
     _window = window;
 
-#ifdef GL_CUSTOM_CONTEXT
+#ifdef Q_OS_WIN
     _hwnd = (HWND)window->winId();
 #endif
 
@@ -130,7 +131,9 @@ void Context::clear() {
     swapBuffers();
 }
 
-#if defined(GL_CUSTOM_CONTEXT)
+Q_GUI_EXPORT QOpenGLContext* qt_gl_global_share_context();
+
+#ifdef Q_OS_WIN
 
 static void setupPixelFormatSimple(HDC hdc) {
     // FIXME build the PFD based on the
@@ -197,25 +200,6 @@ typedef HGLRC(APIENTRYP PFNWGLCREATECONTEXTATTRIBSARBPROC)(HDC hDC, HGLRC hShare
 
 GLAPI PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB;
 GLAPI PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB;
-
-#endif
-
-
-Q_GUI_EXPORT QOpenGLContext *qt_gl_global_share_context();
-
-#if defined(GL_CUSTOM_CONTEXT)
-bool Context::makeCurrent() {
-    BOOL result = wglMakeCurrent(_hdc, _hglrc);
-    assert(result);
-    updateSwapchainMemoryCounter();
-    return result;
-}
-void Context::swapBuffers() {
-    SwapBuffers(_hdc);
-}
-void Context::doneCurrent() {
-    wglMakeCurrent(0, 0);
-}
 #endif
 
 void Context::create(QOpenGLContext* shareContext) {
@@ -223,45 +207,52 @@ void Context::create(QOpenGLContext* shareContext) {
         shareContext = qt_gl_global_share_context();
     }
 
-#if defined(GL_CUSTOM_CONTEXT)
-    assert(0 != _hwnd);
-    assert(0 == _hdc);
-    auto hwnd = _hwnd;
-    // Create a temporary context to initialize glew
-    static std::once_flag once;
-    std::call_once(once, [&] {
-        auto hdc = GetDC(hwnd);
-        setupPixelFormatSimple(hdc);
-        auto glrc = wglCreateContext(hdc);
-        BOOL makeCurrentResult;
-        makeCurrentResult = wglMakeCurrent(hdc, glrc);
-        if (!makeCurrentResult) {
-            throw std::runtime_error("Unable to create initial context");
-        }
-        gl::initModuleGl();
-        wglMakeCurrent(0, 0);
-        wglDeleteContext(glrc);
-        ReleaseDC(hwnd, hdc);
-        if (!wglChoosePixelFormatARB || !wglCreateContextAttribsARB) {
-            USE_CUSTOM_CONTEXT = false;
-        }
-    });
+#ifdef Q_OS_WIN
+    auto backendApi = hifi::properties::getGraphicsAPI();
+
+#ifndef USE_KHR_ROBUSTNESS
+    if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
+        USE_CUSTOM_CONTEXT = true;
+    }
+#else
+    USE_CUSTOM_CONTEXT = true;
+#endif
+
+    if (USE_CUSTOM_CONTEXT) {
+        assert(0 != _hwnd);
+        assert(0 == _hdc);
+        auto hwnd = _hwnd;
+        // Create a temporary context to initialize glew
+        static std::once_flag once;
+        std::call_once(once, [&] {
+            auto hdc = GetDC(hwnd);
+            setupPixelFormatSimple(hdc);
+            auto glrc = wglCreateContext(hdc);
+            BOOL makeCurrentResult;
+            makeCurrentResult = wglMakeCurrent(hdc, glrc);
+            if (!makeCurrentResult) {
+                throw std::runtime_error("Unable to create initial context");
+            }
+            gl::initModuleGl();
+            wglMakeCurrent(0, 0);
+            wglDeleteContext(glrc);
+            ReleaseDC(hwnd, hdc);
+            if (!wglChoosePixelFormatARB || !wglCreateContextAttribsARB) {
+                USE_CUSTOM_CONTEXT = false;
+            }
+        });
+    }
 
     if (USE_CUSTOM_CONTEXT) {
         _hdc = GetDC(_hwnd);
-#if defined(USE_GLES)
-        _version = 0x0302;
-#else
-        if (gl::disableGl45()) {
-            _version = 0x0401;
-        } else if (GLAD_GL_VERSION_4_5) {
+
+        if (GLAD_GL_VERSION_4_5 && backendApi == hifi::properties::GraphicsAPI::GL45) {
             _version = 0x0405;
-        } else if (GLAD_GL_VERSION_4_3) {
-            _version = 0x0403;
-        } else {
+        } else if (GLAD_GL_VERSION_4_1 && backendApi == hifi::properties::GraphicsAPI::GL41) {
             _version = 0x0401;
+        } else {
+            _version = 0x0302;
         }
-#endif
 
         static int pixelFormat = 0;
         static PIXELFORMATDESCRIPTOR pfd;
@@ -308,11 +299,11 @@ void Context::create(QOpenGLContext* shareContext) {
             contextAttribs.push_back(WGL_CONTEXT_MINOR_VERSION_ARB);
             contextAttribs.push_back(minorVersion);
             contextAttribs.push_back(WGL_CONTEXT_PROFILE_MASK_ARB);
-#if defined(USE_GLES)
-            contextAttribs.push_back(WGL_CONTEXT_ES2_PROFILE_BIT_EXT);
-#else
-            contextAttribs.push_back(WGL_CONTEXT_CORE_PROFILE_BIT_ARB);
-#endif
+            if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
+                contextAttribs.push_back(WGL_CONTEXT_ES2_PROFILE_BIT_EXT);
+            } else {
+                contextAttribs.push_back(WGL_CONTEXT_CORE_PROFILE_BIT_ARB);
+            }
             {
                 int contextFlags = 0;
                 if (enableDebugLogger()) {

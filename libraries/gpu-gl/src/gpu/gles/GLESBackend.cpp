@@ -117,7 +117,7 @@ void GLESBackend::do_drawInstanced(const Batch& batch, size_t paramOffset) {
     (void) CHECK_GL_ERROR();
 }
 
-void glbackend_glDrawElementsInstancedBaseVertexBaseInstance(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, GLsizei primcount, GLint basevertex, GLuint baseinstance) {
+void glesbackend_glDrawElementsInstancedBaseVertexBaseInstance(GLenum mode, GLsizei count, GLenum type, const GLvoid *indices, GLsizei primcount, GLint basevertex, GLuint baseinstance) {
 //#if (GPU_INPUT_PROFILE == GPU_CORE_43)
     //glDrawElementsInstancedBaseVertexBaseInstance(mode, count, type, indices, primcount, basevertex, baseinstance);
 //#else
@@ -142,19 +142,23 @@ void GLESBackend::do_drawIndexedInstanced(const Batch& batch, size_t paramOffset
         GLint trueNumInstances = 2 * numInstances;
 
 #ifdef GPU_STEREO_DRAWCALL_INSTANCED
-        glbackend_glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, trueNumInstances, 0, startInstance);
+        glesbackend_glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset,
+                                                                  trueNumInstances, 0, startInstance);
 #else
         setupStereoSide(0);
-        glbackend_glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, numInstances, 0, startInstance);
+        glesbackend_glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, numInstances,
+                                                                  0, startInstance);
         setupStereoSide(1);
-        glbackend_glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, numInstances, 0, startInstance);
+        glesbackend_glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, numInstances,
+                                                                  0, startInstance);
 #endif
 
         _stats._DSNumTriangles += (trueNumInstances * numIndices) / 3;
         _stats._DSNumDrawcalls += trueNumInstances;
     } else {
-        //qDebug() << "GLESBackend::do_drawIndexedInstanced glbackend_glDrawElementsInstancedBaseVertexBaseInstance " << numInstances;
-        glbackend_glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, numInstances, 0, startInstance);
+        //qDebug() << "GLESBackend::do_drawIndexedInstanced glesbackend_glDrawElementsInstancedBaseVertexBaseInstance " << numInstances;
+        glesbackend_glDrawElementsInstancedBaseVertexBaseInstance(mode, numIndices, glType, indexBufferByteOffset, numInstances,
+                                                                  0, startInstance);
         _stats._DSNumTriangles += (numInstances * numIndices) / 3;
         _stats._DSNumDrawcalls += numInstances;
     }

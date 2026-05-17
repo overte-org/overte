@@ -28,12 +28,13 @@
 
 #include <gpu/Forward.h>
 #include <gpu/Backend.h>
+#include <shared/GlobalAppProperties.h>
 
 #include "GLShared.h"
 
 // Different versions for the stereo drawcall
 // Current preferred is  "instanced" which draw the shape twice but instanced and rely on clipping plane to draw left/right side only
-#if defined(USE_GLES) && !defined(HAVE_EXT_clip_cull_distance)
+#if !defined(HAVE_EXT_clip_cull_distance)
 #define GPU_STEREO_TECHNIQUE_DOUBLED_SIMPLE
 #else
 //#define GPU_STEREO_TECHNIQUE_DOUBLED_SMARTER
@@ -74,22 +75,6 @@ public:
         MESA,
         Unknown
     };
-
-#if defined(USE_GLES)
-    // https://www.khronos.org/registry/OpenGL-Refpages/es3/html/glGet.xhtml
-    static const GLint MIN_REQUIRED_TEXTURE_IMAGE_UNITS = 16;
-    static const GLint MIN_REQUIRED_COMBINED_UNIFORM_BLOCKS = 60;
-    static const GLint MIN_REQUIRED_COMBINED_TEXTURE_IMAGE_UNITS = 48;
-    static const GLint MIN_REQUIRED_UNIFORM_BUFFER_BINDINGS = 72;
-    static const GLint MIN_REQUIRED_UNIFORM_LOCATIONS = 1024;
-#else
-    // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGet.xhtml
-    static const GLint MIN_REQUIRED_TEXTURE_IMAGE_UNITS = 16;
-    static const GLint MIN_REQUIRED_COMBINED_UNIFORM_BLOCKS = 70;
-    static const GLint MIN_REQUIRED_COMBINED_TEXTURE_IMAGE_UNITS = 48;
-    static const GLint MIN_REQUIRED_UNIFORM_BUFFER_BINDINGS = 36;
-    static const GLint MIN_REQUIRED_UNIFORM_LOCATIONS = 1024;
-#endif
 
     static GLint MAX_TEXTURE_IMAGE_UNITS;
     static GLint MAX_UNIFORM_BUFFER_BINDINGS;
@@ -496,6 +481,22 @@ protected:
     virtual void transferTransformState(const Batch& batch) const = 0;
 
     struct UniformStageState {
+        UniformStageState() {
+            // MAX_NUM_UNIFORM_BUFFERS-1 is the max uniform index BATCHES are allowed to set, but
+            // MIN_REQUIRED_UNIFORM_BUFFER_BINDINGS is used here because the backend sets some
+            // internal UBOs for things like camera correction
+            size_t minRequiredUniformBufferBindings = 0;
+            auto backendApi = hifi::properties::getGraphicsAPI();
+            if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
+                // https://www.khronos.org/registry/OpenGL-Refpages/es3/html/glGet.xhtml
+                minRequiredUniformBufferBindings = 72;
+            } else {
+                // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGet.xhtml
+                minRequiredUniformBufferBindings = 36;
+            }
+            _buffers.resize(minRequiredUniformBufferBindings);
+        }
+
         struct BufferState {
             BufferReference buffer{};
             GLintptr offset{ 0 };
@@ -513,10 +514,7 @@ protected:
             }
         };
 
-        // MAX_NUM_UNIFORM_BUFFERS-1 is the max uniform index BATCHES are allowed to set, but
-        // MIN_REQUIRED_UNIFORM_BUFFER_BINDINGS is used here because the backend sets some
-        // internal UBOs for things like camera correction
-        std::array<BufferState, MIN_REQUIRED_UNIFORM_BUFFER_BINDINGS> _buffers;
+        std::vector<BufferState> _buffers;
     } _uniform;
 
     // Helper function that provides common code

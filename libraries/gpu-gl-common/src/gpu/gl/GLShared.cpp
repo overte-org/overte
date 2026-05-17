@@ -15,6 +15,7 @@
 #include <gl/GLHelpers.h>
 #include <GPUIdent.h>
 #include <NumericalConstants.h>
+#include <shared/GlobalAppProperties.h>
 
 Q_LOGGING_CATEGORY(gpugllogging, "hifi.gpu.gl")
 Q_LOGGING_CATEGORY(trace_render_gpu_gl, "trace.render.gpu.gl")
@@ -24,29 +25,29 @@ namespace gpu { namespace gl {
 
 gpu::Size getFreeDedicatedMemory() {
     Size result { 0 };
-#if !defined(USE_GLES)
-    static bool nvidiaMemorySupported { true };
-    static bool atiMemorySupported { true };
-    if (nvidiaMemorySupported) {
-        
-        GLint nvGpuMemory { 0 };
-        glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &nvGpuMemory);
-        if (GL_NO_ERROR == glGetError()) {
-            result = KB_TO_BYTES(nvGpuMemory);
-        } else {
-            nvidiaMemorySupported = false;
-        }
-    } else if (atiMemorySupported) {
-        GLint atiGpuMemory[4];
-        // not really total memory, but close enough if called early enough in the application lifecycle
-        glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, atiGpuMemory);
-        if (GL_NO_ERROR == glGetError()) {
-            result = KB_TO_BYTES(atiGpuMemory[0]);
-        } else {
-            atiMemorySupported = false;
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+        static bool nvidiaMemorySupported { true };
+        static bool atiMemorySupported { true };
+        if (nvidiaMemorySupported) {
+            GLint nvGpuMemory { 0 };
+            glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &nvGpuMemory);
+            if (GL_NO_ERROR == glGetError()) {
+                result = KB_TO_BYTES(nvGpuMemory);
+            } else {
+                nvidiaMemorySupported = false;
+            }
+        } else if (atiMemorySupported) {
+            GLint atiGpuMemory[4];
+            // not really total memory, but close enough if called early enough in the application lifecycle
+            glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, atiGpuMemory);
+            if (GL_NO_ERROR == glGetError()) {
+                result = KB_TO_BYTES(atiGpuMemory[0]);
+            } else {
+                atiMemorySupported = false;
+            }
         }
     }
-#endif
     return result;
 }
 
@@ -146,21 +147,22 @@ State::BlendArg blendArgFromGL(GLenum blendArg) {
 
 void getCurrentGLState(State::Data& state) {
     {
-#if defined(USE_GLES)
-        state.fillMode = State::FILL_FACE;
-#else
-        GLint modes[2];
-        glGetIntegerv(GL_POLYGON_MODE, modes);
-        if (modes[0] == GL_FILL) {
+        auto backendApi = hifi::properties::getGraphicsAPI();
+        if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
             state.fillMode = State::FILL_FACE;
         } else {
-            if (modes[0] == GL_LINE) {
-                state.fillMode = State::FILL_LINE;
+            GLint modes[2];
+            glGetIntegerv(GL_POLYGON_MODE, modes);
+            if (modes[0] == GL_FILL) {
+                state.fillMode = State::FILL_FACE;
             } else {
-                state.fillMode = State::FILL_POINT;
+                if (modes[0] == GL_LINE) {
+                    state.fillMode = State::FILL_LINE;
+                } else {
+                    state.fillMode = State::FILL_POINT;
+                }
             }
         }
-#endif
     }
     {
         if (glIsEnabled(GL_CULL_FACE)) {
@@ -175,15 +177,17 @@ void getCurrentGLState(State::Data& state) {
         GLint winding;
         glGetIntegerv(GL_FRONT_FACE, &winding);
         state.flags.frontFaceClockwise = (winding == GL_CW);
-#if defined(USE_GLES)
-        state.flags.multisampleEnable = glIsEnabled(GL_MULTISAMPLE_EXT);
-        state.flags.antialisedLineEnable = false;
-        state.flags.depthClampEnable = false;
-#else
-        state.flags.multisampleEnable = glIsEnabled(GL_MULTISAMPLE);
-        state.flags.antialisedLineEnable = glIsEnabled(GL_LINE_SMOOTH);
-        state.flags.depthClampEnable = glIsEnabled(GL_DEPTH_CLAMP);
-#endif
+
+        auto backendApi = hifi::properties::getGraphicsAPI();
+        if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
+            state.flags.multisampleEnable = glIsEnabled(GL_MULTISAMPLE_EXT);
+            state.flags.antialisedLineEnable = false;
+            state.flags.depthClampEnable = false;
+        } else {
+            state.flags.multisampleEnable = glIsEnabled(GL_MULTISAMPLE);
+            state.flags.antialisedLineEnable = glIsEnabled(GL_LINE_SMOOTH);
+            state.flags.depthClampEnable = glIsEnabled(GL_DEPTH_CLAMP);
+        }
         state.flags.scissorEnable = glIsEnabled(GL_SCISSOR_TEST);
     }
     {

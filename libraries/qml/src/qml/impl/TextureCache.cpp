@@ -7,6 +7,8 @@
 #include <QtCore/QThread>
 #include <QtCore/QCoreApplication>
 
+#include <shared/GlobalAppProperties.h>
+
 #include "Profiling.h"
 
 using namespace hifi::qml::impl;
@@ -124,9 +126,10 @@ uint32_t TextureCache::createTexture(const QSize& size) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-#if !defined(USE_GLES)
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -0.2f);
-#endif
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_LOD_BIAS, -0.2f);
+    }
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 8.0f);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, size.width(), size.height(), 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
     return newTexture;

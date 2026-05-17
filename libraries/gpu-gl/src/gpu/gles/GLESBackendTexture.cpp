@@ -436,7 +436,7 @@ void GLESVariableAllocationTexture::syncSampler(const Sampler& sampler) const {
     });
 }
 
-void copyTexGPUMem(const gpu::Texture& texture, GLenum texTarget, GLuint srcId, GLuint destId, uint16_t numMips, uint16_t srcMipOffset, uint16_t destMipOffset, uint16_t populatedMips) {
+void copyTexGPUMemGLES(const gpu::Texture& texture, GLenum texTarget, GLuint srcId, GLuint destId, uint16_t numMips, uint16_t srcMipOffset, uint16_t destMipOffset, uint16_t populatedMips) {
     for (uint16_t mip = populatedMips; mip < numMips; ++mip) {
         auto mipDimensions = texture.evalMipDimensions(mip);
         uint16_t targetMip = mip - destMipOffset;
@@ -455,7 +455,7 @@ void copyTexGPUMem(const gpu::Texture& texture, GLenum texTarget, GLuint srcId, 
 
 void GLESVariableAllocationTexture::copyTextureMipsInGPUMem(GLuint srcId, GLuint destId, uint16_t srcMipOffset, uint16_t destMipOffset, uint16_t populatedMips) {
     uint16_t numMips = _gpuObject.getNumMips();
-    copyTexGPUMem(_gpuObject, _target, srcId, destId, numMips, srcMipOffset, destMipOffset, populatedMips);
+    copyTexGPUMemGLES(_gpuObject, _target, srcId, destId, numMips, srcMipOffset, destMipOffset, populatedMips);
 }
 
 size_t GLESVariableAllocationTexture::promote() {

@@ -84,8 +84,8 @@ void GLESBackend::updateTransform(const Batch& batch) {
             glDisableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is disabled
             _transform._enabledDrawcallInfoBuffer = false;
         }
-        glVertexAttribI4i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.unused, 0, 0);
-        //glVertexAttribI2i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.unused);
+        glVertexAttribI4i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.user, 0, 0);
+        //glVertexAttribI2i(gpu::Stream::DRAW_CALL_INFO, drawCallInfo.index, drawCallInfo.user);
     } else {
         if (!_transform._enabledDrawcallInfoBuffer) {
             glEnableVertexAttribArray(gpu::Stream::DRAW_CALL_INFO); // Make sure attrib array is enabled
