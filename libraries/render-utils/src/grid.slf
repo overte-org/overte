@@ -37,15 +37,21 @@ INPUT(GPU_ATTR_COLOR, vec4, varColor);
 
 
 void main(void) {
-    const float SQRT_2 = 1.4142135623730951;
-
     float gridLine = mix(paintGridMajorMinor(varTexCoord0, grid.offset, grid.period, grid.edge),
                       paintGrid(varTexCoord0, grid.offset.xy, grid.period.xy, grid.edge.xy),
                       float(grid.edge.z == 0.0));
 
+    // TODO: this is temporary until Grid can get an
+    // entity property for toggling the radius fade
+<@if HIFI_USE_TRANSLUCENT@>
+    const float SQRT_2 = 1.4142135623730951;
+
     // multiply by sqrt(2) to hide the chunk pop-in on the corners
     float fade = clamp(1.0 - (length(varTexCoord1) * SQRT_2), 0.0, 1.0);
     float gridWeight = gridLine * fade;
+<@else@>
+    float gridWeight = gridLine;
+<@endif@>
 
     if (gridWeight <= 0.0) { discard; }
 
