@@ -103,7 +103,12 @@ var sendToLogWindow = function(type, message, scriptFileName) {
         if (type) {
             typeFormatted = type + " - ";
         }
-        window.sendToQml("[" + getFormattedDate() + "] " + "[" + scriptFileName + "] " + typeFormatted + message);
+        window.sendToQml({
+            date: getFormattedDate(),
+            scriptFileName: scriptFileName,
+            type: type,
+            message: message, // "[" + getFormattedDate() + "] " + "[" + scriptFileName + "] " + typeFormatted + message
+        });
     }
 };
 
