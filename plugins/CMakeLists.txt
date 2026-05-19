@@ -19,8 +19,10 @@ if (OVERTE_BUILD_CLIENT AND NOT ANDROID)
     add_subdirectory(${DIR})
   endif()
 
-  set(DIR "openxr")
-  add_subdirectory(${DIR})
+  if (NOT APPLE)
+    set(DIR "openxr")
+    add_subdirectory(${DIR})
+  endif()
 
   set(DIR "hifiSdl2")
   add_subdirectory(${DIR})
