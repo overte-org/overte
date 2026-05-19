@@ -73,7 +73,12 @@ Rectangle {
             default:
                 line.color = hifi.colors.faintGray
         }
-        textArea.append(`<span style="color: ${line.color}">[${line.date}] [${line.scriptFileName}] ${line.type.length > 0 ? line.type+' - ' : ""}${line.message}</span>`);
+
+        // Preserved formatting of text when used in html
+        const message = line.message.replace(/\n/g, "<br>")
+
+        // white-space: pre-wrap preserves white space at the start of lines
+        textArea.append(`<span style="color: ${line.color}; white-space: pre-wrap">[${line.date}] [${line.scriptFileName}] ${line.type.length > 0 ? line.type+' - ' : ""}${message}</span>`);
     }
 
     function clearWindow() {
