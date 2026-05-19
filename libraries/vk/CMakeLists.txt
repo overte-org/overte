@@ -11,7 +11,10 @@
 set(TARGET_NAME vk)
 setup_hifi_library(Gui)
 GroupSources(src)
-link_hifi_libraries(shared shaders gl vk-mac)
+link_hifi_libraries(shared shaders gl)
+if(APPLE)
+    link_hifi_libraries(vk-mac)
+endif()
 find_package(Qt5 COMPONENTS Core Gui QUIET REQUIRED)
 target_link_libraries(${TARGET_NAME} Qt5::GuiPrivate)
 
