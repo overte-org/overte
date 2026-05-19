@@ -105,7 +105,7 @@ jobs:
             rendering_backend: Vulkan
           - id: macos
             os: macOS 15 (Sequoia)
-            runner: macos-15
+            runner: depot-macos-15
             arch: arm64
             build_type: full
             cmake_build_type: Release
