@@ -31,7 +31,9 @@
 #include "Config.h"
 #include "VulkanSwapChain.h"
 #include "Context.h"
-#include "layerForWindow.h"
+#ifdef Q_OS_MAC
+	#include "layerForWindow.h"
+#endif
 
 VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
     vks::Context::get().registerWindow(this);
