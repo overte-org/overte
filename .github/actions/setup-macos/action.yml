@@ -3,6 +3,11 @@ description: "Install tools and dependencies, set environment variables, et cete
 runs:
     using: "composite"
     steps:
+    - name: Update Bash
+      # macOS comes with Bash 3.x, which doesn't allow stuff line `${BUILD_TYPE,,}` yet.
+      shell: bash
+      run: brew install bash
+
     - name: Set environment variables
       shell: bash
       run: |
