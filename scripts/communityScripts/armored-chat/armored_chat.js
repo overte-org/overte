@@ -338,7 +338,6 @@
         const date = new Date(timestamp);
         const day = date.getDate();
         const dayString = String(day).padStart(2, '0')
-        console.log(dayString[0], dayString[1]);
         // const suffix = (dayString[0] != '1' && dayString[1] === '1') ? 'st' : (dayString[0] != '1' && dayString[1] === '2') ? 'nd' : (dayString[0] != '1' && dayString[1]) === '3' ? 'rd' : 'th';
 
         timeArray.push(`${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`);
