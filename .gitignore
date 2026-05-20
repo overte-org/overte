@@ -36,6 +36,8 @@ pkglist.json
 **/__pycache__
 **/.venv
 
+# Rust/Cargo
+/target
 
 # Android Studio
 *.iml

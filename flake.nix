@@ -2,6 +2,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
+    rust-overlay.url = "github:oxalica/rust-overlay";
   };
   outputs =
     inputs:
@@ -17,12 +18,22 @@
         perSystem =
           {
             pkgs,
+            system,
             lib,
             self',
             inputs',
             ...
           }:
           {
+            _module.args.pkgs = import inputs.nixpkgs {
+              inherit system;
+              overlays = [
+                (import inputs.rust-overlay)
+                (self: _super: {
+                  rust-overte = self.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+                })
+              ];
+            };
             packages = {
               glad = pkgs.callPackage ./nix/glad.nix { };
               etc2comp = pkgs.callPackage ./nix/etc2comp.nix { };
@@ -61,7 +72,11 @@
                 pkgs.conan
                 pkgs.ninja
                 pkgs.gdb
+                pkgs.nixd
+                pkgs.nixfmt
                 pkgs.clang-tools
+                pkgs.llvmPackages_20.clang-unwrapped
+                pkgs.rust-overte
               ];
               inputsFrom = [ self'.packages.overte-full ];
 

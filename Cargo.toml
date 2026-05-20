@@ -1,0 +1,16 @@
+[workspace]
+resolver = "2"
+members = [
+  "libraries/render-utils"
+]
+
+[workspace.package]
+version = "2026.1.1"
+edition = "2024"
+license = "apache-2.0"
+
+[workspace.dependencies]
+cxx = "1.0"
+cxx-build = "1.0"
+itertools = "0.14.0"
+
