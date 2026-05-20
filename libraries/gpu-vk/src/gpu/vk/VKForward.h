@@ -28,6 +28,7 @@ class VKBackend;
 class VKFramebuffer;
 class VKPipeline;
 class VKQuery;
+class VKTextureTransferEngine;
 
 } }
 

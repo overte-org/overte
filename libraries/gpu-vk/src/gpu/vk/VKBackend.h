@@ -402,6 +402,12 @@ public:
 
     int getRealUniformLocation(int location);
 
+    static size_t getTotalMemory() { return 8000000; }// VKTODO: return _totalMemory; }
+    static size_t getDedicatedMemory() { return 8000000; }// VKTODO: return _dedicatedMemory; }
+    static size_t getAvailableMemory() { return 5000000; }
+    static bool availableMemoryKnown() { return true; }
+
+
     virtual void store_glUniform1i(const Batch& batch, size_t paramOffset) final;
     virtual void store_glUniform1f(const Batch& batch, size_t paramOffset) final;
     virtual void store_glUniform2f(const Batch& batch, size_t paramOffset) final;
@@ -522,6 +528,14 @@ public:
     // VKTODO: quick hack
     VKFramebuffer *_outputTexture{ nullptr };
 protected:
+    struct TextureManagementStageState {
+        bool _sparseCapable{ false };
+        std::shared_ptr<VKTextureTransferEngine> _transferEngine;
+    } _textureManagement;
+
+    virtual void initTextureManagementStage();
+    virtual void killTextureManagementStage();
+
     void transitionInputImageLayouts(); // This can be called only form `updateRenderPass`
     void transitionAttachmentImageLayouts(gpu::Framebuffer &framebuffer); // This can be called only form `updateRenderPass`
 
