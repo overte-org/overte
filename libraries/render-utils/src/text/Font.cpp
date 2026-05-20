@@ -14,9 +14,9 @@
 #include <QImage>
 #include <QNetworkReply>
 #include <QThreadStorage>
+#include <vector>
 
-#include "artery-font/artery-font.h"
-#include "artery-font/std-artery-font.h"
+#include <render-utils.rs.h>
 
 #include <ColorUtils.h>
 
@@ -122,16 +122,17 @@ void Font::read(QIODevice& in) {
     QByteArray data = in.readAll();
     _readOffset.setLocalData(0);
     _readMax.setLocalData(data.length());
-    artery_font::StdArteryFont<float> arteryFont;
-    bool success = artery_font::decode<&readHelper, float, artery_font::StdList, artery_font::StdByteArray, artery_font::StdString>(arteryFont, (void *)data.data());
+    std::vector<uint8_t> vecData(data.data(), data.data() + data.length());
+    render_utils::rust::Arfont arteryFont;
+    render_utils::rust::ArfontError res = render_utils::rust::decode_arfont(vecData, arteryFont);
 
-    if (!success) {
-        qDebug() << "Font" << _family << "failed to decode.";
+    if (res != render_utils::rust::ArfontError::Ok) {
+        qCDebug(renderutils) << "Font" << _family << "failed to decode. Errcode:" << (uint32_t)res;
         return;
     }
 
-    if (arteryFont.variants.length() == 0) {
-        qDebug() << "Font" << _family << "has 0 variants.";
+    if (arteryFont.variants.empty()) {
+        qCDebug(renderutils) << "Font" << _family << "has 0 variants.";
         return;
     }
 
@@ -139,24 +140,24 @@ void Font::read(QIODevice& in) {
     const float ascent = arteryFont.variants[0].metrics.ascender;
     _fontHeight = ascent + fabs(arteryFont.variants[0].metrics.descender);
     _leading = arteryFont.variants[0].metrics.lineHeight;
-    _spaceWidth = 0.5f * arteryFont.variants[0].metrics.emSize; // We use half the emSize as a first guess for _spaceWidth
+    _spaceWidth = 0.5f * arteryFont.variants[0].metrics.emSize;  // We use half the emSize as a first guess for _spaceWidth
 
-    if (arteryFont.variants[0].glyphs.length() == 0) {
-        qDebug() << "Font" << _family << "has 0 glyphs.";
+    if (arteryFont.variants[0].glyphs.empty()) {
+        qCDebug(renderutils) << "Font" << _family << "has 0 glyphs.";
         return;
     }
 
     QVector<Glyph> glyphs;
-    glyphs.reserve(arteryFont.variants[0].glyphs.length());
-    for (int i = 0; i < arteryFont.variants[0].glyphs.length(); i++) {
+    glyphs.reserve(arteryFont.variants[0].glyphs.size());
+    for (size_t i = 0; i < arteryFont.variants[0].glyphs.size(); i++) {
         auto& g = arteryFont.variants[0].glyphs[i];
 
         Glyph glyph;
         glyph.c = g.codepoint;
-        glyph.texOffset = glm::vec2(g.imageBounds.l, g.imageBounds.b);
-        glyph.texSize = glm::vec2(g.imageBounds.r, g.imageBounds.t) - glyph.texOffset;
-        glyph.offset = glm::vec2(g.planeBounds.l, g.planeBounds.b);
-        glyph.size = glm::vec2(g.planeBounds.r, g.planeBounds.t) - glyph.offset;
+        glyph.texOffset = glm::vec2(g.image_bounds.l, g.image_bounds.b);
+        glyph.texSize = glm::vec2(g.image_bounds.r, g.image_bounds.t) - glyph.texOffset;
+        glyph.offset = glm::vec2(g.plane_bounds.l, g.plane_bounds.b);
+        glyph.size = glm::vec2(g.plane_bounds.r, g.plane_bounds.t) - glyph.offset;
         glyph.d = g.advance.h;
         glyphs.push_back(glyph);
 
@@ -166,35 +167,40 @@ void Font::read(QIODevice& in) {
         }
     }
 
-    if (arteryFont.images.length() == 0) {
-        qDebug() << "Font" << _family << "has 0 images.";
+    if (arteryFont.images.empty()) {
+        qCDebug(renderutils) << "Font" << _family << "has 0 images.";
         return;
     }
 
-    if (arteryFont.images[0].imageType != artery_font::ImageType::IMAGE_MTSDF) {
-        qDebug() << "Font" << _family << "has the wrong image type.  Expected MTSDF (7), got" << arteryFont.images[0].imageType;
+    if (arteryFont.images[0].image_type != render_utils::rust::ImageType::IMAGE_MTSDF) {
+        qCDebug(renderutils) << "Font" << _family << "has the wrong image type.  Expected MTSDF (7), got"
+                             << (uint32_t)arteryFont.images[0].image_type;
         return;
     }
 
-    if (arteryFont.images[0].encoding != artery_font::ImageEncoding::IMAGE_PNG) {
-        qDebug() << "Font" << _family << "has the wrong encoding.  Expected PNG (8), got" << arteryFont.images[0].encoding;
+    if (arteryFont.images[0].encoding != render_utils::rust::ImageEncoding::IMAGE_PNG) {
+        qCDebug(renderutils) << "Font" << _family << "has the wrong encoding.  Expected PNG (8), got"
+                             << (uint32_t)arteryFont.images[0].encoding;
         return;
     }
 
-    if (arteryFont.images[0].pixelFormat != artery_font::PixelFormat::PIXEL_UNSIGNED8) {
-        qDebug() << "Font" << _family << "has the wrong pixel format.  Expected unsigned char (8), got" << arteryFont.images[0].pixelFormat;
+    if (arteryFont.images[0].pixel_format != render_utils::rust::PixelFormat::PIXEL_UNSIGNED8) {
+        qCDebug(renderutils) << "Font" << _family << "has the wrong pixel format.  Expected unsigned char (8), got"
+                             << (uint32_t)arteryFont.images[0].pixel_format;
         return;
     }
 
     if (arteryFont.images[0].width == 0 || arteryFont.images[0].height == 0) {
-        qDebug() << "Font" << _family << "has image with width or height of 0.  Width:" << arteryFont.images[0].width << ", height:"<< arteryFont.images[0].height;
+        qCDebug(renderutils) << "Font" << _family
+                             << "has image with width or height of 0.  Width:" << arteryFont.images[0].width
+                             << ", height:" << arteryFont.images[0].height;
         return;
     }
 
     // read image data
     QImage image;
-    if (!image.loadFromData((const unsigned char*)arteryFont.images[0].data, arteryFont.images[0].data.length(), "PNG")) {
-        qDebug() << "Failed to read image for font" << _family;
+    if (!image.loadFromData((const unsigned char*)arteryFont.images[0].data.data(), arteryFont.images[0].data.size(), "PNG")) {
+        qCDebug(renderutils) << "Failed to read image for font" << _family;
         return;
     }
 

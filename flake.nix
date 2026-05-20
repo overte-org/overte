@@ -40,8 +40,6 @@
 
               cgltf = pkgs.callPackage ./nix/cgltf.nix { };
 
-              artery-font-format = pkgs.callPackage ./nix/artery-font-format.nix { };
-
               gif_creator = pkgs.callPackage ./nix/gif_creator.nix { };
 
               scribe = pkgs.callPackage ./nix/scribe.nix { };
@@ -51,7 +49,6 @@
                   glad
                   scribe
                   gif_creator
-                  artery-font-format
                   cgltf
                   etc2comp
                   draco
