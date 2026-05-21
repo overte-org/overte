@@ -1539,6 +1539,11 @@ Section "Uninstall"
   Delete "$SMSTARTUP\@CONSOLE_HF_SHORTCUT_NAME@.lnk"
   Delete "$SMSTARTUP\@SANDBOX_HF_SHORTCUT_NAME@.lnk"
   SetShellVarContext all
+  
+  ; Remove all Interface caches of the current user when uninstalling.
+  SetShellVarContext current
+  RMDir /r "$LOCALAPPDATA\@BUILD_ORGANIZATION@\Interface"
+  SetShellVarContext all
 
 @CPACK_NSIS_DELETE_ICONS@
 @CPACK_NSIS_DELETE_ICONS_EXTRA@
