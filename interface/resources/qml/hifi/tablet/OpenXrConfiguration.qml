@@ -155,7 +155,7 @@ Flickable {
             RalewayRegular {
                 id: bodyTrackingInfo
 
-                text: "Body tracking support is experimental on OpenXR. Calibration is incorrect, and tracking only works the Monado runtime currently. Other runtime vendors' body tracking extensions may be supported in the future."
+                text: "Body tracking is experimental on OpenXR. Monado's xdev tracker extension is partially supported, but calibration is broken. Other runtimes' body tracking extensions may be supported in the future."
                 size: 12
 
                 color: hifi.colors.white
