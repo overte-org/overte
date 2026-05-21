@@ -50,6 +50,10 @@ Rectangle {
                 color: "transparent"
             }
             text:""
+
+            onTextChanged: {
+                scrollView.contentY = Math.max(0, contentHeight - height);
+            }
         }
     }
 
@@ -80,7 +84,6 @@ Rectangle {
 
         // white-space: pre-wrap preserves white space at the start of lines
         textArea.append(`<span style="color: ${line.color}; white-space: pre-wrap">[${line.date}] [${line.scriptFileName}] ${line.type.length > 0 ? line.type+' - ' : ""}${message}</span>`);
-        logView.ScrollBar.vertical.position = Math.max(logView.contentHeight - logView.height, 0);
     }
 
     function clearWindow() {
