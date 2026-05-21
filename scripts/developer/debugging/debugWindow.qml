@@ -52,7 +52,7 @@ Rectangle {
             text:""
 
             onTextChanged: {
-                scrollView.contentY = Math.max(0, contentHeight - height);
+                logView.ScrollBar.vertical.position = 1.0 - logView.ScrollBar.vertical.size;
             }
         }
     }
