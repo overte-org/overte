@@ -122,7 +122,7 @@ private:
         bool _wantsCalibrate = false;
 
         XrHandTrackerEXT _handTracker[2] = {XR_NULL_HANDLE, XR_NULL_HANDLE};
-
+        bool _handTrackingEnabled = true;
         bool _hapticsEnabled = true;
 
         bool initActions();
