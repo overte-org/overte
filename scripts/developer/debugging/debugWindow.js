@@ -107,7 +107,7 @@ var sendToLogWindow = function(type, message, scriptFileName) {
             date: getFormattedDate(),
             scriptFileName: scriptFileName,
             type: type,
-            message: message, // "[" + getFormattedDate() + "] " + "[" + scriptFileName + "] " + typeFormatted + message
+            message: message,
         });
     }
 };
