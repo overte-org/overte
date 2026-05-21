@@ -257,7 +257,7 @@ void VKTextureTransferEngine::processTransferQueues() {
     // while the background thread is working.
     //
     // This will queue jobs until _queuedBufferSize can't be increased without exceeding
-    // GLVariableAllocationTexture::MAX_BUFFER_SIZE or there is no more work to be done
+    // VKVariableAllocationTexture::MAX_BUFFER_SIZE or there is no more work to be done
     populateActiveBufferQueue();
 #if !THREADED_TEXTURE_BUFFERING
     processActiveBufferQueue();
@@ -281,7 +281,7 @@ void VKTextureTransferEngine::processTransferQueues() {
             if (tranferJob->sourceMip() < varVkTexture->populatedMip()) {
                 tranferJob->transfer(texturePointer);
             }
-            // The pop_front MUST be the last call since all of these varaibles in scope are
+            // The pop_front MUST be the last call since all of these variables in scope are
             // references that will be invalid after the pop
             activeTransferQueue.pop_front();
         }
@@ -401,7 +401,7 @@ void VKTextureTransferEngine::populateTransferQueue(const TexturePointer& textur
     }
 }
 
-// From the queue of textures to be promited
+// From the queue of textures to be promoted
 void VKTextureTransferEngine::processPromotes() {
     // FIXME use max allocated memory per frame instead of promotion count
     static const size_t MAX_ALLOCATED_BYTES_PER_FRAME = VKVariableAllocationSupport::MAX_BUFFER_SIZE;
@@ -513,7 +513,7 @@ void VKVariableAllocationSupport::sanityCheck() const {
 }
 
 // FIXME hack for stats display
-QString getTextureMemoryPressureModeString() {
+QString getTextureMemoryPressureModeStringVK() {
     switch (_memoryPressureState) {
         case MemoryPressureState::Undersubscribed:
             return "Undersubscribed";

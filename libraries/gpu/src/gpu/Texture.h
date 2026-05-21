@@ -506,7 +506,15 @@ public:
     void setExternalRecycler(const ExternalRecycler& recycler);
     ExternalRecycler getExternalRecycler() const;
 
+    /**
+     * @brief Textures flagged as important cannot have their mipmaps unloaded from GPU memory after they are loaded.
+     * @return `true` if the texture mipmaps cannot be unloaded.
+     */
     bool getImportant() const { return _important; }
+
+    /**
+     * @param important `true` if the texture mipmaps should not be unloaded from the GPU memory after they are loaded.
+     */
     void setImportant(bool important) { _important = important; }
 
     const GPUObjectPointer gpuObject {};

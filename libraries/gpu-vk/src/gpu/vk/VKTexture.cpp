@@ -193,6 +193,23 @@ VkImageViewType VKTexture::getVKTextureType(const Texture& texture) {
     return VK_IMAGE_VIEW_TYPE_2D;
 }
 
+uint8_t VKTexture::getFaceCount(VkImageViewType target) {
+    switch (target) {
+        case VK_IMAGE_VIEW_TYPE_1D:
+        case VK_IMAGE_VIEW_TYPE_2D:
+        case VK_IMAGE_VIEW_TYPE_3D:
+        case VK_IMAGE_VIEW_TYPE_1D_ARRAY:
+        case VK_IMAGE_VIEW_TYPE_2D_ARRAY:
+            return 1;
+        case VK_IMAGE_VIEW_TYPE_CUBE:
+        case VK_IMAGE_VIEW_TYPE_CUBE_ARRAY:
+            return 6;
+        default:
+            Q_UNREACHABLE();
+            break;
+    }
+}
+
 // From VKS
 void VKAttachmentTexture::createTexture(VKBackend &backend) {
     VkImageCreateInfo imageCI = vks::initializers::imageCreateInfo();
@@ -962,20 +979,21 @@ void GLVariableAllocationSupport::sanityCheck() const {
 }*/
 
 //VKTODO:
-/*TransferJob::TransferJob(const Texture& texture,
+TransferJob::TransferJob(const Texture& texture,
                          uint16_t sourceMip,
                          uint16_t targetMip,
                          uint8_t face,
                          uint32_t lines,
                          uint32_t lineOffset) {
     auto transferDimensions = texture.evalMipDimensions(sourceMip);
-    GLenum format;
+    /*GLenum format;
     GLenum internalFormat;
     GLenum type;
-    GLTexelFormat texelFormat = GLTexelFormat::evalGLTexelFormat(texture.getTexelFormat(), texture.getStoredMipFormat());
+    //evalTexelFormatInternal(_gpuObject.getTexelFormat(), backend.getContext())
+    GLTexelFormat texelFormat = evalTexelFormatInternal(texture.getTexelFormat(), texture.getStoredMipFormat());
     format = texelFormat.format;
     internalFormat = texelFormat.internalFormat;
-    type = texelFormat.type;
+    type = texelFormat.type;*/
     _transferSize = texture.getStoredMipFaceSize(sourceMip, face);
 
     // If we're copying a subsection of the mip, do additional calculations to find the size and offset of the segment
@@ -989,8 +1007,8 @@ void GLVariableAllocationSupport::sanityCheck() const {
 
     Backend::texturePendingGPUTransferMemSize.update(0, _transferSize);
 
-    if (_transferSize > GLVariableAllocationSupport::MAX_TRANSFER_SIZE) {
-        qCWarning(gpugllogging) << "Transfer size of " << _transferSize << " exceeds theoretical maximum transfer size";
+    if (_transferSize > VKVariableAllocationSupport::MAX_TRANSFER_SIZE) {
+        qCWarning(gpu_vk_logging) << "Transfer size of " << _transferSize << " exceeds theoretical maximum transfer size";
     }
 
     // Buffering can invoke disk IO, so it should be off of the main and render threads
@@ -999,7 +1017,7 @@ void GLVariableAllocationSupport::sanityCheck() const {
         if (mipStorage) {
             _mipData = mipStorage->createView(_transferSize, _transferOffset);
         } else {
-            qCWarning(gpugllogging) << "Buffering failed because mip could not be retrieved from texture "
+            qCWarning(gpu_vk_logging) << "Buffering failed because mip could not be retrieved from texture "
                                     << texture->source().c_str();
         }
     };
@@ -1007,11 +1025,12 @@ void GLVariableAllocationSupport::sanityCheck() const {
     _transferLambda = [=](const TexturePointer& texture) {
         if (_mipData) {
             auto gltexture = Backend::getGPUObject<VKTexture>(*texture);
-            gltexture->copyMipFaceLinesFromTexture(targetMip, face, transferDimensions, lineOffset, internalFormat, format,
-                                                   type, _mipData->size(), _mipData->readData());
+            //VKTODO:
+            //gltexture->copyMipFaceLinesFromTexture(targetMip, face, transferDimensions, lineOffset, internalFormat, format,
+            //                                       type, _mipData->size(), _mipData->readData());
             _mipData.reset();
         } else {
-            qCWarning(gpugllogging) << "Transfer failed because mip could not be retrieved from texture "
+            qCWarning(gpu_vk_logging) << "Transfer failed because mip could not be retrieved from texture "
                                     << texture->source().c_str();
         }
     };
@@ -1022,7 +1041,7 @@ TransferJob::TransferJob(uint16_t sourceMip, const std::function<void()>& transf
 
 TransferJob::~TransferJob() {
     Backend::texturePendingGPUTransferMemSize.update(_transferSize, 0);
-}*/
+}
 
 VkDescriptorImageInfo VKStrictResourceTexture::getDescriptorImageInfo() {
     VkDescriptorImageInfo result {};
@@ -1031,3 +1050,266 @@ VkDescriptorImageInfo VKStrictResourceTexture::getDescriptorImageInfo() {
     result.imageView = _vkImageView;
     return result;
 }
+
+VKVariableAllocationTexture::VKVariableAllocationTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture) : VKTexture(backend, texture, true) {
+}
+
+VKVariableAllocationTexture::~VKVariableAllocationTexture() {
+}
+
+#if GPU_BINDLESS_TEXTURES
+const GL45Texture::Bindless& GL45VariableAllocationTexture::getBindless() const {
+    // The parent call may re-initialize the _bindless member, so we need to call it first
+    const auto& result = Parent::getBindless();
+    // Make sure the referenced structure has the correct minimum available mip value
+    _bindless.minMip = _populatedMip - _allocatedMip;
+    // Now return the result
+    return result;
+}
+#endif
+
+// VKTODO
+/*Size VKVariableAllocationTexture::copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face, const uvec3& size, uint32_t yOffset, GLenum internalFormat, GLenum format, GLenum type, Size sourceSize, const void* sourcePointer) const {
+    Size amountCopied = 0;
+    amountCopied = Parent::copyMipFaceLinesFromTexture(mip, face, size, yOffset, internalFormat, format, type, sourceSize, sourcePointer);
+    return amountCopied;
+}*/
+
+// VKTODO
+/*void copyTexGPUMem(const gpu::Texture& texture, GLenum texTarget, GLuint srcId, GLuint destId, uint16_t numMips, uint16_t srcMipOffset, uint16_t destMipOffset, uint16_t populatedMips) {
+    for (uint16_t mip = populatedMips; mip < numMips; ++mip) {
+        auto mipDimensions = texture.evalMipDimensions(mip);
+        uint16_t targetMip = mip - destMipOffset;
+        uint16_t sourceMip = mip - srcMipOffset;
+        auto faces = VKTexture::getFaceCount(texTarget);
+        for (uint8_t face = 0; face < faces; ++face) {
+            glCopyImageSubData(
+                srcId, texTarget, sourceMip, 0, 0, face,
+                destId, texTarget, targetMip, 0, 0, face,
+                mipDimensions.x, mipDimensions.y, 1
+                );
+            (void)CHECK_GL_ERROR();
+        }
+    }
+}*/
+
+// VKTODO
+/*void VKVariableAllocationTexture::copyTextureMipsInGPUMem(GLuint srcId, GLuint destId, uint16_t srcMipOffset, uint16_t destMipOffset, uint16_t populatedMips) {
+    uint16_t numMips = _gpuObject.getNumMips();
+    copyTexGPUMem(_gpuObject, _target, srcId, destId, numMips, srcMipOffset, destMipOffset, populatedMips);
+}*/
+
+// Managed size resource textures
+VKResourceTexture::VKResourceTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture) : VKVariableAllocationTexture(backend, texture) {
+    auto mipLevels = texture.getNumMips();
+    _allocatedMip = mipLevels;
+    _maxAllocatedMip = _populatedMip = mipLevels;
+    _minAllocatedMip = texture.minAvailableMipLevel();
+
+    for (uint16_t mip = _minAllocatedMip; mip < mipLevels; ++mip) {
+        if (glm::all(glm::lessThanEqual(texture.evalMipDimensions(mip), INITIAL_MIP_TRANSFER_DIMENSIONS))) {
+            _maxAllocatedMip = _populatedMip = mip;
+            break;
+        }
+    }
+
+    auto targetMip = _populatedMip - std::min<uint16_t>(_populatedMip, 2);
+    uint16_t allocatedMip = std::max<uint16_t>(_minAllocatedMip, targetMip);
+
+    allocateStorage(allocatedMip);
+    copyMipsFromTexture();
+    // VKTODO:
+    //syncSampler(texture.getSampler());
+}
+
+void VKResourceTexture::allocateStorage(uint16 allocatedMip) {
+    /*_allocatedMip = allocatedMip;
+    const GLTexelFormat texelFormat = GLTexelFormat::evalGLTexelFormat(_gpuObject.getTexelFormat());
+    const auto dimensions = _gpuObject.evalMipDimensions(_allocatedMip);
+    const auto totalMips = _gpuObject.getNumMips();
+    const auto mips = totalMips - _allocatedMip;
+    glTextureStorage2D(_id, mips, texelFormat.internalFormat, dimensions.x, dimensions.y);
+    auto mipLevels = _gpuObject.getNumMips();
+    _size = 0;
+    for (uint16_t mip = _allocatedMip; mip < mipLevels; ++mip) {
+        _size += _gpuObject.evalMipSize(mip);
+    }
+    Backend::textureResourceGPUMemSize.update(0, _size);*/
+}
+
+Size VKResourceTexture::copyMipsFromTexture() {
+    /*auto mipLevels = _gpuObject.getNumMips();
+    size_t maxFace = GLTexture::getFaceCount(_target);
+    Size amount = 0;
+    for (uint16_t sourceMip = _populatedMip; sourceMip < mipLevels; ++sourceMip) {
+        uint16_t targetMip = sourceMip - _allocatedMip;
+        for (uint8_t face = 0; face < maxFace; ++face) {
+            amount += copyMipFaceFromTexture(sourceMip, targetMip, face);
+        }
+    }
+    incrementPopulatedSize(amount);
+    return amount;*/
+}
+
+/*void VKResourceTexture::syncSampler(const Sampler& sampler) const {
+    Parent::syncSampler(sampler);
+#if GPU_BINDLESS_TEXTURES
+    if (!isBindless()) {
+        glTextureParameteri(_id, GL_TEXTURE_BASE_LEVEL, _populatedMip - _allocatedMip);
+    }
+#else
+    glTextureParameteri(_id, GL_TEXTURE_BASE_LEVEL, _populatedMip - _allocatedMip);
+#endif
+}
+
+size_t VKResourceTexture::promote() {
+    PROFILE_RANGE(render_gpu_gl, __FUNCTION__);
+    Q_ASSERT(_allocatedMip > 0);
+
+    uint16_t targetAllocatedMip = _allocatedMip - std::min<uint16_t>(_allocatedMip, 2);
+    targetAllocatedMip = std::max<uint16_t>(_minAllocatedMip, targetAllocatedMip);
+
+#if GPU_BINDLESS_TEXTURES
+    bool bindless = isBindless();
+    if (bindless) {
+        releaseBindless();
+    }
+#endif
+
+    GLuint oldId = _id;
+    auto oldSize = _size;
+    uint16_t oldAllocatedMip = _allocatedMip;
+
+    // create new texture
+    const_cast<GLuint&>(_id) = allocate(_gpuObject);
+
+    // allocate storage for new level
+    allocateStorage(targetAllocatedMip);
+
+    // copy pre-existing mips
+    copyTextureMipsInGPUMem(oldId, _id, oldAllocatedMip, _allocatedMip, _populatedMip);
+
+#if GPU_BINDLESS_TEXTURES
+    if (bindless) {
+        getBindless();
+    }
+#endif
+
+    // destroy the old texture
+    glDeleteTextures(1, &oldId);
+
+    // Update sampler
+    _cachedSampler = getInvalidSampler();
+    syncSampler(_gpuObject.getSampler());
+
+    // update the memory usage
+    Backend::textureResourceGPUMemSize.update(oldSize, 0);
+    // no change to Backend::textureResourcePopulatedGPUMemSize
+    return (_size - oldSize);
+}
+
+size_t VKResourceTexture::demote() {
+    PROFILE_RANGE(render_gpu_gl, __FUNCTION__);
+    Q_ASSERT(_allocatedMip < _maxAllocatedMip);
+    auto oldId = _id;
+    auto oldSize = _size;
+    auto oldPopulatedMip = _populatedMip;
+
+#if GPU_BINDLESS_TEXTURES
+    bool bindless = isBindless();
+    if (bindless) {
+        releaseBindless();
+    }
+#endif
+
+    // allocate new texture
+    const_cast<GLuint&>(_id) = allocate(_gpuObject);
+    uint16_t oldAllocatedMip = _allocatedMip;
+    allocateStorage(_allocatedMip + 1);
+    _populatedMip = std::max(_populatedMip, _allocatedMip);
+
+    // copy pre-existing mips
+    copyTextureMipsInGPUMem(oldId, _id, oldAllocatedMip, _allocatedMip, _populatedMip);
+
+#if GPU_BINDLESS_TEXTURES
+    if (bindless) {
+        getBindless();
+    }
+#endif
+
+    // destroy the old texture
+    glDeleteTextures(1, &oldId);
+
+    // Update sampler
+    _cachedSampler = getInvalidSampler();
+    syncSampler(_gpuObject.getSampler());
+
+    // update the memory usage
+    Backend::textureResourceGPUMemSize.update(oldSize, 0);
+    // Demoting unpopulate the memory delta
+    if (oldPopulatedMip != _populatedMip) {
+        auto numPopulatedDemoted = _populatedMip - oldPopulatedMip;
+        Size amountUnpopulated = 0;
+        for (int i = 0; i < numPopulatedDemoted; i++) {
+            amountUnpopulated += _gpuObject.evalMipSize(oldPopulatedMip + i);
+        }
+        decrementPopulatedSize(amountUnpopulated);
+    }
+    return (oldSize - _size);
+}*/
+
+void VKResourceTexture::populateTransferQueue(TransferQueue& pendingTransfers) {
+    PROFILE_RANGE(gpu_vk, __FUNCTION__);
+    sanityCheck();
+
+    if (_populatedMip <= _allocatedMip) {
+        return;
+    }
+
+    const uint8_t maxFace = VKTexture::getFaceCount(_target);
+    uint16_t sourceMip = _populatedMip;
+    do {
+        --sourceMip;
+        auto targetMip = sourceMip - _allocatedMip;
+        auto mipDimensions = _gpuObject.evalMipDimensions(sourceMip);
+        for (uint8_t face = 0; face < maxFace; ++face) {
+            if (!_gpuObject.isStoredMipFaceAvailable(sourceMip, face)) {
+                continue;
+            }
+
+            // If the mip is less than the max transfer size, then just do it in one transfer
+            if (glm::all(glm::lessThanEqual(mipDimensions, MAX_TRANSFER_DIMENSIONS))) {
+                // Can the mip be transferred in one go
+                pendingTransfers.emplace(new TransferJob(_gpuObject, sourceMip, targetMip, face));
+                continue;
+            }
+
+            // break down the transfers into chunks so that no single transfer is
+            // consuming more than X bandwidth
+            // For compressed format, regions must be a multiple of the 4x4 tiles, so enforce 4 lines as the minimum block
+            auto mipSize = _gpuObject.getStoredMipFaceSize(sourceMip, face);
+            const auto lines = mipDimensions.y;
+            const uint32_t BLOCK_NUM_LINES{ 4 };
+            const auto numBlocks = (lines + (BLOCK_NUM_LINES - 1)) / BLOCK_NUM_LINES;
+            auto bytesPerBlock = mipSize / numBlocks;
+            Q_ASSERT(0 == (mipSize % lines));
+            uint32_t linesPerTransfer = BLOCK_NUM_LINES * (uint32_t)(MAX_TRANSFER_SIZE / bytesPerBlock);
+            uint32_t lineOffset = 0;
+            while (lineOffset < lines) {
+                uint32_t linesToCopy = std::min<uint32_t>(lines - lineOffset, linesPerTransfer);
+                pendingTransfers.emplace(new TransferJob(_gpuObject, sourceMip, targetMip, face, linesToCopy, lineOffset));
+                lineOffset += linesToCopy;
+            }
+        }
+
+        // queue up the sampler and populated mip change for after the transfer has completed
+        pendingTransfers.emplace(new TransferJob(sourceMip, [=, this] {
+            _populatedMip = sourceMip;
+            incrementPopulatedSize(_gpuObject.evalMipSize(sourceMip));
+            sanityCheck();
+            //VKTODO
+            //syncSampler(_gpuObject.getSampler());
+        }));
+    } while (sourceMip != _allocatedMip);
+}
+

@@ -17,7 +17,7 @@
 #include "VKShared.h"
 
 #include "VKBackend.h"
-
+#include "VKTextureTransfer.h"
 
 namespace gpu { namespace vk {
 
@@ -153,7 +153,7 @@ public:
         const uint16 _maxMip { 0 };
     } _downsampleSource;
 
-    virtual size_t size() const { return _size; }
+    virtual size_t size() const { Q_ASSERT(false); return 0; }
     VKSyncState getSyncState() const { return _syncState; }
 
     // Is the storage out of date relative to the gpu texture?
@@ -176,6 +176,8 @@ public:
     // VKTODO: can be done later
     bool isOverMaxMemory() const { return false; };
 
+    uint8_t getFaceCount(VkImageViewType target);
+
 protected:
     static const size_t CUBE_NUM_FACES = 6;
     // VKTODO
@@ -195,7 +197,7 @@ protected:
     static float getMemoryPressure() { return 0; };
 
 
-    const size_t _size { 0 }; // true size as reported by the Vulkan api
+    //const size_t _size { 0 }; // true size as reported by the Vulkan api
     std::atomic<VKSyncState> _syncState { VKSyncState::Idle };
     VkFormat _vkTexelFormat { VK_FORMAT_UNDEFINED };
 
@@ -256,7 +258,7 @@ public:
     virtual ~VKFixedAllocationTexture() {};
 
 protected:
-    Size size() const override { return _size; }
+    Size size() const override { Q_ASSERT(false); return 0; }
 
     //void allocateStorage();
     // VKTODO
@@ -264,7 +266,7 @@ protected:
     // VKTODO
     //void updateSize() const override {};
     VmaAllocation _vmaAllocation;
-    const Size _size{ 0 };
+    //const Size _size{ 0 };
 };
 
 class VKAttachmentTexture : public VKFixedAllocationTexture {
@@ -316,6 +318,44 @@ protected:
     // This need to be moved to VKFixedAllocationTexture and allocated in allocateStorage()
     //VkDeviceMemory _vkDeviceMemory{ VK_NULL_HANDLE };
 };
+
+class VKVariableAllocationTexture : public VKTexture, public VKVariableAllocationSupport {
+    using Parent = VKTexture;
+    friend class VKBackend;
+    using PromoteLambda = std::function<void()>;
+
+protected:
+    VKVariableAllocationTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture);
+    ~VKVariableAllocationTexture() override;
+
+    Size size() const override { return _size; }
+
+    // VKTODO::
+    //Size copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face, const uvec3& size, uint32_t yOffset, GLenum internalFormat, GLenum format, GLenum type, Size sourceSize, const void* sourcePointer) const override;
+    //void copyTextureMipsInGPUMem(GLuint srcId, GLuint destId, uint16_t srcMipOffset, uint16_t destMipOffset, uint16_t populatedMips) override;
+
+#if GPU_BINDLESS_TEXTURES
+    virtual const Bindless& getBindless() const override;
+#endif
+};
+
+class VKResourceTexture : public VKVariableAllocationTexture {
+    using Parent = VKVariableAllocationTexture;
+    friend class VKBackend;
+
+protected:
+    VKResourceTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture);
+
+    //VKTODO
+    //void syncSampler(const Sampler& sampler) const override;
+    size_t promote() override {return 0;};//VKTODO
+    size_t demote() override {return 0;};//VKTODO
+    void populateTransferQueue(TransferQueue& pendingTransfers) override;
+
+    void allocateStorage(uint16 mip);
+    Size copyMipsFromTexture();
+};
+
 
 class VKExternalTexture: public VKTexture {
     friend class VKBackend;
