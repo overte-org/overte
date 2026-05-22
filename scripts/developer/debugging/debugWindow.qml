@@ -52,18 +52,47 @@ Rectangle {
             text:""
 
             onTextChanged: {
-                logView.ScrollBar.vertical.position = 1.0 - logView.ScrollBar.vertical.size;
+                if (logView.scrollDelay) {
+                    // Scroll to the bottom, but only once within a short period of time
+                    // rather than for every message.
+                    scrollTimer.restart();
+                } else {
+                    // Scroll to the bottom, immediately!
+                    logView.scrollToBottom();
+                    logView.scrollDelay = true;
+                }
             }
+        }
+
+        // Do we want to use the timer for the next scroll (true),
+        // or scroll immediately (false);
+        property bool scrollDelay: true
+
+        Timer {
+            id: scrollTimer
+            interval: 1000; running: false; repeat: false;
+            onTriggered: {
+                logView.scrollToBottom();
+            }
+        }
+
+        function scrollToBottom() { // This is not strictly necessary now, but is kept as a fail-safe
+            logView.ScrollBar.vertical.position = 1.0 - logView.ScrollBar.vertical.size;
         }
     }
 
+
     function fromScript(line) {
-        var MAX_LINE_COUNT = 2000;
-        var TRIM_LINES = 500;
-        if (textArea.lineCount > MAX_LINE_COUNT) {
-            var lines = textArea.text.split('\n');
-            lines.splice(0, TRIM_LINES);
-            textArea.text = lines.join('\n');
+        const MAX_LINE_COUNT = 2000; // post-wrap lines
+        const TRIM_LINES = 50; // pre-wrap lines
+        if (textArea.lineCount > MAX_LINE_COUNT) { // textArea.lineCount represents the number of visual line breaks after text wrap, so is not an accurate count of the number of log lines.
+
+            let charIndex = -1;
+            for (let i = 0; i < TRIM_LINES; i++) {
+                charIndex = textArea.text.indexOf('</span>', charIndex + 1); // This seems to result in removing ~3x the number of log lines then we requested.
+            }
+            // Here we use .remove, as editing the .text property directly results in breaking the built-in automatic scrolling when new lines are added.
+            textArea.remove(0, charIndex + 7); // + the length of </span>
         }
         switch(line.type) {
             case "WARNING":
