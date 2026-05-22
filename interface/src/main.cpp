@@ -144,8 +144,6 @@ int main(int argc, const char* argv[]) {
     // Journald by default in user applications is probably a bit too modern still.
     LogHandler::getInstance().setShouldUseJournald(false);
 
-
-    // Extend argv to enable WebGL rendering
     std::vector<const char*> argvExtended(&argv[0], &argv[argc]);
 #ifdef Q_OS_ANDROID
     argvExtended.push_back("--suppress-settings-reset");
