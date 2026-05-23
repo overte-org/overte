@@ -13,6 +13,8 @@
 
 #include "Context.h"
 
+#include <shared/GlobalAppProperties.h>
+
 using namespace gpu;
 
 Shader::ProgramMap Shader::_programMap;
@@ -64,13 +66,19 @@ Shader::Reflection Shader::getReflection(shader::Dialect dialect, shader::Varian
     return _source.getReflection(dialect, variant);
 }
 
-
 Shader::Reflection Shader::getReflection() const {
     // For sake of convenience i would like to be able to use a  "default" dialect that represents the reflection
     // of the source of the shader
     // What i really want, is a reflection that is designed for the gpu lib interface but we don't have that yet (glsl45 is the closest to that)
     // Until we have an implementation for this, we will return such default reflection from the one available and platform specific
-    return getReflection(shader::DEFAULT_DIALECT, shader::Variant::Mono);
+    auto DEFAULT_DIALECT = Dialect::glsl450;
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    if (backendApi == hifi::properties::GraphicsAPI::GL41) {
+        DEFAULT_DIALECT = Dialect::glsl410;
+    } else if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
+        DEFAULT_DIALECT = Dialect::glsl310es;
+    }
+    return getReflection(DEFAULT_DIALECT, shader::Variant::Mono);
 }
 
 Shader::~Shader()

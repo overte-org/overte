@@ -311,8 +311,6 @@ GLBackend::ElementResource GLBackend::getFormatFromGLUniform(GLenum gltype) {
         return ElementResource(Element(SCALAR, gpu::UINT32, SAMPLER), Resource::TEXTURE_2D_ARRAY);
     case GL_UNSIGNED_INT_SAMPLER_2D_MULTISAMPLE_ARRAY:
         return ElementResource(Element(SCALAR, gpu::UINT32, SAMPLER_MULTISAMPLE), Resource::TEXTURE_2D_ARRAY);
-
-#if !defined(USE_GLES)
     case GL_SAMPLER_1D:
         return ElementResource(Element(SCALAR, gpu::FLOAT, SAMPLER), Resource::TEXTURE_1D);
     case GL_SAMPLER_1D_ARRAY:
@@ -325,7 +323,6 @@ GLBackend::ElementResource GLBackend::getFormatFromGLUniform(GLenum gltype) {
         return ElementResource(Element(SCALAR, gpu::UINT32, SAMPLER), Resource::TEXTURE_1D);
     case GL_UNSIGNED_INT_SAMPLER_1D_ARRAY:
         return ElementResource(Element(SCALAR, gpu::UINT32, SAMPLER), Resource::TEXTURE_1D_ARRAY);
-#endif
 
     default:
         return ElementResource(Element(), Resource::BUFFER);

@@ -19,6 +19,7 @@
 #include <nlohmann/json.hpp>
 
 #include <shared/FileUtils.h>
+#include <shared/GlobalAppProperties.h>
 #include <gl/GLHelpers.h>
 
 // Can't use the Q_INIT_RESOURCE macro inside a namespace on Mac,
@@ -30,33 +31,20 @@ static void initShadersResources() {
 
 namespace shader {
 
-#if defined(USE_GLES)
-
-const Dialect DEFAULT_DIALECT = Dialect::glsl310es;
-
-const std::vector<Dialect>& allDialects() {
-    static const std::vector<Dialect> ALL_DIALECTS{ Dialect::glsl310es };
-    return ALL_DIALECTS;
-}
-
-#elif defined(Q_OS_MAC)
-
-const Dialect DEFAULT_DIALECT = Dialect::glsl410;
-
-const std::vector<Dialect>& allDialects() {
-    static const std::vector<Dialect> ALL_DIALECTS{ Dialect::glsl410 };
-    return ALL_DIALECTS;
-}
-
-#else
-
-const Dialect DEFAULT_DIALECT = Dialect::glsl450;
-
 const std::vector<Dialect> & allDialects() {
-    static const std::vector<Dialect> ALL_DIALECTS{ { Dialect::glsl450, Dialect::glsl410 } };
-    return ALL_DIALECTS;
+    static const std::vector<Dialect> ALL_DIALECTS_45{ { Dialect::glsl450, Dialect::glsl410 } };
+    static const std::vector<Dialect> ALL_DIALECTS_41{ { Dialect::glsl410 } };
+    static const std::vector<Dialect> ALL_DIALECTS_32ES{ { Dialect::glsl310es } };
+
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    if (backendApi == hifi::properties::GraphicsAPI::GL45) {
+        return ALL_DIALECTS_45;
+    } else if (backendApi == hifi::properties::GraphicsAPI::GL41) {
+        return ALL_DIALECTS_41;
+    } else {
+        return ALL_DIALECTS_32ES;
+    }
 }
-#endif
 
 const std::vector<Variant>& allVariants() {
     static const std::vector<Variant> ALL_VARIANTS{ { Variant::Mono, Variant::Stereo } };
@@ -68,14 +56,9 @@ const std::string& dialectPath(Dialect dialect) {
     static const std::string e410Path { "/410/" };
     static const std::string e450Path { "/450/" };
     switch (dialect) {
-#if defined(USE_GLES)
         case Dialect::glsl310es: return e310esPath;
-#else
-#if !defined(Q_OS_MAC)
         case Dialect::glsl450: return e450Path;
-#endif
         case Dialect::glsl410: return e410Path;
-#endif
         default: break;
     }
     throw std::runtime_error("Invalid dialect");
@@ -222,7 +205,7 @@ String Source::getSource(Dialect dialect, Variant variant) const {
         }
     }
 
-#if defined(Q_OS_ANDROID) || defined(USE_GLES)
+#if defined(Q_OS_ANDROID)
     // SPIRV cross injects "#extension GL_OES_texture_buffer : require" into the GLSL shaders,
     // which breaks android rendering
     return variantSource.scribe;

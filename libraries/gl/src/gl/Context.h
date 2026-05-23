@@ -23,17 +23,13 @@ class QOpenGLContext;
 class QThread;
 class QOpenGLDebugMessage;
 
-#if defined(Q_OS_WIN) && (defined(USE_GLES) || defined(USE_KHR_ROBUSTNESS))
-//#if defined(Q_OS_WIN)
-#define GL_CUSTOM_CONTEXT
-#endif
 namespace gl {
 
     class Context {
     protected:
         QWindow* _window { nullptr };
         static void destroyContext(QOpenGLContext* context);
-#if defined(GL_CUSTOM_CONTEXT)
+#ifdef Q_OS_WIN
         static bool USE_CUSTOM_CONTEXT;
 
         uint32_t _version { 0x0401 };
@@ -46,7 +42,7 @@ namespace gl {
     private:
         Context(const Context& other);
         void qtCreate(QOpenGLContext* shareContext);
-#if defined(GL_CUSTOM_CONTEXT)
+#ifdef Q_OS_WIN
         void createWrapperContext();
 #endif
 

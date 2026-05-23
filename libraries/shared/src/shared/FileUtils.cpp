@@ -24,6 +24,7 @@
 #include <QtCore/QFileSelector>
 #include <QtGui/QDesktopServices>
 
+#include "GlobalAppProperties.h"
 
 #include "../SharedLogging.h"
 
@@ -36,9 +37,10 @@ const QStringList& FileUtils::getFileSelectors() {
         extraSelectors << "android_" HIFI_ANDROID_APP;
 #endif
 
-#if defined(USE_GLES)
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
         extraSelectors << "gles";
-#endif
+    }
 
 #ifndef Q_OS_ANDROID
         extraSelectors << "webengine";

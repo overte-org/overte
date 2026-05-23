@@ -14,22 +14,6 @@
 
 #include <QtCore/QtGlobal>
 
-#if defined(USE_GLES)
-// Minimum GL ES version required is 3.2
-#define GL_MIN_VERSION_MAJOR 0x03
-#define GL_MIN_VERSION_MINOR 0x02
-#define GL_DEFAULT_VERSION_MAJOR GL_MIN_VERSION_MAJOR
-#define GL_DEFAULT_VERSION_MINOR GL_MIN_VERSION_MINOR
-#else
-// Minimum desktop GL version required is 4.1
-#define GL_MIN_VERSION_MAJOR 0x04
-#define GL_MIN_VERSION_MINOR 0x01
-#define GL_DEFAULT_VERSION_MAJOR 0x04
-#define GL_DEFAULT_VERSION_MINOR 0x05
-#endif
-
-#define MINIMUM_GL_VERSION ((GL_MIN_VERSION_MAJOR << 8) | GL_MIN_VERSION_MINOR)
-
 #include <glad/glad.h>
 
 #if defined(Q_OS_ANDROID)
