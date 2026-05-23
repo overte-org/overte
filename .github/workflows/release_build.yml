@@ -178,7 +178,9 @@ jobs:
 
     - name: Build installer
       shell: bash
-      run: cmake --build . --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
+      run: |
+        cmake --build . --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
+        rm build/Overte-*.json || true  # Remove JSON created by CPack External Generator to avoid it landing in the CI Artifacts.
 
     #- name: Sign installer (Windows)
     #  if: startsWith(matrix.os, 'windows')
