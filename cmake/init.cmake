@@ -58,3 +58,6 @@ if (UNIX)
 endif ()
 
 find_package(Python3 REQUIRED)
+
+set(CARGO_MANIFEST ${CMAKE_SOURCE_DIR}/Cargo.toml)
+set(CARGO_TARGET_DIR ${CMAKE_SOURCE_DIR}/target)

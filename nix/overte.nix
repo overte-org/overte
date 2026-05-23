@@ -9,7 +9,6 @@
   # dependencies
   glad,
   gif_creator,
-  artery-font-format,
   cgltf,
   etc2comp,
   openssl,
@@ -103,7 +102,6 @@ stdenv.mkDerivation {
       etc2comp
       cgltf
       gif_creator
-      artery-font-format
       openssl
       libGL
       glm

@@ -14,9 +14,9 @@
 #include <QImage>
 #include <QNetworkReply>
 #include <QThreadStorage>
+#include <vector>
 
-#include "artery-font/artery-font.h"
-#include "artery-font/std-artery-font.h"
+#include <render-utils.rs.h>
 
 #include <ColorUtils.h>
 
@@ -43,7 +43,8 @@ struct TextureVertex {
     glm::vec4 bounds;
     float isTofu;
     TextureVertex() {}
-    TextureVertex(const glm::vec2& pos, const glm::vec2& tex, const glm::vec4& bounds, bool isTofu) : pos(pos), tex(tex), bounds(bounds), isTofu(isTofu ? 1.0f : 0.0f) {}
+    TextureVertex(const glm::vec2& pos, const glm::vec2& tex, const glm::vec4& bounds, bool isTofu) :
+        pos(pos), tex(tex), bounds(bounds), isTofu(isTofu ? 1.0f : 0.0f) {}
 };
 
 static const int NUMBER_OF_INDICES_PER_QUAD = 6;  // 1 quad = 2 triangles
@@ -72,14 +73,10 @@ struct QuadBuilder {
         }
 
         // min = bottomLeft
-        vertices[0] = TextureVertex(min,
-                                    texMin + glm::vec2(0.0f, texSize.y), bounds, glyph.isTofu);
-        vertices[1] = TextureVertex(min + glm::vec2(size.x, 0.0f),
-                                    texMin + texSize, bounds, glyph.isTofu);
-        vertices[2] = TextureVertex(min + glm::vec2(0.0f, size.y),
-                                    texMin, bounds, glyph.isTofu);
-        vertices[3] = TextureVertex(min + size,
-                                    texMin + glm::vec2(texSize.x, 0.0f), bounds, glyph.isTofu);
+        vertices[0] = TextureVertex(min, texMin + glm::vec2(0.0f, texSize.y), bounds, glyph.isTofu);
+        vertices[1] = TextureVertex(min + glm::vec2(size.x, 0.0f), texMin + texSize, bounds, glyph.isTofu);
+        vertices[2] = TextureVertex(min + glm::vec2(0.0f, size.y), texMin, bounds, glyph.isTofu);
+        vertices[3] = TextureVertex(min + size, texMin + glm::vec2(texSize.x, 0.0f), bounds, glyph.isTofu);
     }
 };
 
@@ -96,7 +93,7 @@ void Font::handleFontNetworkReply() {
     if (requestReply->error() == QNetworkReply::NoError) {
         read(*requestReply);
     } else {
-        qDebug() << "Error downloading " << requestReply->url() << " - " << requestReply->errorString();
+        qCDebug(renderutils) << "Error downloading " << requestReply->url() << " - " << requestReply->errorString();
     }
 }
 
@@ -104,14 +101,15 @@ QThreadStorage<size_t> _readOffset;
 QThreadStorage<size_t> _readMax;
 int readHelper(void* dst, int length, void* data) {
     if (!dst) {
-        qWarning() << "readHelper called with NULL pointer as first argument: dst = " << dst << "; length = " << length << "; data =" << data;
+        qCWarning(renderutils) << "readHelper called with NULL pointer as first argument: dst = " << dst
+                               << "; length = " << length << "; data =" << data;
         return 0;
     }
 
     if (_readOffset.localData() + length > _readMax.localData()) {
         return -1;
     }
-    memcpy(dst, (char *)data + _readOffset.localData(), length);
+    memcpy(dst, (char*)data + _readOffset.localData(), length);
     _readOffset.setLocalData(_readOffset.localData() + length);
     return length;
 };
@@ -122,16 +120,17 @@ void Font::read(QIODevice& in) {
     QByteArray data = in.readAll();
     _readOffset.setLocalData(0);
     _readMax.setLocalData(data.length());
-    artery_font::StdArteryFont<float> arteryFont;
-    bool success = artery_font::decode<&readHelper, float, artery_font::StdList, artery_font::StdByteArray, artery_font::StdString>(arteryFont, (void *)data.data());
+    std::vector<uint8_t> vecData(data.data(), data.data() + data.length());
+    render_utils::rust::Arfont arteryFont;
+    render_utils::rust::ArfontError res = render_utils::rust::decode_arfont(vecData, arteryFont);
 
-    if (!success) {
-        qDebug() << "Font" << _family << "failed to decode.";
+    if (res != render_utils::rust::ArfontError::Ok) {
+        qCDebug(renderutils) << "Font" << _family << "failed to decode. Errcode:" << (uint32_t)res;
         return;
     }
 
-    if (arteryFont.variants.length() == 0) {
-        qDebug() << "Font" << _family << "has 0 variants.";
+    if (arteryFont.variants.empty()) {
+        qCDebug(renderutils) << "Font" << _family << "has 0 variants.";
         return;
     }
 
@@ -139,24 +138,24 @@ void Font::read(QIODevice& in) {
     const float ascent = arteryFont.variants[0].metrics.ascender;
     _fontHeight = ascent + fabs(arteryFont.variants[0].metrics.descender);
     _leading = arteryFont.variants[0].metrics.lineHeight;
-    _spaceWidth = 0.5f * arteryFont.variants[0].metrics.emSize; // We use half the emSize as a first guess for _spaceWidth
+    _spaceWidth = 0.5f * arteryFont.variants[0].metrics.emSize;  // We use half the emSize as a first guess for _spaceWidth
 
-    if (arteryFont.variants[0].glyphs.length() == 0) {
-        qDebug() << "Font" << _family << "has 0 glyphs.";
+    if (arteryFont.variants[0].glyphs.empty()) {
+        qCDebug(renderutils) << "Font" << _family << "has 0 glyphs.";
         return;
     }
 
     QVector<Glyph> glyphs;
-    glyphs.reserve(arteryFont.variants[0].glyphs.length());
-    for (int i = 0; i < arteryFont.variants[0].glyphs.length(); i++) {
+    glyphs.reserve(arteryFont.variants[0].glyphs.size());
+    for (size_t i = 0; i < arteryFont.variants[0].glyphs.size(); i++) {
         auto& g = arteryFont.variants[0].glyphs[i];
 
         Glyph glyph;
         glyph.c = g.codepoint;
-        glyph.texOffset = glm::vec2(g.imageBounds.l, g.imageBounds.b);
-        glyph.texSize = glm::vec2(g.imageBounds.r, g.imageBounds.t) - glyph.texOffset;
-        glyph.offset = glm::vec2(g.planeBounds.l, g.planeBounds.b);
-        glyph.size = glm::vec2(g.planeBounds.r, g.planeBounds.t) - glyph.offset;
+        glyph.texOffset = glm::vec2(g.image_bounds.l, g.image_bounds.b);
+        glyph.texSize = glm::vec2(g.image_bounds.r, g.image_bounds.t) - glyph.texOffset;
+        glyph.offset = glm::vec2(g.plane_bounds.l, g.plane_bounds.b);
+        glyph.size = glm::vec2(g.plane_bounds.r, g.plane_bounds.t) - glyph.offset;
         glyph.d = g.advance.h;
         glyphs.push_back(glyph);
 
@@ -166,35 +165,40 @@ void Font::read(QIODevice& in) {
         }
     }
 
-    if (arteryFont.images.length() == 0) {
-        qDebug() << "Font" << _family << "has 0 images.";
+    if (arteryFont.images.empty()) {
+        qCDebug(renderutils) << "Font" << _family << "has 0 images.";
         return;
     }
 
-    if (arteryFont.images[0].imageType != artery_font::ImageType::IMAGE_MTSDF) {
-        qDebug() << "Font" << _family << "has the wrong image type.  Expected MTSDF (7), got" << arteryFont.images[0].imageType;
+    if (arteryFont.images[0].image_type != render_utils::rust::ImageType::IMAGE_MTSDF) {
+        qCDebug(renderutils) << "Font" << _family << "has the wrong image type.  Expected MTSDF (7), got"
+                             << (uint32_t)arteryFont.images[0].image_type;
         return;
     }
 
-    if (arteryFont.images[0].encoding != artery_font::ImageEncoding::IMAGE_PNG) {
-        qDebug() << "Font" << _family << "has the wrong encoding.  Expected PNG (8), got" << arteryFont.images[0].encoding;
+    if (arteryFont.images[0].encoding != render_utils::rust::ImageEncoding::IMAGE_PNG) {
+        qCDebug(renderutils) << "Font" << _family << "has the wrong encoding.  Expected PNG (8), got"
+                             << (uint32_t)arteryFont.images[0].encoding;
         return;
     }
 
-    if (arteryFont.images[0].pixelFormat != artery_font::PixelFormat::PIXEL_UNSIGNED8) {
-        qDebug() << "Font" << _family << "has the wrong pixel format.  Expected unsigned char (8), got" << arteryFont.images[0].pixelFormat;
+    if (arteryFont.images[0].pixel_format != render_utils::rust::PixelFormat::PIXEL_UNSIGNED8) {
+        qCDebug(renderutils) << "Font" << _family << "has the wrong pixel format.  Expected unsigned char (8), got"
+                             << (uint32_t)arteryFont.images[0].pixel_format;
         return;
     }
 
     if (arteryFont.images[0].width == 0 || arteryFont.images[0].height == 0) {
-        qDebug() << "Font" << _family << "has image with width or height of 0.  Width:" << arteryFont.images[0].width << ", height:"<< arteryFont.images[0].height;
+        qCDebug(renderutils) << "Font" << _family
+                             << "has image with width or height of 0.  Width:" << arteryFont.images[0].width
+                             << ", height:" << arteryFont.images[0].height;
         return;
     }
 
     // read image data
     QImage image;
-    if (!image.loadFromData((const unsigned char*)arteryFont.images[0].data, arteryFont.images[0].data.length(), "PNG")) {
-        qDebug() << "Failed to read image for font" << _family;
+    if (!image.loadFromData((const unsigned char*)arteryFont.images[0].data.data(), arteryFont.images[0].data.size(), "PNG")) {
+        qCDebug(renderutils) << "Failed to read image for font" << _family;
         return;
     }
 
@@ -202,7 +206,7 @@ void Font::read(QIODevice& in) {
     glm::vec2 imageSize = toGlm(image.size());
     _distanceRange /= imageSize;
     bool hasTofu = false;
-    foreach(Glyph g, glyphs) {
+    foreach (Glyph g, glyphs) {
         // Adjust the pixel texture coordinates into UV coordinates,
         g.texSize /= imageSize;
         g.texOffset /= imageSize;
@@ -297,9 +301,7 @@ Font::Pointer Font::load(const QString& family) {
 
 Font::Font(const QString& family) : _family(family) {
     static std::once_flag once;
-    std::call_once(once, []{
-        Q_INIT_RESOURCE(fonts);
-    });
+    std::call_once(once, [] { Q_INIT_RESOURCE(fonts); });
 }
 
 // NERD RAGE: why doesn't QHash have a 'const T & operator[] const' member
@@ -316,7 +318,7 @@ QStringList Font::splitLines(const QString& str) const {
 
 QStringList Font::tokenizeForWrapping(const QString& str) const {
     QStringList tokens;
-    for(auto line : splitLines(str)) {
+    for (auto line : splitLines(str)) {
         if (!tokens.empty()) {
             tokens << QString('\n');
         }
@@ -327,7 +329,7 @@ QStringList Font::tokenizeForWrapping(const QString& str) const {
 
 float Font::computeTokenWidth(const QString& token) const {
     float advance = 0.0f;
-    foreach(QChar c, token) {
+    foreach (QChar c, token) {
         Q_ASSERT(c != '\n');
         advance += (c == ' ') ? _spaceWidth : getGlyph(c).d;
     }
@@ -339,7 +341,7 @@ glm::vec2 Font::computeExtent(const QString& str) const {
 
     QStringList lines = splitLines(str);
     if (!lines.empty()) {
-        for(const auto& line : lines) {
+        for (const auto& line : lines) {
             float tokenWidth = computeTokenWidth(line);
             extent.x = std::max(tokenWidth, extent.x);
         }
@@ -361,15 +363,19 @@ void Font::setupGPU() {
             std::make_tuple(false, false, true, false, false, sdf_text3D_forward),
             std::make_tuple(true, false, true, false, false, sdf_text3D_forward /*sdf_text3D_translucent_forward*/),
             std::make_tuple(false, true, true, false, false, sdf_text3D_translucent_unlit /*sdf_text3D_unlit_forward*/),
-            std::make_tuple(true, true, true,  false, false, sdf_text3D_translucent_unlit/*sdf_text3D_translucent_unlit_forward*/),
+            std::make_tuple(true, true, true, false, false,
+                            sdf_text3D_translucent_unlit /*sdf_text3D_translucent_unlit_forward*/),
             std::make_tuple(false, false, false, true, false, sdf_text3D_mirror),
             std::make_tuple(true, false, false, true, false, sdf_text3D_translucent_mirror),
             std::make_tuple(false, true, false, true, false, sdf_text3D_unlit_mirror),
             std::make_tuple(true, true, false, true, false, sdf_text3D_translucent_unlit_mirror),
             std::make_tuple(false, false, true, true, false, sdf_text3D_forward_mirror),
-            std::make_tuple(true, false, true, true, false, sdf_text3D_forward_mirror /*sdf_text3D_translucent_forward_mirror*/),
-            std::make_tuple(false, true, true, true, false, sdf_text3D_translucent_unlit_mirror /*sdf_text3D_unlit_forward_mirror*/),
-            std::make_tuple(true, true, true,  true, false, sdf_text3D_translucent_unlit_mirror/*sdf_text3D_translucent_unlit_forward_mirror*/),
+            std::make_tuple(true, false, true, true, false,
+                            sdf_text3D_forward_mirror /*sdf_text3D_translucent_forward_mirror*/),
+            std::make_tuple(false, true, true, true, false,
+                            sdf_text3D_translucent_unlit_mirror /*sdf_text3D_unlit_forward_mirror*/),
+            std::make_tuple(true, true, true, true, false,
+                            sdf_text3D_translucent_unlit_mirror /*sdf_text3D_translucent_unlit_forward_mirror*/),
             std::make_tuple(false, false, false, false, true, sdf_text3D_fade),
             std::make_tuple(true, false, false, false, true, sdf_text3D_translucent_fade),
             std::make_tuple(false, true, false, false, true, sdf_text3D_unlit_fade),
@@ -390,9 +396,8 @@ void Font::setupGPU() {
             auto state = std::make_shared<gpu::State>();
             state->setCullMode(gpu::State::CULL_BACK);
             state->setDepthTest(true, !transparent, ComparisonFunction::LESS_EQUAL);
-            state->setBlendFunction(transparent,
-                gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
-                gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
+            state->setBlendFunction(transparent, gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
+                                    gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
             if (transparent) {
                 PrepareStencil::testMask(*state);
             } else {
@@ -405,7 +410,8 @@ void Font::setupGPU() {
             state->setDepthBias(-2.0f);
             state->setDepthBiasSlopeScale(-2.0f);
 
-            _pipelines[std::make_tuple(transparent, unlit, forward, mirror, fade)] = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<5>(key)), state);
+            _pipelines[std::make_tuple(transparent, unlit, forward, mirror, fade)] =
+                gpu::Pipeline::create(gpu::Shader::createProgram(std::get<5>(key)), state);
         }
 
         // Sanity checks
@@ -425,8 +431,14 @@ void Font::setupGPU() {
     }
 }
 
-inline QuadBuilder adjustedQuadBuilderForAlignmentMode(const Glyph& glyph, glm::vec2 advance, float scale, float enlargeForShadows,
-                                                TextAlignment alignment, float rightSpacing, TextVerticalAlignment verticalAlignment, float bottomSpacing) {
+inline QuadBuilder adjustedQuadBuilderForAlignmentMode(const Glyph& glyph,
+                                                       glm::vec2 advance,
+                                                       float scale,
+                                                       float enlargeForShadows,
+                                                       TextAlignment alignment,
+                                                       float rightSpacing,
+                                                       TextVerticalAlignment verticalAlignment,
+                                                       float bottomSpacing) {
     if (alignment == TextAlignment::RIGHT) {
         advance.x += rightSpacing;
     } else if (alignment == TextAlignment::CENTER) {
@@ -440,8 +452,14 @@ inline QuadBuilder adjustedQuadBuilderForAlignmentMode(const Glyph& glyph, glm::
     return QuadBuilder(glyph, advance, scale, enlargeForShadows);
 }
 
-void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm::vec2& origin, const glm::vec2& bounds, float scale, bool enlargeForShadows,
-                         TextAlignment alignment, TextVerticalAlignment verticalAlignment) {
+void Font::buildVertices(Font::DrawInfo& drawInfo,
+                         const QString& str,
+                         const glm::vec2& origin,
+                         const glm::vec2& bounds,
+                         float scale,
+                         bool enlargeForShadows,
+                         TextAlignment alignment,
+                         TextVerticalAlignment verticalAlignment) {
     drawInfo.verticesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer);
     drawInfo.indicesBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::IndexBuffer);
     drawInfo.indexCount = 0;
@@ -524,7 +542,9 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
             int i = (int)glyphsAndCorners.size() - 1;
             while (!foundBottomSpacing && i >= 0) {
                 auto* nextGlyphAndCorner = &glyphsAndCorners[i];
-                bottomSpacing = std::max(bottomSpacing, bottomEdge - (nextGlyphAndCorner->second.y + (nextGlyphAndCorner->first.offset.y - nextGlyphAndCorner->first.size.y)));
+                bottomSpacing =
+                    std::max(bottomSpacing, bottomEdge - (nextGlyphAndCorner->second.y + (nextGlyphAndCorner->first.offset.y -
+                                                                                          nextGlyphAndCorner->first.size.y)));
                 i--;
                 while (i >= 0) {
                     auto& prevGlyphAndCorner = glyphsAndCorners[i];
@@ -534,7 +554,9 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
                         break;
                     }
                     nextGlyphAndCorner = &prevGlyphAndCorner;
-                    bottomSpacing = std::max(bottomSpacing, bottomEdge - (nextGlyphAndCorner->second.y + (nextGlyphAndCorner->first.offset.y - nextGlyphAndCorner->first.size.y)));
+                    bottomSpacing = std::max(bottomSpacing,
+                                             bottomEdge - (nextGlyphAndCorner->second.y + (nextGlyphAndCorner->first.offset.y -
+                                                                                           nextGlyphAndCorner->first.size.y)));
                     i--;
                 }
             }
@@ -544,8 +566,9 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
         while (i >= 0) {
             auto* nextGlyphAndCorner = &glyphsAndCorners[i];
             float rightSpacing = rightEdge - (nextGlyphAndCorner->second.x + nextGlyphAndCorner->first.d);
-            quadBuilders.push_back(adjustedQuadBuilderForAlignmentMode(nextGlyphAndCorner->first, nextGlyphAndCorner->second, scale, enlargeForShadows,
-                                                                       alignment, rightSpacing, verticalAlignment, bottomSpacing));
+            quadBuilders.push_back(adjustedQuadBuilderForAlignmentMode(nextGlyphAndCorner->first, nextGlyphAndCorner->second,
+                                                                       scale, enlargeForShadows, alignment, rightSpacing,
+                                                                       verticalAlignment, bottomSpacing));
             i--;
             while (i >= 0) {
                 auto& prevGlyphAndCorner = glyphsAndCorners[i];
@@ -555,8 +578,9 @@ void Font::buildVertices(Font::DrawInfo& drawInfo, const QString& str, const glm
                     break;
                 }
 
-                quadBuilders.push_back(adjustedQuadBuilderForAlignmentMode(prevGlyphAndCorner.first, prevGlyphAndCorner.second, scale, enlargeForShadows,
-                                                                           alignment, rightSpacing, verticalAlignment, bottomSpacing));
+                quadBuilders.push_back(adjustedQuadBuilderForAlignmentMode(prevGlyphAndCorner.first, prevGlyphAndCorner.second,
+                                                                           scale, enlargeForShadows, alignment, rightSpacing,
+                                                                           verticalAlignment, bottomSpacing));
 
                 nextGlyphAndCorner = &prevGlyphAndCorner;
                 i--;
@@ -610,20 +634,22 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const DrawPro
     const bool boundsChanged = props.bounds != drawInfo.bounds || props.origin != drawInfo.origin;
 
     // If we're switching to or from shadow effect mode, we need to rebuild the vertices
-    if (props.str != drawInfo.string || boundsChanged || props.alignment != drawInfo.alignment || props.verticalAlignment != drawInfo.verticalAlignment ||
-            (drawInfo.params.effect != textEffect && (textEffect == SHADOW_EFFECT || drawInfo.params.effect == SHADOW_EFFECT)) ||
-            (textEffect == SHADOW_EFFECT && props.scale != drawInfo.scale)) {
+    if (props.str != drawInfo.string || boundsChanged || props.alignment != drawInfo.alignment ||
+        props.verticalAlignment != drawInfo.verticalAlignment ||
+        (drawInfo.params.effect != textEffect && (textEffect == SHADOW_EFFECT || drawInfo.params.effect == SHADOW_EFFECT)) ||
+        (textEffect == SHADOW_EFFECT && props.scale != drawInfo.scale)) {
         drawInfo.scale = props.scale;
         drawInfo.alignment = props.alignment;
         drawInfo.verticalAlignment = props.verticalAlignment;
-        buildVertices(drawInfo, props.str, props.origin, props.bounds, props.scale, textEffect == SHADOW_EFFECT, drawInfo.alignment, drawInfo.verticalAlignment);
+        buildVertices(drawInfo, props.str, props.origin, props.bounds, props.scale, textEffect == SHADOW_EFFECT,
+                      drawInfo.alignment, drawInfo.verticalAlignment);
     }
 
     setupGPU();
 
     if (!drawInfo.paramsBuffer || boundsChanged || _needsParamsUpdate || drawInfo.params.color != props.color ||
-            drawInfo.params.effectColor != props.effectColor || drawInfo.params.effectThickness != props.effectThickness ||
-            drawInfo.params.effect != textEffect) {
+        drawInfo.params.effectColor != props.effectColor || drawInfo.params.effectThickness != props.effectThickness ||
+        drawInfo.params.effect != textEffect) {
         drawInfo.params.color = props.color;
         drawInfo.params.effectColor = props.effectColor;
         drawInfo.params.effectThickness = props.effectThickness;
@@ -645,7 +671,8 @@ void Font::drawString(gpu::Batch& batch, Font::DrawInfo& drawInfo, const DrawPro
         _needsParamsUpdate = false;
     }
 
-    batch.setPipeline(_pipelines[std::make_tuple(props.color.a < 1.0f, props.unlit, props.forward, props.mirror, props.fading)]);
+    batch.setPipeline(
+        _pipelines[std::make_tuple(props.color.a < 1.0f, props.unlit, props.forward, props.mirror, props.fading)]);
     batch.setInputFormat(_format);
     batch.setInputBuffer(0, drawInfo.verticesBuffer, 0, _format->getChannels().at(0)._stride);
     batch.setResourceTexture(render_utils::slot::texture::TextFont, _texture);
