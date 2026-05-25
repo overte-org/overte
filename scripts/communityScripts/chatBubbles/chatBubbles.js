@@ -46,7 +46,7 @@ let typingIndicators = {};
 function ChatBubbles_WrapText(text, maxChars = BUBBLE_WIDTH_MAX_CHARS) {
     // split on spaces, periods, commas, slashes, hyphens, colons, and semicolons,
     // collapsing whitespace down to one space
-    let tokens = text.replace(/[^\S\n]+/g, " ").split(/([ \.,\/\-:;\n\r])/);
+    let tokens = text.replace(/[^\S\n]+/g, " ").match(/([^ \.,\/\-:;\n\r]+[ \.,\/\-:;\n\r]?)/g);
     let lineWidth = 0;
     let lineChunk = [];
     let linesAccum = [];
