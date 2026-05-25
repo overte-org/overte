@@ -46,7 +46,7 @@ let typingIndicators = {};
 function ChatBubbles_WrapText(text, maxChars = BUBBLE_WIDTH_MAX_CHARS) {
     // split on spaces, periods, commas, slashes, hyphens, colons, and semicolons,
     // collapsing whitespace down to one space
-    let tokens = text.replace(/[^\S\n]+/g, " ").match(/([^ \.,\/\-:;\n\r]+[ \.,\/\-:;\n\r]?)/g);
+    let tokens = text.replace(/[^\S\n]+/g, " ").match(/([^ \.,\/\-:;\n]+[ \.,\/\-:;\n]?)/g);
     let lineWidth = 0;
     let lineChunk = [];
     let linesAccum = [];
@@ -55,7 +55,7 @@ function ChatBubbles_WrapText(text, maxChars = BUBBLE_WIDTH_MAX_CHARS) {
         // the split regex sometimes produces empty space tokens too, so skip those
         if (token.length < 1) { continue; }
 
-        const newLine = token.indexOf('\n') > -1;
+        const newLine = token.indexOf('\n') == 0;
 
         // This token is either a new line or
         // this token would go over the limit,
@@ -67,8 +67,24 @@ function ChatBubbles_WrapText(text, maxChars = BUBBLE_WIDTH_MAX_CHARS) {
             lineWidth = 0;
         }
 
-        // trim new line characters
-        token = token.replace(/[\n]+/, "");
+        // trim first new line character
+        if (newLine) {
+            token = token.slice(1);
+        }
+
+
+        // iterate through to push line before each other new line character
+        let index = 0;
+        while (index > -1) {
+            index = token.indexOf('\n');
+            if (index > -1) {
+                lineChunk.push(token.slice(0, index));
+                linesAccum.push(lineChunk.join(""));
+                lineChunk = []
+                lineWidth = 0;
+                token = token.slice(index+1);
+            }
+        }
 
         // it's *still* too long for an empty line,
         // so break it apart into smaller chunks
