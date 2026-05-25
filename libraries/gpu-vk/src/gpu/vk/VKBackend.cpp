@@ -118,6 +118,8 @@ void VKBackend::shutdown() {
     VK_CHECK_RESULT(vkQueueWaitIdle(_context.transferQueue) );
     VK_CHECK_RESULT(vkDeviceWaitIdle(_context.device->logicalDevice));
 
+    killTextureManagementStage();
+
     _context.shutdownWindows();
 
     // Release frames so their destructors can do a cleanup
@@ -266,6 +268,7 @@ void VKBackend::executeFrame(const FramePointer& frame) {
     }
     releaseFrameData();
     _frameCounter++;
+    _textureManagement._transferEngine->manageMemory();
     // VKTODO: add a good way of toggling this
     /*if (_frameCounter % 4000 == 0) {
         dumpVmaMemoryStats();
@@ -1049,14 +1052,14 @@ void VKBackend::bindResourceTexture(uint32_t slot, const gpu::TexturePointer& te
         return;
     }
     // check cache before thinking
-    if (_resource._textures[slot].texture == texture.get()) {
+    if (_resource._textures[slot].texture == texture) {
         return;
     }
 
     // One more True texture bound
     _stats._RSNumTextureBounded++;
 
-    _resource._textures[slot].texture = texture.get();
+    _resource._textures[slot].texture = texture;
 
     // VKTODO: check how it's done in GLBackend
     //_stats._RSAmountTextureMemoryBounded += object->size();
@@ -1064,8 +1067,11 @@ void VKBackend::bindResourceTexture(uint32_t slot, const gpu::TexturePointer& te
 
 void VKBackend::releaseResourceTexture(uint32_t slot) {
     auto& textureState = _resource._textures[slot];
-    if (valid(textureState.texture)) {
-        reset(textureState.texture);
+    //if (valid(textureState.texture)) {
+    //    reset(textureState.texture);
+    //}
+    if (textureState.texture) {
+        textureState.texture.reset();
     }
 }
 
@@ -1172,7 +1178,7 @@ void VKBackend::updateAttachmentLayoutsAfterRenderPass() {
             continue;
         }
         Q_ASSERT(buffer._texture);
-        auto gpuObject = syncGPUObject(buffer._texture.get());
+        auto gpuObject = syncGPUObject(buffer._texture);
         Q_ASSERT(gpuObject);
         auto attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuObject);
         Q_ASSERT(attachmentTexture);
@@ -1189,7 +1195,7 @@ void VKBackend::updateAttachmentLayoutsAfterRenderPass() {
 
     auto depthStencilBuffer = _currentFramebuffer->getDepthStencilBuffer();
     if (depthStencilBuffer) {
-        auto gpuObject = syncGPUObject(depthStencilBuffer.get());
+        auto gpuObject = syncGPUObject(depthStencilBuffer);
         Q_ASSERT(gpuObject);
         auto attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuObject);
         Q_ASSERT(attachmentTexture);
@@ -1328,8 +1334,8 @@ void VKBackend::renderPassTransfer(const Batch& batch) {
         // Insert barriers for the buffers from this transfer pass and clear barrier list.
         vkCmdPipelineBarrier(
             _currentCommandBuffer,
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT,
+            VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
             VK_FLAGS_NONE,
             0, nullptr,
             _currentFrame->bufferBarriers.size(), _currentFrame->bufferBarriers.data(),
@@ -1554,7 +1560,7 @@ VKBuffer* VKBackend::syncGPUObjectNoTransfer(const Buffer *buffer) {
 }
 
 
-VKTexture* VKBackend::syncGPUObject(const Texture *texture) {
+VKTexture* VKBackend::syncGPUObject(const std::shared_ptr<Texture> &texture) {
     if (!texture) {
         return nullptr;
     }
@@ -1692,27 +1698,17 @@ VKTexture* VKBackend::syncGPUObject(const Texture *texture) {
                 break;
 
 #if !FORCE_STRICT_TEXTURE
-                //VKTODO: there's no transfer engine for Vulkan yet
             case TextureUsageType::RESOURCE: {
-                // VKTODO
-                /*auto& transferEngine  = _textureManagement._transferEngine;
+                auto& transferEngine  = _textureManagement._transferEngine;
                 if (transferEngine->allowCreate()) {
-#if ENABLE_SPARSE_TEXTURE
-                    if (isTextureManagementSparseEnabled() && GL45Texture::isSparseEligible(texture)) {
-                        object = new GL45SparseResourceTexture(shared_from_this(), texture);
-                    } else {
-                        object = new GL45ResourceTexture(shared_from_this(), texture);
-                    }
-#else
-                    object = new GL45ResourceTexture(shared_from_this(), texture);
-#endif
-                    transferEngine->addMemoryManagedTexture(texturePointer);
+                    object = new VKResourceTexture(shared_from_this(), *texture);
+                    transferEngine->addMemoryManagedTexture(texture);
                 } else {
-                    auto fallback = texturePointer->getFallbackTexture();
+                    auto fallback = _defaultTexture;
                     if (fallback) {
-                        object = static_cast<GL45Texture*>(syncGPUObject(fallback));
+                        object = syncGPUObject(fallback);
                     }
-                }*/
+                }
                 break;
             }
 #endif
@@ -1722,15 +1718,14 @@ VKTexture* VKBackend::syncGPUObject(const Texture *texture) {
     } else {
 
         if (texture->getUsageType() == TextureUsageType::RESOURCE) {
-            // VKTODO
-            /*auto varTex = static_cast<GL45VariableAllocationTexture*> (object);
+            auto varTex = dynamic_cast<VKVariableAllocationTexture*> (object);
 
-            if (varTex->_minAllocatedMip > 0) {
-                auto minAvailableMip = texture.minAvailableMipLevel();
+            if (varTex && varTex->_minAllocatedMip > 0) {
+                auto minAvailableMip = texture->minAvailableMipLevel();
                 if (minAvailableMip < varTex->_minAllocatedMip) {
                     varTex->_minAllocatedMip = minAvailableMip;
                 }
-            }*/
+            }
         }
     }
 
@@ -2051,24 +2046,24 @@ void VKBackend::initDefaultTexture() {
         }
     }
 
-    _defaultTexture = gpu::Texture::create2D(gpu::Element{ gpu::VEC4, gpu::NUINT8, gpu::RGBA }, width, height, 1U,
+    _defaultTexture = gpu::Texture::createStrict(gpu::Element{ gpu::VEC4, gpu::NUINT8, gpu::RGBA }, width, height, 1U,
                                                 Sampler(Sampler::FILTER_MIN_MAG_LINEAR, Sampler::WRAP_CLAMP));
     _defaultTexture->setSource("defaultVulkanTexture");
     _defaultTexture->setStoredMipFormat(_defaultTexture->getTexelFormat());
     _defaultTexture->assignStoredMip(0, width * height * sizeof(uint8_t) * 4, (const gpu::Byte*)buffer.data());
-    _defaultTextureVk = syncGPUObject(_defaultTexture.get());
+    _defaultTextureVk = syncGPUObject(_defaultTexture);
     _defaultTextureImageInfo = _defaultTextureVk->getDescriptorImageInfo();
 
     // Skyboxes cannot use single layer texture on Vulkan so a separate one needs to be created
     Q_ASSERT(width == height);
-    _defaultSkyboxTexture = gpu::Texture::createCube(gpu::Element{ gpu::VEC4, gpu::NUINT8, gpu::RGBA }, width, 1U,
+    _defaultSkyboxTexture = gpu::Texture::createCubeStrict(gpu::Element{ gpu::VEC4, gpu::NUINT8, gpu::RGBA }, width, 1U,
                                                         Sampler(Sampler::FILTER_MIN_MAG_LINEAR, Sampler::WRAP_CLAMP));
     _defaultSkyboxTexture->setSource("defaultVulkanSkyboxTexture");
     _defaultSkyboxTexture->setStoredMipFormat(_defaultSkyboxTexture->getTexelFormat());
     for (int i = 0; i < 6; i++) {
         _defaultSkyboxTexture->assignStoredMipFace(0, i, width * height * sizeof(uint8_t) * 4, (const gpu::Byte*)buffer.data());
     }
-    _defaultSkyboxTextureVk = syncGPUObject(_defaultSkyboxTexture.get());
+    _defaultSkyboxTextureVk = syncGPUObject(_defaultSkyboxTexture);
     _defaultSkyboxTextureImageInfo = _defaultSkyboxTextureVk->getDescriptorImageInfo();
 }
 
@@ -2136,7 +2131,10 @@ void VKBackend::transitionInputImageLayouts() {
             }
             if (isAttachment) {
                 VkImageSubresourceRange mipSubRange = {};
-                mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                if (framebuffer->hasStencil()) {
+                    mipSubRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+                }
                 mipSubRange.baseMipLevel = 0;
                 mipSubRange.levelCount = 1;
                 mipSubRange.layerCount = 1;
@@ -2151,7 +2149,10 @@ void VKBackend::transitionInputImageLayouts() {
                 attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_GENERAL;
             } else {
                 VkImageSubresourceRange mipSubRange = {};
-                mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                if (texture.texture->getTexelFormat().getSemantic() == gpu::DEPTH_STENCIL) {
+                    mipSubRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+                }
                 mipSubRange.baseMipLevel = 0;
                 mipSubRange.levelCount = 1;
                 mipSubRange.layerCount = 1;
@@ -2189,7 +2190,10 @@ void VKBackend::transitionAttachmentImageLayouts(gpu::Framebuffer &framebuffer) 
             if (attachmentTexture->_gpuObject.isDepthStencilRenderTarget()) {
                 // VKTODO: Check if the same depth render target is used as one of the inputs, if so then don't update it here
                 VkImageSubresourceRange mipSubRange = {};
-                mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                if (buffer._texture->getTexelFormat().getSemantic() == gpu::DEPTH_STENCIL) {
+                    mipSubRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+                }
                 mipSubRange.baseMipLevel = 0;
                 mipSubRange.levelCount = 1;
                 mipSubRange.layerCount = 1;
@@ -2233,7 +2237,10 @@ void VKBackend::transitionAttachmentImageLayouts(gpu::Framebuffer &framebuffer) 
     if (attachmentTexture->_vkImageLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
         Q_ASSERT(attachmentTexture->_gpuObject.isDepthStencilRenderTarget());
         VkImageSubresourceRange mipSubRange = {};
-        mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+        mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        if (attachmentTexture->_gpuObject.getTexelFormat().getSemantic() == gpu::DEPTH_STENCIL) {
+            mipSubRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+        }
         mipSubRange.baseMipLevel = 0;
         mipSubRange.levelCount = 1;
         mipSubRange.layerCount = 1;
@@ -2473,6 +2480,7 @@ void VKBackend::releaseExternalTexture(GLuint id, const Texture::ExternalRecycle
 void VKBackend::initBeforeFirstFrame() {
     initTransform();
     initDefaultTexture();
+    initTextureManagementStage();
 }
 
 void VKBackend::initTransform() {
@@ -2829,7 +2837,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
         }
         Q_ASSERT(texture);
         VKAttachmentTexture *attachmentTexture = nullptr;
-        auto gpuTexture = syncGPUObject(texture.get());
+        auto gpuTexture = syncGPUObject(texture);
         Q_ASSERT(gpuTexture);
         attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
         Q_ASSERT(attachmentTexture);
@@ -2939,7 +2947,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
         if (!texture) {
             continue;
         }
-        auto gpuTexture = syncGPUObject(texture.get());
+        auto gpuTexture = syncGPUObject(texture);
         Q_ASSERT(gpuTexture);
         auto *attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
         Q_ASSERT(attachmentTexture);
@@ -2947,7 +2955,10 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
             if (attachmentTexture->_gpuObject.isDepthStencilRenderTarget()) {
                 // VKTODO: Check if the same depth render target is used as one of the inputs, if so then don't update it here
                 VkImageSubresourceRange mipSubRange = {};
-                mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
+                mipSubRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+                if (renderBuffer._texture->getTexelFormat().getSemantic() == gpu::DEPTH_STENCIL) {
+                    mipSubRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+                }
                 mipSubRange.baseMipLevel = 0;
                 mipSubRange.levelCount = 1;
                 mipSubRange.layerCount = 1;
@@ -2981,7 +2992,7 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
     if (masks & Framebuffer::BUFFER_STENCIL || masks & Framebuffer::BUFFER_DEPTH) {
         auto texture = framebuffer->getDepthStencilBuffer();
         Q_ASSERT(texture);
-        auto gpuTexture = syncGPUObject(texture.get());
+        auto gpuTexture = syncGPUObject(texture);
         Q_ASSERT(gpuTexture);
         auto *attachmentTexture = dynamic_cast<VKAttachmentTexture*>(gpuTexture);
         Q_ASSERT(attachmentTexture);
@@ -3039,8 +3050,8 @@ void VKBackend::do_blit(const Batch& batch, size_t paramOffset) {
 
     for (size_t i = 0; i < srcRenderBuffers.size(); i++) {
         if (srcRenderBuffers[i]._texture && dstRenderBuffers[i]._texture) {
-            auto source = syncGPUObject(srcRenderBuffers[i]._texture.get());
-            auto destination = syncGPUObject(dstRenderBuffers[i]._texture.get());
+            auto source = syncGPUObject(srcRenderBuffers[i]._texture);
+            auto destination = syncGPUObject(dstRenderBuffers[i]._texture);
             if (source && destination) {
                 auto srcAttachmentTexture = dynamic_cast<VKAttachmentTexture*>(source);
                 auto dstAttachmentTexture = dynamic_cast<VKAttachmentTexture*>(destination);
@@ -3051,8 +3062,8 @@ void VKBackend::do_blit(const Batch& batch, size_t paramOffset) {
         }
     }
     if (srcDepthStencilBuffer && dstDepthStencilBuffer) {
-        auto source = syncGPUObject(srcDepthStencilBuffer.get());
-        auto destination = syncGPUObject(dstDepthStencilBuffer.get());
+        auto source = syncGPUObject(srcDepthStencilBuffer);
+        auto destination = syncGPUObject(dstDepthStencilBuffer);
         if (source && destination) {
             auto srcAttachmentTexture = dynamic_cast<VKAttachmentTexture*>(source);
             auto dstAttachmentTexture = dynamic_cast<VKAttachmentTexture*>(destination);
@@ -3443,7 +3454,7 @@ void VKBackend::do_setResourceTexture(const Batch& batch, size_t paramOffset) {
     }
 
     // check cache before thinking
-    if (_resource._textures[slot].texture == resourceTexture.get()) {
+    if (_resource._textures[slot].texture == resourceTexture) {
         return;
     }
 
@@ -3453,7 +3464,7 @@ void VKBackend::do_setResourceTexture(const Batch& batch, size_t paramOffset) {
     // Always make sure the VKObject is in sync
     // VKTODO: Check when GLBacked synchronizes textures
 
-    _resource._textures[slot].texture = resourceTexture.get();
+    _resource._textures[slot].texture = resourceTexture;
 
     // VKTODO:
     //_stats._RSAmountTextureMemoryBounded += object->size();
@@ -3499,14 +3510,14 @@ void VKBackend::do_setResourceFramebufferSwapChainTexture(const Batch& batch, si
     }
 
     // check cache before thinking
-    if (_resource._textures[slot].texture == resourceTexture.get()) {
+    if (_resource._textures[slot].texture == resourceTexture) {
         return;
     }
 
     // One more True texture bound
     _stats._RSNumTextureBounded++;
 
-    _resource._textures[slot].texture = resourceTexture.get();
+    _resource._textures[slot].texture = resourceTexture;
 }
 
 std::array<VKBackend::CommandCall, Batch::NUM_COMMANDS> VKBackend::_commandCalls{ {

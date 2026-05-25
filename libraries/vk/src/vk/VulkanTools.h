@@ -87,6 +87,8 @@ namespace vks
         // Returns true if a given format has a stencil part
         VkBool32 formatHasStencil(VkFormat format);
 
+        // VKTODO: check all uses of this and choose better stage masks
+        // VKTODO: search for all VK_PIPELINE_STAGE_ALL_COMMANDS_BIT in the source code
         // Put an image memory barrier for setting an image layout on the sub resource into the given command buffer
         void setImageLayout(
             VkCommandBuffer cmdbuffer,
@@ -99,6 +101,7 @@ namespace vks
             VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
             VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
         // Uses a fixed sub resource layout with first mip level and layer
+        // VKTODO: check all uses of this and choose better stage masks
         void setImageLayout(
             VkCommandBuffer cmdbuffer,
             VkImage image,
@@ -109,6 +112,7 @@ namespace vks
             VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
         /** @brief Insert an image memory barrier into the command buffer */
+        // VKTODO: check all uses of this and choose better stage masks
         void insertImageMemoryBarrier(
             VkCommandBuffer cmdbuffer,
             VkImage image,

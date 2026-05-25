@@ -120,13 +120,6 @@ public:
         return object->getDescriptorImageInfo();
     }*/
 
-    // Used by derived classes and helpers to ensure the actual VK object exceeds the lifetime of `this`
-    /*VkImage takeOwnership() {
-        VkImage result = _id;
-        const_cast<VkImage&>(_id) = 0;
-        return result;
-    }*/
-
     virtual ~VKTexture();
 
     VkImage _vkImage{ VK_NULL_HANDLE };
@@ -176,7 +169,7 @@ public:
     // VKTODO: can be done later
     bool isOverMaxMemory() const { return false; };
 
-    uint8_t getFaceCount(VkImageViewType target);
+    static uint8_t getFaceCount(VkImageViewType target);
 
 protected:
     static const size_t CUBE_NUM_FACES = 6;
@@ -229,13 +222,17 @@ protected:
         };
         std::vector<std::vector<Mip>> mips;
     };
-    TransferData _transferData{};
     virtual void transfer(VKBackend &backend) = 0;
-    //virtual void syncSampler() const = 0;
+    virtual void syncSampler(const Sampler& sampler) = 0;
     // VKTODO
     //virtual void generateMips() const = 0;
     // VKTODO what does this mean?
     //virtual void withPreservedTexture(std::function<void()> f) const = 0;
+
+    static Sampler getInvalidSampler();
+
+    // This stores the texture handle (64 bits) in xy, the min mip available in z, and the sampler ID in w
+    mutable Sampler _cachedSampler { getInvalidSampler() };
 
 protected:
     void setSize(size_t size) const;
@@ -262,7 +259,7 @@ protected:
 
     //void allocateStorage();
     // VKTODO
-    //void syncSampler() const override;
+    void syncSampler(const Sampler& sampler) override {};
     // VKTODO
     //void updateSize() const override {};
     VmaAllocation _vmaAllocation;
@@ -295,6 +292,8 @@ protected:
 
 class VKStrictResourceTexture: public VKFixedAllocationTexture {
     friend class VKBackend;
+public:
+    void postTransfer(VKBackend &backend) override;
 
 protected:
     // VKTODO: how to handle mipmaps?
@@ -309,8 +308,8 @@ protected:
     ~VKStrictResourceTexture() override; // VKTODO: delete image and image view, release memory
     void createTexture(VKBackend &backend) override;
     void transfer(VKBackend &backend) override;
-    void postTransfer(VKBackend &backend) override;
     VkDescriptorImageInfo getDescriptorImageInfo() override;
+    TransferData _transferData{};
     //VkImage _vkImage { VK_NULL_HANDLE };
     VkImageView _vkImageView { VK_NULL_HANDLE };
     VkImageLayout _vkImageLayout {};
@@ -328,11 +327,16 @@ protected:
     VKVariableAllocationTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture);
     ~VKVariableAllocationTexture() override;
 
+    void allocateNewImage(uint16_t targetAllocatedMip, VkCommandBuffer &copyCmd);
+
     Size size() const override { return _size; }
 
-    // VKTODO::
-    //Size copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face, const uvec3& size, uint32_t yOffset, GLenum internalFormat, GLenum format, GLenum type, Size sourceSize, const void* sourcePointer) const override;
-    //void copyTextureMipsInGPUMem(GLuint srcId, GLuint destId, uint16_t srcMipOffset, uint16_t destMipOffset, uint16_t populatedMips) override;
+    void syncSampler(const Sampler& sampler) override {};
+
+    void copyTextureMipsInGPUMem(VkImage srcImage, VkImage dstImage,
+        uint16_t srcMipOffset, uint16_t destMipOffset, uint16_t populatedMips, VkCommandBuffer &copyCmd);
+
+    VmaAllocation _vmaAllocation;
 
 #if GPU_BINDLESS_TEXTURES
     virtual const Bindless& getBindless() const override;
@@ -342,18 +346,35 @@ protected:
 class VKResourceTexture : public VKVariableAllocationTexture {
     using Parent = VKVariableAllocationTexture;
     friend class VKBackend;
+public:
+    size_t promote() override;
+    size_t demote() override;
+    void populateTransferQueue(TransferQueue& pendingTransfers) override;
+
+    void postTransfer(VKBackend &backend) override;
 
 protected:
     VKResourceTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture);
 
-    //VKTODO
-    //void syncSampler(const Sampler& sampler) const override;
-    size_t promote() override {return 0;};//VKTODO
-    size_t demote() override {return 0;};//VKTODO
-    void populateTransferQueue(TransferQueue& pendingTransfers) override;
+    void syncSampler(const Sampler& sampler) override;
+    void updateImageView();
 
-    void allocateStorage(uint16 mip);
-    Size copyMipsFromTexture();
+    void createTexture(VKBackend &backend) override {}; // VKTODO
+    void transfer(VKBackend &backend) override {}; // VKTODO
+
+    VkDescriptorImageInfo getDescriptorImageInfo() override;
+
+    //void allocateStorage(uint16 mip);
+    Size copyMipsFromTexture(VkCommandBuffer &copyCmd);
+    Size copyMipFaceFromTexture(uint16_t sourceMip, uint16_t targetMip, uint8_t face, VkCommandBuffer &copyCmd);
+    Size copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face,
+        const uvec3& size, uint32_t yOffset,
+        Size sourceSize, const void* sourcePointer);
+
+    VkImageView _vkImageView { VK_NULL_HANDLE };
+    VkImageLayout _vkImageLayout {};
+    VkSampler _vkSampler { VK_NULL_HANDLE };
+    friend class TransferJob;
 };
 
 
@@ -377,6 +398,8 @@ public:
 
 protected:
     Size size() const override { return _size; }
+
+    void syncSampler(const Sampler& sampler) override {};
 
     //VmaAllocation _vmaAllocation;
     VkDeviceMemory _sharedMemory;

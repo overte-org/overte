@@ -41,7 +41,7 @@ void gpu::vk::VKFramebuffer::update() {
                 surface = b._texture;
                 if (surface) {
                     Q_ASSERT(TextureUsageType::RENDERBUFFER == surface->getUsageType());
-                    vkTexture = backend->syncGPUObject(surface.get());
+                    vkTexture = backend->syncGPUObject(surface);
                 } else {
                     vkTexture = nullptr;
                 }
@@ -103,7 +103,7 @@ void gpu::vk::VKFramebuffer::update() {
         auto backend = _backend.lock();
         if (_gpuObject.hasDepthStencil() && surface) {
             Q_ASSERT(TextureUsageType::RENDERBUFFER == surface->getUsageType());
-            vkTexture = backend->syncGPUObject(surface.get());
+            vkTexture = backend->syncGPUObject(surface);
         }
 
         if (vkTexture) {
@@ -361,6 +361,7 @@ uint32_t gpu::vk::VKFramebuffer::addAttachment(VKAttachmentCreateInfo createinfo
     attachment.subresourceRange = {};
     attachment.subresourceRange.aspectMask = aspectMask;
     attachment.subresourceRange.baseArrayLayer = subresource;
+    attachment.subresourceRange.levelCount = 1;
     attachment.subresourceRange.layerCount = 1; // Even though texture can have multiple layers, we only render to one of them currently.
 
     VkImageViewCreateInfo imageView = vks::initializers::imageViewCreateInfo();

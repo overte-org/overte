@@ -319,6 +319,7 @@ public:
     static TexturePointer create2DArray(const Element& texelFormat, uint16 width, uint16 height, uint16 numSlices, uint16 numMips = SINGLE_MIP, const Sampler& sampler = Sampler());
     static TexturePointer create3D(const Element& texelFormat, uint16 width, uint16 height, uint16 depth, uint16 numMips = SINGLE_MIP, const Sampler& sampler = Sampler());
     static TexturePointer createCube(const Element& texelFormat, uint16 width, uint16 numMips = 1, const Sampler& sampler = Sampler());
+    static TexturePointer createCubeStrict(const Element& texelFormat, uint16 width, uint16 numMips = 1, const Sampler& sampler = Sampler());
     static TexturePointer createRenderBuffer(const Element& texelFormat, uint16 width, uint16 height, uint16 numMips = SINGLE_MIP, const Sampler& sampler = Sampler());
     static TexturePointer createRenderBufferMultisample(const Element& texelFormat, uint16 width, uint16 height, uint16 numSamples, const Sampler& sampler = Sampler());
     static TexturePointer createRenderBufferArray(const Element& texelFormat, uint16 width, uint16 height, uint16 numSlices, uint16 numMips = SINGLE_MIP, const Sampler& sampler = Sampler());

@@ -117,7 +117,7 @@ void VKBuffer::transferWithBarrier(VKBackend &backend, VkCommandBuffer commandBu
     VkBufferMemoryBarrier bufferMemoryBarrier{
         .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
         .pNext = nullptr,
-        .srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT,
+        .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
         .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
@@ -128,8 +128,8 @@ void VKBuffer::transferWithBarrier(VKBackend &backend, VkCommandBuffer commandBu
 
     vkCmdPipelineBarrier(
         commandBuffer,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
         VK_FLAGS_NONE,
         0, nullptr,
         1, &bufferMemoryBarrier,
@@ -155,7 +155,7 @@ void VKBuffer::transferWithDelayedBarrier(VKBackend &backend, VkCommandBuffer co
     VkBufferMemoryBarrier bufferMemoryBarrier{
         .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
         .pNext = nullptr,
-        .srcAccessMask = VK_ACCESS_2_HOST_WRITE_BIT,
+        .srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT,
         .dstAccessMask = VK_ACCESS_SHADER_READ_BIT,
         .srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
         .dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
@@ -247,7 +247,7 @@ VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& gpuBuffer) : VKObject(
     transferVkBufferCI.pNext = nullptr;
     transferVkBufferCI.flags = 0;
     transferVkBufferCI.size = stagingAllocation.size == 0 ? 256 : stagingAllocation.size;
-    transferVkBufferCI.usage = usageFlags;
+    transferVkBufferCI.usage = VK_BUFFER_USAGE_2_TRANSFER_SRC_BIT;
     transferVkBufferCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     transferVkBufferCI.queueFamilyIndexCount = 0;
     transferVkBufferCI.pQueueFamilyIndices = nullptr;
@@ -264,7 +264,7 @@ VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& gpuBuffer) : VKObject(
     vkBufferCI.pNext = nullptr;
     vkBufferCI.flags = 0;
     vkBufferCI.size = allocation.size == 0 ? 256 : allocation.size;
-    vkBufferCI.usage = usageFlags;
+    vkBufferCI.usage = usageFlags | VK_BUFFER_USAGE_2_TRANSFER_DST_BIT;
     vkBufferCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkBufferCI.queueFamilyIndexCount = 0;
     vkBufferCI.pQueueFamilyIndices = nullptr;

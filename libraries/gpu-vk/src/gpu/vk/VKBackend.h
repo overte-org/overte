@@ -255,10 +255,10 @@ protected:
 
     struct ResourceStageState {
         struct TextureState {
-            TextureReference texture{};
+            TexturePointer texture{};
             TextureState& operator=(const TextureState& other) = delete;
             void reset() {
-                gpu::reset(texture);
+                texture.reset();
             }
         };
         struct BufferState {
@@ -370,7 +370,7 @@ private:
     vk::VKFramebuffer* syncGPUObject(const Framebuffer *framebuffer);
     VKBuffer* syncGPUObject(const Buffer *buffer);
     VKBuffer* syncGPUObjectNoTransfer(const Buffer *buffer);
-    VKTexture* syncGPUObject(const Texture *texture);
+    VKTexture* syncGPUObject(const std::shared_ptr<Texture> &texture);
     VKQuery* syncGPUObject(const Query *query);
 
     void blitToFramebuffer(VKAttachmentTexture &input, const Vec4i& srcViewport, VKAttachmentTexture &output, const Vec4i& dstViewport);
