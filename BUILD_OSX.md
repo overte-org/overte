@@ -104,12 +104,10 @@ Open the `overte.xcodeproj` file, choose `ALL_BUILD` from the Product > Scheme m
 
 If the build completes successfully, you will have built targets for all components located in the `build/${target_name}/Debug` directories.
 
-## FAQ
-
-1. **Problem:** Running the scheme `interface.app` from Xcode causes a crash for Interface related to `libgl`.
-    1. **Cause:** The target `gl` generates a binary called `libgl`. A macOS `libGL.framework` item gets loaded instead by Xcode.
-    2. **Solution:** In the Xcode target settings for `libgl`, set the version to `1.0.0`.
-2. **Problem:** CMake complains about Python 3 being missing.
-    1. **Cause:** CMake might be out of date.
-    2. **Solution:** Try updating your CMake binary with command `brew upgrade cmake`, or by downloading and running a newer CMake installer,
-                     depending on how you originally installed CMake. Please keep in mind the recommended CMake versions noted above.
+## Troubleshooting
+- `error: unable to spawn process '/bin/sh' (Argument list too long)`
+  Xcode sandboxes user scripts by putting all environment variables into the command, which then exceeds
+  macOS's maximum command length.. As far as I can tell,
+  there is no way to disable that through CMake (only inside the Xcode IDE).
+  *Make sure you are using Ninja instead, by appending `-G Ninja` to the CMake configuration step.*
+- Try updating CMake via `brew upgrade cmake`. Apple breaks things often and fast, so CMake requires updates pretty often.
