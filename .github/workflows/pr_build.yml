@@ -37,15 +37,28 @@ jobs:
               build_type: full
               qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
               rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
+            - os: Windows 2022
+              runner: depot-windows-2022-16
+              arch: x86_64
+              build_type: full
+              qt_source: aqt
+              rendering_backend: OpenGL
             #- os: macOS-10.15
             #  build_type: full
             #  qt_source: aqt
             - os: Ubuntu 22.04 OpenGL
               image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
-              runner: ubuntu-latest
+              runner: depot-ubuntu-24.04-16
               arch: amd64
               build_type: full
               qt_source: source
+              rendering_backend: OpenGL
+            - os: Ubuntu 22.04 OpenGL system package
+              image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+              runner: depot-ubuntu-24.04-16
+              arch: amd64
+              build_type: full
+              qt_source: system
               rendering_backend: OpenGL
             - os: Ubuntu 22.04 Vulkan
               image: docker.io/overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64
