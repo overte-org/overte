@@ -274,13 +274,13 @@ void OtherAvatar::setCollisionWithOtherAvatarsFlags() {
 }
 
 void OtherAvatar::interpolateJoints() {
+    auto now = usecTimestampNow();
+
     // there's no history to interpolate from,
     // just set the rig poses to whatever we have
     if ((size_t)_jointData.size() != _jointHistory.size()) {
         goto finishRigSetup;
     }
-
-    auto now = usecTimestampNow();
 
     for (int i = 0; i < _jointData.size(); i++) {
         const auto &history{_jointHistory[i]};
