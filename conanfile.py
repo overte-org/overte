@@ -104,6 +104,8 @@ class Overte(ConanFile):
 
         self.requires(openssl, force=True)
 
+        self.requires("glib/2.85.3", override=True) # Fix version conflict resulting from Qt and GStreamer.
+
     def generate(self):
         tc = CMakeToolchain(self)
 
