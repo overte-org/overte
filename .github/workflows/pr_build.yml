@@ -9,6 +9,8 @@ name: Pull Request CI Build
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+  pull_request_target:
+    types: [opened, synchronize, reopened]
 
 env:
   # Many environment variables are already set in our Docker images or in other Actions.
