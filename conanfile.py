@@ -39,12 +39,6 @@ class Overte(ConanFile):
         "qt*:qtwebview": "True",
         "qt*:qtxmlpatterns": "True",
         "qt*:qttools": "True",  # windeployqt for Windows
-        "qt*:with_dbus": "True",  # Required for Qt on Linux. Can be disabled for Windows.
-        "fontconfig*:shared": "True",  # For Qt on Linux. Building with static fontconfig and freetype fails: https://github.com/conan-io/conan-center-index/issues/17142
-        "freetype*:shared": "True",  # For Qt on Linux.
-        "nss*:shared": "True",  # Dependency of Qt. "NSS recipe cannot yet build static library."
-        "nspr*:shared": "True",  # NSS, which is a dependency of Qt, cannot link to statis NSPR.
-        "sqlite*:shared": "True",  # Avoid `undefined symbol` errors when building NSS.
         "glad*:spec": "gl",
         "glad*:gl_profile": "core",
         "glad*:gl_version": "4.5",
