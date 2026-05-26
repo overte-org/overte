@@ -144,7 +144,7 @@ void VKBuffer::transferWithBarrier(VKBackend &backend, VkCommandBuffer commandBu
 void VKBuffer::transferWithDelayedBarrier(VKBackend &backend, VkCommandBuffer commandBuffer) {
     VkBufferCopy copyRegion = {};
 
-    copyRegion.size = _localData.size();
+    copyRegion.size = _localData.size() == 0 ? 256 : _localData.size();
     vkCmdCopyBuffer(
         commandBuffer,
         stagingBuffer,
@@ -263,7 +263,7 @@ VKBuffer::VKBuffer(VKBackend& backend, const gpu::Buffer& gpuBuffer) : VKObject(
     vkBufferCI.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     vkBufferCI.pNext = nullptr;
     vkBufferCI.flags = 0;
-    vkBufferCI.size = allocation.size == 0 ? 256 : allocation.size;
+    vkBufferCI.size = allocation.size == 0 ? 256 : allocation.size; // TODO: why does renderer create zero-size buffers sometimes?
     vkBufferCI.usage = usageFlags | VK_BUFFER_USAGE_2_TRANSFER_DST_BIT;
     vkBufferCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
     vkBufferCI.queueFamilyIndexCount = 0;

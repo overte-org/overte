@@ -512,7 +512,11 @@ void VKStrictResourceTexture::transfer(VKBackend &backend) {
         _vkImage,
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        subresourceRange);
+        subresourceRange,
+        device->queueFamilyIndices.transfer,
+        device->queueFamilyIndices.transfer,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
     // Copy mip levels from staging buffer
     vkCmdCopyBufferToImage(
@@ -792,7 +796,11 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
         _vkImage,
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        subresourceRange);
+        subresourceRange,
+        device->queueFamilyIndices.graphics,
+        device->queueFamilyIndices.graphics,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
     VkClearColorValue color = { .float32 = {0.5, 0.0, 0.0} };
     VkImageSubresourceRange imageSubresourceRange { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
@@ -805,7 +813,11 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
         _vkImage,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         VK_IMAGE_LAYOUT_GENERAL,
-        subresourceRange);
+        subresourceRange,
+        device->queueFamilyIndices.graphics,
+        device->queueFamilyIndices.graphics,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
     device->flushCommandBuffer(transferCmd, backend.getContext().graphicsQueue, device->graphicsCommandPool);
 }
@@ -1187,7 +1199,11 @@ Size VKResourceTexture::copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face,
         _vkImage,
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        subresourceRange);
+        subresourceRange,
+        device->queueFamilyIndices.transfer,
+        device->queueFamilyIndices.transfer,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
     // Copy mip levels from staging buffer
     vkCmdCopyBufferToImage(
@@ -1262,6 +1278,7 @@ void VKVariableAllocationTexture::copyTextureMipsInGPUMem(VkImage srcImage, VkIm
 }
 
 void VKVariableAllocationTexture::allocateNewImage(uint16_t targetAllocatedMip, VkCommandBuffer &copyCmd) {
+    auto device = _backend.lock()->getContext().device;
     _allocatedMip = targetAllocatedMip;
 
     VkImageCreateInfo imageCreateInfo = vks::initializers::imageCreateInfo();
@@ -1302,7 +1319,11 @@ void VKVariableAllocationTexture::allocateNewImage(uint16_t targetAllocatedMip, 
         _vkImage,
         VK_IMAGE_LAYOUT_UNDEFINED,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        subresourceRange);
+        subresourceRange,
+        device->queueFamilyIndices.transfer,
+        device->queueFamilyIndices.transfer,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
     // I think this is incorrect, it takes into account all mips and not only allocated ones
     /*for (uint16_t mip = _allocatedMip; mip < mipLevels; ++mip) {
         _size += _gpuObject.evalMipSize(mip);

@@ -96,10 +96,10 @@ namespace vks
             VkImageLayout oldImageLayout,
             VkImageLayout newImageLayout,
             VkImageSubresourceRange subresourceRange,
-            uint32_t srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            uint32_t dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-            VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-            VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+            uint32_t srcQueueFamilyIndex,// = VK_QUEUE_FAMILY_IGNORED,
+            uint32_t dstQueueFamilyIndex,// = VK_QUEUE_FAMILY_IGNORED,
+            VkPipelineStageFlags srcStageMask,
+            VkPipelineStageFlags dstStageMask);
         // Uses a fixed sub resource layout with first mip level and layer
         // VKTODO: check all uses of this and choose better stage masks
         void setImageLayout(
@@ -108,8 +108,8 @@ namespace vks
             VkImageAspectFlags aspectMask,
             VkImageLayout oldImageLayout,
             VkImageLayout newImageLayout,
-            VkPipelineStageFlags srcStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-            VkPipelineStageFlags dstStageMask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+            VkPipelineStageFlags srcStageMask,
+            VkPipelineStageFlags dstStageMask);
 
         /** @brief Insert an image memory barrier into the command buffer */
         // VKTODO: check all uses of this and choose better stage masks
