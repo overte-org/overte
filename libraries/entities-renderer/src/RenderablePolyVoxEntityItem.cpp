@@ -2117,11 +2117,11 @@ void RenderablePolyVoxEntityItem::recomputeMesh() {
     auto entity = std::static_pointer_cast<RenderablePolyVoxEntityItem>(getThisPointer());
 
     QtConcurrent::run([this, entity, voxelSurfaceStyle] {
-        graphics::MeshPointer mesh(std::make_shared<graphics::Mesh>());
+        std::shared_ptr<VoxelVolume> volData;
+        std::unique_ptr<SurfaceExtractor> extractor;
 
         entity->withReadLock([&] {
-            std::shared_ptr<VoxelVolume> volData = entity->_volData;
-            std::unique_ptr<SurfaceExtractor> extractor;
+            volData = std::make_shared<VoxelVolume>(*entity->_volData);
             switch (voxelSurfaceStyle) {
                 case PolyVoxEntityItem::SURFACE_EDGED_MARCHING_CUBES:
                 case PolyVoxEntityItem::SURFACE_MARCHING_CUBES: {
@@ -2136,9 +2136,9 @@ void RenderablePolyVoxEntityItem::recomputeMesh() {
                     break;
                 }
             }
-            mesh = extractor->createMesh();
         });
 
+        graphics::MeshPointer mesh = extractor->createMesh();
         entity->setMesh(mesh);
     });
 }
