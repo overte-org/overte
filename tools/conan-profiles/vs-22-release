@@ -12,3 +12,5 @@ build_type=Release
 Overte/*:qt_source=source
 # Required for building oneTBB.
 hwloc/*:shared=True
+# libpq throws linker errors on CI and not needed (PostgreSQL).
+qt*:with_pq=False
