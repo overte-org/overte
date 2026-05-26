@@ -73,7 +73,7 @@ class Overte(ConanFile):
         self.requires("openexr/3.1.9")
         self.requires("openvr/2.2.3@overte/stable")
         self.requires("openxr/1.1.46@overte/stable")
-        self.requires("opus/1.5.2")
+        self.requires("opus/1.5.2", force=True) # The Qt6 source package depends on an older opus version than we do.
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.10")
