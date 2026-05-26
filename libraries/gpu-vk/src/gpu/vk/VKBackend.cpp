@@ -2111,7 +2111,7 @@ void VKBackend::transitionInputImageLayouts() {
                                                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                                                  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                                                  VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                                                 VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,  // VKTODO
+                                                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                                                  mipSubRange);
             attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         } else if (attachmentTexture->_vkImageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
@@ -2142,9 +2142,9 @@ void VKBackend::transitionInputImageLayouts() {
                                                      VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                                      VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT,
                                                      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
-                                                     VK_IMAGE_LAYOUT_GENERAL, // VKTODO: is here a better alyout for this use case?
-                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,  // VKTODO
-                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,  // VKTODO
+                                                     VK_IMAGE_LAYOUT_GENERAL, // VKTODO: is here a better layout for this use case?
+                                                     VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                                     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                                                      mipSubRange);
                 attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_GENERAL;
             } else {
@@ -2161,8 +2161,8 @@ void VKBackend::transitionInputImageLayouts() {
                                                      VK_ACCESS_SHADER_READ_BIT,
                                                      VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,  // VKTODO
-                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,  // VKTODO
+                                                     VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                                     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                                                      mipSubRange);
                 attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             }
@@ -2201,9 +2201,9 @@ void VKBackend::transitionAttachmentImageLayouts(gpu::Framebuffer &framebuffer) 
                                                      VK_ACCESS_SHADER_READ_BIT,
                                                      VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,  // VKTODO: should be
-                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
-                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, mipSubRange); // VKTODO: what stage mask for depth stencil?
+                                                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                                     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, mipSubRange);
                 attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             } else {
                 VkImageSubresourceRange mipSubRange = {};
@@ -2215,8 +2215,8 @@ void VKBackend::transitionAttachmentImageLayouts(gpu::Framebuffer &framebuffer) 
                                                      VK_ACCESS_SHADER_READ_BIT,
                                                      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                                      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,  // VKTODO: should be
-                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
+                                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                     VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                                                      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, mipSubRange);
                 attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             }
@@ -2247,10 +2247,10 @@ void VKBackend::transitionAttachmentImageLayouts(gpu::Framebuffer &framebuffer) 
         vks::tools::insertImageMemoryBarrier(_currentCommandBuffer, attachmentTexture->_vkImage, VK_ACCESS_SHADER_READ_BIT,
                                              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                              VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,  // VKTODO: should be
-                                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,                // VKTODO
-                                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-                                             mipSubRange);  // VKTODO: what stage mask for depth stencil?
+                                             VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                             VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                                             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
+                                             mipSubRange);
         attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
     }
 }
@@ -2966,9 +2966,9 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
                                                      VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                                      VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                                      VK_IMAGE_LAYOUT_UNDEFINED,
-                                                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,  // VKTODO: should be
-                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
-                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, mipSubRange); // VKTODO: what stage mask for depth stencil?
+                                                     VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+                                                     VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                                     VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, mipSubRange);
                 Q_ASSERT(attachmentTexture->_vkImageLayout != VK_IMAGE_LAYOUT_GENERAL);
                 attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             } else {
@@ -2981,8 +2981,8 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
                                                      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                                      VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
                                                      VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,  // VKTODO: should be
-                                                     VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
+                                                     VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                     VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                                                      VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, mipSubRange);
                 attachmentTexture->_vkImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             }
@@ -3017,9 +3017,9 @@ void VKBackend::do_clearFramebuffer(const Batch& batch, size_t paramOffset) {
                                              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                              VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
                                              layout,
-                                             layout,  // VKTODO: should be
-                                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,        // VKTODO
-                                             VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, mipSubRange); // VKTODO: what stage mask for depth stencil?
+                                             layout,
+                                             VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT,
+                                             VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT, mipSubRange);
 
         attachmentTexture->_vkImageLayout = layout;
     }

@@ -515,8 +515,8 @@ void VKStrictResourceTexture::transfer(VKBackend &backend) {
         subresourceRange,
         device->queueFamilyIndices.transfer,
         device->queueFamilyIndices.transfer,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     // Copy mip levels from staging buffer
     vkCmdCopyBufferToImage(
@@ -539,8 +539,8 @@ void VKStrictResourceTexture::transfer(VKBackend &backend) {
         subresourceRange,
         device->queueFamilyIndices.transfer,
         device->queueFamilyIndices.graphics,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT); // VKTODO: should be VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT but validation layers complain so I'm not sure
 
     device->flushCommandBuffer(copyCmd, backend.getContext().transferQueue, device->transferCommandPool);
 
@@ -571,8 +571,8 @@ void VKStrictResourceTexture::postTransfer(VKBackend &backend) {
         subresourceRange,
         device->queueFamilyIndices.transfer,
         device->queueFamilyIndices.graphics,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
     device->flushCommandBuffer(graphicsCmd, backend.getContext().graphicsQueue, device->graphicsCommandPool);
     // Image is ready to use now.
@@ -799,8 +799,8 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
         subresourceRange,
         device->queueFamilyIndices.graphics,
         device->queueFamilyIndices.graphics,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     VkClearColorValue color = { .float32 = {0.5, 0.0, 0.0} };
     VkImageSubresourceRange imageSubresourceRange { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
@@ -816,8 +816,8 @@ void VKExternalTexture::createTexture(VKBackend &backend) {
         subresourceRange,
         device->queueFamilyIndices.graphics,
         device->queueFamilyIndices.graphics,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     device->flushCommandBuffer(transferCmd, backend.getContext().graphicsQueue, device->graphicsCommandPool);
 }
@@ -1202,8 +1202,8 @@ Size VKResourceTexture::copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face,
         subresourceRange,
         device->queueFamilyIndices.transfer,
         device->queueFamilyIndices.transfer,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     // Copy mip levels from staging buffer
     vkCmdCopyBufferToImage(
@@ -1226,8 +1226,8 @@ Size VKResourceTexture::copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face,
         subresourceRange,
         device->queueFamilyIndices.transfer,
         device->queueFamilyIndices.graphics,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
     device->flushCommandBuffer(copyCmd, backend->getContext().transferQueue, device->transferCommandPool);
 
@@ -1322,8 +1322,8 @@ void VKVariableAllocationTexture::allocateNewImage(uint16_t targetAllocatedMip, 
         subresourceRange,
         device->queueFamilyIndices.transfer,
         device->queueFamilyIndices.transfer,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT);
     // I think this is incorrect, it takes into account all mips and not only allocated ones
     /*for (uint16_t mip = _allocatedMip; mip < mipLevels; ++mip) {
         _size += _gpuObject.evalMipSize(mip);
@@ -1377,8 +1377,8 @@ VKResourceTexture::VKResourceTexture(const std::weak_ptr<VKBackend>& backend, co
         subresourceRange,
         device->queueFamilyIndices.transfer,
         device->queueFamilyIndices.graphics,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT); // VKTODO: should be VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT but validation layers complain so I'm not sure
     device->flushCommandBuffer(copyCmd, backendPointer->getContext().transferQueue, device->transferCommandPool);
 
     VKResourceTexture::postTransfer(*backendPointer);
@@ -1499,8 +1499,8 @@ size_t VKResourceTexture::promote() {
         subresourceRange,
         device->queueFamilyIndices.transfer,
         device->queueFamilyIndices.graphics,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
     // Execute transfer.
     device->flushCommandBuffer(copyCmd, backend->getContext().transferQueue, device->transferCommandPool);
@@ -1560,8 +1560,8 @@ size_t VKResourceTexture::demote() {
         subresourceRange,
         device->queueFamilyIndices.transfer,
         device->queueFamilyIndices.graphics,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
     // Execute transfer.
     device->flushCommandBuffer(copyCmd, backend->getContext().transferQueue, device->transferCommandPool);
@@ -1667,8 +1667,8 @@ void VKResourceTexture::postTransfer(VKBackend &backend) {
         subresourceRange,
         device->queueFamilyIndices.transfer,
         device->queueFamilyIndices.graphics,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
-        VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
+        VK_PIPELINE_STAGE_TRANSFER_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
     device->flushCommandBuffer(graphicsCmd, backend.getContext().graphicsQueue, device->graphicsCommandPool);
     // Image is ready to use now.
