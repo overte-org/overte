@@ -7,8 +7,6 @@ name: Pull Request CI Build
 # Keep in mind that GitHub Actions does not allow reading secrets during PR builds.
 
 on:
-  pull_request:
-    types: [opened, synchronize, reopened]
   pull_request_target:
     types: [opened, synchronize, reopened]
 
