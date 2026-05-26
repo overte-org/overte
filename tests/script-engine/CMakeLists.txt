@@ -22,6 +22,8 @@ macro (setup_testcase_dependencies)
 #        "${CMAKE_CURRENT_BINARY_DIR}/tests"
 #    )
   endif()
+
+  include_hifi_library_headers(entities)
 endmacro ()
 
 setup_hifi_testcase(Network)

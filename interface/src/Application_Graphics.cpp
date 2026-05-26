@@ -512,7 +512,7 @@ void Application::updateRenderArgs(float deltaTime) {
             appRenderArgs._renderArgs = RenderArgs(_graphicsEngine->getGPUContext(), lodManager->getVisibilityDistance(),
                 lodManager->getBoundaryLevelAdjust(), lodManager->getLODFarHalfAngleTan(), lodManager->getLODNearHalfAngleTan(),
                 lodManager->getLODFarDistance(), lodManager->getLODNearDistance(), RenderArgs::DEFAULT_RENDER_MODE,
-                RenderArgs::MONO, RenderArgs::DEFERRED, RenderArgs::RENDER_DEBUG_NONE);
+                RenderArgs::MONO, RenderArgs::DEFERRED);
             appRenderArgs._renderArgs._scene = getMain3DScene();
 
             {

@@ -11,7 +11,11 @@
 <@func declareBlendshape(USE_NORMAL, USE_TANGENT)@>
 
 #if !defined(GPU_SSBO_TRANSFORM_OBJECT)
+#ifdef GPU_GLES_310
 LAYOUT(binding=GPU_RESOURCE_BUFFER_SLOT0_TEXTURE) uniform samplerBuffer blendshapeOffsetsBuffer;
+#else
+RESOURCE_BUFFER(GPU_RESOURCE_BUFFER_SLOT0_TEXTURE, blendshapeOffsetsBuffer);
+#endif
 uvec4 getPackedBlendshapeOffset(int i) {
     return floatBitsToUint(texelFetch(blendshapeOffsetsBuffer, i));
 }

@@ -76,7 +76,7 @@ struct CubeFaceMip {
 class CubeMap::ConstMip : public CubeFaceMip {
 public:
 
-    ConstMip(gpu::uint16 level, const CubeMap* cubemap) : 
+    ConstMip(gpu::uint16 level, const CubeMap* cubemap) :
         CubeFaceMip(level, cubemap), _faces(cubemap->_mips[level]) {
     }
 
@@ -176,8 +176,8 @@ private:
     }
 
     static std::pair<int, int> getSrcAndDst(int dim, int value) {
-        int src;
-        int dst;
+        int src = 0;
+        int dst = 0;
 
         if (value < 0) {
             src = 1;
@@ -185,7 +185,16 @@ private:
         } else if (value >= dim) {
             src = dim;
             dst = dim + 1;
+        } else {
+            // TODO:
+            // This branch should never happen.
+            // If it does, we're unsure of the correct return values.
+            //
+            // If the assert is hit, this code should be revisited to work out what should
+            // be the proper result in this case.
+            assert(0);
         }
+
         return std::make_pair(src, dst);
     }
 

@@ -19,7 +19,8 @@
 WheelEvent::WheelEvent() :
     x(0.0f),
     y(0.0f),
-    delta(0.0f),
+    deltaX(0.0f),
+    deltaY(0.0f),
     orientation("UNKNOwN"),
     isLeftButton(false),
     isRightButton(false),
@@ -42,6 +43,9 @@ WheelEvent::WheelEvent(const QWheelEvent& event) {
         orientation = "VERTICAL";
     }
 
+    deltaX = event.angleDelta().x();
+    deltaY = event.angleDelta().y();
+
     // button pressed state
     isLeftButton = (event.buttons().testFlag(Qt::LeftButton));
     isRightButton = (event.buttons().testFlag(Qt::RightButton));
@@ -60,7 +64,9 @@ WheelEvent::WheelEvent(const QWheelEvent& event) {
  * @property {number} x - Integer x-coordinate of the event on the Interface window or HMD HUD.
  * @property {number} y - Integer y-coordinate of the event on the Interface window or HMD HUD.
  * @property {number} delta - Integer number indicating the direction and speed to scroll: positive numbers to scroll up, and
- *     negative numers to scroll down.
+ *     negative numers to scroll down. <b>Deprecated. Duplicate of <code>deltaY</code>.</b>
+ * @property {number} deltaX - Horizontal scroll, with negative values representing a rightwards scroll.
+ * @property {number} deltaY - Vertical scroll, with negative values representing a downward scroll.
  * @property {string} orientation - The orientation of the wheel: <code>"VERTICAL"</code> for a typical mouse;
  *     <code>"HORIZONTAL"</code> for a "horizontal" wheel.
  * @property {boolean} isLeftButton - <code>true</code> if the left button was pressed when the event was generated, otherwise
@@ -86,7 +92,9 @@ ScriptValue WheelEvent::toScriptValue(ScriptEngine* engine, const WheelEvent& ev
     ScriptValue obj = engine->newObject();
     obj.setProperty("x", event.x);
     obj.setProperty("y", event.y);
-    obj.setProperty("delta", event.delta);
+    obj.setProperty("delta", event.deltaY);
+    obj.setProperty("deltaX", event.deltaX);
+    obj.setProperty("deltaY", event.deltaY);
     obj.setProperty("orientation", event.orientation);
     obj.setProperty("isLeftButton", event.isLeftButton);
     obj.setProperty("isRightButton", event.isRightButton);

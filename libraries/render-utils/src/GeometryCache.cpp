@@ -2194,7 +2194,6 @@ void GeometryCache::useSimpleDrawPipeline(gpu::Batch& batch, bool noBlend) {
 void GeometryCache::useGridPipeline(gpu::Batch& batch, GridBuffer gridBuffer, bool transparent, bool forward) {
     if (_gridPipelines.empty()) {
         using namespace shader::render_utils::program;
-        const float DEPTH_BIAS = 0.001f;
 
         static const std::vector<std::tuple<bool, bool, uint32_t>> keys = {
             std::make_tuple(false, false, grid), std::make_tuple(false, true, grid_forward), std::make_tuple(true, false, grid_translucent), std::make_tuple(true, true, grid_translucent_forward)
@@ -2212,7 +2211,8 @@ void GeometryCache::useGridPipeline(gpu::Batch& batch, GridBuffer gridBuffer, bo
                 gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,
                 gpu::State::FACTOR_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::ONE);
             state->setCullMode(gpu::State::CULL_NONE);
-            state->setDepthBias(DEPTH_BIAS);
+            state->setDepthBias(-1.0f);
+            state->setDepthBiasSlopeScale(-1.0f);
 
             _gridPipelines[{std::get<0>(key), std::get<1>(key)}] = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<2>(key)), state);
         }
@@ -2357,8 +2357,8 @@ gpu::PipelinePointer GeometryCache::getSimplePipeline(bool textured, bool transp
     }
     state->setDepthTest(true, !config.isTransparent(), ComparisonFunction::LESS_EQUAL);
     if (config.hasDepthBias()) {
-        state->setDepthBias(1.0f);
-        state->setDepthBiasSlopeScale(1.0f);
+        state->setDepthBias(-1.0f);
+        state->setDepthBiasSlopeScale(-1.0f);
     }
     state->setBlendFunction(config.isTransparent(),
         gpu::State::SRC_ALPHA, gpu::State::BLEND_OP_ADD, gpu::State::INV_SRC_ALPHA,

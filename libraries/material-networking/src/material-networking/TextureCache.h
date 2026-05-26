@@ -226,12 +226,11 @@ private:
     TextureCache();
     virtual ~TextureCache();
 
-    static const std::string KTX_DIRNAME;
     static const std::string KTX_EXT;
 
     gpu::ContextPointer _gpuContext { nullptr };
 
-    std::shared_ptr<cache::FileCache> _ktxCache { std::make_shared<KTXCache>(KTX_DIRNAME, KTX_EXT) };
+    std::shared_ptr<cache::FileCache> _ktxCache { nullptr };
 
     // Map from image hashes to texture weak pointers
     std::unordered_map<std::string, std::pair<std::weak_ptr<gpu::Texture>, glm::ivec2>> _texturesByHashes;

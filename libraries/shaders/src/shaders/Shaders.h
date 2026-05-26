@@ -27,22 +27,11 @@ static const uint32_t INVALID_PROGRAM = (uint32_t)-1;
 const std::vector<uint32_t>& startupPrograms();
 const std::vector<uint32_t>& allShaders();
 
-enum class Dialect
-{
-#if defined(USE_GLES)
-    // GLES only support 3.1 es
-    glsl310es,
-#elif defined(Q_OS_MAC)
-    // Mac only supports 4.1
-    glsl410,
-#else
-    // Everything else supports 4.1 and 4.5
+enum class Dialect {
     glsl450,
     glsl410,
-#endif
+    glsl310es,
 };
-
-extern const Dialect DEFAULT_DIALECT;
 
 const std::vector<Dialect>& allDialects();
 const std::string& dialectPath(Dialect dialect);
@@ -125,7 +114,7 @@ struct DialectVariantSource {
     // Optimized SPIRV version of the shader
     Binary spirv;
     // Regenerated GLSL from the optimized SPIRV
-    //String glsl;
+    String glsl;
     // Shader reflection from the optimized SPIRV
     Reflection reflection;
 

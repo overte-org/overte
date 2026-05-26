@@ -10,8 +10,10 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "ScriptManager.h"
 #include "ScriptManagerScriptingInterface.h"
+
+#include "ScriptCache.h"
+#include "ScriptManager.h"
 #include "ScriptEngines.h"
 #include "ScriptEngine.h"
 #include <QMetaType>
@@ -132,4 +134,9 @@ QString ScriptManagerScriptingInterface::btoa(const QByteArray &binary) {
 
 QByteArray ScriptManagerScriptingInterface::atob(const QString &base64) {
     return QByteArray::fromBase64(base64.toUtf8());
+}
+
+void ScriptManagerScriptingInterface::clearCache() {
+    qCInfo(scriptengine) << "clearScriptCache -- clearing caches";
+    DependencyManager::get<ScriptCache>()->clearCache();
 }

@@ -35,7 +35,8 @@ public:
     
     int x;
     int y;
-    int delta;
+    int deltaX;
+    int deltaY;
     QString orientation;
     bool isLeftButton;
     bool isRightButton;

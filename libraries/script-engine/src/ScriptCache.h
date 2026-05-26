@@ -26,6 +26,7 @@ using contentAvailableCallback = std::function<void(const QString& scriptOrURL, 
 
 class ScriptUser {
 public:
+    virtual ~ScriptUser() = default;
     virtual void scriptContentsAvailable(const QUrl& url, const QString& scriptContents) = 0;
     virtual void errorInLoadingScript(const QUrl& url) = 0;
 };

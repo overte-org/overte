@@ -54,9 +54,6 @@ Context::Context() {
     }
 }
 
-Context::Context(const Context& context) {
-}
-
 Context::~Context() {
     clearBatches();
     _syncedPrograms.clear();

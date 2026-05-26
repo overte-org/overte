@@ -28,12 +28,10 @@ void Uniform::load(GLuint glprogram, int index) {
 
 bool isTextureType(GLenum type) {
     switch (type) {
-#ifndef USE_GLES
         case GL_SAMPLER_1D:
         case GL_SAMPLER_1D_ARRAY:
         case GL_SAMPLER_1D_SHADOW:
         case GL_SAMPLER_1D_ARRAY_SHADOW:
-#endif
         case GL_SAMPLER_2D:
         case GL_SAMPLER_3D:
         case GL_SAMPLER_CUBE:
@@ -436,11 +434,18 @@ static const char* SHADER_JSON_TYPE_KEY = "type";
 static const char* SHADER_JSON_SOURCE_KEY = "source";
 static const char* SHADER_JSON_DATA_KEY = "data";
 
+// Currently shader cache size limit is 1 GB.
+constexpr qsizetype MAX_SHADER_CACHE_SIZE = INT32_MAX / 2 - 1;
+
 void gl::loadShaderCache(ShaderCache& cache) {
 #if !defined(DISABLE_QML)
     QString shaderCacheFile = getShaderCacheFile();
-    if (QFileInfo(shaderCacheFile).exists()) {
-        QString json = FileUtils::readFile(shaderCacheFile);
+    auto shaderFileInfo = QFileInfo(shaderCacheFile);
+    if (!shaderFileInfo.exists()) {
+        return;
+    }
+    // Shader cache will slowly get bigger, so we need to keep it to some reasonable size.
+    if (shaderFileInfo.size() <= MAX_SHADER_CACHE_SIZE) {
         nlohmann::json root;
         try {
             std::ifstream i(shaderCacheFile.toStdString());
@@ -487,6 +492,10 @@ void gl::loadShaderCache(ShaderCache& cache) {
             cachedShader.format = (GLenum)programObject[SHADER_JSON_TYPE_KEY].get<int>();
             cachedShader.source = programObject[SHADER_JSON_SOURCE_KEY].get<std::string>();
         }
+    } else {
+        qWarning() << "Shader cache is too large and cannot be read to a string. Clearing cache.";
+        auto shaderFile = QFile(shaderCacheFile);
+        shaderFile.remove();
     }
 #endif
 }

@@ -103,6 +103,11 @@ void Font::handleFontNetworkReply() {
 QThreadStorage<size_t> _readOffset;
 QThreadStorage<size_t> _readMax;
 int readHelper(void* dst, int length, void* data) {
+    if (!dst) {
+        qWarning() << "readHelper called with NULL pointer as first argument: dst = " << dst << "; length = " << length << "; data =" << data;
+        return 0;
+    }
+
     if (_readOffset.localData() + length > _readMax.localData()) {
         return -1;
     }
@@ -400,6 +405,13 @@ void Font::setupGPU() {
             } else {
                 PrepareStencil::testMaskDrawShape(*state);
             }
+
+            // TODO: Revisit this once we support specifying depth bias values in ShapeKey
+            // assume the text payload is in front of an already-biased background (bias of -1),
+            // so push the text a little further out so it doesn't z-fight
+            state->setDepthBias(-2.0f);
+            state->setDepthBiasSlopeScale(-2.0f);
+
             _pipelines[std::make_tuple(transparent, unlit, forward, mirror, fade)] = gpu::Pipeline::create(gpu::Shader::createProgram(std::get<5>(key)), state);
         }
 

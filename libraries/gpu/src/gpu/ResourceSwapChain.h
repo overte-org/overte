@@ -12,25 +12,39 @@
 #include <array>
 
 namespace gpu {
+    /// Base class for swapchains.
     class SwapChain {
     public:
-
+        /**
+         * @param size Number of objects stored in the swapchain.
+         */
         SwapChain(uint8_t size = 2U) : _size{ size } {}
         virtual ~SwapChain() {}
 
+        /**
+         * Choose next object from circular buffer as the active one.
+         */
         void advance() {
             _frontIndex = (_frontIndex + 1) % _size;
         }
 
+        /**
+         * @return Number of objects stored in the swapchain.
+         */
         uint8_t getSize() const { return _size; }
 
     protected:
+        /// Number of objects stored in the swapchain.
         const uint8_t _size;
+
+        /// Index of the current object in the circular buffer.
         uint8_t _frontIndex{ 0U };
 
     };
     typedef std::shared_ptr<SwapChain> SwapChainPointer;
 
+    /// Swapchain container template.
+    /// Used with Framebuffer objects.
     template <class R>
     class ResourceSwapChain : public SwapChain {
     public:
@@ -43,15 +57,26 @@ namespace gpu {
         using TypePointer = std::shared_ptr<R>;
         using TypeConstPointer = std::shared_ptr<const R>;
 
+        /**
+         * @param v Type of the object that is stored in the swapchain.
+         */
         ResourceSwapChain(const std::vector<TypePointer>& v) : SwapChain{ std::min<uint8_t>((uint8_t)v.size(), MAX_SIZE) } {
             for (size_t i = 0; i < _size; ++i) {
                 _resources[i] = v[i];
             }
         }
+
+        /**
+         * For example `index = 0` returns active object, and `index = 1` returns next one.
+         *
+         * @param index Object index relative to currently active object.
+         * @return Reference to the object with particular index in relation to currently active object.
+         */
         const TypePointer& get(unsigned int index) const { return _resources[(index + _frontIndex) % _size]; }
 
     private:
 
+        /// Circular buffer storing objects.
         std::array<TypePointer, MAX_SIZE> _resources;
     };
 }

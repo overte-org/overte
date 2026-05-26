@@ -50,6 +50,7 @@
 #include <CursorManager.h>
 #include <FramebufferCache.h>
 #include <shared/NsightHelpers.h>
+#include <shared/GlobalAppProperties.h>
 #include <ui-plugins/PluginContainer.h>
 #include <ui/Menu.h>
 #include <CursorManager.h>
@@ -915,66 +916,66 @@ void OpenGLDisplayPlugin::updateCompositeFramebuffer() {
 }
 
 void OpenGLDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer networkTexture, QOpenGLFramebufferObject* target, GLsync* fenceSync) {
-#if !defined(USE_GLES)
-    auto backend = const_cast<OpenGLDisplayPlugin&>(*this).getBackend();
-    auto glBackend = std::dynamic_pointer_cast<gpu::gl::GLBackend>(backend);
-    Q_ASSERT(glBackend);
-    withOtherThreadContext([&] {
-        GLuint sourceTexture = glBackend->getTextureID(networkTexture->getGPUTexture());
-        GLuint targetTexture = target->texture();
-        GLuint fbo[2] {0, 0};
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+        auto backend = const_cast<OpenGLDisplayPlugin&>(*this).getBackend();
+        auto glBackend = std::dynamic_pointer_cast<gpu::gl::GLBackend>(backend);
+        Q_ASSERT(glBackend);
+        withOtherThreadContext([&] {
+            GLuint sourceTexture = glBackend->getTextureID(networkTexture->getGPUTexture());
+            GLuint targetTexture = target->texture();
+            GLuint fbo[2] { 0, 0 };
 
-        // need mipmaps for blitting texture
-        glGenerateTextureMipmap(sourceTexture);
+            // need mipmaps for blitting texture
+            glGenerateTextureMipmap(sourceTexture);
 
-        // create 2 fbos (one for initial texture, second for scaled one)
-        glCreateFramebuffers(2, fbo);
+            // create 2 fbos (one for initial texture, second for scaled one)
+            glCreateFramebuffers(2, fbo);
 
-        // setup source fbo
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo[0]);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sourceTexture, 0);
+            // setup source fbo
+            glBindFramebuffer(GL_FRAMEBUFFER, fbo[0]);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sourceTexture, 0);
 
-        GLint texWidth = networkTexture->getWidth();
-        GLint texHeight = networkTexture->getHeight();
+            GLint texWidth = networkTexture->getWidth();
+            GLint texHeight = networkTexture->getHeight();
 
-        // setup destination fbo
-        glBindFramebuffer(GL_FRAMEBUFFER, fbo[1]);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, targetTexture, 0);
-        glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+            // setup destination fbo
+            glBindFramebuffer(GL_FRAMEBUFFER, fbo[1]);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, targetTexture, 0);
+            glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
+            glClear(GL_COLOR_BUFFER_BIT);
 
-        // maintain aspect ratio, filling the width first if possible.  If that makes the height too
-        // much, fill height instead. TODO: only do this when texture changes
-        GLint newX = 0;
-        GLint newY = 0;
-        float aspectRatio = (float)texHeight / (float)texWidth;
-        GLint newWidth = target->width();
-        GLint newHeight = std::round(aspectRatio * (float)target->width());
-        if (newHeight > target->height()) {
-            newHeight = target->height();
-            newWidth = std::round((float)target->height() / aspectRatio);
-            newX = (target->width() - newWidth) / 2;
-        } else {
-            newY = (target->height() - newHeight) / 2;
-        }
+            // maintain aspect ratio, filling the width first if possible.  If that makes the height too
+            // much, fill height instead. TODO: only do this when texture changes
+            GLint newX = 0;
+            GLint newY = 0;
+            float aspectRatio = (float)texHeight / (float)texWidth;
+            GLint newWidth = target->width();
+            GLint newHeight = std::round(aspectRatio * (float)target->width());
+            if (newHeight > target->height()) {
+                newHeight = target->height();
+                newWidth = std::round((float)target->height() / aspectRatio);
+                newX = (target->width() - newWidth) / 2;
+            } else {
+                newY = (target->height() - newHeight) / 2;
+            }
 
-        glBlitNamedFramebuffer(fbo[0], fbo[1], 0, 0, texWidth, texHeight, newX, newY, newX + newWidth, newY + newHeight, GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT, GL_NEAREST);
+            glBlitNamedFramebuffer(fbo[0], fbo[1], 0, 0, texWidth, texHeight, newX, newY, newX + newWidth, newY + newHeight,
+                                   GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
-        // don't delete the textures!
-        glDeleteFramebuffers(2, fbo);
-        *fenceSync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
-    });
-#endif
+            // don't delete the textures!
+            glDeleteFramebuffers(2, fbo);
+            *fenceSync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        });
+    }
 }
 
 gpu::PipelinePointer OpenGLDisplayPlugin::getRenderTexturePipeline() {
-#ifdef USE_GLES
     if (!_hasSetSRGBConversion) {
         const gl::ContextInfo &contextInfo = gl::ContextInfo::get();
         _extraLinearToSRGBConversionSetting.set(std::find(contextInfo.extensions.cbegin(), contextInfo.extensions.cend(), "GL_EXT_framebuffer_sRGB") == contextInfo.extensions.cend());
         _hasSetSRGBConversion = true;
     }
-#endif
 
     if (getExtraLinearToSRGBConversion()) {
         return _linearToSRGBPipeline;

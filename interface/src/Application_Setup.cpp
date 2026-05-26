@@ -97,6 +97,7 @@
 #include <scripting/TestScriptingInterface.h>
 #include <scripting/TTSScriptingInterface.h>
 #include <scripting/WindowScriptingInterface.h>
+#include <scripting/OSCScriptingInterface.h>
 #include <ShapeEntityItem.h>
 #ifndef Q_OS_ANDROID
 #include <shared/FileLogger.h>
@@ -359,6 +360,7 @@ bool Application::setupEssentials(const QCommandLineParser& parser, bool running
     DependencyManager::set<DesktopScriptingInterface>();
     DependencyManager::set<EntityScriptingInterface>(true);
     DependencyManager::set<GraphicsScriptingInterface>();
+    DependencyManager::set<OSCScriptingInterface>();
     DependencyManager::registerInheritance<scriptable::ModelProviderFactory, ApplicationMeshProvider>();
     DependencyManager::set<ApplicationMeshProvider>();
     DependencyManager::set<RecordingScriptingInterface>();

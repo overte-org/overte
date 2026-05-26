@@ -1,5 +1,6 @@
-import QtQuick 2.5
-import QtQuick.Controls 2.3
+import QtQuick 2.7
+import QtQuick.Controls 2.15
+import "./qml"
 
 Item {
     id: root
@@ -30,13 +31,14 @@ Item {
         TextInput {
             id: textArea
             x: 5
-            width: parent.width
+            width: parent.width - button.width
             height: parent.height
-            text: ""
+            text: ''
             color: "#000"
             clip: false
             font.pointSize: 18
             verticalAlignment: Text.AlignVCenter
+            rightPadding: 10
 
             Keys.onReturnPressed: { _onEnterPressed(); }
             Keys.onEnterPressed: { _onEnterPressed(); }

@@ -30,6 +30,7 @@
 #include <plugins/PluginManager.h>
 #include <plugins/DisplayPlugin.h>
 #include <plugins/CodecPlugin.h>
+#include <shared/GlobalAppProperties.h>
 
 #include "AddressManager.h"
 #include "Application.h"
@@ -62,11 +63,66 @@ int main(int argc, const char* argv[]) {
     QSurfaceFormat::setDefaultFormat(format);
 #endif
 
-#if defined(Q_OS_WIN)
-    // Check the minimum version of
-    if (gl::getAvailableVersion() < gl::getRequiredVersion()) {
-        MessageBoxA(nullptr, "Interface requires OpenGL 4.1 or higher", "Unsupported", MB_OK);
-        return -1;
+    // You can force a specific graphics API with the --graphicsAPI option.  By default we will pick the best available based on the platform.
+    // Some systems may fallback to a lower API than requested based on what is supported.
+    std::string apiString;
+    for (int i = 1; i < argc; ++i) {
+        if (std::string(argv[i]) == "--graphicsAPI" && i + 1 < argc) {
+            apiString = argv[i + 1];
+            break;
+        }
+    }
+    if (!apiString.empty()) {
+        if (apiString == "gl45") {
+            hifi::properties::setGraphicsAPI(hifi::properties::GraphicsAPI::GL45);
+        } else if (apiString == "gl41") {
+            hifi::properties::setGraphicsAPI(hifi::properties::GraphicsAPI::GL41);
+        } else if (apiString == "gles32") {
+            hifi::properties::setGraphicsAPI(hifi::properties::GraphicsAPI::GLES32);
+        } else {
+            qWarning() << "Unknown graphics API specified, defaulting to GL4.5:" << QString::fromStdString(apiString);
+            hifi::properties::setGraphicsAPI(hifi::properties::GraphicsAPI::GL45);
+        }
+    } else {
+#ifdef Q_OS_MAC
+        hifi::properties::setGraphicsAPI(hifi::properties::GraphicsAPI::GL41);
+#elif defined(Q_OS_ANDROID) || (defined(Q_OS_LINUX) && defined(__aarch64__))
+        // Use GLES on Android and aarch64 Linux
+        hifi::properties::setGraphicsAPI(hifi::properties::GraphicsAPI::GLES32);
+#else
+        hifi::properties::setGraphicsAPI(hifi::properties::GraphicsAPI::GL45);
+#endif
+    }
+
+#ifdef Q_OS_WIN
+    // Check the minimum GL version as early as possible
+    {
+        uint16_t available = gl::getAvailableVersion();
+        uint16_t required = gl::getRequiredVersion();
+        if (gl::getAvailableVersion() < gl::getRequiredVersion()) {
+            int availMajor = GL_GET_MAJOR_VERSION(available);
+            int availMinor = GL_GET_MINOR_VERSION(available);
+            int reqMajor = GL_GET_MAJOR_VERSION(required);
+            int reqMinor = GL_GET_MINOR_VERSION(required);
+            std::string message = "Interface requires OpenGL " + std::to_string(reqMajor) + "." + std::to_string(reqMinor) + " or higher. Available: " + std::to_string(availMajor) + "." + std::to_string(availMinor);
+            MessageBoxA(nullptr, message.c_str(), "Unsupported", MB_OK);
+            // GL version logging is currently disabled.  Version checking needs to happen before Application creation, but then the AccountManager + UserActivityLogger aren't set up yet.
+    #if 0
+            auto accountManager = DependencyManager::get<AccountManager>();
+            if (accountManager->isLoggedIn()) {
+                UserActivityLogger::getInstance().insufficientGLVersion(glData);
+            } else {
+                QObject::connect(accountManager.data(), &AccountManager::loginComplete, [glData](){
+                    static bool loggedInsufficientGL = false;
+                    if (!loggedInsufficientGL) {
+                        UserActivityLogger::getInstance().insufficientGLVersion(glData);
+                        loggedInsufficientGL = true;
+                    }
+                });
+            }
+    #endif
+            return -1;
+        }
     }
 #endif
 
@@ -90,10 +146,7 @@ int main(int argc, const char* argv[]) {
     // Journald by default in user applications is probably a bit too modern still.
     LogHandler::getInstance().setShouldUseJournald(false);
 
-
-    // Extend argv to enable WebGL rendering
     std::vector<const char*> argvExtended(&argv[0], &argv[argc]);
-    argvExtended.push_back("--ignore-gpu-blocklist");
 #ifdef Q_OS_ANDROID
     argvExtended.push_back("--suppress-settings-reset");
 #endif
@@ -316,12 +369,11 @@ int main(int argc, const char* argv[]) {
         "xrNoPalmPose",
         "Debug option. Disables use of the OpenXR palm pose, even if it's supported. Falls back to the controller's grip pose."
     );
-
-    // "--qmljsdebugger", which appears in output from "--help-all".
-    // Those below don't seem to be optional.
-    //     --ignore-gpu-blocklist
-    //     --suppress-settings-reset
-
+    QCommandLineOption graphicsAPIOption(
+        "graphicsAPI",
+        "Which graphics API to target. Supports gl45, gl41, and gles32. Final API may vary based on system support.",
+        "string"
+    );
 
     parser.addOption(urlOption);
     parser.addOption(protocolVersionOption);
@@ -368,7 +420,7 @@ int main(int argc, const char* argv[]) {
     parser.addOption(useExperimentalXROption);
     parser.addOption(xrNoHandTrackingOption);
     parser.addOption(xrNoPalmPoseOption);
-
+    parser.addOption(graphicsAPIOption);
 
     QString applicationPath;
     // A temporary application instance is needed to get the location of the running executable
@@ -400,7 +452,7 @@ int main(int argc, const char* argv[]) {
     Q_ASSERT_X(false, "Interface", "This is not a debug build, but somehow Q_ASSERTs are enabled. \
                This is known to happen on Windows if QT_NO_DEBUG isn't set by us.");
 #endif
-    Application app(argcExtended, const_cast<char**>(argvExtended.data()), parser, startupTime);
+    Application app(argcExtended, const_cast<char**>(argvExtended.data()), startupTime);
 
     if (parser.isSet("abortAfterStartup")) {
         return 99;
@@ -592,12 +644,15 @@ int main(int argc, const char* argv[]) {
     QApplication::setAttribute(Qt::AA_DontUseNativeMenuBar);
 #endif
 
-#if defined(USE_GLES) && defined(Q_OS_WIN)
-    // When using GLES on Windows, we can't create normal GL context in Qt, so
-    // we force Qt to use angle.  This will cause the QML to be unable to be used
-    // in the output window, so QML should be disabled.
-    qputenv("QT_ANGLE_PLATFORM", "d3d11");
-    QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+#if defined(Q_OS_WIN)
+    // Must come after property is set above
+    if (hifi::properties::getGraphicsAPI() == hifi::properties::GraphicsAPI::GLES32) {
+        // When using GLES on Windows, we can't create normal GL context in Qt, so
+        // we force Qt to use angle.  This will cause the QML to be unable to be used
+        // in the output window, so QML should be disabled.
+        qputenv("QT_ANGLE_PLATFORM", "d3d11");
+        QCoreApplication::setAttribute(Qt::AA_UseOpenGLES);
+    }
 #endif
 
     // Instance UserActivityLogger now that the settings are loaded
@@ -698,32 +753,6 @@ int main(int argc, const char* argv[]) {
 #endif
     }
 
-    // FIXME this method of checking the OpenGL version screws up the `QOpenGLContext::globalShareContext()` value, which in turn
-    // leads to crashes when creating the real OpenGL instance.  Disabling for now until we come up with a better way of checking
-    // the GL version on the system without resorting to creating a full Qt application
-#if 0
-    // Check OpenGL version.
-    // This is done separately from the main Application so that start-up and shut-down logic within the main Application is
-    // not made more complicated than it already is.
-    bool overrideGLCheck = false;
-
-    QJsonObject glData;
-    {
-        OpenGLVersionChecker openGLVersionChecker(argc, const_cast<char**>(argv));
-        bool valid = true;
-        glData = openGLVersionChecker.checkVersion(valid, overrideGLCheck);
-        if (!valid) {
-            if (overrideGLCheck) {
-                auto glVersion = glData["version"].toString();
-                qCWarning(interfaceapp, "Running on insufficient OpenGL version: %s.", glVersion.toStdString().c_str());
-            } else {
-                qCWarning(interfaceapp, "Early exit due to OpenGL version.");
-                return 0;
-            }
-        }
-    }
-#endif
-
     // Debug option to demonstrate that the client's local time does not
     // need to be in sync with any other network node. This forces clock
     // skew for the individual client
@@ -793,24 +822,6 @@ int main(int argc, const char* argv[]) {
             QObject::connect(&exitTimer, &QTimer::timeout, &app, &Application::quit);
             exitTimer.start(int(1000 * traceDuration));
         }
-
-#if 0
-        // If we failed the OpenGLVersion check, log it.
-        if (overrideGLcheck) {
-            auto accountManager = DependencyManager::get<AccountManager>();
-            if (accountManager->isLoggedIn()) {
-                UserActivityLogger::getInstance().insufficientGLVersion(glData);
-            } else {
-                QObject::connect(accountManager.data(), &AccountManager::loginComplete, [glData](){
-                    static bool loggedInsufficientGL = false;
-                    if (!loggedInsufficientGL) {
-                        UserActivityLogger::getInstance().insufficientGLVersion(glData);
-                        loggedInsufficientGL = true;
-                    }
-                });
-            }
-        }
-#endif
 
         // Setup local server
         QLocalServer server{ &app };

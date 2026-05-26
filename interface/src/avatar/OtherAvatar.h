@@ -11,6 +11,7 @@
 
 #include <memory>
 #include <vector>
+#include <optional>
 
 #include <avatars-renderer/Avatar.h>
 #include <workload/Space.h>
@@ -64,6 +65,7 @@ public:
     void setCollisionWithOtherAvatarsFlags() override;
 
     void simulate(float deltaTime, bool inView) override;
+    void interpolateJoints();
     void debugJointData() const;
     friend AvatarManager;
 
@@ -93,6 +95,10 @@ protected:
     uint8_t _workloadRegion { workload::Region::INVALID };
     BodyLOD _bodyLOD { BodyLOD::Sphere };
     bool _needsDetailedRebuild { false };
+
+    /// Contains received joint transforms and their timestamps in microseconds.
+    std::vector<std::vector<std::pair<quint64, JointData>>> _jointHistory;
+    std::optional<glm::vec3> _lerpServerPosition {};
 
 private:
     // When determining _hasCheckedForAvatarEntities for OtherAvatars, we can set it to true in

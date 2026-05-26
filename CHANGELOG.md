@@ -1,5 +1,5 @@
 <!--
-Copyright 2022-2025 Overte e.V.
+Copyright 2022-2026 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
@@ -10,6 +10,100 @@ like documentation or CI pipeline.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [2026.04.1] 2026.04.21
+
+### Fixes
+- Fixed a script engine performance regression, which was making Debug builds unusable (PR1943)
+- Fixed broken argument getter in script context (PR1960)
+- Fixed an edge case where the server gets stuck resending too large packages (PR1963)
+- Fixed "Z" wrongly being labeled "X" during voxel creation (PR1965)
+- Fixed a crash when applying the fade shader to text entities (PR1973,PR2043)
+- Fixed a script engine regression which caused crashes when disconnecting from servers (PR1969)
+- Fixed image previews not appearing reliably in the chat (PR1901)
+- Fixed VR lasers interacting with entities they shouldn't interact with (PR1933)
+    VR lasers could previously hit invisible material entities without Create app being open.
+- Fixed simple transparent shader not being affected by local lights (PR1793)
+- Fixed Interface scripts getting removed due to temporary network failures (PR1775)
+- Disabled fading effect on UI elements (PR1988)
+- Fixed things such as the avatar loading indicator and Create app gizmos being grabbable (PR1988)
+- Fixed particle spin calculation, which was causing billboarding issues for large particles (PR2066)
+- Disabled fade effect on unsupported entity types (PR2063)
+- Clarified accepted pitch for sound entities (PR2065)
+- Fixed a regression which caused Overte to deadlock when taking a screenshot (PR2084)
+- Fixed a performance regresssion in conjunction with the VR keybord (PR2077)
+    This greatly improves performance on weak CPUs and CPUs with low single core performance.
+- Disabled "You are available in undefined" notification (PR2057)
+- Fixed a server crash when running an Assignment Client script (PR2082)
+- Fixed console.log not working when used inside modules (PR2099)
+- Fixed black boxes and super bright single pixels when bloom is enabled (PR2111)
+- Partially fixed rendering on OpenGL 4.1 (PR2061)
+- Fixed outer edges on VR headsets with a high field of view being culled incorrectly on both OpenXR and OpenVR (PR2118,PR2173)
+- Fixed chat bubbles sometimes not being large enough for their contents (PR2116)
+- Fixed "user connected" and "user disconnected" messages appearing when entering and exiting the shield radius (PR2122)
+- Fixed crashes and rendering issues when displaying web entities (PR2136)
+- Fixed a regression causing the Emote and Doppelganger apps to not work (PR2124)
+- Fixed finger joint rotations on OpenXR (PR2137)
+- Fixed an issue which was causing WebAssembly functions to never resolve (PR2141)
+- Fixed the CONFIRM button in Avatar app popups being invisible sometimes (PR2114)
+- Fixed text and image entities sinking into models, due to backwards depth biasing (PR2131)
+- Fixed haze being applied to skyboxes incorrectly on the forward renderer (PR2115,PR2203)
+- Worked around a compiler issue causing OpenXR to not initialize on Linux (PR2163)
+- Fixed multiple potential bugs and crashes due to undefined behaviour (PR2175,PR2180,PR2177,PR2207)
+- Fixed server backups sometimes failing and being marked a corrupted (PR2158)
+- Fixed scripts getting garbage data from mouse wheel (PR2147)
+- Fixed two cases of negative timer intervals (PR2172)
+- Fixed a crash on Linux due to too large shader cache (PR2212)
+- Fixed text entities sometimes trying to write to a null pointer (PR2191)
+- Fixed a regression causing Overte to crash when switching to an avatar with wearables (PR2217)
+- Fixed a race condition when updating avatar joint data (PR2221)
+
+### Changes
+- Changed the "failed to load script" message to be less intrusive (PR1775)
+- Disabled TAA texture LOD bias, resulting in less noisy textures and theoretically higher performance (PR2048)
+- Moved the simulated primary button on Windows Mixed Reality controllers on OpenXR from thumbstick click to trackpad click (PR1948)
+- Exposed more OpenXR controller inputs (PR1948)
+- Improved appearance of VR lasers (PR1989)
+- Domain server log options are now passed to Assignment Clients (PR1981)
+- Most JavaScript objects can now be printed directly to console, instead of needing to stringify them (PR2103)
+- Improved grid shader (PR2134)
+- Multiple improvements to the chat (PR2201)
+
+### Additions
+- Added initial Vulkan support (PR59,PR2011,PR2052)
+    The rendering backend is selected at compile time, meaning Vulkan support isn't available in normal release builds.
+- Added a dialog for picking the display plugin on startup (PR1941)
+    You can bypass the dialog with the `--display={Desktop,OpenXR,OpenVR (Vive)}` launch flag.
+    `--useExperimentalXR` is no longer necessary, and behaves the same as `--display=OpenXR`.
+- Added local lights support to the forward renderer (PR1793)
+- Added bloom support to the forward renderer (PR2048)
+- Added Seated/Standing toggle to the VR tablet (PR2048)
+    This is a shortcut for the "Allow my avatar to stand" controls setting.
+- Added simple additive local light support to our MToon shader (PR1934)
+- Added fading effect support to lights (PR2064)
+- Added the possibility of emitting virtual keyboard events (PR2080)
+    By default, this is only allowed for scripts shipped with Overte and scripts on the local filesystem.
+- Added flycam, which can be enabled by pressing F4 (PR2100)
+    This doesn't replace the focus camera when pressing F in Create, or the Alt-cam when Alt-dragging.
+- Added new `OSCSocket` API for scripts to handle Open Sound Control messages (PR1944)
+- Added options to the `Clipboard.exportEntities` API for exporting entities with global positioning, excluding non-domain entitites and excluding pathnames (PR1620,PR2125)
+- Added initial EGL support on Linux for Wayland (PR2123,PR2202)
+- Added initial `MNDX_egl_enable` support on OpenXR (PR2123,PR2202)
+- Added LERP interpolation to avatar movement, making other avatars animate smoothly (PR2169)
+- Added horizontal mouse wheel scrolling to the `WheelEvent` API (PR2147)
+- Added `ScriptDiscoveryService.clearCache` for clearing `Script.require()` dependencies (PR2198)
+    Useful for reloading scripts during development.
+
+### Build System
+- Updated libnode from major version 18 to 22 (PR1711)
+- Added Conan binary cache uploads to our CI pipeline, resulting in prebuilt binaries being downloaded from our Artifactory in some cases (PR1952)
+- Switched building dependencies with C++20 on Windows (PR1978)
+- Added Conan Linux profile, simplifying the `conan install` command (PR2074)
+- Building with `OVERTE_USE_SYSTEM_LIBS` now disabled AppImage creating (PR2109)
+- Fixed building with `OVERTE_MEMORY_DEBUGGING` (PR2174)
+- Shader generator is now quiet by default (PR2188)
+- Replaced dependency on Polyvox with an internal implementation (PR2026)
+
 
 ## [2025.12.1] 2025.12.17
 
@@ -49,7 +143,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 
 ### Build System
 - Enabled warnings as errors on certain configurations (PR938,PR1368,PR1447,PR1705,PR1765)
-- Switch to C++20 (PR1857,PR1855)
+- Switched to C++20 (PR1857,PR1855)
 - Added NPM lockfiles to Console and JSDoc to avoid NPM supply chain attacks (PR1924)
 
 

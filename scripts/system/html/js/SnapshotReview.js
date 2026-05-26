@@ -33,7 +33,7 @@ function showSetupInstructions() {
     snapshotImagesDiv.className = "snapshotInstructions";
     snapshotImagesDiv.innerHTML = '<img class="centeredImage" src="./img/snapshotIcon.png" alt="Snapshot Instructions" width="64" height="64"/>' +
         '<br/>' +
-        '<p>Take and share snaps and GIFs with people in High Fidelity, Facebook, and Twitter.</p>' +
+        '<p>Take and share snaps and GIFs with people in Overte, Facebook, and Twitter.</p>' +
         "<h4>Setup Instructions</h4>" +
         "<p>Before you can begin taking snaps, please choose where you'd like to save snaps on your computer:</p>" +
         '<br/>' +
@@ -58,7 +58,7 @@ function showSnapshotInstructions() {
     snapshotImagesDiv.className = "snapshotInstructions";
     snapshotImagesDiv.innerHTML = '<img class="centeredImage" src="./img/snapshotIcon.png" alt="Snapshot Instructions" width="64" height="64"/>' +
         '<br/>' +
-        '<p>Take and share snaps and GIFs with people in High Fidelity, Facebook, and Twitter.</p>' +
+        '<p>Take and share snaps and GIFs with people in Overte, Facebook, and Twitter.</p>' +
         '<br/>' +
         '<div style="text-align:center;font-weight:bold;">' +
             '<p>Press the big red button to take a snap!</p>' +

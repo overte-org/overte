@@ -82,6 +82,18 @@ macro (setup_testcase_dependencies)
       CONFIGURE_COMMAND "" BUILD_COMMAND "" INSTALL_COMMAND ""
     )
 
+    # User reported at least floor.glb from this collection causes a crash.
+    # The collection is licensed CC0, so we can use this for testing freely.
+    ExternalProject_Add(
+      kenney_building_kit
+      PREFIX "models"
+      URL "https://testing-assets.overte.org/model-serializers/kenney_building-kit.zip"
+      URL_HASH SHA512=e15d59c39310738510bd94adab4227bbdf9f98f672bc7910494d970ac773473e99ea4ac8e94854e84de5f38bf92c10168eb4aa15f528773fb7ed2c2621411239
+      DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+      CONFIGURE_COMMAND "" BUILD_COMMAND "" INSTALL_COMMAND ""
+    )
+
+
 
 
     add_dependencies(${TARGET_NAME} ukr_franny)
@@ -91,6 +103,7 @@ macro (setup_testcase_dependencies)
     add_dependencies(${TARGET_NAME} madders2)
     add_dependencies(${TARGET_NAME} broken)
     add_dependencies(${TARGET_NAME} gltf_samples)
+    add_dependencies(${TARGET_NAME} kenney_building_kit)
   endif()
 
 

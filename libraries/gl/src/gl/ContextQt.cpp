@@ -30,7 +30,7 @@ void Context::makeCurrent(QOpenGLContext* context, QSurface* surface) {
     context->makeCurrent(surface);
 }
 
-#if defined(GL_CUSTOM_CONTEXT)
+#ifdef Q_OS_WIN
 void Context::createWrapperContext() {
     if (0 != _hglrc && nullptr == _qglContext) {
         _qglContext = new QOpenGLContext();
@@ -39,7 +39,6 @@ void Context::createWrapperContext() {
     }
 }
 #endif
-
 
 void Context::moveToThread(QThread* thread) {
     if (_qglContext) {
@@ -78,25 +77,49 @@ void Context::setupDebugLogging(QOpenGLContext *context) {
     }
 }
 
-
-#if !defined(GL_CUSTOM_CONTEXT)
 bool Context::makeCurrent() {
-    updateSwapchainMemoryCounter();
-    bool result = _qglContext->makeCurrent(_window);
-    gl::initModuleGl();
-    return result;
+#ifdef Q_OS_WIN
+    if (USE_CUSTOM_CONTEXT) {
+        BOOL result = wglMakeCurrent(_hdc, _hglrc);
+        assert(result);
+        updateSwapchainMemoryCounter();
+        return result;
+    } else {
+#endif
+        updateSwapchainMemoryCounter();
+        bool result = _qglContext->makeCurrent(_window);
+        gl::initModuleGl();
+        return result;
+#ifdef Q_OS_WIN
+    }
+#endif
 }
 
 void Context::swapBuffers() {
-    qglContext()->swapBuffers(_window); // VKTODO
+#ifdef Q_OS_WIN
+    if (USE_CUSTOM_CONTEXT) {
+        SwapBuffers(_hdc);
+    } else {
+#endif
+        qglContext()->swapBuffers(_window); // VKTODO
+#ifdef Q_OS_WIN
+    }
+#endif
 }
 
 void Context::doneCurrent() {
-    if (_qglContext) {
-        _qglContext->doneCurrent();
-    }
-}
+#ifdef Q_OS_WIN
+    if (USE_CUSTOM_CONTEXT) {
+        wglMakeCurrent(0, 0);
+    } else {
 #endif
+        if (_qglContext) {
+            _qglContext->doneCurrent();
+        }
+#ifdef Q_OS_WIN
+    }
+#endif
+}
 
 Q_GUI_EXPORT QOpenGLContext *qt_gl_global_share_context();
 const QSurfaceFormat& getDefaultOpenGLSurfaceFormat();

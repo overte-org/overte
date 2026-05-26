@@ -19,6 +19,7 @@
 
 namespace gpu {
 
+/// Not used anywhere.
 enum class LoadOp
 {
     Load = 0,
@@ -26,12 +27,14 @@ enum class LoadOp
     DontCare = 2,
 };
 
+/// Not used anywhere.
 enum class StoreOp
 {
     Store = 0,
     DontCare = 1,
 };
 
+/// Not used anywhere.
 struct Attachment {
     Attachment();
     Attachment(const Element& element, LoadOp loadOp, StoreOp storeOp, LoadOp stencilLoadOp = LoadOp::DontCare, StoreOp stencilStoreOp = StoreOp::DontCare);
@@ -45,6 +48,7 @@ struct Attachment {
     void setRaw(uint32_t raw);
 };
 
+/// Not used anywhere.
 class Renderpass {
 public:
     using Attachments = std::vector<Attachment>;

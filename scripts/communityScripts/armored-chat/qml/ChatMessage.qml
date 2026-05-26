@@ -22,7 +22,7 @@ Item {
 			Text {
 				text: delegateUsername;
 				font.pixelSize: 16;
-				color: isSystem ? "#00aaff" : "gray";
+				color: isSystem ? "#00aaff" : "#c6c6c6";
 			}
 
 			Text {

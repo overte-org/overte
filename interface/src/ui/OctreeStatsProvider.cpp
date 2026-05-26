@@ -15,9 +15,8 @@
 #include "Menu.h"
 #include "octree/OctreePacketProcessor.h"
 
-OctreeStatsProvider::OctreeStatsProvider(QObject* parent, NodeToOctreeSceneStats* model) :
+OctreeStatsProvider::OctreeStatsProvider(QObject* parent) :
     QObject(parent),
-    _model(model),
     _statCount(0),
     _averageUpdatesPerSecond(SAMPLES_PER_SECOND)
 {
@@ -70,7 +69,7 @@ void OctreeStatsProvider::updateOctreeStatsData() {
 
     // Do this ever paint event... even if we don't update
     auto totalTrackedEdits = entitiesTree->getTotalTrackedEdits();
-    
+
     const quint64 SAMPLING_WINDOW = USECS_PER_SECOND / SAMPLES_PER_SECOND;
     quint64 now = usecTimestampNow();
     quint64 sinceLastWindow = now - _lastWindowAt;
@@ -154,7 +153,7 @@ void OctreeStatsProvider::updateOctreeStatsData() {
     }
 
     emit sendingModeChanged(m_sendingMode);
-    
+
     // Server Elements
     m_serverElements = QString("Total: %1 / Internal: %2 / Leaves: %3").
             arg(totalNodes).arg(totalInternal).arg(totalLeaves);
@@ -212,7 +211,7 @@ void OctreeStatsProvider::updateOctreeStatsData() {
             .arg(outboundQueuedPPS, 5, 'f', FLOATING_POINT_PRECISION)
             .arg(outboundSentPPS, 5, 'f', FLOATING_POINT_PRECISION);
     emit outboundEditPacketsChanged(m_outboundEditPackets);
-    
+
     // Entity Edits update time
     auto averageEditDelta = entitiesTree->getAverageEditDeltas();
     auto maxEditDelta = entitiesTree->getMaxEditDelta();
@@ -224,7 +223,7 @@ void OctreeStatsProvider::updateOctreeStatsData() {
 
     // Entity Edits
     auto bytesPerEdit = entitiesTree->getAverageEditBytes();
-    
+
     auto updatesPerSecond = _averageUpdatesPerSecond.getAverage();
     if (updatesPerSecond < 1) {
         updatesPerSecond = 0; // we don't really care about small updates per second so suppress those

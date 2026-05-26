@@ -85,18 +85,6 @@ bool Stream::Format::setAttribute(Slot slot, Slot channel, Element element, Offs
     return true;
 }
 
-bool Stream::Format::setAttribute(Slot slot, Frequency frequency) {
-    _attributes[slot] = Attribute((InputSlot)slot, slot, getDefaultElements()[slot], 0, frequency);
-    evaluateCache();
-    return true;
-}
-
-bool Stream::Format::setAttribute(Slot slot, Slot channel, Frequency frequency) {
-    _attributes[slot] = Attribute((InputSlot)slot, channel, getDefaultElements()[slot], 0, frequency);
-    evaluateCache();
-    return true;
-}
-
 Stream::Attribute Stream::Format::getAttribute(Slot slot) const {
     auto attribIt = _attributes.find(slot);
     if (attribIt != _attributes.end()) {
@@ -110,17 +98,4 @@ void BufferStream::addBuffer(const BufferPointer& buffer, Offset offset, Offset 
     _buffers.push_back(buffer);
     _offsets.push_back(offset);
     _strides.push_back(stride);
-}
-
-BufferStream BufferStream::makeRangedStream(uint32 offset, uint32 count) const {
-    if ((offset < _buffers.size())) {
-        auto rangeSize = std::min(count, (uint32)(_buffers.size() - offset));
-        BufferStream newStream;
-        newStream._buffers.insert(newStream._buffers.begin(), _buffers.begin() + offset, _buffers.begin() + offset + rangeSize);
-        newStream._offsets.insert(newStream._offsets.begin(), _offsets.begin() + offset, _offsets.begin() + offset + rangeSize);
-        newStream._strides.insert(newStream._strides.begin(), _strides.begin() + offset, _strides.begin() + offset + rangeSize);
-        return newStream;
-    }
-
-    return BufferStream();
 }

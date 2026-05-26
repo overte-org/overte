@@ -202,6 +202,9 @@ FlowNode::FlowNode(const glm::vec3& initialPosition, FlowPhysicsSettings setting
 }
 
 void FlowNode::update(float deltaTime, const glm::vec3& accelerationOffset) {
+    // limit to 20fps so the solver doesn't blow up when the game is minimised
+    deltaTime = std::min(0.05f, deltaTime);
+
     _acceleration = glm::vec3(0.0f, _settings._gravity, 0.0f);
     _previousVelocity = _currentVelocity;
     _currentVelocity = _currentPosition - _previousPosition;

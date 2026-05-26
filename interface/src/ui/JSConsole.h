@@ -74,7 +74,7 @@ private:
 
     QStandardItemModel* getAutoCompleteModel(const QString& memberOf = nullptr);
 
-    QFutureWatcher<QVariant> _executeWatcher;
+    QFutureWatcher<QString> _executeWatcher;
     Ui::Console* _ui;
     int _currentCommandInHistory;
     QString _savedHistoryFilename;

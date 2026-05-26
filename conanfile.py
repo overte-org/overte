@@ -37,6 +37,7 @@ class Overte(ConanFile):
         "qt*:qtwebengine": "True",
         "qt*:qtwebsockets": "True",
         "qt*:qtwebview": "True",
+        "qt*:qtx11extras": "True",  # Required by gpu-frame-player on Linux
         "qt*:qtxmlpatterns": "True",
         "qt*:qttools": "True",  # windeployqt for Windows
         "glad*:spec": "gl",
@@ -67,16 +68,15 @@ class Overte(ConanFile):
         self.requires("liblo/0.30@overte/stable")
         self.requires("libnode/22.22.0@overte/stable#1f75a2b0272c5e3ad9d4ddb432a467f8")
         self.requires("nlohmann_json/3.11.2")
-        self.requires("nvidia-texture-tools/2023.01@overte/stable")
+        self.requires("nvidia-texture-tools/2023.01@overte/stable#f4eff53a38bd2c26eb6fa1206ffd22f6")
         self.requires("onetbb/2021.10.0")
         self.requires("openexr/3.1.9")
         self.requires("openvr/2.2.3@overte/stable")
         self.requires("openxr/1.1.46@overte/stable")
-        self.requires("opus/1.4")
-        self.requires("polyvox/2025.09.19@overte/experimental#76ce908c1078988dceae5ad32ead2909")
+        self.requires("opus/1.5.2")
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
-        self.requires("sdl/2.32.8")
+        self.requires("sdl/2.32.10")
         self.requires("spirv-cross/1.3.268.0")
         self.requires("spirv-tools/1.3.268.0")
         self.requires("steamworks/158a@overte/prebuild")
@@ -86,9 +86,6 @@ class Overte(ConanFile):
         self.requires("zlib/1.3.1")
         self.requires("glm/0.9.9.5", force=True) # FIXME: update to version 1.0.1
         self.requires("jsoncpp/1.9.6", force=True)
-        # Fixes build errors on GCC 15. Check if this is still required when upgrading from sdl/2.30.3.
-        # https://github.com/conan-io/conan-center-index/issues/27265
-        self.requires("libiconv/1.18", force=True)
         openssl = "openssl/1.1.1q"
 
         if self.options.qt_source == "system":

@@ -93,6 +93,7 @@
 #include <scripting/SettingsScriptingInterface.h>
 #include <scripting/TestScriptingInterface.h>
 #include <scripting/WindowScriptingInterface.h>
+#include <scripting/OSCScriptingInterface.h>
 #ifndef Q_OS_ANDROID
 #include <shared/FileLogger.h>
 #endif
@@ -210,7 +211,6 @@ void messageHandler(QtMsgType type, const QMessageLogContext& context, const QSt
 
 Application::Application(
     int& argc, char** argv,
-    const QCommandLineParser& parser,
     QElapsedTimer& startupTimer
 ) :
     QApplication(argc, argv),
@@ -668,6 +668,9 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject(sgp, "Workload", _gameWorkload._engine->getConfiguration().get());
 
     scriptEngine->registerGlobalObject(sgp, "Graphics", DependencyManager::get<GraphicsScriptingInterface>().data());
+
+    scriptEngine->registerGlobalObject(sgp, "OSCSocket", DependencyManager::get<OSCScriptingInterface>().data());
+    scriptEngine->registerFunction(sgp, "OSCSocket", "sendPacket", OSCScriptingInterface::sendPacket, 0);
 
     scriptEngine->registerGlobalObject(sgp, "ScriptDiscoveryService", DependencyManager::get<ScriptEngines>().data());
     scriptEngine->registerGlobalObject(sgp, "Reticle", getApplicationCompositor().getReticleInterface());

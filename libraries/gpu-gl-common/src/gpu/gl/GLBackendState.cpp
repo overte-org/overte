@@ -31,18 +31,19 @@ void GLBackend::resetPipelineState(State::Signature nextSignature) {
 
     // Default line width accross the board
     glLineWidth(1.0f);
-#if !defined(USE_GLES)
-    // force a few states regardless
-    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-    // Point size is always on
-    //glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
-    glEnable(GL_PROGRAM_POINT_SIZE_EXT);
-    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+        // force a few states regardless
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-    glEnable(GL_LINE_SMOOTH);
-#endif
+        // Point size is always on
+        //glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+        glEnable(GL_PROGRAM_POINT_SIZE_EXT);
+        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
 
+        glEnable(GL_LINE_SMOOTH);
+    }
 }
 
 void GLBackend::syncPipelineStateCache() {
@@ -53,15 +54,17 @@ void GLBackend::syncPipelineStateCache() {
     // Default line width accross the board
     glLineWidth(1.0f);
 
-#if !defined(USE_GLES)
-    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
-    // Point size is always on
-    //glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
-    glEnable(GL_PROGRAM_POINT_SIZE_EXT);
-    glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
-    glEnable(GL_LINE_SMOOTH);
-#endif
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+        glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+
+        // Point size is always on
+        //glHint(GL_POINT_SMOOTH_HINT, GL_NICEST);
+        glEnable(GL_PROGRAM_POINT_SIZE_EXT);
+        glEnable(GL_VERTEX_PROGRAM_POINT_SIZE);
+        glEnable(GL_LINE_SMOOTH);
+    }
 
     getCurrentGLState(state);
     State::Signature signature = State::evalSignature(state);
@@ -73,13 +76,14 @@ void GLBackend::syncPipelineStateCache() {
 
 void GLBackend::do_setStateFillMode(int32 mode) {
     if (_pipeline._stateCache.fillMode != mode) {
-#if !defined(USE_GLES)
-        static GLenum GL_FILL_MODES[] = { GL_POINT, GL_LINE, GL_FILL };
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL_MODES[mode]);
-        (void)CHECK_GL_ERROR();
+        auto backendApi = hifi::properties::getGraphicsAPI();
+        if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+            static GLenum GL_FILL_MODES[] = { GL_POINT, GL_LINE, GL_FILL };
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL_MODES[mode]);
+            (void)CHECK_GL_ERROR();
 
-        _pipeline._stateCache.fillMode = State::FillMode(mode);
-#endif
+            _pipeline._stateCache.fillMode = State::FillMode(mode);
+        }
     }
 }
 
@@ -111,15 +115,16 @@ void GLBackend::do_setStateFrontFaceClockwise(bool isClockwise) {
 
 void GLBackend::do_setStateDepthClampEnable(bool enable) {
     if (_pipeline._stateCache.flags.depthClampEnable != enable) {
-#if !defined(USE_GLES)
-        if (enable) {
-            glEnable(GL_DEPTH_CLAMP);
-        } else {
-            glDisable(GL_DEPTH_CLAMP);
+        auto backendApi = hifi::properties::getGraphicsAPI();
+        if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+            if (enable) {
+                glEnable(GL_DEPTH_CLAMP);
+            } else {
+                glDisable(GL_DEPTH_CLAMP);
+            }
+            (void)CHECK_GL_ERROR();
+            _pipeline._stateCache.flags.depthClampEnable = enable;
         }
-        (void)CHECK_GL_ERROR();
-        _pipeline._stateCache.flags.depthClampEnable = enable;
-#endif
     }
 }
 
@@ -138,49 +143,52 @@ void GLBackend::do_setStateScissorEnable(bool enable) {
 
 void GLBackend::do_setStateMultisampleEnable(bool enable) {
     if (_pipeline._stateCache.flags.multisampleEnable != enable) {
-#if !defined(USE_GLES)
-        if (enable) {
-            glEnable(GL_MULTISAMPLE);
-        } else {
-            glDisable(GL_MULTISAMPLE);
-        }
-        (void)CHECK_GL_ERROR();
+        auto backendApi = hifi::properties::getGraphicsAPI();
+        if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+            if (enable) {
+                glEnable(GL_MULTISAMPLE);
+            } else {
+                glDisable(GL_MULTISAMPLE);
+            }
+            (void)CHECK_GL_ERROR();
 
-        _pipeline._stateCache.flags.multisampleEnable = enable;
-#endif
+            _pipeline._stateCache.flags.multisampleEnable = enable;
+        }
     }
 }
 
 void GLBackend::do_setStateAntialiasedLineEnable(bool enable) {
     if (_pipeline._stateCache.flags.antialisedLineEnable != enable) {
-#if !defined(USE_GLES)
-        if (enable) {
-            glEnable(GL_LINE_SMOOTH);
-        } else {
-            glDisable(GL_LINE_SMOOTH);
-        }
-        (void)CHECK_GL_ERROR();
+        auto backendApi = hifi::properties::getGraphicsAPI();
+        if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+            if (enable) {
+                glEnable(GL_LINE_SMOOTH);
+            } else {
+                glDisable(GL_LINE_SMOOTH);
+            }
+            (void)CHECK_GL_ERROR();
 
-        _pipeline._stateCache.flags.antialisedLineEnable = enable;
-#endif
+            _pipeline._stateCache.flags.antialisedLineEnable = enable;
+        }
     }
 }
 
 void GLBackend::do_setStateDepthBias(Vec2 bias) {
     if ((bias.x != _pipeline._stateCache.depthBias) || (bias.y != _pipeline._stateCache.depthBiasSlopeScale)) {
+        auto backendApi = hifi::properties::getGraphicsAPI();
         if ((bias.x != 0.0f) || (bias.y != 0.0f)) {
             glEnable(GL_POLYGON_OFFSET_FILL);
-#if !defined(USE_GLES)
-            glEnable(GL_POLYGON_OFFSET_LINE);
-            glEnable(GL_POLYGON_OFFSET_POINT);
-#endif
+            if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+                glEnable(GL_POLYGON_OFFSET_LINE);
+                glEnable(GL_POLYGON_OFFSET_POINT);
+            }
             glPolygonOffset(bias.x, bias.y);
         } else {
             glDisable(GL_POLYGON_OFFSET_FILL);
-#if !defined(USE_GLES)
-            glDisable(GL_POLYGON_OFFSET_LINE);
-            glDisable(GL_POLYGON_OFFSET_POINT);
-#endif
+            if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+                glDisable(GL_POLYGON_OFFSET_LINE);
+                glDisable(GL_POLYGON_OFFSET_POINT);
+            }
         }
         (void)CHECK_GL_ERROR();
 

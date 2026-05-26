@@ -157,7 +157,7 @@ void GLBackend::init() {
         GPUIdent* gpu = GPUIdent::getInstance(vendor, renderer);
 
 // Do not try to get texture memory information on unsupported systems.
-#if defined(Q_OS_ANDROID) || defined(USE_GLES) || defined(Q_OS_DARWIN)
+#if defined(Q_OS_ANDROID) || defined(Q_OS_DARWIN)
         qCDebug(gpugllogging) << "Automatic texture memory not supported in this configuration";
         _videoCard = Unknown;
         _dedicatedMemory = (size_t)(gpu->getMemory()) * BYTES_PER_MIB;
@@ -225,9 +225,7 @@ void GLBackend::init() {
         qCDebug(gpugllogging) << "\tmax uniform binding:" << MAX_COMBINED_UNIFORM_BLOCKS;
         qCDebug(gpugllogging) << "\tmax uniform size:" << MAX_UNIFORM_BLOCK_SIZE;
         qCDebug(gpugllogging) << "\tuniform alignment:" << UNIFORM_BUFFER_OFFSET_ALIGNMENT;
-#if !defined(USE_GLES)
         qCDebug(gpugllogging, "V-Sync is %s\n", (::gl::getSwapInterval() > 0 ? "ON" : "OFF"));
-#endif
     });
 }
 
@@ -238,12 +236,12 @@ size_t GLBackend::getAvailableMemory() {
 
     switch( _videoCard ) {
         case NVIDIA:
-#if !defined(Q_OS_ANDROID) && !defined(USE_GLES)
+#if !defined(Q_OS_ANDROID)
             glGetIntegerv(GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX, &mem[0]);
 #endif
             return (size_t)(mem[0]) * BYTES_PER_KIB;
         case ATI:
-#if !defined(Q_OS_ANDROID) && !defined(USE_GLES)
+#if !defined(Q_OS_ANDROID)
             glGetIntegerv(GL_TEXTURE_FREE_MEMORY_ATI, &mem[0]);
 #endif
             return (size_t)(mem[0]) * BYTES_PER_KIB;
@@ -508,7 +506,7 @@ void GLBackend::renderPassDraw(const Batch& batch) {
 // Support annotating captures in tools like Renderdoc
 class GlDuration {
 public:
-#ifdef USE_GLES
+#ifdef Q_OS_ANDROID
     GlDuration(const char* name) {
         // We need to use strlen here instead of -1, because the Snapdragon profiler
         // will crash otherwise 

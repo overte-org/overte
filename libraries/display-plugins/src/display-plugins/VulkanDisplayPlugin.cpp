@@ -1112,7 +1112,6 @@ void VulkanDisplayPlugin::updateCompositeFramebuffer() {
 void VulkanDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer networkTexture, QOpenGLFramebufferObject* target, GLsync* fenceSync) {
     // VKTODO
 #if 0
-#if !defined(USE_GLES)
     auto glBackend = const_cast<VulkanDisplayPlugin&>(*this).getBackend();
     withOtherThreadContext([&] {
         GLuint sourceTexture = glBackend->getTextureID(networkTexture->getGPUTexture());
@@ -1159,7 +1158,6 @@ void VulkanDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer ne
         glDeleteFramebuffers(2, fbo);
         *fenceSync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
     });
-#endif
 #endif
 }
 

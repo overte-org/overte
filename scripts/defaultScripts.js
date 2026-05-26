@@ -36,7 +36,7 @@ var DEFAULT_SCRIPTS_COMBINED = [
 ];
 var DEFAULT_SCRIPTS_SEPARATE = [
     "system/systemApps.js",
-    "system/chat.js",
+    //"system/chat.js",
     "system/places/places.js",
     "system/controllers/controllerScripts.js",
     "system/controllers/squeezeHands.js",
@@ -44,6 +44,7 @@ var DEFAULT_SCRIPTS_SEPARATE = [
     "simplifiedUI/ui/simplifiedNametag/simplifiedNametag.js",
     "communityScripts/chatBubbles/chatBubbles.js",
     "communityScripts/contextMenu.js",
+    "system/flyCam.js",
 ];
 
 if (Window.interstitialModeEnabled) {

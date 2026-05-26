@@ -18,7 +18,11 @@ Item {
     // property alias webViewCoreProfile: webViewCore.profile
     property string webViewCoreUserAgent
 
-    property bool useBackground: webViewCore.useBackground
+    property bool useBackground: false
+    Component.onCompleted: {
+        useBackground = Qt.binding(function() { return webViewCore.useBackground ?? false; })
+    }
+
     property string userAgent: webViewCore.profile.httpUserAgent
     property string userScriptUrl: ""
     property string urlTag: "noDownload=false";

@@ -1094,8 +1094,8 @@ int AvatarData::parseDataFromBuffer(const QByteArray& buffer) {
         glm::quat currentOrientation = getLocalOrientation();
 
         if (currentOrientation != newOrientation) {
-            _hasNewJointData = true;
-            setLocalOrientation(newOrientation);
+            _orientationHistory[0] = _orientationHistory[1];
+            _orientationHistory[1] = { usecTimestampNow(), newOrientation };
         }
         int numBytesRead = sourceBuffer - startSection;
         _avatarOrientationRate.increment(numBytesRead);
@@ -1369,11 +1369,15 @@ int AvatarData::parseDataFromBuffer(const QByteArray& buffer) {
 
         const int COMPRESSED_QUATERNION_SIZE = 6;
         PACKET_READ_CHECK(JointRotations, numValidJointRotations * COMPRESSED_QUATERNION_SIZE);
+        if (_hasNewJointDataVec.size() != static_cast<size_t>(numJoints)) {
+            _hasNewJointDataVec.resize(numJoints, false);
+        }
         for (int i = 0; i < numJoints; i++) {
             JointData& data = _jointData[i];
             if (validRotations[i]) {
                 sourceBuffer += unpackOrientationQuatFromSixBytes(sourceBuffer, data.rotation);
                 _hasNewJointData = true;
+                _hasNewJointDataVec[i] = true;
                 data.rotationIsDefaultPose = false;
             }
         }
@@ -1410,12 +1414,16 @@ int AvatarData::parseDataFromBuffer(const QByteArray& buffer) {
         const int COMPRESSED_TRANSLATION_SIZE = 6;
         PACKET_READ_CHECK(JointTranslation, numValidJointTranslations * COMPRESSED_TRANSLATION_SIZE);
 
+        if (_hasNewJointDataVec.size() != static_cast<size_t>(numJoints)) {
+            _hasNewJointDataVec.resize(numJoints, false);
+        }
         for (int i = 0; i < numJoints; i++) {
             JointData& data = _jointData[i];
             if (validTranslations[i]) {
                 sourceBuffer += unpackFloatVec3FromSignedTwoByteFixed(sourceBuffer, data.translation, TRANSLATION_COMPRESSION_RADIX);
                 data.translation *= maxTranslationDimension;
                 _hasNewJointData = true;
+                _hasNewJointDataVec[i] = true;
                 data.translationIsDefaultPose = false;
             }
         }

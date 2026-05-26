@@ -13,6 +13,8 @@
 
 #include "Context.h"
 
+#include <shared/GlobalAppProperties.h>
+
 using namespace gpu;
 
 Shader::ProgramMap Shader::_programMap;
@@ -64,13 +66,19 @@ Shader::Reflection Shader::getReflection(shader::Dialect dialect, shader::Varian
     return _source.getReflection(dialect, variant);
 }
 
-
 Shader::Reflection Shader::getReflection() const {
     // For sake of convenience i would like to be able to use a  "default" dialect that represents the reflection
     // of the source of the shader
     // What i really want, is a reflection that is designed for the gpu lib interface but we don't have that yet (glsl45 is the closest to that)
     // Until we have an implementation for this, we will return such default reflection from the one available and platform specific
-    return getReflection(shader::DEFAULT_DIALECT, shader::Variant::Mono);
+    auto DEFAULT_DIALECT = Dialect::glsl450;
+    auto backendApi = hifi::properties::getGraphicsAPI();
+    if (backendApi == hifi::properties::GraphicsAPI::GL41) {
+        DEFAULT_DIALECT = Dialect::glsl410;
+    } else if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
+        DEFAULT_DIALECT = Dialect::glsl310es;
+    }
+    return getReflection(DEFAULT_DIALECT, shader::Variant::Mono);
 }
 
 Shader::~Shader()
@@ -151,10 +159,6 @@ void Shader::setCompilationLogs(const CompilationLogs& logs) const {
     }
 }
 
-void Shader::incrementCompilationAttempt() const {
-    _numCompilationAttempts++;
-}
-
 Shader::Pointer Shader::createVertex(const Source& source) {
     return Pointer(new Shader(VERTEX, source, true));
 }
@@ -182,10 +186,10 @@ Shader::Pointer Shader::createProgram(const Pointer& vertexShader, const Pointer
     return Pointer(new Shader(PROGRAM, vertexShader, nullptr, pixelShader));
 }
 
-// Dynamic program, bypass caching
+/*// Dynamic program, bypass caching
 Shader::Pointer Shader::createProgram(const Pointer& vertexShader, const Pointer& geometryShader, const Pointer& pixelShader) {
     return Pointer(new Shader(PROGRAM, vertexShader, geometryShader, pixelShader));
-}
+}*/
 
 const Shader::Source& Shader::getShaderSource(uint32_t id) {
     return shader::Source::get(id);

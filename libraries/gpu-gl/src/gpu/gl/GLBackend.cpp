@@ -4,6 +4,7 @@
 //
 //  Created by Sam Gateau on 10/27/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -21,6 +22,7 @@
 
 #include "../gl41/GL41Backend.h"
 #include "../gl45/GL45Backend.h"
+#include "../gles/GLESBackend.h"
 
 using namespace gpu;
 using namespace gpu::gl;
@@ -28,17 +30,23 @@ using namespace gpu::gl;
 static GLBackend* INSTANCE{ nullptr };
 
 BackendPointer GLBackend::createBackend() {
-    // FIXME provide a mechanism to override the backend for testing
-    // Where the gpuContext is initialized and where the TRUE Backend is created and assigned
+    auto backendApi = hifi::properties::getGraphicsAPI();
     auto version = QOpenGLContextWrapper::currentContextVersion();
     std::shared_ptr<GLBackend> result;
-    if (!::gl::disableGl45() && version >= 0x0405) {
+    if (backendApi == hifi::properties::GraphicsAPI::GL45 && version >= 0x0405) {
         qCDebug(gpugllogging) << "Using OpenGL 4.5 backend";
         result = std::make_shared<gpu::gl45::GL45Backend>();
-    } else {
+    } else if (backendApi == hifi::properties::GraphicsAPI::GL41) {
         qCDebug(gpugllogging) << "Using OpenGL 4.1 backend";
         result = std::make_shared<gpu::gl41::GL41Backend>();
+    } else if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
+        qDebug() << "Using OpenGLES 3.2 backend";
+        result = std::make_shared<gpu::gles::GLESBackend>();
+    } else {
+        qDebug() << "Unknown OpenGL backend" << (int)backendApi;
+        return nullptr;
     }
+
     result->initInput();
     result->initTransform();
     result->initTextureManagementStage();
