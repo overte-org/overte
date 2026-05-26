@@ -19,12 +19,8 @@ hwloc/*:shared=True
 # Some Qt options are here rather than Overte's conanfile.py to allow for easier usage during Qt package development.
 # Version conflict and not needed.
 qt*:with_mysql=False
-# PulseAudio is used for audio output on Linux.
-qt*:with_pulseaudio=True
-# Required by qt:with_pulseaudio
-pulseaudio*:with_glib=True
-# Required for PulseAudio support in Qt.
-qt*:with_glib=True
+# Use GStreamer audio backend. See: QTBUG-95116
+qt*:with_gstreamer=True
 # libpq build error and not needed (PostgreSQL).
 qt*:with_pq=False
 # Open Database Connectivity
