@@ -22,14 +22,18 @@
 // WEBRTC_DATA_CHANNELS: WebRTC client-server connections in parallel with UDP.
 
 #if defined(Q_OS_MAC)
-#  define WEBRTC_AUDIO 1
+#  ifndef DISABLE_WEBRTC
+#      define WEBRTC_AUDIO 1
+#  endif
 #elif defined(Q_OS_WIN)
-#  define WEBRTC_AUDIO 1
+#   ifndef DISABLE_WEBRTC
+#       define WEBRTC_AUDIO 1
 // We use PulseAudio's webrtc-audio-processing, which doesn't include Data Channels.
 // Data Channels were only used for Vircadia's web client.
 // We should replace Google WebRTC with libdatachannel if we ever resurrect it.
 // #  define WEBRTC_DATA_CHANNELS 1
-#  define WEBRTC_WIN 1
+#      define WEBRTC_WIN 1
+#  endif
 #  define NOMINMAX 1  // Windows.h
 #  ifndef WIN32_LEAN_AND_MEAN
 #    define WIN32_LEAN_AND_MEAN 1

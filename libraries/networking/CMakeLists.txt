@@ -8,7 +8,7 @@ add_crashpad()
 target_breakpad()
 
 if (WIN32 OR (UNIX AND NOT APPLE))
-    if (NOT DISABLE_WEBRTC )
+    if (NOT OVERTE_DISABLE_WEBRTC)
         target_webrtc()
     else()
         message(WARNING "WebRTC is supported on this platform but has been disabled for this build (likely memory debugging)")
