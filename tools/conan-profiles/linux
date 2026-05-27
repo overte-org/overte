@@ -17,6 +17,8 @@ hwloc/*:shared=True
 
 # Options required for building Qt
 # Some Qt options are here rather than Overte's conanfile.py to allow for easier usage during Qt package development.
+# Required by gpu-frame-player on Linux
+qt*:qtx11extras=True
 # Version conflict and not needed.
 qt*:with_mysql=False
 # PulseAudio is used for audio output on Linux.

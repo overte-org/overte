@@ -58,6 +58,10 @@ jobs:
       if: startsWith(matrix.os, 'Windows')
       uses: ./.github/actions/setup-windows
 
+    - name: Prepare macOS environment
+      if: startsWith(matrix.os, 'macOS')
+      uses: ./.github/actions/setup-macos
+
     - name: Read image environment variables
       # Bring some environment variables out of the Runner (Docker) image's environment into the Job environment.
       if: ${{matrix.image}} != ""
