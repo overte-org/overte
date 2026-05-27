@@ -5,7 +5,7 @@
 //  Created by Stephen Birarda on 4/9/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -72,6 +72,7 @@ using AvatarGrabDataMap = QMap<QUuid, QByteArray>;
 
 using AvatarDataSequenceNumber = uint16_t;
 
+/// XXX: why is there an avatar entity limit and why is it specifically 42
 const int MAX_NUM_AVATAR_ENTITIES = 42;
 
 // avatar motion behaviors
@@ -119,23 +120,8 @@ const int PROCEDURAL_BLINK_FACE_MOVEMENT = 10; // 11th bit
 const int COLLIDE_WITH_OTHER_AVATARS = 11; // 12th bit
 const int HAS_HERO_PRIORITY = 12; // 13th bit  (be scared)
 
-/*@jsdoc
- * <p>The pointing state of the hands is specified by the following values:</p>
- * <table>
- *   <thead>
- *     <tr><th>Value</th><th>Description</th>
- *   </thead>
- *   <tbody>
- *     <tr><td><code>0</code></td><td>No hand is pointing.</td></tr>
- *     <tr><td><code>1</code></td><td>The left hand is pointing.</td></tr>
- *     <tr><td><code>2</code></td><td>The right hand is pointing.</td></tr>
- *     <tr><td><code>4</code></td><td>It is the index finger that is pointing.</td></tr>
- *   </tbody>
- * </table>
- * <p>The values for the hand states are added together to give the <code>HandState</code> value. For example, if the left
- * hand's finger is pointing, the value is <code>1 + 4 == 5</code>.
- * @typedef {number} HandState
- */
+// FIXME: Unused prehistoric cruft, still technically used in Avatar
+// for rendering magenta laser pointers in C++
 const char HAND_STATE_NULL = 0;
 const char LEFT_HAND_POINTING_FLAG = 1;
 const char RIGHT_HAND_POINTING_FLAG = 2;
@@ -248,6 +234,8 @@ namespace AvatarDataPacket {
     const size_t AVATAR_SCALE_SIZE = 2;
     static_assert(sizeof(AvatarScale) == AVATAR_SCALE_SIZE, "AvatarDataPacket::AvatarScale size doesn't match.");
 
+    // TODO: Is this necessary? Wouldn't the eye
+    // bones in the joint data already cover this?
     PACKED_BEGIN struct LookAtPosition {
         float lookAtPosition[3];          // world space position that eyes are focusing on.
                                           // FIXME - unless the person has an eye tracker, this is simulated...
@@ -295,6 +283,9 @@ namespace AvatarDataPacket {
     const size_t PARENT_INFO_SIZE = 18;
     static_assert(sizeof(ParentInfo) == PARENT_INFO_SIZE, "AvatarDataPacket::ParentInfo size doesn't match.");
 
+    // FIXME: Why is the local position a separately packed field,
+    // especially when it's the exact same size as the global position
+    // and a local position with no parent is just a global position anyway?
     // will only ever be included if the avatar has a parent but can change independent of changes to parent info
     // and so we keep it a separate record
     PACKED_BEGIN struct AvatarLocalPosition {
@@ -304,6 +295,9 @@ namespace AvatarDataPacket {
     const size_t AVATAR_LOCAL_POSITION_SIZE = 12;
     static_assert(sizeof(AvatarLocalPosition) == AVATAR_LOCAL_POSITION_SIZE, "AvatarDataPacket::AvatarLocalPosition size doesn't match.");
 
+    // FIXME: In practice it looks like only the avatar-relative
+    // controller joints of OtherAvatars aren't done properly, and
+    // the "camera-relative" ones fall back to the avatar-relative ones.
     PACKED_BEGIN struct HandControllers {
         SixByteQuat leftHandRotation;
         SixByteTrans leftHandTranslation;
@@ -328,6 +322,9 @@ namespace AvatarDataPacket {
 
     // variable length structure follows
 
+    // FIXME: This has nothing to do with face tracking. Are these fields
+    // even used? I thought these blendshapes were driven procedurally
+    // just from the audio loudness
     // only present if HAS_SCRIPTED_BLENDSHAPES flag is set in AvatarInfo.flags
     PACKED_BEGIN struct FaceTrackerInfo {
         float leftEyeBlink;
@@ -420,6 +417,7 @@ const float AVATAR_DISTANCE_LEVEL_5 = 200.0f; // meters
 
 // Where one's own Avatar begins in the world (will be overwritten if avatar data file is found).
 // This is the start location in the Sandbox (xyz: 6270, 211, 6000).
+// FIXME: Unused prehistoric cruft
 const glm::vec3 START_LOCATION(6270, 211, 6000);
 
 // Avatar Transit Constants
@@ -433,6 +431,7 @@ const float AVATAR_TRANSIT_FRAMES_PER_SECOND = 30.0f;
 const float AVATAR_PRE_TRANSIT_FRAME_COUNT = 10.0f;
 const float AVATAR_POST_TRANSIT_FRAME_COUNT = 27.0f;
 
+// FIXME: Unused prehistoric cruft
 enum KeyState {
     NO_KEY_DOWN = 0,
     INSERT_KEY_DOWN,
@@ -484,6 +483,10 @@ public:
 
 class ClientTraitsHandler;
 
+/**
+ * The parent class of and Avatar, ScriptableAvatar, MixerAvatar,
+ * and the grandparent class of MyAvatar and OtherAvatar.
+ */
 class AvatarData : public QObject, public SpatiallyNestable {
     Q_OBJECT
 
@@ -600,7 +603,18 @@ public:
 
     static const QString FRAME_NAME;
 
+    /**
+     * Deserializes a recorded joint data frame and applies it to an avatar.
+     * @param frameData The serialized frame data
+     * @param avatar The avatar to modify
+     * @param useFrameSkeleton true if the avatar's model URL should be overwritten by the recorded one
+     */
     static void fromFrame(const QByteArray& frameData, AvatarData& avatar, bool useFrameSkeleton = true);
+    /**
+     * Serializes an avatar's joint data for the avatar recording format.
+     * @param avatar The avatar to serialize
+     * @returns The serialized joint data
+     */
     static QByteArray toFrame(const AvatarData& avatar);
 
     AvatarData();
@@ -608,36 +622,74 @@ public:
 
     virtual bool isMyAvatarURLProtected() const { return false; } // This needs to be here because both MyAvatar and AvatarData inherit from MyAvatar
 
+    /** @return PathUtils::resourcesUrl("/meshes/defaultAvatar_full.fst") */
     static const QUrl& defaultFullAvatarModelUrl();
 
+    // TODO: Why is this its own function? It's always getID
     const QUuid getSessionUUID() const { return getID(); }
 
+    // FIXME: Unused prehistoric cruft
     glm::vec3 getHandPosition() const;
     void setHandPosition(const glm::vec3& handPosition);
 
+    /// Specifies how much avatar data to include in the output of AvatarData::toByteArray.
     typedef enum {
+        /// Only the avatar UUID and empty flag bitset header
         NoData,
+        /// Global position and audio loudness
         PALMinimum,
+        /// Any dirty properties, except joint data
         MinimumData,
+        /// Any dirty properties, and only joint data that has changed significantly
         CullSmallData,
+        /// Any dirty properties, and any joint data
         IncludeSmallData,
+        /// Sends all available data, even if it's not dirty
         SendAllData
     } AvatarDataDetail;
 
+    /**
+     * Similar to toByteArary, but automatically fills in most of its arguments and
+     * updates _lastToByteArray to usecTimestampNow.
+     */
     virtual QByteArray toByteArrayStateful(AvatarDataDetail dataDetail, bool dropFaceTracking = false);
 
+    // FIXME: This function is a horrible mess
+    /**
+     * Packs avatar data into a byte array. What data is included is determined by dataDetail.
+     * @param dataDetail How much data should be included
+     * @param lastSentTime Microsecond timestamp of when the last update was sent
+     * @param lastSendJointData
+     * @param sendStatus
+     * @param dropFaceTracking Doesn't actually have anything to do with face tracking.
+     * @param distanceAdjust Whether to ignore small joint differences that might be too far away to see
+     * @param viewerPosition Used for determining the distance to the avatar for culling small joint deltas
+     * @param sentJointDataOut TODO
+     * @param maxDataSize The maximum size the serialised packet can be. If a property would overfill the buffer, it and the following properties are ignored.
+     * @param outboundDataRateOut Bandwidth counter
+     * @returns The serialized avatar data
+     */
     virtual QByteArray toByteArray(AvatarDataDetail dataDetail, quint64 lastSentTime, const QVector<JointData>& lastSentJointData,
         AvatarDataPacket::SendStatus& sendStatus, bool dropFaceTracking, bool distanceAdjust, glm::vec3 viewerPosition,
         QVector<JointData>* sentJointDataOut, int maxDataSize = 0, AvatarDataRate* outboundDataRateOut = nullptr) const;
 
+    /**
+     * Updates _lastSendJointData.
+     * @param cullSmallChanges
+     */
     virtual void doneEncoding(bool cullSmallChanges);
 
-    /// \return true if an error should be logged
+    /**
+     * Used for throttling the output of error messages
+     * @return true if an error should be logged
+     */
     bool shouldLogError(const quint64& now);
 
-    /// \param packet byte array of data
-    /// \param offset number of bytes into packet where data starts
-    /// \return number of bytes parsed
+    /**
+     * Deserializes avatar data from a network packet buffer.
+     * @param buffer The serialized avatar data
+     * @return The number of bytes that were consumed
+     */
     virtual int parseDataFromBuffer(const QByteArray& buffer);
 
     virtual void setCollisionWithOtherAvatarsFlags() {};
@@ -650,9 +702,15 @@ public:
     float getBodyRoll() const;
     void setBodyRoll(float bodyRoll);
 
+    /** An alias for setWorldPosition. */
     virtual void setPositionViaScript(const glm::vec3& position);
+    /** An alias for setWorldOrientation. */
     virtual void setOrientationViaScript(const glm::quat& orientation);
 
+    /**
+     * Sets the avatar's rotation and up vector.
+     * Unused by AvatarData, but is used by Avatar.
+     */
     virtual void updateAttitude(const glm::quat& orientation) {}
 
     glm::quat getHeadOrientation() const {
@@ -760,20 +818,10 @@ public:
     void setDomainMinimumHeight(float domainMinimumHeight);
     void setDomainMaximumHeight(float domainMaximumHeight);
 
-    /*@jsdoc
-     * Sets the pointing state of the hands to control where the laser emanates from. If the right index finger is pointing, the
-     * laser emanates from the tip of that finger, otherwise it emanates from the palm.
-     * @function Avatar.setHandState
-     * @param {HandState} state - The pointing state of the hand.
-     */
+    // FIXME: Unused legacy cruft, remove this
     Q_INVOKABLE void setHandState(char s) { _handState = s; }
 
-    /*@jsdoc
-     * Gets the pointing state of the hands to control where the laser emanates from. If the right index finger is pointing, the
-     * laser emanates from the tip of that finger, otherwise it emanates from the palm.
-     * @function Avatar.getHandState
-     * @returns {HandState} The pointing state of the hand.
-     */
+    // FIXME: Unused legacy cruft, remove this
     Q_INVOKABLE char getHandState() const { return _handState; }
 
     /*@jsdoc
@@ -1177,7 +1225,7 @@ public:
      */
     Q_INVOKABLE void setForceFaceTrackerConnected(bool connected) { setHasScriptedBlendshapes(connected); }
 
-    // key state
+    // FIXME: Unused legacy cruft, remove these
     void setKeyState(KeyState s) { _keyState = s; }
     KeyState keyState() const { return _keyState; }
 
@@ -1207,7 +1255,9 @@ public:
 
     QByteArray identityByteArray(bool setIsReplicated = false) const;
 
+    /** @return The skeleton model URL, or an empty QUrl if it's a file:// or qrc:/ URL. */
     QUrl getWireSafeSkeletonModelURL() const;
+    /** @return The skeleton model URL, or an empty QUrl if this avatar is someone else's. */
     virtual const QUrl& getSkeletonModelURL() const;
 
     const QString& getDisplayName() const { return _displayName; }
@@ -1589,14 +1639,14 @@ protected:
     float _domainMinimumHeight { MIN_AVATAR_HEIGHT };
     float _domainMaximumHeight { MAX_AVATAR_HEIGHT };
 
-    //  Hand state (are we grabbing something or not)
+    // FIXME: Unused prehistoric cruft
     char _handState;
 
     QVector<JointData> _jointData; ///< the state of the skeleton joints
     QVector<JointData> _lastSentJointData; ///< the state of the skeleton joints last time we transmitted
     mutable QReadWriteLock _jointDataLock;
 
-    // key state
+    // FIXME: Unused prehistoric cruft
     KeyState _keyState;
 
     std::atomic<bool> _hasNewJointData { true }; // set in AvatarData, cleared in Avatar
@@ -1606,12 +1656,15 @@ protected:
     std::vector<bool> _hasNewJointDataVec;
     std::array<std::pair<quint64, glm::quat>, 2> _orientationHistory;
 
+    // FIXME: Prehistoric cruft that makes no sense and needs to be removed
     mutable HeadData* _headData { nullptr };
 
     QUrl _skeletonModelURL;
     QString _displayName;
     QString _sessionDisplayName { };
     bool _lookAtSnappingEnabled { true };
+    // FIXME: Unused, we don't have centralised avatar verification and
+    // the "verification failed" model doesn't even exist anymore
     bool _verificationFailed { false };
 
     quint64 _errorLogExpiry; ///< time in future when to log an error
