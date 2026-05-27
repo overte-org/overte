@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Build macOS
 
-*Last Updated on 2026-03-16*
+*Last Updated on 2026-05-26*
 
 Please read the [general build guide](BUILD.md) for information on dependencies required for all platforms.
 This will include the necessary environment variables to customize your build. Only macOS specific instructions are found in this document.
@@ -53,11 +53,11 @@ conan remote add overte https://artifactory.overte.org/artifactory/api/conan/ove
 
 ## Compiling
 
-If you installed Qt5 as instructed above, we need to add its path to the environment as instructed by Homebrew:
+If you installed the Qt5 **system** package as instructed above, you need to add its path to the environment as instructed by Homebrew:
 ```bash
 export PATH="/opt/homebrew/opt/qt@5/bin:$PATH"
 ```
-If you only need Qt5 on your machine (for example if you only develop Overte), you can make this change permanent as well:
+If you *only* need Qt5 on your machine (for example if you only develop Overte), you can make this change permanent as well:
 ```bash
 echo 'export PATH="/opt/homebrew/opt/qt@5/bin:$PATH"' >> ~/.zshrc
 ```
@@ -70,15 +70,17 @@ conan install . -s build_type=Release -b missing -pr:a="tools/conan-profiles/mac
 
 ## Generate and Build
 
-You can choose to use either Unix Makefiles or Xcode.
+You can choose to use either Unix Makefiles, Ninja or Xcode.
 
-### make
-
-Run CMake.
+### make or Ninja
 
 Prepare makefiles:
 ```bash
 cmake --preset conan-release
+```
+To use Ninja instead, append a `-G Ninja`. E.g.:
+```bash
+cmake --preset conan-release -G Ninja
 ```
 
 Build:
@@ -100,6 +102,7 @@ cmake --preset conan-release -G Xcode
 ```
 
 After running CMake, you will have the Xcode project file necessary to build all of the components.
+**To be able to build, you need to turn off Xcode's `Use Shell Script Sandboxing`, as it results in commands too long for macOS.**
 Open the `overte.xcodeproj` file, choose `ALL_BUILD` from the Product > Scheme menu (or target drop down), and click Run.
 
 If the build completes successfully, you will have built targets for all components located in the `build/${target_name}/Debug` directories.
