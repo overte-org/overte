@@ -64,7 +64,7 @@ class Overte(ConanFile):
         self.requires("glad/0.1.36") # NOTE: glad 2 is released
         self.requires("gli/cci.20210515") # NOTE: not maintained for 4 years
         self.requires("glslang/1.3.268.0")
-        self.requires("liblo/0.30@overte/stable")
+        self.requires("liblo/0.35@overte/stable")
         self.requires("libnode/22.22.0@overte/stable#1f75a2b0272c5e3ad9d4ddb432a467f8")
         self.requires("nlohmann_json/3.11.2")
         self.requires("nvidia-texture-tools/2023.01@overte/stable#bb4a28e5438f69332299cc23b770fc07")
