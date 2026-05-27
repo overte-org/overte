@@ -1,5 +1,6 @@
 #
 #  Copyright 2018 High Fidelity, Inc.
+#  Copyright 2026 Overte e.V.
 #  Created by Sam Gondelman on 5/2/2018
 #
 #  Distributed under the Apache License, Version 2.0.
@@ -19,10 +20,9 @@ macro(TARGET_ETC2COMP)
             set(ETC2COMP_LIBRARY_RELEASE ${INSTALL_DIR}/lib/libEtcLib.a)
             target_include_directories(${TARGET_NAME} PRIVATE ${ETC2COMP_INCLUDE_DIRS})
         else()
-            find_package(etc2comp REQUIRED)
+            find_package(etc2comp QUIET REQUIRED)
         endif()
 
         target_link_libraries(${TARGET_NAME} etc2comp::etc2comp)
     endif()
 endmacro()
-

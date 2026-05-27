@@ -4,7 +4,7 @@ project(${TARGET_NAME})
 set(CUSTOM_NITPICK_QRC_PATHS "")
 
 find_npm()
-find_package(Qt5 COMPONENTS Widgets)
+find_package(Qt5 COMPONENTS Widgets QUIET REQUIRED)
 
 set(RESOURCES_QRC ${CMAKE_CURRENT_BINARY_DIR}/resources.qrc)
 set(RESOURCES_RCC ${CMAKE_CURRENT_BINARY_DIR}/resources.rcc)

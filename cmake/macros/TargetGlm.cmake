@@ -1,6 +1,6 @@
 # 
 #  Copyright 2015 High Fidelity, Inc.
-#  Copyright 2025 Overte e.V.
+#  Copyright 2025-2026 Overte e.V.
 #  Created by Bradley Austin Davis on 2015/10/10
 #
 #  Distributed under the Apache License, Version 2.0.
@@ -13,7 +13,7 @@ macro(TARGET_GLM)
         target_include_directories(${TARGET_NAME} SYSTEM PUBLIC ${Glm_INCLUDE_DIRS})
         target_link_libraries(${TARGET_NAME} ${Glm_LINK_LIBRARIES})
     else()
-        find_package(glm CONFIG REQUIRED)
+        find_package(glm CONFIG QUIET REQUIRED)
         target_link_libraries(${TARGET_NAME} glm::glm)
     endif()
     target_compile_definitions(${TARGET_NAME} PUBLIC GLM_FORCE_RADIANS)

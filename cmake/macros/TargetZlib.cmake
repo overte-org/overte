@@ -1,5 +1,6 @@
 #
 #  Copyright 2015 High Fidelity, Inc.
+#  Copyright 2026 Overte e.V.
 #  Created by Bradley Austin Davis on 2015/10/10
 #
 #  Distributed under the Apache License, Version 2.0.
@@ -10,7 +11,7 @@ macro(TARGET_ZLIB)
         # zlib is part of the NDK
         target_link_libraries(${TARGET_NAME} z)
     else()
-        find_package(ZLIB REQUIRED)
+        find_package(ZLIB QUIET REQUIRED)
         target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${ZLIB_INCLUDE_DIRS})
         target_link_libraries(${TARGET_NAME} ${ZLIB_LIBRARIES})
     endif()

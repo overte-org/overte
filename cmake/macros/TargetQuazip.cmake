@@ -1,5 +1,6 @@
 # 
 #  Copyright 2015 High Fidelity, Inc.
+#  Copyright 2026 Overte e.V.
 #  Created by Leonardo Murillo on 2015/11/20
 #
 #  Distributed under the Apache License, Version 2.0.
@@ -12,7 +13,7 @@ macro(TARGET_QUAZIP)
         target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${QuaZip_INCLUDE_DIRS})
         target_link_libraries(${TARGET_NAME} ${QuaZip_LINK_LIBRARIES})
     else()
-        find_package(QuaZip-Qt5 REQUIRED)
+        find_package(QuaZip-Qt5 QUIET REQUIRED)
         target_link_libraries(${TARGET_NAME} QuaZip::QuaZip)
     endif()
 endmacro()
