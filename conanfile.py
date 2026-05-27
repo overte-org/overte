@@ -57,7 +57,7 @@ class Overte(ConanFile):
         self.requires("bullet3/3.25")
         self.requires("cgltf/1.14@overte/stable")
         # self.requires("crashpad/cci.20220219" ) # Broken
-        self.requires("discord-rpc/3.4.0@anotherfoxguy/stable")
+        self.requires("discord-rpc/3.4.0@overte/stable")
         self.requires("draco/1.3.5") # FIXME: update to newer version
         self.requires("etc2comp/cci.20170424") # NOTE: archived upstream
         self.requires("gifcreator/2016.11@overte/stable")
