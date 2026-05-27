@@ -172,9 +172,6 @@ class Overte(ConanFile):
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
-        if self.settings.build_type == "Release":
-            deps.configuration = "RelWithDebInfo"
-            deps.generate()
 
         for dep in self.dependencies.values():
             for f in dep.cpp_info.bindirs:
