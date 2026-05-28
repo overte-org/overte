@@ -551,6 +551,14 @@ protected:
     void beforeShutdownCleanup();
     void dumpVmaMemoryStats();
 
+    // Temporary vectors for updating descriptor sets. Created here once, since allocation is expensive.
+    std::vector<VkWriteDescriptorSet> uniformVkWriteDescriptorSets;
+    std::vector<VkDescriptorBufferInfo> uniformVkDescriptorBufferInfo;
+    std::vector<VkWriteDescriptorSet> textureVkWriteDescriptorSets;
+    std::vector<VkDescriptorImageInfo> textureVkDescriptorBufferInfo;
+    std::vector<VkWriteDescriptorSet> storageVkWriteDescriptorSets;
+    std::vector<VkDescriptorBufferInfo> storageVkDescriptorBufferInfo;
+
     std::mutex _externalTexturesMutex;
     std::list<std::pair<GLuint, Texture::ExternalRecycler>> _externalTexturesTrash;
 

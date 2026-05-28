@@ -781,10 +781,13 @@ void VKBackend::updateVkDescriptorWriteSetsUniform(const Cache::PipelineLayout &
     const auto& vertexReflection = layout.vertexReflection;
     const auto& fragmentReflection = layout.fragmentReflection;
 
-    std::vector<VkWriteDescriptorSet> sets;
-    std::vector<VkDescriptorBufferInfo> bufferInfos;
+    // Allocation is expensive, so vectors are allocated once in the backend class.
+    std::vector<VkWriteDescriptorSet> &sets = uniformVkWriteDescriptorSets;
+    std::vector<VkDescriptorBufferInfo> &bufferInfos = uniformVkDescriptorBufferInfo;
+    sets.clear();
     sets.reserve(_uniform._buffers.size());
-    bufferInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
+    bufferInfos.clear();
+    bufferInfos.reserve(_uniform._buffers.size()); // This is to avoid vector reallocation and changing pointer addresses
     for (size_t i = 0; i < _uniform._buffers.size(); i++) {
         if ((_uniform._buffers[i].buffer)
             && (vertexReflection.validUniformBuffer(i) || fragmentReflection.validUniformBuffer(i))) {
@@ -874,9 +877,12 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(const Cache::PipelineLayout &
 
     const auto &bindingMap = layout.textureBindingMap;
 
-    std::vector<VkWriteDescriptorSet> sets;
-    std::vector<VkDescriptorImageInfo> imageInfos;
+    // Allocation is expensive, so vectors are allocated once in the backend class.
+    std::vector<VkWriteDescriptorSet> &sets = textureVkWriteDescriptorSets;
+    std::vector<VkDescriptorImageInfo> &imageInfos = textureVkDescriptorBufferInfo;
+    sets.clear();
     sets.reserve(_resource._textures.size());
+    imageInfos.clear();
     imageInfos.reserve(_resource._textures.size()); // This is to avoid vector reallocation and changing pointer addresses
     for (size_t i = 0; i < _resource._textures.size(); i++) {
         if (_resource._textures[i].texture && (vertexReflection.validTexture(i) || fragmentReflection.validTexture(i))) {
@@ -972,9 +978,12 @@ void VKBackend::updateVkDescriptorWriteSetsStorage(const Cache::PipelineLayout &
     const auto& vertexReflection = layout.vertexReflection;
     const auto& fragmentReflection = layout.fragmentReflection;
 
-    std::vector<VkWriteDescriptorSet> sets;
-    std::vector<VkDescriptorBufferInfo> bufferInfos;
+    // Allocation is expensive, so vectors are allocated once in the backend class.
+    std::vector<VkWriteDescriptorSet> &sets = storageVkWriteDescriptorSets;
+    std::vector<VkDescriptorBufferInfo> &bufferInfos = storageVkDescriptorBufferInfo;
+    sets.clear();
     sets.reserve(_resource._buffers.size());
+    bufferInfos.clear();
     bufferInfos.reserve(_resource._buffers.size()); // This is to avoid vector reallocation and changing pointer adresses
     for (size_t i = 0; i < _resource._buffers.size(); i++) {
         if ((_resource._buffers[i].buffer)
@@ -1527,7 +1536,7 @@ vk::VKFramebuffer* VKBackend::syncGPUObject(const Framebuffer *framebuffer) {
     }
     // VKTODO
     auto object = vk::VKFramebuffer::sync(*this, *framebuffer);
-    if (!_framebuffers.count(object)) {
+    if (!_framebuffers.contains(object)) {
         _framebuffers.insert(object);
     }
     return object;
@@ -1538,7 +1547,7 @@ VKBuffer* VKBackend::syncGPUObject(const Buffer *buffer) {
         return nullptr;
     }
     auto object = vk::VKBuffer::sync(*this, *buffer);
-    if (!_buffers.count(object)) {
+    if (!_buffers.contains(object)) {
         _buffers.insert(object);
     }
     return object;
@@ -1549,7 +1558,7 @@ VKBuffer* VKBackend::syncGPUObjectNoTransfer(const Buffer *buffer) {
         return nullptr;
     }
     auto object = vk::VKBuffer::sync(*this, *buffer, false);
-    if (!_buffers.count(object)) {
+    if (!_buffers.contains(object)) {
         _buffers.insert(object);
     }
     return object;
@@ -1725,7 +1734,7 @@ VKTexture* VKBackend::syncGPUObject(const std::shared_ptr<Texture> &texture) {
         }
     }
 
-    if (!_textures.count(object)) {
+    if (!_textures.contains(object)) {
         _textures.insert(object);
     }
     return object;
@@ -1736,7 +1745,7 @@ VKQuery* VKBackend::syncGPUObject(const Query *query) {
         return nullptr;
     }
     auto object = vk::VKQuery::sync(*this, *query);
-    if (!_queries.count(object)) {
+    if (!_queries.contains(object)) {
         _queries.insert(object);
     }
     return object;
@@ -2565,6 +2574,7 @@ void VKBackend::updatePipeline() {
 void VKBackend::transferGlUniforms() {
     auto size = _currentFrame->_glUniformData.size();
     if (size) {
+        // VKTODO: instead of making new buffers every frame, existing ones could be reused.
         _currentFrame->_glUniformBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, size,
                                                                         _currentFrame->_glUniformData.data());
         _currentFrame->_glUniformBuffer->flush();
@@ -2580,6 +2590,7 @@ void VKBackend::transferTransformState(const Batch& batch) {
         for (size_t i = 0; i < _transform._cameras.size(); ++i) {
             memcpy(bufferData.data() + (_transform._cameraUboSize * i), &_transform._cameras[i], sizeof(TransformStageState::CameraBufferElement));
         }
+        // VKTODO: instead of making new buffers every frame, existing ones could be reused.
         _currentFrame->_cameraBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, bufferData.size(), bufferData.data());//vks::Buffer::createUniform(bufferData.size());
         _currentFrame->_cameraBuffer->flush();
         _currentFrame->_buffers.push_back(_currentFrame->_cameraBuffer);
@@ -2589,6 +2600,7 @@ void VKBackend::transferTransformState(const Batch& batch) {
     }
 
     if (!batch._objects.empty()) {
+        // VKTODO: instead of making new buffers every frame, existing ones could be reused.
         _currentFrame->_objectBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::ResourceBuffer,
                                                                      batch._objects.size() * sizeof(Batch::TransformObject),
                                                                      reinterpret_cast<const uint8_t*>(batch._objects.data()));//vks::Buffer::createStorage(batch._objects.size() * sizeof(Batch::TransformObject));
@@ -2615,6 +2627,7 @@ void VKBackend::transferTransformState(const Batch& batch) {
             memcpy(bufferData.data() + currentSize, data.second.drawCallInfos.data(), bytesToCopy);
             _transform._drawCallInfoOffsets[data.first] = currentSize;
         }
+        // VKTODO: instead of making new buffers every frame, existing ones could be reused.
         _currentFrame->_drawCallInfoBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::VertexBuffer,
                                                                            bufferData.size(),
                                                                            bufferData.data());

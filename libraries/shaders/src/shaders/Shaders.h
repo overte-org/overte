@@ -95,7 +95,7 @@ struct Reflection {
 private:
 
     bool validLocation(const ValidSet& locations, int32_t location) const {
-        return locations.count(location) != 0;
+        return locations.contains(location);
     }
 
     void updateValid();
