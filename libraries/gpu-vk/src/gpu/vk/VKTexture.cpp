@@ -1227,7 +1227,7 @@ Size VKResourceTexture::copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face,
         device->queueFamilyIndices.transfer,
         device->queueFamilyIndices.graphics,
         VK_PIPELINE_STAGE_TRANSFER_BIT,
-        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     device->flushCommandBuffer(copyCmd, backend->getContext().transferQueue, device->transferCommandPool);
 
@@ -1386,6 +1386,7 @@ VKResourceTexture::VKResourceTexture(const std::weak_ptr<VKBackend>& backend, co
 }
 
 Size VKResourceTexture::copyMipsFromTexture(VkCommandBuffer &copyCmd) {
+    qDebug(gpu_vk_logging) << "VKResourceTexture::copyMipsFromTexture: _allocatedMip: " << _allocatedMip << " _populatedMip: " << _populatedMip;
     auto mipLevels = _gpuObject.getNumMips();
     size_t maxFace = getFaceCount(_target);
     Size amount = 0;
@@ -1476,6 +1477,7 @@ size_t VKResourceTexture::promote() {
     auto device = backend->getContext().device;
     VkCommandBuffer copyCmd = device->createCommandBuffer(device->transferCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
     allocateNewImage(targetAllocatedMip, copyCmd);
+    qDebug(gpu_vk_logging) << "VKResourceTexture::promote: oldAllocatedMip: " << oldAllocatedMip << " new _allocatedMip: " << _allocatedMip;
 
     // Copy pre-existing mips.
     copyTextureMipsInGPUMem(oldImage, _vkImage, oldAllocatedMip, _allocatedMip, _populatedMip, copyCmd);
@@ -1530,12 +1532,13 @@ size_t VKResourceTexture::demote() {
     VmaAllocation oldAllocation = _vmaAllocation;
     auto oldSize = _size;
     auto oldPopulatedMip = _populatedMip;
+    uint16_t oldAllocatedMip = _allocatedMip;
+    qDebug(gpu_vk_logging) << "VKResourceTexture::promote: oldAllocatedMip: " << oldAllocatedMip << " new _allocatedMip: " << _allocatedMip;
 
     // Create new texture.
     auto device = backend->getContext().device;
     VkCommandBuffer copyCmd = device->createCommandBuffer(device->transferCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY, true);
     allocateNewImage(_allocatedMip + 1, copyCmd);
-    uint16_t oldAllocatedMip = _allocatedMip;
     _populatedMip = std::max(_populatedMip, _allocatedMip);
 
     // Copy pre-existing mips.

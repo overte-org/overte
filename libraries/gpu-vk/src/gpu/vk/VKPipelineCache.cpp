@@ -24,8 +24,6 @@ void Cache::Pipeline::setPipeline(const gpu::PipelinePointer& pipeline) {
         gpu::assign(this->pipeline, pipeline);
         if (pipeline) {
             program = pipeline->getProgram();
-            vertexReflection = program->getShaders()[0]->getReflection();
-            fragmentReflection = program->getShaders()[1]->getReflection();
         }
         clearStrides(); // VKTODO: this doesn't fix the issue with strides for basic shapes being corrupted, sometimes strides are still cleared wile they shouldn't be so more investigation is needed
     }
@@ -58,7 +56,7 @@ void Cache::Pipeline::setBindingMap(BindingMap& bindingMap, const LocationMap& v
     updateBindingMap(bindingMap, fragmentMap, VK_SHADER_STAGE_FRAGMENT_BIT);
 }
 
-Cache::Pipeline::BindingMap Cache::Pipeline::getBindingMap(const LocationMap& vertexMap, const LocationMap& fragmentMap) {
+Cache::BindingMap Cache::Pipeline::getBindingMap(const LocationMap& vertexMap, const LocationMap& fragmentMap) {
     BindingMap result;
     setBindingMap(result, vertexMap, fragmentMap);
     return result;
@@ -79,12 +77,19 @@ Cache::PipelineLayout Cache::Pipeline::getPipelineAndDescriptorLayout(const vks:
 #endif
     PipelineLayout layout{};
 
+    layout.vertexReflection = program->getShaders()[0]->getReflection();
+    layout.fragmentReflection = program->getShaders()[1]->getReflection();
+
+    layout.uniformBindingMap = getBindingMap(layout.vertexReflection.uniformBuffers, layout.fragmentReflection.uniformBuffers);
+    layout.textureBindingMap = getBindingMap(layout.vertexReflection.textures, layout.fragmentReflection.textures);
+    layout.storageBindingMap = getBindingMap(layout.vertexReflection.resourceBuffers, layout.fragmentReflection.resourceBuffers);
+
 #ifdef OVERTE_VK_PIPELINE_DEBUG
     layout.vertexShader = program->getShaders()[0]->getSource().name;
     layout.fragmentShader = program->getShaders()[1]->getSource().name;
 #endif
 
-    for (const auto& entry : getBindingMap(vertexReflection.uniformBuffers, fragmentReflection.uniformBuffers)) {
+    for (const auto& entry : layout.uniformBindingMap) {
         VkDescriptorSetLayoutBinding binding =
             vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, entry.second,
                                                           entry.first, 1);
@@ -93,13 +98,13 @@ Cache::PipelineLayout Cache::Pipeline::getPipelineAndDescriptorLayout(const vks:
     /*if (fragmentRefelection.textures.count("webTexture")){
         printf("webTexture");
     }*/
-    for (const auto& entry : getBindingMap(vertexReflection.textures, fragmentReflection.textures)) {
+    for (const auto& entry : layout.textureBindingMap) {
         VkDescriptorSetLayoutBinding binding =
             vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, entry.second,
                                                           entry.first, 1);
         texLayout.push_back(binding);
     }
-    for (const auto& entry : getBindingMap(vertexReflection.resourceBuffers, fragmentReflection.resourceBuffers)) {
+    for (const auto& entry : layout.storageBindingMap) {
         VkDescriptorSetLayoutBinding binding =
             vks::initializers::descriptorSetLayoutBinding(VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, entry.second,
                                                           entry.first, 1);
@@ -397,7 +402,7 @@ VkShaderModule Cache::getShaderModule(const vks::Context& context, const shader:
     return itr->second;
 }
 
-Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
+const Cache::PipelineLayout& Cache::getPipeline(const vks::Context& context) {
     auto key = pipelineState.getKey(context);
     auto pipelineIterator = pipelineMap.find(key);
     if (pipelineIterator != pipelineMap.end()) {
@@ -508,7 +513,7 @@ Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
 
     // Vertex input
     if (pipelineState.format) {
-        const auto& vertexReflection = pipelineState.vertexReflection;
+        const auto& vertexReflection = pipelineLayout.vertexReflection;
 
         const gpu::Stream::Format& format = *gpu::acquire(pipelineState.format);
         auto& bindingDescriptions = builder.vertexInputState.bindingDescriptions;
@@ -609,7 +614,7 @@ Cache::PipelineLayout Cache::getPipeline(const vks::Context& context) {
     auto result = builder.create();
     builder.shaderStages.clear();
     pipelineLayout.pipeline = result;
-    pipelineMap.insert({key, pipelineLayout});
+    auto pipelineInMap = pipelineMap.insert({key, pipelineLayout});
     qDebug() << "Pipeline cache size: " << pipelineMap.size();
-    return pipelineLayout;
+    return pipelineInMap.first->second;
 }

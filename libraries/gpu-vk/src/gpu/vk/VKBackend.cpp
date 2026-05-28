@@ -778,10 +778,8 @@ void VKBackend::updateVkDescriptorWriteSetsUniform(const Cache::PipelineLayout &
                                                    bool hasPipelineChanged) {
     // VKTODO: can be used for "verification mode" later
     // VKTODO: it looks like renderer tends to bind buffers that should not be bound at given point? Or maybe I'm missing reset somewhere
-    const auto& vertexReflection = _cache.pipelineState.vertexReflection;
-    const auto& fragmentReflection = _cache.pipelineState.fragmentReflection;
-
-    auto bindingMap = Cache::Pipeline::getBindingMap(vertexReflection.uniformBuffers, fragmentReflection.uniformBuffers);
+    const auto& vertexReflection = layout.vertexReflection;
+    const auto& fragmentReflection = layout.fragmentReflection;
 
     std::vector<VkWriteDescriptorSet> sets;
     std::vector<VkDescriptorBufferInfo> bufferInfos;
@@ -871,15 +869,15 @@ void VKBackend::updateVkDescriptorWriteSetsTexture(const Cache::PipelineLayout &
     // VKTODO: renderer leaves unbound texture slots, and that's not allowed on Vulkan
     // VKTODO: can be used for "verification mode" later
     // VKTODO: it looks like renderer tends to bind buffers that should not be bound at given point? Or maybe I'm missing reset somewhere
-    const auto& vertexReflection = _cache.pipelineState.vertexReflection;
-    const auto& fragmentReflection = _cache.pipelineState.fragmentReflection;
+    const auto& vertexReflection = layout.vertexReflection;
+    const auto& fragmentReflection = layout.fragmentReflection;
 
-    auto bindingMap = Cache::Pipeline::getBindingMap(vertexReflection.textures, fragmentReflection.textures);
+    const auto &bindingMap = layout.textureBindingMap;
 
     std::vector<VkWriteDescriptorSet> sets;
     std::vector<VkDescriptorImageInfo> imageInfos;
     sets.reserve(_resource._textures.size());
-    imageInfos.reserve(_resource._textures.size()); // This is to avoid vector reallocation and changing pointer adresses
+    imageInfos.reserve(_resource._textures.size()); // This is to avoid vector reallocation and changing pointer addresses
     for (size_t i = 0; i < _resource._textures.size(); i++) {
         if (_resource._textures[i].texture && (vertexReflection.validTexture(i) || fragmentReflection.validTexture(i))) {
             // VKTODO: move vulkan texture creation to the transfer parts
@@ -971,10 +969,8 @@ void VKBackend::updateVkDescriptorWriteSetsStorage(const Cache::PipelineLayout &
                                                    bool hasPipelineChanged) {
     // VKTODO: can be used for "verification mode" later
     // VKTODO: it looks like renderer tends to bind buffers that should not be bound at given point? Or maybe I'm missing reset somewhere
-    const auto& vertexReflection = _cache.pipelineState.vertexReflection;
-    const auto& fragmentReflection = _cache.pipelineState.fragmentReflection;
-
-    auto bindingMap = Cache::Pipeline::getBindingMap(vertexReflection.resourceBuffers, fragmentReflection.resourceBuffers);
+    const auto& vertexReflection = layout.vertexReflection;
+    const auto& fragmentReflection = layout.fragmentReflection;
 
     std::vector<VkWriteDescriptorSet> sets;
     std::vector<VkDescriptorBufferInfo> bufferInfos;
@@ -1400,7 +1396,7 @@ void VKBackend::renderPassDraw(const Batch& batch) {
             updateRenderPass();
 
             bool hasPipelineChanged{ false };
-            auto layout = _cache.getPipeline(_context);
+            const auto &layout = _cache.getPipeline(_context);
             if (layout.pipeline != currentPipeline) {
                 vkCmdBindPipeline(_currentCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout.pipeline);
                 currentPipeline = layout.pipeline;
