@@ -94,7 +94,7 @@ class Overte(ConanFile):
             if self.settings.os == "Linux":
                 openssl = "openssl/system@anotherfoxguy/stable"
         elif self.options.qt_source == "aqt":
-            self.requires("qt/6.10.3@overte/aqt#07a6e0800e69207cc4a9ef7b978e19ce", force=True)
+            self.requires("qt/6.10.3@overte/aqt#c692bf111ff0a41e7b82ef12dec20219", force=True)
         else:
             self.requires("qt/6.11.1@overte/experimental#f3b43b7235810a2e064268e976386ca0", force=True)
 
