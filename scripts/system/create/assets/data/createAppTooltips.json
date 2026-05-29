@@ -510,6 +510,9 @@
     "minorGridEvery": {
         "tooltip": "The real number of meters at which to draw thin grid lines."
     },
+    "gridAlpha": {
+        "tooltip": "The opacity of the grid. Fully opaque grids are not anti-aliased and don't have a distance fade."
+    },
     "id": {
         "tooltip": "The unique identifier of this entity."
     },
