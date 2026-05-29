@@ -27,6 +27,7 @@ runs:
       run: |
         choco install nsis --allow-downgrade --version=3.06.1
         choco install cmake --allow-downgrade --version=3.31.6  # Our dependencies don't support CMake 4.0 yet.
+        choco install nodejs --version="24.16.0"  # Qt6 needs NodeJS for building Qt WebEngine, but cannot find preinstalled NodeJS.
         Invoke-WebRequest https://build-deps.overte.org/conan/nsis-overte-plugins/NSIS-hifi-plugins-1.0.zip -OutFile NSIS-hifi-plugins.zip
         Expand-Archive -LiteralPath 'NSIS-hifi-plugins.zip' -DestinationPath 'C:/Program Files (x86)/'
 
