@@ -13,6 +13,9 @@
 #include <QThread>
 #include <QtWidgets/QMessageBox>
 #include <QtWidgets/QFileDialog>
+#if defined Q_OS_WIN || defined Q_OS_MAC
+#include <QRegularExpression>
+#endif
 
 #include "Nitpick.h"
 extern Nitpick* nitpick;
@@ -104,15 +107,15 @@ void TestRunnerMobile::connectDevice() {
     if (line2.contains("unauthorized")) {
         QMessageBox::critical(0, "Unauthorized device detected", "Please allow USB debugging on device");
     } else if (line2.contains(DEVICE)) {
-            // Make sure only 1 device
+        // Make sure only 1 device
         QString line3 = devicesFile.readLine();
         if (line3.contains(DEVICE)) {
             QMessageBox::critical(0, "Too many devices detected", "Tests will run only if a single device is attached");
         } else {
             // Line looks like this: 988a1b47335239434b     device product:dream2qlteue model:SM_G955U1 device:dream2qlteue transport_id:2
-            QStringList tokens = line2.split(QRegExp("[\r\n\t ]+"));
+            QStringList tokens = line2.split(QRegularExpression("[\r\n\t ]+"));
             QString deviceID = tokens[0];
-            
+
             // Find the model entry
             _modelName = "UNKNOWN";
             for (int i = 0; i < tokens.size(); ++i) {

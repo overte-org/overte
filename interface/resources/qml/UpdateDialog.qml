@@ -1,8 +1,8 @@
 import Hifi 1.0
 import QtQuick 2.3
-import QtQuick.Controls 1.3
-import QtQuick.Controls.Styles 1.3
-import QtGraphicalEffects 1.0
+import QtQuick.Controls
+//import QtQuick.Controls.Styles
+import Qt5Compat.GraphicalEffects
 
 import controlsUit 1.0
 import "styles" as HifiStyles

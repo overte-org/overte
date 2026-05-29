@@ -17,7 +17,7 @@ Item {
     id: root
     anchors.fill: parent
     property string url: ""
-    property string scriptUrl: null
+    property string scriptUrl: ""
     property bool useBackground: true
     property string userAgent: ""
 
@@ -83,7 +83,7 @@ Item {
             if (root.webViewLoaded) {
                 loader.item.url = "about:blank"
             }
-            loader.setSource(undefined);
+            loader.setSource("");
         }
 
         if (url.match(/\.qml$/)) {
@@ -93,7 +93,7 @@ Item {
             root.webViewLoaded = true;
             loader.setSource("./controls/WebView.qml", {
                 url: url,
-                scriptUrl: scriptUrl,
+                //scriptUrl: scriptUrl, // Qt6 TODO
                 useBackground: useBackground,
                 userAgent: userAgent
             });

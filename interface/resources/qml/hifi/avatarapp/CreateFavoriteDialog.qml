@@ -13,7 +13,7 @@ Rectangle {
 
     property string titleText: 'Create Favorite'
     property string favoriteNameText: favoriteName.text
-    property string avatarImageUrl: null
+    property string avatarImageUrl: ""
     property int wearablesCount: 0
 
     property string button1color: hifi.buttons.noneBorderlessGray;

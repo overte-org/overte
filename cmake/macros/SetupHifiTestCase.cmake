@@ -108,10 +108,10 @@ macro(SETUP_HIFI_TESTCASE)
         list(APPEND ${TARGET_NAME}_DEPENDENCY_QT_MODULES Core Test)
         
         # find these Qt modules and link them to our own target
-        find_package(Qt5 COMPONENTS ${${TARGET_NAME}_DEPENDENCY_QT_MODULES} REQUIRED)
+        find_package(Qt6 COMPONENTS ${${TARGET_NAME}_DEPENDENCY_QT_MODULES} REQUIRED)
       
         foreach(QT_MODULE ${${TARGET_NAME}_DEPENDENCY_QT_MODULES})
-          target_link_libraries(${TARGET_NAME} Qt5::${QT_MODULE})
+          target_link_libraries(${TARGET_NAME} Qt6::${QT_MODULE})
         endforeach()
         target_link_libraries(${TARGET_NAME} ${CMAKE_THREAD_LIBS_INIT})
       

@@ -76,10 +76,13 @@ To create this variable:
 
 *Make sure that you copy the contents of your old `.conan2` folder over, or that you add the remote from step 2 again.*
 
-## Step 6. (Optional) Node.JS and NPM
+## Step 6. Installing Node.JS and NPM
 
 Install the latest LTS version of [Node.JS and NPM](<https://nodejs.org/en/download/>).
 This is required to build the server-console and jsdoc, and for JavaScript console autocompletion.
+All of these components are optional, however, Node.JS is also required for building Qt WebEngine.
+
+There are no proper Windows installers for Node.JS and NPM, so install it from [Chocolatey](https://community.chocolatey.org/).
 
 ## Step 7. Running CMake to Generate Build Files
 

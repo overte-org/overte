@@ -1827,7 +1827,7 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
 
     withReadLock([&] { voxelData = _voxelData; });
 
-    QtConcurrent::run([=, this] {
+    QThreadPool::globalInstance()->start([=, this] {
         QDataStream reader(voxelData);
         quint16 voxelXSize, voxelYSize, voxelZSize;
         reader >> voxelXSize;
@@ -1875,7 +1875,7 @@ void RenderablePolyVoxEntityItem::setVoxelsFromData(QByteArray uncompressedData,
             low += 1;
         }
         loop3(ivec3(0), ivec3(voxelXSize, voxelYSize, voxelZSize), [&](const ivec3& v) {
-            int uncompressedIndex = (v.z * (voxelYSize) * (voxelXSize)) + (v.y * (voxelZSize)) + v.x;
+            int uncompressedIndex = (v.z * (voxelYSize) * (voxelXSize)) + (v.y * (voxelXSize)) + v.x;
             result |= setVoxelInternal(v, uncompressedData[uncompressedIndex]);
         });
 
@@ -1905,7 +1905,7 @@ void RenderablePolyVoxEntityItem::compressVolumeDataAndSendEditPacket() {
     qDebug() << "Compressing voxel and sending data packet";
 #endif
 
-    QtConcurrent::run([voxelXSize, voxelYSize, voxelZSize, entity] {
+    QThreadPool::globalInstance()->start([voxelXSize, voxelYSize, voxelZSize, entity] {
         auto polyVoxEntity = std::static_pointer_cast<RenderablePolyVoxEntityItem>(entity);
         QByteArray uncompressedData = polyVoxEntity->volDataToArray(voxelXSize, voxelYSize, voxelZSize);
 
@@ -2179,7 +2179,7 @@ void RenderablePolyVoxEntityItem::computeShapeInfoWorker() {
         mesh = _mesh;
     });
 
-    QtConcurrent::run([entity, voxelSurfaceStyle, voxelVolumeSize, mesh] {
+    QThreadPool::globalInstance()->start([entity, voxelSurfaceStyle, voxelVolumeSize, mesh] {
         auto polyVoxEntity = std::static_pointer_cast<RenderablePolyVoxEntityItem>(entity);
         QVector<QVector<glm::vec3>> pointCollection;
         AABox box;

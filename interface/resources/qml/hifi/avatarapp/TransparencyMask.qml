@@ -1,4 +1,4 @@
-import QtQuick 2.0
+import QtQuick
 
 Item {
     property alias source: sourceImage.sourceItem
@@ -15,7 +15,8 @@ Item {
         hideSource: true
     }
 
-    ShaderEffect {
+    // QT6TODO: this needs to be ported to Qt6 - probably converting into .qsb is needed
+/*    ShaderEffect {
         id: maskEffect
         anchors.fill: parent
 
@@ -40,5 +41,5 @@ void main()
 }
 "
         }
-    }
+    }*/
 }

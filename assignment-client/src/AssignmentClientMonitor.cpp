@@ -295,7 +295,8 @@ void AssignmentClientMonitor::spawnChildClient() {
 
 void AssignmentClientMonitor::checkSpares() {
     auto nodeList = DependencyManager::get<NodeList>();
-    QUuid aSpareId = "";
+    // QT6TODO: it was originally composed for empty QString, is it null UUID?
+    QUuid aSpareId {};
     unsigned int spareCount = 0;
     unsigned int totalCount = 0;
 

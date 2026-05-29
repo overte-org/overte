@@ -76,10 +76,11 @@ Windows.Window {
     }
 
     function updateInteractiveWindowPositionForMode() {
-        if (presentationMode === Desktop.PresentationMode.VIRTUAL) {
+        // QT6TODO: Desktop isn't being passed to QML?
+        if (presentationMode === /*Desktop.PresentationMode.VIRTUAL*/ 0) {
             x = interactiveWindowPosition.x;
             y = interactiveWindowPosition.y;
-        } else if (presentationMode === Desktop.PresentationMode.NATIVE && nativeWindow) {
+        } else if (presentationMode === /*Desktop.PresentationMode.NATIVE*/ 1 && nativeWindow) {
             if (interactiveWindowPosition.x === 0 && interactiveWindowPosition.y === 0) {
                 // default position for native window in center of main application window
                 nativeWindow.x = Math.floor(Window.x + (Window.innerWidth / 2) - (interactiveWindowSize.width / 2));
@@ -97,28 +98,31 @@ Windows.Window {
         contentHolder.width = interactiveWindowSize.width;
         contentHolder.height = interactiveWindowSize.height;
 
-        if (presentationMode === Desktop.PresentationMode.NATIVE && nativeWindow) {
+        // QT6TODO: Desktop isn't being passed to QML?
+        if (presentationMode === /*Desktop.PresentationMode.NATIVE*/ 1 && nativeWindow) {
             nativeWindow.width = interactiveWindowSize.width;
             nativeWindow.height = interactiveWindowSize.height;
         }
     }
 
     function updateContentParent() {
-        if (presentationMode === Desktop.PresentationMode.VIRTUAL) {
+        // QT6TODO: Desktop isn't being passed to QML?
+        if (presentationMode === /*Desktop.PresentationMode.VIRTUAL*/ 0) {
             contentHolder.parent = root;
-        } else if (presentationMode === Desktop.PresentationMode.NATIVE && nativeWindow) {
+        } else if (presentationMode === /*Desktop.PresentationMode.NATIVE*/ 1 && nativeWindow) {
             contentHolder.parent = nativeWindow.contentItem;
         }
     }
 
     function setupPresentationMode() {
-        if (presentationMode === Desktop.PresentationMode.VIRTUAL) {
+        // QT6TODO: Desktop isn't being passed to QML?
+        if (presentationMode === /*Desktop.PresentationMode.VIRTUAL*/ 0) {
             if (nativeWindow) {
                 nativeWindow.setVisible(false);
             }
             updateInteractiveWindowPositionForMode();
             shown = interactiveWindowVisible;
-        } else if (presentationMode === Desktop.PresentationMode.NATIVE) {
+        } else if (presentationMode === /*Desktop.PresentationMode.NATIVE*/ 1) {
             shown = false;
             if (nativeWindow) {
                 updateInteractiveWindowPositionForMode();
@@ -175,25 +179,29 @@ Windows.Window {
         nativeWindow.height = interactiveWindowSize.height;
 
         nativeWindow.xChanged.connect(function() {
-            if (presentationMode === Desktop.PresentationMode.NATIVE && nativeWindow.visible) {
+            // QT6TODO: Desktop isn't being passed to QML?
+            if (presentationMode === /*Desktop.PresentationMode.NATIVE*/ 1 && nativeWindow.visible) {
                 interactiveWindowPosition = Qt.point(nativeWindow.x, interactiveWindowPosition.y);
             }
         });
         
         nativeWindow.yChanged.connect(function() {
-            if (presentationMode === Desktop.PresentationMode.NATIVE && nativeWindow.visible) {
+            // QT6TODO: Desktop isn't being passed to QML?
+            if (presentationMode === /*Desktop.PresentationMode.NATIVE*/ 1 && nativeWindow.visible) {
                 interactiveWindowPosition = Qt.point(interactiveWindowPosition.x, nativeWindow.y);
             }
         });
 
         nativeWindow.widthChanged.connect(function() {
-            if (presentationMode === Desktop.PresentationMode.NATIVE && nativeWindow.visible) {
+            // QT6TODO: Desktop isn't being passed to QML?
+            if (presentationMode === /*Desktop.PresentationMode.NATIVE*/ 1 && nativeWindow.visible) {
                 interactiveWindowSize = Qt.size(nativeWindow.width, interactiveWindowSize.height);
             }
         });
         
         nativeWindow.heightChanged.connect(function() {
-            if (presentationMode === Desktop.PresentationMode.NATIVE && nativeWindow.visible) {
+            // QT6TODO: Desktop isn't being passed to QML?
+            if (presentationMode === /*Desktop.PresentationMode.NATIVE*/ 1 && nativeWindow.visible) {
                 interactiveWindowSize = Qt.size(interactiveWindowSize.width, nativeWindow.height);
             }
         });
@@ -223,9 +231,10 @@ Windows.Window {
     }
 
     function raiseWindow() {
-        if (presentationMode === Desktop.PresentationMode.VIRTUAL) {
+        // QT6TODO: Desktop isn't being passed to QML?
+        if (presentationMode === /*Desktop.PresentationMode.VIRTUAL*/ 0) {
             raise();
-        } else if (presentationMode === Desktop.PresentationMode.NATIVE && nativeWindow) {
+        } else if (presentationMode === /*Desktop.PresentationMode.NATIVE*/ 1 && nativeWindow) {
             nativeWindow.raise();
         }
     }
@@ -271,9 +280,10 @@ Windows.Window {
     }
 
     onInteractiveWindowVisibleChanged: {
-        if (presentationMode === Desktop.PresentationMode.VIRTUAL) {
+        // QT6TODO: Desktop isn't being passed to QML?
+        if (presentationMode === /*Desktop.PresentationMode.VIRTUAL*/ 0) {
             shown = interactiveWindowVisible;
-        } else if (presentationMode === Desktop.PresentationMode.NATIVE && nativeWindow) {
+        } else if (presentationMode === /*Desktop.PresentationMode.NATIVE*/ 1 && nativeWindow) {
             if (!nativeWindow.visible && interactiveWindowVisible) {
                 nativeWindow.showNormal();
             } else {
@@ -289,25 +299,29 @@ Windows.Window {
     }
 
     onXChanged: {
-        if (presentationMode === Desktop.PresentationMode.VIRTUAL) {
+        // QT6TODO: Desktop isn't being passed to QML?
+        if (presentationMode === /*Desktop.PresentationMode.VIRTUAL*/ 0) {
             interactiveWindowPosition = Qt.point(x, interactiveWindowPosition.y);
         }
     }
 
     onYChanged: {
-        if (presentationMode === Desktop.PresentationMode.VIRTUAL) {
+        // QT6TODO: Desktop isn't being passed to QML?
+        if (presentationMode === /*Desktop.PresentationMode.VIRTUAL*/ 0) {
             interactiveWindowPosition = Qt.point(interactiveWindowPosition.x, y);
         }
     }
 
     onWidthChanged: {
-        if (presentationMode === Desktop.PresentationMode.VIRTUAL) {
+        // QT6TODO: Desktop isn't being passed to QML?
+        if (presentationMode === /*Desktop.PresentationMode.VIRTUAL*/ 0) {
             interactiveWindowSize = Qt.size(width, interactiveWindowSize.height);
         }
     }
 
     onHeightChanged: {
-        if (presentationMode === Desktop.PresentationMode.VIRTUAL) {
+        // QT6TODO: Desktop isn't being passed to QML?
+        if (presentationMode === /*Desktop.PresentationMode.VIRTUAL*/ 0) {
             interactiveWindowSize = Qt.size(interactiveWindowSize.width, height);
         }
     }

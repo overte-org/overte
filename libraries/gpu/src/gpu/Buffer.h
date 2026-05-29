@@ -169,7 +169,7 @@ public:
     /**
      * Buffer destructor updated statistics.
      */
-    ~Buffer();
+    virtual ~Buffer();
 
     /**
      * @return The size in bytes of data stored in the buffer

@@ -16,9 +16,7 @@
 
 class WinHelper : public PlatformHelper, public QAbstractNativeEventFilter {
 public:
-    WinHelper() {
-        QAbstractEventDispatcher::instance()->installNativeEventFilter(this);
-    }
+    WinHelper() { QAbstractEventDispatcher::instance()->installNativeEventFilter(this); }
 
     ~WinHelper() {
         auto eventDispatcher = QAbstractEventDispatcher::instance();
@@ -27,7 +25,7 @@ public:
         }
     }
 
-    bool nativeEventFilter(const QByteArray& eventType, void* message, long*) override {
+    bool nativeEventFilter(const QByteArray& eventType, void* message, qintptr*) override {
         MSG* msg = static_cast<MSG*>(message);
         if (msg->message == WM_POWERBROADCAST) {
             switch (msg->wParam) {

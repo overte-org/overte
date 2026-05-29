@@ -15,6 +15,7 @@
 #include <gl/GLHelpers.h>
 
 #include <QtQuick/QQuickWindow>
+#include <QQuickOpenGLUtils>
 
 #include <shared/NsightHelpers.h>
 #include "Profiling.h"
@@ -60,7 +61,11 @@ RenderEventHandler::RenderEventHandler(SharedObject* shared, QThread* targetThre
     moveToThread(targetThread);
 }
 
+// I'm not sure if several contexts can be initalized with the same shared context concurrently, so better safe than sorry.
+static std::mutex renderControlInitMutex;
+
 void RenderEventHandler::onInitalize() {
+    std::lock_guard<std::mutex> lock(renderControlInitMutex);
     if (_shared->isQuit()) {
         return;
     }
@@ -129,6 +134,10 @@ void RenderEventHandler::qmlRender(bool sceneGraphSync) {
     PROFILE_RANGE(render_qml_gl, __FUNCTION__);
 
     gl::globalLock();
+
+    _shared->_renderControl->polishItems();
+    _shared->_renderControl->beginFrame();
+
     if (!_shared->preRender(sceneGraphSync)) {
         gl::globalRelease();
         return;
@@ -146,17 +155,10 @@ void RenderEventHandler::qmlRender(bool sceneGraphSync) {
             glClear(GL_COLOR_BUFFER_BIT);
         } else {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-            _shared->setRenderTarget(_fbo, _currentSize);
-
-            // workaround for https://highfidelity.atlassian.net/browse/BUGZ-1119
-            {
-                // Serialize QML rendering because of a crash caused by Qt bug 
-                // https://bugreports.qt.io/browse/QTBUG-77469
-                static std::mutex qmlRenderMutex;
-                std::unique_lock<std::mutex> qmlRenderLock{ qmlRenderMutex };
-                _shared->_renderControl->render();
-            }
+            _shared->setRenderTarget(texture, _currentSize);
+            _shared->_renderControl->render();
         }
+        _shared->_renderControl->endFrame();
         _shared->_lastRenderTime = usecTimestampNow();
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
         glBindTexture(GL_TEXTURE_2D, texture);
@@ -166,7 +168,7 @@ void RenderEventHandler::qmlRender(bool sceneGraphSync) {
         // Fence will be used in another thread / context, so a flush is required
         glFlush();
         _shared->updateTextureAndFence({ texture, fence });
-        _shared->_quickWindow->resetOpenGLState();
+        QQuickOpenGLUtils::resetOpenGLState();
     }
     gl::globalRelease();
 }

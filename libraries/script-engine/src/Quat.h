@@ -21,6 +21,8 @@
 
 #include <glm/gtc/quaternion.hpp>
 
+#include <RegisteredMetaTypes.h>
+
 #include <QObject>
 #include <QString>
 
@@ -60,7 +62,7 @@
 /// Provides the <code><a href="https://apidocs.overte.org/Quat.html">Quat</a></code> scripting interface
 class Quat : public QObject, protected Scriptable {
     Q_OBJECT
-    Q_PROPERTY(glm::quat IDENTITY READ IDENTITY CONSTANT)
+    Q_PROPERTY(glm::qua<float,glm::packed_highp> IDENTITY READ IDENTITY CONSTANT)
 
 public slots:
 
@@ -77,7 +79,7 @@ public slots:
      *     var handOrientation = Quat.multiply(MyAvatar.orientation, handPose.rotation);
      * }
      */
-    glm::quat multiply(const glm::quat& q1, const glm::quat& q2);
+    glm::qua<float,glm::packed_highp> multiply(const glm::qua<float,glm::packed_highp>& q1, const glm::qua<float,glm::packed_highp>& q2);
 
     /*@jsdoc
      * Normalizes a quaternion.
@@ -93,7 +95,7 @@ public slots:
      *     // Use currentRotatation for something.
      * }
      */
-    glm::quat normalize(const glm::quat& q);
+    glm::qua<float,glm::packed_highp> normalize(const glm::qua<float,glm::packed_highp>& q);
 
     /*@jsdoc
     * Calculates the conjugate of a quaternion. For a unit quaternion, its conjugate is the same as its 
@@ -109,7 +111,7 @@ public slots:
     * var identity = Quat.multiply(conjugate, quaternion);
     * Quat.print("identity", identity, true); // dvec3(0.000000, 0.000000, 0.000000)
     */
-    glm::quat conjugate(const glm::quat& q);
+    glm::qua<float,glm::packed_highp> conjugate(const glm::qua<float,glm::packed_highp>& q);
 
     /*@jsdoc
      * Calculates a camera orientation given an eye position, point of interest, and "up" direction. The camera's negative 
@@ -125,7 +127,7 @@ public slots:
      * Camera.mode = "independent";
      * Camera.orientation = Quat.lookAt(Camera.position, Vec3.ZERO, Vec3.UNIT_NEG_Y);
      */
-    glm::quat lookAt(const glm::vec3& eye, const glm::vec3& center, const glm::vec3& up);
+    glm::qua<float,glm::packed_highp> lookAt(const glm::vec<3,float,glm::packed_highp>& eye, const glm::vec<3,float,glm::packed_highp>& center, const glm::vec<3,float,glm::packed_highp>& up);
 
     /*@jsdoc
     * Calculates a camera orientation given an eye position and point of interest. The camera's negative z-axis is the forward 
@@ -141,7 +143,7 @@ public slots:
     * Camera.mode = "independent";
     * Camera.orientation = Quat.lookAtSimple(Camera.position, Vec3.ZERO);
     */
-    glm::quat lookAtSimple(const glm::vec3& eye, const glm::vec3& center);
+    glm::qua<float,glm::packed_highp> lookAtSimple(const glm::vec<3,float,glm::packed_highp>& eye, const glm::vec<3,float,glm::packed_highp>& center);
 
     /*@jsdoc
     * Calculates the shortest rotation from a first vector onto a second.
@@ -158,7 +160,7 @@ public slots:
     * Entities.editEntity(entityID, properties);
     * entityVelocity = newVelocity;
     */
-    glm::quat rotationBetween(const glm::vec3& v1, const glm::vec3& v2);
+    glm::qua<float,glm::packed_highp> rotationBetween(const glm::vec<3,float,glm::packed_highp>& v1, const glm::vec<3,float,glm::packed_highp>& v2);
 
     /*@jsdoc
      * Generates a quaternion from a {@link Vec3} of Euler angles in degrees.
@@ -172,7 +174,7 @@ public slots:
      * eulerAngles.z = 0;
      * var newOrientation = Quat.fromVec3Degrees(eulerAngles);
      */
-    glm::quat fromVec3Degrees(const glm::vec3& vec3);
+    glm::qua<float,glm::packed_highp> fromVec3Degrees(const glm::vec<3,float,glm::packed_highp>& vec3);
 
     /*@jsdoc
      * Generates a quaternion from a {@link Vec3} of Euler angles in radians.
@@ -183,7 +185,7 @@ public slots:
      * @example <caption>Create a rotation of 180 degrees about the y axis.</caption>
      * var rotation = Quat.fromVec3Radians({ x: 0, y: Math.PI, z: 0 });
      */
-    glm::quat fromVec3Radians(const glm::vec3& vec3);
+    glm::qua<float,glm::packed_highp> fromVec3Radians(const glm::vec<3,float,glm::packed_highp>& vec3);
 
     /*@jsdoc
     * Generates a quaternion from pitch, yaw, and roll values in degrees.
@@ -195,7 +197,7 @@ public slots:
     * @example <caption>Create a rotation of 180 degrees about the y axis.</caption>
     * var rotation = Quat.fromPitchYawRollDegrees(0, 180, 0 );
     */
-    glm::quat fromPitchYawRollDegrees(float pitch, float yaw, float roll);
+    glm::qua<float,glm::packed_highp> fromPitchYawRollDegrees(float pitch, float yaw, float roll);
 
     /*@jsdoc
     * Generates a quaternion from pitch, yaw, and roll values in radians.
@@ -207,7 +209,7 @@ public slots:
     * @example <caption>Create a rotation of 180 degrees about the y axis.</caption>
     * var rotation = Quat.fromPitchYawRollRadians(0, Math.PI, 0);
     */
-    glm::quat fromPitchYawRollRadians(float pitch, float yaw, float roll);
+    glm::qua<float,glm::packed_highp> fromPitchYawRollRadians(float pitch, float yaw, float roll);
 
     /*@jsdoc
      * Calculates the inverse of a quaternion. For a unit quaternion, its inverse is the same as its
@@ -223,7 +225,7 @@ public slots:
      * var identity = Quat.multiply(inverse, quaternion);
      * Quat.print("identity", identity, true); // dvec3(0.000000, 0.000000, 0.000000)
      */
-    glm::quat inverse(const glm::quat& q);
+    glm::qua<float,glm::packed_highp> inverse(const glm::qua<float,glm::packed_highp>& q);
 
     /*@jsdoc
      * Gets the "front" direction that the camera would face if its orientation was set to the quaternion value.
@@ -233,7 +235,7 @@ public slots:
      * @param {Quat} orientation - A quaternion representing an orientation.
      * @returns {Vec3} The negative z-axis rotated by <code>orientation</code>.
      */
-    glm::vec3 getFront(const glm::quat& orientation) { return getForward(orientation); }
+    glm::vec<3,float,glm::packed_highp> getFront(const glm::qua<float,glm::packed_highp>& orientation) { return getForward(orientation); }
 
     /*@jsdoc
      * Gets the "forward" direction that the camera would face if its orientation was set to the quaternion value.
@@ -246,7 +248,7 @@ public slots:
      * var forward = Quat.getForward(Quat.IDENTITY);
      * print(JSON.stringify(forward)); // {"x":0,"y":0,"z":-1}
      */
-    glm::vec3 getForward(const glm::quat& orientation);
+    glm::vec<3,float,glm::packed_highp> getForward(const glm::qua<float,glm::packed_highp>& orientation);
 
     /*@jsdoc
      * Gets the "right" direction that the camera would have if its orientation was set to the quaternion value.
@@ -255,7 +257,7 @@ public slots:
      * @param {Quat} orientation - A quaternion representing an orientation.
      * @returns {Vec3} The x-axis rotated by <code>orientation</code>.
      */
-    glm::vec3 getRight(const glm::quat& orientation);
+    glm::vec<3,float,glm::packed_highp> getRight(const glm::qua<float,glm::packed_highp>& orientation);
 
     /*@jsdoc
      * Gets the "up" direction that the camera would have if its orientation was set to the quaternion value.
@@ -264,7 +266,7 @@ public slots:
      * @param {Quat} orientation - A quaternion representing an orientation.
      * @returns {Vec3} The y-axis rotated by <code>orientation</code>.
      */
-    glm::vec3 getUp(const glm::quat& orientation);
+    glm::vec<3,float,glm::packed_highp> getUp(const glm::qua<float,glm::packed_highp>& orientation);
 
     /*@jsdoc
      * Calculates the Euler angles for the quaternion, in degrees. (The "safe" in the name signifies that the angle results 
@@ -277,7 +279,7 @@ public slots:
      * var eulerAngles = Quat.safeEulerAngles(Camera.orientation);
      * print("Camera yaw: " + eulerAngles.y);
      */
-    glm::vec3 safeEulerAngles(const glm::quat& orientation);
+    glm::vec<3,float,glm::packed_highp> safeEulerAngles(const glm::qua<float,glm::packed_highp>& orientation);
 
     /*@jsdoc
      * Generates a quaternion given an angle to rotate through and an axis to rotate about.
@@ -290,7 +292,7 @@ public slots:
      * @example <caption>Calculate a rotation of 90 degrees about the direction your camera is looking.</caption>
      * var rotation = Quat.angleAxis(90, Quat.getForward(Camera.orientation));
      */
-    glm::quat angleAxis(float angle, const glm::vec3& v);
+    glm::qua<float,glm::packed_highp> angleAxis(float angle, const glm::vec<3,float,glm::packed_highp>& v);
 
     /*@jsdoc
      * Gets the rotation axis for a quaternion.
@@ -304,7 +306,7 @@ public slots:
      * print("Forward: " + JSON.stringify(forward));
      * print("Axis: " + JSON.stringify(axis)); // Same value as forward.
      */
-    glm::vec3 axis(const glm::quat& orientation);
+    glm::vec<3,float,glm::packed_highp> axis(const glm::qua<float,glm::packed_highp>& orientation);
 
     /*@jsdoc
      * Gets the rotation angle for a quaternion.
@@ -318,7 +320,7 @@ public slots:
      * var angle = Quat.angle(rotation);
      * print("Angle: " + angle * 180 / Math.PI);  // 90 degrees.
      */
-    float angle(const glm::quat& orientation);
+    float angle(const glm::qua<float,glm::packed_highp>& orientation);
 
     // spherical linear interpolation
     // alpha: 0.0 to 1.0?
@@ -340,7 +342,7 @@ public slots:
      * }
      * var newRotation = Quat.mix(startRotation, endRotation, mixFactor);
      */
-    glm::quat mix(const glm::quat& q1, const glm::quat& q2, float alpha);
+    glm::qua<float,glm::packed_highp> mix(const glm::qua<float,glm::packed_highp>& q1, const glm::qua<float,glm::packed_highp>& q2, float alpha);
 
     /*@jsdoc
      * Computes a spherical linear interpolation between two rotations, for rotations that are not very similar.
@@ -353,7 +355,7 @@ public slots:
      *     <code>q1</code>'s value; <code>1.0</code> returns <code>q2s</code>'s value.
      * @returns {Quat} A spherical linear interpolation between rotations <code>q1</code> and <code>q2</code>.
      */
-    glm::quat slerp(const glm::quat& q1, const glm::quat& q2, float alpha);
+    glm::qua<float,glm::packed_highp> slerp(const glm::qua<float,glm::packed_highp>& q1, const glm::qua<float,glm::packed_highp>& q2, float alpha);
 
     /*@jsdoc
      * Computes a spherical quadrangle interpolation between two rotations along a path oriented toward two other rotations.
@@ -368,7 +370,7 @@ public slots:
      * @returns {Quat} A spherical quadrangle interpolation between rotations <code>q1</code> and <code>q2</code> using control
      *     points <code>s1</code> and <code>s2</code>.
      */
-    glm::quat squad(const glm::quat& q1, const glm::quat& q2, const glm::quat& s1, const glm::quat& s2, float h);
+    glm::qua<float,glm::packed_highp> squad(const glm::qua<float,glm::packed_highp>& q1, const glm::qua<float,glm::packed_highp>& q2, const glm::qua<float,glm::packed_highp>& s1, const glm::qua<float,glm::packed_highp>& s2, float h);
 
     /*@jsdoc
      * Calculates the dot product of two quaternions. The closer the quaternions are to each other the more non-zero the value 
@@ -389,7 +391,7 @@ public slots:
      * var equal = Math.abs(1 - Math.abs(dot)) < 0.000001;
      * print(equal); // true
      */
-    float dot(const glm::quat& q1, const glm::quat& q2);
+    float dot(const glm::qua<float,glm::packed_highp>& q1, const glm::qua<float,glm::packed_highp>& q2);
     
     /*@jsdoc
      * Prints to the program log a text label followed by a quaternion's pitch, yaw, and roll Euler angles.
@@ -407,7 +409,7 @@ public slots:
      * // Quaternion: {"x":0,"y":45.000003814697266,"z":0}
      * print("Quaternion: " + JSON.stringify(Quat.safeEulerAngles(quaternion)));
      */
-    void print(const QString& label, const glm::quat& q, bool asDegrees = false);
+    void print(const QString& label, const glm::qua<float,glm::packed_highp>& q, bool asDegrees = false);
 
     /*@jsdoc
      * Tests whether two quaternions are equal.
@@ -429,7 +431,7 @@ public slots:
      * var equal = Math.abs(1 - Math.abs(dot)) < 0.000001;
      * print(equal); // true
      */
-    bool equal(const glm::quat& q1, const glm::quat& q2);
+    bool equal(const glm::qua<float,glm::packed_highp>& q1, const glm::qua<float,glm::packed_highp>& q2);
 
     /*@jsdoc
      * Cancels out the roll and pitch component of a quaternion so that its completely horizontal with a yaw pointing in the 
@@ -449,7 +451,7 @@ public slots:
      * Quat.print("", lookAt, true); // dvec3(0.000000, 22.245996, 0.000000)
      *
      */
-    glm::quat cancelOutRollAndPitch(const glm::quat& q);
+    glm::qua<float,glm::packed_highp> cancelOutRollAndPitch(const glm::qua<float,glm::packed_highp>& q);
 
     /*@jsdoc
     * Cancels out the roll component of a quaternion so that its horizontal axis is level.
@@ -467,10 +469,10 @@ public slots:
     * var lookAt = Quat.lookAtSimple(Vec3.ZERO, front);
     * Quat.print("", lookAt, true); // dvec3(-1.033004, 22.245996, -0.000000)
     */
-    glm::quat cancelOutRoll(const glm::quat& q);
+    glm::qua<float,glm::packed_highp> cancelOutRoll(const glm::qua<float,glm::packed_highp>& q);
 
 private:
-    const glm::quat& IDENTITY() const { return Quaternions::IDENTITY; }
+    const glm::qua<float,glm::packed_highp>& IDENTITY() const { return Quaternions::IDENTITY; }
 
 };
 

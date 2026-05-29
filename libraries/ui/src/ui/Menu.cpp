@@ -10,7 +10,7 @@
 
 #include <QtCore/QThread>
 #include <QtCore/QDebug>
-#include <QtWidgets/QShortcut>
+#include <QShortcut>
 
 #include <SettingHandle.h>
 #include <shared/QtHelpers.h>
@@ -247,8 +247,8 @@ void Menu::removeAction(MenuWrapper* menu, const QString& actionName) {
 void Menu::setIsOptionChecked(const QString& menuOption, bool isChecked) {
     if (thread() != QThread::currentThread()) {
         BLOCKING_INVOKE_METHOD(this, "setIsOptionChecked",
-                    Q_ARG(const QString&, menuOption),
-                    Q_ARG(bool, isChecked));
+                    Q_GENERIC_ARG(const QString&, menuOption),
+                    Q_GENERIC_ARG(bool, isChecked));
         return;
     }
     QAction* menu = _actionHash.value(menuOption);
@@ -595,7 +595,7 @@ QAction* MenuWrapper::addAction(const QString& menuName) {
 }
 
 QAction* MenuWrapper::addAction(const QString& menuName, const QObject* receiver, const char* member, const QKeySequence& shortcut) {
-    QAction* action = _realMenu->addAction(menuName, receiver, member, shortcut);
+    QAction* action = _realMenu->addAction(menuName, shortcut, receiver, member);
     auto offscreenUi = DependencyManager::get<OffscreenUi>();
     if (offscreenUi) {
         offscreenUi->addMenuInitializer([=, this](VrMenu* vrMenu) {

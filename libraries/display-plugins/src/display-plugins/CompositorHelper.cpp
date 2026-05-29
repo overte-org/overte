@@ -175,7 +175,7 @@ QPointF CompositorHelper::getMouseEventPosition(QMouseEvent* event) {
         QMutexLocker locker(&_reticleLock);
         return QPointF(_reticlePositionInHMD.x, _reticlePositionInHMD.y);
     }
-    return event->localPos();
+    return event->position();
 }
 
 static bool isWindowActive() {

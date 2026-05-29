@@ -63,7 +63,9 @@ void GLWidget::createContext(QOpenGLContext* shareContext) {
     _context = new gl::Context();
     _context->setWindow(windowHandle());
     _context->create(shareContext);
-    _context->makeCurrent();
+    bool isCurrent = _context->makeCurrent();
+    Q_ASSERT(isCurrent);
+    Q_UNUSED(isCurrent);
     _context->clear();
     _context->doneCurrent();
 }
@@ -135,7 +137,7 @@ bool GLWidget::event(QEvent* event) {
     return QWidget::event(event);
 }
 
-bool GLWidget::nativeEvent(const QByteArray &eventType, void *message, long *result) {
+bool GLWidget::nativeEvent(const QByteArray &eventType, void *message, qintptr *result) {
 #ifdef Q_OS_WIN32
     MSG* win32message = static_cast<MSG*>(message);
     switch (win32message->message) {

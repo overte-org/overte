@@ -8,6 +8,8 @@
 
 #include "NetworkSocket.h"
 
+#include <QVariant>
+
 #include "../NetworkLogging.h"
 
 
@@ -23,7 +25,7 @@ NetworkSocket::NetworkSocket(QObject* parent) :
     connect(&_udpSocket, &QUdpSocket::readyRead, this, &NetworkSocket::readyRead);
     connect(&_udpSocket, &QAbstractSocket::stateChanged, this, &NetworkSocket::onUDPStateChanged);
     // Use old SIGNAL/SLOT mechanism for Android builds.
-    connect(&_udpSocket, SIGNAL(error(QAbstractSocket::SocketError)),
+    connect(&_udpSocket, SIGNAL(errorOccurred(QAbstractSocket::SocketError)),
         this, SLOT(onUDPSocketError(QAbstractSocket::SocketError)));
 
 #if defined(WEBRTC_DATA_CHANNELS)

@@ -12,7 +12,9 @@
 #include <QtQuick/QQuickWindow>
 #include <QtQuick/QQuickItem>
 #include <QtQml/QQmlContext>
+#include <QQuickRenderTarget>
 #include <QtQml/QQmlEngine>
+#include <QQuickGraphicsDevice>
 
 #include <QtGui/QOpenGLContext>
 #include <QPointer>
@@ -68,11 +70,15 @@ SharedObject::SharedObject() {
     // NOTE: Must be created on the main thread so that OffscreenQmlSurface can send it events
     // NOTE: Must be created on the rendering thread or it will refuse to render,
     //       so we wait until after its ctor to move object/context to this thread.
-    QQuickWindow::setDefaultAlphaBuffer(true);
+    // QT6TODO: QRhi fails to initialize with setDefaultAlphaBuffer
+    //QQuickWindow::setDefaultAlphaBuffer(true);
     _quickWindow = new QQuickWindow(_renderControl);
+    _quickWindow->setSurfaceType(QQuickWindow::OpenGLSurface);
     _quickWindow->setFormat(getDefaultOpenGLSurfaceFormat());
     _quickWindow->setColor(Qt::transparent);
-    _quickWindow->setClearBeforeRendering(true);
+    // QT6TODO: setClearBeforeRendering was removed, what to do about this?
+    // https://doc.qt.io/qt-6/quick-changes-qt6.html
+    //_quickWindow->setClearBeforeRendering(true);
 
 #endif
 
@@ -113,6 +119,10 @@ SharedObject::~SharedObject() {
 
 #ifndef DISABLE_QML
     if (_quickWindow) {
+#ifdef ENABLE_SHARED_OBJECT_EVENT_DEBUG
+        // Remove event filter that was installed if event debugging is enabled.
+        _quickWindow->removeEventFilter(&_eventDebugFilter);
+#endif
         _quickWindow->destroy();
         delete _quickWindow;
         _quickWindow = nullptr;
@@ -290,9 +300,15 @@ void SharedObject::initializeRenderControl(QOpenGLContext* context) {
         qFatal("QML rendering context has no share context");
     }
 
+    Q_ASSERT(context->isValid());
+
 #ifndef DISABLE_QML
     if (!nsightActive()) {
-        _renderControl->initialize(context);
+        _quickWindow->setFormat(context->format());
+        _quickWindow->setGraphicsDevice(QQuickGraphicsDevice::fromOpenGLContext(context));
+        bool result = _renderControl->initialize();
+        Q_ASSERT(result);
+        Q_UNUSED(result);
     }
 #endif
 }
@@ -308,9 +324,9 @@ void SharedObject::releaseTextureAndFence() {
 #endif
 }
 
-void SharedObject::setRenderTarget(uint32_t fbo, const QSize& size) {
+void SharedObject::setRenderTarget(uint32_t texture, const QSize& size) {
 #ifndef DISABLE_QML
-    _quickWindow->setRenderTarget(fbo, size);
+    _quickWindow->setRenderTarget(QQuickRenderTarget::fromOpenGLTexture(texture, size));
 #endif
 }
 
@@ -439,6 +455,11 @@ void SharedObject::wake() {
 
 void SharedObject::onInitialize() {
 #ifndef DISABLE_QML
+#ifdef ENABLE_SHARED_OBJECT_EVENT_DEBUG
+    // Install event filter if event debugging is enabled.
+    _quickWindow->installEventFilter(&_eventDebugFilter);
+#endif
+
     // Associate root item with the window.
     _rootItem->setParentItem(_quickWindow->contentItem());
     _renderControl->prepareThread(_renderThread);
@@ -535,3 +556,20 @@ void SharedObject::resume() {
 bool SharedObject::isPaused() const {
     return _paused;
 }
+
+#ifdef ENABLE_SHARED_OBJECT_EVENT_DEBUG
+bool SharedObjectEventDebug::eventFilter(QObject *object, QEvent *event) {
+    QMouseEvent *mouseEvent = dynamic_cast<QMouseEvent*>(event);
+    if (mouseEvent) {
+        if (mouseEvent->device()->name() == "WebEntityMouseDevice") {
+            qDebug() << "SharedObjectEventDebug QMouseEevent: " << mouseEvent << mouseEvent->buttons();
+        }
+        //qDebug() << "SharedObjectEventDebug QMouseEevent: " << mouseEvent << mouseEvent->buttons();
+    }
+    QTouchEvent *touchEvent = dynamic_cast<QTouchEvent*>(event);
+    if (touchEvent) {
+        qDebug() << "SharedObjectEventDebug QTouchEvent: " << touchEvent;
+    }
+    return false;
+};
+#endif

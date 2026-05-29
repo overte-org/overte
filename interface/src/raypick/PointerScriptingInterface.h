@@ -421,7 +421,7 @@ public:
      * @param {Mat4} [offset] - The offset of the target point from the center of the target item. If not specified, the 
      *     pointer locks on to the center of the target item.
      */
-    Q_INVOKABLE void setLockEndUUID(unsigned int uid, const QUuid& objectID, bool isAvatar, const glm::mat4& offsetMat = glm::mat4()) const { DependencyManager::get<PointerManager>()->setLockEndUUID(uid, objectID, isAvatar, offsetMat); }
+    Q_INVOKABLE void setLockEndUUID(unsigned int uid, const QUuid& objectID, bool isAvatar, const glm::mat<4,4,float,glm::packed_highp>& offsetMat = glm::mat4()) const { DependencyManager::get<PointerManager>()->setLockEndUUID(uid, objectID, isAvatar, offsetMat); }
 
     /*@jsdoc
      * Sets the delay of a Ray pointer.

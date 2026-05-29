@@ -72,7 +72,7 @@ public:
      * @param {MeshProxy} mesh - The mesh to apply the transform to.
      * @returns {MeshProxy|boolean} The transformed mesh, if valid. <code>false</code> if an error.
      */
-    Q_INVOKABLE ScriptValue transformMesh(glm::mat4 transform, MeshProxy* meshProxy);
+    Q_INVOKABLE ScriptValue transformMesh(glm::mat<4,4,float,glm::packed_highp> transform, MeshProxy* meshProxy);
 
     /*@jsdoc
      * Creates a new mesh.
@@ -82,8 +82,8 @@ public:
      * @param {MeshFace[]} faces - The faces in the mesh.
      * @returns {MeshProxy} A new mesh.
      */
-    Q_INVOKABLE ScriptValue newMesh(const QVector<glm::vec3>& vertices,
-                                     const QVector<glm::vec3>& normals,
+    Q_INVOKABLE ScriptValue newMesh(const QVector<glm::vec<3,float,glm::packed_highp>>& vertices,
+                                     const QVector<glm::vec<3,float,glm::packed_highp>>& normals,
                                      const QVector<MeshFace>& faces);
 
     /*@jsdoc

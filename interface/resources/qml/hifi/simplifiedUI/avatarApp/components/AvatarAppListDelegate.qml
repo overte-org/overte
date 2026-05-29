@@ -12,7 +12,7 @@ import QtQuick 2.10
 import "../../simplifiedConstants" as SimplifiedConstants
 import "../../simplifiedControls" as SimplifiedControls
 import stylesUit 1.0 as HifiStylesUit
-import QtGraphicalEffects 1.0
+import Qt5Compat.GraphicalEffects
 
 Rectangle {
     id: root

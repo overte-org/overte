@@ -1,0 +1,11 @@
+module Settings
+Settings 1.0 Settings.qml
+SettingsPage 1.0 SettingsPage.qml
+SettingNote 1.0 SettingNote.qml
+Header 1.0 Header.qml
+SwitchSetting 1.0 SwitchSetting.qml
+FolderSetting 1.0 FolderSetting.qml
+ComboSetting 1.0 ComboSetting.qml
+WideComboSetting 1.0 WideComboSetting.qml
+SpinBoxSetting 1.0 SpinBoxSetting.qml
+SliderSetting 1.0 SliderSetting.qml

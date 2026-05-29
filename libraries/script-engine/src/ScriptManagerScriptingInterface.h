@@ -338,7 +338,8 @@ public:
     Q_INVOKABLE void clearInterval(QTimer* timer) { _manager->clearInterval(timer); }
 
     // Overloaded version is needed in case the timer has expired
-    Q_INVOKABLE void clearInterval(QVariantMap timer) { ; }
+    // QT6TODO: This errors out on Qt6. It seems to work without it, but I'm not sure if there isn't more of underlying bugs.
+    //Q_INVOKABLE void clearInterval(QVariantMap timer) { ; }
 
     /*@jsdoc
      * Stops a timeout timer set by {@link Script.setTimeout|setTimeout}.
@@ -356,7 +357,8 @@ public:
     Q_INVOKABLE void clearTimeout(QTimer* timer) { _manager->clearTimeout(timer); }
 
     // Overloaded version is needed in case the timer has expired
-    Q_INVOKABLE void clearTimeout(QVariantMap timer) { ; }
+    // QT6TODO: This errors out on Qt6. It seems to work without it, but I'm not sure if there isn't more of underlying bugs.
+    //Q_INVOKABLE void clearTimeout(QVariantMap timer) { ; }
 
     /*@jsdoc
      * Prints a message to the program log and emits {@link Script.printedMessage}.

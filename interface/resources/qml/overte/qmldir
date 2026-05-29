@@ -1,0 +1,19 @@
+module Overte
+singleton Theme 1.0 Theme.qml
+Button 1.0 Button.qml
+TextField 1.0 TextField.qml
+Switch 1.0 Switch.qml
+TabBar 1.0 TabBar.qml
+TabButton 1.0 TabButton.qml
+Label 1.0 Label.qml
+AppButton 1.0 AppButton.qml
+RoundButton 1.0 RoundButton.qml
+ScrollBar 1.0 ScrollBar.qml
+ToolTip 1.0 ToolTip.qml
+NodeGraph 1.0 NodeGraph.qml
+Node 1.0 Node.qml
+FileDialog 1.0 FileDialog.qml
+Slider 1.0 Slider.qml
+SpinBox 1.0 SpinBox.qml
+BodyText 1.0 BodyText.qml
+StackView 1.0 StackView.qml

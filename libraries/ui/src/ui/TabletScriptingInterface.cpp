@@ -188,7 +188,7 @@ ToolbarProxy* TabletScriptingInterface::getSystemToolbarProxy() {
 TabletProxy* TabletScriptingInterface::getTablet(const QString& tabletId) {
     TabletProxy* tabletProxy = nullptr;
     if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "getTablet", Q_RETURN_ARG(TabletProxy*, tabletProxy), Q_ARG(QString, tabletId));
+        BLOCKING_INVOKE_METHOD(this, "getTablet", Q_GENERIC_RETURN_ARG(TabletProxy*, tabletProxy), Q_GENERIC_ARG(QString, tabletId));
         return tabletProxy;
     } 
 
@@ -441,7 +441,7 @@ void TabletProxy::initialScreen(const QVariant& url) {
 bool TabletProxy::isMessageDialogOpen() {
     if (QThread::currentThread() != thread()) {
         bool result = false;
-        BLOCKING_INVOKE_METHOD(this, "isMessageDialogOpen", Q_RETURN_ARG(bool, result));
+        BLOCKING_INVOKE_METHOD(this, "isMessageDialogOpen", Q_GENERIC_RETURN_ARG(bool, result));
         return result;
     }
 
@@ -501,7 +501,7 @@ void TabletProxy::onTabletShown() {
 bool TabletProxy::isPathLoaded(const QVariant& path) {
     if (QThread::currentThread() != thread()) {
         bool result = false;
-        BLOCKING_INVOKE_METHOD(this, "isPathLoaded", Q_RETURN_ARG(bool, result), Q_ARG(QVariant, path));
+        BLOCKING_INVOKE_METHOD(this, "isPathLoaded", Q_GENERIC_RETURN_ARG(bool, result), Q_GENERIC_ARG(QVariant, path));
         return result;
     }
 
@@ -757,7 +757,7 @@ void TabletProxy::stopQMLSource() {
 bool TabletProxy::pushOntoStack(const QVariant& path) {
     if (QThread::currentThread() != thread()) {
         bool result = false;
-        BLOCKING_INVOKE_METHOD(this, "pushOntoStack", Q_RETURN_ARG(bool, result), Q_ARG(QVariant, path));
+        BLOCKING_INVOKE_METHOD(this, "pushOntoStack", Q_GENERIC_RETURN_ARG(bool, result), Q_GENERIC_ARG(QVariant, path));
         return result;
     }
 
@@ -900,7 +900,7 @@ void TabletProxy::loadHTMLSourceOnTopImpl(const QString& url, const QString& inj
 TabletButtonProxy* TabletProxy::addButton(const QVariant& properties) {
     if (QThread::currentThread() != thread()) {
         TabletButtonProxy* result = nullptr;
-        BLOCKING_INVOKE_METHOD(this, "addButton", Q_RETURN_ARG(TabletButtonProxy*, result), Q_ARG(QVariant, properties));
+        BLOCKING_INVOKE_METHOD(this, "addButton", Q_GENERIC_RETURN_ARG(TabletButtonProxy*, result), Q_GENERIC_ARG(QVariant, properties));
         return result;
     }
 
@@ -910,7 +910,7 @@ TabletButtonProxy* TabletProxy::addButton(const QVariant& properties) {
 bool TabletProxy::onHomeScreen() {
     if (QThread::currentThread() != thread()) {
         bool result = false;
-        BLOCKING_INVOKE_METHOD(this, "onHomeScreen", Q_RETURN_ARG(bool, result));
+        BLOCKING_INVOKE_METHOD(this, "onHomeScreen", Q_GENERIC_RETURN_ARG(bool, result));
         return result;
     }
 
@@ -919,7 +919,7 @@ bool TabletProxy::onHomeScreen() {
 
 void TabletProxy::removeButton(TabletButtonProxy* tabletButtonProxy) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "removeButton", Q_ARG(TabletButtonProxy*, tabletButtonProxy));
+        QMetaObject::invokeMethod(this, "removeButton", Q_GENERIC_ARG(TabletButtonProxy*, tabletButtonProxy));
         return;
     }
 
@@ -928,34 +928,34 @@ void TabletProxy::removeButton(TabletButtonProxy* tabletButtonProxy) {
 
 void TabletProxy::emitScriptEvent(const QVariant& msg) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "emitScriptEvent", Q_ARG(QVariant, msg));
+        QMetaObject::invokeMethod(this, "emitScriptEvent", Q_GENERIC_ARG(QVariant, msg));
         return;
     }
 
     if (!_toolbarMode && _qmlOffscreenSurface) {
-        QMetaObject::invokeMethod(_qmlOffscreenSurface, "emitScriptEvent", Qt::AutoConnection, Q_ARG(QVariant, msg));
+        QMetaObject::invokeMethod(_qmlOffscreenSurface, "emitScriptEvent", Qt::AutoConnection, Q_GENERIC_ARG(QVariant, msg));
     } else if (_toolbarMode && _desktopWindow) {
-        QMetaObject::invokeMethod(_desktopWindow, "emitScriptEvent", Qt::AutoConnection, Q_ARG(QVariant, msg));
+        QMetaObject::invokeMethod(_desktopWindow, "emitScriptEvent", Qt::AutoConnection, Q_GENERIC_ARG(QVariant, msg));
     }
 }
 
 void TabletProxy::sendToQml(const QVariant& msg) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "sendToQml", Q_ARG(QVariant, msg));
+        QMetaObject::invokeMethod(this, "sendToQml", Q_GENERIC_ARG(QVariant, msg));
         return;
     }
 
     if (!_toolbarMode && _qmlOffscreenSurface) {
-        QMetaObject::invokeMethod(_qmlOffscreenSurface, "sendToQml", Qt::AutoConnection, Q_ARG(QVariant, msg));
+        QMetaObject::invokeMethod(_qmlOffscreenSurface, "sendToQml", Qt::AutoConnection, Q_GENERIC_ARG(QVariant, msg));
     } else if (_toolbarMode && _desktopWindow) {
-        QMetaObject::invokeMethod(_desktopWindow, "sendToQml", Qt::AutoConnection, Q_ARG(QVariant, msg));
+        QMetaObject::invokeMethod(_desktopWindow, "sendToQml", Qt::AutoConnection, Q_GENERIC_ARG(QVariant, msg));
     }
 }
 
 OffscreenQmlSurface* TabletProxy::getTabletSurface() {
     if (QThread::currentThread() != thread()) {
         OffscreenQmlSurface* result = nullptr;
-        BLOCKING_INVOKE_METHOD(this, "getTabletSurface", Q_RETURN_ARG(OffscreenQmlSurface*, result));
+        BLOCKING_INVOKE_METHOD(this, "getTabletSurface", Q_GENERIC_RETURN_ARG(OffscreenQmlSurface*, result));
         return result;
     }
 
@@ -1091,7 +1091,7 @@ TabletButtonProxy::~TabletButtonProxy() {
 QVariantMap TabletButtonProxy::getProperties() {
     if (QThread::currentThread() != thread()) {
         QVariantMap result;
-        BLOCKING_INVOKE_METHOD(this, "getProperties", Q_RETURN_ARG(QVariantMap, result));
+        BLOCKING_INVOKE_METHOD(this, "getProperties", Q_GENERIC_RETURN_ARG(QVariantMap, result));
         return result;
     }
 
@@ -1100,7 +1100,7 @@ QVariantMap TabletButtonProxy::getProperties() {
 
 void TabletButtonProxy::editProperties(const QVariantMap& properties) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "editProperties", Q_ARG(QVariantMap, properties));
+        QMetaObject::invokeMethod(this, "editProperties", Q_GENERIC_ARG(QVariantMap, properties));
         return;
     }
 

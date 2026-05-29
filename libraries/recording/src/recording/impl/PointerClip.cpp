@@ -107,7 +107,13 @@ void PointerClip::init(uchar* data, size_t size) {
 
         QByteArray fileHeaderData((char*)_data + fileHeaderFrameHeader.fileOffset, fileHeaderFrameHeader.size);
 
-        _header = QJsonDocument(QCborValue::fromCbor(fileHeaderData).toJsonValue().toObject());
+        QCborParserError cborError;
+        auto cbor = QCborValue::fromCbor(fileHeaderData, &cborError);
+        if (cborError.error != QCborError::NoError) {
+            qWarning() << "PointerClip::init: corrupted cbor " << QString(fileHeaderData.toHex());
+            return;
+        }
+        _header = QJsonDocument(cbor.toJsonValue().toObject());
     }
 
     // Check for compression

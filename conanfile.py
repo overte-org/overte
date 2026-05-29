@@ -24,6 +24,7 @@ class Overte(ConanFile):
         "openssl*:shared": "True",
         "qt*:shared": "True",
         "qt*:gui": "True",
+        "qt*:qt5compat": "True",  # Required by Quazip 1.4 and probably us
         "qt*:qtdeclarative": "True",
         "qt*:qtimageformats": "True",  # WebP texture support
         "qt*:qtlocation": "True",
@@ -34,6 +35,7 @@ class Overte(ConanFile):
         "qt*:qtsvg": "True",
         "qt*:qtwebchannel": "True",
         "qt*:qtwebengine": "True",
+        "qt*:qtshadertools": "True",  # For Qt WebEngineWidgets
         "qt*:qtwebsockets": "True",
         "qt*:qtwebview": "True",
         "qt*:qtx11extras": "True",  # Required by gpu-frame-player on Linux
@@ -72,7 +74,7 @@ class Overte(ConanFile):
         self.requires("openexr/3.1.9")
         self.requires("openvr/2.2.3@overte/stable")
         self.requires("openxr/1.1.46@overte/stable")
-        self.requires("opus/1.5.2")
+        self.requires("opus/1.5.2", force=True) # The Qt6 source package depends on an older opus version than we do.
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.10")
@@ -88,13 +90,13 @@ class Overte(ConanFile):
         openssl = "openssl/1.1.1q"
 
         if self.options.qt_source == "system":
-            self.requires("qt/5.15.2@overte/system", force=True)
+            self.requires("qt/6.x@overte/system", force=True)
             if self.settings.os == "Linux":
                 openssl = "openssl/system@anotherfoxguy/stable"
         elif self.options.qt_source == "aqt":
-            self.requires("qt/5.15.2@overte/aqt", force=True)
+            self.requires("qt/6.10.3@overte/aqt#c692bf111ff0a41e7b82ef12dec20219", force=True)
         else:
-            self.requires("qt/5.15.18-2026.01.04@overte/stable#4fc772a2dbcd84731eb6ff9904e6e358", force=True)
+            self.requires("qt/6.11.1@overte/experimental#f3b43b7235810a2e064268e976386ca0", force=True)
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")
@@ -102,6 +104,8 @@ class Overte(ConanFile):
             self.requires("ovr-platform-skd/1.10.0@overte/prebuild")
 
         self.requires(openssl, force=True)
+
+        self.requires("glib/2.85.3", override=True) # Fix version conflict resulting from Qt and GStreamer.
 
     def generate(self):
         tc = CMakeToolchain(self)
@@ -134,8 +138,8 @@ class Overte(ConanFile):
             if self.settings.compiler == "gcc":
                 self.output.status("GCC compiler detected, setting default flags.")
                 tc.cache_variables.update({
-                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-Og -ggdb3",
-                    "CMAKE_C_FLAGS_DEBUG_INIT": "-Og -ggdb3",
+                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-O0 -ggdb3",
+                    "CMAKE_C_FLAGS_DEBUG_INIT": "-O0 -ggdb3",
                     "CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -ggdb2",
                     "CMAKE_C_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -ggdb2",
                     "CMAKE_CXX_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",
@@ -144,8 +148,8 @@ class Overte(ConanFile):
             elif self.settings.compiler == "clang":
                 self.output.status("Clang compiler detected, setting default flags.")
                 tc.cache_variables.update({
-                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-Og -g",
-                    "CMAKE_C_FLAGS_DEBUG_INIT": "-Og -g",
+                    "CMAKE_CXX_FLAGS_DEBUG_INIT": "-O0 -g",
+                    "CMAKE_C_FLAGS_DEBUG_INIT": "-O0 -g",
                     "CMAKE_CXX_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -g",
                     "CMAKE_C_FLAGS_RELWITHDEBINFO_INIT": "-O2 -DNDEBUG -g",
                     "CMAKE_CXX_FLAGS_RELEASE_INIT": "-O3 -DNDEBUG",

@@ -15,6 +15,7 @@
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDebug>
+#include <QtCore/QFile>
 #include <QtCore/QMimeData>
 #include <QtCore/QString>
 #include <QtCore/QUrl>

@@ -40,7 +40,7 @@ bool ScriptMessage::fromJson(const QJsonObject &object) {
     }
     _messageContent = object["message"].toString();
     _lineNumber = object["lineNumber"].toInt();
-    _fileName = object["fileName"].toInt();
+    _fileName = object["fileName"].toString();
     _entityID = QUuid::fromString(object["entityID"].toString());
     _scriptType = static_cast<ScriptMessage::ScriptType>(object["type"].toInt());
     _severity = static_cast<ScriptMessage::Severity>(object["severity"].toInt());

@@ -36,3 +36,5 @@ nss*:shared=True
 nspr*:shared=True
 # Work around `undefined reference` errors when building NSS.
 sqlite3*:shared=True
+# Required by Qt6 WebEngine.
+qt*:with_dbus=True

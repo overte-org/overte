@@ -32,8 +32,8 @@ MouseEvent::MouseEvent() :
 
 
 MouseEvent::MouseEvent(const QMouseEvent& event) :
-    x(event.x()),
-    y(event.y()),
+    x(static_cast<int>(event.position().x())),
+    y(static_cast<int>(event.position().y())),
     isLeftButton(event.buttons().testFlag(Qt::LeftButton)),
     isRightButton(event.buttons().testFlag(Qt::RightButton)),
     isMiddleButton(event.buttons().testFlag(Qt::MiddleButton)),

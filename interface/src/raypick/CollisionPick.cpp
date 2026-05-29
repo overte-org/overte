@@ -134,7 +134,7 @@ bool CollisionPick::getShapeInfoReady(const CollisionRegion& pick) {
     return _mathPick.loaded;
 }
 
-void CollisionPick::computeShapeInfoDimensionsOnly(const CollisionRegion& pick, ShapeInfo& shapeInfo, QSharedPointer<GeometryResource> resource) {
+void CollisionPick::computeShapeInfoDimensionsOnly(const CollisionRegion& pick, ShapeInfo& shapeInfo, std::shared_ptr<GeometryResource> resource) {
     ShapeType type = shapeInfo.getType();
     glm::vec3 dimensions = pick.transform.getScale();
     QString modelURL = (resource ? resource->getURL().toString() : "");
@@ -147,7 +147,7 @@ void CollisionPick::computeShapeInfoDimensionsOnly(const CollisionRegion& pick, 
     }
 }
 
-void CollisionPick::computeShapeInfo(const CollisionRegion& pick, ShapeInfo& shapeInfo, QSharedPointer<GeometryResource> resource) {
+void CollisionPick::computeShapeInfo(const CollisionRegion& pick, ShapeInfo& shapeInfo, std::shared_ptr<GeometryResource> resource) {
     // This code was copied and modified from RenderableModelEntityItem::computeShapeInfo
     // TODO: Move to some shared code area (in entities-renderer? model-networking?)
     // after we verify this is working and do a diff comparison with RenderableModelEntityItem::computeShapeInfo
@@ -305,7 +305,7 @@ void CollisionPick::computeShapeInfo(const CollisionRegion& pick, ShapeInfo& sha
             points.reserve(sizeToReserve);
 
             // copy points
-            const glm::vec3* vertexItr = vertices.cbegin();
+            auto vertexItr = vertices.cbegin();
             while (vertexItr != vertices.cend()) {
                 glm::vec3 point = *vertexItr;
                 points.push_back(point);
@@ -322,7 +322,7 @@ void CollisionPick::computeShapeInfo(const CollisionRegion& pick, ShapeInfo& sha
                 triangleIndices.reserve((int)triangleIndicesCount);
 
                 for (const HFMMeshPart& meshPart : mesh.parts) {
-                    const int* indexItr = meshPart.triangleIndices.cbegin();
+                    auto indexItr = meshPart.triangleIndices.cbegin();
                     while (indexItr != meshPart.triangleIndices.cend()) {
                         triangleIndices.push_back(*indexItr);
                         ++indexItr;
