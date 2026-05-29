@@ -35,6 +35,7 @@ class Overte(ConanFile):
         "qt*:qtsvg": "True",
         "qt*:qtwebchannel": "True",
         "qt*:qtwebengine": "True",
+        "qt*:qtshadertools": "True",  # For Qt WebEngineWidgets
         "qt*:qtwebsockets": "True",
         "qt*:qtwebview": "True",
         "qt*:qtx11extras": "True",  # Required by gpu-frame-player on Linux
