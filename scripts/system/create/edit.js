@@ -557,7 +557,7 @@
                 blue: 255
             },
             alpha: 1,
-            followCamera: true,
+            followCamera: false,
             majorGridEvery: 5,
             minorGridEvery: 1,
         },
