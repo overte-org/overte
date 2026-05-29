@@ -6,7 +6,7 @@ runs:
     - name: Set environment variables
       shell: bash
       run: |
-        if [[ "${{ matrix.os }}" = "Windows 2022" ]]; then
+        if [[ "${{ matrix.os }}" = "Windows 2022"* ]]; then
             echo "CONAN_PROFILE='./tools/conan-profiles/vs-22-release'" >> $GITHUB_ENV
         else
             echo "Not sure which Conan profile to use. Exiting." && exit 1
