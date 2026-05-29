@@ -46,6 +46,7 @@ public:
             // All is green, assign the gpuobject to the Framebuffer
             object = new VKFramebuffer(backend.shared_from_this(), framebuffer);
             Backend::setGPUObject(framebuffer, object);
+            backend._framebuffers.insert(object);
         }
 
         object->update();

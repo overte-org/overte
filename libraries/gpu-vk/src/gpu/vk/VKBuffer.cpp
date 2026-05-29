@@ -36,6 +36,7 @@ VKBuffer* VKBuffer::sync(VKBackend& backend, const gpu::Buffer& buffer, bool tra
         // VKTODO: Should previous gpuobject be replaced?
         object = new VKBuffer(backend, buffer);
         newBuffer = true;
+        backend._buffers.insert(object);
     }
     // VKTODO: delete the old buffer after rendering the frame
     if (0 != (buffer._renderPages._flags & PageManager::DIRTY) || newBuffer) {

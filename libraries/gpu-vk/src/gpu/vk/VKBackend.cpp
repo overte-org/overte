@@ -1536,9 +1536,6 @@ vk::VKFramebuffer* VKBackend::syncGPUObject(const Framebuffer *framebuffer) {
     }
     // VKTODO
     auto object = vk::VKFramebuffer::sync(*this, *framebuffer);
-    if (!_framebuffers.contains(object)) {
-        _framebuffers.insert(object);
-    }
     return object;
 }
 
@@ -1547,9 +1544,6 @@ VKBuffer* VKBackend::syncGPUObject(const Buffer *buffer) {
         return nullptr;
     }
     auto object = vk::VKBuffer::sync(*this, *buffer);
-    if (!_buffers.contains(object)) {
-        _buffers.insert(object);
-    }
     return object;
 }
 
@@ -1558,9 +1552,6 @@ VKBuffer* VKBackend::syncGPUObjectNoTransfer(const Buffer *buffer) {
         return nullptr;
     }
     auto object = vk::VKBuffer::sync(*this, *buffer, false);
-    if (!_buffers.contains(object)) {
-        _buffers.insert(object);
-    }
     return object;
 }
 
@@ -1603,6 +1594,7 @@ VKTexture* VKBackend::syncGPUObject(const std::shared_ptr<Texture> &texture) {
 
             if (!object) {
                 object = new VKExternalTexture(shared_from_this(), *texture);
+                _textures.insert(object);
             }
             auto externalTexture = dynamic_cast<VKExternalTexture*>(object);
             Q_ASSERT(externalTexture);
@@ -1650,8 +1642,6 @@ VKTexture* VKBackend::syncGPUObject(const std::shared_ptr<Texture> &texture) {
                 // Stored size can sometimes be reported as 0 for valid textures.
                 if (texture->getStoredSize() == 0 && texture->getStoredMipFormat() == gpu::Element()){
                     qDebug(gpu_vk_logging) << "No data on texture";
-                    texture->getStoredMipFormat();
-                    texture->getStoredSize();
                     return nullptr;
                 }
 
@@ -1720,6 +1710,9 @@ VKTexture* VKBackend::syncGPUObject(const std::shared_ptr<Texture> &texture) {
             default:
                 Q_UNREACHABLE();
         }
+        if (object) {
+            _textures.insert(object);
+        }
     } else {
 
         if (texture->getUsageType() == TextureUsageType::RESOURCE) {
@@ -1734,9 +1727,6 @@ VKTexture* VKBackend::syncGPUObject(const std::shared_ptr<Texture> &texture) {
         }
     }
 
-    if (!_textures.contains(object)) {
-        _textures.insert(object);
-    }
     return object;
 }
 

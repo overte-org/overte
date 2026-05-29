@@ -575,6 +575,7 @@ protected:
     VkDescriptorImageInfo _defaultSkyboxTextureImageInfo{};
     friend class VKBuffer;
     friend class VKFramebuffer;
+    friend class VKQuery;
     VkCommandBuffer _currentCommandBuffer;
     size_t _commandIndex{ 0 };
     int _currentDraw{ -1 };
