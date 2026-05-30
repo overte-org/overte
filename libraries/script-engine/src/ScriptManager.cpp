@@ -550,6 +550,8 @@ void ScriptManager::waitTillDoneRunning(bool shutdown) {
                 //       if they access Settings or Menu in any of their shutdown code. So:
                 // Process events for this thread, allowing invokeMethod calls to pass between threads.
                 QCoreApplication::processEvents();
+                // Events may use script engine so guard is necessary.
+                auto scopeGuard = _engine->getScopeGuard();
                 _engine->processEvents();
             }
 
@@ -1222,6 +1224,11 @@ void ScriptManager::timerFired() {
     if (isStopped()) {
         scriptWarningMessage("Script.timerFired() while shutting down is ignored... parent script:" + getFilename(), getFilename(), -1);
         return; // bail early
+    }
+
+    // Timer events shouldn't be processed after the script engine has shut down.
+    if (_isDoneRunning) {
+        return;
     }
 
 //#define SCRIPT_TIMER_PERFORMANCE_STATISTICS
