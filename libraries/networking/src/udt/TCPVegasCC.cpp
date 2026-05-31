@@ -252,7 +252,7 @@ void TCPVegasCC::performCongestionAvoidance(udt::SequenceNumber ack) {
 
 
 int TCPVegasCC::estimatedTimeout() const {
-    return _ewmaRTT == -1 ? DEFAULT_SYN_INTERVAL : _ewmaRTT + _rttVariance * 4;
+    return _ewmaRTT == -1 ? DEFAULT_SYN_INTERVAL * 200 : _ewmaRTT + _rttVariance * 4;
 }
 
 bool TCPVegasCC::isCongestionWindowLimited() {
