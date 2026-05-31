@@ -91,6 +91,7 @@ public:
     void recordUnreliableSentPackets(int payload, int total);
     void recordUnreliableReceivedPackets(int payload, int total);
 
+    void recordRoundTripTime(int sample);
     void recordCongestionWindowSize(int sample);
     void recordPacketSendPeriod(int sample);
     
