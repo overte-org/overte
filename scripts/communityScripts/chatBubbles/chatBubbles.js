@@ -47,6 +47,7 @@ function ChatBubbles_WrapText(text, maxChars = BUBBLE_WIDTH_MAX_CHARS) {
     // split on spaces, periods, commas, slashes, hyphens, colons, and semicolons,
     // collapsing whitespace down to one space
     let tokens = text.replace(/[^\S\n]+/g, " ").match(/([^ \.,\/\-:;\n]+[ \.,\/\-:;\n]*)/g);
+    if (!tokens) return []; // Just in case the text is empty, a space or some other non bubblable message.
     let lineWidth = 0;
     let lineChunk = [];
     let linesAccum = [];
@@ -72,8 +73,8 @@ function ChatBubbles_WrapText(text, maxChars = BUBBLE_WIDTH_MAX_CHARS) {
             token = token.slice(1);
         }
 
-
-        // iterate through to push line before each other new line character
+        // Look through this token for new line characters,
+        // and split to a new line on each.
         let index = 0;
         while (index > -1) {
             index = token.indexOf('\n');
