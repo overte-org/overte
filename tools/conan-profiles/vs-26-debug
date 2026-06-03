@@ -4,7 +4,7 @@ arch=x86_64
 compiler=msvc
 # Both libnode and webrtc-audio-processing require C++20
 compiler.cppstd=20
-compiler.version=194
+compiler.version=195
 compiler.runtime=dynamic
 compiler.runtime_type=Debug
 build_type=Debug
@@ -12,3 +12,7 @@ build_type=Debug
 Overte/*:qt_source=source
 # Required for building oneTBB.
 hwloc/*:shared=True
+
+[tool_requires]
+# Many of our dependencies don't support CMake 4 yet.
+!cmake/*: cmake/[>=3 <4]
