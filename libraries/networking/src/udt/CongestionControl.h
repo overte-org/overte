@@ -23,7 +23,7 @@
 
 namespace udt {
     
-static const int32_t DEFAULT_SYN_INTERVAL = 10000; // 10 ms
+static const int32_t DEFAULT_SYN_INTERVAL = 2000000; // 2000 ms
 
 class Connection;
 class Packet;
@@ -58,7 +58,7 @@ protected:
     void setPacketSendPeriod(double newSendPeriod); // call this internally to ensure send period doesn't go past max bandwidth
     
     double _packetSendPeriod { 1.0 }; // Packet sending period, in microseconds
-    int _roundTripTime { -1 }; // Round trip time, in milliseconds
+    int _roundTripTime { -1 }; // Round trip time, in microseconds
     int _congestionWindowSize { 16 }; // Congestion window size, in packets
 
     std::atomic<int> _maxBandwidth { -1 }; // Maximum desired bandwidth, bits per second
