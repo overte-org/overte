@@ -2665,11 +2665,10 @@ void ScriptManager::refreshFileScript(const EntityItemID& entityID, const QStrin
         return;
     }
 
-    static bool recurseGuard = false;
-    if (recurseGuard) {
+    if (_refreshRecurseGuard) {
         return;
     }
-    recurseGuard = true;
+    _refreshRecurseGuard = true;
 
     EntityScriptDetails details;
     {
@@ -2682,10 +2681,11 @@ void ScriptManager::refreshFileScript(const EntityItemID& entityID, const QStrin
         auto lastModified = QFileInfo(filePath).lastModified().toMSecsSinceEpoch();
         if (lastModified > details.lastModified) {
             scriptInfoMessage("Reloading modified script " + details.scriptText, filePath, -1);
+            unloadEntityScript(entityID, details.scriptText, true);
             loadEntityScript(entityID, details.scriptText, true);
         }
     }
-    recurseGuard = false;
+    _refreshRecurseGuard = false;
 }
 
 // Execute operation in the appropriate context for (the possibly empty) entityID.

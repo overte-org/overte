@@ -109,9 +109,15 @@ void EntityScriptServer::handleReloadEntityServerScriptPacket(QSharedPointer<Rec
     if (senderNode->getCanRez() || senderNode->getCanRezTmp()) {
         auto entityID = QUuid::fromRfc4122(message->read(NUM_BYTES_RFC4122_UUID));
 
-        if (_entityViewer.getTree() && !_shuttingDown) {
+        if (!_entityViewer.getTree() || _shuttingDown) { return; }
+
+        EntityItemPointer entity = _entityViewer.getTree()->findEntityByEntityItemID(entityID);
+
+        if (entity) {
             qCDebug(entity_script_server) << "Reloading: " << entityID;
-            checkAndCallPreload(entityID, true);
+
+            auto script = entity->getServerScripts();
+            checkAndCallPreload(entityID, script, script);
         }
     }
 }
@@ -577,7 +583,10 @@ void EntityScriptServer::shutdownScriptEngine() {
 }
 
 void EntityScriptServer::addingEntity(const EntityItemID& entityID) {
-    checkAndCallPreload(entityID);
+    EntityItemPointer entity = _entityViewer.getTree()->findEntityByEntityItemID(entityID);
+    if (entity) {
+        checkAndCallPreload(entityID, "", entity->getServerScripts());
+    }
 }
 
 void EntityScriptServer::deletingEntity(const EntityItemID& entityID) {
@@ -587,13 +596,13 @@ void EntityScriptServer::deletingEntity(const EntityItemID& entityID) {
     }
 }
 
-void EntityScriptServer::entityServerScriptChanging(const EntityItemID& entityID, bool reload) {
+void EntityScriptServer::entityServerScriptChanging(const EntityItemID& entityID, const QString& oldScriptURL, const QString& newScriptURL) {
     if (_entityViewer.getTree() && !_shuttingDown) {
-        checkAndCallPreload(entityID, reload);
+        checkAndCallPreload(entityID, oldScriptURL, newScriptURL);
     }
 }
 
-void EntityScriptServer::checkAndCallPreload(const EntityItemID& entityID, bool forceRedownload) {
+void EntityScriptServer::checkAndCallPreload(const EntityItemID& entityID, const QString& oldScriptURL, const QString& newScriptURL) {
     if (_entityViewer.getTree() && !_shuttingDown && _entitiesScriptManager) {
 
         EntityItemPointer entity = _entityViewer.getTree()->findEntityByEntityItemID(entityID);
@@ -601,20 +610,21 @@ void EntityScriptServer::checkAndCallPreload(const EntityItemID& entityID, bool 
             return;
         }
 
-        QString serverScripts = entity->getServerScripts();
         EntityScriptDetails details;
-        bool isRunning = _entitiesScriptManager->getEntityScriptDetails(entityID, serverScripts, details);
-        if (forceRedownload || !isRunning || details.scriptText != serverScripts) {
-            // TODO: Check if this is running on script engine thread, otherwise lambda capturing script engine pointer is needed
-            if (isRunning) {
-                _entitiesScriptManager->unloadEntityScript(entityID, serverScripts, true);
-            }
+        bool isRunning = _entitiesScriptManager->getEntityScriptDetails(entityID, oldScriptURL, details);
+        bool reload = oldScriptURL == newScriptURL;
 
-            QString scriptUrl = entity->getServerScripts();
-            if (!scriptUrl.isEmpty()) {
-                scriptUrl = DependencyManager::get<ResourceManager>()->normalizeURL(scriptUrl);
-                _entitiesScriptManager->loadEntityScript(entityID, scriptUrl, forceRedownload);
-            }
+        // TODO: Check if this is running on script engine thread, otherwise lambda capturing script engine pointer is needed
+        if (isRunning) {
+            _entitiesScriptManager->unloadEntityScript(entityID, oldScriptURL, true);
+        }
+
+        if (!newScriptURL.isEmpty()) {
+            _entitiesScriptManager->loadEntityScript(
+                entityID,
+                DependencyManager::get<ResourceManager>()->normalizeURL(newScriptURL),
+                reload
+            );
         }
     }
 }

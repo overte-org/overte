@@ -150,10 +150,8 @@ public:
     bool layeredZonesHaveFade(const TransitionType type) const { return _layeredZones.hasFade(type); }
 
     bool checkAndCallPreload(const EntityItemID& entityID,
-                             bool reload = false,
-                             bool unloadFirst = false,
-                             const QString& oldOverrideURL = "",
-                             const QString& newOverrideURL = "");
+                             const QString& oldScriptURL = "",
+                             const QString& newScriptURL = "");
     void unloadEntityScript(const EntityItemID& entityID, const QString& scriptURL);
     void updateScriptUserData(const EntityItemID& entityID, const QString& scriptURL, const QString& userData);
 
@@ -165,7 +163,7 @@ signals:
 public slots:
     void addingEntity(const EntityItemID& entityID);
     void deletingEntity(const EntityItemID& entityID);
-    void entityScriptChanging(const EntityItemID& entityID, const bool reload);
+    void entityScriptChanging(const EntityItemID& entityID, const QString& oldScriptURL, const QString& newScriptURL);
     void entityCollisionWithEntity(const EntityItemID& idA, const EntityItemID& idB, const Collision& collision);
     void updateEntityRenderStatus(bool shouldRenderEntities);
     void updateZone(const EntityItemID& id);

@@ -1216,55 +1216,51 @@ void EntityTreeRenderer::deletingEntity(const EntityItemID& entityID) {
 }
 
 void EntityTreeRenderer::addingEntity(const EntityItemID& entityID) {
-    checkAndCallPreload(entityID);
     auto entity = std::static_pointer_cast<EntityTree>(_tree)->findEntityByID(entityID);
     if (entity) {
         _entitiesToAdd.insert({ entity->getEntityItemID(),  entity });
+        checkAndCallPreload(entityID, "", entity->getScript());
     }
 }
 
-void EntityTreeRenderer::entityScriptChanging(const EntityItemID& entityID, bool reload) {
-    checkAndCallPreload(entityID, reload, true);
+void EntityTreeRenderer::entityScriptChanging(const EntityItemID& entityID, const QString& oldScriptURL, const QString& newScriptURL) {
+    checkAndCallPreload(entityID, oldScriptURL, newScriptURL);
     // Force "re-checking" entities so that the logic inside `checkEnterLeaveEntities()` is run.
     // This will ensure that the `enterEntity()` signal is emitted on clients whose avatars
     // are inside an entity when the script is reloaded.
     forceRecheckEntities();
 }
 
-bool EntityTreeRenderer::checkAndCallPreload(const EntityItemID& entityID, bool reload, bool unloadFirst,
-                                             const QString& oldOverrideURL, const QString& newOverrideURL) {
+bool EntityTreeRenderer::checkAndCallPreload(const EntityItemID& entityID,
+                                             const QString& oldScriptURL,
+                                             const QString& newScriptURL) {
     if (_tree && !_shuttingDown) {
         EntityItemPointer entity = getTree()->findEntityByEntityItemID(entityID);
         if (!entity) {
             return false;
         }
+
         auto& scriptEngine = (entity->isLocalEntity() || entity->isMyAvatarEntity()) ? _persistentEntitiesScriptManager : _nonPersistentEntitiesScriptManager;
         if (!scriptEngine) {
             return false;
         }
 
-        bool shouldLoad = !newOverrideURL.isEmpty() ? (newOverrideURL != oldOverrideURL) : entity->shouldPreloadScript();
-        QString scriptUrl = !oldOverrideURL.isEmpty() ? oldOverrideURL : entity->getScript();
-        if ((shouldLoad && unloadFirst) || scriptUrl.isEmpty()) {
-            QString loadedScript = !oldOverrideURL.isEmpty() ? oldOverrideURL : entity->getLoadedScript();
+        bool reload = oldScriptURL == newScriptURL;
+
+        if (!oldScriptURL.isEmpty()) {
             if (_currentEntitiesInside.contains(entityID)) {
-                scriptEngine->callEntityScriptMethodForScript(entityID, loadedScript, "leaveEntity");
+                scriptEngine->callEntityScriptMethodForScript(entityID, oldScriptURL, "leaveEntity");
             }
-            QMetaObject::invokeMethod(scriptEngine.get(), [scriptEngine, entityID, loadedScript]{
-                scriptEngine->unloadEntityScript(entityID, loadedScript, true);
+            QMetaObject::invokeMethod(scriptEngine.get(), [scriptEngine, entityID, oldScriptURL]{
+                scriptEngine->unloadEntityScript(entityID, oldScriptURL, true);
             });
-            if (!oldOverrideURL.isEmpty()) {
-                entity->scriptHasUnloaded();
-            }
+            entity->scriptHasUnloaded();
         }
-        if (shouldLoad) {
-            if (!newOverrideURL.isEmpty()) {
-                entity->setScriptHasFinishedPreload(false);
-            }
-            scriptEngine->loadEntityScript(entityID, resolveScriptURL(!newOverrideURL.isEmpty() ? newOverrideURL : scriptUrl), reload);
-            if (!newOverrideURL.isEmpty()) {
-                entity->scriptHasPreloaded();
-            }
+
+        if (!newScriptURL.isEmpty()) {
+            entity->setScriptHasFinishedPreload(false);
+            scriptEngine->loadEntityScript(entityID, resolveScriptURL(newScriptURL), reload);
+            entity->scriptHasPreloaded();
         }
 
         return true;
