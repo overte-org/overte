@@ -2,6 +2,7 @@
 #  SetupHifiTestCase.cmake
 # 
 #  Copyright 2015 High Fidelity, Inc.
+#  Copyright 2026 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -108,7 +109,7 @@ macro(SETUP_HIFI_TESTCASE)
         list(APPEND ${TARGET_NAME}_DEPENDENCY_QT_MODULES Core Test)
         
         # find these Qt modules and link them to our own target
-        find_package(Qt5 COMPONENTS ${${TARGET_NAME}_DEPENDENCY_QT_MODULES} REQUIRED)
+        find_package(Qt5 COMPONENTS ${${TARGET_NAME}_DEPENDENCY_QT_MODULES} QUIET REQUIRED)
       
         foreach(QT_MODULE ${${TARGET_NAME}_DEPENDENCY_QT_MODULES})
           target_link_libraries(${TARGET_NAME} Qt5::${QT_MODULE})

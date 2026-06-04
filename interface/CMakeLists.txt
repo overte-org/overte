@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2019-2021 Vircadia contributors
-# Copyright 2021-2023 Overte e.V.
+# Copyright 2021-2026 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 if (APPLE)
@@ -28,7 +28,7 @@ find_package(
   Qt5 COMPONENTS
   Gui Widgets Multimedia Network Qml Quick Svg WebEngineCore WebEngineWidgets
   ${PLATFORM_QT_COMPONENTS}
-  WebChannel WebSockets
+  WebChannel WebSockets QUIET REQUIRED
 )
 
 
@@ -68,7 +68,7 @@ foreach(EXTERNAL ${OPTIONAL_EXTERNALS})
   endif ()
 endforeach()
 
-# find_package(Qt5LinguistTools REQUIRED)
+# find_package(Qt5LinguistTools QUIET REQUIRED)
 # find_package(Qt5LinguistToolsMacros)
 
 if (WIN32)
@@ -197,12 +197,12 @@ endif()
 if (WIN32)
 
   if (USE_SIXENSE)
-    find_package(sixense REQUIRED)
+    find_package(sixense QUIET REQUIRED)
     target_link_libraries(${TARGET_NAME} Sixense::Sixense)
   endif ()
 
-  find_package(neuron REQUIRED)
-  find_package(steamworks REQUIRED)
+  find_package(neuron QUIET REQUIRED)
+  find_package(steamworks QUIET REQUIRED)
   target_link_libraries(${TARGET_NAME} Neuron::Datareader Steam::Works)
 endif()
 
@@ -253,7 +253,7 @@ target_quazip()
 foreach(EXTERNAL ${OPTIONAL_EXTERNALS})
 
   if (${${EXTERNAL}_UPPERCASE}_REQUIRED)
-    find_package(${EXTERNAL} REQUIRED)
+    find_package(${EXTERNAL} QUIET REQUIRED)
   else ()
     find_package(${EXTERNAL})
   endif ()
@@ -460,7 +460,7 @@ if(OVERTE_USE_SYSTEM_LIBS)
     find_path(GIFCREATOR_INCLUDE_DIRS "GifCreator/GifCreator.h")
     target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${GIFCREATOR_INCLUDE_DIRS} "${GIFCREATOR_INCLUDE_DIRS}/GifCreator")
 else()
-    find_package(GifCreator REQUIRED)
+    find_package(GifCreator QUIET REQUIRED)
     target_link_libraries(${TARGET_NAME} GifCreator::GifCreator)
 endif()
 

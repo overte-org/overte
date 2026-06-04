@@ -129,7 +129,7 @@ macro(GENERATE_INSTALLERS)
     endif()
 
     # Find and pass QMake to GenerateAppImage.cmake, since QMake tells linuxdeploy-plugin-qt where to find Qt.
-    find_package(Qt5 COMPONENTS Core REQUIRED)
+    find_package(Qt5 COMPONENTS Core QUIET REQUIRED)
     get_target_property(Qt_Core_Location Qt5::Core LOCATION)
     get_filename_component(QT_BIN_DIR ${Qt_Core_Location} DIRECTORY)
     find_program(QMAKE_EXECUTABLE qmake PATHS ${QT_BIN_DIR} PATH_SUFFIXES qt5/bin NO_DEFAULT_PATH)
