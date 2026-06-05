@@ -56,6 +56,9 @@ if (hmdDebugWindowGeometryValue !== '') {
         windowHeight = geometry.height;
         windowX = geometry.x;
         windowY = geometry.y;
+        var viewportDimensions = Controller.getViewportDimensions();
+        if (windowX > viewportDimensions.x) windowX = viewportDimensions.x - windowWidth;
+        if (windowY > viewportDimensions.y) windowX = viewportDimensions.y - windowHeight;
         hasPosition = true;
     }
 }
