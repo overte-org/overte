@@ -198,6 +198,18 @@ TabBar {
                         }
 
                         NewEntityButton {
+                            icon: "icons/grid.svg"
+                            text: "GRID"
+                            onClicked: {
+                                editRoot.sendToScript({
+                                    method: "newEntityButtonClicked",
+                                    params: { buttonName: "newGridButton" }
+                                });
+                                editTabView.currentIndex = tabIndex.properties
+                            }
+                        }
+
+                        NewEntityButton {
                             icon: "icons/sound.svg"
                             text: "SOUND"
                             onClicked: {
