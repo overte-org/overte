@@ -46,21 +46,45 @@ let typingIndicators = {};
 function ChatBubbles_WrapText(text, maxChars = BUBBLE_WIDTH_MAX_CHARS) {
     // split on spaces, periods, commas, slashes, hyphens, colons, and semicolons,
     // collapsing whitespace down to one space
-    let tokens = text.replace(/\s+/g, " ").split(/([ \.,\/\-:;])/);
+    let tokens = text.replace(/[^\S\n]+/g, " ").match(/([^ \.,\/\-:;\n]*[ \.,\/\-:;\n]*)/g);
+    if (!tokens) return []; // Just in case the text is empty, a space or some other non bubblable message.
     let lineWidth = 0;
     let lineChunk = [];
     let linesAccum = [];
 
-    for (const token of tokens) {
+    for (let token of tokens) {
         // the split regex sometimes produces empty space tokens too, so skip those
         if (token.length < 1) { continue; }
 
+        const newLine = token.indexOf('\n') == 0;
+
+        // This token is either a new line or
         // this token would go over the limit,
         // push the line we have and start a new one
-        if (lineWidth + token.length > maxChars && lineWidth !== 0) {
+        // (Skip blank new lines)
+        if ((newLine || (lineWidth + token.length > maxChars)) && lineWidth !== 0) {
             linesAccum.push(lineChunk.join(""));
             lineChunk = [];
             lineWidth = 0;
+        }
+
+        // trim first new line character
+        if (newLine) {
+            token = token.slice(1);
+        }
+
+        // Look through this token for new line characters,
+        // and split to a new line on each.
+        let index = 0;
+        while (index > -1) {
+            index = token.indexOf('\n');
+            if (index > -1) {
+                lineChunk.push(token.slice(0, index));
+                linesAccum.push(lineChunk.join(""));
+                lineChunk = []
+                lineWidth = 0;
+                token = token.slice(index+1);
+            }
         }
 
         // it's *still* too long for an empty line,
