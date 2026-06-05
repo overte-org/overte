@@ -56,9 +56,12 @@ if (hmdDebugWindowGeometryValue !== '') {
         windowHeight = geometry.height;
         windowX = geometry.x;
         windowY = geometry.y;
+
+        // Constrain window position to within the viewport
         const viewportDimensions = Controller.getViewportDimensions();
         if (windowX > viewportDimensions.x) windowX = viewportDimensions.x - windowWidth;
         if (windowY > viewportDimensions.y) windowX = viewportDimensions.y - windowHeight;
+
         hasPosition = true;
     }
 }
