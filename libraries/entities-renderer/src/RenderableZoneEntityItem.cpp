@@ -436,9 +436,9 @@ void ZoneEntityRenderer::updateHazeFromEntity(const TypedEntityPointer& entity) 
 
     haze->setHazeRangeFactor(graphics::Haze::convertHazeRangeToHazeRangeFactor(_hazeProperties.getHazeRange()));
     glm::u8vec3 hazeColor = _hazeProperties.getHazeColor();
-    haze->setHazeColor(toGlm(hazeColor));
+    haze->setHazeColor(ColorUtils::toVec3(hazeColor));
     glm::u8vec3 hazeGlareColor = _hazeProperties.getHazeGlareColor();
-    haze->setHazeGlareColor(toGlm(hazeGlareColor));
+    haze->setHazeGlareColor(ColorUtils::toVec3(hazeGlareColor));
     haze->setHazeEnableGlare(_hazeProperties.getHazeEnableGlare());
     haze->setHazeGlareBlend(graphics::Haze::convertGlareAngleToPower(_hazeProperties.getHazeGlareAngle()));
 
@@ -502,7 +502,7 @@ void ZoneEntityRenderer::updateKeyBackgroundFromEntity(const TypedEntityPointer&
     _skyboxMode = (ComponentMode)entity->getSkyboxMode();
 
     editBackground();
-    setSkyboxColor(toGlm(_skyboxProperties.getColor()));
+    setSkyboxColor(ColorUtils::toVec3(_skyboxProperties.getColor()));
     setProceduralUserData(_proceduralUserData);
     setSkyboxURL(_skyboxProperties.getUrl());
 }

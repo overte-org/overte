@@ -42,7 +42,7 @@ public:
 
 inline glm::vec3 ColorUtils::toVec3(const glm::u8vec3& color) {
     const float ONE_OVER_255 = 1.0f / 255.0f;
-    return glm::vec3(color.x * ONE_OVER_255, color.y * ONE_OVER_255, color.z * ONE_OVER_255);
+    return sRGBToLinearVec3(glm::vec3(color.x * ONE_OVER_255, color.y * ONE_OVER_255, color.z * ONE_OVER_255));
 }
 
 inline glm::vec3 ColorUtils::toGamma22Vec3(const glm::vec3& linear) {
