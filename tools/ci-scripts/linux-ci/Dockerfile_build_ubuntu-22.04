@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-02-09-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-06-05-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
@@ -140,3 +140,10 @@ ENV CONAN_PROFILE="./tools/conan-profiles/linux"
 
 # On macOS the interface target is called "Overte" instead.
 ENV APP_TARGET_NAME=interface
+
+
+# Install rustup
+RUN <<EOF
+# This can be replaced with a system package starting with Ubuntu 24.04.
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none
+EOF
