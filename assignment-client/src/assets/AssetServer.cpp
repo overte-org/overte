@@ -936,8 +936,8 @@ void AssetServer::sendStatsPacket() {
         connectionStats["3. RTT (ms)"] = stats.rtt;
         connectionStats["4. CW (P)"] = stats.congestionWindowSize;
         connectionStats["5. Period (us)"] = stats.packetSendPeriod;
-        connectionStats["6. Up (Mb/s)"] = stats.sentBytes * megabitsPerSecPerByte;
-        connectionStats["7. Down (Mb/s)"] = stats.receivedBytes * megabitsPerSecPerByte;
+        connectionStats["6. Up (Mbit/s)"] = stats.sentBytes * megabitsPerSecPerByte;
+        connectionStats["7. Down (Mbit/s)"] = stats.receivedBytes * megabitsPerSecPerByte;
         connectionStats["last_heard_time_msecs"] = date.toUTC().toMSecsSinceEpoch();
         connectionStats["last_heard_ago_msecs"] = date.msecsTo(QDateTime::currentDateTime());
 

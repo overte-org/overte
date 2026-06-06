@@ -76,6 +76,7 @@ bool TCPVegasCC::calculateRTT(p_high_resolution_clock::time_point sendTime, p_hi
     // add 1 to the number of RTT samples collected during this RTT window
     ++_numRTTs;
 
+    _roundTripTime = _ewmaRTT;
     return true;
 }
 

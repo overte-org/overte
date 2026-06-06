@@ -82,6 +82,10 @@ void ConnectionStats::recordUnreliableReceivedPackets(int payload, int total) {
     _currentSample.receivedUnreliableBytes += total;
 }
 
+void ConnectionStats::recordRoundTripTime(int sample) {
+    _currentSample.rtt = sample;
+}
+
 void ConnectionStats::recordCongestionWindowSize(int sample) {
     _currentSample.congestionWindowSize = sample;
 }

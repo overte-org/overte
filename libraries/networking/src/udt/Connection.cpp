@@ -437,6 +437,7 @@ void Connection::updateCongestionControlAndSendQueue(std::function<void ()> cong
     
     // record connection stats
     _stats.recordPacketSendPeriod(_congestionControl->_packetSendPeriod);
+    _stats.recordRoundTripTime(_congestionControl->roundTripTime() / 1000);
     _stats.recordCongestionWindowSize(_congestionControl->_congestionWindowSize);
 }
 
