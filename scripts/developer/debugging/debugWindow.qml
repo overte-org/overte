@@ -10,77 +10,145 @@
 
 import QtQuick 2.15
 import QtQuick.Controls 2.15
+import QtQuick.Layouts 1.0
 import Hifi 1.0 as Hifi
 
 import stylesUit 1.0
 
 
-Rectangle {
+ColumnLayout {
     id: root
     HifiConstants { id: hifi }
     width: parent ? parent.width : 100
     height: parent ? parent.height : 100
-    color: hifi.colors.darkGray
 
     signal moved(vector2d position);
     signal resized(size size);
 
     property var channel;
 
-    ScrollView {
-        id: logView
-        anchors.fill: parent
-        clip: true
+    Rectangle {
+        Layout.fillHeight: true
+        Layout.preferredWidth: parent.width
+        color: hifi.colors.darkGray
 
-        ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
-        ScrollBar.vertical.policy: ScrollBar.AlwaysOn
+        ScrollView {
+            id: logView
+            anchors.fill: parent
+            clip: true
 
-        TextArea {
-            id: textArea
-            width: root.width
-            height: parent.height
-            wrapMode: TextArea.Wrap
-            placeholderText: qsTr("Debug messages from your running scripts will appear here...")
-            placeholderTextColor: hifi.colors.lightGrayText
-            readOnly: true
-            selectByMouse: true
-            textFormat: TextEdit.RichText
+            ScrollBar.horizontal.policy: ScrollBar.AlwaysOff
+            ScrollBar.vertical.policy: ScrollBar.AlwaysOn
 
-            background: Rectangle {
-                color: "transparent"
-            }
-            text:""
+            TextArea {
+                id: textArea
+                width: root.width
+                height: parent.height - bottomRow.height
+                wrapMode: TextArea.Wrap
+                placeholderText: qsTr("Debug messages from your running scripts will appear here...")
+                placeholderTextColor: hifi.colors.lightGrayText
+                readOnly: true
+                selectByMouse: true
+                textFormat: TextEdit.RichText
 
-            onTextChanged: {
-                if (logView.scrollDelay) {
-                    // Scroll to the bottom, but only once within a short period of time
-                    // rather than for every message.
-                    scrollTimer.restart();
-                } else {
-                    // Scroll to the bottom, immediately!
-                    logView.scrollToBottom();
-                    logView.scrollDelay = true;
+                background: Rectangle {
+                    color: "transparent"
+                }
+                text:""
+
+                onTextChanged: {
+                    if (logView.scrollDelay) {
+                        // Scroll to the bottom, but only once within a short period of time
+                        // rather than for every message.
+                        scrollTimer.restart();
+                    } else {
+                        // Scroll to the bottom, immediately!
+                        logView.scrollToBottom();
+                        logView.scrollDelay = true;
+                    }
                 }
             }
-        }
 
-        // Do we want to use the timer for the next scroll (true),
-        // or scroll immediately (false);
-        property bool scrollDelay: true
+            // Do we want to use the timer for the next scroll (true),
+            // or scroll immediately (false);
+            property bool scrollDelay: true
 
-        Timer {
-            id: scrollTimer
-            interval: 1000; running: false; repeat: false;
-            onTriggered: {
-                logView.scrollToBottom();
+            Timer {
+                id: scrollTimer
+                interval: 1000; running: false; repeat: false;
+                onTriggered: {
+                    logView.scrollToBottom();
+                }
+            }
+
+            function scrollToBottom() { // This is not strictly necessary now, but is kept as a fail-safe
+                logView.ScrollBar.vertical.position = 1.0 - logView.ScrollBar.vertical.size;
             }
         }
 
-        function scrollToBottom() { // This is not strictly necessary now, but is kept as a fail-safe
-            logView.ScrollBar.vertical.position = 1.0 - logView.ScrollBar.vertical.size;
+    }
+
+    RowLayout {
+        id: bottomRow
+        Layout.preferredWidth: parent.width
+
+        // Helpful text
+        Text {
+            Layout.fillWidth: true
+            Layout.preferredWidth: parent.width
+            Layout.maximumHeight: selectScriptName.height
+            text: "Clear view and filter logs by script name"
+            color: hifi.colors.lightGrayText
+            horizontalAlignment: Text.AlignRight
+            wrapMode: Text.WordWrap
+            clip: true
+
+
+        }
+
+        Text {
+            text: "-->"
+            color: hifi.colors.lightGrayText
+            horizontalAlignment: Text.AlignHCenter
+            clip:true
+        }
+
+        // Drop down menu with all seen script names
+        ComboBox {
+            id: selectScriptName
+            padding: 0
+            model: scriptNames
+
+            delegate: ItemDelegate {
+                width: scriptNames.width
+                text: model.name
+                highlighted: scriptNames.highlightedIndex == index
+            }
+
+            onActivated: {
+                console.log("index: ", index);
+                console.log("currentText:", currentText);
+                if (index == 0) {
+                    currentFilter = null;
+                } else {
+                    currentFilter = currentText;
+                }
+                textArea.clear()
+            }
+
         }
     }
 
+    ListModel {
+        id: scriptNames
+        ListElement {
+            name: "No Filter"
+        }
+    }
+
+    property var scriptNamesSet: new Set()
+
+    property var currentFilter: null;
 
     function fromScript(line) {
         const MAX_LINE_COUNT = 2000; // post-wrap lines
@@ -114,8 +182,16 @@ Rectangle {
             .replace(/>/g, "&gt;")
             .replace(/\n/g, "<br>");
 
-        // white-space: pre-wrap preserves white space at the start of lines
-        textArea.append(`<span style="color: ${line.color}; white-space: pre-wrap">[${line.date}] [${line.scriptFileName}] ${line.type.length > 0 ? line.type+' - ' : ""}${message}</span>`);
+        if (!currentFilter || currentFilter == line.scriptFileName) {
+            // `white-space: pre-wrap` preserves white space at the start of lines
+            textArea.append(`<span style="color: ${line.color}; white-space: pre-wrap">[${line.date}] [${line.scriptFileName}] ${line.type.length > 0 ? line.type+' - ' : ""}${message}</span>`);
+        }
+
+        if (!scriptNamesSet.has(line.scriptFileName)) {
+            const scriptNameItem = {"name": line.scriptFileName};
+            scriptNamesSet.add(line.scriptFileName);
+            scriptNames.append(scriptNameItem);
+        }
     }
 
     function clearWindow() {
