@@ -12,6 +12,7 @@ import QtQuick 2.15
 import QtQuick.Controls 2.15
 import QtQuick.Layouts 1.0
 import Hifi 1.0 as Hifi
+import TabletScriptingInterface 1.0
 
 import stylesUit 1.0
 
@@ -116,12 +117,87 @@ ColumnLayout {
         // Drop down menu with all seen script names
         ComboBox {
             id: selectScriptName
+            Layout.preferredWidth: 150
+            Layout.preferredHeight: 35;
             padding: 0
             model: scriptNames
 
+            background: Rectangle {
+                id: comboBoxBackground;
+                color: "#333";
+                radius: 10;
+            }
+
+            contentItem: Text {
+                anchors.centerIn: parent;
+                width: parent.width;
+                text: selectScriptName.displayText;
+                horizontalAlignment: Text.AlignHCenter;
+                verticalAlignment: Text.AlignVCenter;
+                elide: Text.ElideRight;
+                color: "white";
+            }
+
+            popup: Popup {
+                width: selectScriptName.width
+                padding: 1
+
+                contentItem: ListView {
+                    clip: true
+                    implicitHeight: contentHeight
+                    model: selectScriptName.popup.visible ? selectScriptName.delegateModel : null
+                    currentIndex: selectScriptName.highlightedIndex
+
+                    ScrollIndicator.vertical: ScrollIndicator { }
+                }
+
+                background: Rectangle {
+                    color: Qt.rgba(0,0,0,0.9)
+                    radius: 10
+                }
+
+                onVisibleChanged: {
+                    Tablet.playSound(TabletEnums.ButtonClicked);
+                }
+            }
+
+            indicator: Canvas {
+                id: canvas
+                x: selectScriptName.width - width - selectScriptName.rightPadding
+                y: selectScriptName.topPadding + (selectScriptName.availableHeight - height) / 2
+                width: 12
+                height: 8
+                contextType: "2d"
+
+                Connections {
+                    target: selectScriptName
+                    function onPressedChanged() { canvas.requestPaint(); }
+                }
+
+                onPaint: {
+                    context.reset();
+                    context.moveTo(0, 0);
+                    context.lineTo(width, 0);
+                    context.lineTo(width / 2, height);
+                    context.closePath();
+                    context.fillStyle = "white";
+                    context.fill();
+                }
+            }
+
             delegate: ItemDelegate {
-                width: scriptNames.width
-                text: model.name
+                contentItem: Text {
+                    text: model.name
+                    color: "white"
+                    font: selectScriptName.font
+                    elide: Text.ElideRight
+                    verticalAlignment: Text.AlignVCenter
+                    horizontalAlignment: Text.AlignHCenter
+                }
+                background: Rectangle {
+                    color: highlighted ? "gray" : "transparent";
+                    radius: 10
+                }
                 highlighted: scriptNames.highlightedIndex == index
             }
 
