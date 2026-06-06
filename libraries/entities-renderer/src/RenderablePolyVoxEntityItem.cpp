@@ -15,7 +15,8 @@
 
 #include <math.h>
 #include <algorithm>
-#include <numeric>
+#include <array>
+#include <cstddef>
 #include <cstdint>
 #include <optional>
 
@@ -26,15 +27,12 @@
 #include <QtConcurrent/QtConcurrentRun>
 
 #include <model-networking/SimpleMeshProxy.h>
-#include "ModelScriptingInterface.h"
 #include <EntityEditPacketSender.h>
 #include <PhysicalEntitySimulation.h>
 #include <StencilMaskPass.h>
 #include <graphics/ShaderConstants.h>
 #include <render/ShapePipeline.h>
 #include <procedural/Procedural.h>
-
-#include "entities-renderer/ShaderConstants.h"
 
 #include <shaders/Shaders.h>
 
@@ -991,7 +989,9 @@ public:
             std::vector<PositionNormalMaterial> new_vertices{};
             std::vector<bool> already_seen(vecVertices.size(), false);
 
-            std::unordered_set<uint32_t> same_position{};
+            constexpr uint32_t none = static_cast<uint32_t>(~0);
+            // XXX: Assumes max 4 vertices dupes per cell max
+            constexpr size_t MAX_VERT_TOUCHES = 16;
 
             auto vertSize = vecVertices.size();
             for (size_t i = 0; i < vertSize; i++) {
@@ -999,15 +999,17 @@ public:
                     continue;
 
                 auto& vert = vecVertices[i];
-                same_position.clear();
-                same_position.insert(i);
+                std::array<uint32_t, MAX_VERT_TOUCHES> same_position = { none, none, none, none, none, none };
+                size_t index = 0;
+                same_position[index++] = i;
 
                 auto normal_sum = glm::vec3(0);
 
                 for (size_t j = i + 1; j < vertSize; j++) {
                     auto& vert2 = vecVertices[j];
                     if (glm::distance(vert2.position, vert.position) < 0.001f) {
-                        same_position.insert(j);
+                        Q_ASSERT(index < MAX_VERT_TOUCHES);
+                        same_position[index++] = j;
                         Q_ASSERT(!already_seen[j]);
                         already_seen[j] = true;
                         normal_sum += vert2.normal;
@@ -1018,7 +1020,7 @@ public:
                 uint32_t new_ind = new_vertices.size() - 1;
 
                 std::for_each(vecIndices.begin(), vecIndices.end(), [&](auto& ind) {
-                    if (same_position.contains(ind))
+                    if (std::ranges::any_of(same_position, [&](auto& i) { return i == ind; }))
                         ind = new_ind;
                 });
             }
