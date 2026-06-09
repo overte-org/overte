@@ -46,6 +46,7 @@ public:
             // All is green, assign the gpuobject to the Framebuffer
             object = new VKFramebuffer(backend.shared_from_this(), framebuffer);
             Backend::setGPUObject(framebuffer, object);
+            backend._framebuffers.insert(object);
         }
 
         object->update();
@@ -123,7 +124,7 @@ protected:
         VkImageUsageFlags usage;
         VkSampleCountFlagBits imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
     };
-    uint32_t addAttachment(VKAttachmentCreateInfo createinfo, VKTexture *texture);
+    uint32_t addAttachment(VKAttachmentCreateInfo createinfo, VKTexture *texture, uint32_t subresource = 0);
 
     // VKTODO: We need a check on backend.lock(), or to pass backend reference instead
     VKFramebuffer(const std::weak_ptr<vk::VKBackend>& backend, const Framebuffer& framebuffer) : VKObject(*backend.lock(), framebuffer) {}

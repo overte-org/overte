@@ -41,7 +41,7 @@ void gpu::vk::VKFramebuffer::update() {
                 surface = b._texture;
                 if (surface) {
                     Q_ASSERT(TextureUsageType::RENDERBUFFER == surface->getUsageType());
-                    vkTexture = backend->syncGPUObject(surface.get());
+                    vkTexture = backend->syncGPUObject(surface);
                 } else {
                     vkTexture = nullptr;
                 }
@@ -61,9 +61,19 @@ void gpu::vk::VKFramebuffer::update() {
                         addAttachment(attachmentCI, vkTexture);
                         //glNamedFramebufferTexture(_id, colorAttachments[unit], gltexture->_texture, 0);
                         // VKTODO: how to do this?
-                    /*} else if (vkTexture->_target == GL_TEXTURE_2D_MULTISAMPLE) {
-                        glNamedFramebufferTexture(_id, colorAttachments[unit], gltexture->_texture, 0);*/
-                    } else {
+                        /*} else if (vkTexture->_target == GL_TEXTURE_2D_MULTISAMPLE) {
+                            glNamedFramebufferTexture(_id, colorAttachments[unit], gltexture->_texture, 0);*/
+                    } else if (vkTexture->_target == VK_IMAGE_VIEW_TYPE_2D_ARRAY) {
+                        // VKTODO: what about layers?
+                        VKAttachmentCreateInfo attachmentCI {};
+                        attachmentCI.width = vkTexture->_gpuObject.getWidth();
+                        attachmentCI.height = vkTexture->_gpuObject.getHeight();
+                        attachmentCI.layerCount = vkTexture->_gpuObject.getNumSlices() - b._subresource;
+                        attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat(), backend->getContext());
+                        attachmentCI.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+                        attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
+                        addAttachment(attachmentCI, vkTexture, b._subresource);
+                    }else {
                         // VKTODO: what is subresource?
                         Q_ASSERT(false);
                         //glNamedFramebufferTextureLayer(_id, colorAttachments[unit], gltexture->_texture, 0, b._subresource);
@@ -89,10 +99,11 @@ void gpu::vk::VKFramebuffer::update() {
 
     if (_gpuObject.getDepthStamp() != _depthStamp) {
         auto surface = _gpuObject.getDepthStencilBuffer();
+        auto subresource = _gpuObject.getDepthStencilBufferSubresource();
         auto backend = _backend.lock();
         if (_gpuObject.hasDepthStencil() && surface) {
             Q_ASSERT(TextureUsageType::RENDERBUFFER == surface->getUsageType());
-            vkTexture = backend->syncGPUObject(surface.get());
+            vkTexture = backend->syncGPUObject(surface);
         }
 
         if (vkTexture) {
@@ -111,11 +122,11 @@ void gpu::vk::VKFramebuffer::update() {
                 VKAttachmentCreateInfo attachmentCI {};
                 attachmentCI.width = vkTexture->_gpuObject.getWidth();
                 attachmentCI.height = vkTexture->_gpuObject.getHeight();
-                attachmentCI.layerCount = vkTexture->_gpuObject.getNumSlices();
+                attachmentCI.layerCount = vkTexture->_gpuObject.getNumSlices() - subresource;
                 attachmentCI.format = gpu::vk::evalTexelFormatInternal(vkTexture->_gpuObject.getTexelFormat(), backend->getContext());
                 attachmentCI.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
                 attachmentCI.imageSampleCount = VK_SAMPLE_COUNT_1_BIT;
-                addAttachment(attachmentCI, vkTexture);
+                addAttachment(attachmentCI, vkTexture, subresource);
             } else {
                 Q_ASSERT(false);
                 // VKTODO
@@ -123,7 +134,7 @@ void gpu::vk::VKFramebuffer::update() {
                 //                               _gpuObject.getDepthStencilBufferSubresource());
             }
         } else {
-            Q_ASSERT(false);
+            //Q_ASSERT(false);
             // VKTODO
             //glNamedFramebufferTexture(_id, attachement, 0, 0);
         }
@@ -294,6 +305,9 @@ gpu::vk::VKFramebuffer::~VKFramebuffer() {
         auto& recycler = backend->getContext().recycler;  // VKTODO: these sometimes get destroyed after backend was destroyed?
         recycler.trashVkRenderPass(vkRenderPass);
         recycler.trashVkFramebuffer(vkFramebuffer);
+        for (auto &attachment : attachments) {
+            recycler.trashVkImageView(attachment.view);
+        }
         recycler.framebufferDeleted(this);
     } else {
         Q_ASSERT(false);
@@ -308,7 +322,7 @@ gpu::vk::VKFramebuffer::~VKFramebuffer() {
 }
 
 // From VKS
-uint32_t gpu::vk::VKFramebuffer::addAttachment(VKAttachmentCreateInfo createinfo, VKTexture *texture) {
+uint32_t gpu::vk::VKFramebuffer::addAttachment(VKAttachmentCreateInfo createinfo, VKTexture *texture, uint32_t subresource) {
     auto *attachmentTexture = dynamic_cast<VKAttachmentTexture*>(texture);
     Q_ASSERT(attachmentTexture);
 
@@ -346,19 +360,17 @@ uint32_t gpu::vk::VKFramebuffer::addAttachment(VKAttachmentCreateInfo createinfo
 
     attachment.subresourceRange = {};
     attachment.subresourceRange.aspectMask = aspectMask;
+    attachment.subresourceRange.baseArrayLayer = subresource;
     attachment.subresourceRange.levelCount = 1;
-    attachment.subresourceRange.layerCount = createinfo.layerCount;
+    attachment.subresourceRange.layerCount = 1; // Even though texture can have multiple layers, we only render to one of them currently.
 
-    if (!attachmentTexture->_vkImageView) {
-        VkImageViewCreateInfo imageView = vks::initializers::imageViewCreateInfo();
-        imageView.viewType = (createinfo.layerCount == 1) ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-        imageView.format = createinfo.format;
-        imageView.subresourceRange = attachment.subresourceRange;
-        imageView.subresourceRange.aspectMask = attachment.hasDepth() ? VkImageAspectFlags{VK_IMAGE_ASPECT_DEPTH_BIT} : aspectMask;
-        imageView.image = attachment.image;
-        VK_CHECK_RESULT(vkCreateImageView(_backend.lock()->_context.device->logicalDevice, &imageView, nullptr, &attachmentTexture->_vkImageView));
-    }
-    attachment.view = attachmentTexture->_vkImageView;
+    VkImageViewCreateInfo imageView = vks::initializers::imageViewCreateInfo();
+    imageView.viewType = (createinfo.layerCount == 1) ? VK_IMAGE_VIEW_TYPE_2D : VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+    imageView.format = createinfo.format;
+    imageView.subresourceRange = attachment.subresourceRange;
+    imageView.subresourceRange.aspectMask = attachment.hasDepth() ? VkImageAspectFlags{VK_IMAGE_ASPECT_DEPTH_BIT} : aspectMask;
+    imageView.image = attachment.image;
+    VK_CHECK_RESULT(vkCreateImageView(_backend.lock()->_context.device->logicalDevice, &imageView, nullptr, &attachment.view));
 
     // Fill attachment description
     attachment.description = {};

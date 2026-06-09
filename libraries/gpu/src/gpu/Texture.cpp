@@ -211,6 +211,10 @@ TexturePointer Texture::createCube(const Element& texelFormat, uint16 width, uin
     return create(TextureUsageType::RESOURCE, TEX_CUBE, texelFormat, width, width, 1, 1, 0, numMips, sampler);
 }
 
+TexturePointer Texture::createCubeStrict(const Element& texelFormat, uint16 width, uint16 numMips, const Sampler& sampler) {
+    return create(TextureUsageType::STRICT_RESOURCE, TEX_CUBE, texelFormat, width, width, 1, 1, 0, numMips, sampler);
+}
+
 TexturePointer Texture::create(TextureUsageType usageType, Type type, const Element& texelFormat, uint16 width, uint16 height, uint16 depth, uint16 numSamples, uint16 numSlices, uint16 numMips, const Sampler& sampler)
 {
     TexturePointer tex = std::make_shared<Texture>(usageType);

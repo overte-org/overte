@@ -17,7 +17,7 @@
 #include "VKShared.h"
 
 #include "VKBackend.h"
-
+#include "VKTextureTransfer.h"
 
 namespace gpu { namespace vk {
 
@@ -120,13 +120,6 @@ public:
         return object->getDescriptorImageInfo();
     }*/
 
-    // Used by derived classes and helpers to ensure the actual VK object exceeds the lifetime of `this`
-    /*VkImage takeOwnership() {
-        VkImage result = _id;
-        const_cast<VkImage&>(_id) = 0;
-        return result;
-    }*/
-
     virtual ~VKTexture();
 
     VkImage _vkImage{ VK_NULL_HANDLE };
@@ -153,7 +146,7 @@ public:
         const uint16 _maxMip { 0 };
     } _downsampleSource;
 
-    virtual size_t size() const { return _size; }
+    virtual size_t size() const { Q_ASSERT(false); return 0; }
     VKSyncState getSyncState() const { return _syncState; }
 
     // Is the storage out of date relative to the gpu texture?
@@ -176,6 +169,8 @@ public:
     // VKTODO: can be done later
     bool isOverMaxMemory() const { return false; };
 
+    static uint8_t getFaceCount(VkImageViewType target);
+
 protected:
     static const size_t CUBE_NUM_FACES = 6;
     // VKTODO
@@ -195,7 +190,7 @@ protected:
     static float getMemoryPressure() { return 0; };
 
 
-    const size_t _size { 0 }; // true size as reported by the Vulkan api
+    //const size_t _size { 0 }; // true size as reported by the Vulkan api
     std::atomic<VKSyncState> _syncState { VKSyncState::Idle };
     VkFormat _vkTexelFormat { VK_FORMAT_UNDEFINED };
 
@@ -227,13 +222,17 @@ protected:
         };
         std::vector<std::vector<Mip>> mips;
     };
-    TransferData _transferData{};
     virtual void transfer(VKBackend &backend) = 0;
-    //virtual void syncSampler() const = 0;
+    virtual void syncSampler(const Sampler& sampler) = 0;
     // VKTODO
     //virtual void generateMips() const = 0;
     // VKTODO what does this mean?
     //virtual void withPreservedTexture(std::function<void()> f) const = 0;
+
+    static Sampler getInvalidSampler();
+
+    // This stores the texture handle (64 bits) in xy, the min mip available in z, and the sampler ID in w
+    mutable Sampler _cachedSampler { getInvalidSampler() };
 
 protected:
     void setSize(size_t size) const;
@@ -256,15 +255,15 @@ public:
     virtual ~VKFixedAllocationTexture() {};
 
 protected:
-    Size size() const override { return _size; }
+    Size size() const override { Q_ASSERT(false); return 0; }
 
     //void allocateStorage();
     // VKTODO
-    //void syncSampler() const override;
+    void syncSampler(const Sampler& sampler) override {};
     // VKTODO
     //void updateSize() const override {};
     VmaAllocation _vmaAllocation;
-    const Size _size{ 0 };
+    //const Size _size{ 0 };
 };
 
 class VKAttachmentTexture : public VKFixedAllocationTexture {
@@ -293,6 +292,8 @@ protected:
 
 class VKStrictResourceTexture: public VKFixedAllocationTexture {
     friend class VKBackend;
+public:
+    void postTransfer(VKBackend &backend) override;
 
 protected:
     // VKTODO: how to handle mipmaps?
@@ -307,8 +308,8 @@ protected:
     ~VKStrictResourceTexture() override; // VKTODO: delete image and image view, release memory
     void createTexture(VKBackend &backend) override;
     void transfer(VKBackend &backend) override;
-    void postTransfer(VKBackend &backend) override;
     VkDescriptorImageInfo getDescriptorImageInfo() override;
+    TransferData _transferData{};
     //VkImage _vkImage { VK_NULL_HANDLE };
     VkImageView _vkImageView { VK_NULL_HANDLE };
     VkImageLayout _vkImageLayout {};
@@ -316,6 +317,66 @@ protected:
     // This need to be moved to VKFixedAllocationTexture and allocated in allocateStorage()
     //VkDeviceMemory _vkDeviceMemory{ VK_NULL_HANDLE };
 };
+
+class VKVariableAllocationTexture : public VKTexture, public VKVariableAllocationSupport {
+    using Parent = VKTexture;
+    friend class VKBackend;
+    using PromoteLambda = std::function<void()>;
+
+protected:
+    VKVariableAllocationTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture);
+    ~VKVariableAllocationTexture() override;
+
+    void allocateNewImage(uint16_t targetAllocatedMip, VkCommandBuffer &copyCmd);
+
+    Size size() const override { return _size; }
+
+    void syncSampler(const Sampler& sampler) override {};
+
+    void copyTextureMipsInGPUMem(VkImage srcImage, VkImage dstImage,
+        uint16_t srcMipOffset, uint16_t destMipOffset, uint16_t populatedMips, VkCommandBuffer &copyCmd);
+
+    VmaAllocation _vmaAllocation;
+
+#if GPU_BINDLESS_TEXTURES
+    virtual const Bindless& getBindless() const override;
+#endif
+};
+
+class VKResourceTexture : public VKVariableAllocationTexture {
+    using Parent = VKVariableAllocationTexture;
+    friend class VKBackend;
+public:
+    size_t promote() override;
+    size_t demote() override;
+    void populateTransferQueue(TransferQueue& pendingTransfers) override;
+
+    void postTransfer(VKBackend &backend) override;
+
+protected:
+    VKResourceTexture(const std::weak_ptr<VKBackend>& backend, const Texture& texture);
+
+    void syncSampler(const Sampler& sampler) override;
+    void updateImageView();
+
+    void createTexture(VKBackend &backend) override {}; // VKTODO
+    void transfer(VKBackend &backend) override {}; // VKTODO
+
+    VkDescriptorImageInfo getDescriptorImageInfo() override;
+
+    //void allocateStorage(uint16 mip);
+    Size copyMipsFromTexture(VkCommandBuffer &copyCmd);
+    Size copyMipFaceFromTexture(uint16_t sourceMip, uint16_t targetMip, uint8_t face, VkCommandBuffer &copyCmd);
+    Size copyMipFaceLinesFromTexture(uint16_t mip, uint8_t face,
+        const uvec3& size, uint32_t yOffset,
+        Size sourceSize, const void* sourcePointer);
+
+    VkImageView _vkImageView { VK_NULL_HANDLE };
+    VkImageLayout _vkImageLayout {};
+    VkSampler _vkSampler { VK_NULL_HANDLE };
+    friend class TransferJob;
+};
+
 
 class VKExternalTexture: public VKTexture {
     friend class VKBackend;
@@ -337,6 +398,8 @@ public:
 
 protected:
     Size size() const override { return _size; }
+
+    void syncSampler(const Sampler& sampler) override {};
 
     //VmaAllocation _vmaAllocation;
     VkDeviceMemory _sharedMemory;

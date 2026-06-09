@@ -60,29 +60,39 @@ struct RenderPassHash {
 };
 
 struct Cache {
-    struct PipelineLayout {
-        VkPipeline pipeline;
-        VkPipelineLayout pipelineLayout;
-        VkDescriptorSetLayout uniformLayout;
-        VkDescriptorSetLayout textureLayout;
-        VkDescriptorSetLayout storageLayout;
+    struct Pipeline;
+    using BindingMap = std::unordered_map<uint32_t, VkShaderStageFlags>;
+    class PipelineLayout {
+    public:
+        VkPipeline pipeline{ VK_NULL_HANDLE };
+        VkPipelineLayout pipelineLayout{ VK_NULL_HANDLE };
+        VkDescriptorSetLayout uniformLayout{ };
+        VkDescriptorSetLayout textureLayout{ };
+        VkDescriptorSetLayout storageLayout{ };
+
+        shader::Reflection vertexReflection;
+        shader::Reflection fragmentReflection;
+
+        BindingMap uniformBindingMap;
+        BindingMap textureBindingMap;
+        BindingMap storageBindingMap;
 #ifdef OVERTE_VK_PIPELINE_DEBUG
         std::string vertexShader;
         std::string fragmentShader;
 #endif
+    private:
+        PipelineLayout() {};
+        friend struct Cache::Pipeline;
     };
     std::unordered_map<uint32_t, VkShaderModule> moduleMap;
     std::unordered_map<std::string, PipelineLayout> pipelineMap;
 
     struct Pipeline {
         using RenderpassKey = std::vector<std::pair<VkFormat, VkImageLayout>>;
-        using BindingMap = std::unordered_map<uint32_t, VkShaderStageFlags>;
         using LocationMap = shader::Reflection::LocationMap;
 
         gpu::PipelineReference pipeline{ GPU_REFERENCE_INIT_VALUE };
         std::shared_ptr<Shader> program;
-        shader::Reflection vertexReflection;
-        shader::Reflection fragmentReflection;
         gpu::FormatReference format{ GPU_REFERENCE_INIT_VALUE };
         gpu::FramebufferReference framebuffer{ GPU_REFERENCE_INIT_VALUE };
         gpu::Primitive primitiveTopology;
@@ -127,7 +137,7 @@ struct Cache {
 
     VkShaderModule getShaderModule(const vks::Context& context, const shader::Source& source);
 
-    PipelineLayout getPipeline(const vks::Context& context);
+    const PipelineLayout& getPipeline(const vks::Context& context);
 };
 
 } }

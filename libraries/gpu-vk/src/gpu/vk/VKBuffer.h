@@ -16,18 +16,44 @@
 
 namespace gpu { namespace vk {
 
-class VKBuffer : public VKObject<gpu::Buffer>, public vks::Allocation {
+class VKBuffer : public VKObject<gpu::Buffer> {
 public:
-    static VKBuffer* sync(VKBackend& backend, const gpu::Buffer& buffer);
+    static VKBuffer* sync(VKBackend& backend, const gpu::Buffer& buffer, bool transfer = true);
     static VkBuffer getBuffer(VKBackend& backend, const gpu::Buffer& buffer);
-    void transfer();
+
+    /// Transfers buffer to GPU using separate command buffer.
+    /// This is intended for testing only.
+    void transferOnly(VKBackend &backend);
+
+    /// Transfers CPU-side buffer to GPU-accessible staging area.
+    void transferToStaging(VKBackend &backend);
+
+    /// Adds command to transfer data from the staging buffer to GPU-only buffer.
+    /// Adds a barrier immediately after transfer command.
+    void transferWithBarrier(VKBackend &backend, VkCommandBuffer commandBuffer);
+
+    /// Adds command to transfer data from the staging buffer to GPU-only buffer.
+    /// Adds a barrier that will be waited on at the end of transfer pass.
+    /// Can be used only during transfer pass.
+    void transferWithDelayedBarrier(VKBackend &backend, VkCommandBuffer commandBuffer);
 
     ~VKBuffer() override;
 
     VkBuffer buffer{ VK_NULL_HANDLE };
+    vks::Allocation allocation;
+    VkBuffer stagingBuffer{ VK_NULL_HANDLE };
+    vks::Allocation stagingAllocation;
+
 protected:
     VKBuffer(VKBackend& backend, const gpu::Buffer& buffer);
     const Stamp _stamp{ 0 };
+
+    /// Used for debugging.
+    /// Uploading buffers during render pass causes significant performance loss.
+    void incrementCount(VKBackend& backend);
+
+    void incrementTransferCount(VKBackend& backend, size_t transferSize);
+
     // Local copy of buffer data. Updates are copied into it before transfer.
     std::vector<uint8_t> _localData;
 };

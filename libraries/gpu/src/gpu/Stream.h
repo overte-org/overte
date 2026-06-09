@@ -116,11 +116,6 @@ public:
 
             /// Which slots use this channel.
             std::vector< Slot > _slots;
-
-            // Not used currently.
-            //std::vector< Offset > _offsets;
-
-            /// Stride for this channel.
             Offset _stride;
 
             /// Size of all attributes in this channel.

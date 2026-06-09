@@ -43,7 +43,11 @@ using namespace std;
 static Stats* INSTANCE{ nullptr };
 
 #if !defined (Q_OS_ANDROID)
+#ifdef USE_GL
 QString getTextureMemoryPressureModeString();
+#else
+QString getTextureMemoryPressureModeStringVK();
+#endif
 #endif
 Stats* Stats::getInstance() {
     Q_ASSERT(INSTANCE);
@@ -415,7 +419,11 @@ void Stats::updateStats(bool force) {
         STAT_UPDATE(gpuTextureResourcePopulatedMemory, (int)BYTES_TO_MB(gpu::Context::getTextureResourcePopulatedGPUMemSize()));
         STAT_UPDATE(gpuTextureExternalMemory, (int)BYTES_TO_MB(gpu::Context::getTextureExternalGPUMemSize()));
 #if !defined(Q_OS_ANDROID)
+#ifdef USE_GL
         STAT_UPDATE(gpuTextureMemoryPressureState, getTextureMemoryPressureModeString());
+#else
+        STAT_UPDATE(gpuTextureMemoryPressureState, getTextureMemoryPressureModeStringVK());
+#endif
 #endif
         STAT_UPDATE(gpuFreeMemory, (int)BYTES_TO_MB(gpu::Context::getFreeGPUMemSize()));
         STAT_UPDATE(rectifiedTextureCount, (int)RECTIFIED_TEXTURE_COUNT.load());

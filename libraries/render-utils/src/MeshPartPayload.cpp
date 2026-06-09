@@ -379,7 +379,9 @@ void ModelMeshPartPayload::render(RenderArgs* args) {
                             ProceduralProgramKey(outColor.a < 1.0f, _shapeKey.isDeformed(), _shapeKey.isDualQuatSkinned()));
 
         const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
-        _drawMesh->getColorBuffer()->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        if (_drawMesh->getColorBuffer()->getSize() < sizeof(compactColor) || *reinterpret_cast<const uint32_t*>(_drawMesh->getColorBuffer()->getData()) != compactColor) {
+            _drawMesh->getColorBuffer()->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        }
     } else if (!_itemKey.isMirror()) {
         // apply material properties
         if (RenderPipelines::bindMaterials(_drawMaterials, batch, args->_renderMode, args->_enableTexturing)) {
@@ -387,7 +389,9 @@ void ModelMeshPartPayload::render(RenderArgs* args) {
         }
 
         const uint32_t compactColor = 0xFFFFFFFF;
-        _drawMesh->getColorBuffer()->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        if (_drawMesh->getColorBuffer()->getSize() < sizeof(compactColor) || *reinterpret_cast<const uint32_t*>(_drawMesh->getColorBuffer()->getData()) != compactColor) {
+            _drawMesh->getColorBuffer()->setData(sizeof(compactColor), (const gpu::Byte*) &compactColor);
+        }
     }
 
     // Draw!

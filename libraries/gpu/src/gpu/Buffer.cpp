@@ -9,10 +9,32 @@
 #include "Buffer.h"
 #include "Context.h"
 
+#define COUNT_BUFFER_CREATIONS
+
 using namespace gpu;
 
 ContextMetricCount Buffer::_bufferCPUCount;
 ContextMetricSize Buffer::_bufferCPUMemSize;
+
+void Buffer::incrementCreatedBufferCount() {
+    static std::atomic<int> uniformCount = 0;
+    static std::atomic<int> vertexCount = 0;
+    static std::atomic<int> indexCount = 0;
+    static std::atomic<int> resourceCount = 0;
+
+    if(getUsage() & gpu::Buffer::UniformBuffer) {
+        uniformCount++;
+    }
+    if(getUsage() & gpu::Buffer::VertexBuffer) {
+        vertexCount++;
+    }
+    if(getUsage() & gpu::Buffer::IndexBuffer) {
+        indexCount++;
+    }
+    if(getUsage() & gpu::Buffer::ResourceBuffer) {
+        resourceCount++;
+    }
+}
 
 uint32_t Buffer::getBufferCPUCount() {
     return _bufferCPUCount.getValue();
@@ -25,6 +47,9 @@ Buffer::Size Buffer::getBufferCPUMemSize() {
 Buffer::Buffer(uint32_t usage, Size pageSize) :
     _renderPages(pageSize), _pages(pageSize), _usage(usage) {
     _bufferCPUCount.increment();
+#ifdef COUNT_BUFFER_CREATIONS
+    incrementCreatedBufferCount();
+#endif
 }
 
 Buffer::Buffer(uint32_t usage, Size size, const Byte* bytes, Size pageSize) : Buffer(usage, pageSize) {
@@ -33,6 +58,9 @@ Buffer::Buffer(uint32_t usage, Size size, const Byte* bytes, Size pageSize) : Bu
 
 Buffer::Buffer(const Buffer& buf) : Buffer(buf._usage, buf._pages._pageSize) {
     setData(buf.getSize(), buf.getData());
+#ifdef COUNT_BUFFER_CREATIONS
+    incrementCreatedBufferCount();
+#endif
 }
 
 Buffer& Buffer::operator=(const Buffer& buf) {
