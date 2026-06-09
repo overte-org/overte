@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-06-12-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-06-21-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
