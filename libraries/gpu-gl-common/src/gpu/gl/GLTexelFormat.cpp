@@ -30,7 +30,7 @@ bool GLTexelFormat::isCompressed(GLenum format) {
         case GL_COMPRESSED_SRGB_S3TC_DXT1_EXT:
         case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT:
         case GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT:
-    
+
         case GL_COMPRESSED_R11_EAC:
         case GL_COMPRESSED_SIGNED_R11_EAC:
         case GL_COMPRESSED_RG11_EAC:
@@ -47,36 +47,38 @@ bool GLTexelFormat::isCompressed(GLenum format) {
         case GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT:
             return true;
 
+        case GL_COMPRESSED_RGBA_ASTC_4x4_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_5x4_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_5x5_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_6x5_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_6x6_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_8x5_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_8x6_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_8x8_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_10x5_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_10x6_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_10x8_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_10x10_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_12x10_KHR:
+        case GL_COMPRESSED_RGBA_ASTC_12x12_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x6_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x5_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x6_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10_KHR:
+        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12_KHR:
 #if defined(OVERTE_USE_GLES)
-        case GL_COMPRESSED_RGBA_ASTC_4x4:
-        case GL_COMPRESSED_RGBA_ASTC_5x4:
-        case GL_COMPRESSED_RGBA_ASTC_5x5:
-        case GL_COMPRESSED_RGBA_ASTC_6x5:
-        case GL_COMPRESSED_RGBA_ASTC_6x6:
-        case GL_COMPRESSED_RGBA_ASTC_8x5:
-        case GL_COMPRESSED_RGBA_ASTC_8x6:
-        case GL_COMPRESSED_RGBA_ASTC_8x8:
-        case GL_COMPRESSED_RGBA_ASTC_10x5:
-        case GL_COMPRESSED_RGBA_ASTC_10x6:
-        case GL_COMPRESSED_RGBA_ASTC_10x8:
-        case GL_COMPRESSED_RGBA_ASTC_10x10:
-        case GL_COMPRESSED_RGBA_ASTC_12x10:
-        case GL_COMPRESSED_RGBA_ASTC_12x12:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_4x4:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x4:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_5x5:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x5:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_6x6:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x5:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x6:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_8x8:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x5:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x6:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x8:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10:
-        case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12:
             return hifi::properties::getGraphicsAPI() != hifi::properties::GraphicsAPI::GLES32;
+#else
+            return true;
 #endif
 
         default:
@@ -87,7 +89,6 @@ bool GLTexelFormat::isCompressed(GLenum format) {
 bool GLTexelFormat::isCompressed() const {
     return isCompressed(internalFormat);
 }
-
 
 GLenum GLTexelFormat::evalGLTexelFormatInternal(const gpu::Element& dstFormat) {
     GLenum result = GL_RGBA8;
