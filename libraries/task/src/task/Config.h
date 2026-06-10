@@ -70,7 +70,7 @@ public:
         if (_presets.contains(preset)) {
             // Always start back at default to remain deterministic
             QVariantMap config = _default;
-            QVariantMap presetConfig = _presets[preset].toMap();
+            QVariantMap presetConfig = _presets.find(preset)->toMap();
             for (auto it = presetConfig.cbegin(); it != presetConfig.cend(); it++) {
                 config.insert(it.key(), it.value());
             }

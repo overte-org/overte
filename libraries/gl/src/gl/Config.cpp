@@ -25,6 +25,9 @@
 #include <EGL/egl.h>
 #include <GL/glx.h>
 #include <dlfcn.h>
+#elif defined(Q_OS_FREEBSD)
+#include <GL/glx.h>
+#include <dlfcn.h>
 #endif
 
 #include <shared/GlobalAppProperties.h>
@@ -74,7 +77,7 @@ static void* getGlProcessAddress(const char *namez) {
     return dlsym(GL_LIB, namez);
 }
 
-#elif defined(Q_OS_LINUX) && !defined(Q_OS_ANDORID)
+#elif (defined(Q_OS_LINUX) || defined(Q_OS_FREEBSD)) && !defined(Q_OS_ANDORID)
 
 typedef Bool (*PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC) (int attribute, unsigned int *value);
 typedef int (*PFNGLXSWAPINTERVALMESAPROC)(unsigned int interval);
@@ -94,9 +97,11 @@ PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC QueryCurrentRendererIntegerMESA;
 PFNGLXSWAPINTERVALMESAPROC SwapIntervalMESA;
 PFNGLXGETSWAPINTERVALMESAPROC GetSwapIntervalMESA;
 
+#if !defined(Q_OS_FREEBSD)
 // EGL has its own swap interval functions, so the MESA ones aren't needed there
 static bool contextIsEGL = false;
 static int previousSwapInterval = 1;
+#endif
 
 // the real GetProcAddress functions return a placeholder function
 // pointer type (void (*)(void)), but glad expects one returning void*
@@ -117,6 +122,8 @@ void gl::initModuleGl() {
     } else {
         getGlProcessAddress = reinterpret_cast<decltype(getGlProcessAddress)>(glXGetProcAddressARB);
     }
+#elif defined(Q_OS_FREEBSD)
+    getGlProcessAddress = reinterpret_cast<decltype(getGlProcessAddress)>(glXGetProcAddressARB);
 #endif
 
 #if defined(Q_OS_WIN)
@@ -132,6 +139,10 @@ void gl::initModuleGl() {
             SwapIntervalMESA = (PFNGLXSWAPINTERVALMESAPROC)getGlProcessAddress("glXSwapIntervalMESA");
             GetSwapIntervalMESA = (PFNGLXGETSWAPINTERVALMESAPROC)getGlProcessAddress("glXGetSwapIntervalMESA");
         }
+#elif defined(Q_OS_FREEBSD)
+        QueryCurrentRendererIntegerMESA = (PFNGLXQUERYCURRENTRENDERERINTEGERMESAPROC)getGlProcessAddress("glXQueryCurrentRendererIntegerMESA");
+        SwapIntervalMESA = (PFNGLXSWAPINTERVALMESAPROC)getGlProcessAddress("glXSwapIntervalMESA");
+        GetSwapIntervalMESA = (PFNGLXGETSWAPINTERVALMESAPROC)getGlProcessAddress("glXGetSwapIntervalMESA");
 #endif
 
         auto backendApi = hifi::properties::getGraphicsAPI();
@@ -160,6 +171,12 @@ int gl::getSwapInterval() {
     } else {
         return 1;
     }
+#elif defined(Q_OS_FREEBSD)
+    if (GetSwapIntervalMESA) {
+        return GetSwapIntervalMESA();
+    } else {
+        return 1;
+    }
 #else
     return 1;
 #endif
@@ -181,6 +198,8 @@ void gl::setSwapInterval(int interval) {
     } else if (SwapIntervalMESA) {
         SwapIntervalMESA(interval);
     }
+#elif defined(Q_OS_FREEBSD)
+    SwapIntervalMESA(interval);
 #else
     Q_UNUSED(interval);
 #endif
@@ -189,6 +208,10 @@ void gl::setSwapInterval(int interval) {
 bool gl::queryCurrentRendererIntegerMESA(int attr, unsigned int *value) {
 #if defined(Q_OS_LINUX) && !defined(Q_OS_ANDROID)
     if (!contextIsEGL && QueryCurrentRendererIntegerMESA) {
+        return QueryCurrentRendererIntegerMESA(attr, value);
+    }
+#elif defined(Q_OS_FREEBSD)
+    if (QueryCurrentRendererIntegerMESA) {
         return QueryCurrentRendererIntegerMESA(attr, value);
     }
 #endif

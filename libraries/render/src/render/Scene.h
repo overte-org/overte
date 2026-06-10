@@ -277,7 +277,7 @@ public:
      * @param origin Coordinates of the beginning point of the octree. Minimum X, Y and Z position that an item may have.
      * @param size Size of the octree. All rendered entities must fit inside.
      */
-    Scene(glm::vec3 origin, float size);
+    Scene(const glm::vec3 &origin, float size);
     ~Scene();
 
     /**
