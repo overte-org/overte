@@ -145,6 +145,7 @@ bool isCompressedFormat(GLenum internalFormat) {
         case GL_COMPRESSED_SRGB8_PUNCHTHROUGH_ALPHA1_ETC2:
         case GL_COMPRESSED_RGBA8_ETC2_EAC:
         case GL_COMPRESSED_SRGB8_ALPHA8_ETC2_EAC:
+#if defined(OVERTE_USE_GLES)
         case GL_COMPRESSED_RGBA_ASTC_4x4:
         case GL_COMPRESSED_RGBA_ASTC_5x4:
         case GL_COMPRESSED_RGBA_ASTC_5x5:
@@ -173,6 +174,7 @@ bool isCompressedFormat(GLenum internalFormat) {
         case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_10x10:
         case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10:
         case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12:
+#endif
             return true;
         default:
             return false;

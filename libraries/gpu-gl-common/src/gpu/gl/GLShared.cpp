@@ -25,8 +25,11 @@ namespace gpu { namespace gl {
 
 gpu::Size getFreeDedicatedMemory() {
     Size result { 0 };
+#if defined(OVERTE_USE_GLES)
     auto backendApi = hifi::properties::getGraphicsAPI();
-    if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+    if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+    {
         static bool nvidiaMemorySupported { true };
         static bool atiMemorySupported { true };
         if (nvidiaMemorySupported) {
@@ -147,10 +150,13 @@ State::BlendArg blendArgFromGL(GLenum blendArg) {
 
 void getCurrentGLState(State::Data& state) {
     {
+#if defined(OVERTE_USE_GLES)
         auto backendApi = hifi::properties::getGraphicsAPI();
         if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
             state.fillMode = State::FILL_FACE;
-        } else {
+        } else
+#endif
+        {
             GLint modes[2];
             glGetIntegerv(GL_POLYGON_MODE, modes);
             if (modes[0] == GL_FILL) {
@@ -178,12 +184,15 @@ void getCurrentGLState(State::Data& state) {
         glGetIntegerv(GL_FRONT_FACE, &winding);
         state.flags.frontFaceClockwise = (winding == GL_CW);
 
+#if defined(OVERTE_USE_GLES)
         auto backendApi = hifi::properties::getGraphicsAPI();
         if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
             state.flags.multisampleEnable = glIsEnabled(GL_MULTISAMPLE_EXT);
             state.flags.antialisedLineEnable = false;
             state.flags.depthClampEnable = false;
-        } else {
+        } else
+#endif
+        {
             state.flags.multisampleEnable = glIsEnabled(GL_MULTISAMPLE);
             state.flags.antialisedLineEnable = glIsEnabled(GL_LINE_SMOOTH);
             state.flags.depthClampEnable = glIsEnabled(GL_DEPTH_CLAMP);

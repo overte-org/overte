@@ -75,8 +75,10 @@ Shader::Reflection Shader::getReflection() const {
     auto backendApi = hifi::properties::getGraphicsAPI();
     if (backendApi == hifi::properties::GraphicsAPI::GL41) {
         DEFAULT_DIALECT = Dialect::glsl410;
+#if defined(OVERTE_USE_GLES)
     } else if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
         DEFAULT_DIALECT = Dialect::glsl310es;
+#endif
     }
     return getReflection(DEFAULT_DIALECT, shader::Variant::Mono);
 }

@@ -37,10 +37,12 @@ const QStringList& FileUtils::getFileSelectors() {
         extraSelectors << "android_" HIFI_ANDROID_APP;
 #endif
 
+#if defined(OVERTE_USE_GLES)
     auto backendApi = hifi::properties::getGraphicsAPI();
     if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
         extraSelectors << "gles";
     }
+#endif
 
 #ifndef Q_OS_ANDROID
         extraSelectors << "webengine";

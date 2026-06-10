@@ -98,10 +98,12 @@ std::function<gpu::TexturePointer(const QUuid&)> Texture::_unboundTextureForUUID
 
 TextureCache::TextureCache() {
     std::string KTX_DIRNAME = "ktx_cache";
+#if defined(OVERTE_USE_GLES)
     auto backendApi = hifi::properties::getGraphicsAPI();
     if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
         KTX_DIRNAME = "ktx_cache_gles";
     }
+#endif
 
     _ktxCache = std::make_shared<KTXCache>(KTX_DIRNAME, KTX_EXT);
     _ktxCache->initialize();
@@ -350,8 +352,10 @@ gpu::TexturePointer getFallbackTextureForType(image::TextureUsage::Type type) {
 gpu::BackendTarget getBackendTarget() {
     auto backendApi = hifi::properties::getGraphicsAPI();
     switch (backendApi) {
+#if defined(OVERTE_USE_GLES)
         case hifi::properties::GraphicsAPI::GLES32:
             return gpu::BackendTarget::GLES32;
+#endif
         case hifi::properties::GraphicsAPI::GL41:
             return gpu::BackendTarget::GL41;
         case hifi::properties::GraphicsAPI::GL45:
@@ -369,8 +373,14 @@ gpu::TexturePointer TextureCache::getImageTexture(const QString& path, image::Te
     }
     auto loader = image::TextureUsage::getTextureLoaderForType(type);
 
-    const bool shouldCompress = hifi::properties::getGraphicsAPI() ==
-                                    hifi::properties::GraphicsAPI::GLES32;
+    const bool shouldCompress =
+#if defined(OVERTE_USE_GLES)
+         hifi::properties::getGraphicsAPI() ==
+                                    hifi::properties::GraphicsAPI::GLES32
+#else
+         false
+#endif
+     ;
     auto target = getBackendTarget();
 
     return gpu::TexturePointer(loader(std::move(image), path.toStdString(), shouldCompress, target, false));
@@ -1284,8 +1294,14 @@ void ImageReader::read() {
         // IMPORTANT: _content is empty past this point
         auto buffer = std::shared_ptr<QIODevice>((QIODevice*)new OwningBuffer(std::move(_content)));
 
-        const bool shouldCompress = hifi::properties::getGraphicsAPI() ==
-                                        hifi::properties::GraphicsAPI::GLES32;
+        const bool shouldCompress =
+#if defined(OVERTE_USE_GLES)
+            hifi::properties::getGraphicsAPI() ==
+                                        hifi::properties::GraphicsAPI::GLES32
+#else
+            false
+#endif
+            ;
         auto target = getBackendTarget();
         textureAndSize = image::processImage(std::move(buffer), _url.toString().toStdString(), _sourceChannel, _maxNumPixels, networkTexture->getTextureType(), shouldCompress, target);
 

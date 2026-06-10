@@ -261,10 +261,12 @@ void Procedural::setProceduralData(const ProceduralData& proceduralData) {
 }
 
 bool Procedural::isReady() const {
+#if defined(OVERTE_USE_GLES)
     auto backendApi = hifi::properties::getGraphicsAPI();
     if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
         return false;
     }
+#endif
 
     std::lock_guard<std::mutex> lock(_mutex);
 

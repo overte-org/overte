@@ -184,10 +184,12 @@ void GLBackend::downloadFramebuffer(const FramebufferPointer& srcFramebuffer, co
     }
 
     GLenum format = GL_BGRA;
+#if defined(OVERTE_USE_GLES)
     auto backendApi = hifi::properties::getGraphicsAPI();
     if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
         format = GL_RGBA;
     }
+#endif
     if (destImage.format() != QImage::Format_ARGB32) {
           qCWarning(gpugllogging) << "GLBackend::downloadFramebuffer : destImage format must be FORMAT_ARGB32 to receive the region of the framebuffer";
           return;

@@ -22,7 +22,9 @@
 
 #include "../gl41/GL41Backend.h"
 #include "../gl45/GL45Backend.h"
+#if defined(OVERTE_USE_GLES)
 #include "../gles/GLESBackend.h"
+#endif
 
 using namespace gpu;
 using namespace gpu::gl;
@@ -39,10 +41,14 @@ BackendPointer GLBackend::createBackend() {
     } else if (backendApi == hifi::properties::GraphicsAPI::GL41) {
         qCDebug(gpugllogging) << "Using OpenGL 4.1 backend";
         result = std::make_shared<gpu::gl41::GL41Backend>();
-    } else if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
+    } else
+#if defined(OVERTE_USE_GLES)
+    if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
         qDebug() << "Using OpenGLES 3.2 backend";
         result = std::make_shared<gpu::gles::GLESBackend>();
-    } else {
+    } else
+#endif
+    {
         qDebug() << "Unknown OpenGL backend" << (int)backendApi;
         return nullptr;
     }

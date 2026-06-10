@@ -47,6 +47,7 @@ bool GLTexelFormat::isCompressed(GLenum format) {
         case GL_COMPRESSED_RGB_BPTC_UNSIGNED_FLOAT:
             return true;
 
+#if defined(OVERTE_USE_GLES)
         case GL_COMPRESSED_RGBA_ASTC_4x4:
         case GL_COMPRESSED_RGBA_ASTC_5x4:
         case GL_COMPRESSED_RGBA_ASTC_5x5:
@@ -76,6 +77,7 @@ bool GLTexelFormat::isCompressed(GLenum format) {
         case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x10:
         case GL_COMPRESSED_SRGB8_ALPHA8_ASTC_12x12:
             return hifi::properties::getGraphicsAPI() != hifi::properties::GraphicsAPI::GLES32;
+#endif
 
         default:
             return false;
@@ -410,7 +412,9 @@ GLenum GLTexelFormat::evalGLTexelFormatInternal(const gpu::Element& dstFormat) {
 }
 
 GLTexelFormat GLTexelFormat::evalGLTexelFormat(const Element& dstFormat, const Element& srcFormat) {
+#if defined(OVERTE_USE_GLES)
     auto backendApi = hifi::properties::getGraphicsAPI();
+#endif
     if (dstFormat != srcFormat) {
         GLTexelFormat texel = { GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE };
 
@@ -483,7 +487,10 @@ GLTexelFormat GLTexelFormat::evalGLTexelFormat(const Element& dstFormat, const E
             switch (srcFormat.getSemantic()) {
             case gpu::BGRA:
             case gpu::SBGRA: {
-                if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+#if defined(OVERTE_USE_GLES)
+                if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+                {
                     texel.format = GL_BGRA;
                     break;
                 }
@@ -524,7 +531,10 @@ GLTexelFormat GLTexelFormat::evalGLTexelFormat(const Element& dstFormat, const E
             switch (srcFormat.getSemantic()) {
             case gpu::BGRA:
             case gpu::SBGRA: {
-                if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+#if defined(OVERTE_USE_GLES)
+                if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+                {
                     texel.format = GL_BGRA;
                     break;
                 }
@@ -923,7 +933,10 @@ GLTexelFormat GLTexelFormat::evalGLTexelFormat(const Element& dstFormat, const E
             switch (srcFormat.getSemantic()) {
             case gpu::BGRA:
             case gpu::SBGRA: {
-                if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+#if defined(OVERTE_USE_GLES)
+                if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+                {
                     texel.format = GL_BGRA;
                     break;
                 }

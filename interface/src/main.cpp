@@ -78,7 +78,12 @@ int main(int argc, const char* argv[]) {
         } else if (apiString == "gl41") {
             hifi::properties::setGraphicsAPI(hifi::properties::GraphicsAPI::GL41);
         } else if (apiString == "gles32") {
+#ifdef OVERTE_USE_GLES
             hifi::properties::setGraphicsAPI(hifi::properties::GraphicsAPI::GLES32);
+#else
+            qWarning() << "OpenGLES is not supported in this build but specified, defaulting to GL4.5:";
+            hifi::properties::setGraphicsAPI(hifi::properties::GraphicsAPI::GL45);
+#endif
         } else {
             qWarning() << "Unknown graphics API specified, defaulting to GL4.5:" << QString::fromStdString(apiString);
             hifi::properties::setGraphicsAPI(hifi::properties::GraphicsAPI::GL45);

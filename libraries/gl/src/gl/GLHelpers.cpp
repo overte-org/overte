@@ -68,11 +68,13 @@ uint16_t gl::getTargetVersion() {
 
     auto backendApi = hifi::properties::getGraphicsAPI();
     switch (backendApi) {
+#if defined(OVERTE_USE_GLES)
         case hifi::properties::GraphicsAPI::GLES32: {
             major = 3;
             minor = 2;
             break;
         }
+#endif
         case hifi::properties::GraphicsAPI::GL41: {
             major = 4;
             minor = 1;
@@ -92,11 +94,14 @@ uint16_t gl::getTargetVersion() {
 uint16_t gl::getRequiredVersion() {
     uint8_t major = 0, minor = 0;
 
+#if defined(OVERTE_USE_GLES)
     auto backendApi = hifi::properties::getGraphicsAPI();
     if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
         major = 3;
         minor = 2;
-    } else {
+    } else
+#endif
+    {
         major = 4;
         minor = 1;
     }
@@ -246,11 +251,13 @@ uint16_t gl::getAvailableVersion() {
 #else
         // FIXME do runtime detection of GL version on other platforms
         switch (backendApi) {
+#if defined(OVERTE_USE_GLES)
             case hifi::properties::GraphicsAPI::GLES32: {
                 major = 3;
                 minor = 2;
                 break;
             }
+#endif
             case hifi::properties::GraphicsAPI::GL41: {
                 major = 4;
                 minor = 1;
@@ -272,6 +279,7 @@ const QSurfaceFormat& getDefaultOpenGLSurfaceFormat() {
     static QSurfaceFormat format;
     static std::once_flag once;
     std::call_once(once, [] {
+#if defined(OVERTE_USE_GLES)
         auto backendApi = hifi::properties::getGraphicsAPI();
         if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
             format.setRenderableType(QSurfaceFormat::OpenGLES);
@@ -279,7 +287,9 @@ const QSurfaceFormat& getDefaultOpenGLSurfaceFormat() {
             format.setGreenBufferSize(8);
             format.setBlueBufferSize(8);
             format.setAlphaBufferSize(8);
-        } else {
+        } else
+#endif
+        {
             format.setProfile(QSurfaceFormat::OpenGLContextProfile::CoreProfile);
         }
 

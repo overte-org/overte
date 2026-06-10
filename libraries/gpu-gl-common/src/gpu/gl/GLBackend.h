@@ -486,11 +486,14 @@ protected:
             // MIN_REQUIRED_UNIFORM_BUFFER_BINDINGS is used here because the backend sets some
             // internal UBOs for things like camera correction
             size_t minRequiredUniformBufferBindings = 0;
+#if defined(OVERTE_USE_GLES)
             auto backendApi = hifi::properties::getGraphicsAPI();
             if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
                 // https://www.khronos.org/registry/OpenGL-Refpages/es3/html/glGet.xhtml
                 minRequiredUniformBufferBindings = 72;
-            } else {
+            } else
+#endif
+            {
                 // https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/glGet.xhtml
                 minRequiredUniformBufferBindings = 36;
             }

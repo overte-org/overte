@@ -134,10 +134,13 @@ void gl::initModuleGl() {
         }
 #endif
 
+#if defined(OVERTE_USE_GLES)
         auto backendApi = hifi::properties::getGraphicsAPI();
         if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
             gladLoadGLES2Loader(getGlProcessAddress);
-        } else {
+        } else
+#endif
+        {
             gladLoadGLLoader(getGlProcessAddress);
         }
     });

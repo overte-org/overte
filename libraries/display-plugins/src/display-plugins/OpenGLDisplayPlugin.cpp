@@ -916,8 +916,11 @@ void OpenGLDisplayPlugin::updateCompositeFramebuffer() {
 }
 
 void OpenGLDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer networkTexture, QOpenGLFramebufferObject* target, GLsync* fenceSync) {
+#if defined(OVERTE_USE_GLES)
     auto backendApi = hifi::properties::getGraphicsAPI();
-    if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+    if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+    {
         auto backend = const_cast<OpenGLDisplayPlugin&>(*this).getBackend();
         auto glBackend = std::dynamic_pointer_cast<gpu::gl::GLBackend>(backend);
         Q_ASSERT(glBackend);

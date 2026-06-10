@@ -34,7 +34,9 @@ namespace hifi { namespace properties {
     enum class GraphicsAPI {
         GL45,
         GL41,
+#if defined(OVERTE_USE_GLES)
         GLES32,
+#endif
         Vulkan
     };
 

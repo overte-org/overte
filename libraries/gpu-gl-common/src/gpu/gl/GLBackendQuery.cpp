@@ -42,12 +42,15 @@ void GLBackend::do_beginQuery(const Batch& batch, size_t paramOffset) {
         ++_queryStage._rangeQueryDepth;
         glquery->_batchElapsedTimeBegin = std::chrono::high_resolution_clock::now();
 
+#if defined(OVERTE_USE_GLES)
         auto backendApi = hifi::properties::getGraphicsAPI();
         if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
             if (hasTimerExtension()) {
                 glQueryCounterEXT(glquery->_beginqo, GL_TIMESTAMP_EXT);
             }
-        } else {
+        } else
+#endif
+        {
             if (timeElapsed) {
                 if (_queryStage._rangeQueryDepth <= MAX_RANGE_QUERY_DEPTH) {
                     glBeginQuery(GL_TIME_ELAPSED, glquery->_endqo);
@@ -66,12 +69,15 @@ void GLBackend::do_endQuery(const Batch& batch, size_t paramOffset) {
     auto query = batch._queries.get(batch._params[paramOffset]._uint);
     GLQuery* glquery = syncGPUObject(*query);
     if (glquery) {
+#if defined(OVERTE_USE_GLES)
         auto backendApi = hifi::properties::getGraphicsAPI();
         if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
             if (hasTimerExtension()) {
                 glQueryCounterEXT(glquery->_endqo, GL_TIMESTAMP_EXT);
             }
-        } else {
+        } else
+#endif
+        {
             if (timeElapsed) {
                 if (_queryStage._rangeQueryDepth <= MAX_RANGE_QUERY_DEPTH) {
                     glEndQuery(GL_TIME_ELAPSED);
@@ -98,6 +104,7 @@ void GLBackend::do_getQuery(const Batch& batch, size_t paramOffset) {
         if (glquery->_rangeQueryDepth > MAX_RANGE_QUERY_DEPTH) {
             query->triggerReturnHandler(glquery->_result, glquery->_batchElapsedTime);
         } else {
+#if defined(OVERTE_USE_GLES)
             auto backendApi = hifi::properties::getGraphicsAPI();
             if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
                 glquery->_result = 0;
@@ -113,7 +120,9 @@ void GLBackend::do_getQuery(const Batch& batch, size_t paramOffset) {
                 } else {
                     query->triggerReturnHandler(0, glquery->_batchElapsedTime);
                 }
-            } else {
+            } else
+#endif
+            {
                 glGetQueryObjectui64v(glquery->_endqo, GL_QUERY_RESULT_AVAILABLE, &glquery->_result);
                 if (glquery->_result == GL_TRUE) {
                     if (timeElapsed) {

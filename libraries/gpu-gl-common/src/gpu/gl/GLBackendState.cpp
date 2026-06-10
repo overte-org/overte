@@ -32,8 +32,11 @@ void GLBackend::resetPipelineState(State::Signature nextSignature) {
     // Default line width accross the board
     glLineWidth(1.0f);
 
+#if defined(OVERTE_USE_GLES)
     auto backendApi = hifi::properties::getGraphicsAPI();
-    if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+    if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+    {
         // force a few states regardless
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
@@ -55,8 +58,11 @@ void GLBackend::syncPipelineStateCache() {
     glLineWidth(1.0f);
 
 
+#if defined(OVERTE_USE_GLES)
     auto backendApi = hifi::properties::getGraphicsAPI();
-    if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+    if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+    {
         glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
         // Point size is always on
@@ -76,8 +82,11 @@ void GLBackend::syncPipelineStateCache() {
 
 void GLBackend::do_setStateFillMode(int32 mode) {
     if (_pipeline._stateCache.fillMode != mode) {
+#if defined(OVERTE_USE_GLES)
         auto backendApi = hifi::properties::getGraphicsAPI();
-        if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+        if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+        {
             static GLenum GL_FILL_MODES[] = { GL_POINT, GL_LINE, GL_FILL };
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL_MODES[mode]);
             (void)CHECK_GL_ERROR();
@@ -115,8 +124,11 @@ void GLBackend::do_setStateFrontFaceClockwise(bool isClockwise) {
 
 void GLBackend::do_setStateDepthClampEnable(bool enable) {
     if (_pipeline._stateCache.flags.depthClampEnable != enable) {
+#if defined(OVERTE_USE_GLES)
         auto backendApi = hifi::properties::getGraphicsAPI();
-        if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+        if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+        {
             if (enable) {
                 glEnable(GL_DEPTH_CLAMP);
             } else {
@@ -143,8 +155,11 @@ void GLBackend::do_setStateScissorEnable(bool enable) {
 
 void GLBackend::do_setStateMultisampleEnable(bool enable) {
     if (_pipeline._stateCache.flags.multisampleEnable != enable) {
+#if defined(OVERTE_USE_GLES)
         auto backendApi = hifi::properties::getGraphicsAPI();
-        if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+        if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+        {
             if (enable) {
                 glEnable(GL_MULTISAMPLE);
             } else {
@@ -159,8 +174,11 @@ void GLBackend::do_setStateMultisampleEnable(bool enable) {
 
 void GLBackend::do_setStateAntialiasedLineEnable(bool enable) {
     if (_pipeline._stateCache.flags.antialisedLineEnable != enable) {
+#if defined(OVERTE_USE_GLES)
         auto backendApi = hifi::properties::getGraphicsAPI();
-        if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+        if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+        {
             if (enable) {
                 glEnable(GL_LINE_SMOOTH);
             } else {
@@ -175,17 +193,25 @@ void GLBackend::do_setStateAntialiasedLineEnable(bool enable) {
 
 void GLBackend::do_setStateDepthBias(Vec2 bias) {
     if ((bias.x != _pipeline._stateCache.depthBias) || (bias.y != _pipeline._stateCache.depthBiasSlopeScale)) {
+#if defined(OVERTE_USE_GLES)
         auto backendApi = hifi::properties::getGraphicsAPI();
+#endif
         if ((bias.x != 0.0f) || (bias.y != 0.0f)) {
             glEnable(GL_POLYGON_OFFSET_FILL);
-            if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+#if defined(OVERTE_USE_GLES)
+            if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+            {
                 glEnable(GL_POLYGON_OFFSET_LINE);
                 glEnable(GL_POLYGON_OFFSET_POINT);
             }
             glPolygonOffset(bias.x, bias.y);
         } else {
             glDisable(GL_POLYGON_OFFSET_FILL);
-            if (backendApi != hifi::properties::GraphicsAPI::GLES32) {
+#if defined(OVERTE_USE_GLES)
+            if (backendApi != hifi::properties::GraphicsAPI::GLES32)
+#endif
+            {
                 glDisable(GL_POLYGON_OFFSET_LINE);
                 glDisable(GL_POLYGON_OFFSET_POINT);
             }
