@@ -24,14 +24,14 @@ const uint32_t MAX_RANGE_QUERY_DEPTH = 10000;
 static bool timeElapsed = false;
 #endif
 
+#if defined(OVERTE_USE_GLES)
 static bool hasTimerExtension() {
     static std::once_flag once;
     static bool result = false;
-    std::call_once(once, [&] {
-        result = glGetQueryObjectui64vEXT != nullptr;
-    });
+    std::call_once(once, [&] { result = glGetQueryObjectui64vEXT != nullptr; });
     return result;
 }
+#endif
 
 void GLBackend::do_beginQuery(const Batch& batch, size_t paramOffset) {
     auto query = batch._queries.get(batch._params[paramOffset]._uint);
