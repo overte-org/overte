@@ -83,7 +83,7 @@
               shellHook = ''
                 # helper for configuring
                 configure() {
-                    cmake -DOVERTE_USE_SYSTEM_LIBS=ON -B build -S .
+                    cmake -DOVERTE_USE_SYSTEM_LIBS=ON -DOVERTE_USE_GLES=OFF -B build -S .
                 }
               '';
             };
