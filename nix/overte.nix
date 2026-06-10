@@ -124,6 +124,7 @@ stdenv.mkDerivation {
 
   cmakeFlags = [
     "-DOVERTE_USE_SYSTEM_LIBS=ON"
+    "-DOVERTE_USE_GLES=OFF"
     "-DOVERTE_BUILD_TYPE=NIGHLTY"
   ]
   ++ lib.optional (!buildClient) "-DOVERTE_BUILD_CLIENT=OFF"
