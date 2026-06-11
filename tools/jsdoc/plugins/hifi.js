@@ -69,12 +69,13 @@ exports.handlers = {
             '../../libraries/ui/src/ui',
             '../../plugins/oculus/src',
             '../../plugins/openvr/src',
-            '../../scripts/modules',
-            '../../scripts/system/libraries'
+            '../../scripts/modules', // js
+            '../../scripts/system/libraries', // js
         ];
 
         // only files with this extension will be searched for jsdoc comments.
-        const exts = ['.h', '.h.in', '.cpp', '.cpp.in', '.js'];
+        const exts = ['.h', '.h.in', '.cpp', '.cpp.in']; // C++
+        const jsExts = ['.js']; // Javascript
 
         const fs = require('fs');
         dirList.forEach(function (dir) {
@@ -82,18 +83,27 @@ exports.handlers = {
             const files = fs.readdirSync(joinedDir);
             files.forEach(function (file) {
                 const path = pathTools.join(joinedDir, file);
-                if (fs.lstatSync(path).isFile() && endsWith(path, exts)) {
-                    // load entire file into a string
-                    const data = fs.readFileSync(path, "utf8");
+                let reg;
+                if (fs.lstatSync(path).isFile()) {
+                    if (endsWith(path, exts)) { // C++
+                        // this regex searches for blocks starting with /*@jsdoc and end with */
+                        reg = /(\/\*@jsdoc((.|[\r\n])*?)\*\/)/gm;
+                    } else if (endsWith(path, jsExts)) { // Javascript
+                        // this regex searches for blocks starting with /**@jsdoc and end with */
+                        reg = /(\/\*\*@jsdoc((.|[\r\n])*?)\*\/)/gm;
+                    }
 
-                    // this regex searches for blocks starting with /*@jsdoc and end with */
-                    const reg = /(\/\*@jsdoc(.|[\r\n])*?\*\/)/gm;
-                    const matches = data.match(reg);
-                    if (matches) {
-                        // add to source, but strip off c-comment asterisks
-                        e.source += matches.map(function (s) {
-                            return s.replace('/*@jsdoc', '/**');
-                        }).join('\n');
+                    if (reg) {
+                        // load entire file into a string
+                        const data = fs.readFileSync(path, "utf8");
+
+                        const matches = data.matchAll(reg);
+                        if (matches) {
+                            // add to source, but strip off c-comment asterisks
+                            e.source += [...matches].map(function (g) {
+                                return `/**${g[2]}*/`;
+                            }).join('\n');
+                        }
                     }
                 }
             });

@@ -45,7 +45,7 @@ const getGrabPointSphereOffset = function(handController, ignoreSensorToWorldSca
     }
 };
 
-/*@jsdoc
+/**@jsdoc
  *
  * This is a javascript library and is not included by default. To use the method(s) below, you must first include the library.
  *
@@ -54,7 +54,7 @@ const getGrabPointSphereOffset = function(handController, ignoreSensorToWorldSca
  * @namespace Controllers
  */
 
-/*@jsdoc
+/**@jsdoc
  * @typedef {Object} Controllers.controllerWorldLocation
  * @property {Vec3} position - The position of the controller, relative to the world
  * @property {Vec3} translation - Deprecated: Use position instead.
@@ -63,7 +63,7 @@ const getGrabPointSphereOffset = function(handController, ignoreSensorToWorldSca
  * @property {boolean} valid
  */
 
-/*@jsdoc
+/**@jsdoc
  * controllerWorldLocation is where the controller would be, in-world, with an added offset
  *
  * @example <caption>Get the controllerWorldPosition and print it to log.</caption>
