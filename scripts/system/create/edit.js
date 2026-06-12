@@ -582,7 +582,7 @@
     const toolBar = (function () {
         const EDIT_SETTING = "io.highfidelity.isEditing"; // for communication with other scripts
         const that = {};
-        const toolBar; // TODO: Why is this here? This just shadowing the global variable without assigning a value to it. This variable is not actually used.
+        var toolBar; // TODO: Why is this here? This just shadowing the global variable without assigning a value to it. This variable is not actually used.
         let activeButton = null;
         let systemToolbar = null;
         let dialogWindow = null;
