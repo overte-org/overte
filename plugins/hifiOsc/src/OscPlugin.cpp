@@ -330,7 +330,7 @@ static void errorHandlerFunc(int num, const char* msg, const char* path) {
 }
 
 static int genericHandlerFunc(const char* path, const char* types, lo_arg** argv,
-                              int argc, void* data, void* user_data) {
+                              int argc, lo_message msg, void* user_data) {
 
     OscPlugin* container = reinterpret_cast<OscPlugin*>(user_data);
     assert(container);
@@ -548,7 +548,7 @@ bool OscPlugin::startServer() {
     qDebug(inputplugins) << "OscPlugin: server started on port" << serverPortString << ", _oscServerThread =" << _oscServerThread;
 
     // add method that will match any path and args
-    // NOTE: callback function will be called on the OSC thread, not the appliation thread.
+    // NOTE: callback function will be called on the OSC thread, not the application thread.
     lo_server_thread_add_method(_oscServerThread, NULL, NULL, genericHandlerFunc, (void*)this);
 
     lo_server_thread_start(_oscServerThread);

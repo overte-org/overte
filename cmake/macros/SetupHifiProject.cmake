@@ -2,6 +2,7 @@
 #  SetupHifiProject.cmake
 #
 #  Copyright 2013 High Fidelity, Inc.
+#  Copyright 2026 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -31,7 +32,7 @@ macro(SETUP_HIFI_PROJECT)
   list(APPEND ${TARGET_NAME}_DEPENDENCY_QT_MODULES Core)
 
   # find these Qt modules and link them to our own target
-  find_package(Qt5 COMPONENTS ${${TARGET_NAME}_DEPENDENCY_QT_MODULES} REQUIRED)
+  find_package(Qt5 COMPONENTS ${${TARGET_NAME}_DEPENDENCY_QT_MODULES} QUIET REQUIRED)
 
   # disable /OPT:REF and /OPT:ICF for the Debug builds
   # This will prevent the following linker warnings

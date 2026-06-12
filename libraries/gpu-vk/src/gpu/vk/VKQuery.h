@@ -24,6 +24,7 @@ public:
             // All is green, assign the gpuobject to the Query
             object = new VKQuery(backend.shared_from_this(), query);
             Backend::setGPUObject(query, object);
+            backend._queries.insert(object);
         }
 
         return object;

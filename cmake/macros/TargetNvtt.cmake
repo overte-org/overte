@@ -1,5 +1,6 @@
 #
 #  Copyright 2015 High Fidelity, Inc.
+#  Copyright 2026 Overte e.V.
 #  Created by Bradley Austin Davis on 2015/10/10
 #
 #  Distributed under the Apache License, Version 2.0.
@@ -28,7 +29,7 @@ macro(TARGET_NVTT)
             set(NVTT_LIBRARIES ${NVTT_LIBS} CACHE STRING INTERNAL)
             target_include_directories(${TARGET_NAME} PRIVATE ${NVTT_INCLUDE_DIRS})
         else()
-            find_package(nvidia-texture-tools REQUIRED)
+            find_package(nvidia-texture-tools QUIET REQUIRED)
         endif()
 
         target_link_libraries(${TARGET_NAME} nvidia-texture-tools::nvidia-texture-tools)

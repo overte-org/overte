@@ -163,57 +163,124 @@ int EntityTreeRenderer::_entitiesScriptEngineCount = 0;
 
 void EntityTreeRenderer::setupEntityScriptEngineSignals(const ScriptManagerPointer& scriptManager) {
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
+    auto weakScriptManagerPointer = scriptManager->weak_from_this();
 
     connect(entityScriptingInterface.data(), &EntityScriptingInterface::mousePressOnEntity, scriptManager.get(),
-            [&](const EntityItemID& entityID, const PointerEvent& event) {
-        scriptManager->callEntityScriptMethod(entityID, "mousePressOnEntity", event);
+            [weakScriptManagerPointer](const EntityItemID& entityID, const PointerEvent& event) {
+        auto scriptManagerPointer = weakScriptManagerPointer.lock();
+        Q_ASSERT(scriptManagerPointer);
+        if (scriptManagerPointer) {
+            scriptManagerPointer->callEntityScriptMethod(entityID, "mousePressOnEntity", event);
+        } else {
+            qCritical() << __FUNCTION__ << " Entity script method is being called after script manager got destroyed. This should never happen.";
+        }
     });
     connect(entityScriptingInterface.data(), &EntityScriptingInterface::mouseDoublePressOnEntity, scriptManager.get(),
-            [&](const EntityItemID& entityID, const PointerEvent& event) {
-        scriptManager->callEntityScriptMethod(entityID, "mouseDoublePressOnEntity", event);
+            [weakScriptManagerPointer](const EntityItemID& entityID, const PointerEvent& event) {
+        auto scriptManagerPointer = weakScriptManagerPointer.lock();
+        Q_ASSERT(scriptManagerPointer);
+        if (scriptManagerPointer) {
+            scriptManagerPointer->callEntityScriptMethod(entityID, "mouseDoublePressOnEntity", event);
+        } else {
+            qCritical() << __FUNCTION__ << " Entity script method is being called after script manager got destroyed. This should never happen.";
+        }
     });
     connect(entityScriptingInterface.data(), &EntityScriptingInterface::mouseMoveOnEntity, scriptManager.get(),
-            [&](const EntityItemID& entityID, const PointerEvent& event) {
-        scriptManager->callEntityScriptMethod(entityID, "mouseMoveOnEntity", event);
-        // FIXME: this is a duplicate of mouseMoveOnEntity, but it seems like some scripts might use this naming
-        scriptManager->callEntityScriptMethod(entityID, "mouseMoveEvent", event);
+            [weakScriptManagerPointer](const EntityItemID& entityID, const PointerEvent& event) {
+        auto scriptManagerPointer = weakScriptManagerPointer.lock();
+        Q_ASSERT(scriptManagerPointer);
+        if (scriptManagerPointer) {
+            scriptManagerPointer->callEntityScriptMethod(entityID, "mouseMoveOnEntity", event);
+            // FIXME: this is a duplicate of mouseMoveOnEntity, but it seems like some scripts might use this naming
+            scriptManagerPointer->callEntityScriptMethod(entityID, "mouseMoveEvent", event);
+        } else {
+            qCritical() << __FUNCTION__ << " Entity script method is being called after script manager got destroyed. This should never happen.";
+        }
     });
     connect(entityScriptingInterface.data(), &EntityScriptingInterface::mouseReleaseOnEntity, scriptManager.get(),
-            [&](const EntityItemID& entityID, const PointerEvent& event) {
-        scriptManager->callEntityScriptMethod(entityID, "mouseReleaseOnEntity", event);
+            [weakScriptManagerPointer](const EntityItemID& entityID, const PointerEvent& event) {
+        auto scriptManagerPointer = weakScriptManagerPointer.lock();
+        Q_ASSERT(scriptManagerPointer);
+        if (scriptManagerPointer) {
+            scriptManagerPointer->callEntityScriptMethod(entityID, "mouseReleaseOnEntity", event);
+        } else {
+            qCritical() << __FUNCTION__ << " Entity script method is being called after script manager got destroyed. This should never happen.";
+        }
     });
 
     connect(entityScriptingInterface.data(), &EntityScriptingInterface::clickDownOnEntity, scriptManager.get(),
-            [&](const EntityItemID& entityID, const PointerEvent& event) {
-        scriptManager->callEntityScriptMethod(entityID, "clickDownOnEntity", event);
+            [weakScriptManagerPointer](const EntityItemID& entityID, const PointerEvent& event) {
+        auto scriptManagerPointer = weakScriptManagerPointer.lock();
+        Q_ASSERT(scriptManagerPointer);
+        if (scriptManagerPointer) {
+            scriptManagerPointer->callEntityScriptMethod(entityID, "clickDownOnEntity", event);
+        } else {
+            qCritical() << __FUNCTION__ << " Entity script method is being called after script manager got destroyed. This should never happen.";
+        }
     });
     connect(entityScriptingInterface.data(), &EntityScriptingInterface::holdingClickOnEntity, scriptManager.get(),
-            [&](const EntityItemID& entityID, const PointerEvent& event) {
-        scriptManager->callEntityScriptMethod(entityID, "holdingClickOnEntity", event);
+            [weakScriptManagerPointer](const EntityItemID& entityID, const PointerEvent& event) {
+        auto scriptManagerPointer = weakScriptManagerPointer.lock();
+        Q_ASSERT(scriptManagerPointer);
+        if (scriptManagerPointer) {
+            scriptManagerPointer->callEntityScriptMethod(entityID, "holdingClickOnEntity", event);
+        } else {
+            qCritical() << __FUNCTION__ << " Entity script method is being called after script manager got destroyed. This should never happen.";
+        }
     });
     connect(entityScriptingInterface.data(), &EntityScriptingInterface::clickReleaseOnEntity, scriptManager.get(),
-            [&](const EntityItemID& entityID, const PointerEvent& event) {
-        scriptManager->callEntityScriptMethod(entityID, "clickReleaseOnEntity", event);
+            [weakScriptManagerPointer](const EntityItemID& entityID, const PointerEvent& event) {
+        auto scriptManagerPointer = weakScriptManagerPointer.lock();
+        Q_ASSERT(scriptManagerPointer);
+        if (scriptManagerPointer) {
+            scriptManagerPointer->callEntityScriptMethod(entityID, "clickReleaseOnEntity", event);
+        } else {
+            qCritical() << __FUNCTION__ << " Entity script method is being called after script manager got destroyed. This should never happen.";
+        }
     });
 
     connect(entityScriptingInterface.data(), &EntityScriptingInterface::hoverEnterEntity, scriptManager.get(),
-            [&](const EntityItemID& entityID, const PointerEvent& event) {
-        scriptManager->callEntityScriptMethod(entityID, "hoverEnterEntity", event);
+            [weakScriptManagerPointer](const EntityItemID& entityID, const PointerEvent& event) {
+        auto scriptManagerPointer = weakScriptManagerPointer.lock();
+        Q_ASSERT(scriptManagerPointer);
+        if (scriptManagerPointer) {
+            scriptManagerPointer->callEntityScriptMethod(entityID, "hoverEnterEntity", event);
+        } else {
+            qCritical() << __FUNCTION__ << " Entity script method is being called after script manager got destroyed. This should never happen.";
+        }
     });
     connect(entityScriptingInterface.data(), &EntityScriptingInterface::hoverOverEntity, scriptManager.get(),
-            [&](const EntityItemID& entityID, const PointerEvent& event) {
-        scriptManager->callEntityScriptMethod(entityID, "hoverOverEntity", event);
+            [weakScriptManagerPointer](const EntityItemID& entityID, const PointerEvent& event) {
+        auto scriptManagerPointer = weakScriptManagerPointer.lock();
+        Q_ASSERT(scriptManagerPointer);
+        if (scriptManagerPointer) {
+            scriptManagerPointer->callEntityScriptMethod(entityID, "hoverOverEntity", event);
+        } else {
+            qCritical() << __FUNCTION__ << " Entity script method is being called after script manager got destroyed. This should never happen.";
+        }
     });
     connect(entityScriptingInterface.data(), &EntityScriptingInterface::hoverLeaveEntity, scriptManager.get(),
-            [&](const EntityItemID& entityID, const PointerEvent& event) {
-        scriptManager->callEntityScriptMethod(entityID, "hoverLeaveEntity", event);
+            [weakScriptManagerPointer](const EntityItemID& entityID, const PointerEvent& event) {
+        auto scriptManagerPointer = weakScriptManagerPointer.lock();
+        Q_ASSERT(scriptManagerPointer);
+        if (scriptManagerPointer) {
+            scriptManagerPointer->callEntityScriptMethod(entityID, "hoverLeaveEntity", event);
+        } else {
+            qCritical() << __FUNCTION__ << " Entity script method is being called after script manager got destroyed. This should never happen.";
+        }
     });
     connect(entityScriptingInterface.data(), &EntityScriptingInterface::scrollOnEntity, scriptManager.get(),
-            [&](const EntityItemID& entityID, const PointerEvent& event) {
-        scriptManager->callEntityScriptMethod(entityID, "scrollOnEntity", event);
+            [weakScriptManagerPointer](const EntityItemID& entityID, const PointerEvent& event) {
+        auto scriptManagerPointer = weakScriptManagerPointer.lock();
+        Q_ASSERT(scriptManagerPointer);
+        if (scriptManagerPointer) {
+            scriptManagerPointer->callEntityScriptMethod(entityID, "scrollOnEntity", event);
+        } else {
+            qCritical() << __FUNCTION__ << " Entity script method is being called after script manager got destroyed. This should never happen.";
+        }
     });
 
-    connect(scriptManager.get(), &ScriptManager::entityScriptPreloadFinished, [&](const EntityItemID& entityID) {
+    connect(scriptManager.get(), &ScriptManager::entityScriptPreloadFinished, [this](const EntityItemID& entityID) {
         EntityItemPointer entity = getTree()->findEntityByID(entityID);
         if (entity) {
             entity->setScriptHasFinishedPreload(true);
@@ -1149,55 +1216,51 @@ void EntityTreeRenderer::deletingEntity(const EntityItemID& entityID) {
 }
 
 void EntityTreeRenderer::addingEntity(const EntityItemID& entityID) {
-    checkAndCallPreload(entityID);
     auto entity = std::static_pointer_cast<EntityTree>(_tree)->findEntityByID(entityID);
     if (entity) {
         _entitiesToAdd.insert({ entity->getEntityItemID(),  entity });
+        checkAndCallPreload(entityID, "", entity->getScript());
     }
 }
 
-void EntityTreeRenderer::entityScriptChanging(const EntityItemID& entityID, bool reload) {
-    checkAndCallPreload(entityID, reload, true);
+void EntityTreeRenderer::entityScriptChanging(const EntityItemID& entityID, const QString& oldScriptURL, const QString& newScriptURL) {
+    checkAndCallPreload(entityID, oldScriptURL, newScriptURL);
     // Force "re-checking" entities so that the logic inside `checkEnterLeaveEntities()` is run.
     // This will ensure that the `enterEntity()` signal is emitted on clients whose avatars
     // are inside an entity when the script is reloaded.
     forceRecheckEntities();
 }
 
-bool EntityTreeRenderer::checkAndCallPreload(const EntityItemID& entityID, bool reload, bool unloadFirst,
-                                             const QString& oldOverrideURL, const QString& newOverrideURL) {
+bool EntityTreeRenderer::checkAndCallPreload(const EntityItemID& entityID,
+                                             const QString& oldScriptURL,
+                                             const QString& newScriptURL) {
     if (_tree && !_shuttingDown) {
         EntityItemPointer entity = getTree()->findEntityByEntityItemID(entityID);
         if (!entity) {
             return false;
         }
+
         auto& scriptEngine = (entity->isLocalEntity() || entity->isMyAvatarEntity()) ? _persistentEntitiesScriptManager : _nonPersistentEntitiesScriptManager;
         if (!scriptEngine) {
             return false;
         }
 
-        bool shouldLoad = !newOverrideURL.isEmpty() ? (newOverrideURL != oldOverrideURL) : entity->shouldPreloadScript();
-        QString scriptUrl = !oldOverrideURL.isEmpty() ? oldOverrideURL : entity->getScript();
-        if ((shouldLoad && unloadFirst) || scriptUrl.isEmpty()) {
-            QString loadedScript = !oldOverrideURL.isEmpty() ? oldOverrideURL : entity->getLoadedScript();
+        bool reload = oldScriptURL == newScriptURL;
+
+        if (!oldScriptURL.isEmpty()) {
             if (_currentEntitiesInside.contains(entityID)) {
-                scriptEngine->callEntityScriptMethodForScript(entityID, loadedScript, "leaveEntity");
+                scriptEngine->callEntityScriptMethodForScript(entityID, oldScriptURL, "leaveEntity");
             }
-            QMetaObject::invokeMethod(scriptEngine.get(), [scriptEngine, entityID, loadedScript]{
-                scriptEngine->unloadEntityScript(entityID, loadedScript, true);
+            QMetaObject::invokeMethod(scriptEngine.get(), [scriptEngine, entityID, oldScriptURL]{
+                scriptEngine->unloadEntityScript(entityID, oldScriptURL, true);
             });
-            if (!oldOverrideURL.isEmpty()) {
-                entity->scriptHasUnloaded();
-            }
+            entity->scriptHasUnloaded();
         }
-        if (shouldLoad) {
-            if (!newOverrideURL.isEmpty()) {
-                entity->setScriptHasFinishedPreload(false);
-            }
-            scriptEngine->loadEntityScript(entityID, resolveScriptURL(!newOverrideURL.isEmpty() ? newOverrideURL : scriptUrl), reload);
-            if (!newOverrideURL.isEmpty()) {
-                entity->scriptHasPreloaded();
-            }
+
+        if (!newScriptURL.isEmpty()) {
+            entity->setScriptHasFinishedPreload(false);
+            scriptEngine->loadEntityScript(entityID, resolveScriptURL(newScriptURL), reload);
+            entity->scriptHasPreloaded();
         }
 
         return true;

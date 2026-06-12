@@ -31,6 +31,7 @@
 #include <glad/glad.h>
 
 #include "VKForward.h"
+#include "VKPipelineCache.h"
 #include "../../../../vk/src/vk/Context.h"
 
 //#define GPU_STEREO_TECHNIQUE_DOUBLED_SMARTER
@@ -245,16 +246,19 @@ protected:
         std::array<BufferState, MIN_REQUIRED_UNIFORM_BUFFER_BINDINGS> _buffers;
     } _uniform;
 
-    void updateVkDescriptorWriteSetsUniform(VkDescriptorSet target);
+    void updateVkDescriptorWriteSetsUniform(const Cache::PipelineLayout &layout,
+                                            std::vector<VkWriteDescriptorSet> &oldSets,
+                                            std::vector<VkDescriptorBufferInfo> &oldBufferInfos,
+                                            bool hasPipelineChanged);
     void releaseUniformBuffer(uint32_t slot);
     void resetUniformStage();
 
     struct ResourceStageState {
         struct TextureState {
-            TextureReference texture{};
+            TexturePointer texture{};
             TextureState& operator=(const TextureState& other) = delete;
             void reset() {
-                gpu::reset(texture);
+                texture.reset();
             }
         };
         struct BufferState {
@@ -268,12 +272,19 @@ protected:
         std::array<TextureState, MAX_NUM_RESOURCE_TEXTURES> _textures{};
     } _resource;
 
-    void updateVkDescriptorWriteSetsTexture(VkDescriptorSet target);
+    void updateVkDescriptorWriteSetsTexture(const Cache::PipelineLayout &layout,
+                                            std::vector<VkWriteDescriptorSet> &oldSets,
+                                            std::vector<VkDescriptorImageInfo> &oldImageInfos,
+                                            bool hasPipelineChanged);
+
     void bindResourceTexture(uint32_t slot, const TexturePointer& texture);
     void releaseResourceTexture(uint32_t slot);
     void resetTextureStage();
 
-    void updateVkDescriptorWriteSetsStorage(VkDescriptorSet target);
+    void updateVkDescriptorWriteSetsStorage(const Cache::PipelineLayout &layout,
+                                            std::vector<VkWriteDescriptorSet> &oldSets,
+                                            std::vector<VkDescriptorBufferInfo> &oldBufferInfos,
+                                            bool hasPipelineChanged);
     void releaseResourceBuffer(uint32_t slot);
     void resetResourceStage();
 
@@ -302,6 +313,8 @@ protected:
     // Contains objects that are created per frame and need to be deleted after the frame is rendered
     class FrameData {
     public:
+        std::vector<VkBufferMemoryBarrier> bufferBarriers;
+
         std::vector<VkDescriptorSet> uniformDescriptorSets;
         std::vector<VkDescriptorSet> textureDescriptorSets;
         std::vector<VkDescriptorSet> storageDescriptorSets;
@@ -318,13 +331,27 @@ protected:
         std::unordered_map<int, size_t> _glUniformOffsetMap;
         size_t _glUniformBufferPosition {0}; // Position where data from next glUniform... call is placed
 
+        size_t _bufferTransferCounterTransferPass {0};
+        size_t _bufferTransferCounterRenderPass {0};
+        size_t _uniformBufferTransferCounter {0};
+        size_t _vertexBufferTransferCounter {0};
+        size_t _indexBufferTransferCounter {0};
+        size_t _resourceBufferTransferCounter {0};
+        size_t _bufferTransferredBytes{0};
+
+        size_t _bufferCreationCounter {0};
+        size_t _bufferResizeCounter {0};
+
+        /// Buffer barriers are added during transfer pass, and then waited on before render pass.
+        void addBufferBarrier(const VkBufferMemoryBarrier &barrier);
+
         void addGlUniform(size_t size, const void *data, size_t commandIndex);
 
         FrameData(VKBackend *backend);
         FrameData() = delete;
         ~FrameData();
         // Executed after the frame was rendered so that it can be reused
-        void cleanup(); // VKTODO
+        void cleanup();
     private:
         // Creates descriptor pool for current frame
         void createDescriptorPool();
@@ -342,7 +369,8 @@ private:
 
     vk::VKFramebuffer* syncGPUObject(const Framebuffer *framebuffer);
     VKBuffer* syncGPUObject(const Buffer *buffer);
-    VKTexture* syncGPUObject(const Texture *texture);
+    VKBuffer* syncGPUObjectNoTransfer(const Buffer *buffer);
+    VKTexture* syncGPUObject(const std::shared_ptr<Texture> &texture);
     VKQuery* syncGPUObject(const Query *query);
 
     void blitToFramebuffer(VKAttachmentTexture &input, const Vec4i& srcViewport, VKAttachmentTexture &output, const Vec4i& dstViewport);
@@ -373,6 +401,12 @@ public:
     static gpu::Primitive getPrimitiveTopologyFromCommand(Batch::Command command, const Batch& batch, size_t paramOffset);
 
     int getRealUniformLocation(int location);
+
+    static size_t getTotalMemory() { return 8000000; }// VKTODO: return _totalMemory; }
+    static size_t getDedicatedMemory() { return 8000000; }// VKTODO: return _dedicatedMemory; }
+    static size_t getAvailableMemory() { return 5000000; }
+    static bool availableMemoryKnown() { return true; }
+
 
     virtual void store_glUniform1i(const Batch& batch, size_t paramOffset) final;
     virtual void store_glUniform1f(const Batch& batch, size_t paramOffset) final;
@@ -494,6 +528,14 @@ public:
     // VKTODO: quick hack
     VKFramebuffer *_outputTexture{ nullptr };
 protected:
+    struct TextureManagementStageState {
+        bool _sparseCapable{ false };
+        std::shared_ptr<VKTextureTransferEngine> _transferEngine;
+    } _textureManagement;
+
+    virtual void initTextureManagementStage();
+    virtual void killTextureManagementStage();
+
     void transitionInputImageLayouts(); // This can be called only form `updateRenderPass`
     void transitionAttachmentImageLayouts(gpu::Framebuffer &framebuffer); // This can be called only form `updateRenderPass`
 
@@ -508,6 +550,14 @@ protected:
     // Called by the destructor
     void beforeShutdownCleanup();
     void dumpVmaMemoryStats();
+
+    // Temporary vectors for updating descriptor sets. Created here once, since allocation is expensive.
+    std::vector<VkWriteDescriptorSet> uniformVkWriteDescriptorSets;
+    std::vector<VkDescriptorBufferInfo> uniformVkDescriptorBufferInfo;
+    std::vector<VkWriteDescriptorSet> textureVkWriteDescriptorSets;
+    std::vector<VkDescriptorImageInfo> textureVkDescriptorBufferInfo;
+    std::vector<VkWriteDescriptorSet> storageVkWriteDescriptorSets;
+    std::vector<VkDescriptorBufferInfo> storageVkDescriptorBufferInfo;
 
     std::mutex _externalTexturesMutex;
     std::list<std::pair<GLuint, Texture::ExternalRecycler>> _externalTexturesTrash;
@@ -525,6 +575,7 @@ protected:
     VkDescriptorImageInfo _defaultSkyboxTextureImageInfo{};
     friend class VKBuffer;
     friend class VKFramebuffer;
+    friend class VKQuery;
     VkCommandBuffer _currentCommandBuffer;
     size_t _commandIndex{ 0 };
     int _currentDraw{ -1 };

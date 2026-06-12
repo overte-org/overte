@@ -381,7 +381,7 @@
             "visible": false,
             "name": "portalCube",
             "locked": true,
-            "userData": "{\"destination\":\"hifi://overte_hub/8.78229,-27.241,121.826/0,0.711478,0,0.702708\"}",
+            "userData": "{\"destination\":\"hifi://overte_hub/\"}",
             "position": {
                 "x":2004.5484619140625,
                 "y":1996.08203125,

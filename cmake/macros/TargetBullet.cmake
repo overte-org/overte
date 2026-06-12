@@ -1,6 +1,6 @@
 #
 #  Copyright 2015 High Fidelity, Inc.
-#  Copyright 2025 Overte e.V.
+#  Copyright 2025-2026 Overte e.V.
 #  Created by Bradley Austin Davis on 2015/10/10
 #
 #  Distributed under the Apache License, Version 2.0.
@@ -13,9 +13,7 @@ macro(TARGET_BULLET)
         target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${BULLET_INCLUDE_DIRS})
         target_link_libraries(${TARGET_NAME} ${BULLET_LINK_LIBRARIES})
     else()
-        find_package(Bullet REQUIRED)
+        find_package(Bullet QUIET REQUIRED)
         target_link_libraries(${TARGET_NAME} Bullet::Bullet)
     endif()
 endmacro()
-
-

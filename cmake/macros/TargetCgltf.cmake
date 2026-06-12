@@ -4,7 +4,7 @@ macro(TARGET_CGLTF)
 
         target_include_directories(${TARGET_NAME} SYSTEM PRIVATE ${CGLTF_INCLUDE_DIRS})
     else()
-        find_package(cgltf REQUIRED)
+        find_package(cgltf QUIET REQUIRED)
         target_link_libraries(${TARGET_NAME} cgltf::cgltf)
     endif()
 endmacro()

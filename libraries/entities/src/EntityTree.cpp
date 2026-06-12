@@ -230,10 +230,10 @@ int EntityTree::readEntityDataFromBuffer(const unsigned char* data, int bytesLef
                     // If the script value has changed on us, or it's timestamp has changed to force
                     // a reload then we want to send out a script changing signal...
                     if (reload || entityScriptBefore != entityScriptAfter) {
-                        emitEntityScriptChanging(entityItemID, reload); // the entity script has changed
+                        emitEntityScriptChanging(entityItemID, entityScriptBefore, entityScriptAfter);
                     }
                     if (reload || entityServerScriptsBefore != entityServerScriptsAfter) {
-                        emitEntityServerScriptChanging(entityItemID, reload); // the entity server script has changed
+                        emitEntityServerScriptChanging(entityItemID, entityServerScriptsBefore, entityServerScriptsAfter);
                     }
 
                     QUuid parentIDAfter = entity->getParentID();
@@ -518,7 +518,7 @@ bool EntityTree::updateEntity(EntityItemPointer entity, const EntityItemProperti
         quint64 entityScriptTimestampAfter = entity->getScriptTimestamp();
         bool reload = entityScriptTimestampBefore != entityScriptTimestampAfter;
         if (entityScriptBefore != entityScriptAfter || reload) {
-            emitEntityScriptChanging(entity->getEntityItemID(), reload); // the entity script has changed
+            emitEntityScriptChanging(entity->getEntityItemID(), entityScriptBefore, entityScriptAfter);
         }
     }
 
@@ -578,12 +578,12 @@ EntityItemPointer EntityTree::addEntity(const EntityItemID& entityID, const Enti
     return result;
 }
 
-void EntityTree::emitEntityScriptChanging(const EntityItemID& entityItemID, bool reload) {
-    emit entityScriptChanging(entityItemID, reload);
+void EntityTree::emitEntityScriptChanging(const EntityItemID& entityItemID, const QString& oldScriptURL, const QString& newScriptURL) {
+    emit entityScriptChanging(entityItemID, oldScriptURL, newScriptURL);
 }
 
-void EntityTree::emitEntityServerScriptChanging(const EntityItemID& entityItemID, bool reload) {
-    emit entityServerScriptChanging(entityItemID, reload);
+void EntityTree::emitEntityServerScriptChanging(const EntityItemID& entityItemID, const QString& oldScriptURL, const QString& newScriptURL) {
+    emit entityServerScriptChanging(entityItemID, oldScriptURL, newScriptURL);
 }
 
 void EntityTree::notifyNewCollisionSoundURL(const QString& newURL, const EntityItemID& entityID) {

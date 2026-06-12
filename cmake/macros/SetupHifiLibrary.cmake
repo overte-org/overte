@@ -2,7 +2,7 @@
 #  SetupHifiLibrary.cmake
 #
 #  Copyright 2013 High Fidelity, Inc.
-#  Copyright 2024 Overte e.V.
+#  Copyright 2024-2026 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -67,7 +67,7 @@ macro(SETUP_HIFI_LIBRARY)
   list(APPEND ${TARGET_NAME}_DEPENDENCY_QT_MODULES Core)
 
   # find these Qt modules and link them to our own target
-  find_package(Qt5 COMPONENTS ${${TARGET_NAME}_DEPENDENCY_QT_MODULES} REQUIRED CMAKE_FIND_ROOT_PATH_BOTH)
+  find_package(Qt5 COMPONENTS ${${TARGET_NAME}_DEPENDENCY_QT_MODULES} QUIET REQUIRED CMAKE_FIND_ROOT_PATH_BOTH)
 
   foreach(QT_MODULE ${${TARGET_NAME}_DEPENDENCY_QT_MODULES})
     target_link_libraries(${TARGET_NAME} Qt5::${QT_MODULE})

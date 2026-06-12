@@ -8,7 +8,7 @@ link_hifi_libraries(embedded-webserver networking shared)
 package_libraries_for_deployment()
 
 # find OpenSSL
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL QUIET REQUIRED)
 
 setup_memory_debugger()
 setup_thread_debugger()

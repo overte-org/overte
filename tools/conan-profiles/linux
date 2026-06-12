@@ -8,8 +8,8 @@ compiler.cppstd=gnu20
 tools.build:cxxflags=['-include', 'cstdint']
 
 [tool_requires]
-# Many of our dependencies don't support CMake 4 yet.
-!cmake/*: cmake/[>=3 <4]
+# Get CMake from Conan, in case the system has a CMake version which is too new for the dependencies to build.
+!cmake/*: cmake/4.3.2
 
 [options]
 # Required for building oneTBB.
