@@ -2182,29 +2182,29 @@
             visible: true
         });
 
-        var success = Clipboard.importEntities(importURL);
+        const success = Clipboard.importEntities(importURL);
 
         if (success) {
-            var VERY_LARGE = 10000;
-            var isLargeImport = Clipboard.getClipboardContentsLargestDimension() >= VERY_LARGE;
-            var position = Vec3.ZERO;
+            const VERY_LARGE = 10000;
+            const isLargeImport = Clipboard.getClipboardContentsLargestDimension() >= VERY_LARGE;
+            let position = Vec3.ZERO;
             if (!isLargeImport) {
                 position = createApp.getPositionToCreateEntity(Clipboard.getClipboardContentsLargestDimension() / 2);
             }
             if (position !== null && position !== undefined) {
-                var pastedEntityIDs = Clipboard.pasteEntities(position, importEntityHostType);
+                const pastedEntityIDs = Clipboard.pasteEntities(position, importEntityHostType);
                 if (!isLargeImport) {
                     // The first entity in Clipboard gets the specified position with the rest being relative to it. Therefore, move
                     // entities after they're imported so that they're all the correct distance in front of and with geometric mean
                     // centered on the avatar/camera direction.
-                    var deltaPosition = Vec3.ZERO;
-                    var entityPositions = [];
-                    var entityParentIDs = [];
+                    let deltaPosition = Vec3.ZERO;
+                    const entityPositions = [];
+                    const entityParentIDs = [];
 
-                    var propType = Entities.getEntityProperties(pastedEntityIDs[0], ["type"]).type;
-                    var NO_ADJUST_ENTITY_TYPES = ["Zone", "Light", "ParticleEffect", "ProceduralParticleEffect", "Sound", "Canvas", "Script"];
+                    const propType = Entities.getEntityProperties(pastedEntityIDs[0], ["type"]).type;
+                    const NO_ADJUST_ENTITY_TYPES = ["Zone", "Light", "ParticleEffect", "ProceduralParticleEffect", "Sound", "Canvas", "Script"];
                     if (NO_ADJUST_ENTITY_TYPES.indexOf(propType) === -1) {
-                        var targetDirection;
+                        let targetDirection;
                         if (Camera.mode === "entity" || Camera.mode === "independent") {
                             targetDirection = Camera.orientation;
                         } else {
@@ -2212,16 +2212,16 @@
                         }
                         targetDirection = Vec3.multiplyQbyV(targetDirection, Vec3.UNIT_Z);
 
-                        var targetPosition = createApp.getPositionToCreateEntity();
-                        var deltaParallel = HALF_TREE_SCALE;  // Distance to move entities parallel to targetDirection.
-                        var deltaPerpendicular = Vec3.ZERO;  // Distance to move entities perpendicular to targetDirection.
-                        for (var i = 0, length = pastedEntityIDs.length; i < length; i++) {
-                            var curLoopEntityProps = Entities.getEntityProperties(pastedEntityIDs[i], ["position", "dimensions",
+                        const targetPosition = createApp.getPositionToCreateEntity();
+                        let deltaParallel = HALF_TREE_SCALE;  // Distance to move entities parallel to targetDirection.
+                        let deltaPerpendicular = Vec3.ZERO;  // Distance to move entities perpendicular to targetDirection.
+                        for (let i = 0, length = pastedEntityIDs.length; i < length; i++) {
+                            const curLoopEntityProps = Entities.getEntityProperties(pastedEntityIDs[i], ["position", "dimensions",
                                 "registrationPoint", "rotation", "parentID"]);
-                            var adjustedPosition = adjustPositionPerBoundingBox(targetPosition, targetDirection,
+                            const adjustedPosition = adjustPositionPerBoundingBox(targetPosition, targetDirection,
                                 curLoopEntityProps.registrationPoint, curLoopEntityProps.dimensions, curLoopEntityProps.rotation);
-                            var delta = Vec3.subtract(adjustedPosition, curLoopEntityProps.position);
-                            var distance = Vec3.dot(delta, targetDirection);
+                            const delta = Vec3.subtract(adjustedPosition, curLoopEntityProps.position);
+                            const distance = Vec3.dot(delta, targetDirection);
                             deltaParallel = Math.min(distance, deltaParallel);
                             deltaPerpendicular = Vec3.sum(Vec3.subtract(delta, Vec3.multiply(distance, targetDirection)),
                                 deltaPerpendicular);
@@ -2233,16 +2233,16 @@
                     }
 
                     if (grid.getSnapToGrid()) {
-                        var firstEntityProps = Entities.getEntityProperties(pastedEntityIDs[0], ["position", "dimensions",
+                        const firstEntityProps = Entities.getEntityProperties(pastedEntityIDs[0], ["position", "dimensions",
                             "registrationPoint"]);
-                        var positionPreSnap = Vec3.sum(deltaPosition, firstEntityProps.position);
+                        const positionPreSnap = Vec3.sum(deltaPosition, firstEntityProps.position);
                         position = grid.snapToSurface(grid.snapToGrid(positionPreSnap, false, firstEntityProps.dimensions,
                                 firstEntityProps.registrationPoint), firstEntityProps.dimensions, firstEntityProps.registrationPoint);
                         deltaPosition = Vec3.subtract(position, firstEntityProps.position);
                     }
 
                     if (!Vec3.equal(deltaPosition, Vec3.ZERO)) {
-                        for (var editEntityIndex = 0, numEntities = pastedEntityIDs.length; editEntityIndex < numEntities; editEntityIndex++) {
+                        for (let editEntityIndex = 0, numEntities = pastedEntityIDs.length; editEntityIndex < numEntities; editEntityIndex++) {
                             if (Uuid.isNull(entityParentIDs[editEntityIndex])) {
                                 Entities.editEntity(pastedEntityIDs[editEntityIndex], {
                                     position: Vec3.sum(deltaPosition, entityPositions[editEntityIndex])
@@ -2273,7 +2273,7 @@
 
     Menu.menuItemEvent.connect(handleMenuEvent);
 
-    var keyPressEvent = function (event) {
+    const keyPressEvent = function (event) {
         if (isActive) {
             cameraManager.keyPressEvent(event);
         }
@@ -2296,7 +2296,7 @@
             createApp.deleteSelectedEntities();
         }
     };
-    var keyReleaseEvent = function (event) {
+    const keyReleaseEvent = function (event) {
         if (isActive) {
             cameraManager.keyReleaseEvent(event);
         }
@@ -2361,17 +2361,17 @@
     }
     function recursiveAdd(newParentID, parentData) {
         if (parentData.children !== undefined) {
-            var children = parentData.children;
-            for (var i = 0; i < children.length; i++) {
-                var childProperties = children[i].properties;
+            const children = parentData.children;
+            for (let i = 0; i < children.length; i++) {
+                const childProperties = children[i].properties;
                 childProperties.parentID = newParentID;
-                var newChildID = Entities.addEntity(childProperties);
+                const newChildID = Entities.addEntity(childProperties);
                 recursiveAdd(newChildID, children[i]);
             }
         }
     }
 
-    var UndoHistory = function(onUpdate) {
+    const UndoHistory = function(onUpdate) {
         this.history = [];
         // The current position is the index of the last executed action in the history array.
         //
@@ -2421,7 +2421,7 @@
             return;
         }
 
-        var command = this.history[this.lastExecutedIndex];
+        const command = this.history[this.lastExecutedIndex];
         command.undoFn(command.undoArgs);
         this.lastExecutedIndex--;
 
@@ -2435,7 +2435,7 @@
             return;
         }
 
-        var command = this.history[this.lastExecutedIndex + 1];
+        const command = this.history[this.lastExecutedIndex + 1];
         command.redoFn(command.redoArgs);
         this.lastExecutedIndex++;
 
@@ -2454,19 +2454,19 @@
     // When an entity has been deleted we need a way to "undo" this deletion.  Because it's not currently
     // possible to create an entity with a specific id, earlier undo commands to the deleted entity
     // will fail if there isn't a way to find the new entity id.
-    var DELETED_ENTITY_MAP = {};
+    const DELETED_ENTITY_MAP = {};
 
     function applyEntityProperties(data) {
-        var editEntities = data.editEntities;
-        var createEntities = data.createEntities;
-        var deleteEntities = data.deleteEntities;
-        var selectedEntityIDs = [];
-        var selectEdits = createEntities.length === 0 || !data.selectCreated;
-        var i, entityID, entityProperties;
+        const editEntities = data.editEntities;
+        const createEntities = data.createEntities;
+        const deleteEntities = data.deleteEntities;
+        const selectedEntityIDs = [];
+        const selectEdits = createEntities.length === 0 || !data.selectCreated;
+        let i, entityID, entityProperties;
         for (i = 0; i < createEntities.length; i++) {
             entityID = createEntities[i].entityID;
             entityProperties = createEntities[i].properties;
-            var newEntityID = Entities.addEntity(entityProperties);
+            const newEntityID = Entities.addEntity(entityProperties);
             recursiveAdd(newEntityID, createEntities[i]);
             DELETED_ENTITY_MAP[entityID] = newEntityID;
             if (data.selectCreated) {
@@ -2479,7 +2479,7 @@
                 entityID = DELETED_ENTITY_MAP[entityID];
             }
             Entities.deleteEntity(entityID);
-            var index = selectedEntityIDs.indexOf(entityID);
+            const index = selectedEntityIDs.indexOf(entityID);
             if (index >= 0) {
                 selectedEntityIDs.splice(index, 1);
             }
@@ -2510,22 +2510,22 @@
     // redo command, and the saved properties for the undo command.  Also, include create and delete entity data.
     createApp.pushCommandForSelections = function (createdEntityData, deletedEntityData, doNotSaveEditProperties) {
         doNotSaveEditProperties = false;
-        var undoData = {
+        const undoData = {
             editEntities: [],
             createEntities: deletedEntityData || [],
             deleteEntities: createdEntityData || [],
             selectCreated: true
         };
-        var redoData = {
+        const redoData = {
             editEntities: [],
             createEntities: createdEntityData || [],
             deleteEntities: deletedEntityData || [],
             selectCreated: true
         };
-        for (var i = 0; i < SelectionManager.selections.length; i++) {
-            var entityID = SelectionManager.selections[i];
-            var initialProperties = SelectionManager.savedProperties[entityID];
-            var currentProperties = null;
+        for (let i = 0; i < SelectionManager.selections.length; i++) {
+            const entityID = SelectionManager.selections[i];
+            let initialProperties = SelectionManager.savedProperties[entityID];
+            let currentProperties = null;
             if (!initialProperties) {
                 continue;
             }
@@ -2548,14 +2548,14 @@
         createApp.undoHistory.pushCommand(applyEntityProperties, undoData, applyEntityProperties, redoData);
     }
 
-    var ServerScriptStatusMonitor = function(entityID, statusCallback) {
-        var self = this;
+    const ServerScriptStatusMonitor = function(entityID, statusCallback) {
+        const self = this;
 
         self.entityID = entityID;
         self.active = true;
         self.sendRequestTimerID = null;
 
-        var onStatusReceived = function(success, isRunning, status, errorInfo) {
+        const onStatusReceived = function(success, isRunning, status, errorInfo) {
             if (self.active) {
                 statusCallback({
                     statusRetrieved: success,
@@ -2577,20 +2577,19 @@
         Entities.getServerScriptStatus(entityID, onStatusReceived);
     };
 
-    var PropertiesTool = function (opts) {
-        var that = {};
+    const PropertiesTool = function (opts) {
+        const that = {};
 
-        var webView = null;
-        webView = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+        const webView = Tablet.getTablet("com.highfidelity.interface.tablet.system");
         webView.setVisible = function(value) {};
 
-        var visible = false;
+        let visible = false;
 
         // This keeps track of the last entity ID that was selected. If multiple entities
         // are selected or if no entity is selected this will be `null`.
-        var currentSelectedEntityID = null;
-        var statusMonitor = null;
-        var blockPropertyUpdates = false;
+        let currentSelectedEntityID = null;
+        let statusMonitor = null;
+        let blockPropertyUpdates = false;
 
         that.setVisible = function (newVisible) {
             visible = newVisible;
@@ -2601,7 +2600,7 @@
         that.setVisible(false);
 
         function emitScriptEvent(data) {
-            var dataString = JSON.stringify(data);
+            const dataString = JSON.stringify(data);
             webView.emitScriptEvent(dataString);
             createToolsWindow.emitScriptEvent(dataString);
         }
@@ -2641,7 +2640,7 @@
                 return;
             }
 
-            var data = {
+            const data = {
                 type: 'update',
                 spaceMode: selectionDisplay.getSpaceMode(),
                 isPropertiesToolUpdate: caller === this,
@@ -2660,15 +2659,15 @@
                     if (statusMonitor !== null) {
                         statusMonitor.stop();
                     }
-                    var entityID = selectionManager.selections[0];
+                    const entityID = selectionManager.selections[0];
                     currentSelectedEntityID = entityID;
                     statusMonitor = new ServerScriptStatusMonitor(entityID, updateScriptStatus);
                 }
             }
 
-            var selections = [];
-            for (var i = 0; i < selectionManager.selections.length; i++) {
-                var entity = {};
+            const selections = [];
+            for (let i = 0; i < selectionManager.selections.length; i++) {
+                const entity = {};
                 entity.id = selectionManager.selections[i];
                 entity.properties = Entities.getEntityProperties(selectionManager.selections[i]);
                 if (entity.properties.rotation !== undefined) {
@@ -2697,7 +2696,7 @@
         selectionManager.addEventListener(updateSelections, this);
 
 
-        var onWebEventReceived = function(data) {
+        const onWebEventReceived = function(data) {
             try {
                 data = JSON.parse(data);
             } catch(e) {
