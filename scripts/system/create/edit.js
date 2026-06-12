@@ -19,11 +19,11 @@
    progressDialog, tooltip, MyAvatar, Quat, Controller, Clipboard, HMD, UndoStack, OverlaySystemWindow */
 
 (function() { // BEGIN LOCAL_SCOPE
-    var createApp = {};
+    const createApp = {};
 
-    var EDIT_TOGGLE_BUTTON = "com.highfidelity.interface.system.editButton";
+    const EDIT_TOGGLE_BUTTON = "com.highfidelity.interface.system.editButton";
 
-    var CONTROLLER_MAPPING_NAME = "com.highfidelity.editMode";
+    const CONTROLLER_MAPPING_NAME = "com.highfidelity.editMode";
 
     Script.include([
         "../libraries/stringHelpers.js",
@@ -43,22 +43,22 @@
         "editModes/editVoxels.js"
     ]);
 
-    var CreateWindow = Script.require('./modules/createWindow.js');
+    const CreateWindow = Script.require('./modules/createWindow.js');
 
-    var TITLE_OFFSET = 60;
-    var CREATE_TOOLS_WIDTH = 750;
-    var MAX_DEFAULT_ENTITY_LIST_HEIGHT = 942;
-    var ENTIRE_DOMAIN_SCAN_RADIUS = 27713;
+    const TITLE_OFFSET = 60;
+    const CREATE_TOOLS_WIDTH = 750;
+    const MAX_DEFAULT_ENTITY_LIST_HEIGHT = 942;
+    const ENTIRE_DOMAIN_SCAN_RADIUS = 27713;
 
-    var DEFAULT_IMAGE = Script.getExternalPath(Script.ExternalPaths.Assets, "Bazaar/Assets/Textures/Defaults/Interface/default_image.jpg");
-    var DEFAULT_PARTICLE = Script.getExternalPath(Script.ExternalPaths.Assets, "Bazaar/Assets/Textures/Defaults/Interface/default_particle.png");
+    const DEFAULT_IMAGE = Script.getExternalPath(Script.ExternalPaths.Assets, "Bazaar/Assets/Textures/Defaults/Interface/default_image.jpg");
+    const DEFAULT_PARTICLE = Script.getExternalPath(Script.ExternalPaths.Assets, "Bazaar/Assets/Textures/Defaults/Interface/default_particle.png");
 
-    var createToolsWindow = new CreateWindow(
+    const createToolsWindow = new CreateWindow(
         Script.resolvePath("qml/EditTools.qml"),
         'Create Tools',
         'com.highfidelity.create.createToolsWindow',
         function () {
-            var windowHeight = Window.innerHeight - TITLE_OFFSET;
+            let windowHeight = Window.innerHeight - TITLE_OFFSET;
             if (windowHeight > MAX_DEFAULT_ENTITY_LIST_HEIGHT) {
                 windowHeight = MAX_DEFAULT_ENTITY_LIST_HEIGHT;
             }
@@ -80,28 +80,28 @@
      * @description Returns true in case we should use the tablet version of the CreateApp
      * @returns boolean
      */
-    var shouldUseEditTabletApp = function() {
+    const shouldUseEditTabletApp = function() {
         return HMD.active || (!HMD.active && !Settings.getValue("desktopTabletBecomesToolbar", true));
     };
 
 
-    var selectionDisplay = SelectionDisplay;
+    const selectionDisplay = SelectionDisplay;
     selectionDisplay.createApp = createApp;
-    var selectionManager = SelectionManager;
+    const selectionManager = SelectionManager;
     selectionManager.createApp = createApp;
 
-    var PARTICLE_SYSTEM_URL = Script.resolvePath("assets/images/icon-particles.svg");
-    var POINT_LIGHT_URL = Script.resolvePath("assets/images/icon-point-light.svg");
-    var SPOT_LIGHT_URL = Script.resolvePath("assets/images/icon-spot-light.svg");
-    var ZONE_URL = Script.resolvePath("assets/images/icon-zone.svg");
-    var MATERIAL_URL = Script.resolvePath("assets/images/icon-material.svg");
-    var SOUND_URL = Script.resolvePath("assets/images/icon-sound.svg");
-    var CANVAS_URL = Script.resolvePath("assets/images/icon-canvas.svg");
-    var EMPTY_URL = Script.resolvePath("assets/images/icon-empty.svg");
-    var SCRIPT_URL = Script.resolvePath("assets/images/icon-script.svg");
+    const PARTICLE_SYSTEM_URL = Script.resolvePath("assets/images/icon-particles.svg");
+    const POINT_LIGHT_URL = Script.resolvePath("assets/images/icon-point-light.svg");
+    const SPOT_LIGHT_URL = Script.resolvePath("assets/images/icon-spot-light.svg");
+    const ZONE_URL = Script.resolvePath("assets/images/icon-zone.svg");
+    const MATERIAL_URL = Script.resolvePath("assets/images/icon-material.svg");
+    const SOUND_URL = Script.resolvePath("assets/images/icon-sound.svg");
+    const CANVAS_URL = Script.resolvePath("assets/images/icon-canvas.svg");
+    const EMPTY_URL = Script.resolvePath("assets/images/icon-empty.svg");
+    const SCRIPT_URL = Script.resolvePath("assets/images/icon-script.svg");
 
-    var entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "ProceduralParticleEffect", "Zone", "Material", "Sound", "Canvas", "Empty", "Script"], function(entityID) {
-        var properties = Entities.getEntityProperties(entityID, ["type", "isSpotlight", "parentID", "name"]);
+    const entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "ProceduralParticleEffect", "Zone", "Material", "Sound", "Canvas", "Empty", "Script"], function(entityID) {
+        const properties = Entities.getEntityProperties(entityID, ["type", "isSpotlight", "parentID", "name"]);
         if (properties.type === "Light") {
             return {
                 imageURL: properties.isSpotlight ? SPOT_LIGHT_URL : POINT_LIGHT_URL
@@ -129,13 +129,13 @@
 
     createApp.hmdMultiSelectMode = false;
     createApp.expectingRotateAsClickedSurface = false;
-    var keepSelectedOnNextClick = false;
+    let keepSelectedOnNextClick = false;
 
-    var copiedPosition;
-    var copiedRotation;
-    var copiedDimensions;
+    let copiedPosition;
+    let copiedRotation;
+    let copiedDimensions;
 
-    var importUiPersistedData = {
+    let importUiPersistedData = {
         "elJsonUrl": "",
         "elImportAtAvatar": true,
         "elImportAtSpecificPosition": false,
@@ -146,11 +146,11 @@
         "elEntityHostTypeAvatar": false
     };
 
-    var cameraManager = new CameraManager();
+    const cameraManager = new CameraManager();
 
-    var grid = new Grid();
+    const grid = new Grid();
     selectionDisplay.grid = grid;
-    var gridTool = new GridTool({
+    const gridTool = new GridTool({
         horizontalGrid: grid,
         createToolsWindow: createToolsWindow,
         shouldUseEditTabletApp: shouldUseEditTabletApp
@@ -159,22 +159,22 @@
     gridTool.createApp = createApp;
     gridTool.setVisible(false);
 
-    var editTools = new EditTools({
+    const editTools = new EditTools({
         createToolsWindow: createToolsWindow,
     });
 
-    var editVoxels = new EditVoxels();
+    const editVoxels = new EditVoxels();
     editVoxels.editTools = editTools;
 
     editTools.addListener(editVoxels.updateEditSettings);
     editTools.addListener(selectionManager.updateEditSettings);
 
-    var entityShapeVisualizerSessionName = "SHAPE_VISUALIZER_" + Uuid.generate();
+    const entityShapeVisualizerSessionName = "SHAPE_VISUALIZER_" + Uuid.generate();
     createApp.entityShapeVisualizerLocalEntityToExclude = [];
-    var EntityShapeVisualizer = Script.require('./modules/entityShapeVisualizer.js');
-    var entityShapeVisualizer = new EntityShapeVisualizer(["Zone"], entityShapeVisualizerSessionName);
+    const EntityShapeVisualizer = Script.require('./modules/entityShapeVisualizer.js');
+    const entityShapeVisualizer = new EntityShapeVisualizer(["Zone"], entityShapeVisualizerSessionName);
 
-    var entityListTool = new EntityListTool(shouldUseEditTabletApp, selectionManager);
+    const entityListTool = new EntityListTool(shouldUseEditTabletApp, selectionManager);
     entityListTool.createApp = createApp;
     entityListTool.grid = grid;
     entityListTool.cameraManager = cameraManager;
@@ -187,64 +187,64 @@
         createApp.entityShapeVisualizerLocalEntityToExclude = entityShapeVisualizer.getLocalEntityToExclude();
     });
 
-    var DEGREES_TO_RADIANS = Math.PI / 180.0;
-    var RADIANS_TO_DEGREES = 180.0 / Math.PI;
+    const DEGREES_TO_RADIANS = Math.PI / 180.0;
+    const RADIANS_TO_DEGREES = 180.0 / Math.PI;
 
-    var MIN_ANGULAR_SIZE = 2;
-    var MAX_ANGULAR_SIZE = 45;
-    var allowLargeModels = true;
-    var allowSmallModels = true;
+    const MIN_ANGULAR_SIZE = 2;
+    const MAX_ANGULAR_SIZE = 45;
+    let allowLargeModels = true;
+    let allowSmallModels = true;
 
-    var DEFAULT_DIMENSION = 0.20;
+    const DEFAULT_DIMENSION = 0.20;
 
-    var DEFAULT_DIMENSIONS = {
+    const DEFAULT_DIMENSIONS = {
         x: DEFAULT_DIMENSION,
         y: DEFAULT_DIMENSION,
         z: DEFAULT_DIMENSION
     };
 
-    var DEFAULT_LIGHT_DIMENSIONS = Vec3.multiply(20, DEFAULT_DIMENSIONS);
+    const DEFAULT_LIGHT_DIMENSIONS = Vec3.multiply(20, DEFAULT_DIMENSIONS);
 
-    var MENU_IMPORT_FROM_FILE = "Import Entities (.json) From a File";
-    var MENU_IMPORT_FROM_URL = "Import Entities (.json) From a URL";
-    var MENU_CREATE_SEPARATOR = "Create Application";
-    var SUBMENU_ENTITY_EDITOR_PREFERENCES = "Edit > Preferences";
-    var MENU_AUTO_FOCUS_ON_SELECT = "Auto Focus on Select";
-    var MENU_EASE_ON_FOCUS = "Ease Orientation on Focus";
+    const MENU_IMPORT_FROM_FILE = "Import Entities (.json) From a File";
+    const MENU_IMPORT_FROM_URL = "Import Entities (.json) From a URL";
+    const MENU_CREATE_SEPARATOR = "Create Application";
+    const SUBMENU_ENTITY_EDITOR_PREFERENCES = "Edit > Preferences";
+    const MENU_AUTO_FOCUS_ON_SELECT = "Auto Focus on Select";
+    const MENU_EASE_ON_FOCUS = "Ease Orientation on Focus";
     createApp.MENU_EASE_ON_FOCUS = MENU_EASE_ON_FOCUS;
-    var MENU_SHOW_ICONS_IN_CREATE_MODE = "Show Icons in Create Mode";
-    var MENU_CREATE_ENTITIES_GRABBABLE = "Create Entities As Grabbable (except Zones, Particles, and Lights)";
-    var MENU_ALLOW_SELECTION_LARGE = "Allow Selecting of Large Models";
-    var MENU_ALLOW_SELECTION_SMALL = "Allow Selecting of Small Models";
-    var MENU_ALLOW_SELECTION_LIGHTS = "Allow Selecting of Lights";
-    var MENU_ENTITY_LIST_DEFAULT_RADIUS = "Entity List Default Radius";
+    const MENU_SHOW_ICONS_IN_CREATE_MODE = "Show Icons in Create Mode";
+    const MENU_CREATE_ENTITIES_GRABBABLE = "Create Entities As Grabbable (except Zones, Particles, and Lights)";
+    const MENU_ALLOW_SELECTION_LARGE = "Allow Selecting of Large Models";
+    const MENU_ALLOW_SELECTION_SMALL = "Allow Selecting of Small Models";
+    const MENU_ALLOW_SELECTION_LIGHTS = "Allow Selecting of Lights";
+    const MENU_ENTITY_LIST_DEFAULT_RADIUS = "Entity List Default Radius";
 
-    var SETTING_AUTO_FOCUS_ON_SELECT = "autoFocusOnSelect";
-    var SETTING_EASE_ON_FOCUS = "cameraEaseOnFocus";
-    var SETTING_SHOW_LIGHTS_AND_PARTICLES_IN_EDIT_MODE = "showLightsAndParticlesInEditMode";
+    const SETTING_AUTO_FOCUS_ON_SELECT = "autoFocusOnSelect";
+    const SETTING_EASE_ON_FOCUS = "cameraEaseOnFocus";
+    const SETTING_SHOW_LIGHTS_AND_PARTICLES_IN_EDIT_MODE = "showLightsAndParticlesInEditMode";
     createApp.SETTING_SHOW_ZONES_IN_EDIT_MODE = "showZonesInEditMode";
     createApp.SETTING_EDITOR_COLUMNS_SETUP = "editorColumnsSetup";
     createApp.SETTING_ENTITY_LIST_DEFAULT_RADIUS = "entityListDefaultRadius";
 
-    var SETTING_EDIT_PREFIX = "Edit/";
+    const SETTING_EDIT_PREFIX = "Edit/";
 
 
-    var CREATE_ENABLED_ICON = "icons/tablet-icons/edit-i.svg";
-    var CREATE_DISABLED_ICON = "icons/tablet-icons/edit-disabled.svg";
+    const CREATE_ENABLED_ICON = "icons/tablet-icons/edit-i.svg";
+    const CREATE_DISABLED_ICON = "icons/tablet-icons/edit-disabled.svg";
 
     // marketplace info, etc.  not quite ready yet.
-    var SHOULD_SHOW_PROPERTY_MENU = false;
-    var INSUFFICIENT_PERMISSIONS_ERROR_MSG = "You do not have the necessary permissions to edit on this domain.";
-    var INSUFFICIENT_PERMISSIONS_IMPORT_ERROR_MSG = "You do not have the necessary permissions to place items on this domain.";
+    const SHOULD_SHOW_PROPERTY_MENU = false;
+    const INSUFFICIENT_PERMISSIONS_ERROR_MSG = "You do not have the necessary permissions to edit on this domain.";
+    const INSUFFICIENT_PERMISSIONS_IMPORT_ERROR_MSG = "You do not have the necessary permissions to place items on this domain.";
 
-    var isActive = false;
-    var createButton = null;
+    let isActive = false;
+    let createButton = null;
 
-    var IMPORTING_SVO_OVERLAY_WIDTH = 144;
-    var IMPORTING_SVO_OVERLAY_HEIGHT = 30;
-    var IMPORTING_SVO_OVERLAY_MARGIN = 5;
-    var IMPORTING_SVO_OVERLAY_LEFT_MARGIN = 34;
-    var importingSVOImageOverlay = Overlays.addOverlay("image", {
+    const IMPORTING_SVO_OVERLAY_WIDTH = 144;
+    const IMPORTING_SVO_OVERLAY_HEIGHT = 30;
+    const IMPORTING_SVO_OVERLAY_MARGIN = 5;
+    const IMPORTING_SVO_OVERLAY_LEFT_MARGIN = 34;
+    const importingSVOImageOverlay = Overlays.addOverlay("image", {
         imageURL: Script.resolvePath("assets/images/hourglass.svg"),
         width: 20,
         height: 20,
@@ -253,7 +253,7 @@
         y: Window.innerHeight - IMPORTING_SVO_OVERLAY_HEIGHT,
         visible: false
     });
-    var importingSVOTextOverlay = Overlays.addOverlay("text", {
+    const importingSVOTextOverlay = Overlays.addOverlay("text", {
         font: {
             size: 14
         },
@@ -272,12 +272,12 @@
         visible: false
     });
 
-    var savedClippingEnabled = false;
+    let savedClippingEnabled = false;
 
     function adjustPositionPerBoundingBox(position, direction, registration, dimensions, orientation) {
         // Adjust the position such that the bounding box (registration, dimensions and orientation) lies behind the original
         // position in the given direction.
-        var CORNERS = [
+        const CORNERS = [
             { x: 0, y: 0, z: 0 },
             { x: 0, y: 0, z: 1 },
             { x: 0, y: 1, z: 0 },
@@ -289,11 +289,11 @@
         ];
 
         // Go through all corners and find least (most negative) distance in front of position.
-        var distance = 0;
-        for (var i = 0, length = CORNERS.length; i < length; i++) {
-            var cornerVector =
+        let distance = 0;
+        for (let i = 0, length = CORNERS.length; i < length; i++) {
+            const cornerVector =
                 Vec3.multiplyQbyV(orientation, Vec3.multiplyVbyV(Vec3.subtract(CORNERS[i], registration), dimensions));
-            var cornerDistance = Vec3.dot(cornerVector, direction);
+            const cornerDistance = Vec3.dot(cornerVector, direction);
             distance = Math.min(cornerDistance, distance);
         }
         position = Vec3.sum(Vec3.multiply(distance, direction), position);
@@ -307,7 +307,7 @@
             return;
         }
 
-        var hasRezPermissions = (Entities.canRez() || Entities.canRezTmp());
+        const hasRezPermissions = (Entities.canRez() || Entities.canRezTmp());
         createButton.editProperties({
             icon: (hasRezPermissions ? CREATE_ENABLED_ICON : CREATE_DISABLED_ICON),
             captionColor: (hasRezPermissions ? "#ffffff" : "#888888"),
@@ -321,7 +321,7 @@
 
     // Copies the properties in `b` into `a`. `a` will be modified.
     function copyProperties(a, b) {
-        for (var key in b) {
+        for (const key in b) {
             a[key] = b[key];
         }
         return a;
@@ -578,26 +578,26 @@
             enabled: true
         }
     };
-    var fcreateNewEntity;
-    var toolBar = (function () {
-        var EDIT_SETTING = "io.highfidelity.isEditing"; // for communication with other scripts
-        var that = {},
-            toolBar,
-            activeButton = null,
-            systemToolbar = null,
-            dialogWindow = null,
-            tablet = null;
+    let fcreateNewEntity;
+    const toolBar = (function () {
+        const EDIT_SETTING = "io.highfidelity.isEditing"; // for communication with other scripts
+        const that = {};
+        const toolBar; // TODO: Why is this here? This just shadowing the global variable without assigning a value to it. This variable is not actually used.
+        let activeButton = null;
+        let systemToolbar = null;
+        let dialogWindow = null;
+        let tablet = null;
 
         function createNewEntity(requestedProperties, entityHostType="domain") {
-            var dimensions = requestedProperties.dimensions ? requestedProperties.dimensions : DEFAULT_DIMENSIONS;
-            var position = createApp.getPositionToCreateEntity();
-            var entityID = null;
+            const dimensions = requestedProperties.dimensions ? requestedProperties.dimensions : DEFAULT_DIMENSIONS;
+            let position = createApp.getPositionToCreateEntity();
+            let entityID = null;
 
-            var properties = {};
+            const properties = {};
 
             copyProperties(properties, DEFAULT_ENTITY_PROPERTIES.All);
 
-            var type = requestedProperties.type;
+            const type = requestedProperties.type;
             if (type === "Box" || type === "Sphere") {
                 copyProperties(properties, DEFAULT_ENTITY_PROPERTIES.Shape);
             } else {
@@ -615,7 +615,7 @@
 
 
             if (position !== null && position !== undefined) {
-                var direction;
+                let direction;
                 if (Camera.mode === "entity" || Camera.mode === "independent") {
                     direction = Camera.orientation;
                 } else {
@@ -623,26 +623,26 @@
                 }
                 direction = Vec3.multiplyQbyV(direction, Vec3.UNIT_Z);
 
-                var PRE_ADJUST_ENTITY_TYPES = ["Box", "Sphere", "Shape", "Text", "Image", "Web", "Material"];
+                const PRE_ADJUST_ENTITY_TYPES = ["Box", "Sphere", "Shape", "Text", "Image", "Web", "Material"];
                 if (PRE_ADJUST_ENTITY_TYPES.indexOf(properties.type) !== -1) {
 
                     // Adjust position of entity per bounding box prior to creating it.
-                    var registration = properties.registration;
+                    let registration = properties.registration;
                     if (registration === undefined) {
-                        var DEFAULT_REGISTRATION = { x: 0.5, y: 0.5, z: 0.5 };
+                        const DEFAULT_REGISTRATION = { x: 0.5, y: 0.5, z: 0.5 };
                         registration = DEFAULT_REGISTRATION;
                     }
 
-                    var orientation = properties.orientation;
+                    let orientation = properties.orientation;
                     if (orientation === undefined) {
                         properties.orientation = MyAvatar.orientation;
-                        var DEFAULT_ORIENTATION = properties.orientation;
+                        const DEFAULT_ORIENTATION = properties.orientation;
                         orientation = DEFAULT_ORIENTATION;
                     } else {
                         // If the orientation is already defined, we perform the corresponding rotation assuming that
                         //  our start referential is the avatar referential.
                         properties.orientation = Quat.multiply(MyAvatar.orientation, properties.orientation);
-                        var DEFAULT_ORIENTATION = properties.orientation;
+                        const DEFAULT_ORIENTATION = properties.orientation;
                         orientation = DEFAULT_ORIENTATION;
                     }
 
@@ -670,15 +670,15 @@
 
                 entityID = Entities.addEntity(properties, entityHostType);
 
-                var dimensionsCheckCallback = function(){
+                const dimensionsCheckCallback = function(){
                     // Adjust position of entity per bounding box after it has been created and auto-resized.
-                    var initialDimensions = Entities.getEntityProperties(entityID, ["dimensions"]).dimensions;
-                    var DIMENSIONS_CHECK_INTERVAL = 200;
-                    var MAX_DIMENSIONS_CHECKS = 10;
-                    var dimensionsCheckCount = 0;
-                    var dimensionsCheckFunction = function () {
+                    const initialDimensions = Entities.getEntityProperties(entityID, ["dimensions"]).dimensions;
+                    const DIMENSIONS_CHECK_INTERVAL = 200;
+                    const MAX_DIMENSIONS_CHECKS = 10;
+                    let dimensionsCheckCount = 0;
+                    const dimensionsCheckFunction = function () {
                         dimensionsCheckCount++;
-                        var properties = Entities.getEntityProperties(entityID, ["dimensions", "registrationPoint", "rotation"]);
+                        const properties = Entities.getEntityProperties(entityID, ["dimensions", "registrationPoint", "rotation"]);
                         if (!Vec3.equal(properties.dimensions, initialDimensions)) {
                             position = adjustPositionPerBoundingBox(position, direction, properties.registrationPoint,
                                 properties.dimensions, properties.rotation);
@@ -696,13 +696,13 @@
                 }
                 // Make sure the model entity is loaded before we try to figure out
                 // its dimensions. We need to give ample time to load the entity.
-                var MAX_LOADED_CHECKS = 100; // 100 * 100ms = 10 seconds.
-                var LOADED_CHECK_INTERVAL = 100;
-                var isLoadedCheckCount = 0;
-                var entityIsLoadedCheck = function() {
+                const MAX_LOADED_CHECKS = 100; // 100 * 100ms = 10 seconds.
+                const LOADED_CHECK_INTERVAL = 100;
+                let isLoadedCheckCount = 0;
+                const entityIsLoadedCheck = function() {
                     isLoadedCheckCount++;
                     if (isLoadedCheckCount === MAX_LOADED_CHECKS || Entities.isLoaded(entityID)) {
-                        var naturalDimensions = Entities.getEntityProperties(entityID, "naturalDimensions").naturalDimensions;
+                        const naturalDimensions = Entities.getEntityProperties(entityID, "naturalDimensions").naturalDimensions;
 
                         if (isLoadedCheckCount === MAX_LOADED_CHECKS) {
                             console.log("Model entity failed to load in time: " + (MAX_LOADED_CHECKS * LOADED_CHECK_INTERVAL) + " ... setting dimensions to: " + JSON.stringify(naturalDimensions))
@@ -722,7 +722,7 @@
                     Script.setTimeout(entityIsLoadedCheck, LOADED_CHECK_INTERVAL);
                 }
 
-                var POST_ADJUST_ENTITY_TYPES = ["Model"];
+                const POST_ADJUST_ENTITY_TYPES = ["Model"];
                 if (POST_ADJUST_ENTITY_TYPES.indexOf(properties.type) !== -1) {
                     Script.setTimeout(entityIsLoadedCheck, LOADED_CHECK_INTERVAL);
                 }
@@ -767,28 +767,28 @@
             }
         }
 
-        var buttonHandlers = {}; // only used to tablet mode
+        const buttonHandlers = {}; // only used to tablet mode
 
         function addButton(name, handler) {
             buttonHandlers[name] = handler;
         }
 
-        var SHAPE_TYPE_NONE = 0;
-        var SHAPE_TYPE_SIMPLE_HULL = 1;
-        var SHAPE_TYPE_SIMPLE_COMPOUND = 2;
-        var SHAPE_TYPE_STATIC_MESH = 3;
-        var SHAPE_TYPE_BOX = 4;
-        var SHAPE_TYPE_SPHERE = 5;
-        var DYNAMIC_DEFAULT = false;
+        const SHAPE_TYPE_NONE = 0;
+        const SHAPE_TYPE_SIMPLE_HULL = 1;
+        const SHAPE_TYPE_SIMPLE_COMPOUND = 2;
+        const SHAPE_TYPE_STATIC_MESH = 3;
+        const SHAPE_TYPE_BOX = 4;
+        const SHAPE_TYPE_SPHERE = 5;
+        const DYNAMIC_DEFAULT = false;
 
-        var MATERIAL_MODE_UV = 0;
-        var MATERIAL_MODE_PROJECTED = 1;
-        var MATERIAL_MODE_TRIPLANAR = 2;
+        const MATERIAL_MODE_UV = 0;
+        const MATERIAL_MODE_PROJECTED = 1;
+        const MATERIAL_MODE_TRIPLANAR = 2;
 
         function handleNewModelDialogResult(result) {
             if (result) {
-                var url = result.url;
-                var shapeType;
+                const url = result.url;
+                let shapeType;
                 switch (result.collisionShapeIndex) {
                 case SHAPE_TYPE_SIMPLE_HULL:
                     shapeType = "simple-hull";
@@ -809,7 +809,7 @@
                     shapeType = "none";
                 }
 
-                var dynamic = result.dynamic !== null ? result.dynamic : DYNAMIC_DEFAULT;
+                const dynamic = result.dynamic !== null ? result.dynamic : DYNAMIC_DEFAULT;
                 if (shapeType === "static-mesh" && dynamic) {
                     // The prompt should prevent this case
                     print("Error: model cannot be both static mesh and dynamic.  This should never happen.");
@@ -830,14 +830,14 @@
 
         function handleNewPolyVoxDialogResult(result) {
             if (result) {
-                var initialShape = result.initialShapeIndex;
-                var volumeSizeX = parseInt(result.volumeSizeX);
-                var volumeSizeY = parseInt(result.volumeSizeY);
-                var volumeSizeZ = parseInt(result.volumeSizeZ);
-                var voxelSurfaceStyle = parseInt(result.surfaceStyleIndex);
-                var voxelPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: volumeSizeZ * -1.6 }));
+                const initialShape = result.initialShapeIndex;
+                const volumeSizeX = parseInt(result.volumeSizeX);
+                const volumeSizeY = parseInt(result.volumeSizeY);
+                const volumeSizeZ = parseInt(result.volumeSizeZ);
+                const voxelSurfaceStyle = parseInt(result.surfaceStyleIndex);
+                const voxelPosition = Vec3.sum(MyAvatar.position, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: volumeSizeZ * -1.6 }));
 
-                var polyVoxID = createNewEntity({
+                const polyVoxID = createNewEntity({
                     type: "PolyVox",
                     name: "terrain",
                     dimensions: {
@@ -931,14 +931,14 @@
                 //    default:
                 //        shapeType = "uv";
                 //}
-                var materialData = "";
+                let materialData = "";
                 if (materialURL.startsWith("materialData")) {
                     materialData = JSON.stringify({
                         "materials": {}
                     });
                 }
 
-                var DEFAULT_LAYERED_MATERIAL_PRIORITY = 1;
+                const DEFAULT_LAYERED_MATERIAL_PRIORITY = 1;
                 if (materialURL) {
                     createNewEntity({
                         type: "Material",
@@ -1081,7 +1081,7 @@
 
             Entities.canRezChanged.connect(checkEditPermissionsAndUpdate);
             Entities.canRezTmpChanged.connect(checkEditPermissionsAndUpdate);
-            var hasRezPermissions = (Entities.canRez() || Entities.canRezTmp());
+            const hasRezPermissions = (Entities.canRez() || Entities.canRezTmp());
 
             Entities.deletingEntity.connect(checkDeletedEntityAndUpdate);
 
