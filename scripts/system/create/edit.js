@@ -917,7 +917,7 @@
 
         function handleNewMaterialDialogResult(result) {
             if (result) {
-                var materialURL = result.textInput;
+                let materialURL = result.textInput;
                 if (materialURL === "") {
                     materialURL = "materialData";
                 }
@@ -962,7 +962,7 @@
 
         function handleNewSoundDialogResult(result) {
             if (result) {
-                var soundURL = result.textInput;
+                const soundURL = result.textInput;
                 if (soundURL) {
                     createNewEntity({
                         type: "Sound",
@@ -973,7 +973,7 @@
         }
         function handleNewScriptDialogResult(result) {
             if (result) {
-                var scriptURL = result.textInput;
+                const scriptURL = result.textInput;
                 if (scriptURL) {
                     createNewEntity({
                         type: "Script",
@@ -984,7 +984,7 @@
         }
 
         function fromQml(message) { // messages are {method, params}, like json-rpc. See also sendToQml.
-            var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+            const tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
             tablet.popFromStack();
             switch (message.method) {
                 case "newModelDialogAdd":
@@ -1035,9 +1035,9 @@
             }
         }
 
-        var entitiesToDelete = [];
-        var deletedEntityTimer = null;
-        var DELETE_ENTITY_TIMER_TIMEOUT = 100;
+        let entitiesToDelete = [];
+        let deletedEntityTimer = null;
+        const DELETE_ENTITY_TIMER_TIMEOUT = 100;
 
         function checkDeletedEntityAndUpdate(entityID) {
             // Allow for multiple entity deletes before updating the entities selected.
@@ -1086,7 +1086,7 @@
 
             Entities.deletingEntity.connect(checkDeletedEntityAndUpdate);
 
-            var createButtonIconRsrc = (hasRezPermissions ? CREATE_ENABLED_ICON : CREATE_DISABLED_ICON);
+            const createButtonIconRsrc = (hasRezPermissions ? CREATE_ENABLED_ICON : CREATE_DISABLED_ICON);
             tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
             activeButton = tablet.addButton({
                 captionColor: hasRezPermissions ? "#ffffff" : "#888888",
@@ -1097,7 +1097,7 @@
             });
             createButton = activeButton;
             tablet.screenChanged.connect(function (type, url) {
-                var isGoingToHomescreenOnDesktop = (!shouldUseEditTabletApp() &&
+                const isGoingToHomescreenOnDesktop = (!shouldUseEditTabletApp() &&
                     (url === 'hifi/tablet/TabletHome.qml' || url === ''));
                 if (isActive && (type !== "QML" || url !== Script.resolvePath("qml/Edit.qml")) && !isGoingToHomescreenOnDesktop) {
                     that.setActive(false);
@@ -1130,12 +1130,12 @@
                 return function() {
                     if (shouldUseEditTabletApp()) {
                         // tablet version of new-model dialog
-                        var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+                        const tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
                         tablet.pushOntoStack(Script.resolvePath("qml/New" + entityType + "Dialog.qml"));
                     } else {
                         closeExistingDialogWindow();
-                        var qmlPath = Script.resolvePath("qml/New" + entityType + "Window.qml");
-                        var DIALOG_WINDOW_SIZE = { x: 500, y: 300 };
+                        const qmlPath = Script.resolvePath("qml/New" + entityType + "Window.qml");
+                        const DIALOG_WINDOW_SIZE = { x: 500, y: 300 };
                         if( entityType === "PolyVox" ){
                             DIALOG_WINDOW_SIZE.x = 600;
                             DIALOG_WINDOW_SIZE.y = 500;
@@ -1213,7 +1213,7 @@
 
             addButton("newScriptButton", createNewEntityDialogButtonCallback("Script"));
 
-            var deactivateCreateIfDesktopWindowsHidden = function() {
+            const deactivateCreateIfDesktopWindowsHidden = function() {
                 if (!shouldUseEditTabletApp() && !entityListTool.isVisible() && !createToolsWindow.isVisible()) {
                     that.setActive(false);
                 }
@@ -1260,7 +1260,7 @@
 
             editVoxels.setActive(active);
 
-            var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+            const tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
             if (!isActive) {
                 entityListTool.setVisible(false);
@@ -1303,19 +1303,19 @@
         return that;
     })();
 
-    var selectedEntityID;
-    var orientation;
-    var intersection;
+    let selectedEntityID;
+    let orientation;
+    let intersection;
 
 
     createApp.rayPlaneIntersection = function(pickRay, point, normal) { //
         //
         //  This version of the test returns the intersection of a line with a plane
         //
-        var collides = Vec3.dot(pickRay.direction, normal);
+        const collides = Vec3.dot(pickRay.direction, normal);
 
-        var d = -Vec3.dot(point, normal);
-        var t = -(Vec3.dot(pickRay.origin, normal) + d) / collides;
+        const d = -Vec3.dot(point, normal);
+        const t = -(Vec3.dot(pickRay.origin, normal) + d) / collides;
 
         return Vec3.sum(pickRay.origin, Vec3.multiply(pickRay.direction, t));
     }
@@ -1324,9 +1324,9 @@
         //
         //  This version of the test returns false if the ray is directed away from the plane
         //
-        var collides = Vec3.dot(pickRay.direction, normal);
-        var d = -Vec3.dot(point, normal);
-        var t = -(Vec3.dot(pickRay.origin, normal) + d) / collides;
+        const collides = Vec3.dot(pickRay.direction, normal);
+        const d = -Vec3.dot(point, normal);
+        const t = -(Vec3.dot(pickRay.origin, normal) + d) / collides;
         if (t < 0.0) {
             return false;
         } else {
@@ -1335,30 +1335,30 @@
     }
 
     function findClickedEntity(event) {
-        var pickZones = event.isControl;
+        const pickZones = event.isControl;
 
         if (pickZones) {
             Entities.setZonesArePickable(true);
         }
 
-        var pickRay = Camera.computePickRay(event.x, event.y);
-        var tabletIDs = getMainTabletIDs();
+        const pickRay = Camera.computePickRay(event.x, event.y);
+        const tabletIDs = getMainTabletIDs();
         if (tabletIDs.length > 0) {
-            var overlayResult = Overlays.findRayIntersection(pickRay, true, tabletIDs);
+            const overlayResult = Overlays.findRayIntersection(pickRay, true, tabletIDs);
             if (overlayResult.intersects) {
                 return null;
             }
         }
 
-        var entityResult = Entities.findRayIntersection(pickRay, true); // want precision picking
-        var iconResult = entityIconOverlayManager.findRayIntersection(pickRay);
+        const entityResult = Entities.findRayIntersection(pickRay, true); // want precision picking
+        const iconResult = entityIconOverlayManager.findRayIntersection(pickRay);
         iconResult.accurate = true;
 
         if (pickZones) {
             Entities.setZonesArePickable(false);
         }
 
-        var result;
+        let result;
         if (createApp.expectingRotateAsClickedSurface) {
             if (!SelectionManager.hasSelection() || !SelectionManager.hasUnlockedSelection()) {
                 audioFeedback.rejection();
@@ -1366,10 +1366,10 @@
                 createApp.expectingRotateAsClickedSurface = false;
             } else {
                 //Rotate Selection according the Surface Normal
-                var normalRotation = Quat.lookAtSimple(Vec3.ZERO, Vec3.multiply(entityResult.surfaceNormal, -1));
+                const normalRotation = Quat.lookAtSimple(Vec3.ZERO, Vec3.multiply(entityResult.surfaceNormal, -1));
                 selectionDisplay.rotateSelection(normalRotation);
                 //Translate Selection according the clicked Surface
-                var distanceFromSurface;
+                let distanceFromSurface;
                 if (selectionDisplay.getSpaceMode() === "world"){
                     distanceFromSurface = SelectionManager.worldDimensions.z / 2;
                 } else {
@@ -1396,7 +1396,7 @@
                 return null;
             }
 
-            var foundEntity = result.entityID;
+            const foundEntity = result.entityID;
             return {
                 pickRay: pickRay,
                 entityID: foundEntity,
@@ -1408,18 +1408,18 @@
     // Handles selections on overlays while in edit mode by querying entities from
     // entityIconOverlayManager.
     function handleOverlaySelectionToolUpdates(channel, message, sender) {
-        var wantDebug = false;
+        const wantDebug = false;
         if (sender !== MyAvatar.sessionUUID || channel !== 'entityToolUpdates')
             return;
 
-        var data = JSON.parse(message);
+        const data = JSON.parse(message);
 
         if (data.method === "selectOverlay") {
             if (!selectionDisplay.triggered() || selectionDisplay.triggeredHand === data.hand) {
                 if (wantDebug) {
                     print("setting selection to overlay " + data.overlayID);
                 }
-                var entity = entityIconOverlayManager.findEntity(data.overlayID);
+                const entity = entityIconOverlayManager.findEntity(data.overlayID);
 
                 if (entity !== null) {
                     if (createApp.hmdMultiSelectMode) {
@@ -1447,13 +1447,14 @@
     Messages.subscribe("entityToolUpdates");
     Messages.messageReceived.connect(handleMessagesReceived);
 
-    var mouseHasMovedSincePress = false;
-    var mousePressStartTime = 0;
-    var mousePressStartPosition = {
+    let mouseHasMovedSincePress = false;
+    let mousePressStartTime = 0;
+    let mousePressStartPosition = {
         x: 0,
         y: 0
     };
-    var mouseDown = false;
+    let mouseDown = false;
+    let mouseCapturedByTool = false;
 
     function mousePressEvent(event) {
         mouseDown = true;
@@ -1477,13 +1478,12 @@
         }
     }
 
-    var mouseCapturedByTool = false;
-    var lastMousePosition = null;
-    var CLICK_TIME_THRESHOLD = 500 * 1000; // 500 ms
-    var CLICK_MOVE_DISTANCE_THRESHOLD = 20;
-    var IDLE_MOUSE_TIMEOUT = 200;
+    let lastMousePosition = null;
+    const CLICK_TIME_THRESHOLD = 500 * 1000; // 500 ms
+    const CLICK_MOVE_DISTANCE_THRESHOLD = 20;
+    const IDLE_MOUSE_TIMEOUT = 200;
 
-    var lastMouseMoveEvent = null;
+    let lastMouseMoveEvent = null;
 
     function mouseMoveEventBuffered(event) {
         lastMouseMoveEvent = event;
@@ -1491,11 +1491,11 @@
 
     function mouseMove(event) {
         if (mouseDown && !mouseHasMovedSincePress) {
-            var timeSincePressMicro = Date.now() - mousePressStartTime;
+            const timeSincePressMicro = Date.now() - mousePressStartTime;
 
-            var dX = mousePressStartPosition.x - event.x;
-            var dY = mousePressStartPosition.y - event.y;
-            var sqDist = (dX * dX) + (dY * dY);
+            const dX = mousePressStartPosition.x - event.x;
+            const dY = mousePressStartPosition.y - event.y;
+            const sqDist = (dX * dX) + (dY * dY);
 
             // If less than CLICK_TIME_THRESHOLD has passed since the mouse click AND the mouse has moved
             // less than CLICK_MOVE_DISTANCE_THRESHOLD distance, then don't register this as a mouse move
@@ -1547,11 +1547,11 @@
     }
 
     function wasTabletOrEditHandleClicked(event) {
-        var rayPick = Camera.computePickRay(event.x, event.y);
-        var result = Overlays.findRayIntersection(rayPick, true);
+        const rayPick = Camera.computePickRay(event.x, event.y);
+        const result = Overlays.findRayIntersection(rayPick, true);
         if (result.intersects) {
-            var overlayID = result.overlayID;
-            var tabletIDs = getMainTabletIDs();
+            const overlayID = result.overlayID;
+            const tabletIDs = getMainTabletIDs();
             if (tabletIDs.indexOf(overlayID) >= 0) {
                 return true;
             } else if (selectionDisplay.isEditHandle(overlayID)) {
@@ -1562,11 +1562,11 @@
     }
 
     function mouseClickEvent(event) {
-        var wantDebug = false;
-        var result, properties, tabletClicked;
+        const wantDebug = false;
+        let result, properties, tabletClicked; // TODO: tabletClicked is not used
         if (isActive && event.isLeftButton) {
             result = findClickedEntity(event);
-            var tabletOrEditHandleClicked = wasTabletOrEditHandleClicked(event);
+            const tabletOrEditHandleClicked = wasTabletOrEditHandleClicked(event);
             if (tabletOrEditHandleClicked) {
                 return;
             }
@@ -1581,13 +1581,13 @@
                 return;
             }
             toolBar.setActive(true);
-            var pickRay = result.pickRay;
-            var foundEntity = result.entityID;
+            const pickRay = result.pickRay;
+            const foundEntity = result.entityID;
             if (HMD.tabletID && foundEntity === HMD.tabletID) {
                 return;
             }
             properties = Entities.getEntityProperties(foundEntity);
-            var halfDiagonal = Vec3.length(properties.dimensions) / 2.0;
+            const halfDiagonal = Vec3.length(properties.dimensions) / 2.0;
 
             if (wantDebug) {
                 print("Checking properties: " + properties.id + " " + " - Half Diagonal:" + halfDiagonal);
@@ -1603,16 +1603,16 @@
             //            X === A + ((P-A).B)B
             //            d = |P-X|
 
-            var A = pickRay.origin;
-            var B = Vec3.normalize(pickRay.direction);
-            var P = properties.position;
+            const A = pickRay.origin;
+            const B = Vec3.normalize(pickRay.direction);
+            const P = properties.position;
 
-            var x = Vec3.dot(Vec3.subtract(P, A), B);
+            const x = Vec3.dot(Vec3.subtract(P, A), B);
 
-            var angularSize = 2 * Math.atan(halfDiagonal / Vec3.distance(Camera.getPosition(), properties.position)) *
+            const angularSize = 2 * Math.atan(halfDiagonal / Vec3.distance(Camera.getPosition(), properties.position)) *
                                 180 / Math.PI;
 
-            var sizeOK = (allowLargeModels || angularSize < MAX_ANGULAR_SIZE) &&
+            const sizeOK = (allowLargeModels || angularSize < MAX_ANGULAR_SIZE) &&
                             (allowSmallModels || angularSize > MIN_ANGULAR_SIZE);
 
             if (0 < x && sizeOK && selectionManager.editEnabled) {
@@ -1662,7 +1662,7 @@
     // In order for editVoxels and editModels to play nice together, they each check to see if a "delete" menu item already
     // exists. If it doesn't they add it. If it does they don't. They also only delete the menu item if they were the one that
     // added it.
-    var originalLightsArePickable = Entities.getLightsArePickable();
+    const originalLightsArePickable = Entities.getLightsArePickable();
 
     function setupModelMenus() {
         Menu.addMenuItem({
@@ -1807,15 +1807,15 @@
         createButton = null;
     });
 
-    var lastOrientation = Camera.orientation;
-    var lastPosition = Camera.position;
+    let lastOrientation = Camera.orientation;
+    let lastPosition = Camera.position;
 
     // Do some stuff regularly, like check for placement of various overlays
     Script.update.connect(function (deltaTime) {
         progressDialog.move();
         selectionDisplay.checkControllerMove();
-        var dOrientation = Math.abs(Quat.dot(Camera.orientation, lastOrientation) - 1);
-        var dPosition = Vec3.distance(Camera.position, lastPosition);
+        const dOrientation = Math.abs(Quat.dot(Camera.orientation, lastOrientation) - 1);
+        const dPosition = Vec3.distance(Camera.position, lastPosition);
         if (dOrientation > 0.001 || dPosition > 0.001) {
             propertyMenu.hide();
             lastOrientation = Camera.orientation;
@@ -1836,26 +1836,26 @@
         createApp.selectAllEntitiesInCurrentSelectionBox = function(keepIfTouching) {
         if (selectionManager.hasSelection()) {
             // Get all entities touching the bounding box of the current selection
-            var boundingBoxCorner = Vec3.subtract(selectionManager.worldPosition,
+            const boundingBoxCorner = Vec3.subtract(selectionManager.worldPosition,
                 Vec3.multiply(selectionManager.worldDimensions, 0.5));
-            var entities = Entities.findEntitiesInBox(boundingBoxCorner, selectionManager.worldDimensions);
+            const entities = Entities.findEntitiesInBox(boundingBoxCorner, selectionManager.worldDimensions);
 
             if (!keepIfTouching) {
-                var isValid;
+                let isValid;
                 if (selectionManager.localPosition === null || selectionManager.localPosition === undefined) {
                     isValid = function (position) {
                         return insideBox(selectionManager.worldPosition, selectionManager.worldDimensions, position);
                     };
                 } else {
                     isValid = function (position) {
-                        var localPosition = Vec3.multiplyQbyV(Quat.inverse(selectionManager.localRotation),
+                        const localPosition = Vec3.multiplyQbyV(Quat.inverse(selectionManager.localRotation),
                             Vec3.subtract(position,
                                 selectionManager.localPosition));
                         return insideBox(Vec3.ZERO, selectionManager.localDimensions, localPosition);
                     };
                 }
-                for (var i = 0; i < entities.length; ++i) {
-                    var properties = Entities.getEntityProperties(entities[i]);
+                for (let i = 0; i < entities.length; ++i) {
+                    const properties = Entities.getEntityProperties(entities[i]);
                     if (!isValid(properties.position)) {
                         entities.splice(i, 1);
                         --i;
@@ -1867,14 +1867,14 @@
     }
 
     function sortSelectedEntities(selected) {
-        var sortedEntities = selected.slice();
-        var begin = 0;
+        const sortedEntities = selected.slice();
+        let begin = 0;
         while (begin < sortedEntities.length) {
-            var elementRemoved = false;
-            var next = begin + 1;
+            let elementRemoved = false;
+            let next = begin + 1;
             while (next < sortedEntities.length) {
-                var beginID = sortedEntities[begin];
-                var nextID = sortedEntities[next];
+                const beginID = sortedEntities[begin];
+                const nextID = sortedEntities[next];
 
                 if (Entities.isChildOfParent(beginID, nextID)) {
                     sortedEntities[begin] = nextID;
@@ -1897,12 +1897,12 @@
     }
 
     function recursiveDelete(entities, childrenList, deletedIDs, entityHostType) {
-        var wantDebug = false;
-        var entitiesLength = entities.length;
-        var initialPropertySets = Entities.getMultipleEntityProperties(entities);
-        var entityHostTypes = Entities.getMultipleEntityProperties(entities, 'entityHostType');
-        for (var i = 0; i < entitiesLength; ++i) {
-            var entityID = entities[i];
+        const wantDebug = false;
+        const entitiesLength = entities.length;
+        const initialPropertySets = Entities.getMultipleEntityProperties(entities);
+        const entityHostTypes = Entities.getMultipleEntityProperties(entities, 'entityHostType');
+        for (let i = 0; i < entitiesLength; ++i) {
+            const entityID = entities[i];
 
             if (entityHostTypes[i].entityHostType !== entityHostType) {
                 if (wantDebug) {
@@ -1912,8 +1912,8 @@
                 continue;
             }
 
-            var children = Entities.getChildrenIDs(entityID);
-            var grandchildrenList = [];
+            const children = Entities.getChildrenIDs(entityID);
+            const grandchildrenList = [];
             recursiveDelete(children, grandchildrenList, deletedIDs, entityHostType);
             childrenList.push({
                 entityID: entityID,
@@ -1927,8 +1927,8 @@
 
     createApp.unparentSelectedEntities = function() {
         if (SelectionManager.hasSelection() && SelectionManager.hasUnlockedSelection()) {
-            var selectedEntities = selectionManager.selections;
-            var parentCheck = false;
+            const selectedEntities = selectionManager.selections;
+            let parentCheck = false;
 
             if (selectedEntities.length < 1) {
                 audioFeedback.rejection();
@@ -1936,7 +1936,7 @@
                 return;
             }
             selectedEntities.forEach(function (id, index) {
-                var parentId = Entities.getEntityProperties(id, ["parentID"]).parentID;
+                const parentId = Entities.getEntityProperties(id, ["parentID"]).parentID;
                 if (parentId !== null && parentId.length > 0 && parentId !== Uuid.NONE) {
                     parentCheck = true;
                 }
@@ -1968,17 +1968,17 @@
     }
     createApp.parentSelectedEntities = function() {
         if (SelectionManager.hasSelection() && SelectionManager.hasUnlockedSelection()) {
-            var selectedEntities = selectionManager.selections;
+            const selectedEntities = selectionManager.selections;
             if (selectedEntities.length <= 1) {
                 audioFeedback.rejection();
                 Window.notifyEditError("You must have multiple entities selected in order to parent them");
                 return;
             }
-            var parentCheck = false;
-            var lastEntityId = selectedEntities[selectedEntities.length - 1];
+            let parentCheck = false;
+            const lastEntityId = selectedEntities[selectedEntities.length - 1];
             selectedEntities.forEach(function (id, index) {
                 if (lastEntityId !== id) {
-                    var parentId = Entities.getEntityProperties(id, ["parentID"]).parentID;
+                    const parentId = Entities.getEntityProperties(id, ["parentID"]).parentID;
                     if (parentId !== lastEntityId) {
                         parentCheck = true;
                     }
@@ -2003,21 +2003,21 @@
     }
     createApp.deleteSelectedEntities = function() {
         if (SelectionManager.hasSelection() && SelectionManager.hasUnlockedSelection()) {
-            var deletedIDs = [];
+            const deletedIDs = [];
 
             SelectionManager.saveProperties();
-            var savedProperties = [];
-            var newSortedSelection = sortSelectedEntities(selectionManager.selections);
-            var entityHostTypes = Entities.getMultipleEntityProperties(newSortedSelection, 'entityHostType');
-            for (var i = 0; i < newSortedSelection.length; ++i) {
-                var entityID = newSortedSelection[i];
-                var initialProperties = SelectionManager.savedProperties[entityID];
+            const savedProperties = [];
+            const newSortedSelection = sortSelectedEntities(selectionManager.selections);
+            const entityHostTypes = Entities.getMultipleEntityProperties(newSortedSelection, 'entityHostType');
+            for (let i = 0; i < newSortedSelection.length; ++i) {
+                const entityID = newSortedSelection[i];
+                const initialProperties = SelectionManager.savedProperties[entityID];
                 if (initialProperties.locked ||
                     (initialProperties.avatarEntity && initialProperties.owningAvatarID !== MyAvatar.sessionUUID)) {
                     continue;
                 }
-                var children = Entities.getChildrenIDs(entityID);
-                var childList = [];
+                const children = Entities.getChildrenIDs(entityID);
+                const childList = [];
                 recursiveDelete(children, childList, deletedIDs, entityHostTypes[i].entityHostType);
                 savedProperties.push({
                     entityID: entityID,
@@ -2039,11 +2039,11 @@
         }
     }
 
-        createApp.toggleSelectedEntitiesLocked = function() {
+    createApp.toggleSelectedEntitiesLocked = function() {
         if (SelectionManager.hasSelection()) {
-            var locked = !Entities.getEntityProperties(SelectionManager.selections[0], ["locked"]).locked;
-            for (var i = 0; i < selectionManager.selections.length; i++) {
-                var entityID = SelectionManager.selections[i];
+            const locked = !Entities.getEntityProperties(SelectionManager.selections[0], ["locked"]).locked;
+            for (let i = 0; i < selectionManager.selections.length; i++) {
+                const entityID = SelectionManager.selections[i];
                 Entities.editEntity(entityID, {
                     locked: locked
                 });
@@ -2053,11 +2053,11 @@
         }
     }
 
-        createApp.toggleSelectedEntitiesVisible = function() {
+    createApp.toggleSelectedEntitiesVisible = function() {
         if (SelectionManager.hasSelection()) {
-            var visible = !Entities.getEntityProperties(SelectionManager.selections[0], ["visible"]).visible;
-            for (var i = 0; i < selectionManager.selections.length; i++) {
-                var entityID = SelectionManager.selections[i];
+            const visible = !Entities.getEntityProperties(SelectionManager.selections[0], ["visible"]).visible;
+            for (let i = 0; i < selectionManager.selections.length; i++) {
+                const entityID = SelectionManager.selections[i];
                 Entities.editEntity(entityID, {
                     visible: visible
                 });
@@ -2070,7 +2070,7 @@
     function onFileSaveChanged(filename) {
         Window.saveFileChanged.disconnect(onFileSaveChanged);
         if (filename !== "") {
-            var success = Clipboard.exportEntities(filename, selectionManager.selections);
+            const success = Clipboard.exportEntities(filename, selectionManager.selections);
             if (!success) {
                 Window.notifyEditError("Export failed.");
             }
@@ -2086,7 +2086,7 @@
             // Ignore.
         }
 
-        var importURL = null;
+        let importURL = null;
         if (filename !== "") {
             importURL = filename;
             if (!/^(http|https):\/\//.test(filename)) {
@@ -2114,7 +2114,7 @@
     function onPromptTextChangedDefaultRadiusUserPref(prompt) {
         Window.promptTextChanged.disconnect(onPromptTextChangedDefaultRadiusUserPref);
         if (prompt !== "") {
-            var radius = parseInt(prompt);
+            let radius = parseInt(prompt);
             if (radius < 0 || isNaN(radius)){
                 radius = 100;
             }
@@ -2150,12 +2150,12 @@
         tooltip.show(false);
     }
 
-    var HALF_TREE_SCALE = 16384;
+    const HALF_TREE_SCALE = 16384;
 
     createApp.getPositionToCreateEntity = function(extra) {
-        var CREATE_DISTANCE = 2;
-        var position;
-        var delta = extra !== undefined ? extra : 0;
+        const CREATE_DISTANCE = 2;
+        let position;
+        const delta = extra !== undefined ? extra : 0;
         if (Camera.mode === "entity" || Camera.mode === "independent") {
             position = Vec3.sum(Camera.position, Vec3.multiply(Quat.getForward(Camera.orientation), CREATE_DISTANCE + delta));
         } else {
