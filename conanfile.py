@@ -57,27 +57,27 @@ class Overte(ConanFile):
         self.requires("bullet3/3.25")
         self.requires("cgltf/1.14@overte/stable")
         # self.requires("crashpad/cci.20220219" ) # Broken
-        self.requires("discord-rpc/3.4.0@anotherfoxguy/stable")
+        self.requires("discord-rpc/3.4.0@overte/stable")
         self.requires("draco/1.3.5") # FIXME: update to newer version
         self.requires("etc2comp/cci.20170424") # NOTE: archived upstream
         self.requires("gifcreator/2016.11@overte/stable")
         self.requires("glad/0.1.36") # NOTE: glad 2 is released
         self.requires("gli/cci.20210515") # NOTE: not maintained for 4 years
-        self.requires("glslang/1.3.268.0")
-        self.requires("liblo/0.30@overte/stable")
+        self.requires("glslang/1.4.350.0")
+        self.requires("liblo/0.35@overte/stable") # For hifiOSC
         self.requires("libnode/22.22.0@overte/stable#1f75a2b0272c5e3ad9d4ddb432a467f8")
         self.requires("nlohmann_json/3.11.2")
-        self.requires("nvidia-texture-tools/2023.01@overte/stable#f4eff53a38bd2c26eb6fa1206ffd22f6")
+        self.requires("nvidia-texture-tools/2023.01@overte/stable#bb4a28e5438f69332299cc23b770fc07")
         self.requires("onetbb/2021.10.0")
         self.requires("openexr/3.1.9")
-        self.requires("openvr/2.2.3@overte/stable")
+        self.requires("openvr/2.15.6@overte/stable")
         self.requires("openxr/1.1.46@overte/stable")
         self.requires("opus/1.5.2")
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.10")
-        self.requires("spirv-cross/1.3.268.0")
-        self.requires("spirv-tools/1.3.268.0")
+        self.requires("spirv-cross/1.4.350.0")
+        self.requires("spirv-tools/1.4.350.0")
         self.requires("steamworks/158a@overte/prebuild")
         self.requires("v-hacd/4.1.0")
         self.requires("vulkan-memory-allocator/3.0.1")
@@ -172,9 +172,6 @@ class Overte(ConanFile):
         tc.generate()
         deps = CMakeDeps(self)
         deps.generate()
-        if self.settings.build_type == "Release":
-            deps.configuration = "RelWithDebInfo"
-            deps.generate()
 
         for dep in self.dependencies.values():
             for f in dep.cpp_info.bindirs:
