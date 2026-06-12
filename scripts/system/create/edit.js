@@ -100,6 +100,8 @@
     const EMPTY_URL = Script.resolvePath("assets/images/icon-empty.svg");
     const SCRIPT_URL = Script.resolvePath("assets/images/icon-script.svg");
 
+    const entityShapeVisualizerSessionName = "SHAPE_VISUALIZER_" + Uuid.generate();
+
     const entityIconOverlayManager = new EntityIconOverlayManager(["Light", "ParticleEffect", "ProceduralParticleEffect", "Zone", "Material", "Sound", "Canvas", "Empty", "Script"], function(entityID) {
         const properties = Entities.getEntityProperties(entityID, ["type", "isSpotlight", "parentID", "name"]);
         if (properties.type === "Light") {
@@ -169,7 +171,6 @@
     editTools.addListener(editVoxels.updateEditSettings);
     editTools.addListener(selectionManager.updateEditSettings);
 
-    const entityShapeVisualizerSessionName = "SHAPE_VISUALIZER_" + Uuid.generate();
     createApp.entityShapeVisualizerLocalEntityToExclude = [];
     const EntityShapeVisualizer = Script.require('./modules/entityShapeVisualizer.js');
     const entityShapeVisualizer = new EntityShapeVisualizer(["Zone"], entityShapeVisualizerSessionName);
