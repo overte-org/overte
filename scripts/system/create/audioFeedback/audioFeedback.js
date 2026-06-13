@@ -9,30 +9,31 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
+"use strict";
 
 audioFeedback = (function() {
-    var that = {};
+    const that = {};
 
-    var confirmationSound = SoundCache.getSound(Script.resolvePath("./sounds/confirmation.mp3"));
-    var rejectionSound = SoundCache.getSound(Script.resolvePath("./sounds/rejection.mp3"));
-    var actionSound = SoundCache.getSound(Script.resolvePath("./sounds/action.mp3"));
+    const confirmationSound = SoundCache.getSound(Script.resolvePath("./sounds/confirmation.mp3"));
+    const rejectionSound = SoundCache.getSound(Script.resolvePath("./sounds/rejection.mp3"));
+    const actionSound = SoundCache.getSound(Script.resolvePath("./sounds/action.mp3"));
     
     that.confirmation = function() { //Play a confirmation sound
-        var injector = Audio.playSound(confirmationSound, {
+        Audio.playSound(confirmationSound, {
             "volume": 0.3,
             "localOnly": true
         });
     }
 
     that.rejection = function() { //Play a rejection sound
-        var injector = Audio.playSound(rejectionSound, {
+        Audio.playSound(rejectionSound, {
             "volume": 0.3,
             "localOnly": true
         });
     }
 
     that.action = function() { //Play an action sound
-        var injector = Audio.playSound(actionSound, {
+        Audio.playSound(actionSound, {
             "volume": 0.3,
             "localOnly": true
         });
