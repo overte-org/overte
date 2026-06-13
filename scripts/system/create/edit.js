@@ -2702,11 +2702,11 @@
             } catch(e) {
                 return;
             }
-            var i, properties, dY, diff, newPosition;
+            let properties;
             if (data.type === "update") {
 
                 if (data.properties || data.propertiesMap) {
-                    var propertiesMap = data.propertiesMap;
+                    const propertiesMap = data.propertiesMap;
                     if (propertiesMap === undefined) {
                         propertiesMap = [{
                             entityIDs: data.ids,
@@ -2714,10 +2714,10 @@
                         }];
                     }
 
-                    var sendListUpdate = false;
+                    let sendListUpdate = false;
                     propertiesMap.forEach(function(propertiesObject) {
-                        var properties = propertiesObject.properties;
-                        var updateEntityIDs = propertiesObject.entityIDs;
+                        const properties = propertiesObject.properties;
+                        const updateEntityIDs = propertiesObject.entityIDs;
                         if (properties.dynamic === false) {
                             // this object is leaving dynamic, so we zero its velocities
                             properties.localVelocity = Vec3.ZERO;
@@ -2733,7 +2733,7 @@
                             properties.emitOrientation = Quat.fromVec3Degrees(properties.emitOrientation);
                         }
                         if (properties.keyLight !== undefined && properties.keyLight.direction !== undefined) {
-                            var currentKeyLightDirection = Vec3.toPolar(Entities.getEntityProperties(selectionManager.selections[0], ['keyLight.direction']).keyLight.direction);
+                            const currentKeyLightDirection = Vec3.toPolar(Entities.getEntityProperties(selectionManager.selections[0], ['keyLight.direction']).keyLight.direction);
                             if (properties.keyLight.direction.x === undefined) {
                                 properties.keyLight.direction.x = currentKeyLightDirection.x;
                             }
@@ -2776,6 +2776,7 @@
                     Entities.editEntity(entityID, data.properties);
                 });
             } else if (data.type === "action") {
+                let i, dY, diff, newPosition;
                 if (data.action === "moveSelectionToGrid") {
                     if (selectionManager.hasSelection()) {
                         selectionManager.saveProperties();
@@ -2800,7 +2801,7 @@
                         selectionManager.saveProperties();
                         for (i = 0; i < selectionManager.selections.length; i++) {
                             properties = selectionManager.savedProperties[selectionManager.selections[i]];
-                            var bottomY = properties.boundingBox.center.y - properties.boundingBox.dimensions.y / 2;
+                            const bottomY = properties.boundingBox.center.y - properties.boundingBox.dimensions.y / 2;
                             dY = grid.getOrigin().y - bottomY;
                             diff = {
                                 x: 0,
@@ -2820,7 +2821,7 @@
                         selectionManager.saveProperties();
                         for (i = 0; i < selectionManager.selections.length; i++) {
                             properties = selectionManager.savedProperties[selectionManager.selections[i]];
-                            var naturalDimensions = properties.naturalDimensions;
+                            const naturalDimensions = properties.naturalDimensions;
 
                             // If any of the natural dimensions are not 0, resize
                             if (properties.type === "Model" && naturalDimensions.x === 0 && naturalDimensions.y === 0 &&
@@ -2842,7 +2843,7 @@
                         Camera.cameraEntity = selectionManager.selections[0];
                     }
                 } else if (data.action === "rescaleDimensions") {
-                    var multiplier = data.percentage / 100.0;
+                    const multiplier = data.percentage / 100.0;
                     if (selectionManager.hasSelection()) {
                         selectionManager.saveProperties();
                         for (i = 0; i < selectionManager.selections.length; i++) {
@@ -2856,7 +2857,7 @@
                     }
                 } else if (data.action === "reloadClientScripts") {
                     if (selectionManager.hasSelection()) {
-                        var timestamp = Date.now();
+                        const timestamp = Date.now();
                         for (i = 0; i < selectionManager.selections.length; i++) {
                             Entities.editEntity(selectionManager.selections[i], {
                                 scriptTimestamp: timestamp
@@ -2932,7 +2933,7 @@
                 } else if (data.action === "setRotationToZero") {
                     if (selectionManager.selections.length === 1 && SelectionManager.hasUnlockedSelection()) {
                         selectionManager.saveProperties();
-                        var parentState = createApp.getParentState(selectionManager.selections[0]);
+                        const parentState = createApp.getParentState(selectionManager.selections[0]);
                         if ((parentState === "PARENT_CHILDREN" || parentState === "CHILDREN") && selectionDisplay.getSpaceMode() === "local" ) {
                             Entities.editEntity(selectionManager.selections[0], {
                                 localRotation: Quat.IDENTITY
@@ -2961,7 +2962,7 @@
                     hmdActive: HMD.active,
                 });
             } else if (data.type === "propertyRangeRequest") {
-                var propertyRanges = {};
+                const propertyRanges = {};
                 data.properties.forEach(function (property) {
                     propertyRanges[property] = Entities.getPropertyInfo(property);
                 });
@@ -2970,10 +2971,10 @@
                     propertyRanges: propertyRanges,
                 });
             } else if (data.type === "materialTargetRequest") {
-                var parentModelData;
-                var properties = Entities.getEntityProperties(data.entityID, ["type", "parentID"]);
+                let parentModelData;
+                const properties = Entities.getEntityProperties(data.entityID, ["type", "parentID"]);
                 if (properties.type === "Material" && properties.parentID !== Uuid.NONE) {
-                    var parentType = Entities.getEntityProperties(properties.parentID, ["type"]).type;
+                    const parentType = Entities.getEntityProperties(properties.parentID, ["type"]).type;
                     if (parentType === "Model" || Entities.getNestableType(properties.parentID) === "avatar") {
                         parentModelData = Graphics.getModel(properties.parentID);
                     } else if (parentType === "Shape" || parentType === "Box" || parentType === "Sphere") {
@@ -3087,29 +3088,29 @@
     };
 
 
-    var PopupMenu = function () {
-        var self = this;
+    const PopupMenu = function () {
+        const self = this;
 
-        var MENU_ITEM_HEIGHT = 21;
-        var MENU_ITEM_SPACING = 1;
-        var TEXT_MARGIN = 7;
+        const MENU_ITEM_HEIGHT = 21;
+        const MENU_ITEM_SPACING = 1;
+        const TEXT_MARGIN = 7;
 
-        var overlays = [];
-        var overlayInfo = {};
+        const overlays = [];
+        const overlayInfo = {};
 
-        var visible = false;
+        let visible = false;
 
-        var upColor = {
+        const upColor = {
             red: 0,
             green: 0,
             blue: 0
         };
-        var downColor = {
+        const downColor = {
             red: 192,
             green: 192,
             blue: 192
         };
-        var overColor = {
+        const overColor = {
             red: 128,
             green: 128,
             blue: 128
@@ -3118,7 +3119,7 @@
         self.onSelectMenuItem = function () {};
 
         self.addMenuItem = function (name) {
-            var id = Overlays.addOverlay("text", {
+            const id = Overlays.addOverlay("text", {
                 text: name,
                 backgroundAlpha: 1.0,
                 backgroundColor: upColor,
@@ -3145,7 +3146,7 @@
         };
 
         self.setPosition = function (x, y) {
-            for (var key in overlayInfo) {
+            for (const key in overlayInfo) {
                 Overlays.editOverlay(key, {
                     x: x,
                     y: y
@@ -3156,12 +3157,12 @@
 
         self.onSelected = function () {};
 
-        var pressingOverlay = null;
-        var hoveringOverlay = null;
+        let pressingOverlay = null;
+        let hoveringOverlay = null;
 
         self.mousePressEvent = function (event) {
             if (event.isLeftButton) {
-                var overlay = Overlays.getOverlayAtPoint({
+                const overlay = Overlays.getOverlayAtPoint({
                     x: event.x,
                     y: event.y
                 });
@@ -3178,7 +3179,7 @@
         };
         self.mouseMoveEvent = function (event) {
             if (visible) {
-                var overlay = Overlays.getOverlayAtPoint({
+                const overlay = Overlays.getOverlayAtPoint({
                     x: event.x,
                     y: event.y
                 });
@@ -3200,7 +3201,7 @@
             return false;
         };
         self.mouseReleaseEvent = function (event) {
-            var overlay = Overlays.getOverlayAtPoint({
+            const overlay = Overlays.getOverlayAtPoint({
                 x: event.x,
                 y: event.y
             });
@@ -3219,7 +3220,7 @@
         self.setVisible = function (newVisible) {
             if (newVisible !== visible) {
                 visible = newVisible;
-                for (var key in overlayInfo) {
+                for (const key in overlayInfo) {
                     Overlays.editOverlay(key, {
                         visible: newVisible
                     });
@@ -3234,7 +3235,7 @@
         };
 
         function cleanup() {
-            for (var i = 0; i < overlays.length; i++) {
+            for (let i = 0; i < overlays.length; i++) {
                 Overlays.deleteOverlay(overlays[i]);
             }
             Controller.mousePressEvent.disconnect(self.mousePressEvent);
@@ -3269,9 +3270,9 @@
         };
     }
 
-    var isOnMacPlatform = Controller.getValue(Controller.Hardware.Application.PlatformMac);
+    const isOnMacPlatform = Controller.getValue(Controller.Hardware.Application.PlatformMac);
 
-    var mapping = Controller.newMapping(CONTROLLER_MAPPING_NAME);
+    const mapping = Controller.newMapping(CONTROLLER_MAPPING_NAME);
     mapping.from([Controller.Hardware.Keyboard.T]).to(toggleKey);
     mapping.from([Controller.Hardware.Keyboard.F]).to(focusKey);
     mapping.from([Controller.Hardware.Keyboard.J]).to(gridKey);
@@ -3304,9 +3305,9 @@
         .to(whenReleased(function() { createApp.parentSelectedEntities(); }));
 
     createApp.keyUpEventFromUIWindow = function(keyUpEvent) {
-        var WANT_DEBUG_MISSING_SHORTCUTS = false;
+        const WANT_DEBUG_MISSING_SHORTCUTS = false;
 
-        var pressedValue = 0.0;
+        const pressedValue = 0.0;
 
         if (isOnMacPlatform && keyUpEvent.keyCodeString === "Backspace") {
             createApp.deleteSelectedEntities();
@@ -3349,12 +3350,12 @@
         }
     };
 
-    var propertyMenu = new PopupMenu();
+    const propertyMenu = new PopupMenu();
 
     propertyMenu.onSelectMenuItem = function (name) {
     };
 
-    var propertiesTool = new PropertiesTool();
+    const propertiesTool = new PropertiesTool();
 
     selectionDisplay.onSpaceModeChange = function(spaceMode) {
         entityListTool.setSpaceMode(spaceMode);
@@ -3362,12 +3363,12 @@
     };
 
     function getExistingZoneList() {
-        var center = { "x": 0, "y": 0, "z": 0 };
-        var existingZoneIDs = Entities.findEntitiesByType("Zone", center, ENTIRE_DOMAIN_SCAN_RADIUS);
-        var listExistingZones = [];
-        var thisZone = {};
-        var properties;
-        for (var k = 0; k < existingZoneIDs.length; k++) {
+        const center = { "x": 0, "y": 0, "z": 0 };
+        const existingZoneIDs = Entities.findEntitiesByType("Zone", center, ENTIRE_DOMAIN_SCAN_RADIUS);
+        const listExistingZones = [];
+        let thisZone = {};
+        let properties;
+        for (let k = 0; k < existingZoneIDs.length; k++) {
             properties = Entities.getEntityProperties(existingZoneIDs[k], ["name"]);
             thisZone = {
                 "id": existingZoneIDs[k],
@@ -3380,8 +3381,8 @@
     }
 
     function zoneSortOrder(a, b) {
-        var nameA = a.name.toUpperCase();
-        var nameB = b.name.toUpperCase();
+        const nameA = a.name.toUpperCase();
+        const nameB = b.name.toUpperCase();
         if (nameA > nameB) {
             return 1;
         } else if (nameA < nameB) {
@@ -3396,9 +3397,9 @@
     }
 
     createApp.getParentState = function(id) {
-        var state = "NONE";
-        var properties = Entities.getEntityProperties(id, ["parentID"]);
-        var children = createApp.getDomainOnlyChildrenIDs(id);
+        let state = "NONE";
+        const properties = Entities.getEntityProperties(id, ["parentID"]);
+        const children = createApp.getDomainOnlyChildrenIDs(id);
         if (properties.parentID !== Uuid.NONE) {
             if (children.length > 0) {
                 state = "PARENT_CHILDREN";
@@ -3414,10 +3415,10 @@
     }
 
     createApp.getDomainOnlyChildrenIDs = function(id) {
-        var allChildren = Entities.getChildrenIDs(id);
-        var realChildren = [];
-        var properties;
-        for (var i = 0; i < allChildren.length; i++) {
+        const allChildren = Entities.getChildrenIDs(id);
+        const realChildren = [];
+        let properties;
+        for (let i = 0; i < allChildren.length; i++) {
             properties = Entities.getEntityProperties(allChildren[i], ["name"]);
             if (properties.name !== undefined && properties.name !== entityShapeVisualizerSessionName) {
                 realChildren.push(allChildren[i]);
