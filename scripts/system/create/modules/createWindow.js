@@ -37,7 +37,7 @@ var CallableEvent = (function() {
                 try {
                     callbackObject.callback.apply(callbackObject.context ? callbackObject.context : this, callArguments);
                 } catch (e) {
-                    console.error('Call to CallableEvent callback failed!');
+                    console.error('Call to CallableEvent callback failed!', e.message);
                 }
             });
         },
