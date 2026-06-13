@@ -989,7 +989,7 @@ public:
             std::vector<PositionNormalMaterial> new_vertices{};
             std::vector<bool> already_seen(vecVertices.size(), false);
 
-            constexpr uint32_t none = static_cast<uint32_t>(~0);
+            constexpr uint32_t none = -1U;
             // XXX: Assumes max 4 vertices dupes per cell max
             constexpr size_t MAX_VERT_TOUCHES = 16;
 
@@ -999,7 +999,8 @@ public:
                     continue;
 
                 auto& vert = vecVertices[i];
-                std::array<uint32_t, MAX_VERT_TOUCHES> same_position = { none, none, none, none, none, none };
+                std::array<uint32_t, MAX_VERT_TOUCHES> same_position = {};
+                same_position.fill(none);
                 size_t index = 0;
                 same_position[index++] = i;
 
@@ -1019,9 +1020,10 @@ public:
                 new_vertices.emplace_back(vert.position, glm::normalize(normal_sum), vert.material);
                 uint32_t new_ind = new_vertices.size() - 1;
 
-                std::for_each(vecIndices.begin(), vecIndices.end(), [&](auto& ind) {
-                    if (std::ranges::any_of(same_position, [&](auto& i) { return i == ind; }))
+                std::for_each(vecIndices.begin(), vecIndices.end(), [&same_position, new_ind](auto& ind) {
+                    if (std::ranges::any_of(same_position, [&](auto& i) { return i == ind; })) {
                         ind = new_ind;
+                    }
                 });
             }
 
