@@ -20,58 +20,59 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
+"use strict";
 
 Script.include([
     "../../libraries/utils.js",
     "../entitySelectionTool/entitySelectionTool.js"
 ]);
 
-var selectionManager = SelectionManager;
+const selectionManager = SelectionManager; // TODO: unused
 
 
-EditVoxels = function() {
-    var self = this;
-    var that = {};
+const EditVoxels = function() {
+    const self = this; // TODO: unused
+    const that = {};
 
     const NO_HAND = -1;
-    var controllerStandard = Controller.Standard;
+    const controllerStandard = Controller.Standard;
 
-    var controlHeld = false;
-    var shiftHeld = false;
-    var isLeftGripPressed = false;
-    var isRightGripPressed = false;
+    let controlHeld = false;
+    let shiftHeld = false;
+    let isLeftGripPressed = false;
+    let isRightGripPressed = false;
 
-    var editEnabled = false;
-    var editSingleVoxels = false;
-    var editSpheres = false;
-    var editCubes = false;
-    var editAdd = true; // Remove voxels if false
-    var inverseOperation = false; // True when middle mouse button or grip is pressed
-    var brushPointer = false;
-    var isActive = true;
+    let editEnabled = false;
+    let editSingleVoxels = false;
+    let editSpheres = false;
+    let editCubes = false;
+    let editAdd = true; // Remove voxels if false
+    let inverseOperation = false; // True when middle mouse button or grip is pressed
+    let brushPointer = false;
+    let isActive = true;
     
-    var editSphereRadius = 0.15;
-    var brushLength = 0.5;
+    let editSphereRadius = 0.15;
+    const brushLength = 0.5; // TODO: Unused
     // Vector calculated from editSphereRadius for adding/remiving cubes
-    var cubeSize = null;
+    let cubeSize = null;
     
     // Local plane for continuous voxel editing
     // 0 - plane parallel to YZ plane
     // 1 - plane parallel to XZ plane
     // 2 - plane parallel to YZ plane
-    var editPlane = 0;
+    let editPlane = 0;
     // Is true when mouse button is pressed
-    var isEditing = false;
-    var editedVoxelEntity = null;
+    let isEditing = false;
+    let editedVoxelEntity = null;
     // Position of last edit in voxel space
-    var oldEditPosition = null;
+    let oldEditPosition = null;
     // True when original operation added voxels, false otherwise
-    var lastEditValue = 255;
-    var isOnUpdateConnected = false;
-    var isSphereResizingStarted = true;
-    var sphereResizingInitialHandDistance = 0.1;
-    var sphereInitialRadius = editSphereRadius;
-    var sphereEntityID = null;
+    let lastEditValue = 255;
+    let isOnUpdateConnected = false;
+    let isSphereResizingStarted = true;
+    let sphereResizingInitialHandDistance = 0.1;
+    let sphereInitialRadius = editSphereRadius;
+    let sphereEntityID = null;
 
     that.triggerClickMapping = Controller.newMapping(Script.resolvePath('') + '-click-voxels');
     that.triggerPressMapping = Controller.newMapping(Script.resolvePath('') + '-press-voxels');
@@ -79,14 +80,14 @@ EditVoxels = function() {
     that.triggeredHand = NO_HAND;
     that.pressedHand = NO_HAND;
     
-    var soundAdd = SoundCache.getSound(Script.resourcesPath() + "sounds/Button05.wav");
-    var soundDelete = SoundCache.getSound(Script.resourcesPath() + "sounds/Tab03.wav");
+    const soundAdd = SoundCache.getSound(Script.resourcesPath() + "sounds/Button05.wav");
+    const soundDelete = SoundCache.getSound(Script.resourcesPath() + "sounds/Tab03.wav");
     
     // Continuous start timer prevents activating continuous mode on short button presses
     // and adding multiple voxels when only one was intended
     
-    var continuousStartTimerMax = 0.200;
-    var continuousStartTimer = 0.0;
+    const continuousStartTimerMax = 0.200;
+    let continuousStartTimer = 0.0;
     
     that.setActive = function(active) {
         isActive = (active === true);
@@ -157,12 +158,12 @@ EditVoxels = function() {
     }
 
     function attemptVoxelChangeForEntity(entityID, pickRayDir, intersectionLocation) {
-        var wantDebug = false;
+        const wantDebug = false;
         if (wantDebug) {
             print("=============== eV::attemptVoxelChangeForEntity BEG =======================");
         }
 
-        var properties = Entities.getEntityProperties(entityID);
+        const properties = Entities.getEntityProperties(entityID);
         if (properties.type != "PolyVox") {
             return false;
         }
@@ -175,14 +176,14 @@ EditVoxels = function() {
             return false;
         }
 
-        var voxelOrigin = Entities.worldCoordsToVoxelCoords(entityID, Vec3.subtract(intersectionLocation, pickRayDir));
-        var voxelPosition = Entities.worldCoordsToVoxelCoords(entityID, intersectionLocation);
-        var pickRayDirInVoxelSpace = Vec3.subtract(voxelPosition, voxelOrigin);
+        const voxelOrigin = Entities.worldCoordsToVoxelCoords(entityID, Vec3.subtract(intersectionLocation, pickRayDir));
+        const voxelPosition = Entities.worldCoordsToVoxelCoords(entityID, intersectionLocation);
+        let pickRayDirInVoxelSpace = Vec3.subtract(voxelPosition, voxelOrigin);
         pickRayDirInVoxelSpace = Vec3.normalize(pickRayDirInVoxelSpace);
         
-        var absX = Math.abs(pickRayDirInVoxelSpace.x);
-        var absY = Math.abs(pickRayDirInVoxelSpace.y);
-        var absZ = Math.abs(pickRayDirInVoxelSpace.z);
+        const absX = Math.abs(pickRayDirInVoxelSpace.x);
+        const absY = Math.abs(pickRayDirInVoxelSpace.y);
+        const absZ = Math.abs(pickRayDirInVoxelSpace.z);
         if(absX >= absY && absX >= absZ){
             editPlane = 0;
         }else if(absY >= absX && absY >= absZ){
@@ -202,7 +203,7 @@ EditVoxels = function() {
             lastEditValue = 255;
         }
 
-        var toDrawPosition = null;
+        let toDrawPosition = null;
 
         if(lastEditValue === 255){
             toDrawPosition = Vec3.subtract(voxelPosition, Vec3.multiply(pickRayDirInVoxelSpace, 0.1));
@@ -232,7 +233,7 @@ EditVoxels = function() {
                 print("floorVector(toDrawPosition): " + JSON.stringify(floorVector(toDrawPosition)));
             }
             oldEditPosition = floorVector(toDrawPosition);
-            var toDrawPositionWorld = Entities.voxelCoordsToWorldCoords(entityID, oldEditPosition);
+            const toDrawPositionWorld = Entities.voxelCoordsToWorldCoords(entityID, oldEditPosition);
             if (Entities.setVoxelSphere(entityID, toDrawPositionWorld, editSphereRadius, lastEditValue)){
                 Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
                 return true;
@@ -248,12 +249,12 @@ EditVoxels = function() {
                 print("floorVector(toDrawPosition): " + JSON.stringify(floorVector(toDrawPosition)));
             }
             oldEditPosition = floorVector(toDrawPosition);
-            var cubeSizeWorld = {x : editSphereRadius * 2, y : editSphereRadius * 2, z : editSphereRadius * 2};
-            var zeroVecWorld = {x : 0, y: 0, z: 0};
-            var zeroVecLocal = Entities.worldCoordsToVoxelCoords(entityID, zeroVecWorld);
-            var cubeSizeVecLocal = Entities.worldCoordsToVoxelCoords(entityID, cubeSizeWorld);
+            const cubeSizeWorld = {x : editSphereRadius * 2, y : editSphereRadius * 2, z : editSphereRadius * 2};
+            const zeroVecWorld = {x : 0, y: 0, z: 0};
+            const zeroVecLocal = Entities.worldCoordsToVoxelCoords(entityID, zeroVecWorld);
+            const cubeSizeVecLocal = Entities.worldCoordsToVoxelCoords(entityID, cubeSizeWorld);
             cubeSize = ceilVector(Vec3.subtract(cubeSizeVecLocal, zeroVecLocal));
-            var lowPosition = Vec3.subtract(oldEditPosition, Vec3.multiply(cubeSize, 0.5));
+            const lowPosition = Vec3.subtract(oldEditPosition, Vec3.multiply(cubeSize, 0.5));
             if (Entities.setVoxelsInCuboid(entityID, lowPosition, cubeSize, lastEditValue)){
                 Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
                 return true;
@@ -264,14 +265,12 @@ EditVoxels = function() {
     }
 
     function attemptVoxelChange(pickRayDir, intersection) {
-        var wantDebug = false;
+        const wantDebug = false;
         if (wantDebug) {
             print("=============== eV::attemptVoxelChange BEG =======================");
         }
 
-        var ids;
-
-        ids = Entities.findEntities(intersection.intersection, editSphereRadius + 1.0);
+        const ids = Entities.findEntities(intersection.intersection, editSphereRadius + 1.0);
         if (ids.indexOf(intersection.entityID) < 0) {
             ids.push(intersection.entityID);
         }
@@ -280,21 +279,21 @@ EditVoxels = function() {
             print("Entities: " + JSON.stringify(ids));
         }
 
-        var success = false;
-        for (var i = 0; i < ids.length; i++) {
-            var entityID = ids[i];
+        let success = false;
+        for (let i = 0; i < ids.length; i++) {
+            const entityID = ids[i];
             success |= attemptVoxelChangeForEntity(entityID, pickRayDir, intersection.intersection)
         }
         return success;
     }
     
     function controllerComputePickRay() {
-        var hand = triggered() ? that.triggeredHand : that.pressedHand;
-        var controllerPose = getControllerWorldLocation(hand, true);
+        const hand = triggered() ? that.triggeredHand : that.pressedHand;
+        const controllerPose = getControllerWorldLocation(hand, true);
         if (controllerPose.valid) {
-            var controllerPosition = controllerPose.translation;
+            const controllerPosition = controllerPose.translation;
             // This gets point direction right, but if you want general quaternion it would be more complicated:
-            var controllerDirection = Quat.getUp(controllerPose.rotation);
+            const controllerDirection = Quat.getUp(controllerPose.rotation);
             return {origin: controllerPosition, direction: controllerDirection};
         }
     }
@@ -304,8 +303,8 @@ EditVoxels = function() {
     }
 
     function mousePressEvent(event) {
-        var wantDebug = false;
-        var attemptChangeOnEmpty = false;
+        const wantDebug = false;
+        const attemptChangeOnEmpty = false;
         if (!editEnabled || !isActive) {
             return false;
         }
@@ -336,9 +335,9 @@ EditVoxels = function() {
 
         continuousStartTimer = 0;
 
-        var pickRay = generalComputePickRay(event.x, event.y);
-        var intersection = Entities.findRayIntersection(pickRay, true); // accurate picking
-        var overlaysIntersection = Overlays.findRayIntersection(pickRay, true); // accurate picking
+        const pickRay = generalComputePickRay(event.x, event.y);
+        const intersection = Entities.findRayIntersection(pickRay, true); // accurate picking
+        const overlaysIntersection = Overlays.findRayIntersection(pickRay, true); // accurate picking
 
         if (wantDebug) {
             print("Pick ray: " + JSON.stringify(pickRay));
@@ -347,8 +346,8 @@ EditVoxels = function() {
 
         if (intersection.intersects) {
             if (overlaysIntersection.intersects) {
-                var overlaysIntersectionDistance = Vec3.distance(overlaysIntersection.intersection, pickRay.origin);
-                var intersectionDistance = Vec3.distance(intersection.intersection, pickRay.origin);
+                const overlaysIntersectionDistance = Vec3.distance(overlaysIntersection.intersection, pickRay.origin);
+                const intersectionDistance = Vec3.distance(intersection.intersection, pickRay.origin);
                 if (wantDebug) {
                     print("overlaysIntersectionDistance: " + overlaysIntersectionDistance);
                     print("intersectionDistance: " + intersectionDistance);
@@ -386,7 +385,7 @@ EditVoxels = function() {
     }
 
     function mouseReleaseEvent(event) {
-        var wantDebug = false;
+        const wantDebug = false;
 
         if (wantDebug) {
             print("=============== eV::mouseReleaseEvent BEG =======================");
@@ -459,23 +458,23 @@ EditVoxels = function() {
     }
 
     function getDistanceBetweenControllers(){
-        var poseLeft = getControllerWorldLocation(controllerStandard.LeftHand, true);
-        var poseRight = getControllerWorldLocation(controllerStandard.RightHand, true);
+        const poseLeft = getControllerWorldLocation(controllerStandard.LeftHand, true);
+        const poseRight = getControllerWorldLocation(controllerStandard.RightHand, true);
         return Vec3.distance(poseLeft.translation, poseRight.translation);
     }
     function getEditSpherePosition( radius ){
-        var poseLeft = getControllerWorldLocation(controllerStandard.LeftHand, true);
-        var poseRight = getControllerWorldLocation(controllerStandard.RightHand, true);
-        var handsPosition = Vec3.multiply(Vec3.sum(poseLeft.translation, poseRight.translation), 0.5);
+        const poseLeft = getControllerWorldLocation(controllerStandard.LeftHand, true);
+        const poseRight = getControllerWorldLocation(controllerStandard.RightHand, true);
+        const handsPosition = Vec3.multiply(Vec3.sum(poseLeft.translation, poseRight.translation), 0.5);
         return Vec3.sum(handsPosition, Vec3.multiplyQbyV(MyAvatar.orientation, { x: 0, y: 0, z: radius * -2.0 }));
     }
 
     function updateSphereResizing(delta) {
-        var wantDebug = false;
-        var newDistance = getDistanceBetweenControllers();
-        var newRadius = (sphereInitialRadius / sphereResizingInitialHandDistance) * newDistance;
-        var newPosition = getEditSpherePosition(newRadius);
-        var newDimensions = Vec3.multiply({ x: 1.0, y: 1.0, z: 1.0 }, newRadius * 2.0);
+        const wantDebug = false;
+        const newDistance = getDistanceBetweenControllers();
+        const newRadius = (sphereInitialRadius / sphereResizingInitialHandDistance) * newDistance;
+        const newPosition = getEditSpherePosition(newRadius);
+        const newDimensions = Vec3.multiply({ x: 1.0, y: 1.0, z: 1.0 }, newRadius * 2.0);
         if (wantDebug) {
             print("newDistance: " + JSON.stringify(newDistance));
             print("newRadius: " + JSON.stringify(newRadius));
@@ -493,15 +492,15 @@ EditVoxels = function() {
     }
 
     function startSphereResizing() {
-        var wantDebug = false;
+        const wantDebug = false;
         if (wantDebug) {
             print("=============== eV::startSphereResizing BEG =======================");
         }
         Script.update.connect(updateSphereResizing);
         sphereResizingInitialHandDistance = getDistanceBetweenControllers();
         sphereInitialRadius = editSphereRadius;
-        var spherePosition = getEditSpherePosition(sphereInitialRadius);
-        var sphereDimensions = Vec3.multiply({ x: 1.0, y: 1.0, z: 1.0 }, sphereInitialRadius * 2.0);
+        const spherePosition = getEditSpherePosition(sphereInitialRadius);
+        const sphereDimensions = Vec3.multiply({ x: 1.0, y: 1.0, z: 1.0 }, sphereInitialRadius * 2.0);
         sphereEntityID = Entities.addEntity({
             type: "Shape",
             shape: "Sphere",
@@ -517,7 +516,7 @@ EditVoxels = function() {
     }
 
     function stopSphereResizing() {
-        var wantDebug = false;
+        const wantDebug = false;
         if (wantDebug) {
             print("=============== eV::stopSphereResizing BEG =======================");
         }
@@ -561,7 +560,7 @@ EditVoxels = function() {
     }
     
     function onUpdateHandler(delta){
-        var wantDebug = false;
+        const wantDebug = false;
 
         if (isEditing === false || editedVoxelEntity === null){
             return;
@@ -575,8 +574,8 @@ EditVoxels = function() {
 
         // Get pick ray origin and direction
 
-        var pickRay = null;
-        var hand = triggered() ? that.triggeredHand : that.pressedHand;
+        const pickRay = null;
+        const hand = triggered() ? that.triggeredHand : that.pressedHand;
         
         if (hand === NO_HAND) {
             pickRay = Camera.computePickRay(Controller.getValue(Controller.Hardware.Keyboard.MouseX), Controller.getValue(Controller.Hardware.Keyboard.MouseY));
@@ -591,12 +590,12 @@ EditVoxels = function() {
 
         // Compute intersection of pick ray with given plane in local coordinates
 
-        var globalOriginInVoxelSpace = Entities.worldCoordsToVoxelCoords(editedVoxelEntity, { x: 0, y: 0, z: 0 });
-        var pickRayDirInVoxelSpace = Vec3.subtract(Entities.worldCoordsToVoxelCoords(editedVoxelEntity, pickRay.direction), globalOriginInVoxelSpace);
-        var voxelPickRayOrigin = Entities.worldCoordsToVoxelCoords(editedVoxelEntity, pickRay.origin);
+        const globalOriginInVoxelSpace = Entities.worldCoordsToVoxelCoords(editedVoxelEntity, { x: 0, y: 0, z: 0 });
+        let pickRayDirInVoxelSpace = Vec3.subtract(Entities.worldCoordsToVoxelCoords(editedVoxelEntity, pickRay.direction), globalOriginInVoxelSpace);
+        const voxelPickRayOrigin = Entities.worldCoordsToVoxelCoords(editedVoxelEntity, pickRay.origin);
         pickRayDirInVoxelSpace = Vec3.normalize(pickRayDirInVoxelSpace);
-        var directionMultiplier = 1.0;
-        var offsetVector = { x: 0, y: 0, z: 0 };
+        let directionMultiplier = 1.0;
+        const offsetVector = { x: 0, y: 0, z: 0 };
         switch (editPlane) {
             // 0 - plane parallel to YZ plane
             case 0:
@@ -641,13 +640,13 @@ EditVoxels = function() {
                 Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
             }
         } else if (editSpheres) {
-            var toDrawPositionWorld = Entities.voxelCoordsToWorldCoords(editedVoxelEntity, newEditPosition);
+            const toDrawPositionWorld = Entities.voxelCoordsToWorldCoords(editedVoxelEntity, newEditPosition);
             if (Entities.setVoxelSphere(editedVoxelEntity, toDrawPositionWorld, editSphereRadius, lastEditValue)){
                 oldEditPosition = newEditPosition;
                 Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
             }
         } else if (editCubes) {
-            var lowPosition = Vec3.subtract(newEditPosition, Vec3.multiply(cubeSize, 0.5));
+            const lowPosition = Vec3.subtract(newEditPosition, Vec3.multiply(cubeSize, 0.5));
             if (Entities.setVoxelsInCuboid(editedVoxelEntity, lowPosition, cubeSize, lastEditValue)){
                 oldEditPosition = newEditPosition;
                 Audio.playSystemSound((lastEditValue === 255) ? soundAdd : soundDelete);
