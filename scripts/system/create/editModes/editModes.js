@@ -15,23 +15,24 @@
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
+"use strict";
 
-EditTools = function(options) {
-    var that = {};
+const EditTools = function(options) {
+    const that = {};
     
-    var createAppMode = "object";
-    var voxelEditMode = "single";
-    var voxelSphereSize = 0.3;
-    var voxelEditDynamics = "click";
-    var voxelRemove = false;
-    var voxelPointerMode = "laser";
-    var voxelBrushLength = 0.5;
-    var listeners = [];
+    let createAppMode = "object";
+    let voxelEditMode = "single";
+    let voxelSphereSize = 0.3;
+    let voxelEditDynamics = "click";
+    let voxelRemove = false;
+    let voxelPointerMode = "laser";
+    let voxelBrushLength = 0.5;
+    const listeners = [];
     
-    var createToolsWindow = options.createToolsWindow;
+    const createToolsWindow = options.createToolsWindow;
     
     that.emitUpdate = function() {
-        var dataString = JSON.stringify({
+        const dataString = JSON.stringify({
                 createAppMode : createAppMode,
                 voxelEditMode : voxelEditMode,
                 voxelSphereSize : voxelSphereSize,
@@ -146,7 +147,7 @@ EditTools = function(options) {
         }
      }
     
-    var webEventReceived = function(data) {
+    const webEventReceived = function(data) {
         try {
             data = JSON.parse(data);
         } catch (e) {
@@ -164,8 +165,7 @@ EditTools = function(options) {
         }
     };
     
-    var webView = null;
-    webView = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+    const webView = Tablet.getTablet("com.highfidelity.interface.tablet.system");
 
     webView.webEventReceived.connect(webEventReceived);
     createToolsWindow.webEventReceived.addListener(webEventReceived);
