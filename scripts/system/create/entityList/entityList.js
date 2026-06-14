@@ -16,38 +16,38 @@
    MENU_EASE_ON_FOCUS,
    Script, Clipboard */
 
-var PROFILING_ENABLED = false;
-var profileIndent = '';
+const PROFILING_ENABLED = false;
+let profileIndent = '';
 
 const PROFILE_NOOP = function(_name, fn, args) {
     fn.apply(this, args);
 };
 const PROFILE = !PROFILING_ENABLED ? PROFILE_NOOP : function(name, fn, args) {
     console.log("PROFILE-Script " + profileIndent + "(" + name + ") Begin");
-    var previousIndent = profileIndent;
+    const previousIndent = profileIndent;
     profileIndent += '  ';
-    var before = Date.now();
+    const before = Date.now();
     fn.apply(this, args);
-    var delta = Date.now() - before;
+    const delta = Date.now() - before;
     profileIndent = previousIndent;
     console.log("PROFILE-Script " + profileIndent + "(" + name + ") End " + delta + "ms");
 };
 
-var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
-    var that = {};
+const EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
+    const that = {};
     that.selectionManager = selectionManager;
 
-    var CreateWindow = Script.require('../modules/createWindow.js');
+    const CreateWindow = Script.require('../modules/createWindow.js');
 
-    var TITLE_OFFSET = 60;
-    var ENTITY_LIST_WIDTH = 495;
-    var MAX_DEFAULT_CREATE_TOOLS_HEIGHT = 778;
-    var entityListWindow = new CreateWindow(
+    const TITLE_OFFSET = 60;
+    const ENTITY_LIST_WIDTH = 495;
+    const MAX_DEFAULT_CREATE_TOOLS_HEIGHT = 778;
+    const entityListWindow = new CreateWindow(
         Script.resolvePath("./qml/EditEntityList.qml"),
         'Entity List',
         'com.highfidelity.create.entityListWindow',
         function () {
-            var windowHeight = Window.innerHeight - TITLE_OFFSET;
+            let windowHeight = Window.innerHeight - TITLE_OFFSET;
             if (windowHeight > MAX_DEFAULT_CREATE_TOOLS_HEIGHT) {
                 windowHeight = MAX_DEFAULT_CREATE_TOOLS_HEIGHT;
             }
@@ -65,15 +65,14 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
         false
     );
 
-    var webView = null;
-    webView = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+    const webView = Tablet.getTablet("com.highfidelity.interface.tablet.system");
     webView.setVisible = function(value){ };
 
-    var filterInView = false;
-    var searchRadius = 100;
-    var localEntityFilter = false;
+    let filterInView = false;
+    let searchRadius = 100;
+    let localEntityFilter = false;
 
-    var visible = false;
+    let visible = false;
 
     that.webView = webView;
 
@@ -90,7 +89,7 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
     that.setVisible(false);
 
     function emitJSONScriptEvent(data) {
-        var dataString;
+        let dataString;
         PROFILE("Script-JSON.stringify", function() {
             dataString = JSON.stringify(data);
         });
@@ -115,9 +114,9 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
         if (!isSelectionUpdate) {
             return;
         }
-        var selectedIDs = [];
+        const selectedIDs = [];
 
-        for (var i = 0; i < that.selectionManager.selections.length; i++) {
+        for (let i = 0; i < that.selectionManager.selections.length; i++) {
             selectedIDs.push(that.selectionManager.selections[i]);
         }
 
@@ -175,11 +174,11 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
 
     function entityIsBaked(properties) {
         if (properties.type === "Model") {
-            var lowerModelURL = properties.modelURL.toLowerCase();
+            const lowerModelURL = properties.modelURL.toLowerCase();
             return lowerModelURL.endsWith(".baked.fbx") || lowerModelURL.endsWith(".baked.fst");
         } else if (properties.type === "Zone") {
-            var lowerSkyboxURL = properties.skybox ? properties.skybox.url.toLowerCase() : "";
-            var lowerAmbientURL = properties.ambientLight ? properties.ambientLight.ambientURL.toLowerCase() : "";
+            const lowerSkyboxURL = properties.skybox ? properties.skybox.url.toLowerCase() : "";
+            const lowerAmbientURL = properties.ambientLight ? properties.ambientLight.ambientURL.toLowerCase() : "";
             return (lowerSkyboxURL === "" || lowerSkyboxURL.endsWith(".texmeta.json")) &&
                 (lowerAmbientURL === "" || lowerAmbientURL.endsWith(".texmeta.json"));
         } else {
@@ -188,7 +187,7 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
     }
 
     that.sendUpdate = function() {
-        var tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
+        const tablet = Tablet.getTablet("com.highfidelity.interface.tablet.system");
         if (HMD.active) {
             tablet.setLandscape(true);
         }
@@ -198,20 +197,20 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
         });
         
         PROFILE('Script-sendUpdate', function() {
-            var entities = [];
+            const entities = [];
 
-            var ids;
+            let ids;
             PROFILE("findEntities", function() {
-                var domainAndAvatarIds;
+                let domainAndAvatarIds;
                 if (filterInView) {
                     domainAndAvatarIds = Entities.findEntitiesInFrustum(Camera.frustum);
                 } else {
                     domainAndAvatarIds = Entities.findEntities(MyAvatar.position, searchRadius);
                 }
-                var localIds = [];
+                let localIds = [];
                 if (localEntityFilter) {
                     localIds = Overlays.findOverlays(MyAvatar.position, searchRadius);
-                    var tabletLocalEntityToExclude = [
+                    const tabletLocalEntityToExclude = [
                         HMD.tabletID,
                         HMD.tabletScreenID,
                         HMD.homeButtonID,
@@ -220,13 +219,13 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
                         HMD.miniTabletScreenID,
                         that.grid.getGridEntityToolID()
                     ];
-                    var seltoolsIds = SelectionDisplay.toolEntityMaterial.concat(
+                    const seltoolsIds = SelectionDisplay.toolEntityMaterial.concat(
                         SelectionDisplay.allToolEntities, 
                         allOverlays,
                         that.createApp.entityShapeVisualizerLocalEntityToExclude,
                         tabletLocalEntityToExclude
                     );
-                    for (var i = localIds.length - 1; i >= 0; i--) {
+                    for (let i = localIds.length - 1; i >= 0; i--) {
                         if (seltoolsIds.includes(localIds[i]) || Keyboard.containsID(localIds[i])) {
                             localIds.splice(i, 1);
                         }
@@ -235,16 +234,16 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
                 ids = domainAndAvatarIds.concat(localIds);
             });
 
-            var cameraPosition = Camera.position;
+            const cameraPosition = Camera.position;
             PROFILE("getMultipleProperties", function () {
-                var multipleProperties = Entities.getMultipleEntityProperties(ids, ['position', 'name', 'type', 'locked',
+                const multipleProperties = Entities.getMultipleEntityProperties(ids, ['position', 'name', 'type', 'locked',
                     'visible', 'renderInfo', 'modelURL', 'materialURL', 'imageURL', 'script', 'serverScripts',
                     'skybox.url', 'ambientLight.url', 'soundURL', 'scriptURL', 'created', 'lastEdited', 'entityHostType']);
-                for (var i = 0; i < multipleProperties.length; i++) {
-                    var properties = multipleProperties[i];
+                for (let i = 0; i < multipleProperties.length; i++) {
+                    const properties = multipleProperties[i];
 
                     if (!filterInView || Vec3.distance(properties.position, cameraPosition) <= searchRadius) {
-                        var url = "";
+                        let url = "";
                         if (properties.type === "Model") {
                             url = properties.modelURL;
                         } else if (properties.type === "Material") {
@@ -257,8 +256,8 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
                             url = properties.scriptURL;
                         }
                         //print("Global object before getParentState call: " + JSON.stringify(globalThis));
-                        var parentStatus = that.createApp.getParentState(ids[i]);
-                        var parentState = "";
+                        const parentStatus = that.createApp.getParentState(ids[i]);
+                        let parentState = "";
                         if (parentStatus === "PARENT") {
                             parentState = "A";
                         } else if (parentStatus === "CHILDREN") {
@@ -295,8 +294,8 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
                 }
             });
 
-            var selectedIDs = [];
-            for (var j = 0; j < that.selectionManager.selections.length; j++) {
+            const selectedIDs = [];
+            for (let j = 0; j < that.selectionManager.selections.length; j++) {
                 selectedIDs.push(that.selectionManager.selections[j]);
             }
 
@@ -310,8 +309,8 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
     };
 
     function formatToStringDateTime(timestamp) {
-        var d = new Date(Math.floor(timestamp/1000));
-        var dateTime = d.getUTCFullYear() + "-" + zeroPad((d.getUTCMonth() + 1), 2) + "-" + zeroPad(d.getUTCDate(), 2);
+        const d = new Date(Math.floor(timestamp/1000));
+        let dateTime = d.getUTCFullYear() + "-" + zeroPad((d.getUTCMonth() + 1), 2) + "-" + zeroPad(d.getUTCDate(), 2);
         dateTime = dateTime + " " + zeroPad(d.getUTCHours(), 2) + ":" + zeroPad(d.getUTCMinutes(), 2) + ":" + zeroPad(d.getUTCSeconds(), 2); 
         dateTime = dateTime + "." + zeroPad(d.getUTCMilliseconds(), 3);
         return dateTime;
@@ -328,14 +327,14 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
     function onFileSaveChanged(filename) {
         Window.saveFileChanged.disconnect(onFileSaveChanged);
         if (filename !== "") {
-            var success = Clipboard.exportEntities(filename, that.selectionManager.selections);
+            const success = Clipboard.exportEntities(filename, that.selectionManager.selections);
             if (!success) {
                 Window.notifyEditError("Export failed.");
             }
         }
     }
 
-    var onWebEventReceived = function(data) {
+    const onWebEventReceived = function(data) {
         //print("entityList.js onWebEventReceived: " + data);
         try {
             data = JSON.parse(data);
@@ -345,9 +344,9 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
         }
 
         if (data.type === "selectionUpdate") {
-            var ids = data.entityIds;
-            var entityIDs = [];
-            for (var i = 0; i < ids.length; i++) {
+            const ids = data.entityIds;
+            const entityIDs = [];
+            for (let i = 0; i < ids.length; i++) {
                 entityIDs.push(ids[i]);
             }
             that.selectionManager.setSelections(entityIDs, that);
@@ -436,8 +435,8 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
         } else if (data.type === 'moveEntitySelectionToAvatar') {
             that.selectionManager.moveEntitiesSelectionToAvatar();
         } else if (data.type === 'loadConfigSetting') {
-            var columnsData = Settings.getValue(that.createApp.SETTING_EDITOR_COLUMNS_SETUP, "NO_DATA");
-            var defaultRadius = Settings.getValue(that.createApp.SETTING_ENTITY_LIST_DEFAULT_RADIUS, 100);
+            const columnsData = Settings.getValue(that.createApp.SETTING_EDITOR_COLUMNS_SETUP, "NO_DATA");
+            const defaultRadius = Settings.getValue(that.createApp.SETTING_ENTITY_LIST_DEFAULT_RADIUS, 100);
             emitJSONScriptEvent({
                 "type": "loadedConfigSetting",
                 "columnsData": columnsData,
