@@ -7,11 +7,12 @@
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+"use strict";
 
 /* global alert, augmentSpinButtons, clearTimeout, console, document, Element, 
    EventBridge, JSONEditor, openEventBridge, setTimeout, window, _, $ */
 
-var currentTab = "base";
+let currentTab = "base";
 
 const DEGREES_TO_RADIANS = Math.PI / 180.0;
 
@@ -4679,9 +4680,9 @@ function parentIDChanged() {
 function createPolyVoxPresetChangedFunction(property) {
     return function() {
         property.elInput.classList.remove('multi-diff');
-        var xTextureURL = "";
-        var yTextureURL = "";
-        var zTextureURL = "";
+        let xTextureURL = "";
+        let yTextureURL = "";
+        let zTextureURL = "";
         switch (parseInt(this.value)) {
             // Clear texture entries
             case 0:
