@@ -31,6 +31,7 @@
 #include <PhysicalEntitySimulation.h>
 #include <StencilMaskPass.h>
 #include <graphics/ShaderConstants.h>
+#include <qelapsedtimer.h>
 #include <render/ShapePipeline.h>
 #include <procedural/Procedural.h>
 
@@ -39,6 +40,7 @@
 #include "EntityTreeRenderer.h"
 #include "RenderPipelines.h"
 #include "gpu/Forward.h"
+#include "src/EntitiesRendererLogging.h"
 
 #include <FadeEffect.h>
 
@@ -2142,7 +2144,11 @@ void RenderablePolyVoxEntityItem::recomputeMesh() {
             }
         });
 
+        QElapsedTimer timer;
+        timer.start();
         graphics::MeshPointer mesh = extractor->createMesh();
+        auto elapsed = timer.elapsed();
+        qCDebug(entitiesrenderer) << "Generated PolyVox Mesh in " << elapsed << "ms";
         entity->setMesh(mesh);
     });
 }
