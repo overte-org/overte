@@ -7,8 +7,9 @@
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
+"use strict";
 
-let maMaterialData = {};
+const maMaterialData = {};
 
 let maClose,
     maName,
@@ -965,7 +966,7 @@ function initiateMaUi() {
         maGenerateJsonAndSave();
     };
     
-    var maAlbedoColorPickerID = "#ma-albedo-colorPicker";
+    const maAlbedoColorPickerID = "#ma-albedo-colorPicker";
     maAlbedoColorPickerSel = $(maAlbedoColorPickerID).colpick({
         colorScheme: 'dark',
         layout: 'rgbhex',
@@ -991,7 +992,7 @@ function initiateMaUi() {
         }
     });
     
-    var maEmissiveColorPickerID = "#ma-emissive-colorPicker";
+    const maEmissiveColorPickerID = "#ma-emissive-colorPicker";
     maEmissiveColorPickerSel = $(maEmissiveColorPickerID).colpick({
         colorScheme: 'dark',
         layout: 'rgbhex',
@@ -1017,7 +1018,7 @@ function initiateMaUi() {
         }
     });
     
-    var maShadeColorPickerID = "#ma-shade-colorPicker";
+    const maShadeColorPickerID = "#ma-shade-colorPicker";
     maShadeColorPickerSel = $(maShadeColorPickerID).colpick({
         colorScheme: 'dark',
         layout: 'rgbhex',
@@ -1043,7 +1044,7 @@ function initiateMaUi() {
         }
     });
     
-    var maMatcapColorPickerID = "#ma-matcap-colorPicker";
+    const maMatcapColorPickerID = "#ma-matcap-colorPicker";
     maMatcapColorPickerSel = $(maMatcapColorPickerID).colpick({
         colorScheme: 'dark',
         layout: 'rgbhex',
@@ -1069,7 +1070,7 @@ function initiateMaUi() {
         }
     });
     
-    var maParametricRimColorPickerID = "#ma-parametricRim-colorPicker";
+    const maParametricRimColorPickerID = "#ma-parametricRim-colorPicker";
     maParametricRimColorPickerSel = $(maParametricRimColorPickerID).colpick({
         colorScheme: 'dark',
         layout: 'rgbhex',
@@ -1097,7 +1098,7 @@ function initiateMaUi() {
 
 /* ############# Not supported yet, but the code is ready #########################
 
-    var maOutlineColorPickerID = "#ma-outline-colorPicker";
+    const maOutlineColorPickerID = "#ma-outline-colorPicker";
     maOutlineColorPickerSel = $(maOutlineColorPickerID).colpick({
         colorScheme: 'dark',
         layout: 'rgbhex',
@@ -1128,8 +1129,8 @@ function initiateMaUi() {
 }
 
 function loadDataInMaUi(materialDataPropertyValue) {
-    var entityMaterialData, materialDefinition;
-    var mapToUse;
+    let entityMaterialData, materialDefinition;
+    let mapToUse;
 
     if (materialDataPropertyValue === "" || materialDataPropertyValue === "{}") {
         entityMaterialData = {
@@ -2072,8 +2073,8 @@ function maFieldContextualDisplayer() {
 }
 
 function maGenerateJsonAndSave() {
-    var newMaterial = {};
-    var defaultFallthrough = false;
+    const newMaterial = {};
+    let defaultFallthrough = false;
     
     //MODEL
     newMaterial.model = maMaterialData.model;
@@ -2441,7 +2442,7 @@ function maGenerateJsonAndSave() {
     }
 
     //insert newMaterial to materialData
-    var materialDataForUpdate = {
+    const materialDataForUpdate = {
             "materialVersion": 1,
             "materials": []
         };
@@ -2462,9 +2463,9 @@ function maGenerateJsonAndSave() {
 
 function maGetColorValueFromEmissive(colorArray) {
     if (Array.isArray(colorArray)) {
-        var max = maGetHighestValue(colorArray);
+        const max = maGetHighestValue(colorArray);
         if (max > 1) {
-            var normalizer = 1/max;
+            const normalizer = 1/max;
             return [colorArray[0] * normalizer, colorArray[1] * normalizer, colorArray[2] * normalizer];
         } else {
             return colorArray;
@@ -2483,8 +2484,8 @@ function maGetBloomFactorFromEmissive(colorArray) {
 }
 
 function maGetHighestValue(colorArray) {
-    var highest = colorArray[0];
-    for (var i = 0; i < colorArray.length; i++) {
+    let highest = colorArray[0];
+    for (let i = 0; i < colorArray.length; i++) {
         if (colorArray[i] > highest) {
             highest = colorArray[i];
         }        
@@ -2508,7 +2509,7 @@ function maGetRGB(colorArray){
  * @param {string or object} materialData - json of the materialData as a string or as an object.
  */
 function maGetMaterialDataAssistantAvailability(materialData) {
-    var materialDataJSON, materialDataString;
+    let materialDataJSON, materialDataString;
     if (typeof materialData === "string") {
         materialDataJSON = JSON.parse(materialData);
         materialDataString = materialData;
