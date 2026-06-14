@@ -106,7 +106,9 @@
                 }                
                 if (isOnHMD) {
                     //use HMD local entities
-                    var sensorScaleFactor = MyAvatar.sensorToWorldScale * HMD_UI_SCALE_FACTOR;
+                    // FIXME: set this to (1 / MyAvatar.sensorToWorldScale) once the
+                    // camera joint uses identity scaling like the sensor joint
+                    var sensorScaleFactor = HMD_UI_SCALE_FACTOR;
                     var lineHeight = HMD_LINE_HEIGHT;
                     height = lineHeight + (2 * entityTopMargin);
                     extraLine = breaks * lineHeight;
@@ -126,7 +128,10 @@
                         "leftMargin": entityLeftMargin * sensorScaleFactor,
                         "topMargin": entityTopMargin * sensorScaleFactor,
                         "unlit": true,
-                        "renderLayer": "hud"
+                        // FIXME: The HUD layer is sometimes corrupted or invisible #1439
+                        "renderLayer": "front",
+                        "grab": { "grabbable": false },
+                        "ignorePickIntersection": true,
                     };
                     if (notifications[i].entityID === Uuid.NONE){
                         properties.text =  notifications[i].dataText;
@@ -147,7 +152,10 @@
                             "emissive": true,
                             "visible": true,
                             "alpha": alpha,
-                            "renderLayer": "hud"
+                            // FIXME: The HUD layer is sometimes corrupted or invisible #1439
+                            "renderLayer": "front",
+                            "grab": { "grabbable": false },
+                            "ignorePickIntersection": true,
                         };                        
                         if (notifications[i].imageEntityID === Uuid.NONE){
                             properties.imageURL = notifications[i].dataImage.path;
@@ -235,10 +243,10 @@
     function createMainHMDnotificationContainer() {
         if (mainHMDnotificationContainerID === Uuid.NONE) {
             var properties = {
-                "type": "Shape",
-                "shape": "Cube",
-                "visible": false,
-                "dimensions": {"x": 0.1, "y": 0.1, "z":0.1},
+                "name": "Notifications Root",
+                "type": "Empty",
+                "grab": { "grabbable": false },
+                "ignorePickIntersection": true,
                 "parentID": MyAvatar.sessionUUID,
                 "parentJointIndex": CAMERA_MATRIX_INDEX,
                 "localPosition": hmdPanelLocalPosition,
