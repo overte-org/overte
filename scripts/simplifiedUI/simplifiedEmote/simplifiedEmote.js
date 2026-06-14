@@ -313,7 +313,7 @@ function mouseMoveEvent(event) {
 
     var pickRay = Camera.computePickRay(event.x, event.y);
     var avatarIntersectionData = AvatarManager.findRayIntersection(pickRay, [], [MyAvatar.sessionUUID], false);
-    var entityIntersectionData = Entities.findRayIntersection(pickRay, true);
+    var entityIntersectionData = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES);
     var avatarIntersectionDistanceM = avatarIntersectionData.intersects && avatarIntersectionData.distance < MAX_INTERSECTION_DISTANCE_M ? avatarIntersectionData.distance : null;
     var entityIntersectionDistanceM = entityIntersectionData.intersects && entityIntersectionData.distance < MAX_INTERSECTION_DISTANCE_M ? entityIntersectionData.distance : null;
 

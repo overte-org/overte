@@ -70,7 +70,7 @@
                 origin: backedOrigin,
                 direction: Quat.getFront(markerProps.rotation)
             }
-            var intersection = Entities.findRayIntersection(pickRay, true, _this.whiteboards);
+            var intersection = Entities.findRayIntersection(pickRay, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES, _this.whiteboards);
 
             if (intersection.intersects && Vec3.distance(intersection.intersection, markerProps.position) <= _this.DRAW_ON_BOARD_DISTANCE) {
                 _this.currentWhiteboard = intersection.entityID;

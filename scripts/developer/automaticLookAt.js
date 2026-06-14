@@ -672,7 +672,7 @@
                     self.nearAvatarList[id].moved = false;
                     var eyePos = MyAvatar.getDefaultEyePosition();
                     var avatarSight = Vec3.subtract(avatar.headPosition, eyePos);
-                    var intersection = Entities.findRayIntersection({origin: eyePos, direction: Vec3.normalize(avatarSight)}, true);
+                    var intersection = Entities.findRayIntersection({ origin: eyePos, direction: Vec3.normalize(avatarSight) }, Picks.PICK_DOMAIN_ENTITIES | Picks.PICK_AVATAR_ENTITIES);
                     self.nearAvatarList[avatar.id].engaged = !intersection.intersects || intersection.distance > Vec3.length(avatarSight);
                 }
             }
