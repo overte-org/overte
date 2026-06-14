@@ -1171,8 +1171,8 @@ void ScriptManager::run() {
 // NOTE: This is private because it must be called on the same thread that created the timers, which is why
 // we want to only call it in our own run "shutdown" processing.
 void ScriptManager::stopAllTimers() {
-    for (const auto& [handle, value] : _timerFunctionMap) {
-        QTimer* timer = std::get<0>(value);
+    for (const auto& pair : _timerFunctionMap) {
+        QTimer* timer = std::get<0>(pair);
 
         timer->stop();
         delete timer;
@@ -1183,10 +1183,15 @@ void ScriptManager::stopAllTimers() {
 }
 
 void ScriptManager::stopAllTimersForEntityScript(const EntityItemID& entityID) {
-    std::vector<int> toDelete;
+    std::vector<int> toDelete = {};
 
-    for (const auto& [handle, value] : _timerFunctionMap) {
-        const auto& [timer, callbackData] = value;
+    for (
+        auto i = _timerFunctionMap.constKeyValueBegin();
+        i != _timerFunctionMap.constKeyValueEnd();
+        ++i
+    ) {
+        const auto& handle = i->first;
+        const auto& [timer, callbackData] = i->second;
 
         if (callbackData.definingEntityIdentifier != entityID) { continue; }
 
@@ -1197,7 +1202,7 @@ void ScriptManager::stopAllTimersForEntityScript(const EntityItemID& entityID) {
     }
 
     for (auto handle : toDelete) {
-        _timerFunctionMap.erase(handle);
+        _timerFunctionMap.remove(handle);
     }
 
     // the timer map is potentially shared across multiple entity scripts,
@@ -1252,11 +1257,11 @@ void ScriptManager::timerFired(int handle) {
         return;
     }
 
-    auto [timer, data] = _timerFunctionMap.at(handle);
+    auto [timer, data] = _timerFunctionMap.value(handle);
 
     if (!timer->isActive()) {
         // this timer is done, we can kill it
-        _timerFunctionMap.erase(handle);
+        _timerFunctionMap.remove(handle);
         delete timer;
     }
 
@@ -1278,8 +1283,7 @@ void ScriptManager::timerFired(int handle) {
 }
 
 int ScriptManager::setupTimerWithInterval(const ScriptValue& function, int intervalMS, bool isSingleShot) {
-    int handle = _timerHandleCounter;
-    _timerHandleCounter += 1;
+    int handle = _timerHandleCounter++;
 
     // create the timer, add it to the map, and start it
     QTimer* newTimer = new QTimer(this);
@@ -1297,7 +1301,7 @@ int ScriptManager::setupTimerWithInterval(const ScriptValue& function, int inter
     connect(this, &ScriptManager::scriptEnding, newTimer, &QTimer::stop);
 
     CallbackData timerData = { function, currentEntityIdentifier, currentSandboxURL };
-    _timerFunctionMap.insert({ handle, { newTimer, timerData } });
+    _timerFunctionMap.insert(handle, { newTimer, timerData });
 
     if (intervalMS < 0) {
         int lineNumber = -1;
@@ -1350,9 +1354,9 @@ int ScriptManager::setTimeout(const ScriptValue& function, int timeoutMS) {
 
 void ScriptManager::stopTimer(int handle) {
     if (_timerFunctionMap.contains(handle)) {
-        auto [timer, callbackData] = _timerFunctionMap.at(handle);
+        auto [timer, callbackData] = _timerFunctionMap.value(handle);
         timer->stop();
-        _timerFunctionMap.erase(handle);
+        _timerFunctionMap.remove(handle);
         delete timer;
     } else {
         qCDebug(scriptengine) << "stopTimer -- not in _timerFunctionMap" << handle;
