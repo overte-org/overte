@@ -501,7 +501,6 @@ bool OBJSerializer::parseOBJGroup(OBJTokenizer& tokenizer, const hifi::VariantHa
     HFMMeshPart& meshPart = mesh.parts.last();
     bool sawG = false;
     bool result = true;
-    int originalFaceCountForDebugging = 0;
     QString currentGroup;
     bool anyVertexColor { false };
     int vertexCount { 0 };
@@ -637,7 +636,7 @@ bool OBJSerializer::parseOBJGroup(OBJTokenizer& tokenizer, const hifi::VariantHa
                 face.groupName = currentGroup;
                 face.materialName = currentMaterialName;
             }
-            originalFaceCountForDebugging++;
+
             foreach(OBJFace face, face.triangulate()) {
                 faces.append(face);
             }

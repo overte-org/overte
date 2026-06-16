@@ -1840,7 +1840,7 @@ bool MyAvatar::updateStaleAvatarEntityBlobs() const {
     }
 
     std::set<EntityItemID> staleIDs = std::move(_staleCachedAvatarEntityBlobs);
-    int32_t numFound = 0;
+
     for (const auto& id : staleIDs) {
         bool found = false;
         EntityItemProperties properties;
@@ -1852,7 +1852,6 @@ bool MyAvatar::updateStaleAvatarEntityBlobs() const {
             }
         });
         if (found) {
-            ++numFound;
             QByteArray blob;
             _helperScriptEngine.run( [&] {
                 EntityItemProperties::propertiesToBlob(*_helperScriptEngine.get(), getID(), properties, blob);

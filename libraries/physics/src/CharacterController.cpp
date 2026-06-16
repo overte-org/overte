@@ -36,8 +36,7 @@ static TemporaryPairwiseCollisionFilter _pairwiseFilter;
 bool applyPairwiseFilter(btManifoldPoint& cp,
         const btCollisionObjectWrapper* colObj0Wrap, int partId0, int index0,
         const btCollisionObjectWrapper* colObj1Wrap, int partId1, int index1) {
-    static int32_t numCalls = 0;
-    ++numCalls;
+
     // This callback is ONLY called on objects with btCollisionObject::CF_CUSTOM_MATERIAL_CALLBACK flag
     // and the flagged object will always be sorted to Obj0.  Hence the "other" is always Obj1.
     const btCollisionObject* other = colObj1Wrap->m_collisionObject;
