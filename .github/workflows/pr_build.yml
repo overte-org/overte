@@ -176,12 +176,12 @@ jobs:
       run: conan cache backup-upload || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
 
     - name: Cleanup Conan dependencies
-      if: always() && steps.conan-cache.cache-hit != 'true'
-      run: conan cache clean "*" -sbd
+      if: always() && steps.conan-cache.outputs.cache-hit != 'true'
+      run: conan cache clean "*" -sbdt
       shell: bash
 
     - name: Save Conan cache
-      if: always() && steps.conan-cache.cache-hit != 'true'
+      if: always() && steps.conan-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v5
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
