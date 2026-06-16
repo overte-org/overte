@@ -236,6 +236,7 @@ jobs:
       uses: actions/upload-artifact@v7
       with:
         name: ${{ env.ARTIFACT_PATTERN }}
+        archive: false
         path: pkg-scripts/${{ env.ARTIFACT_PATTERN }}
 
     - name: Upload artifact to S3
