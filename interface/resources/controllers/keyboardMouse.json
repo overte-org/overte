@@ -5,10 +5,10 @@
         { "from": "Keyboard.A", "when": ["Keyboard.RightMouseButton", "!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeLeft" },
         { "from": "Keyboard.D", "when": ["Keyboard.RightMouseButton", "!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeRight" },
         { "from": "Keyboard.D", "when": ["Keyboard.RightMouseButton", "Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeLeft" },
-        { "from": "Keyboard.Q", "when": ["!Application.CameraSelfie", "!Keyboard.Control", "!Application.CaptureMouse"], "to": "Actions.LATERAL_LEFT" },
-        { "from": "Keyboard.Q", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.LATERAL_RIGHT" },
-        { "from": "Keyboard.E", "when": ["!Application.CameraSelfie", "!Keyboard.Control", "!Application.CaptureMouse"], "to": "Actions.LATERAL_RIGHT" },
-        { "from": "Keyboard.E", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.LATERAL_LEFT" },
+        { "from": "Keyboard.Q", "when": ["!Application.CameraSelfie", "!Keyboard.Control", "!Application.CaptureMouse"], "to": "Actions.StrafeLeft" },
+        { "from": "Keyboard.Q", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeRight" },
+        { "from": "Keyboard.E", "when": ["!Application.CameraSelfie", "!Keyboard.Control", "!Application.CaptureMouse"], "to": "Actions.StrafeRight" },
+        { "from": "Keyboard.E", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.StrafeLeft" },
         { "from": "Keyboard.T", "when": "!Keyboard.Control", "to": "Actions.TogglePushToTalk" },
 
         { "comment" : "Mouse turn need to be small continuous increments",
@@ -82,12 +82,12 @@
 
         { "from": "Keyboard.Left",
           "when": ["!Application.CameraFSM", "!Application.CameraIndependent", "!Application.CameraEntity", "Application.CaptureMouse", "!Keyboard.Shift"],
-          "to": "Actions.LATERAL_LEFT"
+          "to": "Actions.StrafeLeft"
         },
 
         { "from": "Keyboard.Right",
           "when": ["!Application.CameraFSM", "!Application.CameraIndependent", "!Application.CameraEntity", "Application.CaptureMouse", "!Keyboard.Shift"],
-          "to": "Actions.LATERAL_RIGHT"
+          "to": "Actions.StrafeRight"
         },
 
         { "from": { "makeAxis" : [
@@ -101,12 +101,12 @@
 
         { "from": "Keyboard.A",
           "when": ["!Application.CameraFSM", "!Application.CameraIndependent", "!Application.CameraEntity", "Application.CaptureMouse", "!Keyboard.Control"],
-          "to": "Actions.LATERAL_LEFT"
+          "to": "Actions.StrafeLeft"
         },
 
         { "from": "Keyboard.D",
           "when": ["!Application.CameraFSM", "!Application.CameraIndependent", "!Application.CameraEntity", "Application.CaptureMouse", "!Keyboard.Control"],
-          "to": "Actions.LATERAL_RIGHT"
+          "to": "Actions.StrafeRight"
         },
 
         { "from": { "makeAxis" : [
@@ -181,41 +181,41 @@
             ]
         },
 
-        { "from": "Keyboard.W", "when": ["!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.LONGITUDINAL_FORWARD" },
-        { "from": "Keyboard.S", "when": ["!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.LONGITUDINAL_BACKWARD" },
-        { "from": "Keyboard.S", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.LONGITUDINAL_FORWARD" },
-        { "from": "Keyboard.W", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.LONGITUDINAL_BACKWARD" },
-        { "from": "Keyboard.Shift", "when": ["!Keyboard.Left", "!Keyboard.Right"], "to": "Actions.SPRINT" },
-        { "from": "Keyboard.C", "when": "!Keyboard.Control", "to": "Actions.VERTICAL_DOWN" },
-        { "from": "Keyboard.Left", "when": "Keyboard.Shift", "to": "Actions.LATERAL_LEFT" },
-        { "from": "Keyboard.Right", "when": "Keyboard.Shift", "to": "Actions.LATERAL_RIGHT" },
-        { "from": "Keyboard.Up", "when": "Application.CameraFirstPerson", "to": "Actions.LONGITUDINAL_FORWARD" },
-        { "from": "Keyboard.Up", "when": "Application.CameraFirstPersonLookat", "to": "Actions.LONGITUDINAL_FORWARD" },
-        { "from": "Keyboard.Up", "when": "Application.CameraThirdPerson", "to": "Actions.LONGITUDINAL_FORWARD" },
-        { "from": "Keyboard.Up", "when": "Application.CameraLookAt", "to": "Actions.LONGITUDINAL_FORWARD" },
-        { "from": "Keyboard.Up", "when": "Application.CameraSelfie", "to": "Actions.LONGITUDINAL_BACKWARD" },
-        { "from": "Keyboard.Down", "when": "Application.CameraFirstPerson", "to": "Actions.LONGITUDINAL_BACKWARD" },
-        { "from": "Keyboard.Down", "when": "Application.CameraFirstPersonLookat", "to": "Actions.LONGITUDINAL_BACKWARD" },
-        { "from": "Keyboard.Down", "when": "Application.CameraThirdPerson", "to": "Actions.LONGITUDINAL_BACKWARD" },
-        { "from": "Keyboard.Down", "when": "Application.CameraLookAt", "to": "Actions.LONGITUDINAL_BACKWARD" },
-        { "from": "Keyboard.Down", "when": "Application.CameraSelfie", "to": "Actions.LONGITUDINAL_FORWARD" },
+        { "from": "Keyboard.W", "when": ["!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.Forward" },
+        { "from": "Keyboard.S", "when": ["!Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.Backward" },
+        { "from": "Keyboard.S", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.Forward" },
+        { "from": "Keyboard.W", "when": ["Application.CameraSelfie", "!Keyboard.Control"], "to": "Actions.Backward" },
+        { "from": "Keyboard.Shift", "when": ["!Keyboard.Left", "!Keyboard.Right"], "to": "Actions.Sprint" },
+        { "from": "Keyboard.C", "when": "!Keyboard.Control", "to": "Actions.Down" },
+        { "from": "Keyboard.Left", "when": "Keyboard.Shift", "to": "Actions.StrafeLeft" },
+        { "from": "Keyboard.Right", "when": "Keyboard.Shift", "to": "Actions.StrafeRight" },
+        { "from": "Keyboard.Up", "when": "Application.CameraFirstPerson", "to": "Actions.Forward" },
+        { "from": "Keyboard.Up", "when": "Application.CameraFirstPersonLookat", "to": "Actions.Forward" },
+        { "from": "Keyboard.Up", "when": "Application.CameraThirdPerson", "to": "Actions.Forward" },
+        { "from": "Keyboard.Up", "when": "Application.CameraLookAt", "to": "Actions.Forward" },
+        { "from": "Keyboard.Up", "when": "Application.CameraSelfie", "to": "Actions.Backward" },
+        { "from": "Keyboard.Down", "when": "Application.CameraFirstPerson", "to": "Actions.Backward" },
+        { "from": "Keyboard.Down", "when": "Application.CameraFirstPersonLookat", "to": "Actions.Backward" },
+        { "from": "Keyboard.Down", "when": "Application.CameraThirdPerson", "to": "Actions.Backward" },
+        { "from": "Keyboard.Down", "when": "Application.CameraLookAt", "to": "Actions.Backward" },
+        { "from": "Keyboard.Down", "when": "Application.CameraSelfie", "to": "Actions.Forward" },
 
-        { "from": "Keyboard.PgDown", "to": "Actions.VERTICAL_DOWN" },
-        { "from": "Keyboard.PgUp", "to": "Actions.VERTICAL_UP" },
+        { "from": "Keyboard.PgDown", "to": "Actions.Down" },
+        { "from": "Keyboard.PgUp", "to": "Actions.Up" },
 
-        { "from": "Keyboard.TouchpadDown", "to": "Actions.PITCH_DOWN" },
-        { "from": "Keyboard.TouchpadUp", "to": "Actions.PITCH_UP" },
+        { "from": "Keyboard.TouchpadDown", "to": "Actions.PitchDown" },
+        { "from": "Keyboard.TouchpadUp", "to": "Actions.PitchUp" },
 
-        { "from": "Keyboard.MouseWheelUp", "to": "Actions.LATERAL_RIGHT" },
-        { "from": "Keyboard.MouseWheelDown", "to": "Actions.LATERAL_LEFT" },
-        { "from": "Keyboard.MouseWheelLeft", "to": "Actions.BOOM_OUT", "filters": [ { "type": "scale", "scale": 0.02 } ]},
-        { "from": "Keyboard.MouseWheelRight", "to": "Actions.BOOM_IN", "filters": [ { "type": "scale", "scale": 0.02 } ]},
-        { "from": "Keyboard.GesturePinchOut", "to": "Actions.BOOM_OUT"},
-        { "from": "Keyboard.GesturePinchIn", "to": "Actions.BOOM_IN"},
+        { "from": "Keyboard.MouseWheelUp", "to": "Actions.StrafeRight" },
+        { "from": "Keyboard.MouseWheelDown", "to": "Actions.StrafeLeft" },
+        { "from": "Keyboard.MouseWheelLeft", "to": "Actions.BOOMOUT", "filters": [ { "type": "scale", "scale": 0.02 } ]},
+        { "from": "Keyboard.MouseWheelRight", "to": "Actions.BOOMIN", "filters": [ { "type": "scale", "scale": 0.02 } ]},
+        { "from": "Keyboard.GesturePinchOut", "to": "Actions.BOOMOUT"},
+        { "from": "Keyboard.GesturePinchIn", "to": "Actions.BOOMIN"},
 
-        { "from": "Keyboard.Space", "to": "Actions.VERTICAL_UP" },
-        { "from": "Keyboard.R", "to": "Actions.ACTION1" },
-        { "from": "Keyboard.T", "to": "Actions.ACTION2" },
+        { "from": "Keyboard.Space", "to": "Actions.Up" },
+        { "from": "Keyboard.R", "to": "Actions.PrimaryAction" },
+        { "from": "Keyboard.T", "to": "Actions.SecondaryAction" },
         { "from": "Keyboard.Tab", "to": "Actions.ContextMenu" }
     ]
 }
