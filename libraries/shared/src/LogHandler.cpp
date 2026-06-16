@@ -116,10 +116,10 @@ void addString(std::vector<struct iovec>&list, const QByteArray &str) {
 #endif
 
 // the following will produce 11/18 13:55:36
-const QString DATE_STRING_FORMAT = "MM/dd hh:mm:ss";
+#define DATE_STRING_FORMAT "MM/dd hh:mm:ss"
 
 // the following will produce 11/18 13:55:36.999
-const QString DATE_STRING_FORMAT_WITH_MILLISECONDS = "MM/dd hh:mm:ss.zzz";
+#define DATE_STRING_FORMAT_WITH_MILLISECONDS "MM/dd hh:mm:ss.zzz"
 
 bool LogHandler::parseOptions(const QString& logOptions, const QString& paramName) {
     QMutexLocker lock(&_mutex);
@@ -218,13 +218,13 @@ QString LogHandler::printMessage(LogMsgType type, const QMessageLogContext& cont
     // log prefix is in the following format
     // [TIMESTAMP] [DEBUG] [PID] [TID] [TARGET] logged string
 
-    const QString* dateFormatPtr = &DATE_STRING_FORMAT;
-    if (_shouldDisplayMilliseconds) {
-        dateFormatPtr = &DATE_STRING_FORMAT_WITH_MILLISECONDS;
-    }
-
-    QString prefixString = QString("[%1] [%2] [%3]").arg(QDateTime::currentDateTime().toString(*dateFormatPtr),
-        stringForLogType(type), context.category);
+    QString prefixString = QString("[%1] [%2] [%3]").arg(
+        QDateTime::currentDateTime().toString(_shouldDisplayMilliseconds ?
+                                              DATE_STRING_FORMAT_WITH_MILLISECONDS :
+                                              DATE_STRING_FORMAT),
+        stringForLogType(type),
+        context.category
+    );
 
     if (_shouldOutputProcessID) {
         prefixString.append(QString(" [%1]").arg(QCoreApplication::applicationPid()));
@@ -320,7 +320,9 @@ QString LogHandler::printMessage(LogMsgType type, const QMessageLogContext& cont
                 _repeatCount++;
             }
 
-            _previousMessage = message;
+            // HACK: Qt's implicit sharing breaks here and causes
+            // segfaults on shutdown, so manually make a copy
+            _previousMessage = QString(message.toUtf8());
         #ifdef Q_OS_WIN
             // On windows, this will output log lines into the Visual Studio "output" tab
             OutputDebugStringA(qPrintable(logMessage));
@@ -334,7 +336,9 @@ QString LogHandler::printMessage(LogMsgType type, const QMessageLogContext& cont
             }
         }
     }
-    _previousMessage = message;
+    // HACK: Qt's implicit sharing breaks here and causes
+    // segfaults on shutdown, so manually make a copy
+    _previousMessage = QString(message.toUtf8());
 #ifdef Q_OS_WIN
     // On windows, this will output log lines into the Visual Studio "output" tab
     OutputDebugStringA(qPrintable(logMessage));
