@@ -1,0 +1,2 @@
+# Skip qrc_shaders*.cpp files. They take ~2 hours in clang-tidy, cppcheck, and clangsa together when running on one thread.
+-*qrc_shaders*.cpp

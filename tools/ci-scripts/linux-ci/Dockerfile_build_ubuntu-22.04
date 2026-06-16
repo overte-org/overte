@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-05-05-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-06-12-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
@@ -133,6 +133,45 @@ COPY <<EOF /root/.conan2/source_credentials.json
     {% endif %}
   ]
 }
+EOF
+
+#
+# CodeChecker
+#
+# Install CodeChecker and its dependencies
+RUN <<EOF
+# We only run CodeChecker on amd64.
+if [ $(uname -m) = "x86_64" ]; then
+    apt update
+    apt install -y python3-pip
+    # Avoid Ubuntu 22.04's pip version throwing:
+    # ERROR: Could not install packages due to an OSError: [Errno 2] No such file or directory: '/tmp/tmpz4phh0l0/output.json'
+    pip3 install --upgrade pip
+    # The CodeChecker versions needs to be the same as requested by the CodeChecker-Action.
+    pip3 install codechecker==6.28.0
+
+    # Get new CppCheck, instead of Ubuntu's outdated version.
+    wget -O cppcheck.tar.gz https://github.com/cppcheck-opensource/cppcheck/archive/refs/tags/2.21.0.tar.gz
+    mkdir cppcheck
+    tar -xf cppcheck.tar.gz --strip-components=1 -C cppcheck
+    rm cppcheck.tar.gz
+    cd cppcheck
+    cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DHAVE_RULES=ON -DUSE_MATCHCOMPILER=ON
+    cmake --build build
+    cmake --install build
+    cd ..
+    rm -rf cppcheck
+
+    # Get new Clang, instead of Ubuntu's outdated version.
+    curl -sL http://apt.llvm.org/llvm-snapshot.gpg.key | apt-key add -
+    echo 'deb http://apt.llvm.org/jammy/ llvm-toolchain-jammy-22 main' | tee /etc/apt/sources.list.d/llvm.list >/dev/null
+    apt update
+    apt install -y clang-22 clang-tidy-22
+    update-alternatives --install /usr/bin/clang clang /usr/bin/clang-22 100
+    update-alternatives --install /usr/bin/clang-tidy clang-tidy /usr/bin/clang-tidy-22 100
+else
+    echo "We only run CodeChecker on amd64. Skipping for architecture $(uname -m)"
+fi
 EOF
 
 #
