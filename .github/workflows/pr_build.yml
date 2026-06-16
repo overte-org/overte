@@ -107,7 +107,6 @@ jobs:
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
           echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
             if [ "${{ matrix.build_type }}" = "full" ]; then
               echo "CMAKE_EXTRA=-DOVERTE_BUILD_TOOLS=FALSE" >> $GITHUB_ENV
@@ -123,7 +122,6 @@ jobs:
         fi
         # Mac build variables
         if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
-          echo "INSTALLER_EXT=dmg" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
             echo "CMAKE_EXTRA=-DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           else
@@ -133,7 +131,6 @@ jobs:
         # Windows build variables
         if [[ "${{ matrix.os }}" = "Windows"* ]]; then
           echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
             echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
           else
@@ -146,7 +143,6 @@ jobs:
           HIFI_ANDROID_PRECOMPILED="${{runner.workspace}}/dependencies"
           echo "HIFI_ANDROID_PRECOMPILED=$HIFI_ANDROID_PRECOMPILED" >> $GITHUB_ENV
           mkdir $HIFI_ANDROID_PRECOMPILED
-          echo "INSTALLER_EXT=apk" >> $GITHUB_ENV
         fi
 
     # Configuration is broken into two steps because you can't set an env var and also reference it in the same step
@@ -154,16 +150,6 @@ jobs:
       shell: bash
       run: |
         echo "CMAKE_EXTRA=${CMAKE_EXTRA} -DOVERTE_RENDERING_BACKEND=${{ matrix.rendering_backend }}" >> $GITHUB_ENV
-        echo "${{ steps.buildenv1.outputs.symbols_archive }}"
-        if [ "${{ matrix.build_type }}" = "full" ]; then
-          if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-            echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}-$(uname -m)-${{ matrix.rendering_backend }}.$INSTALLER_EXT" >> $GITHUB_ENV
-          else
-            echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
-          fi
-        else
-          echo "ARTIFACT_NAME=Overte-Interface-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
-        fi
 
     - name: Cache conan
       id: conan-cache
@@ -268,7 +254,6 @@ jobs:
     - name: Upload Artifact
       uses: actions/upload-artifact@v7
       with:
-        name: ${{ env.ARTIFACT_NAME }}
         archive: false
         path: ./build/Overte-*
         if-no-files-found: error

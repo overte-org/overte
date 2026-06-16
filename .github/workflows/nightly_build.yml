@@ -80,39 +80,18 @@ jobs:
         # Linux build variables
         if [[ "${{ matrix.os }}" =~ "Ubuntu" ]]; then
           echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DBUILD_TOOLS:BOOLEAN=FALSE" >> $GITHUB_ENV
         fi
         # Mac build variables
         if [[ "${{ matrix.os }}" =~ "macOS" ]]; then
-          echo "INSTALLER_EXT=dmg" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
           echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
           # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
           # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
-        fi
-    # Configuration is broken into two steps because you can't set an env var and also reference it in the same step
-    - name: Configure build environment 2
-      shell: bash
-      run: |
-        if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-          echo "ARTIFACT_NAME=Overte-Nightly-${GIT_COMMIT_SHORT}-$(uname -m).$INSTALLER_EXT" >> $GITHUB_ENV
-        else
-          echo "ARTIFACT_NAME=Overte-Nightly-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
-        fi
-
-        echo "${{ steps.buildenv1.outputs.symbols_archive }}"
-        echo "ARTIFACT_PATTERN=Overte-*.$INSTALLER_EXT" >> $GITHUB_ENV
-        # Build type variables
-        if [ "${{ matrix.build_type }}" = "full" ]; then
-          echo "INSTALLER=Overte-${{ github.event.number }}_${{ github.sha }}-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
-        else
-          echo "INSTALLER=Overte-Interface-master-${{ steps.buildenv1.outputs.github_sha_short }}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
 
     - name: Cache conan
@@ -205,7 +184,6 @@ jobs:
     - name: Upload artifact to GitHub
       uses: actions/upload-artifact@v7
       with:
-        name: ${{ env.ARTIFACT_NAME }}
         archive: false
         path: build/Overte-*
         if-no-files-found: error

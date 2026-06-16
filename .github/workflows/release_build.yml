@@ -86,26 +86,14 @@ jobs:
         # Linux build variables
         if [[ "${{ matrix.os }}" =~ "Ubuntu" ]]; then
           echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DBUILD_TOOLS:BOOLEAN=FALSE" >> $GITHUB_ENV
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
           echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
           # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
           # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
-        fi
-
-    # Configuration is broken into two steps because you can't set an env var and also reference it in the same step
-    - name: Configure build environment 2
-      shell: bash
-      run: |
-        if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-          echo "ARTIFACT_NAME=Overte-${{ github.ref_name }}-$(uname -m).$INSTALLER_EXT" >> $GITHUB_ENV
-        else
-          echo "ARTIFACT_NAME=Overte-${{ github.ref_name }}.$INSTALLER_EXT" >> $GITHUB_ENV
         fi
 
     - name: Cache conan
@@ -191,7 +179,6 @@ jobs:
     - name: Upload artifact to GitHub
       uses: actions/upload-artifact@v7
       with:
-        name: ${{ env.ARTIFACT_NAME }}
         archive: false
         path: build/Overte-*
         if-no-files-found: error
