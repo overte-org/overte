@@ -50,7 +50,7 @@ jobs:
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: false
         fetch-depth: 1
@@ -203,7 +203,7 @@ jobs:
     #  run: .\signtool.exe sign /fd sha256 /f ${{runner.workspace}}\build\codesign.pfx /p ${{secrets.pfx_key}} /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256 ${{runner.workspace}}\build\${env:INSTALLER}
 
     - name: Upload artifact to GitHub
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: ${{ env.ARTIFACT_NAME }}
         path: build/Overte-*
