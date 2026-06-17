@@ -22,11 +22,6 @@ runs:
         # On macOS the interface target is called "Overte" instead.
         echo "APP_TARGET_NAME=interface" >> $GITHUB_ENV
 
-    - name: Override Windows package versions
-      shell: pwsh
-      run: |
-        choco install cmake --allow-downgrade --version=3.31.6  # Our dependencies don't support CMake 4.0 yet.
-
     - name: Install NSIS plugins
       shell: pwsh
       run: |

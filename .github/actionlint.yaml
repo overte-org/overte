@@ -1,0 +1,18 @@
+# Configuration file for the GitHub Actions linter https://github.com/rhysd/actionlint
+self-hosted-runner:
+  labels:
+    # This section supports globbing.
+    # Don't throw a warning about unknown Runner labels when using Depot.dev Runners.
+    - depot-ubuntu-latest
+    - depot-ubuntu-2?.04
+    - depot-ubuntu-2?.04-?
+    - depot-ubuntu-2?.04-??
+    - depot-ubuntu-2?.04-arm
+    - depot-ubuntu-2?.04-arm-?
+    - depot-ubuntu-2?.04-arm-??
+    - depot-windows-latest
+    - depot-windows-202?
+    - depot-windows-202?-?
+    - depot-windows-202?-??
+    - depot-macos-latest
+    - depot-macos-??
