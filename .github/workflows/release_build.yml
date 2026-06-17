@@ -34,13 +34,13 @@ jobs:
             build_type: full
             qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
           - os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-05-05-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+            image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
             runner: ubuntu-latest
             arch: amd64
             build_type: full
             qt_source: system
           - os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-05-05-ubuntu-22.04-aarch64
+            image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-aarch64
             runner: ubuntu-24.04-arm
             arch: aarch64
             build_type: full
@@ -49,7 +49,7 @@ jobs:
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: false
         fetch-depth: 1
@@ -86,29 +86,18 @@ jobs:
         # Linux build variables
         if [[ "${{ matrix.os }}" =~ "Ubuntu" ]]; then
           echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DBUILD_TOOLS:BOOLEAN=FALSE" >> $GITHUB_ENV
         fi
         # Windows build variables
         if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
           echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           echo "CMAKE_EXTRA=-DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
           # echo "HF_PFX_PASSPHRASE=${{secrets.pfx_key}}" >> $GITHUB_ENV
           # echo "HF_PFX_FILE=${{runner.workspace}}\build\codesign.pfx" >> $GITHUB_ENV
         fi
 
-    # Configuration is broken into two steps because you can't set an env var and also reference it in the same step
-    - name: Configure build environment 2
-      shell: bash
-      run: |
-        if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-          echo "ARTIFACT_NAME=Overte-${{ github.ref_name }}-$(uname -m).$INSTALLER_EXT" >> $GITHUB_ENV
-        else
-          echo "ARTIFACT_NAME=Overte-${{ github.ref_name }}.$INSTALLER_EXT" >> $GITHUB_ENV
-        fi
-
     - name: Cache conan
+      id: conan-cache
       uses: actions/cache@v5
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
@@ -136,12 +125,12 @@ jobs:
         CONAN_PASSWORD_OVERTE: ${{ secrets.conan_password_overte }}
 
     - name: Cleanup Conan dependencies
-      if: always() && steps.conan-cache.cache-hit != 'true'
-      run: conan cache clean "*" -sbd
+      if: always() && steps.conan-cache.outputs.cache-hit != 'true'
+      run: conan cache clean "*" -sbdt
       shell: bash
 
     - name: Save Conan cache
-      if: always() && steps.conan-cache.cache-hit != 'true'
+      if: always() && steps.conan-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v5
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
@@ -189,9 +178,9 @@ jobs:
     #  run: .\signtool.exe sign /fd sha256 /f ${{runner.workspace}}\build\codesign.pfx /p ${{secrets.pfx_key}} /tr http://sha256timestamp.ws.symantec.com/sha256/timestamp /td SHA256 ${{runner.workspace}}\build\${env:ARTIFACT_PATTERN}
 
     - name: Upload artifact to GitHub
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
-        name: ${{ env.ARTIFACT_NAME }}
+        archive: false
         path: build/Overte-*
         if-no-files-found: error
 

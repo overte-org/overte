@@ -155,7 +155,7 @@ struct IrradianceKTXPayload {
     }
 
     bool unserialize(DataDeserializer &des) {
-        Version version;
+        Version version = 0;
         if (des.length() != SIZE) {
             return false;
         }

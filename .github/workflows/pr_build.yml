@@ -22,8 +22,6 @@ env:
   UPLOAD_REGION: fra1
   UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
 
-  CMAKE_BUILD_EXTRA: --preset conan-release
-
 jobs:
   build_pr:
     name: "${{matrix.os}}, ${{matrix.arch}}"
@@ -41,14 +39,14 @@ jobs:
             #  build_type: full
             #  qt_source: aqt
             - os: Ubuntu 22.04 OpenGL
-              image: docker.io/overte/overte-full-build:2026-05-05-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+              image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
               runner: ubuntu-latest
               arch: amd64
               build_type: full
               qt_source: system
               rendering_backend: OpenGL
             - os: Ubuntu 22.04 Vulkan
-              image: docker.io/overte/overte-full-build:2026-05-05-ubuntu-22.04-amd64
+              image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-amd64
               runner: ubuntu-latest
               arch: amd64
               build_type: full
@@ -60,24 +58,31 @@ jobs:
             #  apt-dependencies: mesa-common-dev libegl1 libglvnd-dev libdouble-conversion1 libpulse0 python3-github python3-distro
             # Do not change the names of self-hosted runners without knowing what you are doing, as they correspond to labels that have to be set on the runner.
             - os: Ubuntu 22.04 OpenGL
-              image: docker.io/overte/overte-full-build:2026-05-05-ubuntu-22.04-aarch64
+              image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-aarch64
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
               qt_source: system
               rendering_backend: OpenGL
             - os: Ubuntu 22.04 Vulkan
-              image: docker.io/overte/overte-full-build:2026-05-05-ubuntu-22.04-aarch64
+              image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-aarch64
               runner: ubuntu-24.04-arm
               arch: aarch64
               build_type: full
               qt_source: system
               rendering_backend: Vulkan
+            - os: Ubuntu 22.04 CodeChecker
+              image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-amd64
+              runner: depot-ubuntu-24.04-16
+              arch: amd64
+              build_type: CodeChecker
+              qt_source: system
+              rendering_backend: OpenGL
         fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
       with:
         submodules: false
         fetch-depth: 1
@@ -99,6 +104,8 @@ jobs:
       shell: bash
       id: buildenv1
       run: |
+        # Work around https://github.com/actions/runner/issues/2058
+        echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" >> $GITHUB_ENV
 
         # Setting short commit SHA for use as RELEASE_NAME in generated installers.
         echo "GIT_COMMIT_SHORT=`echo $GIT_COMMIT | cut -c1-7`" >> $GITHUB_ENV
@@ -107,7 +114,6 @@ jobs:
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
           echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=AppImage" >> $GITHUB_ENV
           if [[ "${{ matrix.arch }}" = "aarch64" ]]; then
             if [ "${{ matrix.build_type }}" = "full" ]; then
               echo "CMAKE_EXTRA=-DOVERTE_BUILD_TOOLS=FALSE" >> $GITHUB_ENV
@@ -121,9 +127,14 @@ jobs:
             fi
           fi
         fi
+
+        if [[ "${{ matrix.os }}" =~ "CodeChecker" ]]; then
+            # Override CMake BUILD_TYPE
+            echo "BUILD_TYPE=Debug" >> $GITHUB_ENV
+        fi
+
         # Mac build variables
         if [ "${{ matrix.os }}" = "macOS-10.15" ]; then
-          echo "INSTALLER_EXT=dmg" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
             echo "CMAKE_EXTRA=-DCMAKE_OSX_SYSROOT=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.12.sdk -DCMAKE_XCODE_ATTRIBUTE_CODE_SIGNING_REQUIRED=OFF -DOPENSSL_ROOT_DIR=/usr/local/opt/openssl -DOPENSSL_LIBRARIES=/usr/local/opt/openssl/lib -G Xcode" >> $GITHUB_ENV
           else
@@ -133,7 +144,6 @@ jobs:
         # Windows build variables
         if [[ "${{ matrix.os }}" = "Windows"* ]]; then
           echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
-          echo "INSTALLER_EXT=exe" >> $GITHUB_ENV
           if [ "${{ matrix.build_type }}" = "full" ]; then
             echo "CMAKE_EXTRA=-A x64 -DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
           else
@@ -146,7 +156,6 @@ jobs:
           HIFI_ANDROID_PRECOMPILED="${{runner.workspace}}/dependencies"
           echo "HIFI_ANDROID_PRECOMPILED=$HIFI_ANDROID_PRECOMPILED" >> $GITHUB_ENV
           mkdir $HIFI_ANDROID_PRECOMPILED
-          echo "INSTALLER_EXT=apk" >> $GITHUB_ENV
         fi
 
     # Configuration is broken into two steps because you can't set an env var and also reference it in the same step
@@ -154,16 +163,6 @@ jobs:
       shell: bash
       run: |
         echo "CMAKE_EXTRA=${CMAKE_EXTRA} -DOVERTE_RENDERING_BACKEND=${{ matrix.rendering_backend }}" >> $GITHUB_ENV
-        echo "${{ steps.buildenv1.outputs.symbols_archive }}"
-        if [ "${{ matrix.build_type }}" = "full" ]; then
-          if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
-            echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}-$(uname -m)-${{ matrix.rendering_backend }}.$INSTALLER_EXT" >> $GITHUB_ENV
-          else
-            echo "ARTIFACT_NAME=Overte-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
-          fi
-        else
-          echo "ARTIFACT_NAME=Overte-Interface-PR${{ github.event.number }}-${GIT_COMMIT_SHORT}.$INSTALLER_EXT" >> $GITHUB_ENV
-        fi
 
     - name: Cache conan
       id: conan-cache
@@ -190,12 +189,12 @@ jobs:
       run: conan cache backup-upload || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
 
     - name: Cleanup Conan dependencies
-      if: always() && steps.conan-cache.cache-hit != 'true'
-      run: conan cache clean "*" -sbd
+      if: always() && steps.conan-cache.outputs.cache-hit != 'true'
+      run: conan cache clean "*" -sbdt
       shell: bash
 
     - name: Save Conan cache
-      if: always() && steps.conan-cache.cache-hit != 'true'
+      if: always() && steps.conan-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@v5
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
@@ -214,32 +213,90 @@ jobs:
           cmake --preset conan-${BUILD_TYPE,,} -DOVERTE_RELEASE_NUMBER=${{ github.event.number }} -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=PR $CMAKE_EXTRA
         fi
 
+    - name: Run CodeChecker static analysis
+      # TODO: Use upstream action once all changes are upstreamed.
+      uses: JulianGro/CodeChecker-Action@v1.0.4-overte
+      if: matrix.build_type == 'CodeChecker'
+      id: codechecker
+      with:
+        build-command: cmake --build --preset conan-debug --target codegen
+        skipfile: ${{ env.GITHUB_WORKSPACE }}/.github/codechecker/skipfile.txt
+        # Allow static analyzers to analyze across files instead of one file at a time.
+        # TODO: Enable CTU after refactor. If we enable it now, we will always introduce new warnings, since the baseline doesn't get updated.
+        #ctu: true
+
+        # Update CodeChecker master branch results.
+        # TODO: Refactor our GitHub Actions workflows to put master, PR, and release builds in one workflow.
+        store: ${{ github.event_name == 'push' }}
+        store-url: "https://codechecker.overte.org/overte"
+        store-username: ${{ secrets.CODECHECKER_STORE_USER }}
+        store-password: ${{ secrets.CODECHECKER_STORE_PASSWORD }}
+        # Use clang and clang-tidy from our Docker image.
+        llvm-version: "ignore"
+        # Use the same CodeChecker versions as installed in the Docker image.
+        version: "6.28.0"
+        store-run-name: "main"
+
+        # Compare Pull Request against master branch, to see if there are any new warnings.
+        diff: ${{ github.event_name == 'pull_request' }}
+        diff-url: 'https://codechecker.overte.org/overte'
+        # We cannot use secrets on Pull Requests, so we use a separate read-only account.
+        diff-username: github_actions_read
+        diff-password: "xDylatsf@3Jcyz$"
+        # Which result to compare against.
+        diff-run-name: "main"
+
+    - name: Upload CodeChecker analysis warnings
+      uses: actions/upload-artifact@v7
+      if: matrix.build_type == 'CodeChecker'
+      with:
+        name: "CodeChecker analysis warnings.zip"
+        path: ${{ steps.codechecker.outputs.result-html-dir }}
+        if-no-files-found: error
+
+    # Upload the potential new findings results to the CI.
+    - name: Upload new CodeChecker analysis warnings
+      uses: actions/upload-artifact@v7
+      if: ${{ steps.codechecker.outputs.warnings-in-diff == 'true' }}
+      with:
+        name: "Newly introduced analysis warnings.zip"
+        path: ${{ steps.codechecker.outputs.diff-html-dir }}
+        if-no-files-found: error
+
+    - name: "Fail the job if new findings are introduced"
+      if: ${{ steps.codechecker.outputs.warnings-in-diff == 'true' }}
+      shell: bash
+      run: |
+        echo "::error title=New static analysis warnings::Analysed commit would introduce new static analysis warnings and potential bugs to the project."
+        # Fail the build, after results were collected and uploaded.
+        exit 1
+
     - name: Build Application
       if: matrix.build_type == 'full' || matrix.build_type == 'client'
       shell: bash
-      run: cmake --build --target $APP_TARGET_NAME $CMAKE_BUILD_EXTRA
+      run: cmake --build --target $APP_TARGET_NAME --preset conan-${BUILD_TYPE,,}
 
     - name: Build Domain Server
       if: matrix.build_type == 'full'
       shell: bash
-      run: cmake --build --target domain-server $CMAKE_BUILD_EXTRA
+      run: cmake --build --target domain-server --preset conan-${BUILD_TYPE,,}
 
     - name: Build Assignment Client
       if: matrix.build_type == 'full'
       shell: bash
-      run: cmake --build --target assignment-client $CMAKE_BUILD_EXTRA
+      run: cmake --build --target assignment-client --preset conan-${BUILD_TYPE,,}
 
     - name: Build Console
       if: matrix.build_type == 'full' && matrix.arch != 'aarch64' || startsWith(matrix.os, 'windows')
       shell: bash
       run: |
-        cmake --build --target packaged-server-console $CMAKE_BUILD_EXTRA
+        cmake --build --target packaged-server-console --preset conan-${BUILD_TYPE,,}
 
     - name: Build Installer
       if: matrix.build_type != 'android'
       shell: bash
       run: |
-        cmake --build --config $BUILD_TYPE --target package $CMAKE_BUILD_EXTRA
+        cmake --build --config $BUILD_TYPE --target package --preset conan-${BUILD_TYPE,,}
         rm build/Overte-*.json || true  # Remove JSON created by CPack External Generator to avoid it landing in the CI Artifacts.
 
     # As of 05/17/21 GitHub Virtual Environments changed their "Ubuntu 18.04.5 LTS" image to include two versions of CMake for Android
@@ -266,9 +323,9 @@ jobs:
         ./build_android.sh
 
     - name: Upload Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
-        name: ${{ env.ARTIFACT_NAME }}
+        archive: false
         path: ./build/Overte-*
         if-no-files-found: error
 
