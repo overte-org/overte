@@ -667,7 +667,7 @@ constexpr std::array<std::array<int, 16>, 256> triTable{ {
     { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }  // clang-format on
 } };
 
-constexpr size_t maxDuplicatesInRow(const std::array<int, triTable[0].size()>& row) {
+consteval size_t maxDuplicatesInRow(const std::array<int, triTable[0].size()>& row) {
     return std::ranges::max(std::ranges::views::transform(row, [&](auto r) {
         if (r == -1)
             return static_cast<size_t>(0);
@@ -676,8 +676,8 @@ constexpr size_t maxDuplicatesInRow(const std::array<int, triTable[0].size()>& r
     }));
 }
 
-constexpr size_t maxDuplicatesInTable() {
-    return std::ranges::max(std::ranges::views::transform(triTable, maxDuplicatesInRow));
+consteval size_t maxDuplicatesInTable(const std::array<std::array<int, 16>, 256>& table) {
+    return std::ranges::max(std::ranges::views::transform(table, maxDuplicatesInRow));
 }
 
 // TODO: explore if having seperate buffers is better:tm:, as this was just copied from polyvox
@@ -1018,7 +1018,7 @@ public:
                     continue;
 
                 auto& vert = vecVertices[i];
-                std::array<uint32_t, maxDuplicatesInTable() * 4> same_position = {};
+                std::array<uint32_t, maxDuplicatesInTable(triTable) * 4> same_position = {};
                 same_position.fill(none);
                 size_t index = 0;
                 same_position[index++] = i;
