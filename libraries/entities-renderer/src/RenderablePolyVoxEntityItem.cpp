@@ -26,13 +26,13 @@
 #include <QObject>
 #include <QByteArray>
 #include <QtConcurrent/QtConcurrentRun>
+#include <QElapsedTimer>
 
 #include <model-networking/SimpleMeshProxy.h>
 #include <EntityEditPacketSender.h>
 #include <PhysicalEntitySimulation.h>
 #include <StencilMaskPass.h>
 #include <graphics/ShaderConstants.h>
-#include <qelapsedtimer.h>
 #include <render/ShapePipeline.h>
 #include <procedural/Procedural.h>
 
@@ -700,6 +700,7 @@ protected:
 
 // This class was taken from PolyVox v0.2.1 and modified.
 class CubicSurfaceExtractorWithNormals : public SurfaceExtractor {
+    // clang-format off
 /*******************************************************************************
 Copyright (c) 2005-2012 David Williams and Matthew Williams
 
@@ -722,6 +723,7 @@ freely, subject to the following restrictions:
     3. This notice may not be removed or altered from any source
     distribution.
 *******************************************************************************/
+    // clang-format on
 public:
     inline CubicSurfaceExtractorWithNormals(std::shared_ptr<VoxelVolume> vol) : SurfaceExtractor(vol) {}
 
@@ -1239,11 +1241,13 @@ bool RenderablePolyVoxEntityItem::setCuboid(const glm::vec3& lowPosition, const 
     ivec3 low = glm::max(glm::min(iLowPosition, iVoxelVolumeSize - 1), ivec3(0));
     ivec3 high = glm::max(glm::min(low + iCuboidSize, iVoxelVolumeSize), low);
 
+    // clang-format off
     withWriteLock([&] {
         loop3(low, high, [&](const ivec3& v) {
             result |= setVoxelInternal(v, toValue);
         });
     });
+    // clang-format on
     if (result) {
         startUpdates();
     }
@@ -1313,9 +1317,11 @@ bool RenderablePolyVoxEntityItem::setSphere(const vec3& centerWorldCoords, float
     glm::ivec3 lowI = glm::clamp(low, glm::vec3(0.0f), _voxelVolumeSize);
     glm::ivec3 highI = glm::clamp(high, glm::vec3(0.0f), _voxelVolumeSize);
 
+    // clang-format off
     glm::vec3 radials(radiusWorldCoords / voxelSize.x,
                       radiusWorldCoords / voxelSize.y,
                       radiusWorldCoords / voxelSize.z);
+    // clang-format on
 
     // This three-level for loop iterates over every voxel in the volume that might be in the sphere
     withWriteLock([&] {
@@ -1854,11 +1860,13 @@ void RenderablePolyVoxEntityItem::uncompressVolumeData() {
         reader >> voxelYSize;
         reader >> voxelZSize;
 
+        // clang-format off
         if (voxelXSize == 0 || voxelXSize > PolyVoxEntityItem::MAX_VOXEL_DIMENSION ||
             voxelYSize == 0 || voxelYSize > PolyVoxEntityItem::MAX_VOXEL_DIMENSION ||
             voxelZSize == 0 || voxelZSize > PolyVoxEntityItem::MAX_VOXEL_DIMENSION) {
             qCDebug(entitiesrenderer) << "voxelSize is not reasonable, skipping uncompressions."
                                       << voxelXSize << voxelYSize << voxelZSize << getName() << getID();
+            // clang-format on
             entity->setVoxelsFromData(QByteArray(1, 0), 1, 1, 1);
             return;
         }
@@ -2334,10 +2342,12 @@ void RenderablePolyVoxEntityItem::setCollisionPoints(ShapeInfo::PointCollection 
     // include the registrationPoint in the shape key, because the offset is already
     // included in the points and the shapeManager wont know that the shape has changed.
     withWriteLock([&] {
+        // clang-format off
         QString shapeKey = QString(_voxelData.toBase64()) + "," +
                            QString::number(_registrationPoint.x) + "," +
                            QString::number(_registrationPoint.y) + "," +
                            QString::number(_registrationPoint.z);
+        // clang-format on
         _shapeInfo.setParams(SHAPE_TYPE_COMPOUND, collisionModelDimensions, shapeKey);
         _shapeInfo.setPointCollection(pointCollection);
         _shapeReady = true;
@@ -2721,7 +2731,9 @@ void PolyVoxEntityRenderer::doRender(RenderArgs* args) {
         }
 
         const uint32_t compactColor = GeometryCache::toCompactColor(glm::vec4(outColor));
+        // clang-format off
         if (_colorBuffer->getSize() < sizeof(compactColor) || *reinterpret_cast<const uint32_t*>(_colorBuffer->getData()) != compactColor) {
+            // clang-format on
             _colorBuffer->setData(sizeof(compactColor), (const gpu::Byte*)&compactColor);
         }
         gpu::BufferView colorView(_colorBuffer, COLOR_ELEMENT);
