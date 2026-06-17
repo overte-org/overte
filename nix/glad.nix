@@ -13,6 +13,11 @@ stdenv.mkDerivation rec {
     tag = "v${version}";
     hash = "sha256-FtkPz0xchwmqE+QgS+nSJVYaAfJSTUmZsObV/IPypVQ=";
   };
+  postPatch = ''
+    # Fix build with CMake 4
+    substituteInPlace CMakeLists.txt --replace-fail \
+      "cmake_minimum_required(VERSION 3.0)" "cmake_minimum_required(VERSION 3.10)"
+  '';
 
   nativeBuildInputs = [
     cmake
