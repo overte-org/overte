@@ -40,6 +40,7 @@
 #include <ModerationFlags.h>
 
 #include "DomainServerNodeData.h"
+#include "NodePermissions.h"
 
 const QString SETTINGS_DESCRIPTION_RELATIVE_PATH = "/resources/describe-settings.json";
 const QString SETTINGS_PATH = "/settings";
@@ -134,7 +135,6 @@ void DomainServerSettingsManager::splitSettingsDescription() {
         }
 
         if (!domainSettingArray.isEmpty() || !contentSettingArray.isEmpty()) {
-
             // we know for sure we'll have something to add to our settings menu groups
             // so setup that object for the group now, as long as the group isn't hidden alltogether
             QJsonObject settingsDropdownGroup;
@@ -359,9 +359,8 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
                 _agentPermissions[editorKey]->set(NodePermissions::Permission::canAdjustLocks);
             }
 
-            std::list<std::unordered_map<NodePermissionsKey, NodePermissionsPointer>> permissionsSets{
-                _standardAgentPermissions.get(),
-                _agentPermissions.get()
+            std::list<std::unordered_map<NodePermissionsKey, NodePermissionsPointer, NodePermissionsKeyHash>> permissionsSets{
+                _standardAgentPermissions.get(), _agentPermissions.get()
             };
             foreach (auto permissionsSet, permissionsSets) {
                 for (auto entry : permissionsSet) {
@@ -525,14 +524,9 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
         if (oldVersion < 2.5) {
             // Default values for new canRezAvatarEntities permission.
             unpackPermissions();
-            std::list<std::unordered_map<NodePermissionsKey, NodePermissionsPointer>> permissionsSets{
-                _standardAgentPermissions.get(),
-                _agentPermissions.get(),
-                _ipPermissions.get(),
-                _macPermissions.get(),
-                _machineFingerprintPermissions.get(),
-                _groupPermissions.get(),
-                _groupForbiddens.get()
+            std::list<std::unordered_map<NodePermissionsKey, NodePermissionsPointer, NodePermissionsKeyHash>> permissionsSets{
+                _standardAgentPermissions.get(),      _agentPermissions.get(), _ipPermissions.get(),  _macPermissions.get(),
+                _machineFingerprintPermissions.get(), _groupPermissions.get(), _groupForbiddens.get()
             };
             foreach (auto permissionsSet, permissionsSets) {
                 for (auto entry : permissionsSet) {
@@ -550,14 +544,9 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
         if (oldVersion < 2.7) {
             // Default values for new canViewAssetURLs permission.
             unpackPermissions();
-            std::list<std::unordered_map<NodePermissionsKey, NodePermissionsPointer>> permissionsSets{
-                _standardAgentPermissions.get(),
-                _agentPermissions.get(),
-                _ipPermissions.get(),
-                _macPermissions.get(),
-                _machineFingerprintPermissions.get(),
-                _groupPermissions.get(),
-                _groupForbiddens.get()
+            std::list<std::unordered_map<NodePermissionsKey, NodePermissionsPointer, NodePermissionsKeyHash>> permissionsSets{
+                _standardAgentPermissions.get(),      _agentPermissions.get(), _ipPermissions.get(),  _macPermissions.get(),
+                _machineFingerprintPermissions.get(), _groupPermissions.get(), _groupForbiddens.get()
             };
             foreach (auto permissionsSet, permissionsSets) {
                 for (auto entry : permissionsSet) {
@@ -697,7 +686,6 @@ void DomainServerSettingsManager::packPermissions() {
 bool DomainServerSettingsManager::unpackPermissionsForKeypath(const QString& keyPath,
                                                               NodePermissionsMap* mapPointer,
                                                               std::function<void(NodePermissionsPointer)> customUnpacker) {
-
     mapPointer->clear();
 
     QVariant permissions = valueOrDefaultValueForKeyPath(keyPath);
@@ -734,7 +722,6 @@ bool DomainServerSettingsManager::unpackPermissionsForKeypath(const QString& key
     }
 
     return needPack;
-
 }
 
 void DomainServerSettingsManager::unpackPermissions() {
@@ -836,7 +823,6 @@ void DomainServerSettingsManager::unpackPermissions() {
         }
     }
 #endif
-
 }
 
 bool DomainServerSettingsManager::ensurePermissionsForGroupRanks() {
@@ -1736,7 +1722,6 @@ QJsonObject DomainServerSettingsManager::settingDescriptionFromGroup(const QJson
 
 bool DomainServerSettingsManager::recurseJSONObjectAndOverwriteSettings(const QJsonObject& postedSettingsObject,
                                                                         SettingsType settingsType) {
-
     // take a write lock since we're about to overwrite settings in the config map
     QWriteLocker locker(&_settingsLock);
 
@@ -2000,7 +1985,6 @@ bool DomainServerSettingsManager::setGroupID(const QString& groupName, const QUu
     bool changed = false;
     _groupIDs[groupName.toLower()] = groupID;
     _groupNames[groupID] = groupName;
-
 
     for (const auto& entry : _groupPermissions.get()) {
         auto& perms = entry.second;

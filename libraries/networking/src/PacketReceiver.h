@@ -29,18 +29,15 @@
 #include "ReceivedMessage.h"
 #include "udt/PacketHeaders.h"
 
+struct sock_and_msgnum_hash {
+    size_t operator()(const std::pair<SockAddr, udt::Packet::MessageNumber>& pair) const {
+        return std::hash<SockAddr>()(pair.first) ^ std::hash<udt::Packet::MessageNumber>()(pair.second);
+    }
+};
+
 class EntityEditPacketSender;
 class Node;
 class OctreePacketProcessor;
-
-namespace std {
-    template <>
-    struct hash<std::pair<SockAddr, udt::Packet::MessageNumber>> {
-        size_t operator()(const std::pair<SockAddr, udt::Packet::MessageNumber>& pair) const {
-            return hash<SockAddr>()(pair.first) ^ hash<udt::Packet::MessageNumber>()(pair.second);
-        }
-    };
-}
 
 class PacketReceiver : public QObject {
     Q_OBJECT
@@ -130,7 +127,8 @@ private:
     QMutex _directConnectSetMutex;
     QSet<QObject*> _directlyConnectedObjects;
 
-    std::unordered_map<std::pair<SockAddr, udt::Packet::MessageNumber>, QSharedPointer<ReceivedMessage>> _pendingMessages;
+    std::unordered_map<std::pair<SockAddr, udt::Packet::MessageNumber>, QSharedPointer<ReceivedMessage>, sock_and_msgnum_hash>
+        _pendingMessages;
 
     friend class EntityEditPacketSender;
     friend class OctreePacketProcessor;
@@ -176,4 +174,4 @@ bool PacketReceiver::SourcedListenerReference<T>::invokeDirectly(const QSharedPo
     return true;
 }
 
-#endif // hifi_PacketReceiver_h
+#endif  // hifi_PacketReceiver_h

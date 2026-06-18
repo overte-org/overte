@@ -16,6 +16,7 @@
 
 #include <QtCore/QUuid>
 #include <QtCore/QUrl>
+#include <QtGlobal>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -459,95 +460,84 @@ public:
     uint16_t collisionGroup { USER_COLLISION_GROUP_MY_AVATAR };
 };
 
-namespace std {
-    inline void hash_combine(std::size_t& seed) { }
-
-    template <typename T, typename... Rest>
-    inline void hash_combine(std::size_t& seed, const T& v, Rest... rest) {
-        std::hash<T> hasher;
-        seed ^= hasher(v) + 0x9e3779b9 + (seed<<6) + (seed>>2);
-        hash_combine(seed, rest...);
-    }
-
-    template <>
-    struct hash<bilateral::Side> {
-        size_t operator()(const bilateral::Side& a) const {
-            return std::hash<int>()((int)a);
-        }
-    };
-
-    template <>
-    struct hash<glm::vec3> {
-        size_t operator()(const glm::vec3& a) const {
-            size_t result = 0;
-            hash_combine(result, a.x, a.y, a.z);
-            return result;
-        }
-    };
-
-    template <>
-    struct hash<glm::quat> {
-        size_t operator()(const glm::quat& a) const {
-            size_t result = 0;
-            hash_combine(result, a.x, a.y, a.z, a.w);
-            return result;
-        }
-    };
-
-    template <>
-    struct hash<Transform> {
-        size_t operator()(const Transform& a) const {
-            size_t result = 0;
-            hash_combine(result, a.getTranslation(), a.getRotation(), a.getScale());
-            return result;
-        }
-    };
-
-    template <>
-    struct hash<PickRay> {
-        size_t operator()(const PickRay& a) const {
-            size_t result = 0;
-            hash_combine(result, a.origin, a.direction);
-            return result;
-        }
-    };
-
-    template <>
-    struct hash<StylusTip> {
-        size_t operator()(const StylusTip& a) const {
-            size_t result = 0;
-            hash_combine(result, a.side, a.position, a.orientation, a.velocity);
-            return result;
-        }
-    };
-
-    template <>
-    struct hash<PickParabola> {
-        size_t operator()(const PickParabola& a) const {
-            size_t result = 0;
-            hash_combine(result, a.origin, a.velocity, a.acceleration);
-            return result;
-        }
-    };
-
-    template <>
-    struct hash<CollisionRegion> {
-        size_t operator()(const CollisionRegion& a) const {
-            size_t result = 0;
-            hash_combine(result, a.transform, (int)a.shapeInfo->getType(), qHash(a.modelURL));
-            return result;
-        }
-    };
-
-#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
-    template <>
-    struct hash<QString> {
-        size_t operator()(const QString& a) const {
-            return qHash(a);
-        }
-    };
-#endif
+inline void hash_combine(std::size_t& seed) {
+    Q_UNUSED(seed);
 }
+
+template <typename T, typename... Rest>
+inline void hash_combine(std::size_t& seed, const T& v, Rest... rest) {
+    std::hash<T> hasher;
+    seed ^= hasher(v) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+    hash_combine(seed, rest...);
+}
+
+template <>
+struct std::hash<bilateral::Side> {
+    size_t operator()(const bilateral::Side& a) const { return std::hash<int>()((int)a); }
+};
+
+template <>
+struct std::hash<glm::vec3> {
+    size_t operator()(const glm::vec3& a) const {
+        size_t result = 0;
+        hash_combine(result, a.x, a.y, a.z);
+        return result;
+    }
+};
+
+template <>
+struct std::hash<glm::quat> {
+    size_t operator()(const glm::quat& a) const {
+        size_t result = 0;
+        hash_combine(result, a.x, a.y, a.z, a.w);
+        return result;
+    }
+};
+
+template <>
+struct std::hash<Transform> {
+    size_t operator()(const Transform& a) const {
+        size_t result = 0;
+        hash_combine(result, a.getTranslation(), a.getRotation(), a.getScale());
+        return result;
+    }
+};
+
+template <>
+struct std::hash<PickRay> {
+    size_t operator()(const PickRay& a) const {
+        size_t result = 0;
+        hash_combine(result, a.origin, a.direction);
+        return result;
+    }
+};
+
+template <>
+struct std::hash<StylusTip> {
+    size_t operator()(const StylusTip& a) const {
+        size_t result = 0;
+        hash_combine(result, a.side, a.position, a.orientation, a.velocity);
+        return result;
+    }
+};
+
+template <>
+struct std::hash<PickParabola> {
+    size_t operator()(const PickParabola& a) const {
+        size_t result = 0;
+        hash_combine(result, a.origin, a.velocity, a.acceleration);
+        return result;
+    }
+};
+
+template <>
+struct std::hash<CollisionRegion> {
+    size_t operator()(const CollisionRegion& a) const {
+        size_t result = 0;
+        hash_combine(result, a.transform, (int)a.shapeInfo->getType(), qHash(a.modelURL));
+        return result;
+    }
+};
 
 /*@jsdoc
  * <p>The type of a collision contact event.</p>
@@ -633,7 +623,7 @@ class MeshProxy : public QObject {
 
 public:
     virtual MeshPointer getMeshPointer() const = 0;
-    
+
     /*@jsdoc
      * Gets the number of vertices in the mesh.
      * @function MeshProxy#getNumVertices
@@ -656,9 +646,7 @@ Q_DECLARE_METATYPE(MeshProxy*);
 class MeshProxyList : public QList<MeshProxy*> {}; // typedef and using fight with the Qt macros/templates, do this instead
 Q_DECLARE_METATYPE(MeshProxyList);
 
-
 class MeshFace {
-
 public:
     MeshFace() {}
     ~MeshFace() {}
@@ -674,4 +662,4 @@ QVariantMap parseTexturesToMap(QString textures, const QVariantMap& defaultTextu
 
 Q_DECLARE_METATYPE(StencilMaskMode)
 
-#endif // hifi_RegisteredMetaTypes_h
+#endif  // hifi_RegisteredMetaTypes_h

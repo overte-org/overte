@@ -227,25 +227,15 @@ public:
     image::ColorChannel sourceChannel;
 };
 
-namespace std {
-#if (QT_VERSION < QT_VERSION_CHECK(5, 14, 0))
-    template <>
-    struct hash<QByteArray> {
-        size_t operator()(const QByteArray& byteArray) const {
-            return qHash(byteArray);
-        }
-    };
-#endif
-
-    template <>
-    struct hash<TextureExtra> {
-        size_t operator()(const TextureExtra& textureExtra) const {
-            size_t result = 0;
-            hash_combine(result, (int)textureExtra.type, textureExtra.content, textureExtra.maxNumPixels, (int)textureExtra.sourceChannel);
-            return result;
-        }
-    };
-}
+template <>
+struct std::hash<TextureExtra> {
+    size_t operator()(const TextureExtra& textureExtra) const {
+        size_t result = 0;
+        hash_combine(result, (int)textureExtra.type, textureExtra.content, textureExtra.maxNumPixels,
+                     (int)textureExtra.sourceChannel);
+        return result;
+    }
+};
 
 ScriptableResource* TextureCache::prefetch(const QUrl& url, int type, int maxNumPixels, image::ColorChannel sourceChannel) {
     auto byteArray = QByteArray();
@@ -733,7 +723,6 @@ void NetworkTexture::startMipRangeRequest(uint16_t low, uint16_t high) {
         this, _activeUrl, true, -1, "NetworkTexture::startMipRangeRequest");
 
     if (!_ktxMipRequest) {
-
         PROFILE_ASYNC_END(resource, "Resource:" + getType(), QString::number(_requestID));
         return;
     }
@@ -760,7 +749,6 @@ void NetworkTexture::startMipRangeRequest(uint16_t low, uint16_t high) {
 
     _ktxMipRequest->send();
 }
-
 
 // This is called when the header or top mips have been loaded
 void NetworkTexture::ktxInitialDataRequestFinished() {
@@ -790,7 +778,6 @@ void NetworkTexture::ktxInitialDataRequestFinished() {
     }
 
     if (result == ResourceRequest::Success) {
-
         _ktxHeaderData = _ktxHeaderRequest->getData();
         _ktxHighMipData = _ktxMipRequest->getData();
         handleFinishedInitialLoad();
@@ -835,7 +822,6 @@ void NetworkTexture::ktxMipRequestFinished() {
 
     auto result = _ktxMipRequest->getResult();
     if (result == ResourceRequest::Success) {
-
         if (_ktxResourceState == REQUESTING_MIP) {
             Q_ASSERT(_ktxMipLevelRangeInFlight.first != NULL_MIP_LEVEL);
             Q_ASSERT(_ktxMipLevelRangeInFlight.second - _ktxMipLevelRangeInFlight.first == 0);
@@ -1411,7 +1397,6 @@ std::function<gpu::TexturePointer()> Texture::getTextureForUUIDOperator(const QU
     }
     return nullptr;
 }
-
 
 void Texture::setUnboundTextureForUUIDOperator(std::function<gpu::TexturePointer(const QUuid&)> textureForUUIDOperator) {
     _unboundTextureForUUIDOperator = textureForUUIDOperator;

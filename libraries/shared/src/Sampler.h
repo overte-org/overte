@@ -164,20 +164,20 @@ inline DataDeserializer& operator>>(DataDeserializer& dsr, Sampler::Desc& d) {
     return dsr;
 }
 
-namespace std {
-    template<> struct hash<Sampler> {
-        size_t operator()(const Sampler& sampler) const noexcept {
-            size_t result = 0;
-            const auto& desc = sampler.getDesc();
-            hash_combine(result, desc._comparisonFunc, desc._filter, desc._maxAnisotropy, desc._maxMip, desc._minMip, desc._wrapModeU, desc._wrapModeV, desc._wrapModeW);
-            return result;
-        }
-    };
-}
+template <>
+struct std::hash<Sampler> {
+    size_t operator()(const Sampler& sampler) const noexcept {
+        size_t result = 0;
+        const auto& desc = sampler.getDesc();
+        hash_combine(result, desc._comparisonFunc, desc._filter, desc._maxAnisotropy, desc._maxMip, desc._minMip,
+                     desc._wrapModeU, desc._wrapModeV, desc._wrapModeW);
+        return result;
+    }
+};
 
 QDebug& operator<<(QDebug& dbg, const Sampler& s);
 
 QString wrapModeToString(Sampler::WrapMode mode);
 Sampler::WrapMode wrapModeFromString(const QString& string);
 
-#endif // hifi_Sampler_h
+#endif  // hifi_Sampler_h

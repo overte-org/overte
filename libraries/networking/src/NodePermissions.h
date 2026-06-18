@@ -25,15 +25,24 @@
 
 class NodePermissions;
 using NodePermissionsPointer = std::shared_ptr<NodePermissions>;
-using NodePermissionsKey = std::pair<QString, QUuid>; // name, rankID
+using NodePermissionsKey = std::pair<QString, QUuid>;  // name, rankID
 using NodePermissionsKeyList = QList<QPair<QString, QUuid>>;
 
-namespace std {
-    template<>
-    struct hash<NodePermissionsKey> {    
-        size_t operator()(const NodePermissionsKey& key) const;
-    };
-}
+struct NodePermissionsKeyHash {
+    size_t operator()(const NodePermissionsKey& key) const noexcept {
+        size_t result = qHash(key.first);
+        result <<= sizeof(size_t) / 2;
+
+#if (QT_POINTER_SIZE == 8)
+        const uint MASK = 0x00FF;
+#else
+        const uint MASK = 0xFFFF;
+#endif
+
+        result |= (qHash(key.second) & MASK);
+        return result;
+    }
+};
 
 class NodePermissions {
 public:
@@ -145,14 +154,13 @@ public:
         return result;
     }
 
-    const std::unordered_map<NodePermissionsKey, NodePermissionsPointer>& get() { return _data; }
+    const std::unordered_map<NodePermissionsKey, NodePermissionsPointer, NodePermissionsKeyHash>& get() { return _data; }
     void clear() { _data.clear(); }
     void remove(const NodePermissionsKey& key) { _data.erase(key); }
 
 private:
-    std::unordered_map<NodePermissionsKey, NodePermissionsPointer> _data;
+    std::unordered_map<NodePermissionsKey, NodePermissionsPointer, NodePermissionsKeyHash> _data;
 };
-
 
 const NodePermissions DEFAULT_AGENT_PERMISSIONS;
 
@@ -162,4 +170,4 @@ NodePermissionsPointer& operator&=(NodePermissionsPointer& lhs, const NodePermis
 NodePermissionsPointer& operator&=(NodePermissionsPointer& lhs, NodePermissions::Permission rhs);
 NodePermissionsPointer operator~(NodePermissionsPointer& lhs);
 
-#endif // hifi_NodePermissions_h
+#endif  // hifi_NodePermissions_h

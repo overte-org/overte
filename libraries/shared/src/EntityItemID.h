@@ -22,7 +22,7 @@
 #include <QtCore/QSharedPointer>
 #include <QUuid>
 
-const QUuid UNKNOWN_ENTITY_ID; // null uuid
+const QUuid UNKNOWN_ENTITY_ID;  // null uuid
 
 /// Abstract ID for editing model items. Used in EntityItem JS API.
 class EntityItemID : public QUuid {
@@ -44,6 +44,9 @@ Q_DECLARE_METATYPE(EntityItemID);
 Q_DECLARE_METATYPE(QVector<EntityItemID>);
 
 // Allow the use of std::unordered_map with QUuid keys
-namespace std { template<> struct hash<EntityItemID> { size_t operator()(const EntityItemID& id) const; }; }
+template <>
+struct std::hash<EntityItemID> {
+    size_t operator()(const EntityItemID& id) const { return qHash(id); }
+};
 
-#endif // hifi_EntityItemID_h
+#endif  // hifi_EntityItemID_h

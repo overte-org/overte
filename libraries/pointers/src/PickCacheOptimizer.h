@@ -22,14 +22,12 @@ typedef struct PickCacheKey {
     }
 } PickCacheKey;
 
-namespace std {
-    template <>
-    struct hash<PickCacheKey> {
-        size_t operator()(const PickCacheKey& k) const {
-            return ((hash<PickFilter::Flags>()(k.mask) ^ (qHash(k.include) << 1)) >> 1) ^ (qHash(k.ignore) << 1);
-        }
-    };
-}
+template <>
+struct std::hash<PickCacheKey> {
+    size_t operator()(const PickCacheKey& k) const {
+        return ((std::hash<PickFilter::Flags>()(k.mask) ^ (qHash(k.include) << 1)) >> 1) ^ (qHash(k.ignore) << 1);
+    }
+};
 
 // T is a mathematical representation of a Pick (a MathPick)
 // For example: RayPicks use T = PickRay

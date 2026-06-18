@@ -20,13 +20,10 @@
 
 int entityItemIDTypeID = qRegisterMetaType<EntityItemID>();
 
-EntityItemID::EntityItemID() : QUuid()
-{
+EntityItemID::EntityItemID() : QUuid() {
 }
 
-
-EntityItemID::EntityItemID(const QUuid& id) : QUuid(id)
-{
+EntityItemID::EntityItemID(const QUuid& id) : QUuid(id) {
 }
 
 // EntityItemID::EntityItemID(const EntityItemID& other) : QUuid(other)
@@ -40,5 +37,3 @@ EntityItemID EntityItemID::readEntityItemIDFromBuffer(const unsigned char* data,
     }
     return result;
 }
-
-size_t std::hash<EntityItemID>::operator()(const EntityItemID& id) const { return qHash(id); }

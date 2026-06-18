@@ -58,32 +58,28 @@ private:
     QDataStream ds;
 };
 
-namespace std {
-    template <>
-    struct hash<QVariantHash> {
-        size_t operator()(const QVariantHash& a) const {
-            QVariantHasher hasher;
-            return hasher.hash(a);
-        }
-    };
+template <>
+struct std::hash<QVariantHash> {
+    size_t operator()(const QVariantHash& a) const {
+        QVariantHasher hasher;
+        return hasher.hash(a);
+    }
+};
 
-    template <>
-    struct hash<QUrl> {
-        size_t operator()(const QUrl& a) const {
-            return qHash(a);
-        }
-    };
+template <>
+struct std::hash<QUrl> {
+    size_t operator()(const QUrl& a) const { return qHash(a); }
+};
 
-    template <>
-    struct hash<GeometryExtra> {
-        size_t operator()(const GeometryExtra& geometryExtra) const {
-            size_t result = 0;
-            hash_combine(result, geometryExtra.mapping.first, geometryExtra.mapping.second, geometryExtra.textureBaseUrl,
-                geometryExtra.combineParts);
-            return result;
-        }
-    };
-}
+template <>
+struct std::hash<GeometryExtra> {
+    size_t operator()(const GeometryExtra& geometryExtra) const {
+        size_t result = 0;
+        hash_combine(result, geometryExtra.mapping.first, geometryExtra.mapping.second, geometryExtra.textureBaseUrl,
+                     geometryExtra.combineParts);
+        return result;
+    }
+};
 
 class GeometryReader : public QRunnable {
 public:
