@@ -238,8 +238,21 @@ SelectionManager = (function() {
     that.setSelections = function(entityIDs, caller) {
         print("setSelections: " + JSON.stringify(entityIDs));
         Script.logBacktrace("setSelections");
+        
+        // Clear highlight handle list
+        const selection =  Selection.getSelectedItemsList(HIGHLIGHT_LIST_NAME);
+        
+        if ( selection && selection.entities && selection.entities.length > 0 ) {
+            for (let i = 0; i < that.selections.length; i++) {
+                Selection.removeFromSelectedItemsList(HIGHLIGHT_LIST_NAME, "entity", that.selections[i]);
+            }
+        }
+        
+        // Clear class-level selections list
         that.selections = [];
-        for (var i = 0; i < entityIDs.length; i++) {
+        
+        // Add entities to the highlight handle list and Class selections list
+        for (let i = 0; i < entityIDs.length; i++) {
             var entityID = entityIDs[i];
             that.selections.push(entityID);
             Selection.addToSelectedItemsList(HIGHLIGHT_LIST_NAME, "entity", entityID);
@@ -290,6 +303,17 @@ SelectionManager = (function() {
     };
 
     that.clearSelections = function(caller) {
+        
+        const selection =  Selection.getSelectedItemsList(HIGHLIGHT_LIST_NAME);
+        
+        // Clear highlight handle list
+        if ( selection && selection.entities && selection.entities.length > 0 ) {
+            for (let i = 0; i < that.selections.length; i++) {
+                Selection.removeFromSelectedItemsList(HIGHLIGHT_LIST_NAME, "entity", that.selections[i]);
+            }
+        }
+        
+        // Clear class-level selections list
         that.selections = [];
         that._update(true, caller);
     };
