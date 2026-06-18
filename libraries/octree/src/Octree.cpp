@@ -811,7 +811,7 @@ bool Octree::readJSONFromStream(
     std::array<char, READ_JSON_BUFFER_SIZE> rawData;
 
     while (!inputStream.atEnd()) {
-        int got = inputStream.readRawData(rawData.data(), READ_JSON_BUFFER_SIZE - 1);
+        int got = inputStream.readRawData(rawData.data(), rawData.size());
         if (got < 0) {
             qCritical() << "error while reading from json stream";
             return false;
