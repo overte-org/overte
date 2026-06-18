@@ -1,7 +1,7 @@
 # https://www.git-scm.com/docs/gitignore
 #
 # Copyright 2013-2019 High Fidelity, Inc.
-# Copyright 2022-2025 Overte e.V.
+# Copyright 2022-2026 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 VideoDecodeStats
@@ -138,3 +138,7 @@ interface/compiledResources
 
 # Act local GitHub Actions
 .secret
+
+# Flatpak
+/repo/
+/.flatpak-builder/
