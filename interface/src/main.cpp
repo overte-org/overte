@@ -31,6 +31,7 @@
 #include <plugins/DisplayPlugin.h>
 #include <plugins/CodecPlugin.h>
 #include <shared/GlobalAppProperties.h>
+#include <fenv.h>
 
 #include "AddressManager.h"
 #include "Application.h"
@@ -46,6 +47,16 @@
 #include <Windows.h>
 extern "C" {
     typedef int(__stdcall* CHECKMINSPECPROC)();
+}
+#endif
+
+#ifdef Q_OS_UNIX
+#include <csignal>
+static int fpe_counter = 0;
+static void fpe_handler(int signum) {
+    // This currently exists just to have something to pass to the SIGFPE handler,
+    // and to serve as a point where to put a breakpoint.
+    ++fpe_counter;
 }
 #endif
 
@@ -372,6 +383,11 @@ int main(int argc, const char* argv[]) {
         "Which graphics API to target. Supports gl45, gl41, and gles32. Final API may vary based on system support.",
         "string"
     );
+    QCommandLineOption floatExceptionsOption(
+        "floatExcept",
+        "Trigger an exception for the chosen floating point conditions, comma separated:  divbyzero, inexact, invalid, overflow, underflow, all. This is a debugging option.",
+        "string"
+    );
 
     parser.addOption(urlOption);
     parser.addOption(protocolVersionOption);
@@ -419,6 +435,8 @@ int main(int argc, const char* argv[]) {
     parser.addOption(xrNoHandTrackingOption);
     parser.addOption(xrNoPalmPoseOption);
     parser.addOption(graphicsAPIOption);
+    parser.addOption(floatExceptionsOption);
+
 
     QString applicationPath;
     // A temporary application instance is needed to get the location of the running executable
@@ -585,6 +603,34 @@ int main(int argc, const char* argv[]) {
         return 0;
     }
 
+    if (parser.isSet(floatExceptionsOption)) {
+        QStringList opts = parser.value(floatExceptionsOption).split(",");
+        int flags = 0;
+
+        for (const auto &opt : opts) {
+            if (opt == "divbyzero") {
+                flags |= FE_DIVBYZERO;
+            } else if (opt == "inexact") {
+                flags |= FE_INEXACT;
+            } else if (opt == "invalid") {
+                flags |= FE_INVALID;
+            } else if (opt == "overflow") {
+                flags |= FE_OVERFLOW;
+            } else if (opt == "underflow") {
+                flags |= FE_UNDERFLOW;
+            } else if (opt == "all") {
+                flags = FE_ALL_EXCEPT;
+            } else {
+                qCritical() << "Invalid value for --floatExcept option: " << opt;
+                return 2;
+            }
+        }
+
+        feenableexcept(flags);
+#ifdef Q_OS_UNIX
+        signal(SIGFPE, fpe_handler);
+#endif
+    }
 
     static const QString APPLICATION_CONFIG_FILENAME = "config.json";
     QDir applicationDir(applicationPath);

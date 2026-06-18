@@ -25,6 +25,7 @@
 #include <shared/ReadWriteLockable.h>
 #include <NetworkingConstants.h>
 #include <MetaverseAPI.h>
+#include <fenv.h>
 
 #include "Logging.h"
 #include "impl/SharedObject.h"
@@ -457,7 +458,17 @@ void OffscreenSurface::finishQmlLoad(QQmlComponent* qmlComponent,
         // Call this callback after rootitem is set, otherwise VrMenu wont work
         callback(qmlContext, newItem);
     }
+
+    // There's a huge amount of divides by zero that happen with floating point exceptions
+    // enabled. It makes useful debugging impossible, so we're selectively disabling them
+    // here.
+    fexcept_t fflags;
+
+    fegetexceptflag(&fflags, FE_ALL_EXCEPT);
+    fedisableexcept(FE_ALL_EXCEPT);
     qmlComponent->completeCreate();
+
+    fesetexceptflag(&fflags, FE_ALL_EXCEPT);
     qmlComponent->deleteLater();
 }
 
