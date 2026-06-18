@@ -15,6 +15,12 @@ stdenv.mkDerivation rec {
     sha256 = "sha256-1XKm1me72+pGJXfwbShu4TJsJZduLTqpdLLQZUPP314=";
   };
 
+  postPatch = ''
+    # Fix build with CMake 4
+    substituteInPlace CMakeLists.txt --replace-fail \
+      "cmake_minimum_required(VERSION 3.2 FATAL_ERROR)" "cmake_minimum_required(VERSION 3.10)" \
+      --replace-fail "cmake_policy(VERSION 3.2)" "cmake_policy(VERSION 3.5)"
+  '';
   outputs = [
     "out"
     "doc"

@@ -1,6 +1,6 @@
 {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-25.11";
     flake-parts.url = "github:hercules-ci/flake-parts";
   };
   outputs =
@@ -58,14 +58,45 @@
             };
             devShells.default = pkgs.mkShell {
               packages = [
-                pkgs.conan
                 pkgs.ninja
                 pkgs.gdb
                 pkgs.clang-tools
               ];
               inputsFrom = [ self'.packages.overte-full ];
 
-              buildInputs = [ pkgs.libsForQt5.full ];
+              buildInputs = [
+                # taken from: https://github.com/NixOS/nixpkgs/blob/ac62194c3917d5f474c1a844b6fd6da2db95077d/pkgs/development/libraries/qt-5/5.15/default.nix#L353-L388
+                (pkgs.qt5.env "overte-devenv" (
+                  builtins.attrValues {
+                    inherit (pkgs.libsForQt5)
+                      quazip
+                      ;
+                    inherit (pkgs.qt5)
+                      qt3d
+                      qtcharts
+                      qtconnectivity
+                      qtdeclarative
+                      qtdoc
+                      qtgraphicaleffects
+                      qtimageformats
+                      qtmultimedia
+                      qtquickcontrols
+                      qtquickcontrols2
+                      qtscript
+                      qtsensors
+                      qtserialport
+                      qtsvg
+                      qttools
+                      qtwebchannel
+                      qtwebengine
+                      qtwebsockets
+                      qtwebview
+                      qtx11extras
+                      qtxmlpatterns
+                      ;
+                  }
+                ))
+              ];
 
               CMAKE_GENERATOR = "Ninja";
               CMAKE_BUILD_TYPE = "Debug";
