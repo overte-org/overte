@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include <NumericalConstants.h>
+#include <cmath>
 
 const int IEEE754_MANT_BITS = 23;
 const int IEEE754_EXPN_BIAS = 127;
@@ -123,11 +124,10 @@ const float GAIN_CONVERSION_RATIO = 2.0f * 6.02059991f; // scale log2 to 0.5dB
 const float GAIN_CONVERSION_OFFSET = 255 - 60.0f;       // translate +30dB to max
 
 static inline uint8_t packFloatGainToByte(float gain) {
-
     float f = fastLog2f(gain) * GAIN_CONVERSION_RATIO + GAIN_CONVERSION_OFFSET;
-    int32_t i = (int32_t)(f + 0.5f);                    // quantize
-    
-    uint8_t byte = (i < 0) ? 0 : ((i > 255) ? 255 : i); // clamp
+    int32_t i = std::lround(f);  // quantize
+
+    uint8_t byte = std::clamp(i, 0, 255);
     return byte;
 }
 
@@ -137,4 +137,4 @@ static inline float unpackFloatGainFromByte(uint8_t byte) {
     return gain;
 }
 
-#endif // hifi_AudioHelpers_h
+#endif  // hifi_AudioHelpers_h

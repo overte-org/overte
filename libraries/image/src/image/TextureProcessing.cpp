@@ -11,6 +11,7 @@
 
 #include "TextureProcessing.h"
 
+#include <cmath>
 #include <glm/gtc/packing.hpp>
 
 #include <QtCore/QtGlobal>
@@ -364,8 +365,8 @@ std::pair<gpu::TexturePointer, glm::ivec2> processImage(std::shared_ptr<QIODevic
         float scaleFactor = sqrtf(maxNumPixels / (float)(imageWidth * imageHeight));
         int originalWidth = imageWidth;
         int originalHeight = imageHeight;
-        imageWidth = (int)(scaleFactor * (float)imageWidth + 0.5f);
-        imageHeight = (int)(scaleFactor * (float)imageHeight + 0.5f);
+        imageWidth = std::lround(scaleFactor * (float)imageWidth);
+        imageHeight = std::lround(scaleFactor * (float)imageHeight);
         image = image.getScaled(glm::uvec2(imageWidth, imageHeight), Qt::IgnoreAspectRatio, Qt::SmoothTransformation);
         qCDebug(imagelogging).nospace() << "Downscaled " << " (" <<
             QSize(originalWidth, originalHeight) << " to " <<
