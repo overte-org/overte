@@ -172,15 +172,33 @@ const targetingPick = [
 ];
 
 let currentMenuOpen = false;
+
+/**
+ * List of all entities owned by the context menu,
+ * as well as a map to a function for when they're clicked.
+ * @type Map<Uuid, null | (target: Uuid) => void>
+ */
 let currentMenuEntities = new Map();
+/**
+ * Callback actions for each action button.
+ * @type Array<(target: Uuid) => void>
+ */
 let currentMenuActionFuncs = [];
+/**
+ * The selected target for the context menu, set by
+ * holding down click on something when opening the menu.
+ * @type Uuid
+ */
 let currentMenuTarget = Uuid.NONE;
 let currentMenuTargetIsAvatar = false;
 let currentMenuInSubmenu = false;
-let currentMenuTargetLine = Uuid.NONE;
 let mouseWasCaptured = false;
 let disableCounter = 0;
 let prevClickTime = Date.now();
+/**
+ * Stack of submenu action sets to allow going to previously open ones
+ * @type Array<[actionSetName: string, page: number]>
+ */
 let actionSetHistory = [];
 
 function ContextMenu_DeleteMenu() {
@@ -193,7 +211,6 @@ function ContextMenu_DeleteMenu() {
 	currentMenuInSubmenu = false;
 	currentMenuTargetIsAvatar = false;
 	currentMenuTarget = Uuid.NONE;
-	currentMenuTargetLine = Uuid.NONE;
 	actionSetHistory = [];
 	Camera.captureMouse = mouseWasCaptured;
 }
@@ -277,7 +294,6 @@ function ContextMenu_FindTarget(hand = 1) {
 
 function ContextMenu_OpenActions(actionSetName, page = 0) {
 	currentMenuEntities.forEach((_, e) => Entities.deleteEntity(e));
-	currentMenuTargetLine = Uuid.NONE;
 	currentMenuActionFuncs = [];
 
 	currentMenuInSubmenu = true;
@@ -350,37 +366,6 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 
 	let yPos = Math.max(1, activeActions.length) * 0.02 * scale;
 	let bgHeight = (yPos / 2.0) - (0.03 * scale);
-
-	// FIXME: Highlight laser doesn't work on camera or sensor-matrix joint
-	/*if (!Uuid.isNull(currentMenuTarget)) {
-		let targetPos;
-		if (currentMenuTargetIsAvatar) {
-			targetPos = AvatarList.getAvatar(currentMenuTarget).position;
-		} else {
-			targetPos = Entities.getEntityProperties(currentMenuTarget, "position").position;
-		}
-
-		currentMenuTargetLine = Entities.addEntity({
-			type: "PolyLine",
-			grab: {grabbable: false},
-			parentID: (CONTEXT_MENU_SETTINGS.parented ?? true) ? myAvatar : undefined,
-			parentJointIndex: HMD.active ? SENSOR_TO_WORLD_MATRIX_INDEX : CAMERA_MATRIX_INDEX,
-			position: origin,
-			linePoints: [
-				[0, 0, 0],
-				[targetPos.x - origin.x, targetPos.y - origin.y, targetPos.z - origin.z],
-			],
-			normals: [
-				[0, 0, 1],
-				[0, 0, 1],
-			],
-			strokeWidths: [0.02, 0],
-			color: [127, 255, 255],
-			faceCamera: true,
-			glow: true,
-		}, (CONTEXT_MENU_SETTINGS.public ?? false) ? "avatar" : "local");
-		currentMenuEntities.add(currentMenuTargetLine);
-	}*/
 
 	let titleText;
 	let descriptionText;
@@ -783,27 +768,6 @@ function ContextMenu_ActionEvent(action, value) {
 	}
 }
 
-// FIXME: Highlight laser doesn't work on camera or sensor-matrix joint
-/*function ContextMenu_Update() {
-	if (!Uuid.isNull(currentMenuTargetLine)) {
-		if (currentMenuTargetIsAvatar) {
-			targetPos = AvatarList.getAvatar(currentMenuTarget).position;
-		} else {
-			targetPos = Entities.getEntityProperties(currentMenuTarget, "position").position;
-		}
-
-		const myPos = Entities.getEntityProperties(currentMenuTargetLine, "position").position;
-
-		Entities.editEntity(currentMenuTargetLine, {
-			linePoints: [
-				[0, 0, 0],
-				[targetPos.x - myPos.x, targetPos.y - myPos.y, targetPos.z - myPos.z],
-			],
-			rotation: Quat.IDENTITY,
-		});
-	}
-}*/
-
 function ContextMenu_Message(channel, msg, _senderID, _localOnly) {
 	if (channel === MAIN_CHANNEL) {
 		let data; try { data = JSON.parse(msg); } catch (e) {}
@@ -855,7 +819,6 @@ Controller.mouseReleaseEvent.connect(ContextMenu_MouseReleaseEvent);
 Entities.mousePressOnEntity.connect(ContextMenu_EntityClick);
 Entities.hoverEnterEntity.connect(ContextMenu_EntityHoverEnter);
 Entities.hoverLeaveEntity.connect(ContextMenu_EntityHoverLeave);
-//Script.update.connect(ContextMenu_Update);
 
 for (const pick of targetingPick) {
 	Picks.setIgnoreItems(pick, [MyAvatar.sessionUUID]);
@@ -878,7 +841,6 @@ Script.scriptEnding.connect(() => {
 	Entities.mousePressOnEntity.disconnect(ContextMenu_EntityClick);
 	Entities.hoverEnterEntity.disconnect(ContextMenu_EntityHoverEnter);
 	Entities.hoverLeaveEntity.disconnect(ContextMenu_EntityHoverLeave);
-	//Script.update.disconnect(ContextMenu_Update);
 	Picks.removePick(targetingPick[0]);
 	Picks.removePick(targetingPick[1]);
 	ContextMenu_DeleteMenu();
