@@ -329,7 +329,7 @@
           "name": "http_authentication",
           "type": "table",
           "caption": "Authorized Users for HTTP Basic authentication",
-          "help": "These are accounts that are authorized to sign in to the web interface.",
+          "help": "These are accounts that are authorized to sign in to this Domain server control panel.",
           "can_add_new_categories": false,
           "can_add_new_rows": true,
           "new_category_placeholder": "Add new user",
