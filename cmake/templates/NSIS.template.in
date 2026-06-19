@@ -33,11 +33,11 @@
 ; taken from http://nsis.sourceforge.net/Logging:_Simple_Text_File_Logging_Functions_and_Macros
 ; TextLog.nsh v1.1 - 2005-12-26
 ; Written by Mike Schinkel [http://www.mikeschinkel.com/blog/]
-   
+
   Var /GLOBAL __TextLog_FileHandle
   Var /GLOBAL __TextLog_FileName
   Var /GLOBAL __TextLog_State
-   
+
   !define LogMsg '!insertmacro LogMsgCall'
   !macro LogMsgCall _text
           Call LogSetOn
@@ -45,26 +45,26 @@
       Call LogText
       Call LogSetOff
   !macroend
-   
-   
+
+
   !define LogText '!insertmacro LogTextCall'
   !macro LogTextCall _text
       Push "${_text}"
       Call LogText
   !macroend
-   
+
   Function LogText
       Exch $0   	; pABC -> 0ABC
       FileWrite $__TextLog_FileHandle "$0$\r$\n"
       Pop $0		; 0ABC -> ABC
   FunctionEnd
-   
+
   !define LogSetFileName '!insertmacro LogSetFileNameCall'
   !macro LogSetFileNameCall _filename
       Push "${_filename}"
       Call LogSetFileName
   !macroend
-   
+
   Function LogSetFileName
       Exch $0   	; pABC -> 0ABC
       StrCpy $__TextLog_FileName "$0"
@@ -73,12 +73,12 @@
       Call LogSetOn
       Pop $0		; 0ABC -> ABC
   FunctionEnd
-   
+
   !define LogSetOn '!insertmacro LogSetOnCall'
   !macro LogSetOnCall
       Call LogSetOn
   !macroend
-   
+
   Function LogSetOn
       StrCmp $__TextLog_FileName "" +1 AlreadySet
       StrCpy $__TextLog_FileName "$INSTDIR\install.log"
@@ -88,12 +88,12 @@
           FileSeek $__TextLog_FileHandle 0 END
       StrCpy $__TextLog_State "open"
   FunctionEnd
-   
+
   !define LogSetOff '!insertmacro LogSetOffCall'
   !macro LogSetOffCall
       Call LogSetOff
   !macroend
-   
+
   Function LogSetOff
       StrCmp $__TextLog_State "open" +1 +2
       FileClose $__TextLog_FileHandle
@@ -160,66 +160,21 @@
 ;--------------------------------
 ;General
 
-  ; hide install details since we show an image slideshow in their place
-  ShowInstDetails hide
-
   ; leverage the UAC NSIS plugin to promote uninstaller to elevated privileges
   !include UAC.nsh
 
-  ; Set name prior to inner loop so uninstaller has correct values
   Name "@CPACK_NSIS_PACKAGE_NAME@"
   BrandingText " "
   ManifestDPIAware true
 
-  !ifdef INNER
-    !echo "Inner invocation"                  ; just to see what's going on
+  ; Require administrator access
+  RequestExecutionLevel admin
 
-    ; Require user only for temp installer
-    RequestExecutionLevel user
+  ;Output file
+  OutFile "@CPACK_TOPLEVEL_DIRECTORY@/@CPACK_OUTPUT_FILE_NAME@"
 
-    OutFile "$%TEMP%\tempinstaller.exe"       ; not really important where this is
-
-    ; FIXME: We need to enable compression for our first run to stay under NSIS' 2GB limit. We should save space instead and disable compression here again.
-    SetCompressor zlib
-    ; SetCompress off                           ; for speed
-  !else
-    !echo "Outer invocation"
-
-    ; Require administrator access
-    RequestExecutionLevel admin
-
-    ; Call makensis again, defining INNER.  This writes an installer for us which, when
-    ; it is invoked, will just write the uninstaller to some location, and then exit.
-    ; Be sure to substitute the name of this script here.
-
-    !system "$\"${NSISDIR}\makensis$\" /DINNER project.nsi" = 0
-
-    ; Require administrator access
-    RequestExecutionLevel admin
-
-    ; So now run that installer we just created as %TEMP%\tempinstaller.exe.  Since it
-    ; calls quit the return value isn't zero.
-
-    !system "$%TEMP%\tempinstaller.exe" = 2
-
-    ; The Inner invocation has written an uninstaller binary for us.
-    ; We need to sign it if it's a production or PR build.
-    !if @PRODUCTION_BUILD@ == 1
-      !if @BYPASS_SIGNING@ == TRUE
-        !warning "BYPASS_SIGNING set - installer will not be signed"
-      !else 
-        !system '"@SIGNTOOL_EXECUTABLE@" sign /fd sha256 /f %HF_PFX_FILE% /p %HF_PFX_PASSPHRASE% /tr http://timestamp.comodoca.com?td=sha256 /td SHA256 $%TEMP%\@UNINSTALLER_NAME@' = 0
-      !endif
-    !endif
-
-    ; Good.  Now we can carry on writing the real installer.
-
-    ;Output file
-    OutFile "@CPACK_TOPLEVEL_DIRECTORY@/@CPACK_OUTPUT_FILE_NAME@"
-
-    ;Set compression
-    SetCompressor @CPACK_NSIS_COMPRESSOR@
-  !endif
+  ;Set compression
+  SetCompressor @CPACK_NSIS_COMPRESSOR@
 
 @CPACK_NSIS_DEFINES@
 
@@ -379,111 +334,12 @@ FunctionEnd
 
 ;--------------------------------
 
-!ifdef CPACK_USES_DOWNLOAD
-Function DownloadFile
-    IfFileExists $INSTDIR\* +2
-    CreateDirectory $INSTDIR
-    Pop $0
-
-    ; Skip if already downloaded
-    IfFileExists $INSTDIR\$0 0 +2
-    Return
-
-    StrCpy $1 "@CPACK_DOWNLOAD_SITE@"
-
-  try_again:
-    NSISdl::download "$1/$0" "$INSTDIR\$0"
-
-    Pop $1
-    StrCmp $1 "success" success
-    StrCmp $1 "Cancelled" cancel
-    MessageBox MB_OK "Download failed: $1"
-  cancel:
-    Return
-  success:
-FunctionEnd
-!endif
-
-
-!include NSISpcre.nsh
-!insertmacro REMatches
-
-Var CampaignName
-
-!macro GetCampaignName RetVar
-  Call GetCampaignName
-  Pop ${RetVar}
-!macroend
-
-Function GetCampaignName
-  Push $0 ; Stash $0
-
-  ; Parse filename out of the path
-  ${RECaptureMatches} $0 "([^\\]*\\)*(.*)\.exe" $EXEPATH 0
-  ${If} $0 == 2
-    Pop $0 ; Discard Path
-    Pop $0 ; Recover filename
-    ; Parse campaign out of the filename
-    ${RECaptureMatches} $0 "ProjectAthena-([^-]*-)Alpha-.*" $0 0
-    ${If} $0 == 1
-      Pop $0 ; Recover campaign name
-      StrCpy $0 $0 -1 0 ; Remove trailing - and copy to _RetVar
-    ${Else}
-      StrCpy $0 ""
-    ${EndIf}
-  ${Else}
-    StrCpy $0 ""
-  ${EndIf}
-
-  Exch $0 ; Restore $0 and push result
-FunctionEnd
-
-!macro CreateGUID RetVar
-  System::Call 'ole32::CoCreateGuid(g .s)'
-  Pop ${RetVar}
-  ; Strip opening and closing braces
-  StrCpy ${RetVar} ${RetVar} -1 1
-!macroend
-
-Var GAClientID
-
-!macro InitGAClientID
-  ; Generate a new GUID on every run for now
-  !insertmacro CreateGUID $GAClientID
-!macroend
-
 !macro LogStep Category Action Label Value
   ${LogText} "Step: ${Category} ${Action} ${Label} ${Value}"
 !macroend
 
-!macro GoogleAnalytics Category Action Label Value
-  ${If} "@GA_TRACKING_ID@" != ""
-    Push $0
-    Push $1
-
-    StrCpy $0 "https://google-analytics.com/collect?v=1&tid=@GA_TRACKING_ID@"
-    StrCpy $0 "$0&cid=$GAClientID&t=event&ec=${Category}&ea=${Action}"
-
-    ${If} "${Label}" != ""
-      StrCpy $0 "$0&el=${Label}"
-    ${EndIf}
-    ${If} "${Value}" != ""
-      StrCpy $0 "$0&ev=${Value}"
-    ${EndIf}
-
-    GetTempFileName $1
-    inetc::get /SILENT $0 $1 /END
-    Delete $1
-
-    Pop $1
-    Pop $0
-  ${EndIf}
-!macroend
-
 ;--------------------------------
 ; Installation types
-
-
 @CPACK_NSIS_INSTALLATION_TYPES@
 
 ;--------------------------------
@@ -531,7 +387,6 @@ Var GAClientID
   Page custom PostInstallOptionsPage ReadPostInstallOptions
 
   !define MUI_PAGE_CUSTOMFUNCTION_PRE PageInstallFilesPre
-  ; !define MUI_PAGE_CUSTOMFUNCTION_SHOW StartInstallSlideshow
   !insertmacro MUI_PAGE_INSTFILES
 
   !insertmacro MUI_UNPAGE_CONFIRM
@@ -543,22 +398,30 @@ Var GAClientID
   !insertmacro MUI_LANGUAGE "English" ;first language is the default language
   !insertmacro MUI_LANGUAGE "Albanian"
   !insertmacro MUI_LANGUAGE "Arabic"
+  !insertmacro MUI_LANGUAGE "Armenian"
+  !insertmacro MUI_LANGUAGE "Asturian"
   !insertmacro MUI_LANGUAGE "Basque"
   !insertmacro MUI_LANGUAGE "Belarusian"
   !insertmacro MUI_LANGUAGE "Bosnian"
   !insertmacro MUI_LANGUAGE "Breton"
   !insertmacro MUI_LANGUAGE "Bulgarian"
+  !insertmacro MUI_LANGUAGE "Catalan"
+  !insertmacro MUI_LANGUAGE "Corsican"
   !insertmacro MUI_LANGUAGE "Croatian"
   !insertmacro MUI_LANGUAGE "Czech"
   !insertmacro MUI_LANGUAGE "Danish"
   !insertmacro MUI_LANGUAGE "Dutch"
+  !insertmacro MUI_LANGUAGE "Esperanto"
   !insertmacro MUI_LANGUAGE "Estonian"
   !insertmacro MUI_LANGUAGE "Farsi"
   !insertmacro MUI_LANGUAGE "Finnish"
   !insertmacro MUI_LANGUAGE "French"
+  !insertmacro MUI_LANGUAGE "Galician"
+  !insertmacro MUI_LANGUAGE "Georgian"
   !insertmacro MUI_LANGUAGE "German"
   !insertmacro MUI_LANGUAGE "Greek"
   !insertmacro MUI_LANGUAGE "Hebrew"
+  !insertmacro MUI_LANGUAGE "Hindi"
   !insertmacro MUI_LANGUAGE "Hungarian"
   !insertmacro MUI_LANGUAGE "Icelandic"
   !insertmacro MUI_LANGUAGE "Indonesian"
@@ -574,22 +437,29 @@ Var GAClientID
   !insertmacro MUI_LANGUAGE "Malay"
   !insertmacro MUI_LANGUAGE "Mongolian"
   !insertmacro MUI_LANGUAGE "Norwegian"
+  !insertmacro MUI_LANGUAGE "NorwegianNynorsk"
+  !insertmacro MUI_LANGUAGE "Pashto"
   !insertmacro MUI_LANGUAGE "Polish"
   !insertmacro MUI_LANGUAGE "Portuguese"
   !insertmacro MUI_LANGUAGE "PortugueseBR"
   !insertmacro MUI_LANGUAGE "Romanian"
   !insertmacro MUI_LANGUAGE "Russian"
+  !insertmacro MUI_LANGUAGE "ScotsGaelic"
   !insertmacro MUI_LANGUAGE "Serbian"
   !insertmacro MUI_LANGUAGE "SerbianLatin"
   !insertmacro MUI_LANGUAGE "SimpChinese"
   !insertmacro MUI_LANGUAGE "Slovak"
   !insertmacro MUI_LANGUAGE "Slovenian"
   !insertmacro MUI_LANGUAGE "Spanish"
+  !insertmacro MUI_LANGUAGE "SpanishInternational"
   !insertmacro MUI_LANGUAGE "Swedish"
+  !insertmacro MUI_LANGUAGE "Tatar"
   !insertmacro MUI_LANGUAGE "Thai"
   !insertmacro MUI_LANGUAGE "TradChinese"
   !insertmacro MUI_LANGUAGE "Turkish"
   !insertmacro MUI_LANGUAGE "Ukrainian"
+  !insertmacro MUI_LANGUAGE "Uzbek"
+  !insertmacro MUI_LANGUAGE "Vietnamese"
   !insertmacro MUI_LANGUAGE "Welsh"
 
 
@@ -631,60 +501,29 @@ Var Express
   ${EndIf}
 !macroend
 
-!macro DownloadSlideshowImages
-  ${LogText} "Download Slideshow Images"
-  InitPluginsDir
-
-  Push $0
-
-  ; figure out where to download installer slideshow images from
-  StrCpy $0 "http://cdn.highfidelity.com/installer/slideshow"
-  ; Is this in use anymore?
-
-  ${If} $CampaignName == ""
-    StrCpy $0 "$0/default"
-  ${Else}
-    StrCpy $0 "$0/$CampaignName"
-  ${EndIf}
-
-  NSISdl::download_quiet $0/1.jpg "$PLUGINSDIR\1.jpg"
-  NSISdl::download_quiet $0/2.jpg "$PLUGINSDIR\2.jpg"
-  NSISdl::download_quiet $0/3.jpg "$PLUGINSDIR\3.jpg"
-
-  Pop $0
-!macroend
-
 Function OnUserAbort
   !insertmacro LogStep "Installer" "Abort" "User Abort" ""
-  ; !insertmacro GoogleAnalytics "Installer" "Abort" "User Abort" ""
 FunctionEnd
 Function PageWelcomePre
   !insertmacro LogStep "Installer" "Welcome" "" ""
-  ; !insertmacro GoogleAnalytics "Installer" "Welcome" "" ""
-  ; !insertmacro DownloadSlideshowImages
 FunctionEnd
 Function PageLicensePre
   !insertmacro LogStep "Installer" "License" "" ""
-  ; !insertmacro GoogleAnalytics "Installer" "License" "" ""
 FunctionEnd
 Function PageDirectoryPre
   !insertmacro MaybeSkipPage
   !insertmacro LogStep "Installer" "Directory" "" ""
-  ; !insertmacro GoogleAnalytics "Installer" "Directory" "" ""
 FunctionEnd
 Function PageStartMenuPre
   !insertmacro MaybeSkipPage
   !insertmacro LogStep "Installer" "StartMenu" "" ""
-  ; !insertmacro GoogleAnalytics "Installer" "StartMenu" "" ""
 FunctionEnd
 Function PageComponentsPre
   !insertmacro MaybeSkipPage
   !insertmacro LogStep "Installer" "Components" "" ""
-  ; !insertmacro GoogleAnalytics "Installer" "Components" "" ""
 FunctionEnd
 Function PageInstallFilesPre
   !insertmacro LogStep "Installer" "Install" "" ""
-  ; !insertmacro GoogleAnalytics "Installer" "Install" "" ""
 FunctionEnd
 
 !macro SetInstallOption Checkbox OptionName Default
@@ -706,7 +545,6 @@ FunctionEnd
 
 Function InstallTypesPage
   !insertmacro LogStep "Installer" "Install Types" "" ""
-  ; !insertmacro GoogleAnalytics "Installer" "Install Types" "" ""
 
   !insertmacro MUI_HEADER_TEXT "Choose Installation Type" "Express or Custom Install"
 
@@ -760,64 +598,12 @@ Function ChangeCustomLabel
   Pop $R1
 FunctionEnd
 
-!macro AddImageToSlideshowFile ImageFilename
-  ${If} ${FileExists} "$PLUGINSDIR\${ImageFilename}.jpg"
-    FileWrite $0 "= ${ImageFilename}.jpg,500,5000,$\"$\"$\r$\n"
-    StrCpy $1 "1"
-  ${EndIf}
-!macroend
-
-Function StartInstallSlideshow
-  ; create a slideshow file based on what files we have available
-  ${LogText} "Start Installs Slideshow"
-
-  ; stash $0 and $1
-  Push $0
-  Push $1
-
-  ; start $1 as 0, indicating we have no images present
-  StrCpy $1 "0"
-
-  FileOpen $0 "$PLUGINSDIR\slideshow.dat" w
-
-  ; write the language value to the slideshow file for english
-  FileWrite $0 "[1033]$\r$\n"
-
-  ; for each of 1.jpg, 2.jpg, 3.jpg
-  ; if the image is present add it to the dat file and set our flag
-  ; to show we found at least one image
-  !insertmacro AddImageToSlideshowFile "1"
-  !insertmacro AddImageToSlideshowFile "2"
-  !insertmacro AddImageToSlideshowFile "3"
-
-  FileClose $0
-
-  ; NOTE: something inside of nsisSlideshow::show isn't keeping the stack clean
-  ; so we need to push things back BEFORE we call it
-
-  ${If} $1 == "1"
-    Pop $1
-    Pop $0
-
-    ; show the slideshow using the created data file
-    nsisSlideshow::show /NOUNLOAD "/auto=$PLUGINSDIR\slideshow.dat"
-  ${Else}
-    Pop $1
-    Pop $0
-
-    ; show the install details because we didn't end up with slideshow images to show
-    SetDetailsView show
-  ${EndIf}
-
-FunctionEnd
-
 Function PostInstallOptionsPage
 
   ${LogText} "Install Directory: $INSTDIR"
 
   !insertmacro MaybeSkipPage
   !insertmacro LogStep "Installer" "Post Install Options" "" ""
-  ; !insertmacro GoogleAnalytics "Installer" "Post Install Options" "" ""
 
   !insertmacro MUI_HEADER_TEXT "Setup Options" ""
 
@@ -847,14 +633,14 @@ Function PostInstallOptionsPage
   ;  ${NSD_CreateCheckbox} 0 $CurrentOffset$OffsetUnits 100% 10u "&Create a desktop shortcut for @CONSOLE_HF_SHORTCUT_NAME@"
   ;${EndIf}
   ;Pop $DesktopConsoleCheckbox
-  ;IntOp $CurrentOffset $CurrentOffset + 15  
+  ;IntOp $CurrentOffset $CurrentOffset + 15
   ;
   ;; set the checkbox state depending on what is present in the registry
   ;!insertmacro SetInstallOption $DesktopConsoleCheckbox @CONSOLE_DESKTOP_SHORTCUT_REG_KEY@ ${BST_UNCHECKED}
   ${If} @SERVER_COMPONENT_CONDITIONAL@
     ${NSD_CreateCheckbox} 0 $CurrentOffset$OffsetUnits 100% 10u "&Create a desktop shortcut for @SANDBOX_HF_SHORTCUT_NAME@"
     Pop $DesktopConsoleCheckbox
-    IntOp $CurrentOffset $CurrentOffset + 15  
+    IntOp $CurrentOffset $CurrentOffset + 15
     ; set the checkbox state depending on what is present in the registry
     !insertmacro SetInstallOption $DesktopConsoleCheckbox @CONSOLE_DESKTOP_SHORTCUT_REG_KEY@ ${BST_UNCHECKED}
   ${EndIf}
@@ -890,7 +676,7 @@ Function PostInstallOptionsPage
   ${If} @SERVER_COMPONENT_CONDITIONAL@
     ${NSD_CreateCheckbox} 0 $CurrentOffset$OffsetUnits 100% 10u "&Launch @SANDBOX_HF_SHORTCUT_NAME@ after install"
     Pop $LaunchConsoleNowCheckbox
-    
+
     ; set the checkbox state depending on what is present in the registry
     !insertmacro SetInstallOption $LaunchConsoleNowCheckbox @SERVER_LAUNCH_NOW_REG_KEY@ ${BST_UNCHECKED}
     ${StrContains} $substringResult "/forceNoLaunchServer" $CMDLINE
@@ -916,7 +702,7 @@ Function PostInstallOptionsPage
     ${NSD_CreateCheckbox} 0 $CurrentOffset$OffsetUnits 100% 10u "&Launch @SANDBOX_HF_SHORTCUT_NAME@ on startup"
     Pop $ConsoleStartupCheckbox
     IntOp $CurrentOffset $CurrentOffset + 15
-    
+
     ; set the checkbox state depending on what is present in the registry
     !insertmacro SetInstallOption $ConsoleStartupCheckbox @CONSOLE_STARTUP_REG_KEY@ ${BST_UNCHECKED}
   ${EndIf}
@@ -1002,7 +788,7 @@ Function ReadPostInstallOptions
   ${Else}
     StrCpy $DesktopConsoleState ${BST_UNCHECKED}
   ${EndIf}
-  
+
   ; FIXME: Re-enable or permanently remove system tray "Console" for Interface-only installs.
   ;; check if the user asked to have console launched every startup
   ;${NSD_GetState} $ConsoleStartupCheckbox $ConsoleStartupState
@@ -1017,8 +803,8 @@ Function ReadPostInstallOptions
 
   ${If} @SERVER_COMPONENT_CONDITIONAL@
     ${LogText} "Option: Install Server"
-  ${EndIf}  
-  
+  ${EndIf}
+
   ${If} @CLIENT_COMPONENT_CONDITIONAL@
     ${LogText} "Option: Install Client"
     ; check if the user asked for a desktop shortcut to Overte
@@ -1027,7 +813,7 @@ Function ReadPostInstallOptions
   ${EndIf}
 
   ${If} @PR_BUILD@ == 1
-    ${LogText} "Option: PR Build"  
+    ${LogText} "Option: PR Build"
     ; check if we need to copy settings/content from production for this PR build
     ${NSD_GetState} $CopyFromProductionCheckbox $CopyFromProductionState
     ${LogText} "Option: Copy Settings From Production: $CopyFromProductionState"
@@ -1185,23 +971,6 @@ Function HandlePostInstallOptions
   ${EndIf}
 FunctionEnd
 
-Function OptionallyDownloadCampaignServerless
-  ${If} $CampaignName != ""
-    InitPluginsDir
-
-    NSISdl::download_quiet http://cdn.highfidelity.com/installer/serverless/$CampaignName.zip $PLUGINSDIR\$CampaignName.zip
-
-    ${If} ${FileExists} $PLUGINSDIR\$CampaignName.zip
-      ; replace the installed serverless content with the campaign content
-
-      RMDir /r "$INSTDIR\resources\serverless"
-      CreateDirectory "$INSTDIR\resources\serverless"
-      nsisunz::Unzip "$PLUGINSDIR\$CampaignName.zip" "$INSTDIR\resources\serverless"
-    ${EndIf}
-
-  ${Endif}
-FunctionEnd
-
 ;--------------------------------
 ;Installer Sections
 
@@ -1231,17 +1000,12 @@ Section "-Core installation"
   Push $0
   FileOpen $0 "$INSTDIR\installer.ini" w
   FileWrite $0 "type=@INSTALLER_TYPE@$\r$\n"
-  FileWrite $0 "campaign=$CampaignName$\r$\n"
   FileWrite $0 "exepath=$EXEPATH$\r$\n"
   FileClose $0
   Pop $0
 
-  ;Package the signed uninstaller produced by the inner loop
-  !ifndef INNER
-    ; this packages the signed uninstaller
-    File $%TEMP%\@UNINSTALLER_NAME@
-  !endif
-
+  ;Create uninstaller
+  WriteUninstaller "$INSTDIR\Uninstall.exe"
   Push "DisplayName"
   Push "@CPACK_NSIS_DISPLAY_NAME@"
   Call ConditionalAddToRegisty
@@ -1339,14 +1103,10 @@ Section "-Core installation"
 
   @CPACK_NSIS_EXTRA_INSTALL_COMMANDS@
 
-  ; see if we have a campaign that we might need to grab special content for
-  ; Call OptionallyDownloadCampaignServerless
-
   ; Handle whichever post install options were set
   Call HandlePostInstallOptions
 
   !insertmacro LogStep "Installer" "Done" "" ""
-  ; !insertmacro GoogleAnalytics "Installer" "Done" "" ""
 SectionEnd
 
 !include nsProcess.nsh
@@ -1372,8 +1132,6 @@ SectionEnd
         "${displayName} cannot be ${action} while ${displayName} is running.$\r$\nPlease close it in the task bar and click Retry to continue." \
         /SD IDCANCEL IDRETRY Prompt_${UniqueID} IDCANCEL 0
       ${EndIf}
-
-      ; !insertmacro GoogleAnalytics "Installer" "Abort" "${displayName} Running" ""
 
       ; If the user decided to cancel, stop the current installer/uninstaller
       Abort
@@ -1483,10 +1241,6 @@ FunctionEnd
 ;--------------------------------
 ;Uninstaller Section
 
-; the normal uninstaller section is only defined for inner (they're not needed in the "outer"
-; installer and will just cause warnings because there is no WriteInstaller command)
-
-!ifdef INNER
 Section "Uninstall"
 
   ; use all users context for data/startup folders
@@ -1542,7 +1296,7 @@ Section "Uninstall"
   Delete "$SMSTARTUP\@CONSOLE_HF_SHORTCUT_NAME@.lnk"
   Delete "$SMSTARTUP\@SANDBOX_HF_SHORTCUT_NAME@.lnk"
   SetShellVarContext all
-  
+
   ; Remove all Interface caches of the current user when uninstalling.
   SetShellVarContext current
   RMDir /r "$LOCALAPPDATA\@BUILD_ORGANIZATION@\Interface"
@@ -1597,7 +1351,6 @@ Section "Uninstall"
   DeleteRegKey /ifempty HKLM "Software\@CPACK_PACKAGE_VENDOR@\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@"
 
 SectionEnd
-!endif
 
 InstallDirRegKey HKLM "Software\@CPACK_PACKAGE_VENDOR@\@CPACK_PACKAGE_INSTALL_REGISTRY_KEY@" ""
 
@@ -1607,22 +1360,6 @@ Function .onInit
   ${LogSetFileName} "$TEMP\hifi_install.log"
   ${LogSetOn}
   ${LogText} "In .onInit"
-
-  !ifdef INNER
-    ; If INNER is defined, then we aren't supposed to do anything except write out
-    ; the installer.  This is better than processing a command line option as it means
-    ; this entire code path is not present in the final (real) installer.
-
-    WriteUninstaller "$%TEMP%\@UNINSTALLER_NAME@"
-
-    ; just bail out quickly when running the "inner" installer
-    Quit
-  !endif
-
-  !insertmacro InitGAClientID
-  !insertmacro GetCampaignName $CampaignName
-
-  ; !insertmacro GoogleAnalytics "Installer" "Start" "$CampaignName" ""
 
   ; make sure none of the installed applications are still running
   ${LogText} "Checking For Running Applications"
