@@ -4,13 +4,14 @@
 //
 //  Created by Ken Cooke on 10/11/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2026 Overte e.V.
 //
 
 #include "AudioReverb.h"
 
-#include <stdint.h>
-#include <string.h>
-#include <math.h>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
 
 #ifdef _MSC_VER
 #include <intrin.h>
