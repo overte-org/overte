@@ -256,10 +256,17 @@ function ContextMenu_EntityHoverEnter(eid, _event) {
 		}
 	} catch (e) {}
 
+	// make the background a little lighter on hovered actions
+	// NOTE: the spread operator is necessary here to get a copy,
+	// otherwise we'll be modifying entityAction.backgroundColor itself
+	let bgColor = [...entityAction.backgroundColor ?? [0, 0, 0]];
+	bgColor[0] = Math.min(bgColor[0] + 48, 255);
+	bgColor[1] = Math.min(bgColor[1] + 48, 255);
+	bgColor[2] = Math.min(bgColor[2] + 48, 255);
+
 	Entities.editEntity(eid, {
-		textColor: entityAction.backgroundColor ?? [0, 0, 0],
-		backgroundColor: entityAction.textColor ?? [255, 255, 255],
-		textEffectColor: entityAction.textColor ?? [255, 255, 255],
+		backgroundColor: bgColor,
+		textEffectColor: bgColor,
 	});
 }
 
@@ -268,10 +275,11 @@ function ContextMenu_EntityHoverLeave(eid, _event) {
 
 	if (!entityAction) { return; }
 
+	const bgColor = entityAction.backgroundColor ?? [0, 0, 0];
+
 	Entities.editEntity(eid, {
-		backgroundColor: entityAction.backgroundColor ?? [0, 0, 0],
-		textEffectColor: entityAction.backgroundColor ?? [0, 0, 0],
-		textColor: entityAction.textColor ?? [255, 255, 255],
+		backgroundColor: bgColor,
+		textEffectColor: bgColor
 	});
 }
 
