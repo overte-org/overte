@@ -808,18 +808,18 @@ bool Octree::readJSONFromStream(
     // we get an eof.  Leave streamLength parameter for consistency.
 
     QByteArray jsonBuffer;
-    char* rawData = new char[READ_JSON_BUFFER_SIZE];
+    std::array<char, READ_JSON_BUFFER_SIZE> rawData;
+
     while (!inputStream.atEnd()) {
-        int got = inputStream.readRawData(rawData, READ_JSON_BUFFER_SIZE - 1);
+        int got = inputStream.readRawData(rawData.data(), rawData.size());
         if (got < 0) {
             qCritical() << "error while reading from json stream";
-            delete[] rawData;
             return false;
         }
         if (got == 0) {
             break;
         }
-        jsonBuffer += QByteArray(rawData, got);
+        jsonBuffer += QByteArray(rawData.data(), got);
     }
 
     OctreeEntitiesFileParser octreeParser;
@@ -833,7 +833,6 @@ bool Octree::readJSONFromStream(
     }
 
     bool success = readFromMap(asMap, isImport);
-    delete[] rawData;
     return success;
 }
 
