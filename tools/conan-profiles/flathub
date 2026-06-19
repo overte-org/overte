@@ -1,0 +1,19 @@
+include(default)
+
+[settings]
+compiler.cppstd=gnu20
+
+[platform_tool_requires]
+# Use system CMake
+# The version number is us telling Conan which cmake version we have on our system.
+cmake/4.2.0
+# We lie about our version here, so Conan doesn't try to get CMake version <4.
+cmake/3.31.12
+
+[conf]
+# Avoid dependencies failing to build on GCC 15 and newer.
+tools.build:cxxflags=['-include', 'cstdint']
+
+[options]
+# Required for building oneTBB.
+hwloc/*:shared=True

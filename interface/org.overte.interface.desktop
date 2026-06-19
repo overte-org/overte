@@ -5,4 +5,4 @@ Terminal=false
 Type=Application
 Exec=interface
 Icon=interface
-Categories=Network;Qt;
+Categories=Network;Qt;Game;
