@@ -31,8 +31,16 @@ public:
     /// @param socketType The SocketType value.
     /// @return The name of the SocketType value.
     static QString socketTypeToString (SocketType socketType) {
-        static QStringList SOCKET_TYPE_STRINGS { "Unknown", "UDP", "WebRTC" };
-        return SOCKET_TYPE_STRINGS[(int)socketType];
+        switch (socketType) {
+            case SocketType::Unknown:
+                return QStringLiteral("Unknown");
+            case SocketType::UDP:
+                return QStringLiteral("UDP");
+            case SocketType::WebRTC:
+                return QStringLiteral("WebRTC");
+            default:
+                return QStringLiteral("Unknown value in enum! BUG!");
+        }
     }
 };
 
