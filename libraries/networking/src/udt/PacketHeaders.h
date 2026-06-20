@@ -371,6 +371,7 @@ enum class EntityVersion : PacketVersion {
     Fading,
     Sampler,
     CanvasEntity,
+    PolylineAlphaAndSampler,
 
     // Add new versions above here
     NUM_PACKET_TYPE,
