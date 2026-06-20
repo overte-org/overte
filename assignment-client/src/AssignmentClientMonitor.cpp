@@ -74,7 +74,7 @@ AssignmentClientMonitor::AssignmentClientMonitor(const unsigned int numAssignmen
     auto addressManager = DependencyManager::set<AddressManager>();
     auto nodeList = DependencyManager::set<LimitedNodeList>(listenPort);
 
-    auto& packetReceiver = DependencyManager::get<NodeList>()->getPacketReceiver();
+    auto& packetReceiver = DependencyManager::get<LimitedNodeList>()->getPacketReceiver();
     packetReceiver.registerListener(PacketType::AssignmentClientStatus,
         PacketReceiver::makeUnsourcedListenerReference<AssignmentClientMonitor>(this, &AssignmentClientMonitor::handleChildStatusPacket));
 
@@ -130,7 +130,7 @@ void AssignmentClientMonitor::childProcessFinished(qint64 pid, quint16 listenPor
 
 void AssignmentClientMonitor::stopChildProcesses() {
     qDebug() << "Stopping child processes";
-    auto nodeList = DependencyManager::get<NodeList>();
+    auto nodeList = DependencyManager::get<LimitedNodeList>();
 
     // ask child processes to terminate
     for (auto& ac : _childProcesses) {
@@ -209,7 +209,7 @@ void AssignmentClientMonitor::spawnChildClient() {
     // tell children which assignment monitor port to use
     // for now they simply talk to us on localhost
     _childArguments.append("--" + ASSIGNMENT_CLIENT_MONITOR_PORT_OPTION);
-    _childArguments.append(QString::number(DependencyManager::get<NodeList>()->getLocalSockAddr().getPort()));
+    _childArguments.append(QString::number(DependencyManager::get<LimitedNodeList>()->getLocalSockAddr().getPort()));
 
     _childArguments.append("--" + PARENT_PID_OPTION);
     _childArguments.append(QString::number(QCoreApplication::applicationPid()));
@@ -294,7 +294,7 @@ void AssignmentClientMonitor::spawnChildClient() {
 }
 
 void AssignmentClientMonitor::checkSpares() {
-    auto nodeList = DependencyManager::get<NodeList>();
+    auto nodeList = DependencyManager::get<LimitedNodeList>();
     QUuid aSpareId = "";
     unsigned int spareCount = 0;
     unsigned int totalCount = 0;
@@ -336,7 +336,7 @@ void AssignmentClientMonitor::handleChildStatusPacket(QSharedPointer<ReceivedMes
     // read out the sender ID
     QUuid senderID = QUuid::fromRfc4122(message->readWithoutCopy(NUM_BYTES_RFC4122_UUID));
 
-    auto nodeList = DependencyManager::get<NodeList>();
+    auto nodeList = DependencyManager::get<LimitedNodeList>();
 
     SharedNodePointer matchingNode = nodeList->nodeWithUUID(senderID);
     const SockAddr& senderSockAddr = message->getSenderSockAddr();
