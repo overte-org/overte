@@ -41,7 +41,7 @@ void AvatarMixerWorker::configure(ConstIter begin, ConstIter end) {
     _end = end;
 }
 
-void AvatarMixerWorker::configureBroadcast(ConstIter begin, ConstIter end, 
+void AvatarMixerWorker::configureBroadcast(ConstIter begin, ConstIter end,
                                 p_high_resolution_clock::time_point lastFrameTimestamp,
                                 float maxKbpsPerNode, float throttlingRatio,
                                 float priorityReservedFraction) {
@@ -185,7 +185,7 @@ qint64 AvatarMixerWorker::addChangedTraitsToBulkPacket(AvatarMixerClientData* li
                 // look for existing acked version for this instance
                 auto ackedInstanceIt = std::find_if(ackIDValuePairs.begin(), ackIDValuePairs.end(),
                                                     [instanceID](auto& ackInstance) { return ackInstance.id == instanceID; });
-                
+
                 // if we have a sent version, then we must have an acked instance of the same trait with the same
                 // version to go on, otherwise we drop the received trait
                 if (sentInstanceIt != sentIDValuePairs.end() &&
@@ -378,7 +378,7 @@ void AvatarMixerWorker::broadcastAvatarDataToAgent(const SharedNodePointer& node
     enum PriorityVariants { kHero, kNonhero };
     AvatarPriorityQueue avatarPriorityQueues[2] =
     {
-        {cameraViews, AvatarData::_avatarSortCoefficientSize, 
+        {cameraViews, AvatarData::_avatarSortCoefficientSize,
             AvatarData::_avatarSortCoefficientCenter, AvatarData::_avatarSortCoefficientAge},
         {cameraViews, AvatarData::_avatarSortCoefficientSize,
             AvatarData::_avatarSortCoefficientCenter, AvatarData::_avatarSortCoefficientAge}
@@ -482,7 +482,7 @@ void AvatarMixerWorker::broadcastAvatarDataToAgent(const SharedNodePointer& node
             avatarPriorityQueues[avatarNodeData->getHasPriority() ? kHero : kNonhero].push(
                 SortableAvatar(avatarNodeData, sourceAvatarNode, lastEncodeTime));
         }
-        
+
         // If Node A's PAL WAS open but is no longer open, AND
         // Node A is ignoring Avatar B OR Node B is ignoring Avatar A...
         //
@@ -517,7 +517,8 @@ void AvatarMixerWorker::broadcastAvatarDataToAgent(const SharedNodePointer& node
     auto identityPacketList = NLPacketList::create(PacketType::AvatarIdentity, QByteArray(), true, true);
 
     // Loop over two priorities - hero avatars then everyone else:
-    for (PriorityVariants currentVariant = kHero; currentVariant <= kNonhero; ++((int&)currentVariant)) {
+    std::array<PriorityVariants, 2> priority_order = { PriorityVariants::kHero, PriorityVariants::kNonhero };
+    for (PriorityVariants currentVariant : priority_order) {
         const auto& sortedAvatarVector = avatarPriorityQueues[currentVariant].getSortedVector(numToSendEst);
         for (const auto& sortedAvatar : sortedAvatarVector) {
             const Node* sourceNode = sortedAvatar.getNode();
@@ -700,7 +701,7 @@ void AvatarMixerWorker::broadcastAvatarDataToDownstreamMixer(const SharedNodePoi
         if (!AvatarMixer::shouldReplicateTo(*agentNode, *node)) {
             return;
         }
-        
+
         // collect agents that we have avatar data for that we are supposed to replicate
         if (agentNode->getType() == NodeType::Agent && agentNode->getLinkedData() && agentNode->isReplicated()) {
             const AvatarMixerClientData* agentNodeData = reinterpret_cast<const AvatarMixerClientData*>(agentNode->getLinkedData());
@@ -713,7 +714,7 @@ void AvatarMixerWorker::broadcastAvatarDataToDownstreamMixer(const SharedNodePoi
             // since we have no idea if they're online and receiving our packets
 
             // so we always send a full update for this avatar
-            
+
             quint64 start = usecTimestampNow();
             AvatarDataPacket::SendStatus sendStatus;
 
