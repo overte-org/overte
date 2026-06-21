@@ -667,13 +667,17 @@ constexpr std::array<std::array<int, 16>, 256> triTable{ {
     { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }  // clang-format on
 } };
 
-consteval size_t maxDuplicatesInRow(const std::array<int, triTable[0].size()>& row) {
-    return std::ranges::max(std::ranges::views::transform(row, [&](auto r) {
-        if (r == -1)
-            return static_cast<size_t>(0);
+static_assert(std::ranges::all_of(triTable, [](auto a) { return std::ranges::max(a) < 12; }));
 
-        return static_cast<size_t>(std::ranges::count_if(row, [&](int r2) { return r == r2; }));
-    }));
+consteval size_t maxDuplicatesInRow(const std::array<int, triTable[0].size()>& row) {
+    std::array<size_t, 12> numOccurences;
+    numOccurences.fill(0);
+    std::ranges::for_each(row, [&](auto r) {
+        if (r == -1)
+            return;
+        numOccurences[r]++;
+    });
+    return std::ranges::max(numOccurences);
 }
 
 consteval size_t maxDuplicatesInTable(const std::array<std::array<int, 16>, 256>& table) {
