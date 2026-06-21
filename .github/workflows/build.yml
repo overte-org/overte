@@ -1,0 +1,309 @@
+# Copyright 2013-2019 High Fidelity, Inc.
+# Copyright 2020-2022 Vircadia contributors.
+# Copyright 2021-2026 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
+# Use a linter like https://github.com/rhysd/actionlint to avoid silent failures when developing GitHub Actions workflows.
+# You can use https://github.com/nektos/act to test things locally. Example command:
+# act -W .github/workflows/build.yml "pull_request" --matrix id:codechecker --secret-file=.secret
+
+name: Overte CI Build
+
+on:
+  # Keep in mind that GitHub Actions does not allow reading secrets during PR builds.
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches:
+      - master
+    tags:
+      # Release tags. E.g. 2024.06.1
+      # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+      - "[0-9][0-9][0-9][0-9].[0-9][0-9].**"
+
+env:
+  # Many environment variables are already set in our Docker images or in other Actions.
+  BUILD_TYPE: Release
+  UPLOAD_BUCKET: overte-public
+  UPLOAD_REGION: fra1
+  UPLOAD_ENDPOINT: "https://fra1.digitaloceanspaces.com"
+  # GITHUB_SHA points to the merge commit instead of the latest commit on the branch.
+  PULL_REQUEST_SHA: ${{ github.event.pull_request.head.sha }}
+
+jobs:
+  build:
+    name: "${{matrix.job_name_prefix}}${{matrix.os}}, ${{matrix.rendering_backend}}, ${{matrix.arch}}, ${{matrix.cmake_build_type}}"
+    strategy:
+      matrix:
+        include:
+          - id: windows
+            os: Windows 2022
+            # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
+            runner: depot-windows-2022-16  # Which GitHub Actions Runner to use. When using `image` this just needs to run the build container.
+            arch: x86_64
+            cmake_build_type: Release
+            qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
+            rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
+          - id: ubuntu-opengl-amd64
+            os: Ubuntu 22.04
+            image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+            runner: ubuntu-latest
+            arch: amd64
+            cmake_build_type: Release
+            qt_source: system
+            rendering_backend: OpenGL
+          - id: ubuntu-vulkan-amd64
+            os: Ubuntu 22.04
+            image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-amd64
+            runner: ubuntu-latest
+            arch: amd64
+            cmake_build_type: Release
+            qt_source: system
+            rendering_backend: Vulkan
+          - id: ubuntu-opengl-aarch64
+            os: Ubuntu 22.04
+            image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-aarch64
+            runner: ubuntu-24.04-arm
+            arch: aarch64
+            cmake_build_type: Release
+            qt_source: system
+            rendering_backend: OpenGL
+          - id: ubuntu-vulkan-aarch64
+            os: Ubuntu 22.04
+            image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-aarch64
+            runner: ubuntu-24.04-arm
+            arch: aarch64
+            cmake_build_type: Release
+            qt_source: system
+            rendering_backend: Vulkan
+          - id: codechecker
+            os: Ubuntu 22.04
+            image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-amd64
+            runner: depot-ubuntu-24.04-16
+            arch: amd64
+            cmake_build_type: Debug
+            qt_source: system
+            rendering_backend: OpenGL
+            job_name_prefix: 'CodeChecker '
+      fail-fast: false
+    runs-on: ${{matrix.runner}}
+    container: ${{matrix.image}}
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        submodules: false
+        fetch-depth: 1
+
+    - name: Prepare Windows environment
+      if: startsWith(matrix.os, 'Windows')
+      uses: ./.github/actions/setup-windows
+
+    - name: Read image environment variables
+      # Bring some environment variables out of the Runner (Docker) image's environment into the Job environment.
+      if: ${{matrix.image}}
+      shell: bash
+      run: |
+        echo "CONAN_HOME=$CONAN_HOME" >> $GITHUB_ENV
+        echo "CONAN_PROFILE=$CONAN_PROFILE" >> $GITHUB_ENV
+        echo "APP_TARGET_NAME=$APP_TARGET_NAME" >> $GITHUB_ENV
+
+    - name: Configure build environment 1
+      shell: bash
+      id: buildenv1
+      run: |
+        # Work around https://github.com/actions/runner/issues/2058
+        echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" >> $GITHUB_ENV
+        # Create envionment variable for later Bash Parameter Expansion
+        echo "CMAKE_BUILD_TYPE=${{ matrix.cmake_build_type }}" >> $GITHUB_ENV
+
+        if [ "${{github.event_name}}" = "pull_request" ]; then
+          echo "OVERTE_RELEASE_TYPE=PR" >> $GITHUB_ENV
+          echo "OVERTE_RELEASE_NUMBER=${{ github.event.number }}" >> $GITHUB_ENV
+          echo "GIT_COMMIT_SHORT=${PULL_REQUEST_SHA::7}" >> $GITHUB_ENV
+        elif [ "${{github.event_name}}" = "push" && github.event.action == 'tag' ]; then
+          echo "OVERTE_RELEASE_TYPE=RELEASE" >> $GITHUB_ENV
+          echo "OVERTE_RELEASE_NUMBER=" >> $GITHUB_ENV
+          echo "GIT_COMMIT_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+          if [[ "${{ github.ref_name }}" == *"rc"* ]]; then  # release candidate
+            # The uploader already creates a subfolder for each RELEASE_NUMBER.
+            echo "UPLOAD_PREFIX=build/overte/release-candidate/" >> $GITHUB_ENV
+          else  # release
+            echo "UPLOAD_PREFIX=build/overte/release/" >> $GITHUB_ENV
+          fi
+        elif [ "${{github.event_name}}" = "push" ]; then  # Nightly
+          echo "OVERTE_RELEASE_TYPE=NIGHTLY" >> $GITHUB_ENV
+          echo "OVERTE_RELEASE_NUMBER=" >> $GITHUB_ENV
+          echo "GIT_COMMIT_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
+        else  # No condition matched.
+          exit 1;
+        fi
+
+        # Linux build variables
+        if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
+          echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
+        fi
+
+        # Windows build variables
+        if [[ "${{ matrix.os }}" = "Windows"* ]]; then
+          echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
+          echo "CMAKE_EXTRA=-DJSDOC_ENABLED:BOOL=TRUE" >> $GITHUB_ENV
+        fi
+
+    - name: Cache conan
+      if: ${{ !env.ACT }}  # Don't run when testing locally.
+      id: conan-cache
+      uses: actions/cache@v5
+      with:
+        key: conan-${{ matrix.os }}--${{ matrix.cmake_build_type }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: |
+            ${{ env.CONAN_HOME }}/sources
+            ${{ env.CONAN_HOME }}/p
+
+    - name: Install Conan dependencies
+      uses: ./.github/actions/conan-install
+      with:
+        qt_source: ${{matrix.qt_source}}
+        build_type: ${{matrix.cmake_build_type}}
+        cppstd: ${{env.CONAN_CPPSTD}}
+        conan_profile: ${{env.CONAN_PROFILE}}
+
+    - name: Upload dependency source backups
+      if: github.event.action != 'tag'
+      shell: bash
+      env:
+        # Token for uploading dependency source backups.
+        CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN: ${{ secrets.CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN }}
+      run: conan cache backup-upload || echo "Credentials cannot be accessed on remote Pull Request builds. Continuing…"
+
+    - name: Upload Conan binary cache to Artifactory
+      # Conan isn't glibc aware, so we need to be really careful what we upload to the binary cache on Linux.
+      # Namely, we should never upload anything from a Linux system that is newer than our oldest Linux target.
+      # See the upstream discussion: https://github.com/conan-io/conan/issues/7121
+
+      if: github.event_name != 'pull_request' && github.event.action != 'tag'
+      continue-on-error: true
+      uses: ./.github/actions/conan-upload-binaries
+      with:
+        CONAN_LOGIN_USERNAME_OVERTE: ${{ secrets.conan_login_username_overte }}
+        CONAN_PASSWORD_OVERTE: ${{ secrets.conan_password_overte }}
+
+    - name: Cleanup Conan dependencies
+      if: always() && steps.conan-cache.outputs.cache-hit != 'true'
+      run: conan cache clean "*" -sbdt
+      shell: bash
+
+    - name: Save Conan cache
+      if: always() && steps.conan-cache.outputs.cache-hit != 'true' && env.ACT != 'true'
+      uses: actions/cache/save@v5
+      with:
+        key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
+        path: |
+            ${{ env.CONAN_HOME }}/sources
+            ${{ env.CONAN_HOME }}/p
+
+    - name: Configure CMake
+      shell: bash
+      run: |
+        if [[ "${{ matrix.os }}" =~ "Windows" ]]; then
+          cmake --preset conan-default -DOVERTE_RENDERING_BACKEND=${{ matrix.rendering_backend }} -DOVERTE_RELEASE_NUMBER=$OVERTE_RELEASE_NUMBER -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=$OVERTE_RELEASE_TYPE $CMAKE_EXTRA
+        else
+          cmake --preset conan-${CMAKE_BUILD_TYPE,,} -DOVERTE_RENDERING_BACKEND=${{ matrix.rendering_backend }} -DOVERTE_RELEASE_NUMBER=$OVERTE_RELEASE_NUMBER -DOVERTE_GIT_COMMIT_SHORT=$GIT_COMMIT_SHORT -DOVERTE_RELEASE_TYPE=$OVERTE_RELEASE_TYPE $CMAKE_EXTRA
+        fi
+
+    - name: Run CodeChecker static analysis
+      uses: JulianGro/CodeChecker-Action@v1.0.4-overte
+      if: matrix.id == 'codechecker' && github.event.action != 'tag'
+      id: codechecker
+      with:
+        build-command: cmake --build --preset conan-debug --target codegen
+        skipfile: ${{ env.GITHUB_WORKSPACE }}/.github/codechecker/skipfile.txt
+        # Allow static analyzers to analyze across files instead of one file at a time.
+        ctu: true
+
+        # Update CodeChecker master branch results.
+        store: ${{ github.event_name == 'push' }} && ${{ github.ref_name == 'master' }}
+        store-url: "https://codechecker.overte.org/overte"
+        store-username: ${{ secrets.CODECHECKER_STORE_USER }}
+        store-password: ${{ secrets.CODECHECKER_STORE_PASSWORD }}
+        # Use clang and clang-tidy from our Docker image.
+        llvm-version: "ignore"
+        # Use the same CodeChecker versions as installed in the Docker image.
+        version: "6.28.0"
+        store-run-name: "main"
+
+        # Compare Pull Request against master branch, to see if there are any new warnings.
+        diff: ${{ github.event_name == 'pull_request' }}
+        diff-url: 'https://codechecker.overte.org/overte'
+        # We cannot use secrets on Pull Requests, so we use a separate read-only account.
+        diff-username: github_actions_read
+        diff-password: "xDylatsf@3Jcyz$"
+        # Which result to compare against.
+        diff-run-name: "main"
+
+    - name: Upload CodeChecker analysis warnings
+      uses: actions/upload-artifact@v7
+      if: steps.codechecker.outcome != 'skipped' && env.ACT != 'true'
+      with:
+        name: "CodeChecker_analysis_warnings_${{ env.GIT_COMMIT_SHORT }}.zip"
+        path: ${{ steps.codechecker.outputs.result-html-dir }}
+        if-no-files-found: error
+
+    - name: Upload new CodeChecker analysis warnings
+      uses: actions/upload-artifact@v7
+      if: steps.codechecker.outputs.warnings-in-diff == 'true' && env.ACT != 'true'
+      with:
+        name: "Newly_introduced_analysis_warnings_${{ env.GIT_COMMIT_SHORT }}.zip"
+        path: ${{ steps.codechecker.outputs.diff-html-dir }}
+        if-no-files-found: error
+
+    - name: "Fail the job if new findings are introduced"
+      if: ${{ steps.codechecker.outputs.warnings-in-diff == 'true' }}
+      shell: bash
+      run: |
+        echo "::error title=New static analysis warnings::Analysed commit would introduce new static analysis warnings and potential bugs to the project."
+        # Fail the build, after results were collected and uploaded.
+        exit 1
+
+    - name: Build application
+      shell: bash
+      run: cmake --build --target $APP_TARGET_NAME --preset conan-${CMAKE_BUILD_TYPE,,}
+
+    - name: Build domain server
+      shell: bash
+      run: cmake --build --target domain-server --preset conan-${CMAKE_BUILD_TYPE,,}
+
+    - name: Build assignment client
+      shell: bash
+      run: cmake --build --target assignment-client --preset conan-${CMAKE_BUILD_TYPE,,}
+
+    - name: Build console
+      shell: bash
+      run: cmake --build --target packaged-server-console --preset conan-${CMAKE_BUILD_TYPE,,}
+
+    - name: Build installer
+      shell: bash
+      run: |
+        cmake --build --target package --preset conan-${CMAKE_BUILD_TYPE,,}
+        rm build/Overte-*.json || true  # Remove JSON created by CPack External Generator to avoid it landing in the CI Artifacts.
+
+    - name: Upload artifact to GitHub
+      if: ${{ !env.ACT }}  # Don't run when testing locally.
+      uses: actions/upload-artifact@v7
+      with:
+        archive: false
+        path: build/Overte-*
+        if-no-files-found: error
+
+    - name: Upload artifact to S3
+      if: github.event.action == 'tag'
+      shell: bash
+      working-directory: build
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.s3_access_key_id }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.s3_secret_access_key }}
+        RELEASE_NUMBER: ${{ github.ref_name }}
+      run: $PYTHON_EXEC $GITHUB_WORKSPACE/tools/ci-scripts/upload.py
+
+    - name: Output debug information
+      if: always()
+      uses: ./.github/actions/debug-info

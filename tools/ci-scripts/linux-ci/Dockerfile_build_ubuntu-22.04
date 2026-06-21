@@ -62,6 +62,7 @@ qtbase5-private-dev
 libxcb-glx0-dev
 libqt5multimedia5-plugins
 qt5-image-formats-plugins  # Runtime dependency required for WebP texture support.
+fcitx5-frontend-qt5  # Runtime dependency for IME support.
 npm  # For Interface's JavaScript console completion and building server-console.
 # Tools for package creation
 sudo

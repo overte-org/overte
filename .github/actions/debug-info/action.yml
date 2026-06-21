@@ -1,4 +1,5 @@
 name: "Gather debug information"
+description: "Prints information potentially useful when troubleshooting a failing job."
 runs:
     using: "composite"
     steps:
@@ -11,7 +12,6 @@ runs:
     - name: Output Windows installer logs
       if: startsWith(matrix.os, 'Windows')
       shell: bash
-      continue-on-error: true
       working-directory: build
-      run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log
+      run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log || echo "No NSIS log found. Continuing…"
 
