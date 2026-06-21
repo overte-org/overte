@@ -255,8 +255,6 @@ void fixBisectedAxis(float& full, float& negative, float& positive) {
 void UserInputMapper::update(float deltaTime) {
     Locker locker(_lock);
     InputRecorder* inputRecorder = InputRecorder::getInstance();
-    static uint64_t updateCount = 0;
-    ++updateCount;
 
     inputRecorder->resetFrame();
     // Reset the axis state for next loop

@@ -316,13 +316,11 @@ bool Model::updateGeometry() {
         }
 
         const HFMModel& hfmModel = getHFMModel();
-        int i = 0;
         foreach (const HFMMesh& mesh, hfmModel.meshes) {
             MeshState state;
             state.clusterDualQuaternions.resize(mesh.clusters.size());
             state.clusterMatrices.resize(mesh.clusters.size());
             _meshStates.push_back(state);
-            i++;
         }
         needFullUpdate = true;
         emit rigReady();

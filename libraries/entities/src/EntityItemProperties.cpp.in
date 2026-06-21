@@ -1213,8 +1213,6 @@ bool EntityItemProperties::encodeCloneEntityMessage(const EntityItemID& entityID
 }
 
 bool EntityItemProperties::decodeCloneEntityMessage(const QByteArray& buffer, int& processedBytes, EntityItemID& entityIDToClone, EntityItemID& newEntityID) {
-    const unsigned char* packetData = (const unsigned char*)buffer.constData();
-    const unsigned char* dataAt = packetData;
     size_t packetLength = buffer.size();
     processedBytes = 0;
 
@@ -1225,12 +1223,10 @@ bool EntityItemProperties::decodeCloneEntityMessage(const QByteArray& buffer, in
 
     QByteArray encodedID = buffer.mid((int)processedBytes, NUM_BYTES_RFC4122_UUID);
     entityIDToClone = QUuid::fromRfc4122(encodedID);
-    dataAt += encodedID.size();
     processedBytes += encodedID.size();
 
     encodedID = buffer.mid((int)processedBytes, NUM_BYTES_RFC4122_UUID);
     newEntityID = QUuid::fromRfc4122(encodedID);
-    dataAt += encodedID.size();
     processedBytes += encodedID.size();
 
     return true;

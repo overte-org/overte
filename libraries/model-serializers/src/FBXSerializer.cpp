@@ -1153,7 +1153,6 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
                             }
                         }
                     } else if (connection.properties.at(0) == OP) {
-                        int counter = 0;
                         hifi::ByteArray type = connection.properties.at(3).toByteArray().toLower();
                         if (type.contains("DiffuseFactor")) {
                             diffuseFactorTextures.insert(getID(connection.properties, 2), getID(connection.properties, 1));
@@ -1203,7 +1202,6 @@ HFMModel* FBXSerializer::extractHFMModel(const hifi::VariantHash& mapping, const
 
                         } else {
                             QString typenam = type.data();
-                            counter++;
                         }
                     }
                     if (_connectionParentMap.value(getID(connection.properties, 1)) == "0") {

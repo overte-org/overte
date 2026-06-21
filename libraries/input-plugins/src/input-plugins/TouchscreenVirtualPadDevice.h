@@ -195,9 +195,7 @@ protected:
     void processUnusedTouches(std::map<int, TouchType> unusedTouchesInEvent);
 
     void processInputDeviceForView();
-// just for debug
-private:
-    void debugPoints(const QTouchEvent* event, QString who);
+
 
 };
 

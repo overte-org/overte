@@ -158,9 +158,9 @@ void TouchscreenVirtualPadDevice::processInputDeviceForView() {
     // We use average across how many times we've got touchUpdate events.
     // Using the average instead of the full deltaX and deltaY, makes deltaTime in MyAvatar dont't accelerate rotation when there is a low touchUpdate rate (heavier domains).
     // (Because it multiplies this input value by deltaTime (with a coefficient)).
-    _inputDevice->_axisStateMap[controller::RX].value = 
+    _inputDevice->_axisStateMap[controller::RX].value =
         _viewTouchUpdateCount == 0 ? 0 : (_viewCurrentTouchPoint.x - _viewRefTouchPoint.x) / _viewTouchUpdateCount;
-    _inputDevice->_axisStateMap[controller::RY].value = 
+    _inputDevice->_axisStateMap[controller::RY].value =
         _viewTouchUpdateCount == 0 ? 0 : (_viewCurrentTouchPoint.y - _viewRefTouchPoint.y) / _viewTouchUpdateCount;
 
     // after use, save last touch point as ref
@@ -209,33 +209,10 @@ bool TouchscreenVirtualPadDevice::InputDevice::triggerHapticPulse(float strength
 void TouchscreenVirtualPadDevice::InputDevice::focusOutEvent() {
 }
 
-void TouchscreenVirtualPadDevice::debugPoints(const QTouchEvent* event, QString who) {
-    // convert the touch points into an average
-    const QList<QTouchEvent::TouchPoint>& tPoints = event->touchPoints();
-    QVector<glm::vec2> points;
-    int touchPoints = tPoints.count();
-    for (int i = 0; i < touchPoints; ++i) {
-        glm::vec2 thisPoint(tPoints[i].pos().x(), tPoints[i].pos().y());
-        points << thisPoint;
-    }
-    QScreen* eventScreen = event->window()->screen();
-    int midScreenX = eventScreen->availableSize().width()/2;
-    int lefties = 0;
-    int righties = 0;
-    vec2 currentPoint;
-    for (int i = 0; i < points.length(); i++) {
-        currentPoint = points.at(i);
-        if (currentPoint.x < midScreenX) {
-            lefties++;
-        } else {
-            righties++;
-        }
-    }
-}
+
 
 void TouchscreenVirtualPadDevice::touchBeginEvent(const QTouchEvent* event) {
     // touch begin here is a big begin -> begins both pads? maybe it does nothing
-    debugPoints(event, " BEGIN ++++++++++++++++");
     auto& virtualPadManager = VirtualPad::Manager::instance();
     if (!virtualPadManager.isEnabled() && !virtualPadManager.isHidden()) {
         return;
@@ -253,7 +230,6 @@ void TouchscreenVirtualPadDevice::touchEndEvent(const QTouchEvent* event) {
     // touch end here is a big reset -> resets both pads
     _touchPointCount = 0;
     _unusedTouches.clear();
-    debugPoints(event, " END ----------------");
     moveTouchEnd();
     viewTouchEnd();
     _buttonsManager.endTouchForAll();

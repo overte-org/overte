@@ -120,7 +120,6 @@ std::tuple<std::unique_ptr<draco::Mesh>, bool> createDracoMesh(const hfm::Mesh& 
             1, draco::DT_UINT16);
     }
 
-    auto partIndex = 0;
     draco::FaceIndex face;
     uint16_t materialID;
 
@@ -177,7 +176,6 @@ std::tuple<std::unique_ptr<draco::Mesh>, bool> createDracoMesh(const hfm::Mesh& 
             addFace(part.triangleIndices, i, face++);
         }
 
-        partIndex++;
     }
 
     auto dracoMesh = meshBuilder.Finalize();
@@ -200,7 +198,7 @@ std::tuple<std::unique_ptr<draco::Mesh>, bool> createDracoMesh(const hfm::Mesh& 
     if (needsOriginalIndices) {
         dracoMesh->attribute(originalIndexAttributeID)->set_unique_id(DRACO_ATTRIBUTE_ORIGINAL_INDEX);
     }
-    
+
     return std::make_tuple(std::move(dracoMesh), false);
 }
 #endif // not Q_OS_ANDROID

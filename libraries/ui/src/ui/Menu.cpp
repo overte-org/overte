@@ -229,7 +229,7 @@ QAction* Menu::addCheckableActionToQMenuAndActionHash(MenuWrapper* destinationMe
                                                     const QKeySequence& shortcut,
                                                     const bool checked,
                                                     int menuItemLocation,
-                                                    const QString& grouping) { 
+                                                    const QString& grouping) {
     auto action = addCheckableActionToQMenuAndActionHash(destinationMenu, actionName, shortcut, checked, nullptr, nullptr, menuItemLocation, grouping);
     connect(action, &QAction::triggered, handler);
     return action;
@@ -324,14 +324,13 @@ MenuWrapper* Menu::getMenu(const QString& menuName) {
     QStringList menuTree = menuName.split(">");
     MenuWrapper* parent = NULL;
     MenuWrapper* menu = NULL;
-    int item = 0;
+
     foreach (QString menuTreePart, menuTree) {
         menu = getSubMenuFromName(menuTreePart.trimmed(), parent);
         if (!menu) {
             break;
         }
         parent = menu;
-        item++;
     }
     return menu;
 }

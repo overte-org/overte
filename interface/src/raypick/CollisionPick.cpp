@@ -71,19 +71,19 @@ void buildObjectIntersectionsMap(IntersectionType intersectionType, const std::v
  *
  * @typedef {object} IntersectingObject
  * @property {Uuid} id - The ID of the object.
- * @property {IntersectionType} type - The type of the object, either <code>1</code> for INTERSECTED_ENTITY or <code>3</code> 
+ * @property {IntersectionType} type - The type of the object, either <code>1</code> for INTERSECTED_ENTITY or <code>3</code>
  *     for INTERSECTED_AVATAR.
  * @property {CollisionContact[]} collisionContacts - Information on the penetration between the pick and the object.
  */
 
 /*@jsdoc
- * A pair of points that represents part of an overlap between a {@link CollisionPick} and an object in the physics engine. 
+ * A pair of points that represents part of an overlap between a {@link CollisionPick} and an object in the physics engine.
  * Points which are further apart represent deeper overlap.
  *
  * @typedef {object} CollisionContact
- * @property {Vec3} pointOnPick - A point representing a penetration of the object's surface into the volume of the pick, in 
+ * @property {Vec3} pointOnPick - A point representing a penetration of the object's surface into the volume of the pick, in
  *     world coordinates.
- * @property {Vec3} pointOnObject - A point representing a penetration of the pick's surface into the volume of the object, in 
+ * @property {Vec3} pointOnObject - A point representing a penetration of the pick's surface into the volume of the object, in
  *     world coordinates.
  * @property {Vec3} normalOnPick - The normal vector pointing away from the pick, representing the direction of collision.
  */
@@ -283,7 +283,6 @@ void CollisionPick::computeShapeInfo(const CollisionRegion& pick, ShapeInfo& sha
         triangleIndices.clear();
 
         Extents extents;
-        int32_t meshCount = 0;
         int32_t pointListIndex = 0;
         for (auto& mesh : meshes) {
             if (!mesh.vertices.size()) {
@@ -355,7 +354,6 @@ void CollisionPick::computeShapeInfo(const CollisionRegion& pick, ShapeInfo& sha
                 // flag end of mesh
                 triangleIndices.push_back(END_OF_MESH);
             }
-            ++meshCount;
         }
 
         // scale and shift
@@ -434,7 +432,7 @@ PickResultPointer CollisionPick::getEntityIntersection(const CollisionRegion& pi
         return std::make_shared<CollisionPickResult>(pick.toVariantMap(), std::vector<ContactTestResult>(), std::vector<ContactTestResult>());
     }
     getShapeInfoReady(pick);
-    
+
     auto entityIntersections = _physicsEngine->contactTest(USER_COLLISION_MASK_ENTITIES, *_mathPick.shapeInfo, pick.transform, pick.collisionGroup, pick.threshold);
     filterIntersections(entityIntersections);
     return std::make_shared<CollisionPickResult>(pick, entityIntersections, std::vector<ContactTestResult>());
@@ -446,7 +444,7 @@ PickResultPointer CollisionPick::getAvatarIntersection(const CollisionRegion& pi
         return std::make_shared<CollisionPickResult>(pick, std::vector<ContactTestResult>(), std::vector<ContactTestResult>());
     }
     getShapeInfoReady(pick);
-    
+
     auto avatarIntersections = _physicsEngine->contactTest(USER_COLLISION_MASK_AVATARS, *_mathPick.shapeInfo, pick.transform, pick.collisionGroup, pick.threshold);
     filterIntersections(avatarIntersections);
     return std::make_shared<CollisionPickResult>(pick, std::vector<ContactTestResult>(), avatarIntersections);
