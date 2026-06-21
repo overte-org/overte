@@ -21,7 +21,7 @@
 void GrabPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties,
                                           ScriptEngine* engine, bool skipDefaults,
                                           EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags,
-                                          bool isMyOwnAvatarEntity) const {
+                                          AvatarEntityOwnership ownership) const {
     auto nodeList = DependencyManager::get<NodeList>();
 
 @Grab_GROUP_COPY_TO_SCRIPT@

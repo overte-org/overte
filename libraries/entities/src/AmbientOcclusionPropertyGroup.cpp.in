@@ -33,7 +33,7 @@ void AmbientOcclusionPropertyGroup::setTechniqueFromString(const QString& techni
 }
 
 void AmbientOcclusionPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
-        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, AvatarEntityOwnership ownership) const {
 
 @AmbientOcclusion_GROUP_COPY_TO_SCRIPT@
 
