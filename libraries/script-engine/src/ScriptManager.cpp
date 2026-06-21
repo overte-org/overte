@@ -47,6 +47,7 @@
 #include "ScriptContext.h"
 #include "XMLHttpRequestClass.h"
 #include "WebSocketClass.h"
+#include "URLClass.h"
 #include "ScriptEngine.h"
 #include "ScriptEngineCast.h"
 #include "ScriptEngineLogging.h"
@@ -809,8 +810,13 @@ void ScriptManager::init() {
         // For test scripts we want to minimize the amount of functionality available, for the least
         // amount of dependencies and faster test system startup.
 
-        ScriptValue xmlHttpRequestConstructorValue = scriptEngine->newFunction(XMLHttpRequestClass::constructor);
-        scriptEngine->globalObject().setProperty("XMLHttpRequest", xmlHttpRequestConstructorValue);
+        ScriptValue xhrValue = scriptEngine->newFunction(XMLHttpRequestClass::constructor);
+        xhrValue.setProperty("UNSENT", XMLHttpRequestClass::UNSENT);
+        xhrValue.setProperty("OPENED", XMLHttpRequestClass::OPENED);
+        xhrValue.setProperty("HEADERS_RECEIVED", XMLHttpRequestClass::HEADERS_RECEIVED);
+        xhrValue.setProperty("LOADING", XMLHttpRequestClass::LOADING);
+        xhrValue.setProperty("DONE", XMLHttpRequestClass::DONE);
+        scriptEngine->globalObject().setProperty("XMLHttpRequest", xhrValue);
 
         ScriptValue webSocketConstructorValue = scriptEngine->newFunction(WebSocketClass::constructor);
         scriptEngine->globalObject().setProperty("WebSocket", webSocketConstructorValue);
@@ -871,6 +877,11 @@ void ScriptManager::init() {
 
         scriptEngine->registerGlobalObject(sgp, "UserActivityLogger", DependencyManager::get<UserActivityLoggerScriptingInterface>().data());
     }
+
+    ScriptValue urlValue = scriptEngine->newFunction(URLClass::constructor);
+    urlValue.setProperty("parse", scriptEngine->newFunction(URLClass::parse));
+    urlValue.setProperty("canParse", scriptEngine->newFunction(URLClass::canParse));
+    scriptEngine->globalObject().setProperty("URL", urlValue);
 
 #if DEV_BUILD || PR_BUILD
     scriptEngine->registerGlobalObject(sgp, "StackTest", new StackTestScriptingInterface(this));
