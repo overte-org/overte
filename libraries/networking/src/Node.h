@@ -135,15 +135,13 @@ Q_DECLARE_METATYPE(Node*)
 typedef QSharedPointer<Node> SharedNodePointer;
 Q_DECLARE_METATYPE(SharedNodePointer)
 
-namespace std {
-    template<>
-    struct hash<SharedNodePointer> {
-        size_t operator()(const SharedNodePointer& p) const {
-            // Return the hash of the pointer
-            return hash<Node*>()(p.data());
-        }
-    };
-}
+template<>
+struct std::hash<SharedNodePointer> {
+    size_t operator()(const SharedNodePointer& p) const {
+        // Return the hash of the pointer
+        return std::hash<Node*>()(p.data());
+    }
+};
 
 QDebug operator<<(QDebug debug, const Node& node);
 

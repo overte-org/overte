@@ -245,13 +245,11 @@ protected:
     T _mathPick;
 };
 
-namespace std {
-    template <>
-    struct hash<PickQuery::PickType> {
-        size_t operator()(const PickQuery::PickType& a) const {
-            return a;
-        }
-    };
-}
+template <>
+struct std::hash<PickQuery::PickType> {
+    size_t operator()(const PickQuery::PickType& a) const {
+        return a;
+    }
+};
 
 #endif // hifi_Pick_h

@@ -77,27 +77,25 @@ private:
 
 uint qHash(const SockAddr& key, uint seed);
 
-namespace std {
-    template <>
-    struct hash<SockAddr> {
-        // NOTE: this hashing specifically ignores IPv6 addresses - if we begin to support those we will need
-        // to conditionally hash the bytes that represent an IPv6 address
-        size_t operator()(const SockAddr& sockAddr) const {
-            // use XOR of implemented std::hash templates for new hash
-            // depending on the type of address we're looking at
-            
-            if (sockAddr.getAddress().protocol() == QAbstractSocket::IPv4Protocol) {
-                return hash<uint32_t>()((uint32_t) sockAddr.getAddress().toIPv4Address())
-                    ^ hash<uint16_t>()((uint16_t) sockAddr.getPort());
-            } else {
-                // NOTE: if we start to use IPv6 addresses, it's possible their hashing
-                // can be faster by XORing the hash for each 64 bits in the address
-                return hash<string>()(sockAddr.getAddress().toString().toStdString())
-                    ^ hash<uint16_t>()((uint16_t) sockAddr.getPort());
-            }
+template <>
+struct std::hash<SockAddr> {
+    // NOTE: this hashing specifically ignores IPv6 addresses - if we begin to support those we will need
+    // to conditionally hash the bytes that represent an IPv6 address
+    size_t operator()(const SockAddr& sockAddr) const {
+        // use XOR of implemented std::hash templates for new hash
+        // depending on the type of address we're looking at
+
+        if (sockAddr.getAddress().protocol() == QAbstractSocket::IPv4Protocol) {
+            return std::hash<uint32_t>()((uint32_t) sockAddr.getAddress().toIPv4Address())
+                ^ std::hash<uint16_t>()((uint16_t) sockAddr.getPort());
+        } else {
+            // NOTE: if we start to use IPv6 addresses, it's possible their hashing
+            // can be faster by XORing the hash for each 64 bits in the address
+            return std::hash<string>()(sockAddr.getAddress().toString().toStdString())
+                ^ std::hash<uint16_t>()((uint16_t) sockAddr.getPort());
         }
-    };
-}
+    }
+};
 
 Q_DECLARE_METATYPE(SockAddr);
 

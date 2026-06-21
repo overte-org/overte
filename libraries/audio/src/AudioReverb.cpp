@@ -4,13 +4,14 @@
 //
 //  Created by Ken Cooke on 10/11/15.
 //  Copyright 2015 High Fidelity, Inc.
+//  Copyright 2026 Overte e.V.
 //
 
 #include "AudioReverb.h"
 
-#include <stdint.h>
-#include <string.h>
-#include <math.h>
+#include <cmath>
+#include <cstdint>
+#include <cstring>
 
 #ifdef _MSC_VER
 #include <intrin.h>
@@ -1314,7 +1315,7 @@ static int getPrime(int n) {
 }
 
 static int scaleDelay(float delay, float sampleRate) {
-    return getPrime((int)(delay * (sampleRate/48000.0f) + 0.5f));
+    return getPrime(std::lround(delay * (sampleRate/48000.0f)));
 }
 
 //
@@ -1410,7 +1411,7 @@ void ReverbImpl::setParameters(ReverbParameters *p) {
     //
     // Set delays
     //
-    int preDelay = (int)(p->preDelay * (1/1000.0f) * sampleRate + 0.5f);
+    int preDelay = std::lround(p->preDelay * (1/1000.0f) * sampleRate);
     preDelay = MIN(MAX(preDelay, 1), M_PD0);
     _dl0.setDelay(preDelay);
     _dl1.setDelay(preDelay);

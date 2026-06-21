@@ -15,23 +15,6 @@
 #include <QDataStream>
 #include <QtCore/QDebug>
 
-
-
-size_t std::hash<NodePermissionsKey>::operator()(const NodePermissionsKey& key) const {
-    size_t result = qHash(key.first);
-    result <<= sizeof(size_t) / 2;
-
-#if (QT_POINTER_SIZE == 8)
-    const uint MASK = 0x00FF;
-#else
-    const uint MASK = 0xFFFF;
-#endif
-
-    result |= (qHash(key.second) & MASK);
-    return result;
-}
-
-
 NodePermissionsKey NodePermissions::standardNameLocalhost = NodePermissionsKey("localhost", 0);
 NodePermissionsKey NodePermissions::standardNameLoggedIn = NodePermissionsKey("logged-in", 0);
 NodePermissionsKey NodePermissions::standardNameAnonymous = NodePermissionsKey("anonymous", 0);

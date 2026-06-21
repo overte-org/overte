@@ -19,16 +19,13 @@
 
 #define USE_LOCAL_SHADERS 1
 
-namespace std {
-    template <>
-    struct hash<std::pair<std::string, std::string>> {
-        size_t operator()(const std::pair<std::string, std::string>& a) const {
-            std::hash<std::string> hasher;
-            return hasher(a.first) + hasher(a.second);
-        }
-    };
-
-}
+template <>
+struct std::hash<std::pair<std::string, std::string>> {
+    size_t operator()(const std::pair<std::string, std::string>& a) const {
+        std::hash<std::string> hasher;
+        return hasher(a.first) + hasher(a.second);
+    }
+};
 
 using ShadersByName = std::unordered_map<std::string, std::string>;
 using Program = std::pair<std::string, std::string>;
@@ -38,7 +35,6 @@ class ShaderLoadTest : public QObject {
     Q_OBJECT
 
 private:
-
     void parseCacheFile();
 #if USE_LOCAL_SHADERS
     void parseCacheDirectory();

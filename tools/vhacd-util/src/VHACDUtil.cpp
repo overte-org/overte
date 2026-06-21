@@ -19,7 +19,6 @@
 #include <FBXSerializer.h>
 #include <OBJSerializer.h>
 
-
 // FBXSerializer jumbles the order of the meshes by reading them back out of a hashtable.  This will put
 // them back in the order in which they appeared in the file.
 bool HFMModelLessThan(const HFMMesh& e1, const HFMMesh& e2) {
@@ -28,7 +27,6 @@ bool HFMModelLessThan(const HFMMesh& e1, const HFMMesh& e2) {
 void reSortHFMModelMeshes(HFMModel& hfmModel) {
     std::sort(hfmModel.meshes.begin(), hfmModel.meshes.end(), HFMModelLessThan);
 }
-
 
 // Read all the meshes from provided FBX file
 bool vhacd::VHACDUtil::loadFBX(const QString filename, HFMModel& result) {
@@ -205,16 +203,14 @@ private:
     uint32_t _indexB { (uint32_t)(-1) };
 };
 
-namespace std {
-    template <>
-    struct hash<TriangleEdge> {
-        std::size_t operator()(const TriangleEdge& edge) const {
-            // use Cantor's pairing function to generate a hash of ZxZ --> Z
-            uint32_t ab = edge.getIndexA() + edge.getIndexB();
-            return hash<int>()((ab * (ab + 1)) / 2 + edge.getIndexB());
-        }
-    };
-}
+template <>
+struct std::hash<TriangleEdge> {
+    std::size_t operator()(const TriangleEdge& edge) const {
+        // use Cantor's pairing function to generate a hash of ZxZ --> Z
+        uint32_t ab = edge.getIndexA() + edge.getIndexB();
+        return std::hash<int>()((ab * (ab + 1)) / 2 + edge.getIndexB());
+    }
+};
 
 // returns false if any edge has only one adjacent triangle
 bool isClosedManifold(const std::vector<int>& triangleIndices) {
@@ -321,7 +317,6 @@ bool vhacd::VHACDUtil::computeVHACD(HFMModel& hfmModel,
     int meshIndex = 0;
     int validPartsFound = 0;
     foreach (const HFMMesh& mesh, hfmModel.meshes) {
-
         // find duplicate points
         int numDupes = 0;
         std::vector<int> dupeIndexMap;
@@ -459,7 +454,7 @@ bool vhacd::VHACDUtil::computeVHACD(HFMModel& hfmModel,
     return validPartsFound > 0;
 }
 
-vhacd::VHACDUtil:: ~VHACDUtil(){
+vhacd::VHACDUtil::~VHACDUtil() {
     //nothing to be cleaned
 }
 
@@ -478,5 +473,7 @@ void vhacd::ProgressCallback::Update(const double overallProgress,
     }
 }
 
-vhacd::ProgressCallback::ProgressCallback(void){}
-vhacd::ProgressCallback::~ProgressCallback(){}
+vhacd::ProgressCallback::ProgressCallback(void) {
+}
+vhacd::ProgressCallback::~ProgressCallback() {
+}

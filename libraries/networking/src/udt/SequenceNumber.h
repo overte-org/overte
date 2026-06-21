@@ -140,12 +140,11 @@ int seqoff(const SequenceNumber& seq1, const SequenceNumber& seq2);
     
 }
 
-namespace std {
-    template<> struct hash<udt::SequenceNumber> {
-        size_t operator()(const udt::SequenceNumber& SequenceNumber) const {
-            return hash<unsigned long>()(SequenceNumber._value);
-        }
-    };
-}
+template<>
+struct std::hash<udt::SequenceNumber> {
+    size_t operator()(const udt::SequenceNumber& SequenceNumber) const {
+        return std::hash<unsigned long>()(SequenceNumber._value);
+    }
+};
 
 #endif // hifi_SequenceNumber_h

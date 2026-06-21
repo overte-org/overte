@@ -9,6 +9,7 @@
 //
 
 #include "MovingPercentile.h"
+#include <cmath>
 
 MovingPercentile::MovingPercentile(int numSamples, float percentile)
     : _numSamples(numSamples),
@@ -22,7 +23,6 @@ MovingPercentile::MovingPercentile(int numSamples, float percentile)
 }
 
 void MovingPercentile::updatePercentile(qint64 sample) {
-
     // insert the new sample into _samplesSorted
     int newSampleIndex;
     if (_samplesSorted.size() < _numSamples) {
@@ -33,7 +33,7 @@ void MovingPercentile::updatePercentile(qint64 sample) {
 
         // update _indexOfPercentile
         float index = _percentile * (float)(_samplesSorted.size() - 1);
-        _indexOfPercentile = (int)(index + 0.5f);   // round to int
+        _indexOfPercentile = std::lround(index);
     } else {
         // find index of sample with id = _newSampleId and replace it with new sample
         newSampleIndex = _sampleIds.indexOf(_newSampleId);

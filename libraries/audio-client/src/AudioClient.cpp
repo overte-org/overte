@@ -14,6 +14,7 @@
 
 #include "AudioClient.h"
 
+#include <cmath>
 #include <cstring>
 #include <math.h>
 #include <sys/stat.h>
@@ -2013,7 +2014,7 @@ bool AudioClient::switchInputToAudioDevice(const HifiAudioDeviceInfo inputDevice
         // generate audio callbacks at the network sample rate
         _dummyAudioInput = new QTimer(this);
         connect(_dummyAudioInput, SIGNAL(timeout()), this, SLOT(handleDummyAudioInput()));
-        _dummyAudioInput->start((int)(AudioConstants::NETWORK_FRAME_MSECS + 0.5f));
+        _dummyAudioInput->start(std::lround(AudioConstants::NETWORK_FRAME_MSECS));
     }
 
     return supportedFormat;
@@ -2313,10 +2314,10 @@ const float AudioClient::CALLBACK_ACCELERATOR_RATIO = 2.0f;
 #endif
 
 int AudioClient::calculateNumberOfInputCallbackBytes(const QAudioFormat& format) const {
-    int numInputCallbackBytes = (int)(((AudioConstants::NETWORK_FRAME_BYTES_PER_CHANNEL
+    int numInputCallbackBytes = std::lround(((AudioConstants::NETWORK_FRAME_BYTES_PER_CHANNEL
         * format.channelCount()
         * ((float) format.sampleRate() / AudioConstants::SAMPLE_RATE))
-        / CALLBACK_ACCELERATOR_RATIO) + 0.5f);
+        / CALLBACK_ACCELERATOR_RATIO));
 
     return numInputCallbackBytes;
 }

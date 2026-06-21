@@ -21,15 +21,14 @@
 extern const QString TEXTURE_META_EXTENSION;
 extern const uint16_t KTX_VERSION;
 
-namespace std {
-    template<> struct hash<khronos::gl::texture::InternalFormat> {
-        using enum_type = std::underlying_type<khronos::gl::texture::InternalFormat>::type;
-        typedef std::size_t result_type;
-        result_type operator()(khronos::gl::texture::InternalFormat const& v) const noexcept {
-            return std::hash<enum_type>()(static_cast<enum_type>(v));
-        }
-    };
-}
+template<>
+struct std::hash<khronos::gl::texture::InternalFormat> {
+    using enum_type = std::underlying_type<khronos::gl::texture::InternalFormat>::type;
+    typedef std::size_t result_type;
+    result_type operator()(khronos::gl::texture::InternalFormat const& v) const noexcept {
+        return std::hash<enum_type>()(static_cast<enum_type>(v));
+    }
+};
 
 struct TextureMeta {
     static bool deserialize(const QByteArray& data, TextureMeta* meta);

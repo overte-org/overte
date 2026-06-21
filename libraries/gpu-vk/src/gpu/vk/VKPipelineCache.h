@@ -25,26 +25,22 @@
 
 //define OVERTE_VK_PIPELINE_DEBUG
 
-namespace std {
 template <>
-struct hash<gpu::Element> {
+struct std::hash<gpu::Element> {
     size_t operator()(const gpu::Element& a) const { return std::hash<uint32_t>()(a.getRaw()); }
 };
 
 template <>
-struct hash<::VkImageLayout> {
+struct std::hash<::VkImageLayout> {
     size_t operator()(const VkImageLayout& a) const { return std::hash<uint32_t>()((uint32_t)a); }
 };
 
-
-
-}  // namespace std
 namespace gpu { namespace vk {
 
 inline size_t hashRenderPassPair(const std::pair<VkFormat,VkImageLayout>& a) {
     size_t seed = 0;
-    std::hash_combine(seed, a.first);
-    std::hash_combine(seed, a.second);
+    hash_combine(seed, a.first);
+    hash_combine(seed, a.second);
     return seed;
 }
 
@@ -53,7 +49,7 @@ struct RenderPassHash {
     std::size_t operator()(const Container& c) const {
         size_t seed = 0;
         for (const auto& e : c) {
-            std::hash_combine(seed, hashRenderPassPair(e));
+            hash_combine(seed, hashRenderPassPair(e));
         }
         return seed;
     }

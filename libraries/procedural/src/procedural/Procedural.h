@@ -80,14 +80,12 @@ public:
         _flags.set(IS_SKINNED_DQ, isSkinnedDQ);
     }
 };
-namespace std {
-    template <>
-    struct hash<ProceduralProgramKey> {
-        size_t operator()(const ProceduralProgramKey& key) const {
-            return std::hash<std::bitset<ProceduralProgramKey::FlagBit::NUM_FLAGS>>()(key._flags);
-        }
-    };
-}
+template <>
+struct std::hash<ProceduralProgramKey> {
+    size_t operator()(const ProceduralProgramKey& key) const {
+        return std::hash<std::bitset<ProceduralProgramKey::FlagBit::NUM_FLAGS>>()(key._flags);
+    }
+};
 inline bool operator==(const ProceduralProgramKey& a, const ProceduralProgramKey& b) {
     return a._flags == b._flags;
 }

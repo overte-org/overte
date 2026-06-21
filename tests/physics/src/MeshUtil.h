@@ -13,6 +13,7 @@
 #define hifi_MeshUtil_h
 
 #include <functional>
+#include <cstdint>
 
 namespace MeshUtil {
 
@@ -42,18 +43,16 @@ private:
     uint32_t _indexB { (uint32_t)(-1) };
 };
 
-} // MeshUtil namespace
+}  // namespace MeshUtil
 
-namespace std {
-    template <>
-    struct hash<MeshUtil::TriangleEdge> {
-        std::size_t operator()(const MeshUtil::TriangleEdge& edge) const {
-            // use Cantor's pairing function to generate a hash of ZxZ --> Z
-            uint32_t ab = edge.getIndexA() + edge.getIndexB();
-            return hash<uint32_t>()((ab * (ab + 1)) / 2 + edge.getIndexB());
-        }
-    };
-} // std namesspace
+template <>
+struct std::hash<MeshUtil::TriangleEdge> {
+    std::size_t operator()(const MeshUtil::TriangleEdge& edge) const {
+        // use Cantor's pairing function to generate a hash of ZxZ --> Z
+        uint32_t ab = edge.getIndexA() + edge.getIndexB();
+        return std::hash<uint32_t>()((ab * (ab + 1)) / 2 + edge.getIndexB());
+    }
+};
 
 namespace MeshUtil {
 bool isClosedManifold(const uint32_t* meshIndices, uint32_t numIndices) {
@@ -79,13 +78,12 @@ bool isClosedManifold(const uint32_t* meshIndices, uint32_t numIndices) {
     // scan for outside edge
     for (auto& edgeEntry : edges) {
         if (edgeEntry.second == 1) {
-             return false;
+            return false;
         }
     }
     return true;
 }
 
-} // MeshUtil namespace
+}  // namespace MeshUtil
 
-
-#endif // hifi_MeshUtil_h
+#endif  // hifi_MeshUtil_h
