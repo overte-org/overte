@@ -244,7 +244,7 @@ jobs:
       uses: actions/upload-artifact@v7
       if: steps.codechecker.outcome != 'skipped' && env.ACT != 'true'
       with:
-        name: "CodeChecker analysis warnings.zip"
+        name: "CodeChecker_analysis_warnings_${{ env.GIT_COMMIT_SHORT }}.zip"
         path: ${{ steps.codechecker.outputs.result-html-dir }}
         if-no-files-found: error
 
@@ -252,7 +252,7 @@ jobs:
       uses: actions/upload-artifact@v7
       if: steps.codechecker.outputs.warnings-in-diff == 'true' && env.ACT != 'true'
       with:
-        name: "Newly introduced analysis warnings.zip"
+        name: "Newly_introduced_analysis_warnings_${{ env.GIT_COMMIT_SHORT }}.zip"
         path: ${{ steps.codechecker.outputs.diff-html-dir }}
         if-no-files-found: error
 
