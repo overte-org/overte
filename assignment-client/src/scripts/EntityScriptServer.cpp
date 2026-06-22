@@ -34,6 +34,7 @@
 #include <SoundCacheScriptingInterface.h>
 #include <UUID.h>
 #include <WebSocketServerClass.h>
+#include <BlobClass.h>
 
 #include <EntityScriptClient.h> // for EntityScriptServerServices
 
@@ -72,7 +73,7 @@ EntityScriptServer::EntityScriptServer(ReceivedMessage& message) : ThreadedAssig
     DependencyManager::set<AudioInjectorManager>();
 
     DependencyManager::set<ScriptCache>();
-
+    DependencyManager::set<BlobRegistry>();
 
     // Needed to ensure the creation of the DebugDraw instance on the main thread
     DebugDraw::getInstance();
