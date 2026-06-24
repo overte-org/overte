@@ -461,14 +461,23 @@ void OffscreenSurface::finishQmlLoad(QQmlComponent* qmlComponent,
 
     // There's a huge amount of divides by zero that happen with floating point exceptions
     // enabled. It makes useful debugging impossible, so we're selectively disabling them
-    // here.
+    // here. Unfortunately fedisableexcept isn't standard and not available on Windows.
+    //
+    // On Windows, this might be unusable. Perhaps some sort of modification to QML
+    // might be possible.
+#ifndef Q_OS_WIN
     fexcept_t fflags;
 
     fegetexceptflag(&fflags, FE_ALL_EXCEPT);
     fedisableexcept(FE_ALL_EXCEPT);
+#endif
+
     qmlComponent->completeCreate();
 
+#ifndef Q_OS_WIN
     fesetexceptflag(&fflags, FE_ALL_EXCEPT);
+#endif
+
     qmlComponent->deleteLater();
 }
 
