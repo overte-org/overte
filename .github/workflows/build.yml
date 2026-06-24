@@ -120,7 +120,7 @@ jobs:
           echo "OVERTE_RELEASE_TYPE=PR" >> $GITHUB_ENV
           echo "OVERTE_RELEASE_NUMBER=${{ github.event.number }}" >> $GITHUB_ENV
           echo "GIT_COMMIT_SHORT=${PULL_REQUEST_SHA::7}" >> $GITHUB_ENV
-        elif [ "${{github.event_name}}" = "push" && github.event.action == 'tag' ]; then
+        elif [ "${{github.event_name}}" = "push" ] && [ "${{github.event.action}}" == "tag" ]; then
           echo "OVERTE_RELEASE_TYPE=RELEASE" >> $GITHUB_ENV
           echo "OVERTE_RELEASE_NUMBER=" >> $GITHUB_ENV
           echo "GIT_COMMIT_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
