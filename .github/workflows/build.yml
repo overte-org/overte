@@ -111,6 +111,10 @@ jobs:
       shell: bash
       id: buildenv1
       run: |
+        # Use our United States cache instead of our origin to avoid extremely low download speeds on Depot runners.
+        conan remote update overte --url https://us-east-artifactory.overte.org/artifactory/api/conan/overte
+        conan remote update conancenter --url https://us-east-artifactory.overte.org/artifactory/api/conan/conan-center
+
         # Work around https://github.com/actions/runner/issues/2058
         echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" >> $GITHUB_ENV
         # Create envionment variable for later Bash Parameter Expansion
