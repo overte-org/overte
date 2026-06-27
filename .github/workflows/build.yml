@@ -138,6 +138,10 @@ jobs:
       shell: bash
       id: buildenv1
       run: |
+        # Use our United States cache instead of our origin to avoid extremely low download speeds on Depot runners.
+        conan remote update overte --url https://us-east-artifactory.overte.org/artifactory/api/conan/overte
+        conan remote update conancenter --url https://us-east-artifactory.overte.org/artifactory/api/conan/conan-center
+
         # Work around https://github.com/actions/runner/issues/2058
         echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE" >> $GITHUB_ENV
         # Create envionment variable for later Bash Parameter Expansion
@@ -147,7 +151,7 @@ jobs:
           echo "OVERTE_RELEASE_TYPE=PR" >> $GITHUB_ENV
           echo "OVERTE_RELEASE_NUMBER=${{ github.event.number }}" >> $GITHUB_ENV
           echo "GIT_COMMIT_SHORT=${PULL_REQUEST_SHA::7}" >> $GITHUB_ENV
-        elif [ "${{github.event_name}}" = "push" && github.event.action == 'tag' ]; then
+        elif [ "${{github.event_name}}" = "push" ] && [ "${{github.event.action}}" == "tag" ]; then
           echo "OVERTE_RELEASE_TYPE=RELEASE" >> $GITHUB_ENV
           echo "OVERTE_RELEASE_NUMBER=" >> $GITHUB_ENV
           echo "GIT_COMMIT_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
@@ -248,7 +252,7 @@ jobs:
         ctu: true
 
         # Update CodeChecker master branch results.
-        store: ${{ github.event_name == 'push' }} && ${{ github.ref_name == 'master' }}
+        store: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
         store-url: "https://codechecker.overte.org/overte"
         store-username: ${{ secrets.CODECHECKER_STORE_USER }}
         store-password: ${{ secrets.CODECHECKER_STORE_PASSWORD }}
