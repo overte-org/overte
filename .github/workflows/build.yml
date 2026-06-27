@@ -14,12 +14,14 @@ on:
   pull_request:
     types: [opened, synchronize, reopened]
   push:
-    branches:
-      - master
     tags:
       # Release tags. E.g. 2024.06.1
       # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
       - "[0-9][0-9][0-9][0-9].[0-9][0-9].**"
+  schedule:  # Only applies to the default branch.
+    # Nightly builds.
+    # Run every day at 07:33 UTC, which is night in US east, where most of the CI Runners are located.
+    - cron: "33 7 * * *"
 
 env:
   # Many environment variables are already set in our Docker images or in other Actions.
@@ -31,7 +33,32 @@ env:
   PULL_REQUEST_SHA: ${{ github.event.pull_request.head.sha }}
 
 jobs:
+  check_if_new_nightly_commit:
+    runs-on: ubuntu-latest
+    name: Check if there is a new commit
+    outputs:
+      skip_nightly_build: ${{ steps.check_latest_commit.outputs.skip_nightly_build }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check if the latest commit was created less than a day ago.
+        id: check_latest_commit
+        run: |
+          if git rev-list --after="24 hours 5 minutes" ${{ github.sha }} | grep -q "${{ github.sha }}"; then
+            echo "Our latest commit is less than a day old. Continuing…"
+            echo "skip_nightly_build=False" >> $GITHUB_OUTPUT
+          elif [ "${{github.event_name}}" = "schedule" ]; then
+            echo "Our latest commit is older than a day. Skipping Nightly build…"
+            echo "skip_nightly_build=True" >> $GITHUB_OUTPUT
+          else
+            echo "Not a scheduled Nightly build. Continuing…"
+            echo "skip_nightly_build=False" >> $GITHUB_OUTPUT
+          fi
+
   build:
+    # Skip Nightly build if there is no new commit.
+    needs: check_if_new_nightly_commit
+    if: ${{ needs.check_if_new_nightly_commit.outputs.skip_nightly_build != 'True' }}
+
     name: "${{matrix.job_name_prefix}}${{matrix.os}}, ${{matrix.rendering_backend}}, ${{matrix.arch}}, ${{matrix.cmake_build_type}}"
     strategy:
       matrix:
