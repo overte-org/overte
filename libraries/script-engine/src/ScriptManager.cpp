@@ -550,8 +550,11 @@ void ScriptManager::waitTillDoneRunning(bool shutdown) {
                 //       if they access Settings or Menu in any of their shutdown code. So:
                 // Process events for this thread, allowing invokeMethod calls to pass between threads.
                 QCoreApplication::processEvents();
+                // FIXME: this scope guard is causing deadlocks and removing
+                // it seems to not have any ill effect? another thread probably
+                // has a lock and this function is being called incorrectly
                 // Events may use script engine so guard is necessary.
-                auto scopeGuard = _engine->getScopeGuard();
+                // auto scopeGuard = _engine->getScopeGuard();
                 _engine->processEvents();
             }
 
