@@ -153,7 +153,7 @@ jobs:
           echo "GIT_COMMIT_SHORT=${PULL_REQUEST_SHA::7}" >> $GITHUB_ENV
         elif [ "${{github.event_name}}" = "push" ] && [ "${{github.event.action}}" == "tag" ]; then
           echo "OVERTE_RELEASE_TYPE=RELEASE" >> $GITHUB_ENV
-          echo "OVERTE_RELEASE_NUMBER=" >> $GITHUB_ENV
+          echo "OVERTE_RELEASE_NUMBER=${{ github.ref_name }}" >> $GITHUB_ENV
           echo "GIT_COMMIT_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
           if [[ "${{ github.ref_name }}" == *"rc"* ]]; then  # release candidate
             # The uploader already creates a subfolder for each RELEASE_NUMBER.
@@ -161,11 +161,13 @@ jobs:
           else  # release
             echo "UPLOAD_PREFIX=build/overte/release/" >> $GITHUB_ENV
           fi
-        elif [ "${{github.event_name}}" = "push" ]; then  # Nightly
+        elif [ "${{github.event_name}}" = "schedule" ]; then  # Nightly
           echo "OVERTE_RELEASE_TYPE=NIGHTLY" >> $GITHUB_ENV
-          echo "OVERTE_RELEASE_NUMBER=" >> $GITHUB_ENV
+          # Nightlies ignore OVERTE_RELEASE_NUMBER and instead use the build date.
+          echo "OVERTE_RELEASE_NUMBER=''" >> $GITHUB_ENV
           echo "GIT_COMMIT_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
-        else  # No condition matched.
+        else
+          echo "Unexpected Action event! Failing…"
           exit 1;
         fi
 
