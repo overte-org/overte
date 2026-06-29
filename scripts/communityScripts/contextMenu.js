@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 "use strict";
 const CONTEXT_MENU_SETTINGS = Settings.getValue("Context Menu", {
-    actionsPerPage: 6,
-    font: "Roboto",
-    noSfx: false,
-    parented: true,
-    public: false,
+	actionsPerPage: 6,
+	font: "Roboto",
+	noSfx: false,
+	parented: true,
+	public: false,
 });
 
 const ACTIONS_PER_PAGE = CONTEXT_MENU_SETTINGS["actionsPerPage"] ?? 6;
@@ -172,25 +172,46 @@ const targetingPick = [
 ];
 
 let currentMenuOpen = false;
-let currentMenuEntities = new Set();
+
+/**
+ * List of all entities owned by the context menu,
+ * as well as a map to a function for when they're clicked.
+ * @type Map<Uuid, null | (target: Uuid) => void>
+ */
+let currentMenuEntities = new Map();
+/**
+ * Callback actions for each action button.
+ * @type Array<(target: Uuid) => void>
+ */
 let currentMenuActionFuncs = [];
+/**
+ * The selected target for the context menu, set by
+ * holding down click on something when opening the menu.
+ * @type Uuid
+ */
 let currentMenuTarget = Uuid.NONE;
 let currentMenuTargetIsAvatar = false;
 let currentMenuInSubmenu = false;
-let currentMenuTargetLine = Uuid.NONE;
 let mouseWasCaptured = false;
 let disableCounter = 0;
 let prevClickTime = Date.now();
+/**
+ * Stack of submenu action sets to allow going to previously open ones
+ * @type Array<[actionSetName: string, page: number]>
+ */
+let actionSetHistory = [];
 
 function ContextMenu_DeleteMenu() {
-	currentMenuEntities.forEach((_, e) => Entities.deleteEntity(e));
+	for (const [e, _] of currentMenuEntities) {
+		Entities.deleteEntity(e);
+	}
 	currentMenuEntities.clear();
 	currentMenuActionFuncs = [];
 	currentMenuOpen = false;
 	currentMenuInSubmenu = false;
 	currentMenuTargetIsAvatar = false;
 	currentMenuTarget = Uuid.NONE;
-	currentMenuTargetLine = Uuid.NONE;
+	actionSetHistory = [];
 	Camera.captureMouse = mouseWasCaptured;
 }
 
@@ -205,7 +226,12 @@ function ContextMenu_EntityClick(eid, event) {
 	try {
 		const data = JSON.parse(Entities.getEntityProperties(eid, "userData").userData);
 		if (data.nextPage !== undefined && data.actionSetName !== undefined) {
-			ContextMenu_OpenActions(data.actionSetName, data.nextPage);
+			if (data.type === "historyBack") {
+				const history = actionSetHistory.pop();
+				ContextMenu_OpenActions(history[0], history[1]);
+			} else {
+				ContextMenu_OpenActions(data.actionSetName, data.nextPage);
+			}
 		} else {
 			const func = data.actionFunc;
 			currentMenuActionFuncs[func][0](currentMenuTarget, eid);
@@ -218,8 +244,10 @@ function ContextMenu_EntityClick(eid, event) {
 	if (!(CONTEXT_MENU_SETTINGS.noSfx ?? false)) { Audio.playSystemSound(SOUND_CLICK); }
 }
 
-function ContextMenu_EntityHover(eid, _event) {
-	if (!currentMenuEntities.has(eid)) { return; }
+function ContextMenu_EntityHoverEnter(eid, _event) {
+	const entityAction = currentMenuEntities.get(eid);
+
+	if (!entityAction) { return; }
 
 	try {
 		const data = JSON.parse(Entities.getEntityProperties(eid, "userData").userData);
@@ -227,6 +255,32 @@ function ContextMenu_EntityHover(eid, _event) {
 			if (!(CONTEXT_MENU_SETTINGS.noSfx ?? false)) { Audio.playSystemSound(SOUND_HOVER); }
 		}
 	} catch (e) {}
+
+	// make the background a little lighter on hovered actions
+	// NOTE: the spread operator is necessary here to get a copy,
+	// otherwise we'll be modifying entityAction.backgroundColor itself
+	let bgColor = [...entityAction.backgroundColor ?? [0, 0, 0]];
+	bgColor[0] = Math.min(bgColor[0] + 48, 255);
+	bgColor[1] = Math.min(bgColor[1] + 48, 255);
+	bgColor[2] = Math.min(bgColor[2] + 48, 255);
+
+	Entities.editEntity(eid, {
+		backgroundColor: bgColor,
+		textEffectColor: bgColor,
+	});
+}
+
+function ContextMenu_EntityHoverLeave(eid, _event) {
+	const entityAction = currentMenuEntities.get(eid);
+
+	if (!entityAction) { return; }
+
+	const bgColor = entityAction.backgroundColor ?? [0, 0, 0];
+
+	Entities.editEntity(eid, {
+		backgroundColor: bgColor,
+		textEffectColor: bgColor
+	});
 }
 
 function ContextMenu_FindTarget(hand = 1) {
@@ -248,7 +302,6 @@ function ContextMenu_FindTarget(hand = 1) {
 
 function ContextMenu_OpenActions(actionSetName, page = 0) {
 	currentMenuEntities.forEach((_, e) => Entities.deleteEntity(e));
-	currentMenuTargetLine = Uuid.NONE;
 	currentMenuActionFuncs = [];
 
 	currentMenuInSubmenu = true;
@@ -321,37 +374,6 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 
 	let yPos = Math.max(1, activeActions.length) * 0.02 * scale;
 	let bgHeight = (yPos / 2.0) - (0.03 * scale);
-
-	// FIXME: Highlight laser doesn't work on camera or sensor-matrix joint
-	/*if (!Uuid.isNull(currentMenuTarget)) {
-		let targetPos;
-		if (currentMenuTargetIsAvatar) {
-			targetPos = AvatarList.getAvatar(currentMenuTarget).position;
-		} else {
-			targetPos = Entities.getEntityProperties(currentMenuTarget, "position").position;
-		}
-
-		currentMenuTargetLine = Entities.addEntity({
-			type: "PolyLine",
-			grab: {grabbable: false},
-			parentID: (CONTEXT_MENU_SETTINGS.parented ?? true) ? myAvatar : undefined,
-			parentJointIndex: HMD.active ? SENSOR_TO_WORLD_MATRIX_INDEX : CAMERA_MATRIX_INDEX,
-			position: origin,
-			linePoints: [
-				[0, 0, 0],
-				[targetPos.x - origin.x, targetPos.y - origin.y, targetPos.z - origin.z],
-			],
-			normals: [
-				[0, 0, 1],
-				[0, 0, 1],
-			],
-			strokeWidths: [0.02, 0],
-			color: [127, 255, 255],
-			faceCamera: true,
-			glow: true,
-		}, (CONTEXT_MENU_SETTINGS.public ?? false) ? "avatar" : "local");
-		currentMenuEntities.add(currentMenuTargetLine);
-	}*/
 
 	let titleText;
 	let descriptionText;
@@ -430,13 +452,28 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		textEffectThickness: 0.3,
 	});
 
+	let backHasPages = hasPages && page > 0;
+	let backHasHistory = !backHasPages && actionSetHistory.length > 0;
+	let backUserData;
+	let backText = "";
+
+	if (backHasHistory) {
+		const history = actionSetHistory[actionSetHistory.length - 1];
+		backUserData = { actionSetName: history[0], nextPage: history[1], type: "historyBack" };
+		backText = "^";
+	} else if (backHasPages) {
+		backUserData = { nextPage: page - 1, actionSetName: actionSetName };
+		backText = "<";
+	}
+
 	actionEnts.push({
+		action: (backHasPages || backHasHistory) ? {} : undefined,
 		grab: {grabbable: false},
 		type: "Text",
 		position: Vec3.sum(origin, Vec3.multiplyQbyV(angle, [-0.13 * scale, yPos, 0])),
 		rotation: angle,
 		localDimensions: [0.04 * scale, 0.04 * scale, 0.01 * scale],
-		text: hasPages && page > 0 ? "<" : "",
+		text: backText,
 		textColor: [230, 230, 230],
 		backgroundColor: [0, 0, 0],
 		backgroundAlpha: 0.9,
@@ -447,13 +484,14 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		triggerable: false,
 		leftMargin: 0.003 * lineScale,
 		topMargin: -0.008 * lineScale,
-		userData: hasPages && page > 0 ? JSON.stringify({nextPage: page - 1, actionSetName: actionSetName}) : undefined,
+		userData: backUserData ? JSON.stringify(backUserData) : undefined,
 		textEffect: "outline fill",
 		textEffectColor: [0, 0, 0],
 		textEffectThickness: 0.3,
 	});
 
 	actionEnts.push({
+		action: hasPages && page < maxPages ? {} : undefined,
 		grab: {grabbable: false},
 		type: "Text",
 		position: Vec3.sum(origin, Vec3.multiplyQbyV(angle, [0.13 * scale, yPos, 0])),
@@ -484,6 +522,7 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 
 		let pos = Vec3.sum(origin, Vec3.multiplyQbyV(angle, [0, yPos, 0]));
 		actionEnts.push({
+			action,
 			grab: {grabbable: false},
 			type: "Text",
 			position: pos,
@@ -521,7 +560,10 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		let clickFunc = EMPTY_FUNCTION;
 		if (action.submenu) {
 			if (registeredActionSets[action.submenu]) {
-				clickFunc = _target => ContextMenu_OpenActions(action.submenu);
+				clickFunc = _target => {
+					actionSetHistory.push([actionSetName, page]);
+					ContextMenu_OpenActions(action.submenu);
+				};
 			} else {
 				console.error(`Action "${action.text}" referencing unregistered submenu action set "${action.submenu}"`);
 			}
@@ -586,7 +628,7 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 		a.fadeOutMode = "disabled";
 
 		const e = Entities.addEntity(a, (CONTEXT_MENU_SETTINGS.public ?? false) ? "avatar" : "local");
-		currentMenuEntities.add(e);
+		currentMenuEntities.set(e, a.action ?? null);
 	}
 
 	currentMenuOpen = true;
@@ -734,27 +776,6 @@ function ContextMenu_ActionEvent(action, value) {
 	}
 }
 
-// FIXME: Highlight laser doesn't work on camera or sensor-matrix joint
-/*function ContextMenu_Update() {
-	if (!Uuid.isNull(currentMenuTargetLine)) {
-		if (currentMenuTargetIsAvatar) {
-			targetPos = AvatarList.getAvatar(currentMenuTarget).position;
-		} else {
-			targetPos = Entities.getEntityProperties(currentMenuTarget, "position").position;
-		}
-
-		const myPos = Entities.getEntityProperties(currentMenuTargetLine, "position").position;
-
-		Entities.editEntity(currentMenuTargetLine, {
-			linePoints: [
-				[0, 0, 0],
-				[targetPos.x - myPos.x, targetPos.y - myPos.y, targetPos.z - myPos.z],
-			],
-			rotation: Quat.IDENTITY,
-		});
-	}
-}*/
-
 function ContextMenu_Message(channel, msg, _senderID, _localOnly) {
 	if (channel === MAIN_CHANNEL) {
 		let data; try { data = JSON.parse(msg); } catch (e) {}
@@ -804,8 +825,8 @@ Controller.inputEvent.connect(ContextMenu_ActionEvent);
 Controller.mousePressEvent.connect(ContextMenu_MousePressEvent);
 Controller.mouseReleaseEvent.connect(ContextMenu_MouseReleaseEvent);
 Entities.mousePressOnEntity.connect(ContextMenu_EntityClick);
-Entities.hoverEnterEntity.connect(ContextMenu_EntityHover);
-//Script.update.connect(ContextMenu_Update);
+Entities.hoverEnterEntity.connect(ContextMenu_EntityHoverEnter);
+Entities.hoverLeaveEntity.connect(ContextMenu_EntityHoverLeave);
 
 for (const pick of targetingPick) {
 	Picks.setIgnoreItems(pick, [MyAvatar.sessionUUID]);
@@ -826,8 +847,8 @@ Script.scriptEnding.connect(() => {
 	Controller.mousePressEvent.disconnect(ContextMenu_MousePressEvent);
 	Controller.mouseReleaseEvent.disconnect(ContextMenu_MouseReleaseEvent);
 	Entities.mousePressOnEntity.disconnect(ContextMenu_EntityClick);
-	Entities.hoverEnterEntity.disconnect(ContextMenu_EntityHover);
-	//Script.update.disconnect(ContextMenu_Update);
+	Entities.hoverEnterEntity.disconnect(ContextMenu_EntityHoverEnter);
+	Entities.hoverLeaveEntity.disconnect(ContextMenu_EntityHoverLeave);
 	Picks.removePick(targetingPick[0]);
 	Picks.removePick(targetingPick[1]);
 	ContextMenu_DeleteMenu();
