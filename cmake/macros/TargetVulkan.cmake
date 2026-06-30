@@ -6,7 +6,7 @@
 # 
 macro(TARGET_VULKAN)
     if(APPLE)
-        find_package(MoltenVK QUIETREQUIRED)
+        find_package(MoltenVK QUIET REQUIRED)
         target_include_directories(${TARGET_NAME} PRIVATE ${MoltenVK_INCLUDE_DIR})
         target_link_libraries(${TARGET_NAME} ${MoltenVK_LIBRARY})
     else()
