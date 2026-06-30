@@ -599,9 +599,8 @@ ScriptValue ScriptEngineV8::evaluateInClosure(const ScriptValue& _closure,
             if (_manager) {
                 _manager->scriptErrorMessage(errorMessage, _program->fileName(),
                                                       compileResult->errorLineNumber());
-            } else {
-                qCCritical(scriptengine_v8) << errorMessage << _program->fileName() << ":" << compileResult->errorLineNumber();
             }
+            qCCritical(scriptengine_v8) << errorMessage << _program->fileName() << ":" << compileResult->errorLineNumber();
             popContext();
             return nullValue();
         }
