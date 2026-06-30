@@ -1,5 +1,6 @@
+"use strict"
 function endsWith(path, exts) {
-    var result = false;
+    let result = false;
     exts.forEach(function(ext) {
         if (path.endsWith(ext)) {
             result = true;
@@ -14,12 +15,12 @@ exports.handlers = {
     // We use this event to scan the C++ files for jsdoc comments
     // and reformat them into a form digestable by jsdoc.
     beforeParse: function(e) {
-        var pathTools = require('path');
-        var rootFolder = pathTools.dirname(e.filename);
+        const pathTools = require('path');
+        const rootFolder = pathTools.dirname(e.filename);
         console.log("Scanning the Overte source for JSDoc comments...");
 
         // directories to scan for jsdoc comments
-        var dirList = [
+        const dirList = [
             '../../assignment-client/src',
             '../../assignment-client/src/avatars',
             '../../assignment-client/src/entities',
@@ -67,30 +68,42 @@ exports.handlers = {
             '../../libraries/ui/src',
             '../../libraries/ui/src/ui',
             '../../plugins/oculus/src',
-            '../../plugins/openvr/src'
+            '../../plugins/openvr/src',
+            '../../scripts/modules', // js
+            '../../scripts/system/libraries', // js
         ];
 
         // only files with this extension will be searched for jsdoc comments.
-        var exts = ['.h', '.h.in', '.cpp', '.cpp.in'];
+        const exts = ['.h', '.h.in', '.cpp', '.cpp.in']; // C++
+        const jsExts = ['.js']; // Javascript
 
-        var fs = require('fs');
+        const fs = require('fs');
         dirList.forEach(function (dir) {
-            var joinedDir = pathTools.join(rootFolder, dir);
-            var files = fs.readdirSync(joinedDir);
+            const joinedDir = pathTools.join(rootFolder, dir);
+            const files = fs.readdirSync(joinedDir);
             files.forEach(function (file) {
-                var path = pathTools.join(joinedDir, file);
-                if (fs.lstatSync(path).isFile() && endsWith(path, exts)) {
-                    // load entire file into a string
-                    var data = fs.readFileSync(path, "utf8");
+                const path = pathTools.join(joinedDir, file);
+                let reg;
+                if (fs.lstatSync(path).isFile()) {
+                    if (endsWith(path, exts)) { // C++
+                        // this regex searches for blocks starting with /*@jsdoc and end with */
+                        reg = /(\/\*@jsdoc((.|[\r\n])*?)\*\/)/gm;
+                    } else if (endsWith(path, jsExts)) { // Javascript
+                        // this regex searches for blocks starting with /**@jsdoc and end with */
+                        reg = /(\/\*\*@jsdoc((.|[\r\n])*?)\*\/)/gm;
+                    }
 
-                    // this regex searches for blocks starting with /*@jsdoc and end with */
-                    var reg = /(\/\*@jsdoc(.|[\r\n])*?\*\/)/gm;
-                    var matches = data.match(reg);
-                    if (matches) {
-                        // add to source, but strip off c-comment asterisks
-                        e.source += matches.map(function (s) {
-                            return s.replace('/*@jsdoc', '/**');
-                        }).join('\n');
+                    if (reg) {
+                        // load entire file into a string
+                        const data = fs.readFileSync(path, "utf8");
+
+                        const matches = data.matchAll(reg);
+                        if (matches) {
+                            // add to source, but strip off c-comment asterisks
+                            e.source += [...matches].map(function (g) {
+                                return `/**${g[2]}*/`;
+                            }).join('\n');
+                        }
                     }
                 }
             });
@@ -103,7 +116,7 @@ exports.handlers = {
 
         // we only care about hifi custom tags on namespace and class doclets
         if (e.doclet.kind === "namespace" || e.doclet.kind === "class") {
-            var rows = [];
+            const rows = [];
             if (e.doclet.hifiInterface) {
                 rows.push("Interface Scripts");
             }
@@ -122,7 +135,7 @@ exports.handlers = {
 
             // Append an Available In: sentence at the beginning of the namespace description.
             if (rows.length > 0) {
-                var availableIn = "<p class='availableIn'><b>Supported Script Types:</b> " + rows.join(" &bull; ") + "</p>";
+                const availableIn = "<p class='availableIn'><b>Supported Script Types:</b> " + rows.join(" &bull; ") + "</p>";
 
                 e.doclet.description = availableIn + (e.doclet.description ? e.doclet.description : "");
             }
