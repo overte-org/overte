@@ -254,7 +254,7 @@ jobs:
         ctu: true
 
         # Update CodeChecker master branch results.
-        store: ${{ github.event_name == 'push' && github.ref_name == 'master' }}
+        store: ${{ github.event_name == 'schedule' }}
         store-url: "https://codechecker.overte.org/overte"
         store-username: ${{ secrets.CODECHECKER_STORE_USER }}
         store-password: ${{ secrets.CODECHECKER_STORE_PASSWORD }}
