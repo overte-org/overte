@@ -62,7 +62,6 @@ class Overte(ConanFile):
         self.requires("gifcreator/2016.11@overte/stable")
         self.requires("glad/0.1.36@overte/experimental#9612a3032fecdd1d8781dfb1b2bd6dc6") # NOTE: glad 2 is released
         self.requires("gli/cci.20210515") # NOTE: not maintained for 4 years
-        self.requires("glslang/1.4.350.0")
         self.requires("liblo/0.35@overte/stable") # For hifiOSC
         self.requires("libnode/22.22.3@overte/stable#12c9d377b2df64060e312a93bf14592f")
         self.requires("nlohmann_json/3.11.2")
@@ -75,8 +74,6 @@ class Overte(ConanFile):
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.10")
-        self.requires("spirv-cross/1.4.350.0")
-        self.requires("spirv-tools/1.4.350.0")
         self.requires("steamworks/158a@overte/prebuild")
         self.requires("v-hacd/4.1.0")
         self.requires("vulkan-memory-allocator/3.0.1")
@@ -85,6 +82,10 @@ class Overte(ConanFile):
         self.requires("glm/0.9.9.5", force=True) # FIXME: update to version 1.0.1
         self.requires("jsoncpp/1.9.6", force=True)
         openssl = "openssl/1.1.1q"
+
+        self.requires("glslang/1.4.350.0", force=True)
+        self.requires("spirv-cross/1.4.350.0", force=True)
+        self.requires("spirv-tools/1.4.350.0", force=True)
 
         if self.options.qt_source == "system":
             self.requires("qt/5.15.2@overte/system", force=True)
