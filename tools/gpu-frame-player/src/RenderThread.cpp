@@ -101,6 +101,8 @@ void RenderThread::initialize(QWindow* window) {
         std::string{ VK_KHR_SURFACE_EXTENSION_NAME },
 #ifdef WIN32
         std::string{ VK_KHR_WIN32_SURFACE_EXTENSION_NAME },
+#elif defined (Q_OS_MAC)
+        std::string( VK_MVK_MACOS_SURFACE_EXTENSION_NAME ),
 #else
         std::string{ VK_KHR_XCB_SURFACE_EXTENSION_NAME },
 #endif
