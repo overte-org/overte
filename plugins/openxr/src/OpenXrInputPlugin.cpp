@@ -107,6 +107,11 @@ static glm::mat4 defaultPoseOffset(const controller::InputCalibrationData& data,
     }
 }
 
+// FIXME: This currently only works if you're
+// standing in the center of your playspace
+// and are directly facing "forward". The
+// stage space locating should probably be
+// local or floor-local instead.
 void OpenXrInputPlugin::guessXDevRoles(std::unordered_map<XrXDevIdMNDX, XDevTracker>& tracker_map) {
     std::vector<std::tuple<XrXDevIdMNDX, glm::vec3, controller::Pose>> tracker_list;
 
@@ -195,6 +200,7 @@ bool OpenXrInputPlugin::isSupported() const {
 void OpenXrInputPlugin::setConfigurationSettings(const QJsonObject configurationSettings) {
     const auto& calibration = configurationSettings["tracker_calibration"].toObject();
     _inputDevice->_hapticsEnabled = configurationSettings["enable_haptics"].toBool(true);
+    _inputDevice->_handTrackingEnabled = configurationSettings["enable_hand_tracking"].toBool(true);
 
     // grr qt5 doesnt support destructured iterating like std::map
     foreach (const auto& key, calibration.keys()) {
@@ -234,6 +240,7 @@ QJsonObject OpenXrInputPlugin::configurationSettings() {
     QJsonObject configurationSettings;
     configurationSettings["tracker_calibration"] = calibration;
     configurationSettings["enable_haptics"] = _inputDevice->_hapticsEnabled;
+    configurationSettings["enable_hand_tracking"] = _inputDevice->_handTrackingEnabled;
     return configurationSettings;
 }
 
@@ -307,6 +314,28 @@ void OpenXrInputPlugin::loadSettings() {
     Settings settings;
     settings.beginGroup(getName());
 
+    _inputDevice->_hapticsEnabled = settings.value("hapticsEnabled", true).toBool();
+    _inputDevice->_handTrackingEnabled = settings.value("handTrackingEnabled", true).toBool();
+
+    settings.beginGroup("trackerCalibration");
+
+    for (const auto& [name, channel] : stringToPoseChannel) {
+        if (!settings.contains(name)) { continue; }
+
+        vec3 translation = {};
+        quat rotation = {};
+
+        settings.getVec3ValueIfValid("translation", translation);
+        settings.getQuatValueIfValid("rotation", rotation);
+
+        _inputDevice->_trackerCalibrations.insert({
+            channel,
+            controller::Pose(translation, rotation),
+        });
+    }
+
+    settings.endGroup();
+
     settings.endGroup();
 }
 
@@ -314,13 +343,34 @@ void OpenXrInputPlugin::saveSettings() const {
     Settings settings;
     settings.beginGroup(getName());
 
+    settings.setValue("hapticsEnabled", _inputDevice->_hapticsEnabled);
+    settings.setValue("handTrackingEnabled", _inputDevice->_handTrackingEnabled);
+
+    // TODO: Should we save device serial->role mappings?
+    // HTCX_vive_tracker_interaction has preset roles and doesn't
+    // expose serials at all, and MNDX_xdev_space only has serials
+    // with no preset roles. Other skeletal body tracking extensions
+    // don't use serials either.
+    // This isn't really useful for MNDX_xdev_space yet since the
+    // recalibration step is also what assigns the roles to a tracker.
+    settings.beginGroup("trackerCalibration");
+
+    for (const auto& [channel, pose] : _inputDevice->_trackerCalibrations) {
+        settings.beginGroup(poseChannelToString.at(channel));
+        settings.setVec3Value("translation", pose.translation);
+        settings.setQuatValue("rotation", pose.rotation);
+        settings.endGroup();
+    }
+
+    settings.endGroup();
+
     settings.endGroup();
 }
 
 OpenXrInputPlugin::InputDevice::InputDevice(std::shared_ptr<OpenXrContext> c) : controller::InputDevice("OpenXR") {
     _context = c;
 
-    qCInfo(xr_input_cat) << "Hand tracking supported:" << _context->_handTrackingSupported;
+    qCDebug(xr_input_cat) << "Hand tracking supported:" << _context->_handTrackingSupported;
 }
 
 void OpenXrInputPlugin::InputDevice::focusOutEvent() {
@@ -1285,7 +1335,7 @@ void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& se
 
     // if real hand tracking isn't available,
     // don't do any more than the capacitive touch tracking
-    if (!_context->_handTrackingSupported) {
+    if (!_context->_handTrackingSupported || !_handTrackingEnabled) {
         return;
     }
 

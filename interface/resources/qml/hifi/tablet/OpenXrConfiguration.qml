@@ -18,8 +18,6 @@ import "."
 
 Flickable {
     id: flick
-    width: parent.width
-    height: parent.height
     anchors.fill: parent
     contentHeight: 550
     flickableDirection: Flickable.VerticalFlick
@@ -34,7 +32,7 @@ Flickable {
         z: 100  // Display over top of separators.
 
         background: Item {
-            implicitWidth: verticalScrollWidth
+            implicitWidth: 10
             Rectangle {
                 color: hifi.colors.baseGrayShadow
                 radius: 4
@@ -45,9 +43,9 @@ Flickable {
             }
         }
         contentItem: Item {
-            implicitWidth: verticalScrollShaft
+            implicitWidth: 10
             Rectangle {
-                radius: verticalScrollShaft/2
+                radius: 5
                 color: hifi.colors.white30
                 anchors {
                     fill: parent
@@ -90,9 +88,10 @@ Flickable {
             }
 
             Row {
-                id: otherConfig
+                id: hapticsRow
                 anchors.left: parent.left
                 anchors.leftMargin: leftMargin + 10
+                anchors.topMargin: 10
                 spacing: 10
 
                 HifiControls.CheckBox {
@@ -113,66 +112,60 @@ Flickable {
                 }
             }
 
+            Row {
+                id: handTrackingRow
+                anchors.left: parent.left
+                anchors.leftMargin: leftMargin + 10
+                anchors.top: hapticsRow.bottom
+                anchors.topMargin: 10
+                spacing: 10
+
+                HifiControls.CheckBox {
+                    id: handTrackingBox
+                    width: 15
+                    height: 15
+                    boxRadius: 7
+
+                    onClicked: {
+                        sendConfigurationSettings();
+                    }
+                }
+
+                RalewayBold {
+                    size: 12
+                    text: "Enable Hand Tracking"
+                    color: hifi.colors.lightGrayText
+                }
+            }
+
             RalewayBold {
-                id: bodyTracking
+                id: bodyTrackingTitle
 
                 text: "Body Tracking"
                 size: 12
 
                 color: hifi.colors.white
 
-                anchors.top: otherConfig.bottom
+                anchors.top: handTrackingRow.bottom
                 anchors.left: parent.left
                 anchors.leftMargin: leftMargin
                 anchors.topMargin: 10
             }
 
             RalewayRegular {
-                id: info
+                id: bodyTrackingInfo
 
-                text: "See Recommended Placement"
-                color: hifi.colors.blueHighlight
+                text: "Body tracking is experimental on OpenXR. Monado's xdev tracker extension is partially supported, but calibration is broken. Other runtimes' body tracking extensions may be supported in the future."
                 size: 12
-                anchors {
-                    left: bodyTracking.right
-                    leftMargin: 10
-                    verticalCenter: bodyTracking.verticalCenter
-                    topMargin: 10
-                    top: bodyTracking.bottom
-                }
 
-                Rectangle {
-                    id: selected
-                    color: hifi.colors.blueHighlight
+                color: hifi.colors.white
+                wrapMode: Text.Wrap
 
-                    width: info.width
-                    height: 1
-
-                    anchors {
-                        top: info.bottom
-                        topMargin: 1
-                        left: info.left
-                        right: info.right
-                    }
-
-                    visible: false
-                }
-
-                MouseArea {
-                    anchors.fill: parent;
-                    hoverEnabled: true
-
-                    onEntered: {
-                        selected.visible = true;
-                    }
-
-                    onExited: {
-                        selected.visible = false;
-                    }
-                    onClicked: {
-                        stack.messageVisible = true;
-                    }
-                }
+                anchors.top: bodyTrackingTitle.bottom
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.leftMargin: leftMargin
+                anchors.topMargin: 10
             }
 
             color: hifi.colors.baseGray
@@ -191,7 +184,7 @@ Flickable {
 
                 width: glyphButton.width + calibrationText.width + padding
                 height: hifi.dimensions.controlLineHeight
-                anchors.top: bodyTracking.bottom
+                anchors.top: bodyTrackingInfo.bottom
                 anchors.topMargin: 15
                 anchors.left: parent.left
                 anchors.leftMargin: leftMargin
@@ -389,6 +382,7 @@ Flickable {
 
                 var settings = InputConfiguration.configurationSettings("OpenXR");
                 hapticsBox.checked = settings["enable_haptics"];
+                handTrackingBox.checked = settings["enable_hand_tracking"];
 
                 isConfiguring = false;
             }
@@ -397,6 +391,7 @@ Flickable {
                 var settings = InputConfiguration.configurationSettings("OpenXR");
 
                 settings["enable_haptics"] = hapticsBox.checked;
+                settings["enable_hand_tracking"] = handTrackingBox.checked;
 
                 InputConfiguration.setConfigurationSettings(settings, "OpenXR");
             }
