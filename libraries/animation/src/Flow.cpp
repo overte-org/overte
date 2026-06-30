@@ -222,11 +222,24 @@ void FlowNode::update(float deltaTime, const glm::vec3& accelerationOffset) {
         glm::vec3 deltaAcceleration = _acceleration * accelerationFactor;
         // Calculate new position        
         _currentPosition = _currentPosition + (_currentVelocity * _settings._damping) + deltaAcceleration;
+
+        // This only seems to happen on a single timestep - usually after teleporting,
+        // where the velocity blows up since it's taken from a position delta.
+        // Clearing the bad current state lets the solver continue working with a finite delta.
+        if (
+            !std::isfinite(_currentPosition.x) ||
+            !std::isfinite(_currentPosition.y) ||
+            !std::isfinite(_currentPosition.z)
+        ) {
+            _acceleration = {};
+            _currentVelocity = {};
+            _currentPosition = _initialPosition;
+        }
     } else {
         _acceleration = glm::vec3(0.0f);
         _currentVelocity = glm::vec3(0.0f);
     }
-};
+}
 
 
 void FlowNode::solve(const glm::vec3& constrainPoint, float maxDistance, const FlowCollisionResult& collision) {
