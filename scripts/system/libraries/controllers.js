@@ -47,7 +47,7 @@ const getGrabPointSphereOffset = function(handController, ignoreSensorToWorldSca
 
 /**@jsdoc
  *
- * This is a javascript library and is not included by default. To use the method(s) below, you must first include the library.
+ * This is a JavaScript library and is not included by default. To use the method(s) below, you must first include the library.
  *
  * @example <caption>Include this library in your script.</caption>
  * Script.include("/~/system/libraries/controllers.js");
