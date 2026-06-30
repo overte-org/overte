@@ -188,6 +188,12 @@ jobs:
           echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
         fi
 
+        # Mac build variables
+        if [[ "${{ matrix.os }}" = "macOS"* ]]; then
+          echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
+          echo "CMAKE_EXTRA=-DOVERTE_DISABLE_QML=1 -DOVERTE_DISABLE_WEBRTC=1" >> $GITHUB_ENV
+        fi
+
         # Windows build variables
         if [[ "${{ matrix.os }}" = "Windows"* ]]; then
           echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
