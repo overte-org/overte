@@ -1366,11 +1366,12 @@ int AvatarData::parseDataFromBuffer(const QByteArray& buffer) {
         QWriteLocker writeLock(&_jointDataLock);
         _jointData.resize(numJoints);
 
-        const int COMPRESSED_QUATERNION_SIZE = 6;
-        PACKET_READ_CHECK(JointRotations, numValidJointRotations * COMPRESSED_QUATERNION_SIZE);
         if (_hasNewJointDataVec.size() != static_cast<size_t>(numJoints)) {
             _hasNewJointDataVec.resize(numJoints, false);
         }
+
+        const int COMPRESSED_QUATERNION_SIZE = 6;
+        PACKET_READ_CHECK(JointRotations, numValidJointRotations * COMPRESSED_QUATERNION_SIZE);
         for (int i = 0; i < numJoints; i++) {
             JointData& data = _jointData[i];
             if (validRotations[i]) {
@@ -1488,6 +1489,9 @@ int AvatarData::parseDataFromBuffer(const QByteArray& buffer) {
         int numJoints = (int)*sourceBuffer++;
 
         _jointData.resize(numJoints);
+        if (_hasNewJointDataVec.size() != static_cast<size_t>(numJoints)) {
+            _hasNewJointDataVec.resize(numJoints, false);
+        }
 
         size_t bitVectorSize = calcBitVectorSize(numJoints);
         PACKET_READ_CHECK(JointDefaultPoseFlagsRotationFlags, bitVectorSize);
