@@ -18,7 +18,7 @@ SPDX-License-Identifier: Apache-2.0
 </p>
 <h3 align="center">Build Status</h3>
 <p align="center">
-    <a href="https://github.com/overte-org/overte/actions/workflows/nightly_build.yml"><img alt="Nightly CI Build" src="https://github.com/overte-org/overte/actions/workflows/nightly_build.yml/badge.svg"></a>
+    <a href="https://github.com/overte-org/overte/actions/workflows/build.yml"><img alt="Nightly CI Build" src="https://github.com/overte-org/overte/actions/workflows/build.yml/badge.svg?event=schedule"></a>
     <a href="https://github.com/overte-org/overte/actions/workflows/master_deploy_apidocs.yml"><img alt="API-docs CI Build & Deploy" src="https://github.com/overte-org/overte/actions/workflows/master_deploy_apidocs.yml/badge.svg"></a>
     <a href="https://github.com/overte-org/overte/actions/workflows/master_deploy_doxygen.yml"><img alt="Doxygen CI Build & Deploy" src="https://github.com/overte-org/overte/actions/workflows/master_deploy_doxygen.yml/badge.svg"></a>
 </p>
