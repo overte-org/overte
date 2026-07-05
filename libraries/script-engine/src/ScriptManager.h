@@ -1660,7 +1660,7 @@ protected:
     std::atomic<bool> _isDoneRunning { false };
     bool _areMetaTypesInitialized { false };
     bool _isInitialized { false };
-    QHash<int, std::pair<QTimer*, CallbackData>> _timerFunctionMap;
+    std::map<int, std::pair<std::unique_ptr<QTimer>, CallbackData>> _timerFunctionMap;
     int _timerHandleCounter { 1 };
     QSet<QUrl> _includedURLs;
     mutable QReadWriteLock _entityScriptsLock { QReadWriteLock::Recursive };
