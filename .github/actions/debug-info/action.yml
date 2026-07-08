@@ -15,3 +15,8 @@ runs:
       working-directory: build
       run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log || echo "No NSIS log found. Continuing…"
 
+    - name: Output CodeChecker JSON compilation database
+      if: matrix.id == 'codechecker'
+      shell: bash
+      continue-on-error: true
+      run: cat ${{ env.GITHUB_WORKSPACE }}/codechecker_codechecker_compilation_database.json

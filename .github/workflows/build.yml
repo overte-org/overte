@@ -248,7 +248,7 @@ jobs:
       if: matrix.id == 'codechecker' && github.event.action != 'tag'
       id: codechecker
       with:
-        build-command: cmake --build --preset conan-debug --target codegen
+        build-command: cmake --build --preset conan-debug
         skipfile: ${{ env.GITHUB_WORKSPACE }}/.github/codechecker/skipfile.txt
         # Allow static analyzers to analyze across files instead of one file at a time.
         ctu: true
