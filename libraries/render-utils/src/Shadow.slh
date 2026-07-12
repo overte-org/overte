@@ -52,7 +52,7 @@ ShadowSampleOffsets evalShadowFilterOffsets(vec4 position) {
     // Pattern dithering in screen space
     ivec2 coords = ivec2(gl_FragCoord.xy);
 #else
-    // Pattern dithering in world space (mm resolution)
+    // Pattern dithering in world space
     ivec2 coords = ivec2(position.x, position.y+position.z);
 #endif
 

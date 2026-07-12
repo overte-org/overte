@@ -470,7 +470,7 @@ void RenderTransparentDeferred::run(const RenderContextPointer& renderContext, c
     const auto& lightFrame = inputs.get2();
     const auto& lightingModel = inputs.get3();
     const auto& lightClusters = inputs.get4();
-    // Not needed yet: const auto& shadowFrame = inputs.get5();
+    const auto& shadowFrame = inputs.get5();
     const auto& deferredFrameTransform = inputs.get6();
     auto &deferredFramebuffer = inputs.get7();
     auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
@@ -493,6 +493,21 @@ void RenderTransparentDeferred::run(const RenderContextPointer& renderContext, c
         batch.setUniformBuffer(ru::Buffer::LightModel, lightingModel->getParametersBuffer());
         batch.setResourceTexture(ru::Texture::AmbientFresnel, lightingModel->getAmbientFresnelLUT());
         batch.setUniformBuffer(ru::Buffer::DeferredFrameTransform, deferredFrameTransform->getFrameTransformBuffer());
+
+        // Check if keylight casts shadows
+        bool keyLightCastShadows{ false };
+        LightStage::ShadowPointer globalShadow;
+        if (lightingModel->isShadowEnabled() && shadowFrame && !shadowFrame->_objects.empty()) {
+            globalShadow = shadowFrame->_objects.front();
+            if (globalShadow) {
+                keyLightCastShadows = true;
+            }
+        }
+
+        if (keyLightCastShadows && globalShadow) {
+            batch.setResourceTexture(ru::Texture::Shadow, globalShadow->map);
+            batch.setUniformBuffer(ru::Buffer::ShadowParams, globalShadow->getBuffer());
+        }
 
         // Set the light
         deferredLightingEffect->setupKeyLightBatch(args, batch, *lightFrame);
@@ -523,6 +538,8 @@ void RenderTransparentDeferred::run(const RenderContextPointer& renderContext, c
 
         deferredLightingEffect->unsetLocalLightsBatch(batch);
         deferredLightingEffect->unsetKeyLightBatch(batch);
+        batch.setResourceTexture(ru::Texture::Shadow, nullptr);
+        batch.setUniformBuffer(ru::Buffer::ShadowParams, nullptr);
     });
 
     config->setNumDrawn((int)inItems.size());

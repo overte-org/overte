@@ -119,6 +119,9 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
  
         const auto& zones = lightingStageInputs[1];
 
+    const auto shadowTaskOut = inputs.get3();
+    const auto shadowFrame = shadowTaskOut[1];
+
     const auto setNormalMapAttenuationInputs = SetNormalMapAttenuation::Inputs(lightingModel, normalMapAttenuationFrame).asVarying();
     task.addJob<SetNormalMapAttenuation>("SetNormalMapAttenuation", setNormalMapAttenuationInputs);
 
@@ -134,7 +137,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     const auto lightClusters = task.addJob<LightClusteringPass>("LightClustering", lightClusteringPassInputs);
 
     // Prepare Forward Framebuffer pass
-    const auto prepareForwardInputs = PrepareForward::Inputs(scaledPrimaryFramebuffer, lightFrame).asVarying();
+    const auto prepareForwardInputs = PrepareForward::Inputs(scaledPrimaryFramebuffer, lightFrame, lightingModel, shadowFrame).asVarying();
     task.addJob<PrepareForward>("PrepareForward", prepareForwardInputs);
 
     if (depth == 0) {
@@ -146,7 +149,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     task.addJob<PrepareStencil>("PrepareStencil", scaledPrimaryFramebuffer);
 
     // Draw opaques forward
-    const auto opaqueInputs = DrawForward::Inputs(opaques, lightingModel, hazeFrame, lightClusters, deferredFrameTransform).asVarying();
+    const auto opaqueInputs = DrawForward::Inputs(opaques, lightingModel, hazeFrame, lightClusters, deferredFrameTransform, shadowFrame).asVarying();
     task.addJob<DrawForward>("DrawOpaques", opaqueInputs, shapePlumber, true, mainViewTransformSlot);
 
 #ifndef Q_OS_ANDROID
@@ -163,7 +166,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
     task.addJob<DrawBackgroundStage>("DrawBackgroundForward", backgroundInputs, backgroundViewTransformSlot);
 
     // Draw transparent objects forward
-    const auto transparentInputs = DrawForward::Inputs(transparents, lightingModel, hazeFrame, lightClusters, deferredFrameTransform).asVarying();
+    const auto transparentInputs = DrawForward::Inputs(transparents, lightingModel, hazeFrame, lightClusters, deferredFrameTransform, shadowFrame).asVarying();
     task.addJob<DrawForward>("DrawTransparents", transparentInputs, shapePlumber, false, mainViewTransformSlot);
 
      // Layered
@@ -244,6 +247,7 @@ void PrepareForward::run(const RenderContextPointer& renderContext, const Inputs
 
     auto primaryFramebuffer = inputs.get0();
     auto lightStageFrame = inputs.get1();
+    auto lightingModel = inputs.get2();
 
     gpu::doInBatch("RenderForward::Draw::run", args->_context, [&](gpu::Batch& batch) {
         args->_batch = &batch;
@@ -290,6 +294,7 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
     const auto& hazeFrame = inputs.get2();
     const auto& lightClusters = inputs.get3();
     const auto& deferredFrameTransform = inputs.get4();
+    const auto& shadowFrame = inputs.get5();
     auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
 
     graphics::HazePointer haze;
@@ -309,6 +314,21 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
         batch.setUniformBuffer(ru::Buffer::LightModel, lightingModel->getParametersBuffer());
         batch.setResourceTexture(ru::Texture::AmbientFresnel, lightingModel->getAmbientFresnelLUT());
         batch.setUniformBuffer(ru::Buffer::DeferredFrameTransform, deferredFrameTransform->getFrameTransformBuffer());
+
+        // Check if keylight casts shadows
+        bool keyLightCastShadows{ false };
+        LightStage::ShadowPointer globalShadow;
+        if (lightingModel->isShadowEnabled() && shadowFrame && !shadowFrame->_objects.empty()) {
+            globalShadow = shadowFrame->_objects.front();
+            if (globalShadow) {
+                keyLightCastShadows = true;
+            }
+        }
+
+        if (keyLightCastShadows && globalShadow) {
+            batch.setResourceTexture(ru::Texture::Shadow, globalShadow->map);
+            batch.setUniformBuffer(ru::Buffer::ShadowParams, globalShadow->getBuffer());
+        }
 
         // Set the light
         deferredLightingEffect->setupKeyLightBatch(args, batch);
@@ -339,5 +359,7 @@ void DrawForward::run(const RenderContextPointer& renderContext, const Inputs& i
 
         deferredLightingEffect->unsetLocalLightsBatch(batch);
         deferredLightingEffect->unsetKeyLightBatch(batch);
+        batch.setResourceTexture(ru::Texture::Shadow, nullptr);
+        batch.setUniformBuffer(ru::Buffer::ShadowParams, nullptr);
     });
 }
