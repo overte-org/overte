@@ -3,7 +3,7 @@
 //
 // Created by David Kelly on August 1st, 2016
 // Copyright 2016 High Fidelity, Inc.
-// Copyright 2025 Overte e.V.
+// Copyright 2025-2026 Overte e.V.
 //
 // Distributed under the Apache License, Version 2.0
 // See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -477,7 +477,7 @@ function takeSnapshot() {
         Audio.playSound(snapActivateSound, {
             position: { x: MyAvatar.position.x, y: MyAvatar.position.y, z: MyAvatar.position.z },
             localOnly: true,
-            volume: 1.0
+            volume: 0.3
         });
         HMD.closeTablet();
         setTakePhotoControllerMappingStatus(false);
