@@ -1,20 +1,17 @@
 <!--
 Copyright 2021 Vircadia contributors.
-Copyright 2022 Overte e.V.
+Copyright 2022-2026 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
 # Overte Server Packaging Scripts
 
 Collection of scripts to create server distribution packages. Most of these scripts assume
-use of the build script at https://github.com/overte-org/overte-builder, specifically that
-the following directory structure exists:
+that the following directory structure exists:
 
 ```
-base folder/
-	source/		git checkout
+base folder/    git checkout
 	build/		result of cmake build
-	qt5-install/	installed or built Qt5 installation
 ```
 
 These scripts assume that the current directory is the pkg-scripts folder inside of the source directory
@@ -65,16 +62,18 @@ The following directory structure is created for binaries:
 
 The following systemd services are installed in `/usr/lib/systemd/system`:
 ```
-overte-assignment-client.service
-overte-domain-server.service
-overte-server.target - used to launch/shutdown the two prior services
-overte-assignment-client@.service
+overte-agents@.service
+overte-asset-server@.service
+overte-audio-mixer@.service
+overte-avatar-mixer@.service
 overte-domain-server@.service
-overte-server@.target - used to launch/shutdown the two prior services
+overte-entity-script-server@.service
+overte-entity-server@.service
+overte-message-mixer@.service
+overte-domain-server@.service
+overte-server@.target - used to launch/shutdown the prior services
 ```
-
-The top three services in this list are the "normal" services that launch Overte
-in the typical fashion. The bottom three services are "template" services designed
+The services are "template" services designed
 to permit multiple services to be installed and running on a single machine.
 
 The script `/opt/overte/new-server serverName basePort` will do the necessary
@@ -88,7 +87,6 @@ used to configure and run the domain on your server.
 
 The server stores its files in the following locations:
 ```
-/var/lib/overte/.local - "unnamed" services (the default location for Overte servers)
 /var/lib/overte/serverName - "named" (template) domains
 /etc/opt/overte - environment variables when launching named domains
 ```

@@ -1,0 +1,18 @@
+[Unit]
+Description=Overte Agents service for %I
+After=network.target
+PartOf=overte-server@%i.target
+
+[Service]
+Restart=always
+
+WorkingDirectory=/opt/overte
+EnvironmentFile=/etc/opt/overte/%i.conf
+Environment="LD_LIBRARY_PATH=/opt/overte/lib" "HOME=/var/lib/overte/%i"
+PrivateTmp=true
+User=overte
+Group=overte
+ExecStart=/opt/overte/assignment-client -t 2 --server-port $HIFI_DOMAIN_SERVER_PORT --disable-domain-port-auto-discovery --max 20
+
+[Install]
+WantedBy=multi-user.target

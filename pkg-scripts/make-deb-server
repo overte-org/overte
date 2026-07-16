@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Copyright 2020-2021 Vircadia contributors.
-# Copyright 2022-2025 Overte e.V.
+# Copyright 2022-2026 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 if [ "$OVERTE" = "" ]; then
@@ -44,12 +44,17 @@ strip --strip-all $DEB_BUILD_ROOT/plugins/*/*.so
 cd $DEB_BUILD_ROOT
 dh_make -p overte-server_$DEBVERSION -c apache -s --createorig -y
 
-cp $OVERTE/pkg-scripts/overte-assignment-client.service debian
-cp $OVERTE/pkg-scripts/overte-assignment-client@.service debian
-cp $OVERTE/pkg-scripts/overte-domain-server.service debian
-cp $OVERTE/pkg-scripts/overte-domain-server@.service debian
-cp $OVERTE/pkg-scripts/overte-server.target debian
-cp $OVERTE/pkg-scripts/overte-server@.target debian
+cp $OVERTE/pkg-scripts/systemd/overte-agents@.service debian
+cp $OVERTE/pkg-scripts/systemd/overte-asset-server@.service debian
+cp $OVERTE/pkg-scripts/systemd/overte-audio-mixer@.service debian
+cp $OVERTE/pkg-scripts/systemd/overte-avatar-mixer@.service debian
+cp $OVERTE/pkg-scripts/systemd/overte-domain-server@.service debian
+cp $OVERTE/pkg-scripts/systemd/overte-entity-script-server@.service debian
+cp $OVERTE/pkg-scripts/systemd/overte-entity-server@.service debian
+cp $OVERTE/pkg-scripts/systemd/overte-message-mixer@.service debian
+
+cp $OVERTE/pkg-scripts/systemd/overte-domain-server@.service debian
+cp $OVERTE/pkg-scripts/systemd/overte-server@.target debian
 
 cp $OVERTE/pkg-scripts/server-compat debian/compat
 cp $OVERTE/pkg-scripts/server-control debian/control
