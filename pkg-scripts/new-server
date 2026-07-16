@@ -28,7 +28,11 @@ if [ -d "/var/lib/overte/$1" ]; then
 fi
 
 mkdir -p /var/lib/overte/$1/.local/share
+# Old development builds.
 ln -s ../.. /var/lib/overte/$1/.local/share/Overte\ -\ dev
+ln -s ../.. /var/lib/overte/$1/.local/share/Overte\ -\ PR
+ln -s ../.. /var/lib/overte/$1/.local/share/Overte\ -\ Dev
+ln -s ../.. /var/lib/overte/$1/.local/share/Overte\ -\ Nightly
 ln -s ../.. /var/lib/overte/$1/.local/share/Overte
 mkdir -p /var/lib/overte/$1/domain-server
 echo "{\"metaverse\": {\"local_port\": $(($2 + 2))},\"version\": 2.4}" > /var/lib/overte/$1/domain-server/config.json

@@ -29,12 +29,14 @@ case "$1" in
         systemctl enable overte-server@default.target
         systemctl start overte-server@default.target
     else # Default server was already created in the past.
-        # Starting default server in case we removed but didn't purge it.
-        systemctl enable overte-server@default.target
-        systemctl start overte-server@default.target
-        # SystemD can have Units in "memory" which are not actually "loaded", for example because they do not exist anymore.
-        systemctl list-units --state=loaded \
-            | grep -P -o "(overte-assignment-client|overte-domain-server|overte-server)\S+" \
+        if systemctl is-enabled overte-server@default.target | grep -q 'disabled'; then
+            echo "The default server was already created in the past but is disabled."
+            echo "You can reenable it with:"
+            echo "  sudo systemctl enable overte-server@default.target"
+        fi
+        # This lists all enabled targets, such as overte-server@default.target and restarts them.
+        systemctl list-units --type=target \
+            | grep -P -o "overte-server\S+" \
             | xargs systemctl restart
     fi
     ;;
