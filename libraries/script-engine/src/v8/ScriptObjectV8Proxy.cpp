@@ -13,6 +13,7 @@
 //
 
 #include "ScriptObjectV8Proxy.h"
+#include <v8-template.h>
 
 #include <QElapsedTimer>
 #include <QtCore/QList>
@@ -490,14 +491,14 @@ ScriptValue::PropertyFlags ScriptObjectV8Proxy::propertyFlags(const V8ScriptValu
     return ScriptValue::PropertyFlags();
 }
 
-void ScriptObjectV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info) {
+v8::Intercepted ScriptObjectV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info) {
     v8::HandleScope handleScope(info.GetIsolate());
     v8::String::Utf8Value utf8Value(info.GetIsolate(), name);
     v8::Local<v8::Value> objectV8 = info.This();
     ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(info.GetIsolate(), objectV8);
     if (!proxy) {
         qCDebug(scriptengine_v8) << "Proxy object not found when getting: " << *utf8Value;
-        return;
+        return v8::Intercepted::kYes;
     }
     V8ScriptValue object(proxy->_engine, objectV8);
     if (!name->IsString() && !name->IsSymbol()) {
@@ -516,7 +517,7 @@ void ScriptObjectV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCall
         if (flags) {
             V8ScriptValue value = proxy->property(object, nameString, id);
             info.GetReturnValue().Set(value.get());
-            return;
+            return v8::Intercepted::kYes;
         }
     }
 
@@ -526,16 +527,17 @@ void ScriptObjectV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCall
     } else {
         qCDebug(scriptengine_v8) << "Value not found: " << *utf8Value;
     }
+    return v8::Intercepted::kYes;
 }
 
-void ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<v8::Value>& info) {
+v8::Intercepted ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info) {
     v8::HandleScope handleScope(info.GetIsolate());
     v8::String::Utf8Value utf8Value(info.GetIsolate(), name);
     v8::Local<v8::Value> objectV8 = info.This();
     ScriptObjectV8Proxy *proxy = ScriptObjectV8Proxy::unwrapProxy(info.GetIsolate(), objectV8);
     if (!proxy) {
         qCDebug(scriptengine_v8) << "Proxy object not found when setting: " << *utf8Value;
-        return;
+        return v8::Intercepted::kYes;
     }
     V8ScriptValue object(proxy->_engine, objectV8);
     if (!name->IsString() && !name->IsSymbol()) {
@@ -553,7 +555,7 @@ void ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> v
         if (flags) {
             proxy->setProperty(object, nameString, id, V8ScriptValue(proxy->_engine, value));
             info.GetReturnValue().Set(value);
-            return;
+            return v8::Intercepted::kYes;
         }
     }
 
@@ -562,6 +564,7 @@ void ScriptObjectV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> v
     } else {
         qCDebug(scriptengine_v8) << "Set failed: " << *utf8Value;
     }
+    return v8::Intercepted::kYes;
 }
 
 void ScriptObjectV8Proxy::v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info) {
@@ -832,14 +835,14 @@ QVariant* ScriptVariantV8Proxy::unwrapQVariantPointer(v8::Isolate* isolate, cons
 }
 
 
-void ScriptVariantV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info) {
+v8::Intercepted ScriptVariantV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info) {
     v8::HandleScope handleScope(info.GetIsolate());
     v8::String::Utf8Value utf8Name(info.GetIsolate(), name);
     v8::Local<v8::Value> objectV8 = info.This();
     ScriptVariantV8Proxy *proxy = ScriptVariantV8Proxy::unwrapProxy(info.GetIsolate(), objectV8);
     if (!proxy) {
         qCDebug(scriptengine_v8) << "Proxy object not found when getting: " << *utf8Name;
-        return;
+        return v8::Intercepted::kYes;
     }
     V8ScriptValue object(proxy->_engine, proxy->_v8Object.Get(info.GetIsolate()));
 
@@ -852,21 +855,22 @@ void ScriptVariantV8Proxy::v8Get(v8::Local<v8::Name> name, const v8::PropertyCal
         if (flags) {
             V8ScriptValue value = proxy->property(object, nameString, id);
             info.GetReturnValue().Set(value.get());
-            return;
+            return v8::Intercepted::kYes;
         }
     }
 
     qCDebug(scriptengine_v8) << "Value not found: " << *utf8Name;
+    return v8::Intercepted::kYes;
 }
 
-void ScriptVariantV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<v8::Value>& info) {
+v8::Intercepted ScriptVariantV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value, const v8::PropertyCallbackInfo<void>& info) {
     v8::HandleScope handleScope(info.GetIsolate());
     v8::String::Utf8Value utf8Name(info.GetIsolate(), name);
     v8::Local<v8::Value> objectV8 = info.This();
     ScriptVariantV8Proxy *proxy = ScriptVariantV8Proxy::unwrapProxy(info.GetIsolate(), objectV8);
     if (!proxy) {
         qCDebug(scriptengine_v8) << "Proxy object not found when getting: " << *utf8Name;
-        return;
+        return v8::Intercepted::kYes;
     }
 
     V8ScriptValue object(proxy->_engine, objectV8);
@@ -884,10 +888,11 @@ void ScriptVariantV8Proxy::v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> 
         if (flags) {
             proxy->setProperty(object, nameString, id, V8ScriptValue(proxy->_engine, value));
             info.GetReturnValue().Set(value);
-            return;
+            return v8::Intercepted::kYes;
         }
     }
     qCDebug(scriptengine_v8) << "Set failed: " << *utf8Name;
+    return v8::Intercepted::kYes;
 }
 
 void ScriptVariantV8Proxy::v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info) {

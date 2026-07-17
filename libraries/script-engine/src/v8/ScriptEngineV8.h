@@ -30,6 +30,7 @@
 #include <QtCore/QSharedPointer>
 #include <QtCore/QString>
 #include <QQueue>
+#include <v8-isolate.h>
 #include <v8-profiler.h>
 
 #include "libplatform/libplatform.h"
@@ -141,7 +142,7 @@ public:  // ScriptEngine implementation
     virtual ScriptValue undefinedValue() override;
     virtual std::shared_ptr<ScriptException> uncaughtException() const override;
     virtual void updateMemoryCost(const qint64& deltaSize) override;
-    virtual void requestCollectGarbage() override { while(!_v8Isolate->IdleNotificationDeadline(getV8Platform()->MonotonicallyIncreasingTime() + GARBAGE_COLLECTION_TIME_LIMIT_S)) {}; }
+    virtual void requestCollectGarbage() override { _v8Isolate->MemoryPressureNotification(v8::MemoryPressureLevel::kCritical); }
     virtual void processEvents() override;
     virtual void compileTest() override;
     virtual QString scriptValueDebugDetails(const ScriptValue &value) override;

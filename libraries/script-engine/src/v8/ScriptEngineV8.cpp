@@ -769,7 +769,7 @@ ScriptValue ScriptEngineV8::evaluate(const QString& sourceCode, const QString& f
     v8::HandleScope handleScope(_v8Isolate);
     auto context = getContext();
     v8::Context::Scope contextScope(context);
-    v8::ScriptOrigin scriptOrigin(getIsolate(), v8::String::NewFromUtf8(getIsolate(), fileName.toStdString().c_str()).ToLocalChecked());
+    v8::ScriptOrigin scriptOrigin(v8::String::NewFromUtf8(getIsolate(), fileName.toStdString().c_str()).ToLocalChecked());
     v8::Local<v8::Script> script;
     {
         v8::TryCatch tryCatch(getIsolate());
@@ -1421,7 +1421,7 @@ void ScriptEngineV8::compileTest() {
     auto context = getContext();
     v8::Context::Scope contextScope(context);
     v8::Local<v8::Script> script;
-    v8::ScriptOrigin scriptOrigin(getIsolate(), v8::String::NewFromUtf8(getIsolate(),"test").ToLocalChecked());
+    v8::ScriptOrigin scriptOrigin(v8::String::NewFromUtf8(getIsolate(),"test").ToLocalChecked());
     if (v8::Script::Compile(context, v8::String::NewFromUtf8(getIsolate(), "print(\"hello world\");").ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
         qCDebug(scriptengine_v8) << "Compile test successful";
     } else {
