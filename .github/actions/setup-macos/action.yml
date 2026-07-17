@@ -22,3 +22,7 @@ runs:
       shell: bash
       run: |
         python3 -m pip install boto3 PyGithub conan html5lib setuptools
+
+    - name: Install Sentry-cli
+      shell: bash
+      run: curl -sL https://sentry.io/get-cli/ | SENTRY_CLI_VERSION="3.6.0" sh
