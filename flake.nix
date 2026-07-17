@@ -46,7 +46,13 @@
                   draco
                   glm
                   ;
-                libv8 = pkgs.nodejs_22.libv8;
+                libv8 =
+                  (pkgs.nodejs-slim_24.overrideAttrs (attrs: {
+                    postPatch = attrs.postPatch + ''
+                      substituteInPlace tools/v8_gypfiles/v8.gyp \
+                          --replace-fail "'target_defaults': {" "'target_defaults': {'defines':['V8_TLS_USED_IN_LIBRARY',],"
+                    '';
+                  })).libv8;
               };
 
               # TODO: update/remove when overte updates to more modern version
