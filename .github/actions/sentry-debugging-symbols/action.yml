@@ -1,0 +1,14 @@
+name: "Upload debugging symbols to Sentry"
+description: |
+            Uses Sentry-cli to upload debugging symbols to Sentry.
+inputs:
+    SENTRY_DEBUG_TOKEN:
+      required: true
+      description: "Access token for uploading debugging symbols to Sentry."
+runs:
+  using: "composite"
+  steps:
+  - name: Upload debugging symbols to Sentry
+    shell: bash
+    run: |
+      sentry-cli debug-files upload -o overte -p overte --include-sources --wait-for 120 --auth-token ${{ inputs.SENTRY_DEBUG_TOKEN }} build/
