@@ -18,7 +18,7 @@ import Qt.labs.settings 1.0
 import stylesUit 1.0
 import controlsUit 1.0 as HifiControlsUit
 import "../controls" as HifiControls
-import "qrc:////qml//hifi//models" as HifiModels  // Absolute path so the same code works everywhere.
+import "qrc:/qml/hifi/models" as HifiModels  // Absolute path so the same code works everywhere.
 
 // references HMD, Users, UserActivityLogger from root context
 
