@@ -47,7 +47,7 @@ bool ScriptProgramV8Wrapper::compile() {
     QString errorMessage = "";
     QString errorBacktrace = "";
     v8::TryCatch tryCatch(isolate);
-    v8::ScriptOrigin scriptOrigin(isolate, v8::String::NewFromUtf8(isolate, _url.toStdString().c_str()).ToLocalChecked());
+    v8::ScriptOrigin scriptOrigin(v8::String::NewFromUtf8(isolate, _url.toStdString().c_str()).ToLocalChecked());
     v8::Local<v8::Script> script;
     if (v8::Script::Compile(context, v8::String::NewFromUtf8(isolate, _source.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
         qCDebug(scriptengine_v8) << "Script compilation successful: " << _url;

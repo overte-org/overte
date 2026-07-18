@@ -103,7 +103,7 @@ ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) {
         "blue: { set: function(nv) { return this.z = nv; }, get: function() { return this.z; } }"
         "})");
         v8::TryCatch tryCatch(isolate);
-        v8::ScriptOrigin scriptOrigin(isolate, v8::String::NewFromUtf8(isolate, "Vec3prototype").ToLocalChecked());
+        v8::ScriptOrigin scriptOrigin(v8::String::NewFromUtf8(isolate, "Vec3prototype").ToLocalChecked());
         v8::Local<v8::Script> script;
         if (!v8::Script::Compile(context, v8::String::NewFromUtf8(isolate, sourceCode.toStdString().c_str()).ToLocalChecked(), &scriptOrigin).ToLocal(&script)) {
             Q_ASSERT(false);

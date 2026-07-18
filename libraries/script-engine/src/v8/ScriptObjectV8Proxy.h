@@ -30,6 +30,7 @@
 #include "V8Types.h"
 
 #include <shared/ReadWriteLockable.h>
+#include <v8-template.h>
 
 class ScriptEngineV8;
 class ScriptSignalV8Proxy;
@@ -110,8 +111,8 @@ public:
     virtual QueryFlags queryProperty(const V8ScriptValue& object, const V8ScriptString& name, QueryFlags flags, uint* id);
     virtual void setProperty(V8ScriptValue& object, const V8ScriptString& name, uint id, const V8ScriptValue& value);
     v8::Local<v8::Array> getPropertyNames();
-    static void v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info);
-    static void v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value_obj, const v8::PropertyCallbackInfo<v8::Value>& info);
+    static v8::Intercepted v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info);
+    static v8::Intercepted v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value_obj, const v8::PropertyCallbackInfo<void>& info);
     static void v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info);
 
 private:  // implementation
@@ -187,8 +188,8 @@ public:  // QScriptClass implementation
     virtual void setProperty(V8ScriptValue& object, const V8ScriptString& name, uint id, const V8ScriptValue& value) {
         return _proto->setProperty(object, name, id, value);
     }
-    static void v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info);
-    static void v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value_obj, const v8::PropertyCallbackInfo<v8::Value>& info);
+    static v8::Intercepted v8Get(v8::Local<v8::Name> name, const v8::PropertyCallbackInfo<v8::Value>& info);
+    static v8::Intercepted v8Set(v8::Local<v8::Name> name, v8::Local<v8::Value> value_obj, const v8::PropertyCallbackInfo<void>& info);
     static void v8GetPropertyNames(const v8::PropertyCallbackInfo<v8::Array>& info);
 
 private:
