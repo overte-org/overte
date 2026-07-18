@@ -18,8 +18,8 @@ import Qt5Compat.GraphicalEffects
 
 import stylesUit 1.0 as HifiStylesUit
 import controlsUit 1.0 as HifiControlsUit
-import "qrc:////qml//controls" as HifiControls
-import "qrc:////qml//hifi" as Hifi
+import "qrc:/qml/controls" as HifiControls
+import "qrc:/qml/hifi" as Hifi
 
 Rectangle {
     HifiStylesUit.HifiConstants { id: hifi; }
