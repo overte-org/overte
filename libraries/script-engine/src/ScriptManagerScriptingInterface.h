@@ -298,26 +298,26 @@ public:
      * @function Script.setInterval
      * @param {function} function - The function to call. This can be either the name of a function or an in-line definition.
      * @param {number} interval - The interval at which to call the function, in ms.
-     * @returns {object} A handle to the interval timer. This can be used in {@link Script.clearInterval}.
+     * @returns {number} A handle to the interval timer. This can be used in {@link Script.clearInterval}.
      * @example <caption>Print a message every second.</caption>
      * Script.setInterval(function () {
      *     print("Interval timer fired");
      * }, 1000);
     */
-    Q_INVOKABLE QTimer* setInterval(const ScriptValue& function, int intervalMS) { return _manager->setInterval(function, intervalMS); }
+    Q_INVOKABLE int setInterval(const ScriptValue& function, int intervalMS) { return _manager->setInterval(function, intervalMS); }
 
     /*@jsdoc
      * Calls a function once, after a delay.
      * @function Script.setTimeout
      * @param {function} function - The function to call. This can be either the name of a function or an in-line definition.
      * @param {number} timeout - The delay after which to call the function, in ms.
-     * @returns {object} A handle to the timeout timer. This can be used in {@link Script.clearTimeout}.
+     * @returns {number} A handle to the timeout timer. This can be used in {@link Script.clearTimeout}.
      * @example <caption>Print a message once, after a second.</caption>
      * Script.setTimeout(function () {
      *     print("Timeout timer fired");
      * }, 1000);
      */
-    Q_INVOKABLE QTimer* setTimeout(const ScriptValue& function, int timeoutMS) { return _manager->setTimeout(function, timeoutMS); };
+    Q_INVOKABLE int setTimeout(const ScriptValue& function, int timeoutMS) { return _manager->setTimeout(function, timeoutMS); };
 
     /*@jsdoc
      * Stops an interval timer set by {@link Script.setInterval|setInterval}.
@@ -335,10 +335,7 @@ public:
      *     Script.clearInterval(timer);
      * }, 10000);
      */
-    Q_INVOKABLE void clearInterval(QTimer* timer) { _manager->clearInterval(timer); }
-
-    // Overloaded version is needed in case the timer has expired
-    Q_INVOKABLE void clearInterval(QVariantMap timer) { ; }
+    Q_INVOKABLE void clearInterval(int timer) { _manager->clearInterval(timer); }
 
     /*@jsdoc
      * Stops a timeout timer set by {@link Script.setTimeout|setTimeout}.
@@ -353,10 +350,7 @@ public:
      * // Uncomment the following line to stop the timer from firing.
      * //Script.clearTimeout(timer);
      */
-    Q_INVOKABLE void clearTimeout(QTimer* timer) { _manager->clearTimeout(timer); }
-
-    // Overloaded version is needed in case the timer has expired
-    Q_INVOKABLE void clearTimeout(QVariantMap timer) { ; }
+    Q_INVOKABLE void clearTimeout(int timer) { _manager->clearTimeout(timer); }
 
     /*@jsdoc
      * Prints a message to the program log and emits {@link Script.printedMessage}.
