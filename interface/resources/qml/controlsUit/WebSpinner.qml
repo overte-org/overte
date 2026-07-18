@@ -17,7 +17,7 @@ Image {
         property string url: ""
     }
 
-    source: "qrc:////images//unsupportedImage.png"
+    source: "qrc:/images/unsupportedImage.png"
     visible: webview.loading && /^(http.*|)$/i.test(webview.url.toString())
     playing: visible
     z: 10000
