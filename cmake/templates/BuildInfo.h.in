@@ -13,24 +13,22 @@
 
 #define USE_STABLE_GLOBAL_SERVICES @USE_STABLE_GLOBAL_SERVICES@
 
-#include <QString>
-
 namespace BuildInfo {
     // WARNING: This file has been auto-generated.
     // Check cmake/templates/BuildInfo.h.in if you want to modify it.
 
-    const QString INTERFACE_NAME = "Interface";
-    const QString ASSIGNMENT_CLIENT_NAME = "assignment-client";
-    const QString DOMAIN_SERVER_NAME = "domain-server";
-    const QString AC_CLIENT_SERVER_NAME = "ac-client";
-    const QString MODIFIED_ORGANIZATION = "@BUILD_ORGANIZATION@";
-    const QString ORGANIZATION_DOMAIN = "overte.org";
-    const QString VERSION = "@BUILD_VERSION@";
-    const QString BUILD_NUMBER = "@BUILD_VERSION_NO_SHA@";
-    const QString BUILD_GLOBAL_SERVICES = "@BUILD_GLOBAL_SERVICES@";
-    const QString BUILD_TIME = "@BUILD_DATE@";
-    const QString PRELOADED_STARTUP_LOCATION = "@PRELOADED_STARTUP_LOCATION@";
-    const QString PRELOADED_SCRIPT_ALLOWLIST = "@PRELOADED_SCRIPT_ALLOWLIST@";
+    constexpr char INTERFACE_NAME[] = "Interface";
+    constexpr char ASSIGNMENT_CLIENT_NAME[] = "assignment-client";
+    constexpr char DOMAIN_SERVER_NAME[] = "domain-server";
+    constexpr char AC_CLIENT_SERVER_NAME[] = "ac-client";
+    constexpr char MODIFIED_ORGANIZATION[] = "@BUILD_ORGANIZATION@";
+    constexpr char ORGANIZATION_DOMAIN[] = "overte.org";
+    constexpr char VERSION[] = "@BUILD_VERSION@";
+    constexpr char BUILD_NUMBER[] = "@BUILD_VERSION_NO_SHA@";
+    constexpr char BUILD_GLOBAL_SERVICES[] = "@BUILD_GLOBAL_SERVICES@";
+    constexpr char BUILD_TIME[] = "@BUILD_DATE@";
+    constexpr char PRELOADED_STARTUP_LOCATION[] = "@PRELOADED_STARTUP_LOCATION@";
+    constexpr char PRELOADED_SCRIPT_ALLOWLIST[] = "@PRELOADED_SCRIPT_ALLOWLIST@";
 
     enum BuildType {
         Dev,
@@ -40,17 +38,17 @@ namespace BuildInfo {
     };
 
 #if defined(PR_BUILD)
-    const BuildType BUILD_TYPE = PR;
-    const QString BUILD_TYPE_STRING = "pr";
+    constexpr BuildType BUILD_TYPE = PR;
+    constexpr char BUILD_TYPE_STRING[] = "pr";
 #elif defined(PRODUCTION_BUILD)
-    const BuildType BUILD_TYPE = Stable;
-    const QString BUILD_TYPE_STRING = "stable";
+    constexpr BuildType BUILD_TYPE = Stable;
+    constexpr char BUILD_TYPE_STRING[] = "stable";
 #elif defined(NIGHTLY_BUILD)
-    const BuildType BUILD_TYPE = Nightly;
-    const QString BUILD_TYPE_STRING = "nightly";
+    constexpr BuildType BUILD_TYPE = Nightly;
+    constexpr char BUILD_TYPE_STRING[] = "nightly";
 #else
-    const BuildType BUILD_TYPE = Dev;
-    const QString BUILD_TYPE_STRING = "dev";
+    constexpr BuildType BUILD_TYPE = Dev;
+    constexpr char BUILD_TYPE_STRING[] = "dev";
 #endif
 
 }

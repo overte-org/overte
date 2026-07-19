@@ -38,10 +38,10 @@ const QString REDIRECT_HIFI_ADDRESS = NetworkingConstants::REDIRECT_HIFI_ADDRESS
 const QString ADDRESS_MANAGER_SETTINGS_GROUP = "AddressManager";
 const QString SETTINGS_CURRENT_ADDRESS_KEY = "address";
 
-const QString DEFAULT_OVERTE_ADDRESS = (!BuildInfo::PRELOADED_STARTUP_LOCATION.isEmpty())
+const QString DEFAULT_OVERTE_ADDRESS = (!std::string_view(BuildInfo::PRELOADED_STARTUP_LOCATION).empty())
                                        ? BuildInfo::PRELOADED_STARTUP_LOCATION
                                        : NetworkingConstants::DEFAULT_OVERTE_ADDRESS;
-const QString DEFAULT_HOME_ADDRESS = (!BuildInfo::PRELOADED_STARTUP_LOCATION.isEmpty())
+const QString DEFAULT_HOME_ADDRESS = (!std::string_view(BuildInfo::PRELOADED_STARTUP_LOCATION).empty())
                                        ? BuildInfo::PRELOADED_STARTUP_LOCATION
                                        : NetworkingConstants::DEFAULT_OVERTE_ADDRESS;
 
