@@ -271,7 +271,7 @@ public slots:
     void setSystemInjectorGain(float gain) { _systemInjectorGain = gain; };
     void setOutputGain(float gain) { _outputGain = gain; };
 
-    void outputNotify();
+    void checkStarvation();
     void noteAwakening();
 
     void loadSettings();
@@ -346,6 +346,8 @@ private:
     long _inputReadsSinceLastCheck = 0l;
     bool _isHeadsetPluggedIn { false };
 #endif
+
+    QTimer _checkStarvationTimer{ this };
 
     class Gate {
     public:
