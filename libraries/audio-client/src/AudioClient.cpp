@@ -75,6 +75,8 @@ static const int CHECK_INPUT_READS_MSECS = 2000;
 static const int MIN_READS_TO_CONSIDER_INPUT_ALIVE = 10;
 #endif
 
+static const int CHECK_STARVATION_MSECS = 1000;
+
 const AudioClient::AudioPositionGetter  AudioClient::DEFAULT_POSITION_GETTER = []{ return Vectors::ZERO; };
 const AudioClient::AudioOrientationGetter AudioClient::DEFAULT_ORIENTATION_GETTER = [] { return Quaternions::IDENTITY; };
 
@@ -834,6 +836,8 @@ void AudioClient::start() {
     connect(&_checkInputTimer, &QTimer::timeout, this, &AudioClient::checkInputTimeout);
     _checkInputTimer.start(CHECK_INPUT_READS_MSECS);
 #endif
+    connect(&_checkStarvationTimer, &QTimer::timeout, this, &AudioClient::checkStarvation);
+    _checkStarvationTimer.start(CHECK_STARVATION_MSECS);
 }
 
 void AudioClient::stop() {
@@ -2083,7 +2087,7 @@ void AudioClient::setHeadsetPluggedIn(bool pluggedIn) {
 #endif
 }
 
-void AudioClient::outputNotify() {
+void AudioClient::checkStarvation() {
     int recentUnfulfilled = _audioOutputIODevice.getRecentUnfulfilledReads();
     if (recentUnfulfilled > 0) {
         qCDebug(audioclient, "Starve detected, %d new unfulfilled reads", recentUnfulfilled);
@@ -2227,9 +2231,6 @@ bool AudioClient::switchOutputToAudioDevice(const HifiAudioDeviceInfo outputDevi
 #else
             _audioOutput->setBufferSize(requestedSize * 8);
 #endif
-
-            // QT6TODO: I have no idea what to do about this, QAudioSins has no notify signal in Qt6
-            //connect(_audioOutput, &QAudioOutput::notify, this, &AudioClient::outputNotify);
 
             // QT6TODO: we could set the buffer size before starting the IO device and sink
             // start the output device
