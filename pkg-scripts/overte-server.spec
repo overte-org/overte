@@ -1,5 +1,5 @@
 # Copyright 2020-2021 Vircadia contributors.
-# Copyright 2022-2025 Overte e.V.
+# Copyright 2022-2026 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 #OVERTE=~/Overte rpmbuild --target x86_64 -bb overte-server.spec
@@ -64,14 +64,17 @@ install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5Qml.so.*.*.*
 install -m 0644 -t $RPM_BUILD_ROOT/opt/overte/lib $QT5_LIBS/libQt5Quick.so.*.*.*
 %endif
 install -d $RPM_BUILD_ROOT/usr/lib/systemd/system
-install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/overte-assignment-client.service
-install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/overte-assignment-client@.service
-install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/overte-domain-server.service
-install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/overte-domain-server@.service
-#install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/overte-ice-server.service
-#install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/overte-ice-server@.service
-install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/overte-server.target
-install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/overte-server@.target
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/systemd/overte-agents@.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/systemd/overte-asset-server@.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/systemd/overte-audio-mixer@.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/systemd/overte-avatar-mixer@.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/systemd/overte-domain-server@.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/systemd/overte-entity-script-server@.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/systemd/overte-entity-server@.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/systemd/overte-message-mixer@.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/systemd/overte-domain-server@.service
+#install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/systemd/overte-ice-server@.service
+install -m 0644 -t $RPM_BUILD_ROOT/usr/lib/systemd/system $OVERTE/pkg-scripts/systemd/overte-server@.target
 cp -a $OVERTE/domain-server/resources $RPM_BUILD_ROOT/opt/overte
 cp -a $OVERTE/build/assignment-client/plugins $RPM_BUILD_ROOT/opt/overte
 chrpath -d $RPM_BUILD_ROOT/opt/overte/plugins/*.so
@@ -103,13 +106,17 @@ mkdir -p /var/lib/overte && chown overte:overte /var/lib/overte && chmod 775 /va
 
 ldconfig -n /opt/overte/lib
 
-%systemd_post overte-assignment-client.service
-%systemd_post overte-assignment-client@.service
-%systemd_post overte-domain-server.service
+%systemd_post overte-agents@.service
+%systemd_post overte-asset-server@.service
+%systemd_post overte-audio-mixer@.service
+%systemd_post overte-avatar-mixer@.service
 %systemd_post overte-domain-server@.service
-#%systemd_post overte-ice-server.service
+%systemd_post overte-entity-script-server@.service
+%systemd_post overte-entity-server@.service
+%systemd_post overte-message-mixer@.service
+
+%systemd_post overte-domain-server@.service
 #%systemd_post overte-ice-server@.service
-%systemd_post overte-server.target
 %systemd_post overte-server@.target
 
 if [ ! -d "/var/lib/overte/default" ]; then
@@ -131,22 +138,28 @@ if [ "$1" -eq 0 ]; then
 		| xargs systemctl stop
 fi
 
-%systemd_preun overte-server.target
 %systemd_preun overte-server@.target
-%systemd_preun overte-assignment-client.service
-%systemd_preun overte-assignment-client@.service
-%systemd_preun overte-domain-server.service
+%systemd_preun overte-agents@.service
+%systemd_preun overte-asset-server@.service
+%systemd_preun overte-audio-mixer@.service
+%systemd_preun overte-avatar-mixer@.service
 %systemd_preun overte-domain-server@.service
-#%systemd_preun overte-ice-server.service
+%systemd_preun overte-entity-script-server@.service
+%systemd_preun overte-entity-server@.service
+%systemd_preun overte-message-mixer@.service
+%systemd_preun overte-domain-server@.service
 #%systemd_preun overte-ice-server@.service
 
 
 %postun
-%systemd_postun_with_restart overte-server.target
 %systemd_postun_with_restart overte-server@.target
-%systemd_postun_with_restart overte-assignment-client.service
-%systemd_postun_with_restart overte-assignment-client@.service
-%systemd_postun_with_restart overte-domain-server.service
+%systemd_postun_with_restart overte-agents@.service
+%systemd_postun_with_restart overte-asset-server@.service
+%systemd_postun_with_restart overte-audio-mixer@.service
+%systemd_postun_with_restart overte-avatar-mixer@.service
 %systemd_postun_with_restart overte-domain-server@.service
-#%systemd_postun_with_restart overte-ice-server.service
+%systemd_postun_with_restart overte-entity-script-server@.service
+%systemd_postun_with_restart overte-entity-server@.service
+%systemd_postun_with_restart overte-message-mixer@.service
+%systemd_postun_with_restart overte-domain-server@.service
 #%systemd_postun_with_restart overte-ice-server@.service

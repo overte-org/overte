@@ -1,10 +1,10 @@
 [Unit]
-Description=Domain Server service for Overte
+Description=Overte message mixer for %I
 After=network.target
 PartOf=overte-server@%i.target
 
 [Service]
-Restart=on-failure
+Restart=always
 
 WorkingDirectory=/opt/overte
 EnvironmentFile=/etc/opt/overte/%i.conf
@@ -12,8 +12,7 @@ Environment="LD_LIBRARY_PATH=/opt/overte/lib" "HOME=/var/lib/overte/%i"
 PrivateTmp=true
 User=overte
 Group=overte
-#LimitCORE=infinity
-ExecStart=/opt/overte/domain-server
+ExecStart=/opt/overte/assignment-client -t 4 --server-port $HIFI_DOMAIN_SERVER_PORT --disable-domain-port-auto-discovery
 
 [Install]
 WantedBy=multi-user.target

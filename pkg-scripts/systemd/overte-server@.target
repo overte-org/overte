@@ -1,0 +1,24 @@
+[Unit]
+Description=Overte virtual domain for %I
+Wants=overte-audio-mixer@%i.service
+Wants=overte-avatar-mixer@%i.service
+Wants=overte-agents@%i.service
+Wants=overte-asset-server@%i.service
+Wants=overte-message-mixer@%i.service
+Wants=overte-entity-script-server@%i.service
+Wants=overte-entity-server@%i.service
+Wants=overte-domain-server@%i.service
+#Wants=overte-ice-server@%i.service
+
+After=overte-audio-mixer@%i.service
+After=overte-avatar-mixer@%i.service
+After=overte-agents@%i.service
+After=overte-asset-server@%i.service
+After=overte-message-mixer@%i.service
+After=overte-entity-script-server@%i.service
+After=overte-entity-server@%i.service
+After=overte-domain-server@%i.service
+#After=overte-ice-server@%i.service
+
+[Install]
+WantedBy=multi-user.target

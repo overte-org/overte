@@ -20,7 +20,7 @@ set -e
 case "$1" in
     remove)
 	systemctl list-units --state=loaded \
-		| grep -P -o "(overte-assignment-client|overte-domain-server|overte-server)\S+" \
+		| grep -P -o "(overte-assignment-client|overte-domain-server|overte-server|overte-agents|overte-asset-server|overte-audio-mixer|overte-avatar-mixer|overte-entity-script-server|overte-entity-server|overte-message-mixer)\S+" \
 		| xargs systemctl stop
 
 	find -P /opt/overte/lib -type l -delete
