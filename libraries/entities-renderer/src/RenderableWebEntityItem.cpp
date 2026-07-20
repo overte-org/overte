@@ -74,15 +74,15 @@ static ShapePipelinePointer webPipelineFactory(const ShapePlumber& plumber, cons
             std::make_tuple(false, false, false, false, web_browser),
             std::make_tuple(false, true, false, false, web_browser_forward),
             std::make_tuple(false, false, true, false, web_browser_shadow),
-            // no such thing as forward + shadow
+            std::make_tuple(false, true, true, false, web_browser_shadow),
             std::make_tuple(false, false, false, true, web_browser_fade),
             std::make_tuple(false, false, true, true, web_browser_fade),
             // no such thing as forward + fade/shadow
             // transparent
             std::make_tuple(true, false, false, false, web_browser_forward),
             std::make_tuple(true, true, false, false, web_browser_forward),
-            // no such thing as transparent + shadow
-            // no such thing as forward + shadow
+            std::make_tuple(true, false, true, false, web_browser_shadow),
+            std::make_tuple(true, true, true, false, web_browser_shadow),
             std::make_tuple(true, false, false, true, web_browser_fade),
             std::make_tuple(true, false, true, true, web_browser_fade),
             // no such thing as forward + fade/shadow
