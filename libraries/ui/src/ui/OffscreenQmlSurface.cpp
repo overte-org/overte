@@ -225,7 +225,7 @@ void AudioHandler::run() {
         auto oldAudioOutput = _audioOutput;
         _audioOutput = std::make_shared<QAudioOutput>();
         _audioOutput->setDevice(selectedDevice);
-        // Q6TODO: we could set volume here in the future.
+        // QT6TODO: we could set volume here in the future.
         player->setAudioOutput(_audioOutput.get());
         //svc->releaseControl(out);
         // if multimedia was paused, it will start playing automatically after changing audio device
