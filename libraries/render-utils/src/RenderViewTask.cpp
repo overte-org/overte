@@ -79,7 +79,10 @@ void RenderViewTask::build(JobModel& task, const render::Varying& input, render:
         const auto deferredForwardIn = DeferredForwardSwitchJob::Input(items, lightingModel, lightingStageFramesAndZones).asVarying();
         task.addJob<DeferredForwardSwitchJob>("DeferredForwardSwitch", deferredForwardIn, cullFunctor, tagBits, tagMask, transformOffset, depth);
 #else
-        const auto renderInput = RenderForwardTask::Input(items, lightingModel, lightingStageFramesAndZones).asVarying();
-        task.addJob<RenderForwardTask>("RenderForwardTask", renderInput, cullFunctor, transformOffset, depth);
+        // FIXME: how can we skip the shadow task on android?
+        //const auto renderInput = RenderForwardTask::Input(items, lightingModel, lightingStageFramesAndZones).asVarying();
+        //task.addJob<RenderForwardTask>("RenderForwardTask", renderInput, cullFunctor, transformOffset, depth);
+        const auto renderInput = RenderShadowsAndForwardTask::Input(items, lightingModel, lightingStageFramesAndZones).asVarying();
+        task.addJob<RenderShadowsAndForwardTask>("RenderShadowsAndForwardTask", renderInput, cullFunctor, tagBits, tagMask, transformOffset, depth);
 #endif
 }
