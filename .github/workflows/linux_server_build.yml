@@ -60,7 +60,8 @@ jobs:
             image: docker.io/overte/overte-server-build:2026-07-17-debian-14-amd64
             arch: amd64
             qt_source: system
-            runner: ubuntu-latest
+            # GitHub's hosted Runner runs out of disk space.
+            runner: depot-ubuntu-24.04
 
           - os: debian-14
             image: docker.io/overte/overte-server-build:2026-07-17-debian-14-aarch64
