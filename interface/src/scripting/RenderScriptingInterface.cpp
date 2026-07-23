@@ -95,6 +95,8 @@ void RenderScriptingInterface::setRenderMethod(RenderMethod renderMethod) {
     }
 }
 
+// FIXME: other rendering settings like shadows and
+// bloom aren't propagated through mirror views yet
 void recursivelyUpdateMirrorRenderMethods(const QString& parentTaskName, int renderMethod, int depth) {
     if (depth == RenderMirrorTask::MAX_MIRROR_DEPTH) {
         return;

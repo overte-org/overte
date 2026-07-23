@@ -96,6 +96,11 @@ float evalShadowCascadeAttenuation(int cascadeIndex, ShadowSampleOffsets offsets
 }
 
 float evalShadowAttenuation(vec3 worldLightDir, vec4 worldPosition, float viewDepth, vec3 worldNormal) {
+    // If we're not rendering any shadows, don't waste cycles sampling from empty textures.
+    if (getShadowCascadeCount() == 0) {
+        return 1.0;
+    }
+
     ShadowSampleOffsets offsets = evalShadowFilterOffsets(worldPosition);
 
     vec4 cascadeShadowCoords[4];
