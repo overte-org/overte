@@ -14,21 +14,25 @@
 #include "JSConsole.h"
 
 #include <QFuture>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QLabel>
+#include <QListView>
 #include <QScrollBar>
-#include <QtConcurrent/QtConcurrentRun>
 #include <QStandardPaths>
 #include <QStringListModel>
-#include <QListView>
 #include <QToolTip>
+#include <QtConcurrent/QtConcurrentRun>
 #include <QtGui/QStandardItem>
 #include <QtGui/QStandardItemModel>
+#include <QtLogging>
 
 #include <shared/QtHelpers.h>
 #include <ScriptEngines.h>
 #include <PathUtils.h>
 
 #include "Application.h"
+#include "InterfaceLogging.h"
 #include "ScriptHighlighting.h"
 
 const int NO_CURRENT_HISTORY_COMMAND = -1;
@@ -50,18 +54,22 @@ const QString JSDOC_STYLE =
 const QString JSConsole::_consoleFileName { "about:console" };
 
 const QString JSON_KEY = "entries";
-QList<QString> _readLines(const QString& filename) {
+QList<QString> _readJSConsoleHistory(const QString& filename) {
     QFile file(filename);
-    file.open(QFile::ReadOnly);
+    if (!file.open(QFile::ReadOnly)) {
+        return {};
+    }
     auto json = QTextStream(&file).readAll().toUtf8();
     auto root = QJsonDocument::fromJson(json).object();
     // TODO: check root["version"]
     return root[JSON_KEY].toVariant().toStringList();
 }
 
-void _writeLines(const QString& filename, const QList<QString>& lines) {
+void _writeJSConsoleHistory(const QString& filename, const QList<QString>& lines) {
     QFile file(filename);
-    file.open(QFile::WriteOnly);
+    if (!file.open(QFile::WriteOnly)) {
+        qCCritical(interfaceapp) << "could not save JSConsole history";
+    }
     auto root = QJsonObject();
     root["version"] = 1.0;
     root["last-modified"] = QDateTime::currentDateTime().toOffsetFromUtc(Qt::OffsetFromUTC).toString(Qt::ISODate);
@@ -76,7 +84,11 @@ QString _jsdocTypeToString(QJsonValue jsdocType) {
 
 void JSConsole::readAPI() {
     QFile file(PathUtils::resourcesPath() + "auto-complete/hifiJSDoc.json");
-    file.open(QFile::ReadOnly);
+    if (!file.open(QFile::ReadOnly)) {
+        qCCritical(interfaceapp) << "could not load autocomplete for JSConsole";
+        _apiDocs = {QJsonArray()};
+        return;
+    }
     auto json = QTextStream(&file).readAll().toUtf8();
     _apiDocs = QJsonDocument::fromJson(json).array();
 }
@@ -130,7 +142,7 @@ JSConsole::JSConsole(QWidget* parent, const ScriptManagerPointer& scriptManager)
     _ui(new Ui::Console),
     _currentCommandInHistory(NO_CURRENT_HISTORY_COMMAND),
     _savedHistoryFilename(QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation) + "/" + HISTORY_FILENAME),
-    _commandHistory(_readLines(_savedHistoryFilename)),
+    _commandHistory(_readJSConsoleHistory(_savedHistoryFilename)),
     _completer(new QCompleter(this)),
     _monospaceFont(QFontDatabase::systemFont(QFontDatabase::FixedFont)),
     // unfortunately we'll just have to use the first theme we get,
@@ -339,7 +351,7 @@ void JSConsole::executeCommand(const QString& command) {
         if (_commandHistory.length() > MAX_HISTORY_SIZE) {
             _commandHistory.removeLast();
         }
-        _writeLines(_savedHistoryFilename, _commandHistory);
+        _writeJSConsoleHistory(_savedHistoryFilename, _commandHistory);
     }
 
     _ui->promptTextEdit->setDisabled(true);

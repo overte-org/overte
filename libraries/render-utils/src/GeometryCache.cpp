@@ -2284,7 +2284,7 @@ public:
     SimpleProgramKey(int bitmask) : _flags(bitmask) {}
 };
 
-inline uint qHash(const SimpleProgramKey& key, uint seed) {
+inline size_t qHash(const SimpleProgramKey& key, size_t seed) {
     return qHash(key.getRaw(), seed);
 }
 
