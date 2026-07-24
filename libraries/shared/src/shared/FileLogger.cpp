@@ -90,7 +90,8 @@ void FilePersistThread::rollFileIfNecessary(QFile& file, bool force, bool notify
     if (force || (file.size() > MAX_LOG_SIZE)) {
         QString newFileName = getLogRollerFilename();
         if (file.copy(newFileName)) {
-            file.open(QIODevice::WriteOnly | QIODevice::Truncate);
+            auto res = file.open(QIODevice::WriteOnly | QIODevice::Truncate);
+            Q_ASSERT(res);
             file.close();
 
             if (notifyListenersIfRolled) {
