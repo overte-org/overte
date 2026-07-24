@@ -13,6 +13,7 @@
 #define hifi_FileUtils_h
 
 #include <QtCore/QString>
+#include <optional>
 
 class FileUtils {
 
@@ -23,8 +24,8 @@ public:
     static bool exists(const QString& fileName);
     static bool isRelative(const QString& fileName);
     static QString standardPath(QString subfolder);
-    static QString readFile(const QString& filename);
-    static QStringList readLines(const QString& filename, Qt::SplitBehavior splitBehavior = Qt::KeepEmptyParts);
+    static std::optional<QString> readFile(const QString& filename);
+    static std::optional<QStringList> readLines(const QString& filename, Qt::SplitBehavior splitBehavior = Qt::KeepEmptyParts);
     static QString replaceDateTimeTokens(const QString& path);
     static QString computeDocumentPath(const QString& path);
     static bool canCreateFile(const QString& fullPath);

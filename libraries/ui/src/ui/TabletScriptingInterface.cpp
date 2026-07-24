@@ -157,8 +157,9 @@ void TabletButtonsProxyModel::setPageIndex(int pageIndex) {
     if (_pageIndex == pageIndex)
         return;
 
+    beginFilterChange();
     _pageIndex = pageIndex;
-    invalidateFilter();
+    endFilterChange();
     emit pageIndexChanged(_pageIndex);
 }
 

@@ -588,8 +588,7 @@ ExtractedText TestCreator::getTestScriptLines(QString testFileName) {
     ExtractedText relevantTextFromTest;
 
     QFile inputFile(testFileName);
-    inputFile.open(QIODevice::ReadOnly);
-    if (!inputFile.isOpen()) {
+    if (!inputFile.open(QIODevice::ReadOnly)) {
         QMessageBox::critical(0,
             "Internal error: " + QString(__FILE__) + ":" + QString::number(__LINE__),
             "Failed to open \"" + testFileName
