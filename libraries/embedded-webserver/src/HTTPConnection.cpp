@@ -84,8 +84,10 @@ private:
 };
 
 std::unique_ptr<FileStorage> FileStorage::make(qint64 size) {
-    auto file = std::unique_ptr<QTemporaryFile>(new QTemporaryFile());
-    file->open(); // Open for resize
+    auto file = std::make_unique<QTemporaryFile>();
+    // QT6TODO: handle error correctly
+    auto res = file->open(); // Open for resize
+    Q_ASSERT(res);
     file->resize(size);
     auto mapped = file->map(0, size); // map the entire file
 
