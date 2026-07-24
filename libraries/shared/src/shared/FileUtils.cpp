@@ -24,6 +24,7 @@
 #include <QtCore/QRegularExpression>
 #include <QtCore/QFileSelector>
 #include <QtGui/QDesktopServices>
+#include <optional>
 
 #include "GlobalAppProperties.h"
 
@@ -62,24 +63,29 @@ QString FileUtils::selectFile(const QString& path) {
 }
 
 
-QString FileUtils::readFile(const QString& filename) {
+std::optional<QString> FileUtils::readFile(const QString& filename) {
     QFile file(filename);
-    file.open(QFile::Text | QFile::ReadOnly);
-    QString result;
-    // QT6TODO: check if QT6 strings handle larger sizes correctly, if so we can remove this limit once Overte is running on Qt6.
-    // Qt cannot handle strings bigger than 2 GB.
-    // Since QString is UTF-16, this means that reading a file bigger than 1 GB will cause a crash.
-    if (file.size() <= INT32_MAX / 2 - 1) {
-        result.append(QTextStream(&file).readAll());
-    } else {
-        qWarning() << "File is too large and cannot be read to a string";
-        Q_ASSERT(false);
+    if (file.open(QFile::Text | QFile::ReadOnly)) {
+        QString result;
+        // QT6TODO: check if QT6 strings handle larger sizes correctly, if so we can remove this limit once Overte is running on Qt6.
+        // Qt cannot handle strings bigger than 2 GB.
+        // Since QString is UTF-16, this means that reading a file bigger than 1 GB will cause a crash.
+        if (file.size() <= INT32_MAX / 2 - 1) {
+            result.append(QTextStream(&file).readAll());
+        } else {
+            qWarning() << "File is too large and cannot be read to a string";
+            Q_ASSERT(false);
+        }
+        return result;
     }
-    return result;
+    return std::nullopt;
 }
 
-QStringList FileUtils::readLines(const QString& filename, Qt::SplitBehavior splitBehavior) {
-    return readFile(filename).split(QRegularExpression("[\\r\\n]"), Qt::SkipEmptyParts);
+std::optional<QStringList> FileUtils::readLines(const QString& filename, Qt::SplitBehavior splitBehavior) {
+    if (auto a = readFile(filename)) {
+        return a.value().split(QRegularExpression("[\\r\\n]"), Qt::SkipEmptyParts);
+    }
+    return std::nullopt;
 }
 
 void FileUtils::locateFile(const QString& filePath) {

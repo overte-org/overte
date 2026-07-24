@@ -407,7 +407,10 @@ bool ModelPackager::copyTextures(const QString& oldDir, const QDir& newDir) {
             // Copy texture
             if (mustRecode) {
                 QFile newTexFile(newPath);
-                newTexFile.open(QIODevice::WriteOnly);
+                if (!newTexFile.open(QIODevice::WriteOnly)) {
+                    errors += QString("\n%1 could not be openened.").arg(newPath);
+                    continue;
+                }
                 image.save(&newTexFile, isJpeg ? "JPG" : "PNG");
             } else {
                 texFile.copy(newPath);

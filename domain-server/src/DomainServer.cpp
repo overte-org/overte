@@ -583,10 +583,16 @@ bool DomainServer::optionallyReadX509KeyAndCertificate() {
         qDebug() << "Reading key file at" << keyPath << "for HTTPS.";
 
         QFile certFile(certPath);
-        certFile.open(QIODevice::ReadOnly);
+        if (!certFile.open(QIODevice::ReadOnly)) {
+            qCritical() << "SSL certificate Key Not Loading. Could not open file.";
+            return false;
+        }
 
         QFile keyFile(keyPath);
-        keyFile.open(QIODevice::ReadOnly);
+        if (!keyFile.open(QIODevice::ReadOnly)) {
+            qCritical() << "SSL Private Key Not Loading. Could not open file.";
+            return false;
+        }
 
         QSslCertificate sslCertificate(&certFile);
         QSslKey privateKey(&keyFile, QSsl::Rsa, QSsl::Pem, QSsl::PrivateKey, keyPassphraseString.toUtf8());
