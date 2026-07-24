@@ -71,19 +71,6 @@ static QSize clampSize(const QSize& qsize, uint32_t maxDimension) {
 const QmlContextObjectCallback OffscreenSurface::DEFAULT_CONTEXT_OBJECT_CALLBACK = [](QQmlContext*, QQuickItem*) {};
 const QmlContextCallback OffscreenSurface::DEFAULT_CONTEXT_CALLBACK = [](QQmlContext*) {};
 
-QQmlFileSelector* OffscreenSurface::getFileSelector() {
-    auto context = getSurfaceContext();
-    if (!context) {
-        return nullptr;
-    }
-    auto engine = context->engine();
-    if (!engine) {
-        return nullptr;
-    }
-
-    return QQmlFileSelector::get(engine);
-}
-
 void OffscreenSurface::initializeEngine(QQmlEngine* engine) {
     new QQmlFileSelector(engine);
 }

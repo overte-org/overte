@@ -14,6 +14,7 @@
 
 #include <algorithm>
 
+#include <QtAssert>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -67,37 +68,46 @@ DomainServerSettingsManager::DomainServerSettingsManager() {
     qDebug() << "Application dir: " << QCoreApplication::applicationDirPath();
     QString descriptionFilePath = QCoreApplication::applicationDirPath() + SETTINGS_DESCRIPTION_RELATIVE_PATH;
     QFile descriptionFile(descriptionFilePath);
-    descriptionFile.open(QIODevice::ReadOnly);
-
     QJsonParseError parseError;
-    QJsonDocument descriptionDocument = QJsonDocument::fromJson(descriptionFile.readAll(), &parseError);
+    if (descriptionFile.open(QIODevice::ReadOnly)) {
+        QJsonDocument descriptionDocument = QJsonDocument::fromJson(descriptionFile.readAll(), &parseError);
 
-    if (descriptionDocument.isObject()) {
-        QJsonObject descriptionObject = descriptionDocument.object();
+        if (descriptionDocument.isObject()) {
+            QJsonObject descriptionObject = descriptionDocument.object();
 
-        const QString DESCRIPTION_VERSION_KEY = "version";
+            const QString DESCRIPTION_VERSION_KEY = "version";
 
-        if (descriptionObject.contains(DESCRIPTION_VERSION_KEY)) {
-            // read the version from the settings description
-            _descriptionVersion = descriptionObject[DESCRIPTION_VERSION_KEY].toDouble();
+            if (descriptionObject.contains(DESCRIPTION_VERSION_KEY)) {
+                // read the version from the settings description
+                _descriptionVersion = descriptionObject[DESCRIPTION_VERSION_KEY].toDouble();
 
-            if (descriptionObject.contains(DESCRIPTION_SETTINGS_KEY)) {
-                _descriptionArray = descriptionDocument.object()[DESCRIPTION_SETTINGS_KEY].toArray();
-                splitSettingsDescription();
+                if (descriptionObject.contains(DESCRIPTION_SETTINGS_KEY)) {
+                    _descriptionArray = descriptionDocument.object()[DESCRIPTION_SETTINGS_KEY].toArray();
+                    splitSettingsDescription();
 
-                return;
+                    return;
+                }
             }
         }
+        static const QString MISSING_SETTINGS_DESC_MSG =
+            QString("Did not find settings description in JSON at %1 - Unable to continue. domain-server will quit.\n%2 at %3")
+                .arg(descriptionFilePath)
+                .arg(parseError.errorString())
+                .arg(parseError.offset);
+        static const int MISSING_SETTINGS_DESC_ERROR_CODE = 6;
+
+        QMetaObject::invokeMethod(QCoreApplication::instance(), "queuedQuit", Qt::QueuedConnection,
+                                  Q_ARG(QString, MISSING_SETTINGS_DESC_MSG), Q_ARG(int, MISSING_SETTINGS_DESC_ERROR_CODE));
+        Q_UNREACHABLE();
     }
 
-    static const QString MISSING_SETTINGS_DESC_MSG =
-        QString("Did not find settings description in JSON at %1 - Unable to continue. domain-server will quit.\n%2 at %3")
-        .arg(descriptionFilePath).arg(parseError.errorString()).arg(parseError.offset);
-    static const int MISSING_SETTINGS_DESC_ERROR_CODE = 6;
+    static const QString MISSING_SETTINGS_FILE_MSG =
+        QString("Could not open the settings description file %1").arg(descriptionFilePath);
+    static const int MISSING_SETTINGS_FILE_ERROR_CODE = 6;
 
     QMetaObject::invokeMethod(QCoreApplication::instance(), "queuedQuit", Qt::QueuedConnection,
-                              Q_ARG(QString, MISSING_SETTINGS_DESC_MSG),
-                              Q_ARG(int, MISSING_SETTINGS_DESC_ERROR_CODE));
+                              Q_ARG(QString, MISSING_SETTINGS_FILE_MSG), Q_ARG(int, MISSING_SETTINGS_FILE_ERROR_CODE));
+    Q_UNREACHABLE();
 }
 
 void DomainServerSettingsManager::splitSettingsDescription() {
@@ -1581,7 +1591,9 @@ QJsonObject DomainServerSettingsManager::settingsResponseObjectForType(const QSt
         qDebug() << "Reading certificate file at" << certPath << "for HTTPS.";
 
         QFile certFile(certPath);
-        certFile.open(QIODevice::ReadOnly);
+        // QT6TODO: this should be handled correctly
+        auto res = certFile.open(QIODevice::ReadOnly);
+        Q_ASSERT(res);
 
         QSslCertificate sslCertificate(&certFile);
         QString digest = sslCertificate.digest().toHex(':');
