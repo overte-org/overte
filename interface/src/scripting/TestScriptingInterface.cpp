@@ -13,6 +13,7 @@
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QThread>
 
+#include <qloggingcategory.h>
 #include <shared/FileUtils.h>
 #include <shared/QtHelpers.h>
 #include <DependencyManager.h>
@@ -23,6 +24,7 @@
 #include <Trace.h>
 
 #include "Application.h"
+#include "InterfaceLogging.h"
 #include "NetworkingConstants.h"
 
 Q_LOGGING_CATEGORY(trace_test, "trace.test")
@@ -187,9 +189,12 @@ void TestScriptingInterface::saveObject(QVariant variant, const QString& filenam
     QString filepath = QDir::cleanPath(_testResultsLocation + filename);
     QFile file(filepath);
 
-    file.open(QFile::WriteOnly);
-    file.write(jsonData);
-    file.close();
+    if (file.open(QFile::WriteOnly)) {
+        file.write(jsonData);
+        file.close();
+    } else {
+        qCCritical(interfaceapp) << "could not save json data to" << filepath;
+    }
 }
 
 void TestScriptingInterface::showMaximized() {

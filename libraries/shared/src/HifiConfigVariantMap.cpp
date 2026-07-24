@@ -99,16 +99,19 @@ void HifiConfigVariantMap::loadConfig() {
 void HifiConfigVariantMap::loadMapFromJSONFile(QVariantMap& existingMap, const QString& filename) {
     QFile configFile(filename);
 
-    if (configFile.exists()) {
-        qCDebug(shared) << "Reading JSON config file at" << filename;
-        configFile.open(QIODevice::ReadOnly);
-
-        QJsonDocument configDocument = QJsonDocument::fromJson(configFile.readAll());
-        existingMap = configDocument.toVariant().toMap();
-
-    } else {
+    qCDebug(shared) << "Reading JSON config file at" << filename;
+    if (!configFile.exists()) {
         qCDebug(shared) << "Could not find JSON config file at" << filename;
+        return;
     }
+    if (!configFile.open(QIODevice::ReadOnly)) {
+        qCDebug(shared) << "Could not open JSON config file at" << filename;
+        return;
+    }
+
+    QJsonDocument configDocument = QJsonDocument::fromJson(configFile.readAll());
+    existingMap = configDocument.toVariant().toMap();
+
 }
 
 void HifiConfigVariantMap::addMissingValuesToExistingMap(QVariantMap& existingMap, const QVariantMap& newMap) {
