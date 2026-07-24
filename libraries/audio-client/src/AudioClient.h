@@ -433,18 +433,18 @@ private:
     AudioReverb _localReverb { AudioConstants::SAMPLE_RATE };
 
     // possible streams needed for resample
-    AudioSRC* _inputToNetworkResampler{ nullptr };
-    AudioSRC* _networkToOutputResampler{ nullptr };
-    AudioSRC* _localToOutputResampler{ nullptr };
-    AudioSRC* _loopbackResampler{ nullptr };
+    std::unique_ptr<AudioSRC> _inputToNetworkResampler;
+    std::unique_ptr<AudioSRC> _networkToOutputResampler;
+    std::unique_ptr<AudioSRC> _localToOutputResampler;
+    std::unique_ptr<AudioSRC> _loopbackResampler;
 
     // for network audio (used by network audio thread)
     int16_t _networkScratchBuffer[AudioConstants::NETWORK_FRAME_SAMPLES_AMBISONIC];
 
     // for output audio (used by this thread)
     int _outputPeriod { 0 };
-    float* _outputMixBuffer { NULL };
-    int16_t* _outputScratchBuffer { NULL };
+    std::vector<float> _outputMixBuffer;
+    std::vector<int16_t> _outputScratchBuffer;
     std::atomic<float> _outputGain { 1.0f };
     float _lastOutputGain { 1.0f };
 
@@ -453,7 +453,7 @@ private:
     std::atomic<float> _systemInjectorGain { 1.0f };
     float _localMixBuffer[AudioConstants::NETWORK_FRAME_SAMPLES_STEREO];
     int16_t _localScratchBuffer[AudioConstants::NETWORK_FRAME_SAMPLES_AMBISONIC];
-    float* _localOutputMixBuffer { NULL };
+    std::vector<float> _localOutputMixBuffer;
     Mutex _localAudioMutex;
     AudioLimiter _audioLimiter{ AudioConstants::SAMPLE_RATE, OUTPUT_CHANNEL_COUNT };
 
@@ -490,7 +490,7 @@ private:
 
     AudioIOStats _stats{ &_receivedAudioStream };
 
-    AudioGate* _audioGate { nullptr };
+    std::unique_ptr<AudioGate> _audioGate;
     bool _audioGateOpen { true };
 
     AudioPositionGetter _positionGetter{ DEFAULT_POSITION_GETTER };
