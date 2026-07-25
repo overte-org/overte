@@ -192,6 +192,10 @@ jobs:
             ${{ env.CONAN_HOME }}/sources
             ${{ env.CONAN_HOME }}/p
 
+    - name: Output debug information
+      if: always()
+      uses: ./.github/actions/debug-info
+
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install
       with:
