@@ -25,13 +25,17 @@ endfunction()
 if (OVERTE_BUILD_TOOLS)
     set(ALL_TOOLS
         udt-test
-        gpu-frame-player
         ice-client
         ktx-tool
         ac-client
         skeleton-dump
         atp-client
     )
+
+    if(NOT APPLE)
+        # gpu-frame-player doesn't build on macOS with Vulkan/MoltenVK yet.
+        list(APPEND ALL_TOOLS gpu-frame-player)
+    endif()
 
     # Don't include oven or vhacd-til in OSX client-only DMGs.
     if (NOT CLIENT_ONLY OR NOT APPLE)

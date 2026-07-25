@@ -2,7 +2,7 @@
 //  Created by dr Karol Suprynowicz on 2024/08/12
 //  Based on OpenGLDisplayPlugin.cpp, originally created by Bradley Austin Davis on 2015/05/29
 //  Copyright 2015 High Fidelity, Inc.
-//  Copyright 2025 Overte e.V.
+//  Copyright 2025-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -197,7 +197,7 @@ public:
             }
 
 #if defined(Q_OS_MAC)
-            _context->makeCurrent();
+            currentPlugin->_vkWindow->_primaryWidget->context()->makeCurrent();
 #endif
             // Execute the frame and present it to the display device.
             {
@@ -208,7 +208,7 @@ public:
                 //CHECK_GL_ERROR();
             }
 #if defined(Q_OS_MAC)
-            _context->doneCurrent();
+            currentPlugin->_vkWindow->_primaryWidget->context()->doneCurrent();
 #endif
 
             _refreshRateController->sleepThreadIfNeeded(this, currentPlugin->isHmd());
@@ -304,6 +304,7 @@ bool VulkanDisplayPlugin::activate() {
         _vkWindow->setVisible(true);
         _vkWindow->createSurface();
         _vkWindow->createSwapchain();
+        vkWidget->moveToThread(presentThread.get());
         _vkWindow->moveToThread(presentThread.get());
 #endif
         //_vkWindow->connectResizeTimer(presentThread.get());

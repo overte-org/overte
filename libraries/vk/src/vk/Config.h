@@ -1,7 +1,7 @@
 //
 //  Created by Bradley Austin Davis on 2016/03/19
 //  Copyright 2013-2018 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
+//  Copyright 2024-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -27,6 +27,7 @@
 #elif defined(Q_OS_ANDROID)
 #define VK_USE_PLATFORM_ANDROID_KHR
 #elif defined(Q_OS_DARWIN)
+#define VK_USE_PLATFORM_METAL_EXT
 #else
 #define VK_USE_PLATFORM_XCB_KHR
 #endif

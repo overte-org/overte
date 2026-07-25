@@ -1563,6 +1563,9 @@ VKTexture* VKBackend::syncGPUObject(const std::shared_ptr<Texture> &texture) {
     VKTexture* object = Backend::getGPUObject<VKTexture>(*texture);
 
     if (TextureUsageType::EXTERNAL == texture->getUsageType()) {
+#ifdef DISABLE_QML
+        return nullptr;
+#endif
         if (_isFramePlayer) {
             return nullptr; // Frame player does not support external textures
         }

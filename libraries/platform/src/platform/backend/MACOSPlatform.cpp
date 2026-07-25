@@ -1,6 +1,7 @@
 //
 //  Created by Amer Cerkic 05/02/2019
 //  Copyright 2019 High Fidelity, Inc.
+//  Copyright 2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -17,7 +18,9 @@
 
 #ifdef Q_OS_MAC
 #include <unistd.h>
-#include <cpuid.h>
+#if !defined(__arm64__)
+    #include <cpuid.h>  // This header is for x86 only on MacOS.
+#endif
 #include <sys/sysctl.h>
 
 #include <sstream>
@@ -35,8 +38,17 @@ using namespace platform;
 void MACOSInstance::enumerateCpus() {
     json cpu = {};
 
+#if !defined(__arm64__)
     cpu[keys::cpu::vendor] = CPUIdent::Vendor();
     cpu[keys::cpu::model] = CPUIdent::Brand();
+#else
+    cpu[keys::cpu::vendor] = "Apple";
+    size_t alloc_size = 0;
+    sysctlbyname("machdep.cpu.brand_string", nullptr, &alloc_size, nullptr, 0);
+    char* brand_string = new char[alloc_size + 1];  // sysctlbyname requires *more* bytes than the length of its value.
+    sysctlbyname("machdep.cpu.brand_string", brand_string, &alloc_size, nullptr, 0);
+    cpu[keys::cpu::model] = brand_string;
+#endif
     cpu[keys::cpu::numCores] = std::thread::hardware_concurrency();
 
     _cpus.push_back(cpu);

@@ -59,12 +59,12 @@ if (NOT ANDROID_LIB_DIR)
 endif ()
 
 if (APPLE)
-  exec_program(sw_vers ARGS -productVersion  OUTPUT_VARIABLE OSX_VERSION)
+  execute_process(COMMAND sw_vers -productVersion  OUTPUT_VARIABLE OSX_VERSION)
   string(REGEX MATCH "^[0-9]+\\.[0-9]+" OSX_VERSION ${OSX_VERSION})
-  message(STATUS "Detected OS X version = ${OSX_VERSION}")
-  message(STATUS "OS X deployment target = ${CMAKE_OSX_DEPLOYMENT_TARGET}")
+  message(STATUS "Detected macOS version = ${OSX_VERSION}")
+  message(STATUS "macOS deployment target = ${CMAKE_OSX_DEPLOYMENT_TARGET}")
 
-  set(OSX_SDK "${OSX_VERSION}" CACHE STRING "OS X SDK version to look for inside Xcode bundle or at OSX_SDK_PATH")
+  set(OSX_SDK "${OSX_VERSION}" CACHE STRING "macOS SDK version to look for inside Xcode bundle or at OSX_SDK_PATH")
 
   # find the SDK path for the desired SDK
   find_path(
@@ -76,9 +76,9 @@ if (APPLE)
   )
 
   if (NOT _OSX_DESIRED_SDK_PATH)
-    message(STATUS "Could not find OS X ${OSX_SDK} SDK. Will fall back to default. If you want a specific SDK, please pass OSX_SDK and optionally OSX_SDK_PATH to CMake.")
+    message(STATUS "Could not find macOS ${OSX_SDK} SDK. Will fall back to default. If you want a specific SDK, please pass OSX_SDK and optionally OSX_SDK_PATH to CMake.")
   else ()
-    message(STATUS "Found OS X ${OSX_SDK} SDK at ${_OSX_DESIRED_SDK_PATH}/MacOSX${OSX_SDK}.sdk")
+    message(STATUS "Found macOS ${OSX_SDK} SDK at ${_OSX_DESIRED_SDK_PATH}/MacOSX${OSX_SDK}.sdk")
 
     # set that as the SDK to use
     set(CMAKE_OSX_SYSROOT ${_OSX_DESIRED_SDK_PATH}/MacOSX${OSX_SDK}.sdk)

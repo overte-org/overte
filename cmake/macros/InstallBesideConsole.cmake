@@ -46,13 +46,13 @@ macro(install_beside_console)
     endif ()
 
     if (APPLE)
-      find_program(MACDEPLOYQT_COMMAND macdeployqt PATHS "${QT_DIR}/bin" NO_DEFAULT_PATH)
+      get_target_property(Qt_Core_Location Qt5::Core LOCATION)
+      get_filename_component(QT_BIN_DIR ${Qt_Core_Location} DIRECTORY)
+      find_program(MACDEPLOYQT_COMMAND macdeployqt PATHS ${QT_BIN_DIR})
 
-      if (NOT MACDEPLOYQT_COMMAND AND (PRODUCTION_BUILD OR PR_BUILD))
-        message(FATAL_ERROR "Could not find macdeployqt at ${QT_DIR}/bin.\
-          It is required to produce a relocatable interface application.\
-          Check that the environment variable QT_DIR points to your Qt installation.\
-        ")
+      if (NOT MACDEPLOYQT_COMMAND)
+        message(FATAL_ERROR "Could not find macdeployqt at ${QT_BIN_DIR}.\
+          It is required to produce a relocatable interface application.")
       endif ()
 
       # during the install phase, call macdeployqt to drop the shared libraries for these components in the right place

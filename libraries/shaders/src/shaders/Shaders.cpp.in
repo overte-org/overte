@@ -348,4 +348,3 @@ std::vector<std::string> Reflection::getNames(const LocationMap& locations) {
 
 
 }  // namespace shader
-

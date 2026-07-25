@@ -6,7 +6,7 @@
 //  Created by Andrzej Kapolka on 5/10/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -176,10 +176,12 @@ void Application::initializeGL() {
 #endif
 
     // Build an offscreen GL context for the main thread.
+#ifndef Q_OS_MAC
     _primaryWidget->makeCurrent();
     glClearColor(0.2f, 0.2f, 0.2f, 1);
     glClear(GL_COLOR_BUFFER_BIT);
     _primaryWidget->swapBuffers(); //VKTODO
+#endif
 
     _graphicsEngine->initializeGPU(_primaryWidget);
 }

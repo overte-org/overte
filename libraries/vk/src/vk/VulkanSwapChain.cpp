@@ -66,7 +66,7 @@ void VulkanSwapChain::initSurface(screen_context_t screen_context, screen_window
     surfaceCreateInfo.pNext = NULL;
     surfaceCreateInfo.flags = 0;
     surfaceCreateInfo.pLayer = metalLayer;
-    err = vkCreateMetalSurfaceEXT(instance, &surfaceCreateInfo, NULL, &surface);
+    err = vkCreateMetalSurfaceEXT(_context->instance, &surfaceCreateInfo, NULL, &surface);
 #elif defined(_DIRECT2DISPLAY)
     createDirect2DisplaySurface(width, height);
 #elif defined(VK_USE_PLATFORM_DIRECTFB_EXT)

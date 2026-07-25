@@ -18,7 +18,6 @@ runs:
         echo "CONAN_HOME=C:\Conan" >> $GITHUB_ENV
         echo "XZ_OPT=-T0" >> $GITHUB_ENV
 
-        echo "OVERTE_QT_SOURCE=source" >> $GITHUB_ENV
         # On macOS the interface target is called "Overte" instead.
         echo "APP_TARGET_NAME=interface" >> $GITHUB_ENV
 

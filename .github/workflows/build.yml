@@ -103,6 +103,14 @@ jobs:
             cmake_build_type: Release
             qt_source: system
             rendering_backend: Vulkan
+          - id: macos
+            os: macOS 15 (Sequoia)
+            runner: depot-macos-15
+            arch: arm64
+            build_type: full
+            cmake_build_type: Release
+            qt_source: source
+            rendering_backend: Vulkan
           - id: codechecker
             os: Ubuntu 22.04
             image: docker.io/overte/overte-full-build:2026-06-12-ubuntu-22.04-amd64
@@ -124,6 +132,10 @@ jobs:
     - name: Prepare Windows environment
       if: startsWith(matrix.os, 'Windows')
       uses: ./.github/actions/setup-windows
+
+    - name: Prepare macOS environment
+      if: startsWith(matrix.os, 'macOS')
+      uses: ./.github/actions/setup-macos
 
     - name: Read image environment variables
       # Bring some environment variables out of the Runner (Docker) image's environment into the Job environment.
@@ -174,6 +186,12 @@ jobs:
         # Linux build variables
         if [[ "${{ matrix.os }}" = "Ubuntu"* ]]; then
           echo "CONAN_CPPSTD=gnu20" >> $GITHUB_ENV
+        fi
+
+        # Mac build variables
+        if [[ "${{ matrix.os }}" = "macOS"* ]]; then
+          echo "CONAN_CPPSTD=20" >> $GITHUB_ENV
+          echo "CMAKE_EXTRA=-DOVERTE_DISABLE_QML=1 -DOVERTE_DISABLE_WEBRTC=1" >> $GITHUB_ENV
         fi
 
         # Windows build variables

@@ -1,13 +1,15 @@
 //
 //  Created by Bradley Austin Davis on 2016/05/26
 //  Copyright 2013-2018 High Fidelity, Inc.
-//  Copyright 2022-2025 Overte e.V.
+//  Copyright 2022-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 //  Contains parts of Vulkan Samples, Copyright (c) 2018, Sascha Willems, distributed on MIT License.
 //
+
+#include "gl/Context.h"
 
 #include <QtCore/QCoreApplication>
 #include <QGuiApplication>
@@ -17,14 +19,21 @@
 #include <QtCore/QDebug>
 #include <QtPlatformHeaders/QXcbWindowFunctions>
 #include <qpa/qplatformnativeinterface.h>
-#include <QtX11Extras/QX11Info>
+#ifdef Q_OS_LINUX
+    #include <QtX11Extras/QX11Info>
+#endif
 #include <QWidget>
+#include <QWindow>
+#include <QOpenGLContext>
 
 #include "VKWindow.h"
 #include "VKWidget.h"
 #include "Config.h"
 #include "VulkanSwapChain.h"
 #include "Context.h"
+#ifdef Q_OS_MAC
+	#include "layerForWindow.h"
+#endif
 
 VKWindow::VKWindow(QScreen* screen) : QWindow(screen) {
     vks::Context::get().registerWindow(this);
@@ -52,7 +61,13 @@ void VKWindow::createSurface() {
 #ifdef WIN32
     // TODO
     _surface = _context.instance.createWin32SurfaceKHR({ {}, GetModuleHandle(NULL), (HWND)winId() });
-#else
+#elif __APPLE__
+    setSurfaceType(QSurface::MetalSurface);
+
+    Q_ASSERT(winId());
+    qDebug() << "VKWindow::createSurface winId:" << winId();
+    _swapchain.initSurface(layerForWindow(this)); // pointer to the CAMetalLayer to render to.
+#else  // Linux
     setSurfaceType(QSurface::VulkanSurface);
     //VkXcbSurfaceCreateInfoKHR surfaceCreateInfo{};
     //dynamic_cast<QGuiApplication*>(QGuiApplication::instance())->platformNativeInterface()->connection();

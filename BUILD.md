@@ -1,7 +1,7 @@
 <!--
 Copyright 2013-2019 High Fidelity, Inc.
 Copyright 2020-2021 Vircadia contributors
-Copyright 2021-2025 Overte e.V.
+Copyright 2021-2026 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
@@ -129,6 +129,7 @@ The following build options can be used when running CMake
 
 * OVERTE_RENDERING_BACKEND
 * OVERTE_DISABLE_QML
+* OVERTE_DISABLE_WEBRTC
 
 ### Devices
 
