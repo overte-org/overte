@@ -1,0 +1,116 @@
+# syntax=docker/dockerfile:1.4
+
+# Copyright 2022-2026 Overte e.V.
+# SPDX-License-Identifier: Apache-2.0
+
+# Docker file for building Overte Server
+# Example build: docker build --no-cache --progress=plain -t overte/overte-server-build:2026-07-17-debian-14-amd64 -f Dockerfile_build_debian-14 .
+FROM debian:trixie
+LABEL maintainer="Julian Groß (julian.gro@overte.org)"
+LABEL description="Development image for Overte Domain server and assignment clients."
+
+# Don't use any frontend when installing packages during the creation of this container
+ARG DEBIAN_FRONTEND=noninteractive
+
+#
+# Install build dependencies
+#
+RUN <<EOF
+echo UTC >/etc/timezone
+# Installing via dependency causes interactive hang:
+apt-get update && apt-get -y install tzdata
+
+# Install Overte domain-server and assignment-client build dependencies
+cat << PACKAGES > packages.txt
+cmake
+curl
+ninja-build
+git
+g++
+libssl-dev
+libqt5websockets5-dev
+qtdeclarative5-dev
+qtmultimedia5-dev
+python3-setuptools  # Replaces python3-distutils
+python3-distro
+mesa-common-dev
+libgl1-mesa-dev
+libsystemd-dev
+python3-packaging
+# Needed for tools target
+libqt5webchannel5-dev
+qtwebengine5-dev
+libqt5xmlpatterns5-dev
+# Tools for package creation
+sudo
+chrpath
+binutils
+dh-make
+# Tools needed for our Github Actions Workflow
+python3-boto3
+python3-github
+zip
+PACKAGES
+
+apt-get -y install $(grep -o '^[^#]*' packages.txt)  # Install packages while ignoring comments.
+
+# Install Conan
+apt-get -y install wget
+if [ $(uname -m) = "x86_64" ]; then
+    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.30.0/conan-2.30.0-amd64.deb
+elif [ $(uname -m) = "aarch64" ]; then
+    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.30.0/conan-2.30.0-arm64.deb
+else
+    echo "Unsupported architecture: $(uname -m)"
+    exit 1
+fi
+apt-get -y install ./conan.deb
+rm conan.deb
+EOF
+
+
+#
+# Setup Conan
+#
+# Set CONAN_HOME to its default, so we can read it in our GitHub Actions cache step.
+ENV CONAN_HOME=/root/.conan2
+RUN <<EOF
+conan remote add overte https://artifactory.overte.org/artifactory/api/conan/overte
+# Use our mirror of Conan Center to avoid rate limiting.
+conan remote update conancenter --url https://artifactory.overte.org/artifactory/api/conan/conan-center
+
+conan profile detect
+
+cat >> ${CONAN_HOME}/profiles/default <<EOFcat
+[conf]
+# Allow Conan to install system packages.
+tools.system.package_manager:mode=install
+EOFcat
+
+# Try downloading source files from our source backup server, to avoid hammering third party servers. Fall back to downloading source files from conandata.yml.
+echo "core.sources:download_urls=['https://artifactory.overte.org/artifactory/build-dependencies-backup/', 'origin']" >> ${CONAN_HOME}/global.conf
+echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ${CONAN_HOME}/global.conf
+EOF
+
+# Credentials for uploading backups of dependency sources.
+# source-credentials.json is a jinja template, so os.getenv() happens at runtime.
+COPY <<EOF /root/.conan2/source_credentials.json
+{% set TOKEN = os.getenv('CONAN_BUILD_DEPENDENCIES_BACKUP_UPLOAD_TOKEN') %}
+{
+  "credentials": [
+    {% if TOKEN %}
+    {
+    "url": "https://artifactory.overte.org/artifactory/build-dependencies-backup/",
+    "token": "{{TOKEN}}"
+    }
+    {% endif %}
+  ]
+}
+EOF
+
+#
+# Platform specific build variables
+#
+ENV DEBEMAIL=julian.gro@overte.org
+ENV DEBFULLNAME="GitHub Actions CI"
+ENV CONAN_PROFILE="./tools/conan-profiles/linux"
