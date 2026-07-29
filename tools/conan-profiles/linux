@@ -23,6 +23,8 @@ qt*:with_mysql=False
 qt*:with_pulseaudio=True
 # Required by qt:with_pulseaudio
 pulseaudio*:with_glib=True
+# PulseAudio cannot find system OpenSSL, so we just build without.
+pulseaudio*:with_openssl=False
 # Required for PulseAudio support in Qt.
 qt*:with_glib=True
 # libpq build error and not needed (PostgreSQL).
@@ -36,3 +38,4 @@ nss*:shared=True
 nspr*:shared=True
 # Work around `undefined reference` errors when building NSS.
 sqlite3*:shared=True
+qt*:with_dbus=True

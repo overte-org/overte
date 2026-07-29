@@ -9,14 +9,22 @@ runs:
       continue-on-error: true
       run: df -h
 
+    - name: Output system statistics
+      if: ${{ always() }}
+      shell: bash
+      continue-on-error: true
+      run: |
+        lscpu || true
+        lsblk || true
+        free --human || true
+
     - name: Output Windows installer logs
       if: startsWith(matrix.os, 'Windows')
       shell: bash
-      working-directory: build
-      run: cat ./_CPack_Packages/win64/NSIS/NSISOutput.log || echo "No NSIS log found. Continuing…"
+      run: cat ./build/_CPack_Packages/win64/NSIS/NSISOutput.log || echo "No NSIS log found. Continuing…"
 
     - name: Output CodeChecker JSON compilation database
       if: matrix.id == 'codechecker'
       shell: bash
       continue-on-error: true
-      run: cat ${{ env.GITHUB_WORKSPACE }}/codechecker_codechecker_compilation_database.json
+      run: cat ${{ env.GITHUB_WORKSPACE }}/codechecker_codechecker_compilation_database.json || echo "No CodeChecker compilation database found. Continuing…"
