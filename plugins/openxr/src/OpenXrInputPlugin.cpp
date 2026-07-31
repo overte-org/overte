@@ -1129,11 +1129,11 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
         auto right_trigger = _actions.at("right_trigger_value")->getFloat();
 
         // TODO: Customisable click threshold?
-        if (left_trigger.isActive && left_trigger.currentState >= 0.95f) {
+        if (left_trigger.isActive && left_trigger.currentState >= 0.8f) {
             _buttonPressedMap.insert(LT_VIRTUAL_CLICK);
         }
 
-        if (right_trigger.isActive && right_trigger.currentState >= 0.95f) {
+        if (right_trigger.isActive && right_trigger.currentState >= 0.8f) {
             _buttonPressedMap.insert(RT_VIRTUAL_CLICK);
         }
     }
@@ -1183,6 +1183,7 @@ void OpenXrInputPlugin::InputDevice::update(float deltaTime, const controller::I
     }
 
     setupControllerFlags();
+    emulateMissingInputs();
 
     // TODO: Fix up and finish the HTCX_vive_tracker_interaction support
     if (_context->_HTCX_viveTrackerInteractionSupported) {
@@ -1231,6 +1232,65 @@ void OpenXrInputPlugin::InputDevice::setupControllerFlags() {
 
     if (right_primary_touch.isActive) { _buttonPressedMap.insert(RIGHT_HAS_CAPACITIVE_TOUCH); }
     if (right_trigger_click.isActive) { _buttonPressedMap.insert(RIGHT_HAS_TRIGGER_CLICK); }
+}
+
+void OpenXrInputPlugin::InputDevice::emulateMissingInputs() {
+    using namespace controller;
+
+    // emulate thumbsticks on controllers without them (vive controllers)
+    if (
+        _buttonPressedMap.contains(LEFT_HAS_TRACKPAD) &&
+        !_buttonPressedMap.contains(LEFT_HAS_THUMBSTICK)
+    ) {
+        if (_actions.at("left_trackpad_click")->getFloat().currentState >= 0.1f) {
+            auto x = _axisStateMap[(StandardAxisChannel)LEFT_TRACKPAD_X].value;
+            auto y = _axisStateMap[(StandardAxisChannel)LEFT_TRACKPAD_Y].value;
+
+            // only trigger the primary center button if the trackpad was *just*
+            // pressed, so it doesn't trigger if you sweep your finger across it
+            if (
+                !_buttonPressedMap.contains(LEFT_HAS_PRIMARY) &&
+                std::abs(x) < 0.2f &&
+                std::abs(y) < 0.2f &&
+                _axisStateMap[LX].value == 0.0f &&
+                _axisStateMap[LY].value == 0.0f
+            ) {
+                _buttonPressedMap.insert(LEFT_PRIMARY_THUMB);
+            }
+
+            _axisStateMap[LX].value = x;
+            _axisStateMap[LY].value = y;
+        } else {
+            _axisStateMap[LX].value = 0.0f;
+            _axisStateMap[LY].value = 0.0f;
+        }
+    }
+
+    if (
+        _buttonPressedMap.contains(RIGHT_HAS_TRACKPAD) &&
+        !_buttonPressedMap.contains(RIGHT_HAS_THUMBSTICK)
+    ) {
+        if (_actions.at("right_trackpad_click")->getFloat().currentState >= 0.1f) {
+            auto x = _axisStateMap[(StandardAxisChannel)RIGHT_TRACKPAD_X].value;
+            auto y = _axisStateMap[(StandardAxisChannel)RIGHT_TRACKPAD_Y].value;
+
+            if (
+                !_buttonPressedMap.contains(RIGHT_HAS_PRIMARY) &&
+                std::abs(x) < 0.2f &&
+                std::abs(y) < 0.2f &&
+                _axisStateMap[RX].value == 0.0f &&
+                _axisStateMap[RY].value == 0.0f
+            ) {
+                _buttonPressedMap.insert(RIGHT_PRIMARY_THUMB);
+            }
+
+            _axisStateMap[RX].value = x;
+            _axisStateMap[RY].value = y;
+        } else {
+            _axisStateMap[RX].value = 0.0f;
+            _axisStateMap[RY].value = 0.0f;
+        }
+    }
 }
 
 void OpenXrInputPlugin::InputDevice::getHandTrackingInputs(int i, const mat4& sensorToAvatar) {
