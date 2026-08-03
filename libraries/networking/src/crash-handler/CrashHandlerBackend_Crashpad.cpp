@@ -10,7 +10,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#if HAS_CRASHPAD
+#if HAS_SENTRY
 
 #include "CrashHandler.h"
 
@@ -519,4 +519,4 @@ void startCrashHookMonitor(QCoreApplication* app) {
 #endif  // Q_OS_WIN
 }
 
-#endif  // HAS_CRASHPAD
+#endif  // HAS_SENTRY
