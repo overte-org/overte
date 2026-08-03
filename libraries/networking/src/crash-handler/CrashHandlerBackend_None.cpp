@@ -4,12 +4,13 @@
 //
 //  Created by Clement Brisset on 01/19/18.
 //  Copyright 2018 High Fidelity, Inc.
+//  Copyright 2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#if !defined(HAS_CRASHPAD) && !defined(HAS_BREAKPAD)
+#if !defined(HAS_SENTRY) && !defined(HAS_CRASHPAD) && !defined(HAS_BREAKPAD)
 
 #include "CrashHandler.h"
 
