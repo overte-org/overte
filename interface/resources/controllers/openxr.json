@@ -11,11 +11,11 @@
         { "from": "OpenXR.LeftGrip", "to": "Standard.LeftGrip" },
         { "from": "OpenXR.RightGrip", "to": "Standard.RightGrip" },
 
-        { "from": "OpenXR.LX", "to": "Standard.LX", "filters": [{ "type": "deadZone", "min": 0.05 }] },
-        { "from": "OpenXR.LY", "to": "Standard.LY", "filters": [{ "type": "deadZone", "min": 0.05 }] },
+        { "from": "OpenXR.LX", "to": "Standard.LX", "filters": [{ "type": "deadZone", "min": 0.15 }] },
+        { "from": "OpenXR.LY", "to": "Standard.LY", "filters": [{ "type": "deadZone", "min": 0.15 }] },
 
-        { "from": "OpenXR.RX", "to": "Standard.RX" },
-        { "from": "OpenXR.RY", "to": "Standard.RY" },
+        { "from": "OpenXR.RX", "to": "Standard.RX", "filters": [{ "type": "deadZone", "min": 0.15 }]  },
+        { "from": "OpenXR.RY", "to": "Standard.RY", "filters": [{ "type": "deadZone", "min": 0.15 }]  },
 
         { "from": "OpenXR.LS", "to": "Standard.LS" },
         { "from": "OpenXR.RS", "to": "Standard.RS" },
