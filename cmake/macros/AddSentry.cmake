@@ -13,10 +13,10 @@
 macro(add_sentry)
   if (OVERTE_USE_SENTRY)
     if (OVERTE_BACKTRACE_URL STREQUAL "")
-        message(FATAL_ERROR "Crashpad is enabled, but -DOVERTE_BACKTRACE_URL is empty!")
+        message(FATAL_ERROR "Sentry is enabled, but -DOVERTE_BACKTRACE_URL is empty!")
     endif()
     if (OVERTE_BACKTRACE_TOKEN STREQUAL "")
-        message(FATAL_ERROR "Crashpad is enabled, but -DOVERTE_BACKTRACE_TOKEN is empty!")
+        message(FATAL_ERROR "Sentry is enabled, but -DOVERTE_BACKTRACE_TOKEN is empty!")
     endif()
 
     find_package(Sentry QUIET REQUIRED)
