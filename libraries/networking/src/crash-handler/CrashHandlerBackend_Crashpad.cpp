@@ -10,7 +10,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#if HAS_SENTRY
+#if HAS_CRASHPAD
+
 
 #include "CrashHandler.h"
 
@@ -517,6 +518,10 @@ void startCrashHookMonitor(QCoreApplication* app) {
     QObject::connect(&unhandledExceptionTimer, &QTimer::timeout, checkUnhandledExceptionHook);
     unhandledExceptionTimer.start(60000);
 #endif  // Q_OS_WIN
+}
+
+void CrashHandler::logMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+
 }
 
 #endif  // HAS_SENTRY
