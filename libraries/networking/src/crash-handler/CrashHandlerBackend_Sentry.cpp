@@ -1,8 +1,8 @@
 //
-//  CrashHandler_Crashpad.cpp
+//  CrashHandler_Sentry.cpp
 //  interface/src
 //
-//  Created by Clement Brisset on 01/19/18.
+//  Created by Vadim Troschinsky on 05/08/2026.
 //  Copyright 2018 High Fidelity, Inc.
 //  Copyright 2025 Overte e.V.
 //
@@ -10,9 +10,12 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#if HAS_CRASHPAD
+#define HAS_SENTRY 1
+
+#if HAS_SENTRY
 
 
+#include "sentry.h"
 #include "CrashHandler.h"
 
 Q_LOGGING_CATEGORY(crash_handler, "overte.crash_handler")
@@ -33,10 +36,6 @@ Q_LOGGING_CATEGORY(crash_handler, "overte.crash_handler")
 #pragma clang diagnostic ignored "-Wc++14-extensions"
 #endif
 
-#include <client/crashpad_client.h>
-#include <client/crash_report_database.h>
-#include <client/settings.h>
-#include <client/crashpad_info.h>
 
 #if defined(__clang__)
 #pragma clang diagnostic pop
@@ -48,6 +47,18 @@ Q_LOGGING_CATEGORY(crash_handler, "overte.crash_handler")
 #include <UUID.h>
 
 
+
+/**
+ * @brief Sentry implementation
+ *
+ * Sentry is a crash reporting and metrics system.
+ *
+ * Documentation for the API is at https://docs.sentry.io/platforms/native/usage/
+ *
+ * For reporting, we use the sentry DSN, not the minidump endpoint.
+ *
+ *
+ */
 
 static const std::string BACKTRACE_URL{ OVERTE_BACKTRACE_URL };
 static const std::string BACKTRACE_TOKEN{ OVERTE_BACKTRACE_TOKEN };
@@ -142,12 +153,7 @@ bool SpinLockLocker::relock(int msecs /* = -1 */ ) {
 
 // ------------------------------------------------------------------------------------------------
 
-crashpad::CrashpadClient* client{ nullptr };
-std::unique_ptr< crashpad::CrashReportDatabase > crashpadDatabase;
 
-
-SpinLock crashpadAnnotationsProtect;
-crashpad::SimpleStringDictionary* crashpadAnnotations{ nullptr };
 
 #if defined(Q_OS_WIN)
 static const QString CRASHPAD_HANDLER_NAME{ "crashpad_handler.exe" };
@@ -372,138 +378,41 @@ bool startCrashHandler(std::string appPath, std::string crashURL, std::string cr
         return false;
     }
 
-    assert(!client);
-    client = new crashpad::CrashpadClient();
-    std::vector<std::string> arguments;
+    sentry_options_t *options = sentry_options_new();
+    sentry_options_set_dsn(options, crashURL.c_str());
+    sentry_options_set_release(options, crashToken.c_str());
+    sentry_options_set_debug(options, 1); // Debug for Sentry Native SDK itself
+    sentry_options_set_enable_logs(options, 1);
+    sentry_options_set_minidump_mode(options, SENTRY_MINIDUMP_MODE_FULL); // TODO: a way to choose SENTRY_MINIDUMP_MODE_SMART, which sends smaller reports
 
-    std::map<std::string, std::string> annotations;
-    annotations["sentry[release]"] = crashToken;
-    annotations["sentry[contexts][app][app_version]"] = BuildInfo::VERSION.toStdString();
-    annotations["sentry[contexts][app][app_build]"] = BuildInfo::BUILD_NUMBER.toStdString();
-    annotations["build_type"] = BuildInfo::BUILD_TYPE_STRING.toStdString();
-
-    auto machineFingerPrint = uuidStringWithoutCurlyBraces(FingerprintUtils::getMachineFingerprint());
-    annotations["machine_fingerprint"] = machineFingerPrint.toStdString();
-
-    arguments.push_back("--no-rate-limit");
-
-    // Setup Crashpad DB directory
-    const auto crashpadDbName = "crashpad-db";
-    const auto crashpadDbDir = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
-    QDir(crashpadDbDir).mkpath(crashpadDbName);  // Make sure the directory exists
-    const auto crashpadDbPath = crashpadDbDir.toStdString() + "/" + crashpadDbName;
-
-    // Locate Crashpad handler
-    QString binaryDir = findBinaryDir();
-    QDir interfaceDir;
-
-    if (!binaryDir.isEmpty()) {
-        // Locating ourselves by argv[0] fails in the case of AppImage on Linux, as we get the AppImage
-        // itself in there. If we have a platform-specific method, and it succeeds, we use that instead
-        // of argv.
-        qCDebug(crash_handler) << "Locating own directory by platform-specific method";
-        interfaceDir.setPath(binaryDir);
+    if (sentry_init(options) == 0) {
+        qCInfo(crash_handler) << "Sentry init successful";
     } else {
-        // Getting the base dir from argv[0] is already handled by CrashHandler, so we use
-        // the path as-is here.
-        qCDebug(crash_handler) << "Locating own directory by argv[0]";
-        interfaceDir.setPath(QString::fromStdString(appPath));
-    }
-
-    if (!interfaceDir.exists(CRASHPAD_HANDLER_NAME)) {
-        qCCritical(crash_handler) << "Failed to find" << CRASHPAD_HANDLER_NAME << "in" << interfaceDir << ", can't start crash handler";
+        qCCritical(crash_handler) << "Sentry init failed";
         return false;
     }
 
-    const std::string CRASHPAD_HANDLER_PATH = interfaceDir.filePath(CRASHPAD_HANDLER_NAME).toStdString();
 
-    qCDebug(crash_handler) << "Crashpad handler found at" << QString::fromStdString(CRASHPAD_HANDLER_PATH);
+    sentry_value_t release_info = sentry_value_new_object();
+    sentry_value_set_by_key(release_info, "version", sentry_value_new_string(BuildInfo::VERSION.toStdString().c_str()));
+    sentry_value_set_by_key(release_info, "build", sentry_value_new_string(BuildInfo::BUILD_NUMBER.toStdString().c_str()));
 
-    // Setup different file paths
-    base::FilePath::StringType dbPath;
-    base::FilePath::StringType handlerPath;
-    dbPath.assign(crashpadDbPath.cbegin(), crashpadDbPath.cend());
-    handlerPath.assign(CRASHPAD_HANDLER_PATH.cbegin(), CRASHPAD_HANDLER_PATH.cend());
-
-    base::FilePath db(dbPath);
-    base::FilePath handler(handlerPath);
-
-    qCDebug(crash_handler) << "Opening crashpad database" << QString::fromStdString(crashpadDbPath);
-    crashpadDatabase = crashpad::CrashReportDatabase::Initialize(db);
-    if (crashpadDatabase == nullptr || crashpadDatabase->GetSettings() == nullptr) {
-        qCCritical(crash_handler) << "Failed to open crashpad database" << QString::fromStdString(crashpadDbPath);
-        return false;
-    }
-
-    // Enable automated uploads.
-  //  QObject::connect(&UserActivityLogger::getInstance(), &UserActivityLogger::crashReportingEnabledChanged, []() {
-  //      auto &ual = UserActivityLogger::getInstance();
-  //      setCrashReportingEnabled(ual.isCrashReportingEnabled());
-  //  });
-
-    crashpadDatabase->GetSettings()->SetUploadsEnabled(CrashHandler::getInstance().isEnabled());
+    sentry_value_t machine_info = sentry_value_new_object();
+    sentry_value_set_by_key(machine_info, "fingerprint", sentry_value_new_string(uuidStringWithoutCurlyBraces(FingerprintUtils::getMachineFingerprint()).toStdString().c_str()))    ;
 
 
-    if (!client->StartHandler(handler, db, db, crashURL, annotations, arguments, true, true)) {
-        qCCritical(crash_handler) << "Failed to start crashpad handler";
-        return false;
-    }
+    sentry_set_context("Release", release_info);
+    sentry_set_context("Machine", machine_info);
 
-#ifdef Q_OS_WIN
-    AddVectoredExceptionHandler(0, firstChanceExceptionHandler);
-    gl_crashpadUnhandledExceptionFilter = SetUnhandledExceptionFilter(unhandledExceptionHandler);
-#endif
 
-    qCInfo(crash_handler) << "Crashpad initialized";
+    qCInfo(crash_handler) << "Sentry crash handler initialized. SDK version" << sentry_sdk_version() << ". Will send reports to " << crashURL.c_str() << " with token " << crashToken.c_str();
     return true;
-}
 
-void setCrashReportingEnabled(bool enabled) {
-    if (!crashpadDatabase) {
-        qCCritical(crash_handler) << "Can't set to enabled, crash handler not initialized!";
-        return;
-    }
-
-    auto settings = crashpadDatabase->GetSettings();
-    settings->SetUploadsEnabled(enabled);
-
-    if (enabled) {
-        // Enabled now, was disabled before
-        //
-        // Reports are generated while uploads are disabled, so if we didn't do this we could
-        // send something the user doesn't want sent. So if reporting was disabled then enabled,
-        // remove any pending reports.
-        qCDebug(crash_handler) << "Removing any pending crash reports";
-
-        std::vector<crashpad::CrashReportDatabase::Report> pendingReports;
-        crashpad::CrashReportDatabase::OperationStatus status;
-
-        status = crashpadDatabase->GetPendingReports(&pendingReports);
-
-        if (status != crashpad::CrashReportDatabase::kNoError) {
-            qCWarning(crash_handler) << "Failed to get pending reports";
-        } else {
-            for (const auto& report : pendingReports) {
-                qCDebug(crash_handler) << "Deleted crash report" << QString::fromStdString(report.uuid.ToString());
-                crashpadDatabase->DeleteReport(report.uuid);
-            }
-        }
-    }
-
-    qCInfo(crash_handler) << "Crashpad uploads " << (enabled ? QString("enabled") : QString("disabled"));
+    //qCInfo(crash_handler) << "Crashpad uploads " << (enabled ? QString("enabled") : QString("disabled"));
 }
 
 void setCrashAnnotation(std::string name, std::string value) {
-    if (client) {
-        SpinLockLocker guard(crashpadAnnotationsProtect);
-        if (!crashpadAnnotations) {
-            crashpadAnnotations = new crashpad::SimpleStringDictionary();  // don't free this, let it leak
-            crashpad::CrashpadInfo* crashpad_info = crashpad::CrashpadInfo::GetCrashpadInfo();
-            crashpad_info->set_simple_annotations(crashpadAnnotations);
-        }
-        std::replace(value.begin(), value.end(), ',', ';');
-        crashpadAnnotations->SetKeyValue(name, value);
-    }
+
 }
 
 void startCrashHookMonitor(QCoreApplication* app) {
@@ -520,8 +429,48 @@ void startCrashHookMonitor(QCoreApplication* app) {
 #endif  // Q_OS_WIN
 }
 
+
 void CrashHandler::logMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
 
+    // Some of the logging is very spammy and Sentry seems to have a problem with shutting down
+    // in that case.
+    {
+        std::lock_guard<std::mutex> lock(_logMutex);
+
+        if (msg == _previousMessage) {
+            _repeatCount++;
+            return;
+        }
+
+        if (_repeatCount > 0) {
+            sentry_log_warn("Previous log message repeated %i times", _repeatCount);
+        }
+
+        _previousMessage = msg;
+        _repeatCount = 0;
+    }
+
+
+    switch(type) {
+        case QtMsgType::QtFatalMsg:
+            sentry_log_fatal(msg.toStdString().c_str());
+            break;
+        case QtMsgType::QtCriticalMsg:
+            sentry_log_error(msg.toStdString().c_str());
+            break;
+        case QtMsgType::QtWarningMsg:
+            sentry_log_warn(msg.toStdString().c_str());
+            break;
+        case QtMsgType::QtInfoMsg:
+            sentry_log_info(msg.toStdString().c_str());
+            break;
+        case QtMsgType::QtDebugMsg:
+            sentry_log_debug(msg.toStdString().c_str());
+            break;
+        default:
+            sentry_log_warn(msg.toStdString().c_str());
+            sentry_log_warn("Previous log message was of unknown type %i", (int)type);
+    }
 }
 
 #endif  // HAS_SENTRY
