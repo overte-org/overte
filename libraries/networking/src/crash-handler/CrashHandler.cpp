@@ -13,6 +13,11 @@
 #include "CrashHandlerBackend.h"
 #include <QFileInfo>
 #include <QCoreApplication>
+#include <QDebug>
+#include "LogHandler.h"
+
+
+static void crashHandlerLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
 
 CrashHandler& CrashHandler::getInstance() {
@@ -63,6 +68,11 @@ bool CrashHandler::start() {
         }
 
         qCDebug(crash_handler) << "Forwarded" << countAdded << "annotations";
+
+
+        qInstallMessageHandler(crashHandlerLogMessage);
+        qCInfo(crash_handler) << "Installed crash handler log message handler";
+
 
     } else {
         qCWarning(crash_handler) << "Crash handler failed to start";
@@ -122,4 +132,12 @@ void CrashHandler::setAnnotation(const std::string &key, const std::string &valu
     }
 
     setCrashAnnotation(key, value);
+}
+
+
+static void crashHandlerLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+    CrashHandler::getInstance().logMessage(type, context, msg);
+
+    // We only get one log handler, so call the normal one here since we replaced it
+    LogHandler::getInstance().verboseMessageHandler(type, context, msg);
 }

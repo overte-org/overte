@@ -202,6 +202,19 @@ public slots:
      */
     void setAnnotation(const std::string &key, const std::string &value);
 
+
+    /**
+     * @brief Log a message to the crash handler
+     *
+     * This can be called from the logging system, to add log messages
+     * to crash reports.
+     *
+     * @param type Qt Log message type
+     * @param context Qt logging context
+     * @param msg Message to log
+     */
+    virtual void logMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg);
+
 signals:
 
     /**
@@ -231,10 +244,14 @@ private:
     std::atomic<bool> _crashReportingEnabled {false};
     std::unordered_map<std::string, std::string> _annotations{};
     std::mutex _annotationsMutex{};
+    std::mutex _logMutex{};
 
     QString _path;
     QString _crashUrl;
     QString _crashToken;
+
+    QString _previousMessage{};
+    int _repeatCount { 0 };
 };
 
 
