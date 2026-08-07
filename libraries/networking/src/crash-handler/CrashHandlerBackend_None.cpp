@@ -35,4 +35,8 @@ void startCrashHookMonitor(QCoreApplication* app) {
 void setCrashReportingEnabled(bool value) {
 
 }
+
+void CrashHandler::logMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+
+}
 #endif
