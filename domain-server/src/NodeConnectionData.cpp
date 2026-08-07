@@ -31,6 +31,7 @@ NodeConnectionData NodeConnectionData::fromDataStream(QDataStream& dataStream, c
         // NOTE: QDataStream::readBytes() - The buffer is allocated using new []. Destroy it with the delete [] operator.
         delete[] rawBytes;
 
+        // PROTOCOL TODO: remove the mac address and system info fields entirely
         // read the hardware address sent by the client
         dataStream >> newHeader.hardwareAddress;
 
@@ -40,9 +41,6 @@ NodeConnectionData NodeConnectionData::fromDataStream(QDataStream& dataStream, c
         // and the operating system type
         QByteArray compressedSystemInfo;
         dataStream >> compressedSystemInfo;
-        if (!compressedSystemInfo.isEmpty()) {
-            newHeader.SystemInfo = qUncompress(compressedSystemInfo);
-        }
 
         dataStream >> newHeader.connectReason;
 

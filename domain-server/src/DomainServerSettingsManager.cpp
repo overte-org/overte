@@ -525,7 +525,7 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
             // Default values for new canRezAvatarEntities permission.
             unpackPermissions();
             std::list<std::unordered_map<NodePermissionsKey, NodePermissionsPointer, NodePermissionsKeyHash>> permissionsSets{
-                _standardAgentPermissions.get(),      _agentPermissions.get(), _ipPermissions.get(),  _macPermissions.get(),
+                _standardAgentPermissions.get(),      _agentPermissions.get(), _ipPermissions.get(),
                 _machineFingerprintPermissions.get(), _groupPermissions.get(), _groupForbiddens.get()
             };
             foreach (auto permissionsSet, permissionsSets) {
@@ -545,7 +545,7 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
             // Default values for new canViewAssetURLs permission.
             unpackPermissions();
             std::list<std::unordered_map<NodePermissionsKey, NodePermissionsPointer, NodePermissionsKeyHash>> permissionsSets{
-                _standardAgentPermissions.get(),      _agentPermissions.get(), _ipPermissions.get(),  _macPermissions.get(),
+                _standardAgentPermissions.get(),      _agentPermissions.get(), _ipPermissions.get(),
                 _machineFingerprintPermissions.get(), _groupPermissions.get(), _groupForbiddens.get()
             };
             foreach (auto permissionsSet, permissionsSets) {
@@ -668,9 +668,6 @@ void DomainServerSettingsManager::packPermissions() {
     // save settings for IP addresses
     packPermissionsForMap("permissions", _ipPermissions, IP_PERMISSIONS_KEYPATH);
 
-    // save settings for MAC addresses
-    packPermissionsForMap("permissions", _macPermissions, MAC_PERMISSIONS_KEYPATH);
-
     // save settings for Machine Fingerprint
     packPermissionsForMap("permissions", _machineFingerprintPermissions, MACHINE_FINGERPRINT_PERMISSIONS_KEYPATH);
 
@@ -749,17 +746,6 @@ void DomainServerSettingsManager::unpackPermissions() {
             }
     });
 
-    needPack |= unpackPermissionsForKeypath(MAC_PERMISSIONS_KEYPATH, &_macPermissions,
-        [&](NodePermissionsPointer perms){
-            // make sure that this permission row is for a non-empty hardware
-            if (perms->getKey().first.isEmpty()) {
-                _macPermissions.remove(perms->getKey());
-
-                // we removed a row from the MAC permissions, we'll need a re-pack
-                needPack = true;
-            }
-    });
-
     needPack |= unpackPermissionsForKeypath(MACHINE_FINGERPRINT_PERMISSIONS_KEYPATH, &_machineFingerprintPermissions,
         [&](NodePermissionsPointer perms){
             // make sure that this permission row has valid machine fingerprint
@@ -802,8 +788,7 @@ void DomainServerSettingsManager::unpackPermissions() {
     std::array<NodePermissionsMap*, 7> permissionsSets {{
         &_standardAgentPermissions, &_agentPermissions,
         &_groupPermissions, &_groupForbiddens,
-        &_ipPermissions, &_macPermissions,
-        &_machineFingerprintPermissions
+        &_ipPermissions, &_machineFingerprintPermissions
     }};
 
     foreach (auto permissionSet, permissionsSets) {
@@ -1114,16 +1099,6 @@ NodePermissions DomainServerSettingsManager::getPermissionsForIP(const QHostAddr
     NodePermissionsKey ipKey = NodePermissionsKey(address.toString(), 0);
     if (_ipPermissions.contains(ipKey)) {
         return *(_ipPermissions[ipKey].get());
-    }
-    NodePermissions nullPermissions;
-    nullPermissions.setAll(false);
-    return nullPermissions;
-}
-
-NodePermissions DomainServerSettingsManager::getPermissionsForMAC(const QString& macAddress) const {
-    NodePermissionsKey macKey = NodePermissionsKey(macAddress, 0);
-    if (_macPermissions.contains(macKey)) {
-        return *(_macPermissions[macKey].get());
     }
     NodePermissions nullPermissions;
     nullPermissions.setAll(false);

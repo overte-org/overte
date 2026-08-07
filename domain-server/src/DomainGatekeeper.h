@@ -136,7 +136,7 @@ private:
     QSet<QString> _inFlightGroupMembershipsRequests; // keep track of which we've already asked for
 
     NodePermissions setPermissionsForUser(bool isLocalUser, QString verifiedUsername, QString verifiedDomainUsername,
-                                          const QHostAddress& senderAddress, const QString& hardwareAddress, 
+                                          const QHostAddress& senderAddress,
                                           const QUuid& machineFingerprint);
 
     void getGroupMemberships(const QString& username);
