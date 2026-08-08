@@ -49,6 +49,7 @@ bool CrashHandlerSentry::startCrashHandler() {
     sentry_set_context("Release", release_info);
     sentry_set_context("Machine", machine_info);
 
+    sentry_set_tag("support_tag", getSupportTag().toStdString().c_str());
 
     qCInfo(crash_handler) << "Sentry crash handler initialized. SDK version" << sentry_sdk_version() << ". Will send reports to " << crashURL.c_str() << " with token " << crashToken.c_str();
     return true;
