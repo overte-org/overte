@@ -657,6 +657,8 @@ int main(int argc, const char* argv[]) {
     auto& ual = UserActivityLogger::getInstance();
     auto& ch = CrashHandler::getInstance();
 
+    ch.start();
+
     QObject::connect(&ch, &CrashHandler::enabledChanged, [](bool enabled) {
         Settings s;
         s.beginGroup("Crash");
