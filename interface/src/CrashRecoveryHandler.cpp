@@ -174,9 +174,11 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
     QLabel* crashReportLabel = nullptr;
 
     if (ch.isStarted()) {
-        crashReportLabel = new QLabel("To help us with debugging, you can enable automatic crash reports.\n"
+        crashReportLabel = new QLabel(QString("To help us with debugging, you can enable automatic crash reports.\n"
                                       "They'll only be seen by developers trusted by the Overte e.V. organization,\n"
-                                      "and will only be used for improving the code.");
+                                      "and will only be used for improving the code.\n"
+                                      "\n"
+                                      "Support tag: %1").arg(ch.getSupportTag()));
     } else {
         crashReportLabel = new QLabel("Unfortunately, crash reporting isn't built into this release.");
     }
