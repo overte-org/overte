@@ -169,7 +169,9 @@ void CrashHandler::logMessage(QtMsgType type, const QMessageLogContext &context,
         _repeatCount = 0;
     }
 
-    sendLogMessage(type, context, msg);
+    if (isLogStreamingEnabled()) {
+        sendLogMessage(type, context, msg);
+    }
 }
 
 // Locate the full path to the binary's directory
