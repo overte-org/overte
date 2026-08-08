@@ -19,6 +19,9 @@
 #include <unordered_map>
 #include <mutex>
 
+#include <string_view>
+
+
 Q_DECLARE_LOGGING_CATEGORY(crash_handler)
 
 
@@ -284,6 +287,17 @@ public slots:
      */
     void logMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
+    /**
+     * @brief Returns the support tag.
+     *
+     * This is a randomly generated per program launch tag that can be used
+     * to aid in user support and debugging. The user can be asked to give
+     * this tag to a developer. It will be recorded in the crash reports.
+     *
+     * @return QString
+     */
+    QString getSupportTag() const { return _supportTag; }
+
 signals:
 
     /**
@@ -353,6 +367,8 @@ protected:
 
 private:
 
+
+
     std::atomic<bool> _crashMonitorStarted {false};
     std::atomic<bool> _crashReportingEnabled {false};
     std::atomic<bool> _logStreamingEnabled {false};
@@ -368,6 +384,11 @@ private:
 
     QString _previousMessage{};
     int _repeatCount { 0 };
+
+    QString _supportTag{};
+
+    static const QStringList EFF_SHORT_WORDLIST;
+
 };
 
 
