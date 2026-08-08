@@ -24,9 +24,12 @@ bool CrashHandlerSentry::startCrashHandler() {
     sentry_options_set_debug(options, 1); // Debug for Sentry Native SDK itself
     sentry_options_set_enable_logs(options, 1);
     sentry_options_set_enable_metrics(options, 1);
-
+    sentry_options_set_cache_keep(options, SENTRY_CACHE_KEEP_OFFLINE);
+    sentry_options_set_http_retry(options, true);
     sentry_options_set_require_user_consent(options, 1);
     sentry_options_set_minidump_mode(options, SENTRY_MINIDUMP_MODE_FULL); // TODO: a way to choose SENTRY_MINIDUMP_MODE_SMART, which sends smaller reports
+    sentry_options_set_crashpad_wait_for_upload(options, 1); // Wait for crashpad to upload before exiting
+    sentry_options_set_logs_with_attributes(options, true);
 
     if (sentry_init(options) == 0) {
         qCInfo(crash_handler) << "Sentry init successful";
@@ -82,8 +85,10 @@ void CrashHandlerSentry::sendLogMessage(QtMsgType type, const QMessageLogContext
 
 void CrashHandlerSentry::setCrashReportingEnabled(bool value) {
     if (value) {
+        qCInfo(crash_handler) << "Sentry crash reporting consent given. Crash reports will be sent to the server.";
         sentry_user_consent_give();
     } else {
+        qCInfo(crash_handler) << "Sentry crash reporting consent revoked.";
         sentry_user_consent_revoke();
     }
 }
