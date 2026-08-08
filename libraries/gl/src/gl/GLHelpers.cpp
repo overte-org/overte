@@ -31,7 +31,6 @@ size_t evalGLFormatSwapchainPixelSize(const QSurfaceFormat& format) {
 #ifdef Q_OS_MAC
 #define SERIALIZE_GL_RENDERING
 #endif
-#define SERIALIZE_GL_RENDERING
 
 #ifdef SERIALIZE_GL_RENDERING
 
