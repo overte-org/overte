@@ -85,6 +85,6 @@ void CrashHandlerSentry::setCrashReportingEnabled(bool value) {
     }
 }
 
-void CrashHandlerSentry::setCrashAnnotation(std::string name, std::string value) {
+void CrashHandlerSentry::setTag(std::string name, std::string value) {
     sentry_set_tag(name.c_str(), value.c_str());
 }

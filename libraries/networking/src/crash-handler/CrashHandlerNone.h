@@ -26,7 +26,7 @@ class CrashHandlerNone : public CrashHandler {
         // This space intentionally left blank.
     }
 
-    virtual void setCrashAnnotation(std::string name, std::string value) override {
+    virtual void setTag(std::string name, std::string value) override {
         // This space intentionally left blank.
     }
 };
