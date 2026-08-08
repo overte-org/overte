@@ -14,9 +14,23 @@
 #include <QObject>
 #include <QCoreApplication>
 #include <SettingHandle.h>
+#include <QLoggingCategory>
 #include <atomic>
 #include <unordered_map>
 #include <mutex>
+
+Q_DECLARE_LOGGING_CATEGORY(crash_handler)
+
+
+// We get these from CMake if crash reporting is enabled
+
+#ifndef OVERTE_BACKTRACE_URL
+#define OVERTE_BACKTRACE_URL ""
+#endif
+
+#ifndef OVERTE_BACKTRACE_TOKEN
+#define OVERTE_BACKTRACE_TOKEN ""
+#endif
 
 
 
@@ -57,6 +71,10 @@ class CrashHandler : public QObject {
 public:
     static CrashHandler& getInstance();
 
+    QString path() const { return _path; }
+    QString url() const { return _crashUrl; }
+    QString token() const { return _crashToken; }
+
 
 public slots:
 
@@ -70,6 +88,8 @@ public slots:
      * if the path is a filename, then the base directory will be automatically used.
      */
     void setPath(const QString &path);
+
+
 
     /**
      * @brief Start the crash handler
@@ -213,7 +233,7 @@ public slots:
      * @param context Qt logging context
      * @param msg Message to log
      */
-    virtual void logMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg);
+    void logMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg);
 
 signals:
 
@@ -226,8 +246,39 @@ signals:
      */
     void enabledChanged(bool enabled);
 
-private:
-    CrashHandler(QObject *parent = nullptr);
+protected:
+
+    /**
+     * @brief Start the crash handler
+     *
+     * This is implementation dependent, and is called by start().
+     *
+     */
+    virtual bool startCrashHandler() = 0;
+
+    /**
+     * @brief Set whether to enable crash reporting
+     *
+     * This is the implementation dependent part, called by setEnabled().
+     *
+     * @param value Whether to enable crash reporting
+     */
+    virtual void setCrashReportingEnabled(bool value) = 0;
+
+
+    /**
+     * @brief Send a log message to the crash handler.
+     *
+     * This will be logged even without a crash.
+     *
+     * @param type
+     * @param context
+     * @param msg
+     */
+    virtual void sendLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) = 0;
+
+
+    virtual void setCrashAnnotation(std::string name, std::string value) = 0;
 
 
     /**
@@ -239,6 +290,13 @@ private:
      */
     void setStarted(bool started) { _crashMonitorStarted = started; }
 
+    // Move this to PathUtils
+    static QString findBinaryDir();
+
+    CrashHandler(QObject *parent = nullptr);
+
+
+private:
 
     std::atomic<bool> _crashMonitorStarted {false};
     std::atomic<bool> _crashReportingEnabled {false};
@@ -247,8 +305,8 @@ private:
     std::mutex _logMutex{};
 
     QString _path;
-    QString _crashUrl;
-    QString _crashToken;
+    QString _crashUrl{OVERTE_BACKTRACE_URL};
+    QString _crashToken{OVERTE_BACKTRACE_TOKEN};
 
     QString _previousMessage{};
     int _repeatCount { 0 };
