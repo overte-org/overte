@@ -21,7 +21,7 @@ class CrashHandlerSentry : public CrashHandler {
 
     virtual void sendLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) override;
 
-    virtual void setCrashAnnotation(std::string name, std::string value) override;
+    virtual void setTag(std::string name, std::string value) override;
 };
 
 
