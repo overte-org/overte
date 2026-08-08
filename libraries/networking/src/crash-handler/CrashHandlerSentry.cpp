@@ -52,6 +52,7 @@ bool CrashHandlerSentry::startCrashHandler() {
     sentry_set_context("Release", release_info);
     sentry_set_context("Machine", machine_info);
 
+    sentry_set_tag("machine_id", uuidStringWithoutCurlyBraces(FingerprintUtils::getMachineFingerprint()).toStdString().c_str());
     sentry_set_tag("support_tag", getSupportTag().toStdString().c_str());
 
     qCInfo(crash_handler) << "Sentry crash handler initialized. SDK version" << sentry_sdk_version() << ". Will send reports to " << crashURL.c_str() << " with token " << crashToken.c_str();
@@ -61,26 +62,37 @@ bool CrashHandlerSentry::startCrashHandler() {
 }
 
 void CrashHandlerSentry::sendLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg)  {
+    sentry_level_t level = SENTRY_LEVEL_INFO;
+
+    sentry_value_t attributes = sentry_value_new_object();
+
     switch(type) {
         case QtMsgType::QtFatalMsg:
-            sentry_log_fatal(msg.toStdString().c_str());
+            level = SENTRY_LEVEL_FATAL;
             break;
         case QtMsgType::QtCriticalMsg:
-            sentry_log_error(msg.toStdString().c_str());
+            level = SENTRY_LEVEL_ERROR;
             break;
         case QtMsgType::QtWarningMsg:
-            sentry_log_warn(msg.toStdString().c_str());
+            level = SENTRY_LEVEL_WARNING;
             break;
         case QtMsgType::QtInfoMsg:
-            sentry_log_info(msg.toStdString().c_str());
+            level = SENTRY_LEVEL_INFO;
             break;
         case QtMsgType::QtDebugMsg:
-            sentry_log_debug(msg.toStdString().c_str());
+            level = SENTRY_LEVEL_DEBUG;
             break;
         default:
-            sentry_log_warn(msg.toStdString().c_str());
-            sentry_log_warn("Previous log message was of unknown type %i", (int)type);
+            sentry_log_warn("Log message of unknown type %i", (int)type);
     }
+
+    sentry_value_set_by_key(attributes, "file", sentry_value_new_string(context.file));
+    sentry_value_set_by_key(attributes, "line", sentry_value_new_int32(context.line));
+    sentry_value_set_by_key(attributes, "function", sentry_value_new_string(context.function));
+    sentry_value_set_by_key(attributes, "category", sentry_value_new_string(context.category));
+
+    sentry_log(level, msg.toStdString().c_str(), attributes);
+
 }
 
 void CrashHandlerSentry::setCrashReportingEnabled(bool value) {
