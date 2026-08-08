@@ -154,6 +154,46 @@ public slots:
      */
     void setEnabled(bool enabled);
 
+
+
+    /**
+     * @brief Whether logs are streamed to the server for debugging.
+     *
+     * Logs are sent even in the absence of a crash if this is enabled.
+     *
+     * @return true
+     * @return false
+     */
+    bool isLogStreamingEnabled() const { return _logStreamingEnabled; }
+
+    /**
+     * @brief Set whether logs are streamed to the server for debugging.
+     *
+     * Logs are sent even in the absence of a crash if this is enabled.
+     *
+     * @param enabled
+     */
+    void setLogStreamingEnabled(bool enabled) {
+        _logStreamingEnabled = enabled;
+    }
+
+    /**
+     * @brief Whether stats are streamed to the server for debugging.
+     *
+     * @return true
+     * @return false
+     */
+    bool isStatsStreamingEnabled() const { return _statsStreamingEnabled; }
+
+    /**
+     * @brief Set whether stats are streamed to the server for debugging.
+     *
+     * @param enabled
+     */
+    void setStatsStreamingEnabled(bool enabled) {
+        _statsStreamingEnabled = enabled;
+    }
+
     /**
      * @brief Set the URL where to send crash reports to
      *
@@ -227,6 +267,9 @@ public slots:
      * @param value Value
      */
     void setAnnotation(const std::string &key, const std::string &value);
+
+
+    void setContext(const QString &sectionName, const QString &key, const QString &value);
 
 
     /**
@@ -312,6 +355,9 @@ private:
 
     std::atomic<bool> _crashMonitorStarted {false};
     std::atomic<bool> _crashReportingEnabled {false};
+    std::atomic<bool> _logStreamingEnabled {false};
+    std::atomic<bool> _statsStreamingEnabled {false};
+
     std::unordered_map<std::string, std::string> _annotations{};
     std::mutex _annotationsMutex{};
     std::mutex _logMutex{};
