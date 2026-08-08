@@ -75,7 +75,7 @@ bool CrashHandler::start() {
         {
             std::lock_guard<std::mutex> lock(_annotationsMutex);
             for(const auto &item : _annotations) {
-                setCrashAnnotation(item.first, item.second);
+                setTag(item.first, item.second);
             }
 
             countAdded = _annotations.size();
@@ -146,7 +146,7 @@ void CrashHandler::setAnnotation(const std::string &key, const std::string &valu
         return;
     }
 
-    setCrashAnnotation(key, value);
+    setTag(key, value);
 }
 
 

@@ -185,6 +185,8 @@ public slots:
      * Annotations add extra information, such as the application's version number,
      * the current user, or any other information of interest.
      *
+     * In Sentry, this creates a tag and they are searchable in the Sentry web interface.
+     *
      * @note Annotations made before the crash handler are remembered, and sent to the
      * crash handler as soon as it's initialized.
      *
@@ -199,6 +201,8 @@ public slots:
      * Annotations add extra information, such as the application's version number,
      * the current user, or any other information of interest.
      *
+     * In Sentry, this creates a tag and they are searchable in the Sentry web interface.
+     *
      * @note Annotations made before the crash handler are remembered, and sent to the
      * crash handler as soon as it's initialized.
      *
@@ -212,6 +216,8 @@ public slots:
      *
      * Annotations add extra information, such as the application's version number,
      * the current user, or any other information of interest.
+     *
+     * In Sentry, this creates a tag and they are searchable in the Sentry web interface.
      *
      * @note Annotations made before the crash handler are remembered, and sent to the
      * crash handler as soon as it's initialized.
@@ -278,7 +284,13 @@ protected:
     virtual void sendLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) = 0;
 
 
-    virtual void setCrashAnnotation(std::string name, std::string value) = 0;
+    /**
+     * @brief Attach a tag to the crash report
+     *
+     * @param name Key
+     * @param value Value
+     */
+    virtual void setTag(std::string name, std::string value) = 0;
 
 
     /**
