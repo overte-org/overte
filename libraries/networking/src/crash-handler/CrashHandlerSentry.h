@@ -4,6 +4,7 @@
 #define hifi_CrashHandlerSentry_h
 
 #include "CrashHandler.h"
+#include <QMutex>
 
 class CrashHandlerSentry : public CrashHandler {
     Q_OBJECT
@@ -11,7 +12,9 @@ class CrashHandlerSentry : public CrashHandler {
     public:
 
 
+    virtual void setTag(std::string name, std::string value) override;
 
+    virtual void setContext(const QString &sectionName, const QString &key, const QVariant &value) override;
 
     protected:
 
@@ -21,7 +24,9 @@ class CrashHandlerSentry : public CrashHandler {
 
     virtual void sendLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) override;
 
-    virtual void setTag(std::string name, std::string value) override;
+    private:
+        QMutex _contextMutex;
+        QVariantMap _context;
 };
 
 

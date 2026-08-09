@@ -11,6 +11,14 @@ class CrashHandlerNone : public CrashHandler {
     public:
 
 
+    virtual void setTag(std::string name, std::string value) override {
+        // This space intentionally left blank.
+    }
+
+    virtual void setContext(const QString &sectionName, const QString &key, const QVariant &value) override {
+        // This space intentionally left blank.
+    }
+
     protected:
 
     virtual bool startCrashHandler() override {
@@ -26,9 +34,6 @@ class CrashHandlerNone : public CrashHandler {
         // This space intentionally left blank.
     }
 
-    virtual void setTag(std::string name, std::string value) override {
-        // This space intentionally left blank.
-    }
 };
 
 #endif
