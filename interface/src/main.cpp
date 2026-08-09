@@ -660,9 +660,14 @@ int main(int argc, const char* argv[]) {
     ch.start();
 
     QObject::connect(&ch, &CrashHandler::enabledChanged, [](bool enabled) {
+        auto& crashHandler = CrashHandler::getInstance();
         Settings s;
+
         s.beginGroup("Crash");
-        s.setValue("ReportingEnabled", enabled);
+        s.setValue("ReportingEnabled", crashHandler.isEnabled());
+        s.setValue("LogStreamingEnabled", crashHandler.isLogStreamingEnabled());
+        s.setValue("StatsStreamingEnabled", crashHandler.isStatsStreamingEnabled());
+
         s.endGroup();
     });
 
@@ -686,6 +691,8 @@ int main(int argc, const char* argv[]) {
         if (crashSettings.value("ReportingEnabled").toBool()) {
             ch.setEnabled(true);
         }
+        ch.setLogStreamingEnabled(crashSettings.value("LogStreamingEnabled").toBool());
+        ch.setStatsStreamingEnabled(crashSettings.value("StatsStreamingEnabled").toBool());
         crashSettings.endGroup();
     }
 
