@@ -1404,6 +1404,7 @@ void Application::updateWindowTitle() const {
 
     auto& ch = CrashHandler::getInstance();
     ch.setAnnotation("sentry[user][username]", metaverseUsername.toStdString());
+    ch.setAnnotation("user.display_name", getMyAvatar()->getDisplayName().toStdString());
 
     QString currentPlaceName;
     if (isServerlessMode()) {
