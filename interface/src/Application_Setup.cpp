@@ -623,8 +623,8 @@ void Application::initialize(const QCommandLineParser &parser) {
 
         auto &ch = CrashHandler::getInstance();
 
-        ch.setAnnotation("sentry[contexts][gpu][name]", gpuIdent->getName().toStdString());
-        ch.setAnnotation("sentry[contexts][gpu][version]", gpuIdent->getDriver().toStdString());
+        ch.setContext("GPU", "name", gpuIdent->getName());
+        ch.setContext("GPU", "version", gpuIdent->getDriver());
 
         ch.setAnnotation("gpu.memory", std::to_string(gpuIdent->getMemory()));
 
