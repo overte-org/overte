@@ -1404,7 +1404,7 @@ void Application::updateWindowTitle() const {
     QString domainUsername = domainAccountManager->getUsername();
 
     auto& ch = CrashHandler::getInstance();
-    ch.setAnnotation("sentry[user][username]", metaverseUsername.toStdString());
+    ch.setContext("User", "username", metaverseUsername);
     ch.setAnnotation("user.display_name", getMyAvatar()->getDisplayName().toStdString());
 
     QString currentPlaceName;

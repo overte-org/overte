@@ -174,10 +174,13 @@ public slots:
      *
      * Logs are sent even in the absence of a crash if this is enabled.
      *
+     * Emits enabledChanged signal.
+     *
      * @param enabled
      */
     void setLogStreamingEnabled(bool enabled) {
         _logStreamingEnabled = enabled;
+        emit enabledChanged(enabled);
     }
 
     /**
@@ -191,10 +194,12 @@ public slots:
     /**
      * @brief Set whether stats are streamed to the server for debugging.
      *
+     * Emits enabledChanged signal.
      * @param enabled
      */
     void setStatsStreamingEnabled(bool enabled) {
         _statsStreamingEnabled = enabled;
+        emit enabledChanged(enabled);
     }
 
     /**
@@ -271,8 +276,29 @@ public slots:
      */
     void setAnnotation(const std::string &key, const std::string &value);
 
+    /**
+     * @brief Attach a tag to the crash report.
+     *
+     * Tags are always string values, and are searchable.
+     *
+     * @param name Key
+     * @param value Value
+     */
+    virtual void setTag(std::string name, std::string value) = 0;
 
-    void setContext(const QString &sectionName, const QString &key, const QString &value);
+    /**
+     * @brief Add context to the crash report
+     *
+     * Contexts in Sentry are informative, and not normally searchable. This should be used
+     * to provide detailed information that won't normally be used for locating reports.
+     *
+     * Unlike tags, contexts can be other things than string types.
+     *
+     * @param sectionName
+     * @param key
+     * @param value
+     */
+    virtual void setContext(const QString &sectionName, const QString &key, const QVariant &value) = 0;
 
 
     /**
@@ -339,15 +365,6 @@ protected:
      * @param msg
      */
     virtual void sendLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) = 0;
-
-
-    /**
-     * @brief Attach a tag to the crash report
-     *
-     * @param name Key
-     * @param value Value
-     */
-    virtual void setTag(std::string name, std::string value) = 0;
 
 
     /**
