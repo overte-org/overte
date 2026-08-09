@@ -108,3 +108,43 @@ void CrashHandlerSentry::setCrashReportingEnabled(bool value) {
 void CrashHandlerSentry::setTag(std::string name, std::string value) {
     sentry_set_tag(name.c_str(), value.c_str());
 }
+
+void CrashHandlerSentry::setContext(const QString &sectionName, const QString &key, const QVariant &value) {
+    // Newer Sentry Native SDKs have sentry_update_context(), but we don't. Got to do things manually.
+
+    QMutexLocker lock(&_contextMutex);
+
+    QVariantMap section = _context.value(sectionName).toMap();
+    section.insert(key, value);
+    _context.insert(sectionName, section);
+
+
+    foreach(const QString &sectionName, _context.keys()) {
+        sentry_value_t section_info = sentry_value_new_object();
+        QVariantMap sectionMap = _context.value(sectionName).toMap();
+
+        foreach(const QString &key, sectionMap.keys()) {
+            sentry_value_t value;
+
+            if (sectionMap.value(key).type() == QVariant::String) {
+                value = sentry_value_new_string(sectionMap.value(key).toString().toStdString().c_str());
+            } else if (sectionMap.value(key).type() == QVariant::Int) {
+                value = sentry_value_new_int32(sectionMap.value(key).toInt());
+            } else if (sectionMap.value(key).type() == QVariant::LongLong) {
+                value = sentry_value_new_int64(sectionMap.value(key).toLongLong());
+            } else if (sectionMap.value(key).type() == QVariant::Double) {
+                value = sentry_value_new_double(sectionMap.value(key).toDouble());
+            } else if (sectionMap.value(key).type() == QVariant::Bool) {
+                value = sentry_value_new_bool(sectionMap.value(key).toBool());
+            } else {
+                qCWarning(crash_handler) << "Unsupported context value type" << sectionMap.value(key).typeName() << "for key" << key << "in section" << sectionName << ", adding as a string.";
+                value = sentry_value_new_string(sectionMap.value(key).toString().toStdString().c_str());
+            }
+
+            sentry_value_set_by_key(section_info, key.toStdString().c_str(), value);
+        }
+
+        sentry_set_context(sectionName.toStdString().c_str(), section_info);
+    }
+
+}
