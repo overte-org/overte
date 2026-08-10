@@ -304,36 +304,6 @@ void CrashHandler::logMessage(QtMsgType type, const QMessageLogContext &context,
     }
 }
 
-// Locate the full path to the binary's directory
-QString CrashHandler::findBinaryDir() {
-    // Normally we'd just use QCoreApplication::applicationDirPath(), but we can't.
-    // That function needs the QApplication to be created first, and Crashpad is initialized as early as possible,
-    // which is well before QApplication, so that function throws out a warning and returns ".".
-    //
-    // So we must do things the hard way here. In particular this is needed to correctly handle things in AppImage
-    // on Linux. On Windows and MacOS falling back to argv[0] should be fine.
-
-#ifdef Q_OS_LINUX
-    // Find outselves by looking at /proc/<PID>/exe
-    pid_t ourPid = getpid();
-    QString exeLink = QString("/proc/%1/exe").arg(ourPid);
-    qCDebug(crash_handler) << "Looking at" << exeLink;
-
-    QFileInfo exeLinkInfo(exeLink);
-    if (exeLinkInfo.isSymLink()) {
-        QFileInfo exeInfo(exeLinkInfo.symLinkTarget());
-        qCDebug(crash_handler) << "exe symlink points at" << exeInfo;
-        return exeInfo.absoluteDir().absolutePath();
-    } else {
-        qCWarning(crash_handler) << exeLink << "isn't a symlink. /proc not mounted?";
-    }
-
-#endif
-
-    return QString();
-}
-
-
 static void crashHandlerLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
     CrashHandler::getInstance().logMessage(type, context, msg);
 
