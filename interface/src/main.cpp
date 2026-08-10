@@ -666,6 +666,23 @@ int main(int argc, const char* argv[]) {
         s.setValue("Enable Crash Reporting", enabled);
         qInfo() << "SET: Crash reporting enabled:" << enabled;
         s.endGroup();
+
+        // FIXME: Horrible hack. Something in the menu system is badly broken
+        // and sometimes not generating the full path to a setting, so the same
+        // setting can be found eg as both:
+        //  Developer/Network/Enable Crash Reporting
+        //  Network/Enable Crash Reporting
+        //
+        // This leads to inconsistency, with settings not keeping state as
+        // they should.
+        //
+        // Since we plan to revamp the menu system anyway, hack around it for
+        // the time being.
+
+
+        s.beginGroup("Network");
+        s.setValue("Enable Crash Reporting", enabled);
+        s.endGroup();
     });
 
     QObject::connect(&ch, &CrashHandler::logStreamingChanged, [](bool enabled) {
@@ -674,6 +691,11 @@ int main(int argc, const char* argv[]) {
         s.beginGroup("Developer/Network");
         s.setValue("Enable Log Streaming", enabled);
         qInfo() << "SET: Crash log streaming enabled:" << enabled;
+        s.endGroup();
+
+        // FIXME: See above
+        s.beginGroup("Network");
+        s.setValue("Enable Log Streaming", enabled);
         s.endGroup();
     });
 
@@ -684,6 +706,12 @@ int main(int argc, const char* argv[]) {
         s.setValue("Enable Stats Streaming", enabled);
         qInfo() << "SET: Crash stats streaming enabled:" << enabled;
         s.endGroup();
+
+        // FIXME: See above
+        s.beginGroup("Network");
+        s.setValue("Enable Stats Streaming", enabled);
+        s.endGroup();
+
     });
 
 
