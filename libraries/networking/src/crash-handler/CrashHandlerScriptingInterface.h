@@ -15,6 +15,14 @@ class CrashHandlerScriptingInterface : public QObject {
     Q_OBJECT
     public:
 
+        Q_PROPERTY(QString supportTag READ getSupportTag CONSTANT);
+        Q_PROPERTY(QString crashHandlerName READ getCrashHandlerName CONSTANT);
+        Q_PROPERTY(bool crashReportingEnabled READ isCrashReportingEnabled CONSTANT);
+        Q_PROPERTY(bool logStreamingEnabled READ isLogStreamingEnabled CONSTANT);
+        Q_PROPERTY(bool statsStreamingEnabled READ isStatsStreamingEnabled CONSTANT);
+
+
+
         static CrashHandlerScriptingInterface* getInstance() {
             static CrashHandlerScriptingInterface instance;
             return &instance;
@@ -30,7 +38,7 @@ class CrashHandlerScriptingInterface : public QObject {
          * @function CrashHandler.getSupportTag
          * @returns {string} The support tag.
          */
-        Q_INVOKABLE QString getSupportTag() {
+        QString getSupportTag() {
             auto& crashHandler = CrashHandler::getInstance();
             return crashHandler.getSupportTag();
         }
@@ -40,7 +48,7 @@ class CrashHandlerScriptingInterface : public QObject {
          * @function CrashHandler.getCrashHandlerName
          * @returns {string} The name of the crash handler implementation.
          */
-         Q_INVOKABLE QString getCrashHandlerName() {
+         QString getCrashHandlerName() {
             auto& crashHandler = CrashHandler::getInstance();
             return crashHandler.metaObject()->className();
          }
@@ -51,7 +59,7 @@ class CrashHandlerScriptingInterface : public QObject {
          * @function CrashHandler.isCrashReportingEnabled
          * @returns {boolean} <code>true</code> if crash reporting is enabled, <code>false</code> if it isn't.
          */
-        Q_INVOKABLE bool isCrashReportingEnabled() {
+        bool isCrashReportingEnabled() {
             auto& crashHandler = CrashHandler::getInstance();
             return crashHandler.isEnabled();
         }
@@ -61,7 +69,7 @@ class CrashHandlerScriptingInterface : public QObject {
          * @function CrashHandler.isLogStreamingEnabled
          * @returns {boolean} <code>true</code> if log streaming is enabled, <code>false</code> if it isn't.
          */
-        Q_INVOKABLE bool isLogStreamingEnabled() {
+        bool isLogStreamingEnabled() {
             auto& crashHandler = CrashHandler::getInstance();
             return crashHandler.isLogStreamingEnabled();
         }
@@ -71,7 +79,7 @@ class CrashHandlerScriptingInterface : public QObject {
          * @function CrashHandler.isStatsStreamingEnabled
          * @returns {boolean} <code>true</code> if stats streaming is enabled, <code>false</code> if it isn't.
          */
-        Q_INVOKABLE bool isStatsStreamingEnabled() {
+        bool isStatsStreamingEnabled() {
             auto& crashHandler = CrashHandler::getInstance();
             return crashHandler.isStatsStreamingEnabled();
         }
