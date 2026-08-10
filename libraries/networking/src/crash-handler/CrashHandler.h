@@ -180,7 +180,7 @@ public slots:
      */
     void setLogStreamingEnabled(bool enabled) {
         _logStreamingEnabled = enabled;
-        emit enabledChanged(enabled);
+        emit logStreamingChanged(enabled);
     }
 
     /**
@@ -199,7 +199,7 @@ public slots:
      */
     void setStatsStreamingEnabled(bool enabled) {
         _statsStreamingEnabled = enabled;
-        emit enabledChanged(enabled);
+        emit statsStreamingChanged(enabled);
     }
 
     /**
@@ -335,6 +335,23 @@ signals:
      */
     void enabledChanged(bool enabled);
 
+    /**
+     * @brief Emitted when the enabled/disabled state of the log streaming changes
+     *
+     * This can be used to store it as a setting.
+     *
+     * @param enabled Whether the log streaming is now enabled
+     */
+    void logStreamingChanged(bool enabled);
+
+    /**
+     * @brief Emitted when the enabled/disabled state of the stats streaming changes
+     *
+     * This can be used to store it as a setting.
+     *
+     * @param enabled Whether the stats streaming is now enabled
+     */
+    void statsStreamingChanged(bool enabled);
 protected:
 
     /**
