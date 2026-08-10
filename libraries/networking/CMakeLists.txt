@@ -5,7 +5,6 @@ link_hifi_libraries(shared platform)
 target_openssl()
 target_tbb()
 add_sentry()
-target_breakpad()
 
 if (WIN32 OR (UNIX AND NOT APPLE))
     if (NOT DISABLE_WEBRTC )

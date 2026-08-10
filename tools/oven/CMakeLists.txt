@@ -12,7 +12,6 @@ include_hifi_library_headers(script-engine)
 setup_memory_debugger()
 setup_thread_debugger()
 add_sentry()
-target_breakpad()
 
 
 if (WIN32)
