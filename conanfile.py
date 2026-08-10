@@ -96,7 +96,7 @@ class Overte(ConanFile):
         else:
             if self.settings.os == "Linux":
                 # Use system OpenSSL to work around OpenSSL being missing from libnode's rpath and this cascading down to Interface.
-                openssl = "openssl/system@overte/stable#24c4df65c52791c4955f7d47d9faef0d"
+                openssl = "openssl/system@overte/system#74cd53974fe6a60b21693f2c9653b15f"
                 self.requires("fcitx5-qt/5.1.13@overte/stable#41b7ae9082f32e1ad83fd8a43a2c8460")
             self.requires("qt/5.15.18@overte/experimental#3a9079f3023351a7319be352cc6f4665", force=True)
             # Replace Conan Center's glib package with our own duplicate to avoid their outdated binary cache. https://github.com/conan-io/conan-center-index/issues/17876
