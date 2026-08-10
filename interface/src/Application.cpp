@@ -127,6 +127,8 @@
 #include "LODManager.h"
 #include "Menu.h"
 #include "ResourceRequestObserver.h"
+#include "crash-handler/CrashHandlerScriptingInterface.h"
+
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
 #include "SpeechRecognizer.h"
 #endif
@@ -698,6 +700,8 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject(sgp, "About", AboutUtil::getInstance());
     scriptEngine->registerGlobalObject(sgp, "HifiAbout", AboutUtil::getInstance());  // Deprecated.
     scriptEngine->registerGlobalObject(sgp, "ResourceRequestObserver", DependencyManager::get<ResourceRequestObserver>().data());
+
+    scriptEngine->registerGlobalObject(sgp, "CrashHandler", CrashHandlerScriptingInterface::getInstance());
 
     // connect this script engines printedMessage signal to the global ScriptEngines these various messages
     auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
