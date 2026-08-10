@@ -14,19 +14,11 @@
         { "from": "OpenXR.LX", "to": "Standard.LX", "filters": [{ "type": "deadZone", "min": 0.05 }] },
         { "from": "OpenXR.LY", "to": "Standard.LY", "filters": [{ "type": "deadZone", "min": 0.05 }] },
 
-        { "from": "OpenXR.RX", "to": "Standard.RX" },
-        { "from": "OpenXR.RY", "to": "Standard.RY" },
+        { "from": "OpenXR.RX", "to": "Standard.RX", "filters": [{ "type": "deadZone", "min": 0.05 }] },
+        { "from": "OpenXR.RY", "to": "Standard.RY", "filters": [{ "type": "deadZone", "min": 0.05 }] },
 
         { "from": "OpenXR.LS", "to": "Standard.LS" },
         { "from": "OpenXR.RS", "to": "Standard.RS" },
-
-        { "when" : ["!OpenXR.LeftHasThumbstick", "OpenXR.LeftTrackpadClick"], "from": "OpenXR.LeftTrackpadX", "to" : "Standard.LX", "peek": true },
-        { "when" : ["!OpenXR.LeftHasThumbstick", "OpenXR.LeftTrackpadClick"], "from": "OpenXR.LeftTrackpadY", "to" : "Standard.LY", "peek": true },
-        { "when" : ["OpenXR.LeftHasThumbstick", "!OpenXR.LeftHasPrimary"], "from": "OpenXR.LeftTrackpadClick", "to" : "Standard.LeftPrimaryThumb", "peek": true },
-
-        { "when" : ["!OpenXR.RightHasThumbstick", "OpenXR.RightTrackpadClick"], "from": "OpenXR.RightTrackpadX", "to" : "Standard.RX", "peek": true },
-        { "when" : ["!OpenXR.RightHasThumbstick", "OpenXR.RightTrackpadClick"], "from": "OpenXR.RightTrackpadY", "to" : "Standard.RY", "peek": true },
-        { "when" : ["OpenXR.RightHasThumbstick", "!OpenXR.RightHasPrimary"], "from": "OpenXR.RightTrackpadClick", "to" : "Standard.RightPrimaryThumb", "peek": true },
 
         { "from": "OpenXR.LeftPrimary", "to": "Standard.LeftPrimaryThumb" },
         { "from": "OpenXR.LeftPrimaryTouch", "to": "Standard.LeftPrimaryThumbTouch" },
