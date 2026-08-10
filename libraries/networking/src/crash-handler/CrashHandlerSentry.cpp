@@ -77,7 +77,7 @@ bool CrashHandlerSentry::startCrashHandler() {
     sentry_set_tag("machine_id", uuidStringWithoutCurlyBraces(FingerprintUtils::getMachineFingerprint()).toStdString().c_str());
     sentry_set_tag("support_tag", getSupportTag().toStdString().c_str());
 
-    qCInfo(crash_handler) << "Sentry crash handler initialized. SDK version" << sentry_sdk_version() << ". Will send reports to " << crashURL.c_str() << " with token " << crashToken.c_str();
+    qCInfo(crash_handler) << "Sentry crash handler initialized. SDK version" << sentry_sdk_version();
     return true;
 
     //qCInfo(crash_handler) << "Crashpad uploads " << (enabled ? QString("enabled") : QString("disabled"));
