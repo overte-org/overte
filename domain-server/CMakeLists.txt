@@ -37,7 +37,6 @@ target_quazip()
 target_openssl()
 
 add_sentry()
-target_breakpad()
 
 # libcrypto uses dlopen in libdl
 if (UNIX)
