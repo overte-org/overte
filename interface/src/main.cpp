@@ -660,16 +660,32 @@ int main(int argc, const char* argv[]) {
     ch.start();
 
     QObject::connect(&ch, &CrashHandler::enabledChanged, [](bool enabled) {
-        auto& crashHandler = CrashHandler::getInstance();
         Settings s;
 
-        s.beginGroup("Crash");
-        s.setValue("ReportingEnabled", crashHandler.isEnabled());
-        s.setValue("LogStreamingEnabled", crashHandler.isLogStreamingEnabled());
-        s.setValue("StatsStreamingEnabled", crashHandler.isStatsStreamingEnabled());
-
+        s.beginGroup("Developer/Network");
+        s.setValue("Enable Crash Reporting", enabled);
+        qInfo() << "SET: Crash reporting enabled:" << enabled;
         s.endGroup();
     });
+
+    QObject::connect(&ch, &CrashHandler::logStreamingChanged, [](bool enabled) {
+        Settings s;
+
+        s.beginGroup("Developer/Network");
+        s.setValue("Enable Log Streaming", enabled);
+        qInfo() << "SET: Crash log streaming enabled:" << enabled;
+        s.endGroup();
+    });
+
+    QObject::connect(&ch, &CrashHandler::statsStreamingChanged, [](bool enabled) {
+        Settings s;
+
+        s.beginGroup("Developer/Network");
+        s.setValue("Enable Stats Streaming", enabled);
+        qInfo() << "SET: Crash stats streaming enabled:" << enabled;
+        s.endGroup();
+    });
+
 
     // once the settings have been loaded, check if we need to flip the default for UserActivityLogger
     if (!ual.isDisabledSettingSet()) {
@@ -687,13 +703,15 @@ int main(int argc, const char* argv[]) {
 
     {
         Settings crashSettings;
-        crashSettings.beginGroup("Crash");
-        if (crashSettings.value("ReportingEnabled").toBool()) {
-            ch.setEnabled(true);
-        }
-        ch.setLogStreamingEnabled(crashSettings.value("LogStreamingEnabled").toBool());
-        ch.setStatsStreamingEnabled(crashSettings.value("StatsStreamingEnabled").toBool());
+        crashSettings.beginGroup("Developer/Network");
+        ch.setEnabled(crashSettings.value("Enable Crash Reporting").toBool());
+        ch.setLogStreamingEnabled(crashSettings.value("Enable Log Streaming").toBool());
+        ch.setStatsStreamingEnabled(crashSettings.value("Enable Stats Streaming").toBool());
         crashSettings.endGroup();
+
+        qInfo() << "Crash reporting enabled:" << ch.isEnabled();
+        qInfo() << "Crash log streaming enabled:" << ch.isLogStreamingEnabled();
+        qInfo() << "Crash stats streaming enabled:" << ch.isStatsStreamingEnabled();
     }
 
     ch.setAnnotation("program", "interface");
