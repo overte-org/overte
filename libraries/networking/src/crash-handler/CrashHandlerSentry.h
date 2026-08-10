@@ -1,7 +1,7 @@
 
 
-#ifndef hifi_CrashHandlerSentry_h
-#define hifi_CrashHandlerSentry_h
+#ifndef overte_CrashHandlerSentry_h
+#define overte_CrashHandlerSentry_h
 
 #include "CrashHandler.h"
 #include <QMutex>
