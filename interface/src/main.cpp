@@ -664,7 +664,6 @@ int main(int argc, const char* argv[]) {
 
         s.beginGroup("Developer/Network");
         s.setValue("Enable Crash Reporting", enabled);
-        qInfo() << "SET: Crash reporting enabled:" << enabled;
         s.endGroup();
 
         // FIXME: Horrible hack. Something in the menu system is badly broken
@@ -690,7 +689,6 @@ int main(int argc, const char* argv[]) {
 
         s.beginGroup("Developer/Network");
         s.setValue("Enable Log Streaming", enabled);
-        qInfo() << "SET: Crash log streaming enabled:" << enabled;
         s.endGroup();
 
         // FIXME: See above
@@ -704,7 +702,6 @@ int main(int argc, const char* argv[]) {
 
         s.beginGroup("Developer/Network");
         s.setValue("Enable Stats Streaming", enabled);
-        qInfo() << "SET: Crash stats streaming enabled:" << enabled;
         s.endGroup();
 
         // FIXME: See above
@@ -736,10 +733,6 @@ int main(int argc, const char* argv[]) {
         ch.setLogStreamingEnabled(crashSettings.value("Enable Log Streaming").toBool());
         ch.setStatsStreamingEnabled(crashSettings.value("Enable Stats Streaming").toBool());
         crashSettings.endGroup();
-
-        qInfo() << "Crash reporting enabled:" << ch.isEnabled();
-        qInfo() << "Crash log streaming enabled:" << ch.isLogStreamingEnabled();
-        qInfo() << "Crash stats streaming enabled:" << ch.isStatsStreamingEnabled();
     }
 
     ch.setAnnotation("program", "interface");
