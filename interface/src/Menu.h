@@ -91,6 +91,8 @@ namespace MenuOption {
     const QString DeleteBookmark = "Delete Bookmark...";
     const QString DisableActivityLogger = "Disable Activity Logger";
     const QString EnableCrashReporting = "Enable Crash Reporting";
+    const QString EnableLogStreaming = "Enable Log Streaming";
+    const QString EnableStatsStreaming = "Enable Stats Streaming";
     const QString DisableEyelidAdjustment = "Disable Eyelid Adjustment";
     const QString DisableLightEntities = "Disable Light Entities";
     const QString DisplayCrashOptions = "Display Crash Options";
