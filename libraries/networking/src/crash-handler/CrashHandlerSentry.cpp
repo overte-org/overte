@@ -5,8 +5,11 @@
 #include "../FingerprintUtils.h"
 #include "../UserActivityLogger.h"
 #include "shared/FileLogger.h"
+#include "PathUtils.h"
 
 #include <UUID.h>
+
+const QString CRASH_REPORTS_DIR_NAME = "crash-reports";
 
 
 bool CrashHandlerSentry::startCrashHandler() {
@@ -33,11 +36,21 @@ bool CrashHandlerSentry::startCrashHandler() {
     sentry_options_set_crashpad_wait_for_upload(options, 1); // Wait for crashpad to upload before exiting
     sentry_options_set_logs_with_attributes(options, true);
 
+    QString crashReportPath = PathUtils::getAppLocalDataFilePath(CRASH_REPORTS_DIR_NAME);
+    if (!QDir(crashReportPath).exists()) {
+        QDir().mkpath(crashReportPath);
+    }
+
+    sentry_options_set_database_path(options, crashReportPath.toStdString().c_str());
+    qCInfo(crash_handler) << "Will store crash reports in: " << crashReportPath;
+
 
     // The real logger isn't easily available to us, and to deal with that older versions of Sentry SDK may not
     // allow adding attachments after initialization, this is an easier way to deal with it.
     FileLogger dummyLogger;
     qCInfo(crash_handler) << "Will attach log file to crash reports: " << dummyLogger.getFilename();
+
+
     sentry_options_add_attachment(options, dummyLogger.getFilename().toStdString().c_str());
 
     if (sentry_init(options) == 0) {
