@@ -22,6 +22,11 @@
 #include <string_view>
 
 
+
+#ifndef overte_CrashHandler_h
+#define overte_CrashHandler_h
+
+
 Q_DECLARE_LOGGING_CATEGORY(crash_handler)
 
 
@@ -424,5 +429,7 @@ private:
     static const QStringList EFF_SHORT_WORDLIST;
 
 };
+
+#endif
 
 
