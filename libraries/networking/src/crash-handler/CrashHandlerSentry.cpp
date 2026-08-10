@@ -4,6 +4,8 @@
 #include <BuildInfo.h>
 #include "../FingerprintUtils.h"
 #include "../UserActivityLogger.h"
+#include "shared/FileLogger.h"
+
 #include <UUID.h>
 
 
@@ -30,6 +32,13 @@ bool CrashHandlerSentry::startCrashHandler() {
     sentry_options_set_minidump_mode(options, SENTRY_MINIDUMP_MODE_FULL); // TODO: a way to choose SENTRY_MINIDUMP_MODE_SMART, which sends smaller reports
     sentry_options_set_crashpad_wait_for_upload(options, 1); // Wait for crashpad to upload before exiting
     sentry_options_set_logs_with_attributes(options, true);
+
+
+    // The real logger isn't easily available to us, and to deal with that older versions of Sentry SDK may not
+    // allow adding attachments after initialization, this is an easier way to deal with it.
+    FileLogger dummyLogger;
+    qCInfo(crash_handler) << "Will attach log file to crash reports: " << dummyLogger.getFilename();
+    sentry_options_add_attachment(options, dummyLogger.getFilename().toStdString().c_str());
 
     if (sentry_init(options) == 0) {
         qCInfo(crash_handler) << "Sentry init successful";
