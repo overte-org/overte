@@ -398,9 +398,6 @@ protected:
      */
     void setStarted(bool started) { _crashMonitorStarted = started; }
 
-    // Move this to PathUtils
-    static QString findBinaryDir();
-
     CrashHandler(QObject *parent = nullptr);
 
 
