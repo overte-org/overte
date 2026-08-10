@@ -2,6 +2,10 @@
 #include <QObject>
 #include "CrashHandler.h"
 
+
+#ifndef overte_CrashHandlerScriptingInterface_h
+#define overte_CrashHandlerScriptingInterface_h
+
 /*@jsdoc
  * <p>The <code>CrashHandler</code> provides access to the Crash Handler's state.</p>
  * @namespace CrashHandler
@@ -84,3 +88,5 @@ class CrashHandlerScriptingInterface : public QObject {
 
 
 };
+
+#endif
