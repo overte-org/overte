@@ -5,6 +5,7 @@
 
 #include "CrashHandler.h"
 
+
 class CrashHandlerNone : public CrashHandler {
     Q_OBJECT
 
