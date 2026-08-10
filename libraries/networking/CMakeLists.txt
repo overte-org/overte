@@ -2,6 +2,8 @@ set(TARGET_NAME networking)
 setup_hifi_library(Network WebSockets)
 link_hifi_libraries(shared platform)
 
+include_hifi_library_headers(shared)
+
 target_openssl()
 target_tbb()
 add_sentry()
