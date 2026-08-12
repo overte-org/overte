@@ -494,24 +494,15 @@ void RenderTransparentDeferred::run(const RenderContextPointer& renderContext, c
         batch.setResourceTexture(ru::Texture::AmbientFresnel, lightingModel->getAmbientFresnelLUT());
         batch.setUniformBuffer(ru::Buffer::DeferredFrameTransform, deferredFrameTransform->getFrameTransformBuffer());
 
-        // Check if keylight casts shadows
-        bool keyLightCastShadows{ false };
         LightStage::ShadowPointer globalShadow;
         if (lightingModel->isShadowEnabled() && shadowFrame && !shadowFrame->_objects.empty()) {
             globalShadow = shadowFrame->_objects.front();
-            if (globalShadow) {
-                keyLightCastShadows = true;
-            }
-        }
-
-        if (keyLightCastShadows && globalShadow) {
-            batch.setResourceTexture(ru::Texture::Shadow, globalShadow->map);
-            batch.setUniformBuffer(ru::Buffer::ShadowParams, globalShadow->getBuffer());
         }
 
         // Set the light
         deferredLightingEffect->setupKeyLightBatch(args, batch, *lightFrame);
         deferredLightingEffect->setupLocalLightsBatch(batch, lightClusters);
+        deferredLightingEffect->setupShadowsBatch(batch, globalShadow);
 
         // Setup haze if current zone has haze
         const auto& hazeStage = args->_scene->getStage<HazeStage>();
@@ -536,10 +527,9 @@ void RenderTransparentDeferred::run(const RenderContextPointer& renderContext, c
         args->_batch = nullptr;
         args->_globalShapeKey = 0;
 
+        deferredLightingEffect->unsetShadowsBatch(batch);
         deferredLightingEffect->unsetLocalLightsBatch(batch);
         deferredLightingEffect->unsetKeyLightBatch(batch);
-        batch.setResourceTexture(ru::Texture::Shadow, nullptr);
-        batch.setUniformBuffer(ru::Buffer::ShadowParams, nullptr);
     });
 
     config->setNumDrawn((int)inItems.size());
