@@ -21,6 +21,7 @@
 #include <QtNetwork/QLocalServer>
 #include <QtQuick/QQuickWindow>
 #include <QWidget>
+#include <string_view>
 
 #include <AccountManager.h>
 #include <AddressManager.h>
@@ -1615,7 +1616,7 @@ void Application::handleSandboxStatus(QNetworkReply* reply) {
 
     // If this is a first run we short-circuit the address passed in
     if (_firstRun.get()) {
-        if (!BuildInfo::PRELOADED_STARTUP_LOCATION.isEmpty()) {
+        if (!std::string_view(BuildInfo::PRELOADED_STARTUP_LOCATION).empty()) {
             DependencyManager::get<LocationBookmarks>()->setHomeLocationToAddress(NetworkingConstants::DEFAULT_OVERTE_ADDRESS);
             Menu::getInstance()->triggerOption(MenuOption::HomeLocation);
         }
