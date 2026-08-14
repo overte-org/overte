@@ -66,16 +66,6 @@
 #  include <api/audio/audio_processing.h>
 #endif
 
-#ifdef _WIN32
-#pragma warning( push )
-#pragma warning( disable : 4273 )
-#pragma warning( disable : 4305 )
-#endif
-
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
-
 #if defined (Q_OS_ANDROID)
 #define VOICE_RECOGNITION "voicerecognition"
 #define VOICE_COMMUNICATION "voicecommunication"
