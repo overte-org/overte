@@ -109,22 +109,17 @@ public:
     using Mutex = std::mutex;
     using Lock = std::unique_lock<Mutex>;
 
-    class AudioOutputIODevice : public QIODevice {
+    class AudioOutputCallback {
     public:
-        AudioOutputIODevice(LocalInjectorsStream& localInjectorsStream, MixedProcessedAudioStream& receivedAudioStream,
+        AudioOutputCallback(AudioClient::LocalInjectorsStream& localInjectorsStream, MixedProcessedAudioStream& receivedAudioStream,
                 AudioClient* audio) :
-            _localInjectorsStream(localInjectorsStream), _receivedAudioStream(receivedAudioStream),
-            _audio(audio), _unfulfilledReads(0) {}
+            _localInjectorsStream(localInjectorsStream), _receivedAudioStream(receivedAudioStream), _audio(audio) {}
 
-        void start() { open(QIODevice::ReadOnly | QIODevice::Unbuffered); }
-        qint64 readData(char* data, qint64 maxSize) override;
-        qint64 writeData(const char* data, qint64 maxSize) override { return 0; }
-        int getRecentUnfulfilledReads() { int unfulfilledReads = _unfulfilledReads; _unfulfilledReads = 0; return unfulfilledReads; }
+        void operator()(QSpan<AudioConstants::AudioSample> data);
     private:
-        LocalInjectorsStream& _localInjectorsStream;
+        AudioClient::LocalInjectorsStream& _localInjectorsStream;
         MixedProcessedAudioStream& _receivedAudioStream;
         AudioClient* _audio;
-        int _unfulfilledReads;
     };
     
     void startThread();
@@ -271,7 +266,6 @@ public slots:
     void setSystemInjectorGain(float gain) { _systemInjectorGain = gain; };
     void setOutputGain(float gain) { _outputGain = gain; };
 
-    void checkStarvation();
     void noteAwakening();
 
     void loadSettings();
@@ -346,8 +340,6 @@ private:
     long _inputReadsSinceLastCheck = 0l;
     bool _isHeadsetPluggedIn { false };
 #endif
-
-    QTimer _checkStarvationTimer{ this };
 
     class Gate {
     public:
@@ -485,8 +477,6 @@ private:
     int calculateNumberOfFrameSamples(int numBytes) const;
 
     quint16 _outgoingAvatarAudioSequenceNumber{ 0 };
-
-    AudioOutputIODevice _audioOutputIODevice{ _localInjectorsStream, _receivedAudioStream, this };
 
     AudioIOStats _stats{ &_receivedAudioStream };
 
