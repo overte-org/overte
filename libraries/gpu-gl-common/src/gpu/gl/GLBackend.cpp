@@ -1021,7 +1021,7 @@ void GLBackend::updatePresentFrame(const Mat4& correction, bool primary) {
         flippedRotation.z *= -1.0f;
         vec3 flippedTranslation = _transform._presentFrame.unflippedCorrection[3];
         flippedTranslation.x *= -1.0f;
-        _transform._presentFrame.flippedCorrection = glm::translate(glm::mat4_cast(flippedRotation), flippedTranslation);
+        _transform._presentFrame.flippedCorrection = glm::translate(glm::mat4(), flippedTranslation) * glm::mat4_cast(flippedRotation);
         _transform._presentFrame.mirrorViewCorrection = false;
     }
 }

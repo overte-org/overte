@@ -296,9 +296,13 @@ public:
             return;
         }
 
+        // TODO: Half and quarter sized mirror framebuffers?
+        // Naively reducing the texture resolution doesn't work,
+        // maybe there's a differently sized depth buffer or an
+        // MSAA resolve buffer
         auto inputFramebuffer = inputs.get1();
         if (!_mirrorFramebuffer || _mirrorFramebuffer->getWidth() != inputFramebuffer->getWidth() || _mirrorFramebuffer->getHeight() != inputFramebuffer->getHeight()) {
-            _mirrorFramebuffer.reset(gpu::Framebuffer::create("mirror" + _mirrorIndex, gpu::Element::COLOR_SRGBA_32, inputFramebuffer->getWidth(), inputFramebuffer->getHeight()));
+            _mirrorFramebuffer.reset(gpu::Framebuffer::create("mirror" + std::to_string(_mirrorIndex), gpu::Element::COLOR_SRGBA_32, inputFramebuffer->getWidth(), inputFramebuffer->getHeight()));
         }
 
         render::ItemBound mirror = items[_mirrorIndex];
@@ -309,6 +313,10 @@ public:
         _cachedArgsPointer->_mirrorDepth = args->_mirrorDepth;
         _cachedArgsPointer->_numMirrorFlips = args->_numMirrorFlips;
 
+        // FIXME: This is only modifying the "main" frustum, which is the real
+        // view frustum on desktop, but only the *culling* frustum in VR, which
+        // is why the mirror's near clipping plane doesn't work in VR. This will
+        // need to be refactored to also modify the stereo eye frustums.
         ViewFrustum srcViewFrustum = args->getViewFrustum();
         ItemID portalExitID = args->_scene->getItem(mirror.id).computeMirrorView(srcViewFrustum);
 
