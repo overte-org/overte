@@ -23,6 +23,7 @@
 #include <glm/gtx/norm.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <memory>
+#include "AudioConstants.h"
 
 #ifdef __APPLE__
 #include <CoreAudio/AudioHardware.h>
@@ -75,8 +76,6 @@ const int AudioClient::MAX_BUFFER_FRAMES = 20;
 static const int CHECK_INPUT_READS_MSECS = 2000;
 static const int MIN_READS_TO_CONSIDER_INPUT_ALIVE = 10;
 #endif
-
-static const int CHECK_STARVATION_MSECS = 1000;
 
 const AudioClient::AudioPositionGetter AudioClient::DEFAULT_POSITION_GETTER = [] { return Vectors::ZERO; };
 const AudioClient::AudioOrientationGetter AudioClient::DEFAULT_ORIENTATION_GETTER = [] { return Quaternions::IDENTITY; };
@@ -822,8 +821,6 @@ void AudioClient::start() {
     connect(&_checkInputTimer, &QTimer::timeout, this, &AudioClient::checkInputTimeout);
     _checkInputTimer.start(CHECK_INPUT_READS_MSECS);
 #endif
-    connect(&_checkStarvationTimer, &QTimer::timeout, this, &AudioClient::checkStarvation);
-    _checkStarvationTimer.start(CHECK_STARVATION_MSECS);
 }
 
 void AudioClient::stop() {
@@ -2046,36 +2043,6 @@ void AudioClient::setHeadsetPluggedIn(bool pluggedIn) {
 #endif
 }
 
-void AudioClient::checkStarvation() {
-    int recentUnfulfilled = _audioOutputIODevice.getRecentUnfulfilledReads();
-    if (recentUnfulfilled > 0) {
-        qCDebug(audioclient, "Starve detected, %d new unfulfilled reads", recentUnfulfilled);
-
-        if (_outputStarveDetectionEnabled.get()) {
-            quint64 now = usecTimestampNow() / 1000;
-            int dt = (int)(now - _outputStarveDetectionStartTimeMsec);
-            if (dt > STARVE_DETECTION_PERIOD) {
-                _outputStarveDetectionStartTimeMsec = now;
-                _outputStarveDetectionCount = 0;
-            } else {
-                _outputStarveDetectionCount += recentUnfulfilled;
-                if (_outputStarveDetectionCount > STARVE_DETECTION_THRESHOLD) {
-                    int oldOutputBufferSizeFrames = _sessionOutputBufferSizeFrames;
-                    int newOutputBufferSizeFrames = setOutputBufferSize(oldOutputBufferSizeFrames + 1, false);
-
-                    if (newOutputBufferSizeFrames > oldOutputBufferSizeFrames) {
-                        qCDebug(audioclient,
-                                "Starve threshold surpassed (%d starves in %d ms)", _outputStarveDetectionCount, dt);
-                    }
-
-                    _outputStarveDetectionStartTimeMsec = now;
-                    _outputStarveDetectionCount = 0;
-                }
-            }
-        }
-    }
-}
-
 void AudioClient::noteAwakening() {
     qCDebug(audioclient) << "Restarting the audio devices.";
     switchInputToAudioDevice(_inputDeviceInfo);
@@ -2105,7 +2072,6 @@ bool AudioClient::switchOutputToAudioDevice(const HifiAudioDeviceInfo outputDevi
 
     // cleanup any previously initialized device
     if (_audioOutput) {
-        _audioOutputIODevice.close();
         _audioOutput->stop();
         _audioOutputInitialized = false;
 
@@ -2194,10 +2160,7 @@ bool AudioClient::switchOutputToAudioDevice(const HifiAudioDeviceInfo outputDevi
             _audioOutput->setBufferSize(requestedSize * 8);
 #endif
 
-            // QT6TODO: we could set the buffer size before starting the IO device and sink
-            // start the output device
-            _audioOutputIODevice.start();
-            _audioOutput->start(&_audioOutputIODevice);
+            _audioOutput->start(AudioOutputCallback(_localInjectorsStream, _receivedAudioStream, this));
 
             // initialize mix buffers
 
@@ -2332,11 +2295,12 @@ float AudioClient::gainForSource(float distance, float volume) {
     return gain;
 }
 
-qint64 AudioClient::AudioOutputIODevice::readData(char* data, qint64 maxSize) {
+void AudioClient::AudioOutputCallback::operator()(QSpan<AudioConstants::AudioSample> data) {
+    auto maxSize = data.size_bytes();
     // lock-free wait for initialization to avoid races
     if (!_audio->_audioOutputInitialized.load(std::memory_order_acquire)) {
-        memset(data, 0, maxSize);
-        return maxSize;
+        memset(data.data(), 0, data.size_bytes());
+        return;
     }
 
     // max samples requested from OUTPUT_CHANNEL_COUNT
@@ -2419,12 +2383,12 @@ qint64 AudioClient::AudioOutputIODevice::readData(char* data, qint64 maxSize) {
 
     // if required, upmix or downmix to deviceChannelCount
     if (deviceChannelCount == OUTPUT_CHANNEL_COUNT) {
-        memcpy(data, scratchBuffer, samplesPopped * AudioConstants::SAMPLE_SIZE);
+        memcpy(data.data(), scratchBuffer, samplesPopped * AudioConstants::SAMPLE_SIZE);
     } else if (deviceChannelCount > OUTPUT_CHANNEL_COUNT) {
         int extraChannels = deviceChannelCount - OUTPUT_CHANNEL_COUNT;
-        channelUpmix(scratchBuffer, (int16_t*)data, samplesPopped, extraChannels);
+        channelUpmix(scratchBuffer, data.data(), samplesPopped, extraChannels);
     } else {
-        channelDownmix(scratchBuffer, (int16_t*)data, samplesPopped);
+        channelDownmix(scratchBuffer, data.data(), samplesPopped);
     }
     int bytesWritten = framesPopped * AudioConstants::SAMPLE_SIZE * deviceChannelCount;
     assert(bytesWritten <= maxSize);
@@ -2432,18 +2396,12 @@ qint64 AudioClient::AudioOutputIODevice::readData(char* data, qint64 maxSize) {
     // send output buffer for recording
     if (_audio->_isRecording) {
         Lock lock(_recordMutex);
-        _audio->_audioFileWav.addRawAudioChunk(data, bytesWritten);
+        _audio->_audioFileWav.addRawAudioChunk((char*)data.data(), bytesWritten);
     }
 
     int bytesAudioOutputUnplayed = _audio->_audioOutput->bufferSize() - _audio->_audioOutput->bytesFree();
     float msecsAudioOutputUnplayed = bytesAudioOutputUnplayed / (float)_audio->_outputFormat.bytesForDuration(USECS_PER_MSEC);
     _audio->_stats.updateOutputMsUnplayed(msecsAudioOutputUnplayed);
-
-    if (bytesAudioOutputUnplayed == 0) {
-        _unfulfilledReads++;
-    }
-
-    return bytesWritten;
 }
 
 bool AudioClient::startRecording(const QString& filepath) {
