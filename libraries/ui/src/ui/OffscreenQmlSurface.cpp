@@ -271,7 +271,7 @@ void OffscreenQmlSurface::initializeEngine(QQmlEngine* engine) {
     importList.insert(importList.begin(), PathUtils::resourcesPath());
     engine->setImportPathList(importList);
     for (const auto& path : importList) {
-        qDebug() << path;
+        qCDebug(uiLogging) << "qml import path:" << path;
     }
 
     auto rootContext = engine->rootContext();
