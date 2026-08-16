@@ -72,7 +72,7 @@ void ParseMaterialMappingTask::run(const baker::BakeContextPointer& context, con
     MaterialMapping materialMapping;
 
     // QT6TODO: even listing keys causes crash
-    qDebug() << "ParseMaterialMappingTask::run " << mapping.keys();
+    qCDebug(model_baker) << "ParseMaterialMappingTask::run " << mapping.keys();
 
     auto mappingIter = mapping.find("materialMap");
     if (mappingIter != mapping.end()) {
