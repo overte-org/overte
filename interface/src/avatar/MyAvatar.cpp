@@ -453,7 +453,7 @@ void MyAvatar::enableHandTouchForID(const QUuid& entityID) {
 void MyAvatar::registerMetaTypes(ScriptEnginePointer engine) {
     scriptRegisterMetaType<AudioListenerMode, audioListenModeToScriptValue, audioListenModeFromScriptValue>(engine.get());
     scriptRegisterMetaType<MyAvatar::DriveKeys, driveKeysToScriptValue, driveKeysFromScriptValue>(engine.get(), "DriveKeys");
-    qDebug() << "MyAvatar::registerMetaTypes";
+    qCDebug(interfaceapp) << "MyAvatar::registerMetaTypes";
 }
 
 void MyAvatar::registerProperties(ScriptEnginePointer engine) {
