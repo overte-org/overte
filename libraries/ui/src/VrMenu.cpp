@@ -170,7 +170,7 @@ void VrMenu::addMenu(QMenu* menu) {
     //menuComponent.loadFromModule("QtQuick.Controls", "Menu");
     menuComponent.loadUrl(PathUtils::qmlUrl("controls/WrappedMenu.qml"));
     if (menuComponent.status() == QQmlComponent::Status::Error) {
-        qDebug() << "QML Menu component error: " << menuComponent.errorString();
+        qCDebug(uiLogging) << "QML Menu component error: " << menuComponent.errorString();
         return;
     }
     Q_ASSERT(menuComponent.isReady());
@@ -180,7 +180,7 @@ void VrMenu::addMenu(QMenu* menu) {
     menuObject->setObjectName(menu->title());
     menuObject->setProperty("title", menu->title());
     menuObject->setParent(qmlParent);
-    qDebug() << "menuObject: " << QString(menuObject->metaObject()->metaType().name());
+    qCDebug(uiLogging) << "menuObject: " << QString(menuObject->metaObject()->metaType().name());
     bool invokeResult = QMetaObject::invokeMethod(qmlParent, "addMenuWrap", Qt::DirectConnection,
                                                   Q_ARG(QVariant, QVariant::fromValue(menuObject)));
     Q_ASSERT(invokeResult);
@@ -193,7 +193,7 @@ void VrMenu::addMenu(QMenu* menu) {
 void bindActionToQmlAction(QObject* qmlAction, QAction* action, QObject* qmlParent) {
     auto text = action->text();
     if (text == "Login") {
-        qDebug(uiLogging) << "Login action " << action;
+        qCDebug(uiLogging) << "Login action " << action;
     }
 
     new MenuUserData(action, qmlAction, qmlParent);
@@ -224,7 +224,7 @@ void VrMenu::addAction(QMenu* menu, QAction* action) {
     menuItemComponent.loadFromModule("QtQuick.Controls", "MenuItem");
 
     if (menuItemComponent.status() == QQmlComponent::Status::Error) {
-        qDebug() << "QML Menu component error: " << menuItemComponent.errorString();
+        qCDebug(uiLogging) << "QML Menu component error: " << menuItemComponent.errorString();
         return;
     }
     Q_ASSERT(menuItemComponent.isReady());
@@ -261,15 +261,15 @@ void VrMenu::addSeparator(QMenu* menu) {
     menuSeparatorComponent.loadFromModule("QtQuick.Controls", "MenuSeparator");
 
     if (menuSeparatorComponent.status() == QQmlComponent::Status::Error) {
-        qDebug() << "QML Menu component error: " << menuSeparatorComponent.errorString();
+        qCDebug(uiLogging) << "QML Menu component error: " << menuSeparatorComponent.errorString();
         return;
     }
     Q_ASSERT(menuSeparatorComponent.isReady());
     QObject *menuSeparatorObject = menuSeparatorComponent.create(ui->getSurfaceContext());
     Q_ASSERT(menuSeparatorObject);
     menuSeparatorObject->setParent(menuQml);
-    qDebug() << "VrMenu::addSeparator menuQml " << menuQml->objectName();
-    qDebug() << "VrMenu::addSeparator menuQml type " << menuQml->metaObject()->className();
+    qCDebug(uiLogging) << "VrMenu::addSeparator menuQml " << menuQml->objectName();
+    qCDebug(uiLogging) << "VrMenu::addSeparator menuQml type " << menuQml->metaObject()->className();
 
     bool invokeResult = QMetaObject::invokeMethod(menuQml, "addItemWrap", Qt::DirectConnection,
                                                   Q_ARG(QVariant, QVariant::fromValue(menuSeparatorObject)));
@@ -299,7 +299,7 @@ void VrMenu::insertAction(QAction* before, QAction* action) {
     menuItemComponent.loadFromModule("QtQuick.Controls", "MenuItem");
     //menuComponent.loadUrl(PathUtils::qmlUrl("controls/WrappedMenu.qml"));
     if (menuItemComponent.status() == QQmlComponent::Status::Error) {
-        qDebug() << "QML Menu component error: " << menuItemComponent.errorString();
+        qCDebug(uiLogging) << "QML Menu component error: " << menuItemComponent.errorString();
         return;
     }
     Q_ASSERT(menuItemComponent.isReady());
@@ -310,7 +310,7 @@ void VrMenu::insertAction(QAction* before, QAction* action) {
     menuItemObject->setProperty("text", action->text());
     menuItemObject->setParent(menu);
 
-    qDebug() << "menuObject: " << QString(menuItemObject->metaObject()->metaType().name());
+    qCDebug(uiLogging) << "menuObject: " << QString(menuItemObject->metaObject()->metaType().name());
     bool invokeResult = QMetaObject::invokeMethod(menu, "addItemWrap", Qt::DirectConnection,
                                                   Q_ARG(QVariant, QVariant::fromValue(menuItemObject)));
     // FIXME this needs to find the index of the beforeQml item and call insertItem(int, object)
