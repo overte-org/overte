@@ -66,7 +66,7 @@ jobs:
           - id: windows
             os: Windows 2022
             # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
-            # depot-windows-2022-1 runs out of disk space when building RelWithDebInfo Qt.
+            # depot-windows-2022-16 runs out of disk space when building RelWithDebInfo Qt.
             runner: depot-windows-2022-32  # Which GitHub Actions Runner to use. When using `image` this just needs to run the build container.
             arch: x86_64
             cmake_build_type: RelWithDebInfo
