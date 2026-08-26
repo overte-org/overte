@@ -56,7 +56,6 @@ class Overte(ConanFile):
         self.requires("artery-font-format/1.0.1") # FIXME: update to 1.1
         self.requires("bullet3/3.25")
         self.requires("cgltf/1.14@overte/stable")
-        # self.requires("crashpad/cci.20220219" ) # Broken
         self.requires("discord-rpc/3.4.0@overte/stable")
         self.requires("draco/1.3.5") # FIXME: update to newer version
         self.requires("etc2comp/cci.20170424") # NOTE: archived upstream
@@ -65,7 +64,7 @@ class Overte(ConanFile):
         self.requires("gli/cci.20210515") # NOTE: not maintained for 4 years
         self.requires("glslang/1.4.350.0")
         self.requires("liblo/0.35@overte/stable") # For hifiOSC
-        self.requires("libnode/22.22.3@overte/stable#12c9d377b2df64060e312a93bf14592f")
+        self.requires("libnode/22.23.1@overte/stable#d73b93ec99eae5b0c1d85296e0453d8e")
         self.requires("nlohmann_json/3.11.2")
         self.requires("nvidia-texture-tools/2023.01@overte/stable#bb4a28e5438f69332299cc23b770fc07")
         self.requires("onetbb/2021.10.0")
@@ -76,6 +75,7 @@ class Overte(ConanFile):
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.10")
+        self.requires("sentry-native/0.14.2") # Crash reporting
         self.requires("spirv-cross/1.4.350.0")
         self.requires("spirv-tools/1.4.350.0")
         self.requires("steamworks/158a@overte/prebuild")
