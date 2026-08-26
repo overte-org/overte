@@ -28,15 +28,6 @@ macro(add_sentry)
     target_link_libraries(${TARGET_NAME} sentry-native::sentry-native)
 
 
-    # if (WIN32)
-    # set_target_properties(${TARGET_NAME} PROPERTIES LINK_FLAGS "/ignore:4099")
-    # elseif (APPLE)
-    # find_library(Security Security)
-    # target_link_libraries(${TARGET_NAME} ${Security})
-    # target_link_libraries(${TARGET_NAME} "-lbsm")
-    # endif()
-
-
     # Find and pass crashpad_hander to CPack for packaging. crashpad_handler is used for sending crash reports to Sentry.
     find_program(CRASHPAD_HANDLER_EXECUTABLE crashpad_handler PATHS "${sentry_INCLUDE_DIR}/../bin/" NO_DEFAULT_PATH)
     if (NOT CRASHPAD_HANDLER_EXECUTABLE)
