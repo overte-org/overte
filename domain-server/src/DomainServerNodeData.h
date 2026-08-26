@@ -52,9 +52,6 @@ public:
     
     void setNodeVersion(const QString& nodeVersion) { _nodeVersion = nodeVersion; }
     const QString& getNodeVersion() { return _nodeVersion; }
-
-    void setHardwareAddress(const QString& hardwareAddress) { _hardwareAddress = hardwareAddress; }
-    const QString& getHardwareAddress() { return _hardwareAddress; }
    
     void setMachineFingerprint(const QUuid& machineFingerprint) { _machineFingerprint = machineFingerprint; }
     const QUuid& getMachineFingerprint() { return _machineFingerprint; }
@@ -91,7 +88,6 @@ private:
     bool _isAuthenticated = true;
     NodeSet _nodeInterestSet;
     QString _nodeVersion;
-    QString _hardwareAddress;
     QUuid   _machineFingerprint;
     quint64 _lastDomainCheckinTimestamp;
     QString _placeName;

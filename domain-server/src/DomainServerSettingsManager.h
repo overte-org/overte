@@ -32,7 +32,6 @@ const QString SETTINGS_PATHS_KEY = "paths";
 const QString AGENT_STANDARD_PERMISSIONS_KEYPATH = "security.standard_permissions";
 const QString AGENT_PERMISSIONS_KEYPATH = "security.permissions";
 const QString IP_PERMISSIONS_KEYPATH = "security.ip_permissions";
-const QString MAC_PERMISSIONS_KEYPATH = "security.mac_permissions";
 const QString MACHINE_FINGERPRINT_PERMISSIONS_KEYPATH = "security.machine_fingerprint_permissions";
 const QString GROUP_PERMISSIONS_KEYPATH = "security.group_permissions";
 const QString GROUP_FORBIDDENS_KEYPATH = "security.group_forbiddens";
@@ -107,10 +106,6 @@ public:
     // these give access to permissions for specific IPs from the domain-server settings page
     bool hasPermissionsForIP(const QHostAddress& address) const { return _ipPermissions.contains(address.toString(), 0); }
     NodePermissions getPermissionsForIP(const QHostAddress& address) const;
-
-    // these give access to permissions for specific MACs from the domain-server settings page
-    bool hasPermissionsForMAC(const QString& macAddress) const { return _macPermissions.contains(macAddress, 0); }
-    NodePermissions getPermissionsForMAC(const QString& macAddress) const;
 
     // these give access to permissions for specific machine fingerprints from the domain-server settings page
     bool hasPermissionsForMachineFingerprint(const QUuid& machineFingerprint) { return _machineFingerprintPermissions.contains(machineFingerprint.toString(), 0); }
@@ -237,7 +232,6 @@ private:
     NodePermissionsMap _agentPermissions; // specific account-names
 
     NodePermissionsMap _ipPermissions; // permissions granted by node IP address
-    NodePermissionsMap _macPermissions; // permissions granted by node MAC address
     NodePermissionsMap _machineFingerprintPermissions; // permissions granted by Machine Fingerprint
 
     NodePermissionsMap _groupPermissions; // permissions granted by membership to specific groups
