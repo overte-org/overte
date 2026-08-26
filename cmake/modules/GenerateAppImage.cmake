@@ -51,6 +51,17 @@ file(COPY ${CPACK_PACKAGE_DIRECTORY}/interface/scripts DESTINATION ${CPACK_TEMPO
 file(COPY ${CPACK_PACKAGE_DIRECTORY}/interface/resources DESTINATION ${CPACK_TEMPORARY_DIRECTORY}/usr/bin/)
 file(COPY ${CPACK_PACKAGE_DIRECTORY}/interface/resources.rcc DESTINATION ${CPACK_TEMPORARY_DIRECTORY}/usr/bin/)
 
+find_program(CRASHPAD_HANDLER_EXECUTABLE
+  NAMES crashpad_handler
+  PATHS ${CPACK_PACKAGE_DIRECTORY}/interface)
+
+if (CRASHPAD_HANDLER_EXECUTABLE)
+  message(STATUS "Found crashpad_handler executable. Including…")
+  file(COPY ${CRASHPAD_HANDLER_EXECUTABLE} DESTINATION ${CPACK_TEMPORARY_DIRECTORY}/usr/bin/)
+else ()
+  message(STATUS "No crashpad_handler executable found. We probably built without crash reporting. Continuing…")
+endif ()
+
 execute_process(
   COMMAND
     ${CMAKE_COMMAND} -E env
@@ -70,6 +81,8 @@ execute_process(
     # We copied our plugins earlier; Here we tell LinuxDeploy to deploy their dependencies.
     # For example libopenxr_loader.so for our OpenXR plugin.
     --deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/bin/plugins
+    # Same thing for crashpad_handler.
+    --deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/bin/crashpad_handler
     --desktop-file=${APPIMAGE_DESKTOP_FILE}
     --icon-file=${APPIMAGE_ICON_FILE}
     --plugin qt
