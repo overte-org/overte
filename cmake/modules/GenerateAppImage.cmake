@@ -58,8 +58,10 @@ find_program(CRASHPAD_HANDLER_EXECUTABLE
 if (CRASHPAD_HANDLER_EXECUTABLE)
   message(STATUS "Found crashpad_handler executable. Including…")
   file(COPY ${CRASHPAD_HANDLER_EXECUTABLE} DESTINATION ${CPACK_TEMPORARY_DIRECTORY}/usr/bin/)
+  set(LINUXDEPLOY_CRASHPAD_COMMAND "--deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/bin/crashpad_handler" CACHE STRING "Internal")
 else ()
   message(STATUS "No crashpad_handler executable found. We probably built without crash reporting. Continuing…")
+  set(LINUXDEPLOY_CRASHPAD_COMMAND "" CACHE STRING "Internal")
 endif ()
 
 execute_process(
@@ -82,7 +84,7 @@ execute_process(
     # For example libopenxr_loader.so for our OpenXR plugin.
     --deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/bin/plugins
     # Same thing for crashpad_handler.
-    --deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/bin/crashpad_handler
+    ${LINUXDEPLOY_CRASHPAD_COMMAND}
     --desktop-file=${APPIMAGE_DESKTOP_FILE}
     --icon-file=${APPIMAGE_ICON_FILE}
     --plugin qt
