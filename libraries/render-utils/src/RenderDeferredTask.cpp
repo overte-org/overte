@@ -207,7 +207,7 @@ void RenderDeferredTask::build(JobModel& task, const render::Varying& input, ren
 
     // Light Clustering
     // Create the cluster grid of lights, cpu job for now
-    const auto lightClusteringPassInputs = LightClusteringPass::Input(deferredFrameTransform, lightingModel, lightFrame, linearDepthTarget).asVarying();
+    const auto lightClusteringPassInputs = LightClusteringPass::Input(deferredFrameTransform, lightingModel, lightFrame).asVarying();
     const auto lightClusters = task.addJob<LightClusteringPass>("LightClustering", lightClusteringPassInputs);
 
     // DeferredBuffer is complete, now let's shade it into the LightingBuffer
