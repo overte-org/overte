@@ -68,10 +68,6 @@
 #include <QtAndroidExtras/QAndroidJniObject>
 #endif
 
-const int AudioClient::MIN_BUFFER_FRAMES = 1;
-
-const int AudioClient::MAX_BUFFER_FRAMES = 20;
-
 #if defined(Q_OS_ANDROID)
 static const int CHECK_INPUT_READS_MSECS = 2000;
 static const int MIN_READS_TO_CONSIDER_INPUT_ALIVE = 10;
