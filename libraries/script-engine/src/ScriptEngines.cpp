@@ -226,6 +226,7 @@ void ScriptEngines::shutdownScripting() {
     QMutexLocker locker(&_allScriptsMutex);
     qCDebug(scriptengine) << "Stopping all scripts.... currently known scripts:" << _allKnownScriptManagers.size();
 
+    emit scriptingEnded();
     QMutableSetIterator<ScriptManagerPointer> i(_allKnownScriptManagers);
     while (i.hasNext()) {
         ScriptManagerPointer scriptManager = i.next();
