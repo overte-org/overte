@@ -398,7 +398,6 @@ bool ScriptManager::isDebugMode() const {
 }
 
 ScriptManager::~ScriptManager() {
-    auto scopeGuard = engine()->getScopeGuard();
     qDebug() << "ScriptManager::~ScriptManager() : Script manager deleted, type: " << _type << " name: " << _fileNameString;
     if (_type == ScriptManager::Type::ENTITY_CLIENT) {
         printf("ScriptManager::~ScriptManager");
@@ -1065,10 +1064,7 @@ void ScriptManager::run() {
                 std::chrono::duration_cast<std::chrono::milliseconds>(sleepUntil - clock::now());
             if (sleepFor > std::chrono::milliseconds(0)) {
                 QEventLoop loop;
-                QTimer timer;
-                timer.setSingleShot(true);
-                connect(&timer, &QTimer::timeout, &loop, &QEventLoop::quit);
-                timer.start(sleepFor.count());
+                QTimer::singleShot(sleepFor.count(), &loop, &QEventLoop::quit);
                 loop.exec();
             } else {
                 QCoreApplication::processEvents();
