@@ -550,7 +550,6 @@ void LightClusteringPass::run(const render::RenderContextPointer& renderContext,
     auto deferredTransform = inputs.get0();
     auto lightingModel = inputs.get1();
     auto lightFrame = inputs.get2();
-    auto surfaceGeometryFramebuffer = inputs.get3();
     auto localLightingEnabled = lightingModel->isLocalLightingEnabled();
 
     // first update the Grid with the new frustum
