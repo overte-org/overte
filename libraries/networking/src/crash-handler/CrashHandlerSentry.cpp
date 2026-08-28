@@ -62,10 +62,10 @@ bool CrashHandlerSentry::startCrashHandler() {
 
 
     sentry_value_t release_info = sentry_value_new_object();
-    sentry_value_set_by_key(release_info, "version", sentry_value_new_string(BuildInfo::VERSION.toStdString().c_str()));
-    sentry_value_set_by_key(release_info, "build", sentry_value_new_string(BuildInfo::BUILD_NUMBER.toStdString().c_str()));
-    sentry_value_set_by_key(release_info, "build_time", sentry_value_new_string(BuildInfo::BUILD_TIME.toStdString().c_str()));
-    sentry_value_set_by_key(release_info, "build_type", sentry_value_new_string(BuildInfo::BUILD_TYPE_STRING.toStdString().c_str()));
+    sentry_value_set_by_key(release_info, "version", sentry_value_new_string(BuildInfo::VERSION));
+    sentry_value_set_by_key(release_info, "build", sentry_value_new_string(BuildInfo::BUILD_NUMBER));
+    sentry_value_set_by_key(release_info, "build_time", sentry_value_new_string(BuildInfo::BUILD_TIME));
+    sentry_value_set_by_key(release_info, "build_type", sentry_value_new_string(BuildInfo::BUILD_TYPE_STRING));
 
     sentry_value_t machine_info = sentry_value_new_object();
     sentry_value_set_by_key(machine_info, "fingerprint", sentry_value_new_string(uuidStringWithoutCurlyBraces(FingerprintUtils::getMachineFingerprint()).toStdString().c_str()))    ;
