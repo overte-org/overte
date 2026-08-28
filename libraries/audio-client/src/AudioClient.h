@@ -90,8 +90,8 @@ class AudioClient : public AbstractAudioInterface, public Dependency {
 
     using LocalInjectorsStream = AudioMixRingBuffer;
 public:
-    static const int MIN_BUFFER_FRAMES;
-    static const int MAX_BUFFER_FRAMES;
+    static constexpr int MIN_BUFFER_FRAMES = 1;
+    static constexpr int MAX_BUFFER_FRAMES = 20;
 
     using AudioPositionGetter = std::function<glm::vec3()>;
     using AudioOrientationGetter = std::function<glm::quat()>;
@@ -299,12 +299,12 @@ protected:
     virtual void customDeleter() override;
 
 private:
-    static const int RECEIVED_AUDIO_STREAM_CAPACITY_FRAMES{ 100 };
+    static constexpr int RECEIVED_AUDIO_STREAM_CAPACITY_FRAMES = 100;
     // OUTPUT_CHANNEL_COUNT is audio pipeline output format, which is always 2 channel.
     // _outputFormat.channelCount() is device output format, which may be 1 or multichannel.
-    static const int OUTPUT_CHANNEL_COUNT{ 2 };
-    static const int STARVE_DETECTION_THRESHOLD{ 3 };
-    static const int STARVE_DETECTION_PERIOD{ 10 * 1000 }; // 10 Seconds
+    static constexpr int OUTPUT_CHANNEL_COUNT = 2;
+    static constexpr int STARVE_DETECTION_THRESHOLD = 3;
+    static constexpr int STARVE_DETECTION_PERIOD = 10 * 1000; // 10 Seconds
 
     static const AudioPositionGetter DEFAULT_POSITION_GETTER;
     static const AudioOrientationGetter DEFAULT_ORIENTATION_GETTER;
