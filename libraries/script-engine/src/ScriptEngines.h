@@ -336,6 +336,11 @@ signals:
      */
     void requestingEntityScriptServerLog(bool areMessagesRequested);
 
+
+    // QT6TODO: this is part of the MenuScriptingInterface and TabletScriptingInterface hack
+    //          and should not be used
+    void scriptingEnded();
+
 public slots:
 
     /*@jsdoc

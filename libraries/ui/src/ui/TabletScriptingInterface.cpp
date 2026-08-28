@@ -25,6 +25,7 @@
 #include "../QmlWindowClass.h"
 #include "../OffscreenUi.h"
 #include "../InfoView.h"
+#include "ScriptEngines.h"
 #include "ToolbarScriptingInterface.h"
 #include "Logging.h"
 
@@ -63,14 +64,17 @@ static Setting::Handle<QStringList> tabletSoundsButtonClick("TabletSounds", QStr
                                                                                "/sounds/Tab02.wav" });
 
 TabletButtonListModel::TabletButtonListModel() {
-
 }
 
 TabletButtonListModel::~TabletButtonListModel() {
-
 }
 
-enum ButtonDeviceRole {
+void TabletScriptingInterface::onScriptingEnded() {
+    _isFinished = true;
+}
+
+enum ButtonDeviceRole
+{
     ButtonProxyRole = Qt::UserRole,
 };
 
@@ -175,6 +179,9 @@ TabletScriptingInterface::TabletScriptingInterface() {
     qRegisterMetaType<TabletScriptingInterface::TabletAudioEvents>("TabletScriptingInterface::TabletAudioEvents");
     qRegisterMetaType<TabletScriptingInterface::TabletConstants>("TabletScriptingInterface::TabletConstants");
     qmlRegisterType<TabletButtonsProxyModel>("TabletScriptingInterface", 1, 0, "TabletButtonsProxyModel");
+    // QT6TODO: this is part of the _isFinished hack. see header
+    connect(DependencyManager::get<ScriptEngines>().get(), &ScriptEngines::scriptingEnded, this,
+            &TabletScriptingInterface::onScriptingEnded);
 }
 
 TabletScriptingInterface::~TabletScriptingInterface() {
@@ -188,10 +195,13 @@ ToolbarProxy* TabletScriptingInterface::getSystemToolbarProxy() {
 
 TabletProxy* TabletScriptingInterface::getTablet(const QString& tabletId) {
     TabletProxy* tabletProxy = nullptr;
+    if (_isFinished) {
+        return tabletProxy;
+    }
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "getTablet", Q_GENERIC_RETURN_ARG(TabletProxy*, tabletProxy), Q_GENERIC_ARG(QString, tabletId));
         return tabletProxy;
-    } 
+    }
 
     auto iter = _tabletProxies.find(tabletId);
     if (iter != _tabletProxies.end()) {
@@ -652,7 +662,6 @@ void TabletProxy::returnToPreviousAppImpl(bool localSafeContext) {
     if (QThread::currentThread() != thread()) {
         qCWarning(uiLogging) << __FUNCTION__ << "may not be called directly by scripts";
         return;
-
     }
 
     QObject* root = nullptr;
@@ -686,7 +695,7 @@ void TabletProxy::returnToPreviousApp() {
 }
 
 void TabletProxy::loadQMLSource(const QVariant& path, bool resizable) {
-    // Capture whether the current script thread is allowed to load local HTML content, 
+    // Capture whether the current script thread is allowed to load local HTML content,
     // pass the information along to the real function
     bool localSafeContext = hifi::scripting::isLocalAccessSafeThread();
     if (QThread::currentThread() != thread()) {
@@ -700,7 +709,6 @@ void TabletProxy::loadQMLSourceImpl(const QVariant& path, bool resizable, bool l
     if (QThread::currentThread() != thread()) {
         qCWarning(uiLogging) << __FUNCTION__ << "may not be called directly by scripts";
         return;
-
     }
     QObject* root = nullptr;
     if (!_toolbarMode && _qmlTabletRoot) {
@@ -711,8 +719,8 @@ void TabletProxy::loadQMLSourceImpl(const QVariant& path, bool resizable, bool l
 
     if (root) {
         // BUGZ-1398: tablet access to local HTML files from client scripts
-        // Here we TEMPORARILY mark the main thread as allowed to load local file content, 
-        // because the thread that originally made the call is so marked.  
+        // Here we TEMPORARILY mark the main thread as allowed to load local file content,
+        // because the thread that originally made the call is so marked.
         if (localSafeContext) {
             hifi::scripting::setLocalAccessSafeThread(true);
         }
@@ -963,7 +971,6 @@ OffscreenQmlSurface* TabletProxy::getTabletSurface() {
     return _qmlOffscreenSurface;
 }
 
-
 void TabletProxy::desktopWindowClosed() {
     gotoHomeScreen();
 }
@@ -978,7 +985,6 @@ void TabletProxy::unfocus() {
         _qmlOffscreenSurface->lowerKeyboard();
     }
 }
-
 
 QQuickItem* TabletProxy::getQmlTablet() const {
     if (!_qmlTabletRoot) {
