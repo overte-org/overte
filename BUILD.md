@@ -80,7 +80,7 @@ BUILD_GLOBAL_SERVICES=STABLE
 ```text
 // Build with crash reporting.
 OVERTE_USE_SENTRY
-// The URL to post the dump to.
+// The URL to post the dump to. Called "DSN" by Sentry.
 OVERTE_BACKTRACE_URL
 // The identifying tag of the release.
 OVERTE_BACKTRACE_TOKEN
