@@ -56,7 +56,6 @@ class Overte(ConanFile):
         self.requires("artery-font-format/1.0.1") # FIXME: update to 1.1
         self.requires("bullet3/3.25")
         self.requires("cgltf/1.14@overte/stable")
-        # self.requires("crashpad/cci.20220219" ) # Broken
         self.requires("discord-rpc/3.4.0@overte/stable")
         self.requires("draco/1.3.5") # FIXME: update to newer version
         self.requires("etc2comp/cci.20170424") # NOTE: archived upstream
@@ -76,6 +75,7 @@ class Overte(ConanFile):
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.10")
+        self.requires("sentry-native/0.14.2") # Crash reporting
         self.requires("spirv-cross/1.4.350.0")
         self.requires("spirv-tools/1.4.350.0")
         self.requires("steamworks/158a@overte/prebuild")
@@ -90,13 +90,13 @@ class Overte(ConanFile):
         if self.options.qt_source == "system":
             self.requires("qt/5.15.2@overte/system", force=True)
             if self.settings.os == "Linux":
-                openssl = "openssl/system@overte/stable#24c4df65c52791c4955f7d47d9faef0d"
+                openssl = "openssl/system@overte/system#74cd53974fe6a60b21693f2c9653b15f"
         elif self.options.qt_source == "aqt":
             self.requires("qt/5.15.2@overte/aqt", force=True)
         else:
             if self.settings.os == "Linux":
                 # Use system OpenSSL to work around OpenSSL being missing from libnode's rpath and this cascading down to Interface.
-                openssl = "openssl/system@overte/stable#24c4df65c52791c4955f7d47d9faef0d"
+                openssl = "openssl/system@overte/system#74cd53974fe6a60b21693f2c9653b15f"
                 self.requires("fcitx5-qt/5.1.13@overte/stable#41b7ae9082f32e1ad83fd8a43a2c8460")
             self.requires("qt/5.15.18@overte/experimental#3a9079f3023351a7319be352cc6f4665", force=True)
             # Replace Conan Center's glib package with our own duplicate to avoid their outdated binary cache. https://github.com/conan-io/conan-center-index/issues/17876

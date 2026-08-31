@@ -14,9 +14,31 @@
 #include <QObject>
 #include <QCoreApplication>
 #include <SettingHandle.h>
+#include <QLoggingCategory>
 #include <atomic>
 #include <unordered_map>
 #include <mutex>
+
+#include <string_view>
+
+
+
+#ifndef overte_CrashHandler_h
+#define overte_CrashHandler_h
+
+
+Q_DECLARE_LOGGING_CATEGORY(crash_handler)
+
+
+// We get these from CMake if crash reporting is enabled
+
+#ifndef OVERTE_BACKTRACE_URL
+#define OVERTE_BACKTRACE_URL ""
+#endif
+
+#ifndef OVERTE_BACKTRACE_TOKEN
+#define OVERTE_BACKTRACE_TOKEN ""
+#endif
 
 
 
@@ -57,6 +79,10 @@ class CrashHandler : public QObject {
 public:
     static CrashHandler& getInstance();
 
+    QString path() const { return _path; }
+    QString url() const { return _crashUrl; }
+    QString token() const { return _crashToken; }
+
 
 public slots:
 
@@ -70,6 +96,8 @@ public slots:
      * if the path is a filename, then the base directory will be automatically used.
      */
     void setPath(const QString &path);
+
+
 
     /**
      * @brief Start the crash handler
@@ -134,6 +162,51 @@ public slots:
      */
     void setEnabled(bool enabled);
 
+
+
+    /**
+     * @brief Whether logs are streamed to the server for debugging.
+     *
+     * Logs are sent even in the absence of a crash if this is enabled.
+     *
+     * @return true
+     * @return false
+     */
+    bool isLogStreamingEnabled() const { return _logStreamingEnabled; }
+
+    /**
+     * @brief Set whether logs are streamed to the server for debugging.
+     *
+     * Logs are sent even in the absence of a crash if this is enabled.
+     *
+     * Emits enabledChanged signal.
+     *
+     * @param enabled
+     */
+    void setLogStreamingEnabled(bool enabled) {
+        _logStreamingEnabled = enabled;
+        emit logStreamingChanged(enabled);
+    }
+
+    /**
+     * @brief Whether stats are streamed to the server for debugging.
+     *
+     * @return true
+     * @return false
+     */
+    bool isStatsStreamingEnabled() const { return _statsStreamingEnabled; }
+
+    /**
+     * @brief Set whether stats are streamed to the server for debugging.
+     *
+     * Emits enabledChanged signal.
+     * @param enabled
+     */
+    void setStatsStreamingEnabled(bool enabled) {
+        _statsStreamingEnabled = enabled;
+        emit statsStreamingChanged(enabled);
+    }
+
     /**
      * @brief Set the URL where to send crash reports to
      *
@@ -165,6 +238,8 @@ public slots:
      * Annotations add extra information, such as the application's version number,
      * the current user, or any other information of interest.
      *
+     * In Sentry, this creates a tag and they are searchable in the Sentry web interface.
+     *
      * @note Annotations made before the crash handler are remembered, and sent to the
      * crash handler as soon as it's initialized.
      *
@@ -178,6 +253,8 @@ public slots:
      *
      * Annotations add extra information, such as the application's version number,
      * the current user, or any other information of interest.
+     *
+     * In Sentry, this creates a tag and they are searchable in the Sentry web interface.
      *
      * @note Annotations made before the crash handler are remembered, and sent to the
      * crash handler as soon as it's initialized.
@@ -193,6 +270,8 @@ public slots:
      * Annotations add extra information, such as the application's version number,
      * the current user, or any other information of interest.
      *
+     * In Sentry, this creates a tag and they are searchable in the Sentry web interface.
+     *
      * @note Annotations made before the crash handler are remembered, and sent to the
      * crash handler as soon as it's initialized.
      *
@@ -201,6 +280,54 @@ public slots:
      * @param value Value
      */
     void setAnnotation(const std::string &key, const std::string &value);
+
+    /**
+     * @brief Attach a tag to the crash report.
+     *
+     * Tags are always string values, and are searchable.
+     *
+     * @param name Key
+     * @param value Value
+     */
+    virtual void setTag(std::string name, std::string value) = 0;
+
+    /**
+     * @brief Add context to the crash report
+     *
+     * Contexts in Sentry are informative, and not normally searchable. This should be used
+     * to provide detailed information that won't normally be used for locating reports.
+     *
+     * Unlike tags, contexts can be other things than string types.
+     *
+     * @param sectionName
+     * @param key
+     * @param value
+     */
+    virtual void setContext(const QString &sectionName, const QString &key, const QVariant &value) = 0;
+
+
+    /**
+     * @brief Log a message to the crash handler
+     *
+     * This can be called from the logging system, to add log messages
+     * to crash reports.
+     *
+     * @param type Qt Log message type
+     * @param context Qt logging context
+     * @param msg Message to log
+     */
+    void logMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg);
+
+    /**
+     * @brief Returns the support tag.
+     *
+     * This is a randomly generated per program launch tag that can be used
+     * to aid in user support and debugging. The user can be asked to give
+     * this tag to a developer. It will be recorded in the crash reports.
+     *
+     * @return QString
+     */
+    QString getSupportTag() const { return _supportTag; }
 
 signals:
 
@@ -213,8 +340,53 @@ signals:
      */
     void enabledChanged(bool enabled);
 
-private:
-    CrashHandler(QObject *parent = nullptr);
+    /**
+     * @brief Emitted when the enabled/disabled state of the log streaming changes
+     *
+     * This can be used to store it as a setting.
+     *
+     * @param enabled Whether the log streaming is now enabled
+     */
+    void logStreamingChanged(bool enabled);
+
+    /**
+     * @brief Emitted when the enabled/disabled state of the stats streaming changes
+     *
+     * This can be used to store it as a setting.
+     *
+     * @param enabled Whether the stats streaming is now enabled
+     */
+    void statsStreamingChanged(bool enabled);
+protected:
+
+    /**
+     * @brief Start the crash handler
+     *
+     * This is implementation dependent, and is called by start().
+     *
+     */
+    virtual bool startCrashHandler() = 0;
+
+    /**
+     * @brief Set whether to enable crash reporting
+     *
+     * This is the implementation dependent part, called by setEnabled().
+     *
+     * @param value Whether to enable crash reporting
+     */
+    virtual void setCrashReportingEnabled(bool value) = 0;
+
+
+    /**
+     * @brief Send a log message to the crash handler.
+     *
+     * This will be logged even without a crash.
+     *
+     * @param type
+     * @param context
+     * @param msg
+     */
+    virtual void sendLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) = 0;
 
 
     /**
@@ -226,15 +398,35 @@ private:
      */
     void setStarted(bool started) { _crashMonitorStarted = started; }
 
+    CrashHandler(QObject *parent = nullptr);
+
+
+private:
+
+
 
     std::atomic<bool> _crashMonitorStarted {false};
     std::atomic<bool> _crashReportingEnabled {false};
+    std::atomic<bool> _logStreamingEnabled {false};
+    std::atomic<bool> _statsStreamingEnabled {false};
+
     std::unordered_map<std::string, std::string> _annotations{};
     std::mutex _annotationsMutex{};
+    std::mutex _logMutex{};
 
     QString _path;
-    QString _crashUrl;
-    QString _crashToken;
+    QString _crashUrl{OVERTE_BACKTRACE_URL};
+    QString _crashToken{OVERTE_BACKTRACE_TOKEN};
+
+    QString _previousMessage{};
+    int _repeatCount { 0 };
+
+    QString _supportTag{};
+
+    static const QStringList EFF_SHORT_WORDLIST;
+
 };
+
+#endif
 
 

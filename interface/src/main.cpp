@@ -657,12 +657,60 @@ int main(int argc, const char* argv[]) {
     auto& ual = UserActivityLogger::getInstance();
     auto& ch = CrashHandler::getInstance();
 
+    ch.start();
+
     QObject::connect(&ch, &CrashHandler::enabledChanged, [](bool enabled) {
         Settings s;
-        s.beginGroup("Crash");
-        s.setValue("ReportingEnabled", enabled);
+
+        s.beginGroup("Developer/Network");
+        s.setValue("Enable Crash Reporting", enabled);
+        s.endGroup();
+
+        // FIXME: Horrible hack. Something in the menu system is badly broken
+        // and sometimes not generating the full path to a setting, so the same
+        // setting can be found eg as both:
+        //  Developer/Network/Enable Crash Reporting
+        //  Network/Enable Crash Reporting
+        //
+        // This leads to inconsistency, with settings not keeping state as
+        // they should.
+        //
+        // Since we plan to revamp the menu system anyway, hack around it for
+        // the time being.
+
+
+        s.beginGroup("Network");
+        s.setValue("Enable Crash Reporting", enabled);
         s.endGroup();
     });
+
+    QObject::connect(&ch, &CrashHandler::logStreamingChanged, [](bool enabled) {
+        Settings s;
+
+        s.beginGroup("Developer/Network");
+        s.setValue("Enable Log Streaming", enabled);
+        s.endGroup();
+
+        // FIXME: See above
+        s.beginGroup("Network");
+        s.setValue("Enable Log Streaming", enabled);
+        s.endGroup();
+    });
+
+    QObject::connect(&ch, &CrashHandler::statsStreamingChanged, [](bool enabled) {
+        Settings s;
+
+        s.beginGroup("Developer/Network");
+        s.setValue("Enable Stats Streaming", enabled);
+        s.endGroup();
+
+        // FIXME: See above
+        s.beginGroup("Network");
+        s.setValue("Enable Stats Streaming", enabled);
+        s.endGroup();
+
+    });
+
 
     // once the settings have been loaded, check if we need to flip the default for UserActivityLogger
     if (!ual.isDisabledSettingSet()) {
@@ -680,10 +728,10 @@ int main(int argc, const char* argv[]) {
 
     {
         Settings crashSettings;
-        crashSettings.beginGroup("Crash");
-        if (crashSettings.value("ReportingEnabled").toBool()) {
-            ch.setEnabled(true);
-        }
+        crashSettings.beginGroup("Developer/Network");
+        ch.setEnabled(crashSettings.value("Enable Crash Reporting").toBool());
+        ch.setLogStreamingEnabled(crashSettings.value("Enable Log Streaming").toBool());
+        ch.setStatsStreamingEnabled(crashSettings.value("Enable Stats Streaming").toBool());
         crashSettings.endGroup();
     }
 
