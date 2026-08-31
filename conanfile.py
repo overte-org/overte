@@ -65,7 +65,7 @@ class Overte(ConanFile):
         self.requires("gli/cci.20210515") # NOTE: not maintained for 4 years
         self.requires("glslang/1.4.350.0")
         self.requires("liblo/0.35@overte/stable") # For hifiOSC
-        self.requires("libnode/22.22.3@overte/stable#12c9d377b2df64060e312a93bf14592f")
+        self.requires("libnode/22.23.2@overte/stable#f11ce6e78ea278150048966af119fe46")
         self.requires("nlohmann_json/3.11.2")
         self.requires("nvidia-texture-tools/2023.01@overte/stable#bb4a28e5438f69332299cc23b770fc07")
         self.requires("onetbb/2021.10.0")
