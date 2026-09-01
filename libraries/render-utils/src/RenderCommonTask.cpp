@@ -282,7 +282,7 @@ void ResolveFramebuffer::run(const render::RenderContextPointer& renderContext, 
 class SetupMirrorTask {
 public:
     using Input = RenderMirrorTask::Inputs;
-    using Outputs = render::VaryingSet3<render::ItemBound, gpu::FramebufferPointer, RenderArgsPointer>;
+    using Outputs = render::VaryingSet4<render::ItemBound, gpu::FramebufferPointer, RenderArgsPointer, std::array<ViewFrustum, 2>>;
     using JobModel = render::Job::ModelIO<SetupMirrorTask, Input, Outputs>;
 
     SetupMirrorTask(size_t mirrorIndex, size_t depth) : _mirrorIndex(mirrorIndex), _depth(depth) {}
@@ -296,9 +296,13 @@ public:
             return;
         }
 
+        // TODO: Half and quarter sized mirror framebuffers?
+        // Naively reducing the texture resolution doesn't work,
+        // maybe there's a differently sized depth buffer or an
+        // MSAA resolve buffer
         auto inputFramebuffer = inputs.get1();
         if (!_mirrorFramebuffer || _mirrorFramebuffer->getWidth() != inputFramebuffer->getWidth() || _mirrorFramebuffer->getHeight() != inputFramebuffer->getHeight()) {
-            _mirrorFramebuffer.reset(gpu::Framebuffer::create("mirror" + _mirrorIndex, gpu::Element::COLOR_SRGBA_32, inputFramebuffer->getWidth(), inputFramebuffer->getHeight()));
+            _mirrorFramebuffer.reset(gpu::Framebuffer::create("mirror" + std::to_string(_mirrorIndex), gpu::Element::COLOR_SRGBA_32, inputFramebuffer->getWidth(), inputFramebuffer->getHeight()));
         }
 
         render::ItemBound mirror = items[_mirrorIndex];
@@ -309,8 +313,47 @@ public:
         _cachedArgsPointer->_mirrorDepth = args->_mirrorDepth;
         _cachedArgsPointer->_numMirrorFlips = args->_numMirrorFlips;
 
+        // FIXME: This is only modifying the "main" frustum, which is the real
+        // view frustum on desktop, but only the *culling* frustum in VR, which
+        // is why the mirror's near clipping plane doesn't work in VR. This will
+        // need to be refactored to also modify the stereo eye frustums.
         ViewFrustum srcViewFrustum = args->getViewFrustum();
         ItemID portalExitID = args->_scene->getItem(mirror.id).computeMirrorView(srcViewFrustum);
+
+        std::array<ViewFrustum, 2> cachedEyes {};
+
+        // FIXME: Why isn't this being applied to the RenderViewTask that happens after this?
+        if (args->isStereo()) {
+            std::array<glm::mat4, 2> views {};
+            std::array<glm::mat4, 2> projections {};
+
+            args->_context->getStereoViews(views.data());
+            args->_context->getStereoProjections(projections.data());
+
+            glm::mat4 cameraView = args->getViewFrustum().getView();
+            glm::mat4 cameraViewInv = glm::inverse(cameraView);
+
+            for (int i = 0; i < 2; i++) {
+                ViewFrustum eye {};
+                eye.setView(views[i]);
+                eye.setProjection(projections[i]);
+
+                cachedEyes[i] = eye;
+
+                // The stereo views are IPD offsets, so we need to factor in
+                // the base camera's view for computing the mirror views
+                eye.setView(cameraView * views[i]);
+                eye.calculate();
+
+                args->_scene->getItem(mirror.id).computeMirrorView(eye);
+
+                views[i] = cameraViewInv * eye.getView();
+                projections[i] = eye.getProjection();
+            }
+
+            args->_context->setStereoViews(views.data());
+            args->_context->setStereoProjections(projections.data());
+        }
 
         args->_blitFramebuffer = _mirrorFramebuffer;
         args->_ignoreItem = portalExitID != Item::INVALID_ITEM_ID ? portalExitID : mirror.id;
@@ -330,6 +373,7 @@ public:
         outputs.edit0() = mirror;
         outputs.edit1() = inputFramebuffer;
         outputs.edit2() = _cachedArgsPointer;
+        outputs.edit3() = cachedEyes;
     }
 
 protected:
@@ -363,6 +407,7 @@ public:
         auto mirror = inputs.get0();
         auto framebuffer = inputs.get1();
         auto cachedArgs = inputs.get2();
+        auto cachedEyes = inputs.get3();
 
         if (cachedArgs) {
             args->_renderMode = cachedArgs->_renderMode;
@@ -396,6 +441,19 @@ public:
             args->_ignoreItem = cachedArgs->_ignoreItem;
             args->_mirrorDepth = cachedArgs->_mirrorDepth;
             args->_numMirrorFlips = cachedArgs->_numMirrorFlips;
+
+            if (args->isStereo()) {
+                std::array<glm::mat4, 2> views {};
+                std::array<glm::mat4, 2> projections {};
+
+                for (int i = 0; i < 2; i++) {
+                    views[i] = cachedEyes[i].getView();
+                    projections[i] = cachedEyes[i].getProjection();
+                }
+
+                args->_context->setStereoViews(views.data());
+                args->_context->setStereoProjections(projections.data());
+            }
         }
     }
 

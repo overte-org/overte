@@ -38,6 +38,7 @@ public:
     // setters for camera attributes
     void setPosition(const glm::vec3& position);
     void setOrientation(const glm::quat& orientation);
+    void setView(const glm::mat4& view);
 
     // getters for camera attributes
     const glm::vec3& getPosition() const { return _position; }
