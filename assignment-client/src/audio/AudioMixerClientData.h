@@ -104,6 +104,7 @@ public:
     bool shouldFlushEncoder() { return _shouldFlushEncoder; }
 
     QString getCodecName() { return _selectedCodecName; }
+    void setCodecSettings(const std::vector<Encoder::CodecSettings> &settings) { _codecSettings = settings; }
 
     bool shouldMuteClient() { return _shouldMuteClient; }
     void setShouldMuteClient(bool shouldMuteClient) { _shouldMuteClient = shouldMuteClient; }
@@ -197,6 +198,7 @@ private:
     QString _selectedCodecName;
     Encoder* _encoder{ nullptr }; // for outbound mixed stream
     Decoder* _decoder{ nullptr }; // for mic stream
+    std::vector<Encoder::CodecSettings> _codecSettings;
 
     bool _shouldFlushEncoder { false };
 
