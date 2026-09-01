@@ -105,7 +105,7 @@ public:
      * var avatars = AvatarList.getAvatarsInRange(Vec3.ZERO, RANGE);
      * print("Avatars near the origin: " + JSON.stringify(avatars));
      */
-    Q_INVOKABLE QVector<QUuid> getAvatarsInRange(const glm::vec3& position, float rangeMeters) const;
+    Q_INVOKABLE QVector<QUuid> getAvatarsInRange(const glm::vec<3,float,glm::packed_highp>& position, float rangeMeters) const;
 
     /*@jsdoc
      * Gets information about an avatar.
@@ -179,7 +179,7 @@ public slots:
      * @returns {boolean} <code>true</code> if there's an avatar within the specified distance of the point, <code>false</code> 
      *     if not.
      */
-    bool isAvatarInRange(const glm::vec3 & position, const float range);
+    bool isAvatarInRange(const glm::vec<3,float,glm::packed_highp> & position, const float range);
 
 protected slots:
 

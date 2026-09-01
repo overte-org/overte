@@ -25,8 +25,10 @@
 #include <GLMHelpers.h>
 #include <OffscreenUi.h>
 
+#include "shared/QtHelpers.h"
 
-ModelPropertiesDialog::ModelPropertiesDialog(const QVariantHash& originalMapping,
+
+ModelPropertiesDialog::ModelPropertiesDialog(const hifi::VariantMultiHash& originalMapping,
                                              const QString& basePath, const HFMModel& hfmModel) :
 _originalMapping(originalMapping),
 _basePath(basePath),
@@ -70,8 +72,8 @@ _hfmModel(hfmModel)
     reset();
 }
 
-QVariantHash ModelPropertiesDialog::getMapping() const {
-    QVariantHash mapping = _originalMapping;
+hifi::VariantMultiHash ModelPropertiesDialog::getMapping() const {
+    hifi::VariantMultiHash mapping = _originalMapping;
     mapping.insert(TYPE_FIELD, FSTReader::getNameFromType(FSTReader::HEAD_AND_BODY_MODEL));
     mapping.insert(NAME_FIELD, _name->text());
     mapping.insert(TEXDIR_FIELD, _textureDirectory->text());
@@ -85,7 +87,7 @@ QVariantHash ModelPropertiesDialog::getMapping() const {
     }
     mapping.insert(JOINT_INDEX_FIELD, jointIndices);
 
-    QVariantHash joints = mapping.value(JOINT_FIELD).toHash();
+    hifi::VariantMultiHash joints = qVariantToQMultiHash(mapping.value(JOINT_FIELD));
     insertJointMapping(joints, "jointEyeLeft", _leftEyeJoint->currentText());
     insertJointMapping(joints, "jointEyeRight", _rightEyeJoint->currentText());
     insertJointMapping(joints, "jointNeck", _neckJoint->currentText());
@@ -97,7 +99,7 @@ QVariantHash ModelPropertiesDialog::getMapping() const {
     insertJointMapping(joints, "jointLeftHand", _leftHandJoint->currentText());
     insertJointMapping(joints, "jointRightHand", _rightHandJoint->currentText());
 
-    mapping.insert(JOINT_FIELD, joints);
+    mapping.insert(JOINT_FIELD, qMultiHashToQVariant(joints));
 
     return mapping;
 }
@@ -177,7 +179,7 @@ QDoubleSpinBox* ModelPropertiesDialog::createTranslationBox() const {
     return box;
 }
 
-void ModelPropertiesDialog::insertJointMapping(QVariantHash& joints, const QString& joint, const QString& name) const {
+void ModelPropertiesDialog::insertJointMapping(hifi::VariantMultiHash& joints, const QString& joint, const QString& name) const {
     if (_hfmModel.jointIndices.contains(name)) {
         joints.insert(joint, name);
     } else {

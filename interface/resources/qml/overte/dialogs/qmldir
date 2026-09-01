@@ -1,0 +1,5 @@
+module Dialogs
+FileDialog 1.0 FileDialog.qml
+AssetDialog 1.0 AssetDialog.qml
+RunningScriptsDialog 1.0 RunningScriptsDialog.qml
+BuiltinScriptsDialog 1.0 BuiltinScriptsDialog.qml

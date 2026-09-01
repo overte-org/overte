@@ -345,7 +345,7 @@ public slots:
      * @function Controller.getViewportDimensions
      * @returns {Vec2} The dimensions of the Interface window interior if in desktop mode or HUD surface if in HMD mode.
      */
-    virtual glm::vec2 getViewportDimensions() const;
+    virtual glm::vec<2,float,glm::packed_highp> getViewportDimensions() const;
 
     /*@jsdoc
      * Gets the recommended area to position UI on the HUD surface if in HMD mode or Interface's window interior if in desktop 
@@ -483,6 +483,8 @@ private:
 
     using InputKey = controller::InputController::Key;
 };
+
+Q_DECLARE_METATYPE(ControllerScriptingInterface);
 
 const int NUMBER_OF_SPATIALCONTROLS_PER_PALM = 2; // the hand and the tip
 const int NUMBER_OF_JOYSTICKS_PER_PALM = 1;

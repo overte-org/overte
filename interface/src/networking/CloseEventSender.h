@@ -16,6 +16,7 @@
 
 #include <QtCore/QString>
 #include <QtCore/QUuid>
+#include <QObject>
 
 #include <DependencyManager.h>
 

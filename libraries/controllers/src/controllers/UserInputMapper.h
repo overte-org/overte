@@ -232,9 +232,7 @@ namespace controller {
 }
 
 Q_DECLARE_METATYPE(controller::Input::NamedPair)
-Q_DECLARE_METATYPE(controller::Pose)
 Q_DECLARE_METATYPE(QVector<controller::Input::NamedPair>)
-Q_DECLARE_METATYPE(controller::Input)
 Q_DECLARE_METATYPE(controller::Action)
 Q_DECLARE_METATYPE(QVector<controller::Action>)
 Q_DECLARE_METATYPE(controller::Hand)

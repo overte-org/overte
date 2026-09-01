@@ -8,8 +8,8 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
+import QtCore
 import QtQuick 2.5
-import Qt.labs.settings 1.0
 
 import stylesUit 1.0
 import "../windows"

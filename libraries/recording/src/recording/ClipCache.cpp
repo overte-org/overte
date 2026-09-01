@@ -47,18 +47,23 @@ NetworkClipLoaderPointer ClipCache::getClipLoader(const QUrl& url) {
     if (QThread::currentThread() != thread()) {
         NetworkClipLoaderPointer result;
         BLOCKING_INVOKE_METHOD(this, "getClipLoader",
-                                  Q_RETURN_ARG(NetworkClipLoaderPointer, result), Q_ARG(const QUrl&, url));
+                                  Q_GENERIC_RETURN_ARG(NetworkClipLoaderPointer, result), Q_GENERIC_ARG(const QUrl&, url));
         return result;
     }
 
-    return getResource(url).staticCast<NetworkClipLoader>();
+    auto clipLoader = std::dynamic_pointer_cast<NetworkClipLoader>(getResource(url));
+    Q_ASSERT(clipLoader);
+
+    return clipLoader;
 }
 
-QSharedPointer<Resource> ClipCache::createResource(const QUrl& url) {
+std::shared_ptr<Resource> ClipCache::createResource(const QUrl& url) {
     qCDebug(recordingLog) << "Loading recording at" << url;
-    return QSharedPointer<NetworkClipLoader>(new NetworkClipLoader(url), &Resource::deleter);
+    return std::shared_ptr<NetworkClipLoader>(new NetworkClipLoader(url), Resource::sharedPtrDeleter);
 }
 
-QSharedPointer<Resource> ClipCache::createResourceCopy(const QSharedPointer<Resource>& resource) {
-    return QSharedPointer<NetworkClipLoader>(new NetworkClipLoader(*resource.staticCast<NetworkClipLoader>()), &Resource::deleter);
+std::shared_ptr<Resource> ClipCache::createResourceCopy(const std::shared_ptr<Resource>& resource) {
+    auto clipLoader = std::dynamic_pointer_cast<NetworkClipLoader>(resource);
+    Q_ASSERT(clipLoader);
+    return std::shared_ptr<NetworkClipLoader>(new NetworkClipLoader(*clipLoader), Resource::sharedPtrDeleter);
 }

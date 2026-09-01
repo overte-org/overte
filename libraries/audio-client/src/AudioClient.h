@@ -20,6 +20,8 @@
 #include <mutex>
 #include <queue>
 
+#include <QAudioSource>
+#include <QAudioSink>
 #include <QFuture>
 #include <QtCore/QtGlobal>
 #include <QtCore/QByteArray>
@@ -64,16 +66,6 @@
 #  include <api/audio/audio_processing.h>
 #endif
 
-#ifdef _WIN32
-#pragma warning( push )
-#pragma warning( disable : 4273 )
-#pragma warning( disable : 4305 )
-#endif
-
-#ifdef _WIN32
-#pragma warning( pop )
-#endif
-
 #if defined (Q_OS_ANDROID)
 #define VOICE_RECOGNITION "voicerecognition"
 #define VOICE_COMMUNICATION "voicecommunication"
@@ -98,8 +90,8 @@ class AudioClient : public AbstractAudioInterface, public Dependency {
 
     using LocalInjectorsStream = AudioMixRingBuffer;
 public:
-    static const int MIN_BUFFER_FRAMES;
-    static const int MAX_BUFFER_FRAMES;
+    static constexpr int MIN_BUFFER_FRAMES = 1;
+    static constexpr int MAX_BUFFER_FRAMES = 20;
 
     using AudioPositionGetter = std::function<glm::vec3()>;
     using AudioOrientationGetter = std::function<glm::quat()>;
@@ -107,22 +99,17 @@ public:
     using Mutex = std::mutex;
     using Lock = std::unique_lock<Mutex>;
 
-    class AudioOutputIODevice : public QIODevice {
+    class AudioOutputCallback {
     public:
-        AudioOutputIODevice(LocalInjectorsStream& localInjectorsStream, MixedProcessedAudioStream& receivedAudioStream,
+        AudioOutputCallback(AudioClient::LocalInjectorsStream& localInjectorsStream, MixedProcessedAudioStream& receivedAudioStream,
                 AudioClient* audio) :
-            _localInjectorsStream(localInjectorsStream), _receivedAudioStream(receivedAudioStream),
-            _audio(audio), _unfulfilledReads(0) {}
+            _localInjectorsStream(localInjectorsStream), _receivedAudioStream(receivedAudioStream), _audio(audio) {}
 
-        void start() { open(QIODevice::ReadOnly | QIODevice::Unbuffered); }
-        qint64 readData(char* data, qint64 maxSize) override;
-        qint64 writeData(const char* data, qint64 maxSize) override { return 0; }
-        int getRecentUnfulfilledReads() { int unfulfilledReads = _unfulfilledReads; _unfulfilledReads = 0; return unfulfilledReads; }
+        void operator()(QSpan<AudioConstants::AudioSample> data);
     private:
-        LocalInjectorsStream& _localInjectorsStream;
+        AudioClient::LocalInjectorsStream& _localInjectorsStream;
         MixedProcessedAudioStream& _receivedAudioStream;
         AudioClient* _audio;
-        int _unfulfilledReads;
     };
     
     void startThread();
@@ -164,19 +151,19 @@ public:
 
     void setIsPlayingBackRecording(bool isPlayingBackRecording) { _isPlayingBackRecording = isPlayingBackRecording; }
 
-    Q_INVOKABLE void setAvatarBoundingBoxParameters(glm::vec3 corner, glm::vec3 scale);
+    Q_INVOKABLE void setAvatarBoundingBoxParameters(glm::vec3 corner, glm::vec<3,float,glm::packed_highp> scale);
 
     bool outputLocalInjector(const AudioInjectorPointer& injector) override;
 
-    HifiAudioDeviceInfo getActiveAudioDevice(QAudio::Mode mode) const;
-    QList<HifiAudioDeviceInfo> getAudioDevices(QAudio::Mode mode) const;
+    HifiAudioDeviceInfo getActiveAudioDevice(QAudioDevice::Mode mode) const;
+    QList<HifiAudioDeviceInfo> getAudioDevices(QAudioDevice::Mode mode) const;
   
     void enablePeakValues(bool enable) { _enablePeakValues = enable; }
     bool peakValuesAvailable() const;
 
     static const float CALLBACK_ACCELERATOR_RATIO;
 
-    bool getNamedAudioDeviceForModeExists(QAudio::Mode mode, const QString& deviceName);
+    bool getNamedAudioDeviceForModeExists(QAudioDevice::Mode mode, const QString& deviceName);
 
     void setRecording(bool isRecording) { _isRecording = isRecording; };
     bool getRecording() { return _isRecording; };
@@ -254,9 +241,9 @@ public slots:
     bool shouldLoopbackInjectors() override { return _shouldEchoToServer; }
 
     // calling with a null QAudioDevice will use the system default
-    bool switchAudioDevice(QAudio::Mode mode, const HifiAudioDeviceInfo& deviceInfo = HifiAudioDeviceInfo());
-    bool switchAudioDevice(QAudio::Mode mode, const QString& deviceName, bool isHmd);
-    void setHmdAudioName(QAudio::Mode mode, const QString& name);
+    bool switchAudioDevice(QAudioDevice::Mode mode, const HifiAudioDeviceInfo& deviceInfo = HifiAudioDeviceInfo());
+    bool switchAudioDevice(QAudioDevice::Mode mode, const QString& deviceName, bool isHmd);
+    void setHmdAudioName(QAudioDevice::Mode mode, const QString& name);
     // Qt opensles plugin is not able to detect when the headset is plugged in
     void setHeadsetPluggedIn(bool pluggedIn);
 
@@ -269,7 +256,6 @@ public slots:
     void setSystemInjectorGain(float gain) { _systemInjectorGain = gain; };
     void setOutputGain(float gain) { _outputGain = gain; };
 
-    void outputNotify();
     void noteAwakening();
 
     void loadSettings();
@@ -293,8 +279,8 @@ signals:
 
     void changeDevice(const HifiAudioDeviceInfo& outputDeviceInfo);
 
-    void deviceChanged(QAudio::Mode mode, const HifiAudioDeviceInfo& device);
-    void devicesChanged(QAudio::Mode mode, const QList<HifiAudioDeviceInfo>& devices);
+    void deviceChanged(QAudioDevice::Mode mode, const HifiAudioDeviceInfo& device);
+    void devicesChanged(QAudioDevice::Mode mode, const QList<HifiAudioDeviceInfo>& devices);
     void peakValueListChanged(const QList<float> peakValueList);
 
     void receivedFirstPacket();
@@ -313,12 +299,12 @@ protected:
     virtual void customDeleter() override;
 
 private:
-    static const int RECEIVED_AUDIO_STREAM_CAPACITY_FRAMES{ 100 };
+    static constexpr int RECEIVED_AUDIO_STREAM_CAPACITY_FRAMES = 100;
     // OUTPUT_CHANNEL_COUNT is audio pipeline output format, which is always 2 channel.
     // _outputFormat.channelCount() is device output format, which may be 1 or multichannel.
-    static const int OUTPUT_CHANNEL_COUNT{ 2 };
-    static const int STARVE_DETECTION_THRESHOLD{ 3 };
-    static const int STARVE_DETECTION_PERIOD{ 10 * 1000 }; // 10 Seconds
+    static constexpr int OUTPUT_CHANNEL_COUNT = 2;
+    static constexpr int STARVE_DETECTION_THRESHOLD = 3;
+    static constexpr int STARVE_DETECTION_PERIOD = 10 * 1000; // 10 Seconds
 
     static const AudioPositionGetter DEFAULT_POSITION_GETTER;
     static const AudioOrientationGetter DEFAULT_ORIENTATION_GETTER;
@@ -372,19 +358,19 @@ private:
     Gate _gate{ this };
 
     Mutex _injectorsMutex;
-    QAudioInput* _audioInput{ nullptr };
+    QAudioSource* _audioInput{ nullptr };
     QTimer* _dummyAudioInput{ nullptr };
     QAudioFormat _desiredInputFormat;
     QAudioFormat _inputFormat;
     QIODevice* _inputDevice{ nullptr };
     int _numInputCallbackBytes{ 0 };
-    QAudioOutput* _audioOutput{ nullptr };
+    QAudioSink* _audioOutput{ nullptr };
     std::atomic<bool> _audioOutputInitialized { false };
     QAudioFormat _desiredOutputFormat;
     QAudioFormat _outputFormat;
     int _outputFrameSize{ 0 };
     int _numOutputCallbackBytes{ 0 };
-    QAudioOutput* _loopbackAudioOutput{ nullptr };
+    QAudioSink* _loopbackAudioOutput{ nullptr };
     QIODevice* _loopbackOutputDevice{ nullptr };
     AudioRingBuffer _inputRingBuffer{ 0 };
     LocalInjectorsStream _localInjectorsStream{ 0 , 1 };
@@ -429,18 +415,18 @@ private:
     AudioReverb _localReverb { AudioConstants::SAMPLE_RATE };
 
     // possible streams needed for resample
-    AudioSRC* _inputToNetworkResampler{ nullptr };
-    AudioSRC* _networkToOutputResampler{ nullptr };
-    AudioSRC* _localToOutputResampler{ nullptr };
-    AudioSRC* _loopbackResampler{ nullptr };
+    std::unique_ptr<AudioSRC> _inputToNetworkResampler;
+    std::unique_ptr<AudioSRC> _networkToOutputResampler;
+    std::unique_ptr<AudioSRC> _localToOutputResampler;
+    std::unique_ptr<AudioSRC> _loopbackResampler;
 
     // for network audio (used by network audio thread)
     int16_t _networkScratchBuffer[AudioConstants::NETWORK_FRAME_SAMPLES_AMBISONIC];
 
     // for output audio (used by this thread)
     int _outputPeriod { 0 };
-    float* _outputMixBuffer { NULL };
-    int16_t* _outputScratchBuffer { NULL };
+    std::vector<float> _outputMixBuffer;
+    std::vector<int16_t> _outputScratchBuffer;
     std::atomic<float> _outputGain { 1.0f };
     float _lastOutputGain { 1.0f };
 
@@ -449,7 +435,7 @@ private:
     std::atomic<float> _systemInjectorGain { 1.0f };
     float _localMixBuffer[AudioConstants::NETWORK_FRAME_SAMPLES_STEREO];
     int16_t _localScratchBuffer[AudioConstants::NETWORK_FRAME_SAMPLES_AMBISONIC];
-    float* _localOutputMixBuffer { NULL };
+    std::vector<float> _localOutputMixBuffer;
     Mutex _localAudioMutex;
     AudioLimiter _audioLimiter{ AudioConstants::SAMPLE_RATE, OUTPUT_CHANNEL_COUNT };
 
@@ -482,11 +468,9 @@ private:
 
     quint16 _outgoingAvatarAudioSequenceNumber{ 0 };
 
-    AudioOutputIODevice _audioOutputIODevice{ _localInjectorsStream, _receivedAudioStream, this };
-
     AudioIOStats _stats{ &_receivedAudioStream };
 
-    AudioGate* _audioGate { nullptr };
+    std::unique_ptr<AudioGate> _audioGate;
     bool _audioGateOpen { true };
 
     AudioPositionGetter _positionGetter{ DEFAULT_POSITION_GETTER };

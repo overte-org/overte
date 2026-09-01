@@ -28,10 +28,10 @@ public:
 class FetchHazeConfig : public render::Job::Config {
     Q_OBJECT
 
-    Q_PROPERTY(glm::vec3 hazeColor MEMBER hazeColor WRITE setHazeColor NOTIFY dirty);
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> hazeColor MEMBER hazeColor WRITE setHazeColor NOTIFY dirty);
     Q_PROPERTY(float hazeGlareAngle MEMBER hazeGlareAngle WRITE setHazeGlareAngle NOTIFY dirty);
 
-    Q_PROPERTY(glm::vec3 hazeGlareColor MEMBER hazeGlareColor WRITE setHazeGlareColor NOTIFY dirty);
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> hazeGlareColor MEMBER hazeGlareColor WRITE setHazeGlareColor NOTIFY dirty);
     Q_PROPERTY(float hazeBaseReference MEMBER hazeBaseReference WRITE setHazeBaseReference NOTIFY dirty);
 
     Q_PROPERTY(bool isHazeActive MEMBER isHazeActive WRITE setHazeActive NOTIFY dirty);

@@ -59,6 +59,7 @@
         };
 
         this.adjustReticleDepth = function(controllerData) {
+            // QT6TODO: Reticle.isPointingAtSystemOverlay does not work currently
             if (Reticle.isPointingAtSystemOverlay(Reticle.position)) {
                 var reticlePositionOnHUD = HMD.worldPointFromOverlay(Reticle.position);
                 Reticle.depth = Vec3.distance(reticlePositionOnHUD, HMD.position);

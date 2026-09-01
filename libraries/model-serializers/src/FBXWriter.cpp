@@ -12,6 +12,7 @@
 #include "FBXWriter.h"
 
 #include <QDebug>
+#include <QIODevice>
 
 #ifdef USE_FBX_2016_FORMAT
     using FBXEndOffset = int64_t;
@@ -131,7 +132,7 @@ void FBXWriter::encodeFBXProperty(QDataStream& out, const QVariant& prop) {
             out << prop.value<int16_t>();
             break;
 
-        case QVariant::Type::Bool:
+        case QMetaType::Bool:
             out.device()->write("C", 1);
             out << prop.toBool();
             break;

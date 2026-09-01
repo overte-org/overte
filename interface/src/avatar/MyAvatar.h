@@ -326,9 +326,9 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(QVector3D qmlPosition READ getQmlPosition)
     QVector3D getQmlPosition() { auto p = getWorldPosition(); return QVector3D(p.x, p.y, p.z); }
 
-    Q_PROPERTY(glm::vec3 feetPosition READ getWorldFeetPosition WRITE goToFeetLocation)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> feetPosition READ getWorldFeetPosition WRITE goToFeetLocation)
     Q_PROPERTY(bool shouldRenderLocally READ getShouldRenderLocally WRITE setShouldRenderLocally)
-    Q_PROPERTY(glm::vec3 motorVelocity READ getScriptedMotorVelocity WRITE setScriptedMotorVelocity)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> motorVelocity READ getScriptedMotorVelocity WRITE setScriptedMotorVelocity)
     Q_PROPERTY(float motorTimescale READ getScriptedMotorTimescale WRITE setScriptedMotorTimescale)
     Q_PROPERTY(QString motorReferenceFrame READ getScriptedMotorFrame WRITE setScriptedMotorFrame)
     Q_PROPERTY(QString motorMode READ getScriptedMotorMode WRITE setScriptedMotorMode)
@@ -337,18 +337,18 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(AudioListenerMode audioListenerModeHead READ getAudioListenerModeHead)
     Q_PROPERTY(AudioListenerMode audioListenerModeCamera READ getAudioListenerModeCamera)
     Q_PROPERTY(AudioListenerMode audioListenerModeCustom READ getAudioListenerModeCustom)
-    Q_PROPERTY(glm::vec3 customListenPosition READ getCustomListenPosition WRITE setCustomListenPosition)
-    Q_PROPERTY(glm::quat customListenOrientation READ getCustomListenOrientation WRITE setCustomListenOrientation)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> customListenPosition READ getCustomListenPosition WRITE setCustomListenPosition)
+    Q_PROPERTY(glm::qua<float,glm::packed_highp> customListenOrientation READ getCustomListenOrientation WRITE setCustomListenOrientation)
     Q_PROPERTY(float rotationRecenterFilterLength READ getRotationRecenterFilterLength WRITE setRotationRecenterFilterLength)
     Q_PROPERTY(float rotationThreshold READ getRotationThreshold WRITE setRotationThreshold)
     Q_PROPERTY(bool enableStepResetRotation READ getEnableStepResetRotation WRITE setEnableStepResetRotation)
     Q_PROPERTY(bool enableDrawAverageFacing READ getEnableDrawAverageFacing WRITE setEnableDrawAverageFacing)
     //TODO: make gravity feature work Q_PROPERTY(glm::vec3 gravity READ getGravity WRITE setGravity)
 
-    Q_PROPERTY(glm::vec3 leftHandPosition READ getLeftHandPosition)
-    Q_PROPERTY(glm::vec3 rightHandPosition READ getRightHandPosition)
-    Q_PROPERTY(glm::vec3 leftHandTipPosition READ getLeftHandTipPosition)
-    Q_PROPERTY(glm::vec3 rightHandTipPosition READ getRightHandTipPosition)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> leftHandPosition READ getLeftHandPosition)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> rightHandPosition READ getRightHandPosition)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> leftHandTipPosition READ getLeftHandTipPosition)
+    Q_PROPERTY(glm::vec<3,float,glm::packed_highp> rightHandTipPosition READ getRightHandTipPosition)
 
     Q_PROPERTY(controller::Pose leftHandPose READ getLeftHandPose)
     Q_PROPERTY(controller::Pose rightHandPose READ getRightHandPose)
@@ -387,6 +387,8 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(MyAvatar::AllowAvatarStandingPreference standingMode READ getAllowAvatarStandingPreference WRITE setAllowAvatarStandingPreference NOTIFY standingModeChanged);
     Q_PROPERTY(bool allowTeleporting READ getAllowTeleporting)
     Q_PROPERTY(float cameraBoomLength MEMBER _boomLength)
+
+    Q_PROPERTY(MyAvatar::TabletInputMode tabletInputMode READ getTabletInputMode WRITE setTabletInputMode NOTIFY tabletInputModeChanged)
 
     const QString DOMINANT_LEFT_HAND = "left";
     const QString DOMINANT_RIGHT_HAND = "right";
@@ -563,6 +565,13 @@ public:
     static const std::array<QString, (uint)AllowAvatarStandingPreference::Count> allowAvatarStandingPreferenceStrings;
     static const std::array<QString, (uint)AllowAvatarLeaningPreference::Count> allowAvatarLeaningPreferenceStrings;
 
+    enum class TabletInputMode : uint {
+        Lasers,
+        Styluses,
+        AvatarFingers,
+    };
+    Q_ENUM(TabletInputMode);
+
     explicit MyAvatar(QThread* thread);
     virtual ~MyAvatar();
 
@@ -604,9 +613,9 @@ public:
     virtual void postUpdate(float deltaTime, const render::ScenePointer& scene) override;
     void preDisplaySide(const RenderArgs* renderArgs);
 
-    const glm::mat4& getHMDSensorMatrix() const { return _hmdSensorMatrix; }
-    const glm::vec3& getHMDSensorPosition() const { return _hmdSensorPosition; }
-    const glm::quat& getHMDSensorOrientation() const { return _hmdSensorOrientation; }
+    const glm::mat<4,4,float,glm::packed_highp>& getHMDSensorMatrix() const { return _hmdSensorMatrix; }
+    const glm::vec<3,float,glm::packed_highp>& getHMDSensorPosition() const { return _hmdSensorPosition; }
+    const glm::qua<float,glm::packed_highp>& getHMDSensorOrientation() const { return _hmdSensorOrientation; }
 
     /*@jsdoc
      * Gets the avatar orientation. Suitable for use in QML.
@@ -623,18 +632,18 @@ public:
     Q_INVOKABLE QVariant getOrientationVar() const;
 
     // A method intended to be overriden by MyAvatar for polling orientation for network transmission.
-    glm::quat getOrientationOutbound() const override;
+    glm::qua<float,glm::packed_highp> getOrientationOutbound() const override;
 
     // Pass a recent sample of the HMD to the avatar.
     // This can also update the avatar's position to follow the HMD
     // as it moves through the world.
-    void updateFromHMDSensorMatrix(const glm::mat4& hmdSensorMatrix);
+    void updateFromHMDSensorMatrix(const glm::mat<4,4,float,glm::packed_highp>& hmdSensorMatrix);
 
     // compute the hip to hand average azimuth.
-    glm::vec2 computeHandAzimuth() const;
+    glm::vec<2,float,glm::packed_highp> computeHandAzimuth() const;
 
     // read the location of a hand controller and save the transform
-    void updateJointFromController(controller::Action poseKey, ThreadSafeValueCache<glm::mat4>& matrixCache);
+    void updateJointFromController(controller::Action poseKey, ThreadSafeValueCache<glm::mat<4,4,float,glm::packed_highp>>& matrixCache);
 
     // best called at end of main loop, just before rendering.
     // update sensor to world matrix from current body position and hmd sensor.
@@ -653,7 +662,7 @@ public:
      * var defaultEyePosition = MyAvatar.getDefaultEyePosition();
      * print(JSON.stringify(defaultEyePosition));
      */
-    Q_INVOKABLE glm::vec3 getDefaultEyePosition() const;
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getDefaultEyePosition() const;
 
     float getRealWorldFieldOfView() { return _realWorldFieldOfView.get(); }
 
@@ -1020,6 +1029,9 @@ public:
     bool getAllowTeleporting() { return _allowTeleportingSetting.get(); }
     void setAllowTeleporting(bool allowTeleporting) { _allowTeleportingSetting.set(allowTeleporting); }
 
+    MyAvatar::TabletInputMode getTabletInputMode();
+    void setTabletInputMode(MyAvatar::TabletInputMode mode);
+
     bool getShowPlayArea() const { return _showPlayArea.get(); }
     void setShowPlayArea(bool showPlayArea) { _showPlayArea.set(showPlayArea); }
 
@@ -1123,7 +1135,7 @@ public:
      * @example <caption>Report the current position of your avatar's head.</caption>
      * print(JSON.stringify(MyAvatar.getHeadPosition()));
      */
-    Q_INVOKABLE glm::vec3 getHeadPosition() const { return getHead()->getPosition(); }
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getHeadPosition() const { return getHead()->getPosition(); }
 
     /*@jsdoc
      * Gets the yaw of the avatar's head relative to its body.
@@ -1163,7 +1175,7 @@ public:
      * var eyePosition = MyAvatar.getEyePosition();
      * print(JSON.stringify(eyePosition));
      */
-    Q_INVOKABLE glm::vec3 getEyePosition() const { return getHead()->getEyePosition(); }
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getEyePosition() const { return getHead()->getEyePosition(); }
 
     /*@jsdoc
      * Gets the position of the avatar your avatar is currently looking at.
@@ -1174,7 +1186,7 @@ public:
      */
     // FIXME: If not looking at an avatar, the most recently looked-at position is returned. This should be fixed to return
     // undefined or {NaN, NaN, NaN} or similar.
-    Q_INVOKABLE glm::vec3 getTargetAvatarPosition() const { return _targetAvatarPosition; }
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getTargetAvatarPosition() const { return _targetAvatarPosition; }
 
     /*@jsdoc
      * Gets information on the avatar your avatar is currently looking at.
@@ -1195,7 +1207,7 @@ public:
      * @example <caption>Report the position of your left hand relative to your avatar.</caption>
      * print(JSON.stringify(MyAvatar.getLeftHandPosition()));
      */
-    Q_INVOKABLE glm::vec3 getLeftHandPosition() const;
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getLeftHandPosition() const;
 
     /*@jsdoc
      * Gets the position of the avatar's right hand, relative to the avatar, as positioned by a hand controller (e.g., Oculus
@@ -1208,7 +1220,7 @@ public:
      * @example <caption>Report the position of your right hand relative to your avatar.</caption>
      * print(JSON.stringify(MyAvatar.getLeftHandPosition()));
      */
-    Q_INVOKABLE glm::vec3 getRightHandPosition() const;
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getRightHandPosition() const;
 
     /*@jsdoc
      * Gets the position 0.3m in front of the left hand's position in the direction along the palm, in avatar coordinates, as
@@ -1217,7 +1229,7 @@ public:
      * @returns {Vec3} The position 0.3m in front of the left hand's position in the direction along the palm, in avatar
      *     coordinates. If the hand isn't being positioned by a controller, <code>{@link Vec3(0)|Vec3.ZERO}</code> is returned.
      */
-    Q_INVOKABLE glm::vec3 getLeftHandTipPosition() const;
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getLeftHandTipPosition() const;
 
     /*@jsdoc
      * Gets the position 0.3m in front of the right hand's position in the direction along the palm, in avatar coordinates, as
@@ -1226,7 +1238,7 @@ public:
      * @returns {Vec3} The position 0.3m in front of the right hand's position in the direction along the palm, in avatar
      *     coordinates. If the hand isn't being positioned by a controller, <code>{@link Vec3(0)|Vec3.ZERO}</code> is returned.
      */
-    Q_INVOKABLE glm::vec3 getRightHandTipPosition() const;
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getRightHandTipPosition() const;
 
 
     /*@jsdoc
@@ -1285,15 +1297,15 @@ public:
     void snapOtherAvatarLookAtTargetsToMe(const AvatarHash& hash);
     void clearLookAtTargetAvatar();
 
-    virtual void setJointRotations(const QVector<glm::quat>& jointRotations) override;
-    virtual void setJointData(int index, const glm::quat& rotation, const glm::vec3& translation) override;
-    virtual void setJointRotation(int index, const glm::quat& rotation) override;
-    virtual void setJointTranslation(int index, const glm::vec3& translation) override;
+    virtual void setJointRotations(const QVector<glm::qua<float,glm::packed_highp>>& jointRotations) override;
+    virtual void setJointData(int index, const glm::qua<float,glm::packed_highp>& rotation, const glm::vec<3,float,glm::packed_highp>& translation) override;
+    virtual void setJointRotation(int index, const glm::qua<float,glm::packed_highp>& rotation) override;
+    virtual void setJointTranslation(int index, const glm::vec<3,float,glm::packed_highp>& translation) override;
     virtual void clearJointData(int index) override;
 
-    virtual void setJointData(const QString& name, const glm::quat& rotation, const glm::vec3& translation)  override;
-    virtual void setJointRotation(const QString& name, const glm::quat& rotation)  override;
-    virtual void setJointTranslation(const QString& name, const glm::vec3& translation)  override;
+    virtual void setJointData(const QString& name, const glm::qua<float,glm::packed_highp>& rotation, const glm::vec<3,float,glm::packed_highp>& translation)  override;
+    virtual void setJointRotation(const QString& name, const glm::qua<float,glm::packed_highp>& rotation)  override;
+    virtual void setJointTranslation(const QString& name, const glm::vec<3,float,glm::packed_highp>& translation)  override;
     virtual void clearJointData(const QString& name) override;
     virtual void clearJointsData() override;
 
@@ -1306,7 +1318,7 @@ public:
      * @param {Quat} orientation - The orientation of the joint in world coordinates.
      * @returns {boolean} <code>true</code> if the joint was pinned, <code>false</code> if it wasn't.
      */
-    Q_INVOKABLE bool pinJoint(int index, const glm::vec3& position, const glm::quat& orientation);
+    Q_INVOKABLE bool pinJoint(int index, const glm::vec<3,float,glm::packed_highp>& position, const glm::qua<float,glm::packed_highp>& orientation);
 
     bool isJointPinned(int index);
 
@@ -1359,7 +1371,7 @@ public:
 
     void updateMotors();
     void prepareForPhysicsSimulation();
-    void nextAttitude(glm::vec3 position, glm::quat orientation); // Can be safely called at any time.
+    void nextAttitude(glm::vec<3,float,glm::packed_highp> position, glm::qua<float,glm::packed_highp> orientation); // Can be safely called at any time.
     void harvestResultsFromPhysicsSimulation(float deltaTime);
 
     const QString& getCollisionSoundURL() { return _collisionSoundURL; }
@@ -1393,10 +1405,10 @@ public:
 
     AudioListenerMode getAudioListenerMode() { return _audioListenerMode; }
     void setAudioListenerMode(AudioListenerMode audioListenerMode);
-    glm::vec3 getCustomListenPosition() { return _customListenPosition; }
-    void setCustomListenPosition(glm::vec3 customListenPosition) { _customListenPosition = customListenPosition; }
-    glm::quat getCustomListenOrientation() { return _customListenOrientation; }
-    void setCustomListenOrientation(glm::quat customListenOrientation) { _customListenOrientation = customListenOrientation; }
+    glm::vec<3,float,glm::packed_highp> getCustomListenPosition() { return _customListenPosition; }
+    void setCustomListenPosition(glm::vec<3,float,glm::packed_highp> customListenPosition) { _customListenPosition = customListenPosition; }
+    glm::qua<float,glm::packed_highp> getCustomListenOrientation() { return _customListenOrientation; }
+    void setCustomListenOrientation(glm::qua<float,glm::packed_highp> customListenOrientation) { _customListenOrientation = customListenOrientation; }
 
     virtual void rebuildCollisionShape() override;
 
@@ -1408,8 +1420,8 @@ public:
     void setHeadControllerFacingMovingAverage(glm::vec2 currentHeadControllerFacing) { _headControllerFacingMovingAverage = currentHeadControllerFacing; }
     float getCurrentStandingHeight() const { return _currentStandingHeight; }
     void setCurrentStandingHeight(float newMode) { _currentStandingHeight = newMode; }
-    const glm::quat getAverageHeadRotation() const { return _averageHeadRotation; }
-    void setAverageHeadRotation(glm::quat rotation) { _averageHeadRotation = rotation; }
+    const glm::qua<float,glm::packed_highp> getAverageHeadRotation() const { return _averageHeadRotation; }
+    void setAverageHeadRotation(glm::qua<float,glm::packed_highp> rotation) { _averageHeadRotation = rotation; }
     bool getResetMode() const { return _resetMode; }
     void setResetMode(bool hasBeenReset) { _resetMode = hasBeenReset; }
 
@@ -1601,7 +1613,7 @@ public:
      * var headRotation = MyAvatar.getAbsoluteJointRotationInObjectFrame(headIndex);
      * print("Head rotation: " + JSON.stringify(Quat.safeEulerAngles(headRotation))); // Degrees
      */
-    virtual glm::quat getAbsoluteJointRotationInObjectFrame(int index) const override;
+    virtual glm::qua<float,glm::packed_highp> getAbsoluteJointRotationInObjectFrame(int index) const override;
 
     /*@jsdoc
      * Gets the translation of a joint relative to the avatar.
@@ -1614,19 +1626,19 @@ public:
      * var headTranslation = MyAvatar.getAbsoluteJointTranslationInObjectFrame(headIndex);
      * print("Head translation: " + JSON.stringify(headTranslation));
      */
-    virtual glm::vec3 getAbsoluteJointTranslationInObjectFrame(int index) const override;
+    virtual glm::vec<3,float,glm::packed_highp> getAbsoluteJointTranslationInObjectFrame(int index) const override;
 
     // all calibration matrices are in absolute sensor space.
-    glm::mat4 getCenterEyeCalibrationMat() const;
-    glm::mat4 getHeadCalibrationMat() const;
-    glm::mat4 getSpine2CalibrationMat() const;
-    glm::mat4 getHipsCalibrationMat() const;
-    glm::mat4 getLeftFootCalibrationMat() const;
-    glm::mat4 getRightFootCalibrationMat() const;
-    glm::mat4 getRightArmCalibrationMat() const;
-    glm::mat4 getLeftArmCalibrationMat() const;
-    glm::mat4 getLeftHandCalibrationMat() const;
-    glm::mat4 getRightHandCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getCenterEyeCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getHeadCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getSpine2CalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getHipsCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getLeftFootCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getRightFootCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getRightArmCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getLeftArmCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getLeftHandCalibrationMat() const;
+    glm::mat<4,4,float,glm::packed_highp> getRightHandCalibrationMat() const;
 
     void addHoldAction(AvatarActionHold* holdAction);  // thread-safe
     void removeHoldAction(AvatarActionHold* holdAction);  // thread-safe
@@ -1635,16 +1647,16 @@ public:
 
     // derive avatar body position and orientation from the current HMD Sensor location.
     // results are in sensor frame (-z forward)
-    glm::mat4 deriveBodyFromHMDSensor(const bool forceFollowYPos = false) const;
+    glm::mat<4,4,float,glm::packed_highp> deriveBodyFromHMDSensor(const bool forceFollowYPos = false) const;
 
-    glm::mat4 getSpine2RotationRigSpace() const;
+    glm::mat<4,4,float,glm::packed_highp> getSpine2RotationRigSpace() const;
 
-    glm::vec3 computeCounterBalance();
+    glm::vec<3,float,glm::packed_highp> computeCounterBalance();
 
     // derive avatar body position and orientation from using the current HMD Sensor location in relation to the previous
     // location of the base of support of the avatar.
     // results are in sensor frame (-z foward)
-    glm::mat4 deriveBodyUsingCgModel();
+    glm::mat<4,4,float,glm::packed_highp> deriveBodyUsingCgModel();
 
     /*@jsdoc
      * Tests whether a vector is pointing in the general direction of the avatar's "up" direction (i.e., dot product of vectors
@@ -1654,7 +1666,7 @@ public:
      * @returns {boolean} <code>true</code> if the direction vector is pointing generally in the direction of the avatar's "up"
      *     direction.
      */
-    Q_INVOKABLE bool isUp(const glm::vec3& direction) { return glm::dot(direction, _worldUpDirection) > 0.0f; }; // true iff direction points up wrt avatar's definition of up.
+    Q_INVOKABLE bool isUp(const glm::vec<3,float,glm::packed_highp>& direction) { return glm::dot(direction, _worldUpDirection) > 0.0f; }; // true iff direction points up wrt avatar's definition of up.
 
     /*@jsdoc
      * Tests whether a vector is pointing in the general direction of the avatar's "down" direction (i.e., dot product of
@@ -1664,14 +1676,14 @@ public:
      * @returns {boolean} <code>true</code> if the direction vector is pointing generally in the direction of the avatar's
      *     "down" direction.
      */
-    Q_INVOKABLE bool isDown(const glm::vec3& direction) { return glm::dot(direction, _worldUpDirection) < 0.0f; };
+    Q_INVOKABLE bool isDown(const glm::vec<3,float,glm::packed_highp>& direction) { return glm::dot(direction, _worldUpDirection) < 0.0f; };
 
     void setUserHeight(float value);
     float getUserHeight() const;
     float getUserEyeHeight() const;
 
     virtual SpatialParentTree* getParentTree() const override;
-    virtual glm::vec3 scaleForChildren() const override { return glm::vec3(getSensorToWorldScale()); }
+    virtual glm::vec<3,float,glm::packed_highp> scaleForChildren() const override { return glm::vec3(getSensorToWorldScale()); }
 
     const QUuid& getSelfID() const { return AVATAR_SELF_ID; }
 
@@ -1702,9 +1714,9 @@ public:
     bool isReadyForPhysics() const;
 
     float computeStandingHeightMode(const controller::Pose& head);
-    glm::quat computeAverageHeadRotation(const controller::Pose& head);
+    glm::qua<float,glm::packed_highp> computeAverageHeadRotation(const controller::Pose& head);
 
-    glm::vec3 getNextPosition() { return _goToPending ? _goToPosition : getWorldPosition(); }
+    glm::vec<3,float,glm::packed_highp> getNextPosition() { return _goToPending ? _goToPosition : getWorldPosition(); }
     void prepareAvatarEntityDataForReload();
 
     /*@jsdoc
@@ -1714,14 +1726,14 @@ public:
      * @function MyAvatar.setHeadLookAt
      * @param {Vec3} lookAtTarget - The target point in world coordinates.
      */
-    Q_INVOKABLE void setHeadLookAt(const glm::vec3& lookAtTarget);
+    Q_INVOKABLE void setHeadLookAt(const glm::vec<3,float,glm::packed_highp>& lookAtTarget);
 
     /*@jsdoc
      * Gets the current target point of the head's look direction in world coordinates.
      * @function MyAvatar.getHeadLookAt
      * @returns {Vec3} The head's look-at target in world coordinates.
      */
-    Q_INVOKABLE glm::vec3 getHeadLookAt() { return _lookAtCameraTarget; }
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getHeadLookAt() { return _lookAtCameraTarget; }
 
     /*@jsdoc
      * Returns control of the avatar's head to the engine, and releases control from API calls.
@@ -1736,14 +1748,14 @@ public:
      * @function MyAvatar.setEyesLookAt
      * @param {Vec3} lookAtTarget - The target point in world coordinates.
      */
-    Q_INVOKABLE void setEyesLookAt(const glm::vec3& lookAtTarget);
+    Q_INVOKABLE void setEyesLookAt(const glm::vec<3,float,glm::packed_highp>& lookAtTarget);
 
     /*@jsdoc
      * Gets the current target point of the eyes look direction in world coordinates.
      * @function MyAvatar.getEyesLookAt
      * @returns {Vec3} The eyes' look-at target in world coordinates.
      */
-    Q_INVOKABLE glm::vec3 getEyesLookAt() { return _eyesLookAtTarget.get(); }
+    Q_INVOKABLE glm::vec<3,float,glm::packed_highp> getEyesLookAt() { return _eyesLookAtTarget.get(); }
 
     /*@jsdoc
      * Returns control of the avatar's eyes to the engine, and releases control from API calls.
@@ -1759,9 +1771,9 @@ public:
      * @param {Vec3} pointAtTarget - The target to point at, in world coordinates.
      * @returns {boolean} <code>true</code> if the target point was set, <code>false</code> if it wasn't.
      */
-    Q_INVOKABLE bool setPointAt(const glm::vec3& pointAtTarget);
+    Q_INVOKABLE bool setPointAt(const glm::vec<3,float,glm::packed_highp>& pointAtTarget);
 
-    glm::quat getLookAtRotation() { return _lookAtYaw * _lookAtPitch; }
+    glm::qua<float,glm::packed_highp> getLookAtRotation() { return _lookAtYaw * _lookAtPitch; }
 
     /*@jsdoc
      * Creates a new grab that grabs an entity.
@@ -1791,7 +1803,7 @@ public:
      * }, 10000);
      */
     Q_INVOKABLE const QUuid grab(const QUuid& targetID, int parentJointIndex,
-                                 glm::vec3 positionalOffset, glm::quat rotationalOffset);
+                                 glm::vec<3,float,glm::packed_highp> positionalOffset, glm::qua<float,glm::packed_highp> rotationalOffset);
 
     /*@jsdoc
      * Releases (deletes) a grab to stop grabbing an entity.
@@ -1871,7 +1883,7 @@ public:
      * @param {Vec3} position - The position where the avatar should sit.
      * @param {Quat} rotation - The initial orientation of the seated avatar.
      */
-    Q_INVOKABLE void beginSit(const glm::vec3& position, const glm::quat& rotation);
+    Q_INVOKABLE void beginSit(const glm::vec<3,float,glm::packed_highp>& position, const glm::qua<float,glm::packed_highp>& rotation);
 
     /*@jsdoc
      * Ends a sitting action for the avatar.
@@ -1879,7 +1891,7 @@ public:
      * @param {Vec3} position - The position of the avatar when standing up.
      * @param {Quat} rotation - The orientation of the avatar when standing up.
      */
-    Q_INVOKABLE void endSit(const glm::vec3& position, const glm::quat& rotation);
+    Q_INVOKABLE void endSit(const glm::vec<3,float,glm::packed_highp>& position, const glm::qua<float,glm::packed_highp>& rotation);
 
     /*@jsdoc
      * Gets whether the avatar is in a seated pose. The seated pose is set by calling {@link MyAvatar.beginSit}.
@@ -1904,8 +1916,8 @@ public:
     void debugDrawPose(controller::Action action, const char* channelName, float size);
 
     bool getIsJointOverridden(int jointIndex) const;
-    glm::vec3 getLookAtPivotPoint();
-    glm::vec3 getCameraEyesPosition(float deltaTime);
+    glm::vec<3,float,glm::packed_highp> getLookAtPivotPoint();
+    glm::vec<3,float,glm::packed_highp> getCameraEyesPosition(float deltaTime);
     bool isJumping();
     bool getHMDCrouchRecenterEnabled() const;
     bool isAllowedToLean() const;
@@ -1982,8 +1994,8 @@ public slots:
      * @param {boolean} [shouldFaceLocation=false] - Set to <code>true</code> to position the avatar a short distance away from
      *      the new position and orientate the avatar to face the position.
      */
-    void goToFeetLocation(const glm::vec3& newPosition, bool hasOrientation = false,
-        const glm::quat& newOrientation = glm::quat(), bool shouldFaceLocation = false);
+    void goToFeetLocation(const glm::vec<3,float,glm::packed_highp>& newPosition, bool hasOrientation = false,
+        const glm::qua<float,glm::packed_highp>& newOrientation = glm::qua<float,glm::packed_highp>(), bool shouldFaceLocation = false);
 
     /*@jsdoc
      * Moves the avatar to a new position and/or orientation in the domain.
@@ -1995,8 +2007,8 @@ public slots:
      *     the new position and orientate the avatar to face the position.
      * @param {boolean} [withSafeLanding=true] - Set to <code>false</code> to disable safe landing when teleporting.
      */
-    void goToLocation(const glm::vec3& newPosition,
-                      bool hasOrientation = false, const glm::quat& newOrientation = glm::quat(),
+    void goToLocation(const glm::vec<3,float,glm::packed_highp>& newPosition,
+                      bool hasOrientation = false, const glm::qua<float,glm::packed_highp>& newOrientation = glm::qua<float,glm::packed_highp>(),
                       bool shouldFaceLocation = false, bool withSafeLanding = true);
     /*@jsdoc
      * Moves the avatar to a new position and (optional) orientation in the domain, with safe landing.
@@ -2010,7 +2022,7 @@ public slots:
      * @function MyAvatar.goToLocationAndEnableCollisions
      * @param {Vec3} position - The new position for the avatar, in world coordinates.
      */
-    void goToLocationAndEnableCollisions(const glm::vec3& newPosition);
+    void goToLocationAndEnableCollisions(const glm::vec<3,float,glm::packed_highp>& newPosition);
 
     /*@jsdoc
      * @function MyAvatar.safeLanding
@@ -2018,7 +2030,7 @@ public slots:
      * @returns {boolean} <code>true</code> if the avatar was moved, <code>false</code> if it wasn't.
      * @deprecated This function is deprecated and will be removed.
      */
-    bool safeLanding(const glm::vec3& position);
+    bool safeLanding(const glm::vec<3,float,glm::packed_highp>& position);
 
 
     /*@jsdoc
@@ -2043,7 +2055,7 @@ public slots:
      *     properties instead.
      */
     //  Set/Get update the thrust that will move the avatar around
-    void addThrust(glm::vec3 newThrust) { _thrust += newThrust; };
+    void addThrust(glm::vec<3,float,glm::packed_highp> newThrust) { _thrust += newThrust; };
 
     /*@jsdoc
      * Gets the thrust currently being applied to your avatar.
@@ -2052,7 +2064,7 @@ public slots:
      * @deprecated This function is deprecated and will be removed. Use {@link MyAvatar|MyAvatar.motorVelocity} and related
      *     properties instead.
      */
-    glm::vec3 getThrust() { return _thrust; };
+    glm::vec<3,float,glm::packed_highp> getThrust() { return _thrust; };
 
     /*@jsdoc
      * Sets the thrust to be applied to your avatar for a short while.
@@ -2061,7 +2073,7 @@ public slots:
      * @deprecated This function is deprecated and will be removed. Use {@link MyAvatar|MyAvatar.motorVelocity} and related
      *     properties instead.
      */
-    void setThrust(glm::vec3 newThrust) { _thrust = newThrust; }
+    void setThrust(glm::vec<3,float,glm::packed_highp> newThrust) { _thrust = newThrust; }
 
 
     /*@jsdoc
@@ -2237,7 +2249,7 @@ public slots:
      * @function MyAvatar.getPositionForAudio
      * @returns {Vec3} Your listening position.
      */
-    glm::vec3 getPositionForAudio();
+    glm::vec<3,float,glm::packed_highp> getPositionForAudio();
 
     /*@jsdoc
      * Gets the orientation of your listening position for spatialized audio. The orientation depends on the value of the
@@ -2245,7 +2257,7 @@ public slots:
      * @function MyAvatar.getOrientationForAudio
      * @returns {Quat} The orientation of your listening position.
      */
-    glm::quat getOrientationForAudio();
+    glm::qua<float,glm::packed_highp> getOrientationForAudio();
 
     /*@jsdoc
      * @function MyAvatar.setModelScale
@@ -2498,6 +2510,14 @@ signals:
      * @returns {Signal}
      */
     void disableHandTouchForIDChanged(const QUuid& entityID, bool disable);
+
+    /*@jsdoc
+     * Triggered when {@link MyAvatar.tabletInputMode} is changed.
+     * @function MyAvatar.tabletInputModeChanged
+     * @param {MyAvatar.TabletInputMode}
+     * @returns {Signal}
+     */
+    void tabletInputModeChanged(MyAvatar::TabletInputMode mode);
 
 private slots:
     void leaveDomain();

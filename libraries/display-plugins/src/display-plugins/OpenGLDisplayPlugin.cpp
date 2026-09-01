@@ -21,7 +21,7 @@
 
 #include <QtGui/QImage>
 #include <QtGui/QImageWriter>
-#include <QtGui/QOpenGLFramebufferObject>
+#include <QOpenGLFramebufferObject>
 
 #include <NumericalConstants.h>
 #include <DependencyManager.h>
@@ -270,7 +270,7 @@ bool OpenGLDisplayPlugin::activate() {
             auto& cursorData = _cursorsData[iconId];
             auto iconPath = cursorManager.getIconImage(iconId);
             auto image = QImage(iconPath);
-            image = image.mirrored();
+            image = image.flipped(Qt::Vertical);
             image = image.convertToFormat(QImage::Format_RGBA8888);
             cursorData.image = image;
             cursorData.size = toGlm(image.size());
@@ -844,7 +844,7 @@ QImage OpenGLDisplayPlugin::getScreenshot(float aspectRatio) {
     }
     QImage screenshot(bestSize.x, bestSize.y, QImage::Format_ARGB32);
     getBackend()->downloadFramebuffer(_compositeFramebuffer, ivec4(corner, bestSize), screenshot);
-    return screenshot.mirrored(false, true);
+    return screenshot.flipped(Qt::Vertical);
 }
 
 QImage OpenGLDisplayPlugin::getSecondaryCameraScreenshot() {
@@ -854,7 +854,7 @@ QImage OpenGLDisplayPlugin::getSecondaryCameraScreenshot() {
 
     QImage screenshot(region.z, region.w, QImage::Format_ARGB32);
     getBackend()->downloadFramebuffer(secondaryCameraFramebuffer, region, screenshot);
-    return screenshot.mirrored(false, true);
+    return screenshot.flipped(Qt::Vertical);
 }
 
 glm::uvec2 OpenGLDisplayPlugin::getSurfacePixels() const {

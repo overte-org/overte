@@ -1,6 +1,6 @@
 import QtQuick 2.3
-import QtQuick.Controls 1.3 as Original
-import QtQuick.Controls.Styles 1.3 as OriginalStyles
+import QtQuick.Controls as Original
+////import QtQuick.Controls.Styles as OriginalStyles
 
 import "."
 import "../styles"
@@ -11,7 +11,8 @@ Original.Button {
     property real size: 32
     SystemPalette { id: palette; colorGroup: SystemPalette.Active }
     SystemPalette { id: disabledPalette; colorGroup: SystemPalette.Disabled }
-    style: OriginalStyles.ButtonStyle {
+    // QT6TODO
+    /*style: OriginalStyles.ButtonStyle {
         label: FontAwesome {
             verticalAlignment: Text.AlignVCenter
             horizontalAlignment: Text.AlignHCenter
@@ -48,7 +49,7 @@ Original.Button {
                 onStopped: if (control.activeFocus) { start(); }
             }
         }
-    }
+    }*/
     Keys.onEnterPressed: root.clicked();
     Keys.onReturnPressed: root.clicked();
 }

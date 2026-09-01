@@ -36,6 +36,7 @@ class NetworkClipLoader : public Resource {
 public:
     NetworkClipLoader(const QUrl& url);
     NetworkClipLoader(const NetworkClipLoader& other) : Resource(other), _clip(other._clip) {}
+    virtual ~NetworkClipLoader() {}
 
     virtual void downloadFinished(const QByteArray& data) override;
     ClipPointer getClip() { return _clip; }
@@ -48,7 +49,7 @@ private:
     const NetworkClip::Pointer _clip;
 };
 
-using NetworkClipLoaderPointer = QSharedPointer<NetworkClipLoader>;
+using NetworkClipLoaderPointer = std::shared_ptr<NetworkClipLoader>;
 
 class ClipCache : public ResourceCache, public Dependency {
     Q_OBJECT
@@ -58,8 +59,8 @@ public slots:
     NetworkClipLoaderPointer getClipLoader(const QUrl& url);
 
 protected:
-    virtual QSharedPointer<Resource> createResource(const QUrl& url) override;
-    QSharedPointer<Resource> createResourceCopy(const QSharedPointer<Resource>& resource) override;
+    virtual std::shared_ptr<Resource> createResource(const QUrl& url) override;
+    std::shared_ptr<Resource> createResourceCopy(const std::shared_ptr<Resource>& resource) override;
 
 private:
     ClipCache(QObject* parent = nullptr);
