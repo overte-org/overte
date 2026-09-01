@@ -4,7 +4,7 @@
 ## Installation
 
 
-* Install wireshark 2.4.6 or higher.
+* Install wireshark 4.2.6 or higher. Wireshark 4.3 is needed to decode zlib data.
 * Copy these lua files into `c:\Users\username\AppData\Roaming\Wireshark\Plugins` on Windows, or `$HOME/.local/lib/wireshark/plugins` on Linux.
 
 ## Lua version
@@ -49,6 +49,7 @@ After a capture any detected Overte Packets should be easily identifiable by one
 
 See the installation requirements, you need to install the bit32 Lua module for the right Lua version.
 
+
 ## Development hints
 
 
@@ -70,4 +71,6 @@ Decode only the first packet:
 * `-c N` Only decode first N packets
 * `-O hfudt,hf-domain,hf-entity,hf-avatar,hf-audio` Only dump Overte protocol data, skip dumping UDP/etc parts.
 * `-V` decode protocols
+* `-z expert` to show "expert info". This is where things like decode errors are reported, including the inability to decode unknown protocol versions.
+*
 *

@@ -90,7 +90,7 @@ p_hf_avatar.fields = {
   f_avatar_trait_instance_id
 }
 
-local packet_type_extractor = Field.new('hfudt.type')
+local packet_type_extractor = Field.new('hf-nlpacket.type')
 
 INSTANCED_TYPES = {
   [1] = true
