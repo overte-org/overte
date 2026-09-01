@@ -2,6 +2,7 @@
 //  Created by Bradley Austin Davis on 2015/05/12
 //  Copyright 2015 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2025 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -409,8 +410,8 @@ void OpenVrDisplayPlugin::init() {
 }
 
 const QString OpenVrDisplayPlugin::getName() const {
-    std::string headsetName = getOpenVrDeviceName();
-    if (headsetName == "HTC") {
+    std::string headsetName = "OpenVR: " + getOpenVrDeviceName();
+    if (getOpenVrDeviceName() == "HTC") {
         headsetName += " Vive";
     }
 
