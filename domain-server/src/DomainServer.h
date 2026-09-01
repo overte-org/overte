@@ -61,10 +61,10 @@ enum ReplicationServerDirection {
 class DomainServer : public QCoreApplication, public HTTPSRequestHandler {
     Q_OBJECT
 public:
-    DomainServer(int argc, char* argv[]);
+    DomainServer(int argc, char* argv[], QJsonObject &domainSettingsToSet);
     ~DomainServer();
 
-    static void parseCommandLine(int argc, char* argv[]);
+    static void parseCommandLine(int argc, char* argv[], QJsonObject &domainSettingsToSet);
 
     enum DomainType {
         NonMetaverse,
