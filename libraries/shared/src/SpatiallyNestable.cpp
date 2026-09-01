@@ -778,6 +778,8 @@ const Transform SpatiallyNestable::getTransform() const {
     return result;
 }
 
+// FIXME: This doesn't seem to work on avatars. Two avatars parented to eachother
+// will forever spam this function without ever breaking the loop.
 void SpatiallyNestable::breakParentingLoop() const {
     // someone created a loop.  break it...
     qCDebug(shared) << "Parenting loop detected: " << getID();
