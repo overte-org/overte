@@ -566,6 +566,11 @@
  *     <p><strong>Warning:</strong> The ordinate values are in the range <code>0.0</code> &ndash; <code>1.0</code>.</p>
  * @property {Color} color=255,255,255 - Used as the color for each point if <code>strokeColors</code> doesn't have a value for
  *     the point.
+ * @property {float[]} strokeAlphas=[]] - The base alphas of each point, with values in the range <code>0.0</code>
+ *     &ndash; <code>1.0</code>. These alphas are multiplied with the alpha of the texture. If there are more line
+ *     points than stroke alphas, the <code>alpha</code> property value is used for the remaining points.
+ * @property {float} alpha=1.0 - Used as the alpha for each point if <code>strokeAlphas</code> doesn't have a value for
+ *     the point.
  * @property {string} textures="" - The URL of a JPG or PNG texture to use for the lines. If you want transparency, use PNG
  *     format.
  * @property {boolean} isUVModeStretch=true - <code>true</code> if the texture is stretched to fill the whole line,
@@ -574,6 +579,7 @@
  *     <code>false</code> if it doesn't.
  * @property {boolean} faceCamera=false - <code>true</code> if each line segment rotates to face the camera, <code>false</code>
  *     if they don't.
+ * @property {Entities.Sampler} sampler - The texture sampler used to render the image.
  * @example <caption>Draw a textured "V".</caption>
  * var entity = Entities.addEntity({
  *     type: "PolyLine",

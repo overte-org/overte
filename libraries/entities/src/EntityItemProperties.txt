@@ -272,14 +272,17 @@ enum:COLOR prop:color type:u8vec3Color default:ENTITY_ITEM_DEFAULT_COLOR common 
 enum:LINE_POINTS prop:linePoints type:qVectorVec3 default:ENTITY_ITEM_DEFAULT_EMPTY_VEC3_QVEC common noGetterSetterProp,
 PolyLine
 enum:COLOR prop:color type:u8vec3Color default:ENTITY_ITEM_DEFAULT_COLOR common,
+enum:ALPHA prop:alpha type:float default:ENTITY_ITEM_DEFAULT_ALPHA min:0.0f max:1.0f common,
 enum:TEXTURES prop:textures type:QString default:"" common,
 enum:LINE_POINTS prop:linePoints type:qVectorVec3 default:ENTITY_ITEM_DEFAULT_EMPTY_VEC3_QVEC common,
 enum:STROKE_WIDTHS prop:strokeWidths type:qVectorFloat default:QVector<float>(),
 enum:STROKE_NORMALS prop:normals type:qVectorVec3 default:ENTITY_ITEM_DEFAULT_EMPTY_VEC3_QVEC,
 enum:STROKE_COLORS prop:strokeColors type:qVectorVec3 default:ENTITY_ITEM_DEFAULT_EMPTY_VEC3_QVEC,
+enum:STROKE_ALPHAS prop:strokeAlphas type:qVectorFloat default:QVector<float>(),
 enum:IS_UV_MODE_STRETCH prop:isUVModeStretch type:bool default:true renderProp,
 enum:LINE_GLOW prop:glow type:bool default:false renderProp,
 enum:LINE_FACE_CAMERA prop:faceCamera type:bool default:false renderProp,
+enum:SAMPLER prop:sampler type:Sampler default:ENTITY_ITEM_DEFAULT_SAMPLER common renderProp,
 Shape
 enum:COLOR prop:color type:u8vec3Color default:ENTITY_ITEM_DEFAULT_COLOR common renderProp,
 enum:ALPHA prop:alpha type:float default:ENTITY_ITEM_DEFAULT_ALPHA min:0.0f max:1.0f common renderProp,
