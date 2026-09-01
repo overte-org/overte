@@ -207,7 +207,11 @@ void ImageEntityRenderer::doRender(RenderArgs* args) {
         auto procedural = std::static_pointer_cast<graphics::ProceduralMaterial>(materials.top().material);
         procedural->prepare(*batch, transform.getTranslation(), transform.getScale(), transform.getRotation(), _created, ProceduralProgramKey(transparent));
     } else if (pipelineType == Pipeline::SIMPLE) {
-        _texture->getGPUTexture()->setSampler(sampler);
+        auto gpuTexture = _texture->getGPUTexture();
+        if (gpuTexture != nullptr) {
+            _texture->getGPUTexture()->setSampler(sampler);
+        }
+        // It's ok to pass nullptr to setResourceTexture.
         batch->setResourceTexture(0, _texture->getGPUTexture());
     } else if (pipelineType == Pipeline::MATERIAL) {
         color = glm::vec4(1.0f);  // for model shaders, albedo comes from the material instead of vertex colors
