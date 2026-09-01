@@ -77,30 +77,52 @@ $(document).ready(function(){
     if (!verifyAvatarHeights()) {
         return false;
     }
-	  
-    // check if we've set the basic http password
-    if (formJSON["security"]) {
 
-      var password = formJSON["security"]["http_password"];
-      var verify_password = formJSON["security"]["verify_http_password"];
+    // Check if we have updated the basic http authentication settings
+    if (formJSON["security"] && formJSON["security"]["http_authentication"]) {
+      // Keep a list of usernames while going though all accounts to see if there are any duplicates.
+      let usernameList = [];
 
-      // if they've only emptied out the default password field, we should go ahead and acknowledge
-      // the verify password field
-      if (password != undefined && verify_password == undefined) {
-        verify_password = "";
-      }
+      for (loginIndex in formJSON["security"]["http_authentication"]) {
+        var loginPair = formJSON["security"]["http_authentication"][loginIndex];
 
-      // if we have a password and its verification, convert it to sha256 for comparison
-      if (password != undefined && verify_password != undefined) {
-        formJSON["security"]["http_password"] = sha256_digest(password);
-        formJSON["security"]["verify_http_password"] = sha256_digest(verify_password);
+        var username = loginPair["http_username"].trim() || null;
+        var password = loginPair["http_password"] || null;
+        var passwordVerify = loginPair["http_password_verify"] || null;
 
-        if (password == verify_password) {
-          delete formJSON["security"]["verify_http_password"];
-        } else {
+        if (!username) {
+          // Account does not have a user name, don't allow blank username.
+          bootbox.alert({ "message": "Account must have a username", "title": "Username Error" });
+          return false;
+        }
+
+        if (usernameList.includes(username)) {
+          // Account already exists with this username, don't allow duplicate usernames.
+          bootbox.alert({ "message": `Account already exists with the username "${username}"`, "title": "Username Error"  });
+          return false;
+        }
+
+        if (passwordVerify && password !== passwordVerify) {
+          // Tried to change the password, but the password does not match.
           bootbox.alert({ "message": "Passwords must match!", "title": "Password Error" });
           return false;
         }
+
+        if (passwordVerify && password == passwordVerify) {
+          // If password and password verify match, we are changing the password for an account.
+          console.log(`Changing ${loginPair["http_username_multi"]}'s password`);
+
+          // Hash the new password
+          password = sha256_digest(password);
+        }
+
+        usernameList.push(username);
+
+        // Delete the verification field so we don't try and save it.
+        delete formJSON["security"]["http_authentication"][loginIndex]["http_password_verify"];
+
+        // Set the form password value to the new hashed value of that password
+        formJSON["security"]["http_authentication"][loginIndex]["http_password"] = password;
       }
     }
 
