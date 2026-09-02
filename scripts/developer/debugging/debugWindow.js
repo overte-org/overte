@@ -9,20 +9,20 @@
 //
 
 (function() { // BEGIN LOCAL_SCOPE
-
+"use strict"
 //check if script already running.
-var scriptData = ScriptDiscoveryService.getRunning();
-var scripts = scriptData.filter(function (datum) { return datum.name === 'debugWindow.js'; });
+const scriptData = ScriptDiscoveryService.getRunning();
+const scripts = scriptData.filter(function (datum) { return datum.name === 'debugWindow.js'; });
 if (scripts.length >= 2) {
     //2nd instance of the script is too much
     ScriptDiscoveryService.stopScript(scripts[1].url);
     return;
 }
 
-var SUPPRESS_DEFAULT_SCRIPTS_MENU_NAME  = "Developer"
-var SUPPRESS_DEFAULT_SCRIPTS_ITEM_NAME = "Suppress messages from default scripts in Debug Window";
-var DEBUG_WINDOW_SUPPRESS_DEFAULTS_SCRIPTS = 'debugWindowSuppressDefaultScripts';
-var suppressDefaultScripts = Settings.getValue(DEBUG_WINDOW_SUPPRESS_DEFAULTS_SCRIPTS, false)
+const SUPPRESS_DEFAULT_SCRIPTS_MENU_NAME  = "Developer"
+const SUPPRESS_DEFAULT_SCRIPTS_ITEM_NAME = "Suppress messages from default scripts in Debug Window";
+const DEBUG_WINDOW_SUPPRESS_DEFAULTS_SCRIPTS = 'debugWindowSuppressDefaultScripts';
+let suppressDefaultScripts = Settings.getValue(DEBUG_WINDOW_SUPPRESS_DEFAULTS_SCRIPTS, false)
 Menu.addMenuItem({
     menuName: SUPPRESS_DEFAULT_SCRIPTS_MENU_NAME,
     menuItemName: SUPPRESS_DEFAULT_SCRIPTS_ITEM_NAME,
@@ -37,30 +37,36 @@ Menu.menuItemEvent.connect(function(menuItem) {
 });
 
 // Set up the qml ui
-var qml = Script.resolvePath('debugWindow.qml');
+const qml = Script.resolvePath('debugWindow.qml');
 
-var HMD_DEBUG_WINDOW_GEOMETRY_KEY = 'hmdDebugWindowGeometry';
-var hmdDebugWindowGeometryValue = Settings.getValue(HMD_DEBUG_WINDOW_GEOMETRY_KEY);
+const HMD_DEBUG_WINDOW_GEOMETRY_KEY = 'hmdDebugWindowGeometry';
+const hmdDebugWindowGeometryValue = Settings.getValue(HMD_DEBUG_WINDOW_GEOMETRY_KEY);
 
-var windowWidth = 400;
-var windowHeight = 900;
+let windowWidth = 400;
+let windowHeight = 900;
 
-var hasPosition = false;
-var windowX = 0;
-var windowY = 0;
+let hasPosition = false;
+let windowX = 0;
+let windowY = 0;
 
 if (hmdDebugWindowGeometryValue !== '') {
-    var geometry = JSON.parse(hmdDebugWindowGeometryValue);
+    const geometry = JSON.parse(hmdDebugWindowGeometryValue);
     if ((geometry.x !== 0) && (geometry.y !== 0)) {
         windowWidth = geometry.width;
         windowHeight = geometry.height;
         windowX = geometry.x;
         windowY = geometry.y;
+
+        // Constrain window position to within the viewport
+        const viewportDimensions = Controller.getViewportDimensions();
+        if (windowX > viewportDimensions.x) windowX = viewportDimensions.x - windowWidth;
+        if (windowY > viewportDimensions.y) windowX = viewportDimensions.y - windowHeight;
+
         hasPosition = true;
     }
 }
 
-var window = new OverlayWindow({
+const window = new OverlayWindow({
     title: 'Debug Window',
     source: qml,
     width: windowWidth, height: windowHeight,
@@ -92,18 +98,23 @@ function shouldLogMessage(scriptFileName) {
         || (scriptFileName !== "defaultScripts.js" && scriptFileName != "controllerScripts.js");
 }
 
-var getFormattedDate = function() {
-    var date = new Date();
+const getFormattedDate = function() {
+    const date = new Date();
     return date.getMonth() + "/" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds();
 };
 
-var sendToLogWindow = function(type, message, scriptFileName) {
+const sendToLogWindow = function(type, message, scriptFileName) {
     if (shouldLogMessage(scriptFileName)) {
-        var typeFormatted = "";
+        let typeFormatted = "";
         if (type) {
             typeFormatted = type + " - ";
         }
-        window.sendToQml("[" + getFormattedDate() + "] " + "[" + scriptFileName + "] " + typeFormatted + message);
+        window.sendToQml({
+            date: getFormattedDate(),
+            scriptFileName: scriptFileName,
+            type: type,
+            message: message,
+        });
     }
 };
 
@@ -132,7 +143,7 @@ Script.scriptEnding.connect(function () {
                       Menu.isOptionChecked(SUPPRESS_DEFAULT_SCRIPTS_ITEM_NAME));
     Menu.removeMenuItem(SUPPRESS_DEFAULT_SCRIPTS_MENU_NAME, SUPPRESS_DEFAULT_SCRIPTS_ITEM_NAME);
 
-    var geometry = JSON.stringify({
+    const geometry = JSON.stringify({
         x: window.position.x,
         y: window.position.y,
         width: window.size.x,
