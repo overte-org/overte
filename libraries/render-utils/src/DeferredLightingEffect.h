@@ -54,6 +54,10 @@ public:
     static void setupLocalLightsBatch(gpu::Batch& batch);
     static void unsetLocalLightsBatch(gpu::Batch& batch);
 
+    static void setupShadowsBatch(gpu::Batch& batch, const LightStage::ShadowPointer& shadowPointer);
+    static void setupShadowsBatch(gpu::Batch& batch);
+    static void unsetShadowsBatch(gpu::Batch& batch);
+
 private:
     DeferredLightingEffect() = default;
 
@@ -72,6 +76,7 @@ private:
     gpu::PipelinePointer _localLightOutline;
 
     LightClustersPointer _lightClusters;
+    LightStage::ShadowPointer _shadowPointer;
 
     friend class LightClusteringPass;
     friend class RenderDeferredSetup;

@@ -34,11 +34,28 @@ void RenderShadowsAndDeferredTask::build(JobModel& task, const render::Varying& 
     task.addJob<RenderDeferredTask>("RenderDeferredTask", renderDeferredInput, cullFunctor, transformOffset, depth);
 }
 
+void RenderShadowsAndForwardTask::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, uint8_t tagBits,
+        uint8_t tagMask, uint8_t transformOffset, size_t depth) {
+    task.addJob<SetRenderMethod>("SetRenderMethodTask", render::Args::FORWARD);
+
+    const auto items = input.getN<DeferredForwardSwitchJob::Input>(0);
+    const auto lightingModel = input.getN<DeferredForwardSwitchJob::Input>(1);
+    const auto lightingStageFramesAndZones = input.getN<DeferredForwardSwitchJob::Input>(2);
+
+    // Warning : the cull functor passed to the shadow pass should only be testing for LOD culling. If frustum culling
+    // is performed, then casters not in the view frustum will be removed, which is not what we wish.
+    const auto shadowTaskIn = RenderShadowTask::Input(lightingStageFramesAndZones.get<AssembleLightingStageTask::Output>().get0()[0], lightingModel).asVarying();
+    const auto shadowTaskOut = task.addJob<RenderShadowTask>("RenderShadowTask", shadowTaskIn, cullFunctor, tagBits, tagMask);
+
+    const auto renderForwardInput = RenderForwardTask::Input(items, lightingModel, lightingStageFramesAndZones, shadowTaskOut).asVarying();
+    task.addJob<RenderForwardTask>("RenderForwardTask", renderForwardInput, cullFunctor, transformOffset, depth);
+}
+
 void DeferredForwardSwitchJob::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, uint8_t tagBits,
         uint8_t tagMask, uint8_t transformOffset, size_t depth) {
     task.addBranch<RenderShadowsAndDeferredTask>("RenderShadowsAndDeferredTask", 0, input, cullFunctor, tagBits, tagMask, transformOffset, depth);
 
-    task.addBranch<RenderForwardTask>("RenderForwardTask", 1, input, cullFunctor, transformOffset, depth);
+    task.addBranch<RenderShadowsAndForwardTask>("RenderShadowsAndForwardTask", 1, input, cullFunctor, tagBits, tagMask, transformOffset, depth);
 }
 
 void RenderViewTask::build(JobModel& task, const render::Varying& input, render::Varying& output, render::CullFunctor cullFunctor, uint8_t tagBits, uint8_t tagMask,
@@ -62,7 +79,10 @@ void RenderViewTask::build(JobModel& task, const render::Varying& input, render:
         const auto deferredForwardIn = DeferredForwardSwitchJob::Input(items, lightingModel, lightingStageFramesAndZones).asVarying();
         task.addJob<DeferredForwardSwitchJob>("DeferredForwardSwitch", deferredForwardIn, cullFunctor, tagBits, tagMask, transformOffset, depth);
 #else
-        const auto renderInput = RenderForwardTask::Input(items, lightingModel, lightingStageFramesAndZones).asVarying();
-        task.addJob<RenderForwardTask>("RenderForwardTask", renderInput, cullFunctor, transformOffset, depth);
+        // FIXME: how can we skip the shadow task on android?
+        //const auto renderInput = RenderForwardTask::Input(items, lightingModel, lightingStageFramesAndZones).asVarying();
+        //task.addJob<RenderForwardTask>("RenderForwardTask", renderInput, cullFunctor, transformOffset, depth);
+        const auto renderInput = RenderShadowsAndForwardTask::Input(items, lightingModel, lightingStageFramesAndZones).asVarying();
+        task.addJob<RenderShadowsAndForwardTask>("RenderShadowsAndForwardTask", renderInput, cullFunctor, tagBits, tagMask, transformOffset, depth);
 #endif
 }
