@@ -98,7 +98,6 @@ Flickable {
                     id: hapticsBox
                     width: 15
                     height: 15
-                    boxRadius: 7
 
                     onClicked: {
                         sendConfigurationSettings();
@@ -124,7 +123,6 @@ Flickable {
                     id: handTrackingBox
                     width: 15
                     height: 15
-                    boxRadius: 7
 
                     onClicked: {
                         sendConfigurationSettings();
