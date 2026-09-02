@@ -59,7 +59,7 @@ void PulsePropertyGroup::setAlphaModeFromString(const QString& pulseMode) {
 }
 
 void PulsePropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
-        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, AvatarEntityOwnership ownership) const {
 
 @Pulse_GROUP_COPY_TO_SCRIPT@
 

@@ -35,7 +35,7 @@ void TonemappingPropertyGroup::setCurveFromString(const QString& curve) {
 }
 
 void TonemappingPropertyGroup::copyToScriptValue(const EntityPropertyFlags& desiredProperties, ScriptValue& properties, ScriptEngine* engine,
-        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, bool isMyOwnAvatarEntity) const {
+        bool skipDefaults, EntityItemProperties& defaultEntityProperties, bool returnNothingOnEmptyPropertyFlags, AvatarEntityOwnership ownership) const {
 
 @Tonemapping_GROUP_COPY_TO_SCRIPT@
 
