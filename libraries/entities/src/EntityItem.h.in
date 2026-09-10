@@ -73,8 +73,12 @@ class MeshProxyList;
 
 namespace entity {
 enum class HostType : uint8_t {
+    /// Owned and saved by the domain, networked by the entity mixer.
     DOMAIN = 0,
+    /// Owned and saved by a specific user. Networked by
+    /// the avatar mixer and follows the user across domains.
     AVATAR,
+    /// Unsaved and not networked to other clients, follows the user across domains.
     LOCAL
 };
 }
@@ -197,16 +201,27 @@ public:
 
     void requiresRecalcBoxes();
 
-    /// Dimensions in meters (0.0 - TREE_SCALE)
+    /**
+     * Gets this EntityItem's <em>global</em> scale.
+     * @return getUnscaledDimensions() * getSNScale()
+     */
     virtual glm::vec3 getScaledDimensions() const;
+    /**
+     * Sets this EntityItem's <em>global</em> scale.
+     * setUnscaledDimensions(value / getSNScale())
+     */
     virtual void setScaledDimensions(const glm::vec3& value);
 
     virtual glm::vec3 getPivot() const { return glm::vec3(0.0f); } // pivot offset for positioning, mainly for model entities
 
+    /// @return This EntityItem's <em>local</em> scale
     glm::vec3 getUnscaledDimensions() const;
+    /// Sets this EntityItem's <em>local</em> scale.
     virtual void setUnscaledDimensions(const glm::vec3& value);
 
+    /// Calculates an appropriate mass for the EntityItem's density and volume.
     float computeMass() const;
+    /// Sets the EntityItem's density to change its mass for the same volume.
     void setMass(float mass);
 
     bool hasVelocity() const { return getWorldVelocity() != ENTITY_ITEM_ZERO_VEC3; }
@@ -223,6 +238,7 @@ public:
     /// age of this entity in seconds
     float getAge() const { return (float)(usecTimestampNow() - getCreated()) / (float)USECS_PER_SECOND; }
     bool lifetimeHasExpired() const;
+    /// @return Microsecond timestamp of when the EntityItem is due to be automatically deleted
     quint64 getExpiry() const;
 
     // position, size, and bounds related helpers
@@ -250,6 +266,10 @@ public:
     bool getCullWithParent() const;
     void setCullWithParent(bool value);
 
+    // FIXME: "Cauterize" feels unusually violent.
+    // This should just be called joint hiding/clipping.
+    /// Sets whether this EntityItem will inherit any cauterization clipping from its parent,
+    /// i.e. an avatar's head and neck when in first person
     void setCauterized(bool value);
     bool getCauterized() const;
 
@@ -260,7 +280,9 @@ public:
 
     void computeCollisionGroupAndFinalMask(int32_t& group, int32_t& mask) const;
 
+    /// @returns Whether this entity can be collided with by avatars or other entities
     virtual bool shouldBePhysical() const { return !isDead() && getShapeType() != SHAPE_TYPE_NONE && !isLocalEntity(); }
+    /// @returns true if this entity's model and/or textures have been fully loaded
     bool isVisuallyReady() const { return _visuallyReady; }
 
     // FIXME not thread safe?
@@ -285,20 +307,29 @@ public:
     float getRadius() const;
 
     virtual void adjustShapeInfoByRegistration(ShapeInfo& info, bool includePivot = true) const;
+    // FIXME: Why is this here and why does it only work on Shapes?
+    // It should either be moved into ShapeEntityItem or made more
+    // generic to be a point-bounding box test.
+    /// @returns true if point is within a Shape entity's bounds
     virtual bool contains(const glm::vec3& point) const;
 
     virtual bool isReadyToComputeShape() const { return !isDead(); }
     virtual void computeShapeInfo(ShapeInfo& info);
     virtual float getVolumeEstimate() const;
 
+    // FIXME: Why is this here? It should be moved to ShapeEntityItem
     /// return preferred shape type (actual physical shape may differ)
     virtual ShapeType getShapeType() const { return SHAPE_TYPE_NONE; }
 
+    /// Sets an entity's <em>global</em> position
     void setPosition(const glm::vec3& value);
     virtual void setParentID(const QUuid& parentID) override;
+    // FIXME: Why is this here? It should be moved to ShapeEntityItem
     virtual void setShapeType(ShapeType type) { /* do nothing */ }
 
+    /// Sets an entity's <em>global</em> rotation
     void setRotation(glm::quat orientation);
+    /// Sets an entity's <em>global</em> linear velocity
     void setVelocity(const glm::vec3& velocity);
 
     uint32_t getDirtyFlags() const;
@@ -309,9 +340,12 @@ public:
     void markSpecialFlags(uint32_t mask);
     void clearSpecialFlags(uint32_t mask = 0xffff0000);
 
+    /// @return true if this entity has any velocity, relative to the world
     bool isMoving() const;
+    /// @return true if this entity has any velocity relative to its parent
     bool isMovingRelativeToParent() const;
 
+    /// @return true if this entity is being simulated by EntitySimulation
     bool isSimulated() const { return _simulated; }
 
     bool isInPhysicsSimulation() const { return (bool)(_flags & Simulation::SPECIAL_FLAG_IN_PHYSICS_SIMULATION); }
@@ -326,7 +360,9 @@ public:
 
     glm::mat4 getEntityToWorldMatrix() const;
     glm::mat4 getWorldToEntityMatrix() const;
+    /// @return getWorldToEntityMatrix() * point
     glm::vec3 worldToEntity(const glm::vec3& point) const;
+    /// @return getEntityToWorldMatrix() * point
     glm::vec3 entityToWorld(const glm::vec3& point) const;
 
     quint64 getLastEditedFromRemote() const { return _lastEditedFromRemote; }
@@ -391,13 +427,14 @@ public:
     void setScriptHasFinishedPreload(bool value);
     bool isScriptPreloadFinished();
     QString getLoadedScript() const { return _loadedScript; }
+    // FIXME: The term "wearable" is used inconsistently and should just be removed
     virtual bool isWearable() const;
     bool isDomainEntity() const { return _entityHostType == entity::HostType::DOMAIN; }
     bool isAvatarEntity() const { return _entityHostType == entity::HostType::AVATAR; }
     bool isMyAvatarEntity() const;
     bool isLocalEntity() const { return _entityHostType == entity::HostType::LOCAL; }
 
-    // if this entity is an avatar entity, which avatar is it associated with?
+    /// if this entity is an avatar entity, which avatar is it associated with?
     QUuid getOwningAvatarIDForProperties() const;
 
     virtual bool wantsHandControllerPointerEvents() const { return false; }
