@@ -63,7 +63,7 @@ SharedObject::SharedObject() {
 #ifndef DISABLE_QML
 
     // Create render control
-    _renderControl = new RenderControl();
+    _renderControl.reset(new RenderControl());
 
     // Create a QQuickWindow that is associated with our render control.
     // This window never gets created or shown, meaning that it will never get an underlying native (platform) window.
@@ -72,7 +72,7 @@ SharedObject::SharedObject() {
     //       so we wait until after its ctor to move object/context to this thread.
     // QT6TODO: QRhi fails to initialize with setDefaultAlphaBuffer
     //QQuickWindow::setDefaultAlphaBuffer(true);
-    _quickWindow = new QQuickWindow(_renderControl);
+    _quickWindow.reset(new QQuickWindow(_renderControl.get()));
     _quickWindow->setSurfaceType(QQuickWindow::OpenGLSurface);
     _quickWindow->setFormat(getDefaultOpenGLSurfaceFormat());
     _quickWindow->setColor(Qt::transparent);
@@ -92,14 +92,12 @@ SharedObject::~SharedObject() {
     // _renderTimer is created with `this` as the parent, so need no explicit destruction
 #ifndef DISABLE_QML
     if (_renderControl) {
-        delete _renderControl;
-        _renderControl = nullptr;
+        _renderControl.reset();
     }
 
     // Destroy the event handler
     if (_renderObject) {
-        delete _renderObject;
-        _renderObject = nullptr;
+        _renderObject.reset();
     }
 #endif
 
@@ -120,8 +118,7 @@ SharedObject::~SharedObject() {
 #ifndef DISABLE_QML
     if (_quickWindow) {
         _quickWindow->destroy();
-        delete _quickWindow;
-        _quickWindow = nullptr;
+        _quickWindow.reset();
     }
 #endif
     if (_qmlContext) {
@@ -138,7 +135,7 @@ void SharedObject::create(OffscreenSurface* surface) {
     }
 
 #ifndef DISABLE_QML
-    QObject::connect(_quickWindow, &QQuickWindow::focusObjectChanged, surface, &OffscreenSurface::onFocusObjectChanged);
+    QObject::connect(_quickWindow.get(), &QQuickWindow::focusObjectChanged, surface, &OffscreenSurface::onFocusObjectChanged);
 #endif
 
     // Create a QML engine.
@@ -154,7 +151,7 @@ void SharedObject::create(OffscreenSurface* surface) {
     if (!qmlEngine->incubationController()) {
         qmlEngine->setIncubationController(_quickWindow->incubationController());
     }
-    _qmlContext->setContextProperty("offscreenWindow", QVariant::fromValue(_quickWindow));
+    _qmlContext->setContextProperty("offscreenWindow", QVariant::fromValue(_quickWindow.get()));
 #endif
 }
 
@@ -175,11 +172,11 @@ void SharedObject::setRootItem(QQuickItem* rootItem) {
     _renderThread->start();
 
     // Create event handler for the render thread
-    _renderObject = new RenderEventHandler(this, _renderThread);
+    _renderObject.reset(new RenderEventHandler(this, _renderThread));
     QCoreApplication::postEvent(this, new OffscreenEvent(OffscreenEvent::Initialize));
 
-    QObject::connect(_renderControl, &QQuickRenderControl::renderRequested, this, &SharedObject::requestRender);
-    QObject::connect(_renderControl, &QQuickRenderControl::sceneChanged, this, &SharedObject::requestRenderSync);
+    QObject::connect(_renderControl.get(), &QQuickRenderControl::renderRequested, this, &SharedObject::requestRender);
+    QObject::connect(_renderControl.get(), &QQuickRenderControl::sceneChanged, this, &SharedObject::requestRenderSync);
 #endif
 }
 
@@ -201,7 +198,7 @@ void SharedObject::destroy() {
     }
 
     if (_renderControl) {
-        QObject::disconnect(_renderControl);
+        QObject::disconnect(_renderControl.get());
     }
 #endif
 
@@ -212,7 +209,7 @@ void SharedObject::destroy() {
         QMutexLocker lock(&_mutex);
         _quit = true;
         if (_renderObject) {
-            QCoreApplication::postEvent(_renderObject, new OffscreenEvent(OffscreenEvent::Quit), Qt::HighEventPriority);
+            QCoreApplication::postEvent(_renderObject.get(), new OffscreenEvent(OffscreenEvent::Quit), Qt::HighEventPriority);
         }
     }
     // Block until the rendering thread has stopped
@@ -456,7 +453,7 @@ void SharedObject::onInitialize() {
     _renderControl->prepareThread(_renderThread);
 
     // Set up the render thread
-    QCoreApplication::postEvent(_renderObject, new OffscreenEvent(OffscreenEvent::Initialize));
+    QCoreApplication::postEvent(_renderObject.get(), new OffscreenEvent(OffscreenEvent::Initialize));
 
     requestRender();
 
@@ -480,12 +477,12 @@ void SharedObject::onRender() {
     if (_syncRequested) {
         _renderControl->polishItems();
         QMutexLocker lock(&_mutex);
-        QCoreApplication::postEvent(_renderObject, new OffscreenEvent(OffscreenEvent::RenderSync));
+        QCoreApplication::postEvent(_renderObject.get(), new OffscreenEvent(OffscreenEvent::RenderSync));
         // sync and render request, main and render threads must be synchronized
         wait();
         _syncRequested = false;
     } else {
-        QCoreApplication::postEvent(_renderObject, new OffscreenEvent(OffscreenEvent::Render));
+        QCoreApplication::postEvent(_renderObject.get(), new OffscreenEvent(OffscreenEvent::Render));
     }
     _renderRequested = false;
 #endif
