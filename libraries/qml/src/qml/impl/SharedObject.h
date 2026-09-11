@@ -12,6 +12,7 @@
 #include <QtCore/QWaitCondition>
 #include <QtCore/QMutex>
 #include <QtCore/QSize>
+#include <memory>
 
 #include "TextureCache.h"
 
@@ -54,7 +55,7 @@ public:
     void setSize(const QSize& size);
     void setMaxFps(uint8_t maxFps);
 
-    QQuickWindow* getWindow() { return _quickWindow; }
+    QQuickWindow* getWindow() { return _quickWindow.get(); }
     QQuickItem* getRootItem() { return _rootItem; }
     QQmlContext* getContext() { return _qmlContext; }
     void setProxyWindow(QWindow* window);
@@ -95,15 +96,15 @@ private:
     // Texture management
     TextureAndFence _latestTextureAndFence { 0, 0 };
     QQuickItem* _rootItem { nullptr };
-    QQuickWindow* _quickWindow { nullptr };
+    std::unique_ptr<QQuickWindow> _quickWindow { nullptr };
     QQmlContext* _qmlContext { nullptr };
     mutable QMutex _mutex;
     QWaitCondition _cond;
 
 #ifndef DISABLE_QML
     QWindow* _proxyWindow { nullptr };
-    RenderControl* _renderControl { nullptr };
-    RenderEventHandler* _renderObject { nullptr };
+    std::unique_ptr<RenderControl> _renderControl { nullptr };
+    std::unique_ptr<RenderEventHandler> _renderObject { nullptr };
 
     QTimer* _renderTimer { nullptr };
     QThread* _renderThread { nullptr };
