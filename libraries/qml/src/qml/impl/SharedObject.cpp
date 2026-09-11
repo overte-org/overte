@@ -91,15 +91,15 @@ SharedObject::~SharedObject() {
 
     // _renderTimer is created with `this` as the parent, so need no explicit destruction
 #ifndef DISABLE_QML
-    // Destroy the event hand
-    if (_renderObject) {
-        delete _renderObject;
-        _renderObject = nullptr;
-    }
-
     if (_renderControl) {
         delete _renderControl;
         _renderControl = nullptr;
+    }
+
+    // Destroy the event handler
+    if (_renderObject) {
+        delete _renderObject;
+        _renderObject = nullptr;
     }
 #endif
 
