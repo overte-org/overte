@@ -18,7 +18,7 @@
 
 class ParseFlowDataTask {
 public:
-    using Input = hifi::VariantHash;
+    using Input = hifi::VariantMultiHash;
     using Output = FlowData;
     using JobModel = baker::Job::ModelIO<ParseFlowDataTask, Input, Output>;
 

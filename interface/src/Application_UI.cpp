@@ -84,6 +84,7 @@
 #include <UserActivityLogger.h>
 #include <UserActivityLoggerScriptingInterface.h>
 #include <UsersScriptingInterface.h>
+#include <raypick/PickScriptingInterface.h>
 
 #include "AboutUtil.h"
 #include "ArchiveDownloadInterface.h"
@@ -229,7 +230,10 @@ void Application::setupQmlSurface(QQmlContext* surfaceContext, bool setAdditiona
         surfaceContext->setContextProperty("offscreenFlags", flags);
         surfaceContext->setContextProperty("AddressManager", DependencyManager::get<AddressManager>().data());
 
+        // TODO: Replace Settings (conflicts with QtCore.Settings) with SettingsInterface
         surfaceContext->setContextProperty("Settings", new QMLSettingsScriptingInterface(surfaceContext));
+        surfaceContext->setContextProperty("SettingsInterface", new QMLSettingsScriptingInterface(surfaceContext));
+
         surfaceContext->setContextProperty("MenuInterface", MenuScriptingInterface::getInstance());
         surfaceContext->setContextProperty("Performance", new PerformanceScriptingInterface());
 
@@ -258,8 +262,16 @@ void Application::setupQmlSurface(QQmlContext* surfaceContext, bool setAdditiona
         surfaceContext->setContextProperty("Workload", qApp->getGameWorkload()._engine->getConfiguration().get());
         surfaceContext->setContextProperty("Controller", DependencyManager::get<controller::ScriptingInterface>().data());
         surfaceContext->setContextProperty("Pointers", DependencyManager::get<PointerScriptingInterface>().data());
+
+        // QT6TODO: replace all of the instances of "Window" in QML with WindowScriptingInterface
         surfaceContext->setContextProperty("Window", DependencyManager::get<WindowScriptingInterface>().data());
+
+        // There's a lot of stuff in our QML called "Window",
+        // so this needs to be WindowScriptingInterface
+        surfaceContext->setContextProperty("WindowScriptingInterface", DependencyManager::get<WindowScriptingInterface>().data());
+
         surfaceContext->setContextProperty("Reticle", qApp->getApplicationCompositor().getReticleInterface());
+        surfaceContext->setContextProperty("PickScriptingInterface", DependencyManager::get<PickScriptingInterface>().data());
         surfaceContext->setContextProperty("About", AboutUtil::getInstance());
         surfaceContext->setContextProperty("HiFiAbout", AboutUtil::getInstance());  // Deprecated.
         surfaceContext->setContextProperty("ResourceRequestObserver", DependencyManager::get<ResourceRequestObserver>().data());
@@ -580,7 +592,7 @@ void Application::showAssetServerWidget(QString filePath) {
     if (!DependencyManager::get<NodeList>()->getThisNodeCanWriteAssets() || getLoginDialogPoppedUp()) {
         return;
     }
-    static const QUrl url { "hifi/AssetServer.qml" };
+    static const QUrl url { "overte/compat/CompatAssetDialog.qml" };
 
     auto startUpload = [=, this](QQmlContext* context, QObject* newObject){
         if (!filePath.isEmpty()) {
@@ -596,7 +608,7 @@ void Application::showAssetServerWidget(QString filePath) {
         if (!hmd->getShouldShowTablet() && !isHMDMode()) {
             getOffscreenUI()->show(url, "AssetServer", startUpload);
         } else {
-            static const QUrl url("qrc:///qml/hifi/dialogs/TabletAssetServer.qml");
+            static const QUrl url("qrc:///qml/overte/dialogs/AssetDialog.qml");
             if (!tablet->isPathLoaded(url)) {
                 tablet->pushOntoStack(url);
             }
@@ -808,7 +820,7 @@ void Application::updateThemeColors() {
 
     QPalette palette = style->standardPalette();
 
-    if (_darkTheme.get()) {
+    if (_themePrefs->getDarkMode()) {
         palette.setColor(QPalette::Window,          QColor(48, 48, 48));
         palette.setColor(QPalette::WindowText,      QColor(224, 224, 224));
 
@@ -836,16 +848,6 @@ void Application::updateThemeColors() {
     qApp->setStyle(style);
     qApp->setPalette(palette);
     qApp->getPrimaryMenu()->setPalette(palette); // weird Qt bug workaround
-}
-
-void Application::setDarkThemePreference(bool value) {
-    bool previousValue = _darkTheme.get();
-
-    if (value == previousValue) { return; }
-
-    _darkTheme.set(value);
-    updateThemeColors();
-    emit darkThemePreferenceChanged(value);
 }
 
 void Application::showVRKeyboardForHudUI(bool show) {
@@ -901,6 +903,9 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
     surfaceContext->setContextProperty("Assets", DependencyManager::get<AssetMappingsScriptingInterface>().data());
     surfaceContext->setContextProperty("Keyboard", DependencyManager::get<KeyboardScriptingInterface>().data());
 
+    // TODO: replace instances of Keyboard with KeyboardScriptingInterface
+    surfaceContext->setContextProperty("KeyboardScriptingInterface", DependencyManager::get<KeyboardScriptingInterface>().data());
+
     surfaceContext->setContextProperty("AvatarList", DependencyManager::get<AvatarManager>().data());
     surfaceContext->setContextProperty("Users", DependencyManager::get<UsersScriptingInterface>().data());
 
@@ -912,10 +917,21 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
 #endif
 
     surfaceContext->setContextProperty("Overlays", &_overlays);
+
+    // QT6TODO: replace all of the instances of "Window" in QML with WindowScriptingInterface
     surfaceContext->setContextProperty("Window", DependencyManager::get<WindowScriptingInterface>().data());
+
+    // There's a lot of stuff in our QML called "Window",
+    // so this needs to be WindowScriptingInterface
+    surfaceContext->setContextProperty("WindowScriptingInterface", DependencyManager::get<WindowScriptingInterface>().data());
+
     surfaceContext->setContextProperty("Desktop", DependencyManager::get<DesktopScriptingInterface>().data());
     surfaceContext->setContextProperty("MenuInterface", MenuScriptingInterface::getInstance());
+
+    // TODO: Replace Settings (conflicts with QtCore.Settings) with SettingsInterface
     surfaceContext->setContextProperty("Settings", new QMLSettingsScriptingInterface(surfaceContext));
+    surfaceContext->setContextProperty("SettingsInterface", new QMLSettingsScriptingInterface(surfaceContext));
+
     surfaceContext->setContextProperty("ScriptDiscoveryService", DependencyManager::get<ScriptEngines>().data());
     surfaceContext->setContextProperty("AvatarBookmarks", DependencyManager::get<AvatarBookmarks>().data());
     surfaceContext->setContextProperty("LocationBookmarks", DependencyManager::get<LocationBookmarks>().data());
@@ -941,6 +957,7 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
     surfaceContext->setContextProperty("Render", RenderScriptingInterface::getInstance());
     surfaceContext->setContextProperty("PlatformInfo", PlatformInfoScriptingInterface::getInstance());
     surfaceContext->setContextProperty("Workload", _gameWorkload._engine->getConfiguration().get());
+    surfaceContext->setContextProperty("PickScriptingInterface", DependencyManager::get<PickScriptingInterface>().data());
     surfaceContext->setContextProperty("Reticle", getApplicationCompositor().getReticleInterface());
     surfaceContext->setContextProperty("Snapshot", DependencyManager::get<Snapshot>().data());
 
@@ -981,7 +998,7 @@ bool Application::askToSetAvatarUrl(const QString& url) {
     }
 
     // Download the FST file, to attempt to determine its model type
-    QVariantHash fstMapping = FSTReader::downloadMapping(url);
+    hifi::VariantMultiHash fstMapping = FSTReader::downloadMapping(url);
 
     FSTReader::ModelType modelType = FSTReader::predictModelType(fstMapping);
 
@@ -1462,7 +1479,7 @@ void Application::addAssetToWorldError(QString modelName, QString errorText) {
 
 void Application::setMenuBarVisible(bool visible) {
     if (QThread::currentThread() != qApp->thread()) {
-        QMetaObject::invokeMethod(this, "setMenuBarVisible", Q_ARG(bool, visible));
+        QMetaObject::invokeMethod(this, "setMenuBarVisible", Q_GENERIC_ARG(bool, visible));
         return;
     }
 

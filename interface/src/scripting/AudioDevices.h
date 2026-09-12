@@ -17,9 +17,9 @@
 
 #include <QObject>
 #include <QAbstractListModel>
-#include <QAudioDeviceInfo>
+#include <QAudioDevice>
 
-#include <HifiAudioDeviceInfo.h>
+#include <../../audio-client/src/HifiAudioDeviceInfo.h>
 
 namespace scripting {
 
@@ -36,7 +36,7 @@ class AudioDeviceList : public QAbstractListModel {
     Q_OBJECT
 
 public:
-    AudioDeviceList(QAudio::Mode mode = QAudio::AudioOutput);
+    AudioDeviceList(QAudioDevice::Mode mode = QAudioDevice::Mode::Output);
     virtual ~AudioDeviceList();
 
     virtual std::shared_ptr<AudioDevice> newDevice(const AudioDevice& device)
@@ -58,14 +58,14 @@ signals:
 
 protected slots:
     void onDeviceChanged(const HifiAudioDeviceInfo& device, bool isHMD);
-    void onDevicesChanged(QAudio::Mode mode, const QList<HifiAudioDeviceInfo>& devices);
+    void onDevicesChanged(QAudioDevice::Mode mode, const QList<HifiAudioDeviceInfo>& devices);
 
 protected:
     friend class AudioDevices;
 
     static QHash<int, QByteArray> _roles;
     static Qt::ItemFlags _flags;
-    const QAudio::Mode _mode;
+    const QAudioDevice::Mode _mode;
     HifiAudioDeviceInfo _selectedDesktopDevice;
     HifiAudioDeviceInfo _selectedHMDDevice;
     QString _backupSelectedDesktopDeviceName;
@@ -87,7 +87,7 @@ class AudioInputDeviceList : public AudioDeviceList {
     Q_PROPERTY(bool peakValuesEnabled READ peakValuesEnabled WRITE setPeakValuesEnabled NOTIFY peakValuesEnabledChanged)
 
 public:
-    AudioInputDeviceList() : AudioDeviceList(QAudio::AudioInput) {}
+    AudioInputDeviceList() : AudioDeviceList(QAudioDevice::Input) {}
     virtual ~AudioInputDeviceList() = default;
 
     virtual std::shared_ptr<AudioDevice> newDevice(const AudioDevice& device) override
@@ -131,10 +131,10 @@ private slots:
     void chooseOutputDevice(const HifiAudioDeviceInfo& device, bool isHMD);
 
     void onContextChanged(const QString& context);
-    void onDeviceSelected(QAudio::Mode mode, const HifiAudioDeviceInfo& device,
+    void onDeviceSelected(QAudioDevice::Mode mode, const HifiAudioDeviceInfo& device,
                           const HifiAudioDeviceInfo& previousDevice, bool isHMD);
-    void onDeviceChanged(QAudio::Mode mode, const HifiAudioDeviceInfo& device);
-    void onDevicesChanged(QAudio::Mode mode, const QList<HifiAudioDeviceInfo>& devices);
+    void onDeviceChanged(QAudioDevice::Mode mode, const HifiAudioDeviceInfo& device);
+    void onDevicesChanged(QAudioDevice::Mode mode, const QList<HifiAudioDeviceInfo>& devices);
 
 private:
     friend class Audio;
@@ -143,7 +143,7 @@ private:
     AudioDeviceList* getOutputList() { return &_outputs; }
 
     AudioInputDeviceList _inputs;
-    AudioDeviceList _outputs { QAudio::AudioOutput };
+    AudioDeviceList _outputs { QAudioDevice::Mode::Output };
     HifiAudioDeviceInfo _requestedOutputDevice;
     HifiAudioDeviceInfo _requestedInputDevice;
 

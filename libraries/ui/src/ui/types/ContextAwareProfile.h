@@ -17,7 +17,7 @@
 #include <QtCore/QSet>
 
 #if !defined(Q_OS_ANDROID)
-#include <QtWebEngine/QQuickWebEngineProfile>
+#include <QQuickWebEngineProfile>
 #include <QtWebEngineCore/QWebEngineUrlRequestInterceptor>
 
 using ContextAwareProfileParent = QQuickWebEngineProfile;

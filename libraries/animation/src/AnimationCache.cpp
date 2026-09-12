@@ -33,15 +33,19 @@ AnimationCache::AnimationCache(QObject* parent) :
 }
 
 AnimationPointer AnimationCache::getAnimation(const QUrl& url) {
-    return getResource(url).staticCast<Animation>();
+    auto animation = std::dynamic_pointer_cast<Animation>(getResource(url));
+    Q_ASSERT(animation);
+    return animation;
 }
 
-QSharedPointer<Resource> AnimationCache::createResource(const QUrl& url) {
-    return QSharedPointer<Animation>(new Animation(url), &Resource::deleter);
+std::shared_ptr<Resource> AnimationCache::createResource(const QUrl& url) {
+    return std::shared_ptr<Animation>(new Animation(url), Resource::sharedPtrDeleter);
 }
 
-QSharedPointer<Resource> AnimationCache::createResourceCopy(const QSharedPointer<Resource>& resource) {
-    return QSharedPointer<Animation>(new Animation(*resource.staticCast<Animation>()), &Resource::deleter);
+std::shared_ptr<Resource> AnimationCache::createResourceCopy(const std::shared_ptr<Resource>& resource) {
+    auto animation = std::dynamic_pointer_cast<Animation>(resource);
+    Q_ASSERT(animation);
+    return std::shared_ptr<Animation>(new Animation(*animation), Resource::sharedPtrDeleter);
 }
 
 AnimationReader::AnimationReader(const QUrl& url, const QByteArray& data) :
@@ -73,7 +77,7 @@ void AnimationReader::run() {
             // Parse the FBX directly from the QNetworkReply
             HFMModel::Pointer hfmModel;
             if (_url.path().toLower().endsWith(".fbx")) {
-                hfmModel = FBXSerializer().read(_data, QVariantHash(), _url.path());
+                hfmModel = FBXSerializer().read(_data, hifi::VariantMultiHash(), _url.path());
             } else {
                 QString errorStr("usupported format");
                 emit onError(299, errorStr);
@@ -97,7 +101,7 @@ QStringList Animation::getJointNames() const {
     if (QThread::currentThread() != thread()) {
         QStringList result;
         BLOCKING_INVOKE_METHOD(const_cast<Animation*>(this), "getJointNames",
-            Q_RETURN_ARG(QStringList, result));
+            Q_GENERIC_RETURN_ARG(QStringList, result));
         return result;
     }
     QStringList names;
@@ -113,7 +117,7 @@ QVector<HFMAnimationFrame> Animation::getFrames() const {
     if (QThread::currentThread() != thread()) {
         QVector<HFMAnimationFrame> result;
         BLOCKING_INVOKE_METHOD(const_cast<Animation*>(this), "getFrames",
-            Q_RETURN_ARG(QVector<HFMAnimationFrame>, result));
+            Q_GENERIC_RETURN_ARG(QVector<HFMAnimationFrame>, result));
         return result;
     }
     if (_hfmModel) {

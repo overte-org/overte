@@ -11,6 +11,9 @@
 #include "Flow.h"
 #include "Rig.h"
 #include "AnimSkeleton.h"
+#include "src/AnimationLogging.h"
+
+#include <QStringRef>
 
 const std::map<QString, FlowPhysicsSettings> PRESET_FLOW_DATA = { { "hair", FlowPhysicsSettings() },
 { "skirt", FlowPhysicsSettings(true, 1.0f, DEFAULT_GRAVITY, 0.65f, 0.8f, 0.45f, 0.01f) },
@@ -572,7 +575,7 @@ void Flow::calculateConstraints(const std::shared_ptr<AnimSkeleton>& skeleton,
         }
     }
     int extraIndex = -1;
-    qDebug() << "GetScaleFactorGeometryToUnscaledRig() " << _rig->GetScaleFactorGeometryToUnscaledRig();
+    qCDebug(animation) << "GetScaleFactorGeometryToUnscaledRig() " << _rig->GetScaleFactorGeometryToUnscaledRig();
     for (size_t i = 0; i < roots.size(); i++) {
         FlowThread thread = FlowThread(roots[i], &_flowJointData, _rig->GetScaleFactorGeometryToUnscaledRig());
         // add threads with at least 2 joints

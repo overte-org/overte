@@ -14,7 +14,7 @@
 #include <QScreen>
 #include <QtGui/QWindow>
 #include <QtGui/QGuiApplication>
-#include <QtWidgets/QAction>
+#include <QAction>
 
 #include <ui-plugins/PluginContainer.h>
 #include <PathUtils.h>

@@ -15,6 +15,7 @@
 #define hifi_Midi_h
 
 #include <QtCore/QObject>
+#include <QVariant>
 #include <QAbstractNativeEventFilter>
 #include <DependencyManager.h>
 

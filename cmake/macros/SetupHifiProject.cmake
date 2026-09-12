@@ -29,10 +29,10 @@ macro(SETUP_HIFI_PROJECT)
   target_include_directories(${TARGET_NAME} PRIVATE "${CMAKE_BINARY_DIR}/includes")
 
   set(${TARGET_NAME}_DEPENDENCY_QT_MODULES ${ARGN})
-  list(APPEND ${TARGET_NAME}_DEPENDENCY_QT_MODULES Core)
+  list(APPEND ${TARGET_NAME}_DEPENDENCY_QT_MODULES Core Core5Compat)
 
   # find these Qt modules and link them to our own target
-  find_package(Qt5 COMPONENTS ${${TARGET_NAME}_DEPENDENCY_QT_MODULES} QUIET REQUIRED)
+  find_package(Qt6 COMPONENTS ${${TARGET_NAME}_DEPENDENCY_QT_MODULES} QUIET REQUIRED)
 
   # disable /OPT:REF and /OPT:ICF for the Debug builds
   # This will prevent the following linker warnings
@@ -42,7 +42,7 @@ macro(SETUP_HIFI_PROJECT)
   endif()
 
   foreach(QT_MODULE ${${TARGET_NAME}_DEPENDENCY_QT_MODULES})
-    target_link_libraries(${TARGET_NAME} Qt5::${QT_MODULE})
+    target_link_libraries(${TARGET_NAME} Qt6::${QT_MODULE})
   endforeach()
   target_link_libraries(${TARGET_NAME} ${CMAKE_THREAD_LIBS_INIT})
 

@@ -54,7 +54,7 @@ void MaterialBaker::bake() {
         if (_materialResource->isLoaded()) {
             processMaterial();
         } else {
-            connect(_materialResource.data(), &Resource::finished, this, &MaterialBaker::originalMaterialLoaded);
+            connect(_materialResource.get(), &Resource::finished, this, &MaterialBaker::originalMaterialLoaded);
         }
     }
 }
@@ -71,7 +71,7 @@ void MaterialBaker::loadMaterial() {
     if (!_isURL) {
         qCDebug(material_baking) << "Loading local material" << _materialData;
 
-        _materialResource = QSharedPointer<NetworkMaterialResource>::create();
+        _materialResource = std::make_shared<NetworkMaterialResource>();
         // TODO: add baseURL to allow these to reference relative files next to them
         _materialResource->parsedMaterials = NetworkMaterialResource::parseJSONMaterials(QJsonDocument::fromJson(_materialData.toUtf8()), QUrl());
     } else {
@@ -83,7 +83,7 @@ void MaterialBaker::loadMaterial() {
         if (_materialResource->isLoaded()) {
             emit originalMaterialLoaded();
         } else {
-            connect(_materialResource.data(), &Resource::finished, this, &MaterialBaker::originalMaterialLoaded);
+            connect(_materialResource.get(), &Resource::finished, this, &MaterialBaker::originalMaterialLoaded);
         }
     } else {
         handleError("Error loading " + _materialData);
@@ -139,7 +139,7 @@ void MaterialBaker::processMaterial() {
                     if (QImageReader::supportedImageFormats().contains(extension.toLatin1())) {
                         TextureKey textureKey(textureURL, type);
                         if (!_textureBakers.contains(textureKey)) {
-                            auto baseTextureFileName = _textureFileNamer.createBaseTextureFileName(textureURL.fileName(), type);
+                            auto baseTextureFileName = _textureFileNamer.createBaseTextureFileName(QFileInfo(textureURL.fileName()), type);
 
                             QSharedPointer<TextureBaker> textureBaker {
                                 new TextureBaker(textureURL, type, _textureOutputDir, baseTextureFileName, content),

@@ -1,6 +1,6 @@
 import QtQuick 2.5
-import QtGraphicalEffects 1.0
-import QtQuick.Controls 1.4
+import Qt5Compat.GraphicalEffects
+import QtQuick.Controls 2.3
 import QtQml 2.2
 
 
@@ -15,7 +15,7 @@ FocusScope {
     width: parent.width
     height: parent.height
 
-    property var rootMenu: Menu { objectName:"rootMenu" }
+    property var rootMenu: WrappedMenu { objectName:"rootMenu" }
     property var point: Qt.point(50, 50);
     TabletMenuStack { id: menuPopperUpper }
     property string subMenu: ""

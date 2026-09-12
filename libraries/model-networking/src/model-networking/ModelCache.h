@@ -26,7 +26,7 @@
 
 class MeshPart;
 
-using GeometryMappingPair = std::pair<QUrl, QVariantHash>;
+using GeometryMappingPair = std::pair<QUrl, hifi::VariantMultiHash>;
 Q_DECLARE_METATYPE(GeometryMappingPair)
 
 class Geometry {
@@ -59,7 +59,7 @@ public:
     virtual bool areTexturesLoaded() const;
     const QUrl& getAnimGraphOverrideUrl() const { return _animGraphOverrideUrl; }
     bool shouldWaitForWearables() const { return _waitForWearables; }
-    const QVariantHash& getMapping() const { return _mapping; }
+    const hifi::VariantMultiHash& getMapping() const { return _mapping; }
 
 protected:
     // Shared across all geometries, constant throughout lifetime
@@ -72,21 +72,22 @@ protected:
     NetworkMaterials _materials;
 
     QUrl _animGraphOverrideUrl;
-    QVariantHash _mapping;  // parsed contents of FST file.
+    hifi::VariantMultiHash _mapping;  // parsed contents of FST file.
     bool _waitForWearables { false };
 
 private:
-    mutable bool _areTexturesLoaded { false };
+    mutable std::atomic<bool> _areTexturesLoaded { false };
 };
 
 /// A geometry loaded from the network.
 class GeometryResource : public Resource, public Geometry {
     Q_OBJECT
 public:
-    using Pointer = QSharedPointer<GeometryResource>;
+    using Pointer = std::shared_ptr<GeometryResource>;
 
     GeometryResource(const QUrl& url, const ModelLoader& modelLoader) : Resource(url), _modelLoader(modelLoader) {}
     GeometryResource(const GeometryResource& other);
+    virtual ~GeometryResource() {}
 
     QString getType() const override { return "Geometry"; }
 
@@ -175,8 +176,8 @@ public:
 protected:
     friend class GeometryResource;
 
-    virtual QSharedPointer<Resource> createResource(const QUrl& url) override;
-    QSharedPointer<Resource> createResourceCopy(const QSharedPointer<Resource>& resource) override;
+    virtual  std::shared_ptr<Resource> createResource(const QUrl& url) override;
+     std::shared_ptr<Resource> createResourceCopy(const  std::shared_ptr<Resource>& resource) override;
 
 private:
     ModelCache();

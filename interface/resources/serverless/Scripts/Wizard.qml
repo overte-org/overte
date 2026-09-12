@@ -15,8 +15,8 @@ import QtQuick.Layouts 1.12
 
 import stylesUit 1.0 as HifiStylesUit
 import controlsUit 1.0 as HifiControls
-import "qrc:////qml//styles" as HifiStyles
-import "qrc:////qml//hifi" as Hifi
+import "qrc:/qml/styles" as HifiStyles
+import "qrc:/qml/hifi" as Hifi
 
 Rectangle {
   id: wizard
@@ -49,7 +49,7 @@ Rectangle {
         loader.sourceComponent = step5;
         break;
       default:
-        loader.setSource(undefined);
+        loader.setSource("");
     }
   }
 

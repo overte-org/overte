@@ -21,7 +21,7 @@
 #include <QtCore/QPointer>
 #include <QtGui/QOffscreenSurface>
 #include <QtGui/QOpenGLContext>
-#include <QtGui/QOpenGLDebugLogger>
+#include <QOpenGLDebugLogger>
 
 #include <DependencyManager.h>
 
@@ -75,6 +75,10 @@ bool OffscreenGLCanvas::makeCurrent() {
     bool result = _context->makeCurrent(_offscreenSurface);
     if (result) {
         std::call_once(_reportOnce, [] {
+            // initialise glad before ContextInfo::init uses it,
+            // otherwise we crash on debug builds because glad
+            // has its own debug wrappers that need to be set up
+            gl::initModuleGl();
             LOG_GL_CONTEXT_INFO(glLogging, gl::ContextInfo().init());
         });
     }

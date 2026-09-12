@@ -39,7 +39,7 @@ ShutdownEventListener::ShutdownEventListener(QObject* parent) : QObject(parent) 
 }
 
 
-bool ShutdownEventListener::nativeEventFilter(const QByteArray &eventType, void* msg, long* result) {
+bool ShutdownEventListener::nativeEventFilter(const QByteArray &eventType, void* msg, qintptr* result) {
 #ifdef Q_OS_WIN
     if (eventType == "windows_generic_MSG") {
         MSG* message = (MSG*)msg;

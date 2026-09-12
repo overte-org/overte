@@ -14,6 +14,7 @@
 
 #include <algorithm>
 
+#include <QtAssert>
 #include <QtCore/QCoreApplication>
 #include <QtCore/QDir>
 #include <QtCore/QFile>
@@ -67,37 +68,46 @@ DomainServerSettingsManager::DomainServerSettingsManager() {
     qDebug() << "Application dir: " << QCoreApplication::applicationDirPath();
     QString descriptionFilePath = QCoreApplication::applicationDirPath() + SETTINGS_DESCRIPTION_RELATIVE_PATH;
     QFile descriptionFile(descriptionFilePath);
-    descriptionFile.open(QIODevice::ReadOnly);
-
     QJsonParseError parseError;
-    QJsonDocument descriptionDocument = QJsonDocument::fromJson(descriptionFile.readAll(), &parseError);
+    if (descriptionFile.open(QIODevice::ReadOnly)) {
+        QJsonDocument descriptionDocument = QJsonDocument::fromJson(descriptionFile.readAll(), &parseError);
 
-    if (descriptionDocument.isObject()) {
-        QJsonObject descriptionObject = descriptionDocument.object();
+        if (descriptionDocument.isObject()) {
+            QJsonObject descriptionObject = descriptionDocument.object();
 
-        const QString DESCRIPTION_VERSION_KEY = "version";
+            const QString DESCRIPTION_VERSION_KEY = "version";
 
-        if (descriptionObject.contains(DESCRIPTION_VERSION_KEY)) {
-            // read the version from the settings description
-            _descriptionVersion = descriptionObject[DESCRIPTION_VERSION_KEY].toDouble();
+            if (descriptionObject.contains(DESCRIPTION_VERSION_KEY)) {
+                // read the version from the settings description
+                _descriptionVersion = descriptionObject[DESCRIPTION_VERSION_KEY].toDouble();
 
-            if (descriptionObject.contains(DESCRIPTION_SETTINGS_KEY)) {
-                _descriptionArray = descriptionDocument.object()[DESCRIPTION_SETTINGS_KEY].toArray();
-                splitSettingsDescription();
+                if (descriptionObject.contains(DESCRIPTION_SETTINGS_KEY)) {
+                    _descriptionArray = descriptionDocument.object()[DESCRIPTION_SETTINGS_KEY].toArray();
+                    splitSettingsDescription();
 
-                return;
+                    return;
+                }
             }
         }
+        static const QString MISSING_SETTINGS_DESC_MSG =
+            QString("Did not find settings description in JSON at %1 - Unable to continue. domain-server will quit.\n%2 at %3")
+                .arg(descriptionFilePath)
+                .arg(parseError.errorString())
+                .arg(parseError.offset);
+        static const int MISSING_SETTINGS_DESC_ERROR_CODE = 6;
+
+        QMetaObject::invokeMethod(QCoreApplication::instance(), "queuedQuit", Qt::QueuedConnection,
+                                  Q_ARG(QString, MISSING_SETTINGS_DESC_MSG), Q_ARG(int, MISSING_SETTINGS_DESC_ERROR_CODE));
+        Q_UNREACHABLE();
     }
 
-    static const QString MISSING_SETTINGS_DESC_MSG =
-        QString("Did not find settings description in JSON at %1 - Unable to continue. domain-server will quit.\n%2 at %3")
-        .arg(descriptionFilePath).arg(parseError.errorString()).arg(parseError.offset);
-    static const int MISSING_SETTINGS_DESC_ERROR_CODE = 6;
+    static const QString MISSING_SETTINGS_FILE_MSG =
+        QString("Could not open the settings description file %1").arg(descriptionFilePath);
+    static const int MISSING_SETTINGS_FILE_ERROR_CODE = 6;
 
     QMetaObject::invokeMethod(QCoreApplication::instance(), "queuedQuit", Qt::QueuedConnection,
-                              Q_ARG(QString, MISSING_SETTINGS_DESC_MSG),
-                              Q_ARG(int, MISSING_SETTINGS_DESC_ERROR_CODE));
+                              Q_ARG(QString, MISSING_SETTINGS_FILE_MSG), Q_ARG(int, MISSING_SETTINGS_FILE_ERROR_CODE));
+    Q_UNREACHABLE();
 }
 
 void DomainServerSettingsManager::splitSettingsDescription() {
@@ -256,7 +266,7 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
             QVariant* allowedUsers = _configMap.valueForKeyPath(ALLOWED_USERS_SETTINGS_KEYPATH);
 
             if (allowedUsers
-                && allowedUsers->canConvert(QMetaType::QVariantList)
+                && allowedUsers->canConvert(QMetaType(QMetaType::QVariantList))
                 && reinterpret_cast<QVariantList*>(allowedUsers)->size() > 0) {
 
                 qDebug() << "Forcing security.restricted_access to TRUE since there was an"
@@ -277,7 +287,7 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
 
             // this was prior to change of poorly named entitiesFileName to entitiesFilePath
             QVariant* persistFileNameVariant = _configMap.valueForKeyPath(ENTITY_SERVER_SETTINGS_KEY + "." + ENTITY_FILE_NAME_KEY);
-            if (persistFileNameVariant && persistFileNameVariant->canConvert(QMetaType::QString)) {
+            if (persistFileNameVariant && persistFileNameVariant->canConvert(QMetaType(QMetaType::QString))) {
                 QString persistFileName = persistFileNameVariant->toString();
 
                 qDebug() << "Migrating persistFilename to persistFilePath for entity-server settings";
@@ -290,7 +300,7 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
 
                 // remove the old setting
                 QVariant* entityServerVariant = _configMap.valueForKeyPath(ENTITY_SERVER_SETTINGS_KEY);
-                if (entityServerVariant && entityServerVariant->canConvert(QMetaType::QVariantMap)) {
+                if (entityServerVariant && entityServerVariant->canConvert(QMetaType(QMetaType::QVariantMap))) {
                     QVariantMap entityServerMap = entityServerVariant->toMap();
                     entityServerMap.remove(ENTITY_FILE_NAME_KEY);
 
@@ -307,7 +317,7 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
 
             QVariant* passwordVariant = _configMap.valueForKeyPath(BASIC_AUTH_PASSWORD_KEY_PATH);
 
-            if (passwordVariant && passwordVariant->canConvert(QMetaType::QString)) {
+            if (passwordVariant && passwordVariant->canConvert(QMetaType(QMetaType::QString))) {
                 QString plaintextPassword = passwordVariant->toString();
 
                 qDebug() << "Migrating plaintext password to SHA256 hash in domain-server settings.";
@@ -343,12 +353,12 @@ void DomainServerSettingsManager::setupConfigMap(const QString& userConfigFilena
 
             foreach (QString allowedUser, allowedUsers) {
                 // even if isRestrictedAccess is false, we have to add explicit rows for these users.
-                _agentPermissions[NodePermissionsKey(allowedUser, 0)].reset(new NodePermissions(allowedUser));
-                _agentPermissions[NodePermissionsKey(allowedUser, 0)]->set(NodePermissions::Permission::canConnectToDomain);
+                _agentPermissions[NodePermissionsKey(allowedUser, QUuid())].reset(new NodePermissions(allowedUser));
+                _agentPermissions[NodePermissionsKey(allowedUser, QUuid())]->set(NodePermissions::Permission::canConnectToDomain);
             }
 
             foreach (QString allowedEditor, allowedEditors) {
-                NodePermissionsKey editorKey(allowedEditor, 0);
+                NodePermissionsKey editorKey(allowedEditor, QUuid());
                 if (!_agentPermissions.contains(editorKey)) {
                     _agentPermissions[editorKey].reset(new NodePermissions(allowedEditor));
                     if (isRestrictedAccess) {
@@ -602,13 +612,13 @@ void DomainServerSettingsManager::packPermissionsForMap(QString mapName,
 
     // find (or create) the "security" section of the settings map
     QVariant* security = _configMap.valueForKeyPath("security", true);
-    if (!security->canConvert(QMetaType::QVariantMap)) {
+    if (!security->canConvert(QMetaType(QMetaType::QVariantMap))) {
         (*security) = QVariantMap();
     }
 
     // find (or create) whichever subsection of "security" we are packing
     QVariant* permissions = _configMap.valueForKeyPath(keyPath, true);
-    if (!permissions->canConvert(QMetaType::QVariantList)) {
+    if (!permissions->canConvert(QMetaType(QMetaType::QVariantList))) {
         (*permissions) = QVariantList();
     }
 
@@ -692,7 +702,7 @@ bool DomainServerSettingsManager::unpackPermissionsForKeypath(const QString& key
         return false;
     }
 
-    if (!permissions.canConvert(QMetaType::QVariantList)) {
+    if (!permissions.canConvert(QMetaType(QMetaType::QVariantList))) {
         qDebug() << "Failed to extract permissions for key path" << keyPath << "from settings.";
     }
 
@@ -940,7 +950,7 @@ void DomainServerSettingsManager::processNodeKickRequestPacket(QSharedPointer<Re
                             qWarning() << "attempt to kick node running on same machine as domain server (by fingerprint), ignoring KickRequest";
                             return;
                         }
-                        NodePermissionsKey machineFingerprintKey(nodeData->getMachineFingerprint().toString(), 0);
+                        NodePermissionsKey machineFingerprintKey(nodeData->getMachineFingerprint().toString(), QUuid());
 
                         // check if there were already permissions for the fingerprint
                         bool hadFingerprintPermissions = hasPermissionsForMachineFingerprint(nodeData->getMachineFingerprint());
@@ -1086,7 +1096,7 @@ NodePermissions DomainServerSettingsManager::getStandardPermissionsForName(const
 }
 
 NodePermissions DomainServerSettingsManager::getPermissionsForName(const QString& name) const {
-    NodePermissionsKey nameKey = NodePermissionsKey(name, 0);
+    NodePermissionsKey nameKey = NodePermissionsKey(name, QUuid());
     if (_agentPermissions.contains(nameKey)) {
         return *(_agentPermissions[nameKey].get());
     }
@@ -1096,7 +1106,7 @@ NodePermissions DomainServerSettingsManager::getPermissionsForName(const QString
 }
 
 NodePermissions DomainServerSettingsManager::getPermissionsForIP(const QHostAddress& address) const {
-    NodePermissionsKey ipKey = NodePermissionsKey(address.toString(), 0);
+    NodePermissionsKey ipKey = NodePermissionsKey(address.toString(), QUuid());
     if (_ipPermissions.contains(ipKey)) {
         return *(_ipPermissions[ipKey].get());
     }
@@ -1106,7 +1116,7 @@ NodePermissions DomainServerSettingsManager::getPermissionsForIP(const QHostAddr
 }
 
 NodePermissions DomainServerSettingsManager::getPermissionsForMachineFingerprint(const QUuid& machineFingerprint) const {
-    NodePermissionsKey fingerprintKey = NodePermissionsKey(machineFingerprint.toString(), 0);
+    NodePermissionsKey fingerprintKey = NodePermissionsKey(machineFingerprint.toString(), QUuid());
     if (_machineFingerprintPermissions.contains(fingerprintKey)) {
         return *(_machineFingerprintPermissions[fingerprintKey].get());
     }
@@ -1581,7 +1591,9 @@ QJsonObject DomainServerSettingsManager::settingsResponseObjectForType(const QSt
         qDebug() << "Reading certificate file at" << certPath << "for HTTPS.";
 
         QFile certFile(certPath);
-        certFile.open(QIODevice::ReadOnly);
+        // QT6TODO: this should be handled correctly
+        auto res = certFile.open(QIODevice::ReadOnly);
+        Q_ASSERT(res);
 
         QSslCertificate sslCertificate(&certFile);
         QString digest = sslCertificate.digest().toHex(':');
@@ -1633,7 +1645,7 @@ void DomainServerSettingsManager::updateSetting(const QString& key, const QJsonV
 
         QVariant& possibleMap = settingMap[key];
 
-        if (!possibleMap.canConvert(QMetaType::QVariantMap)) {
+        if (!possibleMap.canConvert(QMetaType(QMetaType::QVariantMap))) {
             // if this isn't a map then we need to make it one, otherwise we're about to crash
             qDebug() << "Value at" << key << "was not the expected QVariantMap while updating DS settings"
                 << "- removing existing value and making it a QVariantMap";
@@ -1850,8 +1862,8 @@ bool DomainServerSettingsManager::recurseJSONObjectAndOverwriteSettings(const QJ
 
 // Compare two members of a permissions list
 bool permissionVariantLessThan(const QVariant &v1, const QVariant &v2) {
-    if (!v1.canConvert(QMetaType::QVariantMap) ||
-        !v2.canConvert(QMetaType::QVariantMap)) {
+    if (!v1.canConvert(QMetaType(QMetaType::QVariantMap)) ||
+        !v2.canConvert(QMetaType(QMetaType::QVariantMap))) {
         return v1.toString() < v2.toString();
     }
     QVariantMap m1 = v1.toMap();
@@ -1876,22 +1888,22 @@ void DomainServerSettingsManager::sortPermissions() {
 
     // sort the permission-names
     QVariant* standardPermissions = _configMap.valueForKeyPath(AGENT_STANDARD_PERMISSIONS_KEYPATH);
-    if (standardPermissions && standardPermissions->canConvert(QMetaType::QVariantList)) {
+    if (standardPermissions && standardPermissions->canConvert(QMetaType(QMetaType::QVariantList))) {
         QList<QVariant>* standardPermissionsList = reinterpret_cast<QVariantList*>(standardPermissions);
         std::sort((*standardPermissionsList).begin(), (*standardPermissionsList).end(), permissionVariantLessThan);
     }
     QVariant* permissions = _configMap.valueForKeyPath(AGENT_PERMISSIONS_KEYPATH);
-    if (permissions && permissions->canConvert(QMetaType::QVariantList)) {
+    if (permissions && permissions->canConvert(QMetaType(QMetaType::QVariantList))) {
         QList<QVariant>* permissionsList = reinterpret_cast<QVariantList*>(permissions);
         std::sort((*permissionsList).begin(), (*permissionsList).end(), permissionVariantLessThan);
     }
     QVariant* groupPermissions = _configMap.valueForKeyPath(GROUP_PERMISSIONS_KEYPATH);
-    if (groupPermissions && groupPermissions->canConvert(QMetaType::QVariantList)) {
+    if (groupPermissions && groupPermissions->canConvert(QMetaType(QMetaType::QVariantList))) {
         QList<QVariant>* permissionsList = reinterpret_cast<QVariantList*>(groupPermissions);
         std::sort((*permissionsList).begin(), (*permissionsList).end(), permissionVariantLessThan);
     }
     QVariant* forbiddenPermissions = _configMap.valueForKeyPath(GROUP_FORBIDDENS_KEYPATH);
-    if (forbiddenPermissions && forbiddenPermissions->canConvert(QMetaType::QVariantList)) {
+    if (forbiddenPermissions && forbiddenPermissions->canConvert(QMetaType(QMetaType::QVariantList))) {
         QList<QVariant>* permissionsList = reinterpret_cast<QVariantList*>(forbiddenPermissions);
         std::sort((*permissionsList).begin(), (*permissionsList).end(), permissionVariantLessThan);
     }
@@ -2132,11 +2144,11 @@ void DomainServerSettingsManager::apiGetGroupRanksJSONCallback(QNetworkReply* re
 
     if (jsonObject["status"].toString() == "success") {
         QJsonObject groups = jsonObject["data"].toObject()["groups"].toObject();
-        foreach (auto groupID, groups.keys()) {
+        for (auto const &groupID: groups.keys()) {
             QJsonObject group = groups[groupID].toObject();
             QJsonArray ranks = group["ranks"].toArray();
 
-            QHash<QUuid, GroupRank>& ranksForGroup = _groupRanks[groupID];
+            QHash<QUuid, GroupRank>& ranksForGroup = _groupRanks[QUuid::fromString(groupID)];
             QHash<QUuid, bool> idsFromThisUpdate;
 
             for (int rankIndex = 0; rankIndex < ranks.size(); rankIndex++) {
@@ -2158,7 +2170,7 @@ void DomainServerSettingsManager::apiGetGroupRanksJSONCallback(QNetworkReply* re
             }
 
             // clean up any that went away
-            foreach (QUuid rankID, ranksForGroup.keys()) {
+            for (const QUuid &rankID: ranksForGroup.keys()) {
                 if (!idsFromThisUpdate.contains(rankID)) {
                     ranksForGroup.remove(rankID);
                 }

@@ -116,12 +116,22 @@ void DesktopScriptingInterface::show(const QString& path, const QString&  title)
 
 InteractiveWindowPointer DesktopScriptingInterface::createWindow(const QString& sourceUrl, const QVariantMap& properties) {
     if (QThread::currentThread() != thread()) {
+        qDebug() << "DesktopScriptingInterface::createWindow" << sourceUrl;
         InteractiveWindowPointer interactiveWindow = nullptr;
-        BLOCKING_INVOKE_METHOD(this, "createWindowOnThread",
+        // QT6TODO
+        /*BLOCKING_INVOKE_METHOD(this, "createWindowOnThread",
+            Q_GENERIC_RETURN_ARG(InteractiveWindowPointer, interactiveWindow),
+            Q_GENERIC_ARG(QString, sourceUrl),
+            Q_GENERIC_ARG(QVariantMap, properties),
+            Q_GENERIC_ARG(QThread*, QThread::currentThread()));*/
+        QMetaObject::invokeMethod(this, &DesktopScriptingInterface::createWindowOnThread/*"createWindowOnThread"*/,
+            Qt::BlockingQueuedConnection,
             Q_RETURN_ARG(InteractiveWindowPointer, interactiveWindow),
-            Q_ARG(QString, sourceUrl),
-            Q_ARG(QVariantMap, properties),
-            Q_ARG(QThread*, QThread::currentThread()));
+            sourceUrl,
+            properties,
+            QThread::currentThread()
+            );
+
         return interactiveWindow;
     }
 
@@ -141,6 +151,8 @@ InteractiveWindowPointer DesktopScriptingInterface::createWindowOnThread(const Q
     // The offscreen surface already validates against non-local QML sources, but we also need to ensure that 
     // if we create top level QML, like dock widgets or other types of QQuickView containing desktop windows 
     // that the source URL is permitted
+    // QT6TODO: crashes for some reason, temporarily disabled
+    qDebug() << "DesktopScriptingInterface::createWindowOnThread " << sourceUrl;
     const auto& urlValidator = OffscreenQmlSurface::getUrlValidator();
     if (!urlValidator(sourceUrl)) {
         return nullptr;

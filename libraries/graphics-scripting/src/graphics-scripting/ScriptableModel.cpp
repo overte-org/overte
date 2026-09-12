@@ -179,7 +179,8 @@ scriptable::ScriptableMaterial::ScriptableMaterial(const graphics::MaterialPoint
                 parametricRimFresnelPower = material->getParametricRimFresnelPower();
                 parametricRimLift = material->getParametricRimLift();
                 rimLightingMix = material->getRimLightingMix();
-                outlineWidthMode = material->getOutlineWidthMode();
+                // QT6TODO: something is wrong there, isn't outlineWidthMode supposed to be a string like "worldCoordinates" or "screenCoordinates"
+                outlineWidthMode = QString::number(material->getOutlineWidthMode());
                 outlineWidth = material->getOutlineWidth();
                 outline = material->getOutline();
                 uvAnimationScrollXSpeed = material->getUVAnimationScrollXSpeed();

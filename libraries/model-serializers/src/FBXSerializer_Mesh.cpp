@@ -220,10 +220,10 @@ ExtractedMesh FBXSerializer::extractMesh(const FBXNode& object, unsigned int& me
                 } else if (subdata.name == "NormalsIndex") {
                     data.normalIndices = getIntVector(subdata);
 
-                } else if (subdata.name == "MappingInformationType" && subdata.properties.at(0) == BY_VERTICE) {
+                } else if (subdata.name == "MappingInformationType" && subdata.properties.at(0).toByteArray() == BY_VERTICE) {
                     data.normalsByVertex = true;
 
-                } else if (subdata.name == "ReferenceInformationType" && subdata.properties.at(0) == INDEX_TO_DIRECT) {
+                } else if (subdata.name == "ReferenceInformationType" && subdata.properties.at(0).toByteArray() == INDEX_TO_DIRECT) {
                     indexToDirect = true;
                 }
             }
@@ -240,10 +240,10 @@ ExtractedMesh FBXSerializer::extractMesh(const FBXNode& object, unsigned int& me
                 } else if (subdata.name == "ColorsIndex" || subdata.name == "ColorIndex") {
                     data.colorIndices = getIntVector(subdata);
 
-                } else if (subdata.name == "MappingInformationType" && subdata.properties.at(0) == BY_VERTICE) {
+                } else if (subdata.name == "MappingInformationType" && subdata.properties.at(0).toByteArray() == BY_VERTICE) {
                     data.colorsByVertex = true;
 
-                } else if (subdata.name == "ReferenceInformationType" && subdata.properties.at(0) == INDEX_TO_DIRECT) {
+                } else if (subdata.name == "ReferenceInformationType" && subdata.properties.at(0).toByteArray() == INDEX_TO_DIRECT) {
                     indexToDirect = true;
                 }
             }
@@ -334,7 +334,7 @@ ExtractedMesh FBXSerializer::extractMesh(const FBXNode& object, unsigned int& me
                 if (subdata.name == "Materials") {
                     materials = getIntVector(subdata);
                 } else if (subdata.name == "MappingInformationType") {
-                    if (subdata.properties.at(0) == BY_POLYGON) {
+                    if (subdata.properties.at(0).toByteArray() == BY_POLYGON) {
                         isMaterialPerPolygon = true;
                     }
                 } else {

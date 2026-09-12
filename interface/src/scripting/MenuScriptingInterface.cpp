@@ -11,17 +11,27 @@
 
 #include "MenuScriptingInterface.h"
 #include "Application.h"
+#include "DependencyManager.h"
 #include "MainWindow.h"
 
 #include <QtCore/QCoreApplication>
 #include <QtCore/QThread>
 
+#include <qloggingcategory.h>
 #include <shared/QtHelpers.h>
 #include <MenuItemProperties.h>
 #include "Menu.h"
+#include "ScriptEngines.h"
 
 MenuScriptingInterface::MenuScriptingInterface() {
     connect(qApp, &Application::menuBarVisibilityChanged, this, &MenuScriptingInterface::visibilityChanged);
+    // QT6TODO: this is part of the _isFinished hack, see header
+    connect(DependencyManager::get<ScriptEngines>().get(), &ScriptEngines::scriptingEnded, this,
+            &MenuScriptingInterface::onScriptingEnded);
+}
+
+void MenuScriptingInterface::onScriptingEnded() {
+    _isFinished = true;
 }
 
 MenuScriptingInterface* MenuScriptingInterface::getInstance() {
@@ -57,7 +67,7 @@ void MenuScriptingInterface::removeMenu(const QString& menu) {
 
 bool MenuScriptingInterface::menuExists(const QString& menu) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return false;
     }
 
@@ -65,18 +75,18 @@ bool MenuScriptingInterface::menuExists(const QString& menu) {
         return menuInstance && menuInstance->menuExists(menu);
     }
 
-    bool result { false };
+    bool result{ false };
 
     BLOCKING_INVOKE_METHOD(menuInstance, "menuExists",
-                Q_RETURN_ARG(bool, result), 
-                Q_ARG(const QString&, menu));
+                Q_GENERIC_RETURN_ARG(bool, result),
+                Q_GENERIC_ARG(const QString&, menu));
 
     return result;
 }
 
 void MenuScriptingInterface::addSeparator(const QString& menuName, const QString& separatorName) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return;
     }
 
@@ -87,7 +97,7 @@ void MenuScriptingInterface::addSeparator(const QString& menuName, const QString
 
 void MenuScriptingInterface::removeSeparator(const QString& menuName, const QString& separatorName) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return;
     }
 
@@ -98,7 +108,7 @@ void MenuScriptingInterface::removeSeparator(const QString& menuName, const QStr
 
 void MenuScriptingInterface::addMenuItem(const MenuItemProperties& properties) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return;
     }
 
@@ -107,7 +117,7 @@ void MenuScriptingInterface::addMenuItem(const MenuItemProperties& properties) {
 
 void MenuScriptingInterface::addMenuItem(const QString& menu, const QString& menuitem, const QString& shortcutKey) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return;
     }
 
@@ -117,7 +127,7 @@ void MenuScriptingInterface::addMenuItem(const QString& menu, const QString& men
 
 void MenuScriptingInterface::addMenuItem(const QString& menu, const QString& menuitem) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return;
     }
 
@@ -127,17 +137,16 @@ void MenuScriptingInterface::addMenuItem(const QString& menu, const QString& men
 
 void MenuScriptingInterface::removeMenuItem(const QString& menu, const QString& menuitem) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return;
     }
-    QMetaObject::invokeMethod(menuInstance, "removeMenuItem",
-                Q_ARG(const QString&, menu),
-                Q_ARG(const QString&, menuitem));
+    QMetaObject::invokeMethod(menuInstance, "removeMenuItem", Q_GENERIC_ARG(const QString&, menu),
+                              Q_GENERIC_ARG(const QString&, menuitem));
 };
 
 bool MenuScriptingInterface::menuItemExists(const QString& menu, const QString& menuitem) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return false;
     }
 
@@ -145,19 +154,17 @@ bool MenuScriptingInterface::menuItemExists(const QString& menu, const QString& 
         return menuInstance && menuInstance->menuItemExists(menu, menuitem);
     }
 
-    bool result { false };
+    bool result{ false };
 
-    BLOCKING_INVOKE_METHOD(menuInstance, "menuItemExists",
-        Q_RETURN_ARG(bool, result),
-        Q_ARG(const QString&, menu),
-        Q_ARG(const QString&, menuitem));
+    BLOCKING_INVOKE_METHOD(menuInstance, "menuItemExists", Q_GENERIC_RETURN_ARG(bool, result),
+                           Q_GENERIC_ARG(const QString&, menu), Q_GENERIC_ARG(const QString&, menuitem));
 
     return result;
 }
 
 bool MenuScriptingInterface::isOptionChecked(const QString& menuOption) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return false;
     }
 
@@ -165,28 +172,26 @@ bool MenuScriptingInterface::isOptionChecked(const QString& menuOption) {
         return menuInstance && menuInstance->isOptionChecked(menuOption);
     }
 
-    bool result { false };
+    bool result{ false };
 
-    BLOCKING_INVOKE_METHOD(menuInstance, "isOptionChecked",
-                Q_RETURN_ARG(bool, result), 
-                Q_ARG(const QString&, menuOption));
+    BLOCKING_INVOKE_METHOD(menuInstance, "isOptionChecked", Q_GENERIC_RETURN_ARG(bool, result),
+                           Q_GENERIC_ARG(const QString&, menuOption));
     return result;
 }
 
 void MenuScriptingInterface::setIsOptionChecked(const QString& menuOption, bool isChecked) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return;
     }
 
-    QMetaObject::invokeMethod(menuInstance, "setIsOptionChecked",
-                Q_ARG(const QString&, menuOption),
-                Q_ARG(bool, isChecked));
+    QMetaObject::invokeMethod(menuInstance, "setIsOptionChecked", Q_GENERIC_ARG(const QString&, menuOption),
+                              Q_GENERIC_ARG(bool, isChecked));
 }
 
 bool MenuScriptingInterface::isMenuEnabled(const QString& menuOption) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return false;
     }
 
@@ -194,33 +199,31 @@ bool MenuScriptingInterface::isMenuEnabled(const QString& menuOption) {
         return menuInstance && menuInstance->isMenuEnabled(menuOption);
     }
 
-    bool result { false };
+    bool result{ false };
 
-    BLOCKING_INVOKE_METHOD(menuInstance, "isMenuEnabled",
-        Q_RETURN_ARG(bool, result),
-        Q_ARG(const QString&, menuOption));
+    BLOCKING_INVOKE_METHOD(menuInstance, "isMenuEnabled", Q_GENERIC_RETURN_ARG(bool, result),
+                           Q_GENERIC_ARG(const QString&, menuOption));
 
     return result;
 }
 
 void MenuScriptingInterface::setMenuEnabled(const QString& menuOption, bool isChecked) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return;
     }
 
-    QMetaObject::invokeMethod(menuInstance, "setMenuEnabled",
-        Q_ARG(const QString&, menuOption),
-        Q_ARG(bool, isChecked));
+    QMetaObject::invokeMethod(menuInstance, "setMenuEnabled", Q_GENERIC_ARG(const QString&, menuOption),
+                              Q_GENERIC_ARG(bool, isChecked));
 }
 
 void MenuScriptingInterface::triggerOption(const QString& menuOption) {
     Menu* menuInstance = Menu::getInstance();
-    if (!menuInstance) {
+    if (!menuInstance || _isFinished) {
         return;
     }
 
-    QMetaObject::invokeMethod(menuInstance, "triggerOption", Q_ARG(const QString&, menuOption));
+    QMetaObject::invokeMethod(menuInstance, "triggerOption", Q_GENERIC_ARG(const QString&, menuOption));
 }
 
 void MenuScriptingInterface::setVisible(bool visible) {

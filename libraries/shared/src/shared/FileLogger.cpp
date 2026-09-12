@@ -17,6 +17,7 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QDir>
 #include <QtGui/QDesktopServices>
+#include <QtCore5Compat/QRegExp>
 
 #include "FileUtils.h"
 #include "NetworkUtils.h"
