@@ -684,6 +684,21 @@ Menu::Menu() {
         &CrashHandler::getInstance(),
         SLOT(setEnabled(bool)));
 
+    addCheckableActionToQMenuAndActionHash(networkMenu,
+        MenuOption::EnableLogStreaming,
+        0,
+        CrashHandler::getInstance().isLogStreamingEnabled(),
+        &CrashHandler::getInstance(),
+        SLOT(setLogStreamingEnabled(bool)));
+
+    addCheckableActionToQMenuAndActionHash(networkMenu,
+        MenuOption::EnableStatsStreaming,
+        0,
+        CrashHandler::getInstance().isStatsStreamingEnabled(),
+        &CrashHandler::getInstance(),
+        SLOT(setStatsStreamingEnabled(bool)));
+
+
     addActionToQMenuAndActionHash(networkMenu, MenuOption::ShowDSConnectTable, 0,
         qApp, SLOT(loadDomainConnectionDialog()));
 
