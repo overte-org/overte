@@ -1033,10 +1033,21 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
         // This check is needed for catching issues caused by a bug in Qt6 that causes metamethod invocations to fail when typedefs are used in header files.
 #if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
          for (int parameterIndex = 0; parameterIndex < meta.parameterCount(); parameterIndex++) {
-             if (std::string(meta.parameterTypeName(parameterIndex)) != std::string(meta.parameterMetaType(parameterIndex).name())) {
+            const auto parameterTypeName = std::string(meta.parameterTypeName(parameterIndex));
+            const auto parameterMetatypeName = std::string(meta.parameterMetaType(parameterIndex).name());
+
+            // GLM types will always trigger this, there's a workaround below
+            if (
+                parameterTypeName.starts_with("glm::") ||
+                parameterMetatypeName.starts_with("glm::")
+            ) {
+                continue;
+            }
+
+            if (parameterTypeName != parameterMetatypeName) {
                  qCritical() << "ScriptMethodV8Proxy::call: " << fullName() << " parameter " << parameterIndex
-                     << " has a broken type " << meta.parameterTypeName(parameterIndex)
-                     << " Correct type is " << meta.parameterMetaType(parameterIndex).name();
+                     << " has a broken type " << parameterTypeName
+                     << " Correct type is " << parameterMetatypeName;
                  Q_ASSERT(false);
              }
          }
@@ -1078,10 +1089,35 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
                     const QVariant& converted = qVarArgLists[i].back();
                     conversionPenaltyScore += _engine->computeCastPenalty(V8ScriptValue(_engine, argVal), methodArgTypeId);
 
+                    // QT6TODO: FIXME: Qt 6.5 changed the metatype system a lot. It now uses fully
+                    // qualified type names, ignoring typedefs/usings/the qRegisterMetaType alias.
+                    // Silently replace the GLM types with their typedef names to satisfy Qt.
+                    // In the future we should move away from using Qt metamethods, since they
+                    // might be basically useless for us when Qt 7 arrives.
+                    // FIXME: GCC and Clang have different names for these, we'll need to check
+                    // both of them. MSVC likely has its own name for them too. Maybe we should
+                    // have a map rather than this if-else table if that's the case?
+                    // NOTE: These have to be static or nearly-static lifetime strings (i.e.
+                    // the metatype's name field, which lives for the app's whole lifetime),
+                    // QGenericArgument doesn't copy them.
+                    const char *staticTypeName = QMetaType(converted.userType()).name();
+                    auto typeName = std::string(staticTypeName);
+                    if (typeName == "glm::vec<2,float,glm::packed_highp>") {
+                        staticTypeName = "glm::vec2";
+                    } else if (typeName == "glm::vec<3,float,glm::packed_highp>") {
+                        staticTypeName = "glm::vec3";
+                    } else if (typeName == "glm::vec<4,float,glm::packed_highp>") {
+                        staticTypeName = "glm::vec4";
+                    } else if (typeName == "glm::qua<float,glm::packed_highp>") {
+                        staticTypeName = "glm::quat";
+                    } else if (typeName == "glm::mat4") {
+                        staticTypeName = "glm::mat<4,4,float,glm::packed_highp>";
+                    }
+
                     // a lot of type conversion assistance thanks to https://stackoverflow.com/questions/28457819/qt-invoke-method-with-qvariant
                     // A const_cast is needed because calling data() would detach the QVariant.
                     qGenArgsVectors[i][arg] =
-                        QGenericArgument(QMetaType(converted.userType()).name(), const_cast<void*>(converted.constData()));
+                        QGenericArgument(staticTypeName, const_cast<void*>(converted.constData()));
                 }
             }
         }
