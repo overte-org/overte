@@ -92,7 +92,7 @@ public slots:
      * @returns {Quat} The default rotation of the joint if avatar data are available and the joint index is valid, otherwise
      *     {@link Quat(0)|Quat.IDENTITY}.
      */
-    glm::qua<float,glm::packed_highp> getDefaultJointRotation(int index) const;
+    glm::quat getDefaultJointRotation(int index) const;
 
     /*@jsdoc
      * Gets the default translation of a joint in the avatar relative to its parent, in model coordinates.
@@ -199,7 +199,7 @@ public slots:
      * @returns {Quat} The rotation of the left palm in world coordinates, or {@link Quat(0)|Quat.IDENTITY} if the avatar data
      *     aren't available.
      */
-    glm::qua<float,glm::packed_highp> getLeftPalmRotation() const;
+    glm::quat getLeftPalmRotation() const;
 
     /*@jsdoc
      * Gets the position of the right palm in world coordinates.
@@ -215,7 +215,7 @@ public slots:
      * @returns {Quat} The rotation of the right palm in world coordinates, or {@link Quat(0)|Quat.IDENTITY} if the avatar data
      *     aren't available.
      */
-    glm::qua<float,glm::packed_highp> getRightPalmRotation() const;
+    glm::quat getRightPalmRotation() const;
 
 private:
     std::shared_ptr<Avatar> lockAvatar() const;
