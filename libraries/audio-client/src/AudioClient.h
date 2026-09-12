@@ -151,7 +151,7 @@ public:
 
     void setIsPlayingBackRecording(bool isPlayingBackRecording) { _isPlayingBackRecording = isPlayingBackRecording; }
 
-    Q_INVOKABLE void setAvatarBoundingBoxParameters(glm::vec3 corner, glm::vec<3,float,glm::packed_highp> scale);
+    Q_INVOKABLE void setAvatarBoundingBoxParameters(glm::vec3 corner, glm::vec3 scale);
 
     bool outputLocalInjector(const AudioInjectorPointer& injector) override;
 
