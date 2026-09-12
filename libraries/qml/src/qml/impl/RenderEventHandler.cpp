@@ -135,7 +135,6 @@ void RenderEventHandler::qmlRender(bool sceneGraphSync) {
 
     gl::globalLock();
 
-    _shared->_renderControl->polishItems();
     _shared->_renderControl->beginFrame();
 
     if (!_shared->preRender(sceneGraphSync)) {
