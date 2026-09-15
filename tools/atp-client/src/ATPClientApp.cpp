@@ -27,6 +27,7 @@
 #include <SettingHandle.h>
 #include <AssetUpload.h>
 #include <StatTracker.h>
+#include <platform/Platform.h>
 
 #define HIGH_FIDELITY_ATP_CLIENT_USER_AGENT "Mozilla/5.0 (HighFidelityATPClient)"
 #define TIMEOUT_MILLISECONDS 8000
@@ -142,6 +143,12 @@ ATPClientApp::ATPClientApp(int argc, char* argv[]) :
     DependencyManager::set<AccountManager>(false, [&]{ return QString(HIGH_FIDELITY_ATP_CLIENT_USER_AGENT); });
     DependencyManager::set<AddressManager>();
     DependencyManager::set<NodeList>(NodeType::Agent, _listenPort);
+    DependencyManager::set<DomainAccountManager>();
+
+    // This is normally called from ThreadedAssignment, but not sure how to get
+    // that to happen from here. Calling it directly shouldn't hurt anything.
+    platform::create();
+
 
     auto accountManager = DependencyManager::get<AccountManager>();
     accountManager->setIsAgent(true);
