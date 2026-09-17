@@ -761,6 +761,11 @@ bool OpenXrContext::pollEvents() {
 
                     _vivePoseHack[i] = _viveControllerPath != XR_NULL_PATH && state.interactionProfile == _viveControllerPath;
 
+                    if (state.interactionProfile == XR_NULL_PATH) {
+                        qCInfo(xr_context_cat, "Controller %d was disconnected", i);
+                        continue;
+                    }
+
                     uint32_t bufferCountOutput;
                     char profilePath[XR_MAX_PATH_LENGTH];
                     res = xrPathToString(_instance, state.interactionProfile, XR_MAX_PATH_LENGTH, &bufferCountOutput,
