@@ -39,3 +39,10 @@ nspr*:shared=True
 # Work around `undefined reference` errors when building NSS.
 sqlite3*:shared=True
 qt*:with_dbus=True
+# Work around `undefined reference` errors when building Qt6.
+glib*:shared=True
+freetype*:shared=True
+# We might be able to get away with: qt*:with_harfbuzz=False instead.
+qt*:with_harfbuzz=False
+# The Conan Center Qt6 package builds without JPEG support by default.
+qt*:with_libjpeg=libjpeg
