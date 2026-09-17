@@ -295,7 +295,7 @@ if (ANDROID)
   target_link_libraries(${TARGET_NAME} ${ANDROID_LOG_LIB})
 endif ()
 
-find_package(Qt6GuiPrivate)
+find_package(Qt6 OPTIONAL_COMPONENTS GuiPrivate QUIET)  # Pkgconfig cannot find this on Qt6 source builds, but this find_package() is required for AQt builds. To accomodate both, we set this as optional.
 
 target_link_libraries(
   ${TARGET_NAME}

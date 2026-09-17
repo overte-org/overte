@@ -71,9 +71,17 @@ jobs:
             cmake_build_type: Release
             qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
             rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
+          - id: windows-aqt
+            os: Windows 2022
+            # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
+            runner: depot-windows-2022-16  # Which GitHub Actions Runner to use. When using `image` this just needs to run the build container.
+            arch: x86_64
+            cmake_build_type: Release
+            qt_source: aqt  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
+            rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
           - id: ubuntu-opengl-amd64
             os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-06-21-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+            image: docker.io/overte/overte-full-build:2026-10-08-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
             runner: depot-ubuntu-24.04-16
             arch: amd64
             cmake_build_type: Release
@@ -81,7 +89,7 @@ jobs:
             rendering_backend: OpenGL
           - id: ubuntu-vulkan-amd64
             os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-06-21-ubuntu-22.04-amd64
+            image: docker.io/overte/overte-full-build:2026-10-08-ubuntu-22.04-amd64
             runner: depot-ubuntu-24.04-16
             arch: amd64
             cmake_build_type: Release
@@ -89,7 +97,7 @@ jobs:
             rendering_backend: Vulkan
           - id: ubuntu-opengl-aarch64
             os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-06-21-ubuntu-22.04-aarch64
+            image: docker.io/overte/overte-full-build:2026-10-08-ubuntu-22.04-aarch64
             runner: depot-ubuntu-24.04-arm-16
             arch: aarch64
             cmake_build_type: Release
@@ -97,7 +105,7 @@ jobs:
             rendering_backend: OpenGL
           - id: ubuntu-vulkan-aarch64
             os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-06-21-ubuntu-22.04-aarch64
+            image: docker.io/overte/overte-full-build:2026-10-08-ubuntu-22.04-aarch64
             runner: depot-ubuntu-24.04-arm-16
             arch: aarch64
             cmake_build_type: Release
@@ -105,9 +113,9 @@ jobs:
             rendering_backend: Vulkan
           - id: codechecker
             os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-06-21-ubuntu-22.04-amd64
-            # depot-ubuntu-24.04-16 runs out of disk space when building debug Qt.
-            runner: depot-ubuntu-24.04-32
+            image: docker.io/overte/overte-full-build:2026-10-08-ubuntu-22.04-amd64
+            # depot-ubuntu-24.04-32 runs out of disk space when building debug Qt6.
+            runner: depot-ubuntu-24.04-64
             arch: amd64
             cmake_build_type: Debug
             qt_source: source
