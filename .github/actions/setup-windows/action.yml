@@ -33,6 +33,11 @@ runs:
       run: |
         python -m pip install boto3 PyGithub conan html5lib setuptools
 
+    - name: Install NodeJS
+      shell: bash
+      run: |
+        choco install nodejs --version="24.21.0"  # Qt6 needs NodeJS for building Qt WebEngine, but cannot find preinstalled NodeJS.
+
     - name: Setup Conan
       shell: bash
       run: |

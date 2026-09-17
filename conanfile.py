@@ -35,6 +35,7 @@ class Overte(ConanFile):
         "qt*:qtsvg": "True",
         "qt*:qtwebchannel": "True",
         "qt*:qtwebengine": "True",
+        "qt*:qtshadertools": "True",  # For Qt WebEngineWidgets
         "qt*:qtwebsockets": "True",
         "qt*:qtwebview": "True",
         "qt*:qtx11extras": "True",  # Required by gpu-frame-player on Linux
@@ -73,7 +74,7 @@ class Overte(ConanFile):
         self.requires("openexr/3.1.9")
         self.requires("openvr/2.15.6@overte/stable")
         self.requires("openxr/1.1.46@overte/stable")
-        self.requires("opus/1.5.2")
+        self.requires("opus/1.5.2", force=True) # The Qt6 source package depends on an older opus version than we do.
         self.requires("quazip/1.4")
         self.requires("scribe/2019.02@overte/stable")
         self.requires("sdl/2.32.10")
@@ -89,17 +90,17 @@ class Overte(ConanFile):
         openssl = "openssl/1.1.1q"
 
         if self.options.qt_source == "system":
-            self.requires("qt/5.15.2@overte/system", force=True)
+            self.requires("qt/6.x@overte/system", force=True)
             if self.settings.os == "Linux":
                 openssl = "openssl/system@overte/stable#24c4df65c52791c4955f7d47d9faef0d"
         elif self.options.qt_source == "aqt":
-            self.requires("qt/5.15.2@overte/aqt", force=True)
+            self.requires("qt/6.10.3@overte/aqt#c692bf111ff0a41e7b82ef12dec20219", force=True)
         else:
             if self.settings.os == "Linux":
                 # Use system OpenSSL to work around OpenSSL being missing from libnode's rpath and this cascading down to Interface.
                 openssl = "openssl/system@overte/stable#24c4df65c52791c4955f7d47d9faef0d"
                 self.requires("fcitx5-qt/5.1.13@overte/stable#41b7ae9082f32e1ad83fd8a43a2c8460")
-            self.requires("qt/6.8.3", force=True)
+            self.requires("qt/6.11.1@overte/experimental#f3b43b7235810a2e064268e976386ca0", force=True)
             # Replace Conan Center's glib package with our own duplicate to avoid their outdated binary cache. https://github.com/conan-io/conan-center-index/issues/17876
             self.requires("glib/2.78.3@overte/conancenter", override=True)
 

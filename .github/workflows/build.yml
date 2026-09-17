@@ -71,6 +71,14 @@ jobs:
             cmake_build_type: Release
             qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
             rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
+          - id: windows-aqt
+            os: Windows 2022
+            # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
+            runner: depot-windows-2022-16  # Which GitHub Actions Runner to use. When using `image` this just needs to run the build container.
+            arch: x86_64
+            cmake_build_type: Release
+            qt_source: aqt  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
+            rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
           - id: ubuntu-opengl-amd64
             os: Ubuntu 22.04
             image: docker.io/overte/overte-full-build:2026-06-21-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x

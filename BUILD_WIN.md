@@ -1,13 +1,13 @@
 <!--
 Copyright 2013-2019 High Fidelity, Inc.
 Copyright 2019-2021 Vircadia contributors
-Copyright 2021-2025 Overte e.V.
+Copyright 2021-2026 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
 # Build Windows
 
-*Last Updated on 2025-08-01*
+*Last Updated on 2026-09-17*
 
 This is a stand-alone guide for creating your first Overte build for Windows 64-bit.
 
@@ -78,8 +78,9 @@ To create this variable:
 
 ## Step 6. (Optional) Node.JS and NPM
 
-Install the latest LTS version of [Node.JS and NPM](<https://nodejs.org/en/download/>).
+Install the latest LTS version (at least 22.x.x) of [Node.JS and NPM](<https://nodejs.org/en/download/>).
 This is required to build the server-console and jsdoc, and for JavaScript console autocompletion.
+It is also required for building Qt6 from source.
 
 ## Step 7. Running CMake to Generate Build Files
 
