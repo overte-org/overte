@@ -12,6 +12,7 @@
 #define hifi_AnimExpression
 
 #include <QString>
+#include <QStringRef>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <stack>

@@ -217,7 +217,7 @@ glm::vec3 EntityDynamicInterface::extractVec3Argument(QString objectName, QVaria
     }
 
     QVariant resultV = arguments[argumentName];
-    if (resultV.type() != (QVariant::Type) QMetaType::QVariantMap) {
+    if (resultV.typeId() != QMetaType::QVariantMap) {
         qCDebug(entities) << objectName << "argument" << argumentName << "must be a map";
         ok = false;
         return glm::vec3(0.0f);
@@ -266,7 +266,7 @@ glm::quat EntityDynamicInterface::extractQuatArgument(QString objectName, QVaria
     }
 
     QVariant resultV = arguments[argumentName];
-    if (resultV.type() != (QVariant::Type) QMetaType::QVariantMap) {
+    if (resultV.typeId() != QMetaType::QVariantMap) {
         qCDebug(entities) << objectName << "argument" << argumentName << "must be a map, not" << resultV.typeName();
         ok = false;
         return glm::quat();

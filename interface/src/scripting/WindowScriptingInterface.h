@@ -25,6 +25,8 @@
 #include <Scriptable.h>
 #include <ScriptValue.h>
 
+#include "ThemePrefs.h"
+
 
 /*@jsdoc
  * The <code>Window</code> API provides various facilities not covered elsewhere, including: window dimensions, window focus, 
@@ -57,6 +59,13 @@ class WindowScriptingInterface : public QObject, protected Scriptable, public De
     Q_PROPERTY(int x READ getX)
     Q_PROPERTY(int y READ getY)
     Q_PROPERTY(bool interstitialModeEnabled READ getInterstitialModeEnabled WRITE setInterstitialModeEnabled)
+
+    Q_PROPERTY(bool darkMode READ getDarkMode WRITE setDarkMode NOTIFY themeChanged)
+    Q_PROPERTY(bool highContrast READ getHighContrast WRITE setHighContrast NOTIFY themeChanged)
+    Q_PROPERTY(bool reducedMotion READ getReducedMotion WRITE setReducedMotion NOTIFY themeChanged)
+
+    Q_PROPERTY(bool useSystemColorScheme READ getUseSystemColorScheme WRITE setUseSystemColorScheme NOTIFY themeChanged)
+    Q_PROPERTY(bool useSystemContrast READ getUseSystemContrast WRITE setUseSystemContrast NOTIFY themeChanged)
 
 public:
     WindowScriptingInterface();
@@ -626,13 +635,19 @@ public slots:
      */
     void openWebBrowser(const QString& url = "");
 
-    /*@jsdoc
-     * Returns true if the user prefers a dark UI theme.
-     * @function Window.getDarkThemePreference
-     * @returns {boolean}
-     */
-    bool getDarkThemePreference();
+    bool getDarkMode() const;
+    bool getHighContrast() const;
+    bool getReducedMotion() const;
 
+    bool getUseSystemColorScheme() const;
+    bool getUseSystemContrast() const;
+
+    void setDarkMode(bool value);
+    void setHighContrast(bool value);
+    void setReducedMotion(bool value);
+
+    void setUseSystemColorScheme(bool value);
+    void setUseSystemContrast(bool value);
 
 private slots:
     void onWindowGeometryChanged(const QRect& geometry);
@@ -849,11 +864,10 @@ signals:
     void minimizedChanged(bool isMinimized);
 
     /*@jsdoc
-     * Triggered when the dark theme preference is changed.
-     * @function Window.darkThemePreferenceChanged
-     * @param {boolean} useDarkTheme
+     * Triggered when the theme preferences are changed.
+     * @function Window.themeChanged
      */
-    void darkThemePreferenceChanged(bool useDarkTheme);
+    void themeChanged();
 
 private:
     QString getPreviousBrowseLocation() const;

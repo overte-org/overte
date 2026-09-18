@@ -14,12 +14,12 @@
 import Hifi 1.0 as Hifi
 import QtQuick 2.7
 import QtQuick.Controls 2.2
-import QtGraphicalEffects 1.0
+import Qt5Compat.GraphicalEffects
 
 import stylesUit 1.0 as HifiStylesUit
 import controlsUit 1.0 as HifiControlsUit
-import "qrc:////qml//controls" as HifiControls
-import "qrc:////qml//hifi" as Hifi
+import "qrc:/qml/controls" as HifiControls
+import "qrc:/qml/hifi" as Hifi
 
 Rectangle {
     HifiStylesUit.HifiConstants { id: hifi; }

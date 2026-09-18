@@ -9,7 +9,7 @@
 //  See the accompanying file LICENSE or https://www.apache.org/licenses/LICENSE-2.0.html
 //
 import QtQuick 2.5
-import QtQuick.Controls 1.4
+import QtQuick.Controls 2.3
 
 Item {
     id: root
@@ -264,7 +264,8 @@ Item {
             
             var ctx = getContext("2d");
             ctx.clearRect(0, 0, width, height);
-            ctx.font="12px Verdana";
+            // QT6TODO
+            //ctx.font="12px Verdana";
 
             displayBackground(ctx);
                 
