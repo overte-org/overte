@@ -252,10 +252,9 @@ void OffscreenQmlSurface::clearFocusItem() {
 
 void OffscreenQmlSurface::initializeEngine(QQmlEngine* engine) {
     Parent::initializeEngine(engine);
-    auto fileSelector = QQmlFileSelector::get(engine);
-    if (!fileSelector) {
-        fileSelector = new QQmlFileSelector(engine);
-    }
+    // QT6TODO: this is fine right now, because each OffscreenQmlSurface is owned by SharedObject
+    // and it creates the QQmlEngine, but this seems like a foot gun
+    auto fileSelector = new QQmlFileSelector(engine);
     fileSelector->setExtraSelectors(FileUtils::getFileSelectors());
 
     static std::once_flag once;
