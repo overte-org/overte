@@ -603,8 +603,7 @@ void JSConsole::scrollToBottom() {
 void JSConsole::appendMessage(const QString& gutter, const QString& message, const QColor& fgColor, const QColor& bgColor) {
     QWidget* logLine = new QWidget(_ui->logArea);
     QHBoxLayout* layout = new QHBoxLayout(logLine);
-    // QT6TODO:
-    //layout->setMargin(0);
+    layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(4);
 
     QLabel* gutterLabel = new QLabel(logLine);

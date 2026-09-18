@@ -344,7 +344,7 @@ void CompositorHelper::sendFakeMouseEvent() {
         auto button = Qt::NoButton;
         auto buttons = QGuiApplication::mouseButtons();
         auto modifiers = QGuiApplication::keyboardModifiers();
-        QMouseEvent event(QEvent::MouseMove, globalPos, button, buttons, modifiers);
+        QMouseEvent event(QEvent::MouseMove, globalPos, globalPos, button, buttons, modifiers);
         _fakeMouseEvent = true;
         qApp->sendEvent(_renderingWidget, &event);
         _fakeMouseEvent = false;
