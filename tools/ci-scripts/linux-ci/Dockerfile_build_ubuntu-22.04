@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-06-21-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-09-19-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
@@ -30,6 +30,14 @@ echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://ap
 apt-get update
 rm /usr/share/keyrings/kitware-archive-keyring.gpg && apt-get -y install kitware-archive-keyring
 apt-get -y install cmake
+
+# Install newer NodeJS version for building Qt6.
+# Qt 6.11.1 requires NodeJS 20.x or higher.
+apt-get install -y curl
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt-get install -y nodejs
+node -v
+npm -v
 
 # Install Overte domain-server and assignment-client build dependencies
 cat << PACKAGES > packages.txt
