@@ -34,7 +34,6 @@
 #include <QtCore/QVariant>
 
 #include "EntityItemID.h"
-#include "EntitiesScriptEngineProvider.h"
 #include "EntityScriptUtils.h"
 #include <ExternalResource.h>
 #include <SettingHandle.h>
@@ -279,7 +278,7 @@ public:
  * Some more functionality can be shifted to ScriptManagerScriptingInterface, since
  * it only provides services to scripts and isn't called from C++.
  */
-class ScriptManager : public QObject, public EntitiesScriptEngineProvider, public std::enable_shared_from_this<ScriptManager> {
+class ScriptManager : public QObject, public std::enable_shared_from_this<ScriptManager> {
     Q_OBJECT
 public:
     static const QString SCRIPT_EXCEPTION_FORMAT;
@@ -879,7 +878,7 @@ public:
      * @param scriptURL Script URL
      * @return QFuture<QVariant>
      */
-    QFuture<QVariant> getLocalEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL) override;
+    QFuture<QVariant> getLocalEntityScriptDetails(const EntityItemID& entityID, const QString& scriptURL);
 
 
     /**
@@ -939,7 +938,7 @@ public:
      */
     Q_INVOKABLE void callEntityScriptMethod(const EntityItemID& entityID, const QString& methodName,
                                             const QStringList& params = QStringList(),
-                                            const QUuid& remoteCallerID = QUuid()) override;
+                                            const QUuid& remoteCallerID = QUuid());
 
     /**
      * @brief Call a method on an entity script
@@ -954,7 +953,7 @@ public:
                                                      const QString& scriptURL,
                                                      const QString& methodName,
                                                      const QStringList& params = QStringList(),
-                                                     const QUuid& remoteCallerID = QUuid()) override;
+                                                     const QUuid& remoteCallerID = QUuid());
 
     /**
      * @brief Call a method on an entity script

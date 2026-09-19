@@ -39,6 +39,7 @@
 #include "LightEntityItem.h"
 #include "ModelEntityItem.h"
 #include "QVariantGLM.h"
+#include "ScriptManager.h"
 #include "SimulationOwner.h"
 #include "ZoneEntityItem.h"
 #include "WebEntityItem.h"
@@ -1276,12 +1277,12 @@ QSizeF EntityScriptingInterface::textSize(const QUuid& id, const QString& text) 
     return EntityTree::textSize(id, text);
 }
 
-void EntityScriptingInterface::setPersistentEntitiesScriptEngine(std::shared_ptr<EntitiesScriptEngineProvider> manager) {
+void EntityScriptingInterface::setPersistentEntitiesScriptEngine(ScriptManagerPointer manager) {
     std::lock_guard<std::recursive_mutex> lock(_entitiesScriptEngineLock);
     _persistentEntitiesScriptManager = manager;
 }
 
-void EntityScriptingInterface::setNonPersistentEntitiesScriptEngine(std::shared_ptr<EntitiesScriptEngineProvider> manager) {
+void EntityScriptingInterface::setNonPersistentEntitiesScriptEngine(ScriptManagerPointer manager) {
     std::lock_guard<std::recursive_mutex> lock(_entitiesScriptEngineLock);
     _nonPersistentEntitiesScriptManager = manager;
 }
@@ -1568,7 +1569,7 @@ bool EntityPropertyMetadataRequest::script(EntityItemID entityID, const ScriptVa
         request->deleteLater();
     });
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-    entityScriptingInterface->withEntitiesScriptEngine([&](std::shared_ptr<EntitiesScriptEngineProvider> entitiesScriptEngine) {
+    entityScriptingInterface->withEntitiesScriptEngine([&](ScriptManagerPointer entitiesScriptEngine) {
         EntityItemPointer entity = entityScriptingInterface->getEntityTree()->findEntityByEntityItemID(entityID);
         if (entitiesScriptEngine && entity) {
             request->setFuture(entitiesScriptEngine->getLocalEntityScriptDetails(entityID, entity->getScript()));

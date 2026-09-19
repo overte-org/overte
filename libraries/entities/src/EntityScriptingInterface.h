@@ -42,7 +42,6 @@
 #include "EntityTree.h"
 
 #include "EntityEditPacketSender.h"
-#include "EntitiesScriptEngineProvider.h"
 #include "EntityItemProperties.h"
 
 class EntityTree;
@@ -190,8 +189,8 @@ public:
 
     void setEntityTree(EntityTreePointer modelTree);
     EntityTreePointer getEntityTree() { return _entityTree; }
-    void setPersistentEntitiesScriptEngine(std::shared_ptr<EntitiesScriptEngineProvider> manager);
-    void setNonPersistentEntitiesScriptEngine(std::shared_ptr<EntitiesScriptEngineProvider> manager);
+    void setPersistentEntitiesScriptEngine(ScriptManagerPointer manager);
+    void setNonPersistentEntitiesScriptEngine(ScriptManagerPointer manager);
 
     void resetActivityTracking();
     ActivityTracking getActivityTracking() const { return _activityTracking; }
@@ -2722,7 +2721,7 @@ signals:
     void webEventReceived(const EntityItemID& entityItemID, const QVariant& message);
 
 protected:
-    void withEntitiesScriptEngine(std::function<void(std::shared_ptr<EntitiesScriptEngineProvider>)> function, const EntityItemID& id) {
+    void withEntitiesScriptEngine(std::function<void(ScriptManagerPointer)> function, const EntityItemID& id) {
         auto entity = getEntityTree()->findEntityByEntityItemID(id);
         if (entity) {
             std::lock_guard<std::recursive_mutex> lock(_entitiesScriptEngineLock);
@@ -2765,8 +2764,8 @@ private:
     EntityTreePointer _entityTree;
 
     std::recursive_mutex _entitiesScriptEngineLock;
-    std::shared_ptr<EntitiesScriptEngineProvider> _persistentEntitiesScriptManager;
-    std::shared_ptr<EntitiesScriptEngineProvider> _nonPersistentEntitiesScriptManager;
+    ScriptManagerPointer _persistentEntitiesScriptManager;
+    ScriptManagerPointer _nonPersistentEntitiesScriptManager;
 
     bool _bidOnSimulationOwnership { false };
 
