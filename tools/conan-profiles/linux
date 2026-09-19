@@ -39,3 +39,5 @@ nspr*:shared=True
 # Work around `undefined reference` errors when building NSS.
 sqlite3*:shared=True
 qt*:with_dbus=True
+# Work around `undefined reference` errors when building Qt6.
+glib*:shared=True

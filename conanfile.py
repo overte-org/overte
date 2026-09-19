@@ -102,7 +102,8 @@ class Overte(ConanFile):
                 self.requires("fcitx5-qt/5.1.13@overte/stable#41b7ae9082f32e1ad83fd8a43a2c8460")
             self.requires("qt/6.11.1@overte/experimental#f3b43b7235810a2e064268e976386ca0", force=True)
             # Replace Conan Center's glib package with our own duplicate to avoid their outdated binary cache. https://github.com/conan-io/conan-center-index/issues/17876
-            self.requires("glib/2.78.3@overte/conancenter", override=True)
+            self.requires("glib/2.85.3-overte", override=True) # Fix version conflict resulting from Qt and GStreamer.
+            # We need to override its version number instead of adding a "user" due to the harfbuzz package running into: https://github.com/conan-io/conan/issues/18940
 
         if self.settings.os == "Windows":
             self.requires("neuron/12.2@overte/prebuild")
