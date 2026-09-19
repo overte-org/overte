@@ -31,6 +31,9 @@ runs:
     - name: Install Python modules
       shell: bash
       run: |
+        # Remove newer (non-default) Python versions to work around the Qt6 source package choosing a newer version than everything else.
+        rm -rf "C:\hostedtoolcache\windows\Python\3.14.7"
+        rm -rf "C:\hostedtoolcache\windows\Python\3.13.15"
         python -m pip install boto3 PyGithub conan html5lib setuptools
 
     - name: Install NodeJS
