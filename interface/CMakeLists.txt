@@ -242,6 +242,7 @@ target_bullet()
 
 set(OpenGL_GL_PREFERENCE "GLVND")
 target_opengl()
+add_tracy()
 add_crashpad()
 target_breakpad()
 target_json()

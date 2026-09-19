@@ -24,6 +24,7 @@ link_hifi_libraries(
 include_hifi_library_headers(procedural)
 include_hifi_library_headers(entities)
 
+add_tracy()
 add_crashpad()
 target_breakpad()
 

@@ -129,6 +129,7 @@ The following build options can be used when running CMake
 
 * OVERTE_RENDERING_BACKEND
 * OVERTE_DISABLE_QML
+* OVERTE_USE_TRACY - This builds with Tracy profiler support. Make sure you are building the Tracy client from master to get a similar version as the one used here.
 
 ### Devices
 

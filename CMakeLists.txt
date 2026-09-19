@@ -89,6 +89,7 @@ set(OVERTE_BUILD_TOOLS ON CACHE BOOL "Build tools. Includes Oven, which is used 
 set(OVERTE_BUILD_INSTALLER ON CACHE BOOL "Build installer.")
 set(OVERTE_DISABLE_QML OFF CACHE BOOL "Build without QML. (For graphics debugging.)")
 set(OVERTE_DOWNLOAD_SERVERLESS_CONTENT OFF CACHE BOOL "Download and setup default serverless content beside Interface.")
+set(OVERTE_USE_TRACY OFF CACHE BOOL "Build with support for the Tracy CPU/GPU/memory profiler.")
 set(OVERTE_RENDERING_BACKEND "OpenGL" CACHE STRING "Which rendering backend to compile with. Valid options are: 'OpenGL' and 'Vulkan'.")
 set(OVERTE_EXTERNAL_BUILD_ASSETS "https://build-deps.overte.org" CACHE INTERNAL "")
 set(OVERTE_TIMESERVER_URL "http://timestamp.comodoca.com?td=sha256" CACHE STRING "URL to timeserver used for signing executables.")
