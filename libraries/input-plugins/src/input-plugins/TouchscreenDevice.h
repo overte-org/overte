@@ -14,7 +14,6 @@
 
 #include <controllers/InputDevice.h>
 #include "InputPlugin.h"
-#include <QtGui/qtouchdevice.h>
 
 class QTouchEvent;
 class QGestureEvent;

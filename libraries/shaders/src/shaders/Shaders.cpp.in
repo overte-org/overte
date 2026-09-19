@@ -64,11 +64,14 @@ const std::string& dialectPath(Dialect dialect) {
     throw std::runtime_error("Invalid dialect");
 }
 
-static std::string loadResource(const std::string& path) {
+static std::optional<std::string> loadResource(const std::string& path) {
     if (!QFileInfo(path.c_str()).exists()) {
-        return {};
+        return std::nullopt;
     }
-    return FileUtils::readFile(path.c_str()).toStdString();
+    if (auto a = FileUtils::readFile(path.c_str())){
+        return a.value().toStdString();
+    }
+    return std::nullopt;
 }
 
 static Binary loadSpirvResource(const std::string& path) {
@@ -87,10 +90,10 @@ static Binary loadSpirvResource(const std::string& path) {
 
 DialectVariantSource loadDialectVariantSource(const std::string& basePath) {
     DialectVariantSource result;
-    result.scribe = loadResource(basePath + "scribe");
+    result.scribe = loadResource(basePath + "scribe").value_or("");
     result.spirv = loadSpirvResource(basePath + "spirv");
-    result.glsl = loadResource(basePath + "glsl");
-    String reflectionJson = loadResource(basePath + "json");
+    result.glsl = loadResource(basePath + "glsl").value_or("");
+    String reflectionJson = loadResource(basePath + "json").value_or("");
     result.reflection.parse(reflectionJson);
     return result;
 }
@@ -110,7 +113,7 @@ Source::Pointer Source::loadSource(uint32_t shaderId) {
     auto result = std::make_shared<Source>();
     result->id = shaderId;
     const auto& dialects = allDialects();
-    result->name = loadResource(std::string(":/shaders/") + std::to_string(shaderId) + std::string("/name"));
+    result->name = loadResource(std::string(":/shaders/") + std::to_string(shaderId) + std::string("/name")).value_or("");
     for (const auto& dialect : dialects) {
         result->dialectSources[dialect] = loadDialectSource(dialect, shaderId);
     }

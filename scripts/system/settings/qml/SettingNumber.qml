@@ -1,6 +1,6 @@
-import QtQuick 2.7
-import QtQuick.Controls 2.5
-import QtQuick.Controls.Styles 1.4
+import QtQuick
+import QtQuick.Controls
+//import QtQuick.Controls.Styles
 import QtQuick.Layouts 1.3
 
 Item {
@@ -67,7 +67,7 @@ Item {
 						width: parent.width;
 						clip: true;
 						font.pixelSize: 22
-						validator: RegExpValidator { regExp: /[0-9]*/ }
+						validator: RegularExpressionValidator { regularExpression: /[0-9]*/ }
 
 						background: Rectangle {
 							color: "#111";
@@ -162,7 +162,7 @@ Item {
             hoverEnabled: true;
             propagateComposedEvents: true;
 
-            onPressed: {
+            onPressed: mouse => {
                 mouse.accepted = false
             }
 

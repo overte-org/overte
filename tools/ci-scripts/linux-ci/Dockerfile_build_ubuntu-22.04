@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-06-21-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-09-19-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
@@ -31,6 +31,14 @@ apt-get update
 rm /usr/share/keyrings/kitware-archive-keyring.gpg && apt-get -y install kitware-archive-keyring
 apt-get -y install cmake
 
+# Install newer NodeJS version for building Qt6.
+# Qt 6.11.1 requires NodeJS 20.x or higher.
+apt-get install -y curl
+curl -fsSL https://deb.nodesource.com/setup_22.x | bash -
+apt-get install -y nodejs
+node -v
+npm -v
+
 # Install Overte domain-server and assignment-client build dependencies
 cat << PACKAGES > packages.txt
 curl
@@ -41,6 +49,7 @@ libssl-dev
 libqt5websockets5-dev
 qtdeclarative5-dev
 qtmultimedia5-dev
+pkgconf
 python3-distutils
 python3-distro
 mesa-common-dev
@@ -63,7 +72,7 @@ libxcb-glx0-dev
 libqt5multimedia5-plugins
 qt5-image-formats-plugins  # Runtime dependency required for WebP texture support.
 fcitx5-frontend-qt5  # Runtime dependency for IME support.
-npm  # For Interface's JavaScript console completion and building server-console.
+# npm  # For Interface's JavaScript console completion and building server-console. Fails if already provided by the NodeJS package.
 libpulse-dev  # Qt5 source Conan package cannot find it's own Pulseaudio
 libasound2-dev  # Qt5 source Conan package cannot find it's own ALSA
 python3-html5lib  # Qt5 source Conan package cannot install html5lib itself yet. (Required by Qt WebEngine.)

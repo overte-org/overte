@@ -1,0 +1,506 @@
+[
+	[
+		[
+			{
+				"legend": "Esc",
+				"keycode": "Key_Escape"
+			},
+			{ "span": 0.25 },
+			{
+				"legend": "F1",
+				"keycode": "Key_F1"
+			},
+			{
+				"legend": "F2",
+				"keycode": "Key_F2"
+			},
+			{
+				"legend": "F3",
+				"keycode": "Key_F3"
+			},
+			{
+				"legend": "F4",
+				"keycode": "Key_F4"
+			},
+			{ "span": 0.25 },
+			{
+				"legend": "F5",
+				"keycode": "Key_F5"
+			},
+			{
+				"legend": "F6",
+				"keycode": "Key_F6"
+			},
+			{
+				"legend": "F7",
+				"keycode": "Key_F7"
+			},
+			{
+				"legend": "F8",
+				"keycode": "Key_F8"
+			},
+			{ "span": 0.25 },
+			{
+				"legend": "F9",
+				"keycode": "Key_F9"
+			},
+			{
+				"legend": "F10",
+				"keycode": "Key_F10"
+			},
+			{
+				"legend": "F11",
+				"keycode": "Key_F11"
+			},
+			{
+				"legend": "F12",
+				"keycode": "Key_F12"
+			}
+		],
+		{ "verticalSpan": 0.003 },
+		[
+			{
+				"legend": "`\n~",
+				"unshifted_keycode": "Key_QuoteLeft",
+				"shifted_keycode": "Key_Tilde",
+				"unshifted_char": "`",
+				"shifted_char": "~"
+			},
+			{
+				"legend": "!\n1",
+				"unshifted_keycode": "Key_1",
+				"shifted_keycode": "Key_Exclam",
+				"unshifted_char": "1",
+				"shifted_char": "!"
+			},
+			{
+				"legend": "@\n2",
+				"unshifted_keycode": "Key_2",
+				"shifted_keycode": "Key_At",
+				"unshifted_char": "2",
+				"shifted_char": "@"
+			},
+			{
+				"legend": "#\n3",
+				"unshifted_keycode": "Key_3",
+				"shifted_keycode": "Key_NumberSign",
+				"unshifted_char": "3",
+				"shifted_char": "#"
+			},
+			{
+				"legend": "$\n4",
+				"unshifted_keycode": "Key_4",
+				"shifted_keycode": "Key_Dollar",
+				"unshifted_char": "4",
+				"shifted_char": "#"
+			},
+			{
+				"legend": "%\n5",
+				"unshifted_keycode": "Key_5",
+				"shifted_keycode": "Key_Percent",
+				"unshifted_char": "5",
+				"shifted_char": "%"
+			},
+			{
+				"legend": "^\n6",
+				"unshifted_keycode": "Key_6",
+				"shifted_keycode": "Key_AsciiCircum",
+				"unshifted_char": "6",
+				"shifted_char": "^"
+			},
+			{
+				"legend": "&\n7",
+				"unshifted_keycode": "Key_7",
+				"shifted_keycode": "Key_Ampersand",
+				"unshifted_char": "7",
+				"shifted_char": "&"
+			},
+			{
+				"legend": "*\n8",
+				"unshifted_keycode": "Key_8",
+				"shifted_keycode": "Key_Asterisk",
+				"unshifted_char": "8",
+				"shifted_char": "*"
+			},
+			{
+				"legend": "(\n9",
+				"unshifted_keycode": "Key_9",
+				"shifted_keycode": "Key_ParenLeft",
+				"unshifted_key": "9",
+				"shifted_key": "("
+			},
+			{
+				"legend": ")\n0",
+				"unshifted_keycode": "Key_0",
+				"shifted_keycode": "Key_ParentRight",
+				"unshifted_key": "0",
+				"shifted_key": ")"
+			},
+			{
+				"legend": "_\n-",
+				"unshifted_keycode": "Key_Minus",
+				"shifted_keycode": "Key_Underscore",
+				"unshifted_char": "-",
+				"shifted_char": "_"
+			},
+			{
+				"legend": "+\n=",
+				"unshifted_keycode": "Key_Equals",
+				"shifted_keycode": "Key_Plus",
+				"unshifted_char": "=",
+				"shifted_char": "+"
+			},
+			{
+				"legend": "Backspace",
+				"keycode": "Key_Backspace",
+				"span": 1.5
+			}
+		],
+		[
+			{
+				"legend": "Tab",
+				"keycode": "Key_Tab",
+				"span": 1.1
+			},
+			{
+				"legend": "Q",
+				"keycode": "Key_Q",
+				"unshifted_char": "q",
+				"shifted_char": "Q"
+			},
+			{
+				"legend": "W",
+				"keycode": "Key_W",
+				"unshifted_char": "w",
+				"shifted_char": "W"
+			},
+			{
+				"legend": "E",
+				"keycode": "Key_E",
+				"unshifted_char": "e",
+				"shifted_char": "E"
+			},
+			{
+				"legend": "R",
+				"keycode": "Key_R",
+				"unshifted_char": "r",
+				"shifted_char": "R"
+			},
+			{
+				"legend": "T",
+				"keycode": "Key_T",
+				"unshifted_char": "t",
+				"shifted_char": "T"
+			},
+			{
+				"legend": "Y",
+				"keycode": "Key_Y",
+				"unshifted_char": "y",
+				"shifted_char": "Y"
+			},
+			{
+				"legend": "U",
+				"keycode": "Key_U",
+				"unshifted_char": "u",
+				"shifted_char": "U"
+			},
+			{
+				"legend": "I",
+				"keycode": "Key_I",
+				"unshifted_char": "i",
+				"shifted_char": "I"
+			},
+			{
+				"legend": "O",
+				"keycode": "Key_O",
+				"unshifted_char": "o",
+				"shifted_char": "O"
+			},
+			{
+				"legend": "P",
+				"keycode": "Key_P",
+				"unshifted_char": "p",
+				"shifted_char": "P"
+			},
+			{
+				"legend": "{\n[",
+				"unshifted_keycode": "Key_BracketLeft",
+				"unshifted_keycode": "Key_BraceLeft",
+				"unshifted_char": "[",
+				"shifted_char": "{"
+			},
+			{
+				"legend": "}\n]",
+				"unshifted_keycode": "Key_BracketRight",
+				"unshifted_keycode": "Key_BraceRight",
+				"unshifted_char": "]",
+				"shifted_char": "}"
+			},
+			{
+				"legend": "|\n\\",
+				"unshifted_keycode": "Key_Backslash",
+				"unshifted_keycode": "Key_Bar",
+				"unshifted_char": "\\",
+				"shifted_char": "|",
+				"span": 1.3
+			}
+		],
+		[
+			{
+				"legend": "Caps",
+				"keycode": "Key_CapsLock",
+				"span": 1.3
+			},
+			{
+				"legend": "A",
+				"keycode": "Key_A",
+				"unshifted_char": "a",
+				"shifted_char": "A"
+			},
+			{
+				"legend": "S",
+				"keycode": "Key_S",
+				"unshifted_char": "s",
+				"shifted_char": "S"
+			},
+			{
+				"legend": "D",
+				"keycode": "Key_D",
+				"unshifted_char": "d",
+				"shifted_char": "D"
+			},
+			{
+				"legend": "F",
+				"keycode": "Key_F",
+				"unshifted_char": "f",
+				"shifted_char": "F"
+			},
+			{
+				"legend": "G",
+				"keycode": "Key_G",
+				"unshifted_char": "g",
+				"shifted_char": "G"
+			},
+			{
+				"legend": "H",
+				"keycode": "Key_H",
+				"unshifted_char": "h",
+				"shifted_char": "H"
+			},
+			{
+				"legend": "J",
+				"keycode": "Key_J",
+				"unshifted_char": "j",
+				"shifted_char": "J"
+			},
+			{
+				"legend": "K",
+				"keycode": "Key_K",
+				"unshifted_char": "k",
+				"shifted_char": "K"
+			},
+			{
+				"legend": "L",
+				"keycode": "Key_L",
+				"unshifted_char": "l",
+				"shifted_char": "L"
+			},
+			{
+				"legend": ":\n;",
+				"unshifted_keycode": "Key_Semicolon",
+				"shifted_keycode": "Key_Colon",
+				"unshifted_char": ";",
+				"shifted_char": ":"
+			},
+			{
+				"legend": "\"\n'",
+				"unshifted_keycode": "Key_Apostrophe",
+				"shifted_keycode": "Key_QuoteDbl",
+				"unshifted_char": "'",
+				"shifted_char": "\""
+			},
+			{
+				"legend": "Return",
+				"keycode": "Key_Return",
+				"span": 1.5
+			}
+		],
+		[
+			{
+				"legend": "Shift",
+				"keycode": "Key_Shift",
+				"span": 1.4
+			},
+			{
+				"legend": "Z",
+				"keycode": "Key_Z",
+				"unshifted_char": "z",
+				"shifted_char": "Z"
+			},
+			{
+				"legend": "X",
+				"keycode": "Key_X",
+				"unshifted_char": "x",
+				"shifted_char": "X"
+			},
+			{
+				"legend": "C",
+				"keycode": "Key_C",
+				"unshifted_char": "c",
+				"shifted_char": "C"
+			},
+			{
+				"legend": "V",
+				"keycode": "Key_V",
+				"unshifted_char": "v",
+				"shifted_char": "V"
+			},
+			{
+				"legend": "B",
+				"keycode": "Key_B",
+				"unshifted_char": "b",
+				"shifted_char": "B"
+			},
+			{
+				"legend": "N",
+				"keycode": "Key_N",
+				"unshifted_char": "n",
+				"shifted_char": "N"
+			},
+			{
+				"legend": "M",
+				"keycode": "Key_M",
+				"unshifted_char": "m",
+				"shifted_char": "M"
+			},
+			{
+				"legend": "<\n,",
+				"unshifted_keycode": "Key_Comma",
+				"shifted_keycode": "Key_Less",
+				"unshifted_char": ",",
+				"shifted_char": "<"
+			},
+			{
+				"legend": ">\n.",
+				"unshifted_keycode": "Key_Period",
+				"shifted_keycode": "Key_Greater",
+				"unshifted_char": ".",
+				"shifted_char": ">"
+			},
+			{
+				"legend": "?\n/",
+				"unshifted_keycode": "Key_Slash",
+				"shifted_keycode": "Key_Question",
+				"unshifted_char": "/",
+				"shifted_char": "?"
+			},
+			{
+				"legend": "Shift",
+				"keycode": "Key_Shift",
+				"span": 1.6
+			}
+		],
+		[
+			{
+				"legend": "Ctrl",
+				"keycode": "Key_Control"
+			},
+			{
+				"legend": "⌘",
+				"keycode": "Key_Meta"
+			},
+			{
+				"legend": "Alt",
+				"keycode": "Key_Alt"
+			},
+			{
+				"legend": " ",
+				"keycode": "Key_Space",
+				"unshifted_char": " ",
+				"shifted_char": " ",
+				"span": 4.0
+			},
+			{
+				"legend": "Alt",
+				"keycode": "Key_Alt"
+			},
+			{
+				"legend": "⌘",
+				"keycode": "Key_Meta"
+			},
+			{
+				"legend": "≡",
+				"keycode": "Key_Menu"
+			},
+			{
+				"legend": "Ctrl",
+				"keycode": "Key_Control"
+			}
+		]
+	],
+	[ 0.003 ],
+	[
+		0.15,
+		[
+			{
+				"legend": "🗗"
+			},
+			{
+				"legend": "📋"
+			},
+			{}
+		],
+		{ "verticalSpan": 0.003 },
+		[
+			{
+				"legend": "Ins",
+				"keycode": "Key_Insert"
+			},
+			{
+				"legend": "Home",
+				"keycode": "Key_Home"
+			},
+			{
+				"legend": "Page\nUp",
+				"keycode": "Key_PageUp"
+			}
+		],
+		[
+			{
+				"legend": "Del",
+				"keycode": "Key_Delete"
+			},
+			{
+				"legend": "End",
+				"keycode": "Key_End"
+			},
+			{
+				"legend": "Page\nDown",
+				"keycode": "Key_PageDown"
+			}
+		],
+		{},
+		[
+			{},
+			{
+				"legend": "↑",
+				"keycode": "Key_Up"
+			},
+			{}
+		],
+		[
+			{
+				"legend": "←",
+				"keycode": "Key_Left"
+			},
+			{
+				"legend": "↓",
+				"keycode": "Key_Down"
+			},
+			{
+				"legend": "→",
+				"keycode": "Key_Right"
+			}
+		]
+	]
+]

@@ -24,6 +24,7 @@
 #include "ScriptContextV8Wrapper.h"
 #include "ScriptValueV8Wrapper.h"
 #include "ScriptEngineLoggingV8.h"
+#include "shared/QtHelpers.h"
 
 Q_DECLARE_METATYPE(ScriptValue)
 
@@ -298,10 +299,10 @@ void ScriptObjectV8Proxy::investigate() {
         }
 
         PropertyDef& propDef = _props.insert(idx, PropertyDef(prop.name(), idx)).value();
-        _propNameMap.insert(prop.name(), &propDef);
         propDef.flags = ScriptValue::Undeletable | ScriptValue::PropertyGetter | ScriptValue::PropertySetter |
                         ScriptValue::QObjectMember;
         if (prop.isConstant()) propDef.flags |= ScriptValue::ReadOnly;
+        _propNameMap.insert(prop.name(), propDef);
     }
 
     // discover methods
@@ -349,7 +350,7 @@ void ScriptObjectV8Proxy::investigate() {
                 SignalDef& signalDef = _signals.insert(idx, SignalDef(szName, idx)).value();
                 signalDef.name = szName;
                 signalDef.signal = method;
-                _signalNameMap.insert(szName, &signalDef);
+                _signalNameMap.insert(szName, signalDef);
                 methodNames.insert(szName, idx);
             } else {
                 int originalMethodId = nameLookup.value();
@@ -376,7 +377,7 @@ void ScriptObjectV8Proxy::investigate() {
                 methodDef.name = szName;
                 methodDef.numMaxParams = parameterCount;
                 methodDef.methods.append(method);
-                _methodNameMap.insert(szName, &methodDef);
+                _methodNameMap.insert(szName, methodDef);
                 methodNames.insert(szName, idx);
             } else {
                 int originalMethodId = nameLookup.value();
@@ -440,16 +441,16 @@ ScriptObjectV8Proxy::QueryFlags ScriptObjectV8Proxy::queryProperty(const V8Scrip
     // check for methods
     MethodNameMap::const_iterator method = _methodNameMap.find(nameStr);
     if (method != _methodNameMap.cend()) {
-        const MethodDef* methodDef = method.value();
-        *id = methodDef->_id | METHOD_TYPE;
+        const MethodDef &methodDef = method.value();
+        *id = methodDef._id | METHOD_TYPE;
         return flags & (HandlesReadAccess | HandlesWriteAccess);
     }
 
     // check for properties
     PropertyNameMap::const_iterator prop = _propNameMap.find(nameStr);
     if (prop != _propNameMap.cend()) {
-        const PropertyDef* propDef = prop.value();
-        *id = propDef->_id | PROPERTY_TYPE;
+        const PropertyDef &propDef = prop.value();
+        *id = propDef._id | PROPERTY_TYPE;
         return flags & (HandlesReadAccess | HandlesWriteAccess);
     }
 
@@ -1027,6 +1028,31 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
 
     for (int i = 0; i < num_metas; i++) {
         const QMetaMethod& meta = _metas[i];
+        qVarArgLists[i].reserve(_numMaxParams);
+
+        // This check is needed for catching issues caused by a bug in Qt6 that causes metamethod invocations to fail when typedefs are used in header files.
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+         for (int parameterIndex = 0; parameterIndex < meta.parameterCount(); parameterIndex++) {
+            const auto parameterTypeName = std::string(meta.parameterTypeName(parameterIndex));
+            const auto parameterMetatypeName = std::string(meta.parameterMetaType(parameterIndex).name());
+
+            // GLM types will always trigger this, there's a workaround below
+            if (
+                parameterTypeName.starts_with("glm::") ||
+                parameterMetatypeName.starts_with("glm::")
+            ) {
+                continue;
+            }
+
+            if (parameterTypeName != parameterMetatypeName) {
+                 qCritical() << "ScriptMethodV8Proxy::call: " << fullName() << " parameter " << parameterIndex
+                     << " has a broken type " << parameterTypeName
+                     << " Correct type is " << parameterMetatypeName;
+                 Q_ASSERT(false);
+             }
+         }
+#endif
+
         int methodNumArgs = meta.parameterCount();
         if (methodNumArgs != numArgs) {
             continue;
@@ -1046,28 +1072,54 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
             v8::Local<v8::Value> argVal = arguments[arg];
             if (methodArgTypeId == scriptValueTypeId) {
                 qScriptArgLists[i].append(ScriptValue(new ScriptValueV8Wrapper(_engine, V8ScriptValue(_engine, argVal))));
-                qGenArgsVectors[i][arg] = Q_ARG(ScriptValue, qScriptArgLists[i].back());
+                qGenArgsVectors[i][arg] = Q_GENERIC_ARG(ScriptValue, qScriptArgLists[i].back());
             } else if (methodArgTypeId == QMetaType::QVariant) {
-                QVariant varArgVal;
-                if (!_engine->castValueToVariant(V8ScriptValue(_engine, argVal), varArgVal, methodArgTypeId)) {
+                qVarArgLists[i].emplace_back();
+                if (!_engine->castValueToVariant(V8ScriptValue(_engine, argVal), qVarArgLists[i].back(), methodArgTypeId)) {
                     conversionFailures++;
+                    qVarArgLists[i].pop_back();
                 } else {
-                    qVarArgLists[i].append(varArgVal);
-                    qGenArgsVectors[i][arg] = Q_ARG(QVariant, qVarArgLists[i].back());
+                    qGenArgsVectors[i][arg] = Q_GENERIC_ARG(QVariant, qVarArgLists[i].back());
                 }
             } else {
-                QVariant varArgVal;
-                if (!_engine->castValueToVariant(V8ScriptValue(_engine, argVal), varArgVal, methodArgTypeId)) {
+                qVarArgLists[i].emplace_back();
+                if (!_engine->castValueToVariant(V8ScriptValue(_engine, argVal), qVarArgLists[i].back(), methodArgTypeId)) {
                     conversionFailures++;
                 } else {
-                    qVarArgLists[i].append(varArgVal);
                     const QVariant& converted = qVarArgLists[i].back();
                     conversionPenaltyScore += _engine->computeCastPenalty(V8ScriptValue(_engine, argVal), methodArgTypeId);
+
+                    // QT6TODO: FIXME: Qt 6.5 changed the metatype system a lot. It now uses fully
+                    // qualified type names, ignoring typedefs/usings/the qRegisterMetaType alias.
+                    // Silently replace the GLM types with their typedef names to satisfy Qt.
+                    // In the future we should move away from using Qt metamethods, since they
+                    // might be basically useless for us when Qt 7 arrives.
+                    // FIXME: GCC and Clang have different names for these, we'll need to check
+                    // both of them. MSVC likely has its own name for them too. Maybe we should
+                    // have a map rather than this if-else table if that's the case?
+                    // NOTE: These have to be static or nearly-static lifetime strings (i.e.
+                    // the metatype's name field, which lives for the app's whole lifetime),
+                    // QGenericArgument doesn't copy them.
+                    const char *staticTypeName = QMetaType(converted.userType()).name();
+                    auto typeName = std::string(staticTypeName);
+                    if (typeName == "glm::vec<2,float,glm::packed_highp>") {
+                        staticTypeName = "glm::vec2";
+                    } else if (typeName == "glm::vec<3,float,glm::packed_highp>") {
+                        staticTypeName = "glm::vec3";
+                    } else if (typeName == "glm::vec<4,float,glm::packed_highp>") {
+                        staticTypeName = "glm::vec4";
+                    } else if (typeName == "glm::qua<float,glm::packed_highp>") {
+                        staticTypeName = "glm::quat";
+                    } else if (typeName == "glm::mat4") {
+                        staticTypeName = "glm::mat<4,4,float,glm::packed_highp>";
+                    } else if (typeName == "PerformancePreset") {
+                        staticTypeName = "PerformanceScriptingInterface::PerformancePreset";
+                    }
 
                     // a lot of type conversion assistance thanks to https://stackoverflow.com/questions/28457819/qt-invoke-method-with-qvariant
                     // A const_cast is needed because calling data() would detach the QVariant.
                     qGenArgsVectors[i][arg] =
-                        QGenericArgument(QMetaType::typeName(converted.userType()), const_cast<void*>(converted.constData()));
+                        QGenericArgument(staticTypeName, const_cast<void*>(converted.constData()));
                 }
             }
         }
@@ -1119,7 +1171,7 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
             return;
         } else if (returnTypeId == scriptValueTypeId) {
             ScriptValue result;
-            bool success = meta.invoke(qobject, Qt::DirectConnection, Q_RETURN_ARG(ScriptValue, result), qGenArgs[0],
+            bool success = meta.invoke(qobject, Qt::DirectConnection, Q_GENERIC_RETURN_ARG(ScriptValue, result), qGenArgs[0],
                                        qGenArgs[1], qGenArgs[2], qGenArgs[3], qGenArgs[4], qGenArgs[5], qGenArgs[6],
                                        qGenArgs[7], qGenArgs[8], qGenArgs[9]);
             if (!success) {
@@ -1132,7 +1184,7 @@ void ScriptMethodV8Proxy::call(const v8::FunctionCallbackInfo<v8::Value>& argume
         } else {
             // a lot of type conversion assistance thanks to https://stackoverflow.com/questions/28457819/qt-invoke-method-with-qvariant
             const char* typeName = meta.typeName();
-            QVariant qRetVal(returnTypeId, static_cast<void*>(NULL));
+            QVariant qRetVal(QMetaType(returnTypeId), static_cast<void*>(NULL));
             QGenericReturnArgument sRetVal(typeName, const_cast<void*>(qRetVal.constData()));
 
             bool success =
@@ -1270,7 +1322,7 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
         for (int arg = 0; arg < numArgs; ++arg) {
             int methodArgTypeId = _meta.parameterType(arg);
             Q_ASSERT(methodArgTypeId != QMetaType::UnknownType);
-            QVariant argValue(methodArgTypeId, arguments[arg + 1]);
+            QVariant argValue(QMetaType(methodArgTypeId), arguments[arg + 1]);
             args[arg] = _engine->castVariantToValue(argValue).get();
         }
         for (ConnectionList::iterator iter = connections.begin(); iter != connections.end(); ++iter) {

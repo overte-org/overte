@@ -163,7 +163,12 @@ void DialogsManager::showUpdateDialog() {
 
 void DialogsManager::octreeStatsDetails() {
     if (!_octreeStatsDialog) {
-        _octreeStatsDialog = new OctreeStatsDialog(qApp->getWindow(), qApp->getOcteeSceneStats());
+        auto octreeSceneStats = qApp->getOcteeSceneStats();
+        if (!octreeSceneStats) {
+            qCritical() << "DialogsManager::octreeStatsDetails(): Octree scene stats object not available yet. This should never happen.";
+            std::abort();
+        }
+        _octreeStatsDialog = new OctreeStatsDialog(qApp->getWindow(), octreeSceneStats.value());
 
         if (_hmdToolsDialog) {
             _hmdToolsDialog->watchWindow(_octreeStatsDialog->windowHandle());

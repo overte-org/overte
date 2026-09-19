@@ -28,6 +28,7 @@
 #include <QtGui/QImageReader>
 #include <QtCore/QVector>
 #include <QtCore/QUrlQuery>
+#include <QtCore5Compat/QRegExp>
 
 #include <ClientServerUtils.h>
 #include <NodeType.h>
@@ -434,7 +435,7 @@ void AssetServer::completeSetup() {
         // Check the asset directory to output some information about what we have
         auto files = _filesDirectory.entryList(QDir::Files);
 
-        QRegExp hashFileRegex { AssetUtils::ASSET_HASH_REGEX_STRING };
+        QRegularExpression hashFileRegex { AssetUtils::ASSET_HASH_REGEX_STRING };
         auto hashedFiles = files.filter(hashFileRegex);
 
         qCInfo(asset_server) << "There are" << hashedFiles.size() << "asset files in the asset directory.";

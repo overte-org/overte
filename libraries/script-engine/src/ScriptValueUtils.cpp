@@ -794,7 +794,7 @@ bool qColorFromScriptValue(const ScriptValue& object, QColor& color) {
         color.setRgb(object.toUInt32());
         return true;
     } else if (object.isString()) {
-        color.setNamedColor(object.toString());
+        color = QColor::fromString(object.toString());
         return true;
     } else if (object.isArray()) {
         auto length = object.property("length").toInt32();
@@ -1097,7 +1097,8 @@ QVector<EntityItemID> qVectorEntityItemIDFromScriptValue(const ScriptValue& arra
     newVector.reserve(length);
     for (int i = 0; i < length; i++) {
         QString uuidAsString = array.property(i).toString();
-        EntityItemID fromString(uuidAsString);
+        QUuid uuid(uuidAsString);
+        EntityItemID fromString(uuid);
         newVector << fromString;
     }
     return newVector;

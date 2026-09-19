@@ -15,7 +15,7 @@
 import QtQuick 2.10
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
-import QtGraphicalEffects 1.0
+import Qt5Compat.GraphicalEffects
 
 import stylesUit 1.0
 import controlsUit 1.0 as HifiControlsUit

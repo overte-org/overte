@@ -2,7 +2,7 @@ import QtQuick 2.6
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
 import QtQml.Models 2.1
-import QtGraphicalEffects 1.0
+import Qt5Compat.GraphicalEffects
 import Hifi.AvatarPackager.AvatarProjectStatus 1.0
 import "../../controlsUit" 1.0 as HifiControls
 import "../../stylesUit" 1.0

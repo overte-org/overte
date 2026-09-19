@@ -60,9 +60,9 @@ void AudioFileWav::addHeader(const QAudioFormat& audioFormat) {
     stream << quint16(1);
     stream << quint16(audioFormat.channelCount());
     stream << quint32(audioFormat.sampleRate());
-    stream << quint32(audioFormat.sampleRate() * audioFormat.channelCount() * audioFormat.sampleSize() / 8); // bytes per second
-    stream << quint16(audioFormat.channelCount() * audioFormat.sampleSize() / 8); // block align
-    stream << quint16(audioFormat.sampleSize()); // bits Per Sample
+    stream << quint32(audioFormat.sampleRate() * audioFormat.channelCount() * audioFormat.bytesPerSample()); // bytes per second
+    stream << quint16(audioFormat.channelCount() * audioFormat.bytesPerSample()); // block align
+    stream << quint16(audioFormat.bytesPerSample() * 8); // bits Per Sample
     // Init data chunck
     stream.writeRawData("data", 4);
     stream << quint32(0);

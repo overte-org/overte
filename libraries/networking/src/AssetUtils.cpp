@@ -17,6 +17,7 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QFileInfo> // for baseName
 #include <QtNetwork/QAbstractNetworkCache>
+#include <QtCore5Compat/QRegExp>
 
 #include "NetworkAccessManager.h"
 #include "NetworkLogging.h"
