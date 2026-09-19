@@ -525,10 +525,9 @@ void EntityScriptServer::resetEntitiesScriptEngine() {
         scriptEngines->runScriptInitializers(newManager);
     }
     newManager->runInThread();
-    std::shared_ptr<EntitiesScriptEngineProvider> newEngineSP = newManager;
     // On the entity script server, these are the same
-    DependencyManager::get<EntityScriptingInterface>()->setPersistentEntitiesScriptEngine(newEngineSP);
-    DependencyManager::get<EntityScriptingInterface>()->setNonPersistentEntitiesScriptEngine(newEngineSP);
+    DependencyManager::get<EntityScriptingInterface>()->setPersistentEntitiesScriptEngine(newManager);
+    DependencyManager::get<EntityScriptingInterface>()->setNonPersistentEntitiesScriptEngine(newManager);
 
     if (_entitiesScriptManager) {
         disconnect(_entitiesScriptManager.get(), &ScriptManager::entityScriptDetailsUpdated,

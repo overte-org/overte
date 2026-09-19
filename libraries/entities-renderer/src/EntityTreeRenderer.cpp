@@ -315,7 +315,7 @@ void EntityTreeRenderer::resetPersistentEntitiesScriptEngine() {
     connect(_persistentEntitiesScriptManager.get(), &ScriptManager::warningEntityMessage, scriptEngines, &ScriptEngines::warningEntityMessage);
 
     _persistentEntitiesScriptManager->runInThread();
-    std::shared_ptr<EntitiesScriptEngineProvider> entitiesScriptEngineProvider = _persistentEntitiesScriptManager;
+    ScriptManagerPointer entitiesScriptEngineProvider = _persistentEntitiesScriptManager;
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
     entityScriptingInterface->setPersistentEntitiesScriptEngine(entitiesScriptEngineProvider);
 
@@ -349,7 +349,7 @@ void EntityTreeRenderer::resetNonPersistentEntitiesScriptEngine() {
     connect(_nonPersistentEntitiesScriptManager.get(), &ScriptManager::warningEntityMessage, scriptEngines, &ScriptEngines::warningEntityMessage);
 
     _nonPersistentEntitiesScriptManager->runInThread();
-    std::shared_ptr<EntitiesScriptEngineProvider> entitiesScriptEngineProvider = _nonPersistentEntitiesScriptManager;
+    ScriptManagerPointer entitiesScriptEngineProvider = _nonPersistentEntitiesScriptManager;
     DependencyManager::get<EntityScriptingInterface>()->setNonPersistentEntitiesScriptEngine(entitiesScriptEngineProvider);
 
     setupEntityScriptEngineSignals(_nonPersistentEntitiesScriptManager);
