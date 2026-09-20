@@ -174,18 +174,29 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
     QLabel* crashReportLabel = nullptr;
 
     if (ch.isStarted()) {
-        crashReportLabel = new QLabel("To help us with debugging, you can enable automatic crash reports.\n"
+        crashReportLabel = new QLabel(QString("To help us with debugging, you can enable automatic crash reports.\n"
                                       "They'll only be seen by developers trusted by the Overte e.V. organization,\n"
-                                      "and will only be used for improving the code.");
+                                      "and will only be used for improving the code.\n"
+                                      "\n"
+                                      "Support tag: %1").arg(ch.getSupportTag()));
     } else {
         crashReportLabel = new QLabel("Unfortunately, crash reporting isn't built into this release.");
     }
 
     QCheckBox* crashReportCheckbox = new QCheckBox("Enable automatic crash reporting");
+    QCheckBox* logStatsCheckbox = new QCheckBox("Enable statistics collection");
+    QCheckBox* logStreamingCheckbox = new QCheckBox("Stream logs to the developers for debugging");
+
 
 
     crashReportCheckbox->setChecked(ch.isEnabled());
     crashReportCheckbox->setEnabled(ch.isStarted());
+
+    logStatsCheckbox->setChecked(ch.isStatsStreamingEnabled());
+    logStatsCheckbox->setEnabled(ch.isStarted());
+
+    logStreamingCheckbox->setChecked(ch.isLogStreamingEnabled());
+    logStatsCheckbox->setEnabled(ch.isStarted());
 
     option3->setChecked(true);
     layout->addWidget(option1);
@@ -195,6 +206,8 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
 
     layout->addWidget(crashReportLabel);
     layout->addWidget(crashReportCheckbox);
+    layout->addWidget(logStatsCheckbox);
+    layout->addWidget(logStreamingCheckbox);
     layout->addSpacing(12);
     layout->addStretch();
 
@@ -216,6 +229,9 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
     }
 
     ch.setEnabled(crashReportCheckbox->isChecked());
+    ch.setLogStreamingEnabled(logStreamingCheckbox->isChecked());
+    ch.setStatsStreamingEnabled(logStatsCheckbox->isChecked());
+
 
     // Dialog cancelled or "do nothing" option chosen
     return CrashRecoveryHandler::DO_NOTHING;

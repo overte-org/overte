@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Build Windows
 
-*Last Updated on 2025-08-01*
+*Last Updated on 2026-07-15*
 
 This is a stand-alone guide for creating your first Overte build for Windows 64-bit.
 
@@ -97,7 +97,7 @@ Run the Command Prompt from Start and run the following commands:
 
 ```bash
 cd "%OVERTE_DIR%"
-conan install . -b missing -pr=tools/conan-profiles/vs-22-release -of build
+conan install . -b missing -pr=tools/conan-profiles/vs-22-relwithdebinfo -of build
 conan install . -b missing -pr=tools/conan-profiles/vs-22-debug -of build
 cmake --preset conan-default
 ```

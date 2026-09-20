@@ -138,6 +138,7 @@
 #include "LocationBookmarks.h"
 #include "LODManager.h"
 #include "Menu.h"
+#include "CPUIdent.h"
 #include "ResourceRequestObserver.h"
 #ifndef USE_GL
 #include "vk/VKWindow.h"
@@ -619,11 +620,19 @@ void Application::initialize(const QCommandLineParser &parser) {
     {
         // identify gpu as early as possible to help identify OpenGL initialization errors.
         auto gpuIdent = GPUIdent::getInstance();
+
         auto &ch = CrashHandler::getInstance();
 
-        ch.setAnnotation("sentry[contexts][gpu][name]", gpuIdent->getName().toStdString());
-        ch.setAnnotation("sentry[contexts][gpu][version]", gpuIdent->getDriver().toStdString());
-        ch.setAnnotation("gpu_memory", std::to_string(gpuIdent->getMemory()));
+        ch.setContext("GPU", "name", gpuIdent->getName());
+        ch.setContext("GPU", "version", gpuIdent->getDriver());
+
+        ch.setAnnotation("gpu.memory", std::to_string(gpuIdent->getMemory()));
+
+        ch.setAnnotation("cpu.arch", QSysInfo::currentCpuArchitecture());
+        ch.setAnnotation("cpu.ideal_thread_count", std::to_string(QThread::idealThreadCount()));
+        ch.setAnnotation("cpu.brand", CPUIdent::Brand());
+        ch.setAnnotation("cpu.vendor", CPUIdent::Vendor());
+
     }
 
     // make sure the debug draw singleton is initialized on the main thread.
@@ -848,13 +857,28 @@ void Application::initialize(const QCommandLineParser &parser) {
     isTester = check_tester_file.exists() && check_tester_file.isFile();
 #endif
 
+    auto glContextData = gl::ContextInfo::get();
+    ProcessorInfo procInfo;
+
+
+    ch.setAnnotation("gl.version_int", std::to_string(glVersionToInteger(glContextData.version.c_str())));
+    ch.setAnnotation("gl.version", glContextData.version.c_str());
+    ch.setAnnotation("gl.vendor", glContextData.vendor.c_str());
+    ch.setAnnotation("gl.shading_language_version", glContextData.shadingLanguageVersion.c_str());
+    ch.setAnnotation("gl.renderer", glContextData.renderer.c_str());
+
+
+    // The below seems to return nonsense, disabling for now
+    //ch.setAnnotation("cpu.cores", std::to_string(procInfo.numProcessorCores));
+    //ch.setAnnotation("cpu.logical_cores", std::to_string(procInfo.numLogicalProcessors));
+
+
     auto& userActivityLogger = UserActivityLogger::getInstance();
     if (userActivityLogger.isEnabled()) {
         // sessionRunTime will be reset soon by loadSettings. Grab it now to get previous session value.
         // The value will be 0 if the user blew away settings this session, which is both a feature and a bug.
         static const QString TESTER = "HIFI_TESTER";
         auto gpuIdent = GPUIdent::getInstance();
-        auto glContextData = gl::ContextInfo::get();
         QJsonObject properties = {
             { "version", applicationVersion() },
             { "tester", QProcessEnvironment::systemEnvironment().contains(TESTER) || isTester },
@@ -887,7 +911,6 @@ void Application::initialize(const QCommandLineParser &parser) {
             properties["os_win_version"] = QSysInfo::windowsVersion();
         }
 
-        ProcessorInfo procInfo;
         if (getProcessorInfo(procInfo)) {
             properties["processor_core_count"] = procInfo.numProcessorCores;
             properties["logical_processor_count"] = procInfo.numLogicalProcessors;
