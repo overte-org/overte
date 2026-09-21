@@ -201,6 +201,7 @@ void OpenXrInputPlugin::setConfigurationSettings(const QJsonObject configuration
     const auto& calibration = configurationSettings["tracker_calibration"].toObject();
     _inputDevice->_hapticsEnabled = configurationSettings["enable_haptics"].toBool(true);
     _inputDevice->_handTrackingEnabled = configurationSettings["enable_hand_tracking"].toBool(true);
+    _context->_userPresenceEnabled = configurationSettings["enable_user_presence"].toBool(true);
 
     // grr qt5 doesnt support destructured iterating like std::map
     foreach (const auto& key, calibration.keys()) {
@@ -241,6 +242,8 @@ QJsonObject OpenXrInputPlugin::configurationSettings() {
     configurationSettings["tracker_calibration"] = calibration;
     configurationSettings["enable_haptics"] = _inputDevice->_hapticsEnabled;
     configurationSettings["enable_hand_tracking"] = _inputDevice->_handTrackingEnabled;
+    configurationSettings["enable_user_presence"] = _context->_userPresenceEnabled;
+
     return configurationSettings;
 }
 

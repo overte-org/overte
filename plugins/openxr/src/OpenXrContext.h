@@ -98,7 +98,7 @@ public:
     // only supported by a few runtimes, but lets us
     // emulate OpenVR's headset proximity sensor system
     bool _userPresenceAvailable = false;
-
+    bool _userPresenceEnabled = true;
     // whether the headset is on, using XR_EXT_user_presence
     bool _hmdMounted = true;
 
