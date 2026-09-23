@@ -30,7 +30,7 @@ QString ScriptUUID::toString(const QUuid& id) {
 }
 
 QUuid ScriptUUID::generate() {
-    return QUuid::createUuid();    
+    return QUuid::createUuid();
 }
 
 bool ScriptUUID::isEqual(const QUuid& idA, const QUuid& idB) {
@@ -45,8 +45,9 @@ void ScriptUUID::print(const QString& label, const QUuid& id) {
     QString message = QString("%1 %2").arg(qPrintable(label));
     message = message.arg(id.toString());
     qCDebug(scriptengine) << message;
-    Q_ASSERT(engine());
-    if (ScriptManager* scriptManager = engine()->manager()) {
-        scriptManager->print(message);
-    }
+    auto engine_ = engine();
+    Q_ASSERT(engine_);
+    auto* context_ = context();
+    Q_ASSERT(context_);
+    engine_->log(ScriptEngine::LogLevel::Log, message, context_->currentFileName(), context_->currentLineNumber());
 }

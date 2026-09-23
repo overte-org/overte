@@ -339,8 +339,10 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
     });
 #endif
 
-    // Forward exceptions from the scripting engine
+    // Forward exceptions and error messages from the scripting engine
     connect(_engine.get(), &ScriptEngine::exception, this, &ScriptManager::unhandledException);
+    connect(_engine.get(), &ScriptEngine::scriptMessage, this, &ScriptManager::onScriptMessage);
+    connect(_engine.get(), &ScriptEngine::clearScriptMessages, this, &ScriptManager::onClearScriptMessages);
 
     if (_type == Type::ENTITY_CLIENT || _type == Type::ENTITY_SERVER) {
         QObject::connect(this, &ScriptManager::update, this, [this]() {
@@ -1201,6 +1203,34 @@ void ScriptManager::stop(bool marshal) {
 
 void ScriptManager::updateMemoryCost(const qint64& deltaSize) {
     _engine->updateMemoryCost(deltaSize);
+}
+
+void ScriptManager::onScriptMessage(const ScriptEngine::LogLevel logLevel,
+                                    const QString& message,
+                                    const QString& fileName,
+                                    int lineNumber) {
+    switch (logLevel) {
+        case ScriptEngine::LogLevel::Error: {
+            scriptErrorMessage(message, fileName, lineNumber);
+        } break;
+        case ScriptEngine::LogLevel::Trace: {
+            // V8TODO: shouldn't this be its own thing?
+            scriptPrintedMessage(message, fileName, lineNumber);
+        } break;
+        case ScriptEngine::LogLevel::Debug: {
+            // V8TODO: shouldn't this be its own thing?
+            scriptPrintedMessage(message, fileName, lineNumber);
+        } break;
+        case ScriptEngine::LogLevel::Log: {
+            scriptPrintedMessage(message, fileName, lineNumber);
+        } break;
+        case ScriptEngine::LogLevel::Info: {
+            scriptInfoMessage(message, fileName, lineNumber);
+        } break;
+        case ScriptEngine::LogLevel::Warning: {
+            scriptWarningMessage(message, fileName, lineNumber);
+        } break;
+    }
 }
 
 void ScriptManager::timerFired(int handle) {

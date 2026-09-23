@@ -1364,12 +1364,7 @@ int ScriptSignalV8Proxy::qt_metacall(QMetaObject::Call call, int id, void** argu
                     if (!exceptionMessage.IsEmpty()) {
                         errorLineNumber = exceptionMessage->GetLineNumber(context).FromJust();
                     }
-                    if (_engine->_manager) {
-                        _engine->_manager->scriptErrorMessage(errorMessage, getFileNameFromTryCatch(tryCatch, isolate, context),
-                                                              errorLineNumber);
-                    } else {
-                        qDebug(scriptengine_v8) << errorMessage;
-                    }
+                    _engine->log(ScriptEngine::LogLevel::Error, errorMessage, getFileNameFromTryCatch(tryCatch, isolate, context), errorLineNumber);
 
                     _engine->setUncaughtException(tryCatch, "Error in signal proxy");
                 }

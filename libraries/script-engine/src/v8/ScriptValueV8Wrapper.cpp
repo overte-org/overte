@@ -18,7 +18,7 @@
 
 #include "../ScriptEngineLogging.h"
 #include "ScriptEngineLoggingV8.h"
-
+#include "../ScriptEngine.h"
 
 void ScriptValueV8Wrapper::enqueueRelease() {
     _engine->scheduleValueWrapperForDeletion(this);
@@ -106,17 +106,13 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     lock.unlock();
     if (tryCatch.HasCaught()) {
         QString errorMessage(QString("Function call failed: \"") + _engine->formatErrorMessageFromTryCatch(tryCatch));
-        if (_engine->_manager) {
-            v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
-            int errorLineNumber = -1;
-            if (!exceptionMessage.IsEmpty()) {
-                errorLineNumber = exceptionMessage->GetLineNumber(context).FromJust();
-            }
-            _engine->_manager->scriptErrorMessage(errorMessage, getFileNameFromTryCatch(tryCatch, isolate, context),
-                                                  errorLineNumber);
-        } else {
-            qDebug(scriptengine_v8) << errorMessage;
+        v8::Local<v8::Message> exceptionMessage = tryCatch.Message();
+        int errorLineNumber = -1;
+        if (!exceptionMessage.IsEmpty()) {
+            errorLineNumber = exceptionMessage->GetLineNumber(context).FromJust();
         }
+        _engine->log(ScriptEngine::LogLevel::Error, errorMessage, getFileNameFromTryCatch(tryCatch, isolate, context),
+                     errorLineNumber);
     }
     v8::Local<v8::Value> result;
     Q_ASSERT(_engine == _value.getEngine());
@@ -125,11 +121,8 @@ ScriptValue ScriptValueV8Wrapper::call(const ScriptValue& thisObject, const Scri
     } else {
         auto currentContext = _engine->currentContext();
         QString errorMessage("JS function call failed: " + currentContext->backtrace().join("\n"));
-        if (_engine->_manager) {
-            _engine->_manager->scriptErrorMessage(errorMessage, currentContext->currentFileName(), currentContext->currentLineNumber());
-        } else {
-            qDebug(scriptengine_v8) << errorMessage;
-        }
+        _engine->log(ScriptEngine::LogLevel::Error, errorMessage, currentContext->currentFileName(),
+                     currentContext->currentLineNumber());
         return _engine->undefinedValue();
     }
 }

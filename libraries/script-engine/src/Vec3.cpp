@@ -39,15 +39,16 @@ void Vec3::print(const QString& label, const glm::vec3& v) {
     QString message = QString("%1 %2").arg(qPrintable(label));
     message = message.arg(glm::to_string(glm::dvec3(v)).c_str());
     qCDebug(scriptengine) << message;
-    Q_ASSERT(engine());
-    if (ScriptManager* scriptManager = engine()->manager()) {
-        scriptManager->print(message);
-    }
+    auto engine_ = engine();
+    Q_ASSERT(engine_);
+    auto* context_ = context();
+    Q_ASSERT(context_);
+    engine_->log(ScriptEngine::LogLevel::Log, message, context_->currentFileName(), context_->currentLineNumber());
 }
 
 bool Vec3::withinEpsilon(const glm::vec3& v1, const glm::vec3& v2, float epsilon) {
     float distanceSquared = glm::length2(v1 - v2);
-    return (epsilon*epsilon) >= distanceSquared;
+    return (epsilon * epsilon) >= distanceSquared;
 }
 
 glm::vec3 Vec3::toPolar(const glm::vec3& v) {
@@ -101,4 +102,3 @@ glm::vec3 Vec3::fromPolar(float elevation, float azimuth) {
 float Vec3::getAngle(const glm::vec3& v1, const glm::vec3& v2) {
     return glm::acos(glm::dot(glm::normalize(v1), glm::normalize(v2)));
 }
-

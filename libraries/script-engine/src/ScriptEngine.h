@@ -18,6 +18,7 @@
 #ifndef hifi_ScriptEngine_h
 #define hifi_ScriptEngine_h
 
+#include <qloggingcategory.h>
 #include <memory>
 
 #include <QtCore/QFlags>
@@ -94,10 +95,9 @@ public:
 class ScriptEngine : public QObject {
     Q_OBJECT
 public:
-
-    ScriptEngine(ScriptManager *manager = nullptr) : _manager(manager) {
-
-    }
+    ScriptEngine(std::function<const QLoggingCategory&()> logging_category, ScriptManager* manager = nullptr) :
+        // V8TODO: these should be configurable later
+        _logQtLogger(!manager), _logSignal(manager), _loggingCategory(logging_category), _manager(manager) {}
 
     typedef ScriptValue (*FunctionSignature)(ScriptContext*, ScriptEngine*);
     typedef ScriptValue (*MarshalFunction)(ScriptEngine*, const void*);
@@ -187,8 +187,17 @@ public:
     };
     Q_DECLARE_FLAGS(QObjectWrapOptions, QObjectWrapOption);
 
-public:
+    enum class LogLevel
+    {
+        Log,
+        Trace,
+        Debug,
+        Info,
+        Warning,
+        Error,
+    };
 
+public:
     /**
      * @brief Class used as a base for script engine-specific thread safety guards.
      *
@@ -477,12 +486,14 @@ public:
         return scriptValueFromValue(this, value);
     }
 
-public: // not for public use, but I don't like how Qt strings this along with private friend functions
+public:  // not for public use, but I don't like how Qt strings this along with private friend functions
     virtual ScriptValue create(int type, const void* ptr) = 0;
     virtual QVariant convert(const ScriptValue& value, int type) = 0;
     virtual void registerCustomType(int type, MarshalFunction mf, DemarshalFunction df) = 0;
     virtual QStringList getCurrentScriptURLs() const = 0;
     virtual void perManagerLoopIterationCleanup() = 0;
+
+    void log(const LogLevel logLevel, const QString& message, const QString& fileName, int lineNumber);
 
 signals:
     /**
@@ -492,10 +503,25 @@ signals:
      */
     void exception(std::shared_ptr<ScriptException> exception);
 
+    /**
+     * @brief Logs a script message and emits an message event
+     *
+     * Signals a scriptMessage with a log level
+     *
+     * @param message Message to send to the log
+     * @param fileName Name of the file in which message was generated. Empty string when no file name is available.
+     * @param lineNumber Number of the line on which message was generated. -1 if there line number is not available.
+     */
+    void scriptMessage(const LogLevel logLevel, const QString& message, const QString& fileName, int lineNumber);
+
 protected:
     virtual ~ScriptEngine() {}  // prevent explicit deletion of base class
 
-    ScriptManager *_manager;
+    bool _logQtLogger{ false };
+    bool _logSignal{ false };
+    std::function<const QLoggingCategory&()> _loggingCategory;
+
+    ScriptManager* _manager;
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(ScriptEngine::QObjectWrapOptions);
 

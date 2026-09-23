@@ -1288,6 +1288,8 @@ public slots:
      */
     void updateMemoryCost(const qint64 &deltaSize);
 
+    void onScriptMessage(const ScriptEngine::LogLevel logLevel, const QString& message, const QString& fileName, int lineNumber);
+
 signals:
 
 

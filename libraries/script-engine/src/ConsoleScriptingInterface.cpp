@@ -33,18 +33,15 @@ const QString STACK_TRACE_FORMAT = "\n[Stacktrace]%1%2";
 QList<QString> ConsoleScriptingInterface::_groupDetails = QList<QString>();
 
 ScriptValue ConsoleScriptingInterface::info(ScriptContext* context, ScriptEngine* engine) {
-    if (ScriptManager* scriptManager = engine->manager()) {
-        scriptManager->scriptInfoMessage(appendArguments(context), context->currentFileName(), context->currentLineNumber());
-    }
+    engine->log(ScriptEngine::LogLevel::Info, appendArguments(context), context->currentFileName(),
+                context->currentLineNumber());
     return engine->nullValue();
 }
 
 ScriptValue ConsoleScriptingInterface::log(ScriptContext* context, ScriptEngine* engine) {
     QString message = appendArguments(context);
     if (_groupDetails.count() == 0) {
-        if (ScriptManager* scriptManager = engine->manager()) {
-            scriptManager->scriptPrintedMessage(message, context->currentFileName(), context->currentLineNumber());
-        }
+        engine->log(ScriptEngine::LogLevel::Log, message, context->currentFileName(), context->currentLineNumber());
     } else {
         logGroupMessage(message, engine);
     }
@@ -52,64 +49,64 @@ ScriptValue ConsoleScriptingInterface::log(ScriptContext* context, ScriptEngine*
 }
 
 ScriptValue ConsoleScriptingInterface::debug(ScriptContext* context, ScriptEngine* engine) {
-    if (ScriptManager* scriptManager = engine->manager()) {
-        scriptManager->scriptPrintedMessage(appendArguments(context), context->currentFileName(), context->currentLineNumber());
-    }
+    engine->log(ScriptEngine::LogLevel::Info, appendArguments(context), context->currentFileName(),
+                context->currentLineNumber());
     return engine->nullValue();
 }
 
 ScriptValue ConsoleScriptingInterface::warn(ScriptContext* context, ScriptEngine* engine) {
-    if (ScriptManager* scriptManager = engine->manager()) {
-        scriptManager->scriptWarningMessage(appendArguments(context), context->currentFileName(), context->currentLineNumber());
-    }
+    engine->log(ScriptEngine::LogLevel::Warning, appendArguments(context), context->currentFileName(),
+                context->currentLineNumber());
     return engine->nullValue();
 }
 
 ScriptValue ConsoleScriptingInterface::error(ScriptContext* context, ScriptEngine* engine) {
-    if (ScriptManager* scriptManager = engine->manager()) {
-        scriptManager->scriptErrorMessage(appendArguments(context), context->currentFileName(), context->currentLineNumber());
-    }
+    engine->log(ScriptEngine::LogLevel::Error, appendArguments(context), context->currentFileName(),
+                context->currentLineNumber());
     return engine->nullValue();
 }
 
 ScriptValue ConsoleScriptingInterface::exception(ScriptContext* context, ScriptEngine* engine) {
-    if (ScriptManager* scriptManager = engine->manager()) {
-        scriptManager->scriptErrorMessage(appendArguments(context), context->currentFileName(), context->currentLineNumber());
-    }
+    engine->log(ScriptEngine::LogLevel::Error, appendArguments(context), context->currentFileName(),
+                context->currentLineNumber());
     return engine->nullValue();
 }
 
 void ConsoleScriptingInterface::time(QString labelName) {
     _timerDetails.insert(labelName, QDateTime::currentDateTime().toUTC());
     QString message = QString("%1: Timer started").arg(labelName);
-    Q_ASSERT(engine());
-    if (ScriptManager* scriptManager = engine()->manager()) {
-        scriptManager->scriptPrintedMessage(message, context()->currentFileName(), context()->currentLineNumber());
-    }
+    auto engine_ = engine();
+    Q_ASSERT(engine_);
+    auto* context_ = context();
+    Q_ASSERT(context_);
+    engine_->log(ScriptEngine::LogLevel::Log, message, context_->currentFileName(), context_->currentLineNumber());
 }
 
 void ConsoleScriptingInterface::timeEnd(QString labelName) {
-    Q_ASSERT(engine());
-    if (ScriptManager* scriptManager = engine()->manager()) {
-        if (!_timerDetails.contains(labelName)) {
-            scriptManager->scriptErrorMessage("No such label found " + labelName, context()->currentFileName(), context()->currentLineNumber());
-            return;
-        }
-
-        if (_timerDetails.value(labelName).isNull()) {
-            _timerDetails.remove(labelName);
-            scriptManager->scriptErrorMessage("Invalid start time for " + labelName, context()->currentFileName(), context()->currentLineNumber());
-            return;
-        }
-        QDateTime _startTime = _timerDetails.value(labelName);
-        QDateTime _endTime = QDateTime::currentDateTime().toUTC();
-        qint64 diffInMS = _startTime.msecsTo(_endTime);
-
-        QString message = QString("%1: %2ms").arg(labelName).arg(QString::number(diffInMS));
-        _timerDetails.remove(labelName);
-
-        scriptManager->scriptPrintedMessage(message, context()->currentFileName(), context()->currentLineNumber());
+    auto engine_ = engine();
+    Q_ASSERT(engine_);
+    auto* context_ = context();
+    Q_ASSERT(context_);
+    if (!_timerDetails.contains(labelName)) {
+        engine_->log(ScriptEngine::LogLevel::Error, "No such label found " + labelName, context_->currentFileName(),
+                     context_->currentLineNumber());
+        return;
     }
+
+    if (_timerDetails.value(labelName).isNull()) {
+        _timerDetails.remove(labelName);
+        engine_->log(ScriptEngine::LogLevel::Error, "Invalid start time for " + labelName, context_->currentFileName(),
+                     context_->currentLineNumber());
+        return;
+    }
+    QDateTime _startTime = _timerDetails.value(labelName);
+    QDateTime _endTime = QDateTime::currentDateTime().toUTC();
+    qint64 diffInMS = _startTime.msecsTo(_endTime);
+
+    QString message = QString("%1: %2ms").arg(labelName).arg(QString::number(diffInMS));
+    _timerDetails.remove(labelName);
+
+    engine_->log(ScriptEngine::LogLevel::Log, message, context_->currentFileName(), context_->currentLineNumber());
 }
 
 ScriptValue ConsoleScriptingInterface::assertion(ScriptContext* context, ScriptEngine* engine) {
@@ -130,21 +127,19 @@ ScriptValue ConsoleScriptingInterface::assertion(ScriptContext* context, ScriptE
         } else {
             assertionResult = QString("Assertion failed : %1").arg(message);
         }
-        if (ScriptManager* scriptManager = engine->manager()) {
-            scriptManager->scriptErrorMessage(assertionResult, context->currentFileName(), context->currentLineNumber());
-        }
+        engine->log(ScriptEngine::LogLevel::Error, assertionResult, context->currentFileName(), context->currentLineNumber());
     }
     return engine->nullValue();
 }
 
 void ConsoleScriptingInterface::trace() {
-    Q_ASSERT(engine());
-    ScriptEnginePointer scriptEngine = engine();
-    if (ScriptManager* scriptManager = scriptEngine->manager()) {
-        scriptManager->scriptPrintedMessage
-            (QString(STACK_TRACE_FORMAT).arg(LINE_SEPARATOR,
-            scriptEngine->currentContext()->backtrace().join(LINE_SEPARATOR)), context()->currentFileName(), context()->currentLineNumber());
-    }
+    auto engine_ = engine();
+    Q_ASSERT(engine_);
+    auto* context_ = context();
+    Q_ASSERT(context_);
+    engine_->log(ScriptEngine::LogLevel::Log,
+                 QString(STACK_TRACE_FORMAT).arg(LINE_SEPARATOR, engine_->currentContext()->backtrace().join(LINE_SEPARATOR)),
+                 context_->currentFileName(), context_->currentLineNumber());
 }
 
 void ConsoleScriptingInterface::clear() {
@@ -190,7 +185,7 @@ void ConsoleScriptingInterface::logGroupMessage(QString message, ScriptEngine* e
         logMessage.append(SPACE_SEPARATOR);
     }
     logMessage.append(message);
-    if (ScriptManager* scriptManager = engine->manager()) {
-        scriptManager->scriptPrintedMessage(logMessage, context()->currentFileName(), context()->currentLineNumber());
-    }
+    auto* context_ = context();
+    Q_ASSERT(context_);
+    engine->log(ScriptEngine::LogLevel::Log, logMessage, context_->currentFileName(), context_->currentLineNumber());
 }
