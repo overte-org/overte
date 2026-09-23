@@ -126,10 +126,11 @@ void Quat::print(const QString& label, const glm::quat& q, bool asDegrees) {
         message = message.arg(glm::to_string(glm::dquat(q)).c_str());
     }
     qCDebug(scriptengine) << message;
-    Q_ASSERT(engine());
-    if (ScriptManager* scriptManager = engine()->manager()) {
-        scriptManager->print(message);
-    }
+    auto engine_ = engine();
+    Q_ASSERT(engine_);
+    auto* context_ = context();
+    Q_ASSERT(context_);
+    engine_->log(ScriptEngine::LogLevel::Log, message, context_->currentFileName(), context_->currentLineNumber());
 }
 
 bool Quat::equal(const glm::quat& q1, const glm::quat& q2) {

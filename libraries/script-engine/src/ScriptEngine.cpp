@@ -67,3 +67,36 @@ bool ScriptEngine::IS_THREADSAFE_INVOCATION(const QString& method) {
     Q_ASSERT(false);
     return false;
 }
+
+inline QDebug operator<<(QDebug dbg, const ScriptEngine::LogLevel& logLevel) {
+    switch (logLevel) {
+        case ScriptEngine::LogLevel::Log:
+            dbg << "[LOG]";
+            break;
+        case ScriptEngine::LogLevel::Trace:
+            dbg << "[TRC]";
+            break;
+        case ScriptEngine::LogLevel::Debug:
+            dbg << "[DBG]";
+            break;
+        case ScriptEngine::LogLevel::Info:
+            dbg << "[INF]";
+            break;
+        case ScriptEngine::LogLevel::Warning:
+            dbg << "[WRN]";
+            break;
+        case ScriptEngine::LogLevel::Error:
+            dbg << "[ERR]";
+            break;
+    }
+    return dbg;
+}
+
+void ScriptEngine::log(const LogLevel logLevel, const QString& message, const QString& fileName, int lineNumber) {
+    if (_logSignal) {
+        emit scriptMessage(logLevel, message, fileName, lineNumber);
+    }
+    if (_logQtLogger) {
+        qCDebug(_loggingCategory) << logLevel << message;
+    }
+}
