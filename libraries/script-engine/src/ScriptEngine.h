@@ -5,7 +5,7 @@
 //  Created by Brad Hefta-Gaub on 12/14/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2023 Overte e.V.
+//  Copyright 2023-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -23,6 +23,7 @@
 #include <QtCore/QFlags>
 #include <QtCore/QObject>
 
+#include "shared/ClassUtils.h"
 #include "ScriptValue.h"
 #include "ScriptException.h"
 
@@ -194,15 +195,10 @@ public:
      * Constructing the guard while holding the guard in the same thread must be possible.
      *
      */
-    class ScriptEngineScopeGuard {
+    class ScriptEngineScopeGuard : private NonCopyable, NonMovable {
     protected:
         ScriptEngineScopeGuard() = default;
 
-        // prevent copy and move
-        ScriptEngineScopeGuard(const ScriptEngineScopeGuard&) = delete;
-        ScriptEngineScopeGuard(ScriptEngineScopeGuard&&) = delete;
-        ScriptEngineScopeGuard& operator=(const ScriptEngineScopeGuard&) = delete;
-        ScriptEngineScopeGuard& operator=(ScriptEngineScopeGuard&&) = delete;
     public:
         virtual ~ScriptEngineScopeGuard() = default;
     };
@@ -259,8 +255,7 @@ public:
      * @param program Program to evaluate
      * @return ScriptValue
      */
-    virtual ScriptValue evaluate(const ScriptProgramPointer &program) = 0;
-
+    virtual ScriptValue evaluate(const ScriptProgramPointer& program) = 0;
 
     /**
      * @brief Evaluate a script in a separate environment
