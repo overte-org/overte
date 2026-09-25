@@ -31,11 +31,12 @@ public:
     bool pointsChanged() const { return _pointsChanged; }
     bool normalsChanged() const { return _normalsChanged; }
     bool colorsChanged() const { return _colorsChanged; }
+    bool alphasChanged() const { return _alphasChanged; }
     bool widthsChanged() const { return _widthsChanged; }
     bool texturesChanged() const { return _texturesChanged; }
 
     void resetTexturesChanged() { _texturesChanged = false; }
-    void resetPolyLineChanged() { _colorsChanged = _widthsChanged = _normalsChanged = _pointsChanged = false; }
+    void resetPolyLineChanged() { _colorsChanged = _alphasChanged = _widthsChanged = _normalsChanged = _pointsChanged = false; }
 
     void computeTightLocalBoundingBox(AABox& box) const;
 private:
@@ -48,6 +49,7 @@ protected:
     bool _pointsChanged { false };
     bool _normalsChanged { false };
     bool _colorsChanged { false };
+    bool _alphasChanged { false };
     bool _widthsChanged { false };
     bool _texturesChanged { false };
 };
