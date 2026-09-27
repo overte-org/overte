@@ -1147,14 +1147,6 @@ public:
     void scriptPrintedMessage(const QString& message, const QString& fileName, int lineNumber);
 
     /**
-     * @brief Clears the debug log window
-     *
-     * This only emits clearDebugWindow()
-     *
-     */
-    void clearDebugLogWindow();
-
-    /**
      * @brief Get the number of running entity scripts
      *
      * @return int Number of scripts with the status EntityScriptStatus::RUNNING
@@ -1289,6 +1281,8 @@ public slots:
     void updateMemoryCost(const qint64 &deltaSize);
 
     void onScriptMessage(const ScriptEngine::LogLevel logLevel, const QString& message, const QString& fileName, int lineNumber);
+
+    void onClearScriptMessages();
 
 signals:
 

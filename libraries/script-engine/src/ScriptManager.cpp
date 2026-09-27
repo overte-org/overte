@@ -681,10 +681,6 @@ void ScriptManager::scriptPrintedMessage(const QString& message, const QString& 
     }
 }
 
-void ScriptManager::clearDebugLogWindow() {
-    emit clearDebugWindow();
-}
-
 // Templated qScriptRegisterMetaType fails to compile with raw pointers
 using ScriptableResourceRawPtr = ScriptableResource*;
 
@@ -1231,6 +1227,10 @@ void ScriptManager::onScriptMessage(const ScriptEngine::LogLevel logLevel,
             scriptWarningMessage(message, fileName, lineNumber);
         } break;
     }
+}
+
+void ScriptManager::onClearScriptMessages() {
+    emit clearDebugWindow();
 }
 
 void ScriptManager::timerFired(int handle) {

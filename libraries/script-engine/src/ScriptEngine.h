@@ -514,6 +514,13 @@ signals:
      */
     void scriptMessage(const LogLevel logLevel, const QString& message, const QString& fileName, int lineNumber);
 
+    /**
+     * @brief signals clear of the messages
+     *
+     * Signals the script wanting to clear messages
+     */
+    void clearScriptMessages();
+
 protected:
     virtual ~ScriptEngine() {}  // prevent explicit deletion of base class
 

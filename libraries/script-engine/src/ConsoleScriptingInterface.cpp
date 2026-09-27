@@ -143,10 +143,9 @@ void ConsoleScriptingInterface::trace() {
 }
 
 void ConsoleScriptingInterface::clear() {
-    Q_ASSERT(engine());
-    if (ScriptManager* scriptManager = engine()->manager()) {
-        scriptManager->clearDebugLogWindow();
-    }
+    auto engine_ = engine();
+    Q_ASSERT(engine_);
+    emit engine_->clearScriptMessages();
 }
 
 ScriptValue ConsoleScriptingInterface::group(ScriptContext* context, ScriptEngine* engine) {
