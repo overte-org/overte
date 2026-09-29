@@ -497,11 +497,20 @@ public:  // not for public use, but I don't like how Qt strings this along with 
 
 signals:
     /**
-     * @brief The script being run threw an exception
+     * @brief The script being run threw an exception during evaluation and was not caught.
      *
-     * @param exception Exception that was thrown
+     * Has a full V8 context and stack trace available.
      */
-    void exception(std::shared_ptr<ScriptException> exception);
+    void caughtException(std::shared_ptr<ScriptException> exception);
+
+    /**
+     * @brief An exception was raised with no active evaluation context.
+     *
+     * Raised from pure C++ code paths with no active script evaluation,
+     * e.g. when an error occurs while setting up a script. This also carries
+     * no stack trace.
+     */
+    void cppException(std::shared_ptr<ScriptException> exception);
 
     /**
      * @brief Logs a script message and emits an message event

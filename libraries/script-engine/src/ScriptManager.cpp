@@ -340,7 +340,8 @@ ScriptManager::ScriptManager(Context context, const QString& scriptContents, con
 #endif
 
     // Forward exceptions and error messages from the scripting engine
-    connect(_engine.get(), &ScriptEngine::exception, this, &ScriptManager::unhandledException);
+    connect(_engine.get(), &ScriptEngine::caughtException, this, &ScriptManager::unhandledException);
+    connect(_engine.get(), &ScriptEngine::cppException, this, &ScriptManager::unhandledException);
     connect(_engine.get(), &ScriptEngine::scriptMessage, this, &ScriptManager::onScriptMessage);
     connect(_engine.get(), &ScriptEngine::clearScriptMessages, this, &ScriptManager::onClearScriptMessages);
 
