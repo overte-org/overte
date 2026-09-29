@@ -41,6 +41,15 @@ void ViewFrustum::setPosition(const glm::vec3& position) {
     _view = glm::translate(mat4(), _position) * glm::mat4_cast(_orientation);
 }
 
+void ViewFrustum::setView(const glm::mat4& view) {
+    _view = view;
+    _orientation = glm::quat_cast(_view);
+    _position = glm::vec3(_view[3]);
+    _right = glm::vec3(_orientation * glm::vec4(IDENTITY_RIGHT, 0.0f));
+    _up = glm::vec3(_orientation * glm::vec4(IDENTITY_UP,    0.0f));
+    _direction = glm::vec3(_orientation * glm::vec4(IDENTITY_FORWARD, 0.0f));
+}
+
 // Order cooresponds to the order defined in the BoxVertex enum.
 static const glm::vec4 NDC_VALUES[NUM_FRUSTUM_CORNERS] = {
     glm::vec4(-1.0f, -1.0f, -1.0f, 1.0f),
