@@ -876,7 +876,7 @@ void ScriptEngineV8::setUncaughtException(std::shared_ptr<ScriptException> uncau
     _uncaughtException = uncaughtException;
 
     auto copy = uncaughtException->clone();
-    emit exception(copy);
+    emit caughtException(copy);
 }
 
 
@@ -1361,7 +1361,7 @@ bool ScriptEngineV8::raiseException(const V8ScriptValue& exception) {
         auto thrownV8 = ScriptValueV8Wrapper::fullUnwrap(this, thrown);
         _v8Isolate->ThrowException(thrownV8.get());
         return true;
-    } else if (_manager) {
+    } else {
         // we are within a pure C++ stack frame (ie: being called directly by other C++ code)
         // in this case no context information is available so just emit the exception for reporting
         ScriptValue thrown = makeError(ScriptValue(new ScriptValueV8Wrapper(this, exception)));
@@ -1369,7 +1369,7 @@ bool ScriptEngineV8::raiseException(const V8ScriptValue& exception) {
         ScriptValue message = thrown.property("stack"); //This contains more details along with the error message
         scriptRuntimeException->errorMessage = message.toString();
         scriptRuntimeException->thrownValue = thrown;
-        emit _manager->unhandledException(scriptRuntimeException);
+        emit cppException(scriptRuntimeException);
     }
 
     return false;
