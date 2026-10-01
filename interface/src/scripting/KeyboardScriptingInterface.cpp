@@ -4,6 +4,7 @@
 //
 //  Created by Dante Ruiz on 2018-08-27.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -14,55 +15,55 @@
 #include "ui/Keyboard.h"
 
 bool KeyboardScriptingInterface::isRaised() const {
-    return DependencyManager::get<Keyboard>()->isRaised();
+    return _keyboard->isRaised();
 }
 
 void KeyboardScriptingInterface::setRaised(bool raised) {
-    DependencyManager::get<Keyboard>()->setRaised(raised);
+    _keyboard->setRaised(raised);
 }
 
 bool KeyboardScriptingInterface::isPassword() const {
-    return DependencyManager::get<Keyboard>()->isPassword();
+    return _keyboard->isPassword();
 }
 
 void KeyboardScriptingInterface::setPassword(bool password) {
-    DependencyManager::get<Keyboard>()->setPassword(password);
+    _keyboard->setPassword(password);
 }
 
 void KeyboardScriptingInterface::loadKeyboardFile(const QString& keyboardFile) {
-    DependencyManager::get<Keyboard>()->loadKeyboardFile(keyboardFile);
+    _keyboard->loadKeyboardFile(keyboardFile);
 }
 
 bool KeyboardScriptingInterface::getUse3DKeyboard() const {
-    return DependencyManager::get<Keyboard>()->getUse3DKeyboard();
+    return _keyboard->getUse3DKeyboard();
 }
 
 void KeyboardScriptingInterface::disableRightMallet() {
-    DependencyManager::get<Keyboard>()->disableRightMallet();
+    _keyboard->disableRightMallet();
 }
 
 void KeyboardScriptingInterface::disableLeftMallet() {
-    DependencyManager::get<Keyboard>()->disableLeftMallet();
+    _keyboard->disableLeftMallet();
 }
 
 void KeyboardScriptingInterface::enableRightMallet() {
-    DependencyManager::get<Keyboard>()->enableRightMallet();
+    _keyboard->enableRightMallet();
 }
 
 void KeyboardScriptingInterface::enableLeftMallet() {
-    DependencyManager::get<Keyboard>()->enableLeftMallet();
+    _keyboard->enableLeftMallet();
 }
 
 void KeyboardScriptingInterface::setLeftHandLaser(unsigned int leftHandLaser) {
-    DependencyManager::get<Keyboard>()->setLeftHandLaser(leftHandLaser);
+    _keyboard->setLeftHandLaser(leftHandLaser);
 }
 
 void KeyboardScriptingInterface::setRightHandLaser(unsigned int rightHandLaser) {
-    DependencyManager::get<Keyboard>()->setRightHandLaser(rightHandLaser);
+    _keyboard->setRightHandLaser(rightHandLaser);
 }
 
 bool KeyboardScriptingInterface::getPreferMalletsOverLasers() const {
-    return DependencyManager::get<Keyboard>()->getPreferMalletsOverLasers();
+    return _keyboard->getPreferMalletsOverLasers();
 }
 
 void KeyboardScriptingInterface::setPreferMalletsOverLasers(bool mallets) {
@@ -70,13 +71,13 @@ void KeyboardScriptingInterface::setPreferMalletsOverLasers(bool mallets) {
 }
 
 bool KeyboardScriptingInterface::containsID(const QUuid& id) const {
-    return DependencyManager::get<Keyboard>()->containsID(id);
+    return _keyboard->containsID(id);
 }
 
 void KeyboardScriptingInterface::emitKeyEvent(const KeyEvent& event, bool pressed) const {
-    if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_KEYBOARD_EVENTS)) {
+    if (!ScriptPermissions::hasScriptPermission(_manager, ScriptPermissions::Permission::SCRIPT_PERMISSION_KEYBOARD_EVENTS)) {
         return;
     }
 
-    DependencyManager::get<Keyboard>()->emitKeyEvent(event, pressed);
+    _keyboard->emitKeyEvent(event, pressed);
 }

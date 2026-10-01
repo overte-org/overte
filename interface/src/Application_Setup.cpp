@@ -6,7 +6,7 @@
 //  Created by Andrzej Kapolka on 5/10/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2025 Overte e.V.
+//  Copyright 2022-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -429,7 +429,6 @@ bool Application::setupEssentials(const QCommandLineParser& parser, bool running
 
     DependencyManager::set<ResourceRequestObserver>();
     DependencyManager::set<Keyboard>();
-    DependencyManager::set<KeyboardScriptingInterface>();
     DependencyManager::set<GrabManager>();
     DependencyManager::set<AvatarPackager>();
     PlatformHelper::setup();
@@ -1822,7 +1821,7 @@ void Application::setupSignalsAndOperators() {
                     QObject::connect(webSurface.data(), &hifi::qml::OffscreenSurface::rootContextCreated, rootItemLoadedFunctor);
                 }
                 auto surfaceContext = webSurface->getSurfaceContext();
-                surfaceContext->setContextProperty("KeyboardScriptingInterface", DependencyManager::get<KeyboardScriptingInterface>().data());
+                surfaceContext->setContextProperty("KeyboardScriptingInterface", DependencyManager::get<Keyboard>().data());
             } else {
                 // FIXME: the tablet should use the OffscreenQmlSurfaceCache
                 webSurface = QSharedPointer<OffscreenQmlSurface>(new OffscreenQmlSurface(), [](OffscreenQmlSurface* webSurface) {

@@ -5,7 +5,7 @@
 //  Created by Andrzej Kapolka on 5/10/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -27,6 +27,8 @@
 #include <AnimationCacheScriptingInterface.h>
 #include <AnimDebugDraw.h>
 #include <AvatarBookmarks.h>
+#include <scripting/AvatarBookmarksScriptingInterface.h>
+#include <scripting/LocationBookmarksScriptingInterface.h>
 #include <audio/AudioScope.h>
 #include <avatar/AvatarManager.h>
 #include <avatar/AvatarPackager.h>
@@ -630,8 +632,12 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject(sgp, "Snapshot", DependencyManager::get<Snapshot>().data());
     scriptEngine->registerGlobalObject(sgp, "AudioStats", DependencyManager::get<AudioClient>()->getStats().data());
     scriptEngine->registerGlobalObject(sgp, "AudioScope", DependencyManager::get<AudioScope>().data());
-    scriptEngine->registerGlobalObject(sgp, "AvatarBookmarks", DependencyManager::get<AvatarBookmarks>().data());
-    scriptEngine->registerGlobalObject(sgp, "LocationBookmarks", DependencyManager::get<LocationBookmarks>().data());
+    scriptEngine->registerGlobalObject(sgp, "AvatarBookmarks",
+                                       new AvatarBookmarksScriptingInterface(DependencyManager::get<AvatarBookmarks>().data(), scriptManager.get()),
+                                       ScriptEngine::ScriptOwnership);
+    scriptEngine->registerGlobalObject(sgp, "LocationBookmarks",
+                                       new LocationBookmarksScriptingInterface(DependencyManager::get<LocationBookmarks>().data(), scriptManager.get()),
+                                       ScriptEngine::ScriptOwnership);
 
     scriptEngine->registerGlobalObject(sgp, "RayPick", DependencyManager::get<RayPickScriptingInterface>().data());
     scriptEngine->registerGlobalObject(sgp, "Picks", DependencyManager::get<PickScriptingInterface>().data());
@@ -654,7 +660,10 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
 
     scriptEngine->registerGlobalObject(sgp, "LODManager", DependencyManager::get<LODManager>().data());
 
-    scriptEngine->registerGlobalObject(sgp, "Keyboard", DependencyManager::get<KeyboardScriptingInterface>().data());
+    scriptEngine->registerGlobalObject(sgp, "Keyboard",
+                                       new KeyboardScriptingInterface(DependencyManager::get<Keyboard>().data(), scriptManager.get()),
+                                       ScriptEngine::ScriptOwnership);
+
     scriptEngine->registerGlobalObject(sgp, "Performance", new PerformanceScriptingInterface());
 
     scriptEngine->registerGlobalObject(sgp, "Paths", DependencyManager::get<PathUtils>().data());
@@ -1767,7 +1776,6 @@ void Application::cleanupBeforeQuit() {
     // it accesses the PickManager to delete its associated Pick
     DependencyManager::destroy<PointerManager>();
     DependencyManager::destroy<PickManager>();
-    DependencyManager::destroy<KeyboardScriptingInterface>();
     DependencyManager::destroy<Keyboard>();
     DependencyManager::destroy<AvatarPackager>();
 

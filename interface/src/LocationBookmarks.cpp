@@ -4,7 +4,7 @@
 //
 //  Created by Triplelexx on 23/03/17.
 //  Copyright 2017 High Fidelity, Inc.
-//  Copyright 2023 Overte e.V.
+//  Copyright 2023-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -63,28 +63,15 @@ void LocationBookmarks::setHomeLocation() {
 }
 
 void LocationBookmarks::setHomeLocationToAddress(const QVariant& address) {
-    if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
-        return;
-    }
-
     Bookmarks::insert(HOME_BOOKMARK, address);
 }
 
-
 QString LocationBookmarks::getHomeLocationAddress() {
-    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
-        return addressForBookmark(HOME_BOOKMARK);
-    } else {
-        return {};
-    }
+    return addressForBookmark(HOME_BOOKMARK);
 }
 
 QString LocationBookmarks::getAddress(const QString& bookmarkName) {
-    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
-        return addressForBookmark(bookmarkName);
-    } else {
-        return {};
-    }
+    return addressForBookmark(bookmarkName);
 }
 
 void LocationBookmarks::teleportToBookmark() {
@@ -95,13 +82,9 @@ void LocationBookmarks::teleportToBookmark() {
 }
 
 void LocationBookmarks::addBookmark() {
-    if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
-        return;
-    }
-
     ModalDialogListener* dlg = OffscreenUi::getTextAsync(OffscreenUi::ICON_PLACEMARK, "Bookmark Location", "Name", QString());
 
-    connect(dlg, &ModalDialogListener::response, this, [=, this] (QVariant response) {
+    connect(dlg, &ModalDialogListener::response, this, [=, this](QVariant response) {
         disconnect(dlg, &ModalDialogListener::response, this, nullptr);
         auto bookmarkName = response.toString();
 
@@ -130,25 +113,13 @@ void LocationBookmarks::addBookmarkToMenu(Menu* menubar, const QString& name, co
 }
 
 QVariantMap LocationBookmarks::getBookmarks() {
-    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
-        return _bookmarks;
-    } else {
-        return {};
-    }
+    return _bookmarks;
 }
 
 void LocationBookmarks::addBookmark(const QString& name, const QString& url) {
-    if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
-        return;
-    }
-
     Bookmarks::insert(name, url);
 }
 
 void LocationBookmarks::removeBookmark(const QString& name) {
-    if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
-        return;
-    }
-
     Bookmarks::remove(name);
 }

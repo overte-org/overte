@@ -5,7 +5,7 @@
 //  Created by Mark Peng on 8/16/13.
 //  Copyright 2012 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2022-2023 Overte e.V.
+//  Copyright 2022-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -2141,7 +2141,20 @@ void MyAvatar::loadAvatarEntityDataFromSettings() {
 }
 
 bool MyAvatar::isMyAvatarURLProtected() const {
-    return !ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL);
+    // V8TODO: The manager should be passed into here somehow.
+    auto engine = Scriptable::engine();
+    if (!engine) {
+        // When this happens it means that function was called from QML or C++ and should always be allowed
+        return true;
+    }
+    auto manager = engine->manager();
+    if (!manager) {
+        // This should never happen (hopefully)
+        Q_ASSERT(false);
+        return false;
+    }
+
+    return !ScriptPermissions::hasScriptPermission(manager, ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL);
 }
 
 int MyAvatar::parseDataFromBuffer(const QByteArray& buffer) {

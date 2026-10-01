@@ -3,7 +3,7 @@
 //  libraries/script-engine/src/ScriptPermissions.cpp
 //
 //  Created by dr Karol Suprynowicz on 2024/03/24.
-//  Copyright 2024 Overte e.V.
+//  Copyright 2024-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -17,6 +17,7 @@
 #include "ScriptEngine.h"
 #include "ScriptManager.h"
 #include "Scriptable.h"
+#include "SettingHandle.h"
 
 static const bool PERMISSIONS_DEBUG_ENABLED = false;
 
@@ -56,7 +57,7 @@ extern const std::array<bool, static_cast<int>(ScriptPermissions::Permission::SC
     true,
 };
 
-bool ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission permission) {
+bool ScriptPermissions::hasScriptPermission(ScriptManager* manager, ScriptPermissions::Permission permission) {
     if (permission >= ScriptPermissions::Permission::SCRIPT_PERMISSIONS_SIZE) {
         return false;
     }
@@ -65,21 +66,6 @@ bool ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission per
     Setting::Handle<bool> isCheckingEnabled(scriptPermissionSettingEnableKeyNames[permissionIndex], scriptPermissionSettingEnableDefaultValues[permissionIndex]);
     if (!isCheckingEnabled.get()) {
         return true;
-    }
-    // Get the script manager:
-    auto engine = Scriptable::engine();
-    if (!engine) {
-        // When this happens it means that function was called from QML or C++ and should always be allowed
-        if (PERMISSIONS_DEBUG_ENABLED) {
-            qDebug() << "ScriptPermissions::isCurrentScriptAllowed called outside script engine for permission: "
-                     << scriptPermissionNames[permissionIndex];
-        }
-        return true;
-    }
-    auto manager = engine->manager();
-    if (!manager) {
-        qDebug() << "ScriptPermissions::isCurrentScriptAllowed called from script engine with no script manager for permission: " << scriptPermissionNames[permissionIndex];
-        return false;
     }
     std::vector<QString> urlsToCheck;
     QString scriptURL = manager->getAbsoluteFilename();

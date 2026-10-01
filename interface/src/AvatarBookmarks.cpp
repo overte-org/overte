@@ -5,7 +5,7 @@
 //  Created by Triplelexx on 23/03/17.
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2023 Overte e.V.
+//  Copyright 2023-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -44,11 +44,7 @@
 #include "ScriptPermissions.h"
 
 QVariantMap AvatarBookmarks::getBookmarks() {
-    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
-        return _bookmarks;
-    } else {
-        return {};
-    }
+    return _bookmarks;
 }
 
 void addAvatarEntities(const QVariantList& avatarEntities) {
@@ -59,7 +55,8 @@ void addAvatarEntities(const QVariantList& avatarEntities) {
         return;
     }
     EntitySimulationPointer entitySimulation = entityTree->getSimulation();
-    PhysicalEntitySimulationPointer physicalEntitySimulation = std::static_pointer_cast<PhysicalEntitySimulation>(entitySimulation);
+    PhysicalEntitySimulationPointer physicalEntitySimulation =
+        std::static_pointer_cast<PhysicalEntitySimulation>(entitySimulation);
     EntityEditPacketSender* entityPacketSender = physicalEntitySimulation->getPacketSender();
     // V8TODO: Creating new script engine each time is very inefficient
     ScriptEnginePointer scriptEngine = newScriptEngine();
@@ -116,8 +113,9 @@ AvatarBookmarks::AvatarBookmarks() {
     }
 
     _bookmarksFilename = PathUtils::getAppDataPath() + "/" + AVATARBOOKMARKS_FILENAME;
-    if(!QFile::exists(_bookmarksFilename)) {
-        auto defaultBookmarksFilename = PathUtils::resourcesPath() + QString("avatar/bookmarks") + "/" + AVATARBOOKMARKS_FILENAME;
+    if (!QFile::exists(_bookmarksFilename)) {
+        auto defaultBookmarksFilename =
+            PathUtils::resourcesPath() + QString("avatar/bookmarks") + "/" + AVATARBOOKMARKS_FILENAME;
         if (!QFile::exists(defaultBookmarksFilename)) {
             qDebug() << defaultBookmarksFilename << "doesn't exist!";
         }
@@ -133,29 +131,15 @@ AvatarBookmarks::AvatarBookmarks() {
 }
 
 void AvatarBookmarks::addBookmark(const QString& bookmarkName) {
-    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
-        addBookmarkInternal(bookmarkName);
-    }
-}
-
-void AvatarBookmarks::addBookmarkInternal(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "addBookmark", Q_GENERIC_ARG(QString, bookmarkName));
         return;
     }
     QVariantMap bookmark = getAvatarDataToBookmark();
     insert(bookmarkName, bookmark);
-
-    emit bookmarkAdded(bookmarkName);
 }
 
 void AvatarBookmarks::saveBookmark(const QString& bookmarkName) {
-    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
-        saveBookmarkInternal(bookmarkName);
-    }
-}
-
-void AvatarBookmarks::saveBookmarkInternal(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "saveBookmark", Q_GENERIC_ARG(QString, bookmarkName));
         return;
@@ -167,25 +151,18 @@ void AvatarBookmarks::saveBookmarkInternal(const QString& bookmarkName) {
 }
 
 void AvatarBookmarks::removeBookmark(const QString& bookmarkName) {
-    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
-        removeBookmarkInternal(bookmarkName);
-    }
-}
-
-void AvatarBookmarks::removeBookmarkInternal(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "removeBookmark", Q_GENERIC_ARG(QString, bookmarkName));
         return;
     }
 
     remove(bookmarkName);
-    emit bookmarkDeleted(bookmarkName);
 }
 
 void AvatarBookmarks::deleteBookmark() {
 }
 
-void AvatarBookmarks::updateAvatarEntities(const QVariantList &avatarEntities) {
+void AvatarBookmarks::updateAvatarEntities(const QVariantList& avatarEntities) {
     auto myAvatar = DependencyManager::get<AvatarManager>()->getMyAvatar();
     auto currentAvatarEntities = myAvatar->getAvatarEntityDataNonDefault();
     std::set<QUuid> newAvatarEntities;
@@ -212,23 +189,7 @@ void AvatarBookmarks::updateAvatarEntities(const QVariantList &avatarEntities) {
     }
 }
 
-/*@jsdoc
- * Details of an avatar bookmark.
- * @typedef {object} AvatarBookmarks.BookmarkData
- * @property {number} version - The version of the bookmark data format.
- * @property {string} avatarUrl - The URL of the avatar model.
- * @property {number} avatarScale - The target scale of the avatar.
- * @property {Array<Object<"properties",Entities.EntityProperties>>} [avatarEntites] - The avatar entities included with the
- *     bookmark.
- */
-
 void AvatarBookmarks::loadBookmark(const QString& bookmarkName) {
-    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
-        loadBookmarkInternal(bookmarkName);
-    }
-}
-
-void AvatarBookmarks::loadBookmarkInternal(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
         BLOCKING_INVOKE_METHOD(this, "loadBookmark", Q_GENERIC_ARG(QString, bookmarkName));
         return;
@@ -256,16 +217,17 @@ void AvatarBookmarks::loadBookmarkInternal(const QString& bookmarkName) {
             // from the new avatar, and that would cause the entities to be attached to the wrong joints.
 
             std::shared_ptr<QMetaObject::Connection> connection1 = std::make_shared<QMetaObject::Connection>();
-            *connection1 = connect(myAvatar.get(), &MyAvatar::onLoadComplete, [this, bookmark, bookmarkName, myAvatar, connection1]() {
-                qCDebug(interfaceapp) << "Finish loading avatar bookmark" << bookmarkName;
-                QObject::disconnect(*connection1);
-                myAvatar->clearWornAvatarEntities();
-                const float& qScale = bookmark.value(ENTRY_AVATAR_SCALE, 1.0f).toFloat();
-                myAvatar->setAvatarScale(qScale);
-                QVariantList avatarEntities = bookmark.value(ENTRY_AVATAR_ENTITIES, QVariantList()).toList();
-                addAvatarEntities(avatarEntities);
-                emit bookmarkLoaded(bookmarkName);
-            });
+            *connection1 =
+                connect(myAvatar.get(), &MyAvatar::onLoadComplete, [this, bookmark, bookmarkName, myAvatar, connection1]() {
+                    qCDebug(interfaceapp) << "Finish loading avatar bookmark" << bookmarkName;
+                    QObject::disconnect(*connection1);
+                    myAvatar->clearWornAvatarEntities();
+                    const float& qScale = bookmark.value(ENTRY_AVATAR_SCALE, 1.0f).toFloat();
+                    myAvatar->setAvatarScale(qScale);
+                    QVariantList avatarEntities = bookmark.value(ENTRY_AVATAR_ENTITIES, QVariantList()).toList();
+                    addAvatarEntities(avatarEntities);
+                    emit bookmarkLoaded(bookmarkName);
+                });
 
             qCDebug(interfaceapp) << "Start loading avatar bookmark" << bookmarkName;
 
@@ -294,17 +256,7 @@ void AvatarBookmarks::readFromFile() {
     Bookmarks::readFromFile();
 }
 
-QVariantMap AvatarBookmarks::getBookmark(const QString &bookmarkName)
-{
-    if (ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_GET_AVATAR_URL)) {
-        return getBookmarkInternal(bookmarkName);
-    } else {
-        return {};
-    }
-}
-
-QVariantMap AvatarBookmarks::getBookmarkInternal(const QString &bookmarkName)
-{
+QVariantMap AvatarBookmarks::getBookmark(const QString& bookmarkName) {
     if (QThread::currentThread() != thread()) {
         QVariantMap result;
         BLOCKING_INVOKE_METHOD(this, "getBookmark", Q_GENERIC_RETURN_ARG(QVariantMap, result), Q_GENERIC_ARG(QString, bookmarkName));
