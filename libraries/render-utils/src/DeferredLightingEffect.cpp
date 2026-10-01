@@ -128,6 +128,36 @@ void DeferredLightingEffect::unsetLocalLightsBatch(gpu::Batch& batch) {
     batch.setUniformBuffer(ru::Buffer::LightClusterFrustumGrid, nullptr);
 }
 
+void DeferredLightingEffect::setupShadowsBatch(gpu::Batch &batch, const LightStage::ShadowPointer &shadowPointer) {
+    auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
+    deferredLightingEffect->_shadowPointer = shadowPointer;
+
+    if (shadowPointer) {
+        batch.setResourceTexture(ru::Texture::Shadow, shadowPointer->map);
+        batch.setUniformBuffer(ru::Buffer::ShadowParams, shadowPointer->getBuffer());
+    } else {
+        unsetShadowsBatch(batch);
+    }
+}
+
+void DeferredLightingEffect::setupShadowsBatch(gpu::Batch &batch) {
+    auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
+    auto shadowPointer = deferredLightingEffect->_shadowPointer;
+
+    if (!shadowPointer) {
+        unsetShadowsBatch(batch);
+        return;
+    }
+
+    batch.setResourceTexture(ru::Texture::Shadow, shadowPointer->map);
+    batch.setUniformBuffer(ru::Buffer::ShadowParams, shadowPointer->getBuffer());
+}
+
+void DeferredLightingEffect::unsetShadowsBatch(gpu::Batch &batch) {
+    batch.setResourceTexture(ru::Texture::Shadow, nullptr);
+    batch.setUniformBuffer(ru::Buffer::ShadowParams, nullptr);
+}
+
 static void loadLightProgram(int programId, bool lightVolume, gpu::PipelinePointer& pipeline) {
 
     gpu::ShaderPointer program = gpu::Shader::createProgram(programId);
