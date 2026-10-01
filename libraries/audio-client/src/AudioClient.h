@@ -5,7 +5,7 @@
 //  Created by Stephen Birarda on 1/22/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
-//  Copyright 2025 Overte e.V.
+//  Copyright 2025-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -119,6 +119,8 @@ public:
         void start() { open(QIODevice::ReadOnly | QIODevice::Unbuffered); }
         qint64 readData(char* data, qint64 maxSize) override;
         qint64 writeData(const char* data, qint64 maxSize) override { return 0; }
+        bool isSequential() const override { return true; }
+        qint64 bytesAvailable() const override;
         int getRecentUnfulfilledReads() { int unfulfilledReads = _unfulfilledReads; _unfulfilledReads = 0; return unfulfilledReads; }
     private:
         LocalInjectorsStream& _localInjectorsStream;
@@ -276,6 +278,8 @@ public slots:
 
     void loadSettings();
     void saveSettings();
+
+    void onInjectorAudioReady();
 
 signals:
     void inputVolumeChanged(float volume);
