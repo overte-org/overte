@@ -83,7 +83,7 @@ jobs:
             #~ cmake_build_type: Release
             #~ qt_source: aqt  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
             #~ rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
-        # Current try: Add NodeJS 20
+        # Current try: Add NodeJS 20 → Still cannot be found
           - id: ubuntu-opengl-amd64
             os: Ubuntu 22.04
             image: docker.io/overte/overte-full-build:2026-09-19-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
