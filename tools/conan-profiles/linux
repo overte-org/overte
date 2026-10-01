@@ -41,3 +41,5 @@ sqlite3*:shared=True
 qt*:with_dbus=True
 # Work around `undefined reference` errors when building Qt6.
 glib*:shared=True
+freetype*:shared=True
+harfbuzz*:shared=True
