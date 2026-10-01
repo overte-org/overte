@@ -5,6 +5,7 @@
 //  Created by Triplelexx on 23/03/17.
 //  Copyright 2017 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
+//  Copyright 2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -31,8 +32,7 @@
  * @hifi-avatar
  *
  */
-
-class AvatarBookmarks: public Bookmarks, public  Dependency {
+class AvatarBookmarks : public Bookmarks, public Dependency {
     Q_OBJECT
     SINGLETON_DEPENDENCY
 
@@ -110,6 +110,7 @@ public slots:
      * @function AvatarBookmarks.setBookmarkData
      * @param {string} - The name of the bookmark. If no bookmark with the specified name exists, it will be created. Otherwise, it will edit the existing one.
      * @param {object} - The bookmark data. See the example below for valid keys and their defaults.
+     * @return true if an existing entry was overwritten
      * @example
      * AvatarBookmarks.setBookmarkData("Woody", {
      *     version: 3,
@@ -119,7 +120,7 @@ public slots:
      *     avatarUrl: "qrc:///meshes/defaultAvatar_full.fst",
      * });
      */
-    void setBookmarkData(const QString& bookmarkName, const QVariantMap& data);
+    bool setBookmarkData(const QString& bookmarkName, const QVariantMap& data);
 
 signals:
     /*@jsdoc
@@ -130,33 +131,12 @@ signals:
      */
     void bookmarkLoaded(const QString& bookmarkName);
 
-    /*@jsdoc
-     * Triggered when an avatar bookmark is deleted.
-     * @function AvatarBookmarks.bookmarkDeleted
-     * @param {string} bookmarkName - The name of the avatar bookmark deleted.
-     * @returns {Signal}
-     * @example <caption>Report when a bookmark is deleted.</caption>
-     * AvatarBookmarks.bookmarkDeleted.connect(function (bookmarkName) {
-     *     print("Bookmark deleted: " + bookmarkName);
-     * });
-     */
-    void bookmarkDeleted(const QString& bookmarkName);
-
-    /*@jsdoc
-     * Triggered when a new avatar bookmark is added or an existing avatar bookmark is updated, using 
-     * {@link AvatarBookmarks.addBookmark|addBookmark}.
-     * @function AvatarBookmarks.bookmarkAdded
-     * @param {string} bookmarkName - The name of the avatar bookmark added or updated.
-     * @returns {Signal}
-     */
-    void bookmarkAdded(const QString& bookmarkName);
-
 protected:
     void addBookmarkToMenu(Menu* menubar, const QString& name, const QVariant& bookmark) override {};
     void readFromFile() override;
     QVariantMap getAvatarDataToBookmark();
 
-protected slots: 
+protected slots:
     /*@jsdoc
      * Performs no action.
      * @function AvatarBookmarks.deleteBookmark
@@ -165,11 +145,6 @@ protected slots:
     void deleteBookmark() override;
 
 private:
-    QVariantMap getBookmarkInternal(const QString &bookmarkName);
-    void addBookmarkInternal(const QString& bookmarkName);
-    void saveBookmarkInternal(const QString& bookmarkName);
-    void loadBookmarkInternal(const QString& bookmarkName);
-    void removeBookmarkInternal(const QString& bookmarkName);
     const QString AVATARBOOKMARKS_FILENAME = "avatarbookmarks.json";
     const QString ENTRY_AVATAR_URL = "avatarUrl";
     const QString ENTRY_AVATAR_ICON = "avatarIcon";
@@ -180,4 +155,4 @@ private:
     const int AVATAR_BOOKMARK_VERSION = 3;
 };
 
-#endif // hifi_AvatarBookmarks_h
+#endif  // hifi_AvatarBookmarks_h

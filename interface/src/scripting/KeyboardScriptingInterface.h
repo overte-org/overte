@@ -4,6 +4,7 @@
 //
 //  Created by Dante Ruiz on 2018-08-27.
 //  Copyright 2017 High Fidelity, Inc.
+//  Copyright 2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -17,6 +18,8 @@
 
 #include "DependencyManager.h"
 #include "KeyEvent.h"
+#include "ScriptManager.h"
+#include "ui/Keyboard.h"
 
 /*@jsdoc
  * The <code>Keyboard</code> API provides facilities to use an in-world, virtual keyboard. When enabled, this keyboard is 
@@ -38,7 +41,7 @@
  *     selected, <code>false</code> if "Lasers" is selected. <em>Read-only.</em>
  */
 
-class KeyboardScriptingInterface : public QObject, public Dependency {
+class KeyboardScriptingInterface : public QObject {
     Q_OBJECT
     Q_PROPERTY(bool raised READ isRaised WRITE setRaised)
     Q_PROPERTY(bool password READ isPassword WRITE setPassword)
@@ -46,7 +49,7 @@ class KeyboardScriptingInterface : public QObject, public Dependency {
     Q_PROPERTY(bool preferMalletsOverLasers READ getPreferMalletsOverLasers WRITE setPreferMalletsOverLasers)
 
 public:
-    KeyboardScriptingInterface() = default;
+    KeyboardScriptingInterface(Keyboard* keyboard, ScriptManager* manager) : QObject(nullptr), _keyboard(keyboard), _manager(manager) {}
     ~KeyboardScriptingInterface() = default;
 
     /*@jsdoc
@@ -149,5 +152,8 @@ private:
     void setPassword(bool password);
 
     bool getUse3DKeyboard() const;
+
+    Keyboard* _keyboard{ nullptr };
+    ScriptManager* _manager{ nullptr };
 };
 #endif
