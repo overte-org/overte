@@ -11,6 +11,81 @@ like documentation or CI pipeline.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2026.10.1] Not yet released
+
+### Known issues
+- Overte's scripting engine will often freeze on shutdown and require being force quit (#2316)
+- Sporadic script engine crash when switching words or when the server restarts (#2156)
+- Sporadic crash when loading QML surfaces on Mesa graphics driver (#2195)
+    This appears to be a bug in Mesa. Though the issue happens too rarely to reliably troubleshoot it.
+
+### Fixes
+- Fixed a regression causing broken rendering on OpenGL 4.1 (PR2213)
+- Fixed a crash when loading a glTF model with missing texture data (PR2248)
+- Fixed an out of bounds write in KTX library (PR2268)
+- Removed two number log spam from armored_chat (PR2278)
+- Fixed regression breaking specular highlights (PR2293)
+- Fixed black boxes and super bright single pixels when bloom is enabled (PR2293,PR2297)
+- Fixed performance regression during voxel loading (PR2296)
+- Fixed multiple script engine crashes while switching worlds and shutting down scripts (PR2305)
+- Fixed the server console trying to connect to highfidelity.com (PR2308)
+- Fixed regression causing all avatars to point in the same direction (PR2279)
+- Fixed ScriptManager::refreshFileScript never stopping the previous version of the script (PR2252)
+- Fixed client entity scripts not stopping when removing or replacing them using the Create app (PR2252)
+- Fixed connection resets and high bandwidth usage on connections with high latency (PR2306)
+- Fixed the spawn position when entering the portal in the tutorial world (PR2312)
+- Fixed "OpenXR is not supported" error on AppImages created by the CI pipeline (PR2258)
+- Fixed multiple crashes on the Vulkan backend (PR2240)
+- Fixed notifications being grabbable (PR2046)
+- Fixed text entity Z-fighting (PR2046)
+- Improved text scaling behavior of HUD elements (PR2046)
+- Fixed a memory leak when trying to load malformed entity JSONs (PR2330)
+- Fixed flow bones disappearing when teleporting thousands kilometers (PR2350)
+- Fixed limbs disappearing on some avatars in some poses (PR2350)
+- Fixed the Debian server package re-enabling the @default target on every update (PR2313)
+- Improved reliability of script timers (PR2104)
+- Reverted the fix for outer edges being incorrectly culled on OpenVR (PR2375)
+    This fixes skybox haze flipping on OpenVR.
+- Fixed Overte showing up as "QtPulseAudio" in volume selectors on Linux (PR2078)
+- Fixed thumbstick emulation on HTC Vive Wand controllers on OpenXR (PR2376)
+- Fixed deselected entities not being removed from the editHandleHighlightList (PR2341)
+
+### Changes
+- The Overte client cache now gets removed during uninstall on Windows (PR1814)
+- Disabled distance fade on opaque Grid entities (PR2269)
+- Expose Grid entities' Alpha setting in the Create app (PR2269)
+- Fixed skybox and light colors being incorrectly interpreted as linear (PR2310)
+    Generally speaking, skyboxes and lights will now appear slightly darker and less washed out.
+- Improved new-line behavior of the chat bubbles (PR2294)
+- Improved Vulkan backend performance (PR2240)
+- Improved performance of editing and loading voxels (PR2326)
+- Lowered the audio volume of the Snap app (PR2363)
+- The Debian server assignment-client service is now split into individual services based on roles (PR2367)
+    This allows for easier debugging. Logs are separated by role, and you can see which assignment-client is crashing. No intervention is required when updating (or downgrading) the package.
+- Removed MAC address and system information being sent to the Domain server when connecting (PR2378)
+- Hid other users' avatar entities in Create app (PR2072)
+- Hid other users' avatar entities from the scripting API (PR2072)
+- Added hover and a "go back" button to the Context menu (PR2272)
+
+### Additions
+- Added script compilation error messages for Script.require() (PR2244,PR2280)
+- Added a JavaScript math module called "utilMath" (PR1980)
+- Added creating Grid entities using the Create app (PR2237)
+- Added pick filter support to Entities.XXXX methods (PR1608)
+- Added server packages for Debian 14 Forky (PR2374)
+- Added option to disable hand tracking on OpenXR (PR2288)
+
+### Build System
+- Fixed building some tests (PR2214,PR2243)
+- Switching between OpenGL backends (gl45, gl41, and gles32) is now possible at runtime, rather than having to choose at compile time, using the `--graphicsAPI` command line argument. (PR2232)
+    Switching between Vulkan and OpenGL is still a compile time option.
+- Lower amount of Conan related messages during CMake configuration (PR2298)
+- Added CMake 4.0 compatibility (PR1550)
+- Simplified NSIS installer creation (PR2339)
+- AppImage names now contain the rendering backend name by default (PR2357)
+- Added a way to add JavaScript modules and libraries to the API documentation (PR2171)
+
+
 ## [2026.04.1] 2026.04.21
 
 ### Fixes
