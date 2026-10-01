@@ -2334,7 +2334,7 @@ float AudioClient::gainForSource(float distance, float volume) {
 
 qint64 AudioClient::AudioOutputIODevice::readData(char* data, qint64 maxSize) {
     // lock-free wait for initialization to avoid races
-    if (!_audio->_audioOutputInitialized.load(std::memory_order_acquire)) {
+    if (!_audio || !_audio->_audioOutput || !_audio->_audioOutputInitialized.load(std::memory_order_acquire)) {
         memset(data, 0, maxSize);
         return maxSize;
     }
@@ -2444,6 +2444,18 @@ qint64 AudioClient::AudioOutputIODevice::readData(char* data, qint64 maxSize) {
     }
 
     return bytesWritten;
+}
+
+qint64 AudioClient::AudioOutputIODevice::bytesAvailable() const {
+    qint64 availableSamples = _receivedAudioStream.getSamplesAvailable();
+    availableSamples += _audio->_localSamplesAvailable.load(std::memory_order_acquire);
+
+    // QT6TODO: right now the QIODevice is build around always keeping the audio loop
+    // hot. This should be solved by signaling `readyRead()` from the QIODevice but
+    // we don't have the correct sources set up right now(?), so we always output at least 1
+    availableSamples = std::max(availableSamples, qint64(1));
+
+    return availableSamples * AudioConstants::SAMPLE_SIZE * _audio->_outputFormat.channelCount();
 }
 
 bool AudioClient::startRecording(const QString& filepath) {

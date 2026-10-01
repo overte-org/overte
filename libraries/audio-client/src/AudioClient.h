@@ -119,6 +119,8 @@ public:
         void start() { open(QIODevice::ReadOnly | QIODevice::Unbuffered); }
         qint64 readData(char* data, qint64 maxSize) override;
         qint64 writeData(const char* data, qint64 maxSize) override { return 0; }
+        bool isSequential() const override { return true; }
+        qint64 bytesAvailable() const override;
         int getRecentUnfulfilledReads() { int unfulfilledReads = _unfulfilledReads; _unfulfilledReads = 0; return unfulfilledReads; }
     private:
         LocalInjectorsStream& _localInjectorsStream;
