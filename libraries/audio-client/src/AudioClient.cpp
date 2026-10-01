@@ -5,7 +5,7 @@
 //  Created by Stephen Birarda on 1/22/13.
 //  Copyright 2013 High Fidelity, Inc.
 //  Copyright 2021 Vircadia contributors.
-//  Copyright 2023-2025 Overte e.V.
+//  Copyright 2023-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -61,7 +61,6 @@
 #include "AudioClientLogging.h"
 #include "AudioLogging.h"
 #include "AudioHelpers.h"
-#include "../../../interface/src/scripting/AudioDevices.h"
 
 #if defined(Q_OS_ANDROID)
 #include <QtAndroidExtras/QAndroidJniObject>
@@ -1703,6 +1702,8 @@ void AudioClient::processReceivedSamples(const QByteArray& decodedBuffer, QByteA
     if (!hasReverb && !_networkToOutputResampler) {
         memcpy(outputSamples, decodedSamples, decodedBuffer.size());
     }
+
+    emit _audioOutputIODevice.readyRead();
 }
 
 void AudioClient::sendMuteEnvironmentPacket() {
@@ -1823,6 +1824,8 @@ bool AudioClient::outputLocalInjector(const AudioInjectorPointer& injector) {
             //qCDebug(audioclient) << "adding new injector";
             _activeLocalAudioInjectors.append(injector);
 
+            connect(injector.get(), &AudioInjector::audioReady, this, &AudioClient::onInjectorAudioReady, Qt::SingleShotConnection);
+
             // update the flag
             _localInjectorsAvailable.exchange(true, std::memory_order_release);
         } else {
@@ -1840,6 +1843,14 @@ bool AudioClient::outputLocalInjector(const AudioInjectorPointer& injector) {
 int AudioClient::getNumLocalInjectors() {
     Lock lock(_injectorsMutex);
     return _activeLocalAudioInjectors.size();
+}
+
+void AudioClient::onInjectorAudioReady() {
+    std::unique_ptr<Lock> localAudioLock(new Lock(_localAudioMutex));
+    // QT6TODO: This probably needs to be reexamined, this interface/method
+    // seems to work too early?
+    prepareLocalAudioInjectors(std::move(localAudioLock));
+    emit _audioOutputIODevice.readyRead();
 }
 
 void AudioClient::outputFormatChanged() {
@@ -2334,7 +2345,7 @@ float AudioClient::gainForSource(float distance, float volume) {
 
 qint64 AudioClient::AudioOutputIODevice::readData(char* data, qint64 maxSize) {
     // lock-free wait for initialization to avoid races
-    if (!_audio->_audioOutputInitialized.load(std::memory_order_acquire)) {
+    if (!_audio || !_audio->_audioOutput || !_audio->_audioOutputInitialized.load(std::memory_order_acquire)) {
         memset(data, 0, maxSize);
         return maxSize;
     }
@@ -2365,21 +2376,12 @@ qint64 AudioClient::AudioOutputIODevice::readData(char* data, qint64 maxSize) {
     {
         bool append = networkSamplesPopped > 0;
         // check the samples we have available locklessly; this is possible because only two functions add to the count:
-        // - prepareLocalAudioInjectors will only increase samples count
+        // - prepareLocalAudioInjectors will only increase samples count (called via onInjectorReady signal
+        //   handler or async prefetch)
         // - switchOutputToAudioDevice will zero samples count,
         //   stop the device - so that readData will exhaust the existing buffer or see a zeroed samples count,
         //   and start the device - which can then only see a zeroed samples count
         int samplesAvailable = _audio->_localSamplesAvailable.load(std::memory_order_acquire);
-
-        // if we do not have enough samples buffered despite having injectors, buffer them synchronously
-        if (samplesAvailable < samplesRequested && _audio->_localInjectorsAvailable.load(std::memory_order_acquire)) {
-            // try_to_lock, in case the device is being shut down already
-            std::unique_ptr<Lock> localAudioLock(new Lock(_audio->_localAudioMutex, std::try_to_lock));
-            if (localAudioLock->owns_lock()) {
-                _audio->prepareLocalAudioInjectors(std::move(localAudioLock));
-                samplesAvailable = _audio->_localSamplesAvailable.load(std::memory_order_acquire);
-            }
-        }
 
         samplesRequested = std::min(samplesRequested, samplesAvailable);
         if ((injectorSamplesPopped = _localInjectorsStream.appendSamples(mixBuffer, samplesRequested, append)) > 0) {
@@ -2444,6 +2446,13 @@ qint64 AudioClient::AudioOutputIODevice::readData(char* data, qint64 maxSize) {
     }
 
     return bytesWritten;
+}
+
+qint64 AudioClient::AudioOutputIODevice::bytesAvailable() const {
+    qint64 availableSamples = _receivedAudioStream.getSamplesAvailable();
+    availableSamples += _audio->_localSamplesAvailable.load(std::memory_order_acquire);
+
+    return availableSamples * AudioConstants::SAMPLE_SIZE * _audio->_outputFormat.channelCount();
 }
 
 bool AudioClient::startRecording(const QString& filepath) {
