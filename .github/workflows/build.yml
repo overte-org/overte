@@ -103,7 +103,7 @@ jobs:
            cmake_build_type: Release
            qt_source: source
            rendering_backend: Vulkan
-          # Currenty try: Docker image is uploaded now.
+          # Need to upload updated image.
           # - id: ubuntu-opengl-aarch64
           #   os: Ubuntu 22.04
           #   image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-aarch64
@@ -120,7 +120,16 @@ jobs:
           #   cmake_build_type: Release
           #   qt_source: source
           #   rendering_backend: Vulkan
-          # Current try: depot-ubuntu-24.04-32 ran out of disk space.
+  # FAILED: [code=1] qtbase/libexec/QtWebEngineProcess
+  # : && /usr/bin/c++ -m64 -include cstdint -g -Og -m64 -Wl,-z,relro,-z,now -Wl,--enable-new-dtags -fPIE -pie qtwebengine/src/process/CMakeFiles/QtWebEngineProcess.dir/QtWebEngineProcess_autogen/mocs_compilation.cpp.o qtwebengine/src/process/CMakeFiles/QtWebEngineProcess.dir/main.cpp.o -o qtbase/libexec/QtWebEngineProcess  -Wl,-rpath,/zgofepbi/.conan2/p/b/qt10e11e71b6b49/b/build/Debug/qtbase/lib:  qtbase/lib/libQt6WebEngineCore.so.6.11.1  qtbase/lib/libQt6Quick.so.6.11.1  qtbase/lib/libQt6OpenGL.so.6.11.1  qtbase/lib/libQt6Gui.so.6.11.1  /usr/lib/x86_64-linux-gnu/libGLX.so  /usr/lib/x86_64-linux-gnu/libOpenGL.so  qtbase/lib/libQt6WebChannel.so.6.11.1  qtbase/lib/libQt6Qml.so.6.11.1  qtbase/lib/libQt6Network.so.6.11.1  qtbase/lib/libQt6Positioning.so.6.11.1  qtbase/lib/libQt6Core.so.6.11.1  -Wl,-rpath-link,/zgofepbi/.conan2/p/b/qt10e11e71b6b49/b/build/Debug/qtbase/lib && :
+  # /usr/bin/ld: warning: libharfbuzz-subset.so.0, needed by qtbase/lib/libQt6WebEngineCore.so.6.11.1, not found (try using -rpath or -rpath-link)
+  # /usr/bin/ld: qtbase/lib/libQt6WebEngineCore.so.6.11.1: undefined reference to `hb_subset_input_glyph_set'
+  # /usr/bin/ld: qtbase/lib/libQt6WebEngineCore.so.6.11.1: undefined reference to `hb_subset_input_set'
+  # /usr/bin/ld: qtbase/lib/libQt6WebEngineCore.so.6.11.1: undefined reference to `hb_subset_input_create_or_fail'
+  # /usr/bin/ld: qtbase/lib/libQt6WebEngineCore.so.6.11.1: undefined reference to `hb_subset_or_fail'
+  # /usr/bin/ld: qtbase/lib/libQt6WebEngineCore.so.6.11.1: undefined reference to `hb_subset_input_destroy'
+  # /usr/bin/ld: qtbase/lib/libQt6WebEngineCore.so.6.11.1: undefined reference to `hb_subset_input_set_flags'
+  # collect2: error: ld returned 1 exit status
           # - id: codechecker
           #   os: Ubuntu 22.04
           #   image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64
