@@ -780,6 +780,10 @@ bool OpenXrContext::pollEvents() {
             case XR_TYPE_EVENT_DATA_USER_PRESENCE_CHANGED_EXT: {
                 const auto& eventdata = *reinterpret_cast<XrEventDataUserPresenceChangedEXT*>(&event);
                 _hmdMounted = eventdata.isUserPresent;
+
+                if (_userPresenceEnabled) {
+                    qCDebug(xr_context_cat, "User present: %s", _hmdMounted ? "true" : "false");
+                }
                 break;
             }
             default:

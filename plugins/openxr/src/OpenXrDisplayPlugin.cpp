@@ -480,7 +480,15 @@ void OpenXrDisplayPlugin::postPreview() {
 }
 
 bool OpenXrDisplayPlugin::isHmdMounted() const {
-    return _context->_hmdMounted;
+    if (!_context->_isValid) {
+        return false;
+    }
+
+    if (_context->_userPresenceEnabled) {
+        return _context->_hmdMounted;
+    } else {
+        return true;
+    }
 }
 
 void OpenXrDisplayPlugin::updatePresentPose() {

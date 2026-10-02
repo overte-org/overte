@@ -136,6 +136,31 @@ Flickable {
                 }
             }
 
+            Row {
+                id: userPresenceRow
+                anchors.left: parent.left
+                anchors.leftMargin: leftMargin + 10
+                anchors.top: handTrackingRow.bottom
+                anchors.topMargin: 10
+                spacing: 10
+
+                HifiControls.CheckBox {
+                    id: userPresenceBox
+                    width: 15
+                    height: 15
+
+                    onClicked: {
+                        sendConfigurationSettings();
+                    }
+                }
+
+                RalewayBold {
+                    size: 12
+                    text: "Switch to desktop mode when HMD is taken off"
+                    color: hifi.colors.lightGrayText
+                }
+            }
+
             RalewayBold {
                 id: bodyTrackingTitle
 
@@ -144,7 +169,7 @@ Flickable {
 
                 color: hifi.colors.white
 
-                anchors.top: handTrackingRow.bottom
+                anchors.top: userPresenceRow.bottom
                 anchors.left: parent.left
                 anchors.leftMargin: leftMargin
                 anchors.topMargin: 10
@@ -164,6 +189,7 @@ Flickable {
                 anchors.right: parent.right
                 anchors.leftMargin: leftMargin
                 anchors.topMargin: 10
+                anchors.rightMargin: 32
             }
 
             color: hifi.colors.baseGray
@@ -381,6 +407,7 @@ Flickable {
                 var settings = InputConfiguration.configurationSettings("OpenXR");
                 hapticsBox.checked = settings["enable_haptics"];
                 handTrackingBox.checked = settings["enable_hand_tracking"];
+                userPresenceBox.checked = settings["enable_user_presence"];
 
                 isConfiguring = false;
             }
@@ -390,6 +417,7 @@ Flickable {
 
                 settings["enable_haptics"] = hapticsBox.checked;
                 settings["enable_hand_tracking"] = handTrackingBox.checked;
+                settings["enable_user_presence"] = userPresenceBox.checked;
 
                 InputConfiguration.setConfigurationSettings(settings, "OpenXR");
             }
