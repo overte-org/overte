@@ -95,14 +95,14 @@ jobs:
            cmake_build_type: Release
            qt_source: source
            rendering_backend: OpenGL
-         - id: ubuntu-vulkan-amd64
-           os: Ubuntu 22.04
-           image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64
-           runner: depot-ubuntu-24.04-16
-           arch: amd64
-           cmake_build_type: Release
-           qt_source: source
-           rendering_backend: Vulkan
+         # - id: ubuntu-vulkan-amd64
+         #   os: Ubuntu 22.04
+         #   image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64
+         #   runner: depot-ubuntu-24.04-16
+         #   arch: amd64
+         #   cmake_build_type: Release
+         #   qt_source: source
+         #   rendering_backend: Vulkan
           # Need to upload updated image.
           # - id: ubuntu-opengl-aarch64
           #   os: Ubuntu 22.04

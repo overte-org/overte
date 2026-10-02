@@ -21,6 +21,7 @@ runs:
   - name: Install Conan dependencies
     shell: bash
     run: |
+      locale
       # Run twice to work around OpenSSL not being found. See: https://github.com/overte-org/overte-conan-recipes/issues/1
       # `--format=json > build.json` creates a graph of dependencies, which can later be used to check for cache misses.
       conan install . -s compiler.cppstd=${{ inputs.cppstd }} -s build_type=${{ inputs.build_type }} -o 'Overte/*:qt_source='${{ inputs.qt_source }} -b missing -pr=${{ inputs.conan_profile }} -of build --format=json > build.json
