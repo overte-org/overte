@@ -86,50 +86,51 @@ jobs:
         # error while loading shared libraries:
         # libharfbuzz-subset.so.0: cannot open shared object file
         # ```
-        #  - id: ubuntu-opengl-amd64
-        #    os: Ubuntu 22.04
-        #    image: docker.io/overte/overte-full-build:2026-10-01-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
-        #    runner: depot-ubuntu-24.04-16
-        #    arch: amd64
-        #    cmake_build_type: Release
-        #    qt_source: source
-        #    rendering_backend: OpenGL
-          #- id: ubuntu-vulkan-amd64
-          #  os: Ubuntu 22.04
-          #  image: docker.io/overte/overte-full-build:2026-10-01-ubuntu-22.04-amd64
-          #  runner: depot-ubuntu-24.04-16
-          #  arch: amd64
-          #  cmake_build_type: Release
-          #  qt_source: source
-          #  rendering_backend: Vulkan
+        # Current try: Changed LANGUAGE from en_US.UTF-8 to en_US
+         - id: ubuntu-opengl-amd64
+           os: Ubuntu 22.04
+           image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+           runner: depot-ubuntu-24.04-16
+           arch: amd64
+           cmake_build_type: Release
+           qt_source: source
+           rendering_backend: OpenGL
+         - id: ubuntu-vulkan-amd64
+           os: Ubuntu 22.04
+           image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64
+           runner: depot-ubuntu-24.04-16
+           arch: amd64
+           cmake_build_type: Release
+           qt_source: source
+           rendering_backend: Vulkan
           # Currenty try: Docker image is uploaded now.
-          - id: ubuntu-opengl-aarch64
-            os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-10-01-ubuntu-22.04-aarch64
-            runner: depot-ubuntu-24.04-arm-16
-            arch: aarch64
-            cmake_build_type: Release
-            qt_source: source
-            rendering_backend: OpenGL
-          - id: ubuntu-vulkan-aarch64
-            os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-10-01-ubuntu-22.04-aarch64
-            runner: depot-ubuntu-24.04-arm-16
-            arch: aarch64
-            cmake_build_type: Release
-            qt_source: source
-            rendering_backend: Vulkan
+          # - id: ubuntu-opengl-aarch64
+          #   os: Ubuntu 22.04
+          #   image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-aarch64
+          #   runner: depot-ubuntu-24.04-arm-16
+          #   arch: aarch64
+          #   cmake_build_type: Release
+          #   qt_source: source
+          #   rendering_backend: OpenGL
+          # - id: ubuntu-vulkan-aarch64
+          #   os: Ubuntu 22.04
+          #   image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-aarch64
+          #   runner: depot-ubuntu-24.04-arm-16
+          #   arch: aarch64
+          #   cmake_build_type: Release
+          #   qt_source: source
+          #   rendering_backend: Vulkan
           # Current try: depot-ubuntu-24.04-32 ran out of disk space.
-          - id: codechecker
-            os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-10-01-ubuntu-22.04-amd64
-            # depot-ubuntu-24.04-16 runs out of disk space when building debug Qt.
-            runner: depot-ubuntu-24.04-64
-            arch: amd64
-            cmake_build_type: Debug
-            qt_source: source
-            rendering_backend: OpenGL
-            job_name_prefix: 'CodeChecker '
+          # - id: codechecker
+          #   os: Ubuntu 22.04
+          #   image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64
+          #   # depot-ubuntu-24.04-32 runs out of disk space when building debug Qt6.
+          #   runner: depot-ubuntu-24.04-64
+          #   arch: amd64
+          #   cmake_build_type: Debug
+          #   qt_source: source
+          #   rendering_backend: OpenGL
+          #   job_name_prefix: 'CodeChecker '
       fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
