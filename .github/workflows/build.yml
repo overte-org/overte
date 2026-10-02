@@ -81,23 +81,28 @@ jobs:
             #~ cmake_build_type: Release
             #~ qt_source: aqt  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
             #~ rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
-        # Current try: NodeJS 20 should be fixed.
-          - id: ubuntu-opengl-amd64
-            os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-10-01-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
-            runner: depot-ubuntu-24.04-16
-            arch: amd64
-            cmake_build_type: Release
-            qt_source: source
-            rendering_backend: OpenGL
-          - id: ubuntu-vulkan-amd64
-            os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-10-01-ubuntu-22.04-amd64
-            runner: depot-ubuntu-24.04-16
-            arch: amd64
-            cmake_build_type: Release
-            qt_source: source
-            rendering_backend: Vulkan
+        # ```
+        # ./v8_context_snapshot_generator
+        # error while loading shared libraries:
+        # libharfbuzz-subset.so.0: cannot open shared object file
+        # ```
+        #  - id: ubuntu-opengl-amd64
+        #    os: Ubuntu 22.04
+        #    image: docker.io/overte/overte-full-build:2026-10-01-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+        #    runner: depot-ubuntu-24.04-16
+        #    arch: amd64
+        #    cmake_build_type: Release
+        #    qt_source: source
+        #    rendering_backend: OpenGL
+          #- id: ubuntu-vulkan-amd64
+          #  os: Ubuntu 22.04
+          #  image: docker.io/overte/overte-full-build:2026-10-01-ubuntu-22.04-amd64
+          #  runner: depot-ubuntu-24.04-16
+          #  arch: amd64
+          #  cmake_build_type: Release
+          #  qt_source: source
+          #  rendering_backend: Vulkan
+          # Currenty try: Docker image is uploaded now.
           - id: ubuntu-opengl-aarch64
             os: Ubuntu 22.04
             image: docker.io/overte/overte-full-build:2026-10-01-ubuntu-22.04-aarch64
@@ -114,11 +119,12 @@ jobs:
             cmake_build_type: Release
             qt_source: source
             rendering_backend: Vulkan
+          # Current try: depot-ubuntu-24.04-32 ran out of disk space.
           - id: codechecker
             os: Ubuntu 22.04
             image: docker.io/overte/overte-full-build:2026-10-01-ubuntu-22.04-amd64
             # depot-ubuntu-24.04-16 runs out of disk space when building debug Qt.
-            runner: depot-ubuntu-24.04-32
+            runner: depot-ubuntu-24.04-64
             arch: amd64
             cmake_build_type: Debug
             qt_source: source
