@@ -86,7 +86,7 @@ jobs:
         # error while loading shared libraries:
         # libharfbuzz-subset.so.0: cannot open shared object file
         # ```
-        # Current try: Changed LANGUAGE from en_US.UTF-8 to en_US
+        # Current try: Update image to have the languagew environment variables in the Docker ENV instead of .bashrc.
          - id: ubuntu-opengl-amd64
            os: Ubuntu 22.04
            image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
