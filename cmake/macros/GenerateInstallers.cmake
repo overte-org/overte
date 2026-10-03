@@ -139,6 +139,7 @@ macro(GENERATE_INSTALLERS)
         message(FATAL_ERROR "Could not find QMake at ${Qt_qmake_Executable}. QMake is required by linuxdeploy-plugin-qt for finding Qt.")
     endif ()
     set(CPACK_OVERTE_RENDERING_BACKEND ${OVERTE_RENDERING_BACKEND})
+    set(CPACK_CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE})
   endif ()
 
   # configure a cpack properties file for custom variables in template
