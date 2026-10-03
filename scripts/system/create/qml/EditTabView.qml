@@ -14,7 +14,7 @@ TabBar {
     padding: 0
     spacing: 0
 
-    readonly property HifiConstants hifi: HifiConstants {}
+    HifiConstants { id: hifi; }
 
     EditTabButton {
         title: "CREATE"
