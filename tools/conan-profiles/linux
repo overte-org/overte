@@ -45,3 +45,5 @@ freetype*:shared=True
 #harfbuzz*:shared=True Probably not needed anymore because of subset being disabled.
 # `v8_context_snapshot_generator` uses system libraries during v8 compilation (Qt WebEngine). Later harfbuzz versions have a libharfbuzz-subset0 which isn't available on Ubuntu 22.04.
 harfbuzz*:with_subset=False
+# The Conan Center Qt6 package builds without JPEG support by default.
+qt*:with_libjpeg=libjpeg
