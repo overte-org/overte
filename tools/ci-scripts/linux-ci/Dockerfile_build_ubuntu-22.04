@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-06-21-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
@@ -14,6 +14,18 @@ SHELL ["/bin/bash", "-c"]
 # Don't use any frontend when installing packages during the creation of this container
 ARG DEBIAN_FRONTEND=noninteractive
 
+# Setup locale for Qt6 source builds
+RUN <<EOF
+apt-get update
+apt-get install -y locales
+echo 'LANG="en_US.UTF-8"' >> /etc/default/locale
+# Uncomment en_US.UTF-8 locale.
+sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen
+locale-gen
+EOF
+ENV LC_ALL=en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US
 
 #
 # Install build dependencies
@@ -41,6 +53,7 @@ libssl-dev
 libqt5websockets5-dev
 qtdeclarative5-dev
 qtmultimedia5-dev
+pkgconf
 python3-distutils
 python3-distro
 mesa-common-dev
@@ -79,6 +92,9 @@ zip
 jq
 # Used by GitHub Actions @action/cache. Without this, debug builds take 4 minutes instead of 14 seconds to compress for the cache.
 zstd
+# Required by the Qt6 source package
+#libjpeg8-dev  # Qt6 does not bundle JPEG support.
+#libharfbuzz-subset0  # Needed during v8_context_snapshot_generator
 PACKAGES
 
 apt-get -y install $(grep -o '^[^#]*' packages.txt)  # Install packages while ignoring comments.

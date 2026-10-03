@@ -9,10 +9,13 @@
 //
 
 import QtQuick 2.5
-import QtGraphicalEffects 1.0
+import Qt5Compat.GraphicalEffects
 
 import stylesUit 1.0
 import "../js/Utils.js" as Utils
+
+// TODO: look into whether we should outright replace the Hifi desktop system
+import "../overte" as Overte
 
 Item {
     id: frame
@@ -21,7 +24,6 @@ Item {
 
     default property var decoration
     property string qmlFile: "N/A"
-    property bool gradientsSupported: desktop.gradientsSupported
 
     readonly property int frameMarginLeft: frame.decoration ? frame.decoration.frameMarginLeft : 0
     readonly property int frameMarginRight: frame.decoration ? frame.decoration.frameMarginRight : 0
@@ -33,20 +35,11 @@ Item {
     anchors.fill: parent
 
     children: [
-        focusShadow,
         decoration,
         sizeOutline,
         debugZ,
         sizeDrag
     ]
-
-    Text {
-        id: debugZ
-        visible: (typeof DebugQML !== 'undefined') ? DebugQML : false
-        color: "red"
-        text: (window ? "Z: " + window.z : "") + " " + qmlFile
-        y: window ? window.height + 4 : 0
-    }
 
     function deltaSize(dx, dy) {
         var newSize = Qt.vector2d(window.width + dx, window.height + dy);
@@ -55,41 +48,32 @@ Item {
         window.height = newSize.y
     }
 
-    RadialGradient {
-        id: focusShadow
-        width: 1.66 * window.width
-        height: 1.66 * window.height
-        x: (window.width - width) / 2
-        y: window.height / 2 - 0.375 * height
-        visible: gradientsSupported && window && window.focus && window.content.visible
-        gradient: Gradient {
-            // GradientStop position 0.5 is at full circumference of circle that fits inside the square.
-            GradientStop { position: 0.0; color: "#ff000000" }    // black, 100% opacity
-            GradientStop { position: 0.333; color: "#1f000000" }  // black, 12% opacity
-            GradientStop { position: 0.5; color: "#00000000" }    // black, 0% opacity
-            GradientStop { position: 1.0; color: "#00000000" }
-        }
-        cached: true
-    }
-
     Rectangle {
         id: sizeOutline
         x: -frameMarginLeft
         y: -frameMarginTop
         width: window ? window.width + frameMarginLeft + frameMarginRight + 2 : 0
         height: window ? window.height + frameMarginTop + frameMarginBottom + 2 : 0
-        color: hifi.colors.baseGrayHighlight15
-        border.width: 3
-        border.color: hifi.colors.white50
-        radius: hifi.dimensions.borderRadius
+        color: Overte.Theme.paletteActive.base
+        border.width: Overte.Theme.borderWidth
+        border.color: {
+            if (Overte.Theme.highContrast) {
+                return Overte.Theme.paletteActive.text;
+            } else if (Overte.Theme.darkMode) {
+                return Qt.lighter(Overte.Theme.paletteActive.base);
+            } else {
+                return Qt.darker(Overte.Theme.paletteActive.base);
+            }
+        }
+        radius: Overte.Theme.borderRadius
         visible: window ? !window.content.visible : false
     }
 
     MouseArea {
         // Resize handle
         id: sizeDrag
-        width: hifi.dimensions.frameIconSize
-        height: hifi.dimensions.frameIconSize
+        width: 18
+        height: 18
         enabled: window ? window.resizable : false
         hoverEnabled: true
         x: window ? window.width + frameMarginRight - hifi.dimensions.frameIconSize : 0
@@ -119,15 +103,30 @@ Item {
                 frame.deltaSize(delta.x, delta.y)
             }
         }
+
+        // TODO: use an SVG icon instead of HifiGlyphs
         HiFiGlyphs {
+            x: -9
+            y: -9
             visible: sizeDrag.enabled
-            x: -11  // Move a little to visually align
-            y: window.modality == Qt.ApplicationModal ? -6 : -4
             text: hifi.glyphs.resizeHandle
-            size: hifi.dimensions.frameIconSize + 10
-            color: sizeDrag.containsMouse || sizeDrag.pressed
-                   ? hifi.colors.white
-                   : (window.colorScheme == hifi.colorSchemes.dark ? hifi.colors.white50 : hifi.colors.lightGrayText80)
+            size: 32
+            color: {
+                if (Overte.Theme.highContrast) {
+                    return Overte.Theme.paletteActive.buttonText;
+                } else {
+                    return Qt.darker(Overte.Theme.paletteActive.base, Overte.Theme.borderDarker);
+                }
+            }
         }
+    }
+
+    Text {
+        id: debugZ
+        visible: (typeof DebugQML !== 'undefined') ? DebugQML : false
+        color: "red"
+        text: (window ? "Z: " + window.z : "") + " " + qmlFile
+        y: window ? window.height + 4 : 0
+        font.pixelSize: 12
     }
 }

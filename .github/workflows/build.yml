@@ -63,56 +63,92 @@ jobs:
     strategy:
       matrix:
         include:
-          - id: windows
-            os: Windows 2022
-            # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
-            runner: depot-windows-2022-16  # Which GitHub Actions Runner to use. When using `image` this just needs to run the build container.
-            arch: x86_64
-            cmake_build_type: Release
-            qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
-            rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
-          - id: ubuntu-opengl-amd64
-            os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-06-21-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
-            runner: depot-ubuntu-24.04-16
-            arch: amd64
-            cmake_build_type: Release
-            qt_source: source
-            rendering_backend: OpenGL
-          - id: ubuntu-vulkan-amd64
-            os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-06-21-ubuntu-22.04-amd64
-            runner: depot-ubuntu-24.04-16
-            arch: amd64
-            cmake_build_type: Release
-            qt_source: source
-            rendering_backend: Vulkan
-          - id: ubuntu-opengl-aarch64
-            os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-06-21-ubuntu-22.04-aarch64
-            runner: depot-ubuntu-24.04-arm-16
-            arch: aarch64
-            cmake_build_type: Release
-            qt_source: source
-            rendering_backend: OpenGL
-          - id: ubuntu-vulkan-aarch64
-            os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-06-21-ubuntu-22.04-aarch64
-            runner: depot-ubuntu-24.04-arm-16
-            arch: aarch64
-            cmake_build_type: Release
-            qt_source: source
-            rendering_backend: Vulkan
-          - id: codechecker
-            os: Ubuntu 22.04
-            image: docker.io/overte/overte-full-build:2026-06-21-ubuntu-22.04-amd64
-            # depot-ubuntu-24.04-16 runs out of disk space when building debug Qt.
-            runner: depot-ubuntu-24.04-32
-            arch: amd64
-            cmake_build_type: Debug
-            qt_source: source
-            rendering_backend: OpenGL
-            job_name_prefix: 'CodeChecker '
+        # Works; Fails due to a warning as errors when building Interface.
+          # - id: windows
+          #   os: Windows 2022
+          #   # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
+          #   runner: depot-windows-2022-16  # Which GitHub Actions Runner to use. When using `image` this just needs to run the build container.
+          #   arch: x86_64
+          #   cmake_build_type: Release
+          #   qt_source: source  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
+          #   rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
+        # Works; Fails due to a warning as errors when building Interface.
+          #~ - id: windows-aqt
+            #~ os: Windows 2022
+            #~ # We use a third-party runner hosted by depot.dev to avoid timing out in case Qt has to be built from source.
+            #~ runner: depot-windows-2022-16  # Which GitHub Actions Runner to use. When using `image` this just needs to run the build container.
+            #~ arch: x86_64
+            #~ cmake_build_type: Release
+            #~ qt_source: aqt  # Which Qt Conan package to use. `system`, `source`, or `aqt`.
+            #~ rendering_backend: OpenGL  # Which OVERTE_RENDERING_BACKEND to build.
+        # ```
+        # ./v8_context_snapshot_generator
+        # error while loading shared libraries:
+        # libharfbuzz-subset.so.0: cannot open shared object file
+        # ```
+        # Current try: Installed libharfbuzz-subset0 libjpeg8-dev libjpeg8
+         - id: ubuntu-opengl-amd64
+           os: Ubuntu 22.04
+           image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
+           runner: depot-ubuntu-24.04-16
+           arch: amd64
+           cmake_build_type: Release
+           qt_source: source
+           rendering_backend: OpenGL
+         # - id: ubuntu-vulkan-amd64
+         #   os: Ubuntu 22.04
+         #   image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64
+         #   runner: depot-ubuntu-24.04-16
+         #   arch: amd64
+         #   cmake_build_type: Release
+         #   qt_source: source
+         #   rendering_backend: Vulkan
+          # Need to upload updated image.
+          # - id: ubuntu-opengl-aarch64
+          #   os: Ubuntu 22.04
+          #   image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-aarch64
+          #   runner: depot-ubuntu-24.04-arm-16
+          #   arch: aarch64
+          #   cmake_build_type: Release
+          #   qt_source: source
+          #   rendering_backend: OpenGL
+          # - id: ubuntu-vulkan-aarch64
+          #   os: Ubuntu 22.04
+          #   image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-aarch64
+          #   runner: depot-ubuntu-24.04-arm-16
+          #   arch: aarch64
+          #   cmake_build_type: Release
+          #   qt_source: source
+          #   rendering_backend: Vulkan
+  # FAILED: [code=1] qtbase/libexec/QtWebEngineProcess
+  # : && /usr/bin/c++ -m64 -include cstdint -g -Og -m64 -Wl,-z,relro,-z,now -Wl,--enable-new-dtags -fPIE -pie qtwebengine/src/process/CMakeFiles/QtWebEngineProcess.dir/QtWebEngineProcess_autogen/mocs_compilation.cpp.o qtwebengine/src/process/CMakeFiles/QtWebEngineProcess.dir/main.cpp.o -o qtbase/libexec/QtWebEngineProcess  -Wl,-rpath,/zgofepbi/.conan2/p/b/qt10e11e71b6b49/b/build/Debug/qtbase/lib:  qtbase/lib/libQt6WebEngineCore.so.6.11.1  qtbase/lib/libQt6Quick.so.6.11.1  qtbase/lib/libQt6OpenGL.so.6.11.1  qtbase/lib/libQt6Gui.so.6.11.1  /usr/lib/x86_64-linux-gnu/libGLX.so  /usr/lib/x86_64-linux-gnu/libOpenGL.so  qtbase/lib/libQt6WebChannel.so.6.11.1  qtbase/lib/libQt6Qml.so.6.11.1  qtbase/lib/libQt6Network.so.6.11.1  qtbase/lib/libQt6Positioning.so.6.11.1  qtbase/lib/libQt6Core.so.6.11.1  -Wl,-rpath-link,/zgofepbi/.conan2/p/b/qt10e11e71b6b49/b/build/Debug/qtbase/lib && :
+  # /usr/bin/ld: warning: libharfbuzz-subset.so.0, needed by qtbase/lib/libQt6WebEngineCore.so.6.11.1, not found (try using -rpath or -rpath-link)
+  # /usr/bin/ld: qtbase/lib/libQt6WebEngineCore.so.6.11.1: undefined reference to `hb_subset_input_glyph_set'
+  # /usr/bin/ld: qtbase/lib/libQt6WebEngineCore.so.6.11.1: undefined reference to `hb_subset_input_set'
+  # /usr/bin/ld: qtbase/lib/libQt6WebEngineCore.so.6.11.1: undefined reference to `hb_subset_input_create_or_fail'
+  # /usr/bin/ld: qtbase/lib/libQt6WebEngineCore.so.6.11.1: undefined reference to `hb_subset_or_fail'
+  # /usr/bin/ld: qtbase/lib/libQt6WebEngineCore.so.6.11.1: undefined reference to `hb_subset_input_destroy'
+  # /usr/bin/ld: qtbase/lib/libQt6WebEngineCore.so.6.11.1: undefined reference to `hb_subset_input_set_flags'
+  # collect2: error: ld returned 1 exit status
+          # - id: codechecker
+          #   os: Ubuntu 22.04
+          #   image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64
+          #   # depot-ubuntu-24.04-32 runs out of disk space when building debug Qt6.
+          #   runner: depot-ubuntu-24.04-64
+          #   arch: amd64
+          #   cmake_build_type: Debug
+          #   qt_source: source
+          #   rendering_backend: OpenGL
+          #   job_name_prefix: 'CodeChecker '
+         - id: ubuntu-debug
+           os: Ubuntu 22.04
+           image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64
+           # depot-ubuntu-24.04-32 runs out of disk space when building debug Qt6.
+           runner: depot-ubuntu-24.04-64
+           arch: amd64
+           cmake_build_type: Debug
+           qt_source: source
+           rendering_backend: OpenGL
       fail-fast: false
     runs-on: ${{matrix.runner}}
     container: ${{matrix.image}}
@@ -196,6 +232,11 @@ jobs:
     - name: Output debug information
       if: always()
       uses: ./.github/actions/debug-info
+
+    # - name: Install dependencies
+    #   if:
+    #   shell: bash
+    #   run: apt update && apt -y install libharfbuzz-subset0 libjpeg8-dev
 
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install

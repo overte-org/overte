@@ -18,26 +18,26 @@
 #include "SharedLogging.h"
 
 ScriptValue variantToScriptValue(QVariant& qValue, ScriptEngine& scriptEngine) {
-    switch(qValue.type()) {
-        case QVariant::Bool:
+    switch(qValue.typeId()) {
+        case QMetaType::Bool:
             return scriptEngine.newValue(qValue.toBool());
             break;
-        case QVariant::Int:
+        case QMetaType::Int:
             return scriptEngine.newValue(qValue.toInt());
             break;
-        case QVariant::Double:
+        case QMetaType::Double:
             return scriptEngine.newValue(qValue.toDouble());
             break;
-        case QVariant::String:
-        case QVariant::Url:
+        case QMetaType::QString:
+        case QMetaType::QUrl:
             return scriptEngine.newValue(qValue.toString());
             break;
-        case QVariant::Map: {
+        case QMetaType::QVariantMap: {
             QVariantMap childMap = qValue.toMap();
             return variantMapToScriptValue(childMap, scriptEngine);
             break;
         }
-        case QVariant::List: {
+        case QMetaType::QVariantList: {
             QVariantList childList = qValue.toList();
             return variantListToScriptValue(childList, scriptEngine);
             break;

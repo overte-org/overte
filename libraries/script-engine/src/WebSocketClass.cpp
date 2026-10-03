@@ -51,7 +51,7 @@ void WebSocketClass::initialize() {
     connect(_webSocket, &QWebSocket::textMessageReceived, this, &WebSocketClass::handleOnMessage);
     connect(_webSocket, &QWebSocket::binaryMessageReceived, this, &WebSocketClass::handleOnBinaryMessage);
     connect(_webSocket, &QWebSocket::connected, this, &WebSocketClass::handleOnOpen);
-    connect(_webSocket, static_cast<void(QWebSocket::*)(QAbstractSocket::SocketError)>(&QWebSocket::error), this,
+    connect(_webSocket, static_cast<void(QWebSocket::*)(QAbstractSocket::SocketError)>(&QWebSocket::errorOccurred), this,
         &WebSocketClass::handleOnError);
     _binaryType = QStringLiteral("arraybuffer");
 }

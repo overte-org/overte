@@ -81,9 +81,9 @@ private slots:
     void onFocusObjectChanged(QObject* newFocus) override;
 
 public slots:
-    void hoverBeginEvent(const PointerEvent& event, class QTouchDevice& device);
-    void hoverEndEvent(const PointerEvent& event, class QTouchDevice& device);
-    bool handlePointerEvent(const PointerEvent& event, class QTouchDevice& device, bool release = false);
+    void hoverBeginEvent(const PointerEvent& event, QPointingDevice& device);
+    void hoverEndEvent(const PointerEvent& event, QPointingDevice& device);
+    bool handlePointerEvent(const PointerEvent& event, QPointingDevice& device, bool release = false);
     void changeAudioOutputDevice(const QString& deviceName, bool isHtmlUpdate = false);
     void forceHtmlAudioOutputDeviceUpdate();
     void forceQmlAudioOutputDeviceUpdate();

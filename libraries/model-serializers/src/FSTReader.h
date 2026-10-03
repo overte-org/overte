@@ -55,14 +55,14 @@ public:
     /// Predicts the type of model by examining the mapping
     static ModelType predictModelType(const hifi::VariantMultiHash& mapping);
 
-    static QVector<QString> getScripts(const QUrl& fstUrl, const hifi::VariantMultiHash& mapping = QVariantHash());
+    static QVector<QString> getScripts(const QUrl& fstUrl, const hifi::VariantMultiHash& mapping = hifi::VariantMultiHash());
 
     static QString getNameFromType(ModelType modelType);
     static FSTReader::ModelType getTypeFromName(const QString& name);
     static hifi::VariantMultiHash downloadMapping(const QString& url);
 
 private:
-    static void writeVariant(QBuffer& buffer, QVariantHash::const_iterator& it);
+    static void writeVariant(QBuffer& buffer, const hifi::VariantMultiHash::const_iterator& it);
     static hifi::VariantMultiHash parseMapping(QIODevice* device);
 
     static QHash<FSTReader::ModelType, QString> _typesToNames;
