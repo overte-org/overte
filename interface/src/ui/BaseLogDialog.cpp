@@ -16,6 +16,7 @@
 #include <QPlainTextEdit>
 #include <QTextCursor>
 #include <QPushButton>
+#include <QRegularExpression>
 
 #include <PathUtils.h>
 
@@ -180,14 +181,16 @@ Highlighter::Highlighter(QTextDocument* parent) : QSyntaxHighlighter(parent) {
 }
 
 void Highlighter::highlightBlock(const QString& text) {
-    QRegExp expression(BOLD_PATTERN);
+    QRegularExpression expression(BOLD_PATTERN);
 
-    int index = text.indexOf(expression, 0);
+    auto expressionMatch = expression.match(text);
+    qsizetype index = expressionMatch.capturedStart();
 
     while (index >= 0) {
-        int length = expression.matchedLength();
+        qsizetype length = expressionMatch.capturedLength();
         setFormat(index, length, boldFormat);
-        index = text.indexOf(expression, index + length);
+        expressionMatch = expression.match(text, index + length);
+        index = expressionMatch.capturedStart();
     }
 
     if (keyword.isNull() || keyword.isEmpty()) {

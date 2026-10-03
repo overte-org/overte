@@ -1,0 +1,5 @@
+module SettingsPages
+General 1.0 General.qml
+Graphics 1.0 Graphics.qml
+Controls 1.0 Controls.qml
+Audio 1.0 Audio.qml

@@ -110,7 +110,7 @@ AvatarProject* AvatarProject::createAvatarProject(const QString& projectsFolder,
 
     try {
         const QByteArray fbxContents = fbx.readAll();
-        hfmModel = FBXSerializer().read(fbxContents, QVariantHash(), fbxInfo.filePath());
+        hfmModel = FBXSerializer().read(fbxContents, hifi::VariantMultiHash(), fbxInfo.filePath());
     } catch (const QString& error) {
         Q_UNUSED(error)
         status = AvatarProjectStatus::ERROR_CREATE_READ_MODEL;

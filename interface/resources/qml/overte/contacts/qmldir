@@ -1,0 +1,6 @@
+module Contacts
+ContactsList 1.0 ContactsList.qml
+AccountAvatar 1.0 AccountAvatar.qml
+SessionContact 1.0 SessionContact.qml
+AccountContact 1.0 AccountContact.qml
+MyAccountInfo 1.0 MyAccountInfo.qml

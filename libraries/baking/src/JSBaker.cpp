@@ -274,7 +274,7 @@ bool JSBaker::canOmitNewLine(QChar previousCharacter, QChar nextCharacter) {
 //Check if character is alphabet, number or one of the following: '_', '$', '\\' or a non-ASCII character
 bool JSBaker::isAlphanum(QChar c) {
     return ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || (c >= 'A' && c <= 'Z')
-            || c == '_' || c == '$' || c == '\\' || c > ASCII_CHARACTERS_UPPER_LIMIT);
+            || c == '_' || c == '$' || c == '\\' || c > QChar(ASCII_CHARACTERS_UPPER_LIMIT));
 }
 
 bool JSBaker::isNonAscii(QChar c) {

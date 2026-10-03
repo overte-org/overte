@@ -295,7 +295,7 @@ void EntityTreeRenderer::resetPersistentEntitiesScriptEngine() {
     // Clear the pointer before lambda is run on another thread.
     _persistentEntitiesScriptManager.reset();
     if (scriptManager) {
-        QtConcurrent::run([manager = scriptManager] {
+        QThreadPool::globalInstance()->start([manager = scriptManager] {
             manager->unloadAllEntityScripts(true);
             manager->stop();
             manager->waitTillDoneRunning();
@@ -329,7 +329,7 @@ void EntityTreeRenderer::resetNonPersistentEntitiesScriptEngine() {
     // Release the pointer as soon as possible.
     _nonPersistentEntitiesScriptManager.reset();
     if (scriptManager) {
-        QtConcurrent::run([manager = scriptManager] {
+        QThreadPool::globalInstance()->start([manager = scriptManager] {
             manager->unloadAllEntityScripts(true);
             manager->stop();
             manager->waitTillDoneRunning();
@@ -999,7 +999,7 @@ QUuid EntityTreeRenderer::mousePressEvent(QMouseEvent* event) {
 
     PerformanceTimer perfTimer("EntityTreeRenderer::mousePressEvent");
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-    PickRay ray = _viewState->computePickRay(event->x(), event->y());
+    PickRay ray = _viewState->computePickRay(event->position().x(), event->position().y());
     RayToEntityIntersectionResult rayPickResult = _getPrevRayPickResultOperator(_mouseRayPickID);
     EntityItemPointer entity;
     if (rayPickResult.intersects && (entity = getTree()->findEntityByID(rayPickResult.entityID))) {
@@ -1033,7 +1033,7 @@ void EntityTreeRenderer::mouseDoublePressEvent(QMouseEvent* event) {
 
     PerformanceTimer perfTimer("EntityTreeRenderer::mouseDoublePressEvent");
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-    PickRay ray = _viewState->computePickRay(event->x(), event->y());
+    PickRay ray = _viewState->computePickRay(event->position().x(), event->position().y());
     RayToEntityIntersectionResult rayPickResult = _getPrevRayPickResultOperator(_mouseRayPickID);
     EntityItemPointer entity;
     if (rayPickResult.intersects && (entity = getTree()->findEntityByID(rayPickResult.entityID))) {
@@ -1065,7 +1065,7 @@ void EntityTreeRenderer::mouseReleaseEvent(QMouseEvent* event) {
 
     PerformanceTimer perfTimer("EntityTreeRenderer::mouseReleaseEvent");
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-    PickRay ray = _viewState->computePickRay(event->x(), event->y());
+    PickRay ray = _viewState->computePickRay(event->position().x(), event->position().y());
     RayToEntityIntersectionResult rayPickResult = _getPrevRayPickResultOperator(_mouseRayPickID);
     EntityItemPointer entity;
     if (rayPickResult.intersects && (entity = getTree()->findEntityByID(rayPickResult.entityID))) {
@@ -1110,7 +1110,7 @@ void EntityTreeRenderer::mouseMoveEvent(QMouseEvent* event) {
 
     PerformanceTimer perfTimer("EntityTreeRenderer::mouseMoveEvent");
     auto entityScriptingInterface = DependencyManager::get<EntityScriptingInterface>();
-    PickRay ray = _viewState->computePickRay(event->x(), event->y());
+    PickRay ray = _viewState->computePickRay(event->position().x(), event->position().y());
     RayToEntityIntersectionResult rayPickResult = _getPrevRayPickResultOperator(_mouseRayPickID);
     EntityItemPointer entity;
     if (rayPickResult.intersects && (entity = getTree()->findEntityByID(rayPickResult.entityID))) {
