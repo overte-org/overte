@@ -49,9 +49,9 @@ Verify OpenGL:
   - First install mesa-utils with the command `sudo apt install mesa-utils -y`.
   - Then run `glxinfo | grep "OpenGL version"`.
 
-- Qt5 source package:
+- Qt6 source package:
 ```bash
-sudo apt install libpulse-dev libasound2-dev python3-html5lib
+sudo apt install libpulse-dev libasound2-dev libharfbuzz-subset0 libjpeg8-dev python3-html5lib
 ```
 
 ## Extra dependencies to compile Interface on a server

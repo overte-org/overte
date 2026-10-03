@@ -86,7 +86,7 @@ jobs:
         # error while loading shared libraries:
         # libharfbuzz-subset.so.0: cannot open shared object file
         # ```
-        # Current try: Update image to have the languagew environment variables in the Docker ENV instead of .bashrc.
+        # Current try: Installed libharfbuzz-subset0 libjpeg8-dev libjpeg8
          - id: ubuntu-opengl-amd64
            os: Ubuntu 22.04
            image: docker.io/overte/overte-full-build:2026-10-02-ubuntu-22.04-amd64  # Container image used for building. Built from /tools/ci-script/linux-ci/Dockerfile_x
@@ -223,6 +223,11 @@ jobs:
     - name: Output debug information
       if: always()
       uses: ./.github/actions/debug-info
+
+    - name: Install dependencies
+      if:
+      shell: bash
+      run: apt update && apt -y install libharfbuzz-subset0 libjpeg8-dev
 
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install

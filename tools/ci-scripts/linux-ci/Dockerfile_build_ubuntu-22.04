@@ -92,6 +92,9 @@ zip
 jq
 # Used by GitHub Actions @action/cache. Without this, debug builds take 4 minutes instead of 14 seconds to compress for the cache.
 zstd
+# Required by the Qt6 source package
+libjpeg8-dev  # Qt6 does not bundle JPEG support.
+libharfbuzz-subset0  # Needed during v8_context_snapshot_generator
 PACKAGES
 
 apt-get -y install $(grep -o '^[^#]*' packages.txt)  # Install packages while ignoring comments.
