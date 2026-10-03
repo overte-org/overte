@@ -233,10 +233,10 @@ jobs:
       if: always()
       uses: ./.github/actions/debug-info
 
-    - name: Install dependencies
-      if:
-      shell: bash
-      run: apt update && apt -y install libharfbuzz-subset0 libjpeg8-dev
+    # - name: Install dependencies
+    #   if:
+    #   shell: bash
+    #   run: apt update && apt -y install libharfbuzz-subset0 libjpeg8-dev
 
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install
