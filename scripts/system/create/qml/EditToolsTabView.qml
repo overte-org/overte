@@ -20,7 +20,7 @@ TabBar {
         readonly property int grid: 2
     }
 
-    readonly property HifiConstants hifi: HifiConstants {}
+    HifiConstants { id: hifi; }
 
     EditTabButton {
         title: "CREATE"
