@@ -12,6 +12,7 @@
 #include "AssetResourceRequest.h"
 
 #include <QtCore/QLoggingCategory>
+#include <QtCore5Compat/QRegExp>
 
 #include <Trace.h>
 #include <Profile.h>

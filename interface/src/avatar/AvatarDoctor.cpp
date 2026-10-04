@@ -90,8 +90,8 @@ void AvatarDoctor::startDiagnosing() {
             return;
         }
         _model = resource;
-        const auto model = resource.data();
-        const auto avatarModel = resource.data()->getHFMModel();
+        const auto model = resource.get();
+        const auto avatarModel = resource.get()->getHFMModel();
         if (!avatarModel.originalURL.toLower().endsWith(".fbx")) {
             addError("Unsupported avatar model format.", "unsupported-format");
             emit complete(getErrors());
@@ -230,7 +230,7 @@ void AvatarDoctor::startDiagnosing() {
 
             auto mapping = resource->getMapping();
 
-            if (mapping.contains(JOINT_NAME_MAPPING_FIELD) && mapping[JOINT_NAME_MAPPING_FIELD].type() == QVariant::Hash) {
+            if (mapping.contains(JOINT_NAME_MAPPING_FIELD) && mapping[JOINT_NAME_MAPPING_FIELD].typeId() == QMetaType::QVariantHash) {
                 const auto& jointNameMappings = mapping[JOINT_NAME_MAPPING_FIELD].toHash();
                 QStringList jointValues;
                 for (const auto& jointVariant: jointNameMappings.values()) {
@@ -277,7 +277,7 @@ void AvatarDoctor::startDiagnosing() {
                 if (materialMappingResource->isLoaded()) {
                     materialMappingHandled();
                 } else {
-                    connect(materialMappingResource.data(), &NetworkTexture::finished, this,
+                    connect(materialMappingResource.get(), &NetworkTexture::finished, this,
                         [materialMappingHandled](bool success) mutable {
 
                         materialMappingHandled();
@@ -297,7 +297,7 @@ void AvatarDoctor::startDiagnosing() {
         if (resource->isLoaded()) {
             resourceLoaded(!resource->isFailed());
         } else {
-            connect(resource.data(), &GeometryResource::finished, this, resourceLoaded);
+            connect(resource.get(), &GeometryResource::finished, this, resourceLoaded);
         }
     } else {
         addError("Model file cannot be opened", "missing-file");
@@ -306,8 +306,8 @@ void AvatarDoctor::startDiagnosing() {
 }
 
 void AvatarDoctor::diagnoseTextures() {
-    const auto model = _model.data();
-    const auto avatarModel = _model.data()->getHFMModel();
+    const auto model = _model.get();
+    const auto avatarModel = _model.get()->getHFMModel();
     QVector<QString> externalTextures{};
     QVector<QString> textureNames{};
     int texturesFound = 0;
@@ -344,7 +344,7 @@ void AvatarDoctor::diagnoseTextures() {
     }
 
     for (const auto& materialMapping : model->getMaterialMapping()) {
-        for (const auto& networkMaterial : materialMapping.second.data()->parsedMaterials.networkMaterials) {
+        for (const auto& networkMaterial : materialMapping.second.get()->parsedMaterials.networkMaterials) {
             texturesFound += (int)networkMaterial.second->getTextureMaps().size();
         }
     }
@@ -405,7 +405,7 @@ void AvatarDoctor::diagnoseTextures() {
                 if (textureResource->isLoaded()) {
                     textureLoaded(!textureResource->isFailed());
                 } else {
-                    connect(textureResource.data(), &NetworkTexture::finished, this, textureLoaded);
+                    connect(textureResource.get(), &NetworkTexture::finished, this, textureLoaded);
                 }
             } else {
                 _missingTextureCount++;

@@ -258,6 +258,7 @@ public:
      * @returns {boolean} <code>true</code> if the mouse cursor is pointing at UI in the Interface window in desktop mode or on 
      *     the HUD surface in HMD mode, <code>false</code> if it isn't.
      */
+    // QT6TODO: Reticle.isPointingAtSystemOverlay does not work currently
     Q_INVOKABLE bool isPointingAtSystemOverlay() { return !_compositor->getReticleOverDesktop(); }
 
     /*@jsdoc

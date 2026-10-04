@@ -63,9 +63,7 @@ WindowScriptingInterface::WindowScriptingInterface() {
         emit interstitialModeChanged(interstitialMode);
     });
 
-    connect(qApp, &Application::darkThemePreferenceChanged, [this](bool useDarkTheme) {
-        emit darkThemePreferenceChanged(useDarkTheme);
-    });
+    connect(qApp->themePrefs(), &ThemePrefs::themeChanged, this, &WindowScriptingInterface::themeChanged);
 }
 
 WindowScriptingInterface::~WindowScriptingInterface() {
@@ -517,11 +515,11 @@ int WindowScriptingInterface::openMessageBox(QString title, QString text, int bu
     if (QThread::currentThread() != thread()) {
         int result;
         BLOCKING_INVOKE_METHOD(this, "openMessageBox",
-            Q_RETURN_ARG(int, result),
-            Q_ARG(QString, title),
-            Q_ARG(QString, text),
-            Q_ARG(int, buttons),
-            Q_ARG(int, defaultButton));
+            Q_GENERIC_RETURN_ARG(int, result),
+            Q_GENERIC_ARG(QString, title),
+            Q_GENERIC_ARG(QString, text),
+            Q_GENERIC_ARG(int, buttons),
+            Q_GENERIC_ARG(int, defaultButton));
         return result;
     }
 
@@ -677,6 +675,42 @@ void WindowScriptingInterface::openWebBrowser(const QString& url) {
     });
 }
 
-bool WindowScriptingInterface::getDarkThemePreference() {
-    return qApp->getDarkThemePreference();
+bool WindowScriptingInterface::getDarkMode() const {
+    return qApp->themePrefs()->getDarkMode();
+}
+
+bool WindowScriptingInterface::getHighContrast() const {
+    return qApp->themePrefs()->getHighContrast();
+}
+
+bool WindowScriptingInterface::getReducedMotion() const {
+    return qApp->themePrefs()->getReducedMotion();
+}
+
+bool WindowScriptingInterface::getUseSystemColorScheme() const {
+    return qApp->themePrefs()->getUseSystemColorScheme();
+}
+
+bool WindowScriptingInterface::getUseSystemContrast() const {
+    return qApp->themePrefs()->getUseSystemContrast();
+}
+
+void WindowScriptingInterface::setDarkMode(bool value) {
+    qApp->themePrefs()->setDarkMode(value);
+}
+
+void WindowScriptingInterface::setHighContrast(bool value) {
+    qApp->themePrefs()->setHighContrast(value);
+}
+
+void WindowScriptingInterface::setReducedMotion(bool value) {
+    qApp->themePrefs()->setReducedMotion(value);
+}
+
+void WindowScriptingInterface::setUseSystemColorScheme(bool value) {
+    qApp->themePrefs()->setUseSystemColorScheme(value);
+}
+
+void WindowScriptingInterface::setUseSystemContrast(bool value) {
+    qApp->themePrefs()->setUseSystemContrast(value);
 }

@@ -14,6 +14,7 @@
 
 #include <QObject>
 #include <QString>
+#include <atomic>
 
 class MenuItemProperties;
 
@@ -53,9 +54,15 @@ class MenuScriptingInterface : public QObject {
     Q_PROPERTY(bool visible READ isVisible WRITE setVisible)
 
     MenuScriptingInterface();
+
 public:
     static MenuScriptingInterface* getInstance();
 
+private:
+    // QT6TODO: This is a hack to make stopping work correctly. We plan on removing the menu to simplify everything,
+    // but we still need to support the menu for now, so this is added
+    std::atomic<bool> _isFinished{ false };
+    void onScriptingEnded();
 private slots:
     friend class Menu;
     void menuItemTriggered();
@@ -260,4 +267,4 @@ signals:
     void visibilityChanged(bool visible);
 };
 
-#endif // hifi_MenuScriptingInterface_h
+#endif  // hifi_MenuScriptingInterface_h

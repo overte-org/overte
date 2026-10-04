@@ -26,6 +26,7 @@
 #include <QUrl>
 #include <QUrlQuery>
 #include <QXmlStreamReader>
+#include <QtCore5Compat/QRegExp>
 
 #include <ThreadHelpers.h>
 #include <NetworkAccessManager.h>
