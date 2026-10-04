@@ -14,7 +14,6 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 ## [2026.10.1] Not yet released
 
 ### Known issues
-- Overte's scripting engine will often freeze on shutdown and require being force quit (#2316)
 - Sporadic script engine crash when switching words or when the server restarts (#2156)
 - Sporadic crash when loading QML surfaces on Mesa graphics driver (#2195)
     This appears to be a bug in Mesa. Though the issue happens too rarely to reliably troubleshoot it.
@@ -49,6 +48,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Fixed Overte showing up as "QtPulseAudio" in volume selectors on Linux (PR2078)
 - Fixed thumbstick emulation on HTC Vive Wand controllers on OpenXR (PR2376)
 - Fixed deselected entities not being removed from the editHandleHighlightList (PR2341)
+- Fixed the deadlock on shutdown (PR2355)
 
 ### Changes
 - The Overte client cache now gets removed during uninstall on Windows (PR1814)
@@ -73,7 +73,8 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Added creating Grid entities using the Create app (PR2237)
 - Added pick filter support to Entities.XXXX methods (PR1608)
 - Added server packages for Debian 14 Forky (PR2374)
-- Added option to disable hand tracking on OpenXR (PR2288)
+- Added an option to disable hand tracking on OpenXR (PR2288)
+- Added an option to disable presence detection on OpenXR (PR2395)
 
 ### Build System
 - Fixed building some tests (PR2214,PR2243)
