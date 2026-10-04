@@ -101,7 +101,7 @@ macro(SET_PACKAGING_PARAMETERS)
     add_definitions(-DDEV_BUILD)
 
   else()
-    message(FATAL_ERROR "OVERTE_RELEASE_TYPE invalid. Expected: 'RELEASE', 'PR', 'NIGHTLY', or 'DEV'. Got: '${OVERTE_RELEASE_TYPE}'")
+    message(FATAL_ERROR "OVERTE_RELEASE_TYPE invalid. Expected: 'PRODUCTION', 'PR', 'NIGHTLY', or 'DEV'. Got: '${OVERTE_RELEASE_TYPE}'")
   endif()
 
   set(NITPICK_BUNDLE_NAME "nitpick")

@@ -153,7 +153,7 @@ jobs:
           echo "OVERTE_RELEASE_NUMBER=${{ github.event.number }}" >> $GITHUB_ENV
           echo "GIT_COMMIT_SHORT=${PULL_REQUEST_SHA::7}" >> $GITHUB_ENV
         elif [ "${{github.event_name}}" = "push" ]; then  # We limit push events to tags at the start of the workflow.
-          echo "OVERTE_RELEASE_TYPE=RELEASE" >> $GITHUB_ENV
+          echo "OVERTE_RELEASE_TYPE=PRODUCTION" >> $GITHUB_ENV
           echo "OVERTE_RELEASE_NUMBER=${{ github.ref_name }}" >> $GITHUB_ENV
           echo "GIT_COMMIT_SHORT=${GITHUB_SHA::7}" >> $GITHUB_ENV
           if [[ "${{ github.ref_name }}" == *"rc"* ]]; then  # release candidate
