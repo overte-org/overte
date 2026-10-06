@@ -7,7 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 
 # Build Linux
 
-*Last Updated on 2026-04-16*
+*Last Updated on 2026-07-17*
 
 Please read the [general build guide](BUILD.md) for information on dependencies required for all platforms. Only Linux specific instructions are found in this file.
 
@@ -119,10 +119,10 @@ If you don't do this, Conan will still complain if it notices system packages be
 Install the dependencies with conan
 ```bash
 cd overte
-conan install . -s build_type=Release -b missing -pr:a=tools/conan-profiles/linux -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"
+conan install . -s build_type=RelWithDebInfo -b missing -pr:a=tools/conan-profiles/linux -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"
 ```
 
-If you want to build Debug or RelWithDebInfo versions, change the `build_type` to `Debug` or `RelWithDebInfo` and run the command again. E.g.:
+If you want to build Debug or Release versions, change the `build_type` to `Debug` or `Release` and run the command again. E.g.:
 ```bash
 conan install . -s build_type=Debug -b missing -pr:a=tools/conan-profiles/linux -of build -c tools.cmake.cmaketoolchain:generator="Ninja Multi-Config"
 ```
@@ -136,7 +136,7 @@ cmake --preset conan-default
 
 To compile the Domain server:
 ```bash
-cmake --build --preset conan-release --target domain-server assignment-client
+cmake --build --preset conan-relwithdebinfo --target domain-server assignment-client
 ```
 
 *Note: For a server, it is not necessary to compile the Interface.*

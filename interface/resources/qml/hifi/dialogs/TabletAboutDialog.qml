@@ -52,6 +52,12 @@ Rectangle {
         }
         Item { height: 10; width: 1 }
         RalewayRegular {
+            text: "Support tag:" + CrashHandler.supportTag
+            size: 20
+            color: "white"
+        }
+        Item { height: 10; width: 1 }
+        RalewayRegular {
             text: "An open source virtual reality platform."
             size: 20
             color: "white"

@@ -1,13 +1,13 @@
 <!--
 Copyright 2013-2019 High Fidelity, Inc.
 Copyright 2020-2021 Vircadia contributors
-Copyright 2021-2025 Overte e.V.
+Copyright 2021-2026 Overte e.V.
 SPDX-License-Identifier: Apache-2.0
 -->
 
 # General Build Information
 
-*Last Updated on 2025-03-17*
+*Last Updated on 2026-07-29*
 
 ## OS Specific Build Guides
 
@@ -78,7 +78,9 @@ BUILD_GLOBAL_SERVICES=STABLE
 #### Possible CMake Variables
 
 ```text
-// The URL to post the dump to.
+// Build with crash reporting.
+OVERTE_USE_SENTRY
+// The URL to post the dump to. Called "DSN" by Sentry.
 OVERTE_BACKTRACE_URL
 // The identifying tag of the release.
 OVERTE_BACKTRACE_TOKEN
