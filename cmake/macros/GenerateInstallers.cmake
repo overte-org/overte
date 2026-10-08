@@ -131,8 +131,8 @@ macro(GENERATE_INSTALLERS)
     # Find and pass QMake to GenerateAppImage.cmake, since QMake tells linuxdeploy-plugin-qt where to find Qt.
     # system Qt5 on Debian doesn't have a Qt5qmakeConfig.cmake or qt5qmake-config.cmake file.
     # On Qt6 we can try looking for the qmake component on system Qt again.
-    find_package(Qt5 COMPONENTS Core QUIET REQUIRED)
-    get_target_property(Qt_qmake_Executable Qt5::qmake LOCATION)
+    find_package(Qt6 COMPONENTS Core QUIET REQUIRED)
+    get_target_property(Qt_qmake_Executable Qt6::qmake LOCATION)
     # Every variable starting with CPACK_* is automatically available inside CPack scripts.
     set(CPACK_QMAKE_EXECUTABLE ${Qt_qmake_Executable})
     if (NOT CPACK_QMAKE_EXECUTABLE)

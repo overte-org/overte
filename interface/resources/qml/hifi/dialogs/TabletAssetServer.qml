@@ -9,9 +9,9 @@
 //
 
 import QtQuick 2.5
-import QtQuick.Controls 1.4
-import QtQuick.Controls.Styles 1.4
-import QtQuick.Dialogs 1.2 as OriginalDialogs
+import QtQuick.Controls 2.3
+//import QtQuick.Controls.Styles
+import QtQuick.Dialogs as OriginalDialogs
 import Qt.labs.settings 1.0
 
 import stylesUit 1.0
@@ -675,6 +675,8 @@ Rectangle {
                         font.pixelSize: hifi.fontSizes.textFieldInput
                         height: hifi.dimensions.tableRowHeight
 
+                        //QT6TODO
+                        /*
                         style: TextFieldStyle {
                             textColor: readOnly
                                         ? hifi.colors.black
@@ -689,10 +691,10 @@ Rectangle {
                             selectionColor: hifi.colors.primaryHighlight
                             padding.left: readOnly ? 0 : hifi.dimensions.textPadding
                             padding.right: readOnly ? 0 : hifi.dimensions.textPadding
-                        }
+                        }*/
 
-                        validator: RegExpValidator {
-                            regExp: /[^/]+/
+                        validator: RegularExpressionValidator {
+                            regularExpression: /[^/]+/
                         }
 
                         Keys.onPressed: {

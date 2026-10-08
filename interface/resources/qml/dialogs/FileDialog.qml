@@ -8,12 +8,12 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-import QtQuick 2.7
-import Qt.labs.folderlistmodel 2.2
-import Qt.labs.settings 1.0
-import QtQuick.Dialogs 1.2 as OriginalDialogs
-import QtQuick.Controls 1.4 as QQC1
-import QtQuick.Controls 2.3
+import QtCore
+import QtQuick
+import Qt.labs.folderlistmodel
+import Qt.labs.qmlmodels
+import QtQuick.Dialogs as OriginalDialogs
+import QtQuick.Controls
 
 import ".."
 import controlsUit 1.0
@@ -34,7 +34,7 @@ ModalWindow {
 
     HifiConstants { id: hifi }
 
-    property var filesModel: ListModel { }
+    property var filesModel: TableModel { }
 
     Settings {
         category: "FileDialog"
@@ -76,8 +76,8 @@ ModalWindow {
         selected(button);
         destroy();
     }
-	
-    property int clickedButton: OriginalDialogs.StandardButton.NoButton;
+
+    property int clickedButton: OriginalDialogs.MessageDialog.NoButton;
 	
     Component.onCompleted: {
         fileDialogItem.keyboardEnabled = HMD.active;
@@ -261,7 +261,7 @@ ModalWindow {
         QtObject {
             id: d
             property var currentSelectionUrl;
-            readonly property string currentSelectionPath: helper.urlToPath(currentSelectionUrl);
+            readonly property string currentSelectionPath: currentSelectionUrl === undefined ? "" : helper.urlToPath(currentSelectionUrl);
             property bool currentSelectionIsFolder;
             property var backStack: []
             property var tableViewConnection: Connections { target: fileTableView; function onCurrentRowChanged() { d.update(); } }
@@ -311,8 +311,9 @@ ModalWindow {
             }
 
             function clearSelection() {
-                fileTableView.selection.clear();
-                fileTableView.currentRow = -1;
+                // QT6TODO
+                //fileTableView.selection.clear();
+                //fileTableView.currentRow = -1;
                 update();
             }
         }
@@ -374,7 +375,25 @@ ModalWindow {
 
         Component {
             id: filesModelBuilder
-            ListModel { }
+            TableModel {
+                TableModelColumn {
+                    //id: fileNameColumn
+                    display: "fileName"
+                    //title: "Name"
+                    //width: (selectDirectory ? 1.0 : 0.5) * fileTableView.width
+                }
+                TableModelColumn {
+                    //id: fileModifiedColumn
+                    display: "fileModified"
+                    //title: "Date"
+                    //width: 0.3 * fileTableView.width
+                }
+                TableModelColumn {
+                    display: "fileSize"
+                    //title: "Size"
+                    //width: fileTableView.width - fileNameColumn.width - fileModifiedColumn.width
+                }
+            }
         }
 
         QtObject {
@@ -429,11 +448,11 @@ ModalWindow {
                 if (row === -1) {
                     return false;
                 }
-                return filesModel.get(row).fileIsDir;
+                return filesModel.getRow(row).fileIsDir;
             }
 
             function get(row) {
-                return filesModel.get(row)
+                return filesModel.getRow(row)
             }
 
             function update() {
@@ -473,7 +492,7 @@ ModalWindow {
                     while (lower < upper) {
                         middle = Math.floor((lower + upper) / 2);
                         var lessThan;
-                        if (comparisonFunction(sortValue, filesModel.get(middle)[sortField])) {
+                        if (comparisonFunction(sortValue, filesModel.getRow(middle)[sortField])) {
                             lessThan = true;
                             upper = middle;
                         } else {
@@ -482,7 +501,7 @@ ModalWindow {
                         }
                     }
 
-                    filesModel.insert(lower, {
+                    filesModel.insertRow(lower, {
                        fileName: fileName,
                        fileModified: (fileIsDir ? new Date(0) : model.getItem(i, "fileModified")),
                        fileSize: model.getItem(i, "fileSize"),
@@ -496,9 +515,10 @@ ModalWindow {
             }
         }
 
-        Table {
+        TableView {
             id: fileTableView
-            colorScheme: hifi.colorSchemes.light
+            // QT6TODO:
+            //colorScheme: hifi.colorSchemes.light
             anchors {
                 top: navControls.bottom
                 topMargin: hifi.dimensions.contentSpacing.y
@@ -507,15 +527,17 @@ ModalWindow {
                 bottom: currentSelection.top
                 bottomMargin: hifi.dimensions.contentSpacing.y + currentSelection.controlHeight - currentSelection.height
             }
-            headerVisible: !selectDirectory
-            onDoubleClicked: navigateToRow(row);
+            // QT6TODO:
+            //headerVisible: !selectDirectory
+            //onDoubleClicked: navigateToRow(row);
             Keys.onReturnPressed: navigateToCurrentRow();
             Keys.onEnterPressed: navigateToCurrentRow();
 
-            sortIndicatorColumn: 0
-            sortIndicatorOrder: Qt.AscendingOrder
-            sortIndicatorVisible: true
+            property int sortIndicatorColumn: 0
+            property var sortIndicatorOrder: Qt.AscendingOrder
+            property bool sortIndicatorVisible: true
 
+            // QT6TODO
             model: filesModel
 
             function updateSort() {
@@ -528,7 +550,20 @@ ModalWindow {
 
             onSortIndicatorOrderChanged: { updateSort(); }
 
-            itemDelegate: Item {
+            delegate: TextInput {
+                text: model.display
+                padding: 12
+                selectByMouse: true
+
+                onAccepted: model.display = text
+
+                Rectangle {
+                    anchors.fill: parent
+                    color: "#efefef"
+                    z: -1
+                }
+            }
+            /*delegate: Item {
                 clip: true
 
                 FiraSansSemiBold {
@@ -571,33 +606,35 @@ ModalWindow {
                         return size + " " + suffixes[suffixIndex];
                     }
                 }
-            }
+            }*/
 
-            QQC1.TableViewColumn {
-                id: fileNameColumn
-                role: "fileName"
-                title: "Name"
-                width: (selectDirectory ? 1.0 : 0.5) * fileTableView.width
-                movable: false
-                resizable: true
-            }
-            QQC1.TableViewColumn {
-                id: fileModifiedColumn
-                role: "fileModified"
-                title: "Date"
-                width: 0.3 * fileTableView.width
-                movable: false
-                resizable: true
-                visible: !selectDirectory
-            }
-            QQC1.TableViewColumn {
-                role: "fileSize"
-                title: "Size"
-                width: fileTableView.width - fileNameColumn.width - fileModifiedColumn.width
-                movable: false
-                resizable: true
-                visible: !selectDirectory
-            }
+            /*model: TableModel {
+                TableModelColumn {
+                    id: fileNameColumn
+                    role: "fileName"
+                    title: "Name"
+                    width: (selectDirectory ? 1.0 : 0.5) * fileTableView.width
+                    movable: false
+                    resizable: true
+                }
+                TableModelColumn {
+                    id: fileModifiedColumn
+                    role: "fileModified"
+                    title: "Date"
+                    width: 0.3 * fileTableView.width
+                    movable: false
+                    resizable: true
+                    visible: !selectDirectory
+                }
+                TableModelColumn {
+                    role: "fileSize"
+                    title: "Size"
+                    width: fileTableView.width - fileNameColumn.width - fileModifiedColumn.width
+                    movable: false
+                    resizable: true
+                    visible: !selectDirectory
+                }
+            }*/
 
             function navigateToRow(row) {
                 currentRow = row;
@@ -651,7 +688,7 @@ ModalWindow {
                 onTriggered: fileTableView.prefix = "";
             }
 
-            Keys.onPressed: {
+            Keys.onPressed: event => {
                 switch (event.key) {
                 case Qt.Key_Backspace:
                 case Qt.Key_Tab:
@@ -820,7 +857,7 @@ ModalWindow {
         }
     }
 
-    Keys.onPressed: {
+    Keys.onPressed: event => {
         switch (event.key) {
         case Qt.Key_Backspace:
             event.accepted = d.navigateUp();
