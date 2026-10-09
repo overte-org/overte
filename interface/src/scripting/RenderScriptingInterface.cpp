@@ -95,6 +95,8 @@ void RenderScriptingInterface::setRenderMethod(RenderMethod renderMethod) {
     }
 }
 
+// FIXME: other rendering settings like shadows and
+// bloom aren't propagated through mirror views yet
 void recursivelyUpdateMirrorRenderMethods(const QString& parentTaskName, int renderMethod, int depth) {
     if (depth == RenderMirrorTask::MAX_MIRROR_DEPTH) {
         return;
@@ -106,7 +108,7 @@ void recursivelyUpdateMirrorRenderMethods(const QString& parentTaskName, int ren
         auto mirrorConfig = dynamic_cast<render::SwitchConfig*>(renderConfig->getConfig(QString::fromStdString(mirrorTaskString)));
         if (mirrorConfig) {
             mirrorConfig->setBranch((int)renderMethod);
-            recursivelyUpdateMirrorRenderMethods(QString::fromStdString(mirrorTaskString) + (renderMethod == 1 ? ".RenderForwardTask" : ".RenderShadowsAndDeferredTask.RenderDeferredTask"),
+            recursivelyUpdateMirrorRenderMethods(QString::fromStdString(mirrorTaskString) + (renderMethod == 1 ? ".RenderShadowsAndForwardTask.RenderForwardTask" : ".RenderShadowsAndDeferredTask.RenderDeferredTask"),
                 renderMethod, depth + 1);
         }
     }
@@ -123,7 +125,7 @@ void RenderScriptingInterface::forceRenderMethod(RenderMethod renderMethod) {
         if (config) {
             config->setBranch((int)renderMethod);
 
-            recursivelyUpdateMirrorRenderMethods(configName + (renderMethod == RenderMethod::FORWARD ? ".RenderForwardTask" : ".RenderShadowsAndDeferredTask.RenderDeferredTask"),
+            recursivelyUpdateMirrorRenderMethods(configName + (renderMethod == RenderMethod::FORWARD ? ".RenderShadowsAndForwardTask.RenderForwardTask" : ".RenderShadowsAndDeferredTask.RenderDeferredTask"),
                 (int)renderMethod, 0);
         }
 
@@ -445,7 +447,7 @@ void RenderScriptingInterface::forceViewportResolutionScale(float scale) {
         if (deferredView) {
             deferredView->setProperty("resolutionScale", scale);
         }
-        auto forwardView = renderConfig->getConfig("RenderMainView.RenderForwardTask");
+        auto forwardView = renderConfig->getConfig("RenderMainView.RenderShadowsAndForwardTask.RenderForwardTask");
         if (forwardView) {
             forwardView->setProperty("resolutionScale", scale);
         }
@@ -454,7 +456,7 @@ void RenderScriptingInterface::forceViewportResolutionScale(float scale) {
         if (deferredSecondView) {
             deferredSecondView->setProperty("resolutionScale", scale);
         }
-        auto forwardSecondView = renderConfig->getConfig("RenderSecondView.RenderForwardTask");
+        auto forwardSecondView = renderConfig->getConfig("RenderSecondView.RenderShadowsAndForwardTask.RenderForwardTask");
         if (forwardSecondView) {
             forwardSecondView->setProperty("resolutionScale", scale);
         }

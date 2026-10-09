@@ -2530,7 +2530,7 @@ static ShapePipelinePointer polyvoxPipelineFactory(const ShapePlumber& plumber, 
             std::make_tuple(false, false, false, polyvox),
             std::make_tuple(true, false, false, polyvox_forward),
             std::make_tuple(false, true, false, polyvox_shadow),
-            // no such thing as forward + shadow
+            std::make_tuple(true, true, false, polyvox_shadow),
             std::make_tuple(false, false, true, polyvox_fade),
             std::make_tuple(false, true, true, polyvox_shadow_fade),
             // no such thing as forward + fade/shadow
