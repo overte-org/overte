@@ -258,10 +258,6 @@ void LightStage::Shadow::setKeylightCascadeFrustum(unsigned int cascadeIndex, co
     auto& cascade = _cascades[cascadeIndex];
     const auto viewMinCascadeShadowDistance = std::max(viewFrustum.getNearClip(), cascade.getMinDistance());
     const auto viewMaxCascadeShadowDistance = std::min(viewFrustum.getFarClip(), cascade.getMaxDistance());
-    const auto viewMaxShadowDistance = _cascades.back().getMaxDistance();
-
-    const Transform shadowView{ cascade._frustum->getView()};
-    const Transform shadowViewInverse{ shadowView.getInverseMatrix() };
 
     // FIXME: ViewFrustum::Corners should just be an array and getCorners
     // should take both the min and max in one call
@@ -298,12 +294,15 @@ void LightStage::Shadow::setKeylightCascadeFrustum(unsigned int cascadeIndex, co
     vec2 min = { -boundsRadius, -boundsRadius };
     vec2 max = { boundsRadius, boundsRadius };
 
-    // Re-adjust near and far shadow distance
-    auto near = glm::min(-boundsRadius, nearDepth);
-    auto far = cascade.computeFarDistance(viewFrustum, shadowViewInverse, min.x, max.x, min.y, max.y, viewMaxShadowDistance);
+    cascade._frustum->setPosition(boundsCenter);
 
-    auto ortho = glm::ortho<float>(min.x, max.x, min.y, max.y, near, far);
-    auto shadowViewProj = ortho * shadowViewInverse.getMatrix();
+    // boundsRadius on its own would be too small, shadows would have a very short cast distance.
+    // Bump it up a bit so there's some wiggle room without destroying the depth precision
+    constexpr float zMargin = 4.0f;
+
+    auto ortho = glm::ortho<float>(min.x, max.x, min.y, max.y, -boundsRadius * zMargin, boundsRadius * zMargin);
+    auto shadowViewInverse = glm::inverse(cascade.getView());
+    auto shadowViewProj = ortho * shadowViewInverse;
 
     auto origin = (shadowViewProj * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
     auto offset = (glm::floor(origin * (MAP_SIZE / 2.0f)) * (2.0f / MAP_SIZE)) - origin;
@@ -318,7 +317,7 @@ void LightStage::Shadow::setKeylightCascadeFrustum(unsigned int cascadeIndex, co
     // Update the buffer
     auto& schema = _schemaBuffer.edit<Schema>();
     auto& schemaCascade = schema.cascades[cascadeIndex];
-    schemaCascade.reprojection = _biasMatrix * ortho * shadowViewInverse.getMatrix();
+    schemaCascade.reprojection = _biasMatrix * ortho * shadowViewInverse;
 }
 
 void LightStage::Shadow::setKeylightCascadeBias(unsigned int cascadeIndex, float constantBias, float slopeBias) {
