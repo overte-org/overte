@@ -258,41 +258,57 @@ void LightStage::Shadow::setKeylightCascadeFrustum(unsigned int cascadeIndex, co
     auto& cascade = _cascades[cascadeIndex];
     const auto viewMinCascadeShadowDistance = std::max(viewFrustum.getNearClip(), cascade.getMinDistance());
     const auto viewMaxCascadeShadowDistance = std::min(viewFrustum.getFarClip(), cascade.getMaxDistance());
-    const auto viewMaxShadowDistance = _cascades.back().getMaxDistance();
 
-    const Transform shadowView{ cascade._frustum->getView()};
-    const Transform shadowViewInverse{ shadowView.getInverseMatrix() };
-
+    // FIXME: ViewFrustum::Corners should just be an array and getCorners
+    // should take both the min and max in one call
     auto nearCorners = viewFrustum.getCorners(viewMinCascadeShadowDistance);
     auto farCorners = viewFrustum.getCorners(viewMaxCascadeShadowDistance);
 
-    vec3 min{ shadowViewInverse.transform(nearCorners.bottomLeft) };
-    vec3 max{ min };
-    // Expand keylight frustum  to fit view frustum
-    auto fitFrustum = [&min, &max, &shadowViewInverse](const vec3& viewCorner) {
-        const auto corner = shadowViewInverse.transform(viewCorner);
-
-        min.x = glm::min(min.x, corner.x);
-        min.y = glm::min(min.y, corner.y);
-        min.z = glm::min(min.z, corner.z);
-
-        max.x = glm::max(max.x, corner.x);
-        max.y = glm::max(max.y, corner.y);
-        max.z = glm::max(max.z, corner.z);
+    std::array<vec3, 8> corners {
+        nearCorners.bottomLeft,
+        nearCorners.bottomRight,
+        nearCorners.topLeft,
+        nearCorners.topRight,
+        farCorners.bottomLeft,
+        farCorners.bottomRight,
+        farCorners.topLeft,
+        farCorners.topRight,
     };
-    fitFrustum(nearCorners.bottomRight);
-    fitFrustum(nearCorners.topLeft);
-    fitFrustum(nearCorners.topRight);
-    fitFrustum(farCorners.bottomLeft);
-    fitFrustum(farCorners.bottomRight);
-    fitFrustum(farCorners.topLeft);
-    fitFrustum(farCorners.topRight);
 
-    // Re-adjust near and far shadow distance
-    auto near = glm::min(-max.z, nearDepth);
-    auto far = cascade.computeFarDistance(viewFrustum, shadowViewInverse, min.x, max.x, min.y, max.y, viewMaxShadowDistance);
+    // Use bounding spheres instead of tightly-bound boxes,
+    // otherwise the frustum will be rectangular and won't
+    // work properly with the texel-rounding math below
+    vec3 boundsCenter {};
+    float boundsRadius = 0.0f;
 
-    glm::mat4 ortho = glm::ortho<float>(min.x, max.x, min.y, max.y, near, far);
+    for (const auto& corner : corners) {
+        boundsCenter += corner / 8.0f;
+    }
+
+    for (const auto& corner : corners) {
+        boundsRadius = std::max(boundsRadius, glm::distance(corner, boundsCenter));
+    }
+
+    boundsRadius = std::ceil(boundsRadius);
+
+    vec2 min = { -boundsRadius, -boundsRadius };
+    vec2 max = { boundsRadius, boundsRadius };
+
+    cascade._frustum->setPosition(boundsCenter);
+
+    // boundsRadius on its own would be too small, shadows would have a very short cast distance.
+    // Bump it up a bit so there's some wiggle room without destroying the depth precision
+    constexpr float zMargin = 4.0f;
+
+    auto ortho = glm::ortho<float>(min.x, max.x, min.y, max.y, -boundsRadius * zMargin, boundsRadius * zMargin);
+    auto shadowViewInverse = glm::inverse(cascade.getView());
+    auto shadowViewProj = ortho * shadowViewInverse;
+
+    auto origin = (shadowViewProj * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
+    auto offset = (glm::floor(origin * (MAP_SIZE / 2.0f)) * (2.0f / MAP_SIZE)) - origin;
+
+    ortho[3][0] += offset.x;
+    ortho[3][1] += offset.y;
     cascade._frustum->setProjection(ortho);
 
     // Calculate the frustum's internal state
@@ -301,7 +317,7 @@ void LightStage::Shadow::setKeylightCascadeFrustum(unsigned int cascadeIndex, co
     // Update the buffer
     auto& schema = _schemaBuffer.edit<Schema>();
     auto& schemaCascade = schema.cascades[cascadeIndex];
-    schemaCascade.reprojection = _biasMatrix * ortho * shadowViewInverse.getMatrix();
+    schemaCascade.reprojection = _biasMatrix * ortho * shadowViewInverse;
 }
 
 void LightStage::Shadow::setKeylightCascadeBias(unsigned int cascadeIndex, float constantBias, float slopeBias) {
