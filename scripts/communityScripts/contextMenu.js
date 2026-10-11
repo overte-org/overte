@@ -309,9 +309,11 @@ function ContextMenu_OpenActions(actionSetName, page = 0) {
 	mouseWasCaptured = Camera.captureMouse;
 	Camera.captureMouse = false;
 
-	const scale = 1;
+	const scale = MyAvatar.sensorToWorldScale;
 	// FIXME: lineHeight and margin properties sets don't take SNScale into account
-	const lineScale = scale / MyAvatar.sensorToWorldScale;
+	// Only scale text when it's parented to the camera, since the camera doesn't
+	// inherit scale like the sensor joint
+	const lineScale = (HMD.active && (CONTEXT_MENU_SETTINGS.parented ?? true)) ? 1.0 : scale;
 	const myAvatar = MyAvatar.sessionUUID;
 
 	const baseActions = registeredActionSets[actionSetName];
