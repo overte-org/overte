@@ -3,7 +3,7 @@
 //  places.css
 //
 //  Created by Alezia Kurdis, January 1st, 2022.
-//  Copyright 2022-2025 Overte e.V.
+//  Copyright 2022-2026 Overte e.V.
 //
 //  css for the ui of the Places application.
 //
@@ -18,6 +18,13 @@ body {
     padding: 0px;
     width: 100%;
     background-color: #000000;   
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
 }
 
 .navBtn {
