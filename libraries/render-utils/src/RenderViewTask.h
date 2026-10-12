@@ -29,6 +29,17 @@ public:
         uint8_t tagBits, uint8_t tagMask, uint8_t transformOffset, size_t depth);
 };
 
+class RenderShadowsAndForwardTask {
+public:
+    using Input = render::VaryingSet3<RenderFetchCullSortTask::Output, LightingModelPointer, AssembleLightingStageTask::Output>;
+    using JobModel = render::Task::ModelI<RenderShadowsAndForwardTask, Input>;
+
+    RenderShadowsAndForwardTask() {}
+
+    void build(JobModel& task, const render::Varying& inputs, render::Varying& outputs, render::CullFunctor cullFunctor,
+        uint8_t tagBits, uint8_t tagMask, uint8_t transformOffset, size_t depth);
+};
+
 class DeferredForwardSwitchJob {
 public:
     using Input = render::VaryingSet3<RenderFetchCullSortTask::Output, LightingModelPointer, AssembleLightingStageTask::Output>;

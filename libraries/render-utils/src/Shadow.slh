@@ -52,7 +52,7 @@ ShadowSampleOffsets evalShadowFilterOffsets(vec4 position) {
     // Pattern dithering in screen space
     ivec2 coords = ivec2(gl_FragCoord.xy);
 #else
-    // Pattern dithering in world space (mm resolution)
+    // Pattern dithering in world space
     ivec2 coords = ivec2(position.x, position.y+position.z);
 #endif
 
@@ -96,6 +96,11 @@ float evalShadowCascadeAttenuation(int cascadeIndex, ShadowSampleOffsets offsets
 }
 
 float evalShadowAttenuation(vec3 worldLightDir, vec4 worldPosition, float viewDepth, vec3 worldNormal) {
+    // If we're not rendering any shadows, don't waste cycles sampling from empty textures.
+    if (getShadowCascadeCount() == 0) {
+        return 1.0;
+    }
+
     ShadowSampleOffsets offsets = evalShadowFilterOffsets(worldPosition);
 
     vec4 cascadeShadowCoords[4];
