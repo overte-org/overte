@@ -152,8 +152,8 @@ void RenderEventHandler::qmlRender(bool sceneGraphSync) {
             {
                 // Serialize QML rendering because of a crash caused by Qt bug 
                 // https://bugreports.qt.io/browse/QTBUG-77469
-                static std::mutex qmlRenderMutex;
-                std::unique_lock<std::mutex> qmlRenderLock{ qmlRenderMutex };
+                //static std::mutex qmlRenderMutex;
+                //std::unique_lock<std::mutex> qmlRenderLock{ qmlRenderMutex };
                 _shared->_renderControl->render();
             }
         }
