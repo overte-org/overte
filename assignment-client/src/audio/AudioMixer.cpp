@@ -59,7 +59,10 @@ float AudioMixer::_noiseMutingThreshold{ DEFAULT_NOISE_MUTING_THRESHOLD };
 float AudioMixer::_attenuationPerDoublingInDistance{ DEFAULT_ATTENUATION_PER_DOUBLING_IN_DISTANCE };
 map<QString, shared_ptr<CodecPlugin>> AudioMixer::_availableCodecs{ };
 QStringList AudioMixer::_codecPreferenceOrder{};
+
 unordered_map<QString, AudioMixer::ZoneSettings> AudioMixer::_audioZones;
+vector<Encoder::CodecSettings> AudioMixer::_codecSettings;
+
 
 AudioMixer::AudioMixer(ReceivedMessage& message) :
     ThreadedAssignment(message)
@@ -227,6 +230,7 @@ void AudioMixer::handleNodeMuteRequestPacket(QSharedPointer<ReceivedMessage> pac
             // we need to set a flag so we send them the appropriate packet to mute them
             AudioMixerClientData* nodeData = (AudioMixerClientData*)node->getLinkedData();
             nodeData->setShouldMuteClient(true);
+            nodeData->setCodecSettings(_codecSettings);
         } else {
             qWarning() << "Node mute packet received for unknown node " << uuidStringWithoutCurlyBraces(nodeUUID);
         }
@@ -401,6 +405,7 @@ AudioMixerClientData* AudioMixer::getOrCreateClientData(Node* node) {
         node->setLinkedData(unique_ptr<NodeData> { new AudioMixerClientData(node->getUUID(), node->getLocalID()) });
         clientData = dynamic_cast<AudioMixerClientData*>(node->getLinkedData());
         connect(clientData, &AudioMixerClientData::injectorStreamFinished, this, &AudioMixer::removeHRTFsForFinishedInjector);
+        clientData->setCodecSettings(_codecSettings);
     }
 
     return clientData;
@@ -810,6 +815,8 @@ void AudioMixer::parseSettingsObject(const QJsonObject& settingsObject) {
                 }
             }
         }
+
+        _codecSettings = Encoder::parseSettings(audioEnvGroupObject);
     }
 }
 
