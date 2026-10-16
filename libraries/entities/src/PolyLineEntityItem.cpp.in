@@ -128,6 +128,13 @@ void PolyLineEntityItem::setStrokeColors(const QVector<glm::vec3>& strokeColors)
     });
 }
 
+void PolyLineEntityItem::setStrokeAlphas(const QVector<float>& strokeAlphas) {
+    withWriteLock([&] {
+        _strokeAlphas = strokeAlphas;
+        _alphasChanged = true;
+    });
+}
+
 void PolyLineEntityItem::computeAndUpdateDimensions() {
     QVector<glm::vec3> points;
     QVector<float> widths;
@@ -191,6 +198,12 @@ QVector<glm::vec3> PolyLineEntityItem::getStrokeColors() const {
     });
 }
 
+QVector<float> PolyLineEntityItem::getStrokeAlphas() const {
+    return resultWithReadLock<QVector<float>>([&] {
+        return _strokeAlphas;
+    });
+}
+
 QVector<float> PolyLineEntityItem::getStrokeWidths() const {
     return resultWithReadLock<QVector<float>>([&] {
         return _strokeWidths;
@@ -222,5 +235,18 @@ void PolyLineEntityItem::setColor(const glm::u8vec3& value) {
 glm::u8vec3 PolyLineEntityItem::getColor() const {
     return resultWithReadLock<glm::u8vec3>([&] {
         return _color;
+    });
+}
+
+void PolyLineEntityItem::setAlpha(const float value) {
+    withWriteLock([&] {
+        _alpha = value;
+        _alphasChanged = true;
+    });
+}
+
+float PolyLineEntityItem::getAlpha() const {
+    return resultWithReadLock<float>([&] {
+        return _alpha;
     });
 }

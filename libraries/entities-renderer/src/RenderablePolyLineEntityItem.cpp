@@ -57,7 +57,25 @@ void PolyLineEntityRenderer::updateModelTransformAndBound(const EntityItemPointe
 }
 
 bool PolyLineEntityRenderer::isTransparent() const {
-    return _glow || (_textureLoaded && _texture->getGPUTexture() && _texture->getGPUTexture()->getUsage().isAlpha());
+    // Glow always forces transparency
+    if (_glow) {
+        return true;
+    }
+
+    // Transparent if any per-point alpha is less than fully opaque
+    for (const auto& alpha : _alphas) {
+        if (alpha < 1.0f) {
+            return true;
+        }
+    }
+
+    // If there are fewer stroke alphas than points, the fallback alpha will apply
+    if (_alphas.size() < _points.size() && _alpha < 1.0f) {
+        return true;
+    }
+
+    // Transparent if the texture has an alpha channel (only if texture is loaded)
+    return (_textureLoaded && _texture->getGPUTexture() && _texture->getGPUTexture()->getUsage().isAlpha());
 }
 
 void PolyLineEntityRenderer::buildPipelines() {
@@ -123,7 +141,7 @@ ShapeKey PolyLineEntityRenderer::getShapeKey() {
 }
 
 bool PolyLineEntityRenderer::needsRenderUpdateFromTypedEntity(const TypedEntityPointer& entity) const {
-    if (entity->pointsChanged() || entity->widthsChanged() || entity->normalsChanged() || entity->texturesChanged() || entity->colorsChanged()) {
+    if (entity->pointsChanged() || entity->widthsChanged() || entity->normalsChanged() || entity->texturesChanged() || entity->colorsChanged() || entity->alphasChanged()) {
         return true;
     }
 
@@ -144,6 +162,7 @@ void PolyLineEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPo
     auto widthsChanged = entity->widthsChanged();
     auto normalsChanged = entity->normalsChanged();
     auto colorsChanged = entity->colorsChanged();
+    auto alphasChanged = entity->alphasChanged();
 
     bool isUVModeStretch = entity->getIsUVModeStretch();
     bool glow = entity->getGlow();
@@ -197,12 +216,21 @@ void PolyLineEntityRenderer::doRenderUpdateAsynchronousTyped(const TypedEntityPo
         _colors = entity->getStrokeColors();
         _color = toGlm(entity->getColor());
     }
+    if (alphasChanged) {
+        _alphas = entity->getStrokeAlphas();
+        _alpha = entity->getAlpha();
+    }
 
     bool uvModeStretchChanged = _isUVModeStretch != isUVModeStretch;
     _isUVModeStretch = isUVModeStretch;
 
-    if (uvModeStretchChanged || pointsChanged || widthsChanged || normalsChanged || colorsChanged || textureChanged || faceCameraChanged) {
+    if (uvModeStretchChanged || pointsChanged || widthsChanged || normalsChanged || colorsChanged || alphasChanged || textureChanged || faceCameraChanged) {
         updateGeometry();
+    }
+
+    auto sampler = entity->getSampler();
+    if (_sampler != sampler) {
+        _sampler = sampler;
     }
 }
 
@@ -269,6 +297,7 @@ void PolyLineEntityRenderer::updateGeometry() {
 
         // Color
         glm::vec3 color = i < _colors.length() ? _colors[i] : _color;
+        float alpha = i < _alphas.length() ? _alphas[i] : _alpha;
 
         // Normal
         glm::vec3 normal = _normals[i];
@@ -291,7 +320,7 @@ void PolyLineEntityRenderer::updateGeometry() {
             }
         }
 
-        PolylineVertex vertex = { glm::vec4(point, uCoord), glm::vec4(color, 1.0f), glm::vec4(normal, 0.0f), glm::vec4(binormal, 0.5f * width) };
+        PolylineVertex vertex = { glm::vec4(point, uCoord), glm::vec4(color, alpha), glm::vec4(normal, 0.0f), glm::vec4(binormal, 0.5f * width) };
         vertices.push_back(vertex);
     }
 
@@ -335,6 +364,9 @@ void PolyLineEntityRenderer::doRender(RenderArgs* args) {
     batch.setModelTransform(transform, _prevRenderTransform);
     if (args->_renderMode == Args::RenderMode::DEFAULT_RENDER_MODE || args->_renderMode == Args::RenderMode::MIRROR_RENDER_MODE) {
         _prevRenderTransform = transform;
+    }
+    if (_textureLoaded && texture) {
+        texture->setSampler(_sampler);
     }
     batch.setResourceTexture(0, texture);
     batch.draw(gpu::TRIANGLE_STRIP, (gpu::uint32)(2 * _numVertices), 0);
