@@ -336,6 +336,11 @@ signals:
      */
     void requestingEntityScriptServerLog(bool areMessagesRequested);
 
+
+    // QT6TODO: this is part of the MenuScriptingInterface and TabletScriptingInterface hack
+    //          and should not be used
+    void scriptingEnded();
+
 public slots:
 
     /*@jsdoc
@@ -409,7 +414,7 @@ protected:
 
     ScriptManager::Context _context;
     QReadWriteLock _scriptManagersHashLock;
-    QMultiHash<QUrl, ScriptManagerPointer> _scriptManagersHash;
+    QHash<QUrl, ScriptManagerPointer> _scriptManagersHash;
     QSet<ScriptManagerPointer> _allKnownScriptManagers;
     QMutex _allScriptsMutex;
     ScriptsModel _scriptsModel;

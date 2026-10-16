@@ -167,13 +167,12 @@ void AssetMappingsScriptingInterface::getAllMappings(QJSValue callback) {
     auto assetClient = DependencyManager::get<AssetClient>();
     auto request = assetClient->createGetAllMappingsRequest();
 
-    connect(request, &GetAllMappingsRequest::finished, this, [callback](GetAllMappingsRequest* request) mutable {
+    connect(request, &GetAllMappingsRequest::finished, this, [callback, this](GetAllMappingsRequest* request) mutable {
         auto mappings = request->getMappings();
 
-        OVERTE_IGNORE_DEPRECATED_BEGIN
-        // Still using QScriptEngine
-        auto map = callback.engine()->newObject();
-        OVERTE_IGNORE_WARNING_END
+        // QT6TODO: is this correct?
+        auto engine = qjsEngine(this);
+        auto map = engine->newObject();
 
         for (auto& kv : mappings ) {
             map.setProperty(kv.first, kv.second.hash);

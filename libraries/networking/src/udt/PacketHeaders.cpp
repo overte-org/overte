@@ -16,6 +16,7 @@
 
 #include <QtCore/QDataStream>
 #include <QtCore/QDebug>
+#include <QIODevice>
 #include <QtCore/QMetaEnum>
 
 

@@ -12,6 +12,8 @@
 #include "UserActivityLoggerScriptingInterface.h"
 #include "UserActivityLogger.h"
 
+#include <shared/QtHelpers.h>
+
 void UserActivityLoggerScriptingInterface::enabledEdit() {
     doLogAction("enabled_edit");
 }

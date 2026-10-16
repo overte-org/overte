@@ -95,4 +95,6 @@ struct Input {
 
 }
 
+Q_DECLARE_METATYPE(controller::Input)
+
 #endif
