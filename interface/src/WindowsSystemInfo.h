@@ -185,7 +185,7 @@ void initCpuUsage() {
     memcpy(&lastUserCPU, &fuser, sizeof(FILETIME));
 
     PdhOpenQuery(NULL, NULL, &cpuQuery);
-    PdhAddCounter(cpuQuery, "\\Processor(_Total)\\% Processor Time", NULL, &cpuTotal);
+    PdhAddCounter(cpuQuery, L"\\Processor(_Total)\\% Processor Time", NULL, &cpuTotal);
     PdhCollectQueryData(cpuQuery);
 }
 

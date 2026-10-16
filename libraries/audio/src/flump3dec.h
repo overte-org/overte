@@ -101,7 +101,7 @@
  * As Fluendo can not assure that any of the activities you undertake do not
  * infringe any patents or other industrial or intellectual property rights,
  * Fluendo hereby disclaims any liability for any patent infringement that may be
- * claimed to you or to any other person from any legitimate right’s owner, as
+ * claimed to you or to any other person from any legitimate right's owner, as
  * stated in MIT license. So it is your responsibility to get information and to
  * acquire the necessary patent licenses to undertake your activities legally.
  */

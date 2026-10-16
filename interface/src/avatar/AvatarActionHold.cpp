@@ -378,7 +378,7 @@ bool AvatarActionHold::updateArguments(QVariantMap arguments) {
         }
 
         ok = true;
-        holderID = EntityDynamicInterface::extractStringArgument("hold", arguments, "holderID", ok, false);
+        holderID = QUuid(EntityDynamicInterface::extractStringArgument("hold", arguments, "holderID", ok, false));
         if (!ok) {
             auto myAvatar = DependencyManager::get<AvatarManager>()->getMyAvatar();
             holderID = myAvatar->getSessionUUID();

@@ -32,7 +32,10 @@ public:
     template <class T> Varying(const T& data, const std::string& name = "noname") : _concept(std::make_shared<Model<T>>(data, name)) {}
 
     template <class T> bool canCast() const { return !!std::dynamic_pointer_cast<Model<T>>(_concept); }
-    template <class T> const T& get() const { return std::static_pointer_cast<const Model<T>>(_concept)->_data; }
+    template <class T> const T& get() const {
+        Q_ASSERT(std::dynamic_pointer_cast<const Model<T>>(_concept));
+        return std::static_pointer_cast<const Model<T>>(_concept)->_data;
+    }
     template <class T> T& edit() { return std::static_pointer_cast<Model<T>>(_concept)->_data; }
 
     const std::string name() const { return _concept->name(); }

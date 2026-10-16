@@ -45,7 +45,7 @@ public:
 
     void setOutputURLSuffix(const QUrl& urlSuffix);
     void setMappingURL(const QUrl& mappingURL);
-    void setMapping(const hifi::VariantHash& mapping);
+    void setMapping(const hifi::VariantMultiHash& mapping);
 
     void initializeOutputDirs();
 
@@ -74,7 +74,7 @@ protected:
     QUrl _modelURL;
     QUrl _outputURLSuffix;
     QUrl _mappingURL;
-    hifi::VariantHash _mapping;
+    hifi::VariantMultiHash _mapping;
     QString _bakedOutputDir;
     QString _originalOutputDir;
     QString _originalOutputModelPath;

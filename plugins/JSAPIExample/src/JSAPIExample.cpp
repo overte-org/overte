@@ -23,6 +23,7 @@
 #include <QtCore/QSharedPointer>
 #include <QtCore/QThread>
 #include <QtCore/QTimer>
+#include <QtCore5Compat/QRegExp>
 
 #include <SettingHelpers.h>  // for ::settingsFilename()
 #include <SharedUtil.h>      // for ::usecTimestampNow()

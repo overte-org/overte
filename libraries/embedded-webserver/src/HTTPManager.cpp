@@ -17,6 +17,7 @@
 #include <QtCore/QFileInfo>
 #include <QtCore/QMimeDatabase>
 #include <QtNetwork/QTcpSocket>
+#include <QtCore5Compat/QRegExp>
 
 #include "HTTPConnection.h"
 #include "EmbeddedWebserverLogging.h"
@@ -117,55 +118,54 @@ bool HTTPManager::handleHTTPRequest(HTTPConnection* connection, const QUrl& url,
             static QMimeDatabase mimeDatabase;
 
             auto localFile = std::unique_ptr<QFile>(new QFile(filePath));
-            localFile->open(QIODevice::ReadOnly);
+            QFileInfo localFileInfo(filePath);
             QByteArray localFileData;
 
-            QFileInfo localFileInfo(filePath);
+            if (localFile->open(QIODevice::ReadOnly)) {
+                if (localFileInfo.completeSuffix() == "shtml") {
+                    localFileData = localFile->readAll();
+                    // this is a file that may have some SSI statements
+                    // the only thing we support is the include directive, but check the contents for that
 
-            if (localFileInfo.completeSuffix() == "shtml") {
-                localFileData = localFile->readAll();
-                // this is a file that may have some SSI statements
-                // the only thing we support is the include directive, but check the contents for that
+                    // setup our static QRegExp that will catch <!--#include virtual ... --> and <!--#include file .. --> directives
+                    const QString includeRegExpString = "<!--\\s*#include\\s+(virtual|file)\\s?=\\s?\"(\\S+)\"\\s*-->";
+                    QRegExp includeRegExp(includeRegExpString);
 
-                // setup our static QRegExp that will catch <!--#include virtual ... --> and <!--#include file .. --> directives
-                const QString includeRegExpString = "<!--\\s*#include\\s+(virtual|file)\\s?=\\s?\"(\\S+)\"\\s*-->";
-                QRegExp includeRegExp(includeRegExpString);
+                    int matchPosition = 0;
 
-                int matchPosition = 0;
+                    QString localFileString(localFileData);
 
-                QString localFileString(localFileData);
+                    while ((matchPosition = includeRegExp.indexIn(localFileString, matchPosition)) != -1) {
+                        // check if this is a file or vitual include
+                        bool isFileInclude = includeRegExp.cap(1) == "file";
 
-                while ((matchPosition = includeRegExp.indexIn(localFileString, matchPosition)) != -1) {
-                    // check if this is a file or vitual include
-                    bool isFileInclude = includeRegExp.cap(1) == "file";
+                        // setup the correct file path for the included file
+                        QString includeFilePath = isFileInclude
+                        ? localFileInfo.canonicalPath() + "/" + includeRegExp.cap(2)
+                        : _documentRoot + includeRegExp.cap(2);
 
-                    // setup the correct file path for the included file
-                    QString includeFilePath = isFileInclude
-                    ? localFileInfo.canonicalPath() + "/" + includeRegExp.cap(2)
-                    : _documentRoot + includeRegExp.cap(2);
-
-                    QString replacementString;
-
-                    if (QFileInfo(includeFilePath).isFile()) {
+                        QString replacementString;
 
                         QFile includedFile(includeFilePath);
-                        includedFile.open(QIODevice::ReadOnly);
+                        if (includedFile.open(QIODevice::ReadOnly)) {
+                            replacementString = QString(includedFile.readAll());
+                        } else {
+                            qCDebug(embeddedwebserver) << "SSI include directive referenced a missing or unopenable file:" << includeFilePath;
+                        }
 
-                        replacementString = QString(includedFile.readAll());
-                    } else {
-                        qCDebug(embeddedwebserver) << "SSI include directive referenced a missing file:" << includeFilePath;
+                        // replace the match with the contents of the file, or an empty string if the file was not found
+                        localFileString.replace(matchPosition, includeRegExp.matchedLength(), replacementString);
+
+                        // push the match position forward so we can check the next match
+                        matchPosition += includeRegExp.matchedLength();
                     }
 
-                    // replace the match with the contents of the file, or an empty string if the file was not found
-                    localFileString.replace(matchPosition, includeRegExp.matchedLength(), replacementString);
-
-                    // push the match position forward so we can check the next match
-                    matchPosition += includeRegExp.matchedLength();
+                    localFileData = localFileString.toLocal8Bit();
                 }
-
-                localFileData = localFileString.toLocal8Bit();
+            } else {
+                connection->respond(HTTPConnection::StatusCode500, QString("File %1 not found").arg(filePath).toUtf8());
+                return false;
             }
-
             // if this is an shtml, html or htm file just make the MIME type match HTML so browsers aren't confused
             // otherwise use the mimeDatabase to look it up
             auto suffix = localFileInfo.suffix();
