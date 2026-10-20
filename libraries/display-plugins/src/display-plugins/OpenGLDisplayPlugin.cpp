@@ -971,9 +971,10 @@ void OpenGLDisplayPlugin::copyTextureToQuickFramebuffer(NetworkTexturePointer ne
 }
 
 gpu::PipelinePointer OpenGLDisplayPlugin::getRenderTexturePipeline() {
-    if (!_hasSetSRGBConversion) {
-        const gl::ContextInfo &contextInfo = gl::ContextInfo::get();
-        _extraLinearToSRGBConversionSetting.set(std::find(contextInfo.extensions.cbegin(), contextInfo.extensions.cend(), "GL_EXT_framebuffer_sRGB") == contextInfo.extensions.cend());
+    auto backendApi = hifi::properties::getGraphicsAPI();
+
+    if (backendApi == hifi::properties::GraphicsAPI::GLES32 && !_hasSetSRGBConversion) {
+        _extraLinearToSRGBConversionSetting.set(true);
         _hasSetSRGBConversion = true;
     }
 
