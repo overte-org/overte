@@ -130,7 +130,7 @@ void RenderForwardTask::build(JobModel& task, const render::Varying& input, rend
 
     // Light Clustering
     // Create the cluster grid of lights, cpu job for now
-    const auto lightClusteringPassInputs = LightClusteringPass::Input(deferredFrameTransform, lightingModel, lightFrame, scaledPrimaryFramebuffer).asVarying();
+    const auto lightClusteringPassInputs = LightClusteringPass::Input(deferredFrameTransform, lightingModel, lightFrame).asVarying();
     const auto lightClusters = task.addJob<LightClusteringPass>("LightClustering", lightClusteringPassInputs);
 
     // Prepare Forward Framebuffer pass

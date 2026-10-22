@@ -1,7 +1,7 @@
 import QtQuick 2.6
 import QtQuick.Controls 2.2
 import QtQuick.Layouts 1.3
-import QtGraphicalEffects 1.0
+import Qt5Compat.GraphicalEffects
 
 AnimatedImage {
     id: root

@@ -3,7 +3,7 @@ import QtQuick.Controls 2.2
 import QtWebChannel 1.0
 import controls 1.0
 import hifi.toolbars 1.0
-import QtGraphicalEffects 1.0
+import Qt5Compat.GraphicalEffects
 import controlsUit 1.0 as HifiControls
 import stylesUit 1.0
 
@@ -14,7 +14,7 @@ TabBar {
     padding: 0
     spacing: 0
 
-    readonly property HifiConstants hifi: HifiConstants {}
+    HifiConstants { id: hifi; }
 
     EditTabButton {
         title: "CREATE"

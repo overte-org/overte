@@ -126,45 +126,45 @@ QDebug& operator<<(QDebug& dbg, const Sampler& s) {
     QString result = "[ ";
 
     result += "borderColor: (";
-    result += s.getBorderColor().r;
+    result += QString::number(s.getBorderColor().r);
     result += ", ";
-    result += s.getBorderColor().g;
+    result += QString::number(s.getBorderColor().g);
     result += ", ";
-    result += s.getBorderColor().b;
+    result += QString::number(s.getBorderColor().b);
     result += ", ";
-    result += s.getBorderColor().a;
+    result += QString::number(s.getBorderColor().a);
     result += "), ";
 
     result += "maxAnistropy: ";
-    result += s.getMaxAnisotropy();
+    result += QString::number(s.getMaxAnisotropy());
     result += ", ";
 
     result += "filter: ";
-    result += s.getFilter();
+    result += QString::number(s.getFilter());
     result += ", ";
 
     result += "comparisonFunction: ";
-    result += (uint8_t)s.getComparisonFunction();
+    result += QString::number((uint8_t)s.getComparisonFunction());
     result += ", ";
 
     result += "wrap: (";
-    result += s.getWrapModeU();
+    result += QString::number(s.getWrapModeU());
     result += ", ";
-    result += s.getWrapModeV();
+    result += QString::number(s.getWrapModeV());
     result += ", ";
-    result += s.getWrapModeW();
+    result += QString::number(s.getWrapModeW());
     result += "), ";
 
     result += "mipOffset: ";
-    result += s.getMipOffset();
+    result += QString::number(s.getMipOffset());
     result += ", ";
 
     result += "minMip: ";
-    result += s.getMinMip();
+    result += QString::number(s.getMinMip());
     result += ", ";
 
     result += "maxMip: ";
-    result += s.getMaxMip();
+    result += QString::number(s.getMaxMip());
     result += ", ";
 
     result += "]";

@@ -13,7 +13,7 @@
 
 #include <SettingHandle.h>
 #include <PathUtils.h>
-#include <QXmlQuery>
+//#include <QXmlQuery>
 #include <QDir>
 const QUrl InfoView::QML{ "InfoView.qml" };
 const QString InfoView::NAME{ "InfoView" };
@@ -34,12 +34,14 @@ void InfoView::registerType() {
 }
 
 QString fetchVersion(const QUrl& url) {
-    QXmlQuery query;
-    query.bindVariable("file", QVariant(url));
-    query.setQuery("string((doc($file)//input[@id='version'])[1]/@value)");
-    QString r;
-    query.evaluateTo(&r);
-    return r.trimmed();
+    // QT6TODO: QXmlQuery is not available in Qt6
+    //QXmlQuery query;
+    //query.bindVariable("file", QVariant(url));
+    //query.setQuery("string((doc($file)//input[@id='version'])[1]/@value)");
+    //QString r;
+    //query.evaluateTo(&r);
+    //return r.trimmed();
+    return {};
 }
 
 void InfoView::show(const QString& path, bool firstOrChangedOnly, QString urlQuery) {

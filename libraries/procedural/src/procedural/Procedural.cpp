@@ -306,10 +306,11 @@ void Procedural::prepare(gpu::Batch& batch,
         auto lastModified = (uint64_t)QFileInfo(_fragmentShaderPath).lastModified().toMSecsSinceEpoch();
         if (lastModified > _fragmentShaderModified) {
             QFile file(_fragmentShaderPath);
-            file.open(QIODevice::ReadOnly);
-            _fragmentShaderSource = QTextStream(&file).readAll();
-            _shaderDirty = true;
-            _fragmentShaderModified = lastModified;
+            if (file.open(QIODevice::ReadOnly)) {
+                _fragmentShaderSource = QTextStream(&file).readAll();
+                _shaderDirty = true;
+                _fragmentShaderModified = lastModified;
+            }
         }
     } else if (_fragmentShaderSource.isEmpty() && _networkFragmentShader && _networkFragmentShader->isLoaded()) {
         _fragmentShaderSource = _networkFragmentShader->_source;
@@ -320,10 +321,11 @@ void Procedural::prepare(gpu::Batch& batch,
         auto lastModified = (uint64_t)QFileInfo(_vertexShaderPath).lastModified().toMSecsSinceEpoch();
         if (lastModified > _vertexShaderModified) {
             QFile file(_vertexShaderPath);
-            file.open(QIODevice::ReadOnly);
-            _vertexShaderSource = QTextStream(&file).readAll();
-            _shaderDirty = true;
-            _vertexShaderModified = lastModified;
+            if (file.open(QIODevice::ReadOnly)) {
+                _vertexShaderSource = QTextStream(&file).readAll();
+                _shaderDirty = true;
+                _vertexShaderModified = lastModified;
+            }
         }
     } else if (_vertexShaderSource.isEmpty() && _networkVertexShader && _networkVertexShader->isLoaded()) {
         _vertexShaderSource = _networkVertexShader->_source;
@@ -440,8 +442,9 @@ void Procedural::prepare(gpu::Batch& batch,
         // Error fallback: pink checkerboard
         if (_errorFallbackFragmentSource.isEmpty()) {
             QFile file(_errorFallbackFragmentPath);
-            file.open(QIODevice::ReadOnly);
-            _errorFallbackFragmentSource = QTextStream(&file).readAll();
+            if (file.open(QIODevice::ReadOnly)) {
+                _errorFallbackFragmentSource = QTextStream(&file).readAll();
+            }
         }
         vertexSource.replacements.erase(PROCEDURAL_BLOCK);
         fragmentSource.replacements[PROCEDURAL_BLOCK] = _errorFallbackFragmentSource.toStdString();
