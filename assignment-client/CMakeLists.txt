@@ -24,8 +24,7 @@ link_hifi_libraries(
 include_hifi_library_headers(procedural)
 include_hifi_library_headers(entities)
 
-add_crashpad()
-target_breakpad()
+add_sentry()
 
 if (OVERTE_BUILD_TOOLS)
   add_dependencies(${TARGET_NAME} oven)
