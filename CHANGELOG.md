@@ -11,7 +11,7 @@ like documentation or CI pipeline.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 This project does **not** adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [2026.10.1] Not yet released
+## [2026.10.1] 2026.10.24
 
 ### Known issues
 - Sporadic script engine crash when switching words or when the server restarts (#2156)
@@ -49,6 +49,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Fixed thumbstick emulation on HTC Vive Wand controllers on OpenXR (PR2376)
 - Fixed deselected entities not being removed from the editHandleHighlightList (PR2341)
 - Fixed the deadlock on shutdown (PR2355)
+- Fixed broken context menu scaling (PR2411)
 
 ### Changes
 - The Overte client cache now gets removed during uninstall on Windows (PR1814)
@@ -66,6 +67,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 - Hid other users' avatar entities in Create app (PR2072)
 - Hid other users' avatar entities from the scripting API (PR2072)
 - Added hover and a "go back" button to the Context menu (PR2272)
+- Improved shadows (PR2410)
 
 ### Additions
 - Added script compilation error messages for Script.require() (PR2244,PR2280)
@@ -78,7 +80,7 @@ This project does **not** adhere to [Semantic Versioning](https://semver.org/spe
 
 ### Build System
 - Fixed building some tests (PR2214,PR2243)
-- Switching between OpenGL backends (gl45, gl41, and gles32) is now possible at runtime, rather than having to choose at compile time, using the `--graphicsAPI` command line argument. (PR2232)
+- Switching between OpenGL backends (gl45, gl41, and gles32) is now possible at runtime, rather than having to choose at compile time, using the `--graphicsAPI` command line argument. (PR2232,PR2416)
     Switching between Vulkan and OpenGL is still a compile time option.
 - Lower amount of Conan related messages during CMake configuration (PR2298)
 - Added CMake 4.0 compatibility (PR1550)
