@@ -13,6 +13,7 @@
 #include <QtCore/QLoggingCategory>
 #include <QtCore/QThread>
 
+#include <qloggingcategory.h>
 #include <shared/FileUtils.h>
 #include <shared/QtHelpers.h>
 #include <DependencyManager.h>
@@ -23,6 +24,7 @@
 #include <Trace.h>
 
 #include "Application.h"
+#include "InterfaceLogging.h"
 #include "NetworkingConstants.h"
 
 Q_LOGGING_CATEGORY(trace_test, "trace.test")
@@ -66,7 +68,7 @@ void TestScriptingInterface::waitIdle() {
 bool TestScriptingInterface::loadTestScene(QString scene) {
     if (QThread::currentThread() != thread()) {
         bool result;
-        BLOCKING_INVOKE_METHOD(this, "loadTestScene", Q_RETURN_ARG(bool, result), Q_ARG(QString, scene));
+        BLOCKING_INVOKE_METHOD(this, "loadTestScene", Q_GENERIC_RETURN_ARG(bool, result), Q_GENERIC_ARG(QString, scene));
         return result;
     }
 
@@ -187,9 +189,12 @@ void TestScriptingInterface::saveObject(QVariant variant, const QString& filenam
     QString filepath = QDir::cleanPath(_testResultsLocation + filename);
     QFile file(filepath);
 
-    file.open(QFile::WriteOnly);
-    file.write(jsonData);
-    file.close();
+    if (file.open(QFile::WriteOnly)) {
+        file.write(jsonData);
+        file.close();
+    } else {
+        qCCritical(interfaceapp) << "could not save json data to" << filepath;
+    }
 }
 
 void TestScriptingInterface::showMaximized() {

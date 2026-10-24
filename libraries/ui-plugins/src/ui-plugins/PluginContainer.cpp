@@ -7,6 +7,7 @@
 //
 #include "PluginContainer.h"
 
+#include <QActionGroup>
 #include <QtCore/QTimer>
 #include <QtCore/QThread>
 #include <QtGui/QScreen>

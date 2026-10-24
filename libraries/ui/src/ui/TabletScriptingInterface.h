@@ -67,7 +67,6 @@ class OffscreenQmlSurface;
 class TabletScriptingInterface : public QObject, public Dependency {
     Q_OBJECT
 public:
-
     /*@jsdoc
      * <p>Standard tablet sounds.</p>
      * <table>
@@ -147,10 +146,16 @@ private:
     ToolbarProxy* getSystemToolbarProxy();
 
     QMap<TabletAudioEvents, SharedSoundPointer> _audioEvents;
+
+    // QT6TODO: This is a hack and will lead to crashing of scripts
+    std::atomic<bool> _isFinished{ false };
+private slots:
+    void onScriptingEnded();
+
 protected:
     std::map<QString, TabletProxy*> _tabletProxies;
-    ToolbarScriptingInterface* _toolbarScriptingInterface { nullptr };
-    bool _toolbarMode { false };
+    ToolbarScriptingInterface* _toolbarScriptingInterface{ nullptr };
+    bool _toolbarMode{ false };
 };
 
 /*@jsdoc
@@ -170,7 +175,6 @@ public:
     Qt::ItemFlags flags(const QModelIndex& index) const override { return _flags; }
     QVariant data(const QModelIndex& index, int role) const override;
 
-
 protected:
     friend class TabletProxy;
     TabletButtonProxy* addButton(const QVariant& properties);
@@ -184,8 +188,7 @@ protected:
 
 Q_DECLARE_METATYPE(TabletButtonListModel*);
 
-class TabletButtonsProxyModel : public QSortFilterProxyModel
-{
+class TabletButtonsProxyModel : public QSortFilterProxyModel {
     Q_OBJECT
 
     Q_PROPERTY(int pageIndex READ pageIndex WRITE setPageIndex NOTIFY pageIndexChanged)
@@ -201,10 +204,10 @@ signals:
     void pageIndexChanged(int pageIndex);
 
 protected:
-    bool filterAcceptsRow(int sourceRow, const QModelIndex &sourceParent) const override;
+    bool filterAcceptsRow(int sourceRow, const QModelIndex& sourceParent) const override;
 
 private:
-    int _pageIndex { -1 };
+    int _pageIndex{ -1 };
 };
 
 Q_DECLARE_METATYPE(TabletButtonsProxyModel*);
@@ -538,7 +541,7 @@ signals:
     void toolbarModeChanged();
 
 protected slots:
-    
+
     /*@jsdoc
      * @function TabletProxy#desktopWindowClosed
      * @deprecated This function is deprecated and will be removed.
@@ -689,4 +692,4 @@ protected:
 Q_DECLARE_METATYPE(TabletButtonProxy*);
 Q_DECLARE_METATYPE(TabletScriptingInterface::TabletAudioEvents)
 
-#endif // hifi_TabletScriptingInterface_h
+#endif  // hifi_TabletScriptingInterface_h

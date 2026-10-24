@@ -68,7 +68,7 @@ void AssetClient::initCaching() {
 #ifdef Q_OS_ANDROID
             QString cachePath = QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
 #else
-            QString cachePath = QStandardPaths::writableLocation(QStandardPaths::DataLocation);
+            QString cachePath = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
 #endif
             _cacheDir = !cachePath.isEmpty() ? cachePath : "interfaceCache";
         }
@@ -222,7 +222,7 @@ namespace {
         if (!dt.isValid()) {
             qDebug() << __FUNCTION__ << "unrecognized date format:" << dateString;
         }
-        dt.setTimeSpec(Qt::UTC);
+        dt.setTimeZone(QTimeZone::utc());
         return dt;
     }
     QDateTime getHttpDateValue(const QVariantMap& headers, const QString& keyName, const QDateTime& defaultValue) {
