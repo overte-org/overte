@@ -203,6 +203,11 @@ void OpenXrInputPlugin::setConfigurationSettings(const QJsonObject configuration
     _inputDevice->_handTrackingEnabled = configurationSettings["enable_hand_tracking"].toBool(true);
     _context->_userPresenceEnabled = configurationSettings["enable_user_presence"].toBool(true);
 
+    if (configurationSettings["reset_calibration"].toBool(false)) {
+        _inputDevice->_trackerCalibrations.clear();
+        _inputDevice->_wantsCalibrate = false;
+    }
+
     // grr qt5 doesnt support destructured iterating like std::map
     foreach (const auto& key, calibration.keys()) {
         const auto& value = calibration.value(key).toObject();
