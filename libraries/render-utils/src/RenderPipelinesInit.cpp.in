@@ -211,7 +211,7 @@ void lightBatchSetter(const ShapePipeline* pipeline, Batch& batch, RenderArgs* a
 void initZPassPipelines(ShapePlumber& plumber, StatePointer state, const ShapePipeline::BatchSetter& batchSetter, const ShapePipeline::ItemSetter& itemSetter) {
     static std::unordered_map<ShapePlumber*, std::function<void(ShapeKey, int, ShapePipeline::BatchSetter, ShapePipeline::ItemSetter)>> addPipelineMap;
     ShapePlumber* plumberKey = &plumber;
-    addPipelineMap[plumberKey] = std::bind(&addPlumberPipeline, std::ref(plumber), _1, _2, std::make_shared<State>(), _3, _4);
+    addPipelineMap[plumberKey] = std::bind(&addPlumberPipeline, std::ref(plumber), _1, _2, state, _3, _4);
     static auto addPipeline = [=](const ShapeKey& key, int programId, ShapePlumber* plumberKey) {
         if (key.isFaded()) {
             addPipelineMap[plumberKey](key, programId, batchSetter, itemSetter);
