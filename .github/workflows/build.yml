@@ -205,10 +205,6 @@ jobs:
       if: always()
       uses: ./.github/actions/debug-info
 
-    - name: Install apt dependencies
-      shell: bash
-      run: apt update && apt install libgbm1
-
     - name: Install Conan dependencies
       uses: ./.github/actions/conan-install
       with:
