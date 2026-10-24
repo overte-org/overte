@@ -594,7 +594,7 @@ std::pair<TexturePointer, glm::ivec2> Texture::build(const ktx::KTXDescriptor& d
     // Assing the mips availables
     texture->setStoredMipFormat(mipFormat);
 
-    IrradianceKTXPayload irradianceKtxKeyValue;
+    IrradianceKTXPayload irradianceKtxKeyValue{};
     if (IrradianceKTXPayload::findInKeyValues(descriptor.keyValues, irradianceKtxKeyValue)) {
         texture->overrideIrradiance(std::make_shared<SphericalHarmonics>(irradianceKtxKeyValue._irradianceSH));
     }

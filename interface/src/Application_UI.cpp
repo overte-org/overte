@@ -92,6 +92,8 @@
 #include "LocationBookmarks.h"
 #include "LODManager.h"
 #include "ResourceRequestObserver.h"
+#include "crash-handler/CrashHandlerScriptingInterface.h"
+
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
 #include "SpeechRecognizer.h"
 #endif
@@ -265,6 +267,7 @@ void Application::setupQmlSurface(QQmlContext* surfaceContext, bool setAdditiona
         surfaceContext->setContextProperty("ResourceRequestObserver", DependencyManager::get<ResourceRequestObserver>().data());
         surfaceContext->setContextProperty("PlatformInfo", PlatformInfoScriptingInterface::getInstance());
         surfaceContext->setContextProperty("ExternalResource", ExternalResource::getInstance());
+        surfaceContext->setContextProperty("CrashHandler", CrashHandlerScriptingInterface::getInstance());
 
         // This `module` context property is blank for the QML scripting interface so that we don't get log errors when importing
         // certain JS files from both scripts (in the JS context) and QML (in the QML context).
@@ -952,6 +955,7 @@ void Application::onDesktopRootContextCreated(QQmlContext* surfaceContext) {
     surfaceContext->setContextProperty("HiFiAbout", AboutUtil::getInstance());  // Deprecated
     surfaceContext->setContextProperty("ResourceRequestObserver", DependencyManager::get<ResourceRequestObserver>().data());
     surfaceContext->setContextProperty("ExternalResource", ExternalResource::getInstance());
+    surfaceContext->setContextProperty("CrashHandler", CrashHandlerScriptingInterface::getInstance());
 
     if (auto steamClient = PluginManager::getInstance()->getSteamClientPlugin()) {
         surfaceContext->setContextProperty("Steam", new SteamScriptingInterface(engine, steamClient.get()));

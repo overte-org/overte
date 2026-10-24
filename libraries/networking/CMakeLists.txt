@@ -2,10 +2,11 @@ set(TARGET_NAME networking)
 setup_hifi_library(Network WebSockets)
 link_hifi_libraries(shared platform)
 
+include_hifi_library_headers(shared)
+
 target_openssl()
 target_tbb()
-add_crashpad()
-target_breakpad()
+add_sentry()
 
 if (WIN32 OR (UNIX AND NOT APPLE))
     if (NOT DISABLE_WEBRTC )
