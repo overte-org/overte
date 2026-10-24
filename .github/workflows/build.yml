@@ -114,7 +114,7 @@ jobs:
           - id: codechecker
             os: Ubuntu 22.04
             image: docker.io/overte/overte-full-build:2026-10-08-ubuntu-22.04-amd64
-            depot-ubuntu-24.04-32 runs out of disk space when building debug Qt6.
+            # depot-ubuntu-24.04-32 runs out of disk space when building debug Qt6.
             runner: depot-ubuntu-24.04-64
             arch: amd64
             cmake_build_type: Debug
