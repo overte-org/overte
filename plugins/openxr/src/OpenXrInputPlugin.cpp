@@ -1513,7 +1513,12 @@ void OpenXrInputPlugin::InputDevice::calibratePucks(const controller::InputCalib
         auto offset = defaultPoseOffset(data, channel);
 
         _trackerCalibrations[channel] = Pose(
+            // FIXME: do the tracker-bone offsetting correctly rather than hardcoding it here
+#if 0 // hardcoded vive puck offset
             glm::inverse(rotation) * vec3(0.0f, 0.0f, channel == HIPS || channel == SPINE2 ? 0.2f : 0.1f),
+#else
+            vec3(),
+#endif
             glm::inverse(rotation) * quat(offset)
         );
     }
