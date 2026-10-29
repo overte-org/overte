@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="24"
+   height="24"
+   viewBox="0 0 24 24"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   sodipodi:docname="settings_cog.svg"
+   inkscape:export-filename="../icons/settings_cog.svg"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="true"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="px"
+     showgrid="true"
+     inkscape:zoom="32"
+     inkscape:cx="11.09375"
+     inkscape:cy="13.265625"
+     inkscape:window-width="1382"
+     inkscape:window-height="1160"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="1"
+       spacingy="1"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="4"
+       enabled="true"
+       visible="true" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <linearGradient
+       id="linearGradient26"
+       inkscape:collect="always">
+      <stop
+         style="stop-color:#dbe2e3;stop-opacity:1;"
+         offset="0"
+         id="stop26" />
+      <stop
+         style="stop-color:#6f8a91;stop-opacity:1"
+         offset="1"
+         id="stop27" />
+    </linearGradient>
+    <mask
+       maskUnits="userSpaceOnUse"
+       id="mask17">
+      <g
+         inkscape:label="Layer 1"
+         inkscape:groupmode="layer"
+         id="g25"
+         style="display:inline">
+        <circle
+           style="fill:none;stroke:#ffffff;stroke-width:3;stroke-linecap:round;stroke-dasharray:none;paint-order:stroke fill markers"
+           id="circle17"
+           cx="12"
+           cy="12"
+           r="6" />
+        <path
+           style="fill:none;stroke:#ffffff;stroke-width:3;stroke-linecap:butt;stroke-dasharray:none;paint-order:stroke fill markers"
+           d="M 12,2 V 6"
+           id="path18"
+           sodipodi:nodetypes="cc" />
+        <path
+           style="fill:none;stroke:#ffffff;stroke-width:3;stroke-linecap:butt;stroke-dasharray:none;paint-order:normal"
+           d="M 22,12 H 18"
+           id="path19"
+           sodipodi:nodetypes="cc" />
+        <path
+           style="fill:none;stroke:#ffffff;stroke-width:3;stroke-linecap:butt;stroke-dasharray:none;paint-order:stroke fill markers"
+           d="M 12,22 V 18"
+           id="path20"
+           sodipodi:nodetypes="cc" />
+        <path
+           style="fill:none;stroke:#ffffff;stroke-width:3;stroke-linecap:butt;stroke-dasharray:none;paint-order:stroke fill markers"
+           d="M 6,12 H 2"
+           id="path21"
+           sodipodi:nodetypes="cc" />
+        <path
+           style="fill:none;stroke:#ffffff;stroke-width:3;stroke-linecap:butt;stroke-dasharray:none;paint-order:stroke fill markers"
+           d="M 8,8 5,5"
+           id="path22"
+           sodipodi:nodetypes="cc" />
+        <path
+           style="fill:none;stroke:#ffffff;stroke-width:3;stroke-linecap:butt;stroke-dasharray:none;paint-order:stroke fill markers"
+           d="M 16,8 19,5"
+           id="path23"
+           sodipodi:nodetypes="cc" />
+        <path
+           style="fill:none;stroke:#ffffff;stroke-width:3;stroke-linecap:butt;stroke-dasharray:none;paint-order:stroke fill markers"
+           d="m 16,16 3,3"
+           id="path24"
+           sodipodi:nodetypes="cc" />
+        <path
+           style="fill:none;stroke:#ffffff;stroke-width:3;stroke-linecap:butt;stroke-dasharray:none;paint-order:stroke fill markers"
+           d="M 8,16 5,19"
+           id="path25"
+           sodipodi:nodetypes="cc" />
+      </g>
+    </mask>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient26"
+       id="linearGradient27"
+       x1="2"
+       y1="2"
+       x2="22"
+       y2="22"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <g
+     inkscape:label="outline"
+     inkscape:groupmode="layer"
+     id="g17"
+     style="stroke:#374548">
+    <circle
+       style="fill:none;stroke:#374548;stroke-width:5;stroke-linecap:round;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       id="circle9"
+       cx="12"
+       cy="12"
+       r="6" />
+    <path
+       style="fill:none;stroke:#374548;stroke-width:5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       d="M 12,1 V 6"
+       id="path10"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#374548;stroke-width:5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+       d="M 23,12 H 18"
+       id="path11"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#374548;stroke-width:5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       d="M 12,23 V 18"
+       id="path12"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#374548;stroke-width:5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       d="M 6,12 H 1"
+       id="path13"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#374548;stroke-width:5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       d="M 8,8 4,4"
+       id="path14"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#374548;stroke-width:5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       d="M 16,8 20,4"
+       id="path15"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#374548;stroke-width:5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       d="m 16,16 4,4"
+       id="path16"
+       sodipodi:nodetypes="cc" />
+    <path
+       style="fill:none;stroke:#374548;stroke-width:5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1;paint-order:stroke fill markers"
+       d="M 8,16 4,20"
+       id="path17"
+       sodipodi:nodetypes="cc" />
+  </g>
+  <rect
+     style="display:inline;fill:url(#linearGradient27);stroke:none;stroke-width:5;stroke-linecap:butt;stroke-linejoin:bevel;stroke-dasharray:none;stroke-opacity:1;paint-order:normal"
+     id="rect17"
+     width="24"
+     height="24"
+     x="0"
+     y="0"
+     rx="2"
+     ry="2"
+     mask="url(#mask17)" />
+</svg>

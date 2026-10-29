@@ -51,6 +51,6 @@ namespace controller {
     };
 }
 
-//Q_DECLARE_METATYPE(controller::Pose);
+Q_DECLARE_METATYPE(controller::Pose);
 
 #endif

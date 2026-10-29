@@ -25,6 +25,7 @@
 #include "../QmlWindowClass.h"
 #include "../OffscreenUi.h"
 #include "../InfoView.h"
+#include "ScriptEngines.h"
 #include "ToolbarScriptingInterface.h"
 #include "Logging.h"
 
@@ -63,14 +64,17 @@ static Setting::Handle<QStringList> tabletSoundsButtonClick("TabletSounds", QStr
                                                                                "/sounds/Tab02.wav" });
 
 TabletButtonListModel::TabletButtonListModel() {
-
 }
 
 TabletButtonListModel::~TabletButtonListModel() {
-
 }
 
-enum ButtonDeviceRole {
+void TabletScriptingInterface::onScriptingEnded() {
+    _isFinished = true;
+}
+
+enum ButtonDeviceRole
+{
     ButtonProxyRole = Qt::UserRole,
 };
 
@@ -157,8 +161,9 @@ void TabletButtonsProxyModel::setPageIndex(int pageIndex) {
     if (_pageIndex == pageIndex)
         return;
 
+    beginFilterChange();
     _pageIndex = pageIndex;
-    invalidateFilter();
+    endFilterChange();
     emit pageIndexChanged(_pageIndex);
 }
 
@@ -174,6 +179,9 @@ TabletScriptingInterface::TabletScriptingInterface() {
     qRegisterMetaType<TabletScriptingInterface::TabletAudioEvents>("TabletScriptingInterface::TabletAudioEvents");
     qRegisterMetaType<TabletScriptingInterface::TabletConstants>("TabletScriptingInterface::TabletConstants");
     qmlRegisterType<TabletButtonsProxyModel>("TabletScriptingInterface", 1, 0, "TabletButtonsProxyModel");
+    // QT6TODO: this is part of the _isFinished hack. see header
+    connect(DependencyManager::get<ScriptEngines>().get(), &ScriptEngines::scriptingEnded, this,
+            &TabletScriptingInterface::onScriptingEnded);
 }
 
 TabletScriptingInterface::~TabletScriptingInterface() {
@@ -187,10 +195,13 @@ ToolbarProxy* TabletScriptingInterface::getSystemToolbarProxy() {
 
 TabletProxy* TabletScriptingInterface::getTablet(const QString& tabletId) {
     TabletProxy* tabletProxy = nullptr;
-    if (QThread::currentThread() != thread()) {
-        BLOCKING_INVOKE_METHOD(this, "getTablet", Q_RETURN_ARG(TabletProxy*, tabletProxy), Q_ARG(QString, tabletId));
+    if (_isFinished) {
         return tabletProxy;
-    } 
+    }
+    if (QThread::currentThread() != thread()) {
+        BLOCKING_INVOKE_METHOD(this, "getTablet", Q_GENERIC_RETURN_ARG(TabletProxy*, tabletProxy), Q_GENERIC_ARG(QString, tabletId));
+        return tabletProxy;
+    }
 
     auto iter = _tabletProxies.find(tabletId);
     if (iter != _tabletProxies.end()) {
@@ -441,7 +452,7 @@ void TabletProxy::initialScreen(const QVariant& url) {
 bool TabletProxy::isMessageDialogOpen() {
     if (QThread::currentThread() != thread()) {
         bool result = false;
-        BLOCKING_INVOKE_METHOD(this, "isMessageDialogOpen", Q_RETURN_ARG(bool, result));
+        BLOCKING_INVOKE_METHOD(this, "isMessageDialogOpen", Q_GENERIC_RETURN_ARG(bool, result));
         return result;
     }
 
@@ -501,7 +512,7 @@ void TabletProxy::onTabletShown() {
 bool TabletProxy::isPathLoaded(const QVariant& path) {
     if (QThread::currentThread() != thread()) {
         bool result = false;
-        BLOCKING_INVOKE_METHOD(this, "isPathLoaded", Q_RETURN_ARG(bool, result), Q_ARG(QVariant, path));
+        BLOCKING_INVOKE_METHOD(this, "isPathLoaded", Q_GENERIC_RETURN_ARG(bool, result), Q_GENERIC_ARG(QVariant, path));
         return result;
     }
 
@@ -651,7 +662,6 @@ void TabletProxy::returnToPreviousAppImpl(bool localSafeContext) {
     if (QThread::currentThread() != thread()) {
         qCWarning(uiLogging) << __FUNCTION__ << "may not be called directly by scripts";
         return;
-
     }
 
     QObject* root = nullptr;
@@ -685,7 +695,7 @@ void TabletProxy::returnToPreviousApp() {
 }
 
 void TabletProxy::loadQMLSource(const QVariant& path, bool resizable) {
-    // Capture whether the current script thread is allowed to load local HTML content, 
+    // Capture whether the current script thread is allowed to load local HTML content,
     // pass the information along to the real function
     bool localSafeContext = hifi::scripting::isLocalAccessSafeThread();
     if (QThread::currentThread() != thread()) {
@@ -699,7 +709,6 @@ void TabletProxy::loadQMLSourceImpl(const QVariant& path, bool resizable, bool l
     if (QThread::currentThread() != thread()) {
         qCWarning(uiLogging) << __FUNCTION__ << "may not be called directly by scripts";
         return;
-
     }
     QObject* root = nullptr;
     if (!_toolbarMode && _qmlTabletRoot) {
@@ -710,8 +719,8 @@ void TabletProxy::loadQMLSourceImpl(const QVariant& path, bool resizable, bool l
 
     if (root) {
         // BUGZ-1398: tablet access to local HTML files from client scripts
-        // Here we TEMPORARILY mark the main thread as allowed to load local file content, 
-        // because the thread that originally made the call is so marked.  
+        // Here we TEMPORARILY mark the main thread as allowed to load local file content,
+        // because the thread that originally made the call is so marked.
         if (localSafeContext) {
             hifi::scripting::setLocalAccessSafeThread(true);
         }
@@ -757,7 +766,7 @@ void TabletProxy::stopQMLSource() {
 bool TabletProxy::pushOntoStack(const QVariant& path) {
     if (QThread::currentThread() != thread()) {
         bool result = false;
-        BLOCKING_INVOKE_METHOD(this, "pushOntoStack", Q_RETURN_ARG(bool, result), Q_ARG(QVariant, path));
+        BLOCKING_INVOKE_METHOD(this, "pushOntoStack", Q_GENERIC_RETURN_ARG(bool, result), Q_GENERIC_ARG(QVariant, path));
         return result;
     }
 
@@ -900,7 +909,7 @@ void TabletProxy::loadHTMLSourceOnTopImpl(const QString& url, const QString& inj
 TabletButtonProxy* TabletProxy::addButton(const QVariant& properties) {
     if (QThread::currentThread() != thread()) {
         TabletButtonProxy* result = nullptr;
-        BLOCKING_INVOKE_METHOD(this, "addButton", Q_RETURN_ARG(TabletButtonProxy*, result), Q_ARG(QVariant, properties));
+        BLOCKING_INVOKE_METHOD(this, "addButton", Q_GENERIC_RETURN_ARG(TabletButtonProxy*, result), Q_GENERIC_ARG(QVariant, properties));
         return result;
     }
 
@@ -910,7 +919,7 @@ TabletButtonProxy* TabletProxy::addButton(const QVariant& properties) {
 bool TabletProxy::onHomeScreen() {
     if (QThread::currentThread() != thread()) {
         bool result = false;
-        BLOCKING_INVOKE_METHOD(this, "onHomeScreen", Q_RETURN_ARG(bool, result));
+        BLOCKING_INVOKE_METHOD(this, "onHomeScreen", Q_GENERIC_RETURN_ARG(bool, result));
         return result;
     }
 
@@ -919,7 +928,7 @@ bool TabletProxy::onHomeScreen() {
 
 void TabletProxy::removeButton(TabletButtonProxy* tabletButtonProxy) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "removeButton", Q_ARG(TabletButtonProxy*, tabletButtonProxy));
+        QMetaObject::invokeMethod(this, "removeButton", Q_GENERIC_ARG(TabletButtonProxy*, tabletButtonProxy));
         return;
     }
 
@@ -928,40 +937,39 @@ void TabletProxy::removeButton(TabletButtonProxy* tabletButtonProxy) {
 
 void TabletProxy::emitScriptEvent(const QVariant& msg) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "emitScriptEvent", Q_ARG(QVariant, msg));
+        QMetaObject::invokeMethod(this, "emitScriptEvent", Q_GENERIC_ARG(QVariant, msg));
         return;
     }
 
     if (!_toolbarMode && _qmlOffscreenSurface) {
-        QMetaObject::invokeMethod(_qmlOffscreenSurface, "emitScriptEvent", Qt::AutoConnection, Q_ARG(QVariant, msg));
+        QMetaObject::invokeMethod(_qmlOffscreenSurface, "emitScriptEvent", Qt::AutoConnection, Q_GENERIC_ARG(QVariant, msg));
     } else if (_toolbarMode && _desktopWindow) {
-        QMetaObject::invokeMethod(_desktopWindow, "emitScriptEvent", Qt::AutoConnection, Q_ARG(QVariant, msg));
+        QMetaObject::invokeMethod(_desktopWindow, "emitScriptEvent", Qt::AutoConnection, Q_GENERIC_ARG(QVariant, msg));
     }
 }
 
 void TabletProxy::sendToQml(const QVariant& msg) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "sendToQml", Q_ARG(QVariant, msg));
+        QMetaObject::invokeMethod(this, "sendToQml", Q_GENERIC_ARG(QVariant, msg));
         return;
     }
 
     if (!_toolbarMode && _qmlOffscreenSurface) {
-        QMetaObject::invokeMethod(_qmlOffscreenSurface, "sendToQml", Qt::AutoConnection, Q_ARG(QVariant, msg));
+        QMetaObject::invokeMethod(_qmlOffscreenSurface, "sendToQml", Qt::AutoConnection, Q_GENERIC_ARG(QVariant, msg));
     } else if (_toolbarMode && _desktopWindow) {
-        QMetaObject::invokeMethod(_desktopWindow, "sendToQml", Qt::AutoConnection, Q_ARG(QVariant, msg));
+        QMetaObject::invokeMethod(_desktopWindow, "sendToQml", Qt::AutoConnection, Q_GENERIC_ARG(QVariant, msg));
     }
 }
 
 OffscreenQmlSurface* TabletProxy::getTabletSurface() {
     if (QThread::currentThread() != thread()) {
         OffscreenQmlSurface* result = nullptr;
-        BLOCKING_INVOKE_METHOD(this, "getTabletSurface", Q_RETURN_ARG(OffscreenQmlSurface*, result));
+        BLOCKING_INVOKE_METHOD(this, "getTabletSurface", Q_GENERIC_RETURN_ARG(OffscreenQmlSurface*, result));
         return result;
     }
 
     return _qmlOffscreenSurface;
 }
-
 
 void TabletProxy::desktopWindowClosed() {
     gotoHomeScreen();
@@ -977,7 +985,6 @@ void TabletProxy::unfocus() {
         _qmlOffscreenSurface->lowerKeyboard();
     }
 }
-
 
 QQuickItem* TabletProxy::getQmlTablet() const {
     if (!_qmlTabletRoot) {
@@ -1091,7 +1098,7 @@ TabletButtonProxy::~TabletButtonProxy() {
 QVariantMap TabletButtonProxy::getProperties() {
     if (QThread::currentThread() != thread()) {
         QVariantMap result;
-        BLOCKING_INVOKE_METHOD(this, "getProperties", Q_RETURN_ARG(QVariantMap, result));
+        BLOCKING_INVOKE_METHOD(this, "getProperties", Q_GENERIC_RETURN_ARG(QVariantMap, result));
         return result;
     }
 
@@ -1100,7 +1107,7 @@ QVariantMap TabletButtonProxy::getProperties() {
 
 void TabletButtonProxy::editProperties(const QVariantMap& properties) {
     if (QThread::currentThread() != thread()) {
-        QMetaObject::invokeMethod(this, "editProperties", Q_ARG(QVariantMap, properties));
+        QMetaObject::invokeMethod(this, "editProperties", Q_GENERIC_ARG(QVariantMap, properties));
         return;
     }
 

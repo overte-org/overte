@@ -8,11 +8,11 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-import QtQuick 2.5
-import QtQuick.Controls 1.4
-import QtQuick.Controls.Styles 1.4
-import QtQuick.Dialogs 1.2 as OriginalDialogs
-import Qt.labs.settings 1.0
+import QtQuick
+import QtQuick.Controls
+//import QtQuick.Controls.Styles
+import QtQuick.Dialogs as OriginalDialogs
+import Qt.labs.settings
 
 import stylesUit 1.0
 import controlsUit 1.0 as HifiControls
@@ -677,6 +677,8 @@ Windows.ScrollingWindow {
                         font.pixelSize: hifi.fontSizes.textFieldInput
                         height: hifi.dimensions.tableRowHeight
 
+                        //QT6TODO
+                        /*
                         style: TextFieldStyle {
                             textColor: readOnly
                                         ? hifi.colors.black
@@ -691,10 +693,10 @@ Windows.ScrollingWindow {
                             selectionColor: hifi.colors.primaryHighlight
                             padding.left: readOnly ? 0 : hifi.dimensions.textPadding
                             padding.right: readOnly ? 0 : hifi.dimensions.textPadding
-                        }
+                        }*/
 
-                        validator: RegExpValidator {
-                            regExp: /[^/]+/
+                        validator: RegularExpressionValidator {
+                            regularExpression: /[^/]+/
                         }
 
                         Keys.onPressed: {

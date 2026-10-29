@@ -11,7 +11,7 @@
 
 import Hifi 1.0
 import QtQuick 2.5
-import QtQuick.Dialogs 1.2 as OriginalDialogs
+import QtQuick.Dialogs as OriginalDialogs
 
 Item {
     Component.onCompleted: {

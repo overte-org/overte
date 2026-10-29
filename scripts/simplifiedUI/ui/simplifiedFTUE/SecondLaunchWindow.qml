@@ -9,7 +9,7 @@
 
 import QtQuick 2.10
 import QtQuick.Controls 2.3
-import QtGraphicalEffects 1.0
+import Qt5Compat.GraphicalEffects
 import QtQuick.Layouts 1.3
 import stylesUit 1.0 as HifiStylesUit
 import TabletScriptingInterface 1.0
