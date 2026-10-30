@@ -100,6 +100,17 @@ public:
     ReadHelper(const char* data, size_t dataLen) :
         data(reinterpret_cast<const uint8_t*>(data)), dataLen(dataLen) {}
 
+    ReadHelper slice(size_t len) {
+        if (cursor < dataLen) {
+            auto minLen = std::min(dataLen - cursor, len);
+            auto r = ReadHelper(data + cursor, minLen);
+            cursor += minLen;
+            return r;
+        } else {
+            return ReadHelper(data + dataLen, 0);
+        }
+    }
+
     size_t getCursor() const { return cursor; }
 
     /// If cursor is already aligned to alignment, nothing changes
@@ -292,9 +303,10 @@ void OSCScriptingInterface::rebindSocket() {
     );
 }
 
-static std::optional<std::pair<QString, QVariantList>> readOscMessage(const char* dataBase, size_t dataLen) {
-    auto r = ReadHelper(dataBase, dataLen);
-
+static bool readOscMessage(
+    std::vector<std::pair<QString, QVariantList>>& messageList,
+    ReadHelper& r
+) {
     std::string addr;
     std::string argTypes;
     QVariantList args;
@@ -306,12 +318,26 @@ static std::optional<std::pair<QString, QVariantList>> readOscMessage(const char
         addr = *s;
     } else {
         qCritical(osc_cat, "Early EOF in packet, OSC address missing");
-        return std::nullopt;
+        return false;
     }
 
     if (addr == "#bundle") {
-        qCritical(osc_cat, "Received OSC bundle, which isn't supported");
-        return std::nullopt;
+        // we can't actually do anything with this, but it's part of the bundle struct
+        [[maybe_unused]] auto timetag = r.readU64();
+
+        auto elemSize = r.readU32();
+
+        while (elemSize.has_value()) {
+            auto innerR = r.slice(*elemSize);
+
+            if (!readOscMessage(messageList, innerR)) {
+                return false;
+            }
+
+            elemSize = r.readU32();
+        }
+
+        return true;
     }
 
     if (
@@ -321,12 +347,12 @@ static std::optional<std::pair<QString, QVariantList>> readOscMessage(const char
         argTypes = *s;
     } else {
         qCritical(osc_cat, "Early EOF in packet, argument types string missing");
-        return std::nullopt;
+        return false;
     }
 
     if (argTypes[0] != ',') {
         qCritical(osc_cat, "Argument type string does not start with ','");
-        return std::nullopt;
+        return false;
     }
 
     // +1 to exclude the comma
@@ -339,7 +365,7 @@ static std::optional<std::pair<QString, QVariantList>> readOscMessage(const char
 
                 if (!value.has_value()) {
                     qCritical(osc_cat, "Early EOF in packet (%s), reading int at offset %zu", addr.c_str(), startCursor);
-                    return std::nullopt;
+                    return false;
                 }
 
                 args.append(QVariantMap {
@@ -353,7 +379,7 @@ static std::optional<std::pair<QString, QVariantList>> readOscMessage(const char
 
                 if (!value.has_value()) {
                     qCritical(osc_cat, "Early EOF in packet (%s), reading float at offset %zu", addr.c_str(), startCursor);
-                    return std::nullopt;
+                    return false;
                 }
 
                 args.append(QVariantMap {
@@ -367,7 +393,7 @@ static std::optional<std::pair<QString, QVariantList>> readOscMessage(const char
 
                 if (!value.has_value()) {
                     qCritical(osc_cat, "Early EOF in packet (%s), string starting at offset %zu", addr.c_str(), startCursor);
-                    return std::nullopt;
+                    return false;
                 }
 
                 args.append(QVariantMap {
@@ -381,7 +407,7 @@ static std::optional<std::pair<QString, QVariantList>> readOscMessage(const char
 
                 if (!len.has_value()) {
                     qCritical(osc_cat, "Early EOF in packet (%s), reading blob at offset %zu (length prefix)", addr.c_str(), startCursor);
-                    return std::nullopt;
+                    return false;
                 }
 
                 startCursor = r.getCursor();
@@ -390,7 +416,7 @@ static std::optional<std::pair<QString, QVariantList>> readOscMessage(const char
 
                 if (!bytes.has_value()) {
                     qCritical(osc_cat, "Early EOF in packet (%s), reading blob at offset %zu (data)", addr.c_str(), startCursor);
-                    return std::nullopt;
+                    return false;
                 }
 
                 args.append(QVariantMap {
@@ -422,11 +448,12 @@ static std::optional<std::pair<QString, QVariantList>> readOscMessage(const char
 
             default:
                 qCCritical(osc_cat, "Unknown type '%c'", static_cast<char>(argTypes[arg]));
-                return std::nullopt;
+                return false;
         }
     }
 
-    return std::make_pair(QString::fromStdString(addr), args);
+    messageList.push_back(std::make_pair(QString::fromStdString(addr), args));
+    return true;
 }
 
 void OSCScriptingInterface::readPacket() {
@@ -434,12 +461,27 @@ void OSCScriptingInterface::readPacket() {
 
     if (!datagram.isValid()) { return; }
 
-    if (
-        auto msg = readOscMessage(datagram.data().constData(), datagram.data().size());
-        msg.has_value()
-    ) {
-        auto [address, args] = *msg;
-        emit packetReceived(address, args);
+    auto r = ReadHelper(datagram.data().constData(), datagram.data().size());
+
+    std::vector<std::pair<QString, QVariantList>> q {};
+
+    if (readOscMessage(q, r)) {
+        if (q.size() == 1) {
+            emit packetReceived(std::get<0>(q[0]), std::get<1>(q[0]));
+        } else {
+            QVariantList list {};
+
+            for (const auto& [address, args] : q) {
+                QVariantList msgList {};
+                msgList.append(address);
+
+                for (const auto& arg : args) {
+                    msgList.append(arg);
+                }
+            }
+
+            emit bundleReceived(list);
+        }
     }
 }
 
@@ -459,7 +501,7 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
     }
 
     if (address == "#bundle") {
-        engine->raiseException("OSC bundles are not supported");
+        engine->raiseException("Sending OSC bundles is unsupported");
         return engine->undefinedValue();
     }
 

@@ -42,6 +42,12 @@ class ScriptContext;
  */
 
 /*@jsdoc
+ * @typedef {Array} OSCSocket.BundledMessage
+ * @property {string} 0 - The OSC address
+ * @property {...OSCSocket.TypedArgument} 1 - The rest of the array is the OSC message arguments
+ */
+
+/*@jsdoc
  * The <code>OSCSocket</code> API lets you send and receive Open Sound Control packets.
  * Despite the name, OSC is commonly used with VR applications too. It is used by some
  * tracking and haptic systems that aren't exposed through OpenVR or OpenXR.
@@ -81,7 +87,7 @@ public:
     ~OSCScriptingInterface();
 
     /*@jsdoc
-     * Sends an encoded OSC packet. OSC bundles are not supported.
+     * Sends an encoded OSC message. Sending bundles is currently not supported.
      * @function OSCSocket.sendPacket
      * @param {string} address - OSC address, starting with <code>/</code>
      * @param {...(OSCSocket.TypedArgument|number|string|ArrayBuffer|boolean|null)} [arguments]
@@ -90,13 +96,21 @@ public:
 
 signals:
     /*@jsdoc
-     * Triggered when an OSC packet is received. OSC bundles are not supported.
+     * Emitted when an OSC message is received.
      * @function OSCSocket.packetReceived
      * @param {string} address - OSC address starting with <code>/</code>
      * @param {Array.<OSCSocket.TypedArgument>} arguments
      * @returns {Signal}
      */
     void packetReceived(const QString& address, const QVariantList& arguments);
+
+    /*@jsdoc
+     * Emitted when an OSC bundle is received.
+     * @function OSCSocket.bundleReceived
+     * @param {Array.<OSCSocket.BundledMessage>} messages
+     * @returns {Signal}
+     */
+    void bundleReceived(const QVariantList& messages);
 
     /// FIXME: This should be private but Qt complains if it is.
     /// It's not meant to be used outside of OSCScriptingInterface.
