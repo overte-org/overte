@@ -32,8 +32,8 @@ find_package(
 )
 
 
-if (OVERTE_BUILD_TOOLS AND JSDOC_ENABLED)
-    message(STATUS "JSDoc enabled, depending on jsdoc")
+if (OVERTE_BUILD_TOOLS AND OVERTE_JSDOC_CONSOLE_AUTOCOMPLETION)
+    message(STATUS "JSDoc enabled, depending on jsdoc for console auto completion.")
     add_custom_qrc_path(CUSTOM_INTERFACE_QRC_PATHS "${CMAKE_BINARY_DIR}/tools/jsdoc/out/hifiJSDoc.json" "auto-complete/hifiJSDoc.json")
 endif()
 
@@ -47,11 +47,9 @@ if (ANDROID)
 else ()
   qt5_add_binary_resources(resources "${RESOURCES_QRC}" DESTINATION "${RESOURCES_RCC}")
 endif()
-
-if (OVERTE_BUILD_TOOLS AND JSDOC_ENABLED)
+if (OVERTE_BUILD_TOOLS AND OVERTE_JSDOC_CONSOLE_AUTOCOMPLETION)
     add_dependencies(resources jsdoc)
 endif()
-
 list(APPEND GENERATE_QRC_DEPENDS ${RESOURCES_RCC})
 
 # set a default root dir for each of our optional externals if it was not passed
@@ -359,7 +357,7 @@ if (APPLE)
       "${RESOURCES_DEV_DIR}/serverless/redirect.json"
     )
 
-  if (JSDOC_ENABLED)
+  if (OVERTE_JSDOC_CONSOLE_AUTOCOMPLETION)
     add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
       # copy JSDoc files beside the executable
       COMMAND "${CMAKE_COMMAND}" -E copy_directory
@@ -397,7 +395,7 @@ else()
       "${INTERFACE_EXEC_DIR}/resources.rcc"
   )
 
-  if (JSDOC_ENABLED)
+  if (OVERTE_JSDOC_CONSOLE_AUTOCOMPLETION)
     add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
     # copy JSDoc files beside the executable
     COMMAND "${CMAKE_COMMAND}" -E copy_directory
