@@ -98,6 +98,10 @@ signals:
      */
     void packetReceived(const QString& address, const QVariantList& arguments);
 
+    /// FIXME: This should be private but Qt complains if it is.
+    /// It's not meant to be used outside of OSCScriptingInterface.
+    void receiveHostChanged();
+
 private:
     void readPacket();
     void rebindSocket();

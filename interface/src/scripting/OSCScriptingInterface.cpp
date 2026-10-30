@@ -181,6 +181,10 @@ OSCScriptingInterface::OSCScriptingInterface(QObject* parent) :
     _sendHost("osc/sendHost", "127.0.0.1"),
     _socket(std::make_shared<QUdpSocket>(this))
 {
+    connect(this, &OSCScriptingInterface::receiveHostChanged, this, [this] {
+        this->rebindSocket();
+    });
+
     connect(_socket.get(), &QUdpSocket::readyRead, this, [this] {
         // multiple datagrams might arrive at once
         while (_socket->hasPendingDatagrams()) {
@@ -197,8 +201,20 @@ OSCScriptingInterface::~OSCScriptingInterface() {
 }
 
 void OSCScriptingInterface::rebindSocket() {
-    _socket->bind(QHostAddress(_receiveHost.get()), _receivePort.get());
-    qCInfo(osc_cat) << "Listening on" << _socket->localAddress() << ":" << _socket->localPort();
+    _socket->abort();
+
+    _socket->bind(
+        QHostAddress(_receiveHost.get()),
+        _receivePort.get(),
+        QAbstractSocket::ShareAddress | QAbstractSocket::ReuseAddressHint
+    );
+
+    qCInfo(
+        osc_cat,
+        "Listening on %s : %d",
+        qUtf8Printable(_socket->localAddress().toString()),
+        _socket->localPort()
+    );
 }
 
 void OSCScriptingInterface::readPacket() {
@@ -473,22 +489,30 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
     // pack the header + body data together for the datagram
     bytes.append(bodyBytes);
 
-    instance->_socket->writeDatagram(bytes, QHostAddress(instance->_sendHost.get()), instance->_sendPort.get());
+    instance->_socket->writeDatagram(
+        bytes,
+        QHostAddress(instance->_sendHost.get()), instance->_sendPort.get()
+    );
 
     return engine->undefinedValue();
 }
 
 void OSCScriptingInterface::setReceiveHost(QString host) {
+    if (_receiveHost.get() == host) { return; }
+
     QHostAddress address;
 
     // only save if it's a valid address
     if (address.setAddress(host)) {
         _receiveHost.set(host);
-        rebindSocket();
     }
+
+    emit receiveHostChanged();
 }
 
 void OSCScriptingInterface::setSendHost(QString host) {
+    if (_sendHost.get() == host) { return; }
+
     QHostAddress address;
 
     // only save if it's a valid address
@@ -498,6 +522,8 @@ void OSCScriptingInterface::setSendHost(QString host) {
 }
 
 void OSCScriptingInterface::setSendPort(int port) {
+    if (_sendPort.get() == port) { return; }
+
     if (port < 1 || port > 65535) {
         qCritical(osc_cat) << "setSendPort: invalid port" << port;
         return;
@@ -507,11 +533,14 @@ void OSCScriptingInterface::setSendPort(int port) {
 }
 
 void OSCScriptingInterface::setReceivePort(int port) {
+    if (_receivePort.get() == port) { return; }
+
     if (port < 1024 || port > 65535) {
         qCritical(osc_cat) << "setReceivePort: invalid port" << port;
         return;
     }
 
     _receivePort.set(port);
-    rebindSocket();
+
+    emit receiveHostChanged();
 }
