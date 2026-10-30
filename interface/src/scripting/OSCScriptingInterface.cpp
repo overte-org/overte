@@ -23,130 +23,205 @@
 #include <optional>
 #include <QByteArray>
 
-// TODO: Split this out into libshared later
-// This might be handy to reuse in other modules too
-namespace DataHelpers {
-
-template<typename T, std::endian endianness = std::endian::big>
-    // don't try to write pointers, references, structs, etc
-    requires (std::is_arithmetic_v<T>)
-inline auto write(QByteArray& ba, T v) {
-    std::array<char, sizeof(v)> buffer;
-
-    std::copy_n(reinterpret_cast<char*>(&v), sizeof(v), buffer.begin());
-
-    if constexpr (std::endian::native != endianness) {
-        std::reverse(buffer.begin(), buffer.end());
-    }
-
-    return ba.append(buffer.data(), buffer.size());
-}
-
-template<typename T>
-inline auto writeUTF8NullTerminated(QByteArray& ba, const T& v);
-
-template<>
-inline auto writeUTF8NullTerminated(QByteArray& ba, const QString& v) {
-    ba.append(v.toUtf8());
-    return ba.append('\x00');
-}
-
-template<typename T, std::endian endianness = std::endian::big>
-    // don't try to read pointers, references, structs, etc
-    requires (std::is_arithmetic_v<T>)
-inline std::optional<T> read(QByteArray& ba, int& offset) {
-    if (offset < 0) { return std::nullopt; }
-
-    std::array<char, sizeof(T)> buffer;
-
-    // the byte array doesn't have enough
-    // data left to fulfill the read
-    if (offset + static_cast<int>(sizeof(T)) > ba.size()) {
-        return std::nullopt;
-    }
-
-    std::copy_n(ba.constData() + offset, sizeof(T), buffer.begin());
-
-    if constexpr (std::endian::native != endianness) {
-        std::reverse(buffer.begin(), buffer.end());
-    }
-
-    T value;
-    std::copy_n(buffer.data(), buffer.size(), reinterpret_cast<char*>(&value));
-
-    offset += sizeof(T);
-
-    return value;
-}
-
-template<typename T, int N>
-    requires (sizeof(T) == 1 && N > 0)
-inline std::optional<std::array<T, N>> read(QByteArray& ba, int& offset) {
-    if (offset < 0) { return std::nullopt; }
-
-    std::array<T, N> buffer;
-
-    // the byte array doesn't have enough
-    // data left to fulfill the read
-    if (offset + N > ba.size()) {
-        return std::nullopt;
-    }
-
-    std::copy_n(ba.constData() + offset, N, buffer.begin());
-
-    return buffer;
-}
-
-inline std::optional<QByteArray> read(QByteArray& ba, int offset, int length) {
-    if (offset < 0 || length < 1) { return std::nullopt; }
-
-    // the byte array doesn't have enough
-    // data left to fulfill the read
-    if (offset + length > ba.size()) {
-        return std::nullopt;
-    }
-
-    return QByteArray(ba.constData() + offset, length);
-}
-
-template<typename T>
-inline std::optional<T>
-readUTF8NullTerminated(QByteArray& ba, int& offset);
-
-template<>
-inline std::optional<QString>
-readUTF8NullTerminated(QByteArray& ba, int& offset) {
-    auto cursor = offset;
-
-    for (int i = 0; (i + cursor) < ba.size(); i++) {
-        if (ba[i + cursor] == '\x00') {
-            offset = offset + i;
-            return QString::fromUtf8(ba.constData() + cursor, i);
-        }
-    }
-
-    return std::nullopt;
-}
-
-template<>
-inline std::optional<QByteArray>
-readUTF8NullTerminated(QByteArray& ba, int& offset) {
-    auto cursor = offset;
-
-    for (int i = 0; (i + cursor) < ba.size(); i++) {
-        if (ba[i + cursor] == '\x00') {
-            offset = offset + i;
-            return QByteArray(ba.constData() + cursor, i);
-        }
-    }
-
-    return std::nullopt;
-}
-
-}
-
-
 Q_LOGGING_CATEGORY(osc_cat, "overte.osc")
+
+class WriteHelper {
+    std::vector<uint8_t> data {};
+
+public:
+    const auto& getData() const { return data; }
+
+    /// If data.size is already aligned to alignment, then nothing extra will be pushed
+    void pushToAlign(size_t alignment) {
+        auto delta = alignment - (data.size() % alignment);
+        data.resize(data.size() + delta);
+    }
+
+    void pushU8(uint8_t x) {
+        data.push_back(x);
+    }
+
+    void pushU32(uint32_t x) {
+        std::array<uint8_t, 4> a {
+            static_cast<uint8_t>((x >> 24) & 0xff),
+            static_cast<uint8_t>((x >> 16) & 0xff),
+            static_cast<uint8_t>((x >> 8) & 0xff),
+            static_cast<uint8_t>((x >> 0) & 0xff),
+        };
+        data.insert(data.end(), std::begin(a), std::end(a));
+    }
+
+    void pushU64(uint64_t x) {
+        std::array<uint8_t, 8> a {
+            static_cast<uint8_t>((x >> 56) & 0xff),
+            static_cast<uint8_t>((x >> 48) & 0xff),
+            static_cast<uint8_t>((x >> 40) & 0xff),
+            static_cast<uint8_t>((x >> 32) & 0xff),
+            static_cast<uint8_t>((x >> 24) & 0xff),
+            static_cast<uint8_t>((x >> 16) & 0xff),
+            static_cast<uint8_t>((x >> 8) & 0xff),
+            static_cast<uint8_t>((x >> 0) & 0xff),
+        };
+        data.insert(data.end(), std::begin(a), std::end(a));
+    }
+
+    void pushF32(float x) {
+        pushU32(std::bit_cast<uint32_t>(x));
+    }
+
+    void pushString(const std::string_view& s) {
+        data.insert(data.end(), std::begin(s), std::end(s));
+        data.push_back(0);
+        pushToAlign(4);
+    }
+
+    void pushI32(int32_t x) {
+        pushU32(static_cast<uint32_t>(x));
+    }
+
+    void pushBytes(const QByteArray& bytes) {
+        data.insert(data.end(), std::begin(bytes), std::end(bytes));
+    }
+
+    void pushBytes(const std::vector<uint8_t>& bytes) {
+        data.insert(data.end(), std::begin(bytes), std::end(bytes));
+    }
+};
+
+class ReadHelper {
+    const uint8_t* data;
+    size_t dataLen;
+    size_t cursor { 0 };
+
+public:
+    ReadHelper(const uint8_t* data, size_t dataLen) :
+        data(data), dataLen(dataLen) {}
+
+    ReadHelper(const char* data, size_t dataLen) :
+        data(reinterpret_cast<const uint8_t*>(data)), dataLen(dataLen) {}
+
+    size_t getCursor() const { return cursor; }
+
+    /// If cursor is already aligned to alignment, nothing changes
+    void skipToAlign(size_t alignment) {
+        auto delta = alignment - (cursor % alignment);
+        cursor = cursor + delta;
+    }
+
+    std::optional<uint8_t> readU8() {
+        if (cursor + 1 > dataLen) { return std::nullopt; }
+
+        auto x = data[cursor];
+
+        cursor += 1;
+        return x;
+    }
+
+    std::optional<uint32_t> readU32() {
+        if (cursor + 4 > dataLen) { return std::nullopt; }
+
+        std::array<uint8_t, 4> raw {
+            data[cursor + 0],
+            data[cursor + 1],
+            data[cursor + 2],
+            data[cursor + 3],
+        };
+
+        uint32_t x = (
+            (static_cast<uint32_t>(raw[0]) << 24) |
+            (static_cast<uint32_t>(raw[1]) << 16) |
+            (static_cast<uint32_t>(raw[2]) << 8) |
+            (static_cast<uint32_t>(raw[3]) << 0)
+        );
+
+        cursor += 4;
+        return x;
+    }
+
+    std::optional<int32_t> readI32() {
+        if (auto x = readU32(); x.has_value()) {
+            return static_cast<int32_t>(*x);
+        } else {
+            return std::nullopt;
+        }
+    }
+
+    std::optional<uint32_t> readU64() {
+        if (cursor + 8 > dataLen) { return std::nullopt; }
+
+        std::array<uint8_t, 8> raw {
+            data[cursor + 0],
+            data[cursor + 1],
+            data[cursor + 2],
+            data[cursor + 3],
+            data[cursor + 4],
+            data[cursor + 5],
+            data[cursor + 6],
+            data[cursor + 7],
+        };
+
+        uint64_t x = (
+            (static_cast<uint64_t>(raw[0]) << 24) |
+            (static_cast<uint64_t>(raw[1]) << 24) |
+            (static_cast<uint64_t>(raw[2]) << 24) |
+            (static_cast<uint64_t>(raw[3]) << 24) |
+            (static_cast<uint64_t>(raw[4]) << 24) |
+            (static_cast<uint64_t>(raw[5]) << 16) |
+            (static_cast<uint64_t>(raw[6]) << 8) |
+            (static_cast<uint64_t>(raw[7]) << 0)
+        );
+
+        cursor += 8;
+        return x;
+    }
+
+    std::optional<float> readF32() {
+        if (auto x = readU32(); x.has_value()) {
+            return std::bit_cast<float>(*x);
+        } else {
+            return std::nullopt;
+        }
+    }
+
+    std::optional<std::string> readString() {
+        // there needs to be at least 4 bytes, 1 nul terminator and padding
+        if (cursor + 4 > dataLen) { return std::nullopt; }
+
+        size_t endpoint = cursor;
+
+        while (data[endpoint] != 0) {
+            endpoint += 1;
+
+            // there wasn't a nul terminator in the buffer, bail
+            if (endpoint >= dataLen) {
+                return std::nullopt;
+            }
+        }
+
+        auto s = std::string(data + cursor, data + endpoint);
+
+        cursor += endpoint - cursor;
+        skipToAlign(4);
+        return s;
+    }
+
+    std::optional<QString> readQString() {
+        if (auto x = readString(); x.has_value()) {
+            return QString::fromStdString(*x);
+        } else {
+            return std::nullopt;
+        }
+    }
+
+    std::optional<QByteArray> readQByteArray(size_t len) {
+        if (cursor + len > dataLen) { return std::nullopt; }
+
+        auto bytes = QByteArray(reinterpret_cast<const char*>(data + cursor), len);
+
+        cursor += len;
+        return bytes;
+    }
+};
 
 enum OSCTag: char {
     // standard types
@@ -217,61 +292,54 @@ void OSCScriptingInterface::rebindSocket() {
     );
 }
 
-void OSCScriptingInterface::readPacket() {
-    auto datagram = _socket->receiveDatagram();
+static std::optional<std::pair<QString, QVariantList>> readOscMessage(const char* dataBase, size_t dataLen) {
+    auto r = ReadHelper(dataBase, dataLen);
 
-    if (!datagram.isValid()) { return; }
-
-    auto next4 = [](int i) { return i + (4 - i % 4); };
-
-    auto data = datagram.data();
-    int cursor = 0;
-
-    QString addr;
-    QByteArray argTypes;
+    std::string addr;
+    std::string argTypes;
     QVariantList args;
 
     if (
-        auto s = DataHelpers::readUTF8NullTerminated<QString>(data, cursor);
-        s.has_value() && !s->isEmpty()
+        auto s = r.readString();
+        s.has_value() && !s->empty()
     ) {
         addr = *s;
     } else {
         qCritical(osc_cat, "Early EOF in packet, OSC address missing");
-        return;
+        return std::nullopt;
     }
-    cursor = next4(cursor);
 
     if (addr == "#bundle") {
         qCritical(osc_cat, "Received OSC bundle, which isn't supported");
-        return;
+        return std::nullopt;
     }
 
     if (
-        auto s = DataHelpers::readUTF8NullTerminated<QByteArray>(data, cursor);
-        s.has_value() && !s->isEmpty()
+        auto s = r.readString();
+        s.has_value() && !s->empty()
     ) {
         argTypes = *s;
     } else {
         qCritical(osc_cat, "Early EOF in packet, argument types string missing");
-        return;
+        return std::nullopt;
     }
-    cursor = next4(cursor);
 
     if (argTypes[0] != ',') {
         qCritical(osc_cat, "Argument type string does not start with ','");
-        return;
+        return std::nullopt;
     }
 
     // +1 to exclude the comma
-    for (int arg = 1; arg < argTypes.length(); arg++) {
+    for (size_t arg = 1; arg < argTypes.length(); arg++) {
+        auto startCursor = r.getCursor();
+
         switch (argTypes[arg]) {
             case OSCTag::Int: {
-                auto value = DataHelpers::read<qint32>(data, cursor);
+                auto value = r.readI32();
 
                 if (!value.has_value()) {
-                    qCritical(osc_cat, "Early EOF in packet (%s), reading int at offset %d", qUtf8Printable(addr), cursor);
-                    return;
+                    qCritical(osc_cat, "Early EOF in packet (%s), reading int at offset %zu", addr.c_str(), startCursor);
+                    return std::nullopt;
                 }
 
                 args.append(QVariantMap {
@@ -281,11 +349,11 @@ void OSCScriptingInterface::readPacket() {
             } break;
 
             case OSCTag::Float: {
-                auto value = DataHelpers::read<float>(data, cursor);
+                auto value = r.readF32();
 
                 if (!value.has_value()) {
-                    qCritical(osc_cat, "Early EOF in packet (%s), reading float at offset %d", qUtf8Printable(addr), cursor);
-                    return;
+                    qCritical(osc_cat, "Early EOF in packet (%s), reading float at offset %zu", addr.c_str(), startCursor);
+                    return std::nullopt;
                 }
 
                 args.append(QVariantMap {
@@ -295,15 +363,12 @@ void OSCScriptingInterface::readPacket() {
             } break;
 
             case OSCTag::String: {
-                int startCursor = cursor;
-                auto value = DataHelpers::readUTF8NullTerminated<QString>(data, cursor);
+                auto value = r.readQString();
 
                 if (!value.has_value()) {
-                    qCritical(osc_cat, "Early EOF in packet (%s), string starting at offset %d", qUtf8Printable(addr), startCursor);
-                    return;
+                    qCritical(osc_cat, "Early EOF in packet (%s), string starting at offset %zu", addr.c_str(), startCursor);
+                    return std::nullopt;
                 }
-
-                cursor = next4(cursor);
 
                 args.append(QVariantMap {
                     {"type", QString(OSCTag::String)},
@@ -312,27 +377,26 @@ void OSCScriptingInterface::readPacket() {
             } break;
 
             case OSCTag::Blob: {
-                auto len = DataHelpers::read<qint32>(data, cursor);
+                auto len = r.readU32();
 
                 if (!len.has_value()) {
-                    qCritical(osc_cat, "Early EOF in packet (%s), reading blob at offset %d (length prefix)", qUtf8Printable(addr), cursor);
-                    return;
+                    qCritical(osc_cat, "Early EOF in packet (%s), reading blob at offset %zu (length prefix)", addr.c_str(), startCursor);
+                    return std::nullopt;
                 }
 
-                auto startCursor = cursor;
-                auto bytes = DataHelpers::read(data, cursor, len.value());
+                startCursor = r.getCursor();
+
+                auto bytes = r.readQByteArray(*len);
 
                 if (!bytes.has_value()) {
-                    qCritical(osc_cat, "Early EOF in packet (%s), reading blob at offset %d (data)", qUtf8Printable(addr), startCursor);
-                    return;
+                    qCritical(osc_cat, "Early EOF in packet (%s), reading blob at offset %zu (data)", addr.c_str(), startCursor);
+                    return std::nullopt;
                 }
 
                 args.append(QVariantMap {
                     {"type", QString(OSCTag::Blob)},
                     {"value", bytes.value()},
                 });
-
-                cursor = next4(cursor + len.value());
             } break;
 
             case OSCTag::False:
@@ -358,11 +422,25 @@ void OSCScriptingInterface::readPacket() {
 
             default:
                 qCCritical(osc_cat, "Unknown type '%c'", static_cast<char>(argTypes[arg]));
-                return;
+                return std::nullopt;
         }
     }
 
-    emit packetReceived(addr, args);
+    return std::make_pair(QString::fromStdString(addr), args);
+}
+
+void OSCScriptingInterface::readPacket() {
+    auto datagram = _socket->receiveDatagram();
+
+    if (!datagram.isValid()) { return; }
+
+    if (
+        auto msg = readOscMessage(datagram.data().constData(), datagram.data().size());
+        msg.has_value()
+    ) {
+        auto [address, args] = *msg;
+        emit packetReceived(address, args);
+    }
 }
 
 ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngine* engine) {
@@ -395,20 +473,14 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
         return engine->undefinedValue();
     }
 
-    auto pad4 = [](QByteArray& array) {
-        array.append((4 - array.length() % 4) % 4, 0);
-    };
+    auto msgBytes = WriteHelper();
 
-    QByteArray bytes = address.toUtf8();
-
-    // pad to 4-byte boundary with at least one zero for the address string
-    bytes.append('\x00');
-    pad4(bytes);
+    msgBytes.pushString(address.toStdString());
 
     // comma at the start of the argument list, even if empty
-    bytes.append(',');
+    msgBytes.pushU8(',');
 
-    QByteArray bodyBytes;
+    auto bodyBytes = WriteHelper();
 
     for (int i = 0; i < arguments.length(); i++) {
         auto arg = arguments[i];
@@ -431,23 +503,23 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
         }
 
         if (value.isNull()) {
-            bytes.append(OSCTag::Null);
+            msgBytes.pushU8(OSCTag::Null);
             continue;
         }
 
         switch (expectedType) {
             case QVariant::Int: {
-                bytes.append(OSCTag::Int);
-                DataHelpers::write(bodyBytes, static_cast<qint32>(value.toDouble()));
+                msgBytes.pushU8(OSCTag::Int);
+                bodyBytes.pushI32(static_cast<int32_t>(value.toDouble()));
             } break;
 
             case QVariant::Double: {
-                bytes.append(OSCTag::Float);
-                DataHelpers::write(bodyBytes, static_cast<float>(value.toDouble()));
+                msgBytes.pushU8(OSCTag::Float);
+                bodyBytes.pushF32(static_cast<float>(value.toDouble()));
             } break;
 
             case QVariant::String: {
-                bytes.append(OSCTag::String);
+                msgBytes.pushU8(OSCTag::String);
 
                 auto stringArg = value.toString();
 
@@ -456,24 +528,21 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
                     return engine->undefinedValue();
                 }
 
-                DataHelpers::writeUTF8NullTerminated(bodyBytes, stringArg);
-                pad4(bodyBytes);
+                bodyBytes.pushString(stringArg.toStdString());
             } break;
 
             case QVariant::ByteArray: {
-                bytes.append(OSCTag::Blob);
+                msgBytes.pushU8(OSCTag::Blob);
 
                 auto bytesArg = value.toByteArray();
 
-                DataHelpers::write(bodyBytes, bytesArg.length());
-                bodyBytes.append(bytesArg);
-
-                // pad to 4-byte boundary
-                pad4(bodyBytes);
+                bodyBytes.pushU32(bytesArg.size());
+                bodyBytes.pushBytes(bytesArg);
+                bodyBytes.pushToAlign(4);
             } break;
 
             case QVariant::Bool:
-                bytes.append(value.toBool() ? OSCTag::True : OSCTag::False);
+                msgBytes.pushU8(value.toBool() ? OSCTag::True : OSCTag::False);
                 break;
 
             default:
@@ -483,14 +552,14 @@ ScriptValue OSCScriptingInterface::sendPacket(ScriptContext* context, ScriptEngi
     }
 
     // pad argument type string to 4-byte boundary with at least one zero
-    bytes.append('\x00');
-    pad4(bytes);
+    msgBytes.pushU8('\x00');
+    msgBytes.pushToAlign(4);
 
     // pack the header + body data together for the datagram
-    bytes.append(bodyBytes);
+    msgBytes.pushBytes(bodyBytes.getData());
 
     instance->_socket->writeDatagram(
-        bytes,
+        QByteArray(reinterpret_cast<const char*>(msgBytes.getData().data()), msgBytes.getData().size()),
         QHostAddress(instance->_sendHost.get()), instance->_sendPort.get()
     );
 
