@@ -51,6 +51,14 @@ file(COPY ${CPACK_PACKAGE_DIRECTORY}/interface/scripts DESTINATION ${CPACK_TEMPO
 file(COPY ${CPACK_PACKAGE_DIRECTORY}/interface/resources DESTINATION ${CPACK_TEMPORARY_DIRECTORY}/usr/bin/)
 file(COPY ${CPACK_PACKAGE_DIRECTORY}/interface/resources.rcc DESTINATION ${CPACK_TEMPORARY_DIRECTORY}/usr/bin/)
 
+# libfcitx5platforminputcontextplugin.so is provided by a separate Conan package and linuxdeploy-plugin-qt expects all plugins to be in one folder, so we copy it over manually.
+if(EXISTS "${CPACK_PACKAGE_DIRECTORY}/conanlibs/${CPACK_CMAKE_BUILD_TYPE}/libfcitx5platforminputcontextplugin.so")
+    message(STATUS "Copying Conan provided Fcitx Qt input plugin…")
+    file(COPY ${CPACK_PACKAGE_DIRECTORY}/conanlibs/${CPACK_CMAKE_BUILD_TYPE}/libfcitx5platforminputcontextplugin.so DESTINATION ${CPACK_TEMPORARY_DIRECTORY}/usr/plugins/platforminputcontexts/)
+else()
+    message(WARNING "No Conan provided Fcitx Qt input plugin found. This warning can be safely ignored if you are using system Qt. On Conan's source Qt package Fcitx (IME) support won't be available in Overte!")
+endif()
+
 if(CPACK_CMAKE_BUILD_TYPE STREQUAL "Debug")
     set(APPIMAGE_FILENAME ${CPACK_PACKAGE_FILE_NAME}-${CPACK_CMAKE_BUILD_TYPE}-${CPACK_OVERTE_RENDERING_BACKEND}-${CMAKE_SYSTEM_PROCESSOR}.AppImage)
 elseif(CPACK_CMAKE_BUILD_TYPE)
@@ -78,6 +86,8 @@ execute_process(
     # We copied our plugins earlier; Here we tell LinuxDeploy to deploy their dependencies.
     # For example libopenxr_loader.so for our OpenXR plugin.
     --deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/bin/plugins
+    # Deploy dependencies of manually copied libfcitx5platforminputcontextplugin.so
+    --deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/plugins/platforminputcontexts/libfcitx5platforminputcontextplugin.so
     --desktop-file=${APPIMAGE_DESKTOP_FILE}
     --icon-file=${APPIMAGE_ICON_FILE}
     --plugin qt
