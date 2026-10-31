@@ -87,7 +87,7 @@ execute_process(
     # For example libopenxr_loader.so for our OpenXR plugin.
     --deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/bin/plugins
     # Deploy dependencies of manually copied libfcitx5platforminputcontextplugin.so
-    --deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/plugins/platforminputcontexts/libfcitx5platforminputcontextplugin.so
+    #--deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/plugins/platforminputcontexts/libfcitx5platforminputcontextplugin.so
     --desktop-file=${APPIMAGE_DESKTOP_FILE}
     --icon-file=${APPIMAGE_ICON_FILE}
     --plugin qt
