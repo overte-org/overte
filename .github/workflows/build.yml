@@ -184,7 +184,8 @@ jobs:
         fi
 
     - name: Cache conan
-      if: ${{ !env.ACT }}  # Don't run when testing locally.
+      # Don't run when testing locally, and don't use the cache on Nightly builds so we reliably know which packages aren't cached on the Artifactory.
+      if: ${{ !env.ACT && github.event_name != 'schedule' }}
       id: conan-cache
       uses: actions/cache@v5
       with:
@@ -231,7 +232,7 @@ jobs:
       shell: bash
 
     - name: Save Conan cache
-      if: always() && steps.conan-cache.outputs.cache-hit != 'true' && env.ACT != 'true'
+      if: always() && steps.conan-cache.outputs.cache-hit != 'true' && env.ACT != 'true' && github.event_name != 'schedule'
       uses: actions/cache/save@v5
       with:
         key: conan-${{ matrix.os }}-${{ matrix.arch }}-${{ hashFiles('conanfile.py') }}
