@@ -258,6 +258,7 @@ Flickable {
                         top: parent.top
                         bottom: parent.bottom
                         bottomMargin: 1
+                        topMargin: 7
                     }
                 }
 
@@ -308,6 +309,97 @@ Flickable {
                 }
             }
 
+            Rectangle {
+                id: resetButton
+                property int color: hifi.buttons.blue
+                property int colorScheme: hifi.colorSchemes.light
+                property string glyph: hifi.glyphs.avatar1
+                property bool enabled: true
+                property bool pressed: false
+                property bool hovered: false
+                property int size: 32
+                property string text: "Reset"
+                property int padding: 12
+
+                width: glyphButton.width + resetText.width + padding
+                height: hifi.dimensions.controlLineHeight
+                anchors.top: bodyTrackingInfo.bottom
+                anchors.topMargin: 15
+                anchors.left: calibrationButton.right
+                anchors.leftMargin: leftMargin
+
+                radius: hifi.buttons.radius
+
+                gradient: Gradient {
+                    GradientStop {
+                        position: 0.2
+                        color: {
+                            if (!resetButton.enabled) {
+                                hifi.buttons.disabledColorStart[resetButton.colorScheme]
+                            } else if (resetButton.pressed) {
+                                hifi.buttons.pressedColor[resetButton.color]
+                            } else if (resetButton.hovered) {
+                                hifi.buttons.hoveredColor[resetButton.color]
+                            } else {
+                                hifi.buttons.colorStart[resetButton.color]
+                            }
+                        }
+                    }
+
+                    GradientStop {
+                        position: 1.0
+                        color: {
+                            if (!resetButton.enabled) {
+                                hifi.buttons.disabledColorFinish[resetButton.colorScheme]
+                            } else if (resetButton.pressed) {
+                                hifi.buttons.pressedColor[resetButton.color]
+                            } else if (resetButton.hovered) {
+                                hifi.buttons.hoveredColor[resetButton.color]
+                            } else {
+                                hifi.buttons.colorFinish[resetButton.color]
+                            }
+                        }
+                    }
+                }
+
+                RalewayBold {
+                    id: resetText
+                    font.capitalization: Font.AllUppercase
+                    color: enabled ? hifi.buttons.textColor[resetButton.color]
+                        : hifi.buttons.disabledTextColor[resetButton.colorScheme]
+                    size: hifi.fontSizes.buttonLabel
+                    text: resetButton.text
+
+                    anchors {
+                        horizontalCenter: parent.horizontalCenter
+                        top: parent.top
+                        topMargin: 7
+                    }
+                }
+
+                MouseArea {
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    onClicked: InputConfiguration.uncalibratePlugin("OpenXR")
+
+                    onPressed: {
+                        resetButton.pressed = true;
+                    }
+
+                    onReleased: {
+                        resetButton.pressed = false;
+                    }
+
+                    onEntered: {
+                        resetButton.hovered = true;
+                    }
+
+                    onExited: {
+                        resetButton.hovered = false;
+                    }
+                }
+            }
+
             Timer {
                 id: calibrationTimer
                 repeat: false
@@ -335,7 +427,7 @@ Flickable {
             HifiControls.SpinBox {
                 id: timeToCalibrate
                 width: 70
-                anchors.top: calibrationButton.bottom
+                anchors.top: resetButton.bottom
                 anchors.topMargin: 20
                 anchors.left: parent.left
                 anchors.leftMargin: leftMargin
