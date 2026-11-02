@@ -46,7 +46,6 @@ ColumnLayout {
                 width: root.width
                 height: parent.height - bottomRow.height
                 wrapMode: TextArea.Wrap
-                placeholderText: qsTr("Debug messages from your running scripts will appear here...")
                 placeholderTextColor: hifi.colors.lightGrayText
                 readOnly: true
                 selectByMouse: true
@@ -55,7 +54,13 @@ ColumnLayout {
                 background: Rectangle {
                     color: "transparent"
                 }
-                text:""
+
+                property string placeholder: "Debug messages from your running scripts will appear here..."
+
+                text: textArea.placeholder
+                placeholderText: textArea.placeholder
+
+                property bool isEmpty: true
 
                 onTextChanged: {
                     if (logView.scrollDelay) {
@@ -251,6 +256,12 @@ ColumnLayout {
             .replace(/>/g, "&gt;")
             .replace(/\n/g, "<br>");
 
+        // Clear placeholder text if this is the first line to be appended
+        if (textArea.isEmpty) {
+            textArea.clear();
+            textArea.isEmpty = false;
+        }
+
         if (!currentFilter || currentFilter == line.scriptFileName) {
             // `white-space: pre-wrap` preserves white space at the start of lines
             textArea.append(`<span style="color: ${line.color}; white-space: pre-wrap">[${line.date}] [${line.scriptFileName}] ${line.type.length > 0 ? line.type+' - ' : ""}${message}</span>`);
@@ -264,7 +275,9 @@ ColumnLayout {
     }
 
     function clearWindow() {
-        textArea.remove(0,textArea.length);
+        textArea.clear();
+        textArea.append(textArea.placeholder);
+        textArea.isEmpty = true;
     }
 }
 
