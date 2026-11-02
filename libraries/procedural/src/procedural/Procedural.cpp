@@ -261,11 +261,6 @@ void Procedural::setProceduralData(const ProceduralData& proceduralData) {
 }
 
 bool Procedural::isReady() const {
-    auto backendApi = hifi::properties::getGraphicsAPI();
-    if (backendApi == hifi::properties::GraphicsAPI::GLES32) {
-        return false;
-    }
-
     std::lock_guard<std::mutex> lock(_mutex);
 
     if (!_enabled) {
