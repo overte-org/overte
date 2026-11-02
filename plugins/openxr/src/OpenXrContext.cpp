@@ -14,7 +14,6 @@
 
 #if defined(Q_OS_LINUX)
 #include <QOpenGLContext>
-#include <QtPlatformHeaders/QGLXNativeContext>
 #endif
 
 #if defined(HAVE_VULKAN)

@@ -78,7 +78,7 @@ void ContextAwareProfile::restrictContext(QQmlContext* context, bool restrict) {
 bool ContextAwareProfile::isRestrictedGetProperty() {
     if (QThread::currentThread() != thread()) {
         bool restrictedResult = false;
-        BLOCKING_INVOKE_METHOD(this, "isRestrictedGetProperty", Q_RETURN_ARG(bool, restrictedResult));
+        BLOCKING_INVOKE_METHOD(this, "isRestrictedGetProperty", Q_GENERIC_RETURN_ARG(bool, restrictedResult));
         return restrictedResult;
     }
 

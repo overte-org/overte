@@ -300,7 +300,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
         if (obj) {
             for (const QMetaObject* metaObject = obj->metaObject(); metaObject; metaObject = metaObject->superClass()) {
                 QByteArray typeName = QByteArray(metaObject->className()) + "*";
-                int typeId = QMetaType::type(typeName.constData());
+                int typeId = QMetaType::fromName(typeName).id();
                 if (typeId != QMetaType::UnknownType) {
                     destTypeId = typeId;
                     break;
@@ -382,7 +382,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                     }
                 }
                 errorMessage = QString() + "Conversion failure: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
-                               + "to variant. Destination type: " + QMetaType::typeName(destTypeId) +" details: "+ scriptValueDebugDetailsV8(v8Val);
+                               + "to variant. Destination type: " + QMetaType(destTypeId).name() +" details: "+ scriptValueDebugDetailsV8(v8Val);
                 qCDebug(scriptengine_v8) << errorMessage;
 
                 // V8TODO: this doesn't seem to be necessary anymore but I'm keeping it until all the API is tested
@@ -501,12 +501,13 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                     }
                 }
                 errorMessage = QString() + "Conversion to variant failed: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
-                                       + " Destination type: " + QMetaType::typeName(destTypeId) + " Value details: " + scriptValueDebugDetailsV8(v8Val);
+                                       + " Destination type: " + QMetaType(destTypeId).name() + " Value details: " + scriptValueDebugDetailsV8(v8Val);
                 qCDebug(scriptengine_v8) << errorMessage;
                 return false;
             default:
                 // check to see if this is a pointer to a QObject-derived object
-                if (QMetaType::typeFlags(destTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
+                const auto destMetaType = QMetaType(destTypeId);
+                if (destMetaType.flags() & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
                     /* Do we really want to permit regular passing of nullptr to native functions?
                     if (!val.isValid() || val.isUndefined() || val.isNull()) {
                         dest = QVariant::fromValue(nullptr);
@@ -514,7 +515,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                     }*/
                     QObject* obj = ScriptObjectV8Proxy::unwrap(v8Val);
                     if (!obj) return false;
-                    const QMetaObject* destMeta = QMetaType::metaObjectForType(destTypeId);
+                    const QMetaObject* destMeta = destMetaType.metaObject();
                     Q_ASSERT(destMeta);
                     obj = destMeta->cast(obj);
                     if (!obj) return false;
@@ -540,7 +541,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
                 // last chance, just convert it to a variant (impossible on V8)
                 // V8TODO
                 errorMessage = QString() + "Conversion failure: " + QString(*v8::String::Utf8Value(_v8Isolate, val->ToDetailString(getConstContext()).ToLocalChecked()))
-                         + "to variant. Destination type: " + QMetaType::typeName(destTypeId);
+                         + "to variant. Destination type: " + destMetaType.name();
                 qCDebug(scriptengine_v8) << errorMessage;
                 if(destTypeId == QMetaType::QVariant) {
                     Q_ASSERT(false);
@@ -550,7 +551,7 @@ bool ScriptEngineV8::castValueToVariant(const V8ScriptValue& v8Val, QVariant& de
         }
     }
 
-    return destTypeId == QMetaType::UnknownType || dest.userType() == destTypeId || dest.convert(destTypeId);
+    return destTypeId == QMetaType::UnknownType || dest.userType() == destTypeId || dest.convert(QMetaType(destTypeId));
 }
 
 bool ScriptEngineV8::convertJSArrayToVariant(v8::Local<v8::Array> array, QVariant &dest) {
@@ -562,7 +563,7 @@ bool ScriptEngineV8::convertJSArrayToVariant(v8::Local<v8::Array> array, QVarian
     for (int i = 0; i < length; i++) {
         v8::Local<v8::Value> v8Property;
         if (!array->Get(context, i).ToLocal(&v8Property)) {
-            qCDebug(scriptengine_v8) << "ScriptEngineV8::convertJSArrayToVariant could not get property: " + QString(i);
+            qCDebug(scriptengine_v8) << "ScriptEngineV8::convertJSArrayToVariant could not get property: " + QString::number(i);
             continue;
         }
         QVariant property;
@@ -570,7 +571,7 @@ bool ScriptEngineV8::convertJSArrayToVariant(v8::Local<v8::Array> array, QVarian
         if (castValueToVariant(V8ScriptValue(this, v8Property), property, QMetaType::UnknownType)) {
             properties.append(property);
         } else {
-            qCDebug(scriptengine_v8) << "ScriptEngineV8::convertJSArrayToVariant could cast property to variant: " + QString(i);
+            qCDebug(scriptengine_v8) << "ScriptEngineV8::convertJSArrayToVariant could cast property to variant: " + QString::number(i);
             ;
         }
     }
@@ -654,6 +655,9 @@ QString ScriptEngineV8::valueType(const V8ScriptValue& v8Val) {
     return "undefined";
 }
 
+// QT6TODO: where does this belong?
+Q_DECLARE_METATYPE(Qt::TimerType);
+
 V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
     Q_ASSERT(_v8Isolate->IsCurrent());
     v8::HandleScope handleScope(_v8Isolate);
@@ -731,12 +735,18 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
         default:
             // check to see if this is a pointer to a QObject-derived object
             // WeakPointerToQObject and SharedPointerToQObject were causing trouble here because some values are handled by custom prototypes instead
-            if (QMetaType::typeFlags(valTypeId) & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
+            if (QMetaType(valTypeId).flags() & (QMetaType::PointerToQObject | QMetaType::TrackingPointerToQObject)) {
                 QObject* obj = val.value<QObject*>();
                 if (obj == nullptr) return V8ScriptValue(this, v8::Null(_v8Isolate));
                 //V8TODO: what should be the ownership in this case?
                 return ScriptObjectV8Proxy::newQObject(this, obj);
             }
+
+            // enums need special treatment, Qt::TimerType fails without this
+            if (QMetaType(valTypeId).flags() & (QMetaType::IsEnumeration | QMetaType::IsUnsignedEnumeration)) {
+                return V8ScriptValue(this, v8::Integer::New(_v8Isolate, val.toInt()));
+            }
+
             // have we set a prototyped variant?
             {
                 _customTypeProtect.lockForRead();
@@ -748,7 +758,7 @@ V8ScriptValue ScriptEngineV8::castVariantToValue(const QVariant& val) {
             }
             // just do a generic variant
             //V8TODO
-            qCDebug(scriptengine_v8) << "ScriptEngineV8::castVariantToValue failed for " << QMetaType::typeName(valTypeId);
+            qCDebug(scriptengine_v8) << "ScriptEngineV8::castVariantToValue failed for " << QMetaType(valTypeId).name();
             logBacktrace("ScriptEngineV8::castVariantToValue failed");
             //Q_ASSERT(false);
             return V8ScriptValue(this, v8::Undefined(_v8Isolate));

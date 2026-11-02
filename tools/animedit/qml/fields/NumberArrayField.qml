@@ -2,7 +2,7 @@ import QtQuick 2.12
 import QtQuick.Window 2.12
 import QtQuick.Controls 1.6
 import QtQuick.Layouts 1.3
-import QtQuick.Dialogs 1.0
+import QtQuick.Dialogs
 
 
 Row {
@@ -43,7 +43,7 @@ Row {
         // then substitue the second into the \d+ of the first, yeilding this monstrocity.
         //    ^\[\s*(\d+\.?\d*)(\s*,\s*(\d+\.?\d*))*\]$|\[\s*\]
 
-        //validator: RegExpValidator { regExp: /^\[\s*(\d+\.?\d*)(\s*,\s*(\d+\.?\d*))*\]$|\[\s*\]/ }
+        //validator: RegularExpressionValidator { regularExpression: /^\[\s*(\d+\.?\d*)(\s*,\s*(\d+\.?\d*))*\]$|\[\s*\]/ }
 
         text: JSON.stringify(value)
         onEditingFinished: {

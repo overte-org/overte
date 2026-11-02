@@ -1,5 +1,5 @@
 import QtQuick 2.2
-import QtQuick.Dialogs 1.1
+import QtQuick.Dialogs
 import Qt.labs.folderlistmodel 2.11
 
 Item {

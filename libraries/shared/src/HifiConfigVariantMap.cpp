@@ -20,19 +20,20 @@
 #include <QtCore/QJsonObject>
 #include <QtCore/QStandardPaths>
 #include <QtCore/QVariant>
+#include <QtCore5Compat/QRegExp>
 
 #include "PathUtils.h"
 #include "SharedLogging.h"
 
 QVariantMap HifiConfigVariantMap::mergeCLParametersWithJSONConfig(const QStringList& argumentList) {
 
-    QMultiMap<QString, QVariant> mergedMap;
+    QVariantMap mergedMap;
 
     // Add anything in the CL parameter list to the variant map.
     // Take anything with a dash in it as a key, and the values after it as the value.
 
     const QString DASHED_KEY_REGEX_STRING = "(^-{1,2})([\\w-]+)";
-    QRegExp dashedKeyRegex(DASHED_KEY_REGEX_STRING);
+    QRegularExpression dashedKeyRegex(DASHED_KEY_REGEX_STRING);
 
     int keyIndex = argumentList.indexOf(dashedKeyRegex);
     int nextKeyIndex = 0;
@@ -43,7 +44,7 @@ QVariantMap HifiConfigVariantMap::mergeCLParametersWithJSONConfig(const QStringL
     while (keyIndex != -1) {
         if (argumentList[keyIndex] != CONFIG_FILE_OPTION) {
             // we have a key - look forward to see how many values associate to it
-            QString key = dashedKeyRegex.cap(2);
+            QString key = dashedKeyRegex.namedCaptureGroups()[2];
 
             nextKeyIndex = argumentList.indexOf(dashedKeyRegex, keyIndex + 1);
 
@@ -98,16 +99,19 @@ void HifiConfigVariantMap::loadConfig() {
 void HifiConfigVariantMap::loadMapFromJSONFile(QVariantMap& existingMap, const QString& filename) {
     QFile configFile(filename);
 
-    if (configFile.exists()) {
-        qCDebug(shared) << "Reading JSON config file at" << filename;
-        configFile.open(QIODevice::ReadOnly);
-
-        QJsonDocument configDocument = QJsonDocument::fromJson(configFile.readAll());
-        existingMap = configDocument.toVariant().toMap();
-
-    } else {
+    qCDebug(shared) << "Reading JSON config file at" << filename;
+    if (!configFile.exists()) {
         qCDebug(shared) << "Could not find JSON config file at" << filename;
+        return;
     }
+    if (!configFile.open(QIODevice::ReadOnly)) {
+        qCDebug(shared) << "Could not open JSON config file at" << filename;
+        return;
+    }
+
+    QJsonDocument configDocument = QJsonDocument::fromJson(configFile.readAll());
+    existingMap = configDocument.toVariant().toMap();
+
 }
 
 void HifiConfigVariantMap::addMissingValuesToExistingMap(QVariantMap& existingMap, const QVariantMap& newMap) {
@@ -115,7 +119,7 @@ void HifiConfigVariantMap::addMissingValuesToExistingMap(QVariantMap& existingMa
         if (existingMap.contains(key)) {
             // if this is just a regular value, we're done - we don't ovveride
 
-            if (newMap[key].canConvert(QMetaType::QVariantMap) && existingMap[key].canConvert(QMetaType::QVariantMap)) {
+            if (newMap[key].canConvert(QMetaType(QMetaType::QVariantMap)) && existingMap[key].canConvert(QMetaType(QMetaType::QVariantMap))) {
                 // there's a variant map below and the existing map has one too, so we need to keep recursing
                 addMissingValuesToExistingMap(*static_cast<QVariantMap*>(existingMap[key].data()), newMap[key].toMap());
             }
@@ -134,7 +138,7 @@ QVariant* valueForKeyPath(QVariantMap& variantMap, const QString& keyPath, bool 
         if (dotIndex == -1) {
             return &variantMap[firstKey];
         }
-        if (!variantMap[firstKey].canConvert(QMetaType::QVariantMap)) {
+        if (!variantMap[firstKey].canConvert(QMetaType(QMetaType::QVariantMap))) {
             variantMap[firstKey] = QVariantMap();
         }
         return valueForKeyPath(*static_cast<QVariantMap*>(variantMap[firstKey].data()), keyPath.mid(dotIndex + 1),

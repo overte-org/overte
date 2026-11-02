@@ -16,7 +16,7 @@ Rectangle {
     property alias inputText: input;
     property alias dialogButtons: buttons
 
-    property string imageSource: null
+    property string imageSource: ""
 
     property string button1color: hifi.buttons.noneBorderlessGray;
     property string button1text: ''
@@ -70,6 +70,7 @@ Rectangle {
         width: Math.max(parent.width * 0.8, 400)
         property int margin: 30;
 
+        // QT6TODO: QML QQuickRectangle*: Binding loop detected for property "height"
         height: childrenRect.height + margin * 2
         onHeightChanged: {
             console.debug('mainContainer: height = ', height)

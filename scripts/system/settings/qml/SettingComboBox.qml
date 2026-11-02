@@ -152,7 +152,7 @@ Item {
             hoverEnabled: true;
             propagateComposedEvents: true;
 
-            onPressed: {
+            onPressed: mouse => {
                 if (disabled) return;
                 mouse.accepted = false;
             }
