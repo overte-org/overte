@@ -107,13 +107,6 @@ ColumnLayout {
 
         }
 
-        Text {
-            text: "-->"
-            color: hifi.colors.lightGrayText
-            horizontalAlignment: Text.AlignHCenter
-            clip:true
-        }
-
         // Drop down menu with all seen script names
         ComboBox {
             id: selectScriptName
