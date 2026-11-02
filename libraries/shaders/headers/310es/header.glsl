@@ -18,6 +18,7 @@
 #if defined(HAVE_EXT_clip_cull_distance) && !defined(VULKAN)
 #extension GL_EXT_clip_cull_distance : enable
 #endif
+#extension GL_EXT_shader_implicit_conversions : enable
 precision highp int;
 precision highp float;
 precision highp samplerBuffer;
