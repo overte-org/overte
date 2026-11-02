@@ -298,6 +298,22 @@ void LightingModel::setNormalMapAttenuation(float min, float max) {
     parameters.normalMapAttenuationMax = max;
 }
 
+void LightingModel::setShadowMapSize(int size) {
+    _shadowMapSize = std::clamp(size, MIN_SHADOWMAP_SIZE, MAX_SHADOWMAP_SIZE);
+}
+
+int LightingModel::getShadowMapSize() const {
+    return _shadowMapSize;
+}
+
+void LightingModel::setShadowCascadeCount(int count) {
+    _shadowCascadeCount = std::clamp(count, MIN_SHADOW_CASCADE_COUNT, MAX_SHADOW_CASCADE_COUNT);
+}
+
+int LightingModel::getShadowCascadeCount() const {
+    return _shadowCascadeCount;
+}
+
 MakeLightingModel::MakeLightingModel() {
     _lightingModel = std::make_shared<LightingModel>();
 }
@@ -333,6 +349,9 @@ void MakeLightingModel::configure(const Config& config) {
     _lightingModel->setAmbientOcclusion(config.enableAmbientOcclusion);
     _lightingModel->setLocalLightingEnabled(config.enableLocalLighting);
     _lightingModel->setShadow(config.enableShadow);
+
+    _lightingModel->setShadowMapSize(config.shadowMapSize);
+    _lightingModel->setShadowCascadeCount(config.shadowCascadeCount);
 }
 
 void MakeLightingModel::run(const render::RenderContextPointer& renderContext, LightingModelPointer& lightingModel) {

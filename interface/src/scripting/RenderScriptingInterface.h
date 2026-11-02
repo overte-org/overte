@@ -14,6 +14,7 @@
 #include <QtCore/QObject>
 #include "Application.h"
 
+#include "LightingModel.h"
 #include "RenderForward.h"
 #include "AntialiasingEffect.h"
 #include <QScreen>
@@ -29,6 +30,8 @@
  *
  * @property {Render.RenderMethod} renderMethod - The render method being used.
  * @property {boolean} shadowsEnabled - <code>true</code> if shadows are enabled, <code>false</code> if they're disabled.
+ * @property {boolean} shadowMapSize - The texture resolution of each cascade in the rendered shadow maps. Minimum 256, maximum 8192.
+ * @property {boolean} shadowCascadeCount - How many level-of-detail slices will be drawn for shadows. Minimum 1, maximum 4.
  * @property {boolean} hazeEnabled - <code>true</code> if haze (fog) is enabled, <code>false</code> if it's disabled.
  * @property {boolean} bloomEnabled - <code>true</code> if bloom is enabled, <code>false</code> if it's disabled.
  * @property {boolean} ambientOcclusionEnabled - <code>true</code> if ambient occlusion is enabled, <code>false</code> if it's disabled.
@@ -44,6 +47,8 @@ class RenderScriptingInterface : public QObject {
     Q_OBJECT
     Q_PROPERTY(RenderMethod renderMethod READ getRenderMethod WRITE setRenderMethod NOTIFY settingsChanged)
     Q_PROPERTY(bool shadowsEnabled READ getShadowsEnabled WRITE setShadowsEnabled NOTIFY settingsChanged)
+    Q_PROPERTY(int shadowMapSize READ getShadowMapSize WRITE setShadowMapSize NOTIFY settingsChanged)
+    Q_PROPERTY(int shadowCascadeCount READ getShadowCascadeCount WRITE setShadowCascadeCount NOTIFY settingsChanged)
     Q_PROPERTY(bool hazeEnabled READ getHazeEnabled WRITE setHazeEnabled NOTIFY settingsChanged)
     Q_PROPERTY(bool bloomEnabled READ getBloomEnabled WRITE setBloomEnabled NOTIFY settingsChanged)
     Q_PROPERTY(bool ambientOcclusionEnabled READ getAmbientOcclusionEnabled WRITE setAmbientOcclusionEnabled NOTIFY settingsChanged)
@@ -144,6 +149,34 @@ public slots:
      * @param {boolean} enabled - <code>true</code> to enable shadows, <code>false</code> to disable.
      */
     void setShadowsEnabled(bool enabled);
+
+    /*@jsdoc
+     * Gets the shadow map texture size.
+     * @function Render.getShadowMapSize
+     * @returns {number}
+     */
+    int getShadowMapSize() const;
+
+    /*@jsdoc
+     * Sets the shadow map texture size.
+     * @function Render.setShadowMapSize
+     * @param {number} mapSize - Shadow texture size, minimum 256, maximum 8192
+     */
+    void setShadowMapSize(int mapSize);
+
+    /*@jsdoc
+     * Gets the number of level-of-detail slices to render for shadows.
+     * @function Render.getShadowCascadeCount
+     * @returns {number}
+     */
+    int getShadowCascadeCount() const;
+
+    /*@jsdoc
+     * Sets the number of level-of-detail slices to render for shadows.
+     * @function Render.setShadowCascadeCount
+     * @param {number} cascadeCount - Number of detail slices, minimum 1, maximum 4
+     */
+    void setShadowCascadeCount(int cascadeCount);
 
     /*@jsdoc
      * Gets whether or not haze is enabled.
@@ -326,6 +359,8 @@ private:
     AntialiasingSetupConfig::Mode _antialiasingMode { AntialiasingSetupConfig::Mode::NONE };
     float _viewportResolutionScale { 1.0f };
     QString _fullScreenScreen;
+    int _shadowMapSize { LightingModel::DEFAULT_SHADOWMAP_SIZE };
+    int _shadowCascadeCount { LightingModel::DEFAULT_SHADOW_CASCADES };
 
     // Actual settings saved on disk
     Setting::Handle<int> _renderMethodSetting { "renderMethod", RENDER_FORWARD ? render::Args::RenderMethod::FORWARD : render::Args::RenderMethod::DEFERRED };
@@ -338,6 +373,8 @@ private:
     Setting::Handle<int> _antialiasingModeSetting { "antialiasingMode", (int)AntialiasingSetupConfig::Mode::NONE };
     Setting::Handle<float> _viewportResolutionScaleSetting { "viewportResolutionScale", 1.0f };
     Setting::Handle<QString> _fullScreenScreenSetting { "fullScreenScreen", "" };
+    Setting::Handle<int> _shadowMapSizeSetting { "shadowMapSize", LightingModel::DEFAULT_SHADOWMAP_SIZE };
+    Setting::Handle<int> _shadowCascadeCountSetting { "shadowCascadeCount", LightingModel::DEFAULT_SHADOW_CASCADES };
 
     // Force assign both setting AND runtime value to the parameter value
     void forceRenderMethod(RenderMethod renderMethod);
@@ -349,6 +386,8 @@ private:
     void forceProceduralMaterialsEnabled(bool enabled);
     void forceAntialiasingMode(AntialiasingSetupConfig::Mode mode);
     void forceViewportResolutionScale(float scale);
+    void forceShadowMapSize(int mapSize);
+    void forceShadowCascadeCount(int cascades);
 
     static std::once_flag registry_flag;
 };
