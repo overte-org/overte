@@ -5,7 +5,7 @@
 //  Created by Ryan Huffman on November 19th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2023-2025 Overte e.V.
+//  Copyright 2023-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -347,6 +347,25 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
         }
     }
 
+    function onFileSaveChangedForServerless(filename) {
+        Window.saveFileChanged.disconnect(onFileSaveChangedForServerless);
+        if (filename !== "") {
+            let exportOptions = {
+                "globalPositions": true,
+                "paths": {
+                    "/": {
+                        "position": MyAvatar.position,
+                        "orientation": MyAvatar.orientation
+                    }
+                }
+            };
+            let success = Clipboard.exportEntities(filename, that.selectionManager.selections, exportOptions);
+            if (!success) {
+                Window.notifyEditError("Export failed.");
+            }
+        }
+    }
+
     var onWebEventReceived = function(data) {
         //print("entityList.js onWebEventReceived: " + data);
         try {
@@ -381,6 +400,16 @@ var EntityListTool = function(shouldUseEditTabletApp, selectionManager) {
             } else {
                 Window.saveFileChanged.connect(onFileSaveChanged);
                 Window.saveAsync("Select Where to Save", "", "*.json");
+            }
+        } else if (data.type === "saveAsServerless") {
+            if (!that.selectionManager.hasSelection()) {
+                Window.notifyEditError("No entities have been selected.");
+            } else {
+                let landingPointWarning = Window.confirm("Your avatar's current position will be used as the landing point. Do you want to proceed?");
+                if (landingPointWarning) {
+                    Window.saveFileChanged.connect(onFileSaveChangedForServerless);
+                    Window.saveAsync("Select Where to Save", "", "*.json");
+                }
             }
         } else if (data.type === "delete") {
             that.createApp.deleteSelectedEntities();
