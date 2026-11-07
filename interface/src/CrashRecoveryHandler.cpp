@@ -196,7 +196,7 @@ CrashRecoveryHandler::Action CrashRecoveryHandler::promptUserForAction(bool show
     logStatsCheckbox->setEnabled(ch.isStarted());
 
     logStreamingCheckbox->setChecked(ch.isLogStreamingEnabled());
-    logStatsCheckbox->setEnabled(ch.isStarted());
+    logStreamingCheckbox->setEnabled(ch.isStarted());
 
     option3->setChecked(true);
     layout->addWidget(option1);
