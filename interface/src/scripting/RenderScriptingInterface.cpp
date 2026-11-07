@@ -15,7 +15,6 @@
 #include <RenderCommonTask.h>
 #include <ScriptEngineCast.h>
 
-#include "LightingModel.h"
 #include "Menu.h"
 #include "ScreenName.h"
 
@@ -63,6 +62,8 @@ void RenderScriptingInterface::loadSettings() {
         _antialiasingMode = static_cast<AntialiasingSetupConfig::Mode>(_antialiasingModeSetting.get());
         _viewportResolutionScale = _viewportResolutionScaleSetting.get();
         _fullScreenScreen = _fullScreenScreenSetting.get();
+        _shadowMapSize = _shadowMapSizeSetting.get();
+        _shadowCascadeCount = _shadowCascadeCountSetting.get();
     });
 
     // If full screen screen is not initialized, or set to an invalid value,
@@ -82,6 +83,8 @@ void RenderScriptingInterface::loadSettings() {
     forceProceduralMaterialsEnabled(_proceduralMaterialsEnabled);
     forceAntialiasingMode(_antialiasingMode);
     forceViewportResolutionScale(_viewportResolutionScale);
+    forceShadowMapSize(_shadowMapSize);
+    forceShadowCascadeCount(_shadowCascadeCount);
 }
 
 RenderScriptingInterface::RenderMethod RenderScriptingInterface::getRenderMethod() const {
@@ -185,6 +188,46 @@ void RenderScriptingInterface::forceShadowsEnabled(bool enabled) {
         Menu::getInstance()->setIsOptionChecked(MenuOption::Shadows, enabled);
 
         recursivelyUpdateLightingModel("", [enabled] (MakeLightingModelConfig *config) { config->setShadow(enabled); });
+    });
+}
+
+int RenderScriptingInterface::getShadowMapSize() const {
+    return _shadowMapSize;
+}
+
+void RenderScriptingInterface::setShadowMapSize(int size) {
+    if (_shadowMapSize != size) {
+        forceShadowMapSize(size);
+        emit settingsChanged();
+    }
+}
+
+void RenderScriptingInterface::forceShadowMapSize(int size) {
+    _renderSettingLock.withWriteLock([&] {
+        _shadowMapSize = size;
+        _shadowMapSizeSetting.set(size);
+
+        recursivelyUpdateLightingModel("", [size] (MakeLightingModelConfig *config) { config->setShadowMapSize(size); });
+    });
+}
+
+int RenderScriptingInterface::getShadowCascadeCount() const {
+    return _shadowCascadeCount;
+}
+
+void RenderScriptingInterface::setShadowCascadeCount(int cascades) {
+    if (_shadowCascadeCount != cascades) {
+        forceShadowCascadeCount(cascades);
+        emit settingsChanged();
+    }
+}
+
+void RenderScriptingInterface::forceShadowCascadeCount(int cascades) {
+    _renderSettingLock.withWriteLock([&] {
+        _shadowCascadeCount = cascades;
+        _shadowCascadeCountSetting.set(cascades);
+
+        recursivelyUpdateLightingModel("", [cascades] (MakeLightingModelConfig *config) { config->setShadowCascadeCount(cascades); });
     });
 }
 
