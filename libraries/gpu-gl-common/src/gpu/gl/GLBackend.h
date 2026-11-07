@@ -4,7 +4,7 @@
 //
 //  Created by Sam Gateau on 10/27/2014.
 //  Copyright 2014 High Fidelity, Inc.
-//  Copyright 2024 Overte e.V.
+//  Copyright 2024-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -34,12 +34,9 @@
 
 // Different versions for the stereo drawcall
 // Current preferred is  "instanced" which draw the shape twice but instanced and rely on clipping plane to draw left/right side only
-#if !defined(HAVE_EXT_clip_cull_distance)
-#define GPU_STEREO_TECHNIQUE_DOUBLED_SIMPLE
-#else
+//#define GPU_STEREO_TECHNIQUE_DOUBLED_SIMPLE
 //#define GPU_STEREO_TECHNIQUE_DOUBLED_SMARTER
 #define GPU_STEREO_TECHNIQUE_INSTANCED
-#endif
 
 // Let these be configured by the one define picked above
 #ifdef GPU_STEREO_TECHNIQUE_DOUBLED_SIMPLE

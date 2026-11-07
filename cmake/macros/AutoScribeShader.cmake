@@ -3,7 +3,7 @@
 #
 #  Created by Sam Gateau on 12/17/14.
 #  Copyright 2014 High Fidelity, Inc.
-#  Copyright 2024 Overte e.V.
+#  Copyright 2024-2026 Overte e.V.
 #
 #  Distributed under the Apache License, Version 2.0.
 #  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -474,16 +474,7 @@ macro(AUTOSCRIBE_SHADER_LIBS)
     set(AUTOSCRIBE_SHADERGEN_COMMANDS_FILE ${CMAKE_CURRENT_BINARY_DIR}/shadergen.txt)
     file(WRITE ${AUTOSCRIBE_SHADERGEN_COMMANDS_FILE} "${AUTOSCRIBE_SHADERGEN_COMMANDS}")
 
-    if (HIFI_ANDROID)
-        if (
-            (${HIFI_ANDROID_APP} STREQUAL "questInterface") OR
-            (${HIFI_ANDROID_APP} STREQUAL "questFramePlayer") OR
-            (${HIFI_ANDROID_APP} STREQUAL "framePlayer")
-        )
-            set(EXTRA_SHADERGEN_ARGS --extensions EXT_clip_cull_distance)
-        endif()
-    endif()
-
+    set(EXTRA_SHADERGEN_ARGS --extensions EXT_clip_cull_distance)
 
     # A custom python script which will generate all our shader artifacts
     add_custom_command(

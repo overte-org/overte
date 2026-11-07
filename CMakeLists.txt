@@ -1,6 +1,6 @@
 # Copyright 2013-2019 High Fidelity, Inc.
 # Copyright 2019-2021 Vircadia contributors.
-# Copyright 2020-2025 Overte e.V.
+# Copyright 2020-2026 Overte e.V.
 # SPDX-License-Identifier: Apache-2.0
 
 # As the official CMake documentation is pretty bad for non-experts, Craig Scott's "Professional CMake: A Practical Guide" is a worthwhile investment,
@@ -115,9 +115,7 @@ if (ANDROID)
       (${HIFI_ANDROID_APP} STREQUAL "questFramePlayer") OR
       (${HIFI_ANDROID_APP} STREQUAL "framePlayer")
     )
-    # We know the quest hardware has this extension, so we can force the use of instanced stereo
-    add_definitions(-DHAVE_EXT_clip_cull_distance)
-    # We can also use multiview stereo techniques
+    # We know the quest hardware has this extension, so we can use multiview stereo techniques
     add_definitions(-DHAVE_OVR_multiview2)
     add_definitions(-DHAVE_OVR_multiview)
     # We can also use our own foveated textures
@@ -138,7 +136,6 @@ if (ANDROID)
   endif()
 else ()
   set(PLATFORM_QT_COMPONENTS WebEngine Xml)
-  add_definitions(-DHAVE_EXT_clip_cull_distance)
 endif()
 
 
