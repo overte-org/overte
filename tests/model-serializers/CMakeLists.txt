@@ -93,6 +93,16 @@ macro (setup_testcase_dependencies)
       CONFIGURE_COMMAND "" BUILD_COMMAND "" INSTALL_COMMAND ""
     )
 
+    # Reported on Discord that this avatar doesn't work, currently for unspecified reasons.
+    ExternalProject_Add(
+      alezia_test_avatar
+      PREFIX "models"
+      URL "https://testing-assets.overte.org/model-serializers/AleziaTestAVATAR.glb"
+      URL_HASH SHA512=6da8a2f7686abb552736eab82449e70ed748f774a3a04b7d2483ddc8427a3f31b3e3a31eb93d6d243cb056b5e35fe2cc8935be936a9be1a464599d72174116a5
+      DOWNLOAD_NO_EXTRACT TRUE
+      CONFIGURE_COMMAND "" BUILD_COMMAND "" INSTALL_COMMAND ""
+    )
+
 
 
 
@@ -104,6 +114,7 @@ macro (setup_testcase_dependencies)
     add_dependencies(${TARGET_NAME} broken)
     add_dependencies(${TARGET_NAME} gltf_samples)
     add_dependencies(${TARGET_NAME} kenney_building_kit)
+    add_dependencies(${TARGET_NAME} alezia_test_avatar)
   endif()
 
 
