@@ -402,7 +402,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
             HFMMesh& mesh = hfmModel.meshes[hfmModel.meshes.size() - 1];
             mesh.modelTransform = globalTransforms[nodeIndex];
 
-            if (!hfmModel.hasSkeletonJoints) {
+            if (!node.skin) {
                 HFMCluster cluster;
                 cluster.jointIndex = nodeCount;
                 cluster.inverseBindMatrix = glm::mat4();
@@ -900,7 +900,7 @@ bool GLTFSerializer::buildGeometry(HFMModel& hfmModel, const hifi::VariantHash& 
                 }
 
                 // Build weights (adapted from FBXSerializer.cpp)
-                if (hfmModel.hasSkeletonJoints) {
+                if (node.skin) {
                     int prevMeshClusterIndexCount = mesh.clusterIndices.count();
                     int prevMeshClusterWeightCount = mesh.clusterWeights.count();
                     const int WEIGHTS_PER_VERTEX = 4;
