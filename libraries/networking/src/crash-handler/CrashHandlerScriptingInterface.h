@@ -17,9 +17,9 @@ class CrashHandlerScriptingInterface : public QObject {
 
         Q_PROPERTY(QString supportTag READ getSupportTag CONSTANT);
         Q_PROPERTY(QString crashHandlerName READ getCrashHandlerName CONSTANT);
-        Q_PROPERTY(bool crashReportingEnabled READ isCrashReportingEnabled);
-        Q_PROPERTY(bool logStreamingEnabled READ isLogStreamingEnabled);
-        Q_PROPERTY(bool statsStreamingEnabled READ isStatsStreamingEnabled);
+        Q_PROPERTY(bool crashReportingEnabled READ isCrashReportingEnabled NOTIFY crashReportingEnabledChanged);
+        Q_PROPERTY(bool logStreamingEnabled READ isLogStreamingEnabled NOTIFY logStreamingEnabledChanged);
+        Q_PROPERTY(bool statsStreamingEnabled READ isStatsStreamingEnabled NOTIFY statsStreamingEnabledChanged);
 
 
 
@@ -87,6 +87,10 @@ class CrashHandlerScriptingInterface : public QObject {
 
         virtual ~CrashHandlerScriptingInterface() = default;
 
+    signals:
+        void crashReportingEnabledChanged();
+        void logStreamingEnabledChanged();
+        void statsStreamingEnabledChanged();
     private:
 
         CrashHandlerScriptingInterface(QObject* parent = nullptr) : QObject(parent) {
