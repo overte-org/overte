@@ -16,6 +16,10 @@ class CrashHandlerSentry : public CrashHandler {
 
     virtual void setContext(const QString &sectionName, const QString &key, const QVariant &value) override;
 
+    virtual void attachFile(const QString &file) override;
+
+    virtual void clearAttachments() override;
+
     protected:
 
     virtual bool startCrashHandler() override;
