@@ -264,6 +264,10 @@ Application::Application(
     LogHandler::getInstance().setupRepeatedMessageFlusher();
     qInstallMessageHandler(messageHandler);
 
+    auto &crashHandler = CrashHandler::getInstance();
+    crashHandler.attachFile(_logger->getFilename());
+
+
     DependencyManager::set<PathUtils>();
 }
 
