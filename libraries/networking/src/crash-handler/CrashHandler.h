@@ -292,6 +292,24 @@ public slots:
     virtual void setTag(std::string name, std::string value) = 0;
 
     /**
+     * @brief Attach a file to the crash report
+     *
+     * Files such as logs and screenshots may be attached to crash reports
+     *
+     * @param file Path to file.
+     */
+    virtual void attachFile(const QString &file) = 0;
+
+    /**
+     * @brief Clear attachments from the crash report
+     *
+     * Removes all attachments from the crash report.
+     *
+     */
+    virtual void clearAttachments() = 0;
+
+
+    /**
      * @brief Add context to the crash report
      *
      * Contexts in Sentry are informative, and not normally searchable. This should be used

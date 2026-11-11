@@ -44,15 +44,6 @@ bool CrashHandlerSentry::startCrashHandler() {
     sentry_options_set_database_path(options, crashReportPath.toStdString().c_str());
     qCInfo(crash_handler) << "Will store crash reports in: " << crashReportPath;
 
-
-    // The real logger isn't easily available to us, and to deal with that older versions of Sentry SDK may not
-    // allow adding attachments after initialization, this is an easier way to deal with it.
-    FileLogger dummyLogger;
-    qCInfo(crash_handler) << "Will attach log file to crash reports: " << dummyLogger.getFilename();
-
-
-    sentry_options_add_attachment(options, dummyLogger.getFilename().toStdString().c_str());
-
     if (sentry_init(options) == 0) {
         qCInfo(crash_handler) << "Sentry init successful";
     } else {
@@ -169,4 +160,14 @@ void CrashHandlerSentry::setContext(const QString &sectionName, const QString &k
         sentry_set_context(sectionName.toStdString().c_str(), section_info);
     }
 
+}
+
+void CrashHandlerSentry::attachFile(const QString &file) {
+    qCDebug(crash_handler) << "Attaching file to Sentry:" << file;
+    sentry_attach_file(file.toStdString().c_str());
+}
+
+void CrashHandlerSentry::clearAttachments() {
+    qCDebug(crash_handler) << "Clearing all attachments from Sentry.";
+    sentry_clear_attachments();
 }
