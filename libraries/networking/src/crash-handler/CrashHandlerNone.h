@@ -20,6 +20,14 @@ class CrashHandlerNone : public CrashHandler {
         // This space intentionally left blank.
     }
 
+    virtual void attachFile(const QString &file) {
+        // This space intentionally left blank.
+    }
+
+    virtual void clearAttachments() {
+        // This space intentionally left blank.
+    }
+
     protected:
 
     virtual bool startCrashHandler() override {
