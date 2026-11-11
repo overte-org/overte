@@ -94,7 +94,10 @@ class CrashHandlerScriptingInterface : public QObject {
     private:
 
         CrashHandlerScriptingInterface(QObject* parent = nullptr) : QObject(parent) {
-
+            auto& crashHandler = CrashHandler::getInstance();
+            connect(&crashHandler, &CrashHandler::enabledChanged, this, &CrashHandlerScriptingInterface::crashReportingEnabledChanged);
+            connect(&crashHandler, &CrashHandler::logStreamingChanged, this, &CrashHandlerScriptingInterface::logStreamingEnabledChanged);
+            connect(&crashHandler, &CrashHandler::statsStreamingChanged, this, &CrashHandlerScriptingInterface::statsStreamingEnabledChanged);
         }
 
 
