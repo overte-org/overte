@@ -17,9 +17,9 @@ class CrashHandlerScriptingInterface : public QObject {
 
         Q_PROPERTY(QString supportTag READ getSupportTag CONSTANT);
         Q_PROPERTY(QString crashHandlerName READ getCrashHandlerName CONSTANT);
-        Q_PROPERTY(bool crashReportingEnabled READ isCrashReportingEnabled CONSTANT);
-        Q_PROPERTY(bool logStreamingEnabled READ isLogStreamingEnabled CONSTANT);
-        Q_PROPERTY(bool statsStreamingEnabled READ isStatsStreamingEnabled CONSTANT);
+        Q_PROPERTY(bool crashReportingEnabled READ isCrashReportingEnabled);
+        Q_PROPERTY(bool logStreamingEnabled READ isLogStreamingEnabled);
+        Q_PROPERTY(bool statsStreamingEnabled READ isStatsStreamingEnabled);
 
 
 
