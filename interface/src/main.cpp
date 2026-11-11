@@ -657,8 +657,6 @@ int main(int argc, const char* argv[]) {
     auto& ual = UserActivityLogger::getInstance();
     auto& ch = CrashHandler::getInstance();
 
-    ch.start();
-
     QObject::connect(&ch, &CrashHandler::enabledChanged, [](bool enabled) {
         Settings s;
 
@@ -721,20 +719,21 @@ int main(int argc, const char* argv[]) {
     }
     qDebug() << "UserActivityLogger is enabled:" << ual.isEnabled();
 
+    {
+        Settings crashSettings;
+        crashSettings.beginGroup("Developer/Network");
+        ch.setLogStreamingEnabled(crashSettings.value("Enable Log Streaming").toBool());
+        ch.setStatsStreamingEnabled(crashSettings.value("Enable Stats Streaming").toBool());
+        ch.setEnabled(crashSettings.value("Enable Crash Reporting").toBool());
+        crashSettings.endGroup();
+    }
+
     if (parser.isSet(forceCrashReportingOption)) {
         qInfo() << "Crash reporting enabled on the command-line";
         ch.setEnabled(true);
     }
 
-    {
-        Settings crashSettings;
-        crashSettings.beginGroup("Developer/Network");
-        ch.setEnabled(crashSettings.value("Enable Crash Reporting").toBool());
-        ch.setLogStreamingEnabled(crashSettings.value("Enable Log Streaming").toBool());
-        ch.setStatsStreamingEnabled(crashSettings.value("Enable Stats Streaming").toBool());
-        crashSettings.endGroup();
-    }
-
+    ch.start();
     ch.setAnnotation("program", "interface");
 
     const QString& applicationName = getInterfaceSharedMemoryName();
