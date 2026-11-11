@@ -1,16 +1,20 @@
 [settings]
 os=Windows
-os_build=Windows
 arch=x86_64
-arch_build=x86_64
-compiler=Visual Studio
+compiler=msvc
 # Both libnode and webrtc-audio-processing require C++20
 compiler.cppstd=20
-compiler.version=16
-build_type=Release
+compiler.version=195
+compiler.runtime=dynamic
+compiler.runtime_type=Release
+build_type=RelWithDebInfo
 # libnode's build system seems to only support Release and Debug on Windows. RelWithDebInfo is not a valid option.
 libnode/*:build_type=Release
 [options]
 Overte/*:qt_source=source
 # Required for building oneTBB.
 hwloc/*:shared=True
+
+[tool_requires]
+# Many of our dependencies don't support CMake 4 yet.
+!cmake/*: cmake/[>=3 <4]
