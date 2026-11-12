@@ -48,7 +48,7 @@ bool CrashHandlerSentry::startCrashHandler() {
     sentry_options_t *options = sentry_options_new();
     sentry_options_set_dsn(options, crashURL.c_str());
     sentry_options_set_release(options, crashToken.c_str());
-    sentry_options_set_debug(options, 1); // Debug for Sentry Native SDK itself
+    sentry_options_set_debug(options, 0); // Debug for Sentry Native SDK itself
     sentry_options_set_enable_logs(options, isLogStreamingEnabled());
     sentry_options_set_enable_metrics(options, isStatsStreamingEnabled());
     sentry_options_set_cache_keep(options, SENTRY_CACHE_KEEP_OFFLINE);
