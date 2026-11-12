@@ -1741,6 +1741,7 @@ void Application::cleanupBeforeQuit() {
     // first stop all timers directly or by invokeMethod
     // depending on what thread they run in
     _locationUpdateTimer.stop();
+    _metricsUpdateTimer.stop();
     _window->saveGeometry();
 
     // stop QML
@@ -2480,6 +2481,21 @@ void Application::updateLOD(float deltaTime) const {
     } else {
         DependencyManager::get<LODManager>()->resetLODAdjust();
     }
+}
+
+void Application::updateMetrics() {
+    // We can't do this in updateLOD(), it gets called way too often. This one runs on a leisury,
+    // predictable schedule.
+    float presentTime = getActiveDisplayPlugin()->getAveragePresentTime();
+    float engineRunTime = (float)(_graphicsEngine->getRenderEngine()->getConfiguration().get()->getCPURunTime());
+    float gpuTime = getGPUContext()->getFrameTimerGPUAverage();
+    float batchTime = getGPUContext()->getFrameTimerBatchAverage();
+
+    auto &ch = CrashHandler::getInstance();
+    ch.setGauge("presentTime", presentTime, CrashHandler::MetricsUnit::Milliseconds);
+    ch.setGauge("engineRunTime", engineRunTime, CrashHandler::MetricsUnit::Milliseconds);
+    ch.setGauge("batchTime", batchTime, CrashHandler::MetricsUnit::Milliseconds);
+    ch.setGauge("gpuTime", gpuTime, CrashHandler::MetricsUnit::Milliseconds);
 }
 
 void Application::updateThreads(float deltaTime) {

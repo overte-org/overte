@@ -20,6 +20,12 @@ class CrashHandlerSentry : public CrashHandler {
 
     virtual void clearAttachments() override;
 
+
+    virtual void setCounter(const QString &name, qint64 value, MetricsUnit unit = MetricsUnit::None) override;
+
+    virtual void setGauge(const QString &name, double value, MetricsUnit unit = MetricsUnit::None) override;
+
+
     protected:
 
     virtual bool startCrashHandler() override;
