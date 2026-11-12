@@ -137,46 +137,6 @@ set(OVERTE_USE_SENTRY OFF CACHE BOOL "Build with Sentry crash reporting.")
 set(OVERTE_BACKTRACE_URL "" CACHE STRING "URL to an endpoint for uploading crash-dumps. For example Sentry.")
 set(OVERTE_BACKTRACE_TOKEN "" CACHE STRING "Token used to identify this build, for use in uploading crash-dumps.")
 
-if (HIFI_ANDROID)
-    execute_process(
-        COMMAND ${HIFI_PYTHON_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/prebuild.py --release-type ${RELEASE_TYPE} --android ${HIFI_ANDROID_APP} --build-root ${CMAKE_BINARY_DIR}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} RESULTS_VARIABLE PREBUILD_RET
-    )
-else()
-    set(VCPKG_BUILD_TYPE_PARAM "")
-    if (VCPKG_BUILD_TYPE)
-      set(VCPKG_BUILD_TYPE_PARAM --vcpkg-build-type ${VCPKG_BUILD_TYPE})
-    endif()
-    execute_process(
-        COMMAND ${HIFI_PYTHON_EXEC} ${CMAKE_CURRENT_SOURCE_DIR}/prebuild.py --release-type ${RELEASE_TYPE} --build-root ${CMAKE_BINARY_DIR} ${VCPKG_BUILD_TYPE_PARAM}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} RESULTS_VARIABLE PREBUILD_RET
-    )
-endif()
-
-if (PREBUILD_RET GREATER 0)
-  message(FATAL_ERROR "prebuild.py failed with error ${PREBUILD_RET}")
-endif()
-if(NOT EXISTS "${CMAKE_BINARY_DIR}/vcpkg.cmake")
-    message(FATAL_ERROR "vcpkg configuration missing.")
-endif()
-include("${CMAKE_BINARY_DIR}/vcpkg.cmake")
-
-if (HIFI_ANDROID)
-  set(QT_CMAKE_PREFIX_PATH "$ENV{HIFI_ANDROID_PRECOMPILED}/qt/lib/cmake")
-else()
-  if ("$ENV{OVERTE_USE_SYSTEM_QT}" STREQUAL "")
-     if(NOT EXISTS "${CMAKE_BINARY_DIR}/qt.cmake")
-        message(FATAL_ERROR "qt configuration missing.")
-    endif()
-    include("${CMAKE_BINARY_DIR}/qt.cmake")
-    message(STATUS "${CMAKE_BINARY_DIR}/qt.cmake included!")
-  else()
-    message(STATUS "System Qt in use, not including qt.cmake!")
-  endif()
-endif()
-
-option(VCPKG_APPLOCAL_DEPS OFF)
-
 
 project(overte LANGUAGES CXX VERSION "${GIT_VERSION_FULL}")
 
@@ -193,10 +153,6 @@ endif()
 
 include("cmake/init.cmake")
 include("cmake/compiler.cmake")
-option(VCPKG_APPLOCAL_DEPS OFF)
-
-add_paths_to_fixup_libs(${VCPKG_INSTALL_ROOT}/bin)
-add_paths_to_fixup_libs(${VCPKG_INSTALL_ROOT}/debug/bin)
 
 if (NOT DEFINED CLIENT_ONLY)
   set(CLIENT_ONLY 0)
