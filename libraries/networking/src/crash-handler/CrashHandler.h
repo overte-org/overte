@@ -84,6 +84,23 @@ public:
     QString token() const { return _crashToken; }
 
 
+    enum class MetricsUnit {
+        None,
+        Nanoseconds,
+        Microseconds,
+        Milliseconds,
+        Seconds,
+        Bytes,
+        Kilobytes,
+        Kibibytes,
+        Megabytes,
+        Mebibytes,
+        Gigabytes,
+        Gibibytes,
+        Percent,
+        Ratio
+    };
+
 public slots:
 
 
@@ -346,6 +363,28 @@ public slots:
      * @return QString
      */
     QString getSupportTag() const { return _supportTag; }
+
+
+
+    /**
+     * @brief Report a counter metric
+     *
+     * @param name Name of whatever we're measuring
+     * @param value Its value
+     * @param unit Unit of measurement for the value
+     */
+    virtual void setCounter(const QString &name, qint64 value, MetricsUnit unit = MetricsUnit::None) = 0;
+
+
+    /**
+     * @brief Report a gauge metric
+     *
+     * @param name Name of whatever we're measuring
+     * @param value Its value
+     * @param unit Unit of measurement for the value
+     */
+    virtual void setGauge(const QString &name, double value, MetricsUnit unit = MetricsUnit::None) = 0;
+
 
 signals:
 

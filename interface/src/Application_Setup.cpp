@@ -1337,6 +1337,10 @@ void Application::initialize(const QCommandLineParser &parser) {
     qCDebug(interfaceapp) << "Directory Service session ID is" << uuidStringWithoutCurlyBraces(accountManager->getSessionID());
 
     pauseUntilLoginDetermined();
+
+
+    connect(&_metricsUpdateTimer, &QTimer::timeout, this, &Application::updateMetrics);
+    _metricsUpdateTimer.start(5000);
 }
 
 void Application::init() {
