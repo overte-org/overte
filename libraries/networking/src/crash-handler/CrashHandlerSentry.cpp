@@ -195,9 +195,15 @@ void CrashHandlerSentry::clearAttachments() {
 }
 
 void CrashHandlerSentry::setCounter(const QString &name, qint64 value, MetricsUnit unit) {
+    if (!isStatsStreamingEnabled()) {
+        return;
+    }
     sentry_metrics_count(name.toStdString().c_str(), value, sentry_value_new_null());
 }
 
 void CrashHandlerSentry::setGauge(const QString &name, double value, MetricsUnit unit) {
+    if (!isStatsStreamingEnabled()) {
+        return;
+    }
     sentry_metrics_gauge(name.toStdString().c_str(), value, toSentryUnit(unit), sentry_value_new_null());
 }
