@@ -51,6 +51,7 @@ file(COPY ${CPACK_PACKAGE_DIRECTORY}/interface/scripts DESTINATION ${CPACK_TEMPO
 file(COPY ${CPACK_PACKAGE_DIRECTORY}/interface/resources DESTINATION ${CPACK_TEMPORARY_DIRECTORY}/usr/bin/)
 file(COPY ${CPACK_PACKAGE_DIRECTORY}/interface/resources.rcc DESTINATION ${CPACK_TEMPORARY_DIRECTORY}/usr/bin/)
 
+
 # libfcitx5platforminputcontextplugin.so is provided by a separate Conan package and linuxdeploy-plugin-qt expects all plugins to be in one folder, so we copy it over manually.
 if(EXISTS "${CPACK_PACKAGE_DIRECTORY}/conanlibs/${CPACK_CMAKE_BUILD_TYPE}/libfcitx5platforminputcontextplugin.so")
     message(STATUS "Copying Conan provided Fcitx Qt input plugin…")
@@ -66,6 +67,19 @@ elseif(CPACK_CMAKE_BUILD_TYPE)
 else()
     message(FATAL_ERROR "CPACK_CMAKE_BUILD_TYPE should have been set but isn't. This is most likely a mistake during refactoring.")
 endif()
+
+find_program(CRASHPAD_HANDLER_EXECUTABLE
+  NAMES crashpad_handler
+  PATHS ${CPACK_PACKAGE_DIRECTORY}/interface)
+
+if (CRASHPAD_HANDLER_EXECUTABLE)
+  message(STATUS "Found crashpad_handler executable. Including…")
+  file(COPY ${CRASHPAD_HANDLER_EXECUTABLE} DESTINATION ${CPACK_TEMPORARY_DIRECTORY}/usr/bin/)
+  set(LINUXDEPLOY_CRASHPAD_COMMAND "--deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/bin/crashpad_handler" CACHE STRING "Internal")
+else ()
+  message(STATUS "No crashpad_handler executable found. We probably built without crash reporting. Continuing…")
+  set(LINUXDEPLOY_CRASHPAD_COMMAND "" CACHE STRING "Internal")
+endif ()
 
 execute_process(
   COMMAND
@@ -86,6 +100,8 @@ execute_process(
     # We copied our plugins earlier; Here we tell LinuxDeploy to deploy their dependencies.
     # For example libopenxr_loader.so for our OpenXR plugin.
     --deploy-deps-only=${CPACK_TEMPORARY_DIRECTORY}/usr/bin/plugins
+    # Same thing for crashpad_handler.
+    ${LINUXDEPLOY_CRASHPAD_COMMAND}
     --desktop-file=${APPIMAGE_DESKTOP_FILE}
     --icon-file=${APPIMAGE_ICON_FILE}
     --plugin qt

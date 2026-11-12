@@ -128,6 +128,8 @@
 #include "LODManager.h"
 #include "Menu.h"
 #include "ResourceRequestObserver.h"
+#include "crash-handler/CrashHandlerScriptingInterface.h"
+
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
 #include "SpeechRecognizer.h"
 #endif
@@ -261,6 +263,10 @@ Application::Application(
     LogHandler::getInstance().moveToThread(thread());
     LogHandler::getInstance().setupRepeatedMessageFlusher();
     qInstallMessageHandler(messageHandler);
+
+    auto &crashHandler = CrashHandler::getInstance();
+    crashHandler.attachFile(_logger->getFilename());
+
 
     DependencyManager::set<PathUtils>();
 }
@@ -699,6 +705,8 @@ void Application::registerScriptEngineWithApplicationServices(ScriptManagerPoint
     scriptEngine->registerGlobalObject(sgp, "About", AboutUtil::getInstance());
     scriptEngine->registerGlobalObject(sgp, "HifiAbout", AboutUtil::getInstance());  // Deprecated.
     scriptEngine->registerGlobalObject(sgp, "ResourceRequestObserver", DependencyManager::get<ResourceRequestObserver>().data());
+
+    scriptEngine->registerGlobalObject(sgp, "CrashHandler", CrashHandlerScriptingInterface::getInstance());
 
     // connect this script engines printedMessage signal to the global ScriptEngines these various messages
     auto scriptEngines = DependencyManager::get<ScriptEngines>().data();
@@ -1404,7 +1412,8 @@ void Application::updateWindowTitle() const {
     QString domainUsername = domainAccountManager->getUsername();
 
     auto& ch = CrashHandler::getInstance();
-    ch.setAnnotation("sentry[user][username]", metaverseUsername.toStdString());
+    ch.setContext("User", "username", metaverseUsername);
+    ch.setAnnotation("user.display_name", getMyAvatar()->getDisplayName().toStdString());
 
     QString currentPlaceName;
     if (isServerlessMode()) {
@@ -1732,6 +1741,7 @@ void Application::cleanupBeforeQuit() {
     // first stop all timers directly or by invokeMethod
     // depending on what thread they run in
     _locationUpdateTimer.stop();
+    _metricsUpdateTimer.stop();
     _window->saveGeometry();
 
     // stop QML
@@ -2471,6 +2481,21 @@ void Application::updateLOD(float deltaTime) const {
     } else {
         DependencyManager::get<LODManager>()->resetLODAdjust();
     }
+}
+
+void Application::updateMetrics() {
+    // We can't do this in updateLOD(), it gets called way too often. This one runs on a leisury,
+    // predictable schedule.
+    float presentTime = getActiveDisplayPlugin()->getAveragePresentTime();
+    float engineRunTime = (float)(_graphicsEngine->getRenderEngine()->getConfiguration().get()->getCPURunTime());
+    float gpuTime = getGPUContext()->getFrameTimerGPUAverage();
+    float batchTime = getGPUContext()->getFrameTimerBatchAverage();
+
+    auto &ch = CrashHandler::getInstance();
+    ch.setGauge("presentTime", presentTime, CrashHandler::MetricsUnit::Milliseconds);
+    ch.setGauge("engineRunTime", engineRunTime, CrashHandler::MetricsUnit::Milliseconds);
+    ch.setGauge("batchTime", batchTime, CrashHandler::MetricsUnit::Milliseconds);
+    ch.setGauge("gpuTime", gpuTime, CrashHandler::MetricsUnit::Milliseconds);
 }
 
 void Application::updateThreads(float deltaTime) {

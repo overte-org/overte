@@ -197,7 +197,7 @@ public:
     void setPreferStylusOverLaser(bool value) { _preferStylusOverLaserSetting.set(value); }
     bool getPreferAvatarFingerOverStylus() { return _preferAvatarFingerOverStylusSetting.get(); }
     void setPreferAvatarFingerOverStylus(bool value) { _preferAvatarFingerOverStylusSetting.set(value); }
-    
+
     void setMouseCaptureVR(bool value);
     bool getMouseCaptureVR();
 
@@ -701,6 +701,7 @@ private:
     // Physics
     void tryToEnablePhysics();
 
+    void updateMetrics();
 
     // Member Variables
     // The window needs to be initialized early as other initializers try to access it
@@ -741,6 +742,7 @@ private:
     QElapsedTimer _lastTimeUpdated;
     QTimer _locationUpdateTimer;
     QTimer _minimizedWindowTimer;
+    QTimer _metricsUpdateTimer;
     // Frame Rate Measurement
     RateCounter<500> _gameLoopCounter;
 

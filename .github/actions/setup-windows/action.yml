@@ -7,7 +7,7 @@ runs:
       shell: bash
       run: |
         if [[ "${{ matrix.os }}" = "Windows 2022" ]]; then
-            echo "CONAN_PROFILE='./tools/conan-profiles/vs-22-release'" >> $GITHUB_ENV
+            echo "CONAN_PROFILE='./tools/conan-profiles/vs-22-relwithdebinfo'" >> $GITHUB_ENV
         else
             echo "Not sure which Conan profile to use. Exiting." && exit 1
         fi
@@ -66,3 +66,7 @@ runs:
         echo "Printing Conan global.conf…" && cat ${CONAN_HOME}/global.conf
         echo "Printing Conan remotes.json…" && cat ${CONAN_HOME}/remotes.json
         echo "Printing Conan source_credentials.json…" && cat ${CONAN_HOME}/source_credentials.json
+
+    - name: Install Sentry-cli
+      shell: bash
+      run: curl -sL https://sentry.io/get-cli/ | SENTRY_CLI_VERSION="3.6.0" sh
