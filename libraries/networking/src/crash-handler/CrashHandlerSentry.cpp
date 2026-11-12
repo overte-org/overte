@@ -12,6 +12,28 @@
 const QString CRASH_REPORTS_DIR_NAME = "crash-reports";
 
 
+constexpr const char* toSentryUnit(CrashHandler::MetricsUnit unit) {
+    switch (unit) {
+        case CrashHandler::MetricsUnit::None: return nullptr;
+        case CrashHandler::MetricsUnit::Nanoseconds: return SENTRY_UNIT_NANOSECOND;
+        case CrashHandler::MetricsUnit::Microseconds: return SENTRY_UNIT_MICROSECOND;
+        case CrashHandler::MetricsUnit::Milliseconds: return SENTRY_UNIT_MILLISECOND;
+        case CrashHandler::MetricsUnit::Seconds: return SENTRY_UNIT_SECOND;
+        case CrashHandler::MetricsUnit::Bytes: return SENTRY_UNIT_BYTE;
+        case CrashHandler::MetricsUnit::Kilobytes: return SENTRY_UNIT_KILOBYTE;
+        case CrashHandler::MetricsUnit::Kibibytes: return SENTRY_UNIT_KIBIBYTE;
+        case CrashHandler::MetricsUnit::Megabytes: return SENTRY_UNIT_MEGABYTE;
+        case CrashHandler::MetricsUnit::Mebibytes: return SENTRY_UNIT_MEBIBYTE;
+        case CrashHandler::MetricsUnit::Gigabytes: return SENTRY_UNIT_GIGABYTE;
+        case CrashHandler::MetricsUnit::Gibibytes: return SENTRY_UNIT_GIBIBYTE;
+        case CrashHandler::MetricsUnit::Percent: return SENTRY_UNIT_PERCENT;
+        case CrashHandler::MetricsUnit::Ratio: return SENTRY_UNIT_RATIO;
+    }
+
+    return nullptr;
+}
+
+
 bool CrashHandlerSentry::startCrashHandler() {
     std::string appPath = path().toStdString();
     std::string crashURL = url().toStdString();
@@ -170,4 +192,12 @@ void CrashHandlerSentry::attachFile(const QString &file) {
 void CrashHandlerSentry::clearAttachments() {
     qCDebug(crash_handler) << "Clearing all attachments from Sentry.";
     sentry_clear_attachments();
+}
+
+void CrashHandlerSentry::setCounter(const QString &name, qint64 value, MetricsUnit unit) {
+    sentry_metrics_count(name.toStdString().c_str(), value, sentry_value_new_null());
+}
+
+void CrashHandlerSentry::setGauge(const QString &name, double value, MetricsUnit unit) {
+    sentry_metrics_gauge(name.toStdString().c_str(), value, toSentryUnit(unit), sentry_value_new_null());
 }

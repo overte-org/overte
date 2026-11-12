@@ -20,11 +20,19 @@ class CrashHandlerNone : public CrashHandler {
         // This space intentionally left blank.
     }
 
-    virtual void attachFile(const QString &file) {
+    virtual void attachFile(const QString &file) override {
         // This space intentionally left blank.
     }
 
-    virtual void clearAttachments() {
+    virtual void clearAttachments() override {
+        // This space intentionally left blank.
+    }
+
+    virtual void setCounter(const QString &name, qint64 value, MetricsUnit unit = MetricsUnit::None) override {
+        // This space intentionally left blank.
+    }
+
+    virtual void setGauge(const QString &name, double value, MetricsUnit unit = MetricsUnit::None) override {
         // This space intentionally left blank.
     }
 
