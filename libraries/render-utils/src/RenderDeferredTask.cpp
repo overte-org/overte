@@ -470,7 +470,7 @@ void RenderTransparentDeferred::run(const RenderContextPointer& renderContext, c
     const auto& lightFrame = inputs.get2();
     const auto& lightingModel = inputs.get3();
     const auto& lightClusters = inputs.get4();
-    // Not needed yet: const auto& shadowFrame = inputs.get5();
+    const auto& shadowFrame = inputs.get5();
     const auto& deferredFrameTransform = inputs.get6();
     auto &deferredFramebuffer = inputs.get7();
     auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
@@ -494,9 +494,15 @@ void RenderTransparentDeferred::run(const RenderContextPointer& renderContext, c
         batch.setResourceTexture(ru::Texture::AmbientFresnel, lightingModel->getAmbientFresnelLUT());
         batch.setUniformBuffer(ru::Buffer::DeferredFrameTransform, deferredFrameTransform->getFrameTransformBuffer());
 
+        LightStage::ShadowPointer globalShadow;
+        if (lightingModel->isShadowEnabled() && shadowFrame && !shadowFrame->_objects.empty()) {
+            globalShadow = shadowFrame->_objects.front();
+        }
+
         // Set the light
         deferredLightingEffect->setupKeyLightBatch(args, batch, *lightFrame);
         deferredLightingEffect->setupLocalLightsBatch(batch, lightClusters);
+        deferredLightingEffect->setupShadowsBatch(batch, globalShadow);
 
         // Setup haze if current zone has haze
         const auto& hazeStage = args->_scene->getStage<HazeStage>();
@@ -521,6 +527,7 @@ void RenderTransparentDeferred::run(const RenderContextPointer& renderContext, c
         args->_batch = nullptr;
         args->_globalShapeKey = 0;
 
+        deferredLightingEffect->unsetShadowsBatch(batch);
         deferredLightingEffect->unsetLocalLightsBatch(batch);
         deferredLightingEffect->unsetKeyLightBatch(batch);
     });

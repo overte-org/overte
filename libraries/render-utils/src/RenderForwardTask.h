@@ -19,6 +19,7 @@
 #include "DeferredFrameTransform.h"
 #include "LightClusters.h"
 #include "LightingModel.h"
+#include "RenderShadowTask.h"
 
 class RenderForwardTaskConfig : public render::Task::Config {
     Q_OBJECT
@@ -32,7 +33,7 @@ signals:
 
 class RenderForwardTask {
 public:
-    using Input = render::VaryingSet3<RenderFetchCullSortTask::Output, LightingModelPointer, AssembleLightingStageTask::Output>;
+    using Input = render::VaryingSet4<RenderFetchCullSortTask::Output, LightingModelPointer, AssembleLightingStageTask::Output, RenderShadowTask::Output>;
     using Config = RenderForwardTaskConfig;
     using JobModel = render::Task::ModelI<RenderForwardTask, Input, Config>;
 
@@ -82,7 +83,7 @@ private:
 
 class PrepareForward {
 public:
-    using Inputs = render::VaryingSet2 <gpu::FramebufferPointer, LightStage::FramePointer>;
+    using Inputs = render::VaryingSet4 <gpu::FramebufferPointer, LightStage::FramePointer, LightingModelPointer, LightStage::ShadowFramePointer>;
     using JobModel = render::Job::ModelI<PrepareForward, Inputs>;
 
     void run(const render::RenderContextPointer& renderContext,
@@ -91,9 +92,9 @@ public:
 private:
 };
 
-class DrawForward{
+class DrawForward {
 public:
-    using Inputs = render::VaryingSet5<render::ItemBounds, LightingModelPointer, HazeStage::FramePointer, LightClustersPointer, DeferredFrameTransformPointer>;
+    using Inputs = render::VaryingSet6<render::ItemBounds, LightingModelPointer, HazeStage::FramePointer, LightClustersPointer, DeferredFrameTransformPointer, LightStage::ShadowFramePointer>;
     using JobModel = render::Job::ModelI<DrawForward, Inputs>;
 
     DrawForward(const render::ShapePlumberPointer& shapePlumber, bool opaquePass, uint transformSlot) :

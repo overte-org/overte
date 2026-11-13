@@ -121,6 +121,10 @@
     <@endif@>
 <@endif@>
 
+<@if HIFI_USE_FORWARD or HIFI_USE_TRANSLUCENT@>
+<@include Shadow.slh@>
+<@endif@>
+
 <@include LightingModel.slh@>
 
 <@if HIFI_USE_FADE@>
@@ -692,6 +696,7 @@ void main(void) {
             vec3 fragToEyeWS = cam._viewInverse[3].xyz - fragPositionWS;
             vec3 fragToEyeDirWS = normalize(fragToEyeWS);
             SurfaceData surfaceWS = initSurfaceData(roughness, fragNormalWS, fragToEyeDirWS);
+            vec3 worldLightDirection = getLightDirection(getKeyLight());
 
             vec4 localLighting = vec4(0.0);
             <$fetchClusterInfo(_positionWS)$>
@@ -703,7 +708,7 @@ void main(void) {
 
             _fragColor0 = vec4(evalGlobalLightingAlphaBlended(
                 cam._viewInverse,
-                1.0,
+                evalShadowAttenuation(worldLightDirection, _positionWS, -_positionES.z, fragNormalWS),
                 occlusion,
                 _positionES.xyz,
                 fragNormalWS,
@@ -767,6 +772,7 @@ void main(void) {
                 vec3 fragToEyeWS = cam._viewInverse[3].xyz - fragPositionWS;
                 vec3 fragToEyeDirWS = normalize(fragToEyeWS);
                 SurfaceData surfaceWS = initSurfaceData(roughness, fragNormalWS, fragToEyeDirWS);
+                vec3 worldLightDirection = getLightDirection(getKeyLight());
 
                 vec4 localLighting = vec4(0.0);
                 <$fetchClusterInfo(_positionWS)$>
@@ -778,7 +784,7 @@ void main(void) {
 
                 vec4 outColor = vec4(evalGlobalLightingAlphaBlended(
                     cam._viewInverse,
-                    1.0,
+                    evalShadowAttenuation(worldLightDirection, _positionWS, -_positionES.z, fragNormalWS),
                     occlusion,
                     _positionES.xyz,
                     fragNormalWS,

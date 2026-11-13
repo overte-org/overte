@@ -82,11 +82,29 @@ Flickable {
 
         // Rendering Effects
         SettingBoolean {
+            settingText: "Shadows";
+            settingEnabledCondition: () => { return Render.shadowsEnabled }
+
+            onSettingEnabledChanged: {
+                Render.shadowsEnabled = settingEnabled;
+            }
+        }
+
+        SettingBoolean {
             settingText: "Local Lights";
             settingEnabledCondition: () => { return Render.localLightingEnabled }
 
             onSettingEnabledChanged: {
                 Render.localLightingEnabled = settingEnabled;
+            }
+        }
+
+        SettingBoolean {
+            settingText: "Haze";
+            settingEnabledCondition: () => { return Render.hazeEnabled }
+
+            onSettingEnabledChanged: {
+                Render.hazeEnabled = settingEnabled;
             }
         }
 
@@ -113,7 +131,7 @@ Flickable {
             wrapMode: Text.Wrap
             font.pixelSize: 16
             color: "white"
-            text: "Custom shaders are currently always unlit when deferred rendering is disabled."
+            text: "Some custom shaders will only work properly with deferred rendering."
         }
 
         SettingBoolean {
@@ -130,22 +148,13 @@ Flickable {
             wrapMode: Text.Wrap
             font.pixelSize: 16
             color: "white"
-            text: "May affect performance, especially on mobile devices. Not compatible with MSAA. Haze is always enabled when not using deferred rendering."
+            text: "May affect performance, especially at high resolutions or on mobile devices. Does not support MSAA."
         }
 
-        // Rendering Effects sub options
+        // Deferred sub options
         AdvancedOptions {
             id: renderingEffectsAdvancedOptions;
             isEnabled: Render.renderMethod === 0;
-
-            SettingBoolean {
-                settingText: "Shadows";
-                settingEnabledCondition: () => { return Render.shadowsEnabled }
-
-                onSettingEnabledChanged: {
-                    Render.shadowsEnabled = settingEnabled;
-                }
-            } 
 
             SettingBoolean {
                 settingText: "Ambient Occlusion";
@@ -153,15 +162,6 @@ Flickable {
 
                 onSettingEnabledChanged: {
                     Render.ambientOcclusionEnabled = settingEnabled;
-                }
-            }
-
-            SettingBoolean {
-                settingText: "Haze";
-                settingEnabledCondition: () => { return Render.hazeEnabled }
-
-                onSettingEnabledChanged: {
-                    Render.hazeEnabled = settingEnabled;
                 }
             }
         }
