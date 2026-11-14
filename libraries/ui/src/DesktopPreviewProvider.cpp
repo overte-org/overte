@@ -42,5 +42,5 @@ void DesktopPreviewProvider::setPreviewDisabledReason(const QString& reasonStrin
 }
 
 QImage& DesktopPreviewProvider::loadPreviewImage(QImage& image, const QString& path) const {
-    return image = QImage(path).mirrored().convertToFormat(QImage::Format_RGBA8888);
+    return image = QImage(path).flipped(Qt::Vertical).convertToFormat(QImage::Format_RGBA8888);
 }

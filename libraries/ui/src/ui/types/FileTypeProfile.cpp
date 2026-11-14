@@ -33,7 +33,7 @@ FileTypeProfile::FileTypeProfile(QQmlContext* parent) :
     setOffTheRecord(false);
 
     auto requestInterceptor = new RequestInterceptor(this);
-    setRequestInterceptor(requestInterceptor);
+    setUrlRequestInterceptor(requestInterceptor);
 
     std::lock_guard<std::mutex> lock(FileTypeProfile_mutex);
     FileTypeProfile_instances.insert(this);

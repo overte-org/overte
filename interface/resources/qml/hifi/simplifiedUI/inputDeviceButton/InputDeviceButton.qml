@@ -10,7 +10,7 @@
 //
 
 import QtQuick 2.10
-import QtGraphicalEffects 1.0
+import Qt5Compat.GraphicalEffects
 import stylesUit 1.0
 import TabletScriptingInterface 1.0
 import "../simplifiedConstants" as SimplifiedConstants

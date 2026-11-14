@@ -27,30 +27,30 @@ Rectangle {
         option = value;
     }
 
-    Component { id: inputDialogBuilder; TabletQueryDialog { } }
+    Component { id: inputDialogBuilder; Item {}}//TabletQueryDialog { } }
     function inputDialog(properties) {
         openModal = inputDialogBuilder.createObject(tabletRoot, properties);
         return openModal;
     }
-    Component { id: messageBoxBuilder; TabletMessageBox { } }
+    Component { id: messageBoxBuilder; Item {}}//TabletMessageBox { } }
     function messageBox(properties) {
         openMessage  = messageBoxBuilder.createObject(tabletRoot, properties);
         return openMessage;
     }
 
-    Component { id: customInputDialogBuilder; TabletCustomQueryDialog { } }
+    Component { id: customInputDialogBuilder; Item {}}//TabletCustomQueryDialog { } }
     function customInputDialog(properties) {
         openModal = customInputDialogBuilder.createObject(tabletRoot, properties);
         return openModal;
     }
 
-    Component { id: fileDialogBuilder; TabletFileDialog { } }
+    Component { id: fileDialogBuilder; Item { }}//TabletFileDialog { } }
     function fileDialog(properties) {
         openModal = fileDialogBuilder.createObject(tabletRoot, properties);
         return openModal;
     }
 
-    Component { id: assetDialogBuilder; TabletAssetDialog { } }
+    Component { id: assetDialogBuilder; Item { }}//TabletAssetDialog { } }
     function assetDialog(properties) {
         openModal = assetDialogBuilder.createObject(tabletRoot, properties);
         return openModal;
@@ -287,7 +287,7 @@ Rectangle {
 	}
 
     width: 480
-    height: 706
+    height: 720
 
     function setShown(value) {
         if (value === true) {

@@ -10,10 +10,12 @@
 
 #include <QObject>
 #include <QtCore/QThread>
+#include <algorithm>
 #include <NumericalConstants.h>
 #include <ThreadHelpers.h>
 
 #include "GLBackend.h"
+#include "gpu/Forward.h"
 
 #define OVERSUBSCRIBED_PRESSURE_VALUE 0.95f
 #define UNDERSUBSCRIBED_PRESSURE_VALUE 0.85f
@@ -133,10 +135,9 @@ void GLBackend::killTextureManagementStage() {
 }
 
 std::vector<TexturePointer> GLTextureTransferEngine::getAllTextures() {
-    auto expiredBegin = std::remove_if(_registeredTextures.begin(), _registeredTextures.end(), [&](const std::weak_ptr<Texture>& weak) -> bool {
+    std::erase_if(_registeredTextures, [&](const TextureWeakPointer& weak) -> bool {
         return weak.expired();
     });
-    _registeredTextures.erase(expiredBegin, _registeredTextures.end());
 
     std::vector<TexturePointer> result;
     result.reserve(_registeredTextures.size());

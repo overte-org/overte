@@ -105,6 +105,22 @@ public slots:
      */
     QVariantMap getBookmarks();
 
+    /*@jsdoc
+     * Directly sets the data object of a bookmark.
+     * @function AvatarBookmarks.setBookmarkData
+     * @param {string} - The name of the bookmark. If no bookmark with the specified name exists, it will be created. Otherwise, it will edit the existing one.
+     * @param {object} - The bookmark data. See the example below for valid keys and their defaults.
+     * @example
+     * AvatarBookmarks.setBookmarkData("Woody", {
+     *     version: 3,
+     *     avatarScale: 1.0,
+     *     avatarEntities: [],
+     *     avatarIcon: "",
+     *     avatarUrl: "qrc:///meshes/defaultAvatar_full.fst",
+     * });
+     */
+    void setBookmarkData(const QString& bookmarkName, const QVariantMap& data);
+
 signals:
     /*@jsdoc
      * Triggered when an avatar bookmark is loaded, setting your avatar model, scale, and avatar entities to those in the bookmark.

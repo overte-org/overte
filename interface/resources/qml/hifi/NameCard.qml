@@ -10,9 +10,9 @@
 //
 
 import QtQuick 2.5
-import QtQuick.Controls 1.4
-import QtQuick.Controls.Styles 1.4
-import QtGraphicalEffects 1.0
+import QtQuick.Controls 2.3
+//import QtQuick.Controls.Styles
+import Qt5Compat.GraphicalEffects
 import stylesUit 1.0
 import controlsUit 1.0 as HifiControls
 import "toolbars"
@@ -534,10 +534,10 @@ Item {
         anchors.left: nameCardVUMeter.left;
         // Properties
         visible: (!isMyCard && (selected && pal.activeTab == "nearbyTab")) && isPresent;
-        minimumValue: -60.0
-        maximumValue: 20.0
+        from: -60.0
+        to: 20.0
         stepSize: 5
-        updateValueWhileDragging: true
+        live: true
         value: Users.getAvatarGain(uuid)
         onValueChanged: {
             updateGainFromQML(uuid, value, false);

@@ -116,7 +116,7 @@ ScriptValue vec3ToScriptValue(ScriptEngine* engine, const glm::vec3& vec3) {
             Q_ASSERT(false);
         }
         Q_ASSERT(!tryCatch.HasCaught());
-        qDebug() <<"vec3ToScriptValue: creating prototype";
+        qCDebug(scriptengine) << "vec3ToScriptValue: creating prototype";
     }
 
     if (!v8Object->Set(context, v8::String::NewFromUtf8(isolate, "x").ToLocalChecked(), v8::Number::New(isolate, vec3.x)).FromMaybe(false)) {
