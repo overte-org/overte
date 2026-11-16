@@ -385,6 +385,19 @@ public slots:
      */
     virtual void setGauge(const QString &name, double value, MetricsUnit unit = MetricsUnit::None) = 0;
 
+    /**
+     * @brief Report a gauge metric
+     *
+     * @note This function exists to suppress the clang-tidy warning.
+     *
+     * @param name Name of whatever we're measuring
+     * @param value Its value
+     * @param unit Unit of measurement for the value
+     */
+    void setGauge(const QString &name, float value, MetricsUnit unit = MetricsUnit::None) {
+        setGauge(name, static_cast<double>(value), unit);
+    }
+
 
 signals:
 
