@@ -21,6 +21,7 @@
 #include <SharedUtil.h>
 
 #include "DomainServer.h"
+#include "PathUtils.h"
 #include <crash-handler/CrashHandler.h>
 
 
@@ -28,6 +29,7 @@ int main(int argc, char* argv[]) {
     setupHifiApplication(BuildInfo::DOMAIN_SERVER_NAME);
 
     DomainServer::parseCommandLine(argc, argv);
+    PathUtils::initialize(PathUtils::FilesystemLayout::Auto, PathUtils::DataStorage::Auto, DomainServer::instanceName());
 
     Setting::init();
 

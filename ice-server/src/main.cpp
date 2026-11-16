@@ -14,10 +14,13 @@
 #include <SharedUtil.h>
 
 #include "IceServer.h"
+#include "PathUtils.h"
 
 int main(int argc, char* argv[]) {
+    PathUtils::initialize();
+
     setupHifiApplication("Ice Server");
-    
+
     IceServer iceServer(argc, argv);
     return iceServer.exec();
 }

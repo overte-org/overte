@@ -89,6 +89,8 @@ bool DomainServer::_getTempName { false };
 QString DomainServer::_userConfigFilename;
 int DomainServer::_parentPID { -1 };
 bool DomainServer::_forceCrashReporting{false};
+QString DomainServer::_instanceName{"main"};
+
 
 
 /// @brief The Domain server can proxy requests to the Directory Server, this function handles those forwarding requests.
@@ -430,6 +432,9 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
     const QCommandLineOption forceCrashReportingOption("forceCrashReporting", "Force crash reporting to initialize.");
     parser.addOption(forceCrashReportingOption);
 
+    const QCommandLineOption instanceNameOption("instance", "Instance name for the domain server", "instance");
+    parser.addOption(instanceNameOption);
+
     QStringList arguments;
     for (int i = 0; i < argc; ++i) {
         arguments << argv[i];
@@ -503,6 +508,10 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
 
     if (parser.isSet(forceCrashReportingOption)) {
         _forceCrashReporting = true;
+    }
+
+    if (parser.isSet(instanceNameOption)) {
+        _instanceName = parser.value(instanceNameOption);
     }
 }
 

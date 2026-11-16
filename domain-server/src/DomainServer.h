@@ -83,6 +83,8 @@ public:
 
     static bool forceCrashReporting() { return _forceCrashReporting; }
 
+    static QString instanceName() { return _instanceName; }
+
 public slots:
     /// Called by NodeList to inform us a node has been added
     void nodeAdded(SharedNodePointer node);
@@ -309,6 +311,7 @@ private:
     static QString _userConfigFilename;
     static int _parentPID;
     static bool _forceCrashReporting;
+    static QString _instanceName;
 
 
     bool _sendICEServerAddressToMetaverseAPIInProgress { false };

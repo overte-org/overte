@@ -14,9 +14,11 @@
 
 #include "AssignmentClientApp.h"
 #include <crash-handler/CrashHandler.h>
+#include "PathUtils.h"
 
 
 int main(int argc, char* argv[]) {
+    PathUtils::initialize();
     setupHifiApplication(BuildInfo::ASSIGNMENT_CLIENT_NAME);
 
     AssignmentClientApp app(argc, argv);
