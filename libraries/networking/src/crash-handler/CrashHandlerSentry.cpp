@@ -194,7 +194,7 @@ void CrashHandlerSentry::clearAttachments() {
     sentry_clear_attachments();
 }
 
-void CrashHandlerSentry::setCounter(const QString &name, qint64 value, MetricsUnit unit) {
+void CrashHandlerSentry::setCounter(const QString &name, qint64 value) {
     if (!isStatsStreamingEnabled()) {
         return;
     }

@@ -20,7 +20,7 @@ class CrashHandlerNone : public CrashHandler {
         // This space intentionally left blank.
     }
 
-    virtual void attachFile(const QString &file) override {
+    virtual void attachFile([[maybe_unused]] const QString &file) override {
         // This space intentionally left blank.
     }
 
@@ -28,7 +28,7 @@ class CrashHandlerNone : public CrashHandler {
         // This space intentionally left blank.
     }
 
-    virtual void setCounter([[maybe_unused]] const QString &name, [[maybe_unused]] qint64 value, [[maybe_unused]] MetricsUnit unit = MetricsUnit::None) override {
+    virtual void setCounter([[maybe_unused]] const QString &name, [[maybe_unused]] qint64 value) override {
         // This space intentionally left blank.
     }
 
