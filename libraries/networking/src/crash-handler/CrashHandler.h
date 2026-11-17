@@ -492,6 +492,8 @@ private:
 
     QString _supportTag{};
 
+    QtMessageHandler _previousMessageHandler{nullptr};
+
     static const QStringList EFF_SHORT_WORDLIST;
 
 };
