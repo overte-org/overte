@@ -12,11 +12,11 @@ class CrashHandlerNone : public CrashHandler {
     public:
 
 
-    virtual void setTag(std::string name, std::string value) override {
+    virtual void setTag([[maybe_unused]] std::string name, [[maybe_unused]] std::string value) override {
         // This space intentionally left blank.
     }
 
-    virtual void setContext(const QString &sectionName, const QString &key, const QVariant &value) override {
+    virtual void setContext([[maybe_unused]] const QString &sectionName, [[maybe_unused]] const QString &key, [[maybe_unused]] const QVariant &value) override {
         // This space intentionally left blank.
     }
 
@@ -28,11 +28,11 @@ class CrashHandlerNone : public CrashHandler {
         // This space intentionally left blank.
     }
 
-    virtual void setCounter(const QString &name, qint64 value, MetricsUnit unit = MetricsUnit::None) override {
+    virtual void setCounter([[maybe_unused]] const QString &name, [[maybe_unused]] qint64 value, [[maybe_unused]] MetricsUnit unit = MetricsUnit::None) override {
         // This space intentionally left blank.
     }
 
-    virtual void setGauge(const QString &name, double value, MetricsUnit unit = MetricsUnit::None) override {
+    virtual void setGauge([[maybe_unused]] const QString &name, [[maybe_unused]] double value, [[maybe_unused]] MetricsUnit unit = MetricsUnit::None) override {
         // This space intentionally left blank.
     }
 
@@ -47,7 +47,7 @@ class CrashHandlerNone : public CrashHandler {
         // This space intentionally left blank.
     }
 
-    virtual void sendLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) override {
+    virtual void sendLogMessage([[maybe_unused]] QtMsgType type, [[maybe_unused]] const QMessageLogContext &context, [[maybe_unused]] const QString &msg) override {
         // This space intentionally left blank.
     }
 
