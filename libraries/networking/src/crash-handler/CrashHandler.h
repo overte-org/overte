@@ -371,9 +371,8 @@ public slots:
      *
      * @param name Name of whatever we're measuring
      * @param value Its value
-     * @param unit Unit of measurement for the value
      */
-    virtual void setCounter(const QString &name, qint64 value, MetricsUnit unit = MetricsUnit::None) = 0;
+    virtual void setCounter(const QString &name, qint64 value) = 0;
 
 
     /**
