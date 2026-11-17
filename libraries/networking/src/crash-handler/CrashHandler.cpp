@@ -226,7 +226,9 @@ bool CrashHandler::start() {
     return started;
 }
 
-void CrashHandler::startMonitor(QCoreApplication *app) {
+void CrashHandler::startMonitor([[maybe_unused]] QCoreApplication *app) {
+    // TODO: I believe this used to setup a way to capture exceptions.
+    // Leaving this for a later PR since exceptions are a rare problem in our code.
    // startCrashHookMonitor(app);
 }
 
