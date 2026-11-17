@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Docker file for building Overte
-# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-06-21-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
+# Example build: docker build --no-cache --progress=plain -t overte/overte-full-build:2026-11-17-ubuntu-22.04-amd64 -f Dockerfile_build_ubuntu-22.04 .
 FROM ubuntu:22.04
 LABEL maintainer="Julian Groß (julian.gro@overte.org)"
 LABEL description="Development image for full Overte builds"
@@ -86,9 +86,9 @@ apt-get -y install $(grep -o '^[^#]*' packages.txt)  # Install packages while ig
 # Install Conan
 apt-get -y install wget
 if [ $(uname -m) = "x86_64" ]; then
-    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.25.2/conan-2.25.2-amd64.deb
+    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.34.0/conan-2.34.0-amd64.deb
 elif [ $(uname -m) = "aarch64" ]; then
-    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.25.2/conan-2.25.2-arm64.deb
+    wget -O conan.deb https://github.com/conan-io/conan/releases/download/2.34.0/conan-2.34.0-arm64.deb
 else
     echo "Unsupported architecture: $(uname -m)"
     exit 1
@@ -121,6 +121,8 @@ EOFcat
 # Try downloading source files from our source backup server, to avoid hammering third party servers. Fall back to downloading source files from conandata.yml.
 echo "core.sources:download_urls=['https://artifactory.overte.org/artifactory/build-dependencies-backup/', 'origin']" >> ${CONAN_HOME}/global.conf
 echo "core.sources:upload_url=https://artifactory.overte.org/artifactory/build-dependencies-backup/" >> ${CONAN_HOME}/global.conf
+# Increase timeout to avoid libnode binary archive uploads sometimes timing out.
+echo "core.net.http:timeout=180" >> ${CONAN_HOME}/global.conf
 EOF
 
 # Credentials for uploading backups of dependency sources.
