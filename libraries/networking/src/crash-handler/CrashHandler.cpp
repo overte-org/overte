@@ -215,7 +215,7 @@ bool CrashHandler::start() {
         qCDebug(crash_handler) << "Forwarded" << countAdded << "annotations";
 
 
-        qInstallMessageHandler(crashHandlerLogMessage);
+        _previousMessageHandler = qInstallMessageHandler(crashHandlerLogMessage);
         qCInfo(crash_handler) << "Installed crash handler log message handler";
 
 
@@ -304,11 +304,13 @@ void CrashHandler::logMessage(QtMsgType type, const QMessageLogContext &context,
     if (isLogStreamingEnabled()) {
         sendLogMessage(type, context, msg);
     }
+
+    if (_previousMessageHandler) {
+        _previousMessageHandler(type, context, msg);
+    }
 }
 
 static void crashHandlerLogMessage(QtMsgType type, const QMessageLogContext &context, const QString &msg) {
+    // logMessage() also calls the original handler if any
     CrashHandler::getInstance().logMessage(type, context, msg);
-
-    // We only get one log handler, so call the normal one here since we replaced it
-    LogHandler::getInstance().verboseMessageHandler(type, context, msg);
 }
