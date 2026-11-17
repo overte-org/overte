@@ -9,7 +9,7 @@
 
 #include <UUID.h>
 
-const QString CRASH_REPORTS_DIR_NAME = "crash-reports";
+const QString CRASH_REPORTS_DIR_NAME = QStringLiteral("crash-reports");
 
 
 constexpr const char* toSentryUnit(CrashHandler::MetricsUnit unit) {
