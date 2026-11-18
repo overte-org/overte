@@ -30,12 +30,36 @@ HTTPManager::HTTPManager(const QHostAddress& listenAddress, quint16 port, const 
     _requestHandler(requestHandler),
     _port(port)
 {
+    // If all the arguments are provided, we start immediately.
+    // If not, the user will have to call start() themselves.
+    if (canStart()) {
+        start();
+    }
+}
+
+bool HTTPManager::canStart() {
+    return !_listenAddress.isNull() && _port != 0 && !_documentRoot.isEmpty();
+}
+
+bool HTTPManager::start() {
+    if (!canStart()) {
+        qCWarning(embeddedwebserver) << "Cannot start HTTP server, missing required parameters";
+        return false;
+    }
+
+    if (_isListeningTimer) {
+        // Everything was already done.
+        return true;
+    }
+
     bindSocket();
 
     _isListeningTimer = new QTimer(this);
     connect(_isListeningTimer, &QTimer::timeout, this, &HTTPManager::isTcpServerListening);
     _isListeningTimer->start(SOCKET_CHECK_INTERVAL_IN_MS);
+    return true;
 }
+
 
 void HTTPManager::incomingConnection(qintptr socketDescriptor) {
     QTcpSocket* socket = new QTcpSocket(this);

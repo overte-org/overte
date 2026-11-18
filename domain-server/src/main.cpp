@@ -29,7 +29,6 @@ int main(int argc, char* argv[]) {
     setupHifiApplication(BuildInfo::DOMAIN_SERVER_NAME);
 
     DomainServer::parseCommandLine(argc, argv);
-    PathUtils::initialize(PathUtils::FilesystemLayout::Auto, PathUtils::DataStorage::Auto, DomainServer::instanceName());
 
     Setting::init();
 

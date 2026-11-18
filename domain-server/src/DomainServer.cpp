@@ -200,10 +200,28 @@ bool DomainServer::forwardMetaverseAPIRequest(HTTPConnection* connection,
 
 DomainServer::DomainServer(int argc, char* argv[]) :
     QCoreApplication(argc, argv),
-    _gatekeeper(this),
-    _httpManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTP_PORT, PathUtils::getServerContentPath("web"), this)
+    _gatekeeper(this)
 {
     static const QString CRASH_REPORTER = "crash_reporting.enable_crash_reporter";
+
+
+    // We have a bit of an ordering problem to deal with here.
+    // 1. Parse command line arguments, because they might configure anything that comes next.
+    // 2. Initialize the path system.
+    // 3. Initialize the log system, because paths affect where logging might go
+    // 4. Initialize the settings system, because settings are dependent on paths
+    // 5. Initialize everything else, which needs settings and logs.
+
+    // Argument parsing was already called with ::parseArguments().
+    PathUtils::initialize(PathUtils::FilesystemLayout::Auto, PathUtils::DataStorage::Auto, DomainServer::instanceName());
+
+    _httpManager.setListenAddress(QHostAddress::AnyIPv4);
+    _httpManager.setPort(DOMAIN_SERVER_HTTP_PORT);
+    _httpManager.setDocumentRoot(PathUtils::getServerContentPath("web"));
+    _httpManager.setRequestHandler(this);
+    _httpManager.start();
+
+    _settingsManager.start();
 
     if (_parentPID != -1) {
         watchParentProcess(_parentPID);

@@ -64,6 +64,9 @@ static const QString SPLIT_MENU_GROUPS_CONTENT_SETTINGS_KEY = "content_settings"
 const QString SETTINGS_VIEWPOINT_KEY = "viewpoint";
 
 DomainServerSettingsManager::DomainServerSettingsManager() {
+}
+
+void DomainServerSettingsManager::start() {
     // load the description object from the settings description
 
     QString descriptionFilePath = PathUtils::getSettingsDescriptionPath();
