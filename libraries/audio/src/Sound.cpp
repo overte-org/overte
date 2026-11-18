@@ -74,13 +74,18 @@ AudioData::AudioData(uint32_t numSamples, uint32_t numChannels, const AudioSampl
 {}
 
 void Sound::downloadFinished(const QByteArray& data) {
-    if (!_self) {
+    auto sharedSoundPointer = weak_from_this().lock();
+
+    if (!sharedSoundPointer) {
+#if !defined(QT_NO_DEBUG) || defined(QT_FORCE_ASSERTS)
+        Q_ASSERT(!_wasDeleted);
+#endif
         soundProcessError(301, "Sound object has gone out of scope");
         return;
     }
 
     // this is a QRunnable, will delete itself after it has finished running
-    auto soundProcessor = new SoundProcessor(_self, data);
+    auto soundProcessor = new SoundProcessor(sharedSoundPointer, data);
     connect(soundProcessor, &SoundProcessor::onSuccess, this, &Sound::soundProcessSuccess);
     connect(soundProcessor, &SoundProcessor::onError, this, &Sound::soundProcessError);
     QThreadPool::globalInstance()->start(soundProcessor);
@@ -102,14 +107,14 @@ void Sound::soundProcessError(int error, QString str) {
 }
 
 
-SoundProcessor::SoundProcessor(QWeakPointer<Resource> sound, QByteArray data) :
+SoundProcessor::SoundProcessor(std::weak_ptr<Resource> sound, QByteArray data) :
     _sound(sound),
     _data(data)
 {
 }
 
 void SoundProcessor::run() {
-    auto sound = qSharedPointerCast<Sound>(_sound.lock());
+    auto sound = std::dynamic_pointer_cast<Sound>(_sound.lock());
     if (!sound) {
         emit onError(301, "Sound object has gone out of scope");
         return;
@@ -440,7 +445,7 @@ bool soundSharedPointerFromScriptValue(const ScriptValue& object, SharedSoundPoi
 SoundScriptingInterface::SoundScriptingInterface(const SharedSoundPointer& sound) : _sound(sound) {
     // During shutdown we can sometimes get an empty sound pointer back
     if (_sound) {
-        QObject::connect(_sound.data(), &Sound::ready, this, &SoundScriptingInterface::ready);
+        QObject::connect(_sound.get(), &Sound::ready, this, &SoundScriptingInterface::ready);
     }
 }
 

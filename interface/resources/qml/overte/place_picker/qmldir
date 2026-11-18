@@ -1,0 +1,3 @@
+module PlacePicker
+PlacePicker 1.0 PlacePicker.qml
+PlaceItem 1.0 PlaceItem.qml

@@ -12,6 +12,7 @@
 
 #include <atomic>
 #include <QtCore/QtGlobal>
+#include <QtCore/QObject>
 #include "../DependencyManager.h"
 
 class PlatformHelper : public QObject, public Dependency {

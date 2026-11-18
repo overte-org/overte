@@ -11,6 +11,7 @@
 #include <QObject>
 #include <QString>
 #include <QStringList>
+#include <QDebug>
 
 #include "ScriptValue.h"
 
@@ -146,20 +147,16 @@ class ScriptRuntimeException : public ScriptException {
      *
      * @return std::shared_ptr<ScriptException>
      */
-    virtual std::shared_ptr<ScriptException> clone() const override {
-        return std::make_shared<ScriptRuntimeException>(*this);
-    }
+    virtual std::shared_ptr<ScriptException> clone() const override { return std::make_shared<ScriptRuntimeException>(*this); }
 };
 
 inline QDebug operator<<(QDebug debug, const ScriptException& e) {
-    debug << "Exception:"
-        << e.errorMessage
-        << (e.additionalInfo.isEmpty() ? QString("") : "[" + e.additionalInfo + "]")
-        << " at line " << e.errorLine << ", column " << e.errorColumn;
+    debug << "Exception:" << e.errorMessage << (e.additionalInfo.isEmpty() ? QString("") : "[" + e.additionalInfo + "]")
+          << " at line " << e.errorLine << ", column " << e.errorColumn;
 
     if (e.backtrace.length()) {
         debug << "Backtrace:";
-        debug << e.backtrace;
+        debug << e.backtrace.join("\n");
     }
 
     return debug;

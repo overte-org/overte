@@ -11,6 +11,7 @@
 #ifndef hifi_ThreadHelpers_h
 #define hifi_ThreadHelpers_h
 
+#include <climits>
 #include <exception>
 #include <functional>
 

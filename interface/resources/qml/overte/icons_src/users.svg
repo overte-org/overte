@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="24"
+   height="24"
+   viewBox="0 0 24 24"
+   version="1.1"
+   id="svg1"
+   inkscape:version="1.4.2 (ebf0e940d0, 2025-05-08)"
+   sodipodi:docname="users.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview1"
+     pagecolor="#505050"
+     bordercolor="#eeeeee"
+     borderopacity="1"
+     inkscape:showpageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="true"
+     inkscape:deskcolor="#505050"
+     inkscape:document-units="px"
+     showgrid="true"
+     inkscape:zoom="32"
+     inkscape:cx="9.5"
+     inkscape:cy="12.0625"
+     inkscape:window-width="1692"
+     inkscape:window-height="1167"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="svg1">
+    <inkscape:grid
+       id="grid1"
+       units="px"
+       originx="0"
+       originy="0"
+       spacingx="1"
+       spacingy="1"
+       empcolor="#0099e5"
+       empopacity="0.30196078"
+       color="#0099e5"
+       opacity="0.14901961"
+       empspacing="4"
+       enabled="true"
+       visible="true" />
+  </sodipodi:namedview>
+  <defs
+     id="defs1">
+    <inkscape:path-effect
+       effect="powerclip"
+       message=""
+       id="path-effect5"
+       is_visible="true"
+       lpeversion="1"
+       inverse="true"
+       flatten="false"
+       hide_clip="false" />
+    <filter
+       id="mask-powermask-path-effect5_inverse"
+       inkscape:label="filtermask-powermask-path-effect5"
+       style="color-interpolation-filters:sRGB"
+       height="100"
+       width="100"
+       x="-50"
+       y="-50">
+      <feColorMatrix
+         id="mask-powermask-path-effect5_primitive1"
+         values="1"
+         type="saturate"
+         result="fbSourceGraphic" />
+      <feColorMatrix
+         id="mask-powermask-path-effect5_primitive2"
+         values="-1 0 0 0 1 0 -1 0 0 1 0 0 -1 0 1 0 0 0 1 0 "
+         in="fbSourceGraphic" />
+    </filter>
+  </defs>
+  <path
+     id="rect2"
+     style="fill:#ffffff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"
+     d="m 4,17 h 8 v 4 H 4 Z m 7.999999,0 a 3.9999998,3.9999998 0 0 1 -3.9999995,4 3.9999998,3.9999998 0 0 1 -3.9999997,-4 3.9999998,3.9999998 0 0 1 3.9999997,-4 3.9999998,3.9999998 0 0 1 3.9999995,4 z m 0,-8 A 3.9999998,3.9999998 0 0 1 7.9999995,13 3.9999998,3.9999998 0 0 1 3.9999998,9 3.9999998,3.9999998 0 0 1 7.9999995,5.0000002 3.9999998,3.9999998 0 0 1 11.999999,9 Z"
+     inkscape:label="front" />
+  <path
+     id="rect2-6"
+     style="display:inline;fill:#ffffff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"
+     inkscape:label="back"
+     d="M 15 3 A 3.9999995 3.9999998 0 0 0 11.375 5.3242188 A 5 5 0 0 1 13 9 A 5 5 0 0 1 12.814453 10.341797 A 3.9999995 3.9999998 0 0 0 15 11 A 3.9999995 3.9999998 0 0 0 19 7 A 3.9999995 3.9999998 0 0 0 15 3 z M 15 11 A 3.9999998 3.9999998 0 0 0 11.376953 13.322266 A 5 4.9999995 0 0 1 13 17 A 5 4.9999995 0 0 1 12.974609 17.5 L 13 17.5 L 13 19 L 19 19 L 19 15 A 3.9999998 3.9999998 0 0 0 15 11 z " />
+</svg>

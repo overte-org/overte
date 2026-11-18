@@ -21,13 +21,17 @@ ShaderCache& ShaderCache::instance() {
 }
 
 NetworkShaderPointer ShaderCache::getShader(const QUrl& url) {
-    return ResourceCache::getResource(url).staticCast<NetworkShader>();
+    auto shader = std::dynamic_pointer_cast<NetworkShader>(ResourceCache::getResource(url));
+    Q_ASSERT(shader);
+    return shader;
 }
 
-QSharedPointer<Resource> ShaderCache::createResource(const QUrl& url) {
-    return QSharedPointer<NetworkShader>(new NetworkShader(url), &Resource::deleter);
+std::shared_ptr<Resource> ShaderCache::createResource(const QUrl& url) {
+    return std::shared_ptr<NetworkShader>(new NetworkShader(url), Resource::sharedPtrDeleter);
 }
 
-QSharedPointer<Resource> ShaderCache::createResourceCopy(const QSharedPointer<Resource>& resource) {
-    return QSharedPointer<NetworkShader>(new NetworkShader(*resource.staticCast<NetworkShader>()), &Resource::deleter);
+std::shared_ptr<Resource> ShaderCache::createResourceCopy(const std::shared_ptr<Resource>& resource) {
+    auto shader = std::dynamic_pointer_cast<NetworkShader>(resource);
+    Q_ASSERT(shader);
+    return std::shared_ptr<NetworkShader>(new NetworkShader(*shader), Resource::sharedPtrDeleter);
 }

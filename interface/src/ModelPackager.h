@@ -34,7 +34,7 @@ private:
     bool editProperties();
     bool zipModel();
     
-    void populateBasicMapping(QVariantHash& mapping, QString filename, const hfm::Model& hfmModel);
+    void populateBasicMapping(hifi::VariantMultiHash& mapping, QString filename, const hfm::Model& hfmModel);
     
     void listTextures();
     bool copyTextures(const QString& oldDir, const QDir& newDir);

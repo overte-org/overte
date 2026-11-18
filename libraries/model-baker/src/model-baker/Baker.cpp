@@ -126,7 +126,7 @@ namespace baker {
 
     class BakerEngineBuilder {
     public:
-        using Input = VaryingSet3<hfm::Model::Pointer, hifi::VariantHash, hifi::URL>;
+        using Input = VaryingSet3<hfm::Model::Pointer, hifi::VariantMultiHash, hifi::URL>;
         using Output = VaryingSet5<hfm::Model::Pointer, MaterialMapping, std::vector<hifi::ByteArray>, std::vector<bool>, std::vector<std::vector<hifi::ByteArray>>>;
         using JobModel = Task::ModelIO<BakerEngineBuilder, Input, Output>;
         void build(JobModel& model, const Varying& input, Varying& output) {
@@ -193,7 +193,7 @@ namespace baker {
         }
     };
 
-    Baker::Baker(const hfm::Model::Pointer& hfmModel, const hifi::VariantHash& mapping, const hifi::URL& materialMappingBaseURL) :
+    Baker::Baker(const hfm::Model::Pointer& hfmModel, const hifi::VariantMultiHash& mapping, const hifi::URL& materialMappingBaseURL) :
         _engine(std::make_shared<Engine>(BakerEngineBuilder::JobModel::create("Baker"), std::make_shared<BakeContext>())) {
         _engine->feedInput<BakerEngineBuilder::Input>(0, hfmModel);
         _engine->feedInput<BakerEngineBuilder::Input>(1, mapping);

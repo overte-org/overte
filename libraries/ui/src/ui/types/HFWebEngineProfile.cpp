@@ -30,7 +30,7 @@ HFWebEngineProfile::HFWebEngineProfile(QQmlContext* parent) : Parent(parent)
     setOffTheRecord(false);
 
     // we use the HFWebEngineRequestInterceptor to make sure that web requests are authenticated for the interface user
-    setRequestInterceptor(new RequestInterceptor(this));
+    setUrlRequestInterceptor(new RequestInterceptor(this));
 
     std::lock_guard<std::mutex> lock(HFWebEngineProfile_mutex);
     HFWebEngineProfile_instances.insert(this);

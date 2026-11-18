@@ -80,7 +80,7 @@ ScriptValue QmlWindowClass::internal_constructor(ScriptContext* context, ScriptE
     Q_ASSERT(retVal);
     if (QThread::currentThread() != qApp->thread()) {
         retVal->moveToThread(qApp->thread());
-        BLOCKING_INVOKE_METHOD(retVal, "initQml", Q_ARG(QVariantMap, properties));
+        BLOCKING_INVOKE_METHOD(retVal, "initQml", Q_GENERIC_ARG(QVariantMap, properties));
     } else {
         retVal->initQml(properties);
     }
@@ -200,7 +200,7 @@ void QmlWindowClass::emitWebEvent(const QVariant& webMessage) {
         const QString RAISE_KEYBOARD = "_RAISE_KEYBOARD";
         const QString RAISE_KEYBOARD_NUMERIC = "_RAISE_KEYBOARD_NUMERIC";
         const QString LOWER_KEYBOARD = "_LOWER_KEYBOARD";
-        QString messageString = webMessage.type() == QVariant::String ? webMessage.toString() : "";
+        QString messageString = webMessage.typeId() == QMetaType::QString ? webMessage.toString() : "";
         if (messageString.left(RAISE_KEYBOARD.length()) == RAISE_KEYBOARD) {
             QQuickItem *quickItem = asQuickItem();
             if (quickItem) {
@@ -265,7 +265,7 @@ void QmlWindowClass::setVisible(bool visible) {
 bool QmlWindowClass::isVisible() {
     if (QThread::currentThread() != thread()) {
         bool result = false;
-        BLOCKING_INVOKE_METHOD(this, "isVisible", Q_RETURN_ARG(bool, result));
+        BLOCKING_INVOKE_METHOD(this, "isVisible", Q_GENERIC_RETURN_ARG(bool, result));
         return result;
     }
 
@@ -286,7 +286,7 @@ bool QmlWindowClass::isVisible() {
 glm::vec2 QmlWindowClass::getPosition() {
     if (QThread::currentThread() != thread()) {
         vec2 result;
-        BLOCKING_INVOKE_METHOD(this, "getPosition", Q_RETURN_ARG(glm::vec2, result));
+        BLOCKING_INVOKE_METHOD(this, "getPosition", Q_GENERIC_RETURN_ARG(glm::vec2, result));
         return result;
     }
 
@@ -327,7 +327,7 @@ glm::vec2 toGlm(const QSizeF& size) {
 glm::vec2 QmlWindowClass::getSize() {
     if (QThread::currentThread() != thread()) {
         vec2 result;
-        BLOCKING_INVOKE_METHOD(this, "getSize", Q_RETURN_ARG(glm::vec2, result));
+        BLOCKING_INVOKE_METHOD(this, "getSize", Q_GENERIC_RETURN_ARG(glm::vec2, result));
         return result;
     }
 
