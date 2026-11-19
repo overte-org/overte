@@ -283,8 +283,9 @@ void RenderShadowSetup::configure(const Config& config) {
 void RenderShadowSetup::calculateBiases(float biasInput) {
     const std::array<float, SHADOW_CASCADE_MAX_COUNT> CONSTANT_CASCADE_SCALE = {{ 0.01f, 0.01f, 0.015f, 0.02f }};
     const float SLOPE_BIAS_SCALE = 0.005f;
+    auto mapSize = _globalShadowObject->getMapSize();
 
-    for (int i = 0; i < SHADOW_CASCADE_MAX_COUNT; i++) {
+    for (unsigned int i = 0; i < _globalShadowObject->getCascadeCount(); i++) {
         auto& cascade = _globalShadowObject->getCascade(i);
 
         // Constant bias is dependent on the depth precision
@@ -295,7 +296,7 @@ void RenderShadowSetup::calculateBiases(float biasInput) {
         // Slope bias is dependent on the texel size
         float cascadeWidth = cascade.getFrustum()->getWidth();
         float cascadeHeight = cascade.getFrustum()->getHeight();
-        float cascadeTexelMaxDim = glm::max(cascadeWidth, cascadeHeight) / LightStage::Shadow::MAP_SIZE; // TODO: variable cascade resolution
+        float cascadeTexelMaxDim = glm::max(cascadeWidth, cascadeHeight) / mapSize;
         setSlopeBias(i, cascadeTexelMaxDim * constantBias / SLOPE_BIAS_SCALE);
     }
 }
@@ -335,8 +336,16 @@ void RenderShadowSetup::run(const render::RenderContextPointer& renderContext, c
     *_cameraFrustum = args->getViewFrustum();
     output.edit2() = _cameraFrustum;
 
-    if (!_globalShadowObject) {
-        _globalShadowObject = std::make_shared<LightStage::Shadow>(currentKeyLight, SHADOW_CASCADE_MAX_COUNT);
+    if (
+        !_globalShadowObject ||
+        (int)_globalShadowObject->getCascadeCount() != lightingModel->getShadowCascadeCount() ||
+        _globalShadowObject->getMapSize() != lightingModel->getShadowMapSize()
+    ) {
+        _globalShadowObject = std::make_shared<LightStage::Shadow>(
+            currentKeyLight,
+            lightingModel->getShadowCascadeCount(),
+            lightingModel->getShadowMapSize()
+        );
     }
     _globalShadowObject->setLight(currentKeyLight);
     _globalShadowObject->setKeylightFrustum(args->getViewFrustum(), SHADOW_FRUSTUM_NEAR, SHADOW_FRUSTUM_FAR);

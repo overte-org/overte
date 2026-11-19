@@ -25,7 +25,6 @@ const glm::mat4 LightStage::Shadow::_biasMatrix {
     0.0, 0.5, 0.0, 0.0,
     0.0, 0.0, 0.5, 0.0,
     0.5, 0.5, 0.5, 1.0 };
-const int LightStage::Shadow::MAP_SIZE = 1024;
 
 LightStage::LightStage() {
     // Add off lights
@@ -66,7 +65,8 @@ LightStage::Shadow::Schema::Schema() {
     defaultTransform.reprojection = mat4();
     defaultTransform.fixedBias = 0.005f;
     std::fill(cascades, cascades + SHADOW_CASCADE_MAX_COUNT, defaultTransform);
-    invMapSize = 1.0f / MAP_SIZE;
+    // Gets properly initialized in LightStage::Shadow::Shadow
+    invMapSize = 1.0f / DEFAULT_MAP_SIZE;
     cascadeCount = 1;
     invCascadeBlendWidth = 1.0f / 0.2f;
     invFalloffDistance = 1.0f / 2.0f;
@@ -122,16 +122,17 @@ float LightStage::Shadow::Cascade::computeFarDistance(const ViewFrustum& viewFru
     return far;
 }
 
-LightStage::Shadow::Shadow(graphics::LightPointer light, unsigned int cascadeCount) :
-    _light{ light } {
+LightStage::Shadow::Shadow(graphics::LightPointer light, unsigned int cascadeCount, unsigned int mapSize) :
+    _light{ light }, _mapSize { mapSize } {
     cascadeCount = std::min(cascadeCount, (unsigned int)SHADOW_CASCADE_MAX_COUNT);
     Schema schema;
     schema.cascadeCount = cascadeCount;
+    schema.invMapSize = 1.0f / _mapSize;
     _schemaBuffer = std::make_shared<gpu::Buffer>(gpu::Buffer::UniformBuffer, sizeof(Schema), (const gpu::Byte*) &schema);
 
     // Create shadow cascade texture array
     auto depthFormat = gpu::Element(gpu::SCALAR, gpu::FLOAT, gpu::DEPTH);  // Depth32 texel format
-    map = gpu::TexturePointer(gpu::Texture::createRenderBufferArray(depthFormat, MAP_SIZE, MAP_SIZE, cascadeCount));
+    map = gpu::TexturePointer(gpu::Texture::createRenderBufferArray(depthFormat, _mapSize, _mapSize, cascadeCount));
     Sampler::Desc samplerDesc;
     samplerDesc._borderColor = glm::vec4(1.0f);
     samplerDesc._wrapModeU = Sampler::WRAP_BORDER;
@@ -305,7 +306,7 @@ void LightStage::Shadow::setKeylightCascadeFrustum(unsigned int cascadeIndex, co
     auto shadowViewProj = ortho * shadowViewInverse;
 
     auto origin = (shadowViewProj * glm::vec4(0.0f, 0.0f, 0.0f, 1.0f));
-    auto offset = (glm::floor(origin * (MAP_SIZE / 2.0f)) * (2.0f / MAP_SIZE)) - origin;
+    auto offset = (glm::floor(origin * (_mapSize / 2.0f)) * (2.0f / _mapSize)) - origin;
 
     ortho[3][0] += offset.x;
     ortho[3][1] += offset.y;

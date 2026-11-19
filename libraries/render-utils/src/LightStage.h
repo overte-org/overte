@@ -54,8 +54,9 @@ public:
 
     class Shadow {
     public:
+        static constexpr int DEFAULT_MAP_SIZE = 1024;
+
         using UniformBufferView = gpu::BufferView;
-        static const int MAP_SIZE;
 
         class Cascade {
             friend Shadow;
@@ -85,7 +86,7 @@ public:
                                      float left, float right, float bottom, float top, float viewMaxShadowDistance) const;
         };
 
-        Shadow(LightPointer light, unsigned int cascadeCount = 1);
+        Shadow(LightPointer light, unsigned int cascadeCount = 1, unsigned int mapSize = DEFAULT_MAP_SIZE);
 
         void setLight(LightPointer light);
 
@@ -104,6 +105,9 @@ public:
         float getMaxDistance() const { return _maxDistance; }
         void setMaxDistance(float value);
 
+        int getMapSize() const { return _mapSize; }
+        void setMapSize(int mapSize);
+
         const LightPointer& getLight() const { return _light; }
 
         gpu::TexturePointer map;
@@ -121,6 +125,7 @@ public:
 
         LightPointer _light;
         float _maxDistance{ 0.0f };
+        unsigned int _mapSize { 1024 };
         Cascades _cascades;
 
         UniformBufferView _schemaBuffer = nullptr;

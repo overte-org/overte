@@ -21,6 +21,16 @@
 // LightingModel is a helper class gathering in one place the flags to enable the lighting contributions
 class LightingModel {
 public:
+    // TODO: account for the SHADOW_CASCADE_MAX_COUNT define
+    static constexpr int DEFAULT_SHADOWMAP_SIZE = 1024;
+    static constexpr int DEFAULT_SHADOW_CASCADES = 4;
+
+    static constexpr int MIN_SHADOWMAP_SIZE = 256;
+    static constexpr int MAX_SHADOWMAP_SIZE = 8192;
+
+    static constexpr int MIN_SHADOW_CASCADE_COUNT = 1;
+    static constexpr int MAX_SHADOW_CASCADE_COUNT = 4;
+
     using UniformBufferView = gpu::BufferView;
 
     LightingModel();
@@ -85,11 +95,19 @@ public:
 
     void setNormalMapAttenuation(float min, float max);
 
+    void setShadowMapSize(int size);
+    int getShadowMapSize() const;
+
+    void setShadowCascadeCount(int count);
+    int getShadowCascadeCount() const;
+
     UniformBufferView getParametersBuffer() const { return _parametersBuffer; }
     gpu::TexturePointer getAmbientFresnelLUT() const { return _ambientFresnelLUT; }
 
 protected:
     bool _enableLocalLighting { true };
+    int _shadowMapSize { DEFAULT_SHADOWMAP_SIZE };
+    int _shadowCascadeCount { DEFAULT_SHADOW_CASCADES };
 
     // Class describing the uniform buffer with the transform info common to the AO shaders
     // It s changing every frame
@@ -167,6 +185,8 @@ class MakeLightingModelConfig : public render::Job::Config {
     Q_PROPERTY(bool enableAmbientOcclusion READ isAmbientOcclusionEnabled WRITE setAmbientOcclusion NOTIFY dirty)
     Q_PROPERTY(bool enableLocalLighting READ isLocalLightingEnabled WRITE setLocalLighting NOTIFY dirty)
     Q_PROPERTY(bool enableShadow READ isShadowEnabled WRITE setShadow NOTIFY dirty)
+    Q_PROPERTY(int shadowCascadeCount READ getShadowCascadeCount WRITE setShadowCascadeCount NOTIFY dirty)
+    Q_PROPERTY(int shadowMapSize READ getShadowMapSize WRITE setShadowMapSize NOTIFY dirty)
 
 public:
     MakeLightingModelConfig() : render::Job::Config() {} // Make Lighting Model is always on
@@ -201,6 +221,9 @@ public:
     bool enableLocalLighting { true };
     bool enableShadow { true };
 
+    int shadowMapSize { LightingModel::DEFAULT_SHADOWMAP_SIZE };
+    int shadowCascadeCount { LightingModel::DEFAULT_SHADOW_CASCADES };
+
     void setAmbientOcclusion(bool enable) { enableAmbientOcclusion = enable; emit dirty();}
     bool isAmbientOcclusionEnabled() const { return enableAmbientOcclusion; }
     void setLocalLighting(bool enable) { enableLocalLighting = enable; emit dirty();}
@@ -209,6 +232,20 @@ public:
     bool isShadowEnabled() const { return enableShadow; }
     void setHaze(bool enable) { enableHaze = enable; emit dirty(); }
     void setBloom(bool enable) { enableBloom = enable; emit dirty(); }
+
+    void setShadowMapSize(int size) {
+        shadowMapSize = std::clamp(size, LightingModel::MIN_SHADOWMAP_SIZE, LightingModel::MAX_SHADOWMAP_SIZE);
+        emit dirty();
+    }
+
+    int getShadowMapSize() const { return shadowMapSize; }
+
+    void setShadowCascadeCount(int count) {
+        shadowCascadeCount = std::clamp(count, LightingModel::MIN_SHADOW_CASCADE_COUNT, LightingModel::MAX_SHADOW_CASCADE_COUNT);
+        emit dirty();
+    }
+
+    int getShadowCascadeCount() const { return shadowCascadeCount; }
 
 signals:
     void dirty();
