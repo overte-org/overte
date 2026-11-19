@@ -780,6 +780,7 @@ render::ShapePipelinePointer GeometryCache::getShapePipeline(bool textured, bool
             auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
             deferredLightingEffect->setupKeyLightBatch(args, batch);
             deferredLightingEffect->setupLocalLightsBatch(batch);
+            deferredLightingEffect->setupShadowsBatch(batch);
         }
     );
 }
@@ -794,6 +795,7 @@ render::ShapePipelinePointer GeometryCache::getFadingShapePipeline(bool textured
             auto deferredLightingEffect = DependencyManager::get<DeferredLightingEffect>();
             deferredLightingEffect->setupKeyLightBatch(args, batch);
             deferredLightingEffect->setupLocalLightsBatch(batch);
+            deferredLightingEffect->setupShadowsBatch(batch);
             fadeBatchSetter(nullptr, batch, args);
         },
         fadeItemSetter
