@@ -1,7 +1,7 @@
 
 #include <QObject>
-#include "CrashHandler.h"
-
+#include "crash-handler/CrashHandler.h"
+#include "ScriptPermissions.h"
 
 #ifndef overte_CrashHandlerScriptingInterface_h
 #define overte_CrashHandlerScriptingInterface_h
@@ -39,6 +39,10 @@ class CrashHandlerScriptingInterface : public QObject {
          * @returns {string} The support tag.
          */
         QString getSupportTag() {
+            if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
+                return {};
+            }
+
             auto& crashHandler = CrashHandler::getInstance();
             return crashHandler.getSupportTag();
         }
@@ -49,6 +53,9 @@ class CrashHandlerScriptingInterface : public QObject {
          * @returns {string} The name of the crash handler implementation.
          */
          QString getCrashHandlerName() {
+            if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
+                return {};
+            }
             auto& crashHandler = CrashHandler::getInstance();
             return crashHandler.metaObject()->className();
          }
@@ -60,6 +67,9 @@ class CrashHandlerScriptingInterface : public QObject {
          * @returns {boolean} <code>true</code> if crash reporting is enabled, <code>false</code> if it isn't.
          */
         bool isCrashReportingEnabled() {
+            if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_CRASH_HANDLER)) {
+                return false;
+            }
             auto& crashHandler = CrashHandler::getInstance();
             return crashHandler.isEnabled();
         }
@@ -70,6 +80,9 @@ class CrashHandlerScriptingInterface : public QObject {
          * @returns {boolean} <code>true</code> if log streaming is enabled, <code>false</code> if it isn't.
          */
         bool isLogStreamingEnabled() {
+            if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_CRASH_HANDLER)) {
+                return false;
+            }
             auto& crashHandler = CrashHandler::getInstance();
             return crashHandler.isLogStreamingEnabled();
         }
@@ -80,6 +93,9 @@ class CrashHandlerScriptingInterface : public QObject {
          * @returns {boolean} <code>true</code> if stats streaming is enabled, <code>false</code> if it isn't.
          */
         bool isStatsStreamingEnabled() {
+            if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_CRASH_HANDLER)) {
+                return false;
+            }
             auto& crashHandler = CrashHandler::getInstance();
             return crashHandler.isStatsStreamingEnabled();
         }

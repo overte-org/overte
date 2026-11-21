@@ -92,7 +92,7 @@
 #include "LocationBookmarks.h"
 #include "LODManager.h"
 #include "ResourceRequestObserver.h"
-#include "crash-handler/CrashHandlerScriptingInterface.h"
+#include "CrashHandlerScriptingInterface.h"
 
 #if defined(Q_OS_MAC) || defined(Q_OS_WIN)
 #include "SpeechRecognizer.h"

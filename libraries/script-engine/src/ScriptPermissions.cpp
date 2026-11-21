@@ -27,6 +27,8 @@ extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission:
     "Permission to view user's bookmarked locations",
     // SCRIPT_PERMISSION_KEYBOARD_EVENTS
     "Permission to emit virtual keyboard events",
+    // SCRIPT_PERMISSION_CRASH_HANDLER
+    "Permission to access crash handler",
 };
 
 extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission::SCRIPT_PERMISSIONS_SIZE)> scriptPermissionSettingKeyNames {
@@ -36,6 +38,8 @@ extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission:
     "private/scriptPermissionBookmarksSafeURLs",
     // SCRIPT_PERMISSION_KEYBOARD_EVENTS
     "private/scriptPermissionKeyboardEventsSafeURLs",
+    // SCRIPT_PERMISSION_CRASH_HANDLER
+    "private/scriptPermissionCrashHandlerSafeURLs",
 };
 
 extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission::SCRIPT_PERMISSIONS_SIZE)> scriptPermissionSettingEnableKeyNames {
@@ -45,6 +49,8 @@ extern const std::array<QString, static_cast<int>(ScriptPermissions::Permission:
     "private/scriptPermissionBookmarksEnable",
     // SCRIPT_PERMISSION_KEYBOARD_EVENTS
     "private/scriptPermissionKeyboardEventsEnable",
+    // SCRIPT_PERMISSION_CRASH_HANDLER
+    "private/scriptPermissionCrashHandlerEnable",
 };
 
 extern const std::array<bool, static_cast<int>(ScriptPermissions::Permission::SCRIPT_PERMISSIONS_SIZE)> scriptPermissionSettingEnableDefaultValues {
@@ -53,6 +59,8 @@ extern const std::array<bool, static_cast<int>(ScriptPermissions::Permission::SC
     // SCRIPT_PERMISSION_BOOKMARKS
     true,
     // SCRIPT_PERMISSION_KEYBOARD_EVENTS
+    true,
+    // SCRIPT_PERMISSION_CRASH_HANDLER
     true,
 };
 
