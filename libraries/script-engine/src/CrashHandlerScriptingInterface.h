@@ -39,7 +39,7 @@ class CrashHandlerScriptingInterface : public QObject {
          * @returns {string} The support tag.
          */
         QString getSupportTag() {
-            if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
+            if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_CRASH_HANDLER)) {
                 return {};
             }
 
@@ -53,7 +53,7 @@ class CrashHandlerScriptingInterface : public QObject {
          * @returns {string} The name of the crash handler implementation.
          */
          QString getCrashHandlerName() {
-            if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_BOOKMARKS)) {
+            if (!ScriptPermissions::isCurrentScriptAllowed(ScriptPermissions::Permission::SCRIPT_PERMISSION_CRASH_HANDLER)) {
                 return {};
             }
             auto& crashHandler = CrashHandler::getInstance();
