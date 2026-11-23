@@ -96,10 +96,10 @@ protected:
     virtual void incomingConnection(qintptr socketDescriptor) override;
     virtual bool requestHandledByRequestHandler(HTTPConnection* connection, const QUrl& url);
 
-    QHostAddress _listenAddress;
+    QHostAddress _listenAddress{QHostAddress::Null};
     QString _documentRoot;
-    HTTPRequestHandler* _requestHandler;
-    QTimer* _isListeningTimer;
+    HTTPRequestHandler* _requestHandler{nullptr};
+    QTimer* _isListeningTimer{nullptr};
     quint16 _port;
 };
 
