@@ -69,6 +69,8 @@ AssignmentClientMonitor::AssignmentClientMonitor(const unsigned int numAssignmen
     // make sure we output process IDs for a monitor otherwise it's insane to parse
     LogHandler::getInstance().setShouldOutputProcessID(true);
 
+    _httpManager.start();
+
     // create a NodeList so we can receive stats from children
     DependencyManager::registerInheritance<LimitedNodeList, NodeList>();
     auto addressManager = DependencyManager::set<AddressManager>();

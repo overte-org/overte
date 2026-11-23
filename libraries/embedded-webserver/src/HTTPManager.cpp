@@ -30,15 +30,16 @@ HTTPManager::HTTPManager(const QHostAddress& listenAddress, quint16 port, const 
     _requestHandler(requestHandler),
     _port(port)
 {
-    // If all the arguments are provided, we start immediately.
+    // If all the required arguments are provided, we start immediately.
     // If not, the user will have to call start() themselves.
+    // Document root may be modified at runtime
     if (canStart()) {
         start();
     }
 }
 
 bool HTTPManager::canStart() {
-    return !_listenAddress.isNull() && _port != 0 && !_documentRoot.isEmpty();
+    return !_listenAddress.isNull() && _port != 0;
 }
 
 bool HTTPManager::start() {

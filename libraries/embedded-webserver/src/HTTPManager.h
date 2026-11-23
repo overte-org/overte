@@ -60,6 +60,9 @@ public:
     /**
      * @brief Where the root of the HTTP server's document tree is located.
      *
+     * It's possible to change the root at runtime, after start().
+     * Setting the root to an empty string disables serving files.
+     *
      * @param documentRoot Path to the root of the HTTP server's content directory
      */
     void setDocumentRoot(const QString &documentRoot) { _documentRoot = documentRoot; }
