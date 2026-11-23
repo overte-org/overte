@@ -14,4 +14,5 @@ endif ()
 
 link_hifi_libraries(networking)
 include_hifi_library_headers(octree)
+include_hifi_library_headers(networking)
 include_hifi_library_headers(shared)
