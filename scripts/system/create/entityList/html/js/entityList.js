@@ -3,7 +3,7 @@
 //  Created by Ryan Huffman on November 19th, 2014
 //  Copyright 2014 High Fidelity, Inc.
 //  Copyright 2020 Vircadia contributors.
-//  Copyright 2024-2025 Overte e.V.
+//  Copyright 2024-2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -273,6 +273,7 @@ let elEntityTable,
     elSetCameraFocusToSelection,
     elToggleLocalWorldMode,
     elExportSelectedEntities,
+    elSaveSelEntitiesAsServerless,
     elImportEntitiesFromFile,
     elImportEntitiesFromUrl,
     elGridActivator,
@@ -364,6 +365,7 @@ function loaded() {
         elSetCameraFocusToSelection = document.getElementById("setCameraFocusToSelection");
         elToggleLocalWorldMode = document.getElementById("toggleLocalWorldMode");
         elExportSelectedEntities = document.getElementById("exportSelectedEntities");
+        elSaveSelEntitiesAsServerless = document.getElementById("saveSelectedEntitiesAsServerless");
         elImportEntitiesFromFile = document.getElementById("importEntitiesFromFile");
         elImportEntitiesFromUrl = document.getElementById("importEntitiesFromUrl");
         elGridActivator = document.getElementById("gridActivator");
@@ -599,6 +601,10 @@ function loaded() {
         };
         elExportSelectedEntities.onclick = function () {
             EventBridge.emitWebEvent(JSON.stringify({ type: "export"}));
+            closeAllEntityListMenu();
+        };
+        elSaveSelEntitiesAsServerless.onclick = function () {
+            EventBridge.emitWebEvent(JSON.stringify({ type: "saveAsServerless"}));
             closeAllEntityListMenu();
         };
         elImportEntitiesFromFile.onclick = function () {
