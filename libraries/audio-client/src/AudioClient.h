@@ -124,7 +124,7 @@ public:
         AudioClient* _audio;
         int _unfulfilledReads;
     };
-    
+
     void startThread();
     void negotiateAudioFormat();
     void selectAudioFormat(const QString& selectedCodecName);
@@ -170,7 +170,7 @@ public:
 
     HifiAudioDeviceInfo getActiveAudioDevice(QAudio::Mode mode) const;
     QList<HifiAudioDeviceInfo> getAudioDevices(QAudio::Mode mode) const;
-  
+
     void enablePeakValues(bool enable) { _enablePeakValues = enable; }
     bool peakValuesAvailable() const;
 
@@ -186,6 +186,30 @@ public:
     void setAudioPaused(bool pause);
 
     AudioSolo& getAudioSolo() override { return _solo; }
+
+    QStringList getCodecs() override;
+    QString getCodec() override;
+
+    QStringList getAllowedCodecs() override { return _allowedCodecs; }
+    void setAllowedCodecs(const QStringList &codecs) override;
+    void setCodecSettings(const std::vector<Encoder::CodecSettings> &settings ) { _codecSettings = settings; }
+
+    QMap<QString,bool> getEncoderFeatures() override;
+
+    bool getEncoderVBR() override;
+    void setEncoderVBR(bool enabled) override;
+
+    int getEncoderBitrate() override;
+    void setEncoderBitrate(int bitrate) override;
+
+    int getEncoderComplexity() override;
+    void setEncoderComplexity(int complexity) override;
+
+    bool getEncoderFEC() override;
+    void setEncoderFEC(bool enabled) override;
+
+    int getEncoderPacketLossPercent() override;
+    void setEncoderPacketLossPercent(int percent) override;
 
 #ifdef Q_OS_WIN
     static QString getWinDeviceName(wchar_t* guid);
@@ -225,10 +249,10 @@ public slots:
 
     void setNoiseReduction(bool isNoiseGateEnabled, bool emitSignal = true);
     bool isNoiseReductionEnabled() const { return _isNoiseGateEnabled; }
-    
+
     void setNoiseReductionAutomatic(bool isNoiseGateAutomatic, bool emitSignal = true);
     bool isNoiseReductionAutomatic() const { return _isNoiseReductionAutomatic; }
-    
+
     void setNoiseReductionThreshold(float noiseReductionThreshold, bool emitSignal = true);
     float noiseReductionThreshold() const { return _noiseReductionThreshold; }
 
@@ -338,6 +362,7 @@ private:
     bool mixLocalAudioInjectors(float* mixBuffer);
     float azimuthForSource(const glm::vec3& relativePosition);
     float gainForSource(float distance, float volume);
+    std::vector<Encoder::CodecSettings> _codecSettings;
 
 #ifdef Q_OS_ANDROID
     QTimer _checkInputTimer{ this };
@@ -453,6 +478,9 @@ private:
     Mutex _localAudioMutex;
     AudioLimiter _audioLimiter{ AudioConstants::SAMPLE_RATE, OUTPUT_CHANNEL_COUNT };
 
+    // Negotiate only these codecs with the domain
+    QStringList _allowedCodecs;
+
     // Adds Reverb
     void configureReverb();
     void updateReverbOptions();
@@ -527,7 +555,7 @@ private:
 #endif
 
     AudioSolo _solo;
-    
+
     QFuture<void> _localPrepInjectorFuture;
     QReadWriteLock _hmdNameLock;
     Mutex _checkDevicesMutex;
