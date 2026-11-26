@@ -30,6 +30,9 @@
   libopus,
   libsForQt5,
   libv8,
+  vulkan-loader,
+  vulkan-headers,
+  vulkan-memory-allocator,
 
   # tools for shader compilation
   scribe,
@@ -42,9 +45,13 @@
   buildClient ? true,
   buildServer ? true,
   buildTools ? false,
+  renderingBackend ? "OpenGL",
 }:
+
+assert renderingBackend == "OpenGL" || renderingBackend == "Vulkan";
+
 stdenv.mkDerivation {
-  pname = "overte";
+  pname = "overte-${lib.toLower renderingBackend}";
   version = "unstable";
   src =
     let
@@ -120,11 +127,16 @@ stdenv.mkDerivation {
       SDL2
       libopus
       libv8
-    ];
+    ] ++ (lib.optionals (renderingBackend == "Vulkan") [
+        vulkan-loader
+        vulkan-headers
+        vulkan-memory-allocator
+    ]);
 
   cmakeFlags = [
     "-DOVERTE_USE_SYSTEM_LIBS=ON"
     "-DOVERTE_BUILD_TYPE=NIGHLTY"
+    "-DOVERTE_RENDERING_BACKEND=${renderingBackend}"
   ]
   ++ lib.optional (!buildClient) "-DOVERTE_BUILD_CLIENT=OFF"
   ++ lib.optional (!buildServer) "-DOVERTE_BUILD_SERVER=OFF"
@@ -161,6 +173,7 @@ stdenv.mkDerivation {
       ln -s "$I"/interface $out/bin/overte-client
       makeWrapper "$I"/interface $out/bin/overte-client \
         --unset QT_PLUGIN_PATH \
+        --set-default QT_QPA_PLATFORM xcb \
         "''${qtWrapperArgs[@]}"
     ''
   )
