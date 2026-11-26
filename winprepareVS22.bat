@@ -5,4 +5,3 @@ conan cache clean "*" -sbdt
 ECHO Running cmake
 cmake --preset conan-default
 ECHO CMake has finished
-pause
