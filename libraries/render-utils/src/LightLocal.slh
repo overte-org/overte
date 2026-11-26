@@ -117,6 +117,14 @@ vec4 evalLocalLighting(ivec3 cluster, int numLights, vec3 fragWorldPos, SurfaceD
 
         updateSurfaceDataWithLight(surface, fragLightDir);
 
+        float spotAngle = lightVolume_getSpotAngleCos(light.volume);
+        float spotExponent = lightIrradiance_getFalloffSpot(light.irradiance);
+        // TODO: expose configurable inner radius, this fixed scale just takes the sharp edges away
+        // FIXME: the exponent thing is a bit weird and tricky to replicate, it applied an exponent
+        // over a 180° spotlight that was clipped against the outer radius
+        float spotEpsilon = spotAngle - pow(spotAngle * 0.98, spotExponent);
+        cosSpotAngle = clamp((cosSpotAngle - spotAngle) / max(spotEpsilon, 0.0001), 0.0, 1.0);
+
         // Eval attenuation
         float radialAttenuation = lightIrradiance_evalLightAttenuation(light.irradiance, fragLightDistance);
         float angularAttenuation = lightIrradiance_evalLightSpotAttenuation(light.irradiance, cosSpotAngle);
