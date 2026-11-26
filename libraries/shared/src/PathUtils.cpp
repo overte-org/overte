@@ -490,6 +490,10 @@ bool PathUtils::initialize(FilesystemLayout type, DataStorage ds, const QString 
         return true;
     }
 
+    // We need the QApplication to be instantiated and have the name and directory set.
+    // Abort in debug mode if this isn't done.
+    Q_ASSERT_X(QCoreApplication::instance() != nullptr, Q_FUNC_INFO, "QApplication must be created before calling this function");
+
     if (QCoreApplication::applicationName().isEmpty()) {
         qCCritical(pathutils_log) << "Please set QCoreApplication::applicationName and related fields first!";
         return false;

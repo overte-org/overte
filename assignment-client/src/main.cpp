@@ -18,10 +18,10 @@
 
 
 int main(int argc, char* argv[]) {
-    PathUtils::initialize();
     setupHifiApplication(BuildInfo::ASSIGNMENT_CLIENT_NAME);
-
     AssignmentClientApp app(argc, argv);
+    PathUtils::initialize();
+
     auto &ch = CrashHandler::getInstance();
     ch.startMonitor(&app);
 
