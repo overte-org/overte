@@ -17,6 +17,8 @@
 #ifndef hifi_AudioScriptingInterface_h
 #define hifi_AudioScriptingInterface_h
 
+#include <queue>
+
 #include "AbstractAudioInterface.h"
 #include "AudioInjector.h"
 #include <DependencyManager.h>
@@ -24,6 +26,17 @@
 
 class ScriptAudioInjector;
 class ScriptEngine;
+
+class ScriptAudioListener {
+    //TODO: add total data size limit
+    //TODO: unregister on script engine destruction
+public:
+    QByteArray getData();
+    void putData(const QByteArray &data);
+private:
+    std::mutex _dataMutex;
+    std::queue<QByteArray> _data;
+};
 
 /// Provides the <code><a href="https://apidocs.overte.org/Audio.html">Audio</a></code> scripting API
 class AudioScriptingInterface : public QObject, public Dependency {
@@ -223,6 +236,10 @@ protected:
      * @returns {boolean} <code>true</code> if the audio input is used in stereo, otherwise <code>false</code>.
      */
     Q_INVOKABLE bool isStereoInput();
+
+    Q_INVOKABLE QUuid registerScriptListener();
+    Q_INVOKABLE void unregisterScriptListener(const QUuid& listener);
+    Q_INVOKABLE QByteArray getPCMData(const QUuid& listener);
 
 signals:
 
