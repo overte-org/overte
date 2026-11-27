@@ -20,7 +20,11 @@
 int main(int argc, char* argv[]) {
     setupHifiApplication(BuildInfo::ASSIGNMENT_CLIENT_NAME);
     AssignmentClientApp app(argc, argv);
-    PathUtils::initialize();
+
+    if (!PathUtils::initialize()) {
+        qCritical() << "Failed to initialize PathUtils";
+        return 80; // 'P'
+    }
 
     auto &ch = CrashHandler::getInstance();
     ch.startMonitor(&app);

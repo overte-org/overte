@@ -213,7 +213,13 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     // 5. Initialize everything else, which needs settings and logs.
 
     // Argument parsing was already called with ::parseArguments().
-    PathUtils::initialize(PathUtils::FilesystemLayout::Auto, PathUtils::DataStorage::Auto, DomainServer::instanceName());
+    if (!PathUtils::initialize(PathUtils::FilesystemLayout::Auto, PathUtils::DataStorage::Auto, DomainServer::instanceName())) {
+        qCritical() << "Failed to initialize PathUtils";
+
+        // We don't normally use exceptions, but this seems like a critical failure
+        // that we can't recover from.
+        throw std::runtime_error("Failed to initialize PathUtils");
+    }
 
     _httpManager.setListenAddress(QHostAddress::AnyIPv4);
     _httpManager.setPort(DOMAIN_SERVER_HTTP_PORT);

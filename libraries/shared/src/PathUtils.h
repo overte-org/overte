@@ -156,7 +156,7 @@ public:
      * @return true Self-check passed, all paths look good.
      * @return false Something isn't being found, program should abort.
      */
-    static bool initialize(FilesystemLayout type = FilesystemLayout::Auto, DataStorage ds = DataStorage::Auto, const QString &instance = "main");
+    [[nodiscard]] static bool initialize(FilesystemLayout type = FilesystemLayout::Auto, DataStorage ds = DataStorage::Auto, const QString &instance = "main");
 
 
 

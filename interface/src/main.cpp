@@ -463,7 +463,11 @@ int main(int argc, const char* argv[]) {
         if (parser.isSet(instanceOption)) {
             instanceName = parser.value(instanceOption).toUtf8();
         }
-        PathUtils::initialize(PathUtils::FilesystemLayout::Auto, PathUtils::DataStorage::Auto, instanceName);
+
+        if (!PathUtils::initialize(PathUtils::FilesystemLayout::Auto, PathUtils::DataStorage::Auto, instanceName)) {
+            qCritical() << "Failed to initialize PathUtils";
+            return 80; // 'P'
+        }
     }
 
     // TODO: We need settings for Application, but Settings needs an Application

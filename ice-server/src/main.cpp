@@ -10,6 +10,7 @@
 //
 
 #include <QtCore/QCoreApplication>
+#include <QDebug>
 
 #include <SharedUtil.h>
 
@@ -17,10 +18,13 @@
 #include "PathUtils.h"
 
 int main(int argc, char* argv[]) {
-    PathUtils::initialize();
-
     setupHifiApplication("Ice Server");
-
     IceServer iceServer(argc, argv);
+
+    if (!PathUtils::initialize()) {
+        qCritical() << "Failed to initialize PathUtils";
+        return 80; // 'P'
+    }
+
     return iceServer.exec();
 }
