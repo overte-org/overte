@@ -16,4 +16,7 @@ macro(TARGET_OPENVR)
         find_package(OpenVR QUIET REQUIRED)
         target_link_libraries(${TARGET_NAME} openvr::openvr)
     endif()
+
+
+    install_external_library("${OPENVR_LIBRARY}")
 endmacro()

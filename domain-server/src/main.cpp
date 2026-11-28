@@ -21,6 +21,7 @@
 #include <SharedUtil.h>
 
 #include "DomainServer.h"
+#include "PathUtils.h"
 #include <crash-handler/CrashHandler.h>
 
 

@@ -89,6 +89,8 @@ bool DomainServer::_getTempName { false };
 QString DomainServer::_userConfigFilename;
 int DomainServer::_parentPID { -1 };
 bool DomainServer::_forceCrashReporting{false};
+QString DomainServer::_instanceName{"main"};
+
 
 
 /// @brief The Domain server can proxy requests to the Directory Server, this function handles those forwarding requests.
@@ -198,11 +200,34 @@ bool DomainServer::forwardMetaverseAPIRequest(HTTPConnection* connection,
 
 DomainServer::DomainServer(int argc, char* argv[]) :
     QCoreApplication(argc, argv),
-    _gatekeeper(this),
-    _httpManager(QHostAddress::AnyIPv4, DOMAIN_SERVER_HTTP_PORT,
-        QString("%1/resources/web/").arg(QCoreApplication::applicationDirPath()), this)
+    _gatekeeper(this)
 {
     static const QString CRASH_REPORTER = "crash_reporting.enable_crash_reporter";
+
+
+    // We have a bit of an ordering problem to deal with here.
+    // 1. Parse command line arguments, because they might configure anything that comes next.
+    // 2. Initialize the path system.
+    // 3. Initialize the log system, because paths affect where logging might go
+    // 4. Initialize the settings system, because settings are dependent on paths
+    // 5. Initialize everything else, which needs settings and logs.
+
+    // Argument parsing was already called with ::parseArguments().
+    if (!PathUtils::initialize(PathUtils::FilesystemLayout::Auto, PathUtils::DataStorage::Auto, DomainServer::instanceName())) {
+        qCritical() << "Failed to initialize PathUtils";
+
+        // We don't normally use exceptions, but this seems like a critical failure
+        // that we can't recover from.
+        throw std::runtime_error("Failed to initialize PathUtils");
+    }
+
+    _httpManager.setListenAddress(QHostAddress::AnyIPv4);
+    _httpManager.setPort(DOMAIN_SERVER_HTTP_PORT);
+    _httpManager.setDocumentRoot(PathUtils::getServerContentPath("web"));
+    _httpManager.setRequestHandler(this);
+    _httpManager.start();
+
+    _settingsManager.start();
 
     if (_parentPID != -1) {
         watchParentProcess(_parentPID);
@@ -239,7 +264,7 @@ DomainServer::DomainServer(int argc, char* argv[]) :
     } else {
         // we weren't passed a user config path
         static const QString USER_CONFIG_FILE_NAME = "config.json";
-        userConfigFilename = PathUtils::getAppDataFilePath(USER_CONFIG_FILE_NAME);
+        userConfigFilename = PathUtils::getConfigFilePath(USER_CONFIG_FILE_NAME);
     }
     _settingsManager.setupConfigMap(userConfigFilename);
 
@@ -431,6 +456,9 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
     const QCommandLineOption forceCrashReportingOption("forceCrashReporting", "Force crash reporting to initialize.");
     parser.addOption(forceCrashReportingOption);
 
+    const QCommandLineOption instanceNameOption("instance", "Instance name for the domain server", "instance");
+    parser.addOption(instanceNameOption);
+
     QStringList arguments;
     for (int i = 0; i < argc; ++i) {
         arguments << argv[i];
@@ -504,6 +532,10 @@ void DomainServer::parseCommandLine(int argc, char* argv[]) {
 
     if (parser.isSet(forceCrashReportingOption)) {
         _forceCrashReporting = true;
+    }
+
+    if (parser.isSet(instanceNameOption)) {
+        _instanceName = parser.value(instanceNameOption);
     }
 }
 
@@ -1921,15 +1953,15 @@ void DomainServer::processOctreeDataPersistMessage(QSharedPointer<ReceivedMessag
 }
 
 QString DomainServer::getContentBackupDir() {
-    return PathUtils::getAppDataFilePath("backups");
+    return PathUtils::getServerDataFilePath("backups");
 }
 
 QString DomainServer::getEntitiesDirPath() {
-    return PathUtils::getAppDataFilePath("entities");
+    return PathUtils::getServerDataFilePath("entities");
 }
 
 QString DomainServer::getEntitiesFilePath() {
-    return PathUtils::getAppDataFilePath("entities/models.json.gz");
+    return PathUtils::getServerDataFilePath("entities/models.json.gz");
 }
 
 QString DomainServer::getEntitiesReplacementFilePath() {
@@ -2118,6 +2150,7 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
 
         // don't handle if we don't have a matching node
         if (!matchingNode) {
+            qWarning() << "Matching node not found for node" << nodeUUID << "url" << url;
             connection->respond(HTTPConnection::StatusCode404, "Resource not found.");
             return true;
         }
@@ -2126,6 +2159,7 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
 
         // don't handle if we don't have node data for this node
         if (!nodeData) {
+            qWarning() << "No node data for node" << nodeUUID << "url" << url;
             connection->respond(HTTPConnection::StatusCode404, "Resource not found.");
             return true;
         }
@@ -2141,6 +2175,7 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
             if (it != _ephemeralACScripts.end()) {
                 connection->respond(HTTPConnection::StatusCode200, it->second, "application/javascript");
             } else {
+                qWarning() << "AC script not found, url" << url;
                 connection->respond(HTTPConnection::StatusCode404, "Resource not found.");
             }
 
@@ -2148,6 +2183,7 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
         }
 
         // request not handled
+        qWarning() << "Resource not found for url " << url;
         connection->respond(HTTPConnection::StatusCode404, "Resource not found.");
         return true;
     }
@@ -2190,6 +2226,7 @@ bool DomainServer::handleHTTPRequest(HTTPConnection* connection, const QUrl& url
             return true;
         } else if (url.path() == URI_WIZARD && completedOnce) {
             // Wizard already completed, return 404
+            qWarning() << "Wizard already completed, refusing to serve URL" << url;
             connection->respond(HTTPConnection::StatusCode404, "Resource not found.");
             return true;
         }
@@ -3194,7 +3231,8 @@ void DomainServer::initializeExporter() {
         (
             QHostAddress::Any,
             (quint16)exporterPort,
-            QString("%1/resources/prometheus_exporter/").arg(QCoreApplication::applicationDirPath()),
+            PathUtils::getServerContentPath("prometheus_exporter"),
+
             &_exporter
         );
     }
@@ -3220,7 +3258,7 @@ void DomainServer::initializeMetadataExporter() {
         (
             QHostAddress::Any,
             (quint16)metadataExporterPort,
-            QString("%1/resources/metadata_exporter/").arg(QCoreApplication::applicationDirPath()),
+            PathUtils::getServerContentPath("metadata_exporter"),
             _metadata
         );
     }

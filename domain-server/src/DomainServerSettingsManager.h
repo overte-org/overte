@@ -75,6 +75,14 @@ class DomainServerSettingsManager : public QObject {
     Q_OBJECT
 public:
     DomainServerSettingsManager();
+
+    /**
+     * @brief Starts the settings manager
+     *
+     * This should be called after initializing PathUtils.
+     */
+    void start();
+
     bool handleAuthenticatedHTTPRequest(HTTPConnection* connection, const QUrl& url);
 
 

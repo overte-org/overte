@@ -32,28 +32,78 @@ public:
 class HTTPManager : public QTcpServer, public HTTPRequestHandler {
    Q_OBJECT
 public:
-    /// Initializes the manager.
-    HTTPManager(const QHostAddress& listenAddress, quint16 port, const QString& documentRoot, HTTPRequestHandler* requestHandler = nullptr);
+    /**
+     * Initializes the HTTP manager.
+     *
+     * @param listenAddress The address to listen on
+     * @param port The port to listen on
+     * @param documentRoot The root of the HTTP server's document tree
+     * @param requestHandler The request handler to use for incoming requests
+     *
+     * @note If all the arguments are provided, the server will start immediately. Otherwise, the user must call start() manually.
+     * This functionality exists to facilitate path management.
+     */
+    HTTPManager(const QHostAddress& listenAddress = QHostAddress::Null, quint16 port = 0, const QString& documentRoot = QString(), HTTPRequestHandler* requestHandler = nullptr);
 
     bool handleHTTPRequest(HTTPConnection* connection, const QUrl& url, bool skipSubHandler = false) override;
+
+    /**
+     * @brief Start the HTTP server and begin listening for incoming connections.
+     *
+     * This will start listening, if all the required parameters are set.
+     *
+     * @return true We're listening
+     * @return false Something is still missing, there will be output on the console.
+     */
+    bool start();
+
+    /**
+     * @brief Where the root of the HTTP server's document tree is located.
+     *
+     * It's possible to change the root at runtime, after start().
+     * Setting the root to an empty string disables serving files.
+     *
+     * @param documentRoot Path to the root of the HTTP server's content directory
+     */
+    void setDocumentRoot(const QString &documentRoot) { _documentRoot = documentRoot; }
+
+
+    /**
+     * @brief Get the document root of the HTTP server.
+     *
+     * @return QString Path to the root of the HTTP server's content directory
+     */
+    QString documentRoot() const { return _documentRoot; }
+
+    void setPort(quint16 port) { _port = port; }
+    quint16 port() const { return _port; }
+
+    void setListenAddress(const QHostAddress& listenAddress) { _listenAddress = listenAddress; }
+
+    QHostAddress listenAddress() const { return _listenAddress; }
+
+    void setRequestHandler(HTTPRequestHandler* requestHandler) { _requestHandler = requestHandler; }
+    HTTPRequestHandler* requestHandler() const { return _requestHandler; }
+
 
 private slots:
     void isTcpServerListening();
     void queuedExit(QString errorMessage);
-    
+
 private:
     bool bindSocket();
-    
+    bool canStart();
+
 protected:
     /// Accepts all pending connections
     virtual void incomingConnection(qintptr socketDescriptor) override;
     virtual bool requestHandledByRequestHandler(HTTPConnection* connection, const QUrl& url);
-    
-    QHostAddress _listenAddress;
+
+    QHostAddress _listenAddress{QHostAddress::Null};
     QString _documentRoot;
-    HTTPRequestHandler* _requestHandler;
-    QTimer* _isListeningTimer;
-    const quint16 _port;
+    HTTPRequestHandler* _requestHandler{nullptr};
+    QTimer* _isListeningTimer{nullptr};
+    quint16 _port;
 };
 
 #endif // hifi_HTTPManager_h

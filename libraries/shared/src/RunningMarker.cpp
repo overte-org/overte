@@ -47,5 +47,5 @@ void RunningMarker::deleteRunningMarkerFile() {
 }
 
 QString RunningMarker::getFilePath() const {
-    return QStandardPaths::writableLocation(QStandardPaths::DataLocation) + "/" + _name;
+    return PathUtils::getDataPath() + "/" + _name;
 }

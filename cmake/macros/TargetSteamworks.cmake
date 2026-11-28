@@ -9,4 +9,6 @@
 macro(TARGET_STEAMWORKS)
     find_package(Steamworks QUIET REQUIRED)
     target_link_libraries(${TARGET_NAME} Steam::Works)
+
+    install_external_library("${STEAMWORKS_LIBRARIES}")
 endmacro()

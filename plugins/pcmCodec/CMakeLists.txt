@@ -14,3 +14,7 @@ link_hifi_libraries(shared audio plugins)
 if (OVERTE_BUILD_SERVER)
   install_beside_console()
 endif ()
+
+if (BUILD_CLIENT)
+  install_beside_client()
+endif ()

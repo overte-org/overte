@@ -6,6 +6,42 @@
 # As the official CMake documentation is pretty bad for non-experts, Craig Scott's "Professional CMake: A Practical Guide" is a worthwhile investment,
 # both as a guide and as a reference manual. https://crascit.com/professional-cmake/
 
+# If we're running under the gradle build, HIFI_ANDROID will be set here, but
+# ANDROID will not be set until after the `project` statement.  This is the *ONLY*
+# place you need to use `HIFI_ANDROID` instead of `ANDROID`
+
+# 3.14 is the minimum version that supports symlinks on Windows
+# 3.20 is required for some improvements to CPack and installation
+cmake_minimum_required(VERSION 3.20)
+
+
+
+
+
+# A bit annoying, but it seems we can't have INSTALL_RPATH and rename on install at the same time, as
+# install's RENAME doesn't seem to work on TARGET, and INSTALL_RPATH only works on TARGET. So the solution
+# seems to be to rename the target itself.
+#
+# At any rate, "interface" isn't a great binary name, might as well call it "overte"
+
+if (APPLE)
+  set(INTERFACE_TARGET_NAME "Overte")
+else()
+  set(INTERFACE_TARGET_NAME "overte")
+endif()
+
+
+include("${CMAKE_CURRENT_LIST_DIR}/cmake/macros/GetVersionFromGit.cmake")
+get_version_from_git()
+
+set(OVERTE_VERSION_MAJOR "${GIT_VERSION_MAJOR}")
+set(OVERTE_VERSION_MINOR "${GIT_VERSION_MINOR}")
+set(OVERTE_VERSION_PATCH "${GIT_VERSION_PATCH}")
+set(OVERTE_VERSION_TWEAK "${GIT_VERSION_TWEAK}")
+
+set(OVERTE_VERSION "${GIT_VERSION_MAJOR}.${GIT_VERSION_MINOR}.${GIT_VERSION_PATCH}.${GIT_VERSION_TWEAK}")
+
+
 # This should allow using long paths on Windows
 SET(CMAKE_NINJA_FORCE_RESPONSE_FILE 1 CACHE INTERNAL "")
 # 3.24 is the minimum version that supports CMAKE_COMPILE_WARNING_AS_ERROR
@@ -101,6 +137,31 @@ set(OVERTE_USE_SENTRY OFF CACHE BOOL "Build with Sentry crash reporting.")
 set(OVERTE_BACKTRACE_URL "" CACHE STRING "URL to an endpoint for uploading crash-dumps. For example Sentry.")
 set(OVERTE_BACKTRACE_TOKEN "" CACHE STRING "Token used to identify this build, for use in uploading crash-dumps.")
 
+
+project(overte LANGUAGES CXX VERSION "${GIT_VERSION_FULL}")
+
+if (UNIX AND NOT APPLE)
+  # A bit of convenience for later
+  set(LINUX TRUE)
+
+  # GNU paths for Linux installs. Must come after project
+  include(GNUInstallDirs)
+
+ # set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib;$ORIGIN/../lib64")
+endif()
+
+
+include("cmake/init.cmake")
+include("cmake/compiler.cmake")
+
+if (NOT DEFINED CLIENT_ONLY)
+  set(CLIENT_ONLY 0)
+endif()
+
+if (NOT DEFINED SERVER_ONLY)
+  set(SERVER_ONLY 0)
+endif()
+
 if (ANDROID OR UWP)
     set(OVERTE_BUILD_SERVER OFF CACHE BOOL FORCE "Overwritten (mobile build)")
     set(OVERTE_BUILD_TOOLS OFF CACHE BOOL FORCE "Overwritten (mobile build)")
@@ -160,6 +221,8 @@ endif()
 foreach(PLATFORM_QT_COMPONENT ${PLATFORM_QT_COMPONENTS})
   list(APPEND PLATFORM_QT_LIBRARIES "Qt5::${PLATFORM_QT_COMPONENT}")
 endforeach()
+
+MESSAGE(STATUS "Install prefix:        " ${CMAKE_INSTALL_PREFIX})
 
 message(STATUS "Use optimized IK:      " ${OVERTE_USE_OPTIMIZED_IK})
 message(STATUS "Build server:          " ${OVERTE_BUILD_SERVER})
@@ -270,7 +333,7 @@ if (OVERTE_BUILD_CLIENT)
   if (APPLE)
     set_target_properties(Overte PROPERTIES FOLDER "Apps")
   else()
-    set_target_properties(interface PROPERTIES FOLDER "Apps")
+    set_target_properties(${INTERFACE_TARGET_NAME} PROPERTIES FOLDER "Apps")
   endif()
 
   option(USE_SIXENSE "Build Interface with sixense library/plugin" OFF)
@@ -301,16 +364,28 @@ if (OVERTE_BUILD_TESTS)
   endif()
 endif()
 
-if (OVERTE_BUILD_INSTALLER)
-  if (UNIX)
-    install(
-        DIRECTORY "${CMAKE_SOURCE_DIR}/scripts"
-        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/interface
-        COMPONENT ${CLIENT_COMPONENT}
-    )
-  endif()
-  generate_installers()
+if (BUILD_INSTALLER)
+#  if (UNIX)
+#    install(
+#        DIRECTORY "${CMAKE_SOURCE_DIR}/scripts"
+#        DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/interface
+#        COMPONENT ${CLIENT_COMPONENT}
+#    )
+#  endif()
+  #generate_installers()
 endif()
 
 # QML import paths for Qt Creator and KDevelop code completion
 set(QML_IMPORT_PATH ${CMAKE_SOURCE_DIR}/interface/resources/qml;${CMAKE_SOURCE_DIR}/launchers/qt/resources/qml CACHE PATH "Extra QML import paths for KDevelop and Qt Creator")
+
+
+
+# For running with in-tree resources, we need to find the source directory. CMake allows locating it anywhere.
+# Windows should support this fine. If there's some issue with this we could easily support a text file with
+# a path in it instead.
+
+add_custom_target(source_symlink)
+add_custom_command(TARGET source_symlink PRE_BUILD COMMAND cmake -E create_symlink ${CMAKE_SOURCE_DIR} ${CMAKE_BINARY_DIR}/source)
+
+# Making shared depend on this should ensure it's always built
+add_dependencies(shared source_symlink)

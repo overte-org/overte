@@ -14,12 +14,18 @@
 
 #include "AssignmentClientApp.h"
 #include <crash-handler/CrashHandler.h>
+#include "PathUtils.h"
 
 
 int main(int argc, char* argv[]) {
     setupHifiApplication(BuildInfo::ASSIGNMENT_CLIENT_NAME);
-
     AssignmentClientApp app(argc, argv);
+
+    if (!PathUtils::initialize()) {
+        qCritical() << "Failed to initialize PathUtils";
+        return 80; // 'P'
+    }
+
     auto &ch = CrashHandler::getInstance();
     ch.startMonitor(&app);
 
