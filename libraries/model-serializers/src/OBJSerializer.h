@@ -103,13 +103,13 @@ public:
     QString currentMaterialName;
     QHash<QString, OBJMaterial> materials;
 
-    HFMModel::Pointer read(const hifi::ByteArray& data, const hifi::VariantHash& mapping, const hifi::URL& url = hifi::URL()) override;
+    HFMModel::Pointer read(const hifi::ByteArray& data, const hifi::VariantMultiHash& mapping, const hifi::URL& url = hifi::URL()) override;
 
 private:
     hifi::URL _url;
 
     QHash<hifi::ByteArray, bool> librariesSeen;
-    bool parseOBJGroup(OBJTokenizer& tokenizer, const hifi::VariantHash& mapping, HFMModel& hfmModel,
+    bool parseOBJGroup(OBJTokenizer& tokenizer, const hifi::VariantMultiHash& mapping, HFMModel& hfmModel,
                        float& scaleGuess, bool combineParts);
     void parseMaterialLibrary(QIODevice* device);
     void parseTextureLine(const hifi::ByteArray& textureLine, hifi::ByteArray& filename, OBJMaterialTextureOptions& textureOptions);

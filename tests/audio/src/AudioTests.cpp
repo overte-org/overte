@@ -38,7 +38,7 @@ void AudioTests::listAudioDevices() {
 
 /*
     // AudioClient::devicesChanged is declared as:
-    // void devicesChanged(QAudio::Mode mode, const QList<HifiAudioDeviceInfo>& devices);
+    // void devicesChanged(QAudioDevice::Mode mode, const QList<HifiAudioDeviceInfo>& devices);
     //
     // Unfortunately with QSignalSpy we have to use the old SIGNAL() syntax, so it was a bit tricky
     // to figure out how to get the signal to connect. The snippet below lists signals in the format
@@ -59,7 +59,7 @@ void AudioTests::listAudioDevices() {
     }
 */
 
-    QSignalSpy spy(ac.get(), SIGNAL(devicesChanged(QAudio::Mode,QList<HifiAudioDeviceInfo>)));
+    QSignalSpy spy(ac.get(), SIGNAL(devicesChanged(QAudioDevice::Mode,QList<HifiAudioDeviceInfo>)));
 
     QVERIFY(spy.isValid()); // This checks that the signal has connected
     spy.wait(15000);
@@ -72,7 +72,7 @@ void AudioTests::listAudioDevices() {
     // QSignalSpy is a QList, which stores the received signals. We can then examine it to see
     // what we got.
     for(auto event : spy) {
-        QAudio::Mode mode = qvariant_cast<QAudio::Mode>(event.at(0));
+        QAudioDevice::Mode mode = qvariant_cast<QAudioDevice::Mode>(event.at(0));
         QList<HifiAudioDeviceInfo> devs = qvariant_cast<QList<HifiAudioDeviceInfo>>(event.at(1));
 
         QVERIFY(devs.count() > 0);

@@ -24,6 +24,7 @@
 #include <QtCore/QDebug>
 #include <QtCore/QCoreApplication>
 #include <QUuid>
+#include <QVariant>
 
 #include "NumericalConstants.h"
 // When writing out avatarEntities to a QByteArray, if the parentID is the ID of MyAvatar, use this ID instead.  This allows
@@ -188,8 +189,7 @@ QString formatSecondsElapsed(float seconds);
 bool similarStrings(const QString& stringA, const QString& stringB);
 
 template <typename T>
-uint qHash(const std::shared_ptr<T>& ptr, uint seed = 0)
-{
+size_t qHash(const std::shared_ptr<T>& ptr, size_t seed = 0) {
     return qHash(ptr.get(), seed);
 }
 

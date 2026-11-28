@@ -1,5 +1,5 @@
 set(TARGET_NAME gl)
-setup_hifi_library(Gui Widgets)
+setup_hifi_library(Gui Widgets OpenGL)
 link_hifi_libraries(shared)
 
 set(OpenGL_GL_PREFERENCE "GLVND")

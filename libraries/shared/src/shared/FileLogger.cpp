@@ -17,6 +17,7 @@
 #include <QtCore/QDateTime>
 #include <QtCore/QDir>
 #include <QtGui/QDesktopServices>
+#include <QtCore5Compat/QRegExp>
 
 #include "FileUtils.h"
 #include "NetworkUtils.h"
@@ -89,7 +90,8 @@ void FilePersistThread::rollFileIfNecessary(QFile& file, bool force, bool notify
     if (force || (file.size() > MAX_LOG_SIZE)) {
         QString newFileName = getLogRollerFilename();
         if (file.copy(newFileName)) {
-            file.open(QIODevice::WriteOnly | QIODevice::Truncate);
+            auto res = file.open(QIODevice::WriteOnly | QIODevice::Truncate);
+            Q_ASSERT(res);
             file.close();
 
             if (notifyListenersIfRolled) {

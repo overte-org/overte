@@ -4,6 +4,7 @@
 //
 //  Created by Stephen Birarda on 1/2/2014.
 //  Copyright 2014 High Fidelity, Inc.
+//  Copyright 2026 Overte e.V.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -179,9 +180,14 @@ bool AudioInjector::injectLocally() {
 
             // call this function on the AudioClient's thread
             // this will move the local buffer's thread to the LocalInjectorThread
+            // outputLocalInjector establishes the connection to localAudioReady
             success = _localAudioInterface->outputLocalInjector(sharedFromThis());
 
-            if (!success) {
+            // Notify that local audio data is ready for consumption
+            // (emit AFTER connection is established in outputLocalInjector)
+            if (success) {
+                emit audioReady();
+            } else {
                 qCDebug(audio) << "AudioInjector::injectLocally could not output locally via _localAudioInterface";
             }
         } else {
